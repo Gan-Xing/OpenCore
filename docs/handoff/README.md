@@ -9,10 +9,15 @@
 - S0/S1：品牌、monorepo 骨架、pnpm workspace、Nx 基础配置、占位应用目录和基础文档。
 - D1-D6：平台边界、模块分类、契约与权限规范、API 启动计划、Admin 启动计划、OpenForge 路线图。
 
+下一阶段：
+
+- S2：初始化 `apps/api` 和 `apps/admin` 空项目。
+
 ## 交接文档
 
 - [OpenCore monorepo 启动 handoff](opencore-monorepo-start-handoff.md)
 - [2026-06-09 启动设计 handoff](2026-06-09-start-design-handoff.md)
+- [2026-06-09 S2 API + Admin 初始化 handoff](2026-06-09-s2-api-admin-bootstrap-handoff.md)
 
 ## D1-D6 设计文档
 
@@ -23,12 +28,13 @@
 - [Admin 启动计划](../development/admin-bootstrap-plan.md)
 - [OpenForge 路线图](../development/openforge-roadmap.md)
 
-## 下一阶段入口
+## S2 执行边界
 
-下一阶段建议进入 S2：初始化 `apps/api` 和 `apps/admin` 空项目。
+S2 只初始化 `apps/api` 和 `apps/admin`：
 
-S2 仍应保持克制：
-
-- `apps/api` 只做 NestJS 空应用、配置、健康检查、OpenAPI 基线。
-- `apps/admin` 只做 Umi Max + Ant Design Pro V6 空后台、request/access/OpenAPI client 规范和测试基线。
+- `apps/api` 只做 NestJS 空应用、健康检查、OpenAPI skeleton 和 Nx target。
+- `apps/admin` 只做 Umi Max + Ant Design Pro V6 空后台、模板页隔离、Nx target 和测试基线。
+- `apps/web`、`apps/mobile`、`apps/miniapp`、`apps/desktop` 继续只保留占位目录。
 - 不实现登录、RBAC、多租户、数据库 schema、RAG、Agent、知识库或业务模块。
+
+S2 必须优先使用官方脚手架或 Nx generator 生成，不要手写模拟模板文件。
