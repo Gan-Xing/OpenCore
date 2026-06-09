@@ -6,7 +6,7 @@ OpenCore（中文名：开元）定位为 **AI Native 企业级全栈 Monorepo**
 
 ## 当前阶段
 
-当前只执行 S0/S1：创建 monorepo 骨架和文档，不写业务代码。
+当前已经完成 S0/S1：创建 monorepo 骨架和基础文档。D1-D6 启动设计阶段用于锁定平台边界、模块分层、契约权限规范、API/Admin 启动计划和 OpenForge 路线，不写业务代码。
 
 本阶段明确不做：
 
@@ -54,7 +54,14 @@ OpenCore（中文名：开元）定位为 **AI Native 企业级全栈 Monorepo**
 - [品牌与命名](docs/architecture/brand.md)
 - [技术栈](docs/architecture/tech-stack.md)
 - [Monorepo 规划](docs/architecture/monorepo.md)
+- [平台边界](docs/architecture/platform-boundaries.md)
 - [模块注册表](docs/modules/module-registry.md)
+- [模块分类](docs/modules/module-taxonomy.md)
 - [优先级路线图](docs/modules/priority-roadmap.md)
 - [开发起步](docs/development/getting-started.md)
+- [契约与权限规范](docs/development/contract-and-permission-standard.md)
+- [API 启动计划](docs/development/api-bootstrap-plan.md)
+- [Admin 启动计划](docs/development/admin-bootstrap-plan.md)
+- [OpenForge 路线图](docs/development/openforge-roadmap.md)
 - [AI Native 路线图](docs/ai/ai-native-roadmap.md)
+- [Handoff 索引](docs/handoff/README.md)
