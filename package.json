@@ -1,0 +1,30 @@
+{
+  "name": "opencore",
+  "version": "0.0.0",
+  "private": true,
+  "description": "OpenCore（开元）- AI Native 企业级全栈 Monorepo",
+  "license": "UNLICENSED",
+  "packageManager": "pnpm@10.12.1",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=10.0.0"
+  },
+  "scripts": {
+    "build": "nx run-many -t build",
+    "lint": "nx run-many -t lint",
+    "test": "nx run-many -t test",
+    "typecheck": "nx run-many -t typecheck",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "nx": "nx"
+  },
+  "devDependencies": {
+    "@nx/js": "^21.0.0",
+    "@nx/node": "^21.0.0",
+    "@nx/react": "^21.0.0",
+    "@nx/workspace": "^21.0.0",
+    "nx": "^21.0.0",
+    "prettier": "^3.5.0",
+    "typescript": "^5.8.0"
+  }
+}
