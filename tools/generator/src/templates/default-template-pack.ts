@@ -145,6 +145,12 @@ const TEMPLATE_SEEDS: readonly TemplateSeed[] = [
     targetPathPattern: 'docs/generated/openforge/{moduleCode}-runbook.md',
   },
   {
+    id: 'docs.patch-review',
+    artifactKind: 'docs.patch-review',
+    description: 'Generated patch review documentation.',
+    targetPathPattern: 'docs/generated/openforge/{moduleCode}-patch-review.md',
+  },
+  {
     id: 'prisma.model-draft',
     artifactKind: 'prisma.model-draft',
     description: 'Prisma model draft for manual review.',
@@ -182,6 +188,13 @@ const TEMPLATE_SEEDS: readonly TemplateSeed[] = [
     artifactKind: 'patch.module-registry',
     description: 'Patch plan for module registry review.',
     targetPathPattern: 'openforge-patches/module-registry.patch.md',
+    patchOnly: true,
+  },
+  {
+    id: 'patch.sdk-index',
+    artifactKind: 'patch.sdk-index',
+    description: 'Patch plan for SDK root index review.',
+    targetPathPattern: 'openforge-patches/sdk-index.patch.md',
     patchOnly: true,
   },
 ];

@@ -22,9 +22,8 @@ V1 不改变 OpenCore 的业务边界：它只生成平台开发骨架和 review
 | Safety          | 阻止绝对路径、`../`、`.env*`、`prisma/schema.prisma`、`prisma/migrations/**` 和 P4/P5 schema               |
 | Tests           | OpenForge reader、validator、planner、diff、preflight、CLI 和 safety tests 已存在                          |
 
-Stage B-H 已补齐 V1 contract surface、schema/config DSL、template pack/VFS、safe apply writer、rollback engine、API generator pack 和 Admin generator pack。后续仍缺少实现层：
+Stage B-I 已补齐 V1 contract surface、schema/config DSL、template pack/VFS、safe apply writer、rollback engine、API generator pack、Admin generator pack 和 SDK/Test/Docs generator pack。后续仍缺少实现层：
 
-- 无 SDK/Test/Docs generator pack 的 golden snapshots。
 - 无 `doctor` CLI。
 - 无 OpenForge V1 gate。
 
@@ -75,7 +74,8 @@ flowchart TD
 | Stage F   | complete | `tools/generator/src/rollback/rollback-engine.ts` plans and applies manifest rollback, blocks modified generated files, restores from apply backups, and writes rollback audit records                                      |
 | Stage G   | complete | API generator pack renders NestJS module/controller/service/repository/DTO/spec skeletons with Swagger decorators, `RequirePermission`, no Prisma access, patch-only app module registration and API golden/typecheck tests |
 | Stage H   | complete | Admin generator pack renders ProTable page, Modal/Drawer forms, ProDescriptions detail, export button and smoke skeletons with permission-aware operations, placeholder client calls and patch-only route/access plans      |
-| Stage I-L | pending  | SDK/Test/Docs generator packs, doctor/e2e/gate and final docs are not implemented yet                                                                                                                                       |
+| Stage I   | complete | SDK/Test/Docs generator pack renders generated SDK types/client/spec/index, API/Admin generated tests, module/API/Admin/runbook/patch-review docs, SDK index patch plan, snapshots and temp-project SDK typecheck           |
+| Stage J-L | pending  | Doctor/e2e/gate and final docs are not implemented yet                                                                                                                                                                      |
 
 ## Generated Ownership Model
 
@@ -100,7 +100,7 @@ generatedAt
 
 ## Template Pack Boundary
 
-The default V1 template pack is `openforge-default-nest-umi-v1`. Current Stage G API output covers:
+The default V1 template pack is `openforge-default-nest-umi-v1`. Current Stage I output covers:
 
 - API: module, controller, service, DTO, repository and spec skeleton.
 - Controller uses `@ApiTags`, operation/response/body/param Swagger decorators and `@RequirePermission`.
@@ -113,12 +113,17 @@ The default V1 template pack is `openforge-default-nest-umi-v1`. Current Stage G
 - Admin page uses generated client placeholders, loading/error/empty states and permission-aware operation buttons.
 - Admin route/access integration remains patch-only markdown; OpenForge does not modify `.umirc.ts` or `access.ts`.
 
+- SDK: generated schema-derived types, generated request wrapper client, generated client spec and generated barrel file.
+- SDK index integration remains patch-only markdown; OpenForge does not modify hand-written SDK entrypoints.
+- Tests: generated API spec asserts DTO shape, permission guard metadata and repository placeholder behavior; generated Admin smoke asserts route, permission map and operation permission helpers.
+- Docs: generated module, API, Admin, runbook and patch-review fragments include `schemaHash` and `templateVersion` review metadata.
+
 Later stages will harden:
 
-- SDK: generated client, generated types and client spec.
-- Docs: module doc, API/Admin doc and runbook fragments.
+- Doctor: CLI diagnostics for workspace readiness and safety boundaries.
+- Gate: repeatable OpenForge V1 verification command set.
 - Prisma: model draft and migration hint only.
-- Patch: app module, admin route, admin access and module registry patch plans.
+- Patch: app module, admin route, admin access, module registry and SDK index patch plans.
 
 Prisma output remains draft/hint only. OpenForge must not directly write `prisma/schema.prisma` or create `prisma/migrations/**`.
 

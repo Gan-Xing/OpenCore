@@ -215,11 +215,13 @@ export type OpenForgeArtifactKind =
   | 'docs.api-doc'
   | 'docs.fragment'
   | 'docs.module-doc'
+  | 'docs.patch-review'
   | 'docs.runbook'
   | 'patch.admin-access'
   | 'patch.admin-route'
   | 'patch.app-module'
   | 'patch.module-registry'
+  | 'patch.sdk-index'
   | 'prisma.hint'
   | 'prisma.migration-hint'
   | 'prisma.model-draft'
@@ -250,11 +252,13 @@ export const OPENFORGE_ARTIFACT_KINDS = [
   'docs.api-doc',
   'docs.fragment',
   'docs.module-doc',
+  'docs.patch-review',
   'docs.runbook',
   'patch.admin-access',
   'patch.admin-route',
   'patch.app-module',
   'patch.module-registry',
+  'patch.sdk-index',
   'prisma.hint',
   'prisma.migration-hint',
   'prisma.model-draft',

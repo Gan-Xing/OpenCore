@@ -1,6 +1,6 @@
 # OpenForge 路线图
 
-OpenForge 是 OpenCore 的代码生成器。当前 S3-S9 已完成，S9 MVP 已通过单独 handoff/goal 落地只读规划能力。OpenForge V1 Full Implementation 已完成 Stage A-H，目标是从只读 plan/diff/check 升级为安全、可审计、可回滚的生成器闭环。
+OpenForge 是 OpenCore 的代码生成器。当前 S3-S9 已完成，S9 MVP 已通过单独 handoff/goal 落地只读规划能力。OpenForge V1 Full Implementation 已完成 Stage A-I，目标是从只读 plan/diff/check 升级为安全、可审计、可回滚的生成器闭环。
 
 ## 当前定位
 
@@ -27,7 +27,7 @@ V1 交付顺序：
 11. Stage K：OpenForge gate。
 12. Stage L：最终文档、roadmap 和交接。
 
-V1 当前 Stage A-H 已完成 architecture、contracts、schema/config DSL、template pack/VFS、safe apply、manifest、rollback、manifest inspection、API generator pack hardening 和 Admin generator pack hardening。Stage I 的 SDK/Test/Docs generator pack 是最早未完成阶段。
+V1 当前 Stage A-I 已完成 architecture、contracts、schema/config DSL、template pack/VFS、safe apply、manifest、rollback、manifest inspection、API generator pack hardening、Admin generator pack hardening 和 SDK/Test/Docs generator pack hardening。Stage J 的 CLI UX、doctor 与 temp repo e2e 是最早未完成阶段。
 
 ## 第一版目标
 
@@ -43,9 +43,11 @@ OpenForge v1 面向 API/Admin 主线，优先生成工程骨架和同步资产�
 - ModalForm / DrawerForm 表单骨架。
 - ProDescriptions 详情抽屉骨架。
 - TableExportButton 操作骨架。
+- SDK types/client/spec/generated index 骨架。
+- API/Admin generated test skeleton。
 - OpenAPI regenerate 提示。
 - E2E skeleton。
-- 文档片段。
+- 模块/API/Admin/runbook/patch-review 文档片段。
 
 S9 当前不生成上述代码，只建立只读/dry-run/diff plan 和 safety/preflight report。
 

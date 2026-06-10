@@ -127,6 +127,12 @@ describe('OpenForge default template pack renderer', () => {
   },
   {
     "format": "markdown",
+    "kind": "docs.patch-review",
+    "patchOnly": false,
+    "targetPath": "docs/generated/openforge/core.dict-patch-review.md",
+  },
+  {
+    "format": "markdown",
     "kind": "docs.runbook",
     "patchOnly": false,
     "targetPath": "docs/generated/openforge/core.dict-runbook.md",
@@ -154,6 +160,12 @@ describe('OpenForge default template pack renderer', () => {
     "kind": "patch.module-registry",
     "patchOnly": true,
     "targetPath": "openforge-patches/module-registry.patch.md",
+  },
+  {
+    "format": "markdown",
+    "kind": "patch.sdk-index",
+    "patchOnly": true,
+    "targetPath": "openforge-patches/sdk-index.patch.md",
   },
   {
     "format": "markdown",
@@ -444,6 +456,11 @@ describe('OpenForge default template pack renderer', () => {
           'declare function expect(value: unknown): {',
           '  toBe(value: unknown): void;',
           '  toBeDefined(): void;',
+          '  toBeInstanceOf(value: unknown): void;',
+          '  toContain(value: unknown): void;',
+          '  rejects: {',
+          '    toThrow(value: string): Promise<void>;',
+          '  };',
           '};',
           '',
         ].join('\n'),
@@ -662,5 +679,250 @@ describe('OpenForge default template pack renderer', () => {
         ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n'),
       ),
     ).toEqual([]);
+  });
+
+  it('renders SDK and Docs generator pack skeletons with patch-review metadata', () => {
+    const { schema } = loadManualSchema(
+      'tools/generator/examples/core.dict.v1.schema.json',
+    );
+    const { config } = loadOpenForgeGeneratorConfig();
+    const files = renderTemplatePack(schema, config);
+    const sdkAndDocs = files
+      .filter(
+        (file) =>
+          file.artifactKind.startsWith('sdk.') ||
+          file.artifactKind.startsWith('docs.') ||
+          file.artifactKind === 'patch.sdk-index',
+      )
+      .sort((left, right) =>
+        left.artifactKind.localeCompare(right.artifactKind),
+      );
+
+    expect(
+      sdkAndDocs.map((file) => {
+        const content = String(file.content.value);
+
+        return {
+          kind: file.artifactKind,
+          targetPath: file.targetPath,
+          checks: {
+            schemaHash: content.includes('schemaHash='),
+            templateVersion: content.includes(
+              'templateVersion=openforge-default-nest-umi-v1',
+            ),
+            sdkRequestWrapper: content.includes('SdkRequest'),
+            sdkExports: content.includes("export * from './dict-client'"),
+            runbookCommands: content.includes('pnpm openforge:apply'),
+            sdkIndexPatch: content.includes("export * from './generated'"),
+          },
+        };
+      }),
+    ).toMatchInlineSnapshot(`
+[
+  {
+    "checks": {
+      "runbookCommands": false,
+      "schemaHash": true,
+      "sdkExports": false,
+      "sdkIndexPatch": false,
+      "sdkRequestWrapper": false,
+      "templateVersion": true,
+    },
+    "kind": "docs.admin-doc",
+    "targetPath": "docs/generated/openforge/core.dict-admin.md",
+  },
+  {
+    "checks": {
+      "runbookCommands": false,
+      "schemaHash": true,
+      "sdkExports": false,
+      "sdkIndexPatch": false,
+      "sdkRequestWrapper": false,
+      "templateVersion": true,
+    },
+    "kind": "docs.api-doc",
+    "targetPath": "docs/generated/openforge/core.dict-api.md",
+  },
+  {
+    "checks": {
+      "runbookCommands": false,
+      "schemaHash": true,
+      "sdkExports": false,
+      "sdkIndexPatch": false,
+      "sdkRequestWrapper": false,
+      "templateVersion": true,
+    },
+    "kind": "docs.module-doc",
+    "targetPath": "docs/generated/openforge/core.dict.md",
+  },
+  {
+    "checks": {
+      "runbookCommands": false,
+      "schemaHash": true,
+      "sdkExports": false,
+      "sdkIndexPatch": false,
+      "sdkRequestWrapper": false,
+      "templateVersion": true,
+    },
+    "kind": "docs.patch-review",
+    "targetPath": "docs/generated/openforge/core.dict-patch-review.md",
+  },
+  {
+    "checks": {
+      "runbookCommands": true,
+      "schemaHash": true,
+      "sdkExports": false,
+      "sdkIndexPatch": false,
+      "sdkRequestWrapper": false,
+      "templateVersion": true,
+    },
+    "kind": "docs.runbook",
+    "targetPath": "docs/generated/openforge/core.dict-runbook.md",
+  },
+  {
+    "checks": {
+      "runbookCommands": false,
+      "schemaHash": true,
+      "sdkExports": false,
+      "sdkIndexPatch": true,
+      "sdkRequestWrapper": false,
+      "templateVersion": true,
+    },
+    "kind": "patch.sdk-index",
+    "targetPath": "openforge-patches/sdk-index.patch.md",
+  },
+  {
+    "checks": {
+      "runbookCommands": false,
+      "schemaHash": true,
+      "sdkExports": false,
+      "sdkIndexPatch": false,
+      "sdkRequestWrapper": true,
+      "templateVersion": true,
+    },
+    "kind": "sdk.client",
+    "targetPath": "packages/sdk/src/generated/dict-client.ts",
+  },
+  {
+    "checks": {
+      "runbookCommands": false,
+      "schemaHash": true,
+      "sdkExports": true,
+      "sdkIndexPatch": false,
+      "sdkRequestWrapper": false,
+      "templateVersion": true,
+    },
+    "kind": "sdk.generated-index",
+    "targetPath": "packages/sdk/src/generated/index.ts",
+  },
+  {
+    "checks": {
+      "runbookCommands": false,
+      "schemaHash": true,
+      "sdkExports": false,
+      "sdkIndexPatch": false,
+      "sdkRequestWrapper": true,
+      "templateVersion": true,
+    },
+    "kind": "sdk.spec",
+    "targetPath": "packages/sdk/src/generated/dict-client.spec.ts",
+  },
+  {
+    "checks": {
+      "runbookCommands": false,
+      "schemaHash": true,
+      "sdkExports": false,
+      "sdkIndexPatch": false,
+      "sdkRequestWrapper": false,
+      "templateVersion": true,
+    },
+    "kind": "sdk.types",
+    "targetPath": "packages/sdk/src/generated/dict-types.ts",
+  },
+]
+`);
+
+    expect(
+      String(
+        findOpenForgeVirtualFile(
+          files,
+          'packages/sdk/src/generated/dict-client.ts',
+        )?.content.value,
+      ),
+    ).toContain("request<DictListResponse>(withGeneratedQuery('/core/dicts'");
+    expect(
+      String(
+        findOpenForgeVirtualFile(
+          files,
+          'docs/generated/openforge/core.dict-runbook.md',
+        )?.content.value,
+      ),
+    ).toContain('Review SDK root index patch before re-exporting');
+  });
+
+  it('typechecks generated SDK TypeScript skeletons in a temp project', () => {
+    const { schema } = loadManualSchema(
+      'tools/generator/examples/core.dict.v1.schema.json',
+    );
+    const { config } = loadOpenForgeGeneratorConfig();
+    const files = renderTemplatePack(schema, config).filter((file) =>
+      file.artifactKind.startsWith('sdk.'),
+    );
+    const tempRoot = mkdtempSync(join(tmpdir(), 'openforge-sdk-typecheck-'));
+
+    try {
+      for (const file of files) {
+        writeTempFile(tempRoot, file.targetPath, String(file.content.value));
+      }
+
+      writeTempFile(
+        tempRoot,
+        'packages/sdk/src/rbac-client.ts',
+        [
+          'export type SdkRequest = <T>(',
+          '  path: `/${string}`,',
+          '  options?: { method?: "DELETE" | "GET" | "PATCH" | "POST"; body?: unknown; token?: string },',
+          ') => Promise<T>;',
+          '',
+        ].join('\n'),
+      );
+      writeTempFile(
+        tempRoot,
+        'stubs/jest-globals.d.ts',
+        [
+          'declare function describe(name: string, fn: () => void): void;',
+          'declare function it(name: string, fn: () => Promise<void> | void): void;',
+          'declare function expect(value: unknown): {',
+          '  toEqual(value: unknown): void;',
+          '};',
+          '',
+        ].join('\n'),
+      );
+
+      const rootNames = [
+        ...files.map((file) => join(tempRoot, file.targetPath)),
+        join(tempRoot, 'stubs/jest-globals.d.ts'),
+      ];
+      const program = ts.createProgram({
+        rootNames,
+        options: {
+          module: ts.ModuleKind.CommonJS,
+          moduleResolution: ts.ModuleResolutionKind.Node10,
+          noEmit: true,
+          skipLibCheck: true,
+          strict: true,
+          target: ts.ScriptTarget.ES2022,
+        },
+      });
+      const diagnostics = ts.getPreEmitDiagnostics(program);
+
+      expect(
+        diagnostics.map((diagnostic) =>
+          ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n'),
+        ),
+      ).toEqual([]);
+    } finally {
+      rmSync(tempRoot, { force: true, recursive: true });
+    }
   });
 });

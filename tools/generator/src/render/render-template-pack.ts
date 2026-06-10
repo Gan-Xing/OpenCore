@@ -229,6 +229,49 @@ function controllerBasePath(schema: OpenForgeManualSchema): string {
   return firstPath.replace(/^\/api\//, '').replace(/^\//, '');
 }
 
+function sdkRequestPath(path: string): `/${string}` {
+  const normalizedPath = path.replace(/^\/api(?=\/)/, '');
+
+  return (
+    normalizedPath.startsWith('/') ? normalizedPath : `/${normalizedPath}`
+  ) as `/${string}`;
+}
+
+function sdkListPath(schema: OpenForgeManualSchema): `/${string}` {
+  return sdkRequestPath(
+    schema.openapi.paths?.[0] ?? `/api/${controllerBasePath(schema)}`,
+  );
+}
+
+function sdkExportPath(schema: OpenForgeManualSchema): `/${string}` {
+  const exportPath = schema.openapi.paths?.find((path) =>
+    path.includes('/export'),
+  );
+
+  return sdkRequestPath(exportPath ?? `${sdkListPath(schema)}/export`);
+}
+
+function sdkDetailPathTemplate(schema: OpenForgeManualSchema): `/${string}` {
+  const identityField = getIdentityField(schema);
+  const detailPath = schema.openapi.paths?.find((path) => path.includes('{'));
+
+  return sdkRequestPath(
+    detailPath ?? `${sdkListPath(schema)}/{${identityField.name}}`,
+  );
+}
+
+function renderTypeMembers(
+  fields: readonly OpenForgeFieldSchema[],
+  forceOptional = false,
+): string {
+  return fields
+    .map(
+      (field) =>
+        `  ${field.name}${forceOptional || !field.required ? '?' : ''}: ${fieldTypeScriptType(field)};`,
+    )
+    .join('\n');
+}
+
 function renderApiDtoContent(
   schema: OpenForgeManualSchema,
   marker: OpenForgeGeneratedMarker,
@@ -548,21 +591,30 @@ function renderApiSpecContent(
   marker: OpenForgeGeneratedMarker,
 ): string {
   const names = getNameParts(schema);
+  const identityField = getIdentityField(schema);
   const markerComment = renderMarkerComment(marker);
+  const readPermission = getPermissionForAction(schema, 'read');
 
   return `${markerComment}
 import { ${names.pascal}Controller } from './${names.resource}.controller';
+import { ${names.pascal}Dto } from './${names.resource}.dto';
 import { Generated${names.pascal}Repository } from './${names.resource}.repository';
 import { ${names.pascal}Service } from './${names.resource}.service';
 
 describe('${names.pascal} generated API skeleton', () => {
-  it('wires the controller to the generated service contract', () => {
+  it('wires the controller to the generated service contract', async () => {
     const repository = new Generated${names.pascal}Repository();
     const service = new ${names.pascal}Service(repository);
     const controller = new ${names.pascal}Controller(service);
+    const dto = new ${names.pascal}Dto();
+    const expectedPermissions = ${renderStringArray(schema.permissions)} as const;
 
+    dto.${identityField.name} = ${identityField.type === 'number' ? '1' : quoteString('example')};
     expect(controller).toBeDefined();
     expect(service.resource).toBe(${quoteString(names.resource)});
+    expect(dto).toBeInstanceOf(${names.pascal}Dto);
+    expect(expectedPermissions).toContain(${quoteString(readPermission ?? '')});
+    await expect(repository.list({})).rejects.toThrow('placeholder');
   });
 });
 `;
@@ -942,6 +994,8 @@ import {
 
 describe('${names.pascal} generated Admin skeleton', () => {
   it('maps operation permissions without registering routes automatically', () => {
+    const generatedRoute = ${quoteString(schema.admin.basePath)};
+
     expect(generated${names.pascal}Permissions).toMatchObject({
 ${schema.actions
   .map((action) => {
@@ -953,8 +1007,400 @@ ${schema.actions
   .join('\n')}
     });
     expect(canUseGenerated${names.pascal}Action('read')).toBe(true);
+    expect(generatedRoute).toBe(${quoteString(schema.admin.basePath)});
   });
 });
+`;
+}
+
+function renderSdkTypesContent(
+  schema: OpenForgeManualSchema,
+  marker: OpenForgeGeneratedMarker,
+): string {
+  const names = getNameParts(schema);
+  const markerComment = renderMarkerComment(marker);
+  const formFields = getFieldsByName(schema, schema.form.fields);
+  const filterFields = getFieldsByName(schema, schema.filter?.fields ?? []);
+
+  return `${markerComment}
+export type ${names.pascal} = {
+${renderTypeMembers(schema.fields)}
+};
+
+export type Create${names.pascal}Request = {
+${renderTypeMembers(formFields)}
+};
+
+export type Update${names.pascal}Request = {
+${renderTypeMembers(formFields, true)}
+};
+
+export type ${names.pascal}ListQuery = {
+  page?: number;
+  pageSize?: number;
+${renderTypeMembers(filterFields, true)}
+  sortBy?: ${schema.sort?.fields?.length ? schema.sort.fields.map((field) => quoteString(field)).join(' | ') : 'string'};
+  sortDirection?: 'asc' | 'desc';
+};
+
+export type ${names.pascal}ListResponse = {
+  items: ${names.pascal}[];
+  total: number;
+  page: number;
+  pageSize: number;
+};
+
+export type ${names.pascal}ExportRequest = {
+  columns?: readonly string[];
+};
+
+export type ${names.pascal}DeleteResult = {
+  deleted: boolean;
+};
+`;
+}
+
+function renderSdkClientContent(
+  schema: OpenForgeManualSchema,
+  marker: OpenForgeGeneratedMarker,
+): string {
+  const names = getNameParts(schema);
+  const identityField = getIdentityField(schema);
+  const markerComment = renderMarkerComment(marker);
+  const listPath = sdkListPath(schema);
+  const exportPath = sdkExportPath(schema);
+  const detailPath = sdkDetailPathTemplate(schema);
+
+  return `${markerComment}
+import type { SdkRequest } from '../rbac-client';
+import type {
+  Create${names.pascal}Request,
+  ${names.pascal},
+  ${names.pascal}DeleteResult,
+  ${names.pascal}ExportRequest,
+  ${names.pascal}ListQuery,
+  ${names.pascal}ListResponse,
+  Update${names.pascal}Request,
+} from './${names.resource}-types';
+
+type Token = string;
+type ${names.pascal}Identity = ${fieldTypeScriptType(identityField)};
+
+function withGeneratedQuery(path: \`/\${string}\`, query?: Record<string, unknown>): \`/\${string}\` {
+  const params = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(query ?? {})) {
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        params.append(key, String(item));
+      }
+    } else if (value !== undefined && value !== null) {
+      params.set(key, String(value));
+    }
+  }
+
+  const queryString = params.toString();
+
+  return (queryString ? \`\${path}?\${queryString}\` : path) as \`/\${string}\`;
+}
+
+function ${names.camel}DetailPath(${identityField.name}: ${names.pascal}Identity): \`/\${string}\` {
+  return ${quoteString(detailPath)}.replace(
+    ${quoteString(`{${identityField.name}}`)},
+    encodeURIComponent(String(${identityField.name})),
+  ) as \`/\${string}\`;
+}
+
+export type ${names.pascal}Client = {
+  list(token: Token, query?: ${names.pascal}ListQuery): Promise<${names.pascal}ListResponse>;
+  get(token: Token, ${identityField.name}: ${names.pascal}Identity): Promise<${names.pascal} | null>;
+  create(token: Token, body: Create${names.pascal}Request): Promise<${names.pascal}>;
+  update(token: Token, ${identityField.name}: ${names.pascal}Identity, body: Update${names.pascal}Request): Promise<${names.pascal}>;
+  delete(token: Token, ${identityField.name}: ${names.pascal}Identity): Promise<${names.pascal}DeleteResult>;
+  exportRows(token: Token, exportRequest?: ${names.pascal}ExportRequest): Promise<${names.pascal}[]>;
+};
+
+export function create${names.pascal}Client(request: SdkRequest): ${names.pascal}Client {
+  return {
+    list: (token, query) =>
+      request<${names.pascal}ListResponse>(withGeneratedQuery(${quoteString(listPath)}, query), {
+        token,
+      }),
+    get: (token, ${identityField.name}) =>
+      request<${names.pascal} | null>(${names.camel}DetailPath(${identityField.name}), {
+        token,
+      }),
+    create: (token, body) =>
+      request<${names.pascal}>(${quoteString(listPath)}, {
+        method: 'POST',
+        body,
+        token,
+      }),
+    update: (token, ${identityField.name}, body) =>
+      request<${names.pascal}>(${names.camel}DetailPath(${identityField.name}), {
+        method: 'PATCH',
+        body,
+        token,
+      }),
+    delete: (token, ${identityField.name}) =>
+      request<${names.pascal}DeleteResult>(${names.camel}DetailPath(${identityField.name}), {
+        method: 'DELETE',
+        token,
+      }),
+    exportRows: (token, exportRequest) =>
+      request<${names.pascal}[]>(withGeneratedQuery(${quoteString(exportPath)}, exportRequest), {
+        token,
+      }),
+  };
+}
+`;
+}
+
+function renderSdkSpecContent(
+  schema: OpenForgeManualSchema,
+  marker: OpenForgeGeneratedMarker,
+): string {
+  const names = getNameParts(schema);
+  const identityField = getIdentityField(schema);
+  const markerComment = renderMarkerComment(marker);
+  const listPath = sdkListPath(schema);
+  const exportPath = sdkExportPath(schema);
+  const detailPath = sdkDetailPathTemplate(schema);
+  const identityExample = identityField.type === 'number' ? '1' : 'demo';
+  const expectedDetailPath = detailPath.replace(
+    `{${identityField.name}}`,
+    encodeURIComponent(identityExample),
+  );
+
+  return `${markerComment}
+import type { SdkRequest } from '../rbac-client';
+import { create${names.pascal}Client } from './${names.resource}-client';
+
+describe('create${names.pascal}Client', () => {
+  it('uses generated OpenAPI paths through the SDK request wrapper', async () => {
+    const calls: Array<{ path: string; method?: string; token?: string }> = [];
+    const request: SdkRequest = async (path, options) => {
+      calls.push({
+        path,
+        method: options?.method,
+        token: options?.token,
+      });
+      return {} as never;
+    };
+    const client = create${names.pascal}Client(request);
+
+    await client.list('token', { page: 2, pageSize: 20 });
+    await client.exportRows('token', { columns: ${renderStringArray(schema.export?.columns ?? schema.list.columns)} });
+    await client.create('token', {} as never);
+    await client.update('token', ${identityField.type === 'number' ? identityExample : quoteString(identityExample)}, {} as never);
+    await client.delete('token', ${identityField.type === 'number' ? identityExample : quoteString(identityExample)});
+
+    expect(calls).toEqual([
+      {
+        path: ${quoteString(`${listPath}?page=2&pageSize=20`)},
+        token: 'token',
+      },
+      {
+        path: ${quoteString(
+          `${exportPath}?columns=${encodeURIComponent((schema.export?.columns ?? schema.list.columns)[0] ?? '')}${(
+            schema.export?.columns ?? schema.list.columns
+          )
+            .slice(1)
+            .map((column) => `&columns=${encodeURIComponent(column)}`)
+            .join('')}`,
+        )},
+        token: 'token',
+      },
+      {
+        path: ${quoteString(listPath)},
+        method: 'POST',
+        token: 'token',
+      },
+      {
+        path: ${quoteString(expectedDetailPath)},
+        method: 'PATCH',
+        token: 'token',
+      },
+      {
+        path: ${quoteString(expectedDetailPath)},
+        method: 'DELETE',
+        token: 'token',
+      },
+    ]);
+  });
+});
+`;
+}
+
+function renderSdkGeneratedIndexContent(
+  schema: OpenForgeManualSchema,
+  marker: OpenForgeGeneratedMarker,
+): string {
+  const names = getNameParts(schema);
+  const markerComment = renderMarkerComment(marker);
+
+  return `${markerComment}
+export * from './${names.resource}-client';
+export * from './${names.resource}-types';
+`;
+}
+
+function renderModuleDocContent(
+  schema: OpenForgeManualSchema,
+  marker: OpenForgeGeneratedMarker,
+): string {
+  return `${renderMarkdownMarker(marker)}
+
+# ${schema.title}
+
+Module: \`${schema.moduleCode}\`
+
+Resource: \`${schema.resource}\`
+
+Template version: \`${marker.templateVersion}\`
+
+Schema hash: \`${marker.schemaHash}\`
+
+## Fields
+
+${renderFieldList(schema)}
+
+## Actions
+
+${schema.actions.map((action) => `- ${action}`).join('\n')}
+
+## Permissions
+
+${schema.permissions.map((permission) => `- \`${permission}\``).join('\n')}
+
+## Generated Outputs
+
+- NestJS API skeletons under \`apps/api/src/modules/generated\`.
+- Admin skeletons under \`apps/admin/src/pages/Generated\`.
+- SDK generated files under \`packages/sdk/src/generated\`.
+- Patch plans under \`openforge-patches\`.
+
+Do not paste secrets into generated documentation.
+`;
+}
+
+function renderApiDocContent(
+  schema: OpenForgeManualSchema,
+  marker: OpenForgeGeneratedMarker,
+): string {
+  return `${renderMarkdownMarker(marker)}
+
+# ${schema.title} API
+
+Module: \`${schema.moduleCode}\`
+
+Template version: \`${marker.templateVersion}\`
+
+Schema hash: \`${marker.schemaHash}\`
+
+## OpenAPI Tags
+
+${schema.openapi.tags.map((tag) => `- ${tag}`).join('\n')}
+
+## Paths
+
+${(schema.openapi.paths ?? []).map((path) => `- \`${path}\``).join('\n')}
+
+## Permission Guard Expectations
+
+${schema.permissions.map((permission) => `- \`${permission}\``).join('\n')}
+`;
+}
+
+function renderAdminDocContent(
+  schema: OpenForgeManualSchema,
+  marker: OpenForgeGeneratedMarker,
+): string {
+  return `${renderMarkdownMarker(marker)}
+
+# ${schema.title} Admin
+
+Route path: \`${schema.admin.basePath}\`
+
+Menu key: \`${schema.admin.menuKey ?? 'manual-review'}\`
+
+Template version: \`${marker.templateVersion}\`
+
+Schema hash: \`${marker.schemaHash}\`
+
+## Generated Admin Files
+
+${(schema.admin.targetPaths ?? []).map((path) => `- \`${path}\``).join('\n')}
+
+## Operation Permissions
+
+${schema.actions
+  .map((action) => {
+    const permission = getPermissionForAction(schema, action);
+
+    return permission ? `- ${action}: \`${permission}\`` : '';
+  })
+  .filter(Boolean)
+  .join('\n')}
+`;
+}
+
+function renderRunbookContent(
+  schema: OpenForgeManualSchema,
+  marker: OpenForgeGeneratedMarker,
+): string {
+  return `${renderMarkdownMarker(marker)}
+
+# ${schema.title} OpenForge Runbook
+
+Template version: \`${marker.templateVersion}\`
+
+Schema hash: \`${marker.schemaHash}\`
+
+## Commands
+
+\`\`\`bash
+pnpm openforge:plan -- --schema <schema> --format json
+pnpm openforge:diff -- --schema <schema> --format json
+pnpm openforge:apply -- --schema <schema> --dry-run
+pnpm openforge:apply -- --schema <schema> --yes
+pnpm openforge:rollback -- --manifest .openforge/manifests/<id>.json --dry-run
+\`\`\`
+
+## Manual Review
+
+- Review API repository placeholder before app module registration.
+- Review Admin route/access patch plans before changing route or access files.
+- Review SDK root index patch before re-exporting generated SDK files.
+- Review Prisma drafts manually; OpenForge does not write schema or migrations.
+`;
+}
+
+function renderPatchReviewDocContent(
+  schema: OpenForgeManualSchema,
+  marker: OpenForgeGeneratedMarker,
+): string {
+  return `${renderMarkdownMarker(marker)}
+
+# ${schema.title} Patch Review
+
+Template version: \`${marker.templateVersion}\`
+
+Schema hash: \`${marker.schemaHash}\`
+
+## Patch Plans
+
+- \`openforge-patches/app-module.patch.md\`
+- \`openforge-patches/admin-route.patch.md\`
+- \`openforge-patches/admin-access.patch.md\`
+- \`openforge-patches/sdk-index.patch.md\`
+- \`openforge-patches/module-registry.patch.md\`
+
+## Review Rules
+
+- Patch plans are review instructions, not automatic edits.
+- Confirm permissions, routes and SDK exports before applying manual changes.
+- Do not apply patches that introduce P4/P5 scope or secret-bearing content.
 `;
 }
 
@@ -1014,13 +1460,20 @@ function renderTypeScriptContent(
     return renderAdminSmokeTestContent(schema, marker);
   }
 
-  if (kind.startsWith('sdk.')) {
-    return `${markerComment}
-export const ${names.camel}GeneratedClient = {
-  resource: '${names.resource}',
-  moduleCode: '${schema.moduleCode}',
-};
-`;
+  if (kind === 'sdk.types') {
+    return renderSdkTypesContent(schema, marker);
+  }
+
+  if (kind === 'sdk.client') {
+    return renderSdkClientContent(schema, marker);
+  }
+
+  if (kind === 'sdk.spec') {
+    return renderSdkSpecContent(schema, marker);
+  }
+
+  if (kind === 'sdk.generated-index') {
+    return renderSdkGeneratedIndexContent(schema, marker);
   }
 
   return `${markerComment}
@@ -1038,6 +1491,26 @@ function renderMarkdownContent(
   patchOnly: boolean,
 ): string {
   const names = getNameParts(schema);
+
+  if (kind === 'docs.module-doc') {
+    return renderModuleDocContent(schema, marker);
+  }
+
+  if (kind === 'docs.api-doc') {
+    return renderApiDocContent(schema, marker);
+  }
+
+  if (kind === 'docs.admin-doc') {
+    return renderAdminDocContent(schema, marker);
+  }
+
+  if (kind === 'docs.runbook') {
+    return renderRunbookContent(schema, marker);
+  }
+
+  if (kind === 'docs.patch-review') {
+    return renderPatchReviewDocContent(schema, marker);
+  }
 
   if (kind === 'patch.app-module') {
     return `${renderMarkdownMarker(marker)}
@@ -1110,6 +1583,29 @@ Safety:
 
 - OpenForge does not modify \`access.ts\` directly.
 - Operation buttons in generated Admin files are permission-aware placeholders.
+`;
+  }
+
+  if (kind === 'patch.sdk-index') {
+    return `${renderMarkdownMarker(marker)}
+
+# SDK Index Patch
+
+Target human file: \`packages/sdk/src/index.ts\`
+
+Generated barrel file: \`packages/sdk/src/generated/index.ts\`
+
+Manual export to review:
+
+\`\`\`ts
+export * from './generated';
+\`\`\`
+
+Safety:
+
+- OpenForge does not modify the hand-written SDK root index directly.
+- Keep generated SDK exports under \`packages/sdk/src/generated\`.
+- Confirm OpenAPI paths before exposing generated SDK clients.
 `;
   }
 
