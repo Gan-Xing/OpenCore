@@ -395,13 +395,49 @@
   - `nestweb-api` required Docker stop timeout handling and is recorded as exit code 137, but after-state confirms it is stopped and data services remain running.
   - No blocker for R0.
 
+### 2026-06-10 R0 Runtime audit execution
+
+- Stage: R0 Runtime audit
+- Completed:
+  - 重新读取本 progress 并确认 R0 是 R-1 之后最早未完成阶段。
+  - 读取 NestWeb `.env` 时只输出变量名、存在性、服务类型和脱敏 host/port；未输出真实 secret、password、token、key、完整 URL 或 bucket 值。
+  - 审计 Docker public metadata，确认基础服务仍在运行：PostgreSQL、Redis、MinIO、RabbitMQ、Prometheus、Grafana。
+  - 记录旧应用冻结状态：`antdpro6-frontend`、`nestweb-api` 已停止，宿主机 NestWeb Node 进程未再出现。
+  - 新增 `docs/runtime/runtime-inventory.md`，记录基础服务、Docker volume/network、NestWeb env 变量名清单和 OpenCore 隔离计划。
+  - 新增 `docs/runtime/opencore-env-mapping.md`，记录 R1/R2/R5 需要的 OpenCore runtime env 变量映射、占位模板和隔离规则。
+- Runtime audit evidence:
+  - NestWeb `.env` 存在，变量名显示 PostgreSQL、Redis、RabbitMQ、MinIO/S3、JWT、CORS、Swagger、metrics、mail/cloud/miniprogram、admin bootstrap 等配置边界。
+  - `nestweb-postgres` 使用 `pgvector/pgvector:pg17`，在 `nestweb_default` Docker network 的内部 `5432` 边界运行；该容器未发布 host `5432`。
+  - `nestweb-redis` 使用 `redis:7.2-alpine`，在 `nestweb_default` Docker network 的内部 `6379` 边界运行；OpenCore 后续必须使用独立 Redis prefix/DB。
+  - `nestweb-minio` 使用 `minio/minio:latest`，host API port `9002`、console port `9003`；OpenCore 后续必须使用独立 bucket/prefix。
+  - `nestweb-rabbitmq` 使用 `rabbitmq:3-management`，host AMQP port `5673`、management port `15673`；R5 仍以 Redis/BullMQ 为目标，不复用 RabbitMQ queue。
+- Tests:
+  - `pnpm format:check` pass.
+  - Initial `pnpm format:check` found Prettier issues in the two new runtime Markdown files; both were formatted and the check was rerun successfully.
+- Files changed:
+  - `docs/runtime/runtime-inventory.md`
+  - `docs/runtime/opencore-env-mapping.md`
+  - `docs/strategy/progress.md`
+- Remaining:
+  - R1-R7 尚未完成。
+  - R1 Env mapping 是最早未完成阶段。
+- Next:
+  - 重新读取本 progress 后，只进入 R1 Env mapping：扩展 `.env.example`、runtime config validation、runbook/local env template 说明，不提交真实 `.env.opencore.local`。
+- Scope guard:
+  - No database, Redis, RabbitMQ, MinIO, S3 bucket, volume, network, schema, table, key, queue, or business data was connected to, deleted, modified, migrated, or cleared.
+  - No OpenCore runtime code, migration, seed, Prisma repository, Redis client, BullMQ adapter, or S3 client was implemented in R0.
+  - No P4/P5 module implemented; CRM、ERP、MES、WMS、商城、支付、会员、多租户、知识库、RAG、Agent 仍保留在长期 backlog。
+- Risk/blocker:
+  - Host `localhost:5432` is occupied by a non-NestWeb PostgreSQL container, while `nestweb-postgres` is only exposed on `nestweb_default`; R2 must verify the intended connection target before creating OpenCore DB/schema/user.
+  - No blocker for R1.
+
 ## 未完成项
 
-战略蓝图文档包已完成。S3、S4、S5、S6、S7、S8 已完成。Runtime integration 已完成 R-1 Legacy freeze；R0-R7 尚未完成，R0 Runtime audit 是最早未完成阶段。
+战略蓝图文档包已完成。S3、S4、S5、S6、S7、S8 已完成。Runtime integration 已完成 R-1 Legacy freeze 和 R0 Runtime audit；R1-R7 尚未完成，R1 Env mapping 是最早未完成阶段。
 
 ## 下一轮建议
 
-继续执行 runtime integration loop。下一轮只进入 R0 Runtime audit：脱敏审计 NestWeb `.env` 和服务器已有依赖，输出 runtime inventory 与 OpenCore env mapping；不要进入 S9 OpenForge，也不要实现 P4/P5 模块。
+继续执行 runtime integration loop。下一轮只进入 R1 Env mapping：扩展 `.env.example`、runtime config validation、runbook/local env template 说明；不要提交真实 `.env.opencore.local`，不要进入 S9 OpenForge，也不要实现 P4/P5 模块。
 
 ## 当前验收结论
 
@@ -422,3 +458,4 @@
 - 当前 S8 未做完整任务调度平台、大数据异步导出、敏感配置暴露或 OpenForge 写文件生成器。
 - S3-S8 handoff 目标已完成；后续 S9 需要单独确认。
 - Runtime integration R-1 Legacy freeze 已完成：旧 Antdpro6 / NestWeb 应用运行态已冻结，PostgreSQL、Redis、MinIO、RabbitMQ 等基础服务和数据卷保留；R0-R7 仍需继续按 runtime handoff 执行。
+- Runtime integration R0 Runtime audit 已完成：已新增脱敏 runtime inventory 和 OpenCore env mapping，明确 OpenCore 必须独立使用 database/schema/user、Redis prefix/DB、BullMQ prefix、MinIO/S3 bucket/prefix；R1-R7 仍需继续按 runtime handoff 执行。
