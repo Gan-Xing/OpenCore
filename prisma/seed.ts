@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import {
   collectMenus,
@@ -8,6 +8,13 @@ import {
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import {
+  seedAuditLogs,
+  seedDictTypes,
+  seedFileAssets,
+  seedLoginLogs,
+  seedSystemConfigs,
+} from '../apps/api/src/modules/core/system-management/system-management.seed';
 
 type SeedRoleDefinition = {
   code: string;
@@ -34,6 +41,7 @@ async function main(): Promise<void> {
   const menuCount = await seedMenus();
   const roleCount = await seedRoles();
   await seedBootstrapAdmin(bootstrapPassword);
+  const systemManagementCount = await seedSystemManagement();
 
   console.log(
     JSON.stringify({
@@ -41,6 +49,7 @@ async function main(): Promise<void> {
         permissions: permissionCount,
         menus: menuCount,
         roles: roleCount,
+        systemManagement: systemManagementCount,
         bootstrapAdminUsername: BOOTSTRAP_ADMIN_USERNAME,
         bootstrapAdminRoleCode: BOOTSTRAP_ADMIN_ROLE_CODE,
       },
@@ -200,6 +209,175 @@ async function seedBootstrapAdmin(bootstrapPassword: string): Promise<void> {
       roleId: adminRole.id,
     },
   });
+}
+
+async function seedSystemManagement(): Promise<{
+  dictTypes: number;
+  systemConfigs: number;
+  fileAssets: number;
+  auditLogs: number;
+  loginLogs: number;
+}> {
+  for (const dict of seedDictTypes) {
+    const dictType = await prisma.dictType.upsert({
+      where: { code: dict.code },
+      update: {
+        name: dict.name,
+        description: dict.description,
+        enabled: dict.enabled,
+      },
+      create: {
+        id: dict.id,
+        code: dict.code,
+        name: dict.name,
+        description: dict.description,
+        enabled: dict.enabled,
+      },
+    });
+    const seedValues = dict.items.map((item) => item.value);
+
+    await prisma.dictItem.deleteMany({
+      where: {
+        typeId: dictType.id,
+        value: { notIn: seedValues },
+      },
+    });
+
+    for (const item of dict.items) {
+      await prisma.dictItem.upsert({
+        where: {
+          typeId_value: {
+            typeId: dictType.id,
+            value: item.value,
+          },
+        },
+        update: {
+          label: item.label,
+          sort: item.sort,
+          enabled: item.enabled,
+        },
+        create: {
+          id: item.id,
+          typeId: dictType.id,
+          label: item.label,
+          value: item.value,
+          sort: item.sort,
+          enabled: item.enabled,
+        },
+      });
+    }
+  }
+
+  for (const config of seedSystemConfigs) {
+    await prisma.systemConfig.upsert({
+      where: { key: config.key },
+      update: {
+        value: config.value,
+        valueType: config.valueType,
+        description: config.description,
+        public: config.public,
+      },
+      create: {
+        id: config.id,
+        key: config.key,
+        value: config.value,
+        valueType: config.valueType,
+        description: config.description,
+        public: config.public,
+      },
+    });
+  }
+
+  for (const file of seedFileAssets) {
+    await prisma.fileAsset.upsert({
+      where: { storageKey: file.storageKey },
+      update: {
+        originalName: file.originalName,
+        mimeType: file.mimeType,
+        sizeBytes: file.sizeBytes,
+        checksum: file.checksum,
+        uploadedBy: file.uploadedBy,
+      },
+      create: {
+        id: file.id,
+        originalName: file.originalName,
+        mimeType: file.mimeType,
+        sizeBytes: file.sizeBytes,
+        storageKey: file.storageKey,
+        checksum: file.checksum,
+        uploadedBy: file.uploadedBy,
+        createdAt: new Date(file.createdAt),
+      },
+    });
+  }
+
+  for (const auditLog of seedAuditLogs) {
+    await prisma.auditLog.upsert({
+      where: { id: auditLog.id },
+      update: {
+        actorUsername: auditLog.actorUsername,
+        action: auditLog.action,
+        resource: auditLog.resource,
+        resourceId: auditLog.resourceId,
+        method: auditLog.method,
+        path: auditLog.path,
+        statusCode: auditLog.statusCode,
+        ip: auditLog.ip,
+        userAgent: auditLog.userAgent,
+        requestId: auditLog.requestId,
+        metadata: auditLog.metadata as Prisma.InputJsonValue,
+        createdAt: new Date(auditLog.createdAt),
+      },
+      create: {
+        id: auditLog.id,
+        actorUsername: auditLog.actorUsername,
+        action: auditLog.action,
+        resource: auditLog.resource,
+        resourceId: auditLog.resourceId,
+        method: auditLog.method,
+        path: auditLog.path,
+        statusCode: auditLog.statusCode,
+        ip: auditLog.ip,
+        userAgent: auditLog.userAgent,
+        requestId: auditLog.requestId,
+        metadata: auditLog.metadata as Prisma.InputJsonValue,
+        createdAt: new Date(auditLog.createdAt),
+      },
+    });
+  }
+
+  for (const loginLog of seedLoginLogs) {
+    await prisma.loginLog.upsert({
+      where: { id: loginLog.id },
+      update: {
+        username: loginLog.username,
+        success: loginLog.success,
+        failureReason: loginLog.failureReason,
+        ip: loginLog.ip,
+        userAgent: loginLog.userAgent,
+        requestId: loginLog.requestId,
+        createdAt: new Date(loginLog.createdAt),
+      },
+      create: {
+        id: loginLog.id,
+        username: loginLog.username,
+        success: loginLog.success,
+        failureReason: loginLog.failureReason,
+        ip: loginLog.ip,
+        userAgent: loginLog.userAgent,
+        requestId: loginLog.requestId,
+        createdAt: new Date(loginLog.createdAt),
+      },
+    });
+  }
+
+  return {
+    dictTypes: seedDictTypes.length,
+    systemConfigs: seedSystemConfigs.length,
+    fileAssets: seedFileAssets.length,
+    auditLogs: seedAuditLogs.length,
+    loginLogs: seedLoginLogs.length,
+  };
 }
 
 function loadLocalEnvFile(): void {

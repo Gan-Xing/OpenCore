@@ -585,13 +585,67 @@
   - The ignored local `DATABASE_URL` still depends on the current PostgreSQL container network address; if that container is recreated, local env may need refresh before Prisma-backed tests.
   - No blocker for R4.
 
+### 2026-06-10 R4 Persistent system management execution
+
+- Stage: R4 Persistent system management
+- Completed:
+  - 重新读取 runtime handoff、S3-S8 handoff、staged roadmap、API bootstrap、contract/permission、module registry、priority roadmap、README 和本 progress，并确认 R4 是 R3 之后最早未完成阶段。
+  - 将 `SystemManagementRepository` 收敛为异步抽象 contract，保留分页、导出 preview、文件 metadata storageKey、config key 安全校验和审计 metadata 脱敏 helper。
+  - 新增 `PrismaSystemManagementRepository`，通过 Prisma 持久化 `DictType`、`DictItem`、`SystemConfig`、`FileAsset`、`AuditLog`、`LoginLog`。
+  - 新增 `SeedSystemManagementRepository`，把 S7 seed/in-memory 行为限定为单测替身。
+  - 更新 `SystemManagementModule` 引入 `DatabaseModule`，生产 provider 切换为 Prisma-backed repository。
+  - 更新 `SystemManagementController` 为异步 repository 调用；dict/config/file CRUD、audit/login log read 和 current-page export preview 均走同一 contract。
+  - 扩展 `prisma/seed.ts`，幂等 upsert S7 baseline dict/config/file metadata/audit log/login log 数据；未新增 schema migration。
+  - 新增 Prisma integration tests，验证 PostgreSQL 中的 seeded system-management 记录、dict/config/file metadata CRUD、audit metadata 脱敏和 current-page export preview。
+- Runtime evidence:
+  - `pnpm prisma:seed` 输出 systemManagement counts：dictTypes `2`、systemConfigs `2`、fileAssets `1`、auditLogs `2`、loginLogs `2`。
+  - API integration test 从 PostgreSQL 读取 `system.status`、`opencore.admin.title` 和 `file-assets/opencore-readme.txt`。
+  - R4 test CRUD 使用 `r4.test.*` 临时 key/code/name，并在测试前后按精确测试标识清理。
+  - Audit log metadata 仍在 repository 读取层递归脱敏，测试覆盖 `password` 和 `authorization`。
+- Tests:
+  - `pnpm prisma:seed` pass.
+  - `pnpm test:api` pass.
+  - `pnpm test` pass.
+  - `pnpm typecheck` pass.
+  - `pnpm lint` pass.
+  - `pnpm openapi:export` pass.
+  - `pnpm openapi:check` pass.
+  - `pnpm prisma:validate` pass.
+  - `pnpm format:check` pass.
+- Files changed:
+  - `apps/api/src/modules/core/system-management/system-management.repository.ts`
+  - `apps/api/src/modules/core/system-management/seed-system-management.repository.ts`
+  - `apps/api/src/modules/core/system-management/prisma-system-management.repository.ts`
+  - `apps/api/src/modules/core/system-management/prisma-system-management.repository.spec.ts`
+  - `apps/api/src/modules/core/system-management/system-management.repository.spec.ts`
+  - `apps/api/src/modules/core/system-management/system-management.controller.ts`
+  - `apps/api/src/modules/core/system-management/system-management.module.ts`
+  - `prisma/seed.ts`
+  - `docs/strategy/progress.md`
+- Local-only files:
+  - `.env.opencore.local` remains ignored and was not staged or committed.
+- Remaining:
+  - R5-R7 尚未完成。
+  - R5 Redis/BullMQ/MinIO runtime 是最早未完成阶段。
+- Next:
+  - 重新读取本 progress 后，只进入 R5 Redis/BullMQ/MinIO runtime：接入真实 Redis/BullMQ/MinIO/S3 runtime boundary 的只读诊断和独立 prefix/bucket/prefix 校验。
+- Scope guard:
+  - No engineering image/article/wechat/sms/mail provider was added to core.
+  - No large-data async export, full scheduler/task platform, or full workflow was implemented.
+  - No NestWeb business database, schema, table, row, Redis key, bucket, queue, or business data was migrated, copied, dropped, truncated, or modified.
+  - No real `.env`, password, token, MinIO key, database URL, Redis URL, RabbitMQ URL, JWT secret, or bootstrap password was committed.
+  - No P4/P5 module implemented; CRM、ERP、MES、WMS、商城、支付、会员、多租户、知识库、RAG、Agent 仍保留在长期 backlog。
+- Risk/blocker:
+  - R5 still needs to validate Redis/BullMQ/MinIO isolation against OpenCore prefixes/bucket without exposing credentials.
+  - No blocker for R5.
+
 ## 未完成项
 
-战略蓝图文档包已完成。S3、S4、S5、S6、S7、S8 已完成。Runtime integration 已完成 R-1 Legacy freeze、R0 Runtime audit、R1 Env mapping、R2 PostgreSQL migration baseline 和 R3 Persistent RBAC；R4-R7 尚未完成，R4 Persistent system management 是最早未完成阶段。
+战略蓝图文档包已完成。S3、S4、S5、S6、S7、S8 已完成。Runtime integration 已完成 R-1 Legacy freeze、R0 Runtime audit、R1 Env mapping、R2 PostgreSQL migration baseline、R3 Persistent RBAC 和 R4 Persistent system management；R5-R7 尚未完成，R5 Redis/BullMQ/MinIO runtime 是最早未完成阶段。
 
 ## 下一轮建议
 
-继续执行 runtime integration loop。下一轮只进入 R4 Persistent system management：把 S7 system management repository 从内存数据升级为 Prisma 持久化读取/写入；不要进入 S9 OpenForge，也不要实现 P4/P5 模块。
+继续执行 runtime integration loop。下一轮只进入 R5 Redis/BullMQ/MinIO runtime：接入真实 Redis/BullMQ/MinIO/S3 runtime boundary 的只读诊断和独立 prefix/bucket/prefix 校验；不要进入 S9 OpenForge，也不要实现 P4/P5 模块。
 
 ## 当前验收结论
 
@@ -616,3 +670,4 @@
 - Runtime integration R1 Env mapping 已完成：`.env.example`、runtime config validation、local env runbook 和 ignored `.env.opencore.local` placeholder 已就绪；R2-R7 仍需继续按 runtime handoff 执行。
 - Runtime integration R2 PostgreSQL migration baseline 已完成：OpenCore 独立 PostgreSQL database/user/schema boundary、baseline migration、idempotent seed 和 Prisma scripts 已就绪；R3-R7 仍需继续按 runtime handoff 执行。
 - Runtime integration R3 Persistent RBAC 已完成：API RBAC 生产 provider 已切换到 Prisma-backed repository，seed fixture 仅保留为单测替身；R4-R7 仍需继续按 runtime handoff 执行。
+- Runtime integration R4 Persistent system management 已完成：dict/config/file metadata/log repository 已切换到 Prisma-backed persistence，S7 seed fixture 仅保留为单测替身；R5-R7 仍需继续按 runtime handoff 执行。

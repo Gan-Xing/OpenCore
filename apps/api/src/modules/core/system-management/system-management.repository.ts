@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 import type {
   CreateDictTypeDto,
@@ -13,20 +8,15 @@ import type {
   UpdateDictTypeDto,
   UpdateSystemConfigDto,
 } from './system-management.dto';
-import {
-  seedAuditLogs,
-  seedDictTypes,
-  seedFileAssets,
-  seedLoginLogs,
-  seedSystemConfigs,
-  type AuditLogRecord,
-  type DictTypeRecord,
-  type FileAssetRecord,
-  type LoginLogRecord,
-  type SystemConfigRecord,
+import type {
+  AuditLogRecord,
+  DictTypeRecord,
+  FileAssetRecord,
+  LoginLogRecord,
+  SystemConfigRecord,
 } from './system-management.seed';
 
-type PageResult<T> = {
+export type PageResult<T> = {
   items: T[];
   page: number;
   pageSize: number;
@@ -34,7 +24,7 @@ type PageResult<T> = {
   totalPages: number;
 };
 
-type ExportPreview = {
+export type ExportPreview = {
   filename: string;
   scope: 'current-page';
   columns: string[];
@@ -42,190 +32,71 @@ type ExportPreview = {
   generatedAt: string;
 };
 
+export type SystemManagementExportResource =
+  | 'audit-logs'
+  | 'config'
+  | 'dicts'
+  | 'files'
+  | 'login-logs';
+
+export type NormalizedPageQuery = {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+  skip: number;
+  take: number;
+};
+
 const SENSITIVE_KEY_PATTERN = /(authorization|cookie|password|secret|token)/i;
 
-@Injectable()
-export class SystemManagementRepository {
-  private dictTypes = seedDictTypes.map(cloneDictType);
-  private systemConfigs = seedSystemConfigs.map((config) => ({ ...config }));
-  private fileAssets = seedFileAssets.map((file) => ({ ...file }));
-  private readonly auditLogs = seedAuditLogs.map((log) => ({ ...log }));
-  private readonly loginLogs = seedLoginLogs.map((log) => ({ ...log }));
+export abstract class SystemManagementRepository {
+  abstract listDicts(query?: PageQueryDto): Promise<PageResult<DictTypeRecord>>;
 
-  listDicts(query: PageQueryDto = {}): PageResult<DictTypeRecord> {
-    return createPage(this.dictTypes, query);
-  }
+  abstract createDict(body: CreateDictTypeDto): Promise<DictTypeRecord>;
 
-  createDict(body: CreateDictTypeDto): DictTypeRecord {
-    if (this.dictTypes.some((dict) => dict.code === body.code)) {
-      throw new ConflictException(`Dictionary already exists: ${body.code}`);
-    }
+  abstract updateDict(
+    code: string,
+    body: UpdateDictTypeDto,
+  ): Promise<DictTypeRecord>;
 
-    const dict: DictTypeRecord = {
-      id: `dict_${body.code.replaceAll('.', '_')}`,
-      code: body.code,
-      name: body.name,
-      description: body.description,
-      enabled: body.enabled ?? true,
-      items: body.items ?? [],
-    };
-    this.dictTypes = [dict, ...this.dictTypes];
-    return cloneDictType(dict);
-  }
+  abstract deleteDict(code: string): Promise<{ deleted: true }>;
 
-  updateDict(code: string, body: UpdateDictTypeDto): DictTypeRecord {
-    const dict = this.findDict(code);
-    Object.assign(dict, {
-      name: body.name ?? dict.name,
-      description: body.description ?? dict.description,
-      enabled: body.enabled ?? dict.enabled,
-      items: body.items ?? dict.items,
-    });
-    return cloneDictType(dict);
-  }
+  abstract listConfig(
+    query?: PageQueryDto,
+  ): Promise<PageResult<SystemConfigRecord>>;
 
-  deleteDict(code: string): { deleted: true } {
-    this.findDict(code);
-    this.dictTypes = this.dictTypes.filter((dict) => dict.code !== code);
-    return { deleted: true };
-  }
+  abstract createConfig(
+    body: CreateSystemConfigDto,
+  ): Promise<SystemConfigRecord>;
 
-  listConfig(query: PageQueryDto = {}): PageResult<SystemConfigRecord> {
-    return createPage(this.systemConfigs, query);
-  }
+  abstract updateConfig(
+    key: string,
+    body: UpdateSystemConfigDto,
+  ): Promise<SystemConfigRecord>;
 
-  createConfig(body: CreateSystemConfigDto): SystemConfigRecord {
-    assertSafeConfigKey(body.key);
+  abstract deleteConfig(key: string): Promise<{ deleted: true }>;
 
-    if (this.systemConfigs.some((config) => config.key === body.key)) {
-      throw new ConflictException(`System config already exists: ${body.key}`);
-    }
+  abstract listFiles(
+    query?: PageQueryDto,
+  ): Promise<PageResult<FileAssetRecord>>;
 
-    const config: SystemConfigRecord = {
-      id: `config_${body.key.replaceAll('.', '_')}`,
-      key: body.key,
-      value: body.value,
-      valueType: body.valueType,
-      description: body.description,
-      public: body.public ?? false,
-    };
-    this.systemConfigs = [config, ...this.systemConfigs];
-    return { ...config };
-  }
+  abstract createFileAsset(body: CreateFileAssetDto): Promise<FileAssetRecord>;
 
-  updateConfig(key: string, body: UpdateSystemConfigDto): SystemConfigRecord {
-    assertSafeConfigKey(key);
-    const config = this.findConfig(key);
-    Object.assign(config, {
-      value: body.value ?? config.value,
-      valueType: body.valueType ?? config.valueType,
-      description: body.description ?? config.description,
-      public: body.public ?? config.public,
-    });
-    return { ...config };
-  }
+  abstract deleteFile(id: string): Promise<{ deleted: true }>;
 
-  deleteConfig(key: string): { deleted: true } {
-    this.findConfig(key);
-    this.systemConfigs = this.systemConfigs.filter(
-      (config) => config.key !== key,
-    );
-    return { deleted: true };
-  }
+  abstract listAuditLogs(
+    query?: PageQueryDto,
+  ): Promise<PageResult<AuditLogRecord>>;
 
-  listFiles(query: PageQueryDto = {}): PageResult<FileAssetRecord> {
-    return createPage(this.fileAssets, query);
-  }
+  abstract listLoginLogs(
+    query?: PageQueryDto,
+  ): Promise<PageResult<LoginLogRecord>>;
 
-  createFileAsset(body: CreateFileAssetDto): FileAssetRecord {
-    if (!body.originalName.trim() || body.originalName.includes('/')) {
-      throw new BadRequestException('File name must be a plain file name.');
-    }
-
-    if (body.sizeBytes <= 0) {
-      throw new BadRequestException('File size must be positive.');
-    }
-
-    const storageKey = createStorageKey(body);
-    const file: FileAssetRecord = {
-      id: `file_${storageKey.slice(-12)}`,
-      originalName: body.originalName,
-      mimeType: body.mimeType,
-      sizeBytes: body.sizeBytes,
-      storageKey,
-      checksum: body.checksum,
-      uploadedBy: body.uploadedBy,
-      createdAt: new Date().toISOString(),
-    };
-    this.fileAssets = [file, ...this.fileAssets];
-    return { ...file };
-  }
-
-  deleteFile(id: string): { deleted: true } {
-    if (!this.fileAssets.some((file) => file.id === id)) {
-      throw new NotFoundException(`File asset not found: ${id}`);
-    }
-
-    this.fileAssets = this.fileAssets.filter((file) => file.id !== id);
-    return { deleted: true };
-  }
-
-  listAuditLogs(query: PageQueryDto = {}): PageResult<AuditLogRecord> {
-    return createPage(
-      this.auditLogs.map((log) => ({
-        ...log,
-        metadata: redactAuditMetadata(log.metadata),
-      })),
-      query,
-    );
-  }
-
-  listLoginLogs(query: PageQueryDto = {}): PageResult<LoginLogRecord> {
-    return createPage(this.loginLogs, query);
-  }
-
-  createExportPreview(
-    resource: 'audit-logs' | 'config' | 'dicts' | 'files' | 'login-logs',
-    query: PageQueryDto = {},
-  ): ExportPreview {
-    const pageByResource = {
-      'audit-logs': this.listAuditLogs(query),
-      config: this.listConfig(query),
-      dicts: this.listDicts(query),
-      files: this.listFiles(query),
-      'login-logs': this.listLoginLogs(query),
-    } satisfies Record<typeof resource, PageResult<unknown>>;
-
-    return {
-      filename: `opencore-${resource}.csv`,
-      scope: 'current-page',
-      columns: [...exportColumnsByResource[resource]],
-      rowCount: pageByResource[resource].items.length,
-      generatedAt: new Date().toISOString(),
-    };
-  }
-
-  private findDict(code: string): DictTypeRecord {
-    const dict = this.dictTypes.find((candidate) => candidate.code === code);
-
-    if (!dict) {
-      throw new NotFoundException(`Dictionary not found: ${code}`);
-    }
-
-    return dict;
-  }
-
-  private findConfig(key: string): SystemConfigRecord {
-    const config = this.systemConfigs.find(
-      (candidate) => candidate.key === key,
-    );
-
-    if (!config) {
-      throw new NotFoundException(`System config not found: ${key}`);
-    }
-
-    return config;
-  }
+  abstract createExportPreview(
+    resource: SystemManagementExportResource,
+    query?: PageQueryDto,
+  ): Promise<ExportPreview>;
 }
 
 export function redactAuditMetadata(value: unknown): unknown {
@@ -247,24 +118,93 @@ export function redactAuditMetadata(value: unknown): unknown {
   return value;
 }
 
-function createPage<T>(
+export function createPage<T>(
   rows: readonly T[],
   query: PageQueryDto = {},
 ): PageResult<T> {
+  const pagination = normalizePageQuery(query, rows.length);
+  const pageRows = rows.slice(
+    pagination.skip,
+    pagination.skip + pagination.take,
+  );
+
+  return createPageResult(
+    pageRows.map((row) => clone(row)),
+    pagination,
+  );
+}
+
+export function normalizePageQuery(
+  query: PageQueryDto = {},
+  total: number,
+): NormalizedPageQuery {
   const page = normalizePositiveInteger(query.page, 1);
   const pageSize = Math.min(normalizePositiveInteger(query.pageSize, 10), 100);
-  const total = rows.length;
   const totalPages = Math.ceil(total / pageSize);
   const safePage = totalPages === 0 ? 1 : Math.min(page, totalPages);
-  const start = (safePage - 1) * pageSize;
+  const skip = (safePage - 1) * pageSize;
 
   return {
-    items: rows.slice(start, start + pageSize).map((row) => clone(row)),
     page: safePage,
     pageSize,
     total,
     totalPages,
+    skip,
+    take: pageSize,
   };
+}
+
+export function createPageResult<T>(
+  items: readonly T[],
+  pagination: NormalizedPageQuery,
+): PageResult<T> {
+  return {
+    items: [...items],
+    page: pagination.page,
+    pageSize: pagination.pageSize,
+    total: pagination.total,
+    totalPages: pagination.totalPages,
+  };
+}
+
+export function createExportPreview(
+  resource: SystemManagementExportResource,
+  page: PageResult<unknown>,
+): ExportPreview {
+  return {
+    filename: `opencore-${resource}.csv`,
+    scope: 'current-page',
+    columns: [...exportColumnsByResource[resource]],
+    rowCount: page.items.length,
+    generatedAt: new Date().toISOString(),
+  };
+}
+
+export function createStorageKey(body: CreateFileAssetDto): string {
+  const digest = createHash('sha256')
+    .update(`${body.originalName}:${body.mimeType}:${body.sizeBytes}`)
+    .digest('hex')
+    .slice(0, 16);
+
+  return `file-assets/${digest}-${sanitizeFileName(body.originalName)}`;
+}
+
+export function assertSafeConfigKey(key: string): void {
+  if (SENSITIVE_KEY_PATTERN.test(key)) {
+    throw new BadRequestException(
+      'System config keys must not store secrets, tokens, passwords, or credentials.',
+    );
+  }
+}
+
+export function assertSafeFileAsset(body: CreateFileAssetDto): void {
+  if (!body.originalName.trim() || body.originalName.includes('/')) {
+    throw new BadRequestException('File name must be a plain file name.');
+  }
+
+  if (body.sizeBytes <= 0) {
+    throw new BadRequestException('File size must be positive.');
+  }
 }
 
 function normalizePositiveInteger(
@@ -275,32 +215,8 @@ function normalizePositiveInteger(
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
-function createStorageKey(body: CreateFileAssetDto): string {
-  const digest = createHash('sha256')
-    .update(`${body.originalName}:${body.mimeType}:${body.sizeBytes}`)
-    .digest('hex')
-    .slice(0, 16);
-
-  return `file-assets/${digest}-${sanitizeFileName(body.originalName)}`;
-}
-
 function sanitizeFileName(fileName: string): string {
   return fileName.replace(/[^a-zA-Z0-9._-]/g, '-');
-}
-
-function assertSafeConfigKey(key: string): void {
-  if (SENSITIVE_KEY_PATTERN.test(key)) {
-    throw new BadRequestException(
-      'System config keys must not store secrets, tokens, passwords, or credentials.',
-    );
-  }
-}
-
-function cloneDictType(dict: DictTypeRecord): DictTypeRecord {
-  return {
-    ...dict,
-    items: dict.items.map((item) => ({ ...item })),
-  };
 }
 
 function clone<T>(value: T): T {
