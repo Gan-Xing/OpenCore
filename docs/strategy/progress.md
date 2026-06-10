@@ -18,15 +18,16 @@
 
 | 文件 | 状态 | 证据 | 待补事项 |
 | --- | --- | --- | --- |
-| `docs/strategy/README.md` | complete | 已写阅读顺序、问题索引、阶段边界、调研基线、后续循环规则，并包含 Mermaid flowchart | 无 |
-| `docs/strategy/opencore-target-vision.md` | complete | 已回答目标愿景、与 RuoYi/Yudao 关系、Lite/Full/AI Native Edition、API/Admin 职责，并包含 `OpenCore Platform Overview` Mermaid | 无 |
-| `docs/strategy/ruoyi-yudao-capability-matrix.md` | complete | 已包含大表格，覆盖 system、infra、monitor、tool、collaboration、workflow、report、member、mall、pay、crm、erp、mes、wms、im、iot、ai、integration | 无 |
+| `docs/strategy/README.md` | complete | 已写阅读顺序、问题索引、阶段边界、调研基线、后续循环规则，并包含 Mermaid flowchart | 可后续补充 S3-S8 handoff 链接 |
+| `docs/strategy/opencore-target-vision.md` | complete | 已回答目标愿景、与 RuoYi/Yudao 关系、Lite/Full/AI Native Edition、API/Admin 职责，并包含 `OpenCore Platform Overview` Mermaid；已补充全功能覆盖口径 | 无 |
+| `docs/strategy/ruoyi-yudao-capability-matrix.md` | complete | 已包含大表格，覆盖 system、infra、monitor、tool、collaboration、workflow、report、member、mall、pay、crm、erp、mes、wms、im、iot、ai、integration；已澄清 P4/P5 是长期 backlog | 无 |
 | `docs/strategy/api-target-architecture.md` | complete | 已包含 API 目标目录、模块层级、Controller/Service/DTO/Entity/OpenAPI tag、NestWeb 复用、S3-S8 顺序，并包含 `API Module Layers` Mermaid | 无 |
 | `docs/strategy/admin-page-map.md` | complete | 已包含一级菜单、页面清单、RuoYi/Yudao 和 Ant Design Pro 对标、模板/optional 边界、Antdpro6 复用、S3-S8 顺序，并包含 `Admin Menu Tree` Mermaid | 无 |
 | `docs/strategy/legacy-reuse-audit.md` | complete | 已审计 Gan-Xing/NestWeb 和 Gan-Xing/Antdpro6，并覆盖 Role.code、RBAC、OpenAPI drift、i18n、Dashboard、runtime config、文件、日志、消息、Approval Lite、TableExportButton、E2E 等 | 无 |
-| `docs/strategy/staged-roadmap.md` | complete | 已覆盖 S3-S12，每阶段包含目标、新增模块、后端交付、前端交付、文档交付、验收标准、不做什么、风险点，并包含 Mermaid gantt/flowchart | 无 |
+| `docs/strategy/staged-roadmap.md` | complete | 已覆盖 S3-S12，每阶段包含目标、新增模块、后端交付、前端交付、文档交付、验收标准、不做什么、风险点，并包含 Mermaid gantt/flowchart；已补充 S3-S8 阶段门禁 | 无 |
 | `docs/strategy/visual/opencore-blueprint.html` | complete | 已创建单文件 HTML，内联 CSS，无外部 CDN/URL，覆盖系统总览、API/Admin/packages、能力对标、路线、旧项目复用、下一阶段建议 | 无 |
 | `docs/strategy/progress.md` | complete | 本文件已更新 checklist、文件状态、操作摘要、验收结论 | 无 |
+| `docs/handoff/2026-06-10-s3-s8-implementation-handoff.md` | complete | 已新增，用于从 S3 连续执行到 S8，并绑定 strategy、阶段门禁和测试规则 | 无 |
 
 ## 每轮 Codex 操作摘要
 
@@ -46,13 +47,21 @@
 - 创建战略蓝图 Markdown 文档和单文件 HTML 总览。
 - 只修改 `docs/strategy` 下的文档文件；未写业务代码，未改 schema，未实现登录/RBAC/数据库。
 
+### 2026-06-10 ChatGPT review/optimization proposal
+
+- 复核 commit `6f91deefef01800b8a35cd7070ab3b9620ec28ea`：当前 strategy blueprint 已完成 S3 前战略文档包，但还不是 S3-S8 实现 handoff。
+- 已澄清 `not_now` / `P5`：表示当前阶段延期，不表示 OpenCore 放弃 RuoYi/Yudao 的长期能力覆盖。
+- 已强化 `staged-roadmap.md`：为 S3-S8 补充进入条件、必须落地、必跑检查和退出条件。
+- 已新增 `docs/handoff/2026-06-10-s3-s8-implementation-handoff.md`，作为 GPT-5.5 xhigh / Codex 循环执行 S3-S8 的主入口。
+- 本次优化仍是文档变更，未修改业务代码、schema、登录、RBAC 或数据库实现。
+
 ## 未完成项
 
-无。本阶段 handoff 明确列出的战略蓝图文档包已完成。
+战略蓝图文档包已完成。S3-S8 实现 handoff 已新增。下一步可以进入 S3，但仍必须只推进最早未完成阶段。
 
 ## 下一轮建议
 
-进入 S3：`contracts / shared / module-registry` 基线。下一轮仍应先读取 handoff 和本 progress 文件，再开始 S3 文档或实现计划。不要直接写业务模块。
+进入 S3：`contracts / shared / module-registry` 基线。下一轮应先读取 `docs/handoff/2026-06-10-s3-s8-implementation-handoff.md`、本 progress 文件和 `docs/strategy/staged-roadmap.md`，只做最早未完成阶段，不要直接写 P4/P5 业务模块。
 
 ## 最终验收结论
 
@@ -60,5 +69,5 @@
 
 - 目标 Markdown 文档全部存在，并包含必要表格和 Mermaid 图。
 - `docs/strategy/visual/opencore-blueprint.html` 是可离线打开的单文件 HTML，未引用外部 CDN。
-- `git status` 显示本轮新增/更新集中在 `docs/strategy/`；未修改 `apps/api`、`apps/admin`、Prisma schema 或业务代码。
-- 仓库中仍有用户/外部已有的未跟踪项 `.telegram-inbox/` 和 handoff 文件，本轮未删除也未回滚。
+- 已新增 S3-S8 implementation handoff，明确阶段门禁、测试规则和 P4/P5 backlog 边界。
+- 当前文档优化未修改 `apps/api`、`apps/admin`、Prisma schema 或业务代码。
