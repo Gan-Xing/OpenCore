@@ -1,0 +1,50 @@
+{
+  "templatePack": "openforge-default-nest-umi-v1",
+  "templateVersion": "openforge-default-nest-umi-v1",
+  "outputRoot": ".",
+  "applyMode": "dry-run",
+  "overwritePolicy": "generated-marker-required",
+  "generatedMarkerRequired": true,
+  "protectedPaths": [
+    ".env",
+    ".env.*",
+    ".env.opencore.local",
+    "prisma/schema.prisma",
+    "prisma/migrations/**"
+  ],
+  "manualPatchOnlyPaths": [
+    "apps/api/src/app/app.module.ts",
+    "apps/admin/.umirc.ts",
+    "apps/admin/src/access.ts",
+    "packages/module-registry/src/modules.ts"
+  ],
+  "allowedArtifactKinds": [
+    "api.module",
+    "api.controller",
+    "api.service",
+    "api.dto",
+    "api.repository",
+    "api.spec",
+    "admin.proTablePage",
+    "admin.modalForm",
+    "admin.drawerForm",
+    "admin.descriptions",
+    "admin.exportButton",
+    "admin.smokeTest",
+    "sdk.client",
+    "sdk.types",
+    "sdk.spec",
+    "sdk.generated-index",
+    "docs.module-doc",
+    "docs.runbook",
+    "prisma.model-draft",
+    "prisma.migration-hint",
+    "patch.app-module",
+    "patch.admin-route",
+    "patch.admin-access",
+    "patch.module-registry"
+  ],
+  "blockedArtifactKinds": ["prisma.hint"],
+  "strictOpenApiTags": false,
+  "strictPermissionCodes": true
+}

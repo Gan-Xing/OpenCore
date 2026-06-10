@@ -1,0 +1,111 @@
+{
+  "schemaVersion": "openforge.schema.v1",
+  "moduleCode": "tool.openapi",
+  "resource": "openapi",
+  "title": "OpenAPI",
+  "description": "OpenAPI contract tooling V1 schema.",
+  "fields": [
+    {
+      "name": "snapshotPath",
+      "title": "Snapshot Path",
+      "type": "string",
+      "required": true,
+      "list": true,
+      "detail": true
+    },
+    {
+      "name": "status",
+      "title": "Status",
+      "type": "enum",
+      "enumValues": ["configured", "drift", "unknown"],
+      "list": true,
+      "detail": true
+    },
+    {
+      "name": "checkedAt",
+      "title": "Checked At",
+      "type": "datetime",
+      "list": true,
+      "detail": true
+    },
+    {
+      "name": "metadata",
+      "title": "Metadata",
+      "type": "json",
+      "detail": true
+    }
+  ],
+  "indexes": [
+    {
+      "name": "openapi_status_checked_at",
+      "fields": ["status", "checkedAt"],
+      "reason": "Status page sorts by latest drift check."
+    }
+  ],
+  "list": {
+    "title": "OpenAPI",
+    "columns": ["snapshotPath", "status", "checkedAt"],
+    "defaultPageSize": 10
+  },
+  "filter": {
+    "fields": ["status"]
+  },
+  "sort": {
+    "default": {
+      "field": "checkedAt",
+      "direction": "desc"
+    },
+    "fields": ["checkedAt"]
+  },
+  "form": {
+    "title": "OpenAPI",
+    "mode": "drawer",
+    "fields": ["snapshotPath", "status"]
+  },
+  "detail": {
+    "title": "OpenAPI Details",
+    "fields": ["snapshotPath", "status", "checkedAt", "metadata"]
+  },
+  "actions": ["read", "export"],
+  "permissions": ["tool:openapi:read", "tool:openapi:export"],
+  "openapi": {
+    "tags": ["Tool OpenAPI"],
+    "paths": ["/api/tools/openapi/drift"]
+  },
+  "admin": {
+    "basePath": "/tools/openapi",
+    "menuKey": "tools.openapi",
+    "targetPaths": ["apps/admin/src/pages/Generated/OpenApi/index.tsx"]
+  },
+  "sdk": {
+    "clientName": "openApiClient",
+    "generatedPath": "packages/sdk/src/generated/openapi-client.ts"
+  },
+  "tests": {
+    "api": "apps/api/src/modules/generated/tool/openapi/openapi.spec.ts",
+    "admin": "apps/admin/src/pages/Generated/OpenApi/OpenApi.smoke.spec.ts"
+  },
+  "docs": {
+    "moduleDoc": "docs/generated/openforge/tool.openapi.md",
+    "runbook": "docs/generated/openforge/tool.openapi-runbook.md"
+  },
+  "export": {
+    "enabled": true,
+    "columns": ["snapshotPath", "status", "checkedAt"],
+    "maxRows": 1000
+  },
+  "storage": {
+    "enabled": false,
+    "fields": []
+  },
+  "audit": {
+    "enabled": true,
+    "actions": ["export"]
+  },
+  "prisma": {
+    "writeSchema": false,
+    "modelName": "OpenApiDriftStatus",
+    "draftPath": "prisma/openforge-drafts/tool.openapi.model.prisma.md",
+    "migrationHintPath": "prisma/openforge-drafts/tool.openapi.migration-hint.md"
+  }
+}

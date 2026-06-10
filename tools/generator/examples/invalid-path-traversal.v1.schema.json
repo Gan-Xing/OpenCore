@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "openforge.schema.v1",
+  "moduleCode": "core.dict",
+  "resource": "dict",
+  "title": "Dictionaries",
+  "fields": [
+    {
+      "name": "code",
+      "title": "Code",
+      "type": "string",
+      "required": true
+    }
+  ],
+  "list": {
+    "title": "Dictionaries",
+    "columns": ["code"]
+  },
+  "form": {
+    "title": "Dictionary",
+    "fields": ["code"]
+  },
+  "detail": {
+    "title": "Dictionary Details",
+    "fields": ["code"]
+  },
+  "actions": ["read"],
+  "permissions": ["core:dict:read"],
+  "openapi": {
+    "tags": ["Core Dictionaries"]
+  },
+  "admin": {
+    "basePath": "/system/dicts",
+    "targetPaths": ["../outside.ts"]
+  },
+  "docs": {
+    "moduleDoc": "docs/generated/openforge/core.dict.md",
+    "runbook": "../outside.md"
+  },
+  "prisma": {
+    "writeSchema": false,
+    "modelName": "DictType"
+  }
+}

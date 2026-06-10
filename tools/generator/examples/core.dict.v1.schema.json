@@ -1,0 +1,218 @@
+{
+  "schemaVersion": "openforge.schema.v1",
+  "moduleCode": "core.dict",
+  "resource": "dict",
+  "title": "Dictionaries",
+  "description": "Dictionary type and item management V1 schema.",
+  "fields": [
+    {
+      "name": "code",
+      "title": "Code",
+      "type": "string",
+      "required": true,
+      "list": true,
+      "form": true,
+      "detail": true
+    },
+    {
+      "name": "name",
+      "title": "Name",
+      "type": "string",
+      "required": true,
+      "list": true,
+      "form": true,
+      "detail": true
+    },
+    {
+      "name": "description",
+      "title": "Description",
+      "type": "text",
+      "form": true,
+      "detail": true
+    },
+    {
+      "name": "enabled",
+      "title": "Enabled",
+      "type": "boolean",
+      "list": true,
+      "form": true,
+      "detail": true
+    },
+    {
+      "name": "sort",
+      "title": "Sort",
+      "type": "number",
+      "list": true,
+      "form": true,
+      "detail": true
+    },
+    {
+      "name": "status",
+      "title": "Status",
+      "type": "enum",
+      "enumValues": ["enabled", "disabled"],
+      "list": true,
+      "form": true,
+      "detail": true
+    },
+    {
+      "name": "metadata",
+      "title": "Metadata",
+      "type": "json",
+      "detail": true
+    },
+    {
+      "name": "ownerId",
+      "title": "Owner",
+      "type": "relation",
+      "relation": {
+        "targetModule": "core.user",
+        "targetResource": "user",
+        "cardinality": "one",
+        "displayField": "username"
+      },
+      "detail": true
+    },
+    {
+      "name": "icon",
+      "title": "Icon",
+      "type": "file",
+      "fileAccept": ["image/png", "image/svg+xml"],
+      "form": true,
+      "detail": true
+    },
+    {
+      "name": "createdAt",
+      "title": "Created At",
+      "type": "datetime",
+      "list": true,
+      "detail": true
+    }
+  ],
+  "relations": [
+    {
+      "targetModule": "core.user",
+      "targetResource": "user",
+      "cardinality": "one",
+      "displayField": "username"
+    }
+  ],
+  "indexes": [
+    {
+      "name": "dict_code_unique",
+      "fields": ["code"],
+      "unique": true,
+      "reason": "Dictionary code must be stable and unique."
+    },
+    {
+      "name": "dict_enabled_sort",
+      "fields": ["enabled", "sort"],
+      "reason": "Admin list defaults to enabled/sort ordering."
+    }
+  ],
+  "list": {
+    "title": "Dictionaries",
+    "columns": ["code", "name", "enabled", "sort", "createdAt"],
+    "defaultPageSize": 10
+  },
+  "filter": {
+    "fields": ["code", "name", "enabled", "status"]
+  },
+  "sort": {
+    "default": {
+      "field": "sort",
+      "direction": "asc"
+    },
+    "fields": ["sort", "createdAt"]
+  },
+  "form": {
+    "title": "Dictionary",
+    "mode": "modal",
+    "fields": [
+      "code",
+      "name",
+      "description",
+      "enabled",
+      "sort",
+      "status",
+      "icon"
+    ]
+  },
+  "detail": {
+    "title": "Dictionary Details",
+    "fields": [
+      "code",
+      "name",
+      "description",
+      "enabled",
+      "sort",
+      "status",
+      "metadata",
+      "ownerId",
+      "icon",
+      "createdAt"
+    ]
+  },
+  "actions": ["read", "create", "update", "delete", "export"],
+  "permissions": [
+    "core:dict:read",
+    "core:dict:create",
+    "core:dict:update",
+    "core:dict:delete",
+    "core:dict:export"
+  ],
+  "openapi": {
+    "tags": ["Core Dictionaries"],
+    "paths": [
+      "/api/core/dicts",
+      "/api/core/dicts/export",
+      "/api/core/dicts/{code}"
+    ]
+  },
+  "admin": {
+    "basePath": "/system/dicts",
+    "menuKey": "system.dicts",
+    "targetPaths": [
+      "apps/admin/src/pages/Generated/Dict/index.tsx",
+      "apps/admin/src/pages/Generated/Dict/components/DictForm.tsx",
+      "apps/admin/src/pages/Generated/Dict/components/DictDetail.tsx"
+    ]
+  },
+  "sdk": {
+    "clientName": "dictClient",
+    "generatedPath": "packages/sdk/src/generated/dict-client.ts",
+    "targetPaths": [
+      "packages/sdk/src/generated/dict-types.ts",
+      "packages/sdk/src/generated/dict-client.spec.ts"
+    ]
+  },
+  "tests": {
+    "api": "apps/api/src/modules/generated/core/dict/dict.spec.ts",
+    "admin": "apps/admin/src/pages/Generated/Dict/Dict.smoke.spec.ts",
+    "e2e": "tools/generator/e2e/generated-module.e2e.spec.ts"
+  },
+  "docs": {
+    "moduleDoc": "docs/generated/openforge/core.dict.md",
+    "runbook": "docs/generated/openforge/core.dict-runbook.md",
+    "patchReview": "docs/generated/openforge/core.dict-patch-review.md"
+  },
+  "export": {
+    "enabled": true,
+    "columns": ["code", "name", "enabled", "sort"],
+    "maxRows": 1000
+  },
+  "storage": {
+    "enabled": true,
+    "fields": ["icon"]
+  },
+  "audit": {
+    "enabled": true,
+    "actions": ["create", "update", "delete"]
+  },
+  "prisma": {
+    "writeSchema": false,
+    "modelName": "DictType",
+    "draftPath": "prisma/openforge-drafts/core.dict.model.prisma.md",
+    "migrationHintPath": "prisma/openforge-drafts/core.dict.migration-hint.md"
+  }
+}

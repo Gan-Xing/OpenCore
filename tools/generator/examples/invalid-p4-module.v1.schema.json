@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "openforge.schema.v1",
+  "moduleCode": "industry.crm",
+  "resource": "customer",
+  "title": "Customers",
+  "fields": [
+    {
+      "name": "name",
+      "title": "Name",
+      "type": "string",
+      "required": true
+    }
+  ],
+  "list": {
+    "title": "Customers",
+    "columns": ["name"]
+  },
+  "form": {
+    "title": "Customer",
+    "fields": ["name"]
+  },
+  "detail": {
+    "title": "Customer Details",
+    "fields": ["name"]
+  },
+  "actions": ["read"],
+  "permissions": ["industry:customer:read"],
+  "openapi": {
+    "tags": ["Industry CRM"]
+  },
+  "admin": {
+    "basePath": "/crm/customers",
+    "targetPaths": ["apps/admin/src/pages/Generated/Crm/Customers.tsx"]
+  },
+  "prisma": {
+    "writeSchema": false,
+    "modelName": "Customer"
+  }
+}

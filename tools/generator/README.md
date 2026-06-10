@@ -18,6 +18,19 @@ pnpm openforge:diff
 pnpm openforge:check
 ```
 
+V1 examples:
+
+```bash
+pnpm openforge:plan -- --schema tools/generator/examples/core.dict.v1.schema.json --format json
+pnpm openforge:check -- --schema tools/generator/examples/core.dict.v1.schema.json
+```
+
+Config DSL fixture:
+
+```text
+tools/generator/examples/openforge.v1.config.json
+```
+
 S9 safety boundaries:
 
 - plan and diff are deterministic and read-only;
@@ -37,3 +50,5 @@ V1 target architecture:
 - doctor and gate commands for repeatable local verification.
 
 Stage A does not add write-capable commands. Until later V1 stages land, the only supported root commands remain `plan`, `diff`, and `check`.
+
+Stage C adds Schema/config DSL V1 validation only. It does not add template rendering, apply, rollback, manifest writing, or generated target file writes.

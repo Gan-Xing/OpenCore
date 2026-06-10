@@ -52,31 +52,84 @@ export type OpenForgeValidationIssue = {
   message: string;
 };
 
+export const OPENFORGE_FIELD_TYPES = [
+  'boolean',
+  'datetime',
+  'enum',
+  'file',
+  'json',
+  'number',
+  'relation',
+  'string',
+  'text',
+] as const;
+
+export type OpenForgeFieldType = (typeof OPENFORGE_FIELD_TYPES)[number];
+
+export type OpenForgeRelationCardinality = 'many' | 'one';
+
+export type OpenForgeFieldRelation = {
+  targetModule: ModuleDefinition['code'];
+  targetResource: string;
+  cardinality: OpenForgeRelationCardinality;
+  displayField?: string;
+};
+
 export type OpenForgeFieldSchema = {
   name: string;
   title: string;
-  type: 'boolean' | 'datetime' | 'number' | 'string' | 'text';
+  type: OpenForgeFieldType;
   required?: boolean;
   list?: boolean;
   form?: boolean;
   detail?: boolean;
   permissionCode?: PermissionCode;
+  enumValues?: readonly string[];
+  relation?: OpenForgeFieldRelation;
+  fileAccept?: readonly string[];
+};
+
+export type OpenForgeIndexHint = {
+  name: string;
+  fields: readonly string[];
+  unique?: boolean;
+  reason: string;
+};
+
+export type OpenForgeFieldSelection = {
+  fields: readonly string[];
+};
+
+export type OpenForgeSortDirection = 'asc' | 'desc';
+
+export type OpenForgeSortSpec = {
+  field: string;
+  direction: OpenForgeSortDirection;
 };
 
 export type OpenForgeManualSchema = {
+  schemaVersion?: 'openforge.schema.v1';
   moduleCode: ModuleDefinition['code'];
   resource: string;
   title: string;
   description?: string;
   fields: readonly OpenForgeFieldSchema[];
+  relations?: readonly OpenForgeFieldRelation[];
+  indexes?: readonly OpenForgeIndexHint[];
   list: {
     title: string;
     columns: readonly string[];
     defaultPageSize?: number;
   };
+  filter?: OpenForgeFieldSelection;
+  sort?: {
+    default?: OpenForgeSortSpec;
+    fields?: readonly string[];
+  };
   form: {
     title: string;
     fields: readonly string[];
+    mode?: 'drawer' | 'modal';
   };
   detail: {
     title: string;
@@ -93,9 +146,39 @@ export type OpenForgeManualSchema = {
     menuKey?: string;
     targetPaths?: readonly string[];
   };
+  sdk?: {
+    clientName: string;
+    generatedPath: string;
+    targetPaths?: readonly string[];
+  };
+  tests?: {
+    api?: string;
+    admin?: string;
+    e2e?: string;
+  };
+  docs?: {
+    moduleDoc: string;
+    runbook: string;
+    patchReview?: string;
+  };
+  export?: {
+    enabled: boolean;
+    columns: readonly string[];
+    maxRows?: number;
+  };
+  storage?: {
+    enabled: boolean;
+    fields?: readonly string[];
+  };
+  audit?: {
+    enabled: boolean;
+    actions: readonly string[];
+  };
   prisma?: {
     writeSchema?: boolean;
     modelName?: string;
+    draftPath?: string;
+    migrationHintPath?: string;
   };
 };
 

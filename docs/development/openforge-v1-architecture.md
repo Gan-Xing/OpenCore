@@ -71,11 +71,12 @@ flowchart TD
 
 ## Current V1 Stage Status
 
-| Stage     | Status   | Evidence                                                                                                                                                          |
-| --------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Stage A   | complete | This architecture document, roadmap update and progress ledger entry exist                                                                                        |
-| Stage B   | complete | `packages/contracts/src/openforge-contract.ts` exports V1 template/apply/manifest/rollback/marker/patch/config contracts and pure marker/apply validation helpers |
-| Stage C-L | pending  | Schema/config DSL, template pack, VFS, safe apply, manifest writer, rollback, generator packs, doctor/e2e/gate and final docs are not implemented yet             |
+| Stage     | Status   | Evidence                                                                                                                                                               |
+| --------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Stage A   | complete | This architecture document, roadmap update and progress ledger entry exist                                                                                             |
+| Stage B   | complete | `packages/contracts/src/openforge-contract.ts` exports V1 template/apply/manifest/rollback/marker/patch/config contracts and pure marker/apply validation helpers      |
+| Stage C   | complete | `tools/generator/src/schema/**` and `tools/generator/src/config/**` validate Schema/config DSL V1, with legal and illegal V1 fixtures under `tools/generator/examples` |
+| Stage D-L | pending  | Template pack, VFS, safe apply, manifest writer, rollback, generator packs, doctor/e2e/gate and final docs are not implemented yet                                     |
 
 ## Generated Ownership Model
 

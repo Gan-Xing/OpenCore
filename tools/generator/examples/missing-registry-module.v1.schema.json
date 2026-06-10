@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "openforge.schema.v1",
+  "moduleCode": "core.missing",
+  "resource": "missing",
+  "title": "Missing Module",
+  "fields": [
+    {
+      "name": "code",
+      "title": "Code",
+      "type": "string",
+      "required": true
+    }
+  ],
+  "list": {
+    "title": "Missing Module",
+    "columns": ["code"]
+  },
+  "form": {
+    "title": "Missing Module",
+    "fields": ["code"]
+  },
+  "detail": {
+    "title": "Missing Module Details",
+    "fields": ["code"]
+  },
+  "actions": ["read"],
+  "permissions": ["core:missing:read"],
+  "openapi": {
+    "tags": ["Core Missing"]
+  },
+  "admin": {
+    "basePath": "/missing",
+    "targetPaths": ["apps/admin/src/pages/Generated/Missing/index.tsx"]
+  },
+  "prisma": {
+    "writeSchema": false,
+    "modelName": "Missing"
+  }
+}

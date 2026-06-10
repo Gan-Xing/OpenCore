@@ -28,10 +28,12 @@ export function getOpenForgeWorkspaceStatus(): OpenForgeWorkspaceStatus {
 export * from './readers/openapi-reader';
 export * from './readers/registry-reader';
 export * from './readers/schema-loader';
+export * from './config/generator-config';
 export * from './hash/stable-hash';
 export * from './diff/diff-plan';
 export * from './output/diff-output';
 export * from './output/plan-output';
 export * from './planner/generate-plan';
 export * from './preflight/preflight-report';
+export * from './schema/schema-v1';
 export * from './validators/manual-schema-validator';
