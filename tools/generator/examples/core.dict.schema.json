@@ -1,0 +1,77 @@
+{
+  "moduleCode": "core.dict",
+  "resource": "dict",
+  "title": "Dictionaries",
+  "description": "Dictionary type and item management planning schema.",
+  "fields": [
+    {
+      "name": "code",
+      "title": "Code",
+      "type": "string",
+      "required": true,
+      "list": true,
+      "form": true,
+      "detail": true
+    },
+    {
+      "name": "name",
+      "title": "Name",
+      "type": "string",
+      "required": true,
+      "list": true,
+      "form": true,
+      "detail": true
+    },
+    {
+      "name": "enabled",
+      "title": "Enabled",
+      "type": "boolean",
+      "list": true,
+      "form": true,
+      "detail": true
+    }
+  ],
+  "list": {
+    "title": "Dictionaries",
+    "columns": ["code", "name", "enabled"],
+    "defaultPageSize": 10
+  },
+  "form": {
+    "title": "Dictionary",
+    "fields": ["code", "name", "enabled"]
+  },
+  "detail": {
+    "title": "Dictionary Details",
+    "fields": ["code", "name", "enabled"]
+  },
+  "actions": ["read", "create", "update", "delete", "export"],
+  "permissions": [
+    "core:dict:read",
+    "core:dict:create",
+    "core:dict:update",
+    "core:dict:delete",
+    "core:dict:export"
+  ],
+  "openapi": {
+    "tags": ["Core Dictionaries"],
+    "paths": [
+      "/api/core/dicts",
+      "/api/core/dicts/export",
+      "/api/core/dicts/{code}"
+    ]
+  },
+  "admin": {
+    "basePath": "/system/dicts",
+    "menuKey": "system.dicts",
+    "targetPaths": [
+      "apps/api/src/modules/core/system-management/dict.controller.ts",
+      "apps/admin/src/pages/System/Dicts.tsx",
+      "packages/sdk/src/system-management-client.ts",
+      "docs/modules/core-dict.md"
+    ]
+  },
+  "prisma": {
+    "writeSchema": false,
+    "modelName": "DictType"
+  }
+}

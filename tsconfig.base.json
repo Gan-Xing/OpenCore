@@ -20,6 +20,7 @@
       "@opencore/auth": ["packages/auth/src/index.ts"],
       "@opencore/config": ["packages/config/src/index.ts"],
       "@opencore/module-registry": ["packages/module-registry/src/index.ts"],
+      "@opencore/openforge": ["tools/generator/src/index.ts"],
       "@opencore/ui-web": ["packages/ui-web/src/index.ts"],
       "@opencore/design-tokens": ["packages/design-tokens/src/index.ts"],
       "@opencore/i18n": ["packages/i18n/src/index.ts"],

@@ -16,6 +16,7 @@ OpenCore 采用阶段化推进，避免过早写业务代码或把 P4/P5 深水�
 | S7     | complete | dict、system config、file asset、audit log、login log、系统管理页面                                                                                          |
 | S8     | complete | status/version/queue、OpenAPI drift check、export protocol、Monitor/Tool 页面                                                                                |
 | R-1-R7 | complete | legacy app freeze、runtime audit、OpenCore env、PostgreSQL migration/seed、Prisma persistence、Redis/BullMQ/MinIO diagnostics、integration smoke、final docs |
+| S9     | complete | OpenForge 只读 generate plan、diff plan、safety/preflight report、contracts、workspace tool、CLI 和测试                                                      |
 
 ## Runtime Integration
 
@@ -30,7 +31,7 @@ R-1 到 R7 已完成：
 
 ## S9：OpenForge MVP
 
-S9 尚未开始。下一阶段建议单独开 handoff/goal，不要混在 S3-S8 或 runtime integration 里继续偷跑。
+S9 已通过单独 handoff/goal 完成。当前 OpenForge 只允许 module registry 登记、contracts、workspace tool、CLI plan/diff/check、只读输入读取、安全/preflight report、测试和文档。
 
 S9 目标：
 

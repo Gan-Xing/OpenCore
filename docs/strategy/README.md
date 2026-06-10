@@ -15,7 +15,7 @@ S3-S8 实现目标已经完成：
 - S7 system management：complete。
 - S8 monitor / tool baseline：complete。
 
-S9 OpenForge MVP 尚未开始；如果继续，应另起 handoff/goal。
+S9 OpenForge MVP 已完成：只读 generate plan、diff plan、safety/preflight report、OpenForge contracts、`tools/generator` Nx tool 和 `tool.openforge` registry 登记均已落地。
 
 ## 推荐阅读顺序
 
@@ -42,10 +42,10 @@ S9 OpenForge MVP 尚未开始；如果继续，应另起 handoff/goal。
 | 后台一级菜单和页面如何规划                                                                   | [Admin 页面蓝图](admin-page-map.md#最终一级菜单设计)                                       |
 | NestWeb 的 Role.code、OpenAPI drift、runtime config 等如何复用                               | [旧项目复用审计](legacy-reuse-audit.md)                                                    |
 | S3-S8 当前完成度                                                                             | [progress.md](progress.md)                                                                 |
-| S9 是否可以开始                                                                              | [阶段路线图](staged-roadmap.md) 与 [OpenForge 路线图](../development/openforge-roadmap.md) |
+| S9 OpenForge MVP 完成了什么                                                                  | [阶段路线图](staged-roadmap.md) 与 [OpenForge 路线图](../development/openforge-roadmap.md) |
 
 ## 后续 Codex 规则
 
-后续不应继续复用 S3-S8 handoff 做新实现。若要推进 S9，应先生成新的 S9 handoff，并明确：OpenForge MVP 只做只读/dry-run/diff plan，不写文件生成器，不生成业务逻辑，不写 Prisma schema。
+后续不应继续复用 S3-S8、runtime integration 或 S9 handoff 做新业务实现。S9 OpenForge MVP 已完成，只做只读/dry-run/diff/check，不写文件生成器，不生成业务逻辑，不写 Prisma schema。若继续，应另起 P1 OpenForge hardening 或 S10 collaboration handoff/goal。
 
 P4/P5 能力仍保留长期 backlog：CRM、ERP、MES、WMS、商城、支付、会员、多租户、知识库、RAG、Agent 均不得无 handoff 直接实现。

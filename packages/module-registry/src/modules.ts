@@ -610,4 +610,40 @@ export const moduleRegistry = [
       ],
     },
   },
+  {
+    code: 'tool.openforge',
+    title: 'OpenForge',
+    layer: 'tool',
+    priority: 'P0',
+    status: 'planned',
+    stage: 'S9',
+    enabledByDefault: true,
+    description:
+      'Read-only generate plan, diff plan, safety report, and preflight checks for OpenCore modules.',
+    apiTags: ['Tool OpenForge'],
+    permissions: definePermissions('tool', 'openforge', 'OpenForge', 'S9', [
+      { action: 'read', title: 'Read' },
+      { action: 'manage', title: 'Manage' },
+    ]),
+    menus: [
+      defineMenu(
+        'tools.openforge',
+        'OpenForge',
+        '/tools/openforge',
+        'tool:openforge:read',
+        520,
+        'S9',
+      ),
+    ],
+    admin: {
+      basePath: '/tools/openforge',
+      routes: [
+        {
+          path: '/tools/openforge',
+          title: 'OpenForge',
+          permissionCode: 'tool:openforge:read',
+        },
+      ],
+    },
+  },
 ] as const satisfies readonly ModuleDefinition[];

@@ -15,9 +15,10 @@
 - S6：auth/RBAC system。
 - S7：system management。
 - S8：monitor/tool baseline。
+- S9：OpenForge MVP，只读 generate plan、diff plan、safety/preflight report。
 - Runtime integration R-1-R7：legacy app freeze、runtime audit、env mapping、PostgreSQL migration/seed、Prisma persistence、Redis/BullMQ/MinIO diagnostics、integration smoke、final docs。
 
-S3-S8 handoff 与 runtime integration handoff 范围均已完成。若继续推进，应另起 S9 OpenForge MVP handoff/goal。
+S3-S9 handoff 与 runtime integration handoff 范围均已完成。若继续推进，应另起 P1 OpenForge hardening 或 S10 collaboration handoff/goal。
 
 ## 交接文档
 
@@ -27,6 +28,7 @@ S3-S8 handoff 与 runtime integration handoff 范围均已完成。若继续推�
 - [2026-06-10 Strategy Blueprint /goal handoff](2026-06-10-strategy-blueprint-goal-handoff.md)
 - [2026-06-10 S3-S8 Implementation Handoff](2026-06-10-s3-s8-implementation-handoff.md)
 - [2026-06-10 Runtime Integration Handoff](2026-06-10-runtime-integration-handoff.md)
+- [2026-06-10 S9 OpenForge MVP Handoff](2026-06-10-s9-openforge-mvp-handoff.md)
 
 ## D1-D6 设计文档
 
@@ -58,4 +60,4 @@ Runtime integration final evidence is tracked in [progress.md](../strategy/progr
 
 ## 下一份 handoff 建议
 
-S9 handoff 应只覆盖 OpenForge MVP：只读 registry/OpenAPI/schema、dry-run generate plan、diff plan、幂等校验和安全覆盖策略。不得在 S9 直接生成业务逻辑、写 Prisma schema、实现 P4/P5 模块或覆盖人工文件。
+S9 handoff 已完成。下一份 handoff 可选择 P1 OpenForge CI/gate hardening，或进入 S10 collaboration。不得复用 S9 继续偷偷扩大为写文件生成器、业务逻辑生成、Prisma schema 写入、migration 创建或 P4/P5 模块实现。

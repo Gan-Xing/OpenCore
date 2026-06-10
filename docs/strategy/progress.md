@@ -804,13 +804,256 @@
 - Risk/blocker:
   - No blocker.
 
+### 2026-06-10 S9 Stage A execution
+
+- Stage: S9 Stage A - Register `tool.openforge`
+- Completed:
+  - 新增 `tool.openforge` module registry 声明，设置为 `tool` layer、`P0` priority、`S9` stage、默认启用，API tag 为 `Tool OpenForge`。
+  - 新增 OpenForge 权限 `tool:openforge:read` 和 `tool:openforge:manage`；`manage` 在 S9 仅代表允许运行只读 plan/diff/check，不代表写文件。
+  - 新增菜单 `tools.openforge`，路径 `/tools/openforge`，绑定 `tool:openforge:read`。
+  - 更新 registry 单测，覆盖模块查询、权限收集、菜单权限追踪和 P4/P5 guard。
+  - 更新 module registry、priority roadmap、OpenForge roadmap 文档，记录 S9 已开始且仍保持只读边界。
+- Tests:
+  - `NX_DAEMON=false pnpm nx test module-registry` pass.
+  - `pnpm typecheck` pass.
+  - `pnpm lint` pass.
+  - `pnpm format:check` pass.
+- Files changed:
+  - `packages/module-registry/src/modules.ts`
+  - `packages/module-registry/src/index.spec.ts`
+  - `docs/modules/module-registry.md`
+  - `docs/modules/priority-roadmap.md`
+  - `docs/development/openforge-roadmap.md`
+  - `docs/handoff/2026-06-10-s9-openforge-mvp-handoff.md`
+  - `docs/strategy/progress.md`
+- Remaining:
+  - S9 Stage B-F 尚未完成。
+  - S9 Stage B OpenForge contracts 与 workspace package 是最早未完成阶段。
+- Next:
+  - 进入 S9 Stage B：新增 OpenForge contracts、`tools/generator` workspace/Nx package 和 root CLI scripts，但仍不写生成目标文件。
+- Scope guard:
+  - No generated target files written.
+  - No Prisma schema or migration generated.
+  - No P4/P5 module implemented.
+  - No secrets read, printed, or committed.
+
+### 2026-06-10 S9 Stage B execution
+
+- Stage: S9 Stage B - OpenForge contracts and workspace package
+- Completed:
+  - 新增 `packages/contracts/src/openforge-contract.ts`，导出 OpenForge manual schema、plan、artifact、diff、safety、input snapshot、validation issue 和 format contract。
+  - 更新 `packages/contracts/src/index.ts` 和 contracts tests，保证 OpenForge S9 protocol 从 `@opencore/contracts` 导出。
+  - 新增 `tools/generator` workspace package：package name `@opencore/openforge`，Nx project name `openforge`。
+  - 新增 OpenForge package config、Nx targets、TypeScript config、Jest config、README、workspace status helper 和 inert CLI shell。
+  - 新增 root scripts：`pnpm openforge:plan`、`pnpm openforge:diff`、`pnpm openforge:check`；当前 Stage B 只返回 workspace-ready 状态，不读取 schema、不生成 plan、不写文件。
+  - 更新 `tsconfig.base.json` path alias 和 `pnpm-lock.yaml` workspace importer。
+- Tests:
+  - `NX_DAEMON=false pnpm nx test contracts` pass.
+  - `NX_DAEMON=false pnpm nx test openforge` pass.
+  - `NX_DAEMON=false pnpm nx build openforge` pass.
+  - `pnpm typecheck` pass.
+  - `pnpm lint` pass.
+  - `pnpm format:check` pass.
+  - `pnpm openforge:check` pass.
+  - `pnpm openforge:plan` pass.
+  - `pnpm openforge:diff` pass.
+- Files changed:
+  - `packages/contracts/src/openforge-contract.ts`
+  - `packages/contracts/src/index.ts`
+  - `packages/contracts/src/index.spec.ts`
+  - `tools/generator/**`
+  - `package.json`
+  - `pnpm-lock.yaml`
+  - `tsconfig.base.json`
+  - `docs/strategy/progress.md`
+- Remaining:
+  - S9 Stage C-F 尚未完成。
+  - S9 Stage C 输入读取器与校验器是最早未完成阶段。
+- Next:
+  - 进入 S9 Stage C：读取 module registry、OpenAPI snapshot 和 manual schema；新增合法/非法 schema fixtures；实现只读校验，不写生成目标文件。
+- Scope guard:
+  - No generated target files written.
+  - No Prisma schema or migration generated.
+  - No P4/P5 module implemented.
+  - No secrets read, printed, or committed.
+
+### 2026-06-10 S9 Stage C execution
+
+- Stage: S9 Stage C - Input readers and validators
+- Completed:
+  - 新增 module registry reader，读取 `listModules()`、`collectMenus()`、`collectPermissionDefinitions()` 和 `validateModuleRegistry()` 的只读 snapshot。
+  - 新增 OpenAPI snapshot reader，读取 `packages/contracts/openapi/opencore-api.json` 并提取 paths、methods、operationId、tags 和 schemas。
+  - 新增 manual schema loader，读取 JSON schema fixture，不写任何生成目标文件。
+  - 新增合法 fixture `tools/generator/examples/core.dict.schema.json`，覆盖 moduleCode、resource、fields、list、form、detail、actions、permissions、openapi、admin 和 Prisma hint 配置。
+  - 新增非法 fixtures：P4/P5 module、permission drift、OpenAPI tag mismatch、Prisma schema write request、path traversal。
+  - 新增 manual schema validator，校验 module registry 存在性、permission 格式和 layer/resource 对齐、registry permission 存在性、OpenAPI tag 对齐、strict tag mismatch、P4/P5 拒绝、Prisma write 拒绝、repo-relative target path。
+- Tests:
+  - `NX_DAEMON=false pnpm nx test openforge` pass.
+  - `NX_DAEMON=false pnpm nx test module-registry` pass.
+  - `NX_DAEMON=false pnpm nx test contracts` pass.
+  - `pnpm typecheck` pass.
+  - `pnpm lint` pass.
+  - `pnpm format:check` pass.
+- Files changed:
+  - `tools/generator/examples/**`
+  - `tools/generator/src/readers/**`
+  - `tools/generator/src/validators/**`
+  - `tools/generator/src/index.ts`
+  - `docs/strategy/progress.md`
+- Remaining:
+  - S9 Stage D-F 尚未完成。
+  - S9 Stage D deterministic generate plan engine 是最早未完成阶段。
+- Next:
+  - 进入 S9 Stage D：基于只读 snapshots 和合法 schema 输出 deterministic generate plan，支持 JSON/Markdown 格式，仍不写目标文件。
+- Scope guard:
+  - No generated target files written.
+  - No Prisma schema or migration generated.
+  - No P4/P5 module implemented.
+  - No secrets read, printed, or committed.
+
+### 2026-06-10 S9 Stage D execution
+
+- Stage: S9 Stage D - Deterministic generate plan engine
+- Completed:
+  - 新增 stable hash helper，对 registry snapshot、OpenAPI snapshot 和 manual schema 生成 deterministic sha256。
+  - 新增 deterministic generate plan engine，使用固定 S9 planning timestamp，确保同一输入重复输出稳定。
+  - Generate plan 输出 `moduleCode`、`templateVersion`、`inputSnapshot`、`schemaHash`、`openApiSnapshotHash`、`registrySnapshotHash`、`artifacts`、`permissions`、`menus`、`openapiTags`、`warnings`、`errors`、`nextCommands` 和 `safety`。
+  - Artifact plan 覆盖 API module/controller/service/dto/repository、Admin list/form/detail、SDK client、API/Admin tests、docs fragment 和 `prisma.hint`。
+  - 每个 artifact 包含 `targetPath`、`kind`、`action`、`protected`、`overwritePolicy`、`contentHash` 或 `contentPreview`、`reason`。
+  - `prisma.hint` 只输出人工提示，`targetPath` 指向 `prisma/schema.prisma` 但 action 为 `hint`、protected 为 true、overwritePolicy 为 `never`，不输出完整 Prisma schema。
+  - `pnpm openforge:plan` 支持 `--schema` 和 `--format json|markdown`。
+- Tests:
+  - `pnpm openforge:plan -- --schema tools/generator/examples/core.dict.schema.json --format json` pass.
+  - `pnpm openforge:plan -- --schema tools/generator/examples/core.dict.schema.json --format markdown` pass.
+  - `NX_DAEMON=false pnpm nx test openforge` pass.
+  - `pnpm typecheck` pass.
+  - `pnpm lint` pass.
+  - `pnpm format:check` pass.
+- Files changed:
+  - `tools/generator/src/hash/**`
+  - `tools/generator/src/planner/**`
+  - `tools/generator/src/output/plan-output.ts`
+  - `tools/generator/src/cli.ts`
+  - `tools/generator/src/index.ts`
+  - `tools/generator/src/cli.spec.ts`
+  - `docs/strategy/progress.md`
+- Remaining:
+  - S9 Stage E-F 尚未完成。
+  - S9 Stage E readonly diff plan and safety strategy 是最早未完成阶段。
+- Next:
+  - 进入 S9 Stage E：实现 readonly diff plan、protected path 阻断、path traversal 拒绝、no-write 和 idempotency 测试、`pnpm openforge:check` preflight。
+- Scope guard:
+  - No generated target files written.
+  - No Prisma schema or migration generated.
+  - No P4/P5 module implemented.
+  - No secrets read, printed, or committed.
+
+### 2026-06-10 S9 Stage E execution
+
+- Stage: S9 Stage E - Readonly diff plan and safety/preflight strategy
+- Completed:
+  - 新增 path safety policy，阻止绝对路径、`../` traversal、`.env`、`.env.*`、`.env.opencore.local`、`prisma/schema.prisma`、`prisma/migrations/**`。
+  - 新增 readonly diff plan engine，支持 `would-create`、`would-update`、`unchanged`、`blocked`、`protected-conflict` 状态。
+  - 已存在且没有 OpenForge generated marker 的文件会进入 `protected-conflict`，避免覆盖人工文件。
+  - `prisma.hint` 在 diff plan 中被保护路径策略拦截为 `protected-conflict`，不会写 Prisma schema。
+  - 新增 preflight report，汇总 registry validation、OpenAPI snapshot counts、schema validation 和 safety policy。
+  - `pnpm openforge:diff` 输出 readonly diff plan；`pnpm openforge:check` 输出 safety/preflight report。
+  - 新增 no-write 测试，验证 diff plan 不创建生成目标文件。
+  - 新增 idempotency 测试，验证同一输入重复 diff 输出稳定。
+- Tests:
+  - `pnpm openforge:diff -- --schema tools/generator/examples/core.dict.schema.json --format json` pass.
+  - `pnpm openforge:check` pass.
+  - `NX_DAEMON=false pnpm nx test openforge` pass.
+  - `NX_DAEMON=false pnpm nx test contracts` pass.
+  - `pnpm typecheck` pass.
+  - `pnpm lint` pass.
+  - `pnpm format:check` pass.
+- Files changed:
+  - `packages/contracts/src/openforge-contract.ts`
+  - `packages/contracts/src/index.spec.ts`
+  - `tools/generator/src/safety/**`
+  - `tools/generator/src/diff/**`
+  - `tools/generator/src/preflight/**`
+  - `tools/generator/src/output/diff-output.ts`
+  - `tools/generator/src/cli.ts`
+  - `tools/generator/src/index.ts`
+  - `docs/strategy/progress.md`
+- Remaining:
+  - S9 Stage F 尚未完成。
+  - S9 Stage F docs/status/final gate 是最早未完成阶段。
+- Next:
+  - 进入 S9 Stage F：同步 README、docs、handoff index、OpenForge roadmap、generator roadmap、module registry docs、progress ledger，并运行最终必跑门禁。
+- Scope guard:
+  - No generated target files written.
+  - No Prisma schema or migration generated.
+  - No P4/P5 module implemented.
+  - No secrets read, printed, or committed.
+
+### 2026-06-10 S9 Stage F execution
+
+- Stage: S9 Stage F - Documentation sync and final gate
+- Completed:
+  - 同步根 `README.md`、`docs/README.md`、strategy README、handoff index、OpenForge roadmap、generator roadmap、module registry docs、priority roadmap 和 `tools/generator/README.md` 到 S9 complete 状态。
+  - 新增并格式化 `docs/handoff/2026-06-10-s9-openforge-mvp-handoff.md`，在 handoff index 中登记 S9。
+  - 完成 S9 final gate：`tool.openforge` 已注册；OpenForge contracts 已导出；`tools/generator` 是 pnpm/Nx 可识别 project；plan/diff/check CLI 均可运行。
+  - Completion audit 确认 `git diff -- prisma/schema.prisma prisma/migrations packages/contracts/openapi/opencore-api.json` 无输出。
+  - Completion audit 确认 planned generated targets 未被创建：`apps/api/src/modules/core/dict`、`apps/admin/src/pages/system/dicts`、`apps/admin/tests` 不存在，`docs/modules/core-dict.md` 与 `packages/sdk/src/dict-client.ts` 不存在。
+- Final tests:
+  - `pnpm format:check` pass.
+  - `pnpm lint` pass.
+  - `pnpm typecheck` pass.
+  - `pnpm test` pass.
+  - `pnpm build` pass.
+  - `pnpm openapi:export` pass.
+  - `pnpm openapi:check` pass.
+  - `NX_DAEMON=false pnpm nx test contracts` pass.
+  - `NX_DAEMON=false pnpm nx test module-registry` pass.
+  - `NX_DAEMON=false pnpm nx test openforge` pass.
+  - `NX_DAEMON=false pnpm nx build openforge` pass.
+  - `pnpm openforge:plan -- --schema tools/generator/examples/core.dict.schema.json --format json` pass.
+  - `pnpm openforge:diff -- --schema tools/generator/examples/core.dict.schema.json --format json` pass.
+  - `pnpm openforge:check` pass.
+- Files changed:
+  - `README.md`
+  - `docs/README.md`
+  - `docs/development/generator-roadmap.md`
+  - `docs/development/openforge-roadmap.md`
+  - `docs/handoff/README.md`
+  - `docs/handoff/2026-06-10-s9-openforge-mvp-handoff.md`
+  - `docs/modules/module-registry.md`
+  - `docs/modules/priority-roadmap.md`
+  - `docs/strategy/README.md`
+  - `docs/strategy/progress.md`
+  - `packages/contracts/src/openforge-contract.ts`
+  - `packages/contracts/src/index.ts`
+  - `packages/contracts/src/index.spec.ts`
+  - `packages/module-registry/src/modules.ts`
+  - `packages/module-registry/src/index.spec.ts`
+  - `tools/generator/**`
+  - `package.json`
+  - `pnpm-lock.yaml`
+  - `tsconfig.base.json`
+- Remaining:
+  - S9 OpenForge MVP is complete.
+  - No remaining work in this S9 handoff.
+  - P4/P5 parity backlog remains deferred.
+- Next:
+  - Stop the current S9 loop. Future work should use a new handoff/goal for P1 OpenForge hardening or S10 collaboration.
+- Scope guard:
+  - No generated target files written.
+  - No Prisma schema or migration generated.
+  - No business logic generated.
+  - No full SDK/Admin generator implemented.
+  - No P4/P5 module implemented.
+  - No secrets read, printed, or committed.
+
 ## 未完成项
 
-战略蓝图文档包已完成。S3、S4、S5、S6、S7、S8 已完成。Runtime integration 已完成 R-1 Legacy freeze、R0 Runtime audit、R1 Env mapping、R2 PostgreSQL migration baseline、R3 Persistent RBAC、R4 Persistent system management、R5 Redis/BullMQ/MinIO runtime、R6 Integration smoke and drift gate 和 R7 Final docs and audit。本目标无剩余未完成阶段。S9 OpenForge MVP 尚未开始，P4/P5 parity backlog 继续保留。
+战略蓝图文档包已完成。S3、S4、S5、S6、S7、S8 已完成。Runtime integration 已完成 R-1 Legacy freeze、R0 Runtime audit、R1 Env mapping、R2 PostgreSQL migration baseline、R3 Persistent RBAC、R4 Persistent system management、R5 Redis/BullMQ/MinIO runtime、R6 Integration smoke and drift gate 和 R7 Final docs and audit。S9 OpenForge MVP 已完成 Stage A registry registration、Stage B contracts/workspace package、Stage C input readers/validators、Stage D deterministic generate plan、Stage E readonly diff/safety/preflight 和 Stage F docs/final gate。P4/P5 parity backlog 继续保留。
 
 ## 下一轮建议
 
-停止当前 runtime integration loop。若继续推进，下一轮应单独创建 S9 OpenForge MVP handoff/goal，只做 registry/OpenAPI/schema 的只读 dry-run/diff plan 设计；不要在无 handoff 的情况下进入 S9 实现，也不要实现 P4/P5 模块。
+停止当前 S9 OpenForge MVP loop。若继续推进，应另起 P1 OpenForge hardening 或 S10 collaboration handoff/goal；不得复用 S9 范围继续实现写文件生成器或 P4/P5 模块。
 
 ## 当前验收结论
 
@@ -838,4 +1081,5 @@
 - Runtime integration R4 Persistent system management 已完成：dict/config/file metadata/log repository 已切换到 Prisma-backed persistence，S7 seed fixture 仅保留为单测替身。
 - Runtime integration R5 Redis/BullMQ/MinIO runtime 已完成：Monitor runtime diagnostics 已接入 PostgreSQL、Redis、BullMQ 和 MinIO/S3 read-only checks，file metadata storageKey 已对齐 OpenCore S3 prefix。
 - Runtime integration R6 Integration smoke and drift gate 已完成：完整 R6 command gate、OpenAPI drift gate、Admin smoke、SDK/contracts targeted tests 和 live API smoke 均通过。
-- Runtime integration R7 Final docs and audit 已完成：README/docs/handoff/runtime/progress 已同步到 S8 complete + runtime integration complete；S9 OpenForge MVP 明确未开始，P4/P5 backlog 保留。
+- Runtime integration R7 Final docs and audit 已完成：README/docs/handoff/runtime/progress 已同步到 S8 complete + runtime integration complete；当时 S9 OpenForge MVP 尚未开始，当前已由 S9 handoff 完成，P4/P5 backlog 仍保留。
+- S9 OpenForge MVP 已完成：`tool.openforge` registry、contracts、`tools/generator` workspace、deterministic generate plan、readonly diff plan、safety/preflight report、protected path guard、P4/P5 schema rejection、docs/progress sync 和 final gate 均已完成。

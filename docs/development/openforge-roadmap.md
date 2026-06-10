@@ -1,10 +1,10 @@
 # OpenForge 路线图
 
-OpenForge 是 OpenCore 的代码生成器。当前 S3-S8 已完成，OpenForge 仍未实现；下一阶段应单独进入 S9 MVP。
+OpenForge 是 OpenCore 的代码生成器。当前 S3-S9 已完成，S9 MVP 已通过单独 handoff/goal 落地只读规划能力。
 
 ## 当前定位
 
-S9 OpenForge MVP 只做只读和 dry-run，不做写文件生成器。
+S9 OpenForge MVP 只做只读和 dry-run，不做写文件生成器。`tool.openforge` 已进入 module registry，`tools/generator` 已成为 pnpm/Nx workspace tool，当前能力停留在 generate plan、diff plan、safety/preflight report。
 
 ## 第一版目标
 
@@ -24,7 +24,7 @@ OpenForge v1 面向 API/Admin 主线，优先生成工程骨架和同步资产�
 - E2E skeleton。
 - 文档片段。
 
-当前阶段不生成上述代码，只在 S9 建立只读/dry-run/diff plan。
+S9 当前不生成上述代码，只建立只读/dry-run/diff plan 和 safety/preflight report。
 
 ## 输入来源
 

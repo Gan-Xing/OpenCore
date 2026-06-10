@@ -27,6 +27,12 @@ OpenForge 后续用于生成：
 
 OpenCore 不复制 RuoYi/Yudao 的 Java/Vue 代码，也不沿用其运行时实现。
 
-## S0/S1 边界
+## S9 MVP 状态
 
-当前阶段只创建 `tools/generator` 目录和路线文档，不实现生成器逻辑。
+S9 已完成 `tools/generator` workspace tool 和 OpenForge contracts，支持：
+
+- `pnpm openforge:plan -- --schema tools/generator/examples/core.dict.schema.json --format json`
+- `pnpm openforge:diff -- --schema tools/generator/examples/core.dict.schema.json --format json`
+- `pnpm openforge:check`
+
+当前能力只输出 generate plan、readonly diff plan 和 safety/preflight report；不写生成目标文件，不覆盖人工文件，不写 Prisma schema，不创建 migration。

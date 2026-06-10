@@ -15,7 +15,7 @@ describe('@opencore/module-registry', () => {
     });
   });
 
-  it('covers the S6-S8 core, monitor, and tool module drafts', () => {
+  it('covers the S6-S9 core, monitor, and tool module drafts', () => {
     expect(
       listModules().map((moduleDefinition) => moduleDefinition.code),
     ).toEqual(
@@ -34,6 +34,7 @@ describe('@opencore/module-registry', () => {
         'monitor.queue',
         'tool.openapi',
         'tool.export',
+        'tool.openforge',
       ]),
     );
   });
@@ -71,5 +72,33 @@ describe('@opencore/module-registry', () => {
         basePath: '/tools/openapi',
       },
     });
+  });
+
+  it('registers OpenForge as the S9 read-only planning tool', () => {
+    expect(findModuleByCode('tool.openforge')).toMatchObject({
+      code: 'tool.openforge',
+      layer: 'tool',
+      priority: 'P0',
+      stage: 'S9',
+      enabledByDefault: true,
+      apiTags: ['Tool OpenForge'],
+      admin: {
+        basePath: '/tools/openforge',
+      },
+    });
+
+    expect(collectPermissionCodes()).toEqual(
+      expect.arrayContaining(['tool:openforge:read', 'tool:openforge:manage']),
+    );
+
+    expect(collectMenus()).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          key: 'tools.openforge',
+          path: '/tools/openforge',
+          permissionCode: 'tool:openforge:read',
+        }),
+      ]),
+    );
   });
 });

@@ -4,11 +4,11 @@
 
 ## 当前状态
 
-S3 已实现 `@opencore/module-registry`，并在 S5-S8 中被 Admin shell、RBAC、系统管理、Monitor/Tool 页面持续消费。
+S3 已实现 `@opencore/module-registry`，并在 S5-S8 中被 Admin shell、RBAC、系统管理、Monitor/Tool 页面持续消费。S9 已登记 `tool.openforge`，只允许只读 generate plan、diff plan、safety/preflight report。
 
 当前能力：
 
-- 登记 S5-S8 模块草案和实际页面入口。
+- 登记 S5-S9 模块草案和实际页面入口。
 - 管理权限码、菜单、OpenAPI tag、stage、priority、enabledByDefault。
 - 校验重复 module code、permission code、menu key。
 - 校验菜单 permission 指向已注册权限码。
@@ -34,7 +34,7 @@ OpenCore 模块分层采用：
 | ------- | --------------------------------------------------------------------------------- |
 | core    | dashboard、user、role、permission、menu、dict、config、file、audit-log、login-log |
 | monitor | status、version、queue                                                            |
-| tool    | openapi、export                                                                   |
+| tool    | openapi、export、openforge                                                        |
 
 ## 长期 backlog
 
@@ -50,4 +50,4 @@ P4/P5 模块继续保留在长期 backlog，不进入当前 core：
 - 模块拥有权限码，格式为 `<module>:<resource>:<action>`。
 - 菜单由模块注册表声明，由 `apps/admin` 渲染。
 - OpenAPI tag 由模块注册表声明，由 `apps/api` 实现。
-- OpenForge S9 将读取模块注册表、OpenAPI 和人工 schema，生成 dry-run/diff plan。
+- OpenForge S9 读取模块注册表、OpenAPI 和人工 schema，生成只读 dry-run/diff plan；`tool:openforge:manage` 只代表允许运行 plan/diff/check，不代表写生成目标文件。

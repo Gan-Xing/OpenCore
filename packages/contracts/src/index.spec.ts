@@ -2,6 +2,8 @@ import {
   OPENAPI_CONTRACT_PROTOCOL,
   CURRENT_PAGE_EXPORT_PROTOCOL,
   createCurrentPageExportPlan,
+  OPENFORGE_CONTRACT_PROTOCOL,
+  OPENFORGE_TEMPLATE_VERSION,
   parsePermissionCode,
   validateMenuDefinition,
   validateModuleDefinition,
@@ -104,5 +106,23 @@ describe('@opencore/contracts', () => {
       format: 'csv',
       rowCount: 1000,
     });
+  });
+
+  it('keeps S9 OpenForge as a read-only planning protocol', () => {
+    expect(OPENFORGE_CONTRACT_PROTOCOL).toMatchObject({
+      stage: 'S9',
+      status: 'read-only-plan',
+      toolPackage: '@opencore/openforge',
+      noWrite: true,
+    });
+    expect(OPENFORGE_TEMPLATE_VERSION).toBe('s9-openforge-mvp-v1');
+    expect(OPENFORGE_CONTRACT_PROTOCOL.planCommand).toContain('openforge:plan');
+    expect(OPENFORGE_CONTRACT_PROTOCOL.diffCommand).toContain('openforge:diff');
+    expect(OPENFORGE_CONTRACT_PROTOCOL.checkCommand).toBe(
+      'pnpm openforge:check',
+    );
+    expect(OPENFORGE_CONTRACT_PROTOCOL.exampleSchemaPath).toBe(
+      'tools/generator/examples/core.dict.schema.json',
+    );
   });
 });

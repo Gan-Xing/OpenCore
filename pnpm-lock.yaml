@@ -225,6 +225,18 @@ importers:
 
   packages/shared: {}
 
+  tools/generator:
+    dependencies:
+      '@opencore/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@opencore/module-registry':
+        specifier: workspace:*
+        version: link:../../packages/module-registry
+      '@opencore/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+
 packages:
   '@ahooksjs/use-request@2.8.15':
     resolution:
