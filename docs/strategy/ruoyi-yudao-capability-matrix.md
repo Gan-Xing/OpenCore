@@ -8,8 +8,8 @@
 
 | 字段 | 取值说明 |
 | --- | --- |
-| 当前状态 | `done` 表示 OpenCore 已完成文档或空主干基线；`partial` 表示已有空壳或规范但未实现；`planned` 表示第一年应进入路线；`optional` 表示 Full 或后续版本可选；`not_now` 表示当前明确不做 |
-| 推荐优先级 | `P0` 契约和工程基线；`P1` core 基础；`P2` 系统管理和监控工具；`P3` 协同与生成器；`P4` 可选通用能力；`P5` 行业或深水区能力 |
+| 当前状态 | `done` 表示 OpenCore 已完成文档或空主干基线；`partial` 表示已有空壳或规范但未实现；`planned` 表示第一年应进入路线；`optional` 表示 Full 或后续版本可选；`not_now` 表示不进入当前 S3-S12 实现窗口，不等于永远不做 |
+| 推荐优先级 | `P0` 契约和工程基线；`P1` core 基础；`P2` 系统管理和监控工具；`P3` 协同与生成器；`P4` 可选通用能力；`P5` 行业或深水区能力。P4/P5 必须进入长期 backlog 和模块准入规则，但不得抢占 S3-S8 |
 
 ## 大表格
 
@@ -126,4 +126,24 @@ mindmap
 - `P2`：dict、config、file、audit log、login log、status、version、queue。
 - `P3`：OpenForge MVP、message center、Approval Lite、TableExportButton 模式。
 
-`P4-P5` 只保留设计位，不进入第一年实现。
+`P4-P5` 只保留设计位，不进入第一年实现；这是一种阶段排序，不是产品放弃。
+
+## P4/P5 长期覆盖承诺
+
+OpenCore 的长期目标应是覆盖 RuoYi/Yudao 的企业后台能力地图。为了防止 `not_now` 被误读成“永不做”，P4/P5 统一按以下方式进入 backlog：
+
+| 队列 | 覆盖能力 | 进入条件 | 默认形态 |
+| --- | --- | --- | --- |
+| P4 optional | 部门/岗位、通知公告、OAuth2、缓存、在线用户、定时任务、报表设计位、工作流设计位 | S6 RBAC、S7 审计、S8 监控工具稳定后 | `optional/*` 或 `monitor/*` 模块，可关闭 |
+| P4 integration | 邮件、短信、微信、WebSocket、OAuth、文件 provider 扩展 | provider 凭据、回调安全、成本和审计规则明确后 | `integration/*` 包，不进入 core |
+| P5 business platform | member、mall、pay、CRM、ERP、MES、WMS、IoT、IM、AI Knowledge/RAG/Agent | 有独立行业建模、权限、数据隔离、计费/合规和测试计划后 | `industry/*`、`ai/*` 或独立 app/package |
+
+P4/P5 转入实现前必须补齐：
+
+1. 模块准入文档：为什么进入、面向谁、默认是否启用。
+2. OpenAPI tag、权限码、菜单、SDK、E2E 测试计划。
+3. 数据模型边界：是否影响 core schema，是否需要迁移策略。
+4. 安全与合规：凭据、支付、会员、行业数据、AI 成本与审计。
+5. 退出策略：如果模块未成熟，如何回滚为 experimental/optional。
+
+这样可以保证“若依/芋道有的能力，OpenCore 都有长期归宿”，同时避免 S3-S8 被 P5 深水区拖垮。
