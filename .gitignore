@@ -10,6 +10,16 @@ build/
 .turbo/
 .nx/
 coverage/
+apps/admin/dist/
+apps/admin/src/.umi/
+apps/admin/src/.umi-production/
+apps/admin/src/.umi-test/
+apps/admin/.umi/
+apps/admin/.umi-production/
+apps/admin/.umi-test/
+apps/admin/.mfsu/
+apps/admin/.swc/
+apps/admin/.turbopack/
 
 # Logs
 *.log

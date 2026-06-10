@@ -3,11 +3,7 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "strict": true,
     "skipLibCheck": true,
     "noEmit": true,
@@ -18,45 +14,18 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "paths": {
-      "@opencore/shared": [
-        "packages/shared/src/index.ts"
-      ],
-      "@opencore/contracts": [
-        "packages/contracts/src/index.ts"
-      ],
-      "@opencore/sdk": [
-        "packages/sdk/src/index.ts"
-      ],
-      "@opencore/auth": [
-        "packages/auth/src/index.ts"
-      ],
-      "@opencore/config": [
-        "packages/config/src/index.ts"
-      ],
-      "@opencore/module-registry": [
-        "packages/module-registry/src/index.ts"
-      ],
-      "@opencore/ui-web": [
-        "packages/ui-web/src/index.ts"
-      ],
-      "@opencore/design-tokens": [
-        "packages/design-tokens/src/index.ts"
-      ],
-      "@opencore/i18n": [
-        "packages/i18n/src/index.ts"
-      ],
-      "@opencore/testing": [
-        "packages/testing/src/index.ts"
-      ],
-      "@opencore/ai-core": [
-        "packages/ai-core/src/index.ts"
-      ]
+      "@opencore/shared": ["packages/shared/src/index.ts"],
+      "@opencore/contracts": ["packages/contracts/src/index.ts"],
+      "@opencore/sdk": ["packages/sdk/src/index.ts"],
+      "@opencore/auth": ["packages/auth/src/index.ts"],
+      "@opencore/config": ["packages/config/src/index.ts"],
+      "@opencore/module-registry": ["packages/module-registry/src/index.ts"],
+      "@opencore/ui-web": ["packages/ui-web/src/index.ts"],
+      "@opencore/design-tokens": ["packages/design-tokens/src/index.ts"],
+      "@opencore/i18n": ["packages/i18n/src/index.ts"],
+      "@opencore/testing": ["packages/testing/src/index.ts"],
+      "@opencore/ai-core": ["packages/ai-core/src/index.ts"]
     }
   },
-  "exclude": [
-    "node_modules",
-    "dist",
-    "build",
-    ".nx"
-  ]
+  "exclude": ["node_modules", "dist", "build", ".nx"]
 }

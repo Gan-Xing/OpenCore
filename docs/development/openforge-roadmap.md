@@ -35,16 +35,16 @@ OpenForge 不应从零猜业务。
 
 ## 输出边界
 
-| 输出 | 目标位置 | 说明 |
-| --- | --- | --- |
-| NestJS 骨架 | `apps/api` | 后续生成 module/controller/service/dto，不生成业务逻辑 |
-| Prisma 草案 | 待定 | 只给草案或 migration 提示，不在 D1-D6 写 schema |
-| 权限码 | `packages/module-registry` | 与 `Permission.code` 标准对齐 |
-| 菜单 seed | `packages/module-registry` 或 `apps/admin` seed 区 | 与菜单 key/path/permission 标准对齐 |
-| ProTable 页面 | `apps/admin` | 只生成页面骨架和 SDK 调用位置 |
-| 表单和详情 | `apps/admin` | 使用 ProComponents，不使用 MUI |
-| SDK 提示 | `packages/sdk` | 提醒重新生成，不手写漂移客户端 |
-| 文档片段 | `docs/*` | 记录生成输入、权限和菜单 |
+| 输出          | 目标位置                                           | 说明                                                   |
+| ------------- | -------------------------------------------------- | ------------------------------------------------------ |
+| NestJS 骨架   | `apps/api`                                         | 后续生成 module/controller/service/dto，不生成业务逻辑 |
+| Prisma 草案   | 待定                                               | 只给草案或 migration 提示，不在 D1-D6 写 schema        |
+| 权限码        | `packages/module-registry`                         | 与 `Permission.code` 标准对齐                          |
+| 菜单 seed     | `packages/module-registry` 或 `apps/admin` seed 区 | 与菜单 key/path/permission 标准对齐                    |
+| ProTable 页面 | `apps/admin`                                       | 只生成页面骨架和 SDK 调用位置                          |
+| 表单和详情    | `apps/admin`                                       | 使用 ProComponents，不使用 MUI                         |
+| SDK 提示      | `packages/sdk`                                     | 提醒重新生成，不手写漂移客户端                         |
+| 文档片段      | `docs/*`                                           | 记录生成输入、权限和菜单                               |
 
 ## 生成器能力要求
 

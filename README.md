@@ -6,7 +6,7 @@ OpenCore（中文名：开元）定位为 **AI Native 企业级全栈 Monorepo**
 
 ## 当前阶段
 
-当前已经完成 S0/S1：创建 monorepo 骨架和基础文档。D1-D6 启动设计阶段用于锁定平台边界、模块分层、契约权限规范、API/Admin 启动计划和 OpenForge 路线，不写业务代码。
+当前已经完成 S0/S1/D1-D6，并进入 S2：初始化 `apps/api` 和 `apps/admin` 空项目。S2 只建立可运行 API/Admin 双主干，不写业务代码。
 
 本阶段明确不做：
 
@@ -37,8 +37,8 @@ OpenCore（中文名：开元）定位为 **AI Native 企业级全栈 Monorepo**
 
 ## 工作区结构
 
-- `apps/api`：后端 API 应用预留，后续使用 NestJS。
-- `apps/admin`：官方后台应用预留，后续使用 Umi Max + Ant Design Pro V6。
+- `apps/api`：NestJS API 空应用，已接入 `/health/live`、`/health/ready` 和 OpenAPI skeleton。
+- `apps/admin`：Umi Max + Ant Design Pro V6 官方后台空应用，已锁定 React 19、antd 6、ProComponents v3。
 - `apps/web`：官网占位，后续使用 Next.js。
 - `apps/mobile`：移动端占位，后续使用 Expo React Native。
 - `apps/miniapp`：小程序占位，后续使用 Taro + React。
@@ -47,6 +47,22 @@ OpenCore（中文名：开元）定位为 **AI Native 企业级全栈 Monorepo**
 - `tools/generator`：OpenForge 代码生成器预留。
 - `infra/*`：Docker、Nginx、监控和 Kubernetes 预留。
 - `docs/*`：架构、模块、开发、部署、运行手册和 AI 路线文档。
+
+## 本地命令
+
+```bash
+pnpm install
+pnpm dev:api
+pnpm dev:admin
+pnpm build:api
+pnpm build:admin
+pnpm test:api
+pnpm test:admin
+```
+
+API 默认端口为 `3000`，健康检查为 `/health/live` 和 `/health/ready`，OpenAPI 文档为 `/api/docs`。
+
+Admin 默认使用 Umi Max dev server，通常为 `http://localhost:8000`。
 
 ## 文档入口
 

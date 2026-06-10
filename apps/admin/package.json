@@ -1,0 +1,29 @@
+{
+  "name": "@opencore/admin",
+  "private": true,
+  "author": "Gan-Xing <599153574@qq.com>",
+  "scripts": {
+    "build": "max build",
+    "dev": "max dev",
+    "format": "prettier --cache --write .",
+    "setup": "max setup",
+    "start": "pnpm dev",
+    "test": "node scripts/smoke-test.mjs && pnpm typecheck",
+    "typecheck": "max setup && tsc --noEmit"
+  },
+  "dependencies": {
+    "@ant-design/icons": "^6.2.5",
+    "@ant-design/pro-components": "3.1.12-0",
+    "@umijs/max": "^4.6.61",
+    "antd": "^6.4.3",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "prettier-plugin-organize-imports": "^3.2.2",
+    "prettier-plugin-packagejson": "^2.4.3",
+    "typescript": "^5.9.3"
+  }
+}

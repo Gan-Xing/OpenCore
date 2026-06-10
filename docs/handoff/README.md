@@ -8,10 +8,7 @@
 
 - S0/S1：品牌、monorepo 骨架、pnpm workspace、Nx 基础配置、占位应用目录和基础文档。
 - D1-D6：平台边界、模块分类、契约与权限规范、API 启动计划、Admin 启动计划、OpenForge 路线图。
-
-下一阶段：
-
-- S2：初始化 `apps/api` 和 `apps/admin` 空项目。
+- S2：初始化 `apps/api` 和 `apps/admin` 空项目，接入 Nx targets、health/OpenAPI skeleton 和 Admin smoke/typecheck/build 基线。
 
 ## 交接文档
 
@@ -38,3 +35,15 @@ S2 只初始化 `apps/api` 和 `apps/admin`：
 - 不实现登录、RBAC、多租户、数据库 schema、RAG、Agent、知识库或业务模块。
 
 S2 必须优先使用官方脚手架或 Nx generator 生成，不要手写模拟模板文件。
+
+## S2 验收入口
+
+```bash
+pnpm nx show projects
+pnpm nx build api
+pnpm nx test api
+pnpm nx typecheck api
+pnpm nx build admin
+pnpm nx test admin
+pnpm nx typecheck admin
+```

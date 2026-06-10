@@ -4,12 +4,12 @@
 
 ## 单一事实来源
 
-| 资产 | 单一事实来源 | 消费方 |
-| --- | --- | --- |
-| API 契约 | `apps/api` 导出的 OpenAPI 文档 | `packages/contracts`、`packages/sdk`、`apps/admin` |
-| 权限码 | `packages/module-registry` 与后端权限声明的合并产物 | `apps/api`、`apps/admin`、OpenForge |
-| 菜单 | `packages/module-registry` 的菜单元数据 | `apps/admin` |
-| SDK | OpenAPI 生成流程 | `apps/admin`、未来 `apps/web/mobile/miniapp/desktop` |
+| 资产     | 单一事实来源                                        | 消费方                                               |
+| -------- | --------------------------------------------------- | ---------------------------------------------------- |
+| API 契约 | `apps/api` 导出的 OpenAPI 文档                      | `packages/contracts`、`packages/sdk`、`apps/admin`   |
+| 权限码   | `packages/module-registry` 与后端权限声明的合并产物 | `apps/api`、`apps/admin`、OpenForge                  |
+| 菜单     | `packages/module-registry` 的菜单元数据             | `apps/admin`                                         |
+| SDK      | OpenAPI 生成流程                                    | `apps/admin`、未来 `apps/web/mobile/miniapp/desktop` |
 
 后续实现时，禁止前端手写与 OpenAPI 不一致的接口类型。
 

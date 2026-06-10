@@ -12,21 +12,14 @@
     "default": {
       "runner": "nx/tasks-runners/default",
       "options": {
-        "cacheableOperations": [
-          "build",
-          "lint",
-          "test",
-          "typecheck"
-        ]
+        "cacheableOperations": ["build", "lint", "test", "typecheck"]
       }
     }
   },
   "targetDefaults": {
     "build": {
       "cache": true,
-      "dependsOn": [
-        "^build"
-      ]
+      "dependsOn": ["^build"]
     },
     "lint": {
       "cache": true
@@ -36,9 +29,7 @@
     },
     "typecheck": {
       "cache": true,
-      "dependsOn": [
-        "^typecheck"
-      ]
+      "dependsOn": ["^typecheck"]
     }
   }
 }

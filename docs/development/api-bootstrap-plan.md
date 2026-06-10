@@ -110,6 +110,25 @@ D1-D6 和 S2 初始阶段不写 Prisma schema。
 - `packages/module-registry`：模块、权限和菜单元数据。
 - `packages/testing`：API 测试工具。
 
+## S2 实际执行记录
+
+S2 使用 Nx/Nest 官方生成器初始化 `apps/api`，实际命令：
+
+```bash
+pnpm add -Dw @nx/nest@21.6.11 @nestjs/cli
+pnpm nx g @nx/nest:application apps/api --name=api --linter=eslint --unitTestRunner=jest --e2eTestRunner=none --useProjectJson --strict --skipFormat
+pnpm add -w @nestjs/swagger swagger-ui-express
+```
+
+当前 S2 结果：
+
+- `apps/api` 已被 Nx 识别为 `api` 项目。
+- 已配置 `build`、`serve`、`lint`、`test`、`typecheck` targets。
+- 已实现 `/health/live` 和 `/health/ready`。
+- 已接入 OpenAPI skeleton，文档路径为 `/api/docs`。
+- 未接入 Prisma、PostgreSQL、Redis、BullMQ、MinIO/S3。
+- 未实现登录、RBAC、多租户或业务模块。
+
 ## 风险
 
 - 过早接数据库会让 schema 先于模块边界固化。

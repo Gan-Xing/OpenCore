@@ -15,6 +15,12 @@ pnpm install
 
 ```bash
 pnpm nx --help
+pnpm dev:api
+pnpm dev:admin
+pnpm build:api
+pnpm build:admin
+pnpm test:api
+pnpm test:admin
 pnpm format:check
 pnpm typecheck
 pnpm lint
@@ -22,7 +28,22 @@ pnpm test
 pnpm build
 ```
 
-当前阶段尚未初始化 `apps/api` 和 `apps/admin` 的具体框架项目，因此部分 Nx target 在 S0/S1 可能没有可执行项目。这是阶段性预期，不代表业务能力缺失。
+S2 已初始化 `apps/api` 和 `apps/admin` 空项目：
+
+- `pnpm nx serve api`：启动 NestJS API。
+- `pnpm nx serve admin`：启动 Umi Max Admin。
+- `pnpm nx build api` / `pnpm nx build admin`：构建双主干。
+- `pnpm nx test api`：运行 API Jest health tests。
+- `pnpm nx test admin`：运行 Admin S2 smoke test 和 typecheck。
+- `pnpm nx typecheck api` / `pnpm nx typecheck admin`：类型检查。
+
+API 启动后：
+
+- `/health/live`：进程存活检查。
+- `/health/ready`：S2 无外部依赖 readiness。
+- `/api/docs`：OpenAPI skeleton。
+
+Admin 启动后默认访问 Umi Max dev server，通常为 `http://localhost:8000`。
 
 ## 当前不可做
 

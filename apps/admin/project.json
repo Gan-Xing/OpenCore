@@ -1,0 +1,50 @@
+{
+  "name": "admin",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/admin/src",
+  "projectType": "application",
+  "targets": {
+    "serve": {
+      "continuous": true,
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec max dev",
+        "cwd": "apps/admin"
+      }
+    },
+    "build": {
+      "cache": true,
+      "executor": "nx:run-commands",
+      "outputs": ["{workspaceRoot}/apps/admin/dist"],
+      "options": {
+        "command": "pnpm exec max build",
+        "cwd": "apps/admin"
+      }
+    },
+    "lint": {
+      "cache": true,
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec eslint src/access.ts src/app.ts src/components src/constants src/models src/pages src/utils --ext .ts,.tsx",
+        "cwd": "apps/admin"
+      }
+    },
+    "test": {
+      "cache": true,
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/smoke-test.mjs && pnpm exec max setup && pnpm exec tsc --noEmit",
+        "cwd": "apps/admin"
+      }
+    },
+    "typecheck": {
+      "cache": true,
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec max setup && pnpm exec tsc --noEmit",
+        "cwd": "apps/admin"
+      }
+    }
+  },
+  "tags": []
+}

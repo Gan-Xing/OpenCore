@@ -34,13 +34,13 @@
 
 ### ADMIN-1：模板页归档
 
-- 将官方模板页保留为 `examples/templates` 或等价位置。
+- 删除官方模板自带的 demo 页面和 mock 代码，避免 S2 出现业务或演示模块。
 - 业务路由从干净结构开始。
 - 模板页只作为设计和组件参考，不作为业务模块。
 
 验收：
 
-- 示例页和正式路由边界清晰。
+- 正式路由只保留空首页壳，不挂载模板 demo 页面。
 
 ### ADMIN-2：request 规范
 
@@ -105,3 +105,37 @@ MUI、Refine 或其他 UI 方案未来可以作为额外 app 评估，例如 `ap
 - 过早接入业务登录会导致 access 规范被实现细节绑死。
 - 过早创建业务页面会让菜单、权限码和 OpenAPI 同步规范失效。
 - 保留模板页但不隔离，会污染后续正式后台结构。
+
+## S2 实际执行记录
+
+S2 使用 `create-umi@latest` 官方交互式脚手架生成 Ant Design Pro 模板。`create-umi --help` 在非 TTY 下会进入交互并失败，因此实际执行采用 TTY 交互：
+
+```bash
+pnpm dlx create-umi@latest admin
+```
+
+交互选择：
+
+```text
+target folder: admin
+template: Ant Design Pro
+npm client: pnpm
+registry: npm
+```
+
+模板生成后迁入 `apps/admin`，并按 OpenCore 版本线升级：
+
+```text
+@umijs/max 4.6.61
+React 19.2.7
+antd 6.4.3
+@ant-design/pro-components 3.1.12-0
+```
+
+说明：
+
+- 当前 npm `@ant-design/pro-components` 的 `latest` 仍为 v2，v3 在 `beta` dist-tag，因此 S2 明确锁定 `3.1.12-0`。
+- 官方模板默认带 React 18、antd 5、ProComponents 2，S2 已升级到 OpenCore 要求的版本线。
+- 官方模板的 Access/Table demo 和 mock service 已删除，不进入正式路由、typecheck 或提交范围。
+- Admin test target 使用 S2 smoke test + `max setup` + TypeScript typecheck；原因是 `max --help` 未提供 `test` 命令。
+- 未实现登录、RBAC、菜单权限数据流或真实 API 调用。
