@@ -4,6 +4,8 @@
 
 本路线图从 S3 开始。S0/S1/D1-D6 已完成文档和 monorepo 基线，S2 已初始化 `apps/api` 和 `apps/admin` 空主干。后续不能跳过 S3 直接写业务模块。
 
+重要口径：S3-S8 是 OpenCore 从“空主干”走到“可创办公司/公开开发的企业后台基础架构”的实现主线；P4/P5 能力进入长期 backlog，但不得抢在契约、RBAC、系统管理和监控工具之前实现。
+
 ## Roadmap Overview
 
 ```mermaid
@@ -25,6 +27,30 @@ gantt
   section Optional Design
   S11 knowledge design or optional module :s11, after s10, 21d
   S12 later optional modules :s12, after s11, 35d
+```
+
+## S3-S8 优化后的阶段门禁
+
+| 阶段 | 进入条件 | 必须落地 | 必跑检查 | 退出条件 |
+| --- | --- | --- | --- | --- |
+| S3 | S2 API/Admin 空主干可 build/test | `packages/contracts`、`packages/shared`、`packages/module-registry`、权限码/菜单 schema、OpenAPI 导出与 SDK 生成协议 | `pnpm format:check`、`pnpm lint`、`pnpm typecheck`、`pnpm test`、契约/registry 单测 | contracts/shared/registry 可空跑；权限码和菜单字段可校验；progress 记录证据 |
+| S4 | S3 契约链路可空跑 | API config/env validation、统一错误、request id、结构化日志、OpenAPI 基线、安全默认值 | `pnpm build:api`、`pnpm test:api`、health/OpenAPI smoke、生产危险配置 fail-fast 测试 | API foundation 稳定，仍不写业务 schema |
+| S5 | S4 API foundation 可启动 | Admin Layout、Dashboard shell、错误页、空状态、request/access 规范、registry/mock 菜单消费 | `pnpm build:admin`、`pnpm test:admin`、`pnpm typecheck`、admin smoke/E2E | Admin 壳可演示，正式菜单不混入 demo 页面 |
+| S6 | S3-S5 全部通过 | 允许引入 Prisma/PostgreSQL；实现 auth/RBAC 最小闭环：user、role、permission、menu、Role.code、Permission.code、guard、Admin 页面 | API/Admin 单测、RBAC E2E、OpenAPI/SDK drift check、权限码/菜单一致性测试 | 登录/RBAC、菜单、按钮权限、SDK、OpenAPI 可互相追踪 |
+| S7 | S6 RBAC 稳定 | dict、system config、file asset、audit log、login log；基础 CRUD、分页、权限、审计 | CRUD 单测、权限矩阵测试、文件上传 smoke、审计脱敏测试、Admin 页面 smoke | 第一批系统管理可用，不混入图片/文章/微信/短信业务 |
+| S8 | S7 系统管理稳定 | status、version、queue 只读诊断、OpenAPI drift CI、当前页导出模板/协议 | monitor smoke、queue/status 单测、OpenAPI diff fail test、export test、敏感信息泄漏检查 | 可观测和工具基线完成，准备 S9 OpenForge MVP |
+
+S6 是第一个允许业务持久化模型进入的阶段；S3-S5 只允许契约、registry、foundation 和 Admin shell。任何阶段失败时，先修测试和 progress，不扩大范围。
+
+```mermaid
+flowchart LR
+  DOCS[strategy docs] --> S3[S3 contracts registry]
+  S3 --> S4[S4 api foundation]
+  S4 --> S5[S5 admin shell]
+  S5 --> S6[S6 auth rbac]
+  S6 --> S7[S7 system management]
+  S7 --> S8[S8 monitor tool]
+  S8 --> S9[S9 OpenForge MVP]
 ```
 
 ## 阶段详情
@@ -68,6 +94,21 @@ flowchart TD
 | 第二段 | S6-S7 | RBAC 和系统管理闭环可用，旧项目核心经验被重写吸收 |
 | 第三段 | S8-S10 | 监控、工具、OpenForge MVP、消息和 Approval Lite 可演示 |
 | 延后 | S11-S12 | 只做 optional/AI/行业模块准入设计，谨慎实现 |
+
+## S12 之后的长期能力队列
+
+为了实现“若依/芋道有的企业后台能力，OpenCore 都有长期归宿”，S12 之后建议继续拆成独立阶段，而不是把 P5 混进 core：
+
+| 后续阶段 | 建议主题 | 说明 |
+| --- | --- | --- |
+| S13 | optional workflow/report/form-builder | 先做设计器和低代码能力的边界，不复制 BPMN/报表平台实现 |
+| S14 | integration providers | 邮件、短信、微信、OAuth、WebSocket、支付 provider 的凭据、安全、审计和成本治理 |
+| S15 | member/mall/pay business pack | 会员、商品、订单、支付、退款等商业能力，必须独立于 core 发布和启用 |
+| S16 | CRM pack | 客户、联系人、商机、合同、跟进、回款等客户经营能力 |
+| S17 | ERP/WMS pack | 采购、销售、库存、仓储、财务边界，必须先有行业数据模型设计 |
+| S18 | MES/IoT/AI Native implementation | 设备、生产、质检、IoT 规则、AI Knowledge/RAG/Agent，必须先有安全、审计和成本模型 |
+
+这些阶段可以让 OpenCore 最终覆盖完整企业架构，但不会破坏 S3-S8 的可实现性。
 
 ## 不允许的路线捷径
 
