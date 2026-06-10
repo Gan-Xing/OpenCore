@@ -37,7 +37,7 @@ flowchart LR
 
 ## 与 RuoYi/Yudao 的关系
 
-OpenCore 学习 RuoYi/Yudao 的产品组织经验，不复制技术实现。
+OpenCore 学习 RuoYi/Yudao 的产品组织经验，不复制技术实现；长期目标是覆盖它们代表的企业后台基本能力地图，而不是只做一个极简后台。
 
 | 学习对象 | 为什么学 | OpenCore 转译方式 | 不复制的内容 |
 | --- | --- | --- | --- |
@@ -47,6 +47,20 @@ OpenCore 学习 RuoYi/Yudao 的产品组织经验，不复制技术实现。
 | 精简版/完整版 | 先有 Lite，后有 Full，避免平台被业务模块压垮 | Lite 只含 core/monitor/tool 基线，Full 才加 collaboration/optional/integration | 不把商城、ERP、MES、WMS 直接塞进 core |
 
 RuoYi/Yudao 是参照系，不是目标代码库。OpenCore 的目标栈固定为 NestJS、Prisma、PostgreSQL、Redis、BullMQ、MinIO/S3、OpenAPI、Umi Max、Ant Design Pro V6、React 19、ProComponents v3、antd 6。
+
+## 全功能覆盖口径
+
+OpenCore 的目标不是“比 RuoYi/Yudao 少一圈”，而是把 RuoYi/Yudao 已经验证过的企业后台能力重新分层、重写和产品化。
+
+| 口径 | 说明 |
+| --- | --- |
+| 全能力进入 backlog | system、infra、monitor、tool、workflow、report、member、mall、pay、crm、erp、mes、wms、im、iot、ai、integration 都应在 strategy 中有归宿 |
+| 不等于全能力进入 core | `core` 只放创办公司或初创公开开发最先需要的通用平台能力 |
+| 不等于第一年全部实现 | P4/P5 是延期队列和行业深水区，不是删除队列 |
+| 不复制 Java/Vue | 只复制问题域、模块边界、权限粒度、菜单组织和验收经验；实现必须是 OpenCore 的 TypeScript/NestJS/Umi 主线 |
+| 不让生成器替代架构判断 | OpenForge 可以生成骨架和 diff plan，但模块准入、权限模型、数据模型仍要人工审查 |
+
+因此，`not_now`、`optional`、`P5` 只能表示“当前阶段不实现”，不能被理解成“OpenCore 永远不做”。后续公司化或公开开发时，应按模块准入 checklist 将这些能力逐步转成独立 optional / integration / industry 包。
 
 ## OpenCore Lite / Full / AI Native Edition
 
