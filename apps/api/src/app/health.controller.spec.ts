@@ -7,14 +7,38 @@ describe('HealthController', () => {
     expect(controller.live()).toEqual({
       status: 'ok',
       service: 'opencore-api',
+      version: '0.0.0',
+      timestamp: expect.any(String),
+      uptimeSeconds: expect.any(Number),
+      checks: [
+        {
+          name: 'process',
+          status: 'ok',
+          critical: true,
+        },
+      ],
     });
   });
 
-  it('returns readiness status without external checks in S2', () => {
+  it('returns readiness status with S4 foundation checks', () => {
     expect(controller.ready()).toEqual({
       status: 'ready',
       service: 'opencore-api',
-      checks: [],
+      version: '0.0.0',
+      timestamp: expect.any(String),
+      uptimeSeconds: expect.any(Number),
+      checks: [
+        {
+          name: 'process',
+          status: 'ok',
+          critical: true,
+        },
+        {
+          name: 'config',
+          status: 'ok',
+          critical: true,
+        },
+      ],
     });
   });
 });

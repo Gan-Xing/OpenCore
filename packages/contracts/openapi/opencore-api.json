@@ -1,0 +1,71 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/health/live": {
+      "get": {
+        "operationId": "HealthController_live",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Process liveness probe.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "status": "ok",
+                    "service": "opencore-api",
+                    "version": "0.0.0",
+                    "timestamp": "2026-06-10T00:00:00.000Z",
+                    "uptimeSeconds": 1,
+                    "checks": [
+                      { "name": "process", "status": "ok", "critical": true }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Health"]
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "operationId": "HealthController_ready",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Readiness probe for S4 foundation dependencies.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "status": "ready",
+                    "service": "opencore-api",
+                    "version": "0.0.0",
+                    "timestamp": "2026-06-10T00:00:00.000Z",
+                    "uptimeSeconds": 1,
+                    "checks": [
+                      { "name": "process", "status": "ok", "critical": true },
+                      { "name": "config", "status": "ok", "critical": true }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Health"]
+      }
+    }
+  },
+  "info": {
+    "title": "OpenCore API",
+    "description": "OpenCore API contract",
+    "version": "0.0.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [{ "url": "/" }],
+  "components": { "schemas": {} }
+}

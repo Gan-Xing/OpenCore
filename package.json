@@ -16,6 +16,7 @@
     "dev:admin": "NX_DAEMON=false nx serve admin",
     "dev:api": "NX_DAEMON=false nx serve api",
     "lint": "NX_DAEMON=false nx run-many -t lint",
+    "openapi:export": "TS_NODE_PROJECT=apps/api/tsconfig.app.json TS_NODE_COMPILER_OPTIONS='{\"moduleResolution\":\"node10\",\"module\":\"commonjs\",\"customConditions\":null}' node -r ts-node/register apps/api/src/platform/openapi/export-openapi.ts",
     "test": "NX_DAEMON=false nx run-many -t test",
     "test:admin": "NX_DAEMON=false nx test admin",
     "test:api": "NX_DAEMON=false nx test api",

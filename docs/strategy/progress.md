@@ -19,8 +19,8 @@
 | 阶段                                    | 状态     | 当前证据                                                                                                                                                 | 下一步         |
 | --------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
 | S3 contracts / shared / module-registry | complete | 已新增 `@opencore/shared`、`@opencore/contracts`、`@opencore/module-registry` 三个 pnpm/Nx 包；权限码、菜单、模块 registry schema 和 registry 单测已通过 | 进入 S4        |
-| S4 API core foundation                  | pending  | 尚未实现 env/config validation、request id、统一错误、结构化日志、安全默认值、health/readiness 扩展                                                      | 最早未完成阶段 |
-| S5 Admin core shell                     | pending  | 尚未实现官方后台壳层、Dashboard shell、错误页、registry/mock 菜单消费                                                                                    | 等 S4 完成     |
+| S4 API core foundation                  | complete | 已实现 env/config validation、request id/trace id、统一错误响应、结构化日志、安全 header/CORS 基线、health/readiness 扩展、OpenAPI export baseline       | 进入 S5        |
+| S5 Admin core shell                     | pending  | 尚未实现官方后台壳层、Dashboard shell、错误页、registry/mock 菜单消费                                                                                    | 最早未完成阶段 |
 | S6 auth / RBAC system                   | pending  | 尚未实现登录、Prisma/PostgreSQL、user/role/permission/menu、guard、Admin RBAC 页面                                                                       | 等 S5 完成     |
 | S7 system management                    | pending  | 尚未实现 dict、system config、file asset、audit log、login log                                                                                           | 等 S6 完成     |
 | S8 monitor / tool baseline              | pending  | 尚未实现 status/version/queue、OpenAPI drift check、export protocol 页面                                                                                 | 等 S7 完成     |
@@ -69,6 +69,7 @@
 ### 2026-06-10 S3 execution
 
 - Stage: S3 contracts / shared / module-registry
+- Commit: `78da42a`
 - Completed:
   - 新增 `packages/shared`，提供 validation result、runtime type guard、duplicate detection 等共享基础类型和工具。
   - 新增 `packages/contracts`，定义 permission code、module/menu/permission schema、OpenAPI export + SDK generation protocol，并提供 runtime validators。
@@ -100,22 +101,62 @@
   - No database, Prisma schema, or business CRUD introduced.
   - No P4/P5 module implemented; CRM、ERP、MES、WMS、商城、支付会员、多租户、知识库、RAG、Agent 仍保留在长期 backlog。
 
+### 2026-06-10 S4 execution
+
+- Stage: S4 API core foundation
+- Completed:
+  - 新增 `platform/config`，实现 env/config validation，并让危险生产配置 fail fast：生产环境必须显式配置 CORS，禁止 `*`，生产开放 Swagger 必须设置 `API_SWAGGER_PUBLIC_ACK=true`。
+  - 新增 `platform/request-context`，为请求建立 `x-request-id` / `x-trace-id` 上下文，并回写响应 header。
+  - 新增 `platform/errors`，统一 HTTP/unknown exception 的 JSON 错误响应，包含 code、message、statusCode、timestamp、path、requestId、traceId。
+  - 新增 `platform/logging`，提供结构化 JSON log entry 和启动日志基线。
+  - 新增 `platform/security`，关闭 `x-powered-by`，启用受配置约束的 CORS，并写入基础安全 headers。
+  - 扩展 `health/live` 和 `health/ready`，返回 version、timestamp、uptimeSeconds 和 process/config checks。
+  - 新增 `platform/openapi` 和 `pnpm openapi:export`，生成 `packages/contracts/openapi/opencore-api.json` 作为 S4 OpenAPI baseline。
+  - 重构 `apps/api/src/main.ts`，通过 `applyApiFoundation` 统一装配 global prefix、request context、安全基线和 exception filter。
+- Tests:
+  - `pnpm format:check` pass
+  - `pnpm build:api` pass
+  - `pnpm test:api` pass
+  - `pnpm lint` pass
+  - `pnpm typecheck` pass
+  - `pnpm openapi:export` pass
+  - health/OpenAPI smoke: `apps/api/src/platform/openapi/openapi.spec.ts` pass
+  - production dangerous config fail-fast: `apps/api/src/platform/config/runtime-config.spec.ts` pass
+- Files changed:
+  - `apps/api/src/main.ts`
+  - `apps/api/src/app/health.controller.ts`
+  - `apps/api/src/app/health.controller.spec.ts`
+  - `apps/api/src/platform/**`
+  - `packages/contracts/openapi/opencore-api.json`
+  - `package.json`
+  - `docs/strategy/progress.md`
+- Remaining:
+  - S5-S8 尚未完成。
+  - S5 是最早未完成阶段。
+- Next:
+  - 重新读取 handoff 和本 progress 后，只进入 S5 Admin core shell。
+- Scope guard:
+  - No auth/RBAC runtime implemented.
+  - No database, Prisma schema, user/role/permission CRUD, or multi-tenant code introduced.
+  - No P4/P5 module implemented; CRM、ERP、MES、WMS、商城、支付会员、多租户、知识库、RAG、Agent 仍保留在长期 backlog。
+
 ## 未完成项
 
-战略蓝图文档包已完成。S3 已完成。S4-S8 仍未完成；下一步必须进入 S4，仍必须只推进最早未完成阶段。
+战略蓝图文档包已完成。S3 和 S4 已完成。S5-S8 仍未完成；下一步必须进入 S5，仍必须只推进最早未完成阶段。
 
 ## 下一轮建议
 
-进入 S4：`API core foundation`。下一轮应先读取 `docs/handoff/2026-06-10-s3-s8-implementation-handoff.md`、本 progress 文件和 `docs/strategy/staged-roadmap.md`，只做 env/config validation、request id、统一错误、结构化日志、安全默认值、health/readiness、OpenAPI baseline 等 S4 范围，不要实现 auth/RBAC、数据库、Prisma schema 或 P4/P5 业务模块。
+进入 S5：`Admin core shell`。下一轮应先读取 `docs/handoff/2026-06-10-s3-s8-implementation-handoff.md`、本 progress 文件和 `docs/strategy/staged-roadmap.md`，只做 Layout、Dashboard shell、403/404/500、空状态、request/access 规范、registry/mock 菜单消费、health/OpenAPI 状态入口，不要真实接入登录、RBAC 数据流、数据库、Prisma schema 或 P4/P5 业务模块。
 
 ## 当前验收结论
 
-战略文档包和 S3 完成。当前证据：
+战略文档包、S3 和 S4 完成。当前证据：
 
 - 目标 Markdown 文档全部存在，并包含必要表格和 Mermaid 图。
 - `docs/strategy/visual/opencore-blueprint.html` 是可离线打开的单文件 HTML，未引用外部 CDN。
 - 已新增 S3-S8 implementation handoff，明确阶段门禁、测试规则和 P4/P5 backlog 边界。
 - S3 三个包已被 pnpm workspace 与 Nx 识别，并有 schema/registry 单测。
 - S3 全仓必跑检查 `pnpm format:check`、`pnpm lint`、`pnpm typecheck`、`pnpm test` 均通过。
-- 当前 S3 未修改 `apps/api`、`apps/admin` 行为，未新增 Prisma schema、登录/RBAC runtime、数据库或业务 CRUD。
-- S4-S8 尚未完成，不能声明总目标完成。
+- S4 API foundation 已通过 `pnpm build:api`、`pnpm test:api`、`pnpm lint`、`pnpm typecheck`，并通过 `pnpm openapi:export` 生成 OpenAPI baseline。
+- 当前 S3-S4 未修改 `apps/admin` 行为，未新增 Prisma schema、登录/RBAC runtime、数据库或业务 CRUD。
+- S5-S8 尚未完成，不能声明总目标完成。
