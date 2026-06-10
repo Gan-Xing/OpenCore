@@ -52,3 +52,5 @@ V1 target architecture:
 Stage A does not add write-capable commands. Until later V1 stages land, the only supported root commands remain `plan`, `diff`, and `check`.
 
 Stage C adds Schema/config DSL V1 validation only. It does not add template rendering, apply, rollback, manifest writing, or generated target file writes.
+
+Stage D adds the default template pack and virtual file system renderer. Rendering remains in memory and deterministic; OpenForge still does not write generated target files.

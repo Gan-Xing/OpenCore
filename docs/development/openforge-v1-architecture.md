@@ -76,7 +76,8 @@ flowchart TD
 | Stage A   | complete | This architecture document, roadmap update and progress ledger entry exist                                                                                             |
 | Stage B   | complete | `packages/contracts/src/openforge-contract.ts` exports V1 template/apply/manifest/rollback/marker/patch/config contracts and pure marker/apply validation helpers      |
 | Stage C   | complete | `tools/generator/src/schema/**` and `tools/generator/src/config/**` validate Schema/config DSL V1, with legal and illegal V1 fixtures under `tools/generator/examples` |
-| Stage D-L | pending  | Template pack, VFS, safe apply, manifest writer, rollback, generator packs, doctor/e2e/gate and final docs are not implemented yet                                     |
+| Stage D   | complete | `openforge-default-nest-umi-v1` template pack, render layer, VFS helpers and golden snapshot tests render API/Admin/SDK/Test/Docs/Prisma/Patch virtual files in memory |
+| Stage E-L | pending  | Safe apply, manifest writer, rollback, generator packs hardening, doctor/e2e/gate and final docs are not implemented yet                                               |
 
 ## Generated Ownership Model
 

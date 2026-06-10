@@ -653,8 +653,19 @@ export function parseOpenForgeGeneratedMarker(
   }
 
   const fields = new Map<string, string>();
+  const expectedKeys = new Set([
+    'templateVersion',
+    'schemaHash',
+    'moduleCode',
+    'artifactKind',
+    'generatedAt',
+  ]);
 
   for (const line of lines.slice(markerIndex + 1, markerIndex + 12)) {
+    if (!line && fields.size > 0) {
+      break;
+    }
+
     const field = parseMarkerField(line);
 
     if (!field) {
@@ -662,7 +673,10 @@ export function parseOpenForgeGeneratedMarker(
     }
 
     const [key, value] = field;
-    fields.set(key, value);
+
+    if (expectedKeys.has(key)) {
+      fields.set(key, value);
+    }
   }
 
   const artifactKind = fields.get('artifactKind');

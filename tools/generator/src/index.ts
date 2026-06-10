@@ -35,5 +35,8 @@ export * from './output/diff-output';
 export * from './output/plan-output';
 export * from './planner/generate-plan';
 export * from './preflight/preflight-report';
+export * from './render/render-template-pack';
 export * from './schema/schema-v1';
+export * from './templates/default-template-pack';
 export * from './validators/manual-schema-validator';
+export * from './vfs/virtual-file-system';
