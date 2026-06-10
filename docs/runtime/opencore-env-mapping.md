@@ -10,7 +10,7 @@
 - `.env.opencore.local` may be created locally in R1, but must remain untracked.
 - Do not copy NestWeb `.env` values into OpenCore.
 - Use the same infrastructure services only as service boundaries; OpenCore must own its database/schema/user, Redis prefix/DB, BullMQ prefix, and S3 bucket/prefix.
-- R0 is read-only. Variable validation and local env template work starts in R1.
+- R0 was read-only. R1 implemented validation and local template work; R2/R5/R6 verified the OpenCore-owned runtime path.
 
 ## Required Runtime Variables
 
@@ -113,3 +113,15 @@ R1 completed:
 3. `docs/runtime/local-env-runbook.md` documents local `.env.opencore.local` usage.
 4. `.env.opencore.local` was generated locally with placeholders and remains ignored.
 5. NestWeb variable names remain historical audit references only, not OpenCore production config names.
+
+## R7 Result
+
+Runtime integration is complete:
+
+1. `.env.example` remains placeholder-only.
+2. `.env.opencore.local` contains local OpenCore-only runtime values and remains ignored.
+3. PostgreSQL migration and seed run against the OpenCore-owned database/user/schema boundary.
+4. RBAC and system management production repositories use Prisma-backed persistence.
+5. Redis/BullMQ diagnostics use OpenCore prefix/DB boundary.
+6. MinIO/S3 diagnostics and file metadata use OpenCore bucket/prefix.
+7. R6 live smoke and command gate passed without printing or committing secrets.

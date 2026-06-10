@@ -15,8 +15,9 @@
 - S6：auth/RBAC system。
 - S7：system management。
 - S8：monitor/tool baseline。
+- Runtime integration R-1-R7：legacy app freeze、runtime audit、env mapping、PostgreSQL migration/seed、Prisma persistence、Redis/BullMQ/MinIO diagnostics、integration smoke、final docs。
 
-S3-S8 handoff 范围已完成。下一步建议先做最终 audit；若继续推进，应另起 S9 OpenForge MVP handoff/goal。
+S3-S8 handoff 与 runtime integration handoff 范围均已完成。若继续推进，应另起 S9 OpenForge MVP handoff/goal。
 
 ## 交接文档
 
@@ -25,6 +26,7 @@ S3-S8 handoff 范围已完成。下一步建议先做最终 audit；若继续推
 - [2026-06-09 S2 API + Admin 初始化 handoff](2026-06-09-s2-api-admin-bootstrap-handoff.md)
 - [2026-06-10 Strategy Blueprint /goal handoff](2026-06-10-strategy-blueprint-goal-handoff.md)
 - [2026-06-10 S3-S8 Implementation Handoff](2026-06-10-s3-s8-implementation-handoff.md)
+- [2026-06-10 Runtime Integration Handoff](2026-06-10-runtime-integration-handoff.md)
 
 ## D1-D6 设计文档
 
@@ -35,7 +37,7 @@ S3-S8 handoff 范围已完成。下一步建议先做最终 audit；若继续推
 - [Admin 启动计划](../development/admin-bootstrap-plan.md)
 - [OpenForge 路线图](../development/openforge-roadmap.md)
 
-## S3-S8 验收入口
+## S3-S8 / Runtime 验收入口
 
 ```bash
 pnpm format:check
@@ -51,6 +53,8 @@ pnpm test:admin
 NX_DAEMON=false pnpm nx test sdk
 NX_DAEMON=false pnpm nx test contracts
 ```
+
+Runtime integration final evidence is tracked in [progress.md](../strategy/progress.md). It includes live API smoke for `/health/live`, `/health/ready`, `/api/docs`, `/api/auth/login`, and `/api/monitor/status`.
 
 ## 下一份 handoff 建议
 

@@ -11,6 +11,19 @@
 - No container, volume, bucket, network, database, schema, table, Redis key, or queue was deleted or modified.
 - No real password, token, access key, JWT secret, database URL, Redis URL, RabbitMQ URL, or MinIO secret is recorded here.
 
+## R7 Final Runtime State
+
+Runtime integration R-1 through R7 is complete:
+
+- R-1 froze only the old application runtime: `antdpro6-frontend`, `nestweb-api`, and the host NestWeb Node process.
+- PostgreSQL, Redis, MinIO, RabbitMQ, Prometheus, Grafana, Docker volumes, and `nestweb_default` network were preserved.
+- R2 created or confirmed OpenCore-owned PostgreSQL boundary: database `opencore`, role/user `opencore_app`, and OpenCore-owned schema usage.
+- R2 applied the baseline Prisma migration and proved `pnpm prisma:seed` is idempotent.
+- R3/R4 switched RBAC and system management production repositories to Prisma-backed persistence.
+- R5 connected read-only runtime diagnostics for PostgreSQL, Redis, BullMQ, MinIO/S3, and file metadata using OpenCore-owned isolation.
+- R6 live smoke passed for `/health/live`, `/health/ready`, `/api/docs`, `/api/auth/login`, and `/api/monitor/status`.
+- `.env.opencore.local` remains ignored and is the only place local runtime secrets were used.
+
 ## Legacy Freeze State
 
 R-1 froze old application runtime before this audit:
@@ -83,4 +96,4 @@ OpenCore must use these only as infrastructure experience and service-boundary r
 
 ## R0 Exit Conclusion
 
-OpenCore can reuse the existing server's infrastructure boundary, but must create its own database/schema/user, Redis key/DB boundary, BullMQ prefix, and S3 bucket/prefix. R0 did not connect to or mutate any data service.
+OpenCore can reuse the existing server's infrastructure boundary, but owns its database/schema/user, Redis key/DB boundary, BullMQ prefix, and S3 bucket/prefix. R0 did not connect to or mutate any data service; R2-R6 later verified the OpenCore-owned runtime path without migrating or modifying NestWeb business data.

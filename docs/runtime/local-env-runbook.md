@@ -50,6 +50,36 @@ Do not commit `.env.opencore.local`.
 
 ## R2 Handoff Notes
 
-R2 must verify the actual PostgreSQL target before creating OpenCore database/schema/user. R0 observed that `nestweb-postgres` is exposed inside Docker network `nestweb_default`, while host `localhost:5432` is occupied by another PostgreSQL container.
+R2 verified the actual PostgreSQL target before creating or confirming OpenCore database/schema/user. R0 observed that `nestweb-postgres` is exposed inside Docker network `nestweb_default`, while host `localhost:5432` is occupied by another PostgreSQL container.
 
-R2 must not run Prisma migrate against a NestWeb business database/schema.
+R2 did not run Prisma migrate against a NestWeb business database/schema.
+
+## Current Runtime Commands
+
+After `.env.opencore.local` is prepared:
+
+```bash
+pnpm prisma:validate
+pnpm prisma:migrate
+pnpm prisma:seed
+pnpm dev:api
+```
+
+Smoke endpoints:
+
+```text
+/health/live
+/health/ready
+/api/docs
+/api/auth/login
+/api/monitor/status
+```
+
+Only print sanitized status fields when running smoke. Do not print passwords, tokens, database URLs, Redis URLs, S3 keys, or generated credentials.
+
+## R7 Final Notes
+
+- R-1 through R7 runtime integration is complete.
+- OpenCore owns its PostgreSQL, Redis/BullMQ, and MinIO/S3 runtime boundary.
+- `.env.opencore.local` remains ignored and must never be staged.
+- S9 OpenForge MVP has not started.

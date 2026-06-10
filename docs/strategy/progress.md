@@ -747,17 +747,74 @@
 - Risk/blocker:
   - No blocker for R7.
 
+### 2026-06-10 R7 Final docs and audit execution
+
+- Stage: R7 Final docs and audit
+- Completed:
+  - 重新读取本 progress 并确认 R7 是 R6 之后最早且唯一未完成阶段。
+  - 同步根 `README.md`、`docs/README.md`、开发起步、API 启动计划、模块优先级路线图、handoff 索引和 runtime 文档到 S3-S8 complete + runtime integration R-1-R7 complete 的最终状态。
+  - 明确记录 S9 OpenForge MVP 尚未开始；后续若推进必须另起 S9 handoff/goal。
+  - 明确记录 P4/P5 parity backlog 仍保留且未进入当前 core：CRM、ERP、MES、WMS、商城、支付、会员、多租户、知识库、RAG、Agent 均未实现。
+  - 复核 runtime isolation：旧应用运行态已冻结，基础服务和数据卷保留；OpenCore 使用独立 PostgreSQL database/user/schema、Redis/BullMQ prefix/DB boundary、MinIO/S3 bucket/prefix。
+  - 将 R7 最终测试证据记录到本 progress。
+- Final audit evidence:
+  - Legacy application runtime remains frozen from R-1; PostgreSQL、Redis、MinIO、RabbitMQ 等基础服务保持保留边界。
+  - Prisma migration reports no pending migrations, and seed remains idempotent with RBAC、system management 和 file metadata baseline counts.
+  - R6 live smoke 已验证 `/health/live`、`/health/ready`、`/api/docs`、`/api/auth/login`、`/api/monitor/status`。
+  - `.env.opencore.local` remains ignored; only variable names and sanitized status evidence are documented.
+- Tests:
+  - `pnpm format:check` pass.
+  - `pnpm build` pass.
+  - `pnpm test` pass.
+  - `pnpm lint` pass.
+  - `pnpm typecheck` pass.
+  - `pnpm prisma:validate` pass.
+  - `pnpm prisma:migrate` pass; no pending migrations.
+  - `pnpm prisma:seed` pass; idempotent seed evidence preserved.
+  - `pnpm openapi:export` pass.
+  - `pnpm openapi:check` pass.
+  - `pnpm test:api` pass.
+  - `pnpm test:admin` pass.
+  - `NX_DAEMON=false pnpm nx test sdk` pass.
+  - `NX_DAEMON=false pnpm nx test contracts` pass.
+- Files changed:
+  - `README.md`
+  - `docs/README.md`
+  - `docs/development/getting-started.md`
+  - `docs/development/api-bootstrap-plan.md`
+  - `docs/modules/priority-roadmap.md`
+  - `docs/handoff/README.md`
+  - `docs/runtime/runtime-inventory.md`
+  - `docs/runtime/opencore-env-mapping.md`
+  - `docs/runtime/local-env-runbook.md`
+  - `docs/strategy/progress.md`
+- Local-only files:
+  - `.env.opencore.local` remains ignored and was not staged or committed.
+- Remaining:
+  - Runtime integration R-1 and R0-R7 are complete.
+  - No remaining work in this runtime integration goal.
+  - S9 OpenForge MVP is not started and remains outside this goal.
+  - P4/P5 parity backlog remains deferred.
+- Next:
+  - Stop the current runtime integration loop. If continuing, create a separate S9 OpenForge MVP handoff/goal before implementation.
+- Scope guard:
+  - Docs-only final audit; no code, schema, migration, seed logic, env file, runtime service, database row, Redis key, queue, bucket, object, or business data was modified in R7.
+  - No real `.env`, password, token, MinIO key, database URL, Redis URL, RabbitMQ URL, JWT secret, bootstrap password, or smoke access token was committed or printed.
+  - No S9 OpenForge generator or P4/P5 module was implemented.
+- Risk/blocker:
+  - No blocker.
+
 ## 未完成项
 
-战略蓝图文档包已完成。S3、S4、S5、S6、S7、S8 已完成。Runtime integration 已完成 R-1 Legacy freeze、R0 Runtime audit、R1 Env mapping、R2 PostgreSQL migration baseline、R3 Persistent RBAC、R4 Persistent system management、R5 Redis/BullMQ/MinIO runtime 和 R6 Integration smoke and drift gate；R7 尚未完成，R7 Final docs and audit 是最早未完成阶段。
+战略蓝图文档包已完成。S3、S4、S5、S6、S7、S8 已完成。Runtime integration 已完成 R-1 Legacy freeze、R0 Runtime audit、R1 Env mapping、R2 PostgreSQL migration baseline、R3 Persistent RBAC、R4 Persistent system management、R5 Redis/BullMQ/MinIO runtime、R6 Integration smoke and drift gate 和 R7 Final docs and audit。本目标无剩余未完成阶段。S9 OpenForge MVP 尚未开始，P4/P5 parity backlog 继续保留。
 
 ## 下一轮建议
 
-继续执行 runtime integration loop。下一轮只进入 R7 Final docs and audit：同步最终文档、记录 R-1 到 R7 完成证据，并明确 S9 OpenForge 未开始、P4/P5 backlog 保留；不要进入 S9 OpenForge，也不要实现 P4/P5 模块。
+停止当前 runtime integration loop。若继续推进，下一轮应单独创建 S9 OpenForge MVP handoff/goal，只做 registry/OpenAPI/schema 的只读 dry-run/diff plan 设计；不要在无 handoff 的情况下进入 S9 实现，也不要实现 P4/P5 模块。
 
 ## 当前验收结论
 
-战略文档包、S3、S4、S5、S6、S7 和 S8 完成。当前证据：
+战略文档包、S3、S4、S5、S6、S7、S8 和 runtime integration R-1-R7 完成。当前证据：
 
 - 目标 Markdown 文档全部存在，并包含必要表格和 Mermaid 图。
 - `docs/strategy/visual/opencore-blueprint.html` 是可离线打开的单文件 HTML，未引用外部 CDN。
@@ -773,11 +830,12 @@
 - S8 monitor/tool 已通过 `pnpm build`、`pnpm test`、`pnpm lint`、`pnpm typecheck`、`pnpm prisma:validate`、`pnpm openapi:export`、`pnpm openapi:check`，并通过 monitor smoke、queue/status 单测、OpenAPI diff fail test、export test、敏感信息泄漏检查、API/SDK/Admin targeted tests。
 - 当前 S8 未做完整任务调度平台、大数据异步导出、敏感配置暴露或 OpenForge 写文件生成器。
 - S3-S8 handoff 目标已完成；后续 S9 需要单独确认。
-- Runtime integration R-1 Legacy freeze 已完成：旧 Antdpro6 / NestWeb 应用运行态已冻结，PostgreSQL、Redis、MinIO、RabbitMQ 等基础服务和数据卷保留；R0-R7 仍需继续按 runtime handoff 执行。
-- Runtime integration R0 Runtime audit 已完成：已新增脱敏 runtime inventory 和 OpenCore env mapping，明确 OpenCore 必须独立使用 database/schema/user、Redis prefix/DB、BullMQ prefix、MinIO/S3 bucket/prefix；R1-R7 仍需继续按 runtime handoff 执行。
-- Runtime integration R1 Env mapping 已完成：`.env.example`、runtime config validation、local env runbook 和 ignored `.env.opencore.local` placeholder 已就绪；R2-R7 仍需继续按 runtime handoff 执行。
-- Runtime integration R2 PostgreSQL migration baseline 已完成：OpenCore 独立 PostgreSQL database/user/schema boundary、baseline migration、idempotent seed 和 Prisma scripts 已就绪；R3-R7 仍需继续按 runtime handoff 执行。
-- Runtime integration R3 Persistent RBAC 已完成：API RBAC 生产 provider 已切换到 Prisma-backed repository，seed fixture 仅保留为单测替身；R4-R7 仍需继续按 runtime handoff 执行。
-- Runtime integration R4 Persistent system management 已完成：dict/config/file metadata/log repository 已切换到 Prisma-backed persistence，S7 seed fixture 仅保留为单测替身；R5-R7 仍需继续按 runtime handoff 执行。
-- Runtime integration R5 Redis/BullMQ/MinIO runtime 已完成：Monitor runtime diagnostics 已接入 PostgreSQL、Redis、BullMQ 和 MinIO/S3 read-only checks，file metadata storageKey 已对齐 OpenCore S3 prefix；R6-R7 仍需继续按 runtime handoff 执行。
-- Runtime integration R6 Integration smoke and drift gate 已完成：完整 R6 command gate、OpenAPI drift gate、Admin smoke、SDK/contracts targeted tests 和 live API smoke 均通过；R7 仍需继续按 runtime handoff 执行。
+- Runtime integration R-1 Legacy freeze 已完成：旧 Antdpro6 / NestWeb 应用运行态已冻结，PostgreSQL、Redis、MinIO、RabbitMQ 等基础服务和数据卷保留。
+- Runtime integration R0 Runtime audit 已完成：已新增脱敏 runtime inventory 和 OpenCore env mapping，明确 OpenCore 独立使用 database/schema/user、Redis prefix/DB、BullMQ prefix、MinIO/S3 bucket/prefix。
+- Runtime integration R1 Env mapping 已完成：`.env.example`、runtime config validation、local env runbook 和 ignored `.env.opencore.local` placeholder 已就绪。
+- Runtime integration R2 PostgreSQL migration baseline 已完成：OpenCore 独立 PostgreSQL database/user/schema boundary、baseline migration、idempotent seed 和 Prisma scripts 已就绪。
+- Runtime integration R3 Persistent RBAC 已完成：API RBAC 生产 provider 已切换到 Prisma-backed repository，seed fixture 仅保留为单测替身。
+- Runtime integration R4 Persistent system management 已完成：dict/config/file metadata/log repository 已切换到 Prisma-backed persistence，S7 seed fixture 仅保留为单测替身。
+- Runtime integration R5 Redis/BullMQ/MinIO runtime 已完成：Monitor runtime diagnostics 已接入 PostgreSQL、Redis、BullMQ 和 MinIO/S3 read-only checks，file metadata storageKey 已对齐 OpenCore S3 prefix。
+- Runtime integration R6 Integration smoke and drift gate 已完成：完整 R6 command gate、OpenAPI drift gate、Admin smoke、SDK/contracts targeted tests 和 live API smoke 均通过。
+- Runtime integration R7 Final docs and audit 已完成：README/docs/handoff/runtime/progress 已同步到 S8 complete + runtime integration complete；S9 OpenForge MVP 明确未开始，P4/P5 backlog 保留。
