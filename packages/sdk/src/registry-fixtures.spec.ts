@@ -1,6 +1,11 @@
 import {
+  createAuditLogFixtures,
+  createDictFixtures,
+  createFileAssetFixtures,
+  createLoginLogFixtures,
   createMenuSummariesFromRegistry,
   createPermissionSummariesFromRegistry,
+  createSystemConfigFixtures,
 } from './registry-fixtures';
 
 describe('registry fixtures', () => {
@@ -19,5 +24,19 @@ describe('registry fixtures', () => {
         expect(permissionCodes.has(menu.permissionCode)).toBe(true);
       }
     }
+  });
+
+  it('creates S7 system-management fixtures with redacted audit data', () => {
+    expect(createDictFixtures().items[0].code).toBe('system.status');
+    expect(createSystemConfigFixtures().items[0].key).toBe(
+      'opencore.admin.title',
+    );
+    expect(createFileAssetFixtures().items[0].storageKey).toContain(
+      'file-assets/',
+    );
+    expect(createAuditLogFixtures().items[0].metadata).toMatchObject({
+      password: '[REDACTED]',
+    });
+    expect(createLoginLogFixtures().items[0].success).toBe(true);
   });
 });

@@ -186,6 +186,585 @@
         "security": [{ "bearer": [] }],
         "tags": ["Core RBAC"]
       }
+    },
+    "/api/core/dicts": {
+      "get": {
+        "operationId": "SystemManagementController_listDicts",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DictTypePageDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Core System Management"]
+      },
+      "post": {
+        "operationId": "SystemManagementController_createDict",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateDictTypeDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DictTypeDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Core System Management"]
+      }
+    },
+    "/api/core/dicts/export": {
+      "get": {
+        "operationId": "SystemManagementController_exportDicts",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ExportPreviewDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Core System Management"]
+      }
+    },
+    "/api/core/dicts/{code}": {
+      "patch": {
+        "operationId": "SystemManagementController_updateDict",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateDictTypeDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DictTypeDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Core System Management"]
+      },
+      "delete": {
+        "operationId": "SystemManagementController_deleteDict",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DeleteResultDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Core System Management"]
+      }
+    },
+    "/api/core/config": {
+      "get": {
+        "operationId": "SystemManagementController_listConfig",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SystemConfigPageDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Core System Management"]
+      },
+      "post": {
+        "operationId": "SystemManagementController_createConfig",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateSystemConfigDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SystemConfigDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Core System Management"]
+      }
+    },
+    "/api/core/config/export": {
+      "get": {
+        "operationId": "SystemManagementController_exportConfig",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ExportPreviewDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Core System Management"]
+      }
+    },
+    "/api/core/config/{key}": {
+      "patch": {
+        "operationId": "SystemManagementController_updateConfig",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateSystemConfigDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SystemConfigDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Core System Management"]
+      },
+      "delete": {
+        "operationId": "SystemManagementController_deleteConfig",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DeleteResultDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Core System Management"]
+      }
+    },
+    "/api/core/files": {
+      "get": {
+        "operationId": "SystemManagementController_listFiles",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/FileAssetPageDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Core System Management"]
+      },
+      "post": {
+        "operationId": "SystemManagementController_createFileAsset",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateFileAssetDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/FileAssetDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Core System Management"]
+      }
+    },
+    "/api/core/files/export": {
+      "get": {
+        "operationId": "SystemManagementController_exportFiles",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ExportPreviewDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Core System Management"]
+      }
+    },
+    "/api/core/files/{id}": {
+      "delete": {
+        "operationId": "SystemManagementController_deleteFile",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DeleteResultDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Core System Management"]
+      }
+    },
+    "/api/core/audit-logs": {
+      "get": {
+        "operationId": "SystemManagementController_listAuditLogs",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AuditLogPageDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Core System Management"]
+      }
+    },
+    "/api/core/audit-logs/export": {
+      "get": {
+        "operationId": "SystemManagementController_exportAuditLogs",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ExportPreviewDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Core System Management"]
+      }
+    },
+    "/api/core/login-logs": {
+      "get": {
+        "operationId": "SystemManagementController_listLoginLogs",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LoginLogPageDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Core System Management"]
+      }
+    },
+    "/api/core/login-logs/export": {
+      "get": {
+        "operationId": "SystemManagementController_exportLoginLogs",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ExportPreviewDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Core System Management"]
+      }
     }
   },
   "info": {
@@ -276,6 +855,272 @@
           "order": { "type": "number" }
         },
         "required": ["key", "title", "path", "stage", "order"]
+      },
+      "Object": { "type": "object", "properties": {} },
+      "DictItemDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "label": { "type": "string" },
+          "value": { "type": "string" },
+          "sort": { "type": "number" },
+          "enabled": { "type": "boolean" }
+        },
+        "required": ["id", "label", "value", "sort", "enabled"]
+      },
+      "DictTypeDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "enabled": { "type": "boolean" },
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/DictItemDto" }
+          }
+        },
+        "required": ["id", "code", "name", "enabled", "items"]
+      },
+      "DictTypePageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/DictTypeDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "ExportPreviewDto": {
+        "type": "object",
+        "properties": {
+          "filename": { "type": "string" },
+          "scope": { "type": "string", "example": "current-page" },
+          "columns": { "type": "array", "items": { "type": "string" } },
+          "rowCount": { "type": "number" },
+          "generatedAt": { "type": "string" }
+        },
+        "required": ["filename", "scope", "columns", "rowCount", "generatedAt"]
+      },
+      "CreateDictTypeDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string", "example": "system.status" },
+          "name": { "type": "string", "example": "System Status" },
+          "description": { "type": "string" },
+          "enabled": { "type": "boolean", "default": true },
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/DictItemDto" }
+          }
+        },
+        "required": ["code", "name"]
+      },
+      "UpdateDictTypeDto": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "enabled": { "type": "boolean" },
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/DictItemDto" }
+          }
+        }
+      },
+      "DeleteResultDto": {
+        "type": "object",
+        "properties": { "deleted": { "type": "boolean" } },
+        "required": ["deleted"]
+      },
+      "SystemConfigDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "key": { "type": "string" },
+          "value": { "type": "string" },
+          "valueType": {
+            "type": "string",
+            "enum": ["boolean", "number", "string"]
+          },
+          "description": { "type": "string" },
+          "public": { "type": "boolean" }
+        },
+        "required": ["id", "key", "value", "valueType", "public"]
+      },
+      "SystemConfigPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SystemConfigDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "CreateSystemConfigDto": {
+        "type": "object",
+        "properties": {
+          "key": { "type": "string", "example": "opencore.admin.title" },
+          "value": { "type": "string" },
+          "valueType": {
+            "type": "string",
+            "enum": ["boolean", "number", "string"]
+          },
+          "description": { "type": "string" },
+          "public": { "type": "boolean", "default": false }
+        },
+        "required": ["key", "value", "valueType"]
+      },
+      "UpdateSystemConfigDto": {
+        "type": "object",
+        "properties": {
+          "value": { "type": "string" },
+          "valueType": {
+            "type": "string",
+            "enum": ["boolean", "number", "string"]
+          },
+          "description": { "type": "string" },
+          "public": { "type": "boolean" }
+        }
+      },
+      "FileAssetDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "originalName": { "type": "string" },
+          "mimeType": { "type": "string" },
+          "sizeBytes": { "type": "number" },
+          "storageKey": { "type": "string" },
+          "checksum": { "type": "string" },
+          "uploadedBy": { "type": "string" },
+          "createdAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "originalName",
+          "mimeType",
+          "sizeBytes",
+          "storageKey",
+          "uploadedBy",
+          "createdAt"
+        ]
+      },
+      "FileAssetPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/FileAssetDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "CreateFileAssetDto": {
+        "type": "object",
+        "properties": {
+          "originalName": { "type": "string", "example": "policy.pdf" },
+          "mimeType": { "type": "string", "example": "application/pdf" },
+          "sizeBytes": { "type": "number" },
+          "checksum": { "type": "string" },
+          "uploadedBy": { "type": "string", "example": "admin" }
+        },
+        "required": ["originalName", "mimeType", "sizeBytes", "uploadedBy"]
+      },
+      "AuditLogDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "actorUsername": { "type": "string" },
+          "action": { "type": "string" },
+          "resource": { "type": "string" },
+          "resourceId": { "type": "string" },
+          "method": { "type": "string" },
+          "path": { "type": "string" },
+          "statusCode": { "type": "number" },
+          "ip": { "type": "string" },
+          "userAgent": { "type": "string" },
+          "requestId": { "type": "string" },
+          "metadata": { "type": "object" },
+          "createdAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "actorUsername",
+          "action",
+          "resource",
+          "method",
+          "path",
+          "statusCode",
+          "ip",
+          "userAgent",
+          "requestId",
+          "createdAt"
+        ]
+      },
+      "AuditLogPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/AuditLogDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "LoginLogDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "username": { "type": "string" },
+          "success": { "type": "boolean" },
+          "failureReason": { "type": "string" },
+          "ip": { "type": "string" },
+          "userAgent": { "type": "string" },
+          "requestId": { "type": "string" },
+          "createdAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "username",
+          "success",
+          "ip",
+          "userAgent",
+          "requestId",
+          "createdAt"
+        ]
+      },
+      "LoginLogPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/LoginLogDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
       }
     }
   }

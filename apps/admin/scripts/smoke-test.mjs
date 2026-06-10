@@ -45,12 +45,17 @@ for (const requiredRoute of [
   "path: '/system/roles'",
   "path: '/system/permissions'",
   "path: '/system/menus'",
+  "path: '/system/dicts'",
+  "path: '/system/config'",
+  "path: '/system/files'",
+  "path: '/security/login-logs'",
+  "path: '/security/operation-logs'",
   "path: '/403'",
   "path: '/404'",
   "path: '/500'",
 ]) {
   if (!config.includes(requiredRoute)) {
-    throw new Error(`Missing S5 shell route in .umirc.ts: ${requiredRoute}`);
+    throw new Error(`Missing shell route in .umirc.ts: ${requiredRoute}`);
   }
 }
 
@@ -71,10 +76,15 @@ if (
   !accessRuntime.includes('core:user:read') ||
   !accessRuntime.includes('core:role:read') ||
   !accessRuntime.includes('core:permission:read') ||
-  !accessRuntime.includes('core:menu:read')
+  !accessRuntime.includes('core:menu:read') ||
+  !accessRuntime.includes('core:dict:read') ||
+  !accessRuntime.includes('core:config:read') ||
+  !accessRuntime.includes('core:file:read') ||
+  !accessRuntime.includes('core:audit-log:read') ||
+  !accessRuntime.includes('core:login-log:read')
 ) {
   throw new Error(
-    'Admin access must guard shell and S6 RBAC routes by permission code.',
+    'Admin access must guard shell, S6 RBAC, and S7 system routes by permission code.',
   );
 }
 
@@ -89,7 +99,12 @@ if (
   !shellRegistry.includes('core.user') ||
   !shellRegistry.includes('core.role') ||
   !shellRegistry.includes('core.permission') ||
-  !shellRegistry.includes('core.menu')
+  !shellRegistry.includes('core.menu') ||
+  !shellRegistry.includes('core.dict') ||
+  !shellRegistry.includes('core.config') ||
+  !shellRegistry.includes('core.file') ||
+  !shellRegistry.includes('core.audit-log') ||
+  !shellRegistry.includes('core.login-log')
 ) {
   throw new Error('Admin shell registry must consume module-registry entries.');
 }
@@ -102,11 +117,38 @@ const permissionsPage = readFileSync(
   resolve(root, 'src/pages/System/Permissions.tsx'),
   'utf8',
 );
+const dictsPage = readFileSync(
+  resolve(root, 'src/pages/System/Dicts.tsx'),
+  'utf8',
+);
+const configPage = readFileSync(
+  resolve(root, 'src/pages/System/Config.tsx'),
+  'utf8',
+);
+const filesPage = readFileSync(
+  resolve(root, 'src/pages/System/Files.tsx'),
+  'utf8',
+);
+const auditLogsPage = readFileSync(
+  resolve(root, 'src/pages/Security/OperationLogs.tsx'),
+  'utf8',
+);
+const loginLogsPage = readFileSync(
+  resolve(root, 'src/pages/Security/LoginLogs.tsx'),
+  'utf8',
+);
 if (
   !usersPage.includes('@opencore/sdk') ||
-  !permissionsPage.includes('@opencore/sdk')
+  !permissionsPage.includes('@opencore/sdk') ||
+  !dictsPage.includes('@opencore/sdk') ||
+  !configPage.includes('@opencore/sdk') ||
+  !filesPage.includes('@opencore/sdk') ||
+  !auditLogsPage.includes('@opencore/sdk') ||
+  !loginLogsPage.includes('@opencore/sdk')
 ) {
-  throw new Error('Admin RBAC pages must consume SDK types or fixtures.');
+  throw new Error(
+    'Admin RBAC and system pages must consume SDK types or fixtures.',
+  );
 }
 
 const requestSpec = readFileSync(resolve(root, 'src/utils/request.ts'), 'utf8');

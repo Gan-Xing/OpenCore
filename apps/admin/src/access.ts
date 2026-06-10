@@ -16,6 +16,11 @@ export default (initialState: InitialState = {}) => {
     canReadRoles: hasPermission('core:role:read'),
     canReadPermissions: hasPermission('core:permission:read'),
     canReadMenus: hasPermission('core:menu:read'),
+    canReadDicts: hasPermission('core:dict:read'),
+    canReadSystemConfig: hasPermission('core:config:read'),
+    canReadFiles: hasPermission('core:file:read'),
+    canReadAuditLogs: hasPermission('core:audit-log:read'),
+    canReadLoginLogs: hasPermission('core:login-log:read'),
     canReadHealth: hasPermission('core:dashboard:read'),
   };
 };

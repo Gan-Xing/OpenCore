@@ -12,10 +12,15 @@ const SHELL_MODULE_CODES = [
   'core.role',
   'core.permission',
   'core.menu',
+  'core.dict',
+  'core.config',
+  'core.file',
+  'core.audit-log',
+  'core.login-log',
   'tool.openapi',
 ] as const;
 
-const PLANNED_STAGE_ORDER = ['S7', 'S8'] as const;
+const PLANNED_STAGE_ORDER = ['S8'] as const;
 
 export type ShellMenuItem = {
   key: string;
@@ -89,7 +94,6 @@ export function createLayoutMenuItems(
   menuItems: readonly ShellMenuItem[] = shellMenuItems,
 ): LayoutMenuItem[] {
   const dashboard = menuItems.find((item) => item.key === 'dashboard.home');
-  const tools = menuItems.filter((item) => item.key.startsWith('tools.'));
   const layoutMenu: LayoutMenuItem[] = [];
 
   if (dashboard) {
@@ -100,6 +104,36 @@ export function createLayoutMenuItems(
     });
   }
 
+  const system = menuItems.filter((item) => item.key.startsWith('system.'));
+
+  if (system.length > 0) {
+    layoutMenu.push({
+      path: '/system',
+      name: 'System',
+      icon: 'SettingOutlined',
+      routes: system.map((item) => ({
+        path: item.path,
+        name: item.name,
+      })),
+    });
+  }
+
+  const security = menuItems.filter((item) => item.key.startsWith('security.'));
+
+  if (security.length > 0) {
+    layoutMenu.push({
+      path: '/security',
+      name: 'Security',
+      icon: 'SafetyOutlined',
+      routes: security.map((item) => ({
+        path: item.path,
+        name: item.name,
+      })),
+    });
+  }
+
+  const tools = menuItems.filter((item) => item.key.startsWith('tools.'));
+
   if (tools.length > 0) {
     layoutMenu.push({
       path: '/tools',
@@ -109,20 +143,6 @@ export function createLayoutMenuItems(
         path: item.path,
         name: item.name,
         icon: 'ApiOutlined',
-      })),
-    });
-  }
-
-  const system = menuItems.filter((item) => item.key.startsWith('system.'));
-
-  if (system.length > 0) {
-    layoutMenu.splice(1, 0, {
-      path: '/system',
-      name: 'System',
-      icon: 'SettingOutlined',
-      routes: system.map((item) => ({
-        path: item.path,
-        name: item.name,
       })),
     });
   }

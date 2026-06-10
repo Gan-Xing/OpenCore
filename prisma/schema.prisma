@@ -68,3 +68,78 @@ model RolePermission {
 
   @@id([roleId, permissionId])
 }
+
+model DictType {
+  id          String     @id @default(cuid())
+  code        String     @unique
+  name        String
+  description String?
+  enabled     Boolean    @default(true)
+  items       DictItem[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model DictItem {
+  id        String   @id @default(cuid())
+  typeId    String
+  type      DictType @relation(fields: [typeId], references: [id], onDelete: Cascade)
+  label     String
+  value     String
+  sort      Int      @default(0)
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([typeId, value])
+}
+
+model SystemConfig {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  valueType   String
+  description String?
+  public      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model FileAsset {
+  id           String   @id @default(cuid())
+  originalName String
+  mimeType     String
+  sizeBytes    Int
+  storageKey   String   @unique
+  checksum     String?
+  uploadedBy   String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model AuditLog {
+  id            String   @id @default(cuid())
+  actorUsername String
+  action        String
+  resource      String
+  resourceId    String?
+  method        String
+  path          String
+  statusCode    Int
+  ip            String
+  userAgent     String
+  requestId     String
+  metadata      Json?
+  createdAt     DateTime @default(now())
+}
+
+model LoginLog {
+  id            String   @id @default(cuid())
+  username      String
+  success       Boolean
+  failureReason String?
+  ip            String
+  userAgent     String
+  requestId     String
+  createdAt     DateTime @default(now())
+}

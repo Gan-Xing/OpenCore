@@ -10,7 +10,7 @@ import type {
 export type SdkRequest = <T>(
   path: `/${string}`,
   options?: {
-    method?: 'GET' | 'POST';
+    method?: 'DELETE' | 'GET' | 'PATCH' | 'POST';
     body?: unknown;
     token?: string;
   },

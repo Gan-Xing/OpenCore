@@ -51,6 +51,36 @@ export default defineConfig({
       access: 'canReadMenus',
     },
     {
+      name: 'Dictionaries',
+      path: '/system/dicts',
+      component: './System/Dicts',
+      access: 'canReadDicts',
+    },
+    {
+      name: 'System Config',
+      path: '/system/config',
+      component: './System/Config',
+      access: 'canReadSystemConfig',
+    },
+    {
+      name: 'File Center',
+      path: '/system/files',
+      component: './System/Files',
+      access: 'canReadFiles',
+    },
+    {
+      name: 'Login Logs',
+      path: '/security/login-logs',
+      component: './Security/LoginLogs',
+      access: 'canReadLoginLogs',
+    },
+    {
+      name: 'Operation Logs',
+      path: '/security/operation-logs',
+      component: './Security/OperationLogs',
+      access: 'canReadAuditLogs',
+    },
+    {
       path: '/403',
       component: './Exception/403',
     },

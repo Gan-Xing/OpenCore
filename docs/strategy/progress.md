@@ -22,8 +22,8 @@
 | S4 API core foundation                  | complete | 已实现 env/config validation、request id/trace id、统一错误响应、结构化日志、安全 header/CORS 基线、health/readiness 扩展、OpenAPI export baseline       | 进入 S5        |
 | S5 Admin core shell                     | complete | 已实现官方 Dashboard shell、403/404/500、空状态、request/access 规范、registry 菜单消费、health/OpenAPI 状态入口，并通过 admin smoke                     | 进入 S6        |
 | S6 auth / RBAC system                   | complete | 已实现 Prisma/PostgreSQL schema、auth token baseline、Role.code/Permission.code、permission guard、RBAC API、SDK、Admin RBAC 页面和 OpenAPI 同步         | 进入 S7        |
-| S7 system management                    | pending  | 尚未实现 dict、system config、file asset、audit log、login log                                                                                           | 最早未完成阶段 |
-| S8 monitor / tool baseline              | pending  | 尚未实现 status/version/queue、OpenAPI drift check、export protocol 页面                                                                                 | 等 S7 完成     |
+| S7 system management                    | complete | 已实现 dict、system config、file asset、audit log、login log、基础 CRUD/分页/权限/export baseline、Admin 页面和 OpenAPI/SDK 同步                         | 进入 S8        |
+| S8 monitor / tool baseline              | pending  | 尚未实现 status/version/queue、OpenAPI drift check、export protocol 页面                                                                                 | 最早未完成阶段 |
 
 ## 目标文件状态
 
@@ -188,6 +188,7 @@
 ### 2026-06-10 S6 execution
 
 - Stage: S6 auth / RBAC system
+- Commit: `e5b4045`
 - Completed:
   - 新增 Prisma/PostgreSQL 配置和 schema：`User`、`Role`、`Permission`、`Menu`、`UserRole`、`RolePermission`，并保留稳定 `Role.code` / `Permission.code`。
   - 新增 `.env.example`、`prisma.config.ts`、`pnpm prisma:validate`，让数据库连接、auth token secret 和 Prisma 7 配置有可校验基线。
@@ -236,17 +237,65 @@
   - No S7/S8 module implementation was included in S6 beyond registry-derived menu awareness.
   - No P4/P5 module implemented; CRM、ERP、MES、WMS、商城、支付会员、多租户、知识库、RAG、Agent 仍保留在长期 backlog。
 
+### 2026-06-10 S7 execution
+
+- Stage: S7 system management
+- Completed:
+  - 扩展 Prisma schema：新增 `DictType`、`DictItem`、`SystemConfig`、`FileAsset`、`AuditLog`、`LoginLog`，保持文件中心为通用资产模型。
+  - 新增 API `core/system-management` 模块：dict、system config、file asset、audit log、login log 的分页列表、CRUD/删除、当前页 export preview、权限 guard 和 OpenAPI DTO。
+  - 新增审计脱敏规则，递归屏蔽 password、token、secret、authorization、cookie 等敏感字段，并用单测保护。
+  - 新增文件资产 upload smoke baseline：只登记通用文件 metadata/storageKey，不引入图片业务语义、对象存储 provider 或凭据。
+  - 扩展 `@opencore/sdk`：S7 types、system-management client、fixtures 和路径测试。
+  - 扩展 Admin：System 下新增 Dictionaries、System Config、File Center；Security 下新增 Login Logs、Operation Logs；路由、access、菜单和 smoke 均由 registry/SDK 权限链路保护。
+  - 更新 OpenAPI snapshot：`packages/contracts/openapi/opencore-api.json` 已包含 S7 system-management endpoints。
+- Tests:
+  - `pnpm format:check` pass
+  - `pnpm build` pass
+  - `pnpm test` pass
+  - `pnpm lint` pass
+  - `pnpm typecheck` pass
+  - `pnpm prisma:validate` pass
+  - `pnpm openapi:export` pass
+  - `pnpm test:api` pass
+  - `NX_DAEMON=false pnpm nx test sdk` pass
+  - `pnpm test:admin` pass
+- Files changed:
+  - `prisma/schema.prisma`
+  - `apps/api/src/app/app.module.ts`
+  - `apps/api/src/modules/core/system-management/**`
+  - `apps/admin/.umirc.ts`
+  - `apps/admin/scripts/smoke-test.mjs`
+  - `apps/admin/src/access.ts`
+  - `apps/admin/src/core/shellRegistry.ts`
+  - `apps/admin/src/pages/System/Dicts.tsx`
+  - `apps/admin/src/pages/System/Config.tsx`
+  - `apps/admin/src/pages/System/Files.tsx`
+  - `apps/admin/src/pages/System/SystemManagementTable.tsx`
+  - `apps/admin/src/pages/Security/**`
+  - `packages/sdk/src/system-management-*`
+  - `packages/sdk/src/registry-fixtures.*`
+  - `packages/contracts/openapi/opencore-api.json`
+- Remaining:
+  - S8 尚未完成。
+  - S8 是最早未完成阶段。
+- Next:
+  - 重新读取 handoff 和本 progress 后，只进入 S8 monitor / tool baseline。
+- Scope guard:
+  - No engineering image/article/wechat/sms/mail provider module added to core.
+  - No big-data async export or full workflow implemented.
+  - No P4/P5 module implemented; CRM、ERP、MES、WMS、商城、支付会员、多租户、知识库、RAG、Agent 仍保留在长期 backlog。
+
 ## 未完成项
 
-战略蓝图文档包已完成。S3、S4、S5、S6 已完成。S7-S8 仍未完成；下一步必须进入 S7，仍必须只推进最早未完成阶段。
+战略蓝图文档包已完成。S3、S4、S5、S6、S7 已完成。S8 仍未完成；下一步必须进入 S8，仍必须只推进最早未完成阶段。
 
 ## 下一轮建议
 
-进入 S7：`system management`。下一轮应先读取 `docs/handoff/2026-06-10-s3-s8-implementation-handoff.md`、本 progress 文件和 `docs/strategy/staged-roadmap.md`，实现第一批系统管理能力：dict、system config、file asset、audit log、login log、基础 CRUD、分页、权限、导出基线和 Admin 对应页面；不要把工程图片、文章、微信、短信、邮件 provider 放进 core，不做大数据异步导出或完整工作流。
+进入 S8：`monitor / tool baseline`。下一轮应先读取 `docs/handoff/2026-06-10-s3-s8-implementation-handoff.md`、本 progress 文件和 `docs/strategy/staged-roadmap.md`，实现 status、version、queue 只读诊断、OpenAPI drift check、current-page export template/protocol 和 Admin monitor/tool 页面；不要做完整任务调度平台、大数据异步导出、敏感配置暴露或 OpenForge 写文件生成器。
 
 ## 当前验收结论
 
-战略文档包、S3、S4、S5 和 S6 完成。当前证据：
+战略文档包、S3、S4、S5、S6 和 S7 完成。当前证据：
 
 - 目标 Markdown 文档全部存在，并包含必要表格和 Mermaid 图。
 - `docs/strategy/visual/opencore-blueprint.html` 是可离线打开的单文件 HTML，未引用外部 CDN。
@@ -257,4 +306,6 @@
 - S5 Admin shell 已通过 `pnpm build:admin`、`pnpm test:admin`、`pnpm typecheck`、`pnpm lint`，并通过本地 `/dashboard`、`/tools/openapi` HTTP smoke。
 - S6 auth/RBAC 已通过 `pnpm build`、`pnpm test`、`pnpm lint`、`pnpm typecheck`、`pnpm prisma:validate`、`pnpm openapi:export`，并通过 API、SDK、Admin targeted tests。
 - 当前 S6 未新增多租户、组织数据权限、SSO/OAuth2、复杂审计平台或 P4/P5 模块。
-- S7-S8 尚未完成，不能声明总目标完成。
+- S7 system management 已通过 `pnpm build`、`pnpm test`、`pnpm lint`、`pnpm typecheck`、`pnpm prisma:validate`、`pnpm openapi:export`，并通过 CRUD、权限矩阵、文件 upload smoke、审计脱敏、API/SDK/Admin targeted tests。
+- 当前 S7 未把工程图片、文章、微信、短信、邮件 provider 放进 core，未做大数据异步导出或完整工作流。
+- S8 尚未完成，不能声明总目标完成。
