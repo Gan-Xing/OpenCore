@@ -22,9 +22,8 @@ V1 不改变 OpenCore 的业务边界：它只生成平台开发骨架和 review
 | Safety          | 阻止绝对路径、`../`、`.env*`、`prisma/schema.prisma`、`prisma/migrations/**` 和 P4/P5 schema               |
 | Tests           | OpenForge reader、validator、planner、diff、preflight、CLI 和 safety tests 已存在                          |
 
-S9 明确缺口：
+Stage B 已补齐 V1 contract surface：template pack、generated marker、virtual/generated file、patch plan、generator config、apply、manifest 和 rollback protocol 已由 `@opencore/contracts` 表达。后续仍缺少实现层：
 
-- 无 V1 template/apply/manifest/rollback/config contract。
 - 无 schema/config DSL V1。
 - 无真实模板包和 virtual file system。
 - 无 safe apply writer。
@@ -69,6 +68,14 @@ flowchart TD
 | Manifest      | Record apply inputs, hashes, actions and rollback actions                                      | No secrets in manifest                                                      |
 | Rollback      | Revert only files recorded by manifest and still safe to touch                                 | Block if generated files were manually modified                             |
 | CI gate       | Run doctor/check/diff/test commands in a repeatable local gate                                 | Keep OpenForge enforceable before S10+ modules                              |
+
+## Current V1 Stage Status
+
+| Stage     | Status   | Evidence                                                                                                                                                          |
+| --------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Stage A   | complete | This architecture document, roadmap update and progress ledger entry exist                                                                                        |
+| Stage B   | complete | `packages/contracts/src/openforge-contract.ts` exports V1 template/apply/manifest/rollback/marker/patch/config contracts and pure marker/apply validation helpers |
+| Stage C-L | pending  | Schema/config DSL, template pack, VFS, safe apply, manifest writer, rollback, generator packs, doctor/e2e/gate and final docs are not implemented yet             |
 
 ## Generated Ownership Model
 
