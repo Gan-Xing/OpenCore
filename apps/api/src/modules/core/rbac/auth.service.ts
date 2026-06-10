@@ -1,6 +1,6 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { createHmac, timingSafeEqual } from 'node:crypto';
-import { hashPassword } from './rbac.seed';
+import { hashPassword } from './rbac.password';
 import { RbacRepository } from './rbac.repository';
 
 export type AuthenticatedUser = {
@@ -15,8 +15,8 @@ export type AuthenticatedUser = {
 export class AuthService {
   constructor(private readonly repository: RbacRepository) {}
 
-  login(username: string, password: string) {
-    const user = this.repository.findUserByUsername(username);
+  async login(username: string, password: string) {
+    const user = await this.repository.findUserByUsername(username);
 
     if (
       !user ||
@@ -26,17 +26,23 @@ export class AuthService {
       throw new UnauthorizedException('Invalid username or password');
     }
 
-    const authenticatedUser = this.toAuthenticatedUser(user.id);
+    return this.createSessionForUser(user.id);
+  }
+
+  async createSessionForUser(userId: string) {
+    const authenticatedUser = await this.toAuthenticatedUser(userId);
 
     return {
-      accessToken: this.signToken(user.id),
+      accessToken: this.signToken(userId),
       tokenType: 'Bearer' as const,
       expiresInSeconds: 3600,
       user: authenticatedUser,
     };
   }
 
-  authenticateBearer(authorization: string | undefined): AuthenticatedUser {
+  async authenticateBearer(
+    authorization: string | undefined,
+  ): Promise<AuthenticatedUser> {
     if (!authorization?.startsWith('Bearer ')) {
       throw new UnauthorizedException('Missing bearer token');
     }
@@ -45,8 +51,10 @@ export class AuthService {
     return this.toAuthenticatedUser(userId);
   }
 
-  private toAuthenticatedUser(userId: string): AuthenticatedUser {
-    const user = this.repository.findUserById(userId);
+  private async toAuthenticatedUser(
+    userId: string,
+  ): Promise<AuthenticatedUser> {
+    const user = await this.repository.findUserById(userId);
 
     if (!user || !user.enabled) {
       throw new UnauthorizedException('User is disabled or missing');
@@ -57,7 +65,7 @@ export class AuthService {
       username: user.username,
       displayName: user.displayName,
       roleCodes: [...user.roleCodes],
-      permissionCodes: this.repository.getPermissionCodesForUser(user.id),
+      permissionCodes: await this.repository.getPermissionCodesForUser(user.id),
     };
   }
 

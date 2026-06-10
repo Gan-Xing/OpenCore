@@ -1,3 +1,6 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+
 export type NodeEnvironment = 'development' | 'test' | 'production';
 
 export type RuntimeConfig = {
@@ -76,6 +79,10 @@ const DEFAULT_S3_SECRET_ACCESS_KEY = 'opencore-local-secret-key';
 export function loadRuntimeConfig(
   env: NodeJS.ProcessEnv = process.env,
 ): RuntimeConfig {
+  if (env === process.env) {
+    loadLocalRuntimeEnv();
+  }
+
   const issues: string[] = [];
   const nodeEnv = parseNodeEnv(env.NODE_ENV, issues);
   const port = parsePort(env.PORT, issues);
@@ -497,4 +504,66 @@ function isPlaceholderRuntimeValue(value: string): boolean {
     normalized.includes('local-opencore') ||
     normalized.includes('opencore-local')
   );
+}
+
+function loadLocalRuntimeEnv(): void {
+  const envPath = findLocalEnvPath();
+
+  if (!envPath) {
+    return;
+  }
+
+  const content = readFileSync(envPath, 'utf8');
+
+  for (const line of content.split(/\r?\n/)) {
+    const trimmed = line.trim();
+
+    if (!trimmed || trimmed.startsWith('#')) {
+      continue;
+    }
+
+    const separatorIndex = trimmed.indexOf('=');
+
+    if (separatorIndex <= 0) {
+      continue;
+    }
+
+    const key = trimmed.slice(0, separatorIndex).trim();
+    const value = stripEnvQuotes(trimmed.slice(separatorIndex + 1).trim());
+
+    if (!process.env[key]) {
+      process.env[key] = value;
+    }
+  }
+}
+
+function findLocalEnvPath(): string | undefined {
+  let directory = process.cwd();
+
+  while (true) {
+    const candidate = resolve(directory, '.env.opencore.local');
+
+    if (existsSync(candidate)) {
+      return candidate;
+    }
+
+    const parent = dirname(directory);
+
+    if (parent === directory) {
+      return undefined;
+    }
+
+    directory = parent;
+  }
+}
+
+function stripEnvQuotes(value: string): string {
+  if (
+    (value.startsWith('"') && value.endsWith('"')) ||
+    (value.startsWith("'") && value.endsWith("'"))
+  ) {
+    return value.slice(1, -1);
+  }
+
+  return value;
 }

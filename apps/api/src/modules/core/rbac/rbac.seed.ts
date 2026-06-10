@@ -3,7 +3,7 @@ import {
   collectPermissionDefinitions,
   collectPermissionCodes,
 } from '@opencore/module-registry';
-import { createHash } from 'node:crypto';
+import { hashPassword } from './rbac.password';
 
 export type SeedUser = {
   id: string;
@@ -74,7 +74,3 @@ export const seedUsers: readonly SeedUser[] = [
     enabled: true,
   },
 ];
-
-export function hashPassword(password: string): string {
-  return createHash('sha256').update(password).digest('hex');
-}

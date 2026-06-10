@@ -1,6 +1,14 @@
 import { MonitoringRepository } from './monitoring.repository';
 
 describe('MonitoringRepository', () => {
+  const originalDatabaseUrl = process.env.DATABASE_URL;
+  const originalAuthTokenSecret = process.env.AUTH_TOKEN_SECRET;
+
+  afterEach(() => {
+    restoreEnv('DATABASE_URL', originalDatabaseUrl);
+    restoreEnv('AUTH_TOKEN_SECRET', originalAuthTokenSecret);
+  });
+
   it('returns status checks without leaking sensitive configuration', () => {
     process.env.DATABASE_URL = 'postgresql://secret@example/opencore';
     process.env.AUTH_TOKEN_SECRET = 'secret-token-value';
@@ -36,3 +44,12 @@ describe('MonitoringRepository', () => {
     });
   });
 });
+
+function restoreEnv(key: string, value: string | undefined): void {
+  if (value === undefined) {
+    delete process.env[key];
+    return;
+  }
+
+  process.env[key] = value;
+}

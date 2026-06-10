@@ -3,13 +3,17 @@ import type { ExecutionContext } from '@nestjs/common';
 import type { Reflector } from '@nestjs/core';
 import { AuthService } from './auth.service';
 import { PermissionGuard } from './permission.guard';
-import { RbacRepository } from './rbac.repository';
+import { SeedRbacRepository } from './seed-rbac.repository';
 
 describe('PermissionGuard', () => {
-  const authService = new AuthService(new RbacRepository());
-  const token = authService.login('admin', 'admin123').accessToken;
+  const authService = new AuthService(new SeedRbacRepository());
+  let token: string;
 
-  it('allows requests whose bearer token has the required permission', () => {
+  beforeAll(async () => {
+    token = (await authService.login('admin', 'admin123')).accessToken;
+  });
+
+  it('allows requests whose bearer token has the required permission', async () => {
     const guard = new PermissionGuard(
       createReflector(['core:user:read']),
       authService,
@@ -20,17 +24,17 @@ describe('PermissionGuard', () => {
       },
     };
 
-    expect(guard.canActivate(createContext(request))).toBe(true);
+    await expect(guard.canActivate(createContext(request))).resolves.toBe(true);
     expect(request).toHaveProperty('user.username', 'admin');
   });
 
-  it('rejects authenticated users missing the required permission', () => {
+  it('rejects authenticated users missing the required permission', async () => {
     const guard = new PermissionGuard(
       createReflector(['industry:crm:read']),
       authService,
     );
 
-    expect(() =>
+    await expect(
       guard.canActivate(
         createContext({
           headers: {
@@ -38,7 +42,7 @@ describe('PermissionGuard', () => {
           },
         }),
       ),
-    ).toThrow(ForbiddenException);
+    ).rejects.toThrow(ForbiddenException);
   });
 });
 

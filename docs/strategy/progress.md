@@ -526,13 +526,72 @@
   - The ignored local `DATABASE_URL` uses the resolved Docker network address for `nestweb-postgres`; if the container is recreated, local env may need refresh before rerunning Prisma commands.
   - No blocker for R3.
 
+### 2026-06-10 R3 Persistent RBAC execution
+
+- Stage: R3 Persistent RBAC
+- Completed:
+  - 重新读取本 progress 并确认 R3 是 R2 之后最早未完成阶段。
+  - 新增 `DatabaseModule` 和 `PrismaService`，通过 Prisma 7 PostgreSQL adapter 读取 OpenCore-only `DATABASE_URL`。
+  - 将 `RbacRepository` 收敛为异步抽象 contract，并新增 `PrismaRbacRepository` 作为生产 provider。
+  - 新增 `SeedRbacRepository`，把 seed fixture 明确限定为单测替身，避免生产路径继续读内存 seed。
+  - 抽出 `rbac.password.ts`，让 seed、Prisma 集成测试和 auth service 共享密码 hash 规则。
+  - 更新 `AuthService`、`AuthController`、`PermissionGuard` 和 `RbacController` 为异步 repository 调用；`/auth/login`、`/auth/me` 和 `/core/users`、`/core/roles`、`/core/permissions`、`/core/menus` 均走 Prisma-backed repository。
+  - 扩展 runtime config 本地 env 加载：从当前工作目录向上查找 ignored `.env.opencore.local`，支持 Nx/Jest 子进程读取 OpenCore 本地 DB 配置。
+  - 修复 monitoring repository 单测的 env 污染，确保 `DATABASE_URL` / `AUTH_TOKEN_SECRET` 在用例后恢复。
+- Runtime evidence:
+  - `PrismaRbacRepository` 集成测试从 PostgreSQL 读取 seeded Role/Permission/Menu，并验证 role codes `admin`、`viewer`。
+  - Seeded admin 可使用 ignored local bootstrap password 登录，返回 PostgreSQL 派生 permission codes。
+  - Permission evidence 覆盖 `core:user:read`、`core:role:read`、`core:permission:read`、`core:menu:read`。
+- Tests:
+  - `pnpm test:api` pass.
+  - `pnpm test` pass.
+  - `pnpm typecheck` pass.
+  - `pnpm lint` pass.
+  - `pnpm openapi:export` pass.
+  - `pnpm openapi:check` pass.
+  - `pnpm format:check` pass.
+- Files changed:
+  - `apps/api/src/platform/database/**`
+  - `apps/api/src/platform/config/runtime-config.ts`
+  - `apps/api/src/modules/core/rbac/auth.controller.ts`
+  - `apps/api/src/modules/core/rbac/auth.service.ts`
+  - `apps/api/src/modules/core/rbac/auth.service.spec.ts`
+  - `apps/api/src/modules/core/rbac/permission.guard.ts`
+  - `apps/api/src/modules/core/rbac/permission.guard.spec.ts`
+  - `apps/api/src/modules/core/rbac/rbac.controller.ts`
+  - `apps/api/src/modules/core/rbac/rbac.module.ts`
+  - `apps/api/src/modules/core/rbac/rbac.repository.ts`
+  - `apps/api/src/modules/core/rbac/rbac.repository.spec.ts`
+  - `apps/api/src/modules/core/rbac/rbac.seed.ts`
+  - `apps/api/src/modules/core/rbac/rbac.password.ts`
+  - `apps/api/src/modules/core/rbac/seed-rbac.repository.ts`
+  - `apps/api/src/modules/core/rbac/prisma-rbac.repository.ts`
+  - `apps/api/src/modules/core/rbac/prisma-rbac.repository.spec.ts`
+  - `apps/api/src/modules/monitor/monitoring/monitoring.repository.spec.ts`
+  - `docs/strategy/progress.md`
+- Local-only files:
+  - `.env.opencore.local` remains ignored and was not staged or committed.
+- Remaining:
+  - R4-R7 尚未完成。
+  - R4 Persistent system management 是最早未完成阶段。
+- Next:
+  - 重新读取本 progress 后，只进入 R4 Persistent system management：把 S7 system management repository 从内存数据升级为 Prisma 持久化读取/写入。
+- Scope guard:
+  - No SSO/OAuth2, multi-tenant, org data permission, or complex audit platform was added.
+  - No NestWeb business database, schema, table, row, Redis key, bucket, queue, or business data was migrated, copied, dropped, truncated, or modified.
+  - No real `.env`, password, token, MinIO key, database URL, Redis URL, RabbitMQ URL, JWT secret, or bootstrap password was committed.
+  - No P4/P5 module implemented; CRM、ERP、MES、WMS、商城、支付、会员、多租户、知识库、RAG、Agent 仍保留在长期 backlog。
+- Risk/blocker:
+  - The ignored local `DATABASE_URL` still depends on the current PostgreSQL container network address; if that container is recreated, local env may need refresh before Prisma-backed tests.
+  - No blocker for R4.
+
 ## 未完成项
 
-战略蓝图文档包已完成。S3、S4、S5、S6、S7、S8 已完成。Runtime integration 已完成 R-1 Legacy freeze、R0 Runtime audit、R1 Env mapping 和 R2 PostgreSQL migration baseline；R3-R7 尚未完成，R3 Persistent RBAC 是最早未完成阶段。
+战略蓝图文档包已完成。S3、S4、S5、S6、S7、S8 已完成。Runtime integration 已完成 R-1 Legacy freeze、R0 Runtime audit、R1 Env mapping、R2 PostgreSQL migration baseline 和 R3 Persistent RBAC；R4-R7 尚未完成，R4 Persistent system management 是最早未完成阶段。
 
 ## 下一轮建议
 
-继续执行 runtime integration loop。下一轮只进入 R3 Persistent RBAC：新增 PrismaService/DatabaseModule，把 RBAC repository 从 seed fixture 升级为 Prisma 持久化读取；不要进入 S9 OpenForge，也不要实现 P4/P5 模块。
+继续执行 runtime integration loop。下一轮只进入 R4 Persistent system management：把 S7 system management repository 从内存数据升级为 Prisma 持久化读取/写入；不要进入 S9 OpenForge，也不要实现 P4/P5 模块。
 
 ## 当前验收结论
 
@@ -556,3 +615,4 @@
 - Runtime integration R0 Runtime audit 已完成：已新增脱敏 runtime inventory 和 OpenCore env mapping，明确 OpenCore 必须独立使用 database/schema/user、Redis prefix/DB、BullMQ prefix、MinIO/S3 bucket/prefix；R1-R7 仍需继续按 runtime handoff 执行。
 - Runtime integration R1 Env mapping 已完成：`.env.example`、runtime config validation、local env runbook 和 ignored `.env.opencore.local` placeholder 已就绪；R2-R7 仍需继续按 runtime handoff 执行。
 - Runtime integration R2 PostgreSQL migration baseline 已完成：OpenCore 独立 PostgreSQL database/user/schema boundary、baseline migration、idempotent seed 和 Prisma scripts 已就绪；R3-R7 仍需继续按 runtime handoff 执行。
+- Runtime integration R3 Persistent RBAC 已完成：API RBAC 生产 provider 已切换到 Prisma-backed repository，seed fixture 仅保留为单测替身；R4-R7 仍需继续按 runtime handoff 执行。

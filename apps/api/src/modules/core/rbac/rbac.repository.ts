@@ -1,57 +1,52 @@
-import { Injectable } from '@nestjs/common';
-import { seedMenus, seedPermissions, seedRoles, seedUsers } from './rbac.seed';
+export type RbacUserRecord = {
+  id: string;
+  username: string;
+  displayName: string;
+  passwordHash: string;
+  roleCodes: readonly string[];
+  enabled: boolean;
+};
 
-@Injectable()
-export class RbacRepository {
-  listUsers() {
-    return seedUsers.map((user) => ({
-      id: user.id,
-      username: user.username,
-      displayName: user.displayName,
-      roleCodes: [...user.roleCodes],
-      enabled: user.enabled,
-    }));
-  }
+export type UserSummaryRecord = Omit<RbacUserRecord, 'passwordHash'>;
 
-  findUserByUsername(username: string) {
-    return seedUsers.find((user) => user.username === username);
-  }
+export type RoleSummaryRecord = {
+  id: string;
+  code: string;
+  name: string;
+  permissionCodes: readonly string[];
+  system: boolean;
+};
 
-  findUserById(id: string) {
-    return seedUsers.find((user) => user.id === id);
-  }
+export type PermissionSummaryRecord = {
+  code: string;
+  title: string;
+  stage: string;
+  dangerous: boolean;
+};
 
-  listRoles() {
-    return seedRoles.map((role) => ({
-      id: role.id,
-      code: role.code,
-      name: role.name,
-      permissionCodes: [...role.permissionCodes],
-      system: role.system,
-    }));
-  }
+export type MenuSummaryRecord = {
+  key: string;
+  title: string;
+  path: string;
+  permissionCode?: string;
+  stage: string;
+  order: number;
+};
 
-  listPermissions() {
-    return seedPermissions;
-  }
+export abstract class RbacRepository {
+  abstract listUsers(): Promise<UserSummaryRecord[]>;
 
-  listMenus() {
-    return seedMenus;
-  }
+  abstract findUserByUsername(
+    username: string,
+  ): Promise<RbacUserRecord | undefined>;
 
-  getPermissionCodesForUser(userId: string): string[] {
-    const user = this.findUserById(userId);
+  abstract findUserById(id: string): Promise<RbacUserRecord | undefined>;
 
-    if (!user || !user.enabled) {
-      return [];
-    }
+  abstract listRoles(): Promise<RoleSummaryRecord[]>;
 
-    return [
-      ...new Set(
-        seedRoles
-          .filter((role) => user.roleCodes.includes(role.code))
-          .flatMap((role) => role.permissionCodes),
-      ),
-    ].sort();
-  }
+  abstract listPermissions(): Promise<PermissionSummaryRecord[]>;
+
+  abstract listMenus(): Promise<MenuSummaryRecord[]>;
+
+  abstract getPermissionCodesForUser(userId: string): Promise<string[]>;
 }

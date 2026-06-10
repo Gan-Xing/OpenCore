@@ -1,8 +1,19 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Req,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { AuthService } from './auth.service';
+import { AuthService, type AuthenticatedUser } from './auth.service';
 import { LoginRequestDto, LoginResponseDto } from './rbac.dto';
 import { RequirePermission } from './permissions.decorator';
+
+type RequestWithUser = {
+  user?: AuthenticatedUser;
+};
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -11,7 +22,7 @@ export class AuthController {
 
   @Post('login')
   @ApiOkResponse({ type: LoginResponseDto })
-  login(@Body() body: LoginRequestDto): LoginResponseDto {
+  login(@Body() body: LoginRequestDto): Promise<LoginResponseDto> {
     return this.authService.login(body.username, body.password);
   }
 
@@ -19,7 +30,11 @@ export class AuthController {
   @ApiBearerAuth()
   @RequirePermission('core:dashboard:read')
   @ApiOkResponse({ type: LoginResponseDto })
-  me(): LoginResponseDto {
-    return this.authService.login('admin', 'admin123');
+  me(@Req() request: RequestWithUser): Promise<LoginResponseDto> {
+    if (!request.user) {
+      throw new UnauthorizedException('Missing authenticated user');
+    }
+
+    return this.authService.createSessionForUser(request.user.id);
   }
 }

@@ -18,28 +18,28 @@ export class RbacController {
   @Get('users')
   @RequirePermission('core:user:read')
   @ApiOkResponse({ type: [UserSummaryDto] })
-  listUsers(): UserSummaryDto[] {
+  listUsers(): Promise<UserSummaryDto[]> {
     return this.repository.listUsers();
   }
 
   @Get('roles')
   @RequirePermission('core:role:read')
   @ApiOkResponse({ type: [RoleSummaryDto] })
-  listRoles(): RoleSummaryDto[] {
+  listRoles(): Promise<RoleSummaryDto[]> {
     return this.repository.listRoles();
   }
 
   @Get('permissions')
   @RequirePermission('core:permission:read')
   @ApiOkResponse({ type: [PermissionSummaryDto] })
-  listPermissions(): PermissionSummaryDto[] {
+  listPermissions(): Promise<PermissionSummaryDto[]> {
     return this.repository.listPermissions();
   }
 
   @Get('menus')
   @RequirePermission('core:menu:read')
   @ApiOkResponse({ type: [MenuSummaryDto] })
-  listMenus(): MenuSummaryDto[] {
+  listMenus(): Promise<MenuSummaryDto[]> {
     return this.repository.listMenus();
   }
 }

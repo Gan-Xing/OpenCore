@@ -1,14 +1,14 @@
-import { RbacRepository } from './rbac.repository';
+import { SeedRbacRepository } from './seed-rbac.repository';
 
-describe('RbacRepository', () => {
-  const repository = new RbacRepository();
+describe('SeedRbacRepository', () => {
+  const repository = new SeedRbacRepository();
 
-  it('keeps Role.code and Permission.code as stable RBAC identities', () => {
-    expect(repository.listRoles().map((role) => role.code)).toEqual(
+  it('keeps Role.code and Permission.code as stable RBAC identities', async () => {
+    expect((await repository.listRoles()).map((role) => role.code)).toEqual(
       expect.arrayContaining(['admin', 'viewer']),
     );
     expect(
-      repository.listPermissions().map((permission) => permission.code),
+      (await repository.listPermissions()).map((permission) => permission.code),
     ).toEqual(
       expect.arrayContaining([
         'core:user:read',
@@ -19,12 +19,12 @@ describe('RbacRepository', () => {
     );
   });
 
-  it('traces every registered menu permission to a permission code', () => {
+  it('traces every registered menu permission to a permission code', async () => {
     const permissionCodes = new Set(
-      repository.listPermissions().map((permission) => permission.code),
+      (await repository.listPermissions()).map((permission) => permission.code),
     );
 
-    for (const menu of repository.listMenus()) {
+    for (const menu of await repository.listMenus()) {
       if (menu.permissionCode) {
         expect(permissionCodes.has(menu.permissionCode)).toBe(true);
       }

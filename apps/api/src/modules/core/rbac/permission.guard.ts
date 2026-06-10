@@ -22,7 +22,7 @@ export class PermissionGuard implements CanActivate {
     private readonly authService: AuthService,
   ) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const requiredPermissions =
       this.reflector.getAllAndOverride<string[]>(REQUIRED_PERMISSIONS_KEY, [
         context.getHandler(),
@@ -34,7 +34,7 @@ export class PermissionGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest<RequestWithAuth>();
-    const user = this.authService.authenticateBearer(
+    const user = await this.authService.authenticateBearer(
       request.headers.authorization,
     );
     const missingPermission = requiredPermissions.find(

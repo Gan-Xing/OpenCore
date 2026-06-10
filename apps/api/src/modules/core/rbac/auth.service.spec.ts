@@ -1,12 +1,12 @@
 import { UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { RbacRepository } from './rbac.repository';
+import { SeedRbacRepository } from './seed-rbac.repository';
 
 describe('AuthService', () => {
-  const service = new AuthService(new RbacRepository());
+  const service = new AuthService(new SeedRbacRepository());
 
-  it('logs in with the seeded admin and exposes stable role and permission codes', () => {
-    const session = service.login('admin', 'admin123');
+  it('logs in with the seeded admin and exposes stable role and permission codes', async () => {
+    const session = await service.login('admin', 'admin123');
 
     expect(session.tokenType).toBe('Bearer');
     expect(session.user.roleCodes).toContain('admin');
@@ -20,15 +20,16 @@ describe('AuthService', () => {
     );
 
     expect(
-      service.authenticateBearer(`Bearer ${session.accessToken}`).username,
+      (await service.authenticateBearer(`Bearer ${session.accessToken}`))
+        .username,
     ).toBe('admin');
   });
 
-  it('rejects invalid credentials and malformed bearer tokens', () => {
-    expect(() => service.login('admin', 'wrong')).toThrow(
+  it('rejects invalid credentials and malformed bearer tokens', async () => {
+    await expect(service.login('admin', 'wrong')).rejects.toThrow(
       UnauthorizedException,
     );
-    expect(() => service.authenticateBearer('Bearer invalid')).toThrow(
+    await expect(service.authenticateBearer('Bearer invalid')).rejects.toThrow(
       UnauthorizedException,
     );
   });
