@@ -1,10 +1,33 @@
 # OpenForge 路线图
 
-OpenForge 是 OpenCore 的代码生成器。当前 S3-S9 已完成，S9 MVP 已通过单独 handoff/goal 落地只读规划能力。
+OpenForge 是 OpenCore 的代码生成器。当前 S3-S9 已完成，S9 MVP 已通过单独 handoff/goal 落地只读规划能力。OpenForge V1 Full Implementation 已进入 Stage A，目标是从只读 plan/diff/check 升级为安全、可审计、可回滚的生成器闭环。
 
 ## 当前定位
 
 S9 OpenForge MVP 只做只读和 dry-run，不做写文件生成器。`tool.openforge` 已进入 module registry，`tools/generator` 已成为 pnpm/Nx workspace tool，当前能力停留在 generate plan、diff plan、safety/preflight report。
+
+V1 的目标不是推翻 S9 安全边界，而是在保持默认 dry-run 的前提下增加 contracts、schema/config DSL、template pack、virtual file system、safe apply、manifest、rollback、doctor、gate 和 API/Admin/SDK/Test/Docs skeleton generator pack。真实写入必须显式 `--yes`，且只能创建新文件或更新带合法 OpenForge generated marker 的文件。
+
+## OpenForge V1 Full Implementation
+
+V1 分层架构见 [OpenForge V1 Architecture](openforge-v1-architecture.md)。
+
+V1 交付顺序：
+
+1. Stage A：架构审计与 V1 architecture 文档。
+2. Stage B：contracts V1 升级，覆盖 template、apply、manifest、rollback、marker、patch plan 和 config。
+3. Stage C：schema/config DSL V1。
+4. Stage D：template pack 与 virtual file system。
+5. Stage E：safe apply writer 与 manifest 写入。
+6. Stage F：rollback engine。
+7. Stage G：API generator pack。
+8. Stage H：Admin generator pack。
+9. Stage I：SDK/Test/Docs generator pack。
+10. Stage J：CLI UX、doctor 与 temp repo e2e。
+11. Stage K：OpenForge gate。
+12. Stage L：最终文档、roadmap 和交接。
+
+V1 当前 Stage A 只更新架构和状态文档，不引入 `openforge:apply` 或写文件能力。
 
 ## 第一版目标
 
@@ -55,6 +78,26 @@ OpenForge 不应从零猜业务。
 - 不写 Prisma schema。
 - 不覆盖人工文件。
 - 不生成 P4/P5 模块。
+
+## V1 写入边界
+
+允许：
+
+- 创建 OpenForge generated-owned files。
+- 更新带合法 generated marker 的文件。
+- 生成 manifest。
+- 基于 manifest 执行 rollback。
+- 为人工入口文件生成 patch plan。
+- 生成 Prisma model draft 或 migration hint。
+
+禁止：
+
+- 覆盖没有 generated marker 的人工文件。
+- 写 `.env*`。
+- 写 `prisma/schema.prisma`。
+- 创建 `prisma/migrations/**`。
+- 直接修改 `apps/api/src/app/app.module.ts`、`apps/admin/.umirc.ts`、`apps/admin/src/access.ts` 或 `packages/module-registry/src/modules.ts`。
+- 实现 P4/P5 或 AI 业务模块。
 
 ## 生成器能力要求
 
