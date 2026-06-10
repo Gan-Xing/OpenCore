@@ -3,7 +3,12 @@ import {
   OPENFORGE_TEMPLATE_VERSION,
 } from '@opencore/contracts';
 
-export const OPENFORGE_CLI_COMMANDS = ['plan', 'diff', 'check'] as const;
+export const OPENFORGE_CLI_COMMANDS = [
+  'plan',
+  'diff',
+  'check',
+  'apply',
+] as const;
 
 export type OpenForgeCliCommand = (typeof OPENFORGE_CLI_COMMANDS)[number];
 
@@ -28,6 +33,7 @@ export function getOpenForgeWorkspaceStatus(): OpenForgeWorkspaceStatus {
 export * from './readers/openapi-reader';
 export * from './readers/registry-reader';
 export * from './readers/schema-loader';
+export * from './apply/apply-writer';
 export * from './config/generator-config';
 export * from './hash/stable-hash';
 export * from './diff/diff-plan';

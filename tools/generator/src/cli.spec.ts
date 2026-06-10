@@ -24,7 +24,7 @@ describe('OpenForge CLI shell', () => {
       exitCode: 0,
     });
     expect(stdout.getValue()).toContain('read-only planning tool');
-    expect(stdout.getValue()).toContain('does not write');
+    expect(stdout.getValue()).toContain('Apply writes require explicit --yes');
     expect(stderr.getValue()).toBe('');
   });
 
@@ -125,6 +125,36 @@ describe('OpenForge CLI shell', () => {
       registry: {
         valid: true,
       },
+    });
+    expect(stderr.getValue()).toBe('');
+  });
+
+  it('prints an apply dry-run result without writing files', () => {
+    const stdout = createWritableBuffer();
+    const stderr = createWritableBuffer();
+
+    expect(
+      runCli(
+        [
+          'apply',
+          '--schema',
+          'tools/generator/examples/core.dict.v1.schema.json',
+          '--dry-run',
+        ],
+        stdout.stream,
+        stderr.stream,
+      ),
+    ).toEqual({
+      exitCode: 0,
+    });
+    expect(JSON.parse(stdout.getValue())).toMatchObject({
+      mode: 'dry-run',
+      applied: false,
+      manifest: {
+        command:
+          'pnpm openforge:apply -- --schema tools/generator/examples/core.dict.v1.schema.json --dry-run',
+      },
+      errors: [],
     });
     expect(stderr.getValue()).toBe('');
   });

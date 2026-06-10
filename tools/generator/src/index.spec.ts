@@ -14,7 +14,7 @@ describe('@opencore/openforge workspace', () => {
     });
   });
 
-  it('exposes the root CLI commands without write commands', () => {
-    expect(OPENFORGE_CLI_COMMANDS).toEqual(['plan', 'diff', 'check']);
+  it('exposes the root CLI commands with explicit safe apply', () => {
+    expect(OPENFORGE_CLI_COMMANDS).toEqual(['plan', 'diff', 'check', 'apply']);
   });
 });

@@ -22,14 +22,10 @@ V1 不改变 OpenCore 的业务边界：它只生成平台开发骨架和 review
 | Safety          | 阻止绝对路径、`../`、`.env*`、`prisma/schema.prisma`、`prisma/migrations/**` 和 P4/P5 schema               |
 | Tests           | OpenForge reader、validator、planner、diff、preflight、CLI 和 safety tests 已存在                          |
 
-Stage B 已补齐 V1 contract surface：template pack、generated marker、virtual/generated file、patch plan、generator config、apply、manifest 和 rollback protocol 已由 `@opencore/contracts` 表达。后续仍缺少实现层：
+Stage B-E 已补齐 V1 contract surface、schema/config DSL、template pack/VFS 和 safe apply writer。后续仍缺少实现层：
 
-- 无 schema/config DSL V1。
-- 无真实模板包和 virtual file system。
-- 无 safe apply writer。
-- 无 manifest 写入。
 - 无 rollback engine。
-- 无 `apply`、`rollback`、`manifest`、`doctor` CLI。
+- 无 `rollback`、`manifest`、`doctor` CLI。
 - 无 API/Admin/SDK/Test/Docs generator pack 的 golden snapshots。
 - 无 temp repo apply/rollback e2e。
 - 无 OpenForge V1 gate。
@@ -71,13 +67,14 @@ flowchart TD
 
 ## Current V1 Stage Status
 
-| Stage     | Status   | Evidence                                                                                                                                                               |
-| --------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Stage A   | complete | This architecture document, roadmap update and progress ledger entry exist                                                                                             |
-| Stage B   | complete | `packages/contracts/src/openforge-contract.ts` exports V1 template/apply/manifest/rollback/marker/patch/config contracts and pure marker/apply validation helpers      |
-| Stage C   | complete | `tools/generator/src/schema/**` and `tools/generator/src/config/**` validate Schema/config DSL V1, with legal and illegal V1 fixtures under `tools/generator/examples` |
-| Stage D   | complete | `openforge-default-nest-umi-v1` template pack, render layer, VFS helpers and golden snapshot tests render API/Admin/SDK/Test/Docs/Prisma/Patch virtual files in memory |
-| Stage E-L | pending  | Safe apply, manifest writer, rollback, generator packs hardening, doctor/e2e/gate and final docs are not implemented yet                                               |
+| Stage     | Status   | Evidence                                                                                                                                                                                        |
+| --------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Stage A   | complete | This architecture document, roadmap update and progress ledger entry exist                                                                                                                      |
+| Stage B   | complete | `packages/contracts/src/openforge-contract.ts` exports V1 template/apply/manifest/rollback/marker/patch/config contracts and pure marker/apply validation helpers                               |
+| Stage C   | complete | `tools/generator/src/schema/**` and `tools/generator/src/config/**` validate Schema/config DSL V1, with legal and illegal V1 fixtures under `tools/generator/examples`                          |
+| Stage D   | complete | `openforge-default-nest-umi-v1` template pack, render layer, VFS helpers and golden snapshot tests render API/Admin/SDK/Test/Docs/Prisma/Patch virtual files in memory                          |
+| Stage E   | complete | `tools/generator/src/apply/apply-writer.ts` applies generated-owned VFS output only with explicit `--yes`, defaults to dry-run, writes manifests, verifies hashes and rolls back partial writes |
+| Stage F-L | pending  | Rollback, generator packs hardening, doctor/e2e/gate and final docs are not implemented yet                                                                                                     |
 
 ## Generated Ownership Model
 
@@ -115,11 +112,16 @@ Prisma output remains draft/hint only. OpenForge must not directly write `prisma
 
 ## Apply And Rollback
 
-V1 write-capable commands are planned for later stages and are not introduced in Stage A:
+Stage E introduces `apply`; it remains dry-run by default and only writes with explicit `--yes`:
 
 ```bash
 pnpm openforge:apply -- --schema <schema> --config <config> --dry-run
 pnpm openforge:apply -- --schema <schema> --config <config> --yes
+```
+
+Rollback and manifest inspection commands remain planned for later stages:
+
+```bash
 pnpm openforge:rollback -- --manifest <manifest> --dry-run
 pnpm openforge:rollback -- --manifest <manifest> --yes
 pnpm openforge:manifest -- --list

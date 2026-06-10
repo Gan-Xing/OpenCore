@@ -1,4 +1,5 @@
 import type { OpenForgePlanFormat } from '@opencore/contracts';
+import { applyOpenForge } from './apply/apply-writer';
 import { buildDiffPlan } from './diff/diff-plan';
 import { getOpenForgeWorkspaceStatus } from './index';
 import {
@@ -30,8 +31,9 @@ function printHelp(stdout: WritableStream): void {
       '  plan   Output a read-only generate plan',
       '  diff   Output a read-only diff plan',
       '  check  Run read-only preflight checks',
+      '  apply  Safely apply generated virtual files, defaulting to dry-run',
       '',
-      'S9 does not write generated target files.',
+      'Apply writes require explicit --yes.',
       '',
     ].join('\n'),
   );
@@ -59,6 +61,26 @@ function readFormat(argv: readonly string[]): OpenForgePlanFormat {
   }
 
   return 'json';
+}
+
+function hasFlag(argv: readonly string[], name: string): boolean {
+  return argv.includes(name);
+}
+
+function buildApplyCommand(
+  schemaPath: string,
+  configPath: string,
+  dryRun: boolean,
+  yes: boolean,
+): string {
+  return [
+    'pnpm openforge:apply --',
+    '--schema',
+    schemaPath,
+    ...(configPath ? ['--config', configPath] : []),
+    ...(dryRun ? ['--dry-run'] : []),
+    ...(!dryRun && yes ? ['--yes'] : []),
+  ].join(' ');
 }
 
 export function runCli(
@@ -115,6 +137,28 @@ export function runCli(
     stdout.write(formatPreflightReportAsJson(report));
 
     return { exitCode: report.valid ? 0 : 1 };
+  }
+
+  if (command === 'apply') {
+    const schemaPath = readOption(
+      argv,
+      '--schema',
+      'tools/generator/examples/core.dict.v1.schema.json',
+    );
+    const configPath = readOption(argv, '--config', '');
+    const yes = hasFlag(argv, '--yes');
+    const dryRun = hasFlag(argv, '--dry-run') || !yes;
+    const result = applyOpenForge({
+      schemaPath,
+      configPath: configPath || undefined,
+      mode: dryRun ? 'dry-run' : 'write',
+      yes,
+      command: buildApplyCommand(schemaPath, configPath, dryRun, yes),
+    });
+
+    printJson(stdout, result);
+
+    return { exitCode: result.errors.length > 0 ? 1 : 0 };
   }
 
   if (command === 'status') {
