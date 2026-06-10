@@ -701,13 +701,59 @@
   - R6 must still run the full integration smoke gate against the now-connected runtime.
   - No blocker for R6.
 
+### 2026-06-10 R6 Integration smoke and drift gate execution
+
+- Stage: R6 Integration smoke and drift gate
+- Completed:
+  - 重新读取 runtime handoff、API bootstrap、contract/permission、module registry、priority roadmap、README、strategy README 和本 progress，并确认 R6 是 R5 之后最早未完成阶段。
+  - 使用真实 OpenCore runtime 执行完整命令门禁，覆盖 format、build、test、lint、typecheck、Prisma validation、OpenAPI export/check、API/Admin、SDK 和 contracts。
+  - 运行 live API smoke：`/health/live`、`/health/ready`、`/api/docs`、`/api/auth/login`、`/api/monitor/status` 均通过。
+  - live monitor payload 脱敏检查只记录状态，不输出 token、password、database URL、Redis URL、S3 key 或任何真实 secret。
+  - Admin smoke 使用 `pnpm test:admin` 覆盖 Dashboard、System、Security、Monitor、Tool 路由与菜单/权限链路。
+  - OpenAPI snapshot 与代码一致，SDK/contracts targeted tests 均通过。
+- Runtime smoke evidence:
+  - `/health/live` status: `ok`.
+  - `/health/ready` status: `ready`.
+  - `/api/docs` HTTP status: `200`.
+  - `/api/monitor/status` status: `ok`.
+  - Monitor dependencies: `api`、`database`、`redis`、`queue`、`s3`、`file-assets` 均为 `ok`。
+  - Smoke 后已停止 `pnpm dev:api` 会话，host `3000` 不再监听。
+- Tests:
+  - `pnpm format:check` pass.
+  - `pnpm build` pass.
+  - `pnpm test` pass.
+  - `pnpm lint` pass.
+  - `pnpm typecheck` pass.
+  - `pnpm prisma:validate` pass.
+  - `pnpm openapi:export` pass.
+  - `pnpm openapi:check` pass.
+  - `pnpm test:api` pass.
+  - `pnpm test:admin` pass.
+  - `NX_DAEMON=false pnpm nx test sdk` pass.
+  - `NX_DAEMON=false pnpm nx test contracts` pass.
+- Files changed:
+  - `docs/strategy/progress.md`
+- Local-only files:
+  - `.env.opencore.local` was used for local OpenCore runtime smoke and remains ignored; not staged or committed.
+- Remaining:
+  - R7 尚未完成。
+  - R7 Final docs and audit 是最早未完成阶段。
+- Next:
+  - 重新读取本 progress 后，只进入 R7 Final docs and audit：同步最终文档、记录 R-1 到 R7 完成证据，并保持 S9 OpenForge 未开始、P4/P5 backlog 保留。
+- Scope guard:
+  - No code, schema, migration, seed, env, runtime service, Redis key, queue, bucket, object, database row, or business data was modified during R6.
+  - No real `.env`, password, token, MinIO key, database URL, Redis URL, RabbitMQ URL, JWT secret, bootstrap password, or smoke access token was committed or printed.
+  - No S9 OpenForge generator or P4/P5 module was implemented.
+- Risk/blocker:
+  - No blocker for R7.
+
 ## 未完成项
 
-战略蓝图文档包已完成。S3、S4、S5、S6、S7、S8 已完成。Runtime integration 已完成 R-1 Legacy freeze、R0 Runtime audit、R1 Env mapping、R2 PostgreSQL migration baseline、R3 Persistent RBAC、R4 Persistent system management 和 R5 Redis/BullMQ/MinIO runtime；R6-R7 尚未完成，R6 Integration smoke and drift gate 是最早未完成阶段。
+战略蓝图文档包已完成。S3、S4、S5、S6、S7、S8 已完成。Runtime integration 已完成 R-1 Legacy freeze、R0 Runtime audit、R1 Env mapping、R2 PostgreSQL migration baseline、R3 Persistent RBAC、R4 Persistent system management、R5 Redis/BullMQ/MinIO runtime 和 R6 Integration smoke and drift gate；R7 尚未完成，R7 Final docs and audit 是最早未完成阶段。
 
 ## 下一轮建议
 
-继续执行 runtime integration loop。下一轮只进入 R6 Integration smoke and drift gate：用真实 runtime 执行 API/Admin/OpenAPI/SDK/Prisma smoke 和 drift gate；不要进入 S9 OpenForge，也不要实现 P4/P5 模块。
+继续执行 runtime integration loop。下一轮只进入 R7 Final docs and audit：同步最终文档、记录 R-1 到 R7 完成证据，并明确 S9 OpenForge 未开始、P4/P5 backlog 保留；不要进入 S9 OpenForge，也不要实现 P4/P5 模块。
 
 ## 当前验收结论
 
@@ -734,3 +780,4 @@
 - Runtime integration R3 Persistent RBAC 已完成：API RBAC 生产 provider 已切换到 Prisma-backed repository，seed fixture 仅保留为单测替身；R4-R7 仍需继续按 runtime handoff 执行。
 - Runtime integration R4 Persistent system management 已完成：dict/config/file metadata/log repository 已切换到 Prisma-backed persistence，S7 seed fixture 仅保留为单测替身；R5-R7 仍需继续按 runtime handoff 执行。
 - Runtime integration R5 Redis/BullMQ/MinIO runtime 已完成：Monitor runtime diagnostics 已接入 PostgreSQL、Redis、BullMQ 和 MinIO/S3 read-only checks，file metadata storageKey 已对齐 OpenCore S3 prefix；R6-R7 仍需继续按 runtime handoff 执行。
+- Runtime integration R6 Integration smoke and drift gate 已完成：完整 R6 command gate、OpenAPI drift gate、Admin smoke、SDK/contracts targeted tests 和 live API smoke 均通过；R7 仍需继续按 runtime handoff 执行。
