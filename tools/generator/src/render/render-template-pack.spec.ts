@@ -481,4 +481,186 @@ describe('OpenForge default template pack renderer', () => {
       rmSync(tempRoot, { force: true, recursive: true });
     }
   });
+
+  it('renders Admin generator pack skeletons with permission-aware operations', () => {
+    const { schema } = loadManualSchema(
+      'tools/generator/examples/core.dict.v1.schema.json',
+    );
+    const { config } = loadOpenForgeGeneratorConfig();
+    const files = renderTemplatePack(schema, config);
+    const adminFiles = files
+      .filter((file) => file.artifactKind.startsWith('admin.'))
+      .sort((left, right) =>
+        left.artifactKind.localeCompare(right.artifactKind),
+      );
+
+    expect(
+      adminFiles.map((file) => {
+        const content = String(file.content.value);
+
+        return {
+          kind: file.artifactKind,
+          targetPath: file.targetPath,
+          checks: {
+            proTable: content.includes('ProTable'),
+            modalForm: content.includes('ModalForm'),
+            drawerForm: content.includes('DrawerForm'),
+            descriptions: content.includes('ProDescriptions'),
+            exportButton: content.includes('ExportButtonProps'),
+            permissionMap: content.includes('generatedDictPermissions'),
+            permissionAwareButtons: content.includes(
+              'canUseGeneratedDictAction',
+            ),
+            sdkPlaceholder: content.includes('generatedDictClient'),
+            loadingErrorEmpty:
+              content.includes('Result') && content.includes('Empty'),
+          },
+        };
+      }),
+    ).toMatchInlineSnapshot(`
+[
+  {
+    "checks": {
+      "descriptions": true,
+      "drawerForm": false,
+      "exportButton": false,
+      "loadingErrorEmpty": false,
+      "modalForm": false,
+      "permissionAwareButtons": false,
+      "permissionMap": false,
+      "proTable": false,
+      "sdkPlaceholder": false,
+    },
+    "kind": "admin.descriptions",
+    "targetPath": "apps/admin/src/pages/Generated/Dict/components/DictDetail.tsx",
+  },
+  {
+    "checks": {
+      "descriptions": false,
+      "drawerForm": true,
+      "exportButton": false,
+      "loadingErrorEmpty": false,
+      "modalForm": false,
+      "permissionAwareButtons": false,
+      "permissionMap": false,
+      "proTable": false,
+      "sdkPlaceholder": false,
+    },
+    "kind": "admin.drawerForm",
+    "targetPath": "apps/admin/src/pages/Generated/Dict/components/DictDrawer.tsx",
+  },
+  {
+    "checks": {
+      "descriptions": false,
+      "drawerForm": false,
+      "exportButton": true,
+      "loadingErrorEmpty": false,
+      "modalForm": false,
+      "permissionAwareButtons": false,
+      "permissionMap": false,
+      "proTable": false,
+      "sdkPlaceholder": false,
+    },
+    "kind": "admin.exportButton",
+    "targetPath": "apps/admin/src/pages/Generated/Dict/components/DictExportButton.tsx",
+  },
+  {
+    "checks": {
+      "descriptions": false,
+      "drawerForm": false,
+      "exportButton": false,
+      "loadingErrorEmpty": false,
+      "modalForm": true,
+      "permissionAwareButtons": false,
+      "permissionMap": false,
+      "proTable": false,
+      "sdkPlaceholder": false,
+    },
+    "kind": "admin.modalForm",
+    "targetPath": "apps/admin/src/pages/Generated/Dict/components/DictForm.tsx",
+  },
+  {
+    "checks": {
+      "descriptions": false,
+      "drawerForm": false,
+      "exportButton": false,
+      "loadingErrorEmpty": true,
+      "modalForm": false,
+      "permissionAwareButtons": true,
+      "permissionMap": true,
+      "proTable": true,
+      "sdkPlaceholder": true,
+    },
+    "kind": "admin.proTablePage",
+    "targetPath": "apps/admin/src/pages/Generated/Dict/index.tsx",
+  },
+  {
+    "checks": {
+      "descriptions": false,
+      "drawerForm": false,
+      "exportButton": false,
+      "loadingErrorEmpty": false,
+      "modalForm": false,
+      "permissionAwareButtons": true,
+      "permissionMap": true,
+      "proTable": false,
+      "sdkPlaceholder": false,
+    },
+    "kind": "admin.smokeTest",
+    "targetPath": "apps/admin/src/pages/Generated/Dict/Dict.smoke.spec.ts",
+  },
+]
+`);
+
+    const page = findOpenForgeVirtualFile(
+      files,
+      'apps/admin/src/pages/Generated/Dict/index.tsx',
+    );
+    const routePatch = findOpenForgeVirtualFile(
+      files,
+      'openforge-patches/admin-route.patch.md',
+    );
+    const accessPatch = findOpenForgeVirtualFile(
+      files,
+      'openforge-patches/admin-access.patch.md',
+    );
+
+    expect(String(page?.content.value)).toContain("create: 'core:dict:create'");
+    expect(String(page?.content.value)).toContain("export: 'core:dict:export'");
+    expect(String(routePatch?.content.value)).toContain(
+      'Target human file: `apps/admin/.umirc.ts`',
+    );
+    expect(String(accessPatch?.content.value)).toContain(
+      'Target human file: `apps/admin/src/access.ts`',
+    );
+  });
+
+  it('transpiles generated Admin TSX skeletons', () => {
+    const { schema } = loadManualSchema(
+      'tools/generator/examples/core.dict.v1.schema.json',
+    );
+    const { config } = loadOpenForgeGeneratorConfig();
+    const files = renderTemplatePack(schema, config).filter((file) =>
+      file.artifactKind.startsWith('admin.'),
+    );
+    const diagnostics = files.flatMap((file) => {
+      const result = ts.transpileModule(String(file.content.value), {
+        fileName: file.targetPath,
+        reportDiagnostics: true,
+        compilerOptions: {
+          jsx: ts.JsxEmit.ReactJSX,
+          module: ts.ModuleKind.CommonJS,
+          target: ts.ScriptTarget.ES2022,
+        },
+      });
+
+      return result.diagnostics ?? [];
+    });
+
+    expect(
+      diagnostics.map((diagnostic) =>
+        ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n'),
+      ),
+    ).toEqual([]);
+  });
 });

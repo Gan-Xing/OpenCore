@@ -568,6 +568,396 @@ describe('${names.pascal} generated API skeleton', () => {
 `;
 }
 
+function renderAdminRecordType(schema: OpenForgeManualSchema): string {
+  return `export type ${getNameParts(schema).pascal}Record = {
+${schema.fields
+  .map(
+    (field) =>
+      `  ${field.name}${field.required ? '' : '?'}: ${fieldTypeScriptType(field)};`,
+  )
+  .join('\n')}
+};`;
+}
+
+function renderAdminPermissionMap(schema: OpenForgeManualSchema): string {
+  const names = getNameParts(schema);
+  const entries = schema.actions
+    .map((action) => {
+      const permission = getPermissionForAction(schema, action);
+
+      return permission ? `  ${action}: ${quoteString(permission)},` : '';
+    })
+    .filter(Boolean)
+    .join('\n');
+
+  return `export const generated${names.pascal}Permissions = {
+${entries}
+} as const;
+
+export type Generated${names.pascal}Action = keyof typeof generated${names.pascal}Permissions;
+
+export function canUseGenerated${names.pascal}Action(
+  action: Generated${names.pascal}Action,
+  grantedPermissions: readonly string[] = Object.values(generated${names.pascal}Permissions),
+): boolean {
+  return grantedPermissions.includes(generated${names.pascal}Permissions[action]);
+}`;
+}
+
+function renderAdminColumn(field: OpenForgeFieldSchema): string {
+  if (field.type === 'boolean') {
+    return `  {
+    title: ${quoteString(field.title)},
+    dataIndex: ${quoteString(field.name)},
+    valueType: 'switch',
+    render: (_, record) => (
+      <Tag color={record.${field.name} ? 'green' : 'default'}>
+        {record.${field.name} ? 'Enabled' : 'Disabled'}
+      </Tag>
+    ),
+  },`;
+  }
+
+  if (field.enumValues && field.enumValues.length > 0) {
+    return `  {
+    title: ${quoteString(field.title)},
+    dataIndex: ${quoteString(field.name)},
+    valueEnum: {
+${field.enumValues
+  .map((value) => `      ${value}: { text: ${quoteString(value)} },`)
+  .join('\n')}
+    },
+    render: (_, record) => <Tag>{String(record.${field.name} ?? '-')}</Tag>,
+  },`;
+  }
+
+  if (field.type === 'datetime') {
+    return `  {
+    title: ${quoteString(field.title)},
+    dataIndex: ${quoteString(field.name)},
+    valueType: 'dateTime',
+  },`;
+  }
+
+  return `  {
+    title: ${quoteString(field.title)},
+    dataIndex: ${quoteString(field.name)},
+    ellipsis: true,
+  },`;
+}
+
+function renderAdminFormControl(field: OpenForgeFieldSchema): string {
+  const commonProps = [
+    `name=${quoteString(field.name)}`,
+    `label=${quoteString(field.title)}`,
+    field.required ? 'rules={[{ required: true }]}' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  if (field.type === 'boolean') {
+    return `      <ProFormSwitch ${commonProps} />`;
+  }
+
+  if (field.type === 'number') {
+    return `      <ProFormDigit ${commonProps} />`;
+  }
+
+  if (field.enumValues && field.enumValues.length > 0) {
+    return `      <ProFormSelect
+        ${commonProps}
+        valueEnum={{
+${field.enumValues
+  .map((value) => `          ${value}: { text: ${quoteString(value)} },`)
+  .join('\n')}
+        }}
+      />`;
+  }
+
+  if (field.type === 'text' || field.type === 'json') {
+    return `      <ProFormTextArea ${commonProps} />`;
+  }
+
+  return `      <ProFormText ${commonProps} />`;
+}
+
+function renderAdminPageContent(
+  schema: OpenForgeManualSchema,
+  marker: OpenForgeGeneratedMarker,
+): string {
+  const names = getNameParts(schema);
+  const markerComment = renderMarkerComment(marker);
+  const listFields = getFieldsByName(schema, schema.list.columns);
+
+  return `${markerComment}
+import { useState } from 'react';
+import {
+  PageContainer,
+  ProTable,
+  type ProColumns,
+} from '@ant-design/pro-components';
+import { Empty, Result, Space, Tag } from 'antd';
+import ${names.pascal}Detail from './components/${names.pascal}Detail';
+import ${names.pascal}ExportButton from './components/${names.pascal}ExportButton';
+import ${names.pascal}Form from './components/${names.pascal}Form';
+
+${renderAdminRecordType(schema)}
+
+${renderAdminPermissionMap(schema)}
+
+const generated${names.pascal}Client = {
+  async list(): Promise<${names.pascal}Record[]> {
+    return [];
+  },
+};
+
+const columns: ProColumns<${names.pascal}Record>[] = [
+${listFields.map((field) => renderAdminColumn(field)).join('\n')}
+];
+
+export default function Generated${names.pascal}Page() {
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const canCreate = canUseGenerated${names.pascal}Action('create');
+  const canExport = canUseGenerated${names.pascal}Action('export');
+
+  return (
+    <PageContainer title=${quoteString(schema.list.title)} subTitle="OpenForge generated">
+      {loadError ? (
+        <Result status="error" title="Unable to load generated records" subTitle={loadError} />
+      ) : null}
+      <ProTable<${names.pascal}Record>
+        rowKey=${quoteString(getIdentityField(schema).name)}
+        columns={columns}
+        search={{ labelWidth: 'auto' }}
+        options={false}
+        request={async () => {
+          try {
+            const data = await generated${names.pascal}Client.list();
+            setLoadError(null);
+
+            return {
+              data,
+              success: true,
+              total: data.length,
+            };
+          } catch (error) {
+            setLoadError(error instanceof Error ? error.message : 'Unknown generated client error');
+
+            return {
+              data: [],
+              success: false,
+              total: 0,
+            };
+          }
+        }}
+        locale={{
+          emptyText: <Empty description="No generated records" />,
+        }}
+        expandable={{
+          expandedRowRender: (record) => <${names.pascal}Detail record={record} />,
+        }}
+        toolBarRender={() => [
+          <${names.pascal}Form key="create" disabled={!canCreate} />,
+          <${names.pascal}ExportButton
+            key="export"
+            disabled={!canExport}
+            columns={${renderStringArray(schema.export?.columns ?? schema.list.columns)}}
+          />,
+        ]}
+      />
+      <Space size="small" />
+    </PageContainer>
+  );
+}
+`;
+}
+
+function renderAdminFormContent(
+  schema: OpenForgeManualSchema,
+  marker: OpenForgeGeneratedMarker,
+  mode: 'drawer' | 'modal',
+): string {
+  const names = getNameParts(schema);
+  const markerComment = renderMarkerComment(marker);
+  const formFields = getFieldsByName(schema, schema.form.fields);
+  const componentName = mode === 'drawer' ? 'DrawerForm' : 'ModalForm';
+
+  return `${markerComment}
+import {
+  ${componentName},
+  ProFormDigit,
+  ProFormSelect,
+  ProFormSwitch,
+  ProFormText,
+  ProFormTextArea,
+} from '@ant-design/pro-components';
+import { Button } from 'antd';
+import type { ${names.pascal}Record } from '../index';
+
+export type ${names.pascal}${mode === 'drawer' ? 'Drawer' : 'Form'}Props = {
+  disabled?: boolean;
+  initialValues?: Partial<${names.pascal}Record>;
+  onSubmit?: (values: Partial<${names.pascal}Record>) => Promise<void> | void;
+};
+
+export default function ${names.pascal}${mode === 'drawer' ? 'Drawer' : 'Form'}({
+  disabled = false,
+  initialValues,
+  onSubmit,
+}: ${names.pascal}${mode === 'drawer' ? 'Drawer' : 'Form'}Props) {
+  return (
+    <${componentName}<Partial<${names.pascal}Record>>
+      title=${quoteString(schema.form.title)}
+      trigger={
+        <Button type="primary" disabled={disabled}>
+          New ${schema.title}
+        </Button>
+      }
+      initialValues={initialValues}
+      onFinish={async (values) => {
+        await onSubmit?.(values);
+        return true;
+      }}
+    >
+${formFields.map((field) => renderAdminFormControl(field)).join('\n')}
+    </${componentName}>
+  );
+}
+`;
+}
+
+function renderAdminDetailContent(
+  schema: OpenForgeManualSchema,
+  marker: OpenForgeGeneratedMarker,
+): string {
+  const names = getNameParts(schema);
+  const markerComment = renderMarkerComment(marker);
+  const detailFields = getFieldsByName(schema, schema.detail.fields);
+
+  return `${markerComment}
+import { ProDescriptions, type ProDescriptionsItemProps } from '@ant-design/pro-components';
+import { Drawer, Empty, Tag } from 'antd';
+import type { ${names.pascal}Record } from '../index';
+
+export type ${names.pascal}DetailRecord = ${names.pascal}Record;
+
+export type ${names.pascal}DetailProps = {
+  record?: ${names.pascal}DetailRecord;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+};
+
+const columns: ProDescriptionsItemProps<${names.pascal}DetailRecord>[] = [
+${detailFields
+  .map(
+    (field) => `  {
+    title: ${quoteString(field.title)},
+    dataIndex: ${quoteString(field.name)},
+    render: (_, record) =>
+      record.${field.name} === undefined || record.${field.name} === null ? (
+        '-'
+      ) : (
+        <Tag>{String(record.${field.name})}</Tag>
+      ),
+  },`,
+  )
+  .join('\n')}
+];
+
+export default function ${names.pascal}Detail({
+  record,
+  open,
+  onOpenChange,
+}: ${names.pascal}DetailProps) {
+  if (!record) {
+    return <Empty description="Select a generated record" />;
+  }
+
+  return (
+    <Drawer
+      title=${quoteString(schema.detail.title)}
+      open={open}
+      onClose={() => onOpenChange?.(false)}
+      width={640}
+    >
+      <ProDescriptions<${names.pascal}DetailRecord>
+        bordered
+        column={1}
+        columns={columns}
+        dataSource={record}
+      />
+    </Drawer>
+  );
+}
+`;
+}
+
+function renderAdminExportButtonContent(
+  schema: OpenForgeManualSchema,
+  marker: OpenForgeGeneratedMarker,
+): string {
+  const names = getNameParts(schema);
+  const markerComment = renderMarkerComment(marker);
+
+  return `${markerComment}
+import { Button } from 'antd';
+
+export type ${names.pascal}ExportButtonProps = {
+  columns?: readonly string[];
+  disabled?: boolean;
+  onExport?: (columns: readonly string[]) => Promise<void> | void;
+};
+
+export default function ${names.pascal}ExportButton({
+  columns = ${renderStringArray(schema.export?.columns ?? schema.list.columns)},
+  disabled = false,
+  onExport,
+}: ${names.pascal}ExportButtonProps) {
+  return (
+    <Button
+      disabled={disabled}
+      onClick={() => {
+        void onExport?.(columns);
+      }}
+    >
+      Export
+    </Button>
+  );
+}
+`;
+}
+
+function renderAdminSmokeTestContent(
+  schema: OpenForgeManualSchema,
+  marker: OpenForgeGeneratedMarker,
+): string {
+  const names = getNameParts(schema);
+  const markerComment = renderMarkerComment(marker);
+
+  return `${markerComment}
+import {
+  canUseGenerated${names.pascal}Action,
+  generated${names.pascal}Permissions,
+} from './index';
+
+describe('${names.pascal} generated Admin skeleton', () => {
+  it('maps operation permissions without registering routes automatically', () => {
+    expect(generated${names.pascal}Permissions).toMatchObject({
+${schema.actions
+  .map((action) => {
+    const permission = getPermissionForAction(schema, action);
+
+    return permission ? `      ${action}: ${quoteString(permission)},` : '';
+  })
+  .filter(Boolean)
+  .join('\n')}
+    });
+    expect(canUseGenerated${names.pascal}Action('read')).toBe(true);
+  });
+});
+`;
+}
+
 function renderTypeScriptContent(
   kind: OpenForgeArtifactKind,
   schema: OpenForgeManualSchema,
@@ -575,9 +965,6 @@ function renderTypeScriptContent(
 ): string {
   const names = getNameParts(schema);
   const markerComment = renderMarkerComment(marker);
-  const permissions = schema.permissions
-    .map((permission) => `'${permission}'`)
-    .join(', ');
 
   if (kind === 'api.dto') {
     return renderApiDtoContent(schema, marker);
@@ -603,18 +990,28 @@ function renderTypeScriptContent(
     return renderApiSpecContent(schema, marker);
   }
 
-  if (kind.startsWith('admin.')) {
-    return `${markerComment}
-export default function Generated${names.pascal}() {
-  return null;
-}
+  if (kind === 'admin.proTablePage') {
+    return renderAdminPageContent(schema, marker);
+  }
 
-export const generated${names.pascal}Meta = {
-  title: '${schema.title}',
-  basePath: '${schema.admin.basePath}',
-  permissions: [${permissions}],
-};
-`;
+  if (kind === 'admin.modalForm') {
+    return renderAdminFormContent(schema, marker, 'modal');
+  }
+
+  if (kind === 'admin.drawerForm') {
+    return renderAdminFormContent(schema, marker, 'drawer');
+  }
+
+  if (kind === 'admin.descriptions' || kind === 'admin.detail') {
+    return renderAdminDetailContent(schema, marker);
+  }
+
+  if (kind === 'admin.exportButton') {
+    return renderAdminExportButtonContent(schema, marker);
+  }
+
+  if (kind === 'admin.smokeTest') {
+    return renderAdminSmokeTestContent(schema, marker);
   }
 
   if (kind.startsWith('sdk.')) {
@@ -666,6 +1063,53 @@ Safety:
 - OpenForge does not modify \`app.module.ts\` directly.
 - The generated repository is a placeholder and must be replaced before production registration.
 - Do not paste secrets into generated patch plans.
+`;
+  }
+
+  if (kind === 'patch.admin-route') {
+    return `${renderMarkdownMarker(marker)}
+
+# Admin Route Patch
+
+Target human file: \`apps/admin/.umirc.ts\`
+
+Generated page component:
+
+\`\`\`ts
+{
+  path: ${quoteString(schema.admin.basePath)},
+  name: ${quoteString(schema.title)},
+  component: ${quoteString(`./Generated/${names.pascal}`)},
+}
+\`\`\`
+
+Safety:
+
+- OpenForge does not modify \`.umirc.ts\` directly.
+- Review route naming and menu placement before adding it by hand.
+- Do not introduce generated demo routes into production menus without review.
+`;
+  }
+
+  if (kind === 'patch.admin-access') {
+    return `${renderMarkdownMarker(marker)}
+
+# Admin Access Patch
+
+Target human file: \`apps/admin/src/access.ts\`
+
+Generated permissions:
+
+${schema.permissions.map((permission) => `- \`${permission}\``).join('\n')}
+
+Manual step:
+
+Expose access helpers for the generated page only after confirming the route and permission mapping.
+
+Safety:
+
+- OpenForge does not modify \`access.ts\` directly.
+- Operation buttons in generated Admin files are permission-aware placeholders.
 `;
   }
 

@@ -22,9 +22,9 @@ V1 不改变 OpenCore 的业务边界：它只生成平台开发骨架和 review
 | Safety          | 阻止绝对路径、`../`、`.env*`、`prisma/schema.prisma`、`prisma/migrations/**` 和 P4/P5 schema               |
 | Tests           | OpenForge reader、validator、planner、diff、preflight、CLI 和 safety tests 已存在                          |
 
-Stage B-G 已补齐 V1 contract surface、schema/config DSL、template pack/VFS、safe apply writer、rollback engine 和 API generator pack。后续仍缺少实现层：
+Stage B-H 已补齐 V1 contract surface、schema/config DSL、template pack/VFS、safe apply writer、rollback engine、API generator pack 和 Admin generator pack。后续仍缺少实现层：
 
-- 无 Admin/SDK/Test/Docs generator pack 的 golden snapshots。
+- 无 SDK/Test/Docs generator pack 的 golden snapshots。
 - 无 `doctor` CLI。
 - 无 OpenForge V1 gate。
 
@@ -74,7 +74,8 @@ flowchart TD
 | Stage E   | complete | `tools/generator/src/apply/apply-writer.ts` applies generated-owned VFS output only with explicit `--yes`, defaults to dry-run, writes manifests, verifies hashes and rolls back partial writes                             |
 | Stage F   | complete | `tools/generator/src/rollback/rollback-engine.ts` plans and applies manifest rollback, blocks modified generated files, restores from apply backups, and writes rollback audit records                                      |
 | Stage G   | complete | API generator pack renders NestJS module/controller/service/repository/DTO/spec skeletons with Swagger decorators, `RequirePermission`, no Prisma access, patch-only app module registration and API golden/typecheck tests |
-| Stage H-L | pending  | Admin, SDK/Test/Docs generator packs, doctor/e2e/gate and final docs are not implemented yet                                                                                                                                |
+| Stage H   | complete | Admin generator pack renders ProTable page, Modal/Drawer forms, ProDescriptions detail, export button and smoke skeletons with permission-aware operations, placeholder client calls and patch-only route/access plans      |
+| Stage I-L | pending  | SDK/Test/Docs generator packs, doctor/e2e/gate and final docs are not implemented yet                                                                                                                                       |
 
 ## Generated Ownership Model
 
@@ -108,9 +109,12 @@ The default V1 template pack is `openforge-default-nest-umi-v1`. Current Stage G
 - Repository is a generated placeholder and must be replaced before production registration.
 - API app module registration remains a patch-only markdown plan.
 
+- Admin: ProTable page, ModalForm or DrawerForm, ProDescriptions detail, export button and smoke test skeleton.
+- Admin page uses generated client placeholders, loading/error/empty states and permission-aware operation buttons.
+- Admin route/access integration remains patch-only markdown; OpenForge does not modify `.umirc.ts` or `access.ts`.
+
 Later stages will harden:
 
-- Admin: ProTable page, ModalForm or DrawerForm, ProDescriptions detail, export button and smoke test skeleton.
 - SDK: generated client, generated types and client spec.
 - Docs: module doc, API/Admin doc and runbook fragments.
 - Prisma: model draft and migration hint only.
