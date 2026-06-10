@@ -639,13 +639,75 @@
   - R5 still needs to validate Redis/BullMQ/MinIO isolation against OpenCore prefixes/bucket without exposing credentials.
   - No blocker for R5.
 
+### 2026-06-10 R5 Redis/BullMQ/MinIO runtime execution
+
+- Stage: R5 Redis/BullMQ/MinIO runtime
+- Completed:
+  - 重新读取 runtime handoff、S3-S8 handoff、strategy README、staged roadmap、API bootstrap、contract/permission、module registry、priority roadmap、runtime inventory、OpenCore env mapping、README 和本 progress，并确认 R5 是 R4 之后最早未完成阶段。
+  - 新增 runtime client dependencies：`ioredis`、`bullmq`、`minio`。
+  - 新增 `RuntimeDiagnosticsService`，提供 PostgreSQL read-only query、Redis `PING`、BullMQ read-only queue counts、MinIO/S3 bucket + prefix listability health checks。
+  - 更新 `MonitoringRepository` 和 `MonitoringController` 为异步 runtime diagnostics；`/monitor/status` 现在展示 DB、Redis、Queue、S3、file-assets 基础状态，`/monitor/queues` 从 BullMQ/Redis read-only probe 读取。
+  - 使用显式 Nest injection token 绑定 runtime diagnostics，避免 TypeScript interface token 在 Nest DI 中丢失。
+  - 更新 `MonitoringModule` 引入 `DatabaseModule` 并注册 diagnostics provider。
+  - 将 file asset `storageKey` 生成与 OpenCore S3 prefix 对齐，默认/本地为 `runtime/file-assets/...`。
+  - 更新 system-management seed 与 SDK fixture 的 baseline file metadata storageKey；`prisma/seed.ts` 改为按稳定 seed id upsert file asset，支持 prefix 变更。
+  - 本地创建/确认 OpenCore-specific MinIO bucket/user/policy，并只更新 ignored `.env.opencore.local`；未输出、未提交任何 generated credential。
+- Runtime evidence:
+  - Runtime diagnostics integration test 验证 PostgreSQL、Redis、BullMQ 和 S3 status 均为 `ok`。
+  - BullMQ queues 使用 `bullmq-redis-readonly` driver，覆盖 `system-audit` 和 `table-export`。
+  - MinIO/S3 health check 确认 OpenCore bucket 可访问且 `runtime/` prefix 可 list。
+  - File metadata baseline storageKey 已更新为 `runtime/file-assets/opencore-readme.txt`。
+  - Sanitized payload tests 确认 monitor payload 不包含 `postgresql://`、`redis://` 或 S3 secret variable names。
+- Tests:
+  - `pnpm prisma:seed` pass.
+  - `pnpm test:api` pass.
+  - `pnpm typecheck` pass.
+  - `pnpm lint` pass.
+  - `pnpm openapi:export` pass.
+  - `pnpm openapi:check` pass.
+  - `pnpm test` pass.
+  - `pnpm prisma:validate` pass.
+  - `pnpm format:check` pass.
+- Files changed:
+  - `apps/api/src/modules/monitor/monitoring/runtime-diagnostics.service.ts`
+  - `apps/api/src/modules/monitor/monitoring/runtime-diagnostics.service.spec.ts`
+  - `apps/api/src/modules/monitor/monitoring/monitoring.repository.ts`
+  - `apps/api/src/modules/monitor/monitoring/monitoring.repository.spec.ts`
+  - `apps/api/src/modules/monitor/monitoring/monitoring.controller.ts`
+  - `apps/api/src/modules/monitor/monitoring/monitoring.module.ts`
+  - `apps/api/src/modules/core/system-management/system-management.repository.ts`
+  - `apps/api/src/modules/core/system-management/prisma-system-management.repository.ts`
+  - `apps/api/src/modules/core/system-management/prisma-system-management.repository.spec.ts`
+  - `apps/api/src/modules/core/system-management/system-management.seed.ts`
+  - `packages/sdk/src/registry-fixtures.ts`
+  - `prisma/seed.ts`
+  - `package.json`
+  - `pnpm-lock.yaml`
+  - `docs/strategy/progress.md`
+- Local-only files:
+  - `.env.opencore.local` was updated with OpenCore-only local MinIO credentials and remains ignored; not staged or committed.
+- Remaining:
+  - R6-R7 尚未完成。
+  - R6 Integration smoke and drift gate 是最早未完成阶段。
+- Next:
+  - 重新读取本 progress 后，只进入 R6 Integration smoke and drift gate：用真实 runtime 执行 API/Admin/OpenAPI/SDK/Prisma smoke 和 drift gate。
+- Scope guard:
+  - No Redis keys were cleared, scanned broadly, or deleted.
+  - No NestWeb Redis prefix, RabbitMQ queue, MinIO bucket/path, database table, or business data was reused or modified.
+  - No full scheduler/task platform, large-data async export, provider upload flow, or workflow engine was implemented.
+  - No real `.env`, password, token, MinIO key, database URL, Redis URL, RabbitMQ URL, JWT secret, or bootstrap password was committed.
+  - No P4/P5 module implemented; CRM、ERP、MES、WMS、商城、支付、会员、多租户、知识库、RAG、Agent 仍保留在长期 backlog。
+- Risk/blocker:
+  - R6 must still run the full integration smoke gate against the now-connected runtime.
+  - No blocker for R6.
+
 ## 未完成项
 
-战略蓝图文档包已完成。S3、S4、S5、S6、S7、S8 已完成。Runtime integration 已完成 R-1 Legacy freeze、R0 Runtime audit、R1 Env mapping、R2 PostgreSQL migration baseline、R3 Persistent RBAC 和 R4 Persistent system management；R5-R7 尚未完成，R5 Redis/BullMQ/MinIO runtime 是最早未完成阶段。
+战略蓝图文档包已完成。S3、S4、S5、S6、S7、S8 已完成。Runtime integration 已完成 R-1 Legacy freeze、R0 Runtime audit、R1 Env mapping、R2 PostgreSQL migration baseline、R3 Persistent RBAC、R4 Persistent system management 和 R5 Redis/BullMQ/MinIO runtime；R6-R7 尚未完成，R6 Integration smoke and drift gate 是最早未完成阶段。
 
 ## 下一轮建议
 
-继续执行 runtime integration loop。下一轮只进入 R5 Redis/BullMQ/MinIO runtime：接入真实 Redis/BullMQ/MinIO/S3 runtime boundary 的只读诊断和独立 prefix/bucket/prefix 校验；不要进入 S9 OpenForge，也不要实现 P4/P5 模块。
+继续执行 runtime integration loop。下一轮只进入 R6 Integration smoke and drift gate：用真实 runtime 执行 API/Admin/OpenAPI/SDK/Prisma smoke 和 drift gate；不要进入 S9 OpenForge，也不要实现 P4/P5 模块。
 
 ## 当前验收结论
 
@@ -671,3 +733,4 @@
 - Runtime integration R2 PostgreSQL migration baseline 已完成：OpenCore 独立 PostgreSQL database/user/schema boundary、baseline migration、idempotent seed 和 Prisma scripts 已就绪；R3-R7 仍需继续按 runtime handoff 执行。
 - Runtime integration R3 Persistent RBAC 已完成：API RBAC 生产 provider 已切换到 Prisma-backed repository，seed fixture 仅保留为单测替身；R4-R7 仍需继续按 runtime handoff 执行。
 - Runtime integration R4 Persistent system management 已完成：dict/config/file metadata/log repository 已切换到 Prisma-backed persistence，S7 seed fixture 仅保留为单测替身；R5-R7 仍需继续按 runtime handoff 执行。
+- Runtime integration R5 Redis/BullMQ/MinIO runtime 已完成：Monitor runtime diagnostics 已接入 PostgreSQL、Redis、BullMQ 和 MinIO/S3 read-only checks，file metadata storageKey 已对齐 OpenCore S3 prefix；R6-R7 仍需继续按 runtime handoff 执行。

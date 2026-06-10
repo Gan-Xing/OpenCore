@@ -180,13 +180,18 @@ export function createExportPreview(
   };
 }
 
-export function createStorageKey(body: CreateFileAssetDto): string {
+export function createStorageKey(
+  body: CreateFileAssetDto,
+  prefix = 'runtime/',
+): string {
   const digest = createHash('sha256')
     .update(`${body.originalName}:${body.mimeType}:${body.sizeBytes}`)
     .digest('hex')
     .slice(0, 16);
 
-  return `file-assets/${digest}-${sanitizeFileName(body.originalName)}`;
+  return `${normalizeObjectPrefix(prefix)}file-assets/${digest}-${sanitizeFileName(
+    body.originalName,
+  )}`;
 }
 
 export function assertSafeConfigKey(key: string): void {
@@ -217,6 +222,16 @@ function normalizePositiveInteger(
 
 function sanitizeFileName(fileName: string): string {
   return fileName.replace(/[^a-zA-Z0-9._-]/g, '-');
+}
+
+function normalizeObjectPrefix(prefix: string): string {
+  const trimmed = prefix.trim();
+
+  if (!trimmed) {
+    return '';
+  }
+
+  return trimmed.endsWith('/') ? trimmed : `${trimmed}/`;
 }
 
 function clone<T>(value: T): T {

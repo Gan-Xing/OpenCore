@@ -136,7 +136,7 @@ export const seedFileAssets: readonly FileAssetRecord[] = [
     originalName: 'opencore-readme.txt',
     mimeType: 'text/plain',
     sizeBytes: 512,
-    storageKey: 'file-assets/opencore-readme.txt',
+    storageKey: 'runtime/file-assets/opencore-readme.txt',
     checksum: 'sha256:readme',
     uploadedBy: 'admin',
     createdAt: '2026-06-10T00:00:00.000Z',

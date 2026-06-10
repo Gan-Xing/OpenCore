@@ -49,7 +49,7 @@ describe('PrismaSystemManagementRepository integration', () => {
       expect.objectContaining({
         items: expect.arrayContaining([
           expect.objectContaining({
-            storageKey: 'file-assets/opencore-readme.txt',
+            storageKey: 'runtime/file-assets/opencore-readme.txt',
           }),
         ]),
       }),

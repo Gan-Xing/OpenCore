@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import {
+  RUNTIME_DIAGNOSTICS,
+  type RuntimeDiagnostics,
+} from './runtime-diagnostics.service';
 
 export type DependencyStatus = {
   name: string;
@@ -35,7 +39,18 @@ export type QueueStatus = {
 
 @Injectable()
 export class MonitoringRepository {
-  getSystemStatus(): SystemStatus {
+  constructor(
+    @Inject(RUNTIME_DIAGNOSTICS)
+    private readonly diagnostics: RuntimeDiagnostics,
+  ) {}
+
+  async getSystemStatus(): Promise<SystemStatus> {
+    const [database, redis, queue, s3] = await Promise.all([
+      this.diagnostics.checkDatabase(),
+      this.diagnostics.checkRedis(),
+      this.diagnostics.listQueues(),
+      this.diagnostics.checkS3(),
+    ]);
     const dependencies: DependencyStatus[] = [
       {
         name: 'api',
@@ -43,23 +58,20 @@ export class MonitoringRepository {
         latencyMs: 1,
         message: 'NestJS application is responding.',
       },
-      {
-        name: 'database',
-        status: 'ok',
-        latencyMs: 1,
-        message: 'Prisma/PostgreSQL schema is configured.',
-      },
+      database,
+      redis,
       {
         name: 'queue',
-        status: 'ok',
-        latencyMs: 0,
-        message: 'Read-only in-memory queue baseline is configured.',
+        status: queue.status,
+        latencyMs: queue.latencyMs,
+        message: queue.message,
       },
+      s3,
       {
         name: 'file-assets',
         status: 'ok',
         latencyMs: 0,
-        message: 'Generic file asset metadata is available.',
+        message: 'Generic file asset metadata uses the OpenCore S3 prefix.',
       },
     ];
 
@@ -83,31 +95,15 @@ export class MonitoringRepository {
     };
   }
 
-  listQueues(): { checkedAt: string; queues: readonly QueueStatus[] } {
+  async listQueues(): Promise<{
+    checkedAt: string;
+    queues: readonly QueueStatus[];
+  }> {
+    const queueProbe = await this.diagnostics.listQueues();
+
     return {
       checkedAt: new Date().toISOString(),
-      queues: [
-        {
-          name: 'system-audit',
-          driver: 'memory-readonly',
-          waiting: 0,
-          active: 0,
-          completed: 2,
-          failed: 0,
-          paused: false,
-          readOnly: true,
-        },
-        {
-          name: 'table-export',
-          driver: 'memory-readonly',
-          waiting: 0,
-          active: 0,
-          completed: 0,
-          failed: 0,
-          paused: false,
-          readOnly: true,
-        },
-      ],
+      queues: queueProbe.queues,
     };
   }
 }

@@ -17,7 +17,7 @@ export class MonitoringController {
   @Get('status')
   @RequirePermission('monitor:status:read')
   @ApiOkResponse({ type: SystemStatusDto })
-  getStatus(): SystemStatusDto {
+  getStatus(): Promise<SystemStatusDto> {
     return this.repository.getSystemStatus();
   }
 
@@ -31,7 +31,7 @@ export class MonitoringController {
   @Get('queues')
   @RequirePermission('monitor:queue:read')
   @ApiOkResponse({ type: QueueStatusListDto })
-  listQueues(): QueueStatusListDto {
+  listQueues(): Promise<QueueStatusListDto> {
     return this.repository.listQueues();
   }
 }

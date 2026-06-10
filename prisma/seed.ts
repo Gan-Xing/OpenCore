@@ -290,11 +290,12 @@ async function seedSystemManagement(): Promise<{
 
   for (const file of seedFileAssets) {
     await prisma.fileAsset.upsert({
-      where: { storageKey: file.storageKey },
+      where: { id: file.id },
       update: {
         originalName: file.originalName,
         mimeType: file.mimeType,
         sizeBytes: file.sizeBytes,
+        storageKey: file.storageKey,
         checksum: file.checksum,
         uploadedBy: file.uploadedBy,
       },

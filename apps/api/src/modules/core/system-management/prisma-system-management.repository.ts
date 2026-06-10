@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { loadRuntimeConfig } from '../../../platform/config/runtime-config';
 import { PrismaService } from '../../../platform/database/prisma.service';
 import type {
   CreateDictTypeDto,
@@ -100,6 +101,8 @@ type PrismaLoginLog = {
 
 @Injectable()
 export class PrismaSystemManagementRepository extends SystemManagementRepository {
+  private readonly storagePrefix = loadRuntimeConfig().s3.prefix;
+
   constructor(private readonly prisma: PrismaService) {
     super();
   }
@@ -267,7 +270,7 @@ export class PrismaSystemManagementRepository extends SystemManagementRepository
   async createFileAsset(body: CreateFileAssetDto): Promise<FileAssetRecord> {
     assertSafeFileAsset(body);
 
-    const storageKey = createStorageKey(body);
+    const storageKey = createStorageKey(body, this.storagePrefix);
 
     if (await this.prisma.fileAsset.findUnique({ where: { storageKey } })) {
       throw new ConflictException(`File asset already exists: ${storageKey}`);
