@@ -327,6 +327,19 @@ function writeManifest(
 
 function writePreparedApply(prepared: PreparedApply): OpenForgeApplyResult {
   const rollbacks: WrittenFileRollback[] = [];
+  const writableEntries = prepared.entries.filter(
+    (entry) => entry.action === 'created' || entry.action === 'updated',
+  );
+
+  if (writableEntries.length === 0) {
+    return {
+      mode: 'write',
+      applied: false,
+      entries: prepared.entries,
+      warnings: prepared.warnings,
+      errors: [],
+    };
+  }
 
   try {
     for (const file of prepared.files) {

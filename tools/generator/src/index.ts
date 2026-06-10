@@ -10,6 +10,7 @@ export const OPENFORGE_CLI_COMMANDS = [
   'apply',
   'rollback',
   'manifest',
+  'doctor',
 ] as const;
 
 export type OpenForgeCliCommand = (typeof OPENFORGE_CLI_COMMANDS)[number];
@@ -39,6 +40,7 @@ export * from './apply/apply-writer';
 export * from './config/generator-config';
 export * from './hash/stable-hash';
 export * from './diff/diff-plan';
+export * from './doctor/openforge-doctor';
 export * from './output/diff-output';
 export * from './output/plan-output';
 export * from './planner/generate-plan';

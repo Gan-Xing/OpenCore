@@ -23,7 +23,8 @@ describe('OpenForge CLI shell', () => {
     expect(runCli(['--help'], stdout.stream, stderr.stream)).toEqual({
       exitCode: 0,
     });
-    expect(stdout.getValue()).toContain('read-only planning tool');
+    expect(stdout.getValue()).toContain('OpenForge V1 safe generator tool');
+    expect(stdout.getValue()).toContain('doctor');
     expect(stdout.getValue()).toContain(
       'Apply and rollback writes require explicit --yes',
     );
@@ -206,5 +207,47 @@ describe('OpenForge CLI shell', () => {
       errors: [],
     });
     expect(stderr.getValue()).toBe('');
+  });
+
+  it('prints doctor readiness checks without writing files', () => {
+    const stdout = createWritableBuffer();
+    const stderr = createWritableBuffer();
+
+    expect(runCli(['doctor'], stdout.stream, stderr.stream)).toEqual({
+      exitCode: 0,
+    });
+    expect(JSON.parse(stdout.getValue())).toMatchObject({
+      valid: true,
+      checks: expect.arrayContaining([
+        expect.objectContaining({
+          id: 'workspace-root',
+          status: 'pass',
+        }),
+        expect.objectContaining({
+          id: 'template-packs',
+          status: 'pass',
+        }),
+        expect.objectContaining({
+          id: 'manifest-directory-status',
+          status: 'pass',
+        }),
+      ]),
+      errors: [],
+    });
+    expect(stderr.getValue()).toBe('');
+  });
+
+  it('fails unknown commands with a clear help hint', () => {
+    const stdout = createWritableBuffer();
+    const stderr = createWritableBuffer();
+
+    expect(runCli(['unknown'], stdout.stream, stderr.stream)).toEqual({
+      exitCode: 1,
+    });
+    expect(stdout.getValue()).toBe('');
+    expect(stderr.getValue()).toContain('Unknown OpenForge command: unknown');
+    expect(stderr.getValue()).toContain(
+      'Run --help to list available OpenForge commands.',
+    );
   });
 });

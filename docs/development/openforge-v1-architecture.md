@@ -22,9 +22,8 @@ V1 不改变 OpenCore 的业务边界：它只生成平台开发骨架和 review
 | Safety          | 阻止绝对路径、`../`、`.env*`、`prisma/schema.prisma`、`prisma/migrations/**` 和 P4/P5 schema               |
 | Tests           | OpenForge reader、validator、planner、diff、preflight、CLI 和 safety tests 已存在                          |
 
-Stage B-I 已补齐 V1 contract surface、schema/config DSL、template pack/VFS、safe apply writer、rollback engine、API generator pack、Admin generator pack 和 SDK/Test/Docs generator pack。后续仍缺少实现层：
+Stage B-J 已补齐 V1 contract surface、schema/config DSL、template pack/VFS、safe apply writer、rollback engine、API generator pack、Admin generator pack、SDK/Test/Docs generator pack、CLI doctor 和 temp repo e2e。后续仍缺少实现层：
 
-- 无 `doctor` CLI。
 - 无 OpenForge V1 gate。
 
 ## V1 Flow
@@ -75,7 +74,8 @@ flowchart TD
 | Stage G   | complete | API generator pack renders NestJS module/controller/service/repository/DTO/spec skeletons with Swagger decorators, `RequirePermission`, no Prisma access, patch-only app module registration and API golden/typecheck tests |
 | Stage H   | complete | Admin generator pack renders ProTable page, Modal/Drawer forms, ProDescriptions detail, export button and smoke skeletons with permission-aware operations, placeholder client calls and patch-only route/access plans      |
 | Stage I   | complete | SDK/Test/Docs generator pack renders generated SDK types/client/spec/index, API/Admin generated tests, module/API/Admin/runbook/patch-review docs, SDK index patch plan, snapshots and temp-project SDK typecheck           |
-| Stage J-L | pending  | Doctor/e2e/gate and final docs are not implemented yet                                                                                                                                                                      |
+| Stage J   | complete | CLI UX includes `openforge:doctor`, clearer help/unknown-command handling, temp repo plan/diff/apply/idempotency/conflict/rollback e2e, and all-skipped apply no-op behavior                                                |
+| Stage K-L | pending  | OpenForge gate and final docs are not implemented yet                                                                                                                                                                       |
 
 ## Generated Ownership Model
 
@@ -118,9 +118,13 @@ The default V1 template pack is `openforge-default-nest-umi-v1`. Current Stage I
 - Tests: generated API spec asserts DTO shape, permission guard metadata and repository placeholder behavior; generated Admin smoke asserts route, permission map and operation permission helpers.
 - Docs: generated module, API, Admin, runbook and patch-review fragments include `schemaHash` and `templateVersion` review metadata.
 
+Stage J CLI/doctor/e2e covers:
+
+- Doctor: workspace root, pnpm workspace, Nx project, contracts export, module registry validation, OpenAPI snapshot, OpenAPI drift command, example schemas, template pack, protected paths and manifest directory status.
+- E2E: temp repo plan/diff/apply `--yes`, generated file verification, idempotent reapply, human-authored conflict detection and rollback cleanup.
+
 Later stages will harden:
 
-- Doctor: CLI diagnostics for workspace readiness and safety boundaries.
 - Gate: repeatable OpenForge V1 verification command set.
 - Prisma: model draft and migration hint only.
 - Patch: app module, admin route, admin access, module registry and SDK index patch plans.
@@ -138,11 +142,12 @@ pnpm openforge:rollback -- --manifest <manifest> --dry-run
 pnpm openforge:rollback -- --manifest <manifest> --yes
 pnpm openforge:manifest -- --list
 pnpm openforge:manifest -- --show <id>
+pnpm openforge:doctor
 ```
 
 Rollback uses only manifest entries. Created files are deleted only when their current hash still matches the apply manifest and they still contain a valid OpenForge marker. Updated files are restored only when their current hash still matches the apply manifest and the Stage F backup hash matches the manifest `beforeHash`. Rollback writes `.openforge/rollbacks/*.json` audit records on successful write-mode rollback.
 
-`pnpm openforge:doctor` remains planned for a later stage. Real writes must require `--yes`; dry-run remains the default.
+`pnpm openforge:doctor` is read-only and does not create `.openforge`. Real writes must require `--yes`; dry-run remains the default. A write-mode apply where every entry is already unchanged is a no-op and does not overwrite the previous manifest.
 
 ## Scope Guard
 

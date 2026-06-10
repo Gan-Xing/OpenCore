@@ -1,6 +1,7 @@
 import type { OpenForgePlanFormat } from '@opencore/contracts';
 import { applyOpenForge } from './apply/apply-writer';
 import { buildDiffPlan } from './diff/diff-plan';
+import { runOpenForgeDoctor } from './doctor/openforge-doctor';
 import { getOpenForgeWorkspaceStatus } from './index';
 import {
   formatDiffPlanAsJson,
@@ -30,15 +31,16 @@ function printJson(stdout: WritableStream, value: unknown): void {
 function printHelp(stdout: WritableStream): void {
   stdout.write(
     [
-      'OpenForge S9 read-only planning tool',
+      'OpenForge V1 safe generator tool',
       '',
       'Commands:',
-      '  plan   Output a read-only generate plan',
-      '  diff   Output a read-only diff plan',
-      '  check  Run read-only preflight checks',
-      '  apply  Safely apply generated virtual files, defaulting to dry-run',
+      '  plan      Output a read-only generate plan',
+      '  diff      Output a read-only diff plan',
+      '  check     Run read-only preflight checks',
+      '  apply     Safely apply generated virtual files, defaulting to dry-run',
       '  rollback  Roll back files from an apply manifest, defaulting to dry-run',
       '  manifest  List or show OpenForge manifests',
+      '  doctor    Check OpenForge workspace readiness without writing files',
       '',
       'Apply and rollback writes require explicit --yes.',
       '',
@@ -215,6 +217,14 @@ export function runCli(
     return { exitCode: result.errors.length > 0 ? 1 : 0 };
   }
 
+  if (command === 'doctor') {
+    const result = runOpenForgeDoctor();
+
+    printJson(stdout, result);
+
+    return { exitCode: result.valid ? 0 : 1 };
+  }
+
   if (command === 'status') {
     printJson(stdout, {
       command,
@@ -226,6 +236,7 @@ export function runCli(
   }
 
   stderr.write(`Unknown OpenForge command: ${command}\n`);
+  stderr.write('Run --help to list available OpenForge commands.\n');
   return { exitCode: 1 };
 }
 
