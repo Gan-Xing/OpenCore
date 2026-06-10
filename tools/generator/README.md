@@ -1,6 +1,6 @@
 # OpenForge
 
-OpenForge is the OpenCore code generator workspace tool. The current implementation includes S9 read-only planning plus V1 schema/config validation, deterministic template rendering, a virtual file system, safe apply, manifests, and manifest-based rollback.
+OpenForge is the OpenCore code generator workspace tool. The current implementation includes S9 read-only planning plus V1 schema/config validation, deterministic template rendering, a virtual file system, safe apply, manifests, manifest-based rollback, and the Stage G API generator pack.
 
 Current S9 capability:
 
@@ -9,6 +9,7 @@ Current S9 capability:
 - output readonly diff plans;
 - report safety and preflight issues;
 - render deterministic V1 virtual files;
+- render NestJS API module/controller/service/repository/DTO/spec skeletons;
 - apply generated-owned files only with explicit `--yes`;
 - roll back apply manifests only with explicit `--yes`.
 
@@ -60,6 +61,7 @@ V1 target architecture:
 - default template pack `openforge-default-nest-umi-v1`;
 - virtual file system before any disk mutation;
 - safe apply writer with explicit `--yes`, generated marker checks, manifest output, and rollback support;
+- API generator pack with Swagger decorators, `RequirePermission`, repository placeholder, no Prisma access, and patch-only app module registration;
 - patch-only plans for human-authored entry files;
 - doctor and gate commands for repeatable local verification.
 
@@ -70,3 +72,5 @@ Stage D adds the default template pack and virtual file system renderer. Renderi
 Stage E adds `apply`. Dry-run is still the default. Real writes require `--yes`, only touch generated-owned files with OpenForge markers or missing generated targets, and write a manifest under `.openforge/manifests/`.
 
 Stage F adds `rollback` and `manifest`. Rollback dry-run shows the manifest rollback plan. Write mode requires `--yes`, deletes files created by apply only when they still match the manifest hash and marker, restores updated files from `.openforge/backups/`, and writes rollback audit records under `.openforge/rollbacks/`. Doctor, e2e gate, and final V1 hardening remain pending.
+
+Stage G hardens the API generator pack. API virtual files now include NestJS module/controller/service/repository/DTO/spec skeletons, Swagger decorators, permission decorators, generated repository placeholders, semantic temp-project typecheck tests, and an app-module patch plan. Admin, SDK/Test/Docs, doctor, e2e gate, and final V1 hardening remain pending.

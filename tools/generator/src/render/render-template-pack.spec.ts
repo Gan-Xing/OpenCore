@@ -1,9 +1,20 @@
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
 import { parseOpenForgeGeneratedMarker } from '@opencore/contracts';
+import ts = require('typescript');
 import { loadOpenForgeGeneratorConfig } from '../config/generator-config';
 import { loadManualSchema } from '../readers/schema-loader';
 import { evaluatePathSafety } from '../safety/path-safety';
 import { findOpenForgeVirtualFile } from '../vfs/virtual-file-system';
 import { renderTemplatePack } from './render-template-pack';
+
+function writeTempFile(root: string, path: string, content: string): void {
+  const absolutePath = join(root, path);
+
+  mkdirSync(dirname(absolutePath), { recursive: true });
+  writeFileSync(absolutePath, content);
+}
 
 describe('OpenForge default template pack renderer', () => {
   it('renders deterministic virtual files for every default template kind', () => {
@@ -215,6 +226,259 @@ describe('OpenForge default template pack renderer', () => {
         format: 'markdown',
       },
     });
-    expect(String(patch?.content.value)).toContain('Patch only: true');
+    expect(String(patch?.content.value)).toContain(
+      'Target human file: `apps/api/src/app/app.module.ts`',
+    );
+    expect(String(patch?.content.value)).toContain(
+      'OpenForge does not modify `app.module.ts` directly.',
+    );
+  });
+
+  it('renders API generator pack skeletons with permissions and no Prisma access', () => {
+    const { schema } = loadManualSchema(
+      'tools/generator/examples/core.dict.v1.schema.json',
+    );
+    const { config } = loadOpenForgeGeneratorConfig();
+    const files = renderTemplatePack(schema, config);
+    const apiFiles = files
+      .filter((file) => file.artifactKind.startsWith('api.'))
+      .sort((left, right) =>
+        left.artifactKind.localeCompare(right.artifactKind),
+      );
+
+    expect(
+      apiFiles.map((file) => {
+        const content = String(file.content.value);
+
+        return {
+          kind: file.artifactKind,
+          targetPath: file.targetPath,
+          exports: [
+            ...content.matchAll(/export (?:class|const|type) ([A-Za-z0-9_]+)/g),
+          ].map((match) => match[1]),
+          checks: {
+            apiTags: content.includes('@ApiTags('),
+            requirePermission: content.includes('@RequirePermission('),
+            swaggerDecorators: content.includes('@ApiProperty'),
+            repositoryPlaceholder: content.includes(
+              'OpenForge generated repository placeholder',
+            ),
+            noPrisma: !content.includes('Prisma'),
+          },
+        };
+      }),
+    ).toMatchInlineSnapshot(`
+[
+  {
+    "checks": {
+      "apiTags": true,
+      "noPrisma": true,
+      "repositoryPlaceholder": false,
+      "requirePermission": true,
+      "swaggerDecorators": false,
+    },
+    "exports": [
+      "DictController",
+    ],
+    "kind": "api.controller",
+    "targetPath": "apps/api/src/modules/generated/core/dict/dict.controller.ts",
+  },
+  {
+    "checks": {
+      "apiTags": false,
+      "noPrisma": true,
+      "repositoryPlaceholder": false,
+      "requirePermission": false,
+      "swaggerDecorators": true,
+    },
+    "exports": [
+      "DictDto",
+      "CreateDictDto",
+      "UpdateDictDto",
+      "DictQueryDto",
+      "DictListResponseDto",
+      "DictDeleteResultDto",
+      "DictExportRequestDto",
+    ],
+    "kind": "api.dto",
+    "targetPath": "apps/api/src/modules/generated/core/dict/dict.dto.ts",
+  },
+  {
+    "checks": {
+      "apiTags": false,
+      "noPrisma": true,
+      "repositoryPlaceholder": false,
+      "requirePermission": false,
+      "swaggerDecorators": false,
+    },
+    "exports": [
+      "DictModule",
+    ],
+    "kind": "api.module",
+    "targetPath": "apps/api/src/modules/generated/core/dict/dict.module.ts",
+  },
+  {
+    "checks": {
+      "apiTags": false,
+      "noPrisma": true,
+      "repositoryPlaceholder": true,
+      "requirePermission": false,
+      "swaggerDecorators": false,
+    },
+    "exports": [
+      "DICT_REPOSITORY",
+      "DictIdentity",
+      "DictRepository",
+      "GeneratedDictRepository",
+    ],
+    "kind": "api.repository",
+    "targetPath": "apps/api/src/modules/generated/core/dict/dict.repository.ts",
+  },
+  {
+    "checks": {
+      "apiTags": false,
+      "noPrisma": true,
+      "repositoryPlaceholder": false,
+      "requirePermission": false,
+      "swaggerDecorators": false,
+    },
+    "exports": [
+      "DictService",
+    ],
+    "kind": "api.service",
+    "targetPath": "apps/api/src/modules/generated/core/dict/dict.service.ts",
+  },
+  {
+    "checks": {
+      "apiTags": false,
+      "noPrisma": true,
+      "repositoryPlaceholder": false,
+      "requirePermission": false,
+      "swaggerDecorators": false,
+    },
+    "exports": [],
+    "kind": "api.spec",
+    "targetPath": "apps/api/src/modules/generated/core/dict/dict.spec.ts",
+  },
+]
+`);
+
+    expect(String(apiFiles[0].content.value)).toContain(
+      "@RequirePermission('core:dict:read')",
+    );
+    expect(String(apiFiles[0].content.value)).toContain(
+      "@RequirePermission('core:dict:export')",
+    );
+    expect(
+      String(
+        findOpenForgeVirtualFile(files, 'openforge-patches/app-module.patch.md')
+          ?.content.value,
+      ),
+    ).toContain('Add `DictModule` to the NestJS `imports` array');
+  });
+
+  it('typechecks generated API TypeScript skeletons in a temp project', () => {
+    const { schema } = loadManualSchema(
+      'tools/generator/examples/core.dict.v1.schema.json',
+    );
+    const { config } = loadOpenForgeGeneratorConfig();
+    const files = renderTemplatePack(schema, config).filter((file) =>
+      file.artifactKind.startsWith('api.'),
+    );
+    const tempRoot = mkdtempSync(join(tmpdir(), 'openforge-api-typecheck-'));
+
+    try {
+      for (const file of files) {
+        writeTempFile(tempRoot, file.targetPath, String(file.content.value));
+      }
+
+      writeTempFile(
+        tempRoot,
+        'apps/api/src/modules/core/rbac/permissions.decorator.ts',
+        [
+          'export function RequirePermission(...permissionCodes: string[]): MethodDecorator {',
+          '  void permissionCodes;',
+          '  return () => undefined;',
+          '}',
+          '',
+        ].join('\n'),
+      );
+      writeTempFile(
+        tempRoot,
+        'stubs/nestjs-common.ts',
+        [
+          'export function Body(): ParameterDecorator { return () => undefined; }',
+          'export function Controller(_path?: string): ClassDecorator { void _path; return () => undefined; }',
+          'export function Delete(_path?: string): MethodDecorator { void _path; return () => undefined; }',
+          'export function Get(_path?: string): MethodDecorator { void _path; return () => undefined; }',
+          'export function Inject(_token?: unknown): ParameterDecorator { void _token; return () => undefined; }',
+          'export function Injectable(): ClassDecorator { return () => undefined; }',
+          'export function Module(_metadata?: unknown): ClassDecorator { void _metadata; return () => undefined; }',
+          'export function Param(_name?: string): ParameterDecorator { void _name; return () => undefined; }',
+          'export function Patch(_path?: string): MethodDecorator { void _path; return () => undefined; }',
+          'export function Post(_path?: string): MethodDecorator { void _path; return () => undefined; }',
+          'export function Query(): ParameterDecorator { return () => undefined; }',
+          '',
+        ].join('\n'),
+      );
+      writeTempFile(
+        tempRoot,
+        'stubs/nestjs-swagger.ts',
+        [
+          'export function ApiBody(_options?: unknown): MethodDecorator { void _options; return () => undefined; }',
+          'export function ApiOkResponse(_options?: unknown): MethodDecorator { void _options; return () => undefined; }',
+          'export function ApiOperation(_options?: unknown): MethodDecorator { void _options; return () => undefined; }',
+          'export function ApiParam(_options?: unknown): MethodDecorator { void _options; return () => undefined; }',
+          'export function ApiProperty(_options?: unknown): PropertyDecorator { void _options; return () => undefined; }',
+          'export function ApiPropertyOptional(_options?: unknown): PropertyDecorator { void _options; return () => undefined; }',
+          'export function ApiTags(...tags: string[]): ClassDecorator { void tags; return () => undefined; }',
+          '',
+        ].join('\n'),
+      );
+      writeTempFile(
+        tempRoot,
+        'stubs/jest-globals.d.ts',
+        [
+          'declare function describe(name: string, fn: () => void): void;',
+          'declare function it(name: string, fn: () => void): void;',
+          'declare function expect(value: unknown): {',
+          '  toBe(value: unknown): void;',
+          '  toBeDefined(): void;',
+          '};',
+          '',
+        ].join('\n'),
+      );
+
+      const rootNames = [
+        ...files.map((file) => join(tempRoot, file.targetPath)),
+        join(tempRoot, 'stubs/jest-globals.d.ts'),
+      ];
+      const program = ts.createProgram({
+        rootNames,
+        options: {
+          baseUrl: tempRoot,
+          experimentalDecorators: true,
+          module: ts.ModuleKind.CommonJS,
+          moduleResolution: ts.ModuleResolutionKind.Node10,
+          noEmit: true,
+          paths: {
+            '@nestjs/common': ['stubs/nestjs-common.ts'],
+            '@nestjs/swagger': ['stubs/nestjs-swagger.ts'],
+          },
+          skipLibCheck: true,
+          strict: true,
+          target: ts.ScriptTarget.ES2022,
+        },
+      });
+      const diagnostics = ts.getPreEmitDiagnostics(program);
+
+      expect(
+        diagnostics.map((diagnostic) =>
+          ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n'),
+        ),
+      ).toEqual([]);
+    } finally {
+      rmSync(tempRoot, { force: true, recursive: true });
+    }
   });
 });

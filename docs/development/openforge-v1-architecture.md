@@ -22,9 +22,9 @@ V1 不改变 OpenCore 的业务边界：它只生成平台开发骨架和 review
 | Safety          | 阻止绝对路径、`../`、`.env*`、`prisma/schema.prisma`、`prisma/migrations/**` 和 P4/P5 schema               |
 | Tests           | OpenForge reader、validator、planner、diff、preflight、CLI 和 safety tests 已存在                          |
 
-Stage B-F 已补齐 V1 contract surface、schema/config DSL、template pack/VFS、safe apply writer 和 rollback engine。后续仍缺少实现层：
+Stage B-G 已补齐 V1 contract surface、schema/config DSL、template pack/VFS、safe apply writer、rollback engine 和 API generator pack。后续仍缺少实现层：
 
-- 无 API/Admin/SDK/Test/Docs generator pack 的 golden snapshots。
+- 无 Admin/SDK/Test/Docs generator pack 的 golden snapshots。
 - 无 `doctor` CLI。
 - 无 OpenForge V1 gate。
 
@@ -65,15 +65,16 @@ flowchart TD
 
 ## Current V1 Stage Status
 
-| Stage     | Status   | Evidence                                                                                                                                                                                        |
-| --------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Stage A   | complete | This architecture document, roadmap update and progress ledger entry exist                                                                                                                      |
-| Stage B   | complete | `packages/contracts/src/openforge-contract.ts` exports V1 template/apply/manifest/rollback/marker/patch/config contracts and pure marker/apply validation helpers                               |
-| Stage C   | complete | `tools/generator/src/schema/**` and `tools/generator/src/config/**` validate Schema/config DSL V1, with legal and illegal V1 fixtures under `tools/generator/examples`                          |
-| Stage D   | complete | `openforge-default-nest-umi-v1` template pack, render layer, VFS helpers and golden snapshot tests render API/Admin/SDK/Test/Docs/Prisma/Patch virtual files in memory                          |
-| Stage E   | complete | `tools/generator/src/apply/apply-writer.ts` applies generated-owned VFS output only with explicit `--yes`, defaults to dry-run, writes manifests, verifies hashes and rolls back partial writes |
-| Stage F   | complete | `tools/generator/src/rollback/rollback-engine.ts` plans and applies manifest rollback, blocks modified generated files, restores from apply backups, and writes rollback audit records          |
-| Stage G-L | pending  | Generator packs hardening, doctor/e2e/gate and final docs are not implemented yet                                                                                                               |
+| Stage     | Status   | Evidence                                                                                                                                                                                                                    |
+| --------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Stage A   | complete | This architecture document, roadmap update and progress ledger entry exist                                                                                                                                                  |
+| Stage B   | complete | `packages/contracts/src/openforge-contract.ts` exports V1 template/apply/manifest/rollback/marker/patch/config contracts and pure marker/apply validation helpers                                                           |
+| Stage C   | complete | `tools/generator/src/schema/**` and `tools/generator/src/config/**` validate Schema/config DSL V1, with legal and illegal V1 fixtures under `tools/generator/examples`                                                      |
+| Stage D   | complete | `openforge-default-nest-umi-v1` template pack, render layer, VFS helpers and golden snapshot tests render API/Admin/SDK/Test/Docs/Prisma/Patch virtual files in memory                                                      |
+| Stage E   | complete | `tools/generator/src/apply/apply-writer.ts` applies generated-owned VFS output only with explicit `--yes`, defaults to dry-run, writes manifests, verifies hashes and rolls back partial writes                             |
+| Stage F   | complete | `tools/generator/src/rollback/rollback-engine.ts` plans and applies manifest rollback, blocks modified generated files, restores from apply backups, and writes rollback audit records                                      |
+| Stage G   | complete | API generator pack renders NestJS module/controller/service/repository/DTO/spec skeletons with Swagger decorators, `RequirePermission`, no Prisma access, patch-only app module registration and API golden/typecheck tests |
+| Stage H-L | pending  | Admin, SDK/Test/Docs generator packs, doctor/e2e/gate and final docs are not implemented yet                                                                                                                                |
 
 ## Generated Ownership Model
 
@@ -98,9 +99,17 @@ generatedAt
 
 ## Template Pack Boundary
 
-The default V1 template pack is `openforge-default-nest-umi-v1`. It is planned to cover:
+The default V1 template pack is `openforge-default-nest-umi-v1`. Current Stage G API output covers:
 
 - API: module, controller, service, DTO, repository and spec skeleton.
+- Controller uses `@ApiTags`, operation/response/body/param Swagger decorators and `@RequirePermission`.
+- DTOs include Swagger property decorators and schema-derived TypeScript field types.
+- Service delegates to a generated repository contract and does not access Prisma.
+- Repository is a generated placeholder and must be replaced before production registration.
+- API app module registration remains a patch-only markdown plan.
+
+Later stages will harden:
+
 - Admin: ProTable page, ModalForm or DrawerForm, ProDescriptions detail, export button and smoke test skeleton.
 - SDK: generated client, generated types and client spec.
 - Docs: module doc, API/Admin doc and runbook fragments.
