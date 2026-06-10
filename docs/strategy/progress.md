@@ -358,13 +358,50 @@
   - Docs-only sync.
   - No P4/P5 module implemented.
 
+### 2026-06-10 R-1 Legacy freeze execution
+
+- Stage: R-1 Legacy freeze
+- Completed:
+  - 重新读取 runtime integration handoff、S3-S8 handoff、roadmap、API bootstrap、contract/permission、module registry、priority roadmap、README 和本 progress 文件。
+  - 检查服务器旧应用运行态，识别到 `antdpro6-frontend`、`nestweb-api` 两个旧应用容器正在运行。
+  - 检查宿主机 Node 进程，识别到 `/home/ubuntu/dev/NestWeb/dist/src/main` 的精确父/子 PID，并只对这些 PID 发送 TERM。
+  - 停止旧应用容器 `antdpro6-frontend`、`nestweb-api`；停止后两者均为 exited，且宿主机 NestWeb PID 已消失。
+  - 验证 `3030` 和 `8000` 不再监听，旧 NestWeb / Antdpro6 应用运行态已冻结。
+  - 验证基础服务仍运行：`nestweb-postgres`、`nestweb-redis`、`nestweb-minio`、`nestweb-rabbitmq` 均保持 running；相关 Docker volumes 和 `nestweb_default` network 保留。
+  - 将 runtime handoff 补充为 R-1 + R0-R7 循环，以匹配本轮目标要求。
+- Runtime freeze evidence:
+  - Stopped app containers: `antdpro6-frontend` (`Exited (0)`), `nestweb-api` (`Exited (137)`).
+  - Preserved data/service containers: PostgreSQL, Redis, MinIO, RabbitMQ all running with existing restart policy.
+  - No broad `pkill` was used; only identified container names and exact NestWeb PIDs were targeted.
+  - No `.env`, password, token, MinIO key, database URL, Redis URL, or JWT secret was printed or committed.
+- Tests:
+  - `pnpm format:check` pass.
+  - Initial `pnpm format:check` found the local untracked `.telegram-inbox/` directory; `.gitignore` and `.prettierignore` now exclude that local inbox from repository checks.
+- Files changed:
+  - `.gitignore`
+  - `.prettierignore`
+  - `docs/handoff/2026-06-10-runtime-integration-handoff.md`
+  - `docs/strategy/progress.md`
+- Remaining:
+  - R0-R7 尚未完成。
+  - R0 Runtime audit 是最早未完成阶段。
+- Next:
+  - 重新读取本 progress 后，只进入 R0 runtime audit：脱敏审计 NestWeb `.env` 和服务器已有依赖，形成 OpenCore runtime plan。
+- Scope guard:
+  - No PostgreSQL, Redis, MinIO, RabbitMQ, volume, bucket, network, database, schema, or Redis key was deleted, rebuilt, truncated, or cleared.
+  - No OpenCore runtime code, migration, seed, DB/schema/user, Redis prefix, BullMQ queue, or S3 bucket was created in R-1.
+  - No P4/P5 module implemented; CRM、ERP、MES、WMS、商城、支付、会员、多租户、知识库、RAG、Agent 仍保留在长期 backlog。
+- Risk/blocker:
+  - `nestweb-api` required Docker stop timeout handling and is recorded as exit code 137, but after-state confirms it is stopped and data services remain running.
+  - No blocker for R0.
+
 ## 未完成项
 
-战略蓝图文档包已完成。S3、S4、S5、S6、S7、S8 已完成。本 handoff 范围内无未完成阶段。
+战略蓝图文档包已完成。S3、S4、S5、S6、S7、S8 已完成。Runtime integration 已完成 R-1 Legacy freeze；R0-R7 尚未完成，R0 Runtime audit 是最早未完成阶段。
 
 ## 下一轮建议
 
-本轮完成后先做最终 audit。若 owner 明确继续，应另起 S9 handoff/goal，评估 `OpenForge MVP`：只读/dry-run 生成计划和 diff，不写文件生成器，不生成业务逻辑，不写 Prisma schema。
+继续执行 runtime integration loop。下一轮只进入 R0 Runtime audit：脱敏审计 NestWeb `.env` 和服务器已有依赖，输出 runtime inventory 与 OpenCore env mapping；不要进入 S9 OpenForge，也不要实现 P4/P5 模块。
 
 ## 当前验收结论
 
@@ -384,3 +421,4 @@
 - S8 monitor/tool 已通过 `pnpm build`、`pnpm test`、`pnpm lint`、`pnpm typecheck`、`pnpm prisma:validate`、`pnpm openapi:export`、`pnpm openapi:check`，并通过 monitor smoke、queue/status 单测、OpenAPI diff fail test、export test、敏感信息泄漏检查、API/SDK/Admin targeted tests。
 - 当前 S8 未做完整任务调度平台、大数据异步导出、敏感配置暴露或 OpenForge 写文件生成器。
 - S3-S8 handoff 目标已完成；后续 S9 需要单独确认。
+- Runtime integration R-1 Legacy freeze 已完成：旧 Antdpro6 / NestWeb 应用运行态已冻结，PostgreSQL、Redis、MinIO、RabbitMQ 等基础服务和数据卷保留；R0-R7 仍需继续按 runtime handoff 执行。
