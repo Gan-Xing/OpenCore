@@ -10,6 +10,29 @@ export type RuntimeConfig = {
   swaggerPath: `${string}/docs`;
   logLevel: 'debug' | 'info' | 'warn' | 'error';
   authTokenSecret: string;
+  databaseUrl: string;
+  redis: RuntimeRedisConfig;
+  bullmq: RuntimeBullmqConfig;
+  s3: RuntimeS3Config;
+};
+
+export type RuntimeRedisConfig = {
+  url: string;
+  keyPrefix: string;
+};
+
+export type RuntimeBullmqConfig = {
+  queuePrefix: string;
+};
+
+export type RuntimeS3Config = {
+  endpoint: string;
+  region: string;
+  bucket: string;
+  prefix: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  forcePathStyle: boolean;
 };
 
 export class RuntimeConfigError extends Error {
@@ -38,6 +61,18 @@ const DEFAULT_DEV_CORS_ORIGINS = [
   'http://localhost:3000',
 ] as const;
 
+const DEFAULT_DEV_DATABASE_URL =
+  'postgresql://opencore_app:opencore_local_password@localhost:5432/opencore?schema=public';
+const DEFAULT_DEV_REDIS_URL = 'redis://localhost:6379/1';
+const DEFAULT_REDIS_KEY_PREFIX = 'opencore:';
+const DEFAULT_BULLMQ_QUEUE_PREFIX = 'opencore';
+const DEFAULT_S3_ENDPOINT = 'http://localhost:9002';
+const DEFAULT_S3_REGION = 'us-east-1';
+const DEFAULT_S3_BUCKET = 'opencore';
+const DEFAULT_S3_PREFIX = 'runtime/';
+const DEFAULT_S3_ACCESS_KEY_ID = 'opencore-local-access-key';
+const DEFAULT_S3_SECRET_ACCESS_KEY = 'opencore-local-secret-key';
+
 export function loadRuntimeConfig(
   env: NodeJS.ProcessEnv = process.env,
 ): RuntimeConfig {
@@ -58,10 +93,84 @@ export function loadRuntimeConfig(
     nodeEnv,
     issues,
   );
+  const databaseUrl = parseRuntimeUrl(
+    env.DATABASE_URL,
+    DEFAULT_DEV_DATABASE_URL,
+    'DATABASE_URL',
+    nodeEnv,
+    ['postgresql:', 'postgres:'],
+    issues,
+  );
+  const redis = {
+    url: parseRuntimeUrl(
+      env.REDIS_URL,
+      DEFAULT_DEV_REDIS_URL,
+      'REDIS_URL',
+      nodeEnv,
+      ['redis:', 'rediss:'],
+      issues,
+    ),
+    keyPrefix: parseRuntimePrefix(
+      env.REDIS_KEY_PREFIX,
+      DEFAULT_REDIS_KEY_PREFIX,
+      'REDIS_KEY_PREFIX',
+      issues,
+    ),
+  };
+  const bullmq = {
+    queuePrefix: parseRuntimePrefix(
+      env.BULLMQ_QUEUE_PREFIX,
+      DEFAULT_BULLMQ_QUEUE_PREFIX,
+      'BULLMQ_QUEUE_PREFIX',
+      issues,
+    ),
+  };
+  const s3 = {
+    endpoint: parseRuntimeUrl(
+      env.S3_ENDPOINT,
+      DEFAULT_S3_ENDPOINT,
+      'S3_ENDPOINT',
+      nodeEnv,
+      ['http:', 'https:'],
+      issues,
+    ),
+    region: parseRequiredRuntimeValue(
+      env.S3_REGION,
+      DEFAULT_S3_REGION,
+      'S3_REGION',
+      nodeEnv,
+      issues,
+    ),
+    bucket: parseS3Bucket(env.S3_BUCKET, DEFAULT_S3_BUCKET, issues),
+    prefix: parseS3Prefix(env.S3_PREFIX, DEFAULT_S3_PREFIX, issues),
+    accessKeyId: parseRequiredRuntimeValue(
+      env.S3_ACCESS_KEY_ID,
+      DEFAULT_S3_ACCESS_KEY_ID,
+      'S3_ACCESS_KEY_ID',
+      nodeEnv,
+      issues,
+    ),
+    secretAccessKey: parseRequiredRuntimeValue(
+      env.S3_SECRET_ACCESS_KEY,
+      DEFAULT_S3_SECRET_ACCESS_KEY,
+      'S3_SECRET_ACCESS_KEY',
+      nodeEnv,
+      issues,
+    ),
+    forcePathStyle: parseBoolean(
+      env.S3_FORCE_PATH_STYLE,
+      true,
+      'S3_FORCE_PATH_STYLE',
+      issues,
+    ),
+  };
 
   validateProductionSafety(
     {
       corsOrigins,
+      databaseUrl,
+      redis,
+      s3,
       nodeEnv,
       swaggerEnabled,
       swaggerPublicAck: env.API_SWAGGER_PUBLIC_ACK,
@@ -83,6 +192,10 @@ export function loadRuntimeConfig(
     swaggerPath: `${globalPrefix}/docs`,
     logLevel,
     authTokenSecret,
+    databaseUrl,
+    redis,
+    bullmq,
+    s3,
   };
 }
 
@@ -192,6 +305,9 @@ function validateProductionSafety(
   options: {
     nodeEnv: NodeEnvironment;
     corsOrigins: readonly string[];
+    databaseUrl: string;
+    redis: RuntimeRedisConfig;
+    s3: RuntimeS3Config;
     swaggerEnabled: boolean;
     swaggerPublicAck: string | undefined;
   },
@@ -208,6 +324,30 @@ function validateProductionSafety(
   if (options.swaggerEnabled && options.swaggerPublicAck !== 'true') {
     issues.push(
       'API_SWAGGER_PUBLIC_ACK=true is required to expose Swagger in production',
+    );
+  }
+
+  if (isPlaceholderRuntimeValue(options.databaseUrl)) {
+    issues.push('DATABASE_URL must not use a placeholder value in production');
+  }
+
+  if (isPlaceholderRuntimeValue(options.redis.url)) {
+    issues.push('REDIS_URL must not use a placeholder value in production');
+  }
+
+  if (isPlaceholderRuntimeValue(options.s3.endpoint)) {
+    issues.push('S3_ENDPOINT must not use a placeholder value in production');
+  }
+
+  if (isPlaceholderRuntimeValue(options.s3.accessKeyId)) {
+    issues.push(
+      'S3_ACCESS_KEY_ID must not use a placeholder value in production',
+    );
+  }
+
+  if (isPlaceholderRuntimeValue(options.s3.secretAccessKey)) {
+    issues.push(
+      'S3_SECRET_ACCESS_KEY must not use a placeholder value in production',
     );
   }
 }
@@ -228,4 +368,133 @@ function parseAuthTokenSecret(
   }
 
   return 'opencore-development-auth-token-secret';
+}
+
+function parseRuntimeUrl(
+  value: string | undefined,
+  defaultValue: string,
+  name: string,
+  nodeEnv: NodeEnvironment,
+  allowedProtocols: readonly string[],
+  issues: string[],
+): string {
+  const candidate = value && value.trim().length > 0 ? value.trim() : undefined;
+
+  if (!candidate) {
+    if (nodeEnv === 'production') {
+      issues.push(`${name} must be set in production`);
+    }
+
+    return defaultValue;
+  }
+
+  try {
+    const url = new URL(candidate);
+    if (!allowedProtocols.includes(url.protocol)) {
+      issues.push(
+        `${name} protocol must be one of ${allowedProtocols
+          .map((protocol) => protocol.replace(':', ''))
+          .join(', ')}`,
+      );
+    }
+  } catch {
+    issues.push(`${name} must be a valid URL`);
+  }
+
+  return candidate;
+}
+
+function parseRuntimePrefix(
+  value: string | undefined,
+  defaultValue: string,
+  name: string,
+  issues: string[],
+): string {
+  const candidate =
+    value && value.trim().length > 0 ? value.trim() : defaultValue;
+
+  if (!/^[a-z0-9][a-z0-9:_-]{1,63}$/i.test(candidate)) {
+    issues.push(`${name} must be 2-64 characters and contain no spaces`);
+    return defaultValue;
+  }
+
+  if (candidate.toLowerCase().includes('nestweb')) {
+    issues.push(`${name} must not reuse a NestWeb prefix`);
+  }
+
+  return candidate;
+}
+
+function parseRequiredRuntimeValue(
+  value: string | undefined,
+  defaultValue: string,
+  name: string,
+  nodeEnv: NodeEnvironment,
+  issues: string[],
+): string {
+  const candidate = value && value.trim().length > 0 ? value.trim() : undefined;
+
+  if (!candidate) {
+    if (nodeEnv === 'production') {
+      issues.push(`${name} must be set in production`);
+    }
+
+    return defaultValue;
+  }
+
+  return candidate;
+}
+
+function parseS3Bucket(
+  value: string | undefined,
+  defaultValue: string,
+  issues: string[],
+): string {
+  const candidate =
+    value && value.trim().length > 0 ? value.trim() : defaultValue;
+
+  if (!/^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$/.test(candidate)) {
+    issues.push('S3_BUCKET must be a valid S3 bucket name');
+    return defaultValue;
+  }
+
+  if (candidate.toLowerCase().includes('nestweb')) {
+    issues.push('S3_BUCKET must not reuse a NestWeb bucket');
+  }
+
+  return candidate;
+}
+
+function parseS3Prefix(
+  value: string | undefined,
+  defaultValue: string,
+  issues: string[],
+): string {
+  const candidate =
+    value && value.trim().length > 0 ? value.trim() : defaultValue;
+
+  if (candidate.startsWith('/') || candidate.includes('..')) {
+    issues.push('S3_PREFIX must be a relative object prefix');
+    return defaultValue;
+  }
+
+  if (candidate.toLowerCase().includes('nestweb')) {
+    issues.push('S3_PREFIX must not reuse a NestWeb prefix');
+  }
+
+  return candidate;
+}
+
+function isPlaceholderRuntimeValue(value: string): boolean {
+  const normalized = value.toLowerCase();
+
+  return (
+    normalized.includes('<') ||
+    normalized.includes('>') ||
+    normalized.includes('change-me') ||
+    normalized.includes('local-password') ||
+    normalized.includes('opencore_local_password') ||
+    normalized.includes('local-opencore') ||
+    normalized.includes('opencore-local')
+  );
 }

@@ -30,9 +30,9 @@
 | `AUTH_TOKEN_SECRET`        | OpenCore auth token signing secret.                             | OpenCore config.                                                             | Must be OpenCore-owned and strong in production. Never use NestWeb JWT secrets.                                                                         |
 | `BOOTSTRAP_ADMIN_PASSWORD` | Local seed password for the first OpenCore admin.               | Local OpenCore env only.                                                     | R2 seed must read this or an equivalent one-time input. Never commit a real password.                                                                   |
 
-## Placeholder Template For R1
+## Placeholder Template
 
-R1 may use the following placeholder shape when extending `.env.example` and documenting `.env.opencore.local`.
+R1 implemented the following placeholder shape in `.env.example` and generated an ignored local `.env.opencore.local` template.
 
 ```dotenv
 DATABASE_URL=postgresql://opencore_app:<local-password>@<postgres-host>:5432/opencore?schema=public
@@ -104,11 +104,12 @@ S3_PREFIX=opencore/runtime/
 
 The fallback is allowed only if creating a dedicated bucket is not available.
 
-## R1 Follow-up
+## R1 Result
 
-R1 should:
+R1 completed:
 
-1. Extend `.env.example` with placeholders for the variables above.
-2. Update runtime config validation so dangerous production defaults fail fast.
-3. Document local `.env.opencore.local` creation without committing the file.
-4. Keep NestWeb variable names out of OpenCore production config except as historical audit references in runtime docs.
+1. `.env.example` contains placeholders for the variables above.
+2. Runtime config validation fails fast for dangerous production defaults.
+3. `docs/runtime/local-env-runbook.md` documents local `.env.opencore.local` usage.
+4. `.env.opencore.local` was generated locally with placeholders and remains ignored.
+5. NestWeb variable names remain historical audit references only, not OpenCore production config names.

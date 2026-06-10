@@ -431,13 +431,53 @@
   - Host `localhost:5432` is occupied by a non-NestWeb PostgreSQL container, while `nestweb-postgres` is only exposed on `nestweb_default`; R2 must verify the intended connection target before creating OpenCore DB/schema/user.
   - No blocker for R1.
 
+### 2026-06-10 R1 Env mapping execution
+
+- Stage: R1 Env mapping
+- Completed:
+  - 重新读取本 progress 并确认 R1 是 R0 之后最早未完成阶段。
+  - 扩展 `.env.example`，加入 OpenCore runtime placeholder：`DATABASE_URL`、`REDIS_URL`、`REDIS_KEY_PREFIX`、`BULLMQ_QUEUE_PREFIX`、`S3_*`、`BOOTSTRAP_ADMIN_PASSWORD`。
+  - 扩展 API runtime config，新增 PostgreSQL、Redis、BullMQ、S3 配置对象，并在 production 下对缺失值、占位符、错误协议和 NestWeb 前缀/桶名复用 fail fast。
+  - 新增 runtime config 单测，覆盖开发默认值、production runtime 变量缺失、placeholder 拒绝和 NestWeb prefix/bucket 拒绝。
+  - 新增 `docs/runtime/local-env-runbook.md`，说明 `.env.opencore.local` 本地使用方式和 R2/R5 隔离要求。
+  - 生成本地 `.env.opencore.local` placeholder 模板，并通过 `.gitignore` 确认该文件保持 ignored，未进入提交。
+  - 更新 `docs/runtime/opencore-env-mapping.md`，记录 R1 已落地的 env placeholder 和本地模板结果。
+- Tests:
+  - `pnpm test:api` pass.
+  - `pnpm format:check` pass.
+  - `pnpm prisma:validate` pass.
+  - `pnpm typecheck` pass.
+  - `pnpm lint` pass.
+- Files changed:
+  - `.env.example`
+  - `apps/api/src/platform/config/runtime-config.ts`
+  - `apps/api/src/platform/config/runtime-config.spec.ts`
+  - `docs/runtime/opencore-env-mapping.md`
+  - `docs/runtime/local-env-runbook.md`
+  - `docs/strategy/progress.md`
+- Local-only files:
+  - `.env.opencore.local` generated with placeholders and ignored by `.gitignore`; not staged or committed.
+- Remaining:
+  - R2-R7 尚未完成。
+  - R2 PostgreSQL migration baseline 是最早未完成阶段。
+- Next:
+  - 重新读取本 progress 后，只进入 R2 PostgreSQL migration baseline：验证实际 PostgreSQL target，创建/确认 OpenCore 独立 DB/schema/user，接通 Prisma migrate/seed。
+- Scope guard:
+  - No real `.env`, password, token, MinIO key, database URL, Redis URL, RabbitMQ URL, or JWT secret was committed.
+  - No PostgreSQL, Redis, BullMQ, MinIO/S3 connection or client runtime was implemented beyond config validation.
+  - No migration, seed, database/schema/user creation, repository persistence, Redis key, queue, bucket, or business data mutation was performed in R1.
+  - No P4/P5 module implemented; CRM、ERP、MES、WMS、商城、支付、会员、多租户、知识库、RAG、Agent 仍保留在长期 backlog。
+- Risk/blocker:
+  - R2 still needs to resolve the `localhost:5432` ambiguity noted in R0 before running migrations.
+  - No blocker for R2.
+
 ## 未完成项
 
-战略蓝图文档包已完成。S3、S4、S5、S6、S7、S8 已完成。Runtime integration 已完成 R-1 Legacy freeze 和 R0 Runtime audit；R1-R7 尚未完成，R1 Env mapping 是最早未完成阶段。
+战略蓝图文档包已完成。S3、S4、S5、S6、S7、S8 已完成。Runtime integration 已完成 R-1 Legacy freeze、R0 Runtime audit 和 R1 Env mapping；R2-R7 尚未完成，R2 PostgreSQL migration baseline 是最早未完成阶段。
 
 ## 下一轮建议
 
-继续执行 runtime integration loop。下一轮只进入 R1 Env mapping：扩展 `.env.example`、runtime config validation、runbook/local env template 说明；不要提交真实 `.env.opencore.local`，不要进入 S9 OpenForge，也不要实现 P4/P5 模块。
+继续执行 runtime integration loop。下一轮只进入 R2 PostgreSQL migration baseline：验证实际 PostgreSQL target，创建/确认 OpenCore 独立 DB/schema/user，接通 Prisma migrate/seed；不要进入 S9 OpenForge，也不要实现 P4/P5 模块。
 
 ## 当前验收结论
 
@@ -459,3 +499,4 @@
 - S3-S8 handoff 目标已完成；后续 S9 需要单独确认。
 - Runtime integration R-1 Legacy freeze 已完成：旧 Antdpro6 / NestWeb 应用运行态已冻结，PostgreSQL、Redis、MinIO、RabbitMQ 等基础服务和数据卷保留；R0-R7 仍需继续按 runtime handoff 执行。
 - Runtime integration R0 Runtime audit 已完成：已新增脱敏 runtime inventory 和 OpenCore env mapping，明确 OpenCore 必须独立使用 database/schema/user、Redis prefix/DB、BullMQ prefix、MinIO/S3 bucket/prefix；R1-R7 仍需继续按 runtime handoff 执行。
+- Runtime integration R1 Env mapping 已完成：`.env.example`、runtime config validation、local env runbook 和 ignored `.env.opencore.local` placeholder 已就绪；R2-R7 仍需继续按 runtime handoff 执行。
