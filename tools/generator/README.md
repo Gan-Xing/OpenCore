@@ -1,6 +1,6 @@
 # OpenForge
 
-OpenForge is the OpenCore code generator workspace tool. The current implementation includes S9 read-only planning plus V1 schema/config validation, deterministic template rendering, a virtual file system, safe apply, manifests, manifest-based rollback, the Stage G-I API/Admin/SDK/Test/Docs generator packs, Stage J doctor checks, and temp workspace e2e coverage.
+OpenForge is the OpenCore code generator workspace tool. The current implementation includes S9 read-only planning plus V1 schema/config validation, deterministic template rendering, a virtual file system, safe apply, manifests, manifest-based rollback, the Stage G-I API/Admin/SDK/Test/Docs generator packs, Stage J doctor checks/temp workspace e2e coverage, and the Stage K local gate.
 
 Current S9 capability:
 
@@ -27,6 +27,8 @@ pnpm openforge:apply -- --dry-run
 pnpm openforge:rollback -- --manifest .openforge/manifests/<id>.json --dry-run
 pnpm openforge:manifest -- --list
 pnpm openforge:doctor
+pnpm openforge:test
+pnpm openforge:gate
 ```
 
 V1 examples:
@@ -68,6 +70,7 @@ V1 target architecture:
 - virtual file system before any disk mutation;
 - safe apply writer with explicit `--yes`, generated marker checks, manifest output, and rollback support;
 - doctor checks for workspace root, pnpm workspace, Nx project, contracts export, module registry, OpenAPI snapshot/drift command, example schemas, template pack, protected paths, and manifest directory status;
+- local gate script for repeatable OpenForge doctor/check/diff validation;
 - API generator pack with Swagger decorators, `RequirePermission`, repository placeholder, no Prisma access, and patch-only app module registration;
 - Admin generator pack with ProTable, Modal/Drawer forms, ProDescriptions, export button, smoke skeleton, permission-aware operations, generated client placeholder, and patch-only route/access plans;
 - SDK generator pack with schema-derived types, request wrapper client, client spec, generated barrel file, and patch-only SDK index plan;
@@ -89,4 +92,6 @@ Stage H hardens the Admin generator pack. Admin virtual files now include a ProT
 
 Stage I hardens the SDK/Test/Docs generator pack. SDK virtual files now include schema-derived types, generated request wrapper client, generated client spec, and generated barrel file; docs include module, API, Admin, runbook, and patch-review fragments; patch-only SDK index integration is emitted for human review. API/Admin generated tests now assert stronger route, permission, DTO, and placeholder behavior.
 
-Stage J hardens CLI UX, doctor checks, temp workspace e2e, and apply idempotency. `openforge:doctor` is read-only, unknown commands fail with a help hint, all-skipped write applies are no-ops that do not overwrite manifests, and e2e coverage verifies plan/diff/apply/idempotency/conflict/rollback in temp repos. OpenForge gate and final V1 docs remain pending.
+Stage J hardens CLI UX, doctor checks, temp workspace e2e, and apply idempotency. `openforge:doctor` is read-only, unknown commands fail with a help hint, all-skipped write applies are no-ops that do not overwrite manifests, and e2e coverage verifies plan/diff/apply/idempotency/conflict/rollback in temp repos.
+
+Stage K adds `openforge:test`, `openforge:gate`, and [OpenForge CI Gate](../../docs/development/openforge-ci-gate.md). The gate is local and read-only: doctor, V1 schema check, and V1 diff. Final V1 docs remain pending.
