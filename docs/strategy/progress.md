@@ -471,13 +471,68 @@
   - R2 still needs to resolve the `localhost:5432` ambiguity noted in R0 before running migrations.
   - No blocker for R2.
 
+### 2026-06-10 R2 PostgreSQL migration baseline execution
+
+- Stage: R2 PostgreSQL migration baseline
+- Completed:
+  - 重新读取本 progress 并确认 R2 是 R1 之后最早未完成阶段。
+  - 生成 Prisma baseline migration：`prisma/migrations/20260610180000_runtime_baseline/migration.sql` 和 `migration_lock.toml`。
+  - 新增安全脚本：`pnpm prisma:generate`、`pnpm prisma:migrate`、`pnpm prisma:seed`、`pnpm prisma:studio`。
+  - 为 Prisma 7 增加 PostgreSQL driver adapter 依赖：`@prisma/adapter-pg`、`pg`。
+  - 更新 `prisma.config.ts`，在存在 ignored `.env.opencore.local` 时加载本地 OpenCore env，但不输出任何值。
+  - 创建/确认 PostgreSQL cluster 内的 OpenCore 独立边界：database `opencore`、role/user `opencore_app`、OpenCore database 内 `public` schema。
+  - 更新 ignored `.env.opencore.local`，写入本地生成的 OpenCore-only `DATABASE_URL` 和 `BOOTSTRAP_ADMIN_PASSWORD`；该文件未 staged、未提交。
+  - 新增 `prisma/seed.ts`，通过 module registry 幂等初始化 Permission/Menu，并创建 `admin`、`viewer` 角色与 bootstrap admin 用户；bootstrap admin 密码只来自本地 env。
+  - 执行 `pnpm prisma:migrate`，初次应用 1 个 baseline migration，复跑显示 no pending migrations。
+  - 执行 `pnpm prisma:seed` 两次，均输出相同计数，证明 seed 幂等。
+- Runtime evidence:
+  - OpenCore database `opencore` 与 legacy database `nestweb` 并存。
+  - OpenCore role/user `opencore_app` 已存在。
+  - OpenCore DB `_prisma_migrations` count: `1`.
+  - OpenCore DB `Role` count: `2`，codes: `admin`, `viewer`.
+  - OpenCore DB `Permission` count: `47`.
+  - OpenCore DB `Menu` count: `15`.
+- Tests:
+  - `pnpm prisma:generate` pass.
+  - `pnpm prisma:validate` pass.
+  - `pnpm prisma:migrate` pass.
+  - `pnpm prisma:seed` pass and idempotent on rerun.
+  - `pnpm format:check` pass.
+  - `pnpm test:api` pass.
+  - `pnpm typecheck` pass.
+  - `pnpm lint` pass.
+- Files changed:
+  - `.prettierignore`
+  - `package.json`
+  - `pnpm-lock.yaml`
+  - `prisma.config.ts`
+  - `prisma/migrations/20260610180000_runtime_baseline/migration.sql`
+  - `prisma/migrations/migration_lock.toml`
+  - `prisma/seed.ts`
+  - `docs/strategy/progress.md`
+- Local-only files:
+  - `.env.opencore.local` updated with generated OpenCore-only local credentials and remains ignored; not staged or committed.
+- Remaining:
+  - R3-R7 尚未完成。
+  - R3 Persistent RBAC 是最早未完成阶段。
+- Next:
+  - 重新读取本 progress 后，只进入 R3 Persistent RBAC：新增 PrismaService/DatabaseModule，把 RBAC repository 从 seed fixture 升级为 Prisma 持久化读取。
+- Scope guard:
+  - No NestWeb business database, schema, table, row, Redis key, bucket, queue, or business data was dropped, truncated, migrated, copied, or modified.
+  - No real `.env`, password, token, MinIO key, database URL, Redis URL, RabbitMQ URL, JWT secret, or bootstrap password was committed.
+  - No RBAC repository production path was switched to Prisma in R2; R3 remains responsible for persistent RBAC runtime.
+  - No P4/P5 module implemented; CRM、ERP、MES、WMS、商城、支付、会员、多租户、知识库、RAG、Agent 仍保留在长期 backlog。
+- Risk/blocker:
+  - The ignored local `DATABASE_URL` uses the resolved Docker network address for `nestweb-postgres`; if the container is recreated, local env may need refresh before rerunning Prisma commands.
+  - No blocker for R3.
+
 ## 未完成项
 
-战略蓝图文档包已完成。S3、S4、S5、S6、S7、S8 已完成。Runtime integration 已完成 R-1 Legacy freeze、R0 Runtime audit 和 R1 Env mapping；R2-R7 尚未完成，R2 PostgreSQL migration baseline 是最早未完成阶段。
+战略蓝图文档包已完成。S3、S4、S5、S6、S7、S8 已完成。Runtime integration 已完成 R-1 Legacy freeze、R0 Runtime audit、R1 Env mapping 和 R2 PostgreSQL migration baseline；R3-R7 尚未完成，R3 Persistent RBAC 是最早未完成阶段。
 
 ## 下一轮建议
 
-继续执行 runtime integration loop。下一轮只进入 R2 PostgreSQL migration baseline：验证实际 PostgreSQL target，创建/确认 OpenCore 独立 DB/schema/user，接通 Prisma migrate/seed；不要进入 S9 OpenForge，也不要实现 P4/P5 模块。
+继续执行 runtime integration loop。下一轮只进入 R3 Persistent RBAC：新增 PrismaService/DatabaseModule，把 RBAC repository 从 seed fixture 升级为 Prisma 持久化读取；不要进入 S9 OpenForge，也不要实现 P4/P5 模块。
 
 ## 当前验收结论
 
@@ -500,3 +555,4 @@
 - Runtime integration R-1 Legacy freeze 已完成：旧 Antdpro6 / NestWeb 应用运行态已冻结，PostgreSQL、Redis、MinIO、RabbitMQ 等基础服务和数据卷保留；R0-R7 仍需继续按 runtime handoff 执行。
 - Runtime integration R0 Runtime audit 已完成：已新增脱敏 runtime inventory 和 OpenCore env mapping，明确 OpenCore 必须独立使用 database/schema/user、Redis prefix/DB、BullMQ prefix、MinIO/S3 bucket/prefix；R1-R7 仍需继续按 runtime handoff 执行。
 - Runtime integration R1 Env mapping 已完成：`.env.example`、runtime config validation、local env runbook 和 ignored `.env.opencore.local` placeholder 已就绪；R2-R7 仍需继续按 runtime handoff 执行。
+- Runtime integration R2 PostgreSQL migration baseline 已完成：OpenCore 独立 PostgreSQL database/user/schema boundary、baseline migration、idempotent seed 和 Prisma scripts 已就绪；R3-R7 仍需继续按 runtime handoff 执行。
