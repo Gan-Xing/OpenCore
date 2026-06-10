@@ -36,3 +36,25 @@ S9 已完成 `tools/generator` workspace tool 和 OpenForge contracts，支持�
 - `pnpm openforge:check`
 
 当前能力只输出 generate plan、readonly diff plan 和 safety/preflight report；不写生成目标文件，不覆盖人工文件，不写 Prisma schema，不创建 migration。
+
+## OpenForge V1 状态
+
+OpenForge V1 Stage A-L 已完成，新增：
+
+- Schema/config DSL V1。
+- Default template pack and virtual file system。
+- Safe apply writer：默认 dry-run，write mode 必须 `--yes`。
+- Manifest and rollback engine。
+- API/Admin/SDK/Test/Docs generator pack。
+- Prisma model draft and migration hint only。
+- Patch-only plans for app module、Admin route/access、module registry 和 SDK index。
+- `openforge:doctor`、temp repo e2e、`openforge:test` 和 `openforge:gate`。
+- Schema authoring、template authoring、apply/rollback runbook 和 CI gate docs。
+
+V1 自动写入边界：
+
+- 可自动创建/更新：`apps/api/src/modules/generated/**`、`apps/admin/src/pages/Generated/**`、`packages/sdk/src/generated/**`、`docs/generated/openforge/**`、`prisma/openforge-drafts/**`、`openforge-patches/**`。
+- 只能 patch plan：`apps/api/src/app/app.module.ts`、`apps/admin/.umirc.ts`、`apps/admin/src/access.ts`、`packages/module-registry/src/modules.ts`、`packages/sdk/src/index.ts`。
+- 永远禁止：`.env*`、`prisma/schema.prisma`、`prisma/migrations/**`。
+
+V1 不生成业务逻辑，不替代 repository/persistence 审计，不实现 P4/P5 模块。S10 collaboration 可复用 OpenForge 生成 message、todo、Approval Lite 等 approved skeleton，但必须先登记 module registry、权限和 OpenAPI tag，并人工 review patch plans。

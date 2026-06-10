@@ -1,6 +1,6 @@
 # OpenForge
 
-OpenForge is the OpenCore code generator workspace tool. The current implementation includes S9 read-only planning plus V1 schema/config validation, deterministic template rendering, a virtual file system, safe apply, manifests, manifest-based rollback, the Stage G-I API/Admin/SDK/Test/Docs generator packs, Stage J doctor checks/temp workspace e2e coverage, and the Stage K local gate.
+OpenForge is the OpenCore code generator workspace tool. The current implementation includes S9 read-only planning plus V1 schema/config validation, deterministic template rendering, a virtual file system, safe apply, manifests, manifest-based rollback, the Stage G-I API/Admin/SDK/Test/Docs generator packs, Stage J doctor checks/temp workspace e2e coverage, the Stage K local gate, and Stage L final docs.
 
 Current S9 capability:
 
@@ -94,4 +94,12 @@ Stage I hardens the SDK/Test/Docs generator pack. SDK virtual files now include 
 
 Stage J hardens CLI UX, doctor checks, temp workspace e2e, and apply idempotency. `openforge:doctor` is read-only, unknown commands fail with a help hint, all-skipped write applies are no-ops that do not overwrite manifests, and e2e coverage verifies plan/diff/apply/idempotency/conflict/rollback in temp repos.
 
-Stage K adds `openforge:test`, `openforge:gate`, and [OpenForge CI Gate](../../docs/development/openforge-ci-gate.md). The gate is local and read-only: doctor, V1 schema check, and V1 diff. Final V1 docs remain pending.
+Stage K adds `openforge:test`, `openforge:gate`, and [OpenForge CI Gate](../../docs/development/openforge-ci-gate.md). The gate is local and read-only: doctor, V1 schema check, and V1 diff.
+
+Stage L completes final docs and handoff:
+
+- [OpenForge V1 Architecture](../../docs/development/openforge-v1-architecture.md)
+- [OpenForge Schema Authoring](../../docs/development/openforge-schema-authoring.md)
+- [OpenForge Template Authoring](../../docs/development/openforge-template-authoring.md)
+- [OpenForge Apply And Rollback Runbook](../../docs/development/openforge-apply-rollback-runbook.md)
+- [OpenForge CI Gate](../../docs/development/openforge-ci-gate.md)

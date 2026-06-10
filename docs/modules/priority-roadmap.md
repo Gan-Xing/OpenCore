@@ -17,6 +17,7 @@ OpenCore 采用阶段化推进，避免过早写业务代码或把 P4/P5 深水�
 | S8     | complete | status/version/queue、OpenAPI drift check、export protocol、Monitor/Tool 页面                                                                                |
 | R-1-R7 | complete | legacy app freeze、runtime audit、OpenCore env、PostgreSQL migration/seed、Prisma persistence、Redis/BullMQ/MinIO diagnostics、integration smoke、final docs |
 | S9     | complete | OpenForge 只读 generate plan、diff plan、safety/preflight report、contracts、workspace tool、CLI 和测试                                                      |
+| V1     | complete | OpenForge safe generator：schema/config DSL、template/VFS、apply/manifest/rollback、API/Admin/SDK/Test/Docs pack、doctor/gate/e2e、final docs                |
 
 ## Runtime Integration
 
@@ -43,14 +44,27 @@ S9 目标：
 - 不写 Prisma schema。
 - 不实现写文件生成器。
 
+## OpenForge V1：Safe Generator
+
+OpenForge V1 Stage A-L 已完成。它在 S9 安全边界上增加写入能力，但只允许：
+
+- 默认 dry-run。
+- `--yes` 才能写。
+- 创建/更新带合法 OpenForge marker 的 generated-owned files。
+- 为 human-authored entry files 生成 patch-only markdown。
+- 通过 manifest rollback 删除或恢复仍匹配 hash/marker 的 generated files。
+- 通过 `openforge:doctor`、`openforge:test` 和 `openforge:gate` 进入本地门禁。
+
+OpenForge V1 仍不写 `prisma/schema.prisma`、不创建 `prisma/migrations/**`、不生成业务逻辑、不实现 P4/P5 模块。S10 collaboration 可以复用它生成 message/todo/Approval Lite skeleton，但必须先通过 registry、OpenAPI 和 schema authoring。
+
 ## S10 以后
 
-| 阶段 | 建议主题                              | 边界                                                     |
-| ---- | ------------------------------------- | -------------------------------------------------------- |
-| S10  | collaboration                         | message、todo、Approval Lite，不做完整 BPMN              |
-| S11  | knowledge/optional design             | 只设计知识库或 optional module，不做 RAG/Agent           |
-| S12  | workflow/report/online-user/cache/job | 逐个通过准入 checklist，不一次性铺开                     |
-| S13+ | integration/industry/ai               | CRM、ERP、MES、WMS、商城、支付、会员、IoT、AI 等独立评估 |
+| 阶段 | 建议主题                              | 边界                                                                         |
+| ---- | ------------------------------------- | ---------------------------------------------------------------------------- |
+| S10  | collaboration                         | message、todo、Approval Lite，可用 OpenForge V1 生成 skeleton，不做完整 BPMN |
+| S11  | knowledge/optional design             | 只设计知识库或 optional module，不做 RAG/Agent                               |
+| S12  | workflow/report/online-user/cache/job | 逐个通过准入 checklist，不一次性铺开                                         |
+| S13+ | integration/industry/ai               | CRM、ERP、MES、WMS、商城、支付、会员、IoT、AI 等独立评估                     |
 
 ## P4/P5 长期 backlog
 

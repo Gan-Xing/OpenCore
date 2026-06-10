@@ -17,8 +17,9 @@
 - S8：monitor/tool baseline。
 - S9：OpenForge MVP，只读 generate plan、diff plan、safety/preflight report。
 - Runtime integration R-1-R7：legacy app freeze、runtime audit、env mapping、PostgreSQL migration/seed、Prisma persistence、Redis/BullMQ/MinIO diagnostics、integration smoke、final docs。
+- OpenForge V1 A-L：safe generator pipeline、schema/config DSL、template/VFS、apply/manifest/rollback、API/Admin/SDK/Test/Docs pack、doctor/gate/e2e、final docs。
 
-S3-S9 handoff 与 runtime integration handoff 范围均已完成。若继续推进，应另起 P1 OpenForge hardening 或 S10 collaboration handoff/goal。
+S3-S9 handoff、runtime integration handoff 与 OpenForge V1 full implementation handoff 范围均已完成。若继续推进，应另起 S10 collaboration handoff/goal。
 
 ## 交接文档
 
@@ -29,6 +30,7 @@ S3-S9 handoff 与 runtime integration handoff 范围均已完成。若继续推�
 - [2026-06-10 S3-S8 Implementation Handoff](2026-06-10-s3-s8-implementation-handoff.md)
 - [2026-06-10 Runtime Integration Handoff](2026-06-10-runtime-integration-handoff.md)
 - [2026-06-10 S9 OpenForge MVP Handoff](2026-06-10-s9-openforge-mvp-handoff.md)
+- [2026-06-10 OpenForge V1 Full Implementation Handoff](2026-06-10-openforge-v1-full-implementation-handoff.md)
 
 ## D1-D6 设计文档
 
@@ -38,6 +40,8 @@ S3-S9 handoff 与 runtime integration handoff 范围均已完成。若继续推�
 - [API 启动计划](../development/api-bootstrap-plan.md)
 - [Admin 启动计划](../development/admin-bootstrap-plan.md)
 - [OpenForge 路线图](../development/openforge-roadmap.md)
+- [OpenForge V1 架构](../development/openforge-v1-architecture.md)
+- [OpenForge Apply/Rollback Runbook](../development/openforge-apply-rollback-runbook.md)
 
 ## S3-S8 / Runtime 验收入口
 
@@ -54,10 +58,11 @@ pnpm test:api
 pnpm test:admin
 NX_DAEMON=false pnpm nx test sdk
 NX_DAEMON=false pnpm nx test contracts
+pnpm openforge:gate
 ```
 
-Runtime integration final evidence is tracked in [progress.md](../strategy/progress.md). It includes live API smoke for `/health/live`, `/health/ready`, `/api/docs`, `/api/auth/login`, and `/api/monitor/status`.
+Runtime integration and OpenForge V1 final evidence is tracked in [progress.md](../strategy/progress.md). Runtime evidence includes live API smoke for `/health/live`, `/health/ready`, `/api/docs`, `/api/auth/login`, and `/api/monitor/status`.
 
 ## 下一份 handoff 建议
 
-S9 handoff 已完成。下一份 handoff 可选择 P1 OpenForge CI/gate hardening，或进入 S10 collaboration。不得复用 S9 继续偷偷扩大为写文件生成器、业务逻辑生成、Prisma schema 写入、migration 创建或 P4/P5 模块实现。
+OpenForge V1 handoff 已完成。下一份 handoff 可进入 S10 collaboration。不得复用 OpenForge V1 继续偷偷扩大为业务逻辑生成、Prisma schema 写入、migration 创建或 P4/P5 模块实现。

@@ -22,9 +22,7 @@ V1 不改变 OpenCore 的业务边界：它只生成平台开发骨架和 review
 | Safety          | 阻止绝对路径、`../`、`.env*`、`prisma/schema.prisma`、`prisma/migrations/**` 和 P4/P5 schema               |
 | Tests           | OpenForge reader、validator、planner、diff、preflight、CLI 和 safety tests 已存在                          |
 
-Stage B-K 已补齐 V1 contract surface、schema/config DSL、template pack/VFS、safe apply writer、rollback engine、API generator pack、Admin generator pack、SDK/Test/Docs generator pack、CLI doctor、temp repo e2e 和 OpenForge gate。后续仍缺少实现层：
-
-- 无最终 V1 文档交接。
+Stage B-L 已补齐 V1 contract surface、schema/config DSL、template pack/VFS、safe apply writer、rollback engine、API generator pack、Admin generator pack、SDK/Test/Docs generator pack、CLI doctor、temp repo e2e、OpenForge gate 和最终文档交接。
 
 ## V1 Flow
 
@@ -76,7 +74,7 @@ flowchart TD
 | Stage I | complete | SDK/Test/Docs generator pack renders generated SDK types/client/spec/index, API/Admin generated tests, module/API/Admin/runbook/patch-review docs, SDK index patch plan, snapshots and temp-project SDK typecheck           |
 | Stage J | complete | CLI UX includes `openforge:doctor`, clearer help/unknown-command handling, temp repo plan/diff/apply/idempotency/conflict/rollback e2e, and all-skipped apply no-op behavior                                                |
 | Stage K | complete | Root scripts `openforge:test` and `openforge:gate` exist, local CI gate docs define full command sequence and no-write checks, and gate runs locally                                                                        |
-| Stage L | pending  | Final docs and handoff are not implemented yet                                                                                                                                                                              |
+| Stage L | complete | Final README/docs/handoff/strategy/module docs plus schema/template/apply authoring docs document V1 operation, S10 usage, generated marker review, manifests and rollback                                                  |
 
 ## Generated Ownership Model
 
@@ -128,7 +126,7 @@ Established V1 boundaries that remain in force:
 
 - Prisma output is model draft and migration hint only.
 - Patch output is app module, admin route, admin access, module registry and SDK index patch plans.
-- Stage L is final documentation and handoff only.
+- V1 final documentation is the handoff source of truth for future S10 usage.
 
 Prisma output remains draft/hint only. OpenForge must not directly write `prisma/schema.prisma` or create `prisma/migrations/**`.
 
@@ -163,6 +161,15 @@ pnpm openforge:diff -- --schema tools/generator/examples/core.dict.v1.schema.jso
 ```
 
 The full local CI sequence is documented in [OpenForge CI Gate](openforge-ci-gate.md). Gate commands are read-only and must not leave `.openforge`, generated API/Admin directories, `docs/generated/openforge`, `openforge-patches`, SDK generated output or Prisma draft output in the repo.
+
+## Authoring And Operations Docs
+
+- [OpenForge Schema Authoring](openforge-schema-authoring.md)
+- [OpenForge Template Authoring](openforge-template-authoring.md)
+- [OpenForge Apply And Rollback Runbook](openforge-apply-rollback-runbook.md)
+- [OpenForge CI Gate](openforge-ci-gate.md)
+
+For S10 collaboration, use OpenForge only after module registry, permissions and OpenAPI tags are defined. Generate skeletons, review patch plans, keep repositories as placeholders until persistence is explicitly authorized, and keep full workflow/BPMN/P4/P5/AI modules out of scope.
 
 ## Scope Guard
 

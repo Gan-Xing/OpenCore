@@ -1,6 +1,6 @@
 # OpenForge 路线图
 
-OpenForge 是 OpenCore 的代码生成器。当前 S3-S9 已完成，S9 MVP 已通过单独 handoff/goal 落地只读规划能力。OpenForge V1 Full Implementation 已完成 Stage A-K，目标是从只读 plan/diff/check 升级为安全、可审计、可回滚的生成器闭环。
+OpenForge 是 OpenCore 的代码生成器。当前 S3-S9 已完成，S9 MVP 已通过单独 handoff/goal 落地只读规划能力。OpenForge V1 Full Implementation 已完成 Stage A-L，已经从只读 plan/diff/check 升级为安全、可审计、可回滚的生成器闭环。
 
 ## 当前定位
 
@@ -27,7 +27,24 @@ V1 交付顺序：
 11. Stage K：OpenForge gate。
 12. Stage L：最终文档、roadmap 和交接。
 
-V1 当前 Stage A-K 已完成 architecture、contracts、schema/config DSL、template pack/VFS、safe apply、manifest、rollback、manifest inspection、API generator pack hardening、Admin generator pack hardening、SDK/Test/Docs generator pack hardening、CLI UX、doctor、temp repo e2e 和 OpenForge gate。Stage L 的最终文档、roadmap 和交接是最早未完成阶段。
+V1 当前 Stage A-L 已完成 architecture、contracts、schema/config DSL、template pack/VFS、safe apply、manifest、rollback、manifest inspection、API generator pack hardening、Admin generator pack hardening、SDK/Test/Docs generator pack hardening、CLI UX、doctor、temp repo e2e、OpenForge gate 和最终文档交接。
+
+V1 运行口径：
+
+- 默认 dry-run。
+- 真实写入必须显式 `--yes`。
+- 自动写入只允许 generated-owned files 和 generated patch-plan files。
+- 人工入口文件只输出 patch plan。
+- Prisma 只输出 draft/hint，不写 schema/migration。
+- P4/P5 模块继续保留长期 backlog，不由 OpenForge V1 实现。
+
+V1 文档入口：
+
+- [OpenForge V1 Architecture](openforge-v1-architecture.md)
+- [OpenForge Schema Authoring](openforge-schema-authoring.md)
+- [OpenForge Template Authoring](openforge-template-authoring.md)
+- [OpenForge Apply And Rollback Runbook](openforge-apply-rollback-runbook.md)
+- [OpenForge CI Gate](openforge-ci-gate.md)
 
 ## 第一版目标
 
