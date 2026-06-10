@@ -311,12 +311,12 @@ pnpm typecheck
 
 OpenCore 的长期目标是覆盖 RuoYi/Yudao 代表的企业后台能力地图，但必须分层实现。
 
-| 队列 | 能力 | 当前处理 |
-| --- | --- | --- |
-| P4 optional | 部门/岗位、通知公告、缓存、在线用户、定时任务、报表/工作流设计位 | S8 后按准入规则评估 |
-| P4 integration | 邮件、短信、微信、OAuth、WebSocket、文件 provider 扩展 | provider 凭据、安全、成本、审计明确后实现 |
-| P5 industry/business | member、mall、pay、CRM、ERP、MES、WMS、IoT、IM | 独立 industry/app/package，不进入 core |
-| P5 ai | Knowledge、RAG、Agent、AI workflow | AI 安全、审计、成本、权限稳定后实现 |
+| 队列                 | 能力                                                             | 当前处理                                  |
+| -------------------- | ---------------------------------------------------------------- | ----------------------------------------- |
+| P4 optional          | 部门/岗位、通知公告、缓存、在线用户、定时任务、报表/工作流设计位 | S8 后按准入规则评估                       |
+| P4 integration       | 邮件、短信、微信、OAuth、WebSocket、文件 provider 扩展           | provider 凭据、安全、成本、审计明确后实现 |
+| P5 industry/business | member、mall、pay、CRM、ERP、MES、WMS、IoT、IM                   | 独立 industry/app/package，不进入 core    |
+| P5 ai                | Knowledge、RAG、Agent、AI workflow                               | AI 安全、审计、成本、权限稳定后实现       |
 
 `not_now` 不是永远不做，只是不进入当前 S3-S8 实现窗口。
 

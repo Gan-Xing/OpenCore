@@ -1,0 +1,75 @@
+import {
+  FORBIDDEN_S3_S8_MODULE_PREFIXES,
+  collectMenus,
+  collectPermissionCodes,
+  findModuleByCode,
+  listModules,
+  validateModuleRegistry,
+} from './index';
+
+describe('@opencore/module-registry', () => {
+  it('keeps the S3 registry internally valid', () => {
+    expect(validateModuleRegistry()).toEqual({
+      valid: true,
+      issues: [],
+    });
+  });
+
+  it('covers the S6-S8 core, monitor, and tool module drafts', () => {
+    expect(
+      listModules().map((moduleDefinition) => moduleDefinition.code),
+    ).toEqual(
+      expect.arrayContaining([
+        'core.user',
+        'core.role',
+        'core.permission',
+        'core.menu',
+        'core.dict',
+        'core.config',
+        'core.file',
+        'core.audit-log',
+        'core.login-log',
+        'monitor.status',
+        'monitor.version',
+        'monitor.queue',
+        'tool.openapi',
+        'tool.export',
+      ]),
+    );
+  });
+
+  it('traces every menu permission to a registered permission code', () => {
+    const permissionCodes = new Set(collectPermissionCodes());
+
+    for (const menu of collectMenus()) {
+      if (!menu.permissionCode) {
+        throw new Error(`Menu ${menu.key} is missing a permission code.`);
+      }
+
+      expect(permissionCodes.has(menu.permissionCode)).toBe(true);
+    }
+  });
+
+  it('keeps P4/P5 modules out of the S3-S8 registry', () => {
+    const moduleCodes = listModules().map(
+      (moduleDefinition) => moduleDefinition.code,
+    );
+
+    for (const forbiddenPrefix of FORBIDDEN_S3_S8_MODULE_PREFIXES) {
+      expect(moduleCodes.some((code) => code.startsWith(forbiddenPrefix))).toBe(
+        false,
+      );
+    }
+  });
+
+  it('allows API and Admin consumers to locate modules by stable code', () => {
+    expect(findModuleByCode('tool.openapi')).toMatchObject({
+      code: 'tool.openapi',
+      layer: 'tool',
+      stage: 'S8',
+      admin: {
+        basePath: '/tools/openapi',
+      },
+    });
+  });
+});

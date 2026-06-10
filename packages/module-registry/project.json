@@ -1,0 +1,41 @@
+{
+  "name": "module-registry",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/module-registry/src",
+  "projectType": "library",
+  "tags": ["scope:module-registry", "type:library"],
+  "targets": {
+    "build": {
+      "cache": true,
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit -p packages/module-registry/tsconfig.lib.json"
+      }
+    },
+    "lint": {
+      "cache": true,
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint packages/module-registry/src packages/module-registry/jest.config.ts"
+      }
+    },
+    "test": {
+      "cache": true,
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "jest -c packages/module-registry/jest.config.ts",
+        "env": {
+          "NODE_OPTIONS": "--no-experimental-strip-types",
+          "TS_NODE_COMPILER_OPTIONS": "{\"moduleResolution\":\"node10\",\"module\":\"commonjs\",\"customConditions\":null}"
+        }
+      }
+    },
+    "typecheck": {
+      "cache": true,
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit -p packages/module-registry/tsconfig.lib.json"
+      }
+    }
+  }
+}

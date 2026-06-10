@@ -1,0 +1,613 @@
+import type {
+  MenuDefinition,
+  ModuleDefinition,
+  ModuleLayer,
+  ModuleStage,
+  PermissionAction,
+  PermissionDefinition,
+} from '@opencore/contracts';
+
+type PermissionSeed = {
+  action: PermissionAction;
+  title: string;
+  dangerous?: boolean;
+};
+
+const CRUD_PERMISSION_SEEDS: readonly PermissionSeed[] = [
+  { action: 'read', title: 'Read' },
+  { action: 'create', title: 'Create' },
+  { action: 'update', title: 'Update' },
+  { action: 'delete', title: 'Delete', dangerous: true },
+  { action: 'export', title: 'Export' },
+];
+
+function definePermissions(
+  layer: ModuleLayer,
+  resource: string,
+  resourceTitle: string,
+  stage: ModuleStage,
+  seeds: readonly PermissionSeed[],
+): readonly PermissionDefinition[] {
+  return seeds.map((seed) => ({
+    code: `${layer}:${resource}:${seed.action}`,
+    title: `${seed.title} ${resourceTitle}`,
+    stage,
+    dangerous: seed.dangerous,
+  }));
+}
+
+function defineMenu(
+  key: string,
+  title: string,
+  path: `/${string}`,
+  permissionCode: PermissionDefinition['code'],
+  order: number,
+  stage: ModuleStage,
+): MenuDefinition {
+  return {
+    key,
+    title,
+    path,
+    permissionCode,
+    order,
+    stage,
+  };
+}
+
+export const moduleRegistry = [
+  {
+    code: 'core.dashboard',
+    title: 'Dashboard',
+    layer: 'core',
+    priority: 'P1',
+    status: 'planned',
+    stage: 'S5',
+    enabledByDefault: true,
+    description: 'Admin dashboard shell with health and empty-state summaries.',
+    apiTags: ['Core Dashboard'],
+    permissions: definePermissions('core', 'dashboard', 'dashboard', 'S5', [
+      { action: 'read', title: 'Read' },
+    ]),
+    menus: [
+      defineMenu(
+        'dashboard.home',
+        'Dashboard',
+        '/dashboard',
+        'core:dashboard:read',
+        10,
+        'S5',
+      ),
+    ],
+    admin: {
+      basePath: '/dashboard',
+      routes: [
+        {
+          path: '/dashboard',
+          title: 'Dashboard',
+          permissionCode: 'core:dashboard:read',
+        },
+      ],
+    },
+  },
+  {
+    code: 'core.user',
+    title: 'Users',
+    layer: 'core',
+    priority: 'P1',
+    status: 'planned',
+    stage: 'S6',
+    enabledByDefault: true,
+    description: 'User identity management for the minimal RBAC loop.',
+    apiTags: ['Core Users'],
+    permissions: definePermissions(
+      'core',
+      'user',
+      'users',
+      'S6',
+      CRUD_PERMISSION_SEEDS,
+    ),
+    menus: [
+      defineMenu(
+        'system.users',
+        'Users',
+        '/system/users',
+        'core:user:read',
+        100,
+        'S6',
+      ),
+    ],
+    admin: {
+      basePath: '/system/users',
+      routes: [
+        {
+          path: '/system/users',
+          title: 'Users',
+          permissionCode: 'core:user:read',
+        },
+      ],
+    },
+  },
+  {
+    code: 'core.role',
+    title: 'Roles',
+    layer: 'core',
+    priority: 'P1',
+    status: 'planned',
+    stage: 'S6',
+    enabledByDefault: true,
+    description: 'Role management with stable Role.code identity.',
+    apiTags: ['Core Roles'],
+    permissions: definePermissions(
+      'core',
+      'role',
+      'roles',
+      'S6',
+      CRUD_PERMISSION_SEEDS,
+    ),
+    menus: [
+      defineMenu(
+        'system.roles',
+        'Roles',
+        '/system/roles',
+        'core:role:read',
+        110,
+        'S6',
+      ),
+    ],
+    admin: {
+      basePath: '/system/roles',
+      routes: [
+        {
+          path: '/system/roles',
+          title: 'Roles',
+          permissionCode: 'core:role:read',
+        },
+      ],
+    },
+  },
+  {
+    code: 'core.permission',
+    title: 'Permissions',
+    layer: 'core',
+    priority: 'P1',
+    status: 'planned',
+    stage: 'S6',
+    enabledByDefault: true,
+    description: 'Permission catalog backed by stable Permission.code values.',
+    apiTags: ['Core Permissions'],
+    permissions: definePermissions(
+      'core',
+      'permission',
+      'permissions',
+      'S6',
+      CRUD_PERMISSION_SEEDS,
+    ),
+    menus: [
+      defineMenu(
+        'system.permissions',
+        'Permissions',
+        '/system/permissions',
+        'core:permission:read',
+        120,
+        'S6',
+      ),
+    ],
+    admin: {
+      basePath: '/system/permissions',
+      routes: [
+        {
+          path: '/system/permissions',
+          title: 'Permissions',
+          permissionCode: 'core:permission:read',
+        },
+      ],
+    },
+  },
+  {
+    code: 'core.menu',
+    title: 'Menus',
+    layer: 'core',
+    priority: 'P1',
+    status: 'planned',
+    stage: 'S6',
+    enabledByDefault: true,
+    description: 'Admin menu management linked to permission codes.',
+    apiTags: ['Core Menus'],
+    permissions: definePermissions(
+      'core',
+      'menu',
+      'menus',
+      'S6',
+      CRUD_PERMISSION_SEEDS,
+    ),
+    menus: [
+      defineMenu(
+        'system.menus',
+        'Menus',
+        '/system/menus',
+        'core:menu:read',
+        130,
+        'S6',
+      ),
+    ],
+    admin: {
+      basePath: '/system/menus',
+      routes: [
+        {
+          path: '/system/menus',
+          title: 'Menus',
+          permissionCode: 'core:menu:read',
+        },
+      ],
+    },
+  },
+  {
+    code: 'core.dict',
+    title: 'Dictionaries',
+    layer: 'core',
+    priority: 'P2',
+    status: 'planned',
+    stage: 'S7',
+    enabledByDefault: true,
+    description: 'System dictionary types and values.',
+    apiTags: ['Core Dictionaries'],
+    permissions: definePermissions(
+      'core',
+      'dict',
+      'dictionaries',
+      'S7',
+      CRUD_PERMISSION_SEEDS,
+    ),
+    menus: [
+      defineMenu(
+        'system.dicts',
+        'Dictionaries',
+        '/system/dicts',
+        'core:dict:read',
+        200,
+        'S7',
+      ),
+    ],
+    admin: {
+      basePath: '/system/dicts',
+      routes: [
+        {
+          path: '/system/dicts',
+          title: 'Dictionaries',
+          permissionCode: 'core:dict:read',
+        },
+      ],
+    },
+  },
+  {
+    code: 'core.config',
+    title: 'System Config',
+    layer: 'core',
+    priority: 'P2',
+    status: 'planned',
+    stage: 'S7',
+    enabledByDefault: true,
+    description: 'Safe runtime system parameters, excluding secrets.',
+    apiTags: ['Core System Config'],
+    permissions: definePermissions(
+      'core',
+      'config',
+      'system config',
+      'S7',
+      CRUD_PERMISSION_SEEDS,
+    ),
+    menus: [
+      defineMenu(
+        'system.config',
+        'System Config',
+        '/system/config',
+        'core:config:read',
+        210,
+        'S7',
+      ),
+    ],
+    admin: {
+      basePath: '/system/config',
+      routes: [
+        {
+          path: '/system/config',
+          title: 'System Config',
+          permissionCode: 'core:config:read',
+        },
+      ],
+    },
+  },
+  {
+    code: 'core.file',
+    title: 'File Center',
+    layer: 'core',
+    priority: 'P2',
+    status: 'planned',
+    stage: 'S7',
+    enabledByDefault: true,
+    description: 'Generic file asset center without industry image semantics.',
+    apiTags: ['Core Files'],
+    permissions: definePermissions(
+      'core',
+      'file',
+      'files',
+      'S7',
+      CRUD_PERMISSION_SEEDS,
+    ),
+    menus: [
+      defineMenu(
+        'system.files',
+        'File Center',
+        '/system/files',
+        'core:file:read',
+        220,
+        'S7',
+      ),
+    ],
+    admin: {
+      basePath: '/system/files',
+      routes: [
+        {
+          path: '/system/files',
+          title: 'File Center',
+          permissionCode: 'core:file:read',
+        },
+      ],
+    },
+  },
+  {
+    code: 'core.audit-log',
+    title: 'Operation Logs',
+    layer: 'core',
+    priority: 'P2',
+    status: 'planned',
+    stage: 'S7',
+    enabledByDefault: true,
+    description: 'Operation audit log with sensitive field redaction.',
+    apiTags: ['Core Audit Logs'],
+    permissions: definePermissions(
+      'core',
+      'audit-log',
+      'operation logs',
+      'S7',
+      [
+        { action: 'read', title: 'Read' },
+        { action: 'export', title: 'Export' },
+      ],
+    ),
+    menus: [
+      defineMenu(
+        'security.operation-logs',
+        'Operation Logs',
+        '/security/operation-logs',
+        'core:audit-log:read',
+        300,
+        'S7',
+      ),
+    ],
+    admin: {
+      basePath: '/security/operation-logs',
+      routes: [
+        {
+          path: '/security/operation-logs',
+          title: 'Operation Logs',
+          permissionCode: 'core:audit-log:read',
+        },
+      ],
+    },
+  },
+  {
+    code: 'core.login-log',
+    title: 'Login Logs',
+    layer: 'core',
+    priority: 'P2',
+    status: 'planned',
+    stage: 'S7',
+    enabledByDefault: true,
+    description: 'Login audit log created after the S6 auth baseline exists.',
+    apiTags: ['Core Login Logs'],
+    permissions: definePermissions('core', 'login-log', 'login logs', 'S7', [
+      { action: 'read', title: 'Read' },
+      { action: 'export', title: 'Export' },
+    ]),
+    menus: [
+      defineMenu(
+        'security.login-logs',
+        'Login Logs',
+        '/security/login-logs',
+        'core:login-log:read',
+        310,
+        'S7',
+      ),
+    ],
+    admin: {
+      basePath: '/security/login-logs',
+      routes: [
+        {
+          path: '/security/login-logs',
+          title: 'Login Logs',
+          permissionCode: 'core:login-log:read',
+        },
+      ],
+    },
+  },
+  {
+    code: 'monitor.status',
+    title: 'System Status',
+    layer: 'monitor',
+    priority: 'P2',
+    status: 'planned',
+    stage: 'S8',
+    enabledByDefault: true,
+    description: 'Read-only dependency and system diagnostics.',
+    apiTags: ['Monitor Status'],
+    permissions: definePermissions('monitor', 'status', 'system status', 'S8', [
+      { action: 'read', title: 'Read' },
+    ]),
+    menus: [
+      defineMenu(
+        'monitor.status',
+        'System Status',
+        '/monitor/status',
+        'monitor:status:read',
+        400,
+        'S8',
+      ),
+    ],
+    admin: {
+      basePath: '/monitor/status',
+      routes: [
+        {
+          path: '/monitor/status',
+          title: 'System Status',
+          permissionCode: 'monitor:status:read',
+        },
+      ],
+    },
+  },
+  {
+    code: 'monitor.version',
+    title: 'Version Info',
+    layer: 'monitor',
+    priority: 'P2',
+    status: 'planned',
+    stage: 'S8',
+    enabledByDefault: true,
+    description: 'Version, commit, and build metadata diagnostics.',
+    apiTags: ['Monitor Version'],
+    permissions: definePermissions('monitor', 'version', 'version info', 'S8', [
+      { action: 'read', title: 'Read' },
+    ]),
+    menus: [
+      defineMenu(
+        'monitor.version',
+        'Version',
+        '/monitor/version',
+        'monitor:version:read',
+        410,
+        'S8',
+      ),
+    ],
+    admin: {
+      basePath: '/monitor/version',
+      routes: [
+        {
+          path: '/monitor/version',
+          title: 'Version',
+          permissionCode: 'monitor:version:read',
+        },
+      ],
+    },
+  },
+  {
+    code: 'monitor.queue',
+    title: 'Queues',
+    layer: 'monitor',
+    priority: 'P2',
+    status: 'planned',
+    stage: 'S8',
+    enabledByDefault: true,
+    description:
+      'Read-only queue status diagnostics without scheduler management.',
+    apiTags: ['Monitor Queues'],
+    permissions: definePermissions('monitor', 'queue', 'queues', 'S8', [
+      { action: 'read', title: 'Read' },
+    ]),
+    menus: [
+      defineMenu(
+        'monitor.queues',
+        'Queues',
+        '/monitor/queues',
+        'monitor:queue:read',
+        420,
+        'S8',
+      ),
+    ],
+    admin: {
+      basePath: '/monitor/queues',
+      routes: [
+        {
+          path: '/monitor/queues',
+          title: 'Queues',
+          permissionCode: 'monitor:queue:read',
+        },
+      ],
+    },
+  },
+  {
+    code: 'tool.openapi',
+    title: 'OpenAPI',
+    layer: 'tool',
+    priority: 'P0',
+    status: 'planned',
+    stage: 'S8',
+    enabledByDefault: true,
+    description: 'OpenAPI contract export, SDK generation, and drift status.',
+    apiTags: ['Tool OpenAPI'],
+    permissions: definePermissions(
+      'tool',
+      'openapi',
+      'OpenAPI contract',
+      'S8',
+      [
+        { action: 'read', title: 'Read' },
+        { action: 'export', title: 'Export' },
+      ],
+    ),
+    menus: [
+      defineMenu(
+        'tools.openapi',
+        'OpenAPI',
+        '/tools/openapi',
+        'tool:openapi:read',
+        500,
+        'S8',
+      ),
+    ],
+    admin: {
+      basePath: '/tools/openapi',
+      routes: [
+        {
+          path: '/tools/openapi',
+          title: 'OpenAPI',
+          permissionCode: 'tool:openapi:read',
+        },
+      ],
+    },
+  },
+  {
+    code: 'tool.export',
+    title: 'Export Tools',
+    layer: 'tool',
+    priority: 'P3',
+    status: 'planned',
+    stage: 'S8',
+    enabledByDefault: true,
+    description: 'Current-page export protocol and reusable Admin template.',
+    apiTags: ['Tool Export'],
+    permissions: definePermissions('tool', 'export', 'export tools', 'S8', [
+      { action: 'read', title: 'Read' },
+      { action: 'export', title: 'Export' },
+    ]),
+    menus: [
+      defineMenu(
+        'tools.export',
+        'Export Tools',
+        '/tools/export',
+        'tool:export:read',
+        510,
+        'S8',
+      ),
+    ],
+    admin: {
+      basePath: '/tools/export',
+      routes: [
+        {
+          path: '/tools/export',
+          title: 'Export Tools',
+          permissionCode: 'tool:export:read',
+        },
+      ],
+    },
+  },
+] as const satisfies readonly ModuleDefinition[];

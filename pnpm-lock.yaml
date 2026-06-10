@@ -169,6 +169,23 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  packages/contracts:
+    dependencies:
+      '@opencore/shared':
+        specifier: workspace:*
+        version: link:../shared
+
+  packages/module-registry:
+    dependencies:
+      '@opencore/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@opencore/shared':
+        specifier: workspace:*
+        version: link:../shared
+
+  packages/shared: {}
+
 packages:
   '@ahooksjs/use-request@2.8.15':
     resolution:
