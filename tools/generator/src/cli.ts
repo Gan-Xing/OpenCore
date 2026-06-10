@@ -9,6 +9,11 @@ import {
 import { formatPlanAsJson, formatPlanAsMarkdown } from './output/plan-output';
 import { buildGeneratePlan } from './planner/generate-plan';
 import { buildPreflightReport } from './preflight/preflight-report';
+import {
+  listOpenForgeManifests,
+  rollbackOpenForge,
+  showOpenForgeManifest,
+} from './rollback/rollback-engine';
 
 type WritableStream = {
   write(message: string): void;
@@ -32,8 +37,10 @@ function printHelp(stdout: WritableStream): void {
       '  diff   Output a read-only diff plan',
       '  check  Run read-only preflight checks',
       '  apply  Safely apply generated virtual files, defaulting to dry-run',
+      '  rollback  Roll back files from an apply manifest, defaulting to dry-run',
+      '  manifest  List or show OpenForge manifests',
       '',
-      'Apply writes require explicit --yes.',
+      'Apply and rollback writes require explicit --yes.',
       '',
     ].join('\n'),
   );
@@ -78,6 +85,20 @@ function buildApplyCommand(
     '--schema',
     schemaPath,
     ...(configPath ? ['--config', configPath] : []),
+    ...(dryRun ? ['--dry-run'] : []),
+    ...(!dryRun && yes ? ['--yes'] : []),
+  ].join(' ');
+}
+
+function buildRollbackCommand(
+  manifestPath: string,
+  dryRun: boolean,
+  yes: boolean,
+): string {
+  return [
+    'pnpm openforge:rollback --',
+    '--manifest',
+    manifestPath,
     ...(dryRun ? ['--dry-run'] : []),
     ...(!dryRun && yes ? ['--yes'] : []),
   ].join(' ');
@@ -155,6 +176,39 @@ export function runCli(
       yes,
       command: buildApplyCommand(schemaPath, configPath, dryRun, yes),
     });
+
+    printJson(stdout, result);
+
+    return { exitCode: result.errors.length > 0 ? 1 : 0 };
+  }
+
+  if (command === 'rollback') {
+    const manifestPath = readOption(argv, '--manifest', '');
+    const yes = hasFlag(argv, '--yes');
+    const dryRun = hasFlag(argv, '--dry-run') || !yes;
+    const result = rollbackOpenForge({
+      manifestPath,
+      mode: dryRun ? 'dry-run' : 'write',
+      yes,
+      command: buildRollbackCommand(manifestPath, dryRun, yes),
+    });
+
+    printJson(stdout, result);
+
+    return { exitCode: result.errors.length > 0 ? 1 : 0 };
+  }
+
+  if (command === 'manifest') {
+    if (hasFlag(argv, '--list')) {
+      const result = listOpenForgeManifests();
+
+      printJson(stdout, result);
+
+      return { exitCode: result.errors.length > 0 ? 1 : 0 };
+    }
+
+    const manifestIdOrPath = readOption(argv, '--show', '');
+    const result = showOpenForgeManifest({ manifestIdOrPath });
 
     printJson(stdout, result);
 

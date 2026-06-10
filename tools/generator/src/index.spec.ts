@@ -15,6 +15,13 @@ describe('@opencore/openforge workspace', () => {
   });
 
   it('exposes the root CLI commands with explicit safe apply', () => {
-    expect(OPENFORGE_CLI_COMMANDS).toEqual(['plan', 'diff', 'check', 'apply']);
+    expect(OPENFORGE_CLI_COMMANDS).toEqual([
+      'plan',
+      'diff',
+      'check',
+      'apply',
+      'rollback',
+      'manifest',
+    ]);
   });
 });

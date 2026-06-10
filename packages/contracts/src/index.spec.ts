@@ -18,6 +18,7 @@ import {
   type OpenForgeGeneratorConfig,
   type OpenForgeManifest,
   type OpenForgePatchPlan,
+  type OpenForgeRollbackAudit,
   type OpenForgeRollbackPlan,
   type ModuleDefinition,
 } from './index';
@@ -265,6 +266,8 @@ describe('@opencore/contracts', () => {
           action: 'created',
           rollbackAction: 'delete',
           afterHash: 'after-hash',
+          backupPath:
+            '.openforge/backups/20260610-core-dict-schema/controller.bak',
         },
       ],
     } satisfies OpenForgeManifest;
@@ -284,6 +287,16 @@ describe('@opencore/contracts', () => {
       warnings: [],
       errors: [],
     } satisfies OpenForgeRollbackPlan;
+    const rollbackAudit = {
+      id: '20260610-core-dict-schema-rollback',
+      createdAt: '2026-06-10T00:00:00.000Z',
+      command: 'pnpm openforge:rollback -- --yes',
+      manifestPath: '.openforge/manifests/20260610-core-dict-schema.json',
+      manifestId: manifest.id,
+      moduleCode: 'core.dict',
+      templateVersion: OPENFORGE_V1_TEMPLATE_VERSION,
+      entries: rollbackPlan.entries,
+    } satisfies OpenForgeRollbackAudit;
     const patchPlan = {
       moduleCode: 'core.dict',
       templateVersion: OPENFORGE_V1_TEMPLATE_VERSION,
@@ -308,6 +321,10 @@ describe('@opencore/contracts', () => {
     });
     expect(rollbackPlan.entries[0]).toMatchObject({
       action: 'delete',
+    });
+    expect(rollbackAudit).toMatchObject({
+      manifestId: manifest.id,
+      moduleCode: 'core.dict',
     });
     expect(patchPlan.entries[0]).toMatchObject({
       artifactKind: 'patch.app-module',

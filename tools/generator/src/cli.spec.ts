@@ -24,7 +24,9 @@ describe('OpenForge CLI shell', () => {
       exitCode: 0,
     });
     expect(stdout.getValue()).toContain('read-only planning tool');
-    expect(stdout.getValue()).toContain('Apply writes require explicit --yes');
+    expect(stdout.getValue()).toContain(
+      'Apply and rollback writes require explicit --yes',
+    );
     expect(stderr.getValue()).toBe('');
   });
 
@@ -154,6 +156,53 @@ describe('OpenForge CLI shell', () => {
         command:
           'pnpm openforge:apply -- --schema tools/generator/examples/core.dict.v1.schema.json --dry-run',
       },
+      errors: [],
+    });
+    expect(stderr.getValue()).toBe('');
+  });
+
+  it('prints a rollback dry-run error for a missing manifest without writing', () => {
+    const stdout = createWritableBuffer();
+    const stderr = createWritableBuffer();
+
+    expect(
+      runCli(
+        [
+          'rollback',
+          '--manifest',
+          '.openforge/manifests/missing.json',
+          '--dry-run',
+        ],
+        stdout.stream,
+        stderr.stream,
+      ),
+    ).toEqual({
+      exitCode: 1,
+    });
+    expect(JSON.parse(stdout.getValue())).toMatchObject({
+      mode: 'dry-run',
+      rolledBack: false,
+      errors: [
+        {
+          path: 'manifestPath',
+          message: 'Manifest file does not exist.',
+        },
+      ],
+    });
+    expect(stderr.getValue()).toBe('');
+  });
+
+  it('lists manifests without writing files', () => {
+    const stdout = createWritableBuffer();
+    const stderr = createWritableBuffer();
+
+    expect(
+      runCli(['manifest', '--list'], stdout.stream, stderr.stream),
+    ).toEqual({
+      exitCode: 0,
+    });
+    expect(JSON.parse(stdout.getValue())).toMatchObject({
+      manifests: [],
       errors: [],
     });
     expect(stderr.getValue()).toBe('');

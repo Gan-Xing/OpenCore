@@ -505,6 +505,7 @@ export type OpenForgeManifestEntry = {
   rollbackAction: OpenForgeManifestRollbackAction;
   beforeHash?: string;
   afterHash?: string;
+  backupPath?: string;
   marker?: OpenForgeGeneratedMarker;
 };
 
@@ -572,11 +573,24 @@ export type OpenForgeRollbackPlan = {
   errors: readonly OpenForgeValidationIssue[];
 };
 
+export type OpenForgeRollbackAudit = {
+  id: string;
+  createdAt: string;
+  command: string;
+  manifestPath: string;
+  manifestId: string;
+  moduleCode: ModuleDefinition['code'];
+  templateVersion: string;
+  entries: readonly OpenForgeRollbackPlanEntry[];
+};
+
 export type OpenForgeRollbackResult = {
   mode: OpenForgeApplyMode;
   rolledBack: boolean;
   entries: readonly OpenForgeRollbackPlanEntry[];
   manifest?: OpenForgeManifest;
+  auditPath?: string;
+  audit?: OpenForgeRollbackAudit;
   warnings: readonly OpenForgeValidationIssue[];
   errors: readonly OpenForgeValidationIssue[];
 };

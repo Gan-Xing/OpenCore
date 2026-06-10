@@ -8,6 +8,8 @@ export const OPENFORGE_CLI_COMMANDS = [
   'diff',
   'check',
   'apply',
+  'rollback',
+  'manifest',
 ] as const;
 
 export type OpenForgeCliCommand = (typeof OPENFORGE_CLI_COMMANDS)[number];
@@ -42,6 +44,7 @@ export * from './output/plan-output';
 export * from './planner/generate-plan';
 export * from './preflight/preflight-report';
 export * from './render/render-template-pack';
+export * from './rollback/rollback-engine';
 export * from './schema/schema-v1';
 export * from './templates/default-template-pack';
 export * from './validators/manual-schema-validator';

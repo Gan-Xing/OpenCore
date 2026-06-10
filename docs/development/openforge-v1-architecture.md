@@ -22,12 +22,10 @@ V1 不改变 OpenCore 的业务边界：它只生成平台开发骨架和 review
 | Safety          | 阻止绝对路径、`../`、`.env*`、`prisma/schema.prisma`、`prisma/migrations/**` 和 P4/P5 schema               |
 | Tests           | OpenForge reader、validator、planner、diff、preflight、CLI 和 safety tests 已存在                          |
 
-Stage B-E 已补齐 V1 contract surface、schema/config DSL、template pack/VFS 和 safe apply writer。后续仍缺少实现层：
+Stage B-F 已补齐 V1 contract surface、schema/config DSL、template pack/VFS、safe apply writer 和 rollback engine。后续仍缺少实现层：
 
-- 无 rollback engine。
-- 无 `rollback`、`manifest`、`doctor` CLI。
 - 无 API/Admin/SDK/Test/Docs generator pack 的 golden snapshots。
-- 无 temp repo apply/rollback e2e。
+- 无 `doctor` CLI。
 - 无 OpenForge V1 gate。
 
 ## V1 Flow
@@ -74,7 +72,8 @@ flowchart TD
 | Stage C   | complete | `tools/generator/src/schema/**` and `tools/generator/src/config/**` validate Schema/config DSL V1, with legal and illegal V1 fixtures under `tools/generator/examples`                          |
 | Stage D   | complete | `openforge-default-nest-umi-v1` template pack, render layer, VFS helpers and golden snapshot tests render API/Admin/SDK/Test/Docs/Prisma/Patch virtual files in memory                          |
 | Stage E   | complete | `tools/generator/src/apply/apply-writer.ts` applies generated-owned VFS output only with explicit `--yes`, defaults to dry-run, writes manifests, verifies hashes and rolls back partial writes |
-| Stage F-L | pending  | Rollback, generator packs hardening, doctor/e2e/gate and final docs are not implemented yet                                                                                                     |
+| Stage F   | complete | `tools/generator/src/rollback/rollback-engine.ts` plans and applies manifest rollback, blocks modified generated files, restores from apply backups, and writes rollback audit records          |
+| Stage G-L | pending  | Generator packs hardening, doctor/e2e/gate and final docs are not implemented yet                                                                                                               |
 
 ## Generated Ownership Model
 
@@ -112,23 +111,20 @@ Prisma output remains draft/hint only. OpenForge must not directly write `prisma
 
 ## Apply And Rollback
 
-Stage E introduces `apply`; it remains dry-run by default and only writes with explicit `--yes`:
+Stage E introduces `apply`; it remains dry-run by default and only writes with explicit `--yes`. Stage F introduces manifest rollback and manifest inspection:
 
 ```bash
 pnpm openforge:apply -- --schema <schema> --config <config> --dry-run
 pnpm openforge:apply -- --schema <schema> --config <config> --yes
-```
-
-Rollback and manifest inspection commands remain planned for later stages:
-
-```bash
 pnpm openforge:rollback -- --manifest <manifest> --dry-run
 pnpm openforge:rollback -- --manifest <manifest> --yes
 pnpm openforge:manifest -- --list
-pnpm openforge:doctor
+pnpm openforge:manifest -- --show <id>
 ```
 
-When implemented, real writes must require `--yes`; dry-run remains the default.
+Rollback uses only manifest entries. Created files are deleted only when their current hash still matches the apply manifest and they still contain a valid OpenForge marker. Updated files are restored only when their current hash still matches the apply manifest and the Stage F backup hash matches the manifest `beforeHash`. Rollback writes `.openforge/rollbacks/*.json` audit records on successful write-mode rollback.
+
+`pnpm openforge:doctor` remains planned for a later stage. Real writes must require `--yes`; dry-run remains the default.
 
 ## Scope Guard
 

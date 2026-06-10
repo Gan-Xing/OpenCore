@@ -92,11 +92,22 @@ function safeManifestId(moduleCode: string, schemaHash: string): string {
   return `${timestamp}-${moduleCode}-${schemaHash.slice(0, 8)}`;
 }
 
+function safeBackupFileName(targetPath: string): string {
+  const safePath = targetPath.replace(/[^a-zA-Z0-9._-]+/g, '_');
+
+  return `${createStableHash(targetPath).slice(0, 8)}-${safePath}.bak`;
+}
+
+function backupPathFor(manifestId: string, targetPath: string): string {
+  return `.openforge/backups/${manifestId}/${safeBackupFileName(targetPath)}`;
+}
+
 function manifestPathFor(manifest: OpenForgeManifest): string {
   return `.openforge/manifests/${manifest.id}.json`;
 }
 
 function createManifest(
+  id: string,
   command: string,
   schemaPath: string,
   moduleCode: OpenForgeManifest['moduleCode'],
@@ -105,7 +116,7 @@ function createManifest(
   entries: readonly OpenForgeManifestEntry[],
 ): OpenForgeManifest {
   return {
-    id: safeManifestId(moduleCode, inputHashes.schemaHash),
+    id,
     createdAt: OPENFORGE_DETERMINISTIC_TIMESTAMP,
     command,
     schemaPath,
@@ -119,6 +130,7 @@ function createManifest(
 function evaluateApplyEntry(
   file: OpenForgeVirtualFile,
   repoRoot: string,
+  manifestId: string,
 ): OpenForgeManifestEntry {
   const safety = evaluatePathSafety(file.targetPath);
 
@@ -192,6 +204,7 @@ function evaluateApplyEntry(
     rollbackAction: 'restore',
     beforeHash,
     afterHash: file.contentHash,
+    backupPath: backupPathFor(manifestId, file.targetPath),
     marker: file.marker,
   };
 }
@@ -224,11 +237,23 @@ function prepareApply(options: ApplyOpenForgeOptions): PreparedApply {
     yes: Boolean(options.yes),
     config,
   });
+  const inputHashes = {
+    schemaHash: createStableHash(loadedSchema.raw),
+    registryHash: createStableHash(registry.modules),
+    openApiHash: createStableHash(openApi.raw),
+    configHash: createStableHash(loadedConfig.raw),
+  };
+  const manifestId = safeManifestId(
+    loadedSchema.schema.moduleCode,
+    inputHashes.schemaHash,
+  );
   const files =
     schemaValidation.valid && configErrors.length === 0
       ? renderTemplatePack(loadedSchema.schema, config)
       : [];
-  const entries = files.map((file) => evaluateApplyEntry(file, repoRoot));
+  const entries = files.map((file) =>
+    evaluateApplyEntry(file, repoRoot, manifestId),
+  );
   const blockedEntries = entries
     .filter((entry) => entry.action === 'blocked')
     .map((entry) =>
@@ -237,13 +262,8 @@ function prepareApply(options: ApplyOpenForgeOptions): PreparedApply {
         'Target path is blocked or conflicts with a human-authored file.',
       ),
     );
-  const inputHashes = {
-    schemaHash: createStableHash(loadedSchema.raw),
-    registryHash: createStableHash(registry.modules),
-    openApiHash: createStableHash(openApi.raw),
-    configHash: createStableHash(loadedConfig.raw),
-  };
   const manifest = createManifest(
+    manifestId,
     options.command ?? 'pnpm openforge:apply',
     options.schemaPath,
     loadedSchema.schema.moduleCode,
@@ -331,6 +351,49 @@ function writePreparedApply(prepared: PreparedApply): OpenForgeApplyResult {
       const beforeContent = existedBefore
         ? readFileSync(absolutePath, 'utf8')
         : undefined;
+
+      if (entry.rollbackAction === 'restore') {
+        if (!entry.backupPath || beforeContent === undefined) {
+          throw new Error(`Missing rollback backup for ${file.targetPath}`);
+        }
+
+        if (
+          entry.beforeHash &&
+          createStableHash(beforeContent) !== entry.beforeHash
+        ) {
+          throw new Error(`Target changed before write: ${file.targetPath}`);
+        }
+
+        const absoluteBackupPath = getAbsoluteTargetPath(
+          prepared.repoRoot,
+          entry.backupPath,
+        );
+
+        if (!absoluteBackupPath) {
+          throw new Error(`Backup escaped repo root: ${entry.backupPath}`);
+        }
+
+        const backupExistedBefore = existsSync(absoluteBackupPath);
+        const backupBeforeContent = backupExistedBefore
+          ? readFileSync(absoluteBackupPath, 'utf8')
+          : undefined;
+
+        rollbacks.push({
+          absolutePath: absoluteBackupPath,
+          existedBefore: backupExistedBefore,
+          beforeContent: backupBeforeContent,
+        });
+        mkdirSync(dirname(absoluteBackupPath), { recursive: true });
+        writeFileSync(absoluteBackupPath, beforeContent);
+
+        if (
+          entry.beforeHash &&
+          createStableHash(readFileSync(absoluteBackupPath, 'utf8')) !==
+            entry.beforeHash
+        ) {
+          throw new Error(`Backup verification failed for ${entry.backupPath}`);
+        }
+      }
 
       rollbacks.push({
         absolutePath,
