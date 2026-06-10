@@ -7,18 +7,27 @@ OpenCore（开元）定位为 **AI Native 企业级全栈 Monorepo**。技术栈
 - pnpm workspace。
 - Nx。
 - TypeScript。
+- Jest。
+- Prettier / ESLint。
+
+当前已落地 `apps/api`、`apps/admin`、`packages/shared`、`packages/contracts`、`packages/module-registry`、`packages/sdk`。
 
 ## 后端
 
 - NestJS。
 - Prisma。
 - PostgreSQL。
-- Redis。
-- BullMQ。
-- MinIO/S3。
-- OpenAPI。
+- OpenAPI / Swagger。
+- Redis：后续缓存、限流、队列依赖。
+- BullMQ：后续后台任务。
+- MinIO/S3：后续对象存储 provider。
 
-当前 S0/S1 不初始化 NestJS 项目，不连接数据库，不生成 Prisma schema。
+当前已完成：
+
+- API foundation：env/config validation、request id、统一错误、结构化日志、安全基线。
+- RBAC：User、Role、Permission、Menu、`Role.code`、`Permission.code`、permission guard。
+- System management：dict、system config、file asset、audit log、login log。
+- Monitor/tool：status、version、queue 只读诊断、OpenAPI drift check、table export protocol。
 
 ## 官方后台
 
@@ -29,6 +38,16 @@ OpenCore（开元）定位为 **AI Native 企业级全栈 Monorepo**。技术栈
 - ProComponents v3。
 - antd 6。
 - React 19。
+
+当前已完成：
+
+- Dashboard shell。
+- 403/404/500。
+- request/access 规范。
+- registry 菜单消费。
+- RBAC 页面。
+- 系统管理页面。
+- Monitor/Tool 页面。
 
 明确边界：
 
@@ -44,10 +63,10 @@ OpenCore（开元）定位为 **AI Native 企业级全栈 Monorepo**。技术栈
 - 小程序：Taro + React，后续阶段，不直接使用 React Native。
 - 桌面端：Tauri，后续阶段。
 
-S0/S1 只创建 `web/mobile/miniapp/desktop` 占位目录和 `.gitkeep`。
+当前仍只保留 `web/mobile/miniapp/desktop` 占位目录和 `.gitkeep`。
 
 ## AI Native
 
-第一阶段只做架构预留，不实现 RAG、Agent、知识库、模型调用或 AI 业务。
+AI Native 当前只做架构预留，不实现 RAG、Agent、知识库、模型调用或 AI 业务。
 
-`packages/ai-core` 仅作为未来能力边界预留。
+AI 能力必须建立在权限、审计、数据边界、成本治理和 S8 可观测能力稳定之后。

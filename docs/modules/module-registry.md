@@ -1,6 +1,18 @@
 # 模块注册表
 
-模块注册表是 OpenCore 的模块元数据中心，后续由 `packages/module-registry` 承载。
+模块注册表是 OpenCore 的模块元数据中心，由 `packages/module-registry` 承载。
+
+## 当前状态
+
+S3 已实现 `@opencore/module-registry`，并在 S5-S8 中被 Admin shell、RBAC、系统管理、Monitor/Tool 页面持续消费。
+
+当前能力：
+
+- 登记 S5-S8 模块草案和实际页面入口。
+- 管理权限码、菜单、OpenAPI tag、stage、priority、enabledByDefault。
+- 校验重复 module code、permission code、menu key。
+- 校验菜单 permission 指向已注册权限码。
+- 阻止 S3-S8 期间 P4/P5 模块泄漏进 registry。
 
 ## 模块分层
 
@@ -8,7 +20,7 @@ OpenCore 模块分层采用：
 
 - `core`：系统运行必需能力。
 - `monitor`：日志、审计、健康检查、任务和运行状态。
-- `tool`：代码生成器、文件、通知、字典、配置等工具能力。
+- `tool`：OpenAPI、导入导出、OpenForge、开发工具。
 - `collaboration`：团队协作、审批、消息和工作台能力。
 - `optional`：可选通用业务模块。
 - `industry`：行业化模块。
@@ -16,17 +28,26 @@ OpenCore 模块分层采用：
 - `ai`：AI Native 能力。
 - `experimental`：实验能力。
 
-## 元数据方向
+## S3-S8 已覆盖模块
 
-模块注册表未来应描述：
+| 层级    | 模块                                                                              |
+| ------- | --------------------------------------------------------------------------------- |
+| core    | dashboard、user、role、permission、menu、dict、config、file、audit-log、login-log |
+| monitor | status、version、queue                                                            |
+| tool    | openapi、export                                                                   |
 
-- 模块标识、名称、描述和分层。
-- 是否默认启用。
-- API、后台菜单、权限点、事件、任务和数据模型边界。
-- 依赖关系和冲突关系。
-- 是否进入精简版或完整版。
-- 是否稳定、预览、实验或废弃。
+## 长期 backlog
 
-## S0/S1 边界
+P4/P5 模块继续保留在长期 backlog，不进入当前 core：
 
-当前阶段只定义文档方向和目录，不写模块注册表实现，不创建业务模块，不实现登录、RBAC、多租户、工作流、CRM、ERP、MES、WMS、商城、支付或会员。
+- optional：tenant、workflow、report、online-user、cache、job 等。
+- integration：mail、sms、wechat、oauth、pay 等。
+- industry：member、mall、crm、erp、mes、wms、iot、im 等。
+- ai：knowledge、RAG、Agent、AI workflow 等。
+
+## 与权限、菜单和 OpenAPI 的关系
+
+- 模块拥有权限码，格式为 `<module>:<resource>:<action>`。
+- 菜单由模块注册表声明，由 `apps/admin` 渲染。
+- OpenAPI tag 由模块注册表声明，由 `apps/api` 实现。
+- OpenForge S9 将读取模块注册表、OpenAPI 和人工 schema，生成 dry-run/diff plan。

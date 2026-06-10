@@ -16,9 +16,16 @@ OpenCore 表达“开放的核心”和“可扩展的源头”。中文名“�
 
 “开放之源，万物之始”用于描述项目的长期方向：以开放架构、共享契约、模块注册表和代码生成器为基础，承载 API、后台中台、官网、多端应用和 AI Native 能力。
 
+## 当前阶段表达
+
+当前可以对外描述为：
+
+> OpenCore 已完成 S3-S8 企业后台基础架构主线，包括 contracts/shared/module-registry、API foundation、Admin shell、auth/RBAC、system management、monitor/tool baseline。S9 将进入 OpenForge MVP。
+
 ## 命名边界
 
 - `OpenCore` 用于产品、文档和对外表达。
 - `opencore` 用于仓库名、workspace 名和内部目录。
 - `@opencore/*` 用于未来 npm 包发布。
 - `OpenForge` 专指代码生成器，不用于业务模块命名。
+- P4/P5 行业能力应使用 `industry/*`、`integration/*`、`optional/*` 或独立 app/package，不进入 core 命名空间。
