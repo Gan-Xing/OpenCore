@@ -12,12 +12,35 @@ export default defineConfig({
   routes: [
     {
       path: '/',
-      redirect: '/home',
+      redirect: '/dashboard',
     },
     {
-      name: '首页',
-      path: '/home',
-      component: './Home',
+      name: 'Dashboard',
+      path: '/dashboard',
+      component: './Dashboard',
+      access: 'canAccessDashboard',
+    },
+    {
+      name: 'OpenAPI',
+      path: '/tools/openapi',
+      component: './Tools/OpenApi',
+      access: 'canReadOpenApiStatus',
+    },
+    {
+      path: '/403',
+      component: './Exception/403',
+    },
+    {
+      path: '/404',
+      component: './Exception/404',
+    },
+    {
+      path: '/500',
+      component: './Exception/500',
+    },
+    {
+      path: '*',
+      component: './Exception/404',
     },
   ],
   npmClient: 'pnpm',

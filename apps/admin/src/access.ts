@@ -1,11 +1,17 @@
+import { shellPermissionCodes } from './core/shellRegistry';
+
 type InitialState = {
   permissions?: string[];
 };
 
 export default (initialState: InitialState = {}) => {
-  // S2 only keeps the access extension point. Real RBAC is intentionally deferred.
-  const permissions = new Set(initialState.permissions ?? []);
+  const permissions = new Set(initialState.permissions ?? shellPermissionCodes);
+  const hasPermission = (permissionCode: string) =>
+    permissions.has(permissionCode);
+
   return {
-    canReadHealth: permissions.has('core:health:read'),
+    canAccessDashboard: hasPermission('core:dashboard:read'),
+    canReadOpenApiStatus: hasPermission('tool:openapi:read'),
+    canReadHealth: hasPermission('core:dashboard:read'),
   };
 };

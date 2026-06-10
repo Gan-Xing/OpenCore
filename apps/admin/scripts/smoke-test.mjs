@@ -13,6 +13,7 @@ const requiredVersions = {
   antd: /^(\^)?6\./,
   react: /^(\^)?19\./,
   'react-dom': /^(\^)?19\./,
+  '@opencore/module-registry': /^workspace:\*$/,
 };
 
 for (const [name, pattern] of Object.entries(requiredVersions)) {
@@ -27,15 +28,71 @@ for (const [name, pattern] of Object.entries(requiredVersions)) {
 const config = readFileSync(resolve(root, '.umirc.ts'), 'utf8');
 if (
   config.includes("component: './Access'") ||
-  config.includes("component: './Table'")
+  config.includes("component: './Table'") ||
+  config.includes("component: './Home'") ||
+  config.includes("path: '/home'")
 ) {
   throw new Error(
-    'Template Access/Table routes must not be mounted in S2 admin routes.',
+    'Template demo routes must not be mounted in S5 admin routes.',
+  );
+}
+
+for (const requiredRoute of [
+  "path: '/dashboard'",
+  "path: '/tools/openapi'",
+  "path: '/403'",
+  "path: '/404'",
+  "path: '/500'",
+]) {
+  if (!config.includes(requiredRoute)) {
+    throw new Error(`Missing S5 shell route in .umirc.ts: ${requiredRoute}`);
+  }
+}
+
+const appRuntime = readFileSync(resolve(root, 'src/app.ts'), 'utf8');
+if (
+  !appRuntime.includes('createLayoutMenuItems') ||
+  !appRuntime.includes('shellMenuItems')
+) {
+  throw new Error(
+    'Admin layout must derive menu data from the shell registry.',
+  );
+}
+
+const accessRuntime = readFileSync(resolve(root, 'src/access.ts'), 'utf8');
+if (
+  !accessRuntime.includes('core:dashboard:read') ||
+  !accessRuntime.includes('tool:openapi:read')
+) {
+  throw new Error(
+    'Admin access must guard S5 shell routes by permission code.',
+  );
+}
+
+const shellRegistry = readFileSync(
+  resolve(root, 'src/core/shellRegistry.ts'),
+  'utf8',
+);
+if (
+  !shellRegistry.includes('@opencore/module-registry') ||
+  !shellRegistry.includes('core.dashboard') ||
+  !shellRegistry.includes('tool.openapi')
+) {
+  throw new Error('Admin shell registry must consume module-registry entries.');
+}
+
+const requestSpec = readFileSync(resolve(root, 'src/utils/request.ts'), 'utf8');
+if (
+  !requestSpec.includes('x-request-id') ||
+  !requestSpec.includes('x-trace-id')
+) {
+  throw new Error(
+    'Admin request helper must preserve request and trace headers.',
   );
 }
 
 if (existsSync(resolve(root, 'examples'))) {
-  throw new Error('Template example code must not be committed in S2.');
+  throw new Error('Template example code must not be committed in S5 shell.');
 }
 
 console.log('admin smoke test passed');

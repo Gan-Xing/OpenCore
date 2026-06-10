@@ -1,21 +1,40 @@
-// 运行时配置
+import {
+  createLayoutMenuItems,
+  registrySummary,
+  shellMenuItems,
+  shellPermissionCodes,
+  type ShellMenuItem,
+} from './core/shellRegistry';
 
-// 全局初始化数据配置，用于 Layout 用户信息和权限初始化
-// 更多信息见文档：https://umijs.org/docs/api/runtime-config#getinitialstate
-export async function getInitialState(): Promise<{
+type InitialState = {
   name: string;
   permissions: string[];
-}> {
+  menuItems: readonly ShellMenuItem[];
+  registrySummary: typeof registrySummary;
+};
+
+export async function getInitialState(): Promise<InitialState> {
   return {
     name: 'OpenCore Admin',
-    permissions: [],
+    permissions: shellPermissionCodes,
+    menuItems: shellMenuItems,
+    registrySummary,
   };
 }
 
-export const layout = () => {
+export const layout = ({
+  initialState,
+}: {
+  initialState?: InitialState;
+} = {}) => {
   return {
+    title: 'OpenCore Admin',
+    layout: 'mix',
     menu: {
       locale: false,
     },
+    menuDataRender: () =>
+      createLayoutMenuItems(initialState?.menuItems ?? shellMenuItems),
+    rightContentRender: false,
   };
 };
