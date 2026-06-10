@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OpenCore Strategy Blueprint</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --ink: #18202a;
+      --muted: #657282;
+      --line: #d8dee7;
+      --blue: #2357a3;
+      --green: #1f7a5c;
+      --red: #9a3b3b;
+      --amber: #9b6a1b;
+      --violet: #6d4aa2;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.55;
+    }
+    header {
+      background: #111821;
+      color: #fff;
+      padding: 36px 28px 30px;
+      border-bottom: 5px solid var(--blue);
+    }
+    header h1 {
+      margin: 0 0 8px;
+      font-size: 34px;
+      letter-spacing: 0;
+    }
+    header p {
+      margin: 0;
+      max-width: 980px;
+      color: #cbd4df;
+      font-size: 16px;
+    }
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 26px 18px 48px;
+    }
+    section {
+      margin: 0 0 22px;
+      padding: 24px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+    h2 {
+      margin: 0 0 16px;
+      font-size: 22px;
+    }
+    h3 {
+      margin: 18px 0 10px;
+      font-size: 16px;
+    }
+    .muted { color: var(--muted); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      background: #fbfcfe;
+      min-height: 118px;
+    }
+    .card strong { display: block; margin-bottom: 6px; }
+    .tag {
+      display: inline-block;
+      margin: 3px 4px 3px 0;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: #eef2f7;
+      color: #27384b;
+      font-size: 12px;
+      border: 1px solid #d7dee8;
+    }
+    .tag.blue { background: #edf4ff; color: var(--blue); border-color: #c9dcf6; }
+    .tag.green { background: #eef9f4; color: var(--green); border-color: #c9e8da; }
+    .tag.amber { background: #fff7e8; color: var(--amber); border-color: #f0ddb7; }
+    .tag.red { background: #fff1f1; color: var(--red); border-color: #efcccc; }
+    .map {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 14px;
+      align-items: stretch;
+    }
+    .node {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      background: #fff;
+    }
+    .node h3 { margin-top: 0; }
+    .arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      color: var(--muted);
+      font-size: 13px;
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      background: #fafafa;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: 14px;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 9px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: #f0f3f7; }
+    .timeline {
+      display: grid;
+      grid-template-columns: repeat(10, minmax(70px, 1fr));
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .stage {
+      min-width: 88px;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: #fbfcfe;
+    }
+    .stage b { display: block; color: var(--blue); }
+    .two {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    ul { margin: 8px 0 0 18px; padding: 0; }
+    li { margin: 4px 0; }
+    footer {
+      color: var(--muted);
+      text-align: center;
+      padding: 18px;
+      font-size: 13px;
+    }
+    @media (max-width: 860px) {
+      .grid, .map, .two { grid-template-columns: 1fr; }
+      header h1 { font-size: 28px; }
+      section { padding: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>OpenCore Strategy Blueprint</h1>
+    <p>OpenCore（开元）是 AI Native 企业级全栈 Monorepo。此页是战略蓝图总览，只描述未来能力、模块边界和阶段路线，不代表已经实现业务模块。</p>
+  </header>
+
+  <main>
+    <section>
+      <h2>Section 1: 系统总览</h2>
+      <div class="grid">
+        <div class="card">
+          <strong>当前状态</strong>
+          <span class="tag blue">S2</span>
+          <p class="muted">API/Admin 空主干。API 有 health 和 OpenAPI skeleton，Admin 有 Umi Max + Ant Design Pro 壳。</p>
+        </div>
+        <div class="card">
+          <strong>目标主线</strong>
+          <span class="tag green">TypeScript</span>
+          <p class="muted">NestJS、OpenAPI、SDK、module registry、Umi Max、OpenForge。</p>
+        </div>
+        <div class="card">
+          <strong>学习对象</strong>
+          <span class="tag amber">RuoYi/Yudao</span>
+          <p class="muted">学习模块地图、权限粒度、代码生成器、精简版/完整版，不复制 Java/Vue。</p>
+        </div>
+        <div class="card">
+          <strong>本阶段禁区</strong>
+          <span class="tag red">No business code</span>
+          <p class="muted">不做登录、RBAC、数据库、CRM、ERP、MES、WMS、商城、支付、会员、多租户、RAG、Agent。</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Section 2: API / Admin / packages 关系</h2>
+      <div class="map">
+        <div class="node">
+          <h3>apps/api</h3>
+          <p>NestJS 后端，最终输出 OpenAPI contract、权限声明、模块能力。</p>
+          <span class="tag">controllers</span><span class="tag">services</span><span class="tag">dto</span><span class="tag">entities</span>
+        </div>
+        <div class="node">
+          <h3>packages</h3>
+          <p>contracts、sdk、module-registry、shared 是单一事实来源。</p>
+          <span class="tag blue">OpenAPI</span><span class="tag blue">SDK</span><span class="tag blue">menus</span><span class="tag blue">permissions</span>
+        </div>
+        <div class="node">
+          <h3>apps/admin</h3>
+          <p>Umi Max + Ant Design Pro 官方后台，只消费 SDK 和 module registry。</p>
+          <span class="tag green">Dashboard</span><span class="tag green">System</span><span class="tag green">Monitor</span>
+        </div>
+      </div>
+      <div class="arrow">apps/api -> OpenAPI contract -> packages/sdk -> apps/admin；packages/module-registry -> permissions + menus -> API/Admin/OpenForge</div>
+    </section>
+
+    <section>
+      <h2>Section 3: RuoYi/Yudao 对标摘要</h2>
+      <table>
+        <thead>
+          <tr><th>分类</th><th>OpenCore 决策</th><th>第一年</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>system</td><td>转译为 core.user、role、permission、menu、dict、config、file、logs</td><td>进入</td></tr>
+          <tr><td>infra / monitor / tool</td><td>转译为 status、version、queue、OpenAPI、OpenForge、export</td><td>进入</td></tr>
+          <tr><td>collaboration</td><td>消息中心和 Approval Lite 可做，完整 workflow 后置</td><td>部分进入</td></tr>
+          <tr><td>member / mall / pay</td><td>不进入 core，支付归 integration 后置，商城会员明确不做</td><td>不进入</td></tr>
+          <tr><td>crm / erp / mes / wms / iot</td><td>归 industry，未来独立包或独立 app 评估</td><td>不进入</td></tr>
+          <tr><td>ai</td><td>只保留 AI Native 边界和治理设计位，不做 RAG/Agent</td><td>不实现</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Section 4: 模块优先级路线</h2>
+      <div class="timeline">
+        <div class="stage"><b>S3</b>contracts<br>shared<br>registry</div>
+        <div class="stage"><b>S4</b>API foundation<br>config<br>errors</div>
+        <div class="stage"><b>S5</b>Admin shell<br>dashboard<br>errors</div>
+        <div class="stage"><b>S6</b>RBAC<br>user<br>role</div>
+        <div class="stage"><b>S7</b>system<br>dict<br>file<br>logs</div>
+        <div class="stage"><b>S8</b>monitor<br>queue<br>OpenAPI drift</div>
+        <div class="stage"><b>S9</b>OpenForge<br>dry-run<br>diff</div>
+        <div class="stage"><b>S10</b>messages<br>todos<br>approval lite</div>
+        <div class="stage"><b>S11</b>optional design<br>knowledge design only</div>
+        <div class="stage"><b>S12</b>workflow/report<br>online/cache/job</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Section 5: 旧项目复用资产</h2>
+      <div class="two">
+        <div class="node">
+          <h3>NestWeb</h3>
+          <ul>
+            <li>Role.code 稳定身份</li>
+            <li>Permissions guard 和权限声明模式</li>
+            <li>OpenAPI generate/check 防漂移</li>
+            <li>runtime config 和安全基线</li>
+            <li>文件、字典、系统参数、日志、消息、Approval Lite</li>
+          </ul>
+        </div>
+        <div class="node">
+          <h3>Antdpro6</h3>
+          <ul>
+            <li>Umi 路由和 access 组织</li>
+            <li>统一 request 错误处理</li>
+            <li>OpenAPI service 生成经验</li>
+            <li>ProTable、Dashboard、TableExportButton</li>
+            <li>Playwright E2E 覆盖消息、审批和导出</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Section 6: 下一阶段建议</h2>
+      <p>完成本战略包后，下一步不是写业务模块，而是进入 S3：contracts / shared / module-registry 基线。</p>
+      <div class="grid">
+        <div class="card"><strong>先做</strong><p class="muted">OpenAPI workflow、SDK 生成、权限码和菜单元数据、模块 registry schema。</p></div>
+        <div class="card"><strong>再做</strong><p class="muted">API foundation、Admin shell、RBAC、系统管理、监控工具。</p></div>
+        <div class="card"><strong>后做</strong><p class="muted">OpenForge MVP、消息中心、Approval Lite、可选模块设计。</p></div>
+        <div class="card"><strong>明确不做</strong><p class="muted">多租户、CRM、ERP、MES、WMS、商城、支付、会员、RAG、Agent。</p></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    OpenCore Strategy Blueprint, generated from local repository research on 2026-06-10. Offline single-file overview.
+  </footer>
+</body>
+</html>
