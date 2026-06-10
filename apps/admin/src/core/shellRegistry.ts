@@ -6,9 +6,16 @@ import {
 
 type RegistryMenu = ReturnType<typeof collectMenus>[number];
 
-const SHELL_MODULE_CODES = ['core.dashboard', 'tool.openapi'] as const;
+const SHELL_MODULE_CODES = [
+  'core.dashboard',
+  'core.user',
+  'core.role',
+  'core.permission',
+  'core.menu',
+  'tool.openapi',
+] as const;
 
-const PLANNED_STAGE_ORDER = ['S6', 'S7', 'S8'] as const;
+const PLANNED_STAGE_ORDER = ['S7', 'S8'] as const;
 
 export type ShellMenuItem = {
   key: string;
@@ -102,6 +109,20 @@ export function createLayoutMenuItems(
         path: item.path,
         name: item.name,
         icon: 'ApiOutlined',
+      })),
+    });
+  }
+
+  const system = menuItems.filter((item) => item.key.startsWith('system.'));
+
+  if (system.length > 0) {
+    layoutMenu.splice(1, 0, {
+      path: '/system',
+      name: 'System',
+      icon: 'SettingOutlined',
+      routes: system.map((item) => ({
+        path: item.path,
+        name: item.name,
       })),
     });
   }

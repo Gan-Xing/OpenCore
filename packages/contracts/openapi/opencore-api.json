@@ -57,6 +57,135 @@
         },
         "tags": ["Health"]
       }
+    },
+    "/api/auth/login": {
+      "post": {
+        "operationId": "AuthController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LoginRequestDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LoginResponseDto" }
+              }
+            }
+          }
+        },
+        "tags": ["Auth"]
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "operationId": "AuthController_me",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LoginResponseDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Auth"]
+      }
+    },
+    "/api/core/users": {
+      "get": {
+        "operationId": "RbacController_listUsers",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/UserSummaryDto" }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Core RBAC"]
+      }
+    },
+    "/api/core/roles": {
+      "get": {
+        "operationId": "RbacController_listRoles",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/RoleSummaryDto" }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Core RBAC"]
+      }
+    },
+    "/api/core/permissions": {
+      "get": {
+        "operationId": "RbacController_listPermissions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PermissionSummaryDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Core RBAC"]
+      }
+    },
+    "/api/core/menus": {
+      "get": {
+        "operationId": "RbacController_listMenus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/MenuSummaryDto" }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Core RBAC"]
+      }
     }
   },
   "info": {
@@ -67,5 +196,87 @@
   },
   "tags": [],
   "servers": [{ "url": "/" }],
-  "components": { "schemas": {} }
+  "components": {
+    "schemas": {
+      "LoginRequestDto": {
+        "type": "object",
+        "properties": {
+          "username": { "type": "string", "example": "admin" },
+          "password": { "type": "string", "example": "admin123" }
+        },
+        "required": ["username", "password"]
+      },
+      "AuthenticatedUserDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "username": { "type": "string" },
+          "displayName": { "type": "string" },
+          "roleCodes": { "type": "array", "items": { "type": "string" } },
+          "permissionCodes": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": [
+          "id",
+          "username",
+          "displayName",
+          "roleCodes",
+          "permissionCodes"
+        ]
+      },
+      "LoginResponseDto": {
+        "type": "object",
+        "properties": {
+          "accessToken": { "type": "string" },
+          "tokenType": { "type": "string", "example": "Bearer" },
+          "expiresInSeconds": { "type": "number" },
+          "user": { "$ref": "#/components/schemas/AuthenticatedUserDto" }
+        },
+        "required": ["accessToken", "tokenType", "expiresInSeconds", "user"]
+      },
+      "UserSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "username": { "type": "string" },
+          "displayName": { "type": "string" },
+          "roleCodes": { "type": "array", "items": { "type": "string" } },
+          "enabled": { "type": "boolean" }
+        },
+        "required": ["id", "username", "displayName", "roleCodes", "enabled"]
+      },
+      "RoleSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "permissionCodes": { "type": "array", "items": { "type": "string" } },
+          "system": { "type": "boolean" }
+        },
+        "required": ["id", "code", "name", "permissionCodes", "system"]
+      },
+      "PermissionSummaryDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "title": { "type": "string" },
+          "stage": { "type": "string" },
+          "dangerous": { "type": "boolean" }
+        },
+        "required": ["code", "title", "stage", "dangerous"]
+      },
+      "MenuSummaryDto": {
+        "type": "object",
+        "properties": {
+          "key": { "type": "string" },
+          "title": { "type": "string" },
+          "path": { "type": "string" },
+          "permissionCode": { "type": "string" },
+          "stage": { "type": "string" },
+          "order": { "type": "number" }
+        },
+        "required": ["key", "title", "path", "stage", "order"]
+      }
+    }
+  }
 }

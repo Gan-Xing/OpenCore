@@ -10,6 +10,7 @@ const deps = packageJson.dependencies ?? {};
 const requiredVersions = {
   '@umijs/max': /^(\^)?4\./,
   '@ant-design/pro-components': /^3\./,
+  '@opencore/sdk': /^workspace:\*$/,
   antd: /^(\^)?6\./,
   react: /^(\^)?19\./,
   'react-dom': /^(\^)?19\./,
@@ -40,6 +41,10 @@ if (
 for (const requiredRoute of [
   "path: '/dashboard'",
   "path: '/tools/openapi'",
+  "path: '/system/users'",
+  "path: '/system/roles'",
+  "path: '/system/permissions'",
+  "path: '/system/menus'",
   "path: '/403'",
   "path: '/404'",
   "path: '/500'",
@@ -62,10 +67,14 @@ if (
 const accessRuntime = readFileSync(resolve(root, 'src/access.ts'), 'utf8');
 if (
   !accessRuntime.includes('core:dashboard:read') ||
-  !accessRuntime.includes('tool:openapi:read')
+  !accessRuntime.includes('tool:openapi:read') ||
+  !accessRuntime.includes('core:user:read') ||
+  !accessRuntime.includes('core:role:read') ||
+  !accessRuntime.includes('core:permission:read') ||
+  !accessRuntime.includes('core:menu:read')
 ) {
   throw new Error(
-    'Admin access must guard S5 shell routes by permission code.',
+    'Admin access must guard shell and S6 RBAC routes by permission code.',
   );
 }
 
@@ -76,9 +85,28 @@ const shellRegistry = readFileSync(
 if (
   !shellRegistry.includes('@opencore/module-registry') ||
   !shellRegistry.includes('core.dashboard') ||
-  !shellRegistry.includes('tool.openapi')
+  !shellRegistry.includes('tool.openapi') ||
+  !shellRegistry.includes('core.user') ||
+  !shellRegistry.includes('core.role') ||
+  !shellRegistry.includes('core.permission') ||
+  !shellRegistry.includes('core.menu')
 ) {
   throw new Error('Admin shell registry must consume module-registry entries.');
+}
+
+const usersPage = readFileSync(
+  resolve(root, 'src/pages/System/Users.tsx'),
+  'utf8',
+);
+const permissionsPage = readFileSync(
+  resolve(root, 'src/pages/System/Permissions.tsx'),
+  'utf8',
+);
+if (
+  !usersPage.includes('@opencore/sdk') ||
+  !permissionsPage.includes('@opencore/sdk')
+) {
+  throw new Error('Admin RBAC pages must consume SDK types or fixtures.');
 }
 
 const requestSpec = readFileSync(resolve(root, 'src/utils/request.ts'), 'utf8');

@@ -21,8 +21,8 @@
 | S3 contracts / shared / module-registry | complete | 已新增 `@opencore/shared`、`@opencore/contracts`、`@opencore/module-registry` 三个 pnpm/Nx 包；权限码、菜单、模块 registry schema 和 registry 单测已通过 | 进入 S4        |
 | S4 API core foundation                  | complete | 已实现 env/config validation、request id/trace id、统一错误响应、结构化日志、安全 header/CORS 基线、health/readiness 扩展、OpenAPI export baseline       | 进入 S5        |
 | S5 Admin core shell                     | complete | 已实现官方 Dashboard shell、403/404/500、空状态、request/access 规范、registry 菜单消费、health/OpenAPI 状态入口，并通过 admin smoke                     | 进入 S6        |
-| S6 auth / RBAC system                   | pending  | 尚未实现登录、Prisma/PostgreSQL、user/role/permission/menu、guard、Admin RBAC 页面                                                                       | 最早未完成阶段 |
-| S7 system management                    | pending  | 尚未实现 dict、system config、file asset、audit log、login log                                                                                           | 等 S6 完成     |
+| S6 auth / RBAC system                   | complete | 已实现 Prisma/PostgreSQL schema、auth token baseline、Role.code/Permission.code、permission guard、RBAC API、SDK、Admin RBAC 页面和 OpenAPI 同步         | 进入 S7        |
+| S7 system management                    | pending  | 尚未实现 dict、system config、file asset、audit log、login log                                                                                           | 最早未完成阶段 |
 | S8 monitor / tool baseline              | pending  | 尚未实现 status/version/queue、OpenAPI drift check、export protocol 页面                                                                                 | 等 S7 完成     |
 
 ## 目标文件状态
@@ -144,6 +144,7 @@
 ### 2026-06-10 S5 execution
 
 - Stage: S5 Admin core shell
+- Commit: `08d0c67`
 - Completed:
   - 将 Admin 根路由从 `/home` 切换到 `/dashboard`，正式路由只保留 Dashboard、OpenAPI status、403、404、500 和 catch-all 404。
   - 新增 `src/core/shellRegistry.ts`，从 `@opencore/module-registry` 派生 S5 shell 菜单、权限码、registry summary 和 planned module 摘要。
@@ -184,17 +185,68 @@
   - No mall/CRM/ERP/MES/WMS/pay/member/multi-tenant/knowledge/RAG/Agent module mounted.
   - S6-S8 menus are shown only as registry-derived planned summaries, not as implemented pages.
 
+### 2026-06-10 S6 execution
+
+- Stage: S6 auth / RBAC system
+- Completed:
+  - 新增 Prisma/PostgreSQL 配置和 schema：`User`、`Role`、`Permission`、`Menu`、`UserRole`、`RolePermission`，并保留稳定 `Role.code` / `Permission.code`。
+  - 新增 `.env.example`、`prisma.config.ts`、`pnpm prisma:validate`，让数据库连接、auth token secret 和 Prisma 7 配置有可校验基线。
+  - 新增 API RBAC 模块：seed、repository、auth service、login/me endpoint、permission decorator、global permission guard、users/roles/permissions/menus endpoint。
+  - 新增 `@opencore/sdk`，提供 RBAC typed client、registry-derived permission/menu fixtures 和 package tests。
+  - 扩展 Admin shell：系统用户、角色、权限、菜单页面，路由、access、菜单和 smoke 均从 registry/SDK 权限链路派生。
+  - 更新 OpenAPI snapshot：`packages/contracts/openapi/opencore-api.json` 已包含 S6 auth/RBAC endpoints。
+  - 更新 runtime config：生产环境 auth secret 需要显式且足够强，避免默认 secret 进入生产。
+- Tests:
+  - `pnpm format:check` pass
+  - `pnpm build` pass
+  - `pnpm test` pass
+  - `pnpm lint` pass
+  - `pnpm typecheck` pass
+  - `pnpm prisma:validate` pass
+  - `pnpm openapi:export` pass
+  - `pnpm test:api` pass
+  - `NX_DAEMON=false pnpm nx test sdk` pass
+  - `pnpm test:admin` pass
+- Files changed:
+  - `.env.example`
+  - `.prettierignore`
+  - `.prettierrc`
+  - `prisma.config.ts`
+  - `prisma/schema.prisma`
+  - `apps/api/src/app/app.module.ts`
+  - `apps/api/src/platform/config/**`
+  - `apps/api/src/modules/core/rbac/**`
+  - `apps/admin/.umirc.ts`
+  - `apps/admin/package.json`
+  - `apps/admin/scripts/smoke-test.mjs`
+  - `apps/admin/src/access.ts`
+  - `apps/admin/src/core/shellRegistry.ts`
+  - `apps/admin/src/pages/System/**`
+  - `packages/sdk/**`
+  - `packages/contracts/openapi/opencore-api.json`
+  - `package.json`
+  - `pnpm-lock.yaml`
+- Remaining:
+  - S7-S8 尚未完成。
+  - S7 是最早未完成阶段。
+- Next:
+  - 重新读取 handoff 和本 progress 后，只进入 S7 system management。
+- Scope guard:
+  - No multi-tenant, org data permissions, SSO/OAuth2, or complex audit platform implemented.
+  - No S7/S8 module implementation was included in S6 beyond registry-derived menu awareness.
+  - No P4/P5 module implemented; CRM、ERP、MES、WMS、商城、支付会员、多租户、知识库、RAG、Agent 仍保留在长期 backlog。
+
 ## 未完成项
 
-战略蓝图文档包已完成。S3、S4、S5 已完成。S6-S8 仍未完成；下一步必须进入 S6，仍必须只推进最早未完成阶段。
+战略蓝图文档包已完成。S3、S4、S5、S6 已完成。S7-S8 仍未完成；下一步必须进入 S7，仍必须只推进最早未完成阶段。
 
 ## 下一轮建议
 
-进入 S6：`auth / RBAC system`。下一轮应先读取 `docs/handoff/2026-06-10-s3-s8-implementation-handoff.md`、本 progress 文件和 `docs/strategy/staged-roadmap.md`，实现最小登录/RBAC 闭环：Prisma/PostgreSQL、user、role、permission、menu、Role.code、Permission.code、guard/decorator、Admin 用户/角色/权限/菜单页面、OpenAPI/SDK 同步；不要做多租户、组织数据权限、SSO/OAuth2、复杂审计平台或 P4/P5 模块。
+进入 S7：`system management`。下一轮应先读取 `docs/handoff/2026-06-10-s3-s8-implementation-handoff.md`、本 progress 文件和 `docs/strategy/staged-roadmap.md`，实现第一批系统管理能力：dict、system config、file asset、audit log、login log、基础 CRUD、分页、权限、导出基线和 Admin 对应页面；不要把工程图片、文章、微信、短信、邮件 provider 放进 core，不做大数据异步导出或完整工作流。
 
 ## 当前验收结论
 
-战略文档包、S3、S4 和 S5 完成。当前证据：
+战略文档包、S3、S4、S5 和 S6 完成。当前证据：
 
 - 目标 Markdown 文档全部存在，并包含必要表格和 Mermaid 图。
 - `docs/strategy/visual/opencore-blueprint.html` 是可离线打开的单文件 HTML，未引用外部 CDN。
@@ -203,5 +255,6 @@
 - S3 全仓必跑检查 `pnpm format:check`、`pnpm lint`、`pnpm typecheck`、`pnpm test` 均通过。
 - S4 API foundation 已通过 `pnpm build:api`、`pnpm test:api`、`pnpm lint`、`pnpm typecheck`，并通过 `pnpm openapi:export` 生成 OpenAPI baseline。
 - S5 Admin shell 已通过 `pnpm build:admin`、`pnpm test:admin`、`pnpm typecheck`、`pnpm lint`，并通过本地 `/dashboard`、`/tools/openapi` HTTP smoke。
-- 当前 S3-S5 未新增 Prisma schema、登录/RBAC runtime、数据库或业务 CRUD。
-- S6-S8 尚未完成，不能声明总目标完成。
+- S6 auth/RBAC 已通过 `pnpm build`、`pnpm test`、`pnpm lint`、`pnpm typecheck`、`pnpm prisma:validate`、`pnpm openapi:export`，并通过 API、SDK、Admin targeted tests。
+- 当前 S6 未新增多租户、组织数据权限、SSO/OAuth2、复杂审计平台或 P4/P5 模块。
+- S7-S8 尚未完成，不能声明总目标完成。

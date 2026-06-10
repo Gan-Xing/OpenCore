@@ -27,6 +27,30 @@ export default defineConfig({
       access: 'canReadOpenApiStatus',
     },
     {
+      name: 'Users',
+      path: '/system/users',
+      component: './System/Users',
+      access: 'canReadUsers',
+    },
+    {
+      name: 'Roles',
+      path: '/system/roles',
+      component: './System/Roles',
+      access: 'canReadRoles',
+    },
+    {
+      name: 'Permissions',
+      path: '/system/permissions',
+      component: './System/Permissions',
+      access: 'canReadPermissions',
+    },
+    {
+      name: 'Menus',
+      path: '/system/menus',
+      component: './System/Menus',
+      access: 'canReadMenus',
+    },
+    {
       path: '/403',
       component: './Exception/403',
     },

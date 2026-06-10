@@ -12,6 +12,10 @@ export default (initialState: InitialState = {}) => {
   return {
     canAccessDashboard: hasPermission('core:dashboard:read'),
     canReadOpenApiStatus: hasPermission('tool:openapi:read'),
+    canReadUsers: hasPermission('core:user:read'),
+    canReadRoles: hasPermission('core:role:read'),
+    canReadPermissions: hasPermission('core:permission:read'),
+    canReadMenus: hasPermission('core:menu:read'),
     canReadHealth: hasPermission('core:dashboard:read'),
   };
 };

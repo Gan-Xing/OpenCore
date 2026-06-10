@@ -9,6 +9,7 @@ export type RuntimeConfig = {
   swaggerEnabled: boolean;
   swaggerPath: `${string}/docs`;
   logLevel: 'debug' | 'info' | 'warn' | 'error';
+  authTokenSecret: string;
 };
 
 export class RuntimeConfigError extends Error {
@@ -52,6 +53,11 @@ export function loadRuntimeConfig(
   );
   const corsOrigins = parseCorsOrigins(env.CORS_ORIGINS, nodeEnv, issues);
   const logLevel = parseLogLevel(env.LOG_LEVEL, issues);
+  const authTokenSecret = parseAuthTokenSecret(
+    env.AUTH_TOKEN_SECRET,
+    nodeEnv,
+    issues,
+  );
 
   validateProductionSafety(
     {
@@ -76,6 +82,7 @@ export function loadRuntimeConfig(
     swaggerEnabled,
     swaggerPath: `${globalPrefix}/docs`,
     logLevel,
+    authTokenSecret,
   };
 }
 
@@ -203,4 +210,22 @@ function validateProductionSafety(
       'API_SWAGGER_PUBLIC_ACK=true is required to expose Swagger in production',
     );
   }
+}
+
+function parseAuthTokenSecret(
+  value: string | undefined,
+  nodeEnv: NodeEnvironment,
+  issues: string[],
+): string {
+  if (value && value.length >= 32) {
+    return value;
+  }
+
+  if (nodeEnv === 'production') {
+    issues.push(
+      'AUTH_TOKEN_SECRET must be at least 32 characters in production',
+    );
+  }
+
+  return 'opencore-development-auth-token-secret';
 }

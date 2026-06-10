@@ -1,0 +1,41 @@
+{
+  "name": "sdk",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/sdk/src",
+  "projectType": "library",
+  "tags": ["scope:sdk", "type:library"],
+  "targets": {
+    "build": {
+      "cache": true,
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit -p packages/sdk/tsconfig.lib.json"
+      }
+    },
+    "lint": {
+      "cache": true,
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint packages/sdk/src packages/sdk/jest.config.ts"
+      }
+    },
+    "test": {
+      "cache": true,
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "jest -c packages/sdk/jest.config.ts",
+        "env": {
+          "NODE_OPTIONS": "--no-experimental-strip-types",
+          "TS_NODE_COMPILER_OPTIONS": "{\"moduleResolution\":\"node10\",\"module\":\"commonjs\",\"customConditions\":null}"
+        }
+      }
+    },
+    "typecheck": {
+      "cache": true,
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit -p packages/sdk/tsconfig.lib.json"
+      }
+    }
+  }
+}
