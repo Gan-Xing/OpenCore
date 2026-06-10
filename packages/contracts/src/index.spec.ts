@@ -1,5 +1,7 @@
 import {
   OPENAPI_CONTRACT_PROTOCOL,
+  CURRENT_PAGE_EXPORT_PROTOCOL,
+  createCurrentPageExportPlan,
   parsePermissionCode,
   validateMenuDefinition,
   validateModuleDefinition,
@@ -82,5 +84,25 @@ describe('@opencore/contracts', () => {
       'packages/contracts',
     );
     expect(OPENAPI_CONTRACT_PROTOCOL.sdkPackage).toBe('@opencore/sdk');
+  });
+
+  it('keeps S8 current-page export as a bounded synchronous protocol', () => {
+    expect(CURRENT_PAGE_EXPORT_PROTOCOL).toMatchObject({
+      stage: 'S8',
+      scope: 'current-page',
+      asyncExport: false,
+    });
+    expect(
+      createCurrentPageExportPlan({
+        resource: 'dicts',
+        columns: ['code', 'name'],
+        rowCount: 1200,
+        generatedAt: '2026-06-10T00:00:00.000Z',
+      }),
+    ).toMatchObject({
+      filename: 'opencore-dicts.csv',
+      format: 'csv',
+      rowCount: 1000,
+    });
   });
 });

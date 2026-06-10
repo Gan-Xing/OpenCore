@@ -81,6 +81,30 @@ export default defineConfig({
       access: 'canReadAuditLogs',
     },
     {
+      name: 'System Status',
+      path: '/monitor/status',
+      component: './Monitor/Status',
+      access: 'canReadSystemStatus',
+    },
+    {
+      name: 'Version',
+      path: '/monitor/version',
+      component: './Monitor/Version',
+      access: 'canReadVersion',
+    },
+    {
+      name: 'Queues',
+      path: '/monitor/queues',
+      component: './Monitor/Queues',
+      access: 'canReadQueues',
+    },
+    {
+      name: 'Export Tools',
+      path: '/tools/export',
+      component: './Tools/Export',
+      access: 'canReadExportTools',
+    },
+    {
       path: '/403',
       component: './Exception/403',
     },

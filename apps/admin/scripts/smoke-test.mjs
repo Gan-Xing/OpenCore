@@ -50,6 +50,10 @@ for (const requiredRoute of [
   "path: '/system/files'",
   "path: '/security/login-logs'",
   "path: '/security/operation-logs'",
+  "path: '/monitor/status'",
+  "path: '/monitor/version'",
+  "path: '/monitor/queues'",
+  "path: '/tools/export'",
   "path: '/403'",
   "path: '/404'",
   "path: '/500'",
@@ -81,10 +85,14 @@ if (
   !accessRuntime.includes('core:config:read') ||
   !accessRuntime.includes('core:file:read') ||
   !accessRuntime.includes('core:audit-log:read') ||
-  !accessRuntime.includes('core:login-log:read')
+  !accessRuntime.includes('core:login-log:read') ||
+  !accessRuntime.includes('monitor:status:read') ||
+  !accessRuntime.includes('monitor:version:read') ||
+  !accessRuntime.includes('monitor:queue:read') ||
+  !accessRuntime.includes('tool:export:read')
 ) {
   throw new Error(
-    'Admin access must guard shell, S6 RBAC, and S7 system routes by permission code.',
+    'Admin access must guard shell, S6 RBAC, S7 system, and S8 monitor/tool routes by permission code.',
   );
 }
 
@@ -104,7 +112,11 @@ if (
   !shellRegistry.includes('core.config') ||
   !shellRegistry.includes('core.file') ||
   !shellRegistry.includes('core.audit-log') ||
-  !shellRegistry.includes('core.login-log')
+  !shellRegistry.includes('core.login-log') ||
+  !shellRegistry.includes('monitor.status') ||
+  !shellRegistry.includes('monitor.version') ||
+  !shellRegistry.includes('monitor.queue') ||
+  !shellRegistry.includes('tool.export')
 ) {
   throw new Error('Admin shell registry must consume module-registry entries.');
 }
@@ -137,6 +149,26 @@ const loginLogsPage = readFileSync(
   resolve(root, 'src/pages/Security/LoginLogs.tsx'),
   'utf8',
 );
+const statusPage = readFileSync(
+  resolve(root, 'src/pages/Monitor/Status.tsx'),
+  'utf8',
+);
+const versionPage = readFileSync(
+  resolve(root, 'src/pages/Monitor/Version.tsx'),
+  'utf8',
+);
+const queuesPage = readFileSync(
+  resolve(root, 'src/pages/Monitor/Queues.tsx'),
+  'utf8',
+);
+const openApiPage = readFileSync(
+  resolve(root, 'src/pages/Tools/OpenApi/index.tsx'),
+  'utf8',
+);
+const exportPage = readFileSync(
+  resolve(root, 'src/pages/Tools/Export/index.tsx'),
+  'utf8',
+);
 if (
   !usersPage.includes('@opencore/sdk') ||
   !permissionsPage.includes('@opencore/sdk') ||
@@ -144,10 +176,15 @@ if (
   !configPage.includes('@opencore/sdk') ||
   !filesPage.includes('@opencore/sdk') ||
   !auditLogsPage.includes('@opencore/sdk') ||
-  !loginLogsPage.includes('@opencore/sdk')
+  !loginLogsPage.includes('@opencore/sdk') ||
+  !statusPage.includes('@opencore/sdk') ||
+  !versionPage.includes('@opencore/sdk') ||
+  !queuesPage.includes('@opencore/sdk') ||
+  !openApiPage.includes('@opencore/sdk') ||
+  !exportPage.includes('@opencore/sdk')
 ) {
   throw new Error(
-    'Admin RBAC and system pages must consume SDK types or fixtures.',
+    'Admin RBAC, system, monitor, and tool pages must consume SDK types or fixtures.',
   );
 }
 

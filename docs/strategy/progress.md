@@ -16,14 +16,14 @@
 
 ## S3-S8 实现进度
 
-| 阶段                                    | 状态     | 当前证据                                                                                                                                                 | 下一步         |
-| --------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
-| S3 contracts / shared / module-registry | complete | 已新增 `@opencore/shared`、`@opencore/contracts`、`@opencore/module-registry` 三个 pnpm/Nx 包；权限码、菜单、模块 registry schema 和 registry 单测已通过 | 进入 S4        |
-| S4 API core foundation                  | complete | 已实现 env/config validation、request id/trace id、统一错误响应、结构化日志、安全 header/CORS 基线、health/readiness 扩展、OpenAPI export baseline       | 进入 S5        |
-| S5 Admin core shell                     | complete | 已实现官方 Dashboard shell、403/404/500、空状态、request/access 规范、registry 菜单消费、health/OpenAPI 状态入口，并通过 admin smoke                     | 进入 S6        |
-| S6 auth / RBAC system                   | complete | 已实现 Prisma/PostgreSQL schema、auth token baseline、Role.code/Permission.code、permission guard、RBAC API、SDK、Admin RBAC 页面和 OpenAPI 同步         | 进入 S7        |
-| S7 system management                    | complete | 已实现 dict、system config、file asset、audit log、login log、基础 CRUD/分页/权限/export baseline、Admin 页面和 OpenAPI/SDK 同步                         | 进入 S8        |
-| S8 monitor / tool baseline              | pending  | 尚未实现 status/version/queue、OpenAPI drift check、export protocol 页面                                                                                 | 最早未完成阶段 |
+| 阶段                                    | 状态     | 当前证据                                                                                                                                                 | 下一步     |
+| --------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| S3 contracts / shared / module-registry | complete | 已新增 `@opencore/shared`、`@opencore/contracts`、`@opencore/module-registry` 三个 pnpm/Nx 包；权限码、菜单、模块 registry schema 和 registry 单测已通过 | 进入 S4    |
+| S4 API core foundation                  | complete | 已实现 env/config validation、request id/trace id、统一错误响应、结构化日志、安全 header/CORS 基线、health/readiness 扩展、OpenAPI export baseline       | 进入 S5    |
+| S5 Admin core shell                     | complete | 已实现官方 Dashboard shell、403/404/500、空状态、request/access 规范、registry 菜单消费、health/OpenAPI 状态入口，并通过 admin smoke                     | 进入 S6    |
+| S6 auth / RBAC system                   | complete | 已实现 Prisma/PostgreSQL schema、auth token baseline、Role.code/Permission.code、permission guard、RBAC API、SDK、Admin RBAC 页面和 OpenAPI 同步         | 进入 S7    |
+| S7 system management                    | complete | 已实现 dict、system config、file asset、audit log、login log、基础 CRUD/分页/权限/export baseline、Admin 页面和 OpenAPI/SDK 同步                         | 进入 S8    |
+| S8 monitor / tool baseline              | complete | 已实现 status/version/queue 只读诊断、OpenAPI drift check、current-page export protocol、Admin monitor/tool 页面和敏感信息泄漏测试                       | S3-S8 完成 |
 
 ## 目标文件状态
 
@@ -240,6 +240,7 @@
 ### 2026-06-10 S7 execution
 
 - Stage: S7 system management
+- Commit: `00ad9e5`
 - Completed:
   - 扩展 Prisma schema：新增 `DictType`、`DictItem`、`SystemConfig`、`FileAsset`、`AuditLog`、`LoginLog`，保持文件中心为通用资产模型。
   - 新增 API `core/system-management` 模块：dict、system config、file asset、audit log、login log 的分页列表、CRUD/删除、当前页 export preview、权限 guard 和 OpenAPI DTO。
@@ -285,17 +286,75 @@
   - No big-data async export or full workflow implemented.
   - No P4/P5 module implemented; CRM、ERP、MES、WMS、商城、支付会员、多租户、知识库、RAG、Agent 仍保留在长期 backlog。
 
+### 2026-06-10 S8 execution
+
+- Stage: S8 monitor / tool baseline
+- Completed:
+  - 新增 Monitor API：`/monitor/status`、`/monitor/version`、`/monitor/queues`，只读返回系统状态、版本信息和 queue baseline，不暴露敏感配置。
+  - 新增 Tooling API：`/tools/openapi/drift`、`/tools/export/protocol`、`/tools/export/preview`，覆盖 OpenAPI drift 状态和 current-page export template/protocol。
+  - 新增 `pnpm openapi:check` 和 OpenAPI drift comparator；drift fail test 覆盖新增 path/schema 的失败场景。
+  - 新增 `CURRENT_PAGE_EXPORT_PROTOCOL` 和 bounded export plan helper，明确 S8 只做当前页 CSV，不做大数据异步导出。
+  - 扩展 `@opencore/sdk`：monitor/tool types、clients、fixtures 和路径测试。
+  - 扩展 Admin：Monitor 下新增 System Status、Version、Queues；Tools 下新增 Export Tools；OpenAPI 页面改为展示 drift check；菜单、access、smoke 均从 registry/SDK 权限链路保护。
+  - 更新 OpenAPI snapshot：`packages/contracts/openapi/opencore-api.json` 已包含 S8 monitor/tool endpoints。
+- Tests:
+  - `pnpm format:check` pass
+  - `pnpm build` pass
+  - `pnpm test` pass
+  - `pnpm lint` pass
+  - `pnpm typecheck` pass
+  - `pnpm prisma:validate` pass
+  - `pnpm openapi:export` pass
+  - `pnpm openapi:check` pass
+  - `pnpm test:api` pass
+  - `NX_DAEMON=false pnpm nx test sdk` pass
+  - `NX_DAEMON=false pnpm nx test contracts` pass
+  - `pnpm test:admin` pass
+- Files changed:
+  - `package.json`
+  - `apps/api/src/app/app.module.ts`
+  - `apps/api/src/modules/monitor/monitoring/**`
+  - `apps/api/src/modules/tool/tooling/**`
+  - `apps/api/src/platform/openapi/check-openapi-drift.ts`
+  - `apps/api/src/platform/openapi/openapi-drift.*`
+  - `apps/api/src/platform/openapi/export-openapi.ts`
+  - `apps/admin/.umirc.ts`
+  - `apps/admin/scripts/smoke-test.mjs`
+  - `apps/admin/src/access.ts`
+  - `apps/admin/src/core/shellRegistry.ts`
+  - `apps/admin/src/pages/Monitor/**`
+  - `apps/admin/src/pages/Tools/Export/**`
+  - `apps/admin/src/pages/Tools/OpenApi/index.tsx`
+  - `apps/admin/src/pages/Dashboard/index.tsx`
+  - `packages/contracts/src/table-export-contract.ts`
+  - `packages/contracts/src/index.*`
+  - `packages/sdk/src/monitoring-*`
+  - `packages/sdk/src/tooling-*`
+  - `packages/sdk/src/registry-fixtures.*`
+  - `packages/contracts/openapi/opencore-api.json`
+- Remaining:
+  - S3-S8 已完成。
+  - S9 OpenForge MVP 尚未开始；不属于本 handoff 的完成条件。
+- Next:
+  - 做最终 audit 后，可在新 handoff/goal 中评估 S9 OpenForge MVP。
+- Scope guard:
+  - No full scheduler/task platform implemented.
+  - No big-data async export implemented.
+  - No sensitive config exposed in monitor payloads.
+  - No OpenForge write-file generator implemented.
+  - No P4/P5 module implemented; CRM、ERP、MES、WMS、商城、支付会员、多租户、知识库、RAG、Agent 仍保留在长期 backlog。
+
 ## 未完成项
 
-战略蓝图文档包已完成。S3、S4、S5、S6、S7 已完成。S8 仍未完成；下一步必须进入 S8，仍必须只推进最早未完成阶段。
+战略蓝图文档包已完成。S3、S4、S5、S6、S7、S8 已完成。本 handoff 范围内无未完成阶段。
 
 ## 下一轮建议
 
-进入 S8：`monitor / tool baseline`。下一轮应先读取 `docs/handoff/2026-06-10-s3-s8-implementation-handoff.md`、本 progress 文件和 `docs/strategy/staged-roadmap.md`，实现 status、version、queue 只读诊断、OpenAPI drift check、current-page export template/protocol 和 Admin monitor/tool 页面；不要做完整任务调度平台、大数据异步导出、敏感配置暴露或 OpenForge 写文件生成器。
+本轮完成后先做最终 audit。若 owner 明确继续，应另起 S9 handoff/goal，评估 `OpenForge MVP`：只读/dry-run 生成计划和 diff，不写文件生成器，不生成业务逻辑，不写 Prisma schema。
 
 ## 当前验收结论
 
-战略文档包、S3、S4、S5、S6 和 S7 完成。当前证据：
+战略文档包、S3、S4、S5、S6、S7 和 S8 完成。当前证据：
 
 - 目标 Markdown 文档全部存在，并包含必要表格和 Mermaid 图。
 - `docs/strategy/visual/opencore-blueprint.html` 是可离线打开的单文件 HTML，未引用外部 CDN。
@@ -308,4 +367,6 @@
 - 当前 S6 未新增多租户、组织数据权限、SSO/OAuth2、复杂审计平台或 P4/P5 模块。
 - S7 system management 已通过 `pnpm build`、`pnpm test`、`pnpm lint`、`pnpm typecheck`、`pnpm prisma:validate`、`pnpm openapi:export`，并通过 CRUD、权限矩阵、文件 upload smoke、审计脱敏、API/SDK/Admin targeted tests。
 - 当前 S7 未把工程图片、文章、微信、短信、邮件 provider 放进 core，未做大数据异步导出或完整工作流。
-- S8 尚未完成，不能声明总目标完成。
+- S8 monitor/tool 已通过 `pnpm build`、`pnpm test`、`pnpm lint`、`pnpm typecheck`、`pnpm prisma:validate`、`pnpm openapi:export`、`pnpm openapi:check`，并通过 monitor smoke、queue/status 单测、OpenAPI diff fail test、export test、敏感信息泄漏检查、API/SDK/Admin targeted tests。
+- 当前 S8 未做完整任务调度平台、大数据异步导出、敏感配置暴露或 OpenForge 写文件生成器。
+- S3-S8 handoff 目标已完成；后续 S9 需要单独确认。

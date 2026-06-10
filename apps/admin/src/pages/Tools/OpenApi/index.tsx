@@ -5,8 +5,11 @@ import {
   HeartOutlined,
 } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
+import { createOpenApiDriftFixture } from '@opencore/sdk';
 import { Button, Card, Descriptions, Space, Tag, Typography } from 'antd';
 import styles from './index.less';
+
+const driftStatus = createOpenApiDriftFixture();
 
 const contractRows = [
   {
@@ -26,6 +29,12 @@ const contractRows = [
     label: 'Export command',
     value: 'pnpm openapi:export',
     status: 'ready',
+  },
+  {
+    key: 'drift',
+    label: 'Drift check',
+    value: driftStatus.driftCheckCommand,
+    status: driftStatus.status,
   },
 ];
 
@@ -65,14 +74,14 @@ const OpenApiStatusPage: React.FC = () => {
         <Card title="Drift guard">
           <Space direction="vertical" size="middle">
             <Typography.Text>
-              OpenAPI export is available. Drift blocking is scheduled for S8.
+              OpenAPI drift is checked against the committed contract snapshot.
             </Typography.Text>
             <pre className={styles.commandBlock}>
-              <code>pnpm openapi:export</code>
+              <code>{driftStatus.driftCheckCommand}</code>
             </pre>
             <EmptyState
-              title="No drift result yet"
-              description="S8 will add the diff gate."
+              title="No drift detected"
+              description={driftStatus.snapshotPath}
             />
           </Space>
         </Card>

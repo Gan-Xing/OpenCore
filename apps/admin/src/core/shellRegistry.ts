@@ -17,10 +17,14 @@ const SHELL_MODULE_CODES = [
   'core.file',
   'core.audit-log',
   'core.login-log',
+  'monitor.status',
+  'monitor.version',
+  'monitor.queue',
   'tool.openapi',
+  'tool.export',
 ] as const;
 
-const PLANNED_STAGE_ORDER = ['S8'] as const;
+const PLANNED_STAGE_ORDER = ['S9', 'S10', 'S11', 'S12'] as const;
 
 export type ShellMenuItem = {
   key: string;
@@ -126,6 +130,20 @@ export function createLayoutMenuItems(
       name: 'Security',
       icon: 'SafetyOutlined',
       routes: security.map((item) => ({
+        path: item.path,
+        name: item.name,
+      })),
+    });
+  }
+
+  const monitor = menuItems.filter((item) => item.key.startsWith('monitor.'));
+
+  if (monitor.length > 0) {
+    layoutMenu.push({
+      path: '/monitor',
+      name: 'Monitor',
+      icon: 'MonitorOutlined',
+      routes: monitor.map((item) => ({
         path: item.path,
         name: item.name,
       })),

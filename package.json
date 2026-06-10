@@ -16,6 +16,7 @@
     "dev:admin": "NX_DAEMON=false nx serve admin",
     "dev:api": "NX_DAEMON=false nx serve api",
     "lint": "NX_DAEMON=false nx run-many -t lint",
+    "openapi:check": "TS_NODE_PROJECT=apps/api/tsconfig.app.json TS_NODE_COMPILER_OPTIONS='{\"moduleResolution\":\"node10\",\"module\":\"commonjs\",\"customConditions\":null}' node -r ts-node/register -r tsconfig-paths/register apps/api/src/platform/openapi/check-openapi-drift.ts",
     "openapi:export": "TS_NODE_PROJECT=apps/api/tsconfig.app.json TS_NODE_COMPILER_OPTIONS='{\"moduleResolution\":\"node10\",\"module\":\"commonjs\",\"customConditions\":null}' node -r ts-node/register -r tsconfig-paths/register apps/api/src/platform/openapi/export-openapi.ts",
     "prisma:validate": "prisma validate --schema prisma/schema.prisma",
     "test": "NX_DAEMON=false nx run-many -t test",

@@ -1,11 +1,17 @@
 import {
   createAuditLogFixtures,
+  createCurrentPageExportProtocolFixture,
   createDictFixtures,
+  createExportPlanFixture,
   createFileAssetFixtures,
   createLoginLogFixtures,
   createMenuSummariesFromRegistry,
+  createOpenApiDriftFixture,
   createPermissionSummariesFromRegistry,
+  createQueueStatusFixture,
   createSystemConfigFixtures,
+  createSystemStatusFixture,
+  createVersionInfoFixture,
 } from './registry-fixtures';
 
 describe('registry fixtures', () => {
@@ -38,5 +44,19 @@ describe('registry fixtures', () => {
       password: '[REDACTED]',
     });
     expect(createLoginLogFixtures().items[0].success).toBe(true);
+  });
+
+  it('creates S8 monitor and tool fixtures without sensitive data', () => {
+    expect(createSystemStatusFixture().dependencies[0].name).toBe('api');
+    expect(JSON.stringify(createSystemStatusFixture())).not.toContain(
+      'DATABASE_URL',
+    );
+    expect(createVersionInfoFixture().name).toBe('opencore-api');
+    expect(createQueueStatusFixture().queues[0].readOnly).toBe(true);
+    expect(createOpenApiDriftFixture().driftCheckCommand).toBe(
+      'pnpm openapi:check',
+    );
+    expect(createCurrentPageExportProtocolFixture().asyncExport).toBe(false);
+    expect(createExportPlanFixture().scope).toBe('current-page');
   });
 });

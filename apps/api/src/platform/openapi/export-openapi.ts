@@ -7,9 +7,15 @@ import { loadRuntimeConfig } from '../config/runtime-config';
 import { applyApiFoundation } from '../setup/apply-api-foundation';
 import { createOpenApiDocument } from './openapi';
 
-const DEFAULT_OPENAPI_OUTPUT = 'packages/contracts/openapi/opencore-api.json';
+export const DEFAULT_OPENAPI_OUTPUT =
+  'packages/contracts/openapi/opencore-api.json';
 
-async function exportOpenApi(): Promise<void> {
+export async function writeOpenApiSnapshot(
+  outputPath = resolve(
+    process.cwd(),
+    process.env.OPENAPI_OUTPUT_PATH ?? DEFAULT_OPENAPI_OUTPUT,
+  ),
+): Promise<string> {
   const config = loadRuntimeConfig({
     ...process.env,
     NODE_ENV: process.env.NODE_ENV ?? 'test',
@@ -21,10 +27,6 @@ async function exportOpenApi(): Promise<void> {
   applyApiFoundation(app, config);
   await app.init();
 
-  const outputPath = resolve(
-    process.cwd(),
-    process.env.OPENAPI_OUTPUT_PATH ?? DEFAULT_OPENAPI_OUTPUT,
-  );
   const document = createOpenApiDocument(app);
   const formattedDocument = await format(JSON.stringify(document), {
     parser: 'json',
@@ -36,7 +38,14 @@ async function exportOpenApi(): Promise<void> {
   await writeFile(outputPath, formattedDocument);
   await app.close();
 
+  return outputPath;
+}
+
+async function exportOpenApi(): Promise<void> {
+  const outputPath = await writeOpenApiSnapshot();
   process.stdout.write(`OpenAPI exported to ${outputPath}\n`);
 }
 
-void exportOpenApi();
+if (require.main === module) {
+  void exportOpenApi();
+}

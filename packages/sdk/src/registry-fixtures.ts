@@ -2,6 +2,11 @@ import {
   collectMenus,
   collectPermissionDefinitions,
 } from '@opencore/module-registry';
+import type {
+  QueueStatusList,
+  SystemStatusSummary,
+  VersionInfoSummary,
+} from './monitoring-types';
 import type { MenuSummary, PermissionSummary } from './rbac-types';
 import type {
   AuditLogSummary,
@@ -11,6 +16,11 @@ import type {
   PageResponse,
   SystemConfigSummary,
 } from './system-management-types';
+import type {
+  CurrentPageExportProtocolSummary,
+  ExportPlanSummary,
+  OpenApiDriftStatus,
+} from './tooling-types';
 
 export function createPermissionSummariesFromRegistry(): PermissionSummary[] {
   return collectPermissionDefinitions().map((permission) => ({
@@ -131,6 +141,109 @@ export function createLoginLogFixtures(): PageResponse<LoginLogSummary> {
       createdAt: '2026-06-10T00:00:00.000Z',
     },
   ]);
+}
+
+export function createSystemStatusFixture(): SystemStatusSummary {
+  return {
+    status: 'ok',
+    checkedAt: '2026-06-10T00:00:00.000Z',
+    uptimeSeconds: 42,
+    dependencies: [
+      {
+        name: 'api',
+        status: 'ok',
+        latencyMs: 1,
+        message: 'NestJS application is responding.',
+      },
+      {
+        name: 'database',
+        status: 'ok',
+        latencyMs: 1,
+        message: 'Prisma/PostgreSQL schema is configured.',
+      },
+      {
+        name: 'queue',
+        status: 'ok',
+        latencyMs: 0,
+        message: 'Read-only in-memory queue baseline is configured.',
+      },
+    ],
+  };
+}
+
+export function createVersionInfoFixture(): VersionInfoSummary {
+  return {
+    name: 'opencore-api',
+    version: '0.0.0',
+    commit: 'unknown',
+    buildTime: 'unknown',
+    nodeVersion: 'v22.x',
+  };
+}
+
+export function createQueueStatusFixture(): QueueStatusList {
+  return {
+    checkedAt: '2026-06-10T00:00:00.000Z',
+    queues: [
+      {
+        name: 'system-audit',
+        driver: 'memory-readonly',
+        waiting: 0,
+        active: 0,
+        completed: 2,
+        failed: 0,
+        paused: false,
+        readOnly: true,
+      },
+      {
+        name: 'table-export',
+        driver: 'memory-readonly',
+        waiting: 0,
+        active: 0,
+        completed: 0,
+        failed: 0,
+        paused: false,
+        readOnly: true,
+      },
+    ],
+  };
+}
+
+export function createOpenApiDriftFixture(): OpenApiDriftStatus {
+  return {
+    status: 'configured',
+    snapshotPath: 'packages/contracts/openapi/opencore-api.json',
+    exportCommand: 'pnpm openapi:export',
+    driftCheckCommand: 'pnpm openapi:check',
+    checkedAt: '2026-06-10T00:00:00.000Z',
+  };
+}
+
+export function createCurrentPageExportProtocolFixture(): CurrentPageExportProtocolSummary {
+  return {
+    stage: 'S8',
+    status: 'active',
+    scope: 'current-page',
+    supportedFormats: ['csv'],
+    maxRows: 1000,
+    asyncExport: false,
+    sensitiveFieldPolicy: 'exclude-sensitive-fields-before-export',
+    ownerPackage: '@opencore/contracts',
+  };
+}
+
+export function createExportPlanFixture(): ExportPlanSummary {
+  const protocol = createCurrentPageExportProtocolFixture();
+
+  return {
+    resource: 'dicts',
+    filename: 'opencore-dicts.csv',
+    format: 'csv',
+    scope: protocol.scope,
+    columns: ['code', 'name', 'enabled'],
+    rowCount: Math.min(2, protocol.maxRows),
+    generatedAt: '2026-06-10T00:00:00.000Z',
+  };
 }
 
 function createPage<T>(items: readonly T[]): PageResponse<T> {

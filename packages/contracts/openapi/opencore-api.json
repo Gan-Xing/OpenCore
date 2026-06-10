@@ -765,6 +765,128 @@
         "security": [{ "bearer": [] }],
         "tags": ["Core System Management"]
       }
+    },
+    "/api/monitor/status": {
+      "get": {
+        "operationId": "MonitoringController_getStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SystemStatusDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Monitor"]
+      }
+    },
+    "/api/monitor/version": {
+      "get": {
+        "operationId": "MonitoringController_getVersion",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/VersionInfoDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Monitor"]
+      }
+    },
+    "/api/monitor/queues": {
+      "get": {
+        "operationId": "MonitoringController_listQueues",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/QueueStatusListDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Monitor"]
+      }
+    },
+    "/api/tools/openapi/drift": {
+      "get": {
+        "operationId": "ToolingController_getOpenApiDriftStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenApiDriftStatusDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Tooling"]
+      }
+    },
+    "/api/tools/export/protocol": {
+      "get": {
+        "operationId": "ToolingController_getExportProtocol",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentPageExportProtocolDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Tooling"]
+      }
+    },
+    "/api/tools/export/preview": {
+      "post": {
+        "operationId": "ToolingController_createExportPreview",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateExportPreviewDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ExportPlanDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Tooling"]
+      }
     }
   },
   "info": {
@@ -1121,6 +1243,147 @@
           "totalPages": { "type": "number" }
         },
         "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "DependencyStatusDto": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "status": { "type": "string", "enum": ["degraded", "ok"] },
+          "latencyMs": { "type": "number" },
+          "message": { "type": "string" }
+        },
+        "required": ["name", "status", "latencyMs", "message"]
+      },
+      "SystemStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string", "enum": ["degraded", "ok"] },
+          "checkedAt": { "type": "string" },
+          "uptimeSeconds": { "type": "number" },
+          "dependencies": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/DependencyStatusDto" }
+          }
+        },
+        "required": ["status", "checkedAt", "uptimeSeconds", "dependencies"]
+      },
+      "VersionInfoDto": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "version": { "type": "string" },
+          "commit": { "type": "string" },
+          "buildTime": { "type": "string" },
+          "nodeVersion": { "type": "string" }
+        },
+        "required": ["name", "version", "commit", "buildTime", "nodeVersion"]
+      },
+      "QueueStatusDto": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "driver": { "type": "string" },
+          "waiting": { "type": "number" },
+          "active": { "type": "number" },
+          "completed": { "type": "number" },
+          "failed": { "type": "number" },
+          "paused": { "type": "boolean" },
+          "readOnly": { "type": "boolean" }
+        },
+        "required": [
+          "name",
+          "driver",
+          "waiting",
+          "active",
+          "completed",
+          "failed",
+          "paused",
+          "readOnly"
+        ]
+      },
+      "QueueStatusListDto": {
+        "type": "object",
+        "properties": {
+          "checkedAt": { "type": "string" },
+          "queues": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/QueueStatusDto" }
+          }
+        },
+        "required": ["checkedAt", "queues"]
+      },
+      "OpenApiDriftStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string", "enum": ["configured"] },
+          "snapshotPath": { "type": "string" },
+          "exportCommand": { "type": "string" },
+          "driftCheckCommand": { "type": "string" },
+          "checkedAt": { "type": "string" }
+        },
+        "required": [
+          "status",
+          "snapshotPath",
+          "exportCommand",
+          "driftCheckCommand",
+          "checkedAt"
+        ]
+      },
+      "CurrentPageExportProtocolDto": {
+        "type": "object",
+        "properties": {
+          "stage": { "type": "string" },
+          "status": { "type": "string" },
+          "scope": { "type": "string" },
+          "supportedFormats": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "maxRows": { "type": "number" },
+          "asyncExport": { "type": "boolean" },
+          "sensitiveFieldPolicy": { "type": "string" },
+          "ownerPackage": { "type": "string" }
+        },
+        "required": [
+          "stage",
+          "status",
+          "scope",
+          "supportedFormats",
+          "maxRows",
+          "asyncExport",
+          "sensitiveFieldPolicy",
+          "ownerPackage"
+        ]
+      },
+      "CreateExportPreviewDto": {
+        "type": "object",
+        "properties": {
+          "resource": { "type": "string", "example": "dicts" },
+          "columns": { "type": "array", "items": { "type": "string" } },
+          "rowCount": { "type": "number" }
+        },
+        "required": ["resource", "columns", "rowCount"]
+      },
+      "ExportPlanDto": {
+        "type": "object",
+        "properties": {
+          "resource": { "type": "string" },
+          "filename": { "type": "string" },
+          "format": { "type": "string" },
+          "scope": { "type": "string" },
+          "columns": { "type": "array", "items": { "type": "string" } },
+          "rowCount": { "type": "number" },
+          "generatedAt": { "type": "string" }
+        },
+        "required": [
+          "resource",
+          "filename",
+          "format",
+          "scope",
+          "columns",
+          "rowCount",
+          "generatedAt"
+        ]
       }
     }
   }

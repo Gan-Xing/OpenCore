@@ -61,7 +61,7 @@ const DashboardPage: React.FC = () => {
               prefix={<CheckCircleOutlined />}
             />
             <Typography.Text type="secondary">
-              S6-S8 modules are visible as contracts only.
+              Later modules stay hidden until they pass admission.
             </Typography.Text>
           </Card>
         </section>
