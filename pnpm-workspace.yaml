@@ -1,4 +1,28 @@
 packages:
-  - 'apps/*'
-  - 'packages/*'
-  - 'tools/*'
+  - apps/*
+  - packages/*
+  - tools/*
+
+overrides:
+  node-fetch@<2.6.7: 2.6.7
+  vite@<6.4.2: 6.4.2
+  immer@>=7.0.0 <9.0.6: 9.0.6
+  axios@<0.32.0: 0.32.0
+  path-to-regexp@>=0.2.0 <1.9.0: 1.9.0
+  path-to-regexp@>=8.0.0 <8.4.0: 8.4.0
+  esbuild@<=0.24.2: 0.25.0
+  '@babel/runtime@<7.26.10': 7.26.10
+  send@<0.19.0: 0.19.0
+  react-router@>=6.0.0 <6.30.4: 6.30.4
+  '@remix-run/router@<=1.23.1': 1.23.2
+  koa@>=3.0.0 <3.1.2: 3.1.2
+  minimatch@>=9.0.0 <9.0.7: 9.0.7
+  serialize-javascript@>=5.0.0 <7.0.5: 7.0.5
+  picomatch@>=4.0.0 <4.0.4: 4.0.4
+  '@hono/node-server@<1.19.13': 1.19.13
+  ws@>=8.0.0 <8.20.1: 8.20.1
+  uuid@<11.1.1: 11.1.1
+
+patchedDependencies:
+  '@umijs/bundler-webpack@4.6.61': patches/@umijs__bundler-webpack@4.6.61.patch
+  '@umijs/mako@0.11.10': patches/@umijs__mako@0.11.10.patch

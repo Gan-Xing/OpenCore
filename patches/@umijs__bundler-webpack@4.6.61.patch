@@ -1,0 +1,12 @@
+diff --git a/package.json b/package.json
+index e585e0b348014c39f03bb67c94b6bf23d961b3e6..24a08ec1ca4efd6d98c765b4cff4bd5538bca2e3 100644
+--- a/package.json
++++ b/package.json
+@@ -33,7 +33,6 @@
+     "fork-ts-checker-webpack-plugin": "8.0.0",
+     "jest-worker": "29.4.3",
+     "lightningcss": "1.22.1",
+-    "node-libs-browser": "2.2.1",
+     "postcss": "^8.4.21",
+     "postcss-preset-env": "7.5.0",
+     "react-error-overlay": "6.0.9",
