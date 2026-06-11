@@ -1,3 +1,6 @@
+import { request } from '@umijs/max';
+import { getAdminToken } from '@/services/opencore/token';
+
 export type AdminApiError = {
   code: string;
   message: string;
@@ -41,44 +44,20 @@ export function createTraceHeaders(options: {
   };
 }
 
-async function parseError(response: Response): Promise<AdminApiError> {
-  const fallback: AdminApiError = {
-    code: `HTTP_${response.status}`,
-    message: response.statusText || 'Request failed',
-    statusCode: response.status,
-  };
-
-  try {
-    const body = (await response.json()) as {
-      error?: Partial<AdminApiError>;
-    };
-
-    return {
-      ...fallback,
-      ...body.error,
-      statusCode: body.error?.statusCode ?? response.status,
-    };
-  } catch {
-    return fallback;
-  }
-}
-
 export async function requestJson<T>(
   path: `/${string}`,
   options: RequestJsonOptions = {},
 ): Promise<T> {
-  const response = await fetch(`${DEFAULT_API_BASE_URL}${path}`, {
-    ...options,
+  const token = getAdminToken();
+
+  return request<T>(`${DEFAULT_API_BASE_URL}${path}`, {
+    method: options.method,
+    data: options.body,
     headers: {
       Accept: 'application/json',
       ...createTraceHeaders(options),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
   });
-
-  if (!response.ok) {
-    throw new AdminRequestError(await parseError(response));
-  }
-
-  return (await response.json()) as T;
 }

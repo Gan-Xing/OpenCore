@@ -82,11 +82,11 @@ The recursive quality-cycle gate runs the OpenForge no-write gate alongside Open
 
 OpenForge V1 distinguishes three ownership classes:
 
-| Class                | Example                                                                                                                         | Automation                                           |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| Generated-owned file | `apps/api/src/modules/generated/core/dict/dict.controller.ts`                                                                   | May create or update when marker is valid            |
-| Patch-only plan      | `apps/api/src/app/app.module.ts`, `apps/admin/.umirc.ts`, `apps/admin/src/access.ts`, `packages/module-registry/src/modules.ts` | Never auto-modify unless the file is generated-owned |
-| Protected file       | `.env*`, `prisma/schema.prisma`, `prisma/migrations/**`                                                                         | Always blocked                                       |
+| Class                | Example                                                                                                                                | Automation                                           |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| Generated-owned file | `apps/api/src/modules/generated/core/dict/dict.controller.ts`                                                                          | May create or update when marker is valid            |
+| Patch-only plan      | `apps/api/src/app/app.module.ts`, `apps/admin/config/routes.ts`, `apps/admin/src/access.ts`, `packages/module-registry/src/modules.ts` | Never auto-modify unless the file is generated-owned |
+| Protected file       | `.env*`, `prisma/schema.prisma`, `prisma/migrations/**`                                                                                | Always blocked                                       |
 
 Generated-owned files must include a parseable OpenForge marker containing:
 
@@ -144,7 +144,7 @@ The default V1 template pack is `openforge-default-nest-umi-v1`. Current Stage I
 - Admin CSV export filenames must be sanitized to local `.csv` basenames before browser download.
 - Admin CSV exports must neutralize spreadsheet formula prefixes before cell serialization. Values beginning with optional whitespace followed by `=`, `+`, `-` or `@` are exported as text with an apostrophe prefix.
 - Admin export object-cell fallback serialization must apply recursive sensitive-key redaction before JSON stringification for password, secret, token, credential, authorization, API key and client secret fields.
-- Admin route/access integration remains patch-only markdown; OpenForge does not modify `.umirc.ts` or `access.ts`.
+- Admin route/access integration remains patch-only markdown; OpenForge does not modify `config/routes.ts` or `access.ts`.
 
 - SDK: generated schema-derived types, generated request wrapper client, generated client spec and generated barrel file.
 - SDK index integration remains patch-only markdown; OpenForge does not modify hand-written SDK entrypoints.

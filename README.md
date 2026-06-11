@@ -99,6 +99,14 @@ API 默认端口为 `3000`，健康检查为 `/health/live` 和 `/health/ready`�
 
 Admin 默认使用 Umi Max dev server，通常为 `http://localhost:8000`；当前正式入口包括 `/dashboard`、`/system/*`、`/security/*`、`/monitor/*`、`/tools/*`、`/collaboration/*`、`/optional/*`、`/integrations/*`。
 
+## Admin Pro V6 迁移状态
+
+2026-06-11，`apps/admin` 已完成官方 Ant Design Pro V6 架构纠偏：保留 `config/config.ts`、`config/routes.ts`、`defaultSettings`、ProLayout runtime、requestErrorConfig、locales、OpenAPI plugin、request-record、React Query 和 Vitest；业务页面来自 `origin/main` 的 Dashboard/System/Security/Monitor/Tools/Collaboration/Optional/Integrations 与 403/404/500。
+
+正式路由只保留 `/dashboard`、`/system/*`、`/security/*`、`/monitor/*`、`/tools/*`、`/collaboration/*`、`/optional/*`、`/integrations/*`、`/user/login`、`/403`、`/404`、`/500`，根路径重定向到 `/dashboard`。已删除 Ant Design Pro demo routes/pages/services/mocks，包括 `/welcome`、`/admin`、`/form`、`/list`、`/profile`、`/result`、`/account`、`/chatbot`、demo `oneapi.json` 和 `pro-api.ant-design-demo` 配置。
+
+Admin 登录/current user 通过 `@opencore/sdk` 调用 `POST /api/auth/login` 与 `GET /api/auth/me`，token 存储键为 `opencore.admin.token`，请求统一追加 `Authorization: Bearer`、`x-request-id`、`x-trace-id`，401 跳转 `/user/login?redirect=...`，403 跳转 `/403`。权限继续由 `Permission.code` 驱动，并由 `pnpm registry:admin-routes:check` 校验 `config/routes.ts` 与 module-registry。
+
 ## 文档入口
 
 - [文档入口](docs/README.md)

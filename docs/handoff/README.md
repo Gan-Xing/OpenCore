@@ -19,6 +19,7 @@
 - Runtime integration R-1-R7：legacy app freeze、runtime audit、env mapping、PostgreSQL migration/seed、Prisma persistence、Redis/BullMQ/MinIO diagnostics、integration smoke、final docs。
 - OpenForge V1 A-L：safe generator pipeline、schema/config DSL、template/VFS、apply/manifest/rollback、API/Admin/SDK/Test/Docs pack、doctor/gate/e2e、final docs。
 - Quality Cycle 001：平台内核加固、契约 gate、OpenForge V1 验证、轻量协同、operations/report 设计位、integration provider/design 边界、全仓 gate。
+- 2026-06-11 Admin Pro V6 migration：在 `fix/admin-ant-design-pro-v6` 上保留官方 Ant Design Pro V6 config/app/layout/request/i18n/openapi 底座，迁移 OpenCore Dashboard/System/Security/Monitor/Tools/Collaboration/Optional/Integrations 页面，删除 demo routes/pages/services/mocks，并将 auth/me 接到 OpenCore API。
 
 S3-S9 handoff、runtime integration handoff、OpenForge V1 full implementation handoff 与 Quality Cycle 001 范围均已完成。若继续推进，应另起 cycle-002 或专项 handoff，并继续保留行业业务、真实支付、AI/RAG/Agent 的准入边界。
 
@@ -33,6 +34,8 @@ S3-S9 handoff、runtime integration handoff、OpenForge V1 full implementation h
 - [2026-06-10 S9 OpenForge MVP Handoff](2026-06-10-s9-openforge-mvp-handoff.md)
 - [2026-06-10 OpenForge V1 Full Implementation Handoff](2026-06-10-openforge-v1-full-implementation-handoff.md)
 - [2026-06-10 OpenCore Quality Recursion Handoff](2026-06-10-opencore-1-6-quality-recursion-handoff.md)
+- [2026-06-11 Admin Ant Design Pro V6 Migration Handoff](2026-06-11-admin-ant-design-pro-v6-migration-handoff.md)
+- [2026-06-11 Admin Ant Design Pro V6 Migration Notes](admin-ant-design-pro-v6-migration-notes.md)
 
 ## D1-D6 设计文档
 

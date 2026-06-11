@@ -1,0 +1,291 @@
+export default [
+  {
+    path: '/user',
+    layout: false,
+    routes: [
+      {
+        path: '/user/login',
+        name: 'login',
+        component: './user/login',
+      },
+      {
+        path: '/user',
+        redirect: '/user/login',
+      },
+      {
+        name: 'not-found',
+        component: './Exception/404',
+        path: '/user/*',
+      },
+    ],
+  },
+  {
+    path: '/dashboard',
+    name: 'Dashboard',
+    icon: 'dashboard',
+    component: './Dashboard',
+    access: 'canAccessDashboard',
+  },
+  {
+    path: '/system',
+    name: 'System',
+    icon: 'setting',
+    routes: [
+      { path: '/system', redirect: '/system/users' },
+      {
+        name: 'Users',
+        path: '/system/users',
+        component: './System/Users',
+        access: 'canReadUsers',
+      },
+      {
+        name: 'Roles',
+        path: '/system/roles',
+        component: './System/Roles',
+        access: 'canReadRoles',
+      },
+      {
+        name: 'Permissions',
+        path: '/system/permissions',
+        component: './System/Permissions',
+        access: 'canReadPermissions',
+      },
+      {
+        name: 'Menus',
+        path: '/system/menus',
+        component: './System/Menus',
+        access: 'canReadMenus',
+      },
+      {
+        name: 'Dictionaries',
+        path: '/system/dicts',
+        component: './System/Dicts',
+        access: 'canReadDicts',
+      },
+      {
+        name: 'System Config',
+        path: '/system/config',
+        component: './System/Config',
+        access: 'canReadSystemConfig',
+      },
+      {
+        name: 'File Center',
+        path: '/system/files',
+        component: './System/Files',
+        access: 'canReadFiles',
+      },
+    ],
+  },
+  {
+    path: '/security',
+    name: 'Security',
+    icon: 'safety',
+    routes: [
+      { path: '/security', redirect: '/security/login-logs' },
+      {
+        name: 'Login Logs',
+        path: '/security/login-logs',
+        component: './Security/LoginLogs',
+        access: 'canReadLoginLogs',
+      },
+      {
+        name: 'Operation Logs',
+        path: '/security/operation-logs',
+        component: './Security/OperationLogs',
+        access: 'canReadAuditLogs',
+      },
+    ],
+  },
+  {
+    path: '/monitor',
+    name: 'Monitor',
+    icon: 'monitor',
+    routes: [
+      { path: '/monitor', redirect: '/monitor/status' },
+      {
+        name: 'System Status',
+        path: '/monitor/status',
+        component: './Monitor/Status',
+        access: 'canReadSystemStatus',
+      },
+      {
+        name: 'Version',
+        path: '/monitor/version',
+        component: './Monitor/Version',
+        access: 'canReadVersion',
+      },
+      {
+        name: 'Queues',
+        path: '/monitor/queues',
+        component: './Monitor/Queues',
+        access: 'canReadQueues',
+      },
+      {
+        name: 'Jobs',
+        path: '/monitor/jobs',
+        component: './Monitor/Jobs',
+        access: 'canReadJobs',
+      },
+      {
+        name: 'Cache',
+        path: '/monitor/cache',
+        component: './Monitor/Cache',
+        access: 'canReadCache',
+      },
+      {
+        name: 'Online Users',
+        path: '/monitor/online-users',
+        component: './Monitor/OnlineUsers',
+        access: 'canReadOnlineUsers',
+      },
+    ],
+  },
+  {
+    path: '/tools',
+    name: 'Tools',
+    icon: 'tool',
+    routes: [
+      { path: '/tools', redirect: '/tools/openapi' },
+      {
+        name: 'OpenAPI',
+        path: '/tools/openapi',
+        component: './Tools/OpenApi',
+        access: 'canReadOpenApiStatus',
+      },
+      {
+        name: 'Export Tools',
+        path: '/tools/export',
+        component: './Tools/Export',
+        access: 'canReadExportTools',
+      },
+      {
+        name: 'OpenForge',
+        path: '/tools/openforge',
+        component: './Tools/OpenForge',
+        access: 'canReadOpenForge',
+      },
+    ],
+  },
+  {
+    path: '/collaboration',
+    name: 'Collaboration',
+    icon: 'team',
+    routes: [
+      { path: '/collaboration', redirect: '/collaboration/messages' },
+      {
+        name: 'Messages',
+        path: '/collaboration/messages',
+        component: './Collaboration/Messages',
+        access: 'canReadMessages',
+      },
+      {
+        name: 'Notices',
+        path: '/collaboration/notices',
+        component: './Collaboration/Notices',
+        access: 'canReadNotices',
+      },
+      {
+        name: 'Todos',
+        path: '/collaboration/todos',
+        component: './Collaboration/Todos',
+        access: 'canReadTodos',
+      },
+      {
+        name: 'Approval Lite',
+        path: '/collaboration/approvals',
+        component: './Collaboration/Approvals',
+        access: 'canReadApprovalLite',
+      },
+    ],
+  },
+  {
+    path: '/optional',
+    name: 'Optional',
+    icon: 'appstore',
+    routes: [
+      { path: '/optional', redirect: '/optional/reports' },
+      {
+        name: 'Reports',
+        path: '/optional/reports',
+        component: './Optional/Reports',
+        access: 'canReadReports',
+      },
+      {
+        name: 'Export Jobs',
+        path: '/optional/export-jobs',
+        component: './Optional/ExportJobs',
+        access: 'canReadExportJobs',
+      },
+    ],
+  },
+  {
+    path: '/integrations',
+    name: 'Integrations',
+    icon: 'api',
+    routes: [
+      { path: '/integrations', redirect: '/integrations/providers' },
+      {
+        name: 'Providers',
+        path: '/integrations/providers',
+        component: './Integrations/Providers',
+        access: 'canReadIntegrationProviders',
+      },
+      {
+        name: 'Mail',
+        path: '/integrations/mail',
+        component: './Integrations/Mail',
+        access: 'canReadMailIntegration',
+      },
+      {
+        name: 'SMS',
+        path: '/integrations/sms',
+        component: './Integrations/Sms',
+        access: 'canReadSmsIntegration',
+      },
+      {
+        name: 'OAuth',
+        path: '/integrations/oauth',
+        component: './Integrations/OAuth',
+        access: 'canReadOAuthIntegration',
+      },
+      {
+        name: 'WeChat',
+        path: '/integrations/wechat',
+        component: './Integrations/WeChat',
+        access: 'canReadWeChatIntegration',
+      },
+      {
+        name: 'WebSocket',
+        path: '/integrations/websocket',
+        component: './Integrations/WebSocket',
+        access: 'canReadWebSocketIntegration',
+      },
+      {
+        name: 'Payment',
+        path: '/integrations/billing-design',
+        component: './Integrations/BillingDesign',
+        access: 'canReadBillingDesign',
+      },
+    ],
+  },
+  {
+    path: '/403',
+    component: './Exception/403',
+  },
+  {
+    path: '/404',
+    component: './Exception/404',
+  },
+  {
+    path: '/500',
+    component: './Exception/500',
+  },
+  {
+    path: '/',
+    redirect: '/dashboard',
+  },
+  {
+    component: './Exception/404',
+    path: '/*',
+  },
+];

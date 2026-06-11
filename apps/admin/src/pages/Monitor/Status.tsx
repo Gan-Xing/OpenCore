@@ -6,10 +6,13 @@ import {
 import {
   createSystemStatusFixture,
   type DependencyStatusSummary,
+  type SystemStatusSummary,
 } from '@opencore/sdk';
-import { Statistic, Tag } from 'antd';
+import { Alert, Statistic, Tag } from 'antd';
+import { useEffect, useState } from 'react';
+import { getOpenCoreSystemStatus } from '@/services/opencore/platform';
 
-const status = createSystemStatusFixture();
+const fallbackStatus = createSystemStatusFixture();
 
 const columns: ProColumns<DependencyStatusSummary>[] = [
   { title: 'Dependency', dataIndex: 'name' },
@@ -27,11 +30,56 @@ const columns: ProColumns<DependencyStatusSummary>[] = [
 ];
 
 export default function StatusPage() {
+  const [status, setStatus] = useState<SystemStatusSummary>(fallbackStatus);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string>();
+
+  useEffect(() => {
+    let mounted = true;
+
+    getOpenCoreSystemStatus()
+      .then((summary) => {
+        if (mounted) {
+          setStatus(summary);
+          setLoadError(undefined);
+        }
+      })
+      .catch((error: unknown) => {
+        if (mounted) {
+          setStatus(fallbackStatus);
+          setLoadError(
+            error instanceof Error
+              ? error.message
+              : 'Unable to load OpenCore system status.',
+          );
+        }
+      })
+      .finally(() => {
+        if (mounted) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   return (
     <PageContainer title="System Status" subTitle="S8 Monitor">
+      {loadError ? (
+        <Alert
+          showIcon
+          type="warning"
+          message="Using fallback monitor snapshot"
+          description={loadError}
+          style={{ marginBlockEnd: 16 }}
+        />
+      ) : null}
       <Statistic title="Overall status" value={status.status} />
       <ProTable<DependencyStatusSummary>
         rowKey="name"
+        loading={loading}
         search={false}
         options={false}
         pagination={false}

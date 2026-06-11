@@ -1,5 +1,8 @@
 import type { UserSummary } from '@opencore/sdk';
+import { Alert } from 'antd';
 import { Space, Tag } from 'antd';
+import { useEffect, useState } from 'react';
+import { listOpenCoreUsers } from '@/services/opencore/platform';
 import type { CurrentPageExportColumn } from '../shared/CurrentPageExportButton';
 import type {
   CurrentPageFilterOption,
@@ -58,36 +61,83 @@ const detailFields = (record: UserSummary): DetailField[] => [
 ];
 
 export default function UsersPage() {
+  const [liveRows, setLiveRows] = useState<readonly UserSummary[]>(rows);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string>();
+
+  useEffect(() => {
+    let mounted = true;
+
+    listOpenCoreUsers()
+      .then((users) => {
+        if (mounted) {
+          setLiveRows(users);
+          setLoadError(undefined);
+        }
+      })
+      .catch((error: unknown) => {
+        if (mounted) {
+          setLiveRows(rows);
+          setLoadError(
+            error instanceof Error
+              ? error.message
+              : 'Unable to load OpenCore users.',
+          );
+        }
+      })
+      .finally(() => {
+        if (mounted) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   return (
-    <RbacTable<UserSummary>
-      title="Users"
-      rows={rows}
-      detailFields={detailFields}
-      detailTitle={(record) => record.username}
-      readOnlyReason="Fixture-backed users are read-only until the S6 write workflow is admitted."
-      resource="core-users"
-      searchFields={searchFields}
-      filterOptions={filterOptions}
-      exportColumns={exportColumns}
-      columns={[
-        { title: 'Username', dataIndex: 'username' },
-        { title: 'Display name', dataIndex: 'displayName' },
-        {
-          title: 'Roles',
-          dataIndex: 'roleCodes',
-          render: (_, record) =>
-            record.roleCodes.map((code) => <Tag key={code}>{code}</Tag>),
-        },
-        {
-          title: 'Status',
-          dataIndex: 'enabled',
-          render: (_, record) => (
-            <Tag color={record.enabled ? 'green' : 'red'}>
-              {record.enabled ? 'enabled' : 'disabled'}
-            </Tag>
-          ),
-        },
-      ]}
-    />
+    <>
+      {loadError ? (
+        <Alert
+          showIcon
+          type="warning"
+          message="Using fallback user snapshot"
+          description={loadError}
+          style={{ marginBlockEnd: 16 }}
+        />
+      ) : null}
+      <RbacTable<UserSummary>
+        title="Users"
+        rows={liveRows}
+        loading={loading}
+        detailFields={detailFields}
+        detailTitle={(record) => record.username}
+        readOnlyReason="Users are read-only in Admin until the S6 write workflow is admitted."
+        resource="core-users"
+        searchFields={searchFields}
+        filterOptions={filterOptions}
+        exportColumns={exportColumns}
+        columns={[
+          { title: 'Username', dataIndex: 'username' },
+          { title: 'Display name', dataIndex: 'displayName' },
+          {
+            title: 'Roles',
+            dataIndex: 'roleCodes',
+            render: (_, record) =>
+              record.roleCodes.map((code) => <Tag key={code}>{code}</Tag>),
+          },
+          {
+            title: 'Status',
+            dataIndex: 'enabled',
+            render: (_, record) => (
+              <Tag color={record.enabled ? 'green' : 'red'}>
+                {record.enabled ? 'enabled' : 'disabled'}
+              </Tag>
+            ),
+          },
+        ]}
+      />
+    </>
   );
 }

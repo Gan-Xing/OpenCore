@@ -1730,7 +1730,7 @@ Safety:
 
 # Admin Route Patch
 
-Target human file: \`apps/admin/.umirc.ts\`
+Target human file: \`apps/admin/config/routes.ts\`
 
 Generated page component:
 
@@ -1744,7 +1744,7 @@ Generated page component:
 
 Safety:
 
-- OpenForge does not modify \`.umirc.ts\` directly.
+- OpenForge does not modify \`config/routes.ts\` directly.
 - Review route naming and menu placement before adding it by hand.
 - Do not introduce generated demo routes into production menus without review.
 `;

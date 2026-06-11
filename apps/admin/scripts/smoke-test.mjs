@@ -5,11 +5,18 @@ const root = process.cwd();
 const packageJson = JSON.parse(
   readFileSync(resolve(root, 'package.json'), 'utf8'),
 );
-const deps = packageJson.dependencies ?? {};
+const deps = {
+  ...(packageJson.devDependencies ?? {}),
+  ...(packageJson.dependencies ?? {}),
+};
+const templatePlaceholder = (name) => '${' + name + '}';
+const pathTemplatePlaceholder = templatePlaceholder('path');
+const textTemplatePlaceholder = templatePlaceholder('text');
+const resourceTemplatePlaceholder = templatePlaceholder('resource');
 
 const requiredVersions = {
   '@umijs/max': /^(\^)?4\./,
-  '@ant-design/pro-components': /^3\./,
+  '@ant-design/pro-components': /^(\^)?3\./,
   '@opencore/sdk': /^workspace:\*$/,
   antd: /^(\^)?6\./,
   react: /^(\^)?19\./,
@@ -26,15 +33,20 @@ for (const [name, pattern] of Object.entries(requiredVersions)) {
   }
 }
 
-const config = readFileSync(resolve(root, '.umirc.ts'), 'utf8');
+const config = readFileSync(resolve(root, 'config/routes.ts'), 'utf8');
 if (
-  config.includes("component: './Access'") ||
-  config.includes("component: './Table'") ||
-  config.includes("component: './Home'") ||
-  config.includes("path: '/home'")
+  config.includes("path: '/welcome'") ||
+  config.includes("path: '/admin'") ||
+  config.includes("path: '/form'") ||
+  config.includes("path: '/list'") ||
+  config.includes("path: '/profile'") ||
+  config.includes("path: '/result'") ||
+  config.includes("path: '/account'") ||
+  config.includes("path: '/chatbot'") ||
+  config.includes("path: '/user/register'")
 ) {
   throw new Error(
-    'Template demo routes must not be mounted in S5 admin routes.',
+    'Ant Design Pro demo routes must not be mounted in formal admin routes.',
   );
 }
 
@@ -76,17 +88,132 @@ for (const requiredRoute of [
   "path: '/500'",
 ]) {
   if (!config.includes(requiredRoute)) {
-    throw new Error(`Missing shell route in .umirc.ts: ${requiredRoute}`);
+    throw new Error(
+      `Missing shell route in config/routes.ts: ${requiredRoute}`,
+    );
   }
 }
 
-const appRuntime = readFileSync(resolve(root, 'src/app.ts'), 'utf8');
+const appRuntime = readFileSync(resolve(root, 'src/app.tsx'), 'utf8');
 if (
-  !appRuntime.includes('createLayoutMenuItems') ||
-  !appRuntime.includes('shellMenuItems')
+  !appRuntime.includes('queryCurrentOpenCoreUser') ||
+  !appRuntime.includes('shellMenuItems') ||
+  !appRuntime.includes('registrySummary') ||
+  !appRuntime.includes('permissions: currentUser?.permissionCodes') ||
+  !appRuntime.includes('baseURL: process.env.ADMIN_API_BASE_URL')
 ) {
   throw new Error(
-    'Admin layout must derive menu data from the shell registry.',
+    'Admin app runtime must use OpenCore auth, shell registry metadata and non-demo request base URL.',
+  );
+}
+
+const proConfig = readFileSync(resolve(root, 'config/config.ts'), 'utf8');
+const proxyConfig = readFileSync(resolve(root, 'config/proxy.ts'), 'utf8');
+const loginPage = readFileSync(
+  resolve(root, 'src/pages/user/login/index.tsx'),
+  'utf8',
+);
+const requestConfig = readFileSync(
+  resolve(root, 'src/requestErrorConfig.ts'),
+  'utf8',
+);
+const authService = readFileSync(
+  resolve(root, 'src/services/opencore/auth.ts'),
+  'utf8',
+);
+const opencoreClientService = readFileSync(
+  resolve(root, 'src/services/opencore/client.ts'),
+  'utf8',
+);
+const opencorePlatformService = readFileSync(
+  resolve(root, 'src/services/opencore/platform.ts'),
+  'utf8',
+);
+const tokenService = readFileSync(
+  resolve(root, 'src/services/opencore/token.ts'),
+  'utf8',
+);
+
+if (
+  proConfig.includes('oneapi.json') ||
+  proConfig.includes('pro-api.ant-design-demo') ||
+  proConfig.includes('preview.pro.ant.design') ||
+  !proConfig.includes('packages/contracts/openapi/opencore-api.json')
+) {
+  throw new Error(
+    'Admin config must use the OpenCore OpenAPI snapshot and no demo API schema.',
+  );
+}
+
+if (
+  proxyConfig.includes('pro-api.ant-design-demo') ||
+  proxyConfig.includes('preview.pro.ant.design') ||
+  !proxyConfig.includes('http://localhost:3000')
+) {
+  throw new Error('Admin proxy must target the local OpenCore API.');
+}
+
+if (
+  !loginPage.includes('loginToOpenCore') ||
+  loginPage.includes('getFakeCaptcha') ||
+  loginPage.includes('@/services/ant-design-pro')
+) {
+  throw new Error(
+    'Admin login must call OpenCore auth and avoid demo login services.',
+  );
+}
+
+if (
+  !authService.includes('createRbacClient') ||
+  !authService.includes('loginToOpenCore') ||
+  !authService.includes('queryCurrentOpenCoreUser') ||
+  !authService.includes('getRequiredAdminToken')
+) {
+  throw new Error(
+    'Admin auth service must use @opencore/sdk for login and current user.',
+  );
+}
+
+if (
+  !opencoreClientService.includes(`/api${pathTemplatePlaceholder}`) ||
+  !opencoreClientService.includes('opencoreSdkRequest') ||
+  !opencoreClientService.includes('MissingAdminTokenError')
+) {
+  throw new Error(
+    'Admin OpenCore SDK request helper must prefix /api and guard missing bearer tokens.',
+  );
+}
+
+if (
+  !opencorePlatformService.includes('createRbacClient') ||
+  !opencorePlatformService.includes('createMonitoringClient') ||
+  !opencorePlatformService.includes('listOpenCoreUsers') ||
+  !opencorePlatformService.includes('getOpenCoreSystemStatus')
+) {
+  throw new Error(
+    'Admin platform service must expose live System and Monitor SDK clients.',
+  );
+}
+
+if (
+  !tokenService.includes('opencore.admin.token') ||
+  !tokenService.includes('localStorage')
+) {
+  throw new Error(
+    'Admin token storage must be centralized on the OpenCore token key.',
+  );
+}
+
+if (
+  !requestConfig.includes('Authorization') ||
+  !requestConfig.includes('Bearer') ||
+  !requestConfig.includes('x-request-id') ||
+  !requestConfig.includes('x-trace-id') ||
+  !requestConfig.includes("history.push('/403')") ||
+  !requestConfig.includes('/user/login?redirect=')
+) {
+  throw new Error(
+    'Admin request config must attach bearer/trace headers and handle 401/403.',
   );
 }
 
@@ -318,6 +445,7 @@ const billingDesignPage = readFileSync(
 );
 if (
   !usersPage.includes('@opencore/sdk') ||
+  !usersPage.includes('listOpenCoreUsers') ||
   !permissionsPage.includes('@opencore/sdk') ||
   !dictsPage.includes('@opencore/sdk') ||
   !configPage.includes('@opencore/sdk') ||
@@ -325,6 +453,7 @@ if (
   !auditLogsPage.includes('@opencore/sdk') ||
   !loginLogsPage.includes('@opencore/sdk') ||
   !statusPage.includes('@opencore/sdk') ||
+  !statusPage.includes('getOpenCoreSystemStatus') ||
   !versionPage.includes('@opencore/sdk') ||
   !queuesPage.includes('@opencore/sdk') ||
   !openApiPage.includes('@opencore/sdk') ||
@@ -400,15 +529,19 @@ if (
   !currentPageExportButton.includes('CSV_FORMULA_PREFIX_PATTERN') ||
   !currentPageExportButton.includes('CSV_FILENAME_UNSAFE_PATTERN') ||
   !currentPageExportButton.includes('[=+\\-@]') ||
-  !currentPageExportButton.includes('[\\\\/:*?"<>|\\x00-\\x1F]') ||
+  !currentPageExportButton.includes('\\\\/:*?"<>|\\\\x00-\\\\x1F') ||
   !currentPageExportButton.includes("basename || 'opencore-export'") ||
   !currentPageExportButton.includes("endsWith('.csv')") ||
-  !currentPageExportButton.includes("return `'${text}`;") ||
+  !currentPageExportButton.includes(
+    "return `'" + textTemplatePlaceholder + '`;',
+  ) ||
   !currentPageExportButton.includes(
     'sanitizeCsvCellText(normalizeCellValue(value))',
   ) ||
   !currentPageExportButton.includes(
-    'sanitizeCsvFilename(filename ?? `opencore-${resource}.csv`)',
+    'sanitizeCsvFilename(filename ?? `opencore-' +
+      resourceTemplatePlaceholder +
+      '.csv`)',
   ) ||
   !currentPageExportButton.includes('redactCurrentPageExportValue') ||
   !currentPageExportButton.includes('password') ||

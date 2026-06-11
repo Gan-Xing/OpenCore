@@ -1,11 +1,11 @@
 import { shellPermissionCodes } from './core/shellRegistry';
 
 type InitialState = {
-  permissions?: string[];
+  permissions?: readonly string[];
 };
 
-export default (initialState: InitialState = {}) => {
-  const permissions = new Set(initialState.permissions ?? shellPermissionCodes);
+export default function access(initialState: InitialState = {}) {
+  const permissions = new Set(initialState.permissions ?? []);
   const hasPermission = (permissionCode: string) =>
     permissions.has(permissionCode);
 
@@ -43,5 +43,8 @@ export default (initialState: InitialState = {}) => {
     canReadWebSocketIntegration: hasPermission('integration:websocket:read'),
     canReadBillingDesign: hasPermission('integration:billing-design:read'),
     canReadHealth: hasPermission('core:dashboard:read'),
+    hasAllShellPermissions: shellPermissionCodes.every((permissionCode) =>
+      hasPermission(permissionCode),
+    ),
   };
-};
+}

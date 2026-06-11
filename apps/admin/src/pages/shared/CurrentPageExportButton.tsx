@@ -19,7 +19,10 @@ type CurrentPageExportButtonProps<T extends object> = {
 
 const exportProtocol = createCurrentPageExportProtocolFixture();
 const CSV_FORMULA_PREFIX_PATTERN = /^\s*[=+\-@]/;
-const CSV_FILENAME_UNSAFE_PATTERN = /[\\/:*?"<>|\x00-\x1F]+/g;
+const CSV_FILENAME_UNSAFE_PATTERN = new RegExp(
+  '[\\\\/:*?"<>|\\x00-\\x1F]+',
+  'g',
+);
 const REDACTED_EXPORT_CELL_VALUE = '[redacted]';
 const EXPORT_CELL_SENSITIVE_KEY_PATTERN =
   /password|secret|token|credential|authorization|api[-_]?key|client[-_]?secret/i;

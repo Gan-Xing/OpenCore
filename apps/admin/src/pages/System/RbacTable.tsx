@@ -44,6 +44,7 @@ type RbacTableProps<T extends RbacRecord> = {
   detailTitle?: (record: T) => ReactNode;
   exportColumns: readonly CurrentPageExportColumn<T>[];
   filterOptions?: readonly CurrentPageFilterOption<T>[];
+  loading?: boolean;
   readOnlyReason: string;
   resource: string;
   searchFields: readonly CurrentPageSearchField<T>[];
@@ -59,6 +60,7 @@ const RbacTable = <T extends RbacRecord>({
   detailTitle,
   exportColumns,
   filterOptions = [],
+  loading = false,
   readOnlyReason,
   resource,
   searchFields,
@@ -75,6 +77,7 @@ const RbacTable = <T extends RbacRecord>({
     <PageContainer title={title} subTitle="S6 RBAC">
       <ProTable<T>
         rowKey={(record) => String(record.id ?? record.code ?? record.key)}
+        loading={loading}
         search={false}
         options={false}
         toolBarRender={() => [

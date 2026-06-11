@@ -698,7 +698,7 @@ describe('OpenForge default template pack renderer', () => {
     expect(exportButtonContent).not.toContain('onExport?.');
     expect(exportButtonContent).not.toContain("import { Button } from 'antd'");
     expect(String(routePatch?.content.value)).toContain(
-      'Target human file: `apps/admin/.umirc.ts`',
+      'Target human file: `apps/admin/config/routes.ts`',
     );
     expect(String(accessPatch?.content.value)).toContain(
       'Target human file: `apps/admin/src/access.ts`',

@@ -67,6 +67,12 @@ Q001 已完成以下平台型能力：
 - `optional.report`、`optional.export-job` 设计位。
 - `integration.provider`、`integration.mail`、`integration.sms`、`integration.oauth`、`integration.wechat`、`integration.websocket`、`integration.billing-design`。
 
+## Admin Pro V6 Architecture Migration
+
+2026-06-11 已完成 Admin 专项迁移：`apps/admin` 使用官方 Ant Design Pro V6 `config/config.ts`、`config/routes.ts`、runtime `src/app.tsx`、`requestErrorConfig`、locales、OpenAPI plugin、request-record、React Query 和 Vitest 作为架构底座；业务页面来自 `origin/main` 的 S5-S8 + Q001 页面能力。
+
+迁移后的正式路由只包含 Dashboard、System、Security、Monitor、Tools、Collaboration、Optional、Integrations、`/user/login` 和 403/404/500。Ant Design Pro demo routes/pages/services/mocks 已删除；auth/current user 通过 `@opencore/sdk` 调用 `POST /api/auth/login` 和 `GET /api/auth/me`；route/access drift gate 改为校验 `apps/admin/config/routes.ts`。
+
 Q001 仍明确不做：
 
 - BPMN/流程设计器。
