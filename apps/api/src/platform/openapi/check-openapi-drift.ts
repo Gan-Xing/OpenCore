@@ -6,6 +6,7 @@ import {
   type OpenApiDocumentLike,
 } from './openapi-drift';
 import { DEFAULT_OPENAPI_OUTPUT, writeOpenApiSnapshot } from './export-openapi';
+import { checkRegistryOpenApiTags } from './check-registry-tags';
 
 async function checkOpenApiDrift(): Promise<void> {
   const tempDir = await mkdtemp(join(tmpdir(), 'opencore-openapi-'));
@@ -28,6 +29,7 @@ async function checkOpenApiDrift(): Promise<void> {
       return;
     }
 
+    await checkRegistryOpenApiTags(expectedPath);
     process.stdout.write('OpenAPI snapshot is clean.\n');
   } finally {
     await rm(tempDir, {
