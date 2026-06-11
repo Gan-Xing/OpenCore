@@ -22,6 +22,23 @@ const SHELL_MODULE_CODES = [
   'monitor.queue',
   'tool.openapi',
   'tool.export',
+  'tool.openforge',
+  'collaboration.message',
+  'collaboration.notice',
+  'collaboration.todo',
+  'collaboration.approval-lite',
+  'monitor.job',
+  'monitor.cache',
+  'monitor.online-user',
+  'optional.report',
+  'optional.export-job',
+  'integration.provider',
+  'integration.mail',
+  'integration.sms',
+  'integration.oauth',
+  'integration.wechat',
+  'integration.websocket',
+  'integration.billing-design',
 ] as const;
 
 const PLANNED_STAGE_ORDER = ['S9', 'S10', 'S11', 'S12'] as const;
@@ -144,6 +161,52 @@ export function createLayoutMenuItems(
       name: 'Monitor',
       icon: 'MonitorOutlined',
       routes: monitor.map((item) => ({
+        path: item.path,
+        name: item.name,
+      })),
+    });
+  }
+
+  const collaboration = menuItems.filter((item) =>
+    item.key.startsWith('collaboration.'),
+  );
+
+  if (collaboration.length > 0) {
+    layoutMenu.push({
+      path: '/collaboration',
+      name: 'Collaboration',
+      icon: 'TeamOutlined',
+      routes: collaboration.map((item) => ({
+        path: item.path,
+        name: item.name,
+      })),
+    });
+  }
+
+  const optional = menuItems.filter((item) => item.key.startsWith('optional.'));
+
+  if (optional.length > 0) {
+    layoutMenu.push({
+      path: '/optional',
+      name: 'Optional',
+      icon: 'AppstoreOutlined',
+      routes: optional.map((item) => ({
+        path: item.path,
+        name: item.name,
+      })),
+    });
+  }
+
+  const integrations = menuItems.filter((item) =>
+    item.key.startsWith('integrations.'),
+  );
+
+  if (integrations.length > 0) {
+    layoutMenu.push({
+      path: '/integrations',
+      name: 'Integrations',
+      icon: 'ApiOutlined',
+      routes: integrations.map((item) => ({
         path: item.path,
         name: item.name,
       })),

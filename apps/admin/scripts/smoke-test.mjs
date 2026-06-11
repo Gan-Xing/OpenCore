@@ -54,6 +54,23 @@ for (const requiredRoute of [
   "path: '/monitor/version'",
   "path: '/monitor/queues'",
   "path: '/tools/export'",
+  "path: '/tools/openforge'",
+  "path: '/collaboration/messages'",
+  "path: '/collaboration/notices'",
+  "path: '/collaboration/todos'",
+  "path: '/collaboration/approvals'",
+  "path: '/monitor/jobs'",
+  "path: '/monitor/cache'",
+  "path: '/monitor/online-users'",
+  "path: '/optional/reports'",
+  "path: '/optional/export-jobs'",
+  "path: '/integrations/providers'",
+  "path: '/integrations/mail'",
+  "path: '/integrations/sms'",
+  "path: '/integrations/oauth'",
+  "path: '/integrations/wechat'",
+  "path: '/integrations/websocket'",
+  "path: '/integrations/billing-design'",
   "path: '/403'",
   "path: '/404'",
   "path: '/500'",
@@ -89,10 +106,27 @@ if (
   !accessRuntime.includes('monitor:status:read') ||
   !accessRuntime.includes('monitor:version:read') ||
   !accessRuntime.includes('monitor:queue:read') ||
-  !accessRuntime.includes('tool:export:read')
+  !accessRuntime.includes('tool:export:read') ||
+  !accessRuntime.includes('tool:openforge:read') ||
+  !accessRuntime.includes('collaboration:message:read') ||
+  !accessRuntime.includes('collaboration:notice:read') ||
+  !accessRuntime.includes('collaboration:todo:read') ||
+  !accessRuntime.includes('collaboration:approval-lite:read') ||
+  !accessRuntime.includes('monitor:job:read') ||
+  !accessRuntime.includes('monitor:cache:read') ||
+  !accessRuntime.includes('monitor:online-user:read') ||
+  !accessRuntime.includes('optional:report:read') ||
+  !accessRuntime.includes('optional:export-job:read') ||
+  !accessRuntime.includes('integration:provider:read') ||
+  !accessRuntime.includes('integration:mail:read') ||
+  !accessRuntime.includes('integration:sms:read') ||
+  !accessRuntime.includes('integration:oauth:read') ||
+  !accessRuntime.includes('integration:wechat:read') ||
+  !accessRuntime.includes('integration:websocket:read') ||
+  !accessRuntime.includes('integration:billing-design:read')
 ) {
   throw new Error(
-    'Admin access must guard shell, S6 RBAC, S7 system, and S8 monitor/tool routes by permission code.',
+    'Admin access must guard shell, platform, collaboration, operations, and integration routes by permission code.',
   );
 }
 
@@ -116,7 +150,24 @@ if (
   !shellRegistry.includes('monitor.status') ||
   !shellRegistry.includes('monitor.version') ||
   !shellRegistry.includes('monitor.queue') ||
-  !shellRegistry.includes('tool.export')
+  !shellRegistry.includes('tool.export') ||
+  !shellRegistry.includes('tool.openforge') ||
+  !shellRegistry.includes('collaboration.message') ||
+  !shellRegistry.includes('collaboration.notice') ||
+  !shellRegistry.includes('collaboration.todo') ||
+  !shellRegistry.includes('collaboration.approval-lite') ||
+  !shellRegistry.includes('monitor.job') ||
+  !shellRegistry.includes('monitor.cache') ||
+  !shellRegistry.includes('monitor.online-user') ||
+  !shellRegistry.includes('optional.report') ||
+  !shellRegistry.includes('optional.export-job') ||
+  !shellRegistry.includes('integration.provider') ||
+  !shellRegistry.includes('integration.mail') ||
+  !shellRegistry.includes('integration.sms') ||
+  !shellRegistry.includes('integration.oauth') ||
+  !shellRegistry.includes('integration.wechat') ||
+  !shellRegistry.includes('integration.websocket') ||
+  !shellRegistry.includes('integration.billing-design')
 ) {
   throw new Error('Admin shell registry must consume module-registry entries.');
 }
@@ -125,8 +176,36 @@ const usersPage = readFileSync(
   resolve(root, 'src/pages/System/Users.tsx'),
   'utf8',
 );
+const rolesPage = readFileSync(
+  resolve(root, 'src/pages/System/Roles.tsx'),
+  'utf8',
+);
+const rbacTable = readFileSync(
+  resolve(root, 'src/pages/System/RbacTable.tsx'),
+  'utf8',
+);
+const systemManagementTable = readFileSync(
+  resolve(root, 'src/pages/System/SystemManagementTable.tsx'),
+  'utf8',
+);
+const readOnlyDetailDrawer = readFileSync(
+  resolve(root, 'src/pages/shared/ReadOnlyDetailDrawer.tsx'),
+  'utf8',
+);
+const currentPageExportButton = readFileSync(
+  resolve(root, 'src/pages/shared/CurrentPageExportButton.tsx'),
+  'utf8',
+);
+const currentPageFilters = readFileSync(
+  resolve(root, 'src/pages/shared/CurrentPageFilters.tsx'),
+  'utf8',
+);
 const permissionsPage = readFileSync(
   resolve(root, 'src/pages/System/Permissions.tsx'),
+  'utf8',
+);
+const menusPage = readFileSync(
+  resolve(root, 'src/pages/System/Menus.tsx'),
   'utf8',
 );
 const dictsPage = readFileSync(
@@ -169,6 +248,74 @@ const exportPage = readFileSync(
   resolve(root, 'src/pages/Tools/Export/index.tsx'),
   'utf8',
 );
+const openForgePage = readFileSync(
+  resolve(root, 'src/pages/Tools/OpenForge/index.tsx'),
+  'utf8',
+);
+const messagesPage = readFileSync(
+  resolve(root, 'src/pages/Collaboration/Messages.tsx'),
+  'utf8',
+);
+const noticesPage = readFileSync(
+  resolve(root, 'src/pages/Collaboration/Notices.tsx'),
+  'utf8',
+);
+const todosPage = readFileSync(
+  resolve(root, 'src/pages/Collaboration/Todos.tsx'),
+  'utf8',
+);
+const approvalsPage = readFileSync(
+  resolve(root, 'src/pages/Collaboration/Approvals.tsx'),
+  'utf8',
+);
+const jobsPage = readFileSync(
+  resolve(root, 'src/pages/Monitor/Jobs.tsx'),
+  'utf8',
+);
+const cachePage = readFileSync(
+  resolve(root, 'src/pages/Monitor/Cache.tsx'),
+  'utf8',
+);
+const onlineUsersPage = readFileSync(
+  resolve(root, 'src/pages/Monitor/OnlineUsers.tsx'),
+  'utf8',
+);
+const reportsPage = readFileSync(
+  resolve(root, 'src/pages/Optional/Reports.tsx'),
+  'utf8',
+);
+const exportJobsPage = readFileSync(
+  resolve(root, 'src/pages/Optional/ExportJobs.tsx'),
+  'utf8',
+);
+const providersPage = readFileSync(
+  resolve(root, 'src/pages/Integrations/Providers.tsx'),
+  'utf8',
+);
+const mailPage = readFileSync(
+  resolve(root, 'src/pages/Integrations/Mail.tsx'),
+  'utf8',
+);
+const smsPage = readFileSync(
+  resolve(root, 'src/pages/Integrations/Sms.tsx'),
+  'utf8',
+);
+const oauthPage = readFileSync(
+  resolve(root, 'src/pages/Integrations/OAuth.tsx'),
+  'utf8',
+);
+const wechatPage = readFileSync(
+  resolve(root, 'src/pages/Integrations/WeChat.tsx'),
+  'utf8',
+);
+const websocketPage = readFileSync(
+  resolve(root, 'src/pages/Integrations/WebSocket.tsx'),
+  'utf8',
+);
+const billingDesignPage = readFileSync(
+  resolve(root, 'src/pages/Integrations/BillingDesign.tsx'),
+  'utf8',
+);
 if (
   !usersPage.includes('@opencore/sdk') ||
   !permissionsPage.includes('@opencore/sdk') ||
@@ -181,11 +328,225 @@ if (
   !versionPage.includes('@opencore/sdk') ||
   !queuesPage.includes('@opencore/sdk') ||
   !openApiPage.includes('@opencore/sdk') ||
-  !exportPage.includes('@opencore/sdk')
+  !exportPage.includes('@opencore/sdk') ||
+  !openForgePage.includes('OpenForge') ||
+  !messagesPage.includes('@opencore/sdk') ||
+  !noticesPage.includes('@opencore/sdk') ||
+  !todosPage.includes('@opencore/sdk') ||
+  !approvalsPage.includes('@opencore/sdk') ||
+  !jobsPage.includes('@opencore/sdk') ||
+  !cachePage.includes('@opencore/sdk') ||
+  !onlineUsersPage.includes('@opencore/sdk') ||
+  !reportsPage.includes('@opencore/sdk') ||
+  !exportJobsPage.includes('@opencore/sdk') ||
+  !providersPage.includes('@opencore/sdk') ||
+  !mailPage.includes('@opencore/sdk') ||
+  !smsPage.includes('@opencore/sdk') ||
+  !oauthPage.includes('@opencore/sdk') ||
+  !wechatPage.includes('@opencore/sdk') ||
+  !websocketPage.includes('@opencore/sdk') ||
+  !billingDesignPage.includes('@opencore/sdk')
 ) {
   throw new Error(
-    'Admin RBAC, system, monitor, and tool pages must consume SDK types or fixtures.',
+    'Admin platform, collaboration, operations, and integration pages must consume SDK types or fixtures.',
   );
+}
+
+for (const wrapper of [
+  { name: 'RBAC table', source: rbacTable },
+  { name: 'system management table', source: systemManagementTable },
+]) {
+  if (
+    !wrapper.source.includes('useCurrentPageFilters') ||
+    !wrapper.source.includes('CurrentPageExportButton') ||
+    !wrapper.source.includes('ReadOnlyDetailDrawer') ||
+    !wrapper.source.includes('setSelectedDetail') ||
+    !wrapper.source.includes('readOnlyReason') ||
+    !wrapper.source.includes('read-only-policy') ||
+    !wrapper.source.includes('dataSource={filteredRows}') ||
+    !wrapper.source.includes('rows={filteredRows}')
+  ) {
+    throw new Error(
+      `Admin core wrapper must use bounded current-page filter/export helpers: ${wrapper.name}`,
+    );
+  }
+}
+
+if (
+  !readOnlyDetailDrawer.includes('redactDetailJsonValue') ||
+  !readOnlyDetailDrawer.includes('sensitive?: boolean') ||
+  !readOnlyDetailDrawer.includes('REDACTED_DETAIL_FIELD_VALUE') ||
+  !readOnlyDetailDrawer.includes('field.sensitive') ||
+  !readOnlyDetailDrawer.includes('renderDetailFieldValue(field)') ||
+  !readOnlyDetailDrawer.includes('password') ||
+  !readOnlyDetailDrawer.includes('secret') ||
+  !readOnlyDetailDrawer.includes('token') ||
+  !readOnlyDetailDrawer.includes('credential') ||
+  !readOnlyDetailDrawer.includes('authorization') ||
+  !readOnlyDetailDrawer.includes('api[-_]?key') ||
+  !readOnlyDetailDrawer.includes('client[-_]?secret') ||
+  !readOnlyDetailDrawer.includes(
+    'JSON.stringify(redactDetailJsonValue(section.value), null, 2)',
+  )
+) {
+  throw new Error(
+    'Read-only detail drawer fields and JSON sections must pass through sensitive redaction before rendering or serialization.',
+  );
+}
+
+if (
+  !currentPageExportButton.includes('sanitizeCsvCellText') ||
+  !currentPageExportButton.includes('sanitizeCsvFilename') ||
+  !currentPageExportButton.includes('CSV_FORMULA_PREFIX_PATTERN') ||
+  !currentPageExportButton.includes('CSV_FILENAME_UNSAFE_PATTERN') ||
+  !currentPageExportButton.includes('[=+\\-@]') ||
+  !currentPageExportButton.includes('[\\\\/:*?"<>|\\x00-\\x1F]') ||
+  !currentPageExportButton.includes("basename || 'opencore-export'") ||
+  !currentPageExportButton.includes("endsWith('.csv')") ||
+  !currentPageExportButton.includes("return `'${text}`;") ||
+  !currentPageExportButton.includes(
+    'sanitizeCsvCellText(normalizeCellValue(value))',
+  ) ||
+  !currentPageExportButton.includes(
+    'sanitizeCsvFilename(filename ?? `opencore-${resource}.csv`)',
+  ) ||
+  !currentPageExportButton.includes('redactCurrentPageExportValue') ||
+  !currentPageExportButton.includes('password') ||
+  !currentPageExportButton.includes('secret') ||
+  !currentPageExportButton.includes('token') ||
+  !currentPageExportButton.includes('credential') ||
+  !currentPageExportButton.includes('authorization') ||
+  !currentPageExportButton.includes('api[-_]?key') ||
+  !currentPageExportButton.includes('client[-_]?secret') ||
+  !currentPageExportButton.includes(
+    'JSON.stringify(redactCurrentPageExportValue(value))',
+  )
+) {
+  throw new Error(
+    'Current-page CSV export must sanitize filenames, neutralize spreadsheet formula prefixes and redact object-cell sensitive keys before serialization.',
+  );
+}
+
+if (
+  !currentPageFilters.includes('redactCurrentPageFilterValue') ||
+  !currentPageFilters.includes('password') ||
+  !currentPageFilters.includes('secret') ||
+  !currentPageFilters.includes('token') ||
+  !currentPageFilters.includes('credential') ||
+  !currentPageFilters.includes('authorization') ||
+  !currentPageFilters.includes('api[-_]?key') ||
+  !currentPageFilters.includes('client[-_]?secret') ||
+  !currentPageFilters.includes(
+    'JSON.stringify(redactCurrentPageFilterValue(value))',
+  )
+) {
+  throw new Error(
+    'Current-page filter/search text must redact object-valued sensitive keys before serialization.',
+  );
+}
+
+if (
+  !rbacTable.includes('disabled') ||
+  !rbacTable.includes('PlusOutlined') ||
+  !rbacTable.includes('EditOutlined') ||
+  !rbacTable.includes('DeleteOutlined')
+) {
+  throw new Error(
+    'RBAC wrapper mutation-looking controls must be disabled until write workflows are admitted.',
+  );
+}
+
+const coreFilteredPages = [
+  { name: 'users', source: usersPage },
+  { name: 'roles', source: rolesPage },
+  { name: 'permissions', source: permissionsPage },
+  { name: 'menus', source: menusPage },
+  { name: 'dicts', source: dictsPage },
+  { name: 'config', source: configPage },
+  { name: 'files', source: filesPage },
+  { name: 'operation logs', source: auditLogsPage },
+  { name: 'login logs', source: loginLogsPage },
+];
+
+for (const page of coreFilteredPages) {
+  if (
+    !page.source.includes('detailFields={detailFields}') ||
+    !page.source.includes('searchFields={searchFields}') ||
+    !page.source.includes('filterOptions={filterOptions}') ||
+    !page.source.includes('exportColumns={exportColumns}') ||
+    !page.source.includes('readOnlyReason=') ||
+    !page.source.includes('resource=')
+  ) {
+    throw new Error(
+      `Admin core page must declare bounded filters and current-page export columns: ${page.name}`,
+    );
+  }
+}
+
+if (
+  !configPage.includes('[redacted]') ||
+  !configPage.includes('formatConfigValue') ||
+  !configPage.includes("record.visibility === 'secret'")
+) {
+  throw new Error('System config detail/export must redact secret values.');
+}
+
+if (
+  !providersPage.includes('<Typography.Text type="secondary">[redacted]') ||
+  !providersPage.includes("label: 'Secret Ref'") ||
+  !providersPage.includes('selected?.secretRef, sensitive: true')
+) {
+  throw new Error(
+    'Integration provider list and detail must redact scalar secret references.',
+  );
+}
+
+if (
+  !onlineUsersPage.includes("label: 'Token ID'") ||
+  !onlineUsersPage.includes('selected?.tokenId, sensitive: true') ||
+  !onlineUsersPage.includes("label: 'Revoked Reason'") ||
+  !onlineUsersPage.includes('selected?.revokedReason') ||
+  (onlineUsersPage.match(/sensitive: true/g) ?? []).length < 2
+) {
+  throw new Error(
+    'Online user detail must redact scalar token and revoked-reason fields.',
+  );
+}
+
+const admittedFilteredPages = [
+  { exportsRows: true, name: 'messages', source: messagesPage },
+  { exportsRows: true, name: 'notices', source: noticesPage },
+  { exportsRows: true, name: 'todos', source: todosPage },
+  { exportsRows: true, name: 'approvals', source: approvalsPage },
+  { exportsRows: true, name: 'jobs', source: jobsPage },
+  { exportsRows: false, name: 'cache', source: cachePage },
+  { exportsRows: true, name: 'online users', source: onlineUsersPage },
+  { exportsRows: true, name: 'reports', source: reportsPage },
+  { exportsRows: true, name: 'export jobs', source: exportJobsPage },
+  { exportsRows: true, name: 'providers', source: providersPage },
+  { exportsRows: true, name: 'mail', source: mailPage },
+  { exportsRows: true, name: 'sms', source: smsPage },
+  { exportsRows: true, name: 'oauth', source: oauthPage },
+  { exportsRows: true, name: 'wechat', source: wechatPage },
+  { exportsRows: true, name: 'websocket', source: websocketPage },
+  { exportsRows: true, name: 'billing design', source: billingDesignPage },
+];
+
+for (const page of admittedFilteredPages) {
+  if (
+    !page.source.includes('useCurrentPageFilters') ||
+    !page.source.includes('dataSource={filteredRows}')
+  ) {
+    throw new Error(
+      `Admin admitted page must use bounded current-page filters: ${page.name}`,
+    );
+  }
+
+  if (page.exportsRows && !page.source.includes('rows={filteredRows}')) {
+    throw new Error(
+      `Admin admitted page export must use filtered rows: ${page.name}`,
+    );
+  }
 }
 
 const requestSpec = readFileSync(resolve(root, 'src/utils/request.ts'), 'utf8');
