@@ -1,13 +1,10 @@
-import {
-  LogoutOutlined,
-  SettingOutlined,
-  SkinOutlined,
-} from '@ant-design/icons';
+import { LogoutOutlined, SkinOutlined } from '@ant-design/icons';
 import { history, useModel } from '@umijs/max';
 import type { MenuProps } from 'antd';
 import { Spin } from 'antd';
 import React, { startTransition } from 'react';
-import { outLogin } from '@/services/ant-design-pro/api';
+import { registrySummary, shellMenuItems } from '@/core/shellRegistry';
+import { removeAdminToken } from '@/services/opencore/token';
 import HeaderDropdown from '../HeaderDropdown';
 
 type GlobalHeaderRightProps = {
@@ -17,8 +14,8 @@ type GlobalHeaderRightProps = {
 export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
   children,
 }) => {
-  const loginOut = async () => {
-    await outLogin();
+  const loginOut = () => {
+    removeAdminToken();
     const { search, pathname } = window.location;
     const urlParams = new URL(window.location.href).searchParams;
     const searchParams = new URLSearchParams({
@@ -38,16 +35,27 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
     const { key } = event;
     if (key === 'logout') {
       startTransition(() => {
-        setInitialState((s) => ({ ...s, currentUser: undefined }));
+        setInitialState((s) => ({
+          ...(s ?? {}),
+          currentUser: undefined,
+          menus: s?.menus ?? shellMenuItems,
+          permissions: [],
+          registrySummary: s?.registrySummary ?? registrySummary,
+        }));
       });
       loginOut();
       return;
     }
     if (key === 'theme') {
-      setInitialState((s) => ({ ...s, settingDrawerOpen: true }));
+      setInitialState((s) => ({
+        ...(s ?? {}),
+        menus: s?.menus ?? shellMenuItems,
+        permissions: s?.permissions ?? [],
+        registrySummary: s?.registrySummary ?? registrySummary,
+        settingDrawerOpen: true,
+      }));
       return;
     }
-    history.push(`/account/${key}`);
   };
 
   if (!initialState) {
@@ -61,11 +69,6 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
   }
 
   const menuItems: MenuProps['items'] = [
-    {
-      key: 'settings',
-      icon: <SettingOutlined />,
-      label: '个人设置',
-    },
     {
       key: 'theme',
       icon: <SkinOutlined />,

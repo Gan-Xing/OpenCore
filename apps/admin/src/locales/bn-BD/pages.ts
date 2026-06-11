@@ -26,7 +26,8 @@ export default {
   'pages.login.registerAccount': 'অ্যাকাউন্ট নিবন্ধন করুন',
   'pages.welcome.link': 'স্বাগতম',
   'pages.welcome.celebrationTitle': 'Ant Design Pro {v6} এ স্বাগতম',
-  'pages.welcome.alertMessage': 'দ্রুত এবং শক্তিশালী ভারী শুল্ক উপাদান প্রকাশ করা হয়েছে।',
+  'pages.welcome.alertMessage':
+    'দ্রুত এবং শক্তিশালী ভারী শুল্ক উপাদান প্রকাশ করা হয়েছে।',
   'pages.404.subTitle': 'দুঃখিত, আপনি যে পৃষ্ঠাটি দেখতে চান তা বিদ্যমান নেই।',
   'pages.404.buttonText': 'প্রধান পাতায় ফিরে যান',
   'pages.admin.subPage.title': 'এই পৃষ্ঠাটি কেবল অ্যাডমিন দ্বারা দেখা যাবে',
@@ -46,7 +47,8 @@ export default {
   'pages.searchTable.updateForm.object': 'নিরীক্ষণ অবজেক্ট',
   'pages.searchTable.updateForm.ruleProps.templateLabel': 'বিধি টেম্পলেট',
   'pages.searchTable.updateForm.ruleProps.typeLabel': 'বিধি প্রকার',
-  'pages.searchTable.updateForm.schedulingPeriod.title': 'সময়সূচী নির্ধারণ করুন',
+  'pages.searchTable.updateForm.schedulingPeriod.title':
+    'সময়সূচী নির্ধারণ করুন',
   'pages.searchTable.updateForm.schedulingPeriod.timeLabel': 'শুরুর সময়',
   'pages.searchTable.updateForm.schedulingPeriod.timeRules':
     'একটি শুরুর সময় চয়ন করুন!',

@@ -52,3 +52,9 @@
 ## 当前边界
 
 S3-S9、runtime integration R-1-R7、OpenForge V1 A-L 和 Quality Cycle 001 已完成。Q001 已引入轻量协同、operations/report 设计位和 integration provider/design 边界；仍未实现 CRM、ERP、MES、WMS、商城、真实支付、会员、多租户、知识库、RAG、Agent。OpenForge V1 默认 dry-run，真实写入必须显式 `--yes`，且不写 Prisma schema 或 migrations。
+
+## 2026-06-11 Admin Pro V6 迁移
+
+`apps/admin` 已切换到官方 Ant Design Pro V6 架构：正式配置为 `apps/admin/config/config.ts` 与 `apps/admin/config/routes.ts`，OpenAPI plugin 指向 `packages/contracts/openapi/opencore-api.json`，proxy 默认指向本地 OpenCore API `http://localhost:3000`。
+
+正式页面来自 `origin/main` 的 Dashboard、System、Security、Monitor、Tools、Collaboration、Optional、Integrations 和 403/404/500；Ant Design Pro demo routes/pages/services/mocks 已从正式源码删除。登录/current user 使用 `POST /api/auth/login`、`GET /api/auth/me` 和 bearer token，权限仍使用 `Permission.code` 并由 module-registry route/access drift gate 校验。

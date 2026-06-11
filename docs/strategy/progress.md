@@ -1682,3 +1682,44 @@ OpenForge V1 loop 已完成。下一轮建议另起 S10 collaboration handoff/go
 - OpenForge V1 Stage J 已完成 CLI UX、doctor 和 temp repo e2e：`openforge:doctor` 检查 workspace readiness，CLI help/unknown command 已强化，temp repo e2e 覆盖 plan/diff/apply/idempotency/conflict/rollback，all-skipped apply 不再覆盖原 manifest。
 - OpenForge V1 Stage K 已完成 CI gate：`openforge:test` 与 `openforge:gate` root scripts 已新增，OpenForge CI Gate 文档记录完整本地门禁、CI 集成方式和 no-write check，gate/doctor/check/diff 均验证不写生成输出。
 - OpenForge V1 Stage L 已完成最终文档、roadmap 和交接：README、docs index、handoff index、roadmaps、architecture、schema/template authoring、apply/rollback runbook、module/strategy docs 和 progress 均同步到 A-L complete。
+
+## 2026-06-11 Admin Ant Design Pro V6 Migration
+
+### 完成内容
+
+- 在 `fix/admin-ant-design-pro-v6` 保留官方 Ant Design Pro V6 架构底座：`apps/admin/config/config.ts`、`config/routes.ts`、`defaultSettings`、`proxy`、`src/app.tsx`、`requestErrorConfig`、components、locales、OpenAPI plugin、request-record、React Query、Vitest。
+- 从 `origin/main` 迁移 OpenCore 正式页面：Dashboard、System、Security、Monitor、Tools、Collaboration、Optional、Integrations、403/404/500，以及 `core/shellRegistry`、shared detail/export/filter helper、`EmptyState`。
+- 删除 Ant Design Pro demo formal surface：`/welcome`、`/admin`、`/form/*`、`/list/*`、`/profile/*`、`/result/*`、`/account/*`、`/chatbot`、`/user/register`、`/user/register-result`、demo mocks、demo services、demo `oneapi.json`、demo route-simple script 和 demo generated typings。
+- 重建正式 `config/routes.ts`：根路径跳 `/dashboard`，正式路由只保留 OpenCore 页面、`/user/login` 和 403/404/500；`pnpm registry:admin-routes:check` 改为解析 `apps/admin/config/routes.ts`。
+- 重写 Admin auth/request：`POST /api/auth/login`、`GET /api/auth/me` 通过 `@opencore/sdk` 调用；token key 为 `opencore.admin.token`；request interceptor 追加 bearer、`x-request-id`、`x-trace-id`；401 跳登录，403 跳 `/403`。
+- 复查后补齐页面级联调缺口：新增 `src/services/opencore/client.ts` 和 `src/services/opencore/platform.ts`，`System/Users` 通过 `createRbacClient(...).listUsers` 读取真实 `/api/core/users`，`Monitor/Status` 通过 `createMonitoringClient(...).getStatus` 读取真实 `/api/monitor/status`；fixture 只保留为失败兜底。
+- OpenForge Admin template patch plan 已从 `.umirc.ts` 改为 `apps/admin/config/routes.ts`，并同步 template authoring / V1 architecture docs。
+
+### 已验证
+
+- `pnpm format:check` pass。
+- `pnpm lint` pass。
+- `pnpm typecheck` pass。
+- `pnpm test` pass。
+- `pnpm build` pass。
+- `pnpm --dir apps/admin test` pass。
+- `pnpm test:admin` pass。
+- `pnpm build:admin` pass。
+- `pnpm openapi:export` pass。
+- `pnpm openapi:check` pass。
+- `pnpm openapi:registry-tags:check` pass。
+- `pnpm registry:admin-routes:check` pass。
+- `pnpm sdk:check` pass。
+- `pnpm openforge:check` pass。
+- `pnpm openforge:gate` pass。
+- `NX_DAEMON=false pnpm nx test openforge` pass。
+- Re-audit targeted checks pass：`origin/main` 正式页面目录与工作区逐项对齐，无缺失；demo API/routes/services 不在正式 config/app/login/request path；Admin smoke 强制检查 `System/Users` 和 `Monitor/Status` 页面级 SDK client 调用。
+- `pnpm prisma:migrate` pass：local OpenCore DB 无待执行 migration。
+- `pnpm prisma:seed` pass：local DB seed 完成 89 permissions、32 menus、2 roles 和 system-management baseline。
+- Local API/Admin HTTP smoke pass：API health live/ready、Admin `/user/login`、`/dashboard`、`/system/users`、`/monitor/status`、`/403` SPA routes、`POST /api/auth/login`、`GET /api/auth/me`、`GET /api/core/users`、`GET /api/monitor/status`、无 bearer 401、临时 viewer 访问 Monitor 403、`x-request-id`/`x-trace-id` response preservation。
+
+### 剩余风险
+
+- 交互式浏览器自动化未运行：`gstack browse` 在当前 checkout 未构建且 Playwright/Puppeteer 未安装。已用 live HTTP smoke 覆盖 API/Admin dev server、登录/current user、System/Monitor SDK API、401/403 和 trace headers；Admin 浏览器侧 request/error 分支由 smoke/Vitest 覆盖。
+- 不应误读为所有业务页面都已 live 后端化：本次迁移保留了 `origin/main` 已有页面能力，复查后补齐 handoff 要求的至少一个 System 页面和一个 Monitor 页面 live SDK 调用；Collaboration、Integration、Optional、部分 System/Security/Monitor 页面仍按 main 的 fixture-backed/read-only baseline 展示，等待各自后续 admission 扩展。
+- `pnpm build` 首次在并行 Nx workspace build 中遇到一次 Umi native worker crash；随后 `pnpm build:admin` 和 `pnpm build` 均通过，Nx 将 `admin:build` 标记为 flaky，后续 CI 仍需观察。

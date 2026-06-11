@@ -64,28 +64,28 @@ npm install                                                # Update dependencies
 
 **Common commands:**
 
-| Command | Description |
-|---------|-------------|
-| `npm start` | Start dev server (UMI_ENV=dev, with Mock) |
-| `npm run dev` | Start dev server (UMI_ENV=dev, no Mock) |
-| `npm run start:no-mock` | Start without Mock |
-| `npm run start:pre` | Pre-production environment |
-| `npm run start:test` | Test environment |
-| `npm run build` | Build for production |
-| `npm run preview` | Preview built output (run `npm run build` first, port 8000) |
-| `npm run preview:build` | Build and preview (port 8000) |
-| `npm run deploy` | Build and deploy to GitHub Pages |
-| `npm run analyze` | Analyze bundle size |
-| `npm run lint` | Lint (Biome + TypeScript) |
-| `npm run biome` | Auto-fix with Biome |
-| `npm test` | Run tests |
-| `npm run test:coverage` | Test with coverage |
-| `npm run test:update` | Update test snapshots |
-| `npm run tsc` | Type check without emitting |
-| `npm run i18n-remove` | Remove i18n wrappers (locale=zh-CN) |
-| `npm run record` | Record request data for login scene |
-| `npm run openapi` | Generate API code from OpenAPI schema |
-| `npm run simple` | Strip demo pages and unused deps |
+| Command                 | Description                                                 |
+| ----------------------- | ----------------------------------------------------------- |
+| `npm start`             | Start dev server (UMI_ENV=dev, with Mock)                   |
+| `npm run dev`           | Start dev server (UMI_ENV=dev, no Mock)                     |
+| `npm run start:no-mock` | Start without Mock                                          |
+| `npm run start:pre`     | Pre-production environment                                  |
+| `npm run start:test`    | Test environment                                            |
+| `npm run build`         | Build for production                                        |
+| `npm run preview`       | Preview built output (run `npm run build` first, port 8000) |
+| `npm run preview:build` | Build and preview (port 8000)                               |
+| `npm run deploy`        | Build and deploy to GitHub Pages                            |
+| `npm run analyze`       | Analyze bundle size                                         |
+| `npm run lint`          | Lint (Biome + TypeScript)                                   |
+| `npm run biome`         | Auto-fix with Biome                                         |
+| `npm test`              | Run tests                                                   |
+| `npm run test:coverage` | Test with coverage                                          |
+| `npm run test:update`   | Update test snapshots                                       |
+| `npm run tsc`           | Type check without emitting                                 |
+| `npm run i18n-remove`   | Remove i18n wrappers (locale=zh-CN)                         |
+| `npm run record`        | Record request data for login scene                         |
+| `npm run openapi`       | Generate API code from OpenAPI schema                       |
+| `npm run simple`        | Strip demo pages and unused deps                            |
 
 > 💡 `UMI_ENV` switches environment configs, mapping to different proxy rules in `config/proxy.ts`.
 
@@ -126,10 +126,10 @@ export default [
 import { useNavigate, useParams, useLocation } from '@umijs/max';
 
 const navigate = useNavigate();
-navigate('/dashboard');        // navigate
-navigate(-1);                  // go back
+navigate('/dashboard'); // navigate
+navigate(-1); // go back
 
-const { id } = useParams();   // dynamic param /user/:id
+const { id } = useParams(); // dynamic param /user/:id
 const location = useLocation(); // current route info
 ```
 
@@ -146,21 +146,22 @@ const location = useLocation(); // current route info
 ```ts
 // File: config/defaultSettings.ts
 export default {
-  navTheme: 'light',               // nav theme: light / dark
-  colorPrimary: '#1890ff',         // primary color
-  layout: 'mix',                   // layout mode: side / top / mix
-  contentWidth: 'Fluid',           // content width: Fluid / Fixed
-  fixedHeader: false,              // fixed header
-  fixSiderbar: true,               // fixed sidebar
-  colorWeak: false,                // color weak mode
-  title: 'Ant Design Pro',         // site title
-  logo: 'https://...',             // logo URL
-  iconfontUrl: '',                 // iconfont URL
-  token: {},                       // ProLayout token for fine-grained style customization
+  navTheme: 'light', // nav theme: light / dark
+  colorPrimary: '#1890ff', // primary color
+  layout: 'mix', // layout mode: side / top / mix
+  contentWidth: 'Fluid', // content width: Fluid / Fixed
+  fixedHeader: false, // fixed header
+  fixSiderbar: true, // fixed sidebar
+  colorWeak: false, // color weak mode
+  title: 'Ant Design Pro', // site title
+  logo: 'https://...', // logo URL
+  iconfontUrl: '', // iconfont URL
+  token: {}, // ProLayout token for fine-grained style customization
 };
 ```
 
 **Layout modes:**
+
 - `side` — Side navigation
 - `top` — Top navigation
 - `mix` — Top + side mixed navigation
@@ -171,10 +172,7 @@ export default {
 import { PageContainer } from '@ant-design/pro-components';
 
 const Page = () => (
-  <PageContainer
-    header={{ title: 'Page Title' }}
-    content="Page description"
-  >
+  <PageContainer header={{ title: 'Page Title' }} content="Page description">
     {/* Page content */}
   </PageContainer>
 );
@@ -194,7 +192,7 @@ import { useState } from 'react';
 
 export default function useCounter() {
   const [count, setCount] = useState(0);
-  const increment = () => setCount(c => c + 1);
+  const increment = () => setCount((c) => c + 1);
   return { count, increment };
 }
 ```
@@ -261,8 +259,8 @@ const { initialState } = useModel('@@initialState');
 export const request: RequestConfig = {
   baseURL: 'https://api.example.com',
   timeout: 10000,
-  requestInterceptors: [],   // request interceptors
-  responseInterceptors: [],  // response interceptors
+  requestInterceptors: [], // request interceptors
+  responseInterceptors: [], // response interceptors
 };
 ```
 
@@ -298,7 +296,9 @@ Auto-generates API calling code under `src/services/` based on `config/oneapi.js
 
 ```ts
 // File: src/access.ts
-export default function access(initialState: { currentUser?: API.CurrentUser }) {
+export default function access(initialState: {
+  currentUser?: API.CurrentUser;
+}) {
   const { currentUser } = initialState;
   return {
     canAdmin: currentUser?.access === 'admin',
@@ -321,11 +321,13 @@ import { Access, useAccess } from '@umijs/max';
 // Declarative
 <Access accessible={access.canAdmin}>
   <AdminPanel />
-</Access>
+</Access>;
 
 // Imperative
 const access = useAccess();
-if (access.canAdmin) { /* ... */ }
+if (access.canAdmin) {
+  /* ... */
+}
 ```
 
 → See [Umi Max Permissions](https://umijs.org/en-US/docs/max/access)
@@ -366,14 +368,14 @@ const intl = useIntl();
 intl.formatMessage({ id: 'menu.welcome' });
 
 // Component
-<FormattedMessage id="menu.welcome" />
+<FormattedMessage id="menu.welcome" />;
 ```
 
 **Switch locale:**
 
 ```tsx
 import { setLocale } from '@umijs/max';
-setLocale('en-US', false);  // false = no page reload
+setLocale('en-US', false); // false = no page reload
 ```
 
 → See [Umi Max i18n](https://umijs.org/en-US/docs/max/i18n)
@@ -384,13 +386,17 @@ setLocale('en-US', false);  // false = no page reload
 
 ```css
 /* example.module.less */
-.container { padding: 24px; }
-.title { font-size: 16px; }
+.container {
+  padding: 24px;
+}
+.title {
+  font-size: 16px;
+}
 ```
 
 ```tsx
 import styles from './example.module.less';
-<div className={styles.container} />
+<div className={styles.container} />;
 ```
 
 **antd-style (CSS-in-JS):**
@@ -406,7 +412,7 @@ const useStyles = createStyles(({ token, css }) => ({
 }));
 
 const { styles } = useStyles();
-<div className={styles.card} />
+<div className={styles.card} />;
 ```
 
 **Tailwind CSS (v4):** Use directly in className:
@@ -454,7 +460,9 @@ Test files go next to the component, named `*.test.ts(x)`.
 // File: mock/user.ts
 export default {
   'GET /api/currentUser': { name: 'Serati Ma', access: 'admin' },
-  'POST /api/login': (req, res) => { res.end('ok'); },
+  'POST /api/login': (req, res) => {
+    res.end('ok');
+  },
 };
 ```
 
@@ -487,6 +495,7 @@ export default {
 Edit `colorPrimary` in `config/defaultSettings.ts`. Use SettingDrawer for live preview in dev mode.
 
 **Q: How to add a new page?**
+
 1. Create component in `src/pages/` 2. Add route in `config/routes.ts` 3. Add menu translation in `src/locales/` (if needed)
 
 **Q: How to add global state?**
@@ -494,15 +503,18 @@ Create a file in `src/models/` exporting a custom Hook, then use `useModel('file
 
 **Q: How to upgrade the project?**
 First, install the pro-upgrade skill into your project:
+
 ```bash
 npx skills add ant-design/ant-design-pro
 ```
+
 Then run `/pro-upgrade` in Claude Code at the project root — AI will auto-diff the latest template and assist your upgrade (deps, config, code patterns, etc.), with conservative handling for ambiguous merges. For other AI assistants, paste the content of `.claude/skills/pro-upgrade/SKILL.md` to them.
 
 **Q: How to deploy?**
 `npm run build` generates `dist/`. Deploy to any static file server. Set `publicPath` for non-root deployments. `npm run deploy` builds and publishes to GitHub Pages automatically (pushes to gh-pages branch).
 
 **Q: How to use OpenAPI code generation?**
+
 1. Configure `openAPI` in `config/config.ts` 2. Run `npm run openapi` 3. Code is auto-generated under `src/services/`
 
 → See [umi FAQ](https://umijs.org/en-US/docs/introduce/faq)
@@ -577,6 +589,7 @@ Auto-upgrade to the latest Ant Design Pro version. Diffs the latest template aga
 ```
 
 What it does:
+
 1. Clones the latest Pro template
 2. Classifies framework vs. business files
 3. Merges dependency updates, config changes, and code pattern migrations
@@ -593,6 +606,7 @@ Query antd component APIs, debug issues, lint for deprecated usage, and assist m
 ```
 
 Key commands available:
+
 - `npx antd info <Component>` — props, types, version info
 - `npx antd demo <Component> <demo>` — working code examples
 - `npx antd lint ./src` — check for deprecated/problematic usage

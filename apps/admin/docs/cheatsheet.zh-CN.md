@@ -64,28 +64,28 @@ npm install                                                # 更新依赖
 
 **常用命令：**
 
-| 命令 | 说明 |
-|------|------|
-| `npm start` | 启动开发服务器（UMI_ENV=dev，带 Mock） |
-| `npm run dev` | 启动开发服务器（UMI_ENV=dev，无 Mock） |
-| `npm run start:no-mock` | 无 Mock 启动 |
-| `npm run start:pre` | 预发布环境启动 |
-| `npm run start:test` | 测试环境启动 |
-| `npm run build` | 构建生产产物 |
-| `npm run preview` | 预览已构建产物（需先 `npm run build`，端口 8000） |
-| `npm run preview:build` | 构建并本地预览（端口 8000） |
-| `npm run deploy` | 构建并部署到 GitHub Pages |
-| `npm run analyze` | 构建产物体积分析 |
-| `npm run lint` | 代码检查（Biome + TypeScript） |
-| `npm run biome` | Biome 自动修复 |
-| `npm test` | 运行测试 |
-| `npm run test:coverage` | 测试覆盖率 |
-| `npm run test:update` | 更新测试快照 |
-| `npm run tsc` | 类型检查（不生成文件） |
-| `npm run i18n-remove` | 移除国际化（locale=zh-CN） |
-| `npm run record` | 录制登录场景请求数据 |
-| `npm run openapi` | 根据 OpenAPI 生成 API 代码 |
-| `npm run simple` | 精简模式（删除示例页面和多余依赖） |
+| 命令                    | 说明                                              |
+| ----------------------- | ------------------------------------------------- |
+| `npm start`             | 启动开发服务器（UMI_ENV=dev，带 Mock）            |
+| `npm run dev`           | 启动开发服务器（UMI_ENV=dev，无 Mock）            |
+| `npm run start:no-mock` | 无 Mock 启动                                      |
+| `npm run start:pre`     | 预发布环境启动                                    |
+| `npm run start:test`    | 测试环境启动                                      |
+| `npm run build`         | 构建生产产物                                      |
+| `npm run preview`       | 预览已构建产物（需先 `npm run build`，端口 8000） |
+| `npm run preview:build` | 构建并本地预览（端口 8000）                       |
+| `npm run deploy`        | 构建并部署到 GitHub Pages                         |
+| `npm run analyze`       | 构建产物体积分析                                  |
+| `npm run lint`          | 代码检查（Biome + TypeScript）                    |
+| `npm run biome`         | Biome 自动修复                                    |
+| `npm test`              | 运行测试                                          |
+| `npm run test:coverage` | 测试覆盖率                                        |
+| `npm run test:update`   | 更新测试快照                                      |
+| `npm run tsc`           | 类型检查（不生成文件）                            |
+| `npm run i18n-remove`   | 移除国际化（locale=zh-CN）                        |
+| `npm run record`        | 录制登录场景请求数据                              |
+| `npm run openapi`       | 根据 OpenAPI 生成 API 代码                        |
+| `npm run simple`        | 精简模式（删除示例页面和多余依赖）                |
 
 > 💡 `UMI_ENV` 用于切换环境配置，对应 `config/proxy.ts` 中的不同代理规则。
 
@@ -126,10 +126,10 @@ export default [
 import { useNavigate, useParams, useLocation } from '@umijs/max';
 
 const navigate = useNavigate();
-navigate('/dashboard');        // 跳转
-navigate(-1);                  // 后退
+navigate('/dashboard'); // 跳转
+navigate(-1); // 后退
 
-const { id } = useParams();   // 获取动态参数 /user/:id
+const { id } = useParams(); // 获取动态参数 /user/:id
 const location = useLocation(); // 当前路由信息
 ```
 
@@ -146,21 +146,22 @@ const location = useLocation(); // 当前路由信息
 ```ts
 // File: config/defaultSettings.ts
 export default {
-  navTheme: 'light',               // 导航主题：light / dark
-  colorPrimary: '#1890ff',         // 主题色
-  layout: 'mix',                   // 布局模式：side / top / mix
-  contentWidth: 'Fluid',           // 内容宽度：Fluid / Fixed
-  fixedHeader: false,              // 固定顶部导航
-  fixSiderbar: true,               // 固定侧边栏
-  colorWeak: false,                // 色弱模式
-  title: 'Ant Design Pro',         // 站点标题
-  logo: 'https://...',             // Logo URL
-  iconfontUrl: '',                 // 图标字体 URL
-  token: {},                       // ProLayout token，用于细粒度样式定制
+  navTheme: 'light', // 导航主题：light / dark
+  colorPrimary: '#1890ff', // 主题色
+  layout: 'mix', // 布局模式：side / top / mix
+  contentWidth: 'Fluid', // 内容宽度：Fluid / Fixed
+  fixedHeader: false, // 固定顶部导航
+  fixSiderbar: true, // 固定侧边栏
+  colorWeak: false, // 色弱模式
+  title: 'Ant Design Pro', // 站点标题
+  logo: 'https://...', // Logo URL
+  iconfontUrl: '', // 图标字体 URL
+  token: {}, // ProLayout token，用于细粒度样式定制
 };
 ```
 
 **布局模式：**
+
 - `side` — 左侧导航
 - `top` — 顶部导航
 - `mix` — 顶部 + 侧边混合导航
@@ -171,10 +172,7 @@ export default {
 import { PageContainer } from '@ant-design/pro-components';
 
 const Page = () => (
-  <PageContainer
-    header={{ title: '页面标题' }}
-    content="页面描述"
-  >
+  <PageContainer header={{ title: '页面标题' }} content="页面描述">
     {/* 页面内容 */}
   </PageContainer>
 );
@@ -194,7 +192,7 @@ import { useState } from 'react';
 
 export default function useCounter() {
   const [count, setCount] = useState(0);
-  const increment = () => setCount(c => c + 1);
+  const increment = () => setCount((c) => c + 1);
   return { count, increment };
 }
 ```
@@ -261,8 +259,8 @@ const { initialState } = useModel('@@initialState');
 export const request: RequestConfig = {
   baseURL: 'https://api.example.com',
   timeout: 10000,
-  requestInterceptors: [],   // 请求拦截器
-  responseInterceptors: [],  // 响应拦截器
+  requestInterceptors: [], // 请求拦截器
+  responseInterceptors: [], // 响应拦截器
 };
 ```
 
@@ -298,7 +296,9 @@ npm run openapi
 
 ```ts
 // File: src/access.ts
-export default function access(initialState: { currentUser?: API.CurrentUser }) {
+export default function access(initialState: {
+  currentUser?: API.CurrentUser;
+}) {
   const { currentUser } = initialState;
   return {
     canAdmin: currentUser?.access === 'admin',
@@ -321,11 +321,13 @@ import { Access, useAccess } from '@umijs/max';
 // 声明式
 <Access accessible={access.canAdmin}>
   <AdminPanel />
-</Access>
+</Access>;
 
 // 命令式
 const access = useAccess();
-if (access.canAdmin) { /* ... */ }
+if (access.canAdmin) {
+  /* ... */
+}
 ```
 
 → 更多内容见 [Umi Max 权限](https://umijs.org/docs/max/access)
@@ -366,14 +368,14 @@ const intl = useIntl();
 intl.formatMessage({ id: 'menu.welcome' });
 
 // 组件方式
-<FormattedMessage id="menu.welcome" />
+<FormattedMessage id="menu.welcome" />;
 ```
 
 **切换语言：**
 
 ```tsx
 import { setLocale } from '@umijs/max';
-setLocale('en-US', false);  // false = 不刷新页面
+setLocale('en-US', false); // false = 不刷新页面
 ```
 
 → 更多内容见 [Umi Max 国际化](https://umijs.org/docs/max/i18n)
@@ -384,13 +386,17 @@ setLocale('en-US', false);  // false = 不刷新页面
 
 ```css
 /* example.module.less */
-.container { padding: 24px; }
-.title { font-size: 16px; }
+.container {
+  padding: 24px;
+}
+.title {
+  font-size: 16px;
+}
 ```
 
 ```tsx
 import styles from './example.module.less';
-<div className={styles.container} />
+<div className={styles.container} />;
 ```
 
 **antd-style（CSS-in-JS）：**
@@ -406,7 +412,7 @@ const useStyles = createStyles(({ token, css }) => ({
 }));
 
 const { styles } = useStyles();
-<div className={styles.card} />
+<div className={styles.card} />;
 ```
 
 **Tailwind CSS（v4）：** 直接在 className 中使用：
@@ -454,7 +460,9 @@ npm run test:update         # 更新快照
 // File: mock/user.ts
 export default {
   'GET /api/currentUser': { name: 'Serati Ma', access: 'admin' },
-  'POST /api/login': (req, res) => { res.end('ok'); },
+  'POST /api/login': (req, res) => {
+    res.end('ok');
+  },
 };
 ```
 
@@ -487,6 +495,7 @@ export default {
 修改 `config/defaultSettings.ts` 的 `colorPrimary`，开发时可用 SettingDrawer 实时调整。
 
 **Q: 如何添加新页面？**
+
 1. 在 `src/pages/` 下创建组件 2. 在 `config/routes.ts` 添加路由 3. 在 `src/locales/` 添加菜单翻译（如需）
 
 **Q: 如何添加全局状态？**
@@ -494,15 +503,18 @@ export default {
 
 **Q: 如何升级项目？**
 先将 pro-upgrade skill 安装到项目中：
+
 ```bash
 npx skills add ant-design/ant-design-pro
 ```
+
 然后在项目根目录用 Claude Code 运行 `/pro-upgrade`，AI 会自动对比最新模板并辅助完成升级（依赖、配置、代码模式等），遇到冲突时会保守处理并询问确认。如使用其他 AI 助手，可将 `.claude/skills/pro-upgrade/SKILL.md` 中的内容提供给它。
 
 **Q: 如何部署？**
 `npm run build` 生成 `dist/` 目录，部署到任意静态服务器。配置 `publicPath` 处理非根目录部署。`npm run deploy` 会自动构建并发布到 GitHub Pages（推送到 gh-pages 分支）。
 
 **Q: 如何使用 OpenAPI 代码生成？**
+
 1. 在 `config/config.ts` 配置 `openAPI` 2. 运行 `npm run openapi` 3. 自动生成 `src/services/` 下的代码
 
 → 更多内容见 [umi FAQ](https://umijs.org/docs/introduce/faq)
@@ -577,6 +589,7 @@ npm install                                                 # 更新依赖
 ```
 
 执行流程：
+
 1. 克隆最新 Pro 模板
 2. 将文件分类为框架文件和业务文件
 3. 合并依赖更新、配置变更和代码模式迁移
@@ -593,6 +606,7 @@ npm install                                                 # 更新依赖
 ```
 
 常用命令：
+
 - `npx antd info <Component>` — props、类型、版本信息
 - `npx antd demo <Component> <demo>` — 可运行的代码示例
 - `npx antd lint ./src` — 检查废弃或有问题的用法

@@ -39,7 +39,7 @@ Patch-only templates produce review markdown. They do not edit the target human 
 Patch-only plans cover:
 
 - `apps/api/src/app/app.module.ts`
-- `apps/admin/.umirc.ts`
+- `apps/admin/config/routes.ts`
 - `apps/admin/src/access.ts`
 - `packages/module-registry/src/modules.ts`
 - `packages/sdk/src/index.ts`

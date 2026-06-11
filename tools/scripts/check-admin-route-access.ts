@@ -4,7 +4,10 @@ import { listModules } from '@opencore/module-registry';
 import ts from 'typescript';
 
 const root = process.cwd();
-const umiConfig = readFileSync(resolve(root, 'apps/admin/.umirc.ts'), 'utf8');
+const routesConfig = readFileSync(
+  resolve(root, 'apps/admin/config/routes.ts'),
+  'utf8',
+);
 const accessSource = readFileSync(
   resolve(root, 'apps/admin/src/access.ts'),
   'utf8',
@@ -42,7 +45,7 @@ function getStringProperty(
 
 function collectRouteAccessBindings(sourceText: string): Map<string, string> {
   const sourceFile = ts.createSourceFile(
-    'apps/admin/.umirc.ts',
+    'apps/admin/config/routes.ts',
     sourceText,
     ts.ScriptTarget.Latest,
     true,
@@ -101,12 +104,12 @@ function collectAccessBindings(sourceText: string): Map<string, string> {
   return bindings;
 }
 
-const routeAccessBindings = collectRouteAccessBindings(umiConfig);
+const routeAccessBindings = collectRouteAccessBindings(routesConfig);
 const accessBindings = collectAccessBindings(accessSource);
 
 for (const moduleDefinition of listModules()) {
   for (const route of moduleDefinition.admin?.routes ?? []) {
-    if (!umiConfig.includes(`path: '${route.path}'`)) {
+    if (!routesConfig.includes(`path: '${route.path}'`)) {
       issues.push(
         `missing-admin-route module=${moduleDefinition.code} path=${route.path}`,
       );

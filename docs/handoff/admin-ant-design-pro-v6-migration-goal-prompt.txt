@@ -1,0 +1,83 @@
+/goal
+
+直接在 fix/admin-ant-design-pro-v6 分支上完成 OpenCore Admin 架构迁移。读取并执行 docs/handoff/2026-06-11-admin-ant-design-pro-v6-migration-handoff.md；如果文件不存在，先按本目标创建该 handoff，再继续实施。不要新开分支，不要只改一个页面，必须完成整个 Admin 架构纠偏和后端联调闭环。
+
+先执行：
+git fetch origin
+git checkout fix/admin-ant-design-pro-v6
+git pull origin fix/admin-ant-design-pro-v6
+git status
+
+核心规则：
+1. 架构来源：当前 fix/admin-ant-design-pro-v6 的 apps/admin 官方 Ant Design Pro V6 结构。
+2. 业务来源：origin/main 的 OpenCore Admin 页面、SDK、权限、module-registry、OpenAPI。
+3. 后端来源：apps/api + packages/sdk + packages/contracts。
+4. 不允许直接 merge demo 业务。
+5. 不允许保留 Ant Design Pro demo API、demo services、demo routes 到正式运行路径。
+6. 不允许删除 main 已完成的 Dashboard/System/Security/Monitor/Tools/Collaboration/Optional/Integrations 页面能力。
+7. 不允许权限退化成角色名判断，必须继续使用 Permission.code。
+8. 不允许绕过 @opencore/sdk 或 OpenAPI 契约手写漂移 API 类型。
+9. 不允许破坏 module-registry、OpenForge、OpenAPI drift gate。
+
+必须读取：
+- 当前分支 apps/admin/package.json
+- 当前分支 apps/admin/config/config.ts
+- 当前分支 apps/admin/config/routes.ts
+- 当前分支 apps/admin/config/proxy.ts
+- 当前分支 apps/admin/src/app.tsx
+- 当前分支 apps/admin/src/requestErrorConfig.ts
+- 当前分支 apps/admin/src/components/**
+- 当前分支 apps/admin/src/locales/**
+- 当前分支 apps/admin/src/pages/user/login/**
+- origin/main:apps/admin/.umirc.ts
+- origin/main:apps/admin/src/access.ts
+- origin/main:apps/admin/src/pages/**
+- origin/main:apps/admin/src/core/**
+- origin/main:apps/admin/src/utils/**
+- origin/main:packages/sdk/**
+- origin/main:packages/module-registry/**
+- origin/main:packages/contracts/**
+- origin/main:apps/api/src/modules/**
+- tools/generator/src/templates/**
+
+执行阶段：
+A. 审计当前分支与 origin/main Admin 差异，写 docs/handoff/admin-ant-design-pro-v6-migration-notes.md。
+B. 保留 Pro V6 config/config.ts、routes.ts、defaultSettings、proxy、src/app.tsx、requestErrorConfig、components、locales、OpenAPI plugin、request-record、React Query、Vitest 等架构底座。
+C. 删除或隔离 demo routes/pages/services：/welcome、/admin、/form、/list、/profile、/result、/account、/chatbot、demo oneapi、demo services、pro-api.ant-design-demo。
+D. 迁移 origin/main 的 OpenCore 页面：Dashboard、System、Security、Monitor、Tools、Collaboration、Optional、Integrations、403/404/500。
+E. 重建 config/routes.ts，只保留 OpenCore 正式路由、/user/login、403/404/500，根路径 redirect 到 /dashboard。
+F. 重写 getInitialState、login、currentUser、request、token storage，调用 OpenCore 后端 /api/auth/login 与 /api/auth/me。
+G. 重写 proxy/baseURL/openAPI 配置，指向 OpenCore API 和 OpenCore OpenAPI snapshot，不使用 demo API。
+H. 迁移 access.ts，保持 Permission.code 判断，确保 pnpm registry:admin-routes:check 通过。
+I. 迁移 Admin smoke/vitest/typecheck/build/lint/Nx 配置，确保 root gate 不破。
+J. 更新 OpenForge Admin templates，使后续生成页面符合新 Pro V6 架构。
+K. 做 API/Admin 联调 smoke；如无法 live smoke，写明原因并保证 build/test/smoke 通过。
+L. 更新 README、docs、handoff、progress。
+
+后端联调要求：
+- 登录 POST /api/auth/login
+- 当前用户 GET /api/auth/me
+- token 使用 Authorization Bearer
+- request headers 保留 x-request-id / x-trace-id
+- 401 跳 /user/login?redirect=
+- 403 显示无权限页
+- API 错误进入 requestErrorConfig
+- 页面接口通过 @opencore/sdk 或 OpenAPI generated service
+
+最终必须通过：
+pnpm format:check
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+pnpm build:admin
+pnpm test:admin
+pnpm openapi:export
+pnpm openapi:check
+pnpm openapi:registry-tags:check
+pnpm registry:admin-routes:check
+pnpm sdk:check
+pnpm openforge:check
+pnpm openforge:gate
+
+失败就继续修复，不要停止重新规划。完成后输出迁移摘要、保留页面、删除/隔离 demo 清单、后端联调路径、测试结果、剩余风险和 commit summary。

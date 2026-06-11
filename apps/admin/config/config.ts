@@ -190,17 +190,15 @@ export default defineConfig({
   openAPI: [
     {
       requestLibPath: "import { request } from '@umijs/max'",
-      // 或者使用在线的版本
-      // schemaPath: "https://gw.alipayobjects.com/os/antfincdn/M%24jrzTTYJN/oneapi.json"
-      schemaPath: join(__dirname, 'oneapi.json'),
+      schemaPath: join(
+        __dirname,
+        '../../../packages/contracts/openapi/opencore-api.json',
+      ),
       mock: false,
     },
   ],
 
-  mock: {
-    include: ['src/pages/**/_mock.ts'],
-    exclude: ['mock/requestRecord.mock.js', 'mock/utils.ts'],
-  },
+  mock: false,
   utoopack: {
     module: {
       rules: {

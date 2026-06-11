@@ -1,0 +1,699 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+const root = process.cwd();
+const packageJson = JSON.parse(
+  readFileSync(resolve(root, 'package.json'), 'utf8'),
+);
+const deps = {
+  ...(packageJson.devDependencies ?? {}),
+  ...(packageJson.dependencies ?? {}),
+};
+const templatePlaceholder = (name) => '${' + name + '}';
+const pathTemplatePlaceholder = templatePlaceholder('path');
+const textTemplatePlaceholder = templatePlaceholder('text');
+const resourceTemplatePlaceholder = templatePlaceholder('resource');
+
+const requiredVersions = {
+  '@umijs/max': /^(\^)?4\./,
+  '@ant-design/pro-components': /^(\^)?3\./,
+  '@opencore/sdk': /^workspace:\*$/,
+  antd: /^(\^)?6\./,
+  react: /^(\^)?19\./,
+  'react-dom': /^(\^)?19\./,
+  '@opencore/module-registry': /^workspace:\*$/,
+};
+
+for (const [name, pattern] of Object.entries(requiredVersions)) {
+  const version = deps[name];
+  if (!version || !pattern.test(version)) {
+    throw new Error(
+      `Expected ${name} to match ${pattern}, received ${version ?? 'missing'}`,
+    );
+  }
+}
+
+const config = readFileSync(resolve(root, 'config/routes.ts'), 'utf8');
+if (
+  config.includes("path: '/welcome'") ||
+  config.includes("path: '/admin'") ||
+  config.includes("path: '/form'") ||
+  config.includes("path: '/list'") ||
+  config.includes("path: '/profile'") ||
+  config.includes("path: '/result'") ||
+  config.includes("path: '/account'") ||
+  config.includes("path: '/chatbot'") ||
+  config.includes("path: '/user/register'")
+) {
+  throw new Error(
+    'Ant Design Pro demo routes must not be mounted in formal admin routes.',
+  );
+}
+
+for (const requiredRoute of [
+  "path: '/dashboard'",
+  "path: '/tools/openapi'",
+  "path: '/system/users'",
+  "path: '/system/roles'",
+  "path: '/system/permissions'",
+  "path: '/system/menus'",
+  "path: '/system/dicts'",
+  "path: '/system/config'",
+  "path: '/system/files'",
+  "path: '/security/login-logs'",
+  "path: '/security/operation-logs'",
+  "path: '/monitor/status'",
+  "path: '/monitor/version'",
+  "path: '/monitor/queues'",
+  "path: '/tools/export'",
+  "path: '/tools/openforge'",
+  "path: '/collaboration/messages'",
+  "path: '/collaboration/notices'",
+  "path: '/collaboration/todos'",
+  "path: '/collaboration/approvals'",
+  "path: '/monitor/jobs'",
+  "path: '/monitor/cache'",
+  "path: '/monitor/online-users'",
+  "path: '/optional/reports'",
+  "path: '/optional/export-jobs'",
+  "path: '/integrations/providers'",
+  "path: '/integrations/mail'",
+  "path: '/integrations/sms'",
+  "path: '/integrations/oauth'",
+  "path: '/integrations/wechat'",
+  "path: '/integrations/websocket'",
+  "path: '/integrations/billing-design'",
+  "path: '/403'",
+  "path: '/404'",
+  "path: '/500'",
+]) {
+  if (!config.includes(requiredRoute)) {
+    throw new Error(
+      `Missing shell route in config/routes.ts: ${requiredRoute}`,
+    );
+  }
+}
+
+const appRuntime = readFileSync(resolve(root, 'src/app.tsx'), 'utf8');
+if (
+  !appRuntime.includes('queryCurrentOpenCoreUser') ||
+  !appRuntime.includes('shellMenuItems') ||
+  !appRuntime.includes('registrySummary') ||
+  !appRuntime.includes('permissions: currentUser?.permissionCodes') ||
+  !appRuntime.includes('baseURL: process.env.ADMIN_API_BASE_URL')
+) {
+  throw new Error(
+    'Admin app runtime must use OpenCore auth, shell registry metadata and non-demo request base URL.',
+  );
+}
+
+const proConfig = readFileSync(resolve(root, 'config/config.ts'), 'utf8');
+const proxyConfig = readFileSync(resolve(root, 'config/proxy.ts'), 'utf8');
+const loginPage = readFileSync(
+  resolve(root, 'src/pages/user/login/index.tsx'),
+  'utf8',
+);
+const requestConfig = readFileSync(
+  resolve(root, 'src/requestErrorConfig.ts'),
+  'utf8',
+);
+const authService = readFileSync(
+  resolve(root, 'src/services/opencore/auth.ts'),
+  'utf8',
+);
+const opencoreClientService = readFileSync(
+  resolve(root, 'src/services/opencore/client.ts'),
+  'utf8',
+);
+const opencorePlatformService = readFileSync(
+  resolve(root, 'src/services/opencore/platform.ts'),
+  'utf8',
+);
+const tokenService = readFileSync(
+  resolve(root, 'src/services/opencore/token.ts'),
+  'utf8',
+);
+
+if (
+  proConfig.includes('oneapi.json') ||
+  proConfig.includes('pro-api.ant-design-demo') ||
+  proConfig.includes('preview.pro.ant.design') ||
+  !proConfig.includes('packages/contracts/openapi/opencore-api.json')
+) {
+  throw new Error(
+    'Admin config must use the OpenCore OpenAPI snapshot and no demo API schema.',
+  );
+}
+
+if (
+  proxyConfig.includes('pro-api.ant-design-demo') ||
+  proxyConfig.includes('preview.pro.ant.design') ||
+  !proxyConfig.includes('http://localhost:3000')
+) {
+  throw new Error('Admin proxy must target the local OpenCore API.');
+}
+
+if (
+  !loginPage.includes('loginToOpenCore') ||
+  loginPage.includes('getFakeCaptcha') ||
+  loginPage.includes('@/services/ant-design-pro')
+) {
+  throw new Error(
+    'Admin login must call OpenCore auth and avoid demo login services.',
+  );
+}
+
+if (
+  !authService.includes('createRbacClient') ||
+  !authService.includes('loginToOpenCore') ||
+  !authService.includes('queryCurrentOpenCoreUser') ||
+  !authService.includes('getRequiredAdminToken')
+) {
+  throw new Error(
+    'Admin auth service must use @opencore/sdk for login and current user.',
+  );
+}
+
+if (
+  !opencoreClientService.includes(`/api${pathTemplatePlaceholder}`) ||
+  !opencoreClientService.includes('opencoreSdkRequest') ||
+  !opencoreClientService.includes('MissingAdminTokenError')
+) {
+  throw new Error(
+    'Admin OpenCore SDK request helper must prefix /api and guard missing bearer tokens.',
+  );
+}
+
+if (
+  !opencorePlatformService.includes('createRbacClient') ||
+  !opencorePlatformService.includes('createMonitoringClient') ||
+  !opencorePlatformService.includes('listOpenCoreUsers') ||
+  !opencorePlatformService.includes('getOpenCoreSystemStatus')
+) {
+  throw new Error(
+    'Admin platform service must expose live System and Monitor SDK clients.',
+  );
+}
+
+if (
+  !tokenService.includes('opencore.admin.token') ||
+  !tokenService.includes('localStorage')
+) {
+  throw new Error(
+    'Admin token storage must be centralized on the OpenCore token key.',
+  );
+}
+
+if (
+  !requestConfig.includes('Authorization') ||
+  !requestConfig.includes('Bearer') ||
+  !requestConfig.includes('x-request-id') ||
+  !requestConfig.includes('x-trace-id') ||
+  !requestConfig.includes("history.push('/403')") ||
+  !requestConfig.includes('/user/login?redirect=')
+) {
+  throw new Error(
+    'Admin request config must attach bearer/trace headers and handle 401/403.',
+  );
+}
+
+const accessRuntime = readFileSync(resolve(root, 'src/access.ts'), 'utf8');
+if (
+  !accessRuntime.includes('core:dashboard:read') ||
+  !accessRuntime.includes('tool:openapi:read') ||
+  !accessRuntime.includes('core:user:read') ||
+  !accessRuntime.includes('core:role:read') ||
+  !accessRuntime.includes('core:permission:read') ||
+  !accessRuntime.includes('core:menu:read') ||
+  !accessRuntime.includes('core:dict:read') ||
+  !accessRuntime.includes('core:config:read') ||
+  !accessRuntime.includes('core:file:read') ||
+  !accessRuntime.includes('core:audit-log:read') ||
+  !accessRuntime.includes('core:login-log:read') ||
+  !accessRuntime.includes('monitor:status:read') ||
+  !accessRuntime.includes('monitor:version:read') ||
+  !accessRuntime.includes('monitor:queue:read') ||
+  !accessRuntime.includes('tool:export:read') ||
+  !accessRuntime.includes('tool:openforge:read') ||
+  !accessRuntime.includes('collaboration:message:read') ||
+  !accessRuntime.includes('collaboration:notice:read') ||
+  !accessRuntime.includes('collaboration:todo:read') ||
+  !accessRuntime.includes('collaboration:approval-lite:read') ||
+  !accessRuntime.includes('monitor:job:read') ||
+  !accessRuntime.includes('monitor:cache:read') ||
+  !accessRuntime.includes('monitor:online-user:read') ||
+  !accessRuntime.includes('optional:report:read') ||
+  !accessRuntime.includes('optional:export-job:read') ||
+  !accessRuntime.includes('integration:provider:read') ||
+  !accessRuntime.includes('integration:mail:read') ||
+  !accessRuntime.includes('integration:sms:read') ||
+  !accessRuntime.includes('integration:oauth:read') ||
+  !accessRuntime.includes('integration:wechat:read') ||
+  !accessRuntime.includes('integration:websocket:read') ||
+  !accessRuntime.includes('integration:billing-design:read')
+) {
+  throw new Error(
+    'Admin access must guard shell, platform, collaboration, operations, and integration routes by permission code.',
+  );
+}
+
+const shellRegistry = readFileSync(
+  resolve(root, 'src/core/shellRegistry.ts'),
+  'utf8',
+);
+if (
+  !shellRegistry.includes('@opencore/module-registry') ||
+  !shellRegistry.includes('core.dashboard') ||
+  !shellRegistry.includes('tool.openapi') ||
+  !shellRegistry.includes('core.user') ||
+  !shellRegistry.includes('core.role') ||
+  !shellRegistry.includes('core.permission') ||
+  !shellRegistry.includes('core.menu') ||
+  !shellRegistry.includes('core.dict') ||
+  !shellRegistry.includes('core.config') ||
+  !shellRegistry.includes('core.file') ||
+  !shellRegistry.includes('core.audit-log') ||
+  !shellRegistry.includes('core.login-log') ||
+  !shellRegistry.includes('monitor.status') ||
+  !shellRegistry.includes('monitor.version') ||
+  !shellRegistry.includes('monitor.queue') ||
+  !shellRegistry.includes('tool.export') ||
+  !shellRegistry.includes('tool.openforge') ||
+  !shellRegistry.includes('collaboration.message') ||
+  !shellRegistry.includes('collaboration.notice') ||
+  !shellRegistry.includes('collaboration.todo') ||
+  !shellRegistry.includes('collaboration.approval-lite') ||
+  !shellRegistry.includes('monitor.job') ||
+  !shellRegistry.includes('monitor.cache') ||
+  !shellRegistry.includes('monitor.online-user') ||
+  !shellRegistry.includes('optional.report') ||
+  !shellRegistry.includes('optional.export-job') ||
+  !shellRegistry.includes('integration.provider') ||
+  !shellRegistry.includes('integration.mail') ||
+  !shellRegistry.includes('integration.sms') ||
+  !shellRegistry.includes('integration.oauth') ||
+  !shellRegistry.includes('integration.wechat') ||
+  !shellRegistry.includes('integration.websocket') ||
+  !shellRegistry.includes('integration.billing-design')
+) {
+  throw new Error('Admin shell registry must consume module-registry entries.');
+}
+
+const usersPage = readFileSync(
+  resolve(root, 'src/pages/System/Users.tsx'),
+  'utf8',
+);
+const rolesPage = readFileSync(
+  resolve(root, 'src/pages/System/Roles.tsx'),
+  'utf8',
+);
+const rbacTable = readFileSync(
+  resolve(root, 'src/pages/System/RbacTable.tsx'),
+  'utf8',
+);
+const systemManagementTable = readFileSync(
+  resolve(root, 'src/pages/System/SystemManagementTable.tsx'),
+  'utf8',
+);
+const readOnlyDetailDrawer = readFileSync(
+  resolve(root, 'src/pages/shared/ReadOnlyDetailDrawer.tsx'),
+  'utf8',
+);
+const currentPageExportButton = readFileSync(
+  resolve(root, 'src/pages/shared/CurrentPageExportButton.tsx'),
+  'utf8',
+);
+const currentPageFilters = readFileSync(
+  resolve(root, 'src/pages/shared/CurrentPageFilters.tsx'),
+  'utf8',
+);
+const permissionsPage = readFileSync(
+  resolve(root, 'src/pages/System/Permissions.tsx'),
+  'utf8',
+);
+const menusPage = readFileSync(
+  resolve(root, 'src/pages/System/Menus.tsx'),
+  'utf8',
+);
+const dictsPage = readFileSync(
+  resolve(root, 'src/pages/System/Dicts.tsx'),
+  'utf8',
+);
+const configPage = readFileSync(
+  resolve(root, 'src/pages/System/Config.tsx'),
+  'utf8',
+);
+const filesPage = readFileSync(
+  resolve(root, 'src/pages/System/Files.tsx'),
+  'utf8',
+);
+const auditLogsPage = readFileSync(
+  resolve(root, 'src/pages/Security/OperationLogs.tsx'),
+  'utf8',
+);
+const loginLogsPage = readFileSync(
+  resolve(root, 'src/pages/Security/LoginLogs.tsx'),
+  'utf8',
+);
+const statusPage = readFileSync(
+  resolve(root, 'src/pages/Monitor/Status.tsx'),
+  'utf8',
+);
+const versionPage = readFileSync(
+  resolve(root, 'src/pages/Monitor/Version.tsx'),
+  'utf8',
+);
+const queuesPage = readFileSync(
+  resolve(root, 'src/pages/Monitor/Queues.tsx'),
+  'utf8',
+);
+const openApiPage = readFileSync(
+  resolve(root, 'src/pages/Tools/OpenApi/index.tsx'),
+  'utf8',
+);
+const exportPage = readFileSync(
+  resolve(root, 'src/pages/Tools/Export/index.tsx'),
+  'utf8',
+);
+const openForgePage = readFileSync(
+  resolve(root, 'src/pages/Tools/OpenForge/index.tsx'),
+  'utf8',
+);
+const messagesPage = readFileSync(
+  resolve(root, 'src/pages/Collaboration/Messages.tsx'),
+  'utf8',
+);
+const noticesPage = readFileSync(
+  resolve(root, 'src/pages/Collaboration/Notices.tsx'),
+  'utf8',
+);
+const todosPage = readFileSync(
+  resolve(root, 'src/pages/Collaboration/Todos.tsx'),
+  'utf8',
+);
+const approvalsPage = readFileSync(
+  resolve(root, 'src/pages/Collaboration/Approvals.tsx'),
+  'utf8',
+);
+const jobsPage = readFileSync(
+  resolve(root, 'src/pages/Monitor/Jobs.tsx'),
+  'utf8',
+);
+const cachePage = readFileSync(
+  resolve(root, 'src/pages/Monitor/Cache.tsx'),
+  'utf8',
+);
+const onlineUsersPage = readFileSync(
+  resolve(root, 'src/pages/Monitor/OnlineUsers.tsx'),
+  'utf8',
+);
+const reportsPage = readFileSync(
+  resolve(root, 'src/pages/Optional/Reports.tsx'),
+  'utf8',
+);
+const exportJobsPage = readFileSync(
+  resolve(root, 'src/pages/Optional/ExportJobs.tsx'),
+  'utf8',
+);
+const providersPage = readFileSync(
+  resolve(root, 'src/pages/Integrations/Providers.tsx'),
+  'utf8',
+);
+const mailPage = readFileSync(
+  resolve(root, 'src/pages/Integrations/Mail.tsx'),
+  'utf8',
+);
+const smsPage = readFileSync(
+  resolve(root, 'src/pages/Integrations/Sms.tsx'),
+  'utf8',
+);
+const oauthPage = readFileSync(
+  resolve(root, 'src/pages/Integrations/OAuth.tsx'),
+  'utf8',
+);
+const wechatPage = readFileSync(
+  resolve(root, 'src/pages/Integrations/WeChat.tsx'),
+  'utf8',
+);
+const websocketPage = readFileSync(
+  resolve(root, 'src/pages/Integrations/WebSocket.tsx'),
+  'utf8',
+);
+const billingDesignPage = readFileSync(
+  resolve(root, 'src/pages/Integrations/BillingDesign.tsx'),
+  'utf8',
+);
+if (
+  !usersPage.includes('@opencore/sdk') ||
+  !usersPage.includes('listOpenCoreUsers') ||
+  !permissionsPage.includes('@opencore/sdk') ||
+  !dictsPage.includes('@opencore/sdk') ||
+  !configPage.includes('@opencore/sdk') ||
+  !filesPage.includes('@opencore/sdk') ||
+  !auditLogsPage.includes('@opencore/sdk') ||
+  !loginLogsPage.includes('@opencore/sdk') ||
+  !statusPage.includes('@opencore/sdk') ||
+  !statusPage.includes('getOpenCoreSystemStatus') ||
+  !versionPage.includes('@opencore/sdk') ||
+  !queuesPage.includes('@opencore/sdk') ||
+  !openApiPage.includes('@opencore/sdk') ||
+  !exportPage.includes('@opencore/sdk') ||
+  !openForgePage.includes('OpenForge') ||
+  !messagesPage.includes('@opencore/sdk') ||
+  !noticesPage.includes('@opencore/sdk') ||
+  !todosPage.includes('@opencore/sdk') ||
+  !approvalsPage.includes('@opencore/sdk') ||
+  !jobsPage.includes('@opencore/sdk') ||
+  !cachePage.includes('@opencore/sdk') ||
+  !onlineUsersPage.includes('@opencore/sdk') ||
+  !reportsPage.includes('@opencore/sdk') ||
+  !exportJobsPage.includes('@opencore/sdk') ||
+  !providersPage.includes('@opencore/sdk') ||
+  !mailPage.includes('@opencore/sdk') ||
+  !smsPage.includes('@opencore/sdk') ||
+  !oauthPage.includes('@opencore/sdk') ||
+  !wechatPage.includes('@opencore/sdk') ||
+  !websocketPage.includes('@opencore/sdk') ||
+  !billingDesignPage.includes('@opencore/sdk')
+) {
+  throw new Error(
+    'Admin platform, collaboration, operations, and integration pages must consume SDK types or fixtures.',
+  );
+}
+
+for (const wrapper of [
+  { name: 'RBAC table', source: rbacTable },
+  { name: 'system management table', source: systemManagementTable },
+]) {
+  if (
+    !wrapper.source.includes('useCurrentPageFilters') ||
+    !wrapper.source.includes('CurrentPageExportButton') ||
+    !wrapper.source.includes('ReadOnlyDetailDrawer') ||
+    !wrapper.source.includes('setSelectedDetail') ||
+    !wrapper.source.includes('readOnlyReason') ||
+    !wrapper.source.includes('read-only-policy') ||
+    !wrapper.source.includes('dataSource={filteredRows}') ||
+    !wrapper.source.includes('rows={filteredRows}')
+  ) {
+    throw new Error(
+      `Admin core wrapper must use bounded current-page filter/export helpers: ${wrapper.name}`,
+    );
+  }
+}
+
+if (
+  !readOnlyDetailDrawer.includes('redactDetailJsonValue') ||
+  !readOnlyDetailDrawer.includes('sensitive?: boolean') ||
+  !readOnlyDetailDrawer.includes('REDACTED_DETAIL_FIELD_VALUE') ||
+  !readOnlyDetailDrawer.includes('field.sensitive') ||
+  !readOnlyDetailDrawer.includes('renderDetailFieldValue(field)') ||
+  !readOnlyDetailDrawer.includes('password') ||
+  !readOnlyDetailDrawer.includes('secret') ||
+  !readOnlyDetailDrawer.includes('token') ||
+  !readOnlyDetailDrawer.includes('credential') ||
+  !readOnlyDetailDrawer.includes('authorization') ||
+  !readOnlyDetailDrawer.includes('api[-_]?key') ||
+  !readOnlyDetailDrawer.includes('client[-_]?secret') ||
+  !readOnlyDetailDrawer.includes(
+    'JSON.stringify(redactDetailJsonValue(section.value), null, 2)',
+  )
+) {
+  throw new Error(
+    'Read-only detail drawer fields and JSON sections must pass through sensitive redaction before rendering or serialization.',
+  );
+}
+
+if (
+  !currentPageExportButton.includes('sanitizeCsvCellText') ||
+  !currentPageExportButton.includes('sanitizeCsvFilename') ||
+  !currentPageExportButton.includes('CSV_FORMULA_PREFIX_PATTERN') ||
+  !currentPageExportButton.includes('CSV_FILENAME_UNSAFE_PATTERN') ||
+  !currentPageExportButton.includes('[=+\\-@]') ||
+  !currentPageExportButton.includes('\\\\/:*?"<>|\\\\x00-\\\\x1F') ||
+  !currentPageExportButton.includes("basename || 'opencore-export'") ||
+  !currentPageExportButton.includes("endsWith('.csv')") ||
+  !currentPageExportButton.includes(
+    "return `'" + textTemplatePlaceholder + '`;',
+  ) ||
+  !currentPageExportButton.includes(
+    'sanitizeCsvCellText(normalizeCellValue(value))',
+  ) ||
+  !currentPageExportButton.includes(
+    'sanitizeCsvFilename(filename ?? `opencore-' +
+      resourceTemplatePlaceholder +
+      '.csv`)',
+  ) ||
+  !currentPageExportButton.includes('redactCurrentPageExportValue') ||
+  !currentPageExportButton.includes('password') ||
+  !currentPageExportButton.includes('secret') ||
+  !currentPageExportButton.includes('token') ||
+  !currentPageExportButton.includes('credential') ||
+  !currentPageExportButton.includes('authorization') ||
+  !currentPageExportButton.includes('api[-_]?key') ||
+  !currentPageExportButton.includes('client[-_]?secret') ||
+  !currentPageExportButton.includes(
+    'JSON.stringify(redactCurrentPageExportValue(value))',
+  )
+) {
+  throw new Error(
+    'Current-page CSV export must sanitize filenames, neutralize spreadsheet formula prefixes and redact object-cell sensitive keys before serialization.',
+  );
+}
+
+if (
+  !currentPageFilters.includes('redactCurrentPageFilterValue') ||
+  !currentPageFilters.includes('password') ||
+  !currentPageFilters.includes('secret') ||
+  !currentPageFilters.includes('token') ||
+  !currentPageFilters.includes('credential') ||
+  !currentPageFilters.includes('authorization') ||
+  !currentPageFilters.includes('api[-_]?key') ||
+  !currentPageFilters.includes('client[-_]?secret') ||
+  !currentPageFilters.includes(
+    'JSON.stringify(redactCurrentPageFilterValue(value))',
+  )
+) {
+  throw new Error(
+    'Current-page filter/search text must redact object-valued sensitive keys before serialization.',
+  );
+}
+
+if (
+  !rbacTable.includes('disabled') ||
+  !rbacTable.includes('PlusOutlined') ||
+  !rbacTable.includes('EditOutlined') ||
+  !rbacTable.includes('DeleteOutlined')
+) {
+  throw new Error(
+    'RBAC wrapper mutation-looking controls must be disabled until write workflows are admitted.',
+  );
+}
+
+const coreFilteredPages = [
+  { name: 'users', source: usersPage },
+  { name: 'roles', source: rolesPage },
+  { name: 'permissions', source: permissionsPage },
+  { name: 'menus', source: menusPage },
+  { name: 'dicts', source: dictsPage },
+  { name: 'config', source: configPage },
+  { name: 'files', source: filesPage },
+  { name: 'operation logs', source: auditLogsPage },
+  { name: 'login logs', source: loginLogsPage },
+];
+
+for (const page of coreFilteredPages) {
+  if (
+    !page.source.includes('detailFields={detailFields}') ||
+    !page.source.includes('searchFields={searchFields}') ||
+    !page.source.includes('filterOptions={filterOptions}') ||
+    !page.source.includes('exportColumns={exportColumns}') ||
+    !page.source.includes('readOnlyReason=') ||
+    !page.source.includes('resource=')
+  ) {
+    throw new Error(
+      `Admin core page must declare bounded filters and current-page export columns: ${page.name}`,
+    );
+  }
+}
+
+if (
+  !configPage.includes('[redacted]') ||
+  !configPage.includes('formatConfigValue') ||
+  !configPage.includes("record.visibility === 'secret'")
+) {
+  throw new Error('System config detail/export must redact secret values.');
+}
+
+if (
+  !providersPage.includes('<Typography.Text type="secondary">[redacted]') ||
+  !providersPage.includes("label: 'Secret Ref'") ||
+  !providersPage.includes('selected?.secretRef, sensitive: true')
+) {
+  throw new Error(
+    'Integration provider list and detail must redact scalar secret references.',
+  );
+}
+
+if (
+  !onlineUsersPage.includes("label: 'Token ID'") ||
+  !onlineUsersPage.includes('selected?.tokenId, sensitive: true') ||
+  !onlineUsersPage.includes("label: 'Revoked Reason'") ||
+  !onlineUsersPage.includes('selected?.revokedReason') ||
+  (onlineUsersPage.match(/sensitive: true/g) ?? []).length < 2
+) {
+  throw new Error(
+    'Online user detail must redact scalar token and revoked-reason fields.',
+  );
+}
+
+const admittedFilteredPages = [
+  { exportsRows: true, name: 'messages', source: messagesPage },
+  { exportsRows: true, name: 'notices', source: noticesPage },
+  { exportsRows: true, name: 'todos', source: todosPage },
+  { exportsRows: true, name: 'approvals', source: approvalsPage },
+  { exportsRows: true, name: 'jobs', source: jobsPage },
+  { exportsRows: false, name: 'cache', source: cachePage },
+  { exportsRows: true, name: 'online users', source: onlineUsersPage },
+  { exportsRows: true, name: 'reports', source: reportsPage },
+  { exportsRows: true, name: 'export jobs', source: exportJobsPage },
+  { exportsRows: true, name: 'providers', source: providersPage },
+  { exportsRows: true, name: 'mail', source: mailPage },
+  { exportsRows: true, name: 'sms', source: smsPage },
+  { exportsRows: true, name: 'oauth', source: oauthPage },
+  { exportsRows: true, name: 'wechat', source: wechatPage },
+  { exportsRows: true, name: 'websocket', source: websocketPage },
+  { exportsRows: true, name: 'billing design', source: billingDesignPage },
+];
+
+for (const page of admittedFilteredPages) {
+  if (
+    !page.source.includes('useCurrentPageFilters') ||
+    !page.source.includes('dataSource={filteredRows}')
+  ) {
+    throw new Error(
+      `Admin admitted page must use bounded current-page filters: ${page.name}`,
+    );
+  }
+
+  if (page.exportsRows && !page.source.includes('rows={filteredRows}')) {
+    throw new Error(
+      `Admin admitted page export must use filtered rows: ${page.name}`,
+    );
+  }
+}
+
+const requestSpec = readFileSync(resolve(root, 'src/utils/request.ts'), 'utf8');
+if (
+  !requestSpec.includes('x-request-id') ||
+  !requestSpec.includes('x-trace-id')
+) {
+  throw new Error(
+    'Admin request helper must preserve request and trace headers.',
+  );
+}
+
+if (existsSync(resolve(root, 'examples'))) {
+  throw new Error('Template example code must not be committed in S5 shell.');
+}
+
+console.log('admin smoke test passed');

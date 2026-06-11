@@ -1,25 +1,47 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock all heavy dependencies before importing app
-const mockReplace = vi.fn();
-const mockHistory = {
-  location: {
-    pathname: '/welcome',
-    search: '',
-    hash: '',
+const mocks = vi.hoisted(() => ({
+  history: {
+    location: {
+      pathname: '/dashboard',
+      search: '',
+      hash: '',
+    },
+    replace: vi.fn(),
   },
-  replace: mockReplace,
-};
-
-const mockQueryCurrentUser = vi.fn();
+  queryCurrentOpenCoreUser: vi.fn(),
+}));
 
 vi.mock('@umijs/max', () => ({
-  history: mockHistory,
+  history: mocks.history,
   Link: ({ children }: any) => children,
 }));
 
-vi.mock('@/services/ant-design-pro/api', () => ({
-  currentUser: mockQueryCurrentUser,
+vi.mock('@/services/opencore/auth', () => ({
+  queryCurrentOpenCoreUser: mocks.queryCurrentOpenCoreUser,
+  toAdminCurrentUser: (user: any) => ({
+    ...user,
+    name: user.displayName,
+    userid: user.id,
+  }),
+}));
+
+vi.mock('@/core/shellRegistry', () => ({
+  registrySummary: {
+    shellModuleCount: 1,
+    shellPermissionCount: 1,
+    plannedModuleCount: 0,
+  },
+  shellMenuItems: [
+    {
+      key: 'dashboard.home',
+      name: 'Dashboard',
+      path: '/dashboard',
+      permissionCode: 'core:dashboard:read',
+      stage: 'S5',
+      order: 10,
+    },
+  ],
 }));
 
 vi.mock('@/components', () => ({
@@ -40,6 +62,10 @@ vi.mock('@ant-design/icons', () => ({
   LinkOutlined: () => null,
 }));
 
+vi.mock('@/theme/shadcnTheme', () => ({
+  default: () => ({}),
+}));
+
 vi.mock('./requestErrorConfig', () => ({
   errorConfig: {},
 }));
@@ -51,48 +77,54 @@ vi.mock('../config/defaultSettings', () => ({
 describe('app getInitialState', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockHistory.location = {
-      pathname: '/welcome',
+    mocks.history.location = {
+      pathname: '/dashboard',
       search: '',
       hash: '',
     };
   });
 
-  it('should fetch currentUser when not on login page', async () => {
+  it('fetches the OpenCore current user when not on a public page', async () => {
     const { getInitialState } = await import('./app');
-    mockQueryCurrentUser.mockResolvedValue({
-      data: {
-        name: 'Test User',
-        access: 'admin',
+    mocks.queryCurrentOpenCoreUser.mockResolvedValue({
+      user: {
+        id: 'user_admin',
+        username: 'admin',
+        displayName: 'OpenCore Admin',
+        roleCodes: ['admin'],
+        permissionCodes: ['core:dashboard:read'],
       },
     });
 
     const state = await getInitialState();
 
-    expect(mockQueryCurrentUser).toHaveBeenCalled();
-    expect(state.currentUser).toEqual({
-      name: 'Test User',
-      access: 'admin',
+    expect(mocks.queryCurrentOpenCoreUser).toHaveBeenCalled();
+    expect(state.currentUser).toMatchObject({
+      id: 'user_admin',
+      name: 'OpenCore Admin',
+      userid: 'user_admin',
     });
+    expect(state.permissions).toEqual(['core:dashboard:read']);
     expect(state.settingDrawerOpen).toBe(false);
     expect(state.fetchUserInfo).toBeDefined();
   });
 
-  it('should redirect to login when currentUser fetch fails (401)', async () => {
+  it('redirects to login when current user fetch fails', async () => {
     const { getInitialState } = await import('./app');
-    mockQueryCurrentUser.mockRejectedValue(new Error('401 Unauthorized'));
+    mocks.queryCurrentOpenCoreUser.mockRejectedValue(new Error('401'));
 
     const state = await getInitialState();
 
-    expect(mockReplace).toHaveBeenCalledWith(
+    expect(mocks.history.replace).toHaveBeenCalledWith(
       expect.stringContaining('/user/login?redirect='),
     );
     expect(state.currentUser).toBeUndefined();
+    expect(state.permissions).toEqual([]);
   });
 
-  it('should not fetch currentUser on login page', async () => {
+  it('does not fetch current user on the login page', async () => {
     const { getInitialState } = await import('./app');
-    mockHistory.location = {
+    mocks.history.location = {
       pathname: '/user/login',
       search: '',
       hash: '',
@@ -100,47 +132,43 @@ describe('app getInitialState', () => {
 
     const state = await getInitialState();
 
-    expect(mockQueryCurrentUser).not.toHaveBeenCalled();
+    expect(mocks.queryCurrentOpenCoreUser).not.toHaveBeenCalled();
     expect(state.currentUser).toBeUndefined();
     expect(state.fetchUserInfo).toBeDefined();
   });
 
-  it('should encode redirect path correctly on 401', async () => {
+  it('encodes redirect path correctly on auth failure', async () => {
     const { getInitialState } = await import('./app');
-    mockHistory.location = {
-      pathname: '/admin/users',
+    mocks.history.location = {
+      pathname: '/system/users',
       search: '?page=2',
       hash: '#section',
     };
-    mockQueryCurrentUser.mockRejectedValue(new Error('401'));
+    mocks.queryCurrentOpenCoreUser.mockRejectedValue(new Error('401'));
 
     await getInitialState();
 
-    expect(mockReplace).toHaveBeenCalledWith(
-      `/user/login?redirect=${encodeURIComponent('/admin/users?page=2#section')}`,
+    expect(mocks.history.replace).toHaveBeenCalledWith(
+      `/user/login?redirect=${encodeURIComponent('/system/users?page=2#section')}`,
     );
   });
 
-  it('should include default settings in initial state', async () => {
+  it('includes default settings and shell metadata in initial state', async () => {
     const { getInitialState } = await import('./app');
-    mockQueryCurrentUser.mockResolvedValue({
-      data: { name: 'User' },
+    mocks.queryCurrentOpenCoreUser.mockResolvedValue({
+      user: {
+        id: 'user_admin',
+        username: 'admin',
+        displayName: 'OpenCore Admin',
+        roleCodes: ['admin'],
+        permissionCodes: ['core:dashboard:read'],
+      },
     });
 
     const state = await getInitialState();
 
     expect(state.settings).toEqual({ navTheme: 'light' });
-  });
-
-  it('fetchUserInfo should return user data on success', async () => {
-    const { getInitialState } = await import('./app');
-    mockQueryCurrentUser.mockResolvedValue({
-      data: { name: 'Fetched User', access: 'user' },
-    });
-
-    const state = await getInitialState();
-
-    const user = await state.fetchUserInfo?.();
-    expect(user).toEqual({ name: 'Fetched User', access: 'user' });
+    expect(state.registrySummary.shellModuleCount).toBe(1);
+    expect(state.menus).toHaveLength(1);
   });
 });

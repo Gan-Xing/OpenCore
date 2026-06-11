@@ -40,11 +40,14 @@ export default {
   'app.settings.security.set': 'সেট',
   'app.settings.security.bind': 'বাঁধাই',
   'app.settings.binding.taobao': 'বাঁধাই তাওবাও',
-  'app.settings.binding.taobao-description': 'বর্তমানে আনবাউন্ড তাওবাও অ্যাকাউন্ট',
+  'app.settings.binding.taobao-description':
+    'বর্তমানে আনবাউন্ড তাওবাও অ্যাকাউন্ট',
   'app.settings.binding.alipay': 'বাইন্ডিং আলিপে',
-  'app.settings.binding.alipay-description': 'বর্তমানে আনবাউন্ড আলিপে অ্যাকাউন্ট',
+  'app.settings.binding.alipay-description':
+    'বর্তমানে আনবাউন্ড আলিপে অ্যাকাউন্ট',
   'app.settings.binding.dingding': 'বাঁধাই ডিঙ্গটালক',
-  'app.settings.binding.dingding-description': 'বর্তমানে আনবাউন্ড ডিঙ্গটাল অ্যাকাউন্ট',
+  'app.settings.binding.dingding-description':
+    'বর্তমানে আনবাউন্ড ডিঙ্গটাল অ্যাকাউন্ট',
   'app.settings.binding.bind': 'বাঁধাই',
   'app.settings.notification.password': 'অ্যাকাউন্টের পাসওয়ার্ড',
   'app.settings.notification.password-description':

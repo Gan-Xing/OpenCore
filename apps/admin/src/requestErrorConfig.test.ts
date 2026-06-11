@@ -1,6 +1,12 @@
 import { message, notification } from 'antd';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { errorConfig } from './requestErrorConfig';
+import { ADMIN_TOKEN_STORAGE_KEY } from '@/services/opencore/token';
+
+const mocks = vi.hoisted(() => ({
+  push: vi.fn(),
+  replace: vi.fn(),
+}));
 
 vi.mock('antd', () => ({
   message: {
@@ -9,6 +15,7 @@ vi.mock('antd', () => ({
   },
   notification: {
     open: vi.fn(),
+    error: vi.fn(),
   },
 }));
 
@@ -16,181 +23,144 @@ vi.mock('@umijs/max', () => ({
   getIntl: vi.fn(() => ({
     formatMessage: vi.fn(({ defaultMessage }) => defaultMessage),
   })),
+  history: {
+    location: {
+      pathname: '/system/users',
+      search: '?page=1',
+      hash: '#top',
+    },
+    push: mocks.push,
+    replace: mocks.replace,
+  },
 }));
 
 describe('requestErrorConfig', () => {
-  // biome-ignore lint/style/noNonNullAssertion: config handlers are always defined
-  const errorThrower = errorConfig.errorConfig!.errorThrower!;
-  // biome-ignore lint/style/noNonNullAssertion: config handlers are always defined
-  const errorHandler = errorConfig.errorConfig!.errorHandler!;
+  const errorThrower = errorConfig.errorConfig?.errorThrower;
+  const errorHandler = errorConfig.errorConfig?.errorHandler;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    window.localStorage.clear();
   });
 
   describe('errorThrower', () => {
-    it('should throw error when success is false', () => {
+    it('throws BizError for OpenCore error envelopes', () => {
       const response = {
         success: false,
-        data: null,
-        errorCode: 400,
-        errorMessage: 'Bad Request',
-        showType: 2,
+        error: {
+          code: 'HTTP_400',
+          message: 'Bad Request',
+          statusCode: 400,
+        },
       };
 
       expect(() => {
-        errorThrower(response);
+        errorThrower?.(response);
       }).toThrow('Bad Request');
     });
 
-    it('should not throw error when success is true', () => {
-      const response = {
-        success: true,
-        data: { id: 1 },
-      };
-
+    it('does not throw for successful responses', () => {
       expect(() => {
-        errorThrower(response);
+        errorThrower?.({ success: true, data: { id: 1 } });
       }).not.toThrow();
-    });
-
-    it('should throw BizError with correct info', () => {
-      const response = {
-        success: false,
-        data: { detail: 'more info' },
-        errorCode: 403,
-        errorMessage: 'Forbidden',
-        showType: 3,
-      };
-
-      expect.assertions(5);
-      try {
-        errorThrower(response);
-      } catch (error: any) {
-        expect(error.name).toBe('BizError');
-        expect(error.info.errorCode).toBe(403);
-        expect(error.info.errorMessage).toBe('Forbidden');
-        expect(error.info.showType).toBe(3);
-        expect(error.info.data).toEqual({ detail: 'more info' });
-      }
     });
   });
 
   describe('errorHandler', () => {
-    it('should rethrow error when skipErrorHandler is true', () => {
+    it('rethrows when skipErrorHandler is true', () => {
       const error = new Error('Test error');
-      const opts = { skipErrorHandler: true };
 
       expect(() => {
-        errorHandler(error, opts);
+        errorHandler?.(error, { skipErrorHandler: true });
       }).toThrow('Test error');
     });
 
-    it('should handle SILENT showType', () => {
-      const error: any = new Error('Silent error');
-      error.name = 'BizError';
-      error.info = {
-        errorCode: 1001,
-        errorMessage: 'Silent error',
-        showType: 0,
-      };
+    it('redirects 401 responses to login and clears the token', () => {
+      window.localStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, 'token');
 
-      errorHandler(error, {});
+      errorHandler?.(
+        {
+          response: {
+            status: 401,
+            data: {
+              error: {
+                code: 'HTTP_401',
+                message: 'Unauthorized',
+                statusCode: 401,
+              },
+            },
+          },
+        } as any,
+        {},
+      );
 
-      expect(message.warning).not.toHaveBeenCalled();
-      expect(message.error).not.toHaveBeenCalled();
-      expect(notification.open).not.toHaveBeenCalled();
+      expect(window.localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY)).toBeNull();
+      expect(mocks.replace).toHaveBeenCalledWith(
+        `/user/login?redirect=${encodeURIComponent('/system/users?page=1#top')}`,
+      );
     });
 
-    it('should handle WARN_MESSAGE showType', () => {
-      const error: any = new Error('Warning');
-      error.name = 'BizError';
-      error.info = {
-        errorCode: 1002,
-        errorMessage: 'This is a warning',
-        showType: 1,
-      };
+    it('redirects 403 responses to the no-permission page', () => {
+      errorHandler?.(
+        {
+          response: {
+            status: 403,
+            data: {
+              error: {
+                code: 'HTTP_403',
+                message: 'Forbidden',
+                statusCode: 403,
+              },
+            },
+          },
+        } as any,
+        {},
+      );
 
-      errorHandler(error, {});
-
-      expect(message.warning).toHaveBeenCalledWith('This is a warning');
+      expect(mocks.push).toHaveBeenCalledWith('/403');
     });
 
-    it('should handle ERROR_MESSAGE showType', () => {
-      const error: any = new Error('Error message');
-      error.name = 'BizError';
-      error.info = {
-        errorCode: 1003,
-        errorMessage: 'This is an error',
-        showType: 2,
-      };
-
-      errorHandler(error, {});
-
-      expect(message.error).toHaveBeenCalledWith('This is an error');
-    });
-
-    it('should handle NOTIFICATION showType', () => {
+    it('handles BizError notification showType', () => {
       const error: any = new Error('Notification');
       error.name = 'BizError';
       error.info = {
-        errorCode: 1004,
-        errorMessage: 'This is a notification',
+        errorCode: 'HTTP_409',
+        errorMessage: 'Conflict',
         showType: 3,
       };
 
-      errorHandler(error, {});
+      errorHandler?.(error, {});
 
       expect(notification.open).toHaveBeenCalledWith({
-        title: 1004,
-        description: 'This is a notification',
+        message: 'HTTP_409',
+        description: 'Conflict',
       });
     });
 
-    it('should handle REDIRECT showType', () => {
-      const error: any = new Error('Redirect');
-      error.name = 'BizError';
-      error.info = {
-        errorCode: 401,
-        errorMessage: 'Unauthorized',
-        showType: 9,
-      };
+    it('handles axios response errors with OpenCore error bodies', () => {
+      errorHandler?.(
+        {
+          response: {
+            status: 500,
+            data: {
+              error: {
+                code: 'INTERNAL_SERVER_ERROR',
+                message: 'Server failed',
+                statusCode: 500,
+              },
+            },
+          },
+        } as any,
+        {},
+      );
 
-      errorHandler(error, {});
-
-      // REDIRECT 分支不应触发任何消息/通知提示
-      expect(message.warning).not.toHaveBeenCalled();
-      expect(message.error).not.toHaveBeenCalled();
-      expect(notification.open).not.toHaveBeenCalled();
+      expect(notification.error).toHaveBeenCalledWith({
+        message: 'INTERNAL_SERVER_ERROR',
+        description: 'Server failed',
+      });
     });
 
-    it('should handle default case for unknown showType', () => {
-      const error: any = new Error('Unknown type');
-      error.name = 'BizError';
-      error.info = {
-        errorCode: 1005,
-        errorMessage: 'Unknown error type',
-        showType: 99,
-      };
-
-      errorHandler(error, {});
-
-      expect(message.error).toHaveBeenCalledWith('Unknown error type');
-    });
-
-    it('should handle axios response error', () => {
-      const error: any = new Error('Axios error');
-      error.response = {
-        status: 500,
-        data: {},
-      };
-
-      errorHandler(error, {});
-
-      expect(message.error).toHaveBeenCalledWith('Response status:500');
-    });
-
-    it('should handle offline error', () => {
+    it('handles offline errors', () => {
       const error: any = new Error('Network error');
       error.request = {};
 
@@ -201,7 +171,7 @@ describe('requestErrorConfig', () => {
       });
 
       try {
-        errorHandler(error, {});
+        errorHandler?.(error, {});
 
         expect(message.error).toHaveBeenCalledWith(
           'Network unavailable. Please check your connection and try again.',
@@ -213,56 +183,27 @@ describe('requestErrorConfig', () => {
         });
       }
     });
-
-    it('should handle request error with no response', () => {
-      const error: any = new Error('Request error');
-      error.request = {};
-
-      errorHandler(error, {});
-
-      expect(message.error).toHaveBeenCalledWith(
-        'None response! Please retry.',
-      );
-    });
-
-    it('should handle generic error', () => {
-      const error: any = new Error('Generic error');
-
-      errorHandler(error, {});
-
-      expect(message.error).toHaveBeenCalledWith(
-        'Request error, please retry.',
-      );
-    });
   });
 
   describe('requestInterceptors', () => {
-    // The interceptor is registered as a plain function (not a tuple),
-    // so narrow the union type to a callable for the test.
     const interceptor = errorConfig.requestInterceptors?.[0] as (config: {
+      headers?: Record<string, string>;
       url?: string;
-      method?: string;
-    }) => { url?: string };
+    }) => { headers: Record<string, string>; url?: string };
 
-    it('should pass through config without modification', () => {
-      const config = {
-        url: 'https://api.example.com/users',
-        method: 'GET',
-      };
+    it('adds trace headers and bearer token', () => {
+      window.localStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, 'token');
 
-      const result = interceptor(config);
+      const result = interceptor({
+        url: '/api/auth/me',
+        headers: {
+          'x-request-id': 'request-1',
+        },
+      });
 
-      // Token attachment is intentionally commented out in the source;
-      // interceptor currently returns config as-is
-      expect(result.url).toBe('https://api.example.com/users');
-    });
-
-    it('should handle URL without config', () => {
-      const config = {};
-
-      const result = interceptor(config);
-
-      expect(result.url).toBeUndefined();
+      expect(result.headers.Authorization).toBe('Bearer token');
+      expect(result.headers['x-request-id']).toBe('request-1');
+      expect(result.headers['x-trace-id']).toBe('request-1');
     });
   });
 });

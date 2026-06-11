@@ -39,14 +39,14 @@ const useStyles = createStyles(({ token, css }) => ({
 export const DocLink: React.FC = () => {
   const { styles } = useStyles();
   return (
-    <Tooltip title="使用文档">
+    <Tooltip title="OpenCore Dashboard">
       <Button
         type="text"
         className={styles.action}
         icon={<BookOutlined />}
-        aria-label="使用文档"
+        aria-label="OpenCore Dashboard"
         onClick={() => {
-          history.push('/welcome');
+          history.push('/dashboard');
         }}
       />
     </Tooltip>
@@ -54,14 +54,13 @@ export const DocLink: React.FC = () => {
 };
 
 const versionItems: MenuProps['items'] = [
-  { key: 'https://v5.pro.ant.design', label: 'v5' },
-  { key: 'https://v4.pro.ant.design', label: 'v4' },
-  { key: 'https://v2.pro.ant.design', label: 'v2' },
-  { key: 'https://v1.pro.ant.design', label: 'v1' },
+  { key: '/tools/openapi', label: 'OpenAPI' },
+  { key: '/tools/openforge', label: 'OpenForge' },
+  { key: '/monitor/version', label: `Version ${__APP_VERSION__}` },
 ];
 
 const onVersionClick: MenuProps['onClick'] = ({ key }) => {
-  window.open(key, '_blank', 'noopener,noreferrer');
+  history.push(key);
 };
 
 export const VersionDropdown: React.FC = () => {
@@ -77,7 +76,7 @@ export const VersionDropdown: React.FC = () => {
         style: { minWidth: 100 },
       }}
     >
-      <Button type="text" className={styles.action} aria-label="历史版本">
+      <Button type="text" className={styles.action} aria-label="OpenCore tools">
         <ForkOutlined />
       </Button>
     </HeaderDropdown>
