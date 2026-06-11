@@ -109,6 +109,7 @@ Run:
 pnpm openforge:check -- --schema <schema>
 pnpm openforge:diff -- --schema <schema> --format json
 pnpm openforge:apply -- --schema <schema> --dry-run
+pnpm openforge:status
 pnpm openforge:gate
 ```
 

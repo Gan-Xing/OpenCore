@@ -11,6 +11,7 @@ pnpm openforge:plan -- --schema tools/generator/examples/core.dict.v1.schema.jso
 pnpm openforge:diff -- --schema tools/generator/examples/core.dict.v1.schema.json --format json
 pnpm openforge:check -- --schema tools/generator/examples/core.dict.v1.schema.json
 pnpm openforge:doctor
+pnpm openforge:status
 pnpm openforge:gate
 ```
 

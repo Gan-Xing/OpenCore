@@ -6,7 +6,8 @@ OpenForge V1 template authoring is for generated platform skeletons only. Templa
 
 ## Template Pack
 
-The default template pack is `openforge-default-nest-umi-v1` in `tools/generator/src/templates/default-template-pack.ts`.
+The default template pack is `openforge-default-nest-umi-v1` in
+`packages/generator-core/src/templates/default-template-pack.ts`.
 
 It renders:
 

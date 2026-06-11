@@ -1,6 +1,15 @@
 # OpenForge
 
-OpenForge is the OpenCore code generator workspace tool. The current implementation includes S9 read-only planning plus V1 schema/config validation, deterministic template rendering, a virtual file system, safe apply, manifests, manifest-based rollback, the Stage G-I API/Admin/SDK/Test/Docs generator packs, Stage J doctor checks/temp workspace e2e coverage, the Stage K local gate, and Stage L final docs.
+OpenForge is the OpenCore code generator CLI workspace tool. The CLI package in
+`tools/generator` owns command parsing, help/status output and the root
+`pnpm openforge:*` entrypoints. Reusable generator behavior lives in
+`@opencore/generator-core`.
+
+The current implementation includes S9 read-only planning plus V1 schema/config
+validation, deterministic template rendering, a virtual file system, safe apply,
+manifests, manifest-based rollback, the Stage G-I API/Admin/SDK/Test/Docs
+generator packs, Stage J doctor checks/temp workspace e2e coverage, the Stage K
+local gate, and Stage L final docs.
 
 Current S9 capability:
 
@@ -27,6 +36,7 @@ pnpm openforge:apply -- --dry-run
 pnpm openforge:rollback -- --manifest .openforge/manifests/<id>.json --dry-run
 pnpm openforge:manifest -- --list
 pnpm openforge:doctor
+pnpm openforge:status
 pnpm openforge:test
 pnpm openforge:gate
 ```
@@ -42,6 +52,7 @@ pnpm openforge:rollback -- --manifest .openforge/manifests/<id>.json --dry-run
 pnpm openforge:rollback -- --manifest .openforge/manifests/<id>.json --yes
 pnpm openforge:manifest -- --show <id>
 pnpm openforge:doctor
+pnpm openforge:status
 ```
 
 Config DSL fixture:
@@ -65,12 +76,13 @@ Safety boundaries:
 V1 target architecture:
 
 - contract layer for template, apply, manifest, rollback, marker, patch plan, and generator config protocols;
-- schema/config DSL for API/Admin/SDK/Test/Docs skeleton generation;
-- default template pack `openforge-default-nest-umi-v1`;
+- generator-core package for schema/config DSL, readers, validators, template rendering, VFS, diff, safe apply, rollback and doctor behavior;
+- CLI wrapper for command parsing, help/status output and root `pnpm openforge:*` scripts;
+- default template pack `openforge-default-nest-umi-v1` in `@opencore/generator-core`;
 - virtual file system before any disk mutation;
 - safe apply writer with explicit `--yes`, generated marker checks, manifest output, and rollback support;
-- doctor checks for workspace root, pnpm workspace, Nx project, contracts export, module registry, OpenAPI snapshot/drift command, example schemas, template pack, protected paths, and manifest directory status;
-- local gate script for repeatable OpenForge doctor/check/diff validation;
+- doctor checks for workspace root, pnpm workspace, CLI Nx project, generator-core Nx project, contracts export, module registry, OpenAPI snapshot/drift command, example schemas, template pack, protected paths, and manifest directory status;
+- local gate script for repeatable OpenForge status/doctor/check/diff validation;
 - API generator pack with Swagger decorators, `RequirePermission`, repository placeholder, no Prisma access, and patch-only app module registration;
 - Admin generator pack with ProTable, Modal/Drawer forms, ProDescriptions, export button, smoke skeleton, permission-aware operations, generated client placeholder, and patch-only route/access plans;
 - SDK generator pack with schema-derived types, request wrapper client, client spec, generated barrel file, and patch-only SDK index plan;
@@ -94,7 +106,7 @@ Stage I hardens the SDK/Test/Docs generator pack. SDK virtual files now include 
 
 Stage J hardens CLI UX, doctor checks, temp workspace e2e, and apply idempotency. `openforge:doctor` is read-only, unknown commands fail with a help hint, all-skipped write applies are no-ops that do not overwrite manifests, and e2e coverage verifies plan/diff/apply/idempotency/conflict/rollback in temp repos.
 
-Stage K adds `openforge:test`, `openforge:gate`, and [OpenForge CI Gate](../../docs/development/openforge-ci-gate.md). The gate is local and read-only: doctor, V1 schema check, and V1 diff.
+Stage K adds `openforge:test`, `openforge:gate`, and [OpenForge CI Gate](../../docs/development/openforge-ci-gate.md). The gate is local and read-only: status, doctor, V1 schema check, and V1 diff. `openforge:test` runs both `generator-core` and CLI wrapper tests.
 
 The recursive OpenCore quality-cycle gate also runs `pnpm registry:admin-routes:check` and `pnpm openapi:registry-tags:check` around OpenAPI export/check, so OpenForge no-write validation is paired with route/access and registry tag drift checks.
 

@@ -23,6 +23,7 @@ describe('@opencore/openforge workspace', () => {
       'rollback',
       'manifest',
       'doctor',
+      'status',
     ]);
   });
 });

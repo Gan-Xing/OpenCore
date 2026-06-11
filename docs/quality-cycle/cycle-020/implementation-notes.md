@@ -2240,3 +2240,87 @@ Generator-core migration full gates all passed after the P22 implementation:
 ## Next Module After Generator Core
 
 Next lowest incomplete module: `tools/generator`.
+
+## Tools Generator Round Module
+
+Target: BE20-P23 `tools/generator`.
+
+Dependency position:
+
+- Runs after `packages/generator-core` because the CLI wrapper can only be
+  aligned once the reusable generator core package exists.
+- Runs before API aggregation finalization because OpenForge remains a
+  development-time tool and should not leak reusable generator behavior back
+  into `apps/api`.
+
+## Tools Generator Implemented
+
+- Kept `tools/generator` as the OpenForge CLI package with command parsing,
+  help/status output, package status and root command entrypoints.
+- Kept the `@opencore/openforge` compatibility entrypoint re-exporting
+  `@opencore/generator-core` while preserving tool-owned
+  `OPENFORGE_CLI_COMMANDS` and `getOpenForgeWorkspaceStatus()`.
+- Added `status` to `OPENFORGE_CLI_COMMANDS`, CLI help and root scripts so the
+  public command list matches the already implemented `runCli(['status'])`
+  command.
+- Updated `runCli(['status'])` to print both `@opencore/openforge` workspace
+  status and `@opencore/generator-core` package status.
+- Updated `pnpm openforge:gate` to run `pnpm openforge:status` before doctor,
+  check and diff.
+- Updated OpenForge README, architecture, CI gate, schema authoring, template
+  authoring, apply/rollback runbook, generator roadmap and root README docs so
+  CLI responsibility belongs to `tools/generator` and reusable generator
+  behavior belongs to `packages/generator-core`.
+
+## Tools Generator Focused Verification
+
+- `NX_DAEMON=false pnpm nx typecheck openforge` pass; dependency chain includes
+  `generator-core:typecheck`.
+- `NX_DAEMON=false pnpm nx test openforge` pass; CLI package currently has 2
+  suites / 13 tests.
+- `NX_DAEMON=false pnpm nx lint openforge` pass.
+- `NX_DAEMON=false pnpm nx typecheck generator-core` pass.
+- `NX_DAEMON=false pnpm nx test generator-core` pass; generator-core currently
+  has 13 suites / 54 tests and 4 snapshots.
+- `NX_DAEMON=false pnpm nx lint generator-core` pass.
+- `pnpm openforge:status` pass; output includes both
+  `@opencore/openforge` and `@opencore/generator-core`.
+- `pnpm openforge:gate` pass; gate runs status, doctor, check and diff.
+- `pnpm openforge:test` pass; runs generator-core and openforge suites.
+
+## Tools Generator Full Round Verification
+
+Tools-generator alignment full gates all passed after the P23 implementation:
+
+- `pnpm typecheck` pass; Nx matrix contains 19 projects including `openforge`
+  and `generator-core`.
+- `pnpm lint` pass; existing Admin Biome hints remain non-failing.
+- `pnpm test` pass; Nx matrix contains 19 projects and includes both OpenForge
+  CLI and generator-core tests.
+- `pnpm build:api` pass; API build dependency graph remains unaffected by the
+  development-time OpenForge CLI package.
+- `pnpm prisma:validate` pass.
+- `pnpm openapi:check` pass.
+- `pnpm format:check` pass.
+
+## Tools Generator RuoYi/Yudao Reference Points
+
+- RuoYi/Yudao make code generation discoverable as a tool with explicit preview,
+  validation and generation actions.
+- OpenCore keeps that tool discoverability but exposes it as a safe TypeScript
+  CLI whose reusable internals live in a package boundary.
+- Status/doctor/gate commands provide a lightweight operational loop for the
+  generator without copying Java generator runtime structure.
+
+## Tools Generator TS/NestJS Best-Practice Choice
+
+- Keeps CLI orchestration thin and testable, with reusable code generation
+  behavior imported from `@opencore/generator-core`.
+- Uses explicit root pnpm scripts for each command instead of hiding generator
+  behavior behind app runtime modules.
+- Keeps status, doctor and gate read-only so OpenForge can be run during local
+  and CI checks without creating generated output.
+
+## Next Module After Tools Generator
+
+Next lowest incomplete module: `apps/api` aggregation and final acceptance.

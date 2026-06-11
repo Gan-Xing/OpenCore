@@ -7,13 +7,17 @@ OpenForge V1 gate 是本地可重复执行的质量门禁。它不读取 `.env*`
 ## Root Scripts
 
 ```bash
+pnpm openforge:status
 pnpm openforge:test
 pnpm openforge:gate
 ```
 
-`pnpm openforge:test` 运行 OpenForge Jest suite。`pnpm openforge:gate` 串联：
+`pnpm openforge:status` prints the CLI wrapper and generator-core package
+status. `pnpm openforge:test` runs both the generator-core and OpenForge CLI
+Jest suites. `pnpm openforge:gate` 串联：
 
 ```bash
+pnpm openforge:status
 pnpm openforge:doctor
 pnpm openforge:check -- --schema tools/generator/examples/core.dict.v1.schema.json
 pnpm openforge:diff -- --schema tools/generator/examples/core.dict.v1.schema.json --format json
@@ -34,18 +38,23 @@ pnpm openapi:export
 pnpm openapi:registry-tags:check
 pnpm openapi:check
 pnpm registry:admin-routes:check
+pnpm openforge:status
 pnpm openforge:doctor
 pnpm openforge:check -- --schema tools/generator/examples/core.dict.v1.schema.json
 pnpm openforge:gate
+NX_DAEMON=false pnpm nx test generator-core
 NX_DAEMON=false pnpm nx test contracts
 NX_DAEMON=false pnpm nx test module-registry
 NX_DAEMON=false pnpm nx test openforge
+NX_DAEMON=false pnpm nx build generator-core
 NX_DAEMON=false pnpm nx build openforge
 ```
 
 ## No-Write Check
 
-After `openforge:doctor`, `openforge:gate`, or dry-run apply, the repo should not contain generated output directories unless a developer intentionally ran apply with `--yes`:
+After `openforge:status`, `openforge:doctor`, `openforge:gate`, or dry-run
+apply, the repo should not contain generated output directories unless a
+developer intentionally ran apply with `--yes`:
 
 ```bash
 test ! -e .openforge

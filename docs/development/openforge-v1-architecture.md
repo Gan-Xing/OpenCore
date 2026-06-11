@@ -14,13 +14,14 @@ V1 不改变 OpenCore 的业务边界：它只生成平台开发骨架和 review
 | --------------- | ---------------------------------------------------------------------------------------------------------- |
 | Module registry | `tool.openforge` 已登记，权限为 `tool:openforge:read` 和 `tool:openforge:manage`                           |
 | Contracts       | `packages/contracts/src/openforge-contract.ts` 导出 S9 read-only plan、diff、preflight contract            |
-| Workspace tool  | `tools/generator` 是 pnpm workspace 和 Nx project，项目名为 `openforge`                                    |
-| CLI             | `pnpm openforge:plan`、`pnpm openforge:diff`、`pnpm openforge:check` 可运行                                |
+| Workspace tool  | `tools/generator` 是 pnpm workspace 和 Nx CLI project，项目名为 `openforge`                                |
+| Generator core  | `packages/generator-core` 是 pnpm workspace 和 Nx library project，项目名为 `generator-core`               |
+| CLI             | `pnpm openforge:plan`、`pnpm openforge:diff`、`pnpm openforge:check` 和 `pnpm openforge:status` 可运行     |
 | Readers         | 只读读取 module registry、OpenAPI snapshot 和 manual schema fixture                                        |
 | Planner         | 生成 deterministic generate plan，包含 API/Admin/SDK/Test/Docs/Prisma hint artifact                        |
 | Diff            | 生成 readonly diff plan，区分 `would-create`、`would-update`、`unchanged`、`blocked`、`protected-conflict` |
 | Safety          | 阻止绝对路径、`../`、`.env*`、`prisma/schema.prisma`、`prisma/migrations/**` 和 P4/P5 schema               |
-| Tests           | OpenForge reader、validator、planner、diff、preflight、CLI 和 safety tests 已存在                          |
+| Tests           | Generator-core reader、validator、planner、diff、preflight、safety tests 与 OpenForge CLI tests 已存在     |
 
 Stage B-L 已补齐 V1 contract surface、schema/config DSL、template pack/VFS、safe apply writer、rollback engine、API generator pack、Admin generator pack、SDK/Test/Docs generator pack、CLI doctor、temp repo e2e、OpenForge gate 和最终文档交接。
 
@@ -57,7 +58,7 @@ flowchart TD
 | Apply         | Write only allowed generated-owned files with explicit `--yes`                                 | Default dry-run; two-phase write and hash verify                            |
 | Manifest      | Record apply inputs, hashes, actions and rollback actions                                      | No secrets in manifest                                                      |
 | Rollback      | Revert only files recorded by manifest and still safe to touch                                 | Block if generated files were manually modified                             |
-| CI gate       | Run doctor/check/diff/test commands in a repeatable local gate                                 | Keep OpenForge enforceable before S10+ modules                              |
+| CI gate       | Run status/doctor/check/diff/test commands in a repeatable local gate                          | Keep OpenForge enforceable before S10+ modules                              |
 
 ## Current V1 Stage Status
 
@@ -65,15 +66,15 @@ flowchart TD
 | ------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Stage A | complete | This architecture document, roadmap update and progress ledger entry exist                                                                                                                                                  |
 | Stage B | complete | `packages/contracts/src/openforge-contract.ts` exports V1 template/apply/manifest/rollback/marker/patch/config contracts and pure marker/apply validation helpers                                                           |
-| Stage C | complete | `tools/generator/src/schema/**` and `tools/generator/src/config/**` validate Schema/config DSL V1, with legal and illegal V1 fixtures under `tools/generator/examples`                                                      |
+| Stage C | complete | `packages/generator-core/src/schema/**` and `packages/generator-core/src/config/**` validate Schema/config DSL V1, with legal and illegal V1 fixtures under `tools/generator/examples`                                      |
 | Stage D | complete | `openforge-default-nest-umi-v1` template pack, render layer, VFS helpers and golden snapshot tests render API/Admin/SDK/Test/Docs/Prisma/Patch virtual files in memory                                                      |
-| Stage E | complete | `tools/generator/src/apply/apply-writer.ts` applies generated-owned VFS output only with explicit `--yes`, defaults to dry-run, writes manifests, verifies hashes and rolls back partial writes                             |
-| Stage F | complete | `tools/generator/src/rollback/rollback-engine.ts` plans and applies manifest rollback, blocks modified generated files, restores from apply backups, and writes rollback audit records                                      |
+| Stage E | complete | `packages/generator-core/src/apply/apply-writer.ts` applies generated-owned VFS output only with explicit `--yes`, defaults to dry-run, writes manifests, verifies hashes and rolls back partial writes                     |
+| Stage F | complete | `packages/generator-core/src/rollback/rollback-engine.ts` plans and applies manifest rollback, blocks modified generated files, restores from apply backups, and writes rollback audit records                              |
 | Stage G | complete | API generator pack renders NestJS module/controller/service/repository/DTO/spec skeletons with Swagger decorators, `RequirePermission`, no Prisma access, patch-only app module registration and API golden/typecheck tests |
 | Stage H | complete | Admin generator pack renders ProTable page, Modal/Drawer forms, ProDescriptions detail, export button and smoke skeletons with permission-aware operations, placeholder client calls and patch-only route/access plans      |
 | Stage I | complete | SDK/Test/Docs generator pack renders generated SDK types/client/spec/index, API/Admin generated tests, module/API/Admin/runbook/patch-review docs, SDK index patch plan, snapshots and temp-project SDK typecheck           |
 | Stage J | complete | CLI UX includes `openforge:doctor`, clearer help/unknown-command handling, temp repo plan/diff/apply/idempotency/conflict/rollback e2e, and all-skipped apply no-op behavior                                                |
-| Stage K | complete | Root scripts `openforge:test` and `openforge:gate` exist, local CI gate docs define full command sequence and no-write checks, and gate runs locally                                                                        |
+| Stage K | complete | Root scripts `openforge:status`, `openforge:test` and `openforge:gate` exist, local CI gate docs define full command sequence and no-write checks, and gate runs locally                                                    |
 | Stage L | complete | Final README/docs/handoff/strategy/module docs plus schema/template/apply authoring docs document V1 operation, S10 usage, generated marker review, manifests and rollback                                                  |
 
 The recursive quality-cycle gate runs the OpenForge no-write gate alongside OpenCore-specific drift checks: `pnpm registry:admin-routes:check` and `pnpm openapi:registry-tags:check`.
@@ -153,7 +154,7 @@ The default V1 template pack is `openforge-default-nest-umi-v1`. Current Stage I
 
 Stage J CLI/doctor/e2e covers:
 
-- Doctor: workspace root, pnpm workspace, Nx project, contracts export, module registry validation, OpenAPI snapshot, OpenAPI drift command, example schemas, template pack, protected paths and manifest directory status.
+- Doctor: workspace root, pnpm workspace, CLI Nx project, generator-core Nx project, contracts export, module registry validation, OpenAPI snapshot, OpenAPI drift command, example schemas, template pack, protected paths and manifest directory status.
 - E2E: temp repo plan/diff/apply `--yes`, generated file verification, idempotent reapply, human-authored conflict detection and rollback cleanup.
 - Recursive gate integration: OpenForge remains no-write while the quality-cycle script also runs admin route/access drift and registry tag drift checks around OpenAPI export/check.
 
@@ -177,6 +178,7 @@ pnpm openforge:rollback -- --manifest <manifest> --yes
 pnpm openforge:manifest -- --list
 pnpm openforge:manifest -- --show <id>
 pnpm openforge:doctor
+pnpm openforge:status
 pnpm openforge:test
 pnpm openforge:gate
 ```
@@ -190,6 +192,7 @@ Rollback uses only manifest entries. Created files are deleted only when their c
 Stage K introduces `pnpm openforge:gate`, which runs:
 
 ```bash
+pnpm openforge:status
 pnpm openforge:doctor
 pnpm openforge:check -- --schema tools/generator/examples/core.dict.v1.schema.json
 pnpm openforge:diff -- --schema tools/generator/examples/core.dict.v1.schema.json --format json

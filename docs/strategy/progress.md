@@ -2279,3 +2279,35 @@ rendering/code generation core。
 
 `tools/generator`：继续按顺序校准 OpenForge CLI 文档、脚本和 generator-core
 边界。
+
+### Tools Generator 进展
+
+- BE20-P23 `tools/generator` 已完成：OpenForge CLI wrapper 已与
+  `@opencore/generator-core` 边界校准。
+- `tools/generator` 继续只拥有 CLI command parsing、help/status output、
+  workspace status、root scripts 和 CLI tests；核心 schema/config、render、
+  VFS、diff、apply、rollback、doctor 行为继续来自 `@opencore/generator-core`。
+- `OPENFORGE_CLI_COMMANDS`、CLI help 和 root `package.json` scripts 已补齐
+  `status`，与 `runCli(['status'])` 实际支持的命令保持一致。
+- `pnpm openforge:status` 输出 `@opencore/openforge` CLI wrapper status 和
+  `@opencore/generator-core` package status，保持 read-only。
+- `pnpm openforge:gate` 现在串联 status、doctor、check 和 diff，确保 gate
+  同时验证 CLI wrapper 与 generator-core 包边界。
+- OpenForge README、architecture、CI gate、schema authoring、template
+  authoring、apply/rollback runbook、generator roadmap 和 root README 已更新，
+  明确 `tools/generator` 是 CLI wrapper，`packages/generator-core` 拥有可复用生成器核心。
+- `NX_DAEMON=false pnpm nx typecheck openforge/generator-core` pass。
+- `NX_DAEMON=false pnpm nx test openforge/generator-core` pass；openforge 当前
+  2 个 suites / 13 tests，generator-core 当前 13 个 suites / 54 tests / 4
+  snapshots。
+- `NX_DAEMON=false pnpm nx lint openforge/generator-core` pass。
+- `pnpm openforge:status`、`pnpm openforge:gate` 和 `pnpm openforge:test` pass。
+- Tools-generator 校准后复跑 `pnpm typecheck`、`pnpm lint`、`pnpm test`、
+  `pnpm build:api`、`pnpm prisma:validate`、`pnpm openapi:check`、
+  `pnpm format:check` 均 pass；`typecheck`/`lint`/`test` 项目矩阵为 19 个 Nx
+  projects。
+
+### 下一模块
+
+`apps/api` 聚合与总体验收：按顺序确认 `apps/api` 只保留启动、HTTP entry、
+模块聚合和 OpenAPI 导出职责。

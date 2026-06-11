@@ -25,6 +25,7 @@ describe('OpenForge CLI shell', () => {
     });
     expect(stdout.getValue()).toContain('OpenForge V1 safe generator tool');
     expect(stdout.getValue()).toContain('doctor');
+    expect(stdout.getValue()).toContain('status');
     expect(stdout.getValue()).toContain(
       'Apply and rollback writes require explicit --yes',
     );
@@ -233,6 +234,28 @@ describe('OpenForge CLI shell', () => {
         }),
       ]),
       errors: [],
+    });
+    expect(stderr.getValue()).toBe('');
+  });
+
+  it('prints CLI and generator-core status without writing files', () => {
+    const stdout = createWritableBuffer();
+    const stderr = createWritableBuffer();
+
+    expect(runCli(['status'], stdout.stream, stderr.stream)).toEqual({
+      exitCode: 0,
+    });
+    expect(JSON.parse(stdout.getValue())).toMatchObject({
+      command: 'status',
+      status: 'workspace-ready',
+      workspace: {
+        packageName: '@opencore/openforge',
+        projectName: 'openforge',
+      },
+      generatorCore: {
+        packageName: '@opencore/generator-core',
+        projectName: 'generator-core',
+      },
     });
     expect(stderr.getValue()).toBe('');
   });

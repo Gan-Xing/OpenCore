@@ -29,7 +29,8 @@ OpenCore 不复制 RuoYi/Yudao 的 Java/Vue 代码，也不沿用其运行时实
 
 ## S9 MVP 状态
 
-S9 已完成 `tools/generator` workspace tool 和 OpenForge contracts，支持：
+S9 已完成 `tools/generator` CLI workspace tool、`packages/generator-core`
+package 和 OpenForge contracts，支持：
 
 - `pnpm openforge:plan -- --schema tools/generator/examples/core.dict.schema.json --format json`
 - `pnpm openforge:diff -- --schema tools/generator/examples/core.dict.schema.json --format json`
@@ -48,7 +49,7 @@ OpenForge V1 Stage A-L 已完成，新增：
 - API/Admin/SDK/Test/Docs generator pack。
 - Prisma model draft and migration hint only。
 - Patch-only plans for app module、Admin route/access、module registry 和 SDK index。
-- `openforge:doctor`、temp repo e2e、`openforge:test` 和 `openforge:gate`。
+- `openforge:status`、`openforge:doctor`、temp repo e2e、`openforge:test` 和 `openforge:gate`。
 - Schema authoring、template authoring、apply/rollback runbook 和 CI gate docs。
 
 V1 自动写入边界：
@@ -58,3 +59,8 @@ V1 自动写入边界：
 - 永远禁止：`.env*`、`prisma/schema.prisma`、`prisma/migrations/**`。
 
 V1 不生成业务逻辑，不替代 repository/persistence 审计，不实现 P4/P5 模块。S10 collaboration 可复用 OpenForge 生成 message、todo、Approval Lite 等 approved skeleton，但必须先登记 module registry、权限和 OpenAPI tag，并人工 review patch plans。
+
+P23 后的边界：`tools/generator` 只拥有 CLI command parsing、help/status 和
+root `pnpm openforge:*` entrypoints；schema/config、template rendering、VFS、
+diff、apply、rollback、doctor 和 e2e core coverage 由 `@opencore/generator-core`
+拥有。

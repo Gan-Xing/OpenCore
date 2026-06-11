@@ -13,6 +13,7 @@ export const OPENFORGE_CLI_COMMANDS = [
   'rollback',
   'manifest',
   'doctor',
+  'status',
 ] as const;
 
 export type OpenForgeCliCommand = (typeof OPENFORGE_CLI_COMMANDS)[number];

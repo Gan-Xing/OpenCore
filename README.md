@@ -59,7 +59,8 @@ S3-S9 handoff、runtime integration R-1-R7、OpenForge V1 A-L 和 Quality Cycle 
 - `packages/contracts`：权限码、模块/menu/permission schema、OpenAPI snapshot、table export/query/upload/error/OpenForge contract。
 - `packages/module-registry`：S5-S12 模块、权限、菜单、OpenAPI tag 和高风险业务泄漏检查。
 - `packages/sdk`：RBAC、系统管理、监控、工具、协同、operations、integration typed clients 和 registry fixtures。
-- `tools/generator`：OpenForge V1 安全生成器，提供 plan/diff/check、schema/config DSL、template/VFS、safe apply、manifest、rollback、doctor、gate 和 API/Admin/SDK/Test/Docs skeleton pack。
+- `packages/generator-core`：OpenForge generator core，提供 schema/config DSL、template/VFS、safe apply、manifest、rollback、doctor 和 API/Admin/SDK/Test/Docs skeleton pack。
+- `tools/generator`：OpenForge CLI wrapper，提供 plan/diff/check/apply/manifest/rollback/doctor/status/gate root commands。
 - `infra/*`：Docker、Nginx、监控和 Kubernetes 预留。
 - `docs/*`：架构、模块、开发、策略、handoff 和 AI 路线文档。
 
@@ -91,6 +92,7 @@ pnpm openforge:check
 pnpm openforge:apply -- --schema tools/generator/examples/core.dict.v1.schema.json --dry-run
 pnpm openforge:rollback -- --manifest .openforge/manifests/<id>.json --dry-run
 pnpm openforge:doctor
+pnpm openforge:status
 pnpm openforge:gate
 ```
 

@@ -8,6 +8,7 @@ import {
   formatPlanAsJson,
   formatPlanAsMarkdown,
   formatPreflightReportAsJson,
+  getOpenForgeGeneratorCoreStatus,
   listOpenForgeManifests,
   rollbackOpenForge,
   runOpenForgeDoctor,
@@ -40,6 +41,7 @@ function printHelp(stdout: WritableStream): void {
       '  rollback  Roll back files from an apply manifest, defaulting to dry-run',
       '  manifest  List or show OpenForge manifests',
       '  doctor    Check OpenForge workspace readiness without writing files',
+      '  status    Print CLI wrapper and generator-core package status',
       '',
       'Apply and rollback writes require explicit --yes.',
       '',
@@ -229,6 +231,7 @@ export function runCli(
       command,
       status: 'workspace-ready',
       workspace: getOpenForgeWorkspaceStatus(),
+      generatorCore: getOpenForgeGeneratorCoreStatus(),
       message: 'OpenForge is registered as a read-only S9 planning workspace.',
     });
     return { exitCode: 0 };

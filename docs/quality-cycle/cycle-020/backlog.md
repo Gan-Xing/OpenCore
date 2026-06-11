@@ -46,7 +46,7 @@ runtime packages are extracted and verified.
       job logs.
 - [x] BE20-P21-MONITOR: extract monitor runtime into `packages/monitor`.
 - [x] BE20-P22-GENERATOR-CORE: extract generator core package.
-- [ ] BE20-P23-TOOLS-GENERATOR: keep OpenForge CLI aligned with generator core.
+- [x] BE20-P23-TOOLS-GENERATOR: keep OpenForge CLI aligned with generator core.
 - [ ] BE20-P24-API-AGGREGATION: keep `apps/api` limited to startup, HTTP entry,
       module aggregation and OpenAPI export.
 
@@ -500,3 +500,23 @@ runtime packages are extracted and verified.
       and generated-module e2e behavior.
 - [x] Focused generator-core/openforge lint/typecheck/test pass.
 - [x] Full backend gate pass after the generator-core migration.
+
+## Tools Generator Round Acceptance
+
+- [x] `tools/generator` remains the OpenForge CLI package and owns command
+      parsing, help/status output, root scripts and CLI tests.
+- [x] `@opencore/openforge` continues to re-export `@opencore/generator-core`
+      for compatibility while keeping CLI workspace status in the tool package.
+- [x] The public CLI command list, help output and root package scripts include
+      `status`, matching the command implemented by `runCli()`.
+- [x] `pnpm openforge:status` prints both CLI wrapper status and
+      `@opencore/generator-core` package status without writing files.
+- [x] `pnpm openforge:gate` is aligned with the extracted core boundary and now
+      runs status, doctor, check and diff.
+- [x] OpenForge docs describe `tools/generator` as the CLI wrapper and
+      `packages/generator-core` as the schema/config/render/apply/rollback
+      owner.
+- [x] CLI tests cover help, status, doctor, plan, diff, check, apply dry-run,
+      rollback dry-run, manifest list and unknown command handling.
+- [x] Focused openforge/generator-core lint/typecheck/test pass.
+- [x] Full backend gate pass after the tools-generator alignment.
