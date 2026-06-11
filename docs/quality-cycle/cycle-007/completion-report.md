@@ -1,0 +1,32 @@
+# cycle-007 Completion Report
+
+## Summary
+
+Cycle 007 closed the Admin current-page export gap for the admitted collaboration, operations, and integration pages.
+
+The implementation adds one reusable Admin export kernel, typed export columns with `sensitive` exclusion, and summary-only CSV actions bounded by the S8 current-page export protocol. OpenForge docs now require generated Admin exports to stay current-page, bounded, and free of sensitive/detail-only fields.
+
+## Delivered
+
+- Added `CurrentPageExportButton` with CSV escaping, empty-state messaging, S8 `maxRows` bounding, and client-side download behavior.
+- Added `CurrentPageExportColumn.sensitive` metadata and removed sensitive columns before header/value generation.
+- Wired current-page export actions into collaboration pages: messages, notices, todos, approvals.
+- Wired current-page export actions into operations pages: jobs, online users, reports, export jobs.
+- Wired current-page export actions into integration pages: providers, mail, sms, OAuth, billing design, WeChat, WebSocket.
+- Updated OpenForge V1 architecture and template authoring docs with export governance rules.
+
+## Verification
+
+- `pnpm format`
+- `NX_DAEMON=false pnpm nx run-many -t typecheck -p admin,sdk`
+- `NX_DAEMON=false pnpm nx test admin`
+- `NX_DAEMON=false pnpm nx test sdk --runInBand`
+- `pnpm registry:admin-routes:check`
+- `pnpm openforge:doctor && pnpm openforge:gate`
+- `node tools/quality-cycle/opencore-quality-cycle.mjs gate`
+
+## Closeout
+
+- Completed at `2026-06-11 03:29:49 Europe/London`.
+- Full repository gate passed after reordering helper definitions in `CurrentPageExportButton.tsx` to satisfy `admin:lint`.
+- `completedCycles` before final close command: 6.

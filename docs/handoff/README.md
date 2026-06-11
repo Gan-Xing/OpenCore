@@ -18,8 +18,9 @@
 - S9：OpenForge MVP，只读 generate plan、diff plan、safety/preflight report。
 - Runtime integration R-1-R7：legacy app freeze、runtime audit、env mapping、PostgreSQL migration/seed、Prisma persistence、Redis/BullMQ/MinIO diagnostics、integration smoke、final docs。
 - OpenForge V1 A-L：safe generator pipeline、schema/config DSL、template/VFS、apply/manifest/rollback、API/Admin/SDK/Test/Docs pack、doctor/gate/e2e、final docs。
+- Quality Cycle 001：平台内核加固、契约 gate、OpenForge V1 验证、轻量协同、operations/report 设计位、integration provider/design 边界、全仓 gate。
 
-S3-S9 handoff、runtime integration handoff 与 OpenForge V1 full implementation handoff 范围均已完成。若继续推进，应另起 S10 collaboration handoff/goal。
+S3-S9 handoff、runtime integration handoff、OpenForge V1 full implementation handoff 与 Quality Cycle 001 范围均已完成。若继续推进，应另起 cycle-002 或专项 handoff，并继续保留行业业务、真实支付、AI/RAG/Agent 的准入边界。
 
 ## 交接文档
 
@@ -31,6 +32,7 @@ S3-S9 handoff、runtime integration handoff 与 OpenForge V1 full implementation
 - [2026-06-10 Runtime Integration Handoff](2026-06-10-runtime-integration-handoff.md)
 - [2026-06-10 S9 OpenForge MVP Handoff](2026-06-10-s9-openforge-mvp-handoff.md)
 - [2026-06-10 OpenForge V1 Full Implementation Handoff](2026-06-10-openforge-v1-full-implementation-handoff.md)
+- [2026-06-10 OpenCore Quality Recursion Handoff](2026-06-10-opencore-1-6-quality-recursion-handoff.md)
 
 ## D1-D6 设计文档
 
@@ -61,8 +63,8 @@ NX_DAEMON=false pnpm nx test contracts
 pnpm openforge:gate
 ```
 
-Runtime integration and OpenForge V1 final evidence is tracked in [progress.md](../strategy/progress.md). Runtime evidence includes live API smoke for `/health/live`, `/health/ready`, `/api/docs`, `/api/auth/login`, and `/api/monitor/status`.
+Runtime integration, OpenForge V1, and Quality Cycle 001 final evidence is tracked in [progress.md](../strategy/progress.md) and [cycle-001 completion report](../quality-cycle/cycle-001/completion-report.md). Runtime evidence includes live API smoke for `/health/live`, `/health/ready`, `/api/docs`, `/api/auth/login`, and `/api/monitor/status`.
 
 ## 下一份 handoff 建议
 
-OpenForge V1 handoff 已完成。下一份 handoff 可进入 S10 collaboration。不得复用 OpenForge V1 继续偷偷扩大为业务逻辑生成、Prisma schema 写入、migration 创建或 P4/P5 模块实现。
+Quality Cycle 001 已完成。下一份 handoff 可进入 cycle-002 recursion 或专项模块 hardening。不得复用 OpenForge V1 继续偷偷扩大为业务逻辑生成、migration 创建、行业业务包、真实支付或 AI/RAG/Agent 实现。

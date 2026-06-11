@@ -1,0 +1,85 @@
+/goal
+
+已保存文件地址：
+
+- Handoff：docs/handoff/2026-06-10-opencore-1-6-quality-recursion-handoff.md
+- Cycle 001 backlog：docs/quality-cycle/cycle-001/backlog.md
+- 计数脚本：tools/quality-cycle/opencore-quality-cycle.mjs
+
+执行 docs/handoff/2026-06-10-opencore-1-6-quality-recursion-handoff.md，并使用 docs/quality-cycle/cycle-001/backlog.md 作为 cycle-001 的初始 backlog，使用 tools/quality-cycle/opencore-quality-cycle.mjs 作为 status / start-cycle / complete-cycle / gate 计数脚本。
+
+这是质量递归循环，不是单任务。每个 cycle 必须完整执行：审计当前项目和 4 个参考项目 → 生成覆盖阶段 1-6 的完整 backlog → 全部实现 → 全仓验收 → completion report → 运行计数脚本成功后才算 cycle +1。不要把单个子任务当一轮。
+
+开始前必须运行：
+node tools/quality-cycle/opencore-quality-cycle.mjs status --max 20
+node tools/quality-cycle/opencore-quality-cycle.mjs start-cycle --max 20
+
+每轮先检查停止条件：
+1. completedCycles >= 20 则停止。
+2. 伦敦时间 >= 2026-06-11 05:30 则停止。
+3. 否则继续当前 active cycle。
+
+必须参考：
+- Gan-Xing/NestWeb：permission、menus、messages、approval、queue、system-log、openapi、prisma。
+- Gan-Xing/Antdpro6：access、routes、TableExportButton、MessageCenter、Approvals、Auth/System/Security 页面、services、e2e。
+- RuoYi/ruoyi-vue-pro：system、infra、monitor、tool、codegen、workflow、report、job、notice、mail、sms、oauth、pay、member、mall、crm、erp、mes、wms。
+- Yudao/yudao-ui-admin-vue3：system、infra、bpm、report、mall、member、crm、erp、iot、ai、codegen。
+
+阶段范围必须覆盖：
+1 平台内核
+2 契约体系
+3 OpenForge
+4 协同办公
+5 工作流/报表/任务
+6 集成能力
+
+当前 active cycle 如果没有 backlog，先审计并生成：
+docs/quality-cycle/cycle-XXX/audit.md
+docs/quality-cycle/cycle-XXX/reference-comparison.md
+docs/quality-cycle/cycle-XXX/backlog.md
+
+backlog 必须是 checkbox，且每项必须包含 ID、阶段、问题、参考来源、涉及文件、实施要求、测试要求、完成标准。不得写空泛任务。
+
+执行规则：
+1. 读取当前 cycle backlog。
+2. 按优先级实现所有未完成项。
+3. 每完成一项，把 `- [ ]` 改成 `- [x]`，并在 implementation-notes.md 记录证据。
+4. 不允许跳过失败测试。
+5. 不允许删除安全约束来通过测试。
+6. 不允许复制 RuoYi/Yudao Java/Vue 代码。
+7. 不允许迁移 NestWeb/Antdpro6 业务代码。
+8. 不允许提交 secret 或读取 .env.opencore.local 到输出。
+9. 不允许把 CRM/ERP/MES/WMS/商城/支付/会员/多租户/AI/RAG/Agent 偷偷塞进 core。
+10. 支付、微信、AI 等只做设计/provider/mock 边界，除非 handoff 明确允许生产闭环。
+
+当前 cycle 全部 backlog 完成后，写：
+docs/quality-cycle/cycle-XXX/completion-report.md
+
+然后运行：
+node tools/quality-cycle/opencore-quality-cycle.mjs complete-cycle --max 20 --run-gate
+
+只有脚本成功，才算 cycle +1。然后立刻运行 status/start-cycle，进入下一轮审计，重新生成新的 backlog。直到 20 次或伦敦时间截止。
+
+每次 complete-cycle 前必须至少通过：
+pnpm format:check
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+pnpm prisma:validate
+pnpm openapi:export
+pnpm openapi:check
+pnpm test:api
+pnpm test:admin
+NX_DAEMON=false pnpm nx test contracts
+NX_DAEMON=false pnpm nx test module-registry
+NX_DAEMON=false pnpm nx test sdk
+
+如果 OpenForge 脚本存在，还必须通过：
+pnpm openforge:check
+pnpm openforge:doctor
+pnpm openforge:gate
+NX_DAEMON=false pnpm nx test openforge
+NX_DAEMON=false pnpm nx build openforge
+
+停止时输出 completedCycles、activeCycle、最后一次 gate、剩余 backlog、下一步建议。

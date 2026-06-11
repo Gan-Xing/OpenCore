@@ -1,0 +1,18 @@
+# cycle-010 Backlog
+
+- [x] Q010-P1-CORE-DETAIL-WRAPPER-CONTRACT：阶段 1；问题：`RbacTable` / `SystemManagementTable` have filter/export parity but no read-only detail contract；参考来源：Antdpro6 Drawer + ProDescriptions detail pages、OpenCore `ReadOnlyDetailDrawer`；涉及文件：`apps/admin/src/pages/System/RbacTable.tsx`、`SystemManagementTable.tsx`；实施要求：wrappers accept detail title/field/json/timeline metadata, open `ReadOnlyDetailDrawer` from a stable row action, and preserve existing no-mutation placeholders；测试要求：`NX_DAEMON=false pnpm nx run-many -t typecheck -p admin,sdk`、`NX_DAEMON=false pnpm nx test admin`；完成标准：core wrappers expose a reusable read-only detail surface without raw backend calls.
+
+- [x] Q010-P2-RBAC-DETAIL-METADATA：阶段 2；问题：users/roles/permissions/menus pages cannot inspect a row beyond visible columns；参考来源：RuoYi/Yudao system RBAC view flows、Antdpro6 Auth pages；涉及文件：`apps/admin/src/pages/System/Users.tsx`、`Roles.tsx`、`Permissions.tsx`、`Menus.tsx`；实施要求：add detail field metadata with stable ids/codes, role/permission/menu identifiers and read-only status/risk fields；测试要求：`NX_DAEMON=false pnpm nx test admin`；完成标准：4 个 RBAC pages pass detail metadata into `RbacTable`.
+
+- [x] Q010-P3-SYSTEM-DETAIL-METADATA：阶段 3；问题：dict/config/files pages lack read-only detail drawers and config detail redaction is not explicit；参考来源：NestWeb dict/config boundaries、Yudao dict/config detail forms；涉及文件：`apps/admin/src/pages/System/Dicts.tsx`、`Config.tsx`、`Files.tsx`、`packages/sdk/src/registry-fixtures.ts`；实施要求：add detail fields/json sections, add a safe secret config fixture sample, and use a shared config value formatter that returns `[redacted]` for secret visibility；测试要求：`NX_DAEMON=false pnpm nx test sdk --runInBand`、`NX_DAEMON=false pnpm nx test admin`；完成标准：system pages show read-only details and secret config values remain redacted.
+
+- [x] Q010-P4-SECURITY-LOG-DETAIL-METADATA：阶段 4；问题：login/operation logs remain table-only despite reference log-detail flows；参考来源：Antdpro6 SystemLogs/LoginLogs detail drawers、Yudao LoginLogDetail/OperateLogDetail；涉及文件：`apps/admin/src/pages/Security/LoginLogs.tsx`、`OperationLogs.tsx`；实施要求：add read-only detail fields for request/user-agent/status and metadata JSON for operation logs；测试要求：`NX_DAEMON=false pnpm nx test admin`；完成标准：security log pages expose diagnostic details without mutation controls.
+
+- [x] Q010-P5-ADMIN-SMOKE-DETAIL-GUARD：阶段 5；问题：Admin smoke checks do not guard core detail drawer parity；参考来源：cycle-006 admitted detail checks、OpenCore smoke-test conventions；涉及文件：`apps/admin/scripts/smoke-test.mjs`；实施要求：assert core wrappers use `ReadOnlyDetailDrawer` and core pages pass `detailFields={detailFields}`, with config redaction enforced；测试要求：`NX_DAEMON=false pnpm nx test admin`；完成标准：core detail metadata cannot regress silently.
+
+- [x] Q010-P6-OPENFORGE-CORE-DETAIL-DOCS：阶段 6；问题：OpenForge docs mention generated detail drawers generally but not core wrapper detail metadata and config detail redaction；参考来源：OpenForge Admin template docs、Yudao/RuoYi detail component conventions；涉及文件：`docs/development/openforge-template-authoring.md`、`docs/development/openforge-v1-architecture.md`；实施要求：document generated core Admin wrappers must provide read-only detail metadata and redact secret config detail values; 测试要求：`pnpm openforge:doctor`、`pnpm openforge:gate`；完成标准：docs match S6/S7 core detail behavior.
+
+- [x] Q010-CLOSE-001：更新 `docs/quality-cycle/cycle-010/implementation-notes.md`。
+- [x] Q010-CLOSE-002：写 `docs/quality-cycle/cycle-010/completion-report.md`。
+- [x] Q010-CLOSE-003：运行全仓 gate。
+- [x] Q010-CLOSE-004：运行 `node tools/quality-cycle/opencore-quality-cycle.mjs complete-cycle --max 20 --run-gate` 并确认 completedCycles +1。

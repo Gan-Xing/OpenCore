@@ -1,0 +1,18 @@
+# cycle-006 Backlog
+
+- [x] Q006-P1-ADMIN-DETAIL-KERNEL：阶段 1；问题：Admin table pages 重复渲染列表但没有统一 read-only detail drawer 内核；参考来源：Antdpro6 Approval Drawer + ProDescriptions、Yudao detail/timeline views；涉及文件：`apps/admin/src/pages/shared/*`、相关 Admin pages；实施要求：新增可复用详情抽屉/字段/JSON/timeline helper，支持 title/status/body/payload/redaction 展示，不引入 live API；测试要求：`NX_DAEMON=false pnpm nx test admin`、`pnpm registry:admin-routes:check`；完成标准：后续 fixture-backed pages 可复用同一 detail drawer 语义。
+
+- [x] Q006-P2-SDK-FIXTURE-DETAIL-SELECTORS：阶段 2；问题：SDK fixtures 只有 list arrays，Admin 不能通过 detail-shaped selector 模拟 cycle-005 的 `GET .../:id`/`:code` contracts；参考来源：Antdpro6 services `findOne`、Yudao `getJob`/`getMailTemplate`/`getSmsTemplate`；涉及文件：`packages/sdk/src/collaboration-types.ts`、`operations-types.ts`、`integration-types.ts`、SDK specs；实施要求：新增 fixture detail selector helpers，保持 provider config redacted、outbox/channel scoping、deleted/hidden policy 与 API 语义一致；测试要求：`NX_DAEMON=false pnpm nx test sdk --runInBand`；完成标准：selector misses return `undefined` and found records match detail route keys。
+
+- [x] Q006-P3-OPENFORGE-ADMIN-DETAIL-DOCS：阶段 3；问题：OpenForge docs 已要求 API detail endpoints，但没有要求 generated Admin table page 通过 detail drawer 表达 list/detail/action 三层边界；参考来源：Antdpro6 Drawer/ProDescriptions、Yudao generated form/detail patterns；涉及文件：`docs/development/openforge-template-authoring.md`、`docs/development/openforge-v1-architecture.md`；实施要求：补充 Admin detail drawer authoring guidance，强调 read permission、redaction、hidden/deleted policy、design-only provider boundaries；测试要求：`pnpm openforge:doctor`、`pnpm openforge:gate`；完成标准：OpenForge 文档同时覆盖 API detail contract 和 Admin detail presentation。
+
+- [x] Q006-P4-COLLAB-ADMIN-DETAIL-DRAWERS：阶段 4；问题：messages/notices/todos/approval-lite Admin pages 只有行级 summary/action policy，没有 body/timeline/business detail；参考来源：Antdpro6 MessageCenter、Approval request drawer、NestWeb message/approval entities；涉及文件：`apps/admin/src/pages/Collaboration/*.tsx`、SDK fixture selectors；实施要求：标题或 action 打开 read-only detail drawer，展示 body、business binding、timeline/status、action policy；测试要求：`NX_DAEMON=false pnpm nx test admin`；完成标准：4 个 collaboration pages 都能从 table row 打开详情且不改变 action guards。
+
+- [x] Q006-P5-OPERATIONS-ADMIN-DETAIL-DRAWERS：阶段 5；问题：jobs/online-users/reports/export jobs Admin pages 缺少 payload、run/log、query schema、runbook bindings 的 detail surface；参考来源：RuoYi/Yudao job detail/job log/report separation；涉及文件：`apps/admin/src/pages/Monitor/Jobs.tsx`、`OnlineUsers.tsx`、`apps/admin/src/pages/Optional/*.tsx`、SDK fixture selectors；实施要求：新增 read-only detail drawers，不触发 scheduler/report/export execution；测试要求：`NX_DAEMON=false pnpm nx test admin`；完成标准：operations detail UI 清楚区分 read-only detail、manual trigger、design-only export。
+
+- [x] Q006-P6-INTEGRATION-ADMIN-DETAIL-DRAWERS：阶段 6；问题：providers/mail/sms/oauth/design pages 缺少 redacted config、template body、outbox/design boundary detail surface；参考来源：Yudao mail/sms template detail/send forms、OAuth provider patterns；涉及文件：`apps/admin/src/pages/Integrations/*.tsx`、SDK fixture selectors；实施要求：新增 provider/template/OAuth/design detail drawers，provider config 继续 redacted，pay/WeChat/WebSocket 保持 design-only；测试要求：`NX_DAEMON=false pnpm nx test admin`、`NX_DAEMON=false pnpm nx test sdk --runInBand`；完成标准：integration Admin detail 不泄露 secrets、不绕过 disabled/provider/action guards。
+
+- [x] Q006-CLOSE-001：更新 `docs/quality-cycle/cycle-006/implementation-notes.md`。
+- [x] Q006-CLOSE-002：写 `docs/quality-cycle/cycle-006/completion-report.md`。
+- [x] Q006-CLOSE-003：运行全仓 gate。
+- [x] Q006-CLOSE-004：运行 `node tools/quality-cycle/opencore-quality-cycle.mjs complete-cycle --max 20 --run-gate` 并确认 completedCycles +1。
