@@ -1,6 +1,6 @@
 # OpenCore Strategy Blueprint Progress
 
-更新时间：2026-06-10
+更新时间：2026-06-11
 
 ## 本阶段 Checklist
 
@@ -24,6 +24,24 @@
 | S6 auth / RBAC system                   | complete | 已实现 Prisma/PostgreSQL schema、auth token baseline、Role.code/Permission.code、permission guard、RBAC API、SDK、Admin RBAC 页面和 OpenAPI 同步         | 进入 S7    |
 | S7 system management                    | complete | 已实现 dict、system config、file asset、audit log、login log、基础 CRUD/分页/权限/export baseline、Admin 页面和 OpenAPI/SDK 同步                         | 进入 S8    |
 | S8 monitor / tool baseline              | complete | 已实现 status/version/queue 只读诊断、OpenAPI drift check、current-page export protocol、Admin monitor/tool 页面和敏感信息泄漏测试                       | S3-S8 完成 |
+
+## Quality Cycle 001 进度
+
+| 范围              | 状态     | 证据                                                                                                            | 边界                                                 |
+| ----------------- | -------- | --------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| 平台内核          | complete | RBAC CRUD/matrix、auth session、audit interceptor、config secret、file update、monitor probes、observability    | 不引入多租户、SSO、复杂审计平台                      |
+| 契约体系          | complete | SDK generate/check、OpenAPI registry tag drift、Admin route/access drift、permission deprecation、API contracts | 不绕过 registry/OpenAPI/SDK/Admin drift gate         |
+| OpenForge         | complete | V1 contracts、schema/config DSL、template/VFS、safe apply、manifest、rollback、doctor/gate/e2e、snapshots       | 不写 Prisma schema/migrations，不生成业务逻辑        |
+| Collaboration     | complete | message、notice、todo、Approval Lite Prisma/API/SDK/Admin/tests                                                 | 不做 BPMN、流程设计器、复杂工作流                    |
+| Operations/Report | complete | monitor.job、monitor.cache、monitor.online-user、optional.report、optional.export-job design                    | 不做完整调度平台、大数据导出生产执行、完整报表设计器 |
+| Integration       | complete | provider config/secret redaction/health、mail、sms、OAuth callback contract、WeChat/WebSocket/payment designs   | 不做真实支付、微信业务闭环、行业业务包、AI/RAG/Agent |
+
+Q001 详细证据见：
+
+- `docs/quality-cycle/cycle-001/audit.md`
+- `docs/quality-cycle/cycle-001/reference-comparison.md`
+- `docs/quality-cycle/cycle-001/implementation-notes.md`
+- `docs/quality-cycle/cycle-001/completion-report.md`
 
 ## 目标文件状态
 
