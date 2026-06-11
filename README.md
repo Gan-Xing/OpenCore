@@ -49,7 +49,7 @@ S3-S9 handoff、runtime integration R-1-R7、OpenForge V1 A-L 和 Quality Cycle 
 
 ## 工作区结构
 
-- `apps/api`：NestJS API，已具备 health/readiness、OpenAPI export/check、API foundation、RBAC、系统管理、监控/工具、轻量协同、operations/report 设计位、integration provider/design 边界，以及 PostgreSQL/Redis/BullMQ/MinIO runtime diagnostics。
+- `apps/api`：NestJS API composition root，保留 bootstrap、HTTP entry aggregation、模块聚合、runtime config 和 OpenAPI export/check；可复用 runtime 已下沉到 `packages/*` 或 `tools/*`。
 - `apps/admin`：Umi Max + Ant Design Pro V6 官方后台，已具备 Dashboard shell、RBAC 页面、系统管理页面、Monitor/Tool/Collaboration/Optional/Integrations 页面和 smoke test。
 - `apps/web`：官网占位，后续使用 Next.js。
 - `apps/mobile`：移动端占位，后续使用 Expo React Native。

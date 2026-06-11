@@ -13,7 +13,8 @@ OpenCore 使用 pnpm workspace + Nx 管理 monorepo。
 
 ## apps
 
-- `apps/api`：NestJS API，已完成 S2-S8 主线。
+- `apps/api`：NestJS API composition root，保留 bootstrap、HTTP entry
+  aggregation、模块聚合、runtime config 和 OpenAPI export/check。
 - `apps/admin`：Umi Max + Ant Design Pro V6 官方后台，已完成 S2-S8 主线。
 - `apps/web`：官网占位，后续初始化 Next.js。
 - `apps/mobile`：移动端占位，后续初始化 Expo React Native。
@@ -28,8 +29,17 @@ OpenCore 使用 pnpm workspace + Nx 管理 monorepo。
 - `contracts`：权限码、模块/menu/permission schema、OpenAPI snapshot、table export contract。
 - `sdk`：RBAC、系统管理、monitor/tool typed client 和 registry fixtures。
 - `module-registry`：S5-S8 模块、权限、菜单、OpenAPI tag 和 P4/P5 泄漏检查。
-- `auth`：认证与权限抽象的未来边界；当前 auth/RBAC runtime 在 `apps/api` 中实现，后续可抽取。
-- `config`：共享配置未来边界；当前 API runtime config 在 `apps/api/src/platform/config` 中实现。
+- `core`：NestJS foundation、异常、响应、OpenAPI helper、请求上下文、安全基线和结构化日志。
+- `database`：Prisma service/module、事务和 seed helper。
+- `redis`：Redis client、key/TTL/cache helper。
+- `file`：文件存储抽象和安全 key/input helper。
+- `system`：字典、参数、公告、部门、岗位、菜单、角色、用户 runtime。
+- `security`：auth、password/token、permission/role/data-scope guards。
+- `audit`：登录日志、操作日志、audit decorator/interceptor。
+- `online-user`：在线用户/session runtime。
+- `scheduler`：任务定义、run log、BullMQ adapter metadata 和 registry whitelist。
+- `monitor`：health、runtime diagnostics、status/version/queue monitor。
+- `generator-core`：OpenForge metadata parsing、template rendering 和 code generation core。
 - `testing`：测试工具预留。
 - `ai-core`：AI Native 架构预留。
 

@@ -2311,3 +2311,37 @@ rendering/code generation core。
 
 `apps/api` 聚合与总体验收：按顺序确认 `apps/api` 只保留启动、HTTP entry、
 模块聚合和 OpenAPI 导出职责。
+
+### API Aggregation 进展
+
+- BE20-P24 `apps/api` 聚合与总体验收已完成。
+- `apps/api/src/main.ts` 保持 bootstrap 职责：加载 runtime config、创建 Nest
+  app、应用 API foundation、设置 OpenAPI、listen 并输出启动日志。
+- `apps/api/src/app/app.module.ts` 保持 composition root 职责：聚合 runtime/API
+  modules 并注册全局 `AuditOperationLogInterceptor`。
+- 删除旧 `apps/api/src/platform` compatibility shim：audit、database、errors、
+  logging、request-context、security、setup、`openapi.ts` 和
+  `openapi-drift.ts` 不再存在于 API app 内。
+- `apps/api/src/platform` 现在只保留 `config` 与 `openapi`：runtime config 是
+  API bootstrap concern，OpenAPI export/check/registry-tags scripts 需要 runnable
+  API graph。
+- OpenAPI tests 已改为直接从 `@opencore/core` 导入
+  `applyApiFoundation`、`createOpenApiDocument` 和
+  `compareOpenApiDocuments`，不再通过 API-local shim。
+- 新增 `api-aggregation-boundary.spec.ts`，锁定 `apps/api/src/platform` 只能包含
+  `config` 和 `openapi`，并锁定 API source root 为 app/assets/main/modules/platform。
+- `NX_DAEMON=false pnpm nx typecheck api` pass。
+- `NX_DAEMON=false pnpm nx test api` pass；API 当前 24 个 suites / 64 tests。
+- `NX_DAEMON=false pnpm nx lint api` pass。
+- `pnpm openapi:export`、`pnpm openapi:check`、`pnpm openapi:registry-tags:check`、
+  `pnpm registry:admin-routes:check` 和 `pnpm sdk:check` pass。
+- API aggregation 清理后复跑 `pnpm typecheck`、`pnpm lint`、`pnpm test`、
+  `pnpm build:api`、`pnpm prisma:validate`、`pnpm openapi:check`、
+  `pnpm format:check` 均 pass；`typecheck`/`lint`/`test` 项目矩阵为 19 个 Nx
+  projects。
+
+### Backend Self-Loop 完成状态
+
+BE20-P01 至 BE20-P24 已全部完成；后端 runtime 能力已按依赖顺序下沉到
+`packages/*` 或 `tools/*`，`apps/api` 保留启动、HTTP entry aggregation、模块聚合、
+runtime config 与 OpenAPI export/check。

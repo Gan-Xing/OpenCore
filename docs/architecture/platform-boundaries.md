@@ -16,14 +16,14 @@
 
 ## apps 职责
 
-| 路径           | 职责                                                                               | 当前状态       |
-| -------------- | ---------------------------------------------------------------------------------- | -------------- |
-| `apps/api`     | NestJS API、OpenAPI 导出/检查、健康检查、配置、安全、RBAC、系统管理、监控/工具边界 | S2-S8 complete |
-| `apps/admin`   | 官方后台中台，使用 Umi Max + Ant Design Pro V6                                     | S2-S8 complete |
-| `apps/web`     | 官网，后续使用 Next.js                                                             | 仅占位         |
-| `apps/mobile`  | 移动端，后续使用 Expo React Native                                                 | 仅占位         |
-| `apps/miniapp` | 小程序，后续使用 Taro + React，不直接使用 React Native                             | 仅占位         |
-| `apps/desktop` | 桌面端，后续使用 Tauri                                                             | 仅占位         |
+| 路径           | 职责                                                                                                 | 当前状态       |
+| -------------- | ---------------------------------------------------------------------------------------------------- | -------------- |
+| `apps/api`     | NestJS API composition root、bootstrap、HTTP entry aggregation、runtime config、OpenAPI export/check | BE20 complete  |
+| `apps/admin`   | 官方后台中台，使用 Umi Max + Ant Design Pro V6                                                       | S2-S8 complete |
+| `apps/web`     | 官网，后续使用 Next.js                                                                               | 仅占位         |
+| `apps/mobile`  | 移动端，后续使用 Expo React Native                                                                   | 仅占位         |
+| `apps/miniapp` | 小程序，后续使用 Taro + React，不直接使用 React Native                                               | 仅占位         |
+| `apps/desktop` | 桌面端，后续使用 Tauri                                                                               | 仅占位         |
 
 ## packages 职责
 

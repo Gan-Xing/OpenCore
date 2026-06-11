@@ -1,8 +1,7 @@
 import { Test } from '@nestjs/testing';
+import { applyApiFoundation, createOpenApiDocument } from '@opencore/core';
 import { AppModule } from '../../app/app.module';
 import { loadRuntimeConfig } from '../config/runtime-config';
-import { applyApiFoundation } from '../setup/apply-api-foundation';
-import { createOpenApiDocument } from './openapi';
 
 describe('OpenAPI baseline', () => {
   it('exports health endpoints from a configured API app', async () => {

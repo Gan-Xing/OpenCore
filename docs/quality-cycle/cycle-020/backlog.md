@@ -47,7 +47,7 @@ runtime packages are extracted and verified.
 - [x] BE20-P21-MONITOR: extract monitor runtime into `packages/monitor`.
 - [x] BE20-P22-GENERATOR-CORE: extract generator core package.
 - [x] BE20-P23-TOOLS-GENERATOR: keep OpenForge CLI aligned with generator core.
-- [ ] BE20-P24-API-AGGREGATION: keep `apps/api` limited to startup, HTTP entry,
+- [x] BE20-P24-API-AGGREGATION: keep `apps/api` limited to startup, HTTP entry,
       module aggregation and OpenAPI export.
 
 ## Common Round Acceptance
@@ -520,3 +520,25 @@ runtime packages are extracted and verified.
       rollback dry-run, manifest list and unknown command handling.
 - [x] Focused openforge/generator-core lint/typecheck/test pass.
 - [x] Full backend gate pass after the tools-generator alignment.
+
+## API Aggregation Round Acceptance
+
+- [x] `apps/api/src/main.ts` owns API bootstrap only: runtime config loading,
+      Nest app creation, API foundation setup, OpenAPI setup and listen/logging.
+- [x] `apps/api/src/app/app.module.ts` owns module aggregation and global
+      interceptor registration only.
+- [x] Health and monitor HTTP entrypoints remain in API aggregation but delegate
+      reusable behavior to `@opencore/monitor`.
+- [x] OpenAPI export/check/registry-tag scripts remain in
+      `apps/api/src/platform/openapi` because they need the runnable API app.
+- [x] Runtime config remains in `apps/api/src/platform/config` as the API
+      bootstrap configuration boundary.
+- [x] Legacy API-local platform shims for audit, database, errors, logging,
+      request context, security, setup and OpenAPI core helpers were removed.
+- [x] API OpenAPI tests import core OpenAPI/foundation helpers directly from
+      `@opencore/core` instead of API-local shims.
+- [x] API aggregation boundary tests assert `apps/api/src/platform` only
+      contains `config` and `openapi`, and that `apps/api/src` stays limited to
+      app, assets, main, modules and platform.
+- [x] Focused api lint/typecheck/test and OpenAPI export/check pass.
+- [x] Full backend gate pass after API aggregation cleanup.

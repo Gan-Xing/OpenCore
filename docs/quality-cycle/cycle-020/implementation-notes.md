@@ -2324,3 +2324,88 @@ Tools-generator alignment full gates all passed after the P23 implementation:
 ## Next Module After Tools Generator
 
 Next lowest incomplete module: `apps/api` aggregation and final acceptance.
+
+## API Aggregation Round Module
+
+Target: BE20-P24 `apps/api` aggregation and final acceptance.
+
+Dependency position:
+
+- Runs after all runtime packages and OpenForge tooling because API aggregation
+  should only compose already-extracted backend capabilities.
+- Serves as the final cleanup round for API-local platform shims before the
+  backend self-loop can be considered complete.
+
+## API Aggregation Implemented
+
+- Kept `apps/api/src/main.ts` focused on runtime config loading, Nest app
+  creation, API foundation setup, OpenAPI setup, listen and startup logging.
+- Kept `apps/api/src/app/app.module.ts` focused on module aggregation and
+  global `AuditOperationLogInterceptor` registration.
+- Removed legacy API-local platform compatibility shims and shim-only tests for
+  audit, database, errors, logging, request context, security, setup,
+  `openapi.ts` and `openapi-drift.ts`.
+- Kept `apps/api/src/platform/config` because runtime config is an API
+  bootstrap concern.
+- Kept `apps/api/src/platform/openapi` export/check/registry-tag scripts
+  because they require the runnable API app to generate and validate the
+  OpenAPI document.
+- Updated OpenAPI tests to import `applyApiFoundation`,
+  `createOpenApiDocument` and `compareOpenApiDocuments` directly from
+  `@opencore/core`.
+- Added `api-aggregation-boundary.spec.ts` to assert that
+  `apps/api/src/platform` only contains `config` and `openapi`, and that the
+  API source root stays limited to app, assets, main, modules and platform.
+
+## API Aggregation Focused Verification
+
+- `NX_DAEMON=false pnpm nx typecheck api` pass.
+- `NX_DAEMON=false pnpm nx test api` pass; API currently has 24 suites / 64
+  tests after removing shim-only platform suites and adding aggregation boundary
+  coverage.
+- `NX_DAEMON=false pnpm nx lint api` pass.
+- `pnpm openapi:export` pass.
+- `pnpm openapi:check` pass.
+- `pnpm openapi:registry-tags:check` pass.
+- `pnpm registry:admin-routes:check` pass.
+- `pnpm sdk:check` pass.
+
+## API Aggregation Full Round Verification
+
+API aggregation cleanup full gates all passed after the P24 implementation:
+
+- `pnpm typecheck` pass; Nx matrix contains 19 projects.
+- `pnpm lint` pass; existing Admin Biome hints remain non-failing.
+- `pnpm test` pass; Nx matrix contains 19 projects and includes the API
+  aggregation boundary suite.
+- `pnpm build:api` pass.
+- `pnpm prisma:validate` pass.
+- `pnpm openapi:check` pass.
+- `pnpm format:check` pass.
+
+## API Aggregation RuoYi/Yudao Reference Points
+
+- RuoYi/Yudao keep a clear web/API entry layer that wires lower-level services
+  into routes and docs.
+- OpenCore keeps that useful entrypoint separation while using Nest modules,
+  interceptors, decorators and package boundaries instead of Java web layer
+  patterns.
+- Reusable platform behavior is now owned by packages; the API app keeps the
+  runnable OpenAPI/export surface that requires a Nest application instance.
+
+## API Aggregation TS/NestJS Best-Practice Choice
+
+- Uses `AppModule` as the composition root, importing package-owned runtime
+  modules and API-local HTTP route modules.
+- Keeps startup-only config and OpenAPI export/check scripts inside the app
+  because they need process environment and the runnable API graph.
+- Removes compatibility re-export shims now that package imports are stable, so
+  future code cannot accidentally reintroduce API-local platform ownership.
+
+## Backend Self-Loop Completion
+
+BE20-P01 through BE20-P24 are complete. The backend self-loop has package
+boundaries for common, core, database, redis, file, system, security, audit,
+online-user, scheduler, monitor, generator-core and OpenForge CLI, with
+`apps/api` limited to bootstrap, HTTP entry aggregation, module aggregation,
+runtime config and OpenAPI export/check.

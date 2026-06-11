@@ -1,4 +1,4 @@
-import { compareOpenApiDocuments } from './openapi-drift';
+import { compareOpenApiDocuments } from '@opencore/core';
 
 describe('OpenAPI drift check', () => {
   it('passes identical documents', () => {
