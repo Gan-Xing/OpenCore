@@ -114,6 +114,34 @@ function renderStringArray(values: readonly string[]): string {
   return `[${values.map((value) => quoteString(value)).join(', ')}]`;
 }
 
+const GENERATED_ADMIN_SENSITIVE_FIELD_PATTERN =
+  /password|secret|token|credential|authorization|api[-_]?key|client[-_]?secret/i;
+const GENERATED_ADMIN_DETAIL_ONLY_FIELD_PATTERN =
+  /payload|body|comment|query[-_]?schema|queryschema|params?|config|template[-_]?body|revoked[-_]?reason|revokedreason/i;
+
+function getGeneratedAdminFieldSignal(field: OpenForgeFieldSchema): string {
+  return `${field.name} ${field.title}`;
+}
+
+function isGeneratedAdminDetailOnlyField(field: OpenForgeFieldSchema): boolean {
+  return (
+    field.detailOnly === true ||
+    GENERATED_ADMIN_DETAIL_ONLY_FIELD_PATTERN.test(
+      getGeneratedAdminFieldSignal(field),
+    )
+  );
+}
+
+function isGeneratedAdminSensitiveField(field: OpenForgeFieldSchema): boolean {
+  return (
+    field.sensitive === true ||
+    isGeneratedAdminDetailOnlyField(field) ||
+    GENERATED_ADMIN_SENSITIVE_FIELD_PATTERN.test(
+      getGeneratedAdminFieldSignal(field),
+    )
+  );
+}
+
 function getIdentityField(schema: OpenForgeManualSchema): OpenForgeFieldSchema {
   return (
     schema.fields.find((field) => field.name === 'id') ??
@@ -657,6 +685,15 @@ export function canUseGenerated${names.pascal}Action(
 }
 
 function renderAdminColumn(field: OpenForgeFieldSchema): string {
+  if (isGeneratedAdminSensitiveField(field)) {
+    return `  {
+    title: ${quoteString(field.title)},
+    dataIndex: ${quoteString(field.name)},
+    ellipsis: true,
+    render: () => <Tag>[redacted]</Tag>,
+  },`;
+  }
+
   if (field.type === 'boolean') {
     return `  {
     title: ${quoteString(field.title)},
@@ -695,6 +732,50 @@ ${field.enumValues
     title: ${quoteString(field.title)},
     dataIndex: ${quoteString(field.name)},
     ellipsis: true,
+  },`;
+}
+
+function renderAdminExportColumn(field: OpenForgeFieldSchema): string {
+  const sensitiveLine = isGeneratedAdminSensitiveField(field)
+    ? '\n    sensitive: true,'
+    : '';
+
+  return `  {
+    title: ${quoteString(field.title)},
+    dataIndex: ${quoteString(field.name)},${sensitiveLine}
+  },`;
+}
+
+function isGeneratedAdminSelectFilterField(
+  field: OpenForgeFieldSchema,
+): boolean {
+  return field.type === 'boolean' || Boolean(field.enumValues?.length);
+}
+
+function renderAdminSelectFilter(field: OpenForgeFieldSchema): string {
+  return `    {
+      key: ${quoteString(field.name)},
+      options: createCurrentPageFilterOptions(rows, ${quoteString(field.name)}),
+      placeholder: ${quoteString(`Filter ${field.title}`)},
+      predicate: (record, value) => String(record.${field.name} ?? '') === value,
+    },`;
+}
+
+function renderAdminDetailField(field: OpenForgeFieldSchema): string {
+  const sensitiveLine = isGeneratedAdminSensitiveField(field)
+    ? '\n    sensitive: true,'
+    : '';
+
+  return `  {
+    label: ${quoteString(field.title)},${sensitiveLine}
+    value: renderGeneratedDetailValue(record.${field.name}),
+  },`;
+}
+
+function renderAdminJsonSection(field: OpenForgeFieldSchema): string {
+  return `  {
+    title: ${quoteString(field.title)},
+    value: record.${field.name},
   },`;
 }
 
@@ -740,17 +821,38 @@ function renderAdminPageContent(
   const names = getNameParts(schema);
   const markerComment = renderMarkerComment(marker);
   const listFields = getFieldsByName(schema, schema.list.columns);
+  const exportFields = getFieldsByName(
+    schema,
+    schema.export?.columns ?? schema.list.columns,
+  );
+  const filterFields = getFieldsByName(
+    schema,
+    schema.filter?.fields ?? [],
+  ).filter((field) => !isGeneratedAdminSensitiveField(field));
+  const searchFields = filterFields.length > 0 ? filterFields : listFields;
+  const selectFilterFields = filterFields.filter((field) =>
+    isGeneratedAdminSelectFilterField(field),
+  );
 
   return `${markerComment}
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   PageContainer,
   ProTable,
   type ProColumns,
 } from '@ant-design/pro-components';
-import { Empty, Result, Space, Tag } from 'antd';
+import { Button, Empty, Result, Tag } from 'antd';
+import {
+  CurrentPageExportButton,
+  type CurrentPageExportColumn,
+} from '../../shared/CurrentPageExportButton';
+import {
+  createCurrentPageFilterOptions,
+  useCurrentPageFilters,
+  type CurrentPageFilterOption,
+  type CurrentPageSearchField,
+} from '../../shared/CurrentPageFilters';
 import ${names.pascal}Detail from './components/${names.pascal}Detail';
-import ${names.pascal}ExportButton from './components/${names.pascal}ExportButton';
 import ${names.pascal}Form from './components/${names.pascal}Form';
 
 ${renderAdminRecordType(schema)}
@@ -767,10 +869,81 @@ const columns: ProColumns<${names.pascal}Record>[] = [
 ${listFields.map((field) => renderAdminColumn(field)).join('\n')}
 ];
 
+const exportColumns: CurrentPageExportColumn<${names.pascal}Record>[] = [
+${exportFields.map((field) => renderAdminExportColumn(field)).join('\n')}
+];
+
+const currentPageSearchFields: CurrentPageSearchField<${names.pascal}Record>[] = ${renderStringArray(
+    searchFields.map((field) => field.name),
+  )};
+
 export default function Generated${names.pascal}Page() {
+  const [rows, setRows] = useState<${names.pascal}Record[]>([]);
+  const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [selectedRecord, setSelectedRecord] = useState<${names.pascal}Record>();
   const canCreate = canUseGenerated${names.pascal}Action('create');
   const canExport = canUseGenerated${names.pascal}Action('export');
+  const selectFilters = useMemo<CurrentPageFilterOption<${names.pascal}Record>[]>(
+    () => [
+${selectFilterFields.map((field) => renderAdminSelectFilter(field)).join('\n')}
+    ],
+    [rows],
+  );
+  const { filteredRows, toolbar: currentPageFilterToolbar } = useCurrentPageFilters({
+    rows,
+    searchFields: currentPageSearchFields,
+    searchPlaceholder: ${quoteString(`Search ${schema.list.title}`)},
+    selectFilters,
+  });
+  const tableColumns = useMemo<ProColumns<${names.pascal}Record>[]>(
+    () => [
+      ...columns,
+      {
+        title: 'Actions',
+        valueType: 'option',
+        render: (_, record) => [
+          <Button key="detail" type="link" onClick={() => setSelectedRecord(record)}>
+            Detail
+          </Button>,
+        ],
+      },
+    ],
+    [],
+  );
+
+  useEffect(() => {
+    let active = true;
+
+    setLoading(true);
+    void generated${names.pascal}Client
+      .list()
+      .then((data) => {
+        if (!active) {
+          return;
+        }
+
+        setRows(data);
+        setLoadError(null);
+      })
+      .catch((error: unknown) => {
+        if (!active) {
+          return;
+        }
+
+        setRows([]);
+        setLoadError(error instanceof Error ? error.message : 'Unknown generated client error');
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <PageContainer title=${quoteString(schema.list.title)} subTitle="OpenForge generated">
@@ -779,45 +952,35 @@ export default function Generated${names.pascal}Page() {
       ) : null}
       <ProTable<${names.pascal}Record>
         rowKey=${quoteString(getIdentityField(schema).name)}
-        columns={columns}
-        search={{ labelWidth: 'auto' }}
+        columns={tableColumns}
+        dataSource={filteredRows}
+        loading={loading}
+        search={false}
         options={false}
-        request={async () => {
-          try {
-            const data = await generated${names.pascal}Client.list();
-            setLoadError(null);
-
-            return {
-              data,
-              success: true,
-              total: data.length,
-            };
-          } catch (error) {
-            setLoadError(error instanceof Error ? error.message : 'Unknown generated client error');
-
-            return {
-              data: [],
-              success: false,
-              total: 0,
-            };
-          }
-        }}
         locale={{
           emptyText: <Empty description="No generated records" />,
         }}
-        expandable={{
-          expandedRowRender: (record) => <${names.pascal}Detail record={record} />,
-        }}
         toolBarRender={() => [
+          currentPageFilterToolbar,
           <${names.pascal}Form key="create" disabled={!canCreate} />,
-          <${names.pascal}ExportButton
+          <CurrentPageExportButton<${names.pascal}Record>
             key="export"
             disabled={!canExport}
-            columns={${renderStringArray(schema.export?.columns ?? schema.list.columns)}}
+            columns={exportColumns}
+            resource=${quoteString(names.resource)}
+            rows={filteredRows}
           />,
         ]}
       />
-      <Space size="small" />
+      <${names.pascal}Detail
+        record={selectedRecord}
+        open={Boolean(selectedRecord)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedRecord(undefined);
+          }
+        }}
+      />
     </PageContainer>
   );
 }
@@ -885,10 +1048,20 @@ function renderAdminDetailContent(
   const names = getNameParts(schema);
   const markerComment = renderMarkerComment(marker);
   const detailFields = getFieldsByName(schema, schema.detail.fields);
+  const scalarDetailFields = detailFields.filter(
+    (field) => field.type !== 'json' || isGeneratedAdminSensitiveField(field),
+  );
+  const jsonDetailFields = detailFields.filter(
+    (field) => field.type === 'json' && !isGeneratedAdminSensitiveField(field),
+  );
 
   return `${markerComment}
-import { ProDescriptions, type ProDescriptionsItemProps } from '@ant-design/pro-components';
-import { Drawer, Empty, Tag } from 'antd';
+import { Empty } from 'antd';
+import {
+  ReadOnlyDetailDrawer,
+  type DetailField,
+  type DetailJsonSection,
+} from '../../../shared/ReadOnlyDetailDrawer';
 import type { ${names.pascal}Record } from '../index';
 
 export type ${names.pascal}DetailRecord = ${names.pascal}Record;
@@ -899,22 +1072,29 @@ export type ${names.pascal}DetailProps = {
   onOpenChange?: (open: boolean) => void;
 };
 
-const columns: ProDescriptionsItemProps<${names.pascal}DetailRecord>[] = [
-${detailFields
-  .map(
-    (field) => `  {
-    title: ${quoteString(field.title)},
-    dataIndex: ${quoteString(field.name)},
-    render: (_, record) =>
-      record.${field.name} === undefined || record.${field.name} === null ? (
-        '-'
-      ) : (
-        <Tag>{String(record.${field.name})}</Tag>
-      ),
-  },`,
-  )
-  .join('\n')}
-];
+function renderGeneratedDetailValue(value: unknown): string {
+  if (value === undefined || value === null || value === '') {
+    return '-';
+  }
+
+  if (typeof value === 'object') {
+    return JSON.stringify(value);
+  }
+
+  return String(value);
+}
+
+function buildDetailFields(record: ${names.pascal}DetailRecord): DetailField[] {
+  return [
+${scalarDetailFields.map((field) => renderAdminDetailField(field)).join('\n')}
+  ];
+}
+
+function buildDetailJsonSections(record: ${names.pascal}DetailRecord): DetailJsonSection[] {
+  return [
+${jsonDetailFields.map((field) => renderAdminJsonSection(field)).join('\n')}
+  ];
+}
 
 export default function ${names.pascal}Detail({
   record,
@@ -926,19 +1106,13 @@ export default function ${names.pascal}Detail({
   }
 
   return (
-    <Drawer
-      title=${quoteString(schema.detail.title)}
-      open={open}
+    <ReadOnlyDetailDrawer
+      fields={buildDetailFields(record)}
+      jsonSections={buildDetailJsonSections(record)}
       onClose={() => onOpenChange?.(false)}
-      width={640}
-    >
-      <ProDescriptions<${names.pascal}DetailRecord>
-        bordered
-        column={1}
-        columns={columns}
-        dataSource={record}
-      />
-    </Drawer>
+      open={Boolean(open)}
+      title=${quoteString(schema.detail.title)}
+    />
   );
 }
 `;
@@ -950,30 +1124,42 @@ function renderAdminExportButtonContent(
 ): string {
   const names = getNameParts(schema);
   const markerComment = renderMarkerComment(marker);
+  const exportFields = getFieldsByName(
+    schema,
+    schema.export?.columns ?? schema.list.columns,
+  );
 
   return `${markerComment}
-import { Button } from 'antd';
+import {
+  CurrentPageExportButton,
+  type CurrentPageExportColumn,
+} from '../../../shared/CurrentPageExportButton';
+import type { ${names.pascal}Record } from '../index';
+
+export const generated${names.pascal}ExportColumns: CurrentPageExportColumn<${names.pascal}Record>[] = [
+${exportFields.map((field) => renderAdminExportColumn(field)).join('\n')}
+];
 
 export type ${names.pascal}ExportButtonProps = {
-  columns?: readonly string[];
+  columns?: readonly CurrentPageExportColumn<${names.pascal}Record>[];
   disabled?: boolean;
-  onExport?: (columns: readonly string[]) => Promise<void> | void;
+  resource?: string;
+  rows: readonly ${names.pascal}Record[];
 };
 
 export default function ${names.pascal}ExportButton({
-  columns = ${renderStringArray(schema.export?.columns ?? schema.list.columns)},
+  columns = generated${names.pascal}ExportColumns,
   disabled = false,
-  onExport,
+  resource = ${quoteString(names.resource)},
+  rows,
 }: ${names.pascal}ExportButtonProps) {
   return (
-    <Button
+    <CurrentPageExportButton<${names.pascal}Record>
+      columns={columns}
       disabled={disabled}
-      onClick={() => {
-        void onExport?.(columns);
-      }}
-    >
-      Export
-    </Button>
+      resource={resource}
+      rows={rows}
+    />
   );
 }
 `;

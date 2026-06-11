@@ -127,6 +127,24 @@ function validateFieldSchema(
     );
   }
 
+  if (field.sensitive !== undefined && typeof field.sensitive !== 'boolean') {
+    issues.push(
+      createIssue(
+        `${fieldPath}.sensitive`,
+        'Field sensitive metadata must be a boolean.',
+      ),
+    );
+  }
+
+  if (field.detailOnly !== undefined && typeof field.detailOnly !== 'boolean') {
+    issues.push(
+      createIssue(
+        `${fieldPath}.detailOnly`,
+        'Field detailOnly metadata must be a boolean.',
+      ),
+    );
+  }
+
   if (
     field.type === 'enum' &&
     (!Array.isArray(field.enumValues) || field.enumValues.length === 0)

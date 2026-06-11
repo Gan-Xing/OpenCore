@@ -96,6 +96,8 @@ Stage J hardens CLI UX, doctor checks, temp workspace e2e, and apply idempotency
 
 Stage K adds `openforge:test`, `openforge:gate`, and [OpenForge CI Gate](../../docs/development/openforge-ci-gate.md). The gate is local and read-only: doctor, V1 schema check, and V1 diff.
 
+The recursive OpenCore quality-cycle gate also runs `pnpm registry:admin-routes:check` and `pnpm openapi:registry-tags:check` around OpenAPI export/check, so OpenForge no-write validation is paired with route/access and registry tag drift checks.
+
 Stage L completes final docs and handoff:
 
 - [OpenForge V1 Architecture](../../docs/development/openforge-v1-architecture.md)

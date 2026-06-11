@@ -1,0 +1,235 @@
+{
+  "schemaVersion": "openforge.schema.v1",
+  "moduleCode": "core.dict",
+  "resource": "dictSafety",
+  "title": "Dictionary Admin Safety Fixture",
+  "description": "Fixture schema for generated Admin filter, export and detail safety boundaries.",
+  "fields": [
+    {
+      "name": "code",
+      "title": "Code",
+      "type": "string",
+      "required": true,
+      "list": true,
+      "form": true,
+      "detail": true
+    },
+    {
+      "name": "name",
+      "title": "Name",
+      "type": "string",
+      "required": true,
+      "list": true,
+      "form": true,
+      "detail": true
+    },
+    {
+      "name": "status",
+      "title": "Status",
+      "type": "enum",
+      "enumValues": ["active", "paused"],
+      "list": true,
+      "form": true,
+      "detail": true
+    },
+    {
+      "name": "secretRef",
+      "title": "Secret Ref",
+      "type": "string",
+      "list": true,
+      "detail": true,
+      "sensitive": true
+    },
+    {
+      "name": "tokenId",
+      "title": "Token ID",
+      "type": "string",
+      "list": true,
+      "detail": true
+    },
+    {
+      "name": "apiKey",
+      "title": "API Key",
+      "type": "string",
+      "list": true,
+      "detail": true
+    },
+    {
+      "name": "clientSecret",
+      "title": "Client Secret",
+      "type": "string",
+      "list": true,
+      "detail": true
+    },
+    {
+      "name": "authorization",
+      "title": "Authorization",
+      "type": "string",
+      "list": true,
+      "detail": true
+    },
+    {
+      "name": "config",
+      "title": "Provider Config",
+      "type": "json",
+      "list": true,
+      "detail": true
+    },
+    {
+      "name": "payload",
+      "title": "Audit Payload",
+      "type": "json",
+      "list": true,
+      "detail": true,
+      "detailOnly": true
+    },
+    {
+      "name": "querySchema",
+      "title": "Report Query Schema",
+      "type": "json",
+      "list": true,
+      "detail": true,
+      "detailOnly": true
+    },
+    {
+      "name": "body",
+      "title": "Message Body",
+      "type": "text",
+      "list": true,
+      "detail": true,
+      "detailOnly": true
+    },
+    {
+      "name": "comment",
+      "title": "Workflow Comment",
+      "type": "text",
+      "list": true,
+      "detail": true,
+      "detailOnly": true
+    },
+    {
+      "name": "createdAt",
+      "title": "Created At",
+      "type": "datetime",
+      "list": true,
+      "detail": true
+    }
+  ],
+  "list": {
+    "title": "Dictionary Admin Safety Fixture",
+    "columns": [
+      "code",
+      "name",
+      "status",
+      "secretRef",
+      "tokenId",
+      "apiKey",
+      "clientSecret",
+      "authorization",
+      "config",
+      "payload",
+      "querySchema",
+      "body",
+      "comment",
+      "createdAt"
+    ],
+    "defaultPageSize": 10
+  },
+  "filter": {
+    "fields": [
+      "code",
+      "name",
+      "status",
+      "secretRef",
+      "apiKey",
+      "payload",
+      "querySchema"
+    ]
+  },
+  "sort": {
+    "default": {
+      "field": "createdAt",
+      "direction": "desc"
+    },
+    "fields": ["createdAt"]
+  },
+  "form": {
+    "title": "Dictionary Admin Safety Fixture",
+    "mode": "modal",
+    "fields": ["code", "name", "status"]
+  },
+  "detail": {
+    "title": "Dictionary Admin Safety Details",
+    "fields": [
+      "code",
+      "name",
+      "status",
+      "secretRef",
+      "tokenId",
+      "apiKey",
+      "clientSecret",
+      "authorization",
+      "config",
+      "payload",
+      "querySchema",
+      "body",
+      "comment",
+      "createdAt"
+    ]
+  },
+  "actions": ["read", "export"],
+  "permissions": ["core:dict:read", "core:dict:export"],
+  "openapi": {
+    "tags": ["Core Dictionaries"],
+    "paths": ["/api/core/dict-safety", "/api/core/dict-safety/export"]
+  },
+  "admin": {
+    "basePath": "/system/dict-safety",
+    "menuKey": "system.dict-safety",
+    "targetPaths": ["apps/admin/src/pages/Generated/DictSafety/index.tsx"]
+  },
+  "sdk": {
+    "clientName": "dictSafetyClient",
+    "generatedPath": "packages/sdk/src/generated/dict-safety-client.ts"
+  },
+  "tests": {
+    "admin": "apps/admin/src/pages/Generated/DictSafety/DictSafety.smoke.spec.ts"
+  },
+  "docs": {
+    "moduleDoc": "docs/generated/openforge/core.dict-admin-safety.md",
+    "runbook": "docs/generated/openforge/core.dict-admin-safety-runbook.md"
+  },
+  "export": {
+    "enabled": true,
+    "columns": [
+      "code",
+      "name",
+      "status",
+      "secretRef",
+      "tokenId",
+      "apiKey",
+      "clientSecret",
+      "authorization",
+      "config",
+      "payload",
+      "querySchema",
+      "body",
+      "comment"
+    ],
+    "maxRows": 1000
+  },
+  "storage": {
+    "enabled": false,
+    "fields": []
+  },
+  "audit": {
+    "enabled": true,
+    "actions": ["export"]
+  },
+  "prisma": {
+    "writeSchema": false,
+    "modelName": "DictSafety",
+    "draftPath": "prisma/openforge-drafts/core.dict-admin-safety.model.prisma.md",
+    "migrationHintPath": "prisma/openforge-drafts/core.dict-admin-safety.migration-hint.md"
+  }
+}

@@ -32,7 +32,7 @@ describe('OpenForge readonly readers', () => {
       ]),
     );
     expect(snapshot.tags).toEqual(
-      expect.arrayContaining(['Core System Management']),
+      expect.arrayContaining(['Core Dictionaries']),
     );
     expect(snapshot.schemas).toEqual(expect.arrayContaining(['DictTypeDto']));
   });

@@ -31,6 +31,29 @@ file
 
 Field names must be stable and declared before they are used in list, form, detail, filter, export or docs selections.
 
+Fields that can carry credentials, tokens, provider config, payloads, template
+bodies, workflow comments or report query schemas must declare explicit safety
+metadata:
+
+```json
+{
+  "name": "secretRef",
+  "title": "Secret Ref",
+  "type": "string",
+  "detail": true,
+  "sensitive": true
+}
+```
+
+- `sensitive: true` means generated Admin list cells, detail fields and CSV
+  export metadata must render or export the field as redacted/excluded through
+  the shared Admin helpers.
+- `detailOnly: true` means generated Admin export/filter defaults must treat the
+  field as unsafe for CSV/search exposure. OpenForge also applies conservative
+  name-based defaults for `payload`, `body`, `comment`, `querySchema`, `config`,
+  token, secret, credential, authorization, API key and client secret fields,
+  but schemas should still be explicit.
+
 ## Permissions And Actions
 
 Permission codes must use:

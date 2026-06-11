@@ -76,6 +76,8 @@ flowchart TD
 | Stage K | complete | Root scripts `openforge:test` and `openforge:gate` exist, local CI gate docs define full command sequence and no-write checks, and gate runs locally                                                                        |
 | Stage L | complete | Final README/docs/handoff/strategy/module docs plus schema/template/apply authoring docs document V1 operation, S10 usage, generated marker review, manifests and rollback                                                  |
 
+The recursive quality-cycle gate runs the OpenForge no-write gate alongside OpenCore-specific drift checks: `pnpm registry:admin-routes:check` and `pnpm openapi:registry-tags:check`.
+
 ## Generated Ownership Model
 
 OpenForge V1 distinguishes three ownership classes:
@@ -104,12 +106,44 @@ The default V1 template pack is `openforge-default-nest-umi-v1`. Current Stage I
 - API: module, controller, service, DTO, repository and spec skeleton.
 - Controller uses `@ApiTags`, operation/response/body/param Swagger decorators and `@RequirePermission`.
 - DTOs include Swagger property decorators and schema-derived TypeScript field types.
+- List query DTOs must use bounded filter fields rather than arbitrary SQL/JSON query pass-throughs.
+- Detail endpoints use read permissions, reuse the same DTOs as list rows when safe, and document deleted/hidden record handling plus secret redaction.
+- Action endpoints must validate current state before mutation: deleted/terminal collaboration records, disabled jobs, revoked sessions, disabled providers, wrong provider channels and disabled templates are rejected.
+- Broad or destructive actions must expose a dry-run or explicit confirmation contract instead of running silently.
 - Service delegates to a generated repository contract and does not access Prisma.
 - Repository is a generated placeholder and must be replaced before production registration.
 - API app module registration remains a patch-only markdown plan.
 
-- Admin: ProTable page, ModalForm or DrawerForm, ProDescriptions detail, export button and smoke test skeleton.
-- Admin page uses generated client placeholders, loading/error/empty states and permission-aware operation buttons.
+- Admin: ProTable page, ModalForm or DrawerForm, read-only ProDescriptions/detail drawer, export button and smoke test skeleton.
+- Admin page uses generated client placeholders, loading/error/empty states, permission-aware operation buttons and row-level detail openers by id/code.
+- Admin list pages must expose bounded current-page filter controls that mirror declared list query DTO fields such as status, type, enabled, owner, prefix, provider code or assignee. Generated filters are field-specific search/select controls, not arbitrary query builders.
+- Admin generator output uses the shared `useCurrentPageFilters` hook and binds
+  both table data and current-page CSV export to `filteredRows`.
+- Admin generator output treats explicit `sensitive` and `detailOnly` field
+  metadata as safety contracts. It also falls back to conservative field-name
+  classification for payload, body, comment, query schema, config, token,
+  secret, credential, authorization, API key and client secret names.
+- Admin current-page filter/search text normalization must apply recursive sensitive-key redaction before object fallback JSON stringification for password, secret, token, credential, authorization, API key and client secret fields.
+- Admin core wrappers, including RBAC and system management tables, must bind ProTable data and CSV export to shared bounded current-page filter results.
+- Admin core wrappers must render an explicit read-only reason while data is fixture-backed or summary-only.
+- Admin core wrappers must accept explicit read-only detail metadata and render shared detail drawers from stable row identifiers.
+- Admin RBAC mutation-looking controls must stay disabled with that read-only reason until real permission-guarded write contracts are admitted.
+- Admin detail drawers must remain read-only, display the same hidden-record/redaction policy as the API detail endpoint, and keep design-only integration topics visibly design-only.
+- Admin detail field metadata must mark scalar token ids, secret refs, credentials, authorization values and other sensitive fields as `sensitive` so the shared detail drawer renders `[redacted]`.
+- Admin generated detail components must use `ReadOnlyDetailDrawer`,
+  `DetailField`, and `DetailJsonSection` instead of standalone
+  `ProDescriptions` scalar rendering.
+- Admin detail JSON sections must pass through the shared recursive sensitive-key redaction guard before JSON serialization, covering nested arrays/objects for password, secret, token, credential, authorization, API key and client secret fields.
+- Admin system config detail drawers must redact values with `secret` visibility using the same formatter as current-page export.
+- Admin export buttons are current-page CSV only, bounded by the S8 `CURRENT_PAGE_EXPORT_PROTOCOL`, and must exclude sensitive/detail-only columns before serialization. System config exports must redact values with `secret` visibility.
+- Admin generated export templates must emit `CurrentPageExportColumn` metadata
+  and call the shared `CurrentPageExportButton`; generated templates must not
+  duplicate CSV/download serialization or rely on an empty `onExport(columns)`
+  callback.
+- Admin export buttons must serialize the currently filtered current-page rows so list filter, detail and export semantics stay aligned.
+- Admin CSV export filenames must be sanitized to local `.csv` basenames before browser download.
+- Admin CSV exports must neutralize spreadsheet formula prefixes before cell serialization. Values beginning with optional whitespace followed by `=`, `+`, `-` or `@` are exported as text with an apostrophe prefix.
+- Admin export object-cell fallback serialization must apply recursive sensitive-key redaction before JSON stringification for password, secret, token, credential, authorization, API key and client secret fields.
 - Admin route/access integration remains patch-only markdown; OpenForge does not modify `.umirc.ts` or `access.ts`.
 
 - SDK: generated schema-derived types, generated request wrapper client, generated client spec and generated barrel file.
@@ -121,6 +155,7 @@ Stage J CLI/doctor/e2e covers:
 
 - Doctor: workspace root, pnpm workspace, Nx project, contracts export, module registry validation, OpenAPI snapshot, OpenAPI drift command, example schemas, template pack, protected paths and manifest directory status.
 - E2E: temp repo plan/diff/apply `--yes`, generated file verification, idempotent reapply, human-authored conflict detection and rollback cleanup.
+- Recursive gate integration: OpenForge remains no-write while the quality-cycle script also runs admin route/access drift and registry tag drift checks around OpenAPI export/check.
 
 Established V1 boundaries that remain in force:
 

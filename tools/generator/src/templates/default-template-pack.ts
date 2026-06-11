@@ -78,14 +78,14 @@ const TEMPLATE_SEEDS: readonly TemplateSeed[] = [
   {
     id: 'admin.descriptions',
     artifactKind: 'admin.descriptions',
-    description: 'Generated Admin ProDescriptions detail skeleton.',
+    description: 'Generated Admin shared read-only detail drawer skeleton.',
     targetPathPattern:
       'apps/admin/src/pages/Generated/{pascal}/components/{pascal}Detail.tsx',
   },
   {
     id: 'admin.export-button',
     artifactKind: 'admin.exportButton',
-    description: 'Generated Admin TableExportButton operation skeleton.',
+    description: 'Generated Admin shared current-page export wrapper skeleton.',
     targetPathPattern:
       'apps/admin/src/pages/Generated/{pascal}/components/{pascal}ExportButton.tsx',
   },

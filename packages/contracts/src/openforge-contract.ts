@@ -83,6 +83,8 @@ export type OpenForgeFieldSchema = {
   list?: boolean;
   form?: boolean;
   detail?: boolean;
+  sensitive?: boolean;
+  detailOnly?: boolean;
   permissionCode?: PermissionCode;
   enumValues?: readonly string[];
   relation?: OpenForgeFieldRelation;

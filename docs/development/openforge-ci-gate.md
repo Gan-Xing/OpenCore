@@ -31,7 +31,9 @@ pnpm test
 pnpm build
 pnpm prisma:validate
 pnpm openapi:export
+pnpm openapi:registry-tags:check
 pnpm openapi:check
+pnpm registry:admin-routes:check
 pnpm openforge:doctor
 pnpm openforge:check -- --schema tools/generator/examples/core.dict.v1.schema.json
 pnpm openforge:gate
@@ -64,6 +66,7 @@ A future CI job can run the same scripts in this order:
 1. Install dependencies with the repo pnpm version.
 2. Run `pnpm openforge:gate` before write-capable generator tests.
 3. Run the full local gate commands above.
-4. Treat any generated output left by read-only or dry-run OpenForge commands as a failure.
+4. Treat Admin route/access binding drift or registry/OpenAPI tag drift as a failure.
+5. Treat any generated output left by read-only or dry-run OpenForge commands as a failure.
 
 OpenForge gate output is JSON-heavy by design. CI may redirect `openforge:gate` output to an artifact, but it must not hide non-zero exits.

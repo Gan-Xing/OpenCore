@@ -522,8 +522,11 @@ describe('OpenForge default template pack renderer', () => {
             proTable: content.includes('ProTable'),
             modalForm: content.includes('ModalForm'),
             drawerForm: content.includes('DrawerForm'),
-            descriptions: content.includes('ProDescriptions'),
-            exportButton: content.includes('ExportButtonProps'),
+            sharedDetailDrawer: content.includes('ReadOnlyDetailDrawer'),
+            sharedExportButton: content.includes('CurrentPageExportButton'),
+            currentPageFilters: content.includes('useCurrentPageFilters'),
+            filteredDataSource: content.includes('dataSource={filteredRows}'),
+            filteredExportRows: content.includes('rows={filteredRows}'),
             permissionMap: content.includes('generatedDictPermissions'),
             permissionAwareButtons: content.includes(
               'canUseGeneratedDictAction',
@@ -538,90 +541,108 @@ describe('OpenForge default template pack renderer', () => {
 [
   {
     "checks": {
-      "descriptions": true,
+      "currentPageFilters": false,
       "drawerForm": false,
-      "exportButton": false,
+      "filteredDataSource": false,
+      "filteredExportRows": false,
       "loadingErrorEmpty": false,
       "modalForm": false,
       "permissionAwareButtons": false,
       "permissionMap": false,
       "proTable": false,
       "sdkPlaceholder": false,
+      "sharedDetailDrawer": true,
+      "sharedExportButton": false,
     },
     "kind": "admin.descriptions",
     "targetPath": "apps/admin/src/pages/Generated/Dict/components/DictDetail.tsx",
   },
   {
     "checks": {
-      "descriptions": false,
+      "currentPageFilters": false,
       "drawerForm": true,
-      "exportButton": false,
+      "filteredDataSource": false,
+      "filteredExportRows": false,
       "loadingErrorEmpty": false,
       "modalForm": false,
       "permissionAwareButtons": false,
       "permissionMap": false,
       "proTable": false,
       "sdkPlaceholder": false,
+      "sharedDetailDrawer": false,
+      "sharedExportButton": false,
     },
     "kind": "admin.drawerForm",
     "targetPath": "apps/admin/src/pages/Generated/Dict/components/DictDrawer.tsx",
   },
   {
     "checks": {
-      "descriptions": false,
+      "currentPageFilters": false,
       "drawerForm": false,
-      "exportButton": true,
+      "filteredDataSource": false,
+      "filteredExportRows": false,
       "loadingErrorEmpty": false,
       "modalForm": false,
       "permissionAwareButtons": false,
       "permissionMap": false,
       "proTable": false,
       "sdkPlaceholder": false,
+      "sharedDetailDrawer": false,
+      "sharedExportButton": true,
     },
     "kind": "admin.exportButton",
     "targetPath": "apps/admin/src/pages/Generated/Dict/components/DictExportButton.tsx",
   },
   {
     "checks": {
-      "descriptions": false,
+      "currentPageFilters": false,
       "drawerForm": false,
-      "exportButton": false,
+      "filteredDataSource": false,
+      "filteredExportRows": false,
       "loadingErrorEmpty": false,
       "modalForm": true,
       "permissionAwareButtons": false,
       "permissionMap": false,
       "proTable": false,
       "sdkPlaceholder": false,
+      "sharedDetailDrawer": false,
+      "sharedExportButton": false,
     },
     "kind": "admin.modalForm",
     "targetPath": "apps/admin/src/pages/Generated/Dict/components/DictForm.tsx",
   },
   {
     "checks": {
-      "descriptions": false,
+      "currentPageFilters": true,
       "drawerForm": false,
-      "exportButton": false,
+      "filteredDataSource": true,
+      "filteredExportRows": true,
       "loadingErrorEmpty": true,
       "modalForm": false,
       "permissionAwareButtons": true,
       "permissionMap": true,
       "proTable": true,
       "sdkPlaceholder": true,
+      "sharedDetailDrawer": false,
+      "sharedExportButton": true,
     },
     "kind": "admin.proTablePage",
     "targetPath": "apps/admin/src/pages/Generated/Dict/index.tsx",
   },
   {
     "checks": {
-      "descriptions": false,
+      "currentPageFilters": false,
       "drawerForm": false,
-      "exportButton": false,
+      "filteredDataSource": false,
+      "filteredExportRows": false,
       "loadingErrorEmpty": false,
       "modalForm": false,
       "permissionAwareButtons": true,
       "permissionMap": true,
       "proTable": false,
       "sdkPlaceholder": false,
+      "sharedDetailDrawer": false,
+      "sharedExportButton": false,
     },
     "kind": "admin.smokeTest",
     "targetPath": "apps/admin/src/pages/Generated/Dict/Dict.smoke.spec.ts",
@@ -641,15 +662,129 @@ describe('OpenForge default template pack renderer', () => {
       files,
       'openforge-patches/admin-access.patch.md',
     );
+    const detail = findOpenForgeVirtualFile(
+      files,
+      'apps/admin/src/pages/Generated/Dict/components/DictDetail.tsx',
+    );
+    const exportButton = findOpenForgeVirtualFile(
+      files,
+      'apps/admin/src/pages/Generated/Dict/components/DictExportButton.tsx',
+    );
+    const pageContent = String(page?.content.value);
+    const detailContent = String(detail?.content.value);
+    const exportButtonContent = String(exportButton?.content.value);
 
-    expect(String(page?.content.value)).toContain("create: 'core:dict:create'");
-    expect(String(page?.content.value)).toContain("export: 'core:dict:export'");
+    expect(pageContent).toContain("create: 'core:dict:create'");
+    expect(pageContent).toContain("export: 'core:dict:export'");
+    expect(pageContent).toContain('CurrentPageExportButton');
+    expect(pageContent).toContain('CurrentPageExportColumn');
+    expect(pageContent).toContain('useCurrentPageFilters');
+    expect(pageContent).toContain('createCurrentPageFilterOptions');
+    expect(pageContent).toContain('dataSource={filteredRows}');
+    expect(pageContent).toContain('rows={filteredRows}');
+    expect(pageContent).toContain("resource='dict'");
+    expect(pageContent).toContain('search={false}');
+    expect(pageContent).not.toContain("search={{ labelWidth: 'auto' }}");
+    expect(detailContent).toContain('ReadOnlyDetailDrawer');
+    expect(detailContent).toContain('DetailField');
+    expect(detailContent).toContain('DetailJsonSection');
+    expect(detailContent).not.toContain('ProDescriptions');
+    expect(detailContent).not.toContain('String(record.');
+    expect(exportButtonContent).toContain('CurrentPageExportButton');
+    expect(exportButtonContent).toContain('CurrentPageExportColumn');
+    expect(exportButtonContent).toContain(
+      'generatedDictExportColumns: CurrentPageExportColumn<DictRecord>[]',
+    );
+    expect(exportButtonContent).not.toContain('onExport?.');
+    expect(exportButtonContent).not.toContain("import { Button } from 'antd'");
     expect(String(routePatch?.content.value)).toContain(
       'Target human file: `apps/admin/.umirc.ts`',
     );
     expect(String(accessPatch?.content.value)).toContain(
       'Target human file: `apps/admin/src/access.ts`',
     );
+  });
+
+  it('renders generated Admin safety metadata for collaboration workflow and integration fields', () => {
+    const { schema } = loadManualSchema(
+      'tools/generator/examples/core.dict-admin-safety.v1.schema.json',
+    );
+    const { config } = loadOpenForgeGeneratorConfig();
+    const files = renderTemplatePack(schema, config);
+    const page = findOpenForgeVirtualFile(
+      files,
+      'apps/admin/src/pages/Generated/DictSafety/index.tsx',
+    );
+    const detail = findOpenForgeVirtualFile(
+      files,
+      'apps/admin/src/pages/Generated/DictSafety/components/DictSafetyDetail.tsx',
+    );
+    const exportButton = findOpenForgeVirtualFile(
+      files,
+      'apps/admin/src/pages/Generated/DictSafety/components/DictSafetyExportButton.tsx',
+    );
+    const pageContent = String(page?.content.value);
+    const detailContent = String(detail?.content.value);
+    const exportButtonContent = String(exportButton?.content.value);
+
+    expect(pageContent).toContain('CurrentPageExportButton');
+    expect(pageContent).toContain('useCurrentPageFilters');
+    expect(pageContent).toContain('dataSource={filteredRows}');
+    expect(pageContent).toContain('rows={filteredRows}');
+    expect(pageContent).toContain("resource='dictSafety'");
+    expect(pageContent).toContain("dataIndex: 'secretRef'");
+    expect(pageContent).toContain("dataIndex: 'apiKey'");
+    expect(pageContent).toContain("dataIndex: 'clientSecret'");
+    expect(pageContent).toContain("dataIndex: 'authorization'");
+    expect(pageContent).toContain("dataIndex: 'payload'");
+    expect(pageContent).toContain("dataIndex: 'querySchema'");
+    expect(pageContent).toContain('render: () => <Tag>[redacted]</Tag>');
+    expect(pageContent).toContain(
+      "const currentPageSearchFields: CurrentPageSearchField<DictSafetyRecord>[] = ['code', 'name', 'status'];",
+    );
+    expect(pageContent).not.toContain("'secretRef', 'apiKey', 'payload'");
+
+    for (const fieldName of [
+      'secretRef',
+      'tokenId',
+      'apiKey',
+      'clientSecret',
+      'authorization',
+      'config',
+      'payload',
+      'querySchema',
+      'body',
+      'comment',
+    ]) {
+      expect(pageContent).toContain(
+        `dataIndex: '${fieldName}',\n    sensitive: true`,
+      );
+    }
+
+    expect(detailContent).toContain('ReadOnlyDetailDrawer');
+    expect(detailContent).toContain('DetailField');
+    expect(detailContent).not.toContain('ProDescriptions');
+    expect(detailContent).not.toContain('String(record.secretRef)');
+    expect(detailContent).toContain(
+      "label: 'Secret Ref',\n    sensitive: true",
+    );
+    expect(detailContent).toContain(
+      "label: 'Audit Payload',\n    sensitive: true",
+    );
+    expect(detailContent).toContain(
+      "label: 'Report Query Schema',\n    sensitive: true",
+    );
+    expect(detailContent).toContain(
+      "label: 'Message Body',\n    sensitive: true",
+    );
+    expect(detailContent).toContain(
+      "label: 'Workflow Comment',\n    sensitive: true",
+    );
+    expect(exportButtonContent).toContain('CurrentPageExportButton');
+    expect(exportButtonContent).toContain(
+      'generatedDictSafetyExportColumns: CurrentPageExportColumn<DictSafetyRecord>[]',
+    );
+    expect(exportButtonContent).not.toContain('onExport?.');
   });
 
   it('transpiles generated Admin TSX skeletons', () => {

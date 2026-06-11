@@ -49,6 +49,41 @@ Patch-only plans cover:
 - Keep templates deterministic for the same schema/config input.
 - Use schema fields, actions, permissions, OpenAPI paths and admin config explicitly.
 - Keep repository implementations as placeholders unless a later handoff authorizes real persistence.
+- Generated list APIs must declare bounded query DTO filters such as status, type, enabled, owner, prefix, provider code, or assignee. Do not emit arbitrary SQL/JSON filter pass-throughs.
+- Generated modules that expose table actions or detail drawers must include read-only detail endpoints protected by the same read permission as list endpoints.
+- Detail endpoints must state their hidden-record and redaction policy; deleted records and secrets must not leak through detail reads.
+- Generated Admin table pages must expose matching bounded current-page filters for declared list query fields. Use explicit search/select controls for status, type, enabled, owner, prefix, provider code, assignee or similar stable fields; do not generate arbitrary SQL/JSON query builders.
+- Generated Admin table pages must use the shared `useCurrentPageFilters` hook,
+  bind `ProTable` data to `filteredRows`, and bind current-page CSV export rows
+  to the same `filteredRows` value.
+- Generated Admin table pages must omit sensitive/detail-only fields from
+  generated current-page search/select field arrays. If a sensitive field is
+  present in `list.columns`, render a redacted cell instead of the raw scalar or
+  object value.
+- Generated Admin current-page filter/search text normalization must apply recursive sensitive-key redaction before object fallback JSON stringification for password, secret, token, credential, authorization, API key and client secret fields.
+- Generated core Admin wrappers, including RBAC and system management tables, must use the shared bounded current-page filter and CSV export helpers instead of raw static table/export rows.
+- Generated core Admin wrappers must show an explicit read-only reason while backed by fixtures or read-only summaries.
+- Generated Admin table pages must keep list, detail and action surfaces separate: table rows open a read-only detail drawer by id/code, action buttons use the current-state policy, and the drawer must not perform mutations.
+- Generated core Admin wrappers must accept explicit read-only detail metadata for fields, JSON sections and titles, then render the shared detail drawer from stable row ids/codes.
+- Generated RBAC mutation-looking controls must remain disabled with the read-only reason until real permission-guarded write contracts are admitted.
+- Generated Admin detail field metadata must mark scalar token ids, secret refs, credentials, authorization values and other sensitive fields as `sensitive` so the shared detail drawer renders `[redacted]`.
+- Generated Admin detail templates must use `ReadOnlyDetailDrawer`,
+  `DetailField`, and `DetailJsonSection`; do not generate direct
+  `ProDescriptions` scalar rendering for sensitive fields.
+- Generated Admin detail JSON sections must pass through the shared recursive sensitive-key redaction guard before JSON serialization. The guard complements source-level redaction and must cover nested arrays/objects for password, secret, token, credential, authorization, API key and client secret fields.
+- Generated Admin detail drawers must show redacted config values exactly as delivered by the API/SDK, not reconstruct or reveal secrets from schema defaults. Design-only provider topics such as payment, WeChat and WebSocket must remain labeled as design-only.
+- Generated system config detail drawers must use the same redaction formatter as current-page export for values whose visibility is `secret`.
+- Generated Admin export buttons must follow the S8 current-page export protocol: CSV only, bounded by `maxRows`, no implicit async export job, and no hidden bulk download behavior.
+- Generated Admin export templates must use `CurrentPageExportButton` and
+  `CurrentPageExportColumn` metadata rather than local CSV/download logic or
+  empty `onExport(columns)` stubs.
+- Generated Admin export buttons must serialize the currently filtered current-page rows, not the unfiltered backing fixture/list data.
+- Generated Admin CSV export filenames must be sanitized to local `.csv` basenames before browser download.
+- Generated Admin CSV exports must neutralize spreadsheet formula prefixes before cell serialization. Values beginning with optional whitespace followed by `=`, `+`, `-` or `@` must be exported as text with an apostrophe prefix.
+- Generated export column definitions must mark token identifiers, secret refs, provider config, payloads, template bodies, report query schemas and other sensitive/detail-only fields as excluded from CSV headers and values. System config exports must redact values whose visibility is `secret`.
+- Generated export object-cell fallback serialization must apply recursive sensitive-key redaction before JSON stringification for password, secret, token, credential, authorization, API key and client secret fields.
+- Generated action APIs must declare the current-state guard they rely on before mutation. Reject deleted, terminal, disabled, wrong-channel, or otherwise inactive resources with typed application errors.
+- Destructive or broad actions must stay dry-run by default or require an explicit confirmation field; never generate hidden best-effort deletes, cache clears, sends, kicks, triggers, or provider calls.
 - Keep Prisma output as draft/hint only.
 - Never emit secrets, env values, credentials or local runtime URLs.
 - Do not add CRM, ERP, MES, WMS, mall, payment, member, multitenancy, Knowledge, RAG, Agent or AI workflow templates in V1.

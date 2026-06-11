@@ -37,6 +37,14 @@ describe('OpenForge manual schema validator', () => {
       valid: true,
       errors: [],
     });
+    expect(
+      validateFixture(
+        'tools/generator/examples/core.dict-admin-safety.v1.schema.json',
+      ),
+    ).toMatchObject({
+      valid: true,
+      errors: [],
+    });
   });
 
   it('rejects forbidden P4/P5 module schemas', () => {
