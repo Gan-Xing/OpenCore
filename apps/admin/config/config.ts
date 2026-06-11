@@ -146,14 +146,6 @@ export default defineConfig({
    */
   antd: {
     appConfig: {},
-    configProvider: {
-      variant: 'filled',
-      theme: {
-        token: {
-          fontFamily: 'AlibabaSans, sans-serif',
-        },
-      },
-    },
   },
   /**
    * @name 网络请求配置

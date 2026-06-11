@@ -3,6 +3,7 @@ import type { Settings as LayoutSettings } from '@ant-design/pro-components';
 import { SettingDrawer } from '@ant-design/pro-components';
 import type { RequestConfig, RunTimeLayoutConfig } from '@umijs/max';
 import { history, Link } from '@umijs/max';
+import { ConfigProvider } from 'antd';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import React from 'react';
@@ -20,6 +21,7 @@ import {
   VersionDropdown,
 } from '@/components';
 import { currentUser as queryCurrentUser } from '@/services/ant-design-pro/api';
+import useShadcnTheme from '@/theme/shadcnTheme';
 import defaultSettings from '../config/defaultSettings';
 import { errorConfig } from './requestErrorConfig';
 
@@ -194,11 +196,19 @@ export const request: RequestConfig = {
   ...errorConfig,
 };
 
+const AppThemeProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const configProps = useShadcnTheme();
+
+  return <ConfigProvider {...configProps}>{children}</ConfigProvider>;
+};
+
 export function rootContainer(container: React.ReactNode) {
   return (
-    <>
+    <AppThemeProvider>
       <OfflineBanner />
       <ErrorBoundary>{container}</ErrorBoundary>
-    </>
+    </AppThemeProvider>
   );
 }
