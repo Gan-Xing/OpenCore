@@ -10,6 +10,7 @@ describe('OpenForge doctor', () => {
       'workspace-root',
       'pnpm-workspace',
       'nx-project',
+      'generator-core-project',
       'contracts-export',
       'module-registry-validation',
       'openapi-snapshot',
@@ -21,6 +22,10 @@ describe('OpenForge doctor', () => {
     ]);
     expect(result.checks).toEqual(
       expect.arrayContaining([
+        expect.objectContaining({
+          id: 'generator-core-project',
+          status: 'pass',
+        }),
         expect.objectContaining({
           id: 'example-schemas',
           status: 'pass',

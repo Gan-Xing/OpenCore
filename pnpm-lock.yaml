@@ -453,6 +453,18 @@ importers:
         specifier: ^7.8.0
         version: 7.8.1
 
+  packages/generator-core:
+    dependencies:
+      '@opencore/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@opencore/module-registry':
+        specifier: workspace:*
+        version: link:../module-registry
+      '@opencore/shared':
+        specifier: workspace:*
+        version: link:../shared
+
   packages/module-registry:
     dependencies:
       '@opencore/contracts':
@@ -613,12 +625,9 @@ importers:
       '@opencore/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
-      '@opencore/module-registry':
+      '@opencore/generator-core':
         specifier: workspace:*
-        version: link:../../packages/module-registry
-      '@opencore/shared':
-        specifier: workspace:*
-        version: link:../../packages/shared
+        version: link:../../packages/generator-core
 
 packages:
   '@adobe/css-tools@4.5.0':

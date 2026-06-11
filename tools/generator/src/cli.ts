@@ -1,20 +1,19 @@
 import type { OpenForgePlanFormat } from '@opencore/contracts';
-import { applyOpenForge } from './apply/apply-writer';
-import { buildDiffPlan } from './diff/diff-plan';
-import { runOpenForgeDoctor } from './doctor/openforge-doctor';
-import { getOpenForgeWorkspaceStatus } from './index';
 import {
+  applyOpenForge,
+  buildDiffPlan,
+  buildGeneratePlan,
+  buildPreflightReport,
   formatDiffPlanAsJson,
+  formatPlanAsJson,
+  formatPlanAsMarkdown,
   formatPreflightReportAsJson,
-} from './output/diff-output';
-import { formatPlanAsJson, formatPlanAsMarkdown } from './output/plan-output';
-import { buildGeneratePlan } from './planner/generate-plan';
-import { buildPreflightReport } from './preflight/preflight-report';
-import {
   listOpenForgeManifests,
   rollbackOpenForge,
+  runOpenForgeDoctor,
   showOpenForgeManifest,
-} from './rollback/rollback-engine';
+} from '@opencore/generator-core';
+import { getOpenForgeWorkspaceStatus } from './index';
 
 type WritableStream = {
   write(message: string): void;

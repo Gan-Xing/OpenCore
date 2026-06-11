@@ -2140,3 +2140,103 @@ Monitor migration full gates all passed after the P21 implementation:
 ## Next Module After Monitor
 
 Next lowest incomplete module: `packages/generator-core`.
+
+## Generator Core Round Module
+
+Target: BE20-P22 `packages/generator-core`.
+
+Dependency position:
+
+- Runs after monitor because OpenForge generator internals are development-time
+  infrastructure and should not be extracted before runtime packages are
+  separated.
+- Runs before the `tools/generator` alignment round so CLI behavior can remain a
+  thin wrapper around a stable package-owned generation core.
+
+## Generator Core Implemented
+
+- Added `@opencore/generator-core` as a workspace/Nx package with build, lint,
+  typecheck and Jest targets.
+- Added package metadata and TypeScript path alias for
+  `@opencore/generator-core`; lockfile importer metadata now includes the new
+  package.
+- Moved OpenForge core directories from `tools/generator/src` into
+  `packages/generator-core/src`: schema/config loading, readers, validators,
+  hashing, planning, output formatting, diffing, preflight, template rendering,
+  VFS, safe apply, rollback, doctor checks and generated-module e2e tests.
+- Added `getOpenForgeGeneratorCoreStatus()` so the core package exposes its own
+  read-only S9 status without claiming to be the CLI package.
+- Kept `@opencore/openforge` as the CLI package and compatibility entrypoint:
+  `tools/generator/src/index.ts` re-exports `@opencore/generator-core` while
+  preserving `OPENFORGE_CLI_COMMANDS` and `getOpenForgeWorkspaceStatus()`.
+- Updated `tools/generator/src/cli.ts` to import generator behavior from
+  `@opencore/generator-core` instead of local relative core directories.
+- Updated `pnpm openforge:test` to run both `generator-core` and `openforge`
+  tests so moved core coverage remains part of the OpenForge gate.
+- Extended `runOpenForgeDoctor()` to verify the extracted
+  `packages/generator-core/project.json` in addition to the existing
+  `tools/generator/project.json`.
+
+## Generator Core Focused Verification
+
+- `pnpm install --lockfile-only` pass; lockfile now includes
+  `packages/generator-core` importer metadata.
+- `NX_DAEMON=false pnpm nx typecheck generator-core` pass; dependency chain
+  includes shared, contracts and module-registry.
+- `NX_DAEMON=false pnpm nx test generator-core` pass; generator-core currently
+  has 13 suites / 54 tests and 4 snapshots.
+- `NX_DAEMON=false pnpm nx lint generator-core` pass.
+- `NX_DAEMON=false pnpm nx typecheck openforge` pass; dependency chain includes
+  `generator-core:typecheck`.
+- `NX_DAEMON=false pnpm nx test openforge` pass; CLI package currently has 2
+  suites / 12 tests.
+- `NX_DAEMON=false pnpm nx lint openforge` pass.
+- `pnpm openforge:doctor` pass; doctor output includes
+  `generator-core-project`.
+- `pnpm openforge:check -- --schema tools/generator/examples/core.dict.v1.schema.json`
+  pass.
+- `pnpm openforge:diff -- --schema tools/generator/examples/core.dict.v1.schema.json --format json`
+  pass.
+- `pnpm openforge:plan -- --schema tools/generator/examples/core.dict.v1.schema.json --format json`
+  pass.
+- `pnpm openforge:test` pass; runs generator-core and openforge suites.
+
+## Generator Core Full Round Verification
+
+Generator-core migration full gates all passed after the P22 implementation:
+
+- `pnpm typecheck` pass; Nx matrix contains 19 projects including
+  `generator-core`.
+- `pnpm lint` pass; existing Admin Biome hints remain non-failing.
+- `pnpm test` pass; Nx matrix contains 19 projects and includes generator-core
+  tests.
+- `pnpm build:api` pass; API build dependency graph remains unaffected by the
+  development-time generator-core package.
+- `pnpm prisma:validate` pass.
+- `pnpm openapi:check` pass.
+- `pnpm format:check` pass.
+
+## Generator Core RuoYi/Yudao Reference Points
+
+- RuoYi/Yudao generator tooling separates metadata definition, template
+  rendering and generated artifact output from runtime controller/service
+  execution.
+- OpenCore keeps the useful generator pipeline separation but models it as a
+  TypeScript package instead of Java reflection/template runtime coupling.
+- OpenForge remains no-write by default; safe apply and rollback stay explicit
+  and manifest-driven.
+
+## Generator Core TS/NestJS Best-Practice Choice
+
+- Uses a package boundary for generator core logic so CLI entrypoints do not own
+  reusable code generation behavior.
+- Keeps generated output deterministic through stable hashes, VFS entries and
+  package-owned tests.
+- Keeps the CLI wrapper thin and behavior-compatible for existing
+  `pnpm openforge:*` scripts.
+- Leaves the final `tools/generator` documentation/UX alignment for the next
+  ordered module.
+
+## Next Module After Generator Core
+
+Next lowest incomplete module: `tools/generator`.

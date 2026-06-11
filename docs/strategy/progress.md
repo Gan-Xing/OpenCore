@@ -2241,3 +2241,41 @@ boundary
 
 `packages/generator-core`：按顺序抽取 generator metadata parsing/template
 rendering/code generation core。
+
+### Generator Core 进展
+
+- BE20-P22 `generator-core` 已完成：新增 `@opencore/generator-core` Nx package。
+- OpenForge schema/config loading、registry/OpenAPI readers、validators、hash、
+  planner、output formatting、diff、preflight、template rendering、VFS、safe
+  apply、rollback、doctor 和 generated-module e2e tests 已迁入
+  `packages/generator-core/src`。
+- `@opencore/generator-core` 已加入 TypeScript path alias、package metadata 和
+  lockfile importer metadata。
+- `tools/generator` 现在只保留 CLI/status wrapper；`@opencore/openforge`
+  入口继续 re-export generator-core API，并保留 `OPENFORGE_CLI_COMMANDS` 与
+  `getOpenForgeWorkspaceStatus()`。
+- OpenForge CLI 已改为从 `@opencore/generator-core` 调用 plan/diff/check、
+  render、apply、rollback、manifest 和 doctor 行为。
+- `pnpm openforge:test` 已改成同时运行 `generator-core` 与 `openforge`
+  suites，避免抽包后核心测试从 OpenForge gate 中消失。
+- Doctor 已新增 `generator-core-project` 检查，同时校验
+  `packages/generator-core/project.json` 和 `tools/generator/project.json`。
+- `pnpm install --lockfile-only` pass。
+- `NX_DAEMON=false pnpm nx typecheck generator-core/openforge` pass。
+- `NX_DAEMON=false pnpm nx test generator-core/openforge` pass；generator-core
+  当前 13 个 suites / 54 tests / 4 snapshots，openforge 当前 2 个 suites / 12
+  tests。
+- `NX_DAEMON=false pnpm nx lint generator-core/openforge` pass。
+- `pnpm openforge:doctor`、`pnpm openforge:check -- --schema tools/generator/examples/core.dict.v1.schema.json`、
+  `pnpm openforge:diff -- --schema tools/generator/examples/core.dict.v1.schema.json --format json`、
+  `pnpm openforge:plan -- --schema tools/generator/examples/core.dict.v1.schema.json --format json`
+  和 `pnpm openforge:test` pass。
+- Generator-core 迁移后复跑 `pnpm typecheck`、`pnpm lint`、`pnpm test`、
+  `pnpm build:api`、`pnpm prisma:validate`、`pnpm openapi:check`、
+  `pnpm format:check` 均 pass；`typecheck`/`lint`/`test` 项目矩阵为 19 个 Nx
+  projects。
+
+### 下一模块
+
+`tools/generator`：继续按顺序校准 OpenForge CLI 文档、脚本和 generator-core
+边界。

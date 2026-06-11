@@ -25,6 +25,7 @@ export type OpenForgeDoctorCheckId =
   | 'workspace-root'
   | 'pnpm-workspace'
   | 'nx-project'
+  | 'generator-core-project'
   | 'contracts-export'
   | 'module-registry-validation'
   | 'openapi-snapshot'
@@ -128,6 +129,10 @@ export function runOpenForgeDoctor(
   const packageJsonPath = join(repoRoot, 'package.json');
   const pnpmWorkspacePath = join(repoRoot, 'pnpm-workspace.yaml');
   const nxProjectPath = join(repoRoot, 'tools/generator/project.json');
+  const generatorCoreProjectPath = join(
+    repoRoot,
+    'packages/generator-core/project.json',
+  );
   const openApiSnapshotPath = join(
     repoRoot,
     'packages/contracts/openapi/opencore-api.json',
@@ -163,11 +168,16 @@ export function runOpenForgeDoctor(
 
       const content = readFileSync(pnpmWorkspacePath, 'utf8');
 
-      if (!content.includes("'tools/*'") && !content.includes('tools/*')) {
-        return fail('pnpm workspace does not include tools/*.');
+      const includesPackages =
+        content.includes("'packages/*'") || content.includes('packages/*');
+      const includesTools =
+        content.includes("'tools/*'") || content.includes('tools/*');
+
+      if (!includesPackages || !includesTools) {
+        return fail('pnpm workspace does not include packages/* and tools/*.');
       }
 
-      return pass('pnpm workspace includes tools/*.', {
+      return pass('pnpm workspace includes packages/* and tools/*.', {
         path: 'pnpm-workspace.yaml',
       });
     }),
@@ -195,6 +205,34 @@ export function runOpenForgeDoctor(
       }
 
       return pass('OpenForge Nx project is configured.', { targets });
+    }),
+    check('generator-core-project', 'Generator core Nx project', () => {
+      if (!existsSync(generatorCoreProjectPath)) {
+        return fail('Generator core Nx project file was not found.');
+      }
+
+      const projectJson = readJsonFile(generatorCoreProjectPath);
+      const targets =
+        isRecord(projectJson) && isRecord(projectJson.targets)
+          ? Object.keys(projectJson.targets).sort()
+          : [];
+
+      if (!isRecord(projectJson) || projectJson.name !== 'generator-core') {
+        return fail('Generator core Nx project name is invalid.');
+      }
+
+      for (const target of ['build', 'lint', 'test', 'typecheck']) {
+        if (!targets.includes(target)) {
+          return fail(
+            `Generator core Nx project is missing ${target} target.`,
+            {
+              targets,
+            },
+          );
+        }
+      }
+
+      return pass('Generator core Nx project is configured.', { targets });
     }),
     check('contracts-export', 'Contracts export', () => {
       const requiredKinds = [

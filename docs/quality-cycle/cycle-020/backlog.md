@@ -45,7 +45,7 @@ runtime packages are extracted and verified.
 - [x] BE20-P20-SCHEDULER: complete scheduler runtime with registry whitelist and
       job logs.
 - [x] BE20-P21-MONITOR: extract monitor runtime into `packages/monitor`.
-- [ ] BE20-P22-GENERATOR-CORE: extract generator core package.
+- [x] BE20-P22-GENERATOR-CORE: extract generator core package.
 - [ ] BE20-P23-TOOLS-GENERATOR: keep OpenForge CLI aligned with generator core.
 - [ ] BE20-P24-API-AGGREGATION: keep `apps/api` limited to startup, HTTP entry,
       module aggregation and OpenAPI export.
@@ -480,3 +480,23 @@ runtime packages are extracted and verified.
       metadata, read-only queue status and runtime diagnostics integration.
 - [x] Focused monitor/api/sdk lint/typecheck/test pass.
 - [x] Full backend gate pass after the monitor migration.
+
+## Generator Core Round Acceptance
+
+- [x] `@opencore/generator-core` is recognized by Nx through
+      `packages/generator-core/project.json`.
+- [x] `@opencore/generator-core` is available through TypeScript path aliases,
+      package metadata and lockfile importer metadata.
+- [x] OpenForge schema/config loading, registry and OpenAPI readers, validation,
+      template rendering, VFS diffing, safe apply, rollback and doctor checks
+      live in `packages/generator-core`.
+- [x] `tools/generator` is reduced to the OpenForge CLI/status wrapper while
+      re-exporting generator core APIs for compatibility.
+- [x] `pnpm openforge:test` runs both `generator-core` and `openforge` suites so
+      moved core coverage remains on the OpenForge local gate path.
+- [x] OpenForge doctor verifies both the CLI Nx project and the extracted
+      generator-core Nx project.
+- [x] Generator core tests cover the moved plan/diff/check/render/apply/rollback
+      and generated-module e2e behavior.
+- [x] Focused generator-core/openforge lint/typecheck/test pass.
+- [x] Full backend gate pass after the generator-core migration.
