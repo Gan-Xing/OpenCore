@@ -7,11 +7,14 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { getRequestContext } from '../../../platform/request-context/request-context';
 import { AuthService, type AuthenticatedUser } from './auth.service';
 import { LoginRequestDto, LoginResponseDto } from './rbac.dto';
 import { RequirePermission } from './permissions.decorator';
 
 type RequestWithUser = {
+  headers?: Record<string, string | string[] | undefined>;
+  ip?: string;
   user?: AuthenticatedUser;
 };
 
@@ -22,8 +25,15 @@ export class AuthController {
 
   @Post('login')
   @ApiOkResponse({ type: LoginResponseDto })
-  login(@Body() body: LoginRequestDto): Promise<LoginResponseDto> {
-    return this.authService.login(body.username, body.password);
+  login(
+    @Body() body: LoginRequestDto,
+    @Req() request: RequestWithUser,
+  ): Promise<LoginResponseDto> {
+    return this.authService.login(body.username, body.password, {
+      ip: request.ip,
+      userAgent: getHeaderValue(request.headers, 'user-agent'),
+      requestId: getRequestContext()?.requestId,
+    });
   }
 
   @Get('me')
@@ -37,4 +47,17 @@ export class AuthController {
 
     return this.authService.createSessionForUser(request.user.id);
   }
+}
+
+function getHeaderValue(
+  headers: RequestWithUser['headers'],
+  name: string,
+): string | undefined {
+  const value = headers?.[name] ?? headers?.[name.toLowerCase()];
+
+  if (Array.isArray(value)) {
+    return value[0];
+  }
+
+  return value;
 }

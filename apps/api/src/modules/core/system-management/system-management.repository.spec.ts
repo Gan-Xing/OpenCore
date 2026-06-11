@@ -43,7 +43,7 @@ describe('SystemManagementRepository', () => {
       valueType: 'boolean',
     });
 
-    expect(config.public).toBe(false);
+    expect(config.visibility).toBe('private');
     expect(
       (await repository.updateConfig('sample.enabled', { value: 'false' }))
         .value,
@@ -53,7 +53,7 @@ describe('SystemManagementRepository', () => {
     });
   });
 
-  it('blocks secret-like config keys', async () => {
+  it('requires explicit secret visibility and redacts secret config values', async () => {
     const repository = new SeedSystemManagementRepository();
 
     await expect(
@@ -63,6 +63,28 @@ describe('SystemManagementRepository', () => {
         valueType: 'string',
       }),
     ).rejects.toThrow(BadRequestException);
+
+    const secret = await repository.createConfig({
+      key: 'auth.token.secret',
+      value: 'unsafe',
+      valueType: 'string',
+      visibility: 'secret',
+    });
+
+    expect(secret).toMatchObject({
+      key: 'auth.token.secret',
+      value: '[REDACTED]',
+      public: false,
+      visibility: 'secret',
+    });
+    expect(JSON.stringify(await repository.listConfig())).not.toContain(
+      'unsafe',
+    );
+    await expect(
+      repository.createExportPreview('config'),
+    ).resolves.toMatchObject({
+      columns: ['key', 'valueType', 'visibility'],
+    });
   });
 
   it('creates generic file assets without provider semantics', async () => {
@@ -76,6 +98,16 @@ describe('SystemManagementRepository', () => {
 
     expect(file.storageKey).toContain('file-assets/');
     expect(file.originalName).toBe('handbook.pdf');
+    await expect(
+      repository.updateFileAsset(file.id, {
+        checksum: 'sha256:updated',
+        originalName: 'handbook-v2.pdf',
+      }),
+    ).resolves.toMatchObject({
+      checksum: 'sha256:updated',
+      originalName: 'handbook-v2.pdf',
+      storageKey: expect.stringContaining('handbook-v2.pdf'),
+    });
     await expect(repository.deleteFile(file.id)).resolves.toEqual({
       deleted: true,
     });
@@ -116,6 +148,11 @@ describe('SystemManagementRepository', () => {
       filename: 'opencore-login-logs.csv',
       scope: 'current-page',
       rowCount: 2,
+    });
+    await expect(
+      repository.createExportPreview('files'),
+    ).resolves.toMatchObject({
+      columns: ['originalName', 'mimeType', 'sizeBytes', 'storageKey'],
     });
   });
 });

@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import {
   OPENAPI_CONTRACT_PROTOCOL,
   CURRENT_PAGE_EXPORT_PROTOCOL,
@@ -10,6 +11,10 @@ import {
   formatOpenForgeGeneratedMarker,
   parseOpenForgeGeneratedMarker,
   parsePermissionCode,
+  API_QUERY_CONTRACT,
+  PERMISSION_DEPRECATION_POLICY,
+  normalizePageRequest,
+  validatePermissionDeprecationPlan,
   validateOpenForgeApplyRequest,
   validateMenuDefinition,
   validateModuleDefinition,
@@ -88,6 +93,12 @@ describe('@opencore/contracts', () => {
   });
 
   it('keeps S3 OpenAPI export and SDK generation as an explicit protocol', () => {
+    const rootPackageJson = JSON.parse(
+      readFileSync('package.json', 'utf8'),
+    ) as {
+      scripts?: Record<string, string>;
+    };
+
     expect(OPENAPI_CONTRACT_PROTOCOL).toMatchObject({
       stage: 'S3',
       status: 'protocol-only',
@@ -98,6 +109,12 @@ describe('@opencore/contracts', () => {
       'packages/contracts',
     );
     expect(OPENAPI_CONTRACT_PROTOCOL.sdkPackage).toBe('@opencore/sdk');
+    expect(rootPackageJson.scripts?.['sdk:generate']).toBe(
+      'node tools/scripts/check-sdk-generate.mjs',
+    );
+    expect(rootPackageJson.scripts?.['sdk:check']).toBe(
+      'node tools/scripts/check-sdk-generate.mjs',
+    );
   });
 
   it('keeps S8 current-page export as a bounded synchronous protocol', () => {
@@ -118,6 +135,44 @@ describe('@opencore/contracts', () => {
       format: 'csv',
       rowCount: 1000,
     });
+  });
+
+  it('defines shared query, error, export, and upload contracts', () => {
+    expect(API_QUERY_CONTRACT).toMatchObject({
+      defaultPage: 1,
+      defaultPageSize: 10,
+      maxPageSize: 100,
+    });
+    expect(normalizePageRequest({ page: 2, pageSize: 200 })).toEqual({
+      page: 2,
+      pageSize: 100,
+    });
+  });
+
+  it('requires explicit permission deprecation plans before removal', () => {
+    expect(PERMISSION_DEPRECATION_POLICY.rule).toBe(
+      'permission-codes-must-not-be-silently-deleted',
+    );
+    expect(
+      validatePermissionDeprecationPlan({
+        code: 'core:user:read',
+        deprecated: true,
+        deprecatedSince: 'cycle-001',
+        migrationNote: 'Use core:user:export for export-only workflows.',
+        replacementCode: 'core:user:export',
+      }),
+    ).toEqual([]);
+    expect(
+      validatePermissionDeprecationPlan({
+        code: 'core:user:read',
+        deprecated: true,
+        deprecatedSince: '',
+        migrationNote: '',
+      }),
+    ).toEqual([
+      'core:user:read.deprecatedSince is required.',
+      'core:user:read.migrationNote is required.',
+    ]);
   });
 
   it('keeps S9 OpenForge as a read-only planning protocol', () => {

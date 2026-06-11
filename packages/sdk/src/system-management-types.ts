@@ -51,6 +51,7 @@ export type SystemConfigSummary = {
   valueType: 'boolean' | 'number' | 'string';
   description?: string;
   public: boolean;
+  visibility: 'private' | 'public' | 'secret';
 };
 
 export type CreateSystemConfigRequest = {
@@ -59,10 +60,14 @@ export type CreateSystemConfigRequest = {
   valueType: SystemConfigSummary['valueType'];
   description?: string;
   public?: boolean;
+  visibility?: SystemConfigSummary['visibility'];
 };
 
 export type UpdateSystemConfigRequest = Partial<
-  Pick<SystemConfigSummary, 'description' | 'public' | 'value' | 'valueType'>
+  Pick<
+    SystemConfigSummary,
+    'description' | 'public' | 'value' | 'valueType' | 'visibility'
+  >
 >;
 
 export type FileAssetSummary = {
@@ -83,6 +88,13 @@ export type CreateFileAssetRequest = {
   checksum?: string;
   uploadedBy: string;
 };
+
+export type UpdateFileAssetRequest = Partial<
+  Pick<
+    FileAssetSummary,
+    'checksum' | 'mimeType' | 'originalName' | 'uploadedBy'
+  >
+>;
 
 export type AuditLogSummary = {
   id: string;

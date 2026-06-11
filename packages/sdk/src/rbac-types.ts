@@ -26,12 +26,40 @@ export type UserSummary = {
   enabled: boolean;
 };
 
+export type CreateUserRequest = {
+  username: string;
+  displayName: string;
+  password: string;
+  roleCodes: readonly string[];
+  enabled?: boolean;
+};
+
+export type UpdateUserRequest = {
+  displayName?: string;
+  password?: string;
+  roleCodes?: readonly string[];
+  enabled?: boolean;
+};
+
 export type RoleSummary = {
   id: string;
   code: string;
   name: string;
   permissionCodes: readonly string[];
   system: boolean;
+};
+
+export type CreateRoleRequest = {
+  code: string;
+  name: string;
+  permissionCodes: readonly string[];
+  system?: boolean;
+};
+
+export type UpdateRoleRequest = {
+  name?: string;
+  permissionCodes?: readonly string[];
+  system?: boolean;
 };
 
 export type PermissionSummary = {
@@ -41,6 +69,15 @@ export type PermissionSummary = {
   dangerous: boolean;
 };
 
+export type CreatePermissionRequest = {
+  code: string;
+  title: string;
+};
+
+export type UpdatePermissionRequest = {
+  title?: string;
+};
+
 export type MenuSummary = {
   key: string;
   title: string;
@@ -48,4 +85,31 @@ export type MenuSummary = {
   permissionCode?: string;
   stage: string;
   order: number;
+};
+
+export type CreateMenuRequest = {
+  key: string;
+  title: string;
+  path: string;
+  permissionCode?: string;
+  order: number;
+};
+
+export type UpdateMenuRequest = {
+  title?: string;
+  path?: string;
+  permissionCode?: string;
+  order?: number;
+};
+
+export type RbacDeleteResult = {
+  deleted: true;
+};
+
+export type RbacExportPreview = {
+  filename: string;
+  scope: 'current-page';
+  columns: readonly string[];
+  rowCount: number;
+  generatedAt: string;
 };

@@ -11,6 +11,7 @@ import type {
   CreateSystemConfigDto,
   PageQueryDto,
   UpdateDictTypeDto,
+  UpdateFileAssetDto,
   UpdateSystemConfigDto,
 } from './system-management.dto';
 import type {
@@ -29,6 +30,9 @@ import {
   createStorageKey,
   normalizePageQuery,
   redactAuditMetadata,
+  redactSystemConfig,
+  resolveConfigVisibility,
+  resolveStoredConfigVisibility,
   SystemManagementRepository,
   type ExportPreview,
   type PageResult,
@@ -203,11 +207,15 @@ export class PrismaSystemManagementRepository extends SystemManagementRepository
       take: pagination.take,
     });
 
-    return createPageResult(rows.map(toSystemConfigRecord), pagination);
+    return createPageResult(
+      rows.map((row) => redactSystemConfig(toSystemConfigRecord(row))),
+      pagination,
+    );
   }
 
   async createConfig(body: CreateSystemConfigDto): Promise<SystemConfigRecord> {
-    assertSafeConfigKey(body.key);
+    const visibility = resolveConfigVisibility(body);
+    assertSafeConfigKey(body.key, visibility);
 
     if (
       await this.prisma.systemConfig.findUnique({ where: { key: body.key } })
@@ -221,30 +229,35 @@ export class PrismaSystemManagementRepository extends SystemManagementRepository
         value: body.value,
         valueType: body.valueType,
         description: body.description,
-        public: body.public ?? false,
+        public: visibility === 'public',
       },
     });
 
-    return toSystemConfigRecord(config);
+    return redactSystemConfig(toSystemConfigRecord(config));
   }
 
   async updateConfig(
     key: string,
     body: UpdateSystemConfigDto,
   ): Promise<SystemConfigRecord> {
-    assertSafeConfigKey(key);
     const existing = await this.findConfigByKey(key);
+    const visibility = resolveStoredConfigVisibility({
+      key,
+      public: body.public ?? existing.public,
+      visibility: body.visibility,
+    });
+    assertSafeConfigKey(key, visibility);
     const config = await this.prisma.systemConfig.update({
       where: { key },
       data: {
         value: body.value ?? existing.value,
         valueType: body.valueType ?? existing.valueType,
         description: body.description ?? existing.description,
-        public: body.public ?? existing.public,
+        public: visibility === 'public',
       },
     });
 
-    return toSystemConfigRecord(config);
+    return redactSystemConfig(toSystemConfigRecord(config));
   }
 
   async deleteConfig(key: string): Promise<{ deleted: true }> {
@@ -290,11 +303,36 @@ export class PrismaSystemManagementRepository extends SystemManagementRepository
     return toFileAssetRecord(file);
   }
 
-  async deleteFile(id: string): Promise<{ deleted: true }> {
-    if (!(await this.prisma.fileAsset.findUnique({ where: { id } }))) {
-      throw new NotFoundException(`File asset not found: ${id}`);
-    }
+  async updateFileAsset(
+    id: string,
+    body: UpdateFileAssetDto,
+  ): Promise<FileAssetRecord> {
+    const existing = await this.findFileById(id);
+    const updated = {
+      originalName: body.originalName ?? existing.originalName,
+      mimeType: body.mimeType ?? existing.mimeType,
+      sizeBytes: existing.sizeBytes,
+      checksum: body.checksum ?? existing.checksum ?? undefined,
+      uploadedBy: body.uploadedBy ?? existing.uploadedBy,
+    };
+    assertSafeFileAsset(updated);
+    const storageKey = createStorageKey(updated, this.storagePrefix);
+    const file = await this.prisma.fileAsset.update({
+      where: { id },
+      data: {
+        originalName: updated.originalName,
+        mimeType: updated.mimeType,
+        storageKey,
+        checksum: updated.checksum,
+        uploadedBy: updated.uploadedBy,
+      },
+    });
 
+    return toFileAssetRecord(file);
+  }
+
+  async deleteFile(id: string): Promise<{ deleted: true }> {
+    await this.findFileById(id);
     await this.prisma.fileAsset.delete({ where: { id } });
     return { deleted: true };
   }
@@ -369,6 +407,16 @@ export class PrismaSystemManagementRepository extends SystemManagementRepository
 
     return config;
   }
+
+  private async findFileById(id: string): Promise<PrismaFileAsset> {
+    const file = await this.prisma.fileAsset.findUnique({ where: { id } });
+
+    if (!file) {
+      throw new NotFoundException(`File asset not found: ${id}`);
+    }
+
+    return file;
+  }
 }
 
 function toDictTypeRecord(dict: PrismaDictTypeWithItems): DictTypeRecord {
@@ -400,6 +448,10 @@ function toSystemConfigRecord(config: PrismaSystemConfig): SystemConfigRecord {
     valueType: toSystemConfigValueType(config.valueType),
     description: config.description ?? undefined,
     public: config.public,
+    visibility: resolveStoredConfigVisibility({
+      key: config.key,
+      public: config.public,
+    }),
   };
 }
 

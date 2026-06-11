@@ -11,11 +11,19 @@ export type AuthenticatedUser = {
   permissionCodes: readonly string[];
 };
 
+export type LoginContext = {
+  ip?: string;
+  userAgent?: string;
+  requestId?: string;
+};
+
+const TOKEN_TTL_SECONDS = 3600;
+
 @Injectable()
 export class AuthService {
   constructor(private readonly repository: RbacRepository) {}
 
-  async login(username: string, password: string) {
+  async login(username: string, password: string, context: LoginContext = {}) {
     const user = await this.repository.findUserByUsername(username);
 
     if (
@@ -23,10 +31,13 @@ export class AuthService {
       !user.enabled ||
       user.passwordHash !== hashPassword(password)
     ) {
+      await this.recordLoginAttempt(username, false, context);
       throw new UnauthorizedException('Invalid username or password');
     }
 
-    return this.createSessionForUser(user.id);
+    const session = await this.createSessionForUser(user.id);
+    await this.recordLoginAttempt(username, true, context);
+    return session;
   }
 
   async createSessionForUser(userId: string) {
@@ -35,7 +46,7 @@ export class AuthService {
     return {
       accessToken: this.signToken(userId),
       tokenType: 'Bearer' as const,
-      expiresInSeconds: 3600,
+      expiresInSeconds: TOKEN_TTL_SECONDS,
       user: authenticatedUser,
     };
   }
@@ -70,10 +81,12 @@ export class AuthService {
   }
 
   private signToken(userId: string): string {
+    const issuedAt = Math.floor(Date.now() / 1000);
     const payload = Buffer.from(
       JSON.stringify({
         sub: userId,
-        iat: Math.floor(Date.now() / 1000),
+        iat: issuedAt,
+        exp: issuedAt + TOKEN_TTL_SECONDS,
       }),
     ).toString('base64url');
     const signature = this.sign(payload);
@@ -91,11 +104,16 @@ export class AuthService {
     const decoded = JSON.parse(
       Buffer.from(payload, 'base64url').toString('utf8'),
     ) as {
+      exp?: number;
       sub?: string;
     };
 
     if (!decoded.sub) {
       throw new UnauthorizedException('Invalid bearer token payload');
+    }
+
+    if (!decoded.exp || decoded.exp <= Math.floor(Date.now() / 1000)) {
+      throw new UnauthorizedException('Bearer token expired');
     }
 
     return decoded.sub;
@@ -108,6 +126,21 @@ export class AuthService {
     )
       .update(payload)
       .digest('base64url');
+  }
+
+  private async recordLoginAttempt(
+    username: string,
+    success: boolean,
+    context: LoginContext,
+  ): Promise<void> {
+    await this.repository.recordLoginAttempt({
+      username,
+      success,
+      failureReason: success ? undefined : 'invalid-credentials-or-disabled',
+      ip: context.ip ?? 'unknown',
+      userAgent: context.userAgent ?? 'unknown',
+      requestId: context.requestId ?? 'unknown',
+    });
   }
 }
 

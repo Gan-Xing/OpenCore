@@ -22,6 +22,7 @@ export type SystemConfigRecord = {
   valueType: 'boolean' | 'number' | 'string';
   description?: string;
   public: boolean;
+  visibility: 'private' | 'public' | 'secret';
 };
 
 export type FileAssetRecord = {
@@ -119,6 +120,7 @@ export const seedSystemConfigs: readonly SystemConfigRecord[] = [
     valueType: 'string',
     description: 'Public Admin title. Secrets are not accepted in core config.',
     public: true,
+    visibility: 'public',
   },
   {
     id: 'config_login_lockout',
@@ -127,6 +129,7 @@ export const seedSystemConfigs: readonly SystemConfigRecord[] = [
     valueType: 'number',
     description: 'Safe login lockout display setting.',
     public: false,
+    visibility: 'private',
   },
 ];
 

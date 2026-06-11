@@ -22,6 +22,9 @@ describe('createSystemManagementClient', () => {
       sizeBytes: 1024,
       uploadedBy: 'admin',
     });
+    await client.updateFileAsset('token', 'file_1', {
+      checksum: 'sha256:updated',
+    });
     await client.deleteConfig('token', 'opencore.admin.title');
 
     expect(calls).toEqual([
@@ -36,6 +39,11 @@ describe('createSystemManagementClient', () => {
       {
         path: '/core/files',
         method: 'POST',
+        token: 'token',
+      },
+      {
+        path: '/core/files/file_1',
+        method: 'PATCH',
         token: 'token',
       },
       {

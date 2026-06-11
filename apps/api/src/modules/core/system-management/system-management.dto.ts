@@ -116,6 +116,9 @@ export class SystemConfigDto {
 
   @ApiProperty()
   public!: boolean;
+
+  @ApiProperty({ enum: ['private', 'public', 'secret'] })
+  visibility!: 'private' | 'public' | 'secret';
 }
 
 export class SystemConfigPageDto {
@@ -150,6 +153,9 @@ export class CreateSystemConfigDto {
 
   @ApiProperty({ required: false, default: false })
   public?: boolean;
+
+  @ApiProperty({ required: false, enum: ['private', 'public', 'secret'] })
+  visibility?: 'private' | 'public' | 'secret';
 }
 
 export class UpdateSystemConfigDto {
@@ -164,6 +170,9 @@ export class UpdateSystemConfigDto {
 
   @ApiProperty({ required: false })
   public?: boolean;
+
+  @ApiProperty({ required: false, enum: ['private', 'public', 'secret'] })
+  visibility?: 'private' | 'public' | 'secret';
 }
 
 export class FileAssetDto {
@@ -224,6 +233,20 @@ export class CreateFileAssetDto {
 
   @ApiProperty({ example: 'admin' })
   uploadedBy!: string;
+}
+
+export class UpdateFileAssetDto {
+  @ApiProperty({ required: false })
+  originalName?: string;
+
+  @ApiProperty({ required: false })
+  mimeType?: string;
+
+  @ApiProperty({ required: false })
+  checksum?: string;
+
+  @ApiProperty({ required: false })
+  uploadedBy?: string;
 }
 
 export class AuditLogDto {

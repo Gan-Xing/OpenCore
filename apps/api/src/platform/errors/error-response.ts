@@ -1,18 +1,8 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
+import type { ApiErrorResponseContract } from '@opencore/contracts';
 import type { RequestContext } from '../request-context/request-context';
 
-export type ApiErrorResponse = {
-  success: false;
-  error: {
-    code: string;
-    message: string;
-    statusCode: number;
-    path?: string;
-    requestId?: string;
-    traceId?: string;
-    timestamp: string;
-  };
-};
+export type ApiErrorResponse = ApiErrorResponseContract;
 
 export function toApiErrorResponse(
   exception: unknown,

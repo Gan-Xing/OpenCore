@@ -9,6 +9,7 @@ import type {
   CreateSystemConfigDto,
   PageQueryDto,
   UpdateDictTypeDto,
+  UpdateFileAssetDto,
   UpdateSystemConfigDto,
 } from './system-management.dto';
 import {
@@ -30,6 +31,8 @@ import {
   createPage,
   createStorageKey,
   redactAuditMetadata,
+  redactSystemConfig,
+  resolveConfigVisibility,
   SystemManagementRepository,
   type ExportPreview,
   type PageResult,
@@ -90,11 +93,12 @@ export class SeedSystemManagementRepository extends SystemManagementRepository {
   async listConfig(
     query: PageQueryDto = {},
   ): Promise<PageResult<SystemConfigRecord>> {
-    return createPage(this.systemConfigs, query);
+    return createPage(this.systemConfigs.map(redactSystemConfig), query);
   }
 
   async createConfig(body: CreateSystemConfigDto): Promise<SystemConfigRecord> {
-    assertSafeConfigKey(body.key);
+    const visibility = resolveConfigVisibility(body);
+    assertSafeConfigKey(body.key, visibility);
 
     if (this.systemConfigs.some((config) => config.key === body.key)) {
       throw new ConflictException(`System config already exists: ${body.key}`);
@@ -106,25 +110,32 @@ export class SeedSystemManagementRepository extends SystemManagementRepository {
       value: body.value,
       valueType: body.valueType,
       description: body.description,
-      public: body.public ?? false,
+      public: visibility === 'public',
+      visibility,
     };
     this.systemConfigs = [config, ...this.systemConfigs];
-    return { ...config };
+    return redactSystemConfig(config);
   }
 
   async updateConfig(
     key: string,
     body: UpdateSystemConfigDto,
   ): Promise<SystemConfigRecord> {
-    assertSafeConfigKey(key);
     const config = this.findConfig(key);
+    const visibility = resolveConfigVisibility({
+      key,
+      public: body.public ?? config.public,
+      visibility: body.visibility ?? config.visibility,
+    });
+    assertSafeConfigKey(key, visibility);
     Object.assign(config, {
       value: body.value ?? config.value,
       valueType: body.valueType ?? config.valueType,
       description: body.description ?? config.description,
-      public: body.public ?? config.public,
+      public: visibility === 'public',
+      visibility,
     });
-    return { ...config };
+    return redactSystemConfig(config);
   }
 
   async deleteConfig(key: string): Promise<{ deleted: true }> {
@@ -159,11 +170,26 @@ export class SeedSystemManagementRepository extends SystemManagementRepository {
     return { ...file };
   }
 
-  async deleteFile(id: string): Promise<{ deleted: true }> {
-    if (!this.fileAssets.some((file) => file.id === id)) {
-      throw new NotFoundException(`File asset not found: ${id}`);
-    }
+  async updateFileAsset(
+    id: string,
+    body: UpdateFileAssetDto,
+  ): Promise<FileAssetRecord> {
+    const file = this.findFileAsset(id);
+    const updated = {
+      ...file,
+      originalName: body.originalName ?? file.originalName,
+      mimeType: body.mimeType ?? file.mimeType,
+      checksum: body.checksum ?? file.checksum,
+      uploadedBy: body.uploadedBy ?? file.uploadedBy,
+    };
+    assertSafeFileAsset(updated);
+    updated.storageKey = createStorageKey(updated);
+    Object.assign(file, updated);
+    return { ...file };
+  }
 
+  async deleteFile(id: string): Promise<{ deleted: true }> {
+    this.findFileAsset(id);
     this.fileAssets = this.fileAssets.filter((file) => file.id !== id);
     return { deleted: true };
   }
@@ -224,6 +250,16 @@ export class SeedSystemManagementRepository extends SystemManagementRepository {
     }
 
     return config;
+  }
+
+  private findFileAsset(id: string): FileAssetRecord {
+    const file = this.fileAssets.find((candidate) => candidate.id === id);
+
+    if (!file) {
+      throw new NotFoundException(`File asset not found: ${id}`);
+    }
+
+    return file;
   }
 }
 

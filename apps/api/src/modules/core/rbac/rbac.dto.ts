@@ -56,6 +56,37 @@ export class UserSummaryDto {
   enabled!: boolean;
 }
 
+export class CreateUserDto {
+  @ApiProperty({ example: 'operator' })
+  username!: string;
+
+  @ApiProperty({ example: 'Operations User' })
+  displayName!: string;
+
+  @ApiProperty()
+  password!: string;
+
+  @ApiProperty({ type: [String], default: [] })
+  roleCodes!: readonly string[];
+
+  @ApiProperty({ required: false, default: true })
+  enabled?: boolean;
+}
+
+export class UpdateUserDto {
+  @ApiProperty({ required: false })
+  displayName?: string;
+
+  @ApiProperty({ required: false })
+  password?: string;
+
+  @ApiProperty({ required: false, type: [String] })
+  roleCodes?: readonly string[];
+
+  @ApiProperty({ required: false })
+  enabled?: boolean;
+}
+
 export class RoleSummaryDto {
   @ApiProperty()
   id!: string;
@@ -73,6 +104,31 @@ export class RoleSummaryDto {
   system!: boolean;
 }
 
+export class CreateRoleDto {
+  @ApiProperty({ example: 'operator' })
+  code!: string;
+
+  @ApiProperty({ example: 'Operator' })
+  name!: string;
+
+  @ApiProperty({ type: [String], default: [] })
+  permissionCodes!: readonly string[];
+
+  @ApiProperty({ required: false, default: false })
+  system?: boolean;
+}
+
+export class UpdateRoleDto {
+  @ApiProperty({ required: false })
+  name?: string;
+
+  @ApiProperty({ required: false, type: [String] })
+  permissionCodes?: readonly string[];
+
+  @ApiProperty({ required: false })
+  system?: boolean;
+}
+
 export class PermissionSummaryDto {
   @ApiProperty()
   code!: string;
@@ -85,6 +141,19 @@ export class PermissionSummaryDto {
 
   @ApiProperty()
   dangerous!: boolean;
+}
+
+export class CreatePermissionDto {
+  @ApiProperty({ example: 'core:example:read' })
+  code!: string;
+
+  @ApiProperty({ example: 'Read examples' })
+  title!: string;
+}
+
+export class UpdatePermissionDto {
+  @ApiProperty({ required: false })
+  title?: string;
 }
 
 export class MenuSummaryDto {
@@ -105,4 +174,57 @@ export class MenuSummaryDto {
 
   @ApiProperty()
   order!: number;
+}
+
+export class CreateMenuDto {
+  @ApiProperty({ example: 'system.examples' })
+  key!: string;
+
+  @ApiProperty({ example: 'Examples' })
+  title!: string;
+
+  @ApiProperty({ example: '/system/examples' })
+  path!: string;
+
+  @ApiProperty({ required: false })
+  permissionCode?: string;
+
+  @ApiProperty()
+  order!: number;
+}
+
+export class UpdateMenuDto {
+  @ApiProperty({ required: false })
+  title?: string;
+
+  @ApiProperty({ required: false })
+  path?: string;
+
+  @ApiProperty({ required: false })
+  permissionCode?: string;
+
+  @ApiProperty({ required: false })
+  order?: number;
+}
+
+export class DeleteResultDto {
+  @ApiProperty()
+  deleted!: true;
+}
+
+export class RbacExportPreviewDto {
+  @ApiProperty()
+  filename!: string;
+
+  @ApiProperty({ example: 'current-page' })
+  scope!: 'current-page';
+
+  @ApiProperty({ type: [String] })
+  columns!: readonly string[];
+
+  @ApiProperty()
+  rowCount!: number;
+
+  @ApiProperty()
+  generatedAt!: string;
 }

@@ -13,6 +13,7 @@ import type {
   PageResponse,
   SystemConfigSummary,
   UpdateDictTypeRequest,
+  UpdateFileAssetRequest,
   UpdateSystemConfigRequest,
 } from './system-management-types';
 
@@ -57,6 +58,11 @@ export type SystemManagementClient = {
   createFileAsset: (
     token: Token,
     body: CreateFileAssetRequest,
+  ) => Promise<FileAssetSummary>;
+  updateFileAsset: (
+    token: Token,
+    id: string,
+    body: UpdateFileAssetRequest,
   ) => Promise<FileAssetSummary>;
   deleteFile: (token: Token, id: string) => Promise<DeleteResult>;
   listAuditLogs: (
@@ -145,6 +151,12 @@ export function createSystemManagementClient(
     createFileAsset: (token, body) =>
       request<FileAssetSummary>('/core/files', {
         method: 'POST',
+        body,
+        token,
+      }),
+    updateFileAsset: (token, id, body) =>
+      request<FileAssetSummary>(`/core/files/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
         body,
         token,
       }),

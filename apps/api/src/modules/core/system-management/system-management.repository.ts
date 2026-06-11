@@ -6,6 +6,7 @@ import type {
   CreateSystemConfigDto,
   PageQueryDto,
   UpdateDictTypeDto,
+  UpdateFileAssetDto,
   UpdateSystemConfigDto,
 } from './system-management.dto';
 import type {
@@ -49,6 +50,7 @@ export type NormalizedPageQuery = {
 };
 
 const SENSITIVE_KEY_PATTERN = /(authorization|cookie|password|secret|token)/i;
+const REDACTED_SECRET_VALUE = '[REDACTED]';
 
 export abstract class SystemManagementRepository {
   abstract listDicts(query?: PageQueryDto): Promise<PageResult<DictTypeRecord>>;
@@ -82,6 +84,11 @@ export abstract class SystemManagementRepository {
   ): Promise<PageResult<FileAssetRecord>>;
 
   abstract createFileAsset(body: CreateFileAssetDto): Promise<FileAssetRecord>;
+
+  abstract updateFileAsset(
+    id: string,
+    body: UpdateFileAssetDto,
+  ): Promise<FileAssetRecord>;
 
   abstract deleteFile(id: string): Promise<{ deleted: true }>;
 
@@ -194,12 +201,65 @@ export function createStorageKey(
   )}`;
 }
 
-export function assertSafeConfigKey(key: string): void {
-  if (SENSITIVE_KEY_PATTERN.test(key)) {
+export function assertSafeConfigKey(
+  key: string,
+  visibility: SystemConfigRecord['visibility'] = resolveConfigVisibility({
+    key,
+    public: false,
+  }),
+): void {
+  if (SENSITIVE_KEY_PATTERN.test(key) && visibility !== 'secret') {
     throw new BadRequestException(
-      'System config keys must not store secrets, tokens, passwords, or credentials.',
+      'Secret-like system config keys must be explicitly marked with secret visibility.',
     );
   }
+
+  if (visibility === 'secret' && !SENSITIVE_KEY_PATTERN.test(key)) {
+    throw new BadRequestException(
+      'Secret system config visibility requires a secret-like key name.',
+    );
+  }
+}
+
+export function resolveConfigVisibility(input: {
+  key: string;
+  public?: boolean;
+  visibility?: SystemConfigRecord['visibility'];
+}): SystemConfigRecord['visibility'] {
+  if (input.visibility) {
+    return input.visibility;
+  }
+
+  return input.public ? 'public' : 'private';
+}
+
+export function resolveStoredConfigVisibility(input: {
+  key: string;
+  public?: boolean;
+  visibility?: SystemConfigRecord['visibility'];
+}): SystemConfigRecord['visibility'] {
+  if (input.visibility) {
+    return input.visibility;
+  }
+
+  if (SENSITIVE_KEY_PATTERN.test(input.key)) {
+    return 'secret';
+  }
+
+  return input.public ? 'public' : 'private';
+}
+
+export function redactSystemConfig(
+  config: SystemConfigRecord,
+): SystemConfigRecord {
+  const visibility = resolveStoredConfigVisibility(config);
+
+  return {
+    ...config,
+    public: visibility === 'public',
+    visibility,
+    value: visibility === 'secret' ? REDACTED_SECRET_VALUE : config.value,
+  };
 }
 
 export function assertSafeFileAsset(body: CreateFileAssetDto): void {
@@ -246,7 +306,7 @@ const exportColumnsByResource = {
     'resource',
     'statusCode',
   ],
-  config: ['key', 'value', 'valueType', 'public'],
+  config: ['key', 'valueType', 'visibility'],
   dicts: ['code', 'name', 'enabled'],
   files: ['originalName', 'mimeType', 'sizeBytes', 'storageKey'],
   'login-logs': ['createdAt', 'username', 'success', 'failureReason'],

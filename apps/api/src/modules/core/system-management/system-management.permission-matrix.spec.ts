@@ -21,6 +21,7 @@ const expectedPermissions = {
   listLoginLogs: ['core:login-log:read'],
   updateConfig: ['core:config:update'],
   updateDict: ['core:dict:update'],
+  updateFileAsset: ['core:file:update'],
 } as const;
 
 describe('SystemManagementController permission matrix', () => {
