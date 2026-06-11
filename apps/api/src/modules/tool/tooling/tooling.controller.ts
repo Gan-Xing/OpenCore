@@ -10,12 +10,12 @@ import {
 import { ToolingRepository } from './tooling.repository';
 
 @ApiBearerAuth()
-@ApiTags('Tooling')
 @Controller('tools')
 export class ToolingController {
   constructor(private readonly repository: ToolingRepository) {}
 
   @Get('openapi/drift')
+  @ApiTags('Tool OpenAPI')
   @RequirePermission('tool:openapi:read')
   @ApiOkResponse({ type: OpenApiDriftStatusDto })
   getOpenApiDriftStatus(): OpenApiDriftStatusDto {
@@ -23,6 +23,7 @@ export class ToolingController {
   }
 
   @Get('export/protocol')
+  @ApiTags('Tool Export')
   @RequirePermission('tool:export:read')
   @ApiOkResponse({ type: CurrentPageExportProtocolDto })
   getExportProtocol(): CurrentPageExportProtocolDto {
@@ -30,6 +31,7 @@ export class ToolingController {
   }
 
   @Post('export/preview')
+  @ApiTags('Tool Export')
   @RequirePermission('tool:export:export')
   @ApiOkResponse({ type: ExportPlanDto })
   createExportPreview(@Body() body: CreateExportPreviewDto): ExportPlanDto {

@@ -1,4 +1,7 @@
-import type { RequestContext } from '../request-context/request-context';
+import {
+  getRequestContext,
+  type RequestContext,
+} from '../request-context/request-context';
 
 export type StructuredLogLevel = 'debug' | 'info' | 'warn' | 'error';
 
@@ -58,7 +61,7 @@ export class StructuredLogger {
       level,
       message,
       context,
-      requestContext,
+      requestContext: requestContext ?? getRequestContext(),
     });
     const line = JSON.stringify(entry);
 

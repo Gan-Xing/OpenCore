@@ -119,7 +119,107 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Core RBAC"]
+        "tags": ["Rbac", "Core Users"]
+      },
+      "post": {
+        "operationId": "RbacController_createUser",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateUserDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UserSummaryDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Users"]
+      }
+    },
+    "/api/core/users/export": {
+      "get": {
+        "operationId": "RbacController_exportUsers",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RbacExportPreviewDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Users"]
+      }
+    },
+    "/api/core/users/{id}": {
+      "patch": {
+        "operationId": "RbacController_updateUser",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateUserDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UserSummaryDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Users"]
+      },
+      "delete": {
+        "operationId": "RbacController_deleteUser",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DeleteResultDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Users"]
       }
     },
     "/api/core/roles": {
@@ -140,7 +240,107 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Core RBAC"]
+        "tags": ["Rbac", "Core Roles"]
+      },
+      "post": {
+        "operationId": "RbacController_createRole",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateRoleDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RoleSummaryDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Roles"]
+      }
+    },
+    "/api/core/roles/export": {
+      "get": {
+        "operationId": "RbacController_exportRoles",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RbacExportPreviewDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Roles"]
+      }
+    },
+    "/api/core/roles/{code}": {
+      "patch": {
+        "operationId": "RbacController_updateRole",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateRoleDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RoleSummaryDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Roles"]
+      },
+      "delete": {
+        "operationId": "RbacController_deleteRole",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DeleteResultDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Roles"]
       }
     },
     "/api/core/permissions": {
@@ -163,7 +363,111 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Core RBAC"]
+        "tags": ["Rbac", "Core Permissions"]
+      },
+      "post": {
+        "operationId": "RbacController_createPermission",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreatePermissionDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PermissionSummaryDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Permissions"]
+      }
+    },
+    "/api/core/permissions/export": {
+      "get": {
+        "operationId": "RbacController_exportPermissions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RbacExportPreviewDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Permissions"]
+      }
+    },
+    "/api/core/permissions/{code}": {
+      "patch": {
+        "operationId": "RbacController_updatePermission",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdatePermissionDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PermissionSummaryDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Permissions"]
+      },
+      "delete": {
+        "operationId": "RbacController_deletePermission",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DeleteResultDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Permissions"]
       }
     },
     "/api/core/menus": {
@@ -184,7 +488,107 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Core RBAC"]
+        "tags": ["Rbac", "Core Menus"]
+      },
+      "post": {
+        "operationId": "RbacController_createMenu",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateMenuDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MenuSummaryDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Menus"]
+      }
+    },
+    "/api/core/menus/export": {
+      "get": {
+        "operationId": "RbacController_exportMenus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RbacExportPreviewDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Menus"]
+      }
+    },
+    "/api/core/menus/{key}": {
+      "patch": {
+        "operationId": "RbacController_updateMenu",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateMenuDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MenuSummaryDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Menus"]
+      },
+      "delete": {
+        "operationId": "RbacController_deleteMenu",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DeleteResultDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Menus"]
       }
     },
     "/api/core/dicts": {
@@ -221,7 +625,7 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Core System Management"]
+        "tags": ["SystemManagement", "Core Dictionaries"]
       },
       "post": {
         "operationId": "SystemManagementController_createDict",
@@ -245,7 +649,7 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Core System Management"]
+        "tags": ["SystemManagement", "Core Dictionaries"]
       }
     },
     "/api/core/dicts/export": {
@@ -282,7 +686,7 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Core System Management"]
+        "tags": ["SystemManagement", "Core Dictionaries"]
       }
     },
     "/api/core/dicts/{code}": {
@@ -315,7 +719,7 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Core System Management"]
+        "tags": ["SystemManagement", "Core Dictionaries"]
       },
       "delete": {
         "operationId": "SystemManagementController_deleteDict",
@@ -338,7 +742,7 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Core System Management"]
+        "tags": ["SystemManagement", "Core Dictionaries"]
       }
     },
     "/api/core/config": {
@@ -375,7 +779,7 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Core System Management"]
+        "tags": ["SystemManagement", "Core System Config"]
       },
       "post": {
         "operationId": "SystemManagementController_createConfig",
@@ -399,7 +803,7 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Core System Management"]
+        "tags": ["SystemManagement", "Core System Config"]
       }
     },
     "/api/core/config/export": {
@@ -436,7 +840,7 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Core System Management"]
+        "tags": ["SystemManagement", "Core System Config"]
       }
     },
     "/api/core/config/{key}": {
@@ -469,7 +873,7 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Core System Management"]
+        "tags": ["SystemManagement", "Core System Config"]
       },
       "delete": {
         "operationId": "SystemManagementController_deleteConfig",
@@ -492,7 +896,7 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Core System Management"]
+        "tags": ["SystemManagement", "Core System Config"]
       }
     },
     "/api/core/files": {
@@ -529,7 +933,7 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Core System Management"]
+        "tags": ["SystemManagement", "Core Files"]
       },
       "post": {
         "operationId": "SystemManagementController_createFileAsset",
@@ -553,7 +957,7 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Core System Management"]
+        "tags": ["SystemManagement", "Core Files"]
       }
     },
     "/api/core/files/export": {
@@ -590,10 +994,41 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Core System Management"]
+        "tags": ["SystemManagement", "Core Files"]
       }
     },
     "/api/core/files/{id}": {
+      "patch": {
+        "operationId": "SystemManagementController_updateFileAsset",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateFileAssetDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/FileAssetDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Files"]
+      },
       "delete": {
         "operationId": "SystemManagementController_deleteFile",
         "parameters": [
@@ -615,7 +1050,7 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Core System Management"]
+        "tags": ["SystemManagement", "Core Files"]
       }
     },
     "/api/core/audit-logs": {
@@ -652,7 +1087,7 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Core System Management"]
+        "tags": ["SystemManagement", "Core Audit Logs"]
       }
     },
     "/api/core/audit-logs/export": {
@@ -689,7 +1124,7 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Core System Management"]
+        "tags": ["SystemManagement", "Core Audit Logs"]
       }
     },
     "/api/core/login-logs": {
@@ -726,7 +1161,7 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Core System Management"]
+        "tags": ["SystemManagement", "Core Login Logs"]
       }
     },
     "/api/core/login-logs/export": {
@@ -763,7 +1198,1586 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Core System Management"]
+        "tags": ["SystemManagement", "Core Login Logs"]
+      }
+    },
+    "/api/collaboration/summary": {
+      "get": {
+        "operationId": "CollaborationController_getSummary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollaborationSummaryDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration", "Collaboration"]
+      }
+    },
+    "/api/collaboration/messages": {
+      "get": {
+        "operationId": "CollaborationController_listMessages",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["unread", "read", "archived"]
+            }
+          },
+          {
+            "name": "recipient",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MessagePageDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration", "Collaboration Messages"]
+      },
+      "post": {
+        "operationId": "CollaborationController_createMessage",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateMessageDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MessageDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration", "Collaboration Messages"]
+      }
+    },
+    "/api/collaboration/messages/{id}": {
+      "get": {
+        "operationId": "CollaborationController_getMessage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MessageDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration", "Collaboration Messages"]
+      },
+      "delete": {
+        "operationId": "CollaborationController_deleteMessage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DeleteResultDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration", "Collaboration Messages"]
+      }
+    },
+    "/api/collaboration/messages/{id}/read": {
+      "patch": {
+        "operationId": "CollaborationController_markMessageRead",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MessageDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration", "Collaboration Messages"]
+      }
+    },
+    "/api/collaboration/messages/{id}/archive": {
+      "patch": {
+        "operationId": "CollaborationController_archiveMessage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MessageDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration", "Collaboration Messages"]
+      }
+    },
+    "/api/collaboration/notices": {
+      "get": {
+        "operationId": "CollaborationController_listNotices",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["draft", "published", "archived"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/NoticePageDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration", "Collaboration Notices"]
+      },
+      "post": {
+        "operationId": "CollaborationController_createNotice",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateNoticeDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/NoticeDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration", "Collaboration Notices"]
+      }
+    },
+    "/api/collaboration/notices/{id}": {
+      "get": {
+        "operationId": "CollaborationController_getNotice",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/NoticeDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration", "Collaboration Notices"]
+      }
+    },
+    "/api/collaboration/notices/{id}/publish": {
+      "patch": {
+        "operationId": "CollaborationController_publishNotice",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/NoticeDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration", "Collaboration Notices"]
+      }
+    },
+    "/api/collaboration/notices/{id}/archive": {
+      "patch": {
+        "operationId": "CollaborationController_archiveNotice",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/NoticeDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration", "Collaboration Notices"]
+      }
+    },
+    "/api/collaboration/todos": {
+      "get": {
+        "operationId": "CollaborationController_listTodos",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["pending", "assigned", "completed", "canceled"]
+            }
+          },
+          {
+            "name": "assignee",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "sourceType",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TodoPageDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration", "Collaboration Todos"]
+      },
+      "post": {
+        "operationId": "CollaborationController_createTodo",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateTodoDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TodoDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration", "Collaboration Todos"]
+      }
+    },
+    "/api/collaboration/todos/{id}": {
+      "get": {
+        "operationId": "CollaborationController_getTodo",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TodoDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration", "Collaboration Todos"]
+      }
+    },
+    "/api/collaboration/todos/{id}/assign": {
+      "patch": {
+        "operationId": "CollaborationController_assignTodo",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AssignTodoDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TodoDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration", "Collaboration Todos"]
+      }
+    },
+    "/api/collaboration/todos/{id}/complete": {
+      "patch": {
+        "operationId": "CollaborationController_completeTodo",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/TodoActionDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TodoDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration", "Collaboration Todos"]
+      }
+    },
+    "/api/collaboration/todos/{id}/cancel": {
+      "patch": {
+        "operationId": "CollaborationController_cancelTodo",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/TodoActionDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TodoDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration", "Collaboration Todos"]
+      }
+    },
+    "/api/collaboration/approvals": {
+      "get": {
+        "operationId": "CollaborationController_listApprovalLiteRequests",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["pending", "approved", "rejected"]
+            }
+          },
+          {
+            "name": "requester",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "approver",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApprovalLitePageDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration", "Collaboration Approval Lite"]
+      },
+      "post": {
+        "operationId": "CollaborationController_createApprovalLiteRequest",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateApprovalLiteDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApprovalLiteDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration", "Collaboration Approval Lite"]
+      }
+    },
+    "/api/collaboration/approvals/{id}": {
+      "get": {
+        "operationId": "CollaborationController_getApprovalLiteRequest",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApprovalLiteDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration", "Collaboration Approval Lite"]
+      }
+    },
+    "/api/collaboration/approvals/{id}/approve": {
+      "patch": {
+        "operationId": "CollaborationController_approveApprovalLiteRequest",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/DecideApprovalLiteDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApprovalLiteDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration", "Collaboration Approval Lite"]
+      }
+    },
+    "/api/collaboration/approvals/{id}/reject": {
+      "patch": {
+        "operationId": "CollaborationController_rejectApprovalLiteRequest",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/DecideApprovalLiteDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApprovalLiteDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Collaboration", "Collaboration Approval Lite"]
+      }
+    },
+    "/api/integrations/summary": {
+      "get": {
+        "operationId": "IntegrationController_getSummary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationSummaryDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration"]
+      }
+    },
+    "/api/integrations/providers": {
+      "get": {
+        "operationId": "IntegrationController_listProviders",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["mail", "oauth", "pay", "sms", "websocket", "wechat"]
+            }
+          },
+          {
+            "name": "enabled",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
+          },
+          {
+            "name": "healthStatus",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["unknown", "healthy", "degraded", "disabled"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationProviderPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Providers"]
+      },
+      "post": {
+        "operationId": "IntegrationController_createProvider",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateIntegrationProviderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationProviderDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Providers"]
+      }
+    },
+    "/api/integrations/providers/{code}": {
+      "get": {
+        "operationId": "IntegrationController_getProvider",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationProviderDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Providers"]
+      },
+      "patch": {
+        "operationId": "IntegrationController_updateProvider",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateIntegrationProviderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationProviderDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Providers"]
+      }
+    },
+    "/api/integrations/providers/{code}/enable": {
+      "patch": {
+        "operationId": "IntegrationController_enableProvider",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationProviderDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Providers"]
+      }
+    },
+    "/api/integrations/providers/{code}/disable": {
+      "patch": {
+        "operationId": "IntegrationController_disableProvider",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationProviderDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Providers"]
+      }
+    },
+    "/api/integrations/providers/{code}/health-check": {
+      "post": {
+        "operationId": "IntegrationController_checkProviderHealth",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationProviderDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Providers"]
+      }
+    },
+    "/api/integrations/mail/templates": {
+      "get": {
+        "operationId": "IntegrationController_listMailTemplates",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "enabled",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationTemplatePageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Mail"]
+      },
+      "post": {
+        "operationId": "IntegrationController_createMailTemplate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateIntegrationTemplateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationTemplateDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Mail"]
+      }
+    },
+    "/api/integrations/mail/templates/{code}": {
+      "get": {
+        "operationId": "IntegrationController_getMailTemplate",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationTemplateDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Mail"]
+      }
+    },
+    "/api/integrations/mail/preview": {
+      "post": {
+        "operationId": "IntegrationController_previewMailTemplate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PreviewTemplateDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TemplatePreviewDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Mail"]
+      }
+    },
+    "/api/integrations/mail/outbox": {
+      "get": {
+        "operationId": "IntegrationController_listMailOutbox",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string", "enum": ["queued", "sent", "failed"] }
+          },
+          {
+            "name": "providerCode",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationOutboxPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Mail"]
+      },
+      "post": {
+        "operationId": "IntegrationController_enqueueMail",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOutboxMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationOutboxDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Mail"]
+      }
+    },
+    "/api/integrations/mail/outbox/{id}": {
+      "get": {
+        "operationId": "IntegrationController_getMailOutboxMessage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationOutboxDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Mail"]
+      }
+    },
+    "/api/integrations/sms/templates": {
+      "get": {
+        "operationId": "IntegrationController_listSmsTemplates",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "enabled",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationTemplatePageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration SMS"]
+      },
+      "post": {
+        "operationId": "IntegrationController_createSmsTemplate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateIntegrationTemplateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationTemplateDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration SMS"]
+      }
+    },
+    "/api/integrations/sms/templates/{code}": {
+      "get": {
+        "operationId": "IntegrationController_getSmsTemplate",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationTemplateDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration SMS"]
+      }
+    },
+    "/api/integrations/sms/preview": {
+      "post": {
+        "operationId": "IntegrationController_previewSmsTemplate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PreviewTemplateDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TemplatePreviewDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration SMS"]
+      }
+    },
+    "/api/integrations/sms/outbox": {
+      "get": {
+        "operationId": "IntegrationController_listSmsOutbox",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string", "enum": ["queued", "sent", "failed"] }
+          },
+          {
+            "name": "providerCode",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationOutboxPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration SMS"]
+      },
+      "post": {
+        "operationId": "IntegrationController_enqueueSms",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOutboxMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationOutboxDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration SMS"]
+      }
+    },
+    "/api/integrations/sms/outbox/{id}": {
+      "get": {
+        "operationId": "IntegrationController_getSmsOutboxMessage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationOutboxDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration SMS"]
+      }
+    },
+    "/api/integrations/oauth/providers": {
+      "get": {
+        "operationId": "IntegrationController_listOAuthProviders",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["mail", "oauth", "pay", "sms", "websocket", "wechat"]
+            }
+          },
+          {
+            "name": "enabled",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
+          },
+          {
+            "name": "healthStatus",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["unknown", "healthy", "degraded", "disabled"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationProviderPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration OAuth"]
+      }
+    },
+    "/api/integrations/oauth/callback-contract": {
+      "get": {
+        "operationId": "IntegrationController_getOAuthCallbackContract",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthCallbackContractDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration OAuth"]
+      }
+    },
+    "/api/integrations/designs/wechat": {
+      "get": {
+        "operationId": "IntegrationController_getWeChatDesign",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationDesignDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration WeChat"]
+      }
+    },
+    "/api/integrations/designs/websocket": {
+      "get": {
+        "operationId": "IntegrationController_getWebSocketDesign",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationDesignDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration WebSocket"]
+      }
+    },
+    "/api/integrations/designs/pay": {
+      "get": {
+        "operationId": "IntegrationController_getPaymentDesign",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationDesignDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Payment"]
       }
     },
     "/api/monitor/status": {
@@ -781,7 +2795,7 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Monitor"]
+        "tags": ["Monitoring", "Monitor Status"]
       }
     },
     "/api/monitor/version": {
@@ -799,7 +2813,7 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Monitor"]
+        "tags": ["Monitoring", "Monitor Version"]
       }
     },
     "/api/monitor/queues": {
@@ -817,7 +2831,624 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Monitor"]
+        "tags": ["Monitoring", "Monitor Queues"]
+      }
+    },
+    "/api/monitor/operations/summary": {
+      "get": {
+        "operationId": "OperationsController_getSummary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationsSummaryDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Operations", "Operations"]
+      }
+    },
+    "/api/monitor/jobs": {
+      "get": {
+        "operationId": "OperationsController_listJobs",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "enabled",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
+          },
+          {
+            "name": "queueName",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobDefinitionPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Operations", "Monitor Jobs"]
+      },
+      "post": {
+        "operationId": "OperationsController_createJob",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateJobDefinitionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/JobDefinitionDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Operations", "Monitor Jobs"]
+      }
+    },
+    "/api/monitor/jobs/{code}": {
+      "get": {
+        "operationId": "OperationsController_getJob",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/JobDefinitionDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Operations", "Monitor Jobs"]
+      },
+      "patch": {
+        "operationId": "OperationsController_updateJob",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateJobDefinitionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/JobDefinitionDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Operations", "Monitor Jobs"]
+      }
+    },
+    "/api/monitor/jobs/{code}/enable": {
+      "patch": {
+        "operationId": "OperationsController_enableJob",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/JobDefinitionDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Operations", "Monitor Jobs"]
+      }
+    },
+    "/api/monitor/jobs/{code}/disable": {
+      "patch": {
+        "operationId": "OperationsController_disableJob",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/JobDefinitionDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Operations", "Monitor Jobs"]
+      }
+    },
+    "/api/monitor/jobs/{code}/trigger": {
+      "post": {
+        "operationId": "OperationsController_triggerJob",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/TriggerJobDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/JobRunLogDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Operations", "Monitor Jobs"]
+      }
+    },
+    "/api/monitor/jobs/{code}/runs": {
+      "get": {
+        "operationId": "OperationsController_listJobRuns",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["queued", "running", "completed", "failed"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/JobRunLogPageDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Operations", "Monitor Jobs"]
+      }
+    },
+    "/api/monitor/jobs/{code}/runs/{id}": {
+      "get": {
+        "operationId": "OperationsController_getJobRun",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/JobRunLogDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Operations", "Monitor Jobs"]
+      }
+    },
+    "/api/monitor/cache": {
+      "get": {
+        "operationId": "OperationsController_listCacheKeys",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "prefix",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CacheKeyPageDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Operations", "Monitor Cache"]
+      }
+    },
+    "/api/monitor/cache/clear": {
+      "post": {
+        "operationId": "OperationsController_clearCache",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ClearCacheDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CacheClearResultDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Operations", "Monitor Cache"]
+      }
+    },
+    "/api/monitor/online-users": {
+      "get": {
+        "operationId": "OperationsController_listOnlineUsers",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "active",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnlineUserSessionPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Operations", "Monitor Online Users"]
+      }
+    },
+    "/api/monitor/online-users/{id}": {
+      "get": {
+        "operationId": "OperationsController_getOnlineUser",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnlineUserSessionDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Operations", "Monitor Online Users"]
+      }
+    },
+    "/api/monitor/online-users/{id}/kick-out": {
+      "post": {
+        "operationId": "OperationsController_kickOutSession",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/KickOutSessionDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnlineUserSessionDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Operations", "Monitor Online Users"]
+      }
+    },
+    "/api/optional/reports": {
+      "get": {
+        "operationId": "OperationsController_listReports",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "enabled",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
+          },
+          {
+            "name": "owner",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportDefinitionPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Operations", "Optional Reports"]
+      },
+      "post": {
+        "operationId": "OperationsController_createReport",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReportDefinitionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReportDefinitionDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Operations", "Optional Reports"]
+      }
+    },
+    "/api/optional/reports/{code}": {
+      "get": {
+        "operationId": "OperationsController_getReport",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReportDefinitionDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Operations", "Optional Reports"]
+      }
+    },
+    "/api/optional/export-jobs/design": {
+      "get": {
+        "operationId": "OperationsController_getExportJobDesign",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ExportJobDesignDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Operations", "Optional Export Jobs"]
       }
     },
     "/api/tools/openapi/drift": {
@@ -837,7 +3468,7 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Tooling"]
+        "tags": ["Tooling", "Tool OpenAPI"]
       }
     },
     "/api/tools/export/protocol": {
@@ -857,7 +3488,7 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Tooling"]
+        "tags": ["Tooling", "Tool Export"]
       }
     },
     "/api/tools/export/preview": {
@@ -885,7 +3516,7 @@
           }
         },
         "security": [{ "bearer": [] }],
-        "tags": ["Tooling"]
+        "tags": ["Tooling", "Tool Export"]
       }
     }
   },
@@ -895,7 +3526,85 @@
     "version": "0.0.0",
     "contact": {}
   },
-  "tags": [],
+  "tags": [
+    {
+      "name": "Collaboration Approval Lite",
+      "description": "collaboration.approval-lite: Approval Lite"
+    },
+    {
+      "name": "Collaboration Messages",
+      "description": "collaboration.message: Messages"
+    },
+    {
+      "name": "Collaboration Notices",
+      "description": "collaboration.notice: Notices"
+    },
+    {
+      "name": "Collaboration Todos",
+      "description": "collaboration.todo: Todos"
+    },
+    {
+      "name": "Core Audit Logs",
+      "description": "core.audit-log: Operation Logs"
+    },
+    { "name": "Core Dashboard", "description": "core.dashboard: Dashboard" },
+    { "name": "Core Dictionaries", "description": "core.dict: Dictionaries" },
+    { "name": "Core Files", "description": "core.file: File Center" },
+    { "name": "Core Login Logs", "description": "core.login-log: Login Logs" },
+    { "name": "Core Menus", "description": "core.menu: Menus" },
+    {
+      "name": "Core Permissions",
+      "description": "core.permission: Permissions"
+    },
+    { "name": "Core Roles", "description": "core.role: Roles" },
+    {
+      "name": "Core System Config",
+      "description": "core.config: System Config"
+    },
+    { "name": "Core Users", "description": "core.user: Users" },
+    { "name": "Integration Mail", "description": "integration.mail: Mail" },
+    { "name": "Integration OAuth", "description": "integration.oauth: OAuth" },
+    {
+      "name": "Integration Payment",
+      "description": "integration.billing-design: Payment Design"
+    },
+    {
+      "name": "Integration Providers",
+      "description": "integration.provider: Integration Providers"
+    },
+    { "name": "Integration SMS", "description": "integration.sms: SMS" },
+    {
+      "name": "Integration WebSocket",
+      "description": "integration.websocket: WebSocket Design"
+    },
+    {
+      "name": "Integration WeChat",
+      "description": "integration.wechat: WeChat Design"
+    },
+    { "name": "Monitor Cache", "description": "monitor.cache: Cache" },
+    { "name": "Monitor Jobs", "description": "monitor.job: Jobs" },
+    {
+      "name": "Monitor Online Users",
+      "description": "monitor.online-user: Online Users"
+    },
+    { "name": "Monitor Queues", "description": "monitor.queue: Queues" },
+    {
+      "name": "Monitor Status",
+      "description": "monitor.status: System Status"
+    },
+    {
+      "name": "Monitor Version",
+      "description": "monitor.version: Version Info"
+    },
+    {
+      "name": "Optional Export Jobs",
+      "description": "optional.export-job: Export Job Design"
+    },
+    { "name": "Optional Reports", "description": "optional.report: Reports" },
+    { "name": "Tool Export", "description": "tool.export: Export Tools" },
+    { "name": "Tool OpenAPI", "description": "tool.openapi: OpenAPI" },
+    { "name": "Tool OpenForge", "description": "tool.openforge: OpenForge" }
+  ],
   "servers": [{ "url": "/" }],
   "components": {
     "schemas": {
@@ -945,6 +3654,46 @@
         },
         "required": ["id", "username", "displayName", "roleCodes", "enabled"]
       },
+      "RbacExportPreviewDto": {
+        "type": "object",
+        "properties": {
+          "filename": { "type": "string" },
+          "scope": { "type": "string", "example": "current-page" },
+          "columns": { "type": "array", "items": { "type": "string" } },
+          "rowCount": { "type": "number" },
+          "generatedAt": { "type": "string" }
+        },
+        "required": ["filename", "scope", "columns", "rowCount", "generatedAt"]
+      },
+      "CreateUserDto": {
+        "type": "object",
+        "properties": {
+          "username": { "type": "string", "example": "operator" },
+          "displayName": { "type": "string", "example": "Operations User" },
+          "password": { "type": "string" },
+          "roleCodes": {
+            "default": [],
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "enabled": { "type": "boolean", "default": true }
+        },
+        "required": ["username", "displayName", "password", "roleCodes"]
+      },
+      "UpdateUserDto": {
+        "type": "object",
+        "properties": {
+          "displayName": { "type": "string" },
+          "password": { "type": "string" },
+          "roleCodes": { "type": "array", "items": { "type": "string" } },
+          "enabled": { "type": "boolean" }
+        }
+      },
+      "DeleteResultDto": {
+        "type": "object",
+        "properties": { "deleted": { "type": "boolean" } },
+        "required": ["deleted"]
+      },
       "RoleSummaryDto": {
         "type": "object",
         "properties": {
@@ -956,6 +3705,28 @@
         },
         "required": ["id", "code", "name", "permissionCodes", "system"]
       },
+      "CreateRoleDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string", "example": "operator" },
+          "name": { "type": "string", "example": "Operator" },
+          "permissionCodes": {
+            "default": [],
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "system": { "type": "boolean", "default": false }
+        },
+        "required": ["code", "name", "permissionCodes"]
+      },
+      "UpdateRoleDto": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "permissionCodes": { "type": "array", "items": { "type": "string" } },
+          "system": { "type": "boolean" }
+        }
+      },
       "PermissionSummaryDto": {
         "type": "object",
         "properties": {
@@ -965,6 +3736,18 @@
           "dangerous": { "type": "boolean" }
         },
         "required": ["code", "title", "stage", "dangerous"]
+      },
+      "CreatePermissionDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string", "example": "core:example:read" },
+          "title": { "type": "string", "example": "Read examples" }
+        },
+        "required": ["code", "title"]
+      },
+      "UpdatePermissionDto": {
+        "type": "object",
+        "properties": { "title": { "type": "string" } }
       },
       "MenuSummaryDto": {
         "type": "object",
@@ -977,6 +3760,26 @@
           "order": { "type": "number" }
         },
         "required": ["key", "title", "path", "stage", "order"]
+      },
+      "CreateMenuDto": {
+        "type": "object",
+        "properties": {
+          "key": { "type": "string", "example": "system.examples" },
+          "title": { "type": "string", "example": "Examples" },
+          "path": { "type": "string", "example": "/system/examples" },
+          "permissionCode": { "type": "string" },
+          "order": { "type": "number" }
+        },
+        "required": ["key", "title", "path", "order"]
+      },
+      "UpdateMenuDto": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string" },
+          "path": { "type": "string" },
+          "permissionCode": { "type": "string" },
+          "order": { "type": "number" }
+        }
       },
       "Object": { "type": "object", "properties": {} },
       "DictItemDto": {
@@ -1056,11 +3859,6 @@
           }
         }
       },
-      "DeleteResultDto": {
-        "type": "object",
-        "properties": { "deleted": { "type": "boolean" } },
-        "required": ["deleted"]
-      },
       "SystemConfigDto": {
         "type": "object",
         "properties": {
@@ -1072,9 +3870,13 @@
             "enum": ["boolean", "number", "string"]
           },
           "description": { "type": "string" },
-          "public": { "type": "boolean" }
+          "public": { "type": "boolean" },
+          "visibility": {
+            "type": "string",
+            "enum": ["private", "public", "secret"]
+          }
         },
-        "required": ["id", "key", "value", "valueType", "public"]
+        "required": ["id", "key", "value", "valueType", "public", "visibility"]
       },
       "SystemConfigPageDto": {
         "type": "object",
@@ -1100,7 +3902,11 @@
             "enum": ["boolean", "number", "string"]
           },
           "description": { "type": "string" },
-          "public": { "type": "boolean", "default": false }
+          "public": { "type": "boolean", "default": false },
+          "visibility": {
+            "type": "string",
+            "enum": ["private", "public", "secret"]
+          }
         },
         "required": ["key", "value", "valueType"]
       },
@@ -1113,7 +3919,11 @@
             "enum": ["boolean", "number", "string"]
           },
           "description": { "type": "string" },
-          "public": { "type": "boolean" }
+          "public": { "type": "boolean" },
+          "visibility": {
+            "type": "string",
+            "enum": ["private", "public", "secret"]
+          }
         }
       },
       "FileAssetDto": {
@@ -1162,6 +3972,15 @@
           "uploadedBy": { "type": "string", "example": "admin" }
         },
         "required": ["originalName", "mimeType", "sizeBytes", "uploadedBy"]
+      },
+      "UpdateFileAssetDto": {
+        "type": "object",
+        "properties": {
+          "originalName": { "type": "string" },
+          "mimeType": { "type": "string" },
+          "checksum": { "type": "string" },
+          "uploadedBy": { "type": "string" }
+        }
       },
       "AuditLogDto": {
         "type": "object",
@@ -1244,6 +4063,587 @@
         },
         "required": ["items", "page", "pageSize", "total", "totalPages"]
       },
+      "CollaborationMessageSummaryDto": {
+        "type": "object",
+        "properties": {
+          "total": { "type": "number" },
+          "unread": { "type": "number" },
+          "read": { "type": "number" },
+          "archived": { "type": "number" }
+        },
+        "required": ["total", "unread", "read", "archived"]
+      },
+      "CollaborationNoticeSummaryDto": {
+        "type": "object",
+        "properties": {
+          "total": { "type": "number" },
+          "draft": { "type": "number" },
+          "published": { "type": "number" },
+          "archived": { "type": "number" }
+        },
+        "required": ["total", "draft", "published", "archived"]
+      },
+      "CollaborationTodoSummaryDto": {
+        "type": "object",
+        "properties": {
+          "total": { "type": "number" },
+          "pending": { "type": "number" },
+          "assigned": { "type": "number" },
+          "completed": { "type": "number" },
+          "canceled": { "type": "number" }
+        },
+        "required": ["total", "pending", "assigned", "completed", "canceled"]
+      },
+      "CollaborationApprovalSummaryDto": {
+        "type": "object",
+        "properties": {
+          "total": { "type": "number" },
+          "pending": { "type": "number" },
+          "approved": { "type": "number" },
+          "rejected": { "type": "number" }
+        },
+        "required": ["total", "pending", "approved", "rejected"]
+      },
+      "CollaborationSummaryDto": {
+        "type": "object",
+        "properties": {
+          "messages": {
+            "$ref": "#/components/schemas/CollaborationMessageSummaryDto"
+          },
+          "notices": {
+            "$ref": "#/components/schemas/CollaborationNoticeSummaryDto"
+          },
+          "todos": {
+            "$ref": "#/components/schemas/CollaborationTodoSummaryDto"
+          },
+          "approvals": {
+            "$ref": "#/components/schemas/CollaborationApprovalSummaryDto"
+          }
+        },
+        "required": ["messages", "notices", "todos", "approvals"]
+      },
+      "MessageDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "body": { "type": "string" },
+          "sender": { "type": "string" },
+          "recipient": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["unread", "read", "archived", "deleted"]
+          },
+          "businessType": { "type": "string" },
+          "businessId": { "type": "string" },
+          "readAt": { "type": "string" },
+          "archivedAt": { "type": "string" },
+          "deletedAt": { "type": "string" },
+          "createdAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "title",
+          "body",
+          "sender",
+          "recipient",
+          "status",
+          "createdAt"
+        ]
+      },
+      "MessagePageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/MessageDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "CreateMessageDto": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string" },
+          "body": { "type": "string" },
+          "sender": { "type": "string" },
+          "recipient": { "type": "string" },
+          "businessType": { "type": "string" },
+          "businessId": { "type": "string" }
+        },
+        "required": ["title", "body", "sender", "recipient"]
+      },
+      "NoticeDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "body": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["draft", "published", "archived"]
+          },
+          "targetAudience": { "type": "array", "items": { "type": "string" } },
+          "validFrom": { "type": "string" },
+          "validTo": { "type": "string" },
+          "publishedAt": { "type": "string" },
+          "archivedAt": { "type": "string" },
+          "createdBy": { "type": "string" },
+          "createdAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "title",
+          "body",
+          "status",
+          "targetAudience",
+          "createdBy",
+          "createdAt"
+        ]
+      },
+      "NoticePageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/NoticeDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "CreateNoticeDto": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string" },
+          "body": { "type": "string" },
+          "targetAudience": { "type": "array", "items": { "type": "string" } },
+          "createdBy": { "type": "string" },
+          "validFrom": { "type": "string" },
+          "validTo": { "type": "string" }
+        },
+        "required": ["title", "body", "targetAudience", "createdBy"]
+      },
+      "CollaborationTimelineEntryDto": {
+        "type": "object",
+        "properties": {
+          "at": { "type": "string" },
+          "actor": { "type": "string" },
+          "action": { "type": "string" }
+        },
+        "required": ["at", "actor", "action"]
+      },
+      "TodoDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "sourceType": { "type": "string" },
+          "businessType": { "type": "string" },
+          "businessId": { "type": "string" },
+          "assignee": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "assigned", "completed", "canceled"]
+          },
+          "timeline": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CollaborationTimelineEntryDto"
+            }
+          },
+          "completedAt": { "type": "string" },
+          "canceledAt": { "type": "string" },
+          "createdAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "title",
+          "sourceType",
+          "assignee",
+          "status",
+          "timeline",
+          "createdAt"
+        ]
+      },
+      "TodoPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/TodoDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "CreateTodoDto": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "sourceType": { "type": "string" },
+          "businessType": { "type": "string" },
+          "businessId": { "type": "string" },
+          "assignee": { "type": "string" },
+          "actor": { "type": "string" }
+        },
+        "required": ["title", "sourceType", "assignee", "actor"]
+      },
+      "AssignTodoDto": {
+        "type": "object",
+        "properties": {
+          "assignee": { "type": "string" },
+          "actor": { "type": "string" }
+        },
+        "required": ["assignee", "actor"]
+      },
+      "TodoActionDto": {
+        "type": "object",
+        "properties": { "actor": { "type": "string" } },
+        "required": ["actor"]
+      },
+      "ApprovalLiteDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "requester": { "type": "string" },
+          "approver": { "type": "string" },
+          "businessType": { "type": "string" },
+          "businessId": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "approved", "rejected"]
+          },
+          "comment": { "type": "string" },
+          "timeline": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CollaborationTimelineEntryDto"
+            }
+          },
+          "decidedAt": { "type": "string" },
+          "createdAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "title",
+          "requester",
+          "approver",
+          "status",
+          "timeline",
+          "createdAt"
+        ]
+      },
+      "ApprovalLitePageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ApprovalLiteDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "CreateApprovalLiteDto": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string" },
+          "requester": { "type": "string" },
+          "approver": { "type": "string" },
+          "businessType": { "type": "string" },
+          "businessId": { "type": "string" }
+        },
+        "required": ["title", "requester", "approver"]
+      },
+      "DecideApprovalLiteDto": {
+        "type": "object",
+        "properties": {
+          "actor": { "type": "string" },
+          "comment": { "type": "string" }
+        },
+        "required": ["actor"]
+      },
+      "IntegrationProviderSummaryDto": {
+        "type": "object",
+        "properties": {
+          "total": { "type": "number" },
+          "enabled": { "type": "number" },
+          "disabled": { "type": "number" },
+          "unknown": { "type": "number" },
+          "healthy": { "type": "number" },
+          "degraded": { "type": "number" }
+        },
+        "required": [
+          "total",
+          "enabled",
+          "disabled",
+          "unknown",
+          "healthy",
+          "degraded"
+        ]
+      },
+      "IntegrationOutboxSummaryDto": {
+        "type": "object",
+        "properties": {
+          "total": { "type": "number" },
+          "queued": { "type": "number" },
+          "sent": { "type": "number" },
+          "failed": { "type": "number" }
+        },
+        "required": ["total", "queued", "sent", "failed"]
+      },
+      "IntegrationDesignSummaryDto": {
+        "type": "object",
+        "properties": {
+          "designOnlyTopics": { "type": "number" },
+          "topics": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["designOnlyTopics", "topics"]
+      },
+      "IntegrationSummaryDto": {
+        "type": "object",
+        "properties": {
+          "providers": {
+            "$ref": "#/components/schemas/IntegrationProviderSummaryDto"
+          },
+          "mailOutbox": {
+            "$ref": "#/components/schemas/IntegrationOutboxSummaryDto"
+          },
+          "smsOutbox": {
+            "$ref": "#/components/schemas/IntegrationOutboxSummaryDto"
+          },
+          "oauthProviders": { "type": "number" },
+          "designs": {
+            "$ref": "#/components/schemas/IntegrationDesignSummaryDto"
+          }
+        },
+        "required": [
+          "providers",
+          "mailOutbox",
+          "smsOutbox",
+          "oauthProviders",
+          "designs"
+        ]
+      },
+      "IntegrationProviderDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "code": { "type": "string" },
+          "type": {
+            "type": "string",
+            "enum": ["mail", "oauth", "pay", "sms", "websocket", "wechat"]
+          },
+          "name": { "type": "string" },
+          "enabled": { "type": "boolean" },
+          "secretRef": { "type": "string" },
+          "config": { "type": "object" },
+          "healthStatus": {
+            "type": "string",
+            "enum": ["unknown", "healthy", "degraded", "disabled"]
+          },
+          "lastCheckedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "code",
+          "type",
+          "name",
+          "enabled",
+          "secretRef",
+          "config",
+          "healthStatus"
+        ]
+      },
+      "IntegrationProviderPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/IntegrationProviderDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "CreateIntegrationProviderDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "type": {
+            "type": "string",
+            "enum": ["mail", "oauth", "pay", "sms", "websocket", "wechat"]
+          },
+          "name": { "type": "string" },
+          "enabled": { "type": "boolean", "default": false },
+          "secretRef": { "type": "string" },
+          "config": { "type": "object" }
+        },
+        "required": ["code", "type", "name", "secretRef", "config"]
+      },
+      "UpdateIntegrationProviderDto": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "enabled": { "type": "boolean" },
+          "secretRef": { "type": "string" },
+          "config": { "type": "object" }
+        }
+      },
+      "IntegrationTemplateDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "code": { "type": "string" },
+          "channel": { "type": "string", "enum": ["mail", "sms"] },
+          "name": { "type": "string" },
+          "subject": { "type": "string" },
+          "body": { "type": "string" },
+          "enabled": { "type": "boolean" }
+        },
+        "required": ["id", "code", "channel", "name", "body", "enabled"]
+      },
+      "IntegrationTemplatePageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/IntegrationTemplateDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "CreateIntegrationTemplateDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "subject": { "type": "string" },
+          "body": { "type": "string" },
+          "enabled": { "type": "boolean", "default": true }
+        },
+        "required": ["code", "name", "body"]
+      },
+      "PreviewTemplateDto": {
+        "type": "object",
+        "properties": {
+          "templateCode": { "type": "string" },
+          "payload": { "type": "object" }
+        },
+        "required": ["templateCode", "payload"]
+      },
+      "TemplatePreviewDto": {
+        "type": "object",
+        "properties": {
+          "channel": { "type": "string" },
+          "templateCode": { "type": "string" },
+          "subject": { "type": "string" },
+          "body": { "type": "string" }
+        },
+        "required": ["channel", "templateCode", "body"]
+      },
+      "IntegrationOutboxDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "channel": { "type": "string", "enum": ["mail", "sms"] },
+          "providerCode": { "type": "string" },
+          "templateCode": { "type": "string" },
+          "recipient": { "type": "string" },
+          "payload": { "type": "object" },
+          "status": { "type": "string", "enum": ["queued", "sent", "failed"] },
+          "retryCount": { "type": "number" },
+          "preview": { "type": "string" },
+          "error": { "type": "string" },
+          "sentAt": { "type": "string" },
+          "createdAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "channel",
+          "providerCode",
+          "recipient",
+          "payload",
+          "status",
+          "retryCount",
+          "createdAt"
+        ]
+      },
+      "IntegrationOutboxPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/IntegrationOutboxDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "CreateOutboxMessageDto": {
+        "type": "object",
+        "properties": {
+          "providerCode": { "type": "string" },
+          "templateCode": { "type": "string" },
+          "recipient": { "type": "string" },
+          "payload": { "type": "object" }
+        },
+        "required": ["providerCode", "recipient", "payload"]
+      },
+      "OAuthCallbackContractDto": {
+        "type": "object",
+        "properties": {
+          "callbackPath": { "type": "string" },
+          "stateTtlSeconds": { "type": "number" },
+          "securityChecks": { "type": "array", "items": { "type": "string" } },
+          "accountBinding": { "type": "array", "items": { "type": "string" } },
+          "auditAction": { "type": "string" }
+        },
+        "required": [
+          "callbackPath",
+          "stateTtlSeconds",
+          "securityChecks",
+          "accountBinding",
+          "auditAction"
+        ]
+      },
+      "IntegrationDesignDto": {
+        "type": "object",
+        "properties": {
+          "topic": { "type": "string" },
+          "status": { "type": "string" },
+          "boundaries": { "type": "array", "items": { "type": "string" } },
+          "documentPath": { "type": "string" }
+        },
+        "required": ["topic", "status", "boundaries", "documentPath"]
+      },
       "DependencyStatusDto": {
         "type": "object",
         "properties": {
@@ -1311,6 +4711,335 @@
           }
         },
         "required": ["checkedAt", "queues"]
+      },
+      "JobDefinitionSummaryDto": {
+        "type": "object",
+        "properties": {
+          "total": { "type": "number" },
+          "enabled": { "type": "number" },
+          "disabled": { "type": "number" }
+        },
+        "required": ["total", "enabled", "disabled"]
+      },
+      "JobRunSummaryDto": {
+        "type": "object",
+        "properties": {
+          "total": { "type": "number" },
+          "queued": { "type": "number" },
+          "running": { "type": "number" },
+          "completed": { "type": "number" },
+          "failed": { "type": "number" },
+          "latestStartedAt": { "type": "string" }
+        },
+        "required": ["total", "queued", "running", "completed", "failed"]
+      },
+      "CacheSummaryDto": {
+        "type": "object",
+        "properties": {
+          "keyCount": { "type": "number" },
+          "totalSizeBytes": { "type": "number" }
+        },
+        "required": ["keyCount", "totalSizeBytes"]
+      },
+      "OnlineUserSummaryDto": {
+        "type": "object",
+        "properties": {
+          "total": { "type": "number" },
+          "active": { "type": "number" },
+          "revoked": { "type": "number" }
+        },
+        "required": ["total", "active", "revoked"]
+      },
+      "ReportSummaryDto": {
+        "type": "object",
+        "properties": {
+          "total": { "type": "number" },
+          "enabled": { "type": "number" },
+          "disabled": { "type": "number" }
+        },
+        "required": ["total", "enabled", "disabled"]
+      },
+      "OperationsSummaryDto": {
+        "type": "object",
+        "properties": {
+          "jobs": { "$ref": "#/components/schemas/JobDefinitionSummaryDto" },
+          "jobRuns": { "$ref": "#/components/schemas/JobRunSummaryDto" },
+          "cache": { "$ref": "#/components/schemas/CacheSummaryDto" },
+          "onlineUsers": {
+            "$ref": "#/components/schemas/OnlineUserSummaryDto"
+          },
+          "reports": { "$ref": "#/components/schemas/ReportSummaryDto" },
+          "exportJobStatus": { "type": "string" }
+        },
+        "required": [
+          "jobs",
+          "jobRuns",
+          "cache",
+          "onlineUsers",
+          "reports",
+          "exportJobStatus"
+        ]
+      },
+      "JobDefinitionDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "queueName": { "type": "string" },
+          "cron": { "type": "string" },
+          "enabled": { "type": "boolean" },
+          "retryLimit": { "type": "number" },
+          "timeoutSeconds": { "type": "number" },
+          "adapter": { "type": "string" },
+          "payload": { "type": "object" }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "queueName",
+          "enabled",
+          "retryLimit",
+          "timeoutSeconds",
+          "adapter"
+        ]
+      },
+      "JobDefinitionPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/JobDefinitionDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "CreateJobDefinitionDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "queueName": { "type": "string" },
+          "cron": { "type": "string" },
+          "enabled": { "type": "boolean", "default": true },
+          "retryLimit": { "type": "number", "default": 3 },
+          "timeoutSeconds": { "type": "number", "default": 60 },
+          "payload": { "type": "object" }
+        },
+        "required": ["code", "name", "queueName"]
+      },
+      "UpdateJobDefinitionDto": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "queueName": { "type": "string" },
+          "cron": { "type": "string" },
+          "enabled": { "type": "boolean" },
+          "retryLimit": { "type": "number" },
+          "timeoutSeconds": { "type": "number" },
+          "payload": { "type": "object" }
+        }
+      },
+      "TriggerJobDto": {
+        "type": "object",
+        "properties": {
+          "actor": { "type": "string" },
+          "metadata": { "type": "object" }
+        },
+        "required": ["actor"]
+      },
+      "JobRunLogDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "jobCode": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["queued", "running", "completed", "failed"]
+          },
+          "trigger": { "type": "string", "enum": ["manual", "schedule"] },
+          "attempts": { "type": "number" },
+          "startedAt": { "type": "string" },
+          "finishedAt": { "type": "string" },
+          "error": { "type": "string" },
+          "metadata": { "type": "object" }
+        },
+        "required": [
+          "id",
+          "jobCode",
+          "status",
+          "trigger",
+          "attempts",
+          "startedAt"
+        ]
+      },
+      "JobRunLogPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/JobRunLogDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "CacheKeyDto": {
+        "type": "object",
+        "properties": {
+          "key": { "type": "string" },
+          "prefix": { "type": "string" },
+          "ttlSeconds": { "type": "number" },
+          "sizeBytes": { "type": "number" }
+        },
+        "required": ["key", "prefix", "ttlSeconds", "sizeBytes"]
+      },
+      "CacheKeyPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/CacheKeyDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "ClearCacheDto": {
+        "type": "object",
+        "properties": {
+          "prefix": { "type": "string" },
+          "dryRun": { "type": "boolean", "default": true },
+          "confirmed": { "type": "boolean" }
+        },
+        "required": ["prefix", "dryRun"]
+      },
+      "CacheClearResultDto": {
+        "type": "object",
+        "properties": {
+          "prefix": { "type": "string" },
+          "dryRun": { "type": "boolean" },
+          "matchedKeys": { "type": "number" },
+          "clearedKeys": { "type": "number" },
+          "policy": { "type": "string" }
+        },
+        "required": ["prefix", "dryRun", "matchedKeys", "clearedKeys", "policy"]
+      },
+      "OnlineUserSessionDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "username": { "type": "string" },
+          "tokenId": { "type": "string" },
+          "ip": { "type": "string" },
+          "userAgent": { "type": "string" },
+          "lastSeenAt": { "type": "string" },
+          "expiresAt": { "type": "string" },
+          "revokedAt": { "type": "string" },
+          "revokedBy": { "type": "string" },
+          "revokedReason": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "username",
+          "tokenId",
+          "ip",
+          "userAgent",
+          "lastSeenAt",
+          "expiresAt"
+        ]
+      },
+      "OnlineUserSessionPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/OnlineUserSessionDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "KickOutSessionDto": {
+        "type": "object",
+        "properties": {
+          "actor": { "type": "string" },
+          "reason": { "type": "string" }
+        },
+        "required": ["actor", "reason"]
+      },
+      "ReportDefinitionDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "querySchema": { "type": "object" },
+          "enabled": { "type": "boolean" },
+          "owner": { "type": "string" }
+        },
+        "required": ["id", "code", "name", "querySchema", "enabled", "owner"]
+      },
+      "ReportDefinitionPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ReportDefinitionDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "CreateReportDefinitionDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "querySchema": { "type": "object" },
+          "enabled": { "type": "boolean", "default": true },
+          "owner": { "type": "string" }
+        },
+        "required": ["code", "name", "querySchema", "owner"]
+      },
+      "ExportJobDesignDto": {
+        "type": "object",
+        "properties": {
+          "resource": { "type": "string" },
+          "status": { "type": "string" },
+          "requiredBindings": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "safetyChecks": { "type": "array", "items": { "type": "string" } },
+          "runbook": { "type": "string" }
+        },
+        "required": [
+          "resource",
+          "status",
+          "requiredBindings",
+          "safetyChecks",
+          "runbook"
+        ]
       },
       "OpenApiDriftStatusDto": {
         "type": "object",

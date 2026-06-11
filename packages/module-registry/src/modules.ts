@@ -646,4 +646,627 @@ export const moduleRegistry = [
       ],
     },
   },
+  {
+    code: 'collaboration.message',
+    title: 'Messages',
+    layer: 'collaboration',
+    priority: 'P2',
+    status: 'planned',
+    stage: 'S10',
+    enabledByDefault: true,
+    description:
+      'Internal inbox messages with read, archive, and delete policy.',
+    apiTags: ['Collaboration Messages'],
+    permissions: definePermissions(
+      'collaboration',
+      'message',
+      'messages',
+      'S10',
+      [
+        { action: 'read', title: 'Read' },
+        { action: 'create', title: 'Create' },
+        { action: 'update', title: 'Update' },
+        { action: 'delete', title: 'Delete', dangerous: true },
+      ],
+    ),
+    menus: [
+      defineMenu(
+        'collaboration.messages',
+        'Messages',
+        '/collaboration/messages',
+        'collaboration:message:read',
+        600,
+        'S10',
+      ),
+    ],
+    admin: {
+      basePath: '/collaboration/messages',
+      routes: [
+        {
+          path: '/collaboration/messages',
+          title: 'Messages',
+          permissionCode: 'collaboration:message:read',
+        },
+      ],
+    },
+  },
+  {
+    code: 'collaboration.notice',
+    title: 'Notices',
+    layer: 'collaboration',
+    priority: 'P2',
+    status: 'planned',
+    stage: 'S10',
+    enabledByDefault: true,
+    description:
+      'Notice draft, publish, archive, and target-audience workflow.',
+    apiTags: ['Collaboration Notices'],
+    permissions: definePermissions(
+      'collaboration',
+      'notice',
+      'notices',
+      'S10',
+      [
+        { action: 'read', title: 'Read' },
+        { action: 'create', title: 'Create' },
+        { action: 'update', title: 'Update' },
+      ],
+    ),
+    menus: [
+      defineMenu(
+        'collaboration.notices',
+        'Notices',
+        '/collaboration/notices',
+        'collaboration:notice:read',
+        610,
+        'S10',
+      ),
+    ],
+    admin: {
+      basePath: '/collaboration/notices',
+      routes: [
+        {
+          path: '/collaboration/notices',
+          title: 'Notices',
+          permissionCode: 'collaboration:notice:read',
+        },
+      ],
+    },
+  },
+  {
+    code: 'collaboration.todo',
+    title: 'Todos',
+    layer: 'collaboration',
+    priority: 'P2',
+    status: 'planned',
+    stage: 'S10',
+    enabledByDefault: true,
+    description:
+      'Assignable todos linked to source type and business identifiers.',
+    apiTags: ['Collaboration Todos'],
+    permissions: definePermissions('collaboration', 'todo', 'todos', 'S10', [
+      { action: 'read', title: 'Read' },
+      { action: 'create', title: 'Create' },
+      { action: 'update', title: 'Update' },
+    ]),
+    menus: [
+      defineMenu(
+        'collaboration.todos',
+        'Todos',
+        '/collaboration/todos',
+        'collaboration:todo:read',
+        620,
+        'S10',
+      ),
+    ],
+    admin: {
+      basePath: '/collaboration/todos',
+      routes: [
+        {
+          path: '/collaboration/todos',
+          title: 'Todos',
+          permissionCode: 'collaboration:todo:read',
+        },
+      ],
+    },
+  },
+  {
+    code: 'collaboration.approval-lite',
+    title: 'Approval Lite',
+    layer: 'collaboration',
+    priority: 'P2',
+    status: 'planned',
+    stage: 'S10',
+    enabledByDefault: true,
+    description: 'Single-step approve/reject requests without BPMN workflow.',
+    apiTags: ['Collaboration Approval Lite'],
+    permissions: definePermissions(
+      'collaboration',
+      'approval-lite',
+      'approval lite',
+      'S10',
+      [
+        { action: 'read', title: 'Read' },
+        { action: 'create', title: 'Create' },
+        { action: 'update', title: 'Update' },
+      ],
+    ),
+    menus: [
+      defineMenu(
+        'collaboration.approvals',
+        'Approval Lite',
+        '/collaboration/approvals',
+        'collaboration:approval-lite:read',
+        630,
+        'S10',
+      ),
+    ],
+    admin: {
+      basePath: '/collaboration/approvals',
+      routes: [
+        {
+          path: '/collaboration/approvals',
+          title: 'Approval Lite',
+          permissionCode: 'collaboration:approval-lite:read',
+        },
+      ],
+    },
+  },
+  {
+    code: 'monitor.job',
+    title: 'Jobs',
+    layer: 'monitor',
+    priority: 'P2',
+    status: 'planned',
+    stage: 'S11',
+    enabledByDefault: true,
+    description:
+      'Job definitions, BullMQ adapter policy, run logs, and manual trigger.',
+    apiTags: ['Monitor Jobs'],
+    permissions: definePermissions('monitor', 'job', 'jobs', 'S11', [
+      { action: 'read', title: 'Read' },
+      { action: 'create', title: 'Create' },
+      { action: 'update', title: 'Update' },
+      { action: 'manage', title: 'Manage' },
+    ]),
+    menus: [
+      defineMenu(
+        'monitor.jobs',
+        'Jobs',
+        '/monitor/jobs',
+        'monitor:job:read',
+        430,
+        'S11',
+      ),
+    ],
+    admin: {
+      basePath: '/monitor/jobs',
+      routes: [
+        {
+          path: '/monitor/jobs',
+          title: 'Jobs',
+          permissionCode: 'monitor:job:read',
+        },
+      ],
+    },
+  },
+  {
+    code: 'monitor.cache',
+    title: 'Cache',
+    layer: 'monitor',
+    priority: 'P2',
+    status: 'planned',
+    stage: 'S11',
+    enabledByDefault: true,
+    description:
+      'Read-only cache key listing and confirmed prefix clear policy.',
+    apiTags: ['Monitor Cache'],
+    permissions: definePermissions('monitor', 'cache', 'cache', 'S11', [
+      { action: 'read', title: 'Read' },
+      { action: 'manage', title: 'Manage', dangerous: true },
+    ]),
+    menus: [
+      defineMenu(
+        'monitor.cache',
+        'Cache',
+        '/monitor/cache',
+        'monitor:cache:read',
+        440,
+        'S11',
+      ),
+    ],
+    admin: {
+      basePath: '/monitor/cache',
+      routes: [
+        {
+          path: '/monitor/cache',
+          title: 'Cache',
+          permissionCode: 'monitor:cache:read',
+        },
+      ],
+    },
+  },
+  {
+    code: 'monitor.online-user',
+    title: 'Online Users',
+    layer: 'monitor',
+    priority: 'P2',
+    status: 'planned',
+    stage: 'S11',
+    enabledByDefault: true,
+    description: 'Active session visibility with permission-gated kick-out.',
+    apiTags: ['Monitor Online Users'],
+    permissions: definePermissions(
+      'monitor',
+      'online-user',
+      'online users',
+      'S11',
+      [
+        { action: 'read', title: 'Read' },
+        { action: 'manage', title: 'Manage', dangerous: true },
+      ],
+    ),
+    menus: [
+      defineMenu(
+        'monitor.online-users',
+        'Online Users',
+        '/monitor/online-users',
+        'monitor:online-user:read',
+        450,
+        'S11',
+      ),
+    ],
+    admin: {
+      basePath: '/monitor/online-users',
+      routes: [
+        {
+          path: '/monitor/online-users',
+          title: 'Online Users',
+          permissionCode: 'monitor:online-user:read',
+        },
+      ],
+    },
+  },
+  {
+    code: 'optional.report',
+    title: 'Reports',
+    layer: 'optional',
+    priority: 'P3',
+    status: 'optional',
+    stage: 'S11',
+    enabledByDefault: false,
+    description:
+      'Minimal report definition and query schema, not a full designer.',
+    apiTags: ['Optional Reports'],
+    permissions: definePermissions('optional', 'report', 'reports', 'S11', [
+      { action: 'read', title: 'Read' },
+      { action: 'create', title: 'Create' },
+    ]),
+    menus: [
+      defineMenu(
+        'optional.reports',
+        'Reports',
+        '/optional/reports',
+        'optional:report:read',
+        700,
+        'S11',
+      ),
+    ],
+    admin: {
+      basePath: '/optional/reports',
+      routes: [
+        {
+          path: '/optional/reports',
+          title: 'Reports',
+          permissionCode: 'optional:report:read',
+        },
+      ],
+    },
+  },
+  {
+    code: 'optional.export-job',
+    title: 'Export Job Design',
+    layer: 'optional',
+    priority: 'P3',
+    status: 'optional',
+    stage: 'S11',
+    enabledByDefault: false,
+    description:
+      'Async export job design binding files, jobs, permissions, expiry, and audit.',
+    apiTags: ['Optional Export Jobs'],
+    permissions: definePermissions(
+      'optional',
+      'export-job',
+      'export jobs',
+      'S11',
+      [{ action: 'read', title: 'Read' }],
+    ),
+    menus: [
+      defineMenu(
+        'optional.export-jobs',
+        'Export Jobs',
+        '/optional/export-jobs',
+        'optional:export-job:read',
+        710,
+        'S11',
+      ),
+    ],
+    admin: {
+      basePath: '/optional/export-jobs',
+      routes: [
+        {
+          path: '/optional/export-jobs',
+          title: 'Export Jobs',
+          permissionCode: 'optional:export-job:read',
+        },
+      ],
+    },
+  },
+  {
+    code: 'integration.provider',
+    title: 'Integration Providers',
+    layer: 'integration',
+    priority: 'P2',
+    status: 'planned',
+    stage: 'S12',
+    enabledByDefault: true,
+    description:
+      'Provider registry, secret references, redaction, health checks, enable/disable.',
+    apiTags: ['Integration Providers'],
+    permissions: definePermissions(
+      'integration',
+      'provider',
+      'providers',
+      'S12',
+      [
+        { action: 'read', title: 'Read' },
+        { action: 'create', title: 'Create' },
+        { action: 'update', title: 'Update' },
+        { action: 'manage', title: 'Manage' },
+      ],
+    ),
+    menus: [
+      defineMenu(
+        'integrations.providers',
+        'Providers',
+        '/integrations/providers',
+        'integration:provider:read',
+        800,
+        'S12',
+      ),
+    ],
+    admin: {
+      basePath: '/integrations/providers',
+      routes: [
+        {
+          path: '/integrations/providers',
+          title: 'Providers',
+          permissionCode: 'integration:provider:read',
+        },
+      ],
+    },
+  },
+  {
+    code: 'integration.mail',
+    title: 'Mail',
+    layer: 'integration',
+    priority: 'P3',
+    status: 'planned',
+    stage: 'S12',
+    enabledByDefault: true,
+    description:
+      'Mail provider abstraction, templates, outbox, preview, send log, retry policy.',
+    apiTags: ['Integration Mail'],
+    permissions: definePermissions('integration', 'mail', 'mail', 'S12', [
+      { action: 'read', title: 'Read' },
+      { action: 'create', title: 'Create' },
+      { action: 'manage', title: 'Manage' },
+    ]),
+    menus: [
+      defineMenu(
+        'integrations.mail',
+        'Mail',
+        '/integrations/mail',
+        'integration:mail:read',
+        810,
+        'S12',
+      ),
+    ],
+    admin: {
+      basePath: '/integrations/mail',
+      routes: [
+        {
+          path: '/integrations/mail',
+          title: 'Mail',
+          permissionCode: 'integration:mail:read',
+        },
+      ],
+    },
+  },
+  {
+    code: 'integration.sms',
+    title: 'SMS',
+    layer: 'integration',
+    priority: 'P3',
+    status: 'planned',
+    stage: 'S12',
+    enabledByDefault: true,
+    description:
+      'SMS provider abstraction, templates, outbox, rate-limit and verification-code safety.',
+    apiTags: ['Integration SMS'],
+    permissions: definePermissions('integration', 'sms', 'SMS', 'S12', [
+      { action: 'read', title: 'Read' },
+      { action: 'create', title: 'Create' },
+      { action: 'manage', title: 'Manage' },
+    ]),
+    menus: [
+      defineMenu(
+        'integrations.sms',
+        'SMS',
+        '/integrations/sms',
+        'integration:sms:read',
+        820,
+        'S12',
+      ),
+    ],
+    admin: {
+      basePath: '/integrations/sms',
+      routes: [
+        {
+          path: '/integrations/sms',
+          title: 'SMS',
+          permissionCode: 'integration:sms:read',
+        },
+      ],
+    },
+  },
+  {
+    code: 'integration.oauth',
+    title: 'OAuth',
+    layer: 'integration',
+    priority: 'P3',
+    status: 'planned',
+    stage: 'S12',
+    enabledByDefault: true,
+    description:
+      'OAuth provider config, callback contract, state security, account binding, audit.',
+    apiTags: ['Integration OAuth'],
+    permissions: definePermissions('integration', 'oauth', 'OAuth', 'S12', [
+      { action: 'read', title: 'Read' },
+      { action: 'create', title: 'Create' },
+      { action: 'manage', title: 'Manage' },
+    ]),
+    menus: [
+      defineMenu(
+        'integrations.oauth',
+        'OAuth',
+        '/integrations/oauth',
+        'integration:oauth:read',
+        830,
+        'S12',
+      ),
+    ],
+    admin: {
+      basePath: '/integrations/oauth',
+      routes: [
+        {
+          path: '/integrations/oauth',
+          title: 'OAuth',
+          permissionCode: 'integration:oauth:read',
+        },
+      ],
+    },
+  },
+  {
+    code: 'integration.wechat',
+    title: 'WeChat Design',
+    layer: 'integration',
+    priority: 'P4',
+    status: 'planned',
+    stage: 'S12',
+    enabledByDefault: false,
+    description:
+      'WeChat integration design boundary without complete WeChat business implementation.',
+    apiTags: ['Integration WeChat'],
+    permissions: definePermissions('integration', 'wechat', 'WeChat', 'S12', [
+      { action: 'read', title: 'Read' },
+    ]),
+    menus: [
+      defineMenu(
+        'integrations.wechat',
+        'WeChat',
+        '/integrations/wechat',
+        'integration:wechat:read',
+        840,
+        'S12',
+      ),
+    ],
+    admin: {
+      basePath: '/integrations/wechat',
+      routes: [
+        {
+          path: '/integrations/wechat',
+          title: 'WeChat',
+          permissionCode: 'integration:wechat:read',
+        },
+      ],
+    },
+  },
+  {
+    code: 'integration.websocket',
+    title: 'WebSocket Design',
+    layer: 'integration',
+    priority: 'P4',
+    status: 'planned',
+    stage: 'S12',
+    enabledByDefault: false,
+    description:
+      'WebSocket auth, room, event, audit, and security design boundary.',
+    apiTags: ['Integration WebSocket'],
+    permissions: definePermissions(
+      'integration',
+      'websocket',
+      'WebSocket',
+      'S12',
+      [{ action: 'read', title: 'Read' }],
+    ),
+    menus: [
+      defineMenu(
+        'integrations.websocket',
+        'WebSocket',
+        '/integrations/websocket',
+        'integration:websocket:read',
+        850,
+        'S12',
+      ),
+    ],
+    admin: {
+      basePath: '/integrations/websocket',
+      routes: [
+        {
+          path: '/integrations/websocket',
+          title: 'WebSocket',
+          permissionCode: 'integration:websocket:read',
+        },
+      ],
+    },
+  },
+  {
+    code: 'integration.billing-design',
+    title: 'Payment Design',
+    layer: 'integration',
+    priority: 'P4',
+    status: 'planned',
+    stage: 'S12',
+    enabledByDefault: false,
+    description: 'Payment provider design with mock/sandbox boundary only.',
+    apiTags: ['Integration Payment'],
+    permissions: definePermissions(
+      'integration',
+      'billing-design',
+      'payment design',
+      'S12',
+      [{ action: 'read', title: 'Read' }],
+    ),
+    menus: [
+      defineMenu(
+        'integrations.billing-design',
+        'Payment',
+        '/integrations/billing-design',
+        'integration:billing-design:read',
+        860,
+        'S12',
+      ),
+    ],
+    admin: {
+      basePath: '/integrations/billing-design',
+      routes: [
+        {
+          path: '/integrations/billing-design',
+          title: 'Payment',
+          permissionCode: 'integration:billing-design:read',
+        },
+      ],
+    },
+  },
 ] as const satisfies readonly ModuleDefinition[];

@@ -21,6 +21,25 @@ describe('MonitoringRepository', () => {
     expect(payload).not.toContain('postgresql://');
   });
 
+  it('degrades system status when a runtime dependency degrades', async () => {
+    const repository = new MonitoringRepository(
+      createFakeDiagnostics({
+        redisStatus: 'degraded',
+      }),
+    );
+
+    await expect(repository.getSystemStatus()).resolves.toMatchObject({
+      status: 'degraded',
+      dependencies: expect.arrayContaining([
+        expect.objectContaining({
+          name: 'redis',
+          status: 'degraded',
+          message: expect.not.stringContaining('redis://'),
+        }),
+      ]),
+    });
+  });
+
   it('returns read-only queue status without scheduler controls', async () => {
     const repository = new MonitoringRepository(createFakeDiagnostics());
 
@@ -46,7 +65,9 @@ describe('MonitoringRepository', () => {
   });
 });
 
-function createFakeDiagnostics(): RuntimeDiagnostics {
+function createFakeDiagnostics(
+  options: { redisStatus?: 'degraded' | 'ok' } = {},
+): RuntimeDiagnostics {
   return {
     checkDatabase: async () => ({
       name: 'database',
@@ -56,10 +77,12 @@ function createFakeDiagnostics(): RuntimeDiagnostics {
     }),
     checkRedis: async () => ({
       name: 'redis',
-      status: 'ok',
+      status: options.redisStatus ?? 'ok',
       latencyMs: 1,
       message:
-        'Redis responded to PING with the OpenCore key prefix configured.',
+        options.redisStatus === 'degraded'
+          ? 'redis health probe failed without exposing runtime details.'
+          : 'Redis responded to PING with the OpenCore key prefix configured.',
     }),
     checkS3: async () => ({
       name: 's3',

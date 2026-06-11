@@ -1,4 +1,6 @@
 import { createStructuredLogEntry } from './structured-logger';
+import { runWithRequestContext } from '../request-context/request-context';
+import { StructuredLogger } from './structured-logger';
 
 describe('createStructuredLogEntry', () => {
   it('includes stable service, level, and request context fields', () => {
@@ -27,5 +29,25 @@ describe('createStructuredLogEntry', () => {
         port: 3000,
       },
     });
+  });
+
+  it('uses the active request context when logging without explicit context', () => {
+    const logger = new StructuredLogger('opencore-api');
+    const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+
+    runWithRequestContext(
+      {
+        requestId: 'req-active',
+        traceId: 'trace-active',
+      },
+      () => logger.info('request.complete'),
+    );
+
+    expect(JSON.parse(String(consoleSpy.mock.calls[0][0]))).toMatchObject({
+      message: 'request.complete',
+      requestId: 'req-active',
+      traceId: 'trace-active',
+    });
+    consoleSpy.mockRestore();
   });
 });

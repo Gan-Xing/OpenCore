@@ -1,0 +1,216 @@
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { RequirePermission } from '../../core/rbac/permissions.decorator';
+import {
+  CacheClearResultDto,
+  CacheKeyPageDto,
+  CacheKeyQueryDto,
+  ClearCacheDto,
+  CreateJobDefinitionDto,
+  CreateReportDefinitionDto,
+  ExportJobDesignDto,
+  JobDefinitionDto,
+  JobDefinitionPageDto,
+  JobQueryDto,
+  JobRunLogDto,
+  JobRunLogPageDto,
+  JobRunQueryDto,
+  KickOutSessionDto,
+  OnlineUserSessionDto,
+  OnlineUserSessionPageDto,
+  OnlineUserQueryDto,
+  OperationsSummaryDto,
+  ReportDefinitionDto,
+  ReportDefinitionPageDto,
+  ReportQueryDto,
+  TriggerJobDto,
+  UpdateJobDefinitionDto,
+} from './operations.dto';
+import { OperationsRepository } from './operations.repository';
+
+@ApiBearerAuth()
+@Controller()
+export class OperationsController {
+  constructor(private readonly repository: OperationsRepository) {}
+
+  @Get('monitor/operations/summary')
+  @ApiTags('Operations')
+  @RequirePermission('monitor:job:read')
+  @ApiOkResponse({ type: OperationsSummaryDto })
+  getSummary(): Promise<OperationsSummaryDto> {
+    return this.repository.getSummary();
+  }
+
+  @Get('monitor/jobs')
+  @ApiTags('Monitor Jobs')
+  @RequirePermission('monitor:job:read')
+  @ApiOkResponse({ type: JobDefinitionPageDto })
+  listJobs(@Query() query: JobQueryDto): Promise<JobDefinitionPageDto> {
+    return this.repository.listJobs(query);
+  }
+
+  @Get('monitor/jobs/:code')
+  @ApiTags('Monitor Jobs')
+  @RequirePermission('monitor:job:read')
+  @ApiOkResponse({ type: JobDefinitionDto })
+  getJob(@Param('code') code: string): Promise<JobDefinitionDto> {
+    return this.repository.getJob(code);
+  }
+
+  @Post('monitor/jobs')
+  @ApiTags('Monitor Jobs')
+  @RequirePermission('monitor:job:create')
+  @ApiOkResponse({ type: JobDefinitionDto })
+  createJob(@Body() body: CreateJobDefinitionDto): Promise<JobDefinitionDto> {
+    return this.repository.createJob(body);
+  }
+
+  @Patch('monitor/jobs/:code')
+  @ApiTags('Monitor Jobs')
+  @RequirePermission('monitor:job:update')
+  @ApiOkResponse({ type: JobDefinitionDto })
+  updateJob(
+    @Param('code') code: string,
+    @Body() body: UpdateJobDefinitionDto,
+  ): Promise<JobDefinitionDto> {
+    return this.repository.updateJob(code, body);
+  }
+
+  @Patch('monitor/jobs/:code/enable')
+  @ApiTags('Monitor Jobs')
+  @RequirePermission('monitor:job:update')
+  @ApiOkResponse({ type: JobDefinitionDto })
+  enableJob(@Param('code') code: string): Promise<JobDefinitionDto> {
+    return this.repository.enableJob(code);
+  }
+
+  @Patch('monitor/jobs/:code/disable')
+  @ApiTags('Monitor Jobs')
+  @RequirePermission('monitor:job:update')
+  @ApiOkResponse({ type: JobDefinitionDto })
+  disableJob(@Param('code') code: string): Promise<JobDefinitionDto> {
+    return this.repository.disableJob(code);
+  }
+
+  @Post('monitor/jobs/:code/trigger')
+  @ApiTags('Monitor Jobs')
+  @RequirePermission('monitor:job:manage')
+  @ApiOkResponse({ type: JobRunLogDto })
+  triggerJob(
+    @Param('code') code: string,
+    @Body() body: TriggerJobDto,
+  ): Promise<JobRunLogDto> {
+    return this.repository.triggerJob(code, body);
+  }
+
+  @Get('monitor/jobs/:code/runs')
+  @ApiTags('Monitor Jobs')
+  @RequirePermission('monitor:job:read')
+  @ApiOkResponse({ type: JobRunLogPageDto })
+  listJobRuns(
+    @Param('code') code: string,
+    @Query() query: JobRunQueryDto,
+  ): Promise<JobRunLogPageDto> {
+    return this.repository.listJobRuns(code, query);
+  }
+
+  @Get('monitor/jobs/:code/runs/:id')
+  @ApiTags('Monitor Jobs')
+  @RequirePermission('monitor:job:read')
+  @ApiOkResponse({ type: JobRunLogDto })
+  getJobRun(
+    @Param('code') code: string,
+    @Param('id') id: string,
+  ): Promise<JobRunLogDto> {
+    return this.repository.getJobRun(code, id);
+  }
+
+  @Get('monitor/cache')
+  @ApiTags('Monitor Cache')
+  @RequirePermission('monitor:cache:read')
+  @ApiOkResponse({ type: CacheKeyPageDto })
+  listCacheKeys(@Query() query: CacheKeyQueryDto): Promise<CacheKeyPageDto> {
+    return this.repository.listCacheKeys(query);
+  }
+
+  @Post('monitor/cache/clear')
+  @ApiTags('Monitor Cache')
+  @RequirePermission('monitor:cache:manage')
+  @ApiOkResponse({ type: CacheClearResultDto })
+  clearCache(@Body() body: ClearCacheDto): Promise<CacheClearResultDto> {
+    return this.repository.clearCache(body);
+  }
+
+  @Get('monitor/online-users')
+  @ApiTags('Monitor Online Users')
+  @RequirePermission('monitor:online-user:read')
+  @ApiOkResponse({ type: OnlineUserSessionPageDto })
+  listOnlineUsers(
+    @Query() query: OnlineUserQueryDto,
+  ): Promise<OnlineUserSessionPageDto> {
+    return this.repository.listOnlineUsers(query);
+  }
+
+  @Get('monitor/online-users/:id')
+  @ApiTags('Monitor Online Users')
+  @RequirePermission('monitor:online-user:read')
+  @ApiOkResponse({ type: OnlineUserSessionDto })
+  getOnlineUser(@Param('id') id: string): Promise<OnlineUserSessionDto> {
+    return this.repository.getOnlineUser(id);
+  }
+
+  @Post('monitor/online-users/:id/kick-out')
+  @ApiTags('Monitor Online Users')
+  @RequirePermission('monitor:online-user:manage')
+  @ApiOkResponse({ type: OnlineUserSessionDto })
+  kickOutSession(
+    @Param('id') id: string,
+    @Body() body: KickOutSessionDto,
+  ): Promise<OnlineUserSessionDto> {
+    return this.repository.kickOutSession(id, body);
+  }
+
+  @Get('optional/reports')
+  @ApiTags('Optional Reports')
+  @RequirePermission('optional:report:read')
+  @ApiOkResponse({ type: ReportDefinitionPageDto })
+  listReports(
+    @Query() query: ReportQueryDto,
+  ): Promise<ReportDefinitionPageDto> {
+    return this.repository.listReports(query);
+  }
+
+  @Get('optional/reports/:code')
+  @ApiTags('Optional Reports')
+  @RequirePermission('optional:report:read')
+  @ApiOkResponse({ type: ReportDefinitionDto })
+  getReport(@Param('code') code: string): Promise<ReportDefinitionDto> {
+    return this.repository.getReport(code);
+  }
+
+  @Post('optional/reports')
+  @ApiTags('Optional Reports')
+  @RequirePermission('optional:report:create')
+  @ApiOkResponse({ type: ReportDefinitionDto })
+  createReport(
+    @Body() body: CreateReportDefinitionDto,
+  ): Promise<ReportDefinitionDto> {
+    return this.repository.createReport(body);
+  }
+
+  @Get('optional/export-jobs/design')
+  @ApiTags('Optional Export Jobs')
+  @RequirePermission('optional:export-job:read')
+  @ApiOkResponse({ type: ExportJobDesignDto })
+  getExportJobDesign(): ExportJobDesignDto {
+    return this.repository.getExportJobDesign();
+  }
+}

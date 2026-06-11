@@ -26,6 +26,7 @@ export type RuntimeDiagnostics = {
 export const RUNTIME_DIAGNOSTICS = Symbol('RUNTIME_DIAGNOSTICS');
 
 const QUEUE_NAMES = ['system-audit', 'table-export'] as const;
+const DATABASE_TIMEOUT_MS = 1_500;
 const REDIS_TIMEOUT_MS = 1_500;
 const S3_TIMEOUT_MS = 2_000;
 
@@ -39,7 +40,7 @@ export class RuntimeDiagnosticsService implements RuntimeDiagnostics {
 
   async checkDatabase(): Promise<DependencyStatus> {
     return measureDependency('database', async () => {
-      await this.prisma.$queryRaw`SELECT 1`;
+      await withTimeout(this.prisma.$queryRaw`SELECT 1`, DATABASE_TIMEOUT_MS);
 
       return 'PostgreSQL responded to a read-only health query.';
     });

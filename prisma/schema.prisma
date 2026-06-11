@@ -143,3 +143,160 @@ model LoginLog {
   requestId     String
   createdAt     DateTime @default(now())
 }
+
+model CollaborationMessage {
+  id           String    @id @default(cuid())
+  title        String
+  body         String
+  sender       String
+  recipient    String
+  status       String    @default("unread")
+  businessType String?
+  businessId   String?
+  readAt       DateTime?
+  archivedAt   DateTime?
+  deletedAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model CollaborationNotice {
+  id             String    @id @default(cuid())
+  title          String
+  body           String
+  status         String    @default("draft")
+  targetAudience Json
+  validFrom      DateTime?
+  validTo        DateTime?
+  publishedAt    DateTime?
+  archivedAt     DateTime?
+  createdBy      String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model CollaborationTodo {
+  id           String    @id @default(cuid())
+  title        String
+  description  String?
+  sourceType   String
+  businessType String?
+  businessId   String?
+  assignee     String
+  status       String    @default("pending")
+  timeline     Json
+  completedAt  DateTime?
+  canceledAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model CollaborationApprovalLite {
+  id           String    @id @default(cuid())
+  title        String
+  requester    String
+  approver     String
+  businessType String?
+  businessId   String?
+  status       String    @default("pending")
+  comment      String?
+  timeline     Json
+  decidedAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model JobDefinition {
+  id             String      @id @default(cuid())
+  code           String      @unique
+  name           String
+  queueName      String
+  cron           String?
+  enabled        Boolean     @default(true)
+  retryLimit     Int         @default(3)
+  timeoutSeconds Int         @default(60)
+  payload        Json?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  runs           JobRunLog[]
+}
+
+model JobRunLog {
+  id         String        @id @default(cuid())
+  jobCode    String
+  job        JobDefinition @relation(fields: [jobCode], references: [code], onDelete: Cascade)
+  status     String
+  trigger    String
+  attempts   Int           @default(1)
+  startedAt  DateTime      @default(now())
+  finishedAt DateTime?
+  error      String?
+  metadata   Json?
+}
+
+model OnlineUserSession {
+  id         String    @id @default(cuid())
+  username   String
+  tokenId    String    @unique
+  ip         String
+  userAgent  String
+  lastSeenAt DateTime
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+model ReportDefinition {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  description String?
+  querySchema Json
+  enabled     Boolean  @default(true)
+  owner       String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model IntegrationProvider {
+  id            String    @id @default(cuid())
+  code          String    @unique
+  type          String
+  name          String
+  enabled       Boolean   @default(false)
+  secretRef     String
+  config        Json
+  healthStatus  String    @default("unknown")
+  lastCheckedAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model IntegrationTemplate {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  channel   String
+  name      String
+  subject   String?
+  body      String
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model IntegrationOutbox {
+  id           String    @id @default(cuid())
+  channel      String
+  providerCode String
+  templateCode String?
+  recipient    String
+  payload      Json
+  status       String    @default("queued")
+  retryCount   Int       @default(0)
+  preview      String?
+  error        String?
+  sentAt       DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}

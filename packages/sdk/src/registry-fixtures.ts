@@ -79,6 +79,7 @@ export function createSystemConfigFixtures(): PageResponse<SystemConfigSummary> 
       valueType: 'string',
       description: 'Public Admin title.',
       public: true,
+      visibility: 'public',
     },
     {
       id: 'config_login_lockout',
@@ -87,6 +88,16 @@ export function createSystemConfigFixtures(): PageResponse<SystemConfigSummary> 
       valueType: 'number',
       description: 'Safe login lockout display setting.',
       public: false,
+      visibility: 'private',
+    },
+    {
+      id: 'config_jwt_secret_ref',
+      key: 'auth.jwt.secretRef',
+      value: '[redacted]',
+      valueType: 'string',
+      description: 'Secret runtime value is stored outside Admin fixtures.',
+      public: false,
+      visibility: 'secret',
     },
   ]);
 }
