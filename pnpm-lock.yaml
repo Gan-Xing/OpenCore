@@ -462,6 +462,33 @@ importers:
         specifier: workspace:*
         version: link:../shared
 
+  packages/monitor:
+    dependencies:
+      '@nestjs/common':
+        specifier: ^11.0.0
+        version: 11.1.26(reflect-metadata@0.1.14)(rxjs@7.8.1)
+      '@nestjs/swagger':
+        specifier: ^11.4.4
+        version: 11.4.4(@nestjs/common@11.1.26(reflect-metadata@0.1.14)(rxjs@7.8.1))(@nestjs/core@11.1.26)(reflect-metadata@0.1.14)
+      '@opencore/database':
+        specifier: workspace:*
+        version: link:../database
+      '@opencore/file':
+        specifier: workspace:*
+        version: link:../file
+      '@opencore/redis':
+        specifier: workspace:*
+        version: link:../redis
+      bullmq:
+        specifier: ^5.78.0
+        version: 5.78.0
+      reflect-metadata:
+        specifier: ^0.1.13
+        version: 0.1.14
+      rxjs:
+        specifier: ^7.8.0
+        version: 7.8.1
+
   packages/online-user:
     dependencies:
       '@nestjs/common':

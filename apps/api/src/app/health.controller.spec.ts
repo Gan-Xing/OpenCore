@@ -1,7 +1,8 @@
+import { MonitorHealthService } from '@opencore/monitor';
 import { HealthController } from './health.controller';
 
 describe('HealthController', () => {
-  const controller = new HealthController();
+  const controller = new HealthController(new MonitorHealthService());
 
   it('returns liveness status', () => {
     expect(controller.live()).toEqual({

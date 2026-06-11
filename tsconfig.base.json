@@ -20,6 +20,8 @@
       "@opencore/audit/records": ["packages/audit/src/records.ts"],
       "@opencore/database": ["packages/database/src/index.ts"],
       "@opencore/file": ["packages/file/src/index.ts"],
+      "@opencore/monitor": ["packages/monitor/src/index.ts"],
+      "@opencore/monitor/records": ["packages/monitor/src/records.ts"],
       "@opencore/online-user": ["packages/online-user/src/index.ts"],
       "@opencore/online-user/records": ["packages/online-user/src/records.ts"],
       "@opencore/redis": ["packages/redis/src/index.ts"],

@@ -44,7 +44,7 @@ runtime packages are extracted and verified.
 - [x] BE20-P19-ONLINE-USER: complete online user package/runtime boundary.
 - [x] BE20-P20-SCHEDULER: complete scheduler runtime with registry whitelist and
       job logs.
-- [ ] BE20-P21-MONITOR: extract monitor runtime into `packages/monitor`.
+- [x] BE20-P21-MONITOR: extract monitor runtime into `packages/monitor`.
 - [ ] BE20-P22-GENERATOR-CORE: extract generator core package.
 - [ ] BE20-P23-TOOLS-GENERATOR: keep OpenForge CLI aligned with generator core.
 - [ ] BE20-P24-API-AGGREGATION: keep `apps/api` limited to startup, HTTP entry,
@@ -456,3 +456,27 @@ runtime packages are extracted and verified.
       read/write persistence.
 - [x] Focused scheduler/api/sdk lint/typecheck/test pass.
 - [x] Full backend gate pass after the scheduler migration.
+
+## Monitor Round Acceptance
+
+- [x] `@opencore/monitor` is recognized by Nx through
+      `packages/monitor/project.json`.
+- [x] `@opencore/monitor` is available through TypeScript path aliases,
+      package metadata and records-only entrypoint
+      `@opencore/monitor/records`.
+- [x] Monitor DTOs, health service, runtime diagnostics, repository, service,
+      module and monitor queue records live in `packages/monitor`.
+- [x] Monitor runtime owns health response generation, dependency status
+      summary, version metadata and read-only BullMQ queue status.
+- [x] Runtime diagnostics probes PostgreSQL, Redis, BullMQ queues and S3
+      without leaking connection strings, secrets or bucket credentials.
+- [x] Existing `/api/health/live`, `/api/health/ready`,
+      `/api/monitor/status`, `/api/monitor/version` and
+      `/api/monitor/queues` routes remain behavior-compatible in API
+      aggregation.
+- [x] API monitoring files are thin controller/re-export shims instead of
+      owning reusable monitor runtime logic.
+- [x] Monitor tests cover health probes, dependency degradation, safe version
+      metadata, read-only queue status and runtime diagnostics integration.
+- [x] Focused monitor/api/sdk lint/typecheck/test pass.
+- [x] Full backend gate pass after the monitor migration.

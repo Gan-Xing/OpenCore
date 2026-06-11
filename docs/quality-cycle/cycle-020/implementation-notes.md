@@ -2045,4 +2045,98 @@ Scheduler migration full gates all passed after the P20 implementation:
 
 ## Next Module After Scheduler
 
-Next lowest incomplete module: `packages/monitor`.
+Completed next lowest incomplete module: `packages/monitor`.
+
+## Monitor Round Module
+
+Target: BE20-P21 `packages/monitor`.
+
+Dependency position:
+
+- Runs after scheduler because monitor diagnostics can observe queue and runtime
+  state but should not own scheduler job management.
+- Keeps health, dependency, Redis, S3, server/version and read-only queue
+  diagnostics reusable outside the API aggregation module.
+
+## Monitor Implemented
+
+- Added `@opencore/monitor` as a workspace/Nx package with build, lint,
+  typecheck and Jest targets.
+- Added package exports for `@opencore/monitor` and
+  `@opencore/monitor/records`, with TypeScript path aliases in
+  `tsconfig.base.json`.
+- Moved monitor DTOs, health response generation, runtime diagnostics,
+  repository, service, module and queue-name records into `packages/monitor`.
+- Runtime diagnostics now use `@opencore/database`, `@opencore/redis` and
+  `@opencore/file` package boundaries instead of API-local helper logic.
+- Preserved read-only BullMQ queue status for `system-audit` and
+  `table-export`; no scheduler control surface is exposed through monitor
+  diagnostics.
+- `HealthController` still owns `/api/health/live` and `/api/health/ready` in
+  API aggregation, but delegates response generation to `MonitorHealthService`.
+- `MonitoringController` still owns `/api/monitor/status`,
+  `/api/monitor/version` and `/api/monitor/queues`, but delegates behavior to
+  `MonitorService`.
+- API monitoring DTO/repository/runtime-diagnostics files are compatibility
+  re-export shims, keeping old local import paths working while removing
+  reusable runtime ownership from `apps/api`.
+
+## Monitor Focused Verification
+
+- `pnpm install --lockfile-only` pass; lockfile now includes
+  `packages/monitor` importer metadata.
+- `NX_DAEMON=false pnpm nx typecheck monitor` pass after aligning the new
+  package tsconfig with the repository's decorator settings.
+- `NX_DAEMON=false pnpm nx test monitor` pass; monitor package currently has 1
+  suite / 6 tests.
+- `NX_DAEMON=false pnpm nx lint monitor` pass.
+- `NX_DAEMON=false pnpm nx typecheck api` pass; API dependency chain includes
+  `monitor:typecheck`.
+- `NX_DAEMON=false pnpm nx test api` pass; API currently has 28 suites / 73
+  tests.
+- `NX_DAEMON=false pnpm nx lint api` pass.
+- `pnpm openapi:export` pass.
+- `pnpm openapi:check` pass.
+- `pnpm openapi:registry-tags:check` pass.
+- `pnpm registry:admin-routes:check` pass.
+- `pnpm sdk:check` pass.
+- `NX_DAEMON=false pnpm nx typecheck sdk` pass.
+- `NX_DAEMON=false pnpm nx test sdk` pass; SDK currently has 8 suites / 13
+  tests.
+- `NX_DAEMON=false pnpm nx lint sdk` pass.
+
+## Monitor Full Round Verification
+
+Monitor migration full gates all passed after the P21 implementation:
+
+- `pnpm typecheck` pass; Nx matrix contains 18 projects including `monitor`.
+- `pnpm lint` pass; existing Admin Biome hints remain non-failing.
+- `pnpm test` pass; Nx matrix contains 18 projects and includes monitor tests.
+- `pnpm build:api` pass; API build dependency chain includes `monitor:build`.
+- `pnpm prisma:validate` pass.
+- `pnpm openapi:check` pass.
+- `pnpm format:check` pass.
+
+## Monitor RuoYi/Yudao Reference Points
+
+- RuoYi/Yudao expose server status, cache/Redis status and job/queue runtime
+  visibility as operational monitor pages.
+- OpenCore keeps the useful read-only observability loop but avoids coupling it
+  to Java-specific servlet/thread/runtime models.
+- Queue diagnostics are deliberately read-only and separate from scheduler job
+  management.
+
+## Monitor TS/NestJS Best-Practice Choice
+
+- Uses a package-owned `MonitorModule` with injectable health, service,
+  repository and diagnostics providers.
+- Uses existing Redis/File/Database package contracts for runtime probes rather
+  than duplicating low-level client setup in `apps/api`.
+- Keeps health and monitor HTTP controllers in API aggregation, but leaves all
+  reusable behavior in `@opencore/monitor`.
+- Preserves compatibility re-export shims while making the ownership boundary
+  explicit for future generator and API aggregation work.
+
+## Next Module After Monitor
+
+Next lowest incomplete module: `packages/generator-core`.

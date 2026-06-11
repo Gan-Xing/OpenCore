@@ -2205,5 +2205,39 @@ boundary
 
 ### 下一模块
 
-`packages/monitor`：按顺序完成 health/redis/server/queue monitor runtime package
-边界。
+`packages/monitor` 已完成，下一模块为 `packages/generator-core`。
+
+### Monitor 进展
+
+- BE20-P21 `monitor` 已完成：新增 `@opencore/monitor` Nx package。
+- Monitor DTO、health service、runtime diagnostics、repository、service、module
+  和 queue records 已迁入 `packages/monitor`。
+- Runtime diagnostics 通过 `@opencore/database`、`@opencore/redis`、
+  `@opencore/file` package 边界探测 PostgreSQL、Redis、BullMQ queues 和 S3。
+- `/api/health/live`、`/api/health/ready` 仍由 API HealthController 聚合，但
+  已委托 `MonitorHealthService` 生成响应。
+- `/api/monitor/status`、`/api/monitor/version`、`/api/monitor/queues` 仍由 API
+  MonitoringController 聚合，但已委托 `MonitorService`。
+- API monitoring DTO/repository/runtime-diagnostics 文件已变成兼容 re-export
+  shim，不再拥有 reusable monitor runtime。
+- Queue monitor 保持 read-only，只读取 `system-audit` 和 `table-export` BullMQ
+  队列状态，不暴露 scheduler 管理能力。
+- Monitor tests 覆盖 health probes、dependency degradation、safe version
+  metadata、read-only queue status 和 runtime diagnostics integration。
+- `pnpm install --lockfile-only` pass；lockfile 已加入 `packages/monitor`
+  importer metadata。
+- `NX_DAEMON=false pnpm nx typecheck monitor/api/sdk` pass。
+- `NX_DAEMON=false pnpm nx test monitor/api/sdk` pass；monitor 当前 1 个 suite
+  / 6 tests，api 28 个 suites / 73 tests，sdk 8 个 suites / 13 tests。
+- `NX_DAEMON=false pnpm nx lint monitor/api/sdk` pass。
+- `pnpm openapi:export`、`pnpm openapi:check`、`pnpm openapi:registry-tags:check`、
+  `pnpm registry:admin-routes:check` 和 `pnpm sdk:check` pass。
+- Monitor 迁移后复跑 `pnpm typecheck`、`pnpm lint`、`pnpm test`、
+  `pnpm build:api`、`pnpm prisma:validate`、`pnpm openapi:check`、
+  `pnpm format:check` 均 pass；`typecheck`/`lint`/`test` 项目矩阵为 18 个 Nx
+  projects，`build:api` 依赖链包含 `monitor:build`。
+
+### 下一模块
+
+`packages/generator-core`：按顺序抽取 generator metadata parsing/template
+rendering/code generation core。

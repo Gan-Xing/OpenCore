@@ -1,22 +1,10 @@
 import { Module } from '@nestjs/common';
-import { DatabaseModule } from '@opencore/database';
+import { MonitorModule } from '@opencore/monitor';
 import { MonitoringController } from './monitoring.controller';
-import { MonitoringRepository } from './monitoring.repository';
-import {
-  RUNTIME_DIAGNOSTICS,
-  RuntimeDiagnosticsService,
-} from './runtime-diagnostics.service';
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [MonitorModule],
   controllers: [MonitoringController],
-  providers: [
-    MonitoringRepository,
-    RuntimeDiagnosticsService,
-    {
-      provide: RUNTIME_DIAGNOSTICS,
-      useExisting: RuntimeDiagnosticsService,
-    },
-  ],
+  exports: [MonitorModule],
 })
 export class MonitoringModule {}
