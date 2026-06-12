@@ -84,6 +84,21 @@ stop_pid_file() {
   kill -9 "$pid" 2>/dev/null || true
 }
 
+require_pid_alive() {
+  local pid_file="$1"
+  local label="$2"
+  local log_file="$3"
+  local pid
+
+  pid="$(cat "$pid_file" 2>/dev/null || true)"
+
+  if [ -z "$pid" ] || ! kill -0 "$pid" 2>/dev/null; then
+    echo "$label is not running after deploy. Log tail:" >&2
+    tail -100 "$log_file" >&2 || true
+    exit 1
+  fi
+}
+
 run_with_env() {
   (
     cd "$ROOT_DIR"
@@ -150,33 +165,38 @@ echo "Starting OpenCore API on fixed port $API_PORT"
   append_deploy_cors_origins
   export PORT="$API_PORT"
   export NODE_ENV="${OPENCORE_DEPLOY_NODE_ENV:-${NODE_ENV:-development}}"
-  exec node dist/apps/api/main.js
-) >>"$API_LOG_FILE" 2>&1 &
-echo "$!" > "$API_PID_FILE"
+  nohup node dist/apps/api/main.js >>"$API_LOG_FILE" 2>&1 &
+  echo "$!" > "$API_PID_FILE"
+)
 
 if ! wait_for_url "$API_BASE_URL/health/live" "OpenCore API"; then
   tail -100 "$API_LOG_FILE" >&2 || true
   exit 1
 fi
+require_pid_alive "$API_PID_FILE" "OpenCore API" "$API_LOG_FILE"
 
 echo "Starting OpenCore Admin on fixed port $ADMIN_PORT"
 (
   cd "$ROOT_DIR"
   export PORT="$ADMIN_PORT"
   export ADMIN_STATIC_ROOT="$ROOT_DIR/apps/admin/dist"
-  exec node "$ROOT_DIR/tools/scripts/serve-admin-static.mjs"
-) >>"$ADMIN_LOG_FILE" 2>&1 &
-echo "$!" > "$ADMIN_PID_FILE"
+  nohup node "$ROOT_DIR/tools/scripts/serve-admin-static.mjs" >>"$ADMIN_LOG_FILE" 2>&1 &
+  echo "$!" > "$ADMIN_PID_FILE"
+)
 
 if ! wait_for_url "$ADMIN_BASE_URL/" "OpenCore Admin"; then
   tail -100 "$ADMIN_LOG_FILE" >&2 || true
   exit 1
 fi
+require_pid_alive "$ADMIN_PID_FILE" "OpenCore Admin" "$ADMIN_LOG_FILE"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
   node "$ROOT_DIR/tools/scripts/smoke-core-config.mjs"
+
+require_pid_alive "$API_PID_FILE" "OpenCore API" "$API_LOG_FILE"
+require_pid_alive "$ADMIN_PID_FILE" "OpenCore Admin" "$ADMIN_LOG_FILE"
 
 echo "OpenCore deploy complete"
 echo "API: $API_BASE_URL (pid $(cat "$API_PID_FILE"))"
