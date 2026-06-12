@@ -59,15 +59,16 @@ Yudao keeps department management under System with simple-list, list/detail,
 create, update, delete and batch delete APIs. The Admin form provides parent
 selection and the standard department metadata fields.
 
-OpenCore admits the core management loop only:
+OpenCore Round 2 admitted the core management loop only:
 
 - tree list, detail, current-page export, create, update and delete;
 - parent selection that excludes the edited department and its descendants;
 - delete protection for departments that still have children.
 
-OpenCore does not admit batch delete, drag-sort persistence, user binding,
-data-scope configuration, tenant hierarchy or workflow/business integration in
-this round.
+Round 27 later admits the enabled-department simple-list option source consumed
+by Admin Users. OpenCore still does not admit batch delete, drag-sort
+persistence, deeper user-binding workflows, data-scope configuration, tenant
+hierarchy or workflow/business integration in these rounds.
 
 ## Round 3 Post Reference Shape
 
@@ -784,3 +785,34 @@ OpenCore admits the matching stage-2 loop without adding storage columns:
 OpenCore still does not admit login-log cleanup/delete, user unlock,
 lockout-policy tuning, IP geolocation, session termination from login logs or
 login-type/result schema expansion in this round.
+
+## Round 27 Department Simple-list Reference Shape
+
+Yudao system department management exposes `/system/dept/simple-list` and
+`/system/dept/list-all-simple` for lightweight enabled-department options. Its
+role data-permission form loads the simple list and turns it into a tree before
+rendering department checkboxes.
+
+RuoYi user and role workflows also treat department options as basic form data:
+user management exposes department trees for filtering and editing, and role
+data-scope workflows expose department trees for custom data permissions.
+
+OpenCore admits the matching stage-2 option-source loop while preserving the
+existing department management tree:
+
+- `GET /api/core/depts/simple-list` is a public consumer endpoint for enabled
+  department options;
+- the endpoint returns lightweight `{ id, name, parentId, order }` records
+  sorted by order and name;
+- disabled departments remain visible to management list filters but are
+  omitted from the consumer option source;
+- `@opencore/sdk` exposes `listDeptOptions()` and Admin platform wraps it as
+  `listOpenCoreSystemDeptOptions()`;
+- Admin Users uses that option source for the create/edit department selector,
+  while the left Department scope filter still uses the full management tree;
+- fixed-port, deploy and public smoke prove disabled-department filtering,
+  enabled option inclusion, lightweight option shape and cleanup.
+
+OpenCore still does not admit custom role data-scope department assignment,
+batch department deletion, drag-sort/order persistence, tenant department
+hierarchies or workflow/business binding in this round.

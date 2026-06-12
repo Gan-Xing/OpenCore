@@ -1968,3 +1968,85 @@ smoke:core-login-log` passed with `OPENCORE_SMOKE_CHECK_DOCS=false` and the
   `dd720f8 feat(core-login-log): add device filters loop / 新增登录日志设备筛选闭环`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 27 Capability
+
+Capability: `core.dept` simple-list option-source productization.
+
+Goal: close the next department P1 foundation gap by adding a lightweight
+enabled-department option source for consumer forms while keeping the full
+department management tree as the management surface.
+
+## Round 27 Implemented
+
+- Added `SystemDeptOptionDto` and `SystemDeptOptionRecord` for lightweight
+  `{ id, name, parentId, order }` department options.
+- Added `listDeptOptions()` to the department repository/service contract.
+- Implemented enabled-only, order/name sorted option queries in seed and Prisma
+  repositories.
+- Added public `GET /api/core/depts/simple-list` before
+  `GET /api/core/depts/:id`.
+- Extended the API permission matrix so the department simple-list consumer
+  route remains free of management permissions.
+- Extended OpenAPI, SDK types, fixtures, client methods and SDK path tests.
+- Added Admin platform `listOpenCoreSystemDeptOptions()`.
+- Updated Admin Users to consume department options from simple-list for the
+  create/edit `TreeSelect`, while preserving the left Department scope filter
+  on the full department tree.
+- Added static Admin smoke markers and `tools/scripts/smoke-core-dept.mjs`.
+- Wired `smoke-core-dept.mjs` into `pnpm smoke:api:local` and
+  `pnpm deploy:opencore`.
+
+## Round 27 Verification
+
+- Static script checks pass:
+  - `node --check tools/scripts/smoke-core-dept.mjs`
+  - `bash -n tools/scripts/run-local-api-smoke.sh tools/scripts/deploy-local-opencore.sh`
+- Focused tests pass:
+  - `NX_DAEMON=false pnpm nx test system --runInBand --runTestsByPath packages/system/src/system-dept/system-dept.spec.ts`
+  - `NX_DAEMON=false pnpm nx test sdk --runInBand --runTestsByPath packages/sdk/src/system-management-client.spec.ts packages/sdk/src/registry-fixtures.spec.ts`
+  - `NX_DAEMON=false pnpm nx test api --runInBand --runTestsByPath src/modules/core/system-management/system-management.permission-matrix.spec.ts`
+  - `pnpm test:admin`
+- `pnpm openapi:export`, `pnpm openapi:check`,
+  `pnpm openapi:registry-tags:check` and `pnpm sdk:check` pass.
+- `pnpm typecheck` pass.
+- `pnpm lint` pass; the known Biome warning in
+  `apps/admin/src/pages/shared/CurrentPageExportButton.tsx` remains non-blocking.
+- `pnpm prisma:validate` pass.
+- `pnpm build` pass.
+- `pnpm format:check` pass.
+- `pnpm test` pass for all 19 Nx projects.
+- `pnpm smoke:api:local` pass on fixed port `39173`, including
+  `core.dept.simple-list.public-consumer`,
+  `core.dept.simple-list.disabled-filtered` and
+  `core.dept.simple-list.option-shape`.
+- `pnpm deploy:opencore` pass, deploying API/Admin on fixed ports
+  `39172`/`39174`; deploy smoke includes the new core-dept option-source checks
+  and the existing login-prefix/frontend-cache/session-revocation guards.
+
+## Round 27 Public Verification
+
+Against public endpoints after deploy:
+
+- `GET http://144.217.243.161:39172/health/ready` returned 200.
+- `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm
+smoke:core-dept` passed with `OPENCORE_SMOKE_CHECK_DOCS=false` and the deployed
+  admin password loaded from `.env.opencore.local` without printing secrets.
+- Public dept smoke verified disabled-department filtering, enabled option
+  inclusion, lightweight option shape, export/detail/delete and cleanup.
+- `GET http://144.217.243.161:39174/system/users/` returned 200.
+- The deployed main Admin bundle `umi.cf2e4e65.js` contains API origin
+  `http://144.217.243.161:39172` and `/core/depts/simple-list`, and does not
+  contain `/api/api/auth/login`.
+- The deployed Users chunk `p__System__Users.b034bbd1.async.js` contains
+  `Select department`.
+- Public Admin same-origin proxy login returned 201 for both `/api/auth/login`
+  and the stale-compatible `/api/api/auth/login`; public API origin
+  `/api/api/auth/login` also returned 201.
+
+## Round 27 Commit Record
+
+- Feature commit:
+  `844f36d feat(core-dept): add simple-list option source / 新增部门精简选项源`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

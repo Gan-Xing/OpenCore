@@ -3,8 +3,8 @@
 Date: 2026-06-12  
 Repository: `Gan-Xing/OpenCore`  
 Default branch: `main`  
-Latest observed feature commit: `dd720f8 feat(core-login-log): add device filters loop / 新增登录日志设备筛选闭环`
-Latest deployed feature commit: `dd720f8 feat(core-login-log): add device filters loop / 新增登录日志设备筛选闭环`
+Latest observed feature commit: `844f36d feat(core-dept): add simple-list option source / 新增部门精简选项源`
+Latest deployed feature commit: `844f36d feat(core-dept): add simple-list option source / 新增部门精简选项源`
 Latest deployed hardening commit: `04e446c fix(online-user): stabilize admin session smoke / 稳定在线用户管理员会话冒烟`
 
 ## One-sentence Goal
@@ -67,6 +67,7 @@ productization waterline completion; see
 - Round 24 `core.config` value-by-key and cache refresh stage 2
 - Round 25 `core.post` simple-list option stage 2
 - Round 26 `core.login-log` device/time filter stage 2
+- Round 27 `core.dept` simple-list option stage 2
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -210,6 +211,20 @@ IP/时间窗筛选可用、未来时间窗排除该行、非法 `createdFrom` �
 且 main bundle 不包含 `/api/api/auth/login`；公网 Admin 代理 `/api/auth/login` 与兼容
 `/api/api/auth/login` 均返回 201。
 
+Round 27 继续补齐 `core.dept` 队列：部门管理现在新增 consumer option 源
+`GET /api/core/depts/simple-list`。该接口返回 enabled departments 的轻量
+`{ id, name, parentId, order }` 列表，作为用户表单部门选择源，而不是让用户页继续依赖部门管理树
+的完整载荷。API/SDK/OpenAPI、seed/Prisma 仓储、Admin Users 和固定部署脚本均同步该闭环。
+新增 `tools/scripts/smoke-core-dept.mjs` 并接入 `pnpm smoke:api:local` 与
+`pnpm deploy:opencore`，固定 smoke、部署 smoke 和公网 smoke 均证明禁用部门不会进入
+simple-list、启用后会进入 simple-list、option shape 不暴露 `code`/`enabled`/`children`
+等管理字段、部门 export/detail/delete 仍可用。公网 Admin Users 页返回 200；当前 main bundle
+`umi.cf2e4e65.js` 已验证包含 `/core/depts/simple-list`、API origin
+`http://144.217.243.161:39172` 且不包含 `/api/api/auth/login`；公网 Users chunk
+`p__System__Users.b034bbd1.async.js` 已验证包含 `Select department`；公网 Admin 代理
+`/api/auth/login`、兼容 `/api/api/auth/login` 以及 API origin `/api/api/auth/login`
+均返回 201。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -218,7 +233,7 @@ The productization waterline now classifies:
   `core.audit-log`, Round 13/14 `monitor.online-user`, Round 10/15
   `core.file`, Round 4/16 `core.menu`, Round 5/17/18/20 `core.role`,
   Round 8/21 `core.dict`.
-- First loop, enhance: Round 1 `core.notice`, Round 2 `core.dept`, Round
+- First loop, enhance: Round 1 `core.notice`, Round 2/27 `core.dept`, Round
   3/22/25 `core.post`, Round 7/19/22/23 `core.user`, Round 9/24
   `core.config`, Round 11/26 `core.login-log`.
 - Thin, rework: none after Round 16.
@@ -237,8 +252,12 @@ finds another blocker:
 3. `core.login-log`: Round 26 closed browser/OS parsing and server-side IP/time
    filters. Remaining work is IP/location enrichment where feasible,
    cleanup/unlock policy integration and login-type/result expansion.
-4. `core.dept` and `core.post`: department binding paths, post batch
-   operations and ordered tree/list operations where useful.
+4. `core.dept`: Round 27 closed the enabled-department simple-list option
+   source consumed by Admin Users. Remaining work is user binding path
+   hardening, data-scope workflow integration and ordered tree operations where
+   useful.
+5. `core.post`: Round 25 closed the enabled-post simple-list option source.
+   Remaining work is batch operations and ordered list operations where useful.
 
 Commit `f4569a4` also fixed the remaining stale-login failure at API level:
 `@opencore/core` now normalizes duplicate global prefixes before Nest route

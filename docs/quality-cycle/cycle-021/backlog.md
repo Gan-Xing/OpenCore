@@ -686,6 +686,40 @@ filtering and readable device fields.
       verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 27: core.dept Simple-list Option Productization
+
+Why this slice: after login-log device filters, the next lower-dependency
+foundation gap was `core.dept` as an option source. Yudao exposes
+`/system/dept/simple-list` and its role data-permission/user forms consume a
+lightweight enabled-department list. RuoYi also treats department options as a
+basic user/role workflow input. OpenCore had live department management and
+user department filtering, but Admin Users still used the full management tree
+payload for the create/edit department selector.
+
+- [x] Add `SystemDeptOptionDto` for lightweight
+      `{ id, name, parentId, order }` consumer options.
+- [x] Add `listDeptOptions()` to the department repository/service contract.
+- [x] Implement enabled-only, order/name sorted options in seed and Prisma
+      repositories.
+- [x] Add public `GET /api/core/depts/simple-list` before
+      `GET /api/core/depts/:id`.
+- [x] Extend API permission-matrix tests to keep consumer simple-list routes
+      free of management permissions.
+- [x] Extend OpenAPI, SDK types/client methods and SDK path tests.
+- [x] Add `listOpenCoreSystemDeptOptions()` to Admin platform services.
+- [x] Update Admin Users to consume department options from simple-list for the
+      create/edit department selector while keeping the left management filter
+      tree on the full department tree.
+- [x] Add static Admin smoke guards for the department option source.
+- [x] Add `tools/scripts/smoke-core-dept.mjs` and wire it into fixed-port local
+      smoke plus deploy smoke.
+- [x] Extend fixed-port/deploy/public `core.dept` smoke to prove
+      disabled-department filtering, enabled option inclusion, lightweight
+      option shape, detail/export/delete and cleanup.
+- [x] Run focused, full, fixed-port smoke, deployment and public URL
+      verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -717,8 +751,9 @@ treat "minimal loop" as "minimal final product".
 
 - [ ] Round 1 `core.notice`: read/unread state, inbox/header badge and delivery
       adapter design.
-- [ ] Round 2 `core.dept`: user binding paths, data-scope workflow integration
-      and ordered tree operations.
+- [ ] Round 2/27 `core.dept`: management tree and simple-list option source
+      are complete; user binding path hardening, data-scope workflow
+      integration and ordered tree operations remain.
 - [ ] Round 3/22/25 `core.post`: user-post binding and simple-list option
       source are complete; batch operations and ordered list refinements
       remain.

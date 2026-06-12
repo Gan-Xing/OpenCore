@@ -32,7 +32,7 @@ A capability reaches the current OpenCore productization waterline only when:
 | Round      | Capability            | Status                  | Reason                                                                                                                                                                                                                                                                                                                       |
 | ---------- | --------------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1          | `core.notice`         | First loop, enhance     | Management CRUD is live, but read/unread state, notification inbox/header badge and delivery semantics remain below a full notice product.                                                                                                                                                                                   |
-| 2          | `core.dept`           | First loop, enhance     | Tree CRUD and delete guard are live, but user binding, data-scope workflows and ordered tree operations still need follow-up.                                                                                                                                                                                                |
+| 2/27       | `core.dept`           | First loop, enhance     | Tree CRUD, delete guard and the enabled-department simple-list option source consumed by Admin Users are live. User binding path hardening, data-scope workflows and ordered tree operations still need follow-up.                                                                                                           |
 | 3/22/25    | `core.post`           | First loop, enhance     | Post CRUD is live, Round 22 closes user-post binding, and Round 25 adds the dedicated enabled-post simple-list option source consumed by Admin Users. Batch operations and ordered list refinements still remain below the full reference depth.                                                                             |
 | 4/16       | `core.menu`           | Meets current waterline | Round 16 closed the flat-model gap: menus now persist parent tree metadata, type, icon/component/status/cache fields, Admin tree operations, delete guards, nullable parent clearing and smoke coverage.                                                                                                                     |
 | 5/17/18/20 | `core.role`           | Meets current waterline | Role CRUD, permission-code assignment, data scope, role menu-tree assignment, role-user assignment and role status are live. Role status/update/delete mutations revoke affected sessions, disabled roles are removed from auth/RBAC calculation and system roles cannot be disabled.                                        |
@@ -77,10 +77,13 @@ P1 enhancement queue:
 3. `core.login-log`: Round 26 completed browser/OS parsing and server-side
    IP/time filters. Remaining login-log work is IP/location enrichment where
    feasible, cleanup/unlock policy integration and login-type/result expansion.
-4. `core.dept` and `core.post`: department binding paths, simple-list
-   endpoints for departments, post batch operations and ordered tree/list
-   operations where useful.
-5. `core.notice`: read/unread state, inbox/header badge and delivery adapter
+4. `core.dept`: Round 27 completed the enabled-department simple-list option
+   source. Remaining department work is user binding path hardening, data-scope
+   workflow integration and ordered tree operations where useful.
+5. `core.post`: Round 25 completed the enabled-post simple-list option source.
+   Remaining post work is batch operations and ordered list operations where
+   useful.
+6. `core.notice`: read/unread state, inbox/header badge and delivery adapter
    design before any real WebSocket/mail/SMS fan-out.
 
 ## Deployment Learning
@@ -145,3 +148,10 @@ records a failed Chrome/Windows login, verifies detail/list expose
 `browser`/`os`, proves server-side username/result/IP/time-window filters,
 proves a future time window excludes the row, proves malformed `createdFrom`
 returns 400 and verifies export columns include device fields.
+
+Round 27 added the department option-source guard: `core.dept` smoke now creates
+a disabled temporary department, proves `depts/simple-list` filters it out,
+enables the department and proves the lightweight `{ id, name, parentId, order }`
+option shape is returned without management-only fields, then verifies
+export/detail/delete and cleanup through the same fixed-port and deploy smoke
+path.
