@@ -1,9 +1,10 @@
 import {
   DeleteOutlined,
+  DownloadOutlined,
   EditOutlined,
   EyeOutlined,
-  PlusOutlined,
   ReloadOutlined,
+  UploadOutlined,
 } from '@ant-design/icons';
 import {
   PageContainer,
@@ -23,15 +24,17 @@ import {
   Tag,
   Tooltip,
   Typography,
+  Upload,
   message,
 } from 'antd';
 import { useMemo, useEffect, useState } from 'react';
 import {
-  createOpenCoreFile,
   deleteOpenCoreFile,
+  downloadOpenCoreFile,
   getOpenCoreFile,
   listOpenCoreFiles,
   updateOpenCoreFile,
+  uploadOpenCoreFile,
 } from '@/services/opencore/platform';
 import {
   CurrentPageExportButton,
@@ -120,6 +123,26 @@ function formatBytes(sizeBytes: number): string {
   return `${(kib / 1024).toFixed(1)} MiB`;
 }
 
+function readFileContentBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Unable to read file content.'));
+    reader.onload = () => {
+      const result = reader.result;
+
+      if (typeof result !== 'string') {
+        reject(new Error('Unexpected file reader result.'));
+        return;
+      }
+
+      resolve(
+        result.includes(',') ? result.slice(result.indexOf(',') + 1) : result,
+      );
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function FilesPage() {
   const [form] = Form.useForm<FileFormValues>();
   const [rows, setRows] = useState<readonly FileAssetSummary[]>(fallbackRows);
@@ -129,6 +152,7 @@ export default function FilesPage() {
   const [editingFile, setEditingFile] = useState<FileAssetSummary>();
   const [formOpen, setFormOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [selectedUploadFile, setSelectedUploadFile] = useState<File>();
   const filterOptions = useMemo(() => createFilterOptions(rows), [rows]);
   const { filteredRows, toolbar: filterToolbar } =
     useCurrentPageFilters<FileAssetSummary>({
@@ -159,11 +183,12 @@ export default function FilesPage() {
 
   const openCreateForm = () => {
     setEditingFile(undefined);
+    setSelectedUploadFile(undefined);
     form.setFieldsValue({
       checksum: '',
       mimeType: 'application/octet-stream',
       originalName: '',
-      sizeBytes: 0,
+      sizeBytes: undefined,
       uploadedBy: 'admin',
     });
     setFormOpen(true);
@@ -211,14 +236,20 @@ export default function FilesPage() {
         await updateOpenCoreFile(editingFile.id, body);
         message.success('File asset updated.');
       } else {
-        await createOpenCoreFile({
+        if (!selectedUploadFile) {
+          message.error('Choose a file to upload.');
+          return;
+        }
+
+        await uploadOpenCoreFile({
           ...body,
-          sizeBytes: values.sizeBytes ?? 0,
+          contentBase64: await readFileContentBase64(selectedUploadFile),
         });
-        message.success('File asset created.');
+        message.success('File uploaded.');
       }
       setFormOpen(false);
       setEditingFile(undefined);
+      setSelectedUploadFile(undefined);
       await loadFiles();
     } finally {
       setSubmitting(false);
@@ -229,6 +260,19 @@ export default function FilesPage() {
     await deleteOpenCoreFile(record.id);
     message.success('File asset deleted.');
     await loadFiles();
+  };
+
+  const downloadFile = async (record: FileAssetSummary) => {
+    const downloaded = await downloadOpenCoreFile(record.id);
+    const objectUrl = URL.createObjectURL(downloaded.blob);
+    const anchor = document.createElement('a');
+    anchor.href = objectUrl;
+    anchor.download = downloaded.filename ?? record.originalName;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(objectUrl);
+    message.success('File downloaded.');
   };
 
   const columns: ProColumns<FileAssetSummary>[] = [
@@ -261,9 +305,17 @@ export default function FilesPage() {
     {
       title: 'Actions',
       valueType: 'option',
-      width: 184,
+      width: 224,
       render: (_, record) => (
         <Space size="small">
+          <Tooltip title="Download">
+            <Button
+              aria-label={`Download ${record.originalName}`}
+              icon={<DownloadOutlined />}
+              onClick={() => void downloadFile(record)}
+              size="small"
+            />
+          </Tooltip>
           <Tooltip title="Detail">
             <Button
               aria-label={`View ${record.originalName}`}
@@ -336,12 +388,12 @@ export default function FilesPage() {
             />
           </Tooltip>,
           <Button
-            icon={<PlusOutlined />}
+            icon={<UploadOutlined />}
             key="create"
             onClick={openCreateForm}
             type="primary"
           >
-            New File Asset
+            Upload File
           </Button>,
         ]}
       />
@@ -357,12 +409,39 @@ export default function FilesPage() {
         onCancel={() => {
           setFormOpen(false);
           setEditingFile(undefined);
+          setSelectedUploadFile(undefined);
         }}
         onOk={() => void submitForm()}
         open={formOpen}
-        title={editingFile ? 'Edit File Asset' : 'Create File Asset'}
+        title={editingFile ? 'Edit File Asset' : 'Upload File'}
       >
         <Form<FileFormValues> form={form} layout="vertical">
+          {!editingFile ? (
+            <Form.Item label="File" required>
+              <Upload
+                beforeUpload={(file) => {
+                  setSelectedUploadFile(file);
+                  form.setFieldsValue({
+                    mimeType: file.type || 'application/octet-stream',
+                    originalName: file.name,
+                    sizeBytes: file.size,
+                  });
+                  return false;
+                }}
+                maxCount={1}
+                onRemove={() => {
+                  setSelectedUploadFile(undefined);
+                  form.setFieldsValue({
+                    mimeType: 'application/octet-stream',
+                    originalName: '',
+                    sizeBytes: undefined,
+                  });
+                }}
+              >
+                <Button icon={<UploadOutlined />}>Choose file</Button>
+              </Upload>
+            </Form.Item>
+          ) : null}
           <Form.Item
             label="Name"
             name="originalName"
@@ -387,7 +466,7 @@ export default function FilesPage() {
             }
           >
             <InputNumber
-              disabled={Boolean(editingFile)}
+              disabled
               min={0}
               precision={0}
               style={{ width: '100%' }}

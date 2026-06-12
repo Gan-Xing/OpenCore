@@ -26,6 +26,7 @@ import type {
   SystemPostSummary,
   UpdateDictTypeRequest,
   UpdateFileAssetRequest,
+  UploadFileAssetRequest,
   UpdateSystemDeptRequest,
   UpdateSystemNoticeRequest,
   UpdateSystemPostRequest,
@@ -73,9 +74,14 @@ export type SystemManagementClient = {
   ) => Promise<PageResponse<FileAssetSummary>>;
   exportFiles: (token: Token, query?: PageRequest) => Promise<ExportPreview>;
   getFile: (token: Token, id: string) => Promise<FileAssetSummary>;
+  getFileDownloadPath: (id: string) => `/core/files/${string}/download`;
   createFileAsset: (
     token: Token,
     body: CreateFileAssetRequest,
+  ) => Promise<FileAssetSummary>;
+  uploadFileAsset: (
+    token: Token,
+    body: UploadFileAssetRequest,
   ) => Promise<FileAssetSummary>;
   updateFileAsset: (
     token: Token,
@@ -239,8 +245,16 @@ export function createSystemManagementClient(
       request<FileAssetSummary>(`/core/files/${encodeURIComponent(id)}`, {
         token,
       }),
+    getFileDownloadPath: (id) =>
+      `/core/files/${encodeURIComponent(id)}/download`,
     createFileAsset: (token, body) =>
       request<FileAssetSummary>('/core/files', {
+        method: 'POST',
+        body,
+        token,
+      }),
+    uploadFileAsset: (token, body) =>
+      request<FileAssetSummary>('/core/files/upload', {
         method: 'POST',
         body,
         token,

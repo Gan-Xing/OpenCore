@@ -3,13 +3,23 @@ import { createSystemManagementClient } from './system-management-client';
 
 describe('createSystemManagementClient', () => {
   it('uses stable S7 system-management API paths', async () => {
-    const calls: Array<{ path: string; method?: string; token?: string }> = [];
+    const calls: Array<{
+      path: string;
+      method?: string;
+      token?: string;
+    }> = [];
     const request: SdkRequest = async (path, options) => {
-      calls.push({
+      const call: {
+        path: string;
+        method?: string;
+        token?: string;
+      } = {
         path,
         method: options?.method,
         token: options?.token,
-      });
+      };
+
+      calls.push(call);
       return {} as never;
     };
     const client = createSystemManagementClient(request);
@@ -45,11 +55,20 @@ describe('createSystemManagementClient', () => {
     await client.exportLoginLogs('token', { success: false });
     await client.listFiles('token', { page: 1, pageSize: 10 });
     await client.getFile('token', 'file_1');
+    expect(client.getFileDownloadPath('file_1')).toBe(
+      '/core/files/file_1/download',
+    );
     await client.exportFiles('token', { page: 1, pageSize: 10 });
     await client.createFileAsset('token', {
       originalName: 'handbook.pdf',
       mimeType: 'application/pdf',
       sizeBytes: 1024,
+      uploadedBy: 'admin',
+    });
+    await client.uploadFileAsset('token', {
+      originalName: 'handbook.pdf',
+      mimeType: 'application/pdf',
+      contentBase64: 'SGVsbG8=',
       uploadedBy: 'admin',
     });
     await client.updateFileAsset('token', 'file_1', {
@@ -162,6 +181,11 @@ describe('createSystemManagementClient', () => {
       },
       {
         path: '/core/files',
+        method: 'POST',
+        token: 'token',
+      },
+      {
+        path: '/core/files/upload',
         method: 'POST',
         token: 'token',
       },

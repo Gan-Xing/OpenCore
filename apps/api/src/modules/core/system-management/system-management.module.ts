@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AuditLoginLogModule, AuditOperationLogModule } from '@opencore/audit';
 import { DatabaseModule } from '@opencore/database';
+import { FileModule } from '@opencore/file';
 import {
   SystemConfigModule,
   SystemDeptModule,
@@ -15,6 +16,7 @@ import { SystemManagementRepository } from './system-management.repository';
 @Module({
   imports: [
     DatabaseModule,
+    FileModule,
     AuditLoginLogModule,
     AuditOperationLogModule,
     SystemDictModule,

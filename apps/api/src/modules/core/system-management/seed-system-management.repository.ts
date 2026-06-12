@@ -61,7 +61,6 @@ export class SeedSystemManagementRepository extends SystemManagementRepository {
       uploadedBy: body.uploadedBy ?? file.uploadedBy,
     };
     assertSafeFileAsset(updated);
-    updated.storageKey = createStorageKey(updated);
     Object.assign(file, updated);
     return { ...file };
   }

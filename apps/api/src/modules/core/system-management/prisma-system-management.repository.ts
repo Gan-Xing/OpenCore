@@ -96,13 +96,11 @@ export class PrismaSystemManagementRepository extends SystemManagementRepository
       uploadedBy: body.uploadedBy ?? existing.uploadedBy,
     };
     assertSafeFileAsset(updated);
-    const storageKey = createStorageKey(updated, this.storagePrefix);
     const file = await this.prisma.fileAsset.update({
       where: { id },
       data: {
         originalName: updated.originalName,
         mimeType: updated.mimeType,
-        storageKey,
         checksum: updated.checksum,
         uploadedBy: updated.uploadedBy,
       },

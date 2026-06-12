@@ -160,6 +160,39 @@ describe('@opencore/file', () => {
     expect(storage.lastMetadata).toEqual({ 'x-opencore-uploaded-by': 'admin' });
   });
 
+  it('stores file object content at an existing asset key', async () => {
+    const storage = createMemoryStorage();
+    const service = new FileStorageService(
+      {
+        driver: 'local',
+        objectPrefix: 'runtime/',
+        local: { rootPath: '/tmp/opencore-files' },
+        s3: {
+          endpoint: 'http://localhost:9002',
+          region: 'us-east-1',
+          bucket: 'opencore',
+          prefix: 'runtime/',
+          accessKeyId: 'access',
+          secretAccessKey: 'secret',
+          forcePathStyle: true,
+        },
+      },
+      storage,
+    );
+
+    const result = await service.storeObjectAtKey({
+      key: 'runtime/file-assets/existing-report.txt',
+      body: 'report-body',
+      contentType: 'text/plain',
+      uploadedBy: 'admin',
+    });
+
+    expect(result.key).toBe('runtime/file-assets/existing-report.txt');
+    await expect(service.getObject(result.key)).resolves.toEqual(
+      Buffer.from('report-body'),
+    );
+  });
+
   it('probes S3 prefix readability through an injected MinIO-compatible client', async () => {
     const client = createS3ProbeClient(true);
 

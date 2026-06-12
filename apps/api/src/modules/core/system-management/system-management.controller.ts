@@ -1,18 +1,27 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
+  NotFoundException,
   Param,
   Patch,
   Post,
   Query,
+  Res,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOkResponse,
+  ApiProduces,
+  ApiTags,
+} from '@nestjs/swagger';
 import {
   AuditLoginLogService,
   AuditOperationLogService,
 } from '@opencore/audit';
+import { FileStorageService } from '@opencore/file';
 import {
   SystemConfigService,
   SystemDeptService,
@@ -54,12 +63,18 @@ import {
   UpdateSystemDeptDto,
   UpdateDictTypeDto,
   UpdateFileAssetDto,
+  UploadFileAssetDto,
   UpdateSystemConfigDto,
   UpdateSystemNoticeDto,
   UpdateSystemPostDto,
   AuditLogDto,
 } from './system-management.dto';
 import { SystemManagementRepository } from './system-management.repository';
+
+type DownloadResponse = {
+  send(body: Buffer): void;
+  set(headers: Record<string, string>): void;
+};
 
 @ApiBearerAuth()
 @Controller('core')
@@ -73,6 +88,7 @@ export class SystemManagementController {
     private readonly operationLogs: AuditOperationLogService,
     private readonly loginLogs: AuditLoginLogService,
     private readonly repository: SystemManagementRepository,
+    private readonly files: FileStorageService,
   ) {}
 
   @Get('dicts')
@@ -368,6 +384,32 @@ export class SystemManagementController {
     return this.repository.createExportPreview('files', query);
   }
 
+  @Get('files/:id/download')
+  @ApiTags('Core Files')
+  @ApiProduces('application/octet-stream')
+  @RequirePermission('core:file:read')
+  @ApiOkResponse({ description: 'Stored file object bytes.' })
+  async downloadFile(
+    @Param('id') id: string,
+    @Res() response: DownloadResponse,
+  ): Promise<void> {
+    const file = await this.repository.getFile(id);
+    const object = await this.files.getObject(file.storageKey);
+
+    if (!object) {
+      throw new NotFoundException(`Stored file object is missing: ${id}`);
+    }
+
+    response.set({
+      'Content-Disposition': createAttachmentDisposition(file.originalName),
+      'Content-Length': String(object.byteLength),
+      'Content-Type': file.mimeType,
+      'X-OpenCore-Storage-Key': file.storageKey,
+    });
+
+    response.send(object);
+  }
+
   @Get('files/:id')
   @ApiTags('Core Files')
   @RequirePermission('core:file:read')
@@ -382,6 +424,38 @@ export class SystemManagementController {
   @ApiOkResponse({ type: FileAssetDto })
   createFileAsset(@Body() body: CreateFileAssetDto): Promise<FileAssetDto> {
     return this.repository.createFileAsset(body);
+  }
+
+  @Post('files/upload')
+  @ApiTags('Core Files')
+  @RequirePermission('core:file:create')
+  @ApiOkResponse({ type: FileAssetDto })
+  async uploadFileAsset(
+    @Body() body: UploadFileAssetDto,
+  ): Promise<FileAssetDto> {
+    const content = decodeBase64FileContent(body.contentBase64);
+    const file = await this.repository.createFileAsset({
+      checksum: body.checksum,
+      mimeType: body.mimeType,
+      originalName: body.originalName,
+      sizeBytes: content.byteLength,
+      uploadedBy: body.uploadedBy,
+    });
+
+    try {
+      await this.files.storeObjectAtKey({
+        key: file.storageKey,
+        body: content,
+        contentType: file.mimeType,
+        checksum: file.checksum,
+        uploadedBy: file.uploadedBy,
+      });
+    } catch (error) {
+      await this.repository.deleteFile(file.id).catch(() => undefined);
+      throw error;
+    }
+
+    return file;
   }
 
   @Patch('files/:id')
@@ -399,7 +473,9 @@ export class SystemManagementController {
   @ApiTags('Core Files')
   @RequirePermission('core:file:delete')
   @ApiOkResponse({ type: DeleteResultDto })
-  deleteFile(@Param('id') id: string): Promise<DeleteResultDto> {
+  async deleteFile(@Param('id') id: string): Promise<DeleteResultDto> {
+    const file = await this.repository.getFile(id);
+    await this.files.deleteObject(file.storageKey);
     return this.repository.deleteFile(id);
   }
 
@@ -450,4 +526,31 @@ export class SystemManagementController {
   getLoginLog(@Param('id') id: string): Promise<LoginLogDto> {
     return this.loginLogs.getLoginLog(id);
   }
+}
+
+function decodeBase64FileContent(contentBase64: string): Buffer {
+  const payload = contentBase64.includes(',')
+    ? contentBase64.slice(contentBase64.indexOf(',') + 1)
+    : contentBase64;
+  const normalized = payload.trim().replace(/\s/g, '');
+
+  if (!normalized || !/^[A-Za-z0-9+/]+={0,2}$/.test(normalized)) {
+    throw new BadRequestException('File content must be valid base64.');
+  }
+
+  const content = Buffer.from(normalized, 'base64');
+
+  if (content.byteLength === 0) {
+    throw new BadRequestException('File content must not be empty.');
+  }
+
+  return content;
+}
+
+function createAttachmentDisposition(fileName: string): string {
+  const fallbackName = fileName.replace(/[^\x20-\x7e]|["\\]/g, '_') || 'file';
+
+  return `attachment; filename="${fallbackName}"; filename*=UTF-8''${encodeURIComponent(
+    fileName,
+  )}`;
 }

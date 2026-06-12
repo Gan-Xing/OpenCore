@@ -24,7 +24,7 @@ describe('SystemManagementRepository', () => {
     ).resolves.toMatchObject({
       checksum: 'sha256:updated',
       originalName: 'handbook-v2.pdf',
-      storageKey: expect.stringContaining('handbook-v2.pdf'),
+      storageKey: file.storageKey,
     });
     await expect(repository.deleteFile(file.id)).resolves.toEqual({
       deleted: true,

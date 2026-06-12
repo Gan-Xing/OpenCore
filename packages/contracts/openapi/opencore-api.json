@@ -1746,6 +1746,22 @@
         "tags": ["SystemManagement", "Core Files"]
       }
     },
+    "/api/core/files/{id}/download": {
+      "get": {
+        "operationId": "SystemManagementController_downloadFile",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": { "200": { "description": "Stored file object bytes." } },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Files"]
+      }
+    },
     "/api/core/files/{id}": {
       "get": {
         "operationId": "SystemManagementController_getFile",
@@ -1817,6 +1833,32 @@
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/DeleteResultDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Files"]
+      }
+    },
+    "/api/core/files/upload": {
+      "post": {
+        "operationId": "SystemManagementController_uploadFileAsset",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UploadFileAssetDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/FileAssetDto" }
               }
             }
           }
@@ -5191,6 +5233,20 @@
           "uploadedBy": { "type": "string", "example": "admin" }
         },
         "required": ["originalName", "mimeType", "sizeBytes", "uploadedBy"]
+      },
+      "UploadFileAssetDto": {
+        "type": "object",
+        "properties": {
+          "originalName": { "type": "string", "example": "policy.pdf" },
+          "mimeType": { "type": "string", "example": "application/pdf" },
+          "contentBase64": {
+            "type": "string",
+            "description": "Base64-encoded file content without a data URL prefix."
+          },
+          "checksum": { "type": "string" },
+          "uploadedBy": { "type": "string", "example": "admin" }
+        },
+        "required": ["originalName", "mimeType", "contentBase64", "uploadedBy"]
       },
       "UpdateFileAssetDto": {
         "type": "object",

@@ -32,12 +32,31 @@ describe('ApiResponseInterceptor', () => {
 
     expect(result).toBe(envelope);
   });
+
+  it('passes through binary response bodies', async () => {
+    const interceptor = new ApiResponseInterceptor();
+    const payload = Buffer.from('file-body');
+    const result = await lastValueFrom(
+      interceptor.intercept(
+        createExecutionContext('/api/core/files/1/download'),
+        {
+          handle: () => of(payload),
+        } as CallHandler,
+      ),
+    );
+
+    expect(result).toBe(payload);
+  });
 });
 
 function createExecutionContext(url: string): ExecutionContext {
   return {
     switchToHttp: () => ({
       getRequest: () => ({ url }),
+      getResponse: () => ({
+        getHeader: () => undefined,
+        headersSent: false,
+      }),
     }),
   } as ExecutionContext;
 }

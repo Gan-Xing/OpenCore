@@ -89,6 +89,14 @@ export type CreateFileAssetRequest = {
   uploadedBy: string;
 };
 
+export type UploadFileAssetRequest = {
+  originalName: string;
+  mimeType: string;
+  contentBase64: string;
+  checksum?: string;
+  uploadedBy: string;
+};
+
 export type UpdateFileAssetRequest = Partial<
   Pick<
     FileAssetSummary,

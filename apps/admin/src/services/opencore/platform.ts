@@ -42,6 +42,7 @@ import {
   type UpdateSystemConfigRequest,
   type UpdateSystemNoticeRequest,
   type UpdateSystemPostRequest,
+  type UploadFileAssetRequest,
   type UpdateMenuRequest,
   type UpdatePermissionRequest,
   type UpdateRoleRequest,
@@ -257,6 +258,41 @@ export function createOpenCoreFile(
   return systemManagementClient.createFileAsset(getRequiredAdminToken(), body);
 }
 
+export function uploadOpenCoreFile(
+  body: UploadFileAssetRequest,
+): Promise<FileAssetSummary> {
+  return systemManagementClient.uploadFileAsset(getRequiredAdminToken(), body);
+}
+
+export type DownloadedOpenCoreFile = {
+  blob: Blob;
+  filename?: string;
+};
+
+export async function downloadOpenCoreFile(
+  id: string,
+): Promise<DownloadedOpenCoreFile> {
+  const response = await fetch(
+    `/api${systemManagementClient.getFileDownloadPath(id)}`,
+    {
+      headers: {
+        Authorization: `Bearer ${getRequiredAdminToken()}`,
+      },
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(`Unable to download file ${id}: HTTP ${response.status}`);
+  }
+
+  return {
+    blob: await response.blob(),
+    filename: parseContentDispositionFilename(
+      response.headers.get('content-disposition'),
+    ),
+  };
+}
+
 export function updateOpenCoreFile(
   id: string,
   body: UpdateFileAssetRequest,
@@ -270,6 +306,18 @@ export function updateOpenCoreFile(
 
 export function deleteOpenCoreFile(id: string): Promise<{ deleted: true }> {
   return systemManagementClient.deleteFile(getRequiredAdminToken(), id);
+}
+
+function parseContentDispositionFilename(
+  contentDisposition: string | null,
+): string | undefined {
+  const utf8Match = contentDisposition?.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utf8Match?.[1]) {
+    return decodeURIComponent(utf8Match[1]);
+  }
+
+  const plainMatch = contentDisposition?.match(/filename="([^"]+)"/i);
+  return plainMatch?.[1];
 }
 
 export async function listOpenCoreLoginLogs(

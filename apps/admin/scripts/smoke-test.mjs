@@ -273,6 +273,8 @@ if (
   !opencorePlatformService.includes('listOpenCoreFiles') ||
   !opencorePlatformService.includes('getOpenCoreFile') ||
   !opencorePlatformService.includes('createOpenCoreFile') ||
+  !opencorePlatformService.includes('uploadOpenCoreFile') ||
+  !opencorePlatformService.includes('downloadOpenCoreFile') ||
   !opencorePlatformService.includes('updateOpenCoreFile') ||
   !opencorePlatformService.includes('deleteOpenCoreFile') ||
   !opencorePlatformService.includes('listOpenCoreAuditLogs') ||
@@ -687,16 +689,20 @@ if (
 if (
   !filesPage.includes('listOpenCoreFiles') ||
   !filesPage.includes('getOpenCoreFile') ||
-  !filesPage.includes('createOpenCoreFile') ||
+  !filesPage.includes('uploadOpenCoreFile') ||
+  !filesPage.includes('downloadOpenCoreFile') ||
   !filesPage.includes('updateOpenCoreFile') ||
   !filesPage.includes('deleteOpenCoreFile') ||
+  !filesPage.includes('Choose file') ||
+  !filesPage.includes('Upload File') ||
+  !filesPage.includes('DownloadOutlined') ||
   !filesPage.includes('useCurrentPageFilters') ||
   !filesPage.includes('CurrentPageExportButton') ||
   !filesPage.includes('dataSource={filteredRows}') ||
   !filesPage.includes('rows={filteredRows}')
 ) {
   throw new Error(
-    'Files page must use live SDK metadata CRUD with bounded filtering and current-page export.',
+    'Files page must use live SDK upload/download with bounded filtering and current-page export.',
   );
 }
 

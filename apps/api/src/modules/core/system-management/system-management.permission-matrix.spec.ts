@@ -13,6 +13,7 @@ const expectedPermissions = {
   deleteDept: ['core:dept:delete'],
   deleteDict: ['core:dict:delete'],
   deleteFile: ['core:file:delete'],
+  downloadFile: ['core:file:read'],
   deleteNotice: ['core:notice:delete'],
   deletePost: ['core:post:delete'],
   exportAuditLogs: ['core:audit-log:export'],
@@ -45,6 +46,7 @@ const expectedPermissions = {
   updateDept: ['core:dept:update'],
   updateDict: ['core:dict:update'],
   updateFileAsset: ['core:file:update'],
+  uploadFileAsset: ['core:file:create'],
   updateNotice: ['core:notice:update'],
   updatePost: ['core:post:update'],
 } as const;

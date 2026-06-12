@@ -13,6 +13,14 @@ export type StoreFileAssetInput = FileAssetStorageInput & {
   uploadedBy?: string;
 };
 
+export type StoreFileObjectAtKeyInput = {
+  key: string;
+  body: FileObjectBody;
+  contentType?: string;
+  checksum?: string;
+  uploadedBy?: string;
+};
+
 @Injectable()
 export class FileStorageService {
   constructor(
@@ -31,10 +39,20 @@ export class FileStorageService {
 
     const key = this.createAssetKey(input);
 
-    return this.storage.putObject({
+    return this.storeObjectAtKey({
       key,
       body: input.body,
       contentType: input.mimeType,
+      checksum: input.checksum,
+      uploadedBy: input.uploadedBy,
+    });
+  }
+
+  async storeObjectAtKey(input: StoreFileObjectAtKeyInput) {
+    return this.storage.putObject({
+      key: input.key,
+      body: input.body,
+      contentType: input.contentType,
       checksum: input.checksum,
       metadata: input.uploadedBy
         ? { 'x-opencore-uploaded-by': input.uploadedBy }

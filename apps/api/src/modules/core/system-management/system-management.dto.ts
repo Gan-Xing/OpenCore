@@ -107,6 +107,25 @@ export class CreateFileAssetDto {
   uploadedBy!: string;
 }
 
+export class UploadFileAssetDto {
+  @ApiProperty({ example: 'policy.pdf' })
+  originalName!: string;
+
+  @ApiProperty({ example: 'application/pdf' })
+  mimeType!: string;
+
+  @ApiProperty({
+    description: 'Base64-encoded file content without a data URL prefix.',
+  })
+  contentBase64!: string;
+
+  @ApiProperty({ required: false })
+  checksum?: string;
+
+  @ApiProperty({ example: 'admin' })
+  uploadedBy!: string;
+}
+
 export class UpdateFileAssetDto {
   @ApiProperty({ required: false })
   originalName?: string;
