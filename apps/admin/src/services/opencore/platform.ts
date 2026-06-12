@@ -2,9 +2,11 @@ import {
   createMonitoringClient,
   createRbacClient,
   createSystemManagementClient,
+  type CreateMenuRequest,
   type CreateSystemDeptRequest,
   type CreateSystemNoticeRequest,
   type CreateSystemPostRequest,
+  type MenuSummary,
   type SystemStatusSummary,
   type SystemDeptQueryRequest,
   type SystemDeptSummary,
@@ -16,6 +18,7 @@ import {
   type UpdateSystemDeptRequest,
   type UpdateSystemNoticeRequest,
   type UpdateSystemPostRequest,
+  type UpdateMenuRequest,
   type UserSummary,
 } from '@opencore/sdk';
 import { getRequiredAdminToken, opencoreSdkRequest } from './client';
@@ -30,6 +33,31 @@ export function listOpenCoreUsers(): Promise<UserSummary[]> {
 
 export function getOpenCoreSystemStatus(): Promise<SystemStatusSummary> {
   return monitoringClient.getStatus(getRequiredAdminToken());
+}
+
+export function listOpenCoreMenus(): Promise<MenuSummary[]> {
+  return rbacClient.listMenus(getRequiredAdminToken());
+}
+
+export function getOpenCoreMenu(key: string): Promise<MenuSummary> {
+  return rbacClient.getMenu(getRequiredAdminToken(), key);
+}
+
+export function createOpenCoreMenu(
+  body: CreateMenuRequest,
+): Promise<MenuSummary> {
+  return rbacClient.createMenu(getRequiredAdminToken(), body);
+}
+
+export function updateOpenCoreMenu(
+  key: string,
+  body: UpdateMenuRequest,
+): Promise<MenuSummary> {
+  return rbacClient.updateMenu(getRequiredAdminToken(), key, body);
+}
+
+export function deleteOpenCoreMenu(key: string): Promise<{ deleted: true }> {
+  return rbacClient.deleteMenu(getRequiredAdminToken(), key);
 }
 
 export function listOpenCoreSystemDepts(

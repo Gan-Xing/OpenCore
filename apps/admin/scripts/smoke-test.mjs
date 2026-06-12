@@ -227,6 +227,11 @@ if (
   !opencorePlatformService.includes('createSystemManagementClient') ||
   !opencorePlatformService.includes('listOpenCoreUsers') ||
   !opencorePlatformService.includes('getOpenCoreSystemStatus') ||
+  !opencorePlatformService.includes('listOpenCoreMenus') ||
+  !opencorePlatformService.includes('getOpenCoreMenu') ||
+  !opencorePlatformService.includes('createOpenCoreMenu') ||
+  !opencorePlatformService.includes('updateOpenCoreMenu') ||
+  !opencorePlatformService.includes('deleteOpenCoreMenu') ||
   !opencorePlatformService.includes('listOpenCoreSystemDepts') ||
   !opencorePlatformService.includes('createOpenCoreSystemDept') ||
   !opencorePlatformService.includes('updateOpenCoreSystemDept') ||
@@ -515,6 +520,7 @@ if (
   !usersPage.includes('@opencore/sdk') ||
   !usersPage.includes('listOpenCoreUsers') ||
   !permissionsPage.includes('@opencore/sdk') ||
+  !menusPage.includes('@opencore/sdk') ||
   !dictsPage.includes('@opencore/sdk') ||
   !configPage.includes('@opencore/sdk') ||
   !systemNoticesPage.includes('@opencore/sdk') ||
@@ -584,6 +590,22 @@ if (
 ) {
   throw new Error(
     'Posts page must use live SDK CRUD with bounded filtering and current-page export.',
+  );
+}
+
+if (
+  !menusPage.includes('listOpenCoreMenus') ||
+  !menusPage.includes('getOpenCoreMenu') ||
+  !menusPage.includes('createOpenCoreMenu') ||
+  !menusPage.includes('updateOpenCoreMenu') ||
+  !menusPage.includes('deleteOpenCoreMenu') ||
+  !menusPage.includes('useCurrentPageFilters') ||
+  !menusPage.includes('CurrentPageExportButton') ||
+  !menusPage.includes('dataSource={filteredRows}') ||
+  !menusPage.includes('rows={filteredRows}')
+) {
+  throw new Error(
+    'Menus page must use live SDK CRUD with bounded filtering and current-page export.',
   );
 }
 
@@ -716,7 +738,6 @@ const coreFilteredPages = [
   { name: 'users', source: usersPage },
   { name: 'roles', source: rolesPage },
   { name: 'permissions', source: permissionsPage },
-  { name: 'menus', source: menusPage },
   { name: 'dicts', source: dictsPage },
   { name: 'config', source: configPage },
   { name: 'files', source: filesPage },

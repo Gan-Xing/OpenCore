@@ -61,6 +61,7 @@ export type RbacClient = {
   deletePermission: (token: string, code: string) => Promise<RbacDeleteResult>;
   listMenus: (token: string) => Promise<MenuSummary[]>;
   exportMenus: (token: string) => Promise<RbacExportPreview>;
+  getMenu: (token: string, key: string) => Promise<MenuSummary>;
   createMenu: (token: string, body: CreateMenuRequest) => Promise<MenuSummary>;
   updateMenu: (
     token: string,
@@ -168,6 +169,10 @@ export function createRbacClient(request: SdkRequest): RbacClient {
       }),
     exportMenus: (token) =>
       request<RbacExportPreview>('/core/menus/export', {
+        token,
+      }),
+    getMenu: (token, key) =>
+      request<MenuSummary>(`/core/menus/${encodeURIComponent(key)}`, {
         token,
       }),
     createMenu: (token, body) =>

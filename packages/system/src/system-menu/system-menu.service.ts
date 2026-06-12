@@ -15,6 +15,10 @@ export class SystemMenuService {
     return this.repository.listMenus();
   }
 
+  getMenu(key: string): Promise<SystemMenuRecord> {
+    return this.repository.getMenu(key);
+  }
+
   createMenu(body: CreateMenuDto): Promise<SystemMenuRecord> {
     return this.repository.createMenu(body);
   }

@@ -189,6 +189,14 @@ export class RbacController {
     return this.menus.createExportPreview();
   }
 
+  @Get('menus/:key')
+  @ApiTags('Core Menus')
+  @RequirePermission('core:menu:read')
+  @ApiOkResponse({ type: MenuSummaryDto })
+  getMenu(@Param('key') key: string): Promise<MenuSummaryDto> {
+    return this.menus.getMenu(key);
+  }
+
   @Post('menus')
   @ApiTags('Core Menus')
   @RequirePermission('core:menu:create')

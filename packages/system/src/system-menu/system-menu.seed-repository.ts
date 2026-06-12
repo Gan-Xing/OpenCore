@@ -27,6 +27,10 @@ export class SeedSystemMenuRepository extends SystemMenuRepository {
       .sort(compareSystemMenuRecords);
   }
 
+  async getMenu(key: string): Promise<SystemMenuRecord> {
+    return { ...this.findMutableMenuByKey(key) };
+  }
+
   async createMenu(body: CreateMenuDto): Promise<SystemMenuRecord> {
     const input = normalizeCreateSystemMenuInput(body);
 

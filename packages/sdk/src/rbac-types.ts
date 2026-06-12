@@ -98,7 +98,7 @@ export type CreateMenuRequest = {
 export type UpdateMenuRequest = {
   title?: string;
   path?: string;
-  permissionCode?: string;
+  permissionCode?: string | null;
   order?: number;
 };
 

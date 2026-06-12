@@ -44,6 +44,7 @@ describe('createRbacClient', () => {
     await client.deletePermission('token', 'core:example:read');
     await client.listMenus('token');
     await client.exportMenus('token');
+    await client.getMenu('token', 'system.menus');
     await client.createMenu('token', {
       key: 'system.examples',
       title: 'Examples',
@@ -90,6 +91,7 @@ describe('createRbacClient', () => {
       },
       { path: '/core/menus', token: 'token' },
       { path: '/core/menus/export', token: 'token' },
+      { path: '/core/menus/system.menus', token: 'token' },
       { path: '/core/menus', method: 'POST', token: 'token' },
       {
         path: '/core/menus/system.examples',

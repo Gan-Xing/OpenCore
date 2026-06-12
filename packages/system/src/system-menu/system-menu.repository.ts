@@ -33,6 +33,8 @@ const MENU_KEY_PATTERN = /^[a-z][a-z0-9_.-]*$/;
 export abstract class SystemMenuRepository {
   abstract listMenus(): Promise<SystemMenuRecord[]>;
 
+  abstract getMenu(key: string): Promise<SystemMenuRecord>;
+
   abstract createMenu(body: CreateMenuDto): Promise<SystemMenuRecord>;
 
   abstract updateMenu(

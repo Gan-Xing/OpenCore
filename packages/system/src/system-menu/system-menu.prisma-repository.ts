@@ -42,6 +42,10 @@ export class PrismaSystemMenuRepository extends SystemMenuRepository {
     return menus.map(toSystemMenuRecord);
   }
 
+  async getMenu(key: string): Promise<SystemMenuRecord> {
+    return toSystemMenuRecord(await this.findMenuEntityByKey(key));
+  }
+
   async createMenu(body: CreateMenuDto): Promise<SystemMenuRecord> {
     const input = normalizeCreateSystemMenuInput(body);
 

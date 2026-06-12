@@ -31,6 +31,11 @@ describe('@opencore/system system-menu', () => {
       permissionCode: 'core:menu:read',
       stage: 'S6',
     });
+    await expect(service.getMenu('system.examples')).resolves.toMatchObject({
+      key: 'system.examples',
+      title: 'Examples',
+      permissionCode: 'core:menu:read',
+    });
     const updatedMenu = await service.updateMenu('system.examples', {
       permissionCode: null,
       title: 'Example Menus',
@@ -136,6 +141,11 @@ describe('@opencore/system system-menu', () => {
 
       expect(menu).toMatchObject({
         key,
+        permissionCode: 'core:menu:read',
+      });
+      await expect(service.getMenu(key)).resolves.toMatchObject({
+        key,
+        title: 'Prisma Test Menu',
         permissionCode: 'core:menu:read',
       });
       await expect(

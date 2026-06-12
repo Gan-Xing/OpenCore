@@ -513,6 +513,29 @@
       }
     },
     "/api/core/menus/{key}": {
+      "get": {
+        "operationId": "RbacController_getMenu",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MenuSummaryDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Menus"]
+      },
       "patch": {
         "operationId": "RbacController_updateMenu",
         "parameters": [
