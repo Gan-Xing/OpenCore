@@ -77,6 +77,10 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
     );
   }
 
+  async getNotice(id: string): Promise<SystemNoticeRecord> {
+    return toSystemNoticeRecord(await this.findNoticeById(id));
+  }
+
   async createNotice(body: CreateSystemNoticeDto): Promise<SystemNoticeRecord> {
     const input = normalizeCreateSystemNoticeInput(body);
 

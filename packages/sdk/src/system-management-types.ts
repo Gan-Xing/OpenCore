@@ -96,6 +96,59 @@ export type UpdateFileAssetRequest = Partial<
   >
 >;
 
+export type SystemNoticeStatus = 'archived' | 'draft' | 'published';
+
+export type SystemNoticeType = 'announcement' | 'maintenance' | 'security';
+
+export type SystemNoticeAudience = 'admin' | 'all';
+
+export type SystemNoticeSummary = {
+  id: string;
+  title: string;
+  content: string;
+  type: SystemNoticeType;
+  status: SystemNoticeStatus;
+  audience: SystemNoticeAudience;
+  pinned: boolean;
+  validFrom?: string;
+  validTo?: string;
+  publishedAt?: string;
+  archivedAt?: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type SystemNoticeQueryRequest = PageRequest & {
+  audience?: SystemNoticeAudience;
+  status?: SystemNoticeStatus;
+  type?: SystemNoticeType;
+};
+
+export type CreateSystemNoticeRequest = {
+  title: string;
+  content: string;
+  type: SystemNoticeType;
+  audience?: SystemNoticeAudience;
+  pinned?: boolean;
+  validFrom?: string;
+  validTo?: string;
+  createdBy: string;
+};
+
+export type UpdateSystemNoticeRequest = Partial<
+  Pick<
+    SystemNoticeSummary,
+    | 'audience'
+    | 'content'
+    | 'pinned'
+    | 'title'
+    | 'type'
+    | 'validFrom'
+    | 'validTo'
+  >
+>;
+
 export type AuditLogSummary = {
   id: string;
   actorUsername: string;

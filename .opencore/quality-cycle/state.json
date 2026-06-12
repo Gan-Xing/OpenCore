@@ -1,9 +1,9 @@
 {
   "version": 1,
   "createdAt": "2026-06-10T23:19:12.361Z",
-  "maxCycles": 20,
-  "completedCycles": 19,
-  "activeCycle": 20,
-  "lastCompletedAt": "2026-06-11T08:53:07.598Z",
+  "maxCycles": 21,
+  "completedCycles": 20,
+  "activeCycle": 21,
+  "lastCompletedAt": "2026-06-12T08:46:02.000Z",
   "deadlineLondon": "2026-06-11 05:30:00 Europe/London"
 }

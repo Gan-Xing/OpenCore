@@ -23,6 +23,7 @@ const expectedPermissions = {
   exportLoginLogs: ['core:login-log:export'],
   exportNotices: ['core:notice:export'],
   exportPosts: ['core:post:export'],
+  getNotice: ['core:notice:read'],
   archiveNotice: ['core:notice:update'],
   listAuditLogs: ['core:audit-log:read'],
   listConfig: ['core:config:read'],

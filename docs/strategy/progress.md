@@ -2393,3 +2393,43 @@ runtime config 与 OpenAPI export/check。
 - 若依/芋道主干后台能力已经按 OpenCore TS/NestJS monorepo 边界形成后端闭环；
   CRM、ERP、MES、WMS、商城、真实支付、会员、多租户、知识库、RAG、Agent、
   完整 BPMN 工作流和完整报表设计器仍未进入已完成范围。
+
+## 2026-06-12 Cycle-021 Round 1: core.notice Productization
+
+### Capability Status
+
+- cycle-021 已从 BE20 backend self-loop 切换到 capability-map productization。
+- 本轮最低依赖缺口选择 `core.notice`：后端 runtime 已存在，但缺少 detail
+  API、SDK、Admin route/access/menu、live Admin 页面和 smoke/e2e 闭环。
+- 已对齐 `.opencore/quality-cycle/state.json`：`completedCycles=20`、
+  `activeCycle=21`、`maxCycles=21`。
+
+### Completed
+
+- 新增 `GET /api/core/notices/:id`，并通过 `core:notice:read` 保护。
+- `@opencore/system` seed/Prisma repository 和 service 均支持 `getNotice`。
+- `@opencore/sdk` 已提供 system notice typed client：list/detail/export/create/
+  update/publish/archive/delete。
+- `packages/module-registry` 已为 `core.notice` 增加 Admin route metadata，
+  `/system/notices` 纳入 `registry:admin-routes:check`。
+- Admin 已新增 `/system/notices` live 页面，使用 SDK-backed platform service
+  完成列表、详情、当前页导出、创建、更新、发布、归档和删除。
+- Admin smoke 已锁定 route/access/shell registry/SDK lifecycle/page integration。
+- OpenAPI snapshot 已刷新。
+
+### Verification
+
+- `pnpm format:check`、`pnpm lint`、`pnpm typecheck`、`pnpm test`、
+  `pnpm build`、`pnpm prisma:validate`、`pnpm test:api`、`pnpm test:admin` pass。
+- `pnpm openapi:export`、`pnpm openapi:registry-tags:check`、
+  `pnpm openapi:check`、`pnpm registry:admin-routes:check` pass。
+- `NX_DAEMON=false pnpm nx test contracts`、`module-registry`、`sdk` pass。
+- Live smoke against `http://127.0.0.1:3010/api` pass：login、notice list、
+  create、detail、update、publish、archive、delete、final list 全链路通过。
+- 首次 `pnpm build` 遇到 Admin CSS loader flaky failure；单独
+  `pnpm build:admin` 和 full build rerun 均通过，Nx 标记 `admin:build` flaky。
+
+### Commit Record
+
+- Feature commit: pending.
+- Push: pending.

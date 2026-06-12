@@ -344,6 +344,16 @@ export const moduleRegistry = [
         'S7',
       ),
     ],
+    admin: {
+      basePath: '/system/notices',
+      routes: [
+        {
+          path: '/system/notices',
+          title: 'System Notices',
+          permissionCode: 'core:notice:read',
+        },
+      ],
+    },
   },
   {
     code: 'core.dept',

@@ -79,6 +79,8 @@ export abstract class SystemNoticeRepository {
     query?: SystemNoticePageQuery,
   ): Promise<PageResult<SystemNoticeRecord>>;
 
+  abstract getNotice(id: string): Promise<SystemNoticeRecord>;
+
   abstract createNotice(
     body: CreateSystemNoticeDto,
   ): Promise<SystemNoticeRecord>;

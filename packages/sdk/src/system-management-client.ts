@@ -3,6 +3,7 @@ import type {
   AuditLogSummary,
   CreateDictTypeRequest,
   CreateFileAssetRequest,
+  CreateSystemNoticeRequest,
   CreateSystemConfigRequest,
   DeleteResult,
   DictTypeSummary,
@@ -12,8 +13,11 @@ import type {
   PageRequest,
   PageResponse,
   SystemConfigSummary,
+  SystemNoticeQueryRequest,
+  SystemNoticeSummary,
   UpdateDictTypeRequest,
   UpdateFileAssetRequest,
+  UpdateSystemNoticeRequest,
   UpdateSystemConfigRequest,
 } from './system-management-types';
 
@@ -65,6 +69,27 @@ export type SystemManagementClient = {
     body: UpdateFileAssetRequest,
   ) => Promise<FileAssetSummary>;
   deleteFile: (token: Token, id: string) => Promise<DeleteResult>;
+  listNotices: (
+    token: Token,
+    query?: SystemNoticeQueryRequest,
+  ) => Promise<PageResponse<SystemNoticeSummary>>;
+  getNotice: (token: Token, id: string) => Promise<SystemNoticeSummary>;
+  exportNotices: (
+    token: Token,
+    query?: SystemNoticeQueryRequest,
+  ) => Promise<ExportPreview>;
+  createNotice: (
+    token: Token,
+    body: CreateSystemNoticeRequest,
+  ) => Promise<SystemNoticeSummary>;
+  updateNotice: (
+    token: Token,
+    id: string,
+    body: UpdateSystemNoticeRequest,
+  ) => Promise<SystemNoticeSummary>;
+  publishNotice: (token: Token, id: string) => Promise<SystemNoticeSummary>;
+  archiveNotice: (token: Token, id: string) => Promise<SystemNoticeSummary>;
+  deleteNotice: (token: Token, id: string) => Promise<DeleteResult>;
   listAuditLogs: (
     token: Token,
     query?: PageRequest,
@@ -165,6 +190,54 @@ export function createSystemManagementClient(
         method: 'DELETE',
         token,
       }),
+    listNotices: (token, query) =>
+      request<PageResponse<SystemNoticeSummary>>(
+        withQuery('/core/notices', query),
+        {
+          token,
+        },
+      ),
+    getNotice: (token, id) =>
+      request<SystemNoticeSummary>(`/core/notices/${encodeURIComponent(id)}`, {
+        token,
+      }),
+    exportNotices: (token, query) =>
+      request<ExportPreview>(withQuery('/core/notices/export', query), {
+        token,
+      }),
+    createNotice: (token, body) =>
+      request<SystemNoticeSummary>('/core/notices', {
+        method: 'POST',
+        body,
+        token,
+      }),
+    updateNotice: (token, id, body) =>
+      request<SystemNoticeSummary>(`/core/notices/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        body,
+        token,
+      }),
+    publishNotice: (token, id) =>
+      request<SystemNoticeSummary>(
+        `/core/notices/${encodeURIComponent(id)}/publish`,
+        {
+          method: 'PATCH',
+          token,
+        },
+      ),
+    archiveNotice: (token, id) =>
+      request<SystemNoticeSummary>(
+        `/core/notices/${encodeURIComponent(id)}/archive`,
+        {
+          method: 'PATCH',
+          token,
+        },
+      ),
+    deleteNotice: (token, id) =>
+      request<DeleteResult>(`/core/notices/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        token,
+      }),
     listAuditLogs: (token, query) =>
       request<PageResponse<AuditLogSummary>>(
         withQuery('/core/audit-logs', query),
@@ -190,15 +263,13 @@ export function createSystemManagementClient(
   };
 }
 
-function withQuery(path: `/${string}`, query: PageRequest = {}): `/${string}` {
+function withQuery(path: `/${string}`, query: object = {}): `/${string}` {
   const params = new URLSearchParams();
 
-  if (query.page !== undefined) {
-    params.set('page', String(query.page));
-  }
-
-  if (query.pageSize !== undefined) {
-    params.set('pageSize', String(query.pageSize));
+  for (const [key, value] of Object.entries(query)) {
+    if (value !== undefined) {
+      params.set(key, String(value));
+    }
   }
 
   const queryString = params.toString();

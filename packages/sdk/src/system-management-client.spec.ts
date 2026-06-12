@@ -25,6 +25,23 @@ describe('createSystemManagementClient', () => {
     await client.updateFileAsset('token', 'file_1', {
       checksum: 'sha256:updated',
     });
+    await client.listNotices('token', {
+      page: 1,
+      pageSize: 10,
+      status: 'draft',
+      type: 'maintenance',
+    });
+    await client.getNotice('token', 'notice_1');
+    await client.createNotice('token', {
+      title: 'Maintenance',
+      content: 'Maintenance window.',
+      type: 'maintenance',
+      createdBy: 'admin',
+    });
+    await client.updateNotice('token', 'notice_1', { pinned: true });
+    await client.publishNotice('token', 'notice_1');
+    await client.archiveNotice('token', 'notice_1');
+    await client.deleteNotice('token', 'notice_1');
     await client.deleteConfig('token', 'opencore.admin.title');
 
     expect(calls).toEqual([
@@ -44,6 +61,39 @@ describe('createSystemManagementClient', () => {
       {
         path: '/core/files/file_1',
         method: 'PATCH',
+        token: 'token',
+      },
+      {
+        path: '/core/notices?page=1&pageSize=10&status=draft&type=maintenance',
+        token: 'token',
+      },
+      {
+        path: '/core/notices/notice_1',
+        token: 'token',
+      },
+      {
+        path: '/core/notices',
+        method: 'POST',
+        token: 'token',
+      },
+      {
+        path: '/core/notices/notice_1',
+        method: 'PATCH',
+        token: 'token',
+      },
+      {
+        path: '/core/notices/notice_1/publish',
+        method: 'PATCH',
+        token: 'token',
+      },
+      {
+        path: '/core/notices/notice_1/archive',
+        method: 'PATCH',
+        token: 'token',
+      },
+      {
+        path: '/core/notices/notice_1',
+        method: 'DELETE',
         token: 'token',
       },
       {

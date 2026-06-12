@@ -69,6 +69,12 @@ export default [
         access: 'canReadSystemConfig',
       },
       {
+        name: 'System Notices',
+        path: '/system/notices',
+        component: './System/Notices',
+        access: 'canReadSystemNotices',
+      },
+      {
         name: 'File Center',
         path: '/system/files',
         component: './System/Files',

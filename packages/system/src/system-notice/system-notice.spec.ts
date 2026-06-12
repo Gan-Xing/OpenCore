@@ -29,6 +29,10 @@ describe('@opencore/system system-notice', () => {
     });
 
     expect(notice.status).toBe('draft');
+    await expect(service.getNotice(notice.id)).resolves.toMatchObject({
+      id: notice.id,
+      title: 'Release Reminder',
+    });
     expect(
       (await service.updateNotice(notice.id, { pinned: true })).pinned,
     ).toBe(true);
@@ -112,6 +116,10 @@ describe('@opencore/system system-notice', () => {
       });
 
       expect(notice.status).toBe('draft');
+      await expect(service.getNotice(notice.id)).resolves.toMatchObject({
+        id: notice.id,
+        title,
+      });
       await expect(
         service.listNotices({ type: 'security', audience: 'admin' }),
       ).resolves.toEqual(

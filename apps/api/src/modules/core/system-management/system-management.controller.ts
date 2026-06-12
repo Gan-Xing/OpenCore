@@ -179,6 +179,14 @@ export class SystemManagementController {
     return this.notices.createExportPreview(query);
   }
 
+  @Get('notices/:id')
+  @ApiTags('Core System Notices')
+  @RequirePermission('core:notice:read')
+  @ApiOkResponse({ type: SystemNoticeDto })
+  getNotice(@Param('id') id: string): Promise<SystemNoticeDto> {
+    return this.notices.getNotice(id);
+  }
+
   @Post('notices')
   @ApiTags('Core System Notices')
   @RequirePermission('core:notice:create')

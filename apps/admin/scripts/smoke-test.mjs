@@ -90,6 +90,7 @@ for (const requiredRoute of [
   "path: '/system/menus'",
   "path: '/system/dicts'",
   "path: '/system/config'",
+  "path: '/system/notices'",
   "path: '/system/files'",
   "path: '/security/login-logs'",
   "path: '/security/operation-logs'",
@@ -221,11 +222,15 @@ if (
 if (
   !opencorePlatformService.includes('createRbacClient') ||
   !opencorePlatformService.includes('createMonitoringClient') ||
+  !opencorePlatformService.includes('createSystemManagementClient') ||
   !opencorePlatformService.includes('listOpenCoreUsers') ||
-  !opencorePlatformService.includes('getOpenCoreSystemStatus')
+  !opencorePlatformService.includes('getOpenCoreSystemStatus') ||
+  !opencorePlatformService.includes('listOpenCoreSystemNotices') ||
+  !opencorePlatformService.includes('publishOpenCoreSystemNotice') ||
+  !opencorePlatformService.includes('archiveOpenCoreSystemNotice')
 ) {
   throw new Error(
-    'Admin platform service must expose live System and Monitor SDK clients.',
+    'Admin platform service must expose live System, Notice and Monitor SDK clients.',
   );
 }
 
@@ -261,6 +266,7 @@ if (
   !accessRuntime.includes('core:menu:read') ||
   !accessRuntime.includes('core:dict:read') ||
   !accessRuntime.includes('core:config:read') ||
+  !accessRuntime.includes('core:notice:read') ||
   !accessRuntime.includes('core:file:read') ||
   !accessRuntime.includes('core:audit-log:read') ||
   !accessRuntime.includes('core:login-log:read') ||
@@ -305,6 +311,7 @@ if (
   !shellRegistry.includes('core.menu') ||
   !shellRegistry.includes('core.dict') ||
   !shellRegistry.includes('core.config') ||
+  !shellRegistry.includes('core.notice') ||
   !shellRegistry.includes('core.file') ||
   !shellRegistry.includes('core.audit-log') ||
   !shellRegistry.includes('core.login-log') ||
@@ -375,6 +382,10 @@ const dictsPage = readFileSync(
 );
 const configPage = readFileSync(
   resolve(root, 'src/pages/System/Config.tsx'),
+  'utf8',
+);
+const systemNoticesPage = readFileSync(
+  resolve(root, 'src/pages/System/Notices.tsx'),
   'utf8',
 );
 const filesPage = readFileSync(
@@ -483,6 +494,7 @@ if (
   !permissionsPage.includes('@opencore/sdk') ||
   !dictsPage.includes('@opencore/sdk') ||
   !configPage.includes('@opencore/sdk') ||
+  !systemNoticesPage.includes('@opencore/sdk') ||
   !filesPage.includes('@opencore/sdk') ||
   !auditLogsPage.includes('@opencore/sdk') ||
   !loginLogsPage.includes('@opencore/sdk') ||
@@ -512,6 +524,23 @@ if (
 ) {
   throw new Error(
     'Admin platform, collaboration, operations, and integration pages must consume SDK types or fixtures.',
+  );
+}
+
+if (
+  !systemNoticesPage.includes('listOpenCoreSystemNotices') ||
+  !systemNoticesPage.includes('createOpenCoreSystemNotice') ||
+  !systemNoticesPage.includes('updateOpenCoreSystemNotice') ||
+  !systemNoticesPage.includes('publishOpenCoreSystemNotice') ||
+  !systemNoticesPage.includes('archiveOpenCoreSystemNotice') ||
+  !systemNoticesPage.includes('deleteOpenCoreSystemNotice') ||
+  !systemNoticesPage.includes('useCurrentPageFilters') ||
+  !systemNoticesPage.includes('CurrentPageExportButton') ||
+  !systemNoticesPage.includes('dataSource={filteredRows}') ||
+  !systemNoticesPage.includes('rows={filteredRows}')
+) {
+  throw new Error(
+    'System Notices page must use live SDK lifecycle actions with bounded filtering and current-page export.',
   );
 }
 

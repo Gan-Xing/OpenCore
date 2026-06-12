@@ -22,6 +22,10 @@ export class SystemNoticeService {
     return this.repository.listNotices(query);
   }
 
+  getNotice(id: string): Promise<SystemNoticeRecord> {
+    return this.repository.getNotice(id);
+  }
+
   createNotice(body: CreateSystemNoticeDto): Promise<SystemNoticeRecord> {
     return this.repository.createNotice(body);
   }

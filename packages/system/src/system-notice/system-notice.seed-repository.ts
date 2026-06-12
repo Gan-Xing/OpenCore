@@ -50,6 +50,10 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
     );
   }
 
+  async getNotice(id: string): Promise<SystemNoticeRecord> {
+    return { ...this.findNotice(id) };
+  }
+
   async createNotice(body: CreateSystemNoticeDto): Promise<SystemNoticeRecord> {
     const input = normalizeCreateSystemNoticeInput(body);
     const id = `notice_${input.title

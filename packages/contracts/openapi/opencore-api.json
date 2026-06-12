@@ -1023,6 +1023,29 @@
       }
     },
     "/api/core/notices/{id}": {
+      "get": {
+        "operationId": "SystemManagementController_getNotice",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SystemNoticeDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Notices"]
+      },
       "patch": {
         "operationId": "SystemManagementController_updateNotice",
         "parameters": [
