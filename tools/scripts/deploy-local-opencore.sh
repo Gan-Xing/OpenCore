@@ -273,7 +273,8 @@ echo "Building OpenCore Admin for $ADMIN_API_BASE_URL_VALUE"
 FORCE_UTOOPACK= \
 OPENCORE_ADMIN_BUNDLER=webpack \
 ADMIN_API_BASE_URL="$ADMIN_API_BASE_URL_VALUE" \
-pnpm build:admin
+NX_DAEMON=false \
+pnpm exec nx build admin --skip-nx-cache
 verify_admin_bundle_api_base_url
 
 echo "Applying Prisma migrations"

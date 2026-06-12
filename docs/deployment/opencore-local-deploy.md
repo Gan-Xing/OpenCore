@@ -26,6 +26,11 @@ login and authenticated requests working even if a browser tries the same-origin
 Admin `/api` path, and prevents the static server from returning `405 Method Not
 Allowed` for API POST requests.
 
+The deploy script skips Nx cache for the Admin build because the browser bundle
+depends on `ADMIN_API_BASE_URL`. Reusing a normal `pnpm build` Admin cache can
+produce a bundle without the deploy API origin and will be rejected by the
+bundle guard.
+
 All Admin HTML route files are served with `no-cache`, while hashed JavaScript
 and CSS assets remain immutable. This prevents browsers from holding an old
 route HTML file that points at an obsolete frontend bundle after deployment.
@@ -45,8 +50,8 @@ temporary API.
 `pnpm deploy:opencore` builds the API and Admin, applies Prisma migrations,
 refreshes local seed data, restarts the API on port `39172`, serves the Admin
 build on port `39174`, then runs authenticated config and file metadata smoke
-checks, an Admin `/api/auth/login` proxy smoke check, and login-log audit smoke
-against the deployed API.
+checks, an Admin `/api/auth/login` proxy smoke check, operation-log audit smoke
+and login-log audit smoke against the deployed API.
 
 Admin production builds deliberately force the stable Umi webpack path. Do not
 enable `FORCE_UTOOPACK` for OpenCore deploys; the project has repeatedly hit
