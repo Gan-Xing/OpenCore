@@ -17,8 +17,20 @@ describe('@opencore/system system-user', () => {
           roleCodes: ['admin'],
           deptId: 'dept_headquarters',
           enabled: true,
+          system: true,
         }),
       ]),
+    );
+    await expect(service.getUser('user_admin')).resolves.toMatchObject({
+      id: 'user_admin',
+      username: 'admin',
+      system: true,
+    });
+    await expect(
+      service.updateUser('user_admin', { displayName: 'Renamed Admin' }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(service.deleteUser('user_admin')).rejects.toThrow(
+      BadRequestException,
     );
 
     const user = await service.createUser({
@@ -35,6 +47,11 @@ describe('@opencore/system system-user', () => {
       roleCodes: ['viewer'],
       deptId: 'dept_operations',
       enabled: true,
+      system: false,
+    });
+    await expect(service.getUser(user.id)).resolves.toMatchObject({
+      id: 'user_operator',
+      system: false,
     });
     await expect(
       service.updateUser('user_operator', {
@@ -52,7 +69,14 @@ describe('@opencore/system system-user', () => {
     await expect(service.createExportPreview()).resolves.toMatchObject({
       filename: 'opencore-system-users.csv',
       scope: 'current-page',
-      columns: ['username', 'displayName', 'roleCodes', 'deptId', 'enabled'],
+      columns: [
+        'username',
+        'displayName',
+        'roleCodes',
+        'deptId',
+        'enabled',
+        'system',
+      ],
     });
     await expect(service.deleteUser('user_operator')).resolves.toEqual({
       deleted: true,
@@ -124,6 +148,7 @@ describe('@opencore/system system-user', () => {
             username: 'admin',
             roleCodes: expect.arrayContaining(['admin']),
             enabled: true,
+            system: true,
           }),
         ]),
       );
@@ -142,6 +167,12 @@ describe('@opencore/system system-user', () => {
         username,
         roleCodes: ['viewer'],
         deptId: 'dept_operations',
+        system: false,
+      });
+      await expect(service.getUser(user.id)).resolves.toMatchObject({
+        username,
+        roleCodes: ['viewer'],
+        system: false,
       });
       await expect(
         prisma.user.findUniqueOrThrow({ where: { id: user.id } }),
@@ -178,6 +209,22 @@ describe('@opencore/system system-user', () => {
       await expect(
         prisma.user.findUnique({ where: { id: user.id } }),
       ).resolves.toBeNull();
+    });
+
+    it('protects the seeded admin user from Prisma updates and deletes', async () => {
+      const admin = (await service.listUsers()).find(
+        (user) => user.username === 'admin',
+      );
+
+      expect(admin).toMatchObject({ username: 'admin', system: true });
+      await expect(
+        service.updateUser(admin?.id ?? 'missing_admin', {
+          displayName: 'Renamed Admin',
+        }),
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        service.deleteUser(admin?.id ?? 'missing_admin'),
+      ).rejects.toThrow(BadRequestException);
     });
 
     async function cleanupTestRows(): Promise<void> {

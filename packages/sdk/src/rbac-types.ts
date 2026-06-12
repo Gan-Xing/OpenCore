@@ -23,7 +23,9 @@ export type UserSummary = {
   username: string;
   displayName: string;
   roleCodes: readonly string[];
+  deptId?: string;
   enabled: boolean;
+  system: boolean;
 };
 
 export type CreateUserRequest = {
@@ -31,6 +33,7 @@ export type CreateUserRequest = {
   displayName: string;
   password: string;
   roleCodes: readonly string[];
+  deptId?: string | null;
   enabled?: boolean;
 };
 
@@ -38,6 +41,7 @@ export type UpdateUserRequest = {
   displayName?: string;
   password?: string;
   roleCodes?: readonly string[];
+  deptId?: string | null;
   enabled?: boolean;
 };
 

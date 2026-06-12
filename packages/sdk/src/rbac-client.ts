@@ -31,6 +31,7 @@ export type RbacClient = {
   me: (token: string) => Promise<LoginResponse>;
   listUsers: (token: string) => Promise<UserSummary[]>;
   exportUsers: (token: string) => Promise<RbacExportPreview>;
+  getUser: (token: string, id: string) => Promise<UserSummary>;
   createUser: (token: string, body: CreateUserRequest) => Promise<UserSummary>;
   updateUser: (
     token: string,
@@ -90,6 +91,10 @@ export function createRbacClient(request: SdkRequest): RbacClient {
       }),
     exportUsers: (token) =>
       request<RbacExportPreview>('/core/users/export', {
+        token,
+      }),
+    getUser: (token, id) =>
+      request<UserSummary>(`/core/users/${encodeURIComponent(id)}`, {
         token,
       }),
     createUser: (token, body) =>

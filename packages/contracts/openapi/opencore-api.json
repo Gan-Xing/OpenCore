@@ -144,6 +144,29 @@
       }
     },
     "/api/core/users/{id}": {
+      "get": {
+        "operationId": "RbacController_getUser",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UserSummaryDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Users"]
+      },
       "patch": {
         "operationId": "RbacController_updateUser",
         "parameters": [
@@ -4434,9 +4457,17 @@
           "displayName": { "type": "string" },
           "roleCodes": { "type": "array", "items": { "type": "string" } },
           "deptId": { "type": "string", "nullable": true },
-          "enabled": { "type": "boolean" }
+          "enabled": { "type": "boolean" },
+          "system": { "type": "boolean" }
         },
-        "required": ["id", "username", "displayName", "roleCodes", "enabled"]
+        "required": [
+          "id",
+          "username",
+          "displayName",
+          "roleCodes",
+          "enabled",
+          "system"
+        ]
       },
       "RbacExportPreviewDto": {
         "type": "object",
@@ -4460,7 +4491,7 @@
             "type": "array",
             "items": { "type": "string" }
           },
-          "deptId": { "type": "object", "nullable": true },
+          "deptId": { "type": "string", "nullable": true },
           "enabled": { "type": "boolean", "default": true }
         },
         "required": ["username", "displayName", "password", "roleCodes"]
@@ -4471,7 +4502,7 @@
           "displayName": { "type": "string" },
           "password": { "type": "string" },
           "roleCodes": { "type": "array", "items": { "type": "string" } },
-          "deptId": { "type": "object", "nullable": true },
+          "deptId": { "type": "string", "nullable": true },
           "enabled": { "type": "boolean" }
         }
       },

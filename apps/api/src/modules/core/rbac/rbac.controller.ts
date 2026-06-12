@@ -58,6 +58,14 @@ export class RbacController {
     return this.users.createExportPreview();
   }
 
+  @Get('users/:id')
+  @ApiTags('Core Users')
+  @RequirePermission('core:user:read')
+  @ApiOkResponse({ type: UserSummaryDto })
+  getUser(@Param('id') id: string): Promise<UserSummaryDto> {
+    return this.users.getUser(id);
+  }
+
   @Post('users')
   @ApiTags('Core Users')
   @RequirePermission('core:user:create')

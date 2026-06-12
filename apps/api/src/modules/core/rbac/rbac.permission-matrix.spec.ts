@@ -18,6 +18,7 @@ const expectedPermissions = {
   getMenu: ['core:menu:read'],
   getPermission: ['core:permission:read'],
   getRole: ['core:role:read'],
+  getUser: ['core:user:read'],
   listMenus: ['core:menu:read'],
   listPermissions: ['core:permission:read'],
   listRoles: ['core:role:read'],

@@ -15,6 +15,10 @@ export class SystemUserService {
     return this.repository.listUsers();
   }
 
+  getUser(id: string): Promise<SystemUserSummaryRecord> {
+    return this.repository.getUser(id);
+  }
+
   createUser(body: CreateUserDto): Promise<SystemUserSummaryRecord> {
     return this.repository.createUser(body);
   }

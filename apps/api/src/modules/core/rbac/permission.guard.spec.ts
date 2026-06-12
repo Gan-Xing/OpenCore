@@ -117,6 +117,7 @@ function createPermissionGuardUsers(): readonly SystemUserRecord[] {
       passwordHash: hashPassword('viewer123'),
       roleCodes: ['viewer'],
       enabled: true,
+      system: false,
     },
     {
       id: 'user_disabled',
@@ -125,6 +126,7 @@ function createPermissionGuardUsers(): readonly SystemUserRecord[] {
       passwordHash: hashPassword('disabled123'),
       roleCodes: ['viewer'],
       enabled: false,
+      system: false,
     },
   ];
 }

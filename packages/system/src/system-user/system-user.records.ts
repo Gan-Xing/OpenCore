@@ -8,6 +8,7 @@ export type SystemUserRecord = {
   roleCodes: readonly string[];
   deptId?: string;
   enabled: boolean;
+  system: boolean;
 };
 
 export const seedSystemUsers: readonly SystemUserRecord[] = [
@@ -19,5 +20,6 @@ export const seedSystemUsers: readonly SystemUserRecord[] = [
     roleCodes: ['admin'],
     deptId: 'dept_headquarters',
     enabled: true,
+    system: true,
   },
 ];

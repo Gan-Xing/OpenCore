@@ -1,28 +1,113 @@
-import type { UserSummary } from '@opencore/sdk';
-import { Alert } from 'antd';
-import { Space, Tag } from 'antd';
-import { useEffect, useState } from 'react';
-import { listOpenCoreUsers } from '@/services/opencore/platform';
-import type { CurrentPageExportColumn } from '../shared/CurrentPageExportButton';
-import type {
-  CurrentPageFilterOption,
-  CurrentPageSearchField,
+import {
+  DeleteOutlined,
+  EditOutlined,
+  EyeOutlined,
+  PlusOutlined,
+  ReloadOutlined,
+} from '@ant-design/icons';
+import {
+  PageContainer,
+  ProTable,
+  type ProColumns,
+} from '@ant-design/pro-components';
+import {
+  createSystemDeptFixtures,
+  type RoleSummary,
+  type SystemDeptSummary,
+  type SystemDeptTreeSummary,
+  type UserSummary,
+} from '@opencore/sdk';
+import {
+  Alert,
+  Button,
+  Form,
+  Input,
+  Modal,
+  Popconfirm,
+  Select,
+  Space,
+  Switch,
+  Tag,
+  Tooltip,
+  TreeSelect,
+  Typography,
+  message,
+} from 'antd';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  createOpenCoreUser,
+  deleteOpenCoreUser,
+  getOpenCoreUser,
+  listOpenCoreRoles,
+  listOpenCoreSystemDepts,
+  listOpenCoreUsers,
+  updateOpenCoreUser,
+} from '@/services/opencore/platform';
+import {
+  CurrentPageExportButton,
+  type CurrentPageExportColumn,
+} from '../shared/CurrentPageExportButton';
+import {
+  useCurrentPageFilters,
+  type CurrentPageFilterOption,
+  type CurrentPageSearchField,
 } from '../shared/CurrentPageFilters';
-import type { DetailField } from '../shared/ReadOnlyDetailDrawer';
-import RbacTable from './RbacTable';
+import {
+  ReadOnlyDetailDrawer,
+  type DetailField,
+} from '../shared/ReadOnlyDetailDrawer';
 
-const rows: UserSummary[] = [
+type UserFormValues = {
+  deptId?: string;
+  displayName: string;
+  enabled?: boolean;
+  password?: string;
+  roleCodes?: string[];
+  username: string;
+};
+
+type TreeSelectNode = {
+  children?: TreeSelectNode[];
+  title: string;
+  value: string;
+};
+
+const fallbackRows: UserSummary[] = [
   {
     id: 'user_admin',
     username: 'admin',
     displayName: 'OpenCore Admin',
     roleCodes: ['admin'],
+    deptId: 'dept_headquarters',
     enabled: true,
+    system: true,
   },
 ];
+const fallbackRoleRows: RoleSummary[] = [
+  {
+    id: 'role_admin',
+    code: 'admin',
+    name: 'Administrator',
+    permissionCodes: [],
+    system: true,
+    dataScope: 'all',
+    dataScopeDeptIds: [],
+  },
+  {
+    id: 'role_viewer',
+    code: 'viewer',
+    name: 'Viewer',
+    permissionCodes: [],
+    system: true,
+    dataScope: 'self',
+    dataScopeDeptIds: [],
+  },
+];
+const fallbackDeptTreeRows = createSystemDeptFixtures();
 const searchFields: CurrentPageSearchField<UserSummary>[] = [
   'username',
   'displayName',
+  'deptId',
   (record) => record.roleCodes,
 ];
 const filterOptions: CurrentPageFilterOption<UserSummary>[] = [
@@ -35,69 +120,340 @@ const filterOptions: CurrentPageFilterOption<UserSummary>[] = [
     placeholder: 'Status',
     predicate: (record, value) => record.enabled === (value === 'true'),
   },
+  {
+    key: 'system',
+    options: [
+      { label: 'system', value: 'true' },
+      { label: 'custom', value: 'false' },
+    ],
+    placeholder: 'System',
+    predicate: (record, value) => record.system === (value === 'true'),
+  },
 ];
 const exportColumns: CurrentPageExportColumn<UserSummary>[] = [
   { title: 'ID', dataIndex: 'id' },
   { title: 'Username', dataIndex: 'username' },
   { title: 'Display Name', dataIndex: 'displayName' },
+  { title: 'Department ID', dataIndex: 'deptId' },
   { title: 'Roles', renderText: (record) => record.roleCodes.join(', ') },
   { title: 'Enabled', dataIndex: 'enabled' },
+  { title: 'System', dataIndex: 'system' },
 ];
-const detailFields = (record: UserSummary): DetailField[] => [
-  { label: 'ID', value: record.id },
-  { label: 'Username', value: record.username },
-  { label: 'Display Name', value: record.displayName },
-  {
-    label: 'Roles',
-    value: (
-      <Space wrap>
-        {record.roleCodes.map((code) => (
-          <Tag key={code}>{code}</Tag>
-        ))}
-      </Space>
-    ),
-  },
-  { label: 'Status', value: record.enabled ? 'enabled' : 'disabled' },
-];
+
+function flattenDeptTree(
+  rows: readonly SystemDeptTreeSummary[],
+): SystemDeptSummary[] {
+  return rows.flatMap((row) => [
+    withoutChildren(row),
+    ...flattenDeptTree(row.children),
+  ]);
+}
+
+function withoutChildren(row: SystemDeptTreeSummary): SystemDeptSummary {
+  const { children: _children, ...summary } = row;
+  return summary;
+}
+
+function createDeptNameMap(rows: readonly SystemDeptSummary[]) {
+  return new Map(rows.map((row) => [row.id, row.name]));
+}
+
+function createRoleOptions(rows: readonly RoleSummary[]) {
+  return [...rows]
+    .sort((left, right) => left.code.localeCompare(right.code))
+    .map((role) => ({
+      label: `${role.name} (${role.code})`,
+      value: role.code,
+    }));
+}
+
+function toDeptTreeSelectData(
+  rows: readonly SystemDeptTreeSummary[],
+): TreeSelectNode[] {
+  return rows.map((row) => ({
+    title: `${row.name} (${row.code})`,
+    value: row.id,
+    children: toDeptTreeSelectData(row.children),
+  }));
+}
+
+function createDetailFields(
+  record: UserSummary,
+  deptNames: ReadonlyMap<string, string>,
+): DetailField[] {
+  return [
+    { label: 'ID', value: record.id },
+    { label: 'Username', value: record.username },
+    { label: 'Display Name', value: record.displayName },
+    {
+      label: 'Department',
+      value: record.deptId
+        ? (deptNames.get(record.deptId) ?? record.deptId)
+        : undefined,
+    },
+    {
+      label: 'Roles',
+      value: (
+        <Space wrap>
+          {record.roleCodes.map((code) => (
+            <Tag key={code}>{code}</Tag>
+          ))}
+        </Space>
+      ),
+    },
+    { label: 'Status', value: record.enabled ? 'enabled' : 'disabled' },
+    { label: 'System', value: record.system ? 'system' : 'custom' },
+  ];
+}
 
 export default function UsersPage() {
-  const [liveRows, setLiveRows] = useState<readonly UserSummary[]>(rows);
+  const [form] = Form.useForm<UserFormValues>();
+  const [rows, setRows] = useState<readonly UserSummary[]>(fallbackRows);
+  const [roleRows, setRoleRows] =
+    useState<readonly RoleSummary[]>(fallbackRoleRows);
+  const [deptTreeRows, setDeptTreeRows] =
+    useState<readonly SystemDeptTreeSummary[]>(fallbackDeptTreeRows);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
+  const [selectedDetail, setSelectedDetail] = useState<UserSummary>();
+  const [editingUser, setEditingUser] = useState<UserSummary>();
+  const [formOpen, setFormOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const flatDeptRows = useMemo(
+    () => flattenDeptTree(deptTreeRows),
+    [deptTreeRows],
+  );
+  const deptNames = useMemo(
+    () => createDeptNameMap(flatDeptRows),
+    [flatDeptRows],
+  );
+  const deptTreeData = useMemo(
+    () => toDeptTreeSelectData(deptTreeRows),
+    [deptTreeRows],
+  );
+  const roleOptions = useMemo(() => createRoleOptions(roleRows), [roleRows]);
+  const { filteredRows, toolbar: filterToolbar } =
+    useCurrentPageFilters<UserSummary>({
+      rows,
+      searchFields,
+      searchPlaceholder: 'Search users',
+      selectFilters: filterOptions,
+    });
+
+  const loadUsers = async () => {
+    setLoading(true);
+    try {
+      const [users, roles, deptTree] = await Promise.all([
+        listOpenCoreUsers(),
+        listOpenCoreRoles(),
+        listOpenCoreSystemDepts(),
+      ]);
+      setRows(users);
+      setRoleRows(roles);
+      setDeptTreeRows(deptTree);
+      setLoadError(undefined);
+    } catch (error: unknown) {
+      setRows(fallbackRows);
+      setRoleRows(fallbackRoleRows);
+      setDeptTreeRows(fallbackDeptTreeRows);
+      setLoadError(
+        error instanceof Error ? error.message : 'Unable to load users.',
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    let mounted = true;
-
-    listOpenCoreUsers()
-      .then((users) => {
-        if (mounted) {
-          setLiveRows(users);
-          setLoadError(undefined);
-        }
-      })
-      .catch((error: unknown) => {
-        if (mounted) {
-          setLiveRows(rows);
-          setLoadError(
-            error instanceof Error
-              ? error.message
-              : 'Unable to load OpenCore users.',
-          );
-        }
-      })
-      .finally(() => {
-        if (mounted) {
-          setLoading(false);
-        }
-      });
-
-    return () => {
-      mounted = false;
-    };
+    void loadUsers();
   }, []);
 
+  const openCreateForm = () => {
+    setEditingUser(undefined);
+    form.setFieldsValue({
+      username: '',
+      displayName: '',
+      password: '',
+      roleCodes: [],
+      deptId: undefined,
+      enabled: true,
+    });
+    setFormOpen(true);
+  };
+
+  const openEditForm = async (record: UserSummary) => {
+    if (record.system) {
+      message.warning('System users cannot be edited.');
+      return;
+    }
+
+    try {
+      const fresh = await getOpenCoreUser(record.id);
+      setEditingUser(fresh);
+      form.setFieldsValue({
+        username: fresh.username,
+        displayName: fresh.displayName,
+        password: '',
+        roleCodes: [...fresh.roleCodes],
+        deptId: fresh.deptId,
+        enabled: fresh.enabled,
+      });
+      setFormOpen(true);
+    } catch (error: unknown) {
+      message.error(
+        error instanceof Error ? error.message : 'Unable to open user.',
+      );
+    }
+  };
+
+  const openDetail = async (record: UserSummary) => {
+    try {
+      setSelectedDetail(await getOpenCoreUser(record.id));
+    } catch (_error) {
+      setSelectedDetail(record);
+    }
+  };
+
+  const submitForm = async () => {
+    const values = await form.validateFields();
+    const roleCodes = values.roleCodes ?? [];
+    const password = values.password?.trim();
+    setSubmitting(true);
+    try {
+      if (editingUser) {
+        await updateOpenCoreUser(editingUser.id, {
+          displayName: values.displayName,
+          password: password || undefined,
+          roleCodes,
+          deptId: values.deptId ?? null,
+          enabled: values.enabled ?? true,
+        });
+        message.success('User updated.');
+      } else {
+        await createOpenCoreUser({
+          username: values.username,
+          displayName: values.displayName,
+          password: password ?? '',
+          roleCodes,
+          deptId: values.deptId,
+          enabled: values.enabled ?? true,
+        });
+        message.success('User created.');
+      }
+      setFormOpen(false);
+      setEditingUser(undefined);
+      await loadUsers();
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const deleteUser = async (record: UserSummary) => {
+    await deleteOpenCoreUser(record.id);
+    message.success('User deleted.');
+    await loadUsers();
+  };
+
+  const columns: ProColumns<UserSummary>[] = [
+    {
+      title: 'Username',
+      dataIndex: 'username',
+      render: (_, record) => (
+        <Typography.Link onClick={() => void openDetail(record)}>
+          {record.username}
+        </Typography.Link>
+      ),
+    },
+    { title: 'Display name', dataIndex: 'displayName' },
+    {
+      title: 'Department',
+      dataIndex: 'deptId',
+      render: (_, record) =>
+        record.deptId ? (deptNames.get(record.deptId) ?? record.deptId) : '-',
+    },
+    {
+      title: 'Roles',
+      dataIndex: 'roleCodes',
+      render: (_, record) => (
+        <Space wrap size={4}>
+          {record.roleCodes.map((code) => (
+            <Tag key={code}>{code}</Tag>
+          ))}
+        </Space>
+      ),
+    },
+    {
+      title: 'Status',
+      dataIndex: 'enabled',
+      width: 96,
+      render: (_, record) => (
+        <Tag color={record.enabled ? 'green' : 'red'}>
+          {record.enabled ? 'enabled' : 'disabled'}
+        </Tag>
+      ),
+    },
+    {
+      title: 'System',
+      dataIndex: 'system',
+      width: 96,
+      render: (_, record) => (
+        <Tag color={record.system ? 'blue' : 'default'}>
+          {record.system ? 'system' : 'custom'}
+        </Tag>
+      ),
+    },
+    {
+      title: 'Actions',
+      valueType: 'option',
+      width: 184,
+      render: (_, record) => (
+        <Space size="small">
+          <Tooltip title="Detail">
+            <Button
+              aria-label={`View ${record.username}`}
+              icon={<EyeOutlined />}
+              onClick={() => void openDetail(record)}
+              size="small"
+            />
+          </Tooltip>
+          <Tooltip
+            title={record.system ? 'System users cannot be edited' : 'Edit'}
+          >
+            <Button
+              aria-label={`Edit ${record.username}`}
+              disabled={record.system}
+              icon={<EditOutlined />}
+              onClick={() => void openEditForm(record)}
+              size="small"
+            />
+          </Tooltip>
+          <Popconfirm
+            title="Delete this user?"
+            okText="Delete"
+            okButtonProps={{ danger: true }}
+            onConfirm={() => void deleteUser(record)}
+          >
+            <Tooltip
+              title={
+                record.system ? 'System users cannot be deleted' : 'Delete'
+              }
+            >
+              <Button
+                aria-label={`Delete ${record.username}`}
+                danger
+                disabled={record.system}
+                icon={<DeleteOutlined />}
+                size="small"
+              />
+            </Tooltip>
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ];
+
   return (
-    <>
+    <PageContainer title="Users" subTitle="S6 RBAC">
       {loadError ? (
         <Alert
           showIcon
@@ -107,37 +463,113 @@ export default function UsersPage() {
           style={{ marginBlockEnd: 16 }}
         />
       ) : null}
-      <RbacTable<UserSummary>
-        title="Users"
-        rows={liveRows}
+      <ProTable<UserSummary>
+        rowKey="id"
         loading={loading}
-        detailFields={detailFields}
-        detailTitle={(record) => record.username}
-        readOnlyReason="Users are read-only in Admin until the S6 write workflow is admitted."
-        resource="core-users"
-        searchFields={searchFields}
-        filterOptions={filterOptions}
-        exportColumns={exportColumns}
-        columns={[
-          { title: 'Username', dataIndex: 'username' },
-          { title: 'Display name', dataIndex: 'displayName' },
-          {
-            title: 'Roles',
-            dataIndex: 'roleCodes',
-            render: (_, record) =>
-              record.roleCodes.map((code) => <Tag key={code}>{code}</Tag>),
-          },
-          {
-            title: 'Status',
-            dataIndex: 'enabled',
-            render: (_, record) => (
-              <Tag color={record.enabled ? 'green' : 'red'}>
-                {record.enabled ? 'enabled' : 'disabled'}
-              </Tag>
-            ),
-          },
+        search={false}
+        options={false}
+        toolBarRender={() => [
+          filterToolbar,
+          <Button
+            key="create"
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={openCreateForm}
+          >
+            New
+          </Button>,
+          <Button
+            key="refresh"
+            icon={<ReloadOutlined />}
+            onClick={() => void loadUsers()}
+          >
+            Refresh
+          </Button>,
+          <CurrentPageExportButton<UserSummary>
+            key="export"
+            columns={exportColumns}
+            resource="core-users"
+            rows={filteredRows}
+          />,
         ]}
+        pagination={{ pageSize: 10 }}
+        dataSource={filteredRows}
+        columns={columns}
       />
-    </>
+      <ReadOnlyDetailDrawer
+        fields={
+          selectedDetail ? createDetailFields(selectedDetail, deptNames) : []
+        }
+        onClose={() => setSelectedDetail(undefined)}
+        open={Boolean(selectedDetail)}
+        title={selectedDetail?.username ?? 'User Detail'}
+      />
+      <Modal
+        title={editingUser ? 'Edit User' : 'New User'}
+        open={formOpen}
+        onCancel={() => {
+          setFormOpen(false);
+          setEditingUser(undefined);
+        }}
+        onOk={() => void submitForm()}
+        confirmLoading={submitting}
+        okText={editingUser ? 'Save' : 'Create'}
+        width={720}
+      >
+        <Form<UserFormValues> form={form} layout="vertical">
+          <Form.Item
+            label="Username"
+            name="username"
+            rules={[{ required: true, message: 'Username is required.' }]}
+          >
+            <Input disabled={Boolean(editingUser)} maxLength={96} />
+          </Form.Item>
+          <Form.Item
+            label="Display Name"
+            name="displayName"
+            rules={[{ required: true, message: 'Display name is required.' }]}
+          >
+            <Input maxLength={120} />
+          </Form.Item>
+          <Form.Item
+            label="Password"
+            name="password"
+            rules={[
+              {
+                required: !editingUser,
+                message: 'Password is required.',
+              },
+            ]}
+          >
+            <Input.Password
+              autoComplete={editingUser ? 'new-password' : 'new-password'}
+              maxLength={128}
+            />
+          </Form.Item>
+          <Form.Item label="Roles" name="roleCodes" rules={[{ type: 'array' }]}>
+            <Select
+              allowClear
+              mode="multiple"
+              optionFilterProp="label"
+              options={roleOptions}
+              placeholder="Select roles"
+              showSearch
+            />
+          </Form.Item>
+          <Form.Item label="Department" name="deptId">
+            <TreeSelect
+              allowClear
+              showSearch
+              treeData={deptTreeData}
+              treeDefaultExpandAll
+              placeholder="Select department"
+            />
+          </Form.Item>
+          <Form.Item label="Enabled" name="enabled" valuePropName="checked">
+            <Switch checkedChildren="Enabled" unCheckedChildren="Disabled" />
+          </Form.Item>
+        </Form>
+      </Modal>
+    </PageContainer>
   );
 }

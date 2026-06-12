@@ -13,11 +13,14 @@ export class UserSummaryDto {
   @ApiProperty({ type: [String] })
   roleCodes!: readonly string[];
 
-  @ApiProperty({ required: false, nullable: true })
+  @ApiProperty({ required: false, nullable: true, type: String })
   deptId?: string;
 
   @ApiProperty()
   enabled!: boolean;
+
+  @ApiProperty()
+  system!: boolean;
 }
 
 export class CreateUserDto {
@@ -33,7 +36,7 @@ export class CreateUserDto {
   @ApiProperty({ type: [String], default: [] })
   roleCodes!: readonly string[];
 
-  @ApiProperty({ required: false, nullable: true })
+  @ApiProperty({ required: false, nullable: true, type: String })
   deptId?: string | null;
 
   @ApiProperty({ required: false, default: true })
@@ -50,7 +53,7 @@ export class UpdateUserDto {
   @ApiProperty({ required: false, type: [String] })
   roleCodes?: readonly string[];
 
-  @ApiProperty({ required: false, nullable: true })
+  @ApiProperty({ required: false, nullable: true, type: String })
   deptId?: string | null;
 
   @ApiProperty({ required: false })

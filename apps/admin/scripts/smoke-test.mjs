@@ -226,6 +226,10 @@ if (
   !opencorePlatformService.includes('createMonitoringClient') ||
   !opencorePlatformService.includes('createSystemManagementClient') ||
   !opencorePlatformService.includes('listOpenCoreUsers') ||
+  !opencorePlatformService.includes('getOpenCoreUser') ||
+  !opencorePlatformService.includes('createOpenCoreUser') ||
+  !opencorePlatformService.includes('updateOpenCoreUser') ||
+  !opencorePlatformService.includes('deleteOpenCoreUser') ||
   !opencorePlatformService.includes('listOpenCoreRoles') ||
   !opencorePlatformService.includes('getOpenCoreRole') ||
   !opencorePlatformService.includes('createOpenCoreRole') ||
@@ -570,6 +574,24 @@ if (
 }
 
 if (
+  !usersPage.includes('listOpenCoreUsers') ||
+  !usersPage.includes('getOpenCoreUser') ||
+  !usersPage.includes('createOpenCoreUser') ||
+  !usersPage.includes('updateOpenCoreUser') ||
+  !usersPage.includes('deleteOpenCoreUser') ||
+  !usersPage.includes('listOpenCoreRoles') ||
+  !usersPage.includes('listOpenCoreSystemDepts') ||
+  !usersPage.includes('useCurrentPageFilters') ||
+  !usersPage.includes('CurrentPageExportButton') ||
+  !usersPage.includes('dataSource={filteredRows}') ||
+  !usersPage.includes('rows={filteredRows}')
+) {
+  throw new Error(
+    'Users page must use live SDK CRUD with role/dept selectors, bounded filtering and current-page export.',
+  );
+}
+
+if (
   !rolesPage.includes('listOpenCoreRoles') ||
   !rolesPage.includes('getOpenCoreRole') ||
   !rolesPage.includes('createOpenCoreRole') ||
@@ -780,7 +802,6 @@ if (
 }
 
 const coreFilteredPages = [
-  { name: 'users', source: usersPage },
   { name: 'dicts', source: dictsPage },
   { name: 'config', source: configPage },
   { name: 'files', source: filesPage },

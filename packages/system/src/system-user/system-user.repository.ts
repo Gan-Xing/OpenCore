@@ -34,6 +34,8 @@ const USERNAME_PATTERN = /^[a-z][a-z0-9_.-]*$/;
 export abstract class SystemUserRepository {
   abstract listUsers(): Promise<SystemUserSummaryRecord[]>;
 
+  abstract getUser(id: string): Promise<SystemUserSummaryRecord>;
+
   abstract createUser(body: CreateUserDto): Promise<SystemUserSummaryRecord>;
 
   abstract updateUser(
@@ -50,7 +52,14 @@ export function createSystemUserExportPreview(
   return {
     filename: 'opencore-system-users.csv',
     scope: 'current-page',
-    columns: ['username', 'displayName', 'roleCodes', 'deptId', 'enabled'],
+    columns: [
+      'username',
+      'displayName',
+      'roleCodes',
+      'deptId',
+      'enabled',
+      'system',
+    ],
     rowCount: rows.length,
     generatedAt: new Date().toISOString(),
   };
@@ -110,7 +119,14 @@ export function cloneSystemUserSummary(
     roleCodes: [...user.roleCodes],
     deptId: user.deptId,
     enabled: user.enabled,
+    system: user.system,
   };
+}
+
+export function assertSystemUserMutable(user: SystemUserSummaryRecord): void {
+  if (user.system) {
+    throw new BadRequestException('System users cannot be updated or deleted.');
+  }
 }
 
 function normalizeUsername(value: string): string {

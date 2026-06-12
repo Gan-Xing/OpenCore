@@ -6,6 +6,7 @@ import {
 import { seedSystemDepts } from '../system-dept/system-dept.records';
 import { seedSystemRoles } from '../system-role/system-role.records';
 import {
+  assertSystemUserMutable,
   cloneSystemUserSummary,
   compareSystemUserRecords,
   normalizeCreateSystemUserInput,
@@ -36,6 +37,10 @@ export class SeedSystemUserRepository extends SystemUserRepository {
       .sort(compareSystemUserRecords);
   }
 
+  async getUser(id: string): Promise<SystemUserSummaryRecord> {
+    return cloneSystemUserSummary(this.findMutableUserById(id));
+  }
+
   async createUser(body: CreateUserDto): Promise<SystemUserSummaryRecord> {
     const input = normalizeCreateSystemUserInput(body);
 
@@ -53,6 +58,7 @@ export class SeedSystemUserRepository extends SystemUserRepository {
       roleCodes: [...input.roleCodes],
       deptId: input.deptId,
       enabled: input.enabled,
+      system: false,
     };
     this.users = [...this.users, user];
     return cloneSystemUserSummary(user);
@@ -64,6 +70,8 @@ export class SeedSystemUserRepository extends SystemUserRepository {
   ): Promise<SystemUserSummaryRecord> {
     const user = this.findMutableUserById(id);
     const input = normalizeUpdateSystemUserInput(body);
+
+    assertSystemUserMutable(user);
 
     if (input.roleCodes !== undefined) {
       this.assertRoleCodes(input.roleCodes);
@@ -85,6 +93,9 @@ export class SeedSystemUserRepository extends SystemUserRepository {
 
   async deleteUser(id: string): Promise<{ deleted: true }> {
     const user = this.findMutableUserById(id);
+
+    assertSystemUserMutable(user);
+
     this.users = this.users.filter((candidate) => candidate.id !== user.id);
     return { deleted: true };
   }

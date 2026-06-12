@@ -7,6 +7,7 @@ import { PrismaService } from '@opencore/database';
 import type { CreateUserDto, UpdateUserDto } from './system-user.dto';
 import { hashSystemUserPassword } from './system-user.password';
 import {
+  assertSystemUserMutable,
   normalizeCreateSystemUserInput,
   normalizeUpdateSystemUserInput,
   SystemUserRepository,
@@ -21,6 +22,9 @@ type PrismaUserWithRoles = {
   enabled: boolean;
   roles: Array<{ role: { code: string } }>;
 };
+
+const SYSTEM_USER_IDS = new Set(['user_admin']);
+const SYSTEM_USERNAMES = new Set(['admin']);
 
 @Injectable()
 export class PrismaSystemUserRepository extends SystemUserRepository {
@@ -41,6 +45,10 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
     });
 
     return users.map(toSystemUserSummaryRecord);
+  }
+
+  async getUser(id: string): Promise<SystemUserSummaryRecord> {
+    return toSystemUserSummaryRecord(await this.findUserEntityById(id));
   }
 
   async createUser(body: CreateUserDto): Promise<SystemUserSummaryRecord> {
@@ -83,8 +91,12 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
     id: string,
     body: UpdateUserDto,
   ): Promise<SystemUserSummaryRecord> {
-    await this.findUserEntityById(id);
+    const existing = toSystemUserSummaryRecord(
+      await this.findUserEntityById(id),
+    );
     const input = normalizeUpdateSystemUserInput(body);
+
+    assertSystemUserMutable(existing);
 
     if (input.roleCodes !== undefined) {
       await this.assertRolesExist(input.roleCodes);
@@ -126,14 +138,26 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
   }
 
   async deleteUser(id: string): Promise<{ deleted: true }> {
-    await this.findUserEntityById(id);
+    const user = toSystemUserSummaryRecord(await this.findUserEntityById(id));
+
+    assertSystemUserMutable(user);
+
     await this.prisma.userRole.deleteMany({ where: { userId: id } });
     await this.prisma.user.delete({ where: { id } });
     return { deleted: true };
   }
 
   private async findUserEntityById(id: string) {
-    const user = await this.prisma.user.findUnique({ where: { id } });
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      include: {
+        roles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
 
     if (!user) {
       throw new NotFoundException(`User not found: ${id}`);
@@ -183,5 +207,10 @@ function toSystemUserSummaryRecord(
     roleCodes: user.roles.map((userRole) => userRole.role.code).sort(),
     deptId: user.deptId ?? undefined,
     enabled: user.enabled,
+    system: isSystemUser(user),
   };
+}
+
+function isSystemUser(user: Pick<PrismaUserWithRoles, 'id' | 'username'>) {
+  return SYSTEM_USER_IDS.has(user.id) || SYSTEM_USERNAMES.has(user.username);
 }
