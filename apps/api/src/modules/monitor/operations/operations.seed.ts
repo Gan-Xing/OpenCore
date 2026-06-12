@@ -1,46 +1,22 @@
 import type {
   CacheKeyDto,
   ExportJobDesignDto,
-  JobDefinitionDto,
-  JobRunLogDto,
-  OnlineUserSessionDto,
   ReportDefinitionDto,
 } from './operations.dto';
 
-export type JobDefinitionRecord = JobDefinitionDto;
-export type JobRunLogRecord = JobRunLogDto;
 export type CacheKeyRecord = CacheKeyDto;
-export type OnlineUserSessionRecord = OnlineUserSessionDto;
 export type ReportDefinitionRecord = ReportDefinitionDto;
 export type ExportJobDesignRecord = ExportJobDesignDto;
-
-export const seedJobs: readonly JobDefinitionRecord[] = [
-  {
-    id: 'job_openapi_drift',
-    code: 'openapi.drift-check',
-    name: 'OpenAPI drift check',
-    queueName: 'maintenance',
-    cron: '0 * * * *',
-    enabled: true,
-    retryLimit: 2,
-    timeoutSeconds: 120,
-    adapter: 'bullmq',
-    payload: { command: 'pnpm openapi:check' },
-  },
-];
-
-export const seedJobRuns: readonly JobRunLogRecord[] = [
-  {
-    id: 'run_openapi_drift_1',
-    jobCode: 'openapi.drift-check',
-    status: 'completed',
-    trigger: 'manual',
-    attempts: 1,
-    startedAt: '2026-06-10T00:00:00.000Z',
-    finishedAt: '2026-06-10T00:00:01.000Z',
-    metadata: { actor: 'admin' },
-  },
-];
+export {
+  seedSchedulerJobs as seedJobs,
+  seedSchedulerRuns as seedJobRuns,
+  type SchedulerJobDefinitionRecord as JobDefinitionRecord,
+  type SchedulerJobRunLogRecord as JobRunLogRecord,
+} from '@opencore/scheduler/records';
+export {
+  seedOnlineUserSessions as seedOnlineSessions,
+  type OnlineUserSessionRecord,
+} from '@opencore/online-user/records';
 
 export const seedCacheKeys: readonly CacheKeyRecord[] = [
   {
@@ -54,18 +30,6 @@ export const seedCacheKeys: readonly CacheKeyRecord[] = [
     prefix: 'opencore:openapi',
     ttlSeconds: 900,
     sizeBytes: 4096,
-  },
-];
-
-export const seedOnlineSessions: readonly OnlineUserSessionRecord[] = [
-  {
-    id: 'session_admin',
-    username: 'admin',
-    tokenId: 'token_admin_1',
-    ip: '127.0.0.1',
-    userAgent: 'OpenCore Admin',
-    lastSeenAt: '2026-06-10T00:00:00.000Z',
-    expiresAt: '2026-06-10T01:00:00.000Z',
   },
 ];
 

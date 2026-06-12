@@ -8,6 +8,8 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { OnlineUserService } from '@opencore/online-user';
+import { SchedulerService } from '@opencore/scheduler';
 import { RequirePermission } from '../../core/rbac/permissions.decorator';
 import {
   CacheClearResultDto,
@@ -39,14 +41,23 @@ import { OperationsRepository } from './operations.repository';
 @ApiBearerAuth()
 @Controller()
 export class OperationsController {
-  constructor(private readonly repository: OperationsRepository) {}
+  constructor(
+    private readonly repository: OperationsRepository,
+    private readonly scheduler: SchedulerService,
+    private readonly onlineUsers: OnlineUserService,
+  ) {}
 
   @Get('monitor/operations/summary')
   @ApiTags('Operations')
   @RequirePermission('monitor:job:read')
   @ApiOkResponse({ type: OperationsSummaryDto })
-  getSummary(): Promise<OperationsSummaryDto> {
-    return this.repository.getSummary();
+  async getSummary(): Promise<OperationsSummaryDto> {
+    const [scheduler, onlineUsers] = await Promise.all([
+      this.scheduler.getSummary(),
+      this.onlineUsers.getSummary(),
+    ]);
+
+    return this.repository.getSummary(scheduler, onlineUsers);
   }
 
   @Get('monitor/jobs')
@@ -54,7 +65,7 @@ export class OperationsController {
   @RequirePermission('monitor:job:read')
   @ApiOkResponse({ type: JobDefinitionPageDto })
   listJobs(@Query() query: JobQueryDto): Promise<JobDefinitionPageDto> {
-    return this.repository.listJobs(query);
+    return this.scheduler.listJobs(query);
   }
 
   @Get('monitor/jobs/:code')
@@ -62,7 +73,7 @@ export class OperationsController {
   @RequirePermission('monitor:job:read')
   @ApiOkResponse({ type: JobDefinitionDto })
   getJob(@Param('code') code: string): Promise<JobDefinitionDto> {
-    return this.repository.getJob(code);
+    return this.scheduler.getJob(code);
   }
 
   @Post('monitor/jobs')
@@ -70,7 +81,7 @@ export class OperationsController {
   @RequirePermission('monitor:job:create')
   @ApiOkResponse({ type: JobDefinitionDto })
   createJob(@Body() body: CreateJobDefinitionDto): Promise<JobDefinitionDto> {
-    return this.repository.createJob(body);
+    return this.scheduler.createJob(body);
   }
 
   @Patch('monitor/jobs/:code')
@@ -81,7 +92,7 @@ export class OperationsController {
     @Param('code') code: string,
     @Body() body: UpdateJobDefinitionDto,
   ): Promise<JobDefinitionDto> {
-    return this.repository.updateJob(code, body);
+    return this.scheduler.updateJob(code, body);
   }
 
   @Patch('monitor/jobs/:code/enable')
@@ -89,7 +100,7 @@ export class OperationsController {
   @RequirePermission('monitor:job:update')
   @ApiOkResponse({ type: JobDefinitionDto })
   enableJob(@Param('code') code: string): Promise<JobDefinitionDto> {
-    return this.repository.enableJob(code);
+    return this.scheduler.enableJob(code);
   }
 
   @Patch('monitor/jobs/:code/disable')
@@ -97,7 +108,7 @@ export class OperationsController {
   @RequirePermission('monitor:job:update')
   @ApiOkResponse({ type: JobDefinitionDto })
   disableJob(@Param('code') code: string): Promise<JobDefinitionDto> {
-    return this.repository.disableJob(code);
+    return this.scheduler.disableJob(code);
   }
 
   @Post('monitor/jobs/:code/trigger')
@@ -108,7 +119,7 @@ export class OperationsController {
     @Param('code') code: string,
     @Body() body: TriggerJobDto,
   ): Promise<JobRunLogDto> {
-    return this.repository.triggerJob(code, body);
+    return this.scheduler.triggerJob(code, body);
   }
 
   @Get('monitor/jobs/:code/runs')
@@ -119,7 +130,7 @@ export class OperationsController {
     @Param('code') code: string,
     @Query() query: JobRunQueryDto,
   ): Promise<JobRunLogPageDto> {
-    return this.repository.listJobRuns(code, query);
+    return this.scheduler.listJobRuns(code, query);
   }
 
   @Get('monitor/jobs/:code/runs/:id')
@@ -130,7 +141,7 @@ export class OperationsController {
     @Param('code') code: string,
     @Param('id') id: string,
   ): Promise<JobRunLogDto> {
-    return this.repository.getJobRun(code, id);
+    return this.scheduler.getJobRun(code, id);
   }
 
   @Get('monitor/cache')
@@ -156,7 +167,7 @@ export class OperationsController {
   listOnlineUsers(
     @Query() query: OnlineUserQueryDto,
   ): Promise<OnlineUserSessionPageDto> {
-    return this.repository.listOnlineUsers(query);
+    return this.onlineUsers.listOnlineUsers(query);
   }
 
   @Get('monitor/online-users/:id')
@@ -164,7 +175,7 @@ export class OperationsController {
   @RequirePermission('monitor:online-user:read')
   @ApiOkResponse({ type: OnlineUserSessionDto })
   getOnlineUser(@Param('id') id: string): Promise<OnlineUserSessionDto> {
-    return this.repository.getOnlineUser(id);
+    return this.onlineUsers.getOnlineUser(id);
   }
 
   @Post('monitor/online-users/:id/kick-out')
@@ -175,7 +186,7 @@ export class OperationsController {
     @Param('id') id: string,
     @Body() body: KickOutSessionDto,
   ): Promise<OnlineUserSessionDto> {
-    return this.repository.kickOutSession(id, body);
+    return this.onlineUsers.kickOutSession(id, body);
   }
 
   @Get('optional/reports')

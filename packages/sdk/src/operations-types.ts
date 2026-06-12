@@ -153,6 +153,7 @@ export type CacheKeyQueryRequest = PageRequest & {
 
 export type OnlineUserQueryRequest = PageRequest & {
   active?: boolean;
+  username?: string;
 };
 
 export type ReportQueryRequest = PageRequest & {

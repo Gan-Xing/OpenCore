@@ -1,11 +1,13 @@
 import { Module } from '@nestjs/common';
-import { DatabaseModule } from '../../../platform/database/database.module';
+import { DatabaseModule } from '@opencore/database';
+import { OnlineUserModule } from '@opencore/online-user';
+import { SchedulerModule } from '@opencore/scheduler';
 import { OperationsController } from './operations.controller';
 import { OperationsRepository } from './operations.repository';
 import { PrismaOperationsRepository } from './prisma-operations.repository';
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, OnlineUserModule, SchedulerModule],
   controllers: [OperationsController],
   providers: [
     {

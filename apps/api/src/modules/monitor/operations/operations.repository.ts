@@ -1,24 +1,16 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import type { OnlineUserSummaryDto } from '@opencore/online-user';
+import type { SchedulerSummaryDto } from '@opencore/scheduler';
 import type {
   CacheKeyQueryDto,
   ClearCacheDto,
-  CreateJobDefinitionDto,
   CreateReportDefinitionDto,
-  KickOutSessionDto,
-  JobQueryDto,
-  JobRunQueryDto,
   OperationsSummaryDto,
-  OnlineUserQueryDto,
   ReportQueryDto,
-  TriggerJobDto,
-  UpdateJobDefinitionDto,
 } from './operations.dto';
 import type {
   CacheKeyRecord,
   ExportJobDesignRecord,
-  JobDefinitionRecord,
-  JobRunLogRecord,
-  OnlineUserSessionRecord,
   ReportDefinitionRecord,
 } from './operations.seed';
 
@@ -39,44 +31,15 @@ export type CacheClearResult = {
 };
 
 export abstract class OperationsRepository {
-  abstract getSummary(): Promise<OperationsSummaryDto>;
-
-  abstract listJobs(
-    query?: JobQueryDto,
-  ): Promise<PageResult<JobDefinitionRecord>>;
-  abstract getJob(code: string): Promise<JobDefinitionRecord>;
-  abstract createJob(
-    body: CreateJobDefinitionDto,
-  ): Promise<JobDefinitionRecord>;
-  abstract updateJob(
-    code: string,
-    body: UpdateJobDefinitionDto,
-  ): Promise<JobDefinitionRecord>;
-  abstract enableJob(code: string): Promise<JobDefinitionRecord>;
-  abstract disableJob(code: string): Promise<JobDefinitionRecord>;
-  abstract triggerJob(
-    code: string,
-    body: TriggerJobDto,
-  ): Promise<JobRunLogRecord>;
-  abstract listJobRuns(
-    code: string,
-    query?: JobRunQueryDto,
-  ): Promise<PageResult<JobRunLogRecord>>;
-  abstract getJobRun(code: string, id: string): Promise<JobRunLogRecord>;
+  abstract getSummary(
+    scheduler: SchedulerSummaryDto,
+    onlineUsers: OnlineUserSummaryDto,
+  ): Promise<OperationsSummaryDto>;
 
   abstract listCacheKeys(
     query?: CacheKeyQueryDto,
   ): Promise<PageResult<CacheKeyRecord>>;
   abstract clearCache(body: ClearCacheDto): Promise<CacheClearResult>;
-
-  abstract listOnlineUsers(
-    query?: OnlineUserQueryDto,
-  ): Promise<PageResult<OnlineUserSessionRecord>>;
-  abstract getOnlineUser(id: string): Promise<OnlineUserSessionRecord>;
-  abstract kickOutSession(
-    id: string,
-    body: KickOutSessionDto,
-  ): Promise<OnlineUserSessionRecord>;
 
   abstract listReports(
     query?: ReportQueryDto,
@@ -89,29 +52,15 @@ export abstract class OperationsRepository {
 }
 
 export function buildOperationsSummary(input: {
-  jobs: readonly JobDefinitionRecord[];
-  jobRuns: readonly JobRunLogRecord[];
+  scheduler: SchedulerSummaryDto;
   cacheKeys: readonly CacheKeyRecord[];
-  onlineSessions: readonly OnlineUserSessionRecord[];
+  onlineUsers: OnlineUserSummaryDto;
   reports: readonly ReportDefinitionRecord[];
   exportJobDesign: ExportJobDesignRecord;
 }): OperationsSummaryDto {
   return {
-    jobs: {
-      total: input.jobs.length,
-      enabled: input.jobs.filter((job) => job.enabled).length,
-      disabled: input.jobs.filter((job) => !job.enabled).length,
-    },
-    jobRuns: {
-      total: input.jobRuns.length,
-      queued: countByStatus(input.jobRuns, 'queued'),
-      running: countByStatus(input.jobRuns, 'running'),
-      completed: countByStatus(input.jobRuns, 'completed'),
-      failed: countByStatus(input.jobRuns, 'failed'),
-      latestStartedAt: latestTimestamp(
-        input.jobRuns.map((run) => run.startedAt),
-      ),
-    },
+    jobs: input.scheduler.jobs,
+    jobRuns: input.scheduler.jobRuns,
     cache: {
       keyCount: input.cacheKeys.length,
       totalSizeBytes: input.cacheKeys.reduce(
@@ -119,13 +68,7 @@ export function buildOperationsSummary(input: {
         0,
       ),
     },
-    onlineUsers: {
-      total: input.onlineSessions.length,
-      active: input.onlineSessions.filter((session) => !session.revokedAt)
-        .length,
-      revoked: input.onlineSessions.filter((session) => session.revokedAt)
-        .length,
-    },
+    onlineUsers: input.onlineUsers,
     reports: {
       total: input.reports.length,
       enabled: input.reports.filter((report) => report.enabled).length,
@@ -168,65 +111,6 @@ export function matchesOptional<T>(
   expected: T | undefined,
 ): boolean {
   return expected === undefined || value === expected;
-}
-
-export function assertSafeJobPolicy(input: {
-  retryLimit: number;
-  timeoutSeconds: number;
-}): void {
-  if (input.retryLimit < 0 || input.retryLimit > 10) {
-    throw new BadRequestException('Job retry limit must be between 0 and 10.');
-  }
-
-  if (input.timeoutSeconds < 1 || input.timeoutSeconds > 3600) {
-    throw new BadRequestException(
-      'Job timeout must be between 1 and 3600 seconds.',
-    );
-  }
-}
-
-export function assertJobEnabled(input: {
-  code: string;
-  enabled: boolean;
-}): void {
-  if (!input.enabled) {
-    throw new BadRequestException(`Job definition is disabled: ${input.code}`);
-  }
-}
-
-export function assertSessionActive(input: {
-  id: string;
-  revokedAt?: string;
-}): void {
-  if (input.revokedAt) {
-    throw new BadRequestException(
-      `Online user session is already revoked: ${input.id}`,
-    );
-  }
-}
-
-export function createManualRunLog(input: {
-  jobCode: string;
-  actor: string;
-  metadata?: Record<string, unknown>;
-  index: number;
-}): JobRunLogRecord {
-  const now = new Date().toISOString();
-
-  return {
-    id: `run_${input.jobCode.replace(/[^a-zA-Z0-9]+/g, '_')}_${input.index}`,
-    jobCode: input.jobCode,
-    status: 'completed',
-    trigger: 'manual',
-    attempts: 1,
-    startedAt: now,
-    finishedAt: now,
-    metadata: {
-      ...(input.metadata ?? {}),
-      actor: input.actor,
-      adapter: 'bullmq',
-    },
-  };
 }
 
 export function applyCacheClearPolicy(
@@ -281,15 +165,4 @@ function normalizePositiveInteger(
 
 function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
-}
-
-function countByStatus<T extends { status: string }>(
-  rows: readonly T[],
-  status: string,
-): number {
-  return rows.filter((row) => row.status === status).length;
-}
-
-function latestTimestamp(values: readonly string[]): string | undefined {
-  return values.filter(Boolean).sort((a, b) => b.localeCompare(a))[0];
 }

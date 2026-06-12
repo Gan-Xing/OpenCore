@@ -1,36 +1,24 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { PrismaService } from '../../../platform/database/prisma.service';
+import { PrismaService } from '@opencore/database';
+import type { OnlineUserSummaryDto } from '@opencore/online-user';
+import type { SchedulerSummaryDto } from '@opencore/scheduler';
 import type {
   CacheKeyQueryDto,
   ClearCacheDto,
-  CreateJobDefinitionDto,
   CreateReportDefinitionDto,
-  KickOutSessionDto,
-  JobQueryDto,
-  JobRunQueryDto,
-  OnlineUserQueryDto,
   ReportQueryDto,
-  TriggerJobDto,
-  UpdateJobDefinitionDto,
 } from './operations.dto';
 import {
   exportJobDesign,
   seedCacheKeys,
   type CacheKeyRecord,
   type ExportJobDesignRecord,
-  type JobDefinitionRecord,
-  type JobRunLogRecord,
-  type OnlineUserSessionRecord,
   type ReportDefinitionRecord,
 } from './operations.seed';
 import {
   applyCacheClearPolicy,
-  assertJobEnabled,
-  assertSafeJobPolicy,
-  assertSessionActive,
   buildOperationsSummary,
-  createManualRunLog,
   createPage,
   normalizeOptionalBoolean,
   OperationsRepository,
@@ -38,43 +26,6 @@ import {
   type CacheClearResult,
   type PageResult,
 } from './operations.repository';
-
-type JobDefinitionRow = {
-  id: string;
-  code: string;
-  name: string;
-  queueName: string;
-  cron: string | null;
-  enabled: boolean;
-  retryLimit: number;
-  timeoutSeconds: number;
-  payload: unknown;
-};
-
-type JobRunLogRow = {
-  id: string;
-  jobCode: string;
-  status: string;
-  trigger: string;
-  attempts: number;
-  startedAt: Date;
-  finishedAt: Date | null;
-  error: string | null;
-  metadata: unknown;
-};
-
-type SessionRow = {
-  id: string;
-  username: string;
-  tokenId: string;
-  ip: string;
-  userAgent: string;
-  lastSeenAt: Date;
-  expiresAt: Date;
-  revokedAt: Date | null;
-  revokedBy?: string | null;
-  revokedReason?: string | null;
-};
 
 type ReportRow = {
   id: string;
@@ -96,147 +47,19 @@ export class PrismaOperationsRepository extends OperationsRepository {
     super();
   }
 
-  async getSummary() {
-    const [jobs, jobRuns, onlineSessions, reports] = await Promise.all([
-      this.prisma.jobDefinition.findMany(),
-      this.prisma.jobRunLog.findMany(),
-      this.prisma.onlineUserSession.findMany(),
-      this.prisma.reportDefinition.findMany(),
-    ]);
+  async getSummary(
+    scheduler: SchedulerSummaryDto,
+    onlineUsers: OnlineUserSummaryDto,
+  ) {
+    const reports = await this.prisma.reportDefinition.findMany();
 
     return buildOperationsSummary({
-      jobs: jobs.map(toJobDefinitionRecord),
-      jobRuns: jobRuns.map(toJobRunLogRecord),
+      scheduler,
       cacheKeys: this.cacheKeys,
-      onlineSessions: onlineSessions.map(toSessionRecord),
+      onlineUsers,
       reports: reports.map(toReportRecord),
       exportJobDesign,
     });
-  }
-
-  async listJobs(
-    query: JobQueryDto = {},
-  ): Promise<PageResult<JobDefinitionRecord>> {
-    const rows = await this.prisma.jobDefinition.findMany({
-      where: {
-        enabled: normalizeOptionalBoolean(query.enabled),
-        queueName: query.queueName,
-      },
-      orderBy: [{ code: 'asc' }],
-    });
-
-    return createPage(rows.map(toJobDefinitionRecord), query);
-  }
-
-  async createJob(body: CreateJobDefinitionDto): Promise<JobDefinitionRecord> {
-    const policy = {
-      retryLimit: body.retryLimit ?? 3,
-      timeoutSeconds: body.timeoutSeconds ?? 60,
-    };
-    assertSafeJobPolicy(policy);
-    const job = await this.prisma.jobDefinition.create({
-      data: {
-        code: body.code,
-        name: body.name,
-        queueName: body.queueName,
-        cron: body.cron,
-        enabled: body.enabled ?? true,
-        retryLimit: policy.retryLimit,
-        timeoutSeconds: policy.timeoutSeconds,
-        payload: body.payload ? toInputJson(body.payload) : undefined,
-      },
-    });
-
-    return toJobDefinitionRecord(job);
-  }
-
-  async getJob(code: string): Promise<JobDefinitionRecord> {
-    return this.findJob(code);
-  }
-
-  async updateJob(
-    code: string,
-    body: UpdateJobDefinitionDto,
-  ): Promise<JobDefinitionRecord> {
-    const existing = await this.findJob(code);
-    const policy = {
-      retryLimit: body.retryLimit ?? existing.retryLimit,
-      timeoutSeconds: body.timeoutSeconds ?? existing.timeoutSeconds,
-    };
-    assertSafeJobPolicy(policy);
-    const job = await this.prisma.jobDefinition.update({
-      where: { code },
-      data: {
-        name: body.name ?? existing.name,
-        queueName: body.queueName ?? existing.queueName,
-        cron: body.cron ?? existing.cron,
-        enabled: body.enabled ?? existing.enabled,
-        retryLimit: policy.retryLimit,
-        timeoutSeconds: policy.timeoutSeconds,
-        payload: body.payload ? toInputJson(body.payload) : undefined,
-      },
-    });
-
-    return toJobDefinitionRecord(job);
-  }
-
-  async enableJob(code: string): Promise<JobDefinitionRecord> {
-    return this.updateJob(code, { enabled: true });
-  }
-
-  async disableJob(code: string): Promise<JobDefinitionRecord> {
-    return this.updateJob(code, { enabled: false });
-  }
-
-  async triggerJob(
-    code: string,
-    body: TriggerJobDto,
-  ): Promise<JobRunLogRecord> {
-    const job = await this.findJob(code);
-    assertJobEnabled(job);
-    const runSeed = createManualRunLog({
-      jobCode: code,
-      actor: body.actor,
-      metadata: body.metadata,
-      index: Date.now(),
-    });
-    const run = await this.prisma.jobRunLog.create({
-      data: {
-        jobCode: code,
-        status: runSeed.status,
-        trigger: runSeed.trigger,
-        attempts: runSeed.attempts,
-        startedAt: new Date(runSeed.startedAt),
-        finishedAt: runSeed.finishedAt ? new Date(runSeed.finishedAt) : null,
-        metadata: runSeed.metadata ? toInputJson(runSeed.metadata) : undefined,
-      },
-    });
-
-    return toJobRunLogRecord(run);
-  }
-
-  async listJobRuns(
-    code: string,
-    query: JobRunQueryDto = {},
-  ): Promise<PageResult<JobRunLogRecord>> {
-    await this.findJob(code);
-    const rows = await this.prisma.jobRunLog.findMany({
-      where: { jobCode: code, status: query.status },
-      orderBy: [{ startedAt: 'desc' }, { id: 'asc' }],
-    });
-
-    return createPage(rows.map(toJobRunLogRecord), query);
-  }
-
-  async getJobRun(code: string, id: string): Promise<JobRunLogRecord> {
-    await this.findJob(code);
-    return requireRecord(
-      await this.prisma.jobRunLog
-        .findFirst({ where: { id, jobCode: code } })
-        .then((run) => (run ? toJobRunLogRecord(run) : undefined)),
-      'Job run log',
-      id,
-    );
   }
 
   async listCacheKeys(
@@ -260,43 +83,6 @@ export class PrismaOperationsRepository extends OperationsRepository {
     }
 
     return result;
-  }
-
-  async listOnlineUsers(
-    query: OnlineUserQueryDto = {},
-  ): Promise<PageResult<OnlineUserSessionRecord>> {
-    const active = normalizeOptionalBoolean(query.active);
-    const rows = await this.prisma.onlineUserSession.findMany({
-      where: {
-        revokedAt:
-          active === undefined ? undefined : active ? null : { not: null },
-      },
-      orderBy: [{ lastSeenAt: 'desc' }, { username: 'asc' }],
-    });
-
-    return createPage(rows.map(toSessionRecord), query);
-  }
-
-  async getOnlineUser(id: string): Promise<OnlineUserSessionRecord> {
-    return this.findSession(id);
-  }
-
-  async kickOutSession(
-    id: string,
-    body: KickOutSessionDto,
-  ): Promise<OnlineUserSessionRecord> {
-    const existing = await this.findSession(id);
-    assertSessionActive(existing);
-    const session = await this.prisma.onlineUserSession.update({
-      where: { id },
-      data: { revokedAt: new Date() },
-    });
-
-    return {
-      ...toSessionRecord(session),
-      revokedBy: body.actor,
-      revokedReason: body.reason,
-    };
   }
 
   async listReports(
@@ -336,26 +122,6 @@ export class PrismaOperationsRepository extends OperationsRepository {
     return { ...exportJobDesign };
   }
 
-  private async findJob(code: string): Promise<JobDefinitionRecord> {
-    return requireRecord(
-      await this.prisma.jobDefinition
-        .findUnique({ where: { code } })
-        .then((job) => (job ? toJobDefinitionRecord(job) : undefined)),
-      'Job definition',
-      code,
-    );
-  }
-
-  private async findSession(id: string): Promise<OnlineUserSessionRecord> {
-    return requireRecord(
-      await this.prisma.onlineUserSession
-        .findUnique({ where: { id } })
-        .then((session) => (session ? toSessionRecord(session) : undefined)),
-      'Online user session',
-      id,
-    );
-  }
-
   private async findReport(code: string): Promise<ReportDefinitionRecord> {
     return requireRecord(
       await this.prisma.reportDefinition
@@ -365,50 +131,6 @@ export class PrismaOperationsRepository extends OperationsRepository {
       code,
     );
   }
-}
-
-function toJobDefinitionRecord(row: JobDefinitionRow): JobDefinitionRecord {
-  return {
-    id: row.id,
-    code: row.code,
-    name: row.name,
-    queueName: row.queueName,
-    cron: row.cron ?? undefined,
-    enabled: row.enabled,
-    retryLimit: row.retryLimit,
-    timeoutSeconds: row.timeoutSeconds,
-    adapter: 'bullmq',
-    payload: normalizeRecord(row.payload),
-  };
-}
-
-function toJobRunLogRecord(row: JobRunLogRow): JobRunLogRecord {
-  return {
-    id: row.id,
-    jobCode: row.jobCode,
-    status: normalizeRunStatus(row.status),
-    trigger: row.trigger === 'schedule' ? 'schedule' : 'manual',
-    attempts: row.attempts,
-    startedAt: row.startedAt.toISOString(),
-    finishedAt: row.finishedAt?.toISOString(),
-    error: row.error ?? undefined,
-    metadata: normalizeRecord(row.metadata),
-  };
-}
-
-function toSessionRecord(row: SessionRow): OnlineUserSessionRecord {
-  return {
-    id: row.id,
-    username: row.username,
-    tokenId: row.tokenId,
-    ip: row.ip,
-    userAgent: row.userAgent,
-    lastSeenAt: row.lastSeenAt.toISOString(),
-    expiresAt: row.expiresAt.toISOString(),
-    revokedAt: row.revokedAt?.toISOString(),
-    revokedBy: row.revokedBy ?? undefined,
-    revokedReason: row.revokedReason ?? undefined,
-  };
 }
 
 function toReportRecord(row: ReportRow): ReportDefinitionRecord {
@@ -427,12 +149,6 @@ function normalizeRecord(value: unknown): Record<string, unknown> | undefined {
   return value && typeof value === 'object' && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : undefined;
-}
-
-function normalizeRunStatus(value: string): JobRunLogRecord['status'] {
-  return ['queued', 'running', 'completed', 'failed'].includes(value)
-    ? (value as JobRunLogRecord['status'])
-    : 'queued';
 }
 
 function toInputJson(value: unknown): Prisma.InputJsonValue {
