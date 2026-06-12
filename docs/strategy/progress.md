@@ -2920,3 +2920,58 @@ pnpm smoke:api:local`。
   `097979c feat(core-file): productize file asset management / 产品化文件资产管理`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## 2026-06-12 Cycle-021 Round 11: core.login-log Productization And Admin API Base Deploy Fix
+
+### Capability Status
+
+- Round 11 选择 `core.login-log`：登录日志 runtime/API 已支持 list/export，但缺少
+  detail API、SDK detail、live Admin 只读审计页面和 failed-login 记录冒烟闭环。
+- 本轮按 OpenCore 的 TS/NestJS 边界承认当前 immutable audit model：`id`、
+  username、IP、success、requestId、failureReason 和 createdAt。
+- 本轮同时修复部署前端 405 根因：Admin 浏览器包必须包含公网
+  `ADMIN_API_BASE_URL`，静态服务器必须代理 `/api/*`，部署脚本必须验证同源
+  `/api/auth/login` 能真实登录。
+- 本轮不扩展登录日志删除/清理、用户解锁、锁定策略、session 终止、地理位置/
+  设备增强、服务端日期范围过滤或 logType/result schema 扩展。
+
+### Completed
+
+- 新增 `GET /api/core/login-logs/:id`，并通过 `core:login-log:read` 保护。
+- `@opencore/audit` seed/Prisma repository 和 service 均支持 `getLoginLog`。
+- `@opencore/sdk` 已提供 login-log query/detail client，并补齐测试。
+- Admin `/security/login-logs` 已从 fixture 只读表升级为 live 只读审计页面，使用
+  SDK-backed platform service 完成列表、详情和当前页导出。
+- 新增 `pnpm smoke:core-login-log`，并把 failed-login 记录/detail/export smoke
+  接入 `pnpm smoke:api:local` 与 `pnpm deploy:opencore`。
+- Admin config 已把 `process.env.ADMIN_API_BASE_URL` define 到浏览器构建产物。
+- `pnpm deploy:opencore` 已强制 grep 构建后的 Admin JS，确认其中包含公网 API
+  base URL；不满足时拒绝部署。
+- Admin 静态服务器已代理 `/api/*` 到部署 API，部署时额外通过
+  `:39174/api/auth/login` 做真实登录冒烟，避免静态站 405 回归。
+- OpenAPI snapshot 已刷新。
+
+### Verification
+
+- Script checks pass：
+  `node --check tools/scripts/serve-admin-static.mjs &&
+node --check tools/scripts/smoke-core-login-log.mjs &&
+node --check apps/admin/scripts/smoke-test.mjs`；
+  `bash -n tools/scripts/deploy-local-opencore.sh tools/scripts/run-local-api-smoke.sh`。
+- `pnpm test:admin` pass。
+- `FORCE_UTOOPACK= OPENCORE_ADMIN_BUNDLER=webpack ADMIN_API_BASE_URL=http://144.217.243.161:39172/api pnpm build:admin`
+  pass。
+- `rg -l --fixed-strings "http://144.217.243.161:39172/api" apps/admin/dist -g '*.js'`
+  returns `apps/admin/dist/umi.c9abe7a3.js`。
+- Full gate pass：`pnpm format:check && pnpm lint && pnpm typecheck &&
+pnpm test && pnpm openapi:check && pnpm sdk:check && pnpm smoke:api:local`。
+- Fixed-port smoke against `http://127.0.0.1:39173` pass：live、ready、docs、
+  login、config CRUD、file metadata CRUD、failed-login recorded、login-log list、
+  detail 和 export 全链路通过。
+
+### Commit Record
+
+- Feature commit:
+  `40d879c feat(core-login-log): productize login log audit trail / 产品化登录日志审计链路`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

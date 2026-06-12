@@ -241,6 +241,34 @@ page and a deployed Admin URL reachable outside the server.
 - [x] Run focused, full, fixed-port smoke and public deploy gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 11: core.login-log Productization And Admin API Base Deploy Fix
+
+Why this slice: RuoYi and Yudao both expose login logs as a Security/System
+audit surface for failed-login diagnosis and operator traceability. OpenCore
+already recorded login logs and exposed list/export routes, but lacked a
+detail API/SDK contract, a live Admin page and a deploy guard for the exact
+frontend 405 regression where browser login POSTs hit the Admin static server.
+
+- [x] Add missing login-log detail API contract.
+- [x] Extend `@opencore/audit` login-log repository/service contracts with
+      `getLoginLog` for seed and Prisma implementations.
+- [x] Extend `@opencore/sdk` with typed login-log query/detail support.
+- [x] Replace the fixture-only Admin Login Logs page with a live read-only
+      audit trail for list/detail/current-page export.
+- [x] Add authenticated login-log smoke that verifies successful login,
+      failed-login recording, detail and export.
+- [x] Wire login-log smoke into both fixed-port local smoke and deploy scripts.
+- [x] Expose `ADMIN_API_BASE_URL` into the Admin browser bundle and make deploy
+      fail if the built JavaScript does not contain the configured public API
+      base URL.
+- [x] Add Admin static-server `/api/*` proxy and deploy-time same-origin login
+      smoke so API POSTs never fall through to a static-server 405.
+- [x] Keep this round scoped to immutable audit records; do not add delete,
+      clean, unlock, lockout-policy or session-management actions.
+- [x] Refresh OpenAPI snapshot and registry route/tag checks.
+- [x] Run focused, full, fixed-port smoke and deployment gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Explicitly Out Of Scope
 
 - Notice read/unread inbox, header badge and per-user read tracking.
@@ -273,4 +301,7 @@ page and a deployed Admin URL reachable outside the server.
 - File binary upload, presigned upload/download URLs, storage-provider config,
   public download/preview/copy-link workflows, batch file delete and object
   browser expansion.
+- Login-log deletion/cleanup, user unlock, lockout-policy tuning, session
+  termination, location/device enrichment, server-side date-range filters and
+  logType/result schema expansion.
 - CRM/ERP/MES/WMS/mall/member/pay/AI modules.

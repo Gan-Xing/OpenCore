@@ -732,3 +732,81 @@ The temporary `39173` API process was stopped after smoke verification.
   `097979c feat(core-file): productize file asset management / 产品化文件资产管理`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 11 Capability
+
+Capability: `core.login-log` productization plus Admin API base deploy
+hardening.
+
+Goal: turn the existing login-log audit runtime into a real login-protected
+Admin diagnostic loop with API detail, SDK detail support, OpenAPI, Admin page
+and smoke coverage, while permanently blocking the deployed frontend regression
+where login POSTs fall through to the Admin static server and return HTTP 405.
+
+## Round 11 Implemented
+
+- Added `GET /api/core/login-logs/:id`, guarded by `core:login-log:read`, and
+  refreshed the OpenAPI snapshot.
+- Extended `@opencore/audit` login-log repository/service contracts with
+  `getLoginLog` for seed and Prisma implementations.
+- Extended `@opencore/sdk` with `LoginLogQueryRequest`, typed list/export query
+  support and `getLoginLog`.
+- Replaced the fixture-only Admin Login Logs page with a live read-only page
+  using `@opencore/sdk` and platform service methods for list/detail/current-
+  page export.
+- Kept fallback fixtures only for API-unavailable page rendering; normal
+  logged-in use reads real audit rows.
+- Added `tools/scripts/smoke-core-login-log.mjs` and wired it into
+  `pnpm smoke:api:local` and `pnpm deploy:opencore`.
+- Updated Admin config so `process.env.ADMIN_API_BASE_URL` is defined into the
+  browser bundle during production builds.
+- Hardened deploy so it fails if the built Admin JavaScript does not contain
+  the configured public API base URL.
+- Added Admin static-server `/api/*` proxy plus deploy-time same-origin
+  `/api/auth/login` smoke, so relative API POSTs cannot return the static
+  server's 405.
+
+## Round 11 Verification
+
+- Script syntax checks pass:
+  `node --check tools/scripts/serve-admin-static.mjs &&
+node --check tools/scripts/smoke-core-login-log.mjs &&
+node --check apps/admin/scripts/smoke-test.mjs` and
+  `bash -n tools/scripts/deploy-local-opencore.sh tools/scripts/run-local-api-smoke.sh`.
+- `pnpm test:admin` pass after Admin smoke locked live login-log service/page
+  behavior and `ADMIN_API_BASE_URL` bundle exposure.
+- `FORCE_UTOOPACK= OPENCORE_ADMIN_BUNDLER=webpack ADMIN_API_BASE_URL=http://144.217.243.161:39172/api pnpm build:admin`
+  pass and emits `apps/admin/dist/umi.c9abe7a3.js`.
+- `rg -l --fixed-strings "http://144.217.243.161:39172/api" apps/admin/dist -g '*.js'`
+  returns `apps/admin/dist/umi.c9abe7a3.js`, proving the deployed browser bundle
+  will not use a relative `/api` base.
+- Full gate pass:
+  `pnpm format:check && pnpm lint && pnpm typecheck && pnpm test &&
+pnpm openapi:check && pnpm sdk:check && pnpm smoke:api:local`.
+- `pnpm smoke:api:local` pass on fixed port `39173` for config, file metadata
+  and login-log audit checks.
+
+## Round 11 Live Smoke
+
+Against the scripted temporary local API on fixed port `39173`:
+
+- `GET /health/live` returned 200.
+- `GET /health/ready` returned 200.
+- `GET /api/docs-json` returned 200 during config smoke.
+- `POST /api/auth/login` returned 201 with the seeded admin.
+- `GET /api/core/login-logs` returned 200.
+- A failed login using a generated username returned 401/403.
+- `GET /api/core/login-logs?username=<generated>&success=false` returned the
+  recorded failed-login row.
+- `GET /api/core/login-logs/:id` returned 200 for that failed-login row.
+- `GET /api/core/login-logs/export?username=<generated>&success=false`
+  returned `current-page` export preview.
+
+The temporary `39173` API process was stopped after smoke verification.
+
+## Round 11 Commit Record
+
+- Feature commit:
+  `40d879c feat(core-login-log): productize login log audit trail / 产品化登录日志审计链路`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

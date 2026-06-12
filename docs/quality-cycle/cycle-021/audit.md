@@ -267,3 +267,33 @@ metadata model: original name, MIME type, size, storage key, checksum, uploader
 and created time. It does not introduce binary upload, presigned URLs, public
 download/preview endpoints, storage-provider configuration, copy-link
 workflows, batch delete or object-browser expansion.
+
+## Round 11 Audit: core.login-log
+
+After Round 10, the next lowest dependency productization gap is
+`core.login-log`:
+
+- `apps/api/src/modules/core/system-management/system-management.controller.ts`
+  exposed `/api/core/login-logs` list/export, but lacked
+  `GET /api/core/login-logs/:id`.
+- `@opencore/audit` already recorded login attempts and exposed seed/Prisma
+  login-log repositories, but the repository/service contracts had no single
+  record lookup.
+- `@opencore/sdk` exposed login-log list/export methods, but lacked typed
+  detail support and a reusable query request type.
+- `apps/admin/src/pages/Security/LoginLogs.tsx` was still a fixture-backed
+  `SystemManagementTable`, so it did not prove a logged-in operator could read
+  real failed-login audit rows or open details.
+- Fixed-port smoke covered config and file metadata, but did not assert that a
+  failed login was recorded and readable through the API.
+- The deployed Admin bundle compiled `process.env.ADMIN_API_BASE_URL` to an
+  empty relative base, so browser login POSTs hit
+  `http://144.217.243.161:39174/api/auth/login`; the Admin static server only
+  accepted GET/HEAD and returned 405.
+
+This remains inside S7/S8 Security audit scope and admits OpenCore's current
+immutable login-log model: ID, username, IP, success flag, request ID, failure
+reason and creation time. It does not introduce login-log deletion/cleanup,
+user unlock, lockout-policy changes, active session termination, location/
+device enrichment, server-side date-range filters or logType/result schema
+expansion.

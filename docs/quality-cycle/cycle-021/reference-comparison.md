@@ -294,3 +294,32 @@ package-owned metadata model:
 OpenCore does not admit binary upload, presigned upload/download URLs,
 storage-provider configuration, public download/preview/copy-link workflows,
 batch delete or object-browser expansion in this round.
+
+## Round 11 Login Log Reference Shape
+
+RuoYi keeps login-log management under System/Monitor security operations. Its
+standard shape centers on login information query, export, delete/clean and
+unlock-oriented operations, with filters such as username, IP address, status
+and login time.
+
+Yudao keeps login logs under System. The Admin reference exposes page query,
+export and row detail. Its response model includes ID, log type, trace ID, user
+identity fields, username, result/status, IP, user agent and create time. The
+backend reference exposes page, export and detail routes guarded by
+`system:login-log:query` and `system:login-log:export`.
+
+OpenCore admits the bounded loop that matches the current immutable audit
+model:
+
+- list, detail and current-page export for login-log records;
+- stable `id` identity for detail;
+- authenticated Admin page with live read-only rows and detail drawer;
+- smoke coverage that performs a failed login, waits for the audit row, reads
+  detail and exports the filtered current page;
+- deploy hardening that embeds the public Admin API base URL and proxies
+  same-origin Admin `/api/*` requests to the API.
+
+OpenCore does not admit login-log deletion/cleanup, user unlock,
+lockout-policy/session actions, location/device enrichment, server-side
+date-range filters or schema expansion for logType/result/user-agent fields in
+this round.
