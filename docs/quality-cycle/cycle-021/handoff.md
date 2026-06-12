@@ -3,8 +3,8 @@
 Date: 2026-06-12  
 Repository: `Gan-Xing/OpenCore`  
 Default branch: `main`  
-Latest observed feature commit: `4b0fa58 feat(core-menu): add tree metadata loop / 新增菜单树元数据闭环`  
-Latest deployed feature commit: `4b0fa58 feat(core-menu): add tree metadata loop / 新增菜单树元数据闭环`  
+Latest observed feature commit: `13168fc feat(core-role): add role menu assignment loop / 新增角色菜单授权闭环`
+Latest deployed feature commit: `13168fc feat(core-role): add role menu assignment loop / 新增角色菜单授权闭环`
 Latest deployed hardening commit: `f4569a4 fix(api): tolerate duplicated API prefix on login / 兼容登录重复 API 前缀`
 
 ## One-sentence Goal
@@ -57,6 +57,7 @@ productization waterline completion; see
 - Round 14 `monitor.online-user` revocation stage 2
 - Round 15 `core.file` content stage 2
 - Round 16 `core.menu` tree metadata stage 2
+- Round 17 `core.role` menu assignment stage 2
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -108,6 +109,14 @@ parent tree、type、icon、component、status、cache、hidden 元数据，Admi
 和删除仍有子节点的父菜单。固定 smoke 和公网验证都证明父子创建、删除保护以及
 `parentKey: null` 清空语义可用。
 
+Round 17 开始补齐 P1 `core.role`/`core.user` 队列：`core.role` 现在有角色菜单树
+授权 API/SDK/Admin 闭环。后端将选中的 menu keys 转换成菜单绑定的 permission
+codes，同时保留非菜单权限；API 保存后会撤销所有持有该角色用户的 active
+online-user sessions，固定 smoke 和公网验证均证明旧 token 再访问 `/api/auth/me`
+返回 401，重新登录后权限刷新生效。Admin Roles 页面新增行级 Menu Assignment 树
+弹窗，部署 Admin chunk 已验证包含 `Menu Assignment`、`checkedMenuKeys` 和
+`revokedSessionCount` 标记。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -116,7 +125,7 @@ The productization waterline now classifies:
   `core.audit-log`, Round 13/14 `monitor.online-user`, Round 10/15
   `core.file`, Round 4/16 `core.menu`.
 - First loop, enhance: Round 1 `core.notice`, Round 2 `core.dept`, Round 3
-  `core.post`, Round 5 `core.role`, Round 7 `core.user`, Round 8
+  `core.post`, Round 5/17 `core.role`, Round 7 `core.user`, Round 8
   `core.dict`, Round 9 `core.config`, Round 11 `core.login-log`.
 - Thin, rework: none after Round 16.
 
@@ -124,9 +133,11 @@ The P0 remediation queue from the post-Round 13 re-audit is now clear. The next
 round should continue with the P1 enhancement queue unless a new waterline audit
 finds another blocker:
 
-1. `core.role` plus `core.user`: role-user assignment, role menu-tree
-   assignment or equivalent permission bundle UX, status/reset-password flows
-   and token/session refresh semantics after RBAC/user mutation.
+1. `core.role` plus `core.user`: role-user assignment, user
+   status/reset-password flows and token/session refresh semantics after
+   RBAC/user mutation. Round 17 has closed the role menu-tree assignment and
+   role-permission session revocation slice; remaining work is role-user
+   assignment, user status/reset-password and user-mutation session semantics.
 2. `core.dict`: separate dict data workflow or a clearly equivalent item
    management API, simple-list/cache endpoints and consumer smoke.
 3. `core.config`: get-by-key, cache refresh/invalidation and runtime

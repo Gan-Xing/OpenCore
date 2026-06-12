@@ -128,6 +128,8 @@ This remains inside S6 RBAC scope and admits the existing OpenCore
 `Role.code`, permission-code assignment and data-scope model. It does not
 introduce role-user assignment pages, menu-tree assignment, simple-list option
 endpoints, batch delete, standalone data-scope endpoints or status toggles.
+Round 17 later closes the menu-tree assignment and role-permission session
+revocation portion of this gap.
 
 ## Round 6 Audit: core.permission
 
@@ -160,6 +162,8 @@ system entries, while allowing custom permissions to be created, edited,
 exported and deleted. It does not introduce registry definition editing,
 dynamic permission discovery, menu-tree role assignment, user-role assignment or
 token permission refresh semantics.
+Round 17 later closes the menu-tree role assignment and role-permission session
+revocation portion of this gap.
 
 ## Round 7 Audit: core.user
 

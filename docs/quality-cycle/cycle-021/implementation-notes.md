@@ -1192,3 +1192,75 @@ Against public endpoints after deploy:
   `4b0fa58 feat(core-menu): add tree metadata loop / 新增菜单树元数据闭环`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 17 Capability
+
+Capability: `core.role` menu assignment productization.
+
+Goal: close the first `core.role` P1 RBAC gap by adding a role menu-tree
+assignment loop that works with OpenCore's permission catalog and makes
+role-permission mutation invalidate affected active sessions.
+
+## Round 17 Implemented
+
+- Added `AssignRoleMenusDto` and `RoleMenuAssignmentDto` to `@opencore/system`.
+- Added `SystemRoleService.getRoleMenuAssignment()` and
+  `SystemRoleService.assignRoleMenus()`.
+- Mapped selected menu keys to menu-bound permission codes while preserving
+  non-menu permission codes such as action-level grants.
+- Imported `SystemMenuModule` into `SystemRoleModule` so the role service owns
+  menu/permission translation instead of duplicating it in the API controller.
+- Added `GET /api/core/roles/:code/menus` and
+  `PATCH /api/core/roles/:code/menus`.
+- Revoked active online-user sessions for users holding the changed role after
+  role menu assignment.
+- Extended OpenAPI and `@opencore/sdk` with role menu assignment types and
+  client methods.
+- Added Admin Roles row-level Menu Assignment tree dialog backed by SDK service
+  methods.
+- Added `tools/scripts/smoke-core-role.mjs` and wired it into both
+  `pnpm smoke:api:local` and `pnpm deploy:opencore`.
+- Hardened Admin lint so it generates Umi runtime types before running `tsc`.
+
+## Round 17 Verification
+
+- `node --check tools/scripts/smoke-core-role.mjs` pass.
+- Focused tests pass:
+  - `pnpm nx test system --testFile=packages/system/src/system-role/system-role.spec.ts`
+  - `pnpm nx test sdk --testFile=packages/sdk/src/rbac-client.spec.ts`
+  - `pnpm nx test api --testFile=apps/api/src/modules/core/rbac/rbac.permission-matrix.spec.ts`
+- Focused typecheck pass for `system`, `sdk`, `api` and `admin`.
+- `pnpm openapi:export`, `pnpm sdk:check`, `pnpm openapi:check`,
+  `pnpm openapi:registry-tags:check` and `pnpm registry:admin-routes:check`
+  pass.
+- `pnpm smoke:api:local` pass on fixed port `39173`, including
+  `core.role.menu-assignment.get`,
+  `core.role.menu-assignment.patch`,
+  `core.role.menu-assignment.preserve-non-menu-permission`,
+  `core.role.menu-assignment.revoke-session` and
+  `core.role.menu-assignment.relogin-refresh`.
+- Full gates pass: `pnpm format:check`, `pnpm lint`, `pnpm typecheck`,
+  `pnpm test`, `pnpm build` and `pnpm prisma:validate`.
+- `pnpm deploy:opencore` pass, deploying API/Admin on fixed ports
+  `39172`/`39174`; deploy smoke includes `core.role.menu-assignment.*`.
+
+## Round 17 Public Verification
+
+Against public endpoints after deploy:
+
+- `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 node
+tools/scripts/smoke-core-role.mjs` passed with `OPENCORE_SMOKE_CHECK_DOCS=false`.
+- Public role smoke verified menu assignment get/patch, preserved non-menu
+  permission, revoked old token 401 and relogin permission refresh.
+- `GET http://144.217.243.161:39174/system/roles/index.html` returned 200.
+- The deployed Admin Roles chunk
+  `p__System__Roles.f1229292.async.js` contains `Menu Assignment`,
+  `checkedMenuKeys`, `assignOpenCoreRoleMenus`,
+  `getOpenCoreRoleMenuAssignment` and `revokedSessionCount` markers.
+
+## Round 17 Commit Record
+
+- Feature commit:
+  `13168fc feat(core-role): add role menu assignment loop / 新增角色菜单授权闭环`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

@@ -146,6 +146,8 @@ package-owned role model:
 OpenCore does not admit role-user assignment, role menu-tree assignment,
 simple-list endpoints, batch delete, separate data-scope update endpoints,
 status toggles or token permission refresh semantics in this round.
+Round 17 later closes the role menu-tree assignment and role-permission session
+revocation portion of this gap.
 
 ## Round 6 Permission Reference Shape
 
@@ -175,6 +177,8 @@ loop that matches that model:
 OpenCore does not admit registry definition editing, dynamic permission
 discovery, role menu-tree assignment, user-role assignment, cache/menu refresh
 or token permission refresh semantics in this round.
+Round 17 later closes the role menu-tree assignment and role-permission session
+revocation portion of this gap.
 
 ## Round 7 User Reference Shape
 
@@ -471,6 +475,33 @@ model:
 - fixed-port smoke creates parent and child menus, verifies the delete guard,
   clears a parent with `null` and checks seed route metadata.
 
-OpenCore still does not admit role menu-tree assignment, drag-sort/save-sort,
-menu cache refresh endpoints, runtime router generation or dynamic registry
-editing in this round.
+OpenCore still does not admit drag-sort/save-sort, menu cache refresh
+endpoints, runtime router generation or dynamic registry editing in this
+round. Role menu-tree assignment is handled by the following Round 17 role
+authorization loop.
+
+## Round 17 Role Menu Assignment Reference Shape
+
+RuoYi exposes a role menu tree workflow through menu-tree selection endpoints
+that return checked menu keys for a role. Yudao exposes the same product shape
+through permission endpoints that list a role's menu ids and assign menus to a
+role, alongside user-role assignment APIs.
+
+OpenCore admits the matching stage-2 loop within its registry-owned permission
+catalog:
+
+- `GET /api/core/roles/:code/menus` returns the role's checked menu keys, the
+  available menu metadata, menu-bound permission codes and preserved non-menu
+  permission codes;
+- `PATCH /api/core/roles/:code/menus` accepts menu keys, maps them to the
+  menus' permission codes and preserves non-menu permission codes such as
+  action-level grants;
+- the API revokes active online-user sessions for every user currently holding
+  the changed role, so old bearer sessions cannot continue after RBAC mutation;
+- Admin Roles adds a row-level Menu Assignment tree dialog backed by SDK methods
+  instead of hand-written request paths;
+- fixed-port and public smoke prove menu assignment, preserved non-menu
+  permissions, revoked old token 401 and relogin permission refresh.
+
+OpenCore still does not admit role-user assignment, role status toggle, batch
+role operations or user reset-password/status mutation semantics in this round.

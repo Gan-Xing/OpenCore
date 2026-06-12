@@ -448,8 +448,9 @@ treat "minimal loop" as "minimal final product".
       and ordered tree operations.
 - [ ] Round 3 `core.post`: user-post binding, simple-list option endpoints and
       batch operations.
-- [ ] Round 5 `core.role`: role-user assignment, menu-tree assignment or
-      equivalent bundle UX, status flow and token permission refresh semantics.
+- [ ] Round 5/17 `core.role`: role menu-tree assignment and role-permission
+      session revocation are complete; role-user assignment, status flow and
+      remaining token/session refresh semantics still need enhancement.
 - [ ] Round 7 `core.user`: reset password, status toggle, side-tree filtering,
       post binding, profile/avatar and token/session refresh semantics.
 - [ ] Round 8 `core.dict`: separate dict data workflow or equivalent item API,
@@ -492,12 +493,12 @@ treat "minimal loop" as "minimal final product".
 - Batch department deletion or drag-sort persistence.
 - User-post binding and user profile post selection.
 - Batch post deletion and simple-list option endpoints.
-- Menu router-generation expansion, role menu tree assignment, menu cache
-  refresh, save-sort and drag-sort persistence.
+- Menu router-generation expansion, menu cache refresh, save-sort and drag-sort
+  persistence.
 - Role-user assignment pages, role simple-list endpoints, batch role deletion,
   standalone data-scope endpoint and role status toggle.
-- Registry definition editing, dynamic permission discovery, menu-tree role
-  assignment, user-role assignment and token permission refresh after permission
+- Registry definition editing, dynamic permission discovery, user-role
+  assignment and remaining token/session refresh after user-role or user
   mutation.
 - User Excel import/export file workflows, reset-password endpoint,
   status-toggle endpoint, dedicated user-role assignment dialog,

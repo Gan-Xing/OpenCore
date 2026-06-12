@@ -29,21 +29,21 @@ A capability reaches the current OpenCore productization waterline only when:
 
 ## Classification
 
-| Round | Capability            | Status                  | Reason                                                                                                                                                                                                                      |
-| ----- | --------------------- | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1     | `core.notice`         | First loop, enhance     | Management CRUD is live, but read/unread state, notification inbox/header badge and delivery semantics remain below a full notice product.                                                                                  |
-| 2     | `core.dept`           | First loop, enhance     | Tree CRUD and delete guard are live, but user binding, data-scope workflows and ordered tree operations still need follow-up.                                                                                               |
-| 3     | `core.post`           | First loop, enhance     | Post CRUD is live, but user-post binding, simple-list option endpoints and batch operations are still missing from the foundation workflow.                                                                                 |
-| 4/16  | `core.menu`           | Meets current waterline | Round 16 closed the flat-model gap: menus now persist parent tree metadata, type, icon/component/status/cache fields, Admin tree operations, delete guards, nullable parent clearing and smoke coverage.                    |
-| 5     | `core.role`           | First loop, enhance     | Role CRUD, permission-code assignment and data scope are live, but role-user assignment, menu-tree assignment/status flows and token permission refresh semantics remain core RBAC gaps.                                    |
-| 6     | `core.permission`     | Meets current waterline | OpenCore deliberately owns a persisted permission catalog. System/custom separation, registry mutation protection, live Admin CRUD for custom permissions and role option integration are enough for this product boundary. |
-| 7     | `core.user`           | First loop, enhance     | User CRUD with role/dept selection is live, but reset password, status toggle, side-tree filtering, post binding, profile/avatar and token/session refresh semantics remain basic admin expectations.                       |
-| 8     | `core.dict`           | First loop, enhance     | Dict type plus embedded items is live, but separate dict-data operations, simple-list/cache endpoints and public option consumption remain platform gaps.                                                                   |
-| 9     | `core.config`         | First loop, enhance     | Config CRUD and secret redaction are live, but get-by-key, cache refresh, category/name/remark enrichment and runtime propagation are still missing.                                                                        |
-| 10/15 | `core.file`           | Meets current waterline | Round 15 closed the metadata-only gap: authenticated upload writes real content through `FileStorageService`, download returns stored bytes, Admin can upload/download, and smoke proves content equality.                  |
-| 11    | `core.login-log`      | First loop, enhance     | Immutable list/detail/export and failed-login smoke are live, but device/browser/OS/IP enrichment, date filters, cleanup/unlock policy integration and session actions are still below reference depth.                     |
-| 12    | `core.audit-log`      | Meets current waterline | Immutable operation audit list/detail/export is live and smoke proves a real write operation is recorded. Delete/clean remains an intentional audit-retention policy decision, not a current product blocker.               |
-| 13/14 | `monitor.online-user` | Meets current waterline | Round 14 closed the Round 13 thin loop: bearer auth now checks online-session state, batch kick-out revokes real sessions, smoke proves kicked tokens return 401, and browser/OS/IP fields reach SDK/Admin.                 |
+| Round | Capability            | Status                  | Reason                                                                                                                                                                                                                                                             |
+| ----- | --------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1     | `core.notice`         | First loop, enhance     | Management CRUD is live, but read/unread state, notification inbox/header badge and delivery semantics remain below a full notice product.                                                                                                                         |
+| 2     | `core.dept`           | First loop, enhance     | Tree CRUD and delete guard are live, but user binding, data-scope workflows and ordered tree operations still need follow-up.                                                                                                                                      |
+| 3     | `core.post`           | First loop, enhance     | Post CRUD is live, but user-post binding, simple-list option endpoints and batch operations are still missing from the foundation workflow.                                                                                                                        |
+| 4/16  | `core.menu`           | Meets current waterline | Round 16 closed the flat-model gap: menus now persist parent tree metadata, type, icon/component/status/cache fields, Admin tree operations, delete guards, nullable parent clearing and smoke coverage.                                                           |
+| 5/17  | `core.role`           | First loop, enhance     | Role CRUD, permission-code assignment, data scope and role menu-tree assignment are live. Round 17 also revokes active sessions for users holding a role after menu-permission mutation. Role-user assignment, role status and broader user mutation flows remain. |
+| 6     | `core.permission`     | Meets current waterline | OpenCore deliberately owns a persisted permission catalog. System/custom separation, registry mutation protection, live Admin CRUD for custom permissions and role option integration are enough for this product boundary.                                        |
+| 7     | `core.user`           | First loop, enhance     | User CRUD with role/dept selection is live, but reset password, status toggle, side-tree filtering, post binding, profile/avatar and token/session refresh semantics remain basic admin expectations.                                                              |
+| 8     | `core.dict`           | First loop, enhance     | Dict type plus embedded items is live, but separate dict-data operations, simple-list/cache endpoints and public option consumption remain platform gaps.                                                                                                          |
+| 9     | `core.config`         | First loop, enhance     | Config CRUD and secret redaction are live, but get-by-key, cache refresh, category/name/remark enrichment and runtime propagation are still missing.                                                                                                               |
+| 10/15 | `core.file`           | Meets current waterline | Round 15 closed the metadata-only gap: authenticated upload writes real content through `FileStorageService`, download returns stored bytes, Admin can upload/download, and smoke proves content equality.                                                         |
+| 11    | `core.login-log`      | First loop, enhance     | Immutable list/detail/export and failed-login smoke are live, but device/browser/OS/IP enrichment, date filters, cleanup/unlock policy integration and session actions are still below reference depth.                                                            |
+| 12    | `core.audit-log`      | Meets current waterline | Immutable operation audit list/detail/export is live and smoke proves a real write operation is recorded. Delete/clean remains an intentional audit-retention policy decision, not a current product blocker.                                                      |
+| 13/14 | `monitor.online-user` | Meets current waterline | Round 14 closed the Round 13 thin loop: bearer auth now checks online-session state, batch kick-out revokes real sessions, smoke proves kicked tokens return 401, and browser/OS/IP fields reach SDK/Admin.                                                        |
 
 ## Remediation Queue
 
@@ -66,9 +66,10 @@ Remaining P0 rework before opening more broad product surfaces:
 
 P1 enhancement queue:
 
-1. `core.role` plus `core.user`: role-user assignment, role menu-tree
-   assignment or equivalent permission bundle UX, status/reset-password flows
-   and token/session refresh semantics after RBAC/user mutation.
+1. `core.role` plus `core.user`: role-user assignment, role status, user
+   status/reset-password flows and token/session refresh semantics after
+   user-role/user mutation. Round 17 completed role menu-tree assignment and
+   role-permission session revocation.
 2. `core.dict`: separate dict data workflow or a clearly equivalent item
    management API, simple-list/cache endpoints and consumer smoke.
 3. `core.config`: get-by-key, cache refresh/invalidation and runtime
