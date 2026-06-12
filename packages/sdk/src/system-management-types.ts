@@ -235,6 +235,12 @@ export type AuditLogSummary = {
   createdAt: string;
 };
 
+export type AuditLogQueryRequest = PageRequest & {
+  actorUsername?: string;
+  action?: string;
+  resource?: string;
+};
+
 export type LoginLogSummary = {
   id: string;
   username: string;

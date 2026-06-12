@@ -1,5 +1,6 @@
 import type { SdkRequest } from './rbac-client';
 import type {
+  AuditLogQueryRequest,
   AuditLogSummary,
   CreateDictTypeRequest,
   CreateFileAssetRequest,
@@ -143,11 +144,12 @@ export type SystemManagementClient = {
   deleteNotice: (token: Token, id: string) => Promise<DeleteResult>;
   listAuditLogs: (
     token: Token,
-    query?: PageRequest,
+    query?: AuditLogQueryRequest,
   ) => Promise<PageResponse<AuditLogSummary>>;
+  getAuditLog: (token: Token, id: string) => Promise<AuditLogSummary>;
   exportAuditLogs: (
     token: Token,
-    query?: PageRequest,
+    query?: AuditLogQueryRequest,
   ) => Promise<ExportPreview>;
   listLoginLogs: (
     token: Token,
@@ -373,6 +375,10 @@ export function createSystemManagementClient(
           token,
         },
       ),
+    getAuditLog: (token, id) =>
+      request<AuditLogSummary>(`/core/audit-logs/${encodeURIComponent(id)}`, {
+        token,
+      }),
     exportAuditLogs: (token, query) =>
       request<ExportPreview>(withQuery('/core/audit-logs/export', query), {
         token,

@@ -40,6 +40,7 @@
     "sdk:check": "node tools/scripts/check-sdk-generate.mjs",
     "sdk:generate": "node tools/scripts/check-sdk-generate.mjs",
     "smoke:api:local": "bash tools/scripts/run-local-api-smoke.sh",
+    "smoke:core-audit-log": "node tools/scripts/smoke-core-audit-log.mjs",
     "smoke:core-config": "node tools/scripts/smoke-core-config.mjs",
     "smoke:core-file": "node tools/scripts/smoke-core-file.mjs",
     "smoke:core-login-log": "node tools/scripts/smoke-core-login-log.mjs",

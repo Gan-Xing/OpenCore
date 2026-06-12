@@ -57,6 +57,7 @@ import {
   UpdateSystemConfigDto,
   UpdateSystemNoticeDto,
   UpdateSystemPostDto,
+  AuditLogDto,
 } from './system-management.dto';
 import { SystemManagementRepository } from './system-management.repository';
 
@@ -416,6 +417,14 @@ export class SystemManagementController {
   @ApiOkResponse({ type: ExportPreviewDto })
   exportAuditLogs(@Query() query: AuditLogQueryDto): Promise<ExportPreviewDto> {
     return this.operationLogs.createExportPreview(query);
+  }
+
+  @Get('audit-logs/:id')
+  @ApiTags('Core Audit Logs')
+  @RequirePermission('core:audit-log:read')
+  @ApiOkResponse({ type: AuditLogDto })
+  getAuditLog(@Param('id') id: string): Promise<AuditLogDto> {
+    return this.operationLogs.getOperationLog(id);
   }
 
   @Get('login-logs')

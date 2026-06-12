@@ -27,7 +27,14 @@ describe('createSystemManagementClient', () => {
     await client.updateConfig('token', 'opencore.sample.enabled', {
       value: 'false',
     });
-    await client.exportAuditLogs('token');
+    await client.listAuditLogs('token', {
+      action: 'POST',
+      page: 1,
+      pageSize: 10,
+      resource: '/api/core/config',
+    });
+    await client.getAuditLog('token', 'audit_config_create');
+    await client.exportAuditLogs('token', { action: 'POST' });
     await client.listLoginLogs('token', {
       page: 1,
       pageSize: 10,
@@ -118,7 +125,15 @@ describe('createSystemManagementClient', () => {
         token: 'token',
       },
       {
-        path: '/core/audit-logs/export',
+        path: '/core/audit-logs?action=POST&page=1&pageSize=10&resource=%2Fapi%2Fcore%2Fconfig',
+        token: 'token',
+      },
+      {
+        path: '/core/audit-logs/audit_config_create',
+        token: 'token',
+      },
+      {
+        path: '/core/audit-logs/export?action=POST',
         token: 'token',
       },
       {

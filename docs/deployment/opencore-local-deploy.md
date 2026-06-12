@@ -14,9 +14,12 @@ occupied, the command fails with the specific port to free or override.
 
 Admin listens on `0.0.0.0` by default and the Admin build uses the detected
 server address for `ADMIN_API_BASE_URL`, so a browser outside the server can
-open the deployed UI. Override `OPENCORE_DEPLOY_PUBLIC_HOST` when the detected
-address is not the public address you want to use. The deploy script refuses to
-continue if the built Admin JavaScript does not contain that API base URL.
+open the deployed UI. `ADMIN_API_BASE_URL` must be the API origin without
+`/api`, because the Admin SDK request helper prefixes `/api` itself. Override
+`OPENCORE_DEPLOY_PUBLIC_HOST` when the detected address is not the public
+address you want to use. The deploy script refuses to continue if the built
+Admin JavaScript does not contain that API base URL, or if the configured value
+ends with `/api`.
 
 The Admin static server also proxies `/api/*` to the deployed API. This keeps
 login and authenticated requests working even if a browser tries the same-origin
@@ -65,7 +68,7 @@ OPENCORE_DEPLOY_API_PORT=39172
 OPENCORE_DEPLOY_ADMIN_PORT=39174
 OPENCORE_DEPLOY_PUBLIC_HOST=144.217.243.161
 OPENCORE_DEPLOY_ADMIN_HOST=0.0.0.0
-OPENCORE_DEPLOY_ADMIN_API_BASE_URL=http://144.217.243.161:39172/api
+OPENCORE_DEPLOY_ADMIN_API_BASE_URL=http://144.217.243.161:39172
 OPENCORE_SMOKE_SEED=true
 OPENCORE_DEPLOY_SEED=true
 OPENCORE_DEPLOY_NODE_ENV=development

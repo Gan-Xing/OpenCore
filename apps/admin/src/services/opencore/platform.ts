@@ -2,6 +2,8 @@ import {
   createMonitoringClient,
   createRbacClient,
   createSystemManagementClient,
+  type AuditLogQueryRequest,
+  type AuditLogSummary,
   type CreateDictTypeRequest,
   type CreateFileAssetRequest,
   type CreateMenuRequest,
@@ -249,6 +251,24 @@ export async function listOpenCoreLoginLogs(
 
 export function getOpenCoreLoginLog(id: string): Promise<LoginLogSummary> {
   return systemManagementClient.getLoginLog(getRequiredAdminToken(), id);
+}
+
+export async function listOpenCoreAuditLogs(
+  query?: AuditLogQueryRequest,
+): Promise<AuditLogSummary[]> {
+  const page = await systemManagementClient.listAuditLogs(
+    getRequiredAdminToken(),
+    {
+      page: 1,
+      pageSize: 100,
+      ...query,
+    },
+  );
+  return [...page.items];
+}
+
+export function getOpenCoreAuditLog(id: string): Promise<AuditLogSummary> {
+  return systemManagementClient.getAuditLog(getRequiredAdminToken(), id);
 }
 
 export function listOpenCoreMenus(): Promise<MenuSummary[]> {

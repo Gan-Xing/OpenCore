@@ -1935,6 +1935,31 @@
         "tags": ["SystemManagement", "Core Audit Logs"]
       }
     },
+    "/api/core/audit-logs/{id}": {
+      "get": {
+        "operationId": "SystemManagementController_getAuditLog",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AuditLogDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Audit Logs"]
+      }
+    },
     "/api/core/login-logs": {
       "get": {
         "operationId": "SystemManagementController_listLoginLogs",

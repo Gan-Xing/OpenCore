@@ -243,6 +243,8 @@ if (
   !opencorePlatformService.includes('createOpenCoreFile') ||
   !opencorePlatformService.includes('updateOpenCoreFile') ||
   !opencorePlatformService.includes('deleteOpenCoreFile') ||
+  !opencorePlatformService.includes('listOpenCoreAuditLogs') ||
+  !opencorePlatformService.includes('getOpenCoreAuditLog') ||
   !opencorePlatformService.includes('listOpenCoreLoginLogs') ||
   !opencorePlatformService.includes('getOpenCoreLoginLog') ||
   !opencorePlatformService.includes('listOpenCoreUsers') ||
@@ -663,6 +665,21 @@ if (
 }
 
 if (
+  !auditLogsPage.includes('listOpenCoreAuditLogs') ||
+  !auditLogsPage.includes('getOpenCoreAuditLog') ||
+  !auditLogsPage.includes('useCurrentPageFilters') ||
+  !auditLogsPage.includes('CurrentPageExportButton') ||
+  !auditLogsPage.includes('dataSource={filteredRows}') ||
+  !auditLogsPage.includes('rows={filteredRows}') ||
+  !auditLogsPage.includes('Read-only audit trail') ||
+  !auditLogsPage.includes('jsonSections=')
+) {
+  throw new Error(
+    'Operation Logs page must use live SDK detail/list with bounded filtering, metadata detail and current-page export.',
+  );
+}
+
+if (
   !loginLogsPage.includes('listOpenCoreLoginLogs') ||
   !loginLogsPage.includes('getOpenCoreLoginLog') ||
   !loginLogsPage.includes('useCurrentPageFilters') ||
@@ -886,7 +903,7 @@ if (
   );
 }
 
-const coreFilteredPages = [{ name: 'operation logs', source: auditLogsPage }];
+const coreFilteredPages = [];
 
 for (const page of coreFilteredPages) {
   if (

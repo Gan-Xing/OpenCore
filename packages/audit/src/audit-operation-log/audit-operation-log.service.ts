@@ -21,6 +21,10 @@ export class AuditOperationLogService {
     return this.repository.listOperationLogs(query);
   }
 
+  getOperationLog(id: string): Promise<AuditOperationLogRecord> {
+    return this.repository.getOperationLog(id);
+  }
+
   recordOperation(record: CreateAuditOperationLogRecord): Promise<void> {
     return this.repository.recordOperation(record);
   }

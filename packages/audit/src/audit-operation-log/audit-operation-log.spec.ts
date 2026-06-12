@@ -96,6 +96,14 @@ describe('@opencore/audit audit-operation-log', () => {
         }),
       ],
     });
+    await expect(service.getOperationLog('audit_3')).resolves.toMatchObject({
+      requestId: 'req_seed_audit_create',
+      metadata: {
+        body: {
+          password: '[REDACTED]',
+        },
+      },
+    });
     await expect(service.createExportPreview()).resolves.toMatchObject({
       filename: 'opencore-audit-logs.csv',
       scope: 'current-page',
@@ -272,6 +280,20 @@ describe('@opencore/audit audit-operation-log', () => {
           }),
         ],
       });
+      const page = await service.listOperationLogs({
+        resource: `test.resource.${testRunId}`,
+      });
+      const recordedLog = page.items[0];
+
+      await expect(service.getOperationLog(recordedLog.id)).resolves.toEqual(
+        expect.objectContaining({
+          id: recordedLog.id,
+          requestId,
+          metadata: {
+            authorization: '[REDACTED]',
+          },
+        }),
+      );
     });
 
     async function cleanupTestRows(): Promise<void> {

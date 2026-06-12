@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
 import { PrismaService } from '@opencore/database';
 import { Prisma } from '@prisma/client';
@@ -65,6 +65,18 @@ export class PrismaAuditOperationLogRepository extends AuditOperationLogReposito
       rows.map(toAuditOperationLogRecord),
       pagination,
     );
+  }
+
+  async getOperationLog(id: string): Promise<AuditOperationLogRecord> {
+    const log = await this.prisma.auditLog.findUnique({
+      where: { id },
+    });
+
+    if (!log) {
+      throw new NotFoundException(`Audit operation log ${id} was not found`);
+    }
+
+    return toAuditOperationLogRecord(log);
   }
 
   async recordOperation(record: CreateAuditOperationLogRecord): Promise<void> {

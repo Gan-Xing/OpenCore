@@ -12,7 +12,7 @@ PUBLIC_HOST="${PUBLIC_HOST:-127.0.0.1}"
 API_PUBLIC_BASE_URL="${OPENCORE_DEPLOY_PUBLIC_API_BASE_URL:-http://$PUBLIC_HOST:$API_PORT}"
 ADMIN_PUBLIC_BASE_URL="${OPENCORE_DEPLOY_PUBLIC_ADMIN_BASE_URL:-http://$PUBLIC_HOST:$ADMIN_PORT}"
 ADMIN_LISTEN_HOST="${OPENCORE_DEPLOY_ADMIN_HOST:-0.0.0.0}"
-ADMIN_API_BASE_URL_VALUE="${OPENCORE_DEPLOY_ADMIN_API_BASE_URL:-$API_PUBLIC_BASE_URL/api}"
+ADMIN_API_BASE_URL_VALUE="${OPENCORE_DEPLOY_ADMIN_API_BASE_URL:-$API_PUBLIC_BASE_URL}"
 RUN_DIR="$ROOT_DIR/.opencore/run"
 API_PID_FILE="$RUN_DIR/opencore-api.pid"
 ADMIN_PID_FILE="$RUN_DIR/opencore-admin.pid"
@@ -61,6 +61,14 @@ NODE
 }
 
 verify_admin_bundle_api_base_url() {
+  case "$ADMIN_API_BASE_URL_VALUE" in
+    */api | */api/)
+      echo "ADMIN_API_BASE_URL must be the API origin without /api: $ADMIN_API_BASE_URL_VALUE" >&2
+      echo "The Admin SDK request helper prefixes /api itself; including /api here produces /api/api requests." >&2
+      exit 1
+      ;;
+  esac
+
   if grep -R \
     --fixed-strings \
     --include='*.js' \
@@ -341,6 +349,11 @@ run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
   node "$ROOT_DIR/tools/scripts/smoke-core-file.mjs"
+
+run_with_env env \
+  OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \
+  OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
+  node "$ROOT_DIR/tools/scripts/smoke-core-audit-log.mjs"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \

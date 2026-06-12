@@ -44,6 +44,8 @@ export abstract class AuditOperationLogRepository {
     query?: AuditOperationLogQuery,
   ): Promise<PageResult<AuditOperationLogRecord>>;
 
+  abstract getOperationLog(id: string): Promise<AuditOperationLogRecord>;
+
   abstract recordOperation(
     record: CreateAuditOperationLogRecord,
   ): Promise<void>;
