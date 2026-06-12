@@ -166,6 +166,28 @@ Admin page.
 - [x] Run focused, live HTTP smoke and full gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 8: core.dict Productization
+
+Why this slice: RuoYi and Yudao both treat dictionary management as a System
+foundation for status/type option data. OpenCore already had package-owned
+dictionary runtime and list/export/create/update/delete API routes, but lacked
+a detail read contract, SDK detail support and a live Admin page. This round
+admits OpenCore's current `DictType` plus embedded `items` model only.
+
+- [x] Add missing dict detail API contract.
+- [x] Extend `@opencore/system` dict repository/service contracts with
+      `getDict` for seed and Prisma implementations.
+- [x] Extend `@opencore/sdk` with typed dictionary detail support.
+- [x] Replace the read-only Admin Dictionaries fixture with a live SDK-backed
+      page for list/detail/current-page export plus create/update/delete
+      actions.
+- [x] Add embedded dict-item editing for the current OpenCore dictionary model.
+- [x] Extend Admin smoke checks to lock dictionary SDK lifecycle usage and page
+      behavior.
+- [x] Refresh OpenAPI snapshot and registry route/tag checks.
+- [x] Run focused, live HTTP smoke and full gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Explicitly Out Of Scope
 
 - Notice read/unread inbox, header badge and per-user read tracking.
@@ -188,4 +210,8 @@ Admin page.
   status-toggle endpoint, dedicated user-role assignment dialog,
   profile/avatar/social/simple-list endpoints, post binding, batch user delete,
   department side-tree filtering and token/session refresh after user mutation.
+- Separate dict-data module/page/endpoints, simple-list/cache endpoints, batch
+  dictionary delete, Excel import/export file workflows, dictionary
+  color/css/remark fields, app public dictionary endpoints and dictionary cache
+  refresh.
 - CRM/ERP/MES/WMS/mall/member/pay/AI modules.

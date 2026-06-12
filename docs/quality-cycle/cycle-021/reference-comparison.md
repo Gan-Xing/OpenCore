@@ -206,3 +206,32 @@ OpenCore does not admit Excel import workflows, reset-password/status-toggle
 endpoints, dedicated user-role assignment dialogs, profile/avatar/social
 endpoints, post binding, batch delete, department side-tree filtering,
 simple-list expansion or token/session refresh semantics in this round.
+
+## Round 8 Dictionary Reference Shape
+
+RuoYi keeps dictionary management under System with separate dictionary type and
+dictionary data surfaces. The reference shape includes type page/list/detail,
+create, update, delete and export; data page/list/detail, create, update,
+delete and export; status fields; dictionary data labels/values/sort; and
+seeded option dictionaries used by other System forms.
+
+Yudao keeps the same broad split between dictionary type and dictionary data.
+Its API shape includes page/list/detail/create/update/delete for both type and
+data, batch delete in selected flows, export support, simple-list/cache-facing
+dictionary APIs, status handling and richer data metadata such as color type,
+CSS class and remark fields.
+
+OpenCore admits the bounded management loop that matches the current
+package-owned dictionary model:
+
+- list, detail, current-page export, create, update and delete for dictionary
+  types;
+- stable `code` identity for detail/update/delete;
+- embedded dictionary item editing inside the dictionary type form;
+- logged-in Admin page and smoke coverage through the existing
+  `core.dict` route/access/shell metadata.
+
+OpenCore does not admit a separate dict-data module/page/endpoints,
+simple-list/cache endpoints, batch delete, Excel import/export file workflows,
+color/css/remark fields, app public dictionary endpoints or dictionary cache
+refresh in this round.

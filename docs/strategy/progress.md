@@ -2736,3 +2736,54 @@ pnpm registry:admin-routes:check && pnpm test:admin && pnpm sdk:check`。
 - Feature commit:
   `88c428f feat(core-user): productize user management / 产品化用户管理闭环`.
 - Push: `origin/main` updated from `7d1d32f` to `88c428f`.
+
+## 2026-06-12 Cycle-021 Round 8: core.dict Productization
+
+### Capability Status
+
+- Round 8 选择 `core.dict`：字典 runtime/API 已支持 list/export/create/update/
+  delete，但缺少 detail API、SDK detail、live Admin CRUD 页面和 smoke 页面行为
+  闭环。
+- 本轮按 OpenCore 的 TS/NestJS 边界承认当前 dictionary 模型：
+  `DictType.code` 稳定标识和内嵌 `items` 编辑。
+- 本轮不扩展若依/芋道的独立 dict-data 模块、simple-list/cache API、批量删除、
+  Excel 文件导入导出、color/css/remark 字段、app public dict API 或缓存刷新语义。
+
+### Completed
+
+- 新增 `GET /api/core/dicts/:code`，并通过 `core:dict:read` 保护。
+- `@opencore/system` seed/Prisma repository 和 service 均支持 `getDict`。
+- `@opencore/sdk` 已提供 dictionary detail client，并补齐测试。
+- Admin `/system/dicts` 已从 fixture 只读表升级为 live 页面，使用 SDK-backed
+  platform service 完成列表、详情、当前页导出、创建、更新和删除。
+- Admin 字典表单已支持内嵌字典项编辑，并在 item ID 留空时生成稳定 ID。
+- Admin smoke 已锁定 dictionary SDK lifecycle、item editing、bounded filtering
+  和 current-page export。
+- OpenAPI snapshot 已刷新。
+
+### Verification
+
+- Focused typecheck pass：
+  `pnpm exec tsc --noEmit -p packages/system/tsconfig.lib.json`、
+  `pnpm exec tsc --noEmit -p packages/sdk/tsconfig.lib.json`、
+  `NX_DAEMON=false pnpm nx run admin:typecheck`、
+  `NX_DAEMON=false pnpm nx run api:typecheck`。
+- Focused tests pass：
+  `NX_DAEMON=false pnpm nx run-many -t test --projects=system,sdk,api`。
+- `pnpm test:admin`、`pnpm openapi:export`、`pnpm openapi:check`、
+  `pnpm sdk:check` pass。
+- Full gates pass：`pnpm format:check && pnpm lint && pnpm typecheck &&
+pnpm test`；`pnpm build && pnpm prisma:validate && pnpm test:api &&
+NX_DAEMON=false pnpm nx test contracts && NX_DAEMON=false pnpm nx test
+module-registry && NX_DAEMON=false pnpm nx test sdk && pnpm openapi:export &&
+pnpm openapi:registry-tags:check && pnpm openapi:check &&
+pnpm registry:admin-routes:check && pnpm test:admin && pnpm sdk:check`。
+- Live smoke against port 3010 pass：live、ready、docs、login、dict list、
+  seeded detail、create、created detail、update、export preview、delete、
+  deleted-detail 404 全链路通过。
+
+### Commit Record
+
+- Feature commit:
+  `52b3bbe feat(core-dict): productize dictionary management / 产品化字典管理闭环`.
+- Push: `origin/main` updated from `f891c39` to `52b3bbe`.

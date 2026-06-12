@@ -186,3 +186,27 @@ password on create or explicit update and seeded-admin protection. It does not
 introduce import, reset-password/status-toggle endpoints, profile/avatar/social
 capabilities, post binding, batch delete, side-tree filtering or token/session
 refresh semantics.
+
+## Round 8 Audit: core.dict
+
+After Round 7, the next lowest dependency productization gap is `core.dict`:
+
+- `apps/api/src/modules/core/system-management/system-management.controller.ts`
+  exposed `/api/core/dicts` list/export/create/update/delete, but lacked
+  `GET /api/core/dicts/:code`.
+- `@opencore/system` already owned package-local dictionary DTOs, seed records,
+  seed repository, Prisma repository, service, module, pagination, filters and
+  export preview helper for `DictType` records with embedded `items`.
+- `@opencore/sdk` exposed dictionary list/export/create/update/delete methods,
+  but lacked typed detail support.
+- `apps/admin/src/pages/System/Dicts.tsx` was still a read-only fixture-backed
+  table and did not prove a logged-in operator could manage package-owned
+  dictionaries.
+- Admin smoke kept dictionaries in the legacy read-only current-page-filter
+  bucket, so it did not lock live SDK dictionary lifecycle usage.
+
+This remains inside S7 System scope and admits the existing OpenCore
+`DictType.code` plus embedded `items` model. It does not introduce a separate
+dict-data module/page/endpoints, simple-list/cache endpoints, batch delete,
+Excel import/export file workflows, color/css/remark fields, app public
+dictionary endpoints or cache refresh semantics.

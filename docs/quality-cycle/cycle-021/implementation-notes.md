@@ -497,3 +497,68 @@ pre-existing 3000 process was left running.
 - Feature commit:
   `88c428f feat(core-user): productize user management / 产品化用户管理闭环`.
 - Push: `origin/main` updated from `7d1d32f` to `88c428f`.
+
+## Round 8 Capability
+
+Capability: `core.dict` productization.
+
+Goal: turn the existing package-owned dictionary runtime into a real
+login-protected Admin operation loop with API detail, SDK detail support,
+OpenAPI, Admin page and smoke coverage, while keeping the current embedded-item
+dictionary model.
+
+## Round 8 Implemented
+
+- Added `GET /api/core/dicts/:code`, guarded by `core:dict:read`, and
+  refreshed the OpenAPI snapshot.
+- Extended `@opencore/system` dictionary repository/service contracts with
+  `getDict` for seed and Prisma implementations.
+- Extended `@opencore/sdk` with dictionary detail support and tests.
+- Replaced the read-only Admin Dictionaries fixture with a live page using
+  `@opencore/sdk` and platform service methods for list/detail/current-page
+  export plus create/update/delete actions.
+- Added embedded dictionary item editing in the create/update form, including
+  deterministic item ID generation when operators leave item IDs blank.
+- Extended Admin smoke checks to lock SDK-backed dictionary lifecycle methods,
+  item editing, bounded filtering and current-page export behavior.
+
+## Round 8 Verification
+
+- `pnpm exec tsc --noEmit -p packages/system/tsconfig.lib.json` pass.
+- `pnpm exec tsc --noEmit -p packages/sdk/tsconfig.lib.json` pass.
+- `NX_DAEMON=false pnpm nx run admin:typecheck` pass.
+- `NX_DAEMON=false pnpm nx run api:typecheck` pass.
+- `NX_DAEMON=false pnpm nx run-many -t test --projects=system,sdk,api` pass.
+- `pnpm test:admin && pnpm openapi:export && pnpm openapi:check && pnpm sdk:check`
+  pass after moving dictionaries out of the legacy read-only Admin smoke bucket.
+- `pnpm format:check && pnpm lint && pnpm typecheck && pnpm test` pass.
+- `pnpm build && pnpm prisma:validate && pnpm test:api && NX_DAEMON=false pnpm nx test contracts && NX_DAEMON=false pnpm nx test module-registry && NX_DAEMON=false pnpm nx test sdk && pnpm openapi:export && pnpm openapi:registry-tags:check && pnpm openapi:check && pnpm registry:admin-routes:check && pnpm test:admin && pnpm sdk:check`
+  pass.
+
+## Round 8 Live Smoke
+
+Against the temporary local API on port 3010:
+
+- `GET /health/live` returned 200.
+- `GET /health/ready` returned 200.
+- `GET /api/docs-json` returned 200.
+- `POST /api/auth/login` returned 201.
+- `GET /api/core/dicts` returned 200.
+- `GET /api/core/dicts/system.status` returned 200 for seeded dictionary
+  detail.
+- `POST /api/core/dicts` created a smoke dictionary with 201.
+- `GET /api/core/dicts/:code` returned 200 for the created dictionary.
+- `PATCH /api/core/dicts/:code` returned 200 and updated the created
+  dictionary.
+- `GET /api/core/dicts/export` returned 200.
+- `DELETE /api/core/dicts/:code` returned 200 with `deleted=true`.
+- `GET /api/core/dicts/:code` returned 404 after deletion.
+
+The temporary 3010 API process was stopped after smoke verification; the
+pre-existing 3000 process was left running.
+
+## Round 8 Commit Record
+
+- Feature commit:
+  `52b3bbe feat(core-dict): productize dictionary management / 产品化字典管理闭环`.
+- Push: `origin/main` updated from `f891c39` to `52b3bbe`.
