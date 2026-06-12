@@ -118,3 +118,31 @@ package-owned data model:
 OpenCore does not admit tree parent/type/icon/component/status/cache fields,
 dynamic router generation, role menu tree assignment, cache refresh, save-sort,
 drag-sort persistence or Prisma schema expansion in this round.
+
+## Round 5 Role Reference Shape
+
+RuoYi keeps role management under System with list, export, detail, create,
+update, data-scope update, status change, delete, role-all, assigned-user,
+unassigned-user, cancel assignment, batch cancel, select-all assignment and
+dept-tree APIs. Its Admin page exposes filters for role name/key/status, table
+actions for create/update/delete/export, a role form with menu permission tree,
+a data-permission dialog and a role-user assignment route.
+
+Yudao keeps role management under System with page, simple-list, detail,
+create, update, delete, batch delete and export APIs. Its Admin page exposes
+role CRUD plus dedicated menu assignment and data-permission forms.
+
+OpenCore admits the bounded management loop that matches the current
+package-owned role model:
+
+- list, detail, current-page export, create, update and delete;
+- stable `code` identity for detail/update/delete;
+- permission-code assignment through the existing registry-seeded permission
+  catalog;
+- data-scope update through the existing `all/custom/dept_tree/own_dept/self`
+  model, with custom departments selected from the admitted department tree;
+- system-role delete protection.
+
+OpenCore does not admit role-user assignment, role menu-tree assignment,
+simple-list endpoints, batch delete, separate data-scope update endpoints,
+status toggles or token permission refresh semantics in this round.

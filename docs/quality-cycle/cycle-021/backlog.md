@@ -93,6 +93,29 @@ and the API/SDK lacked a detail read contract.
 - [x] Run focused, live HTTP smoke and full gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 5: core.role Productization
+
+Why this slice: RuoYi and Yudao both place role management at the RBAC bridge
+between users, permissions, menus and data scope. OpenCore already had
+package-owned role list/export/create/update/delete runtime and Admin shell
+metadata, but lacked a role detail API/SDK contract, SDK data-scope fields and
+a live Admin role management page.
+
+- [x] Add missing detail API contract for system roles.
+- [x] Extend `@opencore/system` role repository/service contracts with
+      `getRole` for seed and Prisma implementations.
+- [x] Extend `@opencore/sdk` with typed role detail support and role
+      data-scope fields.
+- [x] Replace the read-only Admin Roles fixture with a live SDK-backed page for
+      list/detail/current-page export plus create/update/delete actions.
+- [x] Add custom data-scope department selection using the admitted department
+      tree runtime.
+- [x] Extend Admin smoke checks to lock role SDK lifecycle usage and page
+      behavior.
+- [x] Refresh OpenAPI snapshot and registry route/tag checks.
+- [x] Run focused, live HTTP smoke and full gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Explicitly Out Of Scope
 
 - Notice read/unread inbox, header badge and per-user read tracking.
@@ -106,4 +129,6 @@ and the API/SDK lacked a detail read contract.
 - Menu parent/type/icon/component/status/cache/router-generation expansion.
 - Role menu tree assignment, menu cache refresh, save-sort and drag-sort
   persistence.
+- Role-user assignment pages, role simple-list endpoints, batch role deletion,
+  standalone data-scope endpoint and role status toggle.
 - CRM/ERP/MES/WMS/mall/member/pay/AI modules.

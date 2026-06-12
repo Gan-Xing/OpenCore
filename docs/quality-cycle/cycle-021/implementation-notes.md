@@ -290,3 +290,69 @@ pre-existing 3000 process was left running.
 - Feature commit:
   `34e35c7 feat(core-menu): productize system menu management / 产品化系统菜单管理闭环`.
 - Push: `origin/main` updated from `79c5583` to `34e35c7`.
+
+## Round 5 Capability
+
+Capability: `core.role` productization.
+
+Goal: turn the existing package-owned role runtime into a real login-protected
+Admin operation loop with API detail, SDK data-scope alignment, OpenAPI, Admin
+page and smoke coverage.
+
+## Round 5 Implemented
+
+- Added `GET /api/core/roles/:code`, guarded by `core:role:read`, and
+  refreshed the OpenAPI snapshot.
+- Extended `@opencore/system` role repository/service contracts with `getRole`
+  for seed and Prisma implementations.
+- Extended `@opencore/sdk` with role detail support plus `RoleDataScope`,
+  `dataScope` and `dataScopeDeptIds` fields on role types.
+- Replaced the read-only Admin Roles fixture with a live page using
+  `@opencore/sdk` and platform service methods for list/detail/current-page
+  export plus create/update/delete actions.
+- Added custom data-scope department selection using the existing department
+  tree runtime and guarded system-role deletion in Admin.
+- Extended Admin smoke checks to lock SDK-backed role lifecycle methods and
+  page-level live integration.
+
+## Round 5 Verification
+
+- `NX_DAEMON=false pnpm nx run-many -t typecheck --projects=system,sdk,api,admin`
+  pass.
+- `NX_DAEMON=false pnpm nx run-many -t test --projects=system,sdk,api` pass.
+- `pnpm test:admin` pass.
+- `pnpm openapi:export` pass.
+- `pnpm openapi:registry-tags:check` pass.
+- `pnpm openapi:check` pass.
+- `pnpm registry:admin-routes:check` pass.
+- `pnpm sdk:check` pass.
+- `pnpm format:check && pnpm lint && pnpm typecheck && pnpm test` pass.
+- `pnpm build && pnpm prisma:validate && pnpm test:api && NX_DAEMON=false pnpm nx test contracts && NX_DAEMON=false pnpm nx test module-registry && NX_DAEMON=false pnpm nx test sdk && pnpm openapi:export && pnpm openapi:registry-tags:check && pnpm openapi:check && pnpm registry:admin-routes:check && pnpm test:admin && pnpm sdk:check`
+  pass.
+
+## Round 5 Live Smoke
+
+Against `http://127.0.0.1:3010/api` with the local seeded admin:
+
+- `POST /api/auth/login` returned 201.
+- `GET /api/core/roles` returned 200.
+- `GET /api/core/roles/admin` returned 200.
+- `POST /api/core/roles` created a smoke role with custom data scope and 201.
+- `GET /api/core/roles/:code` returned 200 for the created role.
+- `PATCH /api/core/roles/:code` returned 200 and updated permissions plus
+  `dataScope=self`.
+- `GET /api/core/roles/export` returned 200.
+- `DELETE /api/core/roles/admin` returned 400, proving system-role delete
+  protection.
+- `DELETE /api/core/roles/:code` returned 200 with `deleted=true`.
+- `GET /api/core/roles/:code` returned 404 after deletion.
+- Final list returned 200.
+
+The temporary 3010 API process was stopped after smoke verification; the
+pre-existing 3000 process was left running.
+
+## Round 5 Commit Record
+
+- Feature commit:
+  `7ca8b2f feat(core-role): productize role management / 产品化角色管理闭环`.
+- Push: `origin/main` updated from `4269cb4` to `7ca8b2f`.

@@ -2579,3 +2579,54 @@ pnpm openapi:export && pnpm openapi:registry-tags:check && pnpm openapi:check
 - Feature commit:
   `34e35c7 feat(core-menu): productize system menu management / 产品化系统菜单管理闭环`.
 - Push: `origin/main` updated from `79c5583` to `34e35c7`.
+
+## 2026-06-12 Cycle-021 Round 5: core.role Productization
+
+### Capability Status
+
+- Round 5 选择 `core.role`：后端 runtime/API 已支持角色 list/export/create/
+  update/delete，但缺少 detail API、SDK data-scope 对齐、live Admin CRUD 页面
+  和 smoke 页面行为闭环。
+- 本轮只接入 OpenCore 现有 `Role.code`、permission code assignment 和
+  data-scope 模型，不扩展若依/芋道的角色分配用户、菜单树分配、批量删除或
+  独立数据权限接口。
+
+### Completed
+
+- 新增 `GET /api/core/roles/:code`，并通过 `core:role:read` 保护。
+- `@opencore/system` seed/Prisma repository 和 service 均支持 `getRole`。
+- `@opencore/sdk` 已提供 role detail client，并补齐 `RoleDataScope`、
+  `dataScope`、`dataScopeDeptIds` 类型字段。
+- Admin `/system/roles` 已从 fixture 只读表升级为 live 页面，使用
+  SDK-backed platform service 完成列表、详情、当前页导出、创建、更新和删除。
+- Admin 角色表单已支持权限码选择和 custom data-scope 部门选择，并在 UI
+  禁止删除 system role。
+- Admin smoke 已锁定 role SDK lifecycle/page integration。
+- OpenAPI snapshot 已刷新。
+
+### Verification
+
+- Focused typecheck pass：
+  `NX_DAEMON=false pnpm nx run-many -t typecheck --projects=system,sdk,api,admin`。
+- Focused tests pass：
+  `NX_DAEMON=false pnpm nx run-many -t test --projects=system,sdk,api`。
+- `pnpm test:admin` pass。
+- `pnpm openapi:export`、`pnpm openapi:registry-tags:check`、
+  `pnpm openapi:check`、`pnpm registry:admin-routes:check`、`pnpm sdk:check`
+  pass。
+- Full gates pass：`pnpm format:check && pnpm lint && pnpm typecheck &&
+pnpm test`；`pnpm build && pnpm prisma:validate && pnpm test:api &&
+NX_DAEMON=false pnpm nx test contracts && NX_DAEMON=false pnpm nx test
+module-registry && NX_DAEMON=false pnpm nx test sdk && pnpm openapi:export &&
+pnpm openapi:registry-tags:check && pnpm openapi:check &&
+pnpm registry:admin-routes:check && pnpm test:admin && pnpm sdk:check`。
+- Live smoke against `http://127.0.0.1:3010/api` pass：login、role list、
+  seeded detail、create custom data-scope role、detail、update to self
+  data-scope、export preview、reject admin delete、delete、deleted-detail 404、
+  final list 全链路通过。
+
+### Commit Record
+
+- Feature commit:
+  `7ca8b2f feat(core-role): productize role management / 产品化角色管理闭环`.
+- Push: `origin/main` updated from `4269cb4` to `7ca8b2f`.

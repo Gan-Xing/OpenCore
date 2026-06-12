@@ -103,3 +103,28 @@ This remains inside S6 RBAC scope and admits OpenCore's current flat
 trees, menu type/icon/component/status/cache fields, dynamic router generation,
 role menu tree assignment, menu cache refresh, save-sort or drag-sort
 persistence.
+
+## Round 5 Audit: core.role
+
+After Round 4, the next lowest dependency productization gap is `core.role`:
+
+- `@opencore/system` already owns `system-role` DTOs, seed records, repository
+  contract, seed repository, Prisma repository, service, module, permission
+  assignment validation, data-scope normalization and export preview helper.
+- `apps/api/src/modules/core/rbac/rbac.controller.ts` exposed `/api/core/roles`
+  list/export/create/update/delete, but lacked `GET /api/core/roles/:code`.
+- `packages/module-registry` already declares `core.role` permissions,
+  `system.roles` menu and Admin route metadata for `/system/roles`.
+- `@opencore/sdk` exposed list/export/create/update/delete role methods, but
+  lacked typed detail support and did not include `dataScope` or
+  `dataScopeDeptIds` in the role type despite the API DTO exposing them.
+- `apps/admin/src/pages/System/Roles.tsx` was still a read-only fixture-backed
+  RBAC table and did not prove a logged-in operator could manage persisted
+  roles.
+- Admin smoke locked route/access/shell presence, but not live SDK role CRUD
+  page behavior.
+
+This remains inside S6 RBAC scope and admits the existing OpenCore
+`Role.code`, permission-code assignment and data-scope model. It does not
+introduce role-user assignment pages, menu-tree assignment, simple-list option
+endpoints, batch delete, standalone data-scope endpoints or status toggles.
