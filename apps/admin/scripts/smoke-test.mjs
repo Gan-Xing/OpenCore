@@ -226,6 +226,11 @@ if (
   !opencorePlatformService.includes('createMonitoringClient') ||
   !opencorePlatformService.includes('createSystemManagementClient') ||
   !opencorePlatformService.includes('listOpenCoreUsers') ||
+  !opencorePlatformService.includes('listOpenCoreRoles') ||
+  !opencorePlatformService.includes('getOpenCoreRole') ||
+  !opencorePlatformService.includes('createOpenCoreRole') ||
+  !opencorePlatformService.includes('updateOpenCoreRole') ||
+  !opencorePlatformService.includes('deleteOpenCoreRole') ||
   !opencorePlatformService.includes('getOpenCoreSystemStatus') ||
   !opencorePlatformService.includes('listOpenCoreMenus') ||
   !opencorePlatformService.includes('getOpenCoreMenu') ||
@@ -519,6 +524,7 @@ const billingDesignPage = readFileSync(
 if (
   !usersPage.includes('@opencore/sdk') ||
   !usersPage.includes('listOpenCoreUsers') ||
+  !rolesPage.includes('@opencore/sdk') ||
   !permissionsPage.includes('@opencore/sdk') ||
   !menusPage.includes('@opencore/sdk') ||
   !dictsPage.includes('@opencore/sdk') ||
@@ -555,6 +561,23 @@ if (
 ) {
   throw new Error(
     'Admin platform, collaboration, operations, and integration pages must consume SDK types or fixtures.',
+  );
+}
+
+if (
+  !rolesPage.includes('listOpenCoreRoles') ||
+  !rolesPage.includes('getOpenCoreRole') ||
+  !rolesPage.includes('createOpenCoreRole') ||
+  !rolesPage.includes('updateOpenCoreRole') ||
+  !rolesPage.includes('deleteOpenCoreRole') ||
+  !rolesPage.includes('listOpenCoreSystemDepts') ||
+  !rolesPage.includes('useCurrentPageFilters') ||
+  !rolesPage.includes('CurrentPageExportButton') ||
+  !rolesPage.includes('dataSource={filteredRows}') ||
+  !rolesPage.includes('rows={filteredRows}')
+) {
+  throw new Error(
+    'Roles page must use live SDK CRUD with bounded filtering and current-page export.',
   );
 }
 
@@ -736,7 +759,6 @@ if (
 
 const coreFilteredPages = [
   { name: 'users', source: usersPage },
-  { name: 'roles', source: rolesPage },
   { name: 'permissions', source: permissionsPage },
   { name: 'dicts', source: dictsPage },
   { name: 'config', source: configPage },

@@ -16,6 +16,7 @@ const expectedPermissions = {
   exportRoles: ['core:role:export'],
   exportUsers: ['core:user:export'],
   getMenu: ['core:menu:read'],
+  getRole: ['core:role:read'],
   listMenus: ['core:menu:read'],
   listPermissions: ['core:permission:read'],
   listRoles: ['core:role:read'],

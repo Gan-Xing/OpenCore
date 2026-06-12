@@ -25,10 +25,12 @@ describe('createRbacClient', () => {
     await client.deleteUser('token', 'user_operator');
     await client.listRoles('token');
     await client.exportRoles('token');
+    await client.getRole('token', 'admin');
     await client.createRole('token', {
       code: 'operator',
       name: 'Operator',
       permissionCodes: ['core:user:read'],
+      dataScope: 'self',
     });
     await client.updateRole('token', 'operator', { name: 'Ops' });
     await client.deleteRole('token', 'operator');
@@ -73,6 +75,7 @@ describe('createRbacClient', () => {
       },
       { path: '/core/roles', token: 'token' },
       { path: '/core/roles/export', token: 'token' },
+      { path: '/core/roles/admin', token: 'token' },
       { path: '/core/roles', method: 'POST', token: 'token' },
       { path: '/core/roles/operator', method: 'PATCH', token: 'token' },
       { path: '/core/roles/operator', method: 'DELETE', token: 'token' },

@@ -32,6 +32,10 @@ export class SeedSystemRoleRepository extends SystemRoleRepository {
     return this.roles.map(cloneRole).sort(compareSystemRoleRecords);
   }
 
+  async getRole(code: string): Promise<SystemRoleRecord> {
+    return cloneRole(this.findMutableRoleByCode(code));
+  }
+
   async createRole(body: CreateRoleDto): Promise<SystemRoleRecord> {
     const input = normalizeCreateSystemRoleInput(body);
 

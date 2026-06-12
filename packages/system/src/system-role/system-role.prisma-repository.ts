@@ -45,6 +45,10 @@ export class PrismaSystemRoleRepository extends SystemRoleRepository {
     return roles.map(toSystemRoleRecord);
   }
 
+  async getRole(code: string): Promise<SystemRoleRecord> {
+    return toSystemRoleRecord(await this.findRoleEntityByCode(code));
+  }
+
   async createRole(body: CreateRoleDto): Promise<SystemRoleRecord> {
     const input = normalizeCreateSystemRoleInput(body);
 

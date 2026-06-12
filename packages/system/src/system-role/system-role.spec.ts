@@ -39,6 +39,12 @@ describe('@opencore/system system-role', () => {
       dataScope: 'custom',
       dataScopeDeptIds: ['dept_operations'],
     });
+    await expect(service.getRole('operator')).resolves.toMatchObject({
+      code: 'operator',
+      name: 'Operator',
+      dataScope: 'custom',
+      dataScopeDeptIds: ['dept_operations'],
+    });
     await expect(
       service.updateRole('operator', {
         name: 'Operations',
@@ -176,6 +182,12 @@ describe('@opencore/system system-role', () => {
       expect(role).toMatchObject({
         code,
         permissionCodes: ['core:role:read'],
+        dataScope: 'custom',
+        dataScopeDeptIds: ['dept_operations'],
+      });
+      await expect(service.getRole(code)).resolves.toMatchObject({
+        code,
+        name: 'Prisma Test Role',
         dataScope: 'custom',
         dataScopeDeptIds: ['dept_operations'],
       });

@@ -265,6 +265,29 @@
       }
     },
     "/api/core/roles/{code}": {
+      "get": {
+        "operationId": "RbacController_getRole",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RoleSummaryDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Roles"]
+      },
       "patch": {
         "operationId": "RbacController_updateRole",
         "parameters": [

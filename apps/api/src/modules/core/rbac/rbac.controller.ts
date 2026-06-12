@@ -101,6 +101,14 @@ export class RbacController {
     return this.roles.createExportPreview();
   }
 
+  @Get('roles/:code')
+  @ApiTags('Core Roles')
+  @RequirePermission('core:role:read')
+  @ApiOkResponse({ type: RoleSummaryDto })
+  getRole(@Param('code') code: string): Promise<RoleSummaryDto> {
+    return this.roles.getRole(code);
+  }
+
   @Post('roles')
   @ApiTags('Core Roles')
   @RequirePermission('core:role:create')

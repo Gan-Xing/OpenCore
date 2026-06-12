@@ -15,6 +15,10 @@ export class SystemRoleService {
     return this.repository.listRoles();
   }
 
+  getRole(code: string): Promise<SystemRoleRecord> {
+    return this.repository.getRole(code);
+  }
+
   createRole(body: CreateRoleDto): Promise<SystemRoleRecord> {
     return this.repository.createRole(body);
   }

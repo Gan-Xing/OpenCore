@@ -36,6 +36,8 @@ const ROLE_CODE_PATTERN = /^[a-z][a-z0-9_.-]*$/;
 export abstract class SystemRoleRepository {
   abstract listRoles(): Promise<SystemRoleRecord[]>;
 
+  abstract getRole(code: string): Promise<SystemRoleRecord>;
+
   abstract createRole(body: CreateRoleDto): Promise<SystemRoleRecord>;
 
   abstract updateRole(

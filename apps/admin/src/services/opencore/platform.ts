@@ -3,10 +3,12 @@ import {
   createRbacClient,
   createSystemManagementClient,
   type CreateMenuRequest,
+  type CreateRoleRequest,
   type CreateSystemDeptRequest,
   type CreateSystemNoticeRequest,
   type CreateSystemPostRequest,
   type MenuSummary,
+  type RoleSummary,
   type SystemStatusSummary,
   type SystemDeptQueryRequest,
   type SystemDeptSummary,
@@ -19,6 +21,7 @@ import {
   type UpdateSystemNoticeRequest,
   type UpdateSystemPostRequest,
   type UpdateMenuRequest,
+  type UpdateRoleRequest,
   type UserSummary,
 } from '@opencore/sdk';
 import { getRequiredAdminToken, opencoreSdkRequest } from './client';
@@ -29,6 +32,31 @@ const systemManagementClient = createSystemManagementClient(opencoreSdkRequest);
 
 export function listOpenCoreUsers(): Promise<UserSummary[]> {
   return rbacClient.listUsers(getRequiredAdminToken());
+}
+
+export function listOpenCoreRoles(): Promise<RoleSummary[]> {
+  return rbacClient.listRoles(getRequiredAdminToken());
+}
+
+export function getOpenCoreRole(code: string): Promise<RoleSummary> {
+  return rbacClient.getRole(getRequiredAdminToken(), code);
+}
+
+export function createOpenCoreRole(
+  body: CreateRoleRequest,
+): Promise<RoleSummary> {
+  return rbacClient.createRole(getRequiredAdminToken(), body);
+}
+
+export function updateOpenCoreRole(
+  code: string,
+  body: UpdateRoleRequest,
+): Promise<RoleSummary> {
+  return rbacClient.updateRole(getRequiredAdminToken(), code, body);
+}
+
+export function deleteOpenCoreRole(code: string): Promise<{ deleted: true }> {
+  return rbacClient.deleteRole(getRequiredAdminToken(), code);
 }
 
 export function getOpenCoreSystemStatus(): Promise<SystemStatusSummary> {

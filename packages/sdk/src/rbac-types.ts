@@ -47,19 +47,32 @@ export type RoleSummary = {
   name: string;
   permissionCodes: readonly string[];
   system: boolean;
+  dataScope: RoleDataScope;
+  dataScopeDeptIds: readonly string[];
 };
+
+export type RoleDataScope =
+  | 'all'
+  | 'custom'
+  | 'dept_tree'
+  | 'own_dept'
+  | 'self';
 
 export type CreateRoleRequest = {
   code: string;
   name: string;
   permissionCodes: readonly string[];
   system?: boolean;
+  dataScope?: RoleDataScope;
+  dataScopeDeptIds?: readonly string[];
 };
 
 export type UpdateRoleRequest = {
   name?: string;
   permissionCodes?: readonly string[];
   system?: boolean;
+  dataScope?: RoleDataScope;
+  dataScopeDeptIds?: readonly string[];
 };
 
 export type PermissionSummary = {

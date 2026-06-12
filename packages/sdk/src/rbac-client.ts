@@ -40,6 +40,7 @@ export type RbacClient = {
   deleteUser: (token: string, id: string) => Promise<RbacDeleteResult>;
   listRoles: (token: string) => Promise<RoleSummary[]>;
   exportRoles: (token: string) => Promise<RbacExportPreview>;
+  getRole: (token: string, code: string) => Promise<RoleSummary>;
   createRole: (token: string, body: CreateRoleRequest) => Promise<RoleSummary>;
   updateRole: (
     token: string,
@@ -113,6 +114,10 @@ export function createRbacClient(request: SdkRequest): RbacClient {
       }),
     exportRoles: (token) =>
       request<RbacExportPreview>('/core/roles/export', {
+        token,
+      }),
+    getRole: (token, code) =>
+      request<RoleSummary>(`/core/roles/${encodeURIComponent(code)}`, {
         token,
       }),
     createRole: (token, body) =>
