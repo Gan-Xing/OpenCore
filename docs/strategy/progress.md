@@ -2457,7 +2457,7 @@ runtime config 与 OpenAPI export/check。
   integration。
 - OpenAPI snapshot 已刷新。
 
-### Verification So Far
+### Verification
 
 - Focused typecheck pass：
   `NX_DAEMON=false pnpm nx run-many -t typecheck --projects=system,sdk,module-registry,api,admin`。
@@ -2467,11 +2467,18 @@ runtime config 与 OpenAPI export/check。
 - `pnpm openapi:export`、`pnpm openapi:registry-tags:check`、
   `pnpm openapi:check`、`pnpm registry:admin-routes:check`、`pnpm sdk:check`
   pass。
+- Full gates pass：`pnpm format:check && pnpm lint && pnpm typecheck &&
+pnpm test`；`pnpm build && pnpm prisma:validate && pnpm test:api &&
+NX_DAEMON=false pnpm nx test contracts && NX_DAEMON=false pnpm nx test
+module-registry && NX_DAEMON=false pnpm nx test sdk && pnpm openapi:export &&
+pnpm openapi:registry-tags:check && pnpm openapi:check &&
+pnpm registry:admin-routes:check && pnpm test:admin && pnpm sdk:check`。
 - Live smoke against `http://127.0.0.1:3010/api` pass：login、dept list、
   seeded detail、create parent、create child、child detail、update child、
   reject parent delete、delete child、delete parent、final list 全链路通过。
 
 ### Commit Record
 
-- Feature commit: pending.
-- Push: pending.
+- Feature commit:
+  `39d4943 feat(core-dept): productize department tree management / 产品化部门树管理闭环`.
+- Push: `origin/main` updated from `b9b67fd` to `39d4943`.

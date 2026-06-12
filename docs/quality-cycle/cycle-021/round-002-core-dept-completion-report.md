@@ -28,6 +28,9 @@ administration.
 - Admin smoke/tests passed.
 - OpenAPI export/check/tag check, registry Admin route check and SDK check
   passed.
+- Full gates passed: format, lint, typecheck, test, build, Prisma validate,
+  API tests, contracts/module-registry/sdk tests, OpenAPI checks, registry
+  Admin route check, Admin smoke and SDK check.
 - Live HTTP smoke against port 3010 passed the login, list, detail, create
   parent, create child, update child, reject parent delete, delete child, delete
   parent and final list sequence.
@@ -42,5 +45,6 @@ administration.
 
 ## Commit Record
 
-- Feature commit: pending.
-- Push: pending.
+- Feature commit:
+  `39d4943 feat(core-dept): productize department tree management / 产品化部门树管理闭环`.
+- Push: `origin/main` updated from `b9b67fd` to `39d4943`.

@@ -121,7 +121,7 @@ coverage.
 - Extended Admin smoke checks to lock the route, access binding, shell registry
   entry, SDK lifecycle methods and page-level tree integration.
 
-## Round 2 Verification So Far
+## Round 2 Verification
 
 - `NX_DAEMON=false pnpm nx run-many -t typecheck --projects=system,sdk,module-registry,api,admin`
   pass.
@@ -133,6 +133,9 @@ coverage.
 - `pnpm openapi:check` pass.
 - `pnpm registry:admin-routes:check` pass.
 - `pnpm sdk:check` pass.
+- `pnpm format:check && pnpm lint && pnpm typecheck && pnpm test` pass.
+- `pnpm build && pnpm prisma:validate && pnpm test:api && NX_DAEMON=false pnpm nx test contracts && NX_DAEMON=false pnpm nx test module-registry && NX_DAEMON=false pnpm nx test sdk && pnpm openapi:export && pnpm openapi:registry-tags:check && pnpm openapi:check && pnpm registry:admin-routes:check && pnpm test:admin && pnpm sdk:check`
+  pass.
 
 ## Round 2 Live Smoke
 
@@ -155,5 +158,6 @@ pre-existing 3000 process was left running.
 
 ## Round 2 Commit Record
 
-- Feature commit: pending.
-- Push: pending.
+- Feature commit:
+  `39d4943 feat(core-dept): productize department tree management / 产品化部门树管理闭环`.
+- Push: `origin/main` updated from `b9b67fd` to `39d4943`.
