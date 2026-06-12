@@ -3037,3 +3037,51 @@ pnpm registry:admin-routes:check && pnpm smoke:api:local`。
   `26c4e1c feat(core-audit-log): productize operation audit trail / 产品化操作审计日志链路`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## 2026-06-12 Cycle-021 Round 13: monitor.online-user Productization And Stale Admin Login Guard
+
+### Capability Status
+
+- Round 13 选择 `monitor.online-user`：online-user runtime/API/SDK 已存在，但
+  Admin 仍是 fixture 页面，smoke 没有证明在线会话 list/detail/kick-out 闭环。
+- 本轮按 OpenCore 的 TS/NestJS 边界承认当前 online session model：`id`、
+  username、tokenId、ip、userAgent、lastSeenAt、expiresAt、revokedAt、
+  revokedBy、revokedReason。
+- 本轮同时修复旧浏览器标签页/旧 Workbox cache 继续发
+  `/api/api/auth/login` 的运行时兜底问题。
+- 本轮不扩展 OAuth2 token 管理、真实 JWT blacklist、浏览器/OS 解析、
+  IP geolocation、批量强退或在线用户导出端点。
+
+### Completed
+
+- 新增第二个 active seed session `session_operator`，专用于强退 smoke。
+- Admin `/monitor/online-users` 已从 fixture 表升级为 live SDK-backed 页面，
+  支持列表、详情、当前页导出和权限控制的强退操作。
+- Admin access 新增 `canManageOnlineUsers`，绑定
+  `monitor:online-user:manage`。
+- 新增 `pnpm smoke:core-online-user`，并接入 `pnpm smoke:api:local` 与
+  `pnpm deploy:opencore`。
+- Admin 静态服务新增退役 `/service-worker.js`，并对 stale `/api/api/*`
+  代理请求做归一化，避免旧 bundle 登录失败。
+- `pnpm deploy:opencore` 新增公开 Admin 登录页、当前 bundle 和退役
+  service worker 校验，部署后自动拒绝坏前端包。
+
+### Verification
+
+- Temporary Admin static runtime pass：`/service-worker.js` 返回 no-store 退役
+  脚本；`/api/auth/login` 和 `/api/api/auth/login` 都通过 Admin proxy 返回
+  201 token。
+- `pnpm test:admin` pass。
+- Full gate pass：`pnpm format:check && pnpm lint && pnpm typecheck &&
+pnpm test && pnpm openapi:export && pnpm openapi:check && pnpm sdk:check &&
+pnpm openapi:registry-tags:check && pnpm registry:admin-routes:check &&
+pnpm smoke:api:local && pnpm build && pnpm prisma:validate`。
+- Fixed-port smoke against `http://127.0.0.1:39173` pass：online-user list、
+  detail、kick-out、repeat-kick-blocked 和 admin-session-preserved 全链路通过。
+
+### Commit Record
+
+- Feature commit:
+  `0381de1 feat(monitor-online-user): productize online sessions / 产品化在线会话管理`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

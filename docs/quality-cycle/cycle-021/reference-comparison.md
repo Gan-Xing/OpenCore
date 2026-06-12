@@ -351,3 +351,36 @@ model:
 OpenCore does not admit operation-log deletion/cleanup, batch delete,
 duration/location/user-agent schema expansion, operation type enum expansion,
 async queue/indexing or business-domain audit timeline views in this round.
+
+## Round 13 Online User Reference Shape
+
+RuoYi keeps online-user management under Monitor. Its reference controller
+exposes an online user list filtered by IP address and username, and a
+force-logout action guarded by a dedicated forceLogout permission. The Admin
+page shows token/session ID, username, department, host/IP, location, browser,
+OS and login time, with a row-level strong-kick action.
+
+Yudao models the comparable operational action through OAuth2 token
+management. Its Admin page lists access tokens by user/client metadata and
+exposes delete/logout actions; the backend routes call the auth service logout
+flow for the selected access token. It also includes batch token deletion in
+the broader reference shape.
+
+OpenCore admits the bounded loop that matches the current package-owned online
+session model:
+
+- list, detail and permission-gated kick-out for online sessions;
+- stable `id` identity for detail/kick-out;
+- a dedicated non-admin seed session, `session_operator`, for smoke kick-out;
+- authenticated Admin page with live rows, detail drawer, current-page export
+  and sensitive token/revocation fields;
+- smoke coverage that kicks `session_operator`, verifies repeat kick-out is
+  rejected and confirms `session_admin` remains active;
+- deploy hardening that retires old service workers and normalizes stale
+  `/api/api/*` Admin proxy requests while still rejecting newly built bundles
+  that contain duplicated API prefixes.
+
+OpenCore does not admit OAuth client/token administration, batch token/session
+deletion, JWT blacklist enforcement, browser/OS parsing, IP geolocation,
+server-side date filters, location fields or online-user export endpoint
+expansion in this round.

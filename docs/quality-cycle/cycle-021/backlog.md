@@ -300,6 +300,44 @@ requests with `/api`.
 - [x] Run focused, full, build, fixed-port smoke and deployment gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 13: monitor.online-user Productization And Stale Admin Login Guard
+
+Why this slice: RuoYi exposes online users under Monitor with list/detail-like
+row inspection and force logout; Yudao exposes comparable token/session
+termination through OAuth2 token management. OpenCore already had
+`@opencore/online-user` runtime plus list/detail/kick-out API and registry
+metadata, but Admin was still fixture-only and smoke did not prove a logged-in
+operator could inspect or revoke an online session. The deployed Admin path
+also needed a runtime guard for browsers still executing an old bundle that
+posts to `/api/api/auth/login`.
+
+- [x] Preserve two active seed online sessions so smoke can kick
+      `session_operator` while keeping `session_admin` usable.
+- [x] Extend `@opencore/sdk` fixtures for the admitted online-user session
+      shape.
+- [x] Wire online-user SDK calls into the Admin platform service.
+- [x] Add `canManageOnlineUsers` access binding for
+      `monitor:online-user:manage`.
+- [x] Replace the fixture-only Admin Online Users page with a live page for
+      list/detail/current-page export plus permission-gated kick-out.
+- [x] Add authenticated online-user smoke covering list, detail, kick-out,
+      repeat-kick rejection and admin-session preservation.
+- [x] Wire online-user smoke into both fixed-port local smoke and deploy
+      scripts.
+- [x] Harden the Admin static server with a retired `/service-worker.js`, no
+      cache for runtime manifests/scripts and duplicate `/api/api` proxy
+      normalization for stale login bundles.
+- [x] Harden deploy so public Admin HTML/bundle/service-worker endpoints are
+      checked after startup and the build is rejected if the public bundle
+      would still emit duplicated API prefixes.
+- [x] Keep this round scoped to online-session observability and kick-out; do
+      not add OAuth client/token management, JWT blacklist enforcement,
+      browser/OS parsing, IP geolocation, batch kick-out or export endpoint
+      expansion.
+- [x] Refresh OpenAPI snapshot and registry route/tag checks.
+- [x] Run focused, full, build, fixed-port smoke and deployment gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Explicitly Out Of Scope
 
 - Notice read/unread inbox, header badge and per-user read tracking.
@@ -338,4 +376,8 @@ requests with `/api`.
 - Operation-log deletion/cleanup, batch delete, duration/location/user-agent
   schema expansion, operation type enum expansion, async queue/indexing and
   business-domain audit timeline views.
+- OAuth client/token administration, JWT blacklist/session invalidation
+  semantics beyond current online-session `revokedAt` records, browser/OS
+  parsing, IP geolocation, batch online-user kick-out and online-user export
+  endpoint expansion.
 - CRM/ERP/MES/WMS/mall/member/pay/AI modules.

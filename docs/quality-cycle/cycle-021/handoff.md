@@ -3,7 +3,7 @@
 Date: 2026-06-12  
 Repository: `Gan-Xing/OpenCore`  
 Default branch: `main`  
-Latest observed feature commit: `26c4e1c feat(core-audit-log): productize operation audit trail / 产品化操作审计日志链路`
+Latest observed feature commit: `0381de1 feat(monitor-online-user): productize online sessions / 产品化在线会话管理`
 
 ## One-sentence Goal
 
@@ -49,6 +49,7 @@ independently accepted slices:
 - Round 10 `core.file`
 - Round 11 `core.login-log`
 - Round 12 `core.audit-log`
+- Round 13 `monitor.online-user`
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -73,6 +74,15 @@ Round 12 修复并沉淀了前端登录 `/api/api` 根因：Admin SDK request he
 `http://144.217.243.161:39172/api`。现在 `pnpm deploy:opencore` 默认使用
 origin，并会在配置值以 `/api` 或 `/api/` 结尾时直接失败，避免浏览器再次发出
 `/api/api/auth/login`。
+
+Round 13 产品化了 `monitor.online-user`：Admin 在线用户页面现在走 live SDK
+service，可列表、详情、当前页导出并按 `monitor:online-user:manage` 强退会话；
+固定 smoke 会强退 `session_operator`，同时验证 `session_admin` 仍保持 active。
+本轮也继续沉淀部署路径：Admin 静态服务器会返回 no-store 的退役
+`/service-worker.js` 清理旧 Workbox cache，并把旧标签页发出的 `/api/api/*`
+代理请求归一化为 `/api/*`。`pnpm deploy:opencore` 会在启动后从公开 Admin URL
+拉取登录 HTML、当前 `umi.*.js` 和退役 service worker，确认 bundle 包含 API
+origin 且不包含重复 API 前缀。
 
 Admin 生产构建已默认强制稳定 webpack 路径。不要为 OpenCore deploy 打开
 `FORCE_UTOOPACK`；utoopack 已多次在 `global.less.css` CSS loader

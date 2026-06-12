@@ -24,7 +24,9 @@ ends with `/api`.
 The Admin static server also proxies `/api/*` to the deployed API. This keeps
 login and authenticated requests working even if a browser tries the same-origin
 Admin `/api` path, and prevents the static server from returning `405 Method Not
-Allowed` for API POST requests.
+Allowed` for API POST requests. It also normalizes stale `/api/api/*` requests
+from old browser tabs to `/api/*`, so an old login bundle can still authenticate
+while the new bundle is being deployed.
 
 The deploy script skips Nx cache for the Admin build because the browser bundle
 depends on `ADMIN_API_BASE_URL`. Reusing a normal `pnpm build` Admin cache can
@@ -34,6 +36,9 @@ bundle guard.
 All Admin HTML route files are served with `no-cache`, while hashed JavaScript
 and CSS assets remain immutable. This prevents browsers from holding an old
 route HTML file that points at an obsolete frontend bundle after deployment.
+Runtime manifests, public scripts and the retired `/service-worker.js` endpoint
+are also served without long-lived caching. `/service-worker.js` intentionally
+unregisters stale Workbox service workers and clears their caches.
 
 ## Commands
 
@@ -51,7 +56,10 @@ temporary API.
 refreshes local seed data, restarts the API on port `39172`, serves the Admin
 build on port `39174`, then runs authenticated config and file metadata smoke
 checks, an Admin `/api/auth/login` proxy smoke check, operation-log audit smoke
-and login-log audit smoke against the deployed API.
+and login-log audit smoke, plus online-user list/detail/kick-out smoke against
+the deployed API. The deploy script also fetches the public Admin login HTML,
+current `umi.*.js` bundle and retired service worker endpoint after startup, so
+deployment fails if the live frontend would still emit `/api/api/auth/login`.
 
 Admin production builds deliberately force the stable Umi webpack path. Do not
 enable `FORCE_UTOOPACK` for OpenCore deploys; the project has repeatedly hit

@@ -328,3 +328,35 @@ resourceId, request method/path/status, IP, user agent, request ID, metadata
 and creation time. It does not introduce operation-log deletion/cleanup, batch
 delete, duration/location schema expansion, operation-type enums, async queue
 indexing or business-domain audit timeline views.
+
+## Round 13 Audit: monitor.online-user
+
+After Round 12, the next lowest dependency productization gap is
+`monitor.online-user`:
+
+- `@opencore/online-user` already owned seed/Prisma online session runtime,
+  summary listing, detail lookup and kick-out mutation.
+- `apps/api/src/modules/monitor/operations/operations.controller.ts` already
+  exposed `/api/monitor/online-users`, `/api/monitor/online-users/:id` and
+  `/api/monitor/online-users/:id/kick-out` guarded by
+  `monitor:online-user:read` and `monitor:online-user:manage`.
+- `@opencore/sdk` already exposed the online-user API methods, but fixtures
+  only modeled one active session, which made a kick-out smoke risk revoking
+  the seeded admin session itself.
+- `apps/admin/src/pages/Monitor/OnlineUsers.tsx` was still fixture-backed and
+  did not prove a logged-in operator could read live online sessions, inspect
+  sensitive token/revocation fields or perform a permission-gated kick-out.
+- Admin access lacked an explicit `canManageOnlineUsers` binding for the
+  manage permission.
+- Fixed-port smoke covered config, file metadata and audit logs, but did not
+  prove online-user list/detail/kick-out behavior or that the admin session
+  remains usable after a forced logout of another session.
+- The deployed Admin bundle had already been corrected, but browsers with an
+  old tab or old Workbox cache could still execute stale JavaScript that posts
+  to `/api/api/auth/login`.
+
+This remains inside S8 Monitor/Security scope and admits OpenCore's current
+online session model: ID, username, token ID, IP, user agent, last seen time,
+expiry and revocation metadata. It does not introduce OAuth client/token
+administration, true JWT blacklist enforcement, browser/OS parsing, IP
+geolocation, batch kick-out, export endpoints or session-refresh semantics.

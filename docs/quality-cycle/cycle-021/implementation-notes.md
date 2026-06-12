@@ -897,3 +897,75 @@ The temporary `39173` API process was stopped after smoke verification.
   `26c4e1c feat(core-audit-log): productize operation audit trail / 产品化操作审计日志链路`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 13 Capability
+
+Capability: `monitor.online-user` productization plus stale Admin login guard.
+
+Goal: turn the existing online-user runtime into a real login-protected Admin
+monitoring loop with live list/detail/current-page export and permission-gated
+kick-out, while keeping stale browser tabs from failing login through
+`/api/api/auth/login`.
+
+## Round 13 Implemented
+
+- Preserved two active seed online sessions so smoke can revoke
+  `session_operator` without revoking `session_admin`.
+- Updated online-user package, API operation summary test and SDK fixtures to
+  reflect the two-session seed state.
+- Added online-user methods to the Admin platform service and
+  `canManageOnlineUsers` to Admin access.
+- Replaced the fixture-only Admin Online Users page with a live page using the
+  Operations SDK client for list, detail and kick-out.
+- Added current-page filters/export, reload, detail drawer, sensitive token and
+  revocation fields, and a disabled/already-revoked state for kick-out.
+- Added `tools/scripts/smoke-core-online-user.mjs` and wired it into
+  `pnpm smoke:api:local` and `pnpm deploy:opencore`.
+- Hardened the Admin static server to serve a no-store retired
+  `/service-worker.js`, avoid caching runtime manifests/scripts and normalize
+  stale `/api/api/*` proxy requests to `/api/*`.
+- Hardened deploy with a public Admin bundle check that fetches the live login
+  HTML, current `umi.*.js` and retired service worker endpoint after startup.
+
+## Round 13 Verification
+
+- Runtime stale-login verification pass on a temporary Admin static port:
+  `/service-worker.js` returns `no-store` JavaScript containing
+  `self.registration.unregister`, and both `/api/auth/login` and
+  `/api/api/auth/login` return 201 through the Admin proxy.
+- `pnpm test:admin` pass after Admin smoke locked live online-user service/page
+  behavior and deploy/static-server guards.
+- Full gate pass: `pnpm format:check && pnpm lint && pnpm typecheck &&
+pnpm test && pnpm openapi:export && pnpm openapi:check && pnpm sdk:check &&
+pnpm openapi:registry-tags:check && pnpm registry:admin-routes:check &&
+pnpm smoke:api:local && pnpm build && pnpm prisma:validate`.
+- `pnpm smoke:api:local` pass on fixed port `39173`, including
+  online-user list, detail, kick-out, repeat-kick rejection and admin-session
+  preservation.
+
+## Round 13 Live Smoke
+
+Against the scripted temporary local API on fixed port `39173`:
+
+- `GET /health/live` returned 200.
+- `GET /health/ready` returned 200.
+- `POST /api/auth/login` returned 201 with the seeded admin.
+- `GET /api/monitor/online-users` returned the seeded admin and operator
+  sessions.
+- `GET /api/monitor/online-users/session_operator` returned 200.
+- `POST /api/monitor/online-users/session_operator/kick-out` returned 200 and
+  set revocation metadata.
+- Repeating the same kick-out returned 400.
+- `GET /api/monitor/online-users?active=false` returned the revoked operator
+  session.
+- `GET /api/monitor/online-users?username=admin&active=true` confirmed the
+  admin session remains active.
+
+The temporary `39173` API process was stopped after smoke verification.
+
+## Round 13 Commit Record
+
+- Feature commit:
+  `0381de1 feat(monitor-online-user): productize online sessions / 产品化在线会话管理`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.
