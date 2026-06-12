@@ -2852,3 +2852,71 @@ pnpm smoke:api:local`。
 - Feature commit:
   `2dbf5aa feat(core-config): productize config management and deploy path / 产品化系统参数管理与部署路径`.
 - Push: `origin/main`.
+
+## 2026-06-12 Cycle-021 Round 10: core.file Productization And Public Admin Deploy
+
+### Capability Status
+
+- Round 10 选择 `core.file`：文件资产 runtime/API 已支持 list/export/create/
+  update/delete，但缺少 detail API、SDK detail、live Admin metadata CRUD 页面和
+  smoke 页面行为闭环。
+- 本轮按 OpenCore 的 TS/NestJS 边界承认当前 file metadata 模型：
+  `FileAsset.id` 稳定标识、original name、MIME type、size、storage key、
+  checksum、uploader 和 created time。
+- 本轮同时修正部署产物的公网可见性：Admin 固定监听 `0.0.0.0:39174`，浏览器
+  bundle 默认使用服务器公网 API 地址，不再部署成只能在服务器本机访问的
+  loopback 前端。
+- 本轮不扩展若依/芋道的二进制上传、预签名 URL、storage-provider config、
+  public download/preview/copy-link、批量删除或对象浏览器能力。
+
+### Completed
+
+- 新增 `GET /api/core/files/:id`，并通过 `core:file:read` 保护。
+- system-management seed/Prisma repository 均支持 `getFile`。
+- `@opencore/sdk` 已提供 file detail client，并补齐测试。
+- Admin `/system/files` 已从 fixture 只读表升级为 live 页面，使用 SDK-backed
+  platform service 完成列表、详情、当前页导出、元数据创建、更新和删除。
+- Admin 文件元数据表单限定在当前 API 已准入字段；编辑时不允许修改
+  `sizeBytes`。
+- Admin smoke 已锁定 file SDK lifecycle、current-page filtering 和 export。
+- 新增 `pnpm smoke:core-file`，并把 file metadata smoke 接入
+  `pnpm smoke:api:local` 与 `pnpm deploy:opencore`。
+- `pnpm deploy:opencore` 已输出公网 API/Admin 地址，当前验证入口：
+  `http://144.217.243.161:39174`。
+- OpenAPI snapshot 已刷新。
+
+### Verification
+
+- Script checks pass：
+  `bash -n tools/scripts/run-local-api-smoke.sh tools/scripts/deploy-local-opencore.sh`
+  和 `node --check tools/scripts/smoke-core-file.mjs &&
+node --check tools/scripts/smoke-core-config.mjs &&
+node --check tools/scripts/serve-admin-static.mjs`。
+- Focused typecheck pass：
+  `pnpm exec tsc --noEmit -p packages/sdk/tsconfig.lib.json`、
+  `NX_DAEMON=false pnpm nx run api:typecheck`、
+  `NX_DAEMON=false pnpm nx run admin:typecheck`。
+- Focused tests pass：
+  `NX_DAEMON=false pnpm nx run-many -t test --projects=api,sdk`。
+- `pnpm test:admin`、`pnpm openapi:export`、`pnpm openapi:check`、
+  `pnpm sdk:check` pass。
+- Full gates pass：`pnpm format:check && pnpm lint && pnpm typecheck &&
+pnpm test`；`pnpm build && pnpm prisma:validate && pnpm test:api &&
+NX_DAEMON=false pnpm nx test contracts && NX_DAEMON=false pnpm nx test
+module-registry && NX_DAEMON=false pnpm nx test sdk && pnpm openapi:export &&
+pnpm openapi:registry-tags:check && pnpm openapi:check &&
+pnpm registry:admin-routes:check && pnpm test:admin && pnpm sdk:check &&
+pnpm smoke:api:local`。
+- Fixed-port smoke against `http://127.0.0.1:39173` pass：live、ready、docs、
+  login、file list、create、created detail、update、export preview、delete、
+  deleted-detail 404 全链路通过。
+- Public deploy verification pass：`http://144.217.243.161:39174/` 返回 200，
+  `/system/files/index.html` 可访问，API `http://144.217.243.161:39172/health/ready`
+  返回 ready。
+
+### Commit Record
+
+- Feature commit:
+  `097979c feat(core-file): productize file asset management / 产品化文件资产管理`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

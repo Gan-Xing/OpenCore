@@ -649,3 +649,86 @@ The temporary `39173` API process was stopped after smoke verification.
 - Feature commit:
   `2dbf5aa feat(core-config): productize config management and deploy path / 产品化系统参数管理与部署路径`.
 - Push: `origin/main`.
+
+## Round 10 Capability
+
+Capability: `core.file` productization plus public Admin deployment.
+
+Goal: turn the existing package-owned file asset metadata runtime into a real
+login-protected Admin operation loop with API detail, SDK detail support,
+OpenAPI, Admin page and smoke coverage, while making the deployed Admin
+reachable from outside the server on the fixed deploy port.
+
+## Round 10 Implemented
+
+- Added `GET /api/core/files/:id`, guarded by `core:file:read`, and refreshed
+  the OpenAPI snapshot.
+- Extended system-management repository contracts with `getFile` for seed and
+  Prisma implementations.
+- Extended `@opencore/sdk` with typed file detail support and tests.
+- Replaced the read-only Admin File Center fixture with a live page using
+  `@opencore/sdk` and platform service methods for list/detail/current-page
+  export plus metadata create/update/delete actions.
+- Kept file editing scoped to metadata fields admitted by the current API:
+  original name, MIME type, checksum and uploader; size is create-only.
+- Extended Admin smoke checks to lock SDK-backed file lifecycle methods,
+  bounded current-page filtering and current-page export behavior.
+- Added `tools/scripts/smoke-core-file.mjs` and wired it into
+  `pnpm smoke:api:local` and `pnpm deploy:opencore`.
+- Updated the deploy script so Admin binds to `0.0.0.0`, uses the detected
+  server public host for the browser API base URL and prints the public Admin
+  URL after deployment.
+
+## Round 10 Verification
+
+- Script syntax checks pass:
+  `bash -n tools/scripts/deploy-local-opencore.sh tools/scripts/run-local-api-smoke.sh`
+  and
+  `node --check tools/scripts/smoke-core-file.mjs && node --check tools/scripts/smoke-core-config.mjs && node --check tools/scripts/serve-admin-static.mjs`.
+- Focused typecheck pass:
+  `pnpm exec tsc --noEmit -p packages/sdk/tsconfig.lib.json`,
+  `NX_DAEMON=false pnpm nx run api:typecheck` and
+  `NX_DAEMON=false pnpm nx run admin:typecheck`.
+- Focused tests pass:
+  `NX_DAEMON=false pnpm nx run-many -t test --projects=api,sdk`.
+- `pnpm test:admin`, `pnpm openapi:export`, `pnpm openapi:check` and
+  `pnpm sdk:check` pass.
+- Full gates pass: `bash -n tools/scripts/run-local-api-smoke.sh
+tools/scripts/deploy-local-opencore.sh && node --check
+tools/scripts/smoke-core-file.mjs && pnpm format:check && pnpm lint &&
+pnpm typecheck && pnpm test`; `pnpm build && pnpm prisma:validate &&
+pnpm test:api && NX_DAEMON=false pnpm nx test contracts &&
+NX_DAEMON=false pnpm nx test module-registry && NX_DAEMON=false pnpm nx test
+sdk && pnpm openapi:export && pnpm openapi:registry-tags:check &&
+pnpm openapi:check && pnpm registry:admin-routes:check && pnpm test:admin &&
+pnpm sdk:check && pnpm smoke:api:local`.
+- Deployed API smoke against `http://127.0.0.1:39172` pass for file metadata:
+  health, login, list, create, detail, update, export and delete cleanup.
+- Public frontend checks pass at `http://144.217.243.161:39174/`, and Admin
+  now serves `/system/files/index.html` from the deployed build.
+
+## Round 10 Live Smoke
+
+Against the scripted temporary local API on fixed port `39173`:
+
+- `GET /health/live` returned 200.
+- `GET /health/ready` returned 200.
+- `GET /api/docs-json` returned 200.
+- `POST /api/auth/login` returned 201 with a seeded admin.
+- `GET /api/core/files` returned 200.
+- `POST /api/core/files` created a smoke file asset with 201.
+- `GET /api/core/files/:id` returned 200 for the created file asset.
+- `PATCH /api/core/files/:id` returned 200 and updated checksum/uploader
+  metadata.
+- `GET /api/core/files/export` returned 200 with `current-page` scope.
+- `DELETE /api/core/files/:id` returned 200 with `deleted=true`.
+- `GET /api/core/files/:id` returned 404 after deletion.
+
+The temporary `39173` API process was stopped after smoke verification.
+
+## Round 10 Commit Record
+
+- Feature commit:
+  `097979c feat(core-file): productize file asset management / 产品化文件资产管理`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

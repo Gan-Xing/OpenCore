@@ -213,6 +213,34 @@ repeatable fixed-port deploy/smoke path after code changes.
 - [x] Run focused, full, build, fixed-port smoke and deploy gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 10: core.file Productization And Public Admin Deploy
+
+Why this slice: RuoYi and Yudao both expose file metadata as an operational
+surface around uploads, previews and storage configuration. OpenCore already
+had package-owned file metadata runtime plus list/export/create/update/delete
+API routes, but lacked a detail read contract, SDK detail support, a live Admin
+page and a deployed Admin URL reachable outside the server.
+
+- [x] Add missing file asset detail API contract.
+- [x] Extend system-management repository contracts with `getFile` for seed
+      and Prisma implementations.
+- [x] Extend `@opencore/sdk` with typed file detail support and tests.
+- [x] Replace the read-only Admin File Center fixture with a live SDK-backed
+      metadata page for list/detail/current-page export plus create/update/
+      delete actions.
+- [x] Keep this round scoped to file metadata management; do not add binary
+      upload, storage-provider configuration, presigned URLs, public download
+      or preview endpoints.
+- [x] Extend Admin smoke checks to lock file SDK lifecycle usage, current-page
+      filtering and export behavior.
+- [x] Add authenticated file metadata smoke to both fixed-port local smoke and
+      deploy scripts.
+- [x] Make deployed Admin bind to `0.0.0.0`, build against the detected public
+      API base URL and print the public frontend URL.
+- [x] Refresh OpenAPI snapshot and registry route/tag checks.
+- [x] Run focused, full, fixed-port smoke and public deploy gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Explicitly Out Of Scope
 
 - Notice read/unread inbox, header badge and per-user read tracking.
@@ -242,4 +270,7 @@ repeatable fixed-port deploy/smoke path after code changes.
 - Config cache refresh, public get-value-by-key endpoints, batch config delete,
   Excel file export, category/name/remark schema expansion, secret vault/KMS
   integration and runtime feature-flag propagation.
+- File binary upload, presigned upload/download URLs, storage-provider config,
+  public download/preview/copy-link workflows, batch file delete and object
+  browser expansion.
 - CRM/ERP/MES/WMS/mall/member/pay/AI modules.

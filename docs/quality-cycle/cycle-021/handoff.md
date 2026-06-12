@@ -3,7 +3,7 @@
 Date: 2026-06-12  
 Repository: `Gan-Xing/OpenCore`  
 Default branch: `main`  
-Latest observed feature commit: `2dbf5aa feat(core-config): productize config management and deploy path / 产品化系统参数管理与部署路径`
+Latest observed feature commit: `097979c feat(core-file): productize file asset management / 产品化文件资产管理`
 
 ## One-sentence Goal
 
@@ -46,11 +46,17 @@ independently accepted slices:
 - Round 7 `core.user`
 - Round 8 `core.dict`
 - Round 9 `core.config`
+- Round 10 `core.file`
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
 `39172` 和 Admin `39174`。后续改完代码不要再手动挑 3000/3010；走脚本，端口
 占用就修占用或显式覆盖。
+
+Round 10 继续沉淀部署路径：`pnpm deploy:opencore` 会让 Admin 监听
+`0.0.0.0:39174`，构建时默认使用检测到的服务器公网 API 地址，并在输出里打印
+公网 Admin URL。当前服务器验证过的入口是 `http://144.217.243.161:39174`，
+API 是 `http://144.217.243.161:39172`。
 
 Admin 生产构建已默认强制稳定 webpack 路径。不要为 OpenCore deploy 打开
 `FORCE_UTOOPACK`；utoopack 已多次在 `global.less.css` CSS loader

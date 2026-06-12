@@ -240,3 +240,30 @@ This remains inside S7 System scope and admits the existing OpenCore
 does not introduce RuoYi/Yudao-style cache refresh, public get-value-by-key
 endpoints, batch delete, Excel file export, category/name/remark schema
 expansion, secret vault/KMS integration or runtime feature-flag propagation.
+
+## Round 10 Audit: core.file
+
+After Round 9, the next lowest dependency productization gap is `core.file`:
+
+- `apps/api/src/modules/core/system-management/system-management.controller.ts`
+  exposed `/api/core/files` list/export/create/update/delete, but lacked
+  `GET /api/core/files/:id`.
+- `@opencore/file` and the system-management repositories already admitted file
+  asset metadata records, but no repository detail contract existed for a
+  single file asset.
+- `@opencore/sdk` exposed file list/export/create/update/delete methods, but
+  lacked typed detail support.
+- `apps/admin/src/pages/System/Files.tsx` was still a read-only fixture-backed
+  table and did not prove a logged-in operator could manage package-owned file
+  metadata.
+- Admin smoke kept files in the legacy read-only current-page-filter bucket,
+  so it did not lock live SDK file lifecycle usage.
+- The deploy script served Admin on `127.0.0.1` and built the browser bundle
+  with a loopback API base URL, so the deployed frontend was not reachable or
+  usable from outside the server.
+
+This remains inside S7 System scope and admits OpenCore's current `FileAsset`
+metadata model: original name, MIME type, size, storage key, checksum, uploader
+and created time. It does not introduce binary upload, presigned URLs, public
+download/preview endpoints, storage-provider configuration, copy-link
+workflows, batch delete or object-browser expansion.

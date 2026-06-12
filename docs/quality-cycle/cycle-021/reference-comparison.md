@@ -264,3 +264,33 @@ model:
 OpenCore does not admit cache refresh, public get-value-by-key APIs, batch
 delete, Excel file export, category/name/remark schema expansion, secret
 vault/KMS integration or runtime feature-flag propagation in this round.
+
+## Round 10 File Reference Shape
+
+RuoYi's standard reference tree checked in this round does not expose a
+standalone file-center management page in the sparse system module, but its
+common upload path treats file handling as infrastructure around upload,
+storage key and returned access URL metadata.
+
+Yudao keeps file management under Infra. The Admin reference exposes file page
+query, delete, batch delete, presigned upload and upload flows, with filters for
+path, MIME type and create time plus preview, download and copy-link actions.
+The backend reference exposes upload, presigned URL creation, create metadata,
+detail, delete, batch delete and download endpoints. The response model
+includes id, config id, path, name, URL, MIME type, size and create time.
+
+OpenCore admits the bounded management loop that matches the current
+package-owned metadata model:
+
+- list, detail, current-page export, create, update and delete for file asset
+  metadata;
+- stable `id` identity for detail/update/delete;
+- SDK-backed Admin page with live metadata CRUD and fallback fixtures only when
+  the API is unavailable;
+- fixed-port smoke and deploy scripts that verify file metadata after login;
+- public Admin deploy that binds to `0.0.0.0` and builds against the server
+  public API URL.
+
+OpenCore does not admit binary upload, presigned upload/download URLs,
+storage-provider configuration, public download/preview/copy-link workflows,
+batch delete or object-browser expansion in this round.
