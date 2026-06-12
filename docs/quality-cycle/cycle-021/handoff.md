@@ -3,7 +3,7 @@
 Date: 2026-06-12  
 Repository: `Gan-Xing/OpenCore`  
 Default branch: `main`  
-Latest observed feature commit: `40d879c feat(core-login-log): productize login log audit trail / 产品化登录日志审计链路`
+Latest observed feature commit: `26c4e1c feat(core-audit-log): productize operation audit trail / 产品化操作审计日志链路`
 
 ## One-sentence Goal
 
@@ -48,6 +48,7 @@ independently accepted slices:
 - Round 9 `core.config`
 - Round 10 `core.file`
 - Round 11 `core.login-log`
+- Round 12 `core.audit-log`
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -66,12 +67,22 @@ Round 11 修复并沉淀了前端登录 405 根因：Admin bundle 之前没有�
 API base URL，并且 Admin 静态服务器会把 `/api/*` 代理到部署 API；部署过程还会
 通过 Admin 同源 `/api/auth/login` 做一次真实登录冒烟。
 
+Round 12 修复并沉淀了前端登录 `/api/api` 根因：Admin SDK request helper
+会自己给请求路径加 `/api`，所以 `ADMIN_API_BASE_URL` 必须是 API origin，
+例如 `http://144.217.243.161:39172`，不能是
+`http://144.217.243.161:39172/api`。现在 `pnpm deploy:opencore` 默认使用
+origin，并会在配置值以 `/api` 或 `/api/` 结尾时直接失败，避免浏览器再次发出
+`/api/api/auth/login`。
+
 Admin 生产构建已默认强制稳定 webpack 路径。不要为 OpenCore deploy 打开
 `FORCE_UTOOPACK`；utoopack 已多次在 `global.less.css` CSS loader
 deserialization 上失败。webpack 构建同时保留 `esbuildMinifyIIFE: true`，避免
 Umi `esbuildHelperChecker` helper-name 冲突。
 
-当前默认前端登录入口：`http://144.217.243.161:39174/user/login`。当前本地部署
+当前默认前端登录入口：`http://144.217.243.161:39174/user/login`。如果浏览器
+仍显示旧的 `/api/api/auth/login`，用
+`http://144.217.243.161:39174/user/login?v=basefix` 打开以避开旧标签页缓存。
+当前本地部署
 账号为 `admin`，密码来自 `.env.opencore.local` 的
 `BOOTSTRAP_ADMIN_PASSWORD`；不要再把 `admin123` 当作这台服务器的有效密码。
 

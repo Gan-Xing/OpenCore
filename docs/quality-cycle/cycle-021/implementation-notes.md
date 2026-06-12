@@ -810,3 +810,90 @@ The temporary `39173` API process was stopped after smoke verification.
   `40d879c feat(core-login-log): productize login log audit trail / 产品化登录日志审计链路`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 12 Capability
+
+Capability: `core.audit-log` productization plus Admin API origin deploy guard.
+
+Goal: turn the existing operation-log audit runtime into a real
+login-protected Admin read-only audit loop with API detail, SDK detail support,
+OpenAPI, Admin page and smoke coverage, while permanently blocking the deployed
+frontend regression where an `/api`-suffixed Admin API base produces
+`/api/api/auth/login`.
+
+## Round 12 Implemented
+
+- Added `GET /api/core/audit-logs/:id`, guarded by `core:audit-log:read`, and
+  refreshed the OpenAPI snapshot.
+- Extended `@opencore/audit` operation-log repository/service contracts with
+  `getOperationLog` for seed and Prisma implementations.
+- Extended `@opencore/sdk` with `AuditLogQueryRequest`, typed list/export query
+  support and `getAuditLog`.
+- Replaced the fixture-only Admin Operation Logs page with a live read-only
+  page using `@opencore/sdk` and platform service methods for list/detail/
+  current-page export.
+- Kept fallback fixtures only for API-unavailable page rendering; normal
+  logged-in use reads real operation audit rows.
+- Added `tools/scripts/smoke-core-audit-log.mjs` and wired it into
+  `pnpm smoke:api:local` and `pnpm deploy:opencore`.
+- The operation-log smoke creates a temporary config through
+  `POST /api/core/config`, waits for the audit interceptor to record the write
+  operation, reads detail, exports filtered rows and deletes the temporary
+  config.
+- Hardened `pnpm deploy:opencore` so `ADMIN_API_BASE_URL` defaults to the API
+  origin without `/api` and deployment fails if an `/api`-suffixed value would
+  cause browser requests like `/api/api/auth/login`.
+- Updated deployment docs to state that `OPENCORE_DEPLOY_ADMIN_API_BASE_URL`
+  must be an API origin, for example `http://144.217.243.161:39172`.
+
+## Round 12 Verification
+
+- Script checks pass:
+  `node --check tools/scripts/smoke-core-audit-log.mjs` and
+  `bash -n tools/scripts/run-local-api-smoke.sh tools/scripts/deploy-local-opencore.sh`.
+- Focused typecheck pass:
+  `pnpm exec tsc --noEmit -p packages/audit/tsconfig.lib.json`,
+  `pnpm exec tsc --noEmit -p packages/sdk/tsconfig.lib.json`,
+  `NX_DAEMON=false pnpm nx run api:typecheck` and
+  `NX_DAEMON=false pnpm nx run admin:typecheck`.
+- Focused tests pass:
+  `NX_DAEMON=false pnpm nx run-many -t test --projects=audit,api,sdk`.
+- `pnpm test:admin`, `pnpm openapi:export`, `pnpm openapi:check` and
+  `pnpm sdk:check` pass.
+- Full gate pass: `pnpm format:check && pnpm lint && pnpm typecheck &&
+pnpm test && pnpm openapi:registry-tags:check &&
+pnpm registry:admin-routes:check && pnpm smoke:api:local`.
+- `pnpm build && pnpm prisma:validate` pass.
+- `pnpm deploy:opencore` pass and deploys API/Admin on fixed ports
+  `39172`/`39174`.
+- Public login checks pass:
+  `http://144.217.243.161:39172/api/auth/login` returns 201,
+  `http://144.217.243.161:39174/api/auth/login` returns 201, and the deployed
+  Admin bundle contains `http://144.217.243.161:39172` without
+  `http://144.217.243.161:39172/api`.
+
+## Round 12 Live Smoke
+
+Against the scripted temporary local API on fixed port `39173`:
+
+- `GET /health/live` returned 200.
+- `GET /health/ready` returned 200.
+- `GET /api/docs-json` returned 200 during config smoke.
+- `POST /api/auth/login` returned 201 with the seeded admin.
+- `GET /api/core/audit-logs` returned 200.
+- `POST /api/core/config` created a temporary smoke config with 201.
+- `GET /api/core/audit-logs?action=POST&resource=/api/core/config` returned
+  the recorded write-operation row.
+- `GET /api/core/audit-logs/:id` returned 200 for that operation-log row.
+- `GET /api/core/audit-logs/export?action=POST&resource=/api/core/config`
+  returned `current-page` export preview.
+- `DELETE /api/core/config/:key` cleaned up the temporary config.
+
+The temporary `39173` API process was stopped after smoke verification.
+
+## Round 12 Commit Record
+
+- Feature commit:
+  `26c4e1c feat(core-audit-log): productize operation audit trail / 产品化操作审计日志链路`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

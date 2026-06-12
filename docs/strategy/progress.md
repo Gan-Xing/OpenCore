@@ -2975,3 +2975,65 @@ pnpm test && pnpm openapi:check && pnpm sdk:check && pnpm smoke:api:local`。
   `40d879c feat(core-login-log): productize login log audit trail / 产品化登录日志审计链路`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## 2026-06-12 Cycle-021 Round 12: core.audit-log Productization And Admin API Origin Guard
+
+### Capability Status
+
+- Round 12 选择 `core.audit-log`：操作审计日志 runtime/API 已支持 list/export，但
+  缺少 detail API、SDK detail、live Admin 只读审计页面和真实写操作记录冒烟闭环。
+- 本轮按 OpenCore 的 TS/NestJS 边界承认当前 immutable operation audit model：
+  `id`、actorUsername、action、resource、resourceId、method、path、statusCode、
+  requestId、metadata 和 createdAt。
+- 本轮同时修复部署前端 `/api/api` 根因：Admin SDK request helper 会自行拼
+  `/api`，所以部署时 `ADMIN_API_BASE_URL` 必须是 API origin，不能以 `/api`
+  结尾。
+- 本轮不扩展操作日志删除/清理、批量删除、duration/location/user-agent schema、
+  operation type enum、异步索引或业务域审计时间线。
+
+### Completed
+
+- 新增 `GET /api/core/audit-logs/:id`，并通过 `core:audit-log:read` 保护。
+- `@opencore/audit` seed/Prisma repository 和 service 均支持
+  `getOperationLog`。
+- `@opencore/sdk` 已提供 audit-log query/detail client，并补齐测试。
+- Admin `/security/operation-logs` 已从 fixture 只读表升级为 live 只读审计页面，
+  使用 SDK-backed platform service 完成列表、详情和当前页导出。
+- 新增 `pnpm smoke:core-audit-log`，并把写操作记录/detail/export smoke 接入
+  `pnpm smoke:api:local` 与 `pnpm deploy:opencore`。
+- `pnpm deploy:opencore` 默认使用 `http://<host>:39172` 作为
+  `ADMIN_API_BASE_URL`，并拒绝以 `/api` 或 `/api/` 结尾的配置，避免
+  `/api/api/auth/login` 回归。
+- OpenAPI snapshot 已刷新。
+
+### Verification
+
+- Script checks pass：
+  `node --check tools/scripts/smoke-core-audit-log.mjs`；
+  `bash -n tools/scripts/run-local-api-smoke.sh tools/scripts/deploy-local-opencore.sh`。
+- Focused typecheck pass：
+  `pnpm exec tsc --noEmit -p packages/audit/tsconfig.lib.json`、
+  `pnpm exec tsc --noEmit -p packages/sdk/tsconfig.lib.json`、
+  `NX_DAEMON=false pnpm nx run api:typecheck`、
+  `NX_DAEMON=false pnpm nx run admin:typecheck`。
+- Focused tests pass：
+  `NX_DAEMON=false pnpm nx run-many -t test --projects=audit,api,sdk`。
+- `pnpm test:admin`、`pnpm openapi:export`、`pnpm openapi:check`、
+  `pnpm sdk:check` pass。
+- Full gate pass：`pnpm format:check && pnpm lint && pnpm typecheck &&
+pnpm test && pnpm openapi:registry-tags:check &&
+pnpm registry:admin-routes:check && pnpm smoke:api:local`。
+- `pnpm build && pnpm prisma:validate` pass。
+- Fixed-port smoke against `http://127.0.0.1:39173` pass：live、ready、docs、
+  login、config CRUD、file metadata CRUD、write-operation recorded、audit-log
+  list、detail 和 export 全链路通过。
+- Public deploy verification pass：`http://144.217.243.161:39174/user/login`
+  返回 no-cache HTML，Admin bundle 包含 `http://144.217.243.161:39172` 且不包含
+  `http://144.217.243.161:39172/api`；API 直连与 Admin 同源代理登录均返回 201。
+
+### Commit Record
+
+- Feature commit:
+  `26c4e1c feat(core-audit-log): productize operation audit trail / 产品化操作审计日志链路`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

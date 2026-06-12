@@ -297,3 +297,34 @@ reason and creation time. It does not introduce login-log deletion/cleanup,
 user unlock, lockout-policy changes, active session termination, location/
 device enrichment, server-side date-range filters or logType/result schema
 expansion.
+
+## Round 12 Audit: core.audit-log
+
+After Round 11, the next lowest dependency productization gap is
+`core.audit-log`:
+
+- `apps/api/src/modules/core/system-management/system-management.controller.ts`
+  exposed `/api/core/audit-logs` list/export, but lacked
+  `GET /api/core/audit-logs/:id`.
+- `@opencore/audit` already recorded operation logs through the global write
+  operation interceptor and exposed seed/Prisma operation-log repositories, but
+  the repository/service contracts had no single record lookup.
+- `@opencore/sdk` exposed audit-log list/export methods, but lacked typed query
+  request reuse and detail support.
+- `apps/admin/src/pages/Security/OperationLogs.tsx` was still a fixture-backed
+  `SystemManagementTable`, so it did not prove a logged-in operator could read
+  real write-operation audit rows or open details.
+- Fixed-port smoke covered config, file metadata and login logs, but did not
+  assert that a successful write operation is recorded by the audit interceptor
+  and readable through list/detail/export.
+- The deployed Admin API base fix from Round 11 still allowed operators to set
+  `OPENCORE_DEPLOY_ADMIN_API_BASE_URL` with a trailing `/api`; because the SDK
+  request helper prefixes `/api` itself, that configuration produced browser
+  requests like `/api/api/auth/login`.
+
+This remains inside S7/S8 Security audit scope and admits OpenCore's current
+immutable operation-log model: ID, actor username, action, resource,
+resourceId, request method/path/status, IP, user agent, request ID, metadata
+and creation time. It does not introduce operation-log deletion/cleanup, batch
+delete, duration/location schema expansion, operation-type enums, async queue
+indexing or business-domain audit timeline views.

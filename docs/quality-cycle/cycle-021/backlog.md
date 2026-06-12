@@ -269,6 +269,37 @@ frontend 405 regression where browser login POSTs hit the Admin static server.
 - [x] Run focused, full, fixed-port smoke and deployment gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 12: core.audit-log Productization And Admin API Origin Guard
+
+Why this slice: RuoYi and Yudao both expose operation logs as an immutable
+security/monitoring trail for operator actions. OpenCore already recorded write
+operations through `@opencore/audit` and exposed list/export routes, but lacked
+a detail API/SDK contract, a live Admin page and a smoke gate proving a real
+write operation is recorded and readable. The deployed Admin path also needed a
+hard guard against the `/api/api/auth/login` regression caused by configuring
+`ADMIN_API_BASE_URL` with a trailing `/api` while the SDK already prefixes
+requests with `/api`.
+
+- [x] Add missing operation-log detail API contract.
+- [x] Extend `@opencore/audit` operation-log repository/service contracts with
+      `getOperationLog` for seed and Prisma implementations.
+- [x] Extend `@opencore/sdk` with typed audit-log query/detail support.
+- [x] Replace the fixture-only Admin Operation Logs page with a live read-only
+      audit trail for list/detail/current-page export.
+- [x] Add authenticated operation-log smoke that creates a temporary config,
+      waits for the write-operation audit row, reads detail, exports and cleans
+      up the config.
+- [x] Wire operation-log smoke into both fixed-port local smoke and deploy
+      scripts.
+- [x] Harden `pnpm deploy:opencore` so `ADMIN_API_BASE_URL` is the API origin
+      without `/api`, and fail deployment if an `/api`-suffixed value would
+      produce `/api/api` browser requests.
+- [x] Keep this round scoped to immutable read-only operation logs; do not add
+      delete, clean, batch delete, async indexing or schema expansion.
+- [x] Refresh OpenAPI snapshot and registry route/tag checks.
+- [x] Run focused, full, build, fixed-port smoke and deployment gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Explicitly Out Of Scope
 
 - Notice read/unread inbox, header badge and per-user read tracking.
@@ -304,4 +335,7 @@ frontend 405 regression where browser login POSTs hit the Admin static server.
 - Login-log deletion/cleanup, user unlock, lockout-policy tuning, session
   termination, location/device enrichment, server-side date-range filters and
   logType/result schema expansion.
+- Operation-log deletion/cleanup, batch delete, duration/location/user-agent
+  schema expansion, operation type enum expansion, async queue/indexing and
+  business-domain audit timeline views.
 - CRM/ERP/MES/WMS/mall/member/pay/AI modules.

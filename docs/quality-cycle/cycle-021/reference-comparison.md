@@ -323,3 +323,31 @@ OpenCore does not admit login-log deletion/cleanup, user unlock,
 lockout-policy/session actions, location/device enrichment, server-side
 date-range filters or schema expansion for logType/result/user-agent fields in
 this round.
+
+## Round 12 Operation Log Reference Shape
+
+RuoYi keeps operation-log management under Monitor as an operator audit surface.
+Its reference shape includes list, export, detail, delete and clean operations,
+with filters such as module title, operator, business type, status and operation
+time. The Admin page exposes row detail so a maintainer can inspect request
+metadata after an operator action.
+
+Yudao keeps operate logs under System. The backend reference exposes detail,
+page query and export routes guarded by operation-log query/export permissions.
+Its response model includes trace ID, user identity, type/subtype, business ID,
+action, extra data, request method, request URL, IP, user agent and create time.
+
+OpenCore admits the bounded loop that matches the current immutable audit
+model:
+
+- list, detail and current-page export for operation-log records;
+- stable `id` identity for detail;
+- authenticated Admin page with live read-only rows and detail drawer;
+- smoke coverage that creates a temporary config through `POST /api/core/config`
+  and proves the global audit interceptor recorded the write operation;
+- deploy hardening that treats `ADMIN_API_BASE_URL` as the API origin and
+  rejects `/api`-suffixed values before a browser can emit `/api/api` requests.
+
+OpenCore does not admit operation-log deletion/cleanup, batch delete,
+duration/location/user-agent schema expansion, operation type enum expansion,
+async queue/indexing or business-domain audit timeline views in this round.
