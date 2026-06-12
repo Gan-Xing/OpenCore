@@ -33,6 +33,7 @@ import { RequirePermission } from '../rbac/permissions.decorator';
 import {
   AuditLogPageDto,
   AuditLogQueryDto,
+  CreateDictItemDto,
   CreateDictTypeDto,
   CreateFileAssetDto,
   CreateSystemDeptDto,
@@ -40,6 +41,9 @@ import {
   CreateSystemNoticeDto,
   CreateSystemPostDto,
   DeleteResultDto,
+  DictDataOptionDto,
+  DictDataOptionQueryDto,
+  DictItemDto,
   DictTypeDto,
   DictTypePageDto,
   ExportPreviewDto,
@@ -61,6 +65,7 @@ import {
   SystemPostPageDto,
   SystemPostQueryDto,
   UpdateSystemDeptDto,
+  UpdateDictItemDto,
   UpdateDictTypeDto,
   UpdateFileAssetDto,
   UploadFileAssetDto,
@@ -107,6 +112,34 @@ export class SystemManagementController {
     return this.dicts.createExportPreview(query);
   }
 
+  @Get('dict-data/simple-list')
+  @ApiTags('Core Dictionaries')
+  @ApiOkResponse({ type: [DictDataOptionDto] })
+  listDictDataOptions(
+    @Query() query: DictDataOptionQueryDto,
+  ): Promise<readonly DictDataOptionDto[]> {
+    return this.dicts.listDictDataOptions(query);
+  }
+
+  @Get('dicts/:code/items')
+  @ApiTags('Core Dictionaries')
+  @RequirePermission('core:dict:read')
+  @ApiOkResponse({ type: [DictItemDto] })
+  listDictItems(@Param('code') code: string): Promise<readonly DictItemDto[]> {
+    return this.dicts.listDictItems(code);
+  }
+
+  @Get('dicts/:code/items/:itemId')
+  @ApiTags('Core Dictionaries')
+  @RequirePermission('core:dict:read')
+  @ApiOkResponse({ type: DictItemDto })
+  getDictItem(
+    @Param('code') code: string,
+    @Param('itemId') itemId: string,
+  ): Promise<DictItemDto> {
+    return this.dicts.getDictItem(code, itemId);
+  }
+
   @Get('dicts/:code')
   @ApiTags('Core Dictionaries')
   @RequirePermission('core:dict:read')
@@ -123,6 +156,17 @@ export class SystemManagementController {
     return this.dicts.createDict(body);
   }
 
+  @Post('dicts/:code/items')
+  @ApiTags('Core Dictionaries')
+  @RequirePermission('core:dict:create')
+  @ApiOkResponse({ type: DictItemDto })
+  createDictItem(
+    @Param('code') code: string,
+    @Body() body: CreateDictItemDto,
+  ): Promise<DictItemDto> {
+    return this.dicts.createDictItem(code, body);
+  }
+
   @Patch('dicts/:code')
   @ApiTags('Core Dictionaries')
   @RequirePermission('core:dict:update')
@@ -132,6 +176,29 @@ export class SystemManagementController {
     @Body() body: UpdateDictTypeDto,
   ): Promise<DictTypeDto> {
     return this.dicts.updateDict(code, body);
+  }
+
+  @Patch('dicts/:code/items/:itemId')
+  @ApiTags('Core Dictionaries')
+  @RequirePermission('core:dict:update')
+  @ApiOkResponse({ type: DictItemDto })
+  updateDictItem(
+    @Param('code') code: string,
+    @Param('itemId') itemId: string,
+    @Body() body: UpdateDictItemDto,
+  ): Promise<DictItemDto> {
+    return this.dicts.updateDictItem(code, itemId, body);
+  }
+
+  @Delete('dicts/:code/items/:itemId')
+  @ApiTags('Core Dictionaries')
+  @RequirePermission('core:dict:delete')
+  @ApiOkResponse({ type: DeleteResultDto })
+  deleteDictItem(
+    @Param('code') code: string,
+    @Param('itemId') itemId: string,
+  ): Promise<DeleteResultDto> {
+    return this.dicts.deleteDictItem(code, itemId);
   }
 
   @Delete('dicts/:code')

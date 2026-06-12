@@ -23,6 +23,10 @@ export type DictItemSummary = {
   enabled: boolean;
 };
 
+export type DictDataOptionSummary = DictItemSummary & {
+  dictCode: string;
+};
+
 export type DictTypeSummary = {
   id: string;
   code: string;
@@ -42,6 +46,22 @@ export type CreateDictTypeRequest = {
 
 export type UpdateDictTypeRequest = Partial<
   Pick<DictTypeSummary, 'description' | 'enabled' | 'items' | 'name'>
+>;
+
+export type DictDataOptionQueryRequest = {
+  dictCode?: string;
+};
+
+export type CreateDictItemRequest = {
+  enabled?: boolean;
+  id?: string;
+  label: string;
+  sort?: number;
+  value: string;
+};
+
+export type UpdateDictItemRequest = Partial<
+  Pick<DictItemSummary, 'enabled' | 'label' | 'sort' | 'value'>
 >;
 
 export type SystemConfigSummary = {

@@ -3,6 +3,7 @@ import {
   EditOutlined,
   EyeOutlined,
   MinusCircleOutlined,
+  OrderedListOutlined,
   PlusOutlined,
   ReloadOutlined,
 } from '@ant-design/icons';
@@ -33,10 +34,15 @@ import {
 } from 'antd';
 import { useEffect, useState } from 'react';
 import {
+  createOpenCoreDictItem,
   createOpenCoreDict,
+  deleteOpenCoreDictItem,
   deleteOpenCoreDict,
   getOpenCoreDict,
+  listOpenCoreDictDataOptions,
+  listOpenCoreDictItems,
   listOpenCoreDicts,
+  updateOpenCoreDictItem,
   updateOpenCoreDict,
 } from '@/services/opencore/platform';
 import {
@@ -131,6 +137,16 @@ function normalizeDictItems(
   });
 }
 
+function normalizeDictItemFormValue(item: DictItemFormValue) {
+  return {
+    id: item.id?.trim() || undefined,
+    label: item.label?.trim() ?? '',
+    value: item.value?.trim() ?? '',
+    sort: item.sort,
+    enabled: item.enabled ?? true,
+  };
+}
+
 function createDictItemId(code: string, value: string, index: number): string {
   const codePart = createIdPart(code);
   const valuePart = createIdPart(value) || `item_${index + 1}`;
@@ -155,6 +171,7 @@ function renderStatus(enabled: boolean) {
 
 export default function DictsPage() {
   const [form] = Form.useForm<DictFormValues>();
+  const [itemForm] = Form.useForm<DictItemFormValue>();
   const [rows, setRows] = useState<readonly DictTypeSummary[]>(fallbackRows);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
@@ -162,6 +179,14 @@ export default function DictsPage() {
   const [editingDict, setEditingDict] = useState<DictTypeSummary>();
   const [formOpen, setFormOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [itemsDict, setItemsDict] = useState<DictTypeSummary>();
+  const [itemRows, setItemRows] = useState<readonly DictItemSummary[]>([]);
+  const [consumerOptionCount, setConsumerOptionCount] = useState(0);
+  const [itemsLoading, setItemsLoading] = useState(false);
+  const [itemsOpen, setItemsOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<DictItemSummary>();
+  const [itemFormOpen, setItemFormOpen] = useState(false);
+  const [itemSubmitting, setItemSubmitting] = useState(false);
   const { filteredRows, toolbar: filterToolbar } =
     useCurrentPageFilters<DictTypeSummary>({
       rows,
@@ -228,6 +253,50 @@ export default function DictsPage() {
     }
   };
 
+  const loadDictItems = async (record: DictTypeSummary) => {
+    setItemsLoading(true);
+    try {
+      const [items, options] = await Promise.all([
+        listOpenCoreDictItems(record.code),
+        listOpenCoreDictDataOptions({ dictCode: record.code }),
+      ]);
+      setItemRows([...items]);
+      setConsumerOptionCount(options.length);
+    } catch (error: unknown) {
+      message.error(
+        error instanceof Error
+          ? error.message
+          : 'Unable to load dictionary items.',
+      );
+    } finally {
+      setItemsLoading(false);
+    }
+  };
+
+  const openItems = async (record: DictTypeSummary) => {
+    setItemsDict(record);
+    setItemsOpen(true);
+    await loadDictItems(record);
+  };
+
+  const openCreateItemForm = () => {
+    setEditingItem(undefined);
+    itemForm.setFieldsValue({
+      enabled: true,
+      id: '',
+      label: '',
+      sort: (itemRows.length + 1) * 10,
+      value: '',
+    });
+    setItemFormOpen(true);
+  };
+
+  const openEditItemForm = (record: DictItemSummary) => {
+    setEditingItem(record);
+    itemForm.setFieldsValue({ ...record });
+    setItemFormOpen(true);
+  };
+
   const submitForm = async () => {
     const values = await form.validateFields();
     const code = values.code.trim();
@@ -264,6 +333,87 @@ export default function DictsPage() {
     await loadDicts();
   };
 
+  const submitItemForm = async () => {
+    if (!itemsDict) {
+      return;
+    }
+
+    const values = await itemForm.validateFields();
+    const body = normalizeDictItemFormValue(values);
+
+    setItemSubmitting(true);
+    try {
+      if (editingItem) {
+        await updateOpenCoreDictItem(itemsDict.code, editingItem.id, body);
+        message.success('Dictionary item updated.');
+      } else {
+        await createOpenCoreDictItem(itemsDict.code, body);
+        message.success('Dictionary item created.');
+      }
+      setItemFormOpen(false);
+      setEditingItem(undefined);
+      await loadDictItems(itemsDict);
+      await loadDicts();
+    } finally {
+      setItemSubmitting(false);
+    }
+  };
+
+  const removeDictItem = async (record: DictItemSummary) => {
+    if (!itemsDict) {
+      return;
+    }
+
+    await deleteOpenCoreDictItem(itemsDict.code, record.id);
+    message.success('Dictionary item deleted.');
+    await loadDictItems(itemsDict);
+    await loadDicts();
+  };
+
+  const itemColumns: ProColumns<DictItemSummary>[] = [
+    { title: 'Label', dataIndex: 'label' },
+    { title: 'Value', dataIndex: 'value' },
+    { title: 'Sort', dataIndex: 'sort', width: 88 },
+    {
+      title: 'Status',
+      dataIndex: 'enabled',
+      width: 96,
+      render: (_, record) => renderStatus(record.enabled),
+    },
+    {
+      title: 'Actions',
+      valueType: 'option',
+      width: 112,
+      render: (_, record) => (
+        <Space size="small">
+          <Tooltip title="Edit item">
+            <Button
+              aria-label={`Edit item ${record.value}`}
+              icon={<EditOutlined />}
+              onClick={() => openEditItemForm(record)}
+              size="small"
+            />
+          </Tooltip>
+          <Popconfirm
+            title="Delete this dictionary item?"
+            okText="Delete"
+            okButtonProps={{ danger: true }}
+            onConfirm={() => void removeDictItem(record)}
+          >
+            <Tooltip title="Delete item">
+              <Button
+                aria-label={`Delete item ${record.value}`}
+                danger
+                icon={<DeleteOutlined />}
+                size="small"
+              />
+            </Tooltip>
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ];
+
   const columns: ProColumns<DictTypeSummary>[] = [
     {
       title: 'Code',
@@ -291,7 +441,7 @@ export default function DictsPage() {
     {
       title: 'Actions',
       valueType: 'option',
-      width: 152,
+      width: 196,
       render: (_, record) => (
         <Space size="small">
           <Tooltip title="Detail">
@@ -299,6 +449,14 @@ export default function DictsPage() {
               aria-label={`View ${record.code}`}
               icon={<EyeOutlined />}
               onClick={() => void openDetail(record)}
+              size="small"
+            />
+          </Tooltip>
+          <Tooltip title="Items">
+            <Button
+              aria-label={`Manage items for ${record.code}`}
+              icon={<OrderedListOutlined />}
+              onClick={() => void openItems(record)}
               size="small"
             />
           </Tooltip>
@@ -383,6 +541,92 @@ export default function DictsPage() {
         open={Boolean(selectedDetail)}
         title={selectedDetail?.name ?? 'Dictionary Detail'}
       />
+      <Modal
+        title={`Dictionary Items${itemsDict ? `: ${itemsDict.code}` : ''}`}
+        open={itemsOpen}
+        onCancel={() => {
+          setItemsOpen(false);
+          setItemsDict(undefined);
+          setItemRows([]);
+          setConsumerOptionCount(0);
+        }}
+        footer={null}
+        width={920}
+      >
+        <Alert
+          showIcon
+          type="info"
+          message={`${consumerOptionCount} enabled items are visible through the simple-list consumer endpoint.`}
+          style={{ marginBlockEnd: 16 }}
+        />
+        <ProTable<DictItemSummary>
+          rowKey="id"
+          loading={itemsLoading}
+          search={false}
+          options={false}
+          toolBarRender={() => [
+            <Button
+              key="create-item"
+              icon={<PlusOutlined />}
+              type="primary"
+              onClick={openCreateItemForm}
+            >
+              New Item
+            </Button>,
+            <Button
+              key="refresh-items"
+              icon={<ReloadOutlined />}
+              onClick={() => {
+                if (itemsDict) {
+                  void loadDictItems(itemsDict);
+                }
+              }}
+            >
+              Refresh Items
+            </Button>,
+          ]}
+          pagination={false}
+          dataSource={itemRows}
+          columns={itemColumns}
+        />
+      </Modal>
+      <Modal
+        title={editingItem ? 'Edit Dictionary Item' : 'New Dictionary Item'}
+        open={itemFormOpen}
+        onCancel={() => {
+          setItemFormOpen(false);
+          setEditingItem(undefined);
+        }}
+        onOk={() => void submitItemForm()}
+        confirmLoading={itemSubmitting}
+        okText={editingItem ? 'Save' : 'Create'}
+      >
+        <Form<DictItemFormValue> form={itemForm} layout="vertical">
+          <Form.Item
+            label="Label"
+            name="label"
+            rules={[{ required: true, message: 'Label is required.' }]}
+          >
+            <Input maxLength={80} />
+          </Form.Item>
+          <Form.Item
+            label="Value"
+            name="value"
+            rules={[{ required: true, message: 'Value is required.' }]}
+          >
+            <Input maxLength={80} />
+          </Form.Item>
+          <Form.Item label="ID" name="id">
+            <Input disabled={Boolean(editingItem)} maxLength={120} />
+          </Form.Item>
+          <Form.Item label="Sort" name="sort">
+            <InputNumber min={0} precision={0} />
+          </Form.Item>
+          <Form.Item label="Enabled" name="enabled" valuePropName="checked">
+            <Switch checkedChildren="Enabled" unCheckedChildren="Disabled" />
+          </Form.Item>
+        </Form>
+      </Modal>
       <Modal
         title={editingDict ? 'Edit Dictionary' : 'New Dictionary'}
         open={formOpen}

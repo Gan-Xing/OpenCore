@@ -26,6 +26,17 @@ describe('createSystemManagementClient', () => {
 
     await client.listDicts('token', { page: 2, pageSize: 20 });
     await client.getDict('token', 'system.status');
+    await client.listDictDataOptions('token', { dictCode: 'system.status' });
+    await client.listDictItems('token', 'system.status');
+    await client.getDictItem('token', 'system.status', 'dict_item_enabled');
+    await client.createDictItem('token', 'system.status', {
+      label: 'Archived',
+      value: 'archived',
+    });
+    await client.updateDictItem('token', 'system.status', 'dict_item_enabled', {
+      sort: 30,
+    });
+    await client.deleteDictItem('token', 'system.status', 'dict_item_disabled');
     await client.listConfig('token', { page: 1, pageSize: 10 });
     await client.getConfig('token', 'opencore.admin.title');
     await client.exportConfig('token', { page: 1, pageSize: 10 });
@@ -119,6 +130,33 @@ describe('createSystemManagementClient', () => {
       },
       {
         path: '/core/dicts/system.status',
+        token: 'token',
+      },
+      {
+        path: '/core/dict-data/simple-list?dictCode=system.status',
+        token: 'token',
+      },
+      {
+        path: '/core/dicts/system.status/items',
+        token: 'token',
+      },
+      {
+        path: '/core/dicts/system.status/items/dict_item_enabled',
+        token: 'token',
+      },
+      {
+        path: '/core/dicts/system.status/items',
+        method: 'POST',
+        token: 'token',
+      },
+      {
+        path: '/core/dicts/system.status/items/dict_item_enabled',
+        method: 'PATCH',
+        token: 'token',
+      },
+      {
+        path: '/core/dicts/system.status/items/dict_item_disabled',
+        method: 'DELETE',
         token: 'token',
       },
       {

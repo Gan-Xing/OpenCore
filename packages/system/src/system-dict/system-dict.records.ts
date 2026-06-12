@@ -6,6 +6,10 @@ export type DictItemRecord = {
   enabled: boolean;
 };
 
+export type DictDataOptionRecord = DictItemRecord & {
+  dictCode: string;
+};
+
 export type DictTypeRecord = {
   id: string;
   code: string;

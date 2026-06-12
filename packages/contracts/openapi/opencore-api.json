@@ -989,6 +989,190 @@
         "tags": ["SystemManagement", "Core Dictionaries"]
       }
     },
+    "/api/core/dict-data/simple-list": {
+      "get": {
+        "operationId": "SystemManagementController_listDictDataOptions",
+        "parameters": [
+          {
+            "name": "dictCode",
+            "required": false,
+            "in": "query",
+            "schema": { "example": "system.status", "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/DictDataOptionDto" }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Dictionaries"]
+      }
+    },
+    "/api/core/dicts/{code}/items": {
+      "get": {
+        "operationId": "SystemManagementController_listDictItems",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/DictItemDto" }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Dictionaries"]
+      },
+      "post": {
+        "operationId": "SystemManagementController_createDictItem",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateDictItemDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DictItemDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Dictionaries"]
+      }
+    },
+    "/api/core/dicts/{code}/items/{itemId}": {
+      "get": {
+        "operationId": "SystemManagementController_getDictItem",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "itemId",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DictItemDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Dictionaries"]
+      },
+      "patch": {
+        "operationId": "SystemManagementController_updateDictItem",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "itemId",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateDictItemDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DictItemDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Dictionaries"]
+      },
+      "delete": {
+        "operationId": "SystemManagementController_deleteDictItem",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "itemId",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DeleteResultDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Dictionaries"]
+      }
+    },
     "/api/core/dicts/{code}": {
       "get": {
         "operationId": "SystemManagementController_getDict",
@@ -5260,6 +5444,18 @@
         },
         "required": ["filename", "scope", "columns", "rowCount", "generatedAt"]
       },
+      "DictDataOptionDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "label": { "type": "string" },
+          "value": { "type": "string" },
+          "sort": { "type": "number" },
+          "enabled": { "type": "boolean" },
+          "dictCode": { "type": "string" }
+        },
+        "required": ["id", "label", "value", "sort", "enabled", "dictCode"]
+      },
       "CreateDictTypeDto": {
         "type": "object",
         "properties": {
@@ -5274,6 +5470,17 @@
         },
         "required": ["code", "name"]
       },
+      "CreateDictItemDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "label": { "type": "string", "example": "Enabled" },
+          "value": { "type": "string", "example": "enabled" },
+          "sort": { "type": "number", "default": 0 },
+          "enabled": { "type": "boolean", "default": true }
+        },
+        "required": ["label", "value"]
+      },
       "UpdateDictTypeDto": {
         "type": "object",
         "properties": {
@@ -5284,6 +5491,15 @@
             "type": "array",
             "items": { "$ref": "#/components/schemas/DictItemDto" }
           }
+        }
+      },
+      "UpdateDictItemDto": {
+        "type": "object",
+        "properties": {
+          "label": { "type": "string" },
+          "value": { "type": "string" },
+          "sort": { "type": "number" },
+          "enabled": { "type": "boolean" }
         }
       },
       "SystemConfigDto": {

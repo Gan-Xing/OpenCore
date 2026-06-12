@@ -2,6 +2,7 @@ import type { SdkRequest } from './rbac-client';
 import type {
   AuditLogQueryRequest,
   AuditLogSummary,
+  CreateDictItemRequest,
   CreateDictTypeRequest,
   CreateFileAssetRequest,
   CreateSystemDeptRequest,
@@ -9,6 +10,9 @@ import type {
   CreateSystemPostRequest,
   CreateSystemConfigRequest,
   DeleteResult,
+  DictDataOptionQueryRequest,
+  DictDataOptionSummary,
+  DictItemSummary,
   DictTypeSummary,
   ExportPreview,
   FileAssetSummary,
@@ -24,6 +28,7 @@ import type {
   SystemNoticeSummary,
   SystemPostQueryRequest,
   SystemPostSummary,
+  UpdateDictItemRequest,
   UpdateDictTypeRequest,
   UpdateFileAssetRequest,
   UploadFileAssetRequest,
@@ -42,15 +47,44 @@ export type SystemManagementClient = {
   ) => Promise<PageResponse<DictTypeSummary>>;
   exportDicts: (token: Token, query?: PageRequest) => Promise<ExportPreview>;
   getDict: (token: Token, code: string) => Promise<DictTypeSummary>;
+  listDictDataOptions: (
+    token: Token,
+    query?: DictDataOptionQueryRequest,
+  ) => Promise<readonly DictDataOptionSummary[]>;
+  listDictItems: (
+    token: Token,
+    code: string,
+  ) => Promise<readonly DictItemSummary[]>;
+  getDictItem: (
+    token: Token,
+    code: string,
+    itemId: string,
+  ) => Promise<DictItemSummary>;
   createDict: (
     token: Token,
     body: CreateDictTypeRequest,
   ) => Promise<DictTypeSummary>;
+  createDictItem: (
+    token: Token,
+    code: string,
+    body: CreateDictItemRequest,
+  ) => Promise<DictItemSummary>;
   updateDict: (
     token: Token,
     code: string,
     body: UpdateDictTypeRequest,
   ) => Promise<DictTypeSummary>;
+  updateDictItem: (
+    token: Token,
+    code: string,
+    itemId: string,
+    body: UpdateDictItemRequest,
+  ) => Promise<DictItemSummary>;
+  deleteDictItem: (
+    token: Token,
+    code: string,
+    itemId: string,
+  ) => Promise<DeleteResult>;
   deleteDict: (token: Token, code: string) => Promise<DeleteResult>;
   listConfig: (
     token: Token,
@@ -184,18 +218,65 @@ export function createSystemManagementClient(
       request<DictTypeSummary>(`/core/dicts/${encodeURIComponent(code)}`, {
         token,
       }),
+    listDictDataOptions: (token, query) =>
+      request<readonly DictDataOptionSummary[]>(
+        withQuery('/core/dict-data/simple-list', query),
+        {
+          token,
+        },
+      ),
+    listDictItems: (token, code) =>
+      request<readonly DictItemSummary[]>(
+        `/core/dicts/${encodeURIComponent(code)}/items`,
+        {
+          token,
+        },
+      ),
+    getDictItem: (token, code, itemId) =>
+      request<DictItemSummary>(
+        `/core/dicts/${encodeURIComponent(code)}/items/${encodeURIComponent(itemId)}`,
+        {
+          token,
+        },
+      ),
     createDict: (token, body) =>
       request<DictTypeSummary>('/core/dicts', {
         method: 'POST',
         body,
         token,
       }),
+    createDictItem: (token, code, body) =>
+      request<DictItemSummary>(
+        `/core/dicts/${encodeURIComponent(code)}/items`,
+        {
+          method: 'POST',
+          body,
+          token,
+        },
+      ),
     updateDict: (token, code, body) =>
       request<DictTypeSummary>(`/core/dicts/${encodeURIComponent(code)}`, {
         method: 'PATCH',
         body,
         token,
       }),
+    updateDictItem: (token, code, itemId, body) =>
+      request<DictItemSummary>(
+        `/core/dicts/${encodeURIComponent(code)}/items/${encodeURIComponent(itemId)}`,
+        {
+          method: 'PATCH',
+          body,
+          token,
+        },
+      ),
+    deleteDictItem: (token, code, itemId) =>
+      request<DeleteResult>(
+        `/core/dicts/${encodeURIComponent(code)}/items/${encodeURIComponent(itemId)}`,
+        {
+          method: 'DELETE',
+          token,
+        },
+      ),
     deleteDict: (token, code) =>
       request<DeleteResult>(`/core/dicts/${encodeURIComponent(code)}`, {
         method: 'DELETE',

@@ -9,6 +9,7 @@ import {
   type AuditLogSummary,
   type BatchKickOutSessionsRequest,
   type BatchKickOutSessionsResult,
+  type CreateDictItemRequest,
   type CreateDictTypeRequest,
   type CreateFileAssetRequest,
   type CreateMenuRequest,
@@ -28,6 +29,9 @@ import {
   type RoleSummary,
   type SetRoleStatusRequest,
   type SystemStatusSummary,
+  type DictDataOptionQueryRequest,
+  type DictDataOptionSummary,
+  type DictItemSummary,
   type DictTypeSummary,
   type SystemConfigSummary,
   type SystemDeptQueryRequest,
@@ -46,6 +50,7 @@ import {
   type ResetUserPasswordRequest,
   type SetUserStatusRequest,
   type UpdateSystemDeptRequest,
+  type UpdateDictItemRequest,
   type UpdateDictTypeRequest,
   type UpdateFileAssetRequest,
   type UpdateSystemConfigRequest,
@@ -236,6 +241,56 @@ export async function listOpenCoreDicts(): Promise<DictTypeSummary[]> {
 
 export function getOpenCoreDict(code: string): Promise<DictTypeSummary> {
   return systemManagementClient.getDict(getRequiredAdminToken(), code);
+}
+
+export function listOpenCoreDictDataOptions(
+  query?: DictDataOptionQueryRequest,
+): Promise<readonly DictDataOptionSummary[]> {
+  return systemManagementClient.listDictDataOptions(
+    getRequiredAdminToken(),
+    query,
+  );
+}
+
+export function listOpenCoreDictItems(
+  code: string,
+): Promise<readonly DictItemSummary[]> {
+  return systemManagementClient.listDictItems(getRequiredAdminToken(), code);
+}
+
+export function createOpenCoreDictItem(
+  code: string,
+  body: CreateDictItemRequest,
+): Promise<DictItemSummary> {
+  return systemManagementClient.createDictItem(
+    getRequiredAdminToken(),
+    code,
+    body,
+  );
+}
+
+export function updateOpenCoreDictItem(
+  code: string,
+  itemId: string,
+  body: UpdateDictItemRequest,
+): Promise<DictItemSummary> {
+  return systemManagementClient.updateDictItem(
+    getRequiredAdminToken(),
+    code,
+    itemId,
+    body,
+  );
+}
+
+export function deleteOpenCoreDictItem(
+  code: string,
+  itemId: string,
+): Promise<{ deleted: true }> {
+  return systemManagementClient.deleteDictItem(
+    getRequiredAdminToken(),
+    code,
+    itemId,
+  );
 }
 
 export function createOpenCoreDict(

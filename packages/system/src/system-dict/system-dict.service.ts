@@ -1,7 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
-import type { CreateDictTypeDto, UpdateDictTypeDto } from './system-dict.dto';
-import type { DictTypeRecord } from './system-dict.records';
+import type {
+  CreateDictItemDto,
+  CreateDictTypeDto,
+  DictDataOptionQueryDto,
+  UpdateDictItemDto,
+  UpdateDictTypeDto,
+} from './system-dict.dto';
+import type {
+  DictDataOptionRecord,
+  DictItemRecord,
+  DictTypeRecord,
+} from './system-dict.records';
 import {
   createSystemDictExportPreview,
   SystemDictRepository,
@@ -23,12 +33,45 @@ export class SystemDictService {
     return this.repository.getDict(code);
   }
 
+  listDictDataOptions(
+    query: DictDataOptionQueryDto = {},
+  ): Promise<readonly DictDataOptionRecord[]> {
+    return this.repository.listDictDataOptions(query);
+  }
+
+  listDictItems(code: string): Promise<readonly DictItemRecord[]> {
+    return this.repository.listDictItems(code);
+  }
+
+  getDictItem(code: string, itemId: string): Promise<DictItemRecord> {
+    return this.repository.getDictItem(code, itemId);
+  }
+
   createDict(body: CreateDictTypeDto): Promise<DictTypeRecord> {
     return this.repository.createDict(body);
   }
 
+  createDictItem(
+    code: string,
+    body: CreateDictItemDto,
+  ): Promise<DictItemRecord> {
+    return this.repository.createDictItem(code, body);
+  }
+
   updateDict(code: string, body: UpdateDictTypeDto): Promise<DictTypeRecord> {
     return this.repository.updateDict(code, body);
+  }
+
+  updateDictItem(
+    code: string,
+    itemId: string,
+    body: UpdateDictItemDto,
+  ): Promise<DictItemRecord> {
+    return this.repository.updateDictItem(code, itemId, body);
+  }
+
+  deleteDictItem(code: string, itemId: string): Promise<{ deleted: true }> {
+    return this.repository.deleteDictItem(code, itemId);
   }
 
   deleteDict(code: string): Promise<{ deleted: true }> {

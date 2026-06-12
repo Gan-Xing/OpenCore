@@ -9,10 +9,13 @@ export {
 } from '@opencore/audit';
 export {
   CreateDictTypeDto,
+  CreateDictItemDto,
   CreateSystemDeptDto,
   CreateSystemConfigDto,
   CreateSystemNoticeDto,
   CreateSystemPostDto,
+  DictDataOptionDto,
+  DictDataOptionQueryDto,
   DictItemDto,
   DictTypeDto,
   DictTypePageDto,
@@ -28,6 +31,7 @@ export {
   SystemPostPageDto,
   SystemPostQueryDto,
   UpdateSystemDeptDto,
+  UpdateDictItemDto,
   UpdateDictTypeDto,
   UpdateSystemConfigDto,
   UpdateSystemNoticeDto,

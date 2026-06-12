@@ -47,6 +47,85 @@ describe('@opencore/system system-dict', () => {
     });
   });
 
+  it('supports item-level management and simple-list filtering in seed mode', async () => {
+    const service = new SystemDictService(new SeedSystemDictRepository());
+    const dict = await service.createDict({
+      code: 'sample.options',
+      name: 'Sample Options',
+      items: [],
+    });
+    const visible = await service.createDictItem(dict.code, {
+      label: 'Visible',
+      value: 'visible',
+      sort: 10,
+    });
+    const hidden = await service.createDictItem(dict.code, {
+      label: 'Hidden',
+      value: 'hidden',
+      enabled: false,
+      sort: 20,
+    });
+
+    await expect(service.listDictItems(dict.code)).resolves.toHaveLength(2);
+    await expect(
+      service.listDictDataOptions({ dictCode: dict.code }),
+    ).resolves.toEqual([
+      expect.objectContaining({
+        dictCode: dict.code,
+        value: visible.value,
+      }),
+    ]);
+
+    await expect(
+      service.updateDictItem(dict.code, hidden.id, { enabled: true }),
+    ).resolves.toMatchObject({ enabled: true });
+    await expect(
+      service.listDictDataOptions({ dictCode: dict.code }),
+    ).resolves.toHaveLength(2);
+
+    await service.updateDict(dict.code, { enabled: false });
+    await expect(
+      service.listDictDataOptions({ dictCode: dict.code }),
+    ).resolves.toEqual([]);
+
+    await service.updateDict(dict.code, { enabled: true });
+    await expect(
+      service.deleteDictItem(dict.code, visible.id),
+    ).resolves.toEqual({ deleted: true });
+    await expect(service.getDictItem(dict.code, visible.id)).rejects.toThrow(
+      'Dictionary item not found',
+    );
+  });
+
+  it('rejects malformed dictionary booleans and item sort values', async () => {
+    const service = new SystemDictService(new SeedSystemDictRepository());
+
+    await expect(
+      service.createDict({
+        code: 'sample.invalid',
+        name: 'Sample Invalid',
+        enabled: 'true' as unknown as boolean,
+        items: [],
+      }),
+    ).rejects.toThrow('enabled must be a boolean');
+
+    await expect(
+      service.createDict({
+        code: 'sample.invalid-item',
+        name: 'Sample Invalid Item',
+        items: [
+          {
+            id: 'invalid_item',
+            label: 'Invalid',
+            value: 'invalid',
+            enabled: true,
+            sort: '10' as unknown as number,
+          },
+        ],
+      }),
+    ).rejects.toThrow('sort must be an integer');
+  });
+
   describe('PrismaSystemDictRepository integration', () => {
     const prisma = new PrismaService();
     const service = new SystemDictService(
@@ -116,6 +195,54 @@ describe('@opencore/system system-dict', () => {
       await expect(service.deleteDict(dictCode)).resolves.toEqual({
         deleted: true,
       });
+    });
+
+    it('persists dictionary item CRUD and simple-list filtering through Prisma', async () => {
+      const dict = await service.createDict({
+        code: dictCode,
+        name: 'System Package Dictionary',
+        items: [],
+      });
+      const visible = await service.createDictItem(dict.code, {
+        label: 'Visible',
+        value: 'visible',
+        sort: 10,
+      });
+      const hidden = await service.createDictItem(dict.code, {
+        label: 'Hidden',
+        value: 'hidden',
+        enabled: false,
+        sort: 20,
+      });
+
+      await expect(service.getDictItem(dict.code, visible.id)).resolves.toEqual(
+        expect.objectContaining({ value: 'visible' }),
+      );
+      await expect(
+        service.listDictDataOptions({ dictCode: dict.code }),
+      ).resolves.toEqual([
+        expect.objectContaining({
+          dictCode: dict.code,
+          value: 'visible',
+        }),
+      ]);
+
+      await expect(
+        service.updateDictItem(dict.code, hidden.id, { enabled: true }),
+      ).resolves.toMatchObject({ enabled: true });
+      await expect(
+        service.listDictDataOptions({ dictCode: dict.code }),
+      ).resolves.toHaveLength(2);
+
+      await service.updateDict(dict.code, { enabled: false });
+      await expect(
+        service.listDictDataOptions({ dictCode: dict.code }),
+      ).resolves.toEqual([]);
+
+      await service.updateDict(dict.code, { enabled: true });
+      await expect(
+        service.deleteDictItem(dict.code, visible.id),
+      ).resolves.toEqual({ deleted: true });
     });
 
     async function cleanupTestRows(): Promise<void> {

@@ -1,11 +1,22 @@
+import { BadRequestException } from '@nestjs/common';
 import {
   createPageResult,
   normalizePagination,
   type PageQueryInput,
   type PageResult,
 } from '@opencore/common';
-import type { CreateDictTypeDto, UpdateDictTypeDto } from './system-dict.dto';
-import type { DictTypeRecord } from './system-dict.records';
+import type {
+  CreateDictItemDto,
+  CreateDictTypeDto,
+  DictDataOptionQueryDto,
+  UpdateDictItemDto,
+  UpdateDictTypeDto,
+} from './system-dict.dto';
+import type {
+  DictDataOptionRecord,
+  DictItemRecord,
+  DictTypeRecord,
+} from './system-dict.records';
 
 export type SystemDictExportPreview = {
   filename: string;
@@ -33,12 +44,36 @@ export abstract class SystemDictRepository {
 
   abstract getDict(code: string): Promise<DictTypeRecord>;
 
+  abstract listDictDataOptions(
+    query?: DictDataOptionQueryDto,
+  ): Promise<readonly DictDataOptionRecord[]>;
+
+  abstract listDictItems(code: string): Promise<readonly DictItemRecord[]>;
+
+  abstract getDictItem(code: string, itemId: string): Promise<DictItemRecord>;
+
   abstract createDict(body: CreateDictTypeDto): Promise<DictTypeRecord>;
+
+  abstract createDictItem(
+    code: string,
+    body: CreateDictItemDto,
+  ): Promise<DictItemRecord>;
 
   abstract updateDict(
     code: string,
     body: UpdateDictTypeDto,
   ): Promise<DictTypeRecord>;
+
+  abstract updateDictItem(
+    code: string,
+    itemId: string,
+    body: UpdateDictItemDto,
+  ): Promise<DictItemRecord>;
+
+  abstract deleteDictItem(
+    code: string,
+    itemId: string,
+  ): Promise<{ deleted: true }>;
 
   abstract deleteDict(code: string): Promise<{ deleted: true }>;
 }
@@ -92,4 +127,98 @@ export function cloneDictType(dict: DictTypeRecord): DictTypeRecord {
     ...dict,
     items: dict.items.map((item) => ({ ...item })),
   };
+}
+
+export type NormalizedDictItemCreateInput = {
+  enabled: boolean;
+  id?: string;
+  label: string;
+  sort: number;
+  value: string;
+};
+
+export type NormalizedDictItemUpdateInput = {
+  enabled?: boolean;
+  label?: string;
+  sort?: number;
+  value?: string;
+};
+
+export function normalizeCreateDictItemInput(
+  body: CreateDictItemDto,
+  index = 0,
+): NormalizedDictItemCreateInput {
+  return {
+    id: normalizeOptionalText(body.id, 'id'),
+    label: normalizeRequiredText(body.label, 'label'),
+    value: normalizeRequiredText(body.value, 'value'),
+    sort: normalizeOptionalInteger(body.sort, 'sort') ?? (index + 1) * 10,
+    enabled: normalizeOptionalBoolean(body.enabled, 'enabled') ?? true,
+  };
+}
+
+export function normalizeUpdateDictItemInput(
+  body: UpdateDictItemDto,
+): NormalizedDictItemUpdateInput {
+  return {
+    label:
+      body.label === undefined
+        ? undefined
+        : normalizeRequiredText(body.label, 'label'),
+    value:
+      body.value === undefined
+        ? undefined
+        : normalizeRequiredText(body.value, 'value'),
+    sort: normalizeOptionalInteger(body.sort, 'sort'),
+    enabled: normalizeOptionalBoolean(body.enabled, 'enabled'),
+  };
+}
+
+export function normalizeOptionalBoolean(
+  value: unknown,
+  fieldName: string,
+): boolean | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (typeof value !== 'boolean') {
+    throw new BadRequestException(`${fieldName} must be a boolean.`);
+  }
+
+  return value;
+}
+
+function normalizeRequiredText(value: unknown, fieldName: string): string {
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    throw new BadRequestException(`${fieldName} must be a non-empty string.`);
+  }
+
+  return value.trim();
+}
+
+function normalizeOptionalText(
+  value: unknown,
+  fieldName: string,
+): string | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  return normalizeRequiredText(value, fieldName);
+}
+
+function normalizeOptionalInteger(
+  value: unknown,
+  fieldName: string,
+): number | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (typeof value !== 'number' || !Number.isInteger(value)) {
+    throw new BadRequestException(`${fieldName} must be an integer.`);
+  }
+
+  return value;
 }

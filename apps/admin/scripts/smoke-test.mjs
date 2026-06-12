@@ -262,9 +262,14 @@ if (
   !opencorePlatformService.includes('createSystemManagementClient') ||
   !opencorePlatformService.includes('listOpenCoreDicts') ||
   !opencorePlatformService.includes('getOpenCoreDict') ||
+  !opencorePlatformService.includes('listOpenCoreDictDataOptions') ||
+  !opencorePlatformService.includes('listOpenCoreDictItems') ||
   !opencorePlatformService.includes('createOpenCoreDict') ||
+  !opencorePlatformService.includes('createOpenCoreDictItem') ||
   !opencorePlatformService.includes('updateOpenCoreDict') ||
+  !opencorePlatformService.includes('updateOpenCoreDictItem') ||
   !opencorePlatformService.includes('deleteOpenCoreDict') ||
+  !opencorePlatformService.includes('deleteOpenCoreDictItem') ||
   !opencorePlatformService.includes('listOpenCoreSystemConfig') ||
   !opencorePlatformService.includes('getOpenCoreSystemConfig') ||
   !opencorePlatformService.includes('createOpenCoreSystemConfig') ||
@@ -663,9 +668,17 @@ if (
 if (
   !dictsPage.includes('listOpenCoreDicts') ||
   !dictsPage.includes('getOpenCoreDict') ||
+  !dictsPage.includes('listOpenCoreDictDataOptions') ||
+  !dictsPage.includes('listOpenCoreDictItems') ||
   !dictsPage.includes('createOpenCoreDict') ||
+  !dictsPage.includes('createOpenCoreDictItem') ||
   !dictsPage.includes('updateOpenCoreDict') ||
+  !dictsPage.includes('updateOpenCoreDictItem') ||
   !dictsPage.includes('deleteOpenCoreDict') ||
+  !dictsPage.includes('deleteOpenCoreDictItem') ||
+  !dictsPage.includes('Dictionary Items') ||
+  !dictsPage.includes('New Item') ||
+  !dictsPage.includes('simple-list consumer endpoint') ||
   !dictsPage.includes('Form.List') ||
   !dictsPage.includes('normalizeDictItems') ||
   !dictsPage.includes('useCurrentPageFilters') ||
