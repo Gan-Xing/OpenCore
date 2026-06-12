@@ -235,3 +235,32 @@ OpenCore does not admit a separate dict-data module/page/endpoints,
 simple-list/cache endpoints, batch delete, Excel import/export file workflows,
 color/css/remark fields, app public dictionary endpoints or dictionary cache
 refresh in this round.
+
+## Round 9 Config Reference Shape
+
+RuoYi keeps parameter management under System with list, export, detail by ID,
+value lookup by config key, create, update, delete and cache-refresh
+operations. Its model uses config ID, name, key, value, type and remark fields,
+with permissions for list/query/add/edit/remove/export/cache refresh.
+
+Yudao keeps configuration management under Infra with page, detail,
+get-value-by-key, create, update, delete, batch delete and export APIs. Its
+model includes category, name, key, value, type, visibility, remark and create
+time. Value lookup rejects invisible configs.
+
+OpenCore admits the bounded loop that matches the current package-owned config
+model:
+
+- list, detail, current-page export, create, update and delete for system
+  config records;
+- stable `key` identity for detail/update/delete;
+- `valueType` and `visibility` handling through the existing
+  `@opencore/system` runtime;
+- secret-key enforcement and `[REDACTED]` response semantics in API, SDK and
+  Admin detail/edit flows;
+- fixed-port local smoke and deploy commands so config CRUD can be verified
+  against both a temporary API and the deployed local service.
+
+OpenCore does not admit cache refresh, public get-value-by-key APIs, batch
+delete, Excel file export, category/name/remark schema expansion, secret
+vault/KMS integration or runtime feature-flag propagation in this round.

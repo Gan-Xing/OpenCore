@@ -2787,3 +2787,68 @@ pnpm registry:admin-routes:check && pnpm test:admin && pnpm sdk:check`。
 - Feature commit:
   `52b3bbe feat(core-dict): productize dictionary management / 产品化字典管理闭环`.
 - Push: `origin/main` updated from `f891c39` to `52b3bbe`.
+
+## 2026-06-12 Cycle-021 Round 9: core.config Productization And Deploy Path
+
+### Capability Status
+
+- Round 9 选择 `core.config`：系统参数 runtime/API 已支持 list/export/create/
+  update/delete，但缺少 detail API、SDK detail、live Admin CRUD 页面和 smoke
+  页面行为闭环。
+- 本轮按 OpenCore 的 TS/NestJS 边界承认当前 config 模型：`SystemConfig.key`
+  稳定标识、`valueType`、`visibility`、secret-key enforcement 和
+  `[REDACTED]` redaction。
+- 本轮同时把本地 smoke/deploy 固定到不常用端口，避免每次改代码后重新人工判断
+  端口；Admin 生产构建固定 webpack，规避反复出现的 utoopack CSS loader
+  deserialization 问题。
+- 本轮不扩展若依/芋道的缓存刷新、public get-value-by-key、批量删除、Excel
+  文件导出、category/name/remark schema、secret vault/KMS 或 runtime
+  feature-flag propagation。
+
+### Completed
+
+- 新增 `GET /api/core/config/:key`，并通过 `core:config:read` 保护。
+- `@opencore/system` seed/Prisma repository 和 service 均支持 `getConfig`。
+- `@opencore/sdk` 已提供 config detail client，并补齐测试。
+- Admin `/system/config` 已从 fixture 只读表升级为 live 页面，使用
+  SDK-backed platform service 完成列表、详情、当前页导出、创建、更新和删除。
+- Admin 参数页保留 secret redaction：列表/详情不泄露密钥，编辑 secret 且不填新值
+  时不会把 `[REDACTED]` 写回真实值。
+- 新增 `pnpm smoke:api:local` 固定 `39173` 和 `pnpm deploy:opencore` 固定
+  API/Admin `39172`/`39174`，并通过 `.opencore/run` 管理 PID/log。
+- Admin build/deploy 默认强制 webpack，并加上 `esbuildMinifyIIFE: true`，避免
+  utoopack 反序列化和 webpack helper-name 冲突重复发生。
+- OpenAPI snapshot 已刷新。
+
+### Verification
+
+- Focused typecheck pass：
+  `pnpm exec tsc --noEmit -p packages/system/tsconfig.lib.json`、
+  `pnpm exec tsc --noEmit -p packages/sdk/tsconfig.lib.json`、
+  `NX_DAEMON=false pnpm nx run admin:typecheck`、
+  `NX_DAEMON=false pnpm nx run api:typecheck`。
+- Focused tests pass：
+  `NX_DAEMON=false pnpm nx run-many -t test --projects=system,sdk,api`。
+- `pnpm test:admin`、`pnpm openapi:export`、`pnpm openapi:check`、
+  `pnpm sdk:check` pass。
+- Script checks pass：
+  `bash -n tools/scripts/run-local-api-smoke.sh tools/scripts/deploy-local-opencore.sh`
+  和 `node --check tools/scripts/smoke-core-config.mjs && node --check tools/scripts/serve-admin-static.mjs`。
+- Full gates pass：`pnpm format:check && pnpm lint && pnpm typecheck &&
+pnpm test`；`pnpm build && pnpm prisma:validate && pnpm test:api &&
+NX_DAEMON=false pnpm nx test contracts && NX_DAEMON=false pnpm nx test
+module-registry && NX_DAEMON=false pnpm nx test sdk && pnpm openapi:export &&
+pnpm openapi:registry-tags:check && pnpm openapi:check &&
+pnpm registry:admin-routes:check && pnpm test:admin && pnpm sdk:check &&
+pnpm smoke:api:local`。
+- Fixed-port smoke against `http://127.0.0.1:39173` pass：live、ready、docs、
+  login、config list、create、detail、update、export preview、secret create、
+  secret detail redaction、delete cleanup 全链路通过。
+- `pnpm build:admin` pass，Admin build 使用 webpack 并生成 `/system/config`
+  静态路由。
+
+### Commit Record
+
+- Feature commit:
+  `2dbf5aa feat(core-config): productize config management and deploy path / 产品化系统参数管理与部署路径`.
+- Push: `origin/main`.

@@ -562,3 +562,90 @@ pre-existing 3000 process was left running.
 - Feature commit:
   `52b3bbe feat(core-dict): productize dictionary management / 产品化字典管理闭环`.
 - Push: `origin/main` updated from `f891c39` to `52b3bbe`.
+
+## Round 9 Capability
+
+Capability: `core.config` productization plus scripted deploy/smoke path.
+
+Goal: turn the existing package-owned system config runtime into a real
+login-protected Admin operation loop with API detail, SDK detail support,
+OpenAPI, Admin page and smoke coverage, while making local smoke/deploy use
+fixed uncommon ports and stable Admin production builds.
+
+## Round 9 Implemented
+
+- Added `GET /api/core/config/:key`, guarded by `core:config:read`, and
+  refreshed the OpenAPI snapshot.
+- Extended `@opencore/system` config repository/service contracts with
+  `getConfig` for seed and Prisma implementations.
+- Extended `@opencore/sdk` with config detail support and tests.
+- Replaced the read-only Admin Config fixture with a live page using
+  `@opencore/sdk` and platform service methods for list/detail/current-page
+  export plus create/update/delete actions.
+- Preserved secret redaction in list/detail/edit flows: secret values render as
+  `[redacted]`, detail marks value as sensitive and edit updates omit unchanged
+  redacted secret values.
+- Added `pnpm smoke:api:local` on fixed port `39173` and `pnpm deploy:opencore`
+  on fixed API/Admin ports `39172`/`39174`.
+- Added an authenticated config smoke script covering health, docs, login,
+  list, create, detail, update, export, secret-redaction and delete cleanup.
+- Added a lightweight Admin static server for deployed `apps/admin/dist`.
+- Forced Admin production builds to use stable Umi webpack by default and
+  documented that OpenCore deploys must not enable `FORCE_UTOOPACK`.
+- Added `esbuildMinifyIIFE: true` for webpack builds to avoid Umi
+  `esbuildHelperChecker` helper-name conflicts after compilation.
+- Documented the fixed local deploy path in
+  `docs/deployment/opencore-local-deploy.md`.
+
+## Round 9 Verification
+
+- Focused typecheck pass:
+  `pnpm exec tsc --noEmit -p packages/system/tsconfig.lib.json`,
+  `pnpm exec tsc --noEmit -p packages/sdk/tsconfig.lib.json`,
+  `NX_DAEMON=false pnpm nx run admin:typecheck`,
+  `NX_DAEMON=false pnpm nx run api:typecheck`.
+- Focused tests pass:
+  `NX_DAEMON=false pnpm nx run-many -t test --projects=system,sdk,api`.
+- `pnpm test:admin`, `pnpm openapi:export`, `pnpm openapi:check` and
+  `pnpm sdk:check` pass.
+- Script syntax checks pass:
+  `bash -n tools/scripts/run-local-api-smoke.sh tools/scripts/deploy-local-opencore.sh`
+  and `node --check tools/scripts/smoke-core-config.mjs && node --check tools/scripts/serve-admin-static.mjs`.
+- Full gates pass: `pnpm format:check && pnpm lint && pnpm typecheck &&
+pnpm test`; `pnpm build && pnpm prisma:validate && pnpm test:api &&
+NX_DAEMON=false pnpm nx test contracts && NX_DAEMON=false pnpm nx test
+module-registry && NX_DAEMON=false pnpm nx test sdk && pnpm openapi:export &&
+pnpm openapi:registry-tags:check && pnpm openapi:check &&
+pnpm registry:admin-routes:check && pnpm test:admin && pnpm sdk:check &&
+pnpm smoke:api:local`.
+- `pnpm build:admin` pass after webpack stabilization and emits the
+  `/system/config` static route.
+- `pnpm smoke:api:local` pass on fixed port `39173` and stops the temporary API
+  after the smoke sequence.
+
+## Round 9 Live Smoke
+
+Against the scripted temporary local API on fixed port `39173`:
+
+- `GET /health/live` returned 200.
+- `GET /health/ready` returned 200.
+- `GET /api/docs-json` returned 200.
+- `POST /api/auth/login` returned 201 with a seeded admin.
+- `GET /api/core/config` returned 200.
+- `POST /api/core/config` created a smoke config with 201.
+- `GET /api/core/config/:key` returned 200 for the created config.
+- `PATCH /api/core/config/:key` returned 200 and updated the created config.
+- `GET /api/core/config/export` returned 200 with `current-page` scope.
+- `POST /api/core/config` created a secret smoke config and returned
+  `[REDACTED]`.
+- `GET /api/core/config/:secretKey` returned `[REDACTED]`, proving detail
+  redaction.
+- `DELETE /api/core/config/:key` cleanup returned 200/404-safe cleanup.
+
+The temporary `39173` API process was stopped after smoke verification.
+
+## Round 9 Commit Record
+
+- Feature commit:
+  `2dbf5aa feat(core-config): productize config management and deploy path / 产品化系统参数管理与部署路径`.
+- Push: `origin/main`.

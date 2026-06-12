@@ -210,3 +210,33 @@ This remains inside S7 System scope and admits the existing OpenCore
 dict-data module/page/endpoints, simple-list/cache endpoints, batch delete,
 Excel import/export file workflows, color/css/remark fields, app public
 dictionary endpoints or cache refresh semantics.
+
+## Round 9 Audit: core.config
+
+After Round 8, the next lowest dependency productization gap is `core.config`:
+
+- `apps/api/src/modules/core/system-management/system-management.controller.ts`
+  exposed `/api/core/config` list/export/create/update/delete, but lacked
+  `GET /api/core/config/:key`.
+- `@opencore/system` already owned package-local system config DTOs, seed
+  records, seed repository, Prisma repository, service, module, pagination,
+  filters, export preview helper, secret-key validation and redaction.
+- `@opencore/sdk` exposed config list/export/create/update/delete methods, but
+  lacked typed detail support.
+- `apps/admin/src/pages/System/Config.tsx` was still a read-only
+  fixture-backed table and did not prove a logged-in operator could manage
+  package-owned runtime configuration.
+- Admin smoke kept config in the legacy read-only current-page-filter bucket,
+  so it did not lock live SDK config lifecycle usage or secret redaction
+  preservation.
+- Local verification and deployment still required per-run port decisions,
+  which repeatedly wasted time around unrelated listeners.
+- Admin production builds repeatedly hit utoopack CSS loader deserialization
+  failures on `global.less.css`, then webpack needed the Umi esbuild helper
+  IIFE setting to build reliably.
+
+This remains inside S7 System scope and admits the existing OpenCore
+`SystemConfig.key`, `valueType`, `visibility` and secret-redaction model. It
+does not introduce RuoYi/Yudao-style cache refresh, public get-value-by-key
+endpoints, batch delete, Excel file export, category/name/remark schema
+expansion, secret vault/KMS integration or runtime feature-flag propagation.

@@ -3,7 +3,7 @@
 Date: 2026-06-12  
 Repository: `Gan-Xing/OpenCore`  
 Default branch: `main`  
-Latest observed commit: `16a2858 docs(docs): reconcile backend self-loop documentation / 对齐后端自循环文档状态`
+Latest observed feature commit: `2dbf5aa feat(core-config): productize config management and deploy path / 产品化系统参数管理与部署路径`
 
 ## One-sentence Goal
 
@@ -32,9 +32,35 @@ BE20 已把若依/芋道主干后台能力按 OpenCore 的 TS/NestJS monorepo �
 
 Admin 当前是 Umi Max + Ant Design Pro V6 + ProComponents v3 + antd 6 + React 19，已有 Dashboard、System、Security、Monitor、Tools、Collaboration、Optional、Integrations 页面和 smoke test。最新安全修复已移除 vulnerable `mockjs` / `@umijs/openapi` 依赖链，Admin `openapi` 脚本现在委托根目录 `openapi:export` + `sdk:check`，后续不得重新引入该依赖链。
 
-## Important State Mismatch To Resolve First
+## Current Cycle-021 Status
 
-文档和 ledger 已记录 cycle-020 / BE20 完成，但 `.opencore/quality-cycle/state.json` 仍显示：
+Cycle-021 已进入 capability-map productization recursion，并已完成这些
+independently accepted slices:
+
+- Round 1 `core.notice`
+- Round 2 `core.dept`
+- Round 3 `core.post`
+- Round 4 `core.menu`
+- Round 5 `core.role`
+- Round 6 `core.permission`
+- Round 7 `core.user`
+- Round 8 `core.dict`
+- Round 9 `core.config`
+
+Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
+`pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
+`39172` 和 Admin `39174`。后续改完代码不要再手动挑 3000/3010；走脚本，端口
+占用就修占用或显式覆盖。
+
+Admin 生产构建已默认强制稳定 webpack 路径。不要为 OpenCore deploy 打开
+`FORCE_UTOOPACK`；utoopack 已多次在 `global.less.css` CSS loader
+deserialization 上失败。webpack 构建同时保留 `esbuildMinifyIIFE: true`，避免
+Umi `esbuildHelperChecker` helper-name 冲突。
+
+## Resolved State Alignment
+
+文档和 ledger 曾记录 cycle-020 / BE20 完成，但 `.opencore/quality-cycle/state.json`
+仍显示：
 
 ```json
 {
@@ -51,11 +77,11 @@ Admin 当前是 Umi Max + Ant Design Pro V6 + ProComponents v3 + antd 6 + React 
 2026-06-12 08:46:02 UTC documented cycle-020 completion; checked=24 backend modules; goalDuration=5h52m55s
 ```
 
-下一轮 AI 必须先处理这个状态对齐点：
+Round 1 已处理这个状态对齐点，将 state 对齐到 cycle-021 active 状态。后续不应
+再把这个 mismatch 当作阻塞项。
 
-1. 重新读取 `.opencore/quality-cycle/state.json`、`docs/quality-cycle/ledger.md`、`docs/quality-cycle/cycle-020/backlog.md`、`docs/quality-cycle/cycle-020/completion-report.md`。
-2. 判断是补一个 state closeout commit，还是在新的 cycle-021 handoff 中明确说明 cycle-020 是 documented completion 而非 quality-cycle tool formal completion。
-3. 不要继续使用 `docs/quality-cycle/opencore-backend-self-loop.md` 作为主执行 prompt；BE20 已完成，下一轮应从新的 capability-map productization recursion 开始。
+不要继续使用 `docs/quality-cycle/opencore-backend-self-loop.md` 作为主执行 prompt；
+BE20 已完成，当前主线是 cycle-021 capability-map productization recursion。
 
 ## What The Next AI Should Do
 

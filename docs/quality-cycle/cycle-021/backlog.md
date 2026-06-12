@@ -188,6 +188,31 @@ admits OpenCore's current `DictType` plus embedded `items` model only.
 - [x] Run focused, live HTTP smoke and full gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 9: core.config Productization And Deploy Path
+
+Why this slice: RuoYi and Yudao both expose system configuration management as
+a first-class System/Infra operation surface. OpenCore already had
+package-owned config runtime and list/export/create/update/delete API routes,
+but lacked a detail read contract, SDK detail support, a live Admin page and a
+repeatable fixed-port deploy/smoke path after code changes.
+
+- [x] Add missing config detail API contract.
+- [x] Extend `@opencore/system` config repository/service contracts with
+      `getConfig` for seed and Prisma implementations.
+- [x] Extend `@opencore/sdk` with typed config detail support.
+- [x] Replace the read-only Admin Config fixture with a live SDK-backed page
+      for list/detail/current-page export plus create/update/delete actions.
+- [x] Preserve OpenCore secret redaction semantics in list/detail/edit flows.
+- [x] Add fixed-port local smoke and deploy scripts so the deployment path is
+      scripted rather than hand-picked per run.
+- [x] Force stable webpack Admin production builds for OpenCore deploys to
+      avoid the repeated utoopack CSS loader deserialization failure.
+- [x] Extend Admin smoke checks to lock config SDK lifecycle usage, current
+      page filtering/export and secret-preserving edit behavior.
+- [x] Refresh OpenAPI snapshot and registry route/tag checks.
+- [x] Run focused, full, build, fixed-port smoke and deploy gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Explicitly Out Of Scope
 
 - Notice read/unread inbox, header badge and per-user read tracking.
@@ -214,4 +239,7 @@ admits OpenCore's current `DictType` plus embedded `items` model only.
   dictionary delete, Excel import/export file workflows, dictionary
   color/css/remark fields, app public dictionary endpoints and dictionary cache
   refresh.
+- Config cache refresh, public get-value-by-key endpoints, batch config delete,
+  Excel file export, category/name/remark schema expansion, secret vault/KMS
+  integration and runtime feature-flag propagation.
 - CRM/ERP/MES/WMS/mall/member/pay/AI modules.
