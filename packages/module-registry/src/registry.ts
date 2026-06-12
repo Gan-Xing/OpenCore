@@ -24,6 +24,65 @@ export const FORBIDDEN_S3_S8_MODULE_PREFIXES = [
   'ai.',
 ] as const;
 
+const MENU_GROUPS = {
+  dashboard: {
+    title: 'Dashboard',
+    path: '/dashboard',
+    icon: 'DashboardOutlined',
+    order: 0,
+  },
+  system: {
+    title: 'System',
+    path: '/system',
+    icon: 'SettingOutlined',
+    order: 90,
+  },
+  security: {
+    title: 'Security',
+    path: '/security',
+    icon: 'SafetyOutlined',
+    order: 290,
+  },
+  monitor: {
+    title: 'Monitor',
+    path: '/monitor',
+    icon: 'MonitorOutlined',
+    order: 390,
+  },
+  collaboration: {
+    title: 'Collaboration',
+    path: '/collaboration',
+    icon: 'TeamOutlined',
+    order: 590,
+  },
+  optional: {
+    title: 'Optional',
+    path: '/optional',
+    icon: 'AppstoreOutlined',
+    order: 690,
+  },
+  integrations: {
+    title: 'Integrations',
+    path: '/integrations',
+    icon: 'ApiOutlined',
+    order: 790,
+  },
+  tools: {
+    title: 'Tools',
+    path: '/tools',
+    icon: 'ToolOutlined',
+    order: 490,
+  },
+} as const satisfies Record<
+  string,
+  {
+    title: string;
+    path: `/${string}`;
+    icon: string;
+    order: number;
+  }
+>;
+
 export function listModules(): readonly ModuleDefinition[] {
   return moduleRegistry;
 }
@@ -46,6 +105,20 @@ export function collectPermissionCodes(): readonly PermissionDefinition['code'][
 
 export function collectMenus(): readonly MenuDefinition[] {
   return moduleRegistry.flatMap((moduleDefinition) => moduleDefinition.menus);
+}
+
+export function collectMenuTree(): readonly MenuDefinition[] {
+  const menus = collectMenus().map((menu) => normalizeMenuDefinition(menu));
+  const activeGroupKeys = new Set(
+    menus
+      .map((menu) => menu.key.split('.')[0])
+      .filter((key) => key in MENU_GROUPS),
+  );
+  const groups = [...activeGroupKeys]
+    .map((key) => createMenuGroupDefinition(key, menus))
+    .sort((left, right) => left.order - right.order);
+
+  return [...groups, ...menus];
 }
 
 export function validateModuleRegistry(): ValidationResult {
@@ -99,4 +172,56 @@ export function validateModuleRegistry(): ValidationResult {
   }
 
   return createValidationResult(issues);
+}
+
+function normalizeMenuDefinition(menu: MenuDefinition): MenuDefinition {
+  const groupKey = menu.key.split('.')[0];
+  const parentKey =
+    menu.parentKey ?? (groupKey in MENU_GROUPS ? groupKey : undefined);
+
+  return {
+    ...menu,
+    parentKey,
+    type: menu.type ?? 'menu',
+    component: menu.component ?? pathToAdminComponent(menu.path),
+    status: menu.status ?? 'enabled',
+    cache: menu.cache ?? false,
+    hidden: menu.hidden ?? false,
+  };
+}
+
+function createMenuGroupDefinition(
+  key: string,
+  menus: readonly MenuDefinition[],
+): MenuDefinition {
+  const group = MENU_GROUPS[key as keyof typeof MENU_GROUPS];
+  const firstChild = menus.find((menu) => menu.parentKey === key);
+
+  return {
+    key,
+    title: group.title,
+    path: group.path,
+    type: 'directory',
+    icon: group.icon,
+    order: group.order,
+    stage: firstChild?.stage ?? 'S6',
+    status: 'enabled',
+    cache: false,
+    hidden: false,
+  };
+}
+
+function pathToAdminComponent(path: string): string {
+  return path
+    .replace(/^\/+|\/+$/g, '')
+    .split('/')
+    .filter(Boolean)
+    .map((segment) =>
+      segment
+        .split('-')
+        .filter(Boolean)
+        .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
+        .join(''),
+    )
+    .join('/');
 }

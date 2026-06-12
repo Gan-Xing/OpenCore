@@ -50,6 +50,21 @@ describe('registry fixtures', () => {
         expect(permissionCodes.has(menu.permissionCode)).toBe(true);
       }
     }
+
+    expect(createMenuSummariesFromRegistry()).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          key: 'system',
+          type: 'directory',
+          status: 'enabled',
+        }),
+        expect.objectContaining({
+          key: 'system.menus',
+          parentKey: 'system',
+          component: 'System/Menus',
+        }),
+      ]),
+    );
   });
 
   it('creates S7 system-management fixtures with redacted audit data', () => {

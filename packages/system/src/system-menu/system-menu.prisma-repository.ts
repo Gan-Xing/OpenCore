@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -7,6 +8,7 @@ import { PrismaService } from '@opencore/database';
 import type { CreateMenuDto, UpdateMenuDto } from './system-menu.dto';
 import type { SystemMenuRecord } from './system-menu.records';
 import {
+  compareSystemMenuRecords,
   normalizeCreateSystemMenuInput,
   normalizeUpdateSystemMenuInput,
   resolveSystemMenuStage,
@@ -19,9 +21,16 @@ type PrismaPermission = {
 
 type PrismaMenuWithPermission = {
   key: string;
+  parentKey: string | null;
   title: string;
+  type: string;
   path: string;
+  icon: string | null;
+  component: string | null;
   order: number;
+  status: string;
+  cache: boolean;
+  hidden: boolean;
   permission: { code: string } | null;
 };
 
@@ -39,7 +48,7 @@ export class PrismaSystemMenuRepository extends SystemMenuRepository {
       orderBy: [{ order: 'asc' }, { key: 'asc' }],
     });
 
-    return menus.map(toSystemMenuRecord);
+    return menus.map(toSystemMenuRecord).sort(compareSystemMenuRecords);
   }
 
   async getMenu(key: string): Promise<SystemMenuRecord> {
@@ -56,13 +65,20 @@ export class PrismaSystemMenuRepository extends SystemMenuRepository {
     const permission = input.permissionCode
       ? await this.findPermissionEntityByCode(input.permissionCode)
       : undefined;
+    await this.assertParentKey(input.parentKey, input.key);
     const menu = await this.prisma.menu.create({
       data: {
         key: input.key,
+        parentKey: input.parentKey,
         title: input.title,
+        type: input.type,
         path: input.path,
+        icon: input.icon,
+        component: input.component,
         order: input.order,
-        hidden: false,
+        status: input.status,
+        cache: input.cache,
+        hidden: input.hidden,
         permissionId: permission?.id,
       },
       include: {
@@ -79,14 +95,22 @@ export class PrismaSystemMenuRepository extends SystemMenuRepository {
   ): Promise<SystemMenuRecord> {
     const existing = toSystemMenuRecord(await this.findMenuEntityByKey(key));
     const input = normalizeUpdateSystemMenuInput(existing, body);
+    await this.assertParentKey(input.parentKey, key);
     const permissionId = await this.resolvePermissionId(input.permissionCode);
     const menu = await this.prisma.menu.update({
       where: { key },
       data: {
+        parentKey: input.parentKey,
         title: input.title,
+        type: input.type,
         path: input.path,
+        icon: input.icon,
+        component: input.component,
         order: input.order,
-        ...(input.permissionCode === undefined ? {} : { permissionId }),
+        status: input.status,
+        cache: input.cache,
+        hidden: input.hidden,
+        permissionId,
       },
       include: {
         permission: true,
@@ -98,6 +122,14 @@ export class PrismaSystemMenuRepository extends SystemMenuRepository {
 
   async deleteMenu(key: string): Promise<{ deleted: true }> {
     await this.findMenuEntityByKey(key);
+    const childCount = await this.prisma.menu.count({
+      where: { parentKey: key },
+    });
+
+    if (childCount > 0) {
+      throw new BadRequestException(`Menu has child menus: ${key}`);
+    }
+
     await this.prisma.menu.delete({ where: { key } });
     return { deleted: true };
   }
@@ -145,15 +177,55 @@ export class PrismaSystemMenuRepository extends SystemMenuRepository {
 
     return menu;
   }
+
+  private async assertParentKey(
+    parentKey: string | null | undefined,
+    currentKey: string,
+  ): Promise<void> {
+    if (!parentKey) {
+      return;
+    }
+
+    const menus = await this.prisma.menu.findMany({
+      select: {
+        key: true,
+        parentKey: true,
+      },
+    });
+    const parentByKey = new Map(
+      menus.map((menu) => [menu.key, menu.parentKey ?? undefined]),
+    );
+
+    if (!parentByKey.has(parentKey)) {
+      throw new NotFoundException(`Parent menu not found: ${parentKey}`);
+    }
+
+    let cursor: string | undefined = parentKey;
+    while (cursor) {
+      if (cursor === currentKey) {
+        throw new BadRequestException(
+          `Menu parent would create a cycle: ${currentKey}`,
+        );
+      }
+      cursor = parentByKey.get(cursor);
+    }
+  }
 }
 
 function toSystemMenuRecord(menu: PrismaMenuWithPermission): SystemMenuRecord {
   return {
     key: menu.key,
+    parentKey: menu.parentKey ?? undefined,
     title: menu.title,
+    type: menu.type === 'directory' ? 'directory' : 'menu',
     path: menu.path,
+    icon: menu.icon ?? undefined,
+    component: menu.component ?? undefined,
     permissionCode: menu.permission?.code,
     stage: resolveSystemMenuStage(menu.key),
     order: menu.order,
+    status: menu.status === 'disabled' ? 'disabled' : 'enabled',
+    cache: menu.cache,
+    hidden: menu.hidden,
   };
 }

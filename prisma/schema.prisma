@@ -47,14 +47,25 @@ model Permission {
 model Menu {
   id           String      @id @default(cuid())
   key          String      @unique
+  parentKey    String?
+  parent       Menu?       @relation("MenuTree", fields: [parentKey], references: [key], onDelete: SetNull, onUpdate: Cascade)
+  children     Menu[]      @relation("MenuTree")
   title        String
+  type         String      @default("menu")
   path         String
+  icon         String?
+  component    String?
   permissionId String?
   permission   Permission? @relation(fields: [permissionId], references: [id])
   order        Int
+  status       String      @default("enabled")
+  cache        Boolean     @default(false)
   hidden       Boolean     @default(false)
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
+
+  @@index([parentKey, order])
+  @@index([status, order])
 }
 
 model UserRole {

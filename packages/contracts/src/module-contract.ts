@@ -52,15 +52,27 @@ export type PermissionDefinition = {
   dangerous?: boolean;
 };
 
+export const MENU_TYPES = ['directory', 'menu'] as const;
+
+export type MenuType = (typeof MENU_TYPES)[number];
+
+export const MENU_STATUSES = ['enabled', 'disabled'] as const;
+
+export type MenuStatus = (typeof MENU_STATUSES)[number];
+
 export type MenuDefinition = {
   key: string;
   title: string;
   path: `/${string}`;
   permissionCode?: PermissionCode;
   parentKey?: string;
+  type?: MenuType;
   icon?: string;
+  component?: string;
   order: number;
   stage: ModuleStage;
+  status?: MenuStatus;
+  cache?: boolean;
   hidden?: boolean;
 };
 

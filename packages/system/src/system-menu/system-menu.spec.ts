@@ -12,7 +12,15 @@ describe('@opencore/system system-menu', () => {
     await expect(service.listMenus()).resolves.toEqual(
       expect.arrayContaining([
         expect.objectContaining({
+          key: 'system',
+          type: 'directory',
+          icon: 'SettingOutlined',
+          status: 'enabled',
+        }),
+        expect.objectContaining({
           key: 'system.menus',
+          parentKey: 'system',
+          component: 'System/Menus',
           permissionCode: 'core:menu:read',
         }),
       ]),
@@ -20,36 +28,64 @@ describe('@opencore/system system-menu', () => {
 
     const menu = await service.createMenu({
       key: 'system.examples',
+      parentKey: 'system',
       title: 'Examples',
+      type: 'menu',
       path: '/system/examples',
+      icon: 'AppstoreOutlined',
+      component: 'System/Examples',
       permissionCode: 'core:menu:read',
       order: 999,
+      status: 'enabled',
+      cache: true,
     });
 
     expect(menu).toMatchObject({
       key: 'system.examples',
+      parentKey: 'system',
+      type: 'menu',
+      component: 'System/Examples',
       permissionCode: 'core:menu:read',
       stage: 'S6',
+      cache: true,
+      hidden: false,
     });
     await expect(service.getMenu('system.examples')).resolves.toMatchObject({
       key: 'system.examples',
       title: 'Examples',
+      parentKey: 'system',
       permissionCode: 'core:menu:read',
     });
     const updatedMenu = await service.updateMenu('system.examples', {
+      parentKey: null,
+      icon: null,
+      component: null,
       permissionCode: null,
+      status: 'disabled',
       title: 'Example Menus',
     });
 
     expect(updatedMenu).toMatchObject({
       key: 'system.examples',
       title: 'Example Menus',
+      status: 'disabled',
     });
+    expect(updatedMenu.parentKey).toBeUndefined();
+    expect(updatedMenu.icon).toBeUndefined();
+    expect(updatedMenu.component).toBeUndefined();
     expect(updatedMenu.permissionCode).toBeUndefined();
     await expect(service.createExportPreview()).resolves.toMatchObject({
       filename: 'opencore-system-menus.csv',
       scope: 'current-page',
-      columns: ['key', 'title', 'path', 'permissionCode', 'order'],
+      columns: expect.arrayContaining([
+        'key',
+        'parentKey',
+        'type',
+        'component',
+        'status',
+        'cache',
+        'hidden',
+      ]),
     });
     await expect(service.deleteMenu('system.examples')).resolves.toEqual({
       deleted: true,
@@ -83,6 +119,43 @@ describe('@opencore/system system-menu', () => {
         order: -1,
       }),
     ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.createMenu({
+        key: 'system.invalid',
+        parentKey: 'system.invalid',
+        title: 'Invalid',
+        path: '/system/invalid',
+        order: 1,
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('protects seeded menu tree structure from cycles and parent deletes', async () => {
+    const service = new SystemMenuService(new SeedSystemMenuRepository());
+
+    await service.createMenu({
+      key: 'system.examples',
+      parentKey: 'system',
+      title: 'Examples',
+      path: '/system/examples',
+      order: 999,
+    });
+    await service.createMenu({
+      key: 'system.examples.child',
+      parentKey: 'system.examples',
+      title: 'Example Child',
+      path: '/system/examples/child',
+      order: 1000,
+    });
+
+    await expect(
+      service.updateMenu('system.examples', {
+        parentKey: 'system.examples.child',
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(service.deleteMenu('system.examples')).rejects.toThrow(
+      BadRequestException,
+    );
   });
 
   describe('PrismaSystemMenuRepository integration', () => {
@@ -133,29 +206,45 @@ describe('@opencore/system system-menu', () => {
     it('persists menu CRUD through Prisma', async () => {
       const menu = await service.createMenu({
         key,
+        parentKey: 'system',
         title: 'Prisma Test Menu',
+        type: 'menu',
         path: '/system/test-menu',
+        icon: 'AppstoreOutlined',
+        component: 'System/TestMenu',
         permissionCode: 'core:menu:read',
         order: 998,
+        status: 'enabled',
+        cache: true,
       });
 
       expect(menu).toMatchObject({
         key,
+        parentKey: 'system',
+        component: 'System/TestMenu',
         permissionCode: 'core:menu:read',
+        cache: true,
       });
       await expect(service.getMenu(key)).resolves.toMatchObject({
         key,
         title: 'Prisma Test Menu',
+        parentKey: 'system',
         permissionCode: 'core:menu:read',
       });
       await expect(
         service.updateMenu(key, {
+          parentKey: null,
+          component: 'System/UpdatedTestMenu',
           permissionCode: 'core:dashboard:read',
+          status: 'disabled',
           title: 'Updated Prisma Test Menu',
         }),
       ).resolves.toMatchObject({
         title: 'Updated Prisma Test Menu',
+        parentKey: undefined,
+        component: 'System/UpdatedTestMenu',
         permissionCode: 'core:dashboard:read',
+        status: 'disabled',
       });
       await expect(service.deleteMenu(key)).resolves.toEqual({
         deleted: true,

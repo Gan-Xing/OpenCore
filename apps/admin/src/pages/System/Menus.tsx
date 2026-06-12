@@ -13,7 +13,9 @@ import {
 import {
   createMenuSummariesFromRegistry,
   createPermissionSummariesFromRegistry,
+  type MenuStatus,
   type MenuSummary,
+  type MenuType,
 } from '@opencore/sdk';
 import {
   Alert,
@@ -25,8 +27,10 @@ import {
   Popconfirm,
   Select,
   Space,
+  Switch,
   Tag,
   Tooltip,
+  TreeSelect,
   Typography,
   message,
 } from 'antd';
@@ -54,11 +58,28 @@ import {
 } from '../shared/ReadOnlyDetailDrawer';
 
 type MenuFormValues = {
+  cache?: boolean;
+  component?: string;
+  hidden?: boolean;
+  icon?: string;
   key: string;
   order?: number;
+  parentKey?: string;
   path: string;
   permissionCode?: string;
+  status?: MenuStatus;
   title: string;
+  type?: MenuType;
+};
+
+type MenuTreeNode = MenuSummary & {
+  children: MenuTreeNode[];
+};
+
+type TreeSelectNode = {
+  children?: TreeSelectNode[];
+  title: string;
+  value: string;
 };
 
 const fallbackRows = createMenuSummariesFromRegistry();
@@ -66,42 +87,149 @@ const searchFields: CurrentPageSearchField<MenuSummary>[] = [
   'key',
   'title',
   'path',
+  'parentKey',
   'permissionCode',
   'stage',
+  'component',
+  'icon',
+];
+const menuTypeOptions = [
+  { label: 'directory', value: 'directory' },
+  { label: 'menu', value: 'menu' },
+];
+const menuStatusOptions = [
+  { label: 'enabled', value: 'enabled' },
+  { label: 'disabled', value: 'disabled' },
 ];
 const exportColumns: CurrentPageExportColumn<MenuSummary>[] = [
   { title: 'Key', dataIndex: 'key' },
+  { title: 'Parent', dataIndex: 'parentKey' },
   { title: 'Title', dataIndex: 'title' },
+  { title: 'Type', dataIndex: 'type' },
   { title: 'Path', dataIndex: 'path' },
+  { title: 'Icon', dataIndex: 'icon' },
+  { title: 'Component', dataIndex: 'component' },
   { title: 'Permission', dataIndex: 'permissionCode' },
   { title: 'Stage', dataIndex: 'stage' },
   { title: 'Order', dataIndex: 'order' },
+  { title: 'Status', dataIndex: 'status' },
+  { title: 'Cache', dataIndex: 'cache' },
+  { title: 'Hidden', dataIndex: 'hidden' },
 ];
 
-function createDetailFields(record: MenuSummary): DetailField[] {
+function flattenMenuTree(rows: readonly MenuTreeNode[]): MenuSummary[] {
+  return rows.flatMap((row) => [
+    withoutChildren(row),
+    ...flattenMenuTree(row.children),
+  ]);
+}
+
+function buildMenuTree(rows: readonly MenuSummary[]): MenuTreeNode[] {
+  const nodes = new Map<string, MenuTreeNode>();
+  const roots: MenuTreeNode[] = [];
+
+  for (const row of [...rows].sort(compareMenuRows)) {
+    nodes.set(row.key, { ...row, children: [] });
+  }
+
+  for (const node of nodes.values()) {
+    if (node.parentKey && nodes.has(node.parentKey)) {
+      nodes.get(node.parentKey)?.children.push(node);
+      continue;
+    }
+    roots.push(node);
+  }
+
+  return roots;
+}
+
+function compareMenuRows(left: MenuSummary, right: MenuSummary): number {
+  return left.order - right.order || left.key.localeCompare(right.key);
+}
+
+function withoutChildren(row: MenuTreeNode): MenuSummary {
+  const { children: _children, ...summary } = row;
+  return summary;
+}
+
+function createParentTitleMap(rows: readonly MenuSummary[]) {
+  return new Map(rows.map((row) => [row.key, row.title]));
+}
+
+function createDetailFields(
+  record: MenuSummary,
+  parentTitles: ReadonlyMap<string, string>,
+): DetailField[] {
   return [
     { label: 'Key', value: record.key },
+    {
+      label: 'Parent',
+      value: record.parentKey
+        ? (parentTitles.get(record.parentKey) ?? record.parentKey)
+        : 'Root',
+    },
     { label: 'Title', value: record.title },
+    { label: 'Type', value: record.type },
     { label: 'Path', value: record.path },
+    { label: 'Icon', value: record.icon },
+    { label: 'Component', value: record.component },
     { label: 'Permission', value: record.permissionCode },
     { label: 'Stage', value: record.stage },
     { label: 'Order', value: record.order },
+    { label: 'Status', value: record.status },
+    { label: 'Cache', value: record.cache ? 'cache' : 'no cache' },
+    { label: 'Hidden', value: record.hidden ? 'hidden' : 'visible' },
   ];
 }
 
-function createPermissionOptions(rows: readonly MenuSummary[]) {
-  return Array.from(
-    new Set([
-      ...createPermissionSummariesFromRegistry().map(
-        (permission) => permission.code,
-      ),
-      ...rows
-        .map((row) => row.permissionCode)
-        .filter((code): code is string => Boolean(code)),
-    ]),
-  )
-    .sort()
-    .map((code) => ({ label: code, value: code }));
+function findMenuNode(
+  rows: readonly MenuTreeNode[],
+  key: string,
+): MenuTreeNode | undefined {
+  for (const row of rows) {
+    if (row.key === key) {
+      return row;
+    }
+
+    const child = findMenuNode(row.children, key);
+    if (child) {
+      return child;
+    }
+  }
+
+  return undefined;
+}
+
+function collectDescendantKeys(row: MenuTreeNode): Set<string> {
+  const keys = new Set<string>([row.key]);
+  for (const child of row.children) {
+    for (const key of collectDescendantKeys(child)) {
+      keys.add(key);
+    }
+  }
+  return keys;
+}
+
+function toTreeSelectData(
+  rows: readonly MenuTreeNode[],
+  excludedKeys = new Set<string>(),
+): TreeSelectNode[] {
+  return rows
+    .filter((row) => !excludedKeys.has(row.key))
+    .map((row) => ({
+      title: row.title,
+      value: row.key,
+      children: toTreeSelectData(row.children, excludedKeys),
+    }));
+}
+
+function normalizeOptionalText(value: string | undefined): string | undefined {
+  const normalized = value?.trim();
+  return normalized ? normalized : undefined;
+}
+
+function createChildPath(parent: MenuSummary): string {
+  return `${parent.path.replace(/\/+$/, '')}/`;
 }
 
 export default function MenusPage() {
@@ -113,28 +241,62 @@ export default function MenusPage() {
   const [editingMenu, setEditingMenu] = useState<MenuSummary>();
   const [formOpen, setFormOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const treeRows = useMemo(() => buildMenuTree(rows), [rows]);
+  const flatRows = useMemo(() => flattenMenuTree(treeRows), [treeRows]);
+  const parentTitles = useMemo(
+    () => createParentTitleMap(flatRows),
+    [flatRows],
+  );
+  const excludedParentKeys = useMemo(() => {
+    if (!editingMenu) {
+      return new Set<string>();
+    }
+
+    const editingNode = findMenuNode(treeRows, editingMenu.key);
+    return editingNode ? collectDescendantKeys(editingNode) : new Set<string>();
+  }, [editingMenu, treeRows]);
+  const parentTreeData = useMemo(
+    () => toTreeSelectData(treeRows, excludedParentKeys),
+    [excludedParentKeys, treeRows],
+  );
   const permissionOptions = useMemo(
-    () => createPermissionOptions(rows),
-    [rows],
+    () => createPermissionOptions(flatRows),
+    [flatRows],
   );
   const filterOptions = useMemo<CurrentPageFilterOption<MenuSummary>[]>(
     () => [
       {
+        key: 'type',
+        options: menuTypeOptions,
+        placeholder: 'Type',
+        predicate: (record, value) => record.type === value,
+      },
+      {
+        key: 'status',
+        options: menuStatusOptions,
+        placeholder: 'Status',
+        predicate: (record, value) => record.status === value,
+      },
+      {
         key: 'stage',
-        options: createCurrentPageFilterOptions(rows, 'stage'),
+        options: createCurrentPageFilterOptions(flatRows, 'stage'),
         placeholder: 'Stage',
         predicate: (record, value) => record.stage === value,
       },
     ],
-    [rows],
+    [flatRows],
   );
   const { filteredRows, toolbar: filterToolbar } =
     useCurrentPageFilters<MenuSummary>({
-      rows,
+      rows: flatRows,
       searchFields,
       searchPlaceholder: 'Search menus',
       selectFilters: filterOptions,
     });
+  const filteredTreeRows = useMemo(
+    () => buildMenuTree(filteredRows),
+    [filteredRows],
+  );
 
   const loadMenus = async () => {
     setLoading(true);
@@ -155,14 +317,21 @@ export default function MenusPage() {
     void loadMenus();
   }, []);
 
-  const openCreateForm = () => {
+  const openCreateForm = (parent?: MenuSummary) => {
     setEditingMenu(undefined);
     form.setFieldsValue({
-      key: '',
-      order: 0,
-      path: '',
+      cache: false,
+      component: undefined,
+      hidden: false,
+      icon: undefined,
+      key: parent ? `${parent.key}.` : '',
+      order: parent ? parent.order + 1 : 0,
+      parentKey: parent?.key,
+      path: parent ? createChildPath(parent) : '',
       permissionCode: undefined,
+      status: 'enabled',
       title: '',
+      type: 'menu',
     });
     setFormOpen(true);
   };
@@ -172,11 +341,18 @@ export default function MenusPage() {
       const fresh = await getOpenCoreMenu(record.key);
       setEditingMenu(fresh);
       form.setFieldsValue({
+        cache: fresh.cache,
+        component: fresh.component,
+        hidden: fresh.hidden,
+        icon: fresh.icon,
         key: fresh.key,
         order: fresh.order,
+        parentKey: fresh.parentKey,
         path: fresh.path,
         permissionCode: fresh.permissionCode,
+        status: fresh.status,
         title: fresh.title,
+        type: fresh.type,
       });
       setFormOpen(true);
     } catch (error: unknown) {
@@ -200,19 +376,33 @@ export default function MenusPage() {
     try {
       if (editingMenu) {
         await updateOpenCoreMenu(editingMenu.key, {
+          cache: Boolean(values.cache),
+          component: normalizeOptionalText(values.component) ?? null,
+          hidden: Boolean(values.hidden),
+          icon: normalizeOptionalText(values.icon) ?? null,
           order: values.order,
+          parentKey: values.parentKey ?? null,
           path: values.path,
           permissionCode: values.permissionCode ?? null,
+          status: values.status ?? 'enabled',
           title: values.title,
+          type: values.type ?? 'menu',
         });
         message.success('Menu updated.');
       } else {
         await createOpenCoreMenu({
+          cache: Boolean(values.cache),
+          component: normalizeOptionalText(values.component),
+          hidden: Boolean(values.hidden),
+          icon: normalizeOptionalText(values.icon),
           key: values.key,
           order: values.order ?? 0,
+          parentKey: values.parentKey,
           path: values.path,
           permissionCode: values.permissionCode,
+          status: values.status ?? 'enabled',
           title: values.title,
+          type: values.type ?? 'menu',
         });
         message.success('Menu created.');
       }
@@ -235,13 +425,38 @@ export default function MenusPage() {
       title: 'Title',
       dataIndex: 'title',
       render: (_, record) => (
-        <Typography.Link onClick={() => void openDetail(record)}>
-          {record.title}
-        </Typography.Link>
+        <Space size={8}>
+          <Typography.Link onClick={() => void openDetail(record)}>
+            {record.title}
+          </Typography.Link>
+          {record.icon ? <Tag>{record.icon}</Tag> : null}
+        </Space>
       ),
     },
     { title: 'Key', dataIndex: 'key', ellipsis: true },
+    {
+      title: 'Type',
+      dataIndex: 'type',
+      width: 104,
+      render: (_, record) => (
+        <Tag color={record.type === 'directory' ? 'purple' : 'blue'}>
+          {record.type}
+        </Tag>
+      ),
+    },
+    {
+      title: 'Parent',
+      dataIndex: 'parentKey',
+      ellipsis: true,
+      render: (_, record) =>
+        record.parentKey ? (
+          (parentTitles.get(record.parentKey) ?? record.parentKey)
+        ) : (
+          <Tag>root</Tag>
+        ),
+    },
     { title: 'Path', dataIndex: 'path', ellipsis: true },
+    { title: 'Component', dataIndex: 'component', ellipsis: true },
     {
       title: 'Permission',
       dataIndex: 'permissionCode',
@@ -254,16 +469,36 @@ export default function MenusPage() {
         ),
     },
     {
-      title: 'Stage',
-      dataIndex: 'stage',
-      width: 88,
-      render: (_, record) => <Tag>{record.stage}</Tag>,
+      title: 'Status',
+      dataIndex: 'status',
+      width: 104,
+      render: (_, record) => (
+        <Tag color={record.status === 'enabled' ? 'green' : 'default'}>
+          {record.status}
+        </Tag>
+      ),
     },
-    { title: 'Order', dataIndex: 'order', width: 88 },
+    {
+      title: 'Cache',
+      dataIndex: 'cache',
+      width: 88,
+      render: (_, record) => <Tag>{record.cache ? 'cache' : 'none'}</Tag>,
+    },
+    {
+      title: 'Hidden',
+      dataIndex: 'hidden',
+      width: 88,
+      render: (_, record) => <Tag>{record.hidden ? 'hidden' : 'visible'}</Tag>,
+    },
+    {
+      title: 'Order',
+      dataIndex: 'order',
+      width: 88,
+    },
     {
       title: 'Actions',
       valueType: 'option',
-      width: 184,
+      width: 232,
       render: (_, record) => (
         <Space size="small">
           <Tooltip title="Detail">
@@ -271,6 +506,14 @@ export default function MenusPage() {
               aria-label={`View ${record.title}`}
               icon={<EyeOutlined />}
               onClick={() => void openDetail(record)}
+              size="small"
+            />
+          </Tooltip>
+          <Tooltip title="Add child">
+            <Button
+              aria-label={`Add child menu under ${record.title}`}
+              icon={<PlusOutlined />}
+              onClick={() => openCreateForm(record)}
               size="small"
             />
           </Tooltip>
@@ -324,7 +567,7 @@ export default function MenusPage() {
             key="create"
             type="primary"
             icon={<PlusOutlined />}
-            onClick={openCreateForm}
+            onClick={() => openCreateForm()}
           >
             New
           </Button>,
@@ -342,12 +585,14 @@ export default function MenusPage() {
             rows={filteredRows}
           />,
         ]}
-        pagination={{ pageSize: 10 }}
-        dataSource={filteredRows}
+        pagination={false}
+        dataSource={filteredTreeRows}
         columns={columns}
       />
       <ReadOnlyDetailDrawer
-        fields={selectedDetail ? createDetailFields(selectedDetail) : []}
+        fields={
+          selectedDetail ? createDetailFields(selectedDetail, parentTitles) : []
+        }
         onClose={() => setSelectedDetail(undefined)}
         open={Boolean(selectedDetail)}
         title={selectedDetail?.title ?? 'Menu Detail'}
@@ -371,6 +616,38 @@ export default function MenusPage() {
           >
             <Input disabled={Boolean(editingMenu)} maxLength={96} />
           </Form.Item>
+          <Form.Item label="Parent" name="parentKey">
+            <TreeSelect
+              allowClear
+              showSearch
+              treeDefaultExpandAll
+              treeData={parentTreeData}
+              placeholder="Root"
+            />
+          </Form.Item>
+          <Space align="start" size="middle" wrap>
+            <Form.Item
+              label="Type"
+              name="type"
+              rules={[{ required: true, message: 'Type is required.' }]}
+            >
+              <Select options={menuTypeOptions} style={{ minWidth: 160 }} />
+            </Form.Item>
+            <Form.Item
+              label="Status"
+              name="status"
+              rules={[{ required: true, message: 'Status is required.' }]}
+            >
+              <Select options={menuStatusOptions} style={{ minWidth: 160 }} />
+            </Form.Item>
+            <Form.Item
+              label="Order"
+              name="order"
+              rules={[{ required: true, message: 'Order is required.' }]}
+            >
+              <InputNumber min={0} precision={0} />
+            </Form.Item>
+          </Space>
           <Form.Item
             label="Title"
             name="title"
@@ -392,26 +669,57 @@ export default function MenusPage() {
             <Input maxLength={160} />
           </Form.Item>
           <Space align="start" size="middle" wrap>
-            <Form.Item
-              label="Order"
-              name="order"
-              rules={[{ required: true, message: 'Order is required.' }]}
-            >
-              <InputNumber min={0} precision={0} />
+            <Form.Item label="Icon" name="icon">
+              <Input maxLength={80} style={{ width: 180 }} />
             </Form.Item>
-            <Form.Item label="Permission" name="permissionCode">
-              <Select
-                allowClear
-                showSearch
-                optionFilterProp="label"
-                options={permissionOptions}
-                placeholder="Unbound"
-                style={{ minWidth: 260 }}
-              />
+            <Form.Item label="Component" name="component">
+              <Input maxLength={160} style={{ width: 240 }} />
+            </Form.Item>
+          </Space>
+          <Form.Item label="Permission" name="permissionCode">
+            <Select
+              allowClear
+              showSearch
+              optionFilterProp="label"
+              options={permissionOptions}
+              placeholder="Unbound"
+            />
+          </Form.Item>
+          <Space align="center" size="large" wrap>
+            <Form.Item
+              label="Cache"
+              name="cache"
+              valuePropName="checked"
+              style={{ marginBottom: 0 }}
+            >
+              <Switch />
+            </Form.Item>
+            <Form.Item
+              label="Hidden"
+              name="hidden"
+              valuePropName="checked"
+              style={{ marginBottom: 0 }}
+            >
+              <Switch />
             </Form.Item>
           </Space>
         </Form>
       </Modal>
     </PageContainer>
   );
+}
+
+function createPermissionOptions(rows: readonly MenuSummary[]) {
+  return Array.from(
+    new Set([
+      ...createPermissionSummariesFromRegistry().map(
+        (permission) => permission.code,
+      ),
+      ...rows
+        .map((row) => row.permissionCode)
+        .filter((code): code is string => Boolean(code)),
+    ]),
+  )
+    .sort()
+    .map((code) => ({ label: code, value: code }));
 }

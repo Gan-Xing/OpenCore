@@ -4790,32 +4790,63 @@
         "type": "object",
         "properties": {
           "key": { "type": "string" },
+          "parentKey": { "type": "string", "nullable": true },
           "title": { "type": "string" },
+          "type": { "type": "string", "enum": ["directory", "menu"] },
           "path": { "type": "string" },
+          "icon": { "type": "string" },
+          "component": { "type": "string" },
           "permissionCode": { "type": "string" },
           "stage": { "type": "string" },
-          "order": { "type": "number" }
+          "order": { "type": "number" },
+          "status": { "type": "string", "enum": ["enabled", "disabled"] },
+          "cache": { "type": "boolean" },
+          "hidden": { "type": "boolean" }
         },
-        "required": ["key", "title", "path", "stage", "order"]
+        "required": [
+          "key",
+          "title",
+          "type",
+          "path",
+          "stage",
+          "order",
+          "status",
+          "cache",
+          "hidden"
+        ]
       },
       "CreateMenuDto": {
         "type": "object",
         "properties": {
           "key": { "type": "string", "example": "system.examples" },
+          "parentKey": { "type": "object", "nullable": true },
           "title": { "type": "string", "example": "Examples" },
+          "type": { "type": "string", "enum": ["directory", "menu"] },
           "path": { "type": "string", "example": "/system/examples" },
+          "icon": { "type": "string" },
+          "component": { "type": "string" },
           "permissionCode": { "type": "string" },
-          "order": { "type": "number" }
+          "order": { "type": "number" },
+          "status": { "type": "string", "enum": ["enabled", "disabled"] },
+          "cache": { "type": "boolean" },
+          "hidden": { "type": "boolean" }
         },
         "required": ["key", "title", "path", "order"]
       },
       "UpdateMenuDto": {
         "type": "object",
         "properties": {
+          "parentKey": { "type": "object", "nullable": true },
           "title": { "type": "string" },
+          "type": { "type": "string", "enum": ["directory", "menu"] },
           "path": { "type": "string" },
+          "icon": { "type": "object", "nullable": true },
+          "component": { "type": "object", "nullable": true },
           "permissionCode": { "type": "object", "nullable": true },
-          "order": { "type": "number" }
+          "order": { "type": "number" },
+          "status": { "type": "string", "enum": ["enabled", "disabled"] },
+          "cache": { "type": "boolean" },
+          "hidden": { "type": "boolean" }
         }
       },
       "Object": { "type": "object", "properties": {} },

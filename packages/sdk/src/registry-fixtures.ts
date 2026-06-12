@@ -1,5 +1,5 @@
 import {
-  collectMenus,
+  collectMenuTree,
   collectPermissionDefinitions,
 } from '@opencore/module-registry';
 import type {
@@ -36,13 +36,20 @@ export function createPermissionSummariesFromRegistry(): PermissionSummary[] {
 }
 
 export function createMenuSummariesFromRegistry(): MenuSummary[] {
-  return collectMenus().map((menu) => ({
+  return collectMenuTree().map((menu) => ({
     key: menu.key,
+    parentKey: menu.parentKey,
     title: menu.title,
+    type: menu.type ?? 'menu',
     path: menu.path,
+    icon: menu.icon,
+    component: menu.component,
     permissionCode: menu.permissionCode,
     stage: menu.stage,
     order: menu.order,
+    status: menu.status ?? 'enabled',
+    cache: menu.cache ?? false,
+    hidden: menu.hidden ?? false,
   }));
 }
 

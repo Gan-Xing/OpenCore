@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -39,6 +40,7 @@ export class SeedSystemMenuRepository extends SystemMenuRepository {
     }
 
     this.assertPermissionCode(input.permissionCode);
+    this.assertParentKey(input.parentKey, input.key);
     const menu: SystemMenuRecord = {
       ...input,
       stage: 'S6',
@@ -54,6 +56,8 @@ export class SeedSystemMenuRepository extends SystemMenuRepository {
     const menu = this.findMutableMenuByKey(key);
     const input = normalizeUpdateSystemMenuInput(menu, body);
 
+    this.assertParentKey(input.parentKey, key);
+
     if (input.permissionCode !== undefined) {
       this.assertPermissionCode(input.permissionCode);
       if (input.permissionCode === null) {
@@ -63,16 +67,32 @@ export class SeedSystemMenuRepository extends SystemMenuRepository {
       }
     }
 
+    if (input.parentKey === null) {
+      delete menu.parentKey;
+    } else {
+      menu.parentKey = input.parentKey;
+    }
+
     Object.assign(menu, {
       title: input.title,
+      type: input.type,
       path: input.path,
+      icon: input.icon,
+      component: input.component,
       order: input.order,
+      status: input.status,
+      cache: input.cache,
+      hidden: input.hidden,
     });
     return { ...menu };
   }
 
   async deleteMenu(key: string): Promise<{ deleted: true }> {
     this.findMutableMenuByKey(key);
+    if (this.menus.some((menu) => menu.parentKey === key)) {
+      throw new BadRequestException(`Menu has child menus: ${key}`);
+    }
+
     this.menus = this.menus.filter((menu) => menu.key !== key);
     return { deleted: true };
   }
@@ -92,6 +112,33 @@ export class SeedSystemMenuRepository extends SystemMenuRepository {
   ): void {
     if (permissionCode && !this.permissionCodes.has(permissionCode)) {
       throw new NotFoundException(`Permission not found: ${permissionCode}`);
+    }
+  }
+
+  private assertParentKey(
+    parentKey: string | null | undefined,
+    currentKey: string,
+  ): void {
+    if (!parentKey) {
+      return;
+    }
+
+    if (!this.menus.some((menu) => menu.key === parentKey)) {
+      throw new NotFoundException(`Parent menu not found: ${parentKey}`);
+    }
+
+    let cursor: string | undefined = parentKey;
+    const parentByKey = new Map(
+      this.menus.map((menu) => [menu.key, menu.parentKey]),
+    );
+
+    while (cursor) {
+      if (cursor === currentKey) {
+        throw new BadRequestException(
+          `Menu parent would create a cycle: ${currentKey}`,
+        );
+      }
+      cursor = parentByKey.get(cursor);
     }
   }
 }

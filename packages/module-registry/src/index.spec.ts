@@ -1,5 +1,6 @@
 import {
   FORBIDDEN_S3_S8_MODULE_PREFIXES,
+  collectMenuTree,
   collectMenus,
   collectPermissionCodes,
   findModuleByCode,
@@ -52,6 +53,28 @@ describe('@opencore/module-registry', () => {
 
       expect(permissionCodes.has(menu.permissionCode)).toBe(true);
     }
+  });
+
+  it('derives a tree-shaped menu control plane from registry menus', () => {
+    expect(collectMenuTree()).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          key: 'system',
+          type: 'directory',
+          icon: 'SettingOutlined',
+          path: '/system',
+        }),
+        expect.objectContaining({
+          key: 'system.menus',
+          parentKey: 'system',
+          type: 'menu',
+          component: 'System/Menus',
+          status: 'enabled',
+          cache: false,
+          hidden: false,
+        }),
+      ]),
+    );
   });
 
   it('keeps P4/P5 modules out of the S3-S8 registry', () => {

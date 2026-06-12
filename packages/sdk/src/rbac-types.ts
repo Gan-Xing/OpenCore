@@ -98,26 +98,51 @@ export type UpdatePermissionRequest = {
 
 export type MenuSummary = {
   key: string;
+  parentKey?: string;
   title: string;
+  type: MenuType;
   path: string;
+  icon?: string;
+  component?: string;
   permissionCode?: string;
   stage: string;
   order: number;
+  status: MenuStatus;
+  cache: boolean;
+  hidden: boolean;
 };
+
+export type MenuType = 'directory' | 'menu';
+
+export type MenuStatus = 'enabled' | 'disabled';
 
 export type CreateMenuRequest = {
   key: string;
+  parentKey?: string | null;
   title: string;
+  type?: MenuType;
   path: string;
+  icon?: string;
+  component?: string;
   permissionCode?: string;
   order: number;
+  status?: MenuStatus;
+  cache?: boolean;
+  hidden?: boolean;
 };
 
 export type UpdateMenuRequest = {
+  parentKey?: string | null;
   title?: string;
+  type?: MenuType;
   path?: string;
+  icon?: string | null;
+  component?: string | null;
   permissionCode?: string | null;
   order?: number;
+  status?: MenuStatus;
+  cache?: boolean;
+  hidden?: boolean;
 };
 
 export type RbacDeleteResult = {

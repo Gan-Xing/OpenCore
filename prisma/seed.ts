@@ -1,10 +1,7 @@
 import { Prisma, PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { seedAuditLogs, seedLoginLogs } from '@opencore/audit/records';
-import {
-  collectMenus,
-  collectPermissionDefinitions,
-} from '@opencore/module-registry';
+import { collectPermissionDefinitions } from '@opencore/module-registry';
 import { seedOnlineUserSessions as onlineUserSessionSeeds } from '@opencore/online-user/records';
 import {
   seedSchedulerJobs,
@@ -18,6 +15,7 @@ import {
   seedSystemPosts,
   seedSystemRoles,
   seedSystemUsers,
+  seedSystemMenus,
   hashSystemUserPassword,
 } from '@opencore/system/records';
 import { existsSync, readFileSync } from 'node:fs';
@@ -177,7 +175,7 @@ async function seedPermissions(): Promise<number> {
 }
 
 async function seedMenus(): Promise<number> {
-  const menus = collectMenus();
+  const menus = seedSystemMenus;
 
   for (const menu of menus) {
     const permission = menu.permissionCode
@@ -189,18 +187,30 @@ async function seedMenus(): Promise<number> {
     await prisma.menu.upsert({
       where: { key: menu.key },
       update: {
+        parentKey: menu.parentKey ?? null,
         title: menu.title,
+        type: menu.type,
         path: menu.path,
+        icon: menu.icon ?? null,
+        component: menu.component ?? null,
         order: menu.order,
-        hidden: false,
+        status: menu.status,
+        cache: menu.cache,
+        hidden: menu.hidden,
         permissionId: permission?.id ?? null,
       },
       create: {
         key: menu.key,
+        parentKey: menu.parentKey ?? null,
         title: menu.title,
+        type: menu.type,
         path: menu.path,
+        icon: menu.icon ?? null,
+        component: menu.component ?? null,
         order: menu.order,
-        hidden: false,
+        status: menu.status,
+        cache: menu.cache,
+        hidden: menu.hidden,
         permissionId: permission?.id ?? null,
       },
     });

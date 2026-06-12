@@ -810,13 +810,17 @@ if (
   !menusPage.includes('createOpenCoreMenu') ||
   !menusPage.includes('updateOpenCoreMenu') ||
   !menusPage.includes('deleteOpenCoreMenu') ||
+  !menusPage.includes('buildMenuTree') ||
+  !menusPage.includes('flattenMenuTree') ||
+  !menusPage.includes('TreeSelect') ||
+  !menusPage.includes('parentTreeData') ||
   !menusPage.includes('useCurrentPageFilters') ||
   !menusPage.includes('CurrentPageExportButton') ||
-  !menusPage.includes('dataSource={filteredRows}') ||
+  !menusPage.includes('dataSource={filteredTreeRows}') ||
   !menusPage.includes('rows={filteredRows}')
 ) {
   throw new Error(
-    'Menus page must use live SDK CRUD with bounded filtering and current-page export.',
+    'Menus page must use live SDK tree CRUD with bounded filtering and current-page export.',
   );
 }
 

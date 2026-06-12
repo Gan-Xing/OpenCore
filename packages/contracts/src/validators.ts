@@ -10,6 +10,8 @@ import {
   MODULE_PRIORITIES,
   MODULE_STAGES,
   MODULE_STATUSES,
+  MENU_STATUSES,
+  MENU_TYPES,
   type MenuDefinition,
   type ModuleDefinition,
   type ModuleLayer,
@@ -19,6 +21,7 @@ import { parsePermissionCode } from './permission-code';
 
 const MODULE_CODE_PATTERN = /^[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*$/;
 const MENU_KEY_PATTERN = /^[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)+$/;
+const MENU_PARENT_KEY_PATTERN = /^[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)*$/;
 
 export function validatePermissionDefinition(
   permission: PermissionDefinition,
@@ -106,6 +109,21 @@ export function validateMenuDefinition(menu: MenuDefinition): ValidationResult {
     );
   }
 
+  if (menu.parentKey && !MENU_PARENT_KEY_PATTERN.test(menu.parentKey)) {
+    issues.push(
+      createValidationIssue(
+        `${menu.key}.parentKey`,
+        'Menu parent key must use lowercase segments.',
+      ),
+    );
+  }
+
+  if (menu.type && !(MENU_TYPES as readonly string[]).includes(menu.type)) {
+    issues.push(
+      createValidationIssue(`${menu.key}.type`, 'Menu type is invalid.'),
+    );
+  }
+
   if (menu.permissionCode && !parsePermissionCode(menu.permissionCode)) {
     issues.push(
       createValidationIssue(
@@ -127,6 +145,15 @@ export function validateMenuDefinition(menu: MenuDefinition): ValidationResult {
   if (!(MODULE_STAGES as readonly string[]).includes(menu.stage)) {
     issues.push(
       createValidationIssue(`${menu.key}.stage`, 'Menu stage is invalid.'),
+    );
+  }
+
+  if (
+    menu.status &&
+    !(MENU_STATUSES as readonly string[]).includes(menu.status)
+  ) {
+    issues.push(
+      createValidationIssue(`${menu.key}.status`, 'Menu status is invalid.'),
     );
   }
 
