@@ -139,6 +139,33 @@ export type UpdateSystemDeptRequest = Partial<
   parentId?: string | null;
 };
 
+export type SystemPostSummary = {
+  id: string;
+  code: string;
+  name: string;
+  order: number;
+  description?: string;
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type SystemPostQueryRequest = PageRequest & {
+  enabled?: boolean;
+};
+
+export type CreateSystemPostRequest = {
+  code: string;
+  name: string;
+  order?: number;
+  description?: string;
+  enabled?: boolean;
+};
+
+export type UpdateSystemPostRequest = Partial<
+  Pick<SystemPostSummary, 'description' | 'enabled' | 'name' | 'order'>
+>;
+
 export type SystemNoticeStatus = 'archived' | 'draft' | 'published';
 
 export type SystemNoticeType = 'announcement' | 'maintenance' | 'security';

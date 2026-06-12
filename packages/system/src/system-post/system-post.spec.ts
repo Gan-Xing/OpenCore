@@ -26,6 +26,10 @@ describe('@opencore/system system-post', () => {
     });
 
     expect(post.code).toBe('qa');
+    await expect(service.getPost('qa')).resolves.toMatchObject({
+      code: 'qa',
+      name: 'Quality Assurance',
+    });
     await expect(
       service.updatePost('qa', { name: 'Quality Platform', enabled: false }),
     ).resolves.toMatchObject({
@@ -106,6 +110,10 @@ describe('@opencore/system system-post', () => {
       });
 
       expect(post.code).toBe(code);
+      await expect(service.getPost(code)).resolves.toMatchObject({
+        code,
+        name: 'Prisma Test Post',
+      });
       await expect(
         service.updatePost(code, {
           description: 'Updated by integration test.',

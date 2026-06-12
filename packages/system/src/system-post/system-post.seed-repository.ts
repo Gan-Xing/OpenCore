@@ -46,6 +46,10 @@ export class SeedSystemPostRepository extends SystemPostRepository {
     );
   }
 
+  async getPost(code: string): Promise<SystemPostRecord> {
+    return { ...this.findPost(code) };
+  }
+
   async createPost(body: CreateSystemPostDto): Promise<SystemPostRecord> {
     const input = normalizeCreateSystemPostInput(body);
 

@@ -92,6 +92,7 @@ for (const requiredRoute of [
   "path: '/system/config'",
   "path: '/system/notices'",
   "path: '/system/depts'",
+  "path: '/system/posts'",
   "path: '/system/files'",
   "path: '/security/login-logs'",
   "path: '/security/operation-logs'",
@@ -230,6 +231,11 @@ if (
   !opencorePlatformService.includes('createOpenCoreSystemDept') ||
   !opencorePlatformService.includes('updateOpenCoreSystemDept') ||
   !opencorePlatformService.includes('deleteOpenCoreSystemDept') ||
+  !opencorePlatformService.includes('listOpenCoreSystemPosts') ||
+  !opencorePlatformService.includes('getOpenCoreSystemPost') ||
+  !opencorePlatformService.includes('createOpenCoreSystemPost') ||
+  !opencorePlatformService.includes('updateOpenCoreSystemPost') ||
+  !opencorePlatformService.includes('deleteOpenCoreSystemPost') ||
   !opencorePlatformService.includes('listOpenCoreSystemNotices') ||
   !opencorePlatformService.includes('publishOpenCoreSystemNotice') ||
   !opencorePlatformService.includes('archiveOpenCoreSystemNotice')
@@ -273,6 +279,7 @@ if (
   !accessRuntime.includes('core:config:read') ||
   !accessRuntime.includes('core:notice:read') ||
   !accessRuntime.includes('core:dept:read') ||
+  !accessRuntime.includes('core:post:read') ||
   !accessRuntime.includes('core:file:read') ||
   !accessRuntime.includes('core:audit-log:read') ||
   !accessRuntime.includes('core:login-log:read') ||
@@ -319,6 +326,7 @@ if (
   !shellRegistry.includes('core.config') ||
   !shellRegistry.includes('core.notice') ||
   !shellRegistry.includes('core.dept') ||
+  !shellRegistry.includes('core.post') ||
   !shellRegistry.includes('core.file') ||
   !shellRegistry.includes('core.audit-log') ||
   !shellRegistry.includes('core.login-log') ||
@@ -397,6 +405,10 @@ const systemNoticesPage = readFileSync(
 );
 const departmentsPage = readFileSync(
   resolve(root, 'src/pages/System/Departments.tsx'),
+  'utf8',
+);
+const postsPage = readFileSync(
+  resolve(root, 'src/pages/System/Posts.tsx'),
   'utf8',
 );
 const filesPage = readFileSync(
@@ -507,6 +519,7 @@ if (
   !configPage.includes('@opencore/sdk') ||
   !systemNoticesPage.includes('@opencore/sdk') ||
   !departmentsPage.includes('@opencore/sdk') ||
+  !postsPage.includes('@opencore/sdk') ||
   !filesPage.includes('@opencore/sdk') ||
   !auditLogsPage.includes('@opencore/sdk') ||
   !loginLogsPage.includes('@opencore/sdk') ||
@@ -555,6 +568,22 @@ if (
 ) {
   throw new Error(
     'Departments page must use live SDK tree CRUD with bounded filtering and current-page export.',
+  );
+}
+
+if (
+  !postsPage.includes('listOpenCoreSystemPosts') ||
+  !postsPage.includes('getOpenCoreSystemPost') ||
+  !postsPage.includes('createOpenCoreSystemPost') ||
+  !postsPage.includes('updateOpenCoreSystemPost') ||
+  !postsPage.includes('deleteOpenCoreSystemPost') ||
+  !postsPage.includes('useCurrentPageFilters') ||
+  !postsPage.includes('CurrentPageExportButton') ||
+  !postsPage.includes('dataSource={filteredRows}') ||
+  !postsPage.includes('rows={filteredRows}')
+) {
+  throw new Error(
+    'Posts page must use live SDK CRUD with bounded filtering and current-page export.',
   );
 }
 

@@ -420,6 +420,16 @@ export const moduleRegistry = [
         'S7',
       ),
     ],
+    admin: {
+      basePath: '/system/posts',
+      routes: [
+        {
+          path: '/system/posts',
+          title: 'Posts',
+          permissionCode: 'core:post:read',
+        },
+      ],
+    },
   },
   {
     code: 'core.file',

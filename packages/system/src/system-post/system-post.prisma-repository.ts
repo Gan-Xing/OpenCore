@@ -56,6 +56,10 @@ export class PrismaSystemPostRepository extends SystemPostRepository {
     return createSystemPostPageResult(rows.map(toSystemPostRecord), pagination);
   }
 
+  async getPost(code: string): Promise<SystemPostRecord> {
+    return toSystemPostRecord(await this.findPostByCode(code));
+  }
+
   async createPost(body: CreateSystemPostDto): Promise<SystemPostRecord> {
     const input = normalizeCreateSystemPostInput(body);
 

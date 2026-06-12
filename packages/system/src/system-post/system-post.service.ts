@@ -22,6 +22,10 @@ export class SystemPostService {
     return this.repository.listPosts(query);
   }
 
+  getPost(code: string): Promise<SystemPostRecord> {
+    return this.repository.getPost(code);
+  }
+
   createPost(body: CreateSystemPostDto): Promise<SystemPostRecord> {
     return this.repository.createPost(body);
   }

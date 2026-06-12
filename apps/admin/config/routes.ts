@@ -81,6 +81,12 @@ export default [
         access: 'canReadDepartments',
       },
       {
+        name: 'Posts',
+        path: '/system/posts',
+        component: './System/Posts',
+        access: 'canReadPosts',
+      },
+      {
         name: 'File Center',
         path: '/system/files',
         component: './System/Files',

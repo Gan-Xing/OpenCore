@@ -34,6 +34,16 @@ describe('createSystemManagementClient', () => {
     });
     await client.updateDept('token', 'dept_qa', { name: 'Quality Platform' });
     await client.deleteDept('token', 'dept_qa');
+    await client.listPosts('token', { page: 1, pageSize: 20, enabled: true });
+    await client.getPost('token', 'engineer');
+    await client.exportPosts('token', { enabled: true });
+    await client.createPost('token', {
+      code: 'qa',
+      name: 'Quality Assurance',
+      order: 30,
+    });
+    await client.updatePost('token', 'qa', { name: 'Quality Platform' });
+    await client.deletePost('token', 'qa');
     await client.listNotices('token', {
       page: 1,
       pageSize: 10,
@@ -92,6 +102,33 @@ describe('createSystemManagementClient', () => {
       },
       {
         path: '/core/depts/dept_qa',
+        method: 'DELETE',
+        token: 'token',
+      },
+      {
+        path: '/core/posts?page=1&pageSize=20&enabled=true',
+        token: 'token',
+      },
+      {
+        path: '/core/posts/engineer',
+        token: 'token',
+      },
+      {
+        path: '/core/posts/export?enabled=true',
+        token: 'token',
+      },
+      {
+        path: '/core/posts',
+        method: 'POST',
+        token: 'token',
+      },
+      {
+        path: '/core/posts/qa',
+        method: 'PATCH',
+        token: 'token',
+      },
+      {
+        path: '/core/posts/qa',
         method: 'DELETE',
         token: 'token',
       },

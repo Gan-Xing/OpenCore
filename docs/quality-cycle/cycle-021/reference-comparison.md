@@ -68,3 +68,25 @@ OpenCore admits the core management loop only:
 OpenCore does not admit batch delete, drag-sort persistence, user binding,
 data-scope configuration, tenant hierarchy or workflow/business integration in
 this round.
+
+## Round 3 Post Reference Shape
+
+RuoYi keeps post management under System as a table CRUD capability with list,
+export, detail, create, update, delete and option-select APIs. The permission
+shape is list/query/add/edit/remove/export, and the form includes code, name,
+sort, status and remark. RuoYi also uses posts in user assignment through a
+user-post relation.
+
+Yudao keeps post management under System with page, simple-list, detail, create,
+update, delete, batch delete and export APIs. Its Admin page exposes filters for
+name, code and status, plus create/update/delete/export operations.
+
+OpenCore admits the core management loop only:
+
+- paged list, detail, current-page export, create, update and delete;
+- stable `code` identity for detail/update/delete, matching the existing
+  OpenCore post runtime;
+- logged-in Admin route/access/shell/page and smoke coverage.
+
+OpenCore does not admit user-post binding, user form integration, simple-list
+option endpoints, batch delete or data-scope expansion in this round.

@@ -161,3 +161,66 @@ pre-existing 3000 process was left running.
 - Feature commit:
   `39d4943 feat(core-dept): productize department tree management / 产品化部门树管理闭环`.
 - Push: `origin/main` updated from `b9b67fd` to `39d4943`.
+
+## Round 3 Capability
+
+Capability: `core.post` productization.
+
+Goal: turn the package-owned post/position backend into a real
+login-protected Admin operation loop with SDK/OpenAPI/Admin/permission/menu and
+smoke coverage.
+
+## Round 3 Implemented
+
+- Added `GET /api/core/posts/:code`, guarded by `core:post:read`, and
+  refreshed the OpenAPI snapshot.
+- Extended `@opencore/system` post repository/service contracts with `getPost`
+  for seed and Prisma implementations.
+- Extended `@opencore/sdk` with post list/detail/export/create/update/delete
+  methods, typed query/body contracts and registry fixtures.
+- Added `core.post` Admin metadata in module-registry and wired Admin route,
+  access and shell registry for `/system/posts`.
+- Added a live Posts Admin page using `@opencore/sdk` and platform service
+  methods for list/detail/current-page export plus create/update/delete
+  actions.
+- Extended Admin smoke checks to lock the route, access binding, shell registry
+  entry, SDK lifecycle methods and page-level live integration.
+
+## Round 3 Verification
+
+- `NX_DAEMON=false pnpm nx run-many -t typecheck --projects=system,sdk,module-registry,api,admin`
+  pass.
+- `NX_DAEMON=false pnpm nx run-many -t test --projects=system,sdk,module-registry,api`
+  pass.
+- `pnpm test:admin` pass.
+- `pnpm openapi:export` pass.
+- `pnpm openapi:registry-tags:check` pass.
+- `pnpm openapi:check` pass.
+- `pnpm registry:admin-routes:check` pass.
+- `pnpm sdk:check` pass.
+- `pnpm format:check && pnpm lint && pnpm typecheck && pnpm test` pass.
+- `pnpm build && pnpm prisma:validate && pnpm test:api && NX_DAEMON=false pnpm nx test contracts && NX_DAEMON=false pnpm nx test module-registry && NX_DAEMON=false pnpm nx test sdk && pnpm openapi:export && pnpm openapi:registry-tags:check && pnpm openapi:check && pnpm registry:admin-routes:check && pnpm test:admin && pnpm sdk:check`
+  pass.
+
+## Round 3 Live Smoke
+
+Against `http://127.0.0.1:3010/api` with the local seeded admin:
+
+- `POST /api/auth/login` returned 201.
+- `GET /api/core/posts?page=1&pageSize=20` returned 200.
+- `GET /api/core/posts/engineer` returned 200.
+- `POST /api/core/posts` created a smoke post with 201.
+- `GET /api/core/posts/:code` returned 200 for the created post.
+- `PATCH /api/core/posts/:code` returned 200 and updated `enabled=false`.
+- `GET /api/core/posts/export?enabled=false` returned 200.
+- `DELETE /api/core/posts/:code` returned 200 with `deleted=true`.
+- `GET /api/core/posts/:code` returned 404 after deletion.
+- Final list returned 200.
+
+The temporary 3010 API process was stopped after smoke verification; the
+pre-existing 3000 process was left running.
+
+## Round 3 Commit Record
+
+- Feature commit: pending.
+- Push: pending.

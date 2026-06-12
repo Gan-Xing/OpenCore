@@ -16,6 +16,7 @@ const SHELL_MODULE_CODES = [
   'core.config',
   'core.notice',
   'core.dept',
+  'core.post',
   'core.file',
   'core.audit-log',
   'core.login-log',

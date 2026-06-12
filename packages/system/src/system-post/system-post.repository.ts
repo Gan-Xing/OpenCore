@@ -58,6 +58,8 @@ export abstract class SystemPostRepository {
     query?: SystemPostPageQuery,
   ): Promise<PageResult<SystemPostRecord>>;
 
+  abstract getPost(code: string): Promise<SystemPostRecord>;
+
   abstract createPost(body: CreateSystemPostDto): Promise<SystemPostRecord>;
 
   abstract updatePost(

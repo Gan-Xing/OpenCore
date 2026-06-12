@@ -2482,3 +2482,50 @@ pnpm registry:admin-routes:check && pnpm test:admin && pnpm sdk:check`。
 - Feature commit:
   `39d4943 feat(core-dept): productize department tree management / 产品化部门树管理闭环`.
 - Push: `origin/main` updated from `b9b67fd` to `39d4943`.
+
+## 2026-06-12 Cycle-021 Round 3: core.post Productization
+
+### Capability Status
+
+- Round 3 选择 `core.post`：后端 runtime/API 已存在，但缺少 detail API、
+  SDK、Admin route/access/menu、live Admin 页面和 smoke/e2e 闭环。
+- 这是用户岗位绑定和后续 user hardening 的前置能力。
+
+### Completed
+
+- 新增 `GET /api/core/posts/:code`，并通过 `core:post:read` 保护。
+- `@opencore/system` seed/Prisma repository 和 service 均支持 `getPost`。
+- `@opencore/sdk` 已提供 post typed client：list/detail/export/create/
+  update/delete。
+- `packages/module-registry` 已为 `core.post` 增加 Admin route metadata，
+  `/system/posts` 纳入 `registry:admin-routes:check`。
+- Admin 已新增 `/system/posts` live 页面，使用 SDK-backed platform service
+  完成列表、详情、当前页导出、创建、更新和删除。
+- Admin smoke 已锁定 route/access/shell registry/SDK lifecycle/page
+  integration。
+- OpenAPI snapshot 已刷新。
+
+### Verification
+
+- Focused typecheck pass：
+  `NX_DAEMON=false pnpm nx run-many -t typecheck --projects=system,sdk,module-registry,api,admin`。
+- Focused tests pass：
+  `NX_DAEMON=false pnpm nx run-many -t test --projects=system,sdk,module-registry,api`。
+- `pnpm test:admin` pass。
+- `pnpm openapi:export`、`pnpm openapi:registry-tags:check`、
+  `pnpm openapi:check`、`pnpm registry:admin-routes:check`、`pnpm sdk:check`
+  pass。
+- Full gates pass：`pnpm format:check && pnpm lint && pnpm typecheck &&
+pnpm test`；`pnpm build && pnpm prisma:validate && pnpm test:api &&
+NX_DAEMON=false pnpm nx test contracts && NX_DAEMON=false pnpm nx test
+module-registry && NX_DAEMON=false pnpm nx test sdk && pnpm openapi:export &&
+pnpm openapi:registry-tags:check && pnpm openapi:check &&
+pnpm registry:admin-routes:check && pnpm test:admin && pnpm sdk:check`。
+- Live smoke against `http://127.0.0.1:3010/api` pass：login、post list、
+  seeded detail、create、detail、update、export preview、delete、deleted-detail
+  404、final list 全链路通过。
+
+### Commit Record
+
+- Feature commit: pending.
+- Push: pending.

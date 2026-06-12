@@ -1430,6 +1430,29 @@
       }
     },
     "/api/core/posts/{code}": {
+      "get": {
+        "operationId": "SystemManagementController_getPost",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SystemPostDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Posts"]
+      },
       "patch": {
         "operationId": "SystemManagementController_updatePost",
         "parameters": [

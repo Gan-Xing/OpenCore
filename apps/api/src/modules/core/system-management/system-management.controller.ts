@@ -299,6 +299,14 @@ export class SystemManagementController {
     return this.posts.createExportPreview(query);
   }
 
+  @Get('posts/:code')
+  @ApiTags('Core Posts')
+  @RequirePermission('core:post:read')
+  @ApiOkResponse({ type: SystemPostDto })
+  getPost(@Param('code') code: string): Promise<SystemPostDto> {
+    return this.posts.getPost(code);
+  }
+
   @Post('posts')
   @ApiTags('Core Posts')
   @RequirePermission('core:post:create')

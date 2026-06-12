@@ -51,6 +51,27 @@ coverage and a detail read contract.
 - [x] Run full gates, commit and push this independently accepted product
       slice.
 
+## Round 3: core.post Productization
+
+Why this slice: RuoYi and Yudao both keep post/position management beside
+department management under System. OpenCore already has package-owned post
+runtime and list/export/create/update/delete API routes, but the logged-in
+Admin loop was missing a detail read contract, SDK/Admin route/access/menu,
+live page and smoke coverage.
+
+- [x] Add missing detail API contract for system posts.
+- [x] Extend `@opencore/sdk` with typed post list/detail/export/create/update/
+      delete methods and fixtures.
+- [x] Promote `core.post` to an Admin route/access/menu-checked module.
+- [x] Add a live Admin Posts page with list/detail/current-page export plus
+      create/update/delete actions.
+- [x] Extend Admin smoke checks to lock post route, access binding, shell
+      registry, SDK lifecycle usage and page behavior.
+- [x] Refresh OpenAPI snapshot and registry route/tag checks.
+- [x] Run focused and live HTTP smoke gates.
+- [ ] Run full gates, commit and push this independently accepted product
+      slice.
+
 ## Explicitly Out Of Scope
 
 - Notice read/unread inbox, header badge and per-user read tracking.
@@ -59,4 +80,6 @@ coverage and a detail read contract.
 - Tenant-scoped notices.
 - Department user binding and data-scope assignment UI.
 - Batch department deletion or drag-sort persistence.
+- User-post binding and user profile post selection.
+- Batch post deletion and simple-list option endpoints.
 - CRM/ERP/MES/WMS/mall/member/pay/AI modules.

@@ -4,14 +4,18 @@ import {
   createSystemManagementClient,
   type CreateSystemDeptRequest,
   type CreateSystemNoticeRequest,
+  type CreateSystemPostRequest,
   type SystemStatusSummary,
   type SystemDeptQueryRequest,
   type SystemDeptSummary,
   type SystemDeptTreeSummary,
   type SystemNoticeQueryRequest,
   type SystemNoticeSummary,
+  type SystemPostQueryRequest,
+  type SystemPostSummary,
   type UpdateSystemDeptRequest,
   type UpdateSystemNoticeRequest,
+  type UpdateSystemPostRequest,
   type UserSummary,
 } from '@opencore/sdk';
 import { getRequiredAdminToken, opencoreSdkRequest } from './client';
@@ -55,6 +59,41 @@ export function deleteOpenCoreSystemDept(
   id: string,
 ): Promise<{ deleted: true }> {
   return systemManagementClient.deleteDept(getRequiredAdminToken(), id);
+}
+
+export async function listOpenCoreSystemPosts(
+  query?: SystemPostQueryRequest,
+): Promise<SystemPostSummary[]> {
+  const page = await systemManagementClient.listPosts(
+    getRequiredAdminToken(),
+    query,
+  );
+  return [...page.items];
+}
+
+export function getOpenCoreSystemPost(
+  code: string,
+): Promise<SystemPostSummary> {
+  return systemManagementClient.getPost(getRequiredAdminToken(), code);
+}
+
+export function createOpenCoreSystemPost(
+  body: CreateSystemPostRequest,
+): Promise<SystemPostSummary> {
+  return systemManagementClient.createPost(getRequiredAdminToken(), body);
+}
+
+export function updateOpenCoreSystemPost(
+  code: string,
+  body: UpdateSystemPostRequest,
+): Promise<SystemPostSummary> {
+  return systemManagementClient.updatePost(getRequiredAdminToken(), code, body);
+}
+
+export function deleteOpenCoreSystemPost(
+  code: string,
+): Promise<{ deleted: true }> {
+  return systemManagementClient.deletePost(getRequiredAdminToken(), code);
 }
 
 export async function listOpenCoreSystemNotices(

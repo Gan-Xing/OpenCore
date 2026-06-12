@@ -5,6 +5,7 @@ import type {
   CreateFileAssetRequest,
   CreateSystemDeptRequest,
   CreateSystemNoticeRequest,
+  CreateSystemPostRequest,
   CreateSystemConfigRequest,
   DeleteResult,
   DictTypeSummary,
@@ -19,10 +20,13 @@ import type {
   SystemDeptTreeSummary,
   SystemNoticeQueryRequest,
   SystemNoticeSummary,
+  SystemPostQueryRequest,
+  SystemPostSummary,
   UpdateDictTypeRequest,
   UpdateFileAssetRequest,
   UpdateSystemDeptRequest,
   UpdateSystemNoticeRequest,
+  UpdateSystemPostRequest,
   UpdateSystemConfigRequest,
 } from './system-management-types';
 
@@ -93,6 +97,25 @@ export type SystemManagementClient = {
     body: UpdateSystemDeptRequest,
   ) => Promise<SystemDeptSummary>;
   deleteDept: (token: Token, id: string) => Promise<DeleteResult>;
+  listPosts: (
+    token: Token,
+    query?: SystemPostQueryRequest,
+  ) => Promise<PageResponse<SystemPostSummary>>;
+  getPost: (token: Token, code: string) => Promise<SystemPostSummary>;
+  exportPosts: (
+    token: Token,
+    query?: SystemPostQueryRequest,
+  ) => Promise<ExportPreview>;
+  createPost: (
+    token: Token,
+    body: CreateSystemPostRequest,
+  ) => Promise<SystemPostSummary>;
+  updatePost: (
+    token: Token,
+    code: string,
+    body: UpdateSystemPostRequest,
+  ) => Promise<SystemPostSummary>;
+  deletePost: (token: Token, code: string) => Promise<DeleteResult>;
   listNotices: (
     token: Token,
     query?: SystemNoticeQueryRequest,
@@ -243,6 +266,38 @@ export function createSystemManagementClient(
       }),
     deleteDept: (token, id) =>
       request<DeleteResult>(`/core/depts/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        token,
+      }),
+    listPosts: (token, query) =>
+      request<PageResponse<SystemPostSummary>>(
+        withQuery('/core/posts', query),
+        {
+          token,
+        },
+      ),
+    getPost: (token, code) =>
+      request<SystemPostSummary>(`/core/posts/${encodeURIComponent(code)}`, {
+        token,
+      }),
+    exportPosts: (token, query) =>
+      request<ExportPreview>(withQuery('/core/posts/export', query), {
+        token,
+      }),
+    createPost: (token, body) =>
+      request<SystemPostSummary>('/core/posts', {
+        method: 'POST',
+        body,
+        token,
+      }),
+    updatePost: (token, code, body) =>
+      request<SystemPostSummary>(`/core/posts/${encodeURIComponent(code)}`, {
+        method: 'PATCH',
+        body,
+        token,
+      }),
+    deletePost: (token, code) =>
+      request<DeleteResult>(`/core/posts/${encodeURIComponent(code)}`, {
         method: 'DELETE',
         token,
       }),

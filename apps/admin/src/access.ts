@@ -20,6 +20,7 @@ export default function access(initialState: InitialState = {}) {
     canReadSystemConfig: hasPermission('core:config:read'),
     canReadSystemNotices: hasPermission('core:notice:read'),
     canReadDepartments: hasPermission('core:dept:read'),
+    canReadPosts: hasPermission('core:post:read'),
     canReadFiles: hasPermission('core:file:read'),
     canReadAuditLogs: hasPermission('core:audit-log:read'),
     canReadLoginLogs: hasPermission('core:login-log:read'),

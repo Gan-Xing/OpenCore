@@ -57,3 +57,24 @@ After Round 1, the next lowest dependency productization gap is `core.dept`:
 This remains inside S7 System scope and does not introduce user binding,
 data-scope assignment, multi-tenant hierarchy, batch delete or drag-sort
 persistence.
+
+## Round 3 Audit: core.post
+
+After Round 2, the next lowest dependency productization gap is `core.post`:
+
+- `@opencore/system` already owns `system-post` DTOs, seed records, repository
+  contract, seed repository, Prisma repository, service, module, pagination,
+  filters and export preview helper.
+- `apps/api/src/modules/core/system-management/system-management.controller.ts`
+  exposes `/api/core/posts` list/export/create/update/delete, but lacked
+  `GET /api/core/posts/:code`.
+- `packages/module-registry` declares `core.post` permissions and the
+  `system.posts` menu, but did not provide Admin route metadata.
+- `@opencore/sdk` did not expose typed post client methods or fixtures.
+- `apps/admin/config/routes.ts`, `apps/admin/src/access.ts` and
+  `apps/admin/src/core/shellRegistry.ts` did not include `/system/posts`.
+- No Admin page or smoke check proved a logged-in operator could manage
+  package-owned posts.
+
+This remains inside S7 System scope and does not introduce user-post binding,
+profile post selection, simple-list option endpoints or batch delete.
