@@ -116,6 +116,32 @@ a live Admin role management page.
 - [x] Run focused, live HTTP smoke and full gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 6: core.permission Productization
+
+Why this slice: after role management became live, the next lowest dependency
+RBAC gap is the permission catalog itself. Yudao/RuoYi use permission
+identifiers through menu, role and user assignment flows rather than as a
+separate editable directory, while OpenCore already has a persisted
+`Permission.code` table and API writes. The gap was that OpenCore still lacked
+permission detail, system/custom metadata, registry permission mutation
+protection and a live Admin page.
+
+- [x] Add missing detail API contract for RBAC permissions.
+- [x] Mark registry-seeded permissions as `system=true` and custom permissions
+      as `system=false` across API, SDK fixtures and OpenAPI.
+- [x] Protect registry permissions from update/delete while preserving custom
+      permission create/update/delete.
+- [x] Replace the read-only Admin Permissions fixture with a live SDK-backed
+      page for list/detail/current-page export plus custom create/update/delete
+      actions.
+- [x] Let the live Roles page load permission options from the permission API so
+      custom permissions can be assigned after creation.
+- [x] Extend Admin smoke checks to lock permission SDK lifecycle usage and page
+      behavior.
+- [x] Refresh OpenAPI snapshot and registry route/tag checks.
+- [x] Run focused, live HTTP smoke and full gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Explicitly Out Of Scope
 
 - Notice read/unread inbox, header badge and per-user read tracking.
@@ -131,4 +157,7 @@ a live Admin role management page.
   persistence.
 - Role-user assignment pages, role simple-list endpoints, batch role deletion,
   standalone data-scope endpoint and role status toggle.
+- Registry definition editing, dynamic permission discovery, menu-tree role
+  assignment, user-role assignment and token permission refresh after permission
+  mutation.
 - CRM/ERP/MES/WMS/mall/member/pay/AI modules.

@@ -146,3 +146,32 @@ package-owned role model:
 OpenCore does not admit role-user assignment, role menu-tree assignment,
 simple-list endpoints, batch delete, separate data-scope update endpoints,
 status toggles or token permission refresh semantics in this round.
+
+## Round 6 Permission Reference Shape
+
+RuoYi-style permission management is primarily expressed through menu records,
+button permission identifiers and role/user assignment flows. The system menu
+form owns the permission string, and role management assigns menu permissions
+through a tree rather than editing a standalone permission catalog.
+
+Yudao keeps `/system/permission` as an assignment control plane: list a role's
+menus, assign role menus, assign role data scope, list a user's roles and
+assign user roles. Its Admin side shows permission identifiers in menu
+management and uses dedicated role/user assignment dialogs.
+
+OpenCore already has a different admitted model: a persisted
+`Permission.code` catalog seeded from `@opencore/module-registry`, then used by
+roles, menus, guards and Admin access. Round 6 admits the bounded management
+loop that matches that model:
+
+- list, detail, current-page export, create, update and delete for permissions;
+- stable `code` identity for detail/update/delete;
+- `system=true` for registry-seeded permissions and `system=false` for custom
+  permissions;
+- mutation protection for registry permissions so core route/menu/access
+  contracts cannot be deleted from Admin;
+- live role permission options sourced from the permission API.
+
+OpenCore does not admit registry definition editing, dynamic permission
+discovery, role menu-tree assignment, user-role assignment, cache/menu refresh
+or token permission refresh semantics in this round.

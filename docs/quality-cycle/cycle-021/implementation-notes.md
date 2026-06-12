@@ -356,3 +356,74 @@ pre-existing 3000 process was left running.
 - Feature commit:
   `7ca8b2f feat(core-role): productize role management / 产品化角色管理闭环`.
 - Push: `origin/main` updated from `4269cb4` to `7ca8b2f`.
+
+## Round 6 Capability
+
+Capability: `core.permission` productization.
+
+Goal: turn the existing persisted RBAC permission catalog into a real
+login-protected Admin operation loop with API detail, SDK system/custom
+metadata, OpenAPI, Admin page and smoke coverage, while protecting registry
+permissions from destructive mutation.
+
+## Round 6 Implemented
+
+- Added `GET /api/core/permissions/:code`, guarded by `core:permission:read`,
+  and refreshed the OpenAPI snapshot.
+- Added `system` metadata to permission summaries across API DTOs, seed data,
+  Prisma mapping, SDK types and registry fixtures.
+- Normalized permission create/update input and protected registry-seeded
+  permissions from update/delete in seed and Prisma repositories.
+- Replaced the read-only Admin Permissions fixture with a live page using
+  `@opencore/sdk` and platform service methods for list/detail/current-page
+  export plus custom create/update/delete actions.
+- Updated the live Admin Roles page to load permission options from the
+  permission API, so custom permissions can be assigned after creation.
+- Extended Admin smoke checks to lock SDK-backed permission lifecycle methods
+  and page-level live integration.
+
+## Round 6 Verification
+
+- `NX_DAEMON=false pnpm nx run-many -t typecheck --projects=sdk,api,admin`
+  pass.
+- `NX_DAEMON=false pnpm nx run-many -t test --projects=sdk,api` pass.
+- `pnpm test:admin` pass.
+- `pnpm openapi:export` pass.
+- `pnpm openapi:registry-tags:check` pass.
+- `pnpm openapi:check` pass.
+- `pnpm registry:admin-routes:check` pass.
+- `pnpm sdk:check` pass.
+- `pnpm format:check && pnpm lint && pnpm typecheck && pnpm test` pass.
+- `pnpm build && pnpm prisma:validate && pnpm test:api && NX_DAEMON=false pnpm nx test contracts && NX_DAEMON=false pnpm nx test module-registry && NX_DAEMON=false pnpm nx test sdk && pnpm openapi:export && pnpm openapi:registry-tags:check && pnpm openapi:check && pnpm registry:admin-routes:check && pnpm test:admin && pnpm sdk:check`
+  pass.
+
+## Round 6 Live Smoke
+
+Against `http://127.0.0.1:3010/api` with the local seeded admin:
+
+- `POST /api/auth/login` returned 201.
+- `GET /api/core/permissions` returned 200 and included
+  `core:permission:read` with `system=true`.
+- `GET /api/core/permissions/core%3Apermission%3Aread` returned 200.
+- `POST /api/core/permissions` created a custom smoke permission with 201 and
+  `system=false`.
+- `GET /api/core/permissions/:code` returned 200 for the created permission.
+- `PATCH /api/core/permissions/:code` returned 200 and updated the title.
+- `GET /api/core/permissions/export` returned 200 and included the `system`
+  column.
+- `PATCH /api/core/permissions/core%3Apermission%3Aread` returned 400, proving
+  system-permission update protection.
+- `DELETE /api/core/permissions/core%3Apermission%3Aread` returned 400,
+  proving system-permission delete protection.
+- `DELETE /api/core/permissions/:code` returned 200 with `deleted=true`.
+- `GET /api/core/permissions/:code` returned 404 after deletion.
+- Final list returned 200 and no longer contained the smoke permission.
+
+The temporary 3010 API process was stopped after smoke verification; the
+pre-existing 3000 process was left running.
+
+## Round 6 Commit Record
+
+- Feature commit:
+  `680b578 feat(core-permission): productize permission management / 产品化权限管理闭环`.
+- Push: `origin/main` updated from `1ad577b` to `680b578`.

@@ -2630,3 +2630,58 @@ pnpm registry:admin-routes:check && pnpm test:admin && pnpm sdk:check`。
 - Feature commit:
   `7ca8b2f feat(core-role): productize role management / 产品化角色管理闭环`.
 - Push: `origin/main` updated from `4269cb4` to `7ca8b2f`.
+
+## 2026-06-12 Cycle-021 Round 6: core.permission Productization
+
+### Capability Status
+
+- Round 6 选择 `core.permission`：RBAC API/SDK 已支持权限 list/export/create/
+  update/delete，但缺少 detail API、system/custom 元数据、内置 registry 权限
+  保护、live Admin CRUD 页面和 smoke 页面行为闭环。
+- 本轮按 OpenCore 的 TS/NestJS 边界承认 persisted `Permission.code` catalog：
+  registry-seeded 权限是 system permission，只允许查看和导出；custom
+  permission 可以创建、更新和删除。
+- 本轮不扩展若依/芋道的角色菜单树分配、用户角色分配、菜单缓存刷新或 token
+  权限刷新语义。
+
+### Completed
+
+- 新增 `GET /api/core/permissions/:code`，并通过
+  `core:permission:read` 保护。
+- API DTO、seed repository、Prisma repository、SDK type 和 registry fixture
+  均补齐 `system` 字段。
+- Seed/Prisma RBAC repository 已规范化 permission create/update 输入，并拒绝
+  update/delete registry-seeded system permission。
+- Admin `/system/permissions` 已从 fixture 只读表升级为 live 页面，使用
+  SDK-backed platform service 完成列表、详情、当前页导出、创建、更新和删除。
+- Admin `/system/roles` 已改为从 permission API 加载角色表单权限选项，支持新建
+  custom permission 后参与角色分配。
+- Admin smoke 已锁定 permission SDK lifecycle/page integration。
+- OpenAPI snapshot 已刷新。
+
+### Verification
+
+- Focused typecheck pass：
+  `NX_DAEMON=false pnpm nx run-many -t typecheck --projects=sdk,api,admin`。
+- Focused tests pass：
+  `NX_DAEMON=false pnpm nx run-many -t test --projects=sdk,api`。
+- `pnpm test:admin` pass。
+- `pnpm openapi:export`、`pnpm openapi:registry-tags:check`、
+  `pnpm openapi:check`、`pnpm registry:admin-routes:check`、`pnpm sdk:check`
+  pass。
+- Full gates pass：`pnpm format:check && pnpm lint && pnpm typecheck &&
+pnpm test`；`pnpm build && pnpm prisma:validate && pnpm test:api &&
+NX_DAEMON=false pnpm nx test contracts && NX_DAEMON=false pnpm nx test
+module-registry && NX_DAEMON=false pnpm nx test sdk && pnpm openapi:export &&
+pnpm openapi:registry-tags:check && pnpm openapi:check &&
+pnpm registry:admin-routes:check && pnpm test:admin && pnpm sdk:check`。
+- Live smoke against `http://127.0.0.1:3010/api` pass：login、permission
+  list、seeded detail、create custom permission、detail、update、export
+  preview、reject system permission update、reject system permission delete、
+  delete、deleted-detail 404、final list 全链路通过。
+
+### Commit Record
+
+- Feature commit:
+  `680b578 feat(core-permission): productize permission management / 产品化权限管理闭环`.
+- Push: `origin/main` updated from `1ad577b` to `680b578`.

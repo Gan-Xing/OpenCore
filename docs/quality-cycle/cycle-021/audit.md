@@ -128,3 +128,35 @@ This remains inside S6 RBAC scope and admits the existing OpenCore
 `Role.code`, permission-code assignment and data-scope model. It does not
 introduce role-user assignment pages, menu-tree assignment, simple-list option
 endpoints, batch delete, standalone data-scope endpoints or status toggles.
+
+## Round 6 Audit: core.permission
+
+After Round 5, the next lowest dependency productization gap is
+`core.permission`:
+
+- `apps/api/src/modules/core/rbac/rbac.controller.ts` exposed
+  `/api/core/permissions` list/export/create/update/delete, but lacked
+  `GET /api/core/permissions/:code`.
+- `apps/api/src/modules/core/rbac/*repository.ts` persisted permissions and
+  could mutate them, but the API did not distinguish registry-seeded system
+  permissions from custom permissions.
+- `packages/module-registry` already declares `core.permission` permissions,
+  the `system.permissions` menu and Admin route metadata.
+- `@opencore/sdk` exposed list/export/create/update/delete permission methods,
+  but lacked typed detail support and did not expose whether a permission is
+  registry-managed.
+- `apps/admin/src/pages/System/Permissions.tsx` was still a read-only
+  registry-backed RBAC table and did not prove a logged-in operator could manage
+  custom persisted permissions.
+- `apps/admin/src/pages/System/Roles.tsx` used registry permission fixtures for
+  role assignment options, so newly created custom permissions could not appear
+  in the live role form.
+- Admin smoke locked route/access/shell presence, but not live SDK permission
+  lifecycle page behavior.
+
+This remains inside S6 RBAC scope and admits OpenCore's persisted
+`Permission.code` catalog. It treats module-registry permissions as immutable
+system entries, while allowing custom permissions to be created, edited,
+exported and deleted. It does not introduce registry definition editing,
+dynamic permission discovery, menu-tree role assignment, user-role assignment or
+token permission refresh semantics.
