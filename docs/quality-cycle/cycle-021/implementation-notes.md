@@ -225,3 +225,68 @@ pre-existing 3000 process was left running.
 - Feature commit:
   `92d358b feat(core-post): productize post management / 产品化岗位管理闭环`.
 - Push: `origin/main` updated from `f35cc88` to `92d358b`.
+
+## Round 4 Capability
+
+Capability: `core.menu` productization.
+
+Goal: turn the existing package-owned flat menu runtime into a real
+login-protected Admin operation loop with API detail, SDK, OpenAPI, Admin page
+and smoke coverage.
+
+## Round 4 Implemented
+
+- Added `GET /api/core/menus/:key`, guarded by `core:menu:read`, and refreshed
+  the OpenAPI snapshot.
+- Extended `@opencore/system` menu repository/service contracts with `getMenu`
+  for seed and Prisma implementations.
+- Extended `@opencore/sdk` with menu detail support and nullable
+  `permissionCode` updates.
+- Replaced the read-only Admin Menus registry fixture with a live page using
+  `@opencore/sdk` and platform service methods for list/detail/current-page
+  export plus create/update/delete actions.
+- Extended Admin smoke checks to lock SDK-backed menu lifecycle methods and
+  page-level live integration.
+
+## Round 4 Verification
+
+- `NX_DAEMON=false pnpm nx run-many -t typecheck --projects=system,sdk,api,admin`
+  pass.
+- `NX_DAEMON=false pnpm nx run-many -t test --projects=system,sdk,api` pass.
+- `pnpm test:admin` pass.
+- `pnpm openapi:export` pass.
+- `pnpm openapi:registry-tags:check` pass.
+- `pnpm openapi:check` pass.
+- `pnpm registry:admin-routes:check` pass.
+- `pnpm sdk:check` pass.
+- `pnpm format:check && pnpm lint && pnpm typecheck && pnpm test` pass.
+- `pnpm build:admin` pass after the first full `pnpm build` attempt hit the
+  known intermittent Umi/Utoopack CSS loader failure on
+  `Dashboard/index.less`; Nx marked `admin:build` as flaky.
+- `pnpm build && pnpm prisma:validate && pnpm test:api && NX_DAEMON=false pnpm nx test contracts && NX_DAEMON=false pnpm nx test module-registry && NX_DAEMON=false pnpm nx test sdk && pnpm openapi:export && pnpm openapi:registry-tags:check && pnpm openapi:check && pnpm registry:admin-routes:check && pnpm test:admin && pnpm sdk:check`
+  pass on rerun.
+
+## Round 4 Live Smoke
+
+Against `http://127.0.0.1:3010/api` with the local seeded admin:
+
+- `POST /api/auth/login` returned 201.
+- `GET /api/core/menus` returned 200.
+- `GET /api/core/menus/system.menus` returned 200.
+- `POST /api/core/menus` created a smoke menu with 201.
+- `GET /api/core/menus/:key` returned 200 for the created menu.
+- `PATCH /api/core/menus/:key` returned 200 and cleared `permissionCode` with
+  `null`.
+- `GET /api/core/menus/export` returned 200.
+- `DELETE /api/core/menus/:key` returned 200 with `deleted=true`.
+- `GET /api/core/menus/:key` returned 404 after deletion.
+- Final list returned 200.
+
+The temporary 3010 API process was stopped after smoke verification; the
+pre-existing 3000 process was left running.
+
+## Round 4 Commit Record
+
+- Feature commit:
+  `34e35c7 feat(core-menu): productize system menu management / 产品化系统菜单管理闭环`.
+- Push: `origin/main` updated from `79c5583` to `34e35c7`.

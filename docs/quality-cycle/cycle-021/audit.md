@@ -78,3 +78,28 @@ After Round 2, the next lowest dependency productization gap is `core.post`:
 
 This remains inside S7 System scope and does not introduce user-post binding,
 profile post selection, simple-list option endpoints or batch delete.
+
+## Round 4 Audit: core.menu
+
+After Round 3, the next lowest dependency productization gap is `core.menu`:
+
+- `@opencore/system` already owns `system-menu` DTOs, seed records, repository
+  contract, seed repository, Prisma repository, service, module, normalization
+  rules and export preview helper.
+- `apps/api/src/modules/core/rbac/rbac.controller.ts` exposed `/api/core/menus`
+  list/export/create/update/delete, but lacked `GET /api/core/menus/:key`.
+- `packages/module-registry` already declares `core.menu` permissions,
+  `system.menus` menu and Admin route metadata for `/system/menus`.
+- `@opencore/sdk` exposed list/export/create/update/delete menu methods, but
+  lacked typed detail support and nullable permission clearing.
+- `apps/admin/src/pages/System/Menus.tsx` was still a read-only
+  registry-backed RBAC table and did not prove a logged-in operator could
+  manage persisted menus.
+- Admin smoke locked the route/access/shell entry, but not live SDK menu CRUD
+  page behavior.
+
+This remains inside S6 RBAC scope and admits OpenCore's current flat
+`Menu.key` model only. It does not introduce RuoYi/Yudao-style menu parent
+trees, menu type/icon/component/status/cache fields, dynamic router generation,
+role menu tree assignment, menu cache refresh, save-sort or drag-sort
+persistence.

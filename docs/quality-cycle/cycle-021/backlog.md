@@ -72,6 +72,27 @@ live page and smoke coverage.
 - [x] Run full gates, commit and push this independently accepted product
       slice.
 
+## Round 4: core.menu Productization
+
+Why this slice: RuoYi and Yudao both make menu management the control plane for
+System navigation and button permissions. OpenCore already had package-owned
+menu list/export/create/update/delete runtime and `core.menu` Admin shell
+metadata, but the logged-in Admin loop was still a read-only registry fixture
+and the API/SDK lacked a detail read contract.
+
+- [x] Add missing detail API contract for system menus.
+- [x] Extend `@opencore/system` menu repository/service contracts with
+      `getMenu` for seed and Prisma implementations.
+- [x] Extend `@opencore/sdk` with typed menu detail support and nullable
+      permission clearing.
+- [x] Replace the read-only Admin Menus fixture with a live SDK-backed page for
+      list/detail/current-page export plus create/update/delete actions.
+- [x] Extend Admin smoke checks to lock menu route, access binding, shell
+      registry, SDK lifecycle usage and page behavior.
+- [x] Refresh OpenAPI snapshot and registry route/tag checks.
+- [x] Run focused, live HTTP smoke and full gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Explicitly Out Of Scope
 
 - Notice read/unread inbox, header badge and per-user read tracking.
@@ -82,4 +103,7 @@ live page and smoke coverage.
 - Batch department deletion or drag-sort persistence.
 - User-post binding and user profile post selection.
 - Batch post deletion and simple-list option endpoints.
+- Menu parent/type/icon/component/status/cache/router-generation expansion.
+- Role menu tree assignment, menu cache refresh, save-sort and drag-sort
+  persistence.
 - CRM/ERP/MES/WMS/mall/member/pay/AI modules.

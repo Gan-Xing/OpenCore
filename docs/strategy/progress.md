@@ -2530,3 +2530,52 @@ pnpm registry:admin-routes:check && pnpm test:admin && pnpm sdk:check`。
 - Feature commit:
   `92d358b feat(core-post): productize post management / 产品化岗位管理闭环`.
 - Push: `origin/main` updated from `f35cc88` to `92d358b`.
+
+## 2026-06-12 Cycle-021 Round 4: core.menu Productization
+
+### Capability Status
+
+- Round 4 选择 `core.menu`：后端 runtime/API 已存在，Admin route/access/shell
+  也已登记，但缺少 detail API、SDK detail、live Admin CRUD 页面和 smoke
+  页面行为闭环。
+- 本轮只接入 OpenCore 现有 flat menu 模型，不扩展若依/芋道的树形菜单和
+  动态路由字段。
+
+### Completed
+
+- 新增 `GET /api/core/menus/:key`，并通过 `core:menu:read` 保护。
+- `@opencore/system` seed/Prisma repository 和 service 均支持 `getMenu`。
+- `@opencore/sdk` 已提供 menu detail client，并允许 update 时通过
+  `permissionCode: null` 解除权限绑定。
+- Admin `/system/menus` 已从 registry fixture 只读表升级为 live 页面，使用
+  SDK-backed platform service 完成列表、详情、当前页导出、创建、更新和删除。
+- Admin smoke 已锁定 menu SDK lifecycle/page integration。
+- OpenAPI snapshot 已刷新。
+
+### Verification
+
+- Focused typecheck pass：
+  `NX_DAEMON=false pnpm nx run-many -t typecheck --projects=system,sdk,api,admin`。
+- Focused tests pass：
+  `NX_DAEMON=false pnpm nx run-many -t test --projects=system,sdk,api`。
+- `pnpm test:admin` pass。
+- `pnpm openapi:export`、`pnpm openapi:registry-tags:check`、
+  `pnpm openapi:check`、`pnpm registry:admin-routes:check`、`pnpm sdk:check`
+  pass。
+- Full gates pass：`pnpm format:check && pnpm lint && pnpm typecheck &&
+pnpm test`；首次 `pnpm build` 命中已知 Umi/Utoopack CSS loader flaky，
+  随后 `pnpm build:admin` pass，且 `pnpm build && pnpm prisma:validate &&
+pnpm test:api && NX_DAEMON=false pnpm nx test contracts && NX_DAEMON=false
+pnpm nx test module-registry && NX_DAEMON=false pnpm nx test sdk &&
+pnpm openapi:export && pnpm openapi:registry-tags:check && pnpm openapi:check
+&& pnpm registry:admin-routes:check && pnpm test:admin && pnpm sdk:check`
+  pass。
+- Live smoke against `http://127.0.0.1:3010/api` pass：login、menu list、
+  seeded detail、create、detail、update 并清空 permission、export preview、
+  delete、deleted-detail 404、final list 全链路通过。
+
+### Commit Record
+
+- Feature commit:
+  `34e35c7 feat(core-menu): productize system menu management / 产品化系统菜单管理闭环`.
+- Push: `origin/main` updated from `79c5583` to `34e35c7`.

@@ -90,3 +90,31 @@ OpenCore admits the core management loop only:
 
 OpenCore does not admit user-post binding, user form integration, simple-list
 option endpoints, batch delete or data-scope expansion in this round.
+
+## Round 4 Menu Reference Shape
+
+RuoYi keeps menu management under System as a tree table with list, detail,
+tree-select, role-menu tree-select, create, update, sort update and delete
+operations. Its form covers parent menu, type, icon, display order, menu name,
+route name/path/component, permission, query string, cache, visible and status
+fields. Delete is guarded against child menus and role assignment.
+
+Yudao keeps menu management under System with simple-list, list/detail, create,
+update and delete APIs. Its Admin page exposes a virtual tree table, create/
+update/delete actions, status controls and menu cache refresh, with form fields
+for parent, type, icon, path, component, permission, sort, status, visible,
+keepAlive and alwaysShow.
+
+OpenCore admits the bounded management loop that matches the current
+package-owned data model:
+
+- flat list, detail, current-page export, create, update and delete;
+- stable `key` identity for detail/update/delete;
+- nullable `permissionCode` update so operators can unbind a menu from a
+  permission;
+- logged-in Admin page and smoke coverage through the existing
+  `core.menu` route/access/shell metadata.
+
+OpenCore does not admit tree parent/type/icon/component/status/cache fields,
+dynamic router generation, role menu tree assignment, cache refresh, save-sort,
+drag-sort persistence or Prisma schema expansion in this round.
