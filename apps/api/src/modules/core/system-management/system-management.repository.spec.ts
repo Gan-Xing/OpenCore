@@ -12,6 +12,10 @@ describe('SystemManagementRepository', () => {
 
     expect(file.storageKey).toContain('file-assets/');
     expect(file.originalName).toBe('handbook.pdf');
+    await expect(repository.getFile(file.id)).resolves.toMatchObject({
+      id: file.id,
+      originalName: 'handbook.pdf',
+    });
     await expect(
       repository.updateFileAsset(file.id, {
         checksum: 'sha256:updated',

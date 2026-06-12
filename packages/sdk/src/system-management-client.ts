@@ -70,6 +70,7 @@ export type SystemManagementClient = {
     query?: PageRequest,
   ) => Promise<PageResponse<FileAssetSummary>>;
   exportFiles: (token: Token, query?: PageRequest) => Promise<ExportPreview>;
+  getFile: (token: Token, id: string) => Promise<FileAssetSummary>;
   createFileAsset: (
     token: Token,
     body: CreateFileAssetRequest,
@@ -228,6 +229,10 @@ export function createSystemManagementClient(
       }),
     exportFiles: (token, query) =>
       request<ExportPreview>(withQuery('/core/files/export', query), {
+        token,
+      }),
+    getFile: (token, id) =>
+      request<FileAssetSummary>(`/core/files/${encodeURIComponent(id)}`, {
         token,
       }),
     createFileAsset: (token, body) =>

@@ -26,6 +26,10 @@ export class SeedSystemManagementRepository extends SystemManagementRepository {
     return createPage(this.fileAssets, query);
   }
 
+  async getFile(id: string): Promise<FileAssetRecord> {
+    return { ...this.findFileAsset(id) };
+  }
+
   async createFileAsset(body: CreateFileAssetDto): Promise<FileAssetRecord> {
     assertSafeFileAsset(body);
 

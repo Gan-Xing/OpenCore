@@ -12,6 +12,11 @@ code changes instead of choosing ports by hand.
 The scripts do not auto-select alternate ports. If one of these fixed ports is
 occupied, the command fails with the specific port to free or override.
 
+Admin listens on `0.0.0.0` by default and the Admin build uses the detected
+server address for `ADMIN_API_BASE_URL`, so a browser outside the server can
+open the deployed UI. Override `OPENCORE_DEPLOY_PUBLIC_HOST` when the detected
+address is not the public address you want to use.
+
 ## Commands
 
 ```bash
@@ -26,8 +31,8 @@ temporary API.
 
 `pnpm deploy:opencore` builds the API and Admin, applies Prisma migrations,
 refreshes local seed data, restarts the API on port `39172`, serves the Admin
-build on port `39174`, then runs the same authenticated config smoke against
-the deployed API.
+build on port `39174`, then runs authenticated config and file metadata smoke
+checks against the deployed API.
 
 Admin production builds deliberately force the stable Umi webpack path. Do not
 enable `FORCE_UTOOPACK` for OpenCore deploys; the project has repeatedly hit
@@ -47,6 +52,9 @@ Optional overrides:
 OPENCORE_SMOKE_PORT=39173
 OPENCORE_DEPLOY_API_PORT=39172
 OPENCORE_DEPLOY_ADMIN_PORT=39174
+OPENCORE_DEPLOY_PUBLIC_HOST=144.217.243.161
+OPENCORE_DEPLOY_ADMIN_HOST=0.0.0.0
+OPENCORE_DEPLOY_ADMIN_API_BASE_URL=http://144.217.243.161:39172/api
 OPENCORE_SMOKE_SEED=true
 OPENCORE_DEPLOY_SEED=true
 OPENCORE_DEPLOY_NODE_ENV=development

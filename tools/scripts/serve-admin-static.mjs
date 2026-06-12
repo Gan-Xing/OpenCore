@@ -10,7 +10,7 @@ const root = resolve(
     join(fileURLToPath(new URL('../..', import.meta.url)), 'apps/admin/dist'),
 );
 const port = Number(process.env.PORT || process.env.ADMIN_PORT || 39174);
-const host = process.env.HOST || '127.0.0.1';
+const host = process.env.HOST || '0.0.0.0';
 const indexFile = join(root, 'index.html');
 
 if (!Number.isInteger(port) || port < 1 || port > 65535) {

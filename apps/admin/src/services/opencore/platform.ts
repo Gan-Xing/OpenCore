@@ -3,6 +3,7 @@ import {
   createRbacClient,
   createSystemManagementClient,
   type CreateDictTypeRequest,
+  type CreateFileAssetRequest,
   type CreateMenuRequest,
   type CreatePermissionRequest,
   type CreateRoleRequest,
@@ -20,12 +21,14 @@ import {
   type SystemDeptQueryRequest,
   type SystemDeptSummary,
   type SystemDeptTreeSummary,
+  type FileAssetSummary,
   type SystemNoticeQueryRequest,
   type SystemNoticeSummary,
   type SystemPostQueryRequest,
   type SystemPostSummary,
   type UpdateSystemDeptRequest,
   type UpdateDictTypeRequest,
+  type UpdateFileAssetRequest,
   type UpdateSystemConfigRequest,
   type UpdateSystemNoticeRequest,
   type UpdateSystemPostRequest,
@@ -193,6 +196,39 @@ export function deleteOpenCoreSystemConfig(
   key: string,
 ): Promise<{ deleted: true }> {
   return systemManagementClient.deleteConfig(getRequiredAdminToken(), key);
+}
+
+export async function listOpenCoreFiles(): Promise<FileAssetSummary[]> {
+  const page = await systemManagementClient.listFiles(getRequiredAdminToken(), {
+    page: 1,
+    pageSize: 100,
+  });
+  return [...page.items];
+}
+
+export function getOpenCoreFile(id: string): Promise<FileAssetSummary> {
+  return systemManagementClient.getFile(getRequiredAdminToken(), id);
+}
+
+export function createOpenCoreFile(
+  body: CreateFileAssetRequest,
+): Promise<FileAssetSummary> {
+  return systemManagementClient.createFileAsset(getRequiredAdminToken(), body);
+}
+
+export function updateOpenCoreFile(
+  id: string,
+  body: UpdateFileAssetRequest,
+): Promise<FileAssetSummary> {
+  return systemManagementClient.updateFileAsset(
+    getRequiredAdminToken(),
+    id,
+    body,
+  );
+}
+
+export function deleteOpenCoreFile(id: string): Promise<{ deleted: true }> {
+  return systemManagementClient.deleteFile(getRequiredAdminToken(), id);
 }
 
 export function listOpenCoreMenus(): Promise<MenuSummary[]> {

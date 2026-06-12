@@ -6,8 +6,13 @@ ENV_FILE="${OPENCORE_ENV_FILE:-$ROOT_DIR/.env.opencore.local}"
 API_PORT="${OPENCORE_DEPLOY_API_PORT:-39172}"
 ADMIN_PORT="${OPENCORE_DEPLOY_ADMIN_PORT:-39174}"
 API_BASE_URL="${OPENCORE_DEPLOY_API_BASE_URL:-http://127.0.0.1:$API_PORT}"
-ADMIN_BASE_URL="${OPENCORE_DEPLOY_ADMIN_BASE_URL:-http://127.0.0.1:$ADMIN_PORT}"
-ADMIN_API_BASE_URL_VALUE="${OPENCORE_DEPLOY_ADMIN_API_BASE_URL:-$API_BASE_URL/api}"
+ADMIN_HEALTH_URL="${OPENCORE_DEPLOY_ADMIN_HEALTH_URL:-http://127.0.0.1:$ADMIN_PORT}"
+PUBLIC_HOST="${OPENCORE_DEPLOY_PUBLIC_HOST:-$(hostname -I 2>/dev/null | awk '{print $1}')}"
+PUBLIC_HOST="${PUBLIC_HOST:-127.0.0.1}"
+API_PUBLIC_BASE_URL="${OPENCORE_DEPLOY_PUBLIC_API_BASE_URL:-http://$PUBLIC_HOST:$API_PORT}"
+ADMIN_PUBLIC_BASE_URL="${OPENCORE_DEPLOY_PUBLIC_ADMIN_BASE_URL:-http://$PUBLIC_HOST:$ADMIN_PORT}"
+ADMIN_LISTEN_HOST="${OPENCORE_DEPLOY_ADMIN_HOST:-0.0.0.0}"
+ADMIN_API_BASE_URL_VALUE="${OPENCORE_DEPLOY_ADMIN_API_BASE_URL:-$API_PUBLIC_BASE_URL/api}"
 RUN_DIR="$ROOT_DIR/.opencore/run"
 API_PID_FILE="$RUN_DIR/opencore-api.pid"
 ADMIN_PID_FILE="$RUN_DIR/opencore-admin.pid"
@@ -111,7 +116,7 @@ run_with_env() {
 }
 
 append_deploy_cors_origins() {
-  local admin_origins="http://127.0.0.1:$ADMIN_PORT,http://localhost:$ADMIN_PORT"
+  local admin_origins="http://127.0.0.1:$ADMIN_PORT,http://localhost:$ADMIN_PORT,$ADMIN_PUBLIC_BASE_URL"
 
   if [ -n "${CORS_ORIGINS:-}" ]; then
     export CORS_ORIGINS="$CORS_ORIGINS,$admin_origins"
@@ -179,12 +184,13 @@ echo "Starting OpenCore Admin on fixed port $ADMIN_PORT"
 (
   cd "$ROOT_DIR"
   export PORT="$ADMIN_PORT"
+  export HOST="$ADMIN_LISTEN_HOST"
   export ADMIN_STATIC_ROOT="$ROOT_DIR/apps/admin/dist"
   setsid node "$ROOT_DIR/tools/scripts/serve-admin-static.mjs" </dev/null >>"$ADMIN_LOG_FILE" 2>&1 &
   echo "$!" > "$ADMIN_PID_FILE"
 )
 
-if ! wait_for_url "$ADMIN_BASE_URL/" "OpenCore Admin"; then
+if ! wait_for_url "$ADMIN_HEALTH_URL/" "OpenCore Admin"; then
   tail -100 "$ADMIN_LOG_FILE" >&2 || true
   exit 1
 fi
@@ -195,10 +201,16 @@ run_with_env env \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
   node "$ROOT_DIR/tools/scripts/smoke-core-config.mjs"
 
+run_with_env env \
+  OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \
+  OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
+  node "$ROOT_DIR/tools/scripts/smoke-core-file.mjs"
+
 require_pid_alive "$API_PID_FILE" "OpenCore API" "$API_LOG_FILE"
 require_pid_alive "$ADMIN_PID_FILE" "OpenCore Admin" "$ADMIN_LOG_FILE"
 
 echo "OpenCore deploy complete"
 echo "API: $API_BASE_URL (pid $(cat "$API_PID_FILE"))"
-echo "Admin: $ADMIN_BASE_URL (pid $(cat "$ADMIN_PID_FILE"))"
+echo "Public API: $API_PUBLIC_BASE_URL"
+echo "Admin: $ADMIN_PUBLIC_BASE_URL (pid $(cat "$ADMIN_PID_FILE"))"
 echo "Logs: $API_LOG_FILE, $ADMIN_LOG_FILE"

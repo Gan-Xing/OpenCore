@@ -28,6 +28,9 @@ describe('createSystemManagementClient', () => {
       value: 'false',
     });
     await client.exportAuditLogs('token');
+    await client.listFiles('token', { page: 1, pageSize: 10 });
+    await client.getFile('token', 'file_1');
+    await client.exportFiles('token', { page: 1, pageSize: 10 });
     await client.createFileAsset('token', {
       originalName: 'handbook.pdf',
       mimeType: 'application/pdf',
@@ -108,6 +111,18 @@ describe('createSystemManagementClient', () => {
       },
       {
         path: '/core/audit-logs/export',
+        token: 'token',
+      },
+      {
+        path: '/core/files?page=1&pageSize=10',
+        token: 'token',
+      },
+      {
+        path: '/core/files/file_1',
+        token: 'token',
+      },
+      {
+        path: '/core/files/export?page=1&pageSize=10',
         token: 'token',
       },
       {

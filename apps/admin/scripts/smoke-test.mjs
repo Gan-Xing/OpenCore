@@ -235,6 +235,11 @@ if (
   !opencorePlatformService.includes('createOpenCoreSystemConfig') ||
   !opencorePlatformService.includes('updateOpenCoreSystemConfig') ||
   !opencorePlatformService.includes('deleteOpenCoreSystemConfig') ||
+  !opencorePlatformService.includes('listOpenCoreFiles') ||
+  !opencorePlatformService.includes('getOpenCoreFile') ||
+  !opencorePlatformService.includes('createOpenCoreFile') ||
+  !opencorePlatformService.includes('updateOpenCoreFile') ||
+  !opencorePlatformService.includes('deleteOpenCoreFile') ||
   !opencorePlatformService.includes('listOpenCoreUsers') ||
   !opencorePlatformService.includes('getOpenCoreUser') ||
   !opencorePlatformService.includes('createOpenCoreUser') ||
@@ -637,6 +642,22 @@ if (
 }
 
 if (
+  !filesPage.includes('listOpenCoreFiles') ||
+  !filesPage.includes('getOpenCoreFile') ||
+  !filesPage.includes('createOpenCoreFile') ||
+  !filesPage.includes('updateOpenCoreFile') ||
+  !filesPage.includes('deleteOpenCoreFile') ||
+  !filesPage.includes('useCurrentPageFilters') ||
+  !filesPage.includes('CurrentPageExportButton') ||
+  !filesPage.includes('dataSource={filteredRows}') ||
+  !filesPage.includes('rows={filteredRows}')
+) {
+  throw new Error(
+    'Files page must use live SDK metadata CRUD with bounded filtering and current-page export.',
+  );
+}
+
+if (
   !rolesPage.includes('listOpenCoreRoles') ||
   !rolesPage.includes('getOpenCoreRole') ||
   !rolesPage.includes('createOpenCoreRole') ||
@@ -847,7 +868,6 @@ if (
 }
 
 const coreFilteredPages = [
-  { name: 'files', source: filesPage },
   { name: 'operation logs', source: auditLogsPage },
   { name: 'login logs', source: loginLogsPage },
 ];

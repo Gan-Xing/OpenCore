@@ -56,6 +56,10 @@ export class PrismaSystemManagementRepository extends SystemManagementRepository
     return createPageResult(rows.map(toFileAssetRecord), pagination);
   }
 
+  async getFile(id: string): Promise<FileAssetRecord> {
+    return toFileAssetRecord(await this.findFileById(id));
+  }
+
   async createFileAsset(body: CreateFileAssetDto): Promise<FileAssetRecord> {
     assertSafeFileAsset(body);
 

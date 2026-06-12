@@ -41,6 +41,7 @@
     "sdk:generate": "node tools/scripts/check-sdk-generate.mjs",
     "smoke:api:local": "bash tools/scripts/run-local-api-smoke.sh",
     "smoke:core-config": "node tools/scripts/smoke-core-config.mjs",
+    "smoke:core-file": "node tools/scripts/smoke-core-file.mjs",
     "test": "NX_DAEMON=false nx run-many -t test",
     "test:admin": "NX_DAEMON=false nx test admin",
     "test:api": "NX_DAEMON=false nx test api",

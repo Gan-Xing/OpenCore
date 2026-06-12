@@ -1747,6 +1747,29 @@
       }
     },
     "/api/core/files/{id}": {
+      "get": {
+        "operationId": "SystemManagementController_getFile",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/FileAssetDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Files"]
+      },
       "patch": {
         "operationId": "SystemManagementController_updateFileAsset",
         "parameters": [

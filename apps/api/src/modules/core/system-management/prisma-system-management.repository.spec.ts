@@ -44,6 +44,10 @@ describe('PrismaSystemManagementRepository integration', () => {
 
     expect(file.storageKey).toContain('file-assets/');
     expect(file.originalName).toBe(fileName);
+    await expect(repository.getFile(file.id)).resolves.toMatchObject({
+      id: file.id,
+      originalName: fileName,
+    });
     await expect(
       repository.createExportPreview('files', { page: 1, pageSize: 20 }),
     ).resolves.toMatchObject({

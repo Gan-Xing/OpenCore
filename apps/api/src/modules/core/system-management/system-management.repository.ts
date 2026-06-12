@@ -41,6 +41,8 @@ export abstract class SystemManagementRepository {
     query?: PageQueryDto,
   ): Promise<PageResult<FileAssetRecord>>;
 
+  abstract getFile(id: string): Promise<FileAssetRecord>;
+
   abstract createFileAsset(body: CreateFileAssetDto): Promise<FileAssetRecord>;
 
   abstract updateFileAsset(

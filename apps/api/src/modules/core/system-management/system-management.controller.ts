@@ -366,6 +366,14 @@ export class SystemManagementController {
     return this.repository.createExportPreview('files', query);
   }
 
+  @Get('files/:id')
+  @ApiTags('Core Files')
+  @RequirePermission('core:file:read')
+  @ApiOkResponse({ type: FileAssetDto })
+  getFile(@Param('id') id: string): Promise<FileAssetDto> {
+    return this.repository.getFile(id);
+  }
+
   @Post('files')
   @ApiTags('Core Files')
   @RequirePermission('core:file:create')
