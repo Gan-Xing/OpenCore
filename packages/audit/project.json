@@ -1,0 +1,41 @@
+{
+  "name": "audit",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/audit/src",
+  "projectType": "library",
+  "tags": ["scope:audit", "type:library"],
+  "targets": {
+    "build": {
+      "cache": true,
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit -p packages/audit/tsconfig.lib.json"
+      }
+    },
+    "lint": {
+      "cache": true,
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint packages/audit/src packages/audit/jest.config.ts"
+      }
+    },
+    "test": {
+      "cache": true,
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "jest -c packages/audit/jest.config.ts",
+        "env": {
+          "NODE_OPTIONS": "--no-experimental-strip-types",
+          "TS_NODE_COMPILER_OPTIONS": "{\"moduleResolution\":\"node10\",\"module\":\"commonjs\",\"customConditions\":null}"
+        }
+      }
+    },
+    "typecheck": {
+      "cache": true,
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit -p packages/audit/tsconfig.lib.json"
+      }
+    }
+  }
+}

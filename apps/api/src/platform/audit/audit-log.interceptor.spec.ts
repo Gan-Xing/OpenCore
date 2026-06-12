@@ -1,84 +1,80 @@
 import { HttpException } from '@nestjs/common';
-import { of, throwError } from 'rxjs';
+import {
+  AuditOperationLogService,
+  SeedAuditOperationLogRepository,
+} from '@opencore/audit';
+import { lastValueFrom, of, throwError } from 'rxjs';
 import { runWithRequestContext } from '../request-context/request-context';
 import {
   AuditLogInterceptor,
   redactAuditMetadata,
 } from './audit-log.interceptor';
 
-describe('AuditLogInterceptor', () => {
+describe('AuditLogInterceptor compatibility export', () => {
   it('writes a redacted audit log for successful write requests', async () => {
-    const prisma = createPrismaMock();
-    const interceptor = new AuditLogInterceptor(prisma);
+    const repository = new SeedAuditOperationLogRepository();
+    const service = new AuditOperationLogService(repository);
+    const interceptor = new AuditLogInterceptor(service, createReflector());
 
-    await new Promise<void>((resolve) => {
-      runWithRequestContext(
-        {
-          requestId: 'req-audit',
-          traceId: 'trace-audit',
-        },
-        () => {
-          interceptor
-            .intercept(
-              createContext({
-                body: {
-                  password: 'secret',
-                  title: 'Visible',
-                },
-                headers: {
-                  authorization: 'Bearer token',
-                  'user-agent': 'jest',
-                },
-                ip: '127.0.0.1',
-                method: 'POST',
-                originalUrl: '/core/users',
-                user: {
-                  username: 'admin',
-                },
-              }),
-              {
-                handle: () => of({ ok: true }),
-              },
-            )
-            .subscribe({
-              complete: resolve,
-            });
-        },
-      );
-    });
-    await Promise.resolve();
+    await runInRequestContext(() =>
+      lastValueFrom(
+        interceptor.intercept(
+          createContext({
+            body: {
+              password: 'secret',
+              title: 'Visible',
+            },
+            headers: {
+              authorization: 'Bearer token',
+              'user-agent': 'jest',
+            },
+            ip: '127.0.0.1',
+            method: 'POST',
+            originalUrl: '/core/users',
+            user: {
+              username: 'admin',
+            },
+          }),
+          {
+            handle: () => of({ ok: true }),
+          },
+        ),
+      ),
+    );
 
-    expect(prisma.auditLog.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
+    await expect(
+      service.listOperationLogs({
         actorUsername: 'admin',
-        action: 'POST',
-        method: 'POST',
-        path: '/core/users',
         resource: '/core/users',
-        statusCode: 201,
-        requestId: 'req-audit',
-        metadata: expect.objectContaining({
-          body: {
-            password: '[REDACTED]',
-            title: 'Visible',
-          },
-          headers: {
-            authorization: '[REDACTED]',
-            'user-agent': 'jest',
-          },
-          traceId: 'trace-audit',
-        }),
       }),
+    ).resolves.toMatchObject({
+      items: expect.arrayContaining([
+        expect.objectContaining({
+          requestId: 'req-audit',
+          metadata: expect.objectContaining({
+            body: {
+              password: '[REDACTED]',
+              title: 'Visible',
+            },
+            headers: {
+              authorization: '[REDACTED]',
+              'user-agent': 'jest',
+            },
+            traceId: 'trace-audit',
+          }),
+        }),
+      ]),
     });
   });
 
   it('writes a failed audit log for rejected write requests', async () => {
-    const prisma = createPrismaMock();
-    const interceptor = new AuditLogInterceptor(prisma);
+    const repository = new SeedAuditOperationLogRepository();
+    const service = new AuditOperationLogService(repository);
+    const interceptor = new AuditLogInterceptor(service, createReflector());
 
-    await new Promise<void>((resolve) => {
-      interceptor
-        .intercept(
+    await expect(
+      lastValueFrom(
+        interceptor.intercept(
           createContext({
             headers: {},
             method: 'DELETE',
@@ -87,45 +83,45 @@ describe('AuditLogInterceptor', () => {
           {
             handle: () => throwError(() => new HttpException('no', 403)),
           },
-        )
-        .subscribe({
-          error: () => resolve(),
-        });
-    });
-    await Promise.resolve();
+        ),
+      ),
+    ).rejects.toThrow(HttpException);
 
-    expect(prisma.auditLog.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        actorUsername: 'anonymous',
-        method: 'DELETE',
-        path: '/core/users/user_1',
-        statusCode: 403,
-      }),
+    await expect(
+      service.listOperationLogs({ resource: '/core/users/user_1' }),
+    ).resolves.toMatchObject({
+      items: expect.arrayContaining([
+        expect.objectContaining({
+          actorUsername: 'anonymous',
+          method: 'DELETE',
+          path: '/core/users/user_1',
+          statusCode: 403,
+        }),
+      ]),
     });
   });
 
   it('skips read requests', async () => {
-    const prisma = createPrismaMock();
-    const interceptor = new AuditLogInterceptor(prisma);
+    const repository = new SeedAuditOperationLogRepository();
+    const service = new AuditOperationLogService(repository);
+    const interceptor = new AuditLogInterceptor(service, createReflector());
 
-    await new Promise<void>((resolve) => {
-      interceptor
-        .intercept(
-          createContext({
-            headers: {},
-            method: 'GET',
-            originalUrl: '/core/users',
-          }),
-          {
-            handle: () => of({ ok: true }),
-          },
-        )
-        .subscribe({
-          complete: resolve,
-        });
-    });
+    await lastValueFrom(
+      interceptor.intercept(
+        createContext({
+          headers: {},
+          method: 'GET',
+          originalUrl: '/core/users',
+        }),
+        {
+          handle: () => of({ ok: true }),
+        },
+      ),
+    );
 
-    expect(prisma.auditLog.create).not.toHaveBeenCalled();
+    await expect(
+      service.listOperationLogs({ resource: '/core/users' }),
+    ).resolves.toMatchObject({ total: 0 });
   });
 
   it('redacts sensitive keys recursively', () => {
@@ -145,16 +141,30 @@ describe('AuditLogInterceptor', () => {
   });
 });
 
-function createPrismaMock() {
+async function runInRequestContext<T>(callback: () => Promise<T>): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    runWithRequestContext(
+      {
+        requestId: 'req-audit',
+        traceId: 'trace-audit',
+      },
+      () => {
+        void callback().then(resolve, reject);
+      },
+    );
+  });
+}
+
+function createReflector() {
   return {
-    auditLog: {
-      create: jest.fn().mockResolvedValue({}),
-    },
+    getAllAndOverride: () => undefined,
   } as never;
 }
 
 function createContext(request: unknown) {
   return {
+    getHandler: () => ({}),
+    getClass: () => ({}),
     getType: () => 'http',
     switchToHttp: () => ({
       getRequest: () => request,
