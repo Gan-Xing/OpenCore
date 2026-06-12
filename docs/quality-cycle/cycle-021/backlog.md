@@ -338,6 +338,65 @@ posts to `/api/api/auth/login`.
 - [x] Run focused, full, build, fixed-port smoke and deployment gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Productization Waterline Re-Audit
+
+User clarification: one round should remain a minimal deployable, verifiable and
+reversible loop, but one product capability may require multiple rounds. Do not
+treat "minimal loop" as "minimal final product".
+
+- [x] Recheck current RuoYi/Yudao HEADs and OpenCore round evidence.
+- [x] Classify rounds 1-13 into productization waterline buckets in
+      `productization-waterline-audit.md`.
+- [x] Record repeated login `/api/api` failure as API code plus deploy smoke,
+      not as operator memory.
+
+### Meets Current Waterline
+
+- [x] Round 6 `core.permission`: persisted permission catalog, system/custom
+      separation, registry mutation protection and live role option integration.
+- [x] Round 12 `core.audit-log`: immutable operation audit trail, real write
+      smoke, live list/detail/export.
+
+### First Loop, Needs Enhancement
+
+- [ ] Round 1 `core.notice`: read/unread state, inbox/header badge and delivery
+      adapter design.
+- [ ] Round 2 `core.dept`: user binding paths, data-scope workflow integration
+      and ordered tree operations.
+- [ ] Round 3 `core.post`: user-post binding, simple-list option endpoints and
+      batch operations.
+- [ ] Round 5 `core.role`: role-user assignment, menu-tree assignment or
+      equivalent bundle UX, status flow and token permission refresh semantics.
+- [ ] Round 7 `core.user`: reset password, status toggle, side-tree filtering,
+      post binding, profile/avatar and token/session refresh semantics.
+- [ ] Round 8 `core.dict`: separate dict data workflow or equivalent item API,
+      simple-list/cache endpoints and consumer smoke.
+- [ ] Round 9 `core.config`: get-by-key, cache refresh/invalidation and runtime
+      propagation boundaries.
+- [ ] Round 11 `core.login-log`: browser/OS parsing, IP/location enrichment
+      where feasible, server-side time filters and cleanup/unlock policy
+      integration.
+
+### Thin, Must Rework Before More Broad Surfaces
+
+- [ ] P0-R14-ONLINE-USER-REVOCATION：问题：Round 13 kick-out 只写
+      `revokedAt`，bearer token validation 仍忽略 online-session revoke；
+      参考来源：RuoYi online user force logout、Yudao OAuth2 token delete；
+      实施要求：真实 token/session revoke enforcement，batch kick-out，
+      browser/OS parsing，IP fields，Admin 展示；测试要求：smoke 证明被踢
+      token 再访问受保护接口返回 401；完成标准：kick-out 产生真实访问失效。
+- [ ] P0-R15-FILE-CONTENT-LOOP：问题：Round 10 只有文件 metadata CRUD，不是
+      文件中心；参考来源：Yudao file upload/download/preview shape；
+      实施要求：基于现有 file storage boundary 做 authenticated upload plus
+      download/preview/copy-link 的最小闭环；测试要求：smoke 上传、读取 metadata、
+      下载或预览并校验内容；完成标准：Admin 文件中心能处理真实文件内容。
+- [ ] P0-R16-MENU-TREE-REWORK：问题：Round 4 菜单模型过薄，只有 flat
+      `key/title/path/permission/order/hidden`；参考来源：RuoYi/Yudao menu
+      tree/type/icon/component/status/cache shape；实施要求：tree menu model
+      和 Admin tree operations，保持 registry 不被绕过；测试要求：route/menu
+      drift、角色/菜单关联或等价权限 bundle smoke；完成标准：菜单管理能支撑真实
+      后台导航和按钮权限组织。
+
 ## Explicitly Out Of Scope
 
 - Notice read/unread inbox, header badge and per-user read tracking.

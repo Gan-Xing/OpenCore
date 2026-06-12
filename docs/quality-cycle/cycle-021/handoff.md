@@ -3,7 +3,8 @@
 Date: 2026-06-12  
 Repository: `Gan-Xing/OpenCore`  
 Default branch: `main`  
-Latest observed feature commit: `0381de1 feat(monitor-online-user): productize online sessions / 产品化在线会话管理`
+Latest observed feature commit: `0381de1 feat(monitor-online-user): productize online sessions / 产品化在线会话管理`  
+Latest deployed hardening commit: `f4569a4 fix(api): tolerate duplicated API prefix on login / 兼容登录重复 API 前缀`
 
 ## One-sentence Goal
 
@@ -35,7 +36,9 @@ Admin 当前是 Umi Max + Ant Design Pro V6 + ProComponents v3 + antd 6 + React 
 ## Current Cycle-021 Status
 
 Cycle-021 已进入 capability-map productization recursion，并已完成这些
-independently accepted slices:
+independently accepted stage loops. These entries are not all final
+productization waterline completion; see
+`docs/quality-cycle/cycle-021/productization-waterline-audit.md`:
 
 - Round 1 `core.notice`
 - Round 2 `core.dept`
@@ -84,6 +87,34 @@ service，可列表、详情、当前页导出并按 `monitor:online-user:manage
 拉取登录 HTML、当前 `umi.*.js` 和退役 service worker，确认 bundle 包含 API
 origin 且不包含重复 API 前缀。
 
+Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
+minimal deployable, testable and reversible stage, not a minimal final product.
+The productization waterline now classifies:
+
+- Meets current waterline: Round 6 `core.permission`, Round 12
+  `core.audit-log`.
+- First loop, enhance: Round 1 `core.notice`, Round 2 `core.dept`, Round 3
+  `core.post`, Round 5 `core.role`, Round 7 `core.user`, Round 8
+  `core.dict`, Round 9 `core.config`, Round 11 `core.login-log`.
+- Thin, rework: Round 4 `core.menu`, Round 10 `core.file`, Round 13
+  `monitor.online-user`.
+
+The next rounds should prioritize this P0 remediation queue before opening more
+broad surfaces:
+
+1. `monitor.online-user` stage 2: real token/session revocation enforcement,
+   batch kick-out, browser/OS parsing and IP fields, with smoke proving a
+   kicked token returns 401.
+2. `core.file` stage 2: authenticated upload/download or preview loop backed
+   by the existing file storage boundary.
+3. `core.menu` stage 2: tree menu model and Admin tree operations aligned with
+   route/menu metadata.
+
+Commit `f4569a4` also fixed the remaining stale-login failure at API level:
+`@opencore/core` now normalizes duplicate global prefixes before Nest route
+matching, and `pnpm deploy:opencore` smokes
+`POST /api/api/auth/login` directly against the API. Do not remove this guard.
+
 Admin 生产构建已默认强制稳定 webpack 路径。不要为 OpenCore deploy 打开
 `FORCE_UTOOPACK`；utoopack 已多次在 `global.less.css` CSS loader
 deserialization 上失败。webpack 构建同时保留 `esbuildMinifyIIFE: true`，避免
@@ -124,7 +155,7 @@ BE20 已完成，当前主线是 cycle-021 capability-map productization recursi
 
 ## What The Next AI Should Do
 
-下一轮不是固定任务清单，而是能力地图差距递归。AI 必须实时查询当前 OpenCore、若依、芋道和相关旧项目，自己判断当前最低依赖、最高价值、最小可闭环的产品化缺口。
+下一轮不是固定任务清单，而是能力地图差距递归。AI 必须实时查询当前 OpenCore、若依、芋道和相关旧项目，自己判断当前最低依赖、最高价值、最小可闭环的产品化缺口。当前在打开新产品面之前，必须先按 `productization-waterline-audit.md` 的 P0 欠账队列补齐薄弱轮次。
 
 ### Mandatory first read
 
@@ -144,6 +175,7 @@ BE20 已完成，当前主线是 cycle-021 capability-map productization recursi
 - `packages/sdk`
 - `tools/generator`
 - `prisma/schema.prisma`
+- `docs/quality-cycle/cycle-021/productization-waterline-audit.md`
 
 ### Mandatory reference comparison
 
