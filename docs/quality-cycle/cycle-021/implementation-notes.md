@@ -1337,3 +1337,88 @@ tools/scripts/smoke-core-role.mjs` passed with `OPENCORE_SMOKE_CHECK_DOCS=false`
   `b4f8117 feat(core-role): add role user assignment loop / 新增角色用户分配闭环`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 19 Capability
+
+Capability: `core.user` security mutation productization.
+
+Goal: close the next `core.user` P1 gap by adding direct user status and
+password-reset mutation loops, and by making direct user update/status/reset/
+delete invalidate affected active sessions.
+
+## Round 19 Implemented
+
+- Added `SetUserStatusDto`, `ResetUserPasswordDto` and
+  `UserMutationResultDto` to `@opencore/system`.
+- Hardened user input normalization so status payloads require real booleans
+  and malformed password/status bodies are rejected before mutation.
+- Added `SystemUserService.setUserStatus()` and
+  `SystemUserService.resetUserPassword()` across seed and Prisma-backed flows.
+- Added `PATCH /api/core/users/:id/status` and
+  `POST /api/core/users/:id/reset-password`, guarded by `core:user:update`.
+- Changed direct user update and delete responses to include
+  `revokedSessionCount` where applicable.
+- Revoked active online-user sessions after user status changes, password
+  resets, direct user updates and deletes.
+- Extended OpenAPI, `@opencore/sdk` types/client methods and SDK path tests for
+  user status/reset-password calls.
+- Updated Admin Users with row-level enable/disable controls, a reset-password
+  dialog and revoked-session feedback.
+- Added `tools/scripts/smoke-core-user.mjs` and wired it into local and deploy
+  smoke.
+- Stabilized `tools/scripts/smoke-core-online-user.mjs` so deploy smoke checks
+  the current admin token session instead of requiring the seeded admin session
+  to appear on the first active-admin page.
+
+## Round 19 Verification
+
+- `node --check tools/scripts/smoke-core-user.mjs` pass.
+- `node --check tools/scripts/smoke-core-online-user.mjs` pass.
+- Focused tests pass:
+  - `pnpm nx test system --testFile=packages/system/src/system-user/system-user.spec.ts`
+  - `pnpm nx test sdk --testFile=packages/sdk/src/rbac-client.spec.ts`
+  - `pnpm nx test api --testFile=apps/api/src/modules/core/rbac/rbac.permission-matrix.spec.ts`
+- Focused typecheck pass for `system`, `api` and `admin`.
+- `pnpm nx test admin` pass.
+- `pnpm openapi:export`, `pnpm sdk:check`, `pnpm openapi:check`,
+  `pnpm openapi:registry-tags:check` and
+  `pnpm registry:admin-routes:check` pass.
+- `pnpm prisma:validate` pass.
+- `pnpm smoke:api:local` pass on fixed port `39173`, including
+  `core.user.status.disable`, `core.user.status.revoke-session`,
+  `core.user.status.login-blocked`, `core.user.reset-password`,
+  `core.user.reset-password.revoke-session`,
+  `core.user.reset-password.old-password-blocked`,
+  `core.user.update.revoke-session` and `core.user.delete.revoke-session`.
+- Full gates pass: `pnpm format:check`, `pnpm lint`, `pnpm typecheck`,
+  `pnpm test` and `pnpm build`. The existing non-failing Biome regex warning in
+  `apps/admin/src/pages/shared/CurrentPageExportButton.tsx` remains.
+- `pnpm deploy:opencore` pass, deploying API/Admin on fixed ports
+  `39172`/`39174`; deploy smoke includes `core.user.*` and the stabilized
+  online-user admin-session preservation check.
+
+## Round 19 Public Verification
+
+Against public endpoints after deploy:
+
+- `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 node
+tools/scripts/smoke-core-user.mjs` passed with
+  `OPENCORE_SMOKE_CHECK_DOCS=false`.
+- Public user smoke verified create, disable/login-block, enable, password
+  reset, old-password rejection, update session revocation and delete session
+  revocation.
+- `GET http://144.217.243.161:39172/health/ready` returned 200.
+- `GET http://144.217.243.161:39174/system/users/index.html` returned 200.
+- The deployed Admin Users chunk `p__System__Users.d0368dd0.async.js`
+  contains `Reset Password` and `Revoked sessions` markers, and the public main
+  bundle contains API origin `http://144.217.243.161:39172` with no duplicated
+  `/api/api` marker.
+
+## Round 19 Commit Record
+
+- Feature commit:
+  `c4347b4 feat(core-user): add user security mutation loop / 新增用户安全变更闭环`.
+- Smoke hardening commit:
+  `04e446c fix(online-user): stabilize admin session smoke / 稳定在线用户管理员会话冒烟`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

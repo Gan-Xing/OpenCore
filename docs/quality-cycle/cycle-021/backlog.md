@@ -467,6 +467,34 @@ invalidate affected user sessions.
       verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 19: core.user Security Mutation Productization
+
+Why this slice: after role-side user assignment, the next lowest-dependency
+`core.user` gap was direct user security mutation. RuoYi and Yudao both expose
+status change and password reset as first-order user management actions, and
+OpenCore needed these mutations to invalidate active sessions instead of only
+updating database rows.
+
+- [x] Add strict DTO/runtime validation for user status and password-reset
+      payloads, including boolean-only `enabled` handling.
+- [x] Add `PATCH /api/core/users/:id/status` and
+      `POST /api/core/users/:id/reset-password`, guarded by
+      `core:user:update`.
+- [x] Return `revokedSessionCount` from user update/status/reset/delete
+      mutations.
+- [x] Revoke active online-user sessions after user status changes, password
+      resets, direct user updates and deletes.
+- [x] Extend OpenAPI, SDK types/client methods and SDK path tests.
+- [x] Update Admin Users with status toggle, reset-password dialog and revoked
+      session feedback.
+- [x] Add fixed-port/deploy `core.user` smoke proving disable blocks login,
+      reset rejects the old password, and update/delete revoke old tokens.
+- [x] Stabilize online-user deploy smoke so it checks the current admin token
+      session instead of depending on seeded admin pagination.
+- [x] Run focused, full, build, fixed-port smoke, deployment and public URL
+      verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -498,10 +526,11 @@ treat "minimal loop" as "minimal final product".
       batch operations.
 - [ ] Round 5/17/18 `core.role`: role menu-tree assignment,
       role-permission session revocation, role-user assignment and user-role
-      session revocation are complete; role status and remaining user-mutation
-      token/session refresh semantics still need enhancement.
-- [ ] Round 7 `core.user`: reset password, status toggle, side-tree filtering,
-      post binding, profile/avatar and token/session refresh semantics.
+      session revocation are complete; role status still needs enhancement.
+- [ ] Round 7/19 `core.user`: status toggle, reset password and direct
+      user-mutation session invalidation are complete; side-tree filtering,
+      post binding, profile/avatar, import/export and option/batch workflows
+      still need enhancement.
 - [ ] Round 8 `core.dict`: separate dict data workflow or equivalent item API,
       simple-list/cache endpoints and consumer smoke.
 - [ ] Round 9 `core.config`: get-by-key, cache refresh/invalidation and runtime
@@ -546,12 +575,10 @@ treat "minimal loop" as "minimal final product".
   persistence.
 - Role simple-list endpoints, batch role deletion, standalone data-scope
   endpoint and role status toggle.
-- Registry definition editing, dynamic permission discovery and remaining
-  token/session refresh after direct user mutation.
-- User Excel import/export file workflows, reset-password endpoint,
-  status-toggle endpoint, dedicated User-page role assignment dialog,
-  profile/avatar/social/simple-list endpoints, post binding, batch user delete,
-  department side-tree filtering and token/session refresh after user mutation.
+- Registry definition editing and dynamic permission discovery.
+- User Excel import/export file workflows, dedicated User-page role assignment
+  dialog, profile/avatar/social/simple-list endpoints, post binding, batch user
+  delete and department side-tree filtering.
 - Separate dict-data module/page/endpoints, simple-list/cache endpoints, batch
   dictionary delete, Excel import/export file workflows, dictionary
   color/css/remark fields, app public dictionary endpoints and dictionary cache

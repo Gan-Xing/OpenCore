@@ -190,6 +190,8 @@ password on create or explicit update and seeded-admin protection. It does not
 introduce import, reset-password/status-toggle endpoints, profile/avatar/social
 capabilities, post binding, batch delete, side-tree filtering or token/session
 refresh semantics.
+Round 19 later closes the reset-password/status-toggle endpoint gap and direct
+user mutation token/session refresh semantics.
 
 ## Round 8 Audit: core.dict
 

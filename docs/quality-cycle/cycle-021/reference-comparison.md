@@ -212,6 +212,8 @@ OpenCore does not admit Excel import workflows, reset-password/status-toggle
 endpoints, dedicated user-role assignment dialogs, profile/avatar/social
 endpoints, post binding, batch delete, department side-tree filtering,
 simple-list expansion or token/session refresh semantics in this round.
+Round 19 later closes the reset-password/status-toggle endpoint gap and direct
+user-mutation token/session refresh semantics.
 
 ## Round 8 Dictionary Reference Shape
 
@@ -532,6 +534,37 @@ OpenCore admits the matching stage-3 loop from the role management side:
 - fixed-port and public smoke prove unassign, assign, revoked old token 401 and
   relogin role/permission refresh.
 
-OpenCore still does not admit role status toggle, batch role operations,
-separate user-page role assignment, reset-password/status mutation semantics or
-direct user-mutation session refresh in this round.
+OpenCore still does not admit role status toggle, batch role operations or
+separate user-page role assignment in this round. Round 19 closes the
+reset-password/status mutation semantics and direct user-mutation session
+refresh portion from the user-management side.
+
+## Round 19 User Security Mutation Reference Shape
+
+RuoYi exposes user status change and reset-password actions directly from user
+management. Yudao exposes equivalent user status update and password-reset
+operations, with role/department/post/profile flows as adjacent but separate
+user product depth.
+
+OpenCore admits the matching stage-2 loop for direct user security mutation:
+
+- `PATCH /api/core/users/:id/status` toggles a normal user's enabled state
+  through a dedicated request contract;
+- `POST /api/core/users/:id/reset-password` changes a normal user's password
+  through a dedicated reset contract instead of overloading the edit form;
+- direct `PATCH /api/core/users/:id` and `DELETE /api/core/users/:id` also
+  revoke that user's active online-user sessions;
+- mutation responses include `revokedSessionCount` so operators can see the
+  security effect;
+- Admin Users adds row-level status toggles, a reset-password dialog and
+  revoked-session feedback;
+- fixed-port, deploy and public smoke prove disabled users cannot log in, old
+  tokens receive 401 after status/reset/update/delete, and the old password no
+  longer works after reset;
+- runtime validators reject malformed status payloads such as string booleans,
+  so deserialization issues are covered by tests instead of operator memory.
+
+OpenCore still does not admit department side-tree filtering, post binding,
+profile/avatar/social endpoints, Excel import/export workflows, batch user
+delete, separate User-page role assignment or broader user option endpoints in
+this round.
