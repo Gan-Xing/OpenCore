@@ -29,6 +29,10 @@ export type UserSummary = {
   system: boolean;
 };
 
+export type ListUsersRequest = {
+  deptId?: string;
+};
+
 export type CreateUserRequest = {
   username: string;
   displayName: string;

@@ -13,8 +13,8 @@ describe('createRbacClient', () => {
     };
     const client = createRbacClient(request);
 
-    await client.listUsers('token');
-    await client.exportUsers('token');
+    await client.listUsers('token', { deptId: 'dept_operations' });
+    await client.exportUsers('token', { deptId: 'dept_operations' });
     await client.getUser('token', 'user_admin');
     await client.createUser('token', {
       username: 'operator',
@@ -83,8 +83,8 @@ describe('createRbacClient', () => {
     await client.deleteMenu('token', 'system.examples');
 
     expect(calls).toEqual([
-      { path: '/core/users', token: 'token' },
-      { path: '/core/users/export', token: 'token' },
+      { path: '/core/users?deptId=dept_operations', token: 'token' },
+      { path: '/core/users/export?deptId=dept_operations', token: 'token' },
       { path: '/core/users/user_admin', token: 'token' },
       { path: '/core/users', method: 'POST', token: 'token' },
       {

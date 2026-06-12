@@ -16,8 +16,10 @@ import {
   createRoleUserAssignment,
   normalizeAssignRoleUsersInput,
   normalizeCreateSystemUserInput,
+  normalizeListSystemUsersQuery,
   normalizeUpdateSystemUserInput,
   SystemUserRepository,
+  type SystemUserListQuery,
   type SystemUserSummaryRecord,
 } from './system-user.repository';
 
@@ -40,8 +42,15 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
     super();
   }
 
-  async listUsers(): Promise<SystemUserSummaryRecord[]> {
+  async listUsers(
+    query?: SystemUserListQuery,
+  ): Promise<SystemUserSummaryRecord[]> {
+    const filters = normalizeListSystemUsersQuery(query);
+    const deptIds = filters.deptId
+      ? await this.resolveDeptSubtreeIds(filters.deptId)
+      : undefined;
     const users = await this.prisma.user.findMany({
+      where: deptIds ? { deptId: { in: [...deptIds] } } : undefined,
       include: {
         roles: {
           include: {
@@ -329,6 +338,45 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
     if (!dept) {
       throw new NotFoundException(`System dept not found: ${deptId}`);
     }
+  }
+
+  private async resolveDeptSubtreeIds(deptId: string): Promise<Set<string>> {
+    const depts = await this.prisma.systemDept.findMany({
+      select: { id: true, parentId: true },
+    });
+    const target = depts.find((dept) => dept.id === deptId);
+
+    if (!target) {
+      throw new NotFoundException(`System dept not found: ${deptId}`);
+    }
+
+    const childrenByParent = new Map<string, string[]>();
+
+    for (const dept of depts) {
+      if (!dept.parentId) {
+        continue;
+      }
+
+      childrenByParent.set(dept.parentId, [
+        ...(childrenByParent.get(dept.parentId) ?? []),
+        dept.id,
+      ]);
+    }
+
+    const deptIds = new Set<string>([deptId]);
+    const visit = (parentId: string) => {
+      for (const childId of childrenByParent.get(parentId) ?? []) {
+        if (deptIds.has(childId)) {
+          continue;
+        }
+
+        deptIds.add(childId);
+        visit(childId);
+      }
+    };
+
+    visit(deptId);
+    return deptIds;
   }
 
   private async assertPostsExist(postCodes: readonly string[]): Promise<void> {

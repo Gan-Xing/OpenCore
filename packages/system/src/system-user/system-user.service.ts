@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type {
   AssignRoleUsersDto,
   CreateUserDto,
+  ListUsersQueryDto,
   ResetUserPasswordDto,
   RoleUserAssignmentDto,
   SetUserStatusDto,
@@ -20,8 +21,8 @@ import {
 export class SystemUserService {
   constructor(private readonly repository: SystemUserRepository) {}
 
-  listUsers(): Promise<SystemUserSummaryRecord[]> {
-    return this.repository.listUsers();
+  listUsers(query?: ListUsersQueryDto): Promise<SystemUserSummaryRecord[]> {
+    return this.repository.listUsers(query);
   }
 
   getUser(id: string): Promise<SystemUserSummaryRecord> {
@@ -70,7 +71,11 @@ export class SystemUserService {
     return this.repository.assignRoleUsers(roleCode, body);
   }
 
-  async createExportPreview(): Promise<SystemUserExportPreview> {
-    return createSystemUserExportPreview(await this.repository.listUsers());
+  async createExportPreview(
+    query?: ListUsersQueryDto,
+  ): Promise<SystemUserExportPreview> {
+    return createSystemUserExportPreview(
+      await this.repository.listUsers(query),
+    );
   }
 }

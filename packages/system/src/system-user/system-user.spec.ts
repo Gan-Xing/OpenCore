@@ -52,6 +52,30 @@ describe('@opencore/system system-user', () => {
       enabled: true,
       system: false,
     });
+    await expect(
+      service.listUsers({ deptId: 'dept_operations' }),
+    ).resolves.toEqual([
+      expect.objectContaining({
+        id: user.id,
+        deptId: 'dept_operations',
+      }),
+    ]);
+    await expect(
+      service.listUsers({ deptId: 'dept_headquarters' }),
+    ).resolves.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ username: 'admin' }),
+        expect.objectContaining({ id: user.id }),
+      ]),
+    );
+    await expect(
+      service.listUsers({ deptId: 'dept_engineering' }),
+    ).resolves.not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: user.id })]),
+    );
+    await expect(service.listUsers({ deptId: 'missing_dept' })).rejects.toThrow(
+      NotFoundException,
+    );
     await expect(service.getUser(user.id)).resolves.toMatchObject({
       id: 'user_operator',
       system: false,
@@ -260,6 +284,29 @@ describe('@opencore/system system-user', () => {
         postCodes: ['engineer'],
         system: false,
       });
+      await expect(
+        service.listUsers({ deptId: 'dept_operations' }),
+      ).resolves.toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ username, deptId: 'dept_operations' }),
+        ]),
+      );
+      await expect(
+        service.listUsers({ deptId: 'dept_headquarters' }),
+      ).resolves.toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ username: 'admin' }),
+          expect.objectContaining({ username }),
+        ]),
+      );
+      await expect(
+        service.listUsers({ deptId: 'dept_engineering' }),
+      ).resolves.not.toEqual(
+        expect.arrayContaining([expect.objectContaining({ username })]),
+      );
+      await expect(
+        service.listUsers({ deptId: 'missing_dept' }),
+      ).rejects.toThrow(NotFoundException);
       await expect(service.getUser(user.id)).resolves.toMatchObject({
         username,
         roleCodes: ['viewer'],

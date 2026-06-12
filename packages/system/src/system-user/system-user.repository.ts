@@ -2,6 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 import type {
   AssignRoleUsersDto,
   CreateUserDto,
+  ListUsersQueryDto,
   ResetUserPasswordDto,
   RoleUserAssignmentDto,
   SetUserStatusDto,
@@ -17,6 +18,14 @@ export type SystemUserExportPreview = {
   columns: readonly string[];
   rowCount: number;
   generatedAt: string;
+};
+
+export type SystemUserListQuery = {
+  deptId?: string;
+};
+
+export type SystemUserListFilters = {
+  deptId?: string;
 };
 
 export type NormalizedSystemUserCreateInput = {
@@ -49,7 +58,9 @@ export type NormalizedResetUserPasswordInput = {
 const USERNAME_PATTERN = /^[a-z][a-z0-9_.-]*$/;
 
 export abstract class SystemUserRepository {
-  abstract listUsers(): Promise<SystemUserSummaryRecord[]>;
+  abstract listUsers(
+    query?: SystemUserListQuery,
+  ): Promise<SystemUserSummaryRecord[]>;
 
   abstract getUser(id: string): Promise<SystemUserSummaryRecord>;
 
@@ -89,6 +100,17 @@ export function createSystemUserExportPreview(
     ],
     rowCount: rows.length,
     generatedAt: new Date().toISOString(),
+  };
+}
+
+export function normalizeListSystemUsersQuery(
+  query: ListUsersQueryDto = {},
+): SystemUserListFilters {
+  return {
+    deptId:
+      query.deptId === undefined
+        ? undefined
+        : normalizeRequiredText(query.deptId, 'deptId'),
   };
 }
 

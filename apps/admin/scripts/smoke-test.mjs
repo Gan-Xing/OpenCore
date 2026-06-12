@@ -654,6 +654,10 @@ if (
   !usersPage.includes('listOpenCoreRoles') ||
   !usersPage.includes('listOpenCoreSystemDepts') ||
   !usersPage.includes('listOpenCoreSystemPosts') ||
+  !usersPage.includes('Department scope') ||
+  !usersPage.includes('All departments') ||
+  !usersPage.includes('selectedDeptId') ||
+  !usersPage.includes('deptFilterTreeData') ||
   !usersPage.includes('postCodes') ||
   !usersPage.includes('Select posts') ||
   !usersPage.includes('Reset Password') ||
@@ -664,7 +668,7 @@ if (
   !usersPage.includes('rows={filteredRows}')
 ) {
   throw new Error(
-    'Users page must use live SDK CRUD with role/dept selectors, bounded filtering and current-page export.',
+    'Users page must use live SDK CRUD with role/dept selectors, department tree filtering, bounded filtering and current-page export.',
   );
 }
 

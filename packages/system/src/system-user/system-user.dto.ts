@@ -26,6 +26,11 @@ export class UserSummaryDto {
   system!: boolean;
 }
 
+export class ListUsersQueryDto {
+  @ApiProperty({ required: false })
+  deptId?: string;
+}
+
 export class CreateUserDto {
   @ApiProperty({ example: 'operator' })
   username!: string;

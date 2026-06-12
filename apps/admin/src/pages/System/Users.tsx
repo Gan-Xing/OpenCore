@@ -34,11 +34,12 @@ import {
   Switch,
   Tag,
   Tooltip,
+  Tree,
   TreeSelect,
   Typography,
   message,
 } from 'antd';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import {
   createOpenCoreUser,
   deleteOpenCoreUser,
@@ -83,6 +84,38 @@ type TreeSelectNode = {
   children?: TreeSelectNode[];
   title: string;
   value: string;
+};
+
+type DeptFilterTreeNode = {
+  children?: DeptFilterTreeNode[];
+  key: string;
+  title: string;
+};
+
+const usersPageLayoutStyle: CSSProperties = {
+  alignItems: 'flex-start',
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: 16,
+};
+const deptFilterPanelStyle: CSSProperties = {
+  borderRight: '1px solid #f0f0f0',
+  flex: '1 1 220px',
+  maxWidth: 280,
+  minWidth: 220,
+  paddingInlineEnd: 16,
+};
+const usersTablePanelStyle: CSSProperties = {
+  flex: '999 1 620px',
+  minWidth: 0,
+};
+const deptFilterHeaderStyle: CSSProperties = {
+  justifyContent: 'space-between',
+  marginBlockEnd: 12,
+  width: '100%',
+};
+const deptFilterTreeStyle: CSSProperties = {
+  marginBlockStart: 8,
 };
 
 const fallbackRows: UserSummary[] = [
@@ -212,6 +245,61 @@ function toDeptTreeSelectData(
   }));
 }
 
+function toDeptFilterTreeData(
+  rows: readonly SystemDeptTreeSummary[],
+): DeptFilterTreeNode[] {
+  return rows.map((row) => ({
+    title: row.name,
+    key: row.id,
+    children: toDeptFilterTreeData(row.children),
+  }));
+}
+
+function collectDeptSubtreeIds(
+  rows: readonly SystemDeptTreeSummary[],
+  deptId: string,
+): Set<string> | undefined {
+  for (const row of rows) {
+    if (row.id === deptId) {
+      const ids = new Set<string>();
+      collectDeptIds(row, ids);
+      return ids;
+    }
+
+    const childIds = collectDeptSubtreeIds(row.children, deptId);
+    if (childIds) {
+      return childIds;
+    }
+  }
+
+  return undefined;
+}
+
+function collectDeptIds(row: SystemDeptTreeSummary, ids: Set<string>): void {
+  ids.add(row.id);
+
+  for (const child of row.children) {
+    collectDeptIds(child, ids);
+  }
+}
+
+function filterUsersByDept(
+  rows: readonly UserSummary[],
+  deptTree: readonly SystemDeptTreeSummary[],
+  deptId: string | undefined,
+): readonly UserSummary[] {
+  if (!deptId) {
+    return rows;
+  }
+
+  const deptIds = collectDeptSubtreeIds(deptTree, deptId);
+  if (!deptIds) {
+    return [];
+  }
+
+  return rows.filter((row) => row.deptId && deptIds.has(row.deptId));
+}
+
 function createDetailFields(
   record: UserSummary,
   deptNames: ReadonlyMap<string, string>,
@@ -273,6 +361,7 @@ export default function UsersPage() {
   const [submitting, setSubmitting] = useState(false);
   const [resetPasswordSubmitting, setResetPasswordSubmitting] = useState(false);
   const [statusUpdatingUserId, setStatusUpdatingUserId] = useState<string>();
+  const [selectedDeptId, setSelectedDeptId] = useState<string>();
   const flatDeptRows = useMemo(
     () => flattenDeptTree(deptTreeRows),
     [deptTreeRows],
@@ -283,6 +372,10 @@ export default function UsersPage() {
   );
   const deptTreeData = useMemo(
     () => toDeptTreeSelectData(deptTreeRows),
+    [deptTreeRows],
+  );
+  const deptFilterTreeData = useMemo(
+    () => toDeptFilterTreeData(deptTreeRows),
     [deptTreeRows],
   );
   const roleOptions = useMemo(() => createRoleOptions(roleRows), [roleRows]);
@@ -296,11 +389,11 @@ export default function UsersPage() {
       selectFilters: filterOptions,
     });
 
-  const loadUsers = async () => {
+  const loadUsers = async (deptId = selectedDeptId) => {
     setLoading(true);
     try {
       const [users, roles, deptTree, posts] = await Promise.all([
-        listOpenCoreUsers(),
+        listOpenCoreUsers(deptId ? { deptId } : undefined),
         listOpenCoreRoles(),
         listOpenCoreSystemDepts(),
         listOpenCoreSystemPosts({ page: 1, pageSize: 100 }),
@@ -311,7 +404,7 @@ export default function UsersPage() {
       setPostRows(posts);
       setLoadError(undefined);
     } catch (error: unknown) {
-      setRows(fallbackRows);
+      setRows(filterUsersByDept(fallbackRows, fallbackDeptTreeRows, deptId));
       setRoleRows(fallbackRoleRows);
       setDeptTreeRows(fallbackDeptTreeRows);
       setPostRows(fallbackPostRows);
@@ -326,6 +419,11 @@ export default function UsersPage() {
   useEffect(() => {
     void loadUsers();
   }, []);
+
+  const selectDept = async (deptId: string | undefined) => {
+    setSelectedDeptId(deptId);
+    await loadUsers(deptId);
+  };
 
   const openCreateForm = () => {
     setEditingUser(undefined);
@@ -642,39 +740,74 @@ export default function UsersPage() {
           style={{ marginBlockEnd: 16 }}
         />
       ) : null}
-      <ProTable<UserSummary>
-        rowKey="id"
-        loading={loading}
-        search={false}
-        options={false}
-        toolBarRender={() => [
-          filterToolbar,
+      <div style={usersPageLayoutStyle}>
+        <div style={deptFilterPanelStyle}>
+          <Space style={deptFilterHeaderStyle}>
+            <Typography.Text strong>Department scope</Typography.Text>
+            <Tooltip title="Reload">
+              <Button
+                aria-label="Reload users"
+                icon={<ReloadOutlined />}
+                onClick={() => void loadUsers()}
+                size="small"
+              />
+            </Tooltip>
+          </Space>
           <Button
-            key="create"
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={openCreateForm}
+            block
+            type={selectedDeptId ? 'default' : 'primary'}
+            onClick={() => void selectDept(undefined)}
           >
-            New
-          </Button>,
-          <Button
-            key="refresh"
-            icon={<ReloadOutlined />}
-            onClick={() => void loadUsers()}
-          >
-            Refresh
-          </Button>,
-          <CurrentPageExportButton<UserSummary>
-            key="export"
-            columns={exportColumns}
-            resource="core-users"
-            rows={filteredRows}
-          />,
-        ]}
-        pagination={{ pageSize: 10 }}
-        dataSource={filteredRows}
-        columns={columns}
-      />
+            All departments
+          </Button>
+          <Tree
+            blockNode
+            defaultExpandAll
+            onSelect={(keys) => {
+              const deptId = typeof keys[0] === 'string' ? keys[0] : undefined;
+              void selectDept(deptId);
+            }}
+            selectedKeys={selectedDeptId ? [selectedDeptId] : []}
+            style={deptFilterTreeStyle}
+            treeData={deptFilterTreeData}
+          />
+        </div>
+        <div style={usersTablePanelStyle}>
+          <ProTable<UserSummary>
+            rowKey="id"
+            loading={loading}
+            search={false}
+            options={false}
+            toolBarRender={() => [
+              filterToolbar,
+              <Button
+                key="create"
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={openCreateForm}
+              >
+                New
+              </Button>,
+              <Button
+                key="refresh"
+                icon={<ReloadOutlined />}
+                onClick={() => void loadUsers()}
+              >
+                Refresh
+              </Button>,
+              <CurrentPageExportButton<UserSummary>
+                key="export"
+                columns={exportColumns}
+                resource="core-users"
+                rows={filteredRows}
+              />,
+            ]}
+            pagination={{ pageSize: 10 }}
+            dataSource={filteredRows}
+            columns={columns}
+          />
+        </div>
+      </div>
       <ReadOnlyDetailDrawer
         fields={
           selectedDetail

@@ -41,6 +41,7 @@ import {
   type LoginLogQueryRequest,
   type LoginLogSummary,
   type KickOutSessionRequest,
+  type ListUsersRequest,
   type OnlineUserQueryRequest,
   type OnlineUserSessionSummary,
   type SystemNoticeQueryRequest,
@@ -71,8 +72,10 @@ const monitoringClient = createMonitoringClient(opencoreSdkRequest);
 const operationsClient = createOperationsClient(opencoreSdkRequest);
 const systemManagementClient = createSystemManagementClient(opencoreSdkRequest);
 
-export function listOpenCoreUsers(): Promise<UserSummary[]> {
-  return rbacClient.listUsers(getRequiredAdminToken());
+export function listOpenCoreUsers(
+  query?: ListUsersRequest,
+): Promise<UserSummary[]> {
+  return rbacClient.listUsers(getRequiredAdminToken(), query);
 }
 
 export function getOpenCoreUser(id: string): Promise<UserSummary> {

@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { OnlineUserService } from '@opencore/online-user';
@@ -22,6 +23,7 @@ import {
   CreateRoleDto,
   CreateUserDto,
   DeleteResultDto,
+  ListUsersQueryDto,
   MenuSummaryDto,
   PermissionSummaryDto,
   RbacExportPreviewDto,
@@ -57,16 +59,18 @@ export class RbacController {
   @ApiTags('Core Users')
   @RequirePermission('core:user:read')
   @ApiOkResponse({ type: [UserSummaryDto] })
-  listUsers(): Promise<UserSummaryDto[]> {
-    return this.users.listUsers();
+  listUsers(@Query() query: ListUsersQueryDto): Promise<UserSummaryDto[]> {
+    return this.users.listUsers(query);
   }
 
   @Get('users/export')
   @ApiTags('Core Users')
   @RequirePermission('core:user:export')
   @ApiOkResponse({ type: RbacExportPreviewDto })
-  exportUsers(): Promise<RbacExportPreviewDto> {
-    return this.users.createExportPreview();
+  exportUsers(
+    @Query() query: ListUsersQueryDto,
+  ): Promise<RbacExportPreviewDto> {
+    return this.users.createExportPreview(query);
   }
 
   @Get('users/:id')

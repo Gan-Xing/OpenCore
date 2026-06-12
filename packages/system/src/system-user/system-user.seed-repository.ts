@@ -13,8 +13,10 @@ import {
   createRoleUserAssignment,
   normalizeCreateSystemUserInput,
   normalizeAssignRoleUsersInput,
+  normalizeListSystemUsersQuery,
   normalizeUpdateSystemUserInput,
   SystemUserRepository,
+  type SystemUserListQuery,
   type SystemUserSummaryRecord,
 } from './system-user.repository';
 import { hashSystemUserPassword } from './system-user.password';
@@ -28,6 +30,7 @@ export class SeedSystemUserRepository extends SystemUserRepository {
     seedSystemRoles.map((role) => role.code),
   );
   private readonly deptIds = new Set(seedSystemDepts.map((dept) => dept.id));
+  private readonly deptChildrenByParent = createDeptChildrenByParent();
   private readonly postCodes = new Set(
     seedSystemPosts.map((post) => post.code),
   );
@@ -37,8 +40,16 @@ export class SeedSystemUserRepository extends SystemUserRepository {
     this.users = users.map(cloneUser);
   }
 
-  async listUsers(): Promise<SystemUserSummaryRecord[]> {
+  async listUsers(
+    query?: SystemUserListQuery,
+  ): Promise<SystemUserSummaryRecord[]> {
+    const filters = normalizeListSystemUsersQuery(query);
+    const deptIds = filters.deptId
+      ? this.resolveDeptSubtreeIds(filters.deptId)
+      : undefined;
+
     return this.users
+      .filter((user) => !deptIds || (user.deptId && deptIds.has(user.deptId)))
       .map(cloneSystemUserSummary)
       .sort(compareSystemUserRecords);
   }
@@ -177,6 +188,25 @@ export class SeedSystemUserRepository extends SystemUserRepository {
     }
   }
 
+  private resolveDeptSubtreeIds(deptId: string): Set<string> {
+    this.assertDeptId(deptId);
+
+    const deptIds = new Set<string>([deptId]);
+    const visit = (parentId: string) => {
+      for (const childId of this.deptChildrenByParent.get(parentId) ?? []) {
+        if (deptIds.has(childId)) {
+          continue;
+        }
+
+        deptIds.add(childId);
+        visit(childId);
+      }
+    };
+
+    visit(deptId);
+    return deptIds;
+  }
+
   private assertPostCodes(postCodes: readonly string[]): void {
     const missingPostCode = postCodes.find(
       (postCode) => !this.postCodes.has(postCode),
@@ -186,6 +216,23 @@ export class SeedSystemUserRepository extends SystemUserRepository {
       throw new NotFoundException(`System post not found: ${missingPostCode}`);
     }
   }
+}
+
+function createDeptChildrenByParent(): Map<string, string[]> {
+  const childrenByParent = new Map<string, string[]>();
+
+  for (const dept of seedSystemDepts) {
+    if (!dept.parentId) {
+      continue;
+    }
+
+    childrenByParent.set(dept.parentId, [
+      ...(childrenByParent.get(dept.parentId) ?? []),
+      dept.id,
+    ]);
+  }
+
+  return childrenByParent;
 }
 
 function cloneUser(user: SystemUserRecord): SystemUserRecord {

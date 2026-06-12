@@ -5,6 +5,7 @@ export {
   CreateMenuDto,
   CreateRoleDto,
   CreateUserDto,
+  ListUsersQueryDto,
   MenuSummaryDto,
   RoleMenuAssignmentDto,
   RoleMutationResultDto,

@@ -5,6 +5,7 @@ import type {
   CreatePermissionRequest,
   CreateRoleRequest,
   CreateUserRequest,
+  ListUsersRequest,
   LoginRequest,
   LoginResponse,
   MenuSummary,
@@ -38,8 +39,14 @@ export type SdkRequest = <T>(
 export type RbacClient = {
   login: (request: LoginRequest) => Promise<LoginResponse>;
   me: (token: string) => Promise<LoginResponse>;
-  listUsers: (token: string) => Promise<UserSummary[]>;
-  exportUsers: (token: string) => Promise<RbacExportPreview>;
+  listUsers: (
+    token: string,
+    query?: ListUsersRequest,
+  ) => Promise<UserSummary[]>;
+  exportUsers: (
+    token: string,
+    query?: ListUsersRequest,
+  ) => Promise<RbacExportPreview>;
   getUser: (token: string, id: string) => Promise<UserSummary>;
   createUser: (token: string, body: CreateUserRequest) => Promise<UserSummary>;
   updateUser: (
@@ -127,12 +134,12 @@ export function createRbacClient(request: SdkRequest): RbacClient {
       request<LoginResponse>('/auth/me', {
         token,
       }),
-    listUsers: (token) =>
-      request<UserSummary[]>('/core/users', {
+    listUsers: (token, query) =>
+      request<UserSummary[]>(withQuery('/core/users', query), {
         token,
       }),
-    exportUsers: (token) =>
-      request<RbacExportPreview>('/core/users/export', {
+    exportUsers: (token, query) =>
+      request<RbacExportPreview>(withQuery('/core/users/export', query), {
         token,
       }),
     getUser: (token, id) =>
@@ -312,4 +319,17 @@ export function createRbacClient(request: SdkRequest): RbacClient {
         token,
       }),
   };
+}
+
+function withQuery(path: `/${string}`, query: object = {}): `/${string}` {
+  const params = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(query)) {
+    if (value !== undefined && value !== null && value !== '') {
+      params.set(key, String(value));
+    }
+  }
+
+  const queryString = params.toString();
+  return queryString ? `${path}?${queryString}` : path;
 }

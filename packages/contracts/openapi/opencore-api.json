@@ -81,7 +81,14 @@
     "/api/core/users": {
       "get": {
         "operationId": "RbacController_listUsers",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "deptId",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -126,7 +133,14 @@
     "/api/core/users/export": {
       "get": {
         "operationId": "RbacController_exportUsers",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "deptId",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",

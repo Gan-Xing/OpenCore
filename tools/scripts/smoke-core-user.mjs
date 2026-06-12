@@ -59,6 +59,9 @@ try {
       enabled: true,
     },
   });
+  await apiRequest('/core/users?deptId=missing_dept', {
+    expected: [404],
+  });
 
   const createdUser = await apiRequest('/core/users', {
     method: 'POST',
@@ -67,12 +70,29 @@ try {
       displayName: 'Smoke User Security',
       password: smokePassword,
       roleCodes: ['viewer'],
+      deptId: 'dept_operations',
       postCodes: ['engineer'],
       enabled: true,
     },
   });
   smokeUserId = assertString(createdUser.id, 'created smoke user id');
+  assertEqual(createdUser.deptId, 'dept_operations', 'created user department');
   assertIncludes(createdUser.postCodes, 'engineer', 'created user posts');
+  assertUserListIncludesUsername(
+    await apiRequest('/core/users?deptId=dept_operations'),
+    smokeUsername,
+    'operations department user list',
+  );
+  assertUserListIncludesUsername(
+    await apiRequest('/core/users?deptId=dept_headquarters'),
+    smokeUsername,
+    'headquarters subtree user list',
+  );
+  assertUserListNotIncludesUsername(
+    await apiRequest('/core/users?deptId=dept_engineering'),
+    smokeUsername,
+    'engineering department user list',
+  );
 
   const initialLogin = await loginSmokeUser(smokePassword, [200, 201]);
   smokeUserToken = assertString(
@@ -211,7 +231,11 @@ try {
         ...(checkDocs ? ['openapi.docs-json'] : []),
         'auth.login',
         'core.user.post.unknown-rejected',
+        'core.user.dept.unknown-rejected',
         'core.user.create',
+        'core.user.dept.create',
+        'core.user.dept.filter',
+        'core.user.dept.subtree-filter',
         'core.user.post.create',
         'core.user.status.disable',
         'core.user.status.revoke-session',
@@ -414,6 +438,26 @@ function assertIncludes(values, expected, label) {
 function assertNotIncludes(values, expected, label) {
   if (values.includes(expected)) {
     throw new Error(`Expected ${label} not to include ${expected}`);
+  }
+}
+
+function assertUserListIncludesUsername(users, expectedUsername, label) {
+  if (!Array.isArray(users)) {
+    throw new Error(`Expected ${label} to be an array`);
+  }
+
+  if (!users.some((user) => user.username === expectedUsername)) {
+    throw new Error(`Expected ${label} to include ${expectedUsername}`);
+  }
+}
+
+function assertUserListNotIncludesUsername(users, expectedUsername, label) {
+  if (!Array.isArray(users)) {
+    throw new Error(`Expected ${label} to be an array`);
+  }
+
+  if (users.some((user) => user.username === expectedUsername)) {
+    throw new Error(`Expected ${label} not to include ${expectedUsername}`);
   }
 }
 
