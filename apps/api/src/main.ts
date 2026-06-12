@@ -1,9 +1,11 @@
 import { NestFactory } from '@nestjs/core';
+import {
+  applyApiFoundation,
+  setupOpenApi,
+  StructuredLogger,
+} from '@opencore/core';
 import { AppModule } from './app/app.module';
 import { loadRuntimeConfig } from './platform/config/runtime-config';
-import { StructuredLogger } from './platform/logging/structured-logger';
-import { setupOpenApi } from './platform/openapi/openapi';
-import { applyApiFoundation } from './platform/setup/apply-api-foundation';
 
 async function bootstrap() {
   const config = loadRuntimeConfig();

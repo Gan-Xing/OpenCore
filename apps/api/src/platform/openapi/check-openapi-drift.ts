@@ -4,7 +4,7 @@ import { join, resolve } from 'node:path';
 import {
   compareOpenApiDocuments,
   type OpenApiDocumentLike,
-} from './openapi-drift';
+} from '@opencore/core';
 import { DEFAULT_OPENAPI_OUTPUT, writeOpenApiSnapshot } from './export-openapi';
 import { checkRegistryOpenApiTags } from './check-registry-tags';
 

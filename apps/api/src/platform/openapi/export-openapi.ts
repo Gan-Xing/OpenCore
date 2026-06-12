@@ -1,11 +1,10 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { NestFactory } from '@nestjs/core';
+import { applyApiFoundation, createOpenApiDocument } from '@opencore/core';
 import { format } from 'prettier';
 import { AppModule } from '../../app/app.module';
 import { loadRuntimeConfig } from '../config/runtime-config';
-import { applyApiFoundation } from '../setup/apply-api-foundation';
-import { createOpenApiDocument } from './openapi';
 
 export const DEFAULT_OPENAPI_OUTPUT =
   'packages/contracts/openapi/opencore-api.json';
