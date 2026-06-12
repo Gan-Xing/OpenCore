@@ -6,5 +6,6 @@ export const seedPermissions = collectPermissionDefinitions().map(
     title: permission.title,
     stage: permission.stage,
     dangerous: permission.dangerous ?? false,
+    system: true,
   }),
 );

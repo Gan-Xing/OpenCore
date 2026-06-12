@@ -13,6 +13,7 @@ import {
 import {
   createPermissionSummariesFromRegistry,
   createSystemDeptFixtures,
+  type PermissionSummary,
   type RoleDataScope,
   type RoleSummary,
   type SystemDeptSummary,
@@ -37,6 +38,7 @@ import {
   createOpenCoreRole,
   deleteOpenCoreRole,
   getOpenCoreRole,
+  listOpenCorePermissions,
   listOpenCoreRoles,
   listOpenCoreSystemDepts,
   updateOpenCoreRole,
@@ -64,11 +66,9 @@ type RoleFormValues = {
   permissionCodes?: string[];
 };
 
-const permissionOptions = createPermissionSummariesFromRegistry()
-  .map((permission) => ({ label: permission.code, value: permission.code }))
-  .sort((left, right) => left.value.localeCompare(right.value));
-const allPermissionCodes = permissionOptions.map(
-  (permission) => permission.value,
+const fallbackPermissionRows = createPermissionSummariesFromRegistry();
+const allPermissionCodes = fallbackPermissionRows.map(
+  (permission) => permission.code,
 );
 const fallbackRows: RoleSummary[] = [
   {
@@ -214,6 +214,9 @@ function createDetailJsonSections(record: RoleSummary): DetailJsonSection[] {
 export default function RolesPage() {
   const [form] = Form.useForm<RoleFormValues>();
   const [rows, setRows] = useState<readonly RoleSummary[]>(fallbackRows);
+  const [permissionRows, setPermissionRows] = useState<
+    readonly PermissionSummary[]
+  >(fallbackPermissionRows);
   const [deptRows, setDeptRows] =
     useState<readonly SystemDeptSummary[]>(fallbackDeptRows);
   const [loading, setLoading] = useState(true);
@@ -224,6 +227,16 @@ export default function RolesPage() {
   const [submitting, setSubmitting] = useState(false);
   const selectedDataScope = Form.useWatch('dataScope', form);
   const isCustomDataScope = selectedDataScope === 'custom';
+  const permissionOptions = useMemo(
+    () =>
+      permissionRows
+        .map((permission) => ({
+          label: permission.code,
+          value: permission.code,
+        }))
+        .sort((left, right) => left.value.localeCompare(right.value)),
+    [permissionRows],
+  );
   const deptNames = useMemo(() => createDeptNameMap(deptRows), [deptRows]);
   const deptOptions = useMemo(() => createDeptOptions(deptRows), [deptRows]);
   const { filteredRows, toolbar: filterToolbar } =
@@ -237,16 +250,19 @@ export default function RolesPage() {
   const loadRoles = async () => {
     setLoading(true);
     try {
-      const [roles, deptTree] = await Promise.all([
+      const [roles, deptTree, permissions] = await Promise.all([
         listOpenCoreRoles(),
         listOpenCoreSystemDepts(),
+        listOpenCorePermissions(),
       ]);
       setRows(roles);
       setDeptRows(flattenDeptTree(deptTree));
+      setPermissionRows(permissions);
       setLoadError(undefined);
     } catch (error: unknown) {
       setRows(fallbackRows);
       setDeptRows(fallbackDeptRows);
+      setPermissionRows(fallbackPermissionRows);
       setLoadError(
         error instanceof Error ? error.message : 'Unable to load roles.',
       );

@@ -152,6 +152,14 @@ export class RbacController {
     return this.repository.createExportPreview('permissions');
   }
 
+  @Get('permissions/:code')
+  @ApiTags('Core Permissions')
+  @RequirePermission('core:permission:read')
+  @ApiOkResponse({ type: PermissionSummaryDto })
+  getPermission(@Param('code') code: string): Promise<PermissionSummaryDto> {
+    return this.repository.getPermission(code);
+  }
+
   @Post('permissions')
   @ApiTags('Core Permissions')
   @RequirePermission('core:permission:create')

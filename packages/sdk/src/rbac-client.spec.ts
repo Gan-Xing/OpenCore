@@ -36,6 +36,7 @@ describe('createRbacClient', () => {
     await client.deleteRole('token', 'operator');
     await client.listPermissions('token');
     await client.exportPermissions('token');
+    await client.getPermission('token', 'core:permission:read');
     await client.createPermission('token', {
       code: 'core:example:read',
       title: 'Read examples',
@@ -81,6 +82,7 @@ describe('createRbacClient', () => {
       { path: '/core/roles/operator', method: 'DELETE', token: 'token' },
       { path: '/core/permissions', token: 'token' },
       { path: '/core/permissions/export', token: 'token' },
+      { path: '/core/permissions/core%3Apermission%3Aread', token: 'token' },
       { path: '/core/permissions', method: 'POST', token: 'token' },
       {
         path: '/core/permissions/core%3Aexample%3Aread',

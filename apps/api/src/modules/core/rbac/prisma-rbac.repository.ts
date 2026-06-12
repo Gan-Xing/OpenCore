@@ -1,5 +1,6 @@
 import { collectPermissionDefinitions } from '@opencore/module-registry';
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -11,6 +12,8 @@ import type {
 } from '@opencore/security';
 import {
   createRbacExportPreview,
+  normalizeCreatePermissionInput,
+  normalizeUpdatePermissionInput,
   RbacRepository,
   type CreatePermissionRecord,
   type PermissionSummaryRecord,
@@ -97,19 +100,27 @@ export class PrismaRbacRepository extends RbacRepository {
     return permissions.map(toPermissionSummaryRecord);
   }
 
+  async getPermission(code: string): Promise<PermissionSummaryRecord> {
+    return toPermissionSummaryRecord(
+      await this.findPermissionEntityByCode(code),
+    );
+  }
+
   async createPermission(
     body: CreatePermissionRecord,
   ): Promise<PermissionSummaryRecord> {
+    const input = normalizeCreatePermissionInput(body);
+
     if (
-      await this.prisma.permission.findUnique({ where: { code: body.code } })
+      await this.prisma.permission.findUnique({ where: { code: input.code } })
     ) {
-      throw new ConflictException(`Permission already exists: ${body.code}`);
+      throw new ConflictException(`Permission already exists: ${input.code}`);
     }
 
     const permission = await this.prisma.permission.create({
       data: {
-        code: body.code,
-        title: body.title,
+        code: input.code,
+        title: input.title,
       },
     });
 
@@ -120,11 +131,13 @@ export class PrismaRbacRepository extends RbacRepository {
     code: string,
     body: UpdatePermissionRecord,
   ): Promise<PermissionSummaryRecord> {
+    const input = normalizeUpdatePermissionInput(body);
     await this.findPermissionEntityByCode(code);
+    this.assertCustomPermission(code, 'updated');
     const permission = await this.prisma.permission.update({
       where: { code },
       data: {
-        title: body.title,
+        title: input.title,
       },
     });
 
@@ -133,6 +146,7 @@ export class PrismaRbacRepository extends RbacRepository {
 
   async deletePermission(code: string): Promise<{ deleted: true }> {
     const permission = await this.findPermissionEntityByCode(code);
+    this.assertCustomPermission(code, 'deleted');
     await this.prisma.menu.updateMany({
       where: { permissionId: permission.id },
       data: { permissionId: null },
@@ -253,6 +267,12 @@ export class PrismaRbacRepository extends RbacRepository {
 
     return permission;
   }
+
+  private assertCustomPermission(code: string, action: 'deleted' | 'updated') {
+    if (permissionMetadataByCode.has(code)) {
+      throw new BadRequestException(`System permissions cannot be ${action}.`);
+    }
+  }
 }
 
 const securityDataScopeTypes = new Set<SecurityDataScopeType>([
@@ -284,6 +304,7 @@ function toPermissionSummaryRecord(
     title: permission.title,
     stage: metadata?.stage ?? 'S6',
     dangerous: metadata?.dangerous ?? false,
+    system: Boolean(metadata),
   };
 }
 

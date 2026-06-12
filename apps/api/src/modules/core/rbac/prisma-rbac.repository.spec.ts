@@ -1,4 +1,5 @@
 import { PrismaService } from '@opencore/database';
+import { randomUUID } from 'node:crypto';
 import { AuthService } from './auth.service';
 import { PrismaRbacRepository } from './prisma-rbac.repository';
 
@@ -6,6 +7,15 @@ describe('PrismaRbacRepository integration', () => {
   const prisma = new PrismaService();
   const repository = new PrismaRbacRepository(prisma);
   const authService = new AuthService(repository);
+  const permissionCode = `core:perm-${randomUUID().slice(0, 8)}:read`;
+
+  beforeEach(async () => {
+    await cleanupPermission();
+  });
+
+  afterEach(async () => {
+    await cleanupPermission();
+  });
 
   afterAll(async () => {
     await prisma.$disconnect();
@@ -20,6 +30,52 @@ describe('PrismaRbacRepository integration', () => {
         expect.objectContaining({ code: 'core:menu:read' }),
       ]),
     );
+    await expect(
+      repository.getPermission('core:permission:read'),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        code: 'core:permission:read',
+        system: true,
+      }),
+    );
+  });
+
+  it('persists custom permission detail and protects registry permissions', async () => {
+    await expect(
+      repository.createPermission({
+        code: permissionCode,
+        title: 'Read permission smoke',
+      }),
+    ).resolves.toMatchObject({
+      code: permissionCode,
+      system: false,
+    });
+    await expect(
+      repository.getPermission(permissionCode),
+    ).resolves.toMatchObject({
+      code: permissionCode,
+      title: 'Read permission smoke',
+      system: false,
+    });
+    await expect(
+      repository.updatePermission(permissionCode, {
+        title: 'Read updated permission smoke',
+      }),
+    ).resolves.toMatchObject({
+      code: permissionCode,
+      title: 'Read updated permission smoke',
+    });
+    await expect(
+      repository.updatePermission('core:permission:read', {
+        title: 'Renamed',
+      }),
+    ).rejects.toThrow('System permissions cannot be updated.');
+    await expect(
+      repository.deletePermission('core:permission:read'),
+    ).rejects.toThrow('System permissions cannot be deleted.');
+    await expect(repository.deletePermission(permissionCode)).resolves.toEqual({
+      deleted: true,
+    });
   });
 
   it('authenticates the seeded admin from PostgreSQL permissions', async () => {
@@ -69,4 +125,24 @@ describe('PrismaRbacRepository integration', () => {
       repository.listDescendantDeptIds('dept_headquarters'),
     ).resolves.toEqual(['dept_engineering', 'dept_operations']);
   });
+
+  async function cleanupPermission(): Promise<void> {
+    const permissions = await prisma.permission.findMany({
+      where: { code: permissionCode },
+      select: { id: true },
+    });
+    const permissionIds = permissions.map((permission) => permission.id);
+
+    if (permissionIds.length > 0) {
+      await prisma.menu.updateMany({
+        where: { permissionId: { in: permissionIds } },
+        data: { permissionId: null },
+      });
+      await prisma.rolePermission.deleteMany({
+        where: { permissionId: { in: permissionIds } },
+      });
+    }
+
+    await prisma.permission.deleteMany({ where: { code: permissionCode } });
+  }
 });

@@ -18,6 +18,14 @@ describe('SeedRbacRepository', () => {
         'core:menu:read',
       ]),
     );
+    await expect(
+      repository.getPermission('core:permission:read'),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        code: 'core:permission:read',
+        system: true,
+      }),
+    );
   });
 
   it('supports RBAC permission create update delete and export operations', async () => {
@@ -29,6 +37,14 @@ describe('SeedRbacRepository', () => {
     ).resolves.toMatchObject({
       code: 'core:example:read',
       stage: 'S6',
+      system: false,
+    });
+    await expect(
+      repository.getPermission('core:example:read'),
+    ).resolves.toMatchObject({
+      code: 'core:example:read',
+      title: 'Read examples',
+      system: false,
     });
 
     await expect(
@@ -51,6 +67,17 @@ describe('SeedRbacRepository', () => {
     ).resolves.toEqual({
       deleted: true,
     });
+  });
+
+  it('protects registry permissions from mutation', async () => {
+    await expect(
+      repository.updatePermission('core:permission:read', {
+        title: 'Renamed',
+      }),
+    ).rejects.toThrow('System permissions cannot be updated.');
+    await expect(
+      repository.deletePermission('core:permission:read'),
+    ).rejects.toThrow('System permissions cannot be deleted.');
   });
 
   it('resolves seed data-scope profiles and dept descendants', async () => {

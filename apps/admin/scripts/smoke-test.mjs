@@ -231,6 +231,11 @@ if (
   !opencorePlatformService.includes('createOpenCoreRole') ||
   !opencorePlatformService.includes('updateOpenCoreRole') ||
   !opencorePlatformService.includes('deleteOpenCoreRole') ||
+  !opencorePlatformService.includes('listOpenCorePermissions') ||
+  !opencorePlatformService.includes('getOpenCorePermission') ||
+  !opencorePlatformService.includes('createOpenCorePermission') ||
+  !opencorePlatformService.includes('updateOpenCorePermission') ||
+  !opencorePlatformService.includes('deleteOpenCorePermission') ||
   !opencorePlatformService.includes('getOpenCoreSystemStatus') ||
   !opencorePlatformService.includes('listOpenCoreMenus') ||
   !opencorePlatformService.includes('getOpenCoreMenu') ||
@@ -570,6 +575,7 @@ if (
   !rolesPage.includes('createOpenCoreRole') ||
   !rolesPage.includes('updateOpenCoreRole') ||
   !rolesPage.includes('deleteOpenCoreRole') ||
+  !rolesPage.includes('listOpenCorePermissions') ||
   !rolesPage.includes('listOpenCoreSystemDepts') ||
   !rolesPage.includes('useCurrentPageFilters') ||
   !rolesPage.includes('CurrentPageExportButton') ||
@@ -578,6 +584,22 @@ if (
 ) {
   throw new Error(
     'Roles page must use live SDK CRUD with bounded filtering and current-page export.',
+  );
+}
+
+if (
+  !permissionsPage.includes('listOpenCorePermissions') ||
+  !permissionsPage.includes('getOpenCorePermission') ||
+  !permissionsPage.includes('createOpenCorePermission') ||
+  !permissionsPage.includes('updateOpenCorePermission') ||
+  !permissionsPage.includes('deleteOpenCorePermission') ||
+  !permissionsPage.includes('useCurrentPageFilters') ||
+  !permissionsPage.includes('CurrentPageExportButton') ||
+  !permissionsPage.includes('dataSource={filteredRows}') ||
+  !permissionsPage.includes('rows={filteredRows}')
+) {
+  throw new Error(
+    'Permissions page must use live SDK CRUD with bounded filtering and current-page export.',
   );
 }
 
@@ -759,7 +781,6 @@ if (
 
 const coreFilteredPages = [
   { name: 'users', source: usersPage },
-  { name: 'permissions', source: permissionsPage },
   { name: 'dicts', source: dictsPage },
   { name: 'config', source: configPage },
   { name: 'files', source: filesPage },

@@ -1,8 +1,10 @@
+import { BadRequestException } from '@nestjs/common';
 import {
   SecurityAuthUserRepository,
   type SecurityDataScopeProfile,
   type SecurityAuthUserRecord,
 } from '@opencore/security';
+import { isPermissionCode } from '@opencore/contracts';
 
 export type RbacUserRecord = SecurityAuthUserRecord;
 
@@ -11,6 +13,7 @@ export type PermissionSummaryRecord = {
   title: string;
   stage: string;
   dangerous: boolean;
+  system: boolean;
 };
 
 export type CreatePermissionRecord = {
@@ -34,6 +37,8 @@ export type RbacExportPreview = {
 
 export abstract class RbacRepository extends SecurityAuthUserRepository {
   abstract listPermissions(): Promise<PermissionSummaryRecord[]>;
+
+  abstract getPermission(code: string): Promise<PermissionSummaryRecord>;
 
   abstract createPermission(
     body: CreatePermissionRecord,
@@ -73,5 +78,54 @@ export function createRbacExportPreview(
 }
 
 const exportColumnsByResource = {
-  permissions: ['code', 'title', 'stage', 'dangerous'],
+  permissions: ['code', 'title', 'stage', 'dangerous', 'system'],
 } as const;
+
+export function normalizeCreatePermissionInput(
+  body: CreatePermissionRecord,
+): CreatePermissionRecord {
+  return {
+    code: normalizePermissionCode(body.code),
+    title: normalizePermissionTitle(body.title),
+  };
+}
+
+export function normalizeUpdatePermissionInput(
+  body: UpdatePermissionRecord,
+): UpdatePermissionRecord {
+  return {
+    title:
+      body.title === undefined
+        ? undefined
+        : normalizePermissionTitle(body.title),
+  };
+}
+
+function normalizePermissionCode(value: string): string {
+  const code = normalizeRequiredPermissionText(value, 'code');
+
+  if (!isPermissionCode(code)) {
+    throw new BadRequestException(
+      'Permission code must follow <layer>:<resource>:<action> and use a supported action.',
+    );
+  }
+
+  return code;
+}
+
+function normalizePermissionTitle(value: string): string {
+  return normalizeRequiredPermissionText(value, 'title');
+}
+
+function normalizeRequiredPermissionText(
+  value: string,
+  fieldName: string,
+): string {
+  const normalized = value.trim();
+
+  if (!normalized) {
+    throw new BadRequestException(`Permission ${fieldName} is required.`);
+  }
+
+  return normalized;
+}

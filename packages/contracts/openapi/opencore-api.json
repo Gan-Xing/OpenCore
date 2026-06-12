@@ -413,6 +413,31 @@
       }
     },
     "/api/core/permissions/{code}": {
+      "get": {
+        "operationId": "RbacController_getPermission",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PermissionSummaryDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Permissions"]
+      },
       "patch": {
         "operationId": "RbacController_updatePermission",
         "parameters": [
@@ -4522,9 +4547,10 @@
           "code": { "type": "string" },
           "title": { "type": "string" },
           "stage": { "type": "string" },
-          "dangerous": { "type": "boolean" }
+          "dangerous": { "type": "boolean" },
+          "system": { "type": "boolean" }
         },
-        "required": ["code", "title", "stage", "dangerous"]
+        "required": ["code", "title", "stage", "dangerous", "system"]
       },
       "CreatePermissionDto": {
         "type": "object",

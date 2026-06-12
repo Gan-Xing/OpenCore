@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -14,6 +15,8 @@ import type { SecurityDataScopeProfile } from '@opencore/security';
 import { seedPermissions } from './rbac.seed';
 import {
   createRbacExportPreview,
+  normalizeCreatePermissionInput,
+  normalizeUpdatePermissionInput,
   RbacRepository,
   type CreatePermissionRecord,
   type PermissionSummaryRecord,
@@ -59,29 +62,42 @@ export class SeedRbacRepository extends RbacRepository {
     return this.permissions.map((permission) => ({ ...permission }));
   }
 
+  async getPermission(code: string): Promise<PermissionSummaryRecord> {
+    return { ...this.findMutablePermissionByCode(code) };
+  }
+
   async createPermission(
     body: CreatePermissionRecord,
   ): Promise<PermissionSummaryRecord> {
-    if (this.permissions.some((permission) => permission.code === body.code)) {
-      throw new ConflictException(`Permission already exists: ${body.code}`);
+    const input = normalizeCreatePermissionInput(body);
+
+    if (this.permissions.some((permission) => permission.code === input.code)) {
+      throw new ConflictException(`Permission already exists: ${input.code}`);
     }
 
     const permission = {
-      code: body.code,
-      title: body.title,
+      code: input.code,
+      title: input.title,
       stage: 'S6',
       dangerous: false,
+      system: false,
     };
     this.permissions.push(permission);
-    return permission;
+    return { ...permission };
   }
 
   async updatePermission(
     code: string,
     body: UpdatePermissionRecord,
   ): Promise<PermissionSummaryRecord> {
+    const input = normalizeUpdatePermissionInput(body);
     const permission = this.findMutablePermissionByCode(code);
-    permission.title = body.title ?? permission.title;
+
+    if (permission.system) {
+      throw new BadRequestException('System permissions cannot be updated.');
+    }
+
+    permission.title = input.title ?? permission.title;
     return { ...permission };
   }
 
@@ -92,6 +108,10 @@ export class SeedRbacRepository extends RbacRepository {
 
     if (index === -1) {
       throw new NotFoundException(`Permission not found: ${code}`);
+    }
+
+    if (this.permissions[index]?.system) {
+      throw new BadRequestException('System permissions cannot be deleted.');
     }
 
     this.permissions.splice(index, 1);

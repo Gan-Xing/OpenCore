@@ -50,6 +50,7 @@ export type RbacClient = {
   deleteRole: (token: string, code: string) => Promise<RbacDeleteResult>;
   listPermissions: (token: string) => Promise<PermissionSummary[]>;
   exportPermissions: (token: string) => Promise<RbacExportPreview>;
+  getPermission: (token: string, code: string) => Promise<PermissionSummary>;
   createPermission: (
     token: string,
     body: CreatePermissionRequest,
@@ -145,6 +146,13 @@ export function createRbacClient(request: SdkRequest): RbacClient {
       request<RbacExportPreview>('/core/permissions/export', {
         token,
       }),
+    getPermission: (token, code) =>
+      request<PermissionSummary>(
+        `/core/permissions/${encodeURIComponent(code)}`,
+        {
+          token,
+        },
+      ),
     createPermission: (token, body) =>
       request<PermissionSummary>('/core/permissions', {
         method: 'POST',

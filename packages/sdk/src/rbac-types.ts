@@ -80,6 +80,7 @@ export type PermissionSummary = {
   title: string;
   stage: string;
   dangerous: boolean;
+  system: boolean;
 };
 
 export type CreatePermissionRequest = {

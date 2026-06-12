@@ -62,6 +62,9 @@ export class PermissionSummaryDto {
 
   @ApiProperty()
   dangerous!: boolean;
+
+  @ApiProperty()
+  system!: boolean;
 }
 
 export class CreatePermissionDto {
