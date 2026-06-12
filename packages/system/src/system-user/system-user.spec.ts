@@ -66,6 +66,23 @@ describe('@opencore/system system-user', () => {
       deptId: undefined,
       enabled: false,
     });
+    await expect(
+      service.setUserStatus('user_operator', { enabled: true }),
+    ).resolves.toMatchObject({
+      enabled: true,
+    });
+    await expect(
+      service.setUserStatus('user_operator', {
+        enabled: 'false' as unknown as boolean,
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.resetUserPassword('user_operator', {
+        password: 'reset-password',
+      }),
+    ).resolves.toMatchObject({
+      id: 'user_operator',
+    });
     await expect(service.createExportPreview()).resolves.toMatchObject({
       filename: 'opencore-system-users.csv',
       scope: 'current-page',
@@ -245,6 +262,23 @@ describe('@opencore/system system-user', () => {
         prisma.user.findUniqueOrThrow({ where: { id: user.id } }),
       ).resolves.toMatchObject({
         passwordHash: hashSystemUserPassword('updated-password'),
+      });
+      await expect(
+        service.setUserStatus(user.id, { enabled: true }),
+      ).resolves.toMatchObject({
+        enabled: true,
+      });
+      await expect(
+        service.resetUserPassword(user.id, {
+          password: 'reset-password',
+        }),
+      ).resolves.toMatchObject({
+        username,
+      });
+      await expect(
+        prisma.user.findUniqueOrThrow({ where: { id: user.id } }),
+      ).resolves.toMatchObject({
+        passwordHash: hashSystemUserPassword('reset-password'),
       });
 
       await expect(service.deleteUser(user.id)).resolves.toEqual({

@@ -190,7 +190,9 @@
             "description": "",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/UserSummaryDto" }
+                "schema": {
+                  "$ref": "#/components/schemas/UserMutationResultDto"
+                }
               }
             }
           }
@@ -214,6 +216,76 @@
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/DeleteResultDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Users"]
+      }
+    },
+    "/api/core/users/{id}/status": {
+      "patch": {
+        "operationId": "RbacController_setUserStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SetUserStatusDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserMutationResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Users"]
+      }
+    },
+    "/api/core/users/{id}/reset-password": {
+      "post": {
+        "operationId": "RbacController_resetUserPassword",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ResetUserPasswordDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserMutationResultDto"
+                }
               }
             }
           }
@@ -4816,6 +4888,37 @@
           "deptId": { "type": "string", "nullable": true },
           "enabled": { "type": "boolean" }
         }
+      },
+      "UserMutationResultDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "username": { "type": "string" },
+          "displayName": { "type": "string" },
+          "roleCodes": { "type": "array", "items": { "type": "string" } },
+          "deptId": { "type": "string", "nullable": true },
+          "enabled": { "type": "boolean" },
+          "system": { "type": "boolean" },
+          "revokedSessionCount": { "type": "number" }
+        },
+        "required": [
+          "id",
+          "username",
+          "displayName",
+          "roleCodes",
+          "enabled",
+          "system"
+        ]
+      },
+      "SetUserStatusDto": {
+        "type": "object",
+        "properties": { "enabled": { "type": "boolean" } },
+        "required": ["enabled"]
+      },
+      "ResetUserPasswordDto": {
+        "type": "object",
+        "properties": { "password": { "type": "string" } },
+        "required": ["password"]
       },
       "DeleteResultDto": {
         "type": "object",

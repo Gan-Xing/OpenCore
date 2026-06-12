@@ -60,6 +60,21 @@ export class UpdateUserDto {
   enabled?: boolean;
 }
 
+export class SetUserStatusDto {
+  @ApiProperty()
+  enabled!: boolean;
+}
+
+export class ResetUserPasswordDto {
+  @ApiProperty()
+  password!: string;
+}
+
+export class UserMutationResultDto extends UserSummaryDto {
+  @ApiProperty({ required: false })
+  revokedSessionCount?: number;
+}
+
 export class AssignRoleUsersDto {
   @ApiProperty({ type: [String] })
   userIds!: readonly string[];

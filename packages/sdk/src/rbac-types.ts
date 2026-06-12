@@ -45,6 +45,18 @@ export type UpdateUserRequest = {
   enabled?: boolean;
 };
 
+export type SetUserStatusRequest = {
+  enabled: boolean;
+};
+
+export type ResetUserPasswordRequest = {
+  password: string;
+};
+
+export type UserMutationSummary = UserSummary & {
+  revokedSessionCount?: number;
+};
+
 export type RoleSummary = {
   id: string;
   code: string;
@@ -172,6 +184,7 @@ export type UpdateMenuRequest = {
 
 export type RbacDeleteResult = {
   deleted: true;
+  revokedSessionCount?: number;
 };
 
 export type RbacExportPreview = {

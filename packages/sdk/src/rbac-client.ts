@@ -11,13 +11,16 @@ import type {
   PermissionSummary,
   RbacDeleteResult,
   RbacExportPreview,
+  ResetUserPasswordRequest,
   RoleMenuAssignmentSummary,
   RoleUserAssignmentSummary,
   RoleSummary,
+  SetUserStatusRequest,
   UpdateMenuRequest,
   UpdatePermissionRequest,
   UpdateRoleRequest,
   UpdateUserRequest,
+  UserMutationSummary,
   UserSummary,
 } from './rbac-types';
 
@@ -41,7 +44,17 @@ export type RbacClient = {
     token: string,
     id: string,
     body: UpdateUserRequest,
-  ) => Promise<UserSummary>;
+  ) => Promise<UserMutationSummary>;
+  setUserStatus: (
+    token: string,
+    id: string,
+    body: SetUserStatusRequest,
+  ) => Promise<UserMutationSummary>;
+  resetUserPassword: (
+    token: string,
+    id: string,
+    body: ResetUserPasswordRequest,
+  ) => Promise<UserMutationSummary>;
   deleteUser: (token: string, id: string) => Promise<RbacDeleteResult>;
   listRoles: (token: string) => Promise<RoleSummary[]>;
   exportRoles: (token: string) => Promise<RbacExportPreview>;
@@ -126,11 +139,29 @@ export function createRbacClient(request: SdkRequest): RbacClient {
         token,
       }),
     updateUser: (token, id, body) =>
-      request<UserSummary>(`/core/users/${encodeURIComponent(id)}`, {
+      request<UserMutationSummary>(`/core/users/${encodeURIComponent(id)}`, {
         method: 'PATCH',
         body,
         token,
       }),
+    setUserStatus: (token, id, body) =>
+      request<UserMutationSummary>(
+        `/core/users/${encodeURIComponent(id)}/status`,
+        {
+          method: 'PATCH',
+          body,
+          token,
+        },
+      ),
+    resetUserPassword: (token, id, body) =>
+      request<UserMutationSummary>(
+        `/core/users/${encodeURIComponent(id)}/reset-password`,
+        {
+          method: 'POST',
+          body,
+          token,
+        },
+      ),
     deleteUser: (token, id) =>
       request<RbacDeleteResult>(`/core/users/${encodeURIComponent(id)}`, {
         method: 'DELETE',

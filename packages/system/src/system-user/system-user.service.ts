@@ -2,11 +2,15 @@ import { Injectable } from '@nestjs/common';
 import type {
   AssignRoleUsersDto,
   CreateUserDto,
+  ResetUserPasswordDto,
   RoleUserAssignmentDto,
+  SetUserStatusDto,
   UpdateUserDto,
 } from './system-user.dto';
 import {
   createSystemUserExportPreview,
+  normalizeResetUserPasswordInput,
+  normalizeSetUserStatusInput,
   SystemUserRepository,
   type SystemUserExportPreview,
   type SystemUserSummaryRecord,
@@ -33,6 +37,22 @@ export class SystemUserService {
     body: UpdateUserDto,
   ): Promise<SystemUserSummaryRecord> {
     return this.repository.updateUser(id, body);
+  }
+
+  async setUserStatus(
+    id: string,
+    body: SetUserStatusDto,
+  ): Promise<SystemUserSummaryRecord> {
+    const input = normalizeSetUserStatusInput(body);
+    return await this.repository.updateUser(id, { enabled: input.enabled });
+  }
+
+  async resetUserPassword(
+    id: string,
+    body: ResetUserPasswordDto,
+  ): Promise<SystemUserSummaryRecord> {
+    const input = normalizeResetUserPasswordInput(body);
+    return await this.repository.updateUser(id, { password: input.password });
   }
 
   deleteUser(id: string): Promise<{ deleted: true }> {

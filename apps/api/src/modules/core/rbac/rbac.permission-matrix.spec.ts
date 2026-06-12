@@ -25,6 +25,8 @@ const expectedPermissions = {
   listPermissions: ['core:permission:read'],
   listRoles: ['core:role:read'],
   listUsers: ['core:user:read'],
+  resetUserPassword: ['core:user:update'],
+  setUserStatus: ['core:user:update'],
   assignRoleMenus: ['core:role:update'],
   assignRoleUsers: ['core:role:update'],
   updateMenu: ['core:menu:update'],

@@ -2,7 +2,9 @@ import { BadRequestException } from '@nestjs/common';
 import type {
   AssignRoleUsersDto,
   CreateUserDto,
+  ResetUserPasswordDto,
   RoleUserAssignmentDto,
+  SetUserStatusDto,
   UpdateUserDto,
 } from './system-user.dto';
 import type { SystemUserRecord } from './system-user.records';
@@ -32,6 +34,14 @@ export type NormalizedSystemUserUpdateInput = {
   roleCodes?: readonly string[];
   deptId?: string | null;
   enabled?: boolean;
+};
+
+export type NormalizedSetUserStatusInput = {
+  enabled: boolean;
+};
+
+export type NormalizedResetUserPasswordInput = {
+  password: string;
 };
 
 const USERNAME_PATTERN = /^[a-z][a-z0-9_.-]*$/;
@@ -88,7 +98,7 @@ export function normalizeCreateSystemUserInput(
     password: normalizeRequiredText(body.password, 'password'),
     roleCodes: normalizeRoleCodes(body.roleCodes),
     deptId: normalizeOptionalDeptId(body.deptId),
-    enabled: body.enabled ?? true,
+    enabled: normalizeOptionalBoolean(body.enabled, 'enabled') ?? true,
   };
 }
 
@@ -112,7 +122,23 @@ export function normalizeUpdateSystemUserInput(
       body.deptId === undefined
         ? undefined
         : normalizeNullableDeptId(body.deptId),
-    enabled: body.enabled,
+    enabled: normalizeOptionalBoolean(body.enabled, 'enabled'),
+  };
+}
+
+export function normalizeSetUserStatusInput(
+  body: SetUserStatusDto,
+): NormalizedSetUserStatusInput {
+  return {
+    enabled: normalizeRequiredBoolean(body?.enabled, 'enabled'),
+  };
+}
+
+export function normalizeResetUserPasswordInput(
+  body: ResetUserPasswordDto,
+): NormalizedResetUserPasswordInput {
+  return {
+    password: normalizeRequiredText(body?.password, 'password'),
   };
 }
 
@@ -196,7 +222,11 @@ function normalizeUsername(value: string): string {
   return username;
 }
 
-function normalizeRequiredText(value: string, fieldName: string): string {
+function normalizeRequiredText(value: unknown, fieldName: string): string {
+  if (typeof value !== 'string') {
+    throw new BadRequestException(`System user ${fieldName} must be a string.`);
+  }
+
   const normalized = value.trim();
 
   if (!normalized) {
@@ -204,6 +234,27 @@ function normalizeRequiredText(value: string, fieldName: string): string {
   }
 
   return normalized;
+}
+
+function normalizeRequiredBoolean(value: unknown, fieldName: string): boolean {
+  if (typeof value !== 'boolean') {
+    throw new BadRequestException(
+      `System user ${fieldName} must be a boolean.`,
+    );
+  }
+
+  return value;
+}
+
+function normalizeOptionalBoolean(
+  value: unknown,
+  fieldName: string,
+): boolean | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  return normalizeRequiredBoolean(value, fieldName);
 }
 
 function normalizeUserId(value: unknown): string {

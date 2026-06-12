@@ -642,9 +642,13 @@ if (
   !usersPage.includes('getOpenCoreUser') ||
   !usersPage.includes('createOpenCoreUser') ||
   !usersPage.includes('updateOpenCoreUser') ||
+  !usersPage.includes('setOpenCoreUserStatus') ||
+  !usersPage.includes('resetOpenCoreUserPassword') ||
   !usersPage.includes('deleteOpenCoreUser') ||
   !usersPage.includes('listOpenCoreRoles') ||
   !usersPage.includes('listOpenCoreSystemDepts') ||
+  !usersPage.includes('Reset Password') ||
+  !usersPage.includes('Revoked sessions') ||
   !usersPage.includes('useCurrentPageFilters') ||
   !usersPage.includes('CurrentPageExportButton') ||
   !usersPage.includes('dataSource={filteredRows}') ||

@@ -7,11 +7,14 @@ export {
   CreateUserDto,
   MenuSummaryDto,
   RoleMenuAssignmentDto,
+  ResetUserPasswordDto,
   RoleUserAssignmentDto,
   RoleSummaryDto,
+  SetUserStatusDto,
   UpdateMenuDto,
   UpdateRoleDto,
   UpdateUserDto,
+  UserMutationResultDto,
   UserSummaryDto,
 } from '@opencore/system';
 
@@ -87,6 +90,9 @@ export class UpdatePermissionDto {
 export class DeleteResultDto {
   @ApiProperty()
   deleted!: true;
+
+  @ApiProperty({ required: false })
+  revokedSessionCount?: number;
 }
 
 export class RbacExportPreviewDto {

@@ -1,9 +1,12 @@
 import {
+  CheckCircleOutlined,
   DeleteOutlined,
   EditOutlined,
   EyeOutlined,
+  LockOutlined,
   PlusOutlined,
   ReloadOutlined,
+  StopOutlined,
 } from '@ant-design/icons';
 import {
   PageContainer,
@@ -41,6 +44,8 @@ import {
   listOpenCoreRoles,
   listOpenCoreSystemDepts,
   listOpenCoreUsers,
+  resetOpenCoreUserPassword,
+  setOpenCoreUserStatus,
   updateOpenCoreUser,
 } from '@/services/opencore/platform';
 import {
@@ -64,6 +69,10 @@ type UserFormValues = {
   password?: string;
   roleCodes?: string[];
   username: string;
+};
+
+type ResetPasswordValues = {
+  password: string;
 };
 
 type TreeSelectNode = {
@@ -208,6 +217,7 @@ function createDetailFields(
 
 export default function UsersPage() {
   const [form] = Form.useForm<UserFormValues>();
+  const [resetPasswordForm] = Form.useForm<ResetPasswordValues>();
   const [rows, setRows] = useState<readonly UserSummary[]>(fallbackRows);
   const [roleRows, setRoleRows] =
     useState<readonly RoleSummary[]>(fallbackRoleRows);
@@ -217,8 +227,12 @@ export default function UsersPage() {
   const [loadError, setLoadError] = useState<string>();
   const [selectedDetail, setSelectedDetail] = useState<UserSummary>();
   const [editingUser, setEditingUser] = useState<UserSummary>();
+  const [resetPasswordUser, setResetPasswordUser] = useState<UserSummary>();
   const [formOpen, setFormOpen] = useState(false);
+  const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [resetPasswordSubmitting, setResetPasswordSubmitting] = useState(false);
+  const [statusUpdatingUserId, setStatusUpdatingUserId] = useState<string>();
   const flatDeptRows = useMemo(
     () => flattenDeptTree(deptTreeRows),
     [deptTreeRows],
@@ -293,7 +307,7 @@ export default function UsersPage() {
       form.setFieldsValue({
         username: fresh.username,
         displayName: fresh.displayName,
-        password: '',
+        password: undefined,
         roleCodes: [...fresh.roleCodes],
         deptId: fresh.deptId,
         enabled: fresh.enabled,
@@ -311,6 +325,24 @@ export default function UsersPage() {
       setSelectedDetail(await getOpenCoreUser(record.id));
     } catch (_error) {
       setSelectedDetail(record);
+    }
+  };
+
+  const openResetPassword = async (record: UserSummary) => {
+    if (record.system) {
+      message.warning('System users cannot be reset.');
+      return;
+    }
+
+    try {
+      const fresh = await getOpenCoreUser(record.id);
+      setResetPasswordUser(fresh);
+      resetPasswordForm.setFieldsValue({ password: '' });
+      setResetPasswordOpen(true);
+    } catch (error: unknown) {
+      message.error(
+        error instanceof Error ? error.message : 'Unable to open user.',
+      );
     }
   };
 
@@ -348,9 +380,50 @@ export default function UsersPage() {
     }
   };
 
+  const submitResetPassword = async () => {
+    if (!resetPasswordUser) {
+      return;
+    }
+
+    const values = await resetPasswordForm.validateFields();
+    setResetPasswordSubmitting(true);
+    try {
+      const result = await resetOpenCoreUserPassword(resetPasswordUser.id, {
+        password: values.password,
+      });
+      message.success(
+        `Password reset. ${formatRevokedSessions(result.revokedSessionCount)}`,
+      );
+      setResetPasswordOpen(false);
+      setResetPasswordUser(undefined);
+      await loadUsers();
+    } finally {
+      setResetPasswordSubmitting(false);
+    }
+  };
+
+  const toggleUserStatus = async (record: UserSummary) => {
+    setStatusUpdatingUserId(record.id);
+    try {
+      const result = await setOpenCoreUserStatus(record.id, {
+        enabled: !record.enabled,
+      });
+      message.success(
+        `User ${result.enabled ? 'enabled' : 'disabled'}. ${formatRevokedSessions(
+          result.revokedSessionCount,
+        )}`,
+      );
+      await loadUsers();
+    } finally {
+      setStatusUpdatingUserId(undefined);
+    }
+  };
+
   const deleteUser = async (record: UserSummary) => {
-    await deleteOpenCoreUser(record.id);
-    message.success('User deleted.');
+    const result = await deleteOpenCoreUser(record.id);
+    message.success(
+      `User deleted. ${formatRevokedSessions(result.revokedSessionCount)}`,
+    );
     await loadUsers();
   };
 
@@ -405,7 +478,7 @@ export default function UsersPage() {
     {
       title: 'Actions',
       valueType: 'option',
-      width: 184,
+      width: 248,
       render: (_, record) => (
         <Space size="small">
           <Tooltip title="Detail">
@@ -424,6 +497,48 @@ export default function UsersPage() {
               disabled={record.system}
               icon={<EditOutlined />}
               onClick={() => void openEditForm(record)}
+              size="small"
+            />
+          </Tooltip>
+          <Popconfirm
+            title={record.enabled ? 'Disable this user?' : 'Enable this user?'}
+            okText={record.enabled ? 'Disable' : 'Enable'}
+            okButtonProps={{ danger: record.enabled }}
+            onConfirm={() => void toggleUserStatus(record)}
+          >
+            <Tooltip
+              title={
+                record.system
+                  ? 'System users cannot change status'
+                  : record.enabled
+                    ? 'Disable'
+                    : 'Enable'
+              }
+            >
+              <Button
+                aria-label={`${record.enabled ? 'Disable' : 'Enable'} ${record.username}`}
+                danger={record.enabled}
+                disabled={record.system}
+                icon={
+                  record.enabled ? <StopOutlined /> : <CheckCircleOutlined />
+                }
+                loading={statusUpdatingUserId === record.id}
+                size="small"
+              />
+            </Tooltip>
+          </Popconfirm>
+          <Tooltip
+            title={
+              record.system
+                ? 'System users cannot reset password'
+                : 'Reset Password'
+            }
+          >
+            <Button
+              aria-label={`Reset password for ${record.username}`}
+              disabled={record.system}
+              icon={<LockOutlined />}
+              onClick={() => void openResetPassword(record)}
               size="small"
             />
           </Tooltip>
@@ -531,21 +646,20 @@ export default function UsersPage() {
           >
             <Input maxLength={120} />
           </Form.Item>
-          <Form.Item
-            label="Password"
-            name="password"
-            rules={[
-              {
-                required: !editingUser,
-                message: 'Password is required.',
-              },
-            ]}
-          >
-            <Input.Password
-              autoComplete={editingUser ? 'new-password' : 'new-password'}
-              maxLength={128}
-            />
-          </Form.Item>
+          {!editingUser ? (
+            <Form.Item
+              label="Password"
+              name="password"
+              rules={[
+                {
+                  required: true,
+                  message: 'Password is required.',
+                },
+              ]}
+            >
+              <Input.Password autoComplete="new-password" maxLength={128} />
+            </Form.Item>
+          ) : null}
           <Form.Item label="Roles" name="roleCodes" rules={[{ type: 'array' }]}>
             <Select
               allowClear
@@ -570,6 +684,32 @@ export default function UsersPage() {
           </Form.Item>
         </Form>
       </Modal>
+      <Modal
+        title="Reset Password"
+        open={resetPasswordOpen}
+        onCancel={() => {
+          setResetPasswordOpen(false);
+          setResetPasswordUser(undefined);
+        }}
+        onOk={() => void submitResetPassword()}
+        confirmLoading={resetPasswordSubmitting}
+        okText="Reset"
+        width={520}
+      >
+        <Form<ResetPasswordValues> form={resetPasswordForm} layout="vertical">
+          <Form.Item
+            label="New Password"
+            name="password"
+            rules={[{ required: true, message: 'Password is required.' }]}
+          >
+            <Input.Password autoComplete="new-password" maxLength={128} />
+          </Form.Item>
+        </Form>
+      </Modal>
     </PageContainer>
   );
+}
+
+function formatRevokedSessions(count: number | undefined): string {
+  return `Revoked sessions: ${count ?? 0}.`;
 }

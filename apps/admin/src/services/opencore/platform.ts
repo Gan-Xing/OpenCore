@@ -21,6 +21,7 @@ import {
   type CreateSystemPostRequest,
   type MenuSummary,
   type PermissionSummary,
+  type RbacDeleteResult,
   type RoleMenuAssignmentSummary,
   type RoleUserAssignmentSummary,
   type RoleSummary,
@@ -40,6 +41,8 @@ import {
   type SystemNoticeSummary,
   type SystemPostQueryRequest,
   type SystemPostSummary,
+  type ResetUserPasswordRequest,
+  type SetUserStatusRequest,
   type UpdateSystemDeptRequest,
   type UpdateDictTypeRequest,
   type UpdateFileAssetRequest,
@@ -51,6 +54,7 @@ import {
   type UpdatePermissionRequest,
   type UpdateRoleRequest,
   type UserSummary,
+  type UserMutationSummary,
   type UpdateUserRequest,
 } from '@opencore/sdk';
 import { getRequiredAdminToken, opencoreSdkRequest } from './client';
@@ -77,11 +81,25 @@ export function createOpenCoreUser(
 export function updateOpenCoreUser(
   id: string,
   body: UpdateUserRequest,
-): Promise<UserSummary> {
+): Promise<UserMutationSummary> {
   return rbacClient.updateUser(getRequiredAdminToken(), id, body);
 }
 
-export function deleteOpenCoreUser(id: string): Promise<{ deleted: true }> {
+export function setOpenCoreUserStatus(
+  id: string,
+  body: SetUserStatusRequest,
+): Promise<UserMutationSummary> {
+  return rbacClient.setUserStatus(getRequiredAdminToken(), id, body);
+}
+
+export function resetOpenCoreUserPassword(
+  id: string,
+  body: ResetUserPasswordRequest,
+): Promise<UserMutationSummary> {
+  return rbacClient.resetUserPassword(getRequiredAdminToken(), id, body);
+}
+
+export function deleteOpenCoreUser(id: string): Promise<RbacDeleteResult> {
   return rbacClient.deleteUser(getRequiredAdminToken(), id);
 }
 

@@ -47,6 +47,7 @@
     "smoke:core-menu": "node tools/scripts/smoke-core-menu.mjs",
     "smoke:core-online-user": "node tools/scripts/smoke-core-online-user.mjs",
     "smoke:core-role": "node tools/scripts/smoke-core-role.mjs",
+    "smoke:core-user": "node tools/scripts/smoke-core-user.mjs",
     "test": "NX_DAEMON=false nx run-many -t test",
     "test:admin": "NX_DAEMON=false nx test admin",
     "test:api": "NX_DAEMON=false nx test api",

@@ -27,6 +27,12 @@ describe('createRbacClient', () => {
       deptId: null,
       enabled: false,
     });
+    await client.setUserStatus('token', 'user_operator', {
+      enabled: true,
+    });
+    await client.resetUserPassword('token', 'user_operator', {
+      password: 'reset-password',
+    });
     await client.deleteUser('token', 'user_operator');
     await client.listRoles('token');
     await client.exportRoles('token');
@@ -81,6 +87,16 @@ describe('createRbacClient', () => {
       {
         path: '/core/users/user_operator',
         method: 'PATCH',
+        token: 'token',
+      },
+      {
+        path: '/core/users/user_operator/status',
+        method: 'PATCH',
+        token: 'token',
+      },
+      {
+        path: '/core/users/user_operator/reset-password',
+        method: 'POST',
         token: 'token',
       },
       {

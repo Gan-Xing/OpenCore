@@ -26,12 +26,15 @@ import {
   PermissionSummaryDto,
   RbacExportPreviewDto,
   RoleMenuAssignmentDto,
+  ResetUserPasswordDto,
   RoleUserAssignmentDto,
   RoleSummaryDto,
+  SetUserStatusDto,
   UpdateMenuDto,
   UpdatePermissionDto,
   UpdateRoleDto,
   UpdateUserDto,
+  UserMutationResultDto,
   UserSummaryDto,
 } from './rbac.dto';
 import { RequirePermission } from './permissions.decorator';
@@ -83,20 +86,86 @@ export class RbacController {
   @Patch('users/:id')
   @ApiTags('Core Users')
   @RequirePermission('core:user:update')
-  @ApiOkResponse({ type: UserSummaryDto })
-  updateUser(
+  @ApiOkResponse({ type: UserMutationResultDto })
+  async updateUser(
     @Param('id') id: string,
     @Body() body: UpdateUserDto,
-  ): Promise<UserSummaryDto> {
-    return this.users.updateUser(id, body);
+  ): Promise<UserMutationResultDto> {
+    const before = await this.users.getUser(id);
+    const user = await this.users.updateUser(id, body);
+    const revokedSessionCount = await this.revokeActiveSessionsForUsernames(
+      [before.username],
+      'rbac.user-update',
+      `user updated for ${before.username}`,
+    );
+
+    return {
+      ...user,
+      revokedSessionCount,
+    };
+  }
+
+  @Patch('users/:id/status')
+  @ApiTags('Core Users')
+  @RequirePermission('core:user:update')
+  @ApiOkResponse({ type: UserMutationResultDto })
+  async setUserStatus(
+    @Param('id') id: string,
+    @Body() body: SetUserStatusDto,
+  ): Promise<UserMutationResultDto> {
+    const before = await this.users.getUser(id);
+    const user = await this.users.setUserStatus(id, body);
+    const revokedSessionCount = await this.revokeActiveSessionsForUsernames(
+      [before.username],
+      'rbac.user-status',
+      `user status set to ${user.enabled ? 'enabled' : 'disabled'} for ${before.username}`,
+    );
+
+    return {
+      ...user,
+      revokedSessionCount,
+    };
+  }
+
+  @Post('users/:id/reset-password')
+  @ApiTags('Core Users')
+  @RequirePermission('core:user:update')
+  @ApiOkResponse({ type: UserMutationResultDto })
+  async resetUserPassword(
+    @Param('id') id: string,
+    @Body() body: ResetUserPasswordDto,
+  ): Promise<UserMutationResultDto> {
+    const before = await this.users.getUser(id);
+    const user = await this.users.resetUserPassword(id, body);
+    const revokedSessionCount = await this.revokeActiveSessionsForUsernames(
+      [before.username],
+      'rbac.user-reset-password',
+      `user password reset for ${before.username}`,
+    );
+
+    return {
+      ...user,
+      revokedSessionCount,
+    };
   }
 
   @Delete('users/:id')
   @ApiTags('Core Users')
   @RequirePermission('core:user:delete')
   @ApiOkResponse({ type: DeleteResultDto })
-  deleteUser(@Param('id') id: string): Promise<DeleteResultDto> {
-    return this.users.deleteUser(id);
+  async deleteUser(@Param('id') id: string): Promise<DeleteResultDto> {
+    const before = await this.users.getUser(id);
+    const result = await this.users.deleteUser(id);
+    const revokedSessionCount = await this.revokeActiveSessionsForUsernames(
+      [before.username],
+      'rbac.user-delete',
+      `user deleted for ${before.username}`,
+    );
+
+    return {
+      ...result,
+      revokedSessionCount,
+    };
   }
 
   @Get('roles')
