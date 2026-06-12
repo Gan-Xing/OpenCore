@@ -1,21 +1,13 @@
-import { BadRequestException } from '@nestjs/common';
-import { createHash } from 'node:crypto';
+import {
+  assertSafeFileAssetInput,
+  createFileAssetStorageKey,
+} from '@opencore/file';
 import type {
-  CreateDictTypeDto,
   CreateFileAssetDto,
-  CreateSystemConfigDto,
   PageQueryDto,
-  UpdateDictTypeDto,
   UpdateFileAssetDto,
-  UpdateSystemConfigDto,
 } from './system-management.dto';
-import type {
-  AuditLogRecord,
-  DictTypeRecord,
-  FileAssetRecord,
-  LoginLogRecord,
-  SystemConfigRecord,
-} from './system-management.seed';
+import type { FileAssetRecord } from './system-management.seed';
 
 export type PageResult<T> = {
   items: T[];
@@ -33,12 +25,7 @@ export type ExportPreview = {
   generatedAt: string;
 };
 
-export type SystemManagementExportResource =
-  | 'audit-logs'
-  | 'config'
-  | 'dicts'
-  | 'files'
-  | 'login-logs';
+export type SystemManagementExportResource = 'files';
 
 export type NormalizedPageQuery = {
   page: number;
@@ -49,36 +36,7 @@ export type NormalizedPageQuery = {
   take: number;
 };
 
-const SENSITIVE_KEY_PATTERN = /(authorization|cookie|password|secret|token)/i;
-const REDACTED_SECRET_VALUE = '[REDACTED]';
-
 export abstract class SystemManagementRepository {
-  abstract listDicts(query?: PageQueryDto): Promise<PageResult<DictTypeRecord>>;
-
-  abstract createDict(body: CreateDictTypeDto): Promise<DictTypeRecord>;
-
-  abstract updateDict(
-    code: string,
-    body: UpdateDictTypeDto,
-  ): Promise<DictTypeRecord>;
-
-  abstract deleteDict(code: string): Promise<{ deleted: true }>;
-
-  abstract listConfig(
-    query?: PageQueryDto,
-  ): Promise<PageResult<SystemConfigRecord>>;
-
-  abstract createConfig(
-    body: CreateSystemConfigDto,
-  ): Promise<SystemConfigRecord>;
-
-  abstract updateConfig(
-    key: string,
-    body: UpdateSystemConfigDto,
-  ): Promise<SystemConfigRecord>;
-
-  abstract deleteConfig(key: string): Promise<{ deleted: true }>;
-
   abstract listFiles(
     query?: PageQueryDto,
   ): Promise<PageResult<FileAssetRecord>>;
@@ -92,37 +50,10 @@ export abstract class SystemManagementRepository {
 
   abstract deleteFile(id: string): Promise<{ deleted: true }>;
 
-  abstract listAuditLogs(
-    query?: PageQueryDto,
-  ): Promise<PageResult<AuditLogRecord>>;
-
-  abstract listLoginLogs(
-    query?: PageQueryDto,
-  ): Promise<PageResult<LoginLogRecord>>;
-
   abstract createExportPreview(
     resource: SystemManagementExportResource,
     query?: PageQueryDto,
   ): Promise<ExportPreview>;
-}
-
-export function redactAuditMetadata(value: unknown): unknown {
-  if (Array.isArray(value)) {
-    return value.map((item) => redactAuditMetadata(item));
-  }
-
-  if (value && typeof value === 'object') {
-    return Object.fromEntries(
-      Object.entries(value).map(([key, entryValue]) => [
-        key,
-        SENSITIVE_KEY_PATTERN.test(key)
-          ? '[REDACTED]'
-          : redactAuditMetadata(entryValue),
-      ]),
-    );
-  }
-
-  return value;
 }
 
 export function createPage<T>(
@@ -191,85 +122,11 @@ export function createStorageKey(
   body: CreateFileAssetDto,
   prefix = 'runtime/',
 ): string {
-  const digest = createHash('sha256')
-    .update(`${body.originalName}:${body.mimeType}:${body.sizeBytes}`)
-    .digest('hex')
-    .slice(0, 16);
-
-  return `${normalizeObjectPrefix(prefix)}file-assets/${digest}-${sanitizeFileName(
-    body.originalName,
-  )}`;
-}
-
-export function assertSafeConfigKey(
-  key: string,
-  visibility: SystemConfigRecord['visibility'] = resolveConfigVisibility({
-    key,
-    public: false,
-  }),
-): void {
-  if (SENSITIVE_KEY_PATTERN.test(key) && visibility !== 'secret') {
-    throw new BadRequestException(
-      'Secret-like system config keys must be explicitly marked with secret visibility.',
-    );
-  }
-
-  if (visibility === 'secret' && !SENSITIVE_KEY_PATTERN.test(key)) {
-    throw new BadRequestException(
-      'Secret system config visibility requires a secret-like key name.',
-    );
-  }
-}
-
-export function resolveConfigVisibility(input: {
-  key: string;
-  public?: boolean;
-  visibility?: SystemConfigRecord['visibility'];
-}): SystemConfigRecord['visibility'] {
-  if (input.visibility) {
-    return input.visibility;
-  }
-
-  return input.public ? 'public' : 'private';
-}
-
-export function resolveStoredConfigVisibility(input: {
-  key: string;
-  public?: boolean;
-  visibility?: SystemConfigRecord['visibility'];
-}): SystemConfigRecord['visibility'] {
-  if (input.visibility) {
-    return input.visibility;
-  }
-
-  if (SENSITIVE_KEY_PATTERN.test(input.key)) {
-    return 'secret';
-  }
-
-  return input.public ? 'public' : 'private';
-}
-
-export function redactSystemConfig(
-  config: SystemConfigRecord,
-): SystemConfigRecord {
-  const visibility = resolveStoredConfigVisibility(config);
-
-  return {
-    ...config,
-    public: visibility === 'public',
-    visibility,
-    value: visibility === 'secret' ? REDACTED_SECRET_VALUE : config.value,
-  };
+  return createFileAssetStorageKey(body, prefix);
 }
 
 export function assertSafeFileAsset(body: CreateFileAssetDto): void {
-  if (!body.originalName.trim() || body.originalName.includes('/')) {
-    throw new BadRequestException('File name must be a plain file name.');
-  }
-
-  if (body.sizeBytes <= 0) {
-    throw new BadRequestException('File size must be positive.');
-  }
+  assertSafeFileAssetInput(body);
 }
 
 function normalizePositiveInteger(
@@ -280,34 +137,10 @@ function normalizePositiveInteger(
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
-function sanitizeFileName(fileName: string): string {
-  return fileName.replace(/[^a-zA-Z0-9._-]/g, '-');
-}
-
-function normalizeObjectPrefix(prefix: string): string {
-  const trimmed = prefix.trim();
-
-  if (!trimmed) {
-    return '';
-  }
-
-  return trimmed.endsWith('/') ? trimmed : `${trimmed}/`;
-}
-
 function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
 
 const exportColumnsByResource = {
-  'audit-logs': [
-    'createdAt',
-    'actorUsername',
-    'action',
-    'resource',
-    'statusCode',
-  ],
-  config: ['key', 'valueType', 'visibility'],
-  dicts: ['code', 'name', 'enabled'],
   files: ['originalName', 'mimeType', 'sizeBytes', 'storageKey'],
-  'login-logs': ['createdAt', 'username', 'success', 'failureReason'],
 } as const;

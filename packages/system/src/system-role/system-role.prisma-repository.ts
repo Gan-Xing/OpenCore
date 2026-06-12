@@ -1,0 +1,217 @@
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { PrismaService } from '@opencore/database';
+import type { CreateRoleDto, UpdateRoleDto } from './system-role.dto';
+import type { SystemRoleRecord } from './system-role.records';
+import {
+  normalizeDataScope,
+  normalizeCreateSystemRoleInput,
+  normalizeUpdateSystemRoleInput,
+  SystemRoleRepository,
+} from './system-role.repository';
+
+type PrismaRoleWithPermissions = {
+  id: string;
+  code: string;
+  name: string;
+  system: boolean;
+  dataScope: string;
+  dataScopeDeptIds: unknown;
+  permissions: Array<{ permission: { code: string } }>;
+};
+
+@Injectable()
+export class PrismaSystemRoleRepository extends SystemRoleRepository {
+  constructor(private readonly prisma: PrismaService) {
+    super();
+  }
+
+  async listRoles(): Promise<SystemRoleRecord[]> {
+    const roles = await this.prisma.role.findMany({
+      include: {
+        permissions: {
+          include: {
+            permission: true,
+          },
+        },
+      },
+      orderBy: { code: 'asc' },
+    });
+
+    return roles.map(toSystemRoleRecord);
+  }
+
+  async createRole(body: CreateRoleDto): Promise<SystemRoleRecord> {
+    const input = normalizeCreateSystemRoleInput(body);
+
+    if (await this.prisma.role.findUnique({ where: { code: input.code } })) {
+      throw new ConflictException(`Role already exists: ${input.code}`);
+    }
+
+    await this.assertPermissionsExist(input.permissionCodes);
+    await this.assertDeptIdsExist(input.dataScopeDeptIds);
+    const role = await this.prisma.role.create({
+      data: {
+        code: input.code,
+        name: input.name,
+        system: input.system,
+        dataScope: input.dataScope,
+        dataScopeDeptIds: [...input.dataScopeDeptIds],
+        permissions: {
+          create: input.permissionCodes.map((permissionCode) => ({
+            permission: { connect: { code: permissionCode } },
+          })),
+        },
+      },
+      include: {
+        permissions: {
+          include: {
+            permission: true,
+          },
+        },
+      },
+    });
+
+    return toSystemRoleRecord(role);
+  }
+
+  async updateRole(
+    code: string,
+    body: UpdateRoleDto,
+  ): Promise<SystemRoleRecord> {
+    const existing = toSystemRoleRecord(await this.findRoleEntityByCode(code));
+    const input = normalizeUpdateSystemRoleInput(existing, body);
+
+    if (input.permissionCodes !== undefined) {
+      await this.assertPermissionsExist(input.permissionCodes);
+    }
+    await this.assertDeptIdsExist(input.dataScopeDeptIds);
+
+    const role = await this.prisma.role.update({
+      where: { code },
+      data: {
+        name: input.name,
+        system: input.system,
+        dataScope: input.dataScope,
+        dataScopeDeptIds: [...input.dataScopeDeptIds],
+        ...(input.permissionCodes === undefined
+          ? {}
+          : {
+              permissions: {
+                deleteMany: {},
+                create: input.permissionCodes.map((permissionCode) => ({
+                  permission: { connect: { code: permissionCode } },
+                })),
+              },
+            }),
+      },
+      include: {
+        permissions: {
+          include: {
+            permission: true,
+          },
+        },
+      },
+    });
+
+    return toSystemRoleRecord(role);
+  }
+
+  async deleteRole(code: string): Promise<{ deleted: true }> {
+    const role = await this.findRoleEntityByCode(code);
+
+    if (role.system) {
+      throw new BadRequestException('System roles cannot be deleted.');
+    }
+
+    await this.prisma.rolePermission.deleteMany({
+      where: { roleId: role.id },
+    });
+    await this.prisma.userRole.deleteMany({ where: { roleId: role.id } });
+    await this.prisma.role.delete({ where: { code } });
+    return { deleted: true };
+  }
+
+  private async findRoleEntityByCode(
+    code: string,
+  ): Promise<PrismaRoleWithPermissions> {
+    const role = await this.prisma.role.findUnique({
+      where: { code },
+      include: {
+        permissions: {
+          include: {
+            permission: true,
+          },
+        },
+      },
+    });
+
+    if (!role) {
+      throw new NotFoundException(`Role not found: ${code}`);
+    }
+
+    return role;
+  }
+
+  private async assertPermissionsExist(
+    permissionCodes: readonly string[],
+  ): Promise<void> {
+    const permissions = await this.prisma.permission.findMany({
+      where: { code: { in: [...permissionCodes] } },
+      select: { code: true },
+    });
+    const existing = new Set(permissions.map((permission) => permission.code));
+    const missing = permissionCodes.find(
+      (permissionCode) => !existing.has(permissionCode),
+    );
+
+    if (missing) {
+      throw new NotFoundException(`Permission not found: ${missing}`);
+    }
+  }
+
+  private async assertDeptIdsExist(deptIds: readonly string[]): Promise<void> {
+    if (deptIds.length === 0) {
+      return;
+    }
+
+    const depts = await this.prisma.systemDept.findMany({
+      where: { id: { in: [...deptIds] } },
+      select: { id: true },
+    });
+    const existing = new Set(depts.map((dept) => dept.id));
+    const missing = deptIds.find((deptId) => !existing.has(deptId));
+
+    if (missing) {
+      throw new NotFoundException(`System dept not found: ${missing}`);
+    }
+  }
+}
+
+function toSystemRoleRecord(role: PrismaRoleWithPermissions): SystemRoleRecord {
+  return {
+    id: role.id,
+    code: role.code,
+    name: role.name,
+    permissionCodes: role.permissions
+      .map((rolePermission) => rolePermission.permission.code)
+      .sort(),
+    system: role.system,
+    dataScope: normalizeDataScope(role.dataScope),
+    dataScopeDeptIds: normalizeStoredDeptIds(role.dataScopeDeptIds),
+  };
+}
+
+function normalizeStoredDeptIds(value: unknown): readonly string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .filter((item): item is string => typeof item === 'string')
+    .sort();
+}
