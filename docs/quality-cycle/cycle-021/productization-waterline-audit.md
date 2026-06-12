@@ -33,11 +33,11 @@ A capability reaches the current OpenCore productization waterline only when:
 | ---------- | --------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1          | `core.notice`         | First loop, enhance     | Management CRUD is live, but read/unread state, notification inbox/header badge and delivery semantics remain below a full notice product.                                                                                                                                            |
 | 2          | `core.dept`           | First loop, enhance     | Tree CRUD and delete guard are live, but user binding, data-scope workflows and ordered tree operations still need follow-up.                                                                                                                                                         |
-| 3          | `core.post`           | First loop, enhance     | Post CRUD is live, but user-post binding, simple-list option endpoints and batch operations are still missing from the foundation workflow.                                                                                                                                           |
+| 3/22       | `core.post`           | First loop, enhance     | Post CRUD is live, and Round 22 closes user-post binding through the user form and persisted relation. Simple-list option endpoints and batch operations are still missing from the foundation workflow.                                                                              |
 | 4/16       | `core.menu`           | Meets current waterline | Round 16 closed the flat-model gap: menus now persist parent tree metadata, type, icon/component/status/cache fields, Admin tree operations, delete guards, nullable parent clearing and smoke coverage.                                                                              |
 | 5/17/18/20 | `core.role`           | Meets current waterline | Role CRUD, permission-code assignment, data scope, role menu-tree assignment, role-user assignment and role status are live. Role status/update/delete mutations revoke affected sessions, disabled roles are removed from auth/RBAC calculation and system roles cannot be disabled. |
 | 6          | `core.permission`     | Meets current waterline | OpenCore deliberately owns a persisted permission catalog. System/custom separation, registry mutation protection, live Admin CRUD for custom permissions and role option integration are enough for this product boundary.                                                           |
-| 7/19       | `core.user`           | First loop, enhance     | User CRUD with role/dept selection is live, and Round 19 adds status toggle, reset password plus session invalidation after status/reset/update/delete. Side-tree filtering, post binding, profile/avatar, import/export and option/batch workflows remain.                           |
+| 7/19/22    | `core.user`           | First loop, enhance     | User CRUD with role/dept selection is live. Round 19 adds status/reset plus session invalidation after user mutations, and Round 22 adds persisted post binding. Side-tree filtering, profile/avatar, import/export and option/batch workflows remain.                                |
 | 8/21       | `core.dict`           | Meets current waterline | Dict type CRUD plus embedded items is live from Round 8. Round 21 adds item-level management API/SDK/Admin, a public `dict-data/simple-list` consumer endpoint, disabled type/item filtering and smoke coverage for malformed boolean deserialization.                                |
 | 9          | `core.config`         | First loop, enhance     | Config CRUD and secret redaction are live, but get-by-key, cache refresh, category/name/remark enrichment and runtime propagation are still missing.                                                                                                                                  |
 | 10/15      | `core.file`           | Meets current waterline | Round 15 closed the metadata-only gap: authenticated upload writes real content through `FileStorageService`, download returns stored bytes, Admin can upload/download, and smoke proves content equality.                                                                            |
@@ -67,15 +67,15 @@ Remaining P0 rework before opening more broad product surfaces:
 P1 enhancement queue:
 
 1. `core.user`: Round 19 completed user status/reset-password flows and direct
-   user-mutation session invalidation. Remaining user work is department
-   side-tree filtering, post binding, profile/avatar, import/export and
-   option/batch workflows.
+   user-mutation session invalidation; Round 22 completed user-post binding.
+   Remaining user work is department side-tree filtering, profile/avatar,
+   import/export and option/batch workflows.
 2. `core.config`: get-by-key, cache refresh/invalidation and runtime
    propagation boundaries.
 3. `core.login-log`: browser/OS parsing, IP/location enrichment where feasible,
    server-side time filters and cleanup/unlock policy integration.
-4. `core.dept` and `core.post`: user binding paths, simple-list endpoints and
-   ordered tree/list operations where useful.
+4. `core.dept` and `core.post`: department binding paths, simple-list
+   endpoints and ordered tree/list operations where useful.
 5. `core.notice`: read/unread state, inbox/header badge and delivery adapter
    design before any real WebSocket/mail/SMS fan-out.
 
@@ -110,3 +110,9 @@ Round 21 added the dict item-data deserialization and consumer guard:
 updates real dict items, proves the public `dict-data/simple-list` endpoint
 filters disabled items and disabled dict types, and cleans up through the same
 management API.
+
+Round 22 added the user-post binding guard: `core.user` smoke now rejects
+unknown post codes, creates a temporary user bound to the seeded `engineer`
+post, clears `postCodes` through update and keeps the existing user
+status/reset/update/delete session-revocation checks in the same fixed-port and
+deploy smoke path.

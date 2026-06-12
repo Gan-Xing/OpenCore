@@ -3,8 +3,8 @@
 Date: 2026-06-12  
 Repository: `Gan-Xing/OpenCore`  
 Default branch: `main`  
-Latest observed feature commit: `07d4e9b feat(core-dict): add item data simple-list loop / 新增字典数据项消费闭环`
-Latest deployed feature commit: `07d4e9b feat(core-dict): add item data simple-list loop / 新增字典数据项消费闭环`
+Latest observed feature commit: `98e10be feat(core-user): add post binding loop / 新增用户岗位绑定闭环`
+Latest deployed feature commit: `98e10be feat(core-user): add post binding loop / 新增用户岗位绑定闭环`
 Latest deployed hardening commit: `04e446c fix(online-user): stabilize admin session smoke / 稳定在线用户管理员会话冒烟`
 
 ## One-sentence Goal
@@ -62,6 +62,7 @@ productization waterline completion; see
 - Round 19 `core.user` security mutation stage 2
 - Round 20 `core.role` status security stage 4
 - Round 21 `core.dict` item-data simple-list stage 2
+- Round 22 `core.user` post binding stage 3
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -160,6 +161,14 @@ Round 21 关闭 `core.dict` 当前基础水位缺口：字典在 Round 8 的类�
 Admin Dicts chunk 已验证包含 `Dictionary Items`、`New Item`、`simple-list consumer endpoint`
 和 item service markers。
 
+Round 22 继续补齐 `core.user` 队列：用户管理现在持久化 user-post 关系，seeded admin
+绑定 `admin` 岗位，用户 list/detail/create/update/export/OpenAPI/SDK 均返回或接受
+`postCodes`。Admin Users 页面新增岗位列、详情标签、创建/编辑多选和导出列，岗位选项来自
+live `core.post` 列表。固定 smoke、部署 smoke 和公网 smoke 均证明未知岗位 404、创建用户绑定
+`engineer` 岗位、更新用户清空岗位，以及既有 status/reset/update/delete session
+revocation 语义仍然有效。部署 Admin Users chunk 已验证包含 `Select posts` 和 `postCodes`
+标记。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -169,7 +178,7 @@ The productization waterline now classifies:
   `core.file`, Round 4/16 `core.menu`, Round 5/17/18/20 `core.role`,
   Round 8/21 `core.dict`.
 - First loop, enhance: Round 1 `core.notice`, Round 2 `core.dept`, Round 3
-  `core.post`, Round 7/19 `core.user`, Round 9 `core.config`, Round 11
+  `core.post`, Round 7/19/22 `core.user`, Round 9 `core.config`, Round 11
   `core.login-log`.
 - Thin, rework: none after Round 16.
 
@@ -178,15 +187,15 @@ round should continue with the P1 enhancement queue unless a new waterline audit
 finds another blocker:
 
 1. `core.user`: Round 19 closed user status/reset-password and direct
-   user-mutation session semantics. Remaining work is department side-tree
-   filtering, post binding, profile/avatar, import/export and broader
-   option/batch workflows.
+   user-mutation session semantics; Round 22 closed user-post binding.
+   Remaining work is department side-tree filtering, profile/avatar,
+   import/export and broader option/batch workflows.
 2. `core.config`: get-by-key, cache refresh/invalidation and runtime
    propagation boundaries.
 3. `core.login-log`: browser/OS parsing, IP/location enrichment where feasible,
    server-side time filters and cleanup/unlock policy integration.
-4. `core.dept` and `core.post`: binding paths, option endpoints and ordered
-   operations where useful.
+4. `core.dept` and `core.post`: department binding paths, option endpoints and
+   ordered operations where useful.
 
 Commit `f4569a4` also fixed the remaining stale-login failure at API level:
 `@opencore/core` now normalizes duplicate global prefixes before Nest route
@@ -265,7 +274,8 @@ BE20 已完成，当前主线是 cycle-021 capability-map productization recursi
 
 ## Self-loop Protocol
 
-每一轮只做一个最小端到端产品化闭环，不要一次写一堆大模块。
+每一轮只做一个最小端到端产品化闭环，不要一次写一堆大模块；但不要把
+"最小闭环"降级理解成"产品只做最小实现"。同一产品可以连续多个阶段补齐到产品化水位。
 
 循环如下：
 
@@ -284,13 +294,19 @@ BE20 已完成，当前主线是 cycle-021 capability-map productization recursi
    - docs/handoff/progress/implementation-notes/completion-report。
 5. 运行 focused tests。
 6. 运行 full gate。
-7. 每完成一个可独立验收功能，必须使用 commit and push skill：
+7. 每次改代码后必须走固定脚本：
+   - 本地 API smoke 使用 `pnpm smoke:api:local`，固定端口 `39173`。
+   - 部署使用 `pnpm deploy:opencore`，固定 API `39172`、Admin `39174`。
+   - 不再手工判断或改用 3000/3010。
+   - 部署后必须用公开 URL 验证 API 和 Admin，尤其是登录、前端 bundle、
+     `/api/api` 重复前缀、前端缓存、session/token 失效等历史问题。
+8. 每完成一个可独立验收功能，必须使用 commit and push skill：
    - 查看 git status / diff。
    - 运行相关测试。
    - commit message 必须含英文 + 中文摘要。
    - push 到远端。
    - 在 implementation notes/progress 中记录 commit hash。
-8. 回到第 1 步，继续下一轮差距审计。
+9. 回到第 1 步，继续下一轮差距审计。
 
 ## Preferred Cycle-021 Theme
 

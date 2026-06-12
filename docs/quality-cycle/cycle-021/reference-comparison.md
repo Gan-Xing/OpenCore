@@ -573,7 +573,7 @@ OpenCore admits the matching stage-2 loop for direct user security mutation:
 OpenCore still does not admit department side-tree filtering, post binding,
 profile/avatar/social endpoints, Excel import/export workflows, batch user
 delete, separate User-page role assignment or broader user option endpoints in
-this round.
+this round. Round 22 later closes the post binding portion.
 
 ## Round 20 Role Status Security Reference Shape
 
@@ -636,3 +636,28 @@ OpenCore admits the matching stage-2 loop while preserving its current
 OpenCore still does not admit dictionary batch delete, Excel import/export file
 workflows, color/css/remark metadata, app-wide dictionary cache TTL/
 invalidation or a separate dictionary-data Admin page in this round.
+
+## Round 22 User Post Binding Reference Shape
+
+RuoYi user management exposes post assignment in the user create/edit form
+beside department and role controls. Yudao's user form follows the same
+operator shape through `postIds`, loaded from a simple post option list.
+
+OpenCore admits the matching stage-3 loop while preserving its current
+code-based SDK/API contract:
+
+- users now persist a many-to-many relation to system posts through `UserPost`;
+- user summaries expose `postCodes`, and create/update requests accept
+  `postCodes`;
+- seed data binds the bootstrap admin to the seeded `admin` post;
+- Admin Users loads live `core.post` options and renders post tags in the
+  table/detail, plus a multi-select in create/edit forms;
+- export previews include post assignments;
+- runtime validation rejects duplicate and unknown post codes;
+- fixed-port, deploy and public smoke prove unknown-post rejection,
+  create-time `engineer` binding and update-time clearing.
+
+OpenCore still does not admit department side-tree filtering, profile/avatar/
+social endpoints, Excel import/export workflows, batch user delete, standalone
+user simple-list endpoints or a separate User-page role-assignment dialog in
+this round.

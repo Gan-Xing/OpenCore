@@ -552,6 +552,33 @@ page.
       verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 22: core.user Post Binding Productization
+
+Why this slice: after dictionary item-data reached the current foundation
+waterline, the next lowest-dependency P1 user-management gap was user-post
+binding. RuoYi and Yudao both let operators assign posts/positions from the
+user form. OpenCore already had live `core.post` management and user CRUD, but
+users did not persist or expose post assignments.
+
+- [x] Add `UserPost` Prisma relation between users and system posts.
+- [x] Seed the bootstrap admin with the `admin` post and make seed sync
+      user-post assignments.
+- [x] Extend system user DTOs, seed repository and Prisma repository with
+      `postCodes` in list/detail/create/update/export flows.
+- [x] Reject malformed post-code payloads, duplicate post codes and unknown
+      post codes before mutation.
+- [x] Extend OpenAPI, SDK types and SDK request tests.
+- [x] Update Admin Users with post column, detail tags, create/edit
+      multi-select and current-page export column, loading options from live
+      `core.post`.
+- [x] Extend static Admin smoke to lock the post-binding UI markers.
+- [x] Extend fixed-port/deploy/public `core.user` smoke to prove unknown-post
+      rejection, create-time post binding and update-time post clearing while
+      preserving the session-revocation checks from Round 19.
+- [x] Run focused, build, fixed-port smoke, deployment and public URL
+      verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -585,12 +612,12 @@ treat "minimal loop" as "minimal final product".
       adapter design.
 - [ ] Round 2 `core.dept`: user binding paths, data-scope workflow integration
       and ordered tree operations.
-- [ ] Round 3 `core.post`: user-post binding, simple-list option endpoints and
-      batch operations.
-- [ ] Round 7/19 `core.user`: status toggle, reset password and direct
-      user-mutation session invalidation are complete; side-tree filtering,
-      post binding, profile/avatar, import/export and option/batch workflows
-      still need enhancement.
+- [ ] Round 3/22 `core.post`: user-post binding is complete from the user
+      form side; simple-list option endpoints and batch operations remain.
+- [ ] Round 7/19/22 `core.user`: status toggle, reset password and direct
+      user-mutation session invalidation are complete, and post binding is
+      complete. Department side-tree filtering, profile/avatar, import/export
+      and option/batch workflows still need enhancement.
 - [ ] Round 9 `core.config`: get-by-key, cache refresh/invalidation and runtime
       propagation boundaries.
 - [ ] Round 11 `core.login-log`: browser/OS parsing, IP/location enrichment
@@ -627,7 +654,6 @@ treat "minimal loop" as "minimal final product".
 - Tenant-scoped notices.
 - Department user binding and data-scope assignment UI.
 - Batch department deletion or drag-sort persistence.
-- User-post binding and user profile post selection.
 - Batch post deletion and simple-list option endpoints.
 - Menu router-generation expansion, menu cache refresh, save-sort and drag-sort
   persistence.
@@ -635,8 +661,8 @@ treat "minimal loop" as "minimal final product".
   endpoint.
 - Registry definition editing and dynamic permission discovery.
 - User Excel import/export file workflows, dedicated User-page role assignment
-  dialog, profile/avatar/social/simple-list endpoints, post binding, batch user
-  delete and department side-tree filtering.
+  dialog, profile/avatar/social/simple-list endpoints, batch user delete and
+  department side-tree filtering.
 - Batch dictionary delete, Excel import/export file workflows, dictionary
   color/css/remark fields, app-wide dictionary cache TTL/invalidation and
   dictionary cache refresh.

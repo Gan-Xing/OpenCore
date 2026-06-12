@@ -1587,3 +1587,83 @@ tools/scripts/smoke-core-dict.mjs` passed with
   `07d4e9b feat(core-dict): add item data simple-list loop / 新增字典数据项消费闭环`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 22 Capability
+
+Capability: `core.user` post binding productization.
+
+Goal: close the next `core.user` P1 gap by adding persisted user-post binding
+through API/SDK/Admin, using the already live `core.post` capability as the
+option source.
+
+## Round 22 Implemented
+
+- Added Prisma `UserPost` relation and migration
+  `20260612220000_user_post_binding`.
+- Seed now binds bootstrap admin to the seeded `admin` post and keeps
+  user-post rows synchronized.
+- Added `postCodes` to user summary/create/update DTOs, OpenAPI, SDK types and
+  SDK request tests.
+- Extended seed and Prisma user repositories to validate unknown and duplicate
+  post codes, persist create/update post assignments and delete assignments
+  during user deletion.
+- Updated Admin Users with post tags in table/detail, post multi-select in
+  create/edit forms and current-page export support.
+- Admin Users loads post options from live `core.post` and falls back to
+  fixtures only if the API is unavailable.
+- Extended Admin static smoke and `tools/scripts/smoke-core-user.mjs` with
+  post-binding guards.
+
+## Round 22 Verification
+
+- `pnpm prisma:generate` pass.
+- `pnpm prisma:validate` pass.
+- `node --check tools/scripts/smoke-core-user.mjs` pass.
+- `node --check apps/admin/scripts/smoke-test.mjs` pass.
+- `pnpm prisma:migrate` applied `20260612220000_user_post_binding` locally.
+- `pnpm prisma:seed` pass and seeded admin post binding.
+- Focused tests pass:
+  - `pnpm nx test system --testFile=packages/system/src/system-user/system-user.spec.ts`
+  - `pnpm nx test sdk --testFile=packages/sdk/src/rbac-client.spec.ts`
+  - `pnpm nx test api --testFile=apps/api/src/modules/core/rbac/permission.guard.spec.ts`
+  - `pnpm nx test security`
+- `pnpm nx test admin` pass.
+- `pnpm openapi:export`, `pnpm sdk:check`, `pnpm openapi:check`,
+  `pnpm openapi:registry-tags:check` and
+  `pnpm registry:admin-routes:check` pass.
+- `pnpm smoke:api:local` pass on fixed port `39173`, including
+  `core.user.post.unknown-rejected`, `core.user.post.create` and
+  `core.user.post.clear`.
+- `pnpm build:api` pass.
+- `pnpm build:admin` pass.
+- `git diff --check` pass.
+- `pnpm deploy:opencore` pass, deploying API/Admin on fixed ports
+  `39172`/`39174`; deploy smoke includes the new `core.user.post.*` checks and
+  the existing login-prefix/frontend-cache/session-revocation guards.
+
+## Round 22 Public Verification
+
+Against public endpoints after deploy:
+
+- `GET http://144.217.243.161:39172/health/ready` returned 200.
+- `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 node
+tools/scripts/smoke-core-user.mjs` passed with
+  `OPENCORE_SMOKE_CHECK_DOCS=false` and the deployed admin password loaded from
+  `.env.opencore.local` without printing secrets.
+- Public user smoke verified unknown-post rejection, create-time `engineer`
+  post binding, update-time post clearing, status disable/login-block, password
+  reset, old-password rejection and update/delete session revocation.
+- `GET http://144.217.243.161:39174/system/users/` returned 200 with
+  `cache-control: no-cache`.
+- The deployed Admin Users chunk `p__System__Users.072504ad.async.js`
+  contains `Select posts` and `postCodes`.
+- The deployed main Admin bundle `umi.d1ee1ea1.js` contains API origin
+  `http://144.217.243.161:39172` and does not contain
+  `/api/api/auth/login`.
+
+## Round 22 Commit Record
+
+- Feature commit:
+  `98e10be feat(core-user): add post binding loop / 新增用户岗位绑定闭环`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

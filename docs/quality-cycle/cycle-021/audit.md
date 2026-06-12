@@ -416,3 +416,26 @@ This stays inside the current S7 System boundary. It does not introduce a
 separate dictionary-data Admin page, batch dictionary operations, Excel file
 import/export, color/css/remark metadata or app-wide cache TTL/refresh
 semantics.
+
+## Round 22 Audit: core.user Post Binding
+
+After Round 21, the next lowest-dependency P1 foundation gap was `core.user`
+post binding:
+
+- RuoYi and Yudao both expose post/position assignment in the user create/edit
+  workflow, alongside role and department selection.
+- OpenCore already had live post management, user CRUD, role selection,
+  department selection, status mutation, reset password and session-revocation
+  semantics, but users did not persist or expose assigned posts.
+- User summaries needed to carry `postCodes` through API, SDK, OpenAPI,
+  Admin, seed data and export previews so the assignment is not UI-only.
+- Runtime normalization needed to reject malformed, duplicate and unknown post
+  codes before mutation.
+- Fixed-port and deploy smoke needed to prove create-time binding and
+  update-time clearing while preserving the existing user security-mutation
+  session invalidation behavior.
+
+This stays inside the current S7 System/RBAC boundary. It does not introduce
+department side-tree filtering, profile/avatar/social endpoints, Excel
+import/export workflows, batch user delete, standalone user option endpoints or
+a separate User-page role-assignment workflow in this round.
