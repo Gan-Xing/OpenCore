@@ -82,15 +82,15 @@ graph TD
 
 ## apps/api 的核心职责
 
-`apps/api` 是 OpenCore 的后端契约源头。最终职责包括：
+`apps/api` 是 OpenCore 的后端契约源头和 composition root。BE20 之后它的职责包括：
 
 - 暴露 OpenAPI contract，驱动 `packages/contracts` 和 `packages/sdk`。
-- 按模块层级承载 Controller / Service / DTO / Entity。
-- 统一配置、错误、日志、request id、健康检查、审计、权限守卫。
+- 承载 HTTP entry aggregation、module aggregation、bootstrap、runtime config 和 OpenAPI export/check。
+- 从 `packages/*` 组合 core、database、redis、file、system、security、audit、online-user、scheduler、monitor 等可复用 runtime。
 - 将模块权限、菜单、OpenAPI tag 与 `packages/module-registry` 对齐。
 - 支撑 OpenForge 生成后端骨架，但不让生成器替代人工业务判断。
 
-当前 S2 状态只包含 `/health/live`、`/health/ready` 和 `/api/docs` skeleton，不代表业务模块已开始。
+当前 BE20 状态已经完成后端 runtime 包化和 API 聚合收尾；历史 S2 的 `/health/live`、`/health/ready` 和 `/api/docs` skeleton 已升级为完整平台主线的一部分。
 
 ## apps/admin 的核心职责
 

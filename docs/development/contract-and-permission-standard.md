@@ -1,6 +1,6 @@
 # 契约与权限规范
 
-本文档定义 OpenCore 在权限码、菜单、OpenAPI、SDK 和 Admin access 之间保持同步的标准。当前 S3-S8 已完成，本文档既是规范，也是后续 S9+ 的约束。
+本文档定义 OpenCore 在权限码、菜单、OpenAPI、SDK 和 Admin access 之间保持同步的标准。当前 S3-S9、Q001 和 BE20 已完成，本文档既是规范，也是后续 S10+、cycle-021 或专项模块准入的约束。
 
 ## 单一事实来源
 

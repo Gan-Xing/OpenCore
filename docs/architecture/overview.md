@@ -6,18 +6,19 @@ OpenCore 面向一人公司、小团队和现代企业应用开发，目标是�
 
 ## 当前实现状态
 
-OpenCore 当前已经完成 S0/S1、D1-D6、S2、S3、S4、S5、S6、S7、S8。S9 OpenForge MVP 尚未开始。
+OpenCore 当前已经完成 S0/S1、D1-D6、S2、S3-S9、runtime integration R-1-R7、OpenForge V1、Quality Cycle 001 和 Backend Self-Loop BE20-P01 至 BE20-P24。
 
-| 层              | 当前状态                                                                                                                     |
-| --------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| API             | `apps/api` 已完成 NestJS 主干、health/readiness、OpenAPI export/check、API foundation、RBAC、系统管理、monitor/tool baseline |
-| Admin           | `apps/admin` 已完成 Dashboard shell、异常页、request/access、RBAC 页面、系统管理页面、Monitor/Tool 页面                      |
-| Contracts       | `packages/contracts` 已包含权限码、模块 schema、OpenAPI snapshot、table export contract                                      |
-| SDK             | `packages/sdk` 已包含 RBAC、系统管理、监控、工具协议 typed client                                                            |
-| Module Registry | `packages/module-registry` 已登记 S5-S8 模块、权限、菜单、OpenAPI tag，并阻止 P4/P5 泄漏                                     |
-| Prisma          | 已建立 S6/S7 所需 User、Role、Permission、Menu、Dict、Config、File、Audit、LoginLog schema                                   |
-| OpenForge       | 仍是路线图和 S9 目标，尚未实现写文件生成器                                                                                   |
-| AI Native       | 仍为架构预留，不做知识库、RAG、Agent                                                                                         |
+| 层              | 当前状态                                                                                                                                        |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| API             | `apps/api` 已收敛为 NestJS composition root，只保留 bootstrap、HTTP entry aggregation、runtime config 和 OpenAPI export/check                   |
+| Backend runtime | common/core/database/redis/file/system/security/audit/online-user/scheduler/monitor 已下沉到 `packages/*`                                       |
+| Admin           | `apps/admin` 已完成 Dashboard、RBAC、System、Security、Monitor、Tools、Collaboration、Optional、Integrations 和错误页                           |
+| Contracts       | `packages/contracts` 已包含权限码、模块 schema、OpenAPI snapshot、table export/query/upload/error/OpenForge contract                            |
+| SDK             | `packages/sdk` 已包含 RBAC、系统管理、监控、工具、协同、operations、integration typed clients 和 registry fixtures                              |
+| Module Registry | `packages/module-registry` 已登记 core/monitor/tool/collaboration/optional/integration 模块、权限、菜单、OpenAPI tag，并阻止高风险模块泄漏      |
+| Prisma          | 已建立 User、Role、Permission、Menu、Dict、Config、Notice、Dept、Post、File、Audit、LoginLog、OnlineUser、Scheduler 等平台 schema 和 migrations |
+| OpenForge       | `@opencore/generator-core` + `tools/generator` 已完成 safe generator core、CLI wrapper、doctor/gate/e2e；默认 dry-run                           |
+| AI Native       | 仍为架构预留，不做知识库、RAG、Agent                                                                                                            |
 
 ## 架构主线
 
@@ -30,7 +31,8 @@ flowchart LR
   SDK --> ADMIN
   API --> OPENAPI[OpenAPI export/check]
   ADMIN --> PAGES[Dashboard/RBAC/System/Monitor/Tool Pages]
-  FORGE[OpenForge S9 pending] -. reads .-> REG
+  RUNTIME[packages/* backend runtime] --> API
+  FORGE[OpenForge V1 + generator-core] -. reads .-> REG
   FORGE -. reads .-> OPENAPI
 ```
 
@@ -39,11 +41,11 @@ flowchart LR
 - 不实现 P4/P5 模块：CRM、ERP、MES、WMS、商城、支付、会员、多租户、知识库、RAG、Agent。
 - 不复制 RuoYi/Yudao 的 Java/Vue 代码。
 - 不把微信、短信、邮件、支付 provider 放进 core。
-- 不在 S8 中做完整任务调度平台、大数据异步导出或 OpenForge 写文件生成器。
+- 不做无白名单动态反射调度、复杂任务编排平台、大数据异步导出或无保护的 OpenForge 写文件生成器。
 
 ## 官方主线
 
-后端官方主线是 NestJS + Prisma + PostgreSQL + OpenAPI；Redis、BullMQ、MinIO/S3 在后续运行阶段继续接入。
+后端官方主线是 NestJS + Prisma + PostgreSQL + Redis + BullMQ + MinIO/S3 + OpenAPI；可复用 runtime 由 `packages/*` 承载，`apps/api` 只负责组合和启动。
 
 前端官方后台主线是 Umi Max + Ant Design Pro V6 + ProComponents v3 + antd 6 + React 19。
 

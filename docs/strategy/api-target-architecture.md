@@ -1,17 +1,18 @@
 # API Target Architecture
 
-更新时间：2026-06-10
+更新时间：2026-06-12
 
-`apps/api` 的最终目标是成为 OpenCore 的后端契约源头，而不是普通 CRUD 堆叠目录。模块必须先进入 module registry，再进入 Controller / Service / DTO / Entity / OpenAPI tag。S3-S8 前不应跳过契约、共享类型和权限码标准直接写业务。
+`apps/api` 的最终目标是成为 OpenCore 的后端契约源头和 composition root，而不是普通 CRUD 堆叠目录。BE20 之后，可复用 Service/DTO/repository/runtime 应优先位于 `packages/*`，`apps/api` 只保留 HTTP entry aggregation、module aggregation、bootstrap、runtime config 和 OpenAPI export/check。
 
 ## API Module Layers
 
 ```mermaid
 flowchart TD
-  API[apps/api NestJS] --> PLATFORM[platform foundation]
-  PLATFORM --> CONFIG[config and env validation]
-  PLATFORM --> ERROR[errors, logging, request context]
-  PLATFORM --> HEALTH[health, readiness, OpenAPI]
+  API[apps/api NestJS composition root] --> PLATFORM[app-only platform]
+  PLATFORM --> CONFIG[runtime config]
+  PLATFORM --> OPENAPI[OpenAPI export/check]
+  RUNTIME[packages/* backend runtime] --> API
+  COREPKG[packages/core foundation] --> RUNTIME
   API --> CORE[core modules]
   API --> MONITOR[monitor modules]
   API --> TOOL[tool modules]
@@ -28,9 +29,10 @@ flowchart TD
   CONTRACT --> SDK[packages/sdk]
 ```
 
-## 最终模块目录结构
+## 当前模块目录结构
 
-这是目标结构，不是本轮要创建的业务代码。
+这是 BE20 后的真实边界。`apps/api` 聚合 HTTP entry；可复用 runtime 位于
+`packages/*`。
 
 ```text
 apps/api/src/
@@ -40,77 +42,47 @@ apps/api/src/
     health.controller.ts
   platform/
     config/
-    errors/
-    logging/
-    request-context/
     openapi/
-    security/
   modules/
     core/
-      users/
-      roles/
-      permissions/
-      menus/
-      dicts/
-      system-config/
-      files/
-      audit-logs/
-      login-logs/
+      rbac/
+      system-management/
     monitor/
-      status/
-      version/
-      queues/
-      jobs/
-      cache/
-      online-users/
-      api-access-logs/
-      api-error-logs/
+      monitoring/
     tool/
-      openapi/
-      openforge/
-      table-export/
-      import-export/
+      tooling/
     collaboration/
-      messages/
-      approval-lite/
-      notices/
-    optional/
-      workflow/
-      report/
-      form-builder/
+      ...
     integration/
-      mail/
-      sms/
-      wechat/
-      oauth/
-      pay/
-    industry/
-      crm/
-      erp/
-      mes/
-      wms/
-      mall/
-      iot/
-    ai/
-      providers/
-      prompts/
-      tools/
-      audit/
-      cost/
+      ...
+
+packages/
+  common/
+  core/
+  database/
+  redis/
+  file/
+  system/
+  security/
+  audit/
+  online-user/
+  scheduler/
+  monitor/
+  generator-core/
 ```
 
 ## 模块层级如何落地
 
-| 层级            | API 责任           | 示例 Controller                                                            | 示例 Service                                                   | 示例 DTO / Entity                                      | OpenAPI tag                                             | 第一阶段策略           |
-| --------------- | ------------------ | -------------------------------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------- | ---------------------- |
-| `core`          | 平台运行必需能力   | `UsersController`、`RolesController`、`DictsController`、`FilesController` | `UsersService`、`RolesService`、`DictsService`、`FilesService` | `UserDto`、`RoleDto`、`DictTypeDto`、`FileAssetEntity` | `Core Users`、`Core Roles`、`Core Dicts`、`Core Files`  | S4-S7 逐步做           |
-| `monitor`       | 运维和诊断能力     | `StatusController`、`QueuesController`、`ApiLogsController`                | `StatusService`、`QueueMonitorService`、`ApiLogService`        | `SystemStatusDto`、`QueueStatusDto`、`ApiLogEntity`    | `Monitor Status`、`Monitor Queue`、`Monitor Logs`       | S8 做只读和基础诊断    |
-| `tool`          | 开发平台工具       | `OpenApiController`、`OpenForgeController`                                 | `OpenApiExportService`、`OpenForgePlanService`                 | `GeneratePlanDto`、`ContractDiffDto`                   | `Tool OpenAPI`、`Tool OpenForge`                        | S3/S9 做基线和 MVP     |
-| `collaboration` | 消息、待办、轻审批 | `MessagesController`、`ApprovalLiteController`                             | `MessagesService`、`ApprovalLiteService`                       | `MessageDto`、`ApprovalRequestDto`                     | `Collaboration Messages`、`Collaboration Approval Lite` | S10 做                 |
-| `optional`      | 通用可选能力       | `WorkflowController`、`ReportController`                                   | `WorkflowService`、`ReportService`                             | `WorkflowDefinitionDto`、`ReportDatasetDto`            | `Optional Workflow`、`Optional Report`                  | 只做设计位             |
-| `integration`   | 第三方接入         | `MailController`、`SmsController`、`WechatController`                      | `MailService`、`SmsService`、`WechatService`                   | `ProviderConfigDto`、`SendMessageDto`                  | `Integration Mail`、`Integration Sms`                   | S12 后评估             |
-| `industry`      | 行业模块           | `CrmController`、`ErpController`、`MesController`                          | 独立行业 Service                                               | 行业 DTO / Entity                                      | `Industry CRM` 等                                       | 不进入 core            |
-| `ai`            | AI Native 边界     | `AiProviderController`、`PromptController`                                 | `AiProviderService`、`PromptAuditService`                      | `ModelProviderDto`、`PromptTemplateDto`                | `AI Providers`、`AI Audit`                              | 只预留，不做 RAG/Agent |
+| 层级            | API 责任           | 示例 Controller                                   | 示例 Service                               | 示例 DTO / Entity                       | OpenAPI tag                                             | 第一阶段策略           |
+| --------------- | ------------------ | ------------------------------------------------- | ------------------------------------------ | --------------------------------------- | ------------------------------------------------------- | ---------------------- |
+| `core`          | 平台运行必需能力   | API-local HTTP controller 或聚合 controller       | package-owned service                      | package-owned DTO/entity                | `Core Users`、`Core Roles`、`Core Dicts`、`Core Files`  | BE20 complete          |
+| `monitor`       | 运维和诊断能力     | `HealthController`、`MonitoringController`        | `@opencore/monitor`、`@opencore/scheduler` | package-owned DTO/entity                | `Monitor Status`、`Monitor Queue`、`Monitor Logs`       | BE20 complete          |
+| `tool`          | 开发平台工具       | Tooling/OpenAPI aggregation                       | `@opencore/generator-core` + OpenForge CLI | OpenForge/contracts DTO                 | `Tool OpenAPI`、`Tool OpenForge`                        | S9/V1/BE20 complete    |
+| `collaboration` | 消息、待办、轻审批 | Collaboration aggregation                         | Q001 package/module runtime                | Q001 DTO/entity                         | `Collaboration Messages`、`Collaboration Approval Lite` | Q001 complete          |
+| `optional`      | 通用可选能力       | Optional aggregation                              | design/runtime boundary only               | DTO/entity by admitted module           | `Optional Workflow`、`Optional Report`                  | design boundary only   |
+| `integration`   | 第三方接入         | Integration aggregation                           | provider/design boundary only              | provider DTO                            | `Integration Mail`、`Integration Sms`                   | design boundary only   |
+| `industry`      | 行业模块           | `CrmController`、`ErpController`、`MesController` | 独立行业 Service                           | 行业 DTO / Entity                       | `Industry CRM` 等                                       | 不进入 core            |
+| `ai`            | AI Native 边界     | `AiProviderController`、`PromptController`        | `AiProviderService`、`PromptAuditService`  | `ModelProviderDto`、`PromptTemplateDto` | `AI Providers`、`AI Audit`                              | 只预留，不做 RAG/Agent |
 
 ## Controller / Service / DTO / Entity 约定
 
@@ -135,7 +107,7 @@ apps/api/src/
 | 日志和脱敏               | system-log / logging interceptor                                                | S4-S8 建立审计日志、API 日志和敏感字段脱敏                   |
 | 文件中心                 | files/storage/minio                                                             | S7 做 core file，不把图片资源业务放入 core                   |
 | 消息和 Approval Lite     | messages / approval-requests                                                    | S10 做协同基础，不做完整工作流                               |
-| 队列和系统状态           | queue、redis、system/status                                                     | S8 做 monitor 只读诊断                                       |
+| 队列和系统状态           | queue、redis、system/status                                                     | BE20 已通过 `@opencore/monitor` 做 runtime diagnostics       |
 
 ## 只借鉴不迁移的旧代码
 
@@ -150,6 +122,9 @@ apps/api/src/
 | RabbitMQ 细节               | OpenCore 主线倾向 Redis/BullMQ，RabbitMQ 只作为 integration/optional 评估       |
 
 ## 推荐 S3-S8 后端建设顺序
+
+以下是历史建设顺序，已完成。BE20 的最终状态见
+[Backend Self-Loop completion report](../quality-cycle/cycle-020/completion-report.md)。
 
 ```mermaid
 gantt
@@ -181,7 +156,7 @@ gantt
 
 ## 非目标
 
-- S3-S8 不做 CRM、ERP、MES、WMS、商城、支付、会员、多租户。
-- S3-S8 不做知识库、RAG、Agent。
-- S3-S8 不迁移 NestWeb 的 schema 或业务模块。
-- S3-S8 不让 Admin 手写裸 API 类型绕过 SDK。
+- 当前不做 CRM、ERP、MES、WMS、商城、真实支付、会员、多租户。
+- 当前不做知识库、RAG、Agent。
+- 当前不迁移 NestWeb 的 schema 或业务模块。
+- 当前不让 Admin 手写裸 API 类型绕过 SDK。

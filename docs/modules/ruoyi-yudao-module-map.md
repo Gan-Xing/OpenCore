@@ -27,4 +27,6 @@ OpenCore 使用 TypeScript 全栈主线：
 
 ## 阶段边界
 
-S0/S1 只沉淀模块地图和路线，不实现权限、登录、RBAC、代码生成器逻辑或业务模块。
+S0/S1 只沉淀模块地图和路线；S3-S9、OpenForge V1、Q001 和 BE20 已经完成 OpenCore 自己的 contracts、权限、登录、RBAC、系统管理、监控工具、OpenForge 和后端 runtime 包化闭环。
+
+当前仍不把 CRM、ERP、MES、WMS、商城、真实支付、会员、多租户、知识库、RAG、Agent、完整 BPMN 工作流或完整报表设计器塞进 core。后续进入这些能力前，必须通过模块准入、权限/OpenAPI/SDK/Admin/E2E 计划和数据安全评审。

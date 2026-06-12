@@ -19,6 +19,7 @@ OpenCore 采用阶段化推进，避免过早写业务代码或把 P4/P5 深水�
 | S9     | complete | OpenForge 只读 generate plan、diff plan、safety/preflight report、contracts、workspace tool、CLI 和测试                                                      |
 | V1     | complete | OpenForge safe generator：schema/config DSL、template/VFS、apply/manifest/rollback、API/Admin/SDK/Test/Docs pack、doctor/gate/e2e、final docs                |
 | Q001   | complete | 平台内核和契约加固、OpenForge gate、轻量 collaboration、monitor job/cache/online-user、optional report/export-job design、integration provider/design 边界   |
+| BE20   | complete | 后端自循环：common/core/database/redis/file/system/security/audit/online-user/scheduler/monitor/generator-core/tools/api aggregation 按依赖顺序完成          |
 
 ## Runtime Integration
 
@@ -81,20 +82,37 @@ Q001 仍明确不做：
 - 真实支付、回调幂等、退款、对账闭环。
 - CRM、ERP、MES、WMS、商城、会员、多租户、知识库、RAG、Agent。
 
+## Backend Self-Loop BE20
+
+BE20 已完成 OpenCore 后端运行时包化和 API 聚合收尾。若依/芋道主干后台能力已经按 TS/NestJS monorepo 边界转译到 OpenCore：
+
+- 基础 runtime：common、core、database、redis、file。
+- 系统管理：dict、config、notice、dept、post、menu、role、user。
+- 安全审计：auth、password/JWT/captcha、RBAC、data-scope、login log、operation log。
+- 监控运维：online-user、scheduler、monitor health/status/version/queue/cache/runtime diagnostics。
+- 工具生成：generator-core 和 OpenForge CLI wrapper。
+- API 聚合：`apps/api` 只保留 bootstrap、HTTP entry aggregation、module aggregation、runtime config、OpenAPI export/check。
+
+BE20 验收记录：
+
+- [Backend Self-Loop backlog](../quality-cycle/cycle-020/backlog.md)
+- [Backend Self-Loop implementation notes](../quality-cycle/cycle-020/implementation-notes.md)
+- [Backend Self-Loop completion report](../quality-cycle/cycle-020/completion-report.md)
+
 ## S10 以后
 
-| 阶段 | 建议主题                     | 边界                                                                |
-| ---- | ---------------------------- | ------------------------------------------------------------------- |
-| S10  | collaboration hardening      | Q001 已有轻量协同；后续只能加固消息/待办/Approval Lite，不做 BPMN   |
-| S11  | operations/report hardening  | Q001 已有 job/cache/online/report/export-job design；不做完整设计器 |
-| S12  | integration hardening        | Q001 已有 provider/mail/sms/oauth/design；不做真实支付或行业业务    |
-| S13+ | industry/ai independent eval | CRM、ERP、MES、WMS、商城、会员、IoT、AI 等独立评估                  |
+| 阶段 | 建议主题                     | 边界                                                              |
+| ---- | ---------------------------- | ----------------------------------------------------------------- |
+| S10  | collaboration hardening      | Q001 已有轻量协同；后续只能加固消息/待办/Approval Lite，不做 BPMN |
+| S11  | operations/report hardening  | BE20 已有 scheduler/monitor runtime；后续不做完整报表设计器       |
+| S12  | integration hardening        | Q001 已有 provider/mail/sms/oauth/design；不做真实支付或行业业务  |
+| S13+ | industry/ai independent eval | CRM、ERP、MES、WMS、商城、会员、IoT、AI 等独立评估                |
 
 ## P4/P5 长期 backlog
 
 OpenCore 长期要覆盖 RuoYi/Yudao 代表的企业后台能力地图，但必须分层实现：
 
-- `optional/*`：部门/岗位、完整报表设计器、工作流设计器等仍需逐项准入；Q001 已完成 report/export-job 设计位。
+- `optional/*`：完整报表设计器、工作流设计器、租户等仍需逐项准入；Q001 已完成 report/export-job 设计位，BE20 已完成部门/岗位和调度 runtime。
 - `integration/*`：邮件、短信、微信、OAuth、WebSocket provider 边界已进入 Q001；真实支付仍保持 design-only。
 - `industry/*`：member、mall、CRM、ERP、MES、WMS、IoT、IM。
 - `ai/*`：Knowledge、RAG、Agent、AI workflow。

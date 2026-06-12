@@ -4,15 +4,15 @@
 
 ## 当前状态
 
-S3 已实现 `@opencore/module-registry`，并在 S5-S8 中被 Admin shell、RBAC、系统管理、Monitor/Tool 页面持续消费。S9 已登记 `tool.openforge`。OpenForge V1 已完成安全生成器闭环，但仍依赖 registry 作为 module、permission、menu 和 OpenAPI tag 的单一事实来源。
+S3 已实现 `@opencore/module-registry`，并在 S5-S9、Q001 和 BE20 中被 Admin shell、RBAC、系统管理、Monitor/Tool/Collaboration/Optional/Integration 页面、OpenAPI gate 和 OpenForge 持续消费。OpenForge V1 已完成安全生成器闭环，但仍依赖 registry 作为 module、permission、menu 和 OpenAPI tag 的单一事实来源。
 
 当前能力：
 
-- 登记 S5-S9 模块草案和实际页面入口。
+- 登记 core、monitor、tool、collaboration、optional 和 integration 模块草案及实际页面入口。
 - 管理权限码、菜单、OpenAPI tag、stage、priority、enabledByDefault。
 - 校验重复 module code、permission code、menu key。
 - 校验菜单 permission 指向已注册权限码。
-- 阻止 S3-S8 期间 P4/P5 模块泄漏进 registry。
+- 阻止高风险 P5/行业/真实支付/AI 模块绕过准入泄漏进 registry。
 - 为 OpenForge V1 schema validation、patch plan 和 S10 collaboration skeleton generation 提供 module metadata。
 
 ## 模块分层
@@ -29,19 +29,22 @@ OpenCore 模块分层采用：
 - `ai`：AI Native 能力。
 - `experimental`：实验能力。
 
-## S3-S8 已覆盖模块
+## 当前已覆盖模块
 
-| 层级    | 模块                                                                              |
-| ------- | --------------------------------------------------------------------------------- |
-| core    | dashboard、user、role、permission、menu、dict、config、file、audit-log、login-log |
-| monitor | status、version、queue                                                            |
-| tool    | openapi、export、openforge                                                        |
+| 层级          | 模块                                                                                                  |
+| ------------- | ----------------------------------------------------------------------------------------------------- |
+| core          | dashboard、user、role、permission、menu、dict、config、notice、dept、post、file、audit-log、login-log |
+| monitor       | status、version、queue、job、cache、online-user                                                       |
+| tool          | openapi、export、openforge                                                                            |
+| collaboration | message、notice、todo、approval-lite                                                                  |
+| optional      | report、export-job                                                                                    |
+| integration   | provider、mail、sms、oauth、wechat、websocket、billing-design                                         |
 
 ## 长期 backlog
 
 P4/P5 模块继续保留在长期 backlog，不进入当前 core：
 
-- optional：tenant、workflow、report、online-user、cache、job 等。
+- optional：tenant、workflow、full report designer、full export executor 等。
 - integration：mail、sms、wechat、oauth、pay 等。
 - industry：member、mall、crm、erp、mes、wms、iot、im 等。
 - ai：knowledge、RAG、Agent、AI workflow 等。

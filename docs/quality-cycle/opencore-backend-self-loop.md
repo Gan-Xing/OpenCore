@@ -1,5 +1,10 @@
 # OpenCore Backend Self-Loop Execution Prompt
 
+Status: completed on 2026-06-12. BE20-P01 through BE20-P24 are all checked in
+`docs/quality-cycle/cycle-020/backlog.md`; implementation evidence is in
+`docs/quality-cycle/cycle-020/implementation-notes.md`; the final summary is in
+`docs/quality-cycle/cycle-020/completion-report.md`.
+
 你是 OpenCore 后端实现代理。目标是把 OpenCore 后端完整做完，不是只写计划。
 
 ## 总目标

@@ -23,8 +23,22 @@ OpenCore（中文名：开元）定位为 **AI Native 企业级全栈 Monorepo**
 | R-1-R7 | complete | 旧应用冻结、runtime audit、OpenCore env、PostgreSQL migration/seed、Prisma 持久化、Redis/BullMQ/MinIO/S3 诊断、集成 smoke 和最终文档审计                |
 | V1     | complete | OpenForge safe generator：schema/config DSL、template/VFS、apply/manifest/rollback、API/Admin/SDK/Test/Docs pack、doctor/gate/e2e                       |
 | Q001   | complete | Quality Cycle 001：RBAC/auth/audit/config/files/monitor/contracts/OpenForge 加固；新增轻量协同、operations/report 设计位、integration provider 设计边界 |
+| BE20   | complete | Backend Self-Loop：按依赖顺序完成 common/core/database/redis/file/system/security/audit/online-user/scheduler/monitor/generator-core/tools/api 聚合     |
 
-S3-S9 handoff、runtime integration R-1-R7、OpenForge V1 A-L 和 Quality Cycle 001 已完成。OpenForge 默认仍是 dry-run；真实写入必须显式 `--yes`，且只能创建或更新带合法 OpenForge marker 的 generated-owned files。
+S3-S9 handoff、runtime integration R-1-R7、OpenForge V1 A-L、Quality Cycle 001 和 Backend Self-Loop BE20-P01 至 BE20-P24 已完成。OpenForge 默认仍是 dry-run；真实写入必须显式 `--yes`，且只能创建或更新带合法 OpenForge marker 的 generated-owned files。
+
+## 后端当前状态
+
+Backend Self-Loop 已在 2026-06-12 完成收尾记录。OpenCore 后端不再是只读 skeleton 或若依/芋道能力规划，而是已经形成 NestJS/Prisma/Redis/BullMQ/MinIO/OpenAPI 的 runtime 闭环：
+
+- 基础包：`@opencore/common`、`@opencore/core`、`@opencore/database`、`@opencore/redis`、`@opencore/file`。
+- 系统管理：字典、参数、通知公告、部门、岗位、菜单、角色、用户已下沉到 `@opencore/system`。
+- 安全与审计：认证、JWT、密码、验证码、RBAC、数据权限、登录日志、操作日志已下沉到 `@opencore/security` 和 `@opencore/audit`。
+- 监控与运维：在线用户、调度任务、运行时诊断、健康检查、队列状态、缓存/Redis/S3 探测已下沉到 `@opencore/online-user`、`@opencore/scheduler`、`@opencore/monitor`。
+- 代码生成：OpenForge core 已下沉到 `@opencore/generator-core`，`tools/generator` 只保留 CLI wrapper、status、doctor、gate、plan/diff/check/apply/rollback。
+- API 聚合：`apps/api` 只保留 bootstrap、HTTP entry aggregation、模块聚合、runtime config 和 OpenAPI export/check。
+
+BE20 最终验证已通过：`pnpm typecheck`、`pnpm lint`、`pnpm test`、`pnpm build:api`、`pnpm prisma:validate`、`pnpm openapi:check`、`pnpm format:check`，并额外通过 OpenForge doctor/check/diff/test。
 
 ## 当前明确不做
 
@@ -32,7 +46,7 @@ S3-S9 handoff、runtime integration R-1-R7、OpenForge V1 A-L 和 Quality Cycle 
 - Quality Cycle 001 只实现平台型轻量协同、operations/report 设计位和 integration provider/design 边界；不做 BPMN、完整报表设计器、大数据异步导出、真实支付回调/退款/对账或行业业务。
 - 不复制 RuoYi/Yudao 的 Java/Vue 代码，只学习模块地图、权限粒度、菜单组织、代码生成器和精简版/完整版思路。
 - 不直接迁移 NestWeb / Antdpro6 业务代码，只复用设计经验、工程纪律和测试习惯。
-- 不实现完整任务调度平台、大数据异步导出、敏感配置暴露或无保护的 OpenForge 写文件生成器。
+- 不实现无白名单动态反射调度、复杂任务编排平台、大数据异步导出、敏感配置暴露或无保护的 OpenForge 写文件生成器。
 
 ## 技术栈主线
 
@@ -56,9 +70,20 @@ S3-S9 handoff、runtime integration R-1-R7、OpenForge V1 A-L 和 Quality Cycle 
 - `apps/miniapp`：小程序占位，后续使用 Taro + React。
 - `apps/desktop`：桌面端占位，后续使用 Tauri。
 - `packages/shared`：共享 validation、type guard、duplicate detection 等基础工具。
+- `packages/common`：后端通用常量、错误码、响应契约、分页/排序/filter helper。
 - `packages/contracts`：权限码、模块/menu/permission schema、OpenAPI snapshot、table export/query/upload/error/OpenForge contract。
 - `packages/module-registry`：S5-S12 模块、权限、菜单、OpenAPI tag 和高风险业务泄漏检查。
 - `packages/sdk`：RBAC、系统管理、监控、工具、协同、operations、integration typed clients 和 registry fixtures。
+- `packages/core`：NestJS foundation、异常过滤、响应拦截、请求上下文、OpenAPI helper、安全 header 和结构化日志。
+- `packages/database`：Prisma service/module、事务 helper 和 seed helper。
+- `packages/redis`：Redis client、key/TTL/cache helper 和 BullMQ connection options。
+- `packages/file`：本地/MinIO/S3 文件存储抽象、安全 key 和输入校验。
+- `packages/system`：字典、参数、通知公告、部门、岗位、菜单、角色、用户 runtime。
+- `packages/security`：auth、JWT/password/captcha、permission/role/data-scope guards。
+- `packages/audit`：登录日志、操作日志、audit decorator/interceptor。
+- `packages/online-user`：在线用户/session runtime。
+- `packages/scheduler`：调度任务、run log、BullMQ adapter metadata 和 registry whitelist。
+- `packages/monitor`：health、runtime diagnostics、status/version/queue/cache monitor。
 - `packages/generator-core`：OpenForge generator core，提供 schema/config DSL、template/VFS、safe apply、manifest、rollback、doctor 和 API/Admin/SDK/Test/Docs skeleton pack。
 - `tools/generator`：OpenForge CLI wrapper，提供 plan/diff/check/apply/manifest/rollback/doctor/status/gate root commands。
 - `infra/*`：Docker、Nginx、监控和 Kubernetes 预留。
@@ -130,6 +155,9 @@ Admin 登录/current user 通过 `@opencore/sdk` 调用 `POST /api/auth/login` �
 - [OpenForge template authoring](docs/development/openforge-template-authoring.md)
 - [OpenForge apply/rollback runbook](docs/development/openforge-apply-rollback-runbook.md)
 - [OpenForge CI Gate](docs/development/openforge-ci-gate.md)
+- [Backend Self-Loop prompt](docs/quality-cycle/opencore-backend-self-loop.md)
+- [Backend Self-Loop backlog](docs/quality-cycle/cycle-020/backlog.md)
+- [Backend Self-Loop completion report](docs/quality-cycle/cycle-020/completion-report.md)
 - [Module admission checklist](docs/development/module-admission-checklist.md)
 - [Permission deprecation policy](docs/development/permission-deprecation-policy.md)
 - [Export/upload contract](docs/development/export-upload-contract.md)
@@ -143,4 +171,4 @@ Admin 登录/current user 通过 `@opencore/sdk` 调用 `POST /api/auth/login` �
 - [AI Native 路线图](docs/ai/ai-native-roadmap.md)
 - [Handoff 索引](docs/handoff/README.md)
 - [Strategy Blueprint](docs/strategy/README.md)
-- [S3-S8 与 runtime integration 进度](docs/strategy/progress.md)
+- [当前进度与 BE20 证据](docs/strategy/progress.md)

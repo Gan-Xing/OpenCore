@@ -20,8 +20,9 @@
 - OpenForge V1 A-L：safe generator pipeline、schema/config DSL、template/VFS、apply/manifest/rollback、API/Admin/SDK/Test/Docs pack、doctor/gate/e2e、final docs。
 - Quality Cycle 001：平台内核加固、契约 gate、OpenForge V1 验证、轻量协同、operations/report 设计位、integration provider/design 边界、全仓 gate。
 - 2026-06-11 Admin Pro V6 migration：在 `fix/admin-ant-design-pro-v6` 上保留官方 Ant Design Pro V6 config/app/layout/request/i18n/openapi 底座，迁移 OpenCore Dashboard/System/Security/Monitor/Tools/Collaboration/Optional/Integrations 页面，删除 demo routes/pages/services/mocks，并将 auth/me 接到 OpenCore API。
+- 2026-06-12 Backend Self-Loop BE20：按依赖顺序完成 common/core/database/redis/file/system/security/audit/online-user/scheduler/monitor/generator-core/tools/api aggregation 后端闭环。
 
-S3-S9 handoff、runtime integration handoff、OpenForge V1 full implementation handoff 与 Quality Cycle 001 范围均已完成。若继续推进，应另起 cycle-002 或专项 handoff，并继续保留行业业务、真实支付、AI/RAG/Agent 的准入边界。
+S3-S9 handoff、runtime integration handoff、OpenForge V1 full implementation handoff、Quality Cycle 001 与 Backend Self-Loop BE20 范围均已完成。若继续推进，应另起 S10+ hardening、cycle-021 或专项 handoff，并继续保留行业业务、真实支付、AI/RAG/Agent 的准入边界。
 
 ## 交接文档
 
@@ -68,6 +69,8 @@ pnpm openforge:gate
 
 Runtime integration, OpenForge V1, and Quality Cycle 001 final evidence is tracked in [progress.md](../strategy/progress.md) and [cycle-001 completion report](../quality-cycle/cycle-001/completion-report.md). Runtime evidence includes live API smoke for `/health/live`, `/health/ready`, `/api/docs`, `/api/auth/login`, and `/api/monitor/status`.
 
+Backend Self-Loop BE20 final evidence is tracked in [cycle-020 backlog](../quality-cycle/cycle-020/backlog.md), [cycle-020 implementation notes](../quality-cycle/cycle-020/implementation-notes.md), [cycle-020 completion report](../quality-cycle/cycle-020/completion-report.md), and [progress.md](../strategy/progress.md). BE20 evidence includes full backend gates, API aggregation boundary tests, OpenAPI checks, SDK checks and OpenForge doctor/check/diff/test.
+
 ## 下一份 handoff 建议
 
-Quality Cycle 001 已完成。下一份 handoff 可进入 cycle-002 recursion 或专项模块 hardening。不得复用 OpenForge V1 继续偷偷扩大为业务逻辑生成、migration 创建、行业业务包、真实支付或 AI/RAG/Agent 实现。
+Quality Cycle 001 和 Backend Self-Loop BE20 已完成。下一份 handoff 可进入 S10+ hardening、cycle-021 recursion 或专项模块 hardening。不得复用 OpenForge V1 或 BE20 继续偷偷扩大为业务逻辑生成、migration 创建、行业业务包、真实支付或 AI/RAG/Agent 实现。

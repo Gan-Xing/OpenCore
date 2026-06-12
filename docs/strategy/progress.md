@@ -1,6 +1,6 @@
 # OpenCore Strategy Blueprint Progress
 
-更新时间：2026-06-11
+更新时间：2026-06-12
 
 ## 本阶段 Checklist
 
@@ -42,6 +42,22 @@ Q001 详细证据见：
 - `docs/quality-cycle/cycle-001/reference-comparison.md`
 - `docs/quality-cycle/cycle-001/implementation-notes.md`
 - `docs/quality-cycle/cycle-001/completion-report.md`
+
+## Backend Self-Loop BE20 进度
+
+| 范围             | 状态     | 证据                                                                                                   | 边界                                            |
+| ---------------- | -------- | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------- |
+| 基础 runtime     | complete | common、core、database、redis、file 已下沉到 `packages/*`                                              | 不把运行时实现留在 `apps/api`                   |
+| 系统管理         | complete | dict、config、notice、dept、post、menu、role、user 已下沉到 `@opencore/system`                         | 不引入多租户或行业业务                          |
+| 安全审计         | complete | auth/JWT/password/captcha、RBAC、data-scope、login log、operation log 已下沉到 security/audit packages | 不做 SSO/OAuth 完整供应商闭环                   |
+| 监控运维         | complete | online-user、scheduler、monitor health/status/version/queue/cache/runtime diagnostics 已完成           | 不做复杂任务编排平台或敏感配置暴露              |
+| 代码生成/API聚合 | complete | generator-core、OpenForge CLI wrapper 和 `apps/api` composition root 收尾完成                          | OpenForge 不写 Prisma schema/migration/业务逻辑 |
+
+BE20 详细证据见：
+
+- `docs/quality-cycle/cycle-020/backlog.md`
+- `docs/quality-cycle/cycle-020/implementation-notes.md`
+- `docs/quality-cycle/cycle-020/completion-report.md`
 
 ## 目标文件状态
 
@@ -2345,3 +2361,35 @@ rendering/code generation core。
 BE20-P01 至 BE20-P24 已全部完成；后端 runtime 能力已按依赖顺序下沉到
 `packages/*` 或 `tools/*`，`apps/api` 保留启动、HTTP entry aggregation、模块聚合、
 runtime config 与 OpenAPI export/check。
+
+## 2026-06-12 Backend Self-Loop Documentation Reconciliation
+
+### Documentation Status
+
+- 本轮是文档状态补齐，不改变 runtime 代码。
+- 根 `README.md` 已补充 BE20 当前阶段、后端当前状态、可复用 runtime package
+  清单、验证命令和 Backend Self-Loop 文档入口。
+- `docs/README.md` 已把更新时间推进到 2026-06-12，并新增 BE20 complete
+  状态、cycle-020 backlog / implementation notes / completion report 入口。
+- 新增 `docs/quality-cycle/cycle-020/completion-report.md`，集中记录 BE20
+  范围、验收、验证命令、提交和已知非阻塞事项。
+- `docs/quality-cycle/ledger.md` 已记录 cycle-020 completion documentation，
+  包含 24 个后端模块和 5h52m55s 目标用时。
+- `docs/architecture/overview.md`、`docs/architecture/monorepo.md` 和
+  `docs/architecture/platform-boundaries.md` 已同步到 BE20 package-owned
+  runtime 和 `apps/api` composition root 口径。
+- `docs/modules/priority-roadmap.md`、`docs/modules/module-taxonomy.md` 和
+  `docs/modules/module-registry.md` 已同步系统、安全、审计、online-user、
+  scheduler、monitor、generator-core 与 OpenForge CLI 的完成状态。
+- `docs/strategy/README.md` 与 `docs/handoff/README.md` 已声明后续不能继续复用
+  BE20 backend self-loop handoff 做新业务实现，必须另起 S10+ hardening、
+  cycle-021 或专项 handoff。
+
+### Current Status After Documentation Reconciliation
+
+- BE20 仍为 complete：P01-P24 全部已勾选，最终代码提交为
+  `d182d2a refactor(api): remove legacy platform shims / 移除旧平台兼容层`。
+- `apps/api/src/platform` 当前只保留 `config` 和 `openapi`。
+- 若依/芋道主干后台能力已经按 OpenCore TS/NestJS monorepo 边界形成后端闭环；
+  CRM、ERP、MES、WMS、商城、真实支付、会员、多租户、知识库、RAG、Agent、
+  完整 BPMN 工作流和完整报表设计器仍未进入已完成范围。

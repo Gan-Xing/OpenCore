@@ -1,6 +1,6 @@
 # OpenCore Strategy Blueprint
 
-更新时间：2026-06-10
+更新时间：2026-06-12
 
 本目录是 OpenCore 战略蓝图文档包。它回答“OpenCore 最终要做成什么、API 和 Admin 会长成什么、哪些能力要做、哪些能力暂缓、旧项目经验如何复用、后续阶段怎么走”。
 
@@ -19,6 +19,8 @@ S9 OpenForge MVP 已完成：只读 generate plan、diff plan、safety/preflight
 
 OpenForge V1 A-L 已完成：schema/config DSL、template/VFS、safe apply、manifest、rollback、API/Admin/SDK/Test/Docs generator pack、doctor、gate、temp repo e2e 和最终文档已落地。OpenForge 默认 dry-run；真实写入必须显式 `--yes`，且仍不写 Prisma schema/migration，不实现 P4/P5 模块。
 
+Backend Self-Loop BE20-P01 至 BE20-P24 已完成：OpenCore 后端 runtime 已按依赖顺序下沉到 `packages/common`、`packages/core`、`packages/database`、`packages/redis`、`packages/file`、`packages/system`、`packages/security`、`packages/audit`、`packages/online-user`、`packages/scheduler`、`packages/monitor` 和 `packages/generator-core`；`tools/generator` 保留 OpenForge CLI wrapper；`apps/api` 只保留启动、HTTP entry aggregation、模块聚合、runtime config 和 OpenAPI export/check。
+
 ## 推荐阅读顺序
 
 | 顺序 | 文件                                                                                                           | 先回答的问题                                          |
@@ -34,6 +36,7 @@ OpenForge V1 A-L 已完成：schema/config DSL、template/VFS、safe apply、man
 | 9    | [../handoff/2026-06-10-s3-s8-implementation-handoff.md](../handoff/2026-06-10-s3-s8-implementation-handoff.md) | S3-S8 实现 handoff 和阶段门禁                         |
 | 10   | [../development/openforge-v1-architecture.md](../development/openforge-v1-architecture.md)                     | OpenForge V1 safe generator 架构和边界                |
 | 11   | [../development/openforge-apply-rollback-runbook.md](../development/openforge-apply-rollback-runbook.md)       | 如何 apply、review manifest 和 rollback               |
+| 12   | [../quality-cycle/cycle-020/completion-report.md](../quality-cycle/cycle-020/completion-report.md)             | BE20 后端自循环完成范围、验证和提交证据               |
 
 ## 哪些文件回答哪些问题
 
@@ -45,11 +48,12 @@ OpenForge V1 A-L 已完成：schema/config DSL、template/VFS、safe apply、man
 | 后端 core / monitor / tool / collaboration / optional / industry / integration / ai 如何落地 | [API 蓝图](api-target-architecture.md#模块层级如何落地)                                                                                                    |
 | 后台一级菜单和页面如何规划                                                                   | [Admin 页面蓝图](admin-page-map.md#最终一级菜单设计)                                                                                                       |
 | NestWeb 的 Role.code、OpenAPI drift、runtime config 等如何复用                               | [旧项目复用审计](legacy-reuse-audit.md)                                                                                                                    |
-| S3-S8 当前完成度                                                                             | [progress.md](progress.md)                                                                                                                                 |
+| 当前完成度、验证证据和 BE20 收尾                                                             | [progress.md](progress.md)                                                                                                                                 |
 | S9/OpenForge V1 完成了什么                                                                   | [阶段路线图](staged-roadmap.md)、[OpenForge 路线图](../development/openforge-roadmap.md)、[OpenForge V1 架构](../development/openforge-v1-architecture.md) |
+| 后端若依/芋道主干能力完成到哪里                                                              | [BE20 completion report](../quality-cycle/cycle-020/completion-report.md)、[BE20 backlog](../quality-cycle/cycle-020/backlog.md)                           |
 
 ## 后续 Codex 规则
 
-后续不应继续复用 S3-S8、runtime integration、S9 或 OpenForge V1 handoff 做新业务实现。OpenForge V1 已完成安全生成器闭环，但不生成业务逻辑，不写 Prisma schema/migration，不绕过 patch plan 修改 human-authored entry files。若继续，应另起 S10 collaboration handoff/goal。
+后续不应继续复用 S3-S8、runtime integration、S9、OpenForge V1 或 BE20 backend self-loop handoff 做新业务实现。OpenForge V1 已完成安全生成器闭环，但不生成业务逻辑，不写 Prisma schema/migration，不绕过 patch plan 修改 human-authored entry files。若继续，应另起 S10+ hardening 或专项 handoff/goal。
 
 P4/P5 能力仍保留长期 backlog：CRM、ERP、MES、WMS、商城、支付、会员、多租户、知识库、RAG、Agent 均不得无 handoff 直接实现。

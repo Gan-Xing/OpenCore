@@ -22,6 +22,10 @@ OpenCore 表达“开放的核心”和“可扩展的源头”。中文名“�
 
 > OpenCore 已完成 S3-S8 企业后台基础架构主线，包括 contracts/shared/module-registry、API foundation、Admin shell、auth/RBAC、system management、monitor/tool baseline。S9 将进入 OpenForge MVP。
 
+2026-06-12 之后的当前表达为：
+
+> OpenCore 已完成 S3-S9、runtime integration、OpenForge V1、Quality Cycle 001 和 Backend Self-Loop BE20；后端已经把若依/芋道主干后台能力转译为 TS/NestJS monorepo runtime packages，`apps/api` 只保留组合与启动边界。
+
 ## 命名边界
 
 - `OpenCore` 用于产品、文档和对外表达。
