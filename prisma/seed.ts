@@ -286,6 +286,7 @@ async function seedUsers(bootstrapPassword: string): Promise<number> {
         ? hashSystemUserPassword(bootstrapPassword)
         : userDefinition.passwordHash;
     await assertSeedUserDeptExists(userDefinition.deptId);
+    await assertSeedUserPostsExist(userDefinition.postCodes);
     const user = await prisma.user.upsert({
       where: { username: userDefinition.username },
       update: {
@@ -340,6 +341,44 @@ async function seedUsers(bootstrapPassword: string): Promise<number> {
         },
       });
     }
+
+    const posts = await prisma.systemPost.findMany({
+      where: { code: { in: [...userDefinition.postCodes] } },
+      select: { id: true, code: true },
+    });
+    const knownPostCodes = new Set(posts.map((post) => post.code));
+    const missingPostCode = userDefinition.postCodes.find(
+      (postCode) => !knownPostCodes.has(postCode),
+    );
+
+    if (missingPostCode) {
+      throw new Error(`Seed user post not found: ${missingPostCode}`);
+    }
+
+    const desiredPostIds = posts.map((post) => post.id);
+
+    await prisma.userPost.deleteMany({
+      where: {
+        userId: user.id,
+        postId: { notIn: desiredPostIds },
+      },
+    });
+
+    for (const post of posts) {
+      await prisma.userPost.upsert({
+        where: {
+          userId_postId: {
+            userId: user.id,
+            postId: post.id,
+          },
+        },
+        update: {},
+        create: {
+          userId: user.id,
+          postId: post.id,
+        },
+      });
+    }
   }
 
   return seedSystemUsers.length;
@@ -359,6 +398,25 @@ async function assertSeedUserDeptExists(
 
   if (!dept) {
     throw new Error(`Seed user dept not found: ${deptId}`);
+  }
+}
+
+async function assertSeedUserPostsExist(
+  postCodes: readonly string[],
+): Promise<void> {
+  if (postCodes.length === 0) {
+    return;
+  }
+
+  const posts = await prisma.systemPost.findMany({
+    where: { code: { in: [...postCodes] } },
+    select: { code: true },
+  });
+  const existing = new Set(posts.map((post) => post.code));
+  const missing = postCodes.find((postCode) => !existing.has(postCode));
+
+  if (missing) {
+    throw new Error(`Seed user post not found: ${missing}`);
   }
 }
 

@@ -24,6 +24,7 @@ export type UserSummary = {
   displayName: string;
   roleCodes: readonly string[];
   deptId?: string;
+  postCodes: readonly string[];
   enabled: boolean;
   system: boolean;
 };
@@ -34,6 +35,7 @@ export type CreateUserRequest = {
   password: string;
   roleCodes: readonly string[];
   deptId?: string | null;
+  postCodes?: readonly string[];
   enabled?: boolean;
 };
 
@@ -42,6 +44,7 @@ export type UpdateUserRequest = {
   password?: string;
   roleCodes?: readonly string[];
   deptId?: string | null;
+  postCodes?: readonly string[];
   enabled?: boolean;
 };
 

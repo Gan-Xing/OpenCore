@@ -92,6 +92,7 @@ describe('app getInitialState', () => {
         username: 'admin',
         displayName: 'OpenCore Admin',
         roleCodes: ['admin'],
+        postCodes: [],
         permissionCodes: ['core:dashboard:read'],
       },
     });
@@ -161,6 +162,7 @@ describe('app getInitialState', () => {
         username: 'admin',
         displayName: 'OpenCore Admin',
         roleCodes: ['admin'],
+        postCodes: [],
         permissionCodes: ['core:dashboard:read'],
       },
     });

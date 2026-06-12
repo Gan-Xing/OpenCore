@@ -16,6 +16,7 @@ describe('@opencore/system system-user', () => {
           username: 'admin',
           roleCodes: ['admin'],
           deptId: 'dept_headquarters',
+          postCodes: ['admin'],
           enabled: true,
           system: true,
         }),
@@ -39,6 +40,7 @@ describe('@opencore/system system-user', () => {
       password: 'change-me',
       roleCodes: ['viewer'],
       deptId: 'dept_operations',
+      postCodes: ['engineer'],
     });
 
     expect(user).toMatchObject({
@@ -46,6 +48,7 @@ describe('@opencore/system system-user', () => {
       username: 'operator',
       roleCodes: ['viewer'],
       deptId: 'dept_operations',
+      postCodes: ['engineer'],
       enabled: true,
       system: false,
     });
@@ -58,12 +61,14 @@ describe('@opencore/system system-user', () => {
         displayName: 'Operations',
         roleCodes: ['admin'],
         deptId: null,
+        postCodes: ['admin'],
         enabled: false,
       }),
     ).resolves.toMatchObject({
       displayName: 'Operations',
       roleCodes: ['admin'],
       deptId: undefined,
+      postCodes: ['admin'],
       enabled: false,
     });
     await expect(
@@ -91,6 +96,7 @@ describe('@opencore/system system-user', () => {
         'displayName',
         'roleCodes',
         'deptId',
+        'postCodes',
         'enabled',
         'system',
       ],
@@ -136,6 +142,24 @@ describe('@opencore/system system-user', () => {
         deptId: 'missing_dept',
       }),
     ).rejects.toThrow(NotFoundException);
+    await expect(
+      service.createUser({
+        username: 'unknown_post',
+        displayName: 'Unknown Post',
+        password: 'change-me',
+        roleCodes: ['viewer'],
+        postCodes: ['missing_post'],
+      }),
+    ).rejects.toThrow(NotFoundException);
+    await expect(
+      service.createUser({
+        username: 'duplicate_posts',
+        displayName: 'Duplicate Posts',
+        password: 'change-me',
+        roleCodes: ['viewer'],
+        postCodes: ['engineer', 'engineer'],
+      }),
+    ).rejects.toThrow(BadRequestException);
   });
 
   it('assigns users to roles while protecting system users', async () => {
@@ -211,6 +235,7 @@ describe('@opencore/system system-user', () => {
           expect.objectContaining({
             username: 'admin',
             roleCodes: expect.arrayContaining(['admin']),
+            postCodes: expect.arrayContaining(['admin']),
             enabled: true,
             system: true,
           }),
@@ -225,12 +250,14 @@ describe('@opencore/system system-user', () => {
         password: 'initial-password',
         roleCodes: ['viewer'],
         deptId: 'dept_operations',
+        postCodes: ['engineer'],
       });
 
       expect(user).toMatchObject({
         username,
         roleCodes: ['viewer'],
         deptId: 'dept_operations',
+        postCodes: ['engineer'],
         system: false,
       });
       await expect(service.getUser(user.id)).resolves.toMatchObject({
@@ -250,12 +277,14 @@ describe('@opencore/system system-user', () => {
           password: 'updated-password',
           roleCodes: ['admin'],
           deptId: null,
+          postCodes: ['admin'],
           enabled: false,
         }),
       ).resolves.toMatchObject({
         displayName: 'Updated Prisma User',
         roleCodes: ['admin'],
         deptId: undefined,
+        postCodes: ['admin'],
         enabled: false,
       });
       await expect(
@@ -281,11 +310,17 @@ describe('@opencore/system system-user', () => {
         passwordHash: hashSystemUserPassword('reset-password'),
       });
 
+      await expect(
+        prisma.userPost.count({ where: { userId: user.id } }),
+      ).resolves.toBe(1);
       await expect(service.deleteUser(user.id)).resolves.toEqual({
         deleted: true,
       });
       await expect(
         prisma.userRole.count({ where: { userId: user.id } }),
+      ).resolves.toBe(0);
+      await expect(
+        prisma.userPost.count({ where: { userId: user.id } }),
       ).resolves.toBe(0);
       await expect(
         prisma.user.findUnique({ where: { id: user.id } }),
@@ -379,6 +414,9 @@ describe('@opencore/system system-user', () => {
     });
 
     async function cleanupTestRows(): Promise<void> {
+      await prisma.userPost.deleteMany({
+        where: { user: { username: { in: [username, secondUsername] } } },
+      });
       await prisma.userRole.deleteMany({
         where: { user: { username: { in: [username, secondUsername] } } },
       });

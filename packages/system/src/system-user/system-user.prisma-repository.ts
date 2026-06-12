@@ -28,6 +28,7 @@ type PrismaUserWithRoles = {
   deptId?: string | null;
   enabled: boolean;
   roles: Array<{ role: { code: string } }>;
+  posts: Array<{ post: { code: string } }>;
 };
 
 const SYSTEM_USER_IDS = new Set(['user_admin']);
@@ -45,6 +46,11 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
         roles: {
           include: {
             role: true,
+          },
+        },
+        posts: {
+          include: {
+            post: true,
           },
         },
       },
@@ -69,6 +75,7 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
 
     await this.assertRolesExist(input.roleCodes);
     await this.assertDeptExists(input.deptId);
+    await this.assertPostsExist(input.postCodes);
     const user = await this.prisma.user.create({
       data: {
         username: input.username,
@@ -81,11 +88,21 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
             role: { connect: { code: roleCode } },
           })),
         },
+        posts: {
+          create: input.postCodes.map((postCode) => ({
+            post: { connect: { code: postCode } },
+          })),
+        },
       },
       include: {
         roles: {
           include: {
             role: true,
+          },
+        },
+        posts: {
+          include: {
+            post: true,
           },
         },
       },
@@ -111,6 +128,9 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
     if (input.deptId !== undefined) {
       await this.assertDeptExists(input.deptId);
     }
+    if (input.postCodes !== undefined) {
+      await this.assertPostsExist(input.postCodes);
+    }
 
     const user = await this.prisma.user.update({
       where: { id },
@@ -131,11 +151,26 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
                 })),
               },
             }),
+        ...(input.postCodes === undefined
+          ? {}
+          : {
+              posts: {
+                deleteMany: {},
+                create: input.postCodes.map((postCode) => ({
+                  post: { connect: { code: postCode } },
+                })),
+              },
+            }),
       },
       include: {
         roles: {
           include: {
             role: true,
+          },
+        },
+        posts: {
+          include: {
+            post: true,
           },
         },
       },
@@ -150,6 +185,7 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
     assertSystemUserMutable(user);
 
     await this.prisma.userRole.deleteMany({ where: { userId: id } });
+    await this.prisma.userPost.deleteMany({ where: { userId: id } });
     await this.prisma.user.delete({ where: { id } });
     return { deleted: true };
   }
@@ -199,6 +235,11 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
             role: true,
           },
         },
+        posts: {
+          include: {
+            post: true,
+          },
+        },
       },
     });
 
@@ -233,6 +274,11 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
         roles: {
           include: {
             role: true,
+          },
+        },
+        posts: {
+          include: {
+            post: true,
           },
         },
       },
@@ -284,6 +330,23 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
       throw new NotFoundException(`System dept not found: ${deptId}`);
     }
   }
+
+  private async assertPostsExist(postCodes: readonly string[]): Promise<void> {
+    if (postCodes.length === 0) {
+      return;
+    }
+
+    const posts = await this.prisma.systemPost.findMany({
+      where: { code: { in: [...postCodes] } },
+      select: { code: true },
+    });
+    const existing = new Set(posts.map((post) => post.code));
+    const missing = postCodes.find((postCode) => !existing.has(postCode));
+
+    if (missing) {
+      throw new NotFoundException(`System post not found: ${missing}`);
+    }
+  }
 }
 
 function toSystemUserSummaryRecord(
@@ -295,6 +358,7 @@ function toSystemUserSummaryRecord(
     displayName: user.displayName,
     roleCodes: user.roles.map((userRole) => userRole.role.code).sort(),
     deptId: user.deptId ?? undefined,
+    postCodes: user.posts.map((userPost) => userPost.post.code).sort(),
     enabled: user.enabled,
     system: isSystemUser(user),
   };

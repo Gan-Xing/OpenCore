@@ -653,6 +653,9 @@ if (
   !usersPage.includes('deleteOpenCoreUser') ||
   !usersPage.includes('listOpenCoreRoles') ||
   !usersPage.includes('listOpenCoreSystemDepts') ||
+  !usersPage.includes('listOpenCoreSystemPosts') ||
+  !usersPage.includes('postCodes') ||
+  !usersPage.includes('Select posts') ||
   !usersPage.includes('Reset Password') ||
   !usersPage.includes('Revoked sessions') ||
   !usersPage.includes('useCurrentPageFilters') ||

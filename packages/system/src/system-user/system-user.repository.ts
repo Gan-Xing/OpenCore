@@ -25,6 +25,7 @@ export type NormalizedSystemUserCreateInput = {
   password: string;
   roleCodes: readonly string[];
   deptId?: string;
+  postCodes: readonly string[];
   enabled: boolean;
 };
 
@@ -33,6 +34,7 @@ export type NormalizedSystemUserUpdateInput = {
   password?: string;
   roleCodes?: readonly string[];
   deptId?: string | null;
+  postCodes?: readonly string[];
   enabled?: boolean;
 };
 
@@ -81,6 +83,7 @@ export function createSystemUserExportPreview(
       'displayName',
       'roleCodes',
       'deptId',
+      'postCodes',
       'enabled',
       'system',
     ],
@@ -98,6 +101,7 @@ export function normalizeCreateSystemUserInput(
     password: normalizeRequiredText(body.password, 'password'),
     roleCodes: normalizeRoleCodes(body.roleCodes),
     deptId: normalizeOptionalDeptId(body.deptId),
+    postCodes: normalizePostCodes(body.postCodes),
     enabled: normalizeOptionalBoolean(body.enabled, 'enabled') ?? true,
   };
 }
@@ -122,6 +126,10 @@ export function normalizeUpdateSystemUserInput(
       body.deptId === undefined
         ? undefined
         : normalizeNullableDeptId(body.deptId),
+    postCodes:
+      body.postCodes === undefined
+        ? undefined
+        : normalizePostCodes(body.postCodes),
     enabled: normalizeOptionalBoolean(body.enabled, 'enabled'),
   };
 }
@@ -158,6 +166,7 @@ export function cloneSystemUserSummary(
     displayName: user.displayName,
     roleCodes: [...user.roleCodes],
     deptId: user.deptId,
+    postCodes: [...user.postCodes],
     enabled: user.enabled,
     system: user.system,
   };
@@ -276,6 +285,31 @@ function normalizeRoleCodes(
   if (duplicate) {
     throw new BadRequestException(
       `System user role code is duplicated: ${duplicate}`,
+    );
+  }
+
+  return [...normalized].sort();
+}
+
+function normalizePostCodes(
+  values: readonly string[] | undefined,
+): readonly string[] {
+  if (values === undefined) {
+    return [];
+  }
+
+  if (!Array.isArray(values)) {
+    throw new BadRequestException('System user postCodes must be an array.');
+  }
+
+  const normalized = values.map((value) =>
+    normalizeRequiredText(value, 'post code'),
+  );
+  const duplicate = findFirstDuplicate(normalized);
+
+  if (duplicate) {
+    throw new BadRequestException(
+      `System user post code is duplicated: ${duplicate}`,
     );
   }
 

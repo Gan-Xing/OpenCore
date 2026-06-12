@@ -15,7 +15,9 @@ import {
 } from '@ant-design/pro-components';
 import {
   createSystemDeptFixtures,
+  createSystemPostFixtures,
   type RoleSummary,
+  type SystemPostSummary,
   type SystemDeptSummary,
   type SystemDeptTreeSummary,
   type UserSummary,
@@ -43,6 +45,7 @@ import {
   getOpenCoreUser,
   listOpenCoreRoles,
   listOpenCoreSystemDepts,
+  listOpenCoreSystemPosts,
   listOpenCoreUsers,
   resetOpenCoreUserPassword,
   setOpenCoreUserStatus,
@@ -67,6 +70,7 @@ type UserFormValues = {
   displayName: string;
   enabled?: boolean;
   password?: string;
+  postCodes?: string[];
   roleCodes?: string[];
   username: string;
 };
@@ -88,6 +92,7 @@ const fallbackRows: UserSummary[] = [
     displayName: 'OpenCore Admin',
     roleCodes: ['admin'],
     deptId: 'dept_headquarters',
+    postCodes: ['admin'],
     enabled: true,
     system: true,
   },
@@ -115,11 +120,13 @@ const fallbackRoleRows: RoleSummary[] = [
   },
 ];
 const fallbackDeptTreeRows = createSystemDeptFixtures();
+const fallbackPostRows = createSystemPostFixtures().items;
 const searchFields: CurrentPageSearchField<UserSummary>[] = [
   'username',
   'displayName',
   'deptId',
   (record) => record.roleCodes,
+  (record) => record.postCodes,
 ];
 const filterOptions: CurrentPageFilterOption<UserSummary>[] = [
   {
@@ -147,6 +154,7 @@ const exportColumns: CurrentPageExportColumn<UserSummary>[] = [
   { title: 'Display Name', dataIndex: 'displayName' },
   { title: 'Department ID', dataIndex: 'deptId' },
   { title: 'Roles', renderText: (record) => record.roleCodes.join(', ') },
+  { title: 'Posts', renderText: (record) => record.postCodes.join(', ') },
   { title: 'Enabled', dataIndex: 'enabled' },
   { title: 'System', dataIndex: 'system' },
 ];
@@ -178,6 +186,22 @@ function createRoleOptions(rows: readonly RoleSummary[]) {
     }));
 }
 
+function createPostNameMap(rows: readonly SystemPostSummary[]) {
+  return new Map(rows.map((row) => [row.code, row.name]));
+}
+
+function createPostOptions(rows: readonly SystemPostSummary[]) {
+  return [...rows]
+    .sort(
+      (left, right) =>
+        left.order - right.order || left.name.localeCompare(right.name),
+    )
+    .map((post) => ({
+      label: `${post.name} (${post.code})`,
+      value: post.code,
+    }));
+}
+
 function toDeptTreeSelectData(
   rows: readonly SystemDeptTreeSummary[],
 ): TreeSelectNode[] {
@@ -191,6 +215,7 @@ function toDeptTreeSelectData(
 function createDetailFields(
   record: UserSummary,
   deptNames: ReadonlyMap<string, string>,
+  postNames: ReadonlyMap<string, string>,
 ): DetailField[] {
   return [
     { label: 'ID', value: record.id },
@@ -212,6 +237,17 @@ function createDetailFields(
         </Space>
       ),
     },
+    {
+      label: 'Posts',
+      value:
+        record.postCodes.length > 0 ? (
+          <Space wrap>
+            {record.postCodes.map((code) => (
+              <Tag key={code}>{postNames.get(code) ?? code}</Tag>
+            ))}
+          </Space>
+        ) : undefined,
+    },
     { label: 'Status', value: record.enabled ? 'enabled' : 'disabled' },
     { label: 'System', value: record.system ? 'system' : 'custom' },
   ];
@@ -225,6 +261,8 @@ export default function UsersPage() {
     useState<readonly RoleSummary[]>(fallbackRoleRows);
   const [deptTreeRows, setDeptTreeRows] =
     useState<readonly SystemDeptTreeSummary[]>(fallbackDeptTreeRows);
+  const [postRows, setPostRows] =
+    useState<readonly SystemPostSummary[]>(fallbackPostRows);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
   const [selectedDetail, setSelectedDetail] = useState<UserSummary>();
@@ -248,6 +286,8 @@ export default function UsersPage() {
     [deptTreeRows],
   );
   const roleOptions = useMemo(() => createRoleOptions(roleRows), [roleRows]);
+  const postNames = useMemo(() => createPostNameMap(postRows), [postRows]);
+  const postOptions = useMemo(() => createPostOptions(postRows), [postRows]);
   const { filteredRows, toolbar: filterToolbar } =
     useCurrentPageFilters<UserSummary>({
       rows,
@@ -259,19 +299,22 @@ export default function UsersPage() {
   const loadUsers = async () => {
     setLoading(true);
     try {
-      const [users, roles, deptTree] = await Promise.all([
+      const [users, roles, deptTree, posts] = await Promise.all([
         listOpenCoreUsers(),
         listOpenCoreRoles(),
         listOpenCoreSystemDepts(),
+        listOpenCoreSystemPosts({ page: 1, pageSize: 100 }),
       ]);
       setRows(users);
       setRoleRows(roles);
       setDeptTreeRows(deptTree);
+      setPostRows(posts);
       setLoadError(undefined);
     } catch (error: unknown) {
       setRows(fallbackRows);
       setRoleRows(fallbackRoleRows);
       setDeptTreeRows(fallbackDeptTreeRows);
+      setPostRows(fallbackPostRows);
       setLoadError(
         error instanceof Error ? error.message : 'Unable to load users.',
       );
@@ -292,6 +335,7 @@ export default function UsersPage() {
       password: '',
       roleCodes: [],
       deptId: undefined,
+      postCodes: [],
       enabled: true,
     });
     setFormOpen(true);
@@ -312,6 +356,7 @@ export default function UsersPage() {
         password: undefined,
         roleCodes: [...fresh.roleCodes],
         deptId: fresh.deptId,
+        postCodes: [...fresh.postCodes],
         enabled: fresh.enabled,
       });
       setFormOpen(true);
@@ -351,6 +396,7 @@ export default function UsersPage() {
   const submitForm = async () => {
     const values = await form.validateFields();
     const roleCodes = values.roleCodes ?? [];
+    const postCodes = values.postCodes ?? [];
     const password = values.password?.trim();
     setSubmitting(true);
     try {
@@ -360,6 +406,7 @@ export default function UsersPage() {
           password: password || undefined,
           roleCodes,
           deptId: values.deptId ?? null,
+          postCodes,
           enabled: values.enabled ?? true,
         });
         message.success('User updated.');
@@ -370,6 +417,7 @@ export default function UsersPage() {
           password: password ?? '',
           roleCodes,
           deptId: values.deptId,
+          postCodes,
           enabled: values.enabled ?? true,
         });
         message.success('User created.');
@@ -456,6 +504,20 @@ export default function UsersPage() {
           ))}
         </Space>
       ),
+    },
+    {
+      title: 'Posts',
+      dataIndex: 'postCodes',
+      render: (_, record) =>
+        record.postCodes.length > 0 ? (
+          <Space wrap size={4}>
+            {record.postCodes.map((code) => (
+              <Tag key={code}>{postNames.get(code) ?? code}</Tag>
+            ))}
+          </Space>
+        ) : (
+          '-'
+        ),
     },
     {
       title: 'Status',
@@ -615,7 +677,9 @@ export default function UsersPage() {
       />
       <ReadOnlyDetailDrawer
         fields={
-          selectedDetail ? createDetailFields(selectedDetail, deptNames) : []
+          selectedDetail
+            ? createDetailFields(selectedDetail, deptNames, postNames)
+            : []
         }
         onClose={() => setSelectedDetail(undefined)}
         open={Boolean(selectedDetail)}
@@ -679,6 +743,16 @@ export default function UsersPage() {
               treeData={deptTreeData}
               treeDefaultExpandAll
               placeholder="Select department"
+            />
+          </Form.Item>
+          <Form.Item label="Posts" name="postCodes" rules={[{ type: 'array' }]}>
+            <Select
+              allowClear
+              mode="multiple"
+              optionFilterProp="label"
+              options={postOptions}
+              placeholder="Select posts"
+              showSearch
             />
           </Form.Item>
           <Form.Item label="Enabled" name="enabled" valuePropName="checked">

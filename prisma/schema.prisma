@@ -15,6 +15,7 @@ model User {
   deptId       String?
   dept         SystemDept? @relation(fields: [deptId], references: [id], onDelete: SetNull)
   roles        UserRole[]
+  posts        UserPost[]
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
@@ -76,6 +77,15 @@ model UserRole {
   role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@id([userId, roleId])
+}
+
+model UserPost {
+  userId String
+  postId String
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post   SystemPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([userId, postId])
 }
 
 model RolePermission {
@@ -163,14 +173,15 @@ model SystemDept {
 }
 
 model SystemPost {
-  id          String   @id @default(cuid())
-  code        String   @unique
+  id          String     @id @default(cuid())
+  code        String     @unique
   name        String
-  order       Int      @default(0)
+  order       Int        @default(0)
   description String?
-  enabled     Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  enabled     Boolean    @default(true)
+  users       UserPost[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 
   @@index([enabled, order])
 }

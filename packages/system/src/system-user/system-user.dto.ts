@@ -16,6 +16,9 @@ export class UserSummaryDto {
   @ApiProperty({ required: false, nullable: true, type: String })
   deptId?: string;
 
+  @ApiProperty({ type: [String] })
+  postCodes!: readonly string[];
+
   @ApiProperty()
   enabled!: boolean;
 
@@ -39,6 +42,9 @@ export class CreateUserDto {
   @ApiProperty({ required: false, nullable: true, type: String })
   deptId?: string | null;
 
+  @ApiProperty({ required: false, type: [String], default: [] })
+  postCodes?: readonly string[];
+
   @ApiProperty({ required: false, default: true })
   enabled?: boolean;
 }
@@ -55,6 +61,9 @@ export class UpdateUserDto {
 
   @ApiProperty({ required: false, nullable: true, type: String })
   deptId?: string | null;
+
+  @ApiProperty({ required: false, type: [String] })
+  postCodes?: readonly string[];
 
   @ApiProperty({ required: false })
   enabled?: boolean;

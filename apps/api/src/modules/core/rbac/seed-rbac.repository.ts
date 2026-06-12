@@ -210,6 +210,7 @@ function cloneUserRecord(user: SystemUserRecord): SystemUserRecord {
         seedSystemRoles.some((role) => role.enabled && role.code === roleCode),
       )
       .sort(),
+    postCodes: [...user.postCodes],
   };
 }
 

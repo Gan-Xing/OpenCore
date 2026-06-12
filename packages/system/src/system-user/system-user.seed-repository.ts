@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { seedSystemDepts } from '../system-dept/system-dept.records';
+import { seedSystemPosts } from '../system-post/system-post.records';
 import { seedSystemRoles } from '../system-role/system-role.records';
 import {
   assertSystemUserMutable,
@@ -27,6 +28,9 @@ export class SeedSystemUserRepository extends SystemUserRepository {
     seedSystemRoles.map((role) => role.code),
   );
   private readonly deptIds = new Set(seedSystemDepts.map((dept) => dept.id));
+  private readonly postCodes = new Set(
+    seedSystemPosts.map((post) => post.code),
+  );
 
   constructor(users: readonly SystemUserRecord[] = seedSystemUsers) {
     super();
@@ -52,6 +56,7 @@ export class SeedSystemUserRepository extends SystemUserRepository {
 
     this.assertRoleCodes(input.roleCodes);
     this.assertDeptId(input.deptId);
+    this.assertPostCodes(input.postCodes);
     const user: SystemUserRecord = {
       id: `user_${input.username.replace(/[^a-z0-9]+/g, '_')}`,
       username: input.username,
@@ -59,6 +64,7 @@ export class SeedSystemUserRepository extends SystemUserRepository {
       passwordHash: hashSystemUserPassword(input.password),
       roleCodes: [...input.roleCodes],
       deptId: input.deptId,
+      postCodes: [...input.postCodes],
       enabled: input.enabled,
       system: false,
     };
@@ -82,6 +88,10 @@ export class SeedSystemUserRepository extends SystemUserRepository {
     if (input.deptId !== undefined) {
       this.assertDeptId(input.deptId);
       user.deptId = input.deptId ?? undefined;
+    }
+    if (input.postCodes !== undefined) {
+      this.assertPostCodes(input.postCodes);
+      user.postCodes = [...input.postCodes];
     }
 
     user.displayName = input.displayName ?? user.displayName;
@@ -166,11 +176,22 @@ export class SeedSystemUserRepository extends SystemUserRepository {
       throw new NotFoundException(`System dept not found: ${deptId}`);
     }
   }
+
+  private assertPostCodes(postCodes: readonly string[]): void {
+    const missingPostCode = postCodes.find(
+      (postCode) => !this.postCodes.has(postCode),
+    );
+
+    if (missingPostCode) {
+      throw new NotFoundException(`System post not found: ${missingPostCode}`);
+    }
+  }
 }
 
 function cloneUser(user: SystemUserRecord): SystemUserRecord {
   return {
     ...user,
     roleCodes: [...user.roleCodes],
+    postCodes: [...user.postCodes],
   };
 }

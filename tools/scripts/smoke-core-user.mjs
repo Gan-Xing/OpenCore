@@ -47,6 +47,19 @@ try {
   const loginResponse = await loginAdmin();
   adminToken = assertString(loginResponse.accessToken, 'login accessToken');
 
+  await apiRequest('/core/users', {
+    method: 'POST',
+    expected: [404],
+    body: {
+      username: `${smokeUsername}_bad_post`,
+      displayName: 'Smoke User Bad Post',
+      password: smokePassword,
+      roleCodes: ['viewer'],
+      postCodes: ['missing_post'],
+      enabled: true,
+    },
+  });
+
   const createdUser = await apiRequest('/core/users', {
     method: 'POST',
     body: {
@@ -54,10 +67,12 @@ try {
       displayName: 'Smoke User Security',
       password: smokePassword,
       roleCodes: ['viewer'],
+      postCodes: ['engineer'],
       enabled: true,
     },
   });
   smokeUserId = assertString(createdUser.id, 'created smoke user id');
+  assertIncludes(createdUser.postCodes, 'engineer', 'created user posts');
 
   const initialLogin = await loginSmokeUser(smokePassword, [200, 201]);
   smokeUserToken = assertString(
@@ -136,6 +151,7 @@ try {
         displayName: 'Smoke User Security Updated',
         roleCodes: [],
         deptId: null,
+        postCodes: [],
         enabled: true,
       },
     },
@@ -146,6 +162,7 @@ try {
     'update user revoked session count',
   );
   assertNotIncludes(updatedUser.roleCodes, 'viewer', 'updated user roles');
+  assertNotIncludes(updatedUser.postCodes, 'engineer', 'updated user posts');
   await request(`${apiPrefix}/auth/me`, {
     token: smokeUserToken,
     expected: [401],
@@ -193,7 +210,9 @@ try {
         'health.ready',
         ...(checkDocs ? ['openapi.docs-json'] : []),
         'auth.login',
+        'core.user.post.unknown-rejected',
         'core.user.create',
+        'core.user.post.create',
         'core.user.status.disable',
         'core.user.status.revoke-session',
         'core.user.status.login-blocked',
@@ -201,6 +220,7 @@ try {
         'core.user.reset-password',
         'core.user.reset-password.revoke-session',
         'core.user.reset-password.old-password-blocked',
+        'core.user.post.clear',
         'core.user.update.revoke-session',
         'core.user.delete.revoke-session',
       ],

@@ -7,6 +7,7 @@ export type SystemUserRecord = {
   passwordHash: string;
   roleCodes: readonly string[];
   deptId?: string;
+  postCodes: readonly string[];
   enabled: boolean;
   system: boolean;
 };
@@ -19,6 +20,7 @@ export const seedSystemUsers: readonly SystemUserRecord[] = [
     passwordHash: hashSystemUserPassword('admin123'),
     roleCodes: ['admin'],
     deptId: 'dept_headquarters',
+    postCodes: ['admin'],
     enabled: true,
     system: true,
   },

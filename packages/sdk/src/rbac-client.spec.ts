@@ -22,10 +22,12 @@ describe('createRbacClient', () => {
       password: 'change-me',
       roleCodes: ['viewer'],
       deptId: 'dept_operations',
+      postCodes: ['engineer'],
     });
     await client.updateUser('token', 'user_operator', {
       deptId: null,
       enabled: false,
+      postCodes: [],
     });
     await client.setUserStatus('token', 'user_operator', {
       enabled: true,
