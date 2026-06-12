@@ -366,6 +366,32 @@ working, so this round closes that security effect.
       verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 15: core.file Content Loop Productization
+
+Why this slice: the post-Round 13 waterline audit correctly flagged Round 10
+as thin because it only managed file metadata. A file center must prove that a
+logged-in operator can upload real content, retrieve metadata, download the
+stored object and clean it up through the same authenticated product surface.
+
+- [x] Add authenticated file upload API that decodes base64 content, writes it
+      through `FileStorageService` and creates matching metadata.
+- [x] Add authenticated file download API that reads the stored object by
+      metadata `storageKey` and streams bytes with MIME and content-disposition
+      headers.
+- [x] Delete stored objects when deleting file metadata.
+- [x] Preserve `storageKey` during metadata edits so renames do not detach
+      metadata from stored object content.
+- [x] Add binary-response pass-through guard to the core response interceptor.
+- [x] Extend `@opencore/sdk` with upload contracts and a download path helper.
+- [x] Replace Admin metadata-only creation with browser file selection,
+      base64 upload and row-level download.
+- [x] Extend core-file smoke to upload real text content, download it and
+      assert exact content equality.
+- [x] Refresh OpenAPI snapshot and registry route/tag checks.
+- [x] Run focused, full, build, fixed-port smoke, deployment and public URL
+      verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -414,11 +440,12 @@ treat "minimal loop" as "minimal final product".
       browser/OS parsing，IP fields，Admin 展示；测试要求：smoke 证明被踢
       token 再访问受保护接口返回 401；完成标准：Round 14 已完成，kick-out
       会让真实 bearer session 失效。
-- [ ] P0-R15-FILE-CONTENT-LOOP：问题：Round 10 只有文件 metadata CRUD，不是
+- [x] P0-R15-FILE-CONTENT-LOOP：问题：Round 10 只有文件 metadata CRUD，不是
       文件中心；参考来源：Yudao file upload/download/preview shape；
       实施要求：基于现有 file storage boundary 做 authenticated upload plus
       download/preview/copy-link 的最小闭环；测试要求：smoke 上传、读取 metadata、
-      下载或预览并校验内容；完成标准：Admin 文件中心能处理真实文件内容。
+      下载或预览并校验内容；完成标准：Round 15 已完成，Admin/API/smoke
+      均证明真实文件内容可上传并原样下载。
 - [ ] P0-R16-MENU-TREE-REWORK：问题：Round 4 菜单模型过薄，只有 flat
       `key/title/path/permission/order/hidden`；参考来源：RuoYi/Yudao menu
       tree/type/icon/component/status/cache shape；实施要求：tree menu model
@@ -455,9 +482,9 @@ treat "minimal loop" as "minimal final product".
 - Config cache refresh, public get-value-by-key endpoints, batch config delete,
   Excel file export, category/name/remark schema expansion, secret vault/KMS
   integration and runtime feature-flag propagation.
-- File binary upload, presigned upload/download URLs, storage-provider config,
-  public download/preview/copy-link workflows, batch file delete and object
-  browser expansion.
+- Presigned upload/download URLs, storage-provider config, public
+  download/preview/copy-link workflows, batch file delete and object browser
+  expansion.
 - Login-log deletion/cleanup, user unlock, lockout-policy tuning, session
   termination, location/device enrichment, server-side date-range filters and
   logType/result schema expansion.

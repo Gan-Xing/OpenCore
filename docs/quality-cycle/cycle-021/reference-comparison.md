@@ -415,3 +415,34 @@ OpenCore still does not admit OAuth client administration, a standalone JWT
 blacklist separate from the online-session store, IP geolocation/location
 enrichment, server-side date filters or a dedicated online-user export
 endpoint in this round.
+
+## Round 15 File Content Reference Shape
+
+Yudao keeps file management under Infra with upload, presigned upload,
+download, delete and metadata page flows. Its file center is not just a table
+of metadata: a user can create stored content and later retrieve or preview it
+from the management surface.
+
+RuoYi's common file handling similarly treats upload as an infrastructure
+boundary that returns stored file metadata and a retrievable URL/path. The
+important shared product expectation is that file metadata points to a real
+stored object, not a placeholder row.
+
+OpenCore admits the stage-2 loop that matches its existing package-owned file
+storage boundary:
+
+- `POST /core/files/upload` accepts authenticated JSON base64 content, decodes
+  it and writes the bytes through `FileStorageService`;
+- upload creates metadata using the stored object's generated `storageKey`;
+- `GET /core/files/:id/download` reads metadata, loads bytes from storage and
+  sends a binary response with MIME and attachment filename headers;
+- deleting a file asset deletes the stored object before deleting metadata;
+- metadata edits preserve `storageKey` so renames do not detach rows from
+  object content;
+- Admin File Center supports browser file selection, upload and row-level
+  download;
+- smoke proves that downloaded content exactly matches uploaded content.
+
+OpenCore still does not admit presigned URL flows, public copy links,
+storage-provider configuration UI, batch delete, object browser expansion or
+image/video preview tooling in this round.

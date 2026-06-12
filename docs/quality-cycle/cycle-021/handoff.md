@@ -3,8 +3,8 @@
 Date: 2026-06-12  
 Repository: `Gan-Xing/OpenCore`  
 Default branch: `main`  
-Latest observed feature commit: `688b665 feat(monitor-online-user): enforce session revocation / 强制在线会话撤销生效`  
-Latest deployed feature commit: `688b665 feat(monitor-online-user): enforce session revocation / 强制在线会话撤销生效`  
+Latest observed feature commit: `0923009 feat(core-file): add authenticated file content loop / 新增认证文件内容闭环`  
+Latest deployed feature commit: `0923009 feat(core-file): add authenticated file content loop / 新增认证文件内容闭环`  
 Latest deployed hardening commit: `f4569a4 fix(api): tolerate duplicated API prefix on login / 兼容登录重复 API 前缀`
 
 ## One-sentence Goal
@@ -55,6 +55,7 @@ productization waterline completion; see
 - Round 12 `core.audit-log`
 - Round 13 `monitor.online-user`
 - Round 14 `monitor.online-user` revocation stage 2
+- Round 15 `core.file` content stage 2
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -95,23 +96,27 @@ ID，登录会注册 online-user session，鉴权会检查 session 是否已撤�
 online-user smoke 已证明被批量强退的真实 token 再访问 `/api/auth/me` 返回 401；
 公网验证也通过了同样链路。
 
+Round 15 补齐了 Round 10 被审计为偏薄的文件中心问题：`core.file` 现在有认证
+upload/download 内容闭环，上传通过 `FileStorageService` 写真实 bytes，下载从
+storageKey 读回对象，Admin 文件中心支持选择文件上传和行级下载。固定 smoke 和公网
+验证都证明上传内容可以原样下载。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
 
 - Meets current waterline: Round 6 `core.permission`, Round 12
-  `core.audit-log`, Round 13/14 `monitor.online-user`.
+  `core.audit-log`, Round 13/14 `monitor.online-user`, Round 10/15
+  `core.file`.
 - First loop, enhance: Round 1 `core.notice`, Round 2 `core.dept`, Round 3
   `core.post`, Round 5 `core.role`, Round 7 `core.user`, Round 8
   `core.dict`, Round 9 `core.config`, Round 11 `core.login-log`.
-- Thin, rework: Round 4 `core.menu`, Round 10 `core.file`.
+- Thin, rework: Round 4 `core.menu`.
 
 The next rounds should prioritize this P0 remediation queue before opening more
 broad surfaces:
 
-1. `core.file` stage 2: authenticated upload/download or preview loop backed
-   by the existing file storage boundary.
-2. `core.menu` stage 2: tree menu model and Admin tree operations aligned with
+1. `core.menu` stage 2: tree menu model and Admin tree operations aligned with
    route/menu metadata.
 
 Commit `f4569a4` also fixed the remaining stale-login failure at API level:

@@ -1046,3 +1046,74 @@ Against public endpoints after deploy:
   `688b665 feat(monitor-online-user): enforce session revocation / 强制在线会话撤销生效`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 15 Capability
+
+Capability: `core.file` content loop productization.
+
+Goal: close the Round 10 metadata-only gap by letting logged-in operators
+upload real file content, download stored bytes and verify the loop through
+fixed-port smoke and public deployment.
+
+## Round 15 Implemented
+
+- Added `UploadFileAssetDto` and `POST /api/core/files/upload`, guarded by
+  `core:file:create`.
+- Upload decodes base64 file content, writes bytes through
+  `FileStorageService.storeObjectAtKey` and creates matching metadata.
+- Added `GET /api/core/files/:id/download`, guarded by `core:file:read`, with
+  MIME, content-length, content-disposition and storage-key headers.
+- File deletion now deletes the stored object before removing metadata.
+- Metadata updates preserve the existing `storageKey` so renaming metadata does
+  not detach a row from its stored object.
+- Added a binary response pass-through guard to `ApiResponseInterceptor` so
+  file downloads are not wrapped or JSON-serialized.
+- Extended `@opencore/file` tests for writing object content at an existing
+  key.
+- Extended `@opencore/sdk` with upload request contracts and a download path
+  helper.
+- Updated Admin File Center so create is a real file upload and each row has a
+  download action.
+- Updated core-file smoke to upload text content, read detail, download the
+  file and assert exact content equality before delete cleanup.
+
+## Round 15 Verification
+
+- `node --check tools/scripts/smoke-core-file.mjs` pass.
+- Focused typecheck pass:
+  `NX_DAEMON=false pnpm nx run-many -t typecheck --projects=core,file,sdk,api,admin`.
+- Focused tests pass:
+  `NX_DAEMON=false pnpm nx run-many -t test --projects=core,file,sdk,api,admin`.
+- `pnpm openapi:export`, `pnpm openapi:check` and `pnpm sdk:check` pass.
+- `pnpm openapi:registry-tags:check` and `pnpm registry:admin-routes:check`
+  pass.
+- `pnpm smoke:api:local` pass on fixed port `39173`, including
+  `core.file.upload` and `core.file.download`.
+- Full gates pass: `pnpm format:check`, `pnpm lint`, `pnpm typecheck`,
+  `pnpm test`, `pnpm build` and `pnpm prisma:validate`.
+- `pnpm deploy:opencore` pass, deploying API/Admin on fixed ports
+  `39172`/`39174`.
+
+## Round 15 Public Verification
+
+Against public endpoints after deploy:
+
+- `POST http://144.217.243.161:39172/api/auth/login` returned 201.
+- `POST http://144.217.243.161:39172/api/core/files/upload` uploaded a text
+  file and returned metadata with the expected byte size.
+- `GET http://144.217.243.161:39172/api/core/files/:id` returned matching
+  metadata and storage key.
+- `GET http://144.217.243.161:39172/api/core/files/:id/download` returned
+  bytes matching the uploaded content exactly.
+- `DELETE http://144.217.243.161:39172/api/core/files/:id` cleaned up the
+  public verification file.
+- `GET http://144.217.243.161:39174/system/files/index.html` returned 200.
+- The deployed Admin Files chunk includes upload/download wiring markers:
+  `uploadFileAsset`, `getFileDownloadPath`, `Upload File` and `Choose file`.
+
+## Round 15 Commit Record
+
+- Feature commit:
+  `0923009 feat(core-file): add authenticated file content loop / 新增认证文件内容闭环`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.
