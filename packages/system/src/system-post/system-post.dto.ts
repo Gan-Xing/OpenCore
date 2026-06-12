@@ -43,6 +43,17 @@ export class SystemPostPageDto {
   totalPages!: number;
 }
 
+export class SystemPostOptionDto {
+  @ApiProperty()
+  code!: string;
+
+  @ApiProperty()
+  name!: string;
+
+  @ApiProperty()
+  order!: number;
+}
+
 export class SystemPostQueryDto {
   @ApiProperty({ required: false, default: 1 })
   page?: number | string;

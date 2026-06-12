@@ -2043,6 +2043,29 @@
         "tags": ["SystemManagement", "Core Posts"]
       }
     },
+    "/api/core/posts/simple-list": {
+      "get": {
+        "operationId": "SystemManagementController_listPostOptions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SystemPostOptionDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Posts"]
+      }
+    },
     "/api/core/posts/{code}": {
       "get": {
         "operationId": "SystemManagementController_getPost",
@@ -5864,6 +5887,15 @@
           "totalPages": { "type": "number" }
         },
         "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "SystemPostOptionDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "order": { "type": "number" }
+        },
+        "required": ["code", "name", "order"]
       },
       "CreateSystemPostDto": {
         "type": "object",

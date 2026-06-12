@@ -190,6 +190,11 @@ export type SystemPostSummary = {
   updatedAt: string;
 };
 
+export type SystemPostOptionSummary = Pick<
+  SystemPostSummary,
+  'code' | 'name' | 'order'
+>;
+
 export type SystemPostQueryRequest = PageRequest & {
   enabled?: boolean;
 };

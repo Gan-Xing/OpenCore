@@ -97,6 +97,7 @@ describe('createSystemManagementClient', () => {
     await client.updateDept('token', 'dept_qa', { name: 'Quality Platform' });
     await client.deleteDept('token', 'dept_qa');
     await client.listPosts('token', { page: 1, pageSize: 20, enabled: true });
+    await client.listPostOptions('token');
     await client.getPost('token', 'engineer');
     await client.exportPosts('token', { enabled: true });
     await client.createPost('token', {
@@ -268,6 +269,10 @@ describe('createSystemManagementClient', () => {
       },
       {
         path: '/core/posts?page=1&pageSize=20&enabled=true',
+        token: 'token',
+      },
+      {
+        path: '/core/posts/simple-list',
         token: 'token',
       },
       {

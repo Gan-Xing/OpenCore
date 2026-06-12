@@ -17,6 +17,7 @@ import {
   normalizeSystemPostPageQuery,
   normalizeUpdateSystemPostInput,
   SystemPostRepository,
+  type SystemPostOptionRecord,
   type SystemPostPageQuery,
 } from './system-post.repository';
 
@@ -54,6 +55,18 @@ export class PrismaSystemPostRepository extends SystemPostRepository {
     });
 
     return createSystemPostPageResult(rows.map(toSystemPostRecord), pagination);
+  }
+
+  async listPostOptions(): Promise<readonly SystemPostOptionRecord[]> {
+    return this.prisma.systemPost.findMany({
+      where: { enabled: true },
+      orderBy: [{ order: 'asc' }, { name: 'asc' }],
+      select: {
+        code: true,
+        name: true,
+        order: true,
+      },
+    });
   }
 
   async getPost(code: string): Promise<SystemPostRecord> {

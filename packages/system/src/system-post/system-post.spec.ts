@@ -36,12 +36,30 @@ describe('@opencore/system system-post', () => {
       name: 'Quality Platform',
       enabled: false,
     });
+    await expect(service.listPostOptions()).resolves.not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ code: 'qa' })]),
+    );
     await expect(service.listPosts({ enabled: 'false' })).resolves.toEqual(
       expect.objectContaining({
         items: expect.arrayContaining([
           expect.objectContaining({ code: 'qa' }),
         ]),
       }),
+    );
+    await expect(
+      service.updatePost('qa', { enabled: true, order: 5 }),
+    ).resolves.toMatchObject({
+      enabled: true,
+      order: 5,
+    });
+    await expect(service.listPostOptions()).resolves.toEqual(
+      expect.arrayContaining([
+        {
+          code: 'qa',
+          name: 'Quality Platform',
+          order: 5,
+        },
+      ]),
     );
     await expect(service.createExportPreview()).resolves.toMatchObject({
       filename: 'opencore-system-posts.csv',
@@ -99,6 +117,14 @@ describe('@opencore/system system-post', () => {
           ]),
         }),
       );
+      await expect(service.listPostOptions()).resolves.toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            code: 'admin',
+            name: 'Administrator',
+          }),
+        ]),
+      );
     });
 
     it('persists post CRUD through Prisma', async () => {
@@ -123,6 +149,27 @@ describe('@opencore/system system-post', () => {
         description: 'Updated by integration test.',
         enabled: false,
       });
+      await expect(service.listPostOptions()).resolves.not.toEqual(
+        expect.arrayContaining([expect.objectContaining({ code })]),
+      );
+      await expect(
+        service.updatePost(code, {
+          enabled: true,
+          order: 5,
+        }),
+      ).resolves.toMatchObject({
+        enabled: true,
+        order: 5,
+      });
+      await expect(service.listPostOptions()).resolves.toEqual(
+        expect.arrayContaining([
+          {
+            code,
+            name: 'Prisma Test Post',
+            order: 5,
+          },
+        ]),
+      );
       await expect(service.deletePost(code)).resolves.toEqual({
         deleted: true,
       });

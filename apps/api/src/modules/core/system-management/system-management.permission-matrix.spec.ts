@@ -57,6 +57,12 @@ const expectedPermissions = {
   updatePost: ['core:post:update'],
 } as const;
 
+const expectedPublicConsumerMethods = [
+  'getConfigValueByKey',
+  'listDictDataOptions',
+  'listPostOptions',
+] as const;
+
 describe('SystemManagementController permission matrix', () => {
   it('guards every S7 route with registry permission codes', () => {
     for (const [methodName, permissions] of Object.entries(
@@ -70,6 +76,17 @@ describe('SystemManagementController permission matrix', () => {
           ],
         ),
       ).toEqual(permissions);
+    }
+  });
+
+  it('keeps simple consumer routes free of management permissions', () => {
+    for (const methodName of expectedPublicConsumerMethods) {
+      expect(
+        Reflect.getMetadata(
+          REQUIRED_PERMISSIONS_KEY,
+          SystemManagementController.prototype[methodName],
+        ),
+      ).toBeUndefined();
     }
   });
 });

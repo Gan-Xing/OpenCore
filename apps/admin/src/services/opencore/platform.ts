@@ -48,6 +48,7 @@ import {
   type OnlineUserSessionSummary,
   type SystemNoticeQueryRequest,
   type SystemNoticeSummary,
+  type SystemPostOptionSummary,
   type SystemPostQueryRequest,
   type SystemPostSummary,
   type ResetUserPasswordRequest,
@@ -548,6 +549,12 @@ export async function listOpenCoreSystemPosts(
     query,
   );
   return [...page.items];
+}
+
+export function listOpenCoreSystemPostOptions(): Promise<
+  readonly SystemPostOptionSummary[]
+> {
+  return systemManagementClient.listPostOptions(getRequiredAdminToken());
 }
 
 export function getOpenCoreSystemPost(

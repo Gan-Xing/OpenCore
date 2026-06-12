@@ -28,6 +28,7 @@ import type {
   SystemDeptTreeSummary,
   SystemNoticeQueryRequest,
   SystemNoticeSummary,
+  SystemPostOptionSummary,
   SystemPostQueryRequest,
   SystemPostSummary,
   UpdateDictItemRequest,
@@ -155,6 +156,9 @@ export type SystemManagementClient = {
     token: Token,
     query?: SystemPostQueryRequest,
   ) => Promise<PageResponse<SystemPostSummary>>;
+  listPostOptions: (
+    token: Token,
+  ) => Promise<readonly SystemPostOptionSummary[]>;
   getPost: (token: Token, code: string) => Promise<SystemPostSummary>;
   exportPosts: (
     token: Token,
@@ -411,6 +415,10 @@ export function createSystemManagementClient(
           token,
         },
       ),
+    listPostOptions: (token) =>
+      request<readonly SystemPostOptionSummary[]>('/core/posts/simple-list', {
+        token,
+      }),
     getPost: (token, code) =>
       request<SystemPostSummary>(`/core/posts/${encodeURIComponent(code)}`, {
         token,

@@ -322,6 +322,7 @@ if (
   !opencorePlatformService.includes('updateOpenCoreSystemDept') ||
   !opencorePlatformService.includes('deleteOpenCoreSystemDept') ||
   !opencorePlatformService.includes('listOpenCoreSystemPosts') ||
+  !opencorePlatformService.includes('listOpenCoreSystemPostOptions') ||
   !opencorePlatformService.includes('getOpenCoreSystemPost') ||
   !opencorePlatformService.includes('createOpenCoreSystemPost') ||
   !opencorePlatformService.includes('updateOpenCoreSystemPost') ||
@@ -655,7 +656,7 @@ if (
   !usersPage.includes('deleteOpenCoreUser') ||
   !usersPage.includes('listOpenCoreRoles') ||
   !usersPage.includes('listOpenCoreSystemDepts') ||
-  !usersPage.includes('listOpenCoreSystemPosts') ||
+  !usersPage.includes('listOpenCoreSystemPostOptions') ||
   !usersPage.includes('Department scope') ||
   !usersPage.includes('All departments') ||
   !usersPage.includes('selectedDeptId') ||

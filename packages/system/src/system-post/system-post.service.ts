@@ -9,6 +9,7 @@ import {
   createSystemPostExportPreview,
   SystemPostRepository,
   type SystemPostExportPreview,
+  type SystemPostOptionRecord,
   type SystemPostPageQuery,
 } from './system-post.repository';
 
@@ -20,6 +21,10 @@ export class SystemPostService {
     query: SystemPostPageQuery = {},
   ): Promise<PageResult<SystemPostRecord>> {
     return this.repository.listPosts(query);
+  }
+
+  listPostOptions(): Promise<readonly SystemPostOptionRecord[]> {
+    return this.repository.listPostOptions();
   }
 
   getPost(code: string): Promise<SystemPostRecord> {

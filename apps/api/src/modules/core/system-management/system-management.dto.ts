@@ -31,6 +31,7 @@ export {
   SystemNoticePageDto,
   SystemNoticeQueryDto,
   SystemPostDto,
+  SystemPostOptionDto,
   SystemPostPageDto,
   SystemPostQueryDto,
   UpdateSystemDeptDto,

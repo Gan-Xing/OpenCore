@@ -17,6 +17,8 @@ import {
   normalizeSystemPostPageQuery,
   normalizeUpdateSystemPostInput,
   SystemPostRepository,
+  toSystemPostOptionRecord,
+  type SystemPostOptionRecord,
   type SystemPostPageQuery,
 } from './system-post.repository';
 
@@ -44,6 +46,13 @@ export class SeedSystemPostRepository extends SystemPostRepository {
       rows.map((post) => ({ ...post })),
       pagination,
     );
+  }
+
+  async listPostOptions(): Promise<readonly SystemPostOptionRecord[]> {
+    return this.posts
+      .filter((post) => post.enabled)
+      .sort(compareSystemPostRecords)
+      .map(toSystemPostOptionRecord);
   }
 
   async getPost(code: string): Promise<SystemPostRecord> {

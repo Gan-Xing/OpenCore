@@ -27,6 +27,11 @@ export type SystemPostFilters = {
   enabled?: boolean;
 };
 
+export type SystemPostOptionRecord = Pick<
+  SystemPostRecord,
+  'code' | 'name' | 'order'
+>;
+
 export type SystemPostNormalizedPageQuery = {
   page: number;
   pageSize: number;
@@ -57,6 +62,8 @@ export abstract class SystemPostRepository {
   abstract listPosts(
     query?: SystemPostPageQuery,
   ): Promise<PageResult<SystemPostRecord>>;
+
+  abstract listPostOptions(): Promise<readonly SystemPostOptionRecord[]>;
 
   abstract getPost(code: string): Promise<SystemPostRecord>;
 
@@ -158,6 +165,16 @@ export function compareSystemPostRecords(
   right: SystemPostRecord,
 ): number {
   return left.order - right.order || left.name.localeCompare(right.name);
+}
+
+export function toSystemPostOptionRecord(
+  post: SystemPostRecord,
+): SystemPostOptionRecord {
+  return {
+    code: post.code,
+    name: post.name,
+    order: post.order,
+  };
 }
 
 function normalizePostCode(value: string): string {

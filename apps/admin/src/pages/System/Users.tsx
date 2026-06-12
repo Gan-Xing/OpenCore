@@ -17,7 +17,7 @@ import {
   createSystemDeptFixtures,
   createSystemPostFixtures,
   type RoleSummary,
-  type SystemPostSummary,
+  type SystemPostOptionSummary,
   type SystemDeptSummary,
   type SystemDeptTreeSummary,
   type UserSummary,
@@ -46,7 +46,7 @@ import {
   getOpenCoreUser,
   listOpenCoreRoles,
   listOpenCoreSystemDepts,
-  listOpenCoreSystemPosts,
+  listOpenCoreSystemPostOptions,
   listOpenCoreUsers,
   resetOpenCoreUserPassword,
   setOpenCoreUserStatus,
@@ -219,11 +219,11 @@ function createRoleOptions(rows: readonly RoleSummary[]) {
     }));
 }
 
-function createPostNameMap(rows: readonly SystemPostSummary[]) {
+function createPostNameMap(rows: readonly SystemPostOptionSummary[]) {
   return new Map(rows.map((row) => [row.code, row.name]));
 }
 
-function createPostOptions(rows: readonly SystemPostSummary[]) {
+function createPostOptions(rows: readonly SystemPostOptionSummary[]) {
   return [...rows]
     .sort(
       (left, right) =>
@@ -350,7 +350,7 @@ export default function UsersPage() {
   const [deptTreeRows, setDeptTreeRows] =
     useState<readonly SystemDeptTreeSummary[]>(fallbackDeptTreeRows);
   const [postRows, setPostRows] =
-    useState<readonly SystemPostSummary[]>(fallbackPostRows);
+    useState<readonly SystemPostOptionSummary[]>(fallbackPostRows);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
   const [selectedDetail, setSelectedDetail] = useState<UserSummary>();
@@ -396,7 +396,7 @@ export default function UsersPage() {
         listOpenCoreUsers(deptId ? { deptId } : undefined),
         listOpenCoreRoles(),
         listOpenCoreSystemDepts(),
-        listOpenCoreSystemPosts({ page: 1, pageSize: 100 }),
+        listOpenCoreSystemPostOptions(),
       ]);
       setRows(users);
       setRoleRows(roles);

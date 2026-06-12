@@ -65,6 +65,7 @@ import {
   SystemNoticePageDto,
   SystemNoticeQueryDto,
   SystemPostDto,
+  SystemPostOptionDto,
   SystemPostPageDto,
   SystemPostQueryDto,
   UpdateSystemDeptDto,
@@ -418,6 +419,13 @@ export class SystemManagementController {
   @ApiOkResponse({ type: ExportPreviewDto })
   exportPosts(@Query() query: SystemPostQueryDto): Promise<ExportPreviewDto> {
     return this.posts.createExportPreview(query);
+  }
+
+  @Get('posts/simple-list')
+  @ApiTags('Core Posts')
+  @ApiOkResponse({ type: [SystemPostOptionDto] })
+  listPostOptions(): Promise<readonly SystemPostOptionDto[]> {
+    return this.posts.listPostOptions();
   }
 
   @Get('posts/:code')
