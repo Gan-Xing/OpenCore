@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { DatabaseModule } from '../../../platform/database/database.module';
+import { DatabaseModule } from '@opencore/database';
 import { CollaborationController } from './collaboration.controller';
 import { CollaborationRepository } from './collaboration.repository';
 import { PrismaCollaborationRepository } from './prisma-collaboration.repository';

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { PrismaService } from '../../../platform/database/prisma.service';
+import { PrismaService } from '@opencore/database';
 import type {
   CreateIntegrationProviderDto,
   CreateIntegrationTemplateDto,

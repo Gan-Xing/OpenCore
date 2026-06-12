@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { DatabaseModule } from '../../../platform/database/database.module';
+import { DatabaseModule } from '@opencore/database';
 import { MonitoringController } from './monitoring.controller';
 import { MonitoringRepository } from './monitoring.repository';
 import {

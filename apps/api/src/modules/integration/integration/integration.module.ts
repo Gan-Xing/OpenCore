@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { DatabaseModule } from '../../../platform/database/database.module';
+import { DatabaseModule } from '@opencore/database';
 import { IntegrationController } from './integration.controller';
 import { IntegrationRepository } from './integration.repository';
 import { PrismaIntegrationRepository } from './prisma-integration.repository';

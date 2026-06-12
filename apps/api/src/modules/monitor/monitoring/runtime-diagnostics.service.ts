@@ -1,8 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { Queue } from 'bullmq';
-import Redis, { type RedisOptions } from 'ioredis';
-import { Client as MinioClient } from 'minio';
-import { PrismaService } from '../../../platform/database/prisma.service';
+import { PrismaService } from '@opencore/database';
+import {
+  assertS3PrefixReadable,
+  type FileStorageS3Options,
+} from '@opencore/file';
+import {
+  createBullMqRedisConnectionOptions,
+  createRedisClient,
+  type RedisOptionsConfig,
+} from '@opencore/redis';
 import {
   loadRuntimeConfig,
   type RuntimeConfig,
@@ -27,7 +34,6 @@ export const RUNTIME_DIAGNOSTICS = Symbol('RUNTIME_DIAGNOSTICS');
 
 const QUEUE_NAMES = ['system-audit', 'table-export'] as const;
 const DATABASE_TIMEOUT_MS = 1_500;
-const REDIS_TIMEOUT_MS = 1_500;
 const S3_TIMEOUT_MS = 2_000;
 
 @Injectable()
@@ -63,24 +69,9 @@ export class RuntimeDiagnosticsService implements RuntimeDiagnostics {
 
   async checkS3(): Promise<DependencyStatus> {
     return measureDependency('s3', async () => {
-      const client = this.createS3Client();
-      const exists = await withTimeout(
-        client.bucketExists(this.config.s3.bucket),
-        S3_TIMEOUT_MS,
-      );
-
-      if (!exists) {
-        throw new Error('OpenCore S3 bucket is missing');
-      }
-
-      await withTimeout(
-        consumeObjectPrefix(
-          client,
-          this.config.s3.bucket,
-          this.config.s3.prefix,
-        ),
-        S3_TIMEOUT_MS,
-      );
+      await assertS3PrefixReadable(this.createS3Options(), {
+        timeoutMs: S3_TIMEOUT_MS,
+      });
 
       return 'S3 bucket is reachable and the OpenCore object prefix is listable.';
     });
@@ -156,45 +147,35 @@ export class RuntimeDiagnosticsService implements RuntimeDiagnostics {
     }
   }
 
-  private createRedisClient(): Redis {
-    return new Redis(this.config.redis.url, this.createRedisOptions());
+  private createRedisClient() {
+    return createRedisClient(this.createRedisOptions());
   }
 
-  private createBullMqRedisOptions(): RedisOptions & { url: string } {
+  private createBullMqRedisOptions() {
+    return createBullMqRedisConnectionOptions(this.createRedisOptions());
+  }
+
+  private createRedisOptions(): RedisOptionsConfig {
     return {
-      connectTimeout: REDIS_TIMEOUT_MS,
-      commandTimeout: REDIS_TIMEOUT_MS,
-      maxRetriesPerRequest: 1,
-      retryStrategy: () => null,
       url: this.config.redis.url,
-    };
-  }
-
-  private createRedisOptions(): RedisOptions {
-    return {
-      lazyConnect: true,
-      connectTimeout: REDIS_TIMEOUT_MS,
-      commandTimeout: REDIS_TIMEOUT_MS,
+      keyPrefix: this.config.redis.keyPrefix,
+      bullmqQueuePrefix: this.config.bullmq.queuePrefix,
+      connectTimeoutMs: 1_500,
+      commandTimeoutMs: 1_500,
       maxRetriesPerRequest: 1,
-      enableOfflineQueue: false,
-      retryStrategy: () => null,
     };
   }
 
-  private createS3Client(): MinioClient {
-    const endpoint = new URL(this.config.s3.endpoint);
-    const useSSL = endpoint.protocol === 'https:';
-
-    return new MinioClient({
-      endPoint: endpoint.hostname,
-      port: endpoint.port ? Number(endpoint.port) : useSSL ? 443 : 80,
-      useSSL,
-      accessKey: this.config.s3.accessKeyId,
-      secretKey: this.config.s3.secretAccessKey,
+  private createS3Options(): FileStorageS3Options {
+    return {
+      endpoint: this.config.s3.endpoint,
       region: this.config.s3.region,
-      pathStyle: this.config.s3.forcePathStyle,
-      retryOptions: { disableRetry: true },
-    });
+      bucket: this.config.s3.bucket,
+      prefix: this.config.s3.prefix,
+      accessKeyId: this.config.s3.accessKeyId,
+      secretAccessKey: this.config.s3.secretAccessKey,
+      forcePathStyle: this.config.s3.forcePathStyle,
+    };
   }
 }
 
@@ -221,20 +202,6 @@ async function measureDependency(
       message: `${name} health probe failed without exposing runtime details.`,
     };
   }
-}
-
-function consumeObjectPrefix(
-  client: MinioClient,
-  bucket: string,
-  prefix: string,
-): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const stream = client.listObjectsV2(bucket, prefix, true);
-
-    stream.on('data', () => undefined);
-    stream.on('error', reject);
-    stream.on('end', resolve);
-  });
 }
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {

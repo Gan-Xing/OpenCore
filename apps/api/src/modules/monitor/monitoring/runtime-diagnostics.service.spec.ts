@@ -1,4 +1,4 @@
-import { PrismaService } from '../../../platform/database/prisma.service';
+import { PrismaService } from '@opencore/database';
 import { RuntimeDiagnosticsService } from './runtime-diagnostics.service';
 
 describe('RuntimeDiagnosticsService integration', () => {
