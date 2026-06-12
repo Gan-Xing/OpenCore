@@ -3,8 +3,8 @@
 Date: 2026-06-12  
 Repository: `Gan-Xing/OpenCore`  
 Default branch: `main`  
-Latest observed feature commit: `c4347b4 feat(core-user): add user security mutation loop / 新增用户安全变更闭环`
-Latest deployed feature commit: `c4347b4 feat(core-user): add user security mutation loop / 新增用户安全变更闭环`
+Latest observed feature commit: `32a6f5d feat(core-role): add role status security loop / 新增角色状态安全闭环`
+Latest deployed feature commit: `32a6f5d feat(core-role): add role status security loop / 新增角色状态安全闭环`
 Latest deployed hardening commit: `04e446c fix(online-user): stabilize admin session smoke / 稳定在线用户管理员会话冒烟`
 
 ## One-sentence Goal
@@ -60,6 +60,7 @@ productization waterline completion; see
 - Round 17 `core.role` menu assignment stage 2
 - Round 18 `core.role` user assignment stage 3
 - Round 19 `core.user` security mutation stage 2
+- Round 20 `core.role` status security stage 4
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -139,30 +140,38 @@ sessions。固定 smoke、部署 smoke 和公网 smoke 均证明 status/reset/up
 断言改为本次 admin token session 断言，避免真实服务器 active admin session 超过分页后
 误报。
 
+Round 20 关闭 `core.role` 当前基础水位的最后安全缺口：角色现在有 `enabled` 状态、
+状态切换 API/SDK/Admin 闭环和严格 boolean 反序列化校验。禁用角色会让该角色不再出现在
+登录返回的 `roleCodes`、权限聚合和数据范围计算里；状态切换、直接角色更新和角色删除都会
+撤销受影响用户的 active online-user sessions。system role 不能被禁用，避免管理员锁死。
+固定 smoke、部署 smoke 和公网 smoke 均证明 disable/enable/update/delete 会让旧 token 失效，
+禁用期间重新登录不会带回该角色权限，启用后重新登录恢复。Admin Roles 页面新增状态筛选、
+状态列、启用/禁用操作和 `Revoked sessions` 反馈，部署 Admin Roles chunk 已验证包含
+`Disable this role`、`Enable this role`、`System roles cannot be disabled` 和
+`Revoked sessions` 标记。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
 
 - Meets current waterline: Round 6 `core.permission`, Round 12
   `core.audit-log`, Round 13/14 `monitor.online-user`, Round 10/15
-  `core.file`, Round 4/16 `core.menu`.
+  `core.file`, Round 4/16 `core.menu`, Round 5/17/18/20 `core.role`.
 - First loop, enhance: Round 1 `core.notice`, Round 2 `core.dept`, Round 3
-  `core.post`, Round 5/17/18 `core.role`, Round 7/19 `core.user`, Round 8
-  `core.dict`, Round 9 `core.config`, Round 11 `core.login-log`.
+  `core.post`, Round 7/19 `core.user`, Round 8 `core.dict`, Round 9
+  `core.config`, Round 11 `core.login-log`.
 - Thin, rework: none after Round 16.
 
 The P0 remediation queue from the post-Round 13 re-audit is now clear. The next
 round should continue with the P1 enhancement queue unless a new waterline audit
 finds another blocker:
 
-1. `core.role` plus `core.user`: Round 17 closed role menu-tree assignment and
-   role-permission session revocation; Round 18 closed role-user assignment and
-   user-role session revocation; Round 19 closed user status/reset-password and
-   direct user-mutation session semantics. Remaining work is role status plus
-   user department side-tree filtering, post binding, profile/avatar,
-   import/export and broader option/batch workflows.
-2. `core.dict`: separate dict data workflow or a clearly equivalent item
+1. `core.dict`: separate dict data workflow or a clearly equivalent item
    management API, simple-list/cache endpoints and consumer smoke.
+2. `core.user`: Round 19 closed user status/reset-password and direct
+   user-mutation session semantics. Remaining work is department side-tree
+   filtering, post binding, profile/avatar, import/export and broader
+   option/batch workflows.
 3. `core.config`: get-by-key, cache refresh/invalidation and runtime
    propagation boundaries.
 4. `core.login-log`: browser/OS parsing, IP/location enrichment where feasible,

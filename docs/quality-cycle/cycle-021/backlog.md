@@ -495,6 +495,33 @@ updating database rows.
       verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 20: core.role Status Security Productization
+
+Why this slice: after role menu assignment, role-user assignment and user
+security mutation, the remaining basic `core.role` gap was role status. RuoYi
+and Yudao both expose role status as a first-order RBAC control, and OpenCore
+needed disabling a role to affect active and future authorization instead of
+only changing a table cell.
+
+- [x] Add `enabled` to persisted roles, seed roles and role DTOs.
+- [x] Add strict status DTO/runtime validation so `enabled` must be a boolean.
+- [x] Add `PATCH /api/core/roles/:code/status`, guarded by
+      `core:role:update`.
+- [x] Prevent system roles from being disabled.
+- [x] Filter disabled roles out of login `roleCodes`, permission aggregation
+      and data-scope role calculations.
+- [x] Return `revokedSessionCount` from role update/status/delete mutations.
+- [x] Revoke affected active online-user sessions after role status changes,
+      direct role updates and role deletes.
+- [x] Extend OpenAPI, SDK types/client methods and SDK path tests.
+- [x] Update Admin Roles with status filter, status column, enable/disable
+      controls and revoked-session feedback.
+- [x] Extend fixed-port/deploy `core.role` smoke to prove disable/enable,
+      disabled-role filtering and update/delete session revocation.
+- [x] Run focused, full, build, fixed-port smoke, deployment and public URL
+      verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -515,6 +542,9 @@ treat "minimal loop" as "minimal final product".
       smoke, live list/detail/export.
 - [x] Round 4/16 `core.menu`: tree menu metadata, Admin tree operations,
       parent/child guards, nullable parent clearing and route/component smoke.
+- [x] Round 5/17/18/20 `core.role`: CRUD, data scope, menu assignment, user
+      assignment, status toggle, disabled-role auth filtering and
+      status/update/delete session revocation.
 
 ### First Loop, Needs Enhancement
 
@@ -524,9 +554,6 @@ treat "minimal loop" as "minimal final product".
       and ordered tree operations.
 - [ ] Round 3 `core.post`: user-post binding, simple-list option endpoints and
       batch operations.
-- [ ] Round 5/17/18 `core.role`: role menu-tree assignment,
-      role-permission session revocation, role-user assignment and user-role
-      session revocation are complete; role status still needs enhancement.
 - [ ] Round 7/19 `core.user`: status toggle, reset password and direct
       user-mutation session invalidation are complete; side-tree filtering,
       post binding, profile/avatar, import/export and option/batch workflows
@@ -573,8 +600,8 @@ treat "minimal loop" as "minimal final product".
 - Batch post deletion and simple-list option endpoints.
 - Menu router-generation expansion, menu cache refresh, save-sort and drag-sort
   persistence.
-- Role simple-list endpoints, batch role deletion, standalone data-scope
-  endpoint and role status toggle.
+- Role simple-list endpoints, batch role deletion and standalone data-scope
+  endpoint.
 - Registry definition editing and dynamic permission discovery.
 - User Excel import/export file workflows, dedicated User-page role assignment
   dialog, profile/avatar/social/simple-list endpoints, post binding, batch user

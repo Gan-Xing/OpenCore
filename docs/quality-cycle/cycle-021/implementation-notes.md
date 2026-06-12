@@ -1422,3 +1422,88 @@ tools/scripts/smoke-core-user.mjs` passed with
   `04e446c fix(online-user): stabilize admin session smoke / 稳定在线用户管理员会话冒烟`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 20 Capability
+
+Capability: `core.role` status security productization.
+
+Goal: close the remaining basic `core.role` status gap by adding enabled/
+disabled role control and making role status/update/delete mutations invalidate
+affected active sessions while disabled roles stop contributing authorization.
+
+## Round 20 Implemented
+
+- Added `enabled` to persisted roles, Prisma migration
+  `20260612210500_role_status`, seed data and role summary DTOs.
+- Added `SetRoleStatusDto` and `RoleMutationResultDto` with strict boolean
+  normalization so string booleans are rejected before mutation.
+- Added `SystemRoleService.setRoleStatus()` across seed and Prisma-backed
+  flows.
+- Added `PATCH /api/core/roles/:code/status`, guarded by `core:role:update`.
+- Prevented system roles from being disabled.
+- Filtered disabled roles out of login `roleCodes`, permission aggregation and
+  data-scope role calculations while preserving management-side assignments.
+- Changed direct role update and delete responses to include
+  `revokedSessionCount` where applicable.
+- Revoked affected active online-user sessions after role status changes,
+  direct role updates and role deletes.
+- Extended OpenAPI, `@opencore/sdk` types/client methods and SDK path tests for
+  role status calls.
+- Updated Admin Roles with status filter, status column, enable/disable
+  controls and revoked-session feedback.
+- Extended `tools/scripts/smoke-core-role.mjs` so local/deploy/public smoke
+  covers role disable/enable, disabled-role filtering, stale-token 401 after
+  update/delete and cleanup.
+
+## Round 20 Verification
+
+- `pnpm prisma:generate` pass.
+- `pnpm prisma:migrate` applied `20260612210500_role_status`.
+- `node --check tools/scripts/smoke-core-role.mjs` pass.
+- Focused tests pass:
+  - `pnpm nx test system --testFile=packages/system/src/system-role/system-role.spec.ts`
+  - `pnpm nx test sdk --testFile=packages/sdk/src/rbac-client.spec.ts`
+  - `pnpm nx test api --testFile=apps/api/src/modules/core/rbac/rbac.permission-matrix.spec.ts`
+  - `pnpm nx test api --testFile=apps/api/src/modules/core/rbac/prisma-rbac.repository.spec.ts`
+- Focused typecheck pass for `system`, `api` and `admin`.
+- `pnpm nx test admin` pass.
+- `pnpm openapi:export`, `pnpm sdk:check`, `pnpm openapi:check`,
+  `pnpm openapi:registry-tags:check` and
+  `pnpm registry:admin-routes:check` pass.
+- `pnpm prisma:validate` pass.
+- `pnpm smoke:api:local` pass on fixed port `39173`, including
+  `core.role.status.disable`,
+  `core.role.status.disabled-role-filtered`,
+  `core.role.status.enable`,
+  `core.role.update.revoke-session` and
+  `core.role.delete.revoke-session`.
+- Full gates pass sequentially: `pnpm format:check`, `pnpm lint`,
+  `pnpm typecheck`, `pnpm test` and `pnpm build`. The existing non-failing
+  Biome regex warning in
+  `apps/admin/src/pages/shared/CurrentPageExportButton.tsx` remains.
+- `pnpm deploy:opencore` pass, deploying API/Admin on fixed ports
+  `39172`/`39174`; deploy smoke includes the extended `core.role.*` status,
+  update and delete checks.
+
+## Round 20 Public Verification
+
+Against public endpoints after deploy:
+
+- `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 node
+tools/scripts/smoke-core-role.mjs` passed with
+  `OPENCORE_SMOKE_CHECK_DOCS=false`.
+- Public role smoke verified role disable, disabled-role auth filtering,
+  re-enable, relogin permission restoration, direct role update session
+  revocation and role delete session revocation.
+- `GET http://144.217.243.161:39172/health/ready` returned 200.
+- `GET http://144.217.243.161:39174/system/roles/index.html` returned 200.
+- The deployed Admin Roles chunk `p__System__Roles.8910f000.async.js`
+  contains `Revoked sessions`, `Disable this role`, `Enable this role`,
+  `System roles cannot be disabled` and status markers.
+
+## Round 20 Commit Record
+
+- Feature commit:
+  `32a6f5d feat(core-role): add role status security loop / 新增角色状态安全闭环`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

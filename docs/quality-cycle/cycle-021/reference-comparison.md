@@ -148,7 +148,8 @@ simple-list endpoints, batch delete, separate data-scope update endpoints,
 status toggles or token permission refresh semantics in this round.
 Round 17 later closes the role menu-tree assignment and role-permission session
 revocation portion of this gap. Round 18 later closes the role-user assignment
-and user-role session revocation portion.
+and user-role session revocation portion. Round 20 later closes the role status
+and role mutation session-revocation portion.
 
 ## Round 6 Permission Reference Shape
 
@@ -509,7 +510,8 @@ catalog:
 
 OpenCore still does not admit role status toggle, batch role operations,
 separate user-page role assignment or user reset-password/status mutation
-semantics in this round.
+semantics in this round. Round 20 later closes the role status and disabled-role
+auth filtering portion.
 
 ## Round 18 Role User Assignment Reference Shape
 
@@ -537,7 +539,8 @@ OpenCore admits the matching stage-3 loop from the role management side:
 OpenCore still does not admit role status toggle, batch role operations or
 separate user-page role assignment in this round. Round 19 closes the
 reset-password/status mutation semantics and direct user-mutation session
-refresh portion from the user-management side.
+refresh portion from the user-management side. Round 20 closes the role status
+and role mutation session-revocation portion.
 
 ## Round 19 User Security Mutation Reference Shape
 
@@ -568,3 +571,34 @@ OpenCore still does not admit department side-tree filtering, post binding,
 profile/avatar/social endpoints, Excel import/export workflows, batch user
 delete, separate User-page role assignment or broader user option endpoints in
 this round.
+
+## Round 20 Role Status Security Reference Shape
+
+RuoYi exposes role status changes as a basic role management operation. Yudao's
+role management model also carries role status through create/update/list
+flows, and disabled roles are expected to stop contributing authorization
+state.
+
+OpenCore admits the matching stage-4 loop for role status and role mutation
+security effects:
+
+- roles now persist an `enabled` boolean and expose it through API, SDK, seed,
+  OpenAPI and Admin;
+- `PATCH /api/core/roles/:code/status` toggles role status through a strict
+  boolean request contract;
+- system roles cannot be disabled, so an operator cannot lock out the
+  bootstrap administrator path;
+- disabled roles are filtered out of login `roleCodes`, permission aggregation
+  and data-scope role calculations while keeping management-side assignments
+  visible;
+- role status, direct role update and role delete mutations return
+  `revokedSessionCount` and revoke affected active online-user sessions;
+- Admin Roles adds status filtering, status display, enable/disable controls
+  and revoked-session feedback;
+- fixed-port, deploy and public smoke prove stale tokens receive 401 after
+  disable/enable/update/delete, disabled roles are omitted from auth results
+  and permissions return after re-enabling plus relogin.
+
+OpenCore still does not admit role batch operations, a separate standalone
+data-scope endpoint, role simple-list endpoints or separate user-page role
+assignment in this round.

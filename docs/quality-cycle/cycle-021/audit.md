@@ -129,7 +129,9 @@ This remains inside S6 RBAC scope and admits the existing OpenCore
 introduce role-user assignment pages, menu-tree assignment, simple-list option
 endpoints, batch delete, standalone data-scope endpoints or status toggles.
 Round 17 later closes the menu-tree assignment and role-permission session
-revocation portion of this gap.
+revocation portion of this gap. Round 18 later closes role-user assignment and
+changed user-role session revocation. Round 20 later closes role status,
+disabled-role auth filtering and role update/status/delete session revocation.
 
 ## Round 6 Audit: core.permission
 
@@ -366,3 +368,25 @@ online session model: ID, username, token ID, IP, user agent, last seen time,
 expiry and revocation metadata. It does not introduce OAuth client/token
 administration, true JWT blacklist enforcement, browser/OS parsing, IP
 geolocation, batch kick-out, export endpoints or session-refresh semantics.
+
+## Round 20 Audit: core.role Status Security
+
+After Round 19, the remaining basic `core.role` gap was role status and its
+authorization effect:
+
+- Role CRUD, data scope, role menu assignment and role user assignment were
+  live, but roles did not yet persist an operator-visible enabled/disabled
+  state.
+- Direct role update/delete and status changes needed a consistent mutation
+  result with affected-session revocation, matching the session semantics added
+  for role menu/user assignment and direct user security mutation.
+- Auth/RBAC needed to ignore disabled roles during login role-code projection,
+  permission aggregation and data-scope role calculation while keeping the
+  management assignment rows visible for operators.
+- Runtime tests needed to prove status deserialization rejects bad booleans,
+  while deploy/local smoke needed to prove disabled roles do not keep
+  authorizing stale or newly logged-in sessions.
+
+This stays inside the current S6 RBAC boundary. It does not introduce batch
+role operations, separate data-scope endpoints, role simple-list endpoints or a
+separate user-page role assignment workflow.
