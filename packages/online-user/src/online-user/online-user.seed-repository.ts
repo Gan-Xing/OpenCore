@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
+import type { SecurityAuthSessionRecord } from '@opencore/security';
 import {
   seedOnlineUserSessions,
   type OnlineUserSessionRecord,
 } from './online-user.records';
 import {
+  assertTokenSessionActive,
   assertSessionActive,
   compareOnlineUserSessions,
   createOnlineUserPageResult,
@@ -12,6 +14,7 @@ import {
   normalizeOnlineUserFilters,
   normalizeOnlineUserPageQuery,
   OnlineUserRepository,
+  parseOnlineUserAgent,
   requireOnlineUserSession,
   type KickOutSessionInput,
   type OnlineUserQuery,
@@ -45,6 +48,39 @@ export class SeedOnlineUserRepository extends OnlineUserRepository {
 
   async getOnlineUser(id: string): Promise<OnlineUserSessionRecord> {
     return cloneSession(this.findSession(id));
+  }
+
+  async registerSession(record: SecurityAuthSessionRecord): Promise<void> {
+    const existing = this.sessions.find(
+      (session) => session.tokenId === record.tokenId,
+    );
+    const nextSession = withParsedUserAgent({
+      id: createSessionId(record.tokenId),
+      username: record.username,
+      tokenId: record.tokenId,
+      ip: record.ip,
+      userAgent: record.userAgent,
+      lastSeenAt: record.lastSeenAt,
+      expiresAt: record.expiresAt,
+    });
+
+    if (existing) {
+      Object.assign(existing, nextSession);
+      return;
+    }
+
+    this.sessions.push(nextSession);
+  }
+
+  async assertSessionActive(tokenId: string): Promise<void> {
+    const session = this.sessions.find((row) => row.tokenId === tokenId);
+
+    if (!session) {
+      return;
+    }
+
+    assertTokenSessionActive(session);
+    session.lastSeenAt = new Date().toISOString();
   }
 
   async kickOutSession(
@@ -94,4 +130,20 @@ function cloneSession(
   session: OnlineUserSessionRecord,
 ): OnlineUserSessionRecord {
   return JSON.parse(JSON.stringify(session)) as OnlineUserSessionRecord;
+}
+
+function withParsedUserAgent(
+  session: Omit<OnlineUserSessionRecord, 'browser' | 'os'>,
+): OnlineUserSessionRecord {
+  const userAgent = parseOnlineUserAgent(session.userAgent);
+
+  return {
+    ...session,
+    browser: userAgent.browser,
+    os: userAgent.os,
+  };
+}
+
+function createSessionId(tokenId: string): string {
+  return `session_${tokenId.replace(/[^a-zA-Z0-9_-]/gu, '_')}`;
 }

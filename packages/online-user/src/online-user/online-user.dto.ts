@@ -17,6 +17,12 @@ export class OnlineUserSessionDto {
   userAgent!: string;
 
   @ApiProperty()
+  browser!: string;
+
+  @ApiProperty()
+  os!: string;
+
+  @ApiProperty()
   lastSeenAt!: string;
 
   @ApiProperty()
@@ -69,6 +75,25 @@ export class KickOutSessionDto {
 
   @ApiProperty()
   reason!: string;
+}
+
+export class BatchKickOutSessionsDto extends KickOutSessionDto {
+  @ApiProperty({ type: [String] })
+  ids!: readonly string[];
+}
+
+export class BatchKickOutSessionsResultDto {
+  @ApiProperty()
+  requested!: number;
+
+  @ApiProperty()
+  kicked!: number;
+
+  @ApiProperty()
+  skipped!: number;
+
+  @ApiProperty({ type: [OnlineUserSessionDto] })
+  items!: readonly OnlineUserSessionDto[];
 }
 
 export class OnlineUserSummaryDto {

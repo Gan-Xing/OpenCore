@@ -15,6 +15,8 @@ import {
   CacheClearResultDto,
   CacheKeyPageDto,
   CacheKeyQueryDto,
+  BatchKickOutSessionsDto,
+  BatchKickOutSessionsResultDto,
   ClearCacheDto,
   CreateJobDefinitionDto,
   CreateReportDefinitionDto,
@@ -168,6 +170,16 @@ export class OperationsController {
     @Query() query: OnlineUserQueryDto,
   ): Promise<OnlineUserSessionPageDto> {
     return this.onlineUsers.listOnlineUsers(query);
+  }
+
+  @Post('monitor/online-users/kick-out')
+  @ApiTags('Monitor Online Users')
+  @RequirePermission('monitor:online-user:manage')
+  @ApiOkResponse({ type: BatchKickOutSessionsResultDto })
+  kickOutSessions(
+    @Body() body: BatchKickOutSessionsDto,
+  ): Promise<BatchKickOutSessionsResultDto> {
+    return this.onlineUsers.kickOutSessions(body);
   }
 
   @Get('monitor/online-users/:id')

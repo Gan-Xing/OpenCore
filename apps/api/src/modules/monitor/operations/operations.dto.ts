@@ -18,6 +18,8 @@ export {
   UpdateJobDefinitionDto,
 } from '@opencore/scheduler';
 export {
+  BatchKickOutSessionsDto,
+  BatchKickOutSessionsResultDto,
   KickOutSessionDto,
   OnlineUserQueryDto,
   OnlineUserSessionDto,

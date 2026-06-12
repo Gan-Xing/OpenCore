@@ -1,5 +1,7 @@
 import { UnauthorizedException } from '@nestjs/common';
 import {
+  SecurityAuthSessionRepository,
+  type SecurityAuthSessionRecord,
   SecurityAuthUserRepository,
   type SecurityAuthUserRecord,
   SecurityLoginAttemptRecorder,
@@ -28,8 +30,12 @@ describe('@opencore/security security-auth', () => {
     const token = tokens.signSubject('user_admin');
 
     expect(token).toMatchObject({
+      tokenId: expect.any(String),
       tokenType: 'Bearer',
       expiresInSeconds: 3600,
+      expiresAt: new Date(
+        (Math.floor(issuedAt / 1000) + 3600) * 1000,
+      ).toISOString(),
     });
     expect(tokens.verifyAuthorization(`Bearer ${token.accessToken}`)).toBe(
       'user_admin',
@@ -51,7 +57,12 @@ describe('@opencore/security security-auth', () => {
   it('logs in, authenticates bearer tokens and records login attempts', async () => {
     const repository = new InMemorySecurityAuthUserRepository();
     const loginAttempts = new InMemorySecurityLoginAttemptRecorder();
-    const service = new SecurityAuthService(repository, loginAttempts);
+    const sessions = new InMemorySecurityAuthSessionRepository();
+    const service = new SecurityAuthService(
+      repository,
+      loginAttempts,
+      sessions,
+    );
 
     const session = await service.login('admin', 'admin123', {
       ip: '127.0.0.1',
@@ -69,6 +80,19 @@ describe('@opencore/security security-auth', () => {
       username: 'admin',
       permissionCodes: ['core:dashboard:read'],
     });
+    expect(sessions.records).toEqual([
+      expect.objectContaining({
+        username: 'admin',
+        ip: '127.0.0.1',
+        userAgent: 'jest',
+        tokenId: expect.any(String),
+      }),
+    ]);
+
+    sessions.revokedTokenIds.add(sessions.records[0].tokenId);
+    await expect(
+      service.authenticateBearer(`Bearer ${session.accessToken}`),
+    ).rejects.toThrow(UnauthorizedException);
     expect(loginAttempts.records).toEqual([
       {
         username: 'admin',
@@ -139,6 +163,21 @@ class InMemorySecurityAuthUserRepository extends SecurityAuthUserRepository {
 
   async getPermissionCodesForUser(userId: string): Promise<string[]> {
     return userId === 'user_admin' ? ['core:dashboard:read'] : [];
+  }
+}
+
+class InMemorySecurityAuthSessionRepository extends SecurityAuthSessionRepository {
+  readonly records: SecurityAuthSessionRecord[] = [];
+  readonly revokedTokenIds = new Set<string>();
+
+  async registerSession(record: SecurityAuthSessionRecord): Promise<void> {
+    this.records.push({ ...record });
+  }
+
+  async assertSessionActive(tokenId: string): Promise<void> {
+    if (this.revokedTokenIds.has(tokenId)) {
+      throw new UnauthorizedException('Bearer token has been revoked');
+    }
   }
 }
 

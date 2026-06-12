@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '@opencore/database';
 import { PrismaOnlineUserRepository } from './online-user.prisma-repository';
@@ -50,6 +50,48 @@ describe('@opencore/online-user', () => {
     ).rejects.toThrow(BadRequestException);
   });
 
+  it('registers auth sessions, parses user agents and rejects revoked tokens', async () => {
+    const repository = new SeedOnlineUserRepository();
+    const service = new OnlineUserService(repository);
+    const tokenId = `token_${randomUUID()}`;
+
+    await repository.registerSession({
+      userId: 'user_admin',
+      username: 'admin',
+      tokenId,
+      ip: '10.0.0.1',
+      userAgent:
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36',
+      lastSeenAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 3600_000).toISOString(),
+    });
+
+    const page = await service.listOnlineUsers({
+      username: 'admin',
+      active: true,
+    });
+    const session = page.items.find((item) => item.tokenId === tokenId);
+
+    expect(session).toMatchObject({
+      browser: 'Chrome',
+      os: 'Windows',
+      ip: '10.0.0.1',
+    });
+    await expect(repository.assertSessionActive(tokenId)).resolves.toBe(
+      undefined,
+    );
+
+    await service.kickOutSessions({
+      ids: [session?.id ?? 'missing'],
+      actor: 'admin',
+      reason: 'batch revoke',
+    });
+
+    await expect(repository.assertSessionActive(tokenId)).rejects.toThrow(
+      UnauthorizedException,
+    );
+  });
+
   describe('PrismaOnlineUserRepository integration', () => {
     const prisma = new PrismaService();
     const repository = new PrismaOnlineUserRepository(prisma);
@@ -68,7 +110,7 @@ describe('@opencore/online-user', () => {
           ip: '127.0.0.1',
           userAgent: 'jest',
           lastSeenAt: new Date('2026-06-10T00:10:00.000Z'),
-          expiresAt: new Date('2026-06-10T01:10:00.000Z'),
+          expiresAt: new Date('2099-06-10T01:10:00.000Z'),
         },
       });
     });
@@ -105,6 +147,9 @@ describe('@opencore/online-user', () => {
         revokedBy: 'admin',
         revokedReason: 'security rotation',
       });
+      await expect(repository.assertSessionActive(tokenId)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     async function cleanupTestRows(): Promise<void> {

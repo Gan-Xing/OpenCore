@@ -1,6 +1,8 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import {
+  AllowAllSecurityAuthSessionRepository,
   NoopSecurityLoginAttemptRecorder,
+  SecurityAuthSessionRepository,
   SecurityAuthUserRepository,
   SecurityLoginAttemptRecorder,
   type SecurityLoginAttemptRecord,
@@ -34,6 +36,7 @@ export class SecurityAuthService {
   constructor(
     private readonly repository: SecurityAuthUserRepository,
     private readonly loginAttempts: SecurityLoginAttemptRecorder = new NoopSecurityLoginAttemptRecorder(),
+    private readonly sessions: SecurityAuthSessionRepository = new AllowAllSecurityAuthSessionRepository(),
     private readonly bearerTokens: SecurityBearerTokenService = new SecurityBearerTokenService(),
   ) {}
 
@@ -53,14 +56,28 @@ export class SecurityAuthService {
       throw new UnauthorizedException('Invalid username or password');
     }
 
-    const session = await this.createSessionForUser(user.id);
+    const session = await this.createSessionForUser(user.id, context);
     await this.recordLoginAttempt(username, true, context);
     return session;
   }
 
-  async createSessionForUser(userId: string): Promise<LoginResponse> {
+  async createSessionForUser(
+    userId: string,
+    context: LoginContext = {},
+  ): Promise<LoginResponse> {
     const authenticatedUser = await this.toAuthenticatedUser(userId);
     const token = this.bearerTokens.signSubject(userId);
+    const issuedAt = new Date().toISOString();
+
+    await this.sessions.registerSession({
+      userId,
+      username: authenticatedUser.username,
+      tokenId: token.tokenId,
+      ip: context.ip ?? 'unknown',
+      userAgent: context.userAgent ?? 'unknown',
+      lastSeenAt: issuedAt,
+      expiresAt: token.expiresAt,
+    });
 
     return {
       accessToken: token.accessToken,
@@ -73,8 +90,9 @@ export class SecurityAuthService {
   async authenticateBearer(
     authorization: string | undefined,
   ): Promise<AuthenticatedUser> {
-    const userId = this.bearerTokens.verifyAuthorization(authorization);
-    return this.toAuthenticatedUser(userId);
+    const token = this.bearerTokens.verifyAuthorizationToken(authorization);
+    await this.sessions.assertSessionActive(token.tokenId);
+    return this.toAuthenticatedUser(token.subject);
   }
 
   private async toAuthenticatedUser(

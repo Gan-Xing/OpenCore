@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
 import type {
+  BatchKickOutSessionsDto,
+  BatchKickOutSessionsResultDto,
   KickOutSessionDto,
   OnlineUserSummaryDto,
 } from './online-user.dto';
@@ -29,6 +31,12 @@ export class OnlineUserService {
     body: KickOutSessionDto,
   ): Promise<OnlineUserSessionRecord> {
     return this.repository.kickOutSession(id, body);
+  }
+
+  kickOutSessions(
+    body: BatchKickOutSessionsDto,
+  ): Promise<BatchKickOutSessionsResultDto> {
+    return this.repository.kickOutSessions(body);
   }
 
   getSummary(): Promise<OnlineUserSummaryDto> {

@@ -48,6 +48,8 @@ export type OnlineUserSessionSummary = {
   tokenId: string;
   ip: string;
   userAgent: string;
+  browser: string;
+  os: string;
   lastSeenAt: string;
   expiresAt: string;
   revokedAt?: string;
@@ -129,6 +131,17 @@ export type ClearCacheRequest = {
 export type KickOutSessionRequest = {
   actor: string;
   reason: string;
+};
+
+export type BatchKickOutSessionsRequest = KickOutSessionRequest & {
+  ids: readonly string[];
+};
+
+export type BatchKickOutSessionsResult = {
+  requested: number;
+  kicked: number;
+  skipped: number;
+  items: readonly OnlineUserSessionSummary[];
 };
 
 export type CreateReportDefinitionRequest = Omit<
@@ -213,6 +226,8 @@ export function createOperationsFixtures(): OperationsFixtures {
       tokenId: 'token_admin_1',
       ip: '127.0.0.1',
       userAgent: 'OpenCore Admin',
+      browser: 'OpenCore Admin',
+      os: 'Unknown',
       lastSeenAt: '2026-06-10T00:00:00.000Z',
       expiresAt: '2026-06-10T01:00:00.000Z',
     },
@@ -222,6 +237,8 @@ export function createOperationsFixtures(): OperationsFixtures {
       tokenId: 'token_operator_1',
       ip: '127.0.0.2',
       userAgent: 'OpenCore Smoke Operator',
+      browser: 'OpenCore Smoke',
+      os: 'Unknown',
       lastSeenAt: '2026-06-10T00:05:00.000Z',
       expiresAt: '2026-06-10T01:05:00.000Z',
     },

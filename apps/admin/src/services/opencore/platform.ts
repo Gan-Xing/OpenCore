@@ -5,6 +5,8 @@ import {
   createSystemManagementClient,
   type AuditLogQueryRequest,
   type AuditLogSummary,
+  type BatchKickOutSessionsRequest,
+  type BatchKickOutSessionsResult,
   type CreateDictTypeRequest,
   type CreateFileAssetRequest,
   type CreateMenuRequest,
@@ -158,6 +160,12 @@ export function kickOutOpenCoreOnlineUser(
   body: KickOutSessionRequest,
 ): Promise<OnlineUserSessionSummary> {
   return operationsClient.kickOutSession(getRequiredAdminToken(), id, body);
+}
+
+export function kickOutOpenCoreOnlineUsers(
+  body: BatchKickOutSessionsRequest,
+): Promise<BatchKickOutSessionsResult> {
+  return operationsClient.kickOutSessions(getRequiredAdminToken(), body);
 }
 
 export async function listOpenCoreDicts(): Promise<DictTypeSummary[]> {

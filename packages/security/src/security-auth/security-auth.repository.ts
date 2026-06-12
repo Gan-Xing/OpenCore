@@ -16,6 +16,16 @@ export type SecurityLoginAttemptRecord = {
   requestId: string;
 };
 
+export type SecurityAuthSessionRecord = {
+  userId: string;
+  username: string;
+  tokenId: string;
+  ip: string;
+  userAgent: string;
+  lastSeenAt: string;
+  expiresAt: string;
+};
+
 export abstract class SecurityLoginAttemptRecorder {
   abstract recordLoginAttempt(
     record: SecurityLoginAttemptRecord,
@@ -24,6 +34,22 @@ export abstract class SecurityLoginAttemptRecorder {
 
 export class NoopSecurityLoginAttemptRecorder extends SecurityLoginAttemptRecorder {
   async recordLoginAttempt(): Promise<void> {
+    return undefined;
+  }
+}
+
+export abstract class SecurityAuthSessionRepository {
+  abstract registerSession(record: SecurityAuthSessionRecord): Promise<void>;
+
+  abstract assertSessionActive(tokenId: string): Promise<void>;
+}
+
+export class AllowAllSecurityAuthSessionRepository extends SecurityAuthSessionRepository {
+  async registerSession(): Promise<void> {
+    return undefined;
+  }
+
+  async assertSessionActive(): Promise<void> {
     return undefined;
   }
 }

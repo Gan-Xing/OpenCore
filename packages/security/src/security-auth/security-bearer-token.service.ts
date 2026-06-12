@@ -1,16 +1,25 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 
 export type SecurityBearerTokenResult = {
   accessToken: string;
+  tokenId: string;
   tokenType: 'Bearer';
   expiresInSeconds: number;
+  expiresAt: string;
 };
 
 export type SecurityBearerTokenPayload = {
   sub?: string;
+  jti?: string;
   iat?: number;
   exp?: number;
+};
+
+export type VerifiedSecurityBearerToken = {
+  subject: string;
+  tokenId: string;
+  expiresAt: string;
 };
 
 export const DEFAULT_SECURITY_BEARER_TOKEN_TTL_SECONDS = 3600;
@@ -24,31 +33,46 @@ export class SecurityBearerTokenService {
     ttlSeconds = DEFAULT_SECURITY_BEARER_TOKEN_TTL_SECONDS,
   ): SecurityBearerTokenResult {
     const issuedAt = Math.floor(Date.now() / 1000);
+    const tokenId = randomUUID();
+    const expiresAt = issuedAt + ttlSeconds;
     const payload = Buffer.from(
       JSON.stringify({
         sub: subject,
+        jti: tokenId,
         iat: issuedAt,
-        exp: issuedAt + ttlSeconds,
+        exp: expiresAt,
       }),
     ).toString('base64url');
     const signature = this.sign(payload);
 
     return {
       accessToken: `${payload}.${signature}`,
+      tokenId,
       tokenType: 'Bearer',
       expiresInSeconds: ttlSeconds,
+      expiresAt: new Date(expiresAt * 1000).toISOString(),
     };
   }
 
   verifyAuthorization(authorization: string | undefined): string {
+    return this.verifyAuthorizationToken(authorization).subject;
+  }
+
+  verifyAuthorizationToken(
+    authorization: string | undefined,
+  ): VerifiedSecurityBearerToken {
     if (!authorization?.startsWith('Bearer ')) {
       throw new UnauthorizedException('Missing bearer token');
     }
 
-    return this.verifyToken(authorization.slice('Bearer '.length));
+    return this.verifyTokenPayload(authorization.slice('Bearer '.length));
   }
 
   verifyToken(token: string): string {
+    return this.verifyTokenPayload(token).subject;
+  }
+
+  verifyTokenPayload(token: string): VerifiedSecurityBearerToken {
     const [payload, signature] = token.split('.');
 
     if (!payload || !signature || !safeEqual(signature, this.sign(payload))) {
@@ -65,7 +89,11 @@ export class SecurityBearerTokenService {
       throw new UnauthorizedException('Bearer token expired');
     }
 
-    return decoded.sub;
+    return {
+      subject: decoded.sub,
+      tokenId: decoded.jti ?? createLegacyTokenId(decoded),
+      expiresAt: new Date(decoded.exp * 1000).toISOString(),
+    };
   }
 
   private sign(payload: string): string {
@@ -76,6 +104,10 @@ export class SecurityBearerTokenService {
       .update(payload)
       .digest('base64url');
   }
+}
+
+function createLegacyTokenId(payload: SecurityBearerTokenPayload): string {
+  return `legacy:${payload.sub ?? 'unknown'}:${payload.iat ?? 'unknown'}`;
 }
 
 function decodePayload(payload: string): SecurityBearerTokenPayload {

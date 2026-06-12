@@ -4157,6 +4157,36 @@
         "tags": ["Operations", "Monitor Online Users"]
       }
     },
+    "/api/monitor/online-users/kick-out": {
+      "post": {
+        "operationId": "OperationsController_kickOutSessions",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchKickOutSessionsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchKickOutSessionsResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Operations", "Monitor Online Users"]
+      }
+    },
     "/api/monitor/online-users/{id}": {
       "get": {
         "operationId": "OperationsController_getOnlineUser",
@@ -6133,6 +6163,8 @@
           "tokenId": { "type": "string" },
           "ip": { "type": "string" },
           "userAgent": { "type": "string" },
+          "browser": { "type": "string" },
+          "os": { "type": "string" },
           "lastSeenAt": { "type": "string" },
           "expiresAt": { "type": "string" },
           "revokedAt": { "type": "string" },
@@ -6145,6 +6177,8 @@
           "tokenId",
           "ip",
           "userAgent",
+          "browser",
+          "os",
           "lastSeenAt",
           "expiresAt"
         ]
@@ -6162,6 +6196,28 @@
           "totalPages": { "type": "number" }
         },
         "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "BatchKickOutSessionsDto": {
+        "type": "object",
+        "properties": {
+          "actor": { "type": "string" },
+          "reason": { "type": "string" },
+          "ids": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["actor", "reason", "ids"]
+      },
+      "BatchKickOutSessionsResultDto": {
+        "type": "object",
+        "properties": {
+          "requested": { "type": "number" },
+          "kicked": { "type": "number" },
+          "skipped": { "type": "number" },
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/OnlineUserSessionDto" }
+          }
+        },
+        "required": ["requested", "kicked", "skipped", "items"]
       },
       "KickOutSessionDto": {
         "type": "object",

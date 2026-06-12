@@ -1,14 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
 import { PrismaService } from '@opencore/database';
+import type { SecurityAuthSessionRecord } from '@opencore/security';
 import type { OnlineUserSessionRecord } from './online-user.records';
 import {
+  assertTokenSessionActive,
   assertSessionActive,
   createOnlineUserPageResult,
   createOnlineUserSummary,
   normalizeOnlineUserFilters,
   normalizeOnlineUserPageQuery,
   OnlineUserRepository,
+  parseOnlineUserAgent,
   requireOnlineUserSession,
   type KickOutSessionInput,
   type OnlineUserQuery,
@@ -66,6 +69,57 @@ export class PrismaOnlineUserRepository extends OnlineUserRepository {
     return this.findSession(id);
   }
 
+  async registerSession(record: SecurityAuthSessionRecord): Promise<void> {
+    await this.prisma.onlineUserSession.upsert({
+      where: { tokenId: record.tokenId },
+      create: {
+        id: createSessionId(record.tokenId),
+        username: record.username,
+        tokenId: record.tokenId,
+        ip: record.ip,
+        userAgent: record.userAgent,
+        lastSeenAt: new Date(record.lastSeenAt),
+        expiresAt: new Date(record.expiresAt),
+      },
+      update: {
+        username: record.username,
+        ip: record.ip,
+        userAgent: record.userAgent,
+        lastSeenAt: new Date(record.lastSeenAt),
+        expiresAt: new Date(record.expiresAt),
+        revokedAt: null,
+        revokedBy: null,
+        revokedReason: null,
+      },
+    });
+  }
+
+  async assertSessionActive(tokenId: string): Promise<void> {
+    const session = await this.prisma.onlineUserSession.findUnique({
+      where: { tokenId },
+      select: {
+        tokenId: true,
+        revokedAt: true,
+        expiresAt: true,
+      },
+    });
+
+    if (!session) {
+      return;
+    }
+
+    assertTokenSessionActive({
+      tokenId,
+      revokedAt: session.revokedAt?.toISOString(),
+      expiresAt: session.expiresAt.toISOString(),
+    });
+
+    await this.prisma.onlineUserSession.update({
+      where: { tokenId },
+      data: { lastSeenAt: new Date() },
+    });
+  }
+
   async kickOutSession(
     id: string,
     body: KickOutSessionInput,
@@ -111,16 +165,24 @@ export class PrismaOnlineUserRepository extends OnlineUserRepository {
 function toOnlineUserSessionRecord(
   row: OnlineUserSessionRow,
 ): OnlineUserSessionRecord {
+  const userAgent = parseOnlineUserAgent(row.userAgent);
+
   return {
     id: row.id,
     username: row.username,
     tokenId: row.tokenId,
     ip: row.ip,
     userAgent: row.userAgent,
+    browser: userAgent.browser,
+    os: userAgent.os,
     lastSeenAt: row.lastSeenAt.toISOString(),
     expiresAt: row.expiresAt.toISOString(),
     revokedAt: row.revokedAt?.toISOString(),
     revokedBy: row.revokedBy ?? undefined,
     revokedReason: row.revokedReason ?? undefined,
   };
+}
+
+function createSessionId(tokenId: string): string {
+  return `session_${tokenId.replace(/[^a-zA-Z0-9_-]/gu, '_')}`;
 }

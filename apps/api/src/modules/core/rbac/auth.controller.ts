@@ -45,7 +45,11 @@ export class AuthController {
       throw new UnauthorizedException('Missing authenticated user');
     }
 
-    return this.authService.createSessionForUser(request.user.id);
+    return this.authService.createSessionForUser(request.user.id, {
+      ip: request.ip,
+      userAgent: getHeaderValue(request.headers, 'user-agent'),
+      requestId: getRequestContext()?.requestId,
+    });
   }
 }
 

@@ -23,6 +23,7 @@ const timeoutMs = Number(process.env.OPENCORE_SMOKE_TIMEOUT_MS || 10000);
 
 let token;
 let kickedDuringRun = false;
+let realTokenRevoked = false;
 
 class HttpStatusError extends Error {
   constructor(message, status) {
@@ -41,14 +42,20 @@ try {
   }
 
   const loginResponse = await login();
+  const revocationLoginResponse = await login();
 
   token = assertString(loginResponse.accessToken, 'login accessToken');
+  const revocationToken = assertString(
+    revocationLoginResponse.accessToken,
+    'revocation login accessToken',
+  );
+  const revocationTokenId = parseBearerTokenId(revocationToken);
 
   const page = await apiRequest('/monitor/online-users?page=1&pageSize=20');
   assertArray(page.items, 'online user list items');
 
   const adminActivePage = await apiRequest(
-    '/monitor/online-users?page=1&pageSize=20&active=true&username=admin',
+    '/monitor/online-users?page=1&pageSize=100&active=true&username=admin',
   );
   assertArray(adminActivePage.items, 'active admin session items');
   const adminSession = adminActivePage.items.find(
@@ -57,6 +64,32 @@ try {
   if (!adminSession) {
     throw new Error('Expected seeded admin online session to remain active');
   }
+  const revocationSession = adminActivePage.items.find(
+    (session) => session.tokenId === revocationTokenId && !session.revokedAt,
+  );
+  if (!revocationSession) {
+    throw new Error('Expected second login token to be listed as active');
+  }
+  assertString(revocationSession.browser, 'revocation session browser');
+  assertString(revocationSession.os, 'revocation session os');
+
+  const batchKick = await apiRequest('/monitor/online-users/kick-out', {
+    method: 'POST',
+    body: {
+      ids: [revocationSession.id],
+      actor: username,
+      reason: 'OpenCore online-user smoke token revoke',
+    },
+  });
+  assertEqual(batchKick.requested, 1, 'batch requested count');
+  assertEqual(batchKick.kicked, 1, 'batch kicked count');
+  assertEqual(batchKick.skipped, 0, 'batch skipped count');
+
+  await request(`${apiPrefix}/auth/me`, {
+    token: revocationToken,
+    expected: [401],
+  });
+  realTokenRevoked = true;
 
   const targetBefore = await apiRequest(
     `/monitor/online-users/${encodeURIComponent(TARGET_SESSION_ID)}`,
@@ -138,6 +171,10 @@ try {
         'auth.login',
         'monitor.online-user.list',
         'monitor.online-user.detail',
+        'monitor.online-user.batch-kick-out',
+        realTokenRevoked
+          ? 'monitor.online-user.revoked-token-rejected'
+          : 'monitor.online-user.revoked-token-unchecked',
         kickedDuringRun
           ? 'monitor.online-user.kick-out'
           : 'monitor.online-user.already-revoked',
@@ -262,6 +299,20 @@ function assertString(value, label) {
     throw new Error(`Expected ${label} to be a non-empty string`);
   }
   return value;
+}
+
+function parseBearerTokenId(accessToken) {
+  const [payload] = accessToken.split('.');
+
+  if (!payload) {
+    throw new Error('Expected access token to include a payload');
+  }
+
+  const decoded = JSON.parse(
+    Buffer.from(payload, 'base64url').toString('utf8'),
+  );
+
+  return assertString(decoded.jti, 'access token jti');
 }
 
 function assertArray(value, label) {

@@ -1,6 +1,8 @@
 import { DynamicModule, Module, type Provider } from '@nestjs/common';
 import {
   NoopSecurityLoginAttemptRecorder,
+  AllowAllSecurityAuthSessionRepository,
+  SecurityAuthSessionRepository,
   SecurityAuthUserRepository,
   SecurityLoginAttemptRecorder,
 } from './security-auth.repository';
@@ -18,12 +20,17 @@ export class SecurityAuthModule {
           provide: SecurityLoginAttemptRecorder,
           useClass: NoopSecurityLoginAttemptRecorder,
         },
+        {
+          provide: SecurityAuthSessionRepository,
+          useClass: AllowAllSecurityAuthSessionRepository,
+        },
         SecurityBearerTokenService,
         SecurityAuthService,
       ],
       exports: [
         SecurityAuthUserRepository,
         SecurityLoginAttemptRecorder,
+        SecurityAuthSessionRepository,
         SecurityBearerTokenService,
         SecurityAuthService,
       ],

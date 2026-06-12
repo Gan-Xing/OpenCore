@@ -1,4 +1,6 @@
 import type {
+  BatchKickOutSessionsRequest,
+  BatchKickOutSessionsResult,
   CacheClearResultSummary,
   CacheKeyPage,
   CacheKeyQueryRequest,
@@ -80,6 +82,10 @@ export type OperationsClient = {
     id: string,
     body: KickOutSessionRequest,
   ) => Promise<OnlineUserSessionSummary>;
+  kickOutSessions: (
+    token: string,
+    body: BatchKickOutSessionsRequest,
+  ) => Promise<BatchKickOutSessionsResult>;
   listReports: (
     token: string,
     query?: ReportQueryRequest,
@@ -164,6 +170,12 @@ export function createOperationsClient(request: SdkRequest): OperationsClient {
         `/monitor/online-users/${encodeURIComponent(id)}/kick-out`,
         { method: 'POST', body, token },
       ),
+    kickOutSessions: (token, body) =>
+      request<BatchKickOutSessionsResult>('/monitor/online-users/kick-out', {
+        method: 'POST',
+        body,
+        token,
+      }),
     listReports: (token, query) =>
       request<ReportDefinitionPage>(withQuery('/optional/reports', query), {
         token,

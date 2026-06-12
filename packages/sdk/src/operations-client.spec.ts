@@ -50,6 +50,11 @@ describe('createOperationsClient', () => {
       actor: 'admin',
       reason: 'manual',
     });
+    await client.kickOutSessions('token', {
+      ids: ['session_admin', 'session_operator'],
+      actor: 'admin',
+      reason: 'bulk manual',
+    });
     await client.listReports('token', { enabled: true, owner: 'admin' });
     await client.getReport('token', 'runtime.health');
     await client.createReport('token', {
@@ -82,6 +87,7 @@ describe('createOperationsClient', () => {
       { path: '/monitor/online-users?active=true' },
       { path: '/monitor/online-users/session_admin' },
       { path: '/monitor/online-users/session_admin/kick-out', method: 'POST' },
+      { path: '/monitor/online-users/kick-out', method: 'POST' },
       { path: '/optional/reports?enabled=true&owner=admin' },
       { path: '/optional/reports/runtime.health' },
       { path: '/optional/reports', method: 'POST' },

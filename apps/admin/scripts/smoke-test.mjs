@@ -978,13 +978,18 @@ if (
   !onlineUsersPage.includes('listOpenCoreOnlineUsers') ||
   !onlineUsersPage.includes('getOpenCoreOnlineUser') ||
   !onlineUsersPage.includes('kickOutOpenCoreOnlineUser') ||
+  !onlineUsersPage.includes('kickOutOpenCoreOnlineUsers') ||
   !onlineUsersPage.includes('canManageOnlineUsers') ||
   !onlineUsersPage.includes('useAccess') ||
   !onlineUsersPage.includes('useCurrentPageFilters') ||
   !onlineUsersPage.includes('CurrentPageExportButton') ||
   !onlineUsersPage.includes('dataSource={filteredRows}') ||
   !onlineUsersPage.includes('rows={filteredRows}') ||
-  !onlineUsersPage.includes('Read-only unless kick-out is permitted') ||
+  !onlineUsersPage.includes('Kick-out invalidates active bearer sessions') ||
+  !onlineUsersPage.includes('activeSelectedRows') ||
+  !onlineUsersPage.includes('Kick selected') ||
+  !onlineUsersPage.includes("label: 'Browser'") ||
+  !onlineUsersPage.includes("label: 'OS'") ||
   !onlineUsersPage.includes("label: 'Token ID'") ||
   !onlineUsersPage.includes('value: record.tokenId, sensitive: true') ||
   !onlineUsersPage.includes("label: 'Revoked Reason'") ||
