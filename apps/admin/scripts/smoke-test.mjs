@@ -175,10 +175,13 @@ if (
   proConfig.includes('@umijs/max-plugin-openapi') ||
   proConfig.includes('openAPI:') ||
   proConfig.includes('schemaPath') ||
-  proConfig.includes('mockjs')
+  proConfig.includes('mockjs') ||
+  !proConfig.includes(
+    "'process.env.ADMIN_API_BASE_URL': process.env.ADMIN_API_BASE_URL",
+  )
 ) {
   throw new Error(
-    'Admin config must avoid demo API schema and the vulnerable Umi OpenAPI/mock pipeline.',
+    'Admin config must avoid demo API schema, avoid the vulnerable Umi OpenAPI/mock pipeline and expose ADMIN_API_BASE_URL to the browser bundle.',
   );
 }
 
@@ -240,6 +243,8 @@ if (
   !opencorePlatformService.includes('createOpenCoreFile') ||
   !opencorePlatformService.includes('updateOpenCoreFile') ||
   !opencorePlatformService.includes('deleteOpenCoreFile') ||
+  !opencorePlatformService.includes('listOpenCoreLoginLogs') ||
+  !opencorePlatformService.includes('getOpenCoreLoginLog') ||
   !opencorePlatformService.includes('listOpenCoreUsers') ||
   !opencorePlatformService.includes('getOpenCoreUser') ||
   !opencorePlatformService.includes('createOpenCoreUser') ||
@@ -658,6 +663,20 @@ if (
 }
 
 if (
+  !loginLogsPage.includes('listOpenCoreLoginLogs') ||
+  !loginLogsPage.includes('getOpenCoreLoginLog') ||
+  !loginLogsPage.includes('useCurrentPageFilters') ||
+  !loginLogsPage.includes('CurrentPageExportButton') ||
+  !loginLogsPage.includes('dataSource={filteredRows}') ||
+  !loginLogsPage.includes('rows={filteredRows}') ||
+  !loginLogsPage.includes('Read-only audit trail')
+) {
+  throw new Error(
+    'Login Logs page must use live SDK detail/list with bounded filtering and current-page export.',
+  );
+}
+
+if (
   !rolesPage.includes('listOpenCoreRoles') ||
   !rolesPage.includes('getOpenCoreRole') ||
   !rolesPage.includes('createOpenCoreRole') ||
@@ -867,10 +886,7 @@ if (
   );
 }
 
-const coreFilteredPages = [
-  { name: 'operation logs', source: auditLogsPage },
-  { name: 'login logs', source: loginLogsPage },
-];
+const coreFilteredPages = [{ name: 'operation logs', source: auditLogsPage }];
 
 for (const page of coreFilteredPages) {
   if (

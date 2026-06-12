@@ -28,6 +28,14 @@ describe('createSystemManagementClient', () => {
       value: 'false',
     });
     await client.exportAuditLogs('token');
+    await client.listLoginLogs('token', {
+      page: 1,
+      pageSize: 10,
+      success: false,
+      username: 'unknown',
+    });
+    await client.getLoginLog('token', 'login_failure_unknown');
+    await client.exportLoginLogs('token', { success: false });
     await client.listFiles('token', { page: 1, pageSize: 10 });
     await client.getFile('token', 'file_1');
     await client.exportFiles('token', { page: 1, pageSize: 10 });
@@ -111,6 +119,18 @@ describe('createSystemManagementClient', () => {
       },
       {
         path: '/core/audit-logs/export',
+        token: 'token',
+      },
+      {
+        path: '/core/login-logs?page=1&pageSize=10&success=false&username=unknown',
+        token: 'token',
+      },
+      {
+        path: '/core/login-logs/login_failure_unknown',
+        token: 'token',
+      },
+      {
+        path: '/core/login-logs/export?success=false',
         token: 'token',
       },
       {

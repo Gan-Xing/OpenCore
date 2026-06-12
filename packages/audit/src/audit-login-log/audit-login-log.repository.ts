@@ -44,6 +44,8 @@ export abstract class AuditLoginLogRepository extends SecurityLoginAttemptRecord
     query?: AuditLoginLogQuery,
   ): Promise<PageResult<AuditLoginLogRecord>>;
 
+  abstract getLoginLog(id: string): Promise<AuditLoginLogRecord>;
+
   abstract recordLoginAttempt(
     record: SecurityLoginAttemptRecord,
   ): Promise<void>;

@@ -60,6 +60,137 @@ NODE
   return 1
 }
 
+verify_admin_bundle_api_base_url() {
+  if grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "$ADMIN_API_BASE_URL_VALUE" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null; then
+    return
+  fi
+
+  echo "Admin bundle does not include ADMIN_API_BASE_URL=$ADMIN_API_BASE_URL_VALUE." >&2
+  echo "Refusing to deploy a frontend that would post to the static server /api path." >&2
+  exit 1
+}
+
+verify_admin_api_proxy_login() {
+  run_with_env node - "$ADMIN_HEALTH_URL/api/auth/login" <<'NODE'
+const url = process.argv[2];
+const username = process.env.OPENCORE_SMOKE_ADMIN_USERNAME || 'admin';
+const passwordCandidates = [
+  process.env.OPENCORE_SMOKE_ADMIN_PASSWORD,
+  process.env.BOOTSTRAP_ADMIN_PASSWORD,
+  'admin123',
+].filter((candidate, index, candidates) => {
+  return Boolean(candidate) && candidates.indexOf(candidate) === index;
+});
+const timeoutMs = Number(process.env.OPENCORE_SMOKE_TIMEOUT_MS || 10000);
+
+class HttpStatusError extends Error {
+  constructor(message, status) {
+    super(message);
+    this.name = 'HttpStatusError';
+    this.status = status;
+  }
+}
+
+(async () => {
+  try {
+    await login();
+    console.log(
+      JSON.stringify({
+        status: 'pass',
+        baseUrl: url,
+        checks: ['admin.api-proxy.login'],
+      }),
+    );
+  } catch (error) {
+    console.error(
+      JSON.stringify({
+        status: 'fail',
+        baseUrl: url,
+        error: error instanceof Error ? error.message : String(error),
+      }),
+    );
+    process.exit(1);
+  }
+})();
+
+async function login() {
+  let lastError;
+
+  for (const password of passwordCandidates) {
+    try {
+      const response = await request(url, {
+        method: 'POST',
+        expected: [200, 201],
+        body: {
+          username,
+          password,
+        },
+      });
+
+      if (typeof response.accessToken !== 'string' || response.accessToken.length === 0) {
+        throw new Error('Admin API proxy login response did not include accessToken');
+      }
+
+      return;
+    } catch (error) {
+      lastError = error;
+      if (
+        !(error instanceof HttpStatusError) ||
+        ![401, 403].includes(error.status)
+      ) {
+        throw error;
+      }
+    }
+  }
+
+  throw new Error(
+    `Unable to authenticate smoke admin ${username} through Admin /api proxy. Set OPENCORE_SMOKE_ADMIN_PASSWORD to the deployed admin password.`,
+    { cause: lastError },
+  );
+}
+
+async function request(targetUrl, options = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(targetUrl, {
+      method: options.method || 'GET',
+      headers: {
+        ...(options.body ? { 'content-type': 'application/json' } : {}),
+      },
+      body: options.body ? JSON.stringify(options.body) : undefined,
+      signal: controller.signal,
+    });
+    const contentType = response.headers.get('content-type') || '';
+    const responseBody = contentType.includes('application/json')
+      ? await response.json()
+      : await response.text();
+
+    if (!options.expected.includes(response.status)) {
+      throw new HttpStatusError(
+        `${options.method || 'GET'} ${targetUrl} returned ${response.status}`,
+        response.status,
+      );
+    }
+
+    return responseBody;
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(`${options.method || 'GET'} ${targetUrl} timed out`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+NODE
+}
+
 stop_pid_file() {
   local pid_file="$1"
   local label="$2"
@@ -135,6 +266,7 @@ FORCE_UTOOPACK= \
 OPENCORE_ADMIN_BUNDLER=webpack \
 ADMIN_API_BASE_URL="$ADMIN_API_BASE_URL_VALUE" \
 pnpm build:admin
+verify_admin_bundle_api_base_url
 
 echo "Applying Prisma migrations"
 run_with_env pnpm prisma:migrate
@@ -186,6 +318,8 @@ echo "Starting OpenCore Admin on fixed port $ADMIN_PORT"
   export PORT="$ADMIN_PORT"
   export HOST="$ADMIN_LISTEN_HOST"
   export ADMIN_STATIC_ROOT="$ROOT_DIR/apps/admin/dist"
+  export ADMIN_API_BASE_URL="$ADMIN_API_BASE_URL_VALUE"
+  export ADMIN_API_PROXY_TARGET="$API_BASE_URL"
   setsid node "$ROOT_DIR/tools/scripts/serve-admin-static.mjs" </dev/null >>"$ADMIN_LOG_FILE" 2>&1 &
   echo "$!" > "$ADMIN_PID_FILE"
 )
@@ -196,6 +330,8 @@ if ! wait_for_url "$ADMIN_HEALTH_URL/" "OpenCore Admin"; then
 fi
 require_pid_alive "$ADMIN_PID_FILE" "OpenCore Admin" "$ADMIN_LOG_FILE"
 
+verify_admin_api_proxy_login
+
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
@@ -205,6 +341,11 @@ run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
   node "$ROOT_DIR/tools/scripts/smoke-core-file.mjs"
+
+run_with_env env \
+  OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \
+  OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
+  node "$ROOT_DIR/tools/scripts/smoke-core-login-log.mjs"
 
 require_pid_alive "$API_PID_FILE" "OpenCore API" "$API_LOG_FILE"
 require_pid_alive "$ADMIN_PID_FILE" "OpenCore Admin" "$ADMIN_LOG_FILE"

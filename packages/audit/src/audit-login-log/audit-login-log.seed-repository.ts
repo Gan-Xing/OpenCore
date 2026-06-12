@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
 import type { SecurityLoginAttemptRecord } from '@opencore/security';
 import {
@@ -48,6 +48,16 @@ export class SeedAuditLoginLogRepository extends AuditLoginLogRepository {
       },
       ...this.loginLogs,
     ];
+  }
+
+  async getLoginLog(id: string): Promise<AuditLoginLogRecord> {
+    const log = this.loginLogs.find((candidate) => candidate.id === id);
+
+    if (!log) {
+      throw new NotFoundException(`Login log not found: ${id}`);
+    }
+
+    return cloneLoginLog(log);
   }
 }
 

@@ -15,7 +15,13 @@ occupied, the command fails with the specific port to free or override.
 Admin listens on `0.0.0.0` by default and the Admin build uses the detected
 server address for `ADMIN_API_BASE_URL`, so a browser outside the server can
 open the deployed UI. Override `OPENCORE_DEPLOY_PUBLIC_HOST` when the detected
-address is not the public address you want to use.
+address is not the public address you want to use. The deploy script refuses to
+continue if the built Admin JavaScript does not contain that API base URL.
+
+The Admin static server also proxies `/api/*` to the deployed API. This keeps
+login and authenticated requests working even if a browser tries the same-origin
+Admin `/api` path, and prevents the static server from returning `405 Method Not
+Allowed` for API POST requests.
 
 ## Commands
 
@@ -32,7 +38,8 @@ temporary API.
 `pnpm deploy:opencore` builds the API and Admin, applies Prisma migrations,
 refreshes local seed data, restarts the API on port `39172`, serves the Admin
 build on port `39174`, then runs authenticated config and file metadata smoke
-checks against the deployed API.
+checks, an Admin `/api/auth/login` proxy smoke check, and login-log audit smoke
+against the deployed API.
 
 Admin production builds deliberately force the stable Umi webpack path. Do not
 enable `FORCE_UTOOPACK` for OpenCore deploys; the project has repeatedly hit

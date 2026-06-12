@@ -27,6 +27,7 @@ const expectedPermissions = {
   getDept: ['core:dept:read'],
   getDict: ['core:dict:read'],
   getFile: ['core:file:read'],
+  getLoginLog: ['core:login-log:read'],
   getNotice: ['core:notice:read'],
   getPost: ['core:post:read'],
   archiveNotice: ['core:notice:update'],

@@ -207,6 +207,7 @@ export default defineConfig({
   requestRecord: {},
   exportStatic: {},
   define: {
+    'process.env.ADMIN_API_BASE_URL': process.env.ADMIN_API_BASE_URL,
     'process.env.CI': process.env.CI,
     'process.env.COMMIT_HASH': commitHash,
     __APP_VERSION__: require('./../package.json').version,

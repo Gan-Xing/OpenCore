@@ -19,6 +19,10 @@ export class AuditLoginLogService {
     return this.repository.listLoginLogs(query);
   }
 
+  getLoginLog(id: string): Promise<AuditLoginLogRecord> {
+    return this.repository.getLoginLog(id);
+  }
+
   recordLoginAttempt(record: SecurityLoginAttemptRecord): Promise<void> {
     return this.repository.recordLoginAttempt(record);
   }

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
 import { PrismaService } from '@opencore/database';
 import type { SecurityLoginAttemptRecord } from '@opencore/security';
@@ -64,6 +64,18 @@ export class PrismaAuditLoginLogRepository extends AuditLoginLogRepository {
         requestId: record.requestId,
       },
     });
+  }
+
+  async getLoginLog(id: string): Promise<AuditLoginLogRecord> {
+    const log = await this.prisma.loginLog.findUnique({
+      where: { id },
+    });
+
+    if (!log) {
+      throw new NotFoundException(`Login log not found: ${id}`);
+    }
+
+    return toAuditLoginLogRecord(log);
   }
 }
 

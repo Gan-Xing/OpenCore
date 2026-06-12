@@ -22,6 +22,8 @@ import {
   type SystemDeptSummary,
   type SystemDeptTreeSummary,
   type FileAssetSummary,
+  type LoginLogQueryRequest,
+  type LoginLogSummary,
   type SystemNoticeQueryRequest,
   type SystemNoticeSummary,
   type SystemPostQueryRequest,
@@ -229,6 +231,24 @@ export function updateOpenCoreFile(
 
 export function deleteOpenCoreFile(id: string): Promise<{ deleted: true }> {
   return systemManagementClient.deleteFile(getRequiredAdminToken(), id);
+}
+
+export async function listOpenCoreLoginLogs(
+  query?: LoginLogQueryRequest,
+): Promise<LoginLogSummary[]> {
+  const page = await systemManagementClient.listLoginLogs(
+    getRequiredAdminToken(),
+    {
+      page: 1,
+      pageSize: 100,
+      ...query,
+    },
+  );
+  return [...page.items];
+}
+
+export function getOpenCoreLoginLog(id: string): Promise<LoginLogSummary> {
+  return systemManagementClient.getLoginLog(getRequiredAdminToken(), id);
 }
 
 export function listOpenCoreMenus(): Promise<MenuSummary[]> {

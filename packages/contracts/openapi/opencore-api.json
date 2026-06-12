@@ -2033,6 +2033,31 @@
         "tags": ["SystemManagement", "Core Login Logs"]
       }
     },
+    "/api/core/login-logs/{id}": {
+      "get": {
+        "operationId": "SystemManagementController_getLoginLog",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LoginLogDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Login Logs"]
+      }
+    },
     "/api/collaboration/summary": {
       "get": {
         "operationId": "CollaborationController_getSummary",

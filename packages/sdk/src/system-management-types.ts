@@ -246,6 +246,11 @@ export type LoginLogSummary = {
   createdAt: string;
 };
 
+export type LoginLogQueryRequest = PageRequest & {
+  success?: boolean;
+  username?: string;
+};
+
 export type ExportPreview = {
   filename: string;
   scope: 'current-page';

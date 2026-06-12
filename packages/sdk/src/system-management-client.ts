@@ -11,6 +11,7 @@ import type {
   DictTypeSummary,
   ExportPreview,
   FileAssetSummary,
+  LoginLogQueryRequest,
   LoginLogSummary,
   PageRequest,
   PageResponse,
@@ -150,11 +151,12 @@ export type SystemManagementClient = {
   ) => Promise<ExportPreview>;
   listLoginLogs: (
     token: Token,
-    query?: PageRequest,
+    query?: LoginLogQueryRequest,
   ) => Promise<PageResponse<LoginLogSummary>>;
+  getLoginLog: (token: Token, id: string) => Promise<LoginLogSummary>;
   exportLoginLogs: (
     token: Token,
-    query?: PageRequest,
+    query?: LoginLogQueryRequest,
   ) => Promise<ExportPreview>;
 };
 
@@ -382,6 +384,10 @@ export function createSystemManagementClient(
           token,
         },
       ),
+    getLoginLog: (token, id) =>
+      request<LoginLogSummary>(`/core/login-logs/${encodeURIComponent(id)}`, {
+        token,
+      }),
     exportLoginLogs: (token, query) =>
       request<ExportPreview>(withQuery('/core/login-logs/export', query), {
         token,

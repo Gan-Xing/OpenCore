@@ -38,6 +38,7 @@ import {
   FileAssetPageDto,
   LoginLogPageDto,
   LoginLogQueryDto,
+  LoginLogDto,
   PageQueryDto,
   SystemDeptDto,
   SystemDeptQueryDto,
@@ -431,5 +432,13 @@ export class SystemManagementController {
   @ApiOkResponse({ type: ExportPreviewDto })
   exportLoginLogs(@Query() query: LoginLogQueryDto): Promise<ExportPreviewDto> {
     return this.loginLogs.createExportPreview(query);
+  }
+
+  @Get('login-logs/:id')
+  @ApiTags('Core Login Logs')
+  @RequirePermission('core:login-log:read')
+  @ApiOkResponse({ type: LoginLogDto })
+  getLoginLog(@Param('id') id: string): Promise<LoginLogDto> {
+    return this.loginLogs.getLoginLog(id);
   }
 }

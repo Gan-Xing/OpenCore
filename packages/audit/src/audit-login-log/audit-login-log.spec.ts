@@ -20,6 +20,13 @@ describe('@opencore/audit audit-login-log', () => {
         }),
       ],
     });
+    await expect(
+      service.getLoginLog('login_success_admin'),
+    ).resolves.toMatchObject({
+      id: 'login_success_admin',
+      username: 'admin',
+      success: true,
+    });
 
     await service.recordLoginAttempt({
       username: 'operator',
@@ -106,6 +113,20 @@ describe('@opencore/audit audit-login-log', () => {
             failureReason: 'invalid-credentials-or-disabled',
           }),
         ],
+      });
+
+      const page = await service.listLoginLogs({
+        username: `user_${testRunId}`,
+      });
+      const persistedId = page.items[0]?.id;
+      expect(persistedId).toBeDefined();
+
+      await expect(
+        service.getLoginLog(String(persistedId)),
+      ).resolves.toMatchObject({
+        requestId,
+        success: false,
+        failureReason: 'invalid-credentials-or-disabled',
       });
     });
 
