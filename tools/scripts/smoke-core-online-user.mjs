@@ -45,6 +45,7 @@ try {
   const revocationLoginResponse = await login();
 
   token = assertString(loginResponse.accessToken, 'login accessToken');
+  const tokenId = parseBearerTokenId(token);
   const revocationToken = assertString(
     revocationLoginResponse.accessToken,
     'revocation login accessToken',
@@ -59,10 +60,10 @@ try {
   );
   assertArray(adminActivePage.items, 'active admin session items');
   const adminSession = adminActivePage.items.find(
-    (session) => session.id === 'session_admin' && !session.revokedAt,
+    (session) => session.tokenId === tokenId && !session.revokedAt,
   );
   if (!adminSession) {
-    throw new Error('Expected seeded admin online session to remain active');
+    throw new Error('Expected current admin online session to remain active');
   }
   const revocationSession = adminActivePage.items.find(
     (session) => session.tokenId === revocationTokenId && !session.revokedAt,
