@@ -2527,5 +2527,6 @@ pnpm registry:admin-routes:check && pnpm test:admin && pnpm sdk:check`。
 
 ### Commit Record
 
-- Feature commit: pending.
-- Push: pending.
+- Feature commit:
+  `92d358b feat(core-post): productize post management / 产品化岗位管理闭环`.
+- Push: `origin/main` updated from `f35cc88` to `92d358b`.

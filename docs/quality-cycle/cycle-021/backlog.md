@@ -69,7 +69,7 @@ live page and smoke coverage.
       registry, SDK lifecycle usage and page behavior.
 - [x] Refresh OpenAPI snapshot and registry route/tag checks.
 - [x] Run focused and live HTTP smoke gates.
-- [ ] Run full gates, commit and push this independently accepted product
+- [x] Run full gates, commit and push this independently accepted product
       slice.
 
 ## Explicitly Out Of Scope
