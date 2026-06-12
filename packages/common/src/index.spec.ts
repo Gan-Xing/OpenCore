@@ -15,6 +15,7 @@ import {
   normalizePagination,
   normalizeSort,
   normalizeStringArray,
+  parseUserAgent,
   sanitizeErrorCode,
 } from './index';
 
@@ -130,5 +131,22 @@ describe('@opencore/common', () => {
     expect(isNonEmptyString(' value ')).toBe(true);
     expect(isNonEmptyString('   ')).toBe(false);
     expect(findDuplicateValues(['b', 'a', 'b', 'c', 'a'])).toEqual(['a', 'b']);
+  });
+
+  it('parses common user agents into product-facing browser and OS labels', () => {
+    expect(
+      parseUserAgent(
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      ),
+    ).toEqual({ browser: 'Chrome', os: 'Windows' });
+    expect(
+      parseUserAgent(
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+      ),
+    ).toEqual({ browser: 'Safari', os: 'iOS' });
+    expect(parseUserAgent('opencore-smoke')).toEqual({
+      browser: 'OpenCore Smoke',
+      os: 'Unknown',
+    });
   });
 });

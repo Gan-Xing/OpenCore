@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
 import type { SecurityLoginAttemptRecord } from '@opencore/security';
 import {
+  enrichAuditLoginLogRecord,
   seedAuditLoginLogs,
   type AuditLoginLogRecord,
 } from './audit-login-log.records';
@@ -27,7 +28,15 @@ export class SeedAuditLoginLogRepository extends AuditLoginLogRepository {
         (log) =>
           (filters.username === undefined ||
             log.username.includes(filters.username)) &&
+          (filters.ip === undefined || log.ip.includes(filters.ip)) &&
           (filters.success === undefined || log.success === filters.success),
+      )
+      .filter(
+        (log) =>
+          (filters.createdFrom === undefined ||
+            log.createdAt >= filters.createdFrom) &&
+          (filters.createdTo === undefined ||
+            log.createdAt <= filters.createdTo),
       )
       .sort(compareAuditLoginLogRecords);
     const pagination = normalizeAuditLoginLogPageQuery(query, filtered.length);
@@ -41,11 +50,11 @@ export class SeedAuditLoginLogRepository extends AuditLoginLogRepository {
 
   async recordLoginAttempt(record: SecurityLoginAttemptRecord): Promise<void> {
     this.loginLogs = [
-      {
+      enrichAuditLoginLogRecord({
         id: `login_${this.loginLogs.length + 1}`,
         ...record,
         createdAt: new Date().toISOString(),
-      },
+      }),
       ...this.loginLogs,
     ];
   }

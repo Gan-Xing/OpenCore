@@ -764,10 +764,15 @@ if (
   !loginLogsPage.includes('CurrentPageExportButton') ||
   !loginLogsPage.includes('dataSource={filteredRows}') ||
   !loginLogsPage.includes('rows={filteredRows}') ||
-  !loginLogsPage.includes('Read-only audit trail')
+  !loginLogsPage.includes('Read-only audit trail') ||
+  !loginLogsPage.includes('serverFilterToolbar') ||
+  !loginLogsPage.includes('createdFrom') ||
+  !loginLogsPage.includes('createdTo') ||
+  !loginLogsPage.includes('Browser') ||
+  !loginLogsPage.includes('OS')
 ) {
   throw new Error(
-    'Login Logs page must use live SDK detail/list with bounded filtering and current-page export.',
+    'Login Logs page must use live SDK detail/list with server-side filters, device fields and current-page export.',
   );
 }
 

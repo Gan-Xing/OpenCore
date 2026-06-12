@@ -293,11 +293,16 @@ export type LoginLogSummary = {
   failureReason?: string;
   ip: string;
   userAgent: string;
+  browser: string;
+  os: string;
   requestId: string;
   createdAt: string;
 };
 
 export type LoginLogQueryRequest = PageRequest & {
+  createdFrom?: string;
+  createdTo?: string;
+  ip?: string;
   success?: boolean;
   username?: string;
 };

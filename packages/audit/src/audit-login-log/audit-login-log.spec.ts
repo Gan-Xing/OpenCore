@@ -17,6 +17,8 @@ describe('@opencore/audit audit-login-log', () => {
         expect.objectContaining({
           username: 'admin',
           success: true,
+          browser: 'OpenCore Smoke',
+          os: 'Unknown',
         }),
       ],
     });
@@ -38,7 +40,12 @@ describe('@opencore/audit audit-login-log', () => {
     });
 
     await expect(
-      service.listLoginLogs({ success: false, pageSize: 10 }),
+      service.listLoginLogs({
+        createdFrom: '2026-01-01T00:00:00.000Z',
+        ip: '127.0.0.1',
+        success: false,
+        pageSize: 10,
+      }),
     ).resolves.toMatchObject({
       total: 2,
       items: expect.arrayContaining([
@@ -51,9 +58,29 @@ describe('@opencore/audit audit-login-log', () => {
     await expect(service.createExportPreview()).resolves.toMatchObject({
       filename: 'opencore-login-logs.csv',
       scope: 'current-page',
-      columns: ['createdAt', 'username', 'success', 'failureReason'],
+      columns: [
+        'createdAt',
+        'username',
+        'success',
+        'failureReason',
+        'ip',
+        'browser',
+        'os',
+      ],
       rowCount: 3,
     });
+    await expect(
+      service.listLoginLogs({
+        createdFrom: '2026-06-10T00:01:00.000Z',
+        createdTo: '2026-06-10T00:03:00.000Z',
+      }),
+    ).resolves.toMatchObject({
+      total: 1,
+      items: [expect.objectContaining({ id: 'login_failure_unknown' })],
+    });
+    await expect(
+      service.listLoginLogs({ createdFrom: 'not-a-date' }),
+    ).rejects.toThrow('createdFrom must be a valid ISO date-time string');
   });
 
   describe('PrismaAuditLoginLogRepository integration', () => {
@@ -98,17 +125,24 @@ describe('@opencore/audit audit-login-log', () => {
         success: false,
         failureReason: 'invalid-credentials-or-disabled',
         ip: '127.0.0.1',
-        userAgent: 'jest',
+        userAgent:
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         requestId,
       });
 
       await expect(
-        service.listLoginLogs({ username: `user_${testRunId}` }),
+        service.listLoginLogs({
+          createdFrom: '2026-01-01T00:00:00.000Z',
+          ip: '127.0.0.1',
+          username: `user_${testRunId}`,
+        }),
       ).resolves.toMatchObject({
         total: 1,
         items: [
           expect.objectContaining({
+            browser: 'Chrome',
             requestId,
+            os: 'Windows',
             success: false,
             failureReason: 'invalid-credentials-or-disabled',
           }),

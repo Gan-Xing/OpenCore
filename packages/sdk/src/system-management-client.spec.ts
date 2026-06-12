@@ -59,13 +59,20 @@ describe('createSystemManagementClient', () => {
     await client.getAuditLog('token', 'audit_config_create');
     await client.exportAuditLogs('token', { action: 'POST' });
     await client.listLoginLogs('token', {
+      createdFrom: '2026-06-10T00:00:00.000Z',
+      createdTo: '2026-06-10T23:59:59.999Z',
+      ip: '127.0.0.1',
       page: 1,
       pageSize: 10,
       success: false,
       username: 'unknown',
     });
     await client.getLoginLog('token', 'login_failure_unknown');
-    await client.exportLoginLogs('token', { success: false });
+    await client.exportLoginLogs('token', {
+      createdFrom: '2026-06-10T00:00:00.000Z',
+      ip: '127.0.0.1',
+      success: false,
+    });
     await client.listFiles('token', { page: 1, pageSize: 10 });
     await client.getFile('token', 'file_1');
     expect(client.getFileDownloadPath('file_1')).toBe(
@@ -206,7 +213,7 @@ describe('createSystemManagementClient', () => {
         token: 'token',
       },
       {
-        path: '/core/login-logs?page=1&pageSize=10&success=false&username=unknown',
+        path: '/core/login-logs?createdFrom=2026-06-10T00%3A00%3A00.000Z&createdTo=2026-06-10T23%3A59%3A59.999Z&ip=127.0.0.1&page=1&pageSize=10&success=false&username=unknown',
         token: 'token',
       },
       {
@@ -214,7 +221,7 @@ describe('createSystemManagementClient', () => {
         token: 'token',
       },
       {
-        path: '/core/login-logs/export?success=false',
+        path: '/core/login-logs/export?createdFrom=2026-06-10T00%3A00%3A00.000Z&ip=127.0.0.1&success=false',
         token: 'token',
       },
       {

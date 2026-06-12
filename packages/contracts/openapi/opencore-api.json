@@ -2532,6 +2532,24 @@
             "required": false,
             "in": "query",
             "schema": { "$ref": "#/components/schemas/Object" }
+          },
+          {
+            "name": "ip",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "createdFrom",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "createdTo",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
@@ -2581,6 +2599,24 @@
             "required": false,
             "in": "query",
             "schema": { "$ref": "#/components/schemas/Object" }
+          },
+          {
+            "name": "ip",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "createdFrom",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "createdTo",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
@@ -6041,6 +6077,8 @@
           "failureReason": { "type": "string" },
           "ip": { "type": "string" },
           "userAgent": { "type": "string" },
+          "browser": { "type": "string" },
+          "os": { "type": "string" },
           "requestId": { "type": "string" },
           "createdAt": { "type": "string" }
         },
@@ -6050,6 +6088,8 @@
           "success",
           "ip",
           "userAgent",
+          "browser",
+          "os",
           "requestId",
           "createdAt"
         ]

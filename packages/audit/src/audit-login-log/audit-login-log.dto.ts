@@ -20,6 +20,12 @@ export class LoginLogDto {
   userAgent!: string;
 
   @ApiProperty()
+  browser!: string;
+
+  @ApiProperty()
+  os!: string;
+
+  @ApiProperty()
   requestId!: string;
 
   @ApiProperty()
@@ -55,4 +61,13 @@ export class LoginLogQueryDto {
 
   @ApiProperty({ required: false })
   success?: boolean | string;
+
+  @ApiProperty({ required: false })
+  ip?: string;
+
+  @ApiProperty({ required: false })
+  createdFrom?: string;
+
+  @ApiProperty({ required: false })
+  createdTo?: string;
 }

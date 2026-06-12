@@ -1,11 +1,29 @@
-import { EyeOutlined, ReloadOutlined } from '@ant-design/icons';
+import {
+  ClearOutlined,
+  EyeOutlined,
+  ReloadOutlined,
+  SearchOutlined,
+} from '@ant-design/icons';
 import {
   PageContainer,
   ProTable,
   type ProColumns,
 } from '@ant-design/pro-components';
-import { createLoginLogFixtures, type LoginLogSummary } from '@opencore/sdk';
-import { Alert, Button, Space, Tag, Tooltip, Typography } from 'antd';
+import {
+  createLoginLogFixtures,
+  type LoginLogQueryRequest,
+  type LoginLogSummary,
+} from '@opencore/sdk';
+import {
+  Alert,
+  Button,
+  Input,
+  Select,
+  Space,
+  Tag,
+  Tooltip,
+  Typography,
+} from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 import {
   getOpenCoreLoginLog,
@@ -30,6 +48,8 @@ const fallbackRows = createLoginLogFixtures().items;
 const searchFields: CurrentPageSearchField<LoginLogSummary>[] = [
   'username',
   'ip',
+  'browser',
+  'os',
   'requestId',
   'failureReason',
 ];
@@ -41,8 +61,25 @@ const exportColumns: CurrentPageExportColumn<LoginLogSummary>[] = [
   { title: 'Failure Reason', dataIndex: 'failureReason' },
   { title: 'IP', dataIndex: 'ip' },
   { title: 'User Agent', dataIndex: 'userAgent' },
+  { title: 'Browser', dataIndex: 'browser' },
+  { title: 'OS', dataIndex: 'os' },
   { title: 'Request ID', dataIndex: 'requestId' },
 ];
+
+type LoginLogServerFilterDraft = {
+  createdFrom: string;
+  createdTo: string;
+  ip: string;
+  success?: boolean;
+  username: string;
+};
+
+const emptyServerFilterDraft: LoginLogServerFilterDraft = {
+  createdFrom: '',
+  createdTo: '',
+  ip: '',
+  username: '',
+};
 
 function createFilterOptions(
   rows: readonly LoginLogSummary[],
@@ -75,8 +112,31 @@ function createDetailFields(record: LoginLogSummary): DetailField[] {
     { label: 'Failure Reason', value: record.failureReason },
     { label: 'IP', value: record.ip },
     { label: 'User Agent', value: record.userAgent },
+    { label: 'Browser', value: record.browser },
+    { label: 'OS', value: record.os },
     { label: 'Request ID', value: record.requestId },
   ];
+}
+
+function createServerFilterQuery(
+  draft: LoginLogServerFilterDraft,
+): LoginLogQueryRequest {
+  return {
+    createdFrom: toIsoDateTime(draft.createdFrom),
+    createdTo: toIsoDateTime(draft.createdTo),
+    ip: draft.ip.trim() || undefined,
+    success: draft.success,
+    username: draft.username.trim() || undefined,
+  };
+}
+
+function toIsoDateTime(value: string): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
 }
 
 export default function LoginLogsPage() {
@@ -84,6 +144,10 @@ export default function LoginLogsPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
   const [selectedDetail, setSelectedDetail] = useState<LoginLogSummary>();
+  const [activeServerQuery, setActiveServerQuery] =
+    useState<LoginLogQueryRequest>({});
+  const [serverFilterDraft, setServerFilterDraft] =
+    useState<LoginLogServerFilterDraft>({ ...emptyServerFilterDraft });
   const filterOptions = useMemo(() => createFilterOptions(rows), [rows]);
   const { filteredRows, toolbar: filterToolbar } =
     useCurrentPageFilters<LoginLogSummary>({
@@ -93,10 +157,12 @@ export default function LoginLogsPage() {
       selectFilters: filterOptions,
     });
 
-  const loadLoginLogs = async () => {
+  const loadLoginLogs = async (
+    query: LoginLogQueryRequest = activeServerQuery,
+  ) => {
     setLoading(true);
     try {
-      setRows(await listOpenCoreLoginLogs());
+      setRows(await listOpenCoreLoginLogs(query));
       setLoadError(undefined);
     } catch (error: unknown) {
       setRows(fallbackRows);
@@ -108,8 +174,29 @@ export default function LoginLogsPage() {
     }
   };
 
+  const updateServerFilterDraft = <
+    Field extends keyof LoginLogServerFilterDraft,
+  >(
+    field: Field,
+    value: LoginLogServerFilterDraft[Field],
+  ) => {
+    setServerFilterDraft((previous) => ({ ...previous, [field]: value }));
+  };
+
+  const applyServerFilters = async () => {
+    const query = createServerFilterQuery(serverFilterDraft);
+    setActiveServerQuery(query);
+    await loadLoginLogs(query);
+  };
+
+  const resetServerFilters = async () => {
+    setServerFilterDraft({ ...emptyServerFilterDraft });
+    setActiveServerQuery({});
+    await loadLoginLogs({});
+  };
+
   useEffect(() => {
-    void loadLoginLogs();
+    void loadLoginLogs({});
   }, []);
 
   const openDetail = async (record: LoginLogSummary) => {
@@ -142,6 +229,8 @@ export default function LoginLogsPage() {
       ),
     },
     { title: 'IP', dataIndex: 'ip', width: 144 },
+    { title: 'Browser', dataIndex: 'browser', width: 136 },
+    { title: 'OS', dataIndex: 'os', width: 112 },
     { title: 'Request ID', dataIndex: 'requestId', ellipsis: true },
     {
       title: 'Action',
@@ -161,6 +250,79 @@ export default function LoginLogsPage() {
       ),
     },
   ];
+
+  const serverFilterToolbar = (
+    <Space key="server-filters" size="small" wrap>
+      <Input
+        aria-label="Login username server filter"
+        onChange={(event) =>
+          updateServerFilterDraft('username', event.target.value)
+        }
+        placeholder="Username"
+        style={{ width: 148 }}
+        value={serverFilterDraft.username}
+      />
+      <Input
+        aria-label="Login IP server filter"
+        onChange={(event) => updateServerFilterDraft('ip', event.target.value)}
+        placeholder="IP"
+        style={{ width: 132 }}
+        value={serverFilterDraft.ip}
+      />
+      <Select
+        aria-label="Login result server filter"
+        onChange={(value) =>
+          updateServerFilterDraft(
+            'success',
+            value === 'all' ? undefined : value === 'true',
+          )
+        }
+        options={[
+          { label: 'All', value: 'all' },
+          { label: 'Success', value: 'true' },
+          { label: 'Failure', value: 'false' },
+        ]}
+        style={{ width: 116 }}
+        value={
+          serverFilterDraft.success === undefined
+            ? 'all'
+            : String(serverFilterDraft.success)
+        }
+      />
+      <Input
+        aria-label="Login created from server filter"
+        onChange={(event) =>
+          updateServerFilterDraft('createdFrom', event.target.value)
+        }
+        style={{ width: 180 }}
+        type="datetime-local"
+        value={serverFilterDraft.createdFrom}
+      />
+      <Input
+        aria-label="Login created to server filter"
+        onChange={(event) =>
+          updateServerFilterDraft('createdTo', event.target.value)
+        }
+        style={{ width: 180 }}
+        type="datetime-local"
+        value={serverFilterDraft.createdTo}
+      />
+      <Tooltip title="Apply server filters">
+        <Button
+          aria-label="Apply login log server filters"
+          icon={<SearchOutlined />}
+          onClick={() => void applyServerFilters()}
+        />
+      </Tooltip>
+      <Tooltip title="Reset server filters">
+        <Button
+          aria-label="Reset login log server filters"
+          icon={<ClearOutlined />}
+          onClick={() => void resetServerFilters()}
+        />
+      </Tooltip>
+    </Space>
+  );
 
   return (
     <PageContainer title="Login Logs" subTitle="S7 System">
@@ -182,6 +344,7 @@ export default function LoginLogsPage() {
         rowKey="id"
         search={false}
         toolBarRender={() => [
+          serverFilterToolbar,
           filterToolbar,
           <Typography.Text key="read-only-policy" type="secondary">
             Read-only audit trail

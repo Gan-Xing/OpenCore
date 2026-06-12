@@ -22,6 +22,8 @@ const timeoutMs = Number(process.env.OPENCORE_SMOKE_TIMEOUT_MS || 10000);
 
 const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 const failedUsername = `opencore-smoke-login-${runId}`;
+const failedLoginUserAgent =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 let token;
 
 class HttpStatusError extends Error {
@@ -50,6 +52,9 @@ try {
   await request(`${apiPrefix}/auth/login`, {
     method: 'POST',
     expected: [401, 403],
+    headers: {
+      'user-agent': failedLoginUserAgent,
+    },
     body: {
       username: failedUsername,
       password: 'not-the-smoke-password',
@@ -71,14 +76,57 @@ try {
   );
   assertEqual(detailLog.success, false, 'detail failed login success flag');
   assertString(detailLog.requestId, 'detail login log requestId');
+  assertString(detailLog.ip, 'detail login log ip');
+  assertString(detailLog.createdAt, 'detail login log createdAt');
+  assertEqual(detailLog.browser, 'Chrome', 'detail login log browser');
+  assertEqual(detailLog.os, 'Windows', 'detail login log os');
+
+  const encodedFailedUsername = encodeURIComponent(failedUsername);
+  const encodedIp = encodeURIComponent(detailLog.ip);
+  const createdFrom = encodeURIComponent(
+    offsetIsoDate(detailLog.createdAt, -60_000, 'detail login log createdAt'),
+  );
+  const createdTo = encodeURIComponent(
+    offsetIsoDate(detailLog.createdAt, 60_000, 'detail login log createdAt'),
+  );
+  const serverFilteredPage = await apiRequest(
+    `/core/login-logs?page=1&pageSize=10&username=${encodedFailedUsername}&success=false&ip=${encodedIp}&createdFrom=${createdFrom}&createdTo=${createdTo}`,
+  );
+  assertArray(serverFilteredPage.items, 'server filtered login log items');
+  if (
+    !serverFilteredPage.items.some(
+      (item) => item.id === failedLog.id && item.browser === 'Chrome',
+    )
+  ) {
+    throw new Error(
+      'Expected server filters to include failed Chrome login log',
+    );
+  }
+
+  const futureCreatedFrom = encodeURIComponent(
+    offsetIsoDate(
+      detailLog.createdAt,
+      86_400_000,
+      'detail login log createdAt',
+    ),
+  );
+  const futurePage = await apiRequest(
+    `/core/login-logs?page=1&pageSize=10&username=${encodedFailedUsername}&createdFrom=${futureCreatedFrom}`,
+  );
+  assertArray(futurePage.items, 'future filtered login log items');
+  assertEqual(futurePage.total, 0, 'future filtered login log total');
+
+  await apiRequest('/core/login-logs?createdFrom=not-a-date', {
+    expected: [400],
+  });
 
   const exportPreview = await apiRequest(
-    `/core/login-logs/export?username=${encodeURIComponent(
-      failedUsername,
-    )}&success=false`,
+    `/core/login-logs/export?username=${encodedFailedUsername}&success=false&ip=${encodedIp}&createdFrom=${createdFrom}&createdTo=${createdTo}`,
   );
   assertEqual(exportPreview.scope, 'current-page', 'login log export scope');
   assertArray(exportPreview.columns, 'login log export columns');
+  assertIncludes(exportPreview.columns, 'browser', 'login log export columns');
+  assertIncludes(exportPreview.columns, 'os', 'login log export columns');
 
   console.log(
     JSON.stringify({
@@ -92,7 +140,10 @@ try {
         'auth.login',
         'auth.failed-login-recorded',
         'core.login-log.list',
+        'core.login-log.server-filters',
+        'core.login-log.invalid-time-range-guard',
         'core.login-log.detail',
+        'core.login-log.device-fields',
         'core.login-log.export',
       ],
     }),
@@ -188,6 +239,7 @@ async function request(path, options = {}) {
       headers: {
         ...(options.body ? { 'content-type': 'application/json' } : {}),
         ...(options.token ? { authorization: `Bearer ${options.token}` } : {}),
+        ...(options.headers || {}),
       },
       body: options.body ? JSON.stringify(options.body) : undefined,
       signal: controller.signal,
@@ -259,6 +311,26 @@ function assertEqual(actual, expected, label) {
       )}, received ${JSON.stringify(actual)}`,
     );
   }
+}
+
+function assertIncludes(values, expected, label) {
+  if (!values.includes(expected)) {
+    throw new Error(
+      `Expected ${label} to include ${JSON.stringify(
+        expected,
+      )}, received ${JSON.stringify(values)}`,
+    );
+  }
+}
+
+function offsetIsoDate(value, offsetMs, label) {
+  const timestamp = Date.parse(value);
+
+  if (Number.isNaN(timestamp)) {
+    throw new Error(`Expected ${label} to be a valid ISO date-time string`);
+  }
+
+  return new Date(timestamp + offsetMs).toISOString();
 }
 
 function delay(ms) {

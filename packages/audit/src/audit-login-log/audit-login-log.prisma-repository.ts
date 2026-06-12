@@ -2,7 +2,10 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
 import { PrismaService } from '@opencore/database';
 import type { SecurityLoginAttemptRecord } from '@opencore/security';
-import type { AuditLoginLogRecord } from './audit-login-log.records';
+import {
+  enrichAuditLoginLogRecord,
+  type AuditLoginLogRecord,
+} from './audit-login-log.records';
 import {
   AuditLoginLogRepository,
   createAuditLoginLogPageResult,
@@ -36,7 +39,20 @@ export class PrismaAuditLoginLogRepository extends AuditLoginLogRepository {
       ...(filters.username === undefined
         ? {}
         : { username: { contains: filters.username } }),
+      ...(filters.ip === undefined ? {} : { ip: { contains: filters.ip } }),
       ...(filters.success === undefined ? {} : { success: filters.success }),
+      ...(filters.createdFrom === undefined && filters.createdTo === undefined
+        ? {}
+        : {
+            createdAt: {
+              ...(filters.createdFrom === undefined
+                ? {}
+                : { gte: new Date(filters.createdFrom) }),
+              ...(filters.createdTo === undefined
+                ? {}
+                : { lte: new Date(filters.createdTo) }),
+            },
+          }),
     };
     const total = await this.prisma.loginLog.count({ where });
     const pagination = normalizeAuditLoginLogPageQuery(query, total);
@@ -80,7 +96,7 @@ export class PrismaAuditLoginLogRepository extends AuditLoginLogRepository {
 }
 
 function toAuditLoginLogRecord(log: PrismaLoginLog): AuditLoginLogRecord {
-  return {
+  return enrichAuditLoginLogRecord({
     id: log.id,
     username: log.username,
     success: log.success,
@@ -89,5 +105,5 @@ function toAuditLoginLogRecord(log: PrismaLoginLog): AuditLoginLogRecord {
     userAgent: log.userAgent,
     requestId: log.requestId,
     createdAt: log.createdAt.toISOString(),
-  };
+  });
 }
