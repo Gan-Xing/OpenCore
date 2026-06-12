@@ -61,6 +61,7 @@ export type RoleSummary = {
   id: string;
   code: string;
   name: string;
+  enabled: boolean;
   permissionCodes: readonly string[];
   system: boolean;
   dataScope: RoleDataScope;
@@ -77,6 +78,7 @@ export type RoleDataScope =
 export type CreateRoleRequest = {
   code: string;
   name: string;
+  enabled?: boolean;
   permissionCodes: readonly string[];
   system?: boolean;
   dataScope?: RoleDataScope;
@@ -85,6 +87,7 @@ export type CreateRoleRequest = {
 
 export type UpdateRoleRequest = {
   name?: string;
+  enabled?: boolean;
   permissionCodes?: readonly string[];
   system?: boolean;
   dataScope?: RoleDataScope;
@@ -93,6 +96,14 @@ export type UpdateRoleRequest = {
 
 export type AssignRoleMenusRequest = {
   menuKeys: readonly string[];
+};
+
+export type SetRoleStatusRequest = {
+  enabled: boolean;
+};
+
+export type RoleMutationSummary = RoleSummary & {
+  revokedSessionCount?: number;
 };
 
 export type RoleMenuAssignmentSummary = {

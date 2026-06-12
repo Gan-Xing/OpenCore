@@ -227,6 +227,7 @@ async function seedRoles(): Promise<number> {
       where: { code: roleDefinition.code },
       update: {
         name: roleDefinition.name,
+        enabled: roleDefinition.enabled,
         system: roleDefinition.system,
         dataScope: roleDefinition.dataScope,
         dataScopeDeptIds: [
@@ -236,6 +237,7 @@ async function seedRoles(): Promise<number> {
       create: {
         code: roleDefinition.code,
         name: roleDefinition.name,
+        enabled: roleDefinition.enabled,
         system: roleDefinition.system,
         dataScope: roleDefinition.dataScope,
         dataScopeDeptIds: [

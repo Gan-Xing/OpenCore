@@ -52,6 +52,7 @@ describe('createRbacClient', () => {
       dataScope: 'self',
     });
     await client.updateRole('token', 'operator', { name: 'Ops' });
+    await client.setRoleStatus('token', 'operator', { enabled: false });
     await client.deleteRole('token', 'operator');
     await client.listPermissions('token');
     await client.exportPermissions('token');
@@ -121,6 +122,11 @@ describe('createRbacClient', () => {
       },
       { path: '/core/roles', method: 'POST', token: 'token' },
       { path: '/core/roles/operator', method: 'PATCH', token: 'token' },
+      {
+        path: '/core/roles/operator/status',
+        method: 'PATCH',
+        token: 'token',
+      },
       { path: '/core/roles/operator', method: 'DELETE', token: 'token' },
       { path: '/core/permissions', token: 'token' },
       { path: '/core/permissions/export', token: 'token' },

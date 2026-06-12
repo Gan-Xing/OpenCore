@@ -133,7 +133,7 @@ export class SeedRbacRepository extends RbacRepository {
     return [
       ...new Set(
         this.roles
-          .filter((role) => user.roleCodes.includes(role.code))
+          .filter((role) => role.enabled && user.roleCodes.includes(role.code))
           .flatMap((role) => role.permissionCodes),
       ),
     ].sort();
@@ -152,7 +152,7 @@ export class SeedRbacRepository extends RbacRepository {
       userId: user.id,
       deptId: user.deptId,
       roles: this.roles
-        .filter((role) => user.roleCodes.includes(role.code))
+        .filter((role) => role.enabled && user.roleCodes.includes(role.code))
         .map((role) => ({
           roleCode: role.code,
           dataScope: role.dataScope,
@@ -205,7 +205,11 @@ export class SeedRbacRepository extends RbacRepository {
 function cloneUserRecord(user: SystemUserRecord): SystemUserRecord {
   return {
     ...user,
-    roleCodes: [...user.roleCodes],
+    roleCodes: user.roleCodes
+      .filter((roleCode) =>
+        seedSystemRoles.some((role) => role.enabled && role.code === roleCode),
+      )
+      .sort(),
   };
 }
 
@@ -215,7 +219,11 @@ function toRbacUserRecord(user: SystemUserRecord): RbacUserRecord {
     username: user.username,
     displayName: user.displayName,
     passwordHash: user.passwordHash,
-    roleCodes: [...user.roleCodes],
+    roleCodes: user.roleCodes
+      .filter((roleCode) =>
+        seedSystemRoles.some((role) => role.enabled && role.code === roleCode),
+      )
+      .sort(),
     enabled: user.enabled,
   };
 }

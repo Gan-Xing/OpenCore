@@ -26,9 +26,11 @@ import {
   PermissionSummaryDto,
   RbacExportPreviewDto,
   RoleMenuAssignmentDto,
+  RoleMutationResultDto,
   ResetUserPasswordDto,
   RoleUserAssignmentDto,
   RoleSummaryDto,
+  SetRoleStatusDto,
   SetUserStatusDto,
   UpdateMenuDto,
   UpdatePermissionDto,
@@ -266,20 +268,64 @@ export class RbacController {
   @Patch('roles/:code')
   @ApiTags('Core Roles')
   @RequirePermission('core:role:update')
-  @ApiOkResponse({ type: RoleSummaryDto })
-  updateRole(
+  @ApiOkResponse({ type: RoleMutationResultDto })
+  async updateRole(
     @Param('code') code: string,
     @Body() body: UpdateRoleDto,
-  ): Promise<RoleSummaryDto> {
-    return this.roles.updateRole(code, body);
+  ): Promise<RoleMutationResultDto> {
+    const usernames = await this.listUsernamesForRole(code);
+    const role = await this.roles.updateRole(code, body);
+    const revokedSessionCount = await this.revokeActiveSessionsForUsernames(
+      usernames,
+      'rbac.role-update',
+      `role updated for ${code}`,
+    );
+
+    return {
+      ...role,
+      revokedSessionCount,
+    };
+  }
+
+  @Patch('roles/:code/status')
+  @ApiTags('Core Roles')
+  @RequirePermission('core:role:update')
+  @ApiOkResponse({ type: RoleMutationResultDto })
+  async setRoleStatus(
+    @Param('code') code: string,
+    @Body() body: SetRoleStatusDto,
+  ): Promise<RoleMutationResultDto> {
+    const usernames = await this.listUsernamesForRole(code);
+    const role = await this.roles.setRoleStatus(code, body);
+    const revokedSessionCount = await this.revokeActiveSessionsForUsernames(
+      usernames,
+      'rbac.role-status',
+      `role status set to ${role.enabled ? 'enabled' : 'disabled'} for ${code}`,
+    );
+
+    return {
+      ...role,
+      revokedSessionCount,
+    };
   }
 
   @Delete('roles/:code')
   @ApiTags('Core Roles')
   @RequirePermission('core:role:delete')
   @ApiOkResponse({ type: DeleteResultDto })
-  deleteRole(@Param('code') code: string): Promise<DeleteResultDto> {
-    return this.roles.deleteRole(code);
+  async deleteRole(@Param('code') code: string): Promise<DeleteResultDto> {
+    const usernames = await this.listUsernamesForRole(code);
+    const result = await this.roles.deleteRole(code);
+    const revokedSessionCount = await this.revokeActiveSessionsForUsernames(
+      usernames,
+      'rbac.role-delete',
+      `role deleted for ${code}`,
+    );
+
+    return {
+      ...result,
+      revokedSessionCount,
+    };
   }
 
   @Get('permissions')
@@ -391,14 +437,17 @@ export class RbacController {
     actor: string,
     reason: string,
   ): Promise<number> {
-    const users = (await this.users.listUsers()).filter((user) =>
-      user.roleCodes.includes(roleCode),
-    );
     return this.revokeActiveSessionsForUsernames(
-      users.map((user) => user.username),
+      await this.listUsernamesForRole(roleCode),
       actor,
       reason,
     );
+  }
+
+  private async listUsernamesForRole(roleCode: string): Promise<string[]> {
+    return (await this.users.listUsers())
+      .filter((user) => user.roleCodes.includes(roleCode))
+      .map((user) => user.username);
   }
 
   private async revokeActiveSessionsForUsernames(

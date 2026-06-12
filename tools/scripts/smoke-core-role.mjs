@@ -245,6 +245,163 @@ try {
     'role relogin permissions',
   );
 
+  const disabledRole = await apiRequest(
+    `/core/roles/${encodeURIComponent(roleCode)}/status`,
+    {
+      method: 'PATCH',
+      body: {
+        enabled: false,
+      },
+    },
+  );
+  assertEqual(
+    disabledRole.revokedSessionCount,
+    1,
+    'role status disable revoked session count',
+  );
+  assertEqual(disabledRole.enabled, false, 'disabled role enabled flag');
+  await request(`${apiPrefix}/auth/me`, {
+    token: smokeUserToken,
+    expected: [401],
+  });
+
+  const disabledRoleLogin = await request(`${apiPrefix}/auth/login`, {
+    method: 'POST',
+    expected: [200, 201],
+    body: {
+      username: smokeUsername,
+      password: smokePassword,
+    },
+  });
+  smokeUserToken = assertString(
+    disabledRoleLogin.accessToken,
+    'disabled-role relogin accessToken',
+  );
+  assertNotIncludes(
+    disabledRoleLogin.user.roleCodes,
+    roleCode,
+    'disabled-role relogin role codes',
+  );
+  assertNotIncludes(
+    disabledRoleLogin.user.permissionCodes,
+    'core:user:read',
+    'disabled-role relogin permissions',
+  );
+
+  const enabledRole = await apiRequest(
+    `/core/roles/${encodeURIComponent(roleCode)}/status`,
+    {
+      method: 'PATCH',
+      body: {
+        enabled: true,
+      },
+    },
+  );
+  assertEqual(
+    enabledRole.revokedSessionCount,
+    1,
+    'role status enable revoked session count',
+  );
+  assertEqual(enabledRole.enabled, true, 'enabled role enabled flag');
+  await request(`${apiPrefix}/auth/me`, {
+    token: smokeUserToken,
+    expected: [401],
+  });
+
+  const enabledRoleLogin = await request(`${apiPrefix}/auth/login`, {
+    method: 'POST',
+    expected: [200, 201],
+    body: {
+      username: smokeUsername,
+      password: smokePassword,
+    },
+  });
+  smokeUserToken = assertString(
+    enabledRoleLogin.accessToken,
+    'enabled-role relogin accessToken',
+  );
+  assertIncludes(
+    enabledRoleLogin.user.roleCodes,
+    roleCode,
+    'enabled-role relogin roles',
+  );
+  assertIncludes(
+    enabledRoleLogin.user.permissionCodes,
+    'core:user:read',
+    'enabled-role relogin permissions',
+  );
+
+  const updatedRole = await apiRequest(
+    `/core/roles/${encodeURIComponent(roleCode)}`,
+    {
+      method: 'PATCH',
+      body: {
+        name: 'Smoke Role Security Assignment',
+      },
+    },
+  );
+  assertEqual(
+    updatedRole.revokedSessionCount,
+    1,
+    'role update revoked session count',
+  );
+  await request(`${apiPrefix}/auth/me`, {
+    token: smokeUserToken,
+    expected: [401],
+  });
+
+  const updatedRoleLogin = await request(`${apiPrefix}/auth/login`, {
+    method: 'POST',
+    expected: [200, 201],
+    body: {
+      username: smokeUsername,
+      password: smokePassword,
+    },
+  });
+  smokeUserToken = assertString(
+    updatedRoleLogin.accessToken,
+    'updated-role relogin accessToken',
+  );
+  assertIncludes(
+    updatedRoleLogin.user.roleCodes,
+    roleCode,
+    'updated-role relogin roles',
+  );
+
+  const deletedRole = await apiRequest(
+    `/core/roles/${encodeURIComponent(roleCode)}`,
+    {
+      method: 'DELETE',
+    },
+  );
+  assertEqual(
+    deletedRole.revokedSessionCount,
+    1,
+    'role delete revoked session count',
+  );
+  await request(`${apiPrefix}/auth/me`, {
+    token: smokeUserToken,
+    expected: [401],
+  });
+
+  const deletedRoleLogin = await request(`${apiPrefix}/auth/login`, {
+    method: 'POST',
+    expected: [200, 201],
+    body: {
+      username: smokeUsername,
+      password: smokePassword,
+    },
+  });
+  smokeUserToken = assertString(
+    deletedRoleLogin.accessToken,
+    'deleted-role relogin accessToken',
+  );
+  assertNotIncludes(
+    deletedRoleLogin.user.roleCodes,
+    roleCode,
+    'deleted-role relogin roles',
+  );
+
   await cleanup();
 
   console.log(
@@ -267,6 +424,11 @@ try {
         'core.role.user-assignment.assign',
         'core.role.user-assignment.revoke-session',
         'core.role.user-assignment.relogin-refresh',
+        'core.role.status.disable',
+        'core.role.status.disabled-role-filtered',
+        'core.role.status.enable',
+        'core.role.update.revoke-session',
+        'core.role.delete.revoke-session',
       ],
     }),
   );

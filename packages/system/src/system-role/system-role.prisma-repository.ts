@@ -18,6 +18,7 @@ type PrismaRoleWithPermissions = {
   id: string;
   code: string;
   name: string;
+  enabled: boolean;
   system: boolean;
   dataScope: string;
   dataScopeDeptIds: unknown;
@@ -62,6 +63,7 @@ export class PrismaSystemRoleRepository extends SystemRoleRepository {
       data: {
         code: input.code,
         name: input.name,
+        enabled: input.enabled,
         system: input.system,
         dataScope: input.dataScope,
         dataScopeDeptIds: [...input.dataScopeDeptIds],
@@ -99,6 +101,7 @@ export class PrismaSystemRoleRepository extends SystemRoleRepository {
       where: { code },
       data: {
         name: input.name,
+        enabled: input.enabled,
         system: input.system,
         dataScope: input.dataScope,
         dataScopeDeptIds: [...input.dataScopeDeptIds],
@@ -201,6 +204,7 @@ function toSystemRoleRecord(role: PrismaRoleWithPermissions): SystemRoleRecord {
     id: role.id,
     code: role.code,
     name: role.name,
+    enabled: role.enabled,
     permissionCodes: role.permissions
       .map((rolePermission) => rolePermission.permission.code)
       .sort(),

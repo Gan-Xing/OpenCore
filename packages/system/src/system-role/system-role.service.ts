@@ -5,11 +5,13 @@ import type {
   AssignRoleMenusDto,
   CreateRoleDto,
   RoleMenuAssignmentDto,
+  SetRoleStatusDto,
   UpdateRoleDto,
 } from './system-role.dto';
 import type { SystemRoleRecord } from './system-role.records';
 import {
   createSystemRoleExportPreview,
+  normalizeSetRoleStatusInput,
   SystemRoleRepository,
   type SystemRoleExportPreview,
 } from './system-role.repository';
@@ -35,6 +37,13 @@ export class SystemRoleService {
 
   updateRole(code: string, body: UpdateRoleDto): Promise<SystemRoleRecord> {
     return this.repository.updateRole(code, body);
+  }
+
+  async setRoleStatus(
+    code: string,
+    body: SetRoleStatusDto,
+  ): Promise<SystemRoleRecord> {
+    return this.repository.updateRole(code, normalizeSetRoleStatusInput(body));
   }
 
   async getRoleMenuAssignment(code: string): Promise<RoleMenuAssignmentDto> {

@@ -526,7 +526,9 @@
             "description": "",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/RoleSummaryDto" }
+                "schema": {
+                  "$ref": "#/components/schemas/RoleMutationResultDto"
+                }
               }
             }
           }
@@ -550,6 +552,41 @@
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/DeleteResultDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Roles"]
+      }
+    },
+    "/api/core/roles/{code}/status": {
+      "patch": {
+        "operationId": "RbacController_setRoleStatus",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SetRoleStatusDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoleMutationResultDto"
+                }
               }
             }
           }
@@ -4931,6 +4968,7 @@
           "id": { "type": "string" },
           "code": { "type": "string" },
           "name": { "type": "string" },
+          "enabled": { "type": "boolean" },
           "permissionCodes": { "type": "array", "items": { "type": "string" } },
           "system": { "type": "boolean" },
           "dataScope": {
@@ -4943,6 +4981,7 @@
           "id",
           "code",
           "name",
+          "enabled",
           "permissionCodes",
           "system",
           "dataScope",
@@ -5048,6 +5087,7 @@
             "type": "array",
             "items": { "type": "string" }
           },
+          "enabled": { "type": "boolean", "default": true },
           "system": { "type": "boolean", "default": false },
           "dataScope": {
             "type": "string",
@@ -5067,6 +5107,7 @@
         "properties": {
           "name": { "type": "string" },
           "permissionCodes": { "type": "array", "items": { "type": "string" } },
+          "enabled": { "type": "boolean" },
           "system": { "type": "boolean" },
           "dataScope": {
             "type": "string",
@@ -5074,6 +5115,41 @@
           },
           "dataScopeDeptIds": { "type": "array", "items": { "type": "string" } }
         }
+      },
+      "RoleMutationResultDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "enabled": { "type": "boolean" },
+          "permissionCodes": { "type": "array", "items": { "type": "string" } },
+          "system": { "type": "boolean" },
+          "dataScope": {
+            "type": "string",
+            "enum": ["all", "custom", "dept_tree", "own_dept", "self"]
+          },
+          "dataScopeDeptIds": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "revokedSessionCount": { "type": "number" }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "enabled",
+          "permissionCodes",
+          "system",
+          "dataScope",
+          "dataScopeDeptIds"
+        ]
+      },
+      "SetRoleStatusDto": {
+        "type": "object",
+        "properties": { "enabled": { "type": "boolean" } },
+        "required": ["enabled"]
       },
       "PermissionSummaryDto": {
         "type": "object",

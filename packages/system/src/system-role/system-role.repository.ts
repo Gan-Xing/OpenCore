@@ -1,5 +1,9 @@
 import { BadRequestException } from '@nestjs/common';
-import type { CreateRoleDto, UpdateRoleDto } from './system-role.dto';
+import type {
+  CreateRoleDto,
+  SetRoleStatusDto,
+  UpdateRoleDto,
+} from './system-role.dto';
 import {
   systemRoleDataScopeTypes,
   type SystemRoleDataScope,
@@ -17,6 +21,7 @@ export type SystemRoleExportPreview = {
 export type NormalizedSystemRoleCreateInput = {
   code: string;
   name: string;
+  enabled: boolean;
   permissionCodes: readonly string[];
   system: boolean;
   dataScope: SystemRoleDataScope;
@@ -25,6 +30,7 @@ export type NormalizedSystemRoleCreateInput = {
 
 export type NormalizedSystemRoleUpdateInput = {
   name: string;
+  enabled: boolean;
   permissionCodes?: readonly string[];
   system: boolean;
   dataScope: SystemRoleDataScope;
@@ -58,6 +64,7 @@ export function createSystemRoleExportPreview(
       'code',
       'name',
       'permissionCodes',
+      'enabled',
       'system',
       'dataScope',
       'dataScopeDeptIds',
@@ -74,14 +81,18 @@ export function normalizeCreateSystemRoleInput(
   const dataScopeDeptIds = normalizeDataScopeDeptIds(
     body.dataScopeDeptIds ?? [],
   );
+  const enabled = normalizeOptionalBoolean(body.enabled, 'enabled', true);
+  const system = normalizeOptionalBoolean(body.system, 'system', false);
 
   assertDataScopeDeptIds(dataScope, dataScopeDeptIds);
+  assertRoleStatusAllowed(system, enabled);
 
   return {
     code: normalizeRoleCode(body.code),
     name: normalizeRequiredText(body.name, 'name'),
+    enabled,
     permissionCodes: normalizePermissionCodes(body.permissionCodes),
-    system: body.system ?? false,
+    system,
     dataScope,
     dataScopeDeptIds,
   };
@@ -97,21 +108,43 @@ export function normalizeUpdateSystemRoleInput(
   );
 
   assertDataScopeDeptIds(dataScope, dataScopeDeptIds);
+  const system = existing.system
+    ? existing.system
+    : normalizeOptionalBoolean(body.system, 'system', existing.system);
+  const enabled = normalizeOptionalBoolean(
+    body.enabled,
+    'enabled',
+    existing.enabled,
+  );
+  assertRoleStatusAllowed(system, enabled);
 
   return {
     name:
       body.name === undefined
         ? existing.name
         : normalizeRequiredText(body.name, 'name'),
+    enabled,
     permissionCodes:
       body.permissionCodes === undefined
         ? undefined
         : normalizePermissionCodes(body.permissionCodes),
-    system: existing.system
-      ? existing.system
-      : (body.system ?? existing.system),
+    system,
     dataScope,
     dataScopeDeptIds: dataScope === 'custom' ? dataScopeDeptIds : [],
+  };
+}
+
+function assertRoleStatusAllowed(system: boolean, enabled: boolean): void {
+  if (system && !enabled) {
+    throw new BadRequestException('System roles cannot be disabled.');
+  }
+}
+
+export function normalizeSetRoleStatusInput(body: SetRoleStatusDto): {
+  enabled: boolean;
+} {
+  return {
+    enabled: normalizeRequiredBoolean(body?.enabled, 'enabled'),
   };
 }
 
@@ -142,6 +175,26 @@ function normalizeRequiredText(value: string, fieldName: string): string {
   }
 
   return normalized;
+}
+
+function normalizeOptionalBoolean(
+  value: unknown,
+  fieldName: string,
+  fallback: boolean,
+): boolean {
+  return value === undefined
+    ? fallback
+    : normalizeRequiredBoolean(value, fieldName);
+}
+
+function normalizeRequiredBoolean(value: unknown, fieldName: string): boolean {
+  if (typeof value !== 'boolean') {
+    throw new BadRequestException(
+      `System role ${fieldName} must be a boolean.`,
+    );
+  }
+
+  return value;
 }
 
 function normalizePermissionCodes(

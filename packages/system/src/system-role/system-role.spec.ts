@@ -17,10 +17,12 @@ describe('@opencore/system system-role', () => {
         expect.objectContaining({
           code: 'admin',
           system: true,
+          enabled: true,
           dataScope: 'all',
         }),
         expect.objectContaining({
           code: 'viewer',
+          enabled: true,
           permissionCodes: expect.arrayContaining(['core:role:read']),
           dataScope: 'self',
         }),
@@ -37,6 +39,7 @@ describe('@opencore/system system-role', () => {
 
     expect(role).toMatchObject({
       code: 'operator',
+      enabled: true,
       permissionCodes: ['core:role:read', 'core:user:read'],
       system: false,
       dataScope: 'custom',
@@ -60,6 +63,12 @@ describe('@opencore/system system-role', () => {
       dataScope: 'own_dept',
       dataScopeDeptIds: [],
     });
+    await expect(
+      service.setRoleStatus('operator', { enabled: false }),
+    ).resolves.toMatchObject({
+      code: 'operator',
+      enabled: false,
+    });
     await expect(service.createExportPreview()).resolves.toMatchObject({
       filename: 'opencore-system-roles.csv',
       scope: 'current-page',
@@ -67,6 +76,7 @@ describe('@opencore/system system-role', () => {
         'code',
         'name',
         'permissionCodes',
+        'enabled',
         'system',
         'dataScope',
         'dataScopeDeptIds',
@@ -77,7 +87,7 @@ describe('@opencore/system system-role', () => {
     });
   });
 
-  it('rejects invalid role codes and duplicated permission codes', async () => {
+  it('rejects invalid role codes, duplicated permission codes and bad status payloads', async () => {
     const service = createSeedRoleService();
 
     await expect(
@@ -111,9 +121,12 @@ describe('@opencore/system system-role', () => {
         dataScopeDeptIds: ['dept_operations', 'dept_operations'],
       }),
     ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.setRoleStatus('viewer', { enabled: 'false' as never }),
+    ).rejects.toThrow(BadRequestException);
   });
 
-  it('protects system roles from deletion and from system demotion', async () => {
+  it('protects system roles from deletion, system demotion and status disable', async () => {
     const service = createSeedRoleService();
 
     await expect(service.deleteRole('admin')).rejects.toThrow(
@@ -127,6 +140,9 @@ describe('@opencore/system system-role', () => {
         system: true,
       }),
     );
+    await expect(
+      service.setRoleStatus('viewer', { enabled: false }),
+    ).rejects.toThrow('System roles cannot be disabled.');
   });
 
   it('assigns role menus while preserving non-menu permissions', async () => {
@@ -192,8 +208,16 @@ describe('@opencore/system system-role', () => {
 
       expect(roles).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ code: 'admin', system: true }),
-          expect.objectContaining({ code: 'viewer', system: true }),
+          expect.objectContaining({
+            code: 'admin',
+            enabled: true,
+            system: true,
+          }),
+          expect.objectContaining({
+            code: 'viewer',
+            enabled: true,
+            system: true,
+          }),
         ]),
       );
       for (const role of roles) {
@@ -214,6 +238,7 @@ describe('@opencore/system system-role', () => {
 
       expect(role).toMatchObject({
         code,
+        enabled: true,
         permissionCodes: ['core:role:read'],
         dataScope: 'custom',
         dataScopeDeptIds: ['dept_operations'],
@@ -235,6 +260,12 @@ describe('@opencore/system system-role', () => {
         permissionCodes: ['core:dashboard:read'],
         dataScope: 'self',
         dataScopeDeptIds: [],
+      });
+      await expect(
+        service.setRoleStatus(code, { enabled: false }),
+      ).resolves.toMatchObject({
+        code,
+        enabled: false,
       });
 
       const persistedRole = await prisma.role.findUniqueOrThrow({

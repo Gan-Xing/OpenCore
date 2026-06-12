@@ -25,6 +25,7 @@ model Role {
   id               String           @id @default(cuid())
   code             String           @unique
   name             String
+  enabled          Boolean          @default(true)
   system           Boolean          @default(false)
   dataScope        String           @default("all")
   dataScopeDeptIds Json?

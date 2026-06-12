@@ -68,6 +68,7 @@ export class SeedSystemRoleRepository extends SystemRoleRepository {
 
     Object.assign(role, {
       name: input.name,
+      enabled: input.enabled,
       system: input.system,
       dataScope: input.dataScope,
       dataScopeDeptIds: [...input.dataScopeDeptIds],

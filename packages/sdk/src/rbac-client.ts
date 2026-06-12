@@ -13,8 +13,10 @@ import type {
   RbacExportPreview,
   ResetUserPasswordRequest,
   RoleMenuAssignmentSummary,
+  RoleMutationSummary,
   RoleUserAssignmentSummary,
   RoleSummary,
+  SetRoleStatusRequest,
   SetUserStatusRequest,
   UpdateMenuRequest,
   UpdatePermissionRequest,
@@ -82,7 +84,12 @@ export type RbacClient = {
     token: string,
     code: string,
     body: UpdateRoleRequest,
-  ) => Promise<RoleSummary>;
+  ) => Promise<RoleMutationSummary>;
+  setRoleStatus: (
+    token: string,
+    code: string,
+    body: SetRoleStatusRequest,
+  ) => Promise<RoleMutationSummary>;
   deleteRole: (token: string, code: string) => Promise<RbacDeleteResult>;
   listPermissions: (token: string) => Promise<PermissionSummary[]>;
   exportPermissions: (token: string) => Promise<RbacExportPreview>;
@@ -218,11 +225,20 @@ export function createRbacClient(request: SdkRequest): RbacClient {
         token,
       }),
     updateRole: (token, code, body) =>
-      request<RoleSummary>(`/core/roles/${encodeURIComponent(code)}`, {
+      request<RoleMutationSummary>(`/core/roles/${encodeURIComponent(code)}`, {
         method: 'PATCH',
         body,
         token,
       }),
+    setRoleStatus: (token, code, body) =>
+      request<RoleMutationSummary>(
+        `/core/roles/${encodeURIComponent(code)}/status`,
+        {
+          method: 'PATCH',
+          body,
+          token,
+        },
+      ),
     deleteRole: (token, code) =>
       request<RbacDeleteResult>(`/core/roles/${encodeURIComponent(code)}`, {
         method: 'DELETE',

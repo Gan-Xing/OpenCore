@@ -15,6 +15,9 @@ export class RoleSummaryDto {
   @ApiProperty()
   name!: string;
 
+  @ApiProperty()
+  enabled!: boolean;
+
   @ApiProperty({ type: [String] })
   permissionCodes!: readonly string[];
 
@@ -38,6 +41,9 @@ export class CreateRoleDto {
   @ApiProperty({ type: [String], default: [] })
   permissionCodes!: readonly string[];
 
+  @ApiProperty({ required: false, default: true })
+  enabled?: boolean;
+
   @ApiProperty({ required: false, default: false })
   system?: boolean;
 
@@ -60,6 +66,9 @@ export class UpdateRoleDto {
   permissionCodes?: readonly string[];
 
   @ApiProperty({ required: false })
+  enabled?: boolean;
+
+  @ApiProperty({ required: false })
   system?: boolean;
 
   @ApiProperty({ required: false, enum: systemRoleDataScopeTypes })
@@ -72,6 +81,16 @@ export class UpdateRoleDto {
 export class AssignRoleMenusDto {
   @ApiProperty({ type: [String] })
   menuKeys!: readonly string[];
+}
+
+export class SetRoleStatusDto {
+  @ApiProperty()
+  enabled!: boolean;
+}
+
+export class RoleMutationResultDto extends RoleSummaryDto {
+  @ApiProperty({ required: false })
+  revokedSessionCount?: number;
 }
 
 export class RoleMenuAssignmentDto {

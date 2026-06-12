@@ -5,6 +5,7 @@ export type SystemRoleRecord = {
   id: string;
   code: string;
   name: string;
+  enabled: boolean;
   permissionCodes: readonly string[];
   system: boolean;
   dataScope: SystemRoleDataScope;
@@ -29,6 +30,7 @@ export const seedSystemRoles: readonly SystemRoleRecord[] = [
     id: 'role_admin',
     code: 'admin',
     name: 'Administrator',
+    enabled: true,
     permissionCodes: seedSystemRolePermissionCodes,
     system: true,
     dataScope: 'all',
@@ -38,6 +40,7 @@ export const seedSystemRoles: readonly SystemRoleRecord[] = [
     id: 'role_viewer',
     code: 'viewer',
     name: 'Viewer',
+    enabled: true,
     permissionCodes: [
       'core:dashboard:read',
       'tool:openapi:read',

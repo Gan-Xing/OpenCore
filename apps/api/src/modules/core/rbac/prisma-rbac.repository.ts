@@ -43,6 +43,7 @@ type PrismaUserWithRoles = {
   roles: Array<{
     role: {
       code: string;
+      enabled: boolean;
       dataScope?: string;
       dataScopeDeptIds?: unknown;
     };
@@ -185,9 +186,11 @@ export class PrismaRbacRepository extends RbacRepository {
     return [
       ...new Set(
         user.roles.flatMap((userRole) =>
-          userRole.role.permissions.map(
-            (rolePermission) => rolePermission.permission.code,
-          ),
+          userRole.role.enabled
+            ? userRole.role.permissions.map(
+                (rolePermission) => rolePermission.permission.code,
+              )
+            : [],
         ),
       ),
     ].sort();
@@ -215,6 +218,7 @@ export class PrismaRbacRepository extends RbacRepository {
       userId: user.id,
       deptId: user.deptId ?? undefined,
       roles: user.roles
+        .filter((userRole) => userRole.role.enabled)
         .map((userRole) => ({
           roleCode: userRole.role.code,
           dataScope: normalizeSecurityDataScope(userRole.role.dataScope),
@@ -289,7 +293,10 @@ function toUserRecord(user: PrismaUserWithRoles): RbacUserRecord {
     username: user.username,
     displayName: user.displayName,
     passwordHash: user.passwordHash,
-    roleCodes: user.roles.map((userRole) => userRole.role.code).sort(),
+    roleCodes: user.roles
+      .filter((userRole) => userRole.role.enabled)
+      .map((userRole) => userRole.role.code)
+      .sort(),
     enabled: user.enabled,
   };
 }

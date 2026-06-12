@@ -23,8 +23,10 @@ import {
   type PermissionSummary,
   type RbacDeleteResult,
   type RoleMenuAssignmentSummary,
+  type RoleMutationSummary,
   type RoleUserAssignmentSummary,
   type RoleSummary,
+  type SetRoleStatusRequest,
   type SystemStatusSummary,
   type DictTypeSummary,
   type SystemConfigSummary,
@@ -146,11 +148,18 @@ export function createOpenCoreRole(
 export function updateOpenCoreRole(
   code: string,
   body: UpdateRoleRequest,
-): Promise<RoleSummary> {
+): Promise<RoleMutationSummary> {
   return rbacClient.updateRole(getRequiredAdminToken(), code, body);
 }
 
-export function deleteOpenCoreRole(code: string): Promise<{ deleted: true }> {
+export function setOpenCoreRoleStatus(
+  code: string,
+  body: SetRoleStatusRequest,
+): Promise<RoleMutationSummary> {
+  return rbacClient.setRoleStatus(getRequiredAdminToken(), code, body);
+}
+
+export function deleteOpenCoreRole(code: string): Promise<RbacDeleteResult> {
   return rbacClient.deleteRole(getRequiredAdminToken(), code);
 }
 

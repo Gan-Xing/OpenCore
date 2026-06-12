@@ -1,10 +1,12 @@
 import {
   ApartmentOutlined,
+  CheckCircleOutlined,
   DeleteOutlined,
   EditOutlined,
   EyeOutlined,
   PlusOutlined,
   ReloadOutlined,
+  StopOutlined,
   TeamOutlined,
 } from '@ant-design/icons';
 import {
@@ -52,6 +54,7 @@ import {
   listOpenCorePermissions,
   listOpenCoreRoles,
   listOpenCoreSystemDepts,
+  setOpenCoreRoleStatus,
   updateOpenCoreRole,
 } from '@/services/opencore/platform';
 import type { Key } from 'react';
@@ -100,6 +103,7 @@ const fallbackRows: RoleSummary[] = [
     id: 'role_admin',
     code: 'admin',
     name: 'Administrator',
+    enabled: true,
     permissionCodes: allPermissionCodes,
     system: true,
     dataScope: 'all',
@@ -109,6 +113,7 @@ const fallbackRows: RoleSummary[] = [
     id: 'role_viewer',
     code: 'viewer',
     name: 'Viewer',
+    enabled: true,
     permissionCodes: [
       'core:dashboard:read',
       'tool:openapi:read',
@@ -154,6 +159,15 @@ const filterOptions: CurrentPageFilterOption<RoleSummary>[] = [
     predicate: (record, value) => record.system === (value === 'true'),
   },
   {
+    key: 'enabled',
+    options: [
+      { label: 'enabled', value: 'true' },
+      { label: 'disabled', value: 'false' },
+    ],
+    placeholder: 'Status',
+    predicate: (record, value) => record.enabled === (value === 'true'),
+  },
+  {
     key: 'dataScope',
     options: dataScopeOptions,
     placeholder: 'Data scope',
@@ -164,6 +178,7 @@ const exportColumns: CurrentPageExportColumn<RoleSummary>[] = [
   { title: 'ID', dataIndex: 'id' },
   { title: 'Code', dataIndex: 'code' },
   { title: 'Name', dataIndex: 'name' },
+  { title: 'Enabled', dataIndex: 'enabled' },
   {
     title: 'Permission Count',
     renderText: (record) => record.permissionCodes.length,
@@ -277,6 +292,7 @@ function createDetailFields(
     { label: 'ID', value: record.id },
     { label: 'Code', value: record.code },
     { label: 'Name', value: record.name },
+    { label: 'Status', value: record.enabled ? 'enabled' : 'disabled' },
     { label: 'System', value: record.system ? 'system' : 'custom' },
     { label: 'Data Scope', value: dataScopeLabels[record.dataScope] },
     {
@@ -297,6 +313,10 @@ function createDetailJsonSections(record: RoleSummary): DetailJsonSection[] {
     { title: 'Permission Codes', value: record.permissionCodes },
     { title: 'Data Scope Dept IDs', value: record.dataScopeDeptIds },
   ];
+}
+
+function formatRevokedSessions(count: number | undefined): string {
+  return `Revoked sessions: ${count ?? 0}.`;
 }
 
 export default function RolesPage() {
@@ -327,6 +347,8 @@ export default function RolesPage() {
     useState(false);
   const [userAssignmentSubmitting, setUserAssignmentSubmitting] =
     useState(false);
+  const [statusUpdatingRoleCode, setStatusUpdatingRoleCode] =
+    useState<string>();
   const selectedDataScope = Form.useWatch('dataScope', form);
   const isCustomDataScope = selectedDataScope === 'custom';
   const permissionOptions = useMemo(
@@ -464,13 +486,15 @@ export default function RolesPage() {
     setSubmitting(true);
     try {
       if (editingRole) {
-        await updateOpenCoreRole(editingRole.code, {
+        const role = await updateOpenCoreRole(editingRole.code, {
           dataScope: values.dataScope,
           dataScopeDeptIds,
           name: values.name,
           permissionCodes: values.permissionCodes ?? [],
         });
-        message.success('Role updated.');
+        message.success(
+          `Role updated. ${formatRevokedSessions(role.revokedSessionCount)}`,
+        );
       } else {
         await createOpenCoreRole({
           code: values.code,
@@ -490,8 +514,27 @@ export default function RolesPage() {
   };
 
   const deleteRole = async (record: RoleSummary) => {
-    await deleteOpenCoreRole(record.code);
-    message.success('Role deleted.');
+    const result = await deleteOpenCoreRole(record.code);
+    message.success(
+      `Role deleted. ${formatRevokedSessions(result.revokedSessionCount)}`,
+    );
+    await loadRoles();
+  };
+
+  const toggleRoleStatus = async (record: RoleSummary) => {
+    setStatusUpdatingRoleCode(record.code);
+    try {
+      const role = await setOpenCoreRoleStatus(record.code, {
+        enabled: !record.enabled,
+      });
+      message.success(
+        `Role ${role.enabled ? 'enabled' : 'disabled'}. ${formatRevokedSessions(
+          role.revokedSessionCount,
+        )}`,
+      );
+    } finally {
+      setStatusUpdatingRoleCode(undefined);
+    }
     await loadRoles();
   };
 
@@ -579,6 +622,16 @@ export default function RolesPage() {
       render: (_, record) => <Tag>{dataScopeLabels[record.dataScope]}</Tag>,
     },
     {
+      title: 'Status',
+      dataIndex: 'enabled',
+      width: 104,
+      render: (_, record) => (
+        <Tag color={record.enabled ? 'green' : 'default'}>
+          {record.enabled ? 'enabled' : 'disabled'}
+        </Tag>
+      ),
+    },
+    {
       title: 'System',
       dataIndex: 'system',
       width: 96,
@@ -626,6 +679,35 @@ export default function RolesPage() {
               size="small"
             />
           </Tooltip>
+          <Popconfirm
+            title={record.enabled ? 'Disable this role?' : 'Enable this role?'}
+            okText={record.enabled ? 'Disable' : 'Enable'}
+            okButtonProps={{ danger: record.enabled }}
+            onConfirm={() => void toggleRoleStatus(record)}
+          >
+            <Tooltip
+              title={
+                record.system
+                  ? 'System roles cannot be disabled'
+                  : record.enabled
+                    ? 'Disable'
+                    : 'Enable'
+              }
+            >
+              <Button
+                aria-label={`${record.enabled ? 'Disable' : 'Enable'} ${
+                  record.name
+                }`}
+                danger={record.enabled}
+                disabled={record.system}
+                icon={
+                  record.enabled ? <StopOutlined /> : <CheckCircleOutlined />
+                }
+                loading={statusUpdatingRoleCode === record.code}
+                size="small"
+              />
+            </Tooltip>
+          </Popconfirm>
           <Popconfirm
             title="Delete this role?"
             okText="Delete"
