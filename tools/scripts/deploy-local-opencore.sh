@@ -320,6 +320,124 @@ async function request(targetUrl, options = {}) {
 NODE
 }
 
+verify_api_duplicate_prefix_login() {
+  run_with_env node - "$API_BASE_URL/api/api/auth/login" <<'NODE'
+const url = process.argv[2];
+const username = process.env.OPENCORE_SMOKE_ADMIN_USERNAME || 'admin';
+const passwordCandidates = [
+  process.env.OPENCORE_SMOKE_ADMIN_PASSWORD,
+  process.env.BOOTSTRAP_ADMIN_PASSWORD,
+  'admin123',
+].filter((candidate, index, candidates) => {
+  return Boolean(candidate) && candidates.indexOf(candidate) === index;
+});
+const timeoutMs = Number(process.env.OPENCORE_SMOKE_TIMEOUT_MS || 10000);
+
+class HttpStatusError extends Error {
+  constructor(message, status) {
+    super(message);
+    this.name = 'HttpStatusError';
+    this.status = status;
+  }
+}
+
+(async () => {
+  try {
+    await login(url);
+
+    console.log(
+      JSON.stringify({
+        status: 'pass',
+        baseUrl: url,
+        checks: ['api.duplicate-prefix-login'],
+      }),
+    );
+  } catch (error) {
+    console.error(
+      JSON.stringify({
+        status: 'fail',
+        baseUrl: url,
+        error: error instanceof Error ? error.message : String(error),
+      }),
+    );
+    process.exit(1);
+  }
+})();
+
+async function login(targetUrl) {
+  let lastError;
+
+  for (const password of passwordCandidates) {
+    try {
+      const response = await request(targetUrl, {
+        method: 'POST',
+        expected: [200, 201],
+        body: {
+          username,
+          password,
+        },
+      });
+
+      if (typeof response.accessToken !== 'string' || response.accessToken.length === 0) {
+        throw new Error('API duplicate-prefix login response did not include accessToken');
+      }
+
+      return;
+    } catch (error) {
+      lastError = error;
+      if (
+        !(error instanceof HttpStatusError) ||
+        ![401, 403].includes(error.status)
+      ) {
+        throw error;
+      }
+    }
+  }
+
+  throw new Error(
+    `Unable to authenticate smoke admin ${username} through duplicated API prefix. Set OPENCORE_SMOKE_ADMIN_PASSWORD to the deployed admin password.`,
+    { cause: lastError },
+  );
+}
+
+async function request(targetUrl, options = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(targetUrl, {
+      method: options.method || 'GET',
+      headers: {
+        ...(options.body ? { 'content-type': 'application/json' } : {}),
+      },
+      body: options.body ? JSON.stringify(options.body) : undefined,
+      signal: controller.signal,
+    });
+    const contentType = response.headers.get('content-type') || '';
+    const responseBody = contentType.includes('application/json')
+      ? await response.json()
+      : await response.text();
+
+    if (!options.expected.includes(response.status)) {
+      throw new HttpStatusError(
+        `${options.method || 'GET'} ${targetUrl} returned ${response.status}`,
+        response.status,
+      );
+    }
+
+    return responseBody;
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(`${options.method || 'GET'} ${targetUrl} timed out`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+NODE
+}
+
 stop_pid_file() {
   local pid_file="$1"
   local label="$2"
@@ -461,6 +579,7 @@ fi
 require_pid_alive "$ADMIN_PID_FILE" "OpenCore Admin" "$ADMIN_LOG_FILE"
 
 verify_admin_api_proxy_login
+verify_api_duplicate_prefix_login
 verify_public_admin_bundle
 
 run_with_env env \
