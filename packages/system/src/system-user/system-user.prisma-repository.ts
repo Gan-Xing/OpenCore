@@ -1,13 +1,20 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '@opencore/database';
-import type { CreateUserDto, UpdateUserDto } from './system-user.dto';
+import type {
+  AssignRoleUsersDto,
+  CreateUserDto,
+  UpdateUserDto,
+} from './system-user.dto';
 import { hashSystemUserPassword } from './system-user.password';
 import {
   assertSystemUserMutable,
+  createRoleUserAssignment,
+  normalizeAssignRoleUsersInput,
   normalizeCreateSystemUserInput,
   normalizeUpdateSystemUserInput,
   SystemUserRepository,
@@ -147,6 +154,42 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
     return { deleted: true };
   }
 
+  async getRoleUserAssignment(roleCode: string) {
+    await this.findRoleIdByCode(roleCode);
+    return createRoleUserAssignment(roleCode, await this.listUsers());
+  }
+
+  async assignRoleUsers(roleCode: string, body: AssignRoleUsersDto) {
+    const roleId = await this.findRoleIdByCode(roleCode);
+    const userIds = normalizeAssignRoleUsersInput(body);
+    await this.assertUsersAssignable(userIds);
+
+    await this.prisma.$transaction([
+      this.prisma.userRole.deleteMany({
+        where: {
+          roleId,
+          user: {
+            id: { notIn: [...SYSTEM_USER_IDS] },
+            username: { notIn: [...SYSTEM_USERNAMES] },
+          },
+        },
+      }),
+      ...(userIds.length === 0
+        ? []
+        : [
+            this.prisma.userRole.createMany({
+              data: userIds.map((userId) => ({
+                roleId,
+                userId,
+              })),
+              skipDuplicates: true,
+            }),
+          ]),
+    ]);
+
+    return createRoleUserAssignment(roleCode, await this.listUsers());
+  }
+
   private async findUserEntityById(id: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },
@@ -164,6 +207,52 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
     }
 
     return user;
+  }
+
+  private async findRoleIdByCode(code: string): Promise<string> {
+    const role = await this.prisma.role.findUnique({
+      where: { code },
+      select: { id: true },
+    });
+
+    if (!role) {
+      throw new NotFoundException(`Role not found: ${code}`);
+    }
+
+    return role.id;
+  }
+
+  private async assertUsersAssignable(userIds: readonly string[]) {
+    if (userIds.length === 0) {
+      return;
+    }
+
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: [...userIds] } },
+      include: {
+        roles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
+    const usersById = new Map(
+      users.map((user) => [user.id, toSystemUserSummaryRecord(user)]),
+    );
+    const missing = userIds.find((userId) => !usersById.has(userId));
+
+    if (missing) {
+      throw new NotFoundException(`User not found: ${missing}`);
+    }
+
+    const systemUser = userIds
+      .map((userId) => usersById.get(userId))
+      .find((user) => user?.system);
+
+    if (systemUser) {
+      throw new BadRequestException('System users cannot be role-assigned.');
+    }
   }
 
   private async assertRolesExist(roleCodes: readonly string[]): Promise<void> {

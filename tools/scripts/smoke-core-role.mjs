@@ -151,6 +151,100 @@ try {
     'relogin preserved role permissions',
   );
 
+  const initialUserAssignment = await apiRequest(
+    `/core/roles/${encodeURIComponent(roleCode)}/users`,
+  );
+  assertIncludes(
+    initialUserAssignment.assignedUserIds,
+    smokeUserId,
+    'initial role user assignment',
+  );
+
+  const removedUserAssignment = await apiRequest(
+    `/core/roles/${encodeURIComponent(roleCode)}/users`,
+    {
+      method: 'PATCH',
+      body: {
+        userIds: [],
+      },
+    },
+  );
+  assertEqual(
+    removedUserAssignment.revokedSessionCount,
+    1,
+    'role user unassignment revoked session count',
+  );
+  assertNotIncludes(
+    removedUserAssignment.assignedUserIds,
+    smokeUserId,
+    'removed role user assignment',
+  );
+  await request(`${apiPrefix}/auth/me`, {
+    token: smokeUserToken,
+    expected: [401],
+  });
+
+  const noRoleLogin = await request(`${apiPrefix}/auth/login`, {
+    method: 'POST',
+    expected: [200, 201],
+    body: {
+      username: smokeUsername,
+      password: smokePassword,
+    },
+  });
+  smokeUserToken = assertString(
+    noRoleLogin.accessToken,
+    'no-role relogin accessToken',
+  );
+  assertNotIncludes(
+    noRoleLogin.user.roleCodes,
+    roleCode,
+    'no-role relogin role codes',
+  );
+
+  const reassignedUserAssignment = await apiRequest(
+    `/core/roles/${encodeURIComponent(roleCode)}/users`,
+    {
+      method: 'PATCH',
+      body: {
+        userIds: [smokeUserId],
+      },
+    },
+  );
+  assertEqual(
+    reassignedUserAssignment.revokedSessionCount,
+    1,
+    'role user assignment revoked session count',
+  );
+  assertIncludes(
+    reassignedUserAssignment.assignedUserIds,
+    smokeUserId,
+    'reassigned role user assignment',
+  );
+  await request(`${apiPrefix}/auth/me`, {
+    token: smokeUserToken,
+    expected: [401],
+  });
+
+  const roleRelogin = await request(`${apiPrefix}/auth/login`, {
+    method: 'POST',
+    expected: [200, 201],
+    body: {
+      username: smokeUsername,
+      password: smokePassword,
+    },
+  });
+  smokeUserToken = assertString(
+    roleRelogin.accessToken,
+    'role relogin accessToken',
+  );
+  assertIncludes(roleRelogin.user.roleCodes, roleCode, 'role relogin roles');
+  assertIncludes(
+    roleRelogin.user.permissionCodes,
+    'core:user:read',
+    'role relogin permissions',
+  );
+
   await cleanup();
 
   console.log(
@@ -168,6 +262,11 @@ try {
         'core.role.menu-assignment.preserve-non-menu-permission',
         'core.role.menu-assignment.revoke-session',
         'core.role.menu-assignment.relogin-refresh',
+        'core.role.user-assignment.get',
+        'core.role.user-assignment.unassign',
+        'core.role.user-assignment.assign',
+        'core.role.user-assignment.revoke-session',
+        'core.role.user-assignment.relogin-refresh',
       ],
     }),
   );
@@ -353,6 +452,12 @@ function assertArray(value, label) {
 function assertIncludes(values, expected, label) {
   if (!values.includes(expected)) {
     throw new Error(`Expected ${label} to include ${expected}`);
+  }
+}
+
+function assertNotIncludes(values, expected, label) {
+  if (values.includes(expected)) {
+    throw new Error(`Expected ${label} not to include ${expected}`);
   }
 }
 

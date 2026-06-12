@@ -121,6 +121,51 @@ describe('@opencore/system system-user', () => {
     ).rejects.toThrow(NotFoundException);
   });
 
+  it('assigns users to roles while protecting system users', async () => {
+    const service = new SystemUserService(new SeedSystemUserRepository());
+    const operator = await service.createUser({
+      username: 'role_assignee',
+      displayName: 'Role Assignee',
+      password: 'change-me',
+      roleCodes: [],
+    });
+
+    await expect(service.getRoleUserAssignment('viewer')).resolves.toEqual(
+      expect.objectContaining({
+        roleCode: 'viewer',
+        assignedUserIds: [],
+        availableUsers: expect.arrayContaining([
+          expect.objectContaining({ id: operator.id }),
+        ]),
+      }),
+    );
+    await expect(
+      service.assignRoleUsers('viewer', { userIds: [operator.id] }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        roleCode: 'viewer',
+        assignedUserIds: [operator.id],
+        assignedUsers: [
+          expect.objectContaining({
+            id: operator.id,
+            roleCodes: ['viewer'],
+          }),
+        ],
+      }),
+    );
+    await expect(service.getUser(operator.id)).resolves.toMatchObject({
+      roleCodes: ['viewer'],
+    });
+    await expect(
+      service.assignRoleUsers('viewer', { userIds: [] }),
+    ).resolves.toMatchObject({
+      assignedUserIds: [],
+    });
+    await expect(
+      service.assignRoleUsers('viewer', { userIds: ['user_admin'] }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
   describe('PrismaSystemUserRepository integration', () => {
     const prisma = new PrismaService();
     const service = new SystemUserService(
@@ -128,6 +173,8 @@ describe('@opencore/system system-user', () => {
     );
     const testRunId = randomUUID().slice(0, 8);
     const username = `user_${testRunId}`;
+    const secondUsername = `${username}_b`;
+    const roleCode = `role_user_${testRunId}`;
 
     beforeEach(async () => {
       await cleanupTestRows();
@@ -211,6 +258,76 @@ describe('@opencore/system system-user', () => {
       ).resolves.toBeNull();
     });
 
+    it('persists role-user assignment through Prisma', async () => {
+      await prisma.role.create({
+        data: {
+          code: roleCode,
+          name: 'Role User Assignment Test',
+          dataScope: 'self',
+          dataScopeDeptIds: [],
+        },
+      });
+      const firstUser = await service.createUser({
+        username,
+        displayName: 'Role Assignment User',
+        password: 'initial-password',
+        roleCodes: [],
+      });
+      const secondUser = await service.createUser({
+        username: secondUsername,
+        displayName: 'Role Assignment User B',
+        password: 'initial-password',
+        roleCodes: [],
+      });
+
+      await expect(service.getRoleUserAssignment(roleCode)).resolves.toEqual(
+        expect.objectContaining({
+          roleCode,
+          assignedUserIds: [],
+          availableUsers: expect.arrayContaining([
+            expect.objectContaining({ id: firstUser.id }),
+            expect.objectContaining({ id: secondUser.id }),
+          ]),
+        }),
+      );
+      await expect(
+        service.assignRoleUsers(roleCode, { userIds: [firstUser.id] }),
+      ).resolves.toEqual(
+        expect.objectContaining({
+          roleCode,
+          assignedUserIds: [firstUser.id],
+          assignedUsers: [
+            expect.objectContaining({
+              id: firstUser.id,
+              roleCodes: [roleCode],
+            }),
+          ],
+          availableUsers: expect.arrayContaining([
+            expect.objectContaining({ id: secondUser.id }),
+          ]),
+        }),
+      );
+      await expect(service.getUser(firstUser.id)).resolves.toMatchObject({
+        roleCodes: [roleCode],
+      });
+      await expect(
+        service.assignRoleUsers(roleCode, { userIds: [] }),
+      ).resolves.toMatchObject({
+        assignedUserIds: [],
+      });
+      await expect(service.getUser(firstUser.id)).resolves.toMatchObject({
+        roleCodes: [],
+      });
+      const admin = (await service.listUsers()).find(
+        (user) => user.username === 'admin',
+      );
+
+      expect(admin).toEqual(expect.objectContaining({ system: true }));
+      await expect(
+        service.assignRoleUsers(roleCode, { userIds: [admin?.id ?? 'admin'] }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
     it('protects the seeded admin user from Prisma updates and deletes', async () => {
       const admin = (await service.listUsers()).find(
         (user) => user.username === 'admin',
@@ -229,10 +346,13 @@ describe('@opencore/system system-user', () => {
 
     async function cleanupTestRows(): Promise<void> {
       await prisma.userRole.deleteMany({
-        where: { user: { username } },
+        where: { user: { username: { in: [username, secondUsername] } } },
       });
       await prisma.user.deleteMany({
-        where: { username },
+        where: { username: { in: [username, secondUsername] } },
+      });
+      await prisma.role.deleteMany({
+        where: { code: roleCode },
       });
     }
   });

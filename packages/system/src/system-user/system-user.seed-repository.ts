@@ -9,7 +9,9 @@ import {
   assertSystemUserMutable,
   cloneSystemUserSummary,
   compareSystemUserRecords,
+  createRoleUserAssignment,
   normalizeCreateSystemUserInput,
+  normalizeAssignRoleUsersInput,
   normalizeUpdateSystemUserInput,
   SystemUserRepository,
   type SystemUserSummaryRecord,
@@ -98,6 +100,41 @@ export class SeedSystemUserRepository extends SystemUserRepository {
 
     this.users = this.users.filter((candidate) => candidate.id !== user.id);
     return { deleted: true };
+  }
+
+  async getRoleUserAssignment(roleCode: string) {
+    this.assertRoleCodes([roleCode]);
+    return createRoleUserAssignment(roleCode, await this.listUsers());
+  }
+
+  async assignRoleUsers(
+    roleCode: string,
+    body: { userIds: readonly string[] },
+  ) {
+    this.assertRoleCodes([roleCode]);
+    const userIds = normalizeAssignRoleUsersInput(body);
+    const selectedUserIds = new Set(userIds);
+
+    for (const userId of selectedUserIds) {
+      const user = this.findMutableUserById(userId);
+      assertSystemUserMutable(cloneSystemUserSummary(user));
+    }
+
+    for (const user of this.users) {
+      if (user.system) {
+        continue;
+      }
+
+      if (selectedUserIds.has(user.id)) {
+        user.roleCodes = [...new Set([...user.roleCodes, roleCode])].sort();
+      } else {
+        user.roleCodes = user.roleCodes.filter(
+          (candidate) => candidate !== roleCode,
+        );
+      }
+    }
+
+    return createRoleUserAssignment(roleCode, await this.listUsers());
   }
 
   private findMutableUserById(id: string): SystemUserRecord {

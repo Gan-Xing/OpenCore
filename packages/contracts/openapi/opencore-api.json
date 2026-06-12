@@ -347,6 +347,66 @@
         "tags": ["Rbac", "Core Roles"]
       }
     },
+    "/api/core/roles/{code}/users": {
+      "get": {
+        "operationId": "RbacController_getRoleUserAssignment",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoleUserAssignmentDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Roles"]
+      },
+      "patch": {
+        "operationId": "RbacController_assignRoleUsers",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AssignRoleUsersDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoleUserAssignmentDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Roles"]
+      }
+    },
     "/api/core/roles/{code}": {
       "get": {
         "operationId": "RbacController_getRole",
@@ -4845,6 +4905,35 @@
           "menuKeys": { "type": "array", "items": { "type": "string" } }
         },
         "required": ["menuKeys"]
+      },
+      "RoleUserAssignmentDto": {
+        "type": "object",
+        "properties": {
+          "roleCode": { "type": "string" },
+          "assignedUserIds": { "type": "array", "items": { "type": "string" } },
+          "assignedUsers": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/UserSummaryDto" }
+          },
+          "availableUsers": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/UserSummaryDto" }
+          },
+          "revokedSessionCount": { "type": "number" }
+        },
+        "required": [
+          "roleCode",
+          "assignedUserIds",
+          "assignedUsers",
+          "availableUsers"
+        ]
+      },
+      "AssignRoleUsersDto": {
+        "type": "object",
+        "properties": {
+          "userIds": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["userIds"]
       },
       "CreateRoleDto": {
         "type": "object",

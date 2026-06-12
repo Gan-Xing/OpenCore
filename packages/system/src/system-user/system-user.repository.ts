@@ -1,5 +1,10 @@
 import { BadRequestException } from '@nestjs/common';
-import type { CreateUserDto, UpdateUserDto } from './system-user.dto';
+import type {
+  AssignRoleUsersDto,
+  CreateUserDto,
+  RoleUserAssignmentDto,
+  UpdateUserDto,
+} from './system-user.dto';
 import type { SystemUserRecord } from './system-user.records';
 
 export type SystemUserSummaryRecord = Omit<SystemUserRecord, 'passwordHash'>;
@@ -44,6 +49,15 @@ export abstract class SystemUserRepository {
   ): Promise<SystemUserSummaryRecord>;
 
   abstract deleteUser(id: string): Promise<{ deleted: true }>;
+
+  abstract getRoleUserAssignment(
+    roleCode: string,
+  ): Promise<RoleUserAssignmentDto>;
+
+  abstract assignRoleUsers(
+    roleCode: string,
+    body: AssignRoleUsersDto,
+  ): Promise<RoleUserAssignmentDto>;
 }
 
 export function createSystemUserExportPreview(
@@ -129,6 +143,47 @@ export function assertSystemUserMutable(user: SystemUserSummaryRecord): void {
   }
 }
 
+export function createRoleUserAssignment(
+  roleCode: string,
+  users: readonly SystemUserSummaryRecord[],
+): RoleUserAssignmentDto {
+  const mutableUsers = users.filter((user) => !user.system);
+  const assignedUsers = mutableUsers
+    .filter((user) => user.roleCodes.includes(roleCode))
+    .sort(compareSystemUserRecords);
+  const availableUsers = mutableUsers
+    .filter((user) => !user.roleCodes.includes(roleCode))
+    .sort(compareSystemUserRecords);
+
+  return {
+    roleCode,
+    assignedUserIds: assignedUsers.map((user) => user.id),
+    assignedUsers,
+    availableUsers,
+  };
+}
+
+export function normalizeAssignRoleUsersInput(
+  body: AssignRoleUsersDto,
+): readonly string[] {
+  const value = body?.userIds;
+
+  if (!Array.isArray(value)) {
+    throw new BadRequestException('System role userIds must be an array.');
+  }
+
+  const normalized = value.map((userId) => normalizeUserId(userId));
+  const duplicate = findFirstDuplicate(normalized);
+
+  if (duplicate) {
+    throw new BadRequestException(
+      `System role user id is duplicated: ${duplicate}`,
+    );
+  }
+
+  return [...normalized].sort();
+}
+
 function normalizeUsername(value: string): string {
   const username = normalizeRequiredText(value, 'username');
 
@@ -149,6 +204,14 @@ function normalizeRequiredText(value: string, fieldName: string): string {
   }
 
   return normalized;
+}
+
+function normalizeUserId(value: unknown): string {
+  if (typeof value !== 'string') {
+    throw new BadRequestException('System role user id must be a string.');
+  }
+
+  return normalizeRequiredText(value, 'user id');
 }
 
 function normalizeRoleCodes(

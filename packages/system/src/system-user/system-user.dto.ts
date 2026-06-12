@@ -59,3 +59,25 @@ export class UpdateUserDto {
   @ApiProperty({ required: false })
   enabled?: boolean;
 }
+
+export class AssignRoleUsersDto {
+  @ApiProperty({ type: [String] })
+  userIds!: readonly string[];
+}
+
+export class RoleUserAssignmentDto {
+  @ApiProperty()
+  roleCode!: string;
+
+  @ApiProperty({ type: [String] })
+  assignedUserIds!: readonly string[];
+
+  @ApiProperty({ type: [UserSummaryDto] })
+  assignedUsers!: readonly UserSummaryDto[];
+
+  @ApiProperty({ type: [UserSummaryDto] })
+  availableUsers!: readonly UserSummaryDto[];
+
+  @ApiProperty({ required: false })
+  revokedSessionCount?: number;
+}

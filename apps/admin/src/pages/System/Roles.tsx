@@ -5,6 +5,7 @@ import {
   EyeOutlined,
   PlusOutlined,
   ReloadOutlined,
+  TeamOutlined,
 } from '@ant-design/icons';
 import {
   PageContainer,
@@ -20,6 +21,7 @@ import {
   type RoleSummary,
   type SystemDeptSummary,
   type SystemDeptTreeSummary,
+  type UserSummary,
 } from '@opencore/sdk';
 import {
   Alert,
@@ -32,6 +34,7 @@ import {
   Space,
   Tag,
   Tooltip,
+  Transfer,
   Tree,
   Typography,
   message,
@@ -39,16 +42,19 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import {
   assignOpenCoreRoleMenus,
+  assignOpenCoreRoleUsers,
   createOpenCoreRole,
   deleteOpenCoreRole,
   getOpenCoreRole,
   getOpenCoreRoleMenuAssignment,
+  getOpenCoreRoleUserAssignment,
   listOpenCoreMenus,
   listOpenCorePermissions,
   listOpenCoreRoles,
   listOpenCoreSystemDepts,
   updateOpenCoreRole,
 } from '@/services/opencore/platform';
+import type { Key } from 'react';
 import {
   CurrentPageExportButton,
   type CurrentPageExportColumn,
@@ -76,6 +82,13 @@ type MenuTreeNode = {
   children?: MenuTreeNode[];
   key: string;
   title: string;
+};
+
+type UserTransferItem = {
+  disabled?: boolean;
+  key: string;
+  title: string;
+  description: string;
 };
 
 const fallbackPermissionRows = createPermissionSummariesFromRegistry();
@@ -237,6 +250,25 @@ function normalizeCheckedTreeKeys(value: unknown): string[] {
   return keys.map((key) => String(key)).sort();
 }
 
+function createUserTransferItems(
+  users: readonly UserSummary[],
+): UserTransferItem[] {
+  const userById = new Map(users.map((user) => [user.id, user]));
+
+  return [...userById.values()]
+    .sort((left, right) => left.username.localeCompare(right.username))
+    .map((user) => ({
+      key: user.id,
+      title: user.displayName,
+      description: `${user.username}${user.enabled ? '' : ' (disabled)'}`,
+      disabled: user.system,
+    }));
+}
+
+function normalizeTransferKeys(keys: readonly Key[]): string[] {
+  return keys.map((key) => String(key)).sort();
+}
+
 function createDetailFields(
   record: RoleSummary,
   deptNames: ReadonlyMap<string, string>,
@@ -281,11 +313,19 @@ export default function RolesPage() {
   const [selectedDetail, setSelectedDetail] = useState<RoleSummary>();
   const [editingRole, setEditingRole] = useState<RoleSummary>();
   const [assigningMenuRole, setAssigningMenuRole] = useState<RoleSummary>();
+  const [assigningUserRole, setAssigningUserRole] = useState<RoleSummary>();
   const [checkedMenuKeys, setCheckedMenuKeys] = useState<string[]>([]);
+  const [assignedUserIds, setAssignedUserIds] = useState<string[]>([]);
+  const [userTransferItems, setUserTransferItems] = useState<
+    readonly UserTransferItem[]
+  >([]);
   const [formOpen, setFormOpen] = useState(false);
   const [menuAssignmentOpen, setMenuAssignmentOpen] = useState(false);
+  const [userAssignmentOpen, setUserAssignmentOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [menuAssignmentSubmitting, setMenuAssignmentSubmitting] =
+    useState(false);
+  const [userAssignmentSubmitting, setUserAssignmentSubmitting] =
     useState(false);
   const selectedDataScope = Form.useWatch('dataScope', form);
   const isCustomDataScope = selectedDataScope === 'custom';
@@ -396,6 +436,27 @@ export default function RolesPage() {
     }
   };
 
+  const openUserAssignment = async (record: RoleSummary) => {
+    try {
+      const assignment = await getOpenCoreRoleUserAssignment(record.code);
+      setAssigningUserRole(record);
+      setAssignedUserIds([...assignment.assignedUserIds]);
+      setUserTransferItems(
+        createUserTransferItems([
+          ...assignment.assignedUsers,
+          ...assignment.availableUsers,
+        ]),
+      );
+      setUserAssignmentOpen(true);
+    } catch (error: unknown) {
+      message.error(
+        error instanceof Error
+          ? error.message
+          : 'Unable to open role user assignment.',
+      );
+    }
+  };
+
   const submitForm = async () => {
     const values = await form.validateFields();
     const dataScopeDeptIds =
@@ -459,6 +520,32 @@ export default function RolesPage() {
     }
   };
 
+  const submitUserAssignment = async () => {
+    if (!assigningUserRole) {
+      return;
+    }
+
+    setUserAssignmentSubmitting(true);
+    try {
+      const assignment = await assignOpenCoreRoleUsers(assigningUserRole.code, {
+        userIds: assignedUserIds,
+      });
+      const revoked = assignment.revokedSessionCount ?? 0;
+      message.success(
+        revoked > 0
+          ? `Role users updated. ${revoked} active session${revoked === 1 ? '' : 's'} revoked.`
+          : 'Role users updated.',
+      );
+      setUserAssignmentOpen(false);
+      setAssigningUserRole(undefined);
+      setAssignedUserIds([]);
+      setUserTransferItems([]);
+      await loadRoles();
+    } finally {
+      setUserAssignmentSubmitting(false);
+    }
+  };
+
   const columns: ProColumns<RoleSummary>[] = [
     {
       title: 'Name',
@@ -504,7 +591,7 @@ export default function RolesPage() {
     {
       title: 'Actions',
       valueType: 'option',
-      width: 224,
+      width: 264,
       render: (_, record) => (
         <Space size="small">
           <Tooltip title="Detail">
@@ -528,6 +615,14 @@ export default function RolesPage() {
               aria-label={`Assign menus for ${record.name}`}
               icon={<ApartmentOutlined />}
               onClick={() => void openMenuAssignment(record)}
+              size="small"
+            />
+          </Tooltip>
+          <Tooltip title="User Assignment">
+            <Button
+              aria-label={`Assign users for ${record.name}`}
+              icon={<TeamOutlined />}
+              onClick={() => void openUserAssignment(record)}
               size="small"
             />
           </Tooltip>
@@ -722,6 +817,42 @@ export default function RolesPage() {
             No menus available.
           </Typography.Text>
         )}
+      </Modal>
+      <Modal
+        title={
+          assigningUserRole
+            ? `User Assignment - ${assigningUserRole.name}`
+            : 'User Assignment'
+        }
+        open={userAssignmentOpen}
+        onCancel={() => {
+          setUserAssignmentOpen(false);
+          setAssigningUserRole(undefined);
+          setAssignedUserIds([]);
+          setUserTransferItems([]);
+        }}
+        onOk={() => void submitUserAssignment()}
+        confirmLoading={userAssignmentSubmitting}
+        okText="Save"
+        width={820}
+      >
+        <Transfer
+          dataSource={[...userTransferItems]}
+          titles={['Available users', 'Assigned users']}
+          targetKeys={assignedUserIds}
+          onChange={(keys) => setAssignedUserIds(normalizeTransferKeys(keys))}
+          render={(item) => (
+            <Space direction="vertical" size={0}>
+              <Typography.Text>{item.title}</Typography.Text>
+              <Typography.Text type="secondary">
+                {item.description}
+              </Typography.Text>
+            </Space>
+          )}
+          listStyle={{ height: 420, width: 340 }}
+          oneWay={false}
+          showSearch
+        />
       </Modal>
     </PageContainer>
   );

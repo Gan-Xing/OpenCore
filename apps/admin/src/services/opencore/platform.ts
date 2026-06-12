@@ -4,6 +4,7 @@ import {
   createRbacClient,
   createSystemManagementClient,
   type AssignRoleMenusRequest,
+  type AssignRoleUsersRequest,
   type AuditLogQueryRequest,
   type AuditLogSummary,
   type BatchKickOutSessionsRequest,
@@ -21,6 +22,7 @@ import {
   type MenuSummary,
   type PermissionSummary,
   type RoleMenuAssignmentSummary,
+  type RoleUserAssignmentSummary,
   type RoleSummary,
   type SystemStatusSummary,
   type DictTypeSummary,
@@ -102,6 +104,19 @@ export function assignOpenCoreRoleMenus(
   body: AssignRoleMenusRequest,
 ): Promise<RoleMenuAssignmentSummary> {
   return rbacClient.assignRoleMenus(getRequiredAdminToken(), code, body);
+}
+
+export function getOpenCoreRoleUserAssignment(
+  code: string,
+): Promise<RoleUserAssignmentSummary> {
+  return rbacClient.getRoleUserAssignment(getRequiredAdminToken(), code);
+}
+
+export function assignOpenCoreRoleUsers(
+  code: string,
+  body: AssignRoleUsersRequest,
+): Promise<RoleUserAssignmentSummary> {
+  return rbacClient.assignRoleUsers(getRequiredAdminToken(), code, body);
 }
 
 export function createOpenCoreRole(

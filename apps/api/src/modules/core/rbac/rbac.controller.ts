@@ -15,16 +15,18 @@ import {
   SystemUserService,
 } from '@opencore/system';
 import {
+  AssignRoleMenusDto,
+  AssignRoleUsersDto,
   CreateMenuDto,
   CreatePermissionDto,
   CreateRoleDto,
   CreateUserDto,
   DeleteResultDto,
-  AssignRoleMenusDto,
   MenuSummaryDto,
   PermissionSummaryDto,
   RbacExportPreviewDto,
   RoleMenuAssignmentDto,
+  RoleUserAssignmentDto,
   RoleSummaryDto,
   UpdateMenuDto,
   UpdatePermissionDto,
@@ -132,7 +134,43 @@ export class RbacController {
     @Body() body: AssignRoleMenusDto,
   ): Promise<RoleMenuAssignmentDto> {
     const assignment = await this.roles.assignRoleMenus(code, body);
-    const revokedSessionCount = await this.revokeActiveSessionsForRole(code);
+    const revokedSessionCount = await this.revokeActiveSessionsForRole(
+      code,
+      'rbac.role-menu-assignment',
+      `role menu assignment updated for ${code}`,
+    );
+
+    return {
+      ...assignment,
+      revokedSessionCount,
+    };
+  }
+
+  @Get('roles/:code/users')
+  @ApiTags('Core Roles')
+  @RequirePermission('core:role:read')
+  @ApiOkResponse({ type: RoleUserAssignmentDto })
+  getRoleUserAssignment(
+    @Param('code') code: string,
+  ): Promise<RoleUserAssignmentDto> {
+    return this.users.getRoleUserAssignment(code);
+  }
+
+  @Patch('roles/:code/users')
+  @ApiTags('Core Roles')
+  @RequirePermission('core:role:update')
+  @ApiOkResponse({ type: RoleUserAssignmentDto })
+  async assignRoleUsers(
+    @Param('code') code: string,
+    @Body() body: AssignRoleUsersDto,
+  ): Promise<RoleUserAssignmentDto> {
+    const before = await this.users.getRoleUserAssignment(code);
+    const assignment = await this.users.assignRoleUsers(code, body);
+    const revokedSessionCount = await this.revokeActiveSessionsForUsernames(
+      findChangedRoleAssignmentUsernames(before, assignment),
+      'rbac.role-user-assignment',
+      `role user assignment updated for ${code}`,
+    );
 
     return {
       ...assignment,
@@ -279,13 +317,32 @@ export class RbacController {
     return this.menus.deleteMenu(key);
   }
 
-  private async revokeActiveSessionsForRole(roleCode: string): Promise<number> {
+  private async revokeActiveSessionsForRole(
+    roleCode: string,
+    actor: string,
+    reason: string,
+  ): Promise<number> {
     const users = (await this.users.listUsers()).filter((user) =>
       user.roleCodes.includes(roleCode),
     );
+    return this.revokeActiveSessionsForUsernames(
+      users.map((user) => user.username),
+      actor,
+      reason,
+    );
+  }
+
+  private async revokeActiveSessionsForUsernames(
+    usernames: readonly string[],
+    actor: string,
+    reason: string,
+  ): Promise<number> {
+    const uniqueUsernames = [...new Set(usernames)];
     const sessionIds = (
       await Promise.all(
-        users.map((user) => this.listActiveSessionIdsByUsername(user.username)),
+        uniqueUsernames.map((username) =>
+          this.listActiveSessionIdsByUsername(username),
+        ),
       )
     ).flat();
 
@@ -295,8 +352,8 @@ export class RbacController {
 
     const result = await this.onlineUsers.kickOutSessions({
       ids: sessionIds,
-      actor: 'rbac.role-menu-assignment',
-      reason: `role menu assignment updated for ${roleCode}`,
+      actor,
+      reason,
     });
 
     return result.kicked;
@@ -328,4 +385,25 @@ export class RbacController {
 
     return ids;
   }
+}
+
+function findChangedRoleAssignmentUsernames(
+  before: RoleUserAssignmentDto,
+  after: RoleUserAssignmentDto,
+): readonly string[] {
+  const beforeIds = new Set(before.assignedUserIds);
+  const afterIds = new Set(after.assignedUserIds);
+  const usersById = new Map(
+    [
+      ...before.assignedUsers,
+      ...before.availableUsers,
+      ...after.assignedUsers,
+      ...after.availableUsers,
+    ].map((user) => [user.id, user]),
+  );
+
+  return [...new Set([...beforeIds, ...afterIds])]
+    .filter((userId) => beforeIds.has(userId) !== afterIds.has(userId))
+    .map((userId) => usersById.get(userId)?.username)
+    .filter((username): username is string => Boolean(username));
 }

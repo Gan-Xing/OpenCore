@@ -92,6 +92,18 @@ export type RoleMenuAssignmentSummary = {
   revokedSessionCount?: number;
 };
 
+export type AssignRoleUsersRequest = {
+  userIds: readonly string[];
+};
+
+export type RoleUserAssignmentSummary = {
+  roleCode: string;
+  assignedUserIds: readonly string[];
+  assignedUsers: readonly UserSummary[];
+  availableUsers: readonly UserSummary[];
+  revokedSessionCount?: number;
+};
+
 export type PermissionSummary = {
   code: string;
   title: string;

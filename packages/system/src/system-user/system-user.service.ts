@@ -1,5 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import type { CreateUserDto, UpdateUserDto } from './system-user.dto';
+import type {
+  AssignRoleUsersDto,
+  CreateUserDto,
+  RoleUserAssignmentDto,
+  UpdateUserDto,
+} from './system-user.dto';
 import {
   createSystemUserExportPreview,
   SystemUserRepository,
@@ -32,6 +37,17 @@ export class SystemUserService {
 
   deleteUser(id: string): Promise<{ deleted: true }> {
     return this.repository.deleteUser(id);
+  }
+
+  getRoleUserAssignment(roleCode: string): Promise<RoleUserAssignmentDto> {
+    return this.repository.getRoleUserAssignment(roleCode);
+  }
+
+  assignRoleUsers(
+    roleCode: string,
+    body: AssignRoleUsersDto,
+  ): Promise<RoleUserAssignmentDto> {
+    return this.repository.assignRoleUsers(roleCode, body);
   }
 
   async createExportPreview(): Promise<SystemUserExportPreview> {
