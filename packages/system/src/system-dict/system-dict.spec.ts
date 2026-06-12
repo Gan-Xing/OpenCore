@@ -22,6 +22,12 @@ describe('@opencore/system system-dict', () => {
       columns: ['code', 'name', 'enabled'],
       rowCount: 2,
     });
+    await expect(service.getDict('system.status')).resolves.toMatchObject({
+      code: 'system.status',
+      items: expect.arrayContaining([
+        expect.objectContaining({ value: 'enabled' }),
+      ]),
+    });
   });
 
   it('supports seeded dictionary CRUD through the service boundary', async () => {
@@ -89,6 +95,14 @@ describe('@opencore/system system-dict', () => {
       });
 
       expect(dict.code).toBe(dictCode);
+      await expect(service.getDict(dictCode)).resolves.toMatchObject({
+        code: dictCode,
+        items: [
+          expect.objectContaining({
+            value: 'enabled',
+          }),
+        ],
+      });
       expect(
         (await service.updateDict(dictCode, { enabled: false })).enabled,
       ).toBe(false);

@@ -761,6 +761,29 @@
       }
     },
     "/api/core/dicts/{code}": {
+      "get": {
+        "operationId": "SystemManagementController_getDict",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DictTypeDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Dictionaries"]
+      },
       "patch": {
         "operationId": "SystemManagementController_updateDict",
         "parameters": [

@@ -225,6 +225,11 @@ if (
   !opencorePlatformService.includes('createRbacClient') ||
   !opencorePlatformService.includes('createMonitoringClient') ||
   !opencorePlatformService.includes('createSystemManagementClient') ||
+  !opencorePlatformService.includes('listOpenCoreDicts') ||
+  !opencorePlatformService.includes('getOpenCoreDict') ||
+  !opencorePlatformService.includes('createOpenCoreDict') ||
+  !opencorePlatformService.includes('updateOpenCoreDict') ||
+  !opencorePlatformService.includes('deleteOpenCoreDict') ||
   !opencorePlatformService.includes('listOpenCoreUsers') ||
   !opencorePlatformService.includes('getOpenCoreUser') ||
   !opencorePlatformService.includes('createOpenCoreUser') ||
@@ -592,6 +597,24 @@ if (
 }
 
 if (
+  !dictsPage.includes('listOpenCoreDicts') ||
+  !dictsPage.includes('getOpenCoreDict') ||
+  !dictsPage.includes('createOpenCoreDict') ||
+  !dictsPage.includes('updateOpenCoreDict') ||
+  !dictsPage.includes('deleteOpenCoreDict') ||
+  !dictsPage.includes('Form.List') ||
+  !dictsPage.includes('normalizeDictItems') ||
+  !dictsPage.includes('useCurrentPageFilters') ||
+  !dictsPage.includes('CurrentPageExportButton') ||
+  !dictsPage.includes('dataSource={filteredRows}') ||
+  !dictsPage.includes('rows={filteredRows}')
+) {
+  throw new Error(
+    'Dictionaries page must use live SDK CRUD with item editing, bounded filtering and current-page export.',
+  );
+}
+
+if (
   !rolesPage.includes('listOpenCoreRoles') ||
   !rolesPage.includes('getOpenCoreRole') ||
   !rolesPage.includes('createOpenCoreRole') ||
@@ -802,7 +825,6 @@ if (
 }
 
 const coreFilteredPages = [
-  { name: 'dicts', source: dictsPage },
   { name: 'config', source: configPage },
   { name: 'files', source: filesPage },
   { name: 'operation logs', source: auditLogsPage },

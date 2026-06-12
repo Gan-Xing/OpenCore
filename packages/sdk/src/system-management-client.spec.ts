@@ -15,6 +15,7 @@ describe('createSystemManagementClient', () => {
     const client = createSystemManagementClient(request);
 
     await client.listDicts('token', { page: 2, pageSize: 20 });
+    await client.getDict('token', 'system.status');
     await client.exportAuditLogs('token');
     await client.createFileAsset('token', {
       originalName: 'handbook.pdf',
@@ -66,6 +67,10 @@ describe('createSystemManagementClient', () => {
     expect(calls).toEqual([
       {
         path: '/core/dicts?page=2&pageSize=20',
+        token: 'token',
+      },
+      {
+        path: '/core/dicts/system.status',
         token: 'token',
       },
       {

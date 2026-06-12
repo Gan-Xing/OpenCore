@@ -38,6 +38,7 @@ export type SystemManagementClient = {
     query?: PageRequest,
   ) => Promise<PageResponse<DictTypeSummary>>;
   exportDicts: (token: Token, query?: PageRequest) => Promise<ExportPreview>;
+  getDict: (token: Token, code: string) => Promise<DictTypeSummary>;
   createDict: (
     token: Token,
     body: CreateDictTypeRequest,
@@ -165,6 +166,10 @@ export function createSystemManagementClient(
       }),
     exportDicts: (token, query) =>
       request<ExportPreview>(withQuery('/core/dicts/export', query), {
+        token,
+      }),
+    getDict: (token, code) =>
+      request<DictTypeSummary>(`/core/dicts/${encodeURIComponent(code)}`, {
         token,
       }),
     createDict: (token, body) =>

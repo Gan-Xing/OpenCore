@@ -2,6 +2,7 @@ import {
   createMonitoringClient,
   createRbacClient,
   createSystemManagementClient,
+  type CreateDictTypeRequest,
   type CreateMenuRequest,
   type CreatePermissionRequest,
   type CreateRoleRequest,
@@ -13,6 +14,7 @@ import {
   type PermissionSummary,
   type RoleSummary,
   type SystemStatusSummary,
+  type DictTypeSummary,
   type SystemDeptQueryRequest,
   type SystemDeptSummary,
   type SystemDeptTreeSummary,
@@ -21,6 +23,7 @@ import {
   type SystemPostQueryRequest,
   type SystemPostSummary,
   type UpdateSystemDeptRequest,
+  type UpdateDictTypeRequest,
   type UpdateSystemNoticeRequest,
   type UpdateSystemPostRequest,
   type UpdateMenuRequest,
@@ -116,6 +119,35 @@ export function deleteOpenCorePermission(
 
 export function getOpenCoreSystemStatus(): Promise<SystemStatusSummary> {
   return monitoringClient.getStatus(getRequiredAdminToken());
+}
+
+export async function listOpenCoreDicts(): Promise<DictTypeSummary[]> {
+  const page = await systemManagementClient.listDicts(getRequiredAdminToken(), {
+    page: 1,
+    pageSize: 100,
+  });
+  return [...page.items];
+}
+
+export function getOpenCoreDict(code: string): Promise<DictTypeSummary> {
+  return systemManagementClient.getDict(getRequiredAdminToken(), code);
+}
+
+export function createOpenCoreDict(
+  body: CreateDictTypeRequest,
+): Promise<DictTypeSummary> {
+  return systemManagementClient.createDict(getRequiredAdminToken(), body);
+}
+
+export function updateOpenCoreDict(
+  code: string,
+  body: UpdateDictTypeRequest,
+): Promise<DictTypeSummary> {
+  return systemManagementClient.updateDict(getRequiredAdminToken(), code, body);
+}
+
+export function deleteOpenCoreDict(code: string): Promise<{ deleted: true }> {
+  return systemManagementClient.deleteDict(getRequiredAdminToken(), code);
 }
 
 export function listOpenCoreMenus(): Promise<MenuSummary[]> {

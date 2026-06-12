@@ -19,6 +19,10 @@ export class SystemDictService {
     return this.repository.listDicts(query);
   }
 
+  getDict(code: string): Promise<DictTypeRecord> {
+    return this.repository.getDict(code);
+  }
+
   createDict(body: CreateDictTypeDto): Promise<DictTypeRecord> {
     return this.repository.createDict(body);
   }

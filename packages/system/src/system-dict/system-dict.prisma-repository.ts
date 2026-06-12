@@ -56,6 +56,10 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
     return createSystemDictPageResult(rows.map(toDictTypeRecord), pagination);
   }
 
+  async getDict(code: string): Promise<DictTypeRecord> {
+    return toDictTypeRecord(await this.findDictByCode(code));
+  }
+
   async createDict(body: CreateDictTypeDto): Promise<DictTypeRecord> {
     if (await this.prisma.dictType.findUnique({ where: { code: body.code } })) {
       throw new ConflictException(`Dictionary already exists: ${body.code}`);

@@ -33,6 +33,10 @@ export class SeedSystemDictRepository extends SystemDictRepository {
     return createSystemDictPageResult(rows.map(cloneDictType), pagination);
   }
 
+  async getDict(code: string): Promise<DictTypeRecord> {
+    return cloneDictType(this.findDict(code));
+  }
+
   async createDict(body: CreateDictTypeDto): Promise<DictTypeRecord> {
     if (this.dictTypes.some((dict) => dict.code === body.code)) {
       throw new ConflictException(`Dictionary already exists: ${body.code}`);

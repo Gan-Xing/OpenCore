@@ -31,6 +31,8 @@ export abstract class SystemDictRepository {
     query?: SystemDictPageQuery,
   ): Promise<PageResult<DictTypeRecord>>;
 
+  abstract getDict(code: string): Promise<DictTypeRecord>;
+
   abstract createDict(body: CreateDictTypeDto): Promise<DictTypeRecord>;
 
   abstract updateDict(

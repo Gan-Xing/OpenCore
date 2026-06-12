@@ -24,6 +24,7 @@ const expectedPermissions = {
   exportNotices: ['core:notice:export'],
   exportPosts: ['core:post:export'],
   getDept: ['core:dept:read'],
+  getDict: ['core:dict:read'],
   getNotice: ['core:notice:read'],
   getPost: ['core:post:read'],
   archiveNotice: ['core:notice:update'],

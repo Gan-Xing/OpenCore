@@ -89,6 +89,14 @@ export class SystemManagementController {
     return this.dicts.createExportPreview(query);
   }
 
+  @Get('dicts/:code')
+  @ApiTags('Core Dictionaries')
+  @RequirePermission('core:dict:read')
+  @ApiOkResponse({ type: DictTypeDto })
+  getDict(@Param('code') code: string): Promise<DictTypeDto> {
+    return this.dicts.getDict(code);
+  }
+
   @Post('dicts')
   @ApiTags('Core Dictionaries')
   @RequirePermission('core:dict:create')
