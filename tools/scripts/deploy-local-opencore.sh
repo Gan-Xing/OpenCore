@@ -82,9 +82,124 @@ verify_admin_bundle_api_base_url() {
   exit 1
 }
 
+verify_public_admin_bundle() {
+  node - "$ADMIN_PUBLIC_BASE_URL" "$ADMIN_API_BASE_URL_VALUE" <<'NODE'
+const adminBase = process.argv[2];
+const apiBase = process.argv[3].replace(/\/+$/, '');
+const stamp = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+(async () => {
+  const loginUrl = new URL(`/user/login?deploy-check=${stamp}`, withTrailingSlash(adminBase));
+  const htmlResponse = await fetch(loginUrl, {
+    headers: {
+      'cache-control': 'no-cache',
+    },
+  });
+
+  if (!htmlResponse.ok) {
+    throw new Error(`Admin login page returned ${htmlResponse.status}`);
+  }
+
+  const htmlCacheControl = htmlResponse.headers.get('cache-control') || '';
+  if (!/(^|,)\s*(no-cache|no-store|max-age=0)\b/i.test(htmlCacheControl)) {
+    throw new Error(
+      `Admin login page must not be cacheable, received cache-control=${htmlCacheControl || 'missing'}`,
+    );
+  }
+
+  const html = await htmlResponse.text();
+  const bundleMatch = html.match(/<script[^>]+src=["']([^"']*umi\.[^"']+\.js)["']/i);
+
+  if (!bundleMatch) {
+    throw new Error('Admin login page did not reference a umi.*.js bundle');
+  }
+
+  const bundleUrl = new URL(bundleMatch[1], loginUrl);
+  bundleUrl.searchParams.set('deploy-check', stamp);
+
+  const bundleResponse = await fetch(bundleUrl, {
+    headers: {
+      'cache-control': 'no-cache',
+    },
+  });
+
+  if (!bundleResponse.ok) {
+    throw new Error(`Admin bundle ${bundleUrl.pathname} returned ${bundleResponse.status}`);
+  }
+
+  const bundle = await bundleResponse.text();
+  const badApiBase = `${apiBase}/api`;
+
+  if (!bundle.includes(apiBase)) {
+    throw new Error(`Admin bundle does not include API origin ${apiBase}`);
+  }
+
+  if (bundle.includes('/api/api/auth/login') || bundle.includes(badApiBase)) {
+    throw new Error(
+      'Admin bundle still contains a duplicated API prefix and would post to /api/api/auth/login',
+    );
+  }
+
+  const serviceWorkerUrl = new URL(`/service-worker.js?deploy-check=${stamp}`, loginUrl);
+  const serviceWorkerResponse = await fetch(serviceWorkerUrl, {
+    headers: {
+      'cache-control': 'no-cache',
+    },
+  });
+
+  if (!serviceWorkerResponse.ok) {
+    throw new Error(`Retired service worker endpoint returned ${serviceWorkerResponse.status}`);
+  }
+
+  const serviceWorkerCacheControl = serviceWorkerResponse.headers.get('cache-control') || '';
+  const serviceWorkerBody = await serviceWorkerResponse.text();
+
+  if (!serviceWorkerCacheControl.includes('no-store')) {
+    throw new Error(
+      `Retired service worker endpoint must be no-store, received ${serviceWorkerCacheControl || 'missing'}`,
+    );
+  }
+
+  if (!serviceWorkerBody.includes('self.registration.unregister')) {
+    throw new Error('Retired service worker endpoint must unregister stale Admin service workers');
+  }
+
+  console.log(
+    JSON.stringify({
+      status: 'pass',
+      baseUrl: adminBase,
+      bundle: bundleUrl.pathname,
+      checks: [
+        'admin.public-login.no-cache',
+        'admin.public-bundle.api-origin',
+        'admin.public-bundle.no-duplicate-api-prefix',
+        'admin.retired-service-worker',
+      ],
+    }),
+  );
+})().catch((error) => {
+  console.error(
+    JSON.stringify({
+      status: 'fail',
+      baseUrl: adminBase,
+      error: error instanceof Error ? error.message : String(error),
+    }),
+  );
+  process.exit(1);
+});
+
+function withTrailingSlash(value) {
+  return value.endsWith('/') ? value : `${value}/`;
+}
+NODE
+}
+
 verify_admin_api_proxy_login() {
   run_with_env node - "$ADMIN_HEALTH_URL/api/auth/login" <<'NODE'
-const url = process.argv[2];
+const urls = [
+  process.argv[2],
+  process.argv[2].replace('/api/auth/login', '/api/api/auth/login'),
+];
 const username = process.env.OPENCORE_SMOKE_ADMIN_USERNAME || 'admin';
 const passwordCandidates = [
   process.env.OPENCORE_SMOKE_ADMIN_PASSWORD,
@@ -105,19 +220,25 @@ class HttpStatusError extends Error {
 
 (async () => {
   try {
-    await login();
+    for (const url of urls) {
+      await login(url);
+    }
+
     console.log(
       JSON.stringify({
         status: 'pass',
-        baseUrl: url,
-        checks: ['admin.api-proxy.login'],
+        baseUrl: urls[0],
+        checks: [
+          'admin.api-proxy.login',
+          'admin.api-proxy.duplicate-prefix-login',
+        ],
       }),
     );
   } catch (error) {
     console.error(
       JSON.stringify({
         status: 'fail',
-        baseUrl: url,
+        baseUrl: urls[0],
         error: error instanceof Error ? error.message : String(error),
       }),
     );
@@ -125,7 +246,7 @@ class HttpStatusError extends Error {
   }
 })();
 
-async function login() {
+async function login(url) {
   let lastError;
 
   for (const password of passwordCandidates) {
@@ -340,6 +461,7 @@ fi
 require_pid_alive "$ADMIN_PID_FILE" "OpenCore Admin" "$ADMIN_LOG_FILE"
 
 verify_admin_api_proxy_login
+verify_public_admin_bundle
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \
@@ -355,6 +477,11 @@ run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
   node "$ROOT_DIR/tools/scripts/smoke-core-audit-log.mjs"
+
+run_with_env env \
+  OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \
+  OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
+  node "$ROOT_DIR/tools/scripts/smoke-core-online-user.mjs"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \

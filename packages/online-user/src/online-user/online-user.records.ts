@@ -21,4 +21,13 @@ export const seedOnlineUserSessions: readonly OnlineUserSessionRecord[] = [
     lastSeenAt: '2026-06-10T00:00:00.000Z',
     expiresAt: '2026-06-10T01:00:00.000Z',
   },
+  {
+    id: 'session_operator',
+    username: 'operator',
+    tokenId: 'token_operator_1',
+    ip: '127.0.0.2',
+    userAgent: 'OpenCore Smoke Operator',
+    lastSeenAt: '2026-06-10T00:05:00.000Z',
+    expiresAt: '2026-06-10T01:05:00.000Z',
+  },
 ];

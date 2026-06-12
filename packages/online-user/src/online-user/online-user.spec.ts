@@ -22,8 +22,8 @@ describe('@opencore/online-user', () => {
       ],
     });
     await expect(service.getSummary()).resolves.toEqual({
-      total: 1,
-      active: 1,
+      total: 2,
+      active: 2,
       revoked: 0,
     });
     await expect(
@@ -38,8 +38,8 @@ describe('@opencore/online-user', () => {
       revokedReason: 'manual test',
     });
     await expect(service.getSummary()).resolves.toEqual({
-      total: 1,
-      active: 0,
+      total: 2,
+      active: 1,
       revoked: 1,
     });
     await expect(

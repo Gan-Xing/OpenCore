@@ -36,6 +36,7 @@ export default function access(initialState: InitialState = {}) {
     canReadJobs: hasPermission('monitor:job:read'),
     canReadCache: hasPermission('monitor:cache:read'),
     canReadOnlineUsers: hasPermission('monitor:online-user:read'),
+    canManageOnlineUsers: hasPermission('monitor:online-user:manage'),
     canReadReports: hasPermission('optional:report:read'),
     canReadExportJobs: hasPermission('optional:export-job:read'),
     canReadIntegrationProviders: hasPermission('integration:provider:read'),

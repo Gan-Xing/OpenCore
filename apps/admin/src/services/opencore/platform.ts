@@ -1,5 +1,6 @@
 import {
   createMonitoringClient,
+  createOperationsClient,
   createRbacClient,
   createSystemManagementClient,
   type AuditLogQueryRequest,
@@ -26,6 +27,9 @@ import {
   type FileAssetSummary,
   type LoginLogQueryRequest,
   type LoginLogSummary,
+  type KickOutSessionRequest,
+  type OnlineUserQueryRequest,
+  type OnlineUserSessionSummary,
   type SystemNoticeQueryRequest,
   type SystemNoticeSummary,
   type SystemPostQueryRequest,
@@ -46,6 +50,7 @@ import { getRequiredAdminToken, opencoreSdkRequest } from './client';
 
 const rbacClient = createRbacClient(opencoreSdkRequest);
 const monitoringClient = createMonitoringClient(opencoreSdkRequest);
+const operationsClient = createOperationsClient(opencoreSdkRequest);
 const systemManagementClient = createSystemManagementClient(opencoreSdkRequest);
 
 export function listOpenCoreUsers(): Promise<UserSummary[]> {
@@ -129,6 +134,30 @@ export function deleteOpenCorePermission(
 
 export function getOpenCoreSystemStatus(): Promise<SystemStatusSummary> {
   return monitoringClient.getStatus(getRequiredAdminToken());
+}
+
+export async function listOpenCoreOnlineUsers(
+  query?: OnlineUserQueryRequest,
+): Promise<OnlineUserSessionSummary[]> {
+  const page = await operationsClient.listOnlineUsers(getRequiredAdminToken(), {
+    page: 1,
+    pageSize: 100,
+    ...query,
+  });
+  return [...page.items];
+}
+
+export function getOpenCoreOnlineUser(
+  id: string,
+): Promise<OnlineUserSessionSummary> {
+  return operationsClient.getOnlineUser(getRequiredAdminToken(), id);
+}
+
+export function kickOutOpenCoreOnlineUser(
+  id: string,
+  body: KickOutSessionRequest,
+): Promise<OnlineUserSessionSummary> {
+  return operationsClient.kickOutSession(getRequiredAdminToken(), id, body);
 }
 
 export async function listOpenCoreDicts(): Promise<DictTypeSummary[]> {

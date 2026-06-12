@@ -167,6 +167,14 @@ const tokenService = readFileSync(
   resolve(root, 'src/services/opencore/token.ts'),
   'utf8',
 );
+const adminStaticServer = readFileSync(
+  resolve(root, '../../tools/scripts/serve-admin-static.mjs'),
+  'utf8',
+);
+const deployScript = readFileSync(
+  resolve(root, '../../tools/scripts/deploy-local-opencore.sh'),
+  'utf8',
+);
 
 if (
   proConfig.includes('oneapi.json') ||
@@ -191,6 +199,29 @@ if (
   !proxyConfig.includes('http://localhost:3000')
 ) {
   throw new Error('Admin proxy must target the local OpenCore API.');
+}
+
+if (
+  !adminStaticServer.includes('retiredServiceWorkerBody') ||
+  !adminStaticServer.includes("pathname === '/service-worker.js'") ||
+  !adminStaticServer.includes('self.registration.unregister') ||
+  !adminStaticServer.includes('no-store, max-age=0, must-revalidate') ||
+  !adminStaticServer.includes('normalizeApiProxyPath')
+) {
+  throw new Error(
+    'Admin static server must retire stale service workers, avoid caching runtime manifests and tolerate duplicate /api prefixes from stale bundles.',
+  );
+}
+
+if (
+  !deployScript.includes('verify_public_admin_bundle') ||
+  !deployScript.includes('/api/api/auth/login') ||
+  !deployScript.includes('admin.public-bundle.no-duplicate-api-prefix') ||
+  !deployScript.includes('admin.api-proxy.duplicate-prefix-login')
+) {
+  throw new Error(
+    'OpenCore deploy script must verify the public Admin bundle and keep stale /api/api login requests working through the proxy.',
+  );
 }
 
 if (
@@ -227,6 +258,7 @@ if (
 if (
   !opencorePlatformService.includes('createRbacClient') ||
   !opencorePlatformService.includes('createMonitoringClient') ||
+  !opencorePlatformService.includes('createOperationsClient') ||
   !opencorePlatformService.includes('createSystemManagementClient') ||
   !opencorePlatformService.includes('listOpenCoreDicts') ||
   !opencorePlatformService.includes('getOpenCoreDict') ||
@@ -247,6 +279,9 @@ if (
   !opencorePlatformService.includes('getOpenCoreAuditLog') ||
   !opencorePlatformService.includes('listOpenCoreLoginLogs') ||
   !opencorePlatformService.includes('getOpenCoreLoginLog') ||
+  !opencorePlatformService.includes('listOpenCoreOnlineUsers') ||
+  !opencorePlatformService.includes('getOpenCoreOnlineUser') ||
+  !opencorePlatformService.includes('kickOutOpenCoreOnlineUser') ||
   !opencorePlatformService.includes('listOpenCoreUsers') ||
   !opencorePlatformService.includes('getOpenCoreUser') ||
   !opencorePlatformService.includes('createOpenCoreUser') ||
@@ -336,6 +371,7 @@ if (
   !accessRuntime.includes('monitor:job:read') ||
   !accessRuntime.includes('monitor:cache:read') ||
   !accessRuntime.includes('monitor:online-user:read') ||
+  !accessRuntime.includes('monitor:online-user:manage') ||
   !accessRuntime.includes('optional:report:read') ||
   !accessRuntime.includes('optional:export-job:read') ||
   !accessRuntime.includes('integration:provider:read') ||
@@ -939,10 +975,20 @@ if (
 }
 
 if (
+  !onlineUsersPage.includes('listOpenCoreOnlineUsers') ||
+  !onlineUsersPage.includes('getOpenCoreOnlineUser') ||
+  !onlineUsersPage.includes('kickOutOpenCoreOnlineUser') ||
+  !onlineUsersPage.includes('canManageOnlineUsers') ||
+  !onlineUsersPage.includes('useAccess') ||
+  !onlineUsersPage.includes('useCurrentPageFilters') ||
+  !onlineUsersPage.includes('CurrentPageExportButton') ||
+  !onlineUsersPage.includes('dataSource={filteredRows}') ||
+  !onlineUsersPage.includes('rows={filteredRows}') ||
+  !onlineUsersPage.includes('Read-only unless kick-out is permitted') ||
   !onlineUsersPage.includes("label: 'Token ID'") ||
-  !onlineUsersPage.includes('selected?.tokenId, sensitive: true') ||
+  !onlineUsersPage.includes('value: record.tokenId, sensitive: true') ||
   !onlineUsersPage.includes("label: 'Revoked Reason'") ||
-  !onlineUsersPage.includes('selected?.revokedReason') ||
+  !onlineUsersPage.includes('value: record.revokedReason') ||
   (onlineUsersPage.match(/sensitive: true/g) ?? []).length < 2
 ) {
   throw new Error(

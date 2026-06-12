@@ -3,7 +3,7 @@
 import { createReadStream, existsSync, statSync } from 'node:fs';
 import { createServer, request as httpRequest } from 'node:http';
 import { request as httpsRequest } from 'node:https';
-import { extname, join, normalize, resolve, sep } from 'node:path';
+import { basename, extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(
@@ -16,6 +16,25 @@ const indexFile = join(root, 'index.html');
 const apiProxyTarget = normalizeOptionalUrl(
   process.env.ADMIN_API_PROXY_TARGET || process.env.ADMIN_API_BASE_URL,
 );
+const retiredServiceWorkerBody = `
+self.addEventListener('install', (event) => {
+  event.waitUntil(self.skipWaiting());
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil((async () => {
+    if ('caches' in self) {
+      const cacheNames = await caches.keys();
+      await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
+    }
+
+    await self.registration.unregister();
+
+    const clients = await self.clients.matchAll({ type: 'window' });
+    await Promise.all(clients.map((client) => client.navigate(client.url)));
+  })());
+});
+`.trim();
 
 if (!Number.isInteger(port) || port < 1 || port > 65535) {
   throw new Error('PORT must be an integer between 1 and 65535');
@@ -37,8 +56,18 @@ const server = createServer((request, response) => {
     return;
   }
 
-  const filePath = resolveAssetPath(request.url || '/');
   const streamBody = request.method !== 'HEAD';
+
+  if (isRetiredServiceWorkerRequest(request.url || '/')) {
+    response.writeHead(200, {
+      'content-type': 'application/javascript; charset=utf-8',
+      'cache-control': 'no-store, max-age=0, must-revalidate',
+    });
+    response.end(streamBody ? retiredServiceWorkerBody : undefined);
+    return;
+  }
+
+  const filePath = resolveAssetPath(request.url || '/');
 
   response.writeHead(200, {
     'content-type': contentType(filePath),
@@ -93,11 +122,18 @@ function isApiRequest(rawUrl) {
   );
 }
 
+function isRetiredServiceWorkerRequest(rawUrl) {
+  const parsedUrl = new URL(rawUrl, `http://${host}:${port}`);
+  return parsedUrl.pathname === '/service-worker.js';
+}
+
 function proxyApiRequest(clientRequest, clientResponse) {
   let targetUrl;
+  const normalizedClientUrl = normalizeApiProxyRawUrl(clientRequest.url || '/');
+  clientRequest.url = normalizedClientUrl;
 
   try {
-    targetUrl = resolveProxyUrl(clientRequest.url || '/');
+    targetUrl = resolveProxyUrl(normalizedClientUrl);
   } catch (error) {
     clientResponse.writeHead(502, {
       'content-type': 'application/json; charset=utf-8',
@@ -122,8 +158,11 @@ function proxyApiRequest(clientRequest, clientResponse) {
   const transport =
     targetUrl.protocol === 'https:' ? httpsRequest : httpRequest;
   const upstreamRequest = transport(
-    targetUrl,
     {
+      protocol: targetUrl.protocol,
+      hostname: targetUrl.hostname,
+      port: targetUrl.port,
+      path: `${targetUrl.pathname}${targetUrl.search}`,
       method: clientRequest.method,
       headers,
     },
@@ -163,7 +202,7 @@ function resolveProxyUrl(rawUrl) {
 
   const incomingUrl = new URL(rawUrl, `http://${host}:${port}`);
   const basePath = apiProxyTarget.pathname.replace(/\/+$/, '');
-  let proxyPath = incomingUrl.pathname;
+  let proxyPath = normalizeApiProxyPath(incomingUrl.pathname);
 
   if (
     basePath &&
@@ -174,7 +213,19 @@ function resolveProxyUrl(rawUrl) {
     proxyPath = `${basePath}${proxyPath}`;
   }
 
+  proxyPath = normalizeApiProxyPath(proxyPath);
+
   return new URL(`${proxyPath}${incomingUrl.search}`, apiProxyTarget.origin);
+}
+
+function normalizeApiProxyPath(pathname) {
+  return pathname.replace(/^\/api(?:\/api)+(?=\/|$)/u, '/api');
+}
+
+function normalizeApiProxyRawUrl(rawUrl) {
+  const incomingUrl = new URL(rawUrl, `http://${host}:${port}`);
+  incomingUrl.pathname = normalizeApiProxyPath(incomingUrl.pathname);
+  return `${incomingUrl.pathname}${incomingUrl.search}`;
 }
 
 function normalizeOptionalUrl(value) {
@@ -225,7 +276,17 @@ function contentType(filePath) {
 }
 
 function cacheControl(filePath) {
-  if (extname(filePath) === '.html') {
+  const extension = extname(filePath);
+  const name = basename(filePath);
+
+  if (
+    extension === '.html' ||
+    extension === '.webmanifest' ||
+    name === 'asset-manifest.json' ||
+    name === 'manifest.json' ||
+    name === 'service-worker.js' ||
+    filePath.includes(`${sep}scripts${sep}`)
+  ) {
     return 'no-cache';
   }
 
