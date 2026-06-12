@@ -1,4 +1,5 @@
 import {
+  ApartmentOutlined,
   DeleteOutlined,
   EditOutlined,
   EyeOutlined,
@@ -13,6 +14,7 @@ import {
 import {
   createPermissionSummariesFromRegistry,
   createSystemDeptFixtures,
+  type MenuSummary,
   type PermissionSummary,
   type RoleDataScope,
   type RoleSummary,
@@ -30,14 +32,18 @@ import {
   Space,
   Tag,
   Tooltip,
+  Tree,
   Typography,
   message,
 } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 import {
+  assignOpenCoreRoleMenus,
   createOpenCoreRole,
   deleteOpenCoreRole,
   getOpenCoreRole,
+  getOpenCoreRoleMenuAssignment,
+  listOpenCoreMenus,
   listOpenCorePermissions,
   listOpenCoreRoles,
   listOpenCoreSystemDepts,
@@ -64,6 +70,12 @@ type RoleFormValues = {
   dataScopeDeptIds?: string[];
   name: string;
   permissionCodes?: string[];
+};
+
+type MenuTreeNode = {
+  children?: MenuTreeNode[];
+  key: string;
+  title: string;
 };
 
 const fallbackPermissionRows = createPermissionSummariesFromRegistry();
@@ -181,6 +193,50 @@ function createDeptOptions(rows: readonly SystemDeptSummary[]) {
     }));
 }
 
+function createMenuTreeData(rows: readonly MenuSummary[]): MenuTreeNode[] {
+  const childrenByParent = new Map<string | undefined, MenuSummary[]>();
+
+  for (const row of rows) {
+    const siblings = childrenByParent.get(row.parentKey);
+    if (siblings) {
+      siblings.push(row);
+    } else {
+      childrenByParent.set(row.parentKey, [row]);
+    }
+  }
+
+  const buildNodes = (parentKey: string | undefined): MenuTreeNode[] =>
+    [...(childrenByParent.get(parentKey) ?? [])]
+      .sort(
+        (left, right) =>
+          left.order - right.order || left.title.localeCompare(right.title),
+      )
+      .map((row) => ({
+        key: row.key,
+        title: row.permissionCode
+          ? `${row.title} (${row.permissionCode})`
+          : row.title,
+        children: buildNodes(row.key),
+      }));
+
+  return buildNodes(undefined);
+}
+
+function normalizeCheckedTreeKeys(value: unknown): string[] {
+  const keys =
+    Array.isArray(value) ||
+    (value &&
+      typeof value === 'object' &&
+      'checked' in value &&
+      Array.isArray((value as { checked?: unknown }).checked))
+      ? Array.isArray(value)
+        ? value
+        : ((value as { checked: unknown[] }).checked ?? [])
+      : [];
+
+  return keys.map((key) => String(key)).sort();
+}
+
 function createDetailFields(
   record: RoleSummary,
   deptNames: ReadonlyMap<string, string>,
@@ -217,14 +273,20 @@ export default function RolesPage() {
   const [permissionRows, setPermissionRows] = useState<
     readonly PermissionSummary[]
   >(fallbackPermissionRows);
+  const [menuRows, setMenuRows] = useState<readonly MenuSummary[]>([]);
   const [deptRows, setDeptRows] =
     useState<readonly SystemDeptSummary[]>(fallbackDeptRows);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
   const [selectedDetail, setSelectedDetail] = useState<RoleSummary>();
   const [editingRole, setEditingRole] = useState<RoleSummary>();
+  const [assigningMenuRole, setAssigningMenuRole] = useState<RoleSummary>();
+  const [checkedMenuKeys, setCheckedMenuKeys] = useState<string[]>([]);
   const [formOpen, setFormOpen] = useState(false);
+  const [menuAssignmentOpen, setMenuAssignmentOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [menuAssignmentSubmitting, setMenuAssignmentSubmitting] =
+    useState(false);
   const selectedDataScope = Form.useWatch('dataScope', form);
   const isCustomDataScope = selectedDataScope === 'custom';
   const permissionOptions = useMemo(
@@ -239,6 +301,7 @@ export default function RolesPage() {
   );
   const deptNames = useMemo(() => createDeptNameMap(deptRows), [deptRows]);
   const deptOptions = useMemo(() => createDeptOptions(deptRows), [deptRows]);
+  const menuTreeData = useMemo(() => createMenuTreeData(menuRows), [menuRows]);
   const { filteredRows, toolbar: filterToolbar } =
     useCurrentPageFilters<RoleSummary>({
       rows,
@@ -250,19 +313,22 @@ export default function RolesPage() {
   const loadRoles = async () => {
     setLoading(true);
     try {
-      const [roles, deptTree, permissions] = await Promise.all([
+      const [roles, deptTree, permissions, menus] = await Promise.all([
         listOpenCoreRoles(),
         listOpenCoreSystemDepts(),
         listOpenCorePermissions(),
+        listOpenCoreMenus(),
       ]);
       setRows(roles);
       setDeptRows(flattenDeptTree(deptTree));
       setPermissionRows(permissions);
+      setMenuRows(menus);
       setLoadError(undefined);
     } catch (error: unknown) {
       setRows(fallbackRows);
       setDeptRows(fallbackDeptRows);
       setPermissionRows(fallbackPermissionRows);
+      setMenuRows([]);
       setLoadError(
         error instanceof Error ? error.message : 'Unable to load roles.',
       );
@@ -314,6 +380,22 @@ export default function RolesPage() {
     }
   };
 
+  const openMenuAssignment = async (record: RoleSummary) => {
+    try {
+      const assignment = await getOpenCoreRoleMenuAssignment(record.code);
+      setAssigningMenuRole(record);
+      setCheckedMenuKeys([...assignment.menuKeys]);
+      setMenuRows(assignment.menus);
+      setMenuAssignmentOpen(true);
+    } catch (error: unknown) {
+      message.error(
+        error instanceof Error
+          ? error.message
+          : 'Unable to open role menu assignment.',
+      );
+    }
+  };
+
   const submitForm = async () => {
     const values = await form.validateFields();
     const dataScopeDeptIds =
@@ -350,6 +432,31 @@ export default function RolesPage() {
     await deleteOpenCoreRole(record.code);
     message.success('Role deleted.');
     await loadRoles();
+  };
+
+  const submitMenuAssignment = async () => {
+    if (!assigningMenuRole) {
+      return;
+    }
+
+    setMenuAssignmentSubmitting(true);
+    try {
+      const assignment = await assignOpenCoreRoleMenus(assigningMenuRole.code, {
+        menuKeys: checkedMenuKeys,
+      });
+      const revoked = assignment.revokedSessionCount ?? 0;
+      message.success(
+        revoked > 0
+          ? `Role menus updated. ${revoked} active session${revoked === 1 ? '' : 's'} revoked.`
+          : 'Role menus updated.',
+      );
+      setMenuAssignmentOpen(false);
+      setAssigningMenuRole(undefined);
+      setCheckedMenuKeys([]);
+      await loadRoles();
+    } finally {
+      setMenuAssignmentSubmitting(false);
+    }
   };
 
   const columns: ProColumns<RoleSummary>[] = [
@@ -397,7 +504,7 @@ export default function RolesPage() {
     {
       title: 'Actions',
       valueType: 'option',
-      width: 184,
+      width: 224,
       render: (_, record) => (
         <Space size="small">
           <Tooltip title="Detail">
@@ -413,6 +520,14 @@ export default function RolesPage() {
               aria-label={`Edit ${record.name}`}
               icon={<EditOutlined />}
               onClick={() => void openEditForm(record)}
+              size="small"
+            />
+          </Tooltip>
+          <Tooltip title="Menu Assignment">
+            <Button
+              aria-label={`Assign menus for ${record.name}`}
+              icon={<ApartmentOutlined />}
+              onClick={() => void openMenuAssignment(record)}
               size="small"
             />
           </Tooltip>
@@ -572,6 +687,41 @@ export default function RolesPage() {
             />
           </Form.Item>
         </Form>
+      </Modal>
+      <Modal
+        title={
+          assigningMenuRole
+            ? `Menu Assignment - ${assigningMenuRole.name}`
+            : 'Menu Assignment'
+        }
+        open={menuAssignmentOpen}
+        onCancel={() => {
+          setMenuAssignmentOpen(false);
+          setAssigningMenuRole(undefined);
+          setCheckedMenuKeys([]);
+        }}
+        onOk={() => void submitMenuAssignment()}
+        confirmLoading={menuAssignmentSubmitting}
+        okText="Save"
+        width={760}
+      >
+        {menuTreeData.length > 0 ? (
+          <Tree
+            blockNode
+            checkable
+            checkedKeys={checkedMenuKeys}
+            height={420}
+            onCheck={(keys) =>
+              setCheckedMenuKeys(normalizeCheckedTreeKeys(keys))
+            }
+            selectable={false}
+            treeData={menuTreeData}
+          />
+        ) : (
+          <Typography.Text type="secondary">
+            No menus available.
+          </Typography.Text>
+        )}
       </Modal>
     </PageContainer>
   );

@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { MenuSummaryDto } from '../system-menu/system-menu.dto';
 import {
   systemRoleDataScopeTypes,
   type SystemRoleDataScope,
@@ -66,4 +67,29 @@ export class UpdateRoleDto {
 
   @ApiProperty({ required: false, type: [String] })
   dataScopeDeptIds?: readonly string[];
+}
+
+export class AssignRoleMenusDto {
+  @ApiProperty({ type: [String] })
+  menuKeys!: readonly string[];
+}
+
+export class RoleMenuAssignmentDto {
+  @ApiProperty()
+  roleCode!: string;
+
+  @ApiProperty({ type: [String] })
+  menuKeys!: readonly string[];
+
+  @ApiProperty({ type: [String] })
+  permissionCodes!: readonly string[];
+
+  @ApiProperty({ type: [String] })
+  preservedPermissionCodes!: readonly string[];
+
+  @ApiProperty({ type: [MenuSummaryDto] })
+  menus!: readonly MenuSummaryDto[];
+
+  @ApiProperty({ required: false })
+  revokedSessionCount?: number;
 }

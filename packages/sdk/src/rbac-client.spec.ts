@@ -31,6 +31,10 @@ describe('createRbacClient', () => {
     await client.listRoles('token');
     await client.exportRoles('token');
     await client.getRole('token', 'admin');
+    await client.getRoleMenuAssignment('token', 'operator');
+    await client.assignRoleMenus('token', 'operator', {
+      menuKeys: ['system.users'],
+    });
     await client.createRole('token', {
       code: 'operator',
       name: 'Operator',
@@ -83,6 +87,12 @@ describe('createRbacClient', () => {
       { path: '/core/roles', token: 'token' },
       { path: '/core/roles/export', token: 'token' },
       { path: '/core/roles/admin', token: 'token' },
+      { path: '/core/roles/operator/menus', token: 'token' },
+      {
+        path: '/core/roles/operator/menus',
+        method: 'PATCH',
+        token: 'token',
+      },
       { path: '/core/roles', method: 'POST', token: 'token' },
       { path: '/core/roles/operator', method: 'PATCH', token: 'token' },
       { path: '/core/roles/operator', method: 'DELETE', token: 'token' },

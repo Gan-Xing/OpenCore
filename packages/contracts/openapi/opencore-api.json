@@ -287,6 +287,66 @@
         "tags": ["Rbac", "Core Roles"]
       }
     },
+    "/api/core/roles/{code}/menus": {
+      "get": {
+        "operationId": "RbacController_getRoleMenuAssignment",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoleMenuAssignmentDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Roles"]
+      },
+      "patch": {
+        "operationId": "RbacController_assignRoleMenus",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AssignRoleMenusDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoleMenuAssignmentDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Roles"]
+      }
+    },
     "/api/core/roles/{code}": {
       "get": {
         "operationId": "RbacController_getRole",
@@ -4726,6 +4786,66 @@
           "dataScopeDeptIds"
         ]
       },
+      "MenuSummaryDto": {
+        "type": "object",
+        "properties": {
+          "key": { "type": "string" },
+          "parentKey": { "type": "string", "nullable": true },
+          "title": { "type": "string" },
+          "type": { "type": "string", "enum": ["directory", "menu"] },
+          "path": { "type": "string" },
+          "icon": { "type": "string" },
+          "component": { "type": "string" },
+          "permissionCode": { "type": "string" },
+          "stage": { "type": "string" },
+          "order": { "type": "number" },
+          "status": { "type": "string", "enum": ["enabled", "disabled"] },
+          "cache": { "type": "boolean" },
+          "hidden": { "type": "boolean" }
+        },
+        "required": [
+          "key",
+          "title",
+          "type",
+          "path",
+          "stage",
+          "order",
+          "status",
+          "cache",
+          "hidden"
+        ]
+      },
+      "RoleMenuAssignmentDto": {
+        "type": "object",
+        "properties": {
+          "roleCode": { "type": "string" },
+          "menuKeys": { "type": "array", "items": { "type": "string" } },
+          "permissionCodes": { "type": "array", "items": { "type": "string" } },
+          "preservedPermissionCodes": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "menus": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/MenuSummaryDto" }
+          },
+          "revokedSessionCount": { "type": "number" }
+        },
+        "required": [
+          "roleCode",
+          "menuKeys",
+          "permissionCodes",
+          "preservedPermissionCodes",
+          "menus"
+        ]
+      },
+      "AssignRoleMenusDto": {
+        "type": "object",
+        "properties": {
+          "menuKeys": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["menuKeys"]
+      },
       "CreateRoleDto": {
         "type": "object",
         "properties": {
@@ -4785,35 +4905,6 @@
       "UpdatePermissionDto": {
         "type": "object",
         "properties": { "title": { "type": "string" } }
-      },
-      "MenuSummaryDto": {
-        "type": "object",
-        "properties": {
-          "key": { "type": "string" },
-          "parentKey": { "type": "string", "nullable": true },
-          "title": { "type": "string" },
-          "type": { "type": "string", "enum": ["directory", "menu"] },
-          "path": { "type": "string" },
-          "icon": { "type": "string" },
-          "component": { "type": "string" },
-          "permissionCode": { "type": "string" },
-          "stage": { "type": "string" },
-          "order": { "type": "number" },
-          "status": { "type": "string", "enum": ["enabled", "disabled"] },
-          "cache": { "type": "boolean" },
-          "hidden": { "type": "boolean" }
-        },
-        "required": [
-          "key",
-          "title",
-          "type",
-          "path",
-          "stage",
-          "order",
-          "status",
-          "cache",
-          "hidden"
-        ]
       },
       "CreateMenuDto": {
         "type": "object",

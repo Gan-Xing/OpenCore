@@ -1,13 +1,16 @@
 import { BadRequestException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '@opencore/database';
+import { PrismaSystemMenuRepository } from '../system-menu/system-menu.prisma-repository';
+import { SeedSystemMenuRepository } from '../system-menu/system-menu.seed-repository';
+import { SystemMenuService } from '../system-menu/system-menu.service';
 import { PrismaSystemRoleRepository } from './system-role.prisma-repository';
 import { SeedSystemRoleRepository } from './system-role.seed-repository';
 import { SystemRoleService } from './system-role.service';
 
 describe('@opencore/system system-role', () => {
   it('supports seeded role CRUD and export previews', async () => {
-    const service = new SystemRoleService(new SeedSystemRoleRepository());
+    const service = createSeedRoleService();
 
     await expect(service.listRoles()).resolves.toEqual(
       expect.arrayContaining([
@@ -75,7 +78,7 @@ describe('@opencore/system system-role', () => {
   });
 
   it('rejects invalid role codes and duplicated permission codes', async () => {
-    const service = new SystemRoleService(new SeedSystemRoleRepository());
+    const service = createSeedRoleService();
 
     await expect(
       service.createRole({
@@ -111,7 +114,7 @@ describe('@opencore/system system-role', () => {
   });
 
   it('protects system roles from deletion and from system demotion', async () => {
-    const service = new SystemRoleService(new SeedSystemRoleRepository());
+    const service = createSeedRoleService();
 
     await expect(service.deleteRole('admin')).rejects.toThrow(
       'System roles cannot be deleted.',
@@ -126,10 +129,40 @@ describe('@opencore/system system-role', () => {
     );
   });
 
+  it('assigns role menus while preserving non-menu permissions', async () => {
+    const service = createSeedRoleService();
+    await service.createRole({
+      code: 'menu_operator',
+      name: 'Menu Operator',
+      permissionCodes: ['core:dashboard:read', 'core:role:update'],
+      dataScope: 'self',
+    });
+
+    const assignment = await service.assignRoleMenus('menu_operator', {
+      menuKeys: ['system.users', 'system.roles'],
+    });
+
+    expect(assignment).toMatchObject({
+      roleCode: 'menu_operator',
+      menuKeys: ['system.roles', 'system.users'],
+      permissionCodes: ['core:role:read', 'core:user:read'],
+      preservedPermissionCodes: ['core:role:update'],
+    });
+    await expect(service.getRole('menu_operator')).resolves.toMatchObject({
+      permissionCodes: ['core:role:read', 'core:role:update', 'core:user:read'],
+    });
+    await expect(
+      service.assignRoleMenus('menu_operator', {
+        menuKeys: ['system.missing'],
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
   describe('PrismaSystemRoleRepository integration', () => {
     const prisma = new PrismaService();
     const service = new SystemRoleService(
       new PrismaSystemRoleRepository(prisma),
+      new SystemMenuService(new PrismaSystemMenuRepository(prisma)),
     );
     const testRunId = randomUUID().slice(0, 8);
     const code = `role_${testRunId}`;
@@ -230,6 +263,33 @@ describe('@opencore/system system-role', () => {
       ).resolves.toBe(0);
     });
 
+    it('persists menu assignment through Prisma', async () => {
+      await service.createRole({
+        code,
+        name: 'Prisma Menu Role',
+        permissionCodes: ['core:dashboard:read', 'core:role:update'],
+        dataScope: 'self',
+      });
+
+      await expect(
+        service.assignRoleMenus(code, {
+          menuKeys: ['system.users', 'system.roles'],
+        }),
+      ).resolves.toMatchObject({
+        roleCode: code,
+        menuKeys: ['system.roles', 'system.users'],
+        permissionCodes: ['core:role:read', 'core:user:read'],
+        preservedPermissionCodes: ['core:role:update'],
+      });
+      await expect(service.getRole(code)).resolves.toMatchObject({
+        permissionCodes: [
+          'core:role:read',
+          'core:role:update',
+          'core:user:read',
+        ],
+      });
+    });
+
     it('protects seeded system roles in PostgreSQL', async () => {
       await expect(service.deleteRole('admin')).rejects.toThrow(
         'System roles cannot be deleted.',
@@ -263,3 +323,10 @@ describe('@opencore/system system-role', () => {
     }
   });
 });
+
+function createSeedRoleService(): SystemRoleService {
+  return new SystemRoleService(
+    new SeedSystemRoleRepository(),
+    new SystemMenuService(new SeedSystemMenuRepository()),
+  );
+}

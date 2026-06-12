@@ -1,9 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
 export {
+  AssignRoleMenusDto,
   CreateMenuDto,
   CreateRoleDto,
   CreateUserDto,
   MenuSummaryDto,
+  RoleMenuAssignmentDto,
   RoleSummaryDto,
   UpdateMenuDto,
   UpdateRoleDto,

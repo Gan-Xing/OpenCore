@@ -8,6 +8,7 @@ import {
   Post,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { OnlineUserService } from '@opencore/online-user';
 import {
   SystemMenuService,
   SystemRoleService,
@@ -19,9 +20,11 @@ import {
   CreateRoleDto,
   CreateUserDto,
   DeleteResultDto,
+  AssignRoleMenusDto,
   MenuSummaryDto,
   PermissionSummaryDto,
   RbacExportPreviewDto,
+  RoleMenuAssignmentDto,
   RoleSummaryDto,
   UpdateMenuDto,
   UpdatePermissionDto,
@@ -40,6 +43,7 @@ export class RbacController {
     private readonly users: SystemUserService,
     private readonly roles: SystemRoleService,
     private readonly menus: SystemMenuService,
+    private readonly onlineUsers: OnlineUserService,
   ) {}
 
   @Get('users')
@@ -107,6 +111,33 @@ export class RbacController {
   @ApiOkResponse({ type: RbacExportPreviewDto })
   exportRoles(): Promise<RbacExportPreviewDto> {
     return this.roles.createExportPreview();
+  }
+
+  @Get('roles/:code/menus')
+  @ApiTags('Core Roles')
+  @RequirePermission('core:role:read')
+  @ApiOkResponse({ type: RoleMenuAssignmentDto })
+  getRoleMenuAssignment(
+    @Param('code') code: string,
+  ): Promise<RoleMenuAssignmentDto> {
+    return this.roles.getRoleMenuAssignment(code);
+  }
+
+  @Patch('roles/:code/menus')
+  @ApiTags('Core Roles')
+  @RequirePermission('core:role:update')
+  @ApiOkResponse({ type: RoleMenuAssignmentDto })
+  async assignRoleMenus(
+    @Param('code') code: string,
+    @Body() body: AssignRoleMenusDto,
+  ): Promise<RoleMenuAssignmentDto> {
+    const assignment = await this.roles.assignRoleMenus(code, body);
+    const revokedSessionCount = await this.revokeActiveSessionsForRole(code);
+
+    return {
+      ...assignment,
+      revokedSessionCount,
+    };
   }
 
   @Get('roles/:code')
@@ -246,5 +277,55 @@ export class RbacController {
   @ApiOkResponse({ type: DeleteResultDto })
   deleteMenu(@Param('key') key: string): Promise<DeleteResultDto> {
     return this.menus.deleteMenu(key);
+  }
+
+  private async revokeActiveSessionsForRole(roleCode: string): Promise<number> {
+    const users = (await this.users.listUsers()).filter((user) =>
+      user.roleCodes.includes(roleCode),
+    );
+    const sessionIds = (
+      await Promise.all(
+        users.map((user) => this.listActiveSessionIdsByUsername(user.username)),
+      )
+    ).flat();
+
+    if (sessionIds.length === 0) {
+      return 0;
+    }
+
+    const result = await this.onlineUsers.kickOutSessions({
+      ids: sessionIds,
+      actor: 'rbac.role-menu-assignment',
+      reason: `role menu assignment updated for ${roleCode}`,
+    });
+
+    return result.kicked;
+  }
+
+  private async listActiveSessionIdsByUsername(
+    username: string,
+  ): Promise<string[]> {
+    const ids: string[] = [];
+    let page = 1;
+    let totalPages = 1;
+
+    while (page <= totalPages) {
+      const result = await this.onlineUsers.listOnlineUsers({
+        username,
+        active: true,
+        page,
+        pageSize: 100,
+      });
+
+      ids.push(
+        ...result.items
+          .filter((session) => session.username === username)
+          .map((session) => session.id),
+      );
+      totalPages = result.totalPages;
+      page += 1;
+    }
+
+    return ids;
   }
 }

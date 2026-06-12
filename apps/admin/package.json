@@ -9,7 +9,7 @@
     "build": "cross-env FORCE_UTOOPACK= OPENCORE_ADMIN_BUNDLER=webpack max build",
     "dev": "cross-env UMI_ENV=dev max dev",
     "i18n-remove": "node scripts/i18n-remove.js",
-    "lint": "pnpm biome:lint && pnpm tsc",
+    "lint": "pnpm biome:lint && pnpm exec max setup && pnpm tsc",
     "biome:lint": "biome lint",
     "biome": "biome check --write",
     "openapi": "pnpm --dir ../.. openapi:export && pnpm --dir ../.. sdk:check",

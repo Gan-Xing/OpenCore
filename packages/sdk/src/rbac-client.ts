@@ -1,4 +1,5 @@
 import type {
+  AssignRoleMenusRequest,
   CreateMenuRequest,
   CreatePermissionRequest,
   CreateRoleRequest,
@@ -9,6 +10,7 @@ import type {
   PermissionSummary,
   RbacDeleteResult,
   RbacExportPreview,
+  RoleMenuAssignmentSummary,
   RoleSummary,
   UpdateMenuRequest,
   UpdatePermissionRequest,
@@ -42,6 +44,15 @@ export type RbacClient = {
   listRoles: (token: string) => Promise<RoleSummary[]>;
   exportRoles: (token: string) => Promise<RbacExportPreview>;
   getRole: (token: string, code: string) => Promise<RoleSummary>;
+  getRoleMenuAssignment: (
+    token: string,
+    code: string,
+  ) => Promise<RoleMenuAssignmentSummary>;
+  assignRoleMenus: (
+    token: string,
+    code: string,
+    body: AssignRoleMenusRequest,
+  ) => Promise<RoleMenuAssignmentSummary>;
   createRole: (token: string, body: CreateRoleRequest) => Promise<RoleSummary>;
   updateRole: (
     token: string,
@@ -126,6 +137,22 @@ export function createRbacClient(request: SdkRequest): RbacClient {
       request<RoleSummary>(`/core/roles/${encodeURIComponent(code)}`, {
         token,
       }),
+    getRoleMenuAssignment: (token, code) =>
+      request<RoleMenuAssignmentSummary>(
+        `/core/roles/${encodeURIComponent(code)}/menus`,
+        {
+          token,
+        },
+      ),
+    assignRoleMenus: (token, code, body) =>
+      request<RoleMenuAssignmentSummary>(
+        `/core/roles/${encodeURIComponent(code)}/menus`,
+        {
+          method: 'PATCH',
+          body,
+          token,
+        },
+      ),
     createRole: (token, body) =>
       request<RoleSummary>('/core/roles', {
         method: 'POST',

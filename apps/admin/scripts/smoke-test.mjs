@@ -291,6 +291,8 @@ if (
   !opencorePlatformService.includes('deleteOpenCoreUser') ||
   !opencorePlatformService.includes('listOpenCoreRoles') ||
   !opencorePlatformService.includes('getOpenCoreRole') ||
+  !opencorePlatformService.includes('getOpenCoreRoleMenuAssignment') ||
+  !opencorePlatformService.includes('assignOpenCoreRoleMenus') ||
   !opencorePlatformService.includes('createOpenCoreRole') ||
   !opencorePlatformService.includes('updateOpenCoreRole') ||
   !opencorePlatformService.includes('deleteOpenCoreRole') ||
@@ -738,9 +740,14 @@ if (
 if (
   !rolesPage.includes('listOpenCoreRoles') ||
   !rolesPage.includes('getOpenCoreRole') ||
+  !rolesPage.includes('getOpenCoreRoleMenuAssignment') ||
+  !rolesPage.includes('assignOpenCoreRoleMenus') ||
+  !rolesPage.includes('listOpenCoreMenus') ||
   !rolesPage.includes('createOpenCoreRole') ||
   !rolesPage.includes('updateOpenCoreRole') ||
   !rolesPage.includes('deleteOpenCoreRole') ||
+  !rolesPage.includes('checkedMenuKeys') ||
+  !rolesPage.includes('<Tree') ||
   !rolesPage.includes('listOpenCorePermissions') ||
   !rolesPage.includes('listOpenCoreSystemDepts') ||
   !rolesPage.includes('useCurrentPageFilters') ||

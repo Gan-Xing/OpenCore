@@ -79,6 +79,19 @@ export type UpdateRoleRequest = {
   dataScopeDeptIds?: readonly string[];
 };
 
+export type AssignRoleMenusRequest = {
+  menuKeys: readonly string[];
+};
+
+export type RoleMenuAssignmentSummary = {
+  roleCode: string;
+  menuKeys: readonly string[];
+  permissionCodes: readonly string[];
+  preservedPermissionCodes: readonly string[];
+  menus: readonly MenuSummary[];
+  revokedSessionCount?: number;
+};
+
 export type PermissionSummary = {
   code: string;
   title: string;
