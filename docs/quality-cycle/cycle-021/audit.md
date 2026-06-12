@@ -487,3 +487,27 @@ This stays inside the current S7 System boundary. It does not introduce
 category/name/remark schema expansion, batch config delete, Excel file export,
 secret vault/KMS integration or broad runtime feature-flag propagation in this
 round.
+
+## Round 25 Audit: core.post Simple-list Option Source
+
+After Round 24, the next lower-dependency P1 foundation gap was `core.post`
+as a reusable option source:
+
+- Yudao exposes a post simple-list endpoint and its user form consumes it for
+  post assignment instead of loading the full post management page.
+- RuoYi user management also treats post options as first-class form data,
+  even though it obtains them through the user init/detail response rather
+  than a standalone endpoint.
+- OpenCore already had live post CRUD and Round 22 user-post binding, but
+  Admin Users still fetched `listOpenCoreSystemPosts({ page, pageSize })` as a
+  management list and then derived form options from it.
+- A dedicated consumer endpoint needed to filter disabled posts and return a
+  lightweight shape so user forms are not coupled to management fields.
+- Because route order matters, `posts/simple-list` needed to be added before
+  `posts/:code` and locked by SDK/API tests.
+- Fixed-port and deploy smoke needed to prove disabled-post filtering and
+  option shape so this does not regress into another memory-only rule.
+
+This stays inside the current S7 System boundary. It does not introduce batch
+post deletion, drag-sort/order persistence, role/user batch assignment flows or
+department simple-list endpoints in this round.

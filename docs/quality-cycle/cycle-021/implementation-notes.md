@@ -1811,3 +1811,82 @@ tools/scripts/smoke-core-config.mjs` passed with
   `79c4e93 feat(core-config): add value cache refresh loop / 新增配置值读取与缓存刷新闭环`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 25 Capability
+
+Capability: `core.post` simple-list option productization.
+
+Goal: close the next `core.post` P1 foundation gap by adding a dedicated
+enabled-post option source and making Admin Users consume it instead of the
+post management page.
+
+## Round 25 Implemented
+
+- Added `SystemPostOptionDto` with lightweight `{ code, name, order }` shape.
+- Added `listPostOptions()` to `SystemPostRepository` and `SystemPostService`.
+- Implemented enabled-only, order/name sorted option queries in seed and
+  Prisma post repositories.
+- Added public `GET /api/core/posts/simple-list` ahead of the dynamic
+  `posts/:code` route.
+- Extended the system-management permission matrix to assert simple consumer
+  endpoints are not accidentally converted into management-permission routes.
+- Extended OpenAPI, `@opencore/sdk` types/client methods and SDK path tests.
+- Added `listOpenCoreSystemPostOptions()` to Admin platform services.
+- Updated Admin Users so post name maps and post multi-select options load
+  from the simple-list option source.
+- Added `tools/scripts/smoke-core-post.mjs` and wired it into fixed-port local
+  smoke plus deploy smoke.
+
+## Round 25 Verification
+
+- `node --check tools/scripts/smoke-core-post.mjs` pass.
+- `node --check apps/admin/scripts/smoke-test.mjs` pass.
+- `bash -n tools/scripts/run-local-api-smoke.sh tools/scripts/deploy-local-opencore.sh`
+  pass.
+- `git diff --check` pass before the feature commit.
+- Focused tests pass:
+  - `pnpm nx test system --testFile=packages/system/src/system-post/system-post.spec.ts`
+  - `pnpm nx test sdk --testFile=packages/sdk/src/system-management-client.spec.ts`
+  - `pnpm nx test api --testFile=apps/api/src/modules/core/system-management/system-management.permission-matrix.spec.ts`
+  - `pnpm nx test admin`
+- `pnpm openapi:export`, `pnpm openapi:check`, `pnpm sdk:check`,
+  `pnpm openapi:registry-tags:check` and
+  `pnpm registry:admin-routes:check` pass.
+- `pnpm prisma:validate` pass.
+- `pnpm smoke:api:local` pass on fixed port `39173`, including
+  `core.post.simple-list.public-consumer`,
+  `core.post.simple-list.disabled-filtered`,
+  `core.post.simple-list.option-shape` and `core.post.delete`.
+- `pnpm build:api` pass.
+- `pnpm build:admin` pass.
+- `pnpm deploy:opencore` pass, deploying API/Admin on fixed ports
+  `39172`/`39174`; deploy smoke includes the new core-post option-source
+  checks and the existing login-prefix/frontend-cache/session-revocation
+  guards.
+
+## Round 25 Public Verification
+
+Against public endpoints after deploy:
+
+- `GET http://144.217.243.161:39172/health/ready` returned 200.
+- `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 node
+tools/scripts/smoke-core-post.mjs` passed with
+  `OPENCORE_SMOKE_CHECK_DOCS=false` and the deployed admin password loaded from
+  `.env.opencore.local` without printing secrets.
+- Public post smoke verified disabled-post filtering, enabled option inclusion,
+  lightweight option shape, export/detail/delete and cleanup.
+- `GET http://144.217.243.161:39174/system/users/` returned 200.
+- The deployed Admin Users chunk `p__System__Users.7894d121.async.js`
+  contains `Select posts`.
+- The deployed main Admin bundle `umi.17f471f6.js` contains
+  `/core/posts/simple-list`, API origin `http://144.217.243.161:39172` and no
+  `/api/api/auth/login`.
+- Public Admin same-origin proxy login returned 201 for both `/api/auth/login`
+  and the stale-compatible `/api/api/auth/login`.
+
+## Round 25 Commit Record
+
+- Feature commit:
+  `27d15cc feat(core-post): add simple-list option loop / 新增岗位选项列表闭环`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

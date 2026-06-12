@@ -3,8 +3,8 @@
 Date: 2026-06-12  
 Repository: `Gan-Xing/OpenCore`  
 Default branch: `main`  
-Latest observed feature commit: `79c4e93 feat(core-config): add value cache refresh loop / 新增配置值读取与缓存刷新闭环`
-Latest deployed feature commit: `79c4e93 feat(core-config): add value cache refresh loop / 新增配置值读取与缓存刷新闭环`
+Latest observed feature commit: `27d15cc feat(core-post): add simple-list option loop / 新增岗位选项列表闭环`
+Latest deployed feature commit: `27d15cc feat(core-post): add simple-list option loop / 新增岗位选项列表闭环`
 Latest deployed hardening commit: `04e446c fix(online-user): stabilize admin session smoke / 稳定在线用户管理员会话冒烟`
 
 ## One-sentence Goal
@@ -65,6 +65,7 @@ productization waterline completion; see
 - Round 22 `core.user` post binding stage 3
 - Round 23 `core.user` department tree filtering stage 4
 - Round 24 `core.config` value-by-key and cache refresh stage 2
+- Round 25 `core.post` simple-list option stage 2
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -187,6 +188,16 @@ smoke 和公网 smoke 均证明 value-by-key、更新后缓存失效、refresh-c
 阻断可用；公网 Admin Config chunk 已验证包含 `Refresh cache` 和 `Read public value by key`，
 当前 main bundle 已验证包含 `get-value-by-key` 和 `refresh-cache`。
 
+Round 25 继续补齐 `core.post` 队列：岗位管理现在新增 consumer option 源
+`GET /api/core/posts/simple-list`。该接口返回 enabled posts 的轻量 `{ code, name, order }`
+列表，作为用户表单岗位选择源，而不是让用户页继续读取岗位管理分页列表。API/SDK/OpenAPI、
+seed/Prisma 仓储、Admin Users 和固定部署脚本均同步该闭环。新增 `tools/scripts/smoke-core-post.mjs`
+并接入 `pnpm smoke:api:local` 与 `pnpm deploy:opencore`，固定 smoke、部署 smoke 和公网 smoke
+均证明禁用岗位不会进入 simple-list、启用后会进入 simple-list、option shape 不暴露管理字段、
+岗位 export/detail/delete 仍可用。公网 Admin Users chunk 已验证包含 `Select posts`，当前 main bundle
+已验证包含 `/core/posts/simple-list`、API origin `http://144.217.243.161:39172` 且不包含
+`/api/api/auth/login`；公网 Admin 代理 `/api/auth/login` 与兼容 `/api/api/auth/login` 均返回 201。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -195,9 +206,9 @@ The productization waterline now classifies:
   `core.audit-log`, Round 13/14 `monitor.online-user`, Round 10/15
   `core.file`, Round 4/16 `core.menu`, Round 5/17/18/20 `core.role`,
   Round 8/21 `core.dict`.
-- First loop, enhance: Round 1 `core.notice`, Round 2 `core.dept`, Round 3
-  `core.post`, Round 7/19/22/23 `core.user`, Round 9/24 `core.config`,
-  Round 11 `core.login-log`.
+- First loop, enhance: Round 1 `core.notice`, Round 2 `core.dept`, Round
+  3/22/25 `core.post`, Round 7/19/22/23 `core.user`, Round 9/24
+  `core.config`, Round 11 `core.login-log`.
 - Thin, rework: none after Round 16.
 
 The P0 remediation queue from the post-Round 13 re-audit is now clear. The next
@@ -213,8 +224,8 @@ finds another blocker:
    batch/file export depth and broader runtime propagation boundaries.
 3. `core.login-log`: browser/OS parsing, IP/location enrichment where feasible,
    server-side time filters and cleanup/unlock policy integration.
-4. `core.dept` and `core.post`: department binding paths, option endpoints and
-   ordered operations where useful.
+4. `core.dept` and `core.post`: department binding paths, post batch
+   operations and ordered tree/list operations where useful.
 
 Commit `f4569a4` also fixed the remaining stale-login failure at API level:
 `@opencore/core` now normalizes duplicate global prefixes before Nest route

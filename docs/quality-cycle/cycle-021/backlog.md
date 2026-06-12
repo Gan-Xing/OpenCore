@@ -628,6 +628,38 @@ secret redaction, but no runtime consumer endpoint or cache refresh semantics.
       verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 25: core.post Simple-list Option Productization
+
+Why this slice: after config value/cache, the next lower-dependency foundation
+gap was `core.post` as an option source. Yudao exposes
+`/system/post/simple-list` and its user form loads post options from that
+endpoint; RuoYi also treats post options as a first-class user form input.
+OpenCore had live post management and user-post binding, but Admin Users still
+loaded the management post page as its option source.
+
+- [x] Add `SystemPostOptionDto` for lightweight `{ code, name, order }`
+      consumer options.
+- [x] Add `listPostOptions()` to the post repository/service contract.
+- [x] Implement enabled-only, order/name sorted options in seed and Prisma
+      repositories.
+- [x] Add public `GET /api/core/posts/simple-list` before
+      `GET /api/core/posts/:code`.
+- [x] Extend API permission-matrix tests to keep consumer simple-list routes
+      free of management permissions.
+- [x] Extend OpenAPI, SDK types/client methods and SDK path tests.
+- [x] Add `listOpenCoreSystemPostOptions()` to Admin platform services.
+- [x] Update Admin Users to consume post options from simple-list instead of
+      the management post page.
+- [x] Add static Admin smoke guards for the post option source.
+- [x] Add `tools/scripts/smoke-core-post.mjs` and wire it into fixed-port local
+      smoke plus deploy smoke.
+- [x] Extend fixed-port/deploy/public `core.post` smoke to prove disabled-post
+      filtering, enabled option inclusion, lightweight option shape,
+      detail/export/delete and cleanup.
+- [x] Run focused, build, fixed-port smoke, deployment and public URL
+      verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -661,8 +693,9 @@ treat "minimal loop" as "minimal final product".
       adapter design.
 - [ ] Round 2 `core.dept`: user binding paths, data-scope workflow integration
       and ordered tree operations.
-- [ ] Round 3/22 `core.post`: user-post binding is complete from the user
-      form side; simple-list option endpoints and batch operations remain.
+- [ ] Round 3/22/25 `core.post`: user-post binding and simple-list option
+      source are complete; batch operations and ordered list refinements
+      remain.
 - [ ] Round 7/19/22/23 `core.user`: status toggle, reset password and direct
       user-mutation session invalidation are complete, and post binding is
       complete. Department side-tree filtering is complete. Profile/avatar,
@@ -704,7 +737,7 @@ treat "minimal loop" as "minimal final product".
 - Tenant-scoped notices.
 - Department user binding and data-scope assignment UI.
 - Batch department deletion or drag-sort persistence.
-- Batch post deletion and simple-list option endpoints.
+- Batch post deletion and ordered list refinements.
 - Menu router-generation expansion, menu cache refresh, save-sort and drag-sort
   persistence.
 - Role simple-list endpoints, batch role deletion and standalone data-scope

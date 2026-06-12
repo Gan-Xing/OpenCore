@@ -33,7 +33,7 @@ A capability reaches the current OpenCore productization waterline only when:
 | ---------- | --------------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1          | `core.notice`         | First loop, enhance     | Management CRUD is live, but read/unread state, notification inbox/header badge and delivery semantics remain below a full notice product.                                                                                                                                                                                   |
 | 2          | `core.dept`           | First loop, enhance     | Tree CRUD and delete guard are live, but user binding, data-scope workflows and ordered tree operations still need follow-up.                                                                                                                                                                                                |
-| 3/22       | `core.post`           | First loop, enhance     | Post CRUD is live, and Round 22 closes user-post binding through the user form and persisted relation. Simple-list option endpoints and batch operations are still missing from the foundation workflow.                                                                                                                     |
+| 3/22/25    | `core.post`           | First loop, enhance     | Post CRUD is live, Round 22 closes user-post binding, and Round 25 adds the dedicated enabled-post simple-list option source consumed by Admin Users. Batch operations and ordered list refinements still remain below the full reference depth.                                                                             |
 | 4/16       | `core.menu`           | Meets current waterline | Round 16 closed the flat-model gap: menus now persist parent tree metadata, type, icon/component/status/cache fields, Admin tree operations, delete guards, nullable parent clearing and smoke coverage.                                                                                                                     |
 | 5/17/18/20 | `core.role`           | Meets current waterline | Role CRUD, permission-code assignment, data scope, role menu-tree assignment, role-user assignment and role status are live. Role status/update/delete mutations revoke affected sessions, disabled roles are removed from auth/RBAC calculation and system roles cannot be disabled.                                        |
 | 6          | `core.permission`     | Meets current waterline | OpenCore deliberately owns a persisted permission catalog. System/custom separation, registry mutation protection, live Admin CRUD for custom permissions and role option integration are enough for this product boundary.                                                                                                  |
@@ -77,7 +77,8 @@ P1 enhancement queue:
 3. `core.login-log`: browser/OS parsing, IP/location enrichment where feasible,
    server-side time filters and cleanup/unlock policy integration.
 4. `core.dept` and `core.post`: department binding paths, simple-list
-   endpoints and ordered tree/list operations where useful.
+   endpoints for departments, post batch operations and ordered tree/list
+   operations where useful.
 5. `core.notice`: read/unread state, inbox/header badge and delivery adapter
    design before any real WebSocket/mail/SMS fan-out.
 
@@ -131,3 +132,9 @@ public temporary config, reads it through `get-value-by-key`, updates it and
 proves the cached value is invalidated, explicitly refreshes the public value
 cache, and verifies secret config values are blocked from the public value
 consumer with 403.
+
+Round 25 added the post option-source guard: `core.post` smoke now creates a
+disabled temporary post, proves `posts/simple-list` filters it out, enables
+the post and proves the lightweight `{ code, name, order }` option shape is
+returned, then verifies export/detail/delete and cleanup through the same
+fixed-port and deploy smoke path.

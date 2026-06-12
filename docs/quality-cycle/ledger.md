@@ -67,3 +67,4 @@
 - 2026-06-12 22:08:26 UTC completed cycle-021 round-022 core.user post binding productization; featureCommit=98e10be; deployed=39172/39174; publicVerified=user-post-binding,unknown-post-rejected,admin-users-posts
 - 2026-06-12 22:28:33 UTC completed cycle-021 round-023 core.user department tree filter productization; featureCommit=fda33c4; deployed=39172/39174; publicVerified=user-dept-filter,subtree-filter,admin-users-dept-tree
 - 2026-06-12 22:42:18 UTC completed cycle-021 round-024 core.config value cache refresh productization; featureCommit=79c4e93; deployed=39172/39174; publicVerified=config-value-by-key,cache-refresh,secret-value-blocked,admin-config-cache
+- 2026-06-12 22:59:44 UTC completed cycle-021 round-025 core.post simple-list option productization; featureCommit=27d15cc; deployed=39172/39174; publicVerified=post-simple-list,disabled-post-filtered,admin-users-post-options,admin-proxy-login

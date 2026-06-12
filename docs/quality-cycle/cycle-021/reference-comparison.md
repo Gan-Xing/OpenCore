@@ -724,3 +724,32 @@ OpenCore admits the matching stage-2 loop inside its current config model:
 OpenCore still does not admit category/name/remark schema expansion, batch
 config delete, Excel file export, secret vault/KMS integration or broad
 runtime feature-flag propagation in this round.
+
+## Round 25 Post Simple-list Reference Shape
+
+Yudao system post management exposes a simple-list option endpoint under the
+post API, and its user form calls that endpoint to populate post assignment
+options. The option source is separate from paginated post management.
+
+RuoYi user management also treats post options as part of the user form
+workflow; the user init/detail response carries available posts alongside role
+and department data.
+
+OpenCore admits the matching stage-2 loop while preserving its code-based post
+contract:
+
+- `GET /api/core/posts/simple-list` is a public consumer endpoint for enabled
+  post options;
+- the endpoint returns lightweight `{ code, name, order }` records sorted by
+  order and name;
+- disabled posts remain visible to management list filters but are omitted
+  from the consumer option source;
+- `@opencore/sdk` exposes `listPostOptions()` and Admin platform wraps it as
+  `listOpenCoreSystemPostOptions()`;
+- Admin Users uses that option source for post name maps and create/edit
+  multi-select choices;
+- fixed-port, deploy and public smoke prove disabled-post filtering, enabled
+  option inclusion, lightweight option shape and cleanup.
+
+OpenCore still does not admit batch post deletion, drag-sort/order persistence
+or broader post assignment batch workflows in this round.
