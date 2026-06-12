@@ -10,6 +10,7 @@ import type {
 } from './system-dept.dto';
 import {
   seedSystemDepts,
+  type SystemDeptOptionRecord,
   type SystemDeptRecord,
   type SystemDeptTreeRecord,
 } from './system-dept.records';
@@ -22,6 +23,7 @@ import {
   normalizeSystemDeptFilters,
   normalizeUpdateSystemDeptInput,
   SystemDeptRepository,
+  toSystemDeptOptionRecord,
   type SystemDeptQuery,
 } from './system-dept.repository';
 
@@ -42,6 +44,13 @@ export class SeedSystemDeptRepository extends SystemDeptRepository {
       .sort(compareSystemDeptRecords);
 
     return buildSystemDeptTree(rows);
+  }
+
+  async listDeptOptions(): Promise<SystemDeptOptionRecord[]> {
+    return this.depts
+      .filter((dept) => dept.enabled)
+      .sort(compareSystemDeptRecords)
+      .map(toSystemDeptOptionRecord);
   }
 
   async getDept(id: string): Promise<SystemDeptRecord> {

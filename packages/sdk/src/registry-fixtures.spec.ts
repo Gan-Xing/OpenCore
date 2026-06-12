@@ -10,6 +10,7 @@ import {
   createPermissionSummariesFromRegistry,
   createQueueStatusFixture,
   createSystemConfigFixtures,
+  createSystemDeptOptionFixtures,
   createSystemStatusFixture,
   createVersionInfoFixture,
 } from './registry-fixtures';
@@ -85,6 +86,10 @@ describe('registry fixtures', () => {
       password: '[REDACTED]',
     });
     expect(createLoginLogFixtures().items[0].success).toBe(true);
+    expect(createSystemDeptOptionFixtures()[1]).toMatchObject({
+      id: 'dept_engineering',
+      parentId: 'dept_headquarters',
+    });
   });
 
   it('creates S8 monitor and tool fixtures without sensitive data', () => {

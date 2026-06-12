@@ -154,6 +154,13 @@ export type SystemDeptTreeSummary = SystemDeptSummary & {
   children: readonly SystemDeptTreeSummary[];
 };
 
+export type SystemDeptOptionSummary = {
+  id: string;
+  name: string;
+  parentId?: string;
+  order: number;
+};
+
 export type SystemDeptQueryRequest = {
   enabled?: boolean;
   parentId?: string;

@@ -10,6 +10,7 @@ import type {
   UpdateSystemDeptDto,
 } from './system-dept.dto';
 import type {
+  SystemDeptOptionRecord,
   SystemDeptRecord,
   SystemDeptTreeRecord,
 } from './system-dept.records';
@@ -21,6 +22,7 @@ import {
   normalizeSystemDeptFilters,
   normalizeUpdateSystemDeptInput,
   SystemDeptRepository,
+  toSystemDeptOptionRecord,
   type SystemDeptQuery,
 } from './system-dept.repository';
 
@@ -57,6 +59,15 @@ export class PrismaSystemDeptRepository extends SystemDeptRepository {
     });
 
     return buildSystemDeptTree(rows.map(toSystemDeptRecord));
+  }
+
+  async listDeptOptions(): Promise<SystemDeptOptionRecord[]> {
+    const rows = await this.prisma.systemDept.findMany({
+      where: { enabled: true },
+      orderBy: [{ order: 'asc' }, { name: 'asc' }],
+    });
+
+    return rows.map(toSystemDeptRecord).map(toSystemDeptOptionRecord);
   }
 
   async getDept(id: string): Promise<SystemDeptRecord> {

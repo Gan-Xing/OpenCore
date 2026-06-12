@@ -60,6 +60,7 @@ const expectedPermissions = {
 const expectedPublicConsumerMethods = [
   'getConfigValueByKey',
   'listDictDataOptions',
+  'listDeptOptions',
   'listPostOptions',
 ] as const;
 

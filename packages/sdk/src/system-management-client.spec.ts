@@ -95,6 +95,7 @@ describe('createSystemManagementClient', () => {
       checksum: 'sha256:updated',
     });
     await client.listDepts('token', { enabled: true });
+    await client.listDeptOptions('token');
     await client.getDept('token', 'dept_engineering');
     await client.createDept('token', {
       code: 'qa',
@@ -253,6 +254,10 @@ describe('createSystemManagementClient', () => {
       },
       {
         path: '/core/depts?enabled=true',
+        token: 'token',
+      },
+      {
+        path: '/core/depts/simple-list',
         token: 'token',
       },
       {

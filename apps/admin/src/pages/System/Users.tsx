@@ -14,12 +14,14 @@ import {
   type ProColumns,
 } from '@ant-design/pro-components';
 import {
+  createSystemDeptOptionFixtures,
   createSystemDeptFixtures,
   createSystemPostFixtures,
   type RoleSummary,
-  type SystemPostOptionSummary,
+  type SystemDeptOptionSummary,
   type SystemDeptSummary,
   type SystemDeptTreeSummary,
+  type SystemPostOptionSummary,
   type UserSummary,
 } from '@opencore/sdk';
 import {
@@ -46,6 +48,7 @@ import {
   getOpenCoreUser,
   listOpenCoreRoles,
   listOpenCoreSystemDepts,
+  listOpenCoreSystemDeptOptions,
   listOpenCoreSystemPostOptions,
   listOpenCoreUsers,
   resetOpenCoreUserPassword,
@@ -153,6 +156,7 @@ const fallbackRoleRows: RoleSummary[] = [
   },
 ];
 const fallbackDeptTreeRows = createSystemDeptFixtures();
+const fallbackDeptOptionRows = createSystemDeptOptionFixtures();
 const fallbackPostRows = createSystemPostFixtures().items;
 const searchFields: CurrentPageSearchField<UserSummary>[] = [
   'username',
@@ -235,14 +239,56 @@ function createPostOptions(rows: readonly SystemPostOptionSummary[]) {
     }));
 }
 
-function toDeptTreeSelectData(
-  rows: readonly SystemDeptTreeSummary[],
+function toDeptOptionTreeSelectData(
+  rows: readonly SystemDeptOptionSummary[],
 ): TreeSelectNode[] {
-  return rows.map((row) => ({
-    title: `${row.name} (${row.code})`,
-    value: row.id,
-    children: toDeptTreeSelectData(row.children),
-  }));
+  const nodes = new Map<
+    string,
+    TreeSelectNode & { order: number; parentId?: string }
+  >();
+  const roots: Array<TreeSelectNode & { order: number; parentId?: string }> =
+    [];
+
+  for (const row of rows) {
+    nodes.set(row.id, {
+      title: row.name,
+      value: row.id,
+      order: row.order,
+      parentId: row.parentId,
+      children: [],
+    });
+  }
+
+  for (const node of nodes.values()) {
+    if (node.parentId && nodes.has(node.parentId)) {
+      nodes.get(node.parentId)?.children?.push(node);
+      continue;
+    }
+
+    roots.push(node);
+  }
+
+  return sortDeptOptionNodes(roots);
+}
+
+function sortDeptOptionNodes(
+  rows: Array<TreeSelectNode & { order: number; parentId?: string }>,
+): TreeSelectNode[] {
+  return rows
+    .sort(
+      (left, right) =>
+        left.order - right.order || left.title.localeCompare(right.title),
+    )
+    .map(({ order: _order, parentId: _parentId, children, ...row }) => ({
+      ...row,
+      children: children
+        ? sortDeptOptionNodes(
+            children as Array<
+              TreeSelectNode & { order: number; parentId?: string }
+            >,
+          )
+        : [],
+    }));
 }
 
 function toDeptFilterTreeData(
@@ -349,6 +395,9 @@ export default function UsersPage() {
     useState<readonly RoleSummary[]>(fallbackRoleRows);
   const [deptTreeRows, setDeptTreeRows] =
     useState<readonly SystemDeptTreeSummary[]>(fallbackDeptTreeRows);
+  const [deptOptionRows, setDeptOptionRows] = useState<
+    readonly SystemDeptOptionSummary[]
+  >(fallbackDeptOptionRows);
   const [postRows, setPostRows] =
     useState<readonly SystemPostOptionSummary[]>(fallbackPostRows);
   const [loading, setLoading] = useState(true);
@@ -370,9 +419,9 @@ export default function UsersPage() {
     () => createDeptNameMap(flatDeptRows),
     [flatDeptRows],
   );
-  const deptTreeData = useMemo(
-    () => toDeptTreeSelectData(deptTreeRows),
-    [deptTreeRows],
+  const deptOptionTreeData = useMemo(
+    () => toDeptOptionTreeSelectData(deptOptionRows),
+    [deptOptionRows],
   );
   const deptFilterTreeData = useMemo(
     () => toDeptFilterTreeData(deptTreeRows),
@@ -392,21 +441,24 @@ export default function UsersPage() {
   const loadUsers = async (deptId = selectedDeptId) => {
     setLoading(true);
     try {
-      const [users, roles, deptTree, posts] = await Promise.all([
+      const [users, roles, deptTree, deptOptions, posts] = await Promise.all([
         listOpenCoreUsers(deptId ? { deptId } : undefined),
         listOpenCoreRoles(),
         listOpenCoreSystemDepts(),
+        listOpenCoreSystemDeptOptions(),
         listOpenCoreSystemPostOptions(),
       ]);
       setRows(users);
       setRoleRows(roles);
       setDeptTreeRows(deptTree);
+      setDeptOptionRows(deptOptions);
       setPostRows(posts);
       setLoadError(undefined);
     } catch (error: unknown) {
       setRows(filterUsersByDept(fallbackRows, fallbackDeptTreeRows, deptId));
       setRoleRows(fallbackRoleRows);
       setDeptTreeRows(fallbackDeptTreeRows);
+      setDeptOptionRows(fallbackDeptOptionRows);
       setPostRows(fallbackPostRows);
       setLoadError(
         error instanceof Error ? error.message : 'Unable to load users.',
@@ -873,7 +925,7 @@ export default function UsersPage() {
             <TreeSelect
               allowClear
               showSearch
-              treeData={deptTreeData}
+              treeData={deptOptionTreeData}
               treeDefaultExpandAll
               placeholder="Select department"
             />

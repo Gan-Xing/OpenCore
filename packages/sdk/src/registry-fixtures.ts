@@ -15,6 +15,7 @@ import type {
   LoginLogSummary,
   PageResponse,
   SystemConfigSummary,
+  SystemDeptOptionSummary,
   SystemDeptTreeSummary,
   SystemNoticeSummary,
   SystemPostSummary,
@@ -165,6 +166,28 @@ export function createSystemDeptFixtures(): readonly SystemDeptTreeSummary[] {
           children: [],
         },
       ],
+    },
+  ];
+}
+
+export function createSystemDeptOptionFixtures(): readonly SystemDeptOptionSummary[] {
+  return [
+    {
+      id: 'dept_headquarters',
+      name: 'Headquarters',
+      order: 10,
+    },
+    {
+      id: 'dept_engineering',
+      name: 'Engineering',
+      parentId: 'dept_headquarters',
+      order: 20,
+    },
+    {
+      id: 'dept_operations',
+      name: 'Operations',
+      parentId: 'dept_headquarters',
+      order: 30,
     },
   ];
 }

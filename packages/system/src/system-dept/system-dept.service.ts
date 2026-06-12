@@ -4,6 +4,7 @@ import type {
   UpdateSystemDeptDto,
 } from './system-dept.dto';
 import type {
+  SystemDeptOptionRecord,
   SystemDeptRecord,
   SystemDeptTreeRecord,
 } from './system-dept.records';
@@ -20,6 +21,10 @@ export class SystemDeptService {
 
   listDeptTree(query: SystemDeptQuery = {}): Promise<SystemDeptTreeRecord[]> {
     return this.repository.listDeptTree(query);
+  }
+
+  listDeptOptions(): Promise<SystemDeptOptionRecord[]> {
+    return this.repository.listDeptOptions();
   }
 
   getDept(id: string): Promise<SystemDeptRecord> {

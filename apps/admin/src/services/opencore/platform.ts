@@ -36,6 +36,7 @@ import {
   type SystemConfigSummary,
   type SystemConfigCacheRefreshSummary,
   type SystemConfigValueSummary,
+  type SystemDeptOptionSummary,
   type SystemDeptQueryRequest,
   type SystemDeptSummary,
   type SystemDeptTreeSummary,
@@ -516,6 +517,12 @@ export function listOpenCoreSystemDepts(
   query?: SystemDeptQueryRequest,
 ): Promise<readonly SystemDeptTreeSummary[]> {
   return systemManagementClient.listDepts(getRequiredAdminToken(), query);
+}
+
+export function listOpenCoreSystemDeptOptions(): Promise<
+  readonly SystemDeptOptionSummary[]
+> {
+  return systemManagementClient.listDeptOptions(getRequiredAdminToken());
 }
 
 export function getOpenCoreSystemDept(id: string): Promise<SystemDeptSummary> {

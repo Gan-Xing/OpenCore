@@ -23,6 +23,7 @@ import type {
   SystemConfigCacheRefreshSummary,
   SystemConfigSummary,
   SystemConfigValueSummary,
+  SystemDeptOptionSummary,
   SystemDeptQueryRequest,
   SystemDeptSummary,
   SystemDeptTreeSummary,
@@ -137,6 +138,9 @@ export type SystemManagementClient = {
     token: Token,
     query?: SystemDeptQueryRequest,
   ) => Promise<readonly SystemDeptTreeSummary[]>;
+  listDeptOptions: (
+    token: Token,
+  ) => Promise<readonly SystemDeptOptionSummary[]>;
   getDept: (token: Token, id: string) => Promise<SystemDeptSummary>;
   exportDepts: (
     token: Token,
@@ -383,6 +387,10 @@ export function createSystemManagementClient(
           token,
         },
       ),
+    listDeptOptions: (token) =>
+      request<readonly SystemDeptOptionSummary[]>('/core/depts/simple-list', {
+        token,
+      }),
     getDept: (token, id) =>
       request<SystemDeptSummary>(`/core/depts/${encodeURIComponent(id)}`, {
         token,

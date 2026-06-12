@@ -54,6 +54,7 @@ import {
   LoginLogDto,
   PageQueryDto,
   SystemDeptDto,
+  SystemDeptOptionDto,
   SystemDeptQueryDto,
   SystemDeptTreeDto,
   SystemConfigDto,
@@ -368,6 +369,13 @@ export class SystemManagementController {
   @ApiOkResponse({ type: ExportPreviewDto })
   exportDepts(@Query() query: SystemDeptQueryDto): Promise<ExportPreviewDto> {
     return this.depts.createExportPreview(query);
+  }
+
+  @Get('depts/simple-list')
+  @ApiTags('Core Departments')
+  @ApiOkResponse({ type: [SystemDeptOptionDto] })
+  listDeptOptions(): Promise<readonly SystemDeptOptionDto[]> {
+    return this.depts.listDeptOptions();
   }
 
   @Get('depts/:id')

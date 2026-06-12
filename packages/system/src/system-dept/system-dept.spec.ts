@@ -19,6 +19,16 @@ describe('@opencore/system system-dept', () => {
         }),
       ]),
     );
+    await expect(service.listDeptOptions()).resolves.toEqual(
+      expect.arrayContaining([
+        {
+          id: 'dept_engineering',
+          name: 'Engineering',
+          parentId: 'dept_headquarters',
+          order: 20,
+        },
+      ]),
+    );
 
     const dept = await service.createDept({
       code: 'qa',
@@ -39,6 +49,13 @@ describe('@opencore/system system-dept', () => {
       name: 'Quality Platform',
       enabled: false,
     });
+    await expect(service.listDeptOptions()).resolves.not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: dept.id,
+        }),
+      ]),
+    );
     await expect(service.createExportPreview()).resolves.toMatchObject({
       filename: 'opencore-system-depts.csv',
       scope: 'current-page',
@@ -93,6 +110,14 @@ describe('@opencore/system system-dept', () => {
             children: expect.arrayContaining([
               expect.objectContaining({ id: 'dept_engineering' }),
             ]),
+          }),
+        ]),
+      );
+      await expect(service.listDeptOptions()).resolves.toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: 'dept_operations',
+            parentId: 'dept_headquarters',
           }),
         ]),
       );

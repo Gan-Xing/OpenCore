@@ -40,6 +40,20 @@ export class SystemDeptTreeDto extends SystemDeptDto {
   children!: readonly SystemDeptTreeDto[];
 }
 
+export class SystemDeptOptionDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  name!: string;
+
+  @ApiProperty({ required: false })
+  parentId?: string;
+
+  @ApiProperty()
+  order!: number;
+}
+
 export class SystemDeptQueryDto {
   @ApiProperty({ required: false })
   parentId?: string;

@@ -16,6 +16,13 @@ export type SystemDeptTreeRecord = SystemDeptRecord & {
   children: SystemDeptTreeRecord[];
 };
 
+export type SystemDeptOptionRecord = {
+  id: string;
+  name: string;
+  parentId?: string;
+  order: number;
+};
+
 export const seedSystemDepts: readonly SystemDeptRecord[] = [
   {
     id: 'dept_headquarters',

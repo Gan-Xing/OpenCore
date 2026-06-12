@@ -20,6 +20,7 @@ export {
   DictTypeDto,
   DictTypePageDto,
   SystemDeptDto,
+  SystemDeptOptionDto,
   SystemDeptQueryDto,
   SystemDeptTreeDto,
   SystemConfigDto,

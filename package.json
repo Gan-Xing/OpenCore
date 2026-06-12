@@ -43,6 +43,7 @@
     "smoke:core-audit-log": "node tools/scripts/smoke-core-audit-log.mjs",
     "smoke:core-config": "node tools/scripts/smoke-core-config.mjs",
     "smoke:core-dict": "node tools/scripts/smoke-core-dict.mjs",
+    "smoke:core-dept": "node tools/scripts/smoke-core-dept.mjs",
     "smoke:core-file": "node tools/scripts/smoke-core-file.mjs",
     "smoke:core-login-log": "node tools/scripts/smoke-core-login-log.mjs",
     "smoke:core-menu": "node tools/scripts/smoke-core-menu.mjs",

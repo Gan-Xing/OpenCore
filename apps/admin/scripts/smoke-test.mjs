@@ -286,6 +286,7 @@ if (
   !opencorePlatformService.includes('deleteOpenCoreFile') ||
   !opencorePlatformService.includes('listOpenCoreAuditLogs') ||
   !opencorePlatformService.includes('getOpenCoreAuditLog') ||
+  !opencorePlatformService.includes('listOpenCoreSystemDeptOptions') ||
   !opencorePlatformService.includes('listOpenCoreLoginLogs') ||
   !opencorePlatformService.includes('getOpenCoreLoginLog') ||
   !opencorePlatformService.includes('listOpenCoreOnlineUsers') ||
@@ -656,11 +657,13 @@ if (
   !usersPage.includes('deleteOpenCoreUser') ||
   !usersPage.includes('listOpenCoreRoles') ||
   !usersPage.includes('listOpenCoreSystemDepts') ||
+  !usersPage.includes('listOpenCoreSystemDeptOptions') ||
   !usersPage.includes('listOpenCoreSystemPostOptions') ||
   !usersPage.includes('Department scope') ||
   !usersPage.includes('All departments') ||
   !usersPage.includes('selectedDeptId') ||
   !usersPage.includes('deptFilterTreeData') ||
+  !usersPage.includes('deptOptionTreeData') ||
   !usersPage.includes('postCodes') ||
   !usersPage.includes('Select posts') ||
   !usersPage.includes('Reset Password') ||

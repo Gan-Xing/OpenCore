@@ -1854,6 +1854,29 @@
         "tags": ["SystemManagement", "Core Departments"]
       }
     },
+    "/api/core/depts/simple-list": {
+      "get": {
+        "operationId": "SystemManagementController_listDeptOptions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SystemDeptOptionDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Departments"]
+      }
+    },
     "/api/core/depts/{id}": {
       "get": {
         "operationId": "SystemManagementController_getDept",
@@ -5836,6 +5859,16 @@
           "updatedAt",
           "children"
         ]
+      },
+      "SystemDeptOptionDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "parentId": { "type": "string" },
+          "order": { "type": "number" }
+        },
+        "required": ["id", "name", "order"]
       },
       "SystemDeptDto": {
         "type": "object",

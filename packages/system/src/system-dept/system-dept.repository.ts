@@ -4,6 +4,7 @@ import type {
   UpdateSystemDeptDto,
 } from './system-dept.dto';
 import type {
+  SystemDeptOptionRecord,
   SystemDeptRecord,
   SystemDeptTreeRecord,
 } from './system-dept.records';
@@ -53,6 +54,8 @@ export abstract class SystemDeptRepository {
   abstract listDeptTree(
     query?: SystemDeptQuery,
   ): Promise<SystemDeptTreeRecord[]>;
+
+  abstract listDeptOptions(): Promise<SystemDeptOptionRecord[]>;
 
   abstract getDept(id: string): Promise<SystemDeptRecord>;
 
@@ -163,6 +166,17 @@ export function createSystemDeptExportPreview(
     columns: ['code', 'name', 'parentId', 'enabled'],
     rowCount: flattenSystemDeptTree(tree).length,
     generatedAt: new Date().toISOString(),
+  };
+}
+
+export function toSystemDeptOptionRecord(
+  dept: SystemDeptRecord,
+): SystemDeptOptionRecord {
+  return {
+    id: dept.id,
+    name: dept.name,
+    parentId: dept.parentId,
+    order: dept.order,
   };
 }
 
