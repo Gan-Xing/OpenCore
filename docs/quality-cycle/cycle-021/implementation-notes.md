@@ -1117,3 +1117,78 @@ Against public endpoints after deploy:
   `0923009 feat(core-file): add authenticated file content loop / 新增认证文件内容闭环`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 16 Capability
+
+Capability: `core.menu` tree metadata productization.
+
+Goal: close the Round 4 flat-menu gap by making menu management a tree-aware
+route metadata control plane with deployable API/SDK/Admin/smoke coverage.
+
+## Round 16 Implemented
+
+- Extended menu contracts with `parentKey`, `type`, `icon`, `component`,
+  `status`, `cache` and `hidden` metadata.
+- Added registry-derived directory parent nodes and deterministic leaf
+  component/status/cache defaults.
+- Added Prisma migration `20260612191500_menu_tree_metadata`.
+- Updated seed data to write directory parents before leaf menus.
+- Updated `SystemMenuRepository` normalization and Prisma/seed repositories for
+  parent existence checks, self-parent rejection, cycle prevention and delete
+  guards when children exist.
+- Fixed nullable parent semantics: omitted `parentKey` preserves the current
+  parent, `parentKey: null` clears it and string values reparent.
+- Extended API DTOs, OpenAPI and `@opencore/sdk` menu types.
+- Replaced Admin Menus flat table with a tree table, parent `TreeSelect`,
+  add-child action and status/cache/hidden controls.
+- Added `tools/scripts/smoke-core-menu.mjs` and wired it into both
+  `pnpm smoke:api:local` and `pnpm deploy:opencore`.
+
+## Round 16 Verification
+
+- `node --check tools/scripts/smoke-core-menu.mjs` pass.
+- `pnpm prisma:generate` pass.
+- `pnpm prisma:validate` pass.
+- Focused typecheck pass:
+  `NX_DAEMON=false pnpm nx run-many -t typecheck --projects=contracts,module-registry,system,sdk,api,admin`.
+- Focused tests pass:
+  `NX_DAEMON=false pnpm nx run-many -t test --projects=contracts,module-registry,system,sdk,api,admin`.
+- `pnpm openapi:export`, `pnpm sdk:check`, `pnpm openapi:check`,
+  `pnpm openapi:registry-tags:check` and `pnpm registry:admin-routes:check`
+  pass.
+- `pnpm smoke:api:local` pass on fixed port `39173`, including
+  `core.menu.seed-tree-metadata`, `core.menu.create-child`,
+  `core.menu.delete-parent-guard` and `core.menu.update`.
+- Full gates pass: `pnpm format:check`, `pnpm lint`, `pnpm typecheck`,
+  `pnpm test`, `pnpm build` and `pnpm prisma:validate`.
+- `pnpm deploy:opencore` pass, deploying API/Admin on fixed ports
+  `39172`/`39174`; deploy smoke includes `core.menu.*`.
+
+## Round 16 Public Verification
+
+Against public endpoints after deploy:
+
+- `POST http://144.217.243.161:39172/api/auth/login` returned 201.
+- `GET http://144.217.243.161:39172/api/core/menus` returned `system` as a
+  `directory` and `system.menus` with `parentKey=system` plus
+  `component=System/Menus`.
+- `POST http://144.217.243.161:39172/api/core/menus` created a parent menu
+  under `system`.
+- `POST http://144.217.243.161:39172/api/core/menus` created a child menu under
+  the public verification parent.
+- `DELETE http://144.217.243.161:39172/api/core/menus/:parentKey` returned 400
+  while the parent still had a child.
+- `PATCH http://144.217.243.161:39172/api/core/menus/:childKey` with
+  `parentKey: null` cleared the child parent and updated status/cache/hidden.
+- Cleanup deleted the public verification menus.
+- `GET http://144.217.243.161:39174/system/menus/index.html` returned 200.
+- The deployed Admin Menus chunk includes tree UI markers: `Add child`,
+  `Parent`, `Cache`, `Hidden`, `parentKey`, `component`, `status` and
+  `directory`.
+
+## Round 16 Commit Record
+
+- Feature commit:
+  `4b0fa58 feat(core-menu): add tree metadata loop / 新增菜单树元数据闭环`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

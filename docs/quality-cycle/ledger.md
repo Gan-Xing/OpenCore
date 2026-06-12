@@ -58,3 +58,4 @@
 - 2026-06-12 18:11:19 UTC re-audited cycle-021 rounds 1-13 against productization waterline; meets=core.permission,core.audit-log; rework=core.menu,core.file,monitor.online-user
 - 2026-06-12 18:36:43 UTC completed cycle-021 round-014 monitor.online-user revocation productization; featureCommit=688b665; deployed=39172/39174; publicVerified=batch-kick-out,revoked-token-401,admin-online-users
 - 2026-06-12 19:03:14 UTC completed cycle-021 round-015 core.file content loop productization; featureCommit=0923009; deployed=39172/39174; publicVerified=file-upload,file-download-content-match,admin-files
+- 2026-06-12 19:33:28 UTC completed cycle-021 round-016 core.menu tree metadata productization; featureCommit=4b0fa58; deployed=39172/39174; publicVerified=menu-tree,parent-child,delete-guard,admin-menus

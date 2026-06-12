@@ -3,8 +3,8 @@
 Date: 2026-06-12  
 Repository: `Gan-Xing/OpenCore`  
 Default branch: `main`  
-Latest observed feature commit: `0923009 feat(core-file): add authenticated file content loop / 新增认证文件内容闭环`  
-Latest deployed feature commit: `0923009 feat(core-file): add authenticated file content loop / 新增认证文件内容闭环`  
+Latest observed feature commit: `4b0fa58 feat(core-menu): add tree metadata loop / 新增菜单树元数据闭环`  
+Latest deployed feature commit: `4b0fa58 feat(core-menu): add tree metadata loop / 新增菜单树元数据闭环`  
 Latest deployed hardening commit: `f4569a4 fix(api): tolerate duplicated API prefix on login / 兼容登录重复 API 前缀`
 
 ## One-sentence Goal
@@ -56,6 +56,7 @@ productization waterline completion; see
 - Round 13 `monitor.online-user`
 - Round 14 `monitor.online-user` revocation stage 2
 - Round 15 `core.file` content stage 2
+- Round 16 `core.menu` tree metadata stage 2
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -101,23 +102,37 @@ upload/download 内容闭环，上传通过 `FileStorageService` 写真实 bytes
 storageKey 读回对象，Admin 文件中心支持选择文件上传和行级下载。固定 smoke 和公网
 验证都证明上传内容可以原样下载。
 
+Round 16 补齐了 Round 4 被审计为偏薄的菜单控制面问题：`core.menu` 现在持久化
+parent tree、type、icon、component、status、cache、hidden 元数据，Admin Menus
+从平铺表升级为树表和 parent `TreeSelect`，API/seed/repository 会阻止自引用、环
+和删除仍有子节点的父菜单。固定 smoke 和公网验证都证明父子创建、删除保护以及
+`parentKey: null` 清空语义可用。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
 
 - Meets current waterline: Round 6 `core.permission`, Round 12
   `core.audit-log`, Round 13/14 `monitor.online-user`, Round 10/15
-  `core.file`.
+  `core.file`, Round 4/16 `core.menu`.
 - First loop, enhance: Round 1 `core.notice`, Round 2 `core.dept`, Round 3
   `core.post`, Round 5 `core.role`, Round 7 `core.user`, Round 8
   `core.dict`, Round 9 `core.config`, Round 11 `core.login-log`.
-- Thin, rework: Round 4 `core.menu`.
+- Thin, rework: none after Round 16.
 
-The next rounds should prioritize this P0 remediation queue before opening more
-broad surfaces:
+The P0 remediation queue from the post-Round 13 re-audit is now clear. The next
+round should continue with the P1 enhancement queue unless a new waterline audit
+finds another blocker:
 
-1. `core.menu` stage 2: tree menu model and Admin tree operations aligned with
-   route/menu metadata.
+1. `core.role` plus `core.user`: role-user assignment, role menu-tree
+   assignment or equivalent permission bundle UX, status/reset-password flows
+   and token/session refresh semantics after RBAC/user mutation.
+2. `core.dict`: separate dict data workflow or a clearly equivalent item
+   management API, simple-list/cache endpoints and consumer smoke.
+3. `core.config`: get-by-key, cache refresh/invalidation and runtime
+   propagation boundaries.
+4. `core.login-log`: browser/OS parsing, IP/location enrichment where feasible,
+   server-side time filters and cleanup/unlock policy integration.
 
 Commit `f4569a4` also fixed the remaining stale-login failure at API level:
 `@opencore/core` now normalizes duplicate global prefixes before Nest route

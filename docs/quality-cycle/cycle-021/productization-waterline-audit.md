@@ -34,7 +34,7 @@ A capability reaches the current OpenCore productization waterline only when:
 | 1     | `core.notice`         | First loop, enhance     | Management CRUD is live, but read/unread state, notification inbox/header badge and delivery semantics remain below a full notice product.                                                                                  |
 | 2     | `core.dept`           | First loop, enhance     | Tree CRUD and delete guard are live, but user binding, data-scope workflows and ordered tree operations still need follow-up.                                                                                               |
 | 3     | `core.post`           | First loop, enhance     | Post CRUD is live, but user-post binding, simple-list option endpoints and batch operations are still missing from the foundation workflow.                                                                                 |
-| 4     | `core.menu`           | Thin, rework            | Current model is flat `key/title/path/permission/order/hidden`; RuoYi/Yudao-level menu management needs parent tree, menu type, icon/component/status/cache metadata and role menu assignment support.                      |
+| 4/16  | `core.menu`           | Meets current waterline | Round 16 closed the flat-model gap: menus now persist parent tree metadata, type, icon/component/status/cache fields, Admin tree operations, delete guards, nullable parent clearing and smoke coverage.                    |
 | 5     | `core.role`           | First loop, enhance     | Role CRUD, permission-code assignment and data scope are live, but role-user assignment, menu-tree assignment/status flows and token permission refresh semantics remain core RBAC gaps.                                    |
 | 6     | `core.permission`     | Meets current waterline | OpenCore deliberately owns a persisted permission catalog. System/custom separation, registry mutation protection, live Admin CRUD for custom permissions and role option integration are enough for this product boundary. |
 | 7     | `core.user`           | First loop, enhance     | User CRUD with role/dept selection is live, but reset password, status toggle, side-tree filtering, post binding, profile/avatar and token/session refresh semantics remain basic admin expectations.                       |
@@ -55,11 +55,14 @@ Completed P0 remediation:
 2. `core.file` stage 2: authenticated file upload/download loop backed by the
    existing file storage boundary, with smoke proving downloaded content
    matches uploaded content.
+3. `core.menu` stage 2: tree menu model and Admin tree operations aligned with
+   route/menu metadata, including parent/child guards and nullable parent
+   clearing smoke.
 
 Remaining P0 rework before opening more broad product surfaces:
 
-1. `core.menu` stage 2: tree menu model and Admin tree operations aligned with
-   route/menu metadata, without allowing generated routes to bypass registry.
+- None after Round 16. Continue with the P1 enhancement queue unless a new
+  waterline audit identifies another blocker.
 
 P1 enhancement queue:
 

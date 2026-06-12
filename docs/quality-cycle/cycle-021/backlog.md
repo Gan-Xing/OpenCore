@@ -392,6 +392,33 @@ stored object and clean it up through the same authenticated product surface.
       verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 16: core.menu Tree Metadata Productization
+
+Why this slice: the post-Round 13 waterline audit correctly flagged Round 4 as
+thin because it only managed a flat `key/title/path/permission/order/hidden`
+shape. A real backend menu control plane needs tree parentage, menu type,
+route component metadata, icon, status and cache fields, plus Admin operations
+that preserve the route/menu registry boundary.
+
+- [x] Extend the menu contract with `parentKey`, `type`, `icon`, `component`,
+      `status`, `cache` and `hidden` metadata.
+- [x] Add registry-derived directory nodes and deterministic leaf metadata so
+      seed, SDK fallback and Admin all read the same tree shape.
+- [x] Add a Prisma migration for menu parent relations and route metadata.
+- [x] Update seed data to insert parent directory rows before leaf menus.
+- [x] Add repository validation for parent existence, self-parent rejection,
+      cycle prevention and delete guards for menus with children.
+- [x] Preserve proper nullable semantics: omitted `parentKey` means preserve,
+      `parentKey: null` means clear, and string means reparent.
+- [x] Extend API/OpenAPI/SDK DTOs for the tree metadata.
+- [x] Replace the Admin Menus flat table with a tree table, parent
+      `TreeSelect`, add-child action and status/cache/hidden controls.
+- [x] Extend static Admin smoke and fixed-port API smoke to guard the tree
+      workflow.
+- [x] Run focused, full, build, fixed-port smoke, deployment and public URL
+      verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -410,6 +437,8 @@ treat "minimal loop" as "minimal final product".
       separation, registry mutation protection and live role option integration.
 - [x] Round 12 `core.audit-log`: immutable operation audit trail, real write
       smoke, live list/detail/export.
+- [x] Round 4/16 `core.menu`: tree menu metadata, Admin tree operations,
+      parent/child guards, nullable parent clearing and route/component smoke.
 
 ### First Loop, Needs Enhancement
 
@@ -446,12 +475,12 @@ treat "minimal loop" as "minimal final product".
       download/preview/copy-link 的最小闭环；测试要求：smoke 上传、读取 metadata、
       下载或预览并校验内容；完成标准：Round 15 已完成，Admin/API/smoke
       均证明真实文件内容可上传并原样下载。
-- [ ] P0-R16-MENU-TREE-REWORK：问题：Round 4 菜单模型过薄，只有 flat
+- [x] P0-R16-MENU-TREE-REWORK：问题：Round 4 菜单模型过薄，只有 flat
       `key/title/path/permission/order/hidden`；参考来源：RuoYi/Yudao menu
       tree/type/icon/component/status/cache shape；实施要求：tree menu model
       和 Admin tree operations，保持 registry 不被绕过；测试要求：route/menu
-      drift、角色/菜单关联或等价权限 bundle smoke；完成标准：菜单管理能支撑真实
-      后台导航和按钮权限组织。
+      drift、角色/菜单关联或等价权限 bundle smoke；完成标准：Round 16 已完成，
+      菜单管理能支撑真实后台导航元数据和父子组织。
 
 ## Explicitly Out Of Scope
 
@@ -463,9 +492,8 @@ treat "minimal loop" as "minimal final product".
 - Batch department deletion or drag-sort persistence.
 - User-post binding and user profile post selection.
 - Batch post deletion and simple-list option endpoints.
-- Menu parent/type/icon/component/status/cache/router-generation expansion.
-- Role menu tree assignment, menu cache refresh, save-sort and drag-sort
-  persistence.
+- Menu router-generation expansion, role menu tree assignment, menu cache
+  refresh, save-sort and drag-sort persistence.
 - Role-user assignment pages, role simple-list endpoints, batch role deletion,
   standalone data-scope endpoint and role status toggle.
 - Registry definition editing, dynamic permission discovery, menu-tree role

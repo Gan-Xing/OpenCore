@@ -446,3 +446,31 @@ storage boundary:
 OpenCore still does not admit presigned URL flows, public copy links,
 storage-provider configuration UI, batch delete, object browser expansion or
 image/video preview tooling in this round.
+
+## Round 16 Menu Tree Metadata Reference Shape
+
+RuoYi and Yudao both treat menu management as the Admin navigation and
+permission-control plane, not just a flat route list. The reference shape
+includes parent/child tree organization, menu type, icon, route component,
+visibility/status and cache flags. Their broader products also connect menu
+trees to role assignment workflows and route generation boundaries.
+
+OpenCore admits the stage-2 loop that matches its current registry-owned route
+model:
+
+- registry menus now derive deterministic directory parents and leaf route
+  metadata;
+- persisted menus carry `parentKey`, `type`, `icon`, `component`, `status`,
+  `cache` and `hidden` fields;
+- Prisma enforces a parent relation and repository logic rejects self-parent,
+  parent cycles and deletion of menus that still have children;
+- update semantics distinguish omitted `parentKey` from `parentKey: null`, so
+  clients can preserve or clear a parent intentionally;
+- Admin Menus renders a tree table, parent `TreeSelect`, add-child action and
+  status/cache/hidden controls;
+- fixed-port smoke creates parent and child menus, verifies the delete guard,
+  clears a parent with `null` and checks seed route metadata.
+
+OpenCore still does not admit role menu-tree assignment, drag-sort/save-sort,
+menu cache refresh endpoints, runtime router generation or dynamic registry
+editing in this round.
