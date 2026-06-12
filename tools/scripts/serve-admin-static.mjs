@@ -42,10 +42,7 @@ const server = createServer((request, response) => {
 
   response.writeHead(200, {
     'content-type': contentType(filePath),
-    'cache-control':
-      filePath === indexFile
-        ? 'no-cache'
-        : 'public, max-age=31536000, immutable',
+    'cache-control': cacheControl(filePath),
   });
 
   if (!streamBody) {
@@ -225,4 +222,12 @@ function contentType(filePath) {
     default:
       return 'application/octet-stream';
   }
+}
+
+function cacheControl(filePath) {
+  if (extname(filePath) === '.html') {
+    return 'no-cache';
+  }
+
+  return 'public, max-age=31536000, immutable';
 }

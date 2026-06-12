@@ -23,6 +23,10 @@ login and authenticated requests working even if a browser tries the same-origin
 Admin `/api` path, and prevents the static server from returning `405 Method Not
 Allowed` for API POST requests.
 
+All Admin HTML route files are served with `no-cache`, while hashed JavaScript
+and CSS assets remain immutable. This prevents browsers from holding an old
+route HTML file that points at an obsolete frontend bundle after deployment.
+
 ## Commands
 
 ```bash
