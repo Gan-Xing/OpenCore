@@ -41,7 +41,7 @@ A capability reaches the current OpenCore productization waterline only when:
 | 8/21       | `core.dict`           | Meets current waterline | Dict type CRUD plus embedded items is live from Round 8. Round 21 adds item-level management API/SDK/Admin, a public `dict-data/simple-list` consumer endpoint, disabled type/item filtering and smoke coverage for malformed boolean deserialization.                                                                       |
 | 9/24       | `core.config`         | First loop, enhance     | Config CRUD and secret redaction are live. Round 24 adds public value-by-key reading, service value-cache refresh and mutation invalidation. Category/name/remark enrichment, batch/file export depth and broader runtime propagation boundaries remain.                                                                     |
 | 10/15      | `core.file`           | Meets current waterline | Round 15 closed the metadata-only gap: authenticated upload writes real content through `FileStorageService`, download returns stored bytes, Admin can upload/download, and smoke proves content equality.                                                                                                                   |
-| 11         | `core.login-log`      | First loop, enhance     | Immutable list/detail/export and failed-login smoke are live, but device/browser/OS/IP enrichment, date filters, cleanup/unlock policy integration and session actions are still below reference depth.                                                                                                                      |
+| 11/26      | `core.login-log`      | First loop, enhance     | Immutable list/detail/export and failed-login smoke are live. Round 26 adds browser/OS device fields plus server-side IP and time-window filters, but IP location enrichment, cleanup/unlock policy integration and login-type/result expansion remain below reference depth.                                                |
 | 12         | `core.audit-log`      | Meets current waterline | Immutable operation audit list/detail/export is live and smoke proves a real write operation is recorded. Delete/clean remains an intentional audit-retention policy decision, not a current product blocker.                                                                                                                |
 | 13/14      | `monitor.online-user` | Meets current waterline | Round 14 closed the Round 13 thin loop: bearer auth now checks online-session state, batch kick-out revokes real sessions, smoke proves kicked tokens return 401, and browser/OS/IP fields reach SDK/Admin.                                                                                                                  |
 
@@ -74,8 +74,9 @@ P1 enhancement queue:
    refresh/invalidation. Remaining config work is category/name/remark
    enrichment, batch/file export depth and broader runtime propagation
    boundaries.
-3. `core.login-log`: browser/OS parsing, IP/location enrichment where feasible,
-   server-side time filters and cleanup/unlock policy integration.
+3. `core.login-log`: Round 26 completed browser/OS parsing and server-side
+   IP/time filters. Remaining login-log work is IP/location enrichment where
+   feasible, cleanup/unlock policy integration and login-type/result expansion.
 4. `core.dept` and `core.post`: department binding paths, simple-list
    endpoints for departments, post batch operations and ordered tree/list
    operations where useful.
@@ -138,3 +139,9 @@ disabled temporary post, proves `posts/simple-list` filters it out, enables
 the post and proves the lightweight `{ code, name, order }` option shape is
 returned, then verifies export/detail/delete and cleanup through the same
 fixed-port and deploy smoke path.
+
+Round 26 added the login-log device/filter guard: `core.login-log` smoke now
+records a failed Chrome/Windows login, verifies detail/list expose
+`browser`/`os`, proves server-side username/result/IP/time-window filters,
+proves a future time window excludes the row, proves malformed `createdFrom`
+returns 400 and verifies export columns include device fields.

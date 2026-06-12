@@ -1890,3 +1890,81 @@ tools/scripts/smoke-core-post.mjs` passed with
   `27d15cc feat(core-post): add simple-list option loop / 新增岗位选项列表闭环`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 26 Capability
+
+Capability: `core.login-log` device and server-filter productization.
+
+Goal: close the next login-log P1 foundation gap by adding readable
+browser/OS fields and server-side IP/time filtering while preserving the
+immutable audit-log storage model.
+
+## Round 26 Implemented
+
+- Added shared `parseUserAgent()` in `@opencore/common`.
+- Updated `monitor.online-user` to reuse the shared parser.
+- Added computed `browser` and `os` fields to login-log DTOs/records.
+- Added `ip`, `createdFrom` and `createdTo` query filters to login-log
+  list/export contracts.
+- Added invalid date and reversed date-range guards.
+- Implemented seed and Prisma repository filtering for IP and created-time
+  windows.
+- Extended OpenAPI, SDK types/fixtures/path tests and audit repository tests.
+- Updated Admin Login Logs with server-side username/IP/result/time filters and
+  Browser/OS table/detail/export fields.
+- Extended static Admin smoke and `tools/scripts/smoke-core-login-log.mjs` to
+  lock the new device/filter behavior.
+
+## Round 26 Verification
+
+- Focused tests pass:
+  - `NX_DAEMON=false pnpm nx test common --runInBand`
+  - `NX_DAEMON=false pnpm nx test online-user --runInBand`
+  - `NX_DAEMON=false pnpm nx test sdk --runInBand --runTestsByPath packages/sdk/src/system-management-client.spec.ts packages/sdk/src/registry-fixtures.spec.ts`
+  - `NX_DAEMON=false pnpm nx test audit --runInBand --runTestsByPath packages/audit/src/audit-login-log/audit-login-log.spec.ts`
+  - `pnpm test:admin`
+- `pnpm openapi:export`, `pnpm openapi:check`,
+  `pnpm openapi:registry-tags:check` and `pnpm sdk:check` pass.
+- `pnpm typecheck` pass.
+- `pnpm lint` pass; the known Biome warning in
+  `apps/admin/src/pages/shared/CurrentPageExportButton.tsx` remains non-blocking.
+- `pnpm prisma:validate` pass.
+- `pnpm build` pass.
+- `pnpm format:check` pass.
+- `pnpm test` pass for all 19 Nx projects.
+- `pnpm smoke:api:local` pass on fixed port `39173`, including
+  `core.login-log.server-filters`,
+  `core.login-log.invalid-time-range-guard` and
+  `core.login-log.device-fields`.
+- `pnpm deploy:opencore` pass, deploying API/Admin on fixed ports
+  `39172`/`39174`; deploy smoke includes the new login-log device/filter checks
+  and the existing login-prefix/frontend-cache/session-revocation guards.
+
+## Round 26 Public Verification
+
+Against public endpoints after deploy:
+
+- `GET http://144.217.243.161:39172/health/ready` returned 200.
+- `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm
+smoke:core-login-log` passed with `OPENCORE_SMOKE_CHECK_DOCS=false` and the
+  deployed admin password loaded from `.env.opencore.local` without printing
+  secrets.
+- Public login-log smoke verified failed-login recording, server-side
+  username/result/IP/time filters, future-window exclusion, invalid
+  `createdFrom` 400, Chrome/Windows device fields and export device columns.
+- `GET http://144.217.243.161:39174/security/login-logs/` returned 200.
+- The deployed main Admin bundle `umi.688dcb49.js` contains API origin
+  `http://144.217.243.161:39172` and `/core/login-logs`, and does not contain
+  `/api/api/auth/login`.
+- The deployed Login Logs chunk
+  `p__Security__LoginLogs.990c6615.async.js` contains `createdFrom`,
+  `createdTo`, `Browser`, `OS` and `Apply server filters`.
+- Public Admin same-origin proxy login returned 201 for both `/api/auth/login`
+  and the stale-compatible `/api/api/auth/login`.
+
+## Round 26 Commit Record
+
+- Feature commit:
+  `dd720f8 feat(core-login-log): add device filters loop / 新增登录日志设备筛选闭环`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

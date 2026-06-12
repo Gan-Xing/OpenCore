@@ -753,3 +753,34 @@ contract:
 
 OpenCore still does not admit batch post deletion, drag-sort/order persistence
 or broader post assignment batch workflows in this round.
+
+## Round 26 Login Log Device Filter Reference Shape
+
+RuoYi monitor login-info exposes filters for IP address, username, status and
+login-time range, and its table shows login location, browser, OS, message and
+login time. It also offers cleanup and unlock actions that belong to a later
+policy stage.
+
+Yudao system login-log exposes `username`, `userIp`, `status` and `createTime`
+filters. Its Admin list/detail shows `userIp`, raw `userAgent`, result and
+create time.
+
+OpenCore admits the matching stage-2 loop without adding storage columns:
+
+- login-log summaries now derive `browser` and `os` from the recorded
+  `userAgent`;
+- the shared parser lives in `@opencore/common` and is reused by
+  `monitor.online-user`;
+- `GET /api/core/login-logs` and `/export` accept `ip`, `createdFrom` and
+  `createdTo` in addition to username/result;
+- malformed date filters return 400, and reversed ranges are rejected before
+  repository access;
+- Admin Login Logs adds server-side username/IP/result/time controls and shows
+  Browser/OS in table/detail/export;
+- fixed-port, deploy and public smoke prove Chrome/Windows device parsing,
+  server-side IP/time filters, future-window exclusion, invalid-date guard and
+  export device columns.
+
+OpenCore still does not admit login-log cleanup/delete, user unlock,
+lockout-policy tuning, IP geolocation, session termination from login logs or
+login-type/result schema expansion in this round.

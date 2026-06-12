@@ -3,8 +3,8 @@
 Date: 2026-06-12  
 Repository: `Gan-Xing/OpenCore`  
 Default branch: `main`  
-Latest observed feature commit: `27d15cc feat(core-post): add simple-list option loop / 新增岗位选项列表闭环`
-Latest deployed feature commit: `27d15cc feat(core-post): add simple-list option loop / 新增岗位选项列表闭环`
+Latest observed feature commit: `dd720f8 feat(core-login-log): add device filters loop / 新增登录日志设备筛选闭环`
+Latest deployed feature commit: `dd720f8 feat(core-login-log): add device filters loop / 新增登录日志设备筛选闭环`
 Latest deployed hardening commit: `04e446c fix(online-user): stabilize admin session smoke / 稳定在线用户管理员会话冒烟`
 
 ## One-sentence Goal
@@ -66,6 +66,7 @@ productization waterline completion; see
 - Round 23 `core.user` department tree filtering stage 4
 - Round 24 `core.config` value-by-key and cache refresh stage 2
 - Round 25 `core.post` simple-list option stage 2
+- Round 26 `core.login-log` device/time filter stage 2
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -198,6 +199,17 @@ seed/Prisma 仓储、Admin Users 和固定部署脚本均同步该闭环。新�
 已验证包含 `/core/posts/simple-list`、API origin `http://144.217.243.161:39172` 且不包含
 `/api/api/auth/login`；公网 Admin 代理 `/api/auth/login` 与兼容 `/api/api/auth/login` 均返回 201。
 
+Round 26 继续补齐 `core.login-log` 队列：登录日志现在从记录的 user-agent 派生
+`browser` 和 `os`，并支持服务端 `ip`、`createdFrom`、`createdTo` 筛选。UA 解析已沉到
+`@opencore/common`，`monitor.online-user` 复用同一解析器。Admin Login Logs 页面新增
+服务端 username/IP/result/time 筛选工具条，表格、详情和当前页导出展示 Browser/OS。固定
+smoke、部署 smoke 和公网 smoke 均证明 Chrome/Windows 失败登录会被记录、设备字段可见、
+IP/时间窗筛选可用、未来时间窗排除该行、非法 `createdFrom` 返回 400，导出列包含 device 字段。
+公网 Admin 登录日志页返回 200；当前 main bundle 已验证包含 API origin 和 `/core/login-logs`，
+登录日志 chunk 已验证包含 `createdFrom`、`createdTo`、`Browser`、`OS` 与 `Apply server filters`，
+且 main bundle 不包含 `/api/api/auth/login`；公网 Admin 代理 `/api/auth/login` 与兼容
+`/api/api/auth/login` 均返回 201。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -208,7 +220,7 @@ The productization waterline now classifies:
   Round 8/21 `core.dict`.
 - First loop, enhance: Round 1 `core.notice`, Round 2 `core.dept`, Round
   3/22/25 `core.post`, Round 7/19/22/23 `core.user`, Round 9/24
-  `core.config`, Round 11 `core.login-log`.
+  `core.config`, Round 11/26 `core.login-log`.
 - Thin, rework: none after Round 16.
 
 The P0 remediation queue from the post-Round 13 re-audit is now clear. The next
@@ -222,8 +234,9 @@ finds another blocker:
 2. `core.config`: Round 24 closed public get-value-by-key plus cache
    refresh/invalidation. Remaining work is category/name/remark enrichment,
    batch/file export depth and broader runtime propagation boundaries.
-3. `core.login-log`: browser/OS parsing, IP/location enrichment where feasible,
-   server-side time filters and cleanup/unlock policy integration.
+3. `core.login-log`: Round 26 closed browser/OS parsing and server-side IP/time
+   filters. Remaining work is IP/location enrichment where feasible,
+   cleanup/unlock policy integration and login-type/result expansion.
 4. `core.dept` and `core.post`: department binding paths, post batch
    operations and ordered tree/list operations where useful.
 

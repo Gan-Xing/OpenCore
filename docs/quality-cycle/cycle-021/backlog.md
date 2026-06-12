@@ -660,6 +660,32 @@ loaded the management post page as its option source.
       verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 26: core.login-log Device Filter Productization
+
+Why this slice: after post option-source, the next lower-dependency security
+gap was `core.login-log`. RuoYi exposes login IP, location, browser, OS and
+login-time filters; Yudao exposes `userIp`, raw `userAgent` and `createTime`
+filters. OpenCore already had immutable login-log list/detail/export and
+failed-login smoke, but the operator workflow still lacked server-side IP/time
+filtering and readable device fields.
+
+- [x] Move reusable user-agent parsing into `@opencore/common`.
+- [x] Keep `monitor.online-user` on the shared parser instead of a local copy.
+- [x] Add computed `browser` and `os` fields to login-log API records.
+- [x] Add `ip`, `createdFrom` and `createdTo` query filters to login-log
+      list/export contracts, with invalid date and reversed range guards.
+- [x] Implement the filters for both seed and Prisma audit repositories.
+- [x] Extend OpenAPI, SDK types/fixtures/client path tests and audit tests.
+- [x] Update Admin Login Logs with server-side username/IP/result/time filters
+      and browser/OS table/detail/export fields.
+- [x] Extend static Admin smoke for the new server-filter and device markers.
+- [x] Extend fixed-port/deploy/public `core.login-log` smoke to prove device
+      parsing, IP/time filtering, future-window exclusion, invalid date 400 and
+      export device columns.
+- [x] Run focused, full, fixed-port smoke, deployment and public URL
+      verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -703,9 +729,9 @@ treat "minimal loop" as "minimal final product".
 - [ ] Round 9/24 `core.config`: public get-value-by-key, cache refresh and
       mutation invalidation are complete. Category/name/remark enrichment,
       batch/file export depth and broader runtime propagation boundaries remain.
-- [ ] Round 11 `core.login-log`: browser/OS parsing, IP/location enrichment
-      where feasible, server-side time filters and cleanup/unlock policy
-      integration.
+- [ ] Round 11/26 `core.login-log`: browser/OS parsing and IP/time filters are
+      complete. IP/location enrichment where feasible, cleanup/unlock policy
+      integration and logType/result schema expansion remain.
 
 ### Thin, Must Rework Before More Broad Surfaces
 
@@ -755,8 +781,7 @@ treat "minimal loop" as "minimal final product".
   download/preview/copy-link workflows, batch file delete and object browser
   expansion.
 - Login-log deletion/cleanup, user unlock, lockout-policy tuning, session
-  termination, location/device enrichment, server-side date-range filters and
-  logType/result schema expansion.
+  termination, IP location enrichment and logType/result schema expansion.
 - Operation-log deletion/cleanup, batch delete, duration/location/user-agent
   schema expansion, operation type enum expansion, async queue/indexing and
   business-domain audit timeline views.
