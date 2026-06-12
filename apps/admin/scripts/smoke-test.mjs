@@ -5,14 +5,45 @@ const root = process.cwd();
 const packageJson = JSON.parse(
   readFileSync(resolve(root, 'package.json'), 'utf8'),
 );
+const workspaceLockfile = readFileSync(
+  resolve(root, '../../pnpm-lock.yaml'),
+  'utf8',
+);
 const deps = {
   ...(packageJson.devDependencies ?? {}),
   ...(packageJson.dependencies ?? {}),
 };
+const openapiScript = packageJson.scripts?.openapi ?? '';
 const templatePlaceholder = (name) => '${' + name + '}';
 const pathTemplatePlaceholder = templatePlaceholder('path');
 const textTemplatePlaceholder = templatePlaceholder('text');
 const resourceTemplatePlaceholder = templatePlaceholder('resource');
+
+if (deps.mockjs || deps['@umijs/max-plugin-openapi']) {
+  throw new Error(
+    'Admin dependencies must not include mockjs or the Umi OpenAPI plugin.',
+  );
+}
+
+if (
+  /\bmockjs@/.test(workspaceLockfile) ||
+  workspaceLockfile.includes('@umijs/openapi@') ||
+  workspaceLockfile.includes('@umijs/max-plugin-openapi@')
+) {
+  throw new Error(
+    'Workspace lockfile must not include the vulnerable mockjs OpenAPI generation chain.',
+  );
+}
+
+if (
+  openapiScript.includes('max openapi') ||
+  !openapiScript.includes('openapi:export') ||
+  !openapiScript.includes('sdk:check')
+) {
+  throw new Error(
+    'Admin openapi script must use the root OpenCore OpenAPI export and SDK check.',
+  );
+}
 
 const requiredVersions = {
   '@umijs/max': /^(\^)?4\./,
@@ -138,10 +169,13 @@ if (
   proConfig.includes('oneapi.json') ||
   proConfig.includes('pro-api.ant-design-demo') ||
   proConfig.includes('preview.pro.ant.design') ||
-  !proConfig.includes('packages/contracts/openapi/opencore-api.json')
+  proConfig.includes('@umijs/max-plugin-openapi') ||
+  proConfig.includes('openAPI:') ||
+  proConfig.includes('schemaPath') ||
+  proConfig.includes('mockjs')
 ) {
   throw new Error(
-    'Admin config must use the OpenCore OpenAPI snapshot and no demo API schema.',
+    'Admin config must avoid demo API schema and the vulnerable Umi OpenAPI/mock pipeline.',
   );
 }
 
