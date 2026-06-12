@@ -47,3 +47,24 @@ fan-out.
   `registry:admin-routes:check` can prevent future drift.
 - Use `@opencore/sdk` as the Admin data boundary; no generated Umi OpenAPI chain
   and no vulnerable `mockjs` / `@umijs/openapi` dependency chain.
+
+## Round 2 Department Reference Shape
+
+RuoYi keeps department management under System as a tree table with list,
+detail, create, update, delete, exclude-child parent selection and sort-saving
+support. The permission shape is query/add/edit/remove and the form includes
+parent, name, order, leader, phone, email and status.
+
+Yudao keeps department management under System with simple-list, list/detail,
+create, update, delete and batch delete APIs. The Admin form provides parent
+selection and the standard department metadata fields.
+
+OpenCore admits the core management loop only:
+
+- tree list, detail, current-page export, create, update and delete;
+- parent selection that excludes the edited department and its descendants;
+- delete protection for departments that still have children.
+
+OpenCore does not admit batch delete, drag-sort persistence, user binding,
+data-scope configuration, tenant hierarchy or workflow/business integration in
+this round.

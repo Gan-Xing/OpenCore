@@ -54,6 +54,8 @@ export abstract class SystemDeptRepository {
     query?: SystemDeptQuery,
   ): Promise<SystemDeptTreeRecord[]>;
 
+  abstract getDept(id: string): Promise<SystemDeptRecord>;
+
   abstract createDept(body: CreateSystemDeptDto): Promise<SystemDeptRecord>;
 
   abstract updateDept(

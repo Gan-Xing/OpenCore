@@ -29,6 +29,10 @@ describe('@opencore/system system-dept', () => {
     });
 
     expect(dept.parentId).toBe('dept_engineering');
+    await expect(service.getDept(dept.id)).resolves.toMatchObject({
+      id: dept.id,
+      name: 'Quality Assurance',
+    });
     await expect(
       service.updateDept(dept.id, { name: 'Quality Platform', enabled: false }),
     ).resolves.toMatchObject({
@@ -109,6 +113,10 @@ describe('@opencore/system system-dept', () => {
       });
       childId = child.id;
 
+      await expect(service.getDept(parentId)).resolves.toMatchObject({
+        id: parentId,
+        code: parentCode,
+      });
       await expect(service.deleteDept(parentId)).rejects.toThrow(
         BadRequestException,
       );

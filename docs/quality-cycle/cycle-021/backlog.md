@@ -30,10 +30,33 @@ the lowest-dependency product gap before department/post hardening.
 - [x] Run focused and full gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 2: core.dept Productization
+
+Why this slice: RuoYi and Yudao both treat department management as a
+foundation System capability for user organization and data-scope policy.
+OpenCore already has package-owned department runtime and API routes, but the
+login-protected Admin loop was missing SDK/Admin route/access/menu/smoke
+coverage and a detail read contract.
+
+- [x] Add missing detail API contract for system departments.
+- [x] Extend `@opencore/sdk` with typed department tree/detail/export/create/
+      update/delete methods and fixtures.
+- [x] Promote `core.dept` to an Admin route/access/menu-checked module.
+- [x] Add a live Admin Departments page with tree list/detail/current-page
+      export plus create/update/delete actions.
+- [x] Extend Admin smoke checks to lock department route, access binding, shell
+      registry, SDK lifecycle usage and tree page behavior.
+- [x] Refresh OpenAPI snapshot and registry route/tag checks.
+- [x] Run focused and live HTTP smoke gates.
+- [ ] Run full gates, commit and push this independently accepted product
+      slice.
+
 ## Explicitly Out Of Scope
 
 - Notice read/unread inbox, header badge and per-user read tracking.
 - Message bus push, WebSocket delivery or mail/SMS fan-out.
 - BPMN/workflow approval around announcements.
 - Tenant-scoped notices.
+- Department user binding and data-scope assignment UI.
+- Batch department deletion or drag-sort persistence.
 - CRM/ERP/MES/WMS/mall/member/pay/AI modules.

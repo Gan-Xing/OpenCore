@@ -2,10 +2,15 @@ import {
   createMonitoringClient,
   createRbacClient,
   createSystemManagementClient,
+  type CreateSystemDeptRequest,
   type CreateSystemNoticeRequest,
   type SystemStatusSummary,
+  type SystemDeptQueryRequest,
+  type SystemDeptSummary,
+  type SystemDeptTreeSummary,
   type SystemNoticeQueryRequest,
   type SystemNoticeSummary,
+  type UpdateSystemDeptRequest,
   type UpdateSystemNoticeRequest,
   type UserSummary,
 } from '@opencore/sdk';
@@ -21,6 +26,35 @@ export function listOpenCoreUsers(): Promise<UserSummary[]> {
 
 export function getOpenCoreSystemStatus(): Promise<SystemStatusSummary> {
   return monitoringClient.getStatus(getRequiredAdminToken());
+}
+
+export function listOpenCoreSystemDepts(
+  query?: SystemDeptQueryRequest,
+): Promise<readonly SystemDeptTreeSummary[]> {
+  return systemManagementClient.listDepts(getRequiredAdminToken(), query);
+}
+
+export function getOpenCoreSystemDept(id: string): Promise<SystemDeptSummary> {
+  return systemManagementClient.getDept(getRequiredAdminToken(), id);
+}
+
+export function createOpenCoreSystemDept(
+  body: CreateSystemDeptRequest,
+): Promise<SystemDeptSummary> {
+  return systemManagementClient.createDept(getRequiredAdminToken(), body);
+}
+
+export function updateOpenCoreSystemDept(
+  id: string,
+  body: UpdateSystemDeptRequest,
+): Promise<SystemDeptSummary> {
+  return systemManagementClient.updateDept(getRequiredAdminToken(), id, body);
+}
+
+export function deleteOpenCoreSystemDept(
+  id: string,
+): Promise<{ deleted: true }> {
+  return systemManagementClient.deleteDept(getRequiredAdminToken(), id);
 }
 
 export async function listOpenCoreSystemNotices(

@@ -248,6 +248,14 @@ export class SystemManagementController {
     return this.depts.createExportPreview(query);
   }
 
+  @Get('depts/:id')
+  @ApiTags('Core Departments')
+  @RequirePermission('core:dept:read')
+  @ApiOkResponse({ type: SystemDeptDto })
+  getDept(@Param('id') id: string): Promise<SystemDeptDto> {
+    return this.depts.getDept(id);
+  }
+
   @Post('depts')
   @ApiTags('Core Departments')
   @RequirePermission('core:dept:create')

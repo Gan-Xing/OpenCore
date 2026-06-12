@@ -96,6 +96,49 @@ export type UpdateFileAssetRequest = Partial<
   >
 >;
 
+export type SystemDeptSummary = {
+  id: string;
+  code: string;
+  name: string;
+  parentId?: string;
+  order: number;
+  leader?: string;
+  phone?: string;
+  email?: string;
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type SystemDeptTreeSummary = SystemDeptSummary & {
+  children: readonly SystemDeptTreeSummary[];
+};
+
+export type SystemDeptQueryRequest = {
+  enabled?: boolean;
+  parentId?: string;
+};
+
+export type CreateSystemDeptRequest = {
+  code: string;
+  name: string;
+  parentId?: string;
+  order?: number;
+  leader?: string;
+  phone?: string;
+  email?: string;
+  enabled?: boolean;
+};
+
+export type UpdateSystemDeptRequest = Partial<
+  Pick<
+    SystemDeptSummary,
+    'email' | 'enabled' | 'leader' | 'name' | 'order' | 'phone'
+  >
+> & {
+  parentId?: string | null;
+};
+
 export type SystemNoticeStatus = 'archived' | 'draft' | 'published';
 
 export type SystemNoticeType = 'announcement' | 'maintenance' | 'security';

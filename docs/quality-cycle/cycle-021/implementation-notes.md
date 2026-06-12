@@ -96,3 +96,64 @@ pre-existing 3000 process was left running.
 - Feature commit:
   `8885103 feat(core-notice): productize system notice management / 产品化系统公告管理闭环`.
 - Push: `origin/main` updated from `16a2858` to `8885103`.
+
+## Round 2 Capability
+
+Capability: `core.dept` productization.
+
+Goal: turn the package-owned department backend into a real login-protected
+Admin tree operation loop with SDK/OpenAPI/Admin/permission/menu and smoke
+coverage.
+
+## Round 2 Implemented
+
+- Added `GET /api/core/depts/:id`, guarded by `core:dept:read`, and refreshed
+  the OpenAPI snapshot.
+- Extended `@opencore/system` department repository/service contracts with
+  `getDept` for seed and Prisma implementations.
+- Extended `@opencore/sdk` with department tree/detail/export/create/update/
+  delete methods, typed query/body contracts and registry fixtures.
+- Added `core.dept` Admin metadata in module-registry and wired Admin route,
+  access and shell registry for `/system/depts`.
+- Added a live Departments Admin page using `@opencore/sdk` and platform
+  service methods for tree list/detail/current-page export plus create/update/
+  delete actions.
+- Extended Admin smoke checks to lock the route, access binding, shell registry
+  entry, SDK lifecycle methods and page-level tree integration.
+
+## Round 2 Verification So Far
+
+- `NX_DAEMON=false pnpm nx run-many -t typecheck --projects=system,sdk,module-registry,api,admin`
+  pass.
+- `NX_DAEMON=false pnpm nx run-many -t test --projects=system,sdk,module-registry,api`
+  pass.
+- `pnpm test:admin` pass.
+- `pnpm openapi:export` pass.
+- `pnpm openapi:registry-tags:check` pass.
+- `pnpm openapi:check` pass.
+- `pnpm registry:admin-routes:check` pass.
+- `pnpm sdk:check` pass.
+
+## Round 2 Live Smoke
+
+Against `http://127.0.0.1:3010/api` with the local seeded admin:
+
+- `POST /api/auth/login` returned 201.
+- `GET /api/core/depts` returned 200.
+- `GET /api/core/depts/dept_engineering` returned 200.
+- `POST /api/core/depts` created a parent department with 201.
+- `POST /api/core/depts` created a child department with 201.
+- `GET /api/core/depts/:id` returned 200 for the child.
+- `PATCH /api/core/depts/:id` returned 200 and updated `enabled=false`.
+- `DELETE /api/core/depts/:parentId` returned 400 while the child existed.
+- `DELETE /api/core/depts/:childId` returned 200 with `deleted=true`.
+- `DELETE /api/core/depts/:parentId` returned 200 with `deleted=true`.
+- Final list returned 200.
+
+The temporary 3010 API process was stopped after smoke verification; the
+pre-existing 3000 process was left running.
+
+## Round 2 Commit Record
+
+- Feature commit: pending.
+- Push: pending.

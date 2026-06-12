@@ -44,6 +44,10 @@ export class SeedSystemDeptRepository extends SystemDeptRepository {
     return buildSystemDeptTree(rows);
   }
 
+  async getDept(id: string): Promise<SystemDeptRecord> {
+    return { ...this.findDept(id) };
+  }
+
   async createDept(body: CreateSystemDeptDto): Promise<SystemDeptRecord> {
     const input = normalizeCreateSystemDeptInput(body);
 

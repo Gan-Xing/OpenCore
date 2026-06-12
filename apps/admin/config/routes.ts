@@ -75,6 +75,12 @@ export default [
         access: 'canReadSystemNotices',
       },
       {
+        name: 'Departments',
+        path: '/system/depts',
+        component: './System/Departments',
+        access: 'canReadDepartments',
+      },
+      {
         name: 'File Center',
         path: '/system/files',
         component: './System/Files',

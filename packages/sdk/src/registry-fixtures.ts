@@ -15,6 +15,7 @@ import type {
   LoginLogSummary,
   PageResponse,
   SystemConfigSummary,
+  SystemDeptTreeSummary,
   SystemNoticeSummary,
 } from './system-management-types';
 import type {
@@ -116,6 +117,47 @@ export function createFileAssetFixtures(): PageResponse<FileAssetSummary> {
       createdAt: '2026-06-10T00:00:00.000Z',
     },
   ]);
+}
+
+export function createSystemDeptFixtures(): readonly SystemDeptTreeSummary[] {
+  return [
+    {
+      id: 'dept_headquarters',
+      code: 'hq',
+      name: 'Headquarters',
+      order: 10,
+      leader: 'OpenCore Admin',
+      enabled: true,
+      createdAt: '2026-06-10T00:00:00.000Z',
+      updatedAt: '2026-06-10T00:00:00.000Z',
+      children: [
+        {
+          id: 'dept_engineering',
+          code: 'engineering',
+          name: 'Engineering',
+          parentId: 'dept_headquarters',
+          order: 20,
+          leader: 'Platform Lead',
+          enabled: true,
+          createdAt: '2026-06-10T00:05:00.000Z',
+          updatedAt: '2026-06-10T00:05:00.000Z',
+          children: [],
+        },
+        {
+          id: 'dept_operations',
+          code: 'operations',
+          name: 'Operations',
+          parentId: 'dept_headquarters',
+          order: 30,
+          leader: 'Operations Lead',
+          enabled: true,
+          createdAt: '2026-06-10T00:10:00.000Z',
+          updatedAt: '2026-06-10T00:10:00.000Z',
+          children: [],
+        },
+      ],
+    },
+  ];
 }
 
 export function createSystemNoticeFixtures(): PageResponse<SystemNoticeSummary> {

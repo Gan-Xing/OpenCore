@@ -82,6 +82,13 @@ describe('@opencore/module-registry', () => {
         basePath: '/system/notices',
       },
     });
+
+    expect(findModuleByCode('core.dept')).toMatchObject({
+      code: 'core.dept',
+      admin: {
+        basePath: '/system/depts',
+      },
+    });
   });
 
   it('registers OpenForge as the S9 read-only planning tool', () => {

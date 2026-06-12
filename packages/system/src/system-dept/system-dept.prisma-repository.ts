@@ -59,6 +59,10 @@ export class PrismaSystemDeptRepository extends SystemDeptRepository {
     return buildSystemDeptTree(rows.map(toSystemDeptRecord));
   }
 
+  async getDept(id: string): Promise<SystemDeptRecord> {
+    return toSystemDeptRecord(await this.findDeptById(id));
+  }
+
   async createDept(body: CreateSystemDeptDto): Promise<SystemDeptRecord> {
     const input = normalizeCreateSystemDeptInput(body);
 

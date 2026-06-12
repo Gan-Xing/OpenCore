@@ -22,6 +22,10 @@ export class SystemDeptService {
     return this.repository.listDeptTree(query);
   }
 
+  getDept(id: string): Promise<SystemDeptRecord> {
+    return this.repository.getDept(id);
+  }
+
   createDept(body: CreateSystemDeptDto): Promise<SystemDeptRecord> {
     return this.repository.createDept(body);
   }

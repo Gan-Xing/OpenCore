@@ -2434,3 +2434,44 @@ runtime config 与 OpenAPI export/check。
 - Feature commit:
   `8885103 feat(core-notice): productize system notice management / 产品化系统公告管理闭环`.
 - Push: `origin/main` updated from `16a2858` to `8885103`.
+
+## 2026-06-12 Cycle-021 Round 2: core.dept Productization
+
+### Capability Status
+
+- Round 2 选择 `core.dept`：后端 runtime/API 已存在，但缺少 detail API、
+  SDK、Admin route/access/menu、live Admin 页面和 smoke/e2e 闭环。
+- 这是用户组织、角色数据权限和后续 user hardening 的前置能力。
+
+### Completed
+
+- 新增 `GET /api/core/depts/:id`，并通过 `core:dept:read` 保护。
+- `@opencore/system` seed/Prisma repository 和 service 均支持 `getDept`。
+- `@opencore/sdk` 已提供 department typed client：tree list/detail/export/
+  create/update/delete。
+- `packages/module-registry` 已为 `core.dept` 增加 Admin route metadata，
+  `/system/depts` 纳入 `registry:admin-routes:check`。
+- Admin 已新增 `/system/depts` live 页面，使用 SDK-backed platform service
+  完成树表、详情、当前页导出、创建、更新和删除。
+- Admin smoke 已锁定 route/access/shell registry/SDK lifecycle/tree page
+  integration。
+- OpenAPI snapshot 已刷新。
+
+### Verification So Far
+
+- Focused typecheck pass：
+  `NX_DAEMON=false pnpm nx run-many -t typecheck --projects=system,sdk,module-registry,api,admin`。
+- Focused tests pass：
+  `NX_DAEMON=false pnpm nx run-many -t test --projects=system,sdk,module-registry,api`。
+- `pnpm test:admin` pass。
+- `pnpm openapi:export`、`pnpm openapi:registry-tags:check`、
+  `pnpm openapi:check`、`pnpm registry:admin-routes:check`、`pnpm sdk:check`
+  pass。
+- Live smoke against `http://127.0.0.1:3010/api` pass：login、dept list、
+  seeded detail、create parent、create child、child detail、update child、
+  reject parent delete、delete child、delete parent、final list 全链路通过。
+
+### Commit Record
+
+- Feature commit: pending.
+- Push: pending.

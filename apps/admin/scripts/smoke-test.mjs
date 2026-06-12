@@ -91,6 +91,7 @@ for (const requiredRoute of [
   "path: '/system/dicts'",
   "path: '/system/config'",
   "path: '/system/notices'",
+  "path: '/system/depts'",
   "path: '/system/files'",
   "path: '/security/login-logs'",
   "path: '/security/operation-logs'",
@@ -225,6 +226,10 @@ if (
   !opencorePlatformService.includes('createSystemManagementClient') ||
   !opencorePlatformService.includes('listOpenCoreUsers') ||
   !opencorePlatformService.includes('getOpenCoreSystemStatus') ||
+  !opencorePlatformService.includes('listOpenCoreSystemDepts') ||
+  !opencorePlatformService.includes('createOpenCoreSystemDept') ||
+  !opencorePlatformService.includes('updateOpenCoreSystemDept') ||
+  !opencorePlatformService.includes('deleteOpenCoreSystemDept') ||
   !opencorePlatformService.includes('listOpenCoreSystemNotices') ||
   !opencorePlatformService.includes('publishOpenCoreSystemNotice') ||
   !opencorePlatformService.includes('archiveOpenCoreSystemNotice')
@@ -267,6 +272,7 @@ if (
   !accessRuntime.includes('core:dict:read') ||
   !accessRuntime.includes('core:config:read') ||
   !accessRuntime.includes('core:notice:read') ||
+  !accessRuntime.includes('core:dept:read') ||
   !accessRuntime.includes('core:file:read') ||
   !accessRuntime.includes('core:audit-log:read') ||
   !accessRuntime.includes('core:login-log:read') ||
@@ -312,6 +318,7 @@ if (
   !shellRegistry.includes('core.dict') ||
   !shellRegistry.includes('core.config') ||
   !shellRegistry.includes('core.notice') ||
+  !shellRegistry.includes('core.dept') ||
   !shellRegistry.includes('core.file') ||
   !shellRegistry.includes('core.audit-log') ||
   !shellRegistry.includes('core.login-log') ||
@@ -386,6 +393,10 @@ const configPage = readFileSync(
 );
 const systemNoticesPage = readFileSync(
   resolve(root, 'src/pages/System/Notices.tsx'),
+  'utf8',
+);
+const departmentsPage = readFileSync(
+  resolve(root, 'src/pages/System/Departments.tsx'),
   'utf8',
 );
 const filesPage = readFileSync(
@@ -495,6 +506,7 @@ if (
   !dictsPage.includes('@opencore/sdk') ||
   !configPage.includes('@opencore/sdk') ||
   !systemNoticesPage.includes('@opencore/sdk') ||
+  !departmentsPage.includes('@opencore/sdk') ||
   !filesPage.includes('@opencore/sdk') ||
   !auditLogsPage.includes('@opencore/sdk') ||
   !loginLogsPage.includes('@opencore/sdk') ||
@@ -524,6 +536,25 @@ if (
 ) {
   throw new Error(
     'Admin platform, collaboration, operations, and integration pages must consume SDK types or fixtures.',
+  );
+}
+
+if (
+  !departmentsPage.includes('listOpenCoreSystemDepts') ||
+  !departmentsPage.includes('getOpenCoreSystemDept') ||
+  !departmentsPage.includes('createOpenCoreSystemDept') ||
+  !departmentsPage.includes('updateOpenCoreSystemDept') ||
+  !departmentsPage.includes('deleteOpenCoreSystemDept') ||
+  !departmentsPage.includes('flattenDeptTree') ||
+  !departmentsPage.includes('buildDeptTree') ||
+  !departmentsPage.includes('TreeSelect') ||
+  !departmentsPage.includes('useCurrentPageFilters') ||
+  !departmentsPage.includes('CurrentPageExportButton') ||
+  !departmentsPage.includes('dataSource={filteredTreeRows}') ||
+  !departmentsPage.includes('rows={filteredRows}')
+) {
+  throw new Error(
+    'Departments page must use live SDK tree CRUD with bounded filtering and current-page export.',
   );
 }
 

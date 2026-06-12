@@ -35,3 +35,25 @@ complete, while `.opencore/quality-cycle/state.json` still reported
 `completedCycles=19` and `activeCycle=20`. This round aligns state to
 `completedCycles=20`, `activeCycle=21` and `maxCycles=21`, treating cycle-020
 as documented complete and cycle-021 as the active productization recursion.
+
+## Round 2 Audit: core.dept
+
+After Round 1, the next lowest dependency productization gap is `core.dept`:
+
+- `@opencore/system` already owns `system-dept` DTOs, seed records, repository
+  contract, seed repository, Prisma repository, service, module, tree builder,
+  cycle guards and export preview helper.
+- `apps/api/src/modules/core/system-management/system-management.controller.ts`
+  exposes `/api/core/depts` list/export/create/update/delete, but lacked
+  `GET /api/core/depts/:id`.
+- `packages/module-registry` declares `core.dept` permissions and
+  `system.depts` menu, but did not provide Admin route metadata.
+- `@opencore/sdk` did not expose typed department tree/client methods.
+- `apps/admin/config/routes.ts`, `apps/admin/src/access.ts` and
+  `apps/admin/src/core/shellRegistry.ts` did not include `/system/depts`.
+- No Admin page or smoke check proved a logged-in operator could manage the
+  package-owned department tree.
+
+This remains inside S7 System scope and does not introduce user binding,
+data-scope assignment, multi-tenant hierarchy, batch delete or drag-sort
+persistence.

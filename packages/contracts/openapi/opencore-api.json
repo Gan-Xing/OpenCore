@@ -1241,6 +1241,29 @@
       }
     },
     "/api/core/depts/{id}": {
+      "get": {
+        "operationId": "SystemManagementController_getDept",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SystemDeptDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Departments"]
+      },
       "patch": {
         "operationId": "SystemManagementController_updateDept",
         "parameters": [
@@ -4740,20 +4763,6 @@
           "children"
         ]
       },
-      "CreateSystemDeptDto": {
-        "type": "object",
-        "properties": {
-          "code": { "type": "string", "example": "engineering" },
-          "name": { "type": "string", "example": "Engineering" },
-          "parentId": { "type": "string" },
-          "order": { "type": "number", "default": 0 },
-          "leader": { "type": "string" },
-          "phone": { "type": "string" },
-          "email": { "type": "string" },
-          "enabled": { "type": "boolean", "default": true }
-        },
-        "required": ["code", "name"]
-      },
       "SystemDeptDto": {
         "type": "object",
         "properties": {
@@ -4778,6 +4787,20 @@
           "createdAt",
           "updatedAt"
         ]
+      },
+      "CreateSystemDeptDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string", "example": "engineering" },
+          "name": { "type": "string", "example": "Engineering" },
+          "parentId": { "type": "string" },
+          "order": { "type": "number", "default": 0 },
+          "leader": { "type": "string" },
+          "phone": { "type": "string" },
+          "email": { "type": "string" },
+          "enabled": { "type": "boolean", "default": true }
+        },
+        "required": ["code", "name"]
       },
       "UpdateSystemDeptDto": {
         "type": "object",

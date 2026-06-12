@@ -382,6 +382,16 @@ export const moduleRegistry = [
         'S7',
       ),
     ],
+    admin: {
+      basePath: '/system/depts',
+      routes: [
+        {
+          path: '/system/depts',
+          title: 'Departments',
+          permissionCode: 'core:dept:read',
+        },
+      ],
+    },
   },
   {
     code: 'core.post',

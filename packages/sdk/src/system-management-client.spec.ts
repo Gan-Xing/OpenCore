@@ -25,6 +25,15 @@ describe('createSystemManagementClient', () => {
     await client.updateFileAsset('token', 'file_1', {
       checksum: 'sha256:updated',
     });
+    await client.listDepts('token', { enabled: true });
+    await client.getDept('token', 'dept_engineering');
+    await client.createDept('token', {
+      code: 'qa',
+      name: 'Quality Assurance',
+      parentId: 'dept_engineering',
+    });
+    await client.updateDept('token', 'dept_qa', { name: 'Quality Platform' });
+    await client.deleteDept('token', 'dept_qa');
     await client.listNotices('token', {
       page: 1,
       pageSize: 10,
@@ -61,6 +70,29 @@ describe('createSystemManagementClient', () => {
       {
         path: '/core/files/file_1',
         method: 'PATCH',
+        token: 'token',
+      },
+      {
+        path: '/core/depts?enabled=true',
+        token: 'token',
+      },
+      {
+        path: '/core/depts/dept_engineering',
+        token: 'token',
+      },
+      {
+        path: '/core/depts',
+        method: 'POST',
+        token: 'token',
+      },
+      {
+        path: '/core/depts/dept_qa',
+        method: 'PATCH',
+        token: 'token',
+      },
+      {
+        path: '/core/depts/dept_qa',
+        method: 'DELETE',
         token: 'token',
       },
       {

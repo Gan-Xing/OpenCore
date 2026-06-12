@@ -3,6 +3,7 @@ import type {
   AuditLogSummary,
   CreateDictTypeRequest,
   CreateFileAssetRequest,
+  CreateSystemDeptRequest,
   CreateSystemNoticeRequest,
   CreateSystemConfigRequest,
   DeleteResult,
@@ -13,10 +14,14 @@ import type {
   PageRequest,
   PageResponse,
   SystemConfigSummary,
+  SystemDeptQueryRequest,
+  SystemDeptSummary,
+  SystemDeptTreeSummary,
   SystemNoticeQueryRequest,
   SystemNoticeSummary,
   UpdateDictTypeRequest,
   UpdateFileAssetRequest,
+  UpdateSystemDeptRequest,
   UpdateSystemNoticeRequest,
   UpdateSystemConfigRequest,
 } from './system-management-types';
@@ -69,6 +74,25 @@ export type SystemManagementClient = {
     body: UpdateFileAssetRequest,
   ) => Promise<FileAssetSummary>;
   deleteFile: (token: Token, id: string) => Promise<DeleteResult>;
+  listDepts: (
+    token: Token,
+    query?: SystemDeptQueryRequest,
+  ) => Promise<readonly SystemDeptTreeSummary[]>;
+  getDept: (token: Token, id: string) => Promise<SystemDeptSummary>;
+  exportDepts: (
+    token: Token,
+    query?: SystemDeptQueryRequest,
+  ) => Promise<ExportPreview>;
+  createDept: (
+    token: Token,
+    body: CreateSystemDeptRequest,
+  ) => Promise<SystemDeptSummary>;
+  updateDept: (
+    token: Token,
+    id: string,
+    body: UpdateSystemDeptRequest,
+  ) => Promise<SystemDeptSummary>;
+  deleteDept: (token: Token, id: string) => Promise<DeleteResult>;
   listNotices: (
     token: Token,
     query?: SystemNoticeQueryRequest,
@@ -187,6 +211,38 @@ export function createSystemManagementClient(
       }),
     deleteFile: (token, id) =>
       request<DeleteResult>(`/core/files/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        token,
+      }),
+    listDepts: (token, query) =>
+      request<readonly SystemDeptTreeSummary[]>(
+        withQuery('/core/depts', query),
+        {
+          token,
+        },
+      ),
+    getDept: (token, id) =>
+      request<SystemDeptSummary>(`/core/depts/${encodeURIComponent(id)}`, {
+        token,
+      }),
+    exportDepts: (token, query) =>
+      request<ExportPreview>(withQuery('/core/depts/export', query), {
+        token,
+      }),
+    createDept: (token, body) =>
+      request<SystemDeptSummary>('/core/depts', {
+        method: 'POST',
+        body,
+        token,
+      }),
+    updateDept: (token, id, body) =>
+      request<SystemDeptSummary>(`/core/depts/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        body,
+        token,
+      }),
+    deleteDept: (token, id) =>
+      request<DeleteResult>(`/core/depts/${encodeURIComponent(id)}`, {
         method: 'DELETE',
         token,
       }),
