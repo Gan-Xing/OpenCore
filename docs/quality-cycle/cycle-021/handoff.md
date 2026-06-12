@@ -3,8 +3,8 @@
 Date: 2026-06-12  
 Repository: `Gan-Xing/OpenCore`  
 Default branch: `main`  
-Latest observed feature commit: `fda33c4 feat(core-user): add department tree filter loop / 新增用户部门树过滤闭环`
-Latest deployed feature commit: `fda33c4 feat(core-user): add department tree filter loop / 新增用户部门树过滤闭环`
+Latest observed feature commit: `79c4e93 feat(core-config): add value cache refresh loop / 新增配置值读取与缓存刷新闭环`
+Latest deployed feature commit: `79c4e93 feat(core-config): add value cache refresh loop / 新增配置值读取与缓存刷新闭环`
 Latest deployed hardening commit: `04e446c fix(online-user): stabilize admin session smoke / 稳定在线用户管理员会话冒烟`
 
 ## One-sentence Goal
@@ -64,6 +64,7 @@ productization waterline completion; see
 - Round 21 `core.dict` item-data simple-list stage 2
 - Round 22 `core.user` post binding stage 3
 - Round 23 `core.user` department tree filtering stage 4
+- Round 24 `core.config` value-by-key and cache refresh stage 2
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -177,6 +178,15 @@ Department scope 树和 All departments 入口，树数据来自 live `core.dept
 smoke 和公网 smoke 均证明未知部门 404、直接部门过滤、父部门子树过滤和无关部门排除可用；公网
 Admin Users chunk 已验证包含 `Department scope`、`All departments` 和 `deptId` 标记。
 
+Round 24 继续补齐 `core.config` 队列：系统配置现在新增运行时消费面和缓存控制面。`GET
+/api/core/config/get-value-by-key?key=...` 只返回 `visibility=public` 的配置值，private/secret
+配置不会泄露；`POST /api/core/config/refresh-cache` 按 `core:config:update` 保护并重建
+service 内 public value cache。create/update/delete 会失效对应 key 的缓存。Admin Config 页面新增
+`Refresh cache` 工具栏动作和 public 行级 `Read public value by key` 操作。固定 smoke、部署
+smoke 和公网 smoke 均证明 value-by-key、更新后缓存失效、refresh-cache 和 secret value 403
+阻断可用；公网 Admin Config chunk 已验证包含 `Refresh cache` 和 `Read public value by key`，
+当前 main bundle 已验证包含 `get-value-by-key` 和 `refresh-cache`。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -186,8 +196,8 @@ The productization waterline now classifies:
   `core.file`, Round 4/16 `core.menu`, Round 5/17/18/20 `core.role`,
   Round 8/21 `core.dict`.
 - First loop, enhance: Round 1 `core.notice`, Round 2 `core.dept`, Round 3
-  `core.post`, Round 7/19/22/23 `core.user`, Round 9 `core.config`, Round 11
-  `core.login-log`.
+  `core.post`, Round 7/19/22/23 `core.user`, Round 9/24 `core.config`,
+  Round 11 `core.login-log`.
 - Thin, rework: none after Round 16.
 
 The P0 remediation queue from the post-Round 13 re-audit is now clear. The next
@@ -198,8 +208,9 @@ finds another blocker:
    user-mutation session semantics; Round 22 closed user-post binding; Round
    23 closed department side-tree filtering. Remaining work is profile/avatar,
    import/export and broader option/batch workflows.
-2. `core.config`: get-by-key, cache refresh/invalidation and runtime
-   propagation boundaries.
+2. `core.config`: Round 24 closed public get-value-by-key plus cache
+   refresh/invalidation. Remaining work is category/name/remark enrichment,
+   batch/file export depth and broader runtime propagation boundaries.
 3. `core.login-log`: browser/OS parsing, IP/location enrichment where feasible,
    server-side time filters and cleanup/unlock policy integration.
 4. `core.dept` and `core.post`: department binding paths, option endpoints and

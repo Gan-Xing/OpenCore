@@ -275,7 +275,8 @@ model:
 
 OpenCore does not admit cache refresh, public get-value-by-key APIs, batch
 delete, Excel file export, category/name/remark schema expansion, secret
-vault/KMS integration or runtime feature-flag propagation in this round.
+vault/KMS integration or runtime feature-flag propagation in this round. Round
+24 later closes public value-by-key plus service cache refresh/invalidation.
 
 ## Round 10 File Reference Shape
 
@@ -693,3 +694,33 @@ OpenCore admits the matching stage-4 loop:
 OpenCore still does not admit profile/avatar/social endpoints, Excel
 import/export workflows, batch user delete, standalone user simple-list
 endpoints or a separate User-page role-assignment dialog in this round.
+
+## Round 24 Config Value Cache Reference Shape
+
+RuoYi system config exposes `/system/config/configKey/{configKey}` for reading
+a config value by key. Its service reads from Redis first, populates the cache
+on misses, updates cache entries during insert/update/delete and exposes
+`refreshCache` to clear and reload all config values.
+
+Yudao infra config exposes `/infra/config/get-value-by-key?key=...` and its
+Admin consumers call `ConfigApi.getConfigKey(...)` for runtime URLs such as
+Swagger, Druid and SkyWalking. Yudao also blocks invisible config values from
+being returned to frontend consumers.
+
+OpenCore admits the matching stage-2 loop inside its current config model:
+
+- `GET /api/core/config/get-value-by-key?key=...` returns only
+  `visibility=public` values;
+- private and secret config values are blocked from the public consumer;
+- `SystemConfigService` keeps a public value cache and returns cached public
+  values on repeat reads;
+- create/update/delete invalidates the affected cached key;
+- `POST /api/core/config/refresh-cache` rebuilds the public value cache and is
+  guarded by `core:config:update`;
+- Admin Config adds `Refresh cache` and public row `Read public value by key`;
+- fixed-port, deploy and public smoke prove value-by-key, update invalidation,
+  refresh-cache and secret-value 403.
+
+OpenCore still does not admit category/name/remark schema expansion, batch
+config delete, Excel file export, secret vault/KMS integration or broad
+runtime feature-flag propagation in this round.

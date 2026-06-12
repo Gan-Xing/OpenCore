@@ -39,7 +39,7 @@ A capability reaches the current OpenCore productization waterline only when:
 | 6          | `core.permission`     | Meets current waterline | OpenCore deliberately owns a persisted permission catalog. System/custom separation, registry mutation protection, live Admin CRUD for custom permissions and role option integration are enough for this product boundary.                                                                                                  |
 | 7/19/22/23 | `core.user`           | First loop, enhance     | User CRUD with role/dept selection is live. Round 19 adds status/reset plus session invalidation after user mutations, Round 22 adds persisted post binding and Round 23 adds server-side department subtree filtering plus the Admin department side tree. Profile/avatar, import/export and option/batch workflows remain. |
 | 8/21       | `core.dict`           | Meets current waterline | Dict type CRUD plus embedded items is live from Round 8. Round 21 adds item-level management API/SDK/Admin, a public `dict-data/simple-list` consumer endpoint, disabled type/item filtering and smoke coverage for malformed boolean deserialization.                                                                       |
-| 9          | `core.config`         | First loop, enhance     | Config CRUD and secret redaction are live, but get-by-key, cache refresh, category/name/remark enrichment and runtime propagation are still missing.                                                                                                                                                                         |
+| 9/24       | `core.config`         | First loop, enhance     | Config CRUD and secret redaction are live. Round 24 adds public value-by-key reading, service value-cache refresh and mutation invalidation. Category/name/remark enrichment, batch/file export depth and broader runtime propagation boundaries remain.                                                                     |
 | 10/15      | `core.file`           | Meets current waterline | Round 15 closed the metadata-only gap: authenticated upload writes real content through `FileStorageService`, download returns stored bytes, Admin can upload/download, and smoke proves content equality.                                                                                                                   |
 | 11         | `core.login-log`      | First loop, enhance     | Immutable list/detail/export and failed-login smoke are live, but device/browser/OS/IP enrichment, date filters, cleanup/unlock policy integration and session actions are still below reference depth.                                                                                                                      |
 | 12         | `core.audit-log`      | Meets current waterline | Immutable operation audit list/detail/export is live and smoke proves a real write operation is recorded. Delete/clean remains an intentional audit-retention policy decision, not a current product blocker.                                                                                                                |
@@ -70,8 +70,10 @@ P1 enhancement queue:
    user-mutation session invalidation; Round 22 completed user-post binding;
    Round 23 completed department side-tree filtering. Remaining user work is
    profile/avatar, import/export and option/batch workflows.
-2. `core.config`: get-by-key, cache refresh/invalidation and runtime
-   propagation boundaries.
+2. `core.config`: Round 24 completed public get-value-by-key plus cache
+   refresh/invalidation. Remaining config work is category/name/remark
+   enrichment, batch/file export depth and broader runtime propagation
+   boundaries.
 3. `core.login-log`: browser/OS parsing, IP/location enrichment where feasible,
    server-side time filters and cleanup/unlock policy integration.
 4. `core.dept` and `core.post`: department binding paths, simple-list
@@ -123,3 +125,9 @@ operations department, proves direct department filtering includes that user,
 proves headquarters subtree filtering includes it, and proves an unrelated
 engineering department filter excludes it in the same fixed-port and deploy
 smoke path.
+
+Round 24 added the config value-cache guard: `core.config` smoke now creates a
+public temporary config, reads it through `get-value-by-key`, updates it and
+proves the cached value is invalidated, explicitly refreshes the public value
+cache, and verifies secret config values are blocked from the public value
+consumer with 403.

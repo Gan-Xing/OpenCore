@@ -462,3 +462,28 @@ This stays inside the current S7 System/RBAC boundary. It does not introduce
 profile/avatar/social endpoints, Excel import/export workflows, batch user
 delete, standalone user option endpoints or a separate User-page role
 assignment dialog in this round.
+
+## Round 24 Audit: core.config Value Cache Refresh
+
+After Round 23, the next lower-dependency P1 foundation gap was `core.config`
+runtime consumption and cache control:
+
+- RuoYi exposes a config-key value lookup endpoint and keeps config values in a
+  cache that can be reset through refreshCache.
+- Yudao exposes `get-value-by-key` and explicitly rejects invisible config
+  values from being returned to the frontend.
+- OpenCore already had config CRUD/detail/export plus secret redaction, but no
+  consumer endpoint for other frontend/runtime surfaces to read public config
+  values.
+- OpenCore also lacked cache refresh and mutation invalidation semantics, so
+  future runtime config consumers would either bypass caching or risk stale
+  values.
+- Admin Config needed an operator-visible cache refresh action, not just a
+  table reload.
+- Fixed-port and deploy smoke needed to prove value-by-key, update
+  invalidation, explicit refresh-cache and secret-value blocking.
+
+This stays inside the current S7 System boundary. It does not introduce
+category/name/remark schema expansion, batch config delete, Excel file export,
+secret vault/KMS integration or broad runtime feature-flag propagation in this
+round.

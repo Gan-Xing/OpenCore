@@ -1737,3 +1737,77 @@ tools/scripts/smoke-core-user.mjs` passed with
   `fda33c4 feat(core-user): add department tree filter loop / 新增用户部门树过滤闭环`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 24 Capability
+
+Capability: `core.config` value-by-key and cache refresh productization.
+
+Goal: close the next `core.config` P1 gap by adding a runtime-safe public
+config value consumer endpoint and cache refresh/invalidation semantics.
+
+## Round 24 Implemented
+
+- Added `SystemConfigValueDto`, `SystemConfigValueQueryDto` and
+  `SystemConfigCacheRefreshDto`.
+- Added service-level public config value cache in `SystemConfigService`.
+- Added `getConfigValueByKey()` that returns only `visibility=public` values
+  and blocks private/secret values with 403.
+- Added `refreshConfigCache()` that rebuilds the service value cache from all
+  public config rows.
+- Made create/update/delete invalidate the affected cached key.
+- Added `GET /api/core/config/get-value-by-key?key=...` and permission-gated
+  `POST /api/core/config/refresh-cache`.
+- Extended OpenAPI, `@opencore/sdk` types/client methods and SDK path tests.
+- Updated Admin Config with a toolbar `Refresh cache` action and public row
+  `Read public value by key` action.
+- Extended Admin static smoke and `tools/scripts/smoke-core-config.mjs` with
+  value/cache guards.
+
+## Round 24 Verification
+
+- `node --check tools/scripts/smoke-core-config.mjs` pass.
+- `node --check apps/admin/scripts/smoke-test.mjs` pass.
+- `git diff --check` pass before the feature commit.
+- Focused tests pass:
+  - `pnpm nx test system --testFile=packages/system/src/system-config/system-config.spec.ts`
+  - `pnpm nx test sdk --testFile=packages/sdk/src/system-management-client.spec.ts`
+  - `pnpm nx test api --testFile=apps/api/src/modules/core/system-management/system-management.permission-matrix.spec.ts`
+  - `pnpm nx test admin`
+- `pnpm openapi:export`, `pnpm openapi:check`, `pnpm sdk:check`,
+  `pnpm openapi:registry-tags:check` and
+  `pnpm registry:admin-routes:check` pass.
+- `pnpm prisma:validate` pass.
+- `pnpm smoke:api:local` pass on fixed port `39173`, including
+  `core.config.value-by-key`, `core.config.value-cache-invalidation`,
+  `core.config.cache-refresh` and `core.config.secret-value-blocked`.
+- `pnpm build:api` pass.
+- `pnpm build:admin` pass.
+- `pnpm deploy:opencore` pass, deploying API/Admin on fixed ports
+  `39172`/`39174`; deploy smoke includes the new config value/cache checks and
+  the existing login-prefix/frontend-cache/session-revocation guards.
+
+## Round 24 Public Verification
+
+Against public endpoints after deploy:
+
+- `GET http://144.217.243.161:39172/health/ready` returned 200.
+- `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 node
+tools/scripts/smoke-core-config.mjs` passed with
+  `OPENCORE_SMOKE_CHECK_DOCS=false` and the deployed admin password loaded from
+  `.env.opencore.local` without printing secrets.
+- Public config smoke verified value-by-key, cache invalidation after update,
+  explicit cache refresh, secret value 403, secret redaction and cleanup.
+- `GET http://144.217.243.161:39174/system/config/` returned 200 with
+  `cache-control: no-cache`.
+- The deployed Admin Config chunk `p__System__Config.19ce36ed.async.js`
+  contains `Refresh cache` and `Read public value by key`.
+- The deployed main Admin bundle `umi.b4f1a190.js` contains
+  `get-value-by-key`, `refresh-cache`, API origin
+  `http://144.217.243.161:39172` and no `/api/api/auth/login`.
+
+## Round 24 Commit Record
+
+- Feature commit:
+  `79c4e93 feat(core-config): add value cache refresh loop / 新增配置值读取与缓存刷新闭环`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

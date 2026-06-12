@@ -604,6 +604,30 @@ panel.
       verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 24: core.config Value Cache Refresh Productization
+
+Why this slice: after user department filtering, the next foundation gap with
+lower dependency than user profile/import workflows was `core.config`.
+RuoYi exposes config-key value lookup plus refreshCache, and Yudao exposes
+get-value-by-key while rejecting invisible values. OpenCore had CRUD/detail and
+secret redaction, but no runtime consumer endpoint or cache refresh semantics.
+
+- [x] Add public `GET /api/core/config/get-value-by-key?key=...` for
+      `visibility=public` config values.
+- [x] Block private and secret config values from the public value consumer.
+- [x] Add service-level public value cache with create/update/delete
+      invalidation.
+- [x] Add permission-gated `POST /api/core/config/refresh-cache`.
+- [x] Extend OpenAPI, SDK types/client methods and SDK path tests.
+- [x] Update Admin Config with `Refresh cache` and public row-level
+      `Read public value by key`.
+- [x] Extend static Admin smoke to lock the new Admin/SDK markers.
+- [x] Extend fixed-port/deploy/public `core.config` smoke to prove
+      value-by-key, cache invalidation, refresh-cache and secret-value 403.
+- [x] Run focused, build, fixed-port smoke, deployment and public URL
+      verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -643,8 +667,9 @@ treat "minimal loop" as "minimal final product".
       user-mutation session invalidation are complete, and post binding is
       complete. Department side-tree filtering is complete. Profile/avatar,
       import/export and option/batch workflows still need enhancement.
-- [ ] Round 9 `core.config`: get-by-key, cache refresh/invalidation and runtime
-      propagation boundaries.
+- [ ] Round 9/24 `core.config`: public get-value-by-key, cache refresh and
+      mutation invalidation are complete. Category/name/remark enrichment,
+      batch/file export depth and broader runtime propagation boundaries remain.
 - [ ] Round 11 `core.login-log`: browser/OS parsing, IP/location enrichment
       where feasible, server-side time filters and cleanup/unlock policy
       integration.
@@ -690,9 +715,9 @@ treat "minimal loop" as "minimal final product".
 - Batch dictionary delete, Excel import/export file workflows, dictionary
   color/css/remark fields, app-wide dictionary cache TTL/invalidation and
   dictionary cache refresh.
-- Config cache refresh, public get-value-by-key endpoints, batch config delete,
-  Excel file export, category/name/remark schema expansion, secret vault/KMS
-  integration and runtime feature-flag propagation.
+- Batch config delete, Excel file export, category/name/remark schema
+  expansion, secret vault/KMS integration and runtime feature-flag
+  propagation.
 - Presigned upload/download URLs, storage-provider config, public
   download/preview/copy-link workflows, batch file delete and object browser
   expansion.

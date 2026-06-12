@@ -66,3 +66,4 @@
 - 2026-06-12 21:45:57 UTC completed cycle-021 round-021 core.dict item-data simple-list productization; featureCommit=07d4e9b; deployed=39172/39174; publicVerified=dict-item-crud,simple-list-disabled-filtering,admin-dicts-items
 - 2026-06-12 22:08:26 UTC completed cycle-021 round-022 core.user post binding productization; featureCommit=98e10be; deployed=39172/39174; publicVerified=user-post-binding,unknown-post-rejected,admin-users-posts
 - 2026-06-12 22:28:33 UTC completed cycle-021 round-023 core.user department tree filter productization; featureCommit=fda33c4; deployed=39172/39174; publicVerified=user-dept-filter,subtree-filter,admin-users-dept-tree
+- 2026-06-12 22:42:18 UTC completed cycle-021 round-024 core.config value cache refresh productization; featureCommit=79c4e93; deployed=39172/39174; publicVerified=config-value-by-key,cache-refresh,secret-value-blocked,admin-config-cache
