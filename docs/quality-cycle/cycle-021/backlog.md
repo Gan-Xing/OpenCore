@@ -522,6 +522,36 @@ only changing a table cell.
       verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 21: core.dict Item Data Simple-list Productization
+
+Why this slice: after role status reached the current RBAC waterline, the next
+P1 foundation gap was `core.dict`. RuoYi and Yudao both split dictionary types
+from dictionary data and expose option/simple-list consumers. OpenCore already
+had type CRUD plus embedded items, so this round admits an equivalent item
+management API and public consumer endpoint without introducing a second Admin
+page.
+
+- [x] Add `DictDataOption` and dict item create/update DTOs with strict
+      boolean and integer normalization.
+- [x] Add public `GET /api/core/dict-data/simple-list` with optional
+      `dictCode` filtering.
+- [x] Add management item endpoints under `/api/core/dicts/:code/items` for
+      list/detail/create/update/delete.
+- [x] Implement item CRUD and simple-list filtering in seed and Prisma
+      repositories.
+- [x] Reject malformed item payloads such as string booleans before mutation.
+- [x] Extend OpenAPI, SDK types/client methods and SDK path tests.
+- [x] Add Admin Dicts row-level `Dictionary Items` modal with item
+      create/update/delete and public simple-list visibility feedback.
+- [x] Add `tools/scripts/smoke-core-dict.mjs` and wire it into fixed-port local
+      and deploy smoke.
+- [x] Extend fixed-port/deploy/public smoke to prove item CRUD, malformed
+      boolean rejection, public simple-list consumption, disabled item
+      filtering and disabled dict type filtering.
+- [x] Run focused, full, build, fixed-port smoke, deployment and public URL
+      verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -545,6 +575,9 @@ treat "minimal loop" as "minimal final product".
 - [x] Round 5/17/18/20 `core.role`: CRUD, data scope, menu assignment, user
       assignment, status toggle, disabled-role auth filtering and
       status/update/delete session revocation.
+- [x] Round 8/21 `core.dict`: dict type CRUD, item-level management API/SDK/
+      Admin, public simple-list consumer endpoint, disabled type/item filtering
+      and deserialization smoke.
 
 ### First Loop, Needs Enhancement
 
@@ -558,8 +591,6 @@ treat "minimal loop" as "minimal final product".
       user-mutation session invalidation are complete; side-tree filtering,
       post binding, profile/avatar, import/export and option/batch workflows
       still need enhancement.
-- [ ] Round 8 `core.dict`: separate dict data workflow or equivalent item API,
-      simple-list/cache endpoints and consumer smoke.
 - [ ] Round 9 `core.config`: get-by-key, cache refresh/invalidation and runtime
       propagation boundaries.
 - [ ] Round 11 `core.login-log`: browser/OS parsing, IP/location enrichment
@@ -606,10 +637,9 @@ treat "minimal loop" as "minimal final product".
 - User Excel import/export file workflows, dedicated User-page role assignment
   dialog, profile/avatar/social/simple-list endpoints, post binding, batch user
   delete and department side-tree filtering.
-- Separate dict-data module/page/endpoints, simple-list/cache endpoints, batch
-  dictionary delete, Excel import/export file workflows, dictionary
-  color/css/remark fields, app public dictionary endpoints and dictionary cache
-  refresh.
+- Batch dictionary delete, Excel import/export file workflows, dictionary
+  color/css/remark fields, app-wide dictionary cache TTL/invalidation and
+  dictionary cache refresh.
 - Config cache refresh, public get-value-by-key endpoints, batch config delete,
   Excel file export, category/name/remark schema expansion, secret vault/KMS
   integration and runtime feature-flag propagation.

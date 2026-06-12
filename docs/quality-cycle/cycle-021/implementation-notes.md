@@ -1507,3 +1507,83 @@ tools/scripts/smoke-core-role.mjs` passed with
   `32a6f5d feat(core-role): add role status security loop / 新增角色状态安全闭环`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 21 Capability
+
+Capability: `core.dict` item data simple-list productization.
+
+Goal: close the `core.dict` P1 gap by adding item-level management API/SDK/Admin
+and a public simple-list consumer endpoint, while turning repeated
+deserialization failures into tests and smoke guards.
+
+## Round 21 Implemented
+
+- Added `DictDataOption` DTO/types and dict item create/update DTOs.
+- Hardened dict item input normalization so malformed booleans and sort values
+  are rejected before mutation.
+- Added public `GET /api/core/dict-data/simple-list` with optional `dictCode`
+  filtering.
+- Added item management endpoints under `/api/core/dicts/:code/items` for
+  list/detail/create/update/delete.
+- Implemented item CRUD and simple-list filtering in seed and Prisma
+  repositories.
+- Extended OpenAPI, `@opencore/sdk` types/client methods and SDK path tests.
+- Updated Admin Dicts with a row-level `Dictionary Items` modal for item CRUD
+  and public simple-list visibility feedback.
+- Added `tools/scripts/smoke-core-dict.mjs` and wired it into fixed-port local
+  and deploy smoke.
+- Extended static Admin smoke to lock the Dicts item modal and service markers.
+
+## Round 21 Verification
+
+- `node --check tools/scripts/smoke-core-dict.mjs` pass.
+- `bash -n tools/scripts/run-local-api-smoke.sh` and
+  `bash -n tools/scripts/deploy-local-opencore.sh` pass.
+- Focused tests pass:
+  - `pnpm nx test system --testFile=packages/system/src/system-dict/system-dict.spec.ts`
+  - `pnpm nx test sdk --testFile=packages/sdk/src/system-management-client.spec.ts`
+  - `pnpm nx test api --testFile=apps/api/src/modules/core/system-management/system-management.permission-matrix.spec.ts`
+- Focused typecheck pass for `system`, `api` and `admin`.
+- `pnpm nx test admin` pass.
+- `pnpm openapi:export`, `pnpm sdk:check`, `pnpm openapi:check`,
+  `pnpm openapi:registry-tags:check` and
+  `pnpm registry:admin-routes:check` pass.
+- `pnpm prisma:validate` pass.
+- `pnpm smoke:api:local` pass on fixed port `39173`, including
+  `core.dict.item.bad-boolean-rejected`, `core.dict.item.create`,
+  `core.dict.item.list`, `core.dict.item.detail`,
+  `core.dict.simple-list.public-consumer`,
+  `core.dict.simple-list.disabled-item-filtered`,
+  `core.dict.simple-list.disabled-dict-filtered`,
+  `core.dict.item.update` and `core.dict.item.delete`.
+- Full gates pass sequentially: `pnpm format:check`, `pnpm lint`,
+  `pnpm typecheck`, `pnpm test` and `pnpm build`. The existing non-failing
+  Biome regex warning in
+  `apps/admin/src/pages/shared/CurrentPageExportButton.tsx` remains.
+- `pnpm deploy:opencore` pass, deploying API/Admin on fixed ports
+  `39172`/`39174`; deploy smoke includes the new `core.dict.*` item and
+  simple-list checks.
+
+## Round 21 Public Verification
+
+Against public endpoints after deploy:
+
+- `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 node
+tools/scripts/smoke-core-dict.mjs` passed with
+  `OPENCORE_SMOKE_CHECK_DOCS=false`.
+- Public dict smoke verified dict creation, malformed item boolean rejection,
+  item create/list/detail/update/delete, public simple-list consumption,
+  disabled item filtering and disabled dict type filtering.
+- `GET http://144.217.243.161:39172/health/ready` returned 200.
+- `GET http://144.217.243.161:39174/system/dicts/index.html` returned 200.
+- The deployed Admin Dicts chunk `p__System__Dicts.fe464f3b.async.js`
+  contains `Dictionary Items`, `New Item`, `simple-list consumer endpoint`,
+  `listOpenCoreDictItems`, `createOpenCoreDictItem` and
+  `deleteOpenCoreDictItem` markers.
+
+## Round 21 Commit Record
+
+- Feature commit:
+  `07d4e9b feat(core-dict): add item data simple-list loop / 新增字典数据项消费闭环`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

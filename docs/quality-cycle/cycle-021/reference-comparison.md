@@ -244,6 +244,9 @@ OpenCore does not admit a separate dict-data module/page/endpoints,
 simple-list/cache endpoints, batch delete, Excel import/export file workflows,
 color/css/remark fields, app public dictionary endpoints or dictionary cache
 refresh in this round.
+Round 21 later closes the item-management and public simple-list consumer
+portion of this gap with an equivalent `/core/dicts/:code/items` API and
+`/core/dict-data/simple-list` endpoint.
 
 ## Round 9 Config Reference Shape
 
@@ -602,3 +605,34 @@ security effects:
 OpenCore still does not admit role batch operations, a separate standalone
 data-scope endpoint, role simple-list endpoints or separate user-page role
 assignment in this round.
+
+## Round 21 Dict Item Data Reference Shape
+
+RuoYi keeps dictionary type and dictionary data as separate System surfaces.
+The data side has list/detail/create/update/delete, label/value/sort/status
+fields and type-based option lookup used by other forms.
+
+Yudao also splits dictionary type from dictionary data. Its backend exposes
+dictionary data page/detail/create/update/delete/export and a simple-list style
+consumer endpoint, while its Admin store caches simple dictionary data for
+form option usage.
+
+OpenCore admits the matching stage-2 loop while preserving its current
+`DictType` plus item model:
+
+- `GET /api/core/dict-data/simple-list` is a public consumer endpoint with
+  optional `dictCode` filtering;
+- the consumer endpoint returns only enabled items from enabled dictionary
+  types;
+- `GET/POST/PATCH/DELETE /api/core/dicts/:code/items` gives operators an
+  item-level management API without forcing a separate Admin route;
+- strict runtime normalization rejects malformed item booleans and sort
+  values before mutation;
+- Admin Dicts adds a row-level `Dictionary Items` modal for item CRUD and shows
+  how many enabled items are visible to simple-list consumers;
+- fixed-port, deploy and public smoke prove item CRUD, malformed boolean 400,
+  public simple-list consumption and disabled item/type filtering.
+
+OpenCore still does not admit dictionary batch delete, Excel import/export file
+workflows, color/css/remark metadata, app-wide dictionary cache TTL/
+invalidation or a separate dictionary-data Admin page in this round.

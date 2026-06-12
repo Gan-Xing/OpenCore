@@ -218,6 +218,9 @@ This remains inside S7 System scope and admits the existing OpenCore
 dict-data module/page/endpoints, simple-list/cache endpoints, batch delete,
 Excel import/export file workflows, color/css/remark fields, app public
 dictionary endpoints or cache refresh semantics.
+Round 21 later closes the item-level management and public simple-list portion
+of this gap while leaving batch delete, file import/export, color/css/remark
+metadata and broader cache refresh as optional future depth.
 
 ## Round 9 Audit: core.config
 
@@ -390,3 +393,26 @@ authorization effect:
 This stays inside the current S6 RBAC boundary. It does not introduce batch
 role operations, separate data-scope endpoints, role simple-list endpoints or a
 separate user-page role assignment workflow.
+
+## Round 21 Audit: core.dict Item Data Simple-list
+
+After Round 20, the next P1 foundation gap was `core.dict`:
+
+- Round 8 already made dictionary type CRUD and embedded items live, but it did
+  not expose an item-level API for operators that mirrors RuoYi/Yudao
+  dictionary data operations.
+- Other product surfaces still lacked a public/simple consumer endpoint for
+  dictionary options, forcing them either to load management rows or hard-code
+  options.
+- Runtime normalization needed to reject malformed item booleans and sort
+  values because deserialization regressions had repeated across earlier
+  rounds.
+- Admin Dicts needed row-level item management instead of relying only on
+  whole-dictionary embedded edit forms.
+- Fixed-port and deploy smoke needed to prove disabled items and disabled dict
+  types are filtered from consumer results.
+
+This stays inside the current S7 System boundary. It does not introduce a
+separate dictionary-data Admin page, batch dictionary operations, Excel file
+import/export, color/css/remark metadata or app-wide cache TTL/refresh
+semantics.

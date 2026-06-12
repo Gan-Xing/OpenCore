@@ -3,8 +3,8 @@
 Date: 2026-06-12  
 Repository: `Gan-Xing/OpenCore`  
 Default branch: `main`  
-Latest observed feature commit: `32a6f5d feat(core-role): add role status security loop / 新增角色状态安全闭环`
-Latest deployed feature commit: `32a6f5d feat(core-role): add role status security loop / 新增角色状态安全闭环`
+Latest observed feature commit: `07d4e9b feat(core-dict): add item data simple-list loop / 新增字典数据项消费闭环`
+Latest deployed feature commit: `07d4e9b feat(core-dict): add item data simple-list loop / 新增字典数据项消费闭环`
 Latest deployed hardening commit: `04e446c fix(online-user): stabilize admin session smoke / 稳定在线用户管理员会话冒烟`
 
 ## One-sentence Goal
@@ -61,6 +61,7 @@ productization waterline completion; see
 - Round 18 `core.role` user assignment stage 3
 - Round 19 `core.user` security mutation stage 2
 - Round 20 `core.role` status security stage 4
+- Round 21 `core.dict` item-data simple-list stage 2
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -150,32 +151,42 @@ Round 20 关闭 `core.role` 当前基础水位的最后安全缺口：角色现�
 `Disable this role`、`Enable this role`、`System roles cannot be disabled` 和
 `Revoked sessions` 标记。
 
+Round 21 关闭 `core.dict` 当前基础水位缺口：字典在 Round 8 的类型 CRUD 和嵌入式 items
+基础上，新增了独立 item management API/SDK/Admin 闭环和 public consumer
+`/api/core/dict-data/simple-list`。管理端可在 Dicts 行级 `Dictionary Items` 弹窗中新建、
+编辑、删除数据项；simple-list 只返回 enabled dict type 下 enabled items，支持按
+`dictCode` 过滤。固定 smoke、部署 smoke 和公网 smoke 均证明 item CRUD、错误 boolean
+反序列化 400、disabled item 过滤、disabled dict type 过滤和公开 consumer endpoint 可用。
+Admin Dicts chunk 已验证包含 `Dictionary Items`、`New Item`、`simple-list consumer endpoint`
+和 item service markers。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
 
 - Meets current waterline: Round 6 `core.permission`, Round 12
   `core.audit-log`, Round 13/14 `monitor.online-user`, Round 10/15
-  `core.file`, Round 4/16 `core.menu`, Round 5/17/18/20 `core.role`.
+  `core.file`, Round 4/16 `core.menu`, Round 5/17/18/20 `core.role`,
+  Round 8/21 `core.dict`.
 - First loop, enhance: Round 1 `core.notice`, Round 2 `core.dept`, Round 3
-  `core.post`, Round 7/19 `core.user`, Round 8 `core.dict`, Round 9
-  `core.config`, Round 11 `core.login-log`.
+  `core.post`, Round 7/19 `core.user`, Round 9 `core.config`, Round 11
+  `core.login-log`.
 - Thin, rework: none after Round 16.
 
 The P0 remediation queue from the post-Round 13 re-audit is now clear. The next
 round should continue with the P1 enhancement queue unless a new waterline audit
 finds another blocker:
 
-1. `core.dict`: separate dict data workflow or a clearly equivalent item
-   management API, simple-list/cache endpoints and consumer smoke.
-2. `core.user`: Round 19 closed user status/reset-password and direct
+1. `core.user`: Round 19 closed user status/reset-password and direct
    user-mutation session semantics. Remaining work is department side-tree
    filtering, post binding, profile/avatar, import/export and broader
    option/batch workflows.
-3. `core.config`: get-by-key, cache refresh/invalidation and runtime
+2. `core.config`: get-by-key, cache refresh/invalidation and runtime
    propagation boundaries.
-4. `core.login-log`: browser/OS parsing, IP/location enrichment where feasible,
+3. `core.login-log`: browser/OS parsing, IP/location enrichment where feasible,
    server-side time filters and cleanup/unlock policy integration.
+4. `core.dept` and `core.post`: binding paths, option endpoints and ordered
+   operations where useful.
 
 Commit `f4569a4` also fixed the remaining stale-login failure at API level:
 `@opencore/core` now normalizes duplicate global prefixes before Nest route
