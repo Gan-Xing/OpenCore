@@ -34,6 +34,8 @@ import {
   type DictItemSummary,
   type DictTypeSummary,
   type SystemConfigSummary,
+  type SystemConfigCacheRefreshSummary,
+  type SystemConfigValueSummary,
   type SystemDeptQueryRequest,
   type SystemDeptSummary,
   type SystemDeptTreeSummary,
@@ -330,6 +332,19 @@ export function getOpenCoreSystemConfig(
   key: string,
 ): Promise<SystemConfigSummary> {
   return systemManagementClient.getConfig(getRequiredAdminToken(), key);
+}
+
+export function getOpenCoreSystemConfigValue(
+  key: string,
+): Promise<SystemConfigValueSummary> {
+  return systemManagementClient.getConfigValueByKey(
+    getRequiredAdminToken(),
+    key,
+  );
+}
+
+export function refreshOpenCoreSystemConfigCache(): Promise<SystemConfigCacheRefreshSummary> {
+  return systemManagementClient.refreshConfigCache(getRequiredAdminToken());
 }
 
 export function createOpenCoreSystemConfig(

@@ -2,8 +2,10 @@ import {
   DeleteOutlined,
   EditOutlined,
   EyeOutlined,
+  KeyOutlined,
   PlusOutlined,
   ReloadOutlined,
+  SyncOutlined,
 } from '@ant-design/icons';
 import {
   PageContainer,
@@ -33,7 +35,9 @@ import {
   createOpenCoreSystemConfig,
   deleteOpenCoreSystemConfig,
   getOpenCoreSystemConfig,
+  getOpenCoreSystemConfigValue,
   listOpenCoreSystemConfig,
+  refreshOpenCoreSystemConfigCache,
   updateOpenCoreSystemConfig,
 } from '@/services/opencore/platform';
 import {
@@ -166,6 +170,8 @@ export default function ConfigPage() {
   const [editingConfig, setEditingConfig] = useState<SystemConfigSummary>();
   const [formOpen, setFormOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [cacheRefreshing, setCacheRefreshing] = useState(false);
+  const [valueReadingKey, setValueReadingKey] = useState<string>();
   const watchedVisibility = Form.useWatch('visibility', form);
   const filterOptions = useMemo(() => createFilterOptions(rows), [rows]);
   const { filteredRows, toolbar: filterToolbar } =
@@ -288,6 +294,26 @@ export default function ConfigPage() {
     await loadConfig();
   };
 
+  const refreshConfigCache = async () => {
+    setCacheRefreshing(true);
+    try {
+      const result = await refreshOpenCoreSystemConfigCache();
+      message.success(`Config cache refreshed: ${result.cachedKeys} keys.`);
+    } finally {
+      setCacheRefreshing(false);
+    }
+  };
+
+  const readPublicValueByKey = async (record: SystemConfigSummary) => {
+    setValueReadingKey(record.key);
+    try {
+      const result = await getOpenCoreSystemConfigValue(record.key);
+      message.info(`${result.key} = ${result.value}`);
+    } finally {
+      setValueReadingKey(undefined);
+    }
+  };
+
   const columns: ProColumns<SystemConfigSummary>[] = [
     {
       title: 'Key',
@@ -326,7 +352,7 @@ export default function ConfigPage() {
     {
       title: 'Actions',
       valueType: 'option',
-      width: 184,
+      width: 232,
       render: (_, record) => (
         <Space size="small">
           <Tooltip title="Detail">
@@ -334,6 +360,22 @@ export default function ConfigPage() {
               aria-label={`View ${record.key}`}
               icon={<EyeOutlined />}
               onClick={() => void openDetail(record)}
+              size="small"
+            />
+          </Tooltip>
+          <Tooltip
+            title={
+              record.visibility === 'public'
+                ? 'Read public value by key'
+                : 'Only public config values can be read by key'
+            }
+          >
+            <Button
+              aria-label={`Read public value ${record.key}`}
+              disabled={record.visibility !== 'public'}
+              icon={<KeyOutlined />}
+              loading={valueReadingKey === record.key}
+              onClick={() => void readPublicValueByKey(record)}
               size="small"
             />
           </Tooltip>
@@ -392,11 +434,19 @@ export default function ConfigPage() {
             New
           </Button>,
           <Button
+            key="cache"
+            icon={<SyncOutlined spin={cacheRefreshing} />}
+            loading={cacheRefreshing}
+            onClick={() => void refreshConfigCache()}
+          >
+            Refresh cache
+          </Button>,
+          <Button
             key="refresh"
             icon={<ReloadOutlined />}
             onClick={() => void loadConfig()}
           >
-            Refresh
+            Reload data
           </Button>,
           <CurrentPageExportButton<SystemConfigSummary>
             key="export"

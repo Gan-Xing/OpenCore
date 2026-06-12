@@ -20,7 +20,9 @@ import type {
   LoginLogSummary,
   PageRequest,
   PageResponse,
+  SystemConfigCacheRefreshSummary,
   SystemConfigSummary,
+  SystemConfigValueSummary,
   SystemDeptQueryRequest,
   SystemDeptSummary,
   SystemDeptTreeSummary,
@@ -92,6 +94,13 @@ export type SystemManagementClient = {
   ) => Promise<PageResponse<SystemConfigSummary>>;
   exportConfig: (token: Token, query?: PageRequest) => Promise<ExportPreview>;
   getConfig: (token: Token, key: string) => Promise<SystemConfigSummary>;
+  getConfigValueByKey: (
+    token: Token,
+    key: string,
+  ) => Promise<SystemConfigValueSummary>;
+  refreshConfigCache: (
+    token: Token,
+  ) => Promise<SystemConfigCacheRefreshSummary>;
   createConfig: (
     token: Token,
     body: CreateSystemConfigRequest,
@@ -295,6 +304,18 @@ export function createSystemManagementClient(
       }),
     getConfig: (token, key) =>
       request<SystemConfigSummary>(`/core/config/${encodeURIComponent(key)}`, {
+        token,
+      }),
+    getConfigValueByKey: (token, key) =>
+      request<SystemConfigValueSummary>(
+        withQuery('/core/config/get-value-by-key', { key }),
+        {
+          token,
+        },
+      ),
+    refreshConfigCache: (token) =>
+      request<SystemConfigCacheRefreshSummary>('/core/config/refresh-cache', {
+        method: 'POST',
         token,
       }),
     createConfig: (token, body) =>

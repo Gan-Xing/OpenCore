@@ -57,7 +57,10 @@ import {
   SystemDeptQueryDto,
   SystemDeptTreeDto,
   SystemConfigDto,
+  SystemConfigCacheRefreshDto,
   SystemConfigPageDto,
+  SystemConfigValueDto,
+  SystemConfigValueQueryDto,
   SystemNoticeDto,
   SystemNoticePageDto,
   SystemNoticeQueryDto,
@@ -223,6 +226,23 @@ export class SystemManagementController {
   @ApiOkResponse({ type: ExportPreviewDto })
   exportConfig(@Query() query: PageQueryDto): Promise<ExportPreviewDto> {
     return this.config.createExportPreview(query);
+  }
+
+  @Get('config/get-value-by-key')
+  @ApiTags('Core System Config')
+  @ApiOkResponse({ type: SystemConfigValueDto })
+  getConfigValueByKey(
+    @Query() query: SystemConfigValueQueryDto,
+  ): Promise<SystemConfigValueDto> {
+    return this.config.getConfigValueByKey(query.key);
+  }
+
+  @Post('config/refresh-cache')
+  @ApiTags('Core System Config')
+  @RequirePermission('core:config:update')
+  @ApiOkResponse({ type: SystemConfigCacheRefreshDto })
+  refreshConfigCache(): Promise<SystemConfigCacheRefreshDto> {
+    return this.config.refreshConfigCache();
   }
 
   @Get('config/:key')

@@ -23,6 +23,33 @@ export class SystemConfigDto {
   visibility!: 'private' | 'public' | 'secret';
 }
 
+export class SystemConfigValueQueryDto {
+  @ApiProperty({ example: 'opencore.admin.title' })
+  key!: string;
+}
+
+export class SystemConfigValueDto {
+  @ApiProperty({ example: 'opencore.admin.title' })
+  key!: string;
+
+  @ApiProperty()
+  value!: string;
+
+  @ApiProperty({ enum: ['boolean', 'number', 'string'] })
+  valueType!: 'boolean' | 'number' | 'string';
+}
+
+export class SystemConfigCacheRefreshDto {
+  @ApiProperty()
+  refreshed!: true;
+
+  @ApiProperty()
+  cachedKeys!: number;
+
+  @ApiProperty()
+  refreshedAt!: string;
+}
+
 export class SystemConfigPageDto {
   @ApiProperty({ type: [SystemConfigDto] })
   items!: readonly SystemConfigDto[];

@@ -74,6 +74,18 @@ export type SystemConfigSummary = {
   visibility: 'private' | 'public' | 'secret';
 };
 
+export type SystemConfigValueSummary = {
+  key: string;
+  value: string;
+  valueType: SystemConfigSummary['valueType'];
+};
+
+export type SystemConfigCacheRefreshSummary = {
+  refreshed: true;
+  cachedKeys: number;
+  refreshedAt: string;
+};
+
 export type CreateSystemConfigRequest = {
   key: string;
   value: string;

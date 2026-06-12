@@ -272,6 +272,8 @@ if (
   !opencorePlatformService.includes('deleteOpenCoreDictItem') ||
   !opencorePlatformService.includes('listOpenCoreSystemConfig') ||
   !opencorePlatformService.includes('getOpenCoreSystemConfig') ||
+  !opencorePlatformService.includes('getOpenCoreSystemConfigValue') ||
+  !opencorePlatformService.includes('refreshOpenCoreSystemConfigCache') ||
   !opencorePlatformService.includes('createOpenCoreSystemConfig') ||
   !opencorePlatformService.includes('updateOpenCoreSystemConfig') ||
   !opencorePlatformService.includes('deleteOpenCoreSystemConfig') ||
@@ -701,6 +703,10 @@ if (
 if (
   !configPage.includes('listOpenCoreSystemConfig') ||
   !configPage.includes('getOpenCoreSystemConfig') ||
+  !configPage.includes('getOpenCoreSystemConfigValue') ||
+  !configPage.includes('refreshOpenCoreSystemConfigCache') ||
+  !configPage.includes('Read public value by key') ||
+  !configPage.includes('Refresh cache') ||
   !configPage.includes('createOpenCoreSystemConfig') ||
   !configPage.includes('updateOpenCoreSystemConfig') ||
   !configPage.includes('deleteOpenCoreSystemConfig') ||

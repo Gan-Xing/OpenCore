@@ -1364,6 +1364,53 @@
         "tags": ["SystemManagement", "Core System Config"]
       }
     },
+    "/api/core/config/get-value-by-key": {
+      "get": {
+        "operationId": "SystemManagementController_getConfigValueByKey",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "query",
+            "schema": { "example": "opencore.admin.title", "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemConfigValueDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Config"]
+      }
+    },
+    "/api/core/config/refresh-cache": {
+      "post": {
+        "operationId": "SystemManagementController_refreshConfigCache",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemConfigCacheRefreshDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Config"]
+      }
+    },
     "/api/core/config/{key}": {
       "get": {
         "operationId": "SystemManagementController_getConfig",
@@ -5558,6 +5605,27 @@
           "totalPages": { "type": "number" }
         },
         "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "SystemConfigValueDto": {
+        "type": "object",
+        "properties": {
+          "key": { "type": "string", "example": "opencore.admin.title" },
+          "value": { "type": "string" },
+          "valueType": {
+            "type": "string",
+            "enum": ["boolean", "number", "string"]
+          }
+        },
+        "required": ["key", "value", "valueType"]
+      },
+      "SystemConfigCacheRefreshDto": {
+        "type": "object",
+        "properties": {
+          "refreshed": { "type": "boolean" },
+          "cachedKeys": { "type": "number" },
+          "refreshedAt": { "type": "string" }
+        },
+        "required": ["refreshed", "cachedKeys", "refreshedAt"]
       },
       "CreateSystemConfigDto": {
         "type": "object",

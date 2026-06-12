@@ -58,16 +58,24 @@ try {
       value: 'true',
       valueType: 'boolean',
       description: 'OpenCore scripted smoke config',
-      visibility: 'private',
+      visibility: 'public',
     },
   });
   createdKeys.push(plainKey);
   assertEqual(createdConfig.key, plainKey, 'created config key');
   assertEqual(createdConfig.value, 'true', 'created config value');
+  assertEqual(createdConfig.visibility, 'public', 'created config visibility');
 
   const fetchedConfig = await apiRequest(`/core/config/${plainKey}`);
   assertEqual(fetchedConfig.key, plainKey, 'detail config key');
   assertEqual(fetchedConfig.value, 'true', 'detail config value');
+
+  const fetchedValue = await apiRequest(
+    `/core/config/get-value-by-key?key=${encodeURIComponent(plainKey)}`,
+  );
+  assertEqual(fetchedValue.key, plainKey, 'config value key');
+  assertEqual(fetchedValue.value, 'true', 'config value by key');
+  assertEqual(fetchedValue.valueType, 'boolean', 'config value type');
 
   const updatedConfig = await apiRequest(`/core/config/${plainKey}`, {
     method: 'PATCH',
@@ -78,6 +86,18 @@ try {
     },
   });
   assertEqual(updatedConfig.value, 'false', 'updated config value');
+
+  const updatedValue = await apiRequest(
+    `/core/config/get-value-by-key?key=${encodeURIComponent(plainKey)}`,
+  );
+  assertEqual(updatedValue.value, 'false', 'updated config value by key');
+
+  const cacheRefresh = await apiRequest('/core/config/refresh-cache', {
+    method: 'POST',
+  });
+  assertEqual(cacheRefresh.refreshed, true, 'config cache refresh result');
+  assertNumberAtLeast(cacheRefresh.cachedKeys, 1, 'config cache keys');
+  assertString(cacheRefresh.refreshedAt, 'config cache refreshedAt');
 
   const exportPreview = await apiRequest(
     '/core/config/export?page=1&pageSize=10',
@@ -110,6 +130,12 @@ try {
     REDACTED_SECRET_VALUE,
     'detail secret config redaction',
   );
+  await apiRequest(
+    `/core/config/get-value-by-key?key=${encodeURIComponent(secretKey)}`,
+    {
+      expected: [403],
+    },
+  );
 
   await cleanupCreatedConfig();
 
@@ -125,10 +151,14 @@ try {
         'auth.login',
         'core.config.list',
         'core.config.detail',
+        'core.config.value-by-key',
+        'core.config.value-cache-invalidation',
+        'core.config.cache-refresh',
         'core.config.create',
         'core.config.update',
         'core.config.export',
         'core.config.secret-redaction',
+        'core.config.secret-value-blocked',
         'core.config.delete',
       ],
     }),
@@ -279,6 +309,12 @@ function assertArray(value, label) {
 function assertEqual(actual, expected, label) {
   if (actual !== expected) {
     throw new Error(`${label} expected ${expected}, got ${actual}`);
+  }
+}
+
+function assertNumberAtLeast(actual, expected, label) {
+  if (typeof actual !== 'number' || actual < expected) {
+    throw new Error(`${label} expected >= ${expected}, got ${actual}`);
   }
 }
 

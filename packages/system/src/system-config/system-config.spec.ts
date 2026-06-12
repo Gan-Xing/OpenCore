@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '@opencore/database';
 import { PrismaSystemConfigRepository } from './system-config.prisma-repository';
@@ -24,17 +24,47 @@ describe('@opencore/system system-config', () => {
       public: true,
       visibility: 'public',
     });
+    await expect(
+      service.getConfigValueByKey('opencore.admin.title'),
+    ).resolves.toMatchObject({
+      key: 'opencore.admin.title',
+      value: 'OpenCore Admin',
+      valueType: 'string',
+    });
+    await expect(
+      service.getConfigValueByKey('auth.login.lockoutMinutes'),
+    ).rejects.toThrow(ForbiddenException);
 
     const config = await service.createConfig({
       key: 'sample.enabled',
       value: 'true',
       valueType: 'boolean',
+      visibility: 'public',
     });
 
-    expect(config.visibility).toBe('private');
+    expect(config.visibility).toBe('public');
+    await expect(
+      service.getConfigValueByKey('sample.enabled'),
+    ).resolves.toEqual({
+      key: 'sample.enabled',
+      value: 'true',
+      valueType: 'boolean',
+    });
     expect(
       (await service.updateConfig('sample.enabled', { value: 'false' })).value,
     ).toBe('false');
+    await expect(
+      service.getConfigValueByKey('sample.enabled'),
+    ).resolves.toEqual({
+      key: 'sample.enabled',
+      value: 'false',
+      valueType: 'boolean',
+    });
+    await expect(service.refreshConfigCache()).resolves.toMatchObject({
+      refreshed: true,
+      cachedKeys: expect.any(Number),
+      refreshedAt: expect.any(String),
+    });
     await expect(service.createExportPreview()).resolves.toMatchObject({
       filename: 'opencore-config.csv',
       scope: 'current-page',
@@ -70,6 +100,9 @@ describe('@opencore/system system-config', () => {
       visibility: 'secret',
     });
     expect(JSON.stringify(await service.listConfig())).not.toContain('unsafe');
+    await expect(service.getConfigValueByKey(secret.key)).rejects.toThrow(
+      ForbiddenException,
+    );
   });
 
   describe('PrismaSystemConfigRepository integration', () => {
@@ -119,9 +152,27 @@ describe('@opencore/system system-config', () => {
         value: 'true',
         visibility: 'public',
       });
+      await expect(service.getConfigValueByKey(configKey)).resolves.toEqual({
+        key: configKey,
+        value: 'true',
+        valueType: 'boolean',
+      });
       expect(
         (await service.updateConfig(configKey, { value: 'false' })).value,
       ).toBe('false');
+      await expect(service.getConfigValueByKey(configKey)).resolves.toEqual({
+        key: configKey,
+        value: 'false',
+        valueType: 'boolean',
+      });
+      await expect(service.refreshConfigCache()).resolves.toMatchObject({
+        refreshed: true,
+        cachedKeys: expect.any(Number),
+        refreshedAt: expect.any(String),
+      });
+      await expect(
+        service.getConfigValueByKey('auth.login.lockoutMinutes'),
+      ).rejects.toThrow(ForbiddenException);
 
       const secret = await service.createConfig({
         key: secretKey,
@@ -136,6 +187,9 @@ describe('@opencore/system system-config', () => {
         value: '[REDACTED]',
         visibility: 'secret',
       });
+      await expect(service.getConfigValueByKey(secretKey)).rejects.toThrow(
+        ForbiddenException,
+      );
       expect(
         JSON.stringify(await service.listConfig({ pageSize: 50 })),
       ).not.toContain('super-secret');

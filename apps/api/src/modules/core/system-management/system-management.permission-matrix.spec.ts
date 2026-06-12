@@ -46,6 +46,7 @@ const expectedPermissions = {
   listNotices: ['core:notice:read'],
   listPosts: ['core:post:read'],
   publishNotice: ['core:notice:update'],
+  refreshConfigCache: ['core:config:update'],
   updateConfig: ['core:config:update'],
   updateDept: ['core:dept:update'],
   updateDict: ['core:dict:update'],
