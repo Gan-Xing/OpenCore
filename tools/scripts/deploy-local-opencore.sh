@@ -165,7 +165,7 @@ echo "Starting OpenCore API on fixed port $API_PORT"
   append_deploy_cors_origins
   export PORT="$API_PORT"
   export NODE_ENV="${OPENCORE_DEPLOY_NODE_ENV:-${NODE_ENV:-development}}"
-  nohup node dist/apps/api/main.js >>"$API_LOG_FILE" 2>&1 &
+  setsid node dist/apps/api/main.js </dev/null >>"$API_LOG_FILE" 2>&1 &
   echo "$!" > "$API_PID_FILE"
 )
 
@@ -180,7 +180,7 @@ echo "Starting OpenCore Admin on fixed port $ADMIN_PORT"
   cd "$ROOT_DIR"
   export PORT="$ADMIN_PORT"
   export ADMIN_STATIC_ROOT="$ROOT_DIR/apps/admin/dist"
-  nohup node "$ROOT_DIR/tools/scripts/serve-admin-static.mjs" >>"$ADMIN_LOG_FILE" 2>&1 &
+  setsid node "$ROOT_DIR/tools/scripts/serve-admin-static.mjs" </dev/null >>"$ADMIN_LOG_FILE" 2>&1 &
   echo "$!" > "$ADMIN_PID_FILE"
 )
 
