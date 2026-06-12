@@ -175,3 +175,34 @@ loop that matches that model:
 OpenCore does not admit registry definition editing, dynamic permission
 discovery, role menu-tree assignment, user-role assignment, cache/menu refresh
 or token permission refresh semantics in this round.
+
+## Round 7 User Reference Shape
+
+RuoYi keeps user management under System with page list, export, import
+template/import, detail, create, update, delete, reset password, status change,
+department tree filtering, role assignment and profile/avatar endpoints. Its
+Admin page combines a department side tree, table filters, user form, role/post
+selection and operation buttons guarded by system user permissions.
+
+Yudao keeps user management under System with page, detail, create, update,
+delete, export, import, password reset, status update, profile/avatar/social
+capabilities, simple-list style option use and role/post/department assignment
+flows. Its Admin form uses department and role selectors and separates some
+assignment/profile operations into dedicated APIs and dialogs.
+
+OpenCore admits the bounded loop that matches the current package-owned user
+model:
+
+- list, detail, current-page export, create, update and delete for users;
+- stable `id` identity for detail/update/delete;
+- role-code assignment through the existing live role runtime;
+- optional `deptId` selection through the admitted department tree runtime;
+- `enabled` and password fields in the same create/update model already owned
+  by `@opencore/system`;
+- `system=true` metadata for the seeded administrator and update/delete
+  protection for that administrator.
+
+OpenCore does not admit Excel import workflows, reset-password/status-toggle
+endpoints, dedicated user-role assignment dialogs, profile/avatar/social
+endpoints, post binding, batch delete, department side-tree filtering,
+simple-list expansion or token/session refresh semantics in this round.

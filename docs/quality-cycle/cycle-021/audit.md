@@ -160,3 +160,29 @@ system entries, while allowing custom permissions to be created, edited,
 exported and deleted. It does not introduce registry definition editing,
 dynamic permission discovery, menu-tree role assignment, user-role assignment or
 token permission refresh semantics.
+
+## Round 7 Audit: core.user
+
+After Round 6, the next lowest dependency productization gap is `core.user`:
+
+- `apps/api/src/modules/core/rbac/rbac.controller.ts` exposed
+  `/api/core/users` list/export/create/update/delete, but lacked
+  `GET /api/core/users/:id`.
+- `@opencore/system` could create, update and delete users, but the runtime did
+  not expose `system` metadata and did not protect the seeded administrator from
+  update/delete through the user management API.
+- `@opencore/sdk` exposed user list/export/create/update/delete methods, but
+  lacked typed detail support and did not include `deptId` or `system` in user
+  types.
+- `apps/admin/src/pages/System/Users.tsx` was still a read-only list/detail
+  fixture with only `listOpenCoreUsers`, so it did not prove a logged-in
+  operator could manage persisted users.
+- Admin smoke locked route/access/shell presence, but not live SDK user CRUD
+  page behavior.
+
+This remains inside S6/S7 System + RBAC scope and admits OpenCore's current
+user model: role-code assignment, optional department binding, enabled flag,
+password on create or explicit update and seeded-admin protection. It does not
+introduce import, reset-password/status-toggle endpoints, profile/avatar/social
+capabilities, post binding, batch delete, side-tree filtering or token/session
+refresh semantics.

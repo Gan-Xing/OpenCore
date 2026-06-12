@@ -2685,3 +2685,54 @@ pnpm registry:admin-routes:check && pnpm test:admin && pnpm sdk:check`。
 - Feature commit:
   `680b578 feat(core-permission): productize permission management / 产品化权限管理闭环`.
 - Push: `origin/main` updated from `1ad577b` to `680b578`.
+
+## 2026-06-12 Cycle-021 Round 7: core.user Productization
+
+### Capability Status
+
+- Round 7 选择 `core.user`：用户 runtime/API 已支持 list/export/create/update/
+  delete，但缺少 detail API、SDK dept/system 对齐、内置 admin 保护、live Admin
+  CRUD 页面和 smoke 页面行为闭环。
+- 本轮按 OpenCore 的 TS/NestJS 边界承认当前 user 模型：角色码分配、可选部门
+  绑定、enabled/password 变更和 seeded-admin system protection。
+- 本轮不扩展若依/芋道的导入、重置密码、状态切换、profile/avatar/social、
+  post binding、批量删除、部门侧边树筛选或 token/session 刷新语义。
+
+### Completed
+
+- 新增 `GET /api/core/users/:id`，并通过 `core:user:read` 保护。
+- `@opencore/system` seed/Prisma repository 和 service 均支持 `getUser`。
+- API DTO、seed record、seed repository、Prisma repository 和 SDK type 均补齐
+  user `system` 元数据，并拒绝 update/delete seeded admin。
+- `@opencore/sdk` 已提供 user detail client，并补齐 `deptId` 输入/输出类型。
+- Admin `/system/users` 已从 fixture 只读表升级为 live 页面，使用 SDK-backed
+  platform service 完成列表、详情、当前页导出、创建、更新和删除。
+- Admin 用户表单已支持角色码多选和部门树选择，并在 UI 禁止编辑/删除 system
+  user。
+- Admin smoke 已锁定 user SDK lifecycle/page integration。
+- OpenAPI snapshot 已刷新。
+
+### Verification
+
+- Focused typecheck pass：
+  `NX_DAEMON=false pnpm nx run-many -t typecheck --projects=system,sdk,api,admin`。
+- Focused tests pass：
+  `NX_DAEMON=false pnpm nx run-many -t test --projects=system,sdk,api`。
+- `pnpm test:admin` pass。
+- `pnpm openapi:export`、`pnpm openapi:check`、`pnpm sdk:check` pass。
+- Full gates pass：`pnpm format:check && pnpm lint && pnpm typecheck &&
+pnpm test`；`pnpm build && pnpm prisma:validate && pnpm test:api &&
+NX_DAEMON=false pnpm nx test contracts && NX_DAEMON=false pnpm nx test
+module-registry && NX_DAEMON=false pnpm nx test sdk && pnpm openapi:export &&
+pnpm openapi:registry-tags:check && pnpm openapi:check &&
+pnpm registry:admin-routes:check && pnpm test:admin && pnpm sdk:check`。
+- Live smoke against `http://127.0.0.1:3010/api` pass：live、ready、docs、
+  login、user list、seeded admin detail、create、created detail、update、export
+  preview、reject admin update、reject admin delete、delete、deleted-detail
+  404 全链路通过。
+
+### Commit Record
+
+- Feature commit:
+  `88c428f feat(core-user): productize user management / 产品化用户管理闭环`.
+- Push: `origin/main` updated from `7d1d32f` to `88c428f`.

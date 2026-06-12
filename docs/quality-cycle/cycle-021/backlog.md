@@ -142,6 +142,30 @@ protection and a live Admin page.
 - [x] Run focused, live HTTP smoke and full gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 7: core.user Productization
+
+Why this slice: once permissions, menus and roles are live, the next RBAC
+operation gap is user management. RuoYi and Yudao expose user list/detail and
+mutation flows beside role and department assignment. OpenCore already had user
+list/export/create/update/delete runtime, but lacked a detail read contract,
+SDK detail/dept/system typing, seeded-admin mutation protection and a live
+Admin page.
+
+- [x] Add missing detail API contract for system users.
+- [x] Extend system user repository/service contracts with `getUser`,
+      `system` metadata and seeded-admin update/delete protection.
+- [x] Extend `@opencore/sdk` user types/client with detail support plus
+      `deptId` and `system` fields.
+- [x] Replace the read-only Admin Users fixture with a live SDK-backed page for
+      list/detail/current-page export plus create/update/delete actions.
+- [x] Add role-code and department selection from the admitted role and
+      department runtimes.
+- [x] Extend Admin smoke checks to lock user SDK lifecycle usage and page
+      behavior.
+- [x] Refresh OpenAPI snapshot and registry route/tag checks.
+- [x] Run focused, live HTTP smoke and full gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Explicitly Out Of Scope
 
 - Notice read/unread inbox, header badge and per-user read tracking.
@@ -160,4 +184,8 @@ protection and a live Admin page.
 - Registry definition editing, dynamic permission discovery, menu-tree role
   assignment, user-role assignment and token permission refresh after permission
   mutation.
+- User Excel import/export file workflows, reset-password endpoint,
+  status-toggle endpoint, dedicated user-role assignment dialog,
+  profile/avatar/social/simple-list endpoints, post binding, batch user delete,
+  department side-tree filtering and token/session refresh after user mutation.
 - CRM/ERP/MES/WMS/mall/member/pay/AI modules.

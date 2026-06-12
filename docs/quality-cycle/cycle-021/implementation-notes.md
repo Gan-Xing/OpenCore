@@ -427,3 +427,73 @@ pre-existing 3000 process was left running.
 - Feature commit:
   `680b578 feat(core-permission): productize permission management / 产品化权限管理闭环`.
 - Push: `origin/main` updated from `1ad577b` to `680b578`.
+
+## Round 7 Capability
+
+Capability: `core.user` productization.
+
+Goal: turn the existing package-owned user runtime into a real login-protected
+Admin operation loop with API detail, SDK dept/system alignment, OpenAPI, Admin
+page and smoke coverage, while protecting the seeded administrator from
+destructive user-management mutation.
+
+## Round 7 Implemented
+
+- Added `GET /api/core/users/:id`, guarded by `core:user:read`, and refreshed
+  the OpenAPI snapshot.
+- Extended `@opencore/system` user repository/service contracts with `getUser`
+  for seed and Prisma implementations.
+- Added `system` metadata to user summaries and protected seeded admin users
+  from update/delete in seed and Prisma repositories.
+- Extended `@opencore/sdk` with user detail support plus `deptId` and `system`
+  user fields.
+- Replaced the read-only Admin Users fixture with a live page using
+  `@opencore/sdk` and platform service methods for list/detail/current-page
+  export plus create/update/delete actions.
+- Added role-code multi-select and department tree selection using the admitted
+  role and department runtimes.
+- Extended Admin smoke checks to lock SDK-backed user lifecycle methods and
+  page-level live integration.
+
+## Round 7 Verification
+
+- `NX_DAEMON=false pnpm nx run-many -t typecheck --projects=system,sdk,api,admin`
+  pass.
+- `NX_DAEMON=false pnpm nx run-many -t test --projects=system,sdk,api` pass.
+- `pnpm test:admin` pass.
+- `pnpm openapi:export` pass.
+- `pnpm openapi:check` pass.
+- `pnpm sdk:check` pass.
+- `pnpm format:check && pnpm lint && pnpm typecheck && pnpm test` pass.
+- `pnpm build && pnpm prisma:validate && pnpm test:api && NX_DAEMON=false pnpm nx test contracts && NX_DAEMON=false pnpm nx test module-registry && NX_DAEMON=false pnpm nx test sdk && pnpm openapi:export && pnpm openapi:registry-tags:check && pnpm openapi:check && pnpm registry:admin-routes:check && pnpm test:admin && pnpm sdk:check`
+  pass.
+
+## Round 7 Live Smoke
+
+Against `http://127.0.0.1:3010/api` with the local seeded admin:
+
+- `GET /api/live` returned 200.
+- `GET /api/ready` returned 200.
+- `GET /api/docs-json` returned 200.
+- `POST /api/auth/login` returned 201.
+- `GET /api/core/users` returned 200.
+- `GET /api/core/users/:adminId` returned 200 for the seeded administrator.
+- `POST /api/core/users` created a smoke user with 201.
+- `GET /api/core/users/:id` returned 200 for the created user.
+- `PATCH /api/core/users/:id` returned 200 and updated the created user.
+- `GET /api/core/users/export` returned 200.
+- `PATCH /api/core/users/:adminId` returned 400, proving seeded-admin update
+  protection.
+- `DELETE /api/core/users/:adminId` returned 400, proving seeded-admin delete
+  protection.
+- `DELETE /api/core/users/:id` returned 200 with `deleted=true`.
+- `GET /api/core/users/:id` returned 404 after deletion.
+
+The temporary 3010 API process was stopped after smoke verification; the
+pre-existing 3000 process was left running.
+
+## Round 7 Commit Record
+
+- Feature commit:
+  `88c428f feat(core-user): productize user management / 产品化用户管理闭环`.
+- Push: `origin/main` updated from `7d1d32f` to `88c428f`.
