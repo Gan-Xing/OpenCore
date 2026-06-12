@@ -899,6 +899,569 @@
         "tags": ["SystemManagement", "Core System Config"]
       }
     },
+    "/api/core/notices": {
+      "get": {
+        "operationId": "SystemManagementController_listNotices",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["draft", "published", "archived"]
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["announcement", "maintenance", "security"]
+            }
+          },
+          {
+            "name": "audience",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string", "enum": ["all", "admin"] }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SystemNoticePageDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Notices"]
+      },
+      "post": {
+        "operationId": "SystemManagementController_createNotice",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateSystemNoticeDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SystemNoticeDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Notices"]
+      }
+    },
+    "/api/core/notices/export": {
+      "get": {
+        "operationId": "SystemManagementController_exportNotices",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["draft", "published", "archived"]
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["announcement", "maintenance", "security"]
+            }
+          },
+          {
+            "name": "audience",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string", "enum": ["all", "admin"] }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ExportPreviewDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Notices"]
+      }
+    },
+    "/api/core/notices/{id}": {
+      "patch": {
+        "operationId": "SystemManagementController_updateNotice",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateSystemNoticeDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SystemNoticeDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Notices"]
+      },
+      "delete": {
+        "operationId": "SystemManagementController_deleteNotice",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DeleteResultDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Notices"]
+      }
+    },
+    "/api/core/notices/{id}/publish": {
+      "patch": {
+        "operationId": "SystemManagementController_publishNotice",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SystemNoticeDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Notices"]
+      }
+    },
+    "/api/core/notices/{id}/archive": {
+      "patch": {
+        "operationId": "SystemManagementController_archiveNotice",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SystemNoticeDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Notices"]
+      }
+    },
+    "/api/core/depts": {
+      "get": {
+        "operationId": "SystemManagementController_listDepts",
+        "parameters": [
+          {
+            "name": "parentId",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "enabled",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/SystemDeptTreeDto" }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Departments"]
+      },
+      "post": {
+        "operationId": "SystemManagementController_createDept",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateSystemDeptDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SystemDeptDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Departments"]
+      }
+    },
+    "/api/core/depts/export": {
+      "get": {
+        "operationId": "SystemManagementController_exportDepts",
+        "parameters": [
+          {
+            "name": "parentId",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "enabled",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ExportPreviewDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Departments"]
+      }
+    },
+    "/api/core/depts/{id}": {
+      "patch": {
+        "operationId": "SystemManagementController_updateDept",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateSystemDeptDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SystemDeptDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Departments"]
+      },
+      "delete": {
+        "operationId": "SystemManagementController_deleteDept",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DeleteResultDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Departments"]
+      }
+    },
+    "/api/core/posts": {
+      "get": {
+        "operationId": "SystemManagementController_listPosts",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "enabled",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SystemPostPageDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Posts"]
+      },
+      "post": {
+        "operationId": "SystemManagementController_createPost",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateSystemPostDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SystemPostDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Posts"]
+      }
+    },
+    "/api/core/posts/export": {
+      "get": {
+        "operationId": "SystemManagementController_exportPosts",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "enabled",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ExportPreviewDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Posts"]
+      }
+    },
+    "/api/core/posts/{code}": {
+      "patch": {
+        "operationId": "SystemManagementController_updatePost",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateSystemPostDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SystemPostDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Posts"]
+      },
+      "delete": {
+        "operationId": "SystemManagementController_deletePost",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DeleteResultDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Posts"]
+      }
+    },
     "/api/core/files": {
       "get": {
         "operationId": "SystemManagementController_listFiles",
@@ -1074,6 +1637,24 @@
               "default": 10,
               "allOf": [{ "$ref": "#/components/schemas/Object" }]
             }
+          },
+          {
+            "name": "actorUsername",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "action",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "resource",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
@@ -1111,6 +1692,24 @@
               "default": 10,
               "allOf": [{ "$ref": "#/components/schemas/Object" }]
             }
+          },
+          {
+            "name": "actorUsername",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "action",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "resource",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
@@ -1148,6 +1747,18 @@
               "default": 10,
               "allOf": [{ "$ref": "#/components/schemas/Object" }]
             }
+          },
+          {
+            "name": "username",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "success",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
           }
         ],
         "responses": {
@@ -1185,6 +1796,18 @@
               "default": 10,
               "allOf": [{ "$ref": "#/components/schemas/Object" }]
             }
+          },
+          {
+            "name": "username",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "success",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
           }
         ],
         "responses": {
@@ -3251,6 +3874,12 @@
             "required": false,
             "in": "query",
             "schema": { "$ref": "#/components/schemas/Object" }
+          },
+          {
+            "name": "username",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
@@ -3548,6 +4177,7 @@
       "description": "core.audit-log: Operation Logs"
     },
     { "name": "Core Dashboard", "description": "core.dashboard: Dashboard" },
+    { "name": "Core Departments", "description": "core.dept: Departments" },
     { "name": "Core Dictionaries", "description": "core.dict: Dictionaries" },
     { "name": "Core Files", "description": "core.file: File Center" },
     { "name": "Core Login Logs", "description": "core.login-log: Login Logs" },
@@ -3556,10 +4186,15 @@
       "name": "Core Permissions",
       "description": "core.permission: Permissions"
     },
+    { "name": "Core Posts", "description": "core.post: Posts" },
     { "name": "Core Roles", "description": "core.role: Roles" },
     {
       "name": "Core System Config",
       "description": "core.config: System Config"
+    },
+    {
+      "name": "Core System Notices",
+      "description": "core.notice: System Notices"
     },
     { "name": "Core Users", "description": "core.user: Users" },
     { "name": "Integration Mail", "description": "integration.mail: Mail" },
@@ -3650,6 +4285,7 @@
           "username": { "type": "string" },
           "displayName": { "type": "string" },
           "roleCodes": { "type": "array", "items": { "type": "string" } },
+          "deptId": { "type": "string", "nullable": true },
           "enabled": { "type": "boolean" }
         },
         "required": ["id", "username", "displayName", "roleCodes", "enabled"]
@@ -3676,6 +4312,7 @@
             "type": "array",
             "items": { "type": "string" }
           },
+          "deptId": { "type": "object", "nullable": true },
           "enabled": { "type": "boolean", "default": true }
         },
         "required": ["username", "displayName", "password", "roleCodes"]
@@ -3686,6 +4323,7 @@
           "displayName": { "type": "string" },
           "password": { "type": "string" },
           "roleCodes": { "type": "array", "items": { "type": "string" } },
+          "deptId": { "type": "object", "nullable": true },
           "enabled": { "type": "boolean" }
         }
       },
@@ -3701,9 +4339,22 @@
           "code": { "type": "string" },
           "name": { "type": "string" },
           "permissionCodes": { "type": "array", "items": { "type": "string" } },
-          "system": { "type": "boolean" }
+          "system": { "type": "boolean" },
+          "dataScope": {
+            "type": "string",
+            "enum": ["all", "custom", "dept_tree", "own_dept", "self"]
+          },
+          "dataScopeDeptIds": { "type": "array", "items": { "type": "string" } }
         },
-        "required": ["id", "code", "name", "permissionCodes", "system"]
+        "required": [
+          "id",
+          "code",
+          "name",
+          "permissionCodes",
+          "system",
+          "dataScope",
+          "dataScopeDeptIds"
+        ]
       },
       "CreateRoleDto": {
         "type": "object",
@@ -3715,7 +4366,17 @@
             "type": "array",
             "items": { "type": "string" }
           },
-          "system": { "type": "boolean", "default": false }
+          "system": { "type": "boolean", "default": false },
+          "dataScope": {
+            "type": "string",
+            "enum": ["all", "custom", "dept_tree", "own_dept", "self"],
+            "default": "all"
+          },
+          "dataScopeDeptIds": {
+            "default": [],
+            "type": "array",
+            "items": { "type": "string" }
+          }
         },
         "required": ["code", "name", "permissionCodes"]
       },
@@ -3724,7 +4385,12 @@
         "properties": {
           "name": { "type": "string" },
           "permissionCodes": { "type": "array", "items": { "type": "string" } },
-          "system": { "type": "boolean" }
+          "system": { "type": "boolean" },
+          "dataScope": {
+            "type": "string",
+            "enum": ["all", "custom", "dept_tree", "own_dept", "self"]
+          },
+          "dataScopeDeptIds": { "type": "array", "items": { "type": "string" } }
         }
       },
       "PermissionSummaryDto": {
@@ -3777,7 +4443,7 @@
         "properties": {
           "title": { "type": "string" },
           "path": { "type": "string" },
-          "permissionCode": { "type": "string" },
+          "permissionCode": { "type": "object", "nullable": true },
           "order": { "type": "number" }
         }
       },
@@ -3924,6 +4590,230 @@
             "type": "string",
             "enum": ["private", "public", "secret"]
           }
+        }
+      },
+      "SystemNoticeDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "content": { "type": "string" },
+          "type": {
+            "type": "string",
+            "enum": ["announcement", "maintenance", "security"]
+          },
+          "status": {
+            "type": "string",
+            "enum": ["draft", "published", "archived"]
+          },
+          "audience": { "type": "string", "enum": ["all", "admin"] },
+          "pinned": { "type": "boolean" },
+          "validFrom": { "type": "string" },
+          "validTo": { "type": "string" },
+          "publishedAt": { "type": "string" },
+          "archivedAt": { "type": "string" },
+          "createdBy": { "type": "string" },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "title",
+          "content",
+          "type",
+          "status",
+          "audience",
+          "pinned",
+          "createdBy",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "SystemNoticePageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SystemNoticeDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "CreateSystemNoticeDto": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string", "example": "Maintenance Window" },
+          "content": { "type": "string" },
+          "type": {
+            "type": "string",
+            "enum": ["announcement", "maintenance", "security"]
+          },
+          "audience": {
+            "type": "string",
+            "enum": ["all", "admin"],
+            "default": "all"
+          },
+          "pinned": { "type": "boolean", "default": false },
+          "validFrom": { "type": "string" },
+          "validTo": { "type": "string" },
+          "createdBy": { "type": "string", "example": "admin" }
+        },
+        "required": ["title", "content", "type", "createdBy"]
+      },
+      "UpdateSystemNoticeDto": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string" },
+          "content": { "type": "string" },
+          "type": {
+            "type": "string",
+            "enum": ["announcement", "maintenance", "security"]
+          },
+          "audience": { "type": "string", "enum": ["all", "admin"] },
+          "pinned": { "type": "boolean" },
+          "validFrom": { "type": "string" },
+          "validTo": { "type": "string" }
+        }
+      },
+      "SystemDeptTreeDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "parentId": { "type": "string" },
+          "order": { "type": "number" },
+          "leader": { "type": "string" },
+          "phone": { "type": "string" },
+          "email": { "type": "string" },
+          "enabled": { "type": "boolean" },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" },
+          "children": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SystemDeptTreeDto" }
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "order",
+          "enabled",
+          "createdAt",
+          "updatedAt",
+          "children"
+        ]
+      },
+      "CreateSystemDeptDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string", "example": "engineering" },
+          "name": { "type": "string", "example": "Engineering" },
+          "parentId": { "type": "string" },
+          "order": { "type": "number", "default": 0 },
+          "leader": { "type": "string" },
+          "phone": { "type": "string" },
+          "email": { "type": "string" },
+          "enabled": { "type": "boolean", "default": true }
+        },
+        "required": ["code", "name"]
+      },
+      "SystemDeptDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "parentId": { "type": "string" },
+          "order": { "type": "number" },
+          "leader": { "type": "string" },
+          "phone": { "type": "string" },
+          "email": { "type": "string" },
+          "enabled": { "type": "boolean" },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "order",
+          "enabled",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "UpdateSystemDeptDto": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "parentId": { "type": "object", "nullable": true },
+          "order": { "type": "number" },
+          "leader": { "type": "string" },
+          "phone": { "type": "string" },
+          "email": { "type": "string" },
+          "enabled": { "type": "boolean" }
+        }
+      },
+      "SystemPostDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "order": { "type": "number" },
+          "description": { "type": "string" },
+          "enabled": { "type": "boolean" },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "order",
+          "enabled",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "SystemPostPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SystemPostDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "CreateSystemPostDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string", "example": "engineer" },
+          "name": { "type": "string", "example": "Engineer" },
+          "order": { "type": "number", "default": 0 },
+          "description": { "type": "string" },
+          "enabled": { "type": "boolean", "default": true }
+        },
+        "required": ["code", "name"]
+      },
+      "UpdateSystemPostDto": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "order": { "type": "number" },
+          "description": { "type": "string" },
+          "enabled": { "type": "boolean" }
         }
       },
       "FileAssetDto": {

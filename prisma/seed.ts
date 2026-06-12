@@ -1,27 +1,28 @@
 import { Prisma, PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { seedAuditLogs, seedLoginLogs } from '@opencore/audit/records';
 import {
   collectMenus,
-  collectPermissionCodes,
   collectPermissionDefinitions,
 } from '@opencore/module-registry';
-import { createHash } from 'node:crypto';
+import { seedOnlineUserSessions as onlineUserSessionSeeds } from '@opencore/online-user/records';
+import {
+  seedSchedulerJobs,
+  seedSchedulerRuns,
+} from '@opencore/scheduler/records';
+import {
+  seedDictTypes,
+  seedSystemConfigs,
+  seedSystemDepts,
+  seedSystemNotices,
+  seedSystemPosts,
+  seedSystemRoles,
+  seedSystemUsers,
+  hashSystemUserPassword,
+} from '@opencore/system/records';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import {
-  seedAuditLogs,
-  seedDictTypes,
-  seedFileAssets,
-  seedLoginLogs,
-  seedSystemConfigs,
-} from '../apps/api/src/modules/core/system-management/system-management.seed';
-
-type SeedRoleDefinition = {
-  code: string;
-  name: string;
-  system: boolean;
-  permissionCodes: readonly string[];
-};
+import { seedFileAssets } from '../apps/api/src/modules/core/system-management/system-management.seed';
 
 const LOCAL_ENV_FILE = '.env.opencore.local';
 const BOOTSTRAP_ADMIN_USERNAME = 'admin';
@@ -40,8 +41,10 @@ async function main(): Promise<void> {
   const permissionCount = await seedPermissions();
   const menuCount = await seedMenus();
   const roleCount = await seedRoles();
-  await seedBootstrapAdmin(bootstrapPassword);
   const systemManagementCount = await seedSystemManagement();
+  const userCount = await seedUsers(bootstrapPassword);
+  const onlineUserSessionCount = await seedOnlineUserSessions();
+  const schedulerCount = await seedScheduler();
 
   console.log(
     JSON.stringify({
@@ -49,12 +52,111 @@ async function main(): Promise<void> {
         permissions: permissionCount,
         menus: menuCount,
         roles: roleCount,
+        users: userCount,
+        onlineUserSessions: onlineUserSessionCount,
+        scheduler: schedulerCount,
         systemManagement: systemManagementCount,
         bootstrapAdminUsername: BOOTSTRAP_ADMIN_USERNAME,
         bootstrapAdminRoleCode: BOOTSTRAP_ADMIN_ROLE_CODE,
       },
     }),
   );
+}
+
+async function seedOnlineUserSessions(): Promise<number> {
+  for (const session of onlineUserSessionSeeds) {
+    await prisma.onlineUserSession.upsert({
+      where: { id: session.id },
+      update: {
+        username: session.username,
+        tokenId: session.tokenId,
+        ip: session.ip,
+        userAgent: session.userAgent,
+        lastSeenAt: new Date(session.lastSeenAt),
+        expiresAt: new Date(session.expiresAt),
+        revokedAt: session.revokedAt ? new Date(session.revokedAt) : null,
+        revokedBy: session.revokedBy,
+        revokedReason: session.revokedReason,
+      },
+      create: {
+        id: session.id,
+        username: session.username,
+        tokenId: session.tokenId,
+        ip: session.ip,
+        userAgent: session.userAgent,
+        lastSeenAt: new Date(session.lastSeenAt),
+        expiresAt: new Date(session.expiresAt),
+        revokedAt: session.revokedAt ? new Date(session.revokedAt) : null,
+        revokedBy: session.revokedBy,
+        revokedReason: session.revokedReason,
+      },
+    });
+  }
+
+  return onlineUserSessionSeeds.length;
+}
+
+async function seedScheduler(): Promise<{
+  jobs: number;
+  jobRuns: number;
+}> {
+  for (const job of seedSchedulerJobs) {
+    await prisma.jobDefinition.upsert({
+      where: { code: job.code },
+      update: {
+        name: job.name,
+        queueName: job.queueName,
+        cron: job.cron,
+        enabled: job.enabled,
+        retryLimit: job.retryLimit,
+        timeoutSeconds: job.timeoutSeconds,
+        payload: job.payload as Prisma.InputJsonValue,
+      },
+      create: {
+        id: job.id,
+        code: job.code,
+        name: job.name,
+        queueName: job.queueName,
+        cron: job.cron,
+        enabled: job.enabled,
+        retryLimit: job.retryLimit,
+        timeoutSeconds: job.timeoutSeconds,
+        payload: job.payload as Prisma.InputJsonValue,
+      },
+    });
+  }
+
+  for (const run of seedSchedulerRuns) {
+    await prisma.jobRunLog.upsert({
+      where: { id: run.id },
+      update: {
+        jobCode: run.jobCode,
+        status: run.status,
+        trigger: run.trigger,
+        attempts: run.attempts,
+        startedAt: new Date(run.startedAt),
+        finishedAt: run.finishedAt ? new Date(run.finishedAt) : null,
+        error: run.error,
+        metadata: run.metadata as Prisma.InputJsonValue,
+      },
+      create: {
+        id: run.id,
+        jobCode: run.jobCode,
+        status: run.status,
+        trigger: run.trigger,
+        attempts: run.attempts,
+        startedAt: new Date(run.startedAt),
+        finishedAt: run.finishedAt ? new Date(run.finishedAt) : null,
+        error: run.error,
+        metadata: run.metadata as Prisma.InputJsonValue,
+      },
+    });
+  }
+
+  return {
+    jobs: seedSchedulerJobs.length,
+    jobRuns: seedSchedulerRuns.length,
+  };
 }
 
 async function seedPermissions(): Promise<number> {
@@ -108,27 +210,7 @@ async function seedMenus(): Promise<number> {
 }
 
 async function seedRoles(): Promise<number> {
-  const roles: readonly SeedRoleDefinition[] = [
-    {
-      code: BOOTSTRAP_ADMIN_ROLE_CODE,
-      name: 'Administrator',
-      system: true,
-      permissionCodes: collectPermissionCodes(),
-    },
-    {
-      code: 'viewer',
-      name: 'Viewer',
-      system: true,
-      permissionCodes: [
-        'core:dashboard:read',
-        'tool:openapi:read',
-        'core:user:read',
-        'core:role:read',
-        'core:permission:read',
-        'core:menu:read',
-      ],
-    },
-  ];
+  const roles = seedSystemRoles;
 
   for (const roleDefinition of roles) {
     const role = await prisma.role.upsert({
@@ -136,11 +218,19 @@ async function seedRoles(): Promise<number> {
       update: {
         name: roleDefinition.name,
         system: roleDefinition.system,
+        dataScope: roleDefinition.dataScope,
+        dataScopeDeptIds: [
+          ...roleDefinition.dataScopeDeptIds,
+        ] as Prisma.InputJsonValue,
       },
       create: {
         code: roleDefinition.code,
         name: roleDefinition.name,
         system: roleDefinition.system,
+        dataScope: roleDefinition.dataScope,
+        dataScopeDeptIds: [
+          ...roleDefinition.dataScopeDeptIds,
+        ] as Prisma.InputJsonValue,
       },
     });
 
@@ -177,43 +267,95 @@ async function seedRoles(): Promise<number> {
   return roles.length;
 }
 
-async function seedBootstrapAdmin(bootstrapPassword: string): Promise<void> {
-  const adminRole = await prisma.role.findUniqueOrThrow({
-    where: { code: BOOTSTRAP_ADMIN_ROLE_CODE },
-  });
-  const adminUser = await prisma.user.upsert({
-    where: { username: BOOTSTRAP_ADMIN_USERNAME },
-    update: {
-      displayName: 'OpenCore Admin',
-      passwordHash: hashPassword(bootstrapPassword),
-      enabled: true,
-    },
-    create: {
-      username: BOOTSTRAP_ADMIN_USERNAME,
-      displayName: 'OpenCore Admin',
-      passwordHash: hashPassword(bootstrapPassword),
-      enabled: true,
-    },
+async function seedUsers(bootstrapPassword: string): Promise<number> {
+  for (const userDefinition of seedSystemUsers) {
+    const passwordHash =
+      userDefinition.username === BOOTSTRAP_ADMIN_USERNAME
+        ? hashSystemUserPassword(bootstrapPassword)
+        : userDefinition.passwordHash;
+    await assertSeedUserDeptExists(userDefinition.deptId);
+    const user = await prisma.user.upsert({
+      where: { username: userDefinition.username },
+      update: {
+        displayName: userDefinition.displayName,
+        passwordHash,
+        deptId: userDefinition.deptId ?? null,
+        enabled: userDefinition.enabled,
+      },
+      create: {
+        id: userDefinition.id,
+        username: userDefinition.username,
+        displayName: userDefinition.displayName,
+        passwordHash,
+        deptId: userDefinition.deptId,
+        enabled: userDefinition.enabled,
+      },
+    });
+    const roles = await prisma.role.findMany({
+      where: { code: { in: [...userDefinition.roleCodes] } },
+      select: { id: true, code: true },
+    });
+    const knownRoleCodes = new Set(roles.map((role) => role.code));
+    const missingRoleCode = userDefinition.roleCodes.find(
+      (roleCode) => !knownRoleCodes.has(roleCode),
+    );
+
+    if (missingRoleCode) {
+      throw new Error(`Seed user role not found: ${missingRoleCode}`);
+    }
+
+    const desiredRoleIds = roles.map((role) => role.id);
+
+    await prisma.userRole.deleteMany({
+      where: {
+        userId: user.id,
+        roleId: { notIn: desiredRoleIds },
+      },
+    });
+
+    for (const role of roles) {
+      await prisma.userRole.upsert({
+        where: {
+          userId_roleId: {
+            userId: user.id,
+            roleId: role.id,
+          },
+        },
+        update: {},
+        create: {
+          userId: user.id,
+          roleId: role.id,
+        },
+      });
+    }
+  }
+
+  return seedSystemUsers.length;
+}
+
+async function assertSeedUserDeptExists(
+  deptId: string | undefined,
+): Promise<void> {
+  if (!deptId) {
+    return;
+  }
+
+  const dept = await prisma.systemDept.findUnique({
+    where: { id: deptId },
+    select: { id: true },
   });
 
-  await prisma.userRole.upsert({
-    where: {
-      userId_roleId: {
-        userId: adminUser.id,
-        roleId: adminRole.id,
-      },
-    },
-    update: {},
-    create: {
-      userId: adminUser.id,
-      roleId: adminRole.id,
-    },
-  });
+  if (!dept) {
+    throw new Error(`Seed user dept not found: ${deptId}`);
+  }
 }
 
 async function seedSystemManagement(): Promise<{
   dictTypes: number;
   systemConfigs: number;
+  systemNotices: number;
+  systemDepts: number;
+  systemPosts: number;
   fileAssets: number;
   auditLogs: number;
   loginLogs: number;
@@ -284,6 +426,91 @@ async function seedSystemManagement(): Promise<{
         valueType: config.valueType,
         description: config.description,
         public: config.public,
+      },
+    });
+  }
+
+  for (const notice of seedSystemNotices) {
+    await prisma.systemNotice.upsert({
+      where: { id: notice.id },
+      update: {
+        title: notice.title,
+        content: notice.content,
+        type: notice.type,
+        status: notice.status,
+        audience: notice.audience,
+        pinned: notice.pinned,
+        validFrom: notice.validFrom ? new Date(notice.validFrom) : null,
+        validTo: notice.validTo ? new Date(notice.validTo) : null,
+        publishedAt: notice.publishedAt ? new Date(notice.publishedAt) : null,
+        archivedAt: notice.archivedAt ? new Date(notice.archivedAt) : null,
+        createdBy: notice.createdBy,
+        createdAt: new Date(notice.createdAt),
+      },
+      create: {
+        id: notice.id,
+        title: notice.title,
+        content: notice.content,
+        type: notice.type,
+        status: notice.status,
+        audience: notice.audience,
+        pinned: notice.pinned,
+        validFrom: notice.validFrom ? new Date(notice.validFrom) : null,
+        validTo: notice.validTo ? new Date(notice.validTo) : null,
+        publishedAt: notice.publishedAt ? new Date(notice.publishedAt) : null,
+        archivedAt: notice.archivedAt ? new Date(notice.archivedAt) : null,
+        createdBy: notice.createdBy,
+        createdAt: new Date(notice.createdAt),
+      },
+    });
+  }
+
+  for (const dept of seedSystemDepts) {
+    await prisma.systemDept.upsert({
+      where: { code: dept.code },
+      update: {
+        name: dept.name,
+        parentId: dept.parentId,
+        order: dept.order,
+        leader: dept.leader,
+        phone: dept.phone,
+        email: dept.email,
+        enabled: dept.enabled,
+        createdAt: new Date(dept.createdAt),
+      },
+      create: {
+        id: dept.id,
+        code: dept.code,
+        name: dept.name,
+        parentId: dept.parentId,
+        order: dept.order,
+        leader: dept.leader,
+        phone: dept.phone,
+        email: dept.email,
+        enabled: dept.enabled,
+        createdAt: new Date(dept.createdAt),
+      },
+    });
+  }
+
+  for (const post of seedSystemPosts) {
+    await prisma.systemPost.upsert({
+      where: { code: post.code },
+      update: {
+        name: post.name,
+        order: post.order,
+        description: post.description,
+        enabled: post.enabled,
+        createdAt: new Date(post.createdAt),
+      },
+      create: {
+        id: post.id,
+        code: post.code,
+        name: post.name,
+        order: post.order,
+        description: post.description,
+        enabled: post.enabled,
+        createdAt: new Date(post.createdAt),
       },
     });
   }
@@ -375,6 +602,9 @@ async function seedSystemManagement(): Promise<{
   return {
     dictTypes: seedDictTypes.length,
     systemConfigs: seedSystemConfigs.length,
+    systemNotices: seedSystemNotices.length,
+    systemDepts: seedSystemDepts.length,
+    systemPosts: seedSystemPosts.length,
     fileAssets: seedFileAssets.length,
     auditLogs: seedAuditLogs.length,
     loginLogs: seedLoginLogs.length,
@@ -473,10 +703,6 @@ function isPlaceholder(value: string): boolean {
     normalized.includes('change-me') ||
     normalized.includes('local-bootstrap')
   );
-}
-
-function hashPassword(password: string): string {
-  return createHash('sha256').update(password).digest('hex');
 }
 
 main()

@@ -1723,3 +1723,487 @@ OpenForge V1 loop 已完成。下一轮建议另起 S10 collaboration handoff/go
 - 交互式浏览器自动化未运行：`gstack browse` 在当前 checkout 未构建且 Playwright/Puppeteer 未安装。已用 live HTTP smoke 覆盖 API/Admin dev server、登录/current user、System/Monitor SDK API、401/403 和 trace headers；Admin 浏览器侧 request/error 分支由 smoke/Vitest 覆盖。
 - 不应误读为所有业务页面都已 live 后端化：本次迁移保留了 `origin/main` 已有页面能力，复查后补齐 handoff 要求的至少一个 System 页面和一个 Monitor 页面 live SDK 调用；Collaboration、Integration、Optional、部分 System/Security/Monitor 页面仍按 main 的 fixture-backed/read-only baseline 展示，等待各自后续 admission 扩展。
 - `pnpm build` 首次在并行 Nx workspace build 中遇到一次 Umi native worker crash；随后 `pnpm build:admin` 和 `pnpm build` 均通过，Nx 将 `admin:build` 标记为 flaky，后续 CI 仍需观察。
+
+## 2026-06-11 Backend Self-Loop Cycle 020
+
+### 本轮模块
+
+`packages/common`、`packages/core`、`packages/database`、`packages/redis`、
+`packages/file` and `packages/system` 的 `system-dict`、`system-config`、
+`system-notice`、`system-dept`、`system-post`、`system-menu`、`system-role`
+boundary
+
+### 完成内容
+
+- 新增 `@opencore/common` Nx workspace package，承载无框架依赖的后端基础能力。
+- 新增 request/trace header 常量、运行时 guard、错误码规范化、统一响应类型、分页/排序和白名单过滤 helper。
+- `apps/api` 的错误响应与请求上下文中间件已开始消费 `@opencore/common`，降低 `apps/api/src/platform` 的底层职责。
+- 新增 `@opencore/core` Nx workspace package，承载 NestJS 平台内核：request context、HTTP exception filter、error response、security baseline、structured logger、OpenAPI helper/drift、OpenAPI base decorators、response interceptor 和 API foundation setup。
+- `apps/api/src/main.ts`、OpenAPI export/check、auth login request context、audit interceptor 已直接消费 `@opencore/core`。
+- 原 `apps/api/src/platform` 里的 core 实现文件已收敛为 compatibility re-export shim，后续新代码应直接 import package。
+- 新增 `@opencore/database` Nx workspace package，承载 PrismaService、DatabaseModule、Prisma client factory、transaction helper 和 seed step runner。
+- `apps/api` 的 app/module/repository/audit/diagnostics 数据库引用已直接消费 `@opencore/database`；原 `apps/api/src/platform/database` 只保留 re-export shim。
+- `@opencore/database` 保留无输出 `.env.opencore.local` 加载，恢复直接 Prisma 集成测试的本地 env 行为，同时不依赖 `apps/api` config。
+- 新增 `@opencore/redis` Nx workspace package，承载 Redis options/env、client factory/adapter、RedisService、RedisModule、key naming、TTL policy、JSON cache helper 和 BullMQ Redis connection options。
+- Monitor runtime diagnostics 的 Redis/BullMQ 连接构造已改为消费 `@opencore/redis`。
+- 新增 `@opencore/file` Nx workspace package，承载 file storage options/env、object key naming、安全文件校验、storage port、local storage adapter、MinIO/S3 adapter、S3 prefix probe、FileStorageService 和 FileModule。
+- System file asset metadata 的 storage key/安全校验已改为消费 `@opencore/file`。
+- Monitor runtime diagnostics 的 S3 prefix probe 已改为消费 `@opencore/file`，不再在 `apps/api` 内直接构造 MinIO client。
+- 新增 `@opencore/system` Nx workspace package，并按顺序只落地 `system-dict` boundary：dictionary DTO、seed records、repository contract、seed repository、Prisma repository、service、module 和 export preview helper。
+- `apps/api` 的 dictionary routes 已改为消费 `SystemDictService`；旧 system-management repository 不再拥有 dictionary CRUD/export。
+- `prisma/seed.ts` 已改为从 `@opencore/system/records` 获取 dictionary seed
+  data。
+- 在 `@opencore/system` 内按顺序新增 `system-config` boundary：system config DTO、seed records、repository contract、seed repository、Prisma repository、service、module、secret redaction helper 和 export preview helper。
+- `apps/api` 的 config routes 已改为消费 `SystemConfigService`；旧 system-management repository 不再拥有 config CRUD/export。
+- `prisma/seed.ts` 已改为从 `@opencore/system/records` 获取 system config
+  seed data。
+- 在 `@opencore/system` 内按顺序新增 `system-notice` boundary：system notice
+  DTO、seed records、repository contract、seed repository、Prisma repository、
+  service、module、lifecycle guard 和 export preview helper。
+- 新增 `SystemNotice` Prisma model 和
+  `20260611193000_system_notice` migration；system notices 与
+  `CollaborationNotice` 保持独立。
+- `apps/api` 新增 `/api/core/notices` 系统公告 CRUD/export/publish/archive
+  路由，并由 `SystemNoticeService` 承载业务逻辑。
+- `packages/module-registry` 新增 `core.notice` 权限和 `Core System Notices`
+  OpenAPI tag；未声明 Admin route，因此 `registry:admin-routes:check` 无
+  drift。
+- 新增 `@opencore/system/records` records-only 入口，供 Prisma seed 读取纯
+  seed data，避免加载 Swagger DTO decorator。
+- 在 `@opencore/system` 内按顺序新增 `system-dept` boundary：department
+  DTO、seed records、repository contract、seed repository、Prisma repository、
+  service、module、tree builder、cycle guard 和 export preview helper。
+- 新增 `SystemDept` Prisma tree model 和
+  `20260611195500_system_dept` migration；本轮不绑定 `User`，避免越界到
+  system-user/data-scope。
+- `apps/api` 新增 `/api/core/depts` 部门树 CRUD/export 路由，并由
+  `SystemDeptService` 承载业务逻辑。
+- `packages/module-registry` 新增 `core.dept` 权限和 `Core Departments`
+  OpenAPI tag；未声明 Admin route，因此 `registry:admin-routes:check` 无
+  drift。
+- 在 `@opencore/system` 内按顺序新增 `system-post` boundary：post DTO、seed
+  records、repository contract、seed repository、Prisma repository、service、
+  module、pagination helper 和 export preview helper。
+- 新增 `SystemPost` Prisma model 和
+  `20260611202000_system_post` migration；本轮不绑定 `User`，避免越界到
+  system-user。
+- `apps/api` 新增 `/api/core/posts` 岗位 CRUD/export 路由，并由
+  `SystemPostService` 承载业务逻辑。
+- `packages/module-registry` 新增 `core.post` 权限和 `Core Posts` OpenAPI
+  tag；未声明 Admin route，因此 `registry:admin-routes:check` 无 drift。
+- 在 `@opencore/system` 内按顺序新增 `system-menu` boundary：menu DTO、
+  registry-backed seed records、repository contract、seed repository、Prisma
+  repository、service、module 和 export preview helper。
+- `apps/api` 保持既有 `/api/core/menus` 路由和权限矩阵，但控制器已改为消费
+  `SystemMenuService`；RBAC repository 不再拥有 menu CRUD/export。
+- Menu persistence 复用既有 `Menu` Prisma model；写入时继续校验
+  `permissionCode` 对应的 `Permission`，响应 stage 继续来自 registry-backed
+  system menu records。
+- RBAC permission 删除仍会先清空 `Menu.permissionId`，确保菜单边界迁移后
+  permission 删除不破坏数据库外键。
+- 在 `@opencore/system` 内按顺序新增 `system-role` boundary：role DTO、
+  registry-backed seed records、repository contract、seed repository、Prisma
+  repository、service、module 和 export preview helper。
+- `apps/api` 保持既有 `/api/core/roles` 路由和权限矩阵，但控制器已改为消费
+  `SystemRoleService`；RBAC repository 不再拥有 role CRUD/export。
+- Role persistence 复用既有 `Role`、`RolePermission`、`UserRole` Prisma
+  models；写入时继续校验 `permissionCodes`，删除自定义 role 时清理
+  role-permission/user-role 关系。
+- `prisma/seed.ts` 已改为从 `@opencore/system/records` 获取 admin/viewer role
+  seed records。
+- 在 `@opencore/system` 内按顺序新增 `system-user` boundary：user DTO、seed
+  records、repository contract、seed repository、Prisma repository、service、
+  module、password hash helper 和 export preview helper。
+- `apps/api` 保持既有 `/api/core/users` 路由和权限矩阵，但控制器已改为消费
+  `SystemUserService`；RBAC repository 不再拥有 user CRUD/export。
+- User persistence 复用既有 `User`、`UserRole` Prisma models；写入时继续校验
+  `roleCodes`，删除 user 时清理 user-role 关系。
+- `prisma/seed.ts` 已改为从 `@opencore/system/records` 获取 seeded users，并保留
+  `BOOTSTRAP_ADMIN_PASSWORD` 覆盖 admin 密码。
+- RBAC seed repository 只保留认证 fixture、权限 CRUD/export 和登录记录；
+  `PermissionGuard` 测试改用显式 user fixture，不再调用 RBAC user CRUD。
+- 新增 `@opencore/security` 和内部 `security-auth` boundary：auth user
+  repository port、login/session service、bearer token service、password
+  hash/verify helper 和 `SecurityAuthModule.forRepository(...)`。
+- API RBAC `AuthService` 和 `rbac.password.ts` 已变为兼容 re-export；实际
+  auth/token/password 逻辑已进入 `@opencore/security`。
+- `RbacRepository` 现在实现 `SecurityAuthUserRepository`，`RbacModule` 将该
+  auth port 映射到现有 RBAC repository，并注册 `SecurityBearerTokenService`。
+- system-user password hashing 已委托给 `@opencore/security`，用户创建/更新、
+  seed 和 login 校验共享同一 password helper。
+- `@opencore/security` 新增内部 `security-rbac` boundary：`RequirePermission`、
+  `RequireRole`、`SecurityPermissionGuard`、`SecurityRoleGuard` 和
+  `SecurityRequestWithAuth`。
+- API RBAC `permission.guard.ts` 和 `permissions.decorator.ts` 已变为兼容
+  re-export；实际 permission/role guard/decorator 逻辑已进入
+  `@opencore/security`。
+- `RbacModule` 现在同时注册 security permission guard 和 role guard，role
+  guard 没有 `RequireRole` metadata 时保持空操作。
+- 新增 `docs/quality-cycle/cycle-020/backlog.md` 和 `implementation-notes.md` 记录后端 self-loop 进度。
+
+### 已验证
+
+- `NX_DAEMON=false pnpm nx test common` pass。
+- `NX_DAEMON=false pnpm nx typecheck common` pass。
+- `NX_DAEMON=false pnpm nx lint common` pass。
+- `NX_DAEMON=false pnpm nx test api --runInBand --runTestsByPath src/platform/errors/error-response.spec.ts src/platform/request-context/request-context.middleware.spec.ts` pass。
+- `pnpm typecheck` pass。
+- `pnpm lint` pass。
+- `pnpm test` pass。
+- `pnpm build:api` pass。
+- `pnpm prisma:validate` pass。
+- `pnpm openapi:check` pass。
+- `pnpm format:check` pass。
+- `NX_DAEMON=false pnpm nx test core` pass。
+- `NX_DAEMON=false pnpm nx typecheck core` pass。
+- `NX_DAEMON=false pnpm nx lint core` pass。
+- `NX_DAEMON=false pnpm nx test api --runInBand --runTestsByPath src/platform/errors/error-response.spec.ts src/platform/request-context/request-context.middleware.spec.ts src/platform/security/security.spec.ts src/platform/logging/structured-logger.spec.ts src/platform/openapi/openapi-drift.spec.ts` pass。
+- Core 迁移后复跑 `pnpm typecheck`、`pnpm lint`、`pnpm test`、`pnpm build:api`、`pnpm prisma:validate`、`pnpm openapi:check`、`pnpm format:check` 均 pass；`build:api` 依赖链包含 `core:build`。
+- `NX_DAEMON=false pnpm nx test database` pass。
+- `NX_DAEMON=false pnpm nx typecheck database` pass。
+- `NX_DAEMON=false pnpm nx lint database` pass。
+- `NX_DAEMON=false pnpm nx typecheck api` pass。
+- `NX_DAEMON=false pnpm nx test api --runInBand --runTestsByPath src/platform/openapi/openapi.spec.ts src/app/health.controller.spec.ts src/platform/audit/audit-log.interceptor.spec.ts` pass。
+- `NX_DAEMON=false pnpm nx test api --runInBand --runTestsByPath src/modules/core/rbac/prisma-rbac.repository.spec.ts src/modules/core/system-management/prisma-system-management.repository.spec.ts src/modules/monitor/monitoring/runtime-diagnostics.service.spec.ts` pass。
+- Database 迁移后复跑 `pnpm typecheck`、`pnpm lint`、`pnpm test`、`pnpm build:api`、`pnpm prisma:validate`、`pnpm openapi:check`、`pnpm format:check` 均 pass；`build:api` 依赖链包含 `database:build`。
+- `NX_DAEMON=false pnpm nx test redis` pass。
+- `NX_DAEMON=false pnpm nx typecheck redis` pass。
+- `NX_DAEMON=false pnpm nx lint redis` pass。
+- `NX_DAEMON=false pnpm nx typecheck api` pass。
+- `NX_DAEMON=false pnpm nx test api --runInBand --runTestsByPath src/modules/monitor/monitoring/runtime-diagnostics.service.spec.ts src/modules/monitor/monitoring/monitoring.repository.spec.ts` pass。
+- Redis 迁移后复跑 `pnpm typecheck`、`pnpm lint`、`pnpm test`、`pnpm build:api`、`pnpm prisma:validate`、`pnpm openapi:check`、`pnpm format:check` 均 pass；`build:api` 依赖链包含 `redis:build`。
+- Redis 轮首次 `pnpm format:check` 仅因 `pnpm-lock.yaml` 格式化失败，已用 Prettier 修复 lockfile 后通过。
+- `NX_DAEMON=false pnpm nx test file` pass。
+- `NX_DAEMON=false pnpm nx typecheck file` pass。
+- `NX_DAEMON=false pnpm nx lint file` pass。
+- `NX_DAEMON=false pnpm nx typecheck api` pass；依赖链包含 `file:typecheck`。
+- `NX_DAEMON=false pnpm nx test api --runInBand --runTestsByPath src/modules/core/system-management/system-management.repository.spec.ts src/modules/core/system-management/prisma-system-management.repository.spec.ts src/modules/monitor/monitoring/runtime-diagnostics.service.spec.ts src/modules/monitor/monitoring/monitoring.repository.spec.ts` pass。
+- File 迁移后复跑 `pnpm typecheck`、`pnpm lint`、`pnpm test`、`pnpm build:api`、`pnpm prisma:validate`、`pnpm openapi:check`、`pnpm format:check` 均 pass；`typecheck`/`test` 项目矩阵为 12 个 Nx projects，`build:api` 依赖链包含 `file:build`。
+- `NX_DAEMON=false pnpm nx test system` pass。
+- `NX_DAEMON=false pnpm nx typecheck system` pass。
+- `NX_DAEMON=false pnpm nx lint system` pass。
+- `NX_DAEMON=false pnpm nx typecheck api` pass；依赖链包含 `system:typecheck`。
+- `NX_DAEMON=false pnpm nx test api --runInBand --runTestsByPath src/modules/core/system-management/system-management.repository.spec.ts src/modules/core/system-management/prisma-system-management.repository.spec.ts src/modules/core/system-management/system-management.permission-matrix.spec.ts` pass。
+- System dict 迁移后 `pnpm prisma:validate` pass。
+- System dict 迁移后复跑 `pnpm typecheck`、`pnpm lint`、`pnpm test`、`pnpm build:api`、`pnpm prisma:validate`、`pnpm openapi:check`、`pnpm format:check` 均 pass；`typecheck`/`lint`/`test` 项目矩阵为 13 个 Nx projects，`build:api` 依赖链包含 `system:build`。
+- `NX_DAEMON=false pnpm nx test system` pass；当前 `system` 包包含 2 个 suite / 8 个 tests，覆盖 dict 和 config。
+- `NX_DAEMON=false pnpm nx typecheck system` pass。
+- `NX_DAEMON=false pnpm nx lint system` pass。
+- `NX_DAEMON=false pnpm nx typecheck api` pass；依赖链包含 `system:typecheck`。
+- `NX_DAEMON=false pnpm nx test api --runInBand --runTestsByPath src/modules/core/system-management/system-management.repository.spec.ts src/modules/core/system-management/prisma-system-management.repository.spec.ts src/modules/core/system-management/system-management.permission-matrix.spec.ts` pass。
+- System config 迁移后 `pnpm prisma:validate` pass。
+- System config 迁移后复跑 `pnpm typecheck`、`pnpm lint`、`pnpm test`、`pnpm build:api`、`pnpm prisma:validate`、`pnpm openapi:check`、`pnpm format:check` 均 pass；`typecheck`/`lint`/`test` 项目矩阵为 13 个 Nx projects，`build:api` 依赖链包含 `system:build`。
+- `pnpm prisma:generate` pass。
+- `pnpm prisma:migrate` pass：已应用 `20260611193000_system_notice`。
+- `pnpm prisma:seed` pass：local DB seed 完成 94 permissions、33 menus、2
+  roles 和 system-management baseline，其中 `systemNotices: 2`。
+- `NX_DAEMON=false pnpm nx test system` pass；当前 `system` 包包含 3 个
+  suite / 12 个 tests，覆盖 dict、config 和 notice。
+- `NX_DAEMON=false pnpm nx typecheck system` pass。
+- `NX_DAEMON=false pnpm nx lint system` pass。
+- `NX_DAEMON=false pnpm nx test module-registry` pass。
+- `NX_DAEMON=false pnpm nx typecheck module-registry` pass。
+- `NX_DAEMON=false pnpm nx lint module-registry` pass。
+- `NX_DAEMON=false pnpm nx typecheck api` pass；依赖链包含
+  `system:typecheck` 和 `module-registry:typecheck`。
+- `NX_DAEMON=false pnpm nx test api --runInBand --runTestsByPath src/modules/core/system-management/system-management.permission-matrix.spec.ts src/modules/core/system-management/system-management.repository.spec.ts src/modules/core/system-management/prisma-system-management.repository.spec.ts` pass。
+- `pnpm openapi:export` pass。
+- `pnpm openapi:check` pass。
+- `pnpm openapi:registry-tags:check` pass。
+- `pnpm registry:admin-routes:check` pass。
+- System notice 迁移后复跑 `pnpm typecheck`、`pnpm lint`、`pnpm test`、`pnpm build:api`、`pnpm prisma:validate`、`pnpm openapi:check`、`pnpm format:check` 均 pass；`typecheck`/`lint`/`test` 项目矩阵为 13 个 Nx projects，`build:api` 依赖链包含 `system:build`。
+- `pnpm prisma:generate` pass。
+- `pnpm prisma:migrate` pass：已应用 `20260611195500_system_dept`。
+- `pnpm prisma:seed` pass：local DB seed 完成 99 permissions、34 menus、2
+  roles 和 system-management baseline，其中 `systemDepts: 3`。
+- `NX_DAEMON=false pnpm nx test system` pass；当前 `system` 包包含 4 个
+  suite / 16 个 tests，覆盖 dict、config、notice 和 dept。
+- `NX_DAEMON=false pnpm nx typecheck system` pass。
+- `NX_DAEMON=false pnpm nx lint system` pass。
+- `NX_DAEMON=false pnpm nx test module-registry` pass。
+- `NX_DAEMON=false pnpm nx lint module-registry` pass。
+- `NX_DAEMON=false pnpm nx typecheck api` pass；依赖链包含
+  `system:typecheck` 和 `module-registry:typecheck`。
+- `NX_DAEMON=false pnpm nx test api --runInBand --runTestsByPath src/modules/core/system-management/system-management.permission-matrix.spec.ts src/modules/core/system-management/system-management.repository.spec.ts src/modules/core/system-management/prisma-system-management.repository.spec.ts` pass。
+- `pnpm openapi:export` pass。
+- `pnpm openapi:check` pass。
+- `pnpm openapi:registry-tags:check` pass。
+- `pnpm registry:admin-routes:check` pass。
+- System dept 迁移后复跑 `pnpm typecheck`、`pnpm lint`、`pnpm test`、`pnpm build:api`、`pnpm prisma:validate`、`pnpm openapi:check`、`pnpm format:check` 均 pass；`typecheck`/`lint`/`test` 项目矩阵为 13 个 Nx projects，`build:api` 依赖链包含 `system:build`。
+- System dept 轮首次并行 full-gate 让 Admin `max setup`/`tsc` 临时竞态，
+  顺序重跑 `pnpm typecheck`、`pnpm lint` 均 pass；Nx 标记 Admin task flaky。
+- `pnpm prisma:generate` pass。
+- `pnpm prisma:migrate` pass：已应用 `20260611202000_system_post`。
+- `pnpm prisma:seed` pass：local DB seed 完成 104 permissions、35 menus、2
+  roles 和 system-management baseline，其中 `systemPosts: 2`。
+- `NX_DAEMON=false pnpm nx test system` pass；当前 `system` 包包含 5 个
+  suite / 20 个 tests，覆盖 dict、config、notice、dept 和 post。
+- `NX_DAEMON=false pnpm nx typecheck system` pass。
+- `NX_DAEMON=false pnpm nx lint system` pass。
+- `NX_DAEMON=false pnpm nx test module-registry` pass。
+- `NX_DAEMON=false pnpm nx lint module-registry` pass。
+- `NX_DAEMON=false pnpm nx typecheck api` pass；依赖链包含
+  `system:typecheck` 和 `module-registry:typecheck`。
+- `NX_DAEMON=false pnpm nx test api --runInBand --runTestsByPath src/modules/core/system-management/system-management.permission-matrix.spec.ts src/modules/core/system-management/system-management.repository.spec.ts src/modules/core/system-management/prisma-system-management.repository.spec.ts` pass。
+- `pnpm openapi:export` pass。
+- `pnpm openapi:check` pass。
+- `pnpm openapi:registry-tags:check` pass。
+- `pnpm registry:admin-routes:check` pass。
+- System post 迁移后复跑 `pnpm typecheck`、`pnpm lint`、`pnpm test`、`pnpm build:api`、`pnpm prisma:validate`、`pnpm openapi:check`、`pnpm format:check` 均 pass；`typecheck`/`lint`/`test` 项目矩阵为 13 个 Nx projects，`build:api` 依赖链包含 `system:build`。
+- `pnpm prisma:seed` pass：local DB seed 完成 104 permissions、35 menus、2
+  roles 和当前 system-management baseline。
+- `NX_DAEMON=false pnpm nx typecheck system` pass。
+- `NX_DAEMON=false pnpm nx test system` pass；当前 `system` 包包含 6 个
+  suite / 24 个 tests，覆盖 dict、config、notice、dept、post 和 menu。
+- `NX_DAEMON=false pnpm nx lint system` pass。
+- `NX_DAEMON=false pnpm nx typecheck api` pass；依赖链包含
+  `system:typecheck` 和 `module-registry:typecheck`。
+- `NX_DAEMON=false pnpm nx test api --runInBand --runTestsByPath src/modules/core/rbac/rbac.repository.spec.ts src/modules/core/rbac/prisma-rbac.repository.spec.ts src/modules/core/rbac/rbac.permission-matrix.spec.ts` pass。
+- `NX_DAEMON=false pnpm nx lint api` pass。
+- `NX_DAEMON=false pnpm nx lint module-registry` pass。
+- `pnpm prisma:validate` pass。
+- `pnpm openapi:export` pass。
+- `pnpm openapi:check` pass。
+- `pnpm openapi:registry-tags:check` pass。
+- `pnpm registry:admin-routes:check` pass。
+- `pnpm format:check` pass。
+- System menu 迁移后复跑 `pnpm typecheck`、`pnpm lint`、`pnpm test`、`pnpm build:api`、`pnpm prisma:validate`、`pnpm openapi:check`、`pnpm format:check` 均 pass；`typecheck`/`lint`/`test` 项目矩阵为 13 个 Nx projects，`build:api` 依赖链包含 `system:build`。
+- `NX_DAEMON=false pnpm nx typecheck system` pass。
+- `NX_DAEMON=false pnpm nx test system` pass；当前 `system` 包包含 7 个
+  suite / 30 个 tests，覆盖 dict、config、notice、dept、post、menu 和 role。
+- `NX_DAEMON=false pnpm nx lint system` pass。
+- `NX_DAEMON=false pnpm nx typecheck api` pass；依赖链包含
+  `system:typecheck` 和 `module-registry:typecheck`。
+- `NX_DAEMON=false pnpm nx test api --runInBand --runTestsByPath src/modules/core/rbac/rbac.repository.spec.ts src/modules/core/rbac/prisma-rbac.repository.spec.ts src/modules/core/rbac/rbac.permission-matrix.spec.ts src/modules/core/rbac/auth.service.spec.ts src/modules/core/rbac/permission.guard.spec.ts` pass。
+- `pnpm prisma:seed` pass：local DB seed 完成 104 permissions、35 menus、2
+  roles 和当前 system-management baseline。
+- `NX_DAEMON=false pnpm nx lint api` pass。
+- `pnpm prisma:validate` pass。
+- `pnpm openapi:export` pass。
+- `pnpm openapi:check` pass。
+- `pnpm openapi:registry-tags:check` pass。
+- `pnpm registry:admin-routes:check` pass。
+- `pnpm format:check` pass。
+- System role 迁移后复跑 `pnpm typecheck`、`pnpm lint`、`pnpm test`、`pnpm build:api`、`pnpm prisma:validate`、`pnpm openapi:check`、`pnpm format:check` 均 pass；`typecheck`/`lint`/`test` 项目矩阵为 13 个 Nx projects，`build:api` 依赖链包含 `system:build`。
+- `NX_DAEMON=false pnpm nx typecheck system` pass。
+- `NX_DAEMON=false pnpm nx test system` pass；当前 `system` 包包含 8 个
+  suite / 34 个 tests，覆盖 dict、config、notice、dept、post、menu、role 和
+  user。
+- `NX_DAEMON=false pnpm nx typecheck api` pass；依赖链包含
+  `system:typecheck` 和 `module-registry:typecheck`。
+- `NX_DAEMON=false pnpm nx test api --runInBand --runTestsByPath src/modules/core/rbac/rbac.repository.spec.ts src/modules/core/rbac/prisma-rbac.repository.spec.ts src/modules/core/rbac/auth.service.spec.ts src/modules/core/rbac/permission.guard.spec.ts src/modules/core/rbac/rbac.permission-matrix.spec.ts` pass。
+- `NX_DAEMON=false pnpm nx lint system` pass。
+- `NX_DAEMON=false pnpm nx lint api` pass。
+- `pnpm prisma:seed` pass：local DB seed 完成 104 permissions、35 menus、2
+  roles、1 user 和当前 system-management baseline。
+- `pnpm openapi:export` pass。
+- `pnpm openapi:check` pass。
+- `pnpm openapi:registry-tags:check` pass。
+- `pnpm registry:admin-routes:check` pass。
+- `pnpm format:check` pass。
+- `pnpm prisma:validate` pass。
+- System user 迁移后复跑 `pnpm typecheck`、`pnpm lint`、`pnpm test`、`pnpm build:api`、`pnpm prisma:validate`、`pnpm openapi:check`、`pnpm format:check` 均 pass；`typecheck`/`lint`/`test` 项目矩阵为 13 个 Nx projects，`build:api` 依赖链包含 `system:build`。
+- `NX_DAEMON=false pnpm nx typecheck security` pass。
+- `NX_DAEMON=false pnpm nx test security` pass；当前 `security` 包包含 1 个
+  suite / 4 个 tests，覆盖 password hash、bearer token、login 成功/失败和
+  disabled user。
+- `NX_DAEMON=false pnpm nx lint security` pass。
+- `NX_DAEMON=false pnpm nx typecheck system` pass；依赖链包含
+  `security:typecheck`。
+- `NX_DAEMON=false pnpm nx test system` pass；system-user 委托 security
+  password helper 后仍为 8 个 suite / 34 个 tests。
+- `NX_DAEMON=false pnpm nx typecheck api` pass；依赖链包含
+  `security:typecheck`、`system:typecheck` 和 `module-registry:typecheck`。
+- `NX_DAEMON=false pnpm nx test api --runInBand --runTestsByPath src/modules/core/rbac/auth.service.spec.ts src/modules/core/rbac/permission.guard.spec.ts src/modules/core/rbac/prisma-rbac.repository.spec.ts src/modules/core/rbac/rbac.repository.spec.ts src/modules/core/rbac/rbac.permission-matrix.spec.ts` pass。
+- `NX_DAEMON=false pnpm nx lint system` pass。
+- `NX_DAEMON=false pnpm nx lint api` pass。
+- `pnpm prisma:seed` pass：local DB seed 完成 104 permissions、35 menus、2
+  roles、1 user 和当前 system-management baseline。
+- `pnpm openapi:export` pass。
+- `pnpm openapi:check` pass。
+- `pnpm openapi:registry-tags:check` pass。
+- `pnpm registry:admin-routes:check` pass。
+- Security auth 迁移后复跑 `pnpm typecheck`、`pnpm lint`、`pnpm test`、`pnpm build:api`、`pnpm prisma:validate`、`pnpm openapi:check`、`pnpm format:check` 均 pass；`typecheck`/`lint`/`test` 项目矩阵为 14 个 Nx projects，`build:api` 依赖链包含 `security:build` 和 `system:build`。
+- `NX_DAEMON=false pnpm nx typecheck security` pass；依赖链包含
+  `contracts:typecheck`。
+- `NX_DAEMON=false pnpm nx test security` pass；当前 `security` 包包含 2 个
+  suite / 10 个 tests，覆盖 auth 和 RBAC guard/decorator。
+- `NX_DAEMON=false pnpm nx lint security` pass。
+- `NX_DAEMON=false pnpm nx typecheck api` pass；依赖链重新跑
+  `security:typecheck` 和 `system:typecheck`。
+- `NX_DAEMON=false pnpm nx test api --runInBand --runTestsByPath src/modules/core/rbac/permission.guard.spec.ts src/modules/core/rbac/auth.service.spec.ts src/modules/core/rbac/rbac.permission-matrix.spec.ts` pass。
+- `NX_DAEMON=false pnpm nx lint api` pass。
+- `pnpm prisma:seed` pass：local DB seed 完成 104 permissions、35 menus、2
+  roles、1 user 和当前 system-management baseline。
+- `pnpm openapi:export` pass。
+- `pnpm openapi:check` pass。
+- `pnpm openapi:registry-tags:check` pass。
+- `pnpm registry:admin-routes:check` pass。
+- Security RBAC 迁移后复跑 `pnpm typecheck`、`pnpm lint`、`pnpm test`、`pnpm build:api`、`pnpm prisma:validate`、`pnpm openapi:check`、`pnpm format:check` 均 pass；`typecheck`/`lint`/`test` 项目矩阵为 14 个 Nx projects，`build:api` 依赖链包含 `security:build` 和 `system:build`。
+
+### Security Data Scope 进展
+
+- BE20-P16 `security-data-scope` 已完成：`@opencore/security` 新增
+  data-scope decorator/guard/repository port/service/query policy helpers。
+- Prisma 已新增 role `dataScope`/`dataScopeDeptIds`、user `deptId` 和
+  `User` -> `SystemDept` 关系；迁移
+  `20260611213000_security_data_scope` 已应用。
+- `@opencore/system` 的 role/user 记录、DTO、seed/prisma 仓储和测试已支持
+  数据范围与部门归属；seed 顺序已调整为先写 system management/depts 再写
+  users。
+- API RBAC Prisma/seed repositories 已实现 data-scope profile 和部门后代查询；
+  `RbacModule` 已注册 `SecurityDataScopeGuard`，无 `RequireDataScope`
+  metadata 时保持 inert。
+- `pnpm prisma:generate`、`pnpm prisma:migrate`、`pnpm prisma:seed` pass。
+- `NX_DAEMON=false pnpm nx typecheck security/system/api` pass。
+- `NX_DAEMON=false pnpm nx test security/system/api` pass；security 目前 3 个
+  suites / 16 tests，system 8 个 suites / 34 tests，api 28 个 suites / 78
+  tests。
+- `NX_DAEMON=false pnpm nx lint security/system/api` pass。
+- `pnpm openapi:export`、`pnpm openapi:check`、`pnpm openapi:registry-tags:check`
+  和 `pnpm registry:admin-routes:check` pass。
+- Security data-scope 迁移后复跑 `pnpm typecheck`、`pnpm lint`、`pnpm test`、
+  `pnpm build:api`、`pnpm prisma:validate`、`pnpm openapi:check`、
+  `pnpm format:check` 均 pass；`typecheck`/`lint`/`test` 项目矩阵为 14 个 Nx
+  projects，`build:api` 依赖链包含 `security:build` 和 `system:build`。
+
+### Audit Login Log 进展
+
+- BE20-P17 `audit-login-log` 已完成：新增 `@opencore/audit` Nx package 和
+  `audit-login-log` 内部边界。
+- Login log DTO、seed records、repository contract、seed repository、Prisma
+  repository、service、module、分页/filter/export helper 已迁入
+  `packages/audit`。
+- 复用了既有 `LoginLog` Prisma model，本轮无需新增 migration；Prisma seed 已改为
+  直接从 `@opencore/audit/records` 读取 login log seed。
+- `SecurityAuthService` 已改为通过 `SecurityLoginAttemptRecorder` 记录登录尝试；
+  API RBAC 仓储不再写 login logs。
+- `AuditLoginLogModule` 输出 `SecurityLoginAttemptRecorder`，`RbacModule`
+  导入该模块用于 auth login success/failure 写入。
+- `/api/core/login-logs` 和 `/api/core/login-logs/export` 路由保持在 API 聚合
+  层，但已委托 `AuditLoginLogService`，并新增 username/success 查询过滤。
+- `pnpm install --lockfile-only` pass，lockfile 已包含 audit workspace metadata。
+- `NX_DAEMON=false pnpm nx typecheck audit/security/api` pass。
+- `NX_DAEMON=false pnpm nx test audit/security/api` pass；audit 当前 1 个 suite /
+  2 tests，security 3 个 suites / 16 tests，api 28 个 suites / 78 tests。
+- `NX_DAEMON=false pnpm nx lint audit/security/api` pass。
+- `pnpm prisma:seed` pass：local DB seed 完成 104 permissions、35 menus、2
+  roles、1 user 和当前 system-management baseline，其中 login logs 来自
+  `@opencore/audit/records`。
+- `pnpm openapi:export`、`pnpm openapi:check`、`pnpm openapi:registry-tags:check`
+  和 `pnpm registry:admin-routes:check` pass。
+- Audit login-log 迁移后复跑 `pnpm typecheck`、`pnpm lint`、`pnpm test`、
+  `pnpm build:api`、`pnpm prisma:validate`、`pnpm openapi:check`、
+  `pnpm format:check` 均 pass；`typecheck`/`lint`/`test` 项目矩阵为 15 个 Nx
+  projects，`build:api` 依赖链包含 `audit:build`、`security:build` 和
+  `system:build`。
+
+### Audit Operation Log 进展
+
+- BE20-P18 `audit-operation-log` 已完成：`@opencore/audit` 新增
+  `audit-operation-log` 内部边界。
+- Operation log DTO、seed records、repository contract、seed repository、Prisma
+  repository、service、module、decorator、interceptor、分页/filter/export helper
+  已迁入 `packages/audit`。
+- 复用了既有 `AuditLog` Prisma model，本轮无需新增 migration；Prisma seed 已改为
+  直接从 `@opencore/audit/records` 读取 audit operation log seed。
+- `AppModule` 已导入 `AuditOperationLogModule`，并把全局 APP_INTERCEPTOR 切到
+  `AuditOperationLogInterceptor`；旧 `apps/api/src/platform/audit` interceptor
+  文件保留为兼容 re-export shim。
+- `/api/core/audit-logs` 和 `/api/core/audit-logs/export` 路由保持在 API 聚合
+  层，但已委托 `AuditOperationLogService`，并新增 actorUsername/action/resource
+  查询过滤。
+- Legacy system-management Prisma/seed repositories 不再拥有 audit logs；
+  system-management repository 边界现在只保留 file metadata。
+- `pnpm install --lockfile-only` pass，lockfile 已包含 audit 新依赖 metadata。
+- `NX_DAEMON=false pnpm nx typecheck audit/api` pass。
+- `NX_DAEMON=false pnpm nx test audit/api` pass；audit 当前 2 个 suites / 7
+  tests，api 28 个 suites / 76 tests。
+- `NX_DAEMON=false pnpm nx lint audit/api` pass。
+- `pnpm prisma:seed` pass：local DB seed 完成 104 permissions、35 menus、2
+  roles、1 user 和当前 system-management baseline，其中 audit logs/login logs
+  均来自 `@opencore/audit/records`。
+- `pnpm openapi:export`、`pnpm openapi:check`、`pnpm openapi:registry-tags:check`
+  和 `pnpm registry:admin-routes:check` pass。
+- Audit operation-log 迁移后复跑 `pnpm typecheck`、`pnpm lint`、`pnpm test`、
+  `pnpm build:api`、`pnpm prisma:validate`、`pnpm openapi:check`、
+  `pnpm format:check` 均 pass；`typecheck`/`lint`/`test` 项目矩阵为 15 个 Nx
+  projects，`build:api` 依赖链包含 `audit:build`、`security:build` 和
+  `system:build`。
+
+### Online User 进展
+
+- BE20-P19 `online-user` 已完成：新增 `@opencore/online-user` Nx package。
+- Online-user DTO、seed records、repository contract、seed repository、Prisma
+  repository、service、module、分页/filter/summary helper 已迁入
+  `packages/online-user`。
+- 新增 Prisma migration `20260611230000_online_user_revoke_audit`，用于创建/
+  补齐 `OnlineUserSession` 表，并持久化 kick-out 的 `revokedBy` /
+  `revokedReason` 审计上下文。
+- Prisma seed 已改为从 `@opencore/online-user/records` 读取 online user
+  sessions，`pnpm prisma:seed` 当前写入 `onlineUserSessions: 1`。
+- `OperationsModule` 已导入 `OnlineUserModule`；`/api/monitor/online-users`
+  相关路由仍在 API 聚合层，但已委托 `OnlineUserService`。
+- Operations summary 不再由 operations repository 直接查询 online sessions；
+  controller 通过 `OnlineUserService.getSummary()` 组合在线用户统计。
+- Legacy operations Prisma/seed repositories 不再拥有 online-user
+  list/detail/kick-out 行为。
+- SDK online-user query type 已补充 `username` 过滤字段。
+- `pnpm prisma:generate`、`pnpm prisma:migrate`、`pnpm install --lockfile-only`
+  pass。
+- `NX_DAEMON=false pnpm nx typecheck online-user/api/sdk` pass。
+- `NX_DAEMON=false pnpm nx test online-user/api/sdk` pass；online-user 当前 1
+  个 suite / 2 tests，api 28 个 suites / 75 tests，sdk 8 个 suites / 13 tests。
+- `NX_DAEMON=false pnpm nx lint online-user/api/sdk` pass。
+- `pnpm prisma:seed` pass：local DB seed 完成 104 permissions、35 menus、2
+  roles、1 user、1 online user session 和当前 system-management baseline。
+- `pnpm openapi:export`、`pnpm openapi:check`、`pnpm openapi:registry-tags:check`
+  和 `pnpm registry:admin-routes:check` pass。
+- Online-user 迁移后复跑 `pnpm typecheck`、`pnpm lint`、`pnpm test`、
+  `pnpm build:api`、`pnpm prisma:validate`、`pnpm openapi:check`、
+  `pnpm format:check` 均 pass；`typecheck`/`lint`/`test` 项目矩阵为 16 个 Nx
+  projects，`build:api` 依赖链包含 `online-user:build`、`audit:build`、
+  `security:build` 和 `system:build`。
+
+### 下一模块
+
+`packages/scheduler` 已完成，下一模块为 `packages/monitor`。
+
+### Scheduler 进展
+
+- BE20-P20 `scheduler` 已完成：新增 `@opencore/scheduler` Nx package。
+- Scheduler DTO、seed records、registry whitelist、repository contract、seed
+  repository、Prisma repository、service、module、分页/filter/summary helper 已迁入
+  `packages/scheduler`。
+- 新增 scheduler registry whitelist，当前允许 `openapi.drift-check` 和
+  `report.refresh`；create/update/trigger 均校验 registry code、queueName、
+  cron 表达式、retryLimit 和 timeoutSeconds。
+- Manual trigger 会写入 BullMQ-oriented run log metadata，包括 adapter 和
+  handlerKey；真实 worker 执行仍留给后续 monitor/queue worker 边界。
+- 新增 Prisma migration `20260611233000_scheduler_runtime`，用于为旧本地库创建
+  `JobDefinition` / `JobRunLog` 表和 FK。
+- Prisma seed 已改为从 `@opencore/scheduler/records` 读取 scheduler jobs/run
+  logs，`pnpm prisma:seed` 当前写入 `scheduler: { jobs: 1, jobRuns: 1 }`。
+- `OperationsModule` 已导入 `SchedulerModule`；`/api/monitor/jobs` 相关路由仍在
+  API 聚合层，但已委托 `SchedulerService`。
+- Operations summary 不再由 operations repository 直接查询 scheduler tables；
+  controller 通过 `SchedulerService.getSummary()` 组合 job/run-log 统计。
+- Legacy operations Prisma/seed repositories 不再拥有 scheduler
+  list/detail/create/update/enable/disable/trigger/run-log 行为。
+- `pnpm install --lockfile-only`、`pnpm prisma:generate`、`pnpm prisma:migrate`、
+  `pnpm prisma:seed` pass。
+- `NX_DAEMON=false pnpm nx typecheck scheduler/api/sdk` pass。
+- `NX_DAEMON=false pnpm nx test scheduler/api/sdk` pass；scheduler 当前 1 个
+  suite / 3 tests，api 28 个 suites / 73 tests，sdk 8 个 suites / 13 tests。
+- `NX_DAEMON=false pnpm nx lint scheduler/api/sdk` pass。
+- `pnpm openapi:export`、`pnpm openapi:check`、`pnpm openapi:registry-tags:check`、
+  `pnpm registry:admin-routes:check` 和 `pnpm sdk:check` pass。
+- Scheduler 迁移后复跑 `pnpm typecheck`、`pnpm lint`、`pnpm test`、
+  `pnpm build:api`、`pnpm prisma:validate`、`pnpm openapi:check`、
+  `pnpm format:check` 均 pass；`typecheck`/`lint`/`test` 项目矩阵为 17 个 Nx
+  projects，`build:api` 依赖链包含 `scheduler:build`。
+
+### 下一模块
+
+`packages/monitor`：按顺序完成 health/redis/server/queue monitor runtime package
+边界。
