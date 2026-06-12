@@ -1667,3 +1667,73 @@ tools/scripts/smoke-core-user.mjs` passed with
   `98e10be feat(core-user): add post binding loop / 新增用户岗位绑定闭环`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 23 Capability
+
+Capability: `core.user` department tree filter productization.
+
+Goal: close the next `core.user` P1 gap by adding RuoYi/Yudao-style department
+scope filtering to user list/export and the Admin Users page.
+
+## Round 23 Implemented
+
+- Added `ListUsersQueryDto` with optional `deptId` and wired it through
+  `GET /api/core/users` and `GET /api/core/users/export`.
+- Extended seed and Prisma user repositories to normalize list queries, reject
+  unknown department IDs and filter by selected department plus descendants.
+- Extended OpenAPI, `@opencore/sdk` request types/client methods and SDK path
+  tests for user list/export query parameters.
+- Updated Admin Users with a left Department scope tree backed by live
+  `core.dept`, an All departments reset and fallback subtree filtering when
+  the live API is unavailable.
+- Extended Admin static smoke and `tools/scripts/smoke-core-user.mjs` with
+  department-filter guards.
+
+## Round 23 Verification
+
+- `node --check tools/scripts/smoke-core-user.mjs` pass.
+- `node --check apps/admin/scripts/smoke-test.mjs` pass.
+- `git diff --check` pass before the feature commit.
+- Focused tests pass:
+  - `pnpm nx test system --testFile=packages/system/src/system-user/system-user.spec.ts`
+  - `pnpm nx test sdk --testFile=packages/sdk/src/rbac-client.spec.ts`
+  - `pnpm nx test admin`
+  - `pnpm nx test api --testFile=apps/api/src/modules/core/rbac/permission.guard.spec.ts`
+- `pnpm openapi:export`, `pnpm openapi:check`, `pnpm sdk:check`,
+  `pnpm openapi:registry-tags:check` and
+  `pnpm registry:admin-routes:check` pass.
+- `pnpm prisma:validate` pass.
+- `pnpm smoke:api:local` pass on fixed port `39173`, including
+  `core.user.dept.unknown-rejected`, `core.user.dept.create`,
+  `core.user.dept.filter` and `core.user.dept.subtree-filter`.
+- `pnpm build:api` pass.
+- `pnpm build:admin` pass.
+- `pnpm deploy:opencore` pass, deploying API/Admin on fixed ports
+  `39172`/`39174`; deploy smoke includes the new department-filter checks and
+  the existing login-prefix/frontend-cache/session-revocation guards.
+
+## Round 23 Public Verification
+
+Against public endpoints after deploy:
+
+- `GET http://144.217.243.161:39172/health/ready` returned 200.
+- `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 node
+tools/scripts/smoke-core-user.mjs` passed with
+  `OPENCORE_SMOKE_CHECK_DOCS=false` and the deployed admin password loaded from
+  `.env.opencore.local` without printing secrets.
+- Public user smoke verified unknown-department rejection, create-time
+  operations department binding, direct department filtering, headquarters
+  subtree filtering, unrelated engineering exclusion, status disable/
+  login-block, password reset, old-password rejection and update/delete session
+  revocation.
+- `GET http://144.217.243.161:39174/system/users/` returned 200 with
+  `cache-control: no-cache`.
+- The deployed Admin Users chunk `p__System__Users.f2a8caa6.async.js`
+  contains `Department scope`, `All departments` and `deptId`.
+
+## Round 23 Commit Record
+
+- Feature commit:
+  `fda33c4 feat(core-user): add department tree filter loop / 新增用户部门树过滤闭环`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

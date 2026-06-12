@@ -579,6 +579,31 @@ users did not persist or expose post assignments.
       verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 23: core.user Department Tree Filter Productization
+
+Why this slice: after user-post binding, the next lowest-dependency P1
+user-management gap was the left department tree filter. RuoYi and Yudao both
+let operators click a department node to list users in that department subtree.
+OpenCore already had live departments and user `deptId`, but user list/export
+did not accept a department filter and Admin Users had no department scope
+panel.
+
+- [x] Add `deptId` list/export query DTO for system users.
+- [x] Implement selected-department plus descendant filtering in seed and
+      Prisma user repositories.
+- [x] Reject unknown department IDs before returning a filtered user list.
+- [x] Extend OpenAPI, SDK types/client methods and SDK path tests.
+- [x] Update Admin Users with a live department tree side panel, all-departments
+      reset and fallback filtering when the API is unavailable.
+- [x] Extend static Admin smoke to lock the department-filter UI markers.
+- [x] Extend fixed-port/deploy/public `core.user` smoke to prove unknown-dept
+      rejection, direct department filtering, parent subtree filtering and
+      unrelated department exclusion while preserving existing user security
+      checks.
+- [x] Run focused, build, fixed-port smoke, deployment and public URL
+      verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -614,10 +639,10 @@ treat "minimal loop" as "minimal final product".
       and ordered tree operations.
 - [ ] Round 3/22 `core.post`: user-post binding is complete from the user
       form side; simple-list option endpoints and batch operations remain.
-- [ ] Round 7/19/22 `core.user`: status toggle, reset password and direct
+- [ ] Round 7/19/22/23 `core.user`: status toggle, reset password and direct
       user-mutation session invalidation are complete, and post binding is
-      complete. Department side-tree filtering, profile/avatar, import/export
-      and option/batch workflows still need enhancement.
+      complete. Department side-tree filtering is complete. Profile/avatar,
+      import/export and option/batch workflows still need enhancement.
 - [ ] Round 9 `core.config`: get-by-key, cache refresh/invalidation and runtime
       propagation boundaries.
 - [ ] Round 11 `core.login-log`: browser/OS parsing, IP/location enrichment
@@ -661,8 +686,7 @@ treat "minimal loop" as "minimal final product".
   endpoint.
 - Registry definition editing and dynamic permission discovery.
 - User Excel import/export file workflows, dedicated User-page role assignment
-  dialog, profile/avatar/social/simple-list endpoints, batch user delete and
-  department side-tree filtering.
+  dialog, profile/avatar/social/simple-list endpoints and batch user delete.
 - Batch dictionary delete, Excel import/export file workflows, dictionary
   color/css/remark fields, app-wide dictionary cache TTL/invalidation and
   dictionary cache refresh.

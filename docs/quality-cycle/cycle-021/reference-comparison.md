@@ -570,10 +570,11 @@ OpenCore admits the matching stage-2 loop for direct user security mutation:
 - runtime validators reject malformed status payloads such as string booleans,
   so deserialization issues are covered by tests instead of operator memory.
 
-OpenCore still does not admit department side-tree filtering, post binding,
-profile/avatar/social endpoints, Excel import/export workflows, batch user
-delete, separate User-page role assignment or broader user option endpoints in
-this round. Round 22 later closes the post binding portion.
+OpenCore still does not admit post binding, profile/avatar/social endpoints,
+Excel import/export workflows, batch user delete, separate User-page role
+assignment or broader user option endpoints in this round. Round 22 later
+closes the post binding portion, and Round 23 later closes department
+side-tree filtering.
 
 ## Round 20 Role Status Security Reference Shape
 
@@ -657,7 +658,38 @@ code-based SDK/API contract:
 - fixed-port, deploy and public smoke prove unknown-post rejection,
   create-time `engineer` binding and update-time clearing.
 
-OpenCore still does not admit department side-tree filtering, profile/avatar/
-social endpoints, Excel import/export workflows, batch user delete, standalone
-user simple-list endpoints or a separate User-page role-assignment dialog in
-this round.
+OpenCore still does not admit profile/avatar/social endpoints, Excel
+import/export workflows, batch user delete, standalone user simple-list
+endpoints or a separate User-page role-assignment dialog in this round. Round
+23 later closes department side-tree filtering.
+
+## Round 23 User Department Tree Filter Reference Shape
+
+RuoYi renders a department tree beside the user table. Clicking a node assigns
+`queryParams.deptId` and reloads the user list, while the backend expands the
+selected department to its descendants by checking the department ancestor
+chain.
+
+Yudao's Admin user page follows the same shape with a `DeptTreeSelect`
+node-click handler that assigns `queryParams.deptId`; the backend expands the
+selected department to child departments plus itself before applying the user
+query.
+
+OpenCore admits the matching stage-4 loop:
+
+- `GET /api/core/users` and `GET /api/core/users/export` accept optional
+  `deptId`;
+- seed and Prisma repositories reject unknown department IDs and filter users
+  by selected department plus descendants;
+- SDK request types and OpenAPI snapshots expose the query parameter;
+- Admin Users renders a left Department scope tree from live `core.dept`,
+  supports All departments reset and applies the selected scope to live list
+  loading;
+- fallback data is also filtered by subtree when the live API is unavailable;
+- fixed-port, deploy and public smoke prove unknown-department rejection,
+  direct department filtering, headquarters subtree inclusion and unrelated
+  engineering exclusion.
+
+OpenCore still does not admit profile/avatar/social endpoints, Excel
+import/export workflows, batch user delete, standalone user simple-list
+endpoints or a separate User-page role-assignment dialog in this round.

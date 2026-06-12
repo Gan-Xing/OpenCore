@@ -3,8 +3,8 @@
 Date: 2026-06-12  
 Repository: `Gan-Xing/OpenCore`  
 Default branch: `main`  
-Latest observed feature commit: `98e10be feat(core-user): add post binding loop / 新增用户岗位绑定闭环`
-Latest deployed feature commit: `98e10be feat(core-user): add post binding loop / 新增用户岗位绑定闭环`
+Latest observed feature commit: `fda33c4 feat(core-user): add department tree filter loop / 新增用户部门树过滤闭环`
+Latest deployed feature commit: `fda33c4 feat(core-user): add department tree filter loop / 新增用户部门树过滤闭环`
 Latest deployed hardening commit: `04e446c fix(online-user): stabilize admin session smoke / 稳定在线用户管理员会话冒烟`
 
 ## One-sentence Goal
@@ -63,6 +63,7 @@ productization waterline completion; see
 - Round 20 `core.role` status security stage 4
 - Round 21 `core.dict` item-data simple-list stage 2
 - Round 22 `core.user` post binding stage 3
+- Round 23 `core.user` department tree filtering stage 4
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -169,6 +170,13 @@ live `core.post` 列表。固定 smoke、部署 smoke 和公网 smoke 均证明�
 revocation 语义仍然有效。部署 Admin Users chunk 已验证包含 `Select posts` 和 `postCodes`
 标记。
 
+Round 23 继续补齐 `core.user` 队列：用户管理现在支持按部门树筛选用户。`GET
+/api/core/users` 和 `GET /api/core/users/export` 接受 `deptId` 查询参数，后端按选中部门及其
+子部门过滤，并对未知部门返回 404；SDK/OpenAPI/Admin 均同步该参数。Admin Users 页面新增左侧
+Department scope 树和 All departments 入口，树数据来自 live `core.dept`。固定 smoke、部署
+smoke 和公网 smoke 均证明未知部门 404、直接部门过滤、父部门子树过滤和无关部门排除可用；公网
+Admin Users chunk 已验证包含 `Department scope`、`All departments` 和 `deptId` 标记。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -178,7 +186,7 @@ The productization waterline now classifies:
   `core.file`, Round 4/16 `core.menu`, Round 5/17/18/20 `core.role`,
   Round 8/21 `core.dict`.
 - First loop, enhance: Round 1 `core.notice`, Round 2 `core.dept`, Round 3
-  `core.post`, Round 7/19/22 `core.user`, Round 9 `core.config`, Round 11
+  `core.post`, Round 7/19/22/23 `core.user`, Round 9 `core.config`, Round 11
   `core.login-log`.
 - Thin, rework: none after Round 16.
 
@@ -187,8 +195,8 @@ round should continue with the P1 enhancement queue unless a new waterline audit
 finds another blocker:
 
 1. `core.user`: Round 19 closed user status/reset-password and direct
-   user-mutation session semantics; Round 22 closed user-post binding.
-   Remaining work is department side-tree filtering, profile/avatar,
+   user-mutation session semantics; Round 22 closed user-post binding; Round
+   23 closed department side-tree filtering. Remaining work is profile/avatar,
    import/export and broader option/batch workflows.
 2. `core.config`: get-by-key, cache refresh/invalidation and runtime
    propagation boundaries.

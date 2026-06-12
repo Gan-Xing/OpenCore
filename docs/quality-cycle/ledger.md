@@ -65,3 +65,4 @@
 - 2026-06-12 21:14:00 UTC completed cycle-021 round-020 core.role status security productization; featureCommit=32a6f5d; deployed=39172/39174; publicVerified=role-status-disabled-filtered,role-update-delete-session-revocation,admin-roles-status
 - 2026-06-12 21:45:57 UTC completed cycle-021 round-021 core.dict item-data simple-list productization; featureCommit=07d4e9b; deployed=39172/39174; publicVerified=dict-item-crud,simple-list-disabled-filtering,admin-dicts-items
 - 2026-06-12 22:08:26 UTC completed cycle-021 round-022 core.user post binding productization; featureCommit=98e10be; deployed=39172/39174; publicVerified=user-post-binding,unknown-post-rejected,admin-users-posts
+- 2026-06-12 22:28:33 UTC completed cycle-021 round-023 core.user department tree filter productization; featureCommit=fda33c4; deployed=39172/39174; publicVerified=user-dept-filter,subtree-filter,admin-users-dept-tree

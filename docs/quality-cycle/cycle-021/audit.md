@@ -439,3 +439,26 @@ This stays inside the current S7 System/RBAC boundary. It does not introduce
 department side-tree filtering, profile/avatar/social endpoints, Excel
 import/export workflows, batch user delete, standalone user option endpoints or
 a separate User-page role-assignment workflow in this round.
+
+## Round 23 Audit: core.user Department Tree Filter
+
+After Round 22, the next lowest-dependency P1 foundation gap was `core.user`
+department tree filtering:
+
+- RuoYi and Yudao both render a department tree beside the user table and
+  reload users when an operator clicks a department node.
+- Their backend behavior filters by the selected department and its child
+  departments, not only the exact department row.
+- OpenCore already had live department tree management and user `deptId`, so
+  this gap did not require new schema or a broader user-profile workflow.
+- User list/export needed a typed `deptId` query contract across API, SDK and
+  OpenAPI.
+- Runtime behavior needed to reject unknown department IDs instead of silently
+  returning an ambiguous empty list.
+- Fixed-port and deploy smoke needed to prove direct department filtering,
+  parent subtree filtering and unrelated department exclusion.
+
+This stays inside the current S7 System/RBAC boundary. It does not introduce
+profile/avatar/social endpoints, Excel import/export workflows, batch user
+delete, standalone user option endpoints or a separate User-page role
+assignment dialog in this round.
