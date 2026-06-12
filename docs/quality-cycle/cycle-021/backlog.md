@@ -419,6 +419,54 @@ that preserve the route/menu registry boundary.
       verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 17: core.role Menu Assignment Productization
+
+Why this slice: the post-Round 13 waterline audit correctly left `core.role`
+in the enhancement queue. Role CRUD and permission-code assignment were live,
+but the operator could not assign menu trees in the RuoYi/Yudao RBAC shape, and
+role-permission mutation did not invalidate affected sessions.
+
+- [x] Add role menu assignment DTOs, service methods and seed/Prisma repository
+      support.
+- [x] Add `GET /api/core/roles/:code/menus` and
+      `PATCH /api/core/roles/:code/menus`.
+- [x] Map selected menu keys to menu-bound permission codes while preserving
+      non-menu permission codes.
+- [x] Revoke active online-user sessions for users holding the changed role
+      after role menu assignment.
+- [x] Extend OpenAPI, SDK types/client methods and SDK path tests.
+- [x] Add Admin Roles row-level Menu Assignment tree dialog.
+- [x] Extend fixed-port and deploy smoke to prove menu assignment, preserved
+      non-menu permissions, revoked old token 401 and relogin permission
+      refresh.
+- [x] Run focused, full, build, fixed-port smoke, deployment and public URL
+      verification gates.
+- [x] Commit and push this independently accepted product slice.
+
+## Round 18: core.role User Assignment Productization
+
+Why this slice: after role menu assignment, the next `core.role`/`core.user`
+RBAC gap was assigning users to roles. RuoYi exposes assigned/unassigned user
+flows for roles, and Yudao exposes equivalent user-role assignment APIs. The
+OpenCore loop needed to persist role-user changes, protect system users and
+invalidate affected user sessions.
+
+- [x] Add role-user assignment DTOs, service methods and seed/Prisma repository
+      support.
+- [x] Add `GET /api/core/roles/:code/users` and
+      `PATCH /api/core/roles/:code/users`.
+- [x] Reject malformed assignment payloads, duplicate user IDs and system-user
+      mutation through this role assignment entrypoint.
+- [x] Revoke active online-user sessions only for users whose role assignment
+      changed.
+- [x] Extend OpenAPI, SDK types/client methods and SDK path tests.
+- [x] Add Admin Roles row-level User Assignment `Transfer` dialog.
+- [x] Extend fixed-port and deploy smoke to prove assign, unassign, revoked
+      old token 401 and relogin role/permission refresh.
+- [x] Run focused, full, build, fixed-port smoke, deployment and public URL
+      verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -448,9 +496,10 @@ treat "minimal loop" as "minimal final product".
       and ordered tree operations.
 - [ ] Round 3 `core.post`: user-post binding, simple-list option endpoints and
       batch operations.
-- [ ] Round 5/17 `core.role`: role menu-tree assignment and role-permission
-      session revocation are complete; role-user assignment, status flow and
-      remaining token/session refresh semantics still need enhancement.
+- [ ] Round 5/17/18 `core.role`: role menu-tree assignment,
+      role-permission session revocation, role-user assignment and user-role
+      session revocation are complete; role status and remaining user-mutation
+      token/session refresh semantics still need enhancement.
 - [ ] Round 7 `core.user`: reset password, status toggle, side-tree filtering,
       post binding, profile/avatar and token/session refresh semantics.
 - [ ] Round 8 `core.dict`: separate dict data workflow or equivalent item API,
@@ -495,13 +544,12 @@ treat "minimal loop" as "minimal final product".
 - Batch post deletion and simple-list option endpoints.
 - Menu router-generation expansion, menu cache refresh, save-sort and drag-sort
   persistence.
-- Role-user assignment pages, role simple-list endpoints, batch role deletion,
-  standalone data-scope endpoint and role status toggle.
-- Registry definition editing, dynamic permission discovery, user-role
-  assignment and remaining token/session refresh after user-role or user
-  mutation.
+- Role simple-list endpoints, batch role deletion, standalone data-scope
+  endpoint and role status toggle.
+- Registry definition editing, dynamic permission discovery and remaining
+  token/session refresh after direct user mutation.
 - User Excel import/export file workflows, reset-password endpoint,
-  status-toggle endpoint, dedicated user-role assignment dialog,
+  status-toggle endpoint, dedicated User-page role assignment dialog,
   profile/avatar/social/simple-list endpoints, post binding, batch user delete,
   department side-tree filtering and token/session refresh after user mutation.
 - Separate dict-data module/page/endpoints, simple-list/cache endpoints, batch

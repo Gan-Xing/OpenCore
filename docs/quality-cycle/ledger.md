@@ -60,3 +60,4 @@
 - 2026-06-12 19:03:14 UTC completed cycle-021 round-015 core.file content loop productization; featureCommit=0923009; deployed=39172/39174; publicVerified=file-upload,file-download-content-match,admin-files
 - 2026-06-12 19:33:28 UTC completed cycle-021 round-016 core.menu tree metadata productization; featureCommit=4b0fa58; deployed=39172/39174; publicVerified=menu-tree,parent-child,delete-guard,admin-menus
 - 2026-06-12 20:01:38 UTC completed cycle-021 round-017 core.role menu assignment productization; featureCommit=13168fc; deployed=39172/39174; publicVerified=role-menu-assignment,session-revocation,relogin-permission-refresh,admin-roles
+- 2026-06-12 20:26:24 UTC completed cycle-021 round-018 core.role user assignment productization; featureCommit=b4f8117; deployed=39172/39174; publicVerified=role-user-assignment,session-revocation,relogin-role-refresh,admin-roles-transfer

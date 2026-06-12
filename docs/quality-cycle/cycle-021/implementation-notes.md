@@ -1264,3 +1264,76 @@ tools/scripts/smoke-core-role.mjs` passed with `OPENCORE_SMOKE_CHECK_DOCS=false`
   `13168fc feat(core-role): add role menu assignment loop / 新增角色菜单授权闭环`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 18 Capability
+
+Capability: `core.role` user assignment productization.
+
+Goal: close the next `core.role`/`core.user` P1 RBAC gap by adding a role-user
+assignment loop that protects system users and invalidates affected active
+sessions after user-role mutation.
+
+## Round 18 Implemented
+
+- Added `AssignRoleUsersDto` and `RoleUserAssignmentDto` to
+  `@opencore/system`.
+- Added `SystemUserService.getRoleUserAssignment()` and
+  `SystemUserService.assignRoleUsers()`.
+- Implemented seed and Prisma repository support for reading available and
+  assigned users for a role.
+- Rejected malformed assignment payloads, duplicate user IDs, missing users and
+  system users before mutating assignments.
+- Added `GET /api/core/roles/:code/users` and
+  `PATCH /api/core/roles/:code/users`.
+- Revoked active online-user sessions only for users whose role assignment
+  changed after role-user assignment.
+- Extended OpenAPI and `@opencore/sdk` with role-user assignment types and
+  client methods.
+- Added Admin Roles row-level User Assignment `Transfer` dialog backed by SDK
+  service methods.
+- Extended `tools/scripts/smoke-core-role.mjs` so local/deploy/public smoke
+  covers role-user get, unassign, assign, revoked old token 401 and relogin
+  role/permission refresh.
+
+## Round 18 Verification
+
+- `node --check tools/scripts/smoke-core-role.mjs` pass.
+- Focused tests pass:
+  - `pnpm nx test system --testFile=packages/system/src/system-user/system-user.spec.ts`
+  - `pnpm nx test sdk --testFile=packages/sdk/src/rbac-client.spec.ts`
+  - `pnpm nx test api --testFile=apps/api/src/modules/core/rbac/rbac.permission-matrix.spec.ts`
+- Focused typecheck pass for `system`, `api` and `admin`.
+- `pnpm openapi:export`, `pnpm nx test admin`, `pnpm sdk:check`,
+  `pnpm openapi:check`, `pnpm openapi:registry-tags:check` and
+  `pnpm registry:admin-routes:check` pass.
+- `pnpm smoke:api:local` pass on fixed port `39173`, including
+  `core.role.user-assignment.get`,
+  `core.role.user-assignment.unassign`,
+  `core.role.user-assignment.assign`,
+  `core.role.user-assignment.revoke-session` and
+  `core.role.user-assignment.relogin-refresh`.
+- Full gates pass: `pnpm format:check`, `pnpm prisma:validate`, `pnpm lint`,
+  `pnpm typecheck`, `pnpm test` and `pnpm build`.
+- `pnpm deploy:opencore` pass, deploying API/Admin on fixed ports
+  `39172`/`39174`; deploy smoke includes `core.role.user-assignment.*`.
+
+## Round 18 Public Verification
+
+Against public endpoints after deploy:
+
+- `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 node
+tools/scripts/smoke-core-role.mjs` passed with `OPENCORE_SMOKE_CHECK_DOCS=false`.
+- Public role smoke verified role-user assignment get/unassign/assign, revoked
+  old token 401 and relogin role/permission refresh.
+- `GET http://144.217.243.161:39174/system/roles/index.html` returned 200.
+- The deployed Admin Roles chunk
+  `p__System__Roles.49178996.async.js` contains `User Assignment`,
+  `assignedUserIds`, `assignOpenCoreRoleUsers`,
+  `getOpenCoreRoleUserAssignment` and `Role users updated` markers.
+
+## Round 18 Commit Record
+
+- Feature commit:
+  `b4f8117 feat(core-role): add role user assignment loop / 新增角色用户分配闭环`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

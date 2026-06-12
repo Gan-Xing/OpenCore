@@ -147,7 +147,8 @@ OpenCore does not admit role-user assignment, role menu-tree assignment,
 simple-list endpoints, batch delete, separate data-scope update endpoints,
 status toggles or token permission refresh semantics in this round.
 Round 17 later closes the role menu-tree assignment and role-permission session
-revocation portion of this gap.
+revocation portion of this gap. Round 18 later closes the role-user assignment
+and user-role session revocation portion.
 
 ## Round 6 Permission Reference Shape
 
@@ -178,7 +179,8 @@ OpenCore does not admit registry definition editing, dynamic permission
 discovery, role menu-tree assignment, user-role assignment, cache/menu refresh
 or token permission refresh semantics in this round.
 Round 17 later closes the role menu-tree assignment and role-permission session
-revocation portion of this gap.
+revocation portion of this gap. Round 18 later closes the role-user assignment
+and user-role session revocation portion.
 
 ## Round 7 User Reference Shape
 
@@ -503,5 +505,33 @@ catalog:
 - fixed-port and public smoke prove menu assignment, preserved non-menu
   permissions, revoked old token 401 and relogin permission refresh.
 
-OpenCore still does not admit role-user assignment, role status toggle, batch
-role operations or user reset-password/status mutation semantics in this round.
+OpenCore still does not admit role status toggle, batch role operations,
+separate user-page role assignment or user reset-password/status mutation
+semantics in this round.
+
+## Round 18 Role User Assignment Reference Shape
+
+RuoYi exposes role-user assignment as assigned-user, unassigned-user, cancel,
+batch cancel and select-all assignment flows from role management. Yudao exposes
+equivalent role/user assignment through permission APIs that list a user's roles
+and assign roles to users.
+
+OpenCore admits the matching stage-3 loop from the role management side:
+
+- `GET /api/core/roles/:code/users` returns assigned and available users for a
+  role;
+- `PATCH /api/core/roles/:code/users` replaces the normal-user assignments for
+  that role;
+- malformed payloads, duplicate user IDs, missing users and system users are
+  rejected before mutation;
+- the API revokes active online-user sessions only for users whose role
+  assignment changed, so old bearer sessions cannot continue with stale
+  `roleCodes` or `permissionCodes`;
+- Admin Roles adds a row-level User Assignment transfer dialog backed by SDK
+  methods;
+- fixed-port and public smoke prove unassign, assign, revoked old token 401 and
+  relogin role/permission refresh.
+
+OpenCore still does not admit role status toggle, batch role operations,
+separate user-page role assignment, reset-password/status mutation semantics or
+direct user-mutation session refresh in this round.
