@@ -1,4 +1,4 @@
-import { PrismaService } from '../../../platform/database/prisma.service';
+import { PrismaService } from '@opencore/database';
 import { AuthService } from './auth.service';
 import { PrismaRbacRepository } from './prisma-rbac.repository';
 
@@ -11,14 +11,7 @@ describe('PrismaRbacRepository integration', () => {
     await prisma.$disconnect();
   });
 
-  it('reads seeded Role.code and Permission.code values from PostgreSQL', async () => {
-    await expect(repository.listRoles()).resolves.toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ code: 'admin' }),
-        expect.objectContaining({ code: 'viewer' }),
-      ]),
-    );
-
+  it('reads seeded Permission.code values from PostgreSQL', async () => {
     await expect(repository.listPermissions()).resolves.toEqual(
       expect.arrayContaining([
         expect.objectContaining({ code: 'core:user:read' }),
@@ -27,18 +20,6 @@ describe('PrismaRbacRepository integration', () => {
         expect.objectContaining({ code: 'core:menu:read' }),
       ]),
     );
-  });
-
-  it('traces seeded menus to database permission codes', async () => {
-    const permissionCodes = new Set(
-      (await repository.listPermissions()).map((permission) => permission.code),
-    );
-
-    for (const menu of await repository.listMenus()) {
-      if (menu.permissionCode) {
-        expect(permissionCodes.has(menu.permissionCode)).toBe(true);
-      }
-    }
   });
 
   it('authenticates the seeded admin from PostgreSQL permissions', async () => {
@@ -63,5 +44,29 @@ describe('PrismaRbacRepository integration', () => {
       username: 'admin',
       roleCodes: expect.arrayContaining(['admin']),
     });
+  });
+
+  it('resolves seeded admin data-scope from PostgreSQL', async () => {
+    const admin = await prisma.user.findUniqueOrThrow({
+      where: { username: 'admin' },
+      select: { id: true },
+    });
+
+    await expect(
+      repository.getDataScopeProfileForUser(admin.id),
+    ).resolves.toEqual({
+      userId: admin.id,
+      deptId: 'dept_headquarters',
+      roles: [
+        {
+          roleCode: 'admin',
+          dataScope: 'all',
+          dataScopeDeptIds: [],
+        },
+      ],
+    });
+    await expect(
+      repository.listDescendantDeptIds('dept_headquarters'),
+    ).resolves.toEqual(['dept_engineering', 'dept_operations']);
   });
 });

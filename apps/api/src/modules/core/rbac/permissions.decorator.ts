@@ -1,8 +1,8 @@
-import { SetMetadata } from '@nestjs/common';
-import type { PermissionCode } from '@opencore/contracts';
-
-export const REQUIRED_PERMISSIONS_KEY = 'opencore.requiredPermissions';
-
-export function RequirePermission(...permissionCodes: PermissionCode[]) {
-  return SetMetadata(REQUIRED_PERMISSIONS_KEY, permissionCodes);
-}
+export {
+  REQUIRED_DATA_SCOPE_KEY,
+  REQUIRED_PERMISSIONS_KEY,
+  REQUIRED_ROLES_KEY,
+  RequireDataScope,
+  RequirePermission,
+  RequireRole,
+} from '@opencore/security';

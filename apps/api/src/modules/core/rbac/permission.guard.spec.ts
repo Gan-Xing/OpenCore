@@ -1,8 +1,14 @@
 import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import type { ExecutionContext } from '@nestjs/common';
 import type { Reflector } from '@nestjs/core';
+import { SecurityBearerTokenService } from '@opencore/security';
+import {
+  seedSystemUsers,
+  type SystemUserRecord,
+} from '@opencore/system/records';
 import { AuthService } from './auth.service';
 import { PermissionGuard } from './permission.guard';
+import { hashPassword } from './rbac.password';
 import { SeedRbacRepository } from './seed-rbac.repository';
 
 describe('PermissionGuard', () => {
@@ -11,7 +17,7 @@ describe('PermissionGuard', () => {
   let token: string;
 
   beforeEach(async () => {
-    repository = new SeedRbacRepository();
+    repository = new SeedRbacRepository(createPermissionGuardUsers());
     authService = new AuthService(repository);
     token = (await authService.login('admin', 'admin123')).accessToken;
   });
@@ -63,17 +69,8 @@ describe('PermissionGuard', () => {
     ).rejects.toThrow(UnauthorizedException);
   });
 
-  it('rejects tokens for users disabled after login', async () => {
-    await repository.createUser({
-      username: 'temporary',
-      displayName: 'Temporary User',
-      password: 'temporary123',
-      roleCodes: ['viewer'],
-    });
-    const temporaryToken = (
-      await authService.login('temporary', 'temporary123')
-    ).accessToken;
-    await repository.updateUser('user_temporary', { enabled: false });
+  it('rejects tokens for disabled users', async () => {
+    const disabledToken = createTestToken('user_disabled');
     const guard = new PermissionGuard(
       createReflector(['core:user:read']),
       authService,
@@ -83,7 +80,7 @@ describe('PermissionGuard', () => {
       guard.canActivate(
         createContext({
           headers: {
-            authorization: `Bearer ${temporaryToken}`,
+            authorization: `Bearer ${disabledToken}`,
           },
         }),
       ),
@@ -91,12 +88,6 @@ describe('PermissionGuard', () => {
   });
 
   it('rejects dangerous operations without the matching dangerous permission', async () => {
-    await repository.createUser({
-      username: 'viewer',
-      displayName: 'Viewer User',
-      password: 'viewer123',
-      roleCodes: ['viewer'],
-    });
     const viewerToken = (await authService.login('viewer', 'viewer123'))
       .accessToken;
     const guard = new PermissionGuard(
@@ -115,6 +106,32 @@ describe('PermissionGuard', () => {
     ).rejects.toThrow(ForbiddenException);
   });
 });
+
+function createPermissionGuardUsers(): readonly SystemUserRecord[] {
+  return [
+    ...seedSystemUsers,
+    {
+      id: 'user_viewer',
+      username: 'viewer',
+      displayName: 'Viewer User',
+      passwordHash: hashPassword('viewer123'),
+      roleCodes: ['viewer'],
+      enabled: true,
+    },
+    {
+      id: 'user_disabled',
+      username: 'disabled',
+      displayName: 'Disabled User',
+      passwordHash: hashPassword('disabled123'),
+      roleCodes: ['viewer'],
+      enabled: false,
+    },
+  ];
+}
+
+function createTestToken(userId: string): string {
+  return new SecurityBearerTokenService().signSubject(userId).accessToken;
+}
 
 function createReflector(requiredPermissions: string[]): Reflector {
   return {

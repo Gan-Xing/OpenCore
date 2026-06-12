@@ -9,6 +9,11 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import {
+  SystemMenuService,
+  SystemRoleService,
+  SystemUserService,
+} from '@opencore/system';
+import {
   CreateMenuDto,
   CreatePermissionDto,
   CreateRoleDto,
@@ -30,14 +35,19 @@ import { RbacRepository } from './rbac.repository';
 @ApiBearerAuth()
 @Controller('core')
 export class RbacController {
-  constructor(private readonly repository: RbacRepository) {}
+  constructor(
+    private readonly repository: RbacRepository,
+    private readonly users: SystemUserService,
+    private readonly roles: SystemRoleService,
+    private readonly menus: SystemMenuService,
+  ) {}
 
   @Get('users')
   @ApiTags('Core Users')
   @RequirePermission('core:user:read')
   @ApiOkResponse({ type: [UserSummaryDto] })
   listUsers(): Promise<UserSummaryDto[]> {
-    return this.repository.listUsers();
+    return this.users.listUsers();
   }
 
   @Get('users/export')
@@ -45,7 +55,7 @@ export class RbacController {
   @RequirePermission('core:user:export')
   @ApiOkResponse({ type: RbacExportPreviewDto })
   exportUsers(): Promise<RbacExportPreviewDto> {
-    return this.repository.createExportPreview('users');
+    return this.users.createExportPreview();
   }
 
   @Post('users')
@@ -53,7 +63,7 @@ export class RbacController {
   @RequirePermission('core:user:create')
   @ApiOkResponse({ type: UserSummaryDto })
   createUser(@Body() body: CreateUserDto): Promise<UserSummaryDto> {
-    return this.repository.createUser(body);
+    return this.users.createUser(body);
   }
 
   @Patch('users/:id')
@@ -64,7 +74,7 @@ export class RbacController {
     @Param('id') id: string,
     @Body() body: UpdateUserDto,
   ): Promise<UserSummaryDto> {
-    return this.repository.updateUser(id, body);
+    return this.users.updateUser(id, body);
   }
 
   @Delete('users/:id')
@@ -72,7 +82,7 @@ export class RbacController {
   @RequirePermission('core:user:delete')
   @ApiOkResponse({ type: DeleteResultDto })
   deleteUser(@Param('id') id: string): Promise<DeleteResultDto> {
-    return this.repository.deleteUser(id);
+    return this.users.deleteUser(id);
   }
 
   @Get('roles')
@@ -80,7 +90,7 @@ export class RbacController {
   @RequirePermission('core:role:read')
   @ApiOkResponse({ type: [RoleSummaryDto] })
   listRoles(): Promise<RoleSummaryDto[]> {
-    return this.repository.listRoles();
+    return this.roles.listRoles();
   }
 
   @Get('roles/export')
@@ -88,7 +98,7 @@ export class RbacController {
   @RequirePermission('core:role:export')
   @ApiOkResponse({ type: RbacExportPreviewDto })
   exportRoles(): Promise<RbacExportPreviewDto> {
-    return this.repository.createExportPreview('roles');
+    return this.roles.createExportPreview();
   }
 
   @Post('roles')
@@ -96,7 +106,7 @@ export class RbacController {
   @RequirePermission('core:role:create')
   @ApiOkResponse({ type: RoleSummaryDto })
   createRole(@Body() body: CreateRoleDto): Promise<RoleSummaryDto> {
-    return this.repository.createRole(body);
+    return this.roles.createRole(body);
   }
 
   @Patch('roles/:code')
@@ -107,7 +117,7 @@ export class RbacController {
     @Param('code') code: string,
     @Body() body: UpdateRoleDto,
   ): Promise<RoleSummaryDto> {
-    return this.repository.updateRole(code, body);
+    return this.roles.updateRole(code, body);
   }
 
   @Delete('roles/:code')
@@ -115,7 +125,7 @@ export class RbacController {
   @RequirePermission('core:role:delete')
   @ApiOkResponse({ type: DeleteResultDto })
   deleteRole(@Param('code') code: string): Promise<DeleteResultDto> {
-    return this.repository.deleteRole(code);
+    return this.roles.deleteRole(code);
   }
 
   @Get('permissions')
@@ -168,7 +178,7 @@ export class RbacController {
   @RequirePermission('core:menu:read')
   @ApiOkResponse({ type: [MenuSummaryDto] })
   listMenus(): Promise<MenuSummaryDto[]> {
-    return this.repository.listMenus();
+    return this.menus.listMenus();
   }
 
   @Get('menus/export')
@@ -176,7 +186,7 @@ export class RbacController {
   @RequirePermission('core:menu:export')
   @ApiOkResponse({ type: RbacExportPreviewDto })
   exportMenus(): Promise<RbacExportPreviewDto> {
-    return this.repository.createExportPreview('menus');
+    return this.menus.createExportPreview();
   }
 
   @Post('menus')
@@ -184,7 +194,7 @@ export class RbacController {
   @RequirePermission('core:menu:create')
   @ApiOkResponse({ type: MenuSummaryDto })
   createMenu(@Body() body: CreateMenuDto): Promise<MenuSummaryDto> {
-    return this.repository.createMenu(body);
+    return this.menus.createMenu(body);
   }
 
   @Patch('menus/:key')
@@ -195,7 +205,7 @@ export class RbacController {
     @Param('key') key: string,
     @Body() body: UpdateMenuDto,
   ): Promise<MenuSummaryDto> {
-    return this.repository.updateMenu(key, body);
+    return this.menus.updateMenu(key, body);
   }
 
   @Delete('menus/:key')
@@ -203,6 +213,6 @@ export class RbacController {
   @RequirePermission('core:menu:delete')
   @ApiOkResponse({ type: DeleteResultDto })
   deleteMenu(@Param('key') key: string): Promise<DeleteResultDto> {
-    return this.repository.deleteMenu(key);
+    return this.menus.deleteMenu(key);
   }
 }

@@ -7,7 +7,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { getRequestContext } from '../../../platform/request-context/request-context';
+import { getRequestContext } from '@opencore/core';
 import { AuthService, type AuthenticatedUser } from './auth.service';
 import { LoginRequestDto, LoginResponseDto } from './rbac.dto';
 import { RequirePermission } from './permissions.decorator';
