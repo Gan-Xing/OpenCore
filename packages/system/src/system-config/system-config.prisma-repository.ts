@@ -54,6 +54,12 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
     );
   }
 
+  async getConfig(key: string): Promise<SystemConfigRecord> {
+    return redactSystemConfig(
+      toSystemConfigRecord(await this.findConfigByKey(key)),
+    );
+  }
+
   async createConfig(body: CreateSystemConfigDto): Promise<SystemConfigRecord> {
     const visibility = resolveConfigVisibility(body);
     assertSafeConfigKey(body.key, visibility);

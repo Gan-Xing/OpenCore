@@ -140,6 +140,14 @@ export class SystemManagementController {
     return this.config.createExportPreview(query);
   }
 
+  @Get('config/:key')
+  @ApiTags('Core System Config')
+  @RequirePermission('core:config:read')
+  @ApiOkResponse({ type: SystemConfigDto })
+  getConfig(@Param('key') key: string): Promise<SystemConfigDto> {
+    return this.config.getConfig(key);
+  }
+
   @Post('config')
   @ApiTags('Core System Config')
   @RequirePermission('core:config:create')

@@ -17,6 +17,13 @@ describe('@opencore/system system-config', () => {
         totalPages: 2,
       }),
     );
+    await expect(
+      service.getConfig('opencore.admin.title'),
+    ).resolves.toMatchObject({
+      key: 'opencore.admin.title',
+      public: true,
+      visibility: 'public',
+    });
 
     const config = await service.createConfig({
       key: 'sample.enabled',
@@ -107,6 +114,11 @@ describe('@opencore/system system-config', () => {
       });
 
       expect(config.key).toBe(configKey);
+      await expect(service.getConfig(configKey)).resolves.toMatchObject({
+        key: configKey,
+        value: 'true',
+        visibility: 'public',
+      });
       expect(
         (await service.updateConfig(configKey, { value: 'false' })).value,
       ).toBe('false');
@@ -119,6 +131,11 @@ describe('@opencore/system system-config', () => {
       });
 
       expect(secret.value).toBe('[REDACTED]');
+      await expect(service.getConfig(secretKey)).resolves.toMatchObject({
+        key: secretKey,
+        value: '[REDACTED]',
+        visibility: 'secret',
+      });
       expect(
         JSON.stringify(await service.listConfig({ pageSize: 50 })),
       ).not.toContain('super-secret');

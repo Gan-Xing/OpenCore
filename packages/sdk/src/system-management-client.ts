@@ -54,6 +54,7 @@ export type SystemManagementClient = {
     query?: PageRequest,
   ) => Promise<PageResponse<SystemConfigSummary>>;
   exportConfig: (token: Token, query?: PageRequest) => Promise<ExportPreview>;
+  getConfig: (token: Token, key: string) => Promise<SystemConfigSummary>;
   createConfig: (
     token: Token,
     body: CreateSystemConfigRequest,
@@ -198,6 +199,10 @@ export function createSystemManagementClient(
       ),
     exportConfig: (token, query) =>
       request<ExportPreview>(withQuery('/core/config/export', query), {
+        token,
+      }),
+    getConfig: (token, key) =>
+      request<SystemConfigSummary>(`/core/config/${encodeURIComponent(key)}`, {
         token,
       }),
     createConfig: (token, body) =>

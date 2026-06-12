@@ -6,7 +6,7 @@
   "repository": "https://github.com/Gan-Xing/OpenCore.git",
   "scripts": {
     "analyze": "cross-env ANALYZE=1 max build",
-    "build": "max build",
+    "build": "cross-env FORCE_UTOOPACK= OPENCORE_ADMIN_BUNDLER=webpack max build",
     "dev": "cross-env UMI_ENV=dev max dev",
     "i18n-remove": "node scripts/i18n-remove.js",
     "lint": "pnpm biome:lint && pnpm tsc",
@@ -14,7 +14,7 @@
     "biome": "biome check --write",
     "openapi": "pnpm --dir ../.. openapi:export && pnpm --dir ../.. sdk:check",
     "preview": "max preview --port 8000",
-    "preview:build": "max build && max preview --port 8000",
+    "preview:build": "cross-env FORCE_UTOOPACK= OPENCORE_ADMIN_BUNDLER=webpack max build && max preview --port 8000",
     "record": "cross-env NODE_ENV=development UMI_ENV=test max record --scene=login",
     "start": "cross-env UMI_ENV=dev max dev",
     "start:no-mock": "cross-env MOCK=none max dev",

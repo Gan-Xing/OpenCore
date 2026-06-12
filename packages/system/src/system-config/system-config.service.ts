@@ -22,6 +22,10 @@ export class SystemConfigService {
     return this.repository.listConfig(query);
   }
 
+  getConfig(key: string): Promise<SystemConfigRecord> {
+    return this.repository.getConfig(key);
+  }
+
   createConfig(body: CreateSystemConfigDto): Promise<SystemConfigRecord> {
     return this.repository.createConfig(body);
   }

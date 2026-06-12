@@ -6,6 +6,7 @@ import {
   type CreateMenuRequest,
   type CreatePermissionRequest,
   type CreateRoleRequest,
+  type CreateSystemConfigRequest,
   type CreateUserRequest,
   type CreateSystemDeptRequest,
   type CreateSystemNoticeRequest,
@@ -15,6 +16,7 @@ import {
   type RoleSummary,
   type SystemStatusSummary,
   type DictTypeSummary,
+  type SystemConfigSummary,
   type SystemDeptQueryRequest,
   type SystemDeptSummary,
   type SystemDeptTreeSummary,
@@ -24,6 +26,7 @@ import {
   type SystemPostSummary,
   type UpdateSystemDeptRequest,
   type UpdateDictTypeRequest,
+  type UpdateSystemConfigRequest,
   type UpdateSystemNoticeRequest,
   type UpdateSystemPostRequest,
   type UpdateMenuRequest,
@@ -148,6 +151,48 @@ export function updateOpenCoreDict(
 
 export function deleteOpenCoreDict(code: string): Promise<{ deleted: true }> {
   return systemManagementClient.deleteDict(getRequiredAdminToken(), code);
+}
+
+export async function listOpenCoreSystemConfig(): Promise<
+  SystemConfigSummary[]
+> {
+  const page = await systemManagementClient.listConfig(
+    getRequiredAdminToken(),
+    {
+      page: 1,
+      pageSize: 100,
+    },
+  );
+  return [...page.items];
+}
+
+export function getOpenCoreSystemConfig(
+  key: string,
+): Promise<SystemConfigSummary> {
+  return systemManagementClient.getConfig(getRequiredAdminToken(), key);
+}
+
+export function createOpenCoreSystemConfig(
+  body: CreateSystemConfigRequest,
+): Promise<SystemConfigSummary> {
+  return systemManagementClient.createConfig(getRequiredAdminToken(), body);
+}
+
+export function updateOpenCoreSystemConfig(
+  key: string,
+  body: UpdateSystemConfigRequest,
+): Promise<SystemConfigSummary> {
+  return systemManagementClient.updateConfig(
+    getRequiredAdminToken(),
+    key,
+    body,
+  );
+}
+
+export function deleteOpenCoreSystemConfig(
+  key: string,
+): Promise<{ deleted: true }> {
+  return systemManagementClient.deleteConfig(getRequiredAdminToken(), key);
 }
 
 export function listOpenCoreMenus(): Promise<MenuSummary[]> {

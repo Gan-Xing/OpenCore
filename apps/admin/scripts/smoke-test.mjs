@@ -14,7 +14,7 @@ const deps = {
   ...(packageJson.dependencies ?? {}),
 };
 const openapiScript = packageJson.scripts?.openapi ?? '';
-const templatePlaceholder = (name) => '${' + name + '}';
+const templatePlaceholder = (name) => `\${${name}}`;
 const pathTemplatePlaceholder = templatePlaceholder('path');
 const textTemplatePlaceholder = templatePlaceholder('text');
 const resourceTemplatePlaceholder = templatePlaceholder('resource');
@@ -230,6 +230,11 @@ if (
   !opencorePlatformService.includes('createOpenCoreDict') ||
   !opencorePlatformService.includes('updateOpenCoreDict') ||
   !opencorePlatformService.includes('deleteOpenCoreDict') ||
+  !opencorePlatformService.includes('listOpenCoreSystemConfig') ||
+  !opencorePlatformService.includes('getOpenCoreSystemConfig') ||
+  !opencorePlatformService.includes('createOpenCoreSystemConfig') ||
+  !opencorePlatformService.includes('updateOpenCoreSystemConfig') ||
+  !opencorePlatformService.includes('deleteOpenCoreSystemConfig') ||
   !opencorePlatformService.includes('listOpenCoreUsers') ||
   !opencorePlatformService.includes('getOpenCoreUser') ||
   !opencorePlatformService.includes('createOpenCoreUser') ||
@@ -615,6 +620,23 @@ if (
 }
 
 if (
+  !configPage.includes('listOpenCoreSystemConfig') ||
+  !configPage.includes('getOpenCoreSystemConfig') ||
+  !configPage.includes('createOpenCoreSystemConfig') ||
+  !configPage.includes('updateOpenCoreSystemConfig') ||
+  !configPage.includes('deleteOpenCoreSystemConfig') ||
+  !configPage.includes('preserveRedactedSecret') ||
+  !configPage.includes('useCurrentPageFilters') ||
+  !configPage.includes('CurrentPageExportButton') ||
+  !configPage.includes('dataSource={filteredRows}') ||
+  !configPage.includes('rows={filteredRows}')
+) {
+  throw new Error(
+    'System Config page must use live SDK CRUD with redacted secret preservation, bounded filtering and current-page export.',
+  );
+}
+
+if (
   !rolesPage.includes('listOpenCoreRoles') ||
   !rolesPage.includes('getOpenCoreRole') ||
   !rolesPage.includes('createOpenCoreRole') ||
@@ -768,7 +790,7 @@ if (
   !currentPageExportButton.includes("basename || 'opencore-export'") ||
   !currentPageExportButton.includes("endsWith('.csv')") ||
   !currentPageExportButton.includes(
-    "return `'" + textTemplatePlaceholder + '`;',
+    `return \`'${textTemplatePlaceholder}\`;`,
   ) ||
   !currentPageExportButton.includes(
     'sanitizeCsvCellText(normalizeCellValue(value))',
@@ -825,7 +847,6 @@ if (
 }
 
 const coreFilteredPages = [
-  { name: 'config', source: configPage },
   { name: 'files', source: filesPage },
   { name: 'operation logs', source: auditLogsPage },
   { name: 'login logs', source: loginLogsPage },

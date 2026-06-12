@@ -44,6 +44,10 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
     );
   }
 
+  async getConfig(key: string): Promise<SystemConfigRecord> {
+    return redactSystemConfig(this.findConfig(key));
+  }
+
   async createConfig(body: CreateSystemConfigDto): Promise<SystemConfigRecord> {
     const visibility = resolveConfigVisibility(body);
     assertSafeConfigKey(body.key, visibility);

@@ -106,15 +106,10 @@ const Footer: React.FC = () => {
         </span>
         <Divider orientation="vertical" className={styles.divider} />
         <span className={styles.group}>
-          <span className={styles.label}>Utoo</span>
-          <a
-            className={styles.link}
-            href="https://utoo.land"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {__UTOO_VERSION__}
-          </a>
+          <span className={styles.label}>Bundler</span>
+          <span className={styles.link}>
+            {__BUILD_BUNDLER__} {__BUILD_BUNDLER_VERSION__}
+          </span>
         </span>
         <Divider orientation="vertical" className={styles.divider} />
         <a

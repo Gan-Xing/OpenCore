@@ -42,6 +42,8 @@ export abstract class SystemConfigRepository {
     query?: SystemConfigPageQuery,
   ): Promise<PageResult<SystemConfigRecord>>;
 
+  abstract getConfig(key: string): Promise<SystemConfigRecord>;
+
   abstract createConfig(
     body: CreateSystemConfigDto,
   ): Promise<SystemConfigRecord>;

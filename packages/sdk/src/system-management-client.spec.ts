@@ -16,6 +16,17 @@ describe('createSystemManagementClient', () => {
 
     await client.listDicts('token', { page: 2, pageSize: 20 });
     await client.getDict('token', 'system.status');
+    await client.listConfig('token', { page: 1, pageSize: 10 });
+    await client.getConfig('token', 'opencore.admin.title');
+    await client.exportConfig('token', { page: 1, pageSize: 10 });
+    await client.createConfig('token', {
+      key: 'opencore.sample.enabled',
+      value: 'true',
+      valueType: 'boolean',
+    });
+    await client.updateConfig('token', 'opencore.sample.enabled', {
+      value: 'false',
+    });
     await client.exportAuditLogs('token');
     await client.createFileAsset('token', {
       originalName: 'handbook.pdf',
@@ -71,6 +82,28 @@ describe('createSystemManagementClient', () => {
       },
       {
         path: '/core/dicts/system.status',
+        token: 'token',
+      },
+      {
+        path: '/core/config?page=1&pageSize=10',
+        token: 'token',
+      },
+      {
+        path: '/core/config/opencore.admin.title',
+        token: 'token',
+      },
+      {
+        path: '/core/config/export?page=1&pageSize=10',
+        token: 'token',
+      },
+      {
+        path: '/core/config',
+        method: 'POST',
+        token: 'token',
+      },
+      {
+        path: '/core/config/opencore.sample.enabled',
+        method: 'PATCH',
         token: 'token',
       },
       {

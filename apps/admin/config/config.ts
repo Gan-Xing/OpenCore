@@ -8,6 +8,9 @@ import proxy from './proxy';
 import routes from './routes';
 
 const { UMI_ENV = 'dev' } = process.env;
+const adminBundler =
+  process.env.OPENCORE_ADMIN_BUNDLER === 'utoopack' ? 'utoopack' : 'webpack';
+const useUtoopack = adminBundler === 'utoopack';
 
 // Compute commit hash: env vars take precedence, fall back to git at build time
 const commitHash =
@@ -25,6 +28,9 @@ const commitHash =
       return '';
     }
   })();
+const bundlerVersion = useUtoopack
+  ? readPackageVersion('@utoo/pack/package.json', 'unknown')
+  : readPackageVersion('@umijs/bundler-webpack/package.json', 'webpack');
 
 /**
  * @name 使用公共路径
@@ -43,6 +49,7 @@ export default defineConfig({
    * @doc https://umijs.org/docs/api/config#hash
    */
   hash: true,
+  esbuildMinifyIIFE: true,
 
   publicPath: PUBLIC_PATH,
 
@@ -183,16 +190,20 @@ export default defineConfig({
   plugins: ['@umijs/request-record'],
 
   mock: false,
-  utoopack: {
-    module: {
-      rules: {
-        '*.md': {
-          loaders: [{ loader: join(__dirname, 'md-raw-loader.cjs') }],
-          as: '*.js',
+  ...(useUtoopack
+    ? {
+        utoopack: {
+          module: {
+            rules: {
+              '*.md': {
+                loaders: [{ loader: join(__dirname, 'md-raw-loader.cjs') }],
+                as: '*.js',
+              },
+            },
+          },
         },
-      },
-    },
-  },
+      }
+    : {}),
   requestRecord: {},
   exportStatic: {},
   define: {
@@ -200,6 +211,15 @@ export default defineConfig({
     'process.env.COMMIT_HASH': commitHash,
     __APP_VERSION__: require('./../package.json').version,
     __UMI_VERSION__: require('@umijs/max/package.json').version,
-    __UTOO_VERSION__: require('@utoo/pack/package.json').version,
+    __BUILD_BUNDLER__: adminBundler,
+    __BUILD_BUNDLER_VERSION__: bundlerVersion,
   },
 });
+
+function readPackageVersion(packageJsonName: string, fallback: string): string {
+  try {
+    return require(packageJsonName).version;
+  } catch {
+    return fallback;
+  }
+}
