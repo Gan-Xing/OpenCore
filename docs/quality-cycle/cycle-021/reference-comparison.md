@@ -384,3 +384,34 @@ OpenCore does not admit OAuth client/token administration, batch token/session
 deletion, JWT blacklist enforcement, browser/OS parsing, IP geolocation,
 server-side date filters, location fields or online-user export endpoint
 expansion in this round.
+
+## Round 14 Online User Revocation Reference Shape
+
+RuoYi force logout is operationally meaningful because the selected online user
+is removed from the active token/session view and subsequent protected access
+must fail. Its page also shows browser and OS metadata beside IP and login
+time, so an operator can choose the correct device/session before forcing
+logout.
+
+Yudao's comparable OAuth2 token management deletes selected access tokens
+through the auth service. The reference shape treats token deletion as a real
+security action, not merely an audit annotation, and includes batch-oriented
+token management in the broader Admin workflow.
+
+OpenCore admits the stage-2 productization loop that matches its current
+package-owned online-session model:
+
+- bearer tokens carry a `jti` token ID and expiry metadata;
+- successful logins register online sessions with token ID, username, IP, user
+  agent, last-seen and expiry fields;
+- bearer authentication checks the online-session repository and rejects
+  revoked or expired sessions;
+- list/detail rows expose browser and OS parsed from user agent data;
+- Admin supports selected-row batch kick-out in addition to row-level kick-out;
+- smoke logs in twice, batch-kicks the second real token and proves `/auth/me`
+  rejects it with 401.
+
+OpenCore still does not admit OAuth client administration, a standalone JWT
+blacklist separate from the online-session store, IP geolocation/location
+enrichment, server-side date filters or a dedicated online-user export
+endpoint in this round.

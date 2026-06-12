@@ -56,3 +56,4 @@
 - 2026-06-12 17:51:07 UTC completed cycle-021 round-013 monitor.online-user productization and stale Admin login guard; featureCommit=0381de1; pushed=origin/main
 - 2026-06-12 18:07:12 UTC deployed API duplicate-prefix login guard; fixCommit=f4569a4; publicVerified=/api/auth/login,/api/api/auth/login,admin-proxy-login
 - 2026-06-12 18:11:19 UTC re-audited cycle-021 rounds 1-13 against productization waterline; meets=core.permission,core.audit-log; rework=core.menu,core.file,monitor.online-user
+- 2026-06-12 18:36:43 UTC completed cycle-021 round-014 monitor.online-user revocation productization; featureCommit=688b665; deployed=39172/39174; publicVerified=batch-kick-out,revoked-token-401,admin-online-users

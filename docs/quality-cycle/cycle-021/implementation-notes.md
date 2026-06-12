@@ -969,3 +969,80 @@ The temporary `39173` API process was stopped after smoke verification.
   `0381de1 feat(monitor-online-user): productize online sessions / 产品化在线会话管理`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 14 Capability
+
+Capability: `monitor.online-user` revocation productization.
+
+Goal: close the Round 13 thin loop by making kick-out revoke real bearer
+sessions, adding batch kick-out and surfacing browser/OS metadata through
+API/SDK/Admin/smoke.
+
+## Round 14 Implemented
+
+- Added bearer token IDs (`jti`) and exposed token expiry from
+  `@opencore/security`.
+- Added `SecurityAuthSessionRepository` and wired auth login/session creation
+  to register online-session records.
+- Made bearer authentication check the online-session repository so revoked or
+  expired sessions are rejected.
+- Implemented online-user session registration, active-session assertion and
+  batch kick-out in seed and Prisma repositories.
+- Added browser/OS parsing from user-agent strings and surfaced those fields in
+  online-user DTOs, SDK types, fixtures and Admin detail/export/table flows.
+- Added `POST /api/monitor/online-users/kick-out`, guarded by
+  `monitor:online-user:manage`.
+- Added selected-row batch kick-out to the Admin Online Users page.
+- Extended online-user smoke to log in twice, find the second login by token
+  ID, batch-kick that real session and verify the kicked token receives 401 on
+  `/api/auth/me`.
+
+## Round 14 Verification
+
+- `pnpm install --lockfile-only` pass; lockfile diff is limited to the
+  `@opencore/online-user` dependency on `@opencore/security`.
+- Script checks pass:
+  `node --check tools/scripts/smoke-core-online-user.mjs` and
+  `bash -n tools/scripts/run-local-api-smoke.sh tools/scripts/deploy-local-opencore.sh`.
+- Focused tests pass:
+  `NX_DAEMON=false pnpm nx test security --runInBand`,
+  `NX_DAEMON=false pnpm nx test online-user --runInBand` and
+  `NX_DAEMON=false pnpm nx test sdk --runTestsByPath packages/sdk/src/operations-client.spec.ts`.
+- Focused typecheck pass:
+  `NX_DAEMON=false pnpm nx run-many -t typecheck --projects=security,online-user,sdk,api,admin`.
+- `pnpm test:admin` pass.
+- `pnpm test:api` pass.
+- `pnpm openapi:export` pass.
+- `pnpm sdk:check` pass.
+- `pnpm openapi:check` pass.
+- `pnpm openapi:registry-tags:check` pass.
+- `pnpm registry:admin-routes:check` pass.
+- `pnpm smoke:api:local` pass on fixed port `39173`, including
+  `monitor.online-user.batch-kick-out` and
+  `monitor.online-user.revoked-token-rejected`.
+- Full gates pass: `pnpm format:check`, `pnpm lint`, `pnpm typecheck`,
+  `pnpm test`, `pnpm build` and `pnpm prisma:validate`.
+- `pnpm deploy:opencore` pass, deploying API/Admin on fixed ports
+  `39172`/`39174`.
+
+## Round 14 Public Verification
+
+Against public endpoints after deploy:
+
+- `POST http://144.217.243.161:39172/api/auth/login` returned 201.
+- `GET http://144.217.243.161:39172/api/monitor/online-users?...active=true`
+  showed the second login session by token ID.
+- `POST http://144.217.243.161:39172/api/monitor/online-users/kick-out`
+  returned `requested=1`, `kicked=1`, `skipped=0`.
+- `GET http://144.217.243.161:39172/api/auth/me` with the kicked token
+  returned 401.
+- `GET http://144.217.243.161:39174/user/login` returned 200.
+- `GET http://144.217.243.161:39174/monitor/online-users/index.html`
+  returned 200.
+
+## Round 14 Commit Record
+
+- Feature commit:
+  `688b665 feat(monitor-online-user): enforce session revocation / 强制在线会话撤销生效`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

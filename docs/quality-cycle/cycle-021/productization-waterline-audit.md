@@ -43,19 +43,22 @@ A capability reaches the current OpenCore productization waterline only when:
 | 10    | `core.file`           | Thin, rework            | The current page manages file metadata only. A real file center needs authenticated upload, download/preview/copy-link behavior and storage-provider boundaries.                                                            |
 | 11    | `core.login-log`      | First loop, enhance     | Immutable list/detail/export and failed-login smoke are live, but device/browser/OS/IP enrichment, date filters, cleanup/unlock policy integration and session actions are still below reference depth.                     |
 | 12    | `core.audit-log`      | Meets current waterline | Immutable operation audit list/detail/export is live and smoke proves a real write operation is recorded. Delete/clean remains an intentional audit-retention policy decision, not a current product blocker.               |
-| 13    | `monitor.online-user` | Thin, rework            | Admin can list/detail/kick-out rows, but `kick-out` only sets `revokedAt`. Bearer token validation still ignores online-session revocation, and browser/OS/IP enrichment plus batch kick-out are missing.                   |
+| 13/14 | `monitor.online-user` | Meets current waterline | Round 14 closed the Round 13 thin loop: bearer auth now checks online-session state, batch kick-out revokes real sessions, smoke proves kicked tokens return 401, and browser/OS/IP fields reach SDK/Admin.                 |
 
 ## Remediation Queue
 
-P0 rework before opening more broad product surfaces:
+Completed P0 remediation:
 
 1. `monitor.online-user` stage 2: real session/token revocation enforcement,
    smoke proving a kicked token returns 401, batch kick-out, UA browser/OS
    parsing and IP fields surfaced in Admin.
-2. `core.file` stage 2: authenticated file upload/download or preview loop
+
+Remaining P0 rework before opening more broad product surfaces:
+
+1. `core.file` stage 2: authenticated file upload/download or preview loop
    backed by the existing file storage boundary, with public copy-link behavior
    only if scoped safely.
-3. `core.menu` stage 2: tree menu model and Admin tree operations aligned with
+2. `core.menu` stage 2: tree menu model and Admin tree operations aligned with
    route/menu metadata, without allowing generated routes to bypass registry.
 
 P1 enhancement queue:

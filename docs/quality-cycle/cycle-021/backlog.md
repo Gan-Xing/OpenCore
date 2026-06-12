@@ -338,6 +338,34 @@ posts to `/api/api/auth/login`.
 - [x] Run focused, full, build, fixed-port smoke and deployment gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 14: monitor.online-user Revocation Productization
+
+Why this slice: the post-Round 13 waterline audit correctly flagged online
+users as thin. Listing and writing `revokedAt` was not enough because bearer
+token validation still ignored online-session revocation. RuoYi force logout
+and Yudao token deletion both require the selected session/token to stop
+working, so this round closes that security effect.
+
+- [x] Add bearer token IDs and expose token expiry from the security auth
+      boundary.
+- [x] Register successful logins as online-user sessions with token ID, IP,
+      user agent, last-seen and expiry metadata.
+- [x] Make authenticated bearer requests consult the online-user session store
+      and reject revoked or expired sessions.
+- [x] Add batch online-user kick-out API guarded by
+      `monitor:online-user:manage`.
+- [x] Parse and surface browser/OS fields from user-agent data.
+- [x] Extend `@opencore/sdk` and Admin platform service with batch kick-out
+      contracts.
+- [x] Extend the Admin Online Users page with browser/OS columns, filters,
+      detail fields, current-page export fields and selected-row batch kick-out.
+- [x] Extend local/deploy smoke so it logs in twice, revokes the second real
+      token and proves that token receives 401 on `/api/auth/me`.
+- [x] Refresh OpenAPI snapshot and registry route/tag checks.
+- [x] Run focused, full, build, fixed-port smoke, deployment and public URL
+      verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -379,12 +407,13 @@ treat "minimal loop" as "minimal final product".
 
 ### Thin, Must Rework Before More Broad Surfaces
 
-- [ ] P0-R14-ONLINE-USER-REVOCATION：问题：Round 13 kick-out 只写
+- [x] P0-R14-ONLINE-USER-REVOCATION：问题：Round 13 kick-out 只写
       `revokedAt`，bearer token validation 仍忽略 online-session revoke；
       参考来源：RuoYi online user force logout、Yudao OAuth2 token delete；
       实施要求：真实 token/session revoke enforcement，batch kick-out，
       browser/OS parsing，IP fields，Admin 展示；测试要求：smoke 证明被踢
-      token 再访问受保护接口返回 401；完成标准：kick-out 产生真实访问失效。
+      token 再访问受保护接口返回 401；完成标准：Round 14 已完成，kick-out
+      会让真实 bearer session 失效。
 - [ ] P0-R15-FILE-CONTENT-LOOP：问题：Round 10 只有文件 metadata CRUD，不是
       文件中心；参考来源：Yudao file upload/download/preview shape；
       实施要求：基于现有 file storage boundary 做 authenticated upload plus
@@ -435,8 +464,7 @@ treat "minimal loop" as "minimal final product".
 - Operation-log deletion/cleanup, batch delete, duration/location/user-agent
   schema expansion, operation type enum expansion, async queue/indexing and
   business-domain audit timeline views.
-- OAuth client/token administration, JWT blacklist/session invalidation
-  semantics beyond current online-session `revokedAt` records, browser/OS
-  parsing, IP geolocation, batch online-user kick-out and online-user export
-  endpoint expansion.
+- OAuth client/token administration, standalone JWT blacklist independent of
+  the online-session store, IP geolocation, server-side date filters and
+  online-user export endpoint expansion.
 - CRM/ERP/MES/WMS/mall/member/pay/AI modules.
