@@ -28,7 +28,7 @@ the lowest-dependency product gap before department/post hardening.
       usage.
 - [x] Refresh OpenAPI snapshot and registry route/tag checks.
 - [x] Run focused and full gates.
-- [ ] Commit and push this independently accepted product slice.
+- [x] Commit and push this independently accepted product slice.
 
 ## Explicitly Out Of Scope
 
