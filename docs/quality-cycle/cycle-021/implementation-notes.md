@@ -4566,3 +4566,123 @@ Against public endpoints after deploy:
   `446d9af feat(user): enforce data-scope on user queries / 用户查询启用数据范围约束`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 55 Capability
+
+Capability: `core.notice` inbox/read-state productization.
+
+Round 55 closes the P1 notice read/unread and header badge stage without
+claiming full delivery/fan-out depth.
+
+Reference comparison:
+
+- RuoYi exposes notice read helpers such as top-list, mark-read/all-read and
+  read-user records around system notices.
+- Yudao exposes notify message consumer APIs for unread count, unread list,
+  personal message page and mark-read/all-read.
+- OpenCore already had management CRUD from Round 1, but no persisted per-user
+  read state, inbox consumer API or header notification entry.
+
+## Round 55 Implemented
+
+- Added Prisma `SystemNoticeReadReceipt` with unique `(noticeId, userId)`,
+  read timestamps and cascade cleanup to notice/user rows.
+- Added notice inbox DTOs and repository/service contracts for page, detail,
+  unread-list, unread-count, mark-read and mark-all-read.
+- Implemented seed and Prisma inbox behavior for published, currently valid
+  `all/admin` notices only.
+- Added guardrails for malformed `readStatus`, empty id arrays, duplicate ids,
+  draft notices, missing notices and repeated mark-read idempotency.
+- Added authenticated-only API routes:
+  - `GET /api/core/notices/inbox`
+  - `GET /api/core/notices/inbox/:id`
+  - `GET /api/core/notices/inbox/unread-list`
+  - `GET /api/core/notices/inbox/unread-count`
+  - `POST /api/core/notices/inbox/read`
+  - `POST /api/core/notices/inbox/read-all`
+- Kept inbox consumer routes out of management permission requirements while
+  still requiring a valid authenticated user.
+- Extended SDK types/client/spec and refreshed OpenAPI.
+- Added Admin System Notices `Manage` / `Inbox` tabs with inbox detail,
+  unread state, mark-read, mark-all-read and current-page export.
+- Added header `NoticeBell` with unread count, latest unread list and inbox
+  navigation.
+- Added `tools/scripts/smoke-core-notice.mjs` and wired it into fixed-port
+  local smoke plus deploy smoke.
+- Hardened `sync-prisma-client-instances.mjs` so Prisma 7 generated schema
+  formatting no longer breaks workspace Prisma client synchronization.
+
+Out of scope for Round 55:
+
+- notification templates;
+- WebSocket/mail/SMS delivery fan-out;
+- delivery adapter configuration;
+- tenant-scoped notices;
+- BPM/workflow approval;
+- full read-user analytics surface.
+
+## Round 55 Verification
+
+- `pnpm prisma:validate`
+- `pnpm prisma:generate`
+- `pnpm prisma:migrate`
+- `pnpm nx test system --runInBand`
+- `pnpm test:api --runInBand`
+- `pnpm nx test sdk --runInBand`
+- `pnpm test:admin`
+- `pnpm openapi:export`
+- `pnpm openapi:check`
+- `pnpm openapi:registry-tags:check`
+- `pnpm sdk:check`
+- `pnpm exec prettier --check --ignore-unknown ...`
+- `git diff --check`
+- `pnpm typecheck`
+- `pnpm lint`
+- `pnpm smoke:api:local`
+- `pnpm deploy:opencore`
+- `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-notice`
+
+`pnpm smoke:api:local` passed on fixed port `39173`, including
+`core.notice.inbox.auth-required`, `core.notice.inbox.bad-read-status-guard`,
+`core.notice.inbox.empty-read-ids-guard`,
+`core.notice.inbox.duplicate-read-ids-guard`,
+`core.notice.inbox.draft-hidden`, `core.notice.inbox.mark-read`,
+`core.notice.inbox.repeat-read-idempotent` and
+`core.notice.inbox.mark-all-read`.
+
+`pnpm deploy:opencore` passed, deploying API/Admin on fixed ports
+`39172`/`39174`; deploy smoke included Admin same-origin login,
+duplicate-prefix login compatibility, public bundle checks, stale
+service-worker retirement and the same notice inbox guards.
+
+`pnpm lint` passed with existing warnings in
+`packages/system/src/system-user/system-user.prisma-repository.ts` and
+`apps/admin/src/pages/shared/CurrentPageExportButton.tsx`; no Round 55 lint
+errors were introduced.
+
+## Round 55 Public Verification
+
+Against public endpoints after deploy:
+
+- Public API: `http://144.217.243.161:39172`
+- Public Admin: `http://144.217.243.161:39174`
+- Admin main bundle: `umi.72fe51c2.js`
+- System Notices chunk: `p__System__Notices.b3ee31ae.async.js`
+- Public API notice smoke passed:
+  `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-notice`.
+  Checks included auth-required, invalid read-status guard, empty/duplicate id
+  guards, draft-hidden guard, unread page/list/count, mark-read idempotency,
+  read/unread split and mark-all-read.
+- Public Admin main bundle contains `/core/notices/inbox`,
+  `/core/notices/inbox/unread-count`, `/core/notices/inbox/unread-list`,
+  `/core/notices/inbox/read`, `/core/notices/inbox/read-all`,
+  `/system/notices?tab=inbox` and `System notice inbox`.
+- Public System Notices chunk contains `System Notices`,
+  `System Notice Inbox Detail`, `Inbox (`, `Mark all read` and `Read At`.
+
+## Round 55 Commit Record
+
+- Feature commit:
+  `15edffc feat(notice): add system notice inbox read state / 新增系统通知收件箱已读状态`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

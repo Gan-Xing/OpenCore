@@ -97,3 +97,4 @@
 - 2026-06-13 09:48:36 UTC completed cycle-021 round-052 core.dept sibling order productization; featureCommit=2086842; deployed=39172/39174; publicVerified=dept-order-api,tree-order,simple-list-order,admin-depts-order-ui
 - 2026-06-13 10:07:17 UTC completed cycle-021 round-053 core.post ordered list productization; featureCommit=99078df; deployed=39172/39174; publicVerified=post-order-api,list-order,simple-list-order,admin-posts-order-ui
 - 2026-06-13 10:27:39 UTC completed cycle-021 round-054 core.user/core.dept data-scope query enforcement; featureCommit=446d9af; deployed=39172/39174; publicVerified=user-data-scope-self-list,dept-intersection,simple-list,export,admin-users-bundle
+- 2026-06-13 11:08:43 UTC completed cycle-021 round-055 core.notice inbox read-state productization; featureCommit=15edffc; deployed=39172/39174; publicVerified=notice-inbox-unread-count,mark-read,mark-all-read,admin-notice-badge,inbox-tab

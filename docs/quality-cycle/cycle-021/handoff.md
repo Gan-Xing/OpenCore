@@ -3,8 +3,8 @@
 Date: 2026-06-13
 Repository: `Gan-Xing/OpenCore`
 Default branch: `main`
-Latest observed feature commit: `446d9af feat(user): enforce data-scope on user queries / 用户查询启用数据范围约束`
-Latest deployed feature commit: `446d9af feat(user): enforce data-scope on user queries / 用户查询启用数据范围约束`
+Latest observed feature commit: `15edffc feat(notice): add system notice inbox read state / 新增系统通知收件箱已读状态`
+Latest deployed feature commit: `15edffc feat(notice): add system notice inbox read state / 新增系统通知收件箱已读状态`
 Latest deployed hardening commit: `4df5dd1 fix(system): satisfy xlsx export lint guard / 修复 XLSX 导出 lint 守卫`
 
 ## One-sentence Goal
@@ -27,6 +27,12 @@ Use this contract for every follow-up round:
 - Sort work by lowest dependency and product foundation value, then fill the
   necessary API, SDK, Admin, permission/menu, seed, OpenAPI, smoke/e2e and docs
   surfaces for that stage.
+- OpenCore is in fast productization and does not carry old compatibility
+  debt. When an old API, SDK shape, DTO, Admin route, seed, menu, permission,
+  smoke or compatibility layer conflicts with the current target waterline,
+  replace or delete it directly, then update all references and guard the new
+  behavior with tests or smoke. Do not keep dual paths just to preserve stale
+  behavior.
 - For every code change, run the required tests, commit, push, deploy through
   `pnpm deploy:opencore`, and verify the public URLs. Do not hand-pick ports.
 - Fixed ports are API `39172`, Admin `39174` and local smoke `39173`.
@@ -120,6 +126,7 @@ productization waterline completion; see
 - Round 52 `core.dept` sibling order stage 4
 - Round 53 `core.post` ordered list stage 4
 - Round 54 `core.user/core.dept` data-scope query enforcement stage 15/5
+- Round 55 `core.notice` inbox/read-state stage 2
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -722,6 +729,21 @@ Round 54 回到 `core.dept`/`core.user` 数据范围队列，把已经存在但�
 这轮关闭的是已准入的数据范围查询执行闭环，不等于批量部门删除、拖拽排序 UI、
 租户隔离或全业务模块 data-permission 自动铺开。
 
+Round 55 回到 `core.notice` P1 队列，把系统公告从管理 CRUD 补到真实收件箱已读
+状态闭环。OpenCore 现在新增 `SystemNoticeReadReceipt` 持久化模型，按用户记录
+通知已读时间；`GET /api/core/notices/inbox`、`/inbox/:id`、`/inbox/unread-list`、
+`/inbox/unread-count`、`POST /inbox/read` 和 `POST /inbox/read-all` 均走认证用户
+上下文，不要求管理权限。seed 和 Prisma repository 都只让 published、当前时间窗口内、
+audience 为 `all/admin` 的通知进入收件箱，并把非法 `readStatus`、空 ids、重复 ids、
+草稿/缺失通知标记已读沉淀为测试和 smoke 守卫。SDK/OpenAPI/Admin 均同步：System
+Notices 页新增 Manage/Inbox tabs、已读状态、批量全部已读、行级标记已读和收件箱详情；
+顶部 header 新增 live `NoticeBell`，显示未读数、最新未读列表并可跳转收件箱。固定
+smoke、部署 smoke 和公网 API smoke 均验证 auth-required、read/unread/page/list/count、
+mark-read idempotency、mark-all-read 和 cleanup；公网 Admin 验证 `umi.72fe51c2.js` 与
+`p__System__Notices.b3ee31ae.async.js` 包含收件箱 API path、header badge 和 Inbox UI
+标记。注意：这轮关闭的是 read/unread、inbox 和 header badge 闭环，不等于通知模板、
+WebSocket/mail/SMS fan-out、租户通知或 BPM 审批。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -732,7 +754,7 @@ The productization waterline now classifies:
   Round 8/21 `core.dict`, Round 2/27/43/52/54 `core.dept`,
   Round 7/19/22/23/28/29/30/31/32/33/34/35/36/41/54 `core.user`,
   Round 3/22/25/42/53 `core.post`.
-- First loop, enhance: Round 1 `core.notice`,
+- First loop, enhance: Round 1/55 `core.notice`,
   Round 9/24/37/38/39/40/44/46/49 `core.config`,
   Round 11/26/45/47/48/49/50/51 `core.login-log`.
 - Thin, rework: none after Round 16.
@@ -784,8 +806,10 @@ finds another blocker:
    fixed/deploy/public smoke. No remaining `core.post` work is in the current
    admitted P1 waterline; drag-sort UI or broader岗位 workflow would require
    separate admission.
-5. `core.notice`: read/unread state, inbox/header badge and delivery adapter
-   design remain below full notice-product depth.
+5. `core.notice`: Round 55 closed persisted per-user read/unread state,
+   authenticated inbox APIs, Admin Inbox tab and header badge. Remaining notice
+   work is delivery adapter design and any admitted template/WebSocket/mail/SMS
+   fan-out or read-user analytics.
 
 ### Current P0/P1/P2 Scope Snapshot
 
@@ -793,10 +817,10 @@ finds another blocker:
   content upload/download, menu tree metadata, plus deployment hardening for
   fixed ports, Admin API origin, duplicate `/api/api` compatibility and stale
   frontend bundle/cache guards.
-- P1 remaining: `core.notice` inbox/read-state/delivery records,
-  `core.config` broader runtime feature-flag propagation or admitted secret
-  vault/KMS integration, and `core.login-log` IP/location enrichment plus
-  structured actor/reason or admitted mobile/SMS/social login logging.
+- P1 remaining: `core.notice` delivery adapter/template/fan-out/read-user
+  analytics, `core.config` broader runtime feature-flag propagation or admitted
+  secret vault/KMS integration, and `core.login-log` IP/location enrichment
+  plus structured actor/reason or admitted mobile/SMS/social login logging.
   `core.post` is closed at the current admitted waterline after Round 53;
   `core.dept` data-scope workflow is closed at the current admitted waterline
   after Round 54.
@@ -808,7 +832,7 @@ finds another blocker:
 
 Reference parity is measured by product capability waterline, not by replaying
 RuoYi/Yudao commit history. The remaining RuoYi-style foundation backlog after
-Round 54 is roughly several focused P1 loops, not tens of thousands of commits.
+Round 55 is roughly several focused P1 loops, not tens of thousands of commits.
 Yudao Full parity is a different program: BPM, pay, mall, member, CRM, ERP,
 AI and other business domains would require dozens to 100+ separately admitted
 deployable loops, and should not be counted as unfinished cycle-021 foundation
@@ -859,7 +883,7 @@ BE20 已完成，当前主线是 cycle-021 capability-map productization recursi
 
 ## What The Next AI Should Do
 
-下一轮不是固定任务清单，而是能力地图差距递归。AI 必须实时查询当前 OpenCore、若依、芋道和相关旧项目，自己判断当前最低依赖、最高价值、最小可闭环的产品化缺口。当前在打开新产品面之前，必须先按 `productization-waterline-audit.md` 的 P0 欠账队列补齐薄弱轮次。
+下一轮不是固定任务清单，而是能力地图差距递归。AI 必须实时查询当前 OpenCore、若依、芋道和相关旧项目，自己判断当前最低依赖、最高价值、最小可闭环的产品化缺口。当前 P0 欠账已清；打开更宽产品面之前，继续按 `productization-waterline-audit.md` 的 P1 enhancement queue 补齐薄弱基础能力。
 
 ### Mandatory first read
 

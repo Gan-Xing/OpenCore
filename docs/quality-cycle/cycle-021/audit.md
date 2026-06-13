@@ -834,3 +834,36 @@ This stays inside the current S7 System/Security login-policy boundary. It
 does not introduce captcha verification, IP location enrichment,
 logout/mobile/SMS/social login logging, session termination from the login-log
 page, secret vault/KMS integration or broad feature-flag propagation.
+
+## Round 55 Audit: core.notice Inbox Read-State
+
+After Round 54, P0 was clear and the remaining P1 queue was config,
+login-log and notice. The lowest-dependency visible product gap was
+`core.notice`: management CRUD existed, but the product still lacked the
+logged-in user's notification inbox and read/unread state.
+
+- RuoYi-style notice usage includes header notification access, read status
+  operations and read-user records around system notices.
+- Yudao exposes the consumer side explicitly through notify message my-page,
+  unread-list, unread-count, update-read and update-all-read APIs.
+- OpenCore already had notice CRUD, publish/archive lifecycle, audience and
+  validity-window fields, so this round did not need a new management surface.
+- The missing foundation was persisted `(noticeId, userId)` read state plus
+  consumer APIs that use the authenticated user rather than management
+  permissions.
+- The API routes needed to be registered before `notices/:id` so static inbox
+  paths cannot be swallowed by dynamic notice detail routes.
+- The input guards needed to reject malformed `readStatus`, empty arrays,
+  duplicate ids, hidden drafts and missing notices before mutation, because
+  repeated deserialization and route-shape regressions must become tests and
+  smoke checks.
+- Admin needed both the System Notices Inbox tab and a header unread badge, not
+  another fixture-only page.
+- Fixed-port, deploy and public smoke needed to prove the read/unread behavior
+  from login through published notice, mark-read, idempotent repeat read and
+  mark-all-read.
+
+This stays inside the current S7 System notice boundary. It does not introduce
+notification templates, delivery adapter configuration, WebSocket/mail/SMS
+fan-out, tenant notices, BPM approval or full read-user analytics in this
+round.

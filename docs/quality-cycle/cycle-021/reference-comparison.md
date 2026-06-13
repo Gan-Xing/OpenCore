@@ -1711,3 +1711,44 @@ enforcement loop:
 OpenCore does not claim full tenant isolation, all-module data-permission
 rollout, workflow-level ownership rules, batch department deletion or drag-sort
 UI in this round. Those remain separate admissions.
+
+## Round 55 Notice Inbox Read-State Reference Shape
+
+RuoYi-style notice product depth is not only notice CRUD. Its notice-related
+UI commonly includes header notification access, top-list style consumption,
+mark-read/all-read operations and read-user records that let an operator see
+whether a notice has reached users.
+
+Yudao separates notice management from personal notify-message consumption. The
+important consumer shape is the same: my-page, unread-list, unread-count,
+mark-read and mark-all-read endpoints let the logged-in user operate their own
+notification inbox without needing system-notice management permissions.
+
+OpenCore already had:
+
+- system notice management CRUD from Round 1;
+- `core:notice:*` management permissions and Admin System Notices route;
+- published/draft/archived lifecycle, audience and time-window fields;
+- SDK/OpenAPI/Admin management coverage.
+
+The missing product behavior was per-user read state and a real inbox consumer
+surface. Round 55 admits this stage:
+
+- add persisted `SystemNoticeReadReceipt` rows keyed by `(noticeId, userId)`;
+- expose authenticated-only notice inbox page/detail, unread-list,
+  unread-count, mark-read and mark-all-read APIs;
+- keep inbox routes independent from management permissions while still
+  requiring a valid bearer session;
+- include only published, currently valid `all/admin` audience notices in the
+  inbox;
+- reject malformed read-status values, empty/duplicate read ids, hidden drafts
+  and missing inbox notices before mutation;
+- extend SDK/OpenAPI/Admin with a System Notices Inbox tab and header unread
+  badge;
+- prove fixed-port, deploy and public behavior through
+  `tools/scripts/smoke-core-notice.mjs`.
+
+OpenCore does not claim delivery templates, WebSocket/mail/SMS fan-out,
+tenant-scoped notices, BPM approval around announcements or full read-user
+analytics in this round. Those are the remaining notice productization stages
+if admitted.

@@ -1635,6 +1635,49 @@ existing explicit `deptId` subtree filter.
       URL verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 55: core.notice Inbox Read-State Productization
+
+Why this slice: after P0 was clear and post/dept/user ordering/data-scope
+foundations were closed, the thinnest remaining System P1 product gap was
+`core.notice`. RuoYi exposes notice read operations around header notifications
+and read-user records, while Yudao exposes notify message unread count,
+unread-list and mark-read/all-read consumer APIs. OpenCore already had notice
+management CRUD from Round 1, but lacked per-user inbox/read-state behavior and
+a header notification entry. The next lowest-dependency loop was persisted
+read receipts plus authenticated inbox APIs, SDK, Admin Inbox tab, header badge
+and fixed/deploy/public smoke.
+
+- [x] Recompare RuoYi notice read/listTop/markRead/readUsers and Yudao notify
+      message my-page/unread-list/unread-count/update-read/update-all-read
+      before selecting the slice.
+- [x] Add `SystemNoticeReadReceipt` Prisma model and migration with unique
+      `(noticeId, userId)` read receipts and cascade cleanup.
+- [x] Extend `@opencore/system` notice DTO/repository/service contracts with
+      inbox page/detail, unread count/list, mark-read and mark-all-read.
+- [x] Implement seed and Prisma inbox behavior for published, currently valid,
+      `all/admin` audience notices only.
+- [x] Reject malformed `readStatus`, empty read-id arrays, duplicate read ids,
+      draft notices and missing inbox ids before mutation.
+- [x] Add authenticated-only API routes before dynamic notice detail routes:
+      `/core/notices/inbox`, `/inbox/:id`, `/inbox/unread-list`,
+      `/inbox/unread-count`, `/inbox/read` and `/inbox/read-all`.
+- [x] Extend API permission matrix so inbox consumer routes require
+      authentication but not management permissions.
+- [x] Extend SDK types/client/spec and refresh OpenAPI snapshot.
+- [x] Add Admin System Notices Manage/Inbox tabs, inbox detail, row mark-read,
+      mark-all-read, unread count and current-page export.
+- [x] Add header `NoticeBell` with unread badge, latest unread list,
+      mark-read/mark-all-read actions and inbox navigation.
+- [x] Extend Admin static smoke for inbox page markers and header badge
+      service usage.
+- [x] Add `tools/scripts/smoke-core-notice.mjs` and wire it into
+      `pnpm smoke:api:local` plus `pnpm deploy:opencore`.
+- [x] Harden Prisma client sync so Prisma 7 generated schema formatting does
+      not break workspace client instance synchronization.
+- [x] Run focused tests, full gates, fixed-port smoke, deployment and public
+      URL verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -1676,8 +1719,10 @@ treat "minimal loop" as "minimal final product".
 
 ### First Loop, Needs Enhancement
 
-- [ ] Round 1 `core.notice`: read/unread state, inbox/header badge and delivery
-      adapter design.
+- [ ] Round 1/55 `core.notice`: management CRUD, persisted per-user read
+      receipts, authenticated inbox APIs, Admin Inbox tab and header unread
+      badge are complete. Delivery adapter design, notification templates,
+      WebSocket/mail/SMS fan-out and any read-user analytics remain.
 - [ ] Round 9/24/37/38/39/40/44/46/49 `core.config`: public get-value-by-key, cache
       refresh and mutation invalidation are complete. Category/name/remark
       metadata is complete. Native XLSX export payload and Admin download are
@@ -1727,8 +1772,8 @@ treat "minimal loop" as "minimal final product".
 
 ## Explicitly Out Of Scope
 
-- Notice read/unread inbox, header badge and per-user read tracking.
 - Message bus push, WebSocket delivery or mail/SMS fan-out.
+- Notification template/delivery adapter design and read-user analytics.
 - BPMN/workflow approval around announcements.
 - Tenant-scoped notices.
 - Department data-scope workflow integration and role data-scope assignment UI.
