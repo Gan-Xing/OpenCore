@@ -22,9 +22,13 @@ const timeoutMs = Number(process.env.OPENCORE_SMOKE_TIMEOUT_MS || 10000);
 
 const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 const failedUsername = `opencore-smoke-login-${runId}`;
+const lockoutUsername = `opencore-smoke-lockout-${runId}`;
+const lockoutPassword = `Lockout-${runId}-A1`;
+const loginLockoutAttemptLimit = 5;
 const failedLoginUserAgent =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 let token;
+let lockoutUserId;
 
 class HttpStatusError extends Error {
   constructor(message, status) {
@@ -140,6 +144,103 @@ try {
   assertIncludes(exportPreview.columns, 'browser', 'login log export columns');
   assertIncludes(exportPreview.columns, 'os', 'login log export columns');
 
+  const createdLockoutUser = await apiRequest('/core/users', {
+    method: 'POST',
+    body: {
+      username: lockoutUsername,
+      displayName: 'Smoke Login Lockout User',
+      password: lockoutPassword,
+      roleCodes: [],
+      enabled: true,
+    },
+  });
+  lockoutUserId = assertString(
+    createdLockoutUser.id,
+    'created lockout smoke user id',
+  );
+
+  const emptyUnlockResult = await apiRequest('/core/login-logs/unlock', {
+    method: 'POST',
+    body: { username: lockoutUsername },
+  });
+  assertEqual(
+    emptyUnlockResult.username,
+    lockoutUsername,
+    'empty unlock username',
+  );
+  assertEqual(emptyUnlockResult.unlocked, false, 'empty unlock result');
+
+  for (let attempt = 0; attempt < loginLockoutAttemptLimit; attempt += 1) {
+    await request(`${apiPrefix}/auth/login`, {
+      method: 'POST',
+      expected: [401, 403],
+      body: {
+        username: lockoutUsername,
+        password: `wrong-${attempt}`,
+      },
+    });
+  }
+
+  await request(`${apiPrefix}/auth/login`, {
+    method: 'POST',
+    expected: [401, 403],
+    body: {
+      username: lockoutUsername,
+      password: lockoutPassword,
+    },
+  });
+
+  const lockedLog = await waitForAccountLockedLoginLog();
+  assertEqual(
+    lockedLog.username,
+    lockoutUsername,
+    'account locked login username',
+  );
+  assertEqual(
+    lockedLog.result,
+    'account_locked',
+    'account locked login result',
+  );
+  assertEqual(lockedLog.success, false, 'account locked success flag');
+
+  const lockedFilterPage = await apiRequest(
+    `/core/login-logs?page=1&pageSize=10&username=${encodeURIComponent(
+      lockoutUsername,
+    )}&result=account_locked&success=false`,
+  );
+  assertArray(lockedFilterPage.items, 'account locked filtered items');
+  if (!lockedFilterPage.items.some((item) => item.id === lockedLog.id)) {
+    throw new Error('Expected account_locked login log to be filterable');
+  }
+
+  const unlockResult = await apiRequest('/core/login-logs/unlock', {
+    method: 'POST',
+    body: { username: lockoutUsername },
+  });
+  assertEqual(unlockResult.username, lockoutUsername, 'unlock username');
+  assertEqual(unlockResult.unlocked, true, 'unlock result');
+  assertEqual(
+    unlockResult.failedAttempts,
+    loginLockoutAttemptLimit,
+    'unlock failed attempt count',
+  );
+  assertString(unlockResult.lockedUntil, 'unlock lockedUntil');
+
+  const restoredLogin = await request(`${apiPrefix}/auth/login`, {
+    method: 'POST',
+    expected: [200, 201],
+    body: {
+      username: lockoutUsername,
+      password: lockoutPassword,
+    },
+  });
+  assertString(restoredLogin.accessToken, 'restored lockout user accessToken');
+
+  await apiRequest(`/core/users/${encodeURIComponent(lockoutUserId)}`, {
+    method: 'DELETE',
+  });
+  lockoutUserId = undefined;
+
   console.log(
     JSON.stringify({
       status: 'pass',
@@ -159,6 +260,10 @@ try {
         'core.login-log.detail',
         'core.login-log.device-fields',
         'core.login-log.export',
+        'core.login-log.unlock-empty',
+        'auth.login-lockout.enforced',
+        'core.login-log.account-locked-filter',
+        'core.login-log.unlock-restores-login',
       ],
     }),
   );
@@ -199,6 +304,39 @@ async function waitForFailedLoginLog() {
 
   throw new Error(
     `Failed login log was not recorded for ${failedUsername}; latest rows=${formatBody(
+      lastItems,
+    )}`,
+  );
+}
+
+async function waitForAccountLockedLoginLog() {
+  let lastItems = [];
+
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    const page = await apiRequest(
+      `/core/login-logs?page=1&pageSize=10&username=${encodeURIComponent(
+        lockoutUsername,
+      )}&logType=login.username&result=account_locked&success=false`,
+    );
+    assertArray(page.items, 'filtered account locked login log items');
+    lastItems = page.items;
+
+    const match = page.items.find(
+      (item) =>
+        item.username === lockoutUsername &&
+        item.result === 'account_locked' &&
+        item.success === false,
+    );
+
+    if (match) {
+      return match;
+    }
+
+    await delay(250);
+  }
+
+  throw new Error(
+    `Account locked login log was not recorded for ${lockoutUsername}; latest rows=${formatBody(
       lastItems,
     )}`,
   );

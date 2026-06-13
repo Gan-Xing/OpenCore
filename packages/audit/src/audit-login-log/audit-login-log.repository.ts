@@ -62,6 +62,7 @@ export const AUDIT_LOGIN_LOG_TYPES = [
 ] as const satisfies readonly SecurityLoginLogType[];
 
 export const AUDIT_LOGIN_RESULTS = [
+  'account_locked',
   'bad_credentials',
   'captcha_code_error',
   'captcha_not_found',

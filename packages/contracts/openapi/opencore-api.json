@@ -3078,6 +3078,34 @@
         "tags": ["SystemManagement", "Core Login Logs"]
       }
     },
+    "/api/core/login-logs/unlock": {
+      "post": {
+        "operationId": "SystemManagementController_unlockLoginUser",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UnlockLoginUserDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginUnlockResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Login Logs"]
+      }
+    },
     "/api/core/login-logs/{id}": {
       "get": {
         "operationId": "SystemManagementController_getLoginLog",
@@ -6801,6 +6829,7 @@
           "result": {
             "type": "string",
             "enum": [
+              "account_locked",
               "bad_credentials",
               "captcha_code_error",
               "captcha_not_found",
@@ -6844,6 +6873,21 @@
           "totalPages": { "type": "number" }
         },
         "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "UnlockLoginUserDto": {
+        "type": "object",
+        "properties": { "username": { "type": "string", "example": "admin" } },
+        "required": ["username"]
+      },
+      "LoginUnlockResultDto": {
+        "type": "object",
+        "properties": {
+          "username": { "type": "string" },
+          "unlocked": { "type": "boolean" },
+          "failedAttempts": { "type": "number" },
+          "lockedUntil": { "type": "string" }
+        },
+        "required": ["username", "unlocked", "failedAttempts"]
       },
       "CollaborationMessageSummaryDto": {
         "type": "object",

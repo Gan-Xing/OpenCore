@@ -20,6 +20,7 @@ import type {
   FileAssetSummary,
   LoginLogQueryRequest,
   LoginLogSummary,
+  LoginUnlockSummary,
   PageRequest,
   PageResponse,
   SystemConfigBatchMutationSummary,
@@ -40,6 +41,7 @@ import type {
   UpdateDictItemRequest,
   UpdateDictTypeRequest,
   UpdateFileAssetRequest,
+  UnlockLoginUserRequest,
   UploadFileAssetRequest,
   UpdateSystemDeptRequest,
   UpdateSystemNoticeRequest,
@@ -231,6 +233,10 @@ export type SystemManagementClient = {
     token: Token,
     query?: LoginLogQueryRequest,
   ) => Promise<ExportPreview>;
+  unlockLoginUser: (
+    token: Token,
+    body: UnlockLoginUserRequest,
+  ) => Promise<LoginUnlockSummary>;
 };
 
 export function createSystemManagementClient(
@@ -556,6 +562,12 @@ export function createSystemManagementClient(
       }),
     exportLoginLogs: (token, query) =>
       request<ExportPreview>(withQuery('/core/login-logs/export', query), {
+        token,
+      }),
+    unlockLoginUser: (token, body) =>
+      request<LoginUnlockSummary>('/core/login-logs/unlock', {
+        method: 'POST',
+        body,
         token,
       }),
   };

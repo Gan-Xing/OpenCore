@@ -27,6 +27,7 @@ export class LoginLogDto {
 
   @ApiProperty({
     enum: [
+      'account_locked',
       'bad_credentials',
       'captcha_code_error',
       'captcha_not_found',
@@ -35,6 +36,7 @@ export class LoginLogDto {
     ],
   })
   result!:
+    | 'account_locked'
     | 'bad_credentials'
     | 'captcha_code_error'
     | 'captcha_not_found'

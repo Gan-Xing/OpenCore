@@ -53,6 +53,7 @@ import {
   type FileAssetSummary,
   type LoginLogQueryRequest,
   type LoginLogSummary,
+  type LoginUnlockSummary,
   type KickOutSessionRequest,
   type ListUsersRequest,
   type OnlineUserQueryRequest,
@@ -543,6 +544,14 @@ export async function listOpenCoreLoginLogs(
 
 export function getOpenCoreLoginLog(id: string): Promise<LoginLogSummary> {
   return systemManagementClient.getLoginLog(getRequiredAdminToken(), id);
+}
+
+export function unlockOpenCoreLoginUser(
+  username: string,
+): Promise<LoginUnlockSummary> {
+  return systemManagementClient.unlockLoginUser(getRequiredAdminToken(), {
+    username,
+  });
 }
 
 export async function listOpenCoreAuditLogs(

@@ -116,6 +116,7 @@ function toAuditLoginLogRecord(log: PrismaLoginLog): AuditLoginLogRecord {
         ? log.logType
         : 'login.username',
     result:
+      log.result === 'account_locked' ||
       log.result === 'bad_credentials' ||
       log.result === 'captcha_code_error' ||
       log.result === 'captcha_not_found' ||

@@ -17,6 +17,7 @@ import {
   SystemRoleModule,
   SystemUserModule,
 } from '@opencore/system';
+import { LoginSecurityModule } from '../login-security/login-security.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { PermissionGuard } from './permission.guard';
@@ -29,6 +30,7 @@ import { RbacRepository } from './rbac.repository';
     DatabaseModule,
     AuditLoginLogModule,
     FileModule,
+    LoginSecurityModule,
     OnlineUserModule,
     SystemUserModule,
     SystemRoleModule,

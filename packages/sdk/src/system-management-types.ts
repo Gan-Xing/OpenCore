@@ -356,6 +356,7 @@ export type LoginLogType =
   | 'logout.self';
 
 export type LoginLogResult =
+  | 'account_locked'
   | 'bad_credentials'
   | 'captcha_code_error'
   | 'captcha_not_found'
@@ -370,6 +371,17 @@ export type LoginLogQueryRequest = PageRequest & {
   result?: LoginLogResult;
   success?: boolean;
   username?: string;
+};
+
+export type UnlockLoginUserRequest = {
+  username: string;
+};
+
+export type LoginUnlockSummary = {
+  username: string;
+  unlocked: boolean;
+  failedAttempts: number;
+  lockedUntil?: string;
 };
 
 export type ExportPreview = {

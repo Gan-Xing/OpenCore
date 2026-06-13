@@ -170,4 +170,21 @@ describe('@opencore/module-registry', () => {
       ]),
     );
   });
+
+  it('registers login-log management for account unlock actions', () => {
+    expect(collectPermissionCodes()).toEqual(
+      expect.arrayContaining(['core:login-log:manage']),
+    );
+
+    expect(findModuleByCode('core.login-log')?.permissions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'core:login-log:manage',
+          title: 'Manage login logs',
+          stage: 'S7',
+          dangerous: true,
+        }),
+      ]),
+    );
+  });
 });

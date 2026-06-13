@@ -1,10 +1,14 @@
 import { DynamicModule, Module, type Provider } from '@nestjs/common';
 import {
+  DefaultSecurityLoginPolicyProvider,
   NoopSecurityLoginAttemptRecorder,
+  NoopSecurityLoginLockoutRepository,
   AllowAllSecurityAuthSessionRepository,
   SecurityAuthSessionRepository,
   SecurityAuthUserRepository,
+  SecurityLoginLockoutRepository,
   SecurityLoginAttemptRecorder,
+  SecurityLoginPolicyProvider,
 } from './security-auth.repository';
 import { SecurityAuthService } from './security-auth.service';
 import { SecurityBearerTokenService } from './security-bearer-token.service';
@@ -24,6 +28,14 @@ export class SecurityAuthModule {
           provide: SecurityAuthSessionRepository,
           useClass: AllowAllSecurityAuthSessionRepository,
         },
+        {
+          provide: SecurityLoginPolicyProvider,
+          useClass: DefaultSecurityLoginPolicyProvider,
+        },
+        {
+          provide: SecurityLoginLockoutRepository,
+          useClass: NoopSecurityLoginLockoutRepository,
+        },
         SecurityBearerTokenService,
         SecurityAuthService,
       ],
@@ -31,6 +43,8 @@ export class SecurityAuthModule {
         SecurityAuthUserRepository,
         SecurityLoginAttemptRecorder,
         SecurityAuthSessionRepository,
+        SecurityLoginPolicyProvider,
+        SecurityLoginLockoutRepository,
         SecurityBearerTokenService,
         SecurityAuthService,
       ],

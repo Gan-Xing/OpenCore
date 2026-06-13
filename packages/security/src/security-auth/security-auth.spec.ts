@@ -1,5 +1,10 @@
 import { UnauthorizedException } from '@nestjs/common';
 import {
+  SecurityLoginLockoutRepository,
+  type SecurityLoginLockoutAttemptInput,
+  type SecurityLoginLockoutRecord,
+  type SecurityLoginPolicy,
+  SecurityLoginPolicyProvider,
   SecurityAuthSessionRepository,
   type SecurityAuthSessionRecord,
   SecurityAuthUserRepository,
@@ -137,6 +142,67 @@ describe('@opencore/security security-auth', () => {
       }),
     ]);
   });
+
+  it('locks repeated bad password attempts and allows explicit unlock', async () => {
+    const repository = new InMemorySecurityAuthUserRepository();
+    const loginAttempts = new InMemorySecurityLoginAttemptRecorder();
+    const loginLockouts = new InMemorySecurityLoginLockoutRepository();
+    const service = new SecurityAuthService(
+      repository,
+      loginAttempts,
+      new InMemorySecurityAuthSessionRepository(),
+      new SecurityBearerTokenService(),
+      new StaticSecurityLoginPolicyProvider({
+        maxFailedAttempts: 2,
+        lockoutMinutes: 15,
+      }),
+      loginLockouts,
+    );
+
+    await expect(service.login('admin', 'wrong')).rejects.toThrow(
+      UnauthorizedException,
+    );
+    await expect(service.login('admin', 'still-wrong')).rejects.toThrow(
+      UnauthorizedException,
+    );
+    await expect(service.login('admin', 'admin123')).rejects.toThrow(
+      UnauthorizedException,
+    );
+
+    expect(loginAttempts.records).toEqual([
+      expect.objectContaining({
+        username: 'admin',
+        result: 'bad_credentials',
+        success: false,
+        failureReason: 'invalid-credentials',
+      }),
+      expect.objectContaining({
+        username: 'admin',
+        result: 'account_locked',
+        success: false,
+        failureReason: 'account-locked',
+      }),
+      expect.objectContaining({
+        username: 'admin',
+        result: 'account_locked',
+        success: false,
+        failureReason: 'account-locked',
+      }),
+    ]);
+
+    await expect(loginLockouts.clearLoginLockout('admin')).resolves.toEqual(
+      expect.objectContaining({
+        username: 'admin',
+        unlocked: true,
+        failedAttempts: 2,
+      }),
+    );
+    await expect(service.login('admin', 'admin123')).resolves.toMatchObject({
+      user: {
+        username: 'admin',
+      },
+    });
+  });
 });
 
 class InMemorySecurityAuthUserRepository extends SecurityAuthUserRepository {
@@ -195,5 +261,63 @@ class InMemorySecurityLoginAttemptRecorder extends SecurityLoginAttemptRecorder 
 
   async recordLoginAttempt(record: SecurityLoginAttemptRecord): Promise<void> {
     this.records.push({ ...record });
+  }
+}
+
+class StaticSecurityLoginPolicyProvider extends SecurityLoginPolicyProvider {
+  constructor(private readonly policy: SecurityLoginPolicy) {
+    super();
+  }
+
+  async getLoginPolicy(): Promise<SecurityLoginPolicy> {
+    return { ...this.policy };
+  }
+}
+
+class InMemorySecurityLoginLockoutRepository extends SecurityLoginLockoutRepository {
+  private readonly records = new Map<string, SecurityLoginLockoutRecord>();
+
+  async getLoginLockout(
+    username: string,
+  ): Promise<SecurityLoginLockoutRecord | undefined> {
+    return this.clone(this.records.get(username));
+  }
+
+  async recordFailedLoginAttempt(
+    input: SecurityLoginLockoutAttemptInput,
+  ): Promise<SecurityLoginLockoutRecord> {
+    const current = this.records.get(input.username);
+    const now = new Date();
+    const failedAttempts = (current?.failedAttempts ?? 0) + 1;
+    const lockedUntil =
+      failedAttempts >= input.maxFailedAttempts
+        ? new Date(now.getTime() + input.lockoutMinutes * 60_000).toISOString()
+        : undefined;
+    const record: SecurityLoginLockoutRecord = {
+      username: input.username,
+      failedAttempts,
+      lockedUntil,
+      lastFailedAt: now.toISOString(),
+    };
+
+    this.records.set(input.username, record);
+    return { ...record };
+  }
+
+  async clearLoginLockout(username: string) {
+    const current = this.records.get(username);
+    this.records.delete(username);
+    return {
+      username,
+      unlocked: Boolean(current),
+      failedAttempts: current?.failedAttempts ?? 0,
+      lockedUntil: current?.lockedUntil,
+    };
+  }
+
+  private clone(
+    record: SecurityLoginLockoutRecord | undefined,
+  ): SecurityLoginLockoutRecord | undefined {
+    return record ? { ...record } : undefined;
   }
 }

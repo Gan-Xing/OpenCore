@@ -1,10 +1,15 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import {
   AllowAllSecurityAuthSessionRepository,
+  DefaultSecurityLoginPolicyProvider,
+  NoopSecurityLoginLockoutRepository,
   NoopSecurityLoginAttemptRecorder,
   SecurityAuthSessionRepository,
   SecurityAuthUserRepository,
+  SecurityLoginLockoutRepository,
   SecurityLoginAttemptRecorder,
+  SecurityLoginPolicyProvider,
+  type SecurityLoginLockoutRecord,
   type SecurityLoginAttemptRecord,
   type SecurityLoginResult,
 } from './security-auth.repository';
@@ -40,6 +45,8 @@ export class SecurityAuthService {
     private readonly loginAttempts: SecurityLoginAttemptRecorder = new NoopSecurityLoginAttemptRecorder(),
     private readonly sessions: SecurityAuthSessionRepository = new AllowAllSecurityAuthSessionRepository(),
     private readonly bearerTokens: SecurityBearerTokenService = new SecurityBearerTokenService(),
+    private readonly loginPolicy: SecurityLoginPolicyProvider = new DefaultSecurityLoginPolicyProvider(),
+    private readonly loginLockouts: SecurityLoginLockoutRepository = new NoopSecurityLoginLockoutRepository(),
   ) {}
 
   async login(
@@ -47,9 +54,9 @@ export class SecurityAuthService {
     password: string,
     context: LoginContext = {},
   ): Promise<LoginResponse> {
-    const user = await this.repository.findUserByUsername(username);
+    const normalizedUsername = normalizeLoginUsername(username);
 
-    if (!user) {
+    if (!normalizedUsername) {
       await this.recordLoginAttempt(
         username,
         'bad_credentials',
@@ -59,19 +66,35 @@ export class SecurityAuthService {
       throw new UnauthorizedException('Invalid username or password');
     }
 
-    if (!verifySecurityPassword(password, user.passwordHash)) {
+    const policy = await this.loginPolicy.getLoginPolicy();
+    const existingLockout =
+      await this.loginLockouts.getLoginLockout(normalizedUsername);
+
+    if (isActiveLoginLockout(existingLockout)) {
       await this.recordLoginAttempt(
-        username,
-        'bad_credentials',
-        'invalid-credentials',
+        normalizedUsername,
+        'account_locked',
+        'account-locked',
         context,
       );
+      throw new UnauthorizedException('Invalid username or password');
+    }
+
+    const user = await this.repository.findUserByUsername(normalizedUsername);
+
+    if (!user) {
+      await this.recordFailedLoginAttempt(normalizedUsername, policy, context);
+      throw new UnauthorizedException('Invalid username or password');
+    }
+
+    if (!verifySecurityPassword(password, user.passwordHash)) {
+      await this.recordFailedLoginAttempt(normalizedUsername, policy, context);
       throw new UnauthorizedException('Invalid username or password');
     }
 
     if (!user.enabled) {
       await this.recordLoginAttempt(
-        username,
+        normalizedUsername,
         'user_disabled',
         'user-disabled',
         context,
@@ -80,7 +103,13 @@ export class SecurityAuthService {
     }
 
     const session = await this.createSessionForUser(user.id, context);
-    await this.recordLoginAttempt(username, 'success', undefined, context);
+    await this.loginLockouts.clearLoginLockout(normalizedUsername);
+    await this.recordLoginAttempt(
+      normalizedUsername,
+      'success',
+      undefined,
+      context,
+    );
     return session;
   }
 
@@ -156,4 +185,38 @@ export class SecurityAuthService {
 
     await this.loginAttempts.recordLoginAttempt(record);
   }
+
+  private async recordFailedLoginAttempt(
+    username: string,
+    policy: Awaited<ReturnType<SecurityLoginPolicyProvider['getLoginPolicy']>>,
+    context: LoginContext,
+  ): Promise<void> {
+    const lockout = await this.loginLockouts.recordFailedLoginAttempt({
+      username,
+      maxFailedAttempts: policy.maxFailedAttempts,
+      lockoutMinutes: policy.lockoutMinutes,
+    });
+    const locked = isActiveLoginLockout(lockout);
+
+    await this.recordLoginAttempt(
+      username,
+      locked ? 'account_locked' : 'bad_credentials',
+      locked ? 'account-locked' : 'invalid-credentials',
+      context,
+    );
+  }
+}
+
+function normalizeLoginUsername(username: string): string {
+  return username.trim();
+}
+
+function isActiveLoginLockout(
+  lockout: SecurityLoginLockoutRecord | undefined,
+): boolean {
+  if (!lockout?.lockedUntil) {
+    return false;
+  }
+
+  return new Date(lockout.lockedUntil).getTime() > Date.now();
 }

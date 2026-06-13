@@ -61,6 +61,25 @@ export class DeleteResultDto {
   deleted!: true;
 }
 
+export class UnlockLoginUserDto {
+  @ApiProperty({ example: 'admin' })
+  username!: string;
+}
+
+export class LoginUnlockResultDto {
+  @ApiProperty()
+  username!: string;
+
+  @ApiProperty()
+  unlocked!: boolean;
+
+  @ApiProperty()
+  failedAttempts!: number;
+
+  @ApiProperty({ required: false })
+  lockedUntil?: string;
+}
+
 export class FileAssetDto {
   @ApiProperty()
   id!: string;

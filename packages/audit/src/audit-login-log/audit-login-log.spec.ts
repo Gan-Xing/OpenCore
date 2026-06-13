@@ -42,6 +42,16 @@ describe('@opencore/audit audit-login-log', () => {
       userAgent: 'jest',
       requestId: 'req_seed_login_failure',
     });
+    await service.recordLoginAttempt({
+      username: 'locked',
+      logType: 'login.username',
+      result: 'account_locked',
+      success: false,
+      failureReason: 'account-locked',
+      ip: '127.0.0.1',
+      userAgent: 'jest',
+      requestId: 'req_seed_login_locked',
+    });
 
     await expect(
       service.listLoginLogs({
@@ -61,6 +71,22 @@ describe('@opencore/audit audit-login-log', () => {
         }),
       ]),
     });
+    await expect(
+      service.listLoginLogs({
+        result: 'account_locked',
+        success: false,
+        username: 'locked',
+      }),
+    ).resolves.toMatchObject({
+      total: 1,
+      items: [
+        expect.objectContaining({
+          username: 'locked',
+          result: 'account_locked',
+          failureReason: 'account-locked',
+        }),
+      ],
+    });
     await expect(service.createExportPreview()).resolves.toMatchObject({
       filename: 'opencore-login-logs.csv',
       scope: 'current-page',
@@ -75,7 +101,7 @@ describe('@opencore/audit audit-login-log', () => {
         'browser',
         'os',
       ],
-      rowCount: 3,
+      rowCount: 4,
     });
     await expect(
       service.listLoginLogs({

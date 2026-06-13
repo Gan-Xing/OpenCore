@@ -9,6 +9,7 @@ import {
   SystemNoticeModule,
   SystemPostModule,
 } from '@opencore/system';
+import { LoginSecurityModule } from '../login-security/login-security.module';
 import { PrismaSystemManagementRepository } from './prisma-system-management.repository';
 import { SystemManagementController } from './system-management.controller';
 import { SystemManagementRepository } from './system-management.repository';
@@ -19,6 +20,7 @@ import { SystemManagementRepository } from './system-management.repository';
     FileModule,
     AuditLoginLogModule,
     AuditOperationLogModule,
+    LoginSecurityModule,
     SystemDictModule,
     SystemConfigModule,
     SystemNoticeModule,

@@ -428,6 +428,8 @@ if (
   !accessRuntime.includes('core:file:read') ||
   !accessRuntime.includes('core:audit-log:read') ||
   !accessRuntime.includes('core:login-log:read') ||
+  !accessRuntime.includes('core:login-log:manage') ||
+  !accessRuntime.includes('canManageLoginLogs') ||
   !accessRuntime.includes('monitor:status:read') ||
   !accessRuntime.includes('monitor:version:read') ||
   !accessRuntime.includes('monitor:queue:read') ||
@@ -898,11 +900,15 @@ if (
 if (
   !loginLogsPage.includes('listOpenCoreLoginLogs') ||
   !loginLogsPage.includes('getOpenCoreLoginLog') ||
+  !loginLogsPage.includes('unlockOpenCoreLoginUser') ||
   !loginLogsPage.includes('useCurrentPageFilters') ||
   !loginLogsPage.includes('CurrentPageExportButton') ||
   !loginLogsPage.includes('dataSource={filteredRows}') ||
   !loginLogsPage.includes('rows={filteredRows}') ||
-  !loginLogsPage.includes('Read-only audit trail') ||
+  !loginLogsPage.includes('Audit trail with username unlock') ||
+  !loginLogsPage.includes('canManageLoginLogs') ||
+  !loginLogsPage.includes('UnlockOutlined') ||
+  !loginLogsPage.includes('account_locked') ||
   !loginLogsPage.includes('serverFilterToolbar') ||
   !loginLogsPage.includes('loginTypeOptions') ||
   !loginLogsPage.includes('loginResultOptions') ||
@@ -916,7 +922,7 @@ if (
   !loginLogsPage.includes('OS')
 ) {
   throw new Error(
-    'Login Logs page must use live SDK detail/list with server-side filters, login type/result fields, device fields and current-page export.',
+    'Login Logs page must use live SDK detail/list/unlock with server-side filters, login type/result fields, device fields and current-page export.',
   );
 }
 

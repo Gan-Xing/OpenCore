@@ -55,6 +55,7 @@ const expectedPermissions = {
   updateDictItem: ['core:dict:update'],
   updateFileAsset: ['core:file:update'],
   uploadFileAsset: ['core:file:create'],
+  unlockLoginUser: ['core:login-log:manage'],
   updateNotice: ['core:notice:update'],
   updatePost: ['core:post:update'],
 } as const;

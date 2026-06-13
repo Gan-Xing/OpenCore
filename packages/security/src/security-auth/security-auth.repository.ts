@@ -28,11 +28,36 @@ export type SecurityLoginLogType =
   | 'logout.self';
 
 export type SecurityLoginResult =
+  | 'account_locked'
   | 'bad_credentials'
   | 'captcha_code_error'
   | 'captcha_not_found'
   | 'success'
   | 'user_disabled';
+
+export type SecurityLoginPolicy = {
+  maxFailedAttempts: number;
+  lockoutMinutes: number;
+};
+
+export type SecurityLoginLockoutRecord = {
+  username: string;
+  failedAttempts: number;
+  lockedUntil?: string;
+  lastFailedAt?: string;
+};
+
+export type SecurityLoginLockoutAttemptInput = SecurityLoginPolicy & {
+  username: string;
+  occurredAt?: string;
+};
+
+export type SecurityLoginUnlockResult = {
+  username: string;
+  unlocked: boolean;
+  failedAttempts: number;
+  lockedUntil?: string;
+};
 
 export type SecurityAuthSessionRecord = {
   userId: string;
@@ -53,6 +78,59 @@ export abstract class SecurityLoginAttemptRecorder {
 export class NoopSecurityLoginAttemptRecorder extends SecurityLoginAttemptRecorder {
   async recordLoginAttempt(): Promise<void> {
     return undefined;
+  }
+}
+
+export abstract class SecurityLoginPolicyProvider {
+  abstract getLoginPolicy(): Promise<SecurityLoginPolicy>;
+}
+
+export class DefaultSecurityLoginPolicyProvider extends SecurityLoginPolicyProvider {
+  async getLoginPolicy(): Promise<SecurityLoginPolicy> {
+    return {
+      maxFailedAttempts: 5,
+      lockoutMinutes: 30,
+    };
+  }
+}
+
+export abstract class SecurityLoginLockoutRepository {
+  abstract getLoginLockout(
+    username: string,
+  ): Promise<SecurityLoginLockoutRecord | undefined>;
+
+  abstract recordFailedLoginAttempt(
+    input: SecurityLoginLockoutAttemptInput,
+  ): Promise<SecurityLoginLockoutRecord>;
+
+  abstract clearLoginLockout(
+    username: string,
+  ): Promise<SecurityLoginUnlockResult>;
+}
+
+export class NoopSecurityLoginLockoutRepository extends SecurityLoginLockoutRepository {
+  async getLoginLockout(): Promise<undefined> {
+    return undefined;
+  }
+
+  async recordFailedLoginAttempt(
+    input: SecurityLoginLockoutAttemptInput,
+  ): Promise<SecurityLoginLockoutRecord> {
+    return {
+      username: input.username,
+      failedAttempts: 1,
+      lastFailedAt: input.occurredAt ?? new Date().toISOString(),
+    };
+  }
+
+  async clearLoginLockout(
+    username: string,
+  ): Promise<SecurityLoginUnlockResult> {
+    return {
+      username,
+      unlocked: false,
+      failedAttempts: 0,
+    };
   }
 }
 

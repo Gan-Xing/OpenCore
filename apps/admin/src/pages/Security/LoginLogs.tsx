@@ -3,12 +3,14 @@ import {
   EyeOutlined,
   ReloadOutlined,
   SearchOutlined,
+  UnlockOutlined,
 } from '@ant-design/icons';
 import {
   PageContainer,
   ProTable,
   type ProColumns,
 } from '@ant-design/pro-components';
+import { useAccess } from '@umijs/max';
 import {
   createLoginLogFixtures,
   type LoginLogQueryRequest,
@@ -20,6 +22,8 @@ import {
   Alert,
   Button,
   Input,
+  message,
+  Modal,
   Select,
   Space,
   Tag,
@@ -30,6 +34,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   getOpenCoreLoginLog,
   listOpenCoreLoginLogs,
+  unlockOpenCoreLoginUser,
 } from '@/services/opencore/platform';
 import {
   CurrentPageExportButton,
@@ -57,6 +62,7 @@ const loginTypeOptions: { label: string; value: LoginLogType }[] = [
 ];
 const loginResultOptions: { label: string; value: LoginLogResult }[] = [
   { label: 'Success', value: 'success' },
+  { label: 'Account locked', value: 'account_locked' },
   { label: 'Bad credentials', value: 'bad_credentials' },
   { label: 'User disabled', value: 'user_disabled' },
   { label: 'Captcha missing', value: 'captcha_not_found' },
@@ -184,10 +190,13 @@ function formatLoginResult(value: LoginLogResult): string {
 }
 
 export default function LoginLogsPage() {
+  const access = useAccess();
+  const canManageLoginLogs = Boolean(access.canManageLoginLogs);
   const [rows, setRows] = useState<readonly LoginLogSummary[]>(fallbackRows);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
   const [selectedDetail, setSelectedDetail] = useState<LoginLogSummary>();
+  const [unlockingUsername, setUnlockingUsername] = useState<string>();
   const [activeServerQuery, setActiveServerQuery] =
     useState<LoginLogQueryRequest>({});
   const [serverFilterDraft, setServerFilterDraft] =
@@ -251,6 +260,29 @@ export default function LoginLogsPage() {
     }
   };
 
+  const confirmUnlock = (record: LoginLogSummary) => {
+    Modal.confirm({
+      title: `Unlock ${record.username}?`,
+      content:
+        'Failed login counters for this username will be cleared immediately.',
+      okText: 'Unlock',
+      onOk: async () => {
+        setUnlockingUsername(record.username);
+        try {
+          const result = await unlockOpenCoreLoginUser(record.username);
+          message.success(
+            result.unlocked
+              ? `${result.username} unlocked`
+              : `${result.username} had no active lockout`,
+          );
+          await loadLoginLogs();
+        } finally {
+          setUnlockingUsername(undefined);
+        }
+      },
+    });
+  };
+
   const columns: ProColumns<LoginLogSummary>[] = [
     { title: 'Time', dataIndex: 'createdAt', width: 192 },
     {
@@ -293,6 +325,22 @@ export default function LoginLogsPage() {
               aria-label={`View login log ${record.id}`}
               icon={<EyeOutlined />}
               onClick={() => void openDetail(record)}
+              size="small"
+            />
+          </Tooltip>
+          <Tooltip
+            title={
+              canManageLoginLogs
+                ? 'Unlock username'
+                : 'Requires core:login-log:manage'
+            }
+          >
+            <Button
+              aria-label={`Unlock login username ${record.username}`}
+              disabled={!canManageLoginLogs}
+              icon={<UnlockOutlined />}
+              loading={unlockingUsername === record.username}
+              onClick={() => confirmUnlock(record)}
               size="small"
             />
           </Tooltip>
@@ -409,7 +457,7 @@ export default function LoginLogsPage() {
           serverFilterToolbar,
           filterToolbar,
           <Typography.Text key="read-only-policy" type="secondary">
-            Read-only audit trail
+            Audit trail with username unlock
           </Typography.Text>,
           <CurrentPageExportButton
             columns={exportColumns}

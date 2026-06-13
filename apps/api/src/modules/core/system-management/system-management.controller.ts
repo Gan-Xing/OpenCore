@@ -29,6 +29,7 @@ import {
   SystemNoticeService,
   SystemPostService,
 } from '@opencore/system';
+import { SecurityLoginLockoutRepository } from '@opencore/security';
 import { RequirePermission } from '../rbac/permissions.decorator';
 import {
   AuditLogPageDto,
@@ -54,6 +55,7 @@ import {
   LoginLogPageDto,
   LoginLogQueryDto,
   LoginLogDto,
+  LoginUnlockResultDto,
   PageQueryDto,
   SystemDeptDto,
   SystemDeptOptionDto,
@@ -82,6 +84,7 @@ import {
   UpdateSystemConfigDto,
   UpdateSystemNoticeDto,
   UpdateSystemPostDto,
+  UnlockLoginUserDto,
   AuditLogDto,
 } from './system-management.dto';
 import { SystemManagementRepository } from './system-management.repository';
@@ -102,6 +105,7 @@ export class SystemManagementController {
     private readonly posts: SystemPostService,
     private readonly operationLogs: AuditOperationLogService,
     private readonly loginLogs: AuditLoginLogService,
+    private readonly loginLockouts: SecurityLoginLockoutRepository,
     private readonly repository: SystemManagementRepository,
     private readonly files: FileStorageService,
   ) {}
@@ -652,6 +656,16 @@ export class SystemManagementController {
   @ApiOkResponse({ type: ExportPreviewDto })
   exportLoginLogs(@Query() query: LoginLogQueryDto): Promise<ExportPreviewDto> {
     return this.loginLogs.createExportPreview(query);
+  }
+
+  @Post('login-logs/unlock')
+  @ApiTags('Core Login Logs')
+  @RequirePermission('core:login-log:manage')
+  @ApiOkResponse({ type: LoginUnlockResultDto })
+  unlockLoginUser(
+    @Body() body: UnlockLoginUserDto,
+  ): Promise<LoginUnlockResultDto> {
+    return this.loginLockouts.clearLoginLockout(body.username);
   }
 
   @Get('login-logs/:id')
