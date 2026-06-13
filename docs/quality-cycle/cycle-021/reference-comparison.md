@@ -880,3 +880,38 @@ current session model:
 OpenCore still does not admit avatar upload, email/phone profile fields,
 social account binding, user import/export file workflows, batch user deletion
 or a standalone user simple-list endpoint in this round.
+
+## Round 30 User Simple-list Reference Shape
+
+Yudao exposes enabled-user option sources under `/system/user/simple-list` and
+`/system/user/list-all-simple`. The backend returns lightweight user records
+for frontend dropdowns and supports an optional `deptId` filter. Its Admin
+side uses `getSimpleUserList()` in reusable user selector components and
+workflow/business forms rather than forcing every consumer to fetch the full
+user management list.
+
+RuoYi exposes the same product need through role authorization user selection:
+allocated and unallocated user lists, plus select/cancel actions, are part of
+the role-user assignment workflow.
+
+OpenCore admits the matching stage-7 option-source loop while preserving a
+privacy boundary for people data:
+
+- `GET /api/core/users/simple-list` requires bearer authentication but does
+  not require `core:user:read`;
+- the endpoint supports `deptId` and follows OpenCore's already admitted
+  department-subtree filtering semantics;
+- only enabled users are returned;
+- the returned shape is lightweight
+  `{ id, username, displayName, deptId, postCodes }`;
+- `roleCodes`, `enabled` and `system` stay out of the option payload;
+- Admin Roles User Assignment consumes `listOpenCoreUserOptions()` for transfer
+  labels while role assignment state continues to come from the role-user
+  assignment API;
+- fixed-port, deploy and public smoke prove auth guard 401, unknown-department
+  404, department filtering, disabled-user filtering, enabled-user re-entry and
+  option shape.
+
+OpenCore still does not admit avatar upload, email/phone profile fields,
+social account binding, user import/export file workflows, batch user deletion
+or a dedicated User-page role assignment dialog in this round.

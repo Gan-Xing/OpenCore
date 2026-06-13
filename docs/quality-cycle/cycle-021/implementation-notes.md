@@ -2234,3 +2234,98 @@ Against public endpoints after deploy:
   `b46f9bb feat(core-user): add self-password loop / 新增自助改密闭环`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 30 Capability
+
+Capability: `core.user` simple-list option source productization.
+
+Goal: close the next user option-source foundation gap by adding an
+authenticated enabled-user simple-list endpoint and a real Admin consumer
+without exposing management-only fields.
+
+## Round 30 Implemented
+
+- Added `UserOptionDto` with `id`, `username`, `displayName`, `deptId` and
+  `postCodes`.
+- Added `listUserOptions()` to system user repository/service contracts.
+- Implemented enabled-user filtering and existing department-subtree filtering
+  for seed and Prisma repositories.
+- Added `GET /api/core/users/simple-list` as an auth-only endpoint before
+  dynamic `users/:id` routes.
+- Kept user simple-list free of `core:user:read` while still requiring bearer
+  authentication because it exposes people data.
+- Extended API permission-matrix tests so the route remains auth-only.
+- Extended OpenAPI, `@opencore/sdk` types/client methods and SDK path tests.
+- Added Admin platform `listOpenCoreUserOptions()`.
+- Updated Admin Roles User Assignment `Transfer` to consume the user option
+  source for labels while role-user assignment state remains owned by
+  `GET/PATCH /api/core/roles/:code/users`.
+- Extended static Admin smoke guards for the new service method and Roles page
+  consumer markers.
+- Extended `tools/scripts/smoke-core-user.mjs` to prove unauthenticated 401,
+  unknown-department 404, department filtering, enabled-only filtering and
+  option shape without `roleCodes`/`enabled`/`system`.
+
+## Round 30 Verification
+
+- `node --check tools/scripts/smoke-core-user.mjs` pass.
+- `node --check apps/admin/scripts/smoke-test.mjs` pass.
+- Focused tests pass:
+  - `NX_DAEMON=false pnpm nx test system --runInBand --runTestsByPath packages/system/src/system-user/system-user.spec.ts`
+  - `NX_DAEMON=false pnpm nx test sdk --runInBand --runTestsByPath packages/sdk/src/rbac-client.spec.ts`
+  - `NX_DAEMON=false pnpm nx test api --runInBand --runTestsByPath src/modules/core/rbac/rbac.permission-matrix.spec.ts`
+  - `pnpm test:admin`
+- `pnpm openapi:export`, `pnpm openapi:check`,
+  `pnpm openapi:registry-tags:check` and `pnpm sdk:check` pass.
+- `pnpm typecheck` pass.
+- `pnpm lint` pass; the known Biome warning in
+  `apps/admin/src/pages/shared/CurrentPageExportButton.tsx` remains non-blocking.
+- `pnpm prisma:validate` pass.
+- `pnpm format:check` pass.
+- `git diff --check` pass.
+- `pnpm registry:admin-routes:check` pass.
+- `pnpm test:api`, `NX_DAEMON=false pnpm nx test contracts`,
+  `NX_DAEMON=false pnpm nx test module-registry` and
+  `NX_DAEMON=false pnpm nx test sdk` pass.
+- `pnpm smoke:api:local` pass on fixed port `39173`, including
+  `core.user.simple-list.auth-guard`,
+  `core.user.simple-list.authenticated-consumer`,
+  `core.user.simple-list.option-shape`,
+  `core.user.simple-list.dept-filter`,
+  `core.user.simple-list.disabled-filtered` and
+  `core.user.simple-list.enabled-filter`.
+- `pnpm test` pass for all 19 Nx projects.
+- `pnpm build` pass for all 19 Nx projects.
+- `pnpm deploy:opencore` pass, deploying API/Admin on fixed ports
+  `39172`/`39174`; deploy smoke includes the new user simple-list checks and
+  the existing login-prefix/frontend-cache/session-revocation guards.
+
+## Round 30 Public Verification
+
+Against public endpoints after deploy:
+
+- `GET http://144.217.243.161:39172/health/ready` returned 200.
+- `GET http://144.217.243.161:39174/system/roles/` returned 200.
+- Public `pnpm smoke:core-user` passed against
+  `http://144.217.243.161:39172` with `OPENCORE_SMOKE_CHECK_DOCS=false` and the
+  deployed admin password loaded from `.env.opencore.local` without printing
+  secrets.
+- Public user smoke verified authenticated simple-list consumption,
+  unauthenticated 401, unknown-department 404, department filtering,
+  disabled-user filtering, enabled-user re-entry and option shape without
+  management fields.
+- Public main Admin bundle `umi.a7593895.js` contains API origin
+  `http://144.217.243.161:39172` and `/core/users/simple-list`, and does not
+  contain `/api/api/auth/login`.
+- Public Roles chunk `p__System__Roles.978efe8a.async.js` contains
+  `User Assignment`, `Available users` and `Assigned users`.
+- Public Admin same-origin proxy login returned 201 for both `/api/auth/login`
+  and the stale-compatible `/api/api/auth/login`; public API origin
+  `/api/api/auth/login` also returned 201.
+
+## Round 30 Commit Record
+
+- Feature commit:
+  `3dd1b5a feat(core-user): add simple-list option source / 新增用户精简选项源`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

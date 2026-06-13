@@ -511,3 +511,30 @@ as a reusable option source:
 This stays inside the current S7 System boundary. It does not introduce batch
 post deletion, drag-sort/order persistence, role/user batch assignment flows or
 department simple-list endpoints in this round.
+
+## Round 30 Audit: core.user Simple-list Option Source
+
+After Round 29, the next lower-dependency P1 foundation gap was `core.user` as
+a reusable option source:
+
+- Yudao exposes `/system/user/simple-list` and `/system/user/list-all-simple`
+  for enabled-user dropdowns, including optional department filtering.
+- Yudao Admin uses `getSimpleUserList()` in selector components and many
+  workflow/business forms instead of binding every consumer to the user
+  management list.
+- RuoYi role authorization exposes assigned/unassigned user selection and
+  select/cancel workflows, proving the same user-selector product need.
+- OpenCore already had user CRUD, role-user assignment, department filtering
+  and post binding, so this gap did not require schema work.
+- Because user names are people data, OpenCore should not mirror the public
+  dept/post simple-list boundary. The endpoint should require authentication
+  while staying free of `core:user:read` management permission.
+- The option payload needed to avoid `roleCodes`, `enabled` and `system` so
+  selection consumers are not coupled to management/security fields.
+- Fixed-port, deploy and public smoke needed to prove auth guard, unknown-dept
+  handling, enabled-only filtering, department filtering and lightweight
+  option shape.
+
+This stays inside the current S7 System/RBAC boundary. It does not introduce
+avatar upload, Excel import/export workflows, batch user delete, batch
+enable/disable or a separate User-page role assignment dialog in this round.

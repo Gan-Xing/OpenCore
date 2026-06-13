@@ -783,6 +783,39 @@ successful self change.
       verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 30: core.user Simple-list Option Source Productization
+
+Why this slice: after self-password, the next lower-dependency user foundation
+gap was a reusable user option source. Yudao exposes
+`/system/user/simple-list` and `/system/user/list-all-simple` for enabled-user
+dropdowns, including an optional department filter. RuoYi exposes assigned and
+unassigned user selection flows under role authorization. OpenCore already had
+user CRUD, role-user assignment, department filtering and post binding, but no
+lightweight user selector contract; consumers still had to depend on full
+management user summaries.
+
+- [x] Add `UserOptionDto` with only `id`, `username`, `displayName`, `deptId`
+      and `postCodes`.
+- [x] Add `listUserOptions()` to system user repository/service contracts for
+      seed and Prisma implementations.
+- [x] Filter user options to enabled users only while reusing the existing
+      department-subtree filter semantics.
+- [x] Add authenticated `GET /api/core/users/simple-list` before `users/:id`,
+      guarded by bearer auth but not `core:user:read`.
+- [x] Extend API permission-matrix tests to keep user simple-list auth-only and
+      free of management permissions.
+- [x] Extend OpenAPI, SDK types/client methods and SDK path tests.
+- [x] Add Admin platform `listOpenCoreUserOptions()` and consume it in the
+      Roles User Assignment transfer dialog as the lightweight label source.
+- [x] Add static Admin smoke guards for the platform method and Roles page
+      consumer markers.
+- [x] Extend fixed-port/deploy/public `core.user` smoke to prove unauthenticated
+      401, unknown-department 404, department filtering, enabled-only filtering
+      and option shape without `roleCodes`/`enabled`/`system`.
+- [x] Run focused, full, fixed-port smoke, deployment and public URL
+      verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -820,11 +853,12 @@ treat "minimal loop" as "minimal final product".
 - [ ] Round 3/22/25 `core.post`: user-post binding and simple-list option
       source are complete; batch operations and ordered list refinements
       remain.
-- [ ] Round 7/19/22/23/28/29 `core.user`: status toggle, reset password and
+- [ ] Round 7/19/22/23/28/29/30 `core.user`: status toggle, reset password and
       direct user-mutation session invalidation are complete. Post binding,
       department side-tree filtering, self-profile basic display-name
-      read/update and self-password are complete. Avatar, import/export and
-      option/batch workflows still need enhancement.
+      read/update, self-password and authenticated simple-list option source
+      are complete. Avatar, import/export and batch workflows still need
+      enhancement.
 - [ ] Round 9/24 `core.config`: public get-value-by-key, cache refresh and
       mutation invalidation are complete. Category/name/remark enrichment,
       batch/file export depth and broader runtime propagation boundaries remain.
@@ -869,7 +903,7 @@ treat "minimal loop" as "minimal final product".
   endpoint.
 - Registry definition editing and dynamic permission discovery.
 - User Excel import/export file workflows, dedicated User-page role assignment
-  dialog, avatar/social/simple-list endpoints and batch user delete.
+  dialog, avatar/social endpoints and batch user delete.
 - Batch dictionary delete, Excel import/export file workflows, dictionary
   color/css/remark fields, app-wide dictionary cache TTL/invalidation and
   dictionary cache refresh.

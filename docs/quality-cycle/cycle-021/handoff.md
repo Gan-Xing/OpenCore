@@ -1,10 +1,10 @@
 # OpenCore Cycle-021 Capability Map Productization Handoff
 
-Date: 2026-06-12  
-Repository: `Gan-Xing/OpenCore`  
-Default branch: `main`  
-Latest observed feature commit: `b46f9bb feat(core-user): add self-password loop / 新增自助改密闭环`
-Latest deployed feature commit: `b46f9bb feat(core-user): add self-password loop / 新增自助改密闭环`
+Date: 2026-06-13
+Repository: `Gan-Xing/OpenCore`
+Default branch: `main`
+Latest observed feature commit: `3dd1b5a feat(core-user): add simple-list option source / 新增用户精简选项源`
+Latest deployed feature commit: `3dd1b5a feat(core-user): add simple-list option source / 新增用户精简选项源`
 Latest deployed hardening commit: `04e446c fix(online-user): stabilize admin session smoke / 稳定在线用户管理员会话冒烟`
 
 ## One-sentence Goal
@@ -70,6 +70,7 @@ productization waterline completion; see
 - Round 27 `core.dept` simple-list option stage 2
 - Round 28 `core.user` self-profile basic info stage 5
 - Round 29 `core.user` self-password stage 6
+- Round 30 `core.user` simple-list option source stage 7
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -256,6 +257,21 @@ online-user sessions。Admin `/personal/profile` 新增 `Change password` 表单
 代理 `/api/auth/login`、兼容 `/api/api/auth/login` 以及 API origin `/api/api/auth/login`
 均返回 201。
 
+Round 30 继续补齐 `core.user` 队列：用户现在有认证态精简选项源。
+`GET /api/core/users/simple-list` 使用 auth-only guard，不要求 `core:user:read`
+管理权限，支持 `deptId` 子树过滤，只返回 enabled users 的轻量
+`{ id, username, displayName, deptId, postCodes }`，不暴露 `roleCodes`、`enabled`
+或 `system` 管理字段。SDK/OpenAPI、seed/Prisma 仓储、API 权限矩阵、Admin static
+smoke 和固定 core-user smoke 均同步该闭环。Admin Roles 的 User Assignment
+`Transfer` 弹窗现在消费 `listOpenCoreUserOptions()` 作为轻量用户标签源。固定 smoke、
+部署 smoke 和公网 smoke 均证明未登录访问 401、未知部门 404、部门过滤、disabled
+user 过滤、enabled user 回归以及 option shape 管理字段不泄露。公网 Roles 页返回 200；
+当前 main bundle `umi.a7593895.js` 已验证包含 `/core/users/simple-list`、API origin
+`http://144.217.243.161:39172` 且不包含 `/api/api/auth/login`；公网 Roles chunk
+`p__System__Roles.978efe8a.async.js` 已验证包含 `User Assignment`、`Available users`
+和 `Assigned users`；公网 Admin 代理 `/api/auth/login`、兼容 `/api/api/auth/login`
+以及 API origin `/api/api/auth/login` 均返回 201。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -265,7 +281,7 @@ The productization waterline now classifies:
   `core.file`, Round 4/16 `core.menu`, Round 5/17/18/20 `core.role`,
   Round 8/21 `core.dict`.
 - First loop, enhance: Round 1 `core.notice`, Round 2/27 `core.dept`, Round
-  3/22/25 `core.post`, Round 7/19/22/23/28/29 `core.user`, Round 9/24
+  3/22/25 `core.post`, Round 7/19/22/23/28/29/30 `core.user`, Round 9/24
   `core.config`, Round 11/26 `core.login-log`.
 - Thin, rework: none after Round 16.
 
@@ -277,8 +293,10 @@ finds another blocker:
    user-mutation session semantics; Round 22 closed user-post binding; Round
    23 closed department side-tree filtering; Round 28 closed authenticated
    self-profile basic display-name read/update; Round 29 closed authenticated
-   self-password change with old-password verification and session revocation.
-   Remaining work is avatar, import/export and broader option/batch workflows.
+   self-password change with old-password verification and session revocation;
+   Round 30 closed the authenticated user simple-list option source consumed
+   by Admin role user assignment. Remaining work is avatar, import/export and
+   batch workflows.
 2. `core.config`: Round 24 closed public get-value-by-key plus cache
    refresh/invalidation. Remaining work is category/name/remark enrichment,
    batch/file export depth and broader runtime propagation boundaries.
