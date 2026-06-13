@@ -1909,6 +1909,33 @@ runtime security settings.
       lint, builds, fixed-port smoke, deployment and public URL verification.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 63: core.notice Local Delivery Provider Productization
+
+Why this slice: after Round 61 created durable in-app delivery records, the
+lowest-dependency `core.notice` P1 gap was provider execution. OpenCore needed
+an explicit execution state separate from user read-state before adding real
+WebSocket/SMS/Mail adapters or multi-channel retry queues.
+
+- [x] Recompare RuoYi/Yudao notice/send surfaces before selecting this slice.
+- [x] Add provider execution fields plus migration/backfill for
+      `SystemNoticeDelivery`.
+- [x] Keep read-state `status` separate from execution-state
+      `providerStatus`.
+- [x] Add `providerStatus` guard/filter and execute API
+      `POST /api/core/notices/:id/deliveries/execute`.
+- [x] Make new publish/dispatch delivery rows enter `pending` and local
+      provider execution move pending/failed rows to `sent` idempotently.
+- [x] Update seed/Prisma repositories, DTOs, SDK, OpenAPI and Admin services.
+- [x] Add Admin `Execute local provider` action plus Provider, Provider
+      Status, Attempts, Last Attempt At, Sent At and Last Error columns.
+- [x] Extend smoke/deploy guards for providerStatus deserialization, pending
+      rows, provider execution, sent records, repeat idempotency and stale
+      Admin bundle markers.
+- [x] Run focused tests, Prisma migrate/validate/seed, OpenAPI/SDK checks,
+      typecheck, lint, builds, fixed-port smoke, deployment and public URL
+      verification.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -1950,12 +1977,14 @@ treat "minimal loop" as "minimal final product".
 
 ### First Loop, Needs Enhancement
 
-- [ ] Round 1/55/56/60/61 `core.notice`: management CRUD, persisted per-user read
-      receipts, authenticated inbox APIs, Admin Inbox tab, header unread badge,
-      management read-user analytics, notification template CRUD, strict
+- [ ] Round 1/55/56/60/61/63 `core.notice`: management CRUD, persisted per-user
+      read receipts, authenticated inbox APIs, Admin Inbox tab, header unread
+      badge, management read-user analytics, notification template CRUD, strict
       render preview, draft notice creation from template, persisted in-app
-      delivery records, idempotent dispatch and read-status sync are complete.
-      Real delivery adapter execution and WebSocket/mail/SMS fan-out remain.
+      delivery records, idempotent dispatch, read-status sync and local
+      provider execution are complete. Real WebSocket/SMS/Mail adapters,
+      multi-channel retry/failure queues and tenant/member/mobile channels
+      remain.
 - [ ] Round 9/24/37/38/39/40/44/46/49/58/62 `core.config`: public get-value-by-key, cache
       refresh and mutation invalidation are complete. Category/name/remark
       metadata is complete. Native XLSX export payload and Admin download are
@@ -2015,10 +2044,10 @@ treat "minimal loop" as "minimal final product".
 
 - Large-scale message bus push and multi-channel fan-out orchestration unless
   admitted as a dedicated foundation round.
-- Notification templates and in-app delivery records are complete through
-  Round 60/61. Delivery adapter/provider fan-out execution remains P1
-  foundation work, not forbidden scope, and must be handled as an independent
-  round with smoke.
+- Notification templates, in-app delivery records and local provider execution
+  are complete through Round 60/61/63. Real WebSocket/SMS/Mail adapters,
+  multi-channel retry/failure queues and tenant/member/mobile channels remain
+  P1 foundation work when admitted as independent rounds with smoke.
 - BPMN/workflow approval around announcements.
 - Tenant-scoped notices.
 - Department data-scope workflow integration and role data-scope assignment UI.

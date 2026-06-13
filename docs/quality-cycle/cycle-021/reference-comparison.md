@@ -2028,3 +2028,44 @@ OpenCore does not claim external KMS/HSM provider binding, key rotation,
 secret version history, secret access audit timelines or advanced feature-flag
 rollout in this round. Those remain separate config/security hardening stages
 after the at-rest vault foundation.
+
+## Round 63 Notice Local Provider Reference Shape
+
+RuoYi-style system notice management is operator CRUD plus publication and
+read-side management under System permissions. It does not force OpenCore to
+bundle transport execution into the earliest notice stage.
+
+Yudao-style notify/message surfaces separate reusable templates, recipient
+messages and send execution. The relevant product shape for OpenCore is that a
+message/delivery row should have an explicit execution state before real
+WebSocket/SMS/Mail providers are added.
+
+OpenCore already had:
+
+- system notice management CRUD and lifecycle from Round 1;
+- authenticated inbox/read state from Round 55;
+- management read-user analytics from Round 56;
+- notification templates and draft generation from Round 60;
+- durable in-app delivery records and idempotent dispatch from Round 61;
+- `core:notice:*` permissions and Admin System Notices routing;
+- fixed/deploy/public `core.notice` smoke.
+
+Round 63 admits the local-provider execution stage:
+
+- extend `SystemNoticeDelivery` with provider execution fields:
+  `provider`, `providerStatus`, `attemptCount`, `lastAttemptAt`, `sentAt` and
+  `lastError`;
+- keep read-state `status` separate from execution-state `providerStatus`;
+- create new in-app delivery rows as `pending`;
+- expose idempotent local provider execution through
+  `POST /api/core/notices/:id/deliveries/execute`;
+- expose `providerStatus` filtering in the delivery list;
+- surface `Execute local provider` plus provider execution columns in Admin;
+- prove fixed-port, deploy and public smoke for bad providerStatus guards,
+  pending records, sent records, repeat execution idempotency and stale Admin
+  bundle markers.
+
+OpenCore does not claim real WebSocket/SMS/Mail adapters, multi-channel
+retry/failure queues, external provider credentials, tenant notifications, BPM
+approval or member/mobile notice channels in this round. Those remain separate
+notice productization stages after the local provider state machine.

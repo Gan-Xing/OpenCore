@@ -5411,3 +5411,126 @@ Against public endpoints after deploy:
   `2e1e927 feat(config): encrypt secret config values / 加密配置密钥值`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 63 Capability
+
+Capability: `core.notice` local delivery provider productization.
+
+Round 63 closes the local provider execution stage for System Notices.
+OpenCore already had persisted in-app delivery records from Round 61; this
+round adds a distinct provider execution state machine so delivery read-state
+and delivery execution-state no longer share one overloaded field.
+
+Reference comparison:
+
+- RuoYi-style system notice management stays focused on operator notice CRUD
+  and read workflows, so it does not force transport execution into the first
+  notice stage.
+- Yudao-style notify/message surfaces separate templates, message records and
+  send execution, which implies that OpenCore's durable delivery rows need an
+  execution state before real WebSocket/SMS/Mail adapters can be added.
+- OpenCore already had notice CRUD, lifecycle, inbox/read-state, read-user
+  analytics, templates, delivery records and idempotent dispatch. The missing
+  low-dependency layer was an executable local provider over those rows.
+
+## Round 63 Implemented
+
+- Added `provider`, `providerStatus`, `attemptCount`, `lastAttemptAt`,
+  `sentAt` and `lastError` to `SystemNoticeDelivery`, with migration backfill
+  for existing rows as sent local-provider deliveries.
+- Kept user read-state `status` separate from provider execution-state
+  `providerStatus`.
+- Made new publish/dispatch in-app delivery rows enter `pending`.
+- Added idempotent local provider execution through
+  `POST /api/core/notices/:id/deliveries/execute`, guarded by
+  `core:notice:update`.
+- Added delivery list `providerStatus` filtering and strict bad-value guards.
+- Updated Prisma and seed repositories, DTOs, SDK types/client, OpenAPI and
+  registry fixtures for provider fields and execution summaries.
+- Added Admin System Notices `Execute local provider` action plus Provider,
+  Provider Status, Attempts, Last Attempt At, Sent At and Last Error delivery
+  columns.
+- Extended `tools/scripts/smoke-core-notice.mjs` to verify providerStatus
+  deserialization, pending rows after publish, provider execution, sent
+  provider records and idempotent repeat execution.
+- Extended Admin static smoke and deploy-script stale bundle guards for
+  `Execute local provider` and `Provider Status`.
+
+Out of scope for Round 63:
+
+- Real WebSocket/SMS/Mail adapter execution;
+- multi-channel retry or delivery failure queues;
+- external provider credential binding;
+- tenant-scoped notices;
+- BPM approval around announcements;
+- member/mobile notification channels.
+
+## Round 63 Verification
+
+- `pnpm prisma:generate`
+- `pnpm prisma:migrate`
+- `pnpm nx test system --testFile=packages/system/src/system-notice/system-notice.spec.ts`
+- `pnpm nx test sdk --testFile=packages/sdk/src/system-management-client.spec.ts --testFile=packages/sdk/src/registry-fixtures.spec.ts`
+- `pnpm --dir apps/admin test`
+- `pnpm prisma:validate`
+- `pnpm prisma:seed`
+- `pnpm openapi:export`
+- `pnpm sdk:check`
+- `pnpm openapi:registry-tags:check`
+- `pnpm openapi:check`
+- `pnpm typecheck`
+- `pnpm lint`
+- `pnpm build:api`
+- `pnpm build:admin`
+- `bash -n tools/scripts/deploy-local-opencore.sh`
+- `pnpm exec prettier --check ...`
+- `git diff --check`
+- `pnpm smoke:api:local`
+- `pnpm registry:admin-routes:check`
+- `pnpm deploy:opencore`
+- `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-notice`
+
+The first focused system test run exposed that the local database had not yet
+applied the new migration. After `pnpm prisma:migrate`, the same system notice
+test suite passed.
+
+`pnpm smoke:api:local` passed on fixed port `39173`, including
+`core.notice.deliveries.bad-provider-status-guard`,
+`core.notice.deliveries.provider-execute`,
+`core.notice.deliveries.provider-sent-records` and
+`core.notice.deliveries.provider-execute-idempotent`.
+
+`pnpm deploy:opencore` passed, deploying API/Admin on fixed ports
+`39172`/`39174`; deploy smoke included Admin same-origin login,
+duplicate-prefix login compatibility, public bundle checks, stale
+service-worker retirement and the new notice provider execution smoke checks.
+
+`pnpm lint` passed with existing warnings in
+`packages/system/src/system-user/system-user.prisma-repository.ts` and
+`apps/admin/src/pages/shared/CurrentPageExportButton.tsx`; no Round 63 lint
+errors were introduced.
+
+## Round 63 Public Verification
+
+Against public endpoints after deploy:
+
+- Public API: `http://144.217.243.161:39172`
+- Public Admin: `http://144.217.243.161:39174`
+- Admin main bundle: `umi.909cfc55.js`
+- System Notices chunk: `p__System__Notices.ca48749a.async.js`
+- Public API notice smoke passed:
+  `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-notice`.
+  Checks included bad providerStatus guard, pending local-provider records,
+  provider execution, sent provider records and idempotent repeat execution.
+- Public System Notices chunk contains `Execute local provider`,
+  `Provider Status`, `Local provider executed` and `sent`.
+- Public OpenAPI docs contain
+  `/api/core/notices/{id}/deliveries/execute`, `providerStatus` and
+  `SystemNoticeDeliveryExecutionResultDto`.
+
+## Round 63 Commit Record
+
+- Feature commit:
+  `b53edcc feat(notice): execute local delivery provider / 执行本地通知投递提供器`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

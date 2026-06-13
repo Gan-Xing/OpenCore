@@ -3,8 +3,8 @@
 Date: 2026-06-13
 Repository: `Gan-Xing/OpenCore`
 Default branch: `main`
-Latest observed feature commit: `2e1e927 feat(config): encrypt secret config values / 加密配置密钥值`
-Latest deployed feature commit: `2e1e927 feat(config): encrypt secret config values / 加密配置密钥值`
+Latest observed feature commit: `b53edcc feat(notice): execute local delivery provider / 执行本地通知投递提供器`
+Latest deployed feature commit: `b53edcc feat(notice): execute local delivery provider / 执行本地通知投递提供器`
 Latest deployed hardening commit: `4df5dd1 fix(system): satisfy xlsx export lint guard / 修复 XLSX 导出 lint 守卫`
 
 ## One-sentence Goal
@@ -147,6 +147,7 @@ productization waterline completion; see
 - Round 60 `core.notice` notification templates stage 4
 - Round 61 `core.notice` delivery/message-record stage 5
 - Round 62 `core.config` secret vault/KMS foundation stage 11
+- Round 63 `core.notice` local delivery provider execution stage 6
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -852,6 +853,20 @@ seed 新增内置 `auth.jwt.secretRef` secret reference，并让 `prisma/seed.ts
 阻断和数据库值不包含明文；部署脚本会拒绝缺少 `Vault encrypted` 的 stale Config bundle。注意：这轮关闭的是
 配置 secret at-rest vault 基础，不等于外部 KMS/HSM provider、key rotation、secret 版本历史或完整实验平台完成。
 
+Round 63 继续补 `core.notice` P1 队列，把 Round 61 的投递记录/outbox 推进到本地 provider execution
+foundation。OpenCore 为 `SystemNoticeDelivery` 增加
+`provider/providerStatus/attemptCount/lastAttemptAt/sentAt/lastError`，用
+`providerStatus` 明确区分投递执行态和 read-state `status`，避免继续复用一个字段表达两种语义。
+新发布/dispatch 的 in-app delivery rows 先进入 `pending`，
+`POST /api/core/notices/:id/deliveries/execute` 由 `core:notice:update` 权限显式执行
+`in_app.local` provider，把 pending/failed rows 幂等推进到 `sent`，记录 attempt 和 sentAt；历史/seed
+delivery rows 回填为 sent。API/SDK/OpenAPI/Admin 同步：delivery 列表支持
+`providerStatus` 过滤，Admin `System Notices` 新增 `Execute local provider` 操作以及 Provider/Provider
+Status/Attempts/Sent At/Last Error 列。固定 smoke、部署 smoke 和公网 API smoke 均验证 bad providerStatus
+guard、pending records、provider execute、sent records 和 repeat execute idempotency；公网 Admin chunk 验证
+`Execute local provider`/`Provider Status`。注意：这轮关闭的是本地 provider execution 状态机和 operator
+手动执行/重试入口，不等于真实 WebSocket/SMS/Mail adapter、跨渠道失败重试队列、租户通知或 BPM 审批完成。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -862,7 +877,7 @@ The productization waterline now classifies:
   Round 8/21 `core.dict`, Round 2/27/43/52/54 `core.dept`,
   Round 7/19/22/23/28/29/30/31/32/33/34/35/36/41/54 `core.user`,
   Round 3/22/25/42/53 `core.post`.
-- First loop, enhance: Round 1/55/56/60/61 `core.notice`,
+- First loop, enhance: Round 1/55/56/60/61/63 `core.notice`,
   Round 9/24/37/38/39/40/44/46/49/58/62 `core.config`,
   Round 11/26/45/47/48/49/50/51/57/59 `core.login-log`.
 - Thin, rework: none after Round 16.
@@ -932,8 +947,12 @@ finds another blocker:
    template across API/SDK/Admin/OpenAPI/smoke/deploy guards. Round 61 closed
    persisted in-app delivery records, publish-time auto dispatch, explicit
    idempotent dispatch, delivery list filters, Admin delivery records modal and
-   read-status synchronization. Remaining notice work is real delivery adapter
-   execution and any admitted WebSocket/mail/SMS fan-out.
+   read-status synchronization. Round 63 closed local provider execution with
+   separate `providerStatus`, pending/sent transition metadata, explicit
+   `execute` API, Admin provider execution action, provider columns and
+   fixed/deploy/public smoke guards. Remaining notice work is real
+   WebSocket/SMS/Mail adapter execution, multi-channel retry/failure queues and
+   any admitted tenant/member/mobile channels.
 
 ### Current P0/P1/P2 Scope Snapshot
 
@@ -941,7 +960,8 @@ finds another blocker:
   content upload/download, menu tree metadata, plus deployment hardening for
   fixed ports, Admin API origin, duplicate `/api/api` compatibility and stale
   frontend bundle/cache guards.
-- P1 remaining: `core.notice` delivery adapter/provider fan-out execution,
+- P1 remaining: `core.notice` real WebSocket/SMS/Mail adapter execution and
+  multi-channel retry/failure queues,
   `core.config` advanced feature-flag rollout,
   and `core.login-log` optional external GeoIP country/city/provider depth or
   admitted mobile/SMS/social login logging.
@@ -956,7 +976,7 @@ finds another blocker:
 
 Reference parity is measured by product capability waterline, not by replaying
 RuoYi/Yudao commit history. The remaining RuoYi-style foundation backlog after
-Round 62 is roughly several focused P1 loops, not tens of thousands of commits.
+Round 63 is roughly several focused P1 loops, not tens of thousands of commits.
 Yudao Full parity is a different program: BPM, pay, mall, member, CRM, ERP,
 AI and other business domains would require dozens to 100+ separately admitted
 deployable loops, and should not be counted as unfinished cycle-021 foundation

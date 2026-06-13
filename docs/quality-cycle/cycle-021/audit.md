@@ -1092,3 +1092,35 @@ protected at the response boundary.
 This stays inside the current S7 System config boundary. It does not introduce
 external KMS/HSM provider binding, key rotation, secret version history,
 secret access audit timelines or advanced feature-flag rollout.
+
+## Round 63 Audit: core.notice Local Delivery Provider
+
+After Round 61, `core.notice` had durable in-app delivery records but the
+outbox still represented rows, not execution.
+
+- Yudao-style notify/message surfaces separate templates, messages and send
+  execution; RuoYi-style notices remain simpler CRUD/read management.
+- OpenCore already had notice CRUD/lifecycle, inbox/read-state, read-user
+  analytics, templates, delivery records and `core:notice:*` permissions.
+- The lowest-dependency loop was a local provider execution state machine over
+  existing `SystemNoticeDelivery` rows, not introducing WebSocket/SMS/Mail
+  suppliers.
+- `status` already represented read-state (`delivered/read`), so provider
+  execution needed a separate `providerStatus` instead of reusing `status`.
+- Existing/seed rows needed migration/backfill to `sent` so old delivery
+  history did not appear unexecuted.
+- New dispatch rows needed to begin as `pending`; `POST
+/notices/:id/deliveries/execute` needed to move pending/failed rows to
+  `sent` idempotently and record attempt metadata.
+- Admin needed an operator-visible `Execute local provider` action and
+  Provider/Provider Status/Attempts/Sent At/Last Error columns, not
+  backend-only fields.
+- Fixed-port, deploy and public smoke needed to prove providerStatus guard,
+  pending records, execute API, sent records, idempotent repeat and deployed
+  chunk/OpenAPI markers.
+- Deploy script needed stale bundle guards for `Execute local provider` and
+  `Provider Status`.
+
+This stays inside the current S7 System notice boundary. It does not introduce
+real WebSocket/SMS/Mail adapters, multi-channel failure queues, external
+provider credentials, tenant/member/mobile notices or BPM approval.
