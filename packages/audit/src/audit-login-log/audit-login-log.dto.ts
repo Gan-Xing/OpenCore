@@ -49,6 +49,12 @@ export class LoginLogDto {
   @ApiProperty({ required: false })
   failureReason?: string;
 
+  @ApiProperty({ required: false })
+  actorUsername?: string;
+
+  @ApiProperty({ required: false })
+  reason?: string;
+
   @ApiProperty()
   ip!: string;
 
@@ -94,6 +100,9 @@ export class LoginLogQueryDto {
 
   @ApiProperty({ required: false })
   username?: string;
+
+  @ApiProperty({ required: false })
+  actorUsername?: string;
 
   @ApiProperty({ required: false })
   logType?: string;

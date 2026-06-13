@@ -412,6 +412,8 @@ export type LoginLogSummary = {
   result: LoginLogResult;
   success: boolean;
   failureReason?: string;
+  actorUsername?: string;
+  reason?: string;
   ip: string;
   userAgent: string;
   browser: string;
@@ -437,6 +439,7 @@ export type LoginLogResult =
   | 'user_disabled';
 
 export type LoginLogQueryRequest = PageRequest & {
+  actorUsername?: string;
   createdFrom?: string;
   createdTo?: string;
   ip?: string;

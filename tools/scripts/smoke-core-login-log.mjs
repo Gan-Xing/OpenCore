@@ -114,6 +114,8 @@ try {
   assertEqual(logoutLog.logType, 'logout.self', 'self logout log type');
   assertEqual(logoutLog.result, 'success', 'self logout result');
   assertEqual(logoutLog.success, true, 'self logout success flag');
+  assertEqual(logoutLog.actorUsername, logoutUsername, 'self logout actor');
+  assertEqual(logoutLog.reason, 'self logout', 'self logout reason');
 
   await apiRequest(`/core/users/${encodeURIComponent(logoutUserId)}`, {
     method: 'DELETE',
@@ -208,6 +210,12 @@ try {
   assertArray(exportPreview.columns, 'login log export columns');
   assertIncludes(exportPreview.columns, 'logType', 'login log export columns');
   assertIncludes(exportPreview.columns, 'result', 'login log export columns');
+  assertIncludes(
+    exportPreview.columns,
+    'actorUsername',
+    'login log export columns',
+  );
+  assertIncludes(exportPreview.columns, 'reason', 'login log export columns');
   assertIncludes(exportPreview.columns, 'browser', 'login log export columns');
   assertIncludes(exportPreview.columns, 'os', 'login log export columns');
 
@@ -447,6 +455,7 @@ try {
         'auth.logout.self',
         'auth.logout.revokes-session',
         'core.login-log.logout-self-recorded',
+        'core.login-log.logout-self-actor-reason',
         'auth.failed-login-recorded',
         'core.login-log.list',
         'core.login-log.server-filters',

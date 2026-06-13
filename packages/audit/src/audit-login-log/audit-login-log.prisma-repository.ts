@@ -25,6 +25,8 @@ type PrismaLoginLog = {
   result: string;
   success: boolean;
   failureReason: string | null;
+  actorUsername: string | null;
+  reason: string | null;
   ip: string;
   userAgent: string;
   requestId: string;
@@ -45,6 +47,9 @@ export class PrismaAuditLoginLogRepository extends AuditLoginLogRepository {
       ...(filters.username === undefined
         ? {}
         : { username: { contains: filters.username } }),
+      ...(filters.actorUsername === undefined
+        ? {}
+        : { actorUsername: { contains: filters.actorUsername } }),
       ...(filters.logType === undefined ? {} : { logType: filters.logType }),
       ...(filters.result === undefined ? {} : { result: filters.result }),
       ...(filters.ip === undefined ? {} : { ip: { contains: filters.ip } }),
@@ -86,6 +91,8 @@ export class PrismaAuditLoginLogRepository extends AuditLoginLogRepository {
           record.result ?? (record.success ? 'success' : 'bad_credentials'),
         success: record.success,
         failureReason: record.failureReason,
+        actorUsername: record.actorUsername,
+        reason: record.reason,
         ip: record.ip,
         userAgent: record.userAgent,
         requestId: record.requestId,
@@ -167,6 +174,8 @@ function toAuditLoginLogRecord(log: PrismaLoginLog): AuditLoginLogRecord {
           : 'bad_credentials',
     success: log.success,
     failureReason: log.failureReason ?? undefined,
+    actorUsername: log.actorUsername ?? undefined,
+    reason: log.reason ?? undefined,
     ip: log.ip,
     userAgent: log.userAgent,
     requestId: log.requestId,

@@ -164,6 +164,8 @@ describe('@opencore/security security-auth', () => {
         result: 'success',
         success: true,
         failureReason: undefined,
+        actorUsername: 'admin',
+        reason: 'self logout',
         ip: '127.0.0.2',
         requestId: 'req_logout_self',
         userAgent: 'jest-logout',

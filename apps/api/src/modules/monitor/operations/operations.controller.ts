@@ -266,7 +266,8 @@ export class OperationsController {
       userAgent: session.userAgent,
       requestId:
         getRequestContext()?.requestId ?? `online-user.kick-out:${session.id}`,
-      failureReason: `forced by ${body.actor}: ${body.reason}`,
+      actorUsername: body.actor,
+      reason: body.reason,
     });
   }
 }

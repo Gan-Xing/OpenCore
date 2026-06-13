@@ -950,6 +950,10 @@ if (
   !loginLogsPage.includes('formatLoginResult') ||
   !loginLogsPage.includes('logType') ||
   !loginLogsPage.includes('result') ||
+  !loginLogsPage.includes('actorUsername') ||
+  !loginLogsPage.includes('Login actor server filter') ||
+  !loginLogsPage.includes("{ title: 'Actor', dataIndex: 'actorUsername' }") ||
+  !loginLogsPage.includes("{ title: 'Reason', dataIndex: 'reason' }") ||
   !loginLogsPage.includes('createdFrom') ||
   !loginLogsPage.includes('createdTo') ||
   !loginLogsPage.includes('Browser') ||

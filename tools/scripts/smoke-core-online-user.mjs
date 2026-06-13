@@ -98,6 +98,17 @@ try {
   assertEqual(forceLogoutLog.logType, 'logout.force', 'force logout log type');
   assertEqual(forceLogoutLog.result, 'success', 'force logout result');
   assertEqual(forceLogoutLog.success, true, 'force logout success flag');
+  assertEqual(forceLogoutLog.actorUsername, username, 'force logout actor');
+  assertEqual(
+    forceLogoutLog.reason,
+    'OpenCore online-user smoke token revoke',
+    'force logout reason',
+  );
+  assertEqual(
+    forceLogoutLog.failureReason,
+    undefined,
+    'force logout failureReason',
+  );
 
   await request(`${apiPrefix}/auth/me`, {
     token: revocationToken,
@@ -187,6 +198,7 @@ try {
         'monitor.online-user.detail',
         'monitor.online-user.batch-kick-out',
         'core.login-log.logout-force-recorded',
+        'core.login-log.logout-force-actor-reason',
         realTokenRevoked
           ? 'monitor.online-user.revoked-token-rejected'
           : 'monitor.online-user.revoked-token-unchecked',

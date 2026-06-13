@@ -80,14 +80,18 @@ const searchFields: CurrentPageSearchField<LoginLogSummary>[] = [
   'os',
   'requestId',
   'failureReason',
+  'actorUsername',
+  'reason',
 ];
 const exportColumns: CurrentPageExportColumn<LoginLogSummary>[] = [
   { title: 'ID', dataIndex: 'id' },
   { title: 'Time', dataIndex: 'createdAt' },
   { title: 'Username', dataIndex: 'username' },
+  { title: 'Actor', dataIndex: 'actorUsername' },
   { title: 'Login Type', dataIndex: 'logType' },
   { title: 'Result', dataIndex: 'result' },
   { title: 'Failure Reason', dataIndex: 'failureReason' },
+  { title: 'Reason', dataIndex: 'reason' },
   { title: 'IP', dataIndex: 'ip' },
   { title: 'User Agent', dataIndex: 'userAgent' },
   { title: 'Browser', dataIndex: 'browser' },
@@ -96,6 +100,7 @@ const exportColumns: CurrentPageExportColumn<LoginLogSummary>[] = [
 ];
 
 type LoginLogServerFilterDraft = {
+  actorUsername: string;
   createdFrom: string;
   createdTo: string;
   ip: string;
@@ -105,6 +110,7 @@ type LoginLogServerFilterDraft = {
 };
 
 const emptyServerFilterDraft: LoginLogServerFilterDraft = {
+  actorUsername: '',
   createdFrom: '',
   createdTo: '',
   ip: '',
@@ -147,9 +153,11 @@ function createDetailFields(record: LoginLogSummary): DetailField[] {
     { label: 'ID', value: record.id },
     { label: 'Time', value: record.createdAt },
     { label: 'Username', value: record.username },
+    { label: 'Actor', value: record.actorUsername },
     { label: 'Login Type', value: formatLoginType(record.logType) },
     { label: 'Result', value: formatLoginResult(record.result) },
     { label: 'Failure Reason', value: record.failureReason },
+    { label: 'Reason', value: record.reason },
     { label: 'IP', value: record.ip },
     { label: 'User Agent', value: record.userAgent },
     { label: 'Browser', value: record.browser },
@@ -162,6 +170,7 @@ function createServerFilterQuery(
   draft: LoginLogServerFilterDraft,
 ): LoginLogQueryRequest {
   return {
+    actorUsername: draft.actorUsername.trim() || undefined,
     createdFrom: toIsoDateTime(draft.createdFrom),
     createdTo: toIsoDateTime(draft.createdTo),
     ip: draft.ip.trim() || undefined,
@@ -354,6 +363,12 @@ export default function LoginLogsPage() {
       render: (_, record) => <Tag>{formatLoginType(record.logType)}</Tag>,
     },
     {
+      title: 'Actor',
+      dataIndex: 'actorUsername',
+      width: 136,
+      render: (_, record) => record.actorUsername ?? '-',
+    },
+    {
       title: 'Result',
       dataIndex: 'result',
       width: 144,
@@ -366,6 +381,7 @@ export default function LoginLogsPage() {
     { title: 'IP', dataIndex: 'ip', width: 144 },
     { title: 'Browser', dataIndex: 'browser', width: 136 },
     { title: 'OS', dataIndex: 'os', width: 112 },
+    { title: 'Reason', dataIndex: 'reason', ellipsis: true },
     { title: 'Request ID', dataIndex: 'requestId', ellipsis: true },
     {
       title: 'Action',
@@ -412,6 +428,15 @@ export default function LoginLogsPage() {
         placeholder="Username"
         style={{ width: 148 }}
         value={serverFilterDraft.username}
+      />
+      <Input
+        aria-label="Login actor server filter"
+        onChange={(event) =>
+          updateServerFilterDraft('actorUsername', event.target.value)
+        }
+        placeholder="Actor"
+        style={{ width: 132 }}
+        value={serverFilterDraft.actorUsername}
       />
       <Input
         aria-label="Login IP server filter"

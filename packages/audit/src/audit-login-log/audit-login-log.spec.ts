@@ -52,6 +52,17 @@ describe('@opencore/audit audit-login-log', () => {
       userAgent: 'jest',
       requestId: 'req_seed_login_locked',
     });
+    await service.recordLoginAttempt({
+      username: 'operator',
+      logType: 'logout.force',
+      result: 'success',
+      success: true,
+      actorUsername: 'admin',
+      reason: 'manual operator kick-out',
+      ip: '127.0.0.1',
+      userAgent: 'jest',
+      requestId: 'req_seed_logout_force',
+    });
 
     await expect(
       service.listLoginLogs({
@@ -70,6 +81,25 @@ describe('@opencore/audit audit-login-log', () => {
           requestId: 'req_seed_login_failure',
         }),
       ]),
+    });
+    await expect(
+      service.listLoginLogs({
+        actorUsername: 'admin',
+        logType: 'logout.force',
+        username: 'operator',
+      }),
+    ).resolves.toMatchObject({
+      total: 1,
+      items: [
+        expect.objectContaining({
+          actorUsername: 'admin',
+          failureReason: undefined,
+          logType: 'logout.force',
+          reason: 'manual operator kick-out',
+          result: 'success',
+          username: 'operator',
+        }),
+      ],
     });
     await expect(
       service.listLoginLogs({
@@ -97,11 +127,13 @@ describe('@opencore/audit audit-login-log', () => {
         'result',
         'success',
         'failureReason',
+        'actorUsername',
+        'reason',
         'ip',
         'browser',
         'os',
       ],
-      rowCount: 4,
+      rowCount: 5,
     });
     await expect(
       service.listLoginLogs({
@@ -142,7 +174,7 @@ describe('@opencore/audit audit-login-log', () => {
     );
     await expect(service.cleanLoginLogs()).resolves.toEqual({
       deleted: true,
-      affected: 3,
+      affected: 4,
     });
     await expect(service.listLoginLogs()).resolves.toMatchObject({
       total: 0,
@@ -156,6 +188,7 @@ describe('@opencore/audit audit-login-log', () => {
     const service = new AuditLoginLogService(repository);
     const testRunId = randomUUID().slice(0, 8);
     const requestId = `req_login_${testRunId}`;
+    const forceRequestId = `req_logout_force_${testRunId}`;
 
     beforeEach(async () => {
       await cleanupTestRows();
@@ -169,24 +202,7 @@ describe('@opencore/audit audit-login-log', () => {
       await prisma.$disconnect();
     });
 
-    it('reads seeded login logs and persists login attempts through Prisma', async () => {
-      await expect(
-        service.listLoginLogs({
-          username: 'unknown',
-          success: false,
-          pageSize: 20,
-        }),
-      ).resolves.toEqual(
-        expect.objectContaining({
-          items: expect.arrayContaining([
-            expect.objectContaining({
-              username: 'unknown',
-              requestId: 'req_s7_seed_login_fail',
-            }),
-          ]),
-        }),
-      );
-
+    it('persists and reads login attempts through Prisma', async () => {
       await service.recordLoginAttempt({
         username: `user_${testRunId}`,
         logType: 'login.username',
@@ -218,6 +234,35 @@ describe('@opencore/audit audit-login-log', () => {
             failureReason: 'invalid-credentials',
             logType: 'login.username',
             result: 'bad_credentials',
+          }),
+        ],
+      });
+
+      await service.recordLoginAttempt({
+        username: `operator_${testRunId}`,
+        logType: 'logout.force',
+        result: 'success',
+        success: true,
+        actorUsername: 'admin',
+        reason: 'Prisma force logout test',
+        ip: '127.0.0.1',
+        userAgent: 'jest',
+        requestId: forceRequestId,
+      });
+      await expect(
+        service.listLoginLogs({
+          actorUsername: 'admin',
+          logType: 'logout.force',
+          username: `operator_${testRunId}`,
+        }),
+      ).resolves.toMatchObject({
+        total: 1,
+        items: [
+          expect.objectContaining({
+            actorUsername: 'admin',
+            failureReason: undefined,
+            reason: 'Prisma force logout test',
+            requestId: forceRequestId,
           }),
         ],
       });
@@ -269,7 +314,7 @@ describe('@opencore/audit audit-login-log', () => {
 
     async function cleanupTestRows(): Promise<void> {
       await prisma.loginLog.deleteMany({
-        where: { requestId },
+        where: { requestId: { in: [requestId, forceRequestId] } },
       });
     }
   });

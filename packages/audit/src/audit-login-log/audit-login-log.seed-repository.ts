@@ -30,6 +30,8 @@ export class SeedAuditLoginLogRepository extends AuditLoginLogRepository {
     const filtered = this.loginLogs
       .filter(
         (log) =>
+          (filters.actorUsername === undefined ||
+            (log.actorUsername ?? '').includes(filters.actorUsername)) &&
           (filters.username === undefined ||
             log.username.includes(filters.username)) &&
           (filters.logType === undefined || log.logType === filters.logType) &&
@@ -64,6 +66,8 @@ export class SeedAuditLoginLogRepository extends AuditLoginLogRepository {
           record.result ?? (record.success ? 'success' : 'bad_credentials'),
         success: record.success,
         failureReason: record.failureReason,
+        actorUsername: record.actorUsername,
+        reason: record.reason,
         ip: record.ip,
         userAgent: record.userAgent,
         requestId: record.requestId,

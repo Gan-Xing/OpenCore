@@ -3246,6 +3246,12 @@
             "schema": { "type": "string" }
           },
           {
+            "name": "actorUsername",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
             "name": "logType",
             "required": false,
             "in": "query",
@@ -3320,6 +3326,12 @@
           },
           {
             "name": "username",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "actorUsername",
             "required": false,
             "in": "query",
             "schema": { "type": "string" }
@@ -7362,6 +7374,8 @@
           },
           "success": { "type": "boolean" },
           "failureReason": { "type": "string" },
+          "actorUsername": { "type": "string" },
+          "reason": { "type": "string" },
           "ip": { "type": "string" },
           "userAgent": { "type": "string" },
           "browser": { "type": "string" },

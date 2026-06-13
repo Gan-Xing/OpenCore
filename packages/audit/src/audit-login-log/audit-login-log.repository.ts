@@ -17,6 +17,7 @@ import type { BatchDeleteLoginLogsDto } from './audit-login-log.dto';
 import type { AuditLoginLogRecord } from './audit-login-log.records';
 
 export type AuditLoginLogQuery = PageQueryInput & {
+  actorUsername?: string;
   username?: string;
   logType?: string;
   result?: string;
@@ -27,6 +28,7 @@ export type AuditLoginLogQuery = PageQueryInput & {
 };
 
 export type AuditLoginLogFilters = {
+  actorUsername?: string;
   username?: string;
   logType?: SecurityLoginLogType;
   result?: SecurityLoginResult;
@@ -116,6 +118,7 @@ export function normalizeAuditLoginLogFilters(
   }
 
   return {
+    actorUsername: normalizeOptionalString(query.actorUsername),
     username: normalizeOptionalString(query.username),
     logType: normalizeOptionalLoginLogType(query.logType),
     result: normalizeOptionalLoginResult(query.result),
@@ -171,6 +174,8 @@ export function createAuditLoginLogExportPreview(
       'result',
       'success',
       'failureReason',
+      'actorUsername',
+      'reason',
       'ip',
       'browser',
       'os',

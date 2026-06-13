@@ -246,6 +246,8 @@ model LoginLog {
   result        String   @default("success")
   success       Boolean
   failureReason String?
+  actorUsername String?
+  reason        String?
   ip            String
   userAgent     String
   requestId     String

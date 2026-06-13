@@ -306,6 +306,8 @@ export function createLoginLogFixtures(): PageResponse<LoginLogSummary> {
       logType: 'login.username',
       result: 'success',
       success: true,
+      actorUsername: 'admin',
+      reason: 'seed login success',
       ip: '127.0.0.1',
       userAgent: 'opencore-smoke',
       browser: 'OpenCore Smoke',

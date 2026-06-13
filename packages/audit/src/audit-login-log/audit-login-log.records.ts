@@ -11,6 +11,8 @@ export type AuditLoginLogRecord = {
   result: SecurityLoginResult;
   success: boolean;
   failureReason?: string;
+  actorUsername?: string;
+  reason?: string;
   ip: string;
   userAgent: string;
   browser: string;

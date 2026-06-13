@@ -170,6 +170,10 @@ export class SecurityAuthService {
       undefined,
       context,
       'logout.self',
+      {
+        actorUsername: user.username,
+        reason: 'self logout',
+      },
     );
 
     return { loggedOut: true };
@@ -200,6 +204,10 @@ export class SecurityAuthService {
     failureReason: string | undefined,
     context: LoginContext,
     logType: SecurityLoginLogType = 'login.username',
+    structuredContext: Pick<
+      SecurityLoginAttemptRecord,
+      'actorUsername' | 'reason'
+    > = {},
   ): Promise<void> {
     const record: SecurityLoginAttemptRecord = {
       username,
@@ -211,6 +219,14 @@ export class SecurityAuthService {
       userAgent: context.userAgent ?? 'unknown',
       requestId: context.requestId ?? 'unknown',
     };
+
+    if (structuredContext.actorUsername !== undefined) {
+      record.actorUsername = structuredContext.actorUsername;
+    }
+
+    if (structuredContext.reason !== undefined) {
+      record.reason = structuredContext.reason;
+    }
 
     await this.loginAttempts.recordLoginAttempt(record);
   }
