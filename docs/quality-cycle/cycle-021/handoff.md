@@ -3,8 +3,8 @@
 Date: 2026-06-13
 Repository: `Gan-Xing/OpenCore`
 Default branch: `main`
-Latest observed feature commit: `1437eb8 feat(core-user): add xlsx user import / 新增用户 Excel 导入`
-Latest deployed feature commit: `1437eb8 feat(core-user): add xlsx user import / 新增用户 Excel 导入`
+Latest observed feature commit: `2a1f324 feat(core-config): add config metadata / 新增系统配置元数据`
+Latest deployed feature commit: `2a1f324 feat(core-config): add config metadata / 新增系统配置元数据`
 Latest deployed hardening commit: `04e446c fix(online-user): stabilize admin session smoke / 稳定在线用户管理员会话冒烟`
 
 ## One-sentence Goal
@@ -102,6 +102,7 @@ productization waterline completion; see
 - Round 34 `core.user` import permission stage 11
 - Round 35 `core.user` native XLSX export stage 12
 - Round 36 `core.user` native XLSX import stage 13
+- Round 37 `core.config` metadata enrichment stage 3
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -411,6 +412,22 @@ boolean 和会话撤销边界。Admin Users 上传入口从 `Select CSV file` �
 这轮关闭的是用户 XLSX 导入文件格式，不等于 dedicated User-page role assignment
 workflow、email/phone/social account 或更完整 Excel 样式/错误高亮已经完成。
 
+Round 37 继续补齐 `core.config` 队列：系统配置现在补齐 RuoYi/Yudao 都具备的
+operator-facing metadata。参考 Yudao `ConfigSaveReqVO`/`ConfigRespVO` 的
+`category/name/remark` 形状和 RuoYi 配置管理里的配置名称、分组/类型、备注式说明，
+OpenCore 在 `SystemConfig` 持久化 `category`、必填 `name` 和可选 `remark`，并为既有数据
+回填 `category='system'`、`name=key`。API/DTO/repository/seed/Prisma migration、SDK
+types、registry fixtures、Admin Config 表格/详情/新建/编辑/筛选、OpenAPI 和 smoke 均同步。
+固定 smoke、部署 smoke 和公网 smoke 已验证 create/detail/update/export 都返回
+`category/name/remark`，并继续证明 secret value 仍被 redacted、public
+`get-value-by-key` 与 cache refresh 仍可用。公网 Admin Config chunk
+`p__System__Config.a971fcdf.async.js` 已验证包含 `Category`、`Name`、`Remark`、
+`Refresh cache` 和 `Read public value by key`；公网 Admin 同源
+`/api/core/config?page=1&pageSize=10` 已验证返回 seeded
+`opencore.admin.title` 的 `category='system'`、`name='Admin title'` 和 remark。
+注意：这轮关闭的是配置元数据水位，不等于批量删除、Excel 文件导出或更广泛 runtime
+feature-flag propagation 已完成。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -421,7 +438,7 @@ The productization waterline now classifies:
   Round 8/21 `core.dict`.
 - First loop, enhance: Round 1 `core.notice`, Round 2/27 `core.dept`, Round
   3/22/25 `core.post`, Round 7/19/22/23/28/29/30/31/32/33/34/35/36
-  `core.user`, Round 9/24 `core.config`, Round 11/26 `core.login-log`.
+  `core.user`, Round 9/24/37 `core.config`, Round 11/26 `core.login-log`.
 - Thin, rework: none after Round 16.
 
 The P0 remediation queue from the post-Round 13 re-audit is now clear. The next
@@ -445,8 +462,9 @@ finds another blocker:
    Remaining work is any dedicated User-page role assignment workflow if
    admitted.
 2. `core.config`: Round 24 closed public get-value-by-key plus cache
-   refresh/invalidation. Remaining work is category/name/remark enrichment,
-   batch/file export depth and broader runtime propagation boundaries.
+   refresh/invalidation; Round 37 closed category/name/remark metadata across
+   API/SDK/Admin/smoke. Remaining work is batch/file export depth and broader
+   runtime propagation boundaries.
 3. `core.login-log`: Round 26 closed browser/OS parsing and server-side IP/time
    filters. Remaining work is IP/location enrichment where feasible,
    cleanup/unlock policy integration and login-type/result expansion.

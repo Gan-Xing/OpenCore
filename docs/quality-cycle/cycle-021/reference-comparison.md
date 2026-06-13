@@ -1117,3 +1117,31 @@ existing API boundary and import semantics:
 OpenCore still does not claim a dedicated User-page role assignment dialog,
 email/phone/social profile expansion or richer Excel error-highlighting in
 this round.
+
+## Round 37 Config Metadata Reference Shape
+
+Yudao's config save/response shape carries operator-facing metadata such as
+`category`, `name`, `key`, `value`, visibility and `remark`. RuoYi's config
+management similarly exposes a human-readable config name and a type/grouping
+dimension beside the raw key and value. Both references make config rows
+operator-readable instead of treating the key as the only label.
+
+OpenCore admits the matching stage-3 config metadata loop while preserving its
+existing config boundaries:
+
+- `SystemConfig` now persists `category`, required `name` and optional
+  `remark`;
+- the migration backfills existing rows with `category='system'` and
+  `name=key`;
+- DTOs, repositories, seed records, SDK types and registry fixtures expose the
+  metadata consistently;
+- Admin Config shows category/name/remark in list/detail/export and accepts
+  them in create/edit forms;
+- metadata remains visible for secret configs while secret values stay
+  redacted;
+- fixed-port, deploy and public smoke prove create/detail/update/export
+  metadata plus the existing `get-value-by-key` and cache refresh behavior.
+
+OpenCore still does not claim batch config deletion, native Excel config
+export, secret vault/KMS integration or broad runtime feature-flag propagation
+in this round.

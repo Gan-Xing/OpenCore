@@ -2910,3 +2910,80 @@ Against public endpoints after deploy:
   `1437eb8 feat(core-user): add xlsx user import / 新增用户 Excel 导入`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 37 Capability
+
+Capability: `core.config` metadata enrichment.
+
+Goal: add operator-facing config `category`, `name` and `remark` across the
+runtime/API/SDK/Admin surfaces while preserving secret redaction and the
+existing public value/cache controls.
+
+## Round 37 Implemented
+
+- Rechecked Yudao config DTOs and RuoYi config management metadata shape.
+- Added `category`, required `name` and optional `remark` to `SystemConfig`.
+- Added a Prisma migration that backfills existing rows with
+  `category='system'` and `name=key` before enforcing required names.
+- Updated config seed records and runtime fixtures with meaningful metadata.
+- Extended DTOs, repository normalization, Prisma repository and seed
+  repository behavior for metadata create/update.
+- Preserved secret value redaction while exposing metadata for secret configs.
+- Extended SDK config types, registry fixtures and OpenAPI output.
+- Extended Admin Config list/detail/create/edit/filter/export surfaces for
+  category/name/remark.
+- Extended Admin static smoke and `tools/scripts/smoke-core-config.mjs` to
+  guard metadata create/detail/update/export behavior.
+
+## Round 37 Verification
+
+- `pnpm prisma:generate && pnpm prisma:migrate`
+- `pnpm nx test system --testFile=system-config.spec.ts`
+- `pnpm openapi:export && pnpm sdk:check`
+- `node --check tools/scripts/smoke-core-config.mjs`
+- `pnpm nx test admin`
+- `pnpm nx test sdk --testFile=system-management-client.spec.ts`
+- `pnpm nx test sdk --testFile=registry-fixtures.spec.ts`
+- `pnpm nx test api --testFile=rbac.permission-matrix.spec.ts`
+- `pnpm nx run-many -t typecheck --projects=api,admin,sdk,system`
+- `pnpm openapi:check`
+- `pnpm openapi:registry-tags:check`
+- `pnpm nx test contracts`
+- `pnpm nx test module-registry`
+- `pnpm format:check`
+- `pnpm prisma:validate`
+- `pnpm smoke:api:local`
+- `pnpm build:api`
+- `pnpm build:admin`
+- `git diff --check`
+- `pnpm deploy:opencore`
+
+`pnpm smoke:api:local` passed on fixed port `39173`, including
+`core.config.metadata`.
+
+`pnpm deploy:opencore` passed, deploying API/Admin on fixed ports
+`39172`/`39174`; deploy smoke included `core.config.metadata`, duplicate
+`/api/api` login guards, Admin bundle no-cache checks and session guards.
+
+## Round 37 Public Verification
+
+Against public endpoints after deploy:
+
+- Public API: `http://144.217.243.161:39172`
+- Public Admin: `http://144.217.243.161:39174`
+- Public `pnpm smoke:core-config` passed and included
+  `core.config.metadata`.
+- Public Admin Config chunk `p__System__Config.a971fcdf.async.js` contains
+  `Category`, `Name`, `Remark`, `Refresh cache` and
+  `Read public value by key`.
+- Public Admin same-origin login via `/api/auth/login` succeeded.
+- Public Admin same-origin `/api/core/config?page=1&pageSize=10` returned the
+  seeded `opencore.admin.title` row with `category='system'`,
+  `name='Admin title'` and a non-empty `remark`.
+
+## Round 37 Commit Record
+
+- Feature commit:
+  `2a1f324 feat(core-config): add config metadata / 新增系统配置元数据`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

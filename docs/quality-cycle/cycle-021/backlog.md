@@ -1039,6 +1039,34 @@ gap without expanding into role-assignment workflow or extra user schema fields.
       deployment and public URL verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 37: core.config Metadata Enrichment
+
+Why this slice: after the user XLSX import/export file-format gap, the next
+lower-dependency P1 foundation gap was `core.config` operator metadata.
+RuoYi/Yudao both let operators distinguish configuration name, category/group
+and remarks instead of only a raw key/value row. OpenCore already had config
+CRUD, secret redaction, public value-by-key and cache refresh, so this round
+could add metadata without opening batch deletion, Excel file export or broad
+runtime feature-flag propagation.
+
+- [x] Recompare RuoYi/Yudao config management metadata shape against OpenCore.
+- [x] Add `category`, required `name` and optional `remark` to
+      `SystemConfig`.
+- [x] Add Prisma migration with safe backfill from existing `key` values.
+- [x] Update seed/runtime config records with meaningful category/name/remark.
+- [x] Extend config DTOs, repository contracts, Prisma repository and seed
+      repository normalization.
+- [x] Preserve secret value redaction while keeping metadata visible.
+- [x] Extend SDK config types, registry fixtures and OpenAPI output.
+- [x] Extend Admin Config list/detail/create/edit/filter/export surfaces for
+      category/name/remark.
+- [x] Extend Admin static smoke and `core.config` API smoke for metadata
+      create/detail/update/export guards.
+- [x] Run Prisma generate/migrate, focused tests, SDK/OpenAPI checks,
+      typecheck, format, fixed-port smoke, build, deployment and public URL
+      verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -1088,9 +1116,10 @@ treat "minimal loop" as "minimal final product".
       Native XLSX import template/parsing is complete while CSV import remains
       backwards compatible. Any dedicated User-page role assignment workflow
       still needs enhancement if admitted.
-- [ ] Round 9/24 `core.config`: public get-value-by-key, cache refresh and
-      mutation invalidation are complete. Category/name/remark enrichment,
-      batch/file export depth and broader runtime propagation boundaries remain.
+- [ ] Round 9/24/37 `core.config`: public get-value-by-key, cache refresh and
+      mutation invalidation are complete. Category/name/remark metadata is
+      complete. Batch/file export depth and broader runtime propagation
+      boundaries remain.
 - [ ] Round 11/26 `core.login-log`: browser/OS parsing and IP/time filters are
       complete. IP/location enrichment where feasible, cleanup/unlock policy
       integration and logType/result schema expansion remain.
@@ -1135,9 +1164,8 @@ treat "minimal loop" as "minimal final product".
 - Batch dictionary delete, Excel import/export file workflows, dictionary
   color/css/remark fields, app-wide dictionary cache TTL/invalidation and
   dictionary cache refresh.
-- Batch config delete, Excel file export, category/name/remark schema
-  expansion, secret vault/KMS integration and runtime feature-flag
-  propagation.
+- Batch config delete, Excel file export, secret vault/KMS integration and
+  runtime feature-flag propagation.
 - Presigned upload/download URLs, storage-provider config, public
   download/preview/copy-link workflows, batch file delete and object browser
   expansion.

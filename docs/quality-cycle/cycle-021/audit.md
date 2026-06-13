@@ -688,3 +688,32 @@ XLSX import parsing:
 This stays inside the current S7 System/RBAC user-management boundary. It does
 not introduce a dedicated User-page role assignment dialog, email/phone/social
 account expansion or richer Excel style/error-highlighting in this round.
+
+## Round 37 Audit: core.config Metadata Enrichment
+
+After Round 36, the next lower-dependency P1 foundation gap was `core.config`
+operator metadata:
+
+- Yudao's config save/response DTOs expose `category`, `name` and `remark`
+  beside key/value/visibility, so operators can classify and understand config
+  rows.
+- RuoYi's config management similarly treats the display name and grouping/type
+  dimension as part of the basic config table, not as optional decoration.
+- OpenCore already had config CRUD/detail/export, secret redaction, public
+  value-by-key and cache refresh, so metadata could be added without changing
+  the runtime consumption contract.
+- Existing OpenCore config rows only had `key` as their human label; the
+  migration needed to backfill `name=key` before enforcing required names.
+- Repository normalization needed to keep category/name strict enough to avoid
+  another loose deserialization surface, while still defaulting missing
+  category to `system` and missing name to the config key for backwards
+  compatibility.
+- Admin Config needed metadata in list/detail/create/edit/export, not only in
+  API payloads.
+- Fixed-port, deploy and public smoke needed to prove metadata survives
+  create/detail/update/export, while secret values remain redacted and the
+  Round 24 cache/value-by-key behavior still works.
+
+This stays inside the current S7 System configuration boundary. It does not
+introduce batch config deletion, Excel file export, secret vault/KMS
+integration or broad runtime feature-flag propagation in this round.
