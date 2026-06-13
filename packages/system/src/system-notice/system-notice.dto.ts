@@ -101,6 +101,31 @@ export class SystemNoticeUnreadCountDto {
   unreadCount!: number;
 }
 
+export class SystemNoticeRealtimeEventDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty({
+    enum: ['snapshot', 'notice.published', 'notice.read'],
+  })
+  type!: 'notice.published' | 'notice.read' | 'snapshot';
+
+  @ApiProperty()
+  userId!: string;
+
+  @ApiProperty()
+  unreadCount!: number;
+
+  @ApiProperty({ type: [String] })
+  noticeIds!: readonly string[];
+
+  @ApiProperty({ type: [SystemNoticeInboxItemDto] })
+  notices!: readonly SystemNoticeInboxItemDto[];
+
+  @ApiProperty()
+  generatedAt!: string;
+}
+
 export class SystemNoticeReadUserDto {
   @ApiProperty()
   userId!: string;

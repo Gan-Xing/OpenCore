@@ -257,6 +257,16 @@ verify_admin_bundle_api_base_url() {
     ! grep -R \
     --fixed-strings \
     --include='*.js' \
+    "Realtime stream" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "SSE inbox events" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
     "Notice template render preview" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null || \
     ! grep -R \
@@ -344,7 +354,7 @@ verify_admin_bundle_api_base_url() {
     --include='*.js' \
     "Mark outbox sent" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null; then
-    echo "Admin bundle does not include notice template, delivery and outbox state management." >&2
+    echo "Admin bundle does not include notice realtime, template, delivery and outbox state management." >&2
     echo "Refusing to deploy a stale frontend notice page." >&2
     exit 1
   fi

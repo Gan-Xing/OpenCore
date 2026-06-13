@@ -2161,6 +2161,26 @@
         "tags": ["SystemManagement", "Core System Notices"]
       }
     },
+    "/api/core/notices/inbox/events": {
+      "get": {
+        "operationId": "SystemManagementController_streamNoticeInboxEvents",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemNoticeRealtimeEventDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Notices"]
+      }
+    },
     "/api/core/notices/inbox/read": {
       "post": {
         "operationId": "SystemManagementController_markNoticesRead",
@@ -7874,6 +7894,33 @@
         "type": "object",
         "properties": { "unreadCount": { "type": "number" } },
         "required": ["unreadCount"]
+      },
+      "SystemNoticeRealtimeEventDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "type": {
+            "type": "string",
+            "enum": ["snapshot", "notice.published", "notice.read"]
+          },
+          "userId": { "type": "string" },
+          "unreadCount": { "type": "number" },
+          "noticeIds": { "type": "array", "items": { "type": "string" } },
+          "notices": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SystemNoticeInboxItemDto" }
+          },
+          "generatedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "type",
+          "userId",
+          "unreadCount",
+          "noticeIds",
+          "notices",
+          "generatedAt"
+        ]
       },
       "MarkSystemNoticesReadDto": {
         "type": "object",

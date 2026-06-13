@@ -2,6 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '@opencore/database';
 import { PrismaSystemNoticeRepository } from './system-notice.prisma-repository';
+import { SystemNoticeRealtimeService } from './system-notice.realtime';
 import { SeedSystemNoticeRepository } from './system-notice.seed-repository';
 import { SystemNoticeService } from './system-notice.service';
 
@@ -362,6 +363,48 @@ describe('@opencore/system system-notice', () => {
     await expect(
       service.listNoticeInbox(userId, { readStatus: false }),
     ).resolves.toEqual(expect.objectContaining({ total: 0 }));
+  });
+
+  it('publishes notice inbox realtime snapshot, publish and read events', async () => {
+    const realtime = new SystemNoticeRealtimeService();
+    const service = new SystemNoticeService(
+      new SeedSystemNoticeRepository(),
+      realtime,
+    );
+    const userId = 'user_operator';
+    const events: string[] = [];
+    const unsubscribe = service.subscribeNoticeInboxEvents(userId, (event) => {
+      events.push(event.type);
+    });
+
+    await expect(service.createNoticeRealtimeSnapshot(userId)).resolves.toEqual(
+      expect.objectContaining({
+        type: 'snapshot',
+        userId,
+        unreadCount: 1,
+        notices: [expect.objectContaining({ id: 'notice_welcome' })],
+      }),
+    );
+
+    const notice = await service.createNotice({
+      title: 'Realtime notice',
+      content: 'Realtime notice content.',
+      type: 'announcement',
+      audience: 'admin',
+      createdBy: 'admin',
+    });
+    await expect(service.publishNotice(notice.id)).resolves.toMatchObject({
+      status: 'published',
+    });
+    await expect(
+      service.markNoticesRead(userId, { ids: ['notice_welcome'] }),
+    ).resolves.toMatchObject({
+      unreadCount: 1,
+    });
+    unsubscribe();
+    await service.markAllNoticesRead(userId);
+
+    expect(events).toEqual(['notice.published', 'notice.read']);
   });
 
   describe('PrismaSystemNoticeRepository integration', () => {

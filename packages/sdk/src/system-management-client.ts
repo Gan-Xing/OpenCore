@@ -258,6 +258,7 @@ export type SystemManagementClient = {
   getNoticeUnreadCount: (
     token: Token,
   ) => Promise<SystemNoticeUnreadCountSummary>;
+  getNoticeInboxEventsPath: () => string;
   markNoticesRead: (
     token: Token,
     body: MarkSystemNoticesReadRequest,
@@ -670,6 +671,7 @@ export function createSystemManagementClient(
           token,
         },
       ),
+    getNoticeInboxEventsPath: () => '/core/notices/inbox/events',
     markNoticesRead: (token, body) =>
       request<SystemNoticeReadMutationSummary>('/core/notices/inbox/read', {
         method: 'POST',

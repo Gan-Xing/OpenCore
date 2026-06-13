@@ -47,7 +47,7 @@ packages and OpenForge direct Prisma/migration/business-code writing.
 
 ## Current State
 
-Cycle-021 has completed 80 deployable stages.
+Cycle-021 has completed 81 deployable stages.
 
 - System/RBAC: notice, dept, post, menu, role, permission, user, dict, config
   and file loops are live.
@@ -62,27 +62,27 @@ Cycle-021 has completed 80 deployable stages.
   queued processing, signed callback intake, bounded retry scheduling and a
   bounded SMS HTTP adapter plus SMTP mail adapter with outbox subject
   persistence, provider diagnostics, SMS HTTP secret injection, SMTP
-  attachments and explicit SMTP TLS policy.
+  attachments, explicit SMTP TLS policy and authenticated inbox realtime
+  events.
 - Monitor jobs: API/SDK routes, registry policy, seed job, Admin live list,
   enable/disable, manual trigger, registered handler execution, retry/timeout
   diagnostics and failed run-log detail are smoke-guarded.
 
-Latest runtime stage: Round 80 `integration.mail` SMTP TLS policy. It replaces
-ambiguous SMTP TLS booleans with explicit `tlsMode` values, enforces deprecated
-field rejection in the adapter, exposes the policy through SDK/Admin/OpenAPI
-fixtures and verifies STARTTLS-required degradation plus plain SMTP delivery in
-notice smoke and deploy bundle guards.
+Latest runtime stage: Round 81 `core.notice` inbox realtime events. It adds an
+authenticated SSE endpoint for notice inbox snapshots and read/publish events,
+routes publish/read mutations through a process-local realtime bus, exposes the
+stream path through SDK/Admin/OpenAPI and verifies auth-required, snapshot and
+read-event behavior in notice smoke plus deploy bundle guards.
 
 ## Next Queue
 
-1. Notice provider reliability: realtime push.
-2. Config governance: multi-environment rollout, external KMS, key rotation
+1. Config governance: multi-environment rollout, external KMS, key rotation
    and secret versions.
-3. Operation-log enrichment: retention scheduling, duration/location fields
+2. Operation-log enrichment: retention scheduling, duration/location fields
    and governance policy.
-4. OpenForge Admin safe plan/diff/check/apply UI.
-5. Integration health/config audit.
-6. Scheduler/monitor worker parity: external BullMQ worker execution, cron
+3. OpenForge Admin safe plan/diff/check/apply UI.
+4. Integration health/config audit.
+5. Scheduler/monitor worker parity: external BullMQ worker execution, cron
    dispatch and queue metrics beyond the current registered manual executor.
 
 ## Docs Rule

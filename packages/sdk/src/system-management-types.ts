@@ -480,6 +480,21 @@ export type SystemNoticeUnreadCountSummary = {
   unreadCount: number;
 };
 
+export type SystemNoticeRealtimeEventType =
+  | 'notice.published'
+  | 'notice.read'
+  | 'snapshot';
+
+export type SystemNoticeRealtimeEventSummary = {
+  id: string;
+  type: SystemNoticeRealtimeEventType;
+  userId: string;
+  unreadCount: number;
+  noticeIds: readonly string[];
+  notices: readonly SystemNoticeInboxSummary[];
+  generatedAt: string;
+};
+
 export type SystemNoticeDispatchSummary = {
   noticeId: string;
   channel: SystemNoticeDeliveryChannel;

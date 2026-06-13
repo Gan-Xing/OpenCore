@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { DatabaseModule } from '@opencore/database';
 import { PrismaSystemNoticeRepository } from './system-notice.prisma-repository';
+import { SystemNoticeRealtimeService } from './system-notice.realtime';
 import { SystemNoticeRepository } from './system-notice.repository';
 import { SystemNoticeService } from './system-notice.service';
 
@@ -11,8 +12,13 @@ import { SystemNoticeService } from './system-notice.service';
       provide: SystemNoticeRepository,
       useClass: PrismaSystemNoticeRepository,
     },
+    SystemNoticeRealtimeService,
     SystemNoticeService,
   ],
-  exports: [SystemNoticeRepository, SystemNoticeService],
+  exports: [
+    SystemNoticeRealtimeService,
+    SystemNoticeRepository,
+    SystemNoticeService,
+  ],
 })
 export class SystemNoticeModule {}

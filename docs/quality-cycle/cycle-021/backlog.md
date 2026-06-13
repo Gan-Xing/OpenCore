@@ -29,27 +29,26 @@ schema/business-code writing.
   runtime login policy.
 - Rounds 50-59: logout audit semantics, ordering, data-scope, notice
   inbox/read analytics, feature flags and login-log location.
-- Rounds 60-80: notice template/delivery/provider/outbox work, SMS HTTP and
+- Rounds 60-81: notice template/delivery/provider/outbox work, SMS HTTP and
   SMTP adapters, config vault and rollout/audience, operation-log cleanup, plus
   mail subject persistence, provider diagnostics, SMS HTTP secret injection,
-  SMTP attachments, explicit SMTP TLS policy, Monitor Jobs Admin operations and
-  registered handler diagnostics.
+  SMTP attachments, explicit SMTP TLS policy, inbox realtime events, Monitor
+  Jobs Admin operations and registered handler diagnostics.
 
-Latest done: Round 80 SMTP TLS policy with explicit `tlsMode`, deprecated
-TLS-field rejection, Admin/SDK/OpenAPI visibility and STARTTLS-required public
-smoke coverage.
+Latest done: Round 81 notice inbox realtime events with authenticated SSE
+snapshot/read-event streaming, SDK/Admin/OpenAPI visibility and public smoke
+coverage.
 
 ## Active P1/P2 Queue
 
-1. Notice provider reliability: realtime push.
-2. Config governance: multi-environment rollout, external KMS, key rotation
+1. Config governance: multi-environment rollout, external KMS, key rotation
    and secret version history.
-3. Operation-log enrichment: retention scheduling, duration/location fields
+2. Operation-log enrichment: retention scheduling, duration/location fields
    and governance.
-4. OpenForge Admin: plan/diff/check/apply/manifest/rollback surfaces.
-5. Integration health/config audit: provider readiness, failure history,
+3. OpenForge Admin: plan/diff/check/apply/manifest/rollback surfaces.
+4. Integration health/config audit: provider readiness, failure history,
    config validation and operator diagnostics.
-6. Scheduler/monitor worker parity: external BullMQ worker execution, cron
+5. Scheduler/monitor worker parity: external BullMQ worker execution, cron
    dispatch and queue metrics beyond the current registered manual executor.
 
 ## Rework Notes

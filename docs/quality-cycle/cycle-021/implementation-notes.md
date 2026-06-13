@@ -19,10 +19,10 @@ active debt and decisions that change future execution.
 
 ## Runtime State
 
-Cycle-021 has completed 80 deployable stages across
-System/Security/Monitor/Integration foundations. Round 80 added explicit SMTP
-`tlsMode` policy, deprecated TLS field rejection, Admin/SDK/OpenAPI visibility
-and STARTTLS-required smoke coverage.
+Cycle-021 has completed 81 deployable stages across
+System/Security/Monitor/Integration foundations. Round 81 added authenticated
+SSE notice inbox realtime events with SDK/Admin/OpenAPI visibility and smoke
+coverage for auth-required, snapshot and read-event behavior.
 
 ## Guard Register
 
@@ -34,8 +34,8 @@ and STARTTLS-required smoke coverage.
   failure rejection, failed-to-retry, process-to-sent sync, signed callback
   sync, scheduled retry caps, SMS HTTP host allowlist, SMTP config-vault auth,
   SMTP TLS policy, SMS HTTP secret injection, mail outbox subject persistence,
-  SMTP attachments, provider diagnostics, provider failures and sent-state
-  mutation guards.
+  SMTP attachments, authenticated inbox realtime events, provider diagnostics,
+  provider failures and sent-state mutation guards.
 - Operation log: smoke covers batch-delete guards, deleted-detail 404 and
   clean-all target removal while preserving the clean request audit row.
 - Config/secret: smoke covers feature flags, audience rules and no plaintext
@@ -56,8 +56,9 @@ and STARTTLS-required smoke coverage.
 
 ## Remaining Foundation Debt
 
-- Notice: WebSocket realtime push and any admitted tenant/member/mobile
-  channels.
+- Notice: optional multi-instance realtime fanout if deployment topology moves
+  beyond the current single-node process, plus any admitted
+  tenant/member/mobile channels.
 - Config: multi-environment governance, external KMS, key rotation and secret
   version history.
 - Login log: optional external GeoIP depth and broader mobile/social login

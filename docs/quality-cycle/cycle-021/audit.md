@@ -28,6 +28,8 @@ Round 79 added first-class SMTP attachments with bounded validation,
 persistence and MIME smoke coverage.
 Round 80 added explicit SMTP `tlsMode` policy and deprecated TLS-field guards
 with STARTTLS-required smoke coverage.
+Round 81 added authenticated SSE notice inbox realtime events with snapshot and
+read-event smoke coverage.
 Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 `lint` must run sequentially.
 
@@ -39,8 +41,8 @@ Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 - Notice outbox smoke covers pending handoff, retry, process-to-sent, signed
   callback sync, scheduled retry caps, SMS HTTP host allowlist, SMTP
   config-vault auth, SMTP TLS policy, SMS HTTP secret injection, mail subject
-  persistence, SMTP attachments, provider diagnostics, provider failedCount and
-  sent mutation guards.
+  persistence, SMTP attachments, authenticated inbox realtime events, provider
+  diagnostics, provider failedCount and sent mutation guards.
 - Operation-log cleanup smoke covers guard failures, deleted-detail 404 and
   clean-all target removal.
 - Config smoke covers runtime shape and no plaintext secret storage.
@@ -56,7 +58,8 @@ real incident decisions. Do not create per-round reports by default.
 
 ## Residual Risk
 
-- Notice still needs realtime push before provider-depth parity.
+- Notice realtime is single-node process-local; multi-instance fanout remains a
+  deployment-topology upgrade if needed.
 - Config still needs multi-environment governance and external KMS/rotation.
 - Scheduler still needs external worker/cron parity beyond the current
   registered manual executor; operation-log enrichment and OpenForge Admin

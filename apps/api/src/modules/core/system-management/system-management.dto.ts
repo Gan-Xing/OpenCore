@@ -56,6 +56,7 @@ export {
   SystemNoticePageDto,
   SystemNoticeQueryDto,
   SystemNoticeReadMutationResultDto,
+  SystemNoticeRealtimeEventDto,
   SystemNoticeTemplateDto,
   SystemNoticeTemplateOptionDto,
   SystemNoticeTemplatePageDto,

@@ -53,6 +53,7 @@ try {
   }
 
   await request(`${apiPrefix}/core/notices/inbox`, { expected: [401] });
+  await request(`${apiPrefix}/core/notices/inbox/events`, { expected: [401] });
 
   const loginResponse = await login();
   token = assertString(loginResponse.accessToken, 'login accessToken');
@@ -273,6 +274,29 @@ try {
   );
 
   const draftNotice = await createNotice(noticeTitles[0]);
+  const publishRealtimeStream = await openSseStream(
+    '/core/notices/inbox/events',
+  );
+  const publishRealtimeSnapshot = await publishRealtimeStream.nextEvent();
+  assertEqual(
+    publishRealtimeSnapshot.event,
+    'snapshot',
+    'notice realtime snapshot event name',
+  );
+  assertEqual(
+    publishRealtimeSnapshot.data.type,
+    'snapshot',
+    'notice realtime snapshot type',
+  );
+  assertNumberAtLeast(
+    publishRealtimeSnapshot.data.unreadCount,
+    0,
+    'notice realtime snapshot unread count',
+  );
+  assertArray(
+    publishRealtimeSnapshot.data.notices,
+    'notice realtime snapshot notices',
+  );
   await apiRequest(
     `/core/notices/inbox/${encodeURIComponent(draftNotice.id)}`,
     {
@@ -317,6 +341,23 @@ try {
     },
   );
   assertEqual(publishedNotice.status, 'published', 'published notice status');
+  const publishRealtimeEvent = await publishRealtimeStream.nextEvent();
+  assertEqual(
+    publishRealtimeEvent.event,
+    'notice.published',
+    'notice realtime publish event name',
+  );
+  assertEqual(
+    publishRealtimeEvent.data.type,
+    'notice.published',
+    'notice realtime publish event type',
+  );
+  assertArrayIncludes(
+    publishRealtimeEvent.data.noticeIds,
+    draftNotice.id,
+    'notice realtime publish event notice ids',
+  );
+  await publishRealtimeStream.close();
   const deliveryPage = await apiRequest(
     `/core/notices/${encodeURIComponent(draftNotice.id)}/deliveries?channel=in_app&providerStatus=pending&readStatus=false&username=${encodeURIComponent(username)}`,
   );
@@ -1096,12 +1137,45 @@ try {
     body: { ids: [draftNotice.id, `missing_${draftNotice.id}`] },
   });
 
+  const readRealtimeStream = await openSseStream('/core/notices/inbox/events');
+  const readRealtimeSnapshot = await readRealtimeStream.nextEvent();
+  assertEqual(
+    readRealtimeSnapshot.event,
+    'snapshot',
+    'notice realtime read snapshot event name',
+  );
+  assertArray(
+    readRealtimeSnapshot.data.notices,
+    'notice realtime read notices',
+  );
+  assertItemsContain(
+    readRealtimeSnapshot.data.notices,
+    draftNotice.id,
+    'notice realtime read snapshot notices',
+  );
   const readResult = await apiRequest('/core/notices/inbox/read', {
     method: 'POST',
     body: { ids: [draftNotice.id] },
   });
   assertEqual(readResult.markedReadCount, 1, 'first read mutation count');
   assertArrayIncludes(readResult.ids, draftNotice.id, 'first read mutation id');
+  const readRealtimeEvent = await readRealtimeStream.nextEvent();
+  assertEqual(
+    readRealtimeEvent.event,
+    'notice.read',
+    'notice realtime read event name',
+  );
+  assertEqual(
+    readRealtimeEvent.data.type,
+    'notice.read',
+    'notice realtime read event type',
+  );
+  assertArrayIncludes(
+    readRealtimeEvent.data.noticeIds,
+    draftNotice.id,
+    'notice realtime read event notice ids',
+  );
+  await readRealtimeStream.close();
 
   const rereadResult = await apiRequest('/core/notices/inbox/read', {
     method: 'POST',
@@ -1180,7 +1254,10 @@ try {
         'health.ready',
         ...(checkDocs ? ['openapi.docs-json'] : []),
         'core.notice.inbox.auth-required',
+        'core.notice.realtime.auth-required',
         'auth.login',
+        'core.notice.realtime.snapshot',
+        'core.notice.realtime.read-event',
         'core.notice.template.simple-list',
         'core.notice.template.render',
         'core.notice.template.missing-param-guard',
@@ -1523,6 +1600,100 @@ async function startSmokeSmtpServer({ password, username }) {
 function countSmtpCommands(server, command) {
   return server.commands.filter((item) => item === command.toUpperCase())
     .length;
+}
+
+async function openSseStream(path) {
+  const controller = new AbortController();
+  const response = await fetch(`${baseUrl}${apiPrefix}${path}`, {
+    headers: { authorization: `Bearer ${token}` },
+    signal: controller.signal,
+  });
+
+  if (response.status !== 200) {
+    controller.abort();
+    throw new Error(`GET ${path} SSE returned ${response.status}`);
+  }
+
+  const contentType = response.headers.get('content-type') ?? '';
+  if (!contentType.includes('text/event-stream')) {
+    controller.abort();
+    throw new Error(`GET ${path} did not return text/event-stream`);
+  }
+
+  if (!response.body) {
+    controller.abort();
+    throw new Error(`GET ${path} SSE response body is unavailable`);
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  return {
+    async close() {
+      controller.abort();
+      await reader.cancel().catch(() => undefined);
+    },
+    async nextEvent() {
+      const timeout = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        while (true) {
+          const parsed = readSseEventFromBuffer(buffer);
+          if (parsed) {
+            buffer = parsed.remaining;
+            return parsed.event;
+          }
+
+          const { done, value } = await reader.read();
+          if (done) {
+            throw new Error(`GET ${path} SSE closed before next event`);
+          }
+          buffer += decoder.decode(value, { stream: true });
+        }
+      } finally {
+        clearTimeout(timeout);
+      }
+    },
+  };
+}
+
+function readSseEventFromBuffer(buffer) {
+  const boundary = buffer.indexOf('\n\n');
+  if (boundary === -1) {
+    return undefined;
+  }
+
+  const rawEvent = buffer.slice(0, boundary);
+  const remaining = buffer.slice(boundary + 2);
+  const event = parseSseEvent(rawEvent);
+
+  if (!event) {
+    return readSseEventFromBuffer(remaining);
+  }
+
+  return { event, remaining };
+}
+
+function parseSseEvent(rawEvent) {
+  const lines = rawEvent.split(/\r?\n/);
+  const eventName =
+    lines
+      .find((line) => line.startsWith('event:'))
+      ?.slice('event:'.length)
+      .trim() ?? 'message';
+  const data = lines
+    .filter((line) => line.startsWith('data:'))
+    .map((line) => line.slice('data:'.length).trimStart())
+    .join('\n');
+
+  if (!data) {
+    return undefined;
+  }
+
+  return {
+    event: eventName,
+    data: JSON.parse(data),
+  };
 }
 
 async function request(pathOrUrl, options = {}) {

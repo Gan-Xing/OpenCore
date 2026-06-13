@@ -852,6 +852,10 @@ export function getOpenCoreSystemNoticeUnreadCount(): Promise<SystemNoticeUnread
   return systemManagementClient.getNoticeUnreadCount(getRequiredAdminToken());
 }
 
+export function getOpenCoreSystemNoticeInboxEventsPath(): string {
+  return systemManagementClient.getNoticeInboxEventsPath();
+}
+
 export function markOpenCoreSystemNoticesRead(
   body: MarkSystemNoticesReadRequest,
 ): Promise<SystemNoticeReadMutationSummary> {

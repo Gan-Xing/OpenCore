@@ -93,6 +93,7 @@ const expectedAuthenticatedConsumerMethods = [
   'listUnreadNoticeInbox',
   'markAllNoticesRead',
   'markNoticesRead',
+  'streamNoticeInboxEvents',
 ] as const;
 
 describe('SystemManagementController permission matrix', () => {

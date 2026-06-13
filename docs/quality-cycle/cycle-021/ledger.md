@@ -13,3 +13,4 @@ This ledger records state transitions only. Git log keeps commit hashes.
 | 78    | Notice SMS   | SMS HTTP providers inject config-vault secrets into request auth surfaces.    | Adapter tests and notice smoke cover header/query/body inject. |
 | 79    | Notice Mail  | Mail outbox attachments became bounded persisted SMTP delivery state.         | Adapter tests and notice smoke cover SMTP MIME attachments.    |
 | 80    | Notice Mail  | SMTP TLS behavior became explicit `tlsMode` policy.                           | Adapter tests and notice smoke cover STARTTLS-required policy. |
+| 81    | Notice Inbox | Notice inbox realtime became authenticated SSE snapshot/read events.          | Notice smoke covers auth, snapshot and read-event streaming.   |

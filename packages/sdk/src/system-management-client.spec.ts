@@ -163,6 +163,9 @@ describe('createSystemManagementClient', () => {
     await client.getNoticeInboxItem('token', 'notice_welcome');
     await client.listUnreadNotices('token', 10);
     await client.getNoticeUnreadCount('token');
+    expect(client.getNoticeInboxEventsPath()).toBe(
+      '/core/notices/inbox/events',
+    );
     await client.markNoticesRead('token', { ids: ['notice_welcome'] });
     await client.markAllNoticesRead('token');
     await client.listNoticeReadUsers('token', 'notice_welcome', {

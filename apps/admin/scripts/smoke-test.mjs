@@ -398,6 +398,7 @@ if (
   !opencorePlatformService.includes('deleteOpenCoreSystemPosts') ||
   !opencorePlatformService.includes('listOpenCoreSystemNotices') ||
   !opencorePlatformService.includes('listOpenCoreSystemNoticeInbox') ||
+  !opencorePlatformService.includes('getOpenCoreSystemNoticeInboxEventsPath') ||
   !opencorePlatformService.includes('listOpenCoreUnreadSystemNotices') ||
   !opencorePlatformService.includes('getOpenCoreSystemNoticeUnreadCount') ||
   !opencorePlatformService.includes('listOpenCoreSystemNoticeReadUsers') ||
@@ -1148,6 +1149,9 @@ if (
 if (
   !systemNoticesPage.includes('listOpenCoreSystemNotices') ||
   !systemNoticesPage.includes('listOpenCoreSystemNoticeInbox') ||
+  !systemNoticesPage.includes('getOpenCoreSystemNoticeInboxEventsPath') ||
+  !systemNoticesPage.includes('Realtime stream') ||
+  !systemNoticesPage.includes('SSE inbox events') ||
   !systemNoticesPage.includes('getOpenCoreSystemNoticeInboxItem') ||
   !systemNoticesPage.includes('listOpenCoreSystemNoticeReadUsers') ||
   !systemNoticesPage.includes('listOpenCoreSystemNoticeDeliveries') ||

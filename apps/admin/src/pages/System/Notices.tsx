@@ -63,6 +63,7 @@ import {
   executeOpenCoreSystemNoticeDeliveries,
   getOpenCoreSystemNotice,
   getOpenCoreSystemNoticeInboxItem,
+  getOpenCoreSystemNoticeInboxEventsPath,
   getOpenCoreSystemNoticeTemplate,
   listOpenCoreSystemNoticeInbox,
   listOpenCoreSystemNoticeDeliveries,
@@ -361,6 +362,7 @@ export default function SystemNoticesPage() {
   const [templatePreviewLoading, setTemplatePreviewLoading] = useState(false);
   const [templateNoticeSubmitting, setTemplateNoticeSubmitting] =
     useState(false);
+  const realtimeEventsPath = getOpenCoreSystemNoticeInboxEventsPath();
   const { filteredRows, toolbar: filterToolbar } =
     useCurrentPageFilters<SystemNoticeSummary>({
       rows,
@@ -1492,6 +1494,13 @@ export default function SystemNoticesPage() {
             label: `Inbox (${inboxRows.filter((record) => !record.read).length})`,
             children: (
               <>
+                <Alert
+                  showIcon
+                  type="info"
+                  message="Realtime stream"
+                  description={`SSE inbox events: ${realtimeEventsPath}`}
+                  style={{ marginBlockEnd: 16 }}
+                />
                 {inboxLoadError ? (
                   <Alert
                     showIcon

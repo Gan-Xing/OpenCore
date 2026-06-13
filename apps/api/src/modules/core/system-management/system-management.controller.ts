@@ -28,6 +28,7 @@ import {
   SystemConfigService,
   SystemDeptService,
   SystemDictService,
+  type SystemNoticeRealtimeEvent,
   SystemNoticeService,
   SystemPostService,
 } from '@opencore/system';
@@ -100,6 +101,7 @@ import {
   SystemNoticePageDto,
   SystemNoticeQueryDto,
   SystemNoticeReadMutationResultDto,
+  SystemNoticeRealtimeEventDto,
   SystemNoticeTemplateDto,
   SystemNoticeTemplateOptionDto,
   SystemNoticeTemplatePageDto,
@@ -135,6 +137,13 @@ import { SystemManagementRepository } from './system-management.repository';
 type DownloadResponse = {
   send(body: Buffer): void;
   set(headers: Record<string, string>): void;
+};
+
+type SseResponse = {
+  end?: () => void;
+  flushHeaders?: () => void;
+  set(headers: Record<string, string>): void;
+  write(chunk: string): void;
 };
 
 type RequestWithUser = SecurityRequestWithAuth;
@@ -419,6 +428,43 @@ export class SystemManagementController {
         getAuthenticatedUserId(request),
       ),
     };
+  }
+
+  @Get('notices/inbox/events')
+  @ApiTags('Core System Notices')
+  @ApiProduces('text/event-stream')
+  @RequireAuthenticated()
+  @ApiOkResponse({ type: SystemNoticeRealtimeEventDto })
+  async streamNoticeInboxEvents(
+    @Req() request: RequestWithUser,
+    @Res() response: SseResponse,
+  ): Promise<void> {
+    const userId = getAuthenticatedUserId(request);
+    response.set({
+      'cache-control': 'no-cache, no-transform',
+      connection: 'keep-alive',
+      'content-type': 'text/event-stream; charset=utf-8',
+      'x-accel-buffering': 'no',
+    });
+    response.flushHeaders?.();
+
+    const writeEvent = (event: SystemNoticeRealtimeEvent) => {
+      writeSseEvent(response, event);
+    };
+    const unsubscribe = this.notices.subscribeNoticeInboxEvents(
+      userId,
+      writeEvent,
+    );
+    const heartbeat = setInterval(() => {
+      response.write(': heartbeat\n\n');
+    }, 15000);
+    const cleanup = () => {
+      clearInterval(heartbeat);
+      unsubscribe();
+    };
+
+    getCloseableRequest(request).on('close', cleanup);
+    writeEvent(await this.notices.createNoticeRealtimeSnapshot(userId));
   }
 
   @Post('notices/inbox/read')
@@ -991,6 +1037,23 @@ function getAuthenticatedUserId(request: RequestWithUser): string {
   }
 
   return userId;
+}
+
+function writeSseEvent(
+  response: SseResponse,
+  event: SystemNoticeRealtimeEvent,
+): void {
+  response.write(`id: ${event.id}\n`);
+  response.write(`event: ${event.type}\n`);
+  response.write(`data: ${JSON.stringify(event)}\n\n`);
+}
+
+function getCloseableRequest(request: RequestWithUser): {
+  on(event: 'close', listener: () => void): void;
+} {
+  return request as RequestWithUser & {
+    on(event: 'close', listener: () => void): void;
+  };
 }
 
 function decodeBase64FileContent(contentBase64: string): Buffer {

@@ -4,16 +4,19 @@ Date: 2026-06-13
 
 ## Latest Completed Round
 
-Round 80: `integration.mail` SMTP TLS policy.
+Round 81: `core.notice` inbox realtime events.
 
 ## Closed
 
-- Replaced ambiguous SMTP TLS booleans with explicit `tlsMode` policy values.
-- SMTP adapter rejects deprecated `secure`/`requireTls`/`startTls` config and
-  maps `tlsMode` to Nodemailer `secure`/`requireTLS`/`ignoreTLS`.
-- SDK/Admin/OpenAPI fixtures and deploy bundle guards expose the policy.
-- Notice smoke verifies STARTTLS-required degradation and plain SMTP delivery.
+- Added authenticated SSE notice inbox events at
+  `/core/notices/inbox/events`.
+- Publish/read mutations emit process-local realtime events with current unread
+  count and unread snapshot rows.
+- SDK/Admin/OpenAPI and deploy bundle guards expose the stream path.
+- Notice smoke verifies auth-required, snapshot and read-event behavior.
 
 ## Still Open
 
-- Notice still needs realtime push.
+- Realtime is process-local for the current single-node deploy; multi-instance
+  fanout can be promoted later through Redis/BullMQ if deployment topology
+  requires it.

@@ -34,10 +34,20 @@ import {
   type SystemNoticeTemplatePageQuery,
   type SystemNoticeTemplateRenderRecord,
 } from './system-notice.repository';
+import {
+  createSystemNoticeRealtimeEvent,
+  SystemNoticeRealtimeService,
+  type SystemNoticeRealtimeEvent,
+  type SystemNoticeRealtimeEventType,
+  type SystemNoticeRealtimeListener,
+} from './system-notice.realtime';
 
 @Injectable()
 export class SystemNoticeService {
-  constructor(private readonly repository: SystemNoticeRepository) {}
+  constructor(
+    private readonly repository: SystemNoticeRepository,
+    private readonly realtime: SystemNoticeRealtimeService = new SystemNoticeRealtimeService(),
+  ) {}
 
   listNotices(
     query: SystemNoticePageQuery = {},
@@ -70,15 +80,36 @@ export class SystemNoticeService {
     return this.repository.countUnreadNoticeInbox(userId);
   }
 
-  markNoticesRead(
+  async createNoticeRealtimeSnapshot(
+    userId: string,
+  ): Promise<SystemNoticeRealtimeEvent> {
+    return this.createRealtimeEvent(userId, 'snapshot');
+  }
+
+  subscribeNoticeInboxEvents(
+    userId: string,
+    listener: SystemNoticeRealtimeListener,
+  ): () => void {
+    return this.realtime.subscribe(userId, listener);
+  }
+
+  async markNoticesRead(
     userId: string,
     body: MarkSystemNoticesReadDto,
   ): Promise<SystemNoticeReadMutationResult> {
-    return this.repository.markNoticesRead(userId, body);
+    const result = await this.repository.markNoticesRead(userId, body);
+    await this.publishRealtimeEvent(userId, 'notice.read', result.ids);
+
+    return result;
   }
 
-  markAllNoticesRead(userId: string): Promise<SystemNoticeReadMutationResult> {
-    return this.repository.markAllNoticesRead(userId);
+  async markAllNoticesRead(
+    userId: string,
+  ): Promise<SystemNoticeReadMutationResult> {
+    const result = await this.repository.markAllNoticesRead(userId);
+    await this.publishRealtimeEvent(userId, 'notice.read', result.ids);
+
+    return result;
   }
 
   listNoticeReadUsers(
@@ -174,8 +205,13 @@ export class SystemNoticeService {
     return this.repository.updateNotice(id, body);
   }
 
-  publishNotice(id: string): Promise<SystemNoticeRecord> {
-    return this.repository.publishNotice(id);
+  async publishNotice(id: string): Promise<SystemNoticeRecord> {
+    const notice = await this.repository.publishNotice(id);
+    await this.publishRealtimeEventToSubscribers('notice.published', [
+      notice.id,
+    ]);
+
+    return notice;
   }
 
   archiveNotice(id: string): Promise<SystemNoticeRecord> {
@@ -192,5 +228,46 @@ export class SystemNoticeService {
     return createSystemNoticeExportPreview(
       await this.repository.listNotices(query),
     );
+  }
+
+  private async publishRealtimeEvent(
+    userId: string,
+    type: SystemNoticeRealtimeEventType,
+    noticeIds: readonly string[] = [],
+  ): Promise<void> {
+    this.realtime.publish(
+      userId,
+      await this.createRealtimeEvent(userId, type, noticeIds),
+    );
+  }
+
+  private async publishRealtimeEventToSubscribers(
+    type: SystemNoticeRealtimeEventType,
+    noticeIds: readonly string[] = [],
+  ): Promise<void> {
+    await Promise.all(
+      this.realtime
+        .getSubscribedUserIds()
+        .map((userId) => this.publishRealtimeEvent(userId, type, noticeIds)),
+    );
+  }
+
+  private async createRealtimeEvent(
+    userId: string,
+    type: SystemNoticeRealtimeEventType,
+    noticeIds: readonly string[] = [],
+  ): Promise<SystemNoticeRealtimeEvent> {
+    const [unreadCount, notices] = await Promise.all([
+      this.repository.countUnreadNoticeInbox(userId),
+      this.repository.listUnreadNoticeInbox(userId, 10),
+    ]);
+
+    return createSystemNoticeRealtimeEvent({
+      type,
+      userId,
+      unreadCount,
+      noticeIds,
+      notices,
+    });
   }
 }

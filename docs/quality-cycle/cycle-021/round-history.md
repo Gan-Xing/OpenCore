@@ -20,12 +20,13 @@ only; the ledger keeps state transitions and git log keeps commits.
   type/result schema, lockout/unlock, cleanup and attempt limits.
 - Rounds 50-59: logout audit semantics, dept/post ordering, data-scope,
   notice inbox/read analytics, feature flags and login-log location.
-- Rounds 60-80: notice templates, delivery records, local/outbox providers,
+- Rounds 60-81: notice templates, delivery records, local/outbox providers,
   SMS HTTP and SMTP adapters, config secret vault, feature-flag
   rollout/audience, outbox state/process/callback/schedule handling and
   mail subject persistence, provider diagnostics, SMS HTTP secret injection,
-  SMTP attachments, explicit SMTP TLS policy, operation-log cleanup, plus
-  Monitor Jobs Admin operations and registered handler diagnostics.
+  SMTP attachments, explicit SMTP TLS policy, inbox realtime events,
+  operation-log cleanup, plus Monitor Jobs Admin operations and registered
+  handler diagnostics.
 
 ## Rework Notes
 
