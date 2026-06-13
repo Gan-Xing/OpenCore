@@ -11,22 +11,33 @@ import {
 import {
   assertNoticeCanPublish,
   assertNoticeNotArchived,
+  compareSystemNoticeInboxRecords,
+  createSystemNoticeInboxRecord,
   createSystemNoticePageResult,
+  isSystemNoticeVisibleInInbox,
   normalizeCreateSystemNoticeInput,
+  normalizeMarkSystemNoticesReadInput,
+  normalizeSystemNoticeInboxFilters,
   normalizeSystemNoticeFilters,
   normalizeSystemNoticePageQuery,
+  normalizeUnreadNoticeLimit,
   normalizeUpdateSystemNoticeInput,
   SystemNoticeRepository,
+  type SystemNoticeInboxPageQuery,
+  type SystemNoticeInboxRecord,
+  type SystemNoticeReadMutationResult,
   type SystemNoticePageQuery,
 } from './system-notice.repository';
 import type {
   CreateSystemNoticeDto,
+  MarkSystemNoticesReadDto,
   UpdateSystemNoticeDto,
 } from './system-notice.dto';
 
 @Injectable()
 export class SeedSystemNoticeRepository extends SystemNoticeRepository {
   private notices = seedSystemNotices.map((notice) => ({ ...notice }));
+  private readReceipts = new Map<string, string>();
 
   async listNotices(
     query: SystemNoticePageQuery = {},
@@ -48,6 +59,95 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
       rows.map((notice) => ({ ...notice })),
       pagination,
     );
+  }
+
+  async listNoticeInbox(
+    userId: string,
+    query: SystemNoticeInboxPageQuery = {},
+  ): Promise<PageResult<SystemNoticeInboxRecord>> {
+    const filters = normalizeSystemNoticeInboxFilters(query);
+    const rows = this.listVisibleInboxNotices(userId).filter(
+      (notice) =>
+        (filters.readStatus === undefined ||
+          notice.read === filters.readStatus) &&
+        (!filters.type || notice.type === filters.type),
+    );
+    const pagination = normalizeSystemNoticePageQuery(query, rows.length);
+
+    return createSystemNoticePageResult(
+      rows.slice(pagination.skip, pagination.skip + pagination.take),
+      pagination,
+    );
+  }
+
+  async getNoticeInboxItem(
+    userId: string,
+    id: string,
+  ): Promise<SystemNoticeInboxRecord> {
+    return { ...this.findVisibleInboxNotice(userId, id) };
+  }
+
+  async listUnreadNoticeInbox(
+    userId: string,
+    limit?: number | string,
+  ): Promise<readonly SystemNoticeInboxRecord[]> {
+    const take = normalizeUnreadNoticeLimit(limit);
+    return this.listVisibleInboxNotices(userId)
+      .filter((notice) => !notice.read)
+      .slice(0, take)
+      .map((notice) => ({ ...notice }));
+  }
+
+  async countUnreadNoticeInbox(userId: string): Promise<number> {
+    return this.listVisibleInboxNotices(userId).filter((notice) => !notice.read)
+      .length;
+  }
+
+  async markNoticesRead(
+    userId: string,
+    body: MarkSystemNoticesReadDto,
+  ): Promise<SystemNoticeReadMutationResult> {
+    const ids = normalizeMarkSystemNoticesReadInput(body);
+
+    for (const id of ids) {
+      this.findVisibleInboxNotice(userId, id);
+    }
+
+    let markedReadCount = 0;
+    const now = new Date().toISOString();
+
+    for (const id of ids) {
+      const key = createReadReceiptKey(userId, id);
+      if (!this.readReceipts.has(key)) {
+        markedReadCount += 1;
+      }
+      this.readReceipts.set(key, now);
+    }
+
+    return {
+      ids,
+      markedReadCount,
+      unreadCount: await this.countUnreadNoticeInbox(userId),
+    };
+  }
+
+  async markAllNoticesRead(
+    userId: string,
+  ): Promise<SystemNoticeReadMutationResult> {
+    const unreadIds = this.listVisibleInboxNotices(userId)
+      .filter((notice) => !notice.read)
+      .map((notice) => notice.id);
+    const now = new Date().toISOString();
+
+    for (const id of unreadIds) {
+      this.readReceipts.set(createReadReceiptKey(userId, id), now);
+    }
+
+    return {
+      ids: unreadIds,
+      markedReadCount: unreadIds.length,
+      unreadCount: await this.countUnreadNoticeInbox(userId),
+    };
   }
 
   async getNotice(id: string): Promise<SystemNoticeRecord> {
@@ -120,6 +220,11 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
   async deleteNotice(id: string): Promise<{ deleted: true }> {
     this.findNotice(id);
     this.notices = this.notices.filter((notice) => notice.id !== id);
+    for (const key of this.readReceipts.keys()) {
+      if (key.endsWith(`:${id}`)) {
+        this.readReceipts.delete(key);
+      }
+    }
     return { deleted: true };
   }
 
@@ -132,4 +237,35 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
 
     return notice;
   }
+
+  private listVisibleInboxNotices(userId: string): SystemNoticeInboxRecord[] {
+    return this.notices
+      .filter((notice) => isSystemNoticeVisibleInInbox(notice))
+      .map((notice) =>
+        createSystemNoticeInboxRecord(
+          notice,
+          this.readReceipts.get(createReadReceiptKey(userId, notice.id)),
+        ),
+      )
+      .sort(compareSystemNoticeInboxRecords);
+  }
+
+  private findVisibleInboxNotice(
+    userId: string,
+    id: string,
+  ): SystemNoticeInboxRecord {
+    const notice = this.listVisibleInboxNotices(userId).find(
+      (candidate) => candidate.id === id,
+    );
+
+    if (!notice) {
+      throw new NotFoundException(`System notice not found in inbox: ${id}`);
+    }
+
+    return notice;
+  }
+}
+
+function createReadReceiptKey(userId: string, noticeId: string): string {
+  return `${userId}:${noticeId}`;
 }

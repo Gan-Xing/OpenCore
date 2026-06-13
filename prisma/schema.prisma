@@ -7,22 +7,23 @@ datasource db {
 }
 
 model User {
-  id               String      @id @default(cuid())
-  username         String      @unique
+  id               String                    @id @default(cuid())
+  username         String                    @unique
   displayName      String
   passwordHash     String
-  enabled          Boolean     @default(true)
+  enabled          Boolean                   @default(true)
   avatarUrl        String?
-  avatarStorageKey String?     @unique
+  avatarStorageKey String?                   @unique
   avatarMimeType   String?
   avatarSizeBytes  Int?
   avatarUpdatedAt  DateTime?
   deptId           String?
-  dept             SystemDept? @relation(fields: [deptId], references: [id], onDelete: SetNull)
+  dept             SystemDept?               @relation(fields: [deptId], references: [id], onDelete: SetNull)
   roles            UserRole[]
   posts            UserPost[]
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
+  noticeReads      SystemNoticeReadReceipt[]
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
 
   @@index([deptId])
 }
@@ -143,23 +144,38 @@ model SystemConfig {
 }
 
 model SystemNotice {
-  id          String    @id @default(cuid())
-  title       String
-  content     String
-  type        String
-  status      String    @default("draft")
-  audience    String    @default("all")
-  pinned      Boolean   @default(false)
-  validFrom   DateTime?
-  validTo     DateTime?
-  publishedAt DateTime?
-  archivedAt  DateTime?
-  createdBy   String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id           String                    @id @default(cuid())
+  title        String
+  content      String
+  type         String
+  status       String                    @default("draft")
+  audience     String                    @default("all")
+  pinned       Boolean                   @default(false)
+  validFrom    DateTime?
+  validTo      DateTime?
+  publishedAt  DateTime?
+  archivedAt   DateTime?
+  createdBy    String
+  readReceipts SystemNoticeReadReceipt[]
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
 
   @@index([status, type])
   @@index([audience, pinned])
+}
+
+model SystemNoticeReadReceipt {
+  id        String       @id @default(cuid())
+  noticeId  String
+  userId    String
+  notice    SystemNotice @relation(fields: [noticeId], references: [id], onDelete: Cascade)
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  readAt    DateTime     @default(now())
+  createdAt DateTime     @default(now())
+
+  @@unique([noticeId, userId])
+  @@index([userId, readAt])
+  @@index([noticeId, readAt])
 }
 
 model SystemDept {

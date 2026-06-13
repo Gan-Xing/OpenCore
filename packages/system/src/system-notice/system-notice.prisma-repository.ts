@@ -7,21 +7,29 @@ import type { PageResult } from '@opencore/common';
 import { PrismaService } from '@opencore/database';
 import type {
   CreateSystemNoticeDto,
+  MarkSystemNoticesReadDto,
   UpdateSystemNoticeDto,
 } from './system-notice.dto';
 import type { SystemNoticeRecord } from './system-notice.records';
 import {
   assertNoticeCanPublish,
   assertNoticeNotArchived,
+  createSystemNoticeInboxRecord,
   createSystemNoticePageResult,
   normalizeCreateSystemNoticeInput,
+  normalizeMarkSystemNoticesReadInput,
+  normalizeSystemNoticeInboxFilters,
   normalizeSystemNoticeFilters,
   normalizeSystemNoticePageQuery,
+  normalizeUnreadNoticeLimit,
   normalizeUpdateSystemNoticeInput,
   SystemNoticeRepository,
   toSystemNoticeAudience,
   toSystemNoticeStatus,
   toSystemNoticeType,
+  type SystemNoticeInboxPageQuery,
+  type SystemNoticeInboxRecord,
+  type SystemNoticeReadMutationResult,
   type SystemNoticePageQuery,
 } from './system-notice.repository';
 
@@ -40,6 +48,12 @@ type PrismaSystemNotice = {
   createdBy: string;
   createdAt: Date;
   updatedAt: Date;
+};
+
+type PrismaSystemNoticeWithReadReceipt = PrismaSystemNotice & {
+  readReceipts: readonly {
+    readAt: Date;
+  }[];
 };
 
 @Injectable()
@@ -75,6 +89,129 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
       rows.map(toSystemNoticeRecord),
       pagination,
     );
+  }
+
+  async listNoticeInbox(
+    userId: string,
+    query: SystemNoticeInboxPageQuery = {},
+  ): Promise<PageResult<SystemNoticeInboxRecord>> {
+    const filters = normalizeSystemNoticeInboxFilters(query);
+    const where = createInboxWhere(userId, filters);
+    const total = await this.prisma.systemNotice.count({ where });
+    const pagination = normalizeSystemNoticePageQuery(query, total);
+    const rows = await this.prisma.systemNotice.findMany({
+      where,
+      include: createReadReceiptInclude(userId),
+      orderBy: [
+        { pinned: 'desc' },
+        { publishedAt: 'desc' },
+        { createdAt: 'desc' },
+        { title: 'asc' },
+      ],
+      skip: pagination.skip,
+      take: pagination.take,
+    });
+
+    return createSystemNoticePageResult(
+      rows.map(toSystemNoticeInboxRecord),
+      pagination,
+    );
+  }
+
+  async getNoticeInboxItem(
+    userId: string,
+    id: string,
+  ): Promise<SystemNoticeInboxRecord> {
+    const notice = await this.prisma.systemNotice.findFirst({
+      where: {
+        id,
+        ...createInboxWhere(userId, {}),
+      },
+      include: createReadReceiptInclude(userId),
+    });
+
+    if (!notice) {
+      throw new NotFoundException(`System notice not found in inbox: ${id}`);
+    }
+
+    return toSystemNoticeInboxRecord(notice);
+  }
+
+  async listUnreadNoticeInbox(
+    userId: string,
+    limit?: number | string,
+  ): Promise<readonly SystemNoticeInboxRecord[]> {
+    const take = normalizeUnreadNoticeLimit(limit);
+    const rows = await this.prisma.systemNotice.findMany({
+      where: createInboxWhere(userId, { readStatus: false }),
+      include: createReadReceiptInclude(userId),
+      orderBy: [
+        { pinned: 'desc' },
+        { publishedAt: 'desc' },
+        { createdAt: 'desc' },
+        { title: 'asc' },
+      ],
+      take,
+    });
+
+    return rows.map(toSystemNoticeInboxRecord);
+  }
+
+  async countUnreadNoticeInbox(userId: string): Promise<number> {
+    return this.prisma.systemNotice.count({
+      where: createInboxWhere(userId, { readStatus: false }),
+    });
+  }
+
+  async markNoticesRead(
+    userId: string,
+    body: MarkSystemNoticesReadDto,
+  ): Promise<SystemNoticeReadMutationResult> {
+    const ids = normalizeMarkSystemNoticesReadInput(body);
+    await this.assertInboxNoticeIdsVisible(userId, ids);
+    const now = new Date();
+    const result = await this.prisma.systemNoticeReadReceipt.createMany({
+      data: ids.map((noticeId) => ({
+        noticeId,
+        userId,
+        readAt: now,
+      })),
+      skipDuplicates: true,
+    });
+
+    return {
+      ids,
+      markedReadCount: result.count,
+      unreadCount: await this.countUnreadNoticeInbox(userId),
+    };
+  }
+
+  async markAllNoticesRead(
+    userId: string,
+  ): Promise<SystemNoticeReadMutationResult> {
+    const unreadRows = await this.prisma.systemNotice.findMany({
+      where: createInboxWhere(userId, { readStatus: false }),
+      select: { id: true },
+    });
+    const ids = unreadRows.map((row) => row.id);
+    const now = new Date();
+    const result =
+      ids.length === 0
+        ? { count: 0 }
+        : await this.prisma.systemNoticeReadReceipt.createMany({
+            data: ids.map((noticeId) => ({
+              noticeId,
+              userId,
+              readAt: now,
+            })),
+            skipDuplicates: true,
+          });
+
+    return {
+      ids,
+      markedReadCount: result.count,
+      unreadCount: await this.countUnreadNoticeInbox(userId),
+    };
   }
 
   async getNotice(id: string): Promise<SystemNoticeRecord> {
@@ -169,6 +306,27 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
 
     return notice;
   }
+
+  private async assertInboxNoticeIdsVisible(
+    userId: string,
+    ids: readonly string[],
+  ): Promise<void> {
+    const rows = await this.prisma.systemNotice.findMany({
+      where: {
+        id: { in: [...ids] },
+        ...createInboxWhere(userId, {}),
+      },
+      select: { id: true },
+    });
+    const foundIds = new Set(rows.map((row) => row.id));
+    const missingId = ids.find((id) => !foundIds.has(id));
+
+    if (missingId) {
+      throw new NotFoundException(
+        `System notice not found in inbox: ${missingId}`,
+      );
+    }
+  }
 }
 
 function toSystemNoticeRecord(notice: PrismaSystemNotice): SystemNoticeRecord {
@@ -187,5 +345,49 @@ function toSystemNoticeRecord(notice: PrismaSystemNotice): SystemNoticeRecord {
     createdBy: notice.createdBy,
     createdAt: notice.createdAt.toISOString(),
     updatedAt: notice.updatedAt.toISOString(),
+  };
+}
+
+function toSystemNoticeInboxRecord(
+  notice: PrismaSystemNoticeWithReadReceipt,
+): SystemNoticeInboxRecord {
+  return createSystemNoticeInboxRecord(
+    toSystemNoticeRecord(notice),
+    notice.readReceipts[0]?.readAt.toISOString(),
+  );
+}
+
+function createInboxWhere(
+  userId: string,
+  filters: { readStatus?: boolean; type?: string },
+) {
+  return {
+    status: 'published',
+    audience: { in: ['all', 'admin'] },
+    ...(filters.type ? { type: filters.type } : {}),
+    AND: [
+      {
+        OR: [{ validFrom: null }, { validFrom: { lte: new Date() } }],
+      },
+      {
+        OR: [{ validTo: null }, { validTo: { gte: new Date() } }],
+      },
+      ...(filters.readStatus === true
+        ? [{ readReceipts: { some: { userId } } }]
+        : []),
+      ...(filters.readStatus === false
+        ? [{ readReceipts: { none: { userId } } }]
+        : []),
+    ],
+  };
+}
+
+function createReadReceiptInclude(userId: string) {
+  return {
+    readReceipts: {
+      where: { userId },
+      select: { readAt: true },
+      take: 1,
+    },
   };
 }

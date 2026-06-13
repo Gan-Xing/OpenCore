@@ -1,5 +1,8 @@
 import 'reflect-metadata';
-import { REQUIRED_PERMISSIONS_KEY } from '../rbac/permissions.decorator';
+import {
+  REQUIRED_PERMISSIONS_KEY,
+  REQUIRE_AUTHENTICATED_KEY,
+} from '../rbac/permissions.decorator';
 import { SystemManagementController } from './system-management.controller';
 
 const expectedPermissions = {
@@ -72,6 +75,15 @@ const expectedPublicConsumerMethods = [
   'listPostOptions',
 ] as const;
 
+const expectedAuthenticatedConsumerMethods = [
+  'countUnreadNoticeInbox',
+  'getNoticeInboxItem',
+  'listNoticeInbox',
+  'listUnreadNoticeInbox',
+  'markAllNoticesRead',
+  'markNoticesRead',
+] as const;
+
 describe('SystemManagementController permission matrix', () => {
   it('guards every S7 route with registry permission codes', () => {
     for (const [methodName, permissions] of Object.entries(
@@ -96,6 +108,23 @@ describe('SystemManagementController permission matrix', () => {
           SystemManagementController.prototype[methodName],
         ),
       ).toBeUndefined();
+    }
+  });
+
+  it('keeps notice inbox routes authenticated without management permissions', () => {
+    for (const methodName of expectedAuthenticatedConsumerMethods) {
+      expect(
+        Reflect.getMetadata(
+          REQUIRED_PERMISSIONS_KEY,
+          SystemManagementController.prototype[methodName],
+        ),
+      ).toBeUndefined();
+      expect(
+        Reflect.getMetadata(
+          REQUIRE_AUTHENTICATED_KEY,
+          SystemManagementController.prototype[methodName],
+        ),
+      ).toBe(true);
     }
   });
 });

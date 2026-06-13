@@ -142,6 +142,16 @@ describe('createSystemManagementClient', () => {
       status: 'draft',
       type: 'maintenance',
     });
+    await client.listNoticeInbox('token', {
+      page: 1,
+      pageSize: 5,
+      readStatus: false,
+    });
+    await client.getNoticeInboxItem('token', 'notice_welcome');
+    await client.listUnreadNotices('token', 10);
+    await client.getNoticeUnreadCount('token');
+    await client.markNoticesRead('token', { ids: ['notice_welcome'] });
+    await client.markAllNoticesRead('token');
     await client.getNotice('token', 'notice_1');
     await client.createNotice('token', {
       title: 'Maintenance',
@@ -369,6 +379,32 @@ describe('createSystemManagementClient', () => {
       },
       {
         path: '/core/notices?page=1&pageSize=10&status=draft&type=maintenance',
+        token: 'token',
+      },
+      {
+        path: '/core/notices/inbox?page=1&pageSize=5&readStatus=false',
+        token: 'token',
+      },
+      {
+        path: '/core/notices/inbox/notice_welcome',
+        token: 'token',
+      },
+      {
+        path: '/core/notices/inbox/unread-list?limit=10',
+        token: 'token',
+      },
+      {
+        path: '/core/notices/inbox/unread-count',
+        token: 'token',
+      },
+      {
+        path: '/core/notices/inbox/read',
+        method: 'POST',
+        token: 'token',
+      },
+      {
+        path: '/core/notices/inbox/read-all',
+        method: 'POST',
         token: 'token',
       },
       {

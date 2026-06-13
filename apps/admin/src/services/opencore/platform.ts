@@ -58,12 +58,17 @@ import {
   type LoginLogCleanSummary,
   type LoginLogSummary,
   type LoginUnlockSummary,
+  type MarkSystemNoticesReadRequest,
   type KickOutSessionRequest,
   type ListUsersRequest,
   type OnlineUserQueryRequest,
   type OnlineUserSessionSummary,
   type SystemNoticeQueryRequest,
+  type SystemNoticeInboxQueryRequest,
+  type SystemNoticeInboxSummary,
+  type SystemNoticeReadMutationSummary,
   type SystemNoticeSummary,
+  type SystemNoticeUnreadCountSummary,
   type SystemPostBatchMutationSummary,
   type SystemPostOptionSummary,
   type SystemPostOrderMutationSummary,
@@ -716,6 +721,45 @@ export async function listOpenCoreSystemNotices(
     query,
   );
   return [...page.items];
+}
+
+export async function listOpenCoreSystemNoticeInbox(
+  query?: SystemNoticeInboxQueryRequest,
+): Promise<SystemNoticeInboxSummary[]> {
+  const page = await systemManagementClient.listNoticeInbox(
+    getRequiredAdminToken(),
+    query,
+  );
+  return [...page.items];
+}
+
+export function getOpenCoreSystemNoticeInboxItem(
+  id: string,
+): Promise<SystemNoticeInboxSummary> {
+  return systemManagementClient.getNoticeInboxItem(getRequiredAdminToken(), id);
+}
+
+export function listOpenCoreUnreadSystemNotices(
+  limit?: number,
+): Promise<readonly SystemNoticeInboxSummary[]> {
+  return systemManagementClient.listUnreadNotices(
+    getRequiredAdminToken(),
+    limit,
+  );
+}
+
+export function getOpenCoreSystemNoticeUnreadCount(): Promise<SystemNoticeUnreadCountSummary> {
+  return systemManagementClient.getNoticeUnreadCount(getRequiredAdminToken());
+}
+
+export function markOpenCoreSystemNoticesRead(
+  body: MarkSystemNoticesReadRequest,
+): Promise<SystemNoticeReadMutationSummary> {
+  return systemManagementClient.markNoticesRead(getRequiredAdminToken(), body);
+}
+
+export function markAllOpenCoreSystemNoticesRead(): Promise<SystemNoticeReadMutationSummary> {
+  return systemManagementClient.markAllNoticesRead(getRequiredAdminToken());
 }
 
 export function getOpenCoreSystemNotice(

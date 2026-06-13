@@ -13,6 +13,7 @@ import {
   ErrorBoundary,
   Footer,
   LangDropdown,
+  NoticeBell,
   OfflineBanner,
   VersionDropdown,
 } from '@/components';
@@ -125,6 +126,7 @@ export const layout: RunTimeLayoutConfig = ({
         (initialState?.settings as { locale?: boolean })?.locale !== false;
       return [
         <DocLink key="doc" />,
+        <NoticeBell key="notice" />,
         <VersionDropdown key="version" />,
         localeEnabled && <LangDropdown key="lang" />,
       ].filter(Boolean);

@@ -1,4 +1,5 @@
 import {
+  CheckOutlined,
   DeleteOutlined,
   EditOutlined,
   EyeOutlined,
@@ -15,10 +16,11 @@ import {
 import {
   createSystemNoticeFixtures,
   type SystemNoticeAudience,
+  type SystemNoticeInboxSummary,
   type SystemNoticeSummary,
   type SystemNoticeType,
 } from '@opencore/sdk';
-import { useModel } from '@umijs/max';
+import { useLocation, useModel } from '@umijs/max';
 import {
   Alert,
   Button,
@@ -29,6 +31,7 @@ import {
   Select,
   Space,
   Switch,
+  Tabs,
   Tag,
   Tooltip,
   Typography,
@@ -40,7 +43,11 @@ import {
   createOpenCoreSystemNotice,
   deleteOpenCoreSystemNotice,
   getOpenCoreSystemNotice,
+  getOpenCoreSystemNoticeInboxItem,
+  listOpenCoreSystemNoticeInbox,
   listOpenCoreSystemNotices,
+  markAllOpenCoreSystemNoticesRead,
+  markOpenCoreSystemNoticesRead,
   publishOpenCoreSystemNotice,
   updateOpenCoreSystemNotice,
 } from '@/services/opencore/platform';
@@ -65,6 +72,8 @@ type NoticeFormValues = {
   title: string;
   type: SystemNoticeType;
 };
+
+type NoticeTab = 'manage' | 'inbox';
 
 const fallbackRows = createSystemNoticeFixtures().items;
 const searchFields: CurrentPageSearchField<SystemNoticeSummary>[] = [
@@ -137,6 +146,16 @@ function createDetailFields(record: SystemNoticeSummary): DetailField[] {
   ];
 }
 
+function createInboxDetailFields(
+  record: SystemNoticeInboxSummary,
+): DetailField[] {
+  return [
+    ...createDetailFields(record),
+    { label: 'Read', value: record.read ? 'yes' : 'no' },
+    { label: 'Read At', value: record.readAt },
+  ];
+}
+
 function renderStatus(status: SystemNoticeSummary['status']) {
   const color =
     status === 'published' ? 'green' : status === 'draft' ? 'gold' : 'default';
@@ -149,14 +168,31 @@ function renderType(type: SystemNoticeSummary['type']) {
   return <Tag color={color}>{type}</Tag>;
 }
 
+function getNoticeTabFromSearch(search: string): NoticeTab {
+  return new URLSearchParams(search).get('tab') === 'inbox'
+    ? 'inbox'
+    : 'manage';
+}
+
 export default function SystemNoticesPage() {
   const [form] = Form.useForm<NoticeFormValues>();
+  const location = useLocation();
   const { initialState } = useModel('@@initialState');
+  const [activeTab, setActiveTab] = useState<NoticeTab>(() =>
+    getNoticeTabFromSearch(location.search),
+  );
   const [rows, setRows] =
     useState<readonly SystemNoticeSummary[]>(fallbackRows);
+  const [inboxRows, setInboxRows] = useState<
+    readonly SystemNoticeInboxSummary[]
+  >([]);
   const [loading, setLoading] = useState(true);
+  const [inboxLoading, setInboxLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
+  const [inboxLoadError, setInboxLoadError] = useState<string>();
   const [selectedDetail, setSelectedDetail] = useState<SystemNoticeSummary>();
+  const [selectedInboxDetail, setSelectedInboxDetail] =
+    useState<SystemNoticeInboxSummary>();
   const [editingNotice, setEditingNotice] = useState<SystemNoticeSummary>();
   const [formOpen, setFormOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -189,9 +225,35 @@ export default function SystemNoticesPage() {
     }
   };
 
+  const loadInbox = async () => {
+    setInboxLoading(true);
+    try {
+      const notices = await listOpenCoreSystemNoticeInbox({
+        page: 1,
+        pageSize: 100,
+      });
+      setInboxRows(notices);
+      setInboxLoadError(undefined);
+    } catch (error: unknown) {
+      setInboxRows([]);
+      setInboxLoadError(
+        error instanceof Error
+          ? error.message
+          : 'Unable to load system notice inbox.',
+      );
+    } finally {
+      setInboxLoading(false);
+    }
+  };
+
   useEffect(() => {
     void loadNotices();
+    void loadInbox();
   }, []);
+
+  useEffect(() => {
+    setActiveTab(getNoticeTabFromSearch(location.search));
+  }, [location.search]);
 
   const openCreateForm = () => {
     setEditingNotice(undefined);
@@ -251,6 +313,7 @@ export default function SystemNoticesPage() {
       setFormOpen(false);
       setEditingNotice(undefined);
       await loadNotices();
+      await loadInbox();
     } finally {
       setSubmitting(false);
     }
@@ -260,18 +323,41 @@ export default function SystemNoticesPage() {
     await publishOpenCoreSystemNotice(record.id);
     message.success('System notice published.');
     await loadNotices();
+    await loadInbox();
   };
 
   const archiveNotice = async (record: SystemNoticeSummary) => {
     await archiveOpenCoreSystemNotice(record.id);
     message.success('System notice archived.');
     await loadNotices();
+    await loadInbox();
   };
 
   const deleteNotice = async (record: SystemNoticeSummary) => {
     await deleteOpenCoreSystemNotice(record.id);
     message.success('System notice deleted.');
     await loadNotices();
+    await loadInbox();
+  };
+
+  const openInboxDetail = async (record: SystemNoticeInboxSummary) => {
+    try {
+      setSelectedInboxDetail(await getOpenCoreSystemNoticeInboxItem(record.id));
+    } catch (_error) {
+      setSelectedInboxDetail(record);
+    }
+  };
+
+  const markInboxNoticeRead = async (record: SystemNoticeInboxSummary) => {
+    await markOpenCoreSystemNoticesRead({ ids: [record.id] });
+    message.success('System notice marked read.');
+    await loadInbox();
+  };
+
+  const markAllInboxNoticesRead = async () => {
+    await markAllOpenCoreSystemNoticesRead();
+    message.success('All system notices marked read.');
+    await loadInbox();
   };
 
   const columns: ProColumns<SystemNoticeSummary>[] = [
@@ -391,57 +477,198 @@ export default function SystemNoticesPage() {
     },
   ];
 
+  const inboxColumns: ProColumns<SystemNoticeInboxSummary>[] = [
+    {
+      title: 'Title',
+      dataIndex: 'title',
+      render: (_, record) => (
+        <Typography.Link onClick={() => void openInboxDetail(record)}>
+          {record.title}
+        </Typography.Link>
+      ),
+    },
+    {
+      title: 'Type',
+      dataIndex: 'type',
+      render: (_, record) => renderType(record.type),
+    },
+    {
+      title: 'Read',
+      dataIndex: 'read',
+      render: (_, record) => (
+        <Tag color={record.read ? 'default' : 'red'}>
+          {record.read ? 'read' : 'unread'}
+        </Tag>
+      ),
+    },
+    {
+      title: 'Pinned',
+      dataIndex: 'pinned',
+      render: (_, record) => (
+        <Tag color={record.pinned ? 'blue' : 'default'}>
+          {record.pinned ? 'pinned' : 'normal'}
+        </Tag>
+      ),
+    },
+    { title: 'Published At', dataIndex: 'publishedAt' },
+    {
+      title: 'Actions',
+      valueType: 'option',
+      width: 120,
+      render: (_, record) => (
+        <Space size="small">
+          <Tooltip title="Detail">
+            <Button
+              aria-label={`View inbox notice ${record.title}`}
+              icon={<EyeOutlined />}
+              onClick={() => void openInboxDetail(record)}
+              size="small"
+            />
+          </Tooltip>
+          <Tooltip title={record.read ? 'Already read' : 'Mark read'}>
+            <Button
+              aria-label={`Mark ${record.title} read`}
+              disabled={record.read}
+              icon={<CheckOutlined />}
+              onClick={() => void markInboxNoticeRead(record)}
+              size="small"
+            />
+          </Tooltip>
+        </Space>
+      ),
+    },
+  ];
+
   return (
     <PageContainer title="System Notices" subTitle="S7 System">
-      {loadError ? (
-        <Alert
-          showIcon
-          type="warning"
-          message="Using fallback system notice snapshot"
-          description={loadError}
-          style={{ marginBlockEnd: 16 }}
-        />
-      ) : null}
-      <ProTable<SystemNoticeSummary>
-        rowKey="id"
-        loading={loading}
-        search={false}
-        options={false}
-        toolBarRender={() => [
-          filterToolbar,
-          <Button
-            key="create"
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={openCreateForm}
-          >
-            New
-          </Button>,
-          <Button
-            key="refresh"
-            icon={<ReloadOutlined />}
-            onClick={() => void loadNotices()}
-          >
-            Refresh
-          </Button>,
-          <CurrentPageExportButton<SystemNoticeSummary>
-            key="export"
-            columns={exportColumns}
-            resource="core-notices"
-            rows={filteredRows}
-          />,
+      <Tabs
+        activeKey={activeTab}
+        onChange={(key) => setActiveTab(key as NoticeTab)}
+        items={[
+          {
+            key: 'manage',
+            label: 'Manage',
+            children: (
+              <>
+                {loadError ? (
+                  <Alert
+                    showIcon
+                    type="warning"
+                    message="Using fallback system notice snapshot"
+                    description={loadError}
+                    style={{ marginBlockEnd: 16 }}
+                  />
+                ) : null}
+                <ProTable<SystemNoticeSummary>
+                  rowKey="id"
+                  loading={loading}
+                  search={false}
+                  options={false}
+                  toolBarRender={() => [
+                    filterToolbar,
+                    <Button
+                      key="create"
+                      type="primary"
+                      icon={<PlusOutlined />}
+                      onClick={openCreateForm}
+                    >
+                      New
+                    </Button>,
+                    <Button
+                      key="refresh"
+                      icon={<ReloadOutlined />}
+                      onClick={() => void loadNotices()}
+                    >
+                      Refresh
+                    </Button>,
+                    <CurrentPageExportButton<SystemNoticeSummary>
+                      key="export"
+                      columns={exportColumns}
+                      resource="core-notices"
+                      rows={filteredRows}
+                    />,
+                  ]}
+                  pagination={{
+                    pageSize: 10,
+                  }}
+                  dataSource={filteredRows}
+                  columns={columns}
+                />
+              </>
+            ),
+          },
+          {
+            key: 'inbox',
+            label: `Inbox (${inboxRows.filter((record) => !record.read).length})`,
+            children: (
+              <>
+                {inboxLoadError ? (
+                  <Alert
+                    showIcon
+                    type="warning"
+                    message="Unable to load notice inbox"
+                    description={inboxLoadError}
+                    style={{ marginBlockEnd: 16 }}
+                  />
+                ) : null}
+                <ProTable<SystemNoticeInboxSummary>
+                  rowKey="id"
+                  loading={inboxLoading}
+                  search={false}
+                  options={false}
+                  toolBarRender={() => [
+                    <Button
+                      key="mark-all"
+                      icon={<CheckOutlined />}
+                      onClick={() => void markAllInboxNoticesRead()}
+                      disabled={inboxRows.every((record) => record.read)}
+                    >
+                      Mark all read
+                    </Button>,
+                    <Button
+                      key="refresh"
+                      icon={<ReloadOutlined />}
+                      onClick={() => void loadInbox()}
+                    >
+                      Refresh
+                    </Button>,
+                    <CurrentPageExportButton<SystemNoticeInboxSummary>
+                      key="export"
+                      columns={[
+                        ...exportColumns,
+                        { title: 'Read', dataIndex: 'read' },
+                        { title: 'Read At', dataIndex: 'readAt' },
+                      ]}
+                      resource="core-notice-inbox"
+                      rows={inboxRows}
+                    />,
+                  ]}
+                  pagination={{
+                    pageSize: 10,
+                  }}
+                  dataSource={inboxRows}
+                  columns={inboxColumns}
+                />
+              </>
+            ),
+          },
         ]}
-        pagination={{
-          pageSize: 10,
-        }}
-        dataSource={filteredRows}
-        columns={columns}
       />
       <ReadOnlyDetailDrawer
         fields={selectedDetail ? createDetailFields(selectedDetail) : []}
         onClose={() => setSelectedDetail(undefined)}
         open={Boolean(selectedDetail)}
         title={selectedDetail?.title ?? 'System Notice Detail'}
+      />
+      <ReadOnlyDetailDrawer
+        fields={
+          selectedInboxDetail
+            ? createInboxDetailFields(selectedInboxDetail)
+            : []
+        }
+        onClose={() => setSelectedInboxDetail(undefined)}
+        open={Boolean(selectedInboxDetail)}
+        title={selectedInboxDetail?.title ?? 'System Notice Inbox Detail'}
       />
       <Modal
         title={editingNotice ? 'Edit System Notice' : 'New System Notice'}

@@ -138,6 +138,12 @@ run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$BASE_URL" \
   OPENCORE_SMOKE_PORT="$SMOKE_PORT" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
+  node "$ROOT_DIR/tools/scripts/smoke-core-notice.mjs"
+
+run_with_env env \
+  OPENCORE_SMOKE_BASE_URL="$BASE_URL" \
+  OPENCORE_SMOKE_PORT="$SMOKE_PORT" \
+  OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
   node "$ROOT_DIR/tools/scripts/smoke-core-dept.mjs"
 
 run_with_env env \

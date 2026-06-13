@@ -37,8 +37,13 @@ export {
   SystemConfigValueDto,
   SystemConfigValueQueryDto,
   SystemNoticeDto,
+  SystemNoticeInboxItemDto,
+  SystemNoticeInboxPageDto,
+  SystemNoticeInboxQueryDto,
   SystemNoticePageDto,
   SystemNoticeQueryDto,
+  SystemNoticeReadMutationResultDto,
+  SystemNoticeUnreadCountDto,
   SystemPostDto,
   SystemPostBatchMutationResultDto,
   SystemPostOrderMutationResultDto,
@@ -53,6 +58,7 @@ export {
   UpdateSystemConfigDto,
   UpdateSystemNoticeDto,
   UpdateSystemPostDto,
+  MarkSystemNoticesReadDto,
 } from '@opencore/system';
 
 export class PageQueryDto {

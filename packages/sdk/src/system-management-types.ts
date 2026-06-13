@@ -320,10 +320,34 @@ export type SystemNoticeSummary = {
   updatedAt: string;
 };
 
+export type SystemNoticeInboxSummary = SystemNoticeSummary & {
+  read: boolean;
+  readAt?: string;
+};
+
 export type SystemNoticeQueryRequest = PageRequest & {
   audience?: SystemNoticeAudience;
   status?: SystemNoticeStatus;
   type?: SystemNoticeType;
+};
+
+export type SystemNoticeInboxQueryRequest = PageRequest & {
+  readStatus?: boolean;
+  type?: SystemNoticeType;
+};
+
+export type MarkSystemNoticesReadRequest = {
+  ids: readonly string[];
+};
+
+export type SystemNoticeReadMutationSummary = {
+  markedReadCount: number;
+  ids: readonly string[];
+  unreadCount: number;
+};
+
+export type SystemNoticeUnreadCountSummary = {
+  unreadCount: number;
 };
 
 export type CreateSystemNoticeRequest = {

@@ -61,6 +61,8 @@ console.log(
 );
 
 function findGeneratedClientDir(clientPackageDirs, workspaceSchema) {
+  const workspaceModelNames = getModelNames(workspaceSchema);
+
   for (const clientPackageDir of clientPackageDirs) {
     const clientNodeModulesDir = resolve(clientPackageDir, '..', '..');
     const generatedClientDir = join(clientNodeModulesDir, '.prisma', 'client');
@@ -76,7 +78,39 @@ function findGeneratedClientDir(clientPackageDirs, workspaceSchema) {
     }
   }
 
+  for (const clientPackageDir of clientPackageDirs) {
+    const clientNodeModulesDir = resolve(clientPackageDir, '..', '..');
+    const generatedClientDir = join(clientNodeModulesDir, '.prisma', 'client');
+    const generatedSchemaPath = join(generatedClientDir, 'schema.prisma');
+    const generatedIndexPath = join(generatedClientDir, 'index.d.ts');
+
+    if (!existsSync(generatedSchemaPath) || !existsSync(generatedIndexPath)) {
+      continue;
+    }
+
+    const generatedSchema = readFileSync(generatedSchemaPath, 'utf8');
+    const generatedIndex = readFileSync(generatedIndexPath, 'utf8');
+    const generatedModelNames = new Set(getModelNames(generatedSchema));
+
+    if (
+      workspaceModelNames.every((modelName) =>
+        generatedModelNames.has(modelName),
+      ) &&
+      workspaceModelNames.every((modelName) =>
+        generatedIndex.includes(`Model ${modelName}`),
+      )
+    ) {
+      return generatedClientDir;
+    }
+  }
+
   throw new Error(
     'Unable to find a generated Prisma client matching prisma/schema.prisma. Run `prisma generate --schema prisma/schema.prisma` first.',
+  );
+}
+
+function getModelNames(schema) {
+  return [...schema.matchAll(/^model\s+([A-Za-z][A-Za-z0-9_]*)\s+\{/gm)].map(
+    (match) => match[1],
   );
 }

@@ -24,6 +24,7 @@ import type {
   LoginLogCleanSummary,
   LoginLogSummary,
   LoginUnlockSummary,
+  MarkSystemNoticesReadRequest,
   PageRequest,
   PageResponse,
   SystemConfigBatchMutationSummary,
@@ -36,8 +37,12 @@ import type {
   SystemDeptQueryRequest,
   SystemDeptSummary,
   SystemDeptTreeSummary,
+  SystemNoticeInboxQueryRequest,
+  SystemNoticeInboxSummary,
   SystemNoticeQueryRequest,
+  SystemNoticeReadMutationSummary,
   SystemNoticeSummary,
+  SystemNoticeUnreadCountSummary,
   SystemPostBatchMutationSummary,
   SystemPostOrderMutationSummary,
   SystemPostOptionSummary,
@@ -213,6 +218,28 @@ export type SystemManagementClient = {
     token: Token,
     query?: SystemNoticeQueryRequest,
   ) => Promise<PageResponse<SystemNoticeSummary>>;
+  listNoticeInbox: (
+    token: Token,
+    query?: SystemNoticeInboxQueryRequest,
+  ) => Promise<PageResponse<SystemNoticeInboxSummary>>;
+  getNoticeInboxItem: (
+    token: Token,
+    id: string,
+  ) => Promise<SystemNoticeInboxSummary>;
+  listUnreadNotices: (
+    token: Token,
+    limit?: number,
+  ) => Promise<readonly SystemNoticeInboxSummary[]>;
+  getNoticeUnreadCount: (
+    token: Token,
+  ) => Promise<SystemNoticeUnreadCountSummary>;
+  markNoticesRead: (
+    token: Token,
+    body: MarkSystemNoticesReadRequest,
+  ) => Promise<SystemNoticeReadMutationSummary>;
+  markAllNoticesRead: (
+    token: Token,
+  ) => Promise<SystemNoticeReadMutationSummary>;
   getNotice: (token: Token, id: string) => Promise<SystemNoticeSummary>;
   exportNotices: (
     token: Token,
@@ -525,6 +552,45 @@ export function createSystemManagementClient(
           token,
         },
       ),
+    listNoticeInbox: (token, query) =>
+      request<PageResponse<SystemNoticeInboxSummary>>(
+        withQuery('/core/notices/inbox', query),
+        {
+          token,
+        },
+      ),
+    getNoticeInboxItem: (token, id) =>
+      request<SystemNoticeInboxSummary>(
+        `/core/notices/inbox/${encodeURIComponent(id)}`,
+        {
+          token,
+        },
+      ),
+    listUnreadNotices: (token, limit) =>
+      request<readonly SystemNoticeInboxSummary[]>(
+        withQuery('/core/notices/inbox/unread-list', { limit }),
+        {
+          token,
+        },
+      ),
+    getNoticeUnreadCount: (token) =>
+      request<SystemNoticeUnreadCountSummary>(
+        '/core/notices/inbox/unread-count',
+        {
+          token,
+        },
+      ),
+    markNoticesRead: (token, body) =>
+      request<SystemNoticeReadMutationSummary>('/core/notices/inbox/read', {
+        method: 'POST',
+        body,
+        token,
+      }),
+    markAllNoticesRead: (token) =>
+      request<SystemNoticeReadMutationSummary>('/core/notices/inbox/read-all', {
+        method: 'POST',
+        token,
+      }),
     getNotice: (token, id) =>
       request<SystemNoticeSummary>(`/core/notices/${encodeURIComponent(id)}`, {
         token,

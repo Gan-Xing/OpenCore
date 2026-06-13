@@ -2022,6 +2022,180 @@
         "tags": ["SystemManagement", "Core System Notices"]
       }
     },
+    "/api/core/notices/inbox": {
+      "get": {
+        "operationId": "SystemManagementController_listNoticeInbox",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["announcement", "maintenance", "security"]
+            }
+          },
+          {
+            "name": "readStatus",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemNoticeInboxPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Notices"]
+      }
+    },
+    "/api/core/notices/inbox/unread-list": {
+      "get": {
+        "operationId": "SystemManagementController_listUnreadNoticeInbox",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SystemNoticeInboxItemDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Notices"]
+      }
+    },
+    "/api/core/notices/inbox/unread-count": {
+      "get": {
+        "operationId": "SystemManagementController_countUnreadNoticeInbox",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemNoticeUnreadCountDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Notices"]
+      }
+    },
+    "/api/core/notices/inbox/read": {
+      "post": {
+        "operationId": "SystemManagementController_markNoticesRead",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarkSystemNoticesReadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemNoticeReadMutationResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Notices"]
+      }
+    },
+    "/api/core/notices/inbox/read-all": {
+      "post": {
+        "operationId": "SystemManagementController_markAllNoticesRead",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemNoticeReadMutationResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Notices"]
+      }
+    },
+    "/api/core/notices/inbox/{id}": {
+      "get": {
+        "operationId": "SystemManagementController_getNoticeInboxItem",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemNoticeInboxItemDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Notices"]
+      }
+    },
     "/api/core/notices/{id}": {
       "get": {
         "operationId": "SystemManagementController_getNotice",
@@ -6629,6 +6803,81 @@
           "totalPages": { "type": "number" }
         },
         "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "SystemNoticeInboxItemDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "content": { "type": "string" },
+          "type": {
+            "type": "string",
+            "enum": ["announcement", "maintenance", "security"]
+          },
+          "status": {
+            "type": "string",
+            "enum": ["draft", "published", "archived"]
+          },
+          "audience": { "type": "string", "enum": ["all", "admin"] },
+          "pinned": { "type": "boolean" },
+          "validFrom": { "type": "string" },
+          "validTo": { "type": "string" },
+          "publishedAt": { "type": "string" },
+          "archivedAt": { "type": "string" },
+          "createdBy": { "type": "string" },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" },
+          "read": { "type": "boolean" },
+          "readAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "title",
+          "content",
+          "type",
+          "status",
+          "audience",
+          "pinned",
+          "createdBy",
+          "createdAt",
+          "updatedAt",
+          "read"
+        ]
+      },
+      "SystemNoticeInboxPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SystemNoticeInboxItemDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "SystemNoticeUnreadCountDto": {
+        "type": "object",
+        "properties": { "unreadCount": { "type": "number" } },
+        "required": ["unreadCount"]
+      },
+      "MarkSystemNoticesReadDto": {
+        "type": "object",
+        "properties": {
+          "ids": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["ids"]
+      },
+      "SystemNoticeReadMutationResultDto": {
+        "type": "object",
+        "properties": {
+          "markedReadCount": { "type": "number" },
+          "ids": { "type": "array", "items": { "type": "string" } },
+          "unreadCount": { "type": "number" }
+        },
+        "required": ["markedReadCount", "ids", "unreadCount"]
       },
       "CreateSystemNoticeDto": {
         "type": "object",

@@ -9,7 +9,9 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   Res,
+  UnauthorizedException,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -29,8 +31,14 @@ import {
   SystemNoticeService,
   SystemPostService,
 } from '@opencore/system';
-import { SecurityLoginLockoutRepository } from '@opencore/security';
-import { RequirePermission } from '../rbac/permissions.decorator';
+import {
+  SecurityLoginLockoutRepository,
+  type SecurityRequestWithAuth,
+} from '@opencore/security';
+import {
+  RequireAuthenticated,
+  RequirePermission,
+} from '../rbac/permissions.decorator';
 import {
   AuditLogPageDto,
   AuditLogQueryDto,
@@ -73,8 +81,13 @@ import {
   SystemConfigValueDto,
   SystemConfigValueQueryDto,
   SystemNoticeDto,
+  SystemNoticeInboxItemDto,
+  SystemNoticeInboxPageDto,
+  SystemNoticeInboxQueryDto,
   SystemNoticePageDto,
   SystemNoticeQueryDto,
+  SystemNoticeReadMutationResultDto,
+  SystemNoticeUnreadCountDto,
   SystemPostBatchMutationResultDto,
   SystemPostDto,
   SystemPostOrderMutationResultDto,
@@ -93,6 +106,7 @@ import {
   UpdateSystemPostDto,
   UnlockLoginUserDto,
   AuditLogDto,
+  MarkSystemNoticesReadDto,
 } from './system-management.dto';
 import { SystemManagementRepository } from './system-management.repository';
 
@@ -100,6 +114,8 @@ type DownloadResponse = {
   send(body: Buffer): void;
   set(headers: Record<string, string>): void;
 };
+
+type RequestWithUser = SecurityRequestWithAuth;
 
 @ApiBearerAuth()
 @Controller('core')
@@ -333,6 +349,77 @@ export class SystemManagementController {
     @Query() query: SystemNoticeQueryDto,
   ): Promise<ExportPreviewDto> {
     return this.notices.createExportPreview(query);
+  }
+
+  @Get('notices/inbox')
+  @ApiTags('Core System Notices')
+  @RequireAuthenticated()
+  @ApiOkResponse({ type: SystemNoticeInboxPageDto })
+  listNoticeInbox(
+    @Query() query: SystemNoticeInboxQueryDto,
+    @Req() request: RequestWithUser,
+  ): Promise<SystemNoticeInboxPageDto> {
+    return this.notices.listNoticeInbox(getAuthenticatedUserId(request), query);
+  }
+
+  @Get('notices/inbox/unread-list')
+  @ApiTags('Core System Notices')
+  @RequireAuthenticated()
+  @ApiOkResponse({ type: [SystemNoticeInboxItemDto] })
+  listUnreadNoticeInbox(
+    @Query('limit') limit: number | string | undefined,
+    @Req() request: RequestWithUser,
+  ): Promise<readonly SystemNoticeInboxItemDto[]> {
+    return this.notices.listUnreadNoticeInbox(
+      getAuthenticatedUserId(request),
+      limit,
+    );
+  }
+
+  @Get('notices/inbox/unread-count')
+  @ApiTags('Core System Notices')
+  @RequireAuthenticated()
+  @ApiOkResponse({ type: SystemNoticeUnreadCountDto })
+  async countUnreadNoticeInbox(
+    @Req() request: RequestWithUser,
+  ): Promise<SystemNoticeUnreadCountDto> {
+    return {
+      unreadCount: await this.notices.countUnreadNoticeInbox(
+        getAuthenticatedUserId(request),
+      ),
+    };
+  }
+
+  @Post('notices/inbox/read')
+  @ApiTags('Core System Notices')
+  @RequireAuthenticated()
+  @ApiOkResponse({ type: SystemNoticeReadMutationResultDto })
+  markNoticesRead(
+    @Req() request: RequestWithUser,
+    @Body() body: MarkSystemNoticesReadDto,
+  ): Promise<SystemNoticeReadMutationResultDto> {
+    return this.notices.markNoticesRead(getAuthenticatedUserId(request), body);
+  }
+
+  @Post('notices/inbox/read-all')
+  @ApiTags('Core System Notices')
+  @RequireAuthenticated()
+  @ApiOkResponse({ type: SystemNoticeReadMutationResultDto })
+  markAllNoticesRead(
+    @Req() request: RequestWithUser,
+  ): Promise<SystemNoticeReadMutationResultDto> {
+    return this.notices.markAllNoticesRead(getAuthenticatedUserId(request));
+  }
+
+  @Get('notices/inbox/:id')
+  @ApiTags('Core System Notices')
+  @RequireAuthenticated()
+  @ApiOkResponse({ type: SystemNoticeInboxItemDto })
+  getNoticeInboxItem(
+    @Param('id') id: string,
+    @Req() request: RequestWithUser,
+  ): Promise<SystemNoticeInboxItemDto> {
+    return this.notices.getNoticeInboxItem(getAuthenticatedUserId(request), id);
   }
 
   @Get('notices/:id')
@@ -720,6 +807,16 @@ export class SystemManagementController {
   getLoginLog(@Param('id') id: string): Promise<LoginLogDto> {
     return this.loginLogs.getLoginLog(id);
   }
+}
+
+function getAuthenticatedUserId(request: RequestWithUser): string {
+  const userId = request.user?.id;
+
+  if (!userId) {
+    throw new UnauthorizedException('Missing authenticated user');
+  }
+
+  return userId;
 }
 
 function decodeBase64FileContent(contentBase64: string): Buffer {

@@ -388,6 +388,11 @@ if (
   !opencorePlatformService.includes('deleteOpenCoreSystemPost') ||
   !opencorePlatformService.includes('deleteOpenCoreSystemPosts') ||
   !opencorePlatformService.includes('listOpenCoreSystemNotices') ||
+  !opencorePlatformService.includes('listOpenCoreSystemNoticeInbox') ||
+  !opencorePlatformService.includes('listOpenCoreUnreadSystemNotices') ||
+  !opencorePlatformService.includes('getOpenCoreSystemNoticeUnreadCount') ||
+  !opencorePlatformService.includes('markOpenCoreSystemNoticesRead') ||
+  !opencorePlatformService.includes('markAllOpenCoreSystemNoticesRead') ||
   !opencorePlatformService.includes('publishOpenCoreSystemNotice') ||
   !opencorePlatformService.includes('archiveOpenCoreSystemNotice')
 ) {
@@ -567,6 +572,10 @@ const configPage = readFileSync(
 );
 const systemNoticesPage = readFileSync(
   resolve(root, 'src/pages/System/Notices.tsx'),
+  'utf8',
+);
+const noticeBell = readFileSync(
+  resolve(root, 'src/components/RightContent/NoticeBell.tsx'),
   'utf8',
 );
 const departmentsPage = readFileSync(
@@ -1069,11 +1078,18 @@ if (
 
 if (
   !systemNoticesPage.includes('listOpenCoreSystemNotices') ||
+  !systemNoticesPage.includes('listOpenCoreSystemNoticeInbox') ||
+  !systemNoticesPage.includes('getOpenCoreSystemNoticeInboxItem') ||
+  !systemNoticesPage.includes('markOpenCoreSystemNoticesRead') ||
+  !systemNoticesPage.includes('markAllOpenCoreSystemNoticesRead') ||
   !systemNoticesPage.includes('createOpenCoreSystemNotice') ||
   !systemNoticesPage.includes('updateOpenCoreSystemNotice') ||
   !systemNoticesPage.includes('publishOpenCoreSystemNotice') ||
   !systemNoticesPage.includes('archiveOpenCoreSystemNotice') ||
   !systemNoticesPage.includes('deleteOpenCoreSystemNotice') ||
+  !systemNoticesPage.includes("key: 'inbox'") ||
+  !systemNoticesPage.includes('Mark all read') ||
+  !systemNoticesPage.includes('System Notice Inbox Detail') ||
   !systemNoticesPage.includes('useCurrentPageFilters') ||
   !systemNoticesPage.includes('CurrentPageExportButton') ||
   !systemNoticesPage.includes('dataSource={filteredRows}') ||
@@ -1081,6 +1097,20 @@ if (
 ) {
   throw new Error(
     'System Notices page must use live SDK lifecycle actions with bounded filtering and current-page export.',
+  );
+}
+
+if (
+  !appRuntime.includes('<NoticeBell key="notice" />') ||
+  !noticeBell.includes('getOpenCoreSystemNoticeUnreadCount') ||
+  !noticeBell.includes('listOpenCoreUnreadSystemNotices') ||
+  !noticeBell.includes('markOpenCoreSystemNoticesRead') ||
+  !noticeBell.includes('markAllOpenCoreSystemNoticesRead') ||
+  !noticeBell.includes('/system/notices?tab=inbox') ||
+  !noticeBell.includes('System notice inbox')
+) {
+  throw new Error(
+    'Admin header must expose the live System Notice inbox badge and read actions.',
   );
 }
 

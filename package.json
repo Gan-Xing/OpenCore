@@ -47,6 +47,7 @@
     "smoke:core-file": "node tools/scripts/smoke-core-file.mjs",
     "smoke:core-login-log": "node tools/scripts/smoke-core-login-log.mjs",
     "smoke:core-menu": "node tools/scripts/smoke-core-menu.mjs",
+    "smoke:core-notice": "node tools/scripts/smoke-core-notice.mjs",
     "smoke:core-online-user": "node tools/scripts/smoke-core-online-user.mjs",
     "smoke:core-post": "node tools/scripts/smoke-core-post.mjs",
     "smoke:core-role": "node tools/scripts/smoke-core-role.mjs",

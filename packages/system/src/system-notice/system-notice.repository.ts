@@ -6,6 +6,7 @@ import {
   type PageResult,
 } from '@opencore/common';
 import type {
+  MarkSystemNoticesReadDto,
   CreateSystemNoticeDto,
   UpdateSystemNoticeDto,
 } from './system-notice.dto';
@@ -30,10 +31,31 @@ export type SystemNoticePageQuery = PageQueryInput & {
   type?: string;
 };
 
+export type SystemNoticeInboxPageQuery = PageQueryInput & {
+  readStatus?: boolean | string;
+  type?: string;
+};
+
 export type SystemNoticeFilters = {
   audience?: SystemNoticeAudience;
   status?: SystemNoticeStatus;
   type?: SystemNoticeType;
+};
+
+export type SystemNoticeInboxFilters = {
+  readStatus?: boolean;
+  type?: SystemNoticeType;
+};
+
+export type SystemNoticeInboxRecord = SystemNoticeRecord & {
+  read: boolean;
+  readAt?: string;
+};
+
+export type SystemNoticeReadMutationResult = {
+  markedReadCount: number;
+  ids: readonly string[];
+  unreadCount: number;
 };
 
 export type SystemNoticeNormalizedPageQuery = {
@@ -79,6 +101,32 @@ export abstract class SystemNoticeRepository {
     query?: SystemNoticePageQuery,
   ): Promise<PageResult<SystemNoticeRecord>>;
 
+  abstract listNoticeInbox(
+    userId: string,
+    query?: SystemNoticeInboxPageQuery,
+  ): Promise<PageResult<SystemNoticeInboxRecord>>;
+
+  abstract getNoticeInboxItem(
+    userId: string,
+    id: string,
+  ): Promise<SystemNoticeInboxRecord>;
+
+  abstract listUnreadNoticeInbox(
+    userId: string,
+    limit?: number | string,
+  ): Promise<readonly SystemNoticeInboxRecord[]>;
+
+  abstract countUnreadNoticeInbox(userId: string): Promise<number>;
+
+  abstract markNoticesRead(
+    userId: string,
+    body: MarkSystemNoticesReadDto,
+  ): Promise<SystemNoticeReadMutationResult>;
+
+  abstract markAllNoticesRead(
+    userId: string,
+  ): Promise<SystemNoticeReadMutationResult>;
+
   abstract getNotice(id: string): Promise<SystemNoticeRecord>;
 
   abstract createNotice(
@@ -107,6 +155,15 @@ export function normalizeSystemNoticeFilters(
   };
 }
 
+export function normalizeSystemNoticeInboxFilters(
+  query: SystemNoticeInboxPageQuery = {},
+): SystemNoticeInboxFilters {
+  return {
+    readStatus: normalizeOptionalBoolean(query.readStatus, 'readStatus'),
+    type: toOptionalSystemNoticeType(query.type),
+  };
+}
+
 export function normalizeSystemNoticePageQuery(
   query: SystemNoticePageQuery = {},
   total: number,
@@ -125,6 +182,23 @@ export function normalizeSystemNoticePageQuery(
   };
 }
 
+export function normalizeUnreadNoticeLimit(
+  limit: number | string = 10,
+): number {
+  const normalized =
+    typeof limit === 'string' && limit.trim() !== ''
+      ? Number(limit)
+      : Number(limit);
+
+  if (!Number.isInteger(normalized) || normalized < 1 || normalized > 50) {
+    throw new BadRequestException(
+      'System notice unread limit must be an integer between 1 and 50.',
+    );
+  }
+
+  return normalized;
+}
+
 export function createSystemNoticePageResult<T>(
   items: readonly T[],
   pagination: SystemNoticeNormalizedPageQuery,
@@ -139,6 +213,17 @@ export function createSystemNoticePageResult<T>(
   );
 }
 
+export function createSystemNoticeInboxRecord(
+  notice: SystemNoticeRecord,
+  readAt?: string,
+): SystemNoticeInboxRecord {
+  return {
+    ...notice,
+    read: Boolean(readAt),
+    readAt,
+  };
+}
+
 export function createSystemNoticeExportPreview(
   page: PageResult<unknown>,
 ): SystemNoticeExportPreview {
@@ -149,6 +234,67 @@ export function createSystemNoticeExportPreview(
     rowCount: page.items.length,
     generatedAt: new Date().toISOString(),
   };
+}
+
+export function isSystemNoticeVisibleInInbox(
+  notice: SystemNoticeRecord,
+  now: Date = new Date(),
+): boolean {
+  if (notice.status !== 'published') {
+    return false;
+  }
+
+  if (notice.audience !== 'all' && notice.audience !== 'admin') {
+    return false;
+  }
+
+  if (
+    notice.validFrom &&
+    new Date(notice.validFrom).getTime() > now.getTime()
+  ) {
+    return false;
+  }
+
+  if (notice.validTo && new Date(notice.validTo).getTime() < now.getTime()) {
+    return false;
+  }
+
+  return true;
+}
+
+export function compareSystemNoticeInboxRecords(
+  left: SystemNoticeInboxRecord,
+  right: SystemNoticeInboxRecord,
+): number {
+  return (
+    Number(right.pinned) - Number(left.pinned) ||
+    compareNullableIsoDesc(left.publishedAt, right.publishedAt) ||
+    compareNullableIsoDesc(left.createdAt, right.createdAt) ||
+    left.title.localeCompare(right.title)
+  );
+}
+
+export function normalizeMarkSystemNoticesReadInput(
+  body: MarkSystemNoticesReadDto,
+): readonly string[] {
+  if (!Array.isArray(body?.ids)) {
+    throw new BadRequestException('System notice read ids must be an array.');
+  }
+
+  if (body.ids.length === 0) {
+    throw new BadRequestException('System notice read ids must not be empty.');
+  }
+
+  const ids = body.ids.map((id) => normalizeRequiredText(id, 'id'));
+  const duplicate = findFirstDuplicate(ids);
+
+  if (duplicate) {
+    throw new BadRequestException(
+      `System notice read id is duplicated: ${duplicate}`,
+    );
+  }
+
+  return ids;
 }
 
 export function normalizeCreateSystemNoticeInput(
@@ -280,6 +426,25 @@ function toOptionalSystemNoticeAudience(
   return toSystemNoticeAudience(value);
 }
 
+function normalizeOptionalBoolean(
+  value: boolean | string | undefined,
+  fieldName: string,
+): boolean | undefined {
+  if (value === undefined || value === '') {
+    return undefined;
+  }
+
+  if (value === true || value === 'true') {
+    return true;
+  }
+
+  if (value === false || value === 'false') {
+    return false;
+  }
+
+  throw new BadRequestException(`Invalid system notice ${fieldName}: ${value}`);
+}
+
 function isSystemNoticeStatus(value: string): value is SystemNoticeStatus {
   return (SYSTEM_NOTICE_STATUSES as readonly string[]).includes(value);
 }
@@ -293,6 +458,12 @@ function isSystemNoticeAudience(value: string): value is SystemNoticeAudience {
 }
 
 function normalizeRequiredText(value: string, fieldName: string): string {
+  if (typeof value !== 'string') {
+    throw new BadRequestException(
+      `System notice ${fieldName} must be a non-empty string.`,
+    );
+  }
+
   const normalized = value.trim();
 
   if (!normalized) {
@@ -317,6 +488,28 @@ function normalizeOptionalDateString(
   }
 
   return date.toISOString();
+}
+
+function compareNullableIsoDesc(
+  left: string | undefined,
+  right: string | undefined,
+): number {
+  const leftTime = left ? new Date(left).getTime() : 0;
+  const rightTime = right ? new Date(right).getTime() : 0;
+  return rightTime - leftTime;
+}
+
+function findFirstDuplicate(values: readonly string[]): string | undefined {
+  const seen = new Set<string>();
+
+  for (const value of values) {
+    if (seen.has(value)) {
+      return value;
+    }
+    seen.add(value);
+  }
+
+  return undefined;
 }
 
 function assertValidNoticeSchedule(
