@@ -1605,6 +1605,36 @@ it.
       URL verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 54: core.user/core.dept Data-Scope Query Enforcement
+
+Why this slice: after role data-scope assignment, department trees, user
+department filtering and department order were live, OpenCore still had a
+foundation gap: `@opencore/security` could resolve data-scope profiles, but no
+visible management query consumed that constraint. RuoYi applies `@DataScope`
+to user/dept management queries, and Yudao enforces data permission through its
+system data-permission layer. The next lowest-dependency data-scope loop was to
+apply role/dept scope to user list/export/simple-list while preserving the
+existing explicit `deptId` subtree filter.
+
+- [x] Recompare RuoYi/Yudao data-scope query enforcement and OpenCore's
+      existing `SecurityDataScopeGuard` before selecting the slice.
+- [x] Add an internal `SystemUserDataScopeFilter` query contract without
+      exposing it as public OpenAPI input.
+- [x] Apply `@RequireDataScope({ userIdField: 'id', deptIdField: 'deptId' })`
+      to `GET /api/core/users`, `/users/export` and `/users/simple-list`.
+- [x] Merge resolved role dataScope with explicit department subtree filters
+      in both seed and Prisma repositories.
+- [x] Preserve `all` scope behavior, deny `none` scope and support restricted
+      `userIds`/`deptIds` OR filters under the department-filter AND boundary.
+- [x] Extend system-user unit tests for seed and Prisma repositories,
+      including self-scope, department intersection and export row counts.
+- [x] Extend fixed-port/deploy/public `core.user` smoke with a temporary
+      `dataScope=self` low-permission role/user that proves list, simple-list
+      and XLSX export only expose scoped data.
+- [x] Run focused tests, full gates, fixed-port smoke, deployment and public
+      URL verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -1628,14 +1658,18 @@ treat "minimal loop" as "minimal final product".
 - [x] Round 5/17/18/20 `core.role`: CRUD, data scope, menu assignment, user
       assignment, status toggle, disabled-role auth filtering and
       status/update/delete session revocation.
+- [x] Round 2/27/43/52/54 `core.dept`: management tree, simple-list option
+      source, user-binding delete guard, sibling order and admitted user-query
+      data-scope workflow are live for the current waterline.
 - [x] Round 8/21 `core.dict`: dict type CRUD, item-level management API/SDK/
       Admin, public simple-list consumer endpoint, disabled type/item filtering
       and deserialization smoke.
-- [x] Round 7/19/22/23/28/29/30/31/32/33/34/35/36/41 `core.user`: user CRUD,
+- [x] Round 7/19/22/23/28/29/30/31/32/33/34/35/36/41/54 `core.user`: user CRUD,
       status/reset/update/delete session invalidation, post binding,
       department filtering, self-profile/password/avatar, batch mutations,
-      import/export, import permission and dedicated user-side role assignment
-      are live for the current admitted waterline.
+      import/export, import permission, dedicated user-side role assignment
+      and role data-scope list/export/simple-list enforcement are live for the
+      current admitted waterline.
 - [x] Round 3/22/25/42/53 `core.post`: post CRUD, user-post binding,
       simple-list consumer, batch deletion and ordered-list updates are live
       for the current admitted waterline.
@@ -1644,11 +1678,6 @@ treat "minimal loop" as "minimal final product".
 
 - [ ] Round 1 `core.notice`: read/unread state, inbox/header badge and delivery
       adapter design.
-- [ ] Round 2/27/43/52 `core.dept`: management tree, simple-list option
-      source, user-bound department deletion protection and same-parent sibling
-      order updates are complete; data-scope workflow integration remains.
-      Batch department deletion or drag-sort persistence remain separate
-      admission decisions.
 - [ ] Round 9/24/37/38/39/40/44/46/49 `core.config`: public get-value-by-key, cache
       refresh and mutation invalidation are complete. Category/name/remark
       metadata is complete. Native XLSX export payload and Admin download are

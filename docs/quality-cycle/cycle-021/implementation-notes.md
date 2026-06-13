@@ -4470,3 +4470,99 @@ Against public endpoints after deploy:
   `99078df feat(post): add ordered list updates / 新增岗位排序更新`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 54 Capability
+
+Capability: `core.user/core.dept` data-scope query enforcement.
+
+Goal: close the admitted department data-scope workflow gap by applying the
+existing role dataScope model and `SecurityDataScopeGuard` to user management
+query consumers, aligned with RuoYi `@DataScope` and Yudao data-permission
+server-side filtering.
+
+## Round 54 Implemented
+
+- Rechecked RuoYi/Yudao data-scope enforcement and OpenCore's existing
+  `@opencore/security` data-scope guard/service/policy before selecting the
+  slice.
+- Added internal `SystemUserDataScopeFilter` support to `@opencore/system`
+  user list queries.
+- Applied `RequireDataScope({ userIdField: 'id', deptIdField: 'deptId' })` to
+  `GET /api/core/users`, `GET /api/core/users/export` and
+  `GET /api/core/users/simple-list`.
+- Converted request data-scope constraints into internal user query filters in
+  the API controller without exposing a public OpenAPI input.
+- Merged explicit department subtree filters with role data-scope filters in
+  both seed and Prisma repositories.
+- Preserved `all` scope behavior, denied `none` scope and supported restricted
+  self/dept filters through `userIds`/`deptIds`.
+- Extended seed and Prisma system-user tests for self-scope, department
+  intersection, no-data scope, simple-list and export row counts.
+- Extended `tools/scripts/smoke-core-user.mjs` with a temporary
+  `dataScope=self` low-permission user proving list, simple-list and XLSX
+  export only expose scoped data.
+
+## Round 54 Verification
+
+- `node --check tools/scripts/smoke-core-user.mjs`
+- `pnpm nx test system`
+- `pnpm nx test api`
+- `pnpm nx typecheck system`
+- `pnpm nx typecheck api`
+- `pnpm openapi:export`
+- `pnpm openapi:check`
+- `pnpm sdk:check`
+- `pnpm openapi:registry-tags:check`
+- `pnpm registry:admin-routes:check`
+- `pnpm format:check`
+- `git diff --check`
+- `pnpm smoke:api:local`
+- `pnpm prisma:validate`
+- `pnpm lint`
+- `pnpm typecheck`
+- `pnpm build`
+- `pnpm test`
+- `pnpm prisma:seed`
+- `pnpm deploy:opencore`
+
+`pnpm smoke:api:local` passed on fixed port `39173`, including
+`core.user.data-scope.self-list`, `core.user.data-scope.dept-intersection`,
+`core.user.data-scope.simple-list` and `core.user.data-scope.export`.
+
+`pnpm deploy:opencore` passed, deploying API/Admin on fixed ports
+`39172`/`39174`; deploy smoke included Admin same-origin login,
+duplicate-prefix login compatibility, public bundle checks, stale
+service-worker retirement and the same user data-scope guards.
+
+`pnpm lint` passed with existing warnings in
+`packages/system/src/system-user/system-user.prisma-repository.ts` and
+`apps/admin/src/pages/shared/CurrentPageExportButton.tsx`; no Round 54 lint
+errors were introduced.
+
+## Round 54 Public Verification
+
+Against public endpoints after deploy:
+
+- Public API: `http://144.217.243.161:39172`
+- Public Admin: `http://144.217.243.161:39174`
+- Admin main bundle: `umi.773e27e7.js`
+- Users chunk: `p__System__Users.55735978.async.js`
+- Public API user smoke passed:
+  `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-user`.
+  Checks included `core.user.data-scope.self-list`,
+  `core.user.data-scope.dept-intersection`,
+  `core.user.data-scope.simple-list` and
+  `core.user.data-scope.export`.
+- Public health/docs/Admin checks returned 200 for `/health/live`,
+  `/health/ready`, `/api/docs-json` and `/user/login`.
+- Public Admin main bundle contains API origin
+  `http://144.217.243.161:39172` and no `/api/api/auth/login`.
+- Public Admin Users chunk contains the existing `Department scope`,
+  `/core/users/export`, `/core/users/simple-list` and `deptId` markers.
+
+## Round 54 Commit Record
+
+- Feature commit:
+  `446d9af feat(user): enforce data-scope on user queries / 用户查询启用数据范围约束`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

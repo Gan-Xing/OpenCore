@@ -3,8 +3,8 @@
 Date: 2026-06-13
 Repository: `Gan-Xing/OpenCore`
 Default branch: `main`
-Latest observed feature commit: `99078df feat(post): add ordered list updates / 新增岗位排序更新`
-Latest deployed feature commit: `99078df feat(post): add ordered list updates / 新增岗位排序更新`
+Latest observed feature commit: `446d9af feat(user): enforce data-scope on user queries / 用户查询启用数据范围约束`
+Latest deployed feature commit: `446d9af feat(user): enforce data-scope on user queries / 用户查询启用数据范围约束`
 Latest deployed hardening commit: `4df5dd1 fix(system): satisfy xlsx export lint guard / 修复 XLSX 导出 lint 守卫`
 
 ## One-sentence Goal
@@ -119,6 +119,7 @@ productization waterline completion; see
 - Round 51 `core.login-log/monitor.online-user` forced logout logging stage 7
 - Round 52 `core.dept` sibling order stage 4
 - Round 53 `core.post` ordered list stage 4
+- Round 54 `core.user/core.dept` data-scope query enforcement stage 15/5
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -709,6 +710,18 @@ Move up / Move down 图标按钮，按当前岗位列表顺序生成 `(index + 1
 岗位有序列表保存，当前 admitted `core.post` 水位已闭合；拖拽排序 UI 或更复杂岗位工作流
 只在后续单独准入时处理。
 
+Round 54 回到 `core.dept`/`core.user` 数据范围队列，把已经存在但未接入业务查询的
+`@opencore/security` data-scope guard 落到用户管理消费面。OpenCore 现在对
+`GET /api/core/users`、`GET /api/core/users/export` 和
+`GET /api/core/users/simple-list` 同时应用登录用户角色 dataScope 和手工 `deptId`
+部门子树筛选。`all` 范围保持原行为，`none` 返回空结果，`restricted` 会按
+`userIds`/`deptIds` 生成自我或部门范围过滤，并与部门树筛选做 AND 交集。seed
+和 Prisma repository 均实现同一规则，单测覆盖 self/custom-like/none 与部门交集；
+固定 smoke、部署 smoke 和公网 smoke 均创建 `dataScope=self` 的低权限临时用户，
+验证列表、总部/工程部门交集、simple-list 和 XLSX export 只能看到自己。注意：
+这轮关闭的是已准入的数据范围查询执行闭环，不等于批量部门删除、拖拽排序 UI、
+租户隔离或全业务模块 data-permission 自动铺开。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -716,10 +729,10 @@ The productization waterline now classifies:
 - Meets current waterline: Round 6 `core.permission`, Round 12
   `core.audit-log`, Round 13/14 `monitor.online-user`, Round 10/15
   `core.file`, Round 4/16 `core.menu`, Round 5/17/18/20 `core.role`,
-  Round 8/21 `core.dict`,
-  Round 7/19/22/23/28/29/30/31/32/33/34/35/36/41 `core.user`,
+  Round 8/21 `core.dict`, Round 2/27/43/52/54 `core.dept`,
+  Round 7/19/22/23/28/29/30/31/32/33/34/35/36/41/54 `core.user`,
   Round 3/22/25/42/53 `core.post`.
-- First loop, enhance: Round 1 `core.notice`, Round 2/27/43/52 `core.dept`,
+- First loop, enhance: Round 1 `core.notice`,
   Round 9/24/37/38/39/40/44/46/49 `core.config`,
   Round 11/26/45/47/48/49/50/51 `core.login-log`.
 - Thin, rework: none after Round 16.
@@ -760,9 +773,11 @@ finds another blocker:
    source consumed by Admin Users; Round 43 closed user-bound department
    deletion protection and preserved user `deptId` on failed delete. Round 52
    closed same-parent sibling order updates across API/SDK/Admin/smoke and
-   proved the saved order through both tree and simple-list consumers.
-   Remaining work is data-scope workflow integration, plus batch department
-   deletion or drag-sort UI only if separately admitted.
+   proved the saved order through both tree and simple-list consumers. Round
+   54 closed the admitted data-scope workflow by applying role dataScope to
+   user list, export and simple-list queries. No remaining `core.dept` work is
+   in the current admitted P1 waterline; batch department deletion, drag-sort
+   UI or tenant-wide data permission rollout would require separate admission.
 4. `core.post`: Round 25 closed the enabled-post simple-list option source;
    Round 42 closed batch deletion with Admin selected-row deletion and strict
    batch guards; Round 53 closed ordered list updates across API/SDK/Admin and
@@ -779,11 +794,12 @@ finds another blocker:
   fixed ports, Admin API origin, duplicate `/api/api` compatibility and stale
   frontend bundle/cache guards.
 - P1 remaining: `core.notice` inbox/read-state/delivery records,
-  `core.dept` data-scope workflow integration, `core.config` broader runtime
-  feature-flag propagation or admitted secret vault/KMS integration, and
-  `core.login-log` IP/location enrichment plus structured actor/reason or
-  admitted mobile/SMS/social login logging. `core.post` is closed at the
-  current admitted waterline after Round 53.
+  `core.config` broader runtime feature-flag propagation or admitted secret
+  vault/KMS integration, and `core.login-log` IP/location enrichment plus
+  structured actor/reason or admitted mobile/SMS/social login logging.
+  `core.post` is closed at the current admitted waterline after Round 53;
+  `core.dept` data-scope workflow is closed at the current admitted waterline
+  after Round 54.
 - P2 should be the backend-platform extension layer: scheduler/monitor
   operation depth, OpenForge Admin productization, operation-log retention and
   structured fields, report/analytics design-only surfaces and integration
@@ -792,7 +808,7 @@ finds another blocker:
 
 Reference parity is measured by product capability waterline, not by replaying
 RuoYi/Yudao commit history. The remaining RuoYi-style foundation backlog after
-Round 53 is roughly several focused P1 loops, not tens of thousands of commits.
+Round 54 is roughly several focused P1 loops, not tens of thousands of commits.
 Yudao Full parity is a different program: BPM, pay, mall, member, CRM, ERP,
 AI and other business domains would require dozens to 100+ separately admitted
 deployable loops, and should not be counted as unfinished cycle-021 foundation

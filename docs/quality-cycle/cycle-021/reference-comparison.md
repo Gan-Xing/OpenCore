@@ -1672,3 +1672,42 @@ Round 53 admits the remaining ordered-list stage:
 
 OpenCore does not claim drag-sort-only UI or broader岗位 workflow automation in
 this round; those are separate admissions if product demand appears.
+
+## Round 54 User Data-Scope Query Reference Shape
+
+RuoYi applies data permissions to management queries with `@DataScope`, where
+the logged-in user's roles constrain department and user-owned records instead
+of trusting only client-side filters. User management still accepts department
+filters, but those filters narrow the already-permitted data set rather than
+widening access.
+
+Yudao similarly models system data permission as a server-side constraint. Its
+role data-scope configuration is not just display metadata; list and export
+queries are expected to run under the resolved data permission context.
+
+OpenCore already had:
+
+- role `dataScope` and `dataScopeDeptIds` persisted in seed and Prisma;
+- role data-scope assignment UI from the role productization rounds;
+- `SecurityDataScopeGuard`, `SecurityDataScopeService` and policy helpers in
+  `@opencore/security`;
+- user `deptId` ownership and explicit `deptId` subtree filters from Round 23;
+- user list, simple-list and XLSX export consumers.
+
+The missing product behavior was that resolved data-scope constraints were not
+connected to a real management query. Round 54 admits the first visible
+enforcement loop:
+
+- apply `RequireDataScope({ userIdField: 'id', deptIdField: 'deptId' })` to
+  user list, user export and user simple-list;
+- convert resolved `all` / `none` / `restricted` constraints into an internal
+  system-user query filter;
+- OR restricted `userIds` and `deptIds` together, then AND that data-scope
+  filter with any explicit department-subtree filter;
+- implement the same rule in seed and Prisma repositories;
+- prove self-scope and department-intersection behavior in fixed-port, deploy
+  and public smoke through a temporary low-permission role/user.
+
+OpenCore does not claim full tenant isolation, all-module data-permission
+rollout, workflow-level ownership rules, batch department deletion or drag-sort
+UI in this round. Those remain separate admissions.
