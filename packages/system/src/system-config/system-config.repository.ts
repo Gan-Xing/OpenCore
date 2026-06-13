@@ -9,6 +9,10 @@ import type {
   CreateSystemConfigDto,
   UpdateSystemConfigDto,
 } from './system-config.dto';
+import {
+  createOpenCoreXlsxWorkbookBase64,
+  OPENCORE_XLSX_CONTENT_TYPE,
+} from '../export-xlsx';
 import type {
   SystemConfigRecord,
   SystemConfigVisibility,
@@ -16,8 +20,10 @@ import type {
 
 export type SystemConfigExportPreview = {
   filename: string;
+  contentType: string;
+  contentBase64: string;
   scope: 'current-page';
-  columns: string[];
+  columns: readonly string[];
   rowCount: number;
   generatedAt: string;
 };
@@ -36,6 +42,18 @@ export type SystemConfigNormalizedPageQuery = {
 const SENSITIVE_CONFIG_KEY_PATTERN =
   /(authorization|cookie|password|secret|token)/i;
 const REDACTED_SECRET_VALUE = '[REDACTED]';
+export const SYSTEM_CONFIG_EXPORT_CONTENT_TYPE = OPENCORE_XLSX_CONTENT_TYPE;
+export const SYSTEM_CONFIG_EXPORT_COLUMNS = [
+  'category',
+  'name',
+  'key',
+  'value',
+  'valueType',
+  'visibility',
+  'public',
+  'description',
+  'remark',
+] as const;
 
 export abstract class SystemConfigRepository {
   abstract listConfig(
@@ -89,15 +107,42 @@ export function createSystemConfigPageResult<T>(
 }
 
 export function createSystemConfigExportPreview(
-  page: PageResult<unknown>,
+  page: PageResult<SystemConfigRecord>,
 ): SystemConfigExportPreview {
+  const generatedAt = new Date().toISOString();
+
   return {
-    filename: 'opencore-config.csv',
+    filename: 'opencore-system-config.xlsx',
+    contentType: SYSTEM_CONFIG_EXPORT_CONTENT_TYPE,
+    contentBase64: createOpenCoreXlsxWorkbookBase64({
+      worksheetRows: createSystemConfigExportWorksheetRows(page.items),
+      generatedAt,
+      sheetName: 'Config',
+    }),
     scope: 'current-page',
-    columns: ['category', 'name', 'key', 'valueType', 'visibility', 'remark'],
+    columns: SYSTEM_CONFIG_EXPORT_COLUMNS,
     rowCount: page.items.length,
-    generatedAt: new Date().toISOString(),
+    generatedAt,
   };
+}
+
+function createSystemConfigExportWorksheetRows(
+  rows: readonly SystemConfigRecord[],
+): readonly (readonly string[])[] {
+  return [
+    SYSTEM_CONFIG_EXPORT_COLUMNS,
+    ...rows.map((row) => [
+      row.category,
+      row.name,
+      row.key,
+      row.value,
+      row.valueType,
+      row.visibility,
+      row.public ? 'true' : 'false',
+      row.description ?? '',
+      row.remark ?? '',
+    ]),
+  ];
 }
 
 export function assertSafeConfigKey(

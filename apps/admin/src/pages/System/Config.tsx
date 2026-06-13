@@ -1,5 +1,6 @@
 import {
   DeleteOutlined,
+  DownloadOutlined,
   EditOutlined,
   EyeOutlined,
   KeyOutlined,
@@ -12,6 +13,7 @@ import {
   ProTable,
   type ProColumns,
 } from '@ant-design/pro-components';
+import { useAccess } from '@umijs/max';
 import {
   createSystemConfigFixtures,
   type SystemConfigSummary,
@@ -34,6 +36,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   createOpenCoreSystemConfig,
   deleteOpenCoreSystemConfig,
+  exportOpenCoreSystemConfig,
   getOpenCoreSystemConfig,
   getOpenCoreSystemConfigValue,
   listOpenCoreSystemConfig,
@@ -44,6 +47,7 @@ import {
   CurrentPageExportButton,
   type CurrentPageExportColumn,
 } from '../shared/CurrentPageExportButton';
+import { downloadBase64File } from '../shared/downloadBase64File';
 import {
   createCurrentPageFilterOptions,
   useCurrentPageFilters,
@@ -179,6 +183,8 @@ function renderValue(record: SystemConfigSummary) {
 }
 
 export default function ConfigPage() {
+  const access = useAccess();
+  const canExportSystemConfig = Boolean(access.canExportSystemConfig);
   const [form] = Form.useForm<ConfigFormValues>();
   const [rows, setRows] =
     useState<readonly SystemConfigSummary[]>(fallbackRows);
@@ -189,6 +195,7 @@ export default function ConfigPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [cacheRefreshing, setCacheRefreshing] = useState(false);
+  const [exportingConfig, setExportingConfig] = useState(false);
   const [valueReadingKey, setValueReadingKey] = useState<string>();
   const watchedVisibility = Form.useWatch('visibility', form);
   const filterOptions = useMemo(() => createFilterOptions(rows), [rows]);
@@ -236,6 +243,29 @@ export default function ConfigPage() {
       visibility: 'private',
     });
     setFormOpen(true);
+  };
+
+  const downloadConfigExcelExport = async () => {
+    setExportingConfig(true);
+    try {
+      const exported = await exportOpenCoreSystemConfig();
+
+      if (!exported.contentBase64 || !exported.contentType) {
+        message.warning('Config Excel export is unavailable.');
+        return;
+      }
+
+      downloadBase64File(
+        exported.filename,
+        exported.contentBase64,
+        exported.contentType,
+      );
+      message.success(
+        `Config Excel export downloaded. ${exported.rowCount} row(s).`,
+      );
+    } finally {
+      setExportingConfig(false);
+    }
   };
 
   const openEditForm = async (record: SystemConfigSummary) => {
@@ -490,6 +520,23 @@ export default function ConfigPage() {
           >
             Reload data
           </Button>,
+          <Tooltip
+            key="download-config-excel-export"
+            title={
+              canExportSystemConfig
+                ? 'Download Excel export'
+                : 'Missing core:config:export'
+            }
+          >
+            <Button
+              disabled={!canExportSystemConfig}
+              icon={<DownloadOutlined />}
+              loading={exportingConfig}
+              onClick={() => void downloadConfigExcelExport()}
+            >
+              Download Excel
+            </Button>
+          </Tooltip>,
           <CurrentPageExportButton<SystemConfigSummary>
             key="export"
             columns={exportColumns}

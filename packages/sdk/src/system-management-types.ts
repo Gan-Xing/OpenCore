@@ -329,6 +329,8 @@ export type LoginLogQueryRequest = PageRequest & {
 
 export type ExportPreview = {
   filename: string;
+  contentType?: string;
+  contentBase64?: string;
   scope: 'current-page';
   columns: readonly string[];
   rowCount: number;

@@ -38,6 +38,7 @@ import {
   type DictDataOptionSummary,
   type DictItemSummary,
   type DictTypeSummary,
+  type ExportPreview,
   type SystemConfigSummary,
   type SystemConfigCacheRefreshSummary,
   type SystemConfigValueSummary,
@@ -370,6 +371,13 @@ export async function listOpenCoreSystemConfig(): Promise<
     },
   );
   return [...page.items];
+}
+
+export function exportOpenCoreSystemConfig(): Promise<ExportPreview> {
+  return systemManagementClient.exportConfig(getRequiredAdminToken(), {
+    page: 1,
+    pageSize: 100,
+  });
 }
 
 export function getOpenCoreSystemConfig(

@@ -2,6 +2,8 @@
 
 const DEFAULT_PORT = '39173';
 const REDACTED_SECRET_VALUE = '[REDACTED]';
+const XLSX_CONTENT_TYPE =
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
 const port = process.env.OPENCORE_SMOKE_PORT || DEFAULT_PORT;
 const baseUrl = trimTrailingSlash(
@@ -145,6 +147,30 @@ try {
   const exportPreview = await apiRequest(
     '/core/config/export?page=1&pageSize=10',
   );
+  assertEqual(
+    exportPreview.filename,
+    'opencore-system-config.xlsx',
+    'config export filename',
+  );
+  assertEqual(
+    exportPreview.contentType,
+    XLSX_CONTENT_TYPE,
+    'config export MIME type',
+  );
+  const exportWorkbook = Buffer.from(
+    assertString(exportPreview.contentBase64, 'config export workbook body'),
+    'base64',
+  );
+  assertEqual(
+    exportWorkbook.subarray(0, 2).toString('utf8'),
+    'PK',
+    'config export XLSX zip header',
+  );
+  assertNumberAtLeast(
+    exportWorkbook.length,
+    100,
+    'config export XLSX byte length',
+  );
   assertEqual(exportPreview.scope, 'current-page', 'config export scope');
   assertArray(exportPreview.columns, 'config export columns');
   assertIncludes(
@@ -153,6 +179,7 @@ try {
     'config export category column',
   );
   assertIncludes(exportPreview.columns, 'name', 'config export name column');
+  assertIncludes(exportPreview.columns, 'value', 'config export value column');
   assertIncludes(
     exportPreview.columns,
     'remark',
@@ -225,7 +252,7 @@ try {
         'core.config.cache-refresh',
         'core.config.create',
         'core.config.update',
-        'core.config.export',
+        'core.config.export.xlsx',
         'core.config.secret-redaction',
         'core.config.secret-value-blocked',
         'core.config.delete',

@@ -83,11 +83,27 @@ describe('@opencore/system system-config', () => {
       cachedKeys: expect.any(Number),
       refreshedAt: expect.any(String),
     });
-    await expect(service.createExportPreview()).resolves.toMatchObject({
-      filename: 'opencore-config.csv',
+    const exportPreview = await service.createExportPreview();
+    expect(exportPreview).toMatchObject({
+      filename: 'opencore-system-config.xlsx',
+      contentType:
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       scope: 'current-page',
-      columns: ['category', 'name', 'key', 'valueType', 'visibility', 'remark'],
+      columns: [
+        'category',
+        'name',
+        'key',
+        'value',
+        'valueType',
+        'visibility',
+        'public',
+        'description',
+        'remark',
+      ],
     });
+    const exportWorkbook = Buffer.from(exportPreview.contentBase64, 'base64');
+    expect(exportWorkbook.subarray(0, 2).toString('utf8')).toBe('PK');
+    expect(exportWorkbook.length).toBeGreaterThan(100);
     await expect(service.deleteConfig('sample.enabled')).resolves.toEqual({
       deleted: true,
     });
@@ -235,8 +251,11 @@ describe('@opencore/system system-config', () => {
       await expect(
         service.createExportPreview({ page: 1, pageSize: 20 }),
       ).resolves.toMatchObject({
-        filename: 'opencore-config.csv',
+        filename: 'opencore-system-config.xlsx',
+        contentType:
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         scope: 'current-page',
+        contentBase64: expect.any(String),
         rowCount: expect.any(Number),
       });
       await expect(service.deleteConfig(secretKey)).resolves.toEqual({

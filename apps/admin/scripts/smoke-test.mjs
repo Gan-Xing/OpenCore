@@ -290,6 +290,7 @@ if (
   !opencorePlatformService.includes('deleteOpenCoreDict') ||
   !opencorePlatformService.includes('deleteOpenCoreDictItem') ||
   !opencorePlatformService.includes('listOpenCoreSystemConfig') ||
+  !opencorePlatformService.includes('exportOpenCoreSystemConfig') ||
   !opencorePlatformService.includes('getOpenCoreSystemConfig') ||
   !opencorePlatformService.includes('getOpenCoreSystemConfigValue') ||
   !opencorePlatformService.includes('refreshOpenCoreSystemConfigCache') ||
@@ -393,6 +394,8 @@ if (
   !accessRuntime.includes('core:menu:read') ||
   !accessRuntime.includes('core:dict:read') ||
   !accessRuntime.includes('core:config:read') ||
+  !accessRuntime.includes('core:config:export') ||
+  !accessRuntime.includes('canExportSystemConfig') ||
   !accessRuntime.includes('core:notice:read') ||
   !accessRuntime.includes('core:dept:read') ||
   !accessRuntime.includes('core:post:read') ||
@@ -790,8 +793,13 @@ if (
   !configPage.includes('getOpenCoreSystemConfig') ||
   !configPage.includes('getOpenCoreSystemConfigValue') ||
   !configPage.includes('refreshOpenCoreSystemConfigCache') ||
+  !configPage.includes('exportOpenCoreSystemConfig') ||
   !configPage.includes('Read public value by key') ||
   !configPage.includes('Refresh cache') ||
+  !configPage.includes('canExportSystemConfig') ||
+  !configPage.includes('Download Excel') ||
+  !configPage.includes('Config Excel export downloaded') ||
+  !configPage.includes('Missing core:config:export') ||
   !configPage.includes('Category') ||
   !configPage.includes('Name') ||
   !configPage.includes('Remark') ||
