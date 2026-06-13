@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import type {
   AssignRoleUsersDto,
   BatchDeleteUsersDto,
   BatchSetUserStatusDto,
   CreateUserDto,
+  ImportUsersDto,
   ListUsersQueryDto,
   ResetUserPasswordDto,
   RoleUserAssignmentDto,
@@ -13,7 +14,10 @@ import type {
   UpdateUserDto,
 } from './system-user.dto';
 import {
+  createSystemUserImportTemplate,
   createSystemUserExportPreview,
+  normalizeSystemUserImportRecord,
+  parseSystemUserImportCsv,
   normalizeResetUserPasswordInput,
   normalizeSetUserStatusInput,
   SystemUserRepository,
@@ -21,6 +25,8 @@ import {
   type SystemUserAvatarUpdateInput,
   type SystemUserBatchMutationRecord,
   type SystemUserExportPreview,
+  type SystemUserImportResultRecord,
+  type SystemUserImportTemplateRecord,
   type SystemUserOptionRecord,
   type SystemUserSummaryRecord,
 } from './system-user.repository';
@@ -133,4 +139,107 @@ export class SystemUserService {
       await this.repository.listUsers(query),
     );
   }
+
+  createImportTemplate(): SystemUserImportTemplateRecord {
+    return createSystemUserImportTemplate();
+  }
+
+  async importUsers(
+    body: ImportUsersDto,
+  ): Promise<SystemUserImportResultRecord> {
+    const records = parseSystemUserImportCsv(body);
+    const updateExisting = normalizeImportUpdateExisting(body.updateExisting);
+    const existingUsers = new Map(
+      (await this.repository.listUsers()).map((user) => [user.username, user]),
+    );
+    const seenUsernames = new Set<string>();
+    const createdUsernames: string[] = [];
+    const updatedUsernames: string[] = [];
+    const failures: SystemUserImportResultRecord['failures'][number][] = [];
+
+    for (const record of records) {
+      let username = record.values.username?.trim() || undefined;
+
+      try {
+        const input = normalizeSystemUserImportRecord(record);
+        username = input.username;
+
+        if (seenUsernames.has(input.username)) {
+          throw new Error(
+            `Duplicate username in import file: ${input.username}`,
+          );
+        }
+        seenUsernames.add(input.username);
+
+        const existing = existingUsers.get(input.username);
+
+        if (existing) {
+          if (!updateExisting) {
+            throw new Error(`User already exists: ${input.username}`);
+          }
+
+          const updated = await this.repository.updateUser(existing.id, {
+            displayName: input.displayName,
+            password: input.password,
+            roleCodes: input.roleCodes,
+            deptId: input.deptId ?? null,
+            postCodes: input.postCodes,
+            enabled: input.enabled,
+          });
+          existingUsers.set(updated.username, updated);
+          updatedUsernames.push(updated.username);
+          continue;
+        }
+
+        if (!input.password) {
+          throw new Error(
+            `Password is required when creating user: ${input.username}`,
+          );
+        }
+
+        const created = await this.repository.createUser({
+          username: input.username,
+          displayName: input.displayName,
+          password: input.password,
+          roleCodes: input.roleCodes,
+          deptId: input.deptId,
+          postCodes: input.postCodes,
+          enabled: input.enabled,
+        });
+        existingUsers.set(created.username, created);
+        createdUsernames.push(created.username);
+      } catch (error) {
+        failures.push({
+          rowNumber: record.rowNumber,
+          username,
+          reason: error instanceof Error ? error.message : 'Unknown error.',
+        });
+      }
+    }
+
+    return {
+      totalRows: records.length,
+      created: createdUsernames.length,
+      updated: updatedUsernames.length,
+      failed: failures.length,
+      createdUsernames,
+      updatedUsernames,
+      failures,
+      updatedSessionUsernames: updatedUsernames,
+    };
+  }
+}
+
+function normalizeImportUpdateExisting(value: unknown): boolean {
+  if (value === undefined) {
+    return false;
+  }
+
+  if (typeof value !== 'boolean') {
+    throw new BadRequestException(
+      'System user import updateExisting must be a boolean.',
+    );
+  }
+
+  return value;
 }

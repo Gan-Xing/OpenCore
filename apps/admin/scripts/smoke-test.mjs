@@ -718,6 +718,8 @@ if (
   !usersPage.includes('listOpenCoreSystemDepts') ||
   !usersPage.includes('listOpenCoreSystemDeptOptions') ||
   !usersPage.includes('listOpenCoreSystemPostOptions') ||
+  !usersPage.includes('getOpenCoreUserImportTemplate') ||
+  !usersPage.includes('importOpenCoreUsers') ||
   !usersPage.includes('Department scope') ||
   !usersPage.includes('All departments') ||
   !usersPage.includes('selectedDeptId') ||
@@ -729,6 +731,11 @@ if (
   !usersPage.includes('Enable selected') ||
   !usersPage.includes('Disable selected') ||
   !usersPage.includes('Delete selected') ||
+  !usersPage.includes('Download import template') ||
+  !usersPage.includes('Import users') ||
+  !usersPage.includes('Update existing users') ||
+  !usersPage.includes('Select CSV file') ||
+  !usersPage.includes('formatImportSummary') ||
   !usersPage.includes('selectedUserIds') ||
   !usersPage.includes('rowSelection') ||
   !usersPage.includes('Revoked sessions') ||

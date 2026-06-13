@@ -8,6 +8,7 @@ import type {
   CreatePermissionRequest,
   CreateRoleRequest,
   CreateUserRequest,
+  ImportUsersRequest,
   ListUsersRequest,
   LoginRequest,
   LoginResponse,
@@ -29,6 +30,8 @@ import type {
   UploadUserAvatarRequest,
   UpdateUserProfileRequest,
   UpdateUserRequest,
+  UserImportResultSummary,
+  UserImportTemplateSummary,
   UserMutationSummary,
   UserOptionSummary,
   UserPasswordMutationSummary,
@@ -60,6 +63,11 @@ export type RbacClient = {
     token: string,
     query?: ListUsersRequest,
   ) => Promise<RbacExportPreview>;
+  getUserImportTemplate: (token: string) => Promise<UserImportTemplateSummary>;
+  importUsers: (
+    token: string,
+    body: ImportUsersRequest,
+  ) => Promise<UserImportResultSummary>;
   getUserProfile: (token: string) => Promise<UserProfileSummary>;
   updateUserProfile: (
     token: string,
@@ -183,6 +191,16 @@ export function createRbacClient(request: SdkRequest): RbacClient {
       ),
     exportUsers: (token, query) =>
       request<RbacExportPreview>(withQuery('/core/users/export', query), {
+        token,
+      }),
+    getUserImportTemplate: (token) =>
+      request<UserImportTemplateSummary>('/core/users/import-template', {
+        token,
+      }),
+    importUsers: (token, body) =>
+      request<UserImportResultSummary>('/core/users/import', {
+        method: 'POST',
+        body,
         token,
       }),
     getUserProfile: (token) =>

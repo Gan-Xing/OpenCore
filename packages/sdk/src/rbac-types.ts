@@ -96,6 +96,36 @@ export type BatchDeleteUsersRequest = {
   userIds: readonly string[];
 };
 
+export type UserImportTemplateSummary = {
+  filename: string;
+  contentType: string;
+  contentBase64: string;
+  columns: readonly string[];
+  rowCount: number;
+};
+
+export type ImportUsersRequest = {
+  contentBase64: string;
+  updateExisting?: boolean;
+};
+
+export type UserImportFailureSummary = {
+  rowNumber: number;
+  username?: string;
+  reason: string;
+};
+
+export type UserImportResultSummary = {
+  totalRows: number;
+  created: number;
+  updated: number;
+  failed: number;
+  createdUsernames: readonly string[];
+  updatedUsernames: readonly string[];
+  failures: readonly UserImportFailureSummary[];
+  revokedSessionCount?: number;
+};
+
 export type ResetUserPasswordRequest = {
   password: string;
 };

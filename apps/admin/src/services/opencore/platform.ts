@@ -20,6 +20,7 @@ import {
   type CreateRoleRequest,
   type CreateSystemConfigRequest,
   type CreateUserRequest,
+  type ImportUsersRequest,
   type CreateSystemDeptRequest,
   type CreateSystemNoticeRequest,
   type CreateSystemPostRequest,
@@ -72,6 +73,8 @@ import {
   type UserOptionSummary,
   type UserMutationSummary,
   type UpdateUserRequest,
+  type UserImportResultSummary,
+  type UserImportTemplateSummary,
 } from '@opencore/sdk';
 import { getRequiredAdminToken, opencoreSdkRequest } from './client';
 
@@ -137,6 +140,16 @@ export function deleteOpenCoreUsers(
   body: BatchDeleteUsersRequest,
 ): Promise<BatchUserMutationSummary> {
   return rbacClient.deleteUsers(getRequiredAdminToken(), body);
+}
+
+export function getOpenCoreUserImportTemplate(): Promise<UserImportTemplateSummary> {
+  return rbacClient.getUserImportTemplate(getRequiredAdminToken());
+}
+
+export function importOpenCoreUsers(
+  body: ImportUsersRequest,
+): Promise<UserImportResultSummary> {
+  return rbacClient.importUsers(getRequiredAdminToken(), body);
 }
 
 export function listOpenCoreRoles(): Promise<RoleSummary[]> {

@@ -157,6 +157,52 @@
         "tags": ["Rbac", "Core Users"]
       }
     },
+    "/api/core/users/import-template": {
+      "get": {
+        "operationId": "RbacController_getUserImportTemplate",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserImportTemplateDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Users"]
+      }
+    },
+    "/api/core/users/import": {
+      "post": {
+        "operationId": "RbacController_importUsers",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ImportUsersDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UserImportResultDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Users"]
+      }
+    },
     "/api/core/users/simple-list": {
       "get": {
         "operationId": "RbacController_listUserOptions",
@@ -5445,6 +5491,74 @@
           "generatedAt": { "type": "string" }
         },
         "required": ["filename", "scope", "columns", "rowCount", "generatedAt"]
+      },
+      "UserImportTemplateDto": {
+        "type": "object",
+        "properties": {
+          "filename": { "type": "string" },
+          "contentType": { "type": "string" },
+          "contentBase64": { "type": "string" },
+          "columns": { "type": "array", "items": { "type": "string" } },
+          "rowCount": { "type": "number" }
+        },
+        "required": [
+          "filename",
+          "contentType",
+          "contentBase64",
+          "columns",
+          "rowCount"
+        ]
+      },
+      "ImportUsersDto": {
+        "type": "object",
+        "properties": {
+          "contentBase64": {
+            "type": "string",
+            "description": "Base64-encoded CSV content."
+          },
+          "updateExisting": { "type": "boolean", "default": false }
+        },
+        "required": ["contentBase64"]
+      },
+      "UserImportFailureDto": {
+        "type": "object",
+        "properties": {
+          "rowNumber": { "type": "number" },
+          "username": { "type": "string" },
+          "reason": { "type": "string" }
+        },
+        "required": ["rowNumber", "reason"]
+      },
+      "UserImportResultDto": {
+        "type": "object",
+        "properties": {
+          "totalRows": { "type": "number" },
+          "created": { "type": "number" },
+          "updated": { "type": "number" },
+          "failed": { "type": "number" },
+          "createdUsernames": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "updatedUsernames": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "failures": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/UserImportFailureDto" }
+          },
+          "revokedSessionCount": { "type": "number" }
+        },
+        "required": [
+          "totalRows",
+          "created",
+          "updated",
+          "failed",
+          "createdUsernames",
+          "updatedUsernames",
+          "failures"
+        ]
       },
       "UserOptionDto": {
         "type": "object",

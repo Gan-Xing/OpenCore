@@ -26,6 +26,8 @@ const expectedPermissions = {
   getRoleMenuAssignment: ['core:role:read'],
   getRoleUserAssignment: ['core:role:read'],
   getUser: ['core:user:read'],
+  getUserImportTemplate: ['core:user:create'],
+  importUsers: ['core:user:create'],
   listMenus: ['core:menu:read'],
   listPermissions: ['core:permission:read'],
   listRoles: ['core:role:read'],

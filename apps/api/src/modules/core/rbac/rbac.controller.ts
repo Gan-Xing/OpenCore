@@ -42,6 +42,7 @@ import {
   CreateRoleDto,
   CreateUserDto,
   DeleteResultDto,
+  ImportUsersDto,
   ListUsersQueryDto,
   MenuSummaryDto,
   PermissionSummaryDto,
@@ -60,6 +61,8 @@ import {
   UpdatePermissionDto,
   UpdateRoleDto,
   UpdateUserDto,
+  UserImportResultDto,
+  UserImportTemplateDto,
   UserOptionDto,
   UserProfileDto,
   UserPasswordMutationResultDto,
@@ -128,6 +131,40 @@ export class RbacController {
     @Query() query: ListUsersQueryDto,
   ): Promise<RbacExportPreviewDto> {
     return this.users.createExportPreview(query);
+  }
+
+  @Get('users/import-template')
+  @ApiTags('Core Users')
+  @RequirePermission('core:user:create')
+  @ApiOkResponse({ type: UserImportTemplateDto })
+  getUserImportTemplate(): UserImportTemplateDto {
+    return this.users.createImportTemplate();
+  }
+
+  @Post('users/import')
+  @ApiTags('Core Users')
+  @RequirePermission('core:user:create')
+  @ApiOkResponse({ type: UserImportResultDto })
+  async importUsers(
+    @Body() body: ImportUsersDto,
+  ): Promise<UserImportResultDto> {
+    const result = await this.users.importUsers(body);
+    const revokedSessionCount = await this.revokeActiveSessionsForUsernames(
+      result.updatedSessionUsernames,
+      'rbac.user-import',
+      `user import updated ${result.updated} existing user(s)`,
+    );
+
+    return {
+      totalRows: result.totalRows,
+      created: result.created,
+      updated: result.updated,
+      failed: result.failed,
+      createdUsernames: result.createdUsernames,
+      updatedUsernames: result.updatedUsernames,
+      failures: result.failures,
+      revokedSessionCount,
+    };
   }
 
   @Get('users/simple-list')

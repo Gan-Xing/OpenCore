@@ -286,6 +286,125 @@ describe('@opencore/system system-user', () => {
         'system',
       ],
     });
+    const importTemplate = service.createImportTemplate();
+    expect(importTemplate).toMatchObject({
+      filename: 'opencore-system-users-import-template.csv',
+      contentType: 'text/csv;charset=utf-8',
+      columns: [
+        'username',
+        'displayName',
+        'password',
+        'roleCodes',
+        'deptId',
+        'postCodes',
+        'enabled',
+      ],
+      rowCount: 2,
+    });
+    expect(
+      Buffer.from(importTemplate.contentBase64, 'base64').toString('utf8'),
+    ).toContain('operator_import');
+    await expect(
+      service.importUsers({
+        contentBase64: importTemplate.contentBase64,
+        updateExisting: 'true' as unknown as boolean,
+      }),
+    ).rejects.toThrow(BadRequestException);
+    const importResult = await service.importUsers({
+      contentBase64: createUserImportCsvBase64([
+        [
+          'csv_operator',
+          'CSV Operator',
+          'csv-password',
+          'viewer',
+          'dept_operations',
+          'engineer',
+          'true',
+        ],
+        [
+          'csv_operator',
+          'Duplicate CSV Operator',
+          'csv-password',
+          'viewer',
+          '',
+          '',
+          'true',
+        ],
+        [
+          'operator',
+          'Existing Operator',
+          'csv-password',
+          'viewer',
+          '',
+          '',
+          'true',
+        ],
+        ['csv_no_password', 'CSV No Password', '', 'viewer', '', '', 'true'],
+      ]),
+    });
+    expect(importResult).toMatchObject({
+      totalRows: 4,
+      created: 1,
+      updated: 0,
+      failed: 3,
+      createdUsernames: ['csv_operator'],
+      updatedUsernames: [],
+      updatedSessionUsernames: [],
+    });
+    expect(importResult.failures).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          username: 'csv_operator',
+          reason: 'Duplicate username in import file: csv_operator',
+        }),
+        expect.objectContaining({
+          username: 'operator',
+          reason: 'User already exists: operator',
+        }),
+        expect.objectContaining({
+          username: 'csv_no_password',
+          reason: 'Password is required when creating user: csv_no_password',
+        }),
+      ]),
+    );
+    await expect(service.getUser('user_csv_operator')).resolves.toMatchObject({
+      username: 'csv_operator',
+      deptId: 'dept_operations',
+      postCodes: ['engineer'],
+      enabled: true,
+    });
+    const updateImportResult = await service.importUsers({
+      updateExisting: true,
+      contentBase64: createUserImportCsvBase64([
+        [
+          'operator',
+          'Imported Operator Update',
+          'import-updated-password',
+          'viewer',
+          'dept_engineering',
+          '',
+          'false',
+        ],
+      ]),
+    });
+    expect(updateImportResult).toMatchObject({
+      totalRows: 1,
+      created: 0,
+      updated: 1,
+      failed: 0,
+      updatedUsernames: ['operator'],
+      updatedSessionUsernames: ['operator'],
+    });
+    await expect(service.getUser('user_operator')).resolves.toMatchObject({
+      displayName: 'Imported Operator Update',
+      roleCodes: ['viewer'],
+      deptId: 'dept_engineering',
+      postCodes: [],
+      enabled: false,
+    });
+    await expect(service.deleteUser('user_csv_operator')).resolves.toEqual({
+      deleted: true,
+    });
     await expect(service.deleteUser('user_operator')).resolves.toEqual({
       deleted: true,
     });
@@ -796,6 +915,100 @@ describe('@opencore/system system-user', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
+    it('persists imported users through Prisma and reports row failures', async () => {
+      const result = await service.importUsers({
+        contentBase64: createUserImportCsvBase64([
+          [
+            username,
+            'Imported Prisma User',
+            'import-password',
+            'viewer',
+            'dept_operations',
+            'engineer',
+            'true',
+          ],
+          [
+            secondUsername,
+            'Missing Role Prisma User',
+            'import-password',
+            'missing_role',
+            '',
+            '',
+            'true',
+          ],
+        ]),
+      });
+
+      expect(result).toMatchObject({
+        totalRows: 2,
+        created: 1,
+        updated: 0,
+        failed: 1,
+        createdUsernames: [username],
+      });
+      expect(result.failures).toEqual([
+        expect.objectContaining({
+          username: secondUsername,
+          reason: 'Role not found: missing_role',
+        }),
+      ]);
+      const importedSummary = (await service.listUsers()).find(
+        (user) => user.username === username,
+      );
+
+      expect(importedSummary).toBeDefined();
+      const imported = await service.getUser(importedSummary?.id ?? 'missing');
+
+      expect(imported).toMatchObject({
+        username,
+        displayName: 'Imported Prisma User',
+        roleCodes: ['viewer'],
+        deptId: 'dept_operations',
+        postCodes: ['engineer'],
+        enabled: true,
+      });
+      await expect(
+        prisma.user.findUniqueOrThrow({ where: { id: imported.id } }),
+      ).resolves.toMatchObject({
+        passwordHash: hashSystemUserPassword('import-password'),
+      });
+
+      const updateResult = await service.importUsers({
+        updateExisting: true,
+        contentBase64: createUserImportCsvBase64([
+          [
+            username,
+            'Imported Prisma User Updated',
+            'updated-import-password',
+            'viewer',
+            '',
+            '',
+            'false',
+          ],
+        ]),
+      });
+
+      expect(updateResult).toMatchObject({
+        totalRows: 1,
+        created: 0,
+        updated: 1,
+        failed: 0,
+        updatedUsernames: [username],
+        updatedSessionUsernames: [username],
+      });
+      await expect(service.getUser(imported.id)).resolves.toMatchObject({
+        displayName: 'Imported Prisma User Updated',
+        deptId: undefined,
+        postCodes: [],
+        enabled: false,
+      });
+      await expect(
+        prisma.user.findUniqueOrThrow({ where: { id: imported.id } }),
+      ).resolves.toMatchObject({
+        passwordHash: hashSystemUserPassword('updated-import-password'),
+      });
+    });
+
     it('protects the seeded admin user from Prisma updates and deletes', async () => {
       const admin = (await service.listUsers()).find(
         (user) => user.username === 'admin',
@@ -828,3 +1041,33 @@ describe('@opencore/system system-user', () => {
     }
   });
 });
+
+function createUserImportCsvBase64(
+  rows: readonly (readonly string[])[],
+): string {
+  const csvRows = [
+    [
+      'username',
+      'displayName',
+      'password',
+      'roleCodes',
+      'deptId',
+      'postCodes',
+      'enabled',
+    ],
+    ...rows,
+  ];
+
+  return Buffer.from(
+    csvRows.map((row) => row.map(escapeCsvCell).join(',')).join('\n'),
+    'utf8',
+  ).toString('base64');
+}
+
+function escapeCsvCell(value: string): string {
+  if (!/[",\n\r]/.test(value)) {
+    return value;
+  }
+
+  return `"${value.replace(/"/g, '""')}"`;
+}

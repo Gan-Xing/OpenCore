@@ -35,9 +35,13 @@ const resetPassword = `UserSecurityReset-${runId}`;
 const selfPassword = `UserSecuritySelf-${runId}`;
 const batchUsernames = [`user_batch_${runId}_a`, `user_batch_${runId}_b`];
 const batchPassword = `UserBatchSmoke-${runId}`;
+const importUsername = `user_import_${runId}`;
+const importPassword = `UserImportSmoke-${runId}`;
+const importUpdatedPassword = `UserImportUpdated-${runId}`;
 let adminToken;
 let smokeUserId;
 let smokeUserToken;
+let importUserId;
 const batchUserIds = new Set();
 let originalAdminDisplayName;
 let originalAdminAvatarUpload;
@@ -592,6 +596,131 @@ try {
     'updated login roles',
   );
 
+  const importTemplate = await apiRequest('/core/users/import-template');
+  assertEqual(
+    importTemplate.filename,
+    'opencore-system-users-import-template.csv',
+    'user import template filename',
+  );
+  assertIncludes(
+    importTemplate.columns,
+    'username',
+    'user import template columns',
+  );
+  assertIncludes(
+    Buffer.from(
+      assertString(importTemplate.contentBase64, 'user import template body'),
+      'base64',
+    ).toString('utf8'),
+    'operator_import',
+    'user import template sample row',
+  );
+  await apiRequest('/core/users/import', {
+    method: 'POST',
+    expected: [400],
+    body: {
+      contentBase64: createUserImportCsvBase64([
+        [
+          importUsername,
+          'Import Smoke User',
+          importPassword,
+          'viewer',
+          'dept_operations',
+          'engineer',
+          'true',
+        ],
+      ]),
+      updateExisting: 'true',
+    },
+  });
+  const importResult = await apiRequest('/core/users/import', {
+    method: 'POST',
+    body: {
+      contentBase64: createUserImportCsvBase64([
+        [
+          importUsername,
+          'Import Smoke User',
+          importPassword,
+          'viewer',
+          'dept_operations',
+          'engineer',
+          'true',
+        ],
+        [
+          `${importUsername}_bad_role`,
+          'Import Bad Role User',
+          importPassword,
+          'missing_role',
+          '',
+          '',
+          'true',
+        ],
+      ]),
+      updateExisting: false,
+    },
+  });
+  assertEqual(importResult.totalRows, 2, 'user import total rows');
+  assertEqual(importResult.created, 1, 'user import created count');
+  assertEqual(importResult.failed, 1, 'user import failed count');
+  assertIncludes(
+    importResult.createdUsernames,
+    importUsername,
+    'user import created usernames',
+  );
+  assertEqual(
+    importResult.failures[0]?.username,
+    `${importUsername}_bad_role`,
+    'user import failure username',
+  );
+  const importedUser = (await apiRequest('/core/users')).find(
+    (user) => user.username === importUsername,
+  );
+  importUserId = assertString(importedUser?.id, 'imported user id');
+  const importedLogin = await loginUser(
+    importUsername,
+    importPassword,
+    [200, 201],
+  );
+  const importedToken = assertString(
+    importedLogin.accessToken,
+    'imported user accessToken',
+  );
+  const importUpdateResult = await apiRequest('/core/users/import', {
+    method: 'POST',
+    body: {
+      contentBase64: createUserImportCsvBase64([
+        [
+          importUsername,
+          'Import Smoke User Updated',
+          importUpdatedPassword,
+          'viewer',
+          '',
+          '',
+          'false',
+        ],
+      ]),
+      updateExisting: true,
+    },
+  });
+  assertEqual(importUpdateResult.updated, 1, 'user import updated count');
+  assertEqual(importUpdateResult.failed, 0, 'user import update failed count');
+  assertEqual(
+    importUpdateResult.revokedSessionCount,
+    1,
+    'user import update revoked session count',
+  );
+  await request(`${apiPrefix}/auth/me`, {
+    token: importedToken,
+    expected: [401],
+  });
+  assertUserOptionNotIncludesUsername(
+    await apiRequest('/core/users/simple-list'),
+    importUsername,
+    'import disabled simple-list user options',
+  );
+  await loginUser(importUsername, importPassword, [401]);
+  await loginUser(importUsername, importUpdatedPassword, [401]);
+
   const deletedUser = await apiRequest(
     `/core/users/${encodeURIComponent(smokeUserId)}`,
     {
@@ -678,6 +807,11 @@ try {
         'core.user.profile.password.new-password-login',
         'core.user.post.clear',
         'core.user.update.revoke-session',
+        'core.user.import-template',
+        'core.user.import.update-existing-boolean-guard',
+        'core.user.import.partial-result',
+        'core.user.import.update-revoke-session',
+        'core.user.import.enabled-filter',
         'core.user.delete.revoke-session',
       ],
     }),
@@ -784,6 +918,14 @@ async function cleanup() {
     smokeUserId = undefined;
   }
 
+  if (importUserId) {
+    await apiRequest(`/core/users/${encodeURIComponent(importUserId)}`, {
+      method: 'DELETE',
+      expected: [200, 404],
+    }).catch(() => undefined);
+    importUserId = undefined;
+  }
+
   for (const batchUserId of [...batchUserIds]) {
     await apiRequest(`/core/users/${encodeURIComponent(batchUserId)}`, {
       method: 'DELETE',
@@ -826,7 +968,11 @@ async function restoreAdminProfile() {
 }
 
 async function cleanupSmokeUserSessions() {
-  for (const sessionUsername of [smokeUsername, ...batchUsernames]) {
+  for (const sessionUsername of [
+    smokeUsername,
+    importUsername,
+    ...batchUsernames,
+  ]) {
     await cleanupUserSessions(sessionUsername);
   }
 }
@@ -961,6 +1107,34 @@ function parseBoolean(value, defaultValue) {
   }
 
   return ['1', 'true', 'yes'].includes(value.toLowerCase());
+}
+
+function createUserImportCsvBase64(rows) {
+  const csvRows = [
+    [
+      'username',
+      'displayName',
+      'password',
+      'roleCodes',
+      'deptId',
+      'postCodes',
+      'enabled',
+    ],
+    ...rows,
+  ];
+
+  return Buffer.from(
+    csvRows.map((row) => row.map(escapeCsvCell).join(',')).join('\n'),
+    'utf8',
+  ).toString('base64');
+}
+
+function escapeCsvCell(value) {
+  if (!/[",\n\r]/.test(value)) {
+    return value;
+  }
+
+  return `"${value.replace(/"/g, '""')}"`;
 }
 
 function assertString(value, label) {

@@ -1,12 +1,14 @@
 import {
   CheckCircleOutlined,
   DeleteOutlined,
+  DownloadOutlined,
   EditOutlined,
   EyeOutlined,
   LockOutlined,
   PlusOutlined,
   ReloadOutlined,
   StopOutlined,
+  UploadOutlined,
 } from '@ant-design/icons';
 import {
   PageContainer,
@@ -22,11 +24,13 @@ import {
   type SystemDeptSummary,
   type SystemDeptTreeSummary,
   type SystemPostOptionSummary,
+  type UserImportResultSummary,
   type UserSummary,
 } from '@opencore/sdk';
 import {
   Alert,
   Button,
+  Checkbox,
   Form,
   Input,
   Modal,
@@ -39,7 +43,9 @@ import {
   Tree,
   TreeSelect,
   Typography,
+  Upload,
   message,
+  type UploadFile,
 } from 'antd';
 import {
   useEffect,
@@ -52,7 +58,9 @@ import {
   createOpenCoreUser,
   deleteOpenCoreUsers,
   deleteOpenCoreUser,
+  getOpenCoreUserImportTemplate,
   getOpenCoreUser,
+  importOpenCoreUsers,
   listOpenCoreRoles,
   listOpenCoreSystemDepts,
   listOpenCoreSystemDeptOptions,
@@ -421,6 +429,11 @@ export default function UsersPage() {
   const [batchAction, setBatchAction] = useState<
     'delete' | 'disable' | 'enable'
   >();
+  const [importOpen, setImportOpen] = useState(false);
+  const [importSubmitting, setImportSubmitting] = useState(false);
+  const [importUpdateExisting, setImportUpdateExisting] = useState(false);
+  const [importFileList, setImportFileList] = useState<UploadFile[]>([]);
+  const [importResult, setImportResult] = useState<UserImportResultSummary>();
   const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
   const [selectedDeptId, setSelectedDeptId] = useState<string>();
   const flatDeptRows = useMemo(
@@ -517,6 +530,23 @@ export default function UsersPage() {
       enabled: true,
     });
     setFormOpen(true);
+  };
+
+  const downloadImportTemplate = async () => {
+    const template = await getOpenCoreUserImportTemplate();
+    downloadBase64File(
+      template.filename,
+      template.contentBase64,
+      template.contentType,
+    );
+    message.success('User import template downloaded.');
+  };
+
+  const openImportUsers = () => {
+    setImportFileList([]);
+    setImportResult(undefined);
+    setImportUpdateExisting(false);
+    setImportOpen(true);
   };
 
   const openEditForm = async (record: UserSummary) => {
@@ -702,6 +732,33 @@ export default function UsersPage() {
       await loadUsers();
     } finally {
       setBatchAction(undefined);
+    }
+  };
+
+  const submitImportUsers = async () => {
+    const file = importFileList[0]?.originFileObj;
+
+    if (!file) {
+      message.warning('Select a CSV file to import.');
+      return;
+    }
+
+    setImportSubmitting(true);
+    try {
+      const result = await importOpenCoreUsers({
+        contentBase64: await readFileAsDataUrl(file),
+        updateExisting: importUpdateExisting,
+      });
+      setImportResult(result);
+      message.success(formatImportSummary(result));
+
+      if (result.failed === 0) {
+        setImportOpen(false);
+      }
+
+      await loadUsers();
+    } finally {
+      setImportSubmitting(false);
     }
   };
 
@@ -945,6 +1002,20 @@ export default function UsersPage() {
                 </Button>
               </Popconfirm>,
               <Button
+                icon={<DownloadOutlined />}
+                key="download-import-template"
+                onClick={() => void downloadImportTemplate()}
+              >
+                Download import template
+              </Button>,
+              <Button
+                icon={<UploadOutlined />}
+                key="import-users"
+                onClick={openImportUsers}
+              >
+                Import users
+              </Button>,
+              <Button
                 key="create"
                 type="primary"
                 icon={<PlusOutlined />}
@@ -990,6 +1061,62 @@ export default function UsersPage() {
         open={Boolean(selectedDetail)}
         title={selectedDetail?.username ?? 'User Detail'}
       />
+      <Modal
+        title="Import users"
+        open={importOpen}
+        okText="Import"
+        confirmLoading={importSubmitting}
+        onCancel={() => setImportOpen(false)}
+        onOk={() => void submitImportUsers()}
+      >
+        <Space direction="vertical" style={{ width: '100%' }} size="middle">
+          <Upload
+            accept=".csv,text/csv"
+            beforeUpload={(file) => {
+              setImportFileList([file]);
+              setImportResult(undefined);
+              return false;
+            }}
+            fileList={importFileList}
+            maxCount={1}
+            onRemove={() => {
+              setImportFileList([]);
+              setImportResult(undefined);
+            }}
+          >
+            <Button icon={<UploadOutlined />}>Select CSV file</Button>
+          </Upload>
+          <Checkbox
+            checked={importUpdateExisting}
+            onChange={(event) => setImportUpdateExisting(event.target.checked)}
+          >
+            Update existing users
+          </Checkbox>
+          {importResult ? (
+            <Alert
+              showIcon
+              type={importResult.failed > 0 ? 'warning' : 'success'}
+              message={formatImportSummary(importResult)}
+              description={
+                importResult.failures.length > 0 ? (
+                  <Space direction="vertical" size={4}>
+                    {importResult.failures.map((failure) => (
+                      <Typography.Text
+                        key={`${failure.rowNumber}-${failure.username ?? 'row'}`}
+                        type="secondary"
+                      >
+                        Row {failure.rowNumber}
+                        {failure.username ? ` (${failure.username})` : ''}:{' '}
+                        {failure.reason}
+                      </Typography.Text>
+                    ))}
+                  </Space>
+                ) : undefined
+              }
+            />
+          ) : null}
+        </Space>
+      </Modal>
       <Modal
         title={editingUser ? 'Edit User' : 'New User'}
         open={formOpen}
@@ -1102,4 +1229,45 @@ function formatBatchMutation(
   return `${affected} user(s) affected. ${formatRevokedSessions(
     revokedSessionCount,
   )}`;
+}
+
+function formatImportSummary(result: UserImportResultSummary): string {
+  return `Imported ${result.totalRows} row(s): ${result.created} created, ${result.updated} updated, ${result.failed} failed. ${formatRevokedSessions(
+    result.revokedSessionCount,
+  )}`;
+}
+
+function downloadBase64File(
+  filename: string,
+  contentBase64: string,
+  contentType: string,
+): void {
+  const payload = contentBase64.includes(',')
+    ? contentBase64.slice(contentBase64.indexOf(',') + 1)
+    : contentBase64;
+  const byteCharacters = atob(payload);
+  const bytes = new Uint8Array(byteCharacters.length);
+
+  for (let index = 0; index < byteCharacters.length; index += 1) {
+    bytes[index] = byteCharacters.charCodeAt(index);
+  }
+
+  const objectUrl = URL.createObjectURL(
+    new Blob([bytes], { type: contentType }),
+  );
+  const link = document.createElement('a');
+  link.href = objectUrl;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(objectUrl);
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () =>
+      reject(reader.error ?? new Error('File read failed.'));
+    reader.onload = () => resolve(String(reader.result));
+    reader.readAsDataURL(file);
+  });
 }

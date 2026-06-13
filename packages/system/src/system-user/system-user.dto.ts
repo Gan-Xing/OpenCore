@@ -144,6 +144,68 @@ export class BatchDeleteUsersDto {
   userIds!: readonly string[];
 }
 
+export class UserImportTemplateDto {
+  @ApiProperty()
+  filename!: string;
+
+  @ApiProperty()
+  contentType!: string;
+
+  @ApiProperty()
+  contentBase64!: string;
+
+  @ApiProperty({ type: [String] })
+  columns!: readonly string[];
+
+  @ApiProperty()
+  rowCount!: number;
+}
+
+export class ImportUsersDto {
+  @ApiProperty({ description: 'Base64-encoded CSV content.' })
+  contentBase64!: string;
+
+  @ApiProperty({ required: false, default: false })
+  updateExisting?: boolean;
+}
+
+export class UserImportFailureDto {
+  @ApiProperty()
+  rowNumber!: number;
+
+  @ApiProperty({ required: false })
+  username?: string;
+
+  @ApiProperty()
+  reason!: string;
+}
+
+export class UserImportResultDto {
+  @ApiProperty()
+  totalRows!: number;
+
+  @ApiProperty()
+  created!: number;
+
+  @ApiProperty()
+  updated!: number;
+
+  @ApiProperty()
+  failed!: number;
+
+  @ApiProperty({ type: [String] })
+  createdUsernames!: readonly string[];
+
+  @ApiProperty({ type: [String] })
+  updatedUsernames!: readonly string[];
+
+  @ApiProperty({ type: [UserImportFailureDto] })
+  failures!: readonly UserImportFailureDto[];
+
+  @ApiProperty({ required: false })
+  revokedSessionCount?: number;
+}
+
 export class ResetUserPasswordDto {
   @ApiProperty()
   password!: string;

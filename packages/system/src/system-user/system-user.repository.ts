@@ -4,6 +4,7 @@ import type {
   BatchDeleteUsersDto,
   BatchSetUserStatusDto,
   CreateUserDto,
+  ImportUsersDto,
   ListUsersQueryDto,
   ResetUserPasswordDto,
   RoleUserAssignmentDto,
@@ -108,7 +109,58 @@ export type SystemUserBatchMutationRecord = {
   deleted?: true;
 };
 
+export type SystemUserImportTemplateRecord = {
+  filename: string;
+  contentType: string;
+  contentBase64: string;
+  columns: readonly string[];
+  rowCount: number;
+};
+
+export type SystemUserImportCsvRecord = {
+  rowNumber: number;
+  values: Record<string, string>;
+};
+
+export type NormalizedSystemUserImportInput = {
+  rowNumber: number;
+  username: string;
+  displayName: string;
+  password?: string;
+  roleCodes: readonly string[];
+  deptId?: string;
+  postCodes: readonly string[];
+  enabled: boolean;
+};
+
+export type SystemUserImportFailureRecord = {
+  rowNumber: number;
+  username?: string;
+  reason: string;
+};
+
+export type SystemUserImportResultRecord = {
+  totalRows: number;
+  created: number;
+  updated: number;
+  failed: number;
+  createdUsernames: readonly string[];
+  updatedUsernames: readonly string[];
+  failures: readonly SystemUserImportFailureRecord[];
+  updatedSessionUsernames: readonly string[];
+};
+
 const USERNAME_PATTERN = /^[a-z][a-z0-9_.-]*$/;
+const USER_IMPORT_MAX_BYTES = 262_144;
+export const SYSTEM_USER_IMPORT_COLUMNS = [
+  'username',
+  'displayName',
+  'password',
+  'roleCodes',
+  'deptId',
+  'postCodes',
+  'enabled',
+] as const;
 
 export abstract class SystemUserRepository {
   abstract listUsers(
@@ -184,6 +236,147 @@ export function createSystemUserExportPreview(
     ],
     rowCount: rows.length,
     generatedAt: new Date().toISOString(),
+  };
+}
+
+export function createSystemUserImportTemplate(): SystemUserImportTemplateRecord {
+  const rows = [
+    SYSTEM_USER_IMPORT_COLUMNS,
+    [
+      'operator_import',
+      'Imported Operator',
+      'ChangeMe-123456',
+      'viewer',
+      'dept_operations',
+      'engineer',
+      'true',
+    ],
+    [
+      'auditor_import',
+      'Imported Auditor',
+      'ChangeMe-123456',
+      'viewer',
+      '',
+      '',
+      'false',
+    ],
+  ];
+  const csv = rows.map((row) => row.map(escapeCsvCell).join(',')).join('\n');
+
+  return {
+    filename: 'opencore-system-users-import-template.csv',
+    contentType: 'text/csv;charset=utf-8',
+    contentBase64: Buffer.from(csv, 'utf8').toString('base64'),
+    columns: SYSTEM_USER_IMPORT_COLUMNS,
+    rowCount: rows.length - 1,
+  };
+}
+
+export function parseSystemUserImportCsv(
+  body: ImportUsersDto,
+): readonly SystemUserImportCsvRecord[] {
+  const contentBase64 = normalizeRequiredText(
+    body?.contentBase64,
+    'import contentBase64',
+  );
+  const normalizedBase64 = contentBase64.includes(',')
+    ? contentBase64.slice(contentBase64.indexOf(',') + 1)
+    : contentBase64;
+
+  const trimmedBase64 = normalizedBase64.trim();
+
+  if (
+    trimmedBase64.length % 4 !== 0 ||
+    !/^[A-Za-z0-9+/]+={0,2}$/.test(trimmedBase64)
+  ) {
+    throw new BadRequestException('System user import content must be base64.');
+  }
+
+  const content = Buffer.from(trimmedBase64, 'base64');
+  const canonical = content.toString('base64');
+
+  if (
+    content.byteLength === 0 ||
+    canonical.replace(/=+$/, '') !== trimmedBase64.replace(/=+$/, '')
+  ) {
+    throw new BadRequestException(
+      'System user import content must not be empty.',
+    );
+  }
+
+  if (content.byteLength > USER_IMPORT_MAX_BYTES) {
+    throw new BadRequestException(
+      `System user import content must not exceed ${USER_IMPORT_MAX_BYTES} bytes.`,
+    );
+  }
+
+  const csv = stripUtf8Bom(content.toString('utf8'));
+  const rows = parseCsvRows(csv);
+
+  if (rows.length < 2) {
+    throw new BadRequestException(
+      'System user import CSV must contain a header and at least one data row.',
+    );
+  }
+
+  const headers = rows[0].map((header) => header.trim());
+  const missingHeader = SYSTEM_USER_IMPORT_COLUMNS.find(
+    (column) => !headers.includes(column),
+  );
+
+  if (missingHeader) {
+    throw new BadRequestException(
+      `System user import CSV is missing column: ${missingHeader}`,
+    );
+  }
+
+  const records = rows
+    .slice(1)
+    .map((cells, index) => {
+      const values: Record<string, string> = {};
+
+      for (const column of SYSTEM_USER_IMPORT_COLUMNS) {
+        const columnIndex = headers.indexOf(column);
+        values[column] = cells[columnIndex]?.trim() ?? '';
+      }
+
+      return {
+        rowNumber: index + 2,
+        values,
+      };
+    })
+    .filter((record) =>
+      SYSTEM_USER_IMPORT_COLUMNS.some((column) => record.values[column]),
+    );
+
+  if (records.length === 0) {
+    throw new BadRequestException(
+      'System user import CSV must contain at least one non-empty data row.',
+    );
+  }
+
+  return records;
+}
+
+export function normalizeSystemUserImportRecord(
+  record: SystemUserImportCsvRecord,
+): NormalizedSystemUserImportInput {
+  return {
+    rowNumber: record.rowNumber,
+    username: normalizeUsername(record.values.username),
+    displayName: normalizeRequiredText(
+      record.values.displayName,
+      'displayName',
+    ),
+    password: record.values.password
+      ? normalizeRequiredText(record.values.password, 'password')
+      : undefined,
+    roleCodes: normalizeRoleCodes(splitImportCodes(record.values.roleCodes)),
+    deptId: record.values.deptId
+      ? normalizeOptionalDeptId(record.values.deptId)
+      : undefined,
+    postCodes: normalizePostCodes(splitImportCodes(record.values.postCodes)),
+    enabled: normalizeImportBoolean(record.values.enabled),
   };
 }
 
@@ -438,6 +631,24 @@ function normalizeRequiredBoolean(value: unknown, fieldName: string): boolean {
   return value;
 }
 
+function normalizeImportBoolean(value: string): boolean {
+  const normalized = value.trim().toLowerCase();
+
+  if (!normalized) {
+    return true;
+  }
+
+  if (['1', 'enabled', 'true', 'yes'].includes(normalized)) {
+    return true;
+  }
+
+  if (['0', 'disabled', 'false', 'no'].includes(normalized)) {
+    return false;
+  }
+
+  throw new BadRequestException('System user enabled must be a boolean.');
+}
+
 function normalizeOptionalBoolean(
   value: unknown,
   fieldName: string,
@@ -550,4 +761,86 @@ function findFirstDuplicate(values: readonly string[]): string | undefined {
   }
 
   return undefined;
+}
+
+function splitImportCodes(value: string): readonly string[] {
+  const normalized = value.trim();
+
+  if (!normalized) {
+    return [];
+  }
+
+  return normalized
+    .split(';')
+    .map((code) => code.trim())
+    .filter(Boolean);
+}
+
+function stripUtf8Bom(value: string): string {
+  return value.charCodeAt(0) === 0xfeff ? value.slice(1) : value;
+}
+
+function parseCsvRows(csv: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let cell = '';
+  let inQuotes = false;
+
+  for (let index = 0; index < csv.length; index += 1) {
+    const char = csv[index];
+    const next = csv[index + 1];
+
+    if (char === '"') {
+      if (inQuotes && next === '"') {
+        cell += '"';
+        index += 1;
+        continue;
+      }
+
+      inQuotes = !inQuotes;
+      continue;
+    }
+
+    if (!inQuotes && char === ',') {
+      row.push(cell);
+      cell = '';
+      continue;
+    }
+
+    if (!inQuotes && (char === '\n' || char === '\r')) {
+      row.push(cell);
+      rows.push(row);
+      row = [];
+      cell = '';
+
+      if (char === '\r' && next === '\n') {
+        index += 1;
+      }
+
+      continue;
+    }
+
+    cell += char;
+  }
+
+  if (inQuotes) {
+    throw new BadRequestException(
+      'System user import CSV has an unclosed quote.',
+    );
+  }
+
+  row.push(cell);
+  rows.push(row);
+
+  return rows.filter((candidate) =>
+    candidate.some((candidateCell) => candidateCell.trim()),
+  );
+}
+
+function escapeCsvCell(value: string): string {
+  if (!/[",\n\r]/.test(value)) {
+    return value;
+  }
+
+  return `"${value.replace(/"/g, '""')}"`;
 }

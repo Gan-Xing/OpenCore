@@ -16,6 +16,11 @@ describe('createRbacClient', () => {
     await client.listUsers('token', { deptId: 'dept_operations' });
     await client.listUserOptions('token', { deptId: 'dept_operations' });
     await client.exportUsers('token', { deptId: 'dept_operations' });
+    await client.getUserImportTemplate('token');
+    await client.importUsers('token', {
+      contentBase64: Buffer.from('username\noperator\n').toString('base64'),
+      updateExisting: false,
+    });
     await client.getUserProfile('token');
     await client.updateUserProfile('token', {
       displayName: 'Profile Name',
@@ -114,6 +119,12 @@ describe('createRbacClient', () => {
         token: 'token',
       },
       { path: '/core/users/export?deptId=dept_operations', token: 'token' },
+      { path: '/core/users/import-template', token: 'token' },
+      {
+        path: '/core/users/import',
+        method: 'POST',
+        token: 'token',
+      },
       { path: '/core/users/profile', token: 'token' },
       {
         path: '/core/users/profile',
