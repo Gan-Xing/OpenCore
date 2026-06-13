@@ -15,6 +15,21 @@ export type DeleteResult = {
   deleted: true;
 };
 
+export type BatchDeleteLoginLogsRequest = {
+  ids: readonly string[];
+};
+
+export type LoginLogBatchMutationSummary = {
+  deleted: true;
+  affected: number;
+  ids: readonly string[];
+};
+
+export type LoginLogCleanSummary = {
+  deleted: true;
+  affected: number;
+};
+
 export type DictItemSummary = {
   id: string;
   label: string;

@@ -3078,6 +3078,56 @@
         "tags": ["SystemManagement", "Core Login Logs"]
       }
     },
+    "/api/core/login-logs/batch": {
+      "delete": {
+        "operationId": "SystemManagementController_deleteLoginLogs",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchDeleteLoginLogsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginLogBatchMutationResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Login Logs"]
+      }
+    },
+    "/api/core/login-logs/clean": {
+      "delete": {
+        "operationId": "SystemManagementController_cleanLoginLogs",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginLogCleanResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Login Logs"]
+      }
+    },
     "/api/core/login-logs/unlock": {
       "post": {
         "operationId": "SystemManagementController_unlockLoginUser",
@@ -6873,6 +6923,30 @@
           "totalPages": { "type": "number" }
         },
         "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "BatchDeleteLoginLogsDto": {
+        "type": "object",
+        "properties": {
+          "ids": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["ids"]
+      },
+      "LoginLogBatchMutationResultDto": {
+        "type": "object",
+        "properties": {
+          "deleted": { "type": "boolean" },
+          "affected": { "type": "number" },
+          "ids": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["deleted", "affected", "ids"]
+      },
+      "LoginLogCleanResultDto": {
+        "type": "object",
+        "properties": {
+          "deleted": { "type": "boolean" },
+          "affected": { "type": "number" }
+        },
+        "required": ["deleted", "affected"]
       },
       "UnlockLoginUserDto": {
         "type": "object",

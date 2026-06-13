@@ -1,5 +1,6 @@
 import {
   ClearOutlined,
+  DeleteOutlined,
   EyeOutlined,
   ReloadOutlined,
   SearchOutlined,
@@ -30,8 +31,10 @@ import {
   Tooltip,
   Typography,
 } from 'antd';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type Key } from 'react';
 import {
+  cleanOpenCoreLoginLogs,
+  deleteOpenCoreLoginLogs,
   getOpenCoreLoginLog,
   listOpenCoreLoginLogs,
   unlockOpenCoreLoginUser,
@@ -191,11 +194,15 @@ function formatLoginResult(value: LoginLogResult): string {
 
 export default function LoginLogsPage() {
   const access = useAccess();
+  const canDeleteLoginLogs = Boolean(access.canDeleteLoginLogs);
   const canManageLoginLogs = Boolean(access.canManageLoginLogs);
   const [rows, setRows] = useState<readonly LoginLogSummary[]>(fallbackRows);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
   const [selectedDetail, setSelectedDetail] = useState<LoginLogSummary>();
+  const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
+  const [deletingSelected, setDeletingSelected] = useState(false);
+  const [cleaningLogs, setCleaningLogs] = useState(false);
   const [unlockingUsername, setUnlockingUsername] = useState<string>();
   const [activeServerQuery, setActiveServerQuery] =
     useState<LoginLogQueryRequest>({});
@@ -209,6 +216,10 @@ export default function LoginLogsPage() {
       searchPlaceholder: 'Search login logs',
       selectFilters: filterOptions,
     });
+  const selectedRows = useMemo(
+    () => filteredRows.filter((row) => selectedRowKeys.includes(row.id)),
+    [filteredRows, selectedRowKeys],
+  );
 
   const loadLoginLogs = async (
     query: LoginLogQueryRequest = activeServerQuery,
@@ -278,6 +289,48 @@ export default function LoginLogsPage() {
           await loadLoginLogs();
         } finally {
           setUnlockingUsername(undefined);
+        }
+      },
+    });
+  };
+
+  const confirmDeleteSelected = () => {
+    Modal.confirm({
+      title: `Delete ${selectedRows.length} selected login logs?`,
+      content: 'Selected login log records will be permanently removed.',
+      okButtonProps: { danger: true },
+      okText: 'Delete selected',
+      onOk: async () => {
+        setDeletingSelected(true);
+        try {
+          const result = await deleteOpenCoreLoginLogs({
+            ids: selectedRows.map((record) => record.id),
+          });
+          message.success(`Deleted ${result.affected} login logs`);
+          setSelectedRowKeys([]);
+          await loadLoginLogs();
+        } finally {
+          setDeletingSelected(false);
+        }
+      },
+    });
+  };
+
+  const confirmCleanAll = () => {
+    Modal.confirm({
+      title: 'Clean all login logs?',
+      content: 'Every login log record will be permanently removed.',
+      okButtonProps: { danger: true },
+      okText: 'Clean all',
+      onOk: async () => {
+        setCleaningLogs(true);
+        try {
+          const result = await cleanOpenCoreLoginLogs();
+          message.success(`Cleaned ${result.affected} login logs`);
+          setSelectedRowKeys([]);
+          await loadLoginLogs();
+        } finally {
+          setCleaningLogs(false);
         }
       },
     });
@@ -457,8 +510,44 @@ export default function LoginLogsPage() {
           serverFilterToolbar,
           filterToolbar,
           <Typography.Text key="read-only-policy" type="secondary">
-            Audit trail with username unlock
+            Audit trail with unlock and cleanup
           </Typography.Text>,
+          <Tooltip
+            key="delete-selected"
+            title={
+              canDeleteLoginLogs
+                ? 'Delete selected login logs'
+                : 'Requires core:login-log:delete'
+            }
+          >
+            <Button
+              danger
+              disabled={!canDeleteLoginLogs || selectedRows.length === 0}
+              icon={<DeleteOutlined />}
+              loading={deletingSelected}
+              onClick={confirmDeleteSelected}
+            >
+              Delete selected
+            </Button>
+          </Tooltip>,
+          <Tooltip
+            key="clean-all"
+            title={
+              canDeleteLoginLogs
+                ? 'Clean all login logs'
+                : 'Requires core:login-log:delete'
+            }
+          >
+            <Button
+              danger
+              disabled={!canDeleteLoginLogs}
+              icon={<ClearOutlined />}
+              loading={cleaningLogs}
+              onClick={confirmCleanAll}
+            >
+              Clean all
+            </Button>
+          </Tooltip>,
           <CurrentPageExportButton
             columns={exportColumns}
             filename="opencore-login-logs.csv"
@@ -474,6 +563,13 @@ export default function LoginLogsPage() {
             />
           </Tooltip>,
         ]}
+        rowSelection={{
+          selectedRowKeys,
+          onChange: (keys) => setSelectedRowKeys(keys),
+          getCheckboxProps: () => ({
+            disabled: !canDeleteLoginLogs,
+          }),
+        }}
       />
       <ReadOnlyDetailDrawer
         fields={selectedDetail ? createDetailFields(selectedDetail) : []}

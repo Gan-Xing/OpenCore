@@ -113,3 +113,27 @@ export class LoginLogQueryDto {
   @ApiProperty({ required: false })
   createdTo?: string;
 }
+
+export class BatchDeleteLoginLogsDto {
+  @ApiProperty({ type: [String] })
+  ids!: readonly string[];
+}
+
+export class LoginLogBatchMutationResultDto {
+  @ApiProperty()
+  deleted!: true;
+
+  @ApiProperty()
+  affected!: number;
+
+  @ApiProperty({ type: [String] })
+  ids!: readonly string[];
+}
+
+export class LoginLogCleanResultDto {
+  @ApiProperty()
+  deleted!: true;
+
+  @ApiProperty()
+  affected!: number;
+}

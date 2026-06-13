@@ -13,6 +13,7 @@ import {
   type SecurityLoginResult,
   type SecurityLoginAttemptRecord,
 } from '@opencore/security';
+import type { BatchDeleteLoginLogsDto } from './audit-login-log.dto';
 import type { AuditLoginLogRecord } from './audit-login-log.records';
 
 export type AuditLoginLogQuery = PageQueryInput & {
@@ -52,6 +53,17 @@ export type AuditLoginLogExportPreview = {
   generatedAt: string;
 };
 
+export type AuditLoginLogBatchMutationRecord = {
+  deleted: true;
+  affected: number;
+  ids: readonly string[];
+};
+
+export type AuditLoginLogCleanRecord = {
+  deleted: true;
+  affected: number;
+};
+
 export const AUDIT_LOGIN_LOG_TYPES = [
   'login.mobile',
   'login.sms',
@@ -80,6 +92,12 @@ export abstract class AuditLoginLogRepository extends SecurityLoginAttemptRecord
   abstract recordLoginAttempt(
     record: SecurityLoginAttemptRecord,
   ): Promise<void>;
+
+  abstract deleteLoginLogs(
+    body: BatchDeleteLoginLogsDto,
+  ): Promise<AuditLoginLogBatchMutationRecord>;
+
+  abstract cleanLoginLogs(): Promise<AuditLoginLogCleanRecord>;
 }
 
 export function normalizeAuditLoginLogFilters(
@@ -162,6 +180,27 @@ export function createAuditLoginLogExportPreview(
   };
 }
 
+export function normalizeBatchDeleteLoginLogIds(
+  body: BatchDeleteLoginLogsDto,
+): readonly string[] {
+  if (!Array.isArray(body?.ids)) {
+    throw new BadRequestException('Login log ids must be an array.');
+  }
+
+  if (body.ids.length === 0) {
+    throw new BadRequestException('Login log ids must not be empty.');
+  }
+
+  const ids = body.ids.map(normalizeLoginLogId);
+  const duplicate = findFirstDuplicate(ids);
+
+  if (duplicate) {
+    throw new BadRequestException(`Login log id is duplicated: ${duplicate}`);
+  }
+
+  return [...ids].sort();
+}
+
 export function compareAuditLoginLogRecords(
   left: AuditLoginLogRecord,
   right: AuditLoginLogRecord,
@@ -223,4 +262,31 @@ function normalizeOptionalEnumValue<T extends string>(
   }
 
   return normalized as T;
+}
+
+function normalizeLoginLogId(value: string): string {
+  if (typeof value !== 'string') {
+    throw new BadRequestException('Login log id must be a string.');
+  }
+
+  const normalized = value.trim();
+
+  if (!normalized) {
+    throw new BadRequestException('Login log id is required.');
+  }
+
+  return normalized;
+}
+
+function findFirstDuplicate(values: readonly string[]): string | undefined {
+  const seen = new Set<string>();
+
+  for (const value of values) {
+    if (seen.has(value)) {
+      return value;
+    }
+    seen.add(value);
+  }
+
+  return undefined;
 }

@@ -35,6 +35,7 @@ import {
   AuditLogPageDto,
   AuditLogQueryDto,
   BatchDeleteSystemConfigsDto,
+  BatchDeleteLoginLogsDto,
   BatchDeleteSystemPostsDto,
   CreateDictItemDto,
   CreateDictTypeDto,
@@ -55,6 +56,8 @@ import {
   LoginLogPageDto,
   LoginLogQueryDto,
   LoginLogDto,
+  LoginLogBatchMutationResultDto,
+  LoginLogCleanResultDto,
   LoginUnlockResultDto,
   PageQueryDto,
   SystemDeptDto,
@@ -656,6 +659,24 @@ export class SystemManagementController {
   @ApiOkResponse({ type: ExportPreviewDto })
   exportLoginLogs(@Query() query: LoginLogQueryDto): Promise<ExportPreviewDto> {
     return this.loginLogs.createExportPreview(query);
+  }
+
+  @Delete('login-logs/batch')
+  @ApiTags('Core Login Logs')
+  @RequirePermission('core:login-log:delete')
+  @ApiOkResponse({ type: LoginLogBatchMutationResultDto })
+  deleteLoginLogs(
+    @Body() body: BatchDeleteLoginLogsDto,
+  ): Promise<LoginLogBatchMutationResultDto> {
+    return this.loginLogs.deleteLoginLogs(body);
+  }
+
+  @Delete('login-logs/clean')
+  @ApiTags('Core Login Logs')
+  @RequirePermission('core:login-log:delete')
+  @ApiOkResponse({ type: LoginLogCleanResultDto })
+  cleanLoginLogs(): Promise<LoginLogCleanResultDto> {
+    return this.loginLogs.cleanLoginLogs();
   }
 
   @Post('login-logs/unlock')

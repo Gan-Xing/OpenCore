@@ -78,6 +78,8 @@ describe('createSystemManagementClient', () => {
       result: 'bad_credentials',
       success: false,
     });
+    await client.deleteLoginLogs('token', { ids: ['login_failure_unknown'] });
+    await client.cleanLoginLogs('token');
     await client.unlockLoginUser('token', { username: 'operator' });
     await client.listFiles('token', { page: 1, pageSize: 10 });
     await client.getFile('token', 'file_1');
@@ -236,6 +238,16 @@ describe('createSystemManagementClient', () => {
       },
       {
         path: '/core/login-logs/export?createdFrom=2026-06-10T00%3A00%3A00.000Z&ip=127.0.0.1&logType=login.username&result=bad_credentials&success=false',
+        token: 'token',
+      },
+      {
+        path: '/core/login-logs/batch',
+        method: 'DELETE',
+        token: 'token',
+      },
+      {
+        path: '/core/login-logs/clean',
+        method: 'DELETE',
         token: 'token',
       },
       {

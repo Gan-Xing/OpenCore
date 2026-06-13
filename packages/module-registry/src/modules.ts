@@ -521,6 +521,7 @@ export const moduleRegistry = [
     permissions: definePermissions('core', 'login-log', 'login logs', 'S7', [
       { action: 'read', title: 'Read' },
       { action: 'export', title: 'Export' },
+      { action: 'delete', title: 'Delete', dangerous: true },
       { action: 'manage', title: 'Manage', dangerous: true },
     ]),
     menus: [

@@ -23,6 +23,7 @@ const timeoutMs = Number(process.env.OPENCORE_SMOKE_TIMEOUT_MS || 10000);
 const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 const failedUsername = `opencore-smoke-login-${runId}`;
 const lockoutUsername = `opencore-smoke-lockout-${runId}`;
+const postCleanUsername = `opencore-smoke-login-clean-${runId}`;
 const lockoutPassword = `Lockout-${runId}-A1`;
 const loginLockoutAttemptLimit = 5;
 const failedLoginUserAgent =
@@ -144,6 +145,50 @@ try {
   assertIncludes(exportPreview.columns, 'browser', 'login log export columns');
   assertIncludes(exportPreview.columns, 'os', 'login log export columns');
 
+  await apiRequest('/core/login-logs/batch', {
+    method: 'DELETE',
+    expected: [400],
+    body: { ids: [] },
+  });
+  await apiRequest('/core/login-logs/batch', {
+    method: 'DELETE',
+    expected: [400],
+    body: { ids: [failedLog.id, failedLog.id] },
+  });
+
+  const missingLoginLogId = `missing-login-log-${runId}`;
+  await apiRequest('/core/login-logs/batch', {
+    method: 'DELETE',
+    expected: [404],
+    body: { ids: [failedLog.id, missingLoginLogId] },
+  });
+
+  const stillPresentAfterMissingDelete = await apiRequest(
+    `/core/login-logs/${encodeURIComponent(failedLog.id)}`,
+  );
+  assertEqual(
+    stillPresentAfterMissingDelete.id,
+    failedLog.id,
+    'batch delete missing id leaves existing login log',
+  );
+
+  const deleteResult = await apiRequest('/core/login-logs/batch', {
+    method: 'DELETE',
+    body: { ids: [failedLog.id] },
+  });
+  assertEqual(
+    deleteResult.deleted,
+    true,
+    'batch delete login log deleted flag',
+  );
+  assertEqual(deleteResult.affected, 1, 'batch delete login log affected');
+  assertArray(deleteResult.ids, 'batch delete login log ids');
+  assertEqual(deleteResult.ids.length, 1, 'batch delete login log id count');
+  assertEqual(deleteResult.ids[0], failedLog.id, 'batch delete login log id');
+  await apiRequest(`/core/login-logs/${encodeURIComponent(failedLog.id)}`, {
+    expected: [404],
+  });
+
   const createdLockoutUser = await apiRequest('/core/users', {
     method: 'POST',
     body: {
@@ -241,6 +286,48 @@ try {
   });
   lockoutUserId = undefined;
 
+  const cleanResult = await apiRequest('/core/login-logs/clean', {
+    method: 'DELETE',
+  });
+  assertEqual(cleanResult.deleted, true, 'clean login logs deleted flag');
+  assertNumberAtLeast(cleanResult.affected, 1, 'clean login logs affected');
+
+  const cleanedPage = await apiRequest('/core/login-logs?page=1&pageSize=10');
+  assertArray(cleanedPage.items, 'cleaned login log list items');
+  assertEqual(cleanedPage.total, 0, 'cleaned login log total');
+  assertEqual(cleanedPage.items.length, 0, 'cleaned login log item count');
+
+  await request(`${apiPrefix}/auth/login`, {
+    method: 'POST',
+    expected: [401, 403],
+    body: {
+      username: postCleanUsername,
+      password: 'not-the-smoke-password',
+    },
+  });
+
+  const postCleanFailedLog = await waitForLoginLog({
+    label: 'post-clean failed login',
+    result: 'bad_credentials',
+    success: false,
+    username: postCleanUsername,
+  });
+  assertEqual(
+    postCleanFailedLog.username,
+    postCleanUsername,
+    'post-clean failed login username',
+  );
+  assertEqual(
+    postCleanFailedLog.result,
+    'bad_credentials',
+    'post-clean failed login result',
+  );
+  assertEqual(
+    postCleanFailedLog.success,
+    false,
+    'post-clean failed login success flag',
+  );
+
   console.log(
     JSON.stringify({
       status: 'pass',
@@ -260,10 +347,18 @@ try {
         'core.login-log.detail',
         'core.login-log.device-fields',
         'core.login-log.export',
+        'core.login-log.batch-delete-empty-guard',
+        'core.login-log.batch-delete-duplicate-guard',
+        'core.login-log.batch-delete-missing-no-partial',
+        'core.login-log.batch-delete',
+        'core.login-log.batch-delete-detail-404',
         'core.login-log.unlock-empty',
         'auth.login-lockout.enforced',
         'core.login-log.account-locked-filter',
         'core.login-log.unlock-restores-login',
+        'core.login-log.clean-all',
+        'core.login-log.clean-all-list-empty',
+        'auth.post-clean-failed-login-recorded',
       ],
     }),
   );
@@ -280,52 +375,42 @@ try {
 }
 
 async function waitForFailedLoginLog() {
-  let lastItems = [];
-
-  for (let attempt = 0; attempt < 10; attempt += 1) {
-    const page = await apiRequest(
-      `/core/login-logs?page=1&pageSize=10&username=${encodeURIComponent(
-        failedUsername,
-      )}&logType=login.username&result=bad_credentials&success=false`,
-    );
-    assertArray(page.items, 'filtered failed login log items');
-    lastItems = page.items;
-
-    const match = page.items.find(
-      (item) => item.username === failedUsername && item.success === false,
-    );
-
-    if (match) {
-      return match;
-    }
-
-    await delay(250);
-  }
-
-  throw new Error(
-    `Failed login log was not recorded for ${failedUsername}; latest rows=${formatBody(
-      lastItems,
-    )}`,
-  );
+  return waitForLoginLog({
+    label: 'failed login',
+    result: 'bad_credentials',
+    success: false,
+    username: failedUsername,
+  });
 }
 
 async function waitForAccountLockedLoginLog() {
+  return waitForLoginLog({
+    label: 'account locked',
+    result: 'account_locked',
+    success: false,
+    username: lockoutUsername,
+  });
+}
+
+async function waitForLoginLog({ label, result, success, username }) {
   let lastItems = [];
 
   for (let attempt = 0; attempt < 10; attempt += 1) {
     const page = await apiRequest(
       `/core/login-logs?page=1&pageSize=10&username=${encodeURIComponent(
-        lockoutUsername,
-      )}&logType=login.username&result=account_locked&success=false`,
+        username,
+      )}&logType=login.username&result=${encodeURIComponent(
+        result,
+      )}&success=${encodeURIComponent(String(success))}`,
     );
-    assertArray(page.items, 'filtered account locked login log items');
+    assertArray(page.items, `filtered ${label} login log items`);
     lastItems = page.items;
 
     const match = page.items.find(
       (item) =>
-        item.username === lockoutUsername &&
-        item.result === 'account_locked' &&
-        item.success === false,
+        item.username === username &&
+        item.result === result &&
+        item.success === success,
     );
 
     if (match) {
@@ -336,7 +421,7 @@ async function waitForAccountLockedLoginLog() {
   }
 
   throw new Error(
-    `Account locked login log was not recorded for ${lockoutUsername}; latest rows=${formatBody(
+    `${label} login log was not recorded for ${username}; latest rows=${formatBody(
       lastItems,
     )}`,
   );
@@ -471,6 +556,16 @@ function assertIncludes(values, expected, label) {
       `Expected ${label} to include ${JSON.stringify(
         expected,
       )}, received ${JSON.stringify(values)}`,
+    );
+  }
+}
+
+function assertNumberAtLeast(value, minimum, label) {
+  if (typeof value !== 'number' || value < minimum) {
+    throw new Error(
+      `Expected ${label} to be a number >= ${minimum}, received ${JSON.stringify(
+        value,
+      )}`,
     );
   }
 }

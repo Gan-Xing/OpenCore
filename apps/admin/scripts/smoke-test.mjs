@@ -330,6 +330,8 @@ if (
   !opencorePlatformService.includes('listOpenCoreSystemDeptOptions') ||
   !opencorePlatformService.includes('listOpenCoreLoginLogs') ||
   !opencorePlatformService.includes('getOpenCoreLoginLog') ||
+  !opencorePlatformService.includes('deleteOpenCoreLoginLogs') ||
+  !opencorePlatformService.includes('cleanOpenCoreLoginLogs') ||
   !opencorePlatformService.includes('listOpenCoreOnlineUsers') ||
   !opencorePlatformService.includes('getOpenCoreOnlineUser') ||
   !opencorePlatformService.includes('kickOutOpenCoreOnlineUser') ||
@@ -428,6 +430,8 @@ if (
   !accessRuntime.includes('core:file:read') ||
   !accessRuntime.includes('core:audit-log:read') ||
   !accessRuntime.includes('core:login-log:read') ||
+  !accessRuntime.includes('core:login-log:delete') ||
+  !accessRuntime.includes('canDeleteLoginLogs') ||
   !accessRuntime.includes('core:login-log:manage') ||
   !accessRuntime.includes('canManageLoginLogs') ||
   !accessRuntime.includes('monitor:status:read') ||
@@ -900,13 +904,21 @@ if (
 if (
   !loginLogsPage.includes('listOpenCoreLoginLogs') ||
   !loginLogsPage.includes('getOpenCoreLoginLog') ||
+  !loginLogsPage.includes('deleteOpenCoreLoginLogs') ||
+  !loginLogsPage.includes('cleanOpenCoreLoginLogs') ||
   !loginLogsPage.includes('unlockOpenCoreLoginUser') ||
   !loginLogsPage.includes('useCurrentPageFilters') ||
   !loginLogsPage.includes('CurrentPageExportButton') ||
   !loginLogsPage.includes('dataSource={filteredRows}') ||
   !loginLogsPage.includes('rows={filteredRows}') ||
-  !loginLogsPage.includes('Audit trail with username unlock') ||
+  !loginLogsPage.includes('Audit trail with unlock and cleanup') ||
+  !loginLogsPage.includes('core:login-log:delete') ||
+  !loginLogsPage.includes('canDeleteLoginLogs') ||
   !loginLogsPage.includes('canManageLoginLogs') ||
+  !loginLogsPage.includes('Delete selected') ||
+  !loginLogsPage.includes('Clean all') ||
+  !loginLogsPage.includes('rowSelection') ||
+  !loginLogsPage.includes('selectedRowKeys') ||
   !loginLogsPage.includes('UnlockOutlined') ||
   !loginLogsPage.includes('account_locked') ||
   !loginLogsPage.includes('serverFilterToolbar') ||

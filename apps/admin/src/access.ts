@@ -28,6 +28,7 @@ export default function access(initialState: InitialState = {}) {
     canReadFiles: hasPermission('core:file:read'),
     canReadAuditLogs: hasPermission('core:audit-log:read'),
     canReadLoginLogs: hasPermission('core:login-log:read'),
+    canDeleteLoginLogs: hasPermission('core:login-log:delete'),
     canManageLoginLogs: hasPermission('core:login-log:manage'),
     canReadSystemStatus: hasPermission('monitor:status:read'),
     canReadVersion: hasPermission('monitor:version:read'),

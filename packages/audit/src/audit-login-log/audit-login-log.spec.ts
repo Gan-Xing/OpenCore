@@ -121,6 +121,33 @@ describe('@opencore/audit audit-login-log', () => {
     await expect(
       service.listLoginLogs({ logType: 'login.magic' }),
     ).rejects.toThrow('logType must be one of:');
+    await expect(service.deleteLoginLogs({ ids: [] })).rejects.toThrow(
+      'Login log ids must not be empty.',
+    );
+    await expect(
+      service.deleteLoginLogs({ ids: ['login_3', 'login_3'] }),
+    ).rejects.toThrow('Login log id is duplicated: login_3');
+    await expect(
+      service.deleteLoginLogs({ ids: ['login_3', 'missing_login_log'] }),
+    ).rejects.toThrow('Login log not found: missing_login_log');
+    await expect(
+      service.deleteLoginLogs({ ids: ['login_3'] }),
+    ).resolves.toEqual({
+      deleted: true,
+      affected: 1,
+      ids: ['login_3'],
+    });
+    await expect(service.getLoginLog('login_3')).rejects.toThrow(
+      'Login log not found: login_3',
+    );
+    await expect(service.cleanLoginLogs()).resolves.toEqual({
+      deleted: true,
+      affected: 3,
+    });
+    await expect(service.listLoginLogs()).resolves.toMatchObject({
+      total: 0,
+      items: [],
+    });
   });
 
   describe('PrismaAuditLoginLogRepository integration', () => {
@@ -210,6 +237,34 @@ describe('@opencore/audit audit-login-log', () => {
         logType: 'login.username',
         result: 'bad_credentials',
       });
+      await expect(service.deleteLoginLogs({ ids: [] })).rejects.toThrow(
+        'Login log ids must not be empty.',
+      );
+      await expect(
+        service.deleteLoginLogs({
+          ids: [String(persistedId), String(persistedId)],
+        }),
+      ).rejects.toThrow(`Login log id is duplicated: ${persistedId}`);
+      await expect(
+        service.deleteLoginLogs({
+          ids: [String(persistedId), `missing_${testRunId}`],
+        }),
+      ).rejects.toThrow(`Login log not found: missing_${testRunId}`);
+      await expect(service.getLoginLog(String(persistedId))).resolves.toEqual(
+        expect.objectContaining({
+          requestId,
+        }),
+      );
+      await expect(
+        service.deleteLoginLogs({ ids: [String(persistedId)] }),
+      ).resolves.toEqual({
+        deleted: true,
+        affected: 1,
+        ids: [String(persistedId)],
+      });
+      await expect(service.getLoginLog(String(persistedId))).rejects.toThrow(
+        `Login log not found: ${persistedId}`,
+      );
     });
 
     async function cleanupTestRows(): Promise<void> {

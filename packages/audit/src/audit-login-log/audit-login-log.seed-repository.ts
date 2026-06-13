@@ -10,10 +10,14 @@ import {
   AuditLoginLogRepository,
   compareAuditLoginLogRecords,
   createAuditLoginLogPageResult,
+  normalizeBatchDeleteLoginLogIds,
   normalizeAuditLoginLogFilters,
   normalizeAuditLoginLogPageQuery,
+  type AuditLoginLogBatchMutationRecord,
+  type AuditLoginLogCleanRecord,
   type AuditLoginLogQuery,
 } from './audit-login-log.repository';
+import type { BatchDeleteLoginLogsDto } from './audit-login-log.dto';
 
 @Injectable()
 export class SeedAuditLoginLogRepository extends AuditLoginLogRepository {
@@ -77,6 +81,42 @@ export class SeedAuditLoginLogRepository extends AuditLoginLogRepository {
     }
 
     return cloneLoginLog(log);
+  }
+
+  async deleteLoginLogs(
+    body: BatchDeleteLoginLogsDto,
+  ): Promise<AuditLoginLogBatchMutationRecord> {
+    const ids = normalizeBatchDeleteLoginLogIds(body);
+    const selected = ids.map((id) => this.findLoginLog(id));
+    const selectedIds = new Set(selected.map((log) => log.id));
+
+    this.loginLogs = this.loginLogs.filter((log) => !selectedIds.has(log.id));
+
+    return {
+      deleted: true,
+      affected: selected.length,
+      ids,
+    };
+  }
+
+  async cleanLoginLogs(): Promise<AuditLoginLogCleanRecord> {
+    const affected = this.loginLogs.length;
+    this.loginLogs = [];
+
+    return {
+      deleted: true,
+      affected,
+    };
+  }
+
+  private findLoginLog(id: string): AuditLoginLogRecord {
+    const log = this.loginLogs.find((candidate) => candidate.id === id);
+
+    if (!log) {
+      throw new NotFoundException(`Login log not found: ${id}`);
+    }
+
+    return log;
   }
 }
 

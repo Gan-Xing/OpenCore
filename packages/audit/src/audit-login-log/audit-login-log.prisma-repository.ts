@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
 import { PrismaService } from '@opencore/database';
 import type { SecurityLoginAttemptRecord } from '@opencore/security';
+import type { BatchDeleteLoginLogsDto } from './audit-login-log.dto';
 import {
   enrichAuditLoginLogRecord,
   type AuditLoginLogRecord,
@@ -9,8 +10,11 @@ import {
 import {
   AuditLoginLogRepository,
   createAuditLoginLogPageResult,
+  normalizeBatchDeleteLoginLogIds,
   normalizeAuditLoginLogFilters,
   normalizeAuditLoginLogPageQuery,
+  type AuditLoginLogBatchMutationRecord,
+  type AuditLoginLogCleanRecord,
   type AuditLoginLogQuery,
 } from './audit-login-log.repository';
 
@@ -99,6 +103,41 @@ export class PrismaAuditLoginLogRepository extends AuditLoginLogRepository {
     }
 
     return toAuditLoginLogRecord(log);
+  }
+
+  async deleteLoginLogs(
+    body: BatchDeleteLoginLogsDto,
+  ): Promise<AuditLoginLogBatchMutationRecord> {
+    const ids = normalizeBatchDeleteLoginLogIds(body);
+    const logs = await this.prisma.loginLog.findMany({
+      where: { id: { in: [...ids] } },
+      select: { id: true },
+    });
+    const existingIds = new Set(logs.map((log) => log.id));
+    const missing = ids.find((id) => !existingIds.has(id));
+
+    if (missing) {
+      throw new NotFoundException(`Login log not found: ${missing}`);
+    }
+
+    await this.prisma.loginLog.deleteMany({
+      where: { id: { in: [...ids] } },
+    });
+
+    return {
+      deleted: true,
+      affected: ids.length,
+      ids,
+    };
+  }
+
+  async cleanLoginLogs(): Promise<AuditLoginLogCleanRecord> {
+    const result = await this.prisma.loginLog.deleteMany();
+
+    return {
+      deleted: true,
+      affected: result.count,
+    };
   }
 }
 

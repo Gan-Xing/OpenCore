@@ -2,6 +2,7 @@ import type { SdkRequest } from './rbac-client';
 import type {
   AuditLogQueryRequest,
   AuditLogSummary,
+  BatchDeleteLoginLogsRequest,
   BatchDeleteSystemConfigsRequest,
   BatchDeleteSystemPostsRequest,
   CreateDictItemRequest,
@@ -19,6 +20,8 @@ import type {
   ExportPreview,
   FileAssetSummary,
   LoginLogQueryRequest,
+  LoginLogBatchMutationSummary,
+  LoginLogCleanSummary,
   LoginLogSummary,
   LoginUnlockSummary,
   PageRequest,
@@ -233,6 +236,11 @@ export type SystemManagementClient = {
     token: Token,
     query?: LoginLogQueryRequest,
   ) => Promise<ExportPreview>;
+  deleteLoginLogs: (
+    token: Token,
+    body: BatchDeleteLoginLogsRequest,
+  ) => Promise<LoginLogBatchMutationSummary>;
+  cleanLoginLogs: (token: Token) => Promise<LoginLogCleanSummary>;
   unlockLoginUser: (
     token: Token,
     body: UnlockLoginUserRequest,
@@ -562,6 +570,17 @@ export function createSystemManagementClient(
       }),
     exportLoginLogs: (token, query) =>
       request<ExportPreview>(withQuery('/core/login-logs/export', query), {
+        token,
+      }),
+    deleteLoginLogs: (token, body) =>
+      request<LoginLogBatchMutationSummary>('/core/login-logs/batch', {
+        method: 'DELETE',
+        body,
+        token,
+      }),
+    cleanLoginLogs: (token) =>
+      request<LoginLogCleanSummary>('/core/login-logs/clean', {
+        method: 'DELETE',
         token,
       }),
     unlockLoginUser: (token, body) =>

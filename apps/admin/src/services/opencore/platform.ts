@@ -8,6 +8,7 @@ import {
   type AssignUserRolesRequest,
   type AuditLogQueryRequest,
   type AuditLogSummary,
+  type BatchDeleteLoginLogsRequest,
   type BatchDeleteUsersRequest,
   type BatchDeleteSystemConfigsRequest,
   type BatchDeleteSystemPostsRequest,
@@ -52,6 +53,8 @@ import {
   type SystemDeptTreeSummary,
   type FileAssetSummary,
   type LoginLogQueryRequest,
+  type LoginLogBatchMutationSummary,
+  type LoginLogCleanSummary,
   type LoginLogSummary,
   type LoginUnlockSummary,
   type KickOutSessionRequest,
@@ -544,6 +547,16 @@ export async function listOpenCoreLoginLogs(
 
 export function getOpenCoreLoginLog(id: string): Promise<LoginLogSummary> {
   return systemManagementClient.getLoginLog(getRequiredAdminToken(), id);
+}
+
+export function deleteOpenCoreLoginLogs(
+  body: BatchDeleteLoginLogsRequest,
+): Promise<LoginLogBatchMutationSummary> {
+  return systemManagementClient.deleteLoginLogs(getRequiredAdminToken(), body);
+}
+
+export function cleanOpenCoreLoginLogs(): Promise<LoginLogCleanSummary> {
+  return systemManagementClient.cleanLoginLogs(getRequiredAdminToken());
 }
 
 export function unlockOpenCoreLoginUser(
