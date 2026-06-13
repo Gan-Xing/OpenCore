@@ -171,16 +171,28 @@ function columnIndexToName(index: number): string {
 }
 
 function normalizeSheetName(value: string): string {
-  const normalized = value.replace(/[\[\]:*?\/\\]/g, ' ').trim();
+  const unsafeCharacters = new Set(['[', ']', ':', '*', '?', '/', '\\']);
+  const normalized = Array.from(value)
+    .map((character) => (unsafeCharacters.has(character) ? ' ' : character))
+    .join('')
+    .trim();
   return (normalized || 'Data').slice(0, 31);
 }
 
 function escapeXml(value: string): string {
-  return value
-    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '')
+  return stripInvalidXmlControlCharacters(value)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&apos;');
+}
+
+function stripInvalidXmlControlCharacters(value: string): string {
+  return Array.from(value)
+    .filter((character) => {
+      const code = character.charCodeAt(0);
+      return code === 0x09 || code === 0x0a || code === 0x0d || code >= 0x20;
+    })
+    .join('');
 }
