@@ -13,6 +13,9 @@ describe('createRbacClient', () => {
     };
     const client = createRbacClient(request);
 
+    await client.login({ username: 'admin', password: 'admin123' });
+    await client.me('token');
+    await client.logout('token');
     await client.listUsers('token', { deptId: 'dept_operations' });
     await client.listUserOptions('token', { deptId: 'dept_operations' });
     await client.exportUsers('token', { deptId: 'dept_operations' });
@@ -117,6 +120,9 @@ describe('createRbacClient', () => {
     await client.deleteMenu('token', 'system.examples');
 
     expect(calls).toEqual([
+      { path: '/auth/login', method: 'POST' },
+      { path: '/auth/me', token: 'token' },
+      { path: '/auth/logout', method: 'POST', token: 'token' },
       { path: '/core/users?deptId=dept_operations', token: 'token' },
       {
         path: '/core/users/simple-list?deptId=dept_operations',

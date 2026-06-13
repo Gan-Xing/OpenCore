@@ -266,6 +266,7 @@ if (
   !authService.includes('createRbacClient') ||
   !authService.includes('loginToOpenCore') ||
   !authService.includes('queryCurrentOpenCoreUser') ||
+  !authService.includes('logoutFromOpenCore') ||
   !authService.includes('getOpenCoreUserProfile') ||
   !authService.includes('updateOpenCoreUserProfile') ||
   !authService.includes('updateOpenCoreUserAvatar') ||
@@ -282,9 +283,13 @@ if (
 if (
   !avatarDropdown.includes("key: 'profile'") ||
   !avatarDropdown.includes("history.push('/personal/profile')") ||
+  !avatarDropdown.includes('logoutFromOpenCore') ||
+  !avatarDropdown.includes('void loginOut()') ||
   !avatarDropdown.includes('UserOutlined')
 ) {
-  throw new Error('Admin avatar dropdown must expose the self-profile route.');
+  throw new Error(
+    'Admin avatar dropdown must expose the self-profile route and call the OpenCore logout API.',
+  );
 }
 
 if (

@@ -76,6 +76,11 @@ export class LoginResponseDto {
   user!: AuthenticatedUserDto;
 }
 
+export class LogoutResponseDto {
+  @ApiProperty()
+  loggedOut!: true;
+}
+
 export class PermissionSummaryDto {
   @ApiProperty()
   code!: string;

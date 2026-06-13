@@ -19,6 +19,10 @@ export type LoginResponse = {
   user: AuthenticatedUser;
 };
 
+export type LogoutResponse = {
+  loggedOut: true;
+};
+
 export type UserSummary = {
   id: string;
   username: string;

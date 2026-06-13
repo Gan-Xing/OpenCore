@@ -78,6 +78,24 @@
         "tags": ["Auth"]
       }
     },
+    "/api/auth/logout": {
+      "post": {
+        "operationId": "AuthController_logout",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LogoutResponseDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Auth"]
+      }
+    },
     "/api/core/users": {
       "get": {
         "operationId": "RbacController_listUsers",
@@ -5696,6 +5714,11 @@
           "user": { "$ref": "#/components/schemas/AuthenticatedUserDto" }
         },
         "required": ["accessToken", "tokenType", "expiresInSeconds", "user"]
+      },
+      "LogoutResponseDto": {
+        "type": "object",
+        "properties": { "loggedOut": { "type": "boolean" } },
+        "required": ["loggedOut"]
       },
       "UserSummaryDto": {
         "type": "object",

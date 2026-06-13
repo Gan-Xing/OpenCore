@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
   Post,
   Req,
   UnauthorizedException,
@@ -9,7 +10,11 @@ import {
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { getRequestContext } from '@opencore/core';
 import { AuthService, type AuthenticatedUser } from './auth.service';
-import { LoginRequestDto, LoginResponseDto } from './rbac.dto';
+import {
+  LoginRequestDto,
+  LoginResponseDto,
+  LogoutResponseDto,
+} from './rbac.dto';
 import { RequireAuthenticated } from './permissions.decorator';
 
 type RequestWithUser = {
@@ -50,6 +55,22 @@ export class AuthController {
       userAgent: getHeaderValue(request.headers, 'user-agent'),
       requestId: getRequestContext()?.requestId,
     });
+  }
+
+  @Post('logout')
+  @HttpCode(200)
+  @ApiBearerAuth()
+  @RequireAuthenticated()
+  @ApiOkResponse({ type: LogoutResponseDto })
+  logout(@Req() request: RequestWithUser): Promise<LogoutResponseDto> {
+    return this.authService.logout(
+      getHeaderValue(request.headers, 'authorization'),
+      {
+        ip: request.ip,
+        userAgent: getHeaderValue(request.headers, 'user-agent'),
+        requestId: getRequestContext()?.requestId,
+      },
+    );
   }
 }
 

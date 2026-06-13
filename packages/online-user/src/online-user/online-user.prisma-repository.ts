@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
 import { PrismaService } from '@opencore/database';
-import type { SecurityAuthSessionRecord } from '@opencore/security';
+import type {
+  SecurityAuthSessionRecord,
+  SecurityAuthSessionRevocationInput,
+} from '@opencore/security';
 import type { OnlineUserSessionRecord } from './online-user.records';
 import {
   assertTokenSessionActive,
@@ -117,6 +120,29 @@ export class PrismaOnlineUserRepository extends OnlineUserRepository {
     await this.prisma.onlineUserSession.update({
       where: { tokenId },
       data: { lastSeenAt: new Date() },
+    });
+  }
+
+  async revokeSession(
+    tokenId: string,
+    body: SecurityAuthSessionRevocationInput,
+  ): Promise<void> {
+    const session = await this.prisma.onlineUserSession.findUnique({
+      where: { tokenId },
+      select: { tokenId: true, revokedAt: true },
+    });
+
+    if (!session || session.revokedAt) {
+      return;
+    }
+
+    await this.prisma.onlineUserSession.update({
+      where: { tokenId },
+      data: {
+        revokedAt: new Date(),
+        revokedBy: body.actor,
+        revokedReason: body.reason,
+      },
     });
   }
 

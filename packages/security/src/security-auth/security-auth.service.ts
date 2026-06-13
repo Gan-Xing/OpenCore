@@ -12,6 +12,7 @@ import {
   type SecurityLoginLockoutRecord,
   type SecurityLoginAttemptRecord,
   type SecurityLoginResult,
+  type SecurityLoginLogType,
 } from './security-auth.repository';
 import { SecurityBearerTokenService } from './security-bearer-token.service';
 import { verifySecurityPassword } from './security-password';
@@ -36,6 +37,10 @@ export type LoginResponse = {
   tokenType: 'Bearer';
   expiresInSeconds: number;
   user: AuthenticatedUser;
+};
+
+export type LogoutResponse = {
+  loggedOut: true;
 };
 
 @Injectable()
@@ -147,6 +152,29 @@ export class SecurityAuthService {
     return this.toAuthenticatedUser(token.subject);
   }
 
+  async logout(
+    authorization: string | undefined,
+    context: LoginContext = {},
+  ): Promise<LogoutResponse> {
+    const token = this.bearerTokens.verifyAuthorizationToken(authorization);
+    await this.sessions.assertSessionActive(token.tokenId);
+    const user = await this.toAuthenticatedUser(token.subject);
+
+    await this.sessions.revokeSession(token.tokenId, {
+      actor: user.username,
+      reason: 'self logout',
+    });
+    await this.recordLoginAttempt(
+      user.username,
+      'success',
+      undefined,
+      context,
+      'logout.self',
+    );
+
+    return { loggedOut: true };
+  }
+
   private async toAuthenticatedUser(
     userId: string,
   ): Promise<AuthenticatedUser> {
@@ -171,10 +199,11 @@ export class SecurityAuthService {
     result: SecurityLoginResult,
     failureReason: string | undefined,
     context: LoginContext,
+    logType: SecurityLoginLogType = 'login.username',
   ): Promise<void> {
     const record: SecurityLoginAttemptRecord = {
       username,
-      logType: 'login.username',
+      logType,
       result,
       success: result === 'success',
       failureReason,

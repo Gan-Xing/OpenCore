@@ -4,6 +4,7 @@ import type { MenuProps } from 'antd';
 import { Spin } from 'antd';
 import React, { startTransition } from 'react';
 import { registrySummary, shellMenuItems } from '@/core/shellRegistry';
+import { logoutFromOpenCore } from '@/services/opencore/auth';
 import { removeAdminToken } from '@/services/opencore/token';
 import HeaderDropdown from '../HeaderDropdown';
 
@@ -14,7 +15,12 @@ type GlobalHeaderRightProps = {
 export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
   children,
 }) => {
-  const loginOut = () => {
+  const loginOut = async () => {
+    try {
+      await logoutFromOpenCore();
+    } catch (error) {
+      console.error(error);
+    }
     removeAdminToken();
     const { search, pathname } = window.location;
     const urlParams = new URL(window.location.href).searchParams;
@@ -43,7 +49,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
           registrySummary: s?.registrySummary ?? registrySummary,
         }));
       });
-      loginOut();
+      void loginOut();
       return;
     }
     if (key === 'theme') {

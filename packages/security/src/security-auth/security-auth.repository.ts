@@ -69,6 +69,11 @@ export type SecurityAuthSessionRecord = {
   expiresAt: string;
 };
 
+export type SecurityAuthSessionRevocationInput = {
+  actor: string;
+  reason: string;
+};
+
 export abstract class SecurityLoginAttemptRecorder {
   abstract recordLoginAttempt(
     record: SecurityLoginAttemptRecord,
@@ -138,6 +143,11 @@ export abstract class SecurityAuthSessionRepository {
   abstract registerSession(record: SecurityAuthSessionRecord): Promise<void>;
 
   abstract assertSessionActive(tokenId: string): Promise<void>;
+
+  abstract revokeSession(
+    tokenId: string,
+    input: SecurityAuthSessionRevocationInput,
+  ): Promise<void>;
 }
 
 export class AllowAllSecurityAuthSessionRepository extends SecurityAuthSessionRepository {
@@ -146,6 +156,10 @@ export class AllowAllSecurityAuthSessionRepository extends SecurityAuthSessionRe
   }
 
   async assertSessionActive(): Promise<void> {
+    return undefined;
+  }
+
+  async revokeSession(): Promise<void> {
     return undefined;
   }
 }

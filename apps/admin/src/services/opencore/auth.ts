@@ -3,6 +3,7 @@ import {
   type AuthenticatedUser,
   type LoginRequest,
   type LoginResponse,
+  type LogoutResponse,
   type UploadUserAvatarRequest,
   type UpdateUserPasswordRequest,
   type UpdateUserProfileRequest,
@@ -45,6 +46,10 @@ export async function loginToOpenCore(
 
 export async function queryCurrentOpenCoreUser(): Promise<LoginResponse> {
   return authClient.me(getRequiredAdminToken());
+}
+
+export async function logoutFromOpenCore(): Promise<LogoutResponse> {
+  return authClient.logout(getRequiredAdminToken());
 }
 
 export async function getOpenCoreUserProfile(): Promise<UserProfileSummary> {

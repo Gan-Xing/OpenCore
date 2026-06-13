@@ -7,6 +7,7 @@ import {
   SecurityLoginPolicyProvider,
   SecurityAuthSessionRepository,
   type SecurityAuthSessionRecord,
+  type SecurityAuthSessionRevocationInput,
   SecurityAuthUserRepository,
   type SecurityAuthUserRecord,
   SecurityLoginAttemptRecorder,
@@ -110,6 +111,62 @@ describe('@opencore/security security-auth', () => {
         ip: '127.0.0.1',
         requestId: 'req_login_success',
         userAgent: 'jest',
+      },
+    ]);
+  });
+
+  it('logs out the current bearer token and records a self logout log', async () => {
+    const repository = new InMemorySecurityAuthUserRepository();
+    const loginAttempts = new InMemorySecurityLoginAttemptRecorder();
+    const sessions = new InMemorySecurityAuthSessionRepository();
+    const service = new SecurityAuthService(
+      repository,
+      loginAttempts,
+      sessions,
+    );
+
+    const session = await service.login('admin', 'admin123', {
+      ip: '127.0.0.1',
+      requestId: 'req_login_before_logout',
+      userAgent: 'jest-login',
+    });
+    const tokenId = sessions.records[0].tokenId;
+
+    await expect(
+      service.logout(`Bearer ${session.accessToken}`, {
+        ip: '127.0.0.2',
+        requestId: 'req_logout_self',
+        userAgent: 'jest-logout',
+      }),
+    ).resolves.toEqual({ loggedOut: true });
+
+    expect(sessions.revocations).toEqual([
+      {
+        tokenId,
+        actor: 'admin',
+        reason: 'self logout',
+      },
+    ]);
+    await expect(
+      service.authenticateBearer(`Bearer ${session.accessToken}`),
+    ).rejects.toThrow(UnauthorizedException);
+    expect(loginAttempts.records).toEqual([
+      expect.objectContaining({
+        username: 'admin',
+        logType: 'login.username',
+        result: 'success',
+        success: true,
+        requestId: 'req_login_before_logout',
+      }),
+      {
+        username: 'admin',
+        logType: 'logout.self',
+        result: 'success',
+        success: true,
+        failureReason: undefined,
+        ip: '127.0.0.2',
+        requestId: 'req_logout_self',
+        userAgent: 'jest-logout',
       },
     ]);
   });
@@ -244,6 +301,9 @@ class InMemorySecurityAuthUserRepository extends SecurityAuthUserRepository {
 class InMemorySecurityAuthSessionRepository extends SecurityAuthSessionRepository {
   readonly records: SecurityAuthSessionRecord[] = [];
   readonly revokedTokenIds = new Set<string>();
+  readonly revocations: Array<
+    SecurityAuthSessionRevocationInput & { tokenId: string }
+  > = [];
 
   async registerSession(record: SecurityAuthSessionRecord): Promise<void> {
     this.records.push({ ...record });
@@ -253,6 +313,14 @@ class InMemorySecurityAuthSessionRepository extends SecurityAuthSessionRepositor
     if (this.revokedTokenIds.has(tokenId)) {
       throw new UnauthorizedException('Bearer token has been revoked');
     }
+  }
+
+  async revokeSession(
+    tokenId: string,
+    input: SecurityAuthSessionRevocationInput,
+  ): Promise<void> {
+    this.revokedTokenIds.add(tokenId);
+    this.revocations.push({ tokenId, ...input });
   }
 }
 

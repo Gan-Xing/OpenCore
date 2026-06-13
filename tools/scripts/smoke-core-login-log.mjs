@@ -22,13 +22,17 @@ const timeoutMs = Number(process.env.OPENCORE_SMOKE_TIMEOUT_MS || 10000);
 
 const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 const failedUsername = `opencore-smoke-login-${runId}`;
+const logoutUsername = `opencore-smoke-logout-${runId}`;
 const lockoutUsername = `opencore-smoke-lockout-${runId}`;
 const postCleanUsername = `opencore-smoke-login-clean-${runId}`;
+const logoutPassword = `Logout-${runId}-A1`;
 const lockoutPassword = `Lockout-${runId}-A1`;
 const smokeLoginMaxFailedAttempts = 3;
 const failedLoginUserAgent =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+const logoutUserAgent = `OpenCoreSmokeLogout/${runId}`;
 let token;
+let logoutUserId;
 let lockoutUserId;
 let originalLoginMaxFailedAttempts;
 let loginMaxFailedAttemptsMutated = false;
@@ -55,6 +59,66 @@ try {
 
   const listResponse = await apiRequest('/core/login-logs?page=1&pageSize=10');
   assertArray(listResponse.items, 'login log list items');
+
+  const createdLogoutUser = await apiRequest('/core/users', {
+    method: 'POST',
+    body: {
+      username: logoutUsername,
+      displayName: 'Smoke Logout User',
+      password: logoutPassword,
+      roleCodes: [],
+      enabled: true,
+    },
+  });
+  logoutUserId = assertString(
+    createdLogoutUser.id,
+    'created logout smoke user id',
+  );
+
+  const logoutLoginResponse = await request(`${apiPrefix}/auth/login`, {
+    method: 'POST',
+    expected: [200, 201],
+    headers: {
+      'user-agent': logoutUserAgent,
+    },
+    body: {
+      username: logoutUsername,
+      password: logoutPassword,
+    },
+  });
+  const logoutToken = assertString(
+    logoutLoginResponse.accessToken,
+    'logout smoke accessToken',
+  );
+  const logoutResult = await request(`${apiPrefix}/auth/logout`, {
+    method: 'POST',
+    token: logoutToken,
+    headers: {
+      'user-agent': logoutUserAgent,
+    },
+  });
+  assertEqual(logoutResult.loggedOut, true, 'self logout result');
+  await request(`${apiPrefix}/auth/me`, {
+    token: logoutToken,
+    expected: [401, 403],
+  });
+
+  const logoutLog = await waitForLoginLog({
+    label: 'self logout',
+    logType: 'logout.self',
+    result: 'success',
+    success: true,
+    username: logoutUsername,
+  });
+  assertEqual(logoutLog.username, logoutUsername, 'self logout username');
+  assertEqual(logoutLog.logType, 'logout.self', 'self logout log type');
+  assertEqual(logoutLog.result, 'success', 'self logout result');
+  assertEqual(logoutLog.success, true, 'self logout success flag');
+
+  await apiRequest(`/core/users/${encodeURIComponent(logoutUserId)}`, {
+    method: 'DELETE',
+  });
+  logoutUserId = undefined;
 
   await request(`${apiPrefix}/auth/login`, {
     method: 'POST',
@@ -380,6 +444,9 @@ try {
         'health.ready',
         ...(checkDocs ? ['openapi.docs-json'] : []),
         'auth.login',
+        'auth.logout.self',
+        'auth.logout.revokes-session',
+        'core.login-log.logout-self-recorded',
         'auth.failed-login-recorded',
         'core.login-log.list',
         'core.login-log.server-filters',
@@ -406,6 +473,8 @@ try {
     }),
   );
 } catch (error) {
+  await cleanupSmokeUser(logoutUserId).catch(() => undefined);
+  await cleanupSmokeUser(lockoutUserId).catch(() => undefined);
   await restoreLoginMaxFailedAttempts().catch(() => undefined);
   console.error(
     JSON.stringify({
@@ -436,6 +505,16 @@ async function restoreLoginMaxFailedAttempts() {
   loginMaxFailedAttemptsMutated = false;
 }
 
+async function cleanupSmokeUser(userId) {
+  if (!token || !userId) {
+    return;
+  }
+
+  await apiRequest(`/core/users/${encodeURIComponent(userId)}`, {
+    method: 'DELETE',
+  });
+}
+
 async function waitForFailedLoginLog() {
   return waitForLoginLog({
     label: 'failed login',
@@ -454,14 +533,20 @@ async function waitForAccountLockedLoginLog() {
   });
 }
 
-async function waitForLoginLog({ label, result, success, username }) {
+async function waitForLoginLog({
+  label,
+  logType = 'login.username',
+  result,
+  success,
+  username,
+}) {
   let lastItems = [];
 
   for (let attempt = 0; attempt < 10; attempt += 1) {
     const page = await apiRequest(
       `/core/login-logs?page=1&pageSize=10&username=${encodeURIComponent(
         username,
-      )}&logType=login.username&result=${encodeURIComponent(
+      )}&logType=${encodeURIComponent(logType)}&result=${encodeURIComponent(
         result,
       )}&success=${encodeURIComponent(String(success))}`,
     );
@@ -471,6 +556,7 @@ async function waitForLoginLog({ label, result, success, username }) {
     const match = page.items.find(
       (item) =>
         item.username === username &&
+        item.logType === logType &&
         item.result === result &&
         item.success === success,
     );

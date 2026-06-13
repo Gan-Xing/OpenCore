@@ -13,6 +13,7 @@ import type {
   ListUsersRequest,
   LoginRequest,
   LoginResponse,
+  LogoutResponse,
   MenuSummary,
   PermissionSummary,
   RbacDeleteResult,
@@ -53,6 +54,7 @@ export type SdkRequest = <T>(
 export type RbacClient = {
   login: (request: LoginRequest) => Promise<LoginResponse>;
   me: (token: string) => Promise<LoginResponse>;
+  logout: (token: string) => Promise<LogoutResponse>;
   listUsers: (
     token: string,
     query?: ListUsersRequest,
@@ -187,6 +189,11 @@ export function createRbacClient(request: SdkRequest): RbacClient {
       }),
     me: (token) =>
       request<LoginResponse>('/auth/me', {
+        token,
+      }),
+    logout: (token) =>
+      request<LogoutResponse>('/auth/logout', {
+        method: 'POST',
         token,
       }),
     listUsers: (token, query) =>
