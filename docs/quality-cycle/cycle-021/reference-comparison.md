@@ -816,3 +816,34 @@ existing department management tree:
 OpenCore still does not admit custom role data-scope department assignment,
 batch department deletion, drag-sort/order persistence, tenant department
 hierarchies or workflow/business binding in this round.
+
+## Round 28 User Self-profile Reference Shape
+
+RuoYi exposes the current user's profile under `/system/user/profile`, with
+basic profile read/update, password update and avatar upload as one user-center
+surface.
+
+Yudao exposes the same product shape through user profile endpoints for
+profile get/update and update-password, with the Admin user-center page acting
+on the current authenticated account instead of the user-management table.
+
+OpenCore admits the matching stage-5 foundation loop while preserving its
+current user schema:
+
+- `GET /api/core/users/profile` returns the current authenticated user's user
+  summary without requiring a management permission;
+- `PATCH /api/core/users/profile` updates only the current user's
+  `displayName`;
+- the new auth-only guard is explicit, so `/auth/me` and profile endpoints are
+  not coupled to an unrelated dashboard permission;
+- system-user management protection remains in place for
+  `PATCH /api/core/users/:id`;
+- Admin adds `/personal/profile` behind the Avatar menu and shows identity,
+  department, roles and posts plus a display-name edit form;
+- fixed-port, deploy and public smoke prove profile read/update, `/auth/me`
+  display-name refresh, invalid display-name 400 and system-user management
+  update rejection.
+
+OpenCore still does not admit avatar upload, self password update, email/phone
+profile fields, social account binding, user import/export file workflows,
+batch user deletion or a standalone user simple-list endpoint in this round.

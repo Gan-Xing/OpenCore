@@ -720,6 +720,37 @@ payload for the create/edit department selector.
       verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 28: core.user Self-profile Basic Info Productization
+
+Why this slice: after department option-source, the next lower-dependency user
+gap was the current user's own profile. RuoYi exposes `/system/user/profile`
+for profile read/update, password update and avatar upload. Yudao exposes
+profile get/update/update-password under the user profile surface. OpenCore had
+Admin `/auth/me` and management user CRUD, but no self-profile endpoint that
+allowed the current user to update basic personal information without going
+through the system-user management mutation path.
+
+- [x] Add auth-only RBAC metadata and guard support so authenticated endpoints
+      do not require an unrelated management permission.
+- [x] Move `/auth/me` to the auth-only guard instead of dashboard permission
+      coupling.
+- [x] Add `GET /api/core/users/profile` for the current authenticated user.
+- [x] Add `PATCH /api/core/users/profile` for self `displayName` updates only.
+- [x] Preserve system-user management protection: seeded/system users still
+      cannot be modified through `PATCH /api/core/users/:id`.
+- [x] Extend seed and Prisma system user repositories with
+      `updateUserProfile()`.
+- [x] Extend OpenAPI, SDK types/client methods and SDK path tests.
+- [x] Add Admin `/personal/profile` and Avatar menu entry for the current user.
+- [x] Add static Admin smoke guards for the profile route, menu entry, service
+      methods and page markers.
+- [x] Extend fixed-port/deploy/public `core.user` smoke to prove profile
+      read/update, `/auth/me` display-name refresh, invalid display-name 400
+      and system-user management update protection.
+- [x] Run focused, full, fixed-port smoke, deployment and public URL
+      verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -757,10 +788,11 @@ treat "minimal loop" as "minimal final product".
 - [ ] Round 3/22/25 `core.post`: user-post binding and simple-list option
       source are complete; batch operations and ordered list refinements
       remain.
-- [ ] Round 7/19/22/23 `core.user`: status toggle, reset password and direct
-      user-mutation session invalidation are complete, and post binding is
-      complete. Department side-tree filtering is complete. Profile/avatar,
-      import/export and option/batch workflows still need enhancement.
+- [ ] Round 7/19/22/23/28 `core.user`: status toggle, reset password and
+      direct user-mutation session invalidation are complete. Post binding,
+      department side-tree filtering and self-profile basic display-name
+      read/update are complete. Avatar, self-password, import/export and
+      option/batch workflows still need enhancement.
 - [ ] Round 9/24 `core.config`: public get-value-by-key, cache refresh and
       mutation invalidation are complete. Category/name/remark enrichment,
       batch/file export depth and broader runtime propagation boundaries remain.
@@ -805,7 +837,8 @@ treat "minimal loop" as "minimal final product".
   endpoint.
 - Registry definition editing and dynamic permission discovery.
 - User Excel import/export file workflows, dedicated User-page role assignment
-  dialog, profile/avatar/social/simple-list endpoints and batch user delete.
+  dialog, avatar/social/self-password/simple-list endpoints and batch user
+  delete.
 - Batch dictionary delete, Excel import/export file workflows, dictionary
   color/css/remark fields, app-wide dictionary cache TTL/invalidation and
   dictionary cache refresh.

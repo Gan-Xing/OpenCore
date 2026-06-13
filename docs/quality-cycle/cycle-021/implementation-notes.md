@@ -2050,3 +2050,93 @@ smoke:core-dept` passed with `OPENCORE_SMOKE_CHECK_DOCS=false` and the deployed
   `844f36d feat(core-dept): add simple-list option source / 新增部门精简选项源`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 28 Capability
+
+Capability: `core.user` self-profile basic information productization.
+
+Goal: close the next user P1 foundation gap by adding an authenticated current
+user profile read/update loop without weakening system-user management
+protections.
+
+## Round 28 Implemented
+
+- Added `RequireAuthenticated()` RBAC metadata and guard support for endpoints
+  that require a bearer session but no management permission.
+- Moved `/api/auth/me` to auth-only semantics instead of requiring
+  `core:dashboard:read`.
+- Added `GET /api/core/users/profile` and `PATCH /api/core/users/profile`.
+- Added `UpdateUserProfileDto` and `UserProfileDto` API/System DTOs.
+- Added `updateUserProfile()` to system user repository/service contracts and
+  seed/Prisma implementations.
+- Kept management `PATCH /api/core/users/:id` protected for seeded/system
+  users while allowing a user to update only their own `displayName` through
+  the profile endpoint.
+- Extended API permission-matrix tests to lock profile endpoints and
+  `/auth/me` as auth-only, not permission-gated.
+- Extended OpenAPI, `@opencore/sdk` types/client methods and SDK path tests.
+- Added Admin `/personal/profile`, Avatar menu entry and profile page for
+  identity display plus display-name editing.
+- Extended static Admin smoke guards for the route, Avatar menu entry, Admin
+  service methods and profile page markers.
+- Extended `tools/scripts/smoke-core-user.mjs` to prove profile get/update,
+  `/auth/me` display-name refresh, invalid display-name 400 and system-user
+  management update protection, with cleanup restoring the admin display name.
+
+## Round 28 Verification
+
+- `node --check tools/scripts/smoke-core-user.mjs` pass.
+- `bash -n tools/scripts/run-local-api-smoke.sh tools/scripts/deploy-local-opencore.sh`
+  pass.
+- Focused tests pass:
+  - `NX_DAEMON=false pnpm nx test security --runInBand --runTestsByPath packages/security/src/security-rbac/security-rbac.spec.ts`
+  - `NX_DAEMON=false pnpm nx test system --runInBand --runTestsByPath packages/system/src/system-user/system-user.spec.ts`
+  - `NX_DAEMON=false pnpm nx test sdk --runInBand --runTestsByPath packages/sdk/src/rbac-client.spec.ts`
+  - `NX_DAEMON=false pnpm nx test api --runInBand --runTestsByPath src/modules/core/rbac/rbac.permission-matrix.spec.ts`
+  - `pnpm test:admin`
+- `pnpm openapi:export`, `pnpm openapi:check`,
+  `pnpm openapi:registry-tags:check` and `pnpm sdk:check` pass.
+- `pnpm typecheck` pass.
+- `pnpm lint` pass; the known Biome warning in
+  `apps/admin/src/pages/shared/CurrentPageExportButton.tsx` remains non-blocking.
+- `pnpm prisma:validate` pass.
+- `pnpm format:check` pass.
+- `pnpm test` pass for all 19 Nx projects.
+- `pnpm build` pass for all 19 Nx projects.
+- `pnpm smoke:api:local` pass on fixed port `39173`, including
+  `core.user.profile.get`, `core.user.profile.update`,
+  `core.user.profile.auth-me-refresh`,
+  `core.user.profile.invalid-display-name-guard` and
+  `core.user.profile.management-system-user-guard`.
+- `pnpm deploy:opencore` pass, deploying API/Admin on fixed ports
+  `39172`/`39174`; deploy smoke includes the new user profile checks and the
+  existing login-prefix/frontend-cache/session-revocation guards.
+
+## Round 28 Public Verification
+
+Against public endpoints after deploy:
+
+- `GET http://144.217.243.161:39172/health/ready` returned 200.
+- Public `pnpm smoke:core-user` passed against
+  `http://144.217.243.161:39172` with `OPENCORE_SMOKE_CHECK_DOCS=false` and the
+  deployed admin password loaded from `.env.opencore.local` without printing
+  secrets.
+- Public user smoke verified profile get/update, `/auth/me` display-name
+  refresh, invalid display-name 400, system-user management update protection,
+  user create/dept/post/status/reset/update/delete and session revocation.
+- `GET http://144.217.243.161:39174/personal/profile/` returned 200.
+- The deployed main Admin bundle `umi.b3f9bcae.js` contains API origin
+  `http://144.217.243.161:39172` and `/core/users/profile`, and does not
+  contain `/api/api/auth/login`.
+- The deployed Profile chunk `p__Personal__Profile.7e74b02d.async.js` contains
+  `Display name`, `Profile saved.` and `postCodes`.
+- Public Admin same-origin proxy login returned 201 for both `/api/auth/login`
+  and the stale-compatible `/api/api/auth/login`; public API origin
+  `/api/api/auth/login` also returned 201.
+
+## Round 28 Commit Record
+
+- Feature commit:
+  `7db10fe feat(core-user): add self-profile loop / 新增个人资料闭环`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

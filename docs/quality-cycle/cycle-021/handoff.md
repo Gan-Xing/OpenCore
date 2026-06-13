@@ -3,8 +3,8 @@
 Date: 2026-06-12  
 Repository: `Gan-Xing/OpenCore`  
 Default branch: `main`  
-Latest observed feature commit: `844f36d feat(core-dept): add simple-list option source / 新增部门精简选项源`
-Latest deployed feature commit: `844f36d feat(core-dept): add simple-list option source / 新增部门精简选项源`
+Latest observed feature commit: `7db10fe feat(core-user): add self-profile loop / 新增个人资料闭环`
+Latest deployed feature commit: `7db10fe feat(core-user): add self-profile loop / 新增个人资料闭环`
 Latest deployed hardening commit: `04e446c fix(online-user): stabilize admin session smoke / 稳定在线用户管理员会话冒烟`
 
 ## One-sentence Goal
@@ -68,6 +68,7 @@ productization waterline completion; see
 - Round 25 `core.post` simple-list option stage 2
 - Round 26 `core.login-log` device/time filter stage 2
 - Round 27 `core.dept` simple-list option stage 2
+- Round 28 `core.user` self-profile basic info stage 5
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -225,6 +226,20 @@ simple-list、启用后会进入 simple-list、option shape 不暴露 `code`/`en
 `/api/auth/login`、兼容 `/api/api/auth/login` 以及 API origin `/api/api/auth/login`
 均返回 201。
 
+Round 28 继续补齐 `core.user` 队列：用户现在有认证态个人资料基础闭环。
+`GET/PATCH /api/core/users/profile` 使用新的 auth-only guard，只要求 bearer 认证，
+不再把 `/auth/me` 和个人资料读取耦合到 dashboard 权限；当前阶段只允许用户更新自己的
+`displayName`，且 seeded/system admin 仍不能通过管理端 `PATCH /api/core/users/:id`
+绕过系统用户保护。SDK/Admin/OpenAPI 和固定 smoke 均同步该闭环。Admin 新增隐藏路由
+`/personal/profile` 和 Avatar 菜单入口，页面展示身份、部门、角色、岗位并可保存显示名。
+固定 smoke、部署 smoke 和公网 smoke 均证明 profile 读取、更新、`/auth/me` 刷新、空
+displayName 400、系统用户管理更新仍 400。公网 Profile 页返回 200；当前 main bundle
+`umi.b3f9bcae.js` 已验证包含 `/core/users/profile`、API origin
+`http://144.217.243.161:39172` 且不包含 `/api/api/auth/login`；公网 Profile chunk
+`p__Personal__Profile.7e74b02d.async.js` 已验证包含 `Display name`、`Profile saved.`
+和 `postCodes`；公网 Admin 代理 `/api/auth/login`、兼容 `/api/api/auth/login` 以及 API
+origin `/api/api/auth/login` 均返回 201。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -234,7 +249,7 @@ The productization waterline now classifies:
   `core.file`, Round 4/16 `core.menu`, Round 5/17/18/20 `core.role`,
   Round 8/21 `core.dict`.
 - First loop, enhance: Round 1 `core.notice`, Round 2/27 `core.dept`, Round
-  3/22/25 `core.post`, Round 7/19/22/23 `core.user`, Round 9/24
+  3/22/25 `core.post`, Round 7/19/22/23/28 `core.user`, Round 9/24
   `core.config`, Round 11/26 `core.login-log`.
 - Thin, rework: none after Round 16.
 
@@ -244,8 +259,9 @@ finds another blocker:
 
 1. `core.user`: Round 19 closed user status/reset-password and direct
    user-mutation session semantics; Round 22 closed user-post binding; Round
-   23 closed department side-tree filtering. Remaining work is profile/avatar,
-   import/export and broader option/batch workflows.
+   23 closed department side-tree filtering; Round 28 closed authenticated
+   self-profile basic display-name read/update. Remaining work is avatar,
+   self-password, import/export and broader option/batch workflows.
 2. `core.config`: Round 24 closed public get-value-by-key plus cache
    refresh/invalidation. Remaining work is category/name/remark enrichment,
    batch/file export depth and broader runtime propagation boundaries.
