@@ -19,10 +19,10 @@ active debt and decisions that change future execution.
 
 ## Runtime State
 
-Cycle-021 has completed 73 deployable stages across
-System/Security/Monitor/Integration foundations. Round 73 added SMTP mail
-delivery through nodemailer with config-vault password resolution and
-failedCount delivery-state sync.
+Cycle-021 has completed 74 deployable stages across
+System/Security/Monitor/Integration foundations. Round 74 made Monitor Jobs a
+live Admin operation surface and repaired the missing `ReportDefinition`
+migration/seed path that broke operations summary at runtime.
 
 ## Guard Register
 
@@ -38,6 +38,11 @@ failedCount delivery-state sync.
   clean-all target removal while preserving the clean request audit row.
 - Config/secret: smoke covers feature flags, audience rules and no plaintext
   secret-vault leakage.
+- Monitor jobs: smoke covers operations summary, whitelisted job upsert,
+  unsafe policy guards, enable/disable, disabled-trigger rejection, run-now and
+  run-log detail. Deploy also checks the Jobs Admin bundle markers.
+- Prisma schema/seed drift: migrations and seed must include every Prisma
+  model used by smoke-covered runtime endpoints.
 - Admin generated types: run Admin `typecheck` and `lint` sequentially because
   both can call `max setup`.
 - Seed drift: Prisma integration tests must create and clean the records they
@@ -56,5 +61,6 @@ failedCount delivery-state sync.
 - Login log: optional external GeoIP depth and broader mobile/social login
   semantics.
 - Operation log: retention scheduling and enrichment beyond cleanup controls.
-- Scheduler/monitor: job operation depth, retries/timeouts and diagnostics.
+- Scheduler/monitor: real queue handler execution, retries/timeouts and
+  diagnostics beyond the current Admin operation surface.
 - OpenForge Admin: plan/diff/check/apply/manifest/rollback UI.

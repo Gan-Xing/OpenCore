@@ -47,7 +47,7 @@ packages and OpenForge direct Prisma/migration/business-code writing.
 
 ## Current State
 
-Cycle-021 has completed 73 deployable stages.
+Cycle-021 has completed 74 deployable stages.
 
 - System/RBAC: notice, dept, post, menu, role, permission, user, dict, config
   and file loops are live.
@@ -61,22 +61,26 @@ Cycle-021 has completed 73 deployable stages.
   delivery records, local provider, Integration outbox bridge, state sync,
   queued processing, signed callback intake, bounded retry scheduling and a
   bounded SMS HTTP adapter plus SMTP mail adapter.
+- Monitor jobs: API/SDK routes, registry policy, seed job, Admin live list,
+  enable/disable, manual trigger and run-log detail are smoke-guarded.
 
-Latest runtime stage: Round 73 `core.notice` SMTP mail provider adapter. It
-adds nodemailer-backed SMTP sending, config-vault password resolution through
-`secret://config/<key>`, disabled seed provider/config examples, Admin markers
-and smoke/deploy guards for authenticated SMTP delivery.
+Latest runtime stage: Round 74 `monitor.job` Admin runtime operations. It
+replaces the fixture-only Jobs page with live API reads/actions, adds
+permission-gated enable/disable/manual-trigger controls, smoke-guards run-log
+detail and fixes the missing `ReportDefinition` migration/seed drift that made
+operations summary return 500.
 
 ## Next Queue
 
-1. Notice provider reliability: broader provider-secret injection, realtime
+1. Scheduler/monitor runtime depth: real queue handler execution,
+   retry/timeout diagnostics, run-log error detail and registry visibility.
+2. Notice provider reliability: broader provider-secret injection, realtime
    push and deeper SMTP options such as STARTTLS/attachments/template subject
    persistence.
-2. Config governance: multi-environment rollout, external KMS, key rotation
+3. Config governance: multi-environment rollout, external KMS, key rotation
    and secret versions.
-3. Operation-log enrichment: retention scheduling, duration/location fields
+4. Operation-log enrichment: retention scheduling, duration/location fields
    and governance policy.
-4. Scheduler/monitor operation depth.
 5. OpenForge Admin safe plan/diff/check/apply UI.
 6. Integration health/config audit.
 

@@ -41,6 +41,8 @@ export default function access(initialState: InitialState = {}) {
     canReadTodos: hasPermission('collaboration:todo:read'),
     canReadApprovalLite: hasPermission('collaboration:approval-lite:read'),
     canReadJobs: hasPermission('monitor:job:read'),
+    canUpdateJobs: hasPermission('monitor:job:update'),
+    canManageJobs: hasPermission('monitor:job:manage'),
     canReadCache: hasPermission('monitor:cache:read'),
     canReadOnlineUsers: hasPermission('monitor:online-user:read'),
     canManageOnlineUsers: hasPermission('monitor:online-user:manage'),

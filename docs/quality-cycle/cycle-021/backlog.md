@@ -29,24 +29,25 @@ schema/business-code writing.
   runtime login policy.
 - Rounds 50-59: logout audit semantics, ordering, data-scope, notice
   inbox/read analytics, feature flags and login-log location.
-- Rounds 60-73: notice template/delivery/provider/outbox work, SMS HTTP and
-  SMTP adapters, config vault and rollout/audience, plus operation-log cleanup.
+- Rounds 60-74: notice template/delivery/provider/outbox work, SMS HTTP and
+  SMTP adapters, config vault and rollout/audience, operation-log cleanup, plus
+  Monitor Jobs Admin runtime operations.
 
-Latest done: Round 73 SMTP mail provider adapter with config-vault password
-resolution, authenticated SMTP send, failedCount reporting and smoke/deploy
-guards.
+Latest done: Round 74 Monitor Jobs Admin runtime operations with live API
+list/detail, permission-gated enable/disable/manual trigger, run-log detail
+smoke and `ReportDefinition` migration/seed repair.
 
 ## Active P1/P2 Queue
 
-1. Notice provider reliability: broader provider-secret injection, realtime
+1. Scheduler/monitor depth: real queue handler execution, run-log diagnosis,
+   retry/timeout controls and registry whitelist visibility.
+2. Notice provider reliability: broader provider-secret injection, realtime
    push, STARTTLS/attachments/template subject persistence and provider
    diagnostics.
-2. Config governance: multi-environment rollout, external KMS, key rotation
+3. Config governance: multi-environment rollout, external KMS, key rotation
    and secret version history.
-3. Operation-log enrichment: retention scheduling, duration/location fields
+4. Operation-log enrichment: retention scheduling, duration/location fields
    and governance.
-4. Scheduler/monitor depth: enable/disable/run-now, run-log diagnosis,
-   retry/timeout controls and registry whitelist visibility.
 5. OpenForge Admin: plan/diff/check/apply/manifest/rollback surfaces.
 6. Integration health/config audit: provider readiness, failure history,
    config validation and operator diagnostics.

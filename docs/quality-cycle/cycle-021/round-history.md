@@ -20,10 +20,10 @@ only; the ledger keeps state transitions and git log keeps commits.
   type/result schema, lockout/unlock, cleanup and attempt limits.
 - Rounds 50-59: logout audit semantics, dept/post ordering, data-scope,
   notice inbox/read analytics, feature flags and login-log location.
-- Rounds 60-73: notice templates, delivery records, local/outbox providers,
+- Rounds 60-74: notice templates, delivery records, local/outbox providers,
   SMS HTTP and SMTP adapters, config secret vault, feature-flag
   rollout/audience, outbox state/process/callback/schedule handling and
-  operation-log cleanup.
+  operation-log cleanup, plus Monitor Jobs Admin runtime operations.
 
 ## Rework Notes
 
@@ -32,6 +32,8 @@ only; the ledger keeps state transitions and git log keeps commits.
   successful provider send.
 - Round 68 captured the Admin generated-types race: do not run Admin
   `typecheck` and `lint` concurrently.
+- Round 74 captured schema/seed drift for `ReportDefinition`: smoke-covered
+  endpoints must have migrations and seed records before deployment.
 
 ## Rule
 

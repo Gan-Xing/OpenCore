@@ -26,7 +26,7 @@ failures have guards; and remaining omissions are explicit product boundaries.
 | `core.login-log`      | Meets current | Schema, lockout, cleanup, actor/reason and location.                    |
 | `core.config`         | Meets current | Runtime keys, feature flags, rollout, audience, vault.                  |
 | `core.notice`         | Enhance       | SMS HTTP and SMTP adapters live; realtime/deeper provider depth remain. |
-| `scheduler/monitor`   | P2            | Runtime exists; deeper operations remain.                               |
+| `scheduler/monitor`   | Enhance       | Job Admin operations live; real queue execution depth remains.          |
 | `OpenForge Admin`     | P2            | CLI/core exists; Admin UX remains.                                      |
 
 ## Closed Remediation
@@ -43,6 +43,8 @@ failures have guards; and remaining omissions are explicit product boundaries.
 - Round 71 added bounded outbox retry scheduling and delivery sync.
 - Round 72 added a bounded SMS HTTP adapter and failed delivery sync.
 - Round 73 added SMTP mail adapter and config-vault password resolution.
+- Round 74 added live Monitor Jobs Admin operations and fixed
+  `ReportDefinition` migration/seed drift.
 
 ## Active Debt
 
@@ -50,9 +52,9 @@ failures have guards; and remaining omissions are explicit product boundaries.
    attachments/template subject persistence and diagnostics.
 2. Config: multi-environment governance, KMS binding, key rotation and secret
    versions.
-3. Operation log: retention scheduling, duration/location fields and policy.
-4. Scheduler/monitor: job operations, run-log diagnosis, retries/timeouts and
-   whitelist visibility.
+3. Scheduler/monitor: real queue handler execution, run-log diagnosis,
+   retries/timeouts and whitelist visibility.
+4. Operation log: retention scheduling, duration/location fields and policy.
 5. OpenForge Admin: safe plan/diff/check/apply/manifest/rollback UI.
 6. Integration: provider readiness, failure history and config diagnostics.
 
@@ -66,4 +68,7 @@ failures have guards; and remaining omissions are explicit product boundaries.
   retry caps, SMS HTTP host allowlist, SMTP config-vault auth, non-2xx/SMTP
   failedCount and post-sent mutation guards.
 - Operation log: delete/clean guards and deleted-detail 404.
+- Monitor jobs: Admin bundle markers and smoke cover summary, whitelisted job
+  upsert, unsafe policy guards, enable/disable, disabled-trigger rejection,
+  manual trigger and run-log detail.
 - Config: runtime shape and secret-vault plaintext protection.

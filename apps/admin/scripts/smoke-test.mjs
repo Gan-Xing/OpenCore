@@ -403,7 +403,11 @@ if (
   !opencorePlatformService.includes('markOpenCoreSystemNoticesRead') ||
   !opencorePlatformService.includes('markAllOpenCoreSystemNoticesRead') ||
   !opencorePlatformService.includes('publishOpenCoreSystemNotice') ||
-  !opencorePlatformService.includes('archiveOpenCoreSystemNotice')
+  !opencorePlatformService.includes('archiveOpenCoreSystemNotice') ||
+  !opencorePlatformService.includes('listOpenCoreJobs') ||
+  !opencorePlatformService.includes('enableOpenCoreJob') ||
+  !opencorePlatformService.includes('disableOpenCoreJob') ||
+  !opencorePlatformService.includes('triggerOpenCoreJob')
 ) {
   throw new Error(
     'Admin platform service must expose live System, Notice and Monitor SDK clients.',
@@ -470,6 +474,8 @@ if (
   !accessRuntime.includes('collaboration:todo:read') ||
   !accessRuntime.includes('collaboration:approval-lite:read') ||
   !accessRuntime.includes('monitor:job:read') ||
+  !accessRuntime.includes('monitor:job:update') ||
+  !accessRuntime.includes('monitor:job:manage') ||
   !accessRuntime.includes('monitor:cache:read') ||
   !accessRuntime.includes('monitor:online-user:read') ||
   !accessRuntime.includes('monitor:online-user:manage') ||
@@ -1362,6 +1368,24 @@ if (
 ) {
   throw new Error(
     'Integration provider list and detail must redact scalar secret references and show signed callback/provider adapter contracts.',
+  );
+}
+
+if (
+  !jobsPage.includes('listOpenCoreJobs') ||
+  !jobsPage.includes('getOpenCoreJob') ||
+  !jobsPage.includes('listOpenCoreJobRuns') ||
+  !jobsPage.includes('enableOpenCoreJob') ||
+  !jobsPage.includes('disableOpenCoreJob') ||
+  !jobsPage.includes('triggerOpenCoreJob') ||
+  !jobsPage.includes('canUpdateJobs') ||
+  !jobsPage.includes('canManageJobs') ||
+  !jobsPage.includes('Run now') ||
+  !jobsPage.includes('Runtime Operation') ||
+  !jobsPage.includes('enable/disable + manual trigger + run logs')
+) {
+  throw new Error(
+    'Monitor jobs page must use live job APIs with enable/disable, manual trigger, run-log detail, and permission-gated controls.',
   );
 }
 

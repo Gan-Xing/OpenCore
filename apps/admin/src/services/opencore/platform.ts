@@ -64,6 +64,10 @@ import {
   type IntegrationOutboxSummary,
   type IntegrationOutboxProcessResult,
   type IntegrationOutboxScheduleResult,
+  type JobDefinitionSummary,
+  type JobQueryRequest,
+  type JobRunLogSummary,
+  type JobRunQueryRequest,
   type LoginLogQueryRequest,
   type LoginLogBatchMutationSummary,
   type LoginLogCleanSummary,
@@ -74,6 +78,7 @@ import {
   type ListUsersRequest,
   type OnlineUserQueryRequest,
   type OnlineUserSessionSummary,
+  type OperationsSummary,
   type SystemNoticeQueryRequest,
   type SystemNoticeInboxQueryRequest,
   type SystemNoticeInboxSummary,
@@ -99,6 +104,7 @@ import {
   type ResetUserPasswordRequest,
   type ScheduleOutboxRequest,
   type SetUserStatusRequest,
+  type TriggerJobRequest,
   type UpdateSystemDeptRequest,
   type UpdateSystemDeptOrderRequest,
   type UpdateDictItemRequest,
@@ -306,6 +312,58 @@ export function deleteOpenCorePermission(
 
 export function getOpenCoreSystemStatus(): Promise<SystemStatusSummary> {
   return monitoringClient.getStatus(getRequiredAdminToken());
+}
+
+export function getOpenCoreOperationsSummary(): Promise<OperationsSummary> {
+  return operationsClient.getSummary(getRequiredAdminToken());
+}
+
+export async function listOpenCoreJobs(
+  query?: JobQueryRequest,
+): Promise<JobDefinitionSummary[]> {
+  const page = await operationsClient.listJobs(getRequiredAdminToken(), {
+    page: 1,
+    pageSize: 100,
+    ...query,
+  });
+  return [...page.items];
+}
+
+export function getOpenCoreJob(code: string): Promise<JobDefinitionSummary> {
+  return operationsClient.getJob(getRequiredAdminToken(), code);
+}
+
+export function enableOpenCoreJob(code: string): Promise<JobDefinitionSummary> {
+  return operationsClient.enableJob(getRequiredAdminToken(), code);
+}
+
+export function disableOpenCoreJob(
+  code: string,
+): Promise<JobDefinitionSummary> {
+  return operationsClient.disableJob(getRequiredAdminToken(), code);
+}
+
+export function triggerOpenCoreJob(
+  code: string,
+  body: TriggerJobRequest,
+): Promise<JobRunLogSummary> {
+  return operationsClient.triggerJob(getRequiredAdminToken(), code, body);
+}
+
+export async function listOpenCoreJobRuns(
+  code: string,
+  query?: JobRunQueryRequest,
+): Promise<JobRunLogSummary[]> {
+  const page = await operationsClient.listJobRuns(
+    getRequiredAdminToken(),
+    code,
+    {
+      page: 1,
+      pageSize: 20,
+      ...query,
+    },
+  );
+  return [...page.items];
 }
 
 export async function listOpenCoreOnlineUsers(

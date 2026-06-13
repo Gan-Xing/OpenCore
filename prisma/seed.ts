@@ -23,6 +23,7 @@ import {
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { seedFileAssets } from '../apps/api/src/modules/core/system-management/system-management.seed';
+import { seedReports } from '../apps/api/src/modules/monitor/operations/operations.seed';
 import {
   seedIntegrationOutbox,
   seedIntegrationProviders,
@@ -52,6 +53,7 @@ async function main(): Promise<void> {
   const systemNoticeDeliveryCount = await seedSystemNoticeDeliveries();
   const onlineUserSessionCount = await seedOnlineUserSessions();
   const schedulerCount = await seedScheduler();
+  const operationsCount = await seedOperations();
 
   console.log(
     JSON.stringify({
@@ -64,6 +66,7 @@ async function main(): Promise<void> {
         onlineUserSessions: onlineUserSessionCount,
         integrations: integrationCount,
         scheduler: schedulerCount,
+        operations: operationsCount,
         systemManagement: systemManagementCount,
         bootstrapAdminUsername: BOOTSTRAP_ADMIN_USERNAME,
         bootstrapAdminRoleCode: BOOTSTRAP_ADMIN_ROLE_CODE,
@@ -263,6 +266,32 @@ async function seedScheduler(): Promise<{
     jobs: seedSchedulerJobs.length,
     jobRuns: seedSchedulerRuns.length,
   };
+}
+
+async function seedOperations(): Promise<{ reports: number }> {
+  for (const report of seedReports) {
+    await prisma.reportDefinition.upsert({
+      where: { code: report.code },
+      update: {
+        name: report.name,
+        description: report.description ?? null,
+        querySchema: report.querySchema as Prisma.InputJsonValue,
+        enabled: report.enabled,
+        owner: report.owner,
+      },
+      create: {
+        id: report.id,
+        code: report.code,
+        name: report.name,
+        description: report.description ?? null,
+        querySchema: report.querySchema as Prisma.InputJsonValue,
+        enabled: report.enabled,
+        owner: report.owner,
+      },
+    });
+  }
+
+  return { reports: seedReports.length };
 }
 
 async function seedPermissions(): Promise<number> {
