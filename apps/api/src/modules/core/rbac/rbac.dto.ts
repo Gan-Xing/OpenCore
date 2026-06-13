@@ -19,6 +19,7 @@ export {
   UpdateMenuDto,
   UpdateRoleDto,
   UpdateUserDto,
+  UserOptionDto,
   UserProfileDto,
   UserMutationResultDto,
   UserSummaryDto,

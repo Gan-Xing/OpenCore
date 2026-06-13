@@ -46,6 +46,10 @@ try {
     await request(`${apiPrefix}/docs-json`, { expected: [200] });
   }
 
+  await request(`${apiPrefix}/core/users/simple-list`, {
+    expected: [401],
+  });
+
   const loginResponse = await loginAdmin();
   adminToken = assertString(loginResponse.accessToken, 'login accessToken');
 
@@ -110,6 +114,9 @@ try {
   await apiRequest('/core/users?deptId=missing_dept', {
     expected: [404],
   });
+  await apiRequest('/core/users/simple-list?deptId=missing_dept', {
+    expected: [404],
+  });
 
   const createdUser = await apiRequest('/core/users', {
     method: 'POST',
@@ -126,6 +133,46 @@ try {
   smokeUserId = assertString(createdUser.id, 'created smoke user id');
   assertEqual(createdUser.deptId, 'dept_operations', 'created user department');
   assertIncludes(createdUser.postCodes, 'engineer', 'created user posts');
+  const operationUserOptions = await apiRequest(
+    '/core/users/simple-list?deptId=dept_operations',
+  );
+  assertUserOptionIncludesUsername(
+    operationUserOptions,
+    smokeUsername,
+    'operations department user options',
+  );
+  const smokeOption = findUserOption(operationUserOptions, smokeUsername);
+  assertEqual(smokeOption.id, smokeUserId, 'simple-list option id');
+  assertEqual(
+    smokeOption.displayName,
+    'Smoke User Security',
+    'simple-list option displayName',
+  );
+  assertEqual(
+    smokeOption.deptId,
+    'dept_operations',
+    'simple-list option department',
+  );
+  assertIncludes(
+    smokeOption.postCodes,
+    'engineer',
+    'simple-list option post codes',
+  );
+  assertEqual(
+    'roleCodes' in smokeOption,
+    false,
+    'simple-list option roleCodes exposure',
+  );
+  assertEqual(
+    'enabled' in smokeOption,
+    false,
+    'simple-list option enabled exposure',
+  );
+  assertEqual(
+    'system' in smokeOption,
+    false,
+    'simple-list option system exposure',
+  );
   assertUserListIncludesUsername(
     await apiRequest('/core/users?deptId=dept_operations'),
     smokeUsername,
@@ -140,6 +187,11 @@ try {
     await apiRequest('/core/users?deptId=dept_engineering'),
     smokeUsername,
     'engineering department user list',
+  );
+  assertUserOptionNotIncludesUsername(
+    await apiRequest('/core/users/simple-list?deptId=dept_engineering'),
+    smokeUsername,
+    'engineering department user options',
   );
 
   const initialLogin = await loginSmokeUser(smokePassword, [200, 201]);
@@ -161,6 +213,11 @@ try {
     },
   );
   assertEqual(disabledUser.enabled, false, 'disabled user status');
+  assertUserOptionNotIncludesUsername(
+    await apiRequest('/core/users/simple-list'),
+    smokeUsername,
+    'disabled simple-list user options',
+  );
   assertEqual(
     disabledUser.revokedSessionCount,
     1,
@@ -180,6 +237,11 @@ try {
     },
   );
   assertEqual(enabledUser.enabled, true, 'enabled user status');
+  assertUserOptionIncludesUsername(
+    await apiRequest('/core/users/simple-list'),
+    smokeUsername,
+    'enabled simple-list user options',
+  );
 
   const reenabledLogin = await loginSmokeUser(smokePassword, [200, 201]);
   smokeUserToken = assertString(
@@ -323,6 +385,7 @@ try {
         'health.live',
         'health.ready',
         ...(checkDocs ? ['openapi.docs-json'] : []),
+        'core.user.simple-list.auth-guard',
         'auth.login',
         'core.user.profile.get',
         'core.user.profile.update',
@@ -331,15 +394,21 @@ try {
         'core.user.profile.management-system-user-guard',
         'core.user.post.unknown-rejected',
         'core.user.dept.unknown-rejected',
+        'core.user.simple-list.dept.unknown-rejected',
         'core.user.create',
+        'core.user.simple-list.authenticated-consumer',
+        'core.user.simple-list.option-shape',
         'core.user.dept.create',
         'core.user.dept.filter',
         'core.user.dept.subtree-filter',
+        'core.user.simple-list.dept-filter',
         'core.user.post.create',
         'core.user.status.disable',
+        'core.user.simple-list.disabled-filtered',
         'core.user.status.revoke-session',
         'core.user.status.login-blocked',
         'core.user.status.enable',
+        'core.user.simple-list.enabled-filter',
         'core.user.reset-password',
         'core.user.reset-password.revoke-session',
         'core.user.reset-password.old-password-blocked',
@@ -582,6 +651,33 @@ function assertUserListNotIncludesUsername(users, expectedUsername, label) {
   }
 }
 
+function findUserOption(options, username) {
+  assertArray(options, 'user options');
+  const option = options.find((user) => user.username === username);
+
+  if (!option) {
+    throw new Error(`Expected user options to include ${username}`);
+  }
+
+  return option;
+}
+
+function assertUserOptionIncludesUsername(options, expectedUsername, label) {
+  assertArray(options, label);
+
+  if (!options.some((user) => user.username === expectedUsername)) {
+    throw new Error(`Expected ${label} to include ${expectedUsername}`);
+  }
+}
+
+function assertUserOptionNotIncludesUsername(options, expectedUsername, label) {
+  assertArray(options, label);
+
+  if (options.some((user) => user.username === expectedUsername)) {
+    throw new Error(`Expected ${label} not to include ${expectedUsername}`);
+  }
+}
+
 function assertEqual(actual, expected, label) {
   if (actual !== expected) {
     throw new Error(
@@ -589,6 +685,12 @@ function assertEqual(actual, expected, label) {
         expected,
       )}, got ${JSON.stringify(actual)}`,
     );
+  }
+}
+
+function assertArray(value, label) {
+  if (!Array.isArray(value)) {
+    throw new Error(`Expected ${label} to be an array`);
   }
 }
 

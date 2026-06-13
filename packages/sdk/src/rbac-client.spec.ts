@@ -14,6 +14,7 @@ describe('createRbacClient', () => {
     const client = createRbacClient(request);
 
     await client.listUsers('token', { deptId: 'dept_operations' });
+    await client.listUserOptions('token', { deptId: 'dept_operations' });
     await client.exportUsers('token', { deptId: 'dept_operations' });
     await client.getUserProfile('token');
     await client.updateUserProfile('token', {
@@ -92,6 +93,10 @@ describe('createRbacClient', () => {
 
     expect(calls).toEqual([
       { path: '/core/users?deptId=dept_operations', token: 'token' },
+      {
+        path: '/core/users/simple-list?deptId=dept_operations',
+        token: 'token',
+      },
       { path: '/core/users/export?deptId=dept_operations', token: 'token' },
       { path: '/core/users/profile', token: 'token' },
       {

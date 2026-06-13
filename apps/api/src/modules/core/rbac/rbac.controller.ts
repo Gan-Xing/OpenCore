@@ -42,6 +42,7 @@ import {
   UpdatePermissionDto,
   UpdateRoleDto,
   UpdateUserDto,
+  UserOptionDto,
   UserProfileDto,
   UserPasswordMutationResultDto,
   UserMutationResultDto,
@@ -86,6 +87,16 @@ export class RbacController {
     @Query() query: ListUsersQueryDto,
   ): Promise<RbacExportPreviewDto> {
     return this.users.createExportPreview(query);
+  }
+
+  @Get('users/simple-list')
+  @ApiTags('Core Users')
+  @RequireAuthenticated()
+  @ApiOkResponse({ type: [UserOptionDto] })
+  listUserOptions(
+    @Query() query: ListUsersQueryDto,
+  ): Promise<readonly UserOptionDto[]> {
+    return this.users.listUserOptions(query);
   }
 
   @Get('users/profile')

@@ -16,6 +16,7 @@ import {
   normalizeSetUserStatusInput,
   SystemUserRepository,
   type SystemUserExportPreview,
+  type SystemUserOptionRecord,
   type SystemUserSummaryRecord,
 } from './system-user.repository';
 
@@ -25,6 +26,12 @@ export class SystemUserService {
 
   listUsers(query?: ListUsersQueryDto): Promise<SystemUserSummaryRecord[]> {
     return this.repository.listUsers(query);
+  }
+
+  listUserOptions(
+    query?: ListUsersQueryDto,
+  ): Promise<readonly SystemUserOptionRecord[]> {
+    return this.repository.listUserOptions(query);
   }
 
   getUser(id: string): Promise<SystemUserSummaryRecord> {

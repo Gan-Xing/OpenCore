@@ -66,6 +66,7 @@ import {
   type UpdatePermissionRequest,
   type UpdateRoleRequest,
   type UserSummary,
+  type UserOptionSummary,
   type UserMutationSummary,
   type UpdateUserRequest,
 } from '@opencore/sdk';
@@ -80,6 +81,12 @@ export function listOpenCoreUsers(
   query?: ListUsersRequest,
 ): Promise<UserSummary[]> {
   return rbacClient.listUsers(getRequiredAdminToken(), query);
+}
+
+export function listOpenCoreUserOptions(
+  query?: ListUsersRequest,
+): Promise<readonly UserOptionSummary[]> {
+  return rbacClient.listUserOptions(getRequiredAdminToken(), query);
 }
 
 export function getOpenCoreUser(id: string): Promise<UserSummary> {

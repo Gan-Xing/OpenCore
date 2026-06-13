@@ -94,6 +94,21 @@ describe('@opencore/system system-user', () => {
     await expect(service.listUsers({ deptId: 'missing_dept' })).rejects.toThrow(
       NotFoundException,
     );
+    const seedOptions = await service.listUserOptions({
+      deptId: 'dept_operations',
+    });
+    const seedUserOption = seedOptions.find((option) => option.id === user.id);
+
+    expect(seedUserOption).toEqual({
+      id: user.id,
+      username: 'operator',
+      displayName: 'Operations User',
+      deptId: 'dept_operations',
+      postCodes: ['engineer'],
+    });
+    expect(seedUserOption).not.toHaveProperty('roleCodes');
+    expect(seedUserOption).not.toHaveProperty('enabled');
+    expect(seedUserOption).not.toHaveProperty('system');
     await expect(service.getUser(user.id)).resolves.toMatchObject({
       id: 'user_operator',
       system: false,
@@ -113,11 +128,17 @@ describe('@opencore/system system-user', () => {
       postCodes: ['admin'],
       enabled: false,
     });
+    await expect(service.listUserOptions()).resolves.not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: user.id })]),
+    );
     await expect(
       service.setUserStatus('user_operator', { enabled: true }),
     ).resolves.toMatchObject({
       enabled: true,
     });
+    await expect(service.listUserOptions()).resolves.toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: user.id })]),
+    );
     await expect(
       service.setUserStatus('user_operator', {
         enabled: 'false' as unknown as boolean,
@@ -345,6 +366,21 @@ describe('@opencore/system system-user', () => {
       await expect(
         service.listUsers({ deptId: 'missing_dept' }),
       ).rejects.toThrow(NotFoundException);
+      const userOptions = await service.listUserOptions({
+        deptId: 'dept_operations',
+      });
+      const userOption = userOptions.find((option) => option.id === user.id);
+
+      expect(userOption).toEqual({
+        id: user.id,
+        username,
+        displayName: 'Prisma User',
+        deptId: 'dept_operations',
+        postCodes: ['engineer'],
+      });
+      expect(userOption).not.toHaveProperty('roleCodes');
+      expect(userOption).not.toHaveProperty('enabled');
+      expect(userOption).not.toHaveProperty('system');
       await expect(service.getUser(user.id)).resolves.toMatchObject({
         username,
         roleCodes: ['viewer'],
@@ -372,6 +408,9 @@ describe('@opencore/system system-user', () => {
         postCodes: ['admin'],
         enabled: false,
       });
+      await expect(service.listUserOptions()).resolves.not.toEqual(
+        expect.arrayContaining([expect.objectContaining({ id: user.id })]),
+      );
       await expect(
         prisma.user.findUniqueOrThrow({ where: { id: user.id } }),
       ).resolves.toMatchObject({
@@ -398,6 +437,9 @@ describe('@opencore/system system-user', () => {
       ).resolves.toMatchObject({
         enabled: true,
       });
+      await expect(service.listUserOptions()).resolves.toEqual(
+        expect.arrayContaining([expect.objectContaining({ id: user.id })]),
+      );
       await expect(
         service.resetUserPassword(user.id, {
           password: 'reset-password',

@@ -309,6 +309,7 @@ if (
   !opencorePlatformService.includes('getOpenCoreOnlineUser') ||
   !opencorePlatformService.includes('kickOutOpenCoreOnlineUser') ||
   !opencorePlatformService.includes('listOpenCoreUsers') ||
+  !opencorePlatformService.includes('listOpenCoreUserOptions') ||
   !opencorePlatformService.includes('getOpenCoreUser') ||
   !opencorePlatformService.includes('createOpenCoreUser') ||
   !opencorePlatformService.includes('updateOpenCoreUser') ||
@@ -829,6 +830,8 @@ if (
   !rolesPage.includes('assignOpenCoreRoleMenus') ||
   !rolesPage.includes('getOpenCoreRoleUserAssignment') ||
   !rolesPage.includes('assignOpenCoreRoleUsers') ||
+  !rolesPage.includes('listOpenCoreUserOptions') ||
+  !rolesPage.includes('userOptionById') ||
   !rolesPage.includes('listOpenCoreMenus') ||
   !rolesPage.includes('createOpenCoreRole') ||
   !rolesPage.includes('updateOpenCoreRole') ||

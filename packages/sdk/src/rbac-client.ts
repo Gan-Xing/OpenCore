@@ -26,6 +26,7 @@ import type {
   UpdateUserProfileRequest,
   UpdateUserRequest,
   UserMutationSummary,
+  UserOptionSummary,
   UserPasswordMutationSummary,
   UserProfileSummary,
   UserSummary,
@@ -47,6 +48,10 @@ export type RbacClient = {
     token: string,
     query?: ListUsersRequest,
   ) => Promise<UserSummary[]>;
+  listUserOptions: (
+    token: string,
+    query?: ListUsersRequest,
+  ) => Promise<readonly UserOptionSummary[]>;
   exportUsers: (
     token: string,
     query?: ListUsersRequest,
@@ -151,6 +156,13 @@ export function createRbacClient(request: SdkRequest): RbacClient {
       request<UserSummary[]>(withQuery('/core/users', query), {
         token,
       }),
+    listUserOptions: (token, query) =>
+      request<readonly UserOptionSummary[]>(
+        withQuery('/core/users/simple-list', query),
+        {
+          token,
+        },
+      ),
     exportUsers: (token, query) =>
       request<RbacExportPreview>(withQuery('/core/users/export', query), {
         token,

@@ -24,7 +24,9 @@ import {
   normalizeUpdateSystemUserInput,
   normalizeUpdateSystemUserProfileInput,
   SystemUserRepository,
+  toSystemUserOptionRecord,
   type SystemUserListQuery,
+  type SystemUserOptionRecord,
   type SystemUserSummaryRecord,
 } from './system-user.repository';
 
@@ -73,6 +75,14 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
     });
 
     return users.map(toSystemUserSummaryRecord);
+  }
+
+  async listUserOptions(
+    query?: SystemUserListQuery,
+  ): Promise<readonly SystemUserOptionRecord[]> {
+    return (await this.listUsers(query))
+      .filter((user) => user.enabled)
+      .map(toSystemUserOptionRecord);
   }
 
   async getUser(id: string): Promise<SystemUserSummaryRecord> {

@@ -157,6 +157,34 @@
         "tags": ["Rbac", "Core Users"]
       }
     },
+    "/api/core/users/simple-list": {
+      "get": {
+        "operationId": "RbacController_listUserOptions",
+        "parameters": [
+          {
+            "name": "deptId",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/UserOptionDto" }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Users"]
+      }
+    },
     "/api/core/users/profile": {
       "get": {
         "operationId": "RbacController_getUserProfile",
@@ -5298,6 +5326,17 @@
           "generatedAt": { "type": "string" }
         },
         "required": ["filename", "scope", "columns", "rowCount", "generatedAt"]
+      },
+      "UserOptionDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "username": { "type": "string" },
+          "displayName": { "type": "string" },
+          "deptId": { "type": "string", "nullable": true },
+          "postCodes": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["id", "username", "displayName", "postCodes"]
       },
       "UserProfileDto": {
         "type": "object",

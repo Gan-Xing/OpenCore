@@ -26,6 +26,23 @@ export class UserSummaryDto {
   system!: boolean;
 }
 
+export class UserOptionDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  username!: string;
+
+  @ApiProperty()
+  displayName!: string;
+
+  @ApiProperty({ required: false, nullable: true, type: String })
+  deptId?: string;
+
+  @ApiProperty({ type: [String] })
+  postCodes!: readonly string[];
+}
+
 export class ListUsersQueryDto {
   @ApiProperty({ required: false })
   deptId?: string;

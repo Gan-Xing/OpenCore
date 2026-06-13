@@ -14,6 +14,10 @@ import { verifySystemUserPassword } from './system-user.password';
 import type { SystemUserRecord } from './system-user.records';
 
 export type SystemUserSummaryRecord = Omit<SystemUserRecord, 'passwordHash'>;
+export type SystemUserOptionRecord = Pick<
+  SystemUserSummaryRecord,
+  'deptId' | 'displayName' | 'id' | 'postCodes' | 'username'
+>;
 
 export type SystemUserExportPreview = {
   filename: string;
@@ -73,6 +77,10 @@ export abstract class SystemUserRepository {
   abstract listUsers(
     query?: SystemUserListQuery,
   ): Promise<SystemUserSummaryRecord[]>;
+
+  abstract listUserOptions(
+    query?: SystemUserListQuery,
+  ): Promise<readonly SystemUserOptionRecord[]>;
 
   abstract getUser(id: string): Promise<SystemUserSummaryRecord>;
 
@@ -242,6 +250,18 @@ export function cloneSystemUserSummary(
     postCodes: [...user.postCodes],
     enabled: user.enabled,
     system: user.system,
+  };
+}
+
+export function toSystemUserOptionRecord(
+  user: SystemUserSummaryRecord,
+): SystemUserOptionRecord {
+  return {
+    id: user.id,
+    username: user.username,
+    displayName: user.displayName,
+    deptId: user.deptId,
+    postCodes: [...user.postCodes],
   };
 }
 

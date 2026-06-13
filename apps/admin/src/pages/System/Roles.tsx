@@ -23,6 +23,7 @@ import {
   type RoleSummary,
   type SystemDeptSummary,
   type SystemDeptTreeSummary,
+  type UserOptionSummary,
   type UserSummary,
 } from '@opencore/sdk';
 import {
@@ -54,6 +55,7 @@ import {
   listOpenCorePermissions,
   listOpenCoreRoles,
   listOpenCoreSystemDepts,
+  listOpenCoreUserOptions,
   setOpenCoreRoleStatus,
   updateOpenCoreRole,
 } from '@/services/opencore/platform';
@@ -267,17 +269,26 @@ function normalizeCheckedTreeKeys(value: unknown): string[] {
 
 function createUserTransferItems(
   users: readonly UserSummary[],
+  userOptions: readonly UserOptionSummary[],
 ): UserTransferItem[] {
   const userById = new Map(users.map((user) => [user.id, user]));
+  const userOptionById = new Map(userOptions.map((user) => [user.id, user]));
 
   return [...userById.values()]
     .sort((left, right) => left.username.localeCompare(right.username))
-    .map((user) => ({
-      key: user.id,
-      title: user.displayName,
-      description: `${user.username}${user.enabled ? '' : ' (disabled)'}`,
-      disabled: user.system,
-    }));
+    .map((user) => {
+      const option = userOptionById.get(user.id);
+      const username = option?.username ?? user.username;
+      const postCodes = option?.postCodes ?? user.postCodes;
+      const posts = postCodes.length > 0 ? ` - ${postCodes.join(', ')}` : '';
+
+      return {
+        key: user.id,
+        title: option?.displayName ?? user.displayName,
+        description: `${username}${posts}${user.enabled ? '' : ' (disabled)'}`,
+        disabled: user.system,
+      };
+    });
 }
 
 function normalizeTransferKeys(keys: readonly Key[]): string[] {
@@ -460,14 +471,17 @@ export default function RolesPage() {
 
   const openUserAssignment = async (record: RoleSummary) => {
     try {
-      const assignment = await getOpenCoreRoleUserAssignment(record.code);
+      const [assignment, userOptions] = await Promise.all([
+        getOpenCoreRoleUserAssignment(record.code),
+        listOpenCoreUserOptions(),
+      ]);
       setAssigningUserRole(record);
       setAssignedUserIds([...assignment.assignedUserIds]);
       setUserTransferItems(
-        createUserTransferItems([
-          ...assignment.assignedUsers,
-          ...assignment.availableUsers,
-        ]),
+        createUserTransferItems(
+          [...assignment.assignedUsers, ...assignment.availableUsers],
+          userOptions,
+        ),
       );
       setUserAssignmentOpen(true);
     } catch (error: unknown) {

@@ -42,6 +42,7 @@ const expectedPermissions = {
 
 const expectedAuthenticatedOnly = [
   'getUserProfile',
+  'listUserOptions',
   'updateUserProfile',
   'updateUserProfilePassword',
 ];

@@ -29,6 +29,11 @@ export type UserSummary = {
   system: boolean;
 };
 
+export type UserOptionSummary = Pick<
+  UserSummary,
+  'deptId' | 'displayName' | 'id' | 'postCodes' | 'username'
+>;
+
 export type UserProfileSummary = UserSummary;
 
 export type UpdateUserProfileRequest = {
