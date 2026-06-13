@@ -22,8 +22,11 @@ const timeoutMs = Number(process.env.OPENCORE_SMOKE_TIMEOUT_MS || 10000);
 
 const runId = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 const deptCode = `smoke_dept_${runId}`;
+const boundUsername = `dept_user_${runId}`;
+const boundPassword = `DeptSmokePassword1!`;
 let token;
 const createdDeptIds = [];
+const createdUserIds = [];
 
 class HttpStatusError extends Error {
   constructor(message, status) {
@@ -135,6 +138,33 @@ try {
   assertEqual(exportPreview.scope, 'current-page', 'dept export scope');
   assertArray(exportPreview.columns, 'dept export columns');
 
+  const boundUser = await apiRequest('/core/users', {
+    method: 'POST',
+    body: {
+      username: boundUsername,
+      displayName: 'Dept Bound Smoke User',
+      password: boundPassword,
+      roleCodes: ['viewer'],
+      deptId: createdDept.id,
+      postCodes: ['engineer'],
+      enabled: true,
+    },
+  });
+  createdUserIds.push(assertString(boundUser.id, 'dept bound user id'));
+  await apiRequest(`/core/depts/${encodeURIComponent(createdDept.id)}`, {
+    method: 'DELETE',
+    expected: [400],
+  });
+  const boundUserDetail = await apiRequest(
+    `/core/users/${encodeURIComponent(boundUser.id)}`,
+  );
+  assertEqual(
+    boundUserDetail.deptId,
+    createdDept.id,
+    'dept-bound user department after failed delete',
+  );
+
+  await cleanupCreatedUsers();
   await cleanupCreatedDepts();
   assertOptionIdsExclude(
     await publicDeptOptions(),
@@ -161,11 +191,14 @@ try {
         'core.dept.update-enabled',
         'core.dept.simple-list.option-shape',
         'core.dept.export',
+        'core.dept.delete.assigned-user-guard',
+        'core.dept.delete.assigned-user-preserved',
         'core.dept.delete',
       ],
     }),
   );
 } catch (error) {
+  await cleanupCreatedUsers().catch(() => undefined);
   await cleanupCreatedDepts().catch(() => undefined);
   console.error(
     JSON.stringify({
@@ -245,6 +278,16 @@ async function cleanupCreatedDepts() {
     }).catch(() => undefined);
   }
   createdDeptIds.length = 0;
+}
+
+async function cleanupCreatedUsers() {
+  for (const id of [...createdUserIds].reverse()) {
+    await apiRequest(`/core/users/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      expected: [200, 404],
+    }).catch(() => undefined);
+  }
+  createdUserIds.length = 0;
 }
 
 async function apiRequest(path, options = {}) {

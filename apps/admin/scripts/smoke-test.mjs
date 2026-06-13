@@ -952,6 +952,7 @@ if (
   !departmentsPage.includes('flattenDeptTree') ||
   !departmentsPage.includes('buildDeptTree') ||
   !departmentsPage.includes('TreeSelect') ||
+  !departmentsPage.includes('assigned users cannot be deleted') ||
   !departmentsPage.includes('useCurrentPageFilters') ||
   !departmentsPage.includes('CurrentPageExportButton') ||
   !departmentsPage.includes('dataSource={filteredTreeRows}') ||

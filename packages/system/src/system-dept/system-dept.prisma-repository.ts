@@ -17,6 +17,7 @@ import type {
 import {
   assertNoDeptChildren,
   assertNoDeptSelfParent,
+  assertNoDeptUsers,
   buildSystemDeptTree,
   normalizeCreateSystemDeptInput,
   normalizeSystemDeptFilters,
@@ -115,6 +116,7 @@ export class PrismaSystemDeptRepository extends SystemDeptRepository {
     assertNoDeptChildren(
       await this.prisma.systemDept.count({ where: { parentId: id } }),
     );
+    assertNoDeptUsers(await this.prisma.user.count({ where: { deptId: id } }));
     await this.prisma.systemDept.delete({ where: { id } });
     return { deleted: true };
   }

@@ -17,6 +17,7 @@ import {
 import {
   assertNoDeptChildren,
   assertNoDeptSelfParent,
+  assertNoDeptUsers,
   buildSystemDeptTree,
   compareSystemDeptRecords,
   normalizeCreateSystemDeptInput,
@@ -26,10 +27,20 @@ import {
   toSystemDeptOptionRecord,
   type SystemDeptQuery,
 } from './system-dept.repository';
+import {
+  seedSystemUsers,
+  type SystemUserRecord,
+} from '../system-user/system-user.records';
 
 @Injectable()
 export class SeedSystemDeptRepository extends SystemDeptRepository {
   private depts = seedSystemDepts.map((dept) => ({ ...dept }));
+
+  constructor(
+    private readonly users: readonly SystemUserRecord[] = seedSystemUsers,
+  ) {
+    super();
+  }
 
   async listDeptTree(
     query: SystemDeptQuery = {},
@@ -100,6 +111,7 @@ export class SeedSystemDeptRepository extends SystemDeptRepository {
     assertNoDeptChildren(
       this.depts.filter((dept) => dept.parentId === id).length,
     );
+    assertNoDeptUsers(this.users.filter((user) => user.deptId === id).length);
     this.depts = this.depts.filter((dept) => dept.id !== id);
     return { deleted: true };
   }

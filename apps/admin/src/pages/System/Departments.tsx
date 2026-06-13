@@ -325,9 +325,17 @@ export default function DepartmentsPage() {
   };
 
   const deleteDept = async (record: SystemDeptTreeSummary) => {
-    await deleteOpenCoreSystemDept(record.id);
-    message.success('Department deleted.');
-    await loadDepts();
+    try {
+      await deleteOpenCoreSystemDept(record.id);
+      message.success('Department deleted.');
+      await loadDepts();
+    } catch (error: unknown) {
+      message.error(
+        error instanceof Error
+          ? error.message
+          : 'Unable to delete department. Departments with assigned users cannot be deleted.',
+      );
+    }
   };
 
   const excludedParentIds = useMemo(() => {

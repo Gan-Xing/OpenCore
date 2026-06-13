@@ -197,6 +197,14 @@ export function assertNoDeptChildren(
   }
 }
 
+export function assertNoDeptUsers(userCount: number): void {
+  if (userCount > 0) {
+    throw new BadRequestException(
+      'System dept cannot be deleted while users are assigned.',
+    );
+  }
+}
+
 export function compareSystemDeptRecords(
   left: SystemDeptRecord,
   right: SystemDeptRecord,

@@ -79,6 +79,31 @@ describe('@opencore/system system-dept', () => {
     );
   });
 
+  it('rejects deleting departments with assigned users', async () => {
+    const service = new SystemDeptService(
+      new SeedSystemDeptRepository([
+        {
+          id: 'user_ops',
+          username: 'ops',
+          displayName: 'Operations User',
+          passwordHash: 'hash',
+          roleCodes: ['viewer'],
+          deptId: 'dept_operations',
+          postCodes: [],
+          enabled: true,
+          system: false,
+        },
+      ]),
+    );
+
+    await expect(service.deleteDept('dept_operations')).rejects.toThrow(
+      BadRequestException,
+    );
+    await expect(service.getDept('dept_operations')).resolves.toMatchObject({
+      id: 'dept_operations',
+    });
+  });
+
   describe('PrismaSystemDeptRepository integration', () => {
     const prisma = new PrismaService();
     const service = new SystemDeptService(
@@ -87,8 +112,11 @@ describe('@opencore/system system-dept', () => {
     const testRunId = randomUUID().slice(0, 8);
     const parentCode = `dept_parent_${testRunId}`;
     const childCode = `dept_child_${testRunId}`;
+    const boundCode = `dept_bound_${testRunId}`;
+    const boundUsername = `dept_user_${testRunId}`;
     let parentId = '';
     let childId = '';
+    let boundDeptId = '';
 
     beforeEach(async () => {
       await cleanupTestRows();
@@ -158,15 +186,54 @@ describe('@opencore/system system-dept', () => {
       parentId = '';
     });
 
+    it('prevents deleting a department with assigned users through Prisma', async () => {
+      const dept = await service.createDept({
+        code: boundCode,
+        name: 'Bound User Dept',
+        order: 60,
+      });
+      boundDeptId = dept.id;
+      const user = await prisma.user.create({
+        data: {
+          username: boundUsername,
+          displayName: 'Bound Dept User',
+          passwordHash: 'hash',
+          deptId: boundDeptId,
+          enabled: true,
+        },
+      });
+
+      await expect(service.deleteDept(boundDeptId)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(
+        prisma.user.findUnique({ where: { id: user.id } }),
+      ).resolves.toEqual(
+        expect.objectContaining({
+          deptId: boundDeptId,
+        }),
+      );
+
+      await prisma.user.delete({ where: { id: user.id } });
+      await expect(service.deleteDept(boundDeptId)).resolves.toEqual({
+        deleted: true,
+      });
+      boundDeptId = '';
+    });
+
     async function cleanupTestRows(): Promise<void> {
+      await prisma.user.deleteMany({
+        where: { username: boundUsername },
+      });
       await prisma.systemDept.deleteMany({
         where: { code: { in: [childCode] } },
       });
       await prisma.systemDept.deleteMany({
-        where: { code: { in: [parentCode] } },
+        where: { code: { in: [parentCode, boundCode] } },
       });
       parentId = '';
       childId = '';
+      boundDeptId = '';
     }
   });
 });
