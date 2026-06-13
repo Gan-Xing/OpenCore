@@ -3,8 +3,8 @@
 Started: 2026-06-12
 Last compacted: 2026-06-13
 
-This backlog is the working queue, not a full transcript. Per-round completion
-reports and the quality-cycle ledger keep the historical details.
+This backlog is the working queue, not a full transcript. `round-history.md`
+and the quality-cycle ledger keep the historical details.
 
 ## Scope
 

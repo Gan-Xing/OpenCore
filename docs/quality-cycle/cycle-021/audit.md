@@ -3,8 +3,8 @@
 Date: 2026-06-13
 
 This audit tracks current risk and self-correction. It is intentionally short;
-the old file repeated many round summaries that are already covered by
-completion reports and the ledger.
+the old file repeated round summaries and command boilerplate now covered by
+`round-history.md` and the ledger.
 
 ## Current Conclusion
 
@@ -38,15 +38,15 @@ Those issues are now guard requirements, not memory items.
 
 ## Documentation Findings
 
-The main low-signal docs were not the per-round reports; they were aggregate
-files that repeated the same command lists and "reference comparison" wording.
-Those aggregate files have been compacted to current state, guard matrix and
-active queue only.
+The main low-signal docs were the 68 per-round reports and aggregate files that
+repeated the same command lists and "reference comparison" wording. The
+per-round reports have been removed; aggregate files now keep only current
+state, guard matrix and active queue.
 
 Going forward:
 
 - Aggregate docs must stay under control.
-- Completion reports should record only unique evidence.
+- Do not create per-round completion reports by default.
 - Standard command output belongs in the final response or terminal history,
   not copied into every doc.
 

@@ -3,7 +3,7 @@
 Date: 2026-06-13
 
 This audit is intentionally compact. Older versions repeated long per-round
-summaries; those details belong in completion reports and the ledger.
+summaries; current history belongs in `round-history.md` and the ledger.
 
 ## Waterline
 

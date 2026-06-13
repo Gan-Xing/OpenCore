@@ -15,8 +15,8 @@ waterline.
 ## Non-Negotiable Loop
 
 - Read this file, then keep `productization-waterline-audit.md`, `backlog.md`,
-  `reference-comparison.md`, `implementation-notes.md`, `audit.md` and the
-  latest completion report aligned.
+  `reference-comparison.md`, `implementation-notes.md`, `audit.md`,
+  `round-history.md` and the ledger aligned.
 - Sort by lowest dependency and product foundation value.
 - For code changes: test, commit, push, deploy through `pnpm deploy:opencore`
   and verify public URLs.
@@ -116,6 +116,6 @@ foundation defect:
 
 ## Documentation Rule
 
-Aggregate docs must stay short. Do not keep appending repeated round summaries
-or identical command lists. Per-round reports keep the audit trail; aggregate
-docs keep only current state, active debt and guard locations.
+Aggregate docs must stay short. Do not append repeated round summaries or
+identical command lists. Do not create per-round completion reports by default;
+use `round-history.md` plus the ledger for the audit trail.

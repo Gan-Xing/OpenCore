@@ -4,16 +4,15 @@ Date: 2026-06-13
 
 This file is now the compact implementation record for cycle-021. It should
 not repeat full command logs or round-by-round prose. Detailed historical
-evidence stays in the per-round completion reports and the quality-cycle
-ledger.
+evidence stays in `round-history.md` and the quality-cycle ledger.
 
 ## Documentation Discipline
 
 - Do not paste the same test, build, deploy and smoke command list into every
   aggregate doc.
-- For each round, record only the capability, the user-visible behavior, the
-  unique guard added, the deploy/public verification marker and any unresolved
-  debt.
+- For each round, record only capability, user-visible behavior, unique guard,
+  deploy/public marker and unresolved debt when those facts change current
+  state.
 - If a defect repeats, add a code test, smoke check or deploy-script guard and
   name that guard here. Do not rely on memory or another paragraph of warning.
 - Feature code, tests, deploy guards and docs for one stage should land
@@ -38,45 +37,18 @@ ledger.
 
 ## Current Runtime State
 
-Cycle-021 has completed 68 deployable stages. The project is no longer a
-skeleton: API, SDK, Admin, permissions, seed data, OpenAPI snapshots and smoke
-guards exist across the main System/Security/Monitor/Integration foundation
-areas.
+Cycle-021 has completed 68 deployable stages. API, SDK, Admin, permissions,
+seed data, OpenAPI snapshots and smoke guards now exist across the main
+System/Security/Monitor/Integration foundation areas.
 
-The latest runtime stage is Round 68:
+Latest stage: Round 68 added permission-gated operation-log batch delete and
+clean-all APIs, SDK/OpenAPI/Admin support and smoke guards for empty,
+duplicate, missing-ID, deleted-detail and clean-all behavior.
 
-- Capability: `core.audit-log` operation-log cleanup maintenance.
-- API/OpenAPI/SDK: `DELETE /api/core/audit-logs/batch` and
-  `DELETE /api/core/audit-logs/clean` are typed and protected by
-  `core:audit-log:delete`.
-- Runtime: seed and Prisma repositories share strict empty, duplicate and
-  missing-ID guards; clean-all returns the affected count.
-- Admin: `/security/operation-logs` exposes permission-gated selected delete
-  and clean-all controls.
-- Guard: `smoke-core-audit-log.mjs` proves batch-delete guards, successful
-  deletion, detail 404 after deletion and clean-all semantics while allowing
-  the clean-all request itself to be audited.
+## Evidence Rule
 
-## Verification Evidence To Keep
-
-Keep only these high-signal markers in aggregate docs:
-
-- Focused tests passed for Audit operation-log repository/service, System
-  Management permission matrix, Module Registry, SDK and Admin smoke/Vitest.
-- Full gates passed for Prisma validate/generate, OpenAPI export/check,
-  SDK check, typecheck, lint, API/Admin build and full test/build suites.
-- Local smoke passed on fixed port `39173`.
-- Deployment completed through `pnpm deploy:opencore` on API `39172` and Admin
-  `39174`.
-- Public smoke passed against `http://144.217.243.161:39172`.
-- Public Admin chunk
-  `/p__Security__OperationLogs.c8936563.async.js` contains the cleanup action
-  markers.
-- Public OpenAPI at `/api/docs-json` contains the audit-log batch/clean
-  endpoints and DTO schemas.
-
-The exact command output does not belong here unless a command is unique to a
-new guard.
+Aggregate docs keep only unique guard facts and current public markers. Do not
+copy standard test/build/deploy command output into documentation.
 
 ## Guard Register
 
@@ -115,6 +87,6 @@ new guard.
 ## Next-Round Rule
 
 Before opening the next feature round, check `handoff.md`, this file,
-`productization-waterline-audit.md`, `backlog.md`, `reference-comparison.md`
-and `audit.md` for alignment. Do not grow these aggregate docs with repeated
-per-round command transcripts.
+`productization-waterline-audit.md`, `backlog.md`, `reference-comparison.md`,
+`audit.md` and `round-history.md` for alignment. Do not grow these docs with
+repeated command transcripts.
