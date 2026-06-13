@@ -1841,6 +1841,42 @@ same round.
       smoke, deployment and public URL verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 61: core.notice Delivery Records Productization
+
+Why this slice: after Round 60 added notification templates, the remaining
+lowest-dependency notice gap was the per-recipient message record/outbox layer.
+Yudao's `system_notify_message` keeps user-facing notification records with
+read status and read time. OpenCore already had inbox read receipts and
+templates, but did not persist operator-visible delivery records for a
+published notice.
+
+- [x] Recompare Yudao notify-message/message-record shape before selecting
+      this slice.
+- [x] Add Prisma `SystemNoticeDelivery` model, migration and seed data.
+- [x] Fix seed drift by resolving the actual seeded admin user id instead of
+      assuming a hard-coded `user_admin` id.
+- [x] Add system notice delivery repository/service DTOs for list, filters and
+      explicit dispatch.
+- [x] Auto-dispatch in-app delivery records on publish and make explicit
+      dispatch idempotent.
+- [x] Sync delivery `status/readAt` when users mark one notice read or mark all
+      visible notices read.
+- [x] Add API routes `GET /api/core/notices/:id/deliveries` and
+      `POST /api/core/notices/:id/dispatch` with existing `core:notice:*`
+      permissions.
+- [x] Extend SDK types/client/spec, registry fixtures and OpenAPI snapshot for
+      delivery listing and dispatch.
+- [x] Add Admin System Notices `Delivery records` modal and
+      `Dispatch in-app deliveries` action.
+- [x] Extend fixed-port/deploy/public `core.notice` smoke for missing notice
+      guards, draft dispatch guards, `readStatus/channel` deserialization,
+      unread/read delivery records, dispatch idempotency and read sync.
+- [x] Extend Admin static smoke and deploy-script stale bundle guards for the
+      notice delivery UI markers.
+- [x] Run focused tests, OpenAPI/SDK checks, typecheck, build, fixed-port
+      smoke, deployment and public URL verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -1882,11 +1918,12 @@ treat "minimal loop" as "minimal final product".
 
 ### First Loop, Needs Enhancement
 
-- [ ] Round 1/55/56/60 `core.notice`: management CRUD, persisted per-user read
+- [ ] Round 1/55/56/60/61 `core.notice`: management CRUD, persisted per-user read
       receipts, authenticated inbox APIs, Admin Inbox tab, header unread badge,
       management read-user analytics, notification template CRUD, strict
-      render preview and draft notice creation from template are complete.
-      Delivery adapter design and WebSocket/mail/SMS fan-out remain.
+      render preview, draft notice creation from template, persisted in-app
+      delivery records, idempotent dispatch and read-status sync are complete.
+      Real delivery adapter execution and WebSocket/mail/SMS fan-out remain.
 - [ ] Round 9/24/37/38/39/40/44/46/49/58 `core.config`: public get-value-by-key, cache
       refresh and mutation invalidation are complete. Category/name/remark
       metadata is complete. Native XLSX export payload and Admin download are
@@ -1943,8 +1980,10 @@ treat "minimal loop" as "minimal final product".
 
 - Large-scale message bus push and multi-channel fan-out orchestration unless
   admitted as a dedicated foundation round.
-- Notification template and delivery adapter design are P1 foundation work, not
-  forbidden scope; they must be handled as independent rounds with smoke.
+- Notification templates and in-app delivery records are complete through
+  Round 60/61. Delivery adapter/provider fan-out execution remains P1
+  foundation work, not forbidden scope, and must be handled as an independent
+  round with smoke.
 - BPMN/workflow approval around announcements.
 - Tenant-scoped notices.
 - Department data-scope workflow integration and role data-scope assignment UI.

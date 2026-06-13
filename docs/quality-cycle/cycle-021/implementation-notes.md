@@ -5193,3 +5193,110 @@ Against public endpoints after deploy:
   `2f22e76 feat(notice): add notice template management / 新增通知模板管理`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 61 Capability
+
+Capability: `core.notice` delivery/message-record productization.
+
+Round 61 closes the persisted in-app delivery record stage. OpenCore now keeps
+per-recipient delivery rows for published notices, exposes operator-visible
+delivery records, supports explicit idempotent dispatch and synchronizes inbox
+read actions back to delivery `status/readAt`.
+
+Reference comparison:
+
+- Yudao exposes notify-message/message records with recipient identity,
+  template content, read status and read time.
+- RuoYi-style notice workflows expect operators to verify whether notices have
+  reached users, even when the actual transport channel remains separate.
+- OpenCore already had notice CRUD, inbox read state, read-user analytics and
+  templates; the missing low-dependency layer was a persisted delivery/outbox
+  record before adding provider fan-out.
+
+## Round 61 Implemented
+
+- Added Prisma `SystemNoticeDelivery` plus migration and seeded delivery data.
+- Fixed seed drift by resolving the actual admin user id by username instead
+  of assuming an existing database still uses `user_admin`.
+- Added notice delivery DTOs, records, normalizers, seed/Prisma repositories,
+  service methods and tests.
+- Added publish-time auto dispatch for in-app deliveries.
+- Added explicit idempotent dispatch:
+  `POST /api/core/notices/:id/dispatch`.
+- Added operator delivery listing:
+  `GET /api/core/notices/:id/deliveries`.
+- Added delivery filters for username, display name, channel and read status.
+- Synchronized `mark-read` and `mark-all-read` with delivery `status/readAt`.
+- Extended SDK types/client/spec, registry fixtures and OpenAPI snapshot.
+- Added Admin System Notices `Delivery records` modal and
+  `Dispatch in-app deliveries` action.
+- Extended `tools/scripts/smoke-core-notice.mjs` with missing notice delivery
+  guards, draft dispatch guard, malformed `readStatus/channel` guards,
+  unread/read delivery records, dispatch idempotency and read sync.
+- Extended Admin static smoke and deploy-script stale bundle guards for
+  `System Notice Delivery Records` and `Dispatch in-app deliveries`.
+
+Out of scope for Round 61:
+
+- Real WebSocket/mail/SMS provider adapter execution;
+- multi-channel retry or delivery failure queues;
+- tenant-scoped notices;
+- BPM approval around announcements;
+- member/mobile notification channels.
+
+## Round 61 Verification
+
+- `pnpm prisma:generate`
+- `pnpm prisma:migrate`
+- `pnpm prisma:validate`
+- `pnpm nx test system --testFile=packages/system/src/system-notice/system-notice.spec.ts`
+- `pnpm nx test sdk --testFile=packages/sdk/src/system-management-client.spec.ts`
+- `pnpm --dir apps/admin test`
+- `pnpm openapi:export`
+- `pnpm openapi:registry-tags:check`
+- `pnpm sdk:check`
+- `pnpm typecheck`
+- `pnpm build:api`
+- `pnpm build:admin`
+- `pnpm openapi:check`
+- `pnpm smoke:api:local`
+- `git diff --check`
+- `bash -n tools/scripts/deploy-local-opencore.sh`
+- `pnpm deploy:opencore`
+- `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-notice`
+
+`pnpm smoke:api:local` passed on fixed port `39173`, including
+`core.notice.deliveries.missing-guard`,
+`core.notice.deliveries.dispatch-draft-guard`,
+`core.notice.deliveries.bad-read-status-guard`,
+`core.notice.deliveries.bad-channel-guard`,
+`core.notice.deliveries.unread-records`,
+`core.notice.deliveries.dispatch-idempotent` and
+`core.notice.deliveries.read-records`.
+
+`pnpm deploy:opencore` passed, deploying API/Admin on fixed ports
+`39172`/`39174`; deploy smoke included Admin same-origin login,
+duplicate-prefix login compatibility, public bundle checks, stale
+service-worker retirement and the new notice delivery smoke checks.
+
+## Round 61 Public Verification
+
+Against public endpoints after deploy:
+
+- Public API: `http://144.217.243.161:39172`
+- Public Admin: `http://144.217.243.161:39174`
+- Public API notice smoke passed:
+  `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-notice`.
+  Checks included missing notice delivery guards, draft dispatch guard,
+  `readStatus/channel` deserialization, unread/read delivery records, dispatch
+  idempotency and read sync.
+- Public System Notices bundle verification passed for
+  `System Notice Delivery Records`, `Delivery records`,
+  `Dispatch in-app deliveries`, `listNoticeDeliveries` and `dispatchNotice`.
+
+## Round 61 Commit Record
+
+- Feature commit:
+  `27cfa0c feat(notice): add notice delivery records / 新增通知投递记录`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

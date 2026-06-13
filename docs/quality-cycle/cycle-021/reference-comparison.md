@@ -1939,3 +1939,49 @@ Round 60 admits the template-management stage:
 OpenCore does not claim delivery adapter execution, WebSocket/mail/SMS fan-out,
 tenant notifications, BPM approval or member/mobile notice channels in this
 round. Those remain separate notice productization stages.
+
+## Round 61 Notice Delivery Record Reference Shape
+
+Yudao separates notice/template management from per-user notify-message
+records. Its notify-message surface includes message records for recipients,
+read status, read time and personal message consumption. The important product
+shape for OpenCore is not Java model parity; it is that a published notice can
+produce durable per-recipient records that operators and users can reason
+about.
+
+RuoYi's system notice workflow remains operator-facing under System notice
+permissions. It does not force OpenCore to add transport adapters in the same
+stage, but the notice product must expose more than a static notice row when
+operators need to verify delivery/read progress.
+
+OpenCore already had:
+
+- system notice management CRUD and lifecycle from Round 1;
+- authenticated inbox/read state from Round 55;
+- management read-user analytics from Round 56;
+- notification templates and draft generation from Round 60;
+- `core:notice:*` permissions and Admin System Notices routing;
+- fixed/deploy/public `core.notice` smoke.
+
+Round 61 admits the delivery-record stage:
+
+- persist `SystemNoticeDelivery` with notice/user identity, channel, status,
+  delivered time and read time;
+- auto-create in-app delivery records when a notice is published;
+- expose explicit idempotent dispatch through
+  `POST /api/core/notices/:id/dispatch`;
+- expose operator delivery records through
+  `GET /api/core/notices/:id/deliveries` with username, channel and read-status
+  filters;
+- synchronize inbox mark-read and mark-all-read actions back to delivery
+  `status/readAt`;
+- surface delivery records and dispatch actions in the Admin System Notices
+  page;
+- prove fixed-port, deploy and public smoke for draft dispatch guards,
+  deserialization guards, unread/read delivery records, idempotent dispatch,
+  read sync and stale Admin bundle markers.
+
+OpenCore does not claim real WebSocket/mail/SMS provider adapter execution,
+multi-channel retry/failure queues, tenant notifications, BPM approval or
+member/mobile notice channels in this round. Those remain separate notice
+productization stages after the durable in-app delivery record foundation.

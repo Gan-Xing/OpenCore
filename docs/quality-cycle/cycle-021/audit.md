@@ -1020,3 +1020,39 @@ debt.
 This stays inside the current S7 System notice boundary. It does not introduce
 delivery adapter execution, WebSocket/mail/SMS fan-out, tenant notices, BPM
 approval or member/mobile notification channels.
+
+## Round 61 Audit: core.notice Delivery Records
+
+After Round 60, `core.notice` had reusable notification templates, inbox read
+state and read-user analytics, but it still lacked a durable per-recipient
+delivery/message record.
+
+- Yudao's notify-message surface keeps recipient message rows with read status
+  and read time, separate from template management.
+- OpenCore already had notice CRUD, publish/archive lifecycle, read receipts,
+  inbox APIs, read-user analytics, templates and `core:notice:*` permissions.
+- The lowest-dependency loop was persisted in-app delivery records plus
+  idempotent dispatch and read sync, not WebSocket/mail/SMS provider execution.
+- The schema needed a dedicated `SystemNoticeDelivery` model instead of
+  overloading read receipts or notice rows.
+- Publishing a notice needed to create delivery rows for eligible in-app
+  recipients, while explicit dispatch needed to be idempotent for repair/retry
+  workflows.
+- Inbox mark-read and mark-all-read needed to update delivery `status/readAt`
+  so operator-visible delivery records do not drift from user-facing read
+  state.
+- Seed delivery rows needed to resolve the actual admin user id by username,
+  because existing databases may not still use the original seed id.
+- Admin needed a real `Delivery records` modal and
+  `Dispatch in-app deliveries` action, not a backend-only outbox.
+- Fixed-port, deploy and public smoke needed to prove missing-notice guards,
+  draft dispatch blocking, delivery `readStatus/channel` deserialization
+  guards, unread/read records, idempotent dispatch, read sync and deployed
+  Admin chunk markers.
+- The deploy script needed a stale System Notices bundle guard for delivery UI
+  markers because stale frontend artifacts have repeatedly hidden newly
+  deployed workflows.
+
+This stays inside the current S7 System notice boundary. It does not introduce
+real WebSocket/mail/SMS provider adapter execution, multi-channel retry/failure
+queues, tenant notices, BPM approval or member/mobile notification channels.
