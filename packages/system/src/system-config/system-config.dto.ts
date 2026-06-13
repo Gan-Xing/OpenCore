@@ -59,6 +59,22 @@ export class SystemConfigCacheRefreshDto {
   refreshedAt!: string;
 }
 
+export class BatchDeleteSystemConfigsDto {
+  @ApiProperty({ type: [String] })
+  keys!: readonly string[];
+}
+
+export class SystemConfigBatchMutationResultDto {
+  @ApiProperty()
+  deleted!: true;
+
+  @ApiProperty()
+  affected!: number;
+
+  @ApiProperty({ type: [String] })
+  keys!: readonly string[];
+}
+
 export class SystemConfigPageDto {
   @ApiProperty({ type: [SystemConfigDto] })
   items!: readonly SystemConfigDto[];

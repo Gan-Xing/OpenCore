@@ -6,6 +6,7 @@ import {
 import type { PageResult } from '@opencore/common';
 import { PrismaService } from '@opencore/database';
 import type {
+  BatchDeleteSystemConfigsDto,
   CreateSystemConfigDto,
   UpdateSystemConfigDto,
 } from './system-config.dto';
@@ -15,6 +16,7 @@ import {
   createSystemConfigPageResult,
   normalizeConfigCategory,
   normalizeConfigName,
+  normalizeBatchSystemConfigKeys,
   normalizeOptionalConfigText,
   normalizeSystemConfigPageQuery,
   redactSystemConfig,
@@ -138,6 +140,32 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
     await this.findConfigByKey(key);
     await this.prisma.systemConfig.delete({ where: { key } });
     return { deleted: true };
+  }
+
+  async deleteConfigs(
+    body: BatchDeleteSystemConfigsDto,
+  ): Promise<{ deleted: true; affected: number; keys: readonly string[] }> {
+    const keys = normalizeBatchSystemConfigKeys(body?.keys);
+    const configs = await this.prisma.systemConfig.findMany({
+      where: { key: { in: [...keys] } },
+      select: { key: true },
+    });
+    const existingKeys = new Set(configs.map((config) => config.key));
+    const missing = keys.find((key) => !existingKeys.has(key));
+
+    if (missing) {
+      throw new NotFoundException(`System config not found: ${missing}`);
+    }
+
+    await this.prisma.systemConfig.deleteMany({
+      where: { key: { in: [...keys] } },
+    });
+
+    return {
+      deleted: true,
+      affected: keys.length,
+      keys,
+    };
   }
 
   private async findConfigByKey(key: string): Promise<PrismaSystemConfig> {

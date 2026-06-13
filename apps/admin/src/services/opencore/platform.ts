@@ -8,6 +8,7 @@ import {
   type AuditLogQueryRequest,
   type AuditLogSummary,
   type BatchDeleteUsersRequest,
+  type BatchDeleteSystemConfigsRequest,
   type BatchKickOutSessionsRequest,
   type BatchKickOutSessionsResult,
   type BatchSetUserStatusRequest,
@@ -40,6 +41,7 @@ import {
   type DictTypeSummary,
   type ExportPreview,
   type SystemConfigSummary,
+  type SystemConfigBatchMutationSummary,
   type SystemConfigCacheRefreshSummary,
   type SystemConfigValueSummary,
   type SystemDeptOptionSummary,
@@ -420,6 +422,12 @@ export function deleteOpenCoreSystemConfig(
   key: string,
 ): Promise<{ deleted: true }> {
   return systemManagementClient.deleteConfig(getRequiredAdminToken(), key);
+}
+
+export function deleteOpenCoreSystemConfigs(
+  body: BatchDeleteSystemConfigsRequest,
+): Promise<SystemConfigBatchMutationSummary> {
+  return systemManagementClient.deleteConfigs(getRequiredAdminToken(), body);
 }
 
 export async function listOpenCoreFiles(): Promise<FileAssetSummary[]> {

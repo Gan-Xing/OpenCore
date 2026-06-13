@@ -25,6 +25,8 @@ const timeoutMs = Number(process.env.OPENCORE_SMOKE_TIMEOUT_MS || 10000);
 
 const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 const plainKey = `opencore.smoke.config.${runId}`;
+const batchKeyA = `opencore.smoke.config.batch.${runId}.a`;
+const batchKeyB = `opencore.smoke.config.batch.${runId}.b`;
 const secretKey = `auth.token.secret.${runId}`;
 let token;
 
@@ -232,6 +234,70 @@ try {
     },
   );
 
+  await apiRequest('/core/config/batch', {
+    method: 'DELETE',
+    body: { keys: [] },
+    expected: [400],
+  });
+  await apiRequest('/core/config/batch', {
+    method: 'DELETE',
+    body: { keys: [plainKey, plainKey] },
+    expected: [400],
+  });
+  await apiRequest('/core/config/batch', {
+    method: 'DELETE',
+    body: { keys: [plainKey, `opencore.smoke.config.missing.${runId}`] },
+    expected: [404],
+  });
+
+  await apiRequest('/core/config', {
+    method: 'POST',
+    body: {
+      category: 'smoke',
+      key: batchKeyA,
+      name: 'OpenCore smoke batch config A',
+      value: 'batch-a',
+      valueType: 'string',
+      visibility: 'public',
+    },
+  });
+  createdKeys.push(batchKeyA);
+  await apiRequest('/core/config', {
+    method: 'POST',
+    body: {
+      category: 'smoke',
+      key: batchKeyB,
+      name: 'OpenCore smoke batch config B',
+      value: 'batch-b',
+      valueType: 'string',
+      visibility: 'public',
+    },
+  });
+  createdKeys.push(batchKeyB);
+  await apiRequest(
+    `/core/config/get-value-by-key?key=${encodeURIComponent(batchKeyA)}`,
+  );
+  const batchDeleted = await apiRequest('/core/config/batch', {
+    method: 'DELETE',
+    body: { keys: [batchKeyA, batchKeyB] },
+  });
+  assertEqual(batchDeleted.deleted, true, 'config batch delete result');
+  assertEqual(batchDeleted.affected, 2, 'config batch delete affected count');
+  assertIncludes(batchDeleted.keys, batchKeyA, 'config batch delete key A');
+  assertIncludes(batchDeleted.keys, batchKeyB, 'config batch delete key B');
+  await apiRequest(`/core/config/${encodeURIComponent(batchKeyA)}`, {
+    expected: [404],
+  });
+  await apiRequest(
+    `/core/config/get-value-by-key?key=${encodeURIComponent(batchKeyA)}`,
+    {
+      expected: [404],
+    },
+  );
+  await apiRequest(`/core/config/${encodeURIComponent(batchKeyB)}`, {
+    expected: [404],
+  });
+
   await cleanupCreatedConfig();
 
   console.log(
@@ -255,6 +321,11 @@ try {
         'core.config.export.xlsx',
         'core.config.secret-redaction',
         'core.config.secret-value-blocked',
+        'core.config.batch-delete.empty-guard',
+        'core.config.batch-delete.duplicate-guard',
+        'core.config.batch-delete.missing-guard',
+        'core.config.batch-delete',
+        'core.config.batch-delete.cache-invalidation',
         'core.config.delete',
       ],
     }),

@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
 import type {
+  BatchDeleteSystemConfigsDto,
   CreateSystemConfigDto,
   UpdateSystemConfigDto,
 } from './system-config.dto';
@@ -17,6 +18,7 @@ import {
   createSystemConfigPageResult,
   normalizeConfigCategory,
   normalizeConfigName,
+  normalizeBatchSystemConfigKeys,
   normalizeOptionalConfigText,
   normalizeSystemConfigPageQuery,
   redactSystemConfig,
@@ -117,6 +119,30 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
       (config) => config.key !== key,
     );
     return { deleted: true };
+  }
+
+  async deleteConfigs(
+    body: BatchDeleteSystemConfigsDto,
+  ): Promise<{ deleted: true; affected: number; keys: readonly string[] }> {
+    const keys = normalizeBatchSystemConfigKeys(body?.keys);
+    const existingKeys = new Set(
+      this.systemConfigs.map((config) => config.key),
+    );
+    const missing = keys.find((key) => !existingKeys.has(key));
+
+    if (missing) {
+      throw new NotFoundException(`System config not found: ${missing}`);
+    }
+
+    this.systemConfigs = this.systemConfigs.filter(
+      (config) => !keys.includes(config.key),
+    );
+
+    return {
+      deleted: true,
+      affected: keys.length,
+      keys,
+    };
   }
 
   private findConfig(key: string): SystemConfigRecord {

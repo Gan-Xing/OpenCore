@@ -89,6 +89,16 @@ export type SystemConfigCacheRefreshSummary = {
   refreshedAt: string;
 };
 
+export type BatchDeleteSystemConfigsRequest = {
+  keys: readonly string[];
+};
+
+export type SystemConfigBatchMutationSummary = {
+  deleted: true;
+  affected: number;
+  keys: readonly string[];
+};
+
 export type CreateSystemConfigRequest = {
   category?: string;
   key: string;

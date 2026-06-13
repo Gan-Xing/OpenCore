@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
 import type {
+  BatchDeleteSystemConfigsDto,
   CreateSystemConfigDto,
   UpdateSystemConfigDto,
 } from './system-config.dto';
@@ -12,6 +13,7 @@ import type { SystemConfigRecord } from './system-config.records';
 import {
   createSystemConfigExportPreview,
   SystemConfigRepository,
+  type SystemConfigBatchMutationRecord,
   type SystemConfigExportPreview,
   type SystemConfigPageQuery,
 } from './system-config.repository';
@@ -106,6 +108,16 @@ export class SystemConfigService {
   async deleteConfig(key: string): Promise<{ deleted: true }> {
     const result = await this.repository.deleteConfig(key);
     this.invalidateValueCache(key);
+    return result;
+  }
+
+  async deleteConfigs(
+    body: BatchDeleteSystemConfigsDto,
+  ): Promise<SystemConfigBatchMutationRecord> {
+    const result = await this.repository.deleteConfigs(body);
+    for (const key of result.keys) {
+      this.invalidateValueCache(key);
+    }
     return result;
   }
 

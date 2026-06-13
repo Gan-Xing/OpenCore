@@ -2,6 +2,7 @@ import type { SdkRequest } from './rbac-client';
 import type {
   AuditLogQueryRequest,
   AuditLogSummary,
+  BatchDeleteSystemConfigsRequest,
   CreateDictItemRequest,
   CreateDictTypeRequest,
   CreateFileAssetRequest,
@@ -20,6 +21,7 @@ import type {
   LoginLogSummary,
   PageRequest,
   PageResponse,
+  SystemConfigBatchMutationSummary,
   SystemConfigCacheRefreshSummary,
   SystemConfigSummary,
   SystemConfigValueSummary,
@@ -113,6 +115,10 @@ export type SystemManagementClient = {
     body: UpdateSystemConfigRequest,
   ) => Promise<SystemConfigSummary>;
   deleteConfig: (token: Token, key: string) => Promise<DeleteResult>;
+  deleteConfigs: (
+    token: Token,
+    body: BatchDeleteSystemConfigsRequest,
+  ) => Promise<SystemConfigBatchMutationSummary>;
   listFiles: (
     token: Token,
     query?: PageRequest,
@@ -341,6 +347,12 @@ export function createSystemManagementClient(
     deleteConfig: (token, key) =>
       request<DeleteResult>(`/core/config/${encodeURIComponent(key)}`, {
         method: 'DELETE',
+        token,
+      }),
+    deleteConfigs: (token, body) =>
+      request<SystemConfigBatchMutationSummary>('/core/config/batch', {
+        method: 'DELETE',
+        body,
         token,
       }),
     listFiles: (token, query) =>

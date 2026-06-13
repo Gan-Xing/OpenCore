@@ -11,6 +11,7 @@ const expectedPermissions = {
   createNotice: ['core:notice:create'],
   createPost: ['core:post:create'],
   deleteConfig: ['core:config:delete'],
+  deleteConfigs: ['core:config:delete'],
   deleteDept: ['core:dept:delete'],
   deleteDict: ['core:dict:delete'],
   deleteDictItem: ['core:dict:delete'],

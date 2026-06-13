@@ -33,6 +33,7 @@ import { RequirePermission } from '../rbac/permissions.decorator';
 import {
   AuditLogPageDto,
   AuditLogQueryDto,
+  BatchDeleteSystemConfigsDto,
   CreateDictItemDto,
   CreateDictTypeDto,
   CreateFileAssetDto,
@@ -59,6 +60,7 @@ import {
   SystemDeptTreeDto,
   SystemConfigDto,
   SystemConfigCacheRefreshDto,
+  SystemConfigBatchMutationResultDto,
   SystemConfigPageDto,
   SystemConfigValueDto,
   SystemConfigValueQueryDto,
@@ -245,6 +247,16 @@ export class SystemManagementController {
   @ApiOkResponse({ type: SystemConfigCacheRefreshDto })
   refreshConfigCache(): Promise<SystemConfigCacheRefreshDto> {
     return this.config.refreshConfigCache();
+  }
+
+  @Delete('config/batch')
+  @ApiTags('Core System Config')
+  @RequirePermission('core:config:delete')
+  @ApiOkResponse({ type: SystemConfigBatchMutationResultDto })
+  deleteConfigs(
+    @Body() body: BatchDeleteSystemConfigsDto,
+  ): Promise<SystemConfigBatchMutationResultDto> {
+    return this.config.deleteConfigs(body);
   }
 
   @Get('config/:key')

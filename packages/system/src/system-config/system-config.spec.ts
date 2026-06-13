@@ -1,4 +1,8 @@
-import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '@opencore/database';
 import { PrismaSystemConfigRepository } from './system-config.prisma-repository';
@@ -78,6 +82,39 @@ describe('@opencore/system system-config', () => {
       value: 'false',
       valueType: 'boolean',
     });
+    const secondConfig = await service.createConfig({
+      category: 'feature',
+      key: 'sample.batch-delete',
+      name: 'Sample batch delete',
+      value: 'batch',
+      valueType: 'string',
+      visibility: 'public',
+    });
+    await expect(service.deleteConfigs({ keys: [] })).rejects.toThrow(
+      BadRequestException,
+    );
+    await expect(
+      service.deleteConfigs({
+        keys: ['sample.enabled', 'sample.enabled'],
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.deleteConfigs({
+        keys: ['sample.enabled', 'sample.missing'],
+      }),
+    ).rejects.toThrow(NotFoundException);
+    await expect(
+      service.deleteConfigs({
+        keys: [secondConfig.key, 'sample.enabled'],
+      }),
+    ).resolves.toEqual({
+      deleted: true,
+      affected: 2,
+      keys: ['sample.batch-delete', 'sample.enabled'],
+    });
+    await expect(service.getConfigValueByKey('sample.enabled')).rejects.toThrow(
+      NotFoundException,
+    );
     await expect(service.refreshConfigCache()).resolves.toMatchObject({
       refreshed: true,
       cachedKeys: expect.any(Number),
@@ -104,9 +141,6 @@ describe('@opencore/system system-config', () => {
     const exportWorkbook = Buffer.from(exportPreview.contentBase64, 'base64');
     expect(exportWorkbook.subarray(0, 2).toString('utf8')).toBe('PK');
     expect(exportWorkbook.length).toBeGreaterThan(100);
-    await expect(service.deleteConfig('sample.enabled')).resolves.toEqual({
-      deleted: true,
-    });
   });
 
   it('requires explicit secret visibility and redacts secret config values', async () => {
@@ -146,6 +180,7 @@ describe('@opencore/system system-config', () => {
     );
     const testRunId = randomUUID().slice(0, 8);
     const configKey = `system.config.${testRunId}`;
+    const batchConfigKey = `system.config.batch.${testRunId}`;
     const secretKey = `auth.token.secret.${testRunId}`;
 
     beforeEach(async () => {
@@ -258,17 +293,32 @@ describe('@opencore/system system-config', () => {
         contentBase64: expect.any(String),
         rowCount: expect.any(Number),
       });
-      await expect(service.deleteConfig(secretKey)).resolves.toEqual({
-        deleted: true,
+      await service.createConfig({
+        category: 'runtime',
+        key: batchConfigKey,
+        name: 'Runtime batch config',
+        value: 'batch',
+        valueType: 'string',
+        visibility: 'public',
       });
-      await expect(service.deleteConfig(configKey)).resolves.toEqual({
+      await expect(
+        service.deleteConfigs({ keys: [configKey, batchConfigKey] }),
+      ).resolves.toEqual({
+        deleted: true,
+        affected: 2,
+        keys: [batchConfigKey, configKey].sort(),
+      });
+      await expect(service.getConfig(configKey)).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(service.deleteConfig(secretKey)).resolves.toEqual({
         deleted: true,
       });
     });
 
     async function cleanupTestRows(): Promise<void> {
       await prisma.systemConfig.deleteMany({
-        where: { key: { in: [configKey, secretKey] } },
+        where: { key: { in: [configKey, batchConfigKey, secretKey] } },
       });
     }
   });

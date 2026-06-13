@@ -8,6 +8,7 @@ export {
   LoginLogQueryDto,
 } from '@opencore/audit';
 export {
+  BatchDeleteSystemConfigsDto,
   CreateDictTypeDto,
   CreateDictItemDto,
   CreateSystemDeptDto,
@@ -23,6 +24,7 @@ export {
   SystemDeptOptionDto,
   SystemDeptQueryDto,
   SystemDeptTreeDto,
+  SystemConfigBatchMutationResultDto,
   SystemConfigDto,
   SystemConfigCacheRefreshDto,
   SystemConfigPageDto,

@@ -32,10 +32,11 @@ import {
   Typography,
   message,
 } from 'antd';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type Key } from 'react';
 import {
   createOpenCoreSystemConfig,
   deleteOpenCoreSystemConfig,
+  deleteOpenCoreSystemConfigs,
   exportOpenCoreSystemConfig,
   getOpenCoreSystemConfig,
   getOpenCoreSystemConfigValue,
@@ -196,6 +197,8 @@ export default function ConfigPage() {
   const [submitting, setSubmitting] = useState(false);
   const [cacheRefreshing, setCacheRefreshing] = useState(false);
   const [exportingConfig, setExportingConfig] = useState(false);
+  const [batchDeleting, setBatchDeleting] = useState(false);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<readonly Key[]>([]);
   const [valueReadingKey, setValueReadingKey] = useState<string>();
   const watchedVisibility = Form.useWatch('visibility', form);
   const filterOptions = useMemo(() => createFilterOptions(rows), [rows]);
@@ -351,6 +354,23 @@ export default function ConfigPage() {
     await deleteOpenCoreSystemConfig(record.key);
     message.success('System config deleted.');
     await loadConfig();
+  };
+
+  const deleteSelectedConfigs = async () => {
+    const keys = selectedRowKeys.map(String);
+    if (keys.length === 0) {
+      return;
+    }
+
+    setBatchDeleting(true);
+    try {
+      const result = await deleteOpenCoreSystemConfigs({ keys });
+      setSelectedRowKeys([]);
+      message.success(`Selected configs deleted. ${result.affected} row(s).`);
+      await loadConfig();
+    } finally {
+      setBatchDeleting(false);
+    }
   };
 
   const refreshConfigCache = async () => {
@@ -520,6 +540,23 @@ export default function ConfigPage() {
           >
             Reload data
           </Button>,
+          <Popconfirm
+            key="batch-delete"
+            title={`Delete ${selectedRowKeys.length} selected system config(s)?`}
+            okText="Delete"
+            okButtonProps={{ danger: true }}
+            disabled={selectedRowKeys.length === 0}
+            onConfirm={() => void deleteSelectedConfigs()}
+          >
+            <Button
+              danger
+              disabled={selectedRowKeys.length === 0}
+              icon={<DeleteOutlined />}
+              loading={batchDeleting}
+            >
+              Delete selected
+            </Button>
+          </Popconfirm>,
           <Tooltip
             key="download-config-excel-export"
             title={
@@ -547,6 +584,11 @@ export default function ConfigPage() {
         pagination={{ pageSize: 10 }}
         dataSource={filteredRows}
         columns={columns}
+        rowSelection={{
+          selectedRowKeys: [...selectedRowKeys],
+          onChange: (keys) => setSelectedRowKeys(keys),
+          preserveSelectedRowKeys: true,
+        }}
       />
       <ReadOnlyDetailDrawer
         fields={selectedDetail ? createDetailFields(selectedDetail) : []}

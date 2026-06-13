@@ -1669,6 +1669,36 @@
         "tags": ["SystemManagement", "Core System Config"]
       }
     },
+    "/api/core/config/batch": {
+      "delete": {
+        "operationId": "SystemManagementController_deleteConfigs",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchDeleteSystemConfigsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemConfigBatchMutationResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Config"]
+      }
+    },
     "/api/core/config/{key}": {
       "get": {
         "operationId": "SystemManagementController_getConfig",
@@ -6154,6 +6184,22 @@
           "refreshedAt": { "type": "string" }
         },
         "required": ["refreshed", "cachedKeys", "refreshedAt"]
+      },
+      "BatchDeleteSystemConfigsDto": {
+        "type": "object",
+        "properties": {
+          "keys": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["keys"]
+      },
+      "SystemConfigBatchMutationResultDto": {
+        "type": "object",
+        "properties": {
+          "deleted": { "type": "boolean" },
+          "affected": { "type": "number" },
+          "keys": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["deleted", "affected", "keys"]
       },
       "CreateSystemConfigDto": {
         "type": "object",

@@ -6,6 +6,7 @@ import {
   type PageResult,
 } from '@opencore/common';
 import type {
+  BatchDeleteSystemConfigsDto,
   CreateSystemConfigDto,
   UpdateSystemConfigDto,
 } from './system-config.dto';
@@ -26,6 +27,12 @@ export type SystemConfigExportPreview = {
   columns: readonly string[];
   rowCount: number;
   generatedAt: string;
+};
+
+export type SystemConfigBatchMutationRecord = {
+  deleted: true;
+  affected: number;
+  keys: readonly string[];
 };
 
 export type SystemConfigPageQuery = PageQueryInput;
@@ -72,6 +79,10 @@ export abstract class SystemConfigRepository {
   ): Promise<SystemConfigRecord>;
 
   abstract deleteConfig(key: string): Promise<{ deleted: true }>;
+
+  abstract deleteConfigs(
+    body: BatchDeleteSystemConfigsDto,
+  ): Promise<SystemConfigBatchMutationRecord>;
 }
 
 export function normalizeSystemConfigPageQuery(
@@ -281,6 +292,56 @@ export function normalizeOptionalConfigText(
   }
 
   return normalized;
+}
+
+export function normalizeBatchSystemConfigKeys(
+  value: unknown,
+): readonly string[] {
+  if (!Array.isArray(value)) {
+    throw new BadRequestException('System config keys must be an array.');
+  }
+
+  if (value.length === 0) {
+    throw new BadRequestException('System config keys must not be empty.');
+  }
+
+  const normalized = value.map(normalizeSystemConfigKey);
+  const duplicate = findFirstDuplicate(normalized);
+
+  if (duplicate) {
+    throw new BadRequestException(
+      `System config key is duplicated: ${duplicate}`,
+    );
+  }
+
+  return [...normalized].sort();
+}
+
+function normalizeSystemConfigKey(value: unknown): string {
+  if (typeof value !== 'string') {
+    throw new BadRequestException('System config key must be a string.');
+  }
+
+  const normalized = value.trim();
+
+  if (!normalized) {
+    throw new BadRequestException('System config key is required.');
+  }
+
+  return normalized;
+}
+
+function findFirstDuplicate(values: readonly string[]): string | undefined {
+  const seen = new Set<string>();
+
+  for (const value of values) {
+    if (seen.has(value)) {
+      return value;
+    }
+    seen.add(value);
+  }
+
+  return undefined;
 }
 
 export function toSystemConfigValueType(

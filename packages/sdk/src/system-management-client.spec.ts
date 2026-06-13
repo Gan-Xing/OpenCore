@@ -132,6 +132,9 @@ describe('createSystemManagementClient', () => {
     await client.publishNotice('token', 'notice_1');
     await client.archiveNotice('token', 'notice_1');
     await client.deleteNotice('token', 'notice_1');
+    await client.deleteConfigs('token', {
+      keys: ['opencore.admin.title', 'opencore.sample.enabled'],
+    });
     await client.deleteConfig('token', 'opencore.admin.title');
 
     expect(calls).toEqual([
@@ -340,6 +343,11 @@ describe('createSystemManagementClient', () => {
       },
       {
         path: '/core/notices/notice_1',
+        method: 'DELETE',
+        token: 'token',
+      },
+      {
+        path: '/core/config/batch',
         method: 'DELETE',
         token: 'token',
       },

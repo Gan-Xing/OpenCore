@@ -297,6 +297,7 @@ if (
   !opencorePlatformService.includes('createOpenCoreSystemConfig') ||
   !opencorePlatformService.includes('updateOpenCoreSystemConfig') ||
   !opencorePlatformService.includes('deleteOpenCoreSystemConfig') ||
+  !opencorePlatformService.includes('deleteOpenCoreSystemConfigs') ||
   !opencorePlatformService.includes('listOpenCoreFiles') ||
   !opencorePlatformService.includes('getOpenCoreFile') ||
   !opencorePlatformService.includes('createOpenCoreFile') ||
@@ -808,6 +809,10 @@ if (
   !configPage.includes('createOpenCoreSystemConfig') ||
   !configPage.includes('updateOpenCoreSystemConfig') ||
   !configPage.includes('deleteOpenCoreSystemConfig') ||
+  !configPage.includes('deleteOpenCoreSystemConfigs') ||
+  !configPage.includes('Delete selected') ||
+  !configPage.includes('rowSelection') ||
+  !configPage.includes('selectedRowKeys') ||
   !configPage.includes('preserveRedactedSecret') ||
   !configPage.includes('useCurrentPageFilters') ||
   !configPage.includes('CurrentPageExportButton') ||
