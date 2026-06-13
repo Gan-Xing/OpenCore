@@ -90,6 +90,9 @@ describe('app getInitialState', () => {
     };
     mocks.getOpenCoreAdminRuntimeConfig.mockResolvedValue({
       adminTitle: 'OpenCore Admin',
+      featureFlags: {
+        'notice.inbox': true,
+      },
       loginLockoutMinutes: 15,
       loginMaxFailedAttempts: 5,
     });
@@ -121,6 +124,7 @@ describe('app getInitialState', () => {
     expect(state.settingDrawerOpen).toBe(false);
     expect(state.runtimeConfig?.loginLockoutMinutes).toBe(15);
     expect(state.runtimeConfig?.loginMaxFailedAttempts).toBe(5);
+    expect(state.runtimeConfig?.featureFlags['notice.inbox']).toBe(true);
     expect(state.fetchUserInfo).toBeDefined();
   });
 
@@ -196,6 +200,9 @@ describe('app getInitialState', () => {
     const { getInitialState } = await import('./app');
     mocks.getOpenCoreAdminRuntimeConfig.mockResolvedValue({
       adminTitle: 'OpenCore Runtime Admin',
+      featureFlags: {
+        'notice.inbox': false,
+      },
       loginLockoutMinutes: 20,
       loginMaxFailedAttempts: 4,
     });
@@ -215,5 +222,6 @@ describe('app getInitialState', () => {
     expect(state.settings?.title).toBe('OpenCore Runtime Admin');
     expect(state.runtimeConfig?.loginLockoutMinutes).toBe(20);
     expect(state.runtimeConfig?.loginMaxFailedAttempts).toBe(4);
+    expect(state.runtimeConfig?.featureFlags['notice.inbox']).toBe(false);
   });
 });

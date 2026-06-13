@@ -101,6 +101,7 @@ export type SystemConfigValueSummary = {
 
 export type SystemConfigRuntimeSummary = {
   adminTitle: string;
+  featureFlags: Record<string, boolean>;
   loginLockoutMinutes: number;
   loginMaxFailedAttempts: number;
 };

@@ -56,4 +56,17 @@ export const seedSystemConfigs: readonly SystemConfigRecord[] = [
     system: true,
     visibility: 'public',
   },
+  {
+    id: 'config_feature_notice_inbox_enabled',
+    category: 'feature',
+    name: 'Notice inbox feature flag',
+    key: 'feature.notice.inbox.enabled',
+    value: 'true',
+    valueType: 'boolean',
+    description: 'Public runtime feature flag for the notice inbox surface.',
+    remark: 'Returned by the runtime config featureFlags map.',
+    public: true,
+    system: true,
+    visibility: 'public',
+  },
 ];

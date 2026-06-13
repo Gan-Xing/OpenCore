@@ -27,6 +27,7 @@ import {
   Popconfirm,
   Select,
   Space,
+  Switch,
   Tag,
   Tooltip,
   Typography,
@@ -75,6 +76,8 @@ type ConfigFormValues = {
 };
 
 const fallbackRows = createSystemConfigFixtures().items;
+const featureFlagConfigKeyPattern =
+  /^feature\.[a-z0-9]+(?:[.-][a-z0-9]+)*\.enabled$/;
 const searchFields: CurrentPageSearchField<SystemConfigSummary>[] = [
   'name',
   'key',
@@ -83,6 +86,7 @@ const searchFields: CurrentPageSearchField<SystemConfigSummary>[] = [
   'description',
   'remark',
   'visibility',
+  isFeatureFlagConfig,
   'system',
 ];
 const exportColumns: CurrentPageExportColumn<SystemConfigSummary>[] = [
@@ -97,6 +101,7 @@ const exportColumns: CurrentPageExportColumn<SystemConfigSummary>[] = [
   { title: 'Type', dataIndex: 'valueType' },
   { title: 'Visibility', dataIndex: 'visibility' },
   { title: 'Public', dataIndex: 'public' },
+  { title: 'Feature Flag', renderText: renderFeatureFlagExportText },
   { title: 'System', dataIndex: 'system' },
   { title: 'Description', dataIndex: 'description' },
   { title: 'Remark', dataIndex: 'remark' },
@@ -114,6 +119,16 @@ const visibilityOptions: { label: string; value: ConfigVisibility }[] = [
 
 function formatConfigValue(record: SystemConfigSummary): string {
   return record.visibility === 'secret' ? '[redacted]' : record.value;
+}
+
+function isFeatureFlagConfig(record: SystemConfigSummary): boolean {
+  return featureFlagConfigKeyPattern.test(record.key);
+}
+
+function renderFeatureFlagExportText(record: SystemConfigSummary): string {
+  return isFeatureFlagConfig(record)
+    ? `${record.key.slice('feature.'.length, -'.enabled'.length)}=${record.value}`
+    : '';
 }
 
 function createFilterOptions(
@@ -148,6 +163,16 @@ function createFilterOptions(
       predicate: (record, value) => record.public === (value === 'true'),
     },
     {
+      key: 'featureFlag',
+      options: [
+        { label: 'feature flag', value: 'true' },
+        { label: 'standard config', value: 'false' },
+      ],
+      placeholder: 'Feature flag',
+      predicate: (record, value) =>
+        isFeatureFlagConfig(record) === (value === 'true'),
+    },
+    {
       key: 'system',
       options: [
         { label: 'system', value: 'true' },
@@ -173,6 +198,12 @@ function createDetailFields(record: SystemConfigSummary): DetailField[] {
     { label: 'Type', value: record.valueType },
     { label: 'Visibility', value: record.visibility },
     { label: 'Public', value: record.public ? 'public' : 'private' },
+    {
+      label: 'Feature Flag',
+      value: isFeatureFlagConfig(record)
+        ? renderFeatureFlagExportText(record)
+        : 'standard config',
+    },
     { label: 'System', value: record.system ? 'system' : 'custom' },
     { label: 'Description', value: record.description },
     { label: 'Remark', value: record.remark },
@@ -220,6 +251,8 @@ export default function ConfigPage() {
   const [batchDeleting, setBatchDeleting] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<readonly Key[]>([]);
   const [valueReadingKey, setValueReadingKey] = useState<string>();
+  const [featureFlagTogglingKey, setFeatureFlagTogglingKey] =
+    useState<string>();
   const watchedVisibility = Form.useWatch('visibility', form);
   const filterOptions = useMemo(() => createFilterOptions(rows), [rows]);
   const selectedDeletableKeys = useMemo(
@@ -422,6 +455,26 @@ export default function ConfigPage() {
     }
   };
 
+  const toggleFeatureFlag = async (record: SystemConfigSummary) => {
+    if (!isFeatureFlagConfig(record)) {
+      return;
+    }
+
+    setFeatureFlagTogglingKey(record.key);
+    try {
+      const nextValue = record.value === 'true' ? 'false' : 'true';
+      await updateOpenCoreSystemConfig(record.key, {
+        value: nextValue,
+        valueType: 'boolean',
+        visibility: 'public',
+      });
+      message.success(`Feature flag ${record.key} updated.`);
+      await loadConfig();
+    } finally {
+      setFeatureFlagTogglingKey(undefined);
+    }
+  };
+
   const columns: ProColumns<SystemConfigSummary>[] = [
     {
       title: 'Name',
@@ -467,6 +520,26 @@ export default function ConfigPage() {
       dataIndex: 'public',
       width: 96,
       render: (_, record) => (record.public ? 'public' : 'private'),
+    },
+    {
+      title: 'Feature Flag',
+      dataIndex: 'key',
+      width: 156,
+      render: (_, record) =>
+        isFeatureFlagConfig(record) ? (
+          <Space size="small">
+            <Switch
+              aria-label={`Toggle feature flag ${record.key}`}
+              checked={record.value === 'true'}
+              loading={featureFlagTogglingKey === record.key}
+              onChange={() => void toggleFeatureFlag(record)}
+              size="small"
+            />
+            <Tag color="green">runtime</Tag>
+          </Space>
+        ) : (
+          <Tag>standard</Tag>
+        ),
     },
     {
       title: 'System',

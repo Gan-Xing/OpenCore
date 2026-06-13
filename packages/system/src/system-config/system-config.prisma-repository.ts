@@ -14,6 +14,7 @@ import type {
 import type { SystemConfigRecord } from './system-config.records';
 import {
   assertSafeConfigKey,
+  assertFeatureFlagConfigShape,
   assertSystemConfigMutable,
   createSystemConfigPageResult,
   normalizeConfigCategory,
@@ -75,6 +76,11 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
   async createConfig(body: CreateSystemConfigDto): Promise<SystemConfigRecord> {
     const visibility = resolveConfigVisibility(body);
     assertSafeConfigKey(body.key, visibility);
+    assertFeatureFlagConfigShape({
+      key: body.key,
+      valueType: body.valueType,
+      visibility,
+    });
 
     if (
       await this.prisma.systemConfig.findUnique({ where: { key: body.key } })
@@ -120,6 +126,11 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
       visibility: body.visibility,
     });
     assertSafeConfigKey(key, visibility);
+    assertFeatureFlagConfigShape({
+      key,
+      valueType: nextValueType,
+      visibility,
+    });
     const config = await this.prisma.systemConfig.update({
       where: { key },
       data: {

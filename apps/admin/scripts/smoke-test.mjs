@@ -855,6 +855,10 @@ if (
   !configPage.includes('exportOpenCoreSystemConfig') ||
   !configPage.includes('Read public value by key') ||
   !configPage.includes('Refresh cache') ||
+  !configPage.includes('Feature Flag') ||
+  !configPage.includes('featureFlagConfigKeyPattern') ||
+  !configPage.includes('Toggle feature flag') ||
+  !configPage.includes('featureFlagTogglingKey') ||
   !configPage.includes('canExportSystemConfig') ||
   !configPage.includes('Download Excel') ||
   !configPage.includes('Config Excel export downloaded') ||

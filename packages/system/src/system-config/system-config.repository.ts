@@ -49,6 +49,8 @@ export type SystemConfigNormalizedPageQuery = {
 
 const SENSITIVE_CONFIG_KEY_PATTERN =
   /(authorization|cookie|password|secret|token)/i;
+const FEATURE_FLAG_CONFIG_KEY_PATTERN =
+  /^feature\.[a-z0-9]+(?:[.-][a-z0-9]+)*\.enabled$/;
 const REDACTED_SECRET_VALUE = '[REDACTED]';
 export const SYSTEM_CONFIG_EXPORT_CONTENT_TYPE = OPENCORE_XLSX_CONTENT_TYPE;
 export const SYSTEM_CONFIG_EXPORT_COLUMNS = [
@@ -59,6 +61,7 @@ export const SYSTEM_CONFIG_EXPORT_COLUMNS = [
   'valueType',
   'visibility',
   'public',
+  'featureFlag',
   'system',
   'description',
   'remark',
@@ -152,6 +155,7 @@ function createSystemConfigExportWorksheetRows(
       row.valueType,
       row.visibility,
       row.public ? 'true' : 'false',
+      toFeatureFlagName(row.key) ?? '',
       row.system ? 'true' : 'false',
       row.description ?? '',
       row.remark ?? '',
@@ -175,6 +179,40 @@ export function assertSafeConfigKey(
   if (visibility === 'secret' && !SENSITIVE_CONFIG_KEY_PATTERN.test(key)) {
     throw new BadRequestException(
       'Secret system config visibility requires a secret-like key name.',
+    );
+  }
+}
+
+export function isFeatureFlagConfigKey(key: string): boolean {
+  return FEATURE_FLAG_CONFIG_KEY_PATTERN.test(key);
+}
+
+export function toFeatureFlagName(key: string): string | undefined {
+  if (!isFeatureFlagConfigKey(key)) {
+    return undefined;
+  }
+
+  return key.slice('feature.'.length, -'.enabled'.length);
+}
+
+export function assertFeatureFlagConfigShape(input: {
+  key: string;
+  valueType: SystemConfigValueType;
+  visibility: SystemConfigVisibility;
+}): void {
+  if (!isFeatureFlagConfigKey(input.key)) {
+    return;
+  }
+
+  if (input.valueType !== 'boolean') {
+    throw new BadRequestException(
+      `Feature flag config ${input.key} must keep boolean value type.`,
+    );
+  }
+
+  if (input.visibility !== 'public') {
+    throw new BadRequestException(
+      `Feature flag config ${input.key} must remain public.`,
     );
   }
 }

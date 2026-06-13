@@ -55,6 +55,12 @@ export class SystemConfigRuntimeDto {
   @ApiProperty({ example: 'OpenCore Admin' })
   adminTitle!: string;
 
+  @ApiProperty({
+    additionalProperties: { type: 'boolean' },
+    example: { 'notice.inbox': true },
+  })
+  featureFlags!: Record<string, boolean>;
+
   @ApiProperty({ example: 15, minimum: 1, maximum: 1440 })
   loginLockoutMinutes!: number;
 

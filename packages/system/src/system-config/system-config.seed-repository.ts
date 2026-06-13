@@ -16,6 +16,7 @@ import {
 } from './system-config.records';
 import {
   assertSafeConfigKey,
+  assertFeatureFlagConfigShape,
   assertSystemConfigMutable,
   createSystemConfigPageResult,
   normalizeConfigCategory,
@@ -59,6 +60,11 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
   async createConfig(body: CreateSystemConfigDto): Promise<SystemConfigRecord> {
     const visibility = resolveConfigVisibility(body);
     assertSafeConfigKey(body.key, visibility);
+    assertFeatureFlagConfigShape({
+      key: body.key,
+      valueType: body.valueType,
+      visibility,
+    });
 
     if (this.systemConfigs.some((config) => config.key === body.key)) {
       throw new ConflictException(`System config already exists: ${body.key}`);
@@ -97,6 +103,11 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
       visibility: body.visibility ?? config.visibility,
     });
     assertSafeConfigKey(key, visibility);
+    assertFeatureFlagConfigShape({
+      key,
+      valueType: nextValueType,
+      visibility,
+    });
     Object.assign(config, {
       category:
         body.category === undefined

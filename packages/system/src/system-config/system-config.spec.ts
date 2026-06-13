@@ -18,8 +18,8 @@ describe('@opencore/system system-config', () => {
       expect.objectContaining({
         page: 1,
         pageSize: 1,
-        total: 3,
-        totalPages: 3,
+        total: 4,
+        totalPages: 4,
       }),
     );
     await expect(
@@ -48,6 +48,9 @@ describe('@opencore/system system-config', () => {
     });
     await expect(service.getRuntimeConfig()).resolves.toEqual({
       adminTitle: 'OpenCore Admin',
+      featureFlags: {
+        'notice.inbox': true,
+      },
       loginLockoutMinutes: 15,
       loginMaxFailedAttempts: 5,
     });
@@ -159,6 +162,7 @@ describe('@opencore/system system-config', () => {
         'valueType',
         'visibility',
         'public',
+        'featureFlag',
         'system',
         'description',
         'remark',
@@ -174,12 +178,18 @@ describe('@opencore/system system-config', () => {
 
     await expect(service.getRuntimeConfig()).resolves.toEqual({
       adminTitle: 'OpenCore Admin',
+      featureFlags: {
+        'notice.inbox': true,
+      },
       loginLockoutMinutes: 15,
       loginMaxFailedAttempts: 5,
     });
 
     await service.updateConfig('opencore.admin.title', {
       value: 'OpenCore Runtime Admin',
+    });
+    await service.updateConfig('feature.notice.inbox.enabled', {
+      value: 'false',
     });
     await service.updateConfig('auth.login.lockoutMinutes', {
       value: '20',
@@ -190,9 +200,39 @@ describe('@opencore/system system-config', () => {
 
     await expect(service.getRuntimeConfig()).resolves.toEqual({
       adminTitle: 'OpenCore Runtime Admin',
+      featureFlags: {
+        'notice.inbox': false,
+      },
       loginLockoutMinutes: 20,
       loginMaxFailedAttempts: 4,
     });
+
+    await expect(
+      service.updateConfig('feature.notice.inbox.enabled', {
+        valueType: 'string',
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.updateConfig('feature.notice.inbox.enabled', {
+        visibility: 'private',
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.createConfig({
+        key: 'feature.sample.enabled',
+        value: 'true',
+        valueType: 'string',
+        visibility: 'public',
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.createConfig({
+        key: 'feature.sample.enabled',
+        value: 'true',
+        valueType: 'boolean',
+        visibility: 'private',
+      }),
+    ).rejects.toThrow(BadRequestException);
 
     await expect(
       service.updateConfig('auth.login.lockoutMinutes', {
@@ -402,7 +442,7 @@ describe('@opencore/system system-config', () => {
           'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         scope: 'current-page',
         contentBase64: expect.any(String),
-        columns: expect.arrayContaining(['system']),
+        columns: expect.arrayContaining(['featureFlag', 'system']),
         rowCount: expect.any(Number),
       });
       await service.createConfig({

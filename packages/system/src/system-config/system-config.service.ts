@@ -13,6 +13,7 @@ import type { SystemConfigRecord } from './system-config.records';
 import {
   createSystemConfigExportPreview,
   SystemConfigRepository,
+  toFeatureFlagName,
   type SystemConfigBatchMutationRecord,
   type SystemConfigExportPreview,
   type SystemConfigPageQuery,
@@ -32,6 +33,7 @@ export type SystemConfigCacheRefreshResult = {
 
 export type SystemConfigRuntimeResult = {
   adminTitle: string;
+  featureFlags: Record<string, boolean>;
   loginLockoutMinutes: number;
   loginMaxFailedAttempts: number;
 };
@@ -77,15 +79,21 @@ export class SystemConfigService {
   }
 
   async getRuntimeConfig(): Promise<SystemConfigRuntimeResult> {
-    const [adminTitle, loginLockoutMinutes, loginMaxFailedAttempts] =
-      await Promise.all([
-        this.getConfigValueByKey(ADMIN_TITLE_CONFIG_KEY),
-        this.getConfigValueByKey(LOGIN_LOCKOUT_MINUTES_CONFIG_KEY),
-        this.getConfigValueByKey(LOGIN_MAX_FAILED_ATTEMPTS_CONFIG_KEY),
-      ]);
+    const [
+      adminTitle,
+      featureFlags,
+      loginLockoutMinutes,
+      loginMaxFailedAttempts,
+    ] = await Promise.all([
+      this.getConfigValueByKey(ADMIN_TITLE_CONFIG_KEY),
+      this.listRuntimeFeatureFlags(),
+      this.getConfigValueByKey(LOGIN_LOCKOUT_MINUTES_CONFIG_KEY),
+      this.getConfigValueByKey(LOGIN_MAX_FAILED_ATTEMPTS_CONFIG_KEY),
+    ]);
 
     return {
       adminTitle: adminTitle.value,
+      featureFlags,
       loginLockoutMinutes: parseRuntimeIntegerInRange(
         loginLockoutMinutes.value,
         LOGIN_LOCKOUT_MINUTES_CONFIG_KEY,
@@ -171,6 +179,37 @@ export class SystemConfigService {
 
   private invalidateValueCache(key: string): void {
     this.valueCache.delete(key);
+  }
+
+  private async listRuntimeFeatureFlags(): Promise<Record<string, boolean>> {
+    const featureFlags: Record<string, boolean> = {};
+    let page = 1;
+
+    while (true) {
+      const result = await this.repository.listConfig({ page, pageSize: 100 });
+
+      for (const config of result.items) {
+        const flagName = toFeatureFlagName(config.key);
+        if (!flagName) {
+          continue;
+        }
+
+        if (config.visibility !== 'public' || config.valueType !== 'boolean') {
+          throw new BadRequestException(
+            `Feature flag config ${config.key} must be public boolean.`,
+          );
+        }
+
+        featureFlags[flagName] = config.value === 'true';
+      }
+
+      if (page >= result.totalPages) {
+        break;
+      }
+      page += 1;
+    }
+
+    return featureFlags;
   }
 }
 

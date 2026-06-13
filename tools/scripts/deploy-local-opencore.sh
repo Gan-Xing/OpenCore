@@ -98,6 +98,16 @@ verify_admin_bundle_api_base_url() {
     echo "Refusing to deploy a stale frontend login page." >&2
     exit 1
   fi
+
+  if ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Feature Flag" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null; then
+    echo "Admin bundle does not include the runtime feature flag config surface." >&2
+    echo "Refusing to deploy a stale frontend config page." >&2
+    exit 1
+  fi
 }
 
 verify_public_admin_bundle() {

@@ -86,6 +86,16 @@ describe('registry fixtures', () => {
       ),
     ).toBe(true);
     expect(
+      createSystemConfigFixtures().items.some(
+        (item) =>
+          item.category === 'feature' &&
+          item.key === 'feature.notice.inbox.enabled' &&
+          item.value === 'true' &&
+          item.valueType === 'boolean' &&
+          item.visibility === 'public',
+      ),
+    ).toBe(true);
+    expect(
       createSystemConfigFixtures().items.find(
         (item) => item.visibility === 'secret',
       )?.value,

@@ -6714,6 +6714,11 @@
         "type": "object",
         "properties": {
           "adminTitle": { "type": "string", "example": "OpenCore Admin" },
+          "featureFlags": {
+            "type": "object",
+            "additionalProperties": { "type": "boolean" },
+            "example": { "notice.inbox": true }
+          },
           "loginLockoutMinutes": {
             "type": "number",
             "example": 15,
@@ -6729,6 +6734,7 @@
         },
         "required": [
           "adminTitle",
+          "featureFlags",
           "loginLockoutMinutes",
           "loginMaxFailedAttempts"
         ]

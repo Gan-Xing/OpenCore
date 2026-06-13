@@ -27,6 +27,8 @@ const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 const plainKey = `opencore.smoke.config.${runId}`;
 const batchKeyA = `opencore.smoke.config.batch.${runId}.a`;
 const batchKeyB = `opencore.smoke.config.batch.${runId}.b`;
+const featureFlagKey = `feature.smoke.${runId}.enabled`;
+const featureFlagName = `smoke.${runId}`;
 const secretKey = `auth.token.secret.${runId}`;
 let token;
 let originalAdminTitle;
@@ -138,6 +140,15 @@ try {
     initialRuntimeConfig.adminTitle,
     originalAdminTitle,
     'initial runtime admin title',
+  );
+  assertObject(
+    initialRuntimeConfig.featureFlags,
+    'initial runtime feature flags',
+  );
+  assertEqual(
+    initialRuntimeConfig.featureFlags['notice.inbox'],
+    true,
+    'initial notice inbox feature flag',
   );
   assertEqual(
     initialRuntimeConfig.loginLockoutMinutes,
@@ -275,6 +286,100 @@ try {
   );
   await restoreLoginMaxFailedAttempts();
 
+  await apiRequest('/core/config', {
+    method: 'POST',
+    body: {
+      category: 'feature',
+      key: `feature.smoke.${runId}.invalid.enabled`,
+      name: 'Invalid smoke feature flag',
+      value: 'true',
+      valueType: 'string',
+      visibility: 'public',
+    },
+    expected: [400],
+  });
+  await apiRequest('/core/config', {
+    method: 'POST',
+    body: {
+      category: 'feature',
+      key: `feature.smoke.${runId}.invalid.enabled`,
+      name: 'Invalid smoke feature flag',
+      value: 'true',
+      valueType: 'boolean',
+      visibility: 'private',
+    },
+    expected: [400],
+  });
+
+  const createdFeatureFlag = await apiRequest('/core/config', {
+    method: 'POST',
+    body: {
+      category: 'feature',
+      key: featureFlagKey,
+      name: 'OpenCore smoke feature flag',
+      value: 'true',
+      valueType: 'boolean',
+      description: 'OpenCore scripted runtime feature flag',
+      remark: 'Created by core.config smoke.',
+      visibility: 'public',
+    },
+  });
+  createdKeys.push(featureFlagKey);
+  assertEqual(createdFeatureFlag.value, 'true', 'created feature flag value');
+  assertEqual(
+    createdFeatureFlag.valueType,
+    'boolean',
+    'created feature flag value type',
+  );
+  assertEqual(
+    createdFeatureFlag.visibility,
+    'public',
+    'created feature flag visibility',
+  );
+  const runtimeWithFeatureFlag = await request(
+    `${apiPrefix}/core/config/runtime`,
+  );
+  assertEqual(
+    runtimeWithFeatureFlag.featureFlags[featureFlagName],
+    true,
+    'runtime feature flag after create',
+  );
+  await apiRequest(`/core/config/${featureFlagKey}`, {
+    method: 'PATCH',
+    body: {
+      valueType: 'string',
+    },
+    expected: [400],
+  });
+  await apiRequest(`/core/config/${featureFlagKey}`, {
+    method: 'PATCH',
+    body: {
+      visibility: 'private',
+    },
+    expected: [400],
+  });
+  await apiRequest(`/core/config/${featureFlagKey}`, {
+    method: 'PATCH',
+    body: {
+      value: 'yes',
+    },
+    expected: [400],
+  });
+  await apiRequest(`/core/config/${featureFlagKey}`, {
+    method: 'PATCH',
+    body: {
+      value: 'false',
+    },
+  });
+  const runtimeAfterFeatureFlagUpdate = await request(
+    `${apiPrefix}/core/config/runtime`,
+  );
+  assertEqual(
+    runtimeAfterFeatureFlagUpdate.featureFlags[featureFlagName],
+    false,
+    'runtime feature flag after update',
+  );
+
   const createdConfig = await apiRequest('/core/config', {
     method: 'POST',
     body: {
@@ -403,6 +508,11 @@ try {
   );
   assertIncludes(exportPreview.columns, 'name', 'config export name column');
   assertIncludes(exportPreview.columns, 'value', 'config export value column');
+  assertIncludes(
+    exportPreview.columns,
+    'featureFlag',
+    'config export feature flag column',
+  );
   assertIncludes(
     exportPreview.columns,
     'system',
@@ -547,6 +657,8 @@ try {
         'core.config.metadata',
         'core.config.runtime',
         'core.config.runtime-cache-invalidation',
+        'core.config.runtime-feature-flags',
+        'core.config.runtime-feature-flag-guards',
         'core.config.runtime-login-policy',
         'core.config.runtime-login-policy-guards',
         'core.config.runtime-login-attempt-policy',
@@ -762,6 +874,14 @@ function assertString(value, label) {
 function assertArray(value, label) {
   if (!Array.isArray(value)) {
     throw new Error(`${label} must be an array`);
+  }
+
+  return value;
+}
+
+function assertObject(value, label) {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new Error(`${label} must be an object`);
   }
 
   return value;

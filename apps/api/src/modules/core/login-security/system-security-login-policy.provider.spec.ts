@@ -5,6 +5,9 @@ describe('SystemSecurityLoginPolicyProvider', () => {
   it('maps runtime config into the security login policy', async () => {
     const getRuntimeConfig = jest.fn().mockResolvedValue({
       adminTitle: 'OpenCore Admin',
+      featureFlags: {
+        'notice.inbox': true,
+      },
       loginLockoutMinutes: 9,
       loginMaxFailedAttempts: 3,
     });
