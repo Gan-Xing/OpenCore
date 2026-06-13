@@ -1781,6 +1781,34 @@ product.
       smoke, deployment and public URL verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 59: core.login-log IP Location Enrichment Productization
+
+Why this slice: after Round 57 corrected logout actor/reason semantics, the
+remaining low-dependency `core.login-log` reference gap was IP/location
+visibility. This stage closes a deterministic no-external-service location
+loop first, instead of hiding a GeoIP provider or country/city database inside
+the same round.
+
+- [x] Recompare RuoYi/Yudao login-log IP/location expectations before
+      selecting this slice.
+- [x] Add shared IP normalization and deterministic location classification in
+      `@opencore/common`.
+- [x] Add Prisma `LoginLog.location` plus migration/backfill and seed upsert
+      support.
+- [x] Extend seed and Prisma login-log repositories to compute and persist
+      location at write time and filter by `location`.
+- [x] Extend login-log DTOs, SDK types/client/spec, OpenAPI and registry
+      fixtures with `location`.
+- [x] Add Admin Login Logs Location table/detail/export fields, current-page
+      filtering and `Login location server filter` server-side query input.
+- [x] Extend Admin static smoke and deploy-script stale bundle guard for the
+      Location filter UI.
+- [x] Extend fixed-port/deploy/public `core.login-log` smoke to assert
+      detail `location`, server-side location filters and export columns.
+- [x] Run focused tests, OpenAPI/SDK checks, typecheck, lint, fixed-port
+      smoke, deployment and public URL verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -1839,7 +1867,7 @@ treat "minimal loop" as "minimal final product".
       flags with Admin Config toggles, SDK/OpenAPI propagation and
       smoke/deploy guards. Secret vault/KMS and advanced feature-flag rollout
       remain as auto-admissible foundation rounds.
-- [ ] Round 11/26/45/47/48/49/50/51/57 `core.login-log`: browser/OS parsing,
+- [ ] Round 11/26/45/47/48/49/50/51/57/59 `core.login-log`: browser/OS parsing,
       IP/time filters, persisted login type/result schema, Admin display and
       type/result filters are complete. Persisted failed-attempt lockout,
       `account_locked` result mapping and permissioned username unlock are
@@ -1851,8 +1879,10 @@ treat "minimal loop" as "minimal final product".
       `logout.force` rows without logging internal RBAC/user session
       invalidation as forced logout. Round 57 adds structured
       `actorUsername`/`reason` fields for self/force logout records and removes
-      the old `failureReason` overload. IP/location enrichment where feasible
-      and broader mobile/social logging stages remain.
+      the old `failureReason` overload. Round 59 adds deterministic persisted
+      IP/location enrichment, Location filters/export/Admin UI and smoke/deploy
+      guards. Optional external GeoIP country/city/provider depth and broader
+      mobile/social logging stages remain.
 
 ### Thin, Must Rework Before More Broad Surfaces
 
@@ -1904,8 +1934,9 @@ treat "minimal loop" as "minimal final product".
   expansion.
 - Lockout-policy tuning beyond current max-attempts/window fields, session
   termination from the login-log page and broader mobile/SMS/social login
-  logging unless admitted as separate security rounds. IP/location enrichment
-  is P1 foundation work, not a business-domain guard.
+  logging unless admitted as separate security rounds. External GeoIP
+  country/city/provider enrichment remains foundation work, not a
+  business-domain guard.
 - Business-domain operation audit timelines and async queue/indexing remain
   outside this cycle. Operation-log maintenance, retention and structured
   field enrichment are P1/P2 foundation work, not forbidden scope.

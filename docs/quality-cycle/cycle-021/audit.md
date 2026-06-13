@@ -959,3 +959,32 @@ already live, but feature toggles still existed only as an untyped future debt.
 This stays inside the current S7 System config-runtime boundary. It does not
 introduce KMS/secret vault, percentage rollout, audience targeting,
 multi-environment rollout governance or a full experimentation platform.
+
+## Round 59 Audit: core.login-log IP Location Enrichment
+
+After Round 57, `core.login-log` had corrected actor/reason semantics for
+logout rows, but the reference login-log surface still lacked a visible and
+filterable Location field.
+
+- RuoYi login information management exposes login location as a normal
+  security table/export field beside IP, browser and OS.
+- Yudao persists user IP and user-agent as first-class login-log fields, which
+  makes location enrichment a natural foundation layer.
+- OpenCore already had IP, browser, OS, time-window filters, result schema,
+  cleanup, lockout/unlock and logout actor/reason fields.
+- The lowest-dependency loop was a deterministic location field derived from
+  IP ranges, not a hidden external GeoIP provider.
+- The migration needed to add a non-null `location` with safe backfill so
+  existing login-log rows remain readable.
+- Seed and Prisma repositories both needed to compute location at write time
+  and support location filtering.
+- Admin needed a Location column, detail field, export column and server-side
+  location filter, not only a backend field.
+- Fixed-port, deploy and public smoke needed to prove location detail, location
+  filters, export columns and the deployed Login Logs chunk marker.
+- The deploy script needed a stale Login Logs bundle guard because stale
+  frontend artifacts have repeatedly broken login and security workflows.
+
+This stays inside the current S7 Security/System login-log boundary. It does
+not introduce external GeoIP provider integration, country/city databases,
+mobile/SMS/social login logging or Login Logs page session termination.

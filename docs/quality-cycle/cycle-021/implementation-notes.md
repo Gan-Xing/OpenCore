@@ -4976,3 +4976,102 @@ Against public endpoints after deploy:
   `b294c35 feat(config): add runtime feature flags / 新增运行时功能开关`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 59 Capability
+
+Capability: `core.login-log` IP/location enrichment productization.
+
+Round 59 closes the deterministic IP/location stage for Login Logs. OpenCore
+now stores a `location` field for each login-log row by normalizing the source
+IP and classifying it into stable network-location categories. This gives the
+operator a filterable Location column without introducing an external GeoIP
+provider or country/city database in the same round.
+
+Reference comparison:
+
+- RuoYi login information management exposes login location beside IP,
+  username, browser, OS and status.
+- Yudao login logs keep IP and user-agent as first-class fields, which supports
+  downstream device/location enrichment.
+- OpenCore already had IP, browser, OS, result, actor/reason and maintenance
+  actions; the missing low-dependency layer was persisted location plus Admin
+  and smoke coverage.
+
+## Round 59 Implemented
+
+- Added shared IP normalization and deterministic location classification in
+  `@opencore/common`.
+- Added Prisma `LoginLog.location` plus migration/backfill and seed support.
+- Extended audit login-log records, DTOs, repositories, filters, export preview
+  and tests with `location`.
+- Extended SDK login-log summary/query types, registry fixtures and client
+  tests.
+- Extended OpenAPI output with login-log `location` query and response fields.
+- Added Admin Login Logs Location table/detail/export fields, current-page
+  filtering and the `Login location server filter` server-side query input.
+- Extended Admin static smoke, fixed-port `core.login-log` smoke and
+  deploy-script stale bundle guards for Location coverage.
+
+Out of scope for Round 59:
+
+- External GeoIP provider integration;
+- country/city/provider configuration or IP database updates;
+- mobile/SMS/social login logging;
+- session termination initiated from the Login Logs page.
+
+## Round 59 Verification
+
+- `pnpm prisma:generate`
+- `pnpm prisma:migrate`
+- `pnpm nx test common --runInBand`
+- `pnpm nx test audit --runInBand`
+- `pnpm nx test sdk --runInBand`
+- `pnpm prisma:validate`
+- `pnpm test:admin`
+- `pnpm openapi:export`
+- `pnpm openapi:check`
+- `pnpm openapi:registry-tags:check`
+- `pnpm sdk:check`
+- `pnpm test:api --runInBand`
+- `pnpm typecheck`
+- `pnpm lint`
+- `pnpm exec prettier --check --ignore-unknown ...`
+- `git diff --check`
+- `pnpm smoke:api:local`
+- `pnpm deploy:opencore`
+- `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-login-log`
+
+`pnpm smoke:api:local` passed on fixed port `39173`, including
+`core.login-log.location`.
+
+`pnpm deploy:opencore` passed, deploying API/Admin on fixed ports
+`39172`/`39174`; deploy smoke included Admin same-origin login,
+duplicate-prefix login compatibility, public bundle checks, stale
+service-worker retirement and the new login-log location guard.
+
+`pnpm lint` passed with existing warnings in
+`packages/system/src/system-user/system-user.prisma-repository.ts` and
+`apps/admin/src/pages/shared/CurrentPageExportButton.tsx`; no Round 59 lint
+errors were introduced.
+
+## Round 59 Public Verification
+
+Against public endpoints after deploy:
+
+- Public API: `http://144.217.243.161:39172`
+- Public Admin: `http://144.217.243.161:39174`
+- Admin main bundle: `umi.82450f41.js`
+- Login Logs chunk: `p__Security__LoginLogs.c2b20b26.async.js`
+- Public API login-log smoke passed:
+  `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-login-log`.
+  Checks included `core.login-log.location`, server-side location filters and
+  export columns.
+- Public Login Logs chunk contains `Login location server filter`, `Location`
+  and `location`.
+
+## Round 59 Commit Record
+
+- Feature commit:
+  `b39b1ac feat(login-log): add ip location enrichment / 新增登录日志 IP 位置`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

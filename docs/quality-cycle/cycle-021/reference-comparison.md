@@ -1859,3 +1859,43 @@ OpenCore does not claim KMS/secret vault, percentage rollout, audience
 targeting, multi-environment rollout governance or a full experimentation
 platform in this round. Those remain separate foundation rounds, not hidden
 scope inside basic runtime flags.
+
+## Round 59 Login-Log IP Location Reference Shape
+
+RuoYi login information management exposes login location as part of the normal
+login-log table beside IP, username, browser, OS, status and time. That makes
+location an operator-facing security field rather than a downstream analytics
+extra.
+
+Yudao login logs keep user IP and user-agent as first-class persisted fields.
+Even when a deployment chooses a different GeoIP source, the product shape
+still expects IP/device data to support location enrichment, filtering and
+export.
+
+OpenCore already had:
+
+- login-log list/detail/export;
+- IP, browser, OS and time-window filters;
+- persisted login type/result schema;
+- lockout/unlock and cleanup maintenance actions;
+- self and forced logout logging with structured actor/reason fields;
+- Admin Login Logs table, detail drawer, filters and current-page export.
+
+Round 59 admits the no-external-service IP/location stage:
+
+- normalize request IP values before classification;
+- persist `LoginLog.location`;
+- classify common deterministic ranges as Loopback, Private network,
+  Link-local, Shared address space, Documentation network, Public network or
+  Unknown;
+- compute location in seed and Prisma repositories at write time;
+- expose `location` through API, SDK, OpenAPI, Admin filters, detail, list and
+  export;
+- prove location detail, filters and export columns in fixed-port, deploy and
+  public smoke;
+- reject stale Admin bundles that lack the Login Logs Location server filter.
+
+OpenCore does not claim external GeoIP provider integration, country/city
+accuracy, IP database updates, mobile/SMS/social login logging or Login Logs
+page session termination in this round. Those remain separate foundation or
+security rounds.

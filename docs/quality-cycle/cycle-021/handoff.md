@@ -3,8 +3,8 @@
 Date: 2026-06-13
 Repository: `Gan-Xing/OpenCore`
 Default branch: `main`
-Latest observed feature commit: `b294c35 feat(config): add runtime feature flags / 新增运行时功能开关`
-Latest deployed feature commit: `b294c35 feat(config): add runtime feature flags / 新增运行时功能开关`
+Latest observed feature commit: `b39b1ac feat(login-log): add ip location enrichment / 新增登录日志 IP 位置`
+Latest deployed feature commit: `b39b1ac feat(login-log): add ip location enrichment / 新增登录日志 IP 位置`
 Latest deployed hardening commit: `4df5dd1 fix(system): satisfy xlsx export lint guard / 修复 XLSX 导出 lint 守卫`
 
 ## One-sentence Goal
@@ -143,6 +143,7 @@ productization waterline completion; see
 - Round 56 `core.notice` read-user analytics stage 3
 - Round 57 `core.login-log` structured logout actor/reason stage 8
 - Round 58 `core.config` runtime feature flags stage 10
+- Round 59 `core.login-log` IP/location enrichment stage 9
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -800,6 +801,19 @@ Admin Config 页面新增 Feature Flag 筛选、列、当前页导出列和行�
 `featureFlags.notice.inbox=true`。注意：这轮关闭的是基础 public boolean runtime flags，
 不等于 KMS/secret vault、高级灰度规则、百分比发布、人群分流或完整实验平台已经完成。
 
+Round 59 回到 `core.login-log` P1 队列，把登录日志 IP/location enrich 从欠账变成确定性闭环。
+OpenCore 现在在 `@opencore/common` 提供 IP 归一化和确定性位置分类，`LoginLog.location`
+通过 Prisma migration 持久化并对历史行回填，seed/Prisma 登录日志仓储会在写入时根据 IP
+补齐 `Loopback`、`Private network`、`Link-local`、`Shared address space`、
+`Documentation network`、`Public network` 或 `Unknown`。API/SDK/OpenAPI/Admin 同步：
+Login Logs 支持 `location` 服务端过滤，列表/详情/导出展示 Location，Admin Login Logs
+页面新增 Location 当前页筛选和服务端筛选。固定 smoke、部署 smoke 和公网 API smoke 均验证
+`core.login-log.location`；部署脚本会拒绝缺少 `Login location server filter` 的 stale
+Admin bundle。公网 Admin `p__Security__LoginLogs.c2b20b26.async.js` 已验证包含
+`Login location server filter`、`Location` 和 `location` 标记。注意：这轮关闭的是无外部服务依赖的确定性
+IP/location 分类，不等于外部 GeoIP provider、国家/城市库、mobile/SMS/social 登录日志或从
+Login Logs 页面直接终止会话已经完成。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -812,7 +826,7 @@ The productization waterline now classifies:
   Round 3/22/25/42/53 `core.post`.
 - First loop, enhance: Round 1/55/56 `core.notice`,
   Round 9/24/37/38/39/40/44/46/49/58 `core.config`,
-  Round 11/26/45/47/48/49/50/51/57 `core.login-log`.
+  Round 11/26/45/47/48/49/50/51/57/59 `core.login-log`.
 - Thin, rework: none after Round 16.
 
 The P0 remediation queue from the post-Round 13 re-audit is now clear. The next
@@ -849,8 +863,11 @@ finds another blocker:
    Round 51 closed explicit online-user force logout login-log recording.
    Round 57 replaced the temporary `failureReason` overload with structured
    `actorUsername` and `reason` fields for self/force logout records across
-   Prisma, API, SDK, Admin, OpenAPI and smoke. Remaining work is IP/location
-   enrichment where feasible and mobile/SMS/social login logging stages.
+   Prisma, API, SDK, Admin, OpenAPI and smoke. Round 59 closed deterministic
+   IP/location enrichment with persisted `location`, location filters, export
+   columns, Admin Location UI, smoke and deploy stale-bundle guards. Remaining
+   work is optional external GeoIP provider depth such as country/city/provider
+   configuration and broader mobile/SMS/social login logging stages.
 3. `core.dept`: Round 27 closed the enabled-department simple-list option
    source consumed by Admin Users; Round 43 closed user-bound department
    deletion protection and preserved user `deptId` on failed delete. Round 52
@@ -880,8 +897,8 @@ finds another blocker:
   frontend bundle/cache guards.
 - P1 remaining: `core.notice` delivery adapter/template/fan-out,
   `core.config` secret vault/KMS integration or advanced feature-flag rollout,
-  and `core.login-log` IP/location enrichment or admitted mobile/SMS/social
-  login logging.
+  and `core.login-log` optional external GeoIP country/city/provider depth or
+  admitted mobile/SMS/social login logging.
   `core.post` is closed at the current admitted waterline after Round 53;
   `core.dept` data-scope workflow is closed at the current admitted waterline
   after Round 54.
@@ -893,7 +910,7 @@ finds another blocker:
 
 Reference parity is measured by product capability waterline, not by replaying
 RuoYi/Yudao commit history. The remaining RuoYi-style foundation backlog after
-Round 58 is roughly several focused P1 loops, not tens of thousands of commits.
+Round 59 is roughly several focused P1 loops, not tens of thousands of commits.
 Yudao Full parity is a different program: BPM, pay, mall, member, CRM, ERP,
 AI and other business domains would require dozens to 100+ separately admitted
 deployable loops, and should not be counted as unfinished cycle-021 foundation
@@ -1037,10 +1054,10 @@ BE20 已完成，当前主线是 cycle-021 capability-map productization recursi
 
 这些能力只能进入 backlog、design-only 或独立准入评估。
 
-基础后台 P0/P1 能力不在本禁止列表内；例如 IP/location、OAuth token 管理、JWT blacklist、
-通知模板/投递、KMS/secret vault、operation-log 维护、scheduler/monitor 操作深度和
-config runtime feature flags 可以由 AI 作为独立 Round 自动准入，但必须写清边界、参考、
-验收、smoke 和部署验证。
+基础后台 P0/P1 能力不在本禁止列表内；例如外部 IP geolocation 深化、OAuth token 管理、
+JWT blacklist、通知模板/投递、KMS/secret vault、operation-log 维护、
+scheduler/monitor 操作深度和 config runtime feature flags 可以由 AI 作为独立 Round
+自动准入，但必须写清边界、参考、验收、smoke 和部署验证。
 
 ## Required Gates
 
