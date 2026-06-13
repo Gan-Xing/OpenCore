@@ -1056,3 +1056,39 @@ delivery/message record.
 This stays inside the current S7 System notice boundary. It does not introduce
 real WebSocket/mail/SMS provider adapter execution, multi-channel retry/failure
 queues, tenant notices, BPM approval or member/mobile notification channels.
+
+## Round 62 Audit: core.config Secret Vault
+
+After Round 58, `core.config` had public runtime feature flags and mature
+metadata/export/batch/system-policy behavior, but secret values were still only
+protected at the response boundary.
+
+- RuoYi/Yudao-style config management establishes operator-owned config rows;
+  provider and integration surfaces imply credential-bearing config will exist
+  as OpenCore grows.
+- OpenCore already detected secret-like keys, required secret visibility,
+  redacted API/Admin/export output and blocked value-by-key access for secret
+  configs.
+- The lowest-dependency loop was at-rest vault encryption for
+  `visibility=secret`, not external KMS provider rotation or a full secret
+  management product.
+- The storage path needed to reuse the current `SystemConfig.value` boundary
+  with a versioned envelope so existing config APIs and exports remain stable.
+- Secret rows needed an `encrypted` status so operators can distinguish vault
+  encrypted rows from any legacy secret rows while still never seeing the
+  secret value.
+- `prisma/seed.ts` and the seed repository needed to use the same storage
+  helper; otherwise seeded secret references could silently bypass the vault.
+- Admin needed a visible `Vault encrypted` state in list/detail/export/filter,
+  not a backend-only security property.
+- Fixed-port, deploy and public smoke needed to prove seeded secret redaction,
+  value-by-key 403, temporary secret redaction, database envelope storage, no
+  plaintext persistence, non-string secret guard and deployed Admin chunk
+  markers.
+- The deploy script needed a stale Config bundle guard for `Vault encrypted`
+  because stale frontend artifacts have repeatedly hidden newly deployed
+  workflows.
+
+This stays inside the current S7 System config boundary. It does not introduce
+external KMS/HSM provider binding, key rotation, secret version history,
+secret access audit timelines or advanced feature-flag rollout.

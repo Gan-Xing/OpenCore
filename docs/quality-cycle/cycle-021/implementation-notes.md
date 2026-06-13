@@ -5300,3 +5300,114 @@ Against public endpoints after deploy:
   `27cfa0c feat(notice): add notice delivery records / 新增通知投递记录`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 62 Capability
+
+Capability: `core.config` secret vault/KMS foundation.
+
+Round 62 closes the first at-rest secret vault stage for System Config.
+OpenCore now encrypts `visibility=secret` config values before they are stored
+in `SystemConfig.value`, keeps API/Admin/export responses redacted and exposes
+an `encrypted` status so operators can see whether a secret row is backed by
+the vault envelope.
+
+Reference comparison:
+
+- RuoYi/Yudao-style system config surfaces treat system parameters as
+  operator-managed records and commonly protect sensitive values at the UI/API
+  boundary.
+- Yudao provider/infrastructure surfaces also carry credential-like config, so
+  OpenCore needs a foundation that can safely hold future integration/provider
+  secrets before adding more provider workflows.
+- OpenCore already had secret-key detection, redaction, public runtime config,
+  feature flags and config export; the missing low-dependency layer was
+  at-rest encryption and a seed/smoke guard proving secrets are not persisted
+  as plaintext.
+
+## Round 62 Implemented
+
+- Added `packages/system/src/system-config/system-config.vault.ts` with
+  AES-256-GCM envelope encryption, config-key AAD binding and deterministic
+  local key derivation from deployment secret material.
+- Added `normalizeStoredConfigValue`, `normalizeExistingConfigValue`,
+  `assertSecretConfigShape` and `isSystemConfigSecretEncrypted` to centralize
+  vault storage and legacy plaintext repair.
+- Updated Prisma and seed config repositories so secret create/update paths
+  store `opencore:vault:v1:*` envelopes while public/private configs retain
+  normalized plaintext values.
+- Added seeded `auth.jwt.secretRef` as a built-in secret reference and routed
+  `prisma/seed.ts` through the same vault storage helper.
+- Added `encrypted` to system config DTOs, SDK types, registry fixtures and
+  OpenAPI.
+- Added Admin Config `Vault encrypted` column/filter/detail/export surface.
+- Extended Admin static smoke and deploy-script stale bundle guards for the
+  Config vault marker.
+- Extended `tools/scripts/smoke-core-config.mjs` to verify seeded secret
+  redaction, 403 value-by-key, temporary secret redaction, database vault
+  envelope storage, no plaintext storage and non-string secret type rejection.
+
+Out of scope for Round 62:
+
+- External KMS/HSM provider integration;
+- key rotation and re-encryption jobs;
+- secret version history or access audit timeline;
+- advanced feature-flag rollout, targeting or experimentation.
+
+## Round 62 Verification
+
+- `pnpm nx test system --testFile=packages/system/src/system-config/system-config.spec.ts`
+- `pnpm nx test sdk --testFile=packages/sdk/src/system-management-client.spec.ts --testFile=packages/sdk/src/registry-fixtures.spec.ts`
+- `pnpm --dir apps/admin test`
+- `pnpm prisma:validate`
+- `pnpm prisma:seed`
+- `pnpm openapi:export`
+- `pnpm sdk:check`
+- `pnpm openapi:registry-tags:check`
+- `pnpm openapi:check`
+- `pnpm exec prettier --check ...`
+- `pnpm typecheck`
+- `pnpm build:api`
+- `bash -n tools/scripts/deploy-local-opencore.sh`
+- `pnpm build:admin`
+- `pnpm smoke:api:local`
+- `pnpm lint`
+- `git diff --check`
+- `pnpm deploy:opencore`
+- `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-config`
+
+`pnpm smoke:api:local` passed on fixed port `39173`, including
+`core.config.seed-secret-vault`, `core.config.secret-vault-encrypted` and
+`core.config.secret-value-type-guard`.
+
+`pnpm deploy:opencore` passed, deploying API/Admin on fixed ports
+`39172`/`39174`; deploy smoke included Admin same-origin login,
+duplicate-prefix login compatibility, public bundle checks, stale
+service-worker retirement and the new config vault smoke checks.
+
+`pnpm lint` passed with existing warnings in
+`packages/system/src/system-user/system-user.prisma-repository.ts` and
+`apps/admin/src/pages/shared/CurrentPageExportButton.tsx`; no Round 62 lint
+errors were introduced.
+
+## Round 62 Public Verification
+
+Against public endpoints after deploy:
+
+- Public API: `http://144.217.243.161:39172`
+- Public Admin: `http://144.217.243.161:39174`
+- Admin main bundle: `umi.9bba20bc.js`
+- System Config chunk: `p__System__Config.17151e5f.async.js`
+- Public API config smoke passed:
+  `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-config`.
+  Checks included seeded secret vault, value-by-key 403, temporary secret
+  redaction, database vault envelope, no plaintext storage and value-type
+  guard.
+- Public System Config chunk contains `Vault encrypted`, `Legacy secret` and
+  `encrypted`.
+
+## Round 62 Commit Record
+
+- Feature commit:
+  `2e1e927 feat(config): encrypt secret config values / 加密配置密钥值`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

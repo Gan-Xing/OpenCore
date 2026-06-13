@@ -1985,3 +1985,46 @@ OpenCore does not claim real WebSocket/mail/SMS provider adapter execution,
 multi-channel retry/failure queues, tenant notifications, BPM approval or
 member/mobile notice channels in this round. Those remain separate notice
 productization stages after the durable in-app delivery record foundation.
+
+## Round 62 Config Secret Vault Reference Shape
+
+RuoYi-style system config management exposes operator-managed parameter rows
+with keys, values and type/category metadata. That is enough for non-sensitive
+runtime settings, but it does not by itself satisfy OpenCore's security
+foundation requirement for secret-like keys.
+
+Yudao-style infra/provider surfaces contain credential-like configuration
+around providers and infrastructure integrations. Even when those references
+are not exposed as plain system parameters, the product implication for
+OpenCore is clear: before adding more OAuth/provider/delivery integrations, the
+config foundation needs an at-rest secret boundary, not only UI redaction.
+
+OpenCore already had:
+
+- system config CRUD from Round 9;
+- public value-by-key plus cache refresh from Round 24;
+- category/name/remark metadata from Round 37;
+- XLSX export from Round 38;
+- batch delete and system delete policy from Round 39/40;
+- runtime Admin/login policy propagation from Round 44/46/49;
+- runtime feature flags from Round 58;
+- secret-like key detection and API/Admin/export redaction.
+
+Round 62 admits the secret-vault stage:
+
+- store `visibility=secret` config values as `opencore:vault:v1:*` AES-GCM
+  envelopes in the existing `SystemConfig.value` storage boundary;
+- bind each envelope to its config key through authenticated additional data;
+- preserve API/Admin/export redaction and forbid value-by-key access for
+  secret rows;
+- expose an `encrypted` status through DTOs, SDK, OpenAPI and Admin Config;
+- seed `auth.jwt.secretRef` as a built-in secret reference through the same
+  vault path;
+- prove fixed-port, deploy and public smoke against both API behavior and the
+  database value, including no plaintext storage and stale Admin bundle
+  markers.
+
+OpenCore does not claim external KMS/HSM provider binding, key rotation,
+secret version history, secret access audit timelines or advanced feature-flag
+rollout in this round. Those remain separate config/security hardening stages
+after the at-rest vault foundation.

@@ -1877,6 +1877,38 @@ published notice.
       smoke, deployment and public URL verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 62: core.config Secret Vault Productization
+
+Why this slice: after Round 58 made runtime feature flags public and visible,
+the remaining lower-dependency `core.config` P1 gap was secret storage. OpenCore
+already redacted `visibility=secret` values at the API/Admin/export boundary,
+but persisted secret values still used the same plain `SystemConfig.value`
+column semantics. Config secret vault is foundational for future integration
+provider credentials, OAuth client secrets, delivery adapter secrets and
+runtime security settings.
+
+- [x] Recompare RuoYi/Yudao config and provider-secret reference shapes before
+      selecting this slice.
+- [x] Add `system-config.vault` with AES-256-GCM envelope storage and config
+      key AAD binding.
+- [x] Store `visibility=secret` config values as
+      `opencore:vault:v1:*` envelopes in both Prisma and seed repositories.
+- [x] Preserve API/Admin/export redaction while surfacing an `encrypted` status
+      through DTOs, SDK types and OpenAPI.
+- [x] Seed built-in `auth.jwt.secretRef` as a secret reference and make
+      `prisma/seed.ts` use the same `normalizeStoredConfigValue` path.
+- [x] Add secret value-type guard so secret configs stay string-based vault
+      values.
+- [x] Add Admin Config `Vault encrypted` column, detail/export field, filter
+      and stale bundle markers.
+- [x] Extend `tools/scripts/smoke-core-config.mjs` to verify seeded secret
+      redaction, 403 value-by-key, temporary secret redaction, database
+      ciphertext envelope, no plaintext storage and value-type guard.
+- [x] Extend deploy-script stale bundle guard for the Config vault surface.
+- [x] Run focused tests, Prisma validate/seed, OpenAPI/SDK checks, typecheck,
+      lint, builds, fixed-port smoke, deployment and public URL verification.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -1924,7 +1956,7 @@ treat "minimal loop" as "minimal final product".
       render preview, draft notice creation from template, persisted in-app
       delivery records, idempotent dispatch and read-status sync are complete.
       Real delivery adapter execution and WebSocket/mail/SMS fan-out remain.
-- [ ] Round 9/24/37/38/39/40/44/46/49/58 `core.config`: public get-value-by-key, cache
+- [ ] Round 9/24/37/38/39/40/44/46/49/58/62 `core.config`: public get-value-by-key, cache
       refresh and mutation invalidation are complete. Category/name/remark
       metadata is complete. Native XLSX export payload and Admin download are
       complete. Batch deletion is complete. Persisted system/custom deletion
@@ -1935,8 +1967,11 @@ treat "minimal loop" as "minimal final product".
       summary, Admin display, security-auth consumption and deploy bundle
       guardrails. Round 58 closes public boolean `feature.*.enabled` runtime
       flags with Admin Config toggles, SDK/OpenAPI propagation and
-      smoke/deploy guards. Secret vault/KMS and advanced feature-flag rollout
-      remain as auto-admissible foundation rounds.
+      smoke/deploy guards. Round 62 closes secret config at-rest vault
+      encryption, seeded secret references, Admin `encrypted` visibility and
+      database plaintext guards. Advanced feature-flag rollout remains an
+      auto-admissible foundation round; external KMS provider binding, key
+      rotation and secret version history are later hardening stages.
 - [ ] Round 11/26/45/47/48/49/50/51/57/59 `core.login-log`: browser/OS parsing,
       IP/time filters, persisted login type/result schema, Admin display and
       type/result filters are complete. Persisted failed-attempt lockout,
@@ -2001,6 +2036,8 @@ treat "minimal loop" as "minimal final product".
   dictionary cache refresh.
 - Advanced feature-flag rollout such as percentage targeting, audience rules
   and full experimentation UI unless admitted as a dedicated foundation round.
+- External KMS/HSM provider binding, key rotation and secret version history
+  beyond the Round 62 local vault envelope foundation.
 - Presigned upload/download URLs, storage-provider config, public
   download/preview/copy-link workflows, batch file delete and object browser
   expansion.

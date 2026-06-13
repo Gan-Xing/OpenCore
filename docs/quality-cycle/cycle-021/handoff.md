@@ -3,8 +3,8 @@
 Date: 2026-06-13
 Repository: `Gan-Xing/OpenCore`
 Default branch: `main`
-Latest observed feature commit: `27cfa0c feat(notice): add notice delivery records / 新增通知投递记录`
-Latest deployed feature commit: `27cfa0c feat(notice): add notice delivery records / 新增通知投递记录`
+Latest observed feature commit: `2e1e927 feat(config): encrypt secret config values / 加密配置密钥值`
+Latest deployed feature commit: `2e1e927 feat(config): encrypt secret config values / 加密配置密钥值`
 Latest deployed hardening commit: `4df5dd1 fix(system): satisfy xlsx export lint guard / 修复 XLSX 导出 lint 守卫`
 
 ## One-sentence Goal
@@ -146,6 +146,7 @@ productization waterline completion; see
 - Round 59 `core.login-log` IP/location enrichment stage 9
 - Round 60 `core.notice` notification templates stage 4
 - Round 61 `core.notice` delivery/message-record stage 5
+- Round 62 `core.config` secret vault/KMS foundation stage 11
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -841,6 +842,16 @@ dispatch 幂等和 read sync。部署脚本会拒绝缺少 `System Notice Delive
 `user_admin`。注意：这轮关闭的是站内投递记录、幂等 dispatch 和 read sync 闭环，不等于真实
 WebSocket/mail/SMS provider adapter、跨渠道重试、租户通知或 BPM 审批已经完成。
 
+Round 62 回到 `core.config` P1 队列，把 secret config 从“只做 API/Admin redaction”推进到
+at-rest vault foundation。OpenCore 新增 `system-config.vault`，对 `visibility=secret` 的配置值使用
+AES-256-GCM envelope 存储到 `SystemConfig.value`，并用 config key 作为 AAD；API、SDK、OpenAPI、Admin
+列表/详情/导出仍只返回 `[REDACTED]`，同时新增 `encrypted` 状态供 Admin `Vault encrypted` 列展示。
+seed 新增内置 `auth.jwt.secretRef` secret reference，并让 `prisma/seed.ts` 和 seed repository 都走同一
+`normalizeStoredConfigValue` 路径，避免 seed 绕过加密。固定 smoke、部署 smoke 和公网 API smoke 均验证
+`core.config.seed-secret-vault`、`core.config.secret-vault-encrypted`、secret value-type guard、403 value-by-key
+阻断和数据库值不包含明文；部署脚本会拒绝缺少 `Vault encrypted` 的 stale Config bundle。注意：这轮关闭的是
+配置 secret at-rest vault 基础，不等于外部 KMS/HSM provider、key rotation、secret 版本历史或完整实验平台完成。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -852,7 +863,7 @@ The productization waterline now classifies:
   Round 7/19/22/23/28/29/30/31/32/33/34/35/36/41/54 `core.user`,
   Round 3/22/25/42/53 `core.post`.
 - First loop, enhance: Round 1/55/56/60/61 `core.notice`,
-  Round 9/24/37/38/39/40/44/46/49/58 `core.config`,
+  Round 9/24/37/38/39/40/44/46/49/58/62 `core.config`,
   Round 11/26/45/47/48/49/50/51/57/59 `core.login-log`.
 - Thin, rework: none after Round 16.
 
@@ -875,9 +886,13 @@ finds another blocker:
    display, security-auth consumption and stale frontend bundle guards.
    Round 58 adds public boolean `feature.*.enabled` runtime feature flags,
    Admin Config feature-flag toggles, SDK/OpenAPI propagation and smoke/deploy
-   guards. Remaining config work is secret vault/KMS integration and advanced
-   feature-flag rollout such as percentage rules, targeting or a full
-   experimentation surface.
+   guards. Round 62 adds secret config at-rest vault encryption, a seeded
+   `auth.jwt.secretRef` reference, API/SDK/OpenAPI/Admin `encrypted` status,
+   database plaintext smoke guards and stale Config bundle checks. Remaining
+   config work is advanced feature-flag rollout such as percentage rules,
+   targeting or a full experimentation surface; external KMS provider binding,
+   key rotation and secret version history are later security hardening stages,
+   not blockers for this vault foundation.
 2. `core.login-log`: Round 26 closed browser/OS parsing and server-side IP/time
    filters. Round 45 closed persisted login type/result schema, Admin display
    and result/logType filters. Round 47 closed persisted failed-attempt
@@ -927,7 +942,7 @@ finds another blocker:
   fixed ports, Admin API origin, duplicate `/api/api` compatibility and stale
   frontend bundle/cache guards.
 - P1 remaining: `core.notice` delivery adapter/provider fan-out execution,
-  `core.config` secret vault/KMS integration or advanced feature-flag rollout,
+  `core.config` advanced feature-flag rollout,
   and `core.login-log` optional external GeoIP country/city/provider depth or
   admitted mobile/SMS/social login logging.
   `core.post` is closed at the current admitted waterline after Round 53;
@@ -941,7 +956,7 @@ finds another blocker:
 
 Reference parity is measured by product capability waterline, not by replaying
 RuoYi/Yudao commit history. The remaining RuoYi-style foundation backlog after
-Round 61 is roughly several focused P1 loops, not tens of thousands of commits.
+Round 62 is roughly several focused P1 loops, not tens of thousands of commits.
 Yudao Full parity is a different program: BPM, pay, mall, member, CRM, ERP,
 AI and other business domains would require dozens to 100+ separately admitted
 deployable loops, and should not be counted as unfinished cycle-021 foundation
