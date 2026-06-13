@@ -1361,6 +1361,45 @@ broad feature-flag propagation.
       URL verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 47: core.login-log Login Lockout and Unlock
+
+Why this slice: Round 46 made `auth.login.lockoutMinutes` a runtime policy
+value, but the login path still did not enforce failed-attempt lockout and the
+Login Logs product still lacked the RuoYi-style username unlock action. RuoYi
+uses password retry counters plus lock time and exposes login-info unlock by
+username; Yudao records richer login results. OpenCore already had login log
+list/detail/export, device fields and `logType/result`. This round closes the
+lowest-dependency security foundation: failed username/password login attempts
+lock the username, `account_locked` is queryable in login logs, and Admin/API
+can explicitly unlock the username.
+
+- [x] Recompare RuoYi password retry lockout plus login-info unlock and Yudao
+      login-log result modeling against OpenCore's current login-log surface.
+- [x] Add Prisma `LoginLockout` with migration
+      `20260613083000_login_lockout_policy`.
+- [x] Add `SecurityLoginLockoutRepository` and `SecurityLoginPolicyProvider`
+      abstractions to `@opencore/security`.
+- [x] Enforce lockout in shared `SecurityAuthService` before password
+      verification and clear counters on successful login.
+- [x] Read the lockout window from runtime
+      `auth.login.lockoutMinutes` via API `LoginSecurityModule`.
+- [x] Record lockout-triggering and locked attempts as `account_locked` while
+      preserving the generic public 401 login response.
+- [x] Add permission-gated `POST /api/core/login-logs/unlock` using
+      `core:login-log:manage`.
+- [x] Add `account_locked` to DTO/OpenAPI/SDK/Admin login-result filters.
+- [x] Add SDK `unlockLoginUser` and Admin Login Logs unlock action guarded by
+      `canManageLoginLogs`.
+- [x] Extend Admin static smoke for unlock UI, manage permission and
+      `account_locked` markers.
+- [x] Extend fixed-port/deploy/public `core.login-log` smoke with temporary
+      user creation, lockout, correct-password rejection, unlock, restored
+      login and cleanup.
+- [x] Run focused tests, OpenAPI/SDK checks, Prisma generate/migrate/validate,
+      typecheck, lint, format, build, fixed-port smoke, deployment and public
+      URL verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -1408,13 +1447,16 @@ treat "minimal loop" as "minimal final product".
       complete. Batch deletion is complete. Persisted system/custom deletion
       policy is complete. Admin title runtime propagation is complete. Round 46
       closes runtime login-policy summary and guardrails for
-      `auth.login.lockoutMinutes`. Broader feature-flag propagation, any
-      admitted secret vault/KMS integration and real login lockout/unlock
-      enforcement remain.
-- [ ] Round 11/26/45 `core.login-log`: browser/OS parsing, IP/time filters,
+      `auth.login.lockoutMinutes`. Round 47 consumes that key from
+      security-auth. Broader feature-flag propagation and any admitted secret
+      vault/KMS integration remain.
+- [ ] Round 11/26/45/47 `core.login-log`: browser/OS parsing, IP/time filters,
       persisted login type/result schema, Admin display and type/result
-      filters are complete. IP/location enrichment where feasible and
-      cleanup/unlock policy integration remain.
+      filters are complete. Persisted failed-attempt lockout, `account_locked`
+      result mapping and permissioned username unlock are complete. IP/location
+      enrichment where feasible, login-log cleanup/deletion policy,
+      configurable failed-attempt threshold and broader logout/mobile/social
+      logging stages remain.
 
 ### Thin, Must Rework Before More Broad Surfaces
 
@@ -1456,13 +1498,13 @@ treat "minimal loop" as "minimal final product".
 - Batch dictionary delete, Excel import/export file workflows, dictionary
   color/css/remark fields, app-wide dictionary cache TTL/invalidation and
   dictionary cache refresh.
-- Secret vault/KMS integration, broad runtime feature-flag propagation and real
-  login lockout/unlock enforcement.
+- Secret vault/KMS integration and broad runtime feature-flag propagation.
 - Presigned upload/download URLs, storage-provider config, public
   download/preview/copy-link workflows, batch file delete and object browser
   expansion.
-- Login-log deletion/cleanup, user unlock, lockout-policy tuning, session
-  termination and IP location enrichment.
+- Login-log deletion/cleanup, configurable failed-attempt threshold,
+  lockout-policy tuning beyond the current window, session termination from the
+  login-log page and IP location enrichment.
 - Operation-log deletion/cleanup, batch delete, duration/location/user-agent
   schema expansion, operation type enum expansion, async queue/indexing and
   business-domain audit timeline views.

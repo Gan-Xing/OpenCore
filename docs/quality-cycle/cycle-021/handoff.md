@@ -3,8 +3,8 @@
 Date: 2026-06-13
 Repository: `Gan-Xing/OpenCore`
 Default branch: `main`
-Latest observed feature commit: `b0b23ee feat(core-config): add runtime login policy / 新增运行时登录策略`
-Latest deployed feature commit: `b0b23ee feat(core-config): add runtime login policy / 新增运行时登录策略`
+Latest observed feature commit: `8295eb5 feat(login-log): add login lockout unlock flow / 新增登录锁定解锁闭环`
+Latest deployed feature commit: `8295eb5 feat(login-log): add login lockout unlock flow / 新增登录锁定解锁闭环`
 Latest deployed hardening commit: `4df5dd1 fix(system): satisfy xlsx export lint guard / 修复 XLSX 导出 lint 守卫`
 
 ## One-sentence Goal
@@ -112,6 +112,7 @@ productization waterline completion; see
 - Round 44 `core.config` runtime Admin config stage 7
 - Round 45 `core.login-log` login type/result schema stage 3
 - Round 46 `core.config` runtime login policy stage 8
+- Round 47 `core.login-log` login lockout/unlock stage 4
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -579,6 +580,23 @@ static smoke 和固定 smoke 均同步。固定 smoke、部署 smoke 和公网 s
 runtime login policy summary，不等于真实账号锁定/解锁、验证码、secret vault/KMS 或 broad
 feature-flag propagation 已经完成。
 
+Round 47 回到 `core.login-log/security-auth` 队列，把 Round 46 暴露的
+`auth.login.lockoutMinutes` 从“运行时展示策略”推进到真实失败登录锁定/管理端解锁闭环。参考 RuoYi
+`SysPasswordService` 的失败次数锁定和 `SysLogininforController.unlock/{userName}`，
+OpenCore 本轮新增 Prisma `LoginLockout` 持久化表、`SecurityLoginLockoutRepository`、
+`SecurityLoginPolicyProvider` 和 API 侧 `LoginSecurityModule`。通用
+`SecurityAuthService` 现在会在 5 次错误密码后记录 `account_locked` 并阻止该用户名用正确密码登录，
+锁定窗口读取 `auth.login.lockoutMinutes`；成功登录或管理端解锁会清理失败计数。系统管理新增
+`POST /api/core/login-logs/unlock`，权限为 `core:login-log:manage`，SDK/OpenAPI/Admin
+Login Logs 页同步解锁动作、`account_locked` 结果过滤和静态 smoke。固定 smoke、部署 smoke 和公网
+smoke 均验证 `auth.login-lockout.enforced`、`core.login-log.account-locked-filter`、
+`core.login-log.unlock-restores-login`；公网 Admin `umi.8f59c62c.js` 已验证包含 API origin、
+`/core/login-logs/unlock` 且不含 bundle 生成的重复 `/api/api/auth/login`，公网 Login Logs chunk
+`p__Security__LoginLogs.c1cd7a6e.async.js` 已验证包含解锁 UI、`account_locked` 和
+`core:login-log:manage` 标记；公网 Admin 同源代理验证 `/api/core/login-logs/unlock` 可用。
+注意：这轮关闭的是 username/password 登录的基础锁定/解锁，不等于验证码、IP 归属地、日志清理/
+删除、可配置失败次数阈值或 logout/mobile/social 登录日志已经完成。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -590,7 +608,7 @@ The productization waterline now classifies:
   Round 7/19/22/23/28/29/30/31/32/33/34/35/36/41 `core.user`.
 - First loop, enhance: Round 1 `core.notice`, Round 2/27/43 `core.dept`,
   Round 3/22/25/42 `core.post`, Round 9/24/37/38/39/40/44/46 `core.config`,
-  Round 11/26/45 `core.login-log`.
+  Round 11/26/45/47 `core.login-log`.
 - Thin, rework: none after Round 16.
 
 The P0 remediation queue from the post-Round 13 re-audit is now clear. The next
@@ -606,13 +624,16 @@ finds another blocker:
    closed the first runtime propagation loop by letting Admin read
    `opencore.admin.title` through public runtime config; Round 46 added the
    runtime login policy summary backed by `auth.login.lockoutMinutes`, Admin
-   login consumption and runtime-key guardrails. Remaining work is any admitted
-   secret vault/KMS integration, broader runtime feature-flag propagation and
-   real login lockout/unlock policy if that becomes a security product stage.
+   login consumption and runtime-key guardrails. Round 47 consumes that config
+   from the security-auth lockout policy. Remaining config work is any admitted
+   secret vault/KMS integration and broader runtime feature-flag propagation.
 2. `core.login-log`: Round 26 closed browser/OS parsing and server-side IP/time
    filters. Round 45 closed persisted login type/result schema, Admin display
-   and result/logType filters. Remaining work is IP/location enrichment where
-   feasible plus cleanup/unlock policy integration.
+   and result/logType filters. Round 47 closed persisted failed-attempt
+   lockout, `account_locked` result mapping and permissioned Admin/API username
+   unlock. Remaining work is IP/location enrichment where feasible plus login
+   log cleanup/deletion policy, configurable failed-attempt threshold and any
+   logout/mobile/social logging stages.
 3. `core.dept`: Round 27 closed the enabled-department simple-list option
    source consumed by Admin Users; Round 43 closed user-bound department
    deletion protection and preserved user `deptId` on failed delete. Remaining

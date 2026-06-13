@@ -3783,3 +3783,99 @@ Against public endpoints after deploy:
   `b0b23ee feat(core-config): add runtime login policy / 新增运行时登录策略`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 47 Capability
+
+Capability: `core.login-log` login lockout and unlock.
+
+Goal: turn the runtime `auth.login.lockoutMinutes` policy into an enforced
+username/password login lockout, record `account_locked` login-log results and
+let an authorized Admin operator unlock a username from the Login Logs surface.
+
+## Round 47 Implemented
+
+- Rechecked RuoYi password retry lockout and login-info username unlock shape.
+- Rechecked Yudao login-log result modeling for structured login outcomes.
+- Added Prisma `LoginLockout` and migration
+  `20260613083000_login_lockout_policy`.
+- Added `SecurityLoginLockoutRepository`,
+  `SecurityLoginPolicyProvider`, default/noop implementations and security
+  unit coverage.
+- Added API `LoginSecurityModule`, Prisma lockout repository and
+  system-config-backed login policy provider.
+- Enforced lockout in shared `SecurityAuthService` before password
+  verification and clear counters on success.
+- Added `account_locked` login result across audit DTO/repository/OpenAPI/SDK
+  and Admin result filters.
+- Added permissioned `POST /api/core/login-logs/unlock` with
+  `core:login-log:manage`.
+- Registered the manage permission in module-registry and Admin access.
+- Added SDK `unlockLoginUser` and Admin Login Logs unlock row action.
+- Extended Admin static smoke and `tools/scripts/smoke-core-login-log.mjs`.
+- Refreshed OpenAPI snapshot.
+
+## Round 47 Verification
+
+- `pnpm prisma:generate`
+- `pnpm nx test security --testFile=security-auth.spec.ts`
+- `pnpm nx test audit --testFile=audit-login-log.spec.ts`
+- `pnpm nx test sdk --testFile=system-management-client.spec.ts`
+- `pnpm nx test module-registry --testFile=index.spec.ts`
+- `pnpm nx test api --testFile=system-management.permission-matrix.spec.ts`
+- `pnpm nx test api --testFile=auth.service.spec.ts`
+- `node --check tools/scripts/smoke-core-login-log.mjs`
+- `node --check apps/admin/scripts/smoke-test.mjs`
+- `pnpm nx test admin`
+- `pnpm nx run-many -t typecheck --projects=api,admin,sdk,security,audit,system,contracts,module-registry`
+- `pnpm format:check`
+- `pnpm prisma:migrate`
+- `pnpm prisma:validate`
+- `pnpm openapi:export`
+- `pnpm sdk:check`
+- `pnpm openapi:check`
+- `pnpm openapi:registry-tags:check`
+- `pnpm build:api`
+- `pnpm build:admin`
+- `pnpm lint`
+- `pnpm nx lint security`
+- `git diff --check`
+- `pnpm smoke:api:local`
+- `pnpm deploy:opencore`
+
+`pnpm smoke:api:local` passed on fixed port `39173`, including
+`auth.login-lockout.enforced`, `core.login-log.account-locked-filter` and
+`core.login-log.unlock-restores-login`.
+
+`pnpm deploy:opencore` passed, deploying API/Admin on fixed ports
+`39172`/`39174`; deploy smoke included duplicate-prefix login compatibility,
+Admin bundle cache checks and the same login-lockout/unlock guards.
+
+## Round 47 Public Verification
+
+Against public endpoints after deploy:
+
+- Public API: `http://144.217.243.161:39172`
+- Public Admin: `http://144.217.243.161:39174`
+- Public API smoke passed after loading `.env.opencore.local` credentials:
+  `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-login-log`.
+  Checks included `auth.login-lockout.enforced`,
+  `core.login-log.account-locked-filter` and
+  `core.login-log.unlock-restores-login`.
+- Public Admin main bundle `umi.8f59c62c.js` contains the deployed API origin,
+  `/core/login-logs/unlock` and no bundle-generated duplicate
+  `/api/api/auth/login`.
+- Public Admin Login Logs chunk
+  `p__Security__LoginLogs.c1cd7a6e.async.js` contains
+  `Audit trail with username unlock`, `account_locked`, `Unlock username` and
+  `core:login-log:manage`.
+- Public Admin login page returned `cache-control: no-cache`.
+- Public Admin same-origin `/api/auth/login` succeeded.
+- Public Admin same-origin `/api/core/login-logs/unlock` succeeded for a
+  throwaway username.
+
+## Round 47 Commit Record
+
+- Feature commit:
+  `8295eb5 feat(login-log): add login lockout unlock flow / 新增登录锁定解锁闭环`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

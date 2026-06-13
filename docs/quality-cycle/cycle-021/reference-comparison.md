@@ -1429,3 +1429,40 @@ runtime config stage:
 OpenCore does not claim real failed-attempt account lockout, user unlock,
 captcha configuration, secret vault/KMS or broad feature-flag propagation in
 this round.
+
+## Round 47 Login Lockout Unlock Reference Shape
+
+RuoYi's login security flow keeps a password retry counter per username and
+locks the account for the configured lock time after the retry limit is
+exceeded. Its monitoring login-info controller also exposes a username unlock
+operation so an operator can clear the lockout state from the login-log
+surface. Yudao's login-log model adds structured login result values, which
+lets the Admin page distinguish bad credentials, disabled users and other
+outcomes instead of relying only on a boolean.
+
+OpenCore already had immutable login-log list/detail/export, device parsing,
+server-side IP/time filters and Round 45 `logType/result` values. Round 46
+made `auth.login.lockoutMinutes` a public runtime policy value. Round 47 admits
+the matching security-auth and login-log foundation:
+
+- persist username lockout state in Prisma `LoginLockout`;
+- add `SecurityLoginLockoutRepository` and `SecurityLoginPolicyProvider` to the
+  shared security boundary instead of keeping policy in a controller;
+- read the lockout window from `auth.login.lockoutMinutes` and use a fixed
+  five-attempt baseline for this stage;
+- reject locked usernames before password verification while preserving the
+  generic public auth failure response;
+- record lockout-triggering and locked attempts as `account_locked`;
+- clear failed-attempt state on successful login or explicit unlock;
+- expose permissioned `POST /api/core/login-logs/unlock` with
+  `core:login-log:manage`;
+- add `account_locked` to DTO/OpenAPI/SDK/Admin result filters;
+- let Admin Login Logs unlock a username from a row action when the operator
+  has manage permission;
+- fixed-port, deploy and public smoke prove temporary-user lockout, correct
+  password rejection while locked, account-locked filtering, unlock and
+  restored login.
+
+OpenCore does not claim captcha verification, IP location enrichment, login-log
+delete/clean, configurable failed-attempt threshold, logout logging, mobile/SMS
+or social login workflows in this round.
