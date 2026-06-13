@@ -15,14 +15,17 @@ import type { SystemConfigRecord } from './system-config.records';
 import {
   assertSafeConfigKey,
   assertFeatureFlagConfigShape,
+  assertSecretConfigShape,
   assertSystemConfigMutable,
   createSystemConfigPageResult,
+  isSystemConfigSecretEncrypted,
+  normalizeExistingConfigValue,
   normalizeConfigCategory,
   normalizeConfigName,
-  normalizeConfigValue,
   normalizeBatchSystemConfigKeys,
   normalizeOptionalConfigText,
   normalizeSystemConfigPageQuery,
+  normalizeStoredConfigValue,
   redactSystemConfig,
   resolveConfigVisibility,
   resolveStoredConfigVisibility,
@@ -81,6 +84,11 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
       valueType: body.valueType,
       visibility,
     });
+    assertSecretConfigShape({
+      key: body.key,
+      valueType: body.valueType,
+      visibility,
+    });
 
     if (
       await this.prisma.systemConfig.findUnique({ where: { key: body.key } })
@@ -94,7 +102,12 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
         name: normalizeConfigName(body.name, body.key),
         key: body.key,
         valueType: body.valueType,
-        value: normalizeConfigValue(body.value, body.valueType),
+        value: normalizeStoredConfigValue({
+          key: body.key,
+          value: body.value,
+          valueType: body.valueType,
+          visibility,
+        }),
         description: normalizeOptionalConfigText(
           body.description,
           'description',
@@ -113,13 +126,10 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
     body: UpdateSystemConfigDto,
   ): Promise<SystemConfigRecord> {
     const existing = await this.findConfigByKey(key);
+    const existingRecord = toSystemConfigRecord(existing);
     const nextValueType = toSystemConfigValueType(
       body.valueType ?? existing.valueType,
     );
-    const nextValue =
-      body.value === undefined
-        ? normalizeConfigValue(existing.value, nextValueType)
-        : normalizeConfigValue(body.value, nextValueType);
     const visibility = resolveStoredConfigVisibility({
       key,
       public: body.public ?? existing.public,
@@ -131,6 +141,20 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
       valueType: nextValueType,
       visibility,
     });
+    assertSecretConfigShape({
+      key,
+      valueType: nextValueType,
+      visibility,
+    });
+    const nextValue =
+      body.value === undefined
+        ? normalizeExistingConfigValue({
+            key,
+            value: existing.value,
+            valueType: nextValueType,
+            visibility: existingRecord.visibility,
+          })
+        : body.value;
     const config = await this.prisma.systemConfig.update({
       where: { key },
       data: {
@@ -142,7 +166,12 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
           body.name === undefined
             ? existing.name
             : normalizeConfigName(body.name, key),
-        value: nextValue,
+        value: normalizeStoredConfigValue({
+          key,
+          value: nextValue,
+          valueType: nextValueType,
+          visibility,
+        }),
         valueType: nextValueType,
         description:
           body.description === undefined
@@ -215,6 +244,11 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
 }
 
 function toSystemConfigRecord(config: PrismaSystemConfig): SystemConfigRecord {
+  const visibility = resolveStoredConfigVisibility({
+    key: config.key,
+    public: config.public,
+  });
+
   return {
     id: config.id,
     category: config.category,
@@ -223,12 +257,13 @@ function toSystemConfigRecord(config: PrismaSystemConfig): SystemConfigRecord {
     value: config.value,
     valueType: toSystemConfigValueType(config.valueType),
     description: config.description ?? undefined,
+    encrypted: isSystemConfigSecretEncrypted({
+      value: config.value,
+      visibility,
+    }),
     remark: config.remark ?? undefined,
     public: config.public,
     system: config.system,
-    visibility: resolveStoredConfigVisibility({
-      key: config.key,
-      public: config.public,
-    }),
+    visibility,
   };
 }

@@ -859,6 +859,8 @@ if (
   !configPage.includes('Read public value by key') ||
   !configPage.includes('Refresh cache') ||
   !configPage.includes('Feature Flag') ||
+  !configPage.includes('Vault encrypted') ||
+  !configPage.includes('renderVault') ||
   !configPage.includes('featureFlagConfigKeyPattern') ||
   !configPage.includes('Toggle feature flag') ||
   !configPage.includes('featureFlagTogglingKey') ||
@@ -1276,11 +1278,14 @@ for (const page of coreFilteredPages) {
 }
 
 if (
-  !configPage.includes('[redacted]') ||
+  !configPage.includes('[REDACTED]') ||
   !configPage.includes('formatConfigValue') ||
-  !configPage.includes("record.visibility === 'secret'")
+  !configPage.includes("record.visibility === 'secret'") ||
+  !configPage.includes('record.encrypted')
 ) {
-  throw new Error('System config detail/export must redact secret values.');
+  throw new Error(
+    'System config detail/export must redact secret values and surface vault encryption.',
+  );
 }
 
 if (

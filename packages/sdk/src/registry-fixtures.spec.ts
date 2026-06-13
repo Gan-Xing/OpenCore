@@ -83,6 +83,7 @@ describe('registry fixtures', () => {
           item.key === 'auth.login.maxFailedAttempts' &&
           item.value === '5' &&
           item.valueType === 'number' &&
+          item.encrypted === false &&
           item.visibility === 'public',
       ),
     ).toBe(true);
@@ -93,14 +94,18 @@ describe('registry fixtures', () => {
           item.key === 'feature.notice.inbox.enabled' &&
           item.value === 'true' &&
           item.valueType === 'boolean' &&
+          item.encrypted === false &&
           item.visibility === 'public',
       ),
     ).toBe(true);
     expect(
       createSystemConfigFixtures().items.find(
         (item) => item.visibility === 'secret',
-      )?.value,
-    ).toBe('[redacted]');
+      ),
+    ).toMatchObject({
+      encrypted: true,
+      value: '[REDACTED]',
+    });
     expect(createFileAssetFixtures().items[0].storageKey).toContain(
       'file-assets/',
     );

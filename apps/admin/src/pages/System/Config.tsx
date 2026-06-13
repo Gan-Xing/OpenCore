@@ -4,6 +4,7 @@ import {
   EditOutlined,
   EyeOutlined,
   KeyOutlined,
+  LockOutlined,
   PlusOutlined,
   ReloadOutlined,
   SyncOutlined,
@@ -86,6 +87,7 @@ const searchFields: CurrentPageSearchField<SystemConfigSummary>[] = [
   'description',
   'remark',
   'visibility',
+  'encrypted',
   isFeatureFlagConfig,
   'system',
 ];
@@ -100,6 +102,7 @@ const exportColumns: CurrentPageExportColumn<SystemConfigSummary>[] = [
   },
   { title: 'Type', dataIndex: 'valueType' },
   { title: 'Visibility', dataIndex: 'visibility' },
+  { title: 'Vault', renderText: renderVaultExportText },
   { title: 'Public', dataIndex: 'public' },
   { title: 'Feature Flag', renderText: renderFeatureFlagExportText },
   { title: 'System', dataIndex: 'system' },
@@ -118,7 +121,7 @@ const visibilityOptions: { label: string; value: ConfigVisibility }[] = [
 ];
 
 function formatConfigValue(record: SystemConfigSummary): string {
-  return record.visibility === 'secret' ? '[redacted]' : record.value;
+  return record.visibility === 'secret' ? '[REDACTED]' : record.value;
 }
 
 function isFeatureFlagConfig(record: SystemConfigSummary): boolean {
@@ -129,6 +132,14 @@ function renderFeatureFlagExportText(record: SystemConfigSummary): string {
   return isFeatureFlagConfig(record)
     ? `${record.key.slice('feature.'.length, -'.enabled'.length)}=${record.value}`
     : '';
+}
+
+function renderVaultExportText(record: SystemConfigSummary): string {
+  if (record.visibility !== 'secret') {
+    return 'plain';
+  }
+
+  return record.encrypted ? 'vault encrypted' : 'legacy secret';
 }
 
 function createFilterOptions(
@@ -161,6 +172,15 @@ function createFilterOptions(
       ],
       placeholder: 'Public',
       predicate: (record, value) => record.public === (value === 'true'),
+    },
+    {
+      key: 'encrypted',
+      options: [
+        { label: 'vault encrypted', value: 'true' },
+        { label: 'plain or legacy', value: 'false' },
+      ],
+      placeholder: 'Vault',
+      predicate: (record, value) => record.encrypted === (value === 'true'),
     },
     {
       key: 'featureFlag',
@@ -197,6 +217,7 @@ function createDetailFields(record: SystemConfigSummary): DetailField[] {
     },
     { label: 'Type', value: record.valueType },
     { label: 'Visibility', value: record.visibility },
+    { label: 'Vault', value: renderVaultExportText(record) },
     { label: 'Public', value: record.public ? 'public' : 'private' },
     {
       label: 'Feature Flag',
@@ -223,6 +244,18 @@ function renderValue(record: SystemConfigSummary) {
     >
       {value}
     </Typography.Text>
+  );
+}
+
+function renderVault(record: SystemConfigSummary) {
+  if (record.visibility !== 'secret') {
+    return <Tag>plain</Tag>;
+  }
+
+  return (
+    <Tag color={record.encrypted ? 'purple' : 'orange'}>
+      <LockOutlined /> {record.encrypted ? 'Vault encrypted' : 'Legacy secret'}
+    </Tag>
   );
 }
 
@@ -514,6 +547,12 @@ export default function ConfigPage() {
       dataIndex: 'visibility',
       width: 124,
       render: (_, record) => renderVisibility(record),
+    },
+    {
+      title: 'Vault',
+      dataIndex: 'encrypted',
+      width: 148,
+      render: (_, record) => renderVault(record),
     },
     {
       title: 'Public',

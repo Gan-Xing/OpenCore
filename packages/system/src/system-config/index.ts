@@ -5,3 +5,4 @@ export * from './system-config.records';
 export * from './system-config.repository';
 export * from './system-config.seed-repository';
 export * from './system-config.service';
+export * from './system-config.vault';

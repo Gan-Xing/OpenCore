@@ -8,6 +8,7 @@ import {
   seedSchedulerRuns,
 } from '@opencore/scheduler/records';
 import {
+  normalizeStoredConfigValue,
   seedDictTypes,
   seedSystemConfigs,
   seedSystemDepts,
@@ -551,12 +552,18 @@ async function seedSystemManagement(): Promise<{
   }
 
   for (const config of seedSystemConfigs) {
+    const storedConfigValue = normalizeStoredConfigValue({
+      key: config.key,
+      value: config.value,
+      valueType: config.valueType,
+      visibility: config.visibility,
+    });
     await prisma.systemConfig.upsert({
       where: { key: config.key },
       update: {
         category: config.category,
         name: config.name,
-        value: config.value,
+        value: storedConfigValue,
         valueType: config.valueType,
         description: config.description,
         remark: config.remark,
@@ -568,7 +575,7 @@ async function seedSystemManagement(): Promise<{
         category: config.category,
         name: config.name,
         key: config.key,
-        value: config.value,
+        value: storedConfigValue,
         valueType: config.valueType,
         description: config.description,
         remark: config.remark,

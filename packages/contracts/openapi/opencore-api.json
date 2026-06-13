@@ -7039,6 +7039,7 @@
             "type": "string",
             "enum": ["boolean", "number", "string"]
           },
+          "encrypted": { "type": "boolean" },
           "description": { "type": "string" },
           "remark": { "type": "string" },
           "public": { "type": "boolean" },
@@ -7055,6 +7056,7 @@
           "key",
           "value",
           "valueType",
+          "encrypted",
           "public",
           "system",
           "visibility"

@@ -17,14 +17,16 @@ import {
 import {
   assertSafeConfigKey,
   assertFeatureFlagConfigShape,
+  assertSecretConfigShape,
   assertSystemConfigMutable,
   createSystemConfigPageResult,
+  normalizeExistingConfigValue,
   normalizeConfigCategory,
   normalizeConfigName,
-  normalizeConfigValue,
   normalizeBatchSystemConfigKeys,
   normalizeOptionalConfigText,
   normalizeSystemConfigPageQuery,
+  normalizeStoredConfigValue,
   redactSystemConfig,
   resolveConfigVisibility,
   SystemConfigRepository,
@@ -33,7 +35,22 @@ import {
 
 @Injectable()
 export class SeedSystemConfigRepository extends SystemConfigRepository {
-  private systemConfigs = seedSystemConfigs.map((config) => ({ ...config }));
+  private systemConfigs = seedSystemConfigs.map((config) => {
+    const visibility = resolveConfigVisibility(config);
+
+    return {
+      ...config,
+      encrypted: visibility === 'secret',
+      public: visibility === 'public',
+      value: normalizeStoredConfigValue({
+        key: config.key,
+        value: config.value,
+        valueType: config.valueType,
+        visibility,
+      }),
+      visibility,
+    };
+  });
 
   async listConfig(
     query: SystemConfigPageQuery = {},
@@ -65,6 +82,11 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
       valueType: body.valueType,
       visibility,
     });
+    assertSecretConfigShape({
+      key: body.key,
+      valueType: body.valueType,
+      visibility,
+    });
 
     if (this.systemConfigs.some((config) => config.key === body.key)) {
       throw new ConflictException(`System config already exists: ${body.key}`);
@@ -76,8 +98,14 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
       name: normalizeConfigName(body.name, body.key),
       key: body.key,
       valueType: body.valueType,
-      value: normalizeConfigValue(body.value, body.valueType),
+      value: normalizeStoredConfigValue({
+        key: body.key,
+        value: body.value,
+        valueType: body.valueType,
+        visibility,
+      }),
       description: normalizeOptionalConfigText(body.description, 'description'),
+      encrypted: visibility === 'secret',
       remark: normalizeOptionalConfigText(body.remark, 'remark'),
       public: visibility === 'public',
       system: false,
@@ -95,8 +123,13 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
     const nextValueType = body.valueType ?? config.valueType;
     const nextValue =
       body.value === undefined
-        ? normalizeConfigValue(config.value, nextValueType)
-        : normalizeConfigValue(body.value, nextValueType);
+        ? normalizeExistingConfigValue({
+            key,
+            value: config.value,
+            valueType: nextValueType,
+            visibility: config.visibility,
+          })
+        : body.value;
     const visibility = resolveConfigVisibility({
       key,
       public: body.public ?? config.public,
@@ -104,6 +137,11 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
     });
     assertSafeConfigKey(key, visibility);
     assertFeatureFlagConfigShape({
+      key,
+      valueType: nextValueType,
+      visibility,
+    });
+    assertSecretConfigShape({
       key,
       valueType: nextValueType,
       visibility,
@@ -117,7 +155,12 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
         body.name === undefined
           ? config.name
           : normalizeConfigName(body.name, key),
-      value: nextValue,
+      value: normalizeStoredConfigValue({
+        key,
+        value: nextValue,
+        valueType: nextValueType,
+        visibility,
+      }),
       valueType: nextValueType,
       description:
         body.description === undefined
@@ -129,6 +172,7 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
           : normalizeOptionalConfigText(body.remark, 'remark'),
       public: visibility === 'public',
       visibility,
+      encrypted: visibility === 'secret',
     });
     return redactSystemConfig(config);
   }

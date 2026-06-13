@@ -7,6 +7,8 @@ export {
   seedSystemConfigs,
   type SystemConfigRecord,
 } from './system-config/system-config.records';
+export { normalizeStoredConfigValue } from './system-config/system-config.repository';
+export { SYSTEM_CONFIG_SECRET_VALUE_PREFIX } from './system-config/system-config.vault';
 export {
   seedSystemDepts,
   type SystemDeptRecord,

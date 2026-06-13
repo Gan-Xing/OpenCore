@@ -6,9 +6,11 @@ import {
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '@opencore/database';
 import { PrismaSystemConfigRepository } from './system-config.prisma-repository';
+import { normalizeStoredConfigValue } from './system-config.repository';
 import { seedSystemConfigs } from './system-config.records';
 import { SeedSystemConfigRepository } from './system-config.seed-repository';
 import { SystemConfigService } from './system-config.service';
+import { SYSTEM_CONFIG_SECRET_VALUE_PREFIX } from './system-config.vault';
 
 describe('@opencore/system system-config', () => {
   it('supports seeded config CRUD and export previews', async () => {
@@ -18,8 +20,8 @@ describe('@opencore/system system-config', () => {
       expect.objectContaining({
         page: 1,
         pageSize: 1,
-        total: 4,
-        totalPages: 4,
+        total: 5,
+        totalPages: 5,
       }),
     );
     await expect(
@@ -68,6 +70,18 @@ describe('@opencore/system system-config', () => {
       value: '5',
       valueType: 'number',
     });
+    await expect(
+      service.getConfig('auth.jwt.secretRef'),
+    ).resolves.toMatchObject({
+      encrypted: true,
+      key: 'auth.jwt.secretRef',
+      system: true,
+      value: '[REDACTED]',
+      visibility: 'secret',
+    });
+    await expect(
+      service.getConfigValueByKey('auth.jwt.secretRef'),
+    ).rejects.toThrow(ForbiddenException);
 
     const config = await service.createConfig({
       category: 'feature',
@@ -161,6 +175,7 @@ describe('@opencore/system system-config', () => {
         'value',
         'valueType',
         'visibility',
+        'encrypted',
         'public',
         'featureFlag',
         'system',
@@ -289,6 +304,7 @@ describe('@opencore/system system-config', () => {
 
     expect(secret).toMatchObject({
       key: 'auth.token.secret',
+      encrypted: true,
       value: '[REDACTED]',
       public: false,
       visibility: 'secret',
@@ -297,6 +313,14 @@ describe('@opencore/system system-config', () => {
     await expect(service.getConfigValueByKey(secret.key)).rejects.toThrow(
       ForbiddenException,
     );
+    await expect(
+      service.createConfig({
+        key: 'auth.boolean.secret',
+        value: 'true',
+        valueType: 'boolean',
+        visibility: 'secret',
+      }),
+    ).rejects.toThrow(BadRequestException);
   });
 
   describe('PrismaSystemConfigRepository integration', () => {
@@ -423,11 +447,41 @@ describe('@opencore/system system-config', () => {
       expect(secret.name).toBe('Secret token setting');
       expect(secret.remark).toBe('Redaction must preserve metadata.');
       expect(secret.value).toBe('[REDACTED]');
+      expect(secret.encrypted).toBe(true);
       await expect(service.getConfig(secretKey)).resolves.toMatchObject({
         key: secretKey,
+        encrypted: true,
         value: '[REDACTED]',
         visibility: 'secret',
       });
+      const storedSecret = await prisma.systemConfig.findUnique({
+        where: { key: secretKey },
+        select: { value: true },
+      });
+      expect(storedSecret?.value).toEqual(
+        expect.stringContaining(SYSTEM_CONFIG_SECRET_VALUE_PREFIX),
+      );
+      expect(storedSecret?.value).not.toContain('super-secret');
+      const updatedSecret = await service.updateConfig(secretKey, {
+        remark: 'Secret metadata update keeps the vault envelope.',
+      });
+      expect(updatedSecret).toMatchObject({
+        encrypted: true,
+        value: '[REDACTED]',
+        visibility: 'secret',
+        remark: 'Secret metadata update keeps the vault envelope.',
+      });
+      const storedSecretAfterMetadataUpdate =
+        await prisma.systemConfig.findUnique({
+          where: { key: secretKey },
+          select: { value: true },
+        });
+      expect(storedSecretAfterMetadataUpdate?.value).toEqual(
+        expect.stringContaining(SYSTEM_CONFIG_SECRET_VALUE_PREFIX),
+      );
+      expect(storedSecretAfterMetadataUpdate?.value).not.toContain(
+        'super-secret',
+      );
       await expect(service.getConfigValueByKey(secretKey)).rejects.toThrow(
         ForbiddenException,
       );
@@ -476,12 +530,18 @@ describe('@opencore/system system-config', () => {
 
     async function ensureSeedSystemConfigs(): Promise<void> {
       for (const config of seedSystemConfigs) {
+        const storedValue = normalizeStoredConfigValue({
+          key: config.key,
+          value: config.value,
+          valueType: config.valueType,
+          visibility: config.visibility,
+        });
         await prisma.systemConfig.upsert({
           where: { key: config.key },
           update: {
             category: config.category,
             name: config.name,
-            value: config.value,
+            value: storedValue,
             valueType: config.valueType,
             description: config.description,
             remark: config.remark,
@@ -493,7 +553,7 @@ describe('@opencore/system system-config', () => {
             category: config.category,
             name: config.name,
             key: config.key,
-            value: config.value,
+            value: storedValue,
             valueType: config.valueType,
             description: config.description,
             remark: config.remark,

@@ -10,6 +10,7 @@ export type SystemConfigRecord = {
   value: string;
   valueType: SystemConfigValueType;
   description?: string;
+  encrypted: boolean;
   remark?: string;
   public: boolean;
   system: boolean;
@@ -25,6 +26,7 @@ export const seedSystemConfigs: readonly SystemConfigRecord[] = [
     value: 'OpenCore Admin',
     valueType: 'string',
     description: 'Public Admin title. Secrets are not accepted in core config.',
+    encrypted: false,
     remark: 'Shown in the Admin shell title.',
     public: true,
     system: true,
@@ -38,6 +40,7 @@ export const seedSystemConfigs: readonly SystemConfigRecord[] = [
     value: '15',
     valueType: 'number',
     description: 'Public login lockout runtime setting.',
+    encrypted: false,
     remark: 'Shown on the Admin login page as a runtime login policy.',
     public: true,
     system: true,
@@ -51,6 +54,7 @@ export const seedSystemConfigs: readonly SystemConfigRecord[] = [
     value: '5',
     valueType: 'number',
     description: 'Public login failed-attempt threshold runtime setting.',
+    encrypted: false,
     remark: 'Shown on the Admin login page as a runtime login policy.',
     public: true,
     system: true,
@@ -64,9 +68,24 @@ export const seedSystemConfigs: readonly SystemConfigRecord[] = [
     value: 'true',
     valueType: 'boolean',
     description: 'Public runtime feature flag for the notice inbox surface.',
+    encrypted: false,
     remark: 'Returned by the runtime config featureFlags map.',
     public: true,
     system: true,
     visibility: 'public',
+  },
+  {
+    id: 'config_jwt_secret_ref',
+    category: 'security',
+    name: 'JWT secret reference',
+    key: 'auth.jwt.secretRef',
+    value: 'env:AUTH_TOKEN_SECRET',
+    valueType: 'string',
+    description: 'Secret runtime value reference stored through config vault.',
+    encrypted: false,
+    remark: 'Real secret material stays outside public runtime config.',
+    public: false,
+    system: true,
+    visibility: 'secret',
   },
 ];

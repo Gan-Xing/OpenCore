@@ -1,7 +1,13 @@
 #!/usr/bin/env node
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+const { PrismaClient } = require('@prisma/client');
+const { PrismaPg } = require('@prisma/adapter-pg');
 
 const DEFAULT_PORT = '39173';
 const REDACTED_SECRET_VALUE = '[REDACTED]';
+const SECRET_VALUE_PREFIX = 'opencore:vault:v1:';
 const XLSX_CONTENT_TYPE =
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
@@ -37,6 +43,7 @@ let originalLoginMaxFailedAttempts;
 let adminTitleMutated = false;
 let loginLockoutMutated = false;
 let loginMaxFailedAttemptsMutated = false;
+let prisma;
 
 const createdKeys = [];
 
@@ -133,6 +140,27 @@ try {
     'number',
     'seeded login max failed attempts value type',
   );
+  const seededSecretConfig = await apiRequest(
+    '/core/config/auth.jwt.secretRef',
+  );
+  assertEqual(
+    seededSecretConfig.value,
+    REDACTED_SECRET_VALUE,
+    'seeded secret config redaction',
+  );
+  assertEqual(
+    seededSecretConfig.visibility,
+    'secret',
+    'seeded secret config visibility',
+  );
+  assertEqual(
+    seededSecretConfig.encrypted,
+    true,
+    'seeded secret encrypted flag',
+  );
+  await apiRequest('/core/config/get-value-by-key?key=auth.jwt.secretRef', {
+    expected: [403],
+  });
   const initialRuntimeConfig = await request(
     `${apiPrefix}/core/config/runtime`,
   );
@@ -515,6 +543,11 @@ try {
   );
   assertIncludes(
     exportPreview.columns,
+    'encrypted',
+    'config export encrypted column',
+  );
+  assertIncludes(
+    exportPreview.columns,
     'system',
     'config export system column',
   );
@@ -556,6 +589,32 @@ try {
     'created secret config redaction',
   );
   assertEqual(secretConfig.visibility, 'secret', 'created secret visibility');
+  assertEqual(secretConfig.encrypted, true, 'created secret encrypted flag');
+  await apiRequest('/core/config', {
+    method: 'POST',
+    body: {
+      category: 'security',
+      key: `auth.boolean.secret.${runId}`,
+      name: 'Invalid secret config',
+      value: 'true',
+      valueType: 'boolean',
+      visibility: 'secret',
+    },
+    expected: [400],
+  });
+
+  const storedSecretValue = await readStoredConfigValue(secretKey);
+  assertString(storedSecretValue, 'stored secret config value');
+  assertStringIncludes(
+    storedSecretValue,
+    SECRET_VALUE_PREFIX,
+    'stored secret config vault envelope',
+  );
+  assertStringExcludes(
+    storedSecretValue,
+    'super-secret-smoke-value',
+    'stored secret config plaintext',
+  );
 
   const fetchedSecret = await apiRequest(`/core/config/${secretKey}`);
   assertEqual(
@@ -563,6 +622,7 @@ try {
     REDACTED_SECRET_VALUE,
     'detail secret config redaction',
   );
+  assertEqual(fetchedSecret.encrypted, true, 'detail secret encrypted flag');
   await apiRequest(
     `/core/config/get-value-by-key?key=${encodeURIComponent(secretKey)}`,
     {
@@ -641,6 +701,7 @@ try {
   });
 
   await cleanupCreatedConfig();
+  await prisma?.$disconnect().catch(() => undefined);
 
   console.log(
     JSON.stringify({
@@ -663,6 +724,7 @@ try {
         'core.config.runtime-login-policy-guards',
         'core.config.runtime-login-attempt-policy',
         'core.config.runtime-login-attempt-policy-guards',
+        'core.config.seed-secret-vault',
         'core.config.value-by-key',
         'core.config.value-cache-invalidation',
         'core.config.cache-refresh',
@@ -671,6 +733,8 @@ try {
         'core.config.export.xlsx',
         'core.config.secret-redaction',
         'core.config.secret-value-blocked',
+        'core.config.secret-vault-encrypted',
+        'core.config.secret-value-type-guard',
         'core.config.system-flag',
         'core.config.system-delete-guard',
         'core.config.batch-delete.empty-guard',
@@ -688,6 +752,7 @@ try {
   await restoreAdminTitle().catch(() => undefined);
   await restoreLoginLockoutMinutes().catch(() => undefined);
   await restoreLoginMaxFailedAttempts().catch(() => undefined);
+  await prisma?.$disconnect().catch(() => undefined);
   console.error(
     JSON.stringify({
       status: 'fail',
@@ -750,6 +815,29 @@ async function cleanupCreatedConfig() {
   }
 
   createdKeys.length = 0;
+}
+
+async function readStoredConfigValue(key) {
+  if (!prisma) {
+    const connectionString = assertString(
+      process.env.DATABASE_URL,
+      'DATABASE_URL',
+    );
+    prisma = new PrismaClient({
+      adapter: new PrismaPg({ connectionString }),
+    });
+  }
+
+  const row = await prisma.systemConfig.findUnique({
+    where: { key },
+    select: { value: true },
+  });
+
+  if (!row) {
+    throw new Error(`Stored system config not found: ${key}`);
+  }
+
+  return row.value;
 }
 
 async function restoreAdminTitle() {
@@ -896,6 +984,18 @@ function assertEqual(actual, expected, label) {
 function assertIncludes(values, expected, label) {
   if (!Array.isArray(values) || !values.includes(expected)) {
     throw new Error(`${label} must include ${expected}`);
+  }
+}
+
+function assertStringIncludes(value, expected, label) {
+  if (typeof value !== 'string' || !value.includes(expected)) {
+    throw new Error(`${label} must include ${expected}`);
+  }
+}
+
+function assertStringExcludes(value, expected, label) {
+  if (typeof value !== 'string' || value.includes(expected)) {
+    throw new Error(`${label} must not include ${expected}`);
   }
 }
 

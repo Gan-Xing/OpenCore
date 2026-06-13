@@ -19,6 +19,12 @@ import type {
   SystemConfigValueType,
   SystemConfigVisibility,
 } from './system-config.records';
+import {
+  decryptSystemConfigSecretValue,
+  encryptSystemConfigSecretValue,
+  isEncryptedSystemConfigSecretValue,
+  SYSTEM_CONFIG_REDACTED_SECRET_VALUE,
+} from './system-config.vault';
 
 export type SystemConfigExportPreview = {
   filename: string;
@@ -51,7 +57,6 @@ const SENSITIVE_CONFIG_KEY_PATTERN =
   /(authorization|cookie|password|secret|token)/i;
 const FEATURE_FLAG_CONFIG_KEY_PATTERN =
   /^feature\.[a-z0-9]+(?:[.-][a-z0-9]+)*\.enabled$/;
-const REDACTED_SECRET_VALUE = '[REDACTED]';
 export const SYSTEM_CONFIG_EXPORT_CONTENT_TYPE = OPENCORE_XLSX_CONTENT_TYPE;
 export const SYSTEM_CONFIG_EXPORT_COLUMNS = [
   'category',
@@ -60,6 +65,7 @@ export const SYSTEM_CONFIG_EXPORT_COLUMNS = [
   'value',
   'valueType',
   'visibility',
+  'encrypted',
   'public',
   'featureFlag',
   'system',
@@ -154,6 +160,7 @@ function createSystemConfigExportWorksheetRows(
       row.value,
       row.valueType,
       row.visibility,
+      row.encrypted ? 'true' : 'false',
       row.public ? 'true' : 'false',
       toFeatureFlagName(row.key) ?? '',
       row.system ? 'true' : 'false',
@@ -179,6 +186,22 @@ export function assertSafeConfigKey(
   if (visibility === 'secret' && !SENSITIVE_CONFIG_KEY_PATTERN.test(key)) {
     throw new BadRequestException(
       'Secret system config visibility requires a secret-like key name.',
+    );
+  }
+}
+
+export function assertSecretConfigShape(input: {
+  key: string;
+  valueType: SystemConfigValueType;
+  visibility: SystemConfigVisibility;
+}): void {
+  if (input.visibility !== 'secret') {
+    return;
+  }
+
+  if (input.valueType !== 'string') {
+    throw new BadRequestException(
+      `Secret system config ${input.key} must keep string value type.`,
     );
   }
 }
@@ -252,10 +275,52 @@ export function redactSystemConfig(
 
   return {
     ...config,
+    encrypted: visibility === 'secret' ? config.encrypted : false,
     public: visibility === 'public',
     visibility,
-    value: visibility === 'secret' ? REDACTED_SECRET_VALUE : config.value,
+    value:
+      visibility === 'secret'
+        ? SYSTEM_CONFIG_REDACTED_SECRET_VALUE
+        : config.value,
   };
+}
+
+export function normalizeStoredConfigValue(input: {
+  key: string;
+  value: unknown;
+  valueType: SystemConfigValueType;
+  visibility: SystemConfigVisibility;
+}): string {
+  const normalized = normalizeConfigValue(input.value, input.valueType);
+
+  if (input.visibility !== 'secret') {
+    return normalized;
+  }
+
+  return encryptSystemConfigSecretValue(input.key, normalized);
+}
+
+export function normalizeExistingConfigValue(input: {
+  key: string;
+  value: string;
+  valueType: SystemConfigValueType;
+  visibility: SystemConfigVisibility;
+}): string {
+  const value =
+    input.visibility === 'secret'
+      ? decryptSystemConfigSecretValue(input.key, input.value)
+      : input.value;
+
+  return normalizeConfigValue(value, input.valueType);
+}
+
+export function isSystemConfigSecretEncrypted(
+  config: Pick<SystemConfigRecord, 'value' | 'visibility'>,
+): boolean {
+  return (
+    config.visibility === 'secret' &&
+    isEncryptedSystemConfigSecretValue(config.value)
+  );
 }
 
 export function assertSystemConfigMutable(config: SystemConfigRecord): void {

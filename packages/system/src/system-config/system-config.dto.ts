@@ -19,6 +19,9 @@ export class SystemConfigDto {
   @ApiProperty({ enum: ['boolean', 'number', 'string'] })
   valueType!: 'boolean' | 'number' | 'string';
 
+  @ApiProperty()
+  encrypted!: boolean;
+
   @ApiProperty({ required: false })
   description?: string;
 

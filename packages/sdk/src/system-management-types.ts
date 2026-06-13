@@ -86,6 +86,7 @@ export type SystemConfigSummary = {
   key: string;
   value: string;
   valueType: 'boolean' | 'number' | 'string';
+  encrypted: boolean;
   description?: string;
   remark?: string;
   public: boolean;
