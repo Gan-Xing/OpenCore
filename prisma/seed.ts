@@ -133,6 +133,10 @@ async function seedIntegrations(): Promise<{
   }
 
   for (const message of seedIntegrationOutbox) {
+    const attachments = message.attachments
+      ? toInputJson(message.attachments)
+      : Prisma.JsonNull;
+
     await prisma.integrationOutbox.upsert({
       where: { id: message.id },
       update: {
@@ -142,9 +146,7 @@ async function seedIntegrations(): Promise<{
         recipient: message.recipient,
         subject: message.subject ?? null,
         payload: message.payload as Prisma.InputJsonValue,
-        attachments: message.attachments
-          ? ([...message.attachments] as Prisma.InputJsonValue)
-          : null,
+        attachments,
         status: message.status,
         retryCount: message.retryCount,
         preview: message.preview ?? null,
@@ -160,9 +162,7 @@ async function seedIntegrations(): Promise<{
         recipient: message.recipient,
         subject: message.subject ?? null,
         payload: message.payload as Prisma.InputJsonValue,
-        attachments: message.attachments
-          ? ([...message.attachments] as Prisma.InputJsonValue)
-          : null,
+        attachments,
         status: message.status,
         retryCount: message.retryCount,
         preview: message.preview ?? null,
@@ -178,6 +178,10 @@ async function seedIntegrations(): Promise<{
     templates: seedIntegrationTemplates.length,
     outbox: seedIntegrationOutbox.length,
   };
+}
+
+function toInputJson(value: unknown): Prisma.InputJsonValue {
+  return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
 }
 
 async function seedOnlineUserSessions(): Promise<number> {
