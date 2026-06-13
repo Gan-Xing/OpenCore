@@ -3,9 +3,9 @@
 Date: 2026-06-13
 Repository: `Gan-Xing/OpenCore`
 Default branch: `main`
-Latest observed feature commit: `bd55c61 feat(core-config): add runtime admin config / 新增运行时管理端配置`
-Latest deployed feature commit: `bd55c61 feat(core-config): add runtime admin config / 新增运行时管理端配置`
-Latest deployed hardening commit: `04e446c fix(online-user): stabilize admin session smoke / 稳定在线用户管理员会话冒烟`
+Latest observed feature commit: `167bf08 feat(login-log): add login type result schema / 新增登录日志类型结果模型`
+Latest deployed feature commit: `167bf08 feat(login-log): add login type result schema / 新增登录日志类型结果模型`
+Latest deployed hardening commit: `4df5dd1 fix(system): satisfy xlsx export lint guard / 修复 XLSX 导出 lint 守卫`
 
 ## One-sentence Goal
 
@@ -110,6 +110,7 @@ productization waterline completion; see
 - Round 42 `core.post` batch deletion stage 3
 - Round 43 `core.dept` user-binding delete guard stage 3
 - Round 44 `core.config` runtime Admin config stage 7
+- Round 45 `core.login-log` login type/result schema stage 3
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -543,6 +544,23 @@ Round 44 继续补齐 `core.config` 队列，开启运行时配置传播闭环�
 注意：这轮关闭的是 Admin title 的第一条 runtime propagation，不等于 secret vault/KMS、
 多环境 runtime feature flags 或更广泛配置热传播边界已经完成。
 
+Round 45 回到 `core.login-log` 队列，补齐登录类型/结果模型闭环。参考 Yudao 的
+`logType/result` 枚举和 Admin 字典展示，以及 RuoYi 的登录状态、地点、浏览器/OS、
+删除/清空/解锁操作面，OpenCore 本轮只承认最低依赖的 schema 扩展：新增持久化
+`LoginLog.logType/result`，用可读字符串枚举表示 `login.username`、
+`bad_credentials`、`user_disabled` 等结果；保留 legacy `success` 布尔兼容现有调用。
+登录流程现在区分缺用户/错密码为 `bad_credentials`、禁用用户为
+`user_disabled`，但外部仍统一返回 401，避免泄露账号状态。API/DTO/OpenAPI/SDK/Admin
+均支持 `logType/result` 字段和服务端筛选；Admin Login Logs 页面展示 Login Type 与
+Result，固定 smoke、部署 smoke 和公网 smoke 均验证 `core.login-log.result-schema`、
+`core.login-log.invalid-result-guard`、导出列和详情字段。公网 Admin
+`umi.63f63e69.js` 已验证包含 API origin 且不含重复 `/api/api/auth/login`；
+`p__Security__LoginLogs.1e1a0df4.async.js` 已验证包含类型/结果 UI 标记；公网 Admin
+同源代理按 `logType=login.username&result=bad_credentials` 查到真实失败登录，并验证详情、
+导出列和非法 result 400。支持提交 `4df5dd1` 还将 XLSX helper 的正则改为显式字符过滤，
+让全仓 lint gate 通过。注意：这轮关闭的是 login-log type/result schema expansion，不等于
+IP location enrichment、日志删除/清空、用户解锁或 lockout policy 调优已经完成。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -554,7 +572,7 @@ The productization waterline now classifies:
   Round 7/19/22/23/28/29/30/31/32/33/34/35/36/41 `core.user`.
 - First loop, enhance: Round 1 `core.notice`, Round 2/27/43 `core.dept`,
   Round 3/22/25/42 `core.post`, Round 9/24/37/38/39/40/44 `core.config`,
-  Round 11/26 `core.login-log`.
+  Round 11/26/45 `core.login-log`.
 - Thin, rework: none after Round 16.
 
 The P0 remediation queue from the post-Round 13 re-audit is now clear. The next
@@ -572,8 +590,9 @@ finds another blocker:
    broader runtime propagation boundaries and any admitted secret vault/KMS
    integration.
 2. `core.login-log`: Round 26 closed browser/OS parsing and server-side IP/time
-   filters. Remaining work is IP/location enrichment where feasible,
-   cleanup/unlock policy integration and login-type/result expansion.
+   filters. Round 45 closed persisted login type/result schema, Admin display
+   and result/logType filters. Remaining work is IP/location enrichment where
+   feasible plus cleanup/unlock policy integration.
 3. `core.dept`: Round 27 closed the enabled-department simple-list option
    source consumed by Admin Users; Round 43 closed user-bound department
    deletion protection and preserved user `deptId` on failed delete. Remaining

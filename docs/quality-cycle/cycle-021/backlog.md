@@ -1284,6 +1284,46 @@ vault/KMS, multi-environment feature flags or broader hot-propagation design.
       fixed-port smoke, deployment and public URL verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 45: core.login-log Login Type and Result Schema
+
+Why this slice: after login-log list/detail/export, device parsing and
+IP/time filters were live, the next lowest-dependency login-log debt was the
+record schema itself. Yudao models login logs with `logType` and `result`
+enums and renders them through Admin dictionaries; RuoYi exposes login status,
+message, browser/OS and IP/location, with cleanup/unlock as broader
+operations. OpenCore still only exposed a `success` boolean and
+`failureReason`, so operators could not distinguish login type and result
+without parsing messages. This round closes the schema/display/filter loop
+without opening cleanup, unlock, lockout tuning or IP geolocation.
+
+- [x] Recompare Yudao `logType/result` login-log shape and RuoYi login status
+      surface against OpenCore.
+- [x] Add stable string enums for login-log type and result at the security
+      login-attempt recorder boundary.
+- [x] Record username-login success as `login.username/success`.
+- [x] Record missing user and bad password as
+      `login.username/bad_credentials` while keeping the public auth response
+      unchanged.
+- [x] Record disabled users as `login.username/user_disabled` without leaking
+      the account state through the auth response.
+- [x] Add persisted `LoginLog.logType` and `LoginLog.result` with migration
+      defaults and seed backfill.
+- [x] Extend audit DTOs, seed/Prisma repositories, query normalization and
+      export columns with `logType/result`.
+- [x] Reject invalid `logType/result` query values with 400.
+- [x] Extend OpenAPI, SDK types, fixtures and SDK path tests.
+- [x] Update Admin Login Logs with Login Type and Result columns, detail,
+      current-page export, current-page filters and server-side filters.
+- [x] Extend Admin static smoke for type/result formatter and filter markers.
+- [x] Extend fixed-port/deploy/public `core.login-log` smoke with
+      `core.login-log.result-schema` and `core.login-log.invalid-result-guard`.
+- [x] Fix the existing XLSX helper regex lint blocker so the full lint gate
+      passes without changing export behavior.
+- [x] Run focused tests, OpenAPI/SDK checks, Prisma validate, typecheck, lint,
+      format, build, fixed-port smoke, deployment and public URL verification
+      gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -1332,9 +1372,10 @@ treat "minimal loop" as "minimal final product".
       policy is complete. Admin title runtime propagation is complete. Broader
       runtime propagation boundaries and any admitted secret vault/KMS
       integration remain.
-- [ ] Round 11/26 `core.login-log`: browser/OS parsing and IP/time filters are
-      complete. IP/location enrichment where feasible, cleanup/unlock policy
-      integration and logType/result schema expansion remain.
+- [ ] Round 11/26/45 `core.login-log`: browser/OS parsing, IP/time filters,
+      persisted login type/result schema, Admin display and type/result
+      filters are complete. IP/location enrichment where feasible and
+      cleanup/unlock policy integration remain.
 
 ### Thin, Must Rework Before More Broad Surfaces
 
@@ -1381,7 +1422,7 @@ treat "minimal loop" as "minimal final product".
   download/preview/copy-link workflows, batch file delete and object browser
   expansion.
 - Login-log deletion/cleanup, user unlock, lockout-policy tuning, session
-  termination, IP location enrichment and logType/result schema expansion.
+  termination and IP location enrichment.
 - Operation-log deletion/cleanup, batch delete, duration/location/user-agent
   schema expansion, operation type enum expansion, async queue/indexing and
   business-domain audit timeline views.

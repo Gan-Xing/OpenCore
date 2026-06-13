@@ -3586,3 +3586,105 @@ Against public endpoints after deploy:
   `bd55c61 feat(core-config): add runtime admin config / 新增运行时管理端配置`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 45 Capability
+
+Capability: `core.login-log` login type and result schema.
+
+Goal: move login logs beyond a single `success` boolean by persisting,
+exposing, filtering and rendering explicit login behavior type plus outcome,
+while keeping the legacy success field for compatibility.
+
+## Round 45 Implemented
+
+- Rechecked RuoYi remote HEAD `41720e624c5a668c7d3777835e4c87095a7a1dfd`.
+- Rechecked Yudao backend HEAD
+  `51b3d2d8cddd9a2a48e1edc2a7267359f61264cb` and Admin HEAD
+  `caa6fa9be35a7ef13dc3aba082f4675962f5c234`.
+- Added `SecurityLoginLogType` and `SecurityLoginResult` string enums.
+- Recorded username-login success as `login.username/success`.
+- Recorded missing users and bad passwords as
+  `login.username/bad_credentials`.
+- Recorded disabled users as `login.username/user_disabled` while keeping the
+  outward auth failure response unchanged.
+- Added persisted `LoginLog.logType` and `LoginLog.result` plus migration
+  `20260613064000_login_log_result_schema`.
+- Extended Prisma seed, audit DTOs, seed repository, Prisma repository, export
+  columns and query normalization.
+- Added 400 guards for invalid `logType/result` query values.
+- Extended OpenAPI, SDK types, fixtures and SDK path tests.
+- Updated Admin Login Logs with Login Type/Result columns, detail fields,
+  current-page export columns, current-page filters and server-side filters.
+- Extended Admin static smoke and `tools/scripts/smoke-core-login-log.mjs`.
+- Fixed the existing XLSX helper regex lint blocker by replacing the regex
+  control-character removal with explicit character filtering.
+
+## Round 45 Verification
+
+- `pnpm prisma:generate`
+- `pnpm prisma:migrate`
+- `node --check tools/scripts/smoke-core-login-log.mjs`
+- `node --check apps/admin/scripts/smoke-test.mjs`
+- `pnpm nx test security --testFile=security-auth.spec.ts`
+- `pnpm nx test audit --testFile=audit-login-log.spec.ts`
+- `pnpm nx test api --testFile=auth.service.spec.ts`
+- `pnpm nx test sdk --testFile=system-management-client.spec.ts`
+- `pnpm nx test admin`
+- `pnpm openapi:export`
+- `pnpm openapi:check`
+- `pnpm sdk:check`
+- `pnpm openapi:registry-tags:check`
+- `pnpm prisma:validate`
+- `pnpm nx run-many -t typecheck --projects=api,admin,sdk,audit,security,contracts`
+- `pnpm build:api`
+- `pnpm build:admin`
+- `pnpm format:check`
+- `git diff --check`
+- `pnpm smoke:api:local`
+- `pnpm lint`
+- `pnpm nx test system --testFile=system-config.spec.ts`
+- `pnpm nx test system --testFile=system-user.spec.ts`
+- `pnpm nx typecheck system`
+- `pnpm build:api`
+- `pnpm smoke:api:local`
+- `pnpm deploy:opencore`
+
+`pnpm smoke:api:local` passed on fixed port `39173`, including
+`core.login-log.result-schema` and `core.login-log.invalid-result-guard`.
+
+`pnpm deploy:opencore` passed, deploying API/Admin on fixed ports
+`39172`/`39174`; deploy smoke included duplicate `/api/api` login guards,
+Admin bundle cache checks, session guards and the same login-log result-schema
+checks.
+
+## Round 45 Public Verification
+
+Against public endpoints after deploy:
+
+- Public API: `http://144.217.243.161:39172`
+- Public Admin: `http://144.217.243.161:39174`
+- Public `pnpm smoke:core-login-log` passed with
+  `core.login-log.result-schema` and
+  `core.login-log.invalid-result-guard`.
+- Public Admin main bundle `umi.63f63e69.js` contains the deployed API origin
+  and no duplicate `/api/api/auth/login`.
+- Public Login Logs chunk `p__Security__LoginLogs.1e1a0df4.async.js` contains
+  the Login Type/Result UI and filter markers.
+- Public Admin same-origin `/api/auth/login` and compatible
+  `/api/api/auth/login` both succeeded.
+- Public Admin same-origin proxy recorded a real failed login and returned it
+  through `logType=login.username&result=bad_credentials`.
+- Public Admin same-origin detail exposed `logType`, `result` and parsed
+  browser/device fields.
+- Public Admin same-origin export preview included `logType` and `result`
+  columns.
+- Public Admin same-origin invalid `result` query returned 400.
+
+## Round 45 Commit Record
+
+- Supporting lint commit:
+  `4df5dd1 fix(system): satisfy xlsx export lint guard / 修复 XLSX 导出 lint 守卫`.
+- Feature commit:
+  `167bf08 feat(login-log): add login type result schema / 新增登录日志类型结果模型`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

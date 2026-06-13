@@ -1356,3 +1356,40 @@ product boundary:
 OpenCore does not claim secret vault/KMS, broad multi-key runtime feature flag
 propagation, per-environment config promotion or cluster-wide push
 invalidation in this round.
+
+## Round 45 Login Log Type Result Reference Shape
+
+Yudao models login logs as both behavior type and outcome: `LoginLogDO` carries
+`logType`, `result`, user identity, username, IP, user agent and create time;
+its Admin page renders login type and login result through dictionaries and
+exports those fields. Current Yudao login flow records username login success,
+bad credentials, disabled user and captcha-related results, while mobile/social
+login types exist as separate enum values.
+
+RuoYi models login information around login status, message, IP/location,
+browser, OS and login time. Its Admin surface also includes broader operations
+such as delete, clean and unlock.
+
+OpenCore admits the stage-3 login-log schema loop for the current product
+boundary:
+
+- persist `LoginLog.logType` and `LoginLog.result` with migration defaults and
+  seed backfill;
+- keep readable string enum values such as `login.username`, `success`,
+  `bad_credentials` and `user_disabled` instead of importing Yudao numeric dict
+  codes;
+- keep the existing `success` boolean for backward compatibility;
+- record missing users and bad passwords as `bad_credentials`;
+- record disabled users as `user_disabled` while keeping the public auth
+  response as the same 401 message;
+- expose `logType/result` through DTO, OpenAPI, SDK, list/detail/export and
+  Admin Login Logs;
+- support server-side `logType/result` filters and reject unknown enum values
+  with 400;
+- fixed-port, deploy and public smoke prove real failed-login recording,
+  result/type filters, detail fields, export columns, deployed Admin chunk
+  markers and Admin same-origin proxy behavior.
+
+OpenCore does not claim IP location enrichment, login-log deletion/cleanup,
+user unlock, lockout-policy tuning, logout logging or mobile/social login
+workflows in this round.
