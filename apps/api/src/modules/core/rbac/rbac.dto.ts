@@ -16,6 +16,7 @@ export {
   SetUserStatusDto,
   UpdateUserPasswordDto,
   UpdateUserProfileDto,
+  UploadUserAvatarDto,
   UpdateMenuDto,
   UpdateRoleDto,
   UpdateUserDto,
@@ -48,6 +49,9 @@ export class AuthenticatedUserDto {
 
   @ApiProperty({ type: [String] })
   permissionCodes!: readonly string[];
+
+  @ApiProperty({ required: false, nullable: true, type: String })
+  avatarUrl?: string;
 }
 
 export class LoginResponseDto {

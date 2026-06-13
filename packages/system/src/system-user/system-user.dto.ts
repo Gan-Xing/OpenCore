@@ -19,6 +19,18 @@ export class UserSummaryDto {
   @ApiProperty({ type: [String] })
   postCodes!: readonly string[];
 
+  @ApiProperty({ required: false, nullable: true, type: String })
+  avatarUrl?: string;
+
+  @ApiProperty({ required: false, nullable: true, type: String })
+  avatarMimeType?: string;
+
+  @ApiProperty({ required: false, nullable: true, type: Number })
+  avatarSizeBytes?: number;
+
+  @ApiProperty({ required: false, nullable: true, type: String })
+  avatarUpdatedAt?: string;
+
   @ApiProperty()
   enabled!: boolean;
 
@@ -96,6 +108,17 @@ export class UserProfileDto extends UserSummaryDto {}
 export class UpdateUserProfileDto {
   @ApiProperty({ required: false })
   displayName?: string;
+}
+
+export class UploadUserAvatarDto {
+  @ApiProperty({ example: 'avatar.png' })
+  originalName!: string;
+
+  @ApiProperty({ example: 'image/png' })
+  mimeType!: string;
+
+  @ApiProperty({ description: 'Base64-encoded image bytes.' })
+  contentBase64!: string;
 }
 
 export class UpdateUserPasswordDto {

@@ -9,6 +9,11 @@ export type SystemUserRecord = {
   deptId?: string;
   postCodes: readonly string[];
   enabled: boolean;
+  avatarUrl?: string;
+  avatarStorageKey?: string;
+  avatarMimeType?: string;
+  avatarSizeBytes?: number;
+  avatarUpdatedAt?: string;
   system: boolean;
 };
 

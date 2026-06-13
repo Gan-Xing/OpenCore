@@ -226,6 +226,7 @@ function toRbacUserRecord(user: SystemUserRecord): RbacUserRecord {
       )
       .sort(),
     enabled: user.enabled,
+    avatarUrl: user.avatarUrl,
   };
 }
 

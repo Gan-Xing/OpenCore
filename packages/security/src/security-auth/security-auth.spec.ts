@@ -73,12 +73,14 @@ describe('@opencore/security security-auth', () => {
     expect(session.user).toMatchObject({
       username: 'admin',
       roleCodes: ['admin'],
+      avatarUrl: '/api/core/users/user_admin/avatar?v=test',
     });
     await expect(
       service.authenticateBearer(`Bearer ${session.accessToken}`),
     ).resolves.toMatchObject({
       username: 'admin',
       permissionCodes: ['core:dashboard:read'],
+      avatarUrl: '/api/core/users/user_admin/avatar?v=test',
     });
     expect(sessions.records).toEqual([
       expect.objectContaining({
@@ -140,6 +142,7 @@ class InMemorySecurityAuthUserRepository extends SecurityAuthUserRepository {
       passwordHash: hashSecurityPassword('admin123'),
       roleCodes: ['admin'],
       enabled: true,
+      avatarUrl: '/api/core/users/user_admin/avatar?v=test',
     },
     {
       id: 'user_disabled',

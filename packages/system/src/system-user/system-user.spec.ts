@@ -48,6 +48,35 @@ describe('@opencore/system system-user', () => {
         displayName: 123 as unknown as string,
       }),
     ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.updateUserAvatar('user_admin', {
+        avatarUrl: '/api/core/users/user_admin/avatar?v=seed',
+        avatarStorageKey: 'runtime/user-avatars/user_admin/seed-avatar.png',
+        avatarMimeType: 'image/png',
+        avatarSizeBytes: 68,
+        avatarUpdatedAt: '2026-06-13T00:00:00.000Z',
+      }),
+    ).resolves.toMatchObject({
+      username: 'admin',
+      avatarUrl: '/api/core/users/user_admin/avatar?v=seed',
+      avatarMimeType: 'image/png',
+      avatarSizeBytes: 68,
+      avatarUpdatedAt: '2026-06-13T00:00:00.000Z',
+    });
+    await expect(service.getUser('user_admin')).resolves.not.toHaveProperty(
+      'avatarStorageKey',
+    );
+    await expect(service.getUserAvatar('user_admin')).resolves.toMatchObject({
+      avatarStorageKey: 'runtime/user-avatars/user_admin/seed-avatar.png',
+      avatarMimeType: 'image/png',
+    });
+    await expect(service.clearUserAvatar('user_admin')).resolves.toMatchObject({
+      username: 'admin',
+      avatarUrl: undefined,
+      avatarMimeType: undefined,
+      avatarSizeBytes: undefined,
+      avatarUpdatedAt: undefined,
+    });
     await expect(service.deleteUser('user_admin')).rejects.toThrow(
       BadRequestException,
     );
@@ -431,6 +460,49 @@ describe('@opencore/system system-user', () => {
       ).resolves.toMatchObject({
         displayName: 'Updated Profile User',
         passwordHash: hashSystemUserPassword('updated-password'),
+      });
+      const avatarInput = {
+        avatarUrl: `/api/core/users/${user.id}/avatar?v=prisma`,
+        avatarStorageKey: `runtime/user-avatars/${user.id}/prisma-avatar.png`,
+        avatarMimeType: 'image/png',
+        avatarSizeBytes: 68,
+        avatarUpdatedAt: '2026-06-13T00:00:00.000Z',
+      };
+
+      await expect(
+        service.updateUserAvatar(user.id, avatarInput),
+      ).resolves.toMatchObject({
+        username,
+        avatarUrl: avatarInput.avatarUrl,
+        avatarMimeType: 'image/png',
+        avatarSizeBytes: 68,
+        avatarUpdatedAt: '2026-06-13T00:00:00.000Z',
+      });
+      await expect(service.getUser(user.id)).resolves.not.toHaveProperty(
+        'avatarStorageKey',
+      );
+      await expect(service.getUserAvatar(user.id)).resolves.toMatchObject({
+        avatarStorageKey: avatarInput.avatarStorageKey,
+        avatarMimeType: 'image/png',
+      });
+      await expect(
+        prisma.user.findUniqueOrThrow({ where: { id: user.id } }),
+      ).resolves.toMatchObject({
+        avatarUrl: avatarInput.avatarUrl,
+        avatarStorageKey: avatarInput.avatarStorageKey,
+        avatarMimeType: 'image/png',
+        avatarSizeBytes: 68,
+      });
+      await expect(service.clearUserAvatar(user.id)).resolves.toMatchObject({
+        username,
+        avatarUrl: undefined,
+        avatarMimeType: undefined,
+        avatarSizeBytes: undefined,
+        avatarUpdatedAt: undefined,
+      });
+      await expect(service.getUserAvatar(user.id)).resolves.toMatchObject({
+        avatarStorageKey: undefined,
+        avatarMimeType: undefined,
       });
       await expect(
         service.setUserStatus(user.id, { enabled: true }),

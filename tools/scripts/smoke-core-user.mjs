@@ -19,6 +19,14 @@ const passwordCandidates = [
   return Boolean(candidate) && candidates.indexOf(candidate) === index;
 });
 const timeoutMs = Number(process.env.OPENCORE_SMOKE_TIMEOUT_MS || 10000);
+const tinyPngBase64 =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=';
+const extensionByMimeType = {
+  'image/gif': 'gif',
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+};
 
 const runId = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 const smokeUsername = `user_security_${runId}`;
@@ -29,6 +37,8 @@ let adminToken;
 let smokeUserId;
 let smokeUserToken;
 let originalAdminDisplayName;
+let originalAdminAvatarUpload;
+let adminAvatarTouched = false;
 
 class HttpStatusError extends Error {
   constructor(message, status) {
@@ -59,7 +69,69 @@ try {
     adminProfile.displayName,
     'admin profile displayName',
   );
+  originalAdminAvatarUpload = await captureAvatarUpload(adminProfile.avatarUrl);
   assertEqual(adminProfile.username, username, 'admin profile username');
+
+  const avatarUploadBody = {
+    originalName: `admin-avatar-${runId}.png`,
+    mimeType: 'image/png',
+    contentBase64: tinyPngBase64,
+  };
+  await request(`${apiPrefix}/core/users/profile/avatar`, {
+    method: 'POST',
+    expected: [401],
+    body: avatarUploadBody,
+  });
+  await apiRequest('/core/users/profile/avatar', {
+    method: 'POST',
+    expected: [400],
+    body: {
+      ...avatarUploadBody,
+      mimeType: 'image/svg+xml',
+    },
+  });
+  await apiRequest('/core/users/profile/avatar', {
+    method: 'POST',
+    expected: [400],
+    body: {
+      ...avatarUploadBody,
+      contentBase64: 'not-base64',
+    },
+  });
+  const avatarProfile = await apiRequest('/core/users/profile/avatar', {
+    method: 'POST',
+    body: avatarUploadBody,
+  });
+  adminAvatarTouched = true;
+  const avatarUrl = assertString(avatarProfile.avatarUrl, 'avatar URL');
+  assertEqual(avatarProfile.avatarMimeType, 'image/png', 'avatar mime type');
+  assertEqual(
+    avatarProfile.avatarSizeBytes,
+    Buffer.from(tinyPngBase64, 'base64').byteLength,
+    'avatar size',
+  );
+  assertString(avatarProfile.avatarUpdatedAt, 'avatar updatedAt');
+  const downloadedAvatar = await requestBuffer(avatarUrl, { expected: [200] });
+  assertEqual(
+    normalizeContentType(downloadedAvatar.headers.get('content-type')),
+    'image/png',
+    'avatar download content-type',
+  );
+  assertBufferEqual(
+    downloadedAvatar.body,
+    Buffer.from(tinyPngBase64, 'base64'),
+    'avatar download bytes',
+  );
+  const avatarSession = await request(`${apiPrefix}/auth/me`, {
+    token: adminToken,
+    expected: [200, 201],
+  });
+  assertEqual(avatarSession.user.avatarUrl, avatarUrl, 'auth/me avatar URL');
+  const clearedAvatarProfile = await apiRequest('/core/users/profile/avatar', {
+    method: 'DELETE',
+  });
+  assertEqual(clearedAvatarProfile.avatarUrl, undefined, 'cleared avatar URL');
+  await request(avatarUrl, { expected: [404] });
 
   const profileDisplayName = `OpenCore Admin Smoke ${runId}`;
   const updatedProfile = await apiRequest('/core/users/profile', {
@@ -388,6 +460,14 @@ try {
         'core.user.simple-list.auth-guard',
         'auth.login',
         'core.user.profile.get',
+        'core.user.profile.avatar.auth-guard',
+        'core.user.profile.avatar.mime-guard',
+        'core.user.profile.avatar.base64-guard',
+        'core.user.profile.avatar.upload',
+        'core.user.profile.avatar.public-download',
+        'core.user.profile.avatar.auth-me-refresh',
+        'core.user.profile.avatar.delete',
+        'core.user.profile.avatar.delete-removes-public-download',
         'core.user.profile.update',
         'core.user.profile.auth-me-refresh',
         'core.user.profile.invalid-display-name-guard',
@@ -486,6 +566,26 @@ async function loginSmokeUser(password, expected) {
   });
 }
 
+async function captureAvatarUpload(avatarUrl) {
+  if (!avatarUrl) {
+    return undefined;
+  }
+
+  const downloaded = await requestBuffer(avatarUrl, { expected: [200] });
+  const mimeType = normalizeContentType(downloaded.headers.get('content-type'));
+  const extension = extensionByMimeType[mimeType];
+
+  if (!extension) {
+    throw new Error(`Unsupported existing admin avatar MIME type: ${mimeType}`);
+  }
+
+  return {
+    originalName: `restored-admin-avatar.${extension}`,
+    mimeType,
+    contentBase64: downloaded.body.toString('base64'),
+  };
+}
+
 async function cleanup() {
   if (!adminToken) {
     return;
@@ -504,18 +604,35 @@ async function cleanup() {
 }
 
 async function restoreAdminProfile() {
-  if (!originalAdminDisplayName) {
+  if (originalAdminDisplayName) {
+    await apiRequest('/core/users/profile', {
+      method: 'PATCH',
+      expected: [200, 201],
+      body: {
+        displayName: originalAdminDisplayName,
+      },
+    }).catch(() => undefined);
+    originalAdminDisplayName = undefined;
+  }
+
+  if (!adminAvatarTouched) {
     return;
   }
 
-  await apiRequest('/core/users/profile', {
-    method: 'PATCH',
-    expected: [200, 201],
-    body: {
-      displayName: originalAdminDisplayName,
-    },
-  }).catch(() => undefined);
-  originalAdminDisplayName = undefined;
+  if (originalAdminAvatarUpload) {
+    await apiRequest('/core/users/profile/avatar', {
+      method: 'POST',
+      expected: [200, 201],
+      body: originalAdminAvatarUpload,
+    }).catch(() => undefined);
+  } else {
+    await apiRequest('/core/users/profile/avatar', {
+      method: 'DELETE',
+      expected: [200, 201, 404],
+    }).catch(() => undefined);
+  }
+
+  adminAvatarTouched = false;
 }
 
 async function cleanupSmokeUserSessions() {
@@ -581,6 +698,44 @@ async function request(path, options = {}) {
     }
 
     return responseBody;
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(`${options.method || 'GET'} ${path} timed out`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function requestBuffer(path, options = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const expected = options.expected || [200];
+
+  try {
+    const response = await fetch(`${baseUrl}${path}`, {
+      method: options.method || 'GET',
+      headers: {
+        ...(options.token ? { authorization: `Bearer ${options.token}` } : {}),
+      },
+      signal: controller.signal,
+    });
+    const responseBody = Buffer.from(await response.arrayBuffer());
+
+    if (!expected.includes(response.status)) {
+      throw new HttpStatusError(
+        `${options.method || 'GET'} ${path} returned ${response.status}: ${responseBody
+          .toString('utf8')
+          .slice(0, 500)}`,
+        response.status,
+      );
+    }
+
+    return {
+      body: responseBody,
+      headers: response.headers,
+    };
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
       throw new Error(`${options.method || 'GET'} ${path} timed out`);
@@ -686,6 +841,18 @@ function assertEqual(actual, expected, label) {
       )}, got ${JSON.stringify(actual)}`,
     );
   }
+}
+
+function assertBufferEqual(actual, expected, label) {
+  if (!actual.equals(expected)) {
+    throw new Error(
+      `Expected ${label} bytes to equal uploaded bytes, got ${actual.byteLength} bytes`,
+    );
+  }
+}
+
+function normalizeContentType(value) {
+  return (value || '').split(';')[0].trim().toLowerCase();
 }
 
 function assertArray(value, label) {

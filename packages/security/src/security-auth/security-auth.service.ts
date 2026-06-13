@@ -16,6 +16,7 @@ export type AuthenticatedUser = {
   displayName: string;
   roleCodes: readonly string[];
   permissionCodes: readonly string[];
+  avatarUrl?: string;
 };
 
 export type LoginContext = {
@@ -110,6 +111,7 @@ export class SecurityAuthService {
       displayName: user.displayName,
       roleCodes: [...user.roleCodes],
       permissionCodes: await this.repository.getPermissionCodesForUser(user.id),
+      avatarUrl: user.avatarUrl,
     };
   }
 

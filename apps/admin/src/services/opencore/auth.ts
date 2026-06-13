@@ -3,6 +3,7 @@ import {
   type AuthenticatedUser,
   type LoginRequest,
   type LoginResponse,
+  type UploadUserAvatarRequest,
   type UpdateUserPasswordRequest,
   type UpdateUserProfileRequest,
   type UserPasswordMutationSummary,
@@ -28,6 +29,7 @@ const authClient = createRbacClient(opencoreSdkRequest);
 export function toAdminCurrentUser(user: AuthenticatedUser): AdminCurrentUser {
   return {
     ...user,
+    avatar: user.avatarUrl,
     name: user.displayName,
     userid: user.id,
   };
@@ -53,6 +55,16 @@ export async function updateOpenCoreUserProfile(
   body: UpdateUserProfileRequest,
 ): Promise<UserProfileSummary> {
   return authClient.updateUserProfile(getRequiredAdminToken(), body);
+}
+
+export async function updateOpenCoreUserAvatar(
+  body: UploadUserAvatarRequest,
+): Promise<UserProfileSummary> {
+  return authClient.updateUserAvatar(getRequiredAdminToken(), body);
+}
+
+export async function deleteOpenCoreUserAvatar(): Promise<UserProfileSummary> {
+  return authClient.deleteUserAvatar(getRequiredAdminToken());
 }
 
 export async function updateOpenCoreUserPassword(

@@ -4,6 +4,7 @@ export type AuthenticatedUser = {
   displayName: string;
   roleCodes: readonly string[];
   permissionCodes: readonly string[];
+  avatarUrl?: string;
 };
 
 export type LoginRequest = {
@@ -25,6 +26,10 @@ export type UserSummary = {
   roleCodes: readonly string[];
   deptId?: string;
   postCodes: readonly string[];
+  avatarUrl?: string;
+  avatarMimeType?: string;
+  avatarSizeBytes?: number;
+  avatarUpdatedAt?: string;
   enabled: boolean;
   system: boolean;
 };
@@ -38,6 +43,12 @@ export type UserProfileSummary = UserSummary;
 
 export type UpdateUserProfileRequest = {
   displayName?: string;
+};
+
+export type UploadUserAvatarRequest = {
+  originalName: string;
+  mimeType: string;
+  contentBase64: string;
 };
 
 export type UpdateUserPasswordRequest = {

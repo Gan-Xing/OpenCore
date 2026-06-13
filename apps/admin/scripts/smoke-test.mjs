@@ -245,8 +245,11 @@ if (
   !authService.includes('queryCurrentOpenCoreUser') ||
   !authService.includes('getOpenCoreUserProfile') ||
   !authService.includes('updateOpenCoreUserProfile') ||
+  !authService.includes('updateOpenCoreUserAvatar') ||
+  !authService.includes('deleteOpenCoreUserAvatar') ||
   !authService.includes('updateOpenCoreUserPassword') ||
-  !authService.includes('getRequiredAdminToken')
+  !authService.includes('getRequiredAdminToken') ||
+  !authService.includes('avatar: user.avatarUrl')
 ) {
   throw new Error(
     'Admin auth service must use @opencore/sdk for login, current user and profile.',
@@ -672,7 +675,15 @@ if (
 if (
   !profilePage.includes('getOpenCoreUserProfile') ||
   !profilePage.includes('updateOpenCoreUserProfile') ||
+  !profilePage.includes('updateOpenCoreUserAvatar') ||
+  !profilePage.includes('deleteOpenCoreUserAvatar') ||
   !profilePage.includes('updateOpenCoreUserPassword') ||
+  !profilePage.includes('Upload avatar') ||
+  !profilePage.includes('Remove avatar') ||
+  !profilePage.includes('Avatar updated.') ||
+  !profilePage.includes('Avatar removed.') ||
+  !profilePage.includes('avatarUrl') ||
+  !profilePage.includes('AVATAR_ACCEPT') ||
   !profilePage.includes('Display name') ||
   !profilePage.includes('Change password') ||
   !profilePage.includes('Current password') ||

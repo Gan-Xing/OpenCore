@@ -13,7 +13,25 @@ import type {
 import { verifySystemUserPassword } from './system-user.password';
 import type { SystemUserRecord } from './system-user.records';
 
-export type SystemUserSummaryRecord = Omit<SystemUserRecord, 'passwordHash'>;
+export type SystemUserSummaryRecord = Omit<
+  SystemUserRecord,
+  'avatarStorageKey' | 'passwordHash'
+>;
+export type SystemUserAvatarRecord = Pick<
+  SystemUserRecord,
+  | 'avatarMimeType'
+  | 'avatarSizeBytes'
+  | 'avatarStorageKey'
+  | 'avatarUpdatedAt'
+  | 'avatarUrl'
+>;
+export type SystemUserAvatarUpdateInput = {
+  avatarUrl: string;
+  avatarStorageKey: string;
+  avatarMimeType: string;
+  avatarSizeBytes: number;
+  avatarUpdatedAt: string;
+};
 export type SystemUserOptionRecord = Pick<
   SystemUserSummaryRecord,
   'deptId' | 'displayName' | 'id' | 'postCodes' | 'username'
@@ -84,6 +102,8 @@ export abstract class SystemUserRepository {
 
   abstract getUser(id: string): Promise<SystemUserSummaryRecord>;
 
+  abstract getUserAvatar(id: string): Promise<SystemUserAvatarRecord>;
+
   abstract createUser(body: CreateUserDto): Promise<SystemUserSummaryRecord>;
 
   abstract updateUser(
@@ -100,6 +120,13 @@ export abstract class SystemUserRepository {
     id: string,
     body: UpdateUserPasswordDto,
   ): Promise<SystemUserSummaryRecord>;
+
+  abstract updateUserAvatar(
+    id: string,
+    input: SystemUserAvatarUpdateInput,
+  ): Promise<SystemUserSummaryRecord>;
+
+  abstract clearUserAvatar(id: string): Promise<SystemUserSummaryRecord>;
 
   abstract deleteUser(id: string): Promise<{ deleted: true }>;
 
@@ -248,6 +275,10 @@ export function cloneSystemUserSummary(
     roleCodes: [...user.roleCodes],
     deptId: user.deptId,
     postCodes: [...user.postCodes],
+    avatarUrl: user.avatarUrl,
+    avatarMimeType: user.avatarMimeType,
+    avatarSizeBytes: user.avatarSizeBytes,
+    avatarUpdatedAt: user.avatarUpdatedAt,
     enabled: user.enabled,
     system: user.system,
   };

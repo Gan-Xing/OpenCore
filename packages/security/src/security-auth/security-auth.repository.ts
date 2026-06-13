@@ -5,6 +5,7 @@ export type SecurityAuthUserRecord = {
   passwordHash: string;
   roleCodes: readonly string[];
   enabled: boolean;
+  avatarUrl?: string;
 };
 
 export type SecurityLoginAttemptRecord = {

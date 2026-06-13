@@ -227,6 +227,48 @@
         "tags": ["Rbac", "Core Users"]
       }
     },
+    "/api/core/users/profile/avatar": {
+      "post": {
+        "operationId": "RbacController_uploadUserProfileAvatar",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UploadUserAvatarDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UserProfileDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Users"]
+      },
+      "delete": {
+        "operationId": "RbacController_deleteUserProfileAvatar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UserProfileDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Users"]
+      }
+    },
     "/api/core/users/profile/password": {
       "patch": {
         "operationId": "RbacController_updateUserProfilePassword",
@@ -251,6 +293,22 @@
             }
           }
         },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Users"]
+      }
+    },
+    "/api/core/users/{id}/avatar": {
+      "get": {
+        "operationId": "RbacController_getUserAvatar",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": { "200": { "description": "" } },
         "security": [{ "bearer": [] }],
         "tags": ["Rbac", "Core Users"]
       }
@@ -5274,7 +5332,8 @@
           "username": { "type": "string" },
           "displayName": { "type": "string" },
           "roleCodes": { "type": "array", "items": { "type": "string" } },
-          "permissionCodes": { "type": "array", "items": { "type": "string" } }
+          "permissionCodes": { "type": "array", "items": { "type": "string" } },
+          "avatarUrl": { "type": "string", "nullable": true }
         },
         "required": [
           "id",
@@ -5303,6 +5362,10 @@
           "roleCodes": { "type": "array", "items": { "type": "string" } },
           "deptId": { "type": "string", "nullable": true },
           "postCodes": { "type": "array", "items": { "type": "string" } },
+          "avatarUrl": { "type": "string", "nullable": true },
+          "avatarMimeType": { "type": "string", "nullable": true },
+          "avatarSizeBytes": { "type": "number", "nullable": true },
+          "avatarUpdatedAt": { "type": "string", "nullable": true },
           "enabled": { "type": "boolean" },
           "system": { "type": "boolean" }
         },
@@ -5347,6 +5410,10 @@
           "roleCodes": { "type": "array", "items": { "type": "string" } },
           "deptId": { "type": "string", "nullable": true },
           "postCodes": { "type": "array", "items": { "type": "string" } },
+          "avatarUrl": { "type": "string", "nullable": true },
+          "avatarMimeType": { "type": "string", "nullable": true },
+          "avatarSizeBytes": { "type": "number", "nullable": true },
+          "avatarUpdatedAt": { "type": "string", "nullable": true },
           "enabled": { "type": "boolean" },
           "system": { "type": "boolean" }
         },
@@ -5363,6 +5430,18 @@
       "UpdateUserProfileDto": {
         "type": "object",
         "properties": { "displayName": { "type": "string" } }
+      },
+      "UploadUserAvatarDto": {
+        "type": "object",
+        "properties": {
+          "originalName": { "type": "string", "example": "avatar.png" },
+          "mimeType": { "type": "string", "example": "image/png" },
+          "contentBase64": {
+            "type": "string",
+            "description": "Base64-encoded image bytes."
+          }
+        },
+        "required": ["originalName", "mimeType", "contentBase64"]
       },
       "UpdateUserPasswordDto": {
         "type": "object",
@@ -5421,6 +5500,10 @@
           "roleCodes": { "type": "array", "items": { "type": "string" } },
           "deptId": { "type": "string", "nullable": true },
           "postCodes": { "type": "array", "items": { "type": "string" } },
+          "avatarUrl": { "type": "string", "nullable": true },
+          "avatarMimeType": { "type": "string", "nullable": true },
+          "avatarSizeBytes": { "type": "number", "nullable": true },
+          "avatarUpdatedAt": { "type": "string", "nullable": true },
           "enabled": { "type": "boolean" },
           "system": { "type": "boolean" },
           "revokedSessionCount": { "type": "number" }

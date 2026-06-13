@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { AuditLoginLogModule } from '@opencore/audit';
 import { DatabaseModule } from '@opencore/database';
+import { FileModule } from '@opencore/file';
 import { OnlineUserModule } from '@opencore/online-user';
 import {
   SecurityAuthUserRepository,
@@ -27,6 +28,7 @@ import { RbacRepository } from './rbac.repository';
   imports: [
     DatabaseModule,
     AuditLoginLogModule,
+    FileModule,
     OnlineUserModule,
     SystemUserModule,
     SystemRoleModule,

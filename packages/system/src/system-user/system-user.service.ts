@@ -15,6 +15,8 @@ import {
   normalizeResetUserPasswordInput,
   normalizeSetUserStatusInput,
   SystemUserRepository,
+  type SystemUserAvatarRecord,
+  type SystemUserAvatarUpdateInput,
   type SystemUserExportPreview,
   type SystemUserOptionRecord,
   type SystemUserSummaryRecord,
@@ -36,6 +38,10 @@ export class SystemUserService {
 
   getUser(id: string): Promise<SystemUserSummaryRecord> {
     return this.repository.getUser(id);
+  }
+
+  getUserAvatar(id: string): Promise<SystemUserAvatarRecord> {
+    return this.repository.getUserAvatar(id);
   }
 
   createUser(body: CreateUserDto): Promise<SystemUserSummaryRecord> {
@@ -61,6 +67,17 @@ export class SystemUserService {
     body: UpdateUserPasswordDto,
   ): Promise<SystemUserSummaryRecord> {
     return this.repository.updateUserPassword(id, body);
+  }
+
+  updateUserAvatar(
+    id: string,
+    input: SystemUserAvatarUpdateInput,
+  ): Promise<SystemUserSummaryRecord> {
+    return this.repository.updateUserAvatar(id, input);
+  }
+
+  clearUserAvatar(id: string): Promise<SystemUserSummaryRecord> {
+    return this.repository.clearUserAvatar(id);
   }
 
   async setUserStatus(

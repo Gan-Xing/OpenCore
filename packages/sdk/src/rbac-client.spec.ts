@@ -20,6 +20,15 @@ describe('createRbacClient', () => {
     await client.updateUserProfile('token', {
       displayName: 'Profile Name',
     });
+    await client.updateUserAvatar('token', {
+      originalName: 'avatar.png',
+      mimeType: 'image/png',
+      contentBase64: 'iVBORw0KGgo=',
+    });
+    await client.deleteUserAvatar('token');
+    expect(client.getUserAvatarPath('user admin')).toBe(
+      '/core/users/user%20admin/avatar',
+    );
     await client.updateUserPassword('token', {
       oldPassword: 'old-password',
       newPassword: 'new-password',
@@ -102,6 +111,16 @@ describe('createRbacClient', () => {
       {
         path: '/core/users/profile',
         method: 'PATCH',
+        token: 'token',
+      },
+      {
+        path: '/core/users/profile/avatar',
+        method: 'POST',
+        token: 'token',
+      },
+      {
+        path: '/core/users/profile/avatar',
+        method: 'DELETE',
         token: 'token',
       },
       {

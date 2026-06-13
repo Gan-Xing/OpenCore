@@ -1,16 +1,30 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
+  NotFoundException,
   Param,
   Patch,
   Post,
   Query,
   Req,
+  Res,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOkResponse,
+  ApiProduces,
+  ApiTags,
+} from '@nestjs/swagger';
+import {
+  assertStorageKeyAllowed,
+  FileStorageService,
+  normalizeObjectPrefix,
+  sanitizeFileName,
+} from '@opencore/file';
 import { OnlineUserService } from '@opencore/online-user';
 import {
   SystemMenuService,
@@ -38,6 +52,7 @@ import {
   SetUserStatusDto,
   UpdateUserPasswordDto,
   UpdateUserProfileDto,
+  UploadUserAvatarDto,
   UpdateMenuDto,
   UpdatePermissionDto,
   UpdateRoleDto,
@@ -60,6 +75,28 @@ type RequestWithUser = {
   };
 };
 
+type AvatarResponse = {
+  send(body: Buffer): void;
+  set(headers: Record<string, string>): void;
+};
+
+type NormalizedAvatarUpload = {
+  body: Buffer;
+  avatarMimeType: string;
+  avatarSizeBytes: number;
+  avatarStorageKey: string;
+  avatarUpdatedAt: string;
+  avatarUrl: string;
+};
+
+const AVATAR_MAX_BYTES = 1_048_576;
+const ALLOWED_AVATAR_MIME_TYPES = new Set([
+  'image/gif',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+]);
+
 @ApiBearerAuth()
 @Controller('core')
 export class RbacController {
@@ -69,6 +106,7 @@ export class RbacController {
     private readonly roles: SystemRoleService,
     private readonly menus: SystemMenuService,
     private readonly onlineUsers: OnlineUserService,
+    private readonly files: FileStorageService,
   ) {}
 
   @Get('users')
@@ -118,6 +156,56 @@ export class RbacController {
     return this.users.updateUserProfile(getAuthenticatedUserId(request), body);
   }
 
+  @Post('users/profile/avatar')
+  @ApiTags('Core Users')
+  @RequireAuthenticated()
+  @ApiOkResponse({ type: UserProfileDto })
+  async uploadUserProfileAvatar(
+    @Req() request: RequestWithUser,
+    @Body() body: UploadUserAvatarDto,
+  ): Promise<UserProfileDto> {
+    const userId = getAuthenticatedUserId(request);
+    const previousAvatar = await this.users.getUserAvatar(userId);
+    const avatar = normalizeAvatarUpload(userId, body);
+
+    await this.files.storeObjectAtKey({
+      key: avatar.avatarStorageKey,
+      body: avatar.body,
+      contentType: avatar.avatarMimeType,
+      uploadedBy: userId,
+    });
+
+    try {
+      const profile = await this.users.updateUserAvatar(userId, {
+        avatarUrl: avatar.avatarUrl,
+        avatarStorageKey: avatar.avatarStorageKey,
+        avatarMimeType: avatar.avatarMimeType,
+        avatarSizeBytes: avatar.avatarSizeBytes,
+        avatarUpdatedAt: avatar.avatarUpdatedAt,
+      });
+      await this.deleteStoredAvatarIfPresent(previousAvatar.avatarStorageKey);
+      return profile;
+    } catch (error) {
+      await this.deleteStoredAvatarIfPresent(avatar.avatarStorageKey);
+      throw error;
+    }
+  }
+
+  @Delete('users/profile/avatar')
+  @ApiTags('Core Users')
+  @RequireAuthenticated()
+  @ApiOkResponse({ type: UserProfileDto })
+  async deleteUserProfileAvatar(
+    @Req() request: RequestWithUser,
+  ): Promise<UserProfileDto> {
+    const userId = getAuthenticatedUserId(request);
+    const previousAvatar = await this.users.getUserAvatar(userId);
+    const profile = await this.users.clearUserAvatar(userId);
+
+    await this.deleteStoredAvatarIfPresent(previousAvatar.avatarStorageKey);
+    return profile;
+  }
+
   @Patch('users/profile/password')
   @ApiTags('Core Users')
   @RequireAuthenticated()
@@ -140,6 +228,40 @@ export class RbacController {
       changed: true,
       revokedSessionCount,
     };
+  }
+
+  @Get('users/:id/avatar')
+  @ApiTags('Core Users')
+  @ApiProduces('image/gif', 'image/jpeg', 'image/png', 'image/webp')
+  async getUserAvatar(
+    @Param('id') id: string,
+    @Res() response: AvatarResponse,
+  ): Promise<void> {
+    const user = await this.users.getUser(id);
+
+    if (!user.enabled) {
+      throw new NotFoundException(`User avatar not found: ${id}`);
+    }
+
+    const avatar = await this.users.getUserAvatar(id);
+
+    if (!avatar.avatarStorageKey || !avatar.avatarMimeType) {
+      throw new NotFoundException(`User avatar not found: ${id}`);
+    }
+
+    const body = await this.files.getObject(avatar.avatarStorageKey);
+
+    if (!body) {
+      throw new NotFoundException(`User avatar not found: ${id}`);
+    }
+
+    response.set({
+      'Cache-Control': 'public, max-age=300',
+      'Content-Length': String(body.byteLength),
+      'Content-Type': avatar.avatarMimeType,
+      'X-OpenCore-Avatar-User': id,
+    });
+    response.send(body);
   }
 
   @Get('users/:id')
@@ -505,6 +627,16 @@ export class RbacController {
     return this.menus.deleteMenu(key);
   }
 
+  private async deleteStoredAvatarIfPresent(
+    storageKey: string | undefined,
+  ): Promise<void> {
+    if (!storageKey) {
+      return;
+    }
+
+    await this.files.deleteObject(storageKey).catch(() => undefined);
+  }
+
   private async revokeActiveSessionsForRole(
     roleCode: string,
     actor: string,
@@ -586,6 +718,154 @@ function getAuthenticatedUserId(request: RequestWithUser): string {
   }
 
   return userId;
+}
+
+function normalizeAvatarUpload(
+  userId: string,
+  body: UploadUserAvatarDto,
+): NormalizedAvatarUpload {
+  const originalName = normalizeAvatarOriginalName(body?.originalName);
+  const avatarMimeType = normalizeAvatarMimeType(body?.mimeType);
+  const avatarBody = decodeAvatarBase64(body?.contentBase64);
+
+  if (avatarBody.byteLength > AVATAR_MAX_BYTES) {
+    throw new BadRequestException(
+      `User avatar must be ${AVATAR_MAX_BYTES} bytes or smaller.`,
+    );
+  }
+
+  assertAvatarMagic(avatarMimeType, avatarBody);
+  const avatarUpdatedAt = new Date().toISOString();
+  const avatarStorageKey = createAvatarStorageKey(
+    userId,
+    originalName,
+    avatarUpdatedAt,
+  );
+
+  return {
+    body: avatarBody,
+    avatarMimeType,
+    avatarSizeBytes: avatarBody.byteLength,
+    avatarStorageKey,
+    avatarUpdatedAt,
+    avatarUrl: createAvatarUrl(userId, avatarUpdatedAt),
+  };
+}
+
+function normalizeAvatarOriginalName(value: unknown): string {
+  if (typeof value !== 'string') {
+    throw new BadRequestException('User avatar originalName must be a string.');
+  }
+
+  const normalized = value.trim();
+
+  if (
+    !normalized ||
+    normalized.includes('/') ||
+    normalized.includes('\\') ||
+    normalized.includes('\0')
+  ) {
+    throw new BadRequestException(
+      'User avatar originalName must be a plain file name.',
+    );
+  }
+
+  return normalized;
+}
+
+function normalizeAvatarMimeType(value: unknown): string {
+  if (typeof value !== 'string') {
+    throw new BadRequestException('User avatar mimeType must be a string.');
+  }
+
+  const normalized = value.trim().toLowerCase();
+
+  if (!ALLOWED_AVATAR_MIME_TYPES.has(normalized)) {
+    throw new BadRequestException(
+      'User avatar mimeType must be image/png, image/jpeg, image/webp or image/gif.',
+    );
+  }
+
+  return normalized;
+}
+
+function decodeAvatarBase64(value: unknown): Buffer {
+  if (typeof value !== 'string') {
+    throw new BadRequestException(
+      'User avatar contentBase64 must be a string.',
+    );
+  }
+
+  const normalized = value.trim();
+
+  if (
+    !normalized ||
+    /\s/.test(normalized) ||
+    normalized.length % 4 !== 0 ||
+    !/^[A-Za-z0-9+/]+={0,2}$/.test(normalized)
+  ) {
+    throw new BadRequestException(
+      'User avatar contentBase64 must be valid base64.',
+    );
+  }
+
+  const body = Buffer.from(normalized, 'base64');
+  const canonical = body.toString('base64');
+
+  if (
+    body.byteLength === 0 ||
+    canonical.replace(/=+$/, '') !== normalized.replace(/=+$/, '')
+  ) {
+    throw new BadRequestException(
+      'User avatar contentBase64 must be valid base64.',
+    );
+  }
+
+  return body;
+}
+
+function assertAvatarMagic(mimeType: string, body: Buffer): void {
+  const valid =
+    (mimeType === 'image/png' && startsWithHex(body, '89504e470d0a1a0a')) ||
+    (mimeType === 'image/jpeg' && startsWithHex(body, 'ffd8ff')) ||
+    (mimeType === 'image/gif' &&
+      (body.toString('ascii', 0, 6) === 'GIF87a' ||
+        body.toString('ascii', 0, 6) === 'GIF89a')) ||
+    (mimeType === 'image/webp' &&
+      body.byteLength >= 12 &&
+      body.toString('ascii', 0, 4) === 'RIFF' &&
+      body.toString('ascii', 8, 12) === 'WEBP');
+
+  if (!valid) {
+    throw new BadRequestException(
+      'User avatar bytes must match the declared image mimeType.',
+    );
+  }
+}
+
+function startsWithHex(body: Buffer, hex: string): boolean {
+  const expected = Buffer.from(hex, 'hex');
+
+  return body.subarray(0, expected.byteLength).equals(expected);
+}
+
+function createAvatarStorageKey(
+  userId: string,
+  originalName: string,
+  updatedAt: string,
+): string {
+  const key = `${normalizeObjectPrefix('runtime/user-avatars')}${sanitizeFileName(
+    userId,
+  )}/${sanitizeFileName(updatedAt)}-${sanitizeFileName(originalName)}`;
+
+  assertStorageKeyAllowed(key);
+  return key;
+}
+
+function createAvatarUrl(userId: string, updatedAt: string): string {
+  return `/api/core/users/${encodeURIComponent(
+    userId,
+  )}/avatar?v=${encodeURIComponent(updatedAt)}`;
 }
 
 function findChangedRoleAssignmentUsernames(

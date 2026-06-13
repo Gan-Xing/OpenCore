@@ -21,6 +21,8 @@ import {
   SystemUserRepository,
   toSystemUserOptionRecord,
   type SystemUserListQuery,
+  type SystemUserAvatarRecord,
+  type SystemUserAvatarUpdateInput,
   type SystemUserOptionRecord,
   type SystemUserSummaryRecord,
 } from './system-user.repository';
@@ -74,6 +76,18 @@ export class SeedSystemUserRepository extends SystemUserRepository {
 
   async getUser(id: string): Promise<SystemUserSummaryRecord> {
     return cloneSystemUserSummary(this.findMutableUserById(id));
+  }
+
+  async getUserAvatar(id: string): Promise<SystemUserAvatarRecord> {
+    const user = this.findMutableUserById(id);
+
+    return {
+      avatarUrl: user.avatarUrl,
+      avatarStorageKey: user.avatarStorageKey,
+      avatarMimeType: user.avatarMimeType,
+      avatarSizeBytes: user.avatarSizeBytes,
+      avatarUpdatedAt: user.avatarUpdatedAt,
+    };
   }
 
   async createUser(body: CreateUserDto): Promise<SystemUserSummaryRecord> {
@@ -153,6 +167,33 @@ export class SeedSystemUserRepository extends SystemUserRepository {
 
     assertSystemUserPasswordChangeAllowed(user.passwordHash, input);
     user.passwordHash = hashSystemUserPassword(input.newPassword);
+
+    return cloneSystemUserSummary(user);
+  }
+
+  async updateUserAvatar(
+    id: string,
+    input: SystemUserAvatarUpdateInput,
+  ): Promise<SystemUserSummaryRecord> {
+    const user = this.findMutableUserById(id);
+
+    user.avatarUrl = input.avatarUrl;
+    user.avatarStorageKey = input.avatarStorageKey;
+    user.avatarMimeType = input.avatarMimeType;
+    user.avatarSizeBytes = input.avatarSizeBytes;
+    user.avatarUpdatedAt = input.avatarUpdatedAt;
+
+    return cloneSystemUserSummary(user);
+  }
+
+  async clearUserAvatar(id: string): Promise<SystemUserSummaryRecord> {
+    const user = this.findMutableUserById(id);
+
+    user.avatarUrl = undefined;
+    user.avatarStorageKey = undefined;
+    user.avatarMimeType = undefined;
+    user.avatarSizeBytes = undefined;
+    user.avatarUpdatedAt = undefined;
 
     return cloneSystemUserSummary(user);
   }

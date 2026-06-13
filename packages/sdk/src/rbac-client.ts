@@ -23,6 +23,7 @@ import type {
   UpdateMenuRequest,
   UpdatePermissionRequest,
   UpdateRoleRequest,
+  UploadUserAvatarRequest,
   UpdateUserProfileRequest,
   UpdateUserRequest,
   UserMutationSummary,
@@ -61,6 +62,12 @@ export type RbacClient = {
     token: string,
     body: UpdateUserProfileRequest,
   ) => Promise<UserProfileSummary>;
+  updateUserAvatar: (
+    token: string,
+    body: UploadUserAvatarRequest,
+  ) => Promise<UserProfileSummary>;
+  deleteUserAvatar: (token: string) => Promise<UserProfileSummary>;
+  getUserAvatarPath: (id: string) => `/core/users/${string}/avatar`;
   updateUserPassword: (
     token: string,
     body: UpdateUserPasswordRequest,
@@ -177,6 +184,18 @@ export function createRbacClient(request: SdkRequest): RbacClient {
         body,
         token,
       }),
+    updateUserAvatar: (token, body) =>
+      request<UserProfileSummary>('/core/users/profile/avatar', {
+        method: 'POST',
+        body,
+        token,
+      }),
+    deleteUserAvatar: (token) =>
+      request<UserProfileSummary>('/core/users/profile/avatar', {
+        method: 'DELETE',
+        token,
+      }),
+    getUserAvatarPath: (id) => `/core/users/${encodeURIComponent(id)}/avatar`,
     updateUserPassword: (token, body) =>
       request<UserPasswordMutationSummary>('/core/users/profile/password', {
         method: 'PATCH',

@@ -40,6 +40,7 @@ type PrismaUserWithRoles = {
   passwordHash: string;
   deptId?: string | null;
   enabled: boolean;
+  avatarUrl?: string | null;
   roles: Array<{
     role: {
       code: string;
@@ -298,6 +299,7 @@ function toUserRecord(user: PrismaUserWithRoles): RbacUserRecord {
       .map((userRole) => userRole.role.code)
       .sort(),
     enabled: user.enabled,
+    avatarUrl: user.avatarUrl ?? undefined,
   };
 }
 

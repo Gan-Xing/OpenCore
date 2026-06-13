@@ -41,11 +41,15 @@ const expectedPermissions = {
 } as const;
 
 const expectedAuthenticatedOnly = [
+  'deleteUserProfileAvatar',
   'getUserProfile',
   'listUserOptions',
+  'uploadUserProfileAvatar',
   'updateUserProfile',
   'updateUserProfilePassword',
 ];
+
+const expectedPublic = ['getUserAvatar'];
 
 describe('RbacController permission matrix', () => {
   it('guards every S6 RBAC route with registry permission codes', () => {
@@ -69,6 +73,23 @@ describe('RbacController permission matrix', () => {
           RbacController.prototype[methodName as keyof RbacController],
         ),
       ).toBe(true);
+      expect(
+        Reflect.getMetadata(
+          REQUIRED_PERMISSIONS_KEY,
+          RbacController.prototype[methodName as keyof RbacController],
+        ),
+      ).toBeUndefined();
+    }
+  });
+
+  it('keeps public avatar preview free of management permission coupling', () => {
+    for (const methodName of expectedPublic) {
+      expect(
+        Reflect.getMetadata(
+          REQUIRE_AUTHENTICATED_KEY,
+          RbacController.prototype[methodName as keyof RbacController],
+        ),
+      ).toBeUndefined();
       expect(
         Reflect.getMetadata(
           REQUIRED_PERMISSIONS_KEY,

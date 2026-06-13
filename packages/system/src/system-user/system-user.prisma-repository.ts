@@ -25,6 +25,8 @@ import {
   normalizeUpdateSystemUserProfileInput,
   SystemUserRepository,
   toSystemUserOptionRecord,
+  type SystemUserAvatarRecord,
+  type SystemUserAvatarUpdateInput,
   type SystemUserListQuery,
   type SystemUserOptionRecord,
   type SystemUserSummaryRecord,
@@ -37,6 +39,11 @@ type PrismaUserWithRoles = {
   passwordHash: string;
   deptId?: string | null;
   enabled: boolean;
+  avatarUrl?: string | null;
+  avatarStorageKey?: string | null;
+  avatarMimeType?: string | null;
+  avatarSizeBytes?: number | null;
+  avatarUpdatedAt?: Date | null;
   roles: Array<{ role: { code: string } }>;
   posts: Array<{ post: { code: string } }>;
 };
@@ -87,6 +94,12 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
 
   async getUser(id: string): Promise<SystemUserSummaryRecord> {
     return toSystemUserSummaryRecord(await this.findUserEntityById(id));
+  }
+
+  async getUserAvatar(id: string): Promise<SystemUserAvatarRecord> {
+    const user = await this.findUserEntityById(id);
+
+    return toSystemUserAvatarRecord(user);
   }
 
   async createUser(body: CreateUserDto): Promise<SystemUserSummaryRecord> {
@@ -244,6 +257,65 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
       where: { id },
       data: {
         passwordHash: hashSystemUserPassword(input.newPassword),
+      },
+      include: {
+        roles: {
+          include: {
+            role: true,
+          },
+        },
+        posts: {
+          include: {
+            post: true,
+          },
+        },
+      },
+    });
+
+    return toSystemUserSummaryRecord(user);
+  }
+
+  async updateUserAvatar(
+    id: string,
+    input: SystemUserAvatarUpdateInput,
+  ): Promise<SystemUserSummaryRecord> {
+    await this.findUserEntityById(id);
+    const user = await this.prisma.user.update({
+      where: { id },
+      data: {
+        avatarUrl: input.avatarUrl,
+        avatarStorageKey: input.avatarStorageKey,
+        avatarMimeType: input.avatarMimeType,
+        avatarSizeBytes: input.avatarSizeBytes,
+        avatarUpdatedAt: new Date(input.avatarUpdatedAt),
+      },
+      include: {
+        roles: {
+          include: {
+            role: true,
+          },
+        },
+        posts: {
+          include: {
+            post: true,
+          },
+        },
+      },
+    });
+
+    return toSystemUserSummaryRecord(user);
+  }
+
+  async clearUserAvatar(id: string): Promise<SystemUserSummaryRecord> {
+    await this.findUserEntityById(id);
+    const user = await this.prisma.user.update({
+      where: { id },
+      data: {
+        avatarUrl: null,
+        avatarStorageKey: null,
+        avatarMimeType: null,
+        avatarSizeBytes: null,
+        avatarUpdatedAt: null,
       },
       include: {
         roles: {
@@ -481,8 +553,24 @@ function toSystemUserSummaryRecord(
     roleCodes: user.roles.map((userRole) => userRole.role.code).sort(),
     deptId: user.deptId ?? undefined,
     postCodes: user.posts.map((userPost) => userPost.post.code).sort(),
+    avatarUrl: user.avatarUrl ?? undefined,
+    avatarMimeType: user.avatarMimeType ?? undefined,
+    avatarSizeBytes: user.avatarSizeBytes ?? undefined,
+    avatarUpdatedAt: user.avatarUpdatedAt?.toISOString(),
     enabled: user.enabled,
     system: isSystemUser(user),
+  };
+}
+
+function toSystemUserAvatarRecord(
+  user: PrismaUserWithRoles,
+): SystemUserAvatarRecord {
+  return {
+    avatarUrl: user.avatarUrl ?? undefined,
+    avatarStorageKey: user.avatarStorageKey ?? undefined,
+    avatarMimeType: user.avatarMimeType ?? undefined,
+    avatarSizeBytes: user.avatarSizeBytes ?? undefined,
+    avatarUpdatedAt: user.avatarUpdatedAt?.toISOString(),
   };
 }
 
