@@ -3,8 +3,8 @@
 Date: 2026-06-13
 Repository: `Gan-Xing/OpenCore`
 Default branch: `main`
-Latest observed feature commit: `f4ecd68 feat(auth): add self logout session revocation / 新增自助登出会话撤销`
-Latest deployed feature commit: `f4ecd68 feat(auth): add self logout session revocation / 新增自助登出会话撤销`
+Latest observed feature commit: `bfd2454 feat(login-log): record forced logout entries / 记录强退登出日志`
+Latest deployed feature commit: `bfd2454 feat(login-log): record forced logout entries / 记录强退登出日志`
 Latest deployed hardening commit: `4df5dd1 fix(system): satisfy xlsx export lint guard / 修复 XLSX 导出 lint 守卫`
 
 ## One-sentence Goal
@@ -116,6 +116,7 @@ productization waterline completion; see
 - Round 48 `core.login-log` cleanup maintenance stage 5
 - Round 49 `core.config/security-auth` configurable attempt limit stage 9
 - Round 50 `core.login-log/security-auth` self logout revocation stage 6
+- Round 51 `core.login-log/monitor.online-user` forced logout logging stage 7
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -656,6 +657,24 @@ token 并跳转登录页；Admin 静态 smoke 防止退出逻辑退回到只删�
 不等于 IP 归属地、移动/SMS/social 登录、force-logout login-log 记录或登录日志页终止会话
 已经完成。
 
+Round 51 继续补齐 `core.login-log/monitor.online-user` 队列，把 Yudao
+OAuth2 token 管理里的强制删除 access token 记录 `LOGOUT_DELETE`，以及 RuoYi 在线用户
+`forceLogout` 删除登录 token 的操作语义，转译为 OpenCore 显式在线用户强退日志闭环。
+OpenCore 不把所有内部 session invalidation 都写成强退日志，避免角色/用户变更造成登录日志污染；
+本轮只在 Monitor Online Users 的显式单个/批量 kick-out API 成功后记录
+`logType=logout.force`、`result=success`。`OperationsModule` 接入 `AuditLoginLogModule`，
+`OperationsController` 在 `POST /api/monitor/online-users/:id/kick-out` 和
+`POST /api/monitor/online-users/kick-out` 成功返回后按目标 session 的 username/IP/userAgent
+写登录日志，并继续把结构化 actor/reason 保存在 online-user 的
+`revokedBy/revokedReason`；当前登录日志 schema 暂用 `failureReason` 承载
+`forced by actor: reason` 文本。固定 smoke、部署 smoke 和公网 smoke 均验证
+`core.login-log.logout-force-recorded`：强退真实第二个 admin token 后，该 token 再访问
+`/auth/me` 返回 401，并能按 `logType=logout.force` 查到成功记录。公网 Admin
+Login Logs chunk `p__Security__LoginLogs.1647b5aa.async.js` 已验证包含
+`logout.force` 和 `Forced logout` 标记。注意：这轮关闭的是显式在线用户强退的
+`logout.force` 登录日志，不等于 IP 归属地、mobile/SMS/social 登录、登录日志表结构化
+actor/reason 字段或从 Login Logs 页面直接终止会话已经完成。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -668,7 +687,7 @@ The productization waterline now classifies:
 - First loop, enhance: Round 1 `core.notice`, Round 2/27/43 `core.dept`,
   Round 3/22/25/42 `core.post`,
   Round 9/24/37/38/39/40/44/46/49 `core.config`,
-  Round 11/26/45/47/48/49/50 `core.login-log`.
+  Round 11/26/45/47/48/49/50/51 `core.login-log`.
 - Thin, rework: none after Round 16.
 
 The P0 remediation queue from the post-Round 13 re-audit is now clear. The next
@@ -699,8 +718,10 @@ finds another blocker:
    Admin cleanup actions. Round 49 closed the configurable failed-attempt
    threshold by driving lockout from `auth.login.maxFailedAttempts`. Round 50
    closed current-user self logout logging and real token/session revocation.
-   Remaining work is IP/location enrichment where feasible, force-logout
-   login-log integration and mobile/SMS/social login logging stages.
+   Round 51 closed explicit online-user force logout login-log recording.
+   Remaining work is IP/location enrichment where feasible, mobile/SMS/social
+   login logging stages and any future structured actor/reason fields for
+   logout records.
 3. `core.dept`: Round 27 closed the enabled-department simple-list option
    source consumed by Admin Users; Round 43 closed user-bound department
    deletion protection and preserved user `deptId` on failed delete. Remaining

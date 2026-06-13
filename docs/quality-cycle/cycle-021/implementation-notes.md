@@ -4171,3 +4171,99 @@ Against public endpoints after deploy:
   `f4ecd68 feat(auth): add self logout session revocation / 新增自助登出会话撤销`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 51 Capability
+
+Capability: `core.login-log/monitor.online-user` forced logout logging.
+
+Goal: make explicit Monitor Online Users kick-out create filterable
+`logout.force` login-log rows, aligned with RuoYi online-user force logout and
+Yudao admin token deletion, while avoiding false forced-logout rows from
+internal RBAC/user session invalidation.
+
+## Round 51 Implemented
+
+- Rechecked RuoYi online-user `forceLogout` and Yudao OAuth2 token deletion:
+  both treat forced token/session removal as an explicit operator action.
+- Added `AuditLoginLogModule` to `OperationsModule`.
+- Injected `AuditLoginLogService` into `OperationsController`.
+- Recorded successful `logType=logout.force` rows after explicit single
+  `POST /api/monitor/online-users/:id/kick-out`.
+- Recorded successful `logout.force` rows for each returned item after batch
+  `POST /api/monitor/online-users/kick-out`.
+- Used the target session username, IP and user agent for the login-log row.
+- Kept structured actor/reason on online-user
+  `revokedBy/revokedReason`; current login-log schema carries the same context
+  as `failureReason` text until a later structured actor/reason field is
+  admitted.
+- Kept logging at the controller boundary so role/user mutation session
+  invalidation does not create false `logout.force` login-log rows.
+- Extended `tools/scripts/smoke-core-online-user.mjs` with
+  `core.login-log.logout-force-recorded`, proving the kicked token returns
+  401 and a filterable forced logout row exists.
+- Extended Admin static smoke to require `logout.force` and `Forced logout`
+  markers in the Login Logs page.
+
+## Round 51 Verification
+
+- `node --check tools/scripts/smoke-core-online-user.mjs`
+- `node --check apps/admin/scripts/smoke-test.mjs`
+- `pnpm nx test api --testFile=operations.permission-matrix.spec.ts`
+- `pnpm nx test online-user`
+- `pnpm nx test admin`
+- `pnpm prisma:seed`
+- `pnpm nx test audit`
+- `pnpm openapi:export`
+- `pnpm openapi:check`
+- `pnpm sdk:check`
+- `pnpm nx typecheck api`
+- `pnpm nx typecheck audit`
+- `pnpm nx typecheck admin`
+- `pnpm smoke:api:local`
+- `pnpm format:check`
+- `pnpm lint`
+- `pnpm deploy:opencore`
+
+`pnpm smoke:api:local` passed on fixed port `39173`, including
+`core.login-log.logout-force-recorded`.
+
+`pnpm deploy:opencore` passed, deploying API/Admin on fixed ports
+`39172`/`39174`; deploy smoke included Admin same-origin login,
+duplicate-prefix login compatibility, public bundle checks and the online-user
+forced logout logging guard.
+
+The first `pnpm nx test audit` run failed because the prior login-log
+clean-all smoke had removed seeded login-log rows expected by existing audit
+tests. After `pnpm prisma:seed`, `pnpm nx test audit` passed. This is a
+test-data precondition/flaky-task note, not a Round 51 product failure.
+
+`pnpm lint` passed with existing warnings in
+`packages/system/src/system-user/system-user.prisma-repository.ts` and
+`apps/admin/src/pages/shared/CurrentPageExportButton.tsx`; no Round 51 lint
+errors were introduced.
+
+## Round 51 Public Verification
+
+Against public endpoints after deploy:
+
+- Public API: `http://144.217.243.161:39172`
+- Public Admin: `http://144.217.243.161:39174`
+- Admin main bundle: `umi.ae1b5b3e.js`
+- Login Logs chunk: `p__Security__LoginLogs.1647b5aa.async.js`
+- Public API online-user smoke passed:
+  `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-online-user`.
+  Checks included `monitor.online-user.batch-kick-out`,
+  `core.login-log.logout-force-recorded`,
+  `monitor.online-user.revoked-token-rejected` and
+  `monitor.online-user.admin-session-preserved`.
+- Public Admin Login Logs chunk contains `logout.force` and `Forced logout`.
+- `pnpm deploy:opencore` also verified Admin same-origin `/api/auth/login`,
+  duplicate `/api/api/auth/login`, public bundle API origin and retired
+  service-worker behavior.
+
+## Round 51 Commit Record
+
+- Feature commit:
+  `bfd2454 feat(login-log): record forced logout entries / 记录强退登出日志`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

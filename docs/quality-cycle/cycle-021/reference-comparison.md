@@ -1569,3 +1569,46 @@ Round 50 admits the current-user self logout stage:
 OpenCore does not claim IP location enrichment, force-logout login-log
 integration, mobile/SMS/social login recording or a Login Logs page action for
 terminating sessions in this round.
+
+## Round 51 Forced Logout Reference Shape
+
+RuoYi's online-user controller exposes a force logout operation that deletes
+the target login token from token storage and records the operation under a
+force business action. It treats online-user kick-out as an explicit operator
+action distinct from ordinary role/user mutation side effects.
+
+Yudao's OAuth2 token management exposes access-token deletion through the admin
+token surface. The auth service removes the token and records a
+`LOGOUT_DELETE` login-log entry, making forced token deletion queryable in the
+login-log audit surface.
+
+OpenCore already had:
+
+- explicit single and batch Monitor Online Users kick-out APIs;
+- real online-user session revocation enforced by bearer authentication;
+- `logout.force` in the login-log type model and Admin Login Logs filter;
+- current-user `logout.self` logging from Round 50;
+- internal RBAC/user mutation session invalidation for role/user changes.
+
+Round 51 admits the explicit force-logout logging stage:
+
+- keep session revocation behavior owned by `@opencore/online-user`;
+- wire `OperationsModule` to `AuditLoginLogModule`;
+- after successful `POST /api/monitor/online-users/:id/kick-out`, record one
+  successful `logType=logout.force` login-log row for the target session;
+- after successful `POST /api/monitor/online-users/kick-out`, record one
+  successful `logout.force` row for each returned target session;
+- use the target session username, IP and user agent for the login-log row;
+- keep structured operator context in online-user
+  `revokedBy/revokedReason`, while temporarily carrying the same text in the
+  login-log `failureReason` field until a dedicated actor/reason schema is
+  admitted;
+- add fixed-port, deploy and public smoke proving a kicked token returns 401
+  and the `logout.force` row is filterable.
+
+OpenCore deliberately does not record every internal session invalidation as
+`logout.force`; role/user mutations can revoke sessions as a security effect
+without being operator online-user kick-out events. This round also does not
+claim IP location enrichment, mobile/SMS/social login logging, structured
+login-log actor/reason columns or a Login Logs page action for terminating
+sessions.

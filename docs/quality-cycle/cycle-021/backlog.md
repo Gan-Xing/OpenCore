@@ -1509,6 +1509,41 @@ session and records `logout.self`.
       fixed-port smoke, deployment and public URL verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 51: core.login-log/monitor.online-user Forced Logout Logging
+
+Why this slice: OpenCore already had explicit online-user single/batch
+kick-out, real token revocation and a `logout.force` login-log type, but
+operator kick-out only revoked the session. Yudao records a forced-delete
+logout log when an access token is deleted, and RuoYi's online-user
+`forceLogout` removes the login token under an explicit force operation. The
+next lowest-dependency security/audit gap was to record forced logout rows for
+explicit Monitor Online Users kick-out without polluting login logs from
+internal RBAC/user session invalidation.
+
+- [x] Recompare RuoYi online-user `forceLogout` and Yudao OAuth2 token delete
+      logging against OpenCore's explicit kick-out API.
+- [x] Import `AuditLoginLogModule` into `OperationsModule` so online-user
+      operations can write login-log rows.
+- [x] Record `logType=logout.force`, `result=success` after successful single
+      `POST /api/monitor/online-users/:id/kick-out`.
+- [x] Record `logout.force` rows for every returned item after successful
+      batch `POST /api/monitor/online-users/kick-out`.
+- [x] Keep internal role/user/config-driven session invalidation out of
+      `logout.force` logging by placing the logging at the Monitor Online
+      Users controller boundary, not in the shared session repository.
+- [x] Preserve structured actor/reason on online-user
+      `revokedBy/revokedReason`; carry the same reason as current
+      login-log `failureReason` text until a future structured actor/reason
+      login-log schema is admitted.
+- [x] Extend fixed-port/deploy/public `core.online-user` smoke with
+      `core.login-log.logout-force-recorded`, proving a kicked second admin
+      token returns 401 and a filterable `logout.force` row exists.
+- [x] Extend Admin static smoke so the Login Logs page keeps the
+      `logout.force` filter/label markers.
+- [x] Run focused tests, OpenAPI/SDK checks, typecheck, lint, format,
+      fixed-port smoke, deployment and public URL verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -1561,15 +1596,18 @@ treat "minimal loop" as "minimal final product".
       summary, Admin display, security-auth consumption and deploy bundle
       guardrails. Broader feature-flag propagation and any admitted secret
       vault/KMS integration remain.
-- [ ] Round 11/26/45/47/48/49/50 `core.login-log`: browser/OS parsing, IP/time filters,
-      persisted login type/result schema, Admin display and type/result
-      filters are complete. Persisted failed-attempt lockout, `account_locked`
-      result mapping and permissioned username unlock are complete. Permissioned
-      selected-row deletion and clean-all maintenance actions are complete.
-      Configurable failed-attempt threshold is complete through
-      `auth.login.maxFailedAttempts`. Current-user self logout now revokes the
-      real bearer session and records `logout.self`. IP/location enrichment
-      where feasible, force-logout login-log integration and broader
+- [ ] Round 11/26/45/47/48/49/50/51 `core.login-log`: browser/OS parsing,
+      IP/time filters, persisted login type/result schema, Admin display and
+      type/result filters are complete. Persisted failed-attempt lockout,
+      `account_locked` result mapping and permissioned username unlock are
+      complete. Permissioned selected-row deletion and clean-all maintenance
+      actions are complete. Configurable failed-attempt threshold is complete
+      through `auth.login.maxFailedAttempts`. Current-user self logout now
+      revokes the real bearer session and records `logout.self`. Explicit
+      Monitor Online Users single/batch kick-out now records filterable
+      `logout.force` rows without logging internal RBAC/user session
+      invalidation as forced logout. IP/location enrichment where feasible,
+      structured actor/reason fields for logout records and broader
       mobile/social logging stages remain.
 
 ### Thin, Must Rework Before More Broad Surfaces
@@ -1617,8 +1655,9 @@ treat "minimal loop" as "minimal final product".
   download/preview/copy-link workflows, batch file delete and object browser
   expansion.
 - Lockout-policy tuning beyond current max-attempts/window fields, session
-  termination from the login-log page, IP location enrichment and broader
-  logout/mobile/SMS/social login logging.
+  termination from the login-log page, IP location enrichment, structured
+  actor/reason fields for login-log logout rows and broader mobile/SMS/social
+  login logging.
 - Operation-log deletion/cleanup, batch delete, duration/location/user-agent
   schema expansion, operation type enum expansion, async queue/indexing and
   business-domain audit timeline views.
