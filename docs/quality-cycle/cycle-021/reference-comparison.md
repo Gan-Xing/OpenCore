@@ -1,6 +1,17 @@
 # cycle-021 Reference Comparison
 
 Date: 2026-06-12
+Last updated: 2026-06-13
+
+## Scope Note
+
+Historical "does not admit" wording below describes the boundary of that
+specific round only. The active goal supersedes those historical boundaries:
+P0/P1 foundation capabilities such as IP/location, OAuth token management, JWT
+blacklist, notice templates/delivery, KMS/secret vault, operation-log
+maintenance, scheduler/monitor depth and config runtime feature flags may be
+auto-admitted as independent rounds. Large business/platform domains still
+require explicit user admission.
 
 ## Reference Revisions
 
@@ -1825,3 +1836,26 @@ Round 57 admits the structured actor/reason stage:
 OpenCore does not claim IP geolocation, mobile/SMS/social login logging,
 session termination from the Login Logs page or broader operation-log
 retention in this round.
+
+## Round 58 Config Runtime Feature Flags Reference Shape
+
+RuoYi and Yudao both position system configuration as a runtime source for
+operator-tuned behavior. OpenCore had already moved Admin title, lockout
+window and max-attempt policy from static constants into
+`GET /api/core/config/runtime`.
+
+Round 58 admits the next config-runtime foundation stage:
+
+- reserve `feature.*.enabled` for public boolean feature flags;
+- seed `feature.notice.inbox.enabled=true`;
+- return a `featureFlags` map from `GET /api/core/config/runtime`;
+- reject feature-flag rows that are private, non-boolean or malformed boolean
+  text at create/update/runtime-read time;
+- expose feature-flag visibility and toggling in Admin Config;
+- propagate the shape through SDK, OpenAPI, fixed-port smoke, deploy smoke and
+  public smoke.
+
+OpenCore does not claim KMS/secret vault, percentage rollout, audience
+targeting, multi-environment rollout governance or a full experimentation
+platform in this round. Those remain separate foundation rounds, not hidden
+scope inside basic runtime flags.

@@ -1,6 +1,14 @@
 # cycle-021 Audit
 
 Date: 2026-06-12
+Last updated: 2026-06-13
+
+## Scope Note
+
+Historical out-of-scope or "does not admit" wording below applies to the round
+where it appears. The active goal now auto-admits P0/P1 foundation capabilities
+as independent rounds and reserves explicit admission for large
+business/platform domains.
 
 ## Current OpenCore Evidence
 
@@ -924,3 +932,30 @@ wrong paths should be replaced directly instead of preserved for compatibility.
 This stays inside the current S7 Security/System login-log boundary. It does
 not introduce IP geolocation, mobile/SMS/social login logging, session
 termination from the Login Logs page or operation-log retention policy.
+
+## Round 58 Audit: core.config Runtime Feature Flags
+
+After Round 57, the remaining P1 foundation queue still included
+`core.config`. Runtime title, lockout window and max-attempt policy were
+already live, but feature toggles still existed only as an untyped future debt.
+
+- RuoYi/Yudao config centers both justify runtime consumption of system config
+  values, while OpenCore's current runtime endpoint already provided the right
+  public delivery boundary.
+- The lowest-dependency stage was not KMS, rollout percentage or
+  experimentation; it was a strict public boolean `feature.*.enabled` map.
+- The shape needed repository-level guards so operators cannot accidentally
+  make runtime flags private, string-valued or malformed.
+- Runtime reads needed to fail fast on bad feature-flag shape rather than
+  silently deserializing unsafe values.
+- Admin needed a visible Feature Flag column/filter/export field and a toggle
+  for public boolean flags, not another hidden config row.
+- Fixed-port, deploy and public smoke needed to create a dynamic feature flag,
+  reject invalid create/update shapes, toggle it, and prove the runtime
+  `featureFlags` map changes.
+- The deploy script needed a stale Config bundle guard because stale frontend
+  artifacts have repeatedly broken login and runtime-admin behavior.
+
+This stays inside the current S7 System config-runtime boundary. It does not
+introduce KMS/secret vault, percentage rollout, audience targeting,
+multi-environment rollout governance or a full experimentation platform.

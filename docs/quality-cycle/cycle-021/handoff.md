@@ -3,8 +3,8 @@
 Date: 2026-06-13
 Repository: `Gan-Xing/OpenCore`
 Default branch: `main`
-Latest observed feature commit: `a47182c feat(login-log): add structured logout actor reason / 新增退出日志操作者原因`
-Latest deployed feature commit: `a47182c feat(login-log): add structured logout actor reason / 新增退出日志操作者原因`
+Latest observed feature commit: `b294c35 feat(config): add runtime feature flags / 新增运行时功能开关`
+Latest deployed feature commit: `b294c35 feat(config): add runtime feature flags / 新增运行时功能开关`
 Latest deployed hardening commit: `4df5dd1 fix(system): satisfy xlsx export lint guard / 修复 XLSX 导出 lint 守卫`
 
 ## One-sentence Goal
@@ -33,6 +33,19 @@ Use this contract for every follow-up round:
   replace or delete it directly, then update all references and guard the new
   behavior with tests or smoke. Do not keep dual paths just to preserve stale
   behavior.
+- P0/P1 foundation capabilities are automatically admissible as independent
+  rounds and do not need per-round user approval. This includes System,
+  Security, Monitor, Tools/OpenForge foundation work, IP/location, OAuth token
+  management, JWT blacklist, notice templates/delivery, KMS/secret vault,
+  operation-log maintenance, scheduler/monitor operation depth and config
+  runtime feature flags. If an older doc says one of these foundation debts is
+  out of scope, narrow or delete that old guard in the same round's docs.
+- Large business or platform domains still need explicit user admission:
+  CRM/ERP/MES/WMS/mall/member, real payment/refund/reconciliation,
+  production multi-tenancy, BPMN/full workflow platform, full report designer,
+  big-data async export execution, knowledge base/RAG/Agent/AI workflow,
+  industry business packages, unwhitelisted dynamic reflection scheduling and
+  OpenForge directly writing Prisma schema/migration/business logic.
 - For every code change, run the required tests, commit, push, deploy through
   `pnpm deploy:opencore`, and verify the public URLs. Do not hand-pick ports.
 - Fixed ports are API `39172`, Admin `39174` and local smoke `39173`.
@@ -129,6 +142,7 @@ productization waterline completion; see
 - Round 55 `core.notice` inbox/read-state stage 2
 - Round 56 `core.notice` read-user analytics stage 3
 - Round 57 `core.login-log` structured logout actor/reason stage 8
+- Round 58 `core.config` runtime feature flags stage 10
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -773,6 +787,19 @@ Monitor Online Users 显式强退写目标会话的 `logout.force`，并把操�
 退出日志结构化操作者/原因，不等于 IP 归属地、mobile/SMS/social 登录日志或从 Login Logs
 页面直接终止会话已经完成。
 
+Round 58 回到 `core.config` P1 队列，把基础 runtime feature flags 从欠账变成可消费闭环。
+OpenCore 现在约定 `feature.*.enabled` 为 public boolean feature flag，并通过
+`GET /api/core/config/runtime` 返回 `featureFlags` 映射；seed 内置
+`feature.notice.inbox.enabled=true`。seed/Prisma 仓储都会阻止 feature flag 被创建或更新为
+非 public、非 boolean 或非法 boolean 文本，runtime 读取时也会拒绝坏形态。SDK/OpenAPI/Admin 同步：
+Admin Config 页面新增 Feature Flag 筛选、列、当前页导出列和行级开关；部署脚本拒绝缺少 feature flag
+配置面的 stale Admin bundle。固定 smoke、部署 smoke 和公网 API smoke 均验证
+`core.config.runtime-feature-flags` 和 `core.config.runtime-feature-flag-guards`；
+公网 Admin `p__System__Config.892ddef6.async.js` 已验证包含 `Feature Flag`、
+`Toggle feature flag`、`runtime` 和 `standard` 标记，公网 runtime 返回
+`featureFlags.notice.inbox=true`。注意：这轮关闭的是基础 public boolean runtime flags，
+不等于 KMS/secret vault、高级灰度规则、百分比发布、人群分流或完整实验平台已经完成。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -784,7 +811,7 @@ The productization waterline now classifies:
   Round 7/19/22/23/28/29/30/31/32/33/34/35/36/41/54 `core.user`,
   Round 3/22/25/42/53 `core.post`.
 - First loop, enhance: Round 1/55/56 `core.notice`,
-  Round 9/24/37/38/39/40/44/46/49 `core.config`,
+  Round 9/24/37/38/39/40/44/46/49/58 `core.config`,
   Round 11/26/45/47/48/49/50/51/57 `core.login-log`.
 - Thin, rework: none after Round 16.
 
@@ -805,8 +832,11 @@ finds another blocker:
    from the security-auth lockout policy. Round 49 adds
    `auth.login.maxFailedAttempts`, runtime summary propagation, Admin login
    display, security-auth consumption and stale frontend bundle guards.
-   Remaining config work is any admitted secret vault/KMS integration and
-   broader runtime feature-flag propagation.
+   Round 58 adds public boolean `feature.*.enabled` runtime feature flags,
+   Admin Config feature-flag toggles, SDK/OpenAPI propagation and smoke/deploy
+   guards. Remaining config work is secret vault/KMS integration and advanced
+   feature-flag rollout such as percentage rules, targeting or a full
+   experimentation surface.
 2. `core.login-log`: Round 26 closed browser/OS parsing and server-side IP/time
    filters. Round 45 closed persisted login type/result schema, Admin display
    and result/logType filters. Round 47 closed persisted failed-attempt
@@ -849,9 +879,9 @@ finds another blocker:
   fixed ports, Admin API origin, duplicate `/api/api` compatibility and stale
   frontend bundle/cache guards.
 - P1 remaining: `core.notice` delivery adapter/template/fan-out,
-  `core.config` broader runtime feature-flag propagation or admitted
-  secret vault/KMS integration, and `core.login-log` IP/location enrichment
-  or admitted mobile/SMS/social login logging.
+  `core.config` secret vault/KMS integration or advanced feature-flag rollout,
+  and `core.login-log` IP/location enrichment or admitted mobile/SMS/social
+  login logging.
   `core.post` is closed at the current admitted waterline after Round 53;
   `core.dept` data-scope workflow is closed at the current admitted waterline
   after Round 54.
@@ -863,7 +893,7 @@ finds another blocker:
 
 Reference parity is measured by product capability waterline, not by replaying
 RuoYi/Yudao commit history. The remaining RuoYi-style foundation backlog after
-Round 57 is roughly several focused P1 loops, not tens of thousands of commits.
+Round 58 is roughly several focused P1 loops, not tens of thousands of commits.
 Yudao Full parity is a different program: BPM, pay, mall, member, CRM, ERP,
 AI and other business domains would require dozens to 100+ separately admitted
 deployable loops, and should not be counted as unfinished cycle-021 foundation
@@ -993,7 +1023,7 @@ BE20 已完成，当前主线是 cycle-021 capability-map productization recursi
 
 ## Scope Guards
 
-不得直接实现或偷偷扩大这些能力：
+不得直接实现或偷偷扩大这些大域能力：
 
 - CRM、ERP、MES、WMS、商城、会员、行业业务包。
 - 多租户生产闭环。
@@ -1006,6 +1036,11 @@ BE20 已完成，当前主线是 cycle-021 capability-map productization recursi
 - 重新引入 vulnerable `mockjs` / `@umijs/openapi` 依赖链。
 
 这些能力只能进入 backlog、design-only 或独立准入评估。
+
+基础后台 P0/P1 能力不在本禁止列表内；例如 IP/location、OAuth token 管理、JWT blacklist、
+通知模板/投递、KMS/secret vault、operation-log 维护、scheduler/monitor 操作深度和
+config runtime feature flags 可以由 AI 作为独立 Round 自动准入，但必须写清边界、参考、
+验收、smoke 和部署验证。
 
 ## Required Gates
 

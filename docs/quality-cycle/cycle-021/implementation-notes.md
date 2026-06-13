@@ -4885,3 +4885,94 @@ Against public endpoints after deploy:
   `a47182c feat(login-log): add structured logout actor reason / 新增退出日志操作者原因`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 58 Capability
+
+Capability: `core.config` runtime feature flags productization.
+
+Round 58 closes the first `core.config` runtime feature-flag stage. It admits
+only strict public boolean flags following the `feature.*.enabled` naming
+shape, then exposes those flags through the existing runtime config endpoint.
+
+Reference comparison:
+
+- RuoYi/Yudao both treat configuration center values as runtime inputs for
+  system behavior.
+- OpenCore already had runtime title and login-policy propagation.
+- The next foundation step was a typed runtime `featureFlags` map with shape
+  guards, not KMS, percentage rollout or experimentation.
+
+## Round 58 Implemented
+
+- Added `feature.*.enabled` detection and feature-flag shape guards.
+- Added seeded `feature.notice.inbox.enabled=true` as a public boolean system
+  config.
+- Enforced feature-flag shape in seed and Prisma config repositories.
+- Extended `GET /api/core/config/runtime` with `featureFlags`.
+- Extended SDK runtime types, registry fixtures and OpenAPI output.
+- Added Admin Config Feature Flag filtering, table/detail/export markers and
+  row-level toggles that keep runtime flags public boolean values.
+- Extended system/API/Admin tests and fixed-port `core.config` smoke with
+  runtime feature-flag assertions and invalid-shape guards.
+- Added a deploy-script stale Admin Config bundle guard for the Feature Flag
+  UI.
+
+Out of scope for Round 58:
+
+- KMS/secret vault integration;
+- percentage rollout, targeting or experimentation UI;
+- multi-environment flag rollout governance.
+
+## Round 58 Verification
+
+- `pnpm nx test system --runInBand`
+- `pnpm nx test sdk --runInBand`
+- `pnpm test:api --runInBand`
+- `pnpm test:admin`
+- `pnpm openapi:export`
+- `pnpm openapi:check`
+- `pnpm openapi:registry-tags:check`
+- `pnpm sdk:check`
+- `pnpm typecheck`
+- `pnpm lint`
+- `pnpm smoke:api:local`
+- `pnpm deploy:opencore`
+- `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-config`
+
+`pnpm smoke:api:local` passed on fixed port `39173`, including
+`core.config.runtime-feature-flags` and
+`core.config.runtime-feature-flag-guards`.
+
+`pnpm deploy:opencore` passed, deploying API/Admin on fixed ports
+`39172`/`39174`; deploy smoke included Admin same-origin login,
+duplicate-prefix login compatibility, public bundle checks, stale
+service-worker retirement and config runtime feature-flag guards.
+
+`pnpm lint` passed with existing warnings in
+`packages/system/src/system-user/system-user.prisma-repository.ts` and
+`apps/admin/src/pages/shared/CurrentPageExportButton.tsx`; no Round 58 lint
+errors were introduced.
+
+## Round 58 Public Verification
+
+Against public endpoints after deploy:
+
+- Public API: `http://144.217.243.161:39172`
+- Public Admin: `http://144.217.243.161:39174`
+- Admin main bundle: `umi.d09e4d93.js`
+- System Config chunk: `p__System__Config.892ddef6.async.js`
+- Public API config smoke passed:
+  `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-config`.
+  Checks included runtime feature flags, invalid feature-flag create/update
+  guards, runtime toggle propagation and export columns.
+- Public runtime `GET /api/core/config/runtime` returned
+  `featureFlags.notice.inbox=true`.
+- Public System Config chunk contains `Feature Flag`, `Toggle feature flag`,
+  `runtime` and `standard`.
+
+## Round 58 Commit Record
+
+- Feature commit:
+  `b294c35 feat(config): add runtime feature flags / 新增运行时功能开关`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

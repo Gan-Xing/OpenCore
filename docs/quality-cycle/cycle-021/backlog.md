@@ -2,6 +2,17 @@
 
 Started: 2026-06-12
 
+## Scope Note
+
+The active goal supersedes older backlog out-of-scope wording for P0/P1
+foundation capabilities. IP/location, OAuth token management, JWT blacklist,
+notice templates/delivery, KMS/secret vault, operation-log maintenance,
+scheduler/monitor depth and config runtime feature flags can be auto-admitted
+as independent productization rounds. CRM/ERP/MES/WMS/mall/member, real
+payment, production multi-tenancy, BPMN/full workflow, full report designer,
+big-data async export execution, RAG/Agent/AI workflow and OpenForge direct
+schema/business-code writing still need explicit user admission.
+
 ## State Alignment
 
 - [x] Re-read cycle-020 backlog, completion report, ledger and quality-cycle
@@ -1742,6 +1753,34 @@ temporary path with dedicated fields instead of keeping a dual interpretation.
       smoke, deployment and public URL verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 58: core.config Runtime Feature Flags Productization
+
+Why this slice: after runtime title and login-policy config propagation were
+live, the next lowest-dependency `core.config` foundation debt was a strict
+runtime feature-flag surface. OpenCore needs feature flags as a consumable
+runtime map, but this admitted stage is only public boolean `feature.*.enabled`
+flags, not KMS, percentage rollout, targeting or a full experimentation
+product.
+
+- [x] Recompare RuoYi/Yudao config-center runtime usage and OpenCore runtime
+      config before selecting this slice.
+- [x] Define `feature.*.enabled` as the first runtime feature-flag convention.
+- [x] Add seeded `feature.notice.inbox.enabled=true` as a public boolean system
+      config.
+- [x] Guard seed and Prisma repositories so feature flags cannot be private,
+      non-boolean or malformed boolean text.
+- [x] Extend `GET /api/core/config/runtime` with a `featureFlags` map.
+- [x] Extend SDK, OpenAPI, registry fixtures and system tests.
+- [x] Add Admin Config Feature Flag filtering, table/detail/export markers and
+      row-level public boolean toggles.
+- [x] Extend fixed-port/deploy/public `core.config` smoke with runtime
+      feature-flag creation, invalid-shape guards and runtime toggle
+      verification.
+- [x] Add a deploy-script stale Config bundle guard for the Feature Flag UI.
+- [x] Run focused tests, OpenAPI/SDK checks, typecheck, lint, fixed-port
+      smoke, deployment and public URL verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -1787,7 +1826,7 @@ treat "minimal loop" as "minimal final product".
       receipts, authenticated inbox APIs, Admin Inbox tab, header unread badge
       and management read-user analytics are complete. Delivery adapter design,
       notification templates and WebSocket/mail/SMS fan-out remain.
-- [ ] Round 9/24/37/38/39/40/44/46/49 `core.config`: public get-value-by-key, cache
+- [ ] Round 9/24/37/38/39/40/44/46/49/58 `core.config`: public get-value-by-key, cache
       refresh and mutation invalidation are complete. Category/name/remark
       metadata is complete. Native XLSX export payload and Admin download are
       complete. Batch deletion is complete. Persisted system/custom deletion
@@ -1796,8 +1835,10 @@ treat "minimal loop" as "minimal final product".
       `auth.login.lockoutMinutes`. Round 47 consumes that key from
       security-auth. Round 49 closes `auth.login.maxFailedAttempts` runtime
       summary, Admin display, security-auth consumption and deploy bundle
-      guardrails. Broader feature-flag propagation and any admitted secret
-      vault/KMS integration remain.
+      guardrails. Round 58 closes public boolean `feature.*.enabled` runtime
+      flags with Admin Config toggles, SDK/OpenAPI propagation and
+      smoke/deploy guards. Secret vault/KMS and advanced feature-flag rollout
+      remain as auto-admissible foundation rounds.
 - [ ] Round 11/26/45/47/48/49/50/51/57 `core.login-log`: browser/OS parsing,
       IP/time filters, persisted login type/result schema, Admin display and
       type/result filters are complete. Persisted failed-attempt lockout,
@@ -1837,8 +1878,10 @@ treat "minimal loop" as "minimal final product".
 
 ## Explicitly Out Of Scope
 
-- Message bus push, WebSocket delivery or mail/SMS fan-out.
-- Notification template/delivery adapter design and delivery fan-out.
+- Large-scale message bus push and multi-channel fan-out orchestration unless
+  admitted as a dedicated foundation round.
+- Notification template and delivery adapter design are P1 foundation work, not
+  forbidden scope; they must be handled as independent rounds with smoke.
 - BPMN/workflow approval around announcements.
 - Tenant-scoped notices.
 - Department data-scope workflow integration and role data-scope assignment UI.
@@ -1854,17 +1897,19 @@ treat "minimal loop" as "minimal final product".
 - Batch dictionary delete, Excel import/export file workflows, dictionary
   color/css/remark fields, app-wide dictionary cache TTL/invalidation and
   dictionary cache refresh.
-- Secret vault/KMS integration and broad runtime feature-flag propagation.
+- Advanced feature-flag rollout such as percentage targeting, audience rules
+  and full experimentation UI unless admitted as a dedicated foundation round.
 - Presigned upload/download URLs, storage-provider config, public
   download/preview/copy-link workflows, batch file delete and object browser
   expansion.
 - Lockout-policy tuning beyond current max-attempts/window fields, session
-  termination from the login-log page, IP location enrichment and broader
-  mobile/SMS/social login logging.
-- Operation-log deletion/cleanup, batch delete, duration/location/user-agent
-  schema expansion, operation type enum expansion, async queue/indexing and
-  business-domain audit timeline views.
-- OAuth client/token administration, standalone JWT blacklist independent of
-  the online-session store, IP geolocation, server-side date filters and
-  online-user export endpoint expansion.
+  termination from the login-log page and broader mobile/SMS/social login
+  logging unless admitted as separate security rounds. IP/location enrichment
+  is P1 foundation work, not a business-domain guard.
+- Business-domain operation audit timelines and async queue/indexing remain
+  outside this cycle. Operation-log maintenance, retention and structured
+  field enrichment are P1/P2 foundation work, not forbidden scope.
+- Online-user export endpoint expansion remains separate admission. OAuth
+  client/token administration, standalone JWT blacklist and IP geolocation are
+  foundation security rounds, not forbidden scope.
 - CRM/ERP/MES/WMS/mall/member/pay/AI modules.
