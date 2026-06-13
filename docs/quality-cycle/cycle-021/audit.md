@@ -632,3 +632,32 @@ not introduce native XLSX/binary Excel import/export depth, a dedicated
 `core:user:import` permission, server-side full Excel export formatting,
 email/phone profile fields, social account binding or a dedicated User-page
 role assignment dialog in this round.
+
+## Round 34 Audit: core.user Import Permission
+
+After Round 33, the lowest-dependency `core.user` debt was permission
+granularity for import:
+
+- Yudao protects user import with `system:user:import`, proving import is a
+  separate grantable management action from user creation.
+- OpenCore's Round 33 import loop still reused `core:user:create`, so a role
+  allowed to create one user could also bulk import users.
+- The repository and import business behavior were already in place, so this
+  slice should not introduce native XLSX parsing, export formatting or new user
+  schema fields.
+- The existing permission contract did not support `import`; adding the action
+  needed to start at `@opencore/contracts`, then flow through
+  module-registry, seed, API guards, Admin access and smoke.
+- Registry scope needed to stay narrow: only `core.user` should gain
+  `core:user:import`, not every CRUD module.
+- API permission matrix tests needed to prove both import-template and import
+  routes require `core:user:import`.
+- Admin needed an operator-visible disabled state for import actions when the
+  permission is missing.
+- Fixed-port, deploy and public smoke needed a real create-only user token to
+  prove `core:user:create` no longer authorizes import.
+
+This stays inside the current S7 System/RBAC user-management boundary. It does
+not introduce native XLSX/binary Excel import/export depth, server-side full
+Excel export formatting, email/phone profile fields, social account binding or
+a dedicated User-page role assignment dialog in this round.

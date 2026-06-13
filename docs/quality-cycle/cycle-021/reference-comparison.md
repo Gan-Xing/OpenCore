@@ -1022,3 +1022,36 @@ permissions and file-format boundaries:
 OpenCore still does not claim native XLSX/binary Excel import/export depth,
 server-side full Excel export formatting, a dedicated `core:user:import`
 permission or a dedicated User-page role assignment dialog in this round.
+
+## Round 34 User Import Permission Reference Shape
+
+Yudao guards its user import endpoint with
+`@ss.hasPermission('system:user:import')`, separate from user creation. That
+matches the operator expectation that creating one user and bulk importing
+many users are different grantable actions.
+
+RuoYi's user management surface also treats import as a dedicated user-table
+operation beside export and add/edit/delete, even though its permission naming
+uses the RuoYi `add/edit/remove/export` convention around the broader page.
+
+OpenCore admits the matching stage-11 permission loop:
+
+- `PermissionAction` now includes `import`;
+- only `core.user` registers `core:user:import`, so import is not globally
+  added to unrelated CRUD modules;
+- Prisma seed upserts `core:user:import` through the registry and assigns it
+  to the seeded admin role;
+- `GET /api/core/users/import-template` and `POST /api/core/users/import` are
+  both guarded by `core:user:import`;
+- Admin access exposes `canImportUsers`;
+- Admin Users disables template download and import buttons without
+  `core:user:import` and shows the missing permission marker;
+- fixed-port, deploy and public smoke create a user with `core:user:create`
+  but without `core:user:import`, prove the token lacks import permission, and
+  prove both import endpoints return 403;
+- public Admin verification proves `core:user:import` reaches the deployed
+  permission catalog, main bundle and Users chunk.
+
+OpenCore still does not claim native XLSX/binary Excel import/export depth,
+server-side full Excel export formatting or a dedicated User-page role
+assignment dialog in this round.

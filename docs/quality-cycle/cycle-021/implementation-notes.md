@@ -2647,3 +2647,92 @@ Against public endpoints after deploy:
   `1c49e36 feat(core-user): add user import loop / 新增用户导入闭环`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 34 Capability
+
+Capability: `core.user` import permission productization.
+
+Goal: split user import away from `core:user:create` so operators can grant
+single-user creation without granting bulk import.
+
+## Round 34 Implemented
+
+- Added `import` to the `PermissionAction` contract.
+- Registered `core:user:import` only on the `core.user` module.
+- Added contracts, module-registry and SDK registry fixture tests for the new
+  permission action.
+- Moved `GET /api/core/users/import-template` to `core:user:import`.
+- Moved `POST /api/core/users/import` to `core:user:import`.
+- Updated API permission-matrix tests.
+- Added `canImportUsers` to Admin access.
+- Guarded Admin Users import-template and import buttons with `canImportUsers`.
+- Added a missing-permission marker for users without `core:user:import`.
+- Extended Admin static smoke for `core:user:import`, `canImportUsers` and the
+  Users page marker.
+- Extended `tools/scripts/smoke-core-user.mjs` with a temporary create-only
+  role/user that proves create permission does not authorize import.
+
+## Round 34 Verification
+
+- `pnpm nx test contracts`
+- `pnpm nx test module-registry`
+- `pnpm nx test sdk --testFile=registry-fixtures.spec.ts`
+- `pnpm nx test api --testFile=rbac.permission-matrix.spec.ts`
+- `node scripts/smoke-test.mjs` from `apps/admin`
+- `pnpm nx run-many -t typecheck --projects=api,admin,sdk,system,module-registry,contracts`
+- `pnpm openapi:export`
+- `pnpm sdk:check`
+- `pnpm openapi:check`
+- `pnpm openapi:registry-tags:check`
+- `pnpm nx test admin`
+- `pnpm smoke:api:local`
+- `pnpm prisma:validate`
+- `pnpm build:api`
+- `pnpm build:admin`
+- `pnpm format:check`
+- `git diff --check`
+- `pnpm deploy:opencore`
+
+`pnpm smoke:api:local` passed on fixed port `39173`, including
+`core.user.import.permission-split`,
+`core.user.import-template`,
+`core.user.import.update-existing-boolean-guard`,
+`core.user.import.partial-result`,
+`core.user.import.update-revoke-session` and
+`core.user.import.enabled-filter`.
+
+`pnpm deploy:opencore` passed, deploying API/Admin on fixed ports
+`39172`/`39174`; deploy smoke includes the new import permission split and the
+existing login-prefix/frontend-cache/session-revocation guards. Prisma seed
+reported `permissions: 105`, proving the registry permission count includes
+the new `core:user:import` entry.
+
+## Round 34 Public Verification
+
+Against public endpoints after deploy:
+
+- Public `pnpm smoke:core-user` passed against
+  `http://144.217.243.161:39172` after loading the deployed admin password
+  from `.env.opencore.local` without printing secrets.
+- Public user smoke verified a create-only role/user has `core:user:create`,
+  does not have `core:user:import`, and receives 403 from import-template and
+  import endpoints.
+- Public Admin `GET http://144.217.243.161:39174/system/users/` returned 200.
+- Public main bundle `umi.5add3ee4.js` contains `core:user:import`,
+  `/core/users/import-template` and `/core/users/import`.
+- Public Users chunk `p__System__Users.1a00d4b1.async.js` contains
+  `Download import template`, `Import users`, `Update existing users`,
+  `Select CSV file` and `Missing core:user:import`.
+- Public Admin same-origin proxy login returned 201 for `/api/auth/login` and
+  stale-compatible `/api/api/auth/login`; public API origin
+  `/api/api/auth/login` also returned 201.
+- Public Admin same-origin permission catalog returned `core:user:import`.
+- Public Admin same-origin import-template returned
+  `opencore-system-users-import-template.csv`.
+
+## Round 34 Commit Record
+
+- Feature commit:
+  `f152c4d feat(core-user): add import permission / 新增用户导入权限`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

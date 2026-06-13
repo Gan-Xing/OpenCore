@@ -3,8 +3,8 @@
 Date: 2026-06-13
 Repository: `Gan-Xing/OpenCore`
 Default branch: `main`
-Latest observed feature commit: `1c49e36 feat(core-user): add user import loop / 新增用户导入闭环`
-Latest deployed feature commit: `1c49e36 feat(core-user): add user import loop / 新增用户导入闭环`
+Latest observed feature commit: `f152c4d feat(core-user): add import permission / 新增用户导入权限`
+Latest deployed feature commit: `f152c4d feat(core-user): add import permission / 新增用户导入权限`
 Latest deployed hardening commit: `04e446c fix(online-user): stabilize admin session smoke / 稳定在线用户管理员会话冒烟`
 
 ## One-sentence Goal
@@ -99,6 +99,7 @@ productization waterline completion; see
 - Round 31 `core.user` profile avatar stage 8
 - Round 32 `core.user` batch status/delete stage 9
 - Round 33 `core.user` import template/CSV import stage 10
+- Round 34 `core.user` import permission stage 11
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -356,6 +357,23 @@ smoke 均同步该闭环。固定 smoke、部署 smoke 和公网 smoke 均证明
 guard 均通过。注意：这轮关闭的是 CSV-compatible 导入模板/导入结果闭环，不等于用户
 原生 XLSX/binary Excel 文件格式和服务端完整文件导出已经完成。
 
+Round 34 继续补齐 `core.user` 队列：用户导入现在有独立权限闭环。参考
+Yudao 当前 `UserController` 的 `@ss.hasPermission('system:user:import')` 导入保护，
+并对照 RuoYi 用户导入独立于新增用户的产品动作，OpenCore 在 `PermissionAction` 中新增
+`import` action，只给 `core.user` registry 注册 `core:user:import`，并通过 seed 自动进入
+权限目录和 admin role。`GET /api/core/users/import-template` 与
+`POST /api/core/users/import` 都从 `core:user:create` 切到 `core:user:import`；API 权限矩阵、
+module-registry、contracts、SDK registry fixture、Admin access 和 Users 页面均同步。
+Admin Users 使用 `canImportUsers` 控制下载模板和导入按钮，缺权限时显示
+`Missing core:user:import`。固定 smoke、部署 smoke 和公网 smoke 均创建只有
+`core:user:create` 而没有 `core:user:import` 的临时角色/用户，证明该 token 访问导入模板
+和导入接口返回 403；admin token 仍可完成导入模板和导入链路。公网 Admin `umi.5add3ee4.js`
+已验证包含 `core:user:import` 和导入 API path，Users chunk
+`p__System__Users.1a00d4b1.async.js` 已验证包含导入 UI 与缺权限提示；公网 Admin 同源
+`/api/core/permissions` 已验证能看到 `core:user:import`，同源导入模板、登录和兼容
+`/api/api/auth/login` 均通过。注意：这轮关闭的是独立导入权限，不等于原生 XLSX/binary
+Excel 导入导出深度已经完成。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -365,8 +383,8 @@ The productization waterline now classifies:
   `core.file`, Round 4/16 `core.menu`, Round 5/17/18/20 `core.role`,
   Round 8/21 `core.dict`.
 - First loop, enhance: Round 1 `core.notice`, Round 2/27 `core.dept`, Round
-  3/22/25 `core.post`, Round 7/19/22/23/28/29/30/31/32/33 `core.user`, Round
-  9/24 `core.config`, Round 11/26 `core.login-log`.
+  3/22/25 `core.post`, Round 7/19/22/23/28/29/30/31/32/33/34 `core.user`,
+  Round 9/24 `core.config`, Round 11/26 `core.login-log`.
 - Thin, rework: none after Round 16.
 
 The P0 remediation queue from the post-Round 13 re-audit is now clear. The next
@@ -383,9 +401,10 @@ finds another blocker:
    public preview, replacement and deletion; Round 32 closed batch
    enable/disable and batch delete with session revocation; Round 33 closed
    CSV-compatible user import template/import results with update-existing
-   session revocation. Remaining work is native XLSX/binary Excel import/export
-   depth, dedicated import permission if admitted and any dedicated User-page
-   role assignment workflow if admitted.
+   session revocation; Round 34 closed the dedicated `core:user:import`
+   permission across registry/API/Admin/smoke. Remaining work is native
+   XLSX/binary Excel import/export depth and any dedicated User-page role
+   assignment workflow if admitted.
 2. `core.config`: Round 24 closed public get-value-by-key plus cache
    refresh/invalidation. Remaining work is category/name/remark enrichment,
    batch/file export depth and broader runtime propagation boundaries.

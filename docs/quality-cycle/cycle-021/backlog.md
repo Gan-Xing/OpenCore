@@ -944,6 +944,41 @@ claiming native XLSX/binary Excel import/export completion.
       URL verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 34: core.user Import Permission Productization
+
+Why this slice: after the import loop existed, the lowest-dependency remaining
+user-management debt was permission granularity. Yudao guards user import with
+`system:user:import`, and user import is operationally distinct from creating a
+single user. OpenCore still reused `core:user:create` for import template and
+import submission, so operators could not grant create without also granting
+bulk import.
+
+- [x] Recompare Yudao `system:user:import` and RuoYi user import as an
+      independent management action.
+- [x] Extend `PermissionAction` with `import`.
+- [x] Register `core:user:import` only on the `core.user` module, without
+      widening every CRUD module to import.
+- [x] Let Prisma seed upsert the new registry permission and include it in the
+      seeded admin role.
+- [x] Move `GET /api/core/users/import-template` from `core:user:create` to
+      `core:user:import`.
+- [x] Move `POST /api/core/users/import` from `core:user:create` to
+      `core:user:import`.
+- [x] Extend contracts, module-registry, API permission-matrix and SDK
+      registry fixture tests.
+- [x] Add `canImportUsers` in Admin access and guard the Users page import
+      template/import buttons with it.
+- [x] Add Admin static smoke markers for `core:user:import`, `canImportUsers`
+      and the missing-permission UI marker.
+- [x] Extend fixed-port/deploy/public `core.user` smoke to create a temporary
+      create-only role/user, prove the token has `core:user:create` but not
+      `core:user:import`, and prove both import endpoints return 403.
+- [x] Verify public Admin bundle, Users chunk, same-origin permission catalog,
+      import-template proxy, login and stale `/api/api` compatibility.
+- [x] Run focused, typecheck, build, fixed-port smoke, deployment and public
+      URL verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -981,16 +1016,17 @@ treat "minimal loop" as "minimal final product".
 - [ ] Round 3/22/25 `core.post`: user-post binding and simple-list option
       source are complete; batch operations and ordered list refinements
       remain.
-- [ ] Round 7/19/22/23/28/29/30/31/32/33 `core.user`: status toggle, reset
+- [ ] Round 7/19/22/23/28/29/30/31/32/33/34 `core.user`: status toggle, reset
       password and direct user-mutation session invalidation are complete. Post
       binding, department side-tree filtering, self-profile basic display-name
       read/update, self-password and authenticated simple-list option source
       are complete. Profile avatar upload/public preview/replace/delete is
       complete. Batch enable/disable and batch delete are complete.
       CSV-compatible import template/import results with update-existing
-      session revocation are complete. Native XLSX/binary Excel import/export
-      depth, a dedicated import permission and any dedicated User-page role
-      assignment workflow still need enhancement if admitted.
+      session revocation are complete. Dedicated `core:user:import` permission
+      is complete. Native XLSX/binary Excel import/export depth and any
+      dedicated User-page role assignment workflow still need enhancement if
+      admitted.
 - [ ] Round 9/24 `core.config`: public get-value-by-key, cache refresh and
       mutation invalidation are complete. Category/name/remark enrichment,
       batch/file export depth and broader runtime propagation boundaries remain.
@@ -1034,8 +1070,8 @@ treat "minimal loop" as "minimal final product".
 - Role simple-list endpoints, batch role deletion and standalone data-scope
   endpoint.
 - Registry definition editing and dynamic permission discovery.
-- Native user XLSX/binary Excel import/export depth, dedicated user import
-  permission, dedicated User-page role assignment dialog and social endpoints.
+- Native user XLSX/binary Excel import/export depth, dedicated User-page role
+  assignment dialog and social endpoints.
 - Batch dictionary delete, Excel import/export file workflows, dictionary
   color/css/remark fields, app-wide dictionary cache TTL/invalidation and
   dictionary cache refresh.
