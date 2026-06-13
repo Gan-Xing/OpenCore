@@ -3,8 +3,8 @@
 Date: 2026-06-13
 Repository: `Gan-Xing/OpenCore`
 Default branch: `main`
-Latest observed feature commit: `15edffc feat(notice): add system notice inbox read state / 新增系统通知收件箱已读状态`
-Latest deployed feature commit: `15edffc feat(notice): add system notice inbox read state / 新增系统通知收件箱已读状态`
+Latest observed feature commit: `e2601a7 feat(notice): add read user analytics / 新增通知已读用户分析`
+Latest deployed feature commit: `e2601a7 feat(notice): add read user analytics / 新增通知已读用户分析`
 Latest deployed hardening commit: `4df5dd1 fix(system): satisfy xlsx export lint guard / 修复 XLSX 导出 lint 守卫`
 
 ## One-sentence Goal
@@ -127,6 +127,7 @@ productization waterline completion; see
 - Round 53 `core.post` ordered list stage 4
 - Round 54 `core.user/core.dept` data-scope query enforcement stage 15/5
 - Round 55 `core.notice` inbox/read-state stage 2
+- Round 56 `core.notice` read-user analytics stage 3
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -744,6 +745,18 @@ mark-read idempotency、mark-all-read 和 cleanup；公网 Admin 验证 `umi.72f
 标记。注意：这轮关闭的是 read/unread、inbox 和 header badge 闭环，不等于通知模板、
 WebSocket/mail/SMS fan-out、租户通知或 BPM 审批。
 
+Round 56 继续补齐 `core.notice` P1 队列，把 Round 55 留下的 read-user analytics
+从欠账变成管理端闭环。OpenCore 现在新增
+`GET /api/core/notices/:id/read-users`，在 `core:notice:read` 权限下按 notice
+列出已读用户、用户名、显示名和已读时间；seed 和 Prisma repository 均读取真实
+`SystemNoticeReadReceipt`，缺失 notice 返回 404。SDK/OpenAPI/Admin 同步更新：
+System Notices Manage 表新增行级 `Read users` 图标按钮和 `System Notice Read Users`
+弹窗，Admin 静态 smoke 锁住 service 和页面标记。固定 smoke、部署 smoke 和公网 API
+smoke 均验证缺失 notice 守卫与真实登录用户标记已读后出现在 read-users 列表；公网
+Admin 验证 `umi.a866353b.js` 与 `p__System__Notices.004f7e06.async.js` 已包含
+read-users service 和 UI 标记。注意：这轮关闭的是 read-user analytics，不等于通知
+模板、投递 adapter、WebSocket/mail/SMS fan-out、租户通知或 BPM 审批。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -754,7 +767,7 @@ The productization waterline now classifies:
   Round 8/21 `core.dict`, Round 2/27/43/52/54 `core.dept`,
   Round 7/19/22/23/28/29/30/31/32/33/34/35/36/41/54 `core.user`,
   Round 3/22/25/42/53 `core.post`.
-- First loop, enhance: Round 1/55 `core.notice`,
+- First loop, enhance: Round 1/55/56 `core.notice`,
   Round 9/24/37/38/39/40/44/46/49 `core.config`,
   Round 11/26/45/47/48/49/50/51 `core.login-log`.
 - Thin, rework: none after Round 16.
@@ -807,9 +820,10 @@ finds another blocker:
    admitted P1 waterline; drag-sort UI or broader岗位 workflow would require
    separate admission.
 5. `core.notice`: Round 55 closed persisted per-user read/unread state,
-   authenticated inbox APIs, Admin Inbox tab and header badge. Remaining notice
-   work is delivery adapter design and any admitted template/WebSocket/mail/SMS
-   fan-out or read-user analytics.
+   authenticated inbox APIs, Admin Inbox tab and header badge. Round 56 closed
+   management read-user analytics for notices. Remaining notice work is
+   delivery adapter design and any admitted template/WebSocket/mail/SMS
+   fan-out.
 
 ### Current P0/P1/P2 Scope Snapshot
 
@@ -817,8 +831,8 @@ finds another blocker:
   content upload/download, menu tree metadata, plus deployment hardening for
   fixed ports, Admin API origin, duplicate `/api/api` compatibility and stale
   frontend bundle/cache guards.
-- P1 remaining: `core.notice` delivery adapter/template/fan-out/read-user
-  analytics, `core.config` broader runtime feature-flag propagation or admitted
+- P1 remaining: `core.notice` delivery adapter/template/fan-out,
+  `core.config` broader runtime feature-flag propagation or admitted
   secret vault/KMS integration, and `core.login-log` IP/location enrichment
   plus structured actor/reason or admitted mobile/SMS/social login logging.
   `core.post` is closed at the current admitted waterline after Round 53;
@@ -832,7 +846,7 @@ finds another blocker:
 
 Reference parity is measured by product capability waterline, not by replaying
 RuoYi/Yudao commit history. The remaining RuoYi-style foundation backlog after
-Round 55 is roughly several focused P1 loops, not tens of thousands of commits.
+Round 56 is roughly several focused P1 loops, not tens of thousands of commits.
 Yudao Full parity is a different program: BPM, pay, mall, member, CRM, ERP,
 AI and other business domains would require dozens to 100+ separately admitted
 deployable loops, and should not be counted as unfinished cycle-021 foundation

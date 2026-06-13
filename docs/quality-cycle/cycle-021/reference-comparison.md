@@ -1752,3 +1752,38 @@ OpenCore does not claim delivery templates, WebSocket/mail/SMS fan-out,
 tenant-scoped notices, BPM approval around announcements or full read-user
 analytics in this round. Those are the remaining notice productization stages
 if admitted.
+
+## Round 56 Notice Read-User Analytics Reference Shape
+
+RuoYi-style notice management treats read-user records as an operator-facing
+verification surface: after a notice is published and users interact with it,
+the manager should be able to inspect who has read the notice and when. This is
+separate from delivery channels; it relies first on trustworthy per-user read
+state.
+
+Yudao keeps notice/notify-message read state explicit on the consumer side,
+with user-facing unread/list/read operations. Once OpenCore added that read
+receipt foundation in Round 55, the next lowest-dependency reference-aligned
+step was to expose those receipts to notice managers.
+
+OpenCore already had:
+
+- system notice CRUD and lifecycle from Round 1;
+- persisted `SystemNoticeReadReceipt` rows from Round 55;
+- authenticated inbox mark-read and mark-all-read behavior;
+- SDK/OpenAPI/Admin System Notices coverage.
+
+Round 56 admits the read-user analytics stage:
+
+- expose `GET /api/core/notices/:id/read-users` with `core:notice:read`;
+- list `userId`, `username`, `displayName` and `readAt` for users who have read
+  the notice;
+- implement the same behavior in seed and Prisma repositories;
+- surface the list through an Admin System Notices row action and modal;
+- prove missing notice guards and real read receipt visibility in fixed-port,
+  deploy and public smoke.
+
+OpenCore still does not claim notification templates, delivery adapter
+configuration, WebSocket/mail/SMS fan-out, tenant-scoped notices or BPM approval
+around announcements in this round. Those remain separate notice stages if
+admitted.

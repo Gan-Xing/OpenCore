@@ -1678,6 +1678,35 @@ and fixed/deploy/public smoke.
       URL verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 56: core.notice Read-User Analytics Productization
+
+Why this slice: after Round 55 added persisted read receipts and authenticated
+inbox behavior, the next lowest-dependency notice gap was the management-side
+read-user analytics surface. RuoYi-style notice operations expose read-user
+records so an operator can see who has read a notice. Yudao's notify-message
+model keeps the consumer read state explicit, which OpenCore can now surface
+per notice without first admitting templates or delivery fan-out.
+
+- [x] Recompare RuoYi notice read-user expectations and Yudao notify-message
+      read-state management before selecting this slice.
+- [x] Extend `@opencore/system` notice DTO/repository/service contracts with
+      paged read-user records.
+- [x] Implement seed and Prisma read-user queries backed by real
+      `SystemNoticeReadReceipt` rows, including missing-notice 404 behavior.
+- [x] Add `GET /api/core/notices/:id/read-users` before dynamic notice detail
+      routes and protect it with `core:notice:read`.
+- [x] Extend API permission matrix, OpenAPI snapshot, SDK types/client/spec and
+      Admin platform service.
+- [x] Add Admin System Notices row-level `Read users` action and
+      `System Notice Read Users` modal with username, display name and read
+      timestamp columns.
+- [x] Extend Admin static smoke to lock the read-user service and page markers.
+- [x] Extend `tools/scripts/smoke-core-notice.mjs` so fixed-port, deploy and
+      public smoke prove missing-notice guards plus real read-user visibility.
+- [x] Run focused tests, full gates, fixed-port smoke, deployment and public
+      URL verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -1719,10 +1748,10 @@ treat "minimal loop" as "minimal final product".
 
 ### First Loop, Needs Enhancement
 
-- [ ] Round 1/55 `core.notice`: management CRUD, persisted per-user read
-      receipts, authenticated inbox APIs, Admin Inbox tab and header unread
-      badge are complete. Delivery adapter design, notification templates,
-      WebSocket/mail/SMS fan-out and any read-user analytics remain.
+- [ ] Round 1/55/56 `core.notice`: management CRUD, persisted per-user read
+      receipts, authenticated inbox APIs, Admin Inbox tab, header unread badge
+      and management read-user analytics are complete. Delivery adapter design,
+      notification templates and WebSocket/mail/SMS fan-out remain.
 - [ ] Round 9/24/37/38/39/40/44/46/49 `core.config`: public get-value-by-key, cache
       refresh and mutation invalidation are complete. Category/name/remark
       metadata is complete. Native XLSX export payload and Admin download are
@@ -1773,7 +1802,7 @@ treat "minimal loop" as "minimal final product".
 ## Explicitly Out Of Scope
 
 - Message bus push, WebSocket delivery or mail/SMS fan-out.
-- Notification template/delivery adapter design and read-user analytics.
+- Notification template/delivery adapter design and delivery fan-out.
 - BPMN/workflow approval around announcements.
 - Tenant-scoped notices.
 - Department data-scope workflow integration and role data-scope assignment UI.

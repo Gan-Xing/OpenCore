@@ -867,3 +867,29 @@ This stays inside the current S7 System notice boundary. It does not introduce
 notification templates, delivery adapter configuration, WebSocket/mail/SMS
 fan-out, tenant notices, BPM approval or full read-user analytics in this
 round.
+
+## Round 56 Audit: core.notice Read-User Analytics
+
+After Round 55, `core.notice` had persisted read receipts and authenticated
+inbox behavior, but managers still could not inspect which users had read a
+notice.
+
+- RuoYi-style notice management includes read-user records as a basic
+  announcement verification surface.
+- Yudao's notify-message APIs keep read state explicit, so exposing the same
+  receipt data to managers is aligned with the reference shape without copying
+  implementation.
+- OpenCore already had `SystemNoticeReadReceipt`, inbox mark-read behavior,
+  notice management CRUD and `core:notice:read`.
+- The lowest-dependency loop was a management read-users API, SDK/Admin modal,
+  OpenAPI update and smoke guard, not delivery templates or fan-out.
+- The route needed to be registered before `notices/:id` so
+  `:id/read-users` is not swallowed by the dynamic detail path.
+- Seed and Prisma repository implementations both needed to use actual read
+  receipts, not fixture-only rows.
+- Fixed-port, deploy and public smoke needed to prove a missing notice returns
+  404 and that a real authenticated mark-read creates a visible read-user row.
+
+This stays inside the current S7 System notice boundary. It does not introduce
+notification templates, delivery adapter configuration, WebSocket/mail/SMS
+fan-out, tenant notices or BPM approval in this round.

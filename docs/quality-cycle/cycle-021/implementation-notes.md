@@ -4686,3 +4686,100 @@ Against public endpoints after deploy:
   `15edffc feat(notice): add system notice inbox read state / 新增系统通知收件箱已读状态`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 56 Capability
+
+Capability: `core.notice` read-user analytics productization.
+
+Round 56 closes the P1 notice read-user analytics stage that Round 55 left
+open. It does not claim delivery adapter, template or WebSocket/mail/SMS
+fan-out depth.
+
+Reference comparison:
+
+- RuoYi-style notice products expose read-user records around system notices so
+  operators can verify whether announcements reached users.
+- Yudao's notify-message model keeps read state explicit and queryable on the
+  consumer side.
+- OpenCore already had persisted `SystemNoticeReadReceipt` from Round 55, so
+  the lowest-dependency management loop was to surface those receipts by
+  notice.
+
+## Round 56 Implemented
+
+- Added `SystemNoticeReadUserDto`, page DTO and query DTO.
+- Added `listNoticeReadUsers` to `@opencore/system` repository/service
+  contracts.
+- Implemented seed read-user lookup with seeded user metadata fallback.
+- Implemented Prisma read-user lookup backed by
+  `systemNoticeReadReceipt`, including user select and missing notice 404.
+- Added `GET /api/core/notices/:id/read-users` with `core:notice:read` and
+  route order before `GET /api/core/notices/:id`.
+- Extended API permission matrix, OpenAPI snapshot, SDK types/client/spec and
+  Admin platform service.
+- Added Admin System Notices `Read users` row action and
+  `System Notice Read Users` modal with username, display name and read time.
+- Extended Admin static smoke to lock service and page markers.
+- Extended `tools/scripts/smoke-core-notice.mjs` to prove missing read-user
+  notice guards and real read receipt visibility after mark-read.
+
+Out of scope for Round 56:
+
+- notification templates;
+- WebSocket/mail/SMS delivery fan-out;
+- delivery adapter configuration;
+- tenant-scoped notices;
+- BPM/workflow approval;
+- delivery/read analytics beyond the per-notice read-user list.
+
+## Round 56 Verification
+
+- `pnpm nx test system --runInBand`
+- `pnpm nx test sdk --runInBand`
+- `pnpm test:api --runInBand`
+- `pnpm test:admin`
+- `pnpm openapi:export`
+- `pnpm openapi:check`
+- `pnpm openapi:registry-tags:check`
+- `pnpm sdk:check`
+- `pnpm typecheck`
+- `pnpm lint`
+- `pnpm smoke:api:local`
+- `pnpm deploy:opencore`
+- `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-notice`
+
+`pnpm smoke:api:local` passed on fixed port `39173`, including
+`core.notice.read-users.missing-guard` and `core.notice.read-users.list`.
+
+`pnpm deploy:opencore` passed, deploying API/Admin on fixed ports
+`39172`/`39174`; deploy smoke included Admin same-origin login,
+duplicate-prefix login compatibility, public bundle checks, stale
+service-worker retirement and the new notice read-user guards.
+
+`pnpm lint` passed after rerunning it alone. A first attempt ran
+`pnpm typecheck` and `pnpm lint` in parallel; both invoke Admin `max setup`,
+which made `admin:lint` flaky by racing generated Umi types. Do not run
+commands that invoke Admin `max setup` in parallel.
+
+## Round 56 Public Verification
+
+Against public endpoints after deploy:
+
+- Public API: `http://144.217.243.161:39172`
+- Public Admin: `http://144.217.243.161:39174`
+- Admin main bundle: `umi.a866353b.js`
+- System Notices chunk: `p__System__Notices.004f7e06.async.js`
+- Public API notice smoke passed:
+  `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-notice`.
+  Checks included missing read-users guard and read-users list visibility after
+  mark-read.
+- Public Admin main bundle contains `listNoticeReadUsers`.
+- Public System Notices chunk contains `Read users` and
+  `System Notice Read Users`.
+
+## Round 56 Commit Record
+
+- Feature commit:
+  `e2601a7 feat(notice): add read user analytics / 新增通知已读用户分析`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.
