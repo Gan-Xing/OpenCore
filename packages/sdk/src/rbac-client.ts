@@ -1,6 +1,7 @@
 import type {
   AssignRoleMenusRequest,
   AssignRoleUsersRequest,
+  AssignUserRolesRequest,
   BatchDeleteUsersRequest,
   BatchSetUserStatusRequest,
   BatchUserMutationSummary,
@@ -36,6 +37,7 @@ import type {
   UserOptionSummary,
   UserPasswordMutationSummary,
   UserProfileSummary,
+  UserRoleAssignmentSummary,
   UserSummary,
 } from './rbac-types';
 
@@ -84,6 +86,15 @@ export type RbacClient = {
     body: UpdateUserPasswordRequest,
   ) => Promise<UserPasswordMutationSummary>;
   getUser: (token: string, id: string) => Promise<UserSummary>;
+  getUserRoleAssignment: (
+    token: string,
+    id: string,
+  ) => Promise<UserRoleAssignmentSummary>;
+  assignUserRoles: (
+    token: string,
+    id: string,
+    body: AssignUserRolesRequest,
+  ) => Promise<UserRoleAssignmentSummary>;
   createUser: (token: string, body: CreateUserRequest) => Promise<UserSummary>;
   updateUser: (
     token: string,
@@ -235,6 +246,22 @@ export function createRbacClient(request: SdkRequest): RbacClient {
       request<UserSummary>(`/core/users/${encodeURIComponent(id)}`, {
         token,
       }),
+    getUserRoleAssignment: (token, id) =>
+      request<UserRoleAssignmentSummary>(
+        `/core/users/${encodeURIComponent(id)}/roles`,
+        {
+          token,
+        },
+      ),
+    assignUserRoles: (token, id, body) =>
+      request<UserRoleAssignmentSummary>(
+        `/core/users/${encodeURIComponent(id)}/roles`,
+        {
+          method: 'PATCH',
+          body,
+          token,
+        },
+      ),
     createUser: (token, body) =>
       request<UserSummary>('/core/users', {
         method: 'POST',

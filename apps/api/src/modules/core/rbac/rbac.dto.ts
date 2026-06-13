@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 export {
   AssignRoleMenusDto,
   AssignRoleUsersDto,
+  AssignUserRolesDto,
   BatchDeleteUsersDto,
   BatchSetUserStatusDto,
   BatchUserMutationResultDto,
@@ -28,6 +29,7 @@ export {
   UserImportTemplateDto,
   UserOptionDto,
   UserProfileDto,
+  UserRoleAssignmentDto,
   UserMutationResultDto,
   UserSummaryDto,
 } from '@opencore/system';

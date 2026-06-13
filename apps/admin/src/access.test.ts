@@ -6,6 +6,7 @@ describe('access', () => {
     const result = access({
       permissions: [
         'core:dashboard:read',
+        'core:user:manage',
         'core:user:export',
         'core:user:read',
         'monitor:status:read',
@@ -14,6 +15,7 @@ describe('access', () => {
     });
 
     expect(result.canAccessDashboard).toBe(true);
+    expect(result.canAssignUserRoles).toBe(true);
     expect(result.canExportUsers).toBe(true);
     expect(result.canReadUsers).toBe(true);
     expect(result.canReadSystemStatus).toBe(true);
@@ -25,6 +27,7 @@ describe('access', () => {
     const result = access(undefined);
 
     expect(result.canAccessDashboard).toBe(false);
+    expect(result.canAssignUserRoles).toBe(false);
     expect(result.canExportUsers).toBe(false);
     expect(result.canReadUsers).toBe(false);
     expect(result.canReadOpenForge).toBe(false);

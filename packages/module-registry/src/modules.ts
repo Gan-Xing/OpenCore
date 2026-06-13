@@ -102,6 +102,7 @@ export const moduleRegistry = [
     permissions: definePermissions('core', 'user', 'users', 'S6', [
       ...CRUD_PERMISSION_SEEDS,
       { action: 'import', title: 'Import' },
+      { action: 'manage', title: 'Assign roles to', dangerous: true },
     ]),
     menus: [
       defineMenu(

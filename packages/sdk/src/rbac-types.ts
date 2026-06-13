@@ -134,6 +134,18 @@ export type UserMutationSummary = UserSummary & {
   revokedSessionCount?: number;
 };
 
+export type UserRoleAssignmentSummary = Pick<
+  UserSummary,
+  'displayName' | 'roleCodes' | 'username'
+> & {
+  userId: string;
+  revokedSessionCount?: number;
+};
+
+export type AssignUserRolesRequest = {
+  roleCodes: readonly string[];
+};
+
 export type BatchUserMutationSummary = {
   affected: number;
   userIds: readonly string[];

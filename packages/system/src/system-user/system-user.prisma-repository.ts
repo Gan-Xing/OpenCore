@@ -7,6 +7,7 @@ import {
 import { PrismaService } from '@opencore/database';
 import type {
   AssignRoleUsersDto,
+  AssignUserRolesDto,
   BatchDeleteUsersDto,
   BatchSetUserStatusDto,
   CreateUserDto,
@@ -19,9 +20,11 @@ import {
   assertSystemUserMutable,
   assertSystemUserPasswordChangeAllowed,
   createRoleUserAssignment,
+  createUserRoleAssignment,
   normalizeBatchDeleteUsersInput,
   normalizeBatchSetUserStatusInput,
   normalizeAssignRoleUsersInput,
+  normalizeAssignUserRolesInput,
   normalizeCreateSystemUserInput,
   normalizeListSystemUsersQuery,
   normalizeUpdateSystemUserPasswordInput,
@@ -398,6 +401,48 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
   async getRoleUserAssignment(roleCode: string) {
     await this.findRoleIdByCode(roleCode);
     return createRoleUserAssignment(roleCode, await this.listUsers());
+  }
+
+  async getUserRoleAssignment(id: string) {
+    return createUserRoleAssignment(
+      toSystemUserSummaryRecord(await this.findUserEntityById(id)),
+    );
+  }
+
+  async assignUserRoles(id: string, body: AssignUserRolesDto) {
+    const existing = toSystemUserSummaryRecord(
+      await this.findUserEntityById(id),
+    );
+    const roleCodes = normalizeAssignUserRolesInput(body);
+
+    assertSystemUserMutable(existing);
+    await this.assertRolesExist(roleCodes);
+
+    const user = await this.prisma.user.update({
+      where: { id },
+      data: {
+        roles: {
+          deleteMany: {},
+          create: roleCodes.map((roleCode) => ({
+            role: { connect: { code: roleCode } },
+          })),
+        },
+      },
+      include: {
+        roles: {
+          include: {
+            role: true,
+          },
+        },
+        posts: {
+          include: {
+            post: true,
+          },
+        },
+      },
+    });
+
+    return createUserRoleAssignment(toSystemUserSummaryRecord(user));
   }
 
   async assignRoleUsers(roleCode: string, body: AssignRoleUsersDto) {

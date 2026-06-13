@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import type {
   AssignRoleUsersDto,
+  AssignUserRolesDto,
   BatchDeleteUsersDto,
   BatchSetUserStatusDto,
   CreateUserDto,
@@ -12,6 +13,7 @@ import type {
   UpdateUserPasswordDto,
   UpdateUserProfileDto,
   UpdateUserDto,
+  UserRoleAssignmentDto,
 } from './system-user.dto';
 import {
   createSystemUserImportTemplate,
@@ -119,6 +121,17 @@ export class SystemUserService {
     body: BatchDeleteUsersDto,
   ): Promise<SystemUserBatchMutationRecord> {
     return await this.repository.deleteUsers(body);
+  }
+
+  getUserRoleAssignment(id: string): Promise<UserRoleAssignmentDto> {
+    return this.repository.getUserRoleAssignment(id);
+  }
+
+  assignUserRoles(
+    id: string,
+    body: AssignUserRolesDto,
+  ): Promise<UserRoleAssignmentDto> {
+    return this.repository.assignUserRoles(id, body);
   }
 
   getRoleUserAssignment(roleCode: string): Promise<RoleUserAssignmentDto> {

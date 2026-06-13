@@ -103,6 +103,28 @@ export class UpdateUserDto {
   enabled?: boolean;
 }
 
+export class UserRoleAssignmentDto {
+  @ApiProperty()
+  userId!: string;
+
+  @ApiProperty()
+  username!: string;
+
+  @ApiProperty()
+  displayName!: string;
+
+  @ApiProperty({ type: [String] })
+  roleCodes!: readonly string[];
+
+  @ApiProperty({ required: false })
+  revokedSessionCount?: number;
+}
+
+export class AssignUserRolesDto {
+  @ApiProperty({ type: [String] })
+  roleCodes!: readonly string[];
+}
+
 export class UserProfileDto extends UserSummaryDto {}
 
 export class UpdateUserProfileDto {

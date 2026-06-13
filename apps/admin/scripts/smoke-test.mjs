@@ -316,6 +316,8 @@ if (
   !opencorePlatformService.includes('listOpenCoreUsers') ||
   !opencorePlatformService.includes('listOpenCoreUserOptions') ||
   !opencorePlatformService.includes('getOpenCoreUser') ||
+  !opencorePlatformService.includes('getOpenCoreUserRoleAssignment') ||
+  !opencorePlatformService.includes('assignOpenCoreUserRoles') ||
   !opencorePlatformService.includes('createOpenCoreUser') ||
   !opencorePlatformService.includes('updateOpenCoreUser') ||
   !opencorePlatformService.includes('setOpenCoreUsersStatus') ||
@@ -388,6 +390,8 @@ if (
   !accessRuntime.includes('core:dashboard:read') ||
   !accessRuntime.includes('tool:openapi:read') ||
   !accessRuntime.includes('core:user:read') ||
+  !accessRuntime.includes('core:user:manage') ||
+  !accessRuntime.includes('canAssignUserRoles') ||
   !accessRuntime.includes('core:user:import') ||
   !accessRuntime.includes('canImportUsers') ||
   !accessRuntime.includes('core:role:read') ||
@@ -713,6 +717,8 @@ if (
 if (
   !usersPage.includes('listOpenCoreUsers') ||
   !usersPage.includes('getOpenCoreUser') ||
+  !usersPage.includes('getOpenCoreUserRoleAssignment') ||
+  !usersPage.includes('assignOpenCoreUserRoles') ||
   !usersPage.includes('createOpenCoreUser') ||
   !usersPage.includes('updateOpenCoreUser') ||
   !usersPage.includes('setOpenCoreUserStatus') ||
@@ -730,8 +736,10 @@ if (
   !usersPage.includes('useAccess') ||
   !usersPage.includes('canExportUsers') ||
   !usersPage.includes('canImportUsers') ||
+  !usersPage.includes('canAssignUserRoles') ||
   !usersPage.includes('Missing core:user:export') ||
   !usersPage.includes('Missing core:user:import') ||
+  !usersPage.includes('Missing core:user:manage') ||
   !usersPage.includes('Department scope') ||
   !usersPage.includes('All departments') ||
   !usersPage.includes('selectedDeptId') ||
@@ -749,6 +757,9 @@ if (
   !usersPage.includes('Import users') ||
   !usersPage.includes('Update existing users') ||
   !usersPage.includes('Select CSV/XLSX file') ||
+  !usersPage.includes('Assign Roles') ||
+  !usersPage.includes('System users cannot be assigned roles') ||
+  !usersPage.includes('assigningRoleUser') ||
   !usersPage.includes('formatImportSummary') ||
   !usersPage.includes('selectedUserIds') ||
   !usersPage.includes('rowSelection') ||
@@ -759,7 +770,7 @@ if (
   !usersPage.includes('rows={filteredRows}')
 ) {
   throw new Error(
-    'Users page must use live SDK CRUD with role/dept selectors, department tree filtering, bounded filtering, backend Excel export, and current-page export.',
+    'Users page must use live SDK CRUD with role/dept selectors, dedicated role assignment, department tree filtering, bounded filtering, backend Excel export, and current-page export.',
   );
 }
 

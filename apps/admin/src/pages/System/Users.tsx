@@ -8,6 +8,7 @@ import {
   PlusOutlined,
   ReloadOutlined,
   StopOutlined,
+  TeamOutlined,
   UploadOutlined,
 } from '@ant-design/icons';
 import {
@@ -26,6 +27,7 @@ import {
   type SystemDeptTreeSummary,
   type SystemPostOptionSummary,
   type UserImportResultSummary,
+  type UserRoleAssignmentSummary,
   type UserSummary,
 } from '@opencore/sdk';
 import {
@@ -60,8 +62,10 @@ import {
   deleteOpenCoreUsers,
   deleteOpenCoreUser,
   exportOpenCoreUsers,
+  assignOpenCoreUserRoles,
   getOpenCoreUserImportTemplate,
   getOpenCoreUser,
+  getOpenCoreUserRoleAssignment,
   importOpenCoreUsers,
   listOpenCoreRoles,
   listOpenCoreSystemDepts,
@@ -100,6 +104,10 @@ type UserFormValues = {
 
 type ResetPasswordValues = {
   password: string;
+};
+
+type AssignRolesValues = {
+  roleCodes?: string[];
 };
 
 type TreeSelectNode = {
@@ -408,10 +416,12 @@ function createDetailFields(
 
 export default function UsersPage() {
   const access = useAccess();
+  const canAssignUserRoles = Boolean(access.canAssignUserRoles);
   const canExportUsers = Boolean(access.canExportUsers);
   const canImportUsers = Boolean(access.canImportUsers);
   const [form] = Form.useForm<UserFormValues>();
   const [resetPasswordForm] = Form.useForm<ResetPasswordValues>();
+  const [assignRolesForm] = Form.useForm<AssignRolesValues>();
   const [rows, setRows] = useState<readonly UserSummary[]>(fallbackRows);
   const [roleRows, setRoleRows] =
     useState<readonly RoleSummary[]>(fallbackRoleRows);
@@ -427,10 +437,14 @@ export default function UsersPage() {
   const [selectedDetail, setSelectedDetail] = useState<UserSummary>();
   const [editingUser, setEditingUser] = useState<UserSummary>();
   const [resetPasswordUser, setResetPasswordUser] = useState<UserSummary>();
+  const [assigningRoleUser, setAssigningRoleUser] =
+    useState<UserRoleAssignmentSummary>();
   const [formOpen, setFormOpen] = useState(false);
   const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
+  const [assignRolesOpen, setAssignRolesOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [resetPasswordSubmitting, setResetPasswordSubmitting] = useState(false);
+  const [assignRolesSubmitting, setAssignRolesSubmitting] = useState(false);
   const [statusUpdatingUserId, setStatusUpdatingUserId] = useState<string>();
   const [batchAction, setBatchAction] = useState<
     'delete' | 'disable' | 'enable'
@@ -633,6 +647,33 @@ export default function UsersPage() {
     }
   };
 
+  const openAssignRoles = async (record: UserSummary) => {
+    if (record.system) {
+      message.warning('System users cannot be assigned roles.');
+      return;
+    }
+
+    if (!canAssignUserRoles) {
+      message.warning('Missing core:user:manage');
+      return;
+    }
+
+    try {
+      const assignment = await getOpenCoreUserRoleAssignment(record.id);
+      setAssigningRoleUser(assignment);
+      assignRolesForm.setFieldsValue({
+        roleCodes: [...assignment.roleCodes],
+      });
+      setAssignRolesOpen(true);
+    } catch (error: unknown) {
+      message.error(
+        error instanceof Error
+          ? error.message
+          : 'Unable to open role assignment.',
+      );
+    }
+  };
+
   const submitForm = async () => {
     const values = await form.validateFields();
     const roleCodes = values.roleCodes ?? [];
@@ -689,6 +730,28 @@ export default function UsersPage() {
       await loadUsers();
     } finally {
       setResetPasswordSubmitting(false);
+    }
+  };
+
+  const submitAssignRoles = async () => {
+    if (!assigningRoleUser) {
+      return;
+    }
+
+    const values = await assignRolesForm.validateFields();
+    setAssignRolesSubmitting(true);
+    try {
+      const result = await assignOpenCoreUserRoles(assigningRoleUser.userId, {
+        roleCodes: values.roleCodes ?? [],
+      });
+      message.success(
+        `Roles assigned. ${formatRevokedSessions(result.revokedSessionCount)}`,
+      );
+      setAssignRolesOpen(false);
+      setAssigningRoleUser(undefined);
+      await loadUsers();
+    } finally {
+      setAssignRolesSubmitting(false);
     }
   };
 
@@ -920,6 +983,23 @@ export default function UsersPage() {
               disabled={record.system}
               icon={<LockOutlined />}
               onClick={() => void openResetPassword(record)}
+              size="small"
+            />
+          </Tooltip>
+          <Tooltip
+            title={
+              record.system
+                ? 'System users cannot be assigned roles'
+                : canAssignUserRoles
+                  ? 'Assign Roles'
+                  : 'Missing core:user:manage'
+            }
+          >
+            <Button
+              aria-label={`Assign roles for ${record.username}`}
+              disabled={record.system || !canAssignUserRoles}
+              icon={<TeamOutlined />}
+              onClick={() => void openAssignRoles(record)}
               size="small"
             />
           </Tooltip>
@@ -1276,6 +1356,41 @@ export default function UsersPage() {
             rules={[{ required: true, message: 'Password is required.' }]}
           >
             <Input.Password autoComplete="new-password" maxLength={128} />
+          </Form.Item>
+        </Form>
+      </Modal>
+      <Modal
+        title={
+          assigningRoleUser
+            ? `Assign Roles - ${assigningRoleUser.username}`
+            : 'Assign Roles'
+        }
+        open={assignRolesOpen}
+        onCancel={() => {
+          setAssignRolesOpen(false);
+          setAssigningRoleUser(undefined);
+        }}
+        onOk={() => void submitAssignRoles()}
+        confirmLoading={assignRolesSubmitting}
+        okText="Save"
+        width={560}
+      >
+        <Form<AssignRolesValues> form={assignRolesForm} layout="vertical">
+          <Form.Item label="Username">
+            <Input value={assigningRoleUser?.username} disabled />
+          </Form.Item>
+          <Form.Item label="Display Name">
+            <Input value={assigningRoleUser?.displayName} disabled />
+          </Form.Item>
+          <Form.Item label="Roles" name="roleCodes" rules={[{ type: 'array' }]}>
+            <Select
+              allowClear
+              mode="multiple"
+              optionFilterProp="label"
+              options={roleOptions}
+              placeholder="Select roles"
+              showSearch
+            />
           </Form.Item>
         </Form>
       </Modal>

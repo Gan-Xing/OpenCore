@@ -39,6 +39,10 @@ describe('createRbacClient', () => {
       newPassword: 'new-password',
     });
     await client.getUser('token', 'user_admin');
+    await client.getUserRoleAssignment('token', 'user_operator');
+    await client.assignUserRoles('token', 'user_operator', {
+      roleCodes: ['viewer'],
+    });
     await client.createUser('token', {
       username: 'operator',
       displayName: 'Operator',
@@ -147,6 +151,12 @@ describe('createRbacClient', () => {
         token: 'token',
       },
       { path: '/core/users/user_admin', token: 'token' },
+      { path: '/core/users/user_operator/roles', token: 'token' },
+      {
+        path: '/core/users/user_operator/roles',
+        method: 'PATCH',
+        token: 'token',
+      },
       { path: '/core/users', method: 'POST', token: 'token' },
       {
         path: '/core/users/user_operator',

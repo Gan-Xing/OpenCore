@@ -532,6 +532,118 @@ try {
     'reenabled smoke user accessToken',
   );
 
+  const userRoleAssignment = await apiRequest(
+    `/core/users/${encodeURIComponent(smokeUserId)}/roles`,
+  );
+  assertEqual(
+    userRoleAssignment.userId,
+    smokeUserId,
+    'user role assignment user id',
+  );
+  assertEqual(
+    userRoleAssignment.username,
+    smokeUsername,
+    'user role assignment username',
+  );
+  assertIncludes(
+    userRoleAssignment.roleCodes,
+    'viewer',
+    'user role assignment initial roles',
+  );
+  await request(
+    `${apiPrefix}/core/users/${encodeURIComponent(smokeUserId)}/roles`,
+    {
+      token: smokeUserToken,
+      expected: [403],
+    },
+  );
+  await request(
+    `${apiPrefix}/core/users/${encodeURIComponent(smokeUserId)}/roles`,
+    {
+      method: 'PATCH',
+      token: smokeUserToken,
+      expected: [403],
+      body: { roleCodes: [] },
+    },
+  );
+  await apiRequest(`/core/users/${encodeURIComponent(adminUserId)}/roles`, {
+    method: 'PATCH',
+    expected: [400],
+    body: { roleCodes: ['viewer'] },
+  });
+  await apiRequest(`/core/users/${encodeURIComponent(smokeUserId)}/roles`, {
+    method: 'PATCH',
+    expected: [400],
+    body: { roleCodes: ['viewer', 'viewer'] },
+  });
+  await apiRequest(`/core/users/${encodeURIComponent(smokeUserId)}/roles`, {
+    method: 'PATCH',
+    expected: [404],
+    body: { roleCodes: ['missing_role'] },
+  });
+  const clearedRoleAssignment = await apiRequest(
+    `/core/users/${encodeURIComponent(smokeUserId)}/roles`,
+    {
+      method: 'PATCH',
+      body: { roleCodes: [] },
+    },
+  );
+  assertEqual(
+    clearedRoleAssignment.revokedSessionCount,
+    1,
+    'user role assignment revoke session count',
+  );
+  assertNotIncludes(
+    clearedRoleAssignment.roleCodes,
+    'viewer',
+    'user role assignment cleared roles',
+  );
+  await request(`${apiPrefix}/auth/me`, {
+    token: smokeUserToken,
+    expected: [401],
+  });
+  const roleClearedLogin = await loginSmokeUser(smokePassword, [200, 201]);
+  smokeUserToken = assertString(
+    roleClearedLogin.accessToken,
+    'role-cleared smoke user accessToken',
+  );
+  assertNotIncludes(
+    roleClearedLogin.user.roleCodes,
+    'viewer',
+    'role-cleared login roles',
+  );
+  const restoredRoleAssignment = await apiRequest(
+    `/core/users/${encodeURIComponent(smokeUserId)}/roles`,
+    {
+      method: 'PATCH',
+      body: { roleCodes: ['viewer'] },
+    },
+  );
+  assertEqual(
+    restoredRoleAssignment.revokedSessionCount,
+    1,
+    'user role assignment restore revoke session count',
+  );
+  assertIncludes(
+    restoredRoleAssignment.roleCodes,
+    'viewer',
+    'user role assignment restored roles',
+  );
+  await request(`${apiPrefix}/auth/me`, {
+    token: smokeUserToken,
+    expected: [401],
+  });
+  const roleRestoredLogin = await loginSmokeUser(smokePassword, [200, 201]);
+  smokeUserToken = assertString(
+    roleRestoredLogin.accessToken,
+    'role-restored smoke user accessToken',
+  );
+  assertIncludes(
+    roleRestoredLogin.user.roleCodes,
+    'viewer',
+    'role-restored login roles',
+  );
+
   const passwordResetUser = await apiRequest(
     `/core/users/${encodeURIComponent(smokeUserId)}/reset-password`,
     {
@@ -971,6 +1083,16 @@ try {
         'core.user.status.login-blocked',
         'core.user.status.enable',
         'core.user.simple-list.enabled-filter',
+        'core.user.role-assignment.get',
+        'core.user.role-assignment.permission-guard',
+        'core.user.role-assignment.system-user-guard',
+        'core.user.role-assignment.duplicate-role-guard',
+        'core.user.role-assignment.missing-role-guard',
+        'core.user.role-assignment.clear',
+        'core.user.role-assignment.revoke-session',
+        'core.user.role-assignment.login-refresh',
+        'core.user.role-assignment.restore',
+        'core.user.role-assignment.restore-revoke-session',
         'core.user.reset-password',
         'core.user.reset-password.revoke-session',
         'core.user.reset-password.old-password-blocked',

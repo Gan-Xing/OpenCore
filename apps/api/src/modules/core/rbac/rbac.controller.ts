@@ -34,6 +34,7 @@ import {
 import {
   AssignRoleMenusDto,
   AssignRoleUsersDto,
+  AssignUserRolesDto,
   BatchDeleteUsersDto,
   BatchSetUserStatusDto,
   BatchUserMutationResultDto,
@@ -66,6 +67,7 @@ import {
   UserOptionDto,
   UserProfileDto,
   UserPasswordMutationResultDto,
+  UserRoleAssignmentDto,
   UserMutationResultDto,
   UserSummaryDto,
 } from './rbac.dto';
@@ -310,6 +312,43 @@ export class RbacController {
       affected: result.affected,
       userIds: result.userIds,
       deleted: true,
+      revokedSessionCount,
+    };
+  }
+
+  @Get('users/:id/roles')
+  @ApiTags('Core Users')
+  @RequirePermission('core:user:manage')
+  @ApiOkResponse({ type: UserRoleAssignmentDto })
+  getUserRoleAssignment(
+    @Param('id') id: string,
+  ): Promise<UserRoleAssignmentDto> {
+    return this.users.getUserRoleAssignment(id);
+  }
+
+  @Patch('users/:id/roles')
+  @ApiTags('Core Users')
+  @RequirePermission('core:user:manage')
+  @ApiOkResponse({ type: UserRoleAssignmentDto })
+  async assignUserRoles(
+    @Param('id') id: string,
+    @Body() body: AssignUserRolesDto,
+  ): Promise<UserRoleAssignmentDto> {
+    const before = await this.users.getUserRoleAssignment(id);
+    const assignment = await this.users.assignUserRoles(id, body);
+    const revokedSessionCount = sameRoleCodes(
+      before.roleCodes,
+      assignment.roleCodes,
+    )
+      ? 0
+      : await this.revokeActiveSessionsForUsernames(
+          [before.username],
+          'rbac.user-role-assignment',
+          `user role assignment updated for ${before.username}`,
+        );
+
+    return {
+      ...assignment,
       revokedSessionCount,
     };
   }
@@ -931,6 +970,20 @@ function startsWithHex(body: Buffer, hex: string): boolean {
   const expected = Buffer.from(hex, 'hex');
 
   return body.subarray(0, expected.byteLength).equals(expected);
+}
+
+function sameRoleCodes(
+  left: readonly string[],
+  right: readonly string[],
+): boolean {
+  if (left.length !== right.length) {
+    return false;
+  }
+
+  const leftSorted = [...left].sort();
+  const rightSorted = [...right].sort();
+
+  return leftSorted.every((roleCode, index) => roleCode === rightSorted[index]);
 }
 
 function createAvatarStorageKey(

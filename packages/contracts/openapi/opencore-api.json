@@ -399,6 +399,66 @@
         "tags": ["Rbac", "Core Users"]
       }
     },
+    "/api/core/users/{id}/roles": {
+      "get": {
+        "operationId": "RbacController_getUserRoleAssignment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserRoleAssignmentDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Users"]
+      },
+      "patch": {
+        "operationId": "RbacController_assignUserRoles",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AssignUserRolesDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserRoleAssignmentDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Users"]
+      }
+    },
     "/api/core/users/{id}/avatar": {
       "get": {
         "operationId": "RbacController_getUserAvatar",
@@ -5686,6 +5746,24 @@
           "userIds": { "type": "array", "items": { "type": "string" } }
         },
         "required": ["userIds"]
+      },
+      "UserRoleAssignmentDto": {
+        "type": "object",
+        "properties": {
+          "userId": { "type": "string" },
+          "username": { "type": "string" },
+          "displayName": { "type": "string" },
+          "roleCodes": { "type": "array", "items": { "type": "string" } },
+          "revokedSessionCount": { "type": "number" }
+        },
+        "required": ["userId", "username", "displayName", "roleCodes"]
+      },
+      "AssignUserRolesDto": {
+        "type": "object",
+        "properties": {
+          "roleCodes": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["roleCodes"]
       },
       "CreateUserDto": {
         "type": "object",

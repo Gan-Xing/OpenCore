@@ -5,6 +5,7 @@ import {
   createSystemManagementClient,
   type AssignRoleMenusRequest,
   type AssignRoleUsersRequest,
+  type AssignUserRolesRequest,
   type AuditLogQueryRequest,
   type AuditLogSummary,
   type BatchDeleteUsersRequest,
@@ -76,6 +77,7 @@ import {
   type UserSummary,
   type UserOptionSummary,
   type UserMutationSummary,
+  type UserRoleAssignmentSummary,
   type UpdateUserRequest,
   type UserImportResultSummary,
   type UserImportTemplateSummary,
@@ -101,6 +103,19 @@ export function listOpenCoreUserOptions(
 
 export function getOpenCoreUser(id: string): Promise<UserSummary> {
   return rbacClient.getUser(getRequiredAdminToken(), id);
+}
+
+export function getOpenCoreUserRoleAssignment(
+  id: string,
+): Promise<UserRoleAssignmentSummary> {
+  return rbacClient.getUserRoleAssignment(getRequiredAdminToken(), id);
+}
+
+export function assignOpenCoreUserRoles(
+  id: string,
+  body: AssignUserRolesRequest,
+): Promise<UserRoleAssignmentSummary> {
+  return rbacClient.assignUserRoles(getRequiredAdminToken(), id, body);
 }
 
 export function createOpenCoreUser(

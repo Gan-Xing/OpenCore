@@ -545,6 +545,34 @@ describe('@opencore/system system-user', () => {
     await expect(service.getUser(operator.id)).resolves.toMatchObject({
       roleCodes: ['viewer'],
     });
+    await expect(service.getUserRoleAssignment(operator.id)).resolves.toEqual({
+      userId: operator.id,
+      username: 'role_assignee',
+      displayName: 'Role Assignee',
+      roleCodes: ['viewer'],
+    });
+    await expect(
+      service.assignUserRoles(operator.id, { roleCodes: [] }),
+    ).resolves.toEqual({
+      userId: operator.id,
+      username: 'role_assignee',
+      displayName: 'Role Assignee',
+      roleCodes: [],
+    });
+    await expect(service.getUser(operator.id)).resolves.toMatchObject({
+      roleCodes: [],
+    });
+    await expect(
+      service.assignUserRoles(operator.id, {
+        roleCodes: ['viewer', 'viewer'],
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.assignUserRoles(operator.id, { roleCodes: ['missing'] }),
+    ).rejects.toThrow(NotFoundException);
+    await expect(
+      service.assignUserRoles('user_admin', { roleCodes: ['viewer'] }),
+    ).rejects.toThrow(BadRequestException);
     await expect(
       service.assignRoleUsers('viewer', { userIds: [] }),
     ).resolves.toMatchObject({
@@ -942,6 +970,33 @@ describe('@opencore/system system-user', () => {
         roleCodes: [roleCode],
       });
       await expect(
+        service.getUserRoleAssignment(firstUser.id),
+      ).resolves.toEqual({
+        userId: firstUser.id,
+        username,
+        displayName: 'Role Assignment User',
+        roleCodes: [roleCode],
+      });
+      await expect(
+        service.assignUserRoles(firstUser.id, { roleCodes: [] }),
+      ).resolves.toEqual({
+        userId: firstUser.id,
+        username,
+        displayName: 'Role Assignment User',
+        roleCodes: [],
+      });
+      await expect(service.getUser(firstUser.id)).resolves.toMatchObject({
+        roleCodes: [],
+      });
+      await expect(
+        service.assignUserRoles(firstUser.id, {
+          roleCodes: [roleCode, roleCode],
+        }),
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        service.assignUserRoles(firstUser.id, { roleCodes: ['missing'] }),
+      ).rejects.toThrow(NotFoundException);
+      await expect(
         service.assignRoleUsers(roleCode, { userIds: [] }),
       ).resolves.toMatchObject({
         assignedUserIds: [],
@@ -954,6 +1009,11 @@ describe('@opencore/system system-user', () => {
       );
 
       expect(admin).toEqual(expect.objectContaining({ system: true }));
+      await expect(
+        service.assignUserRoles(admin?.id ?? 'admin', {
+          roleCodes: [roleCode],
+        }),
+      ).rejects.toThrow(BadRequestException);
       await expect(
         service.assignRoleUsers(roleCode, { userIds: [admin?.id ?? 'admin'] }),
       ).rejects.toThrow(BadRequestException);

@@ -151,7 +151,7 @@ describe('@opencore/module-registry', () => {
 
   it('registers user import as an explicit permission action', () => {
     expect(collectPermissionCodes()).toEqual(
-      expect.arrayContaining(['core:user:import']),
+      expect.arrayContaining(['core:user:import', 'core:user:manage']),
     );
 
     expect(findModuleByCode('core.user')?.permissions).toEqual(
@@ -160,6 +160,12 @@ describe('@opencore/module-registry', () => {
           code: 'core:user:import',
           title: 'Import users',
           stage: 'S6',
+        }),
+        expect.objectContaining({
+          code: 'core:user:manage',
+          title: 'Assign roles to users',
+          stage: 'S6',
+          dangerous: true,
         }),
       ]),
     );

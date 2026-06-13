@@ -6,6 +6,7 @@ import {
 } from '../export-xlsx';
 import type {
   AssignRoleUsersDto,
+  AssignUserRolesDto,
   BatchDeleteUsersDto,
   BatchSetUserStatusDto,
   CreateUserDto,
@@ -17,6 +18,7 @@ import type {
   UpdateUserPasswordDto,
   UpdateUserProfileDto,
   UpdateUserDto,
+  UserRoleAssignmentDto,
 } from './system-user.dto';
 import { verifySystemUserPassword } from './system-user.password';
 import type { SystemUserRecord } from './system-user.records';
@@ -226,6 +228,13 @@ export abstract class SystemUserRepository {
   abstract deleteUsers(
     body: BatchDeleteUsersDto,
   ): Promise<SystemUserBatchMutationRecord>;
+
+  abstract getUserRoleAssignment(id: string): Promise<UserRoleAssignmentDto>;
+
+  abstract assignUserRoles(
+    id: string,
+    body: AssignUserRolesDto,
+  ): Promise<UserRoleAssignmentDto>;
 
   abstract getRoleUserAssignment(
     roleCode: string,
@@ -585,6 +594,29 @@ export function createRoleUserAssignment(
     assignedUsers,
     availableUsers,
   };
+}
+
+export function createUserRoleAssignment(
+  user: SystemUserSummaryRecord,
+): UserRoleAssignmentDto {
+  return {
+    userId: user.id,
+    username: user.username,
+    displayName: user.displayName,
+    roleCodes: [...user.roleCodes],
+  };
+}
+
+export function normalizeAssignUserRolesInput(
+  body: AssignUserRolesDto,
+): readonly string[] {
+  const value = body?.roleCodes;
+
+  if (!Array.isArray(value)) {
+    throw new BadRequestException('System user roleCodes must be an array.');
+  }
+
+  return normalizeRoleCodes(value);
 }
 
 export function normalizeAssignRoleUsersInput(

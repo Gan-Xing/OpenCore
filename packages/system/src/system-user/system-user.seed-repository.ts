@@ -11,6 +11,8 @@ import {
   cloneSystemUserSummary,
   compareSystemUserRecords,
   createRoleUserAssignment,
+  createUserRoleAssignment,
+  normalizeAssignUserRolesInput,
   normalizeCreateSystemUserInput,
   normalizeAssignRoleUsersInput,
   normalizeBatchDeleteUsersInput,
@@ -32,6 +34,8 @@ import {
 import { hashSystemUserPassword } from './system-user.password';
 import { seedSystemUsers, type SystemUserRecord } from './system-user.records';
 import type {
+  AssignRoleUsersDto,
+  AssignUserRolesDto,
   BatchDeleteUsersDto,
   BatchSetUserStatusDto,
   CreateUserDto,
@@ -255,15 +259,29 @@ export class SeedSystemUserRepository extends SystemUserRepository {
     };
   }
 
+  async getUserRoleAssignment(id: string) {
+    return createUserRoleAssignment(
+      cloneSystemUserSummary(this.findMutableUserById(id)),
+    );
+  }
+
+  async assignUserRoles(id: string, body: AssignUserRolesDto) {
+    const user = this.findMutableUserById(id);
+    assertSystemUserMutable(cloneSystemUserSummary(user));
+    const roleCodes = normalizeAssignUserRolesInput(body);
+
+    this.assertRoleCodes(roleCodes);
+    user.roleCodes = [...roleCodes];
+
+    return createUserRoleAssignment(cloneSystemUserSummary(user));
+  }
+
   async getRoleUserAssignment(roleCode: string) {
     this.assertRoleCodes([roleCode]);
     return createRoleUserAssignment(roleCode, await this.listUsers());
   }
 
-  async assignRoleUsers(
-    roleCode: string,
-    body: { userIds: readonly string[] },
-  ) {
+  async assignRoleUsers(roleCode: string, body: AssignRoleUsersDto) {
     this.assertRoleCodes([roleCode]);
     const userIds = normalizeAssignRoleUsersInput(body);
     const selectedUserIds = new Set(userIds);
