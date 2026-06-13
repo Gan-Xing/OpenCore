@@ -6,7 +6,10 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { SecurityAuthService } from '../security-auth';
-import { REQUIRED_PERMISSIONS_KEY } from './security-rbac.decorators';
+import {
+  REQUIRED_PERMISSIONS_KEY,
+  REQUIRE_AUTHENTICATED_KEY,
+} from './security-rbac.decorators';
 import type { SecurityRequestWithAuth } from './security-rbac.request';
 
 @Injectable()
@@ -22,8 +25,13 @@ export class SecurityPermissionGuard implements CanActivate {
         context.getHandler(),
         context.getClass(),
       ]) ?? [];
+    const requiresAuthenticated =
+      this.reflector.getAllAndOverride<boolean>(REQUIRE_AUTHENTICATED_KEY, [
+        context.getHandler(),
+        context.getClass(),
+      ]) === true;
 
-    if (requiredPermissions.length === 0) {
+    if (requiredPermissions.length === 0 && !requiresAuthenticated) {
       return true;
     }
 
@@ -35,6 +43,12 @@ export class SecurityPermissionGuard implements CanActivate {
       (await this.authService.authenticateBearer(
         request.headers.authorization,
       ));
+    request.user = user;
+
+    if (requiredPermissions.length === 0) {
+      return true;
+    }
+
     const missingPermission = requiredPermissions.find(
       (permissionCode) => !user.permissionCodes.includes(permissionCode),
     );
@@ -43,7 +57,6 @@ export class SecurityPermissionGuard implements CanActivate {
       throw new ForbiddenException(`Missing permission: ${missingPermission}`);
     }
 
-    request.user = user;
     return true;
   }
 }

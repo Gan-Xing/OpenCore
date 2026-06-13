@@ -7,6 +7,8 @@ import {
   Patch,
   Post,
   Query,
+  Req,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { OnlineUserService } from '@opencore/online-user';
@@ -34,15 +36,26 @@ import {
   RoleSummaryDto,
   SetRoleStatusDto,
   SetUserStatusDto,
+  UpdateUserProfileDto,
   UpdateMenuDto,
   UpdatePermissionDto,
   UpdateRoleDto,
   UpdateUserDto,
+  UserProfileDto,
   UserMutationResultDto,
   UserSummaryDto,
 } from './rbac.dto';
-import { RequirePermission } from './permissions.decorator';
+import {
+  RequireAuthenticated,
+  RequirePermission,
+} from './permissions.decorator';
 import { RbacRepository } from './rbac.repository';
+
+type RequestWithUser = {
+  user?: {
+    id: string;
+  };
+};
 
 @ApiBearerAuth()
 @Controller('core')
@@ -71,6 +84,25 @@ export class RbacController {
     @Query() query: ListUsersQueryDto,
   ): Promise<RbacExportPreviewDto> {
     return this.users.createExportPreview(query);
+  }
+
+  @Get('users/profile')
+  @ApiTags('Core Users')
+  @RequireAuthenticated()
+  @ApiOkResponse({ type: UserProfileDto })
+  getUserProfile(@Req() request: RequestWithUser): Promise<UserProfileDto> {
+    return this.users.getUser(getAuthenticatedUserId(request));
+  }
+
+  @Patch('users/profile')
+  @ApiTags('Core Users')
+  @RequireAuthenticated()
+  @ApiOkResponse({ type: UserProfileDto })
+  updateUserProfile(
+    @Req() request: RequestWithUser,
+    @Body() body: UpdateUserProfileDto,
+  ): Promise<UserProfileDto> {
+    return this.users.updateUserProfile(getAuthenticatedUserId(request), body);
   }
 
   @Get('users/:id')
@@ -507,6 +539,16 @@ export class RbacController {
 
     return ids;
   }
+}
+
+function getAuthenticatedUserId(request: RequestWithUser): string {
+  const userId = request.user?.id;
+
+  if (!userId) {
+    throw new UnauthorizedException('Missing authenticated user');
+  }
+
+  return userId;
 }
 
 function findChangedRoleAssignmentUsernames(

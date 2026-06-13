@@ -1,5 +1,9 @@
 import 'reflect-metadata';
-import { REQUIRED_PERMISSIONS_KEY } from './permissions.decorator';
+import {
+  REQUIRED_PERMISSIONS_KEY,
+  REQUIRE_AUTHENTICATED_KEY,
+} from './permissions.decorator';
+import { AuthController } from './auth.controller';
 import { RbacController } from './rbac.controller';
 
 const expectedPermissions = {
@@ -36,6 +40,8 @@ const expectedPermissions = {
   updateUser: ['core:user:update'],
 } as const;
 
+const expectedAuthenticatedOnly = ['getUserProfile', 'updateUserProfile'];
+
 describe('RbacController permission matrix', () => {
   it('guards every S6 RBAC route with registry permission codes', () => {
     for (const [methodName, permissions] of Object.entries(
@@ -48,5 +54,39 @@ describe('RbacController permission matrix', () => {
         ),
       ).toEqual(permissions);
     }
+  });
+
+  it('keeps self-profile routes authenticated without management permissions', () => {
+    for (const methodName of expectedAuthenticatedOnly) {
+      expect(
+        Reflect.getMetadata(
+          REQUIRE_AUTHENTICATED_KEY,
+          RbacController.prototype[methodName as keyof RbacController],
+        ),
+      ).toBe(true);
+      expect(
+        Reflect.getMetadata(
+          REQUIRED_PERMISSIONS_KEY,
+          RbacController.prototype[methodName as keyof RbacController],
+        ),
+      ).toBeUndefined();
+    }
+  });
+});
+
+describe('AuthController permission matrix', () => {
+  it('keeps auth/me authenticated without dashboard permission coupling', () => {
+    expect(
+      Reflect.getMetadata(
+        REQUIRE_AUTHENTICATED_KEY,
+        AuthController.prototype.me,
+      ),
+    ).toBe(true);
+    expect(
+      Reflect.getMetadata(
+        REQUIRED_PERMISSIONS_KEY,
+        AuthController.prototype.me,
+      ),
+    ).toBeUndefined();
   });
 });

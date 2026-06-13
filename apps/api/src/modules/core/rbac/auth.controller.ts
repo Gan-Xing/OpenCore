@@ -10,7 +10,7 @@ import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { getRequestContext } from '@opencore/core';
 import { AuthService, type AuthenticatedUser } from './auth.service';
 import { LoginRequestDto, LoginResponseDto } from './rbac.dto';
-import { RequirePermission } from './permissions.decorator';
+import { RequireAuthenticated } from './permissions.decorator';
 
 type RequestWithUser = {
   headers?: Record<string, string | string[] | undefined>;
@@ -38,7 +38,7 @@ export class AuthController {
 
   @Get('me')
   @ApiBearerAuth()
-  @RequirePermission('core:dashboard:read')
+  @RequireAuthenticated()
   @ApiOkResponse({ type: LoginResponseDto })
   me(@Req() request: RequestWithUser): Promise<LoginResponseDto> {
     if (!request.user) {

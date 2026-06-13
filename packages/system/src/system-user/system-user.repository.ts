@@ -6,6 +6,7 @@ import type {
   ResetUserPasswordDto,
   RoleUserAssignmentDto,
   SetUserStatusDto,
+  UpdateUserProfileDto,
   UpdateUserDto,
 } from './system-user.dto';
 import type { SystemUserRecord } from './system-user.records';
@@ -47,6 +48,10 @@ export type NormalizedSystemUserUpdateInput = {
   enabled?: boolean;
 };
 
+export type NormalizedSystemUserProfileUpdateInput = {
+  displayName?: string;
+};
+
 export type NormalizedSetUserStatusInput = {
   enabled: boolean;
 };
@@ -69,6 +74,11 @@ export abstract class SystemUserRepository {
   abstract updateUser(
     id: string,
     body: UpdateUserDto,
+  ): Promise<SystemUserSummaryRecord>;
+
+  abstract updateUserProfile(
+    id: string,
+    body: UpdateUserProfileDto,
   ): Promise<SystemUserSummaryRecord>;
 
   abstract deleteUser(id: string): Promise<{ deleted: true }>;
@@ -153,6 +163,17 @@ export function normalizeUpdateSystemUserInput(
         ? undefined
         : normalizePostCodes(body.postCodes),
     enabled: normalizeOptionalBoolean(body.enabled, 'enabled'),
+  };
+}
+
+export function normalizeUpdateSystemUserProfileInput(
+  body: UpdateUserProfileDto,
+): NormalizedSystemUserProfileUpdateInput {
+  return {
+    displayName:
+      body.displayName === undefined
+        ? undefined
+        : normalizeRequiredText(body.displayName, 'displayName'),
   };
 }
 

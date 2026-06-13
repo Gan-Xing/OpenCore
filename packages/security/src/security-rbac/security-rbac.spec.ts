@@ -11,7 +11,9 @@ import { hashSecurityPassword } from '../security-auth/security-password';
 import { SecurityPermissionGuard } from './security-permission.guard';
 import {
   REQUIRED_PERMISSIONS_KEY,
+  REQUIRE_AUTHENTICATED_KEY,
   REQUIRED_ROLES_KEY,
+  RequireAuthenticated,
   RequirePermission,
   RequireRole,
 } from './security-rbac.decorators';
@@ -30,14 +32,19 @@ describe('@opencore/security security-rbac', () => {
 
   it('sets permission and role metadata through decorators', () => {
     class PermissionTarget {}
+    class AuthenticatedTarget {}
     class RoleTarget {}
 
     RequirePermission('core:user:read')(PermissionTarget);
+    RequireAuthenticated()(AuthenticatedTarget);
     RequireRole('admin')(RoleTarget);
 
     expect(readMetadata(REQUIRED_PERMISSIONS_KEY, PermissionTarget)).toEqual([
       'core:user:read',
     ]);
+    expect(readMetadata(REQUIRE_AUTHENTICATED_KEY, AuthenticatedTarget)).toBe(
+      true,
+    );
     expect(readMetadata(REQUIRED_ROLES_KEY, RoleTarget)).toEqual(['admin']);
   });
 
@@ -66,6 +73,19 @@ describe('@opencore/security security-rbac', () => {
     await expect(
       guard.canActivate(createContext(createRequest(adminToken))),
     ).rejects.toThrow(ForbiddenException);
+  });
+
+  it('allows authenticated-only requests without requiring a permission', async () => {
+    const guard = new SecurityPermissionGuard(
+      createReflector(REQUIRE_AUTHENTICATED_KEY, true),
+      authService,
+    );
+    const request = createRequest(adminToken);
+
+    await expect(guard.canActivate(createContext(request))).resolves.toBe(true);
+    expect(request.user).toEqual(
+      expect.objectContaining({ username: 'admin' }),
+    );
   });
 
   it('allows requests with any matching required role', async () => {
@@ -155,7 +175,7 @@ function createRequest(accessToken: string): {
   };
 }
 
-function createReflector(key: string, values: string[]): Reflector {
+function createReflector(key: string, values: unknown): Reflector {
   return {
     getAllAndOverride: (metadataKey: string) =>
       metadataKey === key ? values : undefined,

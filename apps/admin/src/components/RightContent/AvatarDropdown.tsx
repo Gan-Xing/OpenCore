@@ -1,4 +1,4 @@
-import { LogoutOutlined, SkinOutlined } from '@ant-design/icons';
+import { LogoutOutlined, SkinOutlined, UserOutlined } from '@ant-design/icons';
 import { history, useModel } from '@umijs/max';
 import type { MenuProps } from 'antd';
 import { Spin } from 'antd';
@@ -56,6 +56,10 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
       }));
       return;
     }
+    if (key === 'profile') {
+      history.push('/personal/profile');
+      return;
+    }
   };
 
   if (!initialState) {
@@ -69,6 +73,11 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
   }
 
   const menuItems: MenuProps['items'] = [
+    {
+      key: 'profile',
+      icon: <UserOutlined />,
+      label: 'Profile',
+    },
     {
       key: 'theme',
       icon: <SkinOutlined />,

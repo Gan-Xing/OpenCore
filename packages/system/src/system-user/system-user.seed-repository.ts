@@ -15,13 +15,18 @@ import {
   normalizeAssignRoleUsersInput,
   normalizeListSystemUsersQuery,
   normalizeUpdateSystemUserInput,
+  normalizeUpdateSystemUserProfileInput,
   SystemUserRepository,
   type SystemUserListQuery,
   type SystemUserSummaryRecord,
 } from './system-user.repository';
 import { hashSystemUserPassword } from './system-user.password';
 import { seedSystemUsers, type SystemUserRecord } from './system-user.records';
-import type { CreateUserDto, UpdateUserDto } from './system-user.dto';
+import type {
+  CreateUserDto,
+  UpdateUserProfileDto,
+  UpdateUserDto,
+} from './system-user.dto';
 
 @Injectable()
 export class SeedSystemUserRepository extends SystemUserRepository {
@@ -110,6 +115,18 @@ export class SeedSystemUserRepository extends SystemUserRepository {
       ? hashSystemUserPassword(input.password)
       : user.passwordHash;
     user.enabled = input.enabled ?? user.enabled;
+
+    return cloneSystemUserSummary(user);
+  }
+
+  async updateUserProfile(
+    id: string,
+    body: UpdateUserProfileDto,
+  ): Promise<SystemUserSummaryRecord> {
+    const user = this.findMutableUserById(id);
+    const input = normalizeUpdateSystemUserProfileInput(body);
+
+    user.displayName = input.displayName ?? user.displayName;
 
     return cloneSystemUserSummary(user);
   }

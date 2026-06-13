@@ -30,6 +30,20 @@ describe('@opencore/system system-user', () => {
     await expect(
       service.updateUser('user_admin', { displayName: 'Renamed Admin' }),
     ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.updateUserProfile('user_admin', {
+        displayName: 'Renamed Admin Profile',
+      }),
+    ).resolves.toMatchObject({
+      username: 'admin',
+      displayName: 'Renamed Admin Profile',
+      system: true,
+    });
+    await expect(
+      service.updateUserProfile('user_admin', {
+        displayName: 123 as unknown as string,
+      }),
+    ).rejects.toThrow(BadRequestException);
     await expect(service.deleteUser('user_admin')).rejects.toThrow(
       BadRequestException,
     );
@@ -337,6 +351,22 @@ describe('@opencore/system system-user', () => {
       await expect(
         prisma.user.findUniqueOrThrow({ where: { id: user.id } }),
       ).resolves.toMatchObject({
+        passwordHash: hashSystemUserPassword('updated-password'),
+      });
+      await expect(
+        service.updateUserProfile(user.id, {
+          displayName: 'Updated Profile User',
+        }),
+      ).resolves.toMatchObject({
+        displayName: 'Updated Profile User',
+        roleCodes: ['admin'],
+        postCodes: ['admin'],
+        enabled: false,
+      });
+      await expect(
+        prisma.user.findUniqueOrThrow({ where: { id: user.id } }),
+      ).resolves.toMatchObject({
+        displayName: 'Updated Profile User',
         passwordHash: hashSystemUserPassword('updated-password'),
       });
       await expect(

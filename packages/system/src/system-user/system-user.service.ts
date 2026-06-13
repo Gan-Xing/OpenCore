@@ -6,6 +6,7 @@ import type {
   ResetUserPasswordDto,
   RoleUserAssignmentDto,
   SetUserStatusDto,
+  UpdateUserProfileDto,
   UpdateUserDto,
 } from './system-user.dto';
 import {
@@ -38,6 +39,13 @@ export class SystemUserService {
     body: UpdateUserDto,
   ): Promise<SystemUserSummaryRecord> {
     return this.repository.updateUser(id, body);
+  }
+
+  updateUserProfile(
+    id: string,
+    body: UpdateUserProfileDto,
+  ): Promise<SystemUserSummaryRecord> {
+    return this.repository.updateUserProfile(id, body);
   }
 
   async setUserStatus(

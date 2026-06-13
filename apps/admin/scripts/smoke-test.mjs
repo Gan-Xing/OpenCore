@@ -83,6 +83,7 @@ if (
 
 for (const requiredRoute of [
   "path: '/dashboard'",
+  "path: '/personal/profile'",
   "path: '/tools/openapi'",
   "path: '/system/users'",
   "path: '/system/roles'",
@@ -153,6 +154,10 @@ const requestConfig = readFileSync(
 );
 const authService = readFileSync(
   resolve(root, 'src/services/opencore/auth.ts'),
+  'utf8',
+);
+const avatarDropdown = readFileSync(
+  resolve(root, 'src/components/RightContent/AvatarDropdown.tsx'),
   'utf8',
 );
 const opencoreClientService = readFileSync(
@@ -238,11 +243,21 @@ if (
   !authService.includes('createRbacClient') ||
   !authService.includes('loginToOpenCore') ||
   !authService.includes('queryCurrentOpenCoreUser') ||
+  !authService.includes('getOpenCoreUserProfile') ||
+  !authService.includes('updateOpenCoreUserProfile') ||
   !authService.includes('getRequiredAdminToken')
 ) {
   throw new Error(
-    'Admin auth service must use @opencore/sdk for login and current user.',
+    'Admin auth service must use @opencore/sdk for login, current user and profile.',
   );
+}
+
+if (
+  !avatarDropdown.includes("key: 'profile'") ||
+  !avatarDropdown.includes("history.push('/personal/profile')") ||
+  !avatarDropdown.includes('UserOutlined')
+) {
+  throw new Error('Admin avatar dropdown must expose the self-profile route.');
 }
 
 if (
@@ -452,6 +467,10 @@ const usersPage = readFileSync(
   resolve(root, 'src/pages/System/Users.tsx'),
   'utf8',
 );
+const profilePage = readFileSync(
+  resolve(root, 'src/pages/Personal/Profile.tsx'),
+  'utf8',
+);
 const rolesPage = readFileSync(
   resolve(root, 'src/pages/System/Roles.tsx'),
   'utf8',
@@ -607,6 +626,7 @@ const billingDesignPage = readFileSync(
 if (
   !usersPage.includes('@opencore/sdk') ||
   !usersPage.includes('listOpenCoreUsers') ||
+  !profilePage.includes('@opencore/sdk') ||
   !rolesPage.includes('@opencore/sdk') ||
   !permissionsPage.includes('@opencore/sdk') ||
   !menusPage.includes('@opencore/sdk') ||
@@ -644,6 +664,20 @@ if (
 ) {
   throw new Error(
     'Admin platform, collaboration, operations, and integration pages must consume SDK types or fixtures.',
+  );
+}
+
+if (
+  !profilePage.includes('getOpenCoreUserProfile') ||
+  !profilePage.includes('updateOpenCoreUserProfile') ||
+  !profilePage.includes('Display name') ||
+  !profilePage.includes('setInitialState') ||
+  !profilePage.includes('Profile saved.') ||
+  !profilePage.includes('postCodes') ||
+  !profilePage.includes('roleCodes')
+) {
+  throw new Error(
+    'Admin personal profile page must load and update the authenticated OpenCore profile.',
   );
 }
 

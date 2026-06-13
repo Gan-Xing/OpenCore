@@ -22,8 +22,10 @@ import type {
   UpdateMenuRequest,
   UpdatePermissionRequest,
   UpdateRoleRequest,
+  UpdateUserProfileRequest,
   UpdateUserRequest,
   UserMutationSummary,
+  UserProfileSummary,
   UserSummary,
 } from './rbac-types';
 
@@ -47,6 +49,11 @@ export type RbacClient = {
     token: string,
     query?: ListUsersRequest,
   ) => Promise<RbacExportPreview>;
+  getUserProfile: (token: string) => Promise<UserProfileSummary>;
+  updateUserProfile: (
+    token: string,
+    body: UpdateUserProfileRequest,
+  ) => Promise<UserProfileSummary>;
   getUser: (token: string, id: string) => Promise<UserSummary>;
   createUser: (token: string, body: CreateUserRequest) => Promise<UserSummary>;
   updateUser: (
@@ -140,6 +147,16 @@ export function createRbacClient(request: SdkRequest): RbacClient {
       }),
     exportUsers: (token, query) =>
       request<RbacExportPreview>(withQuery('/core/users/export', query), {
+        token,
+      }),
+    getUserProfile: (token) =>
+      request<UserProfileSummary>('/core/users/profile', {
+        token,
+      }),
+    updateUserProfile: (token, body) =>
+      request<UserProfileSummary>('/core/users/profile', {
+        method: 'PATCH',
+        body,
         token,
       }),
     getUser: (token, id) =>

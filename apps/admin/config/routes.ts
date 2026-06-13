@@ -27,6 +27,12 @@ export default [
     access: 'canAccessDashboard',
   },
   {
+    path: '/personal/profile',
+    name: 'Profile',
+    component: './Personal/Profile',
+    hideInMenu: true,
+  },
+  {
     path: '/system',
     name: 'System',
     icon: 'setting',

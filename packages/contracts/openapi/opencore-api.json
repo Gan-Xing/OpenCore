@@ -157,6 +157,48 @@
         "tags": ["Rbac", "Core Users"]
       }
     },
+    "/api/core/users/profile": {
+      "get": {
+        "operationId": "RbacController_getUserProfile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UserProfileDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Users"]
+      },
+      "patch": {
+        "operationId": "RbacController_updateUserProfile",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateUserProfileDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UserProfileDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Users"]
+      }
+    },
     "/api/core/users/{id}": {
       "get": {
         "operationId": "RbacController_getUser",
@@ -5228,6 +5270,32 @@
           "generatedAt": { "type": "string" }
         },
         "required": ["filename", "scope", "columns", "rowCount", "generatedAt"]
+      },
+      "UserProfileDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "username": { "type": "string" },
+          "displayName": { "type": "string" },
+          "roleCodes": { "type": "array", "items": { "type": "string" } },
+          "deptId": { "type": "string", "nullable": true },
+          "postCodes": { "type": "array", "items": { "type": "string" } },
+          "enabled": { "type": "boolean" },
+          "system": { "type": "boolean" }
+        },
+        "required": [
+          "id",
+          "username",
+          "displayName",
+          "roleCodes",
+          "postCodes",
+          "enabled",
+          "system"
+        ]
+      },
+      "UpdateUserProfileDto": {
+        "type": "object",
+        "properties": { "displayName": { "type": "string" } }
       },
       "CreateUserDto": {
         "type": "object",

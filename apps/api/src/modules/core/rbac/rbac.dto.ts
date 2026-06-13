@@ -14,9 +14,11 @@ export {
   RoleSummaryDto,
   SetRoleStatusDto,
   SetUserStatusDto,
+  UpdateUserProfileDto,
   UpdateMenuDto,
   UpdateRoleDto,
   UpdateUserDto,
+  UserProfileDto,
   UserMutationResultDto,
   UserSummaryDto,
 } from '@opencore/system';

@@ -27,6 +27,7 @@ const resetPassword = `UserSecurityReset-${runId}`;
 let adminToken;
 let smokeUserId;
 let smokeUserToken;
+let originalAdminDisplayName;
 
 class HttpStatusError extends Error {
   constructor(message, status) {
@@ -46,6 +47,52 @@ try {
 
   const loginResponse = await loginAdmin();
   adminToken = assertString(loginResponse.accessToken, 'login accessToken');
+
+  const adminProfile = await apiRequest('/core/users/profile');
+  const adminUserId = assertString(adminProfile.id, 'admin profile id');
+  originalAdminDisplayName = assertString(
+    adminProfile.displayName,
+    'admin profile displayName',
+  );
+  assertEqual(adminProfile.username, username, 'admin profile username');
+
+  const profileDisplayName = `OpenCore Admin Smoke ${runId}`;
+  const updatedProfile = await apiRequest('/core/users/profile', {
+    method: 'PATCH',
+    body: {
+      displayName: profileDisplayName,
+    },
+  });
+  assertEqual(
+    updatedProfile.displayName,
+    profileDisplayName,
+    'updated admin profile displayName',
+  );
+  assertEqual(updatedProfile.system, true, 'updated admin profile system flag');
+
+  const refreshedSession = await request(`${apiPrefix}/auth/me`, {
+    token: adminToken,
+    expected: [200, 201],
+  });
+  assertEqual(
+    refreshedSession.user.displayName,
+    profileDisplayName,
+    'auth/me refreshed profile displayName',
+  );
+  await apiRequest('/core/users/profile', {
+    method: 'PATCH',
+    expected: [400],
+    body: {
+      displayName: '',
+    },
+  });
+  await apiRequest(`/core/users/${encodeURIComponent(adminUserId)}`, {
+    method: 'PATCH',
+    expected: [400],
+    body: {
+      displayName: 'Management Update Must Still Fail',
+    },
+  });
 
   await apiRequest('/core/users', {
     method: 'POST',
@@ -230,6 +277,11 @@ try {
         'health.ready',
         ...(checkDocs ? ['openapi.docs-json'] : []),
         'auth.login',
+        'core.user.profile.get',
+        'core.user.profile.update',
+        'core.user.profile.auth-me-refresh',
+        'core.user.profile.invalid-display-name-guard',
+        'core.user.profile.management-system-user-guard',
         'core.user.post.unknown-rejected',
         'core.user.dept.unknown-rejected',
         'core.user.create',
@@ -318,6 +370,7 @@ async function cleanup() {
   }
 
   await cleanupSmokeUserSessions();
+  await restoreAdminProfile();
 
   if (smokeUserId) {
     await apiRequest(`/core/users/${encodeURIComponent(smokeUserId)}`, {
@@ -326,6 +379,21 @@ async function cleanup() {
     }).catch(() => undefined);
     smokeUserId = undefined;
   }
+}
+
+async function restoreAdminProfile() {
+  if (!originalAdminDisplayName) {
+    return;
+  }
+
+  await apiRequest('/core/users/profile', {
+    method: 'PATCH',
+    expected: [200, 201],
+    body: {
+      displayName: originalAdminDisplayName,
+    },
+  }).catch(() => undefined);
+  originalAdminDisplayName = undefined;
 }
 
 async function cleanupSmokeUserSessions() {

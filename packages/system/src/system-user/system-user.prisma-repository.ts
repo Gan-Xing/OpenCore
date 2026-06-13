@@ -8,6 +8,7 @@ import { PrismaService } from '@opencore/database';
 import type {
   AssignRoleUsersDto,
   CreateUserDto,
+  UpdateUserProfileDto,
   UpdateUserDto,
 } from './system-user.dto';
 import { hashSystemUserPassword } from './system-user.password';
@@ -18,6 +19,7 @@ import {
   normalizeCreateSystemUserInput,
   normalizeListSystemUsersQuery,
   normalizeUpdateSystemUserInput,
+  normalizeUpdateSystemUserProfileInput,
   SystemUserRepository,
   type SystemUserListQuery,
   type SystemUserSummaryRecord,
@@ -170,6 +172,34 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
                 })),
               },
             }),
+      },
+      include: {
+        roles: {
+          include: {
+            role: true,
+          },
+        },
+        posts: {
+          include: {
+            post: true,
+          },
+        },
+      },
+    });
+
+    return toSystemUserSummaryRecord(user);
+  }
+
+  async updateUserProfile(
+    id: string,
+    body: UpdateUserProfileDto,
+  ): Promise<SystemUserSummaryRecord> {
+    await this.findUserEntityById(id);
+    const input = normalizeUpdateSystemUserProfileInput(body);
+    const user = await this.prisma.user.update({
+      where: { id },
+      data: {
+        displayName: input.displayName,
       },
       include: {
         roles: {

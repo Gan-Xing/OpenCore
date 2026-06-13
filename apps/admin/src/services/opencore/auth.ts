@@ -3,6 +3,8 @@ import {
   type AuthenticatedUser,
   type LoginRequest,
   type LoginResponse,
+  type UpdateUserProfileRequest,
+  type UserProfileSummary,
 } from '@opencore/sdk';
 import {
   getRequiredAdminToken,
@@ -39,4 +41,14 @@ export async function loginToOpenCore(
 
 export async function queryCurrentOpenCoreUser(): Promise<LoginResponse> {
   return authClient.me(getRequiredAdminToken());
+}
+
+export async function getOpenCoreUserProfile(): Promise<UserProfileSummary> {
+  return authClient.getUserProfile(getRequiredAdminToken());
+}
+
+export async function updateOpenCoreUserProfile(
+  body: UpdateUserProfileRequest,
+): Promise<UserProfileSummary> {
+  return authClient.updateUserProfile(getRequiredAdminToken(), body);
 }

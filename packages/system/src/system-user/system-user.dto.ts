@@ -74,6 +74,13 @@ export class UpdateUserDto {
   enabled?: boolean;
 }
 
+export class UserProfileDto extends UserSummaryDto {}
+
+export class UpdateUserProfileDto {
+  @ApiProperty({ required: false })
+  displayName?: string;
+}
+
 export class SetUserStatusDto {
   @ApiProperty()
   enabled!: boolean;
