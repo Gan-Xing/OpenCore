@@ -32,7 +32,7 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   operation-log has list/detail/export/delete/clean.
 - Notice: management, inbox/read analytics, templates, delivery records, local
   provider, Integration outbox bridge, state sync, queued processing and signed
-  callback intake are live.
+  callback intake plus retry scheduling are live.
 - Config: runtime keys, login policy, feature flags, rollout, audience rules
   and secret-vault encryption are live.
 - Monitor/OpenForge/Scheduler: foundations exist; deeper operator workflows
@@ -49,6 +49,9 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
 - Round 70: provider callbacks are signed, ownership-checked and reuse the
   same sent/failed sync paths. Public anonymous webhooks wait for a general
   public-route policy.
+- Round 71: retry scheduling is explicit and bounded; failed outbox rows only
+  return to queue when provider/channel validation passes and retry caps allow
+  it.
 
 ## Explicit Non-Claims
 
@@ -59,6 +62,6 @@ and AI/RAG/Agent workflow.
 
 ## Next Focus
 
-Choose one foundation stage from notice adapters/retry/realtime, config
-governance, operation-log enrichment, scheduler/monitor depth, OpenForge Admin
-or integration health/config audit.
+Choose one foundation stage from notice adapters/realtime, config governance,
+operation-log enrichment, scheduler/monitor depth, OpenForge Admin or
+integration health/config audit.

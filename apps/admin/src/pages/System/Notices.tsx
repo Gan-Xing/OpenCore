@@ -77,6 +77,7 @@ import {
   publishOpenCoreSystemNotice,
   retryOpenCoreIntegrationOutbox,
   renderOpenCoreSystemNoticeTemplate,
+  runOpenCoreIntegrationOutboxSchedule,
   updateOpenCoreSystemNotice,
   updateOpenCoreSystemNoticeTemplate,
 } from '@/services/opencore/platform';
@@ -293,6 +294,15 @@ function getExternalOutboxChannel(
   }
 
   return undefined;
+}
+
+function isSchedulableExternalOutboxDelivery(
+  record: SystemNoticeDeliverySummary,
+): boolean {
+  return (
+    Boolean(getExternalOutboxChannel(record)) &&
+    (record.providerStatus === 'pending' || record.providerStatus === 'failed')
+  );
 }
 
 export default function SystemNoticesPage() {
@@ -786,6 +796,20 @@ export default function SystemNoticesPage() {
     message.success(
       `${channel} outbox processed: ${result.sentCount} sent, ${result.queuedCount} queued.`,
     );
+    await refreshOpenDeliveries();
+  };
+
+  const runDeliveryOutboxSchedule = async () => {
+    const result = await runOpenCoreIntegrationOutboxSchedule({
+      channels: ['mail', 'sms'],
+      retryFailed: true,
+      maxRetryCount: 3,
+      limit: 100,
+    });
+    message.success(
+      `Outbox schedule run: ${result.retriedCount} retried, ${result.sentCount} sent, ${result.queuedCount} queued.`,
+    );
+    await loadInbox();
     await refreshOpenDeliveries();
   };
 
@@ -1401,6 +1425,9 @@ export default function SystemNoticesPage() {
       ),
     },
   ];
+  const hasSchedulableExternalOutbox = deliveryRows.some(
+    isSchedulableExternalOutboxDelivery,
+  );
 
   return (
     <PageContainer title="System Notices" subTitle="S7 System">
@@ -1661,7 +1688,23 @@ export default function SystemNoticesPage() {
           loading={deliveriesLoading}
           search={false}
           options={false}
-          toolBarRender={false}
+          toolBarRender={() => [
+            <Button
+              key="schedule"
+              icon={<SyncOutlined />}
+              disabled={!hasSchedulableExternalOutbox}
+              onClick={() => void runDeliveryOutboxSchedule()}
+            >
+              Run outbox schedule
+            </Button>,
+            <Button
+              key="refresh"
+              icon={<ReloadOutlined />}
+              onClick={() => void refreshOpenDeliveries()}
+            >
+              Refresh
+            </Button>,
+          ]}
           pagination={{ pageSize: 10 }}
           scroll={{ x: 1280 }}
           dataSource={[...deliveryRows]}

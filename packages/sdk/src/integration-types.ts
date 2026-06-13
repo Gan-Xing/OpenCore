@@ -136,6 +136,14 @@ export type ProcessOutboxRequest = {
   limit?: number;
 };
 
+export type ScheduleOutboxRequest = {
+  channels?: readonly ('mail' | 'sms')[];
+  providerCode?: string;
+  limit?: number;
+  retryFailed?: boolean;
+  maxRetryCount?: number;
+};
+
 export type OutboxCallbackRequest = {
   providerCode: string;
   messageId: string;
@@ -147,6 +155,24 @@ export type OutboxCallbackRequest = {
 export type IntegrationOutboxProcessResult = {
   channel: 'mail' | 'sms';
   providerCode?: string;
+  attemptedCount: number;
+  sentCount: number;
+  skippedCount: number;
+  queuedCount: number;
+};
+
+export type IntegrationOutboxScheduleChannelResult = {
+  channel: 'mail' | 'sms';
+  providerCode?: string;
+  retriedCount: number;
+  process: IntegrationOutboxProcessResult;
+};
+
+export type IntegrationOutboxScheduleResult = {
+  retryFailed: boolean;
+  maxRetryCount: number;
+  channels: readonly IntegrationOutboxScheduleChannelResult[];
+  retriedCount: number;
   attemptedCount: number;
   sentCount: number;
   skippedCount: number;

@@ -50,5 +50,8 @@ docs. Commit-level detail is available from git history.
 - 2026-06-13 13:29-18:45 UTC rounds 060-070 closed notice templates,
   delivery records, local/outbox providers, config secret vault, feature-flag
   rollout/audience, outbox processing/callbacks and operation-log cleanup.
-- Latest deployed runtime: round-070 `core.notice` signed outbox callback
-  intake on API `39172` and Admin `39174`.
+- 2026-06-13 19:25:23 UTC completed cycle-021 round-071 `core.notice`
+  outbox retry scheduling; deployed=39172/39174;
+  publicVerified=notice-outbox-schedule-retry,admin-notices-run-outbox-schedule,openapi-integration-outbox-schedule.
+- Latest deployed runtime: round-071 `core.notice` outbox retry scheduling on
+  API `39172` and Admin `39174`.

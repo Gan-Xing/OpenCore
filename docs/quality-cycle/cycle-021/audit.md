@@ -13,9 +13,9 @@ corrected:
   fixed the state model.
 
 Recent guard work moved the next notice reliability steps into code: Round 69
-added queued provider processing and Round 70 added signed callbacks. Round 68
-also exposed the Admin generated-types race, so Admin `typecheck` and `lint`
-must run sequentially.
+added queued provider processing, Round 70 added signed callbacks and Round 71
+added bounded retry scheduling. Round 68 also exposed the Admin
+generated-types race, so Admin `typecheck` and `lint` must run sequentially.
 
 ## Guarded Failures
 
@@ -23,7 +23,7 @@ must run sequentially.
 - Stale Admin deployment is blocked by built bundle markers.
 - Revoked sessions/tokens must return 401.
 - Notice outbox smoke covers pending handoff, retry, process-to-sent, signed
-  callback sync and sent mutation guards.
+  callback sync, scheduled retry caps and sent mutation guards.
 - Operation-log cleanup smoke covers guard failures, deleted-detail 404 and
   clean-all target removal.
 - Config smoke covers runtime shape and no plaintext secret storage.
@@ -36,8 +36,8 @@ real incident decisions. Do not create per-round reports by default.
 
 ## Residual Risk
 
-- Notice still needs real SMTP/SMS adapters, retry scheduling and realtime
-  push before provider-depth parity.
+- Notice still needs real SMTP/SMS adapters and realtime push before
+  provider-depth parity.
 - Config still needs multi-environment governance and external KMS/rotation.
 - Operation-log enrichment, scheduler/monitor depth and OpenForge Admin remain
   P2 foundation work.

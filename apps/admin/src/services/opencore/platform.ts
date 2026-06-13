@@ -63,6 +63,7 @@ import {
   type FailOutboxMessageRequest,
   type IntegrationOutboxSummary,
   type IntegrationOutboxProcessResult,
+  type IntegrationOutboxScheduleResult,
   type LoginLogQueryRequest,
   type LoginLogBatchMutationSummary,
   type LoginLogCleanSummary,
@@ -96,6 +97,7 @@ import {
   type SystemPostQueryRequest,
   type SystemPostSummary,
   type ResetUserPasswordRequest,
+  type ScheduleOutboxRequest,
   type SetUserStatusRequest,
   type UpdateSystemDeptRequest,
   type UpdateSystemDeptOrderRequest,
@@ -876,6 +878,12 @@ export function processOpenCoreIntegrationOutbox(
   return channel === 'mail'
     ? integrationClient.processMailOutbox(getRequiredAdminToken(), body)
     : integrationClient.processSmsOutbox(getRequiredAdminToken(), body);
+}
+
+export function runOpenCoreIntegrationOutboxSchedule(
+  body?: ScheduleOutboxRequest,
+): Promise<IntegrationOutboxScheduleResult> {
+  return integrationClient.runOutboxSchedule(getRequiredAdminToken(), body);
 }
 
 export async function listOpenCoreSystemNoticeTemplates(

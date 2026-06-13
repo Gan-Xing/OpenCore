@@ -47,7 +47,7 @@ packages and OpenForge direct Prisma/migration/business-code writing.
 
 ## Current State
 
-Cycle-021 has completed 70 deployable stages.
+Cycle-021 has completed 71 deployable stages.
 
 - System/RBAC: notice, dept, post, menu, role, permission, user, dict, config
   and file loops are live.
@@ -59,17 +59,16 @@ Cycle-021 has completed 70 deployable stages.
   and secret vault.
 - Notice: management, inbox/read state, read-user analytics, templates,
   delivery records, local provider, Integration outbox bridge, state sync,
-  queued processing and signed callback intake.
+  queued processing, signed callback intake and bounded retry scheduling.
 
-Latest runtime stage: Round 70 `core.notice` signed outbox callback intake.
-Callbacks are permission-gated, HMAC-SHA256 signed, validate
-provider/channel/message ownership and reuse the existing outbox
-sent/failed-to-delivery sync path.
+Latest runtime stage: Round 71 `core.notice` outbox retry scheduling. It adds
+a permission-gated schedule endpoint, SDK/Admin entrypoint and smoke/deploy
+guards for channel validation, provider/channel mismatches, retry caps and
+failed-outbox-to-delivery state sync.
 
 ## Next Queue
 
-1. Notice provider reliability: real SMTP/SMS adapters, retry scheduling and
-   realtime push.
+1. Notice provider reliability: real SMTP/SMS adapters and realtime push.
 2. Config governance: multi-environment rollout, external KMS, key rotation
    and secret versions.
 3. Operation-log enrichment: retention scheduling, duration/location fields

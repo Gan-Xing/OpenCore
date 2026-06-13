@@ -4974,6 +4974,34 @@
         "tags": ["Integration", "Integration Providers"]
       }
     },
+    "/api/integrations/outbox/schedule/run": {
+      "post": {
+        "operationId": "IntegrationController_runOutboxSchedule",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ScheduleOutboxDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationOutboxScheduleResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration"]
+      }
+    },
     "/api/integrations/mail/templates": {
       "get": {
         "operationId": "IntegrationController_listMailTemplates",
@@ -9064,6 +9092,78 @@
           "config": { "type": "object" }
         }
       },
+      "ScheduleOutboxDto": {
+        "type": "object",
+        "properties": {
+          "channels": {
+            "type": "array",
+            "description": "Channels included in the retry schedule run.",
+            "items": { "type": "string", "enum": ["mail", "sms"] }
+          },
+          "providerCode": { "type": "string" },
+          "limit": { "type": "number", "default": 100 },
+          "retryFailed": { "type": "boolean", "default": true },
+          "maxRetryCount": { "type": "number", "default": 3 }
+        }
+      },
+      "IntegrationOutboxProcessResultDto": {
+        "type": "object",
+        "properties": {
+          "channel": { "type": "string", "enum": ["mail", "sms"] },
+          "providerCode": { "type": "string" },
+          "attemptedCount": { "type": "number" },
+          "sentCount": { "type": "number" },
+          "skippedCount": { "type": "number" },
+          "queuedCount": { "type": "number" }
+        },
+        "required": [
+          "channel",
+          "attemptedCount",
+          "sentCount",
+          "skippedCount",
+          "queuedCount"
+        ]
+      },
+      "IntegrationOutboxScheduleChannelResultDto": {
+        "type": "object",
+        "properties": {
+          "channel": { "type": "string", "enum": ["mail", "sms"] },
+          "providerCode": { "type": "string" },
+          "retriedCount": { "type": "number" },
+          "process": {
+            "$ref": "#/components/schemas/IntegrationOutboxProcessResultDto"
+          }
+        },
+        "required": ["channel", "retriedCount", "process"]
+      },
+      "IntegrationOutboxScheduleResultDto": {
+        "type": "object",
+        "properties": {
+          "retryFailed": { "type": "boolean" },
+          "maxRetryCount": { "type": "number" },
+          "channels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IntegrationOutboxScheduleChannelResultDto"
+            }
+          },
+          "retriedCount": { "type": "number" },
+          "attemptedCount": { "type": "number" },
+          "sentCount": { "type": "number" },
+          "skippedCount": { "type": "number" },
+          "queuedCount": { "type": "number" }
+        },
+        "required": [
+          "retryFailed",
+          "maxRetryCount",
+          "channels",
+          "retriedCount",
+          "attemptedCount",
+          "sentCount",
+          "skippedCount",
+          "queuedCount"
+        ]
+      },
       "IntegrationTemplateDto": {
         "type": "object",
         "properties": {
@@ -9182,24 +9282,6 @@
           "providerCode": { "type": "string" },
           "limit": { "type": "number", "default": 100 }
         }
-      },
-      "IntegrationOutboxProcessResultDto": {
-        "type": "object",
-        "properties": {
-          "channel": { "type": "string", "enum": ["mail", "sms"] },
-          "providerCode": { "type": "string" },
-          "attemptedCount": { "type": "number" },
-          "sentCount": { "type": "number" },
-          "skippedCount": { "type": "number" },
-          "queuedCount": { "type": "number" }
-        },
-        "required": [
-          "channel",
-          "attemptedCount",
-          "sentCount",
-          "skippedCount",
-          "queuedCount"
-        ]
       },
       "IntegrationOutboxCallbackDto": {
         "type": "object",

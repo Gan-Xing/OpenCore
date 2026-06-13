@@ -662,22 +662,69 @@ try {
     smsDelivery.providerMessageId,
     'SMS notice integration outbox',
   );
-  const processedSmsOutbox = await apiRequest(
-    '/integrations/sms/outbox/process',
+  await apiRequest('/integrations/outbox/schedule/run', {
+    method: 'POST',
+    expected: [400],
+    body: { channels: ['push'] },
+  });
+  await apiRequest('/integrations/outbox/schedule/run', {
+    method: 'POST',
+    expected: [400],
+    body: { channels: ['sms'], providerCode: 'mail.sandbox' },
+  });
+  const failedSmsOutbox = await apiRequest(
+    `/integrations/sms/outbox/${encodeURIComponent(smsDelivery.providerMessageId)}/failed`,
+    {
+      method: 'PATCH',
+      body: { error: 'Sandbox SMS gateway throttled' },
+    },
+  );
+  assertEqual(failedSmsOutbox.status, 'failed', 'SMS outbox failed status');
+  assertEqual(failedSmsOutbox.retryCount, 1, 'SMS outbox retry count');
+  const cappedSmsSchedule = await apiRequest(
+    '/integrations/outbox/schedule/run',
     {
       method: 'POST',
-      body: { providerCode: 'sms.sandbox' },
+      body: {
+        channels: ['sms'],
+        providerCode: 'sms.sandbox',
+        maxRetryCount: 1,
+      },
     },
+  );
+  assertEqual(cappedSmsSchedule.retriedCount, 0, 'SMS capped schedule retries');
+  assertEqual(
+    cappedSmsSchedule.attemptedCount,
+    0,
+    'SMS capped schedule attempted count',
+  );
+  const processedSmsOutbox = await apiRequest(
+    '/integrations/outbox/schedule/run',
+    {
+      method: 'POST',
+      body: {
+        channels: ['sms'],
+        providerCode: 'sms.sandbox',
+        retryFailed: true,
+        maxRetryCount: 3,
+        limit: 100,
+      },
+    },
+  );
+  assertNumberAtLeast(
+    processedSmsOutbox.retriedCount,
+    1,
+    'SMS schedule retried count',
   );
   assertNumberAtLeast(
     processedSmsOutbox.attemptedCount,
     1,
-    'SMS process attempted count',
+    'SMS schedule attempted count',
   );
   assertNumberAtLeast(
     processedSmsOutbox.sentCount,
     1,
-    'SMS process sent count',
+    'SMS schedule sent count',
   );
   const sentSmsOutbox = await apiRequest(
     `/integrations/sms/outbox/${encodeURIComponent(smsDelivery.providerMessageId)}`,
@@ -845,7 +892,7 @@ try {
         'core.notice.deliveries.mail-outbox-provider',
         'core.notice.deliveries.outbox-failed-retry-sent-sync',
         'core.notice.deliveries.outbox-callback-signature',
-        'core.notice.deliveries.outbox-process-provider',
+        'core.notice.deliveries.outbox-schedule-retry',
         'core.notice.deliveries.sms-outbox-provider',
         'core.notice.inbox.unread-item',
         'core.notice.inbox.unread-page',

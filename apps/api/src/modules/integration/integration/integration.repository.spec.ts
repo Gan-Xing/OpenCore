@@ -234,6 +234,85 @@ describe('IntegrationRepository', () => {
     ).rejects.toThrow(BadRequestException);
   });
 
+  it('runs the outbox retry schedule with bounded retry policy', async () => {
+    const repository = new SeedIntegrationRepository();
+    await repository.enableProvider('mail.sandbox');
+    await repository.markOutboxFailed('mail', 'outbox_mail_1', {
+      error: 'Transient SMTP failure',
+    });
+
+    await expect(
+      repository.runOutboxSchedule({
+        channels: ['mail'],
+        providerCode: 'mail.sandbox',
+        maxRetryCount: 3,
+      }),
+    ).resolves.toMatchObject({
+      retryFailed: true,
+      maxRetryCount: 3,
+      retriedCount: 1,
+      attemptedCount: 1,
+      sentCount: 1,
+      queuedCount: 0,
+      channels: [
+        {
+          channel: 'mail',
+          providerCode: 'mail.sandbox',
+          retriedCount: 1,
+          process: {
+            channel: 'mail',
+            providerCode: 'mail.sandbox',
+            attemptedCount: 1,
+            sentCount: 1,
+            queuedCount: 0,
+          },
+        },
+      ],
+    });
+    await expect(
+      repository.getOutboxMessage('mail', 'outbox_mail_1'),
+    ).resolves.toMatchObject({
+      status: 'sent',
+      retryCount: 1,
+      error: undefined,
+      sentAt: expect.any(String),
+    });
+
+    const capped = new SeedIntegrationRepository();
+    await capped.enableProvider('mail.sandbox');
+    await capped.markOutboxFailed('mail', 'outbox_mail_1', {
+      error: 'Retry cap reached',
+    });
+    await expect(
+      capped.runOutboxSchedule({
+        channels: ['mail'],
+        providerCode: 'mail.sandbox',
+        maxRetryCount: 1,
+      }),
+    ).resolves.toMatchObject({
+      retriedCount: 0,
+      attemptedCount: 0,
+      sentCount: 0,
+    });
+    await expect(
+      capped.getOutboxMessage('mail', 'outbox_mail_1'),
+    ).resolves.toMatchObject({
+      status: 'failed',
+      retryCount: 1,
+      error: 'Retry cap reached',
+    });
+
+    await expect(
+      repository.runOutboxSchedule({ channels: ['push' as never] }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      repository.runOutboxSchedule({
+        channels: ['sms'],
+        providerCode: 'mail.sandbox',
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
   it('accepts only signed outbox provider callbacks', async () => {
     const repository = new SeedIntegrationRepository();
     await repository.enableProvider('mail.sandbox');

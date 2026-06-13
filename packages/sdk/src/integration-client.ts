@@ -7,6 +7,7 @@ import type {
   IntegrationOutboxPage,
   IntegrationOutboxProcessResult,
   IntegrationOutboxQueryRequest,
+  IntegrationOutboxScheduleResult,
   IntegrationOutboxSummary,
   IntegrationProviderPage,
   IntegrationProviderQueryRequest,
@@ -20,6 +21,7 @@ import type {
   PageRequest,
   ProcessOutboxRequest,
   PreviewTemplateRequest,
+  ScheduleOutboxRequest,
   TemplatePreviewSummary,
   UpdateIntegrationProviderRequest,
 } from './integration-types';
@@ -56,6 +58,10 @@ export type IntegrationClient = {
     token: string,
     code: string,
   ) => Promise<IntegrationProviderSummary>;
+  runOutboxSchedule: (
+    token: string,
+    body?: ScheduleOutboxRequest,
+  ) => Promise<IntegrationOutboxScheduleResult>;
   listMailTemplates: (
     token: string,
     query?: IntegrationTemplateQueryRequest,
@@ -207,6 +213,11 @@ export function createIntegrationClient(
       request<IntegrationProviderSummary>(
         `/integrations/providers/${encodeURIComponent(code)}/health-check`,
         { method: 'POST', token },
+      ),
+    runOutboxSchedule: (token, body) =>
+      request<IntegrationOutboxScheduleResult>(
+        '/integrations/outbox/schedule/run',
+        { method: 'POST', body: body ?? {}, token },
       ),
     listMailTemplates: (token, query) =>
       request<IntegrationTemplatePage>(

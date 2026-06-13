@@ -7,6 +7,7 @@ import type {
   FailOutboxMessageDto,
   IntegrationOutboxCallbackDto,
   IntegrationOutboxProcessResultDto,
+  IntegrationOutboxScheduleResultDto,
   IntegrationOutboxQueryDto,
   IntegrationProviderQueryDto,
   IntegrationProviderType,
@@ -14,6 +15,7 @@ import type {
   IntegrationTemplateQueryDto,
   ProcessOutboxDto,
   PreviewTemplateDto,
+  ScheduleOutboxDto,
   UpdateIntegrationProviderDto,
 } from './integration.dto';
 import type {
@@ -39,6 +41,14 @@ export type NormalizedOutboxCallback = {
   status: 'failed' | 'sent';
   error?: string;
   signature: string;
+};
+
+export type NormalizedOutboxSchedule = {
+  channels: readonly ('mail' | 'sms')[];
+  providerCode?: string;
+  limit: number;
+  retryFailed: boolean;
+  maxRetryCount: number;
 };
 
 export abstract class IntegrationRepository {
@@ -111,6 +121,9 @@ export abstract class IntegrationRepository {
     channel: 'mail' | 'sms',
     body?: ProcessOutboxDto,
   ): Promise<IntegrationOutboxProcessResultDto>;
+  abstract runOutboxSchedule(
+    body?: ScheduleOutboxDto,
+  ): Promise<IntegrationOutboxScheduleResultDto>;
   abstract callbackOutbox(
     channel: 'mail' | 'sms',
     body: IntegrationOutboxCallbackDto,
@@ -317,6 +330,49 @@ export function normalizeProcessOutboxLimit(value: unknown): number {
   return parsed;
 }
 
+export function normalizeOutboxSchedule(
+  body: ScheduleOutboxDto = {},
+): NormalizedOutboxSchedule {
+  return {
+    channels: normalizeOutboxScheduleChannels(body.channels),
+    providerCode: normalizeOptionalProviderCode(body.providerCode),
+    limit: normalizeProcessOutboxLimit(body.limit),
+    retryFailed: normalizeOptionalScheduleBoolean(body.retryFailed, true),
+    maxRetryCount: normalizeOutboxScheduleMaxRetryCount(body.maxRetryCount),
+  };
+}
+
+export function createOutboxScheduleResult(input: {
+  schedule: NormalizedOutboxSchedule;
+  channels: IntegrationOutboxScheduleResultDto['channels'];
+}): IntegrationOutboxScheduleResultDto {
+  return {
+    retryFailed: input.schedule.retryFailed,
+    maxRetryCount: input.schedule.maxRetryCount,
+    channels: input.channels,
+    retriedCount: input.channels.reduce(
+      (sum, channel) => sum + channel.retriedCount,
+      0,
+    ),
+    attemptedCount: input.channels.reduce(
+      (sum, channel) => sum + channel.process.attemptedCount,
+      0,
+    ),
+    sentCount: input.channels.reduce(
+      (sum, channel) => sum + channel.process.sentCount,
+      0,
+    ),
+    skippedCount: input.channels.reduce(
+      (sum, channel) => sum + channel.process.skippedCount,
+      0,
+    ),
+    queuedCount: input.channels.reduce(
+      (sum, channel) => sum + channel.process.queuedCount,
+      0,
+    ),
+  };
+}
+
 export function normalizeOptionalProviderCode(
   value: unknown,
 ): string | undefined {
@@ -449,6 +505,60 @@ function normalizeOutboxCallbackSignature(value: unknown): string {
   }
 
   return signature.toLowerCase();
+}
+
+function normalizeOutboxScheduleChannels(
+  value: ScheduleOutboxDto['channels'],
+): readonly ('mail' | 'sms')[] {
+  const rawValues =
+    value === undefined
+      ? ['mail', 'sms']
+      : Array.isArray(value)
+        ? value
+        : [value];
+  const channels: ('mail' | 'sms')[] = [];
+
+  for (const raw of rawValues) {
+    if (raw !== 'mail' && raw !== 'sms') {
+      throw new BadRequestException(
+        'Outbox schedule channels must contain only mail or sms.',
+      );
+    }
+    if (!channels.includes(raw)) {
+      channels.push(raw);
+    }
+  }
+
+  if (channels.length === 0) {
+    throw new BadRequestException(
+      'Outbox schedule channels must not be empty.',
+    );
+  }
+
+  return channels;
+}
+
+function normalizeOptionalScheduleBoolean(
+  value: boolean | string | undefined,
+  fallback: boolean,
+): boolean {
+  if (value === undefined) return fallback;
+  if (value === true || value === 'true') return true;
+  if (value === false || value === 'false') return false;
+
+  throw new BadRequestException('Outbox schedule retryFailed must be boolean.');
+}
+
+function normalizeOutboxScheduleMaxRetryCount(value: unknown): number {
+  const parsed = Number(value ?? 3);
+
+  if (!Number.isInteger(parsed) || parsed < 1 || parsed > 20) {
+    throw new BadRequestException(
+      'Outbox schedule maxRetryCount must be an integer between 1 and 20.',
+    );
+  }
+
+  return parsed;
 }
 
 function resolveOutboxCallbackSigningKey(

@@ -11,10 +11,12 @@ import type {
   FailOutboxMessageDto,
   IntegrationOutboxCallbackDto,
   IntegrationOutboxQueryDto,
+  IntegrationOutboxScheduleChannelResultDto,
   IntegrationProviderQueryDto,
   IntegrationTemplateQueryDto,
   ProcessOutboxDto,
   PreviewTemplateDto,
+  ScheduleOutboxDto,
   UpdateIntegrationProviderDto,
 } from './integration.dto';
 import {
@@ -34,10 +36,12 @@ import {
   assertSmsSafety,
   assertTemplateEnabled,
   buildIntegrationSummary,
+  createOutboxScheduleResult,
   createPage,
   IntegrationRepository,
   normalizeOutboxCallback,
   normalizeOutboxFailureError,
+  normalizeOutboxSchedule,
   normalizeOptionalProviderCode,
   normalizeProviderType,
   normalizeOptionalBoolean,
@@ -474,6 +478,32 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
     };
   }
 
+  async runOutboxSchedule(body: ScheduleOutboxDto = {}) {
+    const schedule = normalizeOutboxSchedule(body);
+    const channels: IntegrationOutboxScheduleChannelResultDto[] = [];
+
+    for (const channel of schedule.channels) {
+      if (schedule.providerCode) {
+        await this.assertScheduleProviderReady(channel, schedule.providerCode);
+      }
+      const retriedCount = schedule.retryFailed
+        ? await this.retryEligibleFailedOutbox(channel, schedule)
+        : 0;
+      const process = await this.processOutbox(channel, {
+        providerCode: schedule.providerCode,
+        limit: schedule.limit,
+      });
+      channels.push({
+        channel,
+        providerCode: schedule.providerCode,
+        retriedCount,
+        process,
+      });
+    }
+
+    return createOutboxScheduleResult({ schedule, channels });
+  }
+
   async callbackOutbox(
     channel: 'mail' | 'sms',
     body: IntegrationOutboxCallbackDto,
@@ -574,6 +604,64 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
     return this.prisma.integrationOutbox.count({
       where: { channel, providerCode, status: 'queued' },
     });
+  }
+
+  private async assertScheduleProviderReady(
+    channel: 'mail' | 'sms',
+    providerCode: string,
+  ): Promise<void> {
+    const provider = await this.findProvider(providerCode);
+    assertProviderReadyForOutbox({
+      code: provider.code,
+      type: provider.type,
+      enabled: provider.enabled,
+      channel,
+    });
+  }
+
+  private async retryEligibleFailedOutbox(
+    channel: 'mail' | 'sms',
+    schedule: ReturnType<typeof normalizeOutboxSchedule>,
+  ): Promise<number> {
+    const failedRows = await this.prisma.integrationOutbox.findMany({
+      where: {
+        channel,
+        status: 'failed',
+        providerCode: schedule.providerCode,
+        retryCount: { lt: schedule.maxRetryCount },
+      },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      take: schedule.limit,
+    });
+
+    if (failedRows.length === 0) {
+      return 0;
+    }
+
+    for (const code of new Set(failedRows.map((row) => row.providerCode))) {
+      await this.assertScheduleProviderReady(channel, code);
+    }
+
+    const now = new Date();
+    await this.prisma.$transaction(async (tx) => {
+      for (const row of failedRows) {
+        const updated = await tx.integrationOutbox.update({
+          where: { id: row.id },
+          data: {
+            status: 'queued',
+            error: null,
+            sentAt: null,
+          },
+        });
+        await syncNoticeDeliveryFromOutbox(tx, updated, {
+          status: 'queued',
+          now,
+          previousOutboxStatus: 'failed',
+        });
+      }
+    });
+
+    return failedRows.length;
   }
 }
 

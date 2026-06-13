@@ -19,9 +19,10 @@ active debt and decisions that change future execution.
 
 ## Runtime State
 
-Cycle-021 has completed 70 deployable stages across
-System/Security/Monitor/Integration foundations. Round 70 added signed
-mail/SMS outbox callback intake with HMAC validation and delivery-state sync.
+Cycle-021 has completed 71 deployable stages across
+System/Security/Monitor/Integration foundations. Round 71 added bounded
+mail/SMS outbox retry scheduling with SDK/Admin support and delivery-state
+sync.
 
 ## Guard Register
 
@@ -31,7 +32,7 @@ mail/SMS outbox callback intake with HMAC validation and delivery-state sync.
   tokens to return 401.
 - Notice outbox: smoke covers pending handoff, idempotent execute, blank
   failure rejection, failed-to-retry, process-to-sent sync, signed callback
-  sync and sent-state mutation guards.
+  sync, scheduled retry caps and sent-state mutation guards.
 - Operation log: smoke covers batch-delete guards, deleted-detail 404 and
   clean-all target removal while preserving the clean request audit row.
 - Config/secret: smoke covers feature flags, audience rules and no plaintext
@@ -46,8 +47,8 @@ mail/SMS outbox callback intake with HMAC validation and delivery-state sync.
 
 ## Remaining Foundation Debt
 
-- Notice: real external SMTP/SMS adapters, retry scheduling, WebSocket
-  realtime push and any admitted tenant/member/mobile channels.
+- Notice: real external SMTP/SMS adapters, WebSocket realtime push and any
+  admitted tenant/member/mobile channels.
 - Config: multi-environment governance, external KMS, key rotation and secret
   version history.
 - Login log: optional external GeoIP depth and broader mobile/social login

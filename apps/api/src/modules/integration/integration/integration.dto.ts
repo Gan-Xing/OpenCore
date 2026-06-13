@@ -294,12 +294,74 @@ export class ProcessOutboxDto {
   limit?: number;
 }
 
+export class ScheduleOutboxDto {
+  @ApiProperty({
+    enum: ['mail', 'sms'],
+    isArray: true,
+    required: false,
+    description: 'Channels included in the retry schedule run.',
+  })
+  channels?: readonly ('mail' | 'sms')[] | 'mail' | 'sms';
+
+  @ApiProperty({ required: false })
+  providerCode?: string;
+
+  @ApiProperty({ required: false, default: 100 })
+  limit?: number;
+
+  @ApiProperty({ required: false, default: true })
+  retryFailed?: boolean;
+
+  @ApiProperty({ required: false, default: 3 })
+  maxRetryCount?: number;
+}
+
 export class IntegrationOutboxProcessResultDto {
   @ApiProperty({ enum: ['mail', 'sms'] })
   channel!: 'mail' | 'sms';
 
   @ApiProperty({ required: false })
   providerCode?: string;
+
+  @ApiProperty()
+  attemptedCount!: number;
+
+  @ApiProperty()
+  sentCount!: number;
+
+  @ApiProperty()
+  skippedCount!: number;
+
+  @ApiProperty()
+  queuedCount!: number;
+}
+
+export class IntegrationOutboxScheduleChannelResultDto {
+  @ApiProperty({ enum: ['mail', 'sms'] })
+  channel!: 'mail' | 'sms';
+
+  @ApiProperty({ required: false })
+  providerCode?: string;
+
+  @ApiProperty()
+  retriedCount!: number;
+
+  @ApiProperty({ type: IntegrationOutboxProcessResultDto })
+  process!: IntegrationOutboxProcessResultDto;
+}
+
+export class IntegrationOutboxScheduleResultDto {
+  @ApiProperty()
+  retryFailed!: boolean;
+
+  @ApiProperty()
+  maxRetryCount!: number;
+
+  @ApiProperty({ type: [IntegrationOutboxScheduleChannelResultDto] })
+  channels!: readonly IntegrationOutboxScheduleChannelResultDto[];
+
+  @ApiProperty()
+  retriedCount!: number;
 
   @ApiProperty()
   attemptedCount!: number;

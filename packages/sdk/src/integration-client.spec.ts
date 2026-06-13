@@ -31,6 +31,11 @@ describe('createIntegrationClient', () => {
     await client.enableProvider('token', 'mail.sandbox');
     await client.disableProvider('token', 'mail.sandbox');
     await client.checkProviderHealth('token', 'mail.sandbox');
+    await client.runOutboxSchedule('token', {
+      channels: ['mail', 'sms'],
+      retryFailed: true,
+      maxRetryCount: 3,
+    });
     await client.listMailTemplates('token', { enabled: true });
     await client.getMailTemplate('token', 'mail.welcome');
     await client.createMailTemplate('token', {
@@ -123,6 +128,10 @@ describe('createIntegrationClient', () => {
       },
       {
         path: '/integrations/providers/mail.sandbox/health-check',
+        method: 'POST',
+      },
+      {
+        path: '/integrations/outbox/schedule/run',
         method: 'POST',
       },
       { path: '/integrations/mail/templates?enabled=true' },

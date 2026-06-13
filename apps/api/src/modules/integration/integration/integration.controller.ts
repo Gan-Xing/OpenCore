@@ -20,6 +20,7 @@ import {
   IntegrationOutboxPageDto,
   IntegrationOutboxProcessResultDto,
   IntegrationOutboxQueryDto,
+  IntegrationOutboxScheduleResultDto,
   IntegrationProviderDto,
   IntegrationProviderPageDto,
   IntegrationProviderQueryDto,
@@ -30,6 +31,7 @@ import {
   OAuthCallbackContractDto,
   ProcessOutboxDto,
   PreviewTemplateDto,
+  ScheduleOutboxDto,
   TemplatePreviewDto,
   UpdateIntegrationProviderDto,
 } from './integration.dto';
@@ -113,6 +115,16 @@ export class IntegrationController {
     @Param('code') code: string,
   ): Promise<IntegrationProviderDto> {
     return this.repository.checkProviderHealth(code);
+  }
+
+  @Post('outbox/schedule/run')
+  @ApiTags('Integration')
+  @RequirePermission('integration:provider:manage')
+  @ApiOkResponse({ type: IntegrationOutboxScheduleResultDto })
+  runOutboxSchedule(
+    @Body() body: ScheduleOutboxDto,
+  ): Promise<IntegrationOutboxScheduleResultDto> {
+    return this.repository.runOutboxSchedule(body);
   }
 
   @Get('mail/templates')

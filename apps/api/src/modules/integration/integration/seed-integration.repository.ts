@@ -6,10 +6,12 @@ import type {
   FailOutboxMessageDto,
   IntegrationOutboxCallbackDto,
   IntegrationOutboxQueryDto,
+  IntegrationOutboxScheduleChannelResultDto,
   IntegrationProviderQueryDto,
   IntegrationTemplateQueryDto,
   ProcessOutboxDto,
   PreviewTemplateDto,
+  ScheduleOutboxDto,
   UpdateIntegrationProviderDto,
 } from './integration.dto';
 import {
@@ -32,11 +34,13 @@ import {
   assertSmsSafety,
   assertTemplateEnabled,
   buildIntegrationSummary,
+  createOutboxScheduleResult,
   createPage,
   IntegrationRepository,
   matchesOptional,
   normalizeOutboxCallback,
   normalizeOutboxFailureError,
+  normalizeOutboxSchedule,
   normalizeOptionalProviderCode,
   normalizeOptionalBoolean,
   normalizeProcessOutboxLimit,
@@ -372,6 +376,32 @@ export class SeedIntegrationRepository extends IntegrationRepository {
     };
   }
 
+  async runOutboxSchedule(body: ScheduleOutboxDto = {}) {
+    const schedule = normalizeOutboxSchedule(body);
+    const channels: IntegrationOutboxScheduleChannelResultDto[] = [];
+
+    for (const channel of schedule.channels) {
+      if (schedule.providerCode) {
+        this.assertScheduleProviderReady(channel, schedule.providerCode);
+      }
+      const retriedCount = schedule.retryFailed
+        ? this.retryEligibleFailedOutbox(channel, schedule)
+        : 0;
+      const process = await this.processOutbox(channel, {
+        providerCode: schedule.providerCode,
+        limit: schedule.limit,
+      });
+      channels.push({
+        channel,
+        providerCode: schedule.providerCode,
+        retriedCount,
+        process,
+      });
+    }
+
+    return createOutboxScheduleResult({ schedule, channels });
+  }
+
   async callbackOutbox(
     channel: 'mail' | 'sms',
     body: IntegrationOutboxCallbackDto,
@@ -472,6 +502,50 @@ export class SeedIntegrationRepository extends IntegrationRepository {
         message.status === 'queued' &&
         matchesOptional(message.providerCode, providerCode),
     ).length;
+  }
+
+  private assertScheduleProviderReady(
+    channel: 'mail' | 'sms',
+    providerCode: string,
+  ): void {
+    const provider = this.findProvider(providerCode);
+    assertProviderReadyForOutbox({
+      code: provider.code,
+      type: provider.type,
+      enabled: provider.enabled,
+      channel,
+    });
+  }
+
+  private retryEligibleFailedOutbox(
+    channel: 'mail' | 'sms',
+    schedule: ReturnType<typeof normalizeOutboxSchedule>,
+  ): number {
+    const eligible = this.outbox
+      .filter(
+        (message) =>
+          message.channel === channel &&
+          message.status === 'failed' &&
+          message.retryCount < schedule.maxRetryCount &&
+          matchesOptional(message.providerCode, schedule.providerCode),
+      )
+      .slice(0, schedule.limit);
+
+    for (const code of new Set(
+      eligible.map((message) => message.providerCode),
+    )) {
+      this.assertScheduleProviderReady(channel, code);
+    }
+
+    for (const message of eligible) {
+      Object.assign(message, {
+        status: 'queued' as const,
+        error: undefined,
+        sentAt: undefined,
+      });
+    }
+
+    return eligible.length;
   }
 }
 
