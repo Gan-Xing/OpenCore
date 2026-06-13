@@ -1899,3 +1899,43 @@ OpenCore does not claim external GeoIP provider integration, country/city
 accuracy, IP database updates, mobile/SMS/social login logging or Login Logs
 page session termination in this round. Those remain separate foundation or
 security rounds.
+
+## Round 60 Notice Template Reference Shape
+
+Yudao exposes notification templates as an operator-managed System/Infra
+surface: templates have stable codes, names, message type/channel semantics,
+content, extracted params, status and a send/preview style action. The product
+value is that operators can define reusable notification bodies and prove the
+rendered result before delivery.
+
+RuoYi's notice surface keeps system announcements under System notice
+management permissions. It does not require OpenCore to copy Yudao's exact Java
+model, but it does require the Admin notice workflow to be operator-facing and
+permissioned rather than fixture-only.
+
+OpenCore already had:
+
+- system notice management CRUD and lifecycle from Round 1;
+- authenticated inbox/read state from Round 55;
+- management read-user analytics from Round 56;
+- `core:notice:*` permissions and Admin System Notices routing;
+- fixed/deploy/public `core.notice` smoke.
+
+Round 60 admits the template-management stage:
+
+- persist `SystemNoticeTemplate` with `code`, `name`, `type`,
+  `titleTemplate`, `contentTemplate`, extracted `params`, `enabled` and
+  `remark`;
+- expose list, simple-list, detail, create, update, delete, render preview and
+  create-draft-from-template APIs under existing `core:notice:*` permissions;
+- enforce strict render params: missing required params, unexpected params and
+  malformed template booleans fail before mutation;
+- surface template CRUD, current-page export, render preview and draft notice
+  creation in the Admin System Notices page;
+- prove fixed-port, deploy and public smoke for seeded template rendering,
+  create/update/delete, disabled-template guards and stale Admin bundle
+  markers.
+
+OpenCore does not claim delivery adapter execution, WebSocket/mail/SMS fan-out,
+tenant notifications, BPM approval or member/mobile notice channels in this
+round. Those remain separate notice productization stages.

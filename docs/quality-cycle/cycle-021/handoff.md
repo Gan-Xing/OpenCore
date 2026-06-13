@@ -3,8 +3,8 @@
 Date: 2026-06-13
 Repository: `Gan-Xing/OpenCore`
 Default branch: `main`
-Latest observed feature commit: `b39b1ac feat(login-log): add ip location enrichment / 新增登录日志 IP 位置`
-Latest deployed feature commit: `b39b1ac feat(login-log): add ip location enrichment / 新增登录日志 IP 位置`
+Latest observed feature commit: `2f22e76 feat(notice): add notice template management / 新增通知模板管理`
+Latest deployed feature commit: `2f22e76 feat(notice): add notice template management / 新增通知模板管理`
 Latest deployed hardening commit: `4df5dd1 fix(system): satisfy xlsx export lint guard / 修复 XLSX 导出 lint 守卫`
 
 ## One-sentence Goal
@@ -144,6 +144,7 @@ productization waterline completion; see
 - Round 57 `core.login-log` structured logout actor/reason stage 8
 - Round 58 `core.config` runtime feature flags stage 10
 - Round 59 `core.login-log` IP/location enrichment stage 9
+- Round 60 `core.notice` notification templates stage 4
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -814,6 +815,19 @@ Admin bundle。公网 Admin `p__Security__LoginLogs.c2b20b26.async.js` 已验证
 IP/location 分类，不等于外部 GeoIP provider、国家/城市库、mobile/SMS/social 登录日志或从
 Login Logs 页面直接终止会话已经完成。
 
+Round 60 回到 `core.notice` P1 队列，把通知模板从欠账变成可管理、可预览、可生成草稿的闭环。
+OpenCore 新增 `SystemNoticeTemplate` Prisma model、migration 和 seed `release.window`，模板字段包括
+`code/name/type/titleTemplate/contentTemplate/params/enabled/remark`。API/SDK/OpenAPI/Admin 同步：
+`/api/core/notices/templates` 支持列表、simple-list、详情、创建、更新、删除、严格参数渲染和
+`create-notice` 从模板生成 draft notice；Admin System Notices 页面新增 `System Notice Templates` tab，
+支持模板 CRUD、当前页导出、渲染预览和 `Create draft from template`。固定 smoke、部署 smoke 和公网 API
+smoke 均验证 `core.notice.template.*`，包括缺失/多余参数、`enabled`/`pinned` 反序列化守卫、禁用模板阻断渲染和清理。
+部署脚本会拒绝缺少模板页面标记的 stale Admin bundle；公网 Admin
+`p__System__Notices.c0987784.async.js` 已验证包含 `System Notice Templates`、
+`Notice template render preview`、`Create draft from template` 和 `core-notice-templates`。
+注意：这轮关闭的是站内通知模板管理和草稿生成闭环，不等于真实 WebSocket/mail/SMS fan-out、
+delivery adapter 投递执行、租户通知或 BPM 审批已经完成。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -824,7 +838,7 @@ The productization waterline now classifies:
   Round 8/21 `core.dict`, Round 2/27/43/52/54 `core.dept`,
   Round 7/19/22/23/28/29/30/31/32/33/34/35/36/41/54 `core.user`,
   Round 3/22/25/42/53 `core.post`.
-- First loop, enhance: Round 1/55/56 `core.notice`,
+- First loop, enhance: Round 1/55/56/60 `core.notice`,
   Round 9/24/37/38/39/40/44/46/49/58 `core.config`,
   Round 11/26/45/47/48/49/50/51/57/59 `core.login-log`.
 - Thin, rework: none after Round 16.
@@ -885,9 +899,10 @@ finds another blocker:
    separate admission.
 5. `core.notice`: Round 55 closed persisted per-user read/unread state,
    authenticated inbox APIs, Admin Inbox tab and header badge. Round 56 closed
-   management read-user analytics for notices. Remaining notice work is
-   delivery adapter design and any admitted template/WebSocket/mail/SMS
-   fan-out.
+   management read-user analytics for notices. Round 60 closed notification
+   template management, strict render preview and draft-notice creation from a
+   template across API/SDK/Admin/OpenAPI/smoke/deploy guards. Remaining notice
+   work is delivery adapter design and any admitted WebSocket/mail/SMS fan-out.
 
 ### Current P0/P1/P2 Scope Snapshot
 
@@ -895,7 +910,7 @@ finds another blocker:
   content upload/download, menu tree metadata, plus deployment hardening for
   fixed ports, Admin API origin, duplicate `/api/api` compatibility and stale
   frontend bundle/cache guards.
-- P1 remaining: `core.notice` delivery adapter/template/fan-out,
+- P1 remaining: `core.notice` delivery adapter/fan-out,
   `core.config` secret vault/KMS integration or advanced feature-flag rollout,
   and `core.login-log` optional external GeoIP country/city/provider depth or
   admitted mobile/SMS/social login logging.

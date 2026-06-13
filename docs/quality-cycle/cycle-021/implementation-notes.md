@@ -5075,3 +5075,121 @@ Against public endpoints after deploy:
   `b39b1ac feat(login-log): add ip location enrichment / 新增登录日志 IP 位置`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 60 Capability
+
+Capability: `core.notice` notification template productization.
+
+Round 60 closes the station-notice template foundation stage. OpenCore now has
+persisted notification templates with strict parameter extraction, server-side
+render preview and draft notice creation from a template. This follows Yudao's
+notify-template product shape without adding real delivery fan-out in the same
+round.
+
+Reference comparison:
+
+- Yudao exposes notify templates as a first-class system capability with code,
+  name/type/content/params/status and send-notify actions.
+- RuoYi's notice management keeps the operator-facing system announcement
+  surface under System notice permissions.
+- OpenCore already had notice CRUD, inbox/read state and read-user analytics;
+  the missing low-dependency layer was reusable templates plus render/create
+  guards.
+
+## Round 60 Implemented
+
+- Added Prisma `SystemNoticeTemplate` plus migration and seed
+  `release.window`.
+- Added system notice template DTOs, records, seed/Prisma repositories,
+  normalization helpers, service methods and unit/integration tests.
+- Added API routes:
+  - `GET /api/core/notices/templates`
+  - `GET /api/core/notices/templates/simple-list`
+  - `GET /api/core/notices/templates/:code`
+  - `POST /api/core/notices/templates/:code/render`
+  - `POST /api/core/notices/templates/:code/create-notice`
+  - `POST /api/core/notices/templates`
+  - `PATCH /api/core/notices/templates/:code`
+  - `DELETE /api/core/notices/templates/:code`
+- Reused existing `core:notice:read/create/update/delete` permissions and
+  updated the API permission matrix.
+- Extended SDK types/client/spec, registry fixtures and OpenAPI snapshot.
+- Added Admin System Notices `System Notice Templates` tab with current-page
+  filtering/export, template CRUD, detail drawer, render preview and
+  `Create draft from template`.
+- Extended `tools/scripts/smoke-core-notice.mjs` with seeded simple-list,
+  strict render, missing/extra param rejection, `enabled`/`pinned`
+  deserialization guards, create/list/render/create-notice/update/delete and
+  disabled-template render guards.
+- Extended Admin static smoke and deploy-script stale bundle guards for
+  `System Notice Templates`, `Notice template render preview` and
+  `Create draft from template`.
+
+Out of scope for Round 60:
+
+- Real WebSocket/mail/SMS fan-out;
+- delivery adapter/provider execution;
+- tenant-scoped notices;
+- BPM approval around announcements;
+- member/mobile notice channels.
+
+## Round 60 Verification
+
+- `pnpm prisma:validate`
+- `pnpm prisma:generate`
+- `pnpm prisma:migrate`
+- `pnpm prisma:seed`
+- `pnpm nx test system --runInBand`
+- `pnpm nx test sdk --runInBand`
+- `pnpm test:api --runInBand`
+- `pnpm test:admin`
+- `pnpm openapi:export`
+- `pnpm openapi:check`
+- `pnpm openapi:registry-tags:check`
+- `pnpm sdk:check`
+- `pnpm typecheck`
+- `pnpm lint`
+- `pnpm smoke:api:local`
+- `pnpm deploy:opencore`
+- `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-notice`
+
+`pnpm smoke:api:local` passed on fixed port `39173`, including
+`core.notice.template.simple-list`, `core.notice.template.render`,
+`core.notice.template.enabled-deserialization-guard`,
+`core.notice.template.pinned-deserialization-guard`,
+`core.notice.template.create-notice` and
+`core.notice.template.disabled-render-guard`.
+
+`pnpm deploy:opencore` passed, deploying API/Admin on fixed ports
+`39172`/`39174`; deploy smoke included Admin same-origin login,
+duplicate-prefix login compatibility, public bundle checks, stale
+service-worker retirement and the new notice template smoke checks.
+
+`pnpm lint` passed with existing warnings in
+`packages/system/src/system-user/system-user.prisma-repository.ts` and
+`apps/admin/src/pages/shared/CurrentPageExportButton.tsx`; no Round 60 lint
+errors were introduced.
+
+## Round 60 Public Verification
+
+Against public endpoints after deploy:
+
+- Public API: `http://144.217.243.161:39172`
+- Public Admin: `http://144.217.243.161:39174`
+- Admin main bundle: `umi.502d85c6.js`
+- System Notices chunk: `p__System__Notices.c0987784.async.js`
+- Public API notice smoke passed:
+  `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-notice`.
+  Checks included notice template simple-list, strict render, param guards,
+  deserialization guards, create/list/render/create-notice/update/delete and
+  disabled-template render blocking.
+- Public System Notices chunk contains `System Notice Templates`,
+  `Notice template render preview`, `Create draft from template` and
+  `core-notice-templates`.
+
+## Round 60 Commit Record
+
+- Feature commit:
+  `2f22e76 feat(notice): add notice template management / 新增通知模板管理`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

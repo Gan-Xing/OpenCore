@@ -1809,6 +1809,38 @@ the same round.
       smoke, deployment and public URL verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 60: core.notice Notification Template Productization
+
+Why this slice: after Round 55/56 gave `core.notice` a real inbox and read-user
+analytics, the remaining low-dependency notice reference gap was notification
+templates. Yudao exposes notify templates with code, type, nickname/content,
+params and send-notify; OpenCore can close the station-notice template and
+draft-generation foundation without adding WebSocket/mail/SMS fan-out in the
+same round.
+
+- [x] Recompare Yudao notify-template shape before selecting this slice.
+- [x] Add Prisma `SystemNoticeTemplate` model, migration and
+      `release.window` seed.
+- [x] Add system notice template repository/service DTOs for list,
+      simple-list, detail, create, update, delete, strict render preview and
+      create draft notice from template.
+- [x] Add API routes under `/api/core/notices/templates*` with existing
+      `core:notice:*` permissions and route-order coverage.
+- [x] Extend SDK types/client/spec, registry fixtures and OpenAPI snapshot for
+      template CRUD/render/create-notice.
+- [x] Add Admin System Notices `System Notice Templates` tab with bounded
+      filtering, current-page export, template CRUD, detail drawer, render
+      preview and `Create draft from template`.
+- [x] Extend Admin static smoke and deploy-script stale bundle guards for the
+      notice template UI markers.
+- [x] Extend fixed-port/deploy/public `core.notice` smoke to assert seeded
+      simple-list, strict render output, missing/extra param guards,
+      `enabled`/`pinned` deserialization guards, template create/list/render,
+      draft creation, disabled-template render guard and cleanup.
+- [x] Run focused tests, OpenAPI/SDK checks, typecheck, lint, fixed-port
+      smoke, deployment and public URL verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -1850,10 +1882,11 @@ treat "minimal loop" as "minimal final product".
 
 ### First Loop, Needs Enhancement
 
-- [ ] Round 1/55/56 `core.notice`: management CRUD, persisted per-user read
-      receipts, authenticated inbox APIs, Admin Inbox tab, header unread badge
-      and management read-user analytics are complete. Delivery adapter design,
-      notification templates and WebSocket/mail/SMS fan-out remain.
+- [ ] Round 1/55/56/60 `core.notice`: management CRUD, persisted per-user read
+      receipts, authenticated inbox APIs, Admin Inbox tab, header unread badge,
+      management read-user analytics, notification template CRUD, strict
+      render preview and draft notice creation from template are complete.
+      Delivery adapter design and WebSocket/mail/SMS fan-out remain.
 - [ ] Round 9/24/37/38/39/40/44/46/49/58 `core.config`: public get-value-by-key, cache
       refresh and mutation invalidation are complete. Category/name/remark
       metadata is complete. Native XLSX export payload and Admin download are

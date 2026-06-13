@@ -988,3 +988,35 @@ filterable Location field.
 This stays inside the current S7 Security/System login-log boundary. It does
 not introduce external GeoIP provider integration, country/city databases,
 mobile/SMS/social login logging or Login Logs page session termination.
+
+## Round 60 Audit: core.notice Notification Templates
+
+After Round 55/56, `core.notice` had a real inbox and management read-user
+analytics, but notification templates were still listed as notice product
+debt.
+
+- Yudao's notify-template surface treats reusable notification content,
+  extracted params, status and send/preview actions as first-class operator
+  workflow.
+- OpenCore already had notice CRUD, publish/archive lifecycle, read receipts,
+  inbox APIs, read-user analytics and `core:notice:*` permissions.
+- The lowest-dependency loop was persisted station-notice templates plus
+  strict render/create-draft behavior, not WebSocket/mail/SMS delivery.
+- The schema needed a dedicated `SystemNoticeTemplate` model instead of
+  overloading notice rows or embedding template JSON in config.
+- Parameter extraction needed to be deterministic and strict so missing,
+  unexpected or malformed params fail before creating a notice.
+- Body boolean inputs such as template `enabled` and create-from-template
+  `pinned` needed explicit deserialization guards to avoid repeating runtime
+  Prisma errors from loose payloads.
+- Admin needed an actual `System Notice Templates` tab with template CRUD,
+  render preview and `Create draft from template`, not a backend-only feature.
+- Fixed-port, deploy and public smoke needed to prove seed template rendering,
+  template CRUD, create-notice, deserialization guards, disabled-template
+  blocking and deployed Admin chunk markers.
+- The deploy script needed a stale System Notices bundle guard because stale
+  frontend artifacts have repeatedly hidden newly deployed UI.
+
+This stays inside the current S7 System notice boundary. It does not introduce
+delivery adapter execution, WebSocket/mail/SMS fan-out, tenant notices, BPM
+approval or member/mobile notification channels.
