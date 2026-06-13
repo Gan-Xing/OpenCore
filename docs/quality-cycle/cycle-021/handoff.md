@@ -3,8 +3,8 @@
 Date: 2026-06-12  
 Repository: `Gan-Xing/OpenCore`  
 Default branch: `main`  
-Latest observed feature commit: `7db10fe feat(core-user): add self-profile loop / 新增个人资料闭环`
-Latest deployed feature commit: `7db10fe feat(core-user): add self-profile loop / 新增个人资料闭环`
+Latest observed feature commit: `b46f9bb feat(core-user): add self-password loop / 新增自助改密闭环`
+Latest deployed feature commit: `b46f9bb feat(core-user): add self-password loop / 新增自助改密闭环`
 Latest deployed hardening commit: `04e446c fix(online-user): stabilize admin session smoke / 稳定在线用户管理员会话冒烟`
 
 ## One-sentence Goal
@@ -69,6 +69,7 @@ productization waterline completion; see
 - Round 26 `core.login-log` device/time filter stage 2
 - Round 27 `core.dept` simple-list option stage 2
 - Round 28 `core.user` self-profile basic info stage 5
+- Round 29 `core.user` self-password stage 6
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -240,6 +241,21 @@ displayName 400、系统用户管理更新仍 400。公网 Profile 页返回 200
 和 `postCodes`；公网 Admin 代理 `/api/auth/login`、兼容 `/api/api/auth/login` 以及 API
 origin `/api/api/auth/login` 均返回 201。
 
+Round 29 继续补齐 `core.user` 队列：用户现在有认证态自助改密码闭环。
+`PATCH /api/core/users/profile/password` 接受 `oldPassword/newPassword`，使用 auth-only
+guard，校验旧密码，拒绝新旧相同，更新当前用户 password hash，并撤销该用户名的 active
+online-user sessions。Admin `/personal/profile` 新增 `Change password` 表单，成功后清理
+本地 token 并跳回登录页。SDK/OpenAPI、seed/Prisma 仓储、API 权限矩阵、Admin smoke 和
+固定 core-user smoke 均同步该闭环。固定 smoke、部署 smoke 和公网 smoke 均证明错误旧密码
+401、新旧相同 400、成功改密、旧 token 401、旧密码不能登录、新密码可以登录。公网 Profile
+页返回 200；当前 main bundle `umi.4cacaf95.js` 已验证包含
+`/core/users/profile/password`、API origin `http://144.217.243.161:39172` 且不包含
+`/api/api/auth/login`；公网 Profile chunk `p__Personal__Profile.d2b0fdde.async.js` 已验证
+包含 `Change password`、`Current password`、`New password`、`Confirm password`、
+`Password changed`、`Sign in again`、`/user/login` 和 `/personal/profile`；公网 Admin
+代理 `/api/auth/login`、兼容 `/api/api/auth/login` 以及 API origin `/api/api/auth/login`
+均返回 201。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -249,7 +265,7 @@ The productization waterline now classifies:
   `core.file`, Round 4/16 `core.menu`, Round 5/17/18/20 `core.role`,
   Round 8/21 `core.dict`.
 - First loop, enhance: Round 1 `core.notice`, Round 2/27 `core.dept`, Round
-  3/22/25 `core.post`, Round 7/19/22/23/28 `core.user`, Round 9/24
+  3/22/25 `core.post`, Round 7/19/22/23/28/29 `core.user`, Round 9/24
   `core.config`, Round 11/26 `core.login-log`.
 - Thin, rework: none after Round 16.
 
@@ -260,8 +276,9 @@ finds another blocker:
 1. `core.user`: Round 19 closed user status/reset-password and direct
    user-mutation session semantics; Round 22 closed user-post binding; Round
    23 closed department side-tree filtering; Round 28 closed authenticated
-   self-profile basic display-name read/update. Remaining work is avatar,
-   self-password, import/export and broader option/batch workflows.
+   self-profile basic display-name read/update; Round 29 closed authenticated
+   self-password change with old-password verification and session revocation.
+   Remaining work is avatar, import/export and broader option/batch workflows.
 2. `core.config`: Round 24 closed public get-value-by-key plus cache
    refresh/invalidation. Remaining work is category/name/remark enrichment,
    batch/file export depth and broader runtime propagation boundaries.

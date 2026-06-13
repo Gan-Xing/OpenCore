@@ -2140,3 +2140,97 @@ Against public endpoints after deploy:
   `7db10fe feat(core-user): add self-profile loop / 新增个人资料闭环`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 29 Capability
+
+Capability: `core.user` self-password productization.
+
+Goal: close the next user profile security gap by adding authenticated
+self-service password change with old-password verification and session
+revocation.
+
+## Round 29 Implemented
+
+- Added `UpdateUserPasswordDto` with `oldPassword/newPassword`.
+- Added `updateUserPassword()` to system user repository/service contracts.
+- Implemented old-password verification, same-password rejection and password
+  hash update in seed and Prisma system user repositories.
+- Added `PATCH /api/core/users/profile/password` as an auth-only current-user
+  endpoint before dynamic `users/:id` routes.
+- Returned a password mutation result with `changed` and
+  `revokedSessionCount`.
+- Revoked active online-user sessions for the current username after a
+  successful self password change.
+- Extended the API permission matrix so self-password stays auth-only and does
+  not require `core:user:update`.
+- Extended OpenAPI, `@opencore/sdk` types/client methods and SDK path tests.
+- Added Admin Profile `Change password` form, current/new/confirm password
+  validation, local token cleanup and login redirect after success.
+- Extended static Admin smoke markers for the new service method, form labels,
+  logout behavior and success message.
+- Extended `tools/scripts/smoke-core-user.mjs` to prove wrong old password 401,
+  same password 400, successful password update, stale token 401, old password
+  blocked and new password login.
+
+## Round 29 Verification
+
+- `node --check tools/scripts/smoke-core-user.mjs`, `node --check
+apps/admin/scripts/smoke-test.mjs` and `bash -n
+tools/scripts/run-local-api-smoke.sh tools/scripts/deploy-local-opencore.sh`
+  pass.
+- Focused tests pass:
+  - `NX_DAEMON=false pnpm nx test system --runInBand --runTestsByPath packages/system/src/system-user/system-user.spec.ts`
+  - `NX_DAEMON=false pnpm nx test sdk --runInBand --runTestsByPath packages/sdk/src/rbac-client.spec.ts`
+  - `NX_DAEMON=false pnpm nx test api --runInBand --runTestsByPath src/modules/core/rbac/rbac.permission-matrix.spec.ts`
+  - `pnpm test:admin`
+- `pnpm openapi:export`, `pnpm openapi:check`,
+  `pnpm openapi:registry-tags:check` and `pnpm sdk:check` pass.
+- `pnpm typecheck` pass.
+- `pnpm lint` pass; the known Biome warning in
+  `apps/admin/src/pages/shared/CurrentPageExportButton.tsx` remains non-blocking.
+- `pnpm prisma:validate` pass.
+- `pnpm format:check` pass.
+- `git diff --check` pass.
+- `pnpm smoke:api:local` pass on fixed port `39173`, including
+  `core.user.profile.password.wrong-old-password-guard`,
+  `core.user.profile.password.same-password-guard`,
+  `core.user.profile.password.update`,
+  `core.user.profile.password.revoke-session`,
+  `core.user.profile.password.old-password-blocked` and
+  `core.user.profile.password.new-password-login`.
+- `pnpm test` pass for all 19 Nx projects.
+- `pnpm build` pass for all 19 Nx projects.
+- `pnpm deploy:opencore` pass, deploying API/Admin on fixed ports
+  `39172`/`39174`; deploy smoke includes the new user self-password checks and
+  the existing login-prefix/frontend-cache/session-revocation guards.
+
+## Round 29 Public Verification
+
+Against public endpoints after deploy:
+
+- `GET http://144.217.243.161:39172/health/ready` returned 200.
+- Public `pnpm smoke:core-user` passed against
+  `http://144.217.243.161:39172` with `OPENCORE_SMOKE_CHECK_DOCS=false` and the
+  deployed admin password loaded from `.env.opencore.local` without printing
+  secrets.
+- Public user smoke verified wrong old password 401, same password 400,
+  successful self-password update, stale token 401, old password blocked, new
+  password login, and the existing user security mutation checks.
+- `GET http://144.217.243.161:39174/personal/profile/` returned 200.
+- The deployed main Admin bundle `umi.4cacaf95.js` contains API origin
+  `http://144.217.243.161:39172` and `/core/users/profile/password`, and does
+  not contain `/api/api/auth/login`.
+- The deployed Profile chunk `p__Personal__Profile.d2b0fdde.async.js`
+  contains `Change password`, `Current password`, `New password`,
+  `Confirm password`, `Password changed`, `Sign in again`, `/user/login` and
+  `/personal/profile`.
+- Public Admin same-origin proxy login returned 201 for both `/api/auth/login`
+  and the stale-compatible `/api/api/auth/login`; public API origin
+  `/api/api/auth/login` also returned 201.
+
+## Round 29 Commit Record
+
+- Feature commit:
+  `b46f9bb feat(core-user): add self-password loop / 新增自助改密闭环`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

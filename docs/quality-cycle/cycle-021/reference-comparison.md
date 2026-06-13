@@ -847,3 +847,36 @@ current user schema:
 OpenCore still does not admit avatar upload, self password update, email/phone
 profile fields, social account binding, user import/export file workflows,
 batch user deletion or a standalone user simple-list endpoint in this round.
+
+## Round 29 User Self-password Reference Shape
+
+RuoYi exposes self-service password change under
+`/system/user/profile/updatePwd`. The reference controller reads
+`oldPassword/newPassword`, verifies the old password against the current
+account, rejects a new password that matches the current password, writes the
+new password hash and refreshes the cached login user.
+
+Yudao exposes the same product shape under
+`/system/user/profile/update-password`. Its request carries
+`oldPassword/newPassword`, validates both fields and verifies the old password
+before updating the current user's password.
+
+OpenCore admits the matching stage-6 security loop while preserving its
+current session model:
+
+- `PATCH /api/core/users/profile/password` is an auth-only current-user
+  endpoint;
+- the endpoint accepts `oldPassword/newPassword`;
+- seed and Prisma repositories verify the old password hash and reject
+  same-password updates;
+- successful updates write the new password hash and revoke the current user's
+  active online-user sessions;
+- Admin `/personal/profile` adds a `Change password` form and clears the local
+  bearer token after success so the operator signs in again;
+- fixed-port, deploy and public smoke prove wrong old password 401, same
+  password 400, successful update, stale token 401, old password blocked and
+  new password login.
+
+OpenCore still does not admit avatar upload, email/phone profile fields,
+social account binding, user import/export file workflows, batch user deletion
+or a standalone user simple-list endpoint in this round.

@@ -751,6 +751,38 @@ through the system-user management mutation path.
       verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 29: core.user Self-password Productization
+
+Why this slice: after self-profile basic info, the next lower-dependency user
+profile gap was self-service password change. RuoYi exposes
+`/system/user/profile/updatePwd` with old-password verification and same
+password rejection. Yudao exposes `/system/user/profile/update-password` with
+`oldPassword/newPassword`. OpenCore had admin reset-password, but no current
+user endpoint that requires the old password and invalidates sessions after a
+successful self change.
+
+- [x] Add `UpdateUserPasswordDto` for `oldPassword/newPassword`.
+- [x] Add `updateUserPassword()` to system user repository/service contracts.
+- [x] Implement old-password verification, same-password rejection and password
+      hash update for seed and Prisma repositories.
+- [x] Add authenticated `PATCH /api/core/users/profile/password` before
+      `users/:id`.
+- [x] Revoke the current user's active online-user sessions after successful
+      self password change.
+- [x] Extend API permission-matrix tests to keep self-password auth-only and
+      free of management permissions.
+- [x] Extend OpenAPI, SDK types/client methods and SDK path tests.
+- [x] Add Admin `/personal/profile` `Change password` form that clears the
+      local bearer token and returns to login after success.
+- [x] Add static Admin smoke guards for the password form, service method,
+      logout behavior and route markers.
+- [x] Extend fixed-port/deploy/public `core.user` smoke to prove wrong old
+      password 401, same password 400, successful password update, stale token
+      401, old password blocked and new password login.
+- [x] Run focused, full, fixed-port smoke, deployment and public URL
+      verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -788,10 +820,10 @@ treat "minimal loop" as "minimal final product".
 - [ ] Round 3/22/25 `core.post`: user-post binding and simple-list option
       source are complete; batch operations and ordered list refinements
       remain.
-- [ ] Round 7/19/22/23/28 `core.user`: status toggle, reset password and
+- [ ] Round 7/19/22/23/28/29 `core.user`: status toggle, reset password and
       direct user-mutation session invalidation are complete. Post binding,
-      department side-tree filtering and self-profile basic display-name
-      read/update are complete. Avatar, self-password, import/export and
+      department side-tree filtering, self-profile basic display-name
+      read/update and self-password are complete. Avatar, import/export and
       option/batch workflows still need enhancement.
 - [ ] Round 9/24 `core.config`: public get-value-by-key, cache refresh and
       mutation invalidation are complete. Category/name/remark enrichment,
@@ -837,8 +869,7 @@ treat "minimal loop" as "minimal final product".
   endpoint.
 - Registry definition editing and dynamic permission discovery.
 - User Excel import/export file workflows, dedicated User-page role assignment
-  dialog, avatar/social/self-password/simple-list endpoints and batch user
-  delete.
+  dialog, avatar/social/simple-list endpoints and batch user delete.
 - Batch dictionary delete, Excel import/export file workflows, dictionary
   color/css/remark fields, app-wide dictionary cache TTL/invalidation and
   dictionary cache refresh.
