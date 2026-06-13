@@ -309,6 +309,40 @@ export function buildProviderDiagnostics(input: {
     actions.push('Fix provider adapter configuration before sending.');
   }
 
+  if (channel === 'sms' && adapter === 'http') {
+    const secretInjections = listProviderSecretInjections(
+      input.provider.config.secretInjections,
+    );
+    if (secretInjections.length === 0) {
+      addCheck(
+        'provider.secret-injections',
+        'warn',
+        'SMS HTTP provider has no config-vault secret injections.',
+      );
+      actions.push(
+        'Configure SMS HTTP secretInjections for auth headers, query or body fields.',
+      );
+    } else if (
+      secretInjections.some(
+        (injection) =>
+          !injection.secretRef.startsWith(CONFIG_SECRET_REF_PREFIX),
+      )
+    ) {
+      addCheck(
+        'provider.secret-injections',
+        'fail',
+        'SMS HTTP provider secretInjections must use secret://config/<key>.',
+      );
+      actions.push('Move SMS HTTP injected secrets to secret://config/<key>.');
+    } else {
+      addCheck(
+        'provider.secret-injections',
+        'pass',
+        `SMS HTTP provider has ${secretInjections.length} config-vault secret injection(s).`,
+      );
+    }
+  }
+
   if (failedRows.length > 0) {
     addCheck(
       'outbox.failed',
@@ -426,6 +460,25 @@ export function redactProviderConfig(
           : value,
     ]),
   );
+}
+
+function listProviderSecretInjections(
+  value: unknown,
+): Array<{ secretRef: string }> {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((item) =>
+      item && typeof item === 'object' && !Array.isArray(item)
+        ? (item as Record<string, unknown>)
+        : undefined,
+    )
+    .filter((item): item is Record<string, unknown> => Boolean(item))
+    .map((item) => item.secretRef)
+    .filter((secretRef): secretRef is string => typeof secretRef === 'string')
+    .map((secretRef) => ({ secretRef }));
 }
 
 export function assertSecretRef(secretRef: string): void {

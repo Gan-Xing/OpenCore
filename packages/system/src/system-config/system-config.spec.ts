@@ -20,8 +20,8 @@ describe('@opencore/system system-config', () => {
       expect.objectContaining({
         page: 1,
         pageSize: 1,
-        total: 8,
-        totalPages: 8,
+        total: 9,
+        totalPages: 9,
       }),
     );
     await expect(

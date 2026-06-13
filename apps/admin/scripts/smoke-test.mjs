@@ -230,6 +230,7 @@ if (
   !deployScript.includes('Retry outbox') ||
   !deployScript.includes('Process queued outbox') ||
   !deployScript.includes('Run outbox schedule') ||
+  !deployScript.includes('HTTP Secret Injection') ||
   !deployScript.includes('Mark outbox sent') ||
   !deployScript.includes('Refusing to deploy a stale frontend login page')
 ) {
@@ -1364,8 +1365,10 @@ if (
   !providersPage.includes('Provider Diagnostics') ||
   !providersPage.includes('selectedDiagnostics?.readiness') ||
   !providersPage.includes('SMS HTTP adapter') ||
+  !providersPage.includes('HTTP Secret Injection') ||
   !providersPage.includes('Mail SMTP adapter') ||
   !providersPage.includes('allowlisted endpoint + status contract') ||
+  !providersPage.includes('secretRef -> header/query/body') ||
   !providersPage.includes('secretRef -> config vault + SMTP send') ||
   !providersPage.includes('/api/integrations/mail/outbox/callback') ||
   !providersPage.includes('/api/integrations/sms/outbox/callback') ||

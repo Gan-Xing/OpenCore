@@ -62,6 +62,44 @@ export const seedIntegrationProviders: readonly IntegrationProviderRecord[] = [
     },
     healthStatus: 'disabled',
   },
+  {
+    id: 'provider_sms_http',
+    code: 'sms.http',
+    type: 'sms',
+    name: 'SMS HTTP',
+    enabled: false,
+    secretRef: 'secret://config/integration.sms.http.api-key.secret',
+    config: {
+      adapter: 'http',
+      endpoint: 'https://sms.example.test/send',
+      allowedHosts: ['sms.example.test'],
+      method: 'POST',
+      headers: {
+        'x-provider': 'opencore',
+      },
+      secretInjections: [
+        {
+          target: 'header',
+          name: 'Authorization',
+          secretRef: 'secret://config/integration.sms.http.api-key.secret',
+          prefix: 'Bearer ',
+        },
+        {
+          target: 'query',
+          name: 'api_key',
+          secretRef: 'secret://config/integration.sms.http.api-key.secret',
+        },
+        {
+          target: 'body',
+          name: 'apiToken',
+          secretRef: 'secret://config/integration.sms.http.api-key.secret',
+        },
+      ],
+      successStatus: 202,
+      timeoutMs: 5000,
+    },
+    healthStatus: 'disabled',
+  },
 ];
 
 export const seedIntegrationTemplates: readonly IntegrationTemplateRecord[] = [

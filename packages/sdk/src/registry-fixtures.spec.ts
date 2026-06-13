@@ -129,6 +129,14 @@ describe('registry fixtures', () => {
       encrypted: true,
       value: '[REDACTED]',
     });
+    expect(
+      createSystemConfigFixtures().items.some(
+        (item) =>
+          item.key === 'integration.sms.http.api-key.secret' &&
+          item.value === '[REDACTED]' &&
+          item.visibility === 'secret',
+      ),
+    ).toBe(true);
     expect(createFileAssetFixtures().items[0].storageKey).toContain(
       'file-assets/',
     );
@@ -189,6 +197,18 @@ describe('registry fixtures', () => {
     expect(
       findIntegrationProviderFixture('mail.sandbox')?.config,
     ).toMatchObject({ clientSecret: '[REDACTED]' });
+    expect(findIntegrationProviderFixture('sms.http')?.config).toMatchObject({
+      secretInjections: expect.arrayContaining([
+        expect.objectContaining({
+          target: 'header',
+          name: 'Authorization',
+          secretRef: 'secret://config/integration.sms.http.api-key.secret',
+        }),
+      ]),
+    });
+    expect(
+      JSON.stringify(findIntegrationProviderFixture('sms.http')),
+    ).not.toContain('opencore-local-sms-api-key');
     expect(
       findIntegrationTemplateFixture('mail', 'mail.welcome')?.enabled,
     ).toBe(true);
@@ -207,6 +227,16 @@ describe('registry fixtures', () => {
     expect(
       findIntegrationProviderDiagnosticsFixture('mail.sandbox')?.readiness,
     ).toBe('blocked');
+    expect(
+      findIntegrationProviderDiagnosticsFixture('sms.http')?.checks,
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'provider.secret-injections',
+          status: 'pass',
+        }),
+      ]),
+    );
     expect(
       findOAuthCallbackContractFixture(
         '/api/integrations/oauth/callback/:providerCode',

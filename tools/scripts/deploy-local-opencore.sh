@@ -187,6 +187,11 @@ verify_admin_bundle_api_base_url() {
     ! grep -R \
     --fixed-strings \
     --include='*.js' \
+    "HTTP Secret Injection" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
     "Mail SMTP adapter" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null || \
     ! grep -R \
@@ -199,7 +204,7 @@ verify_admin_bundle_api_base_url() {
     --include='*.js' \
     "Provider Diagnostics" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null; then
-    echo "Admin bundle does not include integration signed callback, SMS HTTP, Mail SMTP, outbox subject and provider diagnostics surfaces." >&2
+    echo "Admin bundle does not include integration signed callback, SMS HTTP, secret injection, Mail SMTP, outbox subject and provider diagnostics surfaces." >&2
     echo "Refusing to deploy a stale frontend integration provider page." >&2
     exit 1
   fi

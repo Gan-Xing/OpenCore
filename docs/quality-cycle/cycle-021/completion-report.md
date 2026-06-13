@@ -4,18 +4,17 @@ Date: 2026-06-13
 
 ## Latest Completed Round
 
-Round 77: `integration.provider` diagnostics.
+Round 78: `integration.sms-http` secret injection.
 
 ## Closed
 
-- Added read-only provider diagnostics for readiness, config checks, outbox
-  backlog, retryable failures, last failure and operator actions.
-- Exposed diagnostics through API, OpenAPI, SDK client/types and Admin provider
-  detail.
-- Smoke and deploy bundle guards verify the diagnostics endpoint and frontend
-  surface.
+- Added SMS HTTP `secretInjections` for config-vault values in headers, query
+  parameters and JSON body fields.
+- Health-check, delivery and diagnostics reject non-config-backed injection and
+  never expose the resolved secret.
+- SDK/Admin fixtures, static smoke, deploy bundle guard and public notice smoke
+  cover the feature.
 
 ## Still Open
 
-- Notice still needs realtime push, broader provider-secret injection and
-  STARTTLS/attachments.
+- Notice still needs realtime push and SMTP STARTTLS/attachments.

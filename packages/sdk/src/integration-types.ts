@@ -277,6 +277,41 @@ export function createIntegrationFixtures(): IntegrationFixtures {
       },
       healthStatus: 'disabled',
     },
+    {
+      id: 'provider_sms_http',
+      code: 'sms.http',
+      type: 'sms',
+      name: 'SMS HTTP',
+      enabled: false,
+      secretRef: 'secret://config/integration.sms.http.api-key.secret',
+      config: {
+        adapter: 'http',
+        allowedHosts: ['sms.example.test'],
+        endpoint: 'https://sms.example.test/send',
+        method: 'POST',
+        secretInjections: [
+          {
+            target: 'header',
+            name: 'Authorization',
+            secretRef: 'secret://config/integration.sms.http.api-key.secret',
+            prefix: 'Bearer ',
+          },
+          {
+            target: 'query',
+            name: 'api_key',
+            secretRef: 'secret://config/integration.sms.http.api-key.secret',
+          },
+          {
+            target: 'body',
+            name: 'apiToken',
+            secretRef: 'secret://config/integration.sms.http.api-key.secret',
+          },
+        ],
+        successStatus: 202,
+        timeoutMs: 5000,
+      },
+      healthStatus: 'disabled',
+    },
   ];
   const mailTemplates: readonly IntegrationTemplateSummary[] = [
     {
@@ -491,6 +526,19 @@ function buildProviderDiagnosticsFixture(
           : 'No queued outbox backlog.',
     },
   ];
+  if (provider.type === 'sms' && provider.config.adapter === 'http') {
+    const secretInjectionCount = Array.isArray(provider.config.secretInjections)
+      ? provider.config.secretInjections.length
+      : 0;
+    checks.push({
+      code: 'provider.secret-injections',
+      status: secretInjectionCount > 0 ? 'pass' : 'warn',
+      message:
+        secretInjectionCount > 0
+          ? `SMS HTTP provider has ${secretInjectionCount} config-vault secret injection(s).`
+          : 'SMS HTTP provider has no config-vault secret injections.',
+    });
+  }
 
   return {
     provider,

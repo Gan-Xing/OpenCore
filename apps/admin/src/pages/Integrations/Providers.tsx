@@ -159,6 +159,7 @@ export default function ProvidersPage() {
           value={signedCallbackContract.algorithm}
         />
         <Statistic title="SMS HTTP adapter" value="allowlisted" />
+        <Statistic title="HTTP Secret Injection" value="header/query/body" />
         <Statistic title="Mail SMTP adapter" value="vault-backed" />
         <Statistic title="Provider Diagnostics" value="read-only" />
         <Statistic
@@ -222,6 +223,10 @@ export default function ProvidersPage() {
           {
             label: 'SMS HTTP Adapter',
             value: 'allowlisted endpoint + status contract',
+          },
+          {
+            label: 'HTTP Secret Injection',
+            value: 'secretRef -> header/query/body',
           },
           {
             label: 'Mail SMTP Adapter',

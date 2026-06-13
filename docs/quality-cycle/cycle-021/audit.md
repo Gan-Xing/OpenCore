@@ -22,6 +22,8 @@ handler execution and failed retry diagnostics. Round 76 replaced the old
 payload subject fallback with first-class mail outbox subject persistence.
 Round 77 added provider diagnostics for readiness, config-vault hints, outbox
 backlog, last failure and operator actions.
+Round 78 added SMS HTTP config-vault secret injection into headers, query
+parameters and JSON body fields.
 Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 `lint` must run sequentially.
 
@@ -32,8 +34,8 @@ Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 - Revoked sessions/tokens must return 401.
 - Notice outbox smoke covers pending handoff, retry, process-to-sent, signed
   callback sync, scheduled retry caps, SMS HTTP host allowlist, SMTP
-  config-vault auth, mail subject persistence, provider diagnostics, provider
-  failedCount and sent mutation guards.
+  config-vault auth, SMS HTTP secret injection, mail subject persistence,
+  provider diagnostics, provider failedCount and sent mutation guards.
 - Operation-log cleanup smoke covers guard failures, deleted-detail 404 and
   clean-all target removal.
 - Config smoke covers runtime shape and no plaintext secret storage.
@@ -49,8 +51,8 @@ real incident decisions. Do not create per-round reports by default.
 
 ## Residual Risk
 
-- Notice still needs realtime push, broader provider-secret injection and
-  STARTTLS/attachments before provider-depth parity.
+- Notice still needs realtime push and STARTTLS/attachments before
+  provider-depth parity.
 - Config still needs multi-environment governance and external KMS/rotation.
 - Scheduler still needs external worker/cron parity beyond the current
   registered manual executor; operation-log enrichment and OpenForge Admin

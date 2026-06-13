@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { createHmac } from 'node:crypto';
+import http from 'node:http';
 import net from 'node:net';
 
 const DEFAULT_PORT = '39173';
@@ -30,6 +31,7 @@ const noticeTitles = [
 ];
 const templateCode = `smoke.template.${runId}`;
 let token;
+let smsHttpServer;
 let smtpServer;
 const createdNoticeIds = [];
 const createdTemplateCodes = [];
@@ -881,19 +883,44 @@ try {
   );
 
   const smsHttpProviderCode = 'sms.http.smoke';
-  const smsHttpEndpoint = `${baseUrl}/health/live`;
+  const smsHttpSecret = 'opencore-local-sms-api-key';
+  smsHttpServer = await startSmokeSmsHttpServer({
+    apiKey: smsHttpSecret,
+  });
+  const smsHttpEndpoint = `http://127.0.0.1:${smsHttpServer.port}/send`;
   const smsHttpHost = new URL(smsHttpEndpoint).host;
   await upsertIntegrationProvider(smsHttpProviderCode, {
     type: 'sms',
     name: 'SMS HTTP Smoke',
     enabled: true,
-    secretRef: 'secret://integration/sms/http-smoke',
+    secretRef: 'secret://config/integration.sms.http.api-key.secret',
     config: {
       adapter: 'http',
       endpoint: smsHttpEndpoint,
       allowedHosts: [smsHttpHost],
-      method: 'GET',
-      successStatus: 200,
+      headers: {
+        'x-provider': 'opencore-smoke',
+      },
+      method: 'POST',
+      secretInjections: [
+        {
+          target: 'header',
+          name: 'Authorization',
+          secretRef: 'secret://config/integration.sms.http.api-key.secret',
+          prefix: 'Bearer ',
+        },
+        {
+          target: 'query',
+          name: 'api_key',
+          secretRef: 'secret://config/integration.sms.http.api-key.secret',
+        },
+        {
+          target: 'body',
+          name: 'apiToken',
+          secretRef: 'secret://config/integration.sms.http.api-key.secret',
+        },
+      ],
+      successStatus: 202,
       timeoutMs: 5000,
     },
   });
@@ -933,10 +960,38 @@ try {
     'SMS HTTP process sent count',
   );
   assertEqual(smsHttpProcess.failedCount, 0, 'SMS HTTP process failed count');
+  assertNumberAtLeast(
+    smsHttpServer.requests.length,
+    1,
+    'SMS HTTP smoke receiver request count',
+  );
+  const smsHttpRequest = smsHttpServer.requests[0];
+  assertEqual(
+    smsHttpRequest.authorization,
+    `Bearer ${smsHttpSecret}`,
+    'SMS HTTP secret injection header',
+  );
+  assertEqual(
+    smsHttpRequest.queryApiKey,
+    smsHttpSecret,
+    'SMS HTTP secret injection query',
+  );
+  assertEqual(
+    smsHttpRequest.body?.apiToken,
+    smsHttpSecret,
+    'SMS HTTP secret injection body',
+  );
+  assertStringIncludes(
+    JSON.stringify(smsHttpRequest.body),
+    '872341',
+    'SMS HTTP secret injection payload',
+  );
   const sentSmsHttpOutbox = await apiRequest(
     `/integrations/sms/outbox/${encodeURIComponent(smsHttpOutbox.id)}`,
   );
   assertEqual(sentSmsHttpOutbox.status, 'sent', 'SMS HTTP outbox sent status');
+  await smsHttpServer.close();
+  smsHttpServer = undefined;
 
   const inboxItem = await apiRequest(
     `/core/notices/inbox/${encodeURIComponent(draftNotice.id)}`,
@@ -1086,6 +1141,7 @@ try {
         'core.notice.deliveries.outbox-schedule-retry',
         'core.notice.deliveries.sms-outbox-provider',
         'core.notice.deliveries.sms-http-adapter',
+        'core.notice.deliveries.sms-http-secret-injection',
         'core.notice.inbox.unread-item',
         'core.notice.inbox.unread-page',
         'core.notice.inbox.unread-list',
@@ -1103,6 +1159,7 @@ try {
     }),
   );
 } catch (error) {
+  await smsHttpServer?.close().catch(() => undefined);
   await smtpServer?.close().catch(() => undefined);
   await cleanupCreatedTemplates().catch(() => undefined);
   await cleanupCreatedNotices().catch(() => undefined);
@@ -1215,6 +1272,80 @@ async function upsertIntegrationProvider(code, body) {
 
     throw error;
   }
+}
+
+async function startSmokeSmsHttpServer({ apiKey }) {
+  const requests = [];
+  const server = http.createServer(async (request, response) => {
+    try {
+      const url = new URL(request.url ?? '/', 'http://127.0.0.1');
+      if (request.method !== 'POST' || url.pathname !== '/send') {
+        response.writeHead(404);
+        response.end('not found');
+        return;
+      }
+
+      const rawBody = await readHttpRequestBody(request);
+      let body = {};
+      try {
+        body = rawBody ? JSON.parse(rawBody) : {};
+      } catch {
+        response.writeHead(400);
+        response.end('invalid json');
+        return;
+      }
+
+      const received = {
+        authorization: request.headers.authorization,
+        body,
+        queryApiKey: url.searchParams.get('api_key'),
+      };
+      requests.push(received);
+
+      if (
+        received.authorization !== `Bearer ${apiKey}` ||
+        received.queryApiKey !== apiKey ||
+        received.body?.apiToken !== apiKey
+      ) {
+        response.writeHead(401);
+        response.end('missing secret injection');
+        return;
+      }
+
+      response.writeHead(202, { 'content-type': 'application/json' });
+      response.end(JSON.stringify({ queued: true }));
+    } catch (error) {
+      response.writeHead(500);
+      response.end(error instanceof Error ? error.message : String(error));
+    }
+  });
+
+  await new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', resolve);
+  });
+  const address = server.address();
+  if (!address || typeof address === 'string') {
+    throw new Error('Smoke SMS HTTP server address is unavailable');
+  }
+
+  return {
+    requests,
+    port: address.port,
+    close: () =>
+      new Promise((resolve, reject) => {
+        server.close((error) => (error ? reject(error) : resolve()));
+      }),
+  };
+}
+
+function readHttpRequestBody(request) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    request.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
+    request.on('error', reject);
+    request.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+  });
 }
 
 async function startSmokeSmtpServer({ password, username }) {

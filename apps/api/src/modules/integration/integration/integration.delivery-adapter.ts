@@ -39,6 +39,7 @@ type SmsHttpProviderConfig = {
   successStatuses: ReadonlySet<number>;
   timeoutMs: number;
   headers: Record<string, string>;
+  secretInjections: readonly SmsHttpSecretInjection[];
 };
 
 type MailSmtpProviderConfig = {
@@ -54,11 +55,48 @@ type MailSmtpProviderConfig = {
   username?: string;
 };
 
+type SmsHttpSecretInjectionTarget = 'body' | 'header' | 'query';
+
+type SmsHttpSecretInjection = {
+  target: SmsHttpSecretInjectionTarget;
+  name: string;
+  secretRef: string;
+  prefix: string;
+  suffix: string;
+};
+
+type SmsHttpResolvedSecretInjection = SmsHttpSecretInjection & {
+  value: string;
+};
+
+type SmsHttpPayload = {
+  messageId: string;
+  providerCode: string;
+  recipient: string;
+  templateCode?: string;
+  message: string;
+  payload: Record<string, unknown>;
+} & Record<string, unknown>;
+
 const DEFAULT_HTTP_SUCCESS_STATUSES = [200, 201, 202, 204] as const;
 const DEFAULT_SMTP_TIMEOUT_MS = 10000;
 const CONFIG_SECRET_REF_PREFIX = 'secret://config/';
 const SENSITIVE_HTTP_HEADER_PATTERN =
   /^(authorization|cookie|proxy-authorization|x-api-key|api-key|.*token.*|.*secret.*)$/i;
+const FORBIDDEN_SECRET_INJECTION_HEADERS = new Set([
+  'connection',
+  'content-length',
+  'content-type',
+  'host',
+]);
+const RESERVED_SMS_HTTP_PAYLOAD_FIELDS = new Set([
+  'message',
+  'messageId',
+  'payload',
+  'providerCode',
+  'recipient',
+  'templateCode',
+]);
 
 export async function evaluateProviderDeliveryHealth(
   provider: IntegrationProviderRecord,
@@ -126,7 +164,8 @@ async function assertDeliveryAdapterConfig(
   }
 
   if (provider.type === 'sms' && adapter === 'http') {
-    normalizeSmsHttpProviderConfig(provider);
+    const config = normalizeSmsHttpProviderConfig(provider);
+    await resolveSmsHttpSecretInjections(config, options.secretResolver);
     return;
   }
 
@@ -146,10 +185,16 @@ async function deliverSmsHttpMessage(input: {
   provider: IntegrationProviderRecord;
   message: IntegrationOutboxRecord;
   fetchImpl?: FetchLike;
+  secretResolver?: ProviderSecretResolver;
 }): Promise<OutboxDeliveryResult> {
   let config: SmsHttpProviderConfig;
+  let secretInjections: readonly SmsHttpResolvedSecretInjection[];
   try {
     config = normalizeSmsHttpProviderConfig(input.provider);
+    secretInjections = await resolveSmsHttpSecretInjections(
+      config,
+      input.secretResolver,
+    );
   } catch (error) {
     return {
       status: 'failed',
@@ -172,22 +217,30 @@ async function deliverSmsHttpMessage(input: {
 
   try {
     const url = new URL(config.endpoint.toString());
+    const headers: Record<string, string> = { ...config.headers };
+    const payload = buildSmsHttpPayload(input.provider, input.message);
     const init: RequestInit = {
       method: config.method,
-      headers: config.headers,
+      headers,
       signal: controller.signal,
     };
 
     if (config.method === 'GET') {
-      appendSmsHttpQuery(url, input.provider, input.message);
+      appendSmsHttpQuery(url, payload);
     } else {
-      init.headers = {
+      Object.assign(headers, {
         'content-type': 'application/json',
-        ...config.headers,
-      };
-      init.body = JSON.stringify(
-        buildSmsHttpPayload(input.provider, input.message),
-      );
+      });
+      init.body = JSON.stringify(payload);
+    }
+    applySmsHttpSecretInjections({
+      headers,
+      payload,
+      secretInjections,
+      url,
+    });
+    if (config.method === 'POST') {
+      init.body = JSON.stringify(payload);
     }
 
     const response = await fetchImpl(url, init);
@@ -341,12 +394,7 @@ async function resolveMailSmtpPassword(
   return password;
 }
 
-function appendSmsHttpQuery(
-  url: URL,
-  provider: IntegrationProviderRecord,
-  message: IntegrationOutboxRecord,
-): void {
-  const payload = buildSmsHttpPayload(provider, message);
+function appendSmsHttpQuery(url: URL, payload: SmsHttpPayload): void {
   url.searchParams.set('messageId', payload.messageId);
   url.searchParams.set('providerCode', payload.providerCode);
   url.searchParams.set('recipient', payload.recipient);
@@ -356,14 +404,7 @@ function appendSmsHttpQuery(
 function buildSmsHttpPayload(
   provider: IntegrationProviderRecord,
   message: IntegrationOutboxRecord,
-): {
-  messageId: string;
-  providerCode: string;
-  recipient: string;
-  templateCode?: string;
-  message: string;
-  payload: Record<string, unknown>;
-} {
+): SmsHttpPayload {
   return {
     messageId: message.id,
     providerCode: provider.code,
@@ -441,13 +482,21 @@ function normalizeSmsHttpProviderConfig(
   const config = provider.config;
   const endpoint = normalizeHttpEndpoint(config.endpoint);
   assertEndpointAllowed(endpoint, config.allowedHosts);
+  const method = normalizeHttpMethod(config.method);
+  const headers = normalizeHttpHeaders(config.headers);
+  const secretInjections = normalizeSmsHttpSecretInjections(
+    config.secretInjections,
+  );
+  assertSmsHttpSecretInjectionsAllowedForMethod(method, secretInjections);
+  assertNoStaticHeaderSecretInjectionConflict(headers, secretInjections);
 
   return {
     endpoint,
-    method: normalizeHttpMethod(config.method),
+    method,
     successStatuses: normalizeSuccessStatuses(config.successStatus),
     timeoutMs: normalizeTimeoutMs(config.timeoutMs, 3000),
-    headers: normalizeHttpHeaders(config.headers),
+    headers,
+    secretInjections,
   };
 }
 
@@ -664,6 +713,46 @@ function assertConfigSecretRef(secretRef: string): void {
   }
 }
 
+async function resolveSmsHttpSecretInjections(
+  config: SmsHttpProviderConfig,
+  secretResolver: ProviderSecretResolver | undefined,
+): Promise<readonly SmsHttpResolvedSecretInjection[]> {
+  if (config.secretInjections.length === 0) {
+    return [];
+  }
+
+  if (!secretResolver) {
+    throw new Error('SMS HTTP provider secret resolver is unavailable.');
+  }
+
+  return Promise.all(
+    config.secretInjections.map(async (injection) => ({
+      ...injection,
+      value: normalizeSecretInjectionValue(
+        injection,
+        await secretResolver(injection.secretRef),
+      ),
+    })),
+  );
+}
+
+function applySmsHttpSecretInjections(input: {
+  headers: Record<string, string>;
+  payload: SmsHttpPayload;
+  secretInjections: readonly SmsHttpResolvedSecretInjection[];
+  url: URL;
+}): void {
+  for (const injection of input.secretInjections) {
+    if (injection.target === 'header') {
+      input.headers[injection.name] = injection.value;
+    } else if (injection.target === 'query') {
+      input.url.searchParams.set(injection.name, injection.value);
+    } else {
+      input.payload[injection.name] = injection.value;
+    }
+  }
+}
+
 function normalizeHttpHeaders(value: unknown): Record<string, string> {
   if (value === undefined || value === null) {
     return {};
@@ -675,10 +764,7 @@ function normalizeHttpHeaders(value: unknown): Record<string, string> {
 
   return Object.fromEntries(
     Object.entries(value).map(([rawName, rawValue]) => {
-      const name = rawName.trim();
-      if (!name) {
-        throw new Error('SMS HTTP adapter header names must not be blank.');
-      }
+      const name = normalizeHttpHeaderName(rawName);
       if (SENSITIVE_HTTP_HEADER_PATTERN.test(name)) {
         throw new Error(
           `SMS HTTP adapter header must use secretRef injection, not config: ${name}.`,
@@ -693,6 +779,210 @@ function normalizeHttpHeaders(value: unknown): Record<string, string> {
       return [name, rawValue] as const;
     }),
   );
+}
+
+function normalizeSmsHttpSecretInjections(
+  value: unknown,
+): readonly SmsHttpSecretInjection[] {
+  if (value === undefined || value === null) {
+    return [];
+  }
+
+  if (!Array.isArray(value)) {
+    throw new Error('SMS HTTP adapter secretInjections must be an array.');
+  }
+
+  if (value.length > 20) {
+    throw new Error(
+      'SMS HTTP adapter secretInjections must contain at most 20 entries.',
+    );
+  }
+
+  const seen = new Set<string>();
+  return value.map((item, index) => {
+    if (!isRecord(item)) {
+      throw new Error(
+        `SMS HTTP adapter secret injection at index ${index} must be an object.`,
+      );
+    }
+
+    const target = normalizeSmsHttpSecretInjectionTarget(item.target, index);
+    const name =
+      target === 'header'
+        ? normalizeHttpHeaderName(item.name)
+        : normalizeSmsHttpSecretInjectionFieldName(item.name, target, index);
+    const key = `${target}:${name.toLowerCase()}`;
+    if (seen.has(key)) {
+      throw new Error(
+        `SMS HTTP adapter secret injection is duplicated: ${target}:${name}.`,
+      );
+    }
+    seen.add(key);
+
+    return {
+      target,
+      name,
+      secretRef: normalizeSmsHttpSecretInjectionRef(item.secretRef, index),
+      prefix: normalizeSecretInjectionAffix(item.prefix, 'prefix', index),
+      suffix: normalizeSecretInjectionAffix(item.suffix, 'suffix', index),
+    };
+  });
+}
+
+function normalizeSmsHttpSecretInjectionTarget(
+  value: unknown,
+  index: number,
+): SmsHttpSecretInjectionTarget {
+  const target = typeof value === 'string' ? value.trim().toLowerCase() : '';
+  if (target === 'body' || target === 'header' || target === 'query') {
+    return target;
+  }
+
+  throw new Error(
+    `SMS HTTP adapter secret injection target at index ${index} must be header, query or body.`,
+  );
+}
+
+function normalizeSmsHttpSecretInjectionFieldName(
+  value: unknown,
+  target: Exclude<SmsHttpSecretInjectionTarget, 'header'>,
+  index: number,
+): string {
+  const name = normalizeTrimmedString(
+    value,
+    `SMS HTTP adapter ${target} secret injection name at index ${index}`,
+    100,
+  );
+  if (!/^[A-Za-z0-9_.-]+$/.test(name)) {
+    throw new Error(
+      `SMS HTTP adapter ${target} secret injection name at index ${index} is invalid.`,
+    );
+  }
+
+  if (RESERVED_SMS_HTTP_PAYLOAD_FIELDS.has(name)) {
+    throw new Error(
+      `SMS HTTP adapter ${target} secret injection cannot override payload field: ${name}.`,
+    );
+  }
+
+  return name;
+}
+
+function normalizeSmsHttpSecretInjectionRef(
+  value: unknown,
+  index: number,
+): string {
+  const secretRef = normalizeTrimmedString(
+    value,
+    `SMS HTTP adapter secret injection secretRef at index ${index}`,
+    300,
+  );
+  if (
+    !secretRef.startsWith(CONFIG_SECRET_REF_PREFIX) ||
+    secretRef.length === CONFIG_SECRET_REF_PREFIX.length
+  ) {
+    throw new Error(
+      'SMS HTTP provider secret injection secretRef must use secret://config/<key>.',
+    );
+  }
+
+  return secretRef;
+}
+
+function normalizeSecretInjectionAffix(
+  value: unknown,
+  field: 'prefix' | 'suffix',
+  index: number,
+): string {
+  if (value === undefined || value === null) {
+    return '';
+  }
+
+  if (typeof value !== 'string') {
+    throw new Error(
+      `SMS HTTP adapter secret injection ${field} at index ${index} must be a string.`,
+    );
+  }
+
+  if (value.length > 100 || /[\r\n]/.test(value)) {
+    throw new Error(
+      `SMS HTTP adapter secret injection ${field} at index ${index} is invalid.`,
+    );
+  }
+
+  return value;
+}
+
+function normalizeSecretInjectionValue(
+  injection: SmsHttpSecretInjection,
+  secret: string,
+): string {
+  if (!secret.trim()) {
+    throw new Error(
+      `SMS HTTP adapter secret is empty for ${injection.target}:${injection.name}.`,
+    );
+  }
+
+  const value = `${injection.prefix}${secret}${injection.suffix}`;
+  if (value.length > 2000 || /[\r\n]/.test(value)) {
+    throw new Error(
+      `SMS HTTP adapter secret value is invalid for ${injection.target}:${injection.name}.`,
+    );
+  }
+
+  return value;
+}
+
+function assertSmsHttpSecretInjectionsAllowedForMethod(
+  method: 'GET' | 'POST',
+  secretInjections: readonly SmsHttpSecretInjection[],
+): void {
+  if (
+    method === 'GET' &&
+    secretInjections.some((injection) => injection.target === 'body')
+  ) {
+    throw new Error(
+      'SMS HTTP adapter body secret injections require POST method.',
+    );
+  }
+}
+
+function assertNoStaticHeaderSecretInjectionConflict(
+  headers: Record<string, string>,
+  secretInjections: readonly SmsHttpSecretInjection[],
+): void {
+  const staticHeaderNames = new Set(
+    Object.keys(headers).map((name) => name.toLowerCase()),
+  );
+  for (const injection of secretInjections) {
+    if (injection.target !== 'header') {
+      continue;
+    }
+    const normalizedName = injection.name.toLowerCase();
+    if (FORBIDDEN_SECRET_INJECTION_HEADERS.has(normalizedName)) {
+      throw new Error(
+        `SMS HTTP adapter cannot inject managed header: ${injection.name}.`,
+      );
+    }
+    if (staticHeaderNames.has(normalizedName)) {
+      throw new Error(
+        `SMS HTTP adapter header secret injection conflicts with static header: ${injection.name}.`,
+      );
+    }
+  }
+}
+
+function normalizeHttpHeaderName(value: unknown): string {
+  const name = normalizeTrimmedString(
+    value,
+    'SMS HTTP adapter header name',
+    100,
+  );
+  if (!/^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/.test(name)) {
+    throw new Error(`SMS HTTP adapter header name is invalid: ${name}.`);
+  }
+
+  return name;
 }
 
 function getProviderAdapter(provider: IntegrationProviderRecord): string {

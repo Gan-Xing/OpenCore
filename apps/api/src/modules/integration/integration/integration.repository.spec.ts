@@ -15,7 +15,7 @@ describe('IntegrationRepository', () => {
     const repository = new SeedIntegrationRepository();
 
     expect(await repository.getSummary()).toMatchObject({
-      providers: { total: 3, enabled: 0, disabled: 3, degraded: 0 },
+      providers: { total: 4, enabled: 0, disabled: 4, degraded: 0 },
       mailOutbox: { total: 1, queued: 1 },
       smsOutbox: { total: 0, queued: 0 },
       oauthProviders: 0,
@@ -616,6 +616,166 @@ describe('IntegrationRepository', () => {
       retryCount: 1,
       error: 'SMS HTTP provider returned status 500.',
       sentAt: undefined,
+    });
+
+    fetchMock.mockRestore();
+  });
+
+  it('injects config-vault secrets into SMS HTTP headers, query, and body', async () => {
+    const smsSecretKey = 'integration.sms.http.api-key.secret';
+    const repository = new SeedIntegrationRepository(
+      createMapProviderSecretResolver(new Map([[smsSecretKey, 'sms-api-key']])),
+    );
+    const fetchMock = jest.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response('', {
+        status: 202,
+      }),
+    );
+
+    await repository.createProvider({
+      code: 'sms.http-secret',
+      type: 'sms',
+      name: 'SMS HTTP Secret',
+      enabled: true,
+      secretRef: `secret://config/${smsSecretKey}`,
+      config: {
+        adapter: 'http',
+        endpoint: 'https://sms.gateway.test/send',
+        allowedHosts: ['sms.gateway.test'],
+        method: 'POST',
+        successStatus: 202,
+        timeoutMs: 1000,
+        headers: {
+          'x-provider': 'opencore-smoke',
+        },
+        secretInjections: [
+          {
+            target: 'header',
+            name: 'Authorization',
+            secretRef: `secret://config/${smsSecretKey}`,
+            prefix: 'Bearer ',
+          },
+          {
+            target: 'query',
+            name: 'api_key',
+            secretRef: `secret://config/${smsSecretKey}`,
+          },
+          {
+            target: 'body',
+            name: 'apiToken',
+            secretRef: `secret://config/${smsSecretKey}`,
+          },
+        ],
+      },
+    });
+    await expect(
+      repository.checkProviderHealth('sms.http-secret'),
+    ).resolves.toMatchObject({
+      healthStatus: 'healthy',
+    });
+    await expect(
+      repository.getProviderDiagnostics('sms.http-secret'),
+    ).resolves.toMatchObject({
+      checks: expect.arrayContaining([
+        expect.objectContaining({
+          code: 'provider.secret-injections',
+          status: 'pass',
+        }),
+      ]),
+    });
+    const queued = await repository.enqueueOutbox('sms', {
+      providerCode: 'sms.http-secret',
+      templateCode: 'sms.otp',
+      recipient: '+15551234567',
+      payload: { code: '123456' },
+    });
+
+    await expect(
+      repository.processOutbox('sms', { providerCode: 'sms.http-secret' }),
+    ).resolves.toMatchObject({
+      attemptedCount: 1,
+      sentCount: 1,
+      failedCount: 0,
+    });
+
+    const calledUrl = fetchMock.mock.calls[0]?.[0];
+    expect(calledUrl).toBeInstanceOf(URL);
+    expect((calledUrl as URL).searchParams.get('api_key')).toBe('sms-api-key');
+    const requestInit = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    expect(requestInit.headers).toMatchObject({
+      Authorization: 'Bearer sms-api-key',
+      'x-provider': 'opencore-smoke',
+    });
+    const requestBody = JSON.parse(String(requestInit.body)) as Record<
+      string,
+      unknown
+    >;
+    expect(requestBody).toMatchObject({
+      apiToken: 'sms-api-key',
+      messageId: queued.id,
+      providerCode: 'sms.http-secret',
+      recipient: '+15551234567',
+    });
+    expect(
+      JSON.stringify(await repository.getProvider('sms.http-secret')),
+    ).not.toContain('sms-api-key');
+
+    fetchMock.mockRestore();
+  });
+
+  it('requires config-backed SMS HTTP secret injection before delivery', async () => {
+    const repository = new SeedIntegrationRepository(
+      createMapProviderSecretResolver(new Map()),
+    );
+    const fetchMock = jest.spyOn(globalThis, 'fetch');
+
+    await repository.createProvider({
+      code: 'sms.bad-secret-http',
+      type: 'sms',
+      name: 'Bad SMS HTTP Secret',
+      enabled: true,
+      secretRef: 'secret://integration/sms/bad-secret-http',
+      config: {
+        adapter: 'http',
+        endpoint: 'https://sms.gateway.test/send',
+        allowedHosts: ['sms.gateway.test'],
+        secretInjections: [
+          {
+            target: 'header',
+            name: 'Authorization',
+            secretRef: 'secret://integration/sms/bad-secret-http',
+            prefix: 'Bearer ',
+          },
+        ],
+      },
+    });
+    await expect(
+      repository.checkProviderHealth('sms.bad-secret-http'),
+    ).resolves.toMatchObject({
+      healthStatus: 'degraded',
+      lastCheckedAt: expect.any(String),
+    });
+    const queued = await repository.enqueueOutbox('sms', {
+      providerCode: 'sms.bad-secret-http',
+      templateCode: 'sms.otp',
+      recipient: '+15551230000',
+      payload: { code: '123456' },
+    });
+    await expect(
+      repository.processOutbox('sms', { providerCode: 'sms.bad-secret-http' }),
+    ).resolves.toMatchObject({
+      attemptedCount: 1,
+      sentCount: 0,
+      failedCount: 1,
+      queuedCount: 0,
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+    await expect(
+      repository.getOutboxMessage('sms', queued.id),
+    ).resolves.toMatchObject({
+      status: 'failed',
+      retryCount: 1,
+      error: expect.stringContaining('secret://config/<key>'),
     });
 
     fetchMock.mockRestore();

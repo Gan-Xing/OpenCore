@@ -19,10 +19,10 @@ active debt and decisions that change future execution.
 
 ## Runtime State
 
-Cycle-021 has completed 77 deployable stages across
-System/Security/Monitor/Integration foundations. Round 77 added provider
-diagnostics for readiness checks, config-vault hints, outbox backlog, last
-failure and operator actions.
+Cycle-021 has completed 78 deployable stages across
+System/Security/Monitor/Integration foundations. Round 78 added SMS HTTP
+config-vault secret injection into headers, query parameters and JSON body
+fields.
 
 ## Guard Register
 
@@ -33,8 +33,8 @@ failure and operator actions.
 - Notice outbox: smoke covers pending handoff, idempotent execute, blank
   failure rejection, failed-to-retry, process-to-sent sync, signed callback
   sync, scheduled retry caps, SMS HTTP host allowlist, SMTP config-vault auth,
-  mail outbox subject persistence, provider diagnostics, provider failures and
-  sent-state mutation guards.
+  SMS HTTP secret injection, mail outbox subject persistence, provider
+  diagnostics, provider failures and sent-state mutation guards.
 - Operation log: smoke covers batch-delete guards, deleted-detail 404 and
   clean-all target removal while preserving the clean request audit row.
 - Config/secret: smoke covers feature flags, audience rules and no plaintext
@@ -55,8 +55,8 @@ failure and operator actions.
 
 ## Remaining Foundation Debt
 
-- Notice: WebSocket realtime push, broader provider-secret injection,
-  STARTTLS/attachments and any admitted tenant/member/mobile channels.
+- Notice: WebSocket realtime push, STARTTLS/attachments and any admitted
+  tenant/member/mobile channels.
 - Config: multi-environment governance, external KMS, key rotation and secret
   version history.
 - Login log: optional external GeoIP depth and broader mobile/social login

@@ -200,6 +200,21 @@ export function createSystemConfigFixtures(): PageResponse<SystemConfigSummary> 
       system: true,
       visibility: 'secret',
     },
+    {
+      id: 'config_integration_sms_http_api_key',
+      category: 'integration',
+      name: 'SMS HTTP API key',
+      key: 'integration.sms.http.api-key.secret',
+      value: '[REDACTED]',
+      valueType: 'string',
+      description: 'Secret API key used by SMS HTTP provider injection.',
+      encrypted: true,
+      remark:
+        'Runtime SMS HTTP adapters inject this value only through secretRef.',
+      public: false,
+      system: true,
+      visibility: 'secret',
+    },
   ]);
 }
 
