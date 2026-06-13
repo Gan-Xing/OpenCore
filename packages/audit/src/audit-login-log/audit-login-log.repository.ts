@@ -4,6 +4,7 @@ import {
   normalizeOptionalBoolean,
   normalizeOptionalString,
   normalizePagination,
+  parseIpLocation,
   type PageQueryInput,
   type PageResult,
 } from '@opencore/common';
@@ -23,6 +24,7 @@ export type AuditLoginLogQuery = PageQueryInput & {
   result?: string;
   success?: boolean | string;
   ip?: string;
+  location?: string;
   createdFrom?: string;
   createdTo?: string;
 };
@@ -34,6 +36,7 @@ export type AuditLoginLogFilters = {
   result?: SecurityLoginResult;
   success?: boolean;
   ip?: string;
+  location?: string;
   createdFrom?: string;
   createdTo?: string;
 };
@@ -124,6 +127,7 @@ export function normalizeAuditLoginLogFilters(
     result: normalizeOptionalLoginResult(query.result),
     success: normalizeOptionalBoolean(query.success),
     ip: normalizeOptionalString(query.ip),
+    location: normalizeOptionalString(query.location),
     createdFrom,
     createdTo,
   };
@@ -177,12 +181,17 @@ export function createAuditLoginLogExportPreview(
       'actorUsername',
       'reason',
       'ip',
+      'location',
       'browser',
       'os',
     ],
     rowCount: page.items.length,
     generatedAt: new Date().toISOString(),
   };
+}
+
+export function resolveAuditLoginLogLocation(ip: string): string {
+  return parseIpLocation(ip);
 }
 
 export function normalizeBatchDeleteLoginLogIds(

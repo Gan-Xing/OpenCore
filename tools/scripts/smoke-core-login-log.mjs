@@ -154,12 +154,14 @@ try {
   assertEqual(detailLog.success, false, 'detail failed login success flag');
   assertString(detailLog.requestId, 'detail login log requestId');
   assertString(detailLog.ip, 'detail login log ip');
+  assertString(detailLog.location, 'detail login log location');
   assertString(detailLog.createdAt, 'detail login log createdAt');
   assertEqual(detailLog.browser, 'Chrome', 'detail login log browser');
   assertEqual(detailLog.os, 'Windows', 'detail login log os');
 
   const encodedFailedUsername = encodeURIComponent(failedUsername);
   const encodedIp = encodeURIComponent(detailLog.ip);
+  const encodedLocation = encodeURIComponent(detailLog.location);
   const createdFrom = encodeURIComponent(
     offsetIsoDate(detailLog.createdAt, -60_000, 'detail login log createdAt'),
   );
@@ -167,16 +169,19 @@ try {
     offsetIsoDate(detailLog.createdAt, 60_000, 'detail login log createdAt'),
   );
   const serverFilteredPage = await apiRequest(
-    `/core/login-logs?page=1&pageSize=10&username=${encodedFailedUsername}&logType=login.username&result=bad_credentials&success=false&ip=${encodedIp}&createdFrom=${createdFrom}&createdTo=${createdTo}`,
+    `/core/login-logs?page=1&pageSize=10&username=${encodedFailedUsername}&logType=login.username&result=bad_credentials&success=false&ip=${encodedIp}&location=${encodedLocation}&createdFrom=${createdFrom}&createdTo=${createdTo}`,
   );
   assertArray(serverFilteredPage.items, 'server filtered login log items');
   if (
     !serverFilteredPage.items.some(
-      (item) => item.id === failedLog.id && item.browser === 'Chrome',
+      (item) =>
+        item.id === failedLog.id &&
+        item.browser === 'Chrome' &&
+        item.location === detailLog.location,
     )
   ) {
     throw new Error(
-      'Expected server filters to include failed Chrome login log',
+      'Expected server filters to include failed Chrome login log with location',
     );
   }
 
@@ -204,7 +209,7 @@ try {
   });
 
   const exportPreview = await apiRequest(
-    `/core/login-logs/export?username=${encodedFailedUsername}&logType=login.username&result=bad_credentials&success=false&ip=${encodedIp}&createdFrom=${createdFrom}&createdTo=${createdTo}`,
+    `/core/login-logs/export?username=${encodedFailedUsername}&logType=login.username&result=bad_credentials&success=false&ip=${encodedIp}&location=${encodedLocation}&createdFrom=${createdFrom}&createdTo=${createdTo}`,
   );
   assertEqual(exportPreview.scope, 'current-page', 'login log export scope');
   assertArray(exportPreview.columns, 'login log export columns');
@@ -216,6 +221,7 @@ try {
     'login log export columns',
   );
   assertIncludes(exportPreview.columns, 'reason', 'login log export columns');
+  assertIncludes(exportPreview.columns, 'location', 'login log export columns');
   assertIncludes(exportPreview.columns, 'browser', 'login log export columns');
   assertIncludes(exportPreview.columns, 'os', 'login log export columns');
 
@@ -464,6 +470,7 @@ try {
         'core.login-log.invalid-time-range-guard',
         'core.login-log.detail',
         'core.login-log.device-fields',
+        'core.login-log.location',
         'core.login-log.export',
         'core.login-log.batch-delete-empty-guard',
         'core.login-log.batch-delete-duplicate-guard',

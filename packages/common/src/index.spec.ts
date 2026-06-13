@@ -15,6 +15,7 @@ import {
   normalizePagination,
   normalizeSort,
   normalizeStringArray,
+  parseIpLocation,
   parseUserAgent,
   sanitizeErrorCode,
 } from './index';
@@ -148,5 +149,18 @@ describe('@opencore/common', () => {
       browser: 'OpenCore Smoke',
       os: 'Unknown',
     });
+  });
+
+  it('parses IP addresses into deterministic location labels', () => {
+    expect(parseIpLocation('127.0.0.1')).toBe('Loopback');
+    expect(parseIpLocation('::ffff:127.0.0.1')).toBe('Loopback');
+    expect(parseIpLocation('10.1.2.3')).toBe('Private network');
+    expect(parseIpLocation('172.16.1.2')).toBe('Private network');
+    expect(parseIpLocation('192.168.1.5')).toBe('Private network');
+    expect(parseIpLocation('169.254.1.5')).toBe('Link-local');
+    expect(parseIpLocation('100.64.0.1')).toBe('Shared address space');
+    expect(parseIpLocation('203.0.113.8')).toBe('Documentation network');
+    expect(parseIpLocation('8.8.8.8')).toBe('Public network');
+    expect(parseIpLocation('bad-ip')).toBe('Unknown');
   });
 });

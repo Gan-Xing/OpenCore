@@ -958,6 +958,8 @@ if (
   !loginLogsPage.includes('Login actor server filter') ||
   !loginLogsPage.includes("{ title: 'Actor', dataIndex: 'actorUsername' }") ||
   !loginLogsPage.includes("{ title: 'Reason', dataIndex: 'reason' }") ||
+  !loginLogsPage.includes("{ title: 'Location', dataIndex: 'location' }") ||
+  !loginLogsPage.includes('Login location server filter') ||
   !loginLogsPage.includes('createdFrom') ||
   !loginLogsPage.includes('createdTo') ||
   !loginLogsPage.includes('Browser') ||

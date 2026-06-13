@@ -322,6 +322,7 @@ export function createLoginLogFixtures(): PageResponse<LoginLogSummary> {
       actorUsername: 'admin',
       reason: 'seed login success',
       ip: '127.0.0.1',
+      location: 'Loopback',
       userAgent: 'opencore-smoke',
       browser: 'OpenCore Smoke',
       os: 'Unknown',

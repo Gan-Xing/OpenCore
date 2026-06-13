@@ -59,6 +59,9 @@ export class LoginLogDto {
   ip!: string;
 
   @ApiProperty()
+  location!: string;
+
+  @ApiProperty()
   userAgent!: string;
 
   @ApiProperty()
@@ -115,6 +118,9 @@ export class LoginLogQueryDto {
 
   @ApiProperty({ required: false })
   ip?: string;
+
+  @ApiProperty({ required: false })
+  location?: string;
 
   @ApiProperty({ required: false })
   createdFrom?: string;

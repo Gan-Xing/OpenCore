@@ -15,9 +15,13 @@ describe('createSystemManagementClient', () => {
         token?: string;
       } = {
         path,
-        method: options?.method,
-        token: options?.token,
       };
+      if (options?.method !== undefined) {
+        call.method = options.method;
+      }
+      if (options?.token !== undefined) {
+        call.token = options.token;
+      }
 
       calls.push(call);
       return {} as never;
@@ -64,6 +68,7 @@ describe('createSystemManagementClient', () => {
       createdFrom: '2026-06-10T00:00:00.000Z',
       createdTo: '2026-06-10T23:59:59.999Z',
       ip: '127.0.0.1',
+      location: 'Loopback',
       logType: 'login.username',
       page: 1,
       pageSize: 10,
@@ -75,6 +80,7 @@ describe('createSystemManagementClient', () => {
     await client.exportLoginLogs('token', {
       createdFrom: '2026-06-10T00:00:00.000Z',
       ip: '127.0.0.1',
+      location: 'Loopback',
       logType: 'login.username',
       result: 'bad_credentials',
       success: false,
@@ -256,7 +262,7 @@ describe('createSystemManagementClient', () => {
         token: 'token',
       },
       {
-        path: '/core/login-logs?actorUsername=admin&createdFrom=2026-06-10T00%3A00%3A00.000Z&createdTo=2026-06-10T23%3A59%3A59.999Z&ip=127.0.0.1&logType=login.username&page=1&pageSize=10&result=bad_credentials&success=false&username=unknown',
+        path: '/core/login-logs?actorUsername=admin&createdFrom=2026-06-10T00%3A00%3A00.000Z&createdTo=2026-06-10T23%3A59%3A59.999Z&ip=127.0.0.1&location=Loopback&logType=login.username&page=1&pageSize=10&result=bad_credentials&success=false&username=unknown',
         token: 'token',
       },
       {
@@ -264,7 +270,7 @@ describe('createSystemManagementClient', () => {
         token: 'token',
       },
       {
-        path: '/core/login-logs/export?createdFrom=2026-06-10T00%3A00%3A00.000Z&ip=127.0.0.1&logType=login.username&result=bad_credentials&success=false',
+        path: '/core/login-logs/export?createdFrom=2026-06-10T00%3A00%3A00.000Z&ip=127.0.0.1&location=Loopback&logType=login.username&result=bad_credentials&success=false',
         token: 'token',
       },
       {

@@ -416,6 +416,7 @@ export type LoginLogSummary = {
   actorUsername?: string;
   reason?: string;
   ip: string;
+  location: string;
   userAgent: string;
   browser: string;
   os: string;
@@ -444,6 +445,7 @@ export type LoginLogQueryRequest = PageRequest & {
   createdFrom?: string;
   createdTo?: string;
   ip?: string;
+  location?: string;
   logType?: LoginLogType;
   result?: LoginLogResult;
   success?: boolean;

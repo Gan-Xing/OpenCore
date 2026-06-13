@@ -3276,6 +3276,12 @@
             "schema": { "type": "string" }
           },
           {
+            "name": "location",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
             "name": "createdFrom",
             "required": false,
             "in": "query",
@@ -3356,6 +3362,12 @@
           },
           {
             "name": "ip",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "location",
             "required": false,
             "in": "query",
             "schema": { "type": "string" }
@@ -7383,6 +7395,7 @@
           "actorUsername": { "type": "string" },
           "reason": { "type": "string" },
           "ip": { "type": "string" },
+          "location": { "type": "string" },
           "userAgent": { "type": "string" },
           "browser": { "type": "string" },
           "os": { "type": "string" },
@@ -7396,6 +7409,7 @@
           "result",
           "success",
           "ip",
+          "location",
           "userAgent",
           "browser",
           "os",

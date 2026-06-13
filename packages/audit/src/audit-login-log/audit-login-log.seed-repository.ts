@@ -13,6 +13,7 @@ import {
   normalizeBatchDeleteLoginLogIds,
   normalizeAuditLoginLogFilters,
   normalizeAuditLoginLogPageQuery,
+  resolveAuditLoginLogLocation,
   type AuditLoginLogBatchMutationRecord,
   type AuditLoginLogCleanRecord,
   type AuditLoginLogQuery,
@@ -37,6 +38,8 @@ export class SeedAuditLoginLogRepository extends AuditLoginLogRepository {
           (filters.logType === undefined || log.logType === filters.logType) &&
           (filters.result === undefined || log.result === filters.result) &&
           (filters.ip === undefined || log.ip.includes(filters.ip)) &&
+          (filters.location === undefined ||
+            log.location.includes(filters.location)) &&
           (filters.success === undefined || log.success === filters.success),
       )
       .filter(
@@ -69,6 +72,7 @@ export class SeedAuditLoginLogRepository extends AuditLoginLogRepository {
         actorUsername: record.actorUsername,
         reason: record.reason,
         ip: record.ip,
+        location: resolveAuditLoginLogLocation(record.ip),
         userAgent: record.userAgent,
         requestId: record.requestId,
         createdAt: new Date().toISOString(),

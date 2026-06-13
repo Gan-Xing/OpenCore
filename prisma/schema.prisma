@@ -249,6 +249,7 @@ model LoginLog {
   actorUsername String?
   reason        String?
   ip            String
+  location      String   @default("Unknown")
   userAgent     String
   requestId     String
   createdAt     DateTime @default(now())

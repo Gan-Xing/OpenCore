@@ -13,6 +13,7 @@ import {
   normalizeBatchDeleteLoginLogIds,
   normalizeAuditLoginLogFilters,
   normalizeAuditLoginLogPageQuery,
+  resolveAuditLoginLogLocation,
   type AuditLoginLogBatchMutationRecord,
   type AuditLoginLogCleanRecord,
   type AuditLoginLogQuery,
@@ -28,6 +29,7 @@ type PrismaLoginLog = {
   actorUsername: string | null;
   reason: string | null;
   ip: string;
+  location: string;
   userAgent: string;
   requestId: string;
   createdAt: Date;
@@ -53,6 +55,9 @@ export class PrismaAuditLoginLogRepository extends AuditLoginLogRepository {
       ...(filters.logType === undefined ? {} : { logType: filters.logType }),
       ...(filters.result === undefined ? {} : { result: filters.result }),
       ...(filters.ip === undefined ? {} : { ip: { contains: filters.ip } }),
+      ...(filters.location === undefined
+        ? {}
+        : { location: { contains: filters.location } }),
       ...(filters.success === undefined ? {} : { success: filters.success }),
       ...(filters.createdFrom === undefined && filters.createdTo === undefined
         ? {}
@@ -94,6 +99,7 @@ export class PrismaAuditLoginLogRepository extends AuditLoginLogRepository {
         actorUsername: record.actorUsername,
         reason: record.reason,
         ip: record.ip,
+        location: resolveAuditLoginLogLocation(record.ip),
         userAgent: record.userAgent,
         requestId: record.requestId,
       },
@@ -177,6 +183,7 @@ function toAuditLoginLogRecord(log: PrismaLoginLog): AuditLoginLogRecord {
     actorUsername: log.actorUsername ?? undefined,
     reason: log.reason ?? undefined,
     ip: log.ip,
+    location: log.location,
     userAgent: log.userAgent,
     requestId: log.requestId,
     createdAt: log.createdAt.toISOString(),

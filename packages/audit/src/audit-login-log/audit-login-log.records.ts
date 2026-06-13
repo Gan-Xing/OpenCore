@@ -1,4 +1,4 @@
-import { parseUserAgent } from '@opencore/common';
+import { parseIpLocation, parseUserAgent } from '@opencore/common';
 import type {
   SecurityLoginLogType,
   SecurityLoginResult,
@@ -14,6 +14,7 @@ export type AuditLoginLogRecord = {
   actorUsername?: string;
   reason?: string;
   ip: string;
+  location: string;
   userAgent: string;
   browser: string;
   os: string;
@@ -23,14 +24,15 @@ export type AuditLoginLogRecord = {
 
 export type AuditLoginLogStoredRecord = Omit<
   AuditLoginLogRecord,
-  'browser' | 'os'
->;
+  'browser' | 'location' | 'os'
+> & { location?: string };
 
 export function enrichAuditLoginLogRecord(
   record: AuditLoginLogStoredRecord,
 ): AuditLoginLogRecord {
   return {
     ...record,
+    location: record.location ?? parseIpLocation(record.ip),
     ...parseUserAgent(record.userAgent),
   };
 }
@@ -43,6 +45,7 @@ export const seedAuditLoginLogs: readonly AuditLoginLogRecord[] = [
     result: 'success',
     success: true,
     ip: '127.0.0.1',
+    location: 'Loopback',
     userAgent: 'opencore-smoke',
     requestId: 'req_s7_seed_login',
     createdAt: '2026-06-10T00:00:00.000Z',
@@ -55,6 +58,7 @@ export const seedAuditLoginLogs: readonly AuditLoginLogRecord[] = [
     success: false,
     failureReason: 'Invalid username or password',
     ip: '127.0.0.1',
+    location: 'Loopback',
     userAgent: 'opencore-smoke',
     requestId: 'req_s7_seed_login_fail',
     createdAt: '2026-06-10T00:02:00.000Z',

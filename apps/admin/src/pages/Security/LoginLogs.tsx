@@ -76,6 +76,7 @@ const searchFields: CurrentPageSearchField<LoginLogSummary>[] = [
   'logType',
   'result',
   'ip',
+  'location',
   'browser',
   'os',
   'requestId',
@@ -93,6 +94,7 @@ const exportColumns: CurrentPageExportColumn<LoginLogSummary>[] = [
   { title: 'Failure Reason', dataIndex: 'failureReason' },
   { title: 'Reason', dataIndex: 'reason' },
   { title: 'IP', dataIndex: 'ip' },
+  { title: 'Location', dataIndex: 'location' },
   { title: 'User Agent', dataIndex: 'userAgent' },
   { title: 'Browser', dataIndex: 'browser' },
   { title: 'OS', dataIndex: 'os' },
@@ -104,6 +106,7 @@ type LoginLogServerFilterDraft = {
   createdFrom: string;
   createdTo: string;
   ip: string;
+  location: string;
   logType?: LoginLogType;
   result?: LoginLogResult;
   username: string;
@@ -114,6 +117,7 @@ const emptyServerFilterDraft: LoginLogServerFilterDraft = {
   createdFrom: '',
   createdTo: '',
   ip: '',
+  location: '',
   username: '',
 };
 
@@ -140,6 +144,12 @@ function createFilterOptions(
       predicate: (record, value) => record.logType === value,
     },
     {
+      key: 'location',
+      options: createCurrentPageFilterOptions(rows, 'location'),
+      placeholder: 'Location',
+      predicate: (record, value) => record.location === value,
+    },
+    {
       key: 'username',
       options: createCurrentPageFilterOptions(rows, 'username'),
       placeholder: 'Username',
@@ -159,6 +169,7 @@ function createDetailFields(record: LoginLogSummary): DetailField[] {
     { label: 'Failure Reason', value: record.failureReason },
     { label: 'Reason', value: record.reason },
     { label: 'IP', value: record.ip },
+    { label: 'Location', value: record.location },
     { label: 'User Agent', value: record.userAgent },
     { label: 'Browser', value: record.browser },
     { label: 'OS', value: record.os },
@@ -174,6 +185,7 @@ function createServerFilterQuery(
     createdFrom: toIsoDateTime(draft.createdFrom),
     createdTo: toIsoDateTime(draft.createdTo),
     ip: draft.ip.trim() || undefined,
+    location: draft.location.trim() || undefined,
     logType: draft.logType,
     result: draft.result,
     username: draft.username.trim() || undefined,
@@ -379,6 +391,7 @@ export default function LoginLogsPage() {
       ),
     },
     { title: 'IP', dataIndex: 'ip', width: 144 },
+    { title: 'Location', dataIndex: 'location', width: 168 },
     { title: 'Browser', dataIndex: 'browser', width: 136 },
     { title: 'OS', dataIndex: 'os', width: 112 },
     { title: 'Reason', dataIndex: 'reason', ellipsis: true },
@@ -444,6 +457,15 @@ export default function LoginLogsPage() {
         placeholder="IP"
         style={{ width: 132 }}
         value={serverFilterDraft.ip}
+      />
+      <Input
+        aria-label="Login location server filter"
+        onChange={(event) =>
+          updateServerFilterDraft('location', event.target.value)
+        }
+        placeholder="Location"
+        style={{ width: 148 }}
+        value={serverFilterDraft.location}
       />
       <Select
         aria-label="Login type server filter"

@@ -20,6 +20,7 @@ describe('@opencore/audit audit-login-log', () => {
           result: 'success',
           success: true,
           browser: 'OpenCore Smoke',
+          location: 'Loopback',
           os: 'Unknown',
         }),
       ],
@@ -68,6 +69,7 @@ describe('@opencore/audit audit-login-log', () => {
       service.listLoginLogs({
         createdFrom: '2026-01-01T00:00:00.000Z',
         ip: '127.0.0.1',
+        location: 'Loopback',
         success: false,
         logType: 'login.username',
         result: 'bad_credentials',
@@ -130,6 +132,7 @@ describe('@opencore/audit audit-login-log', () => {
         'actorUsername',
         'reason',
         'ip',
+        'location',
         'browser',
         'os',
       ],
@@ -219,6 +222,7 @@ describe('@opencore/audit audit-login-log', () => {
         service.listLoginLogs({
           createdFrom: '2026-01-01T00:00:00.000Z',
           ip: '127.0.0.1',
+          location: 'Loopback',
           username: `user_${testRunId}`,
           logType: 'login.username',
           result: 'bad_credentials',
@@ -228,6 +232,7 @@ describe('@opencore/audit audit-login-log', () => {
         items: [
           expect.objectContaining({
             browser: 'Chrome',
+            location: 'Loopback',
             requestId,
             os: 'Windows',
             success: false,
@@ -252,6 +257,7 @@ describe('@opencore/audit audit-login-log', () => {
       await expect(
         service.listLoginLogs({
           actorUsername: 'admin',
+          location: 'Loopback',
           logType: 'logout.force',
           username: `operator_${testRunId}`,
         }),
@@ -261,6 +267,7 @@ describe('@opencore/audit audit-login-log', () => {
           expect.objectContaining({
             actorUsername: 'admin',
             failureReason: undefined,
+            location: 'Loopback',
             reason: 'Prisma force logout test',
             requestId: forceRequestId,
           }),
@@ -279,6 +286,7 @@ describe('@opencore/audit audit-login-log', () => {
         requestId,
         success: false,
         failureReason: 'invalid-credentials',
+        location: 'Loopback',
         logType: 'login.username',
         result: 'bad_credentials',
       });

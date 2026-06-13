@@ -2,6 +2,7 @@ export * from './constants';
 export * from './error-codes';
 export * from './filtering';
 export * from './guards';
+export * from './ip-location';
 export * from './pagination';
 export * from './response';
 export * from './user-agent';
