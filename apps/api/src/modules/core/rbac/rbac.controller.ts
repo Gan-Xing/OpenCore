@@ -30,7 +30,12 @@ import {
   SystemMenuService,
   SystemRoleService,
   SystemUserService,
+  type SystemUserDataScopeFilter,
 } from '@opencore/system';
+import type {
+  SecurityDataScopeConstraint,
+  SecurityRequestWithDataScope,
+} from '@opencore/security';
 import {
   AssignRoleMenusDto,
   AssignRoleUsersDto,
@@ -72,12 +77,13 @@ import {
   UserSummaryDto,
 } from './rbac.dto';
 import {
+  RequireDataScope,
   RequireAuthenticated,
   RequirePermission,
 } from './permissions.decorator';
 import { RbacRepository } from './rbac.repository';
 
-type RequestWithUser = {
+type RequestWithUser = SecurityRequestWithDataScope & {
   user?: {
     id: string;
   };
@@ -120,19 +126,25 @@ export class RbacController {
   @Get('users')
   @ApiTags('Core Users')
   @RequirePermission('core:user:read')
+  @RequireDataScope({ userIdField: 'id', deptIdField: 'deptId' })
   @ApiOkResponse({ type: [UserSummaryDto] })
-  listUsers(@Query() query: ListUsersQueryDto): Promise<UserSummaryDto[]> {
-    return this.users.listUsers(query);
+  listUsers(
+    @Query() query: ListUsersQueryDto,
+    @Req() request: RequestWithUser,
+  ): Promise<UserSummaryDto[]> {
+    return this.users.listUsers(withRequestDataScope(query, request));
   }
 
   @Get('users/export')
   @ApiTags('Core Users')
   @RequirePermission('core:user:export')
+  @RequireDataScope({ userIdField: 'id', deptIdField: 'deptId' })
   @ApiOkResponse({ type: RbacExportPreviewDto })
   exportUsers(
     @Query() query: ListUsersQueryDto,
+    @Req() request: RequestWithUser,
   ): Promise<RbacExportPreviewDto> {
-    return this.users.createExportPreview(query);
+    return this.users.createExportPreview(withRequestDataScope(query, request));
   }
 
   @Get('users/import-template')
@@ -172,11 +184,13 @@ export class RbacController {
   @Get('users/simple-list')
   @ApiTags('Core Users')
   @RequireAuthenticated()
+  @RequireDataScope({ userIdField: 'id', deptIdField: 'deptId' })
   @ApiOkResponse({ type: [UserOptionDto] })
   listUserOptions(
     @Query() query: ListUsersQueryDto,
+    @Req() request: RequestWithUser,
   ): Promise<readonly UserOptionDto[]> {
-    return this.users.listUserOptions(query);
+    return this.users.listUserOptions(withRequestDataScope(query, request));
   }
 
   @Get('users/profile')
@@ -841,6 +855,36 @@ function getAuthenticatedUserId(request: RequestWithUser): string {
   }
 
   return userId;
+}
+
+function withRequestDataScope(
+  query: ListUsersQueryDto,
+  request: RequestWithUser,
+): ListUsersQueryDto & {
+  dataScope: SystemUserDataScopeFilter;
+} {
+  return {
+    ...query,
+    dataScope: toSystemUserDataScopeFilter(request.dataScope?.constraint),
+  };
+}
+
+function toSystemUserDataScopeFilter(
+  constraint: SecurityDataScopeConstraint | undefined,
+): SystemUserDataScopeFilter {
+  if (!constraint || constraint.type === 'all') {
+    return { type: 'all' } as const;
+  }
+
+  if (constraint.type === 'none') {
+    return { type: 'none' } as const;
+  }
+
+  return {
+    type: 'restricted',
+    userIds: constraint.userIds,
+    deptIds: constraint.deptIds,
+  } as const;
 }
 
 function normalizeAvatarUpload(

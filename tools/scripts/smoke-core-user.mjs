@@ -44,6 +44,9 @@ const resetPassword = `UserSecurityReset-${runId}`;
 const selfPassword = `UserSecuritySelf-${runId}`;
 const batchUsernames = [`user_batch_${runId}_a`, `user_batch_${runId}_b`];
 const batchPassword = `UserBatchSmoke-${runId}`;
+const dataScopeUsername = `user_scope_${runId}`;
+const dataScopePassword = `UserDataScope-${runId}`;
+const dataScopeRoleCode = `user_scope_read_export_${runId}`;
 const importUsername = `user_import_${runId}`;
 const xlsxImportUsername = `user_import_xlsx_${runId}`;
 const importPassword = `UserImportSmoke-${runId}`;
@@ -54,6 +57,8 @@ const importGuardPassword = `UserImportGuard-${runId}`;
 let adminToken;
 let smokeUserId;
 let smokeUserToken;
+let dataScopeUserId;
+let dataScopeRoleCreated = false;
 let importUserId;
 let xlsxImportUserId;
 let importGuardUserId;
@@ -314,6 +319,116 @@ try {
     true,
     'user export XLSX byte length',
   );
+
+  await apiRequest('/core/roles', {
+    method: 'POST',
+    body: {
+      code: dataScopeRoleCode,
+      name: 'User Data Scope Smoke',
+      permissionCodes: ['core:user:read', 'core:user:export'],
+      enabled: true,
+      dataScope: 'self',
+      dataScopeDeptIds: [],
+    },
+  });
+  dataScopeRoleCreated = true;
+  const dataScopeUser = await apiRequest('/core/users', {
+    method: 'POST',
+    body: {
+      username: dataScopeUsername,
+      displayName: 'User Data Scope Smoke',
+      password: dataScopePassword,
+      roleCodes: [dataScopeRoleCode],
+      deptId: 'dept_operations',
+      postCodes: ['engineer'],
+      enabled: true,
+    },
+  });
+  dataScopeUserId = assertString(dataScopeUser.id, 'data-scope smoke user id');
+  const dataScopeLogin = await loginUser(
+    dataScopeUsername,
+    dataScopePassword,
+    [200, 201],
+  );
+  const dataScopeToken = assertString(
+    dataScopeLogin.accessToken,
+    'data-scope smoke accessToken',
+  );
+  const scopedUsers = await request(`${apiPrefix}/core/users`, {
+    token: dataScopeToken,
+  });
+  assertUserListIncludesUsername(
+    scopedUsers,
+    dataScopeUsername,
+    'self data-scope user list',
+  );
+  assertUserListNotIncludesUsername(
+    scopedUsers,
+    username,
+    'self data-scope user list',
+  );
+  assertUserListNotIncludesUsername(
+    scopedUsers,
+    smokeUsername,
+    'self data-scope user list',
+  );
+  assertUserListIncludesUsername(
+    await request(`${apiPrefix}/core/users?deptId=dept_headquarters`, {
+      token: dataScopeToken,
+    }),
+    dataScopeUsername,
+    'self data-scope headquarters intersection',
+  );
+  assertUserListNotIncludesUsername(
+    await request(`${apiPrefix}/core/users?deptId=dept_engineering`, {
+      token: dataScopeToken,
+    }),
+    dataScopeUsername,
+    'self data-scope engineering intersection',
+  );
+  const scopedOptions = await request(`${apiPrefix}/core/users/simple-list`, {
+    token: dataScopeToken,
+  });
+  assertUserOptionIncludesUsername(
+    scopedOptions,
+    dataScopeUsername,
+    'self data-scope simple-list',
+  );
+  assertUserOptionNotIncludesUsername(
+    scopedOptions,
+    smokeUsername,
+    'self data-scope simple-list',
+  );
+  assertUserOptionNotIncludesUsername(
+    await request(
+      `${apiPrefix}/core/users/simple-list?deptId=dept_engineering`,
+      {
+        token: dataScopeToken,
+      },
+    ),
+    dataScopeUsername,
+    'self data-scope simple-list department intersection',
+  );
+  const scopedExport = await request(`${apiPrefix}/core/users/export`, {
+    token: dataScopeToken,
+  });
+  assertEqual(scopedExport.rowCount, 1, 'self data-scope export row count');
+  const scopedExportWorkbook = Buffer.from(
+    assertString(
+      scopedExport.contentBase64,
+      'scoped user export workbook body',
+    ),
+    'base64',
+  );
+  assertEqual(
+    scopedExportWorkbook.subarray(0, 2).toString('utf8'),
+    'PK',
+    'self data-scope export XLSX zip header',
+  );
+  await request(`${apiPrefix}/auth/logout`, {
+    method: 'POST',
+    token: dataScopeToken,
+  });
 
   const batchUsers = [];
   for (const batchUsername of batchUsernames) {
@@ -1063,6 +1178,10 @@ try {
         'core.user.dept.subtree-filter',
         'core.user.simple-list.dept-filter',
         'core.user.export.xlsx',
+        'core.user.data-scope.self-list',
+        'core.user.data-scope.dept-intersection',
+        'core.user.data-scope.simple-list',
+        'core.user.data-scope.export',
         'core.user.post.create',
         'core.user.batch-status.empty-guard',
         'core.user.batch-status.duplicate-guard',
@@ -1217,6 +1336,14 @@ async function cleanup() {
     smokeUserId = undefined;
   }
 
+  if (dataScopeUserId) {
+    await apiRequest(`/core/users/${encodeURIComponent(dataScopeUserId)}`, {
+      method: 'DELETE',
+      expected: [200, 404],
+    }).catch(() => undefined);
+    dataScopeUserId = undefined;
+  }
+
   if (importGuardUserId) {
     await apiRequest(`/core/users/${encodeURIComponent(importGuardUserId)}`, {
       method: 'DELETE',
@@ -1256,6 +1383,14 @@ async function cleanup() {
     }).catch(() => undefined);
     importGuardRoleCreated = false;
   }
+
+  if (dataScopeRoleCreated) {
+    await apiRequest(`/core/roles/${encodeURIComponent(dataScopeRoleCode)}`, {
+      method: 'DELETE',
+      expected: [200, 404],
+    }).catch(() => undefined);
+    dataScopeRoleCreated = false;
+  }
 }
 
 async function restoreAdminProfile() {
@@ -1293,6 +1428,7 @@ async function restoreAdminProfile() {
 async function cleanupSmokeUserSessions() {
   for (const sessionUsername of [
     smokeUsername,
+    dataScopeUsername,
     importUsername,
     xlsxImportUsername,
     importGuardUsername,

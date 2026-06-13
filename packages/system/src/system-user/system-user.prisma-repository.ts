@@ -35,6 +35,7 @@ import {
   type SystemUserAvatarRecord,
   type SystemUserAvatarUpdateInput,
   type SystemUserBatchMutationRecord,
+  type SystemUserDataScopeFilter,
   type SystemUserListQuery,
   type SystemUserOptionRecord,
   type SystemUserSummaryRecord,
@@ -56,6 +57,11 @@ type PrismaUserWithRoles = {
   posts: Array<{ post: { code: string } }>;
 };
 
+type PrismaUserFindManyArgs = NonNullable<
+  Parameters<PrismaService['user']['findMany']>[0]
+>;
+type PrismaUserWhereInput = NonNullable<PrismaUserFindManyArgs['where']>;
+
 const SYSTEM_USER_IDS = new Set(['user_admin']);
 const SYSTEM_USERNAMES = new Set(['admin']);
 
@@ -69,11 +75,9 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
     query?: SystemUserListQuery,
   ): Promise<SystemUserSummaryRecord[]> {
     const filters = normalizeListSystemUsersQuery(query);
-    const deptIds = filters.deptId
-      ? await this.resolveDeptSubtreeIds(filters.deptId)
-      : undefined;
+    const where = await this.createListUsersWhere(filters);
     const users = await this.prisma.user.findMany({
-      where: deptIds ? { deptId: { in: [...deptIds] } } : undefined,
+      where,
       include: {
         roles: {
           include: {
@@ -659,6 +663,28 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
     return deptIds;
   }
 
+  private async createListUsersWhere(filters: {
+    deptId?: string;
+    dataScope: SystemUserDataScopeFilter;
+  }): Promise<PrismaUserWhereInput | undefined> {
+    const deptWhere = filters.deptId
+      ? {
+          deptId: {
+            in: [...(await this.resolveDeptSubtreeIds(filters.deptId))],
+          },
+        }
+      : undefined;
+    const dataScopeWhere = createUserDataScopeWhere(filters.dataScope);
+
+    if (deptWhere && dataScopeWhere) {
+      return {
+        AND: [deptWhere, dataScopeWhere],
+      };
+    }
+
+    return deptWhere ?? dataScopeWhere;
+  }
+
   private async assertPostsExist(postCodes: readonly string[]): Promise<void> {
     if (postCodes.length === 0) {
       return;
@@ -710,4 +736,52 @@ function toSystemUserAvatarRecord(
 
 function isSystemUser(user: Pick<PrismaUserWithRoles, 'id' | 'username'>) {
   return SYSTEM_USER_IDS.has(user.id) || SYSTEM_USERNAMES.has(user.username);
+}
+
+function createUserDataScopeWhere(
+  dataScope: SystemUserDataScopeFilter,
+): PrismaUserWhereInput | undefined {
+  if (dataScope.type === 'all') {
+    return undefined;
+  }
+
+  if (dataScope.type === 'none') {
+    return {
+      id: {
+        in: [],
+      },
+    };
+  }
+
+  const filters: PrismaUserWhereInput[] = [];
+
+  if (dataScope.userIds && dataScope.userIds.length > 0) {
+    filters.push({
+      id: {
+        in: [...dataScope.userIds],
+      },
+    });
+  }
+
+  if (dataScope.deptIds && dataScope.deptIds.length > 0) {
+    filters.push({
+      deptId: {
+        in: [...dataScope.deptIds],
+      },
+    });
+  }
+
+  if (filters.length === 0) {
+    return {
+      id: {
+        in: [],
+      },
+    };
+  }
+
+  return filters.length === 1
+    ? filters[0]
+    : {
+        OR: filters,
+      };
 }

@@ -11,7 +11,6 @@ import type {
   BatchSetUserStatusDto,
   CreateUserDto,
   ImportUsersDto,
-  ListUsersQueryDto,
   ResetUserPasswordDto,
   RoleUserAssignmentDto,
   SetUserStatusDto,
@@ -57,12 +56,27 @@ export type SystemUserExportPreview = {
   generatedAt: string;
 };
 
+export type SystemUserDataScopeFilter =
+  | {
+      type: 'all';
+    }
+  | {
+      type: 'none';
+    }
+  | {
+      type: 'restricted';
+      userIds?: readonly string[];
+      deptIds?: readonly string[];
+    };
+
 export type SystemUserListQuery = {
   deptId?: string;
+  dataScope?: SystemUserDataScopeFilter;
 };
 
 export type SystemUserListFilters = {
   deptId?: string;
+  dataScope: SystemUserDataScopeFilter;
 };
 
 export type NormalizedSystemUserCreateInput = {
@@ -403,13 +417,14 @@ export function normalizeSystemUserImportRecord(
 }
 
 export function normalizeListSystemUsersQuery(
-  query: ListUsersQueryDto = {},
+  query: SystemUserListQuery = {},
 ): SystemUserListFilters {
   return {
     deptId:
       query.deptId === undefined
         ? undefined
         : normalizeRequiredText(query.deptId, 'deptId'),
+    dataScope: normalizeSystemUserDataScopeFilter(query.dataScope),
   };
 }
 
@@ -711,6 +726,52 @@ function normalizeUserId(value: unknown): string {
   }
 
   return normalizeRequiredText(value, 'user id');
+}
+
+function normalizeSystemUserDataScopeFilter(
+  value: SystemUserDataScopeFilter | undefined,
+): SystemUserDataScopeFilter {
+  if (!value || value.type === 'all') {
+    return { type: 'all' };
+  }
+
+  if (value.type === 'none') {
+    return { type: 'none' };
+  }
+
+  if (value.type !== 'restricted') {
+    throw new BadRequestException('System user data scope type is invalid.');
+  }
+
+  return {
+    type: 'restricted',
+    userIds: normalizeDataScopeIds(value.userIds ?? [], 'data scope user id'),
+    deptIds: normalizeDataScopeIds(value.deptIds ?? [], 'data scope dept id'),
+  };
+}
+
+function normalizeDataScopeIds(
+  values: readonly string[],
+  fieldName: string,
+): readonly string[] {
+  if (!Array.isArray(values)) {
+    throw new BadRequestException(
+      `System user ${fieldName}s must be an array.`,
+    );
+  }
+
+  const normalized = values.map((value) =>
+    normalizeRequiredText(value, fieldName),
+  );
+  const duplicate = findFirstDuplicate(normalized);
+
+  if (duplicate) {
+    throw new BadRequestException(
+      `System user ${fieldName} is duplicated: ${duplicate}`,
+    );
+  }
+
+  return [...normalized].sort();
 }
 
 function normalizeBatchSystemUserIds(value: unknown): readonly string[] {

@@ -121,6 +121,48 @@ describe('@opencore/system system-user', () => {
     ).resolves.not.toEqual(
       expect.arrayContaining([expect.objectContaining({ id: user.id })]),
     );
+    await expect(
+      service.listUsers({
+        dataScope: {
+          type: 'restricted',
+          userIds: [user.id],
+          deptIds: [],
+        },
+      }),
+    ).resolves.toEqual([
+      expect.objectContaining({
+        id: user.id,
+        username: 'operator',
+      }),
+    ]);
+    await expect(
+      service.listUsers({
+        deptId: 'dept_headquarters',
+        dataScope: {
+          type: 'restricted',
+          userIds: [],
+          deptIds: ['dept_operations'],
+        },
+      }),
+    ).resolves.toEqual([
+      expect.objectContaining({
+        id: user.id,
+        deptId: 'dept_operations',
+      }),
+    ]);
+    await expect(
+      service.listUsers({
+        deptId: 'dept_engineering',
+        dataScope: {
+          type: 'restricted',
+          userIds: [],
+          deptIds: ['dept_operations'],
+        },
+      }),
+    ).resolves.toEqual([]);
+    await expect(
+      service.listUsers({ dataScope: { type: 'none' } }),
+    ).resolves.toEqual([]);
     await expect(service.listUsers({ deptId: 'missing_dept' })).rejects.toThrow(
       NotFoundException,
     );
@@ -139,6 +181,31 @@ describe('@opencore/system system-user', () => {
     expect(seedUserOption).not.toHaveProperty('roleCodes');
     expect(seedUserOption).not.toHaveProperty('enabled');
     expect(seedUserOption).not.toHaveProperty('system');
+    await expect(
+      service.listUserOptions({
+        dataScope: {
+          type: 'restricted',
+          userIds: [user.id],
+          deptIds: [],
+        },
+      }),
+    ).resolves.toEqual([
+      expect.objectContaining({
+        id: user.id,
+        username: 'operator',
+      }),
+    ]);
+    await expect(
+      service.createExportPreview({
+        dataScope: {
+          type: 'restricted',
+          userIds: [user.id],
+          deptIds: [],
+        },
+      }),
+    ).resolves.toMatchObject({
+      rowCount: 1,
+    });
     await expect(service.getUser(user.id)).resolves.toMatchObject({
       id: 'user_operator',
       system: false,
@@ -657,6 +724,48 @@ describe('@opencore/system system-user', () => {
         expect.arrayContaining([expect.objectContaining({ username })]),
       );
       await expect(
+        service.listUsers({
+          dataScope: {
+            type: 'restricted',
+            userIds: [user.id],
+            deptIds: [],
+          },
+        }),
+      ).resolves.toEqual([
+        expect.objectContaining({
+          id: user.id,
+          username,
+        }),
+      ]);
+      await expect(
+        service.listUsers({
+          deptId: 'dept_headquarters',
+          dataScope: {
+            type: 'restricted',
+            userIds: [],
+            deptIds: ['dept_operations'],
+          },
+        }),
+      ).resolves.toEqual([
+        expect.objectContaining({
+          id: user.id,
+          deptId: 'dept_operations',
+        }),
+      ]);
+      await expect(
+        service.listUsers({
+          deptId: 'dept_engineering',
+          dataScope: {
+            type: 'restricted',
+            userIds: [],
+            deptIds: ['dept_operations'],
+          },
+        }),
+      ).resolves.toEqual([]);
+      await expect(
+        service.listUsers({ dataScope: { type: 'none' } }),
+      ).resolves.toEqual([]);
+      await expect(
         service.listUsers({ deptId: 'missing_dept' }),
       ).rejects.toThrow(NotFoundException);
       const userOptions = await service.listUserOptions({
@@ -674,6 +783,31 @@ describe('@opencore/system system-user', () => {
       expect(userOption).not.toHaveProperty('roleCodes');
       expect(userOption).not.toHaveProperty('enabled');
       expect(userOption).not.toHaveProperty('system');
+      await expect(
+        service.listUserOptions({
+          dataScope: {
+            type: 'restricted',
+            userIds: [user.id],
+            deptIds: [],
+          },
+        }),
+      ).resolves.toEqual([
+        expect.objectContaining({
+          id: user.id,
+          username,
+        }),
+      ]);
+      await expect(
+        service.createExportPreview({
+          dataScope: {
+            type: 'restricted',
+            userIds: [user.id],
+            deptIds: [],
+          },
+        }),
+      ).resolves.toMatchObject({
+        rowCount: 1,
+      });
       await expect(service.getUser(user.id)).resolves.toMatchObject({
         username,
         roleCodes: ['viewer'],

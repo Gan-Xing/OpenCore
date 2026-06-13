@@ -70,7 +70,13 @@ export class SeedSystemUserRepository extends SystemUserRepository {
       : undefined;
 
     return this.users
-      .filter((user) => !deptIds || (user.deptId && deptIds.has(user.deptId)))
+      .filter((user) => {
+        if (deptIds && (!user.deptId || !deptIds.has(user.deptId))) {
+          return false;
+        }
+
+        return matchesDataScope(user, filters.dataScope);
+      })
       .map(cloneSystemUserSummary)
       .sort(compareSystemUserRecords);
   }
@@ -395,4 +401,22 @@ function cloneUser(user: SystemUserRecord): SystemUserRecord {
     roleCodes: [...user.roleCodes],
     postCodes: [...user.postCodes],
   };
+}
+
+function matchesDataScope(
+  user: SystemUserRecord,
+  dataScope: ReturnType<typeof normalizeListSystemUsersQuery>['dataScope'],
+): boolean {
+  if (dataScope.type === 'all') {
+    return true;
+  }
+
+  if (dataScope.type === 'none') {
+    return false;
+  }
+
+  return (
+    Boolean(dataScope.userIds?.includes(user.id)) ||
+    Boolean(user.deptId && dataScope.deptIds?.includes(user.deptId))
+  );
 }

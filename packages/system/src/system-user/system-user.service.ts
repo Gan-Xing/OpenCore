@@ -6,7 +6,6 @@ import type {
   BatchSetUserStatusDto,
   CreateUserDto,
   ImportUsersDto,
-  ListUsersQueryDto,
   ResetUserPasswordDto,
   RoleUserAssignmentDto,
   SetUserStatusDto,
@@ -29,6 +28,7 @@ import {
   type SystemUserExportPreview,
   type SystemUserImportResultRecord,
   type SystemUserImportTemplateRecord,
+  type SystemUserListQuery,
   type SystemUserOptionRecord,
   type SystemUserSummaryRecord,
 } from './system-user.repository';
@@ -37,12 +37,12 @@ import {
 export class SystemUserService {
   constructor(private readonly repository: SystemUserRepository) {}
 
-  listUsers(query?: ListUsersQueryDto): Promise<SystemUserSummaryRecord[]> {
+  listUsers(query?: SystemUserListQuery): Promise<SystemUserSummaryRecord[]> {
     return this.repository.listUsers(query);
   }
 
   listUserOptions(
-    query?: ListUsersQueryDto,
+    query?: SystemUserListQuery,
   ): Promise<readonly SystemUserOptionRecord[]> {
     return this.repository.listUserOptions(query);
   }
@@ -146,7 +146,7 @@ export class SystemUserService {
   }
 
   async createExportPreview(
-    query?: ListUsersQueryDto,
+    query?: SystemUserListQuery,
   ): Promise<SystemUserExportPreview> {
     return createSystemUserExportPreview(
       await this.repository.listUsers(query),
