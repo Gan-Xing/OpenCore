@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
     },
     replace: vi.fn(),
   },
+  getOpenCoreAdminRuntimeConfig: vi.fn(),
   queryCurrentOpenCoreUser: vi.fn(),
 }));
 
@@ -24,6 +25,10 @@ vi.mock('@/services/opencore/auth', () => ({
     name: user.displayName,
     userid: user.id,
   }),
+}));
+
+vi.mock('@/services/opencore/runtimeConfig', () => ({
+  getOpenCoreAdminRuntimeConfig: mocks.getOpenCoreAdminRuntimeConfig,
 }));
 
 vi.mock('@/core/shellRegistry', () => ({
@@ -82,6 +87,9 @@ describe('app getInitialState', () => {
       search: '',
       hash: '',
     };
+    mocks.getOpenCoreAdminRuntimeConfig.mockResolvedValue({
+      adminTitle: 'OpenCore Admin',
+    });
   });
 
   it('fetches the OpenCore current user when not on a public page', async () => {
@@ -100,6 +108,7 @@ describe('app getInitialState', () => {
     const state = await getInitialState();
 
     expect(mocks.queryCurrentOpenCoreUser).toHaveBeenCalled();
+    expect(mocks.getOpenCoreAdminRuntimeConfig).toHaveBeenCalled();
     expect(state.currentUser).toMatchObject({
       id: 'user_admin',
       name: 'OpenCore Admin',
@@ -134,6 +143,7 @@ describe('app getInitialState', () => {
     const state = await getInitialState();
 
     expect(mocks.queryCurrentOpenCoreUser).not.toHaveBeenCalled();
+    expect(mocks.getOpenCoreAdminRuntimeConfig).toHaveBeenCalled();
     expect(state.currentUser).toBeUndefined();
     expect(state.fetchUserInfo).toBeDefined();
   });
@@ -169,8 +179,32 @@ describe('app getInitialState', () => {
 
     const state = await getInitialState();
 
-    expect(state.settings).toEqual({ navTheme: 'light' });
+    expect(state.settings).toEqual({
+      navTheme: 'light',
+      title: 'OpenCore Admin',
+    });
     expect(state.registrySummary.shellModuleCount).toBe(1);
     expect(state.menus).toHaveLength(1);
+  });
+
+  it('uses runtime config to override the Admin title', async () => {
+    const { getInitialState } = await import('./app');
+    mocks.getOpenCoreAdminRuntimeConfig.mockResolvedValue({
+      adminTitle: 'OpenCore Runtime Admin',
+    });
+    mocks.queryCurrentOpenCoreUser.mockResolvedValue({
+      user: {
+        id: 'user_admin',
+        username: 'admin',
+        displayName: 'OpenCore Admin',
+        roleCodes: ['admin'],
+        postCodes: [],
+        permissionCodes: ['core:dashboard:read'],
+      },
+    });
+
+    const state = await getInitialState();
+
+    expect(state.settings?.title).toBe('OpenCore Runtime Admin');
   });
 });

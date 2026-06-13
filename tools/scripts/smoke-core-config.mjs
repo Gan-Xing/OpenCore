@@ -29,6 +29,8 @@ const batchKeyA = `opencore.smoke.config.batch.${runId}.a`;
 const batchKeyB = `opencore.smoke.config.batch.${runId}.b`;
 const secretKey = `auth.token.secret.${runId}`;
 let token;
+let originalAdminTitle;
+let adminTitleMutated = false;
 
 const createdKeys = [];
 
@@ -58,11 +60,48 @@ try {
   const seededSystemConfig = await apiRequest(
     '/core/config/opencore.admin.title',
   );
+  originalAdminTitle = assertString(
+    seededSystemConfig.value,
+    'seeded admin title value',
+  );
   assertEqual(seededSystemConfig.system, true, 'seeded config system flag');
+  const initialRuntimeConfig = await request(
+    `${apiPrefix}/core/config/runtime`,
+  );
+  assertEqual(
+    initialRuntimeConfig.adminTitle,
+    originalAdminTitle,
+    'initial runtime admin title',
+  );
   await apiRequest('/core/config/opencore.admin.title', {
     method: 'DELETE',
     expected: [400],
   });
+  const smokeAdminTitle = `OpenCore Smoke Admin ${runId}`;
+  const updatedAdminTitle = await apiRequest(
+    '/core/config/opencore.admin.title',
+    {
+      method: 'PATCH',
+      body: {
+        value: smokeAdminTitle,
+      },
+    },
+  );
+  adminTitleMutated = true;
+  assertEqual(
+    updatedAdminTitle.value,
+    smokeAdminTitle,
+    'updated admin title config value',
+  );
+  const updatedRuntimeConfig = await request(
+    `${apiPrefix}/core/config/runtime`,
+  );
+  assertEqual(
+    updatedRuntimeConfig.adminTitle,
+    smokeAdminTitle,
+    'runtime admin title after update',
+  );
+  await restoreAdminTitle();
 
   const createdConfig = await apiRequest('/core/config', {
     method: 'POST',
@@ -334,6 +373,8 @@ try {
         'core.config.list',
         'core.config.detail',
         'core.config.metadata',
+        'core.config.runtime',
+        'core.config.runtime-cache-invalidation',
         'core.config.value-by-key',
         'core.config.value-cache-invalidation',
         'core.config.cache-refresh',
@@ -356,6 +397,7 @@ try {
   );
 } catch (error) {
   await cleanupCreatedConfig().catch(() => undefined);
+  await restoreAdminTitle().catch(() => undefined);
   console.error(
     JSON.stringify({
       status: 'fail',
@@ -418,6 +460,20 @@ async function cleanupCreatedConfig() {
   }
 
   createdKeys.length = 0;
+}
+
+async function restoreAdminTitle() {
+  if (!token || !adminTitleMutated || originalAdminTitle === undefined) {
+    return;
+  }
+
+  await apiRequest('/core/config/opencore.admin.title', {
+    method: 'PATCH',
+    body: {
+      value: originalAdminTitle,
+    },
+  });
+  adminTitleMutated = false;
 }
 
 async function request(path, options = {}) {

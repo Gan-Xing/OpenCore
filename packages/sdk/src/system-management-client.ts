@@ -24,6 +24,7 @@ import type {
   PageResponse,
   SystemConfigBatchMutationSummary,
   SystemConfigCacheRefreshSummary,
+  SystemConfigRuntimeSummary,
   SystemConfigSummary,
   SystemConfigValueSummary,
   SystemDeptOptionSummary,
@@ -100,6 +101,7 @@ export type SystemManagementClient = {
   ) => Promise<PageResponse<SystemConfigSummary>>;
   exportConfig: (token: Token, query?: PageRequest) => Promise<ExportPreview>;
   getConfig: (token: Token, key: string) => Promise<SystemConfigSummary>;
+  getConfigRuntime: () => Promise<SystemConfigRuntimeSummary>;
   getConfigValueByKey: (
     token: Token,
     key: string,
@@ -326,6 +328,8 @@ export function createSystemManagementClient(
       request<SystemConfigSummary>(`/core/config/${encodeURIComponent(key)}`, {
         token,
       }),
+    getConfigRuntime: () =>
+      request<SystemConfigRuntimeSummary>('/core/config/runtime'),
     getConfigValueByKey: (token, key) =>
       request<SystemConfigValueSummary>(
         withQuery('/core/config/get-value-by-key', { key }),

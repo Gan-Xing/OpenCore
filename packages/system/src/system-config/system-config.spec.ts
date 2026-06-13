@@ -45,6 +45,9 @@ describe('@opencore/system system-config', () => {
       value: 'OpenCore Admin',
       valueType: 'string',
     });
+    await expect(service.getRuntimeConfig()).resolves.toEqual({
+      adminTitle: 'OpenCore Admin',
+    });
     await expect(
       service.getConfigValueByKey('auth.login.lockoutMinutes'),
     ).rejects.toThrow(ForbiddenException);
@@ -150,6 +153,22 @@ describe('@opencore/system system-config', () => {
     const exportWorkbook = Buffer.from(exportPreview.contentBase64, 'base64');
     expect(exportWorkbook.subarray(0, 2).toString('utf8')).toBe('PK');
     expect(exportWorkbook.length).toBeGreaterThan(100);
+  });
+
+  it('returns runtime config from public values and invalidates title cache after update', async () => {
+    const service = new SystemConfigService(new SeedSystemConfigRepository());
+
+    await expect(service.getRuntimeConfig()).resolves.toEqual({
+      adminTitle: 'OpenCore Admin',
+    });
+
+    await service.updateConfig('opencore.admin.title', {
+      value: 'OpenCore Runtime Admin',
+    });
+
+    await expect(service.getRuntimeConfig()).resolves.toEqual({
+      adminTitle: 'OpenCore Runtime Admin',
+    });
   });
 
   it('requires explicit secret visibility and redacts secret config values', async () => {

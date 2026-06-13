@@ -135,10 +135,11 @@ if (
   !appRuntime.includes('shellMenuItems') ||
   !appRuntime.includes('registrySummary') ||
   !appRuntime.includes('permissions: currentUser?.permissionCodes') ||
+  !appRuntime.includes('getOpenCoreAdminRuntimeConfig') ||
   !appRuntime.includes('baseURL: process.env.ADMIN_API_BASE_URL')
 ) {
   throw new Error(
-    'Admin app runtime must use OpenCore auth, shell registry metadata and non-demo request base URL.',
+    'Admin app runtime must use OpenCore auth, shell registry metadata, runtime config and non-demo request base URL.',
   );
 }
 
@@ -232,10 +233,26 @@ if (
 if (
   !loginPage.includes('loginToOpenCore') ||
   loginPage.includes('getFakeCaptcha') ||
-  loginPage.includes('@/services/ant-design-pro')
+  loginPage.includes('@/services/ant-design-pro') ||
+  !loginPage.includes('runtimeTitle') ||
+  !loginPage.includes('title={runtimeTitle}')
 ) {
   throw new Error(
-    'Admin login must call OpenCore auth and avoid demo login services.',
+    'Admin login must call OpenCore auth, use runtime config title and avoid demo login services.',
+  );
+}
+
+const runtimeConfigService = readFileSync(
+  resolve(root, 'src/services/opencore/runtimeConfig.ts'),
+  'utf8',
+);
+
+if (
+  !runtimeConfigService.includes('getOpenCoreAdminRuntimeConfig') ||
+  !runtimeConfigService.includes('getConfigRuntime')
+) {
+  throw new Error(
+    'Admin runtime config service must read OpenCore public runtime config through the SDK.',
   );
 }
 

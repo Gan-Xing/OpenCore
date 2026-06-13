@@ -63,6 +63,7 @@ import {
   SystemConfigCacheRefreshDto,
   SystemConfigBatchMutationResultDto,
   SystemConfigPageDto,
+  SystemConfigRuntimeDto,
   SystemConfigValueDto,
   SystemConfigValueQueryDto,
   SystemNoticeDto,
@@ -232,6 +233,13 @@ export class SystemManagementController {
   @ApiOkResponse({ type: ExportPreviewDto })
   exportConfig(@Query() query: PageQueryDto): Promise<ExportPreviewDto> {
     return this.config.createExportPreview(query);
+  }
+
+  @Get('config/runtime')
+  @ApiTags('Core System Config')
+  @ApiOkResponse({ type: SystemConfigRuntimeDto })
+  getConfigRuntime(): Promise<SystemConfigRuntimeDto> {
+    return this.config.getRuntimeConfig();
   }
 
   @Get('config/get-value-by-key')

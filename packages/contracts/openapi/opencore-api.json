@@ -1682,6 +1682,26 @@
         "tags": ["SystemManagement", "Core System Config"]
       }
     },
+    "/api/core/config/runtime": {
+      "get": {
+        "operationId": "SystemManagementController_getConfigRuntime",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemConfigRuntimeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Config"]
+      }
+    },
     "/api/core/config/get-value-by-key": {
       "get": {
         "operationId": "SystemManagementController_getConfigValueByKey",
@@ -6273,6 +6293,13 @@
           "totalPages": { "type": "number" }
         },
         "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "SystemConfigRuntimeDto": {
+        "type": "object",
+        "properties": {
+          "adminTitle": { "type": "string", "example": "OpenCore Admin" }
+        },
+        "required": ["adminTitle"]
       },
       "SystemConfigValueDto": {
         "type": "object",

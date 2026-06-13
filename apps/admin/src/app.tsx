@@ -26,6 +26,7 @@ import {
   toAdminCurrentUser,
   type AdminCurrentUser,
 } from '@/services/opencore/auth';
+import { getOpenCoreAdminRuntimeConfig } from '@/services/opencore/runtimeConfig';
 import useShadcnTheme from '@/theme/shadcnTheme';
 import defaultSettings from '../config/defaultSettings';
 import { errorConfig } from './requestErrorConfig';
@@ -35,6 +36,7 @@ dayjs.extend(relativeTime);
 const isDev = process.env.NODE_ENV === 'development';
 const loginPath = '/user/login';
 const publicPaths = new Set([loginPath, '/403', '/404', '/500']);
+const fallbackAdminTitle = defaultSettings.title ?? 'OpenCore Admin';
 
 export type AdminInitialState = {
   settings?: Partial<LayoutSettings>;
@@ -56,6 +58,9 @@ function redirectToLogin(): void {
 }
 
 export async function getInitialState(): Promise<AdminInitialState> {
+  const runtimeConfig = await getOpenCoreAdminRuntimeConfig().catch(
+    () => undefined,
+  );
   const fetchUserInfo = async () => {
     try {
       const session = await queryCurrentOpenCoreUser();
@@ -77,7 +82,10 @@ export async function getInitialState(): Promise<AdminInitialState> {
     menus: shellMenuItems,
     permissions: [],
     registrySummary,
-    settings: defaultSettings as Partial<LayoutSettings>,
+    settings: {
+      ...(defaultSettings as Partial<LayoutSettings>),
+      title: runtimeConfig?.adminTitle ?? fallbackAdminTitle,
+    },
     settingDrawerOpen: false,
   };
 

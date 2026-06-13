@@ -29,6 +29,7 @@ export {
   SystemConfigDto,
   SystemConfigCacheRefreshDto,
   SystemConfigPageDto,
+  SystemConfigRuntimeDto,
   SystemConfigValueDto,
   SystemConfigValueQueryDto,
   SystemNoticeDto,

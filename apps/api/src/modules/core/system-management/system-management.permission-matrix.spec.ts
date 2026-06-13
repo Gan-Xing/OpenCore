@@ -60,6 +60,7 @@ const expectedPermissions = {
 } as const;
 
 const expectedPublicConsumerMethods = [
+  'getConfigRuntime',
   'getConfigValueByKey',
   'listDictDataOptions',
   'listDeptOptions',

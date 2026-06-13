@@ -97,6 +97,8 @@ const Login: React.FC = () => {
   const { styles } = useStyles();
   const { message } = App.useApp();
   const intl = useIntl();
+  const runtimeTitle =
+    initialState?.settings?.title ?? Settings.title ?? 'OpenCore Admin';
 
   const fetchUserInfo = async () => {
     const userInfo = await initialState?.fetchUserInfo?.();
@@ -163,7 +165,7 @@ const Login: React.FC = () => {
             id: 'menu.login',
             defaultMessage: 'Login',
           })}
-          {Settings.title && ` - ${Settings.title}`}
+          {runtimeTitle && ` - ${runtimeTitle}`}
         </title>
       </Helmet>
       <Lang />
@@ -179,7 +181,7 @@ const Login: React.FC = () => {
             maxWidth: '75vw',
           }}
           logo={<img alt="logo" src="/logo.svg" />}
-          title="OpenCore Admin"
+          title={runtimeTitle}
           subTitle={intl.formatMessage({
             id: 'pages.layouts.userLayout.title',
             defaultMessage: 'OpenCore enterprise administration console',

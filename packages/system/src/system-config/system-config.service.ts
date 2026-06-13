@@ -30,6 +30,12 @@ export type SystemConfigCacheRefreshResult = {
   refreshedAt: string;
 };
 
+export type SystemConfigRuntimeResult = {
+  adminTitle: string;
+};
+
+const ADMIN_TITLE_CONFIG_KEY = 'opencore.admin.title';
+
 @Injectable()
 export class SystemConfigService {
   private readonly valueCache = new Map<string, SystemConfigValueResult>();
@@ -60,6 +66,14 @@ export class SystemConfigService {
     );
     this.valueCache.set(normalizedKey, value);
     return { ...value };
+  }
+
+  async getRuntimeConfig(): Promise<SystemConfigRuntimeResult> {
+    const adminTitle = await this.getConfigValueByKey(ADMIN_TITLE_CONFIG_KEY);
+
+    return {
+      adminTitle: adminTitle.value,
+    };
   }
 
   async refreshConfigCache(): Promise<SystemConfigCacheRefreshResult> {

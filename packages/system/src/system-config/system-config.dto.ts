@@ -51,6 +51,11 @@ export class SystemConfigValueDto {
   valueType!: 'boolean' | 'number' | 'string';
 }
 
+export class SystemConfigRuntimeDto {
+  @ApiProperty({ example: 'OpenCore Admin' })
+  adminTitle!: string;
+}
+
 export class SystemConfigCacheRefreshDto {
   @ApiProperty()
   refreshed!: true;

@@ -84,6 +84,10 @@ export type SystemConfigValueSummary = {
   valueType: SystemConfigSummary['valueType'];
 };
 
+export type SystemConfigRuntimeSummary = {
+  adminTitle: string;
+};
+
 export type SystemConfigCacheRefreshSummary = {
   refreshed: true;
   cachedKeys: number;

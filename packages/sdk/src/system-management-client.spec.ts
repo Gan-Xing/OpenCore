@@ -39,6 +39,7 @@ describe('createSystemManagementClient', () => {
     await client.deleteDictItem('token', 'system.status', 'dict_item_disabled');
     await client.listConfig('token', { page: 1, pageSize: 10 });
     await client.getConfig('token', 'opencore.admin.title');
+    await client.getConfigRuntime();
     await client.getConfigValueByKey('token', 'opencore.admin.title');
     await client.refreshConfigCache('token');
     await client.exportConfig('token', { page: 1, pageSize: 10 });
@@ -181,6 +182,9 @@ describe('createSystemManagementClient', () => {
       {
         path: '/core/config/opencore.admin.title',
         token: 'token',
+      },
+      {
+        path: '/core/config/runtime',
       },
       {
         path: '/core/config/get-value-by-key?key=opencore.admin.title',
