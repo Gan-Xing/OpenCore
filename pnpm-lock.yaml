@@ -610,6 +610,9 @@ importers:
       '@opencore/security':
         specifier: workspace:*
         version: link:../security
+      fflate:
+        specifier: 0.8.3
+        version: 0.8.3
       reflect-metadata:
         specifier: ^0.1.13
         version: 0.1.14

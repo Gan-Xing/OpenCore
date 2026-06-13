@@ -59,6 +59,7 @@ import {
   createOpenCoreUser,
   deleteOpenCoreUsers,
   deleteOpenCoreUser,
+  exportOpenCoreUsers,
   getOpenCoreUserImportTemplate,
   getOpenCoreUser,
   importOpenCoreUsers,
@@ -406,6 +407,7 @@ function createDetailFields(
 
 export default function UsersPage() {
   const access = useAccess();
+  const canExportUsers = Boolean(access.canExportUsers);
   const canImportUsers = Boolean(access.canImportUsers);
   const [form] = Form.useForm<UserFormValues>();
   const [resetPasswordForm] = Form.useForm<ResetPasswordValues>();
@@ -432,6 +434,7 @@ export default function UsersPage() {
   const [batchAction, setBatchAction] = useState<
     'delete' | 'disable' | 'enable'
   >();
+  const [exportingUsers, setExportingUsers] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [importSubmitting, setImportSubmitting] = useState(false);
   const [importUpdateExisting, setImportUpdateExisting] = useState(false);
@@ -543,6 +546,31 @@ export default function UsersPage() {
       template.contentType,
     );
     message.success('User import template downloaded.');
+  };
+
+  const downloadUserExcelExport = async () => {
+    setExportingUsers(true);
+    try {
+      const exported = await exportOpenCoreUsers(
+        selectedDeptId ? { deptId: selectedDeptId } : undefined,
+      );
+
+      if (!exported.contentBase64 || !exported.contentType) {
+        message.warning('User Excel export is unavailable.');
+        return;
+      }
+
+      downloadBase64File(
+        exported.filename,
+        exported.contentBase64,
+        exported.contentType,
+      );
+      message.success(
+        `User Excel export downloaded. ${exported.rowCount} row(s).`,
+      );
+    } finally {
+      setExportingUsers(false);
+    }
   };
 
   const openImportUsers = () => {
@@ -1049,6 +1077,23 @@ export default function UsersPage() {
               >
                 Refresh
               </Button>,
+              <Tooltip
+                key="download-user-excel-export"
+                title={
+                  canExportUsers
+                    ? 'Download Excel export'
+                    : 'Missing core:user:export'
+                }
+              >
+                <Button
+                  disabled={!canExportUsers}
+                  icon={<DownloadOutlined />}
+                  loading={exportingUsers}
+                  onClick={() => void downloadUserExcelExport()}
+                >
+                  Download Excel
+                </Button>
+              </Tooltip>,
               <CurrentPageExportButton<UserSummary>
                 key="export"
                 columns={exportColumns}

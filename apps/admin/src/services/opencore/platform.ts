@@ -26,6 +26,7 @@ import {
   type CreateSystemPostRequest,
   type MenuSummary,
   type PermissionSummary,
+  type RbacExportPreview,
   type RbacDeleteResult,
   type RoleMenuAssignmentSummary,
   type RoleMutationSummary,
@@ -144,6 +145,12 @@ export function deleteOpenCoreUsers(
 
 export function getOpenCoreUserImportTemplate(): Promise<UserImportTemplateSummary> {
   return rbacClient.getUserImportTemplate(getRequiredAdminToken());
+}
+
+export function exportOpenCoreUsers(
+  query?: ListUsersRequest,
+): Promise<RbacExportPreview> {
+  return rbacClient.exportUsers(getRequiredAdminToken(), query);
 }
 
 export function importOpenCoreUsers(

@@ -124,6 +124,12 @@ export class RbacExportPreviewDto {
   @ApiProperty()
   filename!: string;
 
+  @ApiProperty({ required: false })
+  contentType?: string;
+
+  @ApiProperty({ required: false })
+  contentBase64?: string;
+
   @ApiProperty({ example: 'current-page' })
   scope!: 'current-page';
 

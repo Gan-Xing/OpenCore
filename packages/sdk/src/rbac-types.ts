@@ -285,6 +285,8 @@ export type RbacDeleteResult = {
 
 export type RbacExportPreview = {
   filename: string;
+  contentType?: string;
+  contentBase64?: string;
   scope: 'current-page';
   columns: readonly string[];
   rowCount: number;

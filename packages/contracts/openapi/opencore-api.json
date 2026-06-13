@@ -5485,6 +5485,8 @@
         "type": "object",
         "properties": {
           "filename": { "type": "string" },
+          "contentType": { "type": "string" },
+          "contentBase64": { "type": "string" },
           "scope": { "type": "string", "example": "current-page" },
           "columns": { "type": "array", "items": { "type": "string" } },
           "rowCount": { "type": "number" },

@@ -31,7 +31,7 @@
     "openapi:check": "TS_NODE_PROJECT=apps/api/tsconfig.app.json TS_NODE_COMPILER_OPTIONS='{\"moduleResolution\":\"node10\",\"module\":\"commonjs\",\"customConditions\":null}' node -r ts-node/register -r tsconfig-paths/register apps/api/src/platform/openapi/check-openapi-drift.ts",
     "openapi:export": "TS_NODE_PROJECT=apps/api/tsconfig.app.json TS_NODE_COMPILER_OPTIONS='{\"moduleResolution\":\"node10\",\"module\":\"commonjs\",\"customConditions\":null}' node -r ts-node/register -r tsconfig-paths/register apps/api/src/platform/openapi/export-openapi.ts",
     "openapi:registry-tags:check": "TS_NODE_PROJECT=apps/api/tsconfig.app.json TS_NODE_COMPILER_OPTIONS='{\"moduleResolution\":\"node10\",\"module\":\"commonjs\",\"customConditions\":null}' node -r ts-node/register -r tsconfig-paths/register apps/api/src/platform/openapi/check-registry-tags.ts",
-    "prisma:generate": "prisma generate --schema prisma/schema.prisma",
+    "prisma:generate": "prisma generate --schema prisma/schema.prisma && node tools/scripts/sync-prisma-client-instances.mjs",
     "prisma:migrate": "prisma migrate deploy --schema prisma/schema.prisma",
     "prisma:seed": "TS_NODE_PROJECT=tsconfig.base.json TS_NODE_COMPILER_OPTIONS='{\"moduleResolution\":\"node10\",\"module\":\"commonjs\",\"customConditions\":null}' node -r ts-node/register -r tsconfig-paths/register prisma/seed.ts",
     "prisma:studio": "prisma studio --schema prisma/schema.prisma",

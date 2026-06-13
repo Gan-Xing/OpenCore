@@ -721,9 +721,12 @@ if (
   !usersPage.includes('listOpenCoreSystemDeptOptions') ||
   !usersPage.includes('listOpenCoreSystemPostOptions') ||
   !usersPage.includes('getOpenCoreUserImportTemplate') ||
+  !usersPage.includes('exportOpenCoreUsers') ||
   !usersPage.includes('importOpenCoreUsers') ||
   !usersPage.includes('useAccess') ||
+  !usersPage.includes('canExportUsers') ||
   !usersPage.includes('canImportUsers') ||
+  !usersPage.includes('Missing core:user:export') ||
   !usersPage.includes('Missing core:user:import') ||
   !usersPage.includes('Department scope') ||
   !usersPage.includes('All departments') ||
@@ -736,6 +739,8 @@ if (
   !usersPage.includes('Enable selected') ||
   !usersPage.includes('Disable selected') ||
   !usersPage.includes('Delete selected') ||
+  !usersPage.includes('Download Excel') ||
+  !usersPage.includes('User Excel export downloaded') ||
   !usersPage.includes('Download import template') ||
   !usersPage.includes('Import users') ||
   !usersPage.includes('Update existing users') ||
@@ -750,7 +755,7 @@ if (
   !usersPage.includes('rows={filteredRows}')
 ) {
   throw new Error(
-    'Users page must use live SDK CRUD with role/dept selectors, department tree filtering, bounded filtering and current-page export.',
+    'Users page must use live SDK CRUD with role/dept selectors, department tree filtering, bounded filtering, backend Excel export, and current-page export.',
   );
 }
 

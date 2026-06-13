@@ -27,6 +27,8 @@ const extensionByMimeType = {
   'image/png': 'png',
   'image/webp': 'webp',
 };
+const xlsxContentType =
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
 const runId = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 const smokeUsername = `user_security_${runId}`;
@@ -276,6 +278,32 @@ try {
     await apiRequest('/core/users/simple-list?deptId=dept_engineering'),
     smokeUsername,
     'engineering department user options',
+  );
+  const userExport = await apiRequest(
+    '/core/users/export?deptId=dept_operations',
+  );
+  assertEqual(
+    userExport.filename,
+    'opencore-system-users.xlsx',
+    'user export filename',
+  );
+  assertEqual(userExport.contentType, xlsxContentType, 'user export MIME type');
+  assertEqual(userExport.scope, 'current-page', 'user export scope');
+  assertEqual(userExport.rowCount > 0, true, 'user export row count');
+  assertIncludes(userExport.columns, 'postCodes', 'user export columns');
+  const userExportWorkbook = Buffer.from(
+    assertString(userExport.contentBase64, 'user export workbook body'),
+    'base64',
+  );
+  assertEqual(
+    userExportWorkbook.subarray(0, 2).toString('utf8'),
+    'PK',
+    'user export XLSX zip header',
+  );
+  assertEqual(
+    userExportWorkbook.length > 1000,
+    true,
+    'user export XLSX byte length',
   );
 
   const batchUsers = [];
@@ -849,6 +877,7 @@ try {
         'core.user.dept.filter',
         'core.user.dept.subtree-filter',
         'core.user.simple-list.dept-filter',
+        'core.user.export.xlsx',
         'core.user.post.create',
         'core.user.batch-status.empty-guard',
         'core.user.batch-status.duplicate-guard',

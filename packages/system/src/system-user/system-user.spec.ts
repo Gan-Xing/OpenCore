@@ -9,6 +9,7 @@ import { hashSystemUserPassword } from './system-user.password';
 import { PrismaSystemUserRepository } from './system-user.prisma-repository';
 import { SeedSystemUserRepository } from './system-user.seed-repository';
 import { SystemUserService } from './system-user.service';
+import { SYSTEM_USER_EXPORT_CONTENT_TYPE } from './system-user.repository';
 
 describe('@opencore/system system-user', () => {
   it('supports seeded user CRUD and export previews', async () => {
@@ -273,8 +274,10 @@ describe('@opencore/system system-user', () => {
     ).resolves.toMatchObject({
       id: 'user_operator',
     });
-    await expect(service.createExportPreview()).resolves.toMatchObject({
-      filename: 'opencore-system-users.csv',
+    const exportPreview = await service.createExportPreview();
+    expect(exportPreview).toMatchObject({
+      filename: 'opencore-system-users.xlsx',
+      contentType: SYSTEM_USER_EXPORT_CONTENT_TYPE,
       scope: 'current-page',
       columns: [
         'username',
@@ -286,6 +289,9 @@ describe('@opencore/system system-user', () => {
         'system',
       ],
     });
+    const exportWorkbook = Buffer.from(exportPreview.contentBase64, 'base64');
+    expect(exportWorkbook.subarray(0, 2).toString('utf8')).toBe('PK');
+    expect(exportWorkbook.length).toBeGreaterThan(1000);
     const importTemplate = service.createImportTemplate();
     expect(importTemplate).toMatchObject({
       filename: 'opencore-system-users-import-template.csv',
