@@ -1,6 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import type {
   CreateSystemDeptDto,
+  UpdateSystemDeptOrderDto,
   UpdateSystemDeptDto,
 } from './system-dept.dto';
 import type {
@@ -48,6 +49,16 @@ export type NormalizedSystemDeptUpdateInput = {
   enabled: boolean;
 };
 
+export type NormalizedSystemDeptOrderItem = {
+  id: string;
+  order: number;
+};
+
+export type SystemDeptOrderMutationResult = {
+  updatedCount: number;
+  items: SystemDeptRecord[];
+};
+
 const DEPT_CODE_PATTERN = /^[a-z][a-z0-9_.-]*$/;
 
 export abstract class SystemDeptRepository {
@@ -65,6 +76,10 @@ export abstract class SystemDeptRepository {
     id: string,
     body: UpdateSystemDeptDto,
   ): Promise<SystemDeptRecord>;
+
+  abstract updateDeptOrder(
+    body: UpdateSystemDeptOrderDto,
+  ): Promise<SystemDeptOrderMutationResult>;
 
   abstract deleteDept(id: string): Promise<{ deleted: true }>;
 }
@@ -124,6 +139,38 @@ export function normalizeUpdateSystemDeptInput(
         : normalizeOptionalText(body.email),
     enabled: body.enabled ?? existing.enabled,
   };
+}
+
+export function normalizeUpdateSystemDeptOrderInput(
+  body: UpdateSystemDeptOrderDto,
+): NormalizedSystemDeptOrderItem[] {
+  if (!Array.isArray(body.items) || body.items.length === 0) {
+    throw new BadRequestException(
+      'System dept order update requires at least one item.',
+    );
+  }
+
+  const seenIds = new Set<string>();
+  return body.items.map((item, index) => {
+    if (!item || typeof item !== 'object') {
+      throw new BadRequestException(
+        `System dept order item ${index + 1} must be an object.`,
+      );
+    }
+
+    const id = normalizeRequiredText(item.id, `items[${index}].id`);
+    if (seenIds.has(id)) {
+      throw new BadRequestException(
+        `Duplicate system dept order item id: ${id}`,
+      );
+    }
+    seenIds.add(id);
+
+    return {
+      id,
+      order: normalizeOrder(item.order),
+    };
+  });
 }
 
 export function buildSystemDeptTree(
@@ -201,6 +248,22 @@ export function assertNoDeptUsers(userCount: number): void {
   if (userCount > 0) {
     throw new BadRequestException(
       'System dept cannot be deleted while users are assigned.',
+    );
+  }
+}
+
+export function assertSameDeptParent(
+  rows: readonly SystemDeptRecord[],
+  action = 'reordered',
+): void {
+  if (rows.length < 2) {
+    return;
+  }
+
+  const firstParentId = rows[0]?.parentId;
+  if (!rows.every((row) => row.parentId === firstParentId)) {
+    throw new BadRequestException(
+      `System dept siblings must share the same parent to be ${action}.`,
     );
   }
 }

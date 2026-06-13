@@ -31,6 +31,7 @@ import type {
   SystemConfigRuntimeSummary,
   SystemConfigSummary,
   SystemConfigValueSummary,
+  SystemDeptOrderMutationSummary,
   SystemDeptOptionSummary,
   SystemDeptQueryRequest,
   SystemDeptSummary,
@@ -46,6 +47,7 @@ import type {
   UpdateFileAssetRequest,
   UnlockLoginUserRequest,
   UploadFileAssetRequest,
+  UpdateSystemDeptOrderRequest,
   UpdateSystemDeptRequest,
   UpdateSystemNoticeRequest,
   UpdateSystemPostRequest,
@@ -170,6 +172,10 @@ export type SystemManagementClient = {
     id: string,
     body: UpdateSystemDeptRequest,
   ) => Promise<SystemDeptSummary>;
+  updateDeptOrder: (
+    token: Token,
+    body: UpdateSystemDeptOrderRequest,
+  ) => Promise<SystemDeptOrderMutationSummary>;
   deleteDept: (token: Token, id: string) => Promise<DeleteResult>;
   listPosts: (
     token: Token,
@@ -443,6 +449,12 @@ export function createSystemManagementClient(
       }),
     updateDept: (token, id, body) =>
       request<SystemDeptSummary>(`/core/depts/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        body,
+        token,
+      }),
+    updateDeptOrder: (token, body) =>
+      request<SystemDeptOrderMutationSummary>('/core/depts/order', {
         method: 'PATCH',
         body,
         token,

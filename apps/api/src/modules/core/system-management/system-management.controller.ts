@@ -61,6 +61,7 @@ import {
   LoginUnlockResultDto,
   PageQueryDto,
   SystemDeptDto,
+  SystemDeptOrderMutationResultDto,
   SystemDeptOptionDto,
   SystemDeptQueryDto,
   SystemDeptTreeDto,
@@ -80,6 +81,7 @@ import {
   SystemPostPageDto,
   SystemPostQueryDto,
   UpdateSystemDeptDto,
+  UpdateSystemDeptOrderDto,
   UpdateDictItemDto,
   UpdateDictTypeDto,
   UpdateFileAssetDto,
@@ -405,6 +407,16 @@ export class SystemManagementController {
   @ApiOkResponse({ type: [SystemDeptOptionDto] })
   listDeptOptions(): Promise<readonly SystemDeptOptionDto[]> {
     return this.depts.listDeptOptions();
+  }
+
+  @Patch('depts/order')
+  @ApiTags('Core Departments')
+  @RequirePermission('core:dept:update')
+  @ApiOkResponse({ type: SystemDeptOrderMutationResultDto })
+  updateDeptOrder(
+    @Body() body: UpdateSystemDeptOrderDto,
+  ): Promise<SystemDeptOrderMutationResultDto> {
+    return this.depts.updateDeptOrder(body);
   }
 
   @Get('depts/:id')

@@ -111,6 +111,12 @@ describe('createSystemManagementClient', () => {
       parentId: 'dept_engineering',
     });
     await client.updateDept('token', 'dept_qa', { name: 'Quality Platform' });
+    await client.updateDeptOrder('token', {
+      items: [
+        { id: 'dept_engineering', order: 10 },
+        { id: 'dept_operations', order: 20 },
+      ],
+    });
     await client.deleteDept('token', 'dept_qa');
     await client.listPosts('token', { page: 1, pageSize: 20, enabled: true });
     await client.listPostOptions('token');
@@ -301,6 +307,11 @@ describe('createSystemManagementClient', () => {
       },
       {
         path: '/core/depts/dept_qa',
+        method: 'PATCH',
+        token: 'token',
+      },
+      {
+        path: '/core/depts/order',
         method: 'PATCH',
         token: 'token',
       },

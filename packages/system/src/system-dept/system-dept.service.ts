@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type {
   CreateSystemDeptDto,
+  UpdateSystemDeptOrderDto,
   UpdateSystemDeptDto,
 } from './system-dept.dto';
 import type {
@@ -12,6 +13,7 @@ import {
   createSystemDeptExportPreview,
   SystemDeptRepository,
   type SystemDeptExportPreview,
+  type SystemDeptOrderMutationResult,
   type SystemDeptQuery,
 } from './system-dept.repository';
 
@@ -37,6 +39,12 @@ export class SystemDeptService {
 
   updateDept(id: string, body: UpdateSystemDeptDto): Promise<SystemDeptRecord> {
     return this.repository.updateDept(id, body);
+  }
+
+  updateDeptOrder(
+    body: UpdateSystemDeptOrderDto,
+  ): Promise<SystemDeptOrderMutationResult> {
+    return this.repository.updateDeptOrder(body);
   }
 
   deleteDept(id: string): Promise<{ deleted: true }> {

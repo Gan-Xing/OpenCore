@@ -48,6 +48,7 @@ import {
   type SystemConfigCacheRefreshSummary,
   type SystemConfigValueSummary,
   type SystemDeptOptionSummary,
+  type SystemDeptOrderMutationSummary,
   type SystemDeptQueryRequest,
   type SystemDeptSummary,
   type SystemDeptTreeSummary,
@@ -70,6 +71,7 @@ import {
   type ResetUserPasswordRequest,
   type SetUserStatusRequest,
   type UpdateSystemDeptRequest,
+  type UpdateSystemDeptOrderRequest,
   type UpdateDictItemRequest,
   type UpdateDictTypeRequest,
   type UpdateFileAssetRequest,
@@ -637,6 +639,12 @@ export function updateOpenCoreSystemDept(
   body: UpdateSystemDeptRequest,
 ): Promise<SystemDeptSummary> {
   return systemManagementClient.updateDept(getRequiredAdminToken(), id, body);
+}
+
+export function updateOpenCoreSystemDeptOrder(
+  body: UpdateSystemDeptOrderRequest,
+): Promise<SystemDeptOrderMutationSummary> {
+  return systemManagementClient.updateDeptOrder(getRequiredAdminToken(), body);
 }
 
 export function deleteOpenCoreSystemDept(

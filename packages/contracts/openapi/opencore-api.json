@@ -2263,6 +2263,36 @@
         "tags": ["SystemManagement", "Core Departments"]
       }
     },
+    "/api/core/depts/order": {
+      "patch": {
+        "operationId": "SystemManagementController_updateDeptOrder",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSystemDeptOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemDeptOrderMutationResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Departments"]
+      }
+    },
     "/api/core/depts/{id}": {
       "get": {
         "operationId": "SystemManagementController_getDept",
@@ -6646,6 +6676,26 @@
         },
         "required": ["id", "name", "order"]
       },
+      "UpdateSystemDeptOrderItemDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "order": { "type": "number" }
+        },
+        "required": ["id", "order"]
+      },
+      "UpdateSystemDeptOrderDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UpdateSystemDeptOrderItemDto"
+            }
+          }
+        },
+        "required": ["items"]
+      },
       "SystemDeptDto": {
         "type": "object",
         "properties": {
@@ -6670,6 +6720,17 @@
           "createdAt",
           "updatedAt"
         ]
+      },
+      "SystemDeptOrderMutationResultDto": {
+        "type": "object",
+        "properties": {
+          "updatedCount": { "type": "number" },
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SystemDeptDto" }
+          }
+        },
+        "required": ["updatedCount", "items"]
       },
       "CreateSystemDeptDto": {
         "type": "object",

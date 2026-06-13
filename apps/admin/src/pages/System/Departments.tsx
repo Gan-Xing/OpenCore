@@ -1,4 +1,6 @@
 import {
+  ArrowDownOutlined,
+  ArrowUpOutlined,
   DeleteOutlined,
   EditOutlined,
   EyeOutlined,
@@ -38,6 +40,7 @@ import {
   getOpenCoreSystemDept,
   listOpenCoreSystemDepts,
   updateOpenCoreSystemDept,
+  updateOpenCoreSystemDeptOrder,
 } from '@/services/opencore/platform';
 import {
   CurrentPageExportButton,
@@ -187,6 +190,61 @@ function collectDescendantIds(row: SystemDeptTreeSummary): Set<string> {
   return ids;
 }
 
+function findTreeRow(
+  rows: readonly SystemDeptTreeSummary[],
+  id: string,
+): SystemDeptTreeSummary | undefined {
+  for (const row of rows) {
+    if (row.id === id) {
+      return row;
+    }
+
+    const child = findTreeRow(row.children, id);
+    if (child) {
+      return child;
+    }
+  }
+
+  return undefined;
+}
+
+function findSiblingRows(
+  rows: readonly SystemDeptTreeSummary[],
+  record: SystemDeptSummary,
+): SystemDeptTreeSummary[] {
+  if (!record.parentId) {
+    return [...rows].sort(compareDeptRows);
+  }
+
+  return [...(findTreeRow(rows, record.parentId)?.children ?? [])].sort(
+    compareDeptRows,
+  );
+}
+
+function createReorderedSiblingItems(
+  siblings: readonly SystemDeptTreeSummary[],
+  recordId: string,
+  direction: 'down' | 'up',
+) {
+  const reordered = [...siblings];
+  const currentIndex = reordered.findIndex((row) => row.id === recordId);
+  const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+
+  if (currentIndex < 0 || targetIndex < 0 || targetIndex >= reordered.length) {
+    return undefined;
+  }
+
+  [reordered[currentIndex], reordered[targetIndex]] = [
+    reordered[targetIndex],
+    reordered[currentIndex],
+  ];
+
+  return reordered.map((row, index) => ({
+    id: row.id,
+    order: (index + 1) * 10,
+  }));
+}
+
 function toTreeSelectData(
   rows: readonly SystemDeptTreeSummary[],
   excludedIds = new Set<string>(),
@@ -209,6 +267,7 @@ export default function DepartmentsPage() {
   const [selectedDetail, setSelectedDetail] = useState<SystemDeptSummary>();
   const [editingDept, setEditingDept] = useState<SystemDeptSummary>();
   const [formOpen, setFormOpen] = useState(false);
+  const [orderingDeptId, setOrderingDeptId] = useState<string>();
   const [submitting, setSubmitting] = useState(false);
   const flatRows = useMemo(() => flattenDeptTree(rows), [rows]);
   const parentNames = useMemo(() => createParentNameMap(flatRows), [flatRows]);
@@ -338,6 +397,33 @@ export default function DepartmentsPage() {
     }
   };
 
+  const moveDept = async (
+    record: SystemDeptTreeSummary,
+    direction: 'down' | 'up',
+  ) => {
+    const siblings = findSiblingRows(rows, record);
+    const items = createReorderedSiblingItems(siblings, record.id, direction);
+
+    if (!items) {
+      return;
+    }
+
+    setOrderingDeptId(record.id);
+    try {
+      await updateOpenCoreSystemDeptOrder({ items });
+      message.success('Department order saved.');
+      await loadDepts();
+    } catch (error: unknown) {
+      message.error(
+        error instanceof Error
+          ? error.message
+          : 'Unable to save department order.',
+      );
+    } finally {
+      setOrderingDeptId(undefined);
+    }
+  };
+
   const excludedParentIds = useMemo(() => {
     if (!editingDept) {
       return new Set<string>();
@@ -384,9 +470,14 @@ export default function DepartmentsPage() {
     {
       title: 'Actions',
       valueType: 'option',
-      width: 220,
+      width: 300,
       render: (_, record) => {
         const hasChildren = record.children.length > 0;
+        const siblings = findSiblingRows(rows, record);
+        const siblingIndex = siblings.findIndex((row) => row.id === record.id);
+        const canMoveUp = siblingIndex > 0;
+        const canMoveDown =
+          siblingIndex >= 0 && siblingIndex < siblings.length - 1;
 
         return (
           <Space size="small">
@@ -411,6 +502,26 @@ export default function DepartmentsPage() {
                 aria-label={`Create child department under ${record.name}`}
                 icon={<PlusOutlined />}
                 onClick={() => openCreateForm(record.id)}
+                size="small"
+              />
+            </Tooltip>
+            <Tooltip title="Move up">
+              <Button
+                aria-label={`Move ${record.name} up`}
+                disabled={!canMoveUp}
+                icon={<ArrowUpOutlined />}
+                loading={orderingDeptId === record.id}
+                onClick={() => void moveDept(record, 'up')}
+                size="small"
+              />
+            </Tooltip>
+            <Tooltip title="Move down">
+              <Button
+                aria-label={`Move ${record.name} down`}
+                disabled={!canMoveDown}
+                icon={<ArrowDownOutlined />}
+                loading={orderingDeptId === record.id}
+                onClick={() => void moveDept(record, 'down')}
                 size="small"
               />
             </Tooltip>

@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import type {
   CreateSystemDeptDto,
+  UpdateSystemDeptOrderDto,
   UpdateSystemDeptDto,
 } from './system-dept.dto';
 import {
@@ -18,10 +19,12 @@ import {
   assertNoDeptChildren,
   assertNoDeptSelfParent,
   assertNoDeptUsers,
+  assertSameDeptParent,
   buildSystemDeptTree,
   compareSystemDeptRecords,
   normalizeCreateSystemDeptInput,
   normalizeSystemDeptFilters,
+  normalizeUpdateSystemDeptOrderInput,
   normalizeUpdateSystemDeptInput,
   SystemDeptRepository,
   toSystemDeptOptionRecord,
@@ -104,6 +107,28 @@ export class SeedSystemDeptRepository extends SystemDeptRepository {
       updatedAt: new Date().toISOString(),
     });
     return { ...dept };
+  }
+
+  async updateDeptOrder(
+    body: UpdateSystemDeptOrderDto,
+  ): Promise<{ updatedCount: number; items: SystemDeptRecord[] }> {
+    const input = normalizeUpdateSystemDeptOrderInput(body);
+    const existing = input.map((item) => this.findDept(item.id));
+    assertSameDeptParent(existing);
+
+    for (const item of input) {
+      Object.assign(this.findDept(item.id), {
+        order: item.order,
+        updatedAt: new Date().toISOString(),
+      });
+    }
+
+    return {
+      updatedCount: input.length,
+      items: input
+        .map((item) => ({ ...this.findDept(item.id) }))
+        .sort(compareSystemDeptRecords),
+    };
   }
 
   async deleteDept(id: string): Promise<{ deleted: true }> {

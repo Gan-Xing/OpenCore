@@ -22,6 +22,7 @@ const timeoutMs = Number(process.env.OPENCORE_SMOKE_TIMEOUT_MS || 10000);
 
 const runId = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 const deptCode = `smoke_dept_${runId}`;
+const siblingDeptCode = `smoke_dept_sibling_${runId}`;
 const boundUsername = `dept_user_${runId}`;
 const boundPassword = `DeptSmokePassword1!`;
 let token;
@@ -134,6 +135,79 @@ try {
     'simple-list option children exposure',
   );
 
+  const siblingDept = await apiRequest('/core/depts', {
+    method: 'POST',
+    body: {
+      code: siblingDeptCode,
+      name: 'OpenCore Smoke Dept Sibling',
+      parentId: 'dept_operations',
+      order: 6,
+      enabled: true,
+    },
+  });
+  createdDeptIds.push(assertString(siblingDept.id, 'sibling dept id'));
+
+  await apiRequest('/core/depts/order', {
+    method: 'PATCH',
+    expected: [400],
+    body: {
+      items: [
+        { id: createdDept.id, order: 10 },
+        { id: createdDept.id, order: 20 },
+      ],
+    },
+  });
+  await apiRequest('/core/depts/order', {
+    method: 'PATCH',
+    expected: [404],
+    body: {
+      items: [{ id: `missing_${createdDept.id}`, order: 10 }],
+    },
+  });
+  await apiRequest('/core/depts/order', {
+    method: 'PATCH',
+    expected: [400],
+    body: {
+      items: [
+        { id: createdDept.id, order: 10 },
+        { id: 'dept_engineering', order: 20 },
+      ],
+    },
+  });
+  await apiRequest('/core/depts/order', {
+    method: 'PATCH',
+    expected: [400],
+    body: {
+      items: [{ id: createdDept.id, order: '1' }],
+    },
+  });
+
+  const orderUpdate = await apiRequest('/core/depts/order', {
+    method: 'PATCH',
+    body: {
+      items: [
+        { id: siblingDept.id, order: 1 },
+        { id: createdDept.id, order: 2 },
+      ],
+    },
+  });
+  assertEqual(orderUpdate.updatedCount, 2, 'dept order updated count');
+  assertRelativeOrder(
+    orderUpdate.items.map((item) => item.id),
+    [siblingDept.id, createdDept.id],
+    'dept order mutation items',
+  );
+  assertRelativeOrder(
+    getSiblingIds(await apiRequest('/core/depts'), 'dept_operations'),
+    [siblingDept.id, createdDept.id],
+    'dept tree sibling order',
+  );
+  assertRelativeOrder(
+    (await publicDeptOptions()).map((option) => option.id),
+    [siblingDept.id, createdDept.id],
+    'dept simple-list sibling order',
+  );
+
   const exportPreview = await apiRequest('/core/depts/export?enabled=true');
   assertEqual(exportPreview.scope, 'current-page', 'dept export scope');
   assertArray(exportPreview.columns, 'dept export columns');
@@ -168,7 +242,7 @@ try {
   await cleanupCreatedDepts();
   assertOptionIdsExclude(
     await publicDeptOptions(),
-    [createdDept.id],
+    [createdDept.id, siblingDept.id],
     'dept-delete simple-list options',
   );
 
@@ -190,6 +264,13 @@ try {
         'core.dept.simple-list.disabled-filtered',
         'core.dept.update-enabled',
         'core.dept.simple-list.option-shape',
+        'core.dept.order.duplicate-guard',
+        'core.dept.order.missing-guard',
+        'core.dept.order.same-parent-guard',
+        'core.dept.order.bad-order-guard',
+        'core.dept.order.update',
+        'core.dept.order.tree-order',
+        'core.dept.order.simple-list-order',
         'core.dept.export',
         'core.dept.delete.assigned-user-guard',
         'core.dept.delete.assigned-user-preserved',
@@ -260,6 +341,31 @@ function assertDeptTreeContains(tree, id, label) {
 
   if (!flattenDeptTree(tree).some((dept) => dept.id === id)) {
     throw new Error(`${label} must contain dept ${id}`);
+  }
+}
+
+function getSiblingIds(tree, parentId) {
+  const parent = flattenDeptTree(tree).find((dept) => dept.id === parentId);
+
+  if (!parent || !Array.isArray(parent.children)) {
+    throw new Error(`Expected parent department ${parentId} to have children`);
+  }
+
+  return parent.children.map((dept) => dept.id);
+}
+
+function assertRelativeOrder(actualIds, expectedIds, label) {
+  let previousIndex = -1;
+
+  for (const id of expectedIds) {
+    const index = actualIds.indexOf(id);
+    if (index === -1) {
+      throw new Error(`${label} must include ${id}`);
+    }
+    if (index <= previousIndex) {
+      throw new Error(`${label} must keep ${expectedIds.join(' before ')}`);
+    }
+    previousIndex = index;
   }
 }
 

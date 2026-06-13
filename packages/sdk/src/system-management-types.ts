@@ -231,6 +231,18 @@ export type UpdateSystemDeptRequest = Partial<
   parentId?: string | null;
 };
 
+export type UpdateSystemDeptOrderRequest = {
+  items: readonly {
+    id: string;
+    order: number;
+  }[];
+};
+
+export type SystemDeptOrderMutationSummary = {
+  updatedCount: number;
+  items: readonly SystemDeptSummary[];
+};
+
 export type SystemPostSummary = {
   id: string;
   code: string;

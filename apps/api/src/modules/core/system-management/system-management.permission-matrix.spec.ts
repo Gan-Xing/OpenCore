@@ -53,6 +53,7 @@ const expectedPermissions = {
   refreshConfigCache: ['core:config:update'],
   updateConfig: ['core:config:update'],
   updateDept: ['core:dept:update'],
+  updateDeptOrder: ['core:dept:update'],
   updateDict: ['core:dict:update'],
   updateDictItem: ['core:dict:update'],
   updateFileAsset: ['core:file:update'],

@@ -377,6 +377,7 @@ if (
   !opencorePlatformService.includes('listOpenCoreSystemDepts') ||
   !opencorePlatformService.includes('createOpenCoreSystemDept') ||
   !opencorePlatformService.includes('updateOpenCoreSystemDept') ||
+  !opencorePlatformService.includes('updateOpenCoreSystemDeptOrder') ||
   !opencorePlatformService.includes('deleteOpenCoreSystemDept') ||
   !opencorePlatformService.includes('listOpenCoreSystemPosts') ||
   !opencorePlatformService.includes('listOpenCoreSystemPostOptions') ||
@@ -1002,9 +1003,13 @@ if (
   !departmentsPage.includes('getOpenCoreSystemDept') ||
   !departmentsPage.includes('createOpenCoreSystemDept') ||
   !departmentsPage.includes('updateOpenCoreSystemDept') ||
+  !departmentsPage.includes('updateOpenCoreSystemDeptOrder') ||
   !departmentsPage.includes('deleteOpenCoreSystemDept') ||
   !departmentsPage.includes('flattenDeptTree') ||
   !departmentsPage.includes('buildDeptTree') ||
+  !departmentsPage.includes('ArrowUpOutlined') ||
+  !departmentsPage.includes('ArrowDownOutlined') ||
+  !departmentsPage.includes('Department order saved.') ||
   !departmentsPage.includes('TreeSelect') ||
   !departmentsPage.includes('assigned users cannot be deleted') ||
   !departmentsPage.includes('useCurrentPageFilters') ||
@@ -1013,7 +1018,7 @@ if (
   !departmentsPage.includes('rows={filteredRows}')
 ) {
   throw new Error(
-    'Departments page must use live SDK tree CRUD with bounded filtering and current-page export.',
+    'Departments page must use live SDK tree CRUD, sibling order updates, bounded filtering and current-page export.',
   );
 }
 

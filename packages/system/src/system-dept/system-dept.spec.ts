@@ -56,6 +56,47 @@ describe('@opencore/system system-dept', () => {
         }),
       ]),
     );
+
+    const sibling = await service.createDept({
+      code: 'qa-docs',
+      name: 'Quality Docs',
+      parentId: 'dept_engineering',
+      order: 30,
+      enabled: true,
+    });
+    await expect(
+      service.updateDeptOrder({
+        items: [
+          { id: sibling.id, order: 1 },
+          { id: dept.id, order: 2 },
+        ],
+      }),
+    ).resolves.toMatchObject({
+      updatedCount: 2,
+      items: [
+        expect.objectContaining({ id: sibling.id, order: 1 }),
+        expect.objectContaining({ id: dept.id, order: 2 }),
+      ],
+    });
+    await expect(
+      service.updateDeptOrder({
+        items: [
+          { id: dept.id, order: 10 },
+          { id: dept.id, order: 20 },
+        ],
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.updateDeptOrder({
+        items: [
+          { id: dept.id, order: 10 },
+          { id: 'dept_operations', order: 20 },
+        ],
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(service.deleteDept(sibling.id)).resolves.toEqual({
+      deleted: true,
+    });
     await expect(service.createExportPreview()).resolves.toMatchObject({
       filename: 'opencore-system-depts.csv',
       scope: 'current-page',
@@ -112,10 +153,12 @@ describe('@opencore/system system-dept', () => {
     const testRunId = randomUUID().slice(0, 8);
     const parentCode = `dept_parent_${testRunId}`;
     const childCode = `dept_child_${testRunId}`;
+    const siblingCode = `dept_sibling_${testRunId}`;
     const boundCode = `dept_bound_${testRunId}`;
     const boundUsername = `dept_user_${testRunId}`;
     let parentId = '';
     let childId = '';
+    let siblingId = '';
     let boundDeptId = '';
 
     beforeEach(async () => {
@@ -165,6 +208,13 @@ describe('@opencore/system system-dept', () => {
         order: 50,
       });
       childId = child.id;
+      const sibling = await service.createDept({
+        code: siblingCode,
+        name: 'Prisma Sibling Dept',
+        parentId,
+        order: 60,
+      });
+      siblingId = sibling.id;
 
       await expect(service.getDept(parentId)).resolves.toMatchObject({
         id: parentId,
@@ -176,10 +226,41 @@ describe('@opencore/system system-dept', () => {
       await expect(
         service.updateDept(parentId, { parentId: childId }),
       ).rejects.toThrow(BadRequestException);
+      await expect(
+        service.updateDeptOrder({
+          items: [
+            { id: siblingId, order: 1 },
+            { id: childId, order: 2 },
+          ],
+        }),
+      ).resolves.toMatchObject({
+        updatedCount: 2,
+        items: [
+          expect.objectContaining({ id: siblingId, order: 1 }),
+          expect.objectContaining({ id: childId, order: 2 }),
+        ],
+      });
+      await expect(
+        service.updateDeptOrder({
+          items: [
+            { id: childId, order: 10 },
+            { id: 'dept_engineering', order: 20 },
+          ],
+        }),
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        service.updateDeptOrder({
+          items: [{ id: `missing_${childId}`, order: 10 }],
+        }),
+      ).rejects.toThrow();
       await expect(service.deleteDept(childId)).resolves.toEqual({
         deleted: true,
       });
       childId = '';
+      await expect(service.deleteDept(siblingId)).resolves.toEqual({
+        deleted: true,
+      });
+      siblingId = '';
       await expect(service.deleteDept(parentId)).resolves.toEqual({
         deleted: true,
       });
@@ -226,13 +307,14 @@ describe('@opencore/system system-dept', () => {
         where: { username: boundUsername },
       });
       await prisma.systemDept.deleteMany({
-        where: { code: { in: [childCode] } },
+        where: { code: { in: [childCode, siblingCode] } },
       });
       await prisma.systemDept.deleteMany({
         where: { code: { in: [parentCode, boundCode] } },
       });
       parentId = '';
       childId = '';
+      siblingId = '';
       boundDeptId = '';
     }
   });

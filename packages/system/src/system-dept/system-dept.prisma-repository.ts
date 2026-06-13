@@ -7,6 +7,7 @@ import {
 import { PrismaService } from '@opencore/database';
 import type {
   CreateSystemDeptDto,
+  UpdateSystemDeptOrderDto,
   UpdateSystemDeptDto,
 } from './system-dept.dto';
 import type {
@@ -18,9 +19,12 @@ import {
   assertNoDeptChildren,
   assertNoDeptSelfParent,
   assertNoDeptUsers,
+  assertSameDeptParent,
   buildSystemDeptTree,
+  compareSystemDeptRecords,
   normalizeCreateSystemDeptInput,
   normalizeSystemDeptFilters,
+  normalizeUpdateSystemDeptOrderInput,
   normalizeUpdateSystemDeptInput,
   SystemDeptRepository,
   toSystemDeptOptionRecord,
@@ -111,6 +115,35 @@ export class PrismaSystemDeptRepository extends SystemDeptRepository {
     return toSystemDeptRecord(dept);
   }
 
+  async updateDeptOrder(
+    body: UpdateSystemDeptOrderDto,
+  ): Promise<{ updatedCount: number; items: SystemDeptRecord[] }> {
+    const input = normalizeUpdateSystemDeptOrderInput(body);
+    const ids = input.map((item) => item.id);
+    const existing = (
+      await this.prisma.systemDept.findMany({
+        where: { id: { in: ids } },
+      })
+    ).map(toSystemDeptRecord);
+
+    assertFoundDeptIds(ids, existing);
+    assertSameDeptParent(existing);
+
+    const updated = await this.prisma.$transaction(
+      input.map((item) =>
+        this.prisma.systemDept.update({
+          where: { id: item.id },
+          data: { order: item.order },
+        }),
+      ),
+    );
+
+    return {
+      updatedCount: updated.length,
+      items: updated.map(toSystemDeptRecord).sort(compareSystemDeptRecords),
+    };
+  }
+
   async deleteDept(id: string): Promise<{ deleted: true }> {
     await this.findDeptById(id);
     assertNoDeptChildren(
@@ -164,4 +197,18 @@ function toSystemDeptRecord(dept: PrismaSystemDept): SystemDeptRecord {
     createdAt: dept.createdAt.toISOString(),
     updatedAt: dept.updatedAt.toISOString(),
   };
+}
+
+function assertFoundDeptIds(
+  expectedIds: readonly string[],
+  rows: readonly SystemDeptRecord[],
+): void {
+  const foundIds = new Set(rows.map((row) => row.id));
+  const missingIds = expectedIds.filter((id) => !foundIds.has(id));
+
+  if (missingIds.length > 0) {
+    throw new NotFoundException(
+      `System dept not found: ${missingIds.join(', ')}`,
+    );
+  }
 }

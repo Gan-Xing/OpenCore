@@ -110,3 +110,24 @@ export class UpdateSystemDeptDto {
   @ApiProperty({ required: false })
   enabled?: boolean;
 }
+
+export class UpdateSystemDeptOrderItemDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  order!: number;
+}
+
+export class UpdateSystemDeptOrderDto {
+  @ApiProperty({ type: () => [UpdateSystemDeptOrderItemDto] })
+  items!: readonly UpdateSystemDeptOrderItemDto[];
+}
+
+export class SystemDeptOrderMutationResultDto {
+  @ApiProperty()
+  updatedCount!: number;
+
+  @ApiProperty({ type: () => [SystemDeptDto] })
+  items!: readonly SystemDeptDto[];
+}
