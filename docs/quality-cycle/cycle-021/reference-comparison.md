@@ -1229,3 +1229,42 @@ preserving its key-based configuration model:
 
 OpenCore still does not claim secret vault/KMS integration or broad runtime
 feature-flag propagation in this round.
+
+## Round 41 User Role Assignment Reference Shape
+
+Yudao exposes dedicated user-side role assignment through
+`GET /system/permission/list-user-roles` and
+`POST /system/permission/assign-user-role`, guarded by
+`system:permission:assign-user-role`. Its Vue3 user table has a row-level
+`分配角色` action that opens a modal, loads the user's current role ids and
+saves the selected role set back to the backend. RuoYi similarly treats user
+role assignment as a user-management table action, not only as an edit-form
+side effect.
+
+OpenCore admits the matching stage-14 loop while preserving its string role
+code model and existing session store:
+
+- `core.user` registers a dedicated `core:user:manage` permission for
+  user-side role assignment;
+- `GET /api/core/users/:id/roles` returns the current user's role-code
+  assignment summary;
+- `PATCH /api/core/users/:id/roles` accepts `{ roleCodes }`, rejects duplicate
+  codes, missing roles and system-user assignment, and returns
+  `revokedSessionCount`;
+- the API revokes active online-user sessions only when the role set changes,
+  so stale bearer tokens cannot keep old role/permission state;
+- SDK and OpenAPI expose typed `getUserRoleAssignment` and `assignUserRoles`
+  contracts;
+- Admin access exposes `canAssignUserRoles`;
+- Admin Users adds a row-level `Assign Roles` modal with role multi-select,
+  missing-permission copy and system-user disabled state;
+- fixed-port, deploy and public smoke prove permission guards, system-user
+  guard, duplicate/missing role guards, role clear/restore, token revocation
+  and relogin role refresh;
+- public Admin verification proves the deployed Users chunk contains
+  `Assign Roles`, `Missing core:user:manage`,
+  `System users cannot be assigned roles` and `Roles assigned.`, while the main
+  bundle still points at the API origin without `/api/api`.
+
+OpenCore does not claim email/phone/social profile expansion in this round;
+those remain outside the currently admitted user-management waterline.

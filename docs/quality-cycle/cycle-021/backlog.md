@@ -1160,6 +1160,41 @@ secret vault/KMS or broader runtime feature-flag propagation.
       gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 41: core.user Dedicated Role Assignment
+
+Why this slice: after user CRUD, security mutations, post binding, department
+filtering, profile/password/avatar, batch mutations, import/export and import
+permission were live, the remaining admitted `core.user` waterline debt was a
+dedicated user-side role assignment workflow. Yudao exposes this as
+`list-user-roles` plus `assign-user-role` on the user table, guarded by a
+separate assignment permission. OpenCore already had role-side user assignment,
+but operators still lacked the expected action from the Users page.
+
+- [x] Recompare Yudao/RuoYi user-role assignment shape against OpenCore.
+- [x] Register `core:user:manage` for the dedicated user-role assignment
+      workflow.
+- [x] Add `UserRoleAssignmentDto` and `AssignUserRolesDto`.
+- [x] Add `getUserRoleAssignment` and `assignUserRoles` repository/service
+      contracts for seed and Prisma implementations.
+- [x] Reject duplicate role codes, missing role codes and system-user
+      assignment before mutation.
+- [x] Add `GET/PATCH /api/core/users/:id/roles` before dynamic `users/:id`,
+      guarded by `core:user:manage`.
+- [x] Revoke active online-user sessions when a user's role assignment
+      changes, and return `revokedSessionCount`.
+- [x] Extend API permission matrix, OpenAPI and SDK types/client/tests.
+- [x] Extend Admin access with `canAssignUserRoles`.
+- [x] Add Admin Users row-level `Assign Roles` modal, missing-permission marker
+      and system-user disabled state.
+- [x] Extend Admin static smoke for `core:user:manage`,
+      `canAssignUserRoles`, role-assignment services and Users page markers.
+- [x] Extend fixed-port/deploy/public `core.user` smoke to prove permission
+      guard, system-user guard, duplicate/missing role guards, clear/restore,
+      session revocation and relogin role refresh.
+- [x] Run focused tests, OpenAPI/SDK checks, typecheck, format, build,
+      fixed-port smoke, deployment and public URL verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -1186,6 +1221,11 @@ treat "minimal loop" as "minimal final product".
 - [x] Round 8/21 `core.dict`: dict type CRUD, item-level management API/SDK/
       Admin, public simple-list consumer endpoint, disabled type/item filtering
       and deserialization smoke.
+- [x] Round 7/19/22/23/28/29/30/31/32/33/34/35/36/41 `core.user`: user CRUD,
+      status/reset/update/delete session invalidation, post binding,
+      department filtering, self-profile/password/avatar, batch mutations,
+      import/export, import permission and dedicated user-side role assignment
+      are live for the current admitted waterline.
 
 ### First Loop, Needs Enhancement
 
@@ -1197,18 +1237,6 @@ treat "minimal loop" as "minimal final product".
 - [ ] Round 3/22/25 `core.post`: user-post binding and simple-list option
       source are complete; batch operations and ordered list refinements
       remain.
-- [ ] Round 7/19/22/23/28/29/30/31/32/33/34/35/36 `core.user`: status toggle, reset
-      password and direct user-mutation session invalidation are complete. Post
-      binding, department side-tree filtering, self-profile basic display-name
-      read/update, self-password and authenticated simple-list option source
-      are complete. Profile avatar upload/public preview/replace/delete is
-      complete. Batch enable/disable and batch delete are complete.
-      CSV-compatible import template/import results with update-existing
-      session revocation are complete. Dedicated `core:user:import` permission
-      is complete. Native XLSX export payload and Admin download are complete.
-      Native XLSX import template/parsing is complete while CSV import remains
-      backwards compatible. Any dedicated User-page role assignment workflow
-      still needs enhancement if admitted.
 - [ ] Round 9/24/37/38/39/40 `core.config`: public get-value-by-key, cache refresh
       and mutation invalidation are complete. Category/name/remark metadata is
       complete. Native XLSX export payload and Admin download are complete.

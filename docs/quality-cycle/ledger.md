@@ -83,3 +83,4 @@
 - 2026-06-13 04:05:18 UTC completed cycle-021 round-038 core.config native XLSX export productization; featureCommit=3419c24; deployed=39172/39174; publicVerified=config-export-xlsx,admin-config-download-excel,admin-proxy-config-export
 - 2026-06-13 04:33:19 UTC completed cycle-021 round-039 core.config batch deletion productization; featureCommit=4940291; deployed=39172/39174; publicVerified=config-batch-delete,admin-config-delete-selected,admin-proxy-config-batch
 - 2026-06-13 04:55:01 UTC completed cycle-021 round-040 core.config system deletion policy productization; featureCommit=c7a3db8; deployed=39172/39174; publicVerified=config-system-flag,system-delete-guard,mixed-batch-system-guard,admin-config-system-ui
+- 2026-06-13 05:21:34 UTC completed cycle-021 round-041 core.user dedicated role assignment productization; featureCommit=fdfbd12; deployed=39172/39174; publicVerified=user-role-assignment,session-revocation,admin-users-assign-roles,admin-public-login

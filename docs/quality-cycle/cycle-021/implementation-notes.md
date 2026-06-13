@@ -3242,3 +3242,96 @@ Against public endpoints after deploy:
   `c7a3db8 feat(core-config): guard system config deletion / 保护系统配置删除`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 41 Capability
+
+Capability: `core.user` dedicated user-side role assignment.
+
+Goal: add the operator workflow expected from RuoYi/Yudao where a user row can
+open a role-assignment dialog, save selected roles through a dedicated
+permission, and revoke stale sessions when the assignment changes.
+
+## Round 41 Implemented
+
+- Rechecked Yudao user role assignment through
+  `list-user-roles` and `assign-user-role`, plus the user table `分配角色`
+  modal.
+- Added `core:user:manage` to the `core.user` registry permission set.
+- Added user-role assignment DTOs and repository/service contracts.
+- Implemented seed and Prisma role assignment reads and writes.
+- Reused role-code normalization and added duplicate/missing-role/system-user
+  guards for the user-side mutation path.
+- Added `GET/PATCH /api/core/users/:id/roles`, guarded by
+  `core:user:manage`, before the dynamic `users/:id` route.
+- Revoked active online-user sessions when the role set changes.
+- Extended API permission matrix, OpenAPI snapshot, SDK types/client/tests and
+  registry fixture tests.
+- Added Admin access `canAssignUserRoles`.
+- Added Admin Users `Assign Roles` row action, modal, missing-permission copy
+  and system-user disabled state.
+- Extended Admin static smoke and `tools/scripts/smoke-core-user.mjs` with
+  role-assignment service/UI markers and real HTTP guards.
+
+## Round 41 Verification
+
+- `pnpm nx test system --testFile=system-user.spec.ts`
+- `pnpm nx test api --testFile=rbac.permission-matrix.spec.ts`
+- `pnpm nx test sdk --testFile=rbac-client.spec.ts`
+- `pnpm nx test module-registry`
+- `pnpm nx test admin`
+- `pnpm nx test contracts`
+- `node --check tools/scripts/smoke-core-user.mjs`
+- `node --check apps/admin/scripts/smoke-test.mjs`
+- `pnpm openapi:export`
+- `pnpm openapi:check`
+- `pnpm sdk:check`
+- `pnpm openapi:registry-tags:check`
+- `pnpm nx run-many -t typecheck --projects=api,admin,sdk,system,module-registry,contracts`
+- `pnpm prisma:validate`
+- `pnpm build:api`
+- `pnpm build:admin`
+- `pnpm format:check`
+- `git diff --check`
+- `pnpm smoke:api:local`
+- `pnpm deploy:opencore`
+
+`pnpm smoke:api:local` passed on fixed port `39173`, including
+`core.user.role-assignment.get`,
+`core.user.role-assignment.permission-guard`,
+`core.user.role-assignment.system-user-guard`,
+`core.user.role-assignment.duplicate-role-guard`,
+`core.user.role-assignment.missing-role-guard`,
+`core.user.role-assignment.clear`,
+`core.user.role-assignment.revoke-session`,
+`core.user.role-assignment.login-refresh`,
+`core.user.role-assignment.restore` and
+`core.user.role-assignment.restore-revoke-session`.
+
+`pnpm deploy:opencore` passed, deploying API/Admin on fixed ports
+`39172`/`39174`; deploy smoke included the same `core.user` role-assignment
+guards, duplicate `/api/api` login guards, Admin bundle cache checks and
+session guards.
+
+## Round 41 Public Verification
+
+Against public endpoints after deploy:
+
+- Public API: `http://144.217.243.161:39172`
+- Public Admin: `http://144.217.243.161:39174`
+- Public `pnpm smoke:core-user` passed and included all
+  `core.user.role-assignment.*` guards.
+- Public Admin Users chunk `p__System__Users.9f27a9ab.async.js` contains
+  `Assign Roles`, `Missing core:user:manage`,
+  `System users cannot be assigned roles`, `Roles assigned.` and
+  `Select roles`.
+- Public Admin main bundle `umi.a0a7b9b5.js` contains the deployed API origin
+  and does not contain duplicate `/api/api` prefixes.
+- Public Admin same-origin `/api/auth/login` succeeded.
+- Public API `/api/auth/login` succeeded.
+
+## Round 41 Commit Record
+
+- Feature commit:
+  `fdfbd12 feat(core-user): add dedicated user role assignment / 新增用户侧角色分配`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

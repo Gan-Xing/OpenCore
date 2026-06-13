@@ -3,8 +3,8 @@
 Date: 2026-06-13
 Repository: `Gan-Xing/OpenCore`
 Default branch: `main`
-Latest observed feature commit: `c7a3db8 feat(core-config): guard system config deletion / 保护系统配置删除`
-Latest deployed feature commit: `c7a3db8 feat(core-config): guard system config deletion / 保护系统配置删除`
+Latest observed feature commit: `fdfbd12 feat(core-user): add dedicated user role assignment / 新增用户侧角色分配`
+Latest deployed feature commit: `fdfbd12 feat(core-user): add dedicated user role assignment / 新增用户侧角色分配`
 Latest deployed hardening commit: `04e446c fix(online-user): stabilize admin session smoke / 稳定在线用户管理员会话冒烟`
 
 ## One-sentence Goal
@@ -106,6 +106,7 @@ productization waterline completion; see
 - Round 38 `core.config` native XLSX export stage 4
 - Round 39 `core.config` batch deletion stage 5
 - Round 40 `core.config` system deletion policy stage 6
+- Round 41 `core.user` dedicated role assignment stage 14
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -480,6 +481,24 @@ config(s)?` 和 `dataIndex:"system"`，公网 Admin main bundle `umi.d3cc4418.js
 `/api/auth/login` 与公网 API 登录均通过。注意：这轮关闭的是内置配置不可删策略，不等于
 secret vault/KMS 或更广泛 runtime feature-flag propagation 已完成。
 
+Round 41 回到 `core.user` 队列，补齐专用用户侧角色分配闭环。参考 Yudao
+`GET /system/permission/list-user-roles` 和
+`POST /system/permission/assign-user-role` 及 Admin 用户列表里的“分配角色”弹窗，
+OpenCore 新增 `GET/PATCH /api/core/users/:id/roles`，使用
+`core:user:manage` 权限并放在动态 `users/:id` 路由之前。seed/Prisma repository
+均复用角色校验，拒绝重复角色、缺失角色和 system user 修改；角色关系变化会撤销该用户
+active online-user sessions，重新登录后 roleCodes 刷新。SDK、OpenAPI、权限矩阵、
+registry、Admin access 和 Admin Users 页面同步；Users 页面新增 `Assign Roles`
+弹窗、缺权提示 `Missing core:user:manage` 和 system user 禁用状态。固定 smoke、部署
+smoke 和公网 smoke 均验证 `core.user.role-assignment.*`，包括权限守卫、system user
+guard、duplicate/missing role guard、clear/restore 以及旧 token 401；公网 Admin
+`p__System__Users.9f27a9ab.async.js` 已验证包含 `Assign Roles`、
+`Missing core:user:manage`、`System users cannot be assigned roles` 和
+`Roles assigned.`，公网 main bundle `umi.a0a7b9b5.js` 已验证指向 API
+`http://144.217.243.161:39172` 且不含重复 API 前缀，公网 Admin 同源登录与公网 API
+登录均通过。注意：这轮关闭的是准入的用户侧角色分配水位，不等于邮箱/手机号/社交账号等未准入
+用户资料扩展已完成。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -487,10 +506,10 @@ The productization waterline now classifies:
 - Meets current waterline: Round 6 `core.permission`, Round 12
   `core.audit-log`, Round 13/14 `monitor.online-user`, Round 10/15
   `core.file`, Round 4/16 `core.menu`, Round 5/17/18/20 `core.role`,
-  Round 8/21 `core.dict`.
+  Round 8/21 `core.dict`,
+  Round 7/19/22/23/28/29/30/31/32/33/34/35/36/41 `core.user`.
 - First loop, enhance: Round 1 `core.notice`, Round 2/27 `core.dept`, Round
-  3/22/25 `core.post`, Round 7/19/22/23/28/29/30/31/32/33/34/35/36
-  `core.user`, Round 9/24/37/38/39/40 `core.config`, Round 11/26
+  3/22/25 `core.post`, Round 9/24/37/38/39/40 `core.config`, Round 11/26
   `core.login-log`.
 - Thin, rework: none after Round 16.
 
@@ -498,23 +517,7 @@ The P0 remediation queue from the post-Round 13 re-audit is now clear. The next
 round should continue with the P1 enhancement queue unless a new waterline audit
 finds another blocker:
 
-1. `core.user`: Round 19 closed user status/reset-password and direct
-   user-mutation session semantics; Round 22 closed user-post binding; Round
-   23 closed department side-tree filtering; Round 28 closed authenticated
-   self-profile basic display-name read/update; Round 29 closed authenticated
-   self-password change with old-password verification and session revocation;
-   Round 30 closed the authenticated user simple-list option source consumed
-   by Admin role user assignment; Round 31 closed profile avatar upload,
-   public preview, replacement and deletion; Round 32 closed batch
-   enable/disable and batch delete with session revocation; Round 33 closed
-   CSV-compatible user import template/import results with update-existing
-   session revocation; Round 34 closed the dedicated `core:user:import`
-   permission across registry/API/Admin/smoke; Round 35 closed native XLSX
-   export payload plus Admin download and smoke guards; Round 36 closed native
-   XLSX import template/parsing while keeping CSV backwards compatibility.
-   Remaining work is any dedicated User-page role assignment workflow if
-   admitted.
-2. `core.config`: Round 24 closed public get-value-by-key plus cache
+1. `core.config`: Round 24 closed public get-value-by-key plus cache
    refresh/invalidation; Round 37 closed category/name/remark metadata across
    API/SDK/Admin/smoke; Round 38 closed native XLSX export payload plus Admin
    download and smoke guards; Round 39 closed batch deletion with cache
@@ -522,15 +525,17 @@ finds another blocker:
    system/custom config deletion policy with API/Admin/smoke guards. Remaining
    work is broader runtime propagation boundaries and any admitted secret
    vault/KMS integration.
-3. `core.login-log`: Round 26 closed browser/OS parsing and server-side IP/time
+2. `core.login-log`: Round 26 closed browser/OS parsing and server-side IP/time
    filters. Remaining work is IP/location enrichment where feasible,
    cleanup/unlock policy integration and login-type/result expansion.
-4. `core.dept`: Round 27 closed the enabled-department simple-list option
+3. `core.dept`: Round 27 closed the enabled-department simple-list option
    source consumed by Admin Users. Remaining work is user binding path
    hardening, data-scope workflow integration and ordered tree operations where
    useful.
-5. `core.post`: Round 25 closed the enabled-post simple-list option source.
+4. `core.post`: Round 25 closed the enabled-post simple-list option source.
    Remaining work is batch operations and ordered list operations where useful.
+5. `core.notice`: read/unread state, inbox/header badge and delivery adapter
+   design remain below full notice-product depth.
 
 Commit `f4569a4` also fixed the remaining stale-login failure at API level:
 `@opencore/core` now normalizes duplicate global prefixes before Nest route
