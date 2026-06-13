@@ -29,10 +29,11 @@ import {
   Typography,
   message,
 } from 'antd';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState, type Key } from 'react';
 import {
   createOpenCoreSystemPost,
   deleteOpenCoreSystemPost,
+  deleteOpenCoreSystemPosts,
   getOpenCoreSystemPost,
   listOpenCoreSystemPosts,
   updateOpenCoreSystemPost,
@@ -109,6 +110,15 @@ export default function PostsPage() {
   const [editingPost, setEditingPost] = useState<SystemPostSummary>();
   const [formOpen, setFormOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [batchDeleting, setBatchDeleting] = useState(false);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<readonly Key[]>([]);
+  const selectedPostCodes = useMemo(
+    () =>
+      selectedRowKeys
+        .map(String)
+        .filter((code) => rows.some((record) => record.code === code)),
+    [rows, selectedRowKeys],
+  );
   const { filteredRows, toolbar: filterToolbar } =
     useCurrentPageFilters<SystemPostSummary>({
       rows,
@@ -122,6 +132,11 @@ export default function PostsPage() {
     try {
       const posts = await listOpenCoreSystemPosts({ page: 1, pageSize: 100 });
       setRows(posts);
+      setSelectedRowKeys((keys) =>
+        keys.filter((key) =>
+          posts.some((record) => record.code === String(key)),
+        ),
+      );
       setLoadError(undefined);
     } catch (error: unknown) {
       setRows(fallbackRows);
@@ -210,6 +225,24 @@ export default function PostsPage() {
     await deleteOpenCoreSystemPost(record.code);
     message.success('Post deleted.');
     await loadPosts();
+  };
+
+  const deleteSelectedPosts = async () => {
+    const codes = selectedPostCodes;
+    if (codes.length === 0) {
+      message.warning('Select at least one post.');
+      return;
+    }
+
+    setBatchDeleting(true);
+    try {
+      const result = await deleteOpenCoreSystemPosts({ codes });
+      setSelectedRowKeys([]);
+      message.success(`Selected posts deleted. ${result.affected} row(s).`);
+      await loadPosts();
+    } finally {
+      setBatchDeleting(false);
+    }
   };
 
   const columns: ProColumns<SystemPostSummary>[] = [
@@ -309,6 +342,23 @@ export default function PostsPage() {
           >
             Refresh
           </Button>,
+          <Popconfirm
+            key="batch-delete"
+            title={`Delete ${selectedPostCodes.length} selected post(s)?`}
+            okText="Delete"
+            okButtonProps={{ danger: true }}
+            disabled={selectedPostCodes.length === 0}
+            onConfirm={() => void deleteSelectedPosts()}
+          >
+            <Button
+              danger
+              disabled={selectedPostCodes.length === 0}
+              icon={<DeleteOutlined />}
+              loading={batchDeleting}
+            >
+              Delete selected
+            </Button>
+          </Popconfirm>,
           <CurrentPageExportButton<SystemPostSummary>
             key="export"
             columns={exportColumns}
@@ -319,6 +369,11 @@ export default function PostsPage() {
         pagination={{ pageSize: 10 }}
         dataSource={filteredRows}
         columns={columns}
+        rowSelection={{
+          selectedRowKeys: [...selectedRowKeys],
+          onChange: (keys) => setSelectedRowKeys(keys),
+          preserveSelectedRowKeys: true,
+        }}
       />
       <ReadOnlyDetailDrawer
         fields={selectedDetail ? createDetailFields(selectedDetail) : []}

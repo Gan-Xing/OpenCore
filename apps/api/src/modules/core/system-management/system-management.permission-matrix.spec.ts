@@ -19,6 +19,7 @@ const expectedPermissions = {
   downloadFile: ['core:file:read'],
   deleteNotice: ['core:notice:delete'],
   deletePost: ['core:post:delete'],
+  deletePosts: ['core:post:delete'],
   exportAuditLogs: ['core:audit-log:export'],
   exportConfig: ['core:config:export'],
   exportDepts: ['core:dept:export'],

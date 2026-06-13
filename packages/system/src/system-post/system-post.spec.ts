@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '@opencore/database';
 import { PrismaSystemPostRepository } from './system-post.prisma-repository';
@@ -66,6 +66,41 @@ describe('@opencore/system system-post', () => {
       scope: 'current-page',
       columns: ['code', 'name', 'order', 'enabled'],
     });
+    await service.createPost({
+      code: 'qa_batch_a',
+      name: 'Quality Batch A',
+      order: 31,
+    });
+    await service.createPost({
+      code: 'qa_batch_b',
+      name: 'Quality Batch B',
+      order: 32,
+    });
+    await expect(service.deletePosts({ codes: [] })).rejects.toThrow(
+      BadRequestException,
+    );
+    await expect(
+      service.deletePosts({ codes: ['qa_batch_a', 'qa_batch_a'] }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.deletePosts({ codes: ['qa_batch_a', 'missing_post'] }),
+    ).rejects.toThrow(NotFoundException);
+    await expect(service.getPost('qa_batch_a')).resolves.toMatchObject({
+      code: 'qa_batch_a',
+    });
+    await expect(
+      service.deletePosts({ codes: ['qa_batch_b', 'qa_batch_a'] }),
+    ).resolves.toEqual({
+      deleted: true,
+      affected: 2,
+      codes: ['qa_batch_a', 'qa_batch_b'],
+    });
+    await expect(service.getPost('qa_batch_a')).rejects.toThrow(
+      NotFoundException,
+    );
+    await expect(service.getPost('qa_batch_b')).rejects.toThrow(
+      NotFoundException,
+    );
     await expect(service.deletePost('qa')).resolves.toEqual({ deleted: true });
   });
 
@@ -94,6 +129,8 @@ describe('@opencore/system system-post', () => {
     );
     const testRunId = randomUUID().slice(0, 8);
     const code = `post_${testRunId}`;
+    const batchCodeA = `${code}_batch_a`;
+    const batchCodeB = `${code}_batch_b`;
 
     beforeEach(async () => {
       await cleanupTestRows();
@@ -175,9 +212,42 @@ describe('@opencore/system system-post', () => {
       });
     });
 
+    it('persists batch post deletion through Prisma', async () => {
+      await service.createPost({
+        code: batchCodeA,
+        name: 'Prisma Batch A',
+        order: 41,
+      });
+      await service.createPost({
+        code: batchCodeB,
+        name: 'Prisma Batch B',
+        order: 42,
+      });
+
+      await expect(
+        service.deletePosts({ codes: [batchCodeA, 'missing_post'] }),
+      ).rejects.toThrow(NotFoundException);
+      await expect(service.getPost(batchCodeA)).resolves.toMatchObject({
+        code: batchCodeA,
+      });
+
+      await expect(
+        service.deletePosts({ codes: [batchCodeB, batchCodeA] }),
+      ).resolves.toEqual({
+        deleted: true,
+        affected: 2,
+        codes: [batchCodeA, batchCodeB],
+      });
+      await expect(
+        prisma.systemPost.findMany({
+          where: { code: { in: [batchCodeA, batchCodeB] } },
+        }),
+      ).resolves.toEqual([]);
+    });
+
     async function cleanupTestRows(): Promise<void> {
       await prisma.systemPost.deleteMany({
-        where: { code },
+        where: { code: { in: [code, batchCodeA, batchCodeB] } },
       });
     }
   });

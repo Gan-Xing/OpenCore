@@ -54,6 +54,22 @@ export class SystemPostOptionDto {
   order!: number;
 }
 
+export class BatchDeleteSystemPostsDto {
+  @ApiProperty({ type: [String] })
+  codes!: readonly string[];
+}
+
+export class SystemPostBatchMutationResultDto {
+  @ApiProperty()
+  deleted!: true;
+
+  @ApiProperty()
+  affected!: number;
+
+  @ApiProperty({ type: [String] })
+  codes!: readonly string[];
+}
+
 export class SystemPostQueryDto {
   @ApiProperty({ required: false, default: 1 })
   page?: number | string;

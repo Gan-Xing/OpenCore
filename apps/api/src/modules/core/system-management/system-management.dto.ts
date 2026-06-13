@@ -9,6 +9,7 @@ export {
 } from '@opencore/audit';
 export {
   BatchDeleteSystemConfigsDto,
+  BatchDeleteSystemPostsDto,
   CreateDictTypeDto,
   CreateDictItemDto,
   CreateSystemDeptDto,
@@ -34,6 +35,7 @@ export {
   SystemNoticePageDto,
   SystemNoticeQueryDto,
   SystemPostDto,
+  SystemPostBatchMutationResultDto,
   SystemPostOptionDto,
   SystemPostPageDto,
   SystemPostQueryDto,

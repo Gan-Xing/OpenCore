@@ -114,6 +114,7 @@ describe('createSystemManagementClient', () => {
       order: 30,
     });
     await client.updatePost('token', 'qa', { name: 'Quality Platform' });
+    await client.deletePosts('token', { codes: ['qa_batch_a', 'qa_batch_b'] });
     await client.deletePost('token', 'qa');
     await client.listNotices('token', {
       page: 1,
@@ -306,6 +307,11 @@ describe('createSystemManagementClient', () => {
       {
         path: '/core/posts/qa',
         method: 'PATCH',
+        token: 'token',
+      },
+      {
+        path: '/core/posts/batch',
+        method: 'DELETE',
         token: 'token',
       },
       {

@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
 import type {
+  BatchDeleteSystemPostsDto,
   CreateSystemPostDto,
   UpdateSystemPostDto,
 } from './system-post.dto';
@@ -12,11 +13,13 @@ import { seedSystemPosts, type SystemPostRecord } from './system-post.records';
 import {
   compareSystemPostRecords,
   createSystemPostPageResult,
+  normalizeBatchDeleteSystemPostsInput,
   normalizeCreateSystemPostInput,
   normalizeSystemPostFilters,
   normalizeSystemPostPageQuery,
   normalizeUpdateSystemPostInput,
   SystemPostRepository,
+  type SystemPostBatchMutationRecord,
   toSystemPostOptionRecord,
   type SystemPostOptionRecord,
   type SystemPostPageQuery,
@@ -93,6 +96,22 @@ export class SeedSystemPostRepository extends SystemPostRepository {
     this.findPost(code);
     this.posts = this.posts.filter((post) => post.code !== code);
     return { deleted: true };
+  }
+
+  async deletePosts(
+    body: BatchDeleteSystemPostsDto,
+  ): Promise<SystemPostBatchMutationRecord> {
+    const codes = normalizeBatchDeleteSystemPostsInput(body);
+    const selected = codes.map((code) => this.findPost(code));
+    const selectedCodes = new Set(selected.map((post) => post.code));
+
+    this.posts = this.posts.filter((post) => !selectedCodes.has(post.code));
+
+    return {
+      deleted: true,
+      affected: selected.length,
+      codes,
+    };
   }
 
   private findPost(code: string): SystemPostRecord {

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
 import type {
+  BatchDeleteSystemPostsDto,
   CreateSystemPostDto,
   UpdateSystemPostDto,
 } from './system-post.dto';
@@ -8,6 +9,7 @@ import type { SystemPostRecord } from './system-post.records';
 import {
   createSystemPostExportPreview,
   SystemPostRepository,
+  type SystemPostBatchMutationRecord,
   type SystemPostExportPreview,
   type SystemPostOptionRecord,
   type SystemPostPageQuery,
@@ -44,6 +46,12 @@ export class SystemPostService {
 
   deletePost(code: string): Promise<{ deleted: true }> {
     return this.repository.deletePost(code);
+  }
+
+  deletePosts(
+    body: BatchDeleteSystemPostsDto,
+  ): Promise<SystemPostBatchMutationRecord> {
+    return this.repository.deletePosts(body);
   }
 
   async createExportPreview(

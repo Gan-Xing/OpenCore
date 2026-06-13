@@ -34,6 +34,7 @@ import {
   AuditLogPageDto,
   AuditLogQueryDto,
   BatchDeleteSystemConfigsDto,
+  BatchDeleteSystemPostsDto,
   CreateDictItemDto,
   CreateDictTypeDto,
   CreateFileAssetDto,
@@ -67,6 +68,7 @@ import {
   SystemNoticeDto,
   SystemNoticePageDto,
   SystemNoticeQueryDto,
+  SystemPostBatchMutationResultDto,
   SystemPostDto,
   SystemPostOptionDto,
   SystemPostPageDto,
@@ -446,6 +448,16 @@ export class SystemManagementController {
   @ApiOkResponse({ type: [SystemPostOptionDto] })
   listPostOptions(): Promise<readonly SystemPostOptionDto[]> {
     return this.posts.listPostOptions();
+  }
+
+  @Delete('posts/batch')
+  @ApiTags('Core Posts')
+  @RequirePermission('core:post:delete')
+  @ApiOkResponse({ type: SystemPostBatchMutationResultDto })
+  deletePosts(
+    @Body() body: BatchDeleteSystemPostsDto,
+  ): Promise<SystemPostBatchMutationResultDto> {
+    return this.posts.deletePosts(body);
   }
 
   @Get('posts/:code')

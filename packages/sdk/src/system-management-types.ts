@@ -230,6 +230,16 @@ export type SystemPostQueryRequest = PageRequest & {
   enabled?: boolean;
 };
 
+export type BatchDeleteSystemPostsRequest = {
+  codes: readonly string[];
+};
+
+export type SystemPostBatchMutationSummary = {
+  deleted: true;
+  affected: number;
+  codes: readonly string[];
+};
+
 export type CreateSystemPostRequest = {
   code: string;
   name: string;

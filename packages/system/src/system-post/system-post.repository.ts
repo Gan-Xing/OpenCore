@@ -6,6 +6,7 @@ import {
   type PageResult,
 } from '@opencore/common';
 import type {
+  BatchDeleteSystemPostsDto,
   CreateSystemPostDto,
   UpdateSystemPostDto,
 } from './system-post.dto';
@@ -31,6 +32,12 @@ export type SystemPostOptionRecord = Pick<
   SystemPostRecord,
   'code' | 'name' | 'order'
 >;
+
+export type SystemPostBatchMutationRecord = {
+  deleted: true;
+  affected: number;
+  codes: readonly string[];
+};
 
 export type SystemPostNormalizedPageQuery = {
   page: number;
@@ -75,6 +82,10 @@ export abstract class SystemPostRepository {
   ): Promise<SystemPostRecord>;
 
   abstract deletePost(code: string): Promise<{ deleted: true }>;
+
+  abstract deletePosts(
+    body: BatchDeleteSystemPostsDto,
+  ): Promise<SystemPostBatchMutationRecord>;
 }
 
 export function normalizeSystemPostFilters(
@@ -177,7 +188,34 @@ export function toSystemPostOptionRecord(
   };
 }
 
+export function normalizeBatchDeleteSystemPostsInput(
+  body: BatchDeleteSystemPostsDto,
+): readonly string[] {
+  if (!Array.isArray(body?.codes)) {
+    throw new BadRequestException('System post codes must be an array.');
+  }
+
+  if (body.codes.length === 0) {
+    throw new BadRequestException('System post codes must not be empty.');
+  }
+
+  const codes = body.codes.map(normalizePostCode);
+  const duplicate = findFirstDuplicate(codes);
+
+  if (duplicate) {
+    throw new BadRequestException(
+      `System post code is duplicated: ${duplicate}`,
+    );
+  }
+
+  return [...codes].sort();
+}
+
 function normalizePostCode(value: string): string {
+  if (typeof value !== 'string') {
+    throw new BadRequestException('System post code must be a string.');
+  }
+
   const code = normalizeRequiredText(value, 'code');
 
   if (!POST_CODE_PATTERN.test(code)) {
@@ -234,4 +272,17 @@ function normalizeOrder(value: number | undefined): number {
   }
 
   return value;
+}
+
+function findFirstDuplicate(values: readonly string[]): string | undefined {
+  const seen = new Set<string>();
+
+  for (const value of values) {
+    if (seen.has(value)) {
+      return value;
+    }
+    seen.add(value);
+  }
+
+  return undefined;
 }

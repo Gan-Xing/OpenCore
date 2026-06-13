@@ -3,6 +3,7 @@ import type {
   AuditLogQueryRequest,
   AuditLogSummary,
   BatchDeleteSystemConfigsRequest,
+  BatchDeleteSystemPostsRequest,
   CreateDictItemRequest,
   CreateDictTypeRequest,
   CreateFileAssetRequest,
@@ -31,6 +32,7 @@ import type {
   SystemDeptTreeSummary,
   SystemNoticeQueryRequest,
   SystemNoticeSummary,
+  SystemPostBatchMutationSummary,
   SystemPostOptionSummary,
   SystemPostQueryRequest,
   SystemPostSummary,
@@ -184,6 +186,10 @@ export type SystemManagementClient = {
     body: UpdateSystemPostRequest,
   ) => Promise<SystemPostSummary>;
   deletePost: (token: Token, code: string) => Promise<DeleteResult>;
+  deletePosts: (
+    token: Token,
+    body: BatchDeleteSystemPostsRequest,
+  ) => Promise<SystemPostBatchMutationSummary>;
   listNotices: (
     token: Token,
     query?: SystemNoticeQueryRequest,
@@ -462,6 +468,12 @@ export function createSystemManagementClient(
     deletePost: (token, code) =>
       request<DeleteResult>(`/core/posts/${encodeURIComponent(code)}`, {
         method: 'DELETE',
+        token,
+      }),
+    deletePosts: (token, body) =>
+      request<SystemPostBatchMutationSummary>('/core/posts/batch', {
+        method: 'DELETE',
+        body,
         token,
       }),
     listNotices: (token, query) =>

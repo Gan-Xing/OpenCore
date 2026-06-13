@@ -22,6 +22,7 @@ const timeoutMs = Number(process.env.OPENCORE_SMOKE_TIMEOUT_MS || 10000);
 
 const runId = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 const postCode = `smoke_post_${runId}`;
+const batchPostCodes = [`${postCode}_batch_a`, `${postCode}_batch_b`];
 let token;
 const createdPostCodes = [];
 
@@ -122,6 +123,68 @@ try {
   assertEqual(exportPreview.scope, 'current-page', 'post export scope');
   assertArray(exportPreview.columns, 'post export columns');
 
+  await apiRequest('/core/posts/batch', {
+    method: 'DELETE',
+    expected: [400],
+    body: { codes: [] },
+  });
+  await apiRequest('/core/posts/batch', {
+    method: 'DELETE',
+    expected: [400],
+    body: { codes: [postCode, postCode] },
+  });
+  await apiRequest('/core/posts/batch', {
+    method: 'DELETE',
+    expected: [404],
+    body: { codes: [postCode, `missing_${postCode}`] },
+  });
+  await apiRequest(`/core/posts/${encodeURIComponent(postCode)}`);
+
+  for (const [index, code] of batchPostCodes.entries()) {
+    await apiRequest('/core/posts', {
+      method: 'POST',
+      body: {
+        code,
+        name: `OpenCore Batch Smoke Post ${index + 1}`,
+        order: 6 + index,
+        description: 'Post batch-delete smoke',
+        enabled: true,
+      },
+    });
+    createdPostCodes.push(code);
+  }
+
+  assertOptionCodesInclude(
+    await publicPostOptions(),
+    batchPostCodes,
+    'batch-delete simple-list setup',
+  );
+
+  const batchDeleteResult = await apiRequest('/core/posts/batch', {
+    method: 'DELETE',
+    body: { codes: [batchPostCodes[1], batchPostCodes[0]] },
+  });
+  assertEqual(batchDeleteResult.deleted, true, 'batch-delete result deleted');
+  assertEqual(batchDeleteResult.affected, 2, 'batch-delete result affected');
+  assertArray(batchDeleteResult.codes, 'batch-delete result codes');
+  assertEqual(
+    batchDeleteResult.codes.join(','),
+    [...batchPostCodes].sort().join(','),
+    'batch-delete result code order',
+  );
+
+  for (const code of batchPostCodes) {
+    forgetCreatedPostCode(code);
+    await apiRequest(`/core/posts/${encodeURIComponent(code)}`, {
+      expected: [404],
+    });
+  }
+  assertOptionCodesExclude(
+    await publicPostOptions(),
+    batchPostCodes,
+    'batch-delete simple-list options',
+  );
+
   await cleanupCreatedPosts();
   assertOptionCodesExclude(
     await publicPostOptions(),
@@ -148,6 +211,11 @@ try {
         'core.post.update-enabled',
         'core.post.simple-list.option-shape',
         'core.post.export',
+        'core.post.batch-delete.empty-guard',
+        'core.post.batch-delete.duplicate-guard',
+        'core.post.batch-delete.missing-guard',
+        'core.post.batch-delete',
+        'core.post.batch-delete.simple-list-cleanup',
         'core.post.delete',
       ],
     }),
@@ -268,6 +336,14 @@ async function cleanupCreatedPosts() {
   }
 
   createdPostCodes.length = 0;
+}
+
+function forgetCreatedPostCode(code) {
+  const index = createdPostCodes.indexOf(code);
+
+  if (index >= 0) {
+    createdPostCodes.splice(index, 1);
+  }
 }
 
 async function request(path, options = {}) {

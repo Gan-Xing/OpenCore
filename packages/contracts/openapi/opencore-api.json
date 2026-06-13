@@ -2437,6 +2437,36 @@
         "tags": ["SystemManagement", "Core Posts"]
       }
     },
+    "/api/core/posts/batch": {
+      "delete": {
+        "operationId": "SystemManagementController_deletePosts",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchDeleteSystemPostsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemPostBatchMutationResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Posts"]
+      }
+    },
     "/api/core/posts/{code}": {
       "get": {
         "operationId": "SystemManagementController_getPost",
@@ -6543,6 +6573,22 @@
           "order": { "type": "number" }
         },
         "required": ["code", "name", "order"]
+      },
+      "BatchDeleteSystemPostsDto": {
+        "type": "object",
+        "properties": {
+          "codes": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["codes"]
+      },
+      "SystemPostBatchMutationResultDto": {
+        "type": "object",
+        "properties": {
+          "deleted": { "type": "boolean" },
+          "affected": { "type": "number" },
+          "codes": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["deleted", "affected", "codes"]
       },
       "CreateSystemPostDto": {
         "type": "object",

@@ -6,17 +6,20 @@ import {
 import type { PageResult } from '@opencore/common';
 import { PrismaService } from '@opencore/database';
 import type {
+  BatchDeleteSystemPostsDto,
   CreateSystemPostDto,
   UpdateSystemPostDto,
 } from './system-post.dto';
 import type { SystemPostRecord } from './system-post.records';
 import {
   createSystemPostPageResult,
+  normalizeBatchDeleteSystemPostsInput,
   normalizeCreateSystemPostInput,
   normalizeSystemPostFilters,
   normalizeSystemPostPageQuery,
   normalizeUpdateSystemPostInput,
   SystemPostRepository,
+  type SystemPostBatchMutationRecord,
   type SystemPostOptionRecord,
   type SystemPostPageQuery,
 } from './system-post.repository';
@@ -103,6 +106,32 @@ export class PrismaSystemPostRepository extends SystemPostRepository {
     await this.findPostByCode(code);
     await this.prisma.systemPost.delete({ where: { code } });
     return { deleted: true };
+  }
+
+  async deletePosts(
+    body: BatchDeleteSystemPostsDto,
+  ): Promise<SystemPostBatchMutationRecord> {
+    const codes = normalizeBatchDeleteSystemPostsInput(body);
+    const posts = await this.prisma.systemPost.findMany({
+      where: { code: { in: [...codes] } },
+      select: { code: true },
+    });
+    const existingCodes = new Set(posts.map((post) => post.code));
+    const missing = codes.find((code) => !existingCodes.has(code));
+
+    if (missing) {
+      throw new NotFoundException(`System post not found: ${missing}`);
+    }
+
+    await this.prisma.systemPost.deleteMany({
+      where: { code: { in: [...codes] } },
+    });
+
+    return {
+      deleted: true,
+      affected: codes.length,
+      codes,
+    };
   }
 
   private async findPostByCode(code: string): Promise<PrismaSystemPost> {

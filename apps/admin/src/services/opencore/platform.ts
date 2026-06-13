@@ -10,6 +10,7 @@ import {
   type AuditLogSummary,
   type BatchDeleteUsersRequest,
   type BatchDeleteSystemConfigsRequest,
+  type BatchDeleteSystemPostsRequest,
   type BatchKickOutSessionsRequest,
   type BatchKickOutSessionsResult,
   type BatchSetUserStatusRequest,
@@ -58,6 +59,7 @@ import {
   type OnlineUserSessionSummary,
   type SystemNoticeQueryRequest,
   type SystemNoticeSummary,
+  type SystemPostBatchMutationSummary,
   type SystemPostOptionSummary,
   type SystemPostQueryRequest,
   type SystemPostSummary,
@@ -660,6 +662,12 @@ export function deleteOpenCoreSystemPost(
   code: string,
 ): Promise<{ deleted: true }> {
   return systemManagementClient.deletePost(getRequiredAdminToken(), code);
+}
+
+export function deleteOpenCoreSystemPosts(
+  body: BatchDeleteSystemPostsRequest,
+): Promise<SystemPostBatchMutationSummary> {
+  return systemManagementClient.deletePosts(getRequiredAdminToken(), body);
 }
 
 export async function listOpenCoreSystemNotices(

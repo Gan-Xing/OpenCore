@@ -354,6 +354,7 @@ if (
   !opencorePlatformService.includes('createOpenCoreSystemPost') ||
   !opencorePlatformService.includes('updateOpenCoreSystemPost') ||
   !opencorePlatformService.includes('deleteOpenCoreSystemPost') ||
+  !opencorePlatformService.includes('deleteOpenCoreSystemPosts') ||
   !opencorePlatformService.includes('listOpenCoreSystemNotices') ||
   !opencorePlatformService.includes('publishOpenCoreSystemNotice') ||
   !opencorePlatformService.includes('archiveOpenCoreSystemNotice')
@@ -967,13 +968,17 @@ if (
   !postsPage.includes('createOpenCoreSystemPost') ||
   !postsPage.includes('updateOpenCoreSystemPost') ||
   !postsPage.includes('deleteOpenCoreSystemPost') ||
+  !postsPage.includes('deleteOpenCoreSystemPosts') ||
+  !postsPage.includes('selectedPostCodes') ||
+  !postsPage.includes('rowSelection') ||
+  !postsPage.includes('Delete selected') ||
   !postsPage.includes('useCurrentPageFilters') ||
   !postsPage.includes('CurrentPageExportButton') ||
   !postsPage.includes('dataSource={filteredRows}') ||
   !postsPage.includes('rows={filteredRows}')
 ) {
   throw new Error(
-    'Posts page must use live SDK CRUD with bounded filtering and current-page export.',
+    'Posts page must use live SDK CRUD and batch deletion with bounded filtering and current-page export.',
   );
 }
 
