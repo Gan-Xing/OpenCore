@@ -11,8 +11,3 @@
 - [x] Q010-P5-ADMIN-SMOKE-DETAIL-GUARD：阶段 5；问题：Admin smoke checks do not guard core detail drawer parity；参考来源：cycle-006 admitted detail checks、OpenCore smoke-test conventions；涉及文件：`apps/admin/scripts/smoke-test.mjs`；实施要求：assert core wrappers use `ReadOnlyDetailDrawer` and core pages pass `detailFields={detailFields}`, with config redaction enforced；完成标准：core detail metadata cannot regress silently.
 
 - [x] Q010-P6-OPENFORGE-CORE-DETAIL-DOCS：阶段 6；问题：OpenForge docs mention generated detail drawers generally but not core wrapper detail metadata and config detail redaction；参考来源：OpenForge Admin template docs、Yudao/RuoYi detail component conventions；涉及文件：`docs/development/openforge-template-authoring.md`、`docs/development/openforge-v1-architecture.md`；实施要求：document generated core Admin wrappers must provide read-only detail metadata and redact secret config detail values；完成标准：docs match S6/S7 core detail behavior.
-
-- [x] Q010-CLOSE-001：更新 `docs/quality-cycle/cycle-010/implementation-notes.md`。
-- [x] Q010-CLOSE-002：写 `docs/quality-cycle/cycle-010/completion-report.md`。
-- [x] Q010-CLOSE-003：运行全仓 gate。
-- [x] Q010-CLOSE-004：运行 `node tools/quality-cycle/opencore-quality-cycle.mjs complete-cycle --max 20 --run-gate` 并确认 completedCycles +1。

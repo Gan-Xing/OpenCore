@@ -28,7 +28,3 @@
 - SDK clients now include detail methods and path specs across collaboration, operations, and integration clients.
 - OpenForge authoring and architecture docs now require list/detail/action-heavy generated modules to define read-only detail endpoints with explicit read permission, redaction, and hidden/deleted-record policy.
 - OpenAPI export now includes 90 paths, 118 operations, and 108 schemas after the detail endpoints were admitted.
-
-## Verification
-
-Focused checks and the applicable gate passed. Command transcripts are intentionally omitted; keep unique defects, guards and decisions only.

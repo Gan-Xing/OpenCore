@@ -21,7 +21,3 @@ Cycle 005 added read-only detail endpoint contracts for existing admitted S10/S1
 ## Scope Guard
 
 Cycle 005 did not add BPMN, workflow designer, report designer, real async export execution, real payment, WeChat production callbacks, WebSocket server runtime, CRM, ERP, MES, WMS, mall, member, multi-tenancy, AI, RAG, or Agent features.
-
-## Verification
-
-Focused checks and the final full-repository gate passed. Repeated command transcripts were removed; use `docs/quality-cycle/ledger.md` for completion markers.

@@ -21,7 +21,3 @@
 - `apps/admin/scripts/smoke-test.mjs` now checks that the shared drawer keeps recursive sensitive-key redaction and serializes `redactDetailJsonValue(section.value)`.
 - `docs/development/openforge-template-authoring.md` and `docs/development/openforge-v1-architecture.md` now require generated Admin detail JSON sections to use the shared recursive redaction guard.
 - `rg "jsonSections" apps/admin/src/pages -n` confirmed current admitted/core JSON detail payloads converge through the shared drawer.
-
-## Verification
-
-Focused checks and the applicable gate passed. Command transcripts are intentionally omitted; keep unique defects, guards and decisions only.

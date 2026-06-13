@@ -2,124 +2,84 @@
 
 Date: 2026-06-13
 Repository: `Gan-Xing/OpenCore`
-Default branch: `main`
+Branch: `main`
 
 ## Goal
 
-Continue cycle-021 capability-map productization. Recompare RuoYi/Yudao and
-OpenCore in real time, then deliver one deployable, verifiable and reversible
-foundation stage per round. A minimal round is not a minimal final product:
-the same product can take multiple rounds until it reaches the admitted
-waterline.
+Continue cycle-021 capability-map productization. Compare RuoYi/Yudao
+capabilities to OpenCore's TS/NestJS boundaries, then ship one deployable,
+verifiable, reversible foundation loop per round. A minimal loop is not a
+minimal product; a product can span multiple rounds until it reaches the
+admitted waterline.
 
-## Non-Negotiable Loop
+## Fixed Loop
 
-- Read this file, then keep `productization-waterline-audit.md`, `backlog.md`,
-  `reference-comparison.md`, `implementation-notes.md`, `audit.md`,
-  `round-history.md` and the ledger aligned.
-- Sort by lowest dependency and product foundation value.
-- For code changes: test, commit, push, deploy through `pnpm deploy:opencore`
-  and verify public URLs.
-- Do not manually choose ports. Fixed ports are API `39172`, Admin `39174` and
-  local smoke `39173`.
-- Do not leave repeated failures as notes. Encode deserialization drift,
-  duplicate `/api/api`, stale frontend bundles and session/token invalidation
-  as tests, smoke checks or deploy guards.
-- Feature code, tests, deploy guards and docs for a stage should be one
-  feature+docs commit. Use docs-only commits only when runtime artifacts are
-  unchanged.
-- Pure docs cleanup needs format/check, commit and push, but no redeploy when
-  runtime artifacts did not change.
+- Read this file before the next round.
+- Sort by lowest dependency and foundation value.
+- Code changes: test, commit, push, deploy through `pnpm deploy:opencore`,
+  then verify public API/Admin URLs.
+- Fixed ports: API `39172`, Admin `39174`, local smoke `39173`.
+- Repeated failures must become tests, smokes or deploy guards:
+  deserialization drift, duplicate `/api/api`, stale Admin bundles and revoked
+  session/token behavior.
+- Feature code, tests, deploy guards and docs should land in one commit.
+- Docs-only cleanup gets format/check, commit and push; no redeploy when
+  runtime artifacts are unchanged.
 
-## Compatibility Policy
+## Compatibility
 
-OpenCore is still in fast productization. There is no old compatibility burden.
-If a stale API, SDK shape, DTO, Admin route, seed, menu, permission, smoke or
-compatibility layer conflicts with the current waterline, replace or delete it
-directly and update all references.
+OpenCore is still in fast productization. There is no legacy compatibility
+burden. Replace or delete stale DTOs, SDK shapes, routes, seeds, menus,
+permissions, smoke paths and compatibility layers when the current waterline
+is better.
 
-## Admission Policy
+## Admission
 
-Auto-admitted foundation work:
+Auto-admitted foundation work: System, Security, Monitor, Tools/OpenForge
+foundation, IP/location, OAuth token management, JWT blacklist, notice
+templates/delivery/provider reliability, KMS/secret vault, operation-log
+maintenance, scheduler/monitor depth and config runtime governance.
 
-- System, Security, Monitor and Tools/OpenForge foundation capabilities.
-- IP/location, OAuth token management, JWT blacklist.
-- Notice templates, delivery and provider reliability.
-- KMS/secret vault.
-- Operation-log maintenance.
-- Scheduler/monitor operation depth.
-- Config runtime feature flags and rollout governance.
+Requires explicit user admission: CRM/ERP/MES/WMS/mall/member, real
+payment/refund/reconciliation, production multi-tenancy, BPMN/full workflow,
+full report designer, big-data async export, RAG/Agent/AI workflow, industry
+packages and OpenForge direct Prisma/migration/business-code writing.
 
-Needs explicit user admission:
+## Current State
 
-- CRM/ERP/MES/WMS/mall/member.
-- Real payment/refund/reconciliation.
-- Production multi-tenancy.
-- BPMN/full workflow platform.
-- Full report designer.
-- Big-data async export execution.
-- Knowledge base/RAG/Agent/AI workflow.
-- Industry business packages.
-- OpenForge directly writing Prisma schema, migrations or business logic.
+Cycle-021 has completed 70 deployable stages.
 
-## Current Foundation State
-
-OpenCore already has package-owned runtime for common, core, database, redis,
-file, system, security, audit, online-user, scheduler, monitor and
-generator-core. Admin is Umi Max + Ant Design Pro V6 + ProComponents v3 +
-antd 6 + React 19. The vulnerable `mockjs` / `@umijs/openapi` path must not be
-reintroduced.
-
-Cycle-021 has completed 70 deployable stages. Completed foundation clusters:
-
-- System/RBAC: notice, department, post, menu, role, permission, user, dict,
-  config and file.
+- System/RBAC: notice, dept, post, menu, role, permission, user, dict, config
+  and file loops are live.
 - Security/session: login policy, logout, force logout, online-user kick-out
-  and real token/session revocation.
-- Logs: login-log type/result, lockout, cleanup, actor/reason and deterministic
-  location. Operation-log list/detail/export/batch delete/clean-all.
-- Config: runtime keys, login policy, feature flags, rollout percentage,
-  audience rules and secret vault.
+  and real revocation are live.
+- Logs: login-log type/result, lockout, cleanup, actor/reason and
+  deterministic location; operation-log list/detail/export/delete/clean.
+- Config: runtime keys, login policy, feature flags, rollout, audience rules
+  and secret vault.
 - Notice: management, inbox/read state, read-user analytics, templates,
-  delivery records, local provider, Integration outbox bridge, Round 67
-  outbox status synchronization, Round 69 queued outbox processing and Round
-  70 signed callback intake.
+  delivery records, local provider, Integration outbox bridge, state sync,
+  queued processing and signed callback intake.
 
-## Latest Runtime Stage
-
-Round 70: `core.notice` signed outbox callback intake.
-
-- Added permission-gated `mail/sms` outbox callback APIs that require
-  HMAC-SHA256 signatures over channel, provider, message id, status and error.
-- Callback intake validates provider/channel readiness, provider-message
-  ownership and failure reason before mutating outbox state.
-- Reuses the existing outbox sent/failed state paths so matching notice
-  delivery records stay synchronized.
-- Added SDK/OpenAPI/Admin provider contract markers plus smoke/deploy guards
-  for bad signatures, blank failure reasons, callback-to-sent delivery sync
-  and stale Admin bundle markers.
-- Deployed on API `39172` and Admin `39174`; public verification passed.
-
-Same-commit hashes are not written into this file. Use the ledger and git log
-after the commit lands.
+Latest runtime stage: Round 70 `core.notice` signed outbox callback intake.
+Callbacks are permission-gated, HMAC-SHA256 signed, validate
+provider/channel/message ownership and reuse the existing outbox
+sent/failed-to-delivery sync path.
 
 ## Next Queue
 
-Pick one stage from this queue unless a new audit reveals a higher-priority
-foundation defect:
-
 1. Notice provider reliability: real SMTP/SMS adapters, retry scheduling and
    realtime push.
-2. Config governance: multi-environment rollout controls, external KMS binding,
-   key rotation and secret version history.
-3. Operation-log enrichment: retention scheduling, duration/location fields and
-   governance policy.
+2. Config governance: multi-environment rollout, external KMS, key rotation
+   and secret versions.
+3. Operation-log enrichment: retention scheduling, duration/location fields
+   and governance policy.
 4. Scheduler/monitor operation depth.
 5. OpenForge Admin safe plan/diff/check/apply UI.
 6. Integration health/config audit.
 
-## Documentation Rule
+## Docs Rule
 
-Aggregate docs must stay short. Do not append repeated round summaries or
-identical command lists. Do not create per-round completion reports by default;
-use `round-history.md` plus the ledger for the audit trail.
+Keep aggregate docs short. Do not append command output or one report per
+round. Use `round-history.md` for clusters, `ledger.md` for state transitions
+and git log for commit hashes.

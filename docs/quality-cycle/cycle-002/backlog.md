@@ -25,8 +25,3 @@
 - [x] Q002-P6-INTEGRATION-SUMMARY：阶段 6；问题：providers/mail/sms/oauth/design-only topics 缺少 integration center summary；参考来源：Yudao mail/sms/oauth/pay API organization、RuoYi pay boundary；涉及文件：`apps/api/src/modules/integration/integration/*`、`packages/sdk/src/integration-*`、`apps/admin/src/pages/Integrations/*`；实施要求：新增 `GET /integrations/summary`，返回 provider health/enabled counts、mail/sms outbox status counts、OAuth provider count、design-only topic count，继续使用 `integration.billing-design` 而不是 `integration.pay`；完成标准：summary 不实现真实支付、微信生产闭环或 WebSocket server。
 
 ## 7. Cycle 002 Closeout
-
-- [x] Q002-CLOSE-001：更新 `docs/quality-cycle/cycle-002/implementation-notes.md`。
-- [x] Q002-CLOSE-002：写 `docs/quality-cycle/cycle-002/completion-report.md`。
-- [x] Q002-CLOSE-003：运行全仓 gate。
-- [x] Q002-CLOSE-004：运行 `node tools/quality-cycle/opencore-quality-cycle.mjs complete-cycle --max 20 --run-gate` 并确认 completedCycles +1。

@@ -13,10 +13,6 @@ Cycle 016 hardened the shared Admin current-page filter/search serializer. Objec
 - Extended `apps/admin/scripts/smoke-test.mjs` to require filter/search object fallback redaction and sensitive-key coverage.
 - Updated export/upload and OpenForge V1 Admin guidance to document current-page filter/search object fallback redaction.
 
-## Verification
-
-Focused checks and the applicable quality gate passed. Repeated command transcripts were removed; use `docs/quality-cycle/ledger.md` and the current handoff for gate/deploy state.
-
 ## Follow-Up
 
 - Continue keeping Admin `max setup` commands sequential when running focused checks to avoid transient `.umi` writer races.

@@ -51,10 +51,6 @@
   one-time closeout after the original 05:30 stop condition. The override is
   scoped to `complete-cycle`; `start-cycle` remains blocked after the deadline.
 
-## Verification
-
-Focused checks and the applicable gate passed. Command transcripts are intentionally omitted; keep unique defects, guards and decisions only.
-
 ## Stop Rationale
 
 Cycle 019 started at 2026-06-11 05:24 Europe/London. Completing the backlog, running focused checks, writing the completion report, and running `complete-cycle --run-gate` could not be honestly finished before the 2026-06-11 05:30 Europe/London stop condition.

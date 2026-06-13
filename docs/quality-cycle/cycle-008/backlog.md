@@ -11,8 +11,3 @@
 - [x] Q008-P5-OPERATIONS-ADMIN-FILTERS：阶段 5；问题：jobs/cache/online-users/reports/export-jobs pages 缺少 enabled/prefix/active/owner/status/source-like filters；参考来源：RuoYi/Yudao job/report list query forms、OpenCore operations query contracts；涉及文件：`apps/admin/src/pages/Monitor/Jobs.tsx`、`Cache.tsx`、`OnlineUsers.tsx`、`apps/admin/src/pages/Optional/*.tsx`；实施要求：新增 bounded current-page filters，jobs/reports use enabled filters, cache uses prefix filter, online users active filter, design-only export jobs status/resource search；export rows use filtered current rows；完成标准：operations pages filter summary rows without triggering scheduler/cache/report/export execution.
 
 - [x] Q008-P6-INTEGRATION-ADMIN-FILTERS：阶段 6；问题：integration pages lack provider/template/outbox/design bounded filters；参考来源：Yudao mail/sms/provider query pages、OpenCore integration query contracts；涉及文件：`apps/admin/src/pages/Integrations/*.tsx`；实施要求：provider filters for type/enabled/health, mail/sms filters for enabled and outbox status/provider where visible, OAuth provider filter, design-only topic/status search; export rows use filtered current rows；完成标准：integration filters do not expose secrets/config/payload and do not widen provider/send/pay/WeChat/WebSocket boundaries.
-
-- [x] Q008-CLOSE-001：更新 `docs/quality-cycle/cycle-008/implementation-notes.md`。
-- [x] Q008-CLOSE-002：写 `docs/quality-cycle/cycle-008/completion-report.md`。
-- [x] Q008-CLOSE-003：运行全仓 gate。
-- [x] Q008-CLOSE-004：运行 `node tools/quality-cycle/opencore-quality-cycle.mjs complete-cycle --max 20 --run-gate` 并确认 completedCycles +1。

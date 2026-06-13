@@ -1,115 +1,54 @@
 # OpenCore Quality Cycle Ledger
 
-- 2026-06-11 00:19:12 Europe/London started cycle-001
-- 2026-06-11 00:24:43 Europe/London started cycle-001
-- 2026-06-11 01:53:34 Europe/London completed cycle-001; checked=60; completedCycles=1
-- 2026-06-11 01:53:58 Europe/London started cycle-002
-- 2026-06-11 02:10:15 Europe/London completed cycle-002; checked=10; completedCycles=2
-- 2026-06-11 02:10:36 Europe/London started cycle-003
-- 2026-06-11 02:28:45 Europe/London completed cycle-003; checked=10; completedCycles=3
-- 2026-06-11 02:29:03 Europe/London started cycle-004
-- 2026-06-11 02:44:57 Europe/London completed cycle-004; checked=10; completedCycles=4
-- 2026-06-11 02:45:09 Europe/London started cycle-005
-- 2026-06-11 03:02:08 Europe/London completed cycle-005; checked=10; completedCycles=5
-- 2026-06-11 03:02:26 Europe/London started cycle-006
-- 2026-06-11 03:18:41 Europe/London completed cycle-006; checked=10; completedCycles=6
-- 2026-06-11 03:18:54 Europe/London started cycle-007
-- 2026-06-11 03:31:51 Europe/London completed cycle-007; checked=10; completedCycles=7
-- 2026-06-11 03:32:07 Europe/London started cycle-008
-- 2026-06-11 03:47:04 Europe/London completed cycle-008; checked=10; completedCycles=8
-- 2026-06-11 03:47:21 Europe/London started cycle-009
-- 2026-06-11 04:00:45 Europe/London completed cycle-009; checked=10; completedCycles=9
-- 2026-06-11 04:00:58 Europe/London started cycle-010
-- 2026-06-11 04:12:37 Europe/London completed cycle-010; checked=10; completedCycles=10
-- 2026-06-11 04:12:49 Europe/London started cycle-011
-- 2026-06-11 04:21:16 Europe/London completed cycle-011; checked=10; completedCycles=11
-- 2026-06-11 04:21:47 Europe/London started cycle-012
-- 2026-06-11 04:31:35 Europe/London completed cycle-012; checked=10; completedCycles=12
-- 2026-06-11 04:31:49 Europe/London started cycle-013
-- 2026-06-11 04:39:49 Europe/London completed cycle-013; checked=10; completedCycles=13
-- 2026-06-11 04:40:05 Europe/London started cycle-014
-- 2026-06-11 04:48:01 Europe/London completed cycle-014; checked=10; completedCycles=14
-- 2026-06-11 04:48:32 Europe/London started cycle-015
-- 2026-06-11 04:56:41 Europe/London completed cycle-015; checked=10; completedCycles=15
-- 2026-06-11 04:56:59 Europe/London started cycle-016
-- 2026-06-11 05:06:17 Europe/London completed cycle-016; checked=10; completedCycles=16
-- 2026-06-11 05:06:31 Europe/London started cycle-017
-- 2026-06-11 05:15:08 Europe/London completed cycle-017; checked=10; completedCycles=17
-- 2026-06-11 05:15:39 Europe/London started cycle-018
-- 2026-06-11 05:23:23 Europe/London completed cycle-018; checked=10; completedCycles=18
-- 2026-06-11 05:24:40 Europe/London started cycle-019
-- 2026-06-11 09:53:07 Europe/London completed cycle-019; checked=8; completedCycles=19
-- 2026-06-12 08:46:02 UTC documented cycle-020 completion; checked=24 backend modules; goalDuration=5h52m55s
-- 2026-06-12 12:16:38 UTC aligned quality-cycle state for cycle-021 capability-map productization; activeCycle=21; firstSlice=core.notice
-- 2026-06-12 12:39:26 UTC completed cycle-021 round-001 core.notice productization; featureCommit=8885103; pushed=origin/main
-- 2026-06-12 13:02:00 UTC completed cycle-021 round-002 core.dept productization; featureCommit=39d4943; pushed=origin/main
-- 2026-06-12 13:20:13 UTC completed cycle-021 round-003 core.post productization; featureCommit=92d358b; pushed=origin/main
-- 2026-06-12 13:40:15 UTC completed cycle-021 round-004 core.menu productization; featureCommit=34e35c7; pushed=origin/main
-- 2026-06-12 13:55:46 UTC completed cycle-021 round-005 core.role productization; featureCommit=7ca8b2f; pushed=origin/main
-- 2026-06-12 14:18:22 UTC completed cycle-021 round-006 core.permission productization; featureCommit=680b578; pushed=origin/main
-- 2026-06-12 14:45:15 UTC completed cycle-021 round-007 core.user productization; featureCommit=88c428f; pushed=origin/main
-- 2026-06-12 15:03:57 UTC completed cycle-021 round-008 core.dict productization; featureCommit=52b3bbe; pushed=origin/main
-- 2026-06-12 15:49:03 UTC completed cycle-021 round-009 core.config productization and fixed deploy path; featureCommit=2dbf5aa; pushed=origin/main
-- 2026-06-12 16:22:20 UTC completed cycle-021 round-010 core.file productization and public Admin deploy; featureCommit=097979c; pushed=origin/main
-- 2026-06-12 16:51:25 UTC completed cycle-021 round-011 core.login-log productization and Admin API-base deploy hardening; featureCommit=40d879c; pushed=origin/main
-- 2026-06-12 17:16:01 UTC completed cycle-021 round-012 core.audit-log productization and Admin API origin guard; featureCommit=26c4e1c; pushed=origin/main
-- 2026-06-12 17:51:07 UTC completed cycle-021 round-013 monitor.online-user productization and stale Admin login guard; featureCommit=0381de1; pushed=origin/main
-- 2026-06-12 18:07:12 UTC deployed API duplicate-prefix login guard; fixCommit=f4569a4; publicVerified=/api/auth/login,/api/api/auth/login,admin-proxy-login
-- 2026-06-12 18:11:19 UTC re-audited cycle-021 rounds 1-13 against productization waterline; meets=core.permission,core.audit-log; rework=core.menu,core.file,monitor.online-user
-- 2026-06-12 18:36:43 UTC completed cycle-021 round-014 monitor.online-user revocation productization; featureCommit=688b665; deployed=39172/39174; publicVerified=batch-kick-out,revoked-token-401,admin-online-users
-- 2026-06-12 19:03:14 UTC completed cycle-021 round-015 core.file content loop productization; featureCommit=0923009; deployed=39172/39174; publicVerified=file-upload,file-download-content-match,admin-files
-- 2026-06-12 19:33:28 UTC completed cycle-021 round-016 core.menu tree metadata productization; featureCommit=4b0fa58; deployed=39172/39174; publicVerified=menu-tree,parent-child,delete-guard,admin-menus
-- 2026-06-12 20:01:38 UTC completed cycle-021 round-017 core.role menu assignment productization; featureCommit=13168fc; deployed=39172/39174; publicVerified=role-menu-assignment,session-revocation,relogin-permission-refresh,admin-roles
-- 2026-06-12 20:26:24 UTC completed cycle-021 round-018 core.role user assignment productization; featureCommit=b4f8117; deployed=39172/39174; publicVerified=role-user-assignment,session-revocation,relogin-role-refresh,admin-roles-transfer
-- 2026-06-12 20:52:03 UTC completed cycle-021 round-019 core.user security mutation productization; featureCommit=c4347b4; hardeningCommit=04e446c; deployed=39172/39174; publicVerified=user-status-reset-update-delete-session-revocation,admin-users-reset-password
-- 2026-06-12 21:14:00 UTC completed cycle-021 round-020 core.role status security productization; featureCommit=32a6f5d; deployed=39172/39174; publicVerified=role-status-disabled-filtered,role-update-delete-session-revocation,admin-roles-status
-- 2026-06-12 21:45:57 UTC completed cycle-021 round-021 core.dict item-data simple-list productization; featureCommit=07d4e9b; deployed=39172/39174; publicVerified=dict-item-crud,simple-list-disabled-filtering,admin-dicts-items
-- 2026-06-12 22:08:26 UTC completed cycle-021 round-022 core.user post binding productization; featureCommit=98e10be; deployed=39172/39174; publicVerified=user-post-binding,unknown-post-rejected,admin-users-posts
-- 2026-06-12 22:28:33 UTC completed cycle-021 round-023 core.user department tree filter productization; featureCommit=fda33c4; deployed=39172/39174; publicVerified=user-dept-filter,subtree-filter,admin-users-dept-tree
-- 2026-06-12 22:42:18 UTC completed cycle-021 round-024 core.config value cache refresh productization; featureCommit=79c4e93; deployed=39172/39174; publicVerified=config-value-by-key,cache-refresh,secret-value-blocked,admin-config-cache
-- 2026-06-12 22:59:44 UTC completed cycle-021 round-025 core.post simple-list option productization; featureCommit=27d15cc; deployed=39172/39174; publicVerified=post-simple-list,disabled-post-filtered,admin-users-post-options,admin-proxy-login
-- 2026-06-12 23:23:43 UTC completed cycle-021 round-026 core.login-log device filter productization; featureCommit=dd720f8; deployed=39172/39174; publicVerified=login-log-device-fields,server-ip-time-filters,admin-login-log-filters,admin-proxy-login
-- 2026-06-12 23:46:31 UTC completed cycle-021 round-027 core.dept simple-list option productization; featureCommit=844f36d; deployed=39172/39174; publicVerified=dept-simple-list,disabled-dept-filtered,admin-users-dept-options,admin-proxy-login
-- 2026-06-13 00:07:27 UTC completed cycle-021 round-028 core.user self-profile basic info productization; featureCommit=7db10fe; deployed=39172/39174; publicVerified=user-profile-get-update,auth-me-profile-refresh,system-user-management-guard,admin-profile-page
-- 2026-06-13 00:26:30 UTC completed cycle-021 round-029 core.user self-password productization; featureCommit=b46f9bb; deployed=39172/39174; publicVerified=self-password-old-password-guard,self-password-session-revocation,new-password-login,admin-profile-password-form
-- 2026-06-13 00:45:44 UTC completed cycle-021 round-030 core.user simple-list option productization; featureCommit=3dd1b5a; deployed=39172/39174; publicVerified=user-simple-list-auth-guard,enabled-user-filtering,option-shape,admin-roles-transfer
-- 2026-06-13 01:12:18 UTC completed cycle-021 round-031 core.user profile avatar productization; featureCommit=09cb9b0; deployed=39172/39174; publicVerified=user-avatar-upload,public-avatar-download,auth-me-avatar-refresh,admin-profile-avatar
-- 2026-06-13 01:43:53 UTC completed cycle-021 round-032 core.user batch mutation productization; featureCommit=1bfd082; deployed=39172/39174; publicVerified=batch-status-delete-session-revocation,admin-users-batch-toolbar,admin-proxy-batch-guard
-- 2026-06-13 02:14:14 UTC completed cycle-021 round-033 core.user import template and CSV import productization; featureCommit=1c49e36; deployed=39172/39174; publicVerified=user-import-template,import-partial-result,import-update-session-revocation,admin-users-import-modal
-- 2026-06-13 02:35:55 UTC completed cycle-021 round-034 core.user import permission productization; featureCommit=f152c4d; deployed=39172/39174; publicVerified=user-import-permission-split,admin-users-import-permission-ui,admin-permission-catalog-import,admin-proxy-import-template
-- 2026-06-13 03:00:34 UTC completed cycle-021 round-035 core.user native XLSX export productization; featureCommit=407dbd0; deployed=39172/39174; publicVerified=user-export-xlsx,admin-users-download-excel,admin-proxy-export
-- 2026-06-13 03:26:36 UTC completed cycle-021 round-036 core.user native XLSX import productization; featureCommit=1437eb8; deployed=39172/39174; publicVerified=user-import-xlsx,admin-users-csv-xlsx-upload,admin-proxy-import-template
-- 2026-06-13 03:43:57 UTC completed cycle-021 round-037 core.config metadata productization; featureCommit=2a1f324; deployed=39172/39174; publicVerified=config-metadata,admin-config-metadata-fields,admin-proxy-config-list
-- 2026-06-13 04:05:18 UTC completed cycle-021 round-038 core.config native XLSX export productization; featureCommit=3419c24; deployed=39172/39174; publicVerified=config-export-xlsx,admin-config-download-excel,admin-proxy-config-export
-- 2026-06-13 04:33:19 UTC completed cycle-021 round-039 core.config batch deletion productization; featureCommit=4940291; deployed=39172/39174; publicVerified=config-batch-delete,admin-config-delete-selected,admin-proxy-config-batch
-- 2026-06-13 04:55:01 UTC completed cycle-021 round-040 core.config system deletion policy productization; featureCommit=c7a3db8; deployed=39172/39174; publicVerified=config-system-flag,system-delete-guard,mixed-batch-system-guard,admin-config-system-ui
-- 2026-06-13 05:21:34 UTC completed cycle-021 round-041 core.user dedicated role assignment productization; featureCommit=fdfbd12; deployed=39172/39174; publicVerified=user-role-assignment,session-revocation,admin-users-assign-roles,admin-public-login
-- 2026-06-13 05:44:12 UTC completed cycle-021 round-042 core.post batch deletion productization; featureCommit=885fa9e; deployed=39172/39174; publicVerified=post-batch-delete,post-simple-list-cleanup,admin-posts-delete-selected,admin-proxy-post-batch
-- 2026-06-13 06:02:41 UTC completed cycle-021 round-043 core.dept user-binding delete guard productization; featureCommit=b4624cf; deployed=39172/39174; publicVerified=dept-assigned-user-delete-guard,dept-user-binding-preserved,admin-depts-delete-guard,admin-proxy-dept-delete
-- 2026-06-13 06:22:08 UTC completed cycle-021 round-044 core.config runtime admin config productization; featureCommit=bd55c61; deployed=39172/39174; publicVerified=config-runtime,admin-runtime-title-update,public-api-runtime-title-update,admin-proxy-runtime-restore
-- 2026-06-13 06:49:47 UTC completed cycle-021 round-045 core.login-log type/result schema productization; supportingCommit=4df5dd1; featureCommit=167bf08; deployed=39172/39174; publicVerified=login-log-result-schema,admin-login-log-type-result-ui,admin-proxy-login-log-result-query,invalid-result-guard
-- 2026-06-13 07:15:30 UTC completed cycle-021 round-046 core.config runtime login policy productization; featureCommit=b0b23ee; deployed=39172/39174; publicVerified=config-runtime-login-policy,admin-login-policy-ui,admin-proxy-login-policy-guards,admin-proxy-runtime-update-restore
-- 2026-06-13 07:45:32 UTC completed cycle-021 round-047 core.login-log login lockout unlock productization; featureCommit=8295eb5; deployed=39172/39174; publicVerified=login-lockout-enforced,account-locked-filter,admin-login-logs-unlock,restored-login
-- 2026-06-13 08:05:21 UTC completed cycle-021 round-048 core.login-log cleanup maintenance productization; featureCommit=052d9be; deployed=39172/39174; publicVerified=login-log-batch-delete,login-log-clean-all,post-clean-failed-login,admin-login-logs-cleanup
-- 2026-06-13 08:37:35 UTC completed cycle-021 round-049 core.config/security-auth configurable attempt limit productization; featureCommit=b4a0258; deployed=39172/39174; publicVerified=config-runtime-login-attempt-policy,login-lockout-configurable-attempt-limit,admin-login-policy-bundle,admin-proxy-duplicate-login
-- 2026-06-13 08:59:27 UTC completed cycle-021 round-050 core.login-log/security-auth self logout revocation productization; featureCommit=f4ecd68; deployed=39172/39174; publicVerified=auth-logout-self,logout-token-revoked,login-log-logout-self,admin-auth-logout-bundle
-- 2026-06-13 09:18:33 UTC completed cycle-021 round-051 core.login-log/monitor.online-user forced logout logging productization; featureCommit=bfd2454; deployed=39172/39174; publicVerified=online-user-force-kick,logout-force-login-log,revoked-token-401,admin-login-logs-force-filter
-- 2026-06-13 09:48:36 UTC completed cycle-021 round-052 core.dept sibling order productization; featureCommit=2086842; deployed=39172/39174; publicVerified=dept-order-api,tree-order,simple-list-order,admin-depts-order-ui
-- 2026-06-13 10:07:17 UTC completed cycle-021 round-053 core.post ordered list productization; featureCommit=99078df; deployed=39172/39174; publicVerified=post-order-api,list-order,simple-list-order,admin-posts-order-ui
-- 2026-06-13 10:27:39 UTC completed cycle-021 round-054 core.user/core.dept data-scope query enforcement; featureCommit=446d9af; deployed=39172/39174; publicVerified=user-data-scope-self-list,dept-intersection,simple-list,export,admin-users-bundle
-- 2026-06-13 11:08:43 UTC completed cycle-021 round-055 core.notice inbox read-state productization; featureCommit=15edffc; deployed=39172/39174; publicVerified=notice-inbox-unread-count,mark-read,mark-all-read,admin-notice-badge,inbox-tab
-- 2026-06-13 11:34:57 UTC completed cycle-021 round-056 core.notice read-user analytics productization; featureCommit=e2601a7; deployed=39172/39174; publicVerified=notice-read-users-missing-guard,read-users-list,admin-notices-read-users-modal
-- 2026-06-13 11:58:08 UTC completed cycle-021 round-057 core.login-log structured logout actor/reason productization; featureCommit=a47182c; deployed=39172/39174; publicVerified=logout-self-actor-reason,logout-force-actor-reason,admin-login-logs-actor-filter
-- 2026-06-13 12:22:18 UTC completed cycle-021 round-058 core.config runtime feature flags productization; featureCommit=b294c35; deployed=39172/39174; publicVerified=config-runtime-feature-flags,feature-flag-guards,admin-config-feature-toggle
-- 2026-06-13 12:50:48 UTC completed cycle-021 round-059 core.login-log IP location enrichment productization; featureCommit=b39b1ac; deployed=39172/39174; publicVerified=login-log-location,location-filter,admin-login-logs-location-filter
-- 2026-06-13 13:29:46 UTC completed cycle-021 round-060 core.notice notification template productization; featureCommit=2f22e76; deployed=39172/39174; publicVerified=notice-template-render,param-guards,admin-system-notices-template-tab
-- 2026-06-13 14:10:15 UTC completed cycle-021 round-061 core.notice delivery records productization; featureCommit=27cfa0c; deployed=39172/39174; publicVerified=notice-delivery-records,dispatch-idempotent,admin-system-notices-delivery-modal
-- 2026-06-13 14:35:35 UTC completed cycle-021 round-062 core.config secret vault productization; featureCommit=2e1e927; deployed=39172/39174; publicVerified=config-secret-vault,secret-ciphertext,admin-config-vault
-- 2026-06-13 15:03:12 UTC completed cycle-021 round-063 core.notice local delivery provider productization; featureCommit=b53edcc; deployed=39172/39174; publicVerified=notice-provider-execute,provider-sent-records,admin-notices-provider-ui
-- 2026-06-13 15:36:59 UTC completed cycle-021 round-064 core.config feature flag rollout productization; featureCommit=719c4ce; deployed=39172/39174; publicVerified=feature-flag-rules,evaluate-api,admin-config-rollout-ui
-- 2026-06-13 16:06:31 UTC completed cycle-021 round-065 core.config feature flag audience productization; featureCommit=f55c8f3; deployed=39172/39174; publicVerified=feature-flag-audience,evaluate-attributes,admin-config-audience-ui
-- 2026-06-13 16:42:34 UTC completed cycle-021 round-066 core.notice integration outbox provider bridge productization; featureCommit=119128c; deployed=39172/39174; publicVerified=notice-mail-sms-outbox-provider,admin-notices-provider-ui,openapi-notice-delivery-channel
-- 2026-06-13 17:22:33 UTC completed cycle-021 round-067 core.notice outbox retry/status hardening; featureCommit=6b341ab; deployed=39172/39174; publicVerified=notice-outbox-failed-retry-sent-sync,admin-notices-outbox-actions,openapi-integration-outbox-state
-- 2026-06-13 17:56:30 UTC completed cycle-021 round-068 core.audit-log cleanup maintenance; featureCommit=3cc80cf; deployed=39172/39174; publicVerified=audit-log-batch-delete-clean,admin-operation-log-cleanup,openapi-audit-log-cleanup
-- 2026-06-13 18:14:26 UTC completed cycle-021 round-069 core.notice outbox provider processing; featureCommit=147196f; deployed=39172/39174; publicVerified=notice-outbox-process-to-sent,admin-notices-process-outbox,openapi-integration-outbox-process
-- 2026-06-13 18:45:00 UTC completed cycle-021 round-070 core.notice signed outbox callback intake; deployed=39172/39174; publicVerified=notice-outbox-callback-signature,admin-integration-callback-contract,openapi-integration-outbox-callback
+This ledger keeps state transitions only. Repeated command transcripts, gate
+output and long smoke lists belong in terminal/final responses, not durable
+docs. Commit-level detail is available from git history.
+
+## Cycles 001-020
+
+- 2026-06-11 01:53:34 Europe/London completed cycle-001; checked=60.
+- 2026-06-11 02:10:15 Europe/London completed cycle-002; checked=10.
+- 2026-06-11 02:28:45 Europe/London completed cycle-003; checked=10.
+- 2026-06-11 02:44:57 Europe/London completed cycle-004; checked=10.
+- 2026-06-11 03:02:08 Europe/London completed cycle-005; checked=10.
+- 2026-06-11 03:18:41 Europe/London completed cycle-006; checked=10.
+- 2026-06-11 03:31:51 Europe/London completed cycle-007; checked=10.
+- 2026-06-11 03:47:04 Europe/London completed cycle-008; checked=10.
+- 2026-06-11 04:00:45 Europe/London completed cycle-009; checked=10.
+- 2026-06-11 04:12:37 Europe/London completed cycle-010; checked=10.
+- 2026-06-11 04:21:16 Europe/London completed cycle-011; checked=10.
+- 2026-06-11 04:31:35 Europe/London completed cycle-012; checked=10.
+- 2026-06-11 04:39:49 Europe/London completed cycle-013; checked=10.
+- 2026-06-11 04:48:01 Europe/London completed cycle-014; checked=10.
+- 2026-06-11 04:56:41 Europe/London completed cycle-015; checked=10.
+- 2026-06-11 05:06:17 Europe/London completed cycle-016; checked=10.
+- 2026-06-11 05:15:08 Europe/London completed cycle-017; checked=10.
+- 2026-06-11 05:23:23 Europe/London completed cycle-018; checked=10.
+- 2026-06-11 09:53:07 Europe/London completed cycle-019; checked=8.
+- 2026-06-12 08:46:02 UTC documented cycle-020 completion; checked=24
+  backend modules; duration=5h52m55s.
+
+## Cycle 021
+
+- 2026-06-12 12:16:38 UTC started capability-map productization; first slice
+  `core.notice`.
+- 2026-06-12 12:39-17:51 UTC rounds 001-013 opened first API/SDK/Admin loops
+  for system/security/monitor foundations.
+- 2026-06-12 18:07 UTC deployed duplicate `/api/api` login guard.
+- 2026-06-12 18:11 UTC re-audited rounds 001-013; rework required for
+  menu/file/online-user depth.
+- 2026-06-12 18:36-22:28 UTC rounds 014-023 closed online-user revocation,
+  file content, menu metadata, role/user bindings, dict options and dept
+  filtering.
+- 2026-06-12 22:42 UTC-2026-06-13 03:26 UTC rounds 024-036 closed config
+  value/cache, option sources, profile/password/avatar and import/export.
+- 2026-06-13 03:43-08:37 UTC rounds 037-049 closed config metadata/runtime,
+  login-log schema/lockout/cleanup and configurable login policy.
+- 2026-06-13 08:59-12:50 UTC rounds 050-059 closed logout/force-logout
+  semantics, ordering, data-scope, notice inbox/read state, feature flags and
+  login-log location.
+- 2026-06-13 13:29-18:45 UTC rounds 060-070 closed notice templates,
+  delivery records, local/outbox providers, config secret vault, feature-flag
+  rollout/audience, outbox processing/callbacks and operation-log cleanup.
+- Latest deployed runtime: round-070 `core.notice` signed outbox callback
+  intake on API `39172` and Admin `39174`.

@@ -76,8 +76,3 @@ same command transcripts are not useful historical state.
 Cycle-001 did not admit CRM, ERP, MES, WMS, mall, member, multi-tenancy,
 production payment/refund/reconciliation, BPMN, report designer, WeChat
 business workflows, WebSocket server runtime, AI, RAG or Agent execution.
-
-## Verification
-
-Focused checks and the cycle gate passed. Do not re-add per-task command lists
-to this file; use the ledger and current handoff for gate state.

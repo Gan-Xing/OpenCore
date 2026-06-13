@@ -14,10 +14,6 @@ Completed Admin route/access binding drift enforcement.
 - Documented binding-level route/access drift in the module admission checklist.
 - Updated OpenForge CI gate docs to include registry tag and Admin route/access drift commands in the full local gate.
 
-## Verification
-
-Focused checks and the applicable quality gate passed. Repeated command transcripts were removed; use `docs/quality-cycle/ledger.md` and the current handoff for gate/deploy state.
-
 ## Residual Risk
 
 The checker validates static route/access bindings. Runtime authorization still depends on `initialState.permissions` being populated correctly and on API-side permission guards remaining the source of truth for server actions.

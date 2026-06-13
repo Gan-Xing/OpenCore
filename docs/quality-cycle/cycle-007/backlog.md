@@ -11,8 +11,3 @@
 - [x] Q007-P5-OPERATIONS-ADMIN-EXPORTS：阶段 5；问题：jobs/online-users/reports/export jobs Admin pages 无 current-page export，且 online-user token/query schema 不应进入 CSV；参考来源：RuoYi/Yudao job/report export separation；涉及文件：`apps/admin/src/pages/Monitor/Jobs.tsx`、`OnlineUsers.tsx`、`apps/admin/src/pages/Optional/*.tsx`；实施要求：新增 export toolbar，排除 tokenId、querySchema execution/payload；完成标准：operations export 是 summary-only，不触发 scheduler/report/export execution。
 
 - [x] Q007-P6-INTEGRATION-ADMIN-EXPORTS：阶段 6；问题：integration Admin pages 无 current-page export，provider config/secretRef/outbox payload/template body 不应进入 CSV；参考来源：Yudao mail/sms template export/send separation、OAuth provider config patterns；涉及文件：`apps/admin/src/pages/Integrations/*.tsx`；实施要求：新增 export toolbar，provider config/secretRef/payload/body 列标记 sensitive 或不列入导出，design-only topics 仅导出 summary；完成标准：integration export 不泄露 secrets、不扩大 provider/send/pay/WeChat/WebSocket 边界。
-
-- [x] Q007-CLOSE-001：更新 `docs/quality-cycle/cycle-007/implementation-notes.md`。
-- [x] Q007-CLOSE-002：写 `docs/quality-cycle/cycle-007/completion-report.md`。
-- [x] Q007-CLOSE-003：运行全仓 gate。
-- [x] Q007-CLOSE-004：运行 `node tools/quality-cycle/opencore-quality-cycle.mjs complete-cycle --max 20 --run-gate` 并确认 completedCycles +1。

@@ -32,7 +32,3 @@
   - Mail/SMS template drawers show sample outbox payloads without sending.
   - Payment, WeChat and WebSocket drawers remain explicitly design-only.
 - Updated OpenForge docs so generated Admin table pages must keep list, read-only detail drawers, and action buttons separate.
-
-## Verification
-
-Focused checks and the applicable gate passed. Command transcripts are intentionally omitted; keep unique defects, guards and decisions only.

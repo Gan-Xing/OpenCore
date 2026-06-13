@@ -16,7 +16,3 @@
 - Added page-specific read-only reasons to users, roles, permissions, menus, dictionaries, system config, files, login logs and operation logs.
 - Extended Admin smoke checks so core wrappers must render the read-only policy and RBAC mutation-looking controls must stay disabled.
 - Updated OpenForge V1 docs so generated core Admin wrappers show read-only reasons and disable mutation-looking controls until real write contracts are admitted.
-
-## Verification
-
-Focused checks and the applicable gate passed. Command transcripts are intentionally omitted; keep unique defects, guards and decisions only.

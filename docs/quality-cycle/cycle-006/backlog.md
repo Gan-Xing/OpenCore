@@ -11,8 +11,3 @@
 - [x] Q006-P5-OPERATIONS-ADMIN-DETAIL-DRAWERS：阶段 5；问题：jobs/online-users/reports/export jobs Admin pages 缺少 payload、run/log、query schema、runbook bindings 的 detail surface；参考来源：RuoYi/Yudao job detail/job log/report separation；涉及文件：`apps/admin/src/pages/Monitor/Jobs.tsx`、`OnlineUsers.tsx`、`apps/admin/src/pages/Optional/*.tsx`、SDK fixture selectors；实施要求：新增 read-only detail drawers，不触发 scheduler/report/export execution；完成标准：operations detail UI 清楚区分 read-only detail、manual trigger、design-only export。
 
 - [x] Q006-P6-INTEGRATION-ADMIN-DETAIL-DRAWERS：阶段 6；问题：providers/mail/sms/oauth/design pages 缺少 redacted config、template body、outbox/design boundary detail surface；参考来源：Yudao mail/sms template detail/send forms、OAuth provider patterns；涉及文件：`apps/admin/src/pages/Integrations/*.tsx`、SDK fixture selectors；实施要求：新增 provider/template/OAuth/design detail drawers，provider config 继续 redacted，pay/WeChat/WebSocket 保持 design-only；完成标准：integration Admin detail 不泄露 secrets、不绕过 disabled/provider/action guards。
-
-- [x] Q006-CLOSE-001：更新 `docs/quality-cycle/cycle-006/implementation-notes.md`。
-- [x] Q006-CLOSE-002：写 `docs/quality-cycle/cycle-006/completion-report.md`。
-- [x] Q006-CLOSE-003：运行全仓 gate。
-- [x] Q006-CLOSE-004：运行 `node tools/quality-cycle/opencore-quality-cycle.mjs complete-cycle --max 20 --run-gate` 并确认 completedCycles +1。

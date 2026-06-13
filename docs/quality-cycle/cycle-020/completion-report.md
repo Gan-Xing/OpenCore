@@ -71,10 +71,6 @@ The cycle intentionally keeps these outside the completed scope:
 - Unrestricted OpenForge writes, Prisma schema generation and migration
   creation.
 
-## Verification
-
-Focused checks and the applicable quality gate passed. Repeated command transcripts were removed; use `docs/quality-cycle/ledger.md` and the current handoff for gate/deploy state.
-
 ## Commits
 
 The final BE20 sequence landed on `main` through these commits:

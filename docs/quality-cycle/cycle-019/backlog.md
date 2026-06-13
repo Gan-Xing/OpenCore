@@ -68,19 +68,6 @@
 
 ## Closeout
 
-- [x] ID: CY19-CLOSE1
+- [x] ID: CY19-CLOSE
   - Phase: closeout
-  - Issue: Implementation evidence must be recorded before completion.
-  - Reference source: OpenCore quality-cycle prompt.
-  - Files: `docs/quality-cycle/cycle-019/implementation-notes.md`.
-  - Implementation requirement: Record every code/doc/test change and focused verification command.
-  - Test requirement: Notes include command names and pass/fail status.
-  - Completion standard: Implementation notes are complete and formatted.
-- [x] ID: CY19-CLOSE2
-  - Phase: closeout
-  - Issue: Cycle cannot count until full gate and completion report are done.
-  - Reference source: OpenCore quality-cycle prompt.
-  - Files: `docs/quality-cycle/cycle-019/completion-report.md`, `.opencore/quality-cycle/state.json`, `docs/quality-cycle/ledger.md`.
-  - Implementation requirement: Run full focused checks, `node tools/quality-cycle/opencore-quality-cycle.mjs gate`, write completion report, then run `node tools/quality-cycle/opencore-quality-cycle.mjs complete-cycle --max 20 --run-gate`.
-  - Test requirement: All required root/OpenForge/Admin/API/SDK/contract tests pass without skipped failures.
-  - Completion standard: `completedCycles` increments to 19 in quality-cycle status and ledger.
+  - Completion standard: cycle 019 counted in quality-cycle state and ledger.

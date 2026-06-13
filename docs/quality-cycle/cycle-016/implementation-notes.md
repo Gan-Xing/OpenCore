@@ -22,10 +22,6 @@
 - `apps/admin/scripts/smoke-test.mjs` now checks that current-page filter/search text normalization keeps object fallback redaction and sensitive-key coverage.
 - `docs/development/export-upload-contract.md`, `docs/development/openforge-template-authoring.md` and `docs/development/openforge-v1-architecture.md` now require current-page filter/search object fallback redaction.
 
-## Verification
-
-Focused checks and the applicable gate passed. Command transcripts are intentionally omitted; keep unique defects, guards and decisions only.
-
 ## Full Gate
 
 - `node tools/quality-cycle/opencore-quality-cycle.mjs gate`

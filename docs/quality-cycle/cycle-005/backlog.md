@@ -11,8 +11,3 @@
 - [x] Q005-P5-OPERATIONS-DETAIL-ENDPOINTS：阶段 5；问题：jobs/runs/online-users/reports 缺少 detail endpoints，无法支撑确认页或日志详情；参考来源：RuoYi/Yudao job detail、job log detail、monitor online user；涉及文件：`apps/api/src/modules/monitor/operations/*`、`packages/sdk/src/operations-*`；实施要求：新增 `GET /monitor/jobs/:code`、`/monitor/jobs/:code/runs/:id`、`/monitor/online-users/:id`、`/optional/reports/:code`；完成标准：operations detail read 不触发 scheduler/export 执行。
 
 - [x] Q005-P6-INTEGRATION-DETAIL-ENDPOINTS：阶段 6；问题：providers/templates/outbox 缺少 detail endpoints，provider detail 必须保持 redaction；参考来源：Yudao mail/sms template get/send forms、OAuth provider config patterns；涉及文件：`apps/api/src/modules/integration/integration/*`、`packages/sdk/src/integration-*`；实施要求：新增 provider、mail/sms template、mail/sms outbox detail endpoints；provider config redacted，outbox payload 仅保留 mock queue data；完成标准：detail endpoints 不绕过 disabled/provider/action guards。
-
-- [x] Q005-CLOSE-001：更新 `docs/quality-cycle/cycle-005/implementation-notes.md`。
-- [x] Q005-CLOSE-002：写 `docs/quality-cycle/cycle-005/completion-report.md`。
-- [x] Q005-CLOSE-003：运行全仓 gate。
-- [x] Q005-CLOSE-004：运行 `node tools/quality-cycle/opencore-quality-cycle.mjs complete-cycle --max 20 --run-gate` 并确认 completedCycles +1。

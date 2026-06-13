@@ -17,7 +17,3 @@
 - Updated all pages with current-page export actions to pass `filteredRows`, so export respects the visible current-page filters.
 - Extended `apps/admin/scripts/smoke-test.mjs` so admitted S10/S11/S12 pages must use `useCurrentPageFilters`, bind table data to `filteredRows`, and export `filteredRows` when an export button exists.
 - Updated OpenForge V1 docs so generated Admin list pages must pair bounded query DTOs with bounded current-page filters and filtered current-page export rows.
-
-## Verification
-
-Focused checks and the applicable gate passed. Command transcripts are intentionally omitted; keep unique defects, guards and decisions only.

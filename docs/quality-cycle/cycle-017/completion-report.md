@@ -14,10 +14,6 @@ Cycle 017 hardened Admin scalar sensitive-field rendering. Shared read-only deta
 - Marked online-session `Token ID` and `Revoked Reason` detail fields sensitive.
 - Extended Admin smoke tests and OpenForge V1 docs to enforce scalar sensitive-field redaction.
 
-## Verification
-
-Focused checks and the applicable quality gate passed. Repeated command transcripts were removed; use `docs/quality-cycle/ledger.md` and the current handoff for gate/deploy state.
-
 ## Follow-Up
 
 - Future generated Admin detail fields that expose token ids, secret refs, credentials or authorization values must use `sensitive: true` even when CSV export already excludes the same columns.

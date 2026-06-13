@@ -20,7 +20,3 @@
 - SDK action path specs now cover the broader S10/S11/S12 action matrix.
 - Admin fixture pages now display action-policy columns for collaboration records, jobs, online users, providers, and templates.
 - OpenForge docs now require current-state guards for generated action endpoints and explicit dry-run/confirmation for broad/destructive actions.
-
-## Verification
-
-Focused checks and the applicable gate passed. Command transcripts are intentionally omitted; keep unique defects, guards and decisions only.

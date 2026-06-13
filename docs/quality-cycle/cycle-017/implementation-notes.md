@@ -23,10 +23,6 @@
 - `apps/admin/scripts/smoke-test.mjs` now checks scalar detail redaction support plus provider and online-session sensitive bindings.
 - `docs/development/openforge-template-authoring.md` and `docs/development/openforge-v1-architecture.md` now require generated Admin detail metadata to mark scalar sensitive fields.
 
-## Verification
-
-Focused checks and the applicable gate passed. Command transcripts are intentionally omitted; keep unique defects, guards and decisions only.
-
 ## Full Gate
 
 - `node tools/quality-cycle/opencore-quality-cycle.mjs gate`

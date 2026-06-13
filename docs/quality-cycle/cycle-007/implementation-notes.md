@@ -17,7 +17,3 @@
 - Added current-page export toolbars to integration Admin pages: providers, mail, sms, OAuth, billing design, WeChat, and WebSocket.
 - Kept exports summary-only by omitting or marking sensitive fields such as body/comment/payload/config/secretRef/tokenId/querySchema/accountBinding.
 - Updated OpenForge V1 architecture and template-authoring docs to require generated Admin exports to be current-page CSV only, bounded by the S8 protocol, and sensitive-column excluded.
-
-## Verification
-
-Focused checks and the applicable gate passed. Command transcripts are intentionally omitted; keep unique defects, guards and decisions only.

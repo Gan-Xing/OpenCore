@@ -23,7 +23,3 @@
 - `docs/development/openforge-ci-gate.md` now includes registry/OpenAPI tag
   drift and Admin route/access drift checks in the full local gate guidance,
   with CI guidance to fail on binding drift.
-
-## Verification
-
-Focused checks and the applicable gate passed. Command transcripts are intentionally omitted; keep unique defects, guards and decisions only.

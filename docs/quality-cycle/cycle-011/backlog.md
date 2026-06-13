@@ -11,8 +11,3 @@
 - [x] Q011-P5-ADMIN-SMOKE-READONLY-GUARD：阶段 5；问题：smoke tests do not guard disabled mutation controls or read-only reasons；参考来源：OpenCore smoke-test conventions；涉及文件：`apps/admin/scripts/smoke-test.mjs`；实施要求：assert wrappers include disabled mutation controls/read-only policy rendering and core pages pass `readOnlyReason`；完成标准：enabled placeholder mutation controls cannot regress silently.
 
 - [x] Q011-P6-OPENFORGE-READONLY-AFFORDANCE-DOCS：阶段 6；问题：OpenForge docs do not tell generated core wrappers to disable write affordances while fixture-backed/read-only；参考来源：OpenForge Admin template docs、RuoYi/Yudao permission directive conventions；涉及文件：`docs/development/openforge-template-authoring.md`、`docs/development/openforge-v1-architecture.md`；实施要求：document generated core wrappers must show read-only reasons and disable mutation-looking controls until real write contracts are admitted；完成标准：generated Admin guidance matches core wrapper affordances.
-
-- [x] Q011-CLOSE-001：更新 `docs/quality-cycle/cycle-011/implementation-notes.md`。
-- [x] Q011-CLOSE-002：写 `docs/quality-cycle/cycle-011/completion-report.md`。
-- [x] Q011-CLOSE-003：运行全仓 gate。
-- [x] Q011-CLOSE-004：运行 `node tools/quality-cycle/opencore-quality-cycle.mjs complete-cycle --max 20 --run-gate` 并确认 completedCycles +1。

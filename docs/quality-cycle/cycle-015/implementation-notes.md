@@ -21,7 +21,3 @@
 - The helper redacts nested values whose keys match password, secret, token, credential, authorization, API key or client secret terminology.
 - `apps/admin/scripts/smoke-test.mjs` now checks that current-page CSV export keeps object-cell redaction, sensitive-key coverage, formula-prefix neutralization and the serializer call path.
 - `docs/development/export-upload-contract.md`, `docs/development/openforge-template-authoring.md` and `docs/development/openforge-v1-architecture.md` now require object-cell redaction before export JSON stringification.
-
-## Verification
-
-Focused checks and the applicable gate passed. Command transcripts are intentionally omitted; keep unique defects, guards and decisions only.

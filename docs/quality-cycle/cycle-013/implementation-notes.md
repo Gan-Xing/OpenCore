@@ -21,7 +21,3 @@
 - `docs/development/export-upload-contract.md` now defines formula-prefix neutralization for current-page CSV exports.
 - `docs/development/openforge-template-authoring.md` and `docs/development/openforge-v1-architecture.md` now require generated Admin CSV exports to neutralize formula prefixes.
 - Existing admitted and core Admin exports continue to use the shared `CurrentPageExportButton`, so the guard applies across the current export surface.
-
-## Verification
-
-Focused checks and the applicable gate passed. Command transcripts are intentionally omitted; keep unique defects, guards and decisions only.

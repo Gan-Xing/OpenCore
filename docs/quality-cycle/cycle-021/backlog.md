@@ -3,85 +3,55 @@
 Started: 2026-06-12
 Last compacted: 2026-06-13
 
-This backlog is the working queue, not a full transcript. `round-history.md`
-and the quality-cycle ledger keep the historical details.
+This is the working queue, not a transcript.
 
 ## Scope
 
-P0/P1 foundation capabilities are auto-admitted as independent rounds:
-System, Security, Monitor, Tools/OpenForge foundation, IP/location, OAuth token
-management, JWT blacklist, notice templates/delivery, KMS/secret vault,
-operation-log maintenance, scheduler/monitor depth and config runtime feature
-flags.
+Auto-admitted P0/P1 foundation work: System, Security, Monitor,
+Tools/OpenForge foundation, IP/location, OAuth token management, JWT
+blacklist, notice templates/delivery, KMS/secret vault, operation-log
+maintenance, scheduler/monitor depth and config runtime governance.
 
-Large business/platform domains still need explicit admission:
-CRM/ERP/MES/WMS/mall/member, real payment, production multi-tenancy, BPMN/full
-workflow, full report designer, big-data async export execution, RAG/Agent/AI
-workflow, industry packages and OpenForge direct schema/business-code writing.
+Explicit admission required: CRM/ERP/MES/WMS/mall/member, real payment,
+production multi-tenancy, BPMN/full workflow, full report designer, big-data
+async export, RAG/Agent/AI workflow, industry packages and OpenForge direct
+schema/business-code writing.
 
-## Completed Foundation Clusters
+## Delivered Clusters
 
-- Rounds 1-13: first live Admin/API/SDK loops for notice, department, post,
-  menu, role, permission, user, dict, config, file, login-log, audit-log and
-  online-user.
-- Rounds 14-23: online-user real revocation, file content, menu tree metadata,
-  role assignments, user security mutations, dict options, user post binding
-  and department filtering.
-- Rounds 24-36: config value/cache, post/dept/user option sources, profile,
-  password, avatar, batch mutations, CSV/XLSX import/export and permissions.
-- Rounds 37-49: config metadata/export/batch/system policy/runtime, login-log
-  schema/lockout/cleanup and runtime login policy.
-- Rounds 50-59: logout/force-logout audit semantics, department/post ordering,
-  data-scope enforcement, notice inbox/read analytics, actor/reason fields,
-  feature flags and login-log IP/location.
-- Rounds 60-70: notice templates, delivery records, secret vault, local
-  provider, feature-flag rollout/audience, Integration outbox bridge and
-  outbox state hardening/process/callback intake, plus operation-log cleanup
-  maintenance.
+- Rounds 1-13: first live API/SDK/Admin loops for core system/security/monitor
+  modules.
+- Rounds 14-23: online-user revocation, file content, menu metadata, role/user
+  bindings, dict options and dept filtering.
+- Rounds 24-36: config value/cache, option sources, profile/password/avatar,
+  batch mutations and CSV/XLSX import/export.
+- Rounds 37-49: config metadata/runtime, login-log schema/lockout/cleanup and
+  runtime login policy.
+- Rounds 50-59: logout audit semantics, ordering, data-scope, notice
+  inbox/read analytics, feature flags and login-log location.
+- Rounds 60-70: notice template/delivery/provider/outbox work, config vault
+  and rollout/audience, plus operation-log cleanup.
 
-## Latest Done
-
-Round 70 completed notice signed outbox callback intake:
-
-- mail/SMS callback APIs are protected by existing integration manage
-  permissions;
-- callbacks require HMAC-SHA256 signatures over channel/provider/message
-  status data;
-- callback intake rejects bad signatures, blank failure reasons and
-  provider-message mismatches;
-- accepted callbacks reuse outbox sent/failed paths so notice delivery records
-  synchronize;
-- Admin Providers exposes the signed callback contract and deploy guards check
-  the built marker.
+Latest done: Round 70 signed notice outbox callbacks with HMAC validation and
+delivery-state sync.
 
 ## Active P1/P2 Queue
 
 1. Notice provider reliability: real SMTP/SMS adapters, retry scheduling and
    realtime push.
-2. Config governance: multi-environment rollout controls, external KMS binding,
-   key rotation and secret version history.
-3. Operation-log enrichment: retention policy scheduling, structured
-   duration/location fields and governance.
-4. Scheduler/monitor operation depth: enable/disable/run-now, run-log
-   diagnosis, retry/timeout controls and registry whitelist visibility.
-5. OpenForge Admin: plan/diff/check/apply/manifest/rollback surfaces over the
-   existing safe generator boundary.
+2. Config governance: multi-environment rollout, external KMS, key rotation
+   and secret version history.
+3. Operation-log enrichment: retention scheduling, duration/location fields
+   and governance.
+4. Scheduler/monitor depth: enable/disable/run-now, run-log diagnosis,
+   retry/timeout controls and registry whitelist visibility.
+5. OpenForge Admin: plan/diff/check/apply/manifest/rollback surfaces.
 6. Integration health/config audit: provider readiness, failure history,
    config validation and operator diagnostics.
 
-## Current Guard Debt
+## Rework Notes
 
-- Keep adding smoke/deploy guards only when they prevent a real repeated
-  failure.
-- Do not copy the standard command list into this file.
+- Round 14 corrected Round 13 online-user by adding real revocation.
+- Round 67 corrected Round 66 outbox semantics before real provider work.
 - If a round creates a semantic bug that should have been caught in the same
   stage, add the missing test or smoke before moving on.
-
-## Closed P0 Rework
-
-- Round 14 corrected Round 13 online-user from list/detail/kick-only into real
-  token/session revocation.
-- Round 67 corrected Round 66 Integration outbox semantics before real provider
-  work could build on the wrong state model.
-
-No open P0 blocker remains in the current foundation waterline.

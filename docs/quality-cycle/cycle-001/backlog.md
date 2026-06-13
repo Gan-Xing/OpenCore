@@ -99,9 +99,3 @@ Cycle：001
 ---
 
 ## 7. Cycle 001 收口
-
-- [x] Q001-CLOSE-001：更新 README、docs/README、handoff index、priority roadmap、staged roadmap、progress。
-- [x] Q001-CLOSE-002：写 `docs/quality-cycle/cycle-001/implementation-notes.md`。
-- [x] Q001-CLOSE-003：写 `docs/quality-cycle/cycle-001/completion-report.md`。
-- [x] Q001-CLOSE-004：运行全仓 gate。
-- [x] Q001-CLOSE-005：运行 `node tools/quality-cycle/opencore-quality-cycle.mjs complete-cycle --max 20 --run-gate` 并确认 completedCycles +1。

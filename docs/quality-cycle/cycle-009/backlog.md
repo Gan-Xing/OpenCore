@@ -11,8 +11,3 @@
 - [x] Q009-P5-ADMIN-SMOKE-CORE-GUARD：阶段 5；问题：Admin smoke guards S10/S11/S12 filter/export but not S6/S7 core wrapper parity；参考来源：Antdpro6 smoke/E2E list checks、OpenCore cycle-008 smoke guard；涉及文件：`apps/admin/scripts/smoke-test.mjs`；实施要求：assert core pages use search fields/filter/export column props and wrappers use current-page helpers；完成标准：core Admin pages cannot regress to raw static list/export wrappers unnoticed.
 
 - [x] Q009-P6-OPENFORGE-CORE-FILTER-EXPORT-DOCS：阶段 6；问题：OpenForge docs mention generated Admin filters/exports generically but not core/RBAC/system wrapper parity and secret config export redaction；参考来源：Yudao/RuoYi system query/export conventions、OpenForge Admin generator；涉及文件：`docs/development/openforge-template-authoring.md`、`docs/development/openforge-v1-architecture.md`；实施要求：document generated core Admin wrappers must use bounded current-page filters, filtered export rows, and secret config redaction；完成标准：generated core Admin guidance matches S6/S7 wrapper implementation.
-
-- [x] Q009-CLOSE-001：更新 `docs/quality-cycle/cycle-009/implementation-notes.md`。
-- [x] Q009-CLOSE-002：写 `docs/quality-cycle/cycle-009/completion-report.md`。
-- [x] Q009-CLOSE-003：运行全仓 gate。
-- [x] Q009-CLOSE-004：运行 `node tools/quality-cycle/opencore-quality-cycle.mjs complete-cycle --max 20 --run-gate` 并确认 completedCycles +1。

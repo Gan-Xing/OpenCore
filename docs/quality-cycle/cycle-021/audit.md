@@ -2,72 +2,47 @@
 
 Date: 2026-06-13
 
-This audit tracks current risk and self-correction. It is intentionally short;
-the old file repeated round summaries and command boilerplate now covered by
-`round-history.md` and the ledger.
+## Conclusion
 
-## Current Conclusion
+Progress is real, but two self-caused under-scoping defects had to be
+corrected:
 
-OpenCore's foundation productization is progressing, but two self-caused
-patterns had to be corrected:
+- Round 13 stopped online-user at list/detail/kick-out; Round 14 added real
+  token/session revocation.
+- Round 66 treated queued external outbox handoff as provider `sent`; Round 67
+  fixed the state model.
 
-- Round 13 under-scoped online-user by stopping at list/detail/kick-out until
-  Round 14 added real token/session revocation.
-- Round 66 used the wrong notice provider state semantics by treating queued
-  external outbox handoff as `sent`; Round 67 corrected the state machine.
-- Round 69 moved the next notice reliability step into code by adding an
-  explicit queued outbox process path instead of another manual state note.
-- Round 70 moved signed outbox callback intake into code with HMAC signature
-  guards and smoke coverage instead of leaving callbacks as a reference note.
-- Round 68 exposed another process issue: running Admin `typecheck` and `lint`
-  in parallel can race `max setup` generated types. Those commands must run
-  sequentially when both touch Admin generated files.
+Recent guard work moved the next notice reliability steps into code: Round 69
+added queued provider processing and Round 70 added signed callbacks. Round 68
+also exposed the Admin generated-types race, so Admin `typecheck` and `lint`
+must run sequentially.
 
-Those issues are now guard requirements, not memory items.
+## Guarded Failures
 
-## Guarded Failure Classes
+- Duplicate `/api/api` login is blocked by deploy/Admin smoke.
+- Stale Admin deployment is blocked by built bundle markers.
+- Revoked sessions/tokens must return 401.
+- Notice outbox smoke covers pending handoff, retry, process-to-sent, signed
+  callback sync and sent mutation guards.
+- Operation-log cleanup smoke covers guard failures, deleted-detail 404 and
+  clean-all target removal.
+- Config smoke covers runtime shape and no plaintext secret storage.
 
-- Login prefix regression: duplicate `/api/api` login is blocked by deploy/Admin
-  smoke.
-- Stale Admin deployment: deploy script checks built bundle markers for changed
-  pages.
-- Session/token revocation: auth/online-user/login-log smokes verify revoked
-  tokens fail.
-- Notice outbox semantics: smoke verifies pending handoff, retry, provider
-  process-to-sent, signed callback sync and explicit sent mutation guards.
-- Operation-log cleanup: smoke verifies batch-delete guards, deleted-detail 404
-  and clean-all target removal.
-- Config/secret drift: smoke verifies runtime config shape and no plaintext
-  secret storage.
+## Documentation Finding
 
-## Documentation Findings
+The low-signal docs were per-round reports, copied gate text and repeated
+reference disclaimers. Keep only current state, guard matrix, active queue and
+real incident decisions. Do not create per-round reports by default.
 
-The main low-signal docs were the 68 per-round reports and aggregate files that
-repeated the same command lists and "reference comparison" wording. The
-per-round reports have been removed; aggregate files now keep only current
-state, guard matrix and active queue.
-
-Going forward:
-
-- Aggregate docs must stay under control.
-- Do not create per-round completion reports by default.
-- Standard command output belongs in the final response or terminal history,
-  not copied into every doc.
-
-## Current Residual Risk
+## Residual Risk
 
 - Notice still needs real SMTP/SMS adapters, retry scheduling and realtime
-  push before claiming full provider delivery depth.
-- Config still needs multi-environment governance and external KMS/rotation for
-  a stronger enterprise posture.
-- Operation-log retention scheduling/enrichment, scheduler/monitor and
-  OpenForge Admin still need deeper operator workflows.
+  push before provider-depth parity.
+- Config still needs multi-environment governance and external KMS/rotation.
+- Operation-log enrichment, scheduler/monitor depth and OpenForge Admin remain
+  P2 foundation work.
 
-## Next Audit Trigger
+## Trigger Next Audit
 
-Run another audit when one of these happens:
-
-- a repeated failure appears again,
-- a round adds more documentation than code without a clear reason,
-- a new P0/P1 foundation domain is about to start,
-- a deployed public smoke fails after local tests passed.
+Audit again when a repeated failure returns, docs grow faster than code, a new
+P0/P1 foundation domain starts, or public smoke fails after local tests pass.

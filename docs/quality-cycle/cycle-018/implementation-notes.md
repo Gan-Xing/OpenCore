@@ -20,10 +20,6 @@
 - `apps/admin/scripts/smoke-test.mjs` now checks filename sanitization, unsafe-character coverage, fallback behavior and `.csv` enforcement.
 - `docs/development/export-upload-contract.md`, `docs/development/openforge-template-authoring.md` and `docs/development/openforge-v1-architecture.md` now require local `.csv` basename sanitization.
 
-## Verification
-
-Focused checks and the applicable gate passed. Command transcripts are intentionally omitted; keep unique defects, guards and decisions only.
-
 ## Full Gate
 
 - `node tools/quality-cycle/opencore-quality-cycle.mjs gate`

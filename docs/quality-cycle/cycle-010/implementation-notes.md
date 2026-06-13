@@ -20,7 +20,3 @@
 - Added detail metadata to security log pages, including operation log metadata JSON.
 - Extended Admin smoke coverage so core wrappers must render `ReadOnlyDetailDrawer` and core pages must pass `detailFields={detailFields}`.
 - Updated OpenForge V1 docs so generated core Admin wrappers expose read-only detail metadata and config detail redaction.
-
-## Verification
-
-Focused checks and the applicable gate passed. Command transcripts are intentionally omitted; keep unique defects, guards and decisions only.

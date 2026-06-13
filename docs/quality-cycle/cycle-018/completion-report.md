@@ -14,10 +14,6 @@ Cycle 018 hardened Admin current-page CSV downloads by sanitizing the browser do
 - Extended Admin smoke checks to require filename sanitization alongside formula-prefix neutralization and object-cell redaction.
 - Updated export/upload and OpenForge V1 Admin export guidance.
 
-## Verification
-
-Focused checks and the applicable quality gate passed. Repeated command transcripts were removed; use `docs/quality-cycle/ledger.md` and the current handoff for gate/deploy state.
-
 ## Follow-Up
 
 - Generated Admin exports should continue using stable resource names, but the shared helper now protects future custom filenames.

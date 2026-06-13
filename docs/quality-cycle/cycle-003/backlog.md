@@ -25,8 +25,3 @@
 - [x] Q003-P6-INTEGRATION-FILTERS：阶段 6；问题：providers/templates/outbox lists 无法按 type/enabled/health/status/provider 查询；参考来源：Yudao mail/sms/oauth/pay list APIs；涉及文件：`apps/api/src/modules/integration/integration/*`、`packages/sdk/src/integration-*`；实施要求：providers 支持 type/enabled/healthStatus，templates 支持 enabled，outbox 支持 status/providerCode；完成标准：不实现真实 payment/WeChat/WebSocket runtime。
 
 ## 7. Cycle 003 Closeout
-
-- [x] Q003-CLOSE-001：更新 `docs/quality-cycle/cycle-003/implementation-notes.md`。
-- [x] Q003-CLOSE-002：写 `docs/quality-cycle/cycle-003/completion-report.md`。
-- [x] Q003-CLOSE-003：运行全仓 gate。
-- [x] Q003-CLOSE-004：运行 `node tools/quality-cycle/opencore-quality-cycle.mjs complete-cycle --max 20 --run-gate` 并确认 completedCycles +1。

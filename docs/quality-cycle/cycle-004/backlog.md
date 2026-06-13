@@ -11,8 +11,3 @@
 - [x] Q004-P5-OPERATIONS-ACTION-GUARDS：阶段 5；问题：disabled job 仍可 trigger，revoked session 可重复 kick-out 且 body 审计意图未体现；参考来源：RuoYi/Yudao job status transition tests、monitor online user force logout；涉及文件：`apps/api/src/modules/monitor/operations/*`、`apps/admin/src/pages/Monitor/*`；实施要求：triggerJob 仅允许 enabled job，kickOutSession 拒绝已 revoked session，Admin fixture page 展示 guarded action policy；完成标准：operations action 不会对禁用/终态记录继续写入。
 
 - [x] Q004-P6-INTEGRATION-ACTION-GUARDS：阶段 6；问题：mail/SMS outbox 可使用 disabled provider，provider/channel mismatch 抛 plain Error，disabled template 仍可用于 enqueue；参考来源：Yudao mail/sms/template send/test、OAuth callback contract；涉及文件：`apps/api/src/modules/integration/integration/*`、`apps/admin/src/pages/Integrations/*`；实施要求：enqueueOutbox 要求 provider enabled、provider type 匹配 channel、template enabled，错误统一为 Nest `BadRequestException`；Admin fixture page 展示 provider/template action policy；完成标准：integration mock outbox 保持设计边界且 action guard 清晰。
-
-- [x] Q004-CLOSE-001：更新 `docs/quality-cycle/cycle-004/implementation-notes.md`。
-- [x] Q004-CLOSE-002：写 `docs/quality-cycle/cycle-004/completion-report.md`。
-- [x] Q004-CLOSE-003：运行全仓 gate。
-- [x] Q004-CLOSE-004：运行 `node tools/quality-cycle/opencore-quality-cycle.mjs complete-cycle --max 20 --run-gate` 并确认 completedCycles +1。

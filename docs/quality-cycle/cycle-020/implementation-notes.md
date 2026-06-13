@@ -73,12 +73,6 @@ TypeScript/NestJS monorepo rather than copied from Java/Spring/MyBatis.
 - The first online-user migration attempt exposed an existing local migration
   precondition; rollback was recorded and the migration was made idempotent.
 
-## Verification
-
-Focused package tests and the full backend gate passed during the cycle. Do not
-paste per-package command transcripts here again; the active gate set belongs in
-the current handoff/goal and the completion marker belongs in the ledger.
-
 ## Completion
 
 Cycle-020 completed BE20-P01 through BE20-P24 and handed off to cycle-021 for
