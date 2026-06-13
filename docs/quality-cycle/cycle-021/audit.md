@@ -568,3 +568,30 @@ This stays inside the current S7 System/RBAC profile boundary. It does not
 introduce email/phone profile fields, social account binding, Excel
 import/export workflows, batch user delete, batch enable/disable or a separate
 User-page role assignment dialog in this round.
+
+## Round 32 Audit: core.user Batch Mutations
+
+After Round 31, the next lower-dependency `core.user` management gap was batch
+status and batch delete:
+
+- RuoYi exposes batch user deletion and status changes on the user management
+  surface, and Yudao exposes `delete-list` plus `update-status`.
+- OpenCore already had single-user status/delete, system-user mutation guards
+  and online-session revocation semantics, so batch mutations could reuse the
+  same product contract instead of opening a new subsystem.
+- Batch status/delete needed repository-level validation so empty arrays,
+  duplicate IDs, missing users and system users fail before mutation.
+- Prisma batch delete needed a transaction across user-role, user-post and
+  user rows so cleanup is not partial.
+- Route order mattered: static `users/batch/*` routes had to be registered
+  before dynamic `users/:id` routes.
+- Admin needed real row selection and disabled system-user checkboxes, not only
+  hidden action buttons.
+- Fixed-port, deploy and public smoke needed to prove batch session revocation
+  and login blocking so this does not regress into another operator-memory
+  rule.
+
+This stays inside the current S7 System/RBAC user-management boundary. It does
+not introduce Excel import/export file workflows, email/phone profile fields,
+social account binding or a dedicated User-page role assignment dialog in this
+round.

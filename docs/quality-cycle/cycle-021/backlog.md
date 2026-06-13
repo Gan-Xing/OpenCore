@@ -857,6 +857,48 @@ workflows.
       URL verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 32: core.user Batch Mutation Productization
+
+Why this slice: after profile avatar, the next lower-dependency user-management
+gap was batch status and batch delete. RuoYi exposes batch user delete through
+`DELETE /system/user/{userIds}` and status change through `changeStatus`; Yudao
+exposes `delete-list` and `update-status`. OpenCore already had single-user
+status/delete and session revocation semantics, so this round could close the
+batch workflow without opening Excel import/export parsing.
+
+- [x] Add batch user DTOs for status and delete requests plus a shared batch
+      mutation result.
+- [x] Add batch user ID normalization that rejects empty arrays, duplicate IDs
+      and non-string IDs.
+- [x] Extend seed and Prisma user repositories with batch status and batch
+      delete contracts.
+- [x] Protect system users and missing IDs before mutation.
+- [x] Use a Prisma transaction for batch delete cleanup across
+      `userRole/userPost/user`.
+- [x] Add `PATCH /api/core/users/batch/status` guarded by `core:user:update`
+      before dynamic `users/:id` routes.
+- [x] Add `DELETE /api/core/users/batch` guarded by `core:user:delete` before
+      dynamic `users/:id` routes.
+- [x] Revoke active online sessions for all affected usernames after batch
+      status and batch delete.
+- [x] Extend API permission-matrix tests, OpenAPI, SDK types/client methods and
+      SDK path tests.
+- [x] Add Admin Users row selection, system-user disabled checkboxes, and
+      `Enable selected` / `Disable selected` / `Delete selected` toolbar
+      actions.
+- [x] Extend Admin static smoke guards for batch service methods and page
+      markers.
+- [x] Extend fixed-port/deploy/public `core.user` smoke to prove empty,
+      duplicate, system-user and missing-user guards, batch disable with
+      session revocation and login block, batch re-enable, and batch delete
+      with session revocation and login block.
+- [x] Verify public Admin chunk markers, public main-bundle batch API paths,
+      Admin same-origin proxy login, stale `/api/api` login compatibility and
+      Admin same-origin batch guard.
+- [x] Run focused, typecheck, build, fixed-port smoke, deployment and public
+      URL verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -894,12 +936,14 @@ treat "minimal loop" as "minimal final product".
 - [ ] Round 3/22/25 `core.post`: user-post binding and simple-list option
       source are complete; batch operations and ordered list refinements
       remain.
-- [ ] Round 7/19/22/23/28/29/30/31 `core.user`: status toggle, reset password and
+- [ ] Round 7/19/22/23/28/29/30/31/32 `core.user`: status toggle, reset password and
       direct user-mutation session invalidation are complete. Post binding,
       department side-tree filtering, self-profile basic display-name
       read/update, self-password and authenticated simple-list option source
       are complete. Profile avatar upload/public preview/replace/delete is
-      complete. Import/export and batch workflows still need enhancement.
+      complete. Batch enable/disable and batch delete are complete. Excel
+      import/export and any dedicated User-page role assignment workflow still
+      need enhancement if admitted.
 - [ ] Round 9/24 `core.config`: public get-value-by-key, cache refresh and
       mutation invalidation are complete. Category/name/remark enrichment,
       batch/file export depth and broader runtime propagation boundaries remain.
@@ -944,7 +988,7 @@ treat "minimal loop" as "minimal final product".
   endpoint.
 - Registry definition editing and dynamic permission discovery.
 - User Excel import/export file workflows, dedicated User-page role assignment
-  dialog, social endpoints and batch user delete.
+  dialog and social endpoints.
 - Batch dictionary delete, Excel import/export file workflows, dictionary
   color/css/remark fields, app-wide dictionary cache TTL/invalidation and
   dictionary cache refresh.

@@ -3,13 +3,38 @@
 Date: 2026-06-13
 Repository: `Gan-Xing/OpenCore`
 Default branch: `main`
-Latest observed feature commit: `09cb9b0 feat(core-user): add profile avatar loop / 新增用户头像闭环`
-Latest deployed feature commit: `09cb9b0 feat(core-user): add profile avatar loop / 新增用户头像闭环`
+Latest observed feature commit: `1bfd082 feat(core-user): add batch user mutations / 新增用户批量变更闭环`
+Latest deployed feature commit: `1bfd082 feat(core-user): add batch user mutations / 新增用户批量变更闭环`
 Latest deployed hardening commit: `04e446c fix(online-user): stabilize admin session smoke / 稳定在线用户管理员会话冒烟`
 
 ## One-sentence Goal
 
 基于已完成的 BE20 后端运行时包化闭环，启动 cycle-021 capability-map 产品化递归：由 AI 实时对比若依/芋道与 OpenCore，按最低依赖能力缺口逐轮补齐 API/SDK/Admin/权限/菜单/种子/OpenAPI/smoke-e2e，并在每个可验收功能后 commit & push，直到 OpenCore 成为可真实登录、可完整操作、可观测、可生成的现代 TS/NestJS monorepo 企业后台底座。
+
+## Recurring Loop Contract
+
+Use this contract for every follow-up round:
+
+- Read this handoff first, then keep
+  `productization-waterline-audit.md`, `backlog.md`, `reference-comparison.md`
+  and the latest completion report aligned.
+- Recompare RuoYi/Yudao/OpenCore before choosing the next capability, and keep
+  each capability's productization waterline plus debt queue explicit.
+- One round means one minimal deployable, verifiable and reversible product
+  stage. It does not mean the product only receives a minimal final
+  implementation; the same product can and should take multiple rounds until it
+  reaches the admitted waterline.
+- Sort work by lowest dependency and product foundation value, then fill the
+  necessary API, SDK, Admin, permission/menu, seed, OpenAPI, smoke/e2e and docs
+  surfaces for that stage.
+- For every code change, run the required tests, commit, push, deploy through
+  `pnpm deploy:opencore`, and verify the public URLs. Do not hand-pick ports.
+- Fixed ports are API `39172`, Admin `39174` and local smoke `39173`.
+- Repeated failures such as deserialization drift, `/api/api` login prefix
+  handling, stale frontend bundles and session/token revocation must become
+  code tests, smoke checks or deployment-script guards.
+- Pure documentation-only updates still need format/check, commit and push, but
+  do not require redeploying unchanged runtime artifacts.
 
 ## Current Project State Rechecked
 
@@ -72,6 +97,7 @@ productization waterline completion; see
 - Round 29 `core.user` self-password stage 6
 - Round 30 `core.user` simple-list option source stage 7
 - Round 31 `core.user` profile avatar stage 8
+- Round 32 `core.user` batch status/delete stage 9
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -292,6 +318,21 @@ smoke 均证明未登录上传 401、非法 MIME/base64 400、上传后公网下
 可下载原始图片 bytes；公网 Admin 代理 `/api/auth/login`、兼容 `/api/api/auth/login`
 以及 API origin `/api/api/auth/login` 均返回 201。
 
+Round 32 继续补齐 `core.user` 队列：用户现在有批量启用/禁用和批量删除闭环。
+参考 RuoYi 的 `DELETE /system/user/{userIds}`、`changeStatus` 与 Yudao 的
+`/system/user/delete-list`、`update-status`，OpenCore 新增
+`PATCH /api/core/users/batch/status` 和 `DELETE /api/core/users/batch`，分别复用
+`core:user:update` 和 `core:user:delete` 权限。系统用户、空数组、重复 ID 和缺失用户
+都在仓储层校验；Prisma 删除使用 transaction 清理 `userRole/userPost/user`；controller
+统一按用户名撤销 active sessions。SDK/OpenAPI、API 权限矩阵、Admin Users 批量工具栏、
+Admin static smoke 和固定 core-user smoke 均同步该闭环。Admin Users 表格现在禁选 system
+用户，支持 `Enable selected`、`Disable selected` 和 `Delete selected`。固定 smoke、部署
+smoke 和公网 smoke 均证明批量禁用会撤销两个临时用户 token 并阻止登录，批量启用后可重新
+登录，批量删除会再次撤销 token 并阻止登录。当前 main bundle `umi.43e7d8e3.js` 已验证
+包含 batch API path，公网 Users chunk `p__System__Users.9bc5aeb8.async.js` 已验证包含
+批量 UI 文案；公网 Admin 代理 `/api/auth/login`、兼容 `/api/api/auth/login`、
+API origin `/api/api/auth/login` 和 Admin 同源 batch guard 均通过。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -301,7 +342,7 @@ The productization waterline now classifies:
   `core.file`, Round 4/16 `core.menu`, Round 5/17/18/20 `core.role`,
   Round 8/21 `core.dict`.
 - First loop, enhance: Round 1 `core.notice`, Round 2/27 `core.dept`, Round
-  3/22/25 `core.post`, Round 7/19/22/23/28/29/30/31 `core.user`, Round 9/24
+  3/22/25 `core.post`, Round 7/19/22/23/28/29/30/31/32 `core.user`, Round 9/24
   `core.config`, Round 11/26 `core.login-log`.
 - Thin, rework: none after Round 16.
 
@@ -316,8 +357,10 @@ finds another blocker:
    self-password change with old-password verification and session revocation;
    Round 30 closed the authenticated user simple-list option source consumed
    by Admin role user assignment; Round 31 closed profile avatar upload,
-   public preview, replacement and deletion. Remaining work is import/export
-   and batch workflows.
+   public preview, replacement and deletion; Round 32 closed batch
+   enable/disable and batch delete with session revocation. Remaining work is
+   Excel import/export and any dedicated User-page role assignment workflow if
+   admitted.
 2. `core.config`: Round 24 closed public get-value-by-key plus cache
    refresh/invalidation. Remaining work is category/name/remark enrichment,
    batch/file export depth and broader runtime propagation boundaries.

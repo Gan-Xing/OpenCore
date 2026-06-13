@@ -2437,3 +2437,107 @@ Against public endpoints after deploy:
   `09cb9b0 feat(core-user): add profile avatar loop / 新增用户头像闭环`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 32 Capability
+
+Capability: `core.user` batch mutation productization.
+
+Goal: close the user-management batch status/delete workflow while preserving
+system-user protection and the session revocation semantics introduced by the
+single-user mutation rounds.
+
+## Round 32 Implemented
+
+- Added `BatchSetUserStatusDto`, `BatchDeleteUsersDto` and
+  `BatchUserMutationResultDto`.
+- Added repository-level batch ID normalization that rejects empty arrays,
+  duplicate IDs and non-string IDs.
+- Extended system user seed and Prisma repositories with `setUsersStatus()` and
+  `deleteUsers()` contracts.
+- Protected missing users and system users before mutation.
+- Implemented Prisma batch delete as a transaction across `userRole`,
+  `userPost` and `user`.
+- Added `PATCH /api/core/users/batch/status`, guarded by `core:user:update`.
+- Added `DELETE /api/core/users/batch`, guarded by `core:user:delete`.
+- Kept both static batch routes before dynamic `users/:id` routes.
+- Revoked active online sessions for all affected usernames after batch status
+  and batch delete.
+- Extended API permission-matrix tests.
+- Extended OpenAPI snapshot, SDK batch request/result types, client methods and
+  SDK path tests.
+- Added Admin platform methods `setOpenCoreUsersStatus()` and
+  `deleteOpenCoreUsers()`.
+- Added Admin Users row selection, system-user disabled checkboxes and toolbar
+  actions for `Enable selected`, `Disable selected` and `Delete selected`.
+- Extended Admin static smoke guards for batch service methods and page markers.
+- Extended `tools/scripts/smoke-core-user.mjs` to prove empty/duplicate/system/
+  missing-user guards, batch disable session revocation and login blocking,
+  batch enable, and batch delete session revocation plus login blocking.
+
+## Round 32 Verification
+
+- `pnpm prisma:validate`
+- `pnpm nx test system --testFile=system-user.spec.ts`
+- `pnpm nx test sdk --testFile=rbac-client.spec.ts`
+- `pnpm nx test api --testFile=rbac.permission-matrix.spec.ts`
+- `node scripts/smoke-test.mjs` from `apps/admin`
+- `pnpm nx run-many -t typecheck --projects=api,admin,sdk,system`
+- `pnpm openapi:export`
+- `pnpm openapi:check`
+- `pnpm sdk:check`
+- `pnpm nx test admin`
+- `pnpm smoke:api:local`
+- `pnpm build:api`
+- `pnpm build:admin`
+- `pnpm format:check`
+- `pnpm openapi:registry-tags:check`
+- `pnpm deploy:opencore`
+
+`pnpm smoke:api:local` passed on fixed port `39173`, including
+`core.user.batch-status.empty-guard`,
+`core.user.batch-status.duplicate-guard`,
+`core.user.batch-status.system-user-guard`,
+`core.user.batch-status.missing-user-guard`,
+`core.user.batch-delete.duplicate-guard`,
+`core.user.batch-delete.system-user-guard`,
+`core.user.batch-status.disable`,
+`core.user.batch-status.revoke-sessions`,
+`core.user.batch-status.login-blocked`,
+`core.user.batch-status.enable`,
+`core.user.batch-delete`,
+`core.user.batch-delete.revoke-sessions` and
+`core.user.batch-delete.login-blocked`.
+
+`pnpm deploy:opencore` passed, deploying API/Admin on fixed ports
+`39172`/`39174`; deploy smoke includes the new user batch checks and the
+existing login-prefix/frontend-cache/session-revocation guards.
+
+## Round 32 Public Verification
+
+Against public endpoints after deploy:
+
+- Public `pnpm smoke:core-user` passed against
+  `http://144.217.243.161:39172` after loading the deployed admin password
+  from `.env.opencore.local` without printing secrets.
+- Public user smoke verified empty IDs 400, duplicate IDs 400, system-user 400,
+  missing user 404, batch disable, two-session revocation, login blocking,
+  batch re-enable, batch delete, two-session revocation and post-delete login
+  blocking.
+- Public Admin `GET http://144.217.243.161:39174/system/users/` returned 200.
+- Public Users chunk `p__System__Users.9bc5aeb8.async.js` contains
+  `Enable selected`, `Disable selected`, `Delete selected` and
+  `Selected users deleted.`.
+- Public main bundle `umi.43e7d8e3.js` contains `/core/users/batch/status` and
+  `/core/users/batch`.
+- Public Admin same-origin proxy login returned 201 for both `/api/auth/login`
+  and stale-compatible `/api/api/auth/login`; public API origin
+  `/api/api/auth/login` also returned 201.
+- Public Admin same-origin batch status guard returned 400 for an empty
+  `userIds` payload, proving the Admin proxy reaches the new batch endpoint.
+
+## Round 32 Commit Record
+
+- Feature commit:
+  `1bfd082 feat(core-user): add batch user mutations / 新增用户批量变更闭环`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

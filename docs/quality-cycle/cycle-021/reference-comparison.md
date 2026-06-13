@@ -950,3 +950,36 @@ its existing file-storage boundary:
 OpenCore still does not admit email/phone profile fields, social account
 binding, Excel import/export workflows, batch user deletion or a dedicated
 User-page role assignment dialog in this round.
+
+## Round 32 User Batch Mutation Reference Shape
+
+RuoYi exposes user batch deletion through `DELETE /system/user/{userIds}` and
+uses a separate `changeStatus` endpoint for user status changes. Yudao exposes
+the same product shape with `DELETE /system/user/delete-list` for batch delete
+and `PUT /system/user/update-status` for status mutation. Both products also
+carry Excel import/export on the user management surface, but file parsing and
+template workflows are a separate, higher-dependency slice.
+
+OpenCore admits the matching stage-9 batch mutation loop while preserving the
+session-revocation semantics added in earlier user rounds:
+
+- `PATCH /api/core/users/batch/status` accepts `{ userIds, enabled }` and is
+  guarded by `core:user:update`;
+- `DELETE /api/core/users/batch` accepts `{ userIds }` and is guarded by
+  `core:user:delete`;
+- both endpoints are static routes before dynamic `users/:id` routes;
+- empty arrays, duplicate IDs, missing users and system users are rejected
+  before mutation;
+- Prisma batch delete runs in a transaction across `userRole`, `userPost` and
+  `user`;
+- both batch status and batch delete revoke active online sessions for all
+  affected usernames;
+- Admin Users exposes row selection with system users disabled and toolbar
+  actions for `Enable selected`, `Disable selected` and `Delete selected`;
+- fixed-port, deploy and public smoke prove batch guards, token revocation,
+  login blocking, Admin bundle markers, duplicate `/api/api` login tolerance
+  and Admin same-origin proxy access.
+
+OpenCore still does not admit Excel import/export file workflows, email/phone
+profile fields, social account binding or a dedicated User-page role assignment
+dialog in this round.
