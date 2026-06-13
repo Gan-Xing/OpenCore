@@ -1400,6 +1400,42 @@ can explicitly unlock the username.
       URL verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 48: core.login-log Cleanup Maintenance Actions
+
+Why this slice: after Round 47, OpenCore could list/detail/export login logs,
+parse device fields, filter by type/result/time/IP, enforce login lockout and
+unlock usernames, but it still lacked the RuoYi-style login-log maintenance
+surface for deleting selected rows and cleaning all login logs. This is the
+lowest-dependency login-log product gap before richer enrichment or broader
+login-type recording.
+
+- [x] Recompare RuoYi `SysLogininforController.remove/clean` and Yudao's
+      current login-log read/export surface against OpenCore.
+- [x] Add `BatchDeleteLoginLogsDto`, batch mutation result DTO and clean-all
+      result DTO.
+- [x] Extend audit login-log repository/service contracts with
+      `deleteLoginLogs` and `cleanLoginLogs`.
+- [x] Implement seed and Prisma batch delete with empty-array, duplicate-ID,
+      missing-ID and no-partial-delete guards.
+- [x] Implement seed and Prisma clean-all with affected count.
+- [x] Add `DELETE /api/core/login-logs/batch` and
+      `DELETE /api/core/login-logs/clean` before dynamic `login-logs/:id`.
+- [x] Register `core:login-log:delete` as a dangerous permission and wire API
+      permission matrix plus Admin access.
+- [x] Extend SDK types/client and Admin platform service.
+- [x] Add Admin Login Logs selected-row deletion and clean-all buttons guarded
+      by `canDeleteLoginLogs`.
+- [x] Refresh OpenAPI snapshot.
+- [x] Extend Admin static smoke for cleanup UI, delete permission and SDK
+      service markers.
+- [x] Extend fixed-port/deploy/public `core.login-log` smoke with empty,
+      duplicate, missing-no-partial, delete, detail-404, clean-all,
+      empty-list and post-clean logging checks.
+- [x] Run focused tests, OpenAPI/SDK checks, Prisma validate, typecheck, lint,
+      format, build, fixed-port smoke, deployment and public URL verification
+      gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -1450,13 +1486,13 @@ treat "minimal loop" as "minimal final product".
       `auth.login.lockoutMinutes`. Round 47 consumes that key from
       security-auth. Broader feature-flag propagation and any admitted secret
       vault/KMS integration remain.
-- [ ] Round 11/26/45/47 `core.login-log`: browser/OS parsing, IP/time filters,
+- [ ] Round 11/26/45/47/48 `core.login-log`: browser/OS parsing, IP/time filters,
       persisted login type/result schema, Admin display and type/result
       filters are complete. Persisted failed-attempt lockout, `account_locked`
-      result mapping and permissioned username unlock are complete. IP/location
-      enrichment where feasible, login-log cleanup/deletion policy,
-      configurable failed-attempt threshold and broader logout/mobile/social
-      logging stages remain.
+      result mapping and permissioned username unlock are complete. Permissioned
+      selected-row deletion and clean-all maintenance actions are complete.
+      IP/location enrichment where feasible, configurable failed-attempt
+      threshold and broader logout/mobile/social logging stages remain.
 
 ### Thin, Must Rework Before More Broad Surfaces
 
@@ -1502,9 +1538,9 @@ treat "minimal loop" as "minimal final product".
 - Presigned upload/download URLs, storage-provider config, public
   download/preview/copy-link workflows, batch file delete and object browser
   expansion.
-- Login-log deletion/cleanup, configurable failed-attempt threshold,
-  lockout-policy tuning beyond the current window, session termination from the
-  login-log page and IP location enrichment.
+- Configurable failed-attempt threshold, lockout-policy tuning beyond the
+  current window, session termination from the login-log page, IP location
+  enrichment and broader logout/mobile/SMS/social login logging.
 - Operation-log deletion/cleanup, batch delete, duration/location/user-agent
   schema expansion, operation type enum expansion, async queue/indexing and
   business-domain audit timeline views.

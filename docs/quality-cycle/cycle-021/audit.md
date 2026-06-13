@@ -773,3 +773,33 @@ After Round 38, the next lower-dependency `core.config` gap was batch deletion:
 This stays inside the current S7 System configuration boundary. It does not
 introduce a built-in-config type/policy field, secret vault/KMS integration or
 broad runtime feature-flag propagation in this round.
+
+## Round 48 Audit: core.login-log Cleanup Maintenance Actions
+
+After Round 47, the next lower-dependency `core.login-log` gap was login-log
+maintenance:
+
+- RuoYi exposes selected-row delete and clean-all actions through
+  `SysLogininforController.remove` and `clean`, beside list/export and unlock.
+- Yudao's current login-log controller remains closer to read/page/export, so
+  OpenCore uses RuoYi as the maintenance reference while preserving Yudao-style
+  structured `logType/result` values from earlier rounds.
+- OpenCore already had list/detail/export, device and time/IP filters,
+  structured results, account lockout and username unlock, so this slice did
+  not need another auth-model or schema-expansion round.
+- The batch route needed to be registered before `login-logs/:id` so
+  `batch`/`clean` cannot be parsed as dynamic IDs.
+- The input guard needed to reject empty arrays, duplicate IDs and missing IDs,
+  and a mixed existing/missing request must not partially delete the existing
+  row.
+- Admin needed selected-row deletion and clean-all actions on the real Login
+  Logs page, guarded by `core:login-log:delete`, not another fixture-only
+  control.
+- Fixed-port, deploy and public smoke needed to prove guards, successful
+  deletion, detail 404 after deletion, clean-all, empty list after clean,
+  post-clean logging and the deployed Admin same-origin proxy route.
+
+This stays inside the current S7 Security/System login-log boundary. It does
+not introduce IP location enrichment, configurable failed-attempt threshold,
+logout/mobile/SMS/social logging or session termination from the login-log
+page in this round.

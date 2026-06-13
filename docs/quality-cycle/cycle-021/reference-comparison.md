@@ -1466,3 +1466,35 @@ the matching security-auth and login-log foundation:
 OpenCore does not claim captcha verification, IP location enrichment, login-log
 delete/clean, configurable failed-attempt threshold, logout logging, mobile/SMS
 or social login workflows in this round.
+
+## Round 48 Login Log Cleanup Maintenance Reference Shape
+
+RuoYi's `SysLogininforController` treats login-log maintenance as part of the
+monitoring login-info surface: it exposes selected-row removal and clean-all
+operations in addition to list/export and username unlock. Yudao's current
+login-log controller remains closer to a read/export audit surface, so for this
+stage RuoYi is the stronger reference for maintenance actions while Yudao
+continues to inform result typing and read/export shape.
+
+OpenCore already had immutable login-log list/detail/export, browser/OS and
+time/IP filters, `logType/result` schema, account lockout and username unlock.
+Round 48 admits the cleanup maintenance stage:
+
+- expose `DELETE /api/core/login-logs/batch` for selected-row deletion;
+- expose `DELETE /api/core/login-logs/clean` for clean-all maintenance;
+- protect both routes with dangerous `core:login-log:delete`;
+- keep the batch route ahead of `login-logs/:id` so static cleanup paths are
+  never swallowed by dynamic detail routing;
+- reject empty arrays, duplicate IDs and missing IDs;
+- reject mixed existing/missing IDs without deleting the existing row;
+- return affected counts for both selected deletion and clean-all;
+- add SDK/OpenAPI/Admin service wrappers and Admin Login Logs selected-row UI;
+- disable destructive Admin actions when the operator lacks
+  `core:login-log:delete`;
+- fixed-port, deploy and public smoke prove guards, successful deletion,
+  detail 404 after deletion, clean-all, empty list after clean and post-clean
+  failed-login recording.
+
+OpenCore does not claim IP location enrichment, configurable failed-attempt
+threshold, logout/mobile/SMS/social login recording or session termination from
+the login-log page in this round.

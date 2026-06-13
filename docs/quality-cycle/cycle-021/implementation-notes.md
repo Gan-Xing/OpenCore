@@ -3879,3 +3879,92 @@ Against public endpoints after deploy:
   `8295eb5 feat(login-log): add login lockout unlock flow / 新增登录锁定解锁闭环`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 48 Capability
+
+Capability: `core.login-log` cleanup maintenance actions.
+
+Goal: add the RuoYi-style selected-row delete and clean-all maintenance surface
+for login logs while keeping strict guards, permission boundaries, SDK/Admin
+coverage and fixed/deploy/public smoke verification.
+
+## Round 48 Implemented
+
+- Rechecked RuoYi login-info `remove` and `clean` controller actions.
+- Rechecked Yudao's current login-log controller as a read/export baseline.
+- Added login-log batch delete and clean-all DTO/result contracts.
+- Extended `@opencore/audit` login-log repository/service contracts.
+- Implemented seed and Prisma `deleteLoginLogs` with empty-array,
+  duplicate-ID, missing-ID and no-partial-delete protection.
+- Implemented seed and Prisma `cleanLoginLogs` with affected count.
+- Added `DELETE /api/core/login-logs/batch` and
+  `DELETE /api/core/login-logs/clean` before the dynamic detail route.
+- Registered dangerous `core:login-log:delete` permission in
+  module-registry, API permission matrix and Admin access.
+- Added SDK types/client methods and Admin platform service wrappers.
+- Added Admin Login Logs row selection, `Delete selected` and `Clean all`
+  actions guarded by `canDeleteLoginLogs`.
+- Extended Admin static smoke and `tools/scripts/smoke-core-login-log.mjs`.
+- Refreshed OpenAPI snapshot.
+
+## Round 48 Verification
+
+- `node --check tools/scripts/smoke-core-login-log.mjs`
+- `node --check apps/admin/scripts/smoke-test.mjs`
+- `pnpm nx test audit --testFile=audit-login-log.spec.ts`
+- `pnpm nx test sdk --testFile=system-management-client.spec.ts`
+- `pnpm nx test module-registry --testFile=index.spec.ts`
+- `pnpm nx test api --testFile=system-management.permission-matrix.spec.ts`
+- `pnpm test:admin`
+- `pnpm openapi:export`
+- `pnpm prisma:validate`
+- `pnpm nx run-many -t typecheck --projects=api,admin,sdk,audit,security,system,contracts,module-registry`
+- `pnpm openapi:check`
+- `pnpm sdk:check`
+- `pnpm openapi:registry-tags:check`
+- `pnpm build:api`
+- `pnpm build:admin`
+- `pnpm lint`
+- `pnpm format:check`
+- `git diff --check`
+- `pnpm smoke:api:local`
+- `pnpm deploy:opencore`
+
+`pnpm smoke:api:local` passed on fixed port `39173`, including
+`core.login-log.batch-delete-empty-guard`,
+`core.login-log.batch-delete-duplicate-guard`,
+`core.login-log.batch-delete-missing-no-partial`,
+`core.login-log.batch-delete`, `core.login-log.batch-delete-detail-404`,
+`core.login-log.clean-all`, `core.login-log.clean-all-list-empty` and
+`auth.post-clean-failed-login-recorded`.
+
+`pnpm deploy:opencore` passed, deploying API/Admin on fixed ports
+`39172`/`39174`; deploy smoke included duplicate-prefix login compatibility,
+Admin bundle cache checks and the same login-log cleanup guards.
+
+## Round 48 Public Verification
+
+Against public endpoints after deploy:
+
+- Public API: `http://144.217.243.161:39172`
+- Public Admin: `http://144.217.243.161:39174`
+- Admin main bundle: `umi.5e1fae41.js`
+- Login Logs chunk: `p__Security__LoginLogs.1647b5aa.async.js`
+- Public API smoke passed after loading `.env.opencore.local` credentials:
+  `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-login-log`.
+  Checks included the batch-delete guard path, successful deletion, clean-all,
+  empty-list assertion and post-clean failed-login recording.
+- Public Admin login page returned `cache-control: no-cache`.
+- Public Admin main bundle contains the deployed API origin and no
+  bundle-generated duplicate `/api/api/auth/login`.
+- Public Admin Login Logs chunk contains `Delete selected`, `Clean all`,
+  `core:login-log:delete` and `Audit trail with unlock and cleanup`.
+- Public Admin same-origin `/api/core/login-logs/batch` returned 400 for an
+  empty `ids` payload, proving the deployed Admin proxy reaches the new route.
+
+## Round 48 Commit Record
+
+- Feature commit:
+  `052d9be feat(login-log): add cleanup maintenance actions / 新增登录日志清理维护动作`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

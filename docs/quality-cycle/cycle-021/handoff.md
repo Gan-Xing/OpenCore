@@ -3,8 +3,8 @@
 Date: 2026-06-13
 Repository: `Gan-Xing/OpenCore`
 Default branch: `main`
-Latest observed feature commit: `8295eb5 feat(login-log): add login lockout unlock flow / 新增登录锁定解锁闭环`
-Latest deployed feature commit: `8295eb5 feat(login-log): add login lockout unlock flow / 新增登录锁定解锁闭环`
+Latest observed feature commit: `052d9be feat(login-log): add cleanup maintenance actions / 新增登录日志清理维护动作`
+Latest deployed feature commit: `052d9be feat(login-log): add cleanup maintenance actions / 新增登录日志清理维护动作`
 Latest deployed hardening commit: `4df5dd1 fix(system): satisfy xlsx export lint guard / 修复 XLSX 导出 lint 守卫`
 
 ## One-sentence Goal
@@ -113,6 +113,7 @@ productization waterline completion; see
 - Round 45 `core.login-log` login type/result schema stage 3
 - Round 46 `core.config` runtime login policy stage 8
 - Round 47 `core.login-log` login lockout/unlock stage 4
+- Round 48 `core.login-log` cleanup maintenance stage 5
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -597,6 +598,26 @@ smoke 均验证 `auth.login-lockout.enforced`、`core.login-log.account-locked-f
 注意：这轮关闭的是 username/password 登录的基础锁定/解锁，不等于验证码、IP 归属地、日志清理/
 删除、可配置失败次数阈值或 logout/mobile/social 登录日志已经完成。
 
+Round 48 继续补齐 `core.login-log` 队列，把 RuoYi 登录日志控制器的 `remove`/`clean`
+维护面转译成 OpenCore 的权限化清理闭环。参考 RuoYi
+`SysLogininforController.remove` 和 `clean`，以及 Yudao 当前登录日志页仍偏只读的取舍，
+OpenCore 本轮新增 `DELETE /api/core/login-logs/batch` 和
+`DELETE /api/core/login-logs/clean`，权限均为 `core:login-log:delete`。后端对批量删除
+做空数组、重复 ID、缺失 ID 严格校验，并在缺失 ID 时保证不半删；清空接口返回实际
+affected count。SDK/OpenAPI/Admin Login Logs 页同步 `Delete selected` 和 `Clean all` 操作，
+Admin access/module-registry 增加危险 delete 权限。固定 smoke、部署 smoke 和公网 smoke 均验证
+`core.login-log.batch-delete-empty-guard`、
+`core.login-log.batch-delete-duplicate-guard`、
+`core.login-log.batch-delete-missing-no-partial`、
+`core.login-log.batch-delete`、`core.login-log.clean-all`、
+`core.login-log.clean-all-list-empty` 和清空后仍能记录失败登录。公网 Admin
+`umi.5e1fae41.js` 已验证包含 API origin 且不含 bundle 生成的重复 `/api/api/auth/login`；
+公网 Login Logs chunk `p__Security__LoginLogs.1647b5aa.async.js` 已验证包含
+`Delete selected`、`Clean all`、`core:login-log:delete` 和
+`Audit trail with unlock and cleanup` 标记；公网 Admin 同源代理验证
+`/api/core/login-logs/batch` 的空数组守卫返回 400。注意：这轮关闭的是登录日志删除/清空维护策略，
+不等于 IP 归属地、可配置失败次数阈值、验证码、logout/mobile/social 登录日志或从登录日志页终止会话已经完成。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -608,7 +629,7 @@ The productization waterline now classifies:
   Round 7/19/22/23/28/29/30/31/32/33/34/35/36/41 `core.user`.
 - First loop, enhance: Round 1 `core.notice`, Round 2/27/43 `core.dept`,
   Round 3/22/25/42 `core.post`, Round 9/24/37/38/39/40/44/46 `core.config`,
-  Round 11/26/45/47 `core.login-log`.
+  Round 11/26/45/47/48 `core.login-log`.
 - Thin, rework: none after Round 16.
 
 The P0 remediation queue from the post-Round 13 re-audit is now clear. The next
@@ -631,9 +652,11 @@ finds another blocker:
    filters. Round 45 closed persisted login type/result schema, Admin display
    and result/logType filters. Round 47 closed persisted failed-attempt
    lockout, `account_locked` result mapping and permissioned Admin/API username
-   unlock. Remaining work is IP/location enrichment where feasible plus login
-   log cleanup/deletion policy, configurable failed-attempt threshold and any
-   logout/mobile/social logging stages.
+   unlock. Round 48 closed permissioned batch deletion and clean-all
+   maintenance, including strict empty/duplicate/missing guards and deployed
+   Admin cleanup actions. Remaining work is IP/location enrichment where
+   feasible, configurable failed-attempt threshold and any logout/mobile/social
+   logging stages.
 3. `core.dept`: Round 27 closed the enabled-department simple-list option
    source consumed by Admin Users; Round 43 closed user-bound department
    deletion protection and preserved user `deptId` on failed delete. Remaining
