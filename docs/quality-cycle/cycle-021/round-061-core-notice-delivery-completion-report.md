@@ -35,24 +35,7 @@ queues, tenant notices, BPM approval or member/mobile notification channels.
 
 ## Verification
 
-- `pnpm prisma:generate`
-- `pnpm prisma:migrate`
-- `pnpm prisma:validate`
-- `pnpm nx test system --testFile=packages/system/src/system-notice/system-notice.spec.ts`
-- `pnpm nx test sdk --testFile=packages/sdk/src/system-management-client.spec.ts`
-- `pnpm --dir apps/admin test`
-- `pnpm openapi:export`
-- `pnpm openapi:registry-tags:check`
-- `pnpm sdk:check`
-- `pnpm typecheck`
-- `pnpm build:api`
-- `pnpm build:admin`
-- `pnpm openapi:check`
-- `pnpm smoke:api:local`
-- `git diff --check`
-- `bash -n tools/scripts/deploy-local-opencore.sh`
-- `pnpm deploy:opencore`
-- `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-notice`
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
 
 Public deployment:
 

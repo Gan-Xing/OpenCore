@@ -35,28 +35,7 @@ flows and session termination from the login-log page.
 
 ## Verification
 
-- `pnpm prisma:generate`
-- `pnpm prisma:migrate`
-- `pnpm prisma:validate`
-- `pnpm nx test security --testFile=security-auth.spec.ts`
-- `pnpm nx test audit --testFile=audit-login-log.spec.ts`
-- `pnpm nx test sdk --testFile=system-management-client.spec.ts`
-- `pnpm nx test module-registry --testFile=index.spec.ts`
-- `pnpm nx test api --testFile=system-management.permission-matrix.spec.ts`
-- `pnpm nx test api --testFile=auth.service.spec.ts`
-- `pnpm nx test admin`
-- `pnpm nx run-many -t typecheck --projects=api,admin,sdk,security,audit,system,contracts,module-registry`
-- `pnpm openapi:export`
-- `pnpm openapi:check`
-- `pnpm sdk:check`
-- `pnpm openapi:registry-tags:check`
-- `pnpm build:api`
-- `pnpm build:admin`
-- `pnpm lint`
-- `pnpm format:check`
-- `git diff --check`
-- `pnpm smoke:api:local`
-- `pnpm deploy:opencore`
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
 
 Public API smoke passed with:
 

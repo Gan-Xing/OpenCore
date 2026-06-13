@@ -1,7 +1,9 @@
 import {
+  CheckCircleOutlined,
   CheckOutlined,
   DeleteOutlined,
   EditOutlined,
+  ExclamationCircleOutlined,
   EyeOutlined,
   FileTextOutlined,
   InboxOutlined,
@@ -12,6 +14,7 @@ import {
   ReloadOutlined,
   SendOutlined,
   StopOutlined,
+  SyncOutlined,
   TeamOutlined,
 } from '@ant-design/icons';
 import {
@@ -66,9 +69,12 @@ import {
   listOpenCoreSystemNoticeReadUsers,
   listOpenCoreSystemNoticeTemplates,
   listOpenCoreSystemNotices,
+  markOpenCoreIntegrationOutboxFailed,
+  markOpenCoreIntegrationOutboxSent,
   markAllOpenCoreSystemNoticesRead,
   markOpenCoreSystemNoticesRead,
   publishOpenCoreSystemNotice,
+  retryOpenCoreIntegrationOutbox,
   renderOpenCoreSystemNoticeTemplate,
   updateOpenCoreSystemNotice,
   updateOpenCoreSystemNoticeTemplate,
@@ -110,6 +116,11 @@ type NoticeTemplateRenderFormValues = {
   pinned?: boolean;
   templateParams?: Record<string, string>;
 };
+
+type ExternalNoticeDeliveryChannel = Extract<
+  SystemNoticeDeliveryChannel,
+  'mail' | 'sms'
+>;
 
 type NoticeTab = 'manage' | 'inbox' | 'templates';
 
@@ -268,6 +279,19 @@ function getNoticeTabFromSearch(search: string): NoticeTab {
   }
 
   return 'manage';
+}
+
+function getExternalOutboxChannel(
+  record: SystemNoticeDeliverySummary,
+): ExternalNoticeDeliveryChannel | undefined {
+  if (
+    (record.channel === 'mail' || record.channel === 'sms') &&
+    record.providerMessageId
+  ) {
+    return record.channel;
+  }
+
+  return undefined;
 }
 
 export default function SystemNoticesPage() {
@@ -702,6 +726,53 @@ export default function SystemNoticesPage() {
     }
   };
 
+  const refreshOpenDeliveries = async () => {
+    if (deliveriesOpenFor) {
+      await openDeliveryRecords(deliveriesOpenFor);
+    }
+  };
+
+  const failDeliveryOutbox = async (record: SystemNoticeDeliverySummary) => {
+    const channel = getExternalOutboxChannel(record);
+    if (!channel || !record.providerMessageId) {
+      return;
+    }
+
+    await markOpenCoreIntegrationOutboxFailed(
+      channel,
+      record.providerMessageId,
+      {
+        error: 'Operator marked provider failure from Admin.',
+      },
+    );
+    message.success(`${channel} outbox marked failed.`);
+    await refreshOpenDeliveries();
+  };
+
+  const retryDeliveryOutbox = async (record: SystemNoticeDeliverySummary) => {
+    const channel = getExternalOutboxChannel(record);
+    if (!channel || !record.providerMessageId) {
+      return;
+    }
+
+    await retryOpenCoreIntegrationOutbox(channel, record.providerMessageId);
+    message.success(`${channel} outbox queued for retry.`);
+    await refreshOpenDeliveries();
+  };
+
+  const markDeliveryOutboxSent = async (
+    record: SystemNoticeDeliverySummary,
+  ) => {
+    const channel = getExternalOutboxChannel(record);
+    if (!channel || !record.providerMessageId) {
+      return;
+    }
+
+    await markOpenCoreIntegrationOutboxSent(channel, record.providerMessageId);
+    message.success(`${channel} outbox marked sent.`);
+    await refreshOpenDeliveries();
+  };
+
   const archiveNotice = async (record: SystemNoticeSummary) => {
     await archiveOpenCoreSystemNotice(record.id);
     message.success('System notice archived.');
@@ -1055,6 +1126,86 @@ export default function SystemNoticesPage() {
     { title: 'Provider Message', dataIndex: 'providerMessageId' },
     { title: 'Last Error', dataIndex: 'lastError' },
     { title: 'Read At', dataIndex: 'readAt' },
+    {
+      title: 'Outbox Actions',
+      valueType: 'option',
+      width: 150,
+      render: (_, record) => {
+        const channel = getExternalOutboxChannel(record);
+        const sent = record.providerStatus === 'sent';
+        const failed = record.providerStatus === 'failed';
+
+        return (
+          <Space size="small">
+            <Popconfirm
+              title="Fail outbox?"
+              okText="Fail outbox"
+              okButtonProps={{ danger: true }}
+              disabled={!channel || sent}
+              onConfirm={() => void failDeliveryOutbox(record)}
+            >
+              <Tooltip
+                title={
+                  !channel
+                    ? 'Only mail/SMS outbox deliveries can fail'
+                    : sent
+                      ? 'Sent outbox messages cannot fail'
+                      : 'Fail outbox'
+                }
+              >
+                <Button
+                  aria-label={`Fail outbox ${record.providerMessageId ?? record.id}`}
+                  danger
+                  disabled={!channel || sent}
+                  icon={<ExclamationCircleOutlined />}
+                  size="small"
+                />
+              </Tooltip>
+            </Popconfirm>
+            <Tooltip
+              title={
+                !channel
+                  ? 'Only mail/SMS outbox deliveries can retry'
+                  : failed
+                    ? 'Retry outbox'
+                    : 'Only failed outbox messages can retry'
+              }
+            >
+              <Button
+                aria-label={`Retry outbox ${record.providerMessageId ?? record.id}`}
+                disabled={!channel || !failed}
+                icon={<SyncOutlined />}
+                onClick={() => void retryDeliveryOutbox(record)}
+                size="small"
+              />
+            </Tooltip>
+            <Popconfirm
+              title="Mark outbox sent?"
+              okText="Mark outbox sent"
+              disabled={!channel || sent}
+              onConfirm={() => void markDeliveryOutboxSent(record)}
+            >
+              <Tooltip
+                title={
+                  !channel
+                    ? 'Only mail/SMS outbox deliveries can be marked sent'
+                    : sent
+                      ? 'Already sent'
+                      : 'Mark outbox sent'
+                }
+              >
+                <Button
+                  aria-label={`Mark outbox sent ${record.providerMessageId ?? record.id}`}
+                  disabled={!channel || sent}
+                  icon={<CheckCircleOutlined />}
+                  size="small"
+                />
+              </Tooltip>
+            </Popconfirm>
+          </Space>
+        );
+      },
+    },
   ];
 
   const inboxColumns: ProColumns<SystemNoticeInboxSummary>[] = [

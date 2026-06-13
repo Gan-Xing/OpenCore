@@ -1,4 +1,5 @@
 import {
+  createIntegrationClient,
   createMonitoringClient,
   createOperationsClient,
   createRbacClient,
@@ -56,6 +57,8 @@ import {
   type SystemDeptSummary,
   type SystemDeptTreeSummary,
   type FileAssetSummary,
+  type FailOutboxMessageRequest,
+  type IntegrationOutboxSummary,
   type LoginLogQueryRequest,
   type LoginLogBatchMutationSummary,
   type LoginLogCleanSummary,
@@ -115,6 +118,7 @@ import {
 import { getRequiredAdminToken, opencoreSdkRequest } from './client';
 
 const rbacClient = createRbacClient(opencoreSdkRequest);
+const integrationClient = createIntegrationClient(opencoreSdkRequest);
 const monitoringClient = createMonitoringClient(opencoreSdkRequest);
 const operationsClient = createOperationsClient(opencoreSdkRequest);
 const systemManagementClient = createSystemManagementClient(opencoreSdkRequest);
@@ -819,6 +823,36 @@ export function executeOpenCoreSystemNoticeDeliveries(
     id,
     { channel },
   );
+}
+
+type IntegrationOutboxChannel = 'mail' | 'sms';
+
+export function markOpenCoreIntegrationOutboxFailed(
+  channel: IntegrationOutboxChannel,
+  id: string,
+  body: FailOutboxMessageRequest,
+): Promise<IntegrationOutboxSummary> {
+  return channel === 'mail'
+    ? integrationClient.markMailOutboxFailed(getRequiredAdminToken(), id, body)
+    : integrationClient.markSmsOutboxFailed(getRequiredAdminToken(), id, body);
+}
+
+export function retryOpenCoreIntegrationOutbox(
+  channel: IntegrationOutboxChannel,
+  id: string,
+): Promise<IntegrationOutboxSummary> {
+  return channel === 'mail'
+    ? integrationClient.retryMailOutbox(getRequiredAdminToken(), id)
+    : integrationClient.retrySmsOutbox(getRequiredAdminToken(), id);
+}
+
+export function markOpenCoreIntegrationOutboxSent(
+  channel: IntegrationOutboxChannel,
+  id: string,
+): Promise<IntegrationOutboxSummary> {
+  return channel === 'mail'
+    ? integrationClient.markMailOutboxSent(getRequiredAdminToken(), id)
+    : integrationClient.markSmsOutboxSent(getRequiredAdminToken(), id);
 }
 
 export async function listOpenCoreSystemNoticeTemplates(

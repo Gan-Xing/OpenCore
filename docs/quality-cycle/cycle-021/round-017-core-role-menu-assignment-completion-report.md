@@ -32,23 +32,11 @@ permission model.
 
 ## Verification
 
-- `node --check tools/scripts/smoke-core-role.mjs`
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
+
 - Focused tests for system role service, SDK client paths and API permission
   matrix.
 - Focused typecheck for system, SDK, API and Admin.
-- `pnpm openapi:export`
-- `pnpm sdk:check`
-- `pnpm openapi:check`
-- `pnpm openapi:registry-tags:check`
-- `pnpm registry:admin-routes:check`
-- `pnpm smoke:api:local`
-- `pnpm format:check`
-- `pnpm lint`
-- `pnpm typecheck`
-- `pnpm test`
-- `pnpm build`
-- `pnpm prisma:validate`
-- `pnpm deploy:opencore`
 - Public verification against `http://144.217.243.161:39172` and
   `http://144.217.243.161:39174`.
 

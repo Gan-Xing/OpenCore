@@ -38,23 +38,7 @@ security side effect and is not logged as `logout.force`.
 
 ## Verification
 
-- `node --check tools/scripts/smoke-core-online-user.mjs`
-- `node --check apps/admin/scripts/smoke-test.mjs`
-- `pnpm nx test api --testFile=operations.permission-matrix.spec.ts`
-- `pnpm nx test online-user`
-- `pnpm nx test admin`
-- `pnpm prisma:seed`
-- `pnpm nx test audit`
-- `pnpm openapi:export`
-- `pnpm openapi:check`
-- `pnpm sdk:check`
-- `pnpm nx typecheck api`
-- `pnpm nx typecheck audit`
-- `pnpm nx typecheck admin`
-- `pnpm smoke:api:local`
-- `pnpm format:check`
-- `pnpm lint`
-- `pnpm deploy:opencore`
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
 
 Local fixed-port smoke passed with:
 

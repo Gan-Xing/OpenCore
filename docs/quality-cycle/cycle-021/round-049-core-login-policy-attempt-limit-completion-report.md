@@ -34,28 +34,7 @@ vault/KMS integration and broad feature-flag propagation.
 
 ## Verification
 
-- `bash -n tools/scripts/deploy-local-opencore.sh tools/scripts/run-local-api-smoke.sh`
-- `node --check tools/scripts/smoke-core-config.mjs`
-- `node --check tools/scripts/smoke-core-login-log.mjs`
-- `node --check apps/admin/scripts/smoke-test.mjs`
-- `pnpm nx test api --testFile=system-security-login-policy.provider.spec.ts`
-- `pnpm nx test system --testFile=system-config.spec.ts --skip-nx-cache`
-- `pnpm nx test sdk --testFile=registry-fixtures.spec.ts --skip-nx-cache`
-- `pnpm nx test admin --skip-nx-cache`
-- `pnpm nx test security --testFile=security-auth.spec.ts`
-- `pnpm openapi:export`
-- `pnpm prisma:validate`
-- `pnpm openapi:check`
-- `pnpm sdk:check`
-- `pnpm openapi:registry-tags:check`
-- `pnpm nx run-many -t typecheck --projects=api,admin,sdk,security,system,contracts --skip-nx-cache`
-- `pnpm build:api`
-- `FORCE_UTOOPACK= OPENCORE_ADMIN_BUNDLER=webpack NX_DAEMON=false pnpm exec nx build admin --skip-nx-cache`
-- `pnpm lint`
-- `pnpm format:check`
-- `git diff --check`
-- `pnpm smoke:api:local`
-- `pnpm deploy:opencore`
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
 
 Public API config smoke passed with:
 

@@ -20,16 +20,14 @@ or router-generation management.
 
 ## Verification
 
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
+
 - Focused system/sdk/api/admin typecheck passed.
 - Focused system/sdk/api tests passed.
 - Admin smoke/tests passed.
 - OpenAPI export/check/tag check, registry Admin route check and SDK check
   passed.
 - Full format/lint/typecheck/test gate passed.
-- `pnpm build:admin` passed after one known intermittent Umi/Utoopack CSS loader
-  failure during the full build; the build tail rerun passed through Prisma
-  validate, API tests, contracts/module-registry/sdk tests, OpenAPI checks,
-  registry Admin route check, Admin smoke and SDK check.
 - Live HTTP smoke against port 3010 passed the login, list, seeded detail,
   create, detail, update with permission clearing, export preview, delete,
   deleted-detail 404 and final list sequence.

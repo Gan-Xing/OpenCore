@@ -28,23 +28,7 @@ fixed-port smoke, deploy smoke and public URL verification.
 
 ## Verification
 
-- `node --check tools/scripts/smoke-core-dept.mjs`
-- `node --check apps/admin/scripts/smoke-test.mjs`
-- `pnpm nx test system --testFile=system-dept.spec.ts`
-- `pnpm nx test admin`
-- `pnpm nx test api --testFile=system-management.permission-matrix.spec.ts`
-- `pnpm openapi:export`
-- `pnpm openapi:check`
-- `pnpm sdk:check`
-- `pnpm openapi:registry-tags:check`
-- `pnpm prisma:validate`
-- `pnpm nx run-many -t typecheck --projects=api,admin,sdk,system,module-registry,contracts`
-- `pnpm build:api`
-- `pnpm build:admin`
-- `pnpm format:check`
-- `git diff --check`
-- `pnpm smoke:api:local`
-- `pnpm deploy:opencore`
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
 
 Fixed-port local smoke passed on `39173` and included:
 

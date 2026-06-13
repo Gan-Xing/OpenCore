@@ -53,6 +53,11 @@ describe('createIntegrationClient', () => {
       recipient: 'admin@example.test',
       payload: { name: 'Admin' },
     });
+    await client.markMailOutboxFailed('token', 'outbox_mail_1', {
+      error: 'SMTP rejected',
+    });
+    await client.retryMailOutbox('token', 'outbox_mail_1');
+    await client.markMailOutboxSent('token', 'outbox_mail_1');
     await client.listSmsTemplates('token', { enabled: true });
     await client.getSmsTemplate('token', 'sms.otp');
     await client.createSmsTemplate('token', {
@@ -71,6 +76,11 @@ describe('createIntegrationClient', () => {
       recipient: '+15551234567',
       payload: { code: '123456' },
     });
+    await client.markSmsOutboxFailed('token', 'outbox_sms_1', {
+      error: 'Gateway throttled',
+    });
+    await client.retrySmsOutbox('token', 'outbox_sms_1');
+    await client.markSmsOutboxSent('token', 'outbox_sms_1');
     await client.listOAuthProviders('token', { enabled: true });
     await client.getOAuthCallbackContract('token');
     await client.getWeChatDesign('token');
@@ -103,6 +113,18 @@ describe('createIntegrationClient', () => {
       },
       { path: '/integrations/mail/outbox/outbox_mail_1' },
       { path: '/integrations/mail/outbox', method: 'POST' },
+      {
+        path: '/integrations/mail/outbox/outbox_mail_1/failed',
+        method: 'PATCH',
+      },
+      {
+        path: '/integrations/mail/outbox/outbox_mail_1/retry',
+        method: 'PATCH',
+      },
+      {
+        path: '/integrations/mail/outbox/outbox_mail_1/sent',
+        method: 'PATCH',
+      },
       { path: '/integrations/sms/templates?enabled=true' },
       { path: '/integrations/sms/templates/sms.otp' },
       { path: '/integrations/sms/templates', method: 'POST' },
@@ -110,6 +132,18 @@ describe('createIntegrationClient', () => {
       { path: '/integrations/sms/outbox?status=queued' },
       { path: '/integrations/sms/outbox/outbox_sms_1' },
       { path: '/integrations/sms/outbox', method: 'POST' },
+      {
+        path: '/integrations/sms/outbox/outbox_sms_1/failed',
+        method: 'PATCH',
+      },
+      {
+        path: '/integrations/sms/outbox/outbox_sms_1/retry',
+        method: 'PATCH',
+      },
+      {
+        path: '/integrations/sms/outbox/outbox_sms_1/sent',
+        method: 'PATCH',
+      },
       { path: '/integrations/oauth/providers?enabled=true' },
       { path: '/integrations/oauth/callback-contract' },
       { path: '/integrations/designs/wechat' },

@@ -38,7 +38,8 @@ online-session model.
 
 ## Verification
 
-- `pnpm test:admin`
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
+
 - Temporary Admin static runtime check: `/service-worker.js` no-store retire
   script, `/api/auth/login` 201 and `/api/api/auth/login` 201 through proxy.
 - Full gate:

@@ -31,21 +31,8 @@ token management product.
 
 ## Verification
 
-- `pnpm format:check`
-- `pnpm lint`
-- `pnpm typecheck`
-- `pnpm test`
-- `pnpm build`
-- `pnpm prisma:validate`
-- `pnpm test:api`
-- `pnpm test:admin`
-- `pnpm openapi:export`
-- `pnpm openapi:check`
-- `pnpm openapi:registry-tags:check`
-- `pnpm registry:admin-routes:check`
-- `pnpm sdk:check`
-- `pnpm smoke:api:local`
-- `pnpm deploy:opencore`
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
+
 - Public verification against `http://144.217.243.161:39172` and
   `http://144.217.243.161:39174`.
 

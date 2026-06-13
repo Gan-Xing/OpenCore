@@ -1,10 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { PrismaService } from '@opencore/database';
+import {
+  PrismaService,
+  type PrismaTransactionClient,
+} from '@opencore/database';
 import type {
   CreateIntegrationProviderDto,
   CreateIntegrationTemplateDto,
   CreateOutboxMessageDto,
+  FailOutboxMessageDto,
   IntegrationOutboxQueryDto,
   IntegrationProviderQueryDto,
   IntegrationTemplateQueryDto,
@@ -28,6 +32,7 @@ import {
   buildIntegrationSummary,
   createPage,
   IntegrationRepository,
+  normalizeOutboxFailureError,
   normalizeProviderType,
   normalizeOptionalBoolean,
   redactProviderConfig,
@@ -297,6 +302,107 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
     );
   }
 
+  async markOutboxSent(
+    channel: 'mail' | 'sms',
+    id: string,
+  ): Promise<IntegrationOutboxRecord> {
+    const existing = await this.findOutboxRow(channel, id);
+    if (existing.status === 'sent') {
+      return toOutboxRecord(existing);
+    }
+
+    const now = new Date();
+    const message = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.integrationOutbox.update({
+        where: { id },
+        data: {
+          status: 'sent',
+          error: null,
+          sentAt: now,
+        },
+      });
+      await syncNoticeDeliveryFromOutbox(tx, updated, {
+        status: 'sent',
+        now,
+        previousOutboxStatus: normalizeOutboxStatus(existing.status),
+      });
+
+      return updated;
+    });
+
+    return toOutboxRecord(message);
+  }
+
+  async markOutboxFailed(
+    channel: 'mail' | 'sms',
+    id: string,
+    body: FailOutboxMessageDto,
+  ): Promise<IntegrationOutboxRecord> {
+    const existing = await this.findOutboxRow(channel, id);
+    if (existing.status === 'sent') {
+      throw new BadRequestException(
+        'Sent outbox messages cannot be marked failed.',
+      );
+    }
+    const now = new Date();
+    const error = normalizeOutboxFailureError(body.error);
+    const shouldIncrementRetry = existing.status !== 'failed';
+    const message = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.integrationOutbox.update({
+        where: { id },
+        data: {
+          status: 'failed',
+          retryCount: shouldIncrementRetry ? { increment: 1 } : undefined,
+          error,
+          sentAt: null,
+        },
+      });
+      await syncNoticeDeliveryFromOutbox(tx, updated, {
+        status: 'failed',
+        error,
+        now,
+        previousOutboxStatus: normalizeOutboxStatus(existing.status),
+      });
+
+      return updated;
+    });
+
+    return toOutboxRecord(message);
+  }
+
+  async retryOutbox(
+    channel: 'mail' | 'sms',
+    id: string,
+  ): Promise<IntegrationOutboxRecord> {
+    const existing = await this.findOutboxRow(channel, id);
+    if (existing.status !== 'failed') {
+      throw new BadRequestException(
+        'Only failed outbox messages can be retried.',
+      );
+    }
+
+    const now = new Date();
+    const message = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.integrationOutbox.update({
+        where: { id },
+        data: {
+          status: 'queued',
+          error: null,
+          sentAt: null,
+        },
+      });
+      await syncNoticeDeliveryFromOutbox(tx, updated, {
+        status: 'queued',
+        now,
+        previousOutboxStatus: normalizeOutboxStatus(existing.status),
+      });
+
+      return updated;
+    });
+
+    return toOutboxRecord(message);
+  }
+
   async listOAuthProviders(
     query: IntegrationProviderQueryDto = {},
   ): Promise<PageResult<IntegrationProviderRecord>> {
@@ -347,6 +453,19 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
         ),
       'Integration template',
       code,
+    );
+  }
+
+  private async findOutboxRow(
+    channel: 'mail' | 'sms',
+    id: string,
+  ): Promise<OutboxRow> {
+    return requireRecord(
+      await this.prisma.integrationOutbox.findFirst({
+        where: { id, channel },
+      }),
+      'Integration outbox message',
+      id,
     );
   }
 }
@@ -423,6 +542,62 @@ function normalizeOutboxStatus(
   return ['queued', 'sent', 'failed'].includes(value)
     ? (value as IntegrationOutboxRecord['status'])
     : 'queued';
+}
+
+async function syncNoticeDeliveryFromOutbox(
+  tx: PrismaTransactionClient,
+  outbox: OutboxRow,
+  input: {
+    status: IntegrationOutboxRecord['status'];
+    now: Date;
+    previousOutboxStatus: IntegrationOutboxRecord['status'];
+    error?: string;
+  },
+): Promise<void> {
+  const payload = normalizeRecord(outbox.payload) ?? {};
+  const deliveryId =
+    typeof payload.deliveryId === 'string' ? payload.deliveryId : undefined;
+  if (!deliveryId) {
+    return;
+  }
+
+  const attemptedNow = input.previousOutboxStatus !== input.status;
+  if (input.status === 'sent') {
+    await tx.systemNoticeDelivery.updateMany({
+      where: { id: deliveryId, providerMessageId: outbox.id },
+      data: {
+        providerStatus: 'sent',
+        lastAttemptAt: input.now,
+        sentAt: input.now,
+        lastError: null,
+        ...(attemptedNow ? { attemptCount: { increment: 1 } } : {}),
+      },
+    });
+    return;
+  }
+
+  if (input.status === 'failed') {
+    await tx.systemNoticeDelivery.updateMany({
+      where: { id: deliveryId, providerMessageId: outbox.id },
+      data: {
+        providerStatus: 'failed',
+        lastAttemptAt: input.now,
+        sentAt: null,
+        lastError: input.error,
+        ...(attemptedNow ? { attemptCount: { increment: 1 } } : {}),
+      },
+    });
+    return;
+  }
+
+  await tx.systemNoticeDelivery.updateMany({
+    where: { id: deliveryId, providerMessageId: outbox.id },
+    data: {
+      providerStatus: 'pending',
+      sentAt: null,
+      lastError: null,
+    },
+  });
 }
 
 function toInputJson(value: unknown): Prisma.InputJsonValue {

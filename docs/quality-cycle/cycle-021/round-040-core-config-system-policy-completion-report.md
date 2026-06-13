@@ -25,26 +25,7 @@ feature-flag propagation.
 
 ## Verification
 
-- `pnpm prisma:generate`
-- `pnpm prisma:migrate`
-- `pnpm nx test system --testFile=system-config.spec.ts`
-- `pnpm nx test sdk --testFile=registry-fixtures.spec.ts`
-- `pnpm nx test admin`
-- `pnpm nx test api --testFile=system-management.permission-matrix.spec.ts`
-- `pnpm nx test contracts`
-- `pnpm nx test module-registry`
-- `pnpm openapi:export`
-- `pnpm sdk:check`
-- `pnpm openapi:check`
-- `pnpm openapi:registry-tags:check`
-- `pnpm nx run-many -t typecheck --projects=api,admin,sdk,system`
-- `pnpm prisma:validate`
-- `pnpm format:check`
-- `git diff --check`
-- `pnpm build:api`
-- `pnpm build:admin`
-- `pnpm smoke:api:local`
-- `pnpm deploy:opencore`
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
 
 ## Public Verification
 

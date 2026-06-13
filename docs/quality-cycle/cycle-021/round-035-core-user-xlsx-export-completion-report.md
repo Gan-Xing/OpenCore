@@ -32,26 +32,7 @@ payload as `contentBase64`, leaving XLSX import parsing to a later loop.
 
 ## Verification
 
-- `pnpm nx test contracts`
-- `pnpm nx test module-registry`
-- `pnpm nx test sdk --testFile=rbac-client.spec.ts`
-- `pnpm nx test api --testFile=rbac.permission-matrix.spec.ts`
-- `pnpm nx test system --testFile=system-user.spec.ts`
-- `pnpm nx test admin`
-- `pnpm install --frozen-lockfile --ignore-scripts`
-- `pnpm prisma:generate`
-- `pnpm nx run-many -t typecheck --projects=api,admin,sdk,system`
-- `pnpm openapi:export`
-- `pnpm sdk:check`
-- `pnpm openapi:check`
-- `pnpm openapi:registry-tags:check`
-- `pnpm format:check`
-- `pnpm smoke:api:local`
-- `pnpm prisma:validate`
-- `pnpm build:api`
-- `pnpm build:admin`
-- `git diff --check`
-- `pnpm deploy:opencore`
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
 
 ## Public Verification
 

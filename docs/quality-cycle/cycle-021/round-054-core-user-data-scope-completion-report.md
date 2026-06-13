@@ -36,26 +36,7 @@ workflow ownership rules, batch department deletion and drag-sort UI.
 
 ## Verification
 
-- `node --check tools/scripts/smoke-core-user.mjs`
-- `pnpm nx test system`
-- `pnpm nx test api`
-- `pnpm nx typecheck system`
-- `pnpm nx typecheck api`
-- `pnpm openapi:export`
-- `pnpm openapi:check`
-- `pnpm sdk:check`
-- `pnpm openapi:registry-tags:check`
-- `pnpm registry:admin-routes:check`
-- `pnpm format:check`
-- `git diff --check`
-- `pnpm smoke:api:local`
-- `pnpm prisma:validate`
-- `pnpm lint`
-- `pnpm typecheck`
-- `pnpm build`
-- `pnpm test`
-- `pnpm prisma:seed`
-- `pnpm deploy:opencore`
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
 
 Local fixed-port smoke passed with:
 

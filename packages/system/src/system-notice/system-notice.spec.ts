@@ -115,10 +115,10 @@ describe('@opencore/system system-notice', () => {
       channel: 'mail',
       provider: 'mail.sandbox',
       attemptedCount: 1,
-      sentCount: 1,
+      sentCount: 0,
       failedCount: 0,
       skippedCount: 0,
-      pendingCount: 0,
+      pendingCount: 1,
       queuedOutboxCount: 1,
     });
     await expect(
@@ -129,8 +129,11 @@ describe('@opencore/system system-notice', () => {
           expect.objectContaining({
             channel: 'mail',
             provider: 'mail.sandbox',
+            providerStatus: 'pending',
+            attemptCount: 0,
             providerMessageId: expect.stringContaining('outbox_'),
             recipient: 'admin@opencore.local',
+            sentAt: undefined,
           }),
         ],
       }),

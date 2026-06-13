@@ -32,26 +32,7 @@ not mark the entire user product as complete.
 
 ## Verification
 
-- `node --check tools/scripts/smoke-core-user.mjs`
-- `node --check apps/admin/scripts/smoke-test.mjs`
-- `bash -n tools/scripts/run-local-api-smoke.sh tools/scripts/deploy-local-opencore.sh`
-- `NX_DAEMON=false pnpm nx test system --runInBand --runTestsByPath packages/system/src/system-user/system-user.spec.ts`
-- `NX_DAEMON=false pnpm nx test sdk --runInBand --runTestsByPath packages/sdk/src/rbac-client.spec.ts`
-- `NX_DAEMON=false pnpm nx test api --runInBand --runTestsByPath src/modules/core/rbac/rbac.permission-matrix.spec.ts`
-- `pnpm test:admin`
-- `pnpm openapi:export`
-- `pnpm openapi:check`
-- `pnpm openapi:registry-tags:check`
-- `pnpm sdk:check`
-- `pnpm typecheck`
-- `pnpm lint`
-- `pnpm prisma:validate`
-- `pnpm format:check`
-- `git diff --check`
-- `pnpm smoke:api:local`
-- `pnpm test`
-- `pnpm build`
-- `pnpm deploy:opencore`
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
 
 ## Public Verification
 

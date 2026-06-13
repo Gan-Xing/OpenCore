@@ -13,6 +13,7 @@ import {
   CreateIntegrationProviderDto,
   CreateIntegrationTemplateDto,
   CreateOutboxMessageDto,
+  FailOutboxMessageDto,
   IntegrationDesignDto,
   IntegrationOutboxDto,
   IntegrationOutboxPageDto,
@@ -179,6 +180,33 @@ export class IntegrationController {
     return this.repository.enqueueOutbox('mail', body);
   }
 
+  @Patch('mail/outbox/:id/sent')
+  @ApiTags('Integration Mail')
+  @RequirePermission('integration:mail:manage')
+  @ApiOkResponse({ type: IntegrationOutboxDto })
+  markMailOutboxSent(@Param('id') id: string): Promise<IntegrationOutboxDto> {
+    return this.repository.markOutboxSent('mail', id);
+  }
+
+  @Patch('mail/outbox/:id/failed')
+  @ApiTags('Integration Mail')
+  @RequirePermission('integration:mail:manage')
+  @ApiOkResponse({ type: IntegrationOutboxDto })
+  markMailOutboxFailed(
+    @Param('id') id: string,
+    @Body() body: FailOutboxMessageDto,
+  ): Promise<IntegrationOutboxDto> {
+    return this.repository.markOutboxFailed('mail', id, body);
+  }
+
+  @Patch('mail/outbox/:id/retry')
+  @ApiTags('Integration Mail')
+  @RequirePermission('integration:mail:manage')
+  @ApiOkResponse({ type: IntegrationOutboxDto })
+  retryMailOutbox(@Param('id') id: string): Promise<IntegrationOutboxDto> {
+    return this.repository.retryOutbox('mail', id);
+  }
+
   @Get('sms/templates')
   @ApiTags('Integration SMS')
   @RequirePermission('integration:sms:read')
@@ -243,6 +271,33 @@ export class IntegrationController {
     @Body() body: CreateOutboxMessageDto,
   ): Promise<IntegrationOutboxDto> {
     return this.repository.enqueueOutbox('sms', body);
+  }
+
+  @Patch('sms/outbox/:id/sent')
+  @ApiTags('Integration SMS')
+  @RequirePermission('integration:sms:manage')
+  @ApiOkResponse({ type: IntegrationOutboxDto })
+  markSmsOutboxSent(@Param('id') id: string): Promise<IntegrationOutboxDto> {
+    return this.repository.markOutboxSent('sms', id);
+  }
+
+  @Patch('sms/outbox/:id/failed')
+  @ApiTags('Integration SMS')
+  @RequirePermission('integration:sms:manage')
+  @ApiOkResponse({ type: IntegrationOutboxDto })
+  markSmsOutboxFailed(
+    @Param('id') id: string,
+    @Body() body: FailOutboxMessageDto,
+  ): Promise<IntegrationOutboxDto> {
+    return this.repository.markOutboxFailed('sms', id, body);
+  }
+
+  @Patch('sms/outbox/:id/retry')
+  @ApiTags('Integration SMS')
+  @RequirePermission('integration:sms:manage')
+  @ApiOkResponse({ type: IntegrationOutboxDto })
+  retrySmsOutbox(@Param('id') id: string): Promise<IntegrationOutboxDto> {
+    return this.repository.retryOutbox('sms', id);
   }
 
   @Get('oauth/providers')

@@ -39,6 +39,14 @@ deployed product state and the productization record do not drift.
 - Extended Admin static smoke and deploy-script stale bundle guards for the new
   System Notices UI markers.
 
+## Follow-up Defect
+
+Round 67 later identified and corrected a Round 66 state-machine defect: queued
+mail/SMS `IntegrationOutbox` handoff was being reflected as provider `sent` on
+the matching notice delivery. The current intended semantics are that queued
+outbox work keeps notice delivery `pending` until explicit outbox failed,
+retry or sent transitions synchronize back to the delivery row.
+
 ## Out Of Scope
 
 - Real external SMTP/SMS provider sending.
@@ -50,30 +58,7 @@ deployed product state and the productization record do not drift.
 
 ## Verification
 
-- `pnpm exec jest -c packages/system/jest.config.ts packages/system/src/system-notice/system-notice.spec.ts --runInBand`
-- `pnpm nx test sdk --testFile=packages/sdk/src/system-management-client.spec.ts --testFile=packages/sdk/src/integration-client.spec.ts --testFile=packages/sdk/src/registry-fixtures.spec.ts`
-- `pnpm --dir apps/admin test`
-- `bash -n tools/scripts/deploy-local-opencore.sh`
-- `node --check tools/scripts/smoke-core-notice.mjs`
-- `node --check apps/admin/scripts/smoke-test.mjs`
-- `pnpm prisma:validate`
-- `pnpm prisma:migrate`
-- `pnpm prisma:generate`
-- `pnpm prisma:seed`
-- `pnpm typecheck`
-- `pnpm openapi:export`
-- `pnpm sdk:check`
-- `pnpm openapi:registry-tags:check`
-- `pnpm openapi:check`
-- `pnpm lint`
-- `pnpm build:api`
-- `pnpm build:admin`
-- `pnpm smoke:api:local`
-- `pnpm format:check`
-- `git diff --check`
-- `pnpm exec jest -c packages/system/jest.config.ts --runInBand`
-- `pnpm registry:admin-routes:check`
-- `pnpm deploy:opencore`
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
 
 `pnpm lint` passed with existing warnings only:
 
@@ -106,5 +91,5 @@ Public verification passed:
 
 ## Commit
 
-- Feature+docs commit: this commit.
+- Feature+docs commit: `119128c`.
 - Push: `origin/main`.

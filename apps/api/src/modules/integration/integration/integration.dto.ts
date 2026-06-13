@@ -281,6 +281,11 @@ export class CreateOutboxMessageDto {
   payload!: Record<string, unknown>;
 }
 
+export class FailOutboxMessageDto {
+  @ApiProperty()
+  error!: string;
+}
+
 export class PreviewTemplateDto {
   @ApiProperty()
   templateCode!: string;

@@ -24,25 +24,7 @@ management product boundary.
 
 ## Verification
 
-- `pnpm nx test sdk --testFile=system-management-client.spec.ts`
-- `pnpm nx test admin`
-- `pnpm nx test api --testFile=system-management.permission-matrix.spec.ts`
-- `node --check tools/scripts/smoke-core-config.mjs`
-- `pnpm nx test system --testFile=system-config.spec.ts`
-- `pnpm openapi:export`
-- `pnpm sdk:check`
-- `pnpm openapi:check`
-- `pnpm openapi:registry-tags:check`
-- `pnpm nx run-many -t typecheck --projects=api,admin,sdk,system`
-- `pnpm nx test contracts`
-- `pnpm nx test module-registry`
-- `pnpm format:check`
-- `pnpm prisma:validate`
-- `git diff --check`
-- `pnpm build:api`
-- `pnpm build:admin`
-- `pnpm smoke:api:local`
-- `pnpm deploy:opencore`
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
 
 ## Public Verification
 

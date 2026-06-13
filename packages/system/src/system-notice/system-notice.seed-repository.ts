@@ -511,7 +511,8 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
         delivery.channel === channel &&
         delivery.provider === provider &&
         (delivery.providerStatus === 'pending' ||
-          delivery.providerStatus === 'failed'),
+          delivery.providerStatus === 'failed') &&
+        (channel === 'in_app' || !delivery.providerMessageId),
     );
     const now = new Date().toISOString();
     let queuedOutboxCount = 0;
@@ -519,12 +520,16 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
     for (const delivery of executableRows) {
       const providerMessageId =
         channel === 'in_app' ? undefined : `outbox_${delivery.id}`;
+      const providerStatus = channel === 'in_app' ? 'sent' : 'pending';
       Object.assign(delivery, {
-        providerStatus: 'sent' as const,
+        providerStatus,
         providerMessageId,
-        attemptCount: delivery.attemptCount + 1,
-        lastAttemptAt: now,
-        sentAt: now,
+        attemptCount:
+          channel === 'in_app'
+            ? delivery.attemptCount + 1
+            : delivery.attemptCount,
+        lastAttemptAt: channel === 'in_app' ? now : undefined,
+        sentAt: channel === 'in_app' ? now : undefined,
         lastError: undefined,
         updatedAt: now,
       });
@@ -545,7 +550,7 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
       channel,
       provider,
       attemptedCount: executableRows.length,
-      sentCount: executableRows.length,
+      sentCount: channel === 'in_app' ? executableRows.length : 0,
       failedCount: 0,
       skippedCount: totalRows - executableRows.length,
       pendingCount: this.countProviderStatus(noticeId, channel, 'pending'),

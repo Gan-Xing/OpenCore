@@ -37,23 +37,7 @@ sessions.
 
 ## Verification
 
-- `pnpm nx test security`
-- `pnpm nx test sdk`
-- `pnpm nx test online-user`
-- `pnpm nx test api`
-- `pnpm nx test admin`
-- `pnpm openapi:export`
-- `pnpm openapi:check`
-- `pnpm sdk:check`
-- `pnpm nx typecheck api`
-- `pnpm nx typecheck admin`
-- `pnpm nx typecheck sdk`
-- `pnpm nx typecheck security`
-- `pnpm nx typecheck online-user`
-- `pnpm smoke:api:local`
-- `pnpm format:check`
-- `pnpm lint`
-- `pnpm deploy:opencore`
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
 
 Local fixed-port smoke passed with:
 

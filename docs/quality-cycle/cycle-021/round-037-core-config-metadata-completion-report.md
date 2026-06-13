@@ -28,26 +28,7 @@ final configuration-management product boundary.
 
 ## Verification
 
-- `pnpm prisma:generate && pnpm prisma:migrate`
-- `pnpm nx test system --testFile=system-config.spec.ts`
-- `pnpm openapi:export && pnpm sdk:check`
-- `node --check tools/scripts/smoke-core-config.mjs`
-- `pnpm nx test admin`
-- `pnpm nx test sdk --testFile=system-management-client.spec.ts`
-- `pnpm nx test sdk --testFile=registry-fixtures.spec.ts`
-- `pnpm nx test api --testFile=rbac.permission-matrix.spec.ts`
-- `pnpm nx run-many -t typecheck --projects=api,admin,sdk,system`
-- `pnpm openapi:check`
-- `pnpm openapi:registry-tags:check`
-- `pnpm nx test contracts`
-- `pnpm nx test module-registry`
-- `pnpm format:check`
-- `pnpm prisma:validate`
-- `pnpm smoke:api:local`
-- `pnpm build:api`
-- `pnpm build:admin`
-- `git diff --check`
-- `pnpm deploy:opencore`
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
 
 ## Public Verification
 

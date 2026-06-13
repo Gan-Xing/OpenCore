@@ -47,23 +47,10 @@ business-domain audit timeline views.
 
 ## Verification
 
-- `node --check tools/scripts/smoke-core-audit-log.mjs` pass.
-- `bash -n tools/scripts/run-local-api-smoke.sh tools/scripts/deploy-local-opencore.sh`
-  pass.
-- `pnpm exec tsc --noEmit -p packages/audit/tsconfig.lib.json` pass.
-- `pnpm exec tsc --noEmit -p packages/sdk/tsconfig.lib.json` pass.
-- `NX_DAEMON=false pnpm nx run api:typecheck` pass.
-- `NX_DAEMON=false pnpm nx run admin:typecheck` pass.
-- `NX_DAEMON=false pnpm nx run-many -t test --projects=audit,api,sdk` pass.
-- `pnpm test:admin` pass.
-- `pnpm openapi:export` pass.
-- `pnpm openapi:check` pass.
-- `pnpm sdk:check` pass.
-- `pnpm format:check && pnpm lint && pnpm typecheck && pnpm test &&
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
+
 pnpm openapi:registry-tags:check && pnpm registry:admin-routes:check &&
 pnpm smoke:api:local` pass.
-- `pnpm build && pnpm prisma:validate` pass.
-- `pnpm deploy:opencore` pass on fixed ports `39172` and `39174`.
 
 ## Public Deploy Verification
 

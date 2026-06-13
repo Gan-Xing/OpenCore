@@ -31,23 +31,7 @@ notices, BPM approval or member/mobile notification channels.
 
 ## Verification
 
-- `pnpm prisma:validate`
-- `pnpm prisma:generate`
-- `pnpm prisma:migrate`
-- `pnpm prisma:seed`
-- `pnpm nx test system --runInBand`
-- `pnpm nx test sdk --runInBand`
-- `pnpm test:api --runInBand`
-- `pnpm test:admin`
-- `pnpm openapi:export`
-- `pnpm openapi:check`
-- `pnpm openapi:registry-tags:check`
-- `pnpm sdk:check`
-- `pnpm typecheck`
-- `pnpm lint`
-- `pnpm smoke:api:local`
-- `pnpm deploy:opencore`
-- `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-notice`
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
 
 Public deployment:
 

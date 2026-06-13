@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import type {
   CreateIntegrationProviderDto,
   CreateIntegrationTemplateDto,
   CreateOutboxMessageDto,
+  FailOutboxMessageDto,
   IntegrationOutboxQueryDto,
   IntegrationProviderQueryDto,
   IntegrationTemplateQueryDto,
@@ -30,6 +31,7 @@ import {
   createPage,
   IntegrationRepository,
   matchesOptional,
+  normalizeOutboxFailureError,
   normalizeOptionalBoolean,
   redactProviderConfig,
   renderTemplate,
@@ -252,6 +254,65 @@ export class SeedIntegrationRepository extends IntegrationRepository {
     };
   }
 
+  async markOutboxSent(
+    channel: 'mail' | 'sms',
+    id: string,
+  ): Promise<IntegrationOutboxRecord> {
+    const message = this.findOutboxMessage(channel, id);
+    if (message.status !== 'sent') {
+      Object.assign(message, {
+        status: 'sent' as const,
+        error: undefined,
+        sentAt: new Date().toISOString(),
+      });
+    }
+
+    return { ...message };
+  }
+
+  async markOutboxFailed(
+    channel: 'mail' | 'sms',
+    id: string,
+    body: FailOutboxMessageDto,
+  ): Promise<IntegrationOutboxRecord> {
+    const message = this.findOutboxMessage(channel, id);
+    if (message.status === 'sent') {
+      throw new BadRequestException(
+        'Sent outbox messages cannot be marked failed.',
+      );
+    }
+    const error = normalizeOutboxFailureError(body.error);
+    const retryCount =
+      message.status === 'failed' ? message.retryCount : message.retryCount + 1;
+    Object.assign(message, {
+      status: 'failed' as const,
+      retryCount,
+      error,
+      sentAt: undefined,
+    });
+
+    return { ...message };
+  }
+
+  async retryOutbox(
+    channel: 'mail' | 'sms',
+    id: string,
+  ): Promise<IntegrationOutboxRecord> {
+    const message = this.findOutboxMessage(channel, id);
+    if (message.status !== 'failed') {
+      throw new BadRequestException(
+        'Only failed outbox messages can be retried.',
+      );
+    }
+    Object.assign(message, {
+      status: 'queued' as const,
+      error: undefined,
+      sentAt: undefined,
+    });
+
+    return { ...message };
+  }
+
   async listOAuthProviders(
     query: IntegrationProviderQueryDto = {},
   ): Promise<PageResult<IntegrationProviderRecord>> {
@@ -299,6 +360,19 @@ export class SeedIntegrationRepository extends IntegrationRepository {
       ),
       'Integration template',
       code,
+    );
+  }
+
+  private findOutboxMessage(
+    channel: 'mail' | 'sms',
+    id: string,
+  ): IntegrationOutboxRecord {
+    return requireRecord(
+      this.outbox.find(
+        (message) => message.channel === channel && message.id === id,
+      ),
+      'Integration outbox message',
+      id,
     );
   }
 }

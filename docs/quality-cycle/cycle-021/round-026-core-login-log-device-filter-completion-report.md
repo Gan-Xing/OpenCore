@@ -28,23 +28,7 @@ not mark the entire login-log product as complete.
 
 ## Verification
 
-- `NX_DAEMON=false pnpm nx test common --runInBand`
-- `NX_DAEMON=false pnpm nx test online-user --runInBand`
-- `NX_DAEMON=false pnpm nx test sdk --runInBand --runTestsByPath packages/sdk/src/system-management-client.spec.ts packages/sdk/src/registry-fixtures.spec.ts`
-- `NX_DAEMON=false pnpm nx test audit --runInBand --runTestsByPath packages/audit/src/audit-login-log/audit-login-log.spec.ts`
-- `pnpm test:admin`
-- `pnpm openapi:export`
-- `pnpm openapi:check`
-- `pnpm openapi:registry-tags:check`
-- `pnpm sdk:check`
-- `pnpm typecheck`
-- `pnpm lint`
-- `pnpm prisma:validate`
-- `pnpm build`
-- `pnpm format:check`
-- `pnpm test`
-- `pnpm smoke:api:local`
-- `pnpm deploy:opencore`
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
 
 ## Public Verification
 

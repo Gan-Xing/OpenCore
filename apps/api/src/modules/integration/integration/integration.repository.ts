@@ -3,6 +3,7 @@ import type {
   CreateIntegrationProviderDto,
   CreateIntegrationTemplateDto,
   CreateOutboxMessageDto,
+  FailOutboxMessageDto,
   IntegrationOutboxQueryDto,
   IntegrationProviderQueryDto,
   IntegrationProviderType,
@@ -77,6 +78,19 @@ export abstract class IntegrationRepository {
     query?: IntegrationOutboxQueryDto,
   ): Promise<PageResult<IntegrationOutboxRecord>>;
   abstract getOutboxMessage(
+    channel: 'mail' | 'sms',
+    id: string,
+  ): Promise<IntegrationOutboxRecord>;
+  abstract markOutboxSent(
+    channel: 'mail' | 'sms',
+    id: string,
+  ): Promise<IntegrationOutboxRecord>;
+  abstract markOutboxFailed(
+    channel: 'mail' | 'sms',
+    id: string,
+    body: FailOutboxMessageDto,
+  ): Promise<IntegrationOutboxRecord>;
+  abstract retryOutbox(
     channel: 'mail' | 'sms',
     id: string,
   ): Promise<IntegrationOutboxRecord>;
@@ -254,8 +268,24 @@ export function assertSmsSafety(
   }
 }
 
+export function normalizeOutboxFailureError(value: unknown): string {
+  const error = typeof value === 'string' ? value.trim() : '';
+
+  if (error.length === 0) {
+    throw new BadRequestException('Outbox failure error is required.');
+  }
+
+  if (error.length > 500) {
+    throw new BadRequestException(
+      'Outbox failure error must be at most 500 characters.',
+    );
+  }
+
+  return error;
+}
+
 export function requireRecord<T>(
-  record: T | undefined,
+  record: T | null | undefined,
   resource: string,
   id: string,
 ): T {

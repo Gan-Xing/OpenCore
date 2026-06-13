@@ -672,6 +672,7 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
         channel,
         provider,
         providerStatus: { in: ['pending', 'failed'] },
+        ...(channel === 'in_app' ? {} : { providerMessageId: null }),
       },
       select: {
         id: true,
@@ -715,7 +716,6 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
           channel,
           provider,
           executableRows,
-          now,
         );
       }
     }
@@ -725,7 +725,7 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
       channel,
       provider,
       attemptedCount: executableRows.length,
-      sentCount: executableRows.length,
+      sentCount: channel === 'in_app' ? executableRows.length : 0,
       failedCount: 0,
       skippedCount: totalRows - executableRows.length,
       pendingCount: await this.countNoticeDeliveriesByProviderStatus(
@@ -797,7 +797,6 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
       type: string;
       audience: string;
     }[],
-    now: Date,
   ): Promise<number> {
     let queuedOutboxCount = 0;
 
@@ -836,12 +835,11 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
       await this.prisma.systemNoticeDelivery.update({
         where: { id: row.id },
         data: {
-          providerStatus: 'sent',
+          providerStatus: 'pending',
           recipient,
           providerMessageId: outbox.id,
-          attemptCount: { increment: 1 },
-          lastAttemptAt: now,
-          sentAt: now,
+          lastAttemptAt: null,
+          sentAt: null,
           lastError: null,
         },
       });

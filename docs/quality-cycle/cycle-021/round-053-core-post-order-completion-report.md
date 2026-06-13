@@ -32,31 +32,7 @@ Out of scope: drag-sort-only UI and broader岗位 workflow automation.
 
 ## Verification
 
-- `node --check tools/scripts/smoke-core-post.mjs`
-- `node --check apps/admin/scripts/smoke-test.mjs`
-- `pnpm nx test system --testFile=system-post.spec.ts`
-- `pnpm nx test api --testFile=system-management.permission-matrix.spec.ts`
-- `pnpm nx test sdk --testFile=system-management-client.spec.ts`
-- `pnpm nx test admin`
-- `pnpm nx typecheck system`
-- `pnpm nx typecheck api`
-- `pnpm nx typecheck sdk`
-- `pnpm nx typecheck admin`
-- `pnpm openapi:export`
-- `pnpm openapi:check`
-- `pnpm sdk:check`
-- `pnpm prisma:validate`
-- `pnpm smoke:api:local`
-- `pnpm openapi:registry-tags:check`
-- `pnpm registry:admin-routes:check`
-- `pnpm format:check`
-- `git diff --check`
-- `pnpm lint`
-- `pnpm typecheck`
-- `pnpm build`
-- `pnpm prisma:seed`
-- `pnpm test`
-- `pnpm deploy:opencore`
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
 
 Local fixed-port smoke passed with:
 

@@ -3,7 +3,7 @@
 Date: 2026-06-13
 
 Feature+docs commit:
-this commit, `feat(config): evaluate feature flag rollouts / 评估功能开关灰度比例`
+`719c4ce feat(config): evaluate feature flag rollouts / 评估功能开关灰度比例`
 
 ## Scope
 
@@ -36,28 +36,7 @@ is admitted.
 
 ## Verification
 
-- `pnpm exec jest -c packages/system/jest.config.ts packages/system/src/system-config/system-config.spec.ts --runInBand`
-- `pnpm exec jest -c packages/system/jest.config.ts --runInBand`
-- `pnpm nx test sdk --testFile=packages/sdk/src/system-management-client.spec.ts --testFile=packages/sdk/src/registry-fixtures.spec.ts`
-- `pnpm --dir apps/admin test`
-- `pnpm prisma:validate`
-- `pnpm prisma:seed`
-- `pnpm prisma:generate`
-- `pnpm openapi:export`
-- `pnpm sdk:check`
-- `pnpm openapi:registry-tags:check`
-- `pnpm openapi:check`
-- `pnpm typecheck`
-- `pnpm lint`
-- `pnpm build:api`
-- `pnpm build:admin`
-- `bash -n tools/scripts/deploy-local-opencore.sh`
-- `node --check tools/scripts/smoke-core-config.mjs`
-- `node --check apps/admin/scripts/smoke-test.mjs`
-- `pnpm smoke:api:local`
-- `pnpm registry:admin-routes:check`
-- `pnpm deploy:opencore`
-- `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-config`
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
 
 `pnpm smoke:api:local` passed on fixed port `39173`, including
 `core.config.runtime-feature-flag-rules`,

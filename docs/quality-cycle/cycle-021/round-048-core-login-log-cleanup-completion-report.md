@@ -34,26 +34,7 @@ login-log page.
 
 ## Verification
 
-- `node --check tools/scripts/smoke-core-login-log.mjs`
-- `node --check apps/admin/scripts/smoke-test.mjs`
-- `pnpm nx test audit --testFile=audit-login-log.spec.ts`
-- `pnpm nx test sdk --testFile=system-management-client.spec.ts`
-- `pnpm nx test module-registry --testFile=index.spec.ts`
-- `pnpm nx test api --testFile=system-management.permission-matrix.spec.ts`
-- `pnpm test:admin`
-- `pnpm openapi:export`
-- `pnpm prisma:validate`
-- `pnpm nx run-many -t typecheck --projects=api,admin,sdk,audit,security,system,contracts,module-registry`
-- `pnpm openapi:check`
-- `pnpm sdk:check`
-- `pnpm openapi:registry-tags:check`
-- `pnpm build:api`
-- `pnpm build:admin`
-- `pnpm lint`
-- `pnpm format:check`
-- `git diff --check`
-- `pnpm smoke:api:local`
-- `pnpm deploy:opencore`
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
 
 Public API smoke passed with:
 

@@ -34,32 +34,7 @@ batch department deletion and drag-sort persistence.
 
 ## Verification
 
-- `node --check tools/scripts/smoke-core-dept.mjs`
-- `node --check apps/admin/scripts/smoke-test.mjs`
-- `pnpm nx test system --testFile=system-dept.spec.ts`
-- `pnpm nx test api --testFile=system-management.permission-matrix.spec.ts`
-- `pnpm nx test sdk --testFile=system-management-client.spec.ts`
-- `pnpm nx test admin`
-- `pnpm nx typecheck system`
-- `pnpm nx typecheck api`
-- `pnpm nx typecheck sdk`
-- `pnpm nx typecheck admin`
-- `pnpm openapi:export`
-- `pnpm openapi:check`
-- `pnpm sdk:check`
-- `pnpm prisma:validate`
-- `pnpm smoke:api:local`
-- `pnpm format:check`
-- `pnpm lint`
-- `pnpm openapi:registry-tags:check`
-- `pnpm registry:admin-routes:check`
-- `pnpm typecheck`
-- `pnpm build`
-- `pnpm prisma:seed`
-- `pnpm nx test audit`
-- `pnpm test`
-- `git diff --check`
-- `pnpm deploy:opencore`
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
 
 Local fixed-port smoke passed with:
 

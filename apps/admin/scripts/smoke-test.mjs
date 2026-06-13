@@ -226,6 +226,9 @@ if (
   !deployScript.includes('admin.api-proxy.duplicate-prefix-login') ||
   !deployScript.includes('loginMaxFailedAttempts') ||
   !deployScript.includes('System Notice Templates') ||
+  !deployScript.includes('Fail outbox') ||
+  !deployScript.includes('Retry outbox') ||
+  !deployScript.includes('Mark outbox sent') ||
   !deployScript.includes('Refusing to deploy a stale frontend login page')
 ) {
   throw new Error(
@@ -1113,6 +1116,9 @@ if (
   !systemNoticesPage.includes('getOpenCoreSystemNoticeTemplate') ||
   !systemNoticesPage.includes('renderOpenCoreSystemNoticeTemplate') ||
   !systemNoticesPage.includes('createOpenCoreSystemNoticeFromTemplate') ||
+  !systemNoticesPage.includes('markOpenCoreIntegrationOutboxFailed') ||
+  !systemNoticesPage.includes('retryOpenCoreIntegrationOutbox') ||
+  !systemNoticesPage.includes('markOpenCoreIntegrationOutboxSent') ||
   !systemNoticesPage.includes('createOpenCoreSystemNoticeTemplate') ||
   !systemNoticesPage.includes('updateOpenCoreSystemNoticeTemplate') ||
   !systemNoticesPage.includes('deleteOpenCoreSystemNoticeTemplate') ||
@@ -1141,6 +1147,10 @@ if (
   !systemNoticesPage.includes('Execute local provider') ||
   !systemNoticesPage.includes('Provider Message') ||
   !systemNoticesPage.includes('Provider Status') ||
+  !systemNoticesPage.includes('Outbox Actions') ||
+  !systemNoticesPage.includes('Fail outbox') ||
+  !systemNoticesPage.includes('Retry outbox') ||
+  !systemNoticesPage.includes('Mark outbox sent') ||
   !systemNoticesPage.includes('System Notice Delivery Records') ||
   !systemNoticesPage.includes('System Notice Inbox Detail') ||
   !systemNoticesPage.includes('System Notice Template Detail') ||
@@ -1152,7 +1162,7 @@ if (
   !systemNoticesPage.includes('rows={filteredRows}')
 ) {
   throw new Error(
-    'System Notices page must use live SDK lifecycle, inbox and template actions with bounded filtering and current-page export.',
+    'System Notices page must use live SDK lifecycle, inbox, template and outbox delivery actions with bounded filtering and current-page export.',
   );
 }
 

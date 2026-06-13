@@ -5156,6 +5156,95 @@
         "tags": ["Integration", "Integration Mail"]
       }
     },
+    "/api/integrations/mail/outbox/{id}/sent": {
+      "patch": {
+        "operationId": "IntegrationController_markMailOutboxSent",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationOutboxDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Mail"]
+      }
+    },
+    "/api/integrations/mail/outbox/{id}/failed": {
+      "patch": {
+        "operationId": "IntegrationController_markMailOutboxFailed",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/FailOutboxMessageDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationOutboxDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Mail"]
+      }
+    },
+    "/api/integrations/mail/outbox/{id}/retry": {
+      "patch": {
+        "operationId": "IntegrationController_retryMailOutbox",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationOutboxDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Mail"]
+      }
+    },
     "/api/integrations/sms/templates": {
       "get": {
         "operationId": "IntegrationController_listSmsTemplates",
@@ -5364,6 +5453,95 @@
     "/api/integrations/sms/outbox/{id}": {
       "get": {
         "operationId": "IntegrationController_getSmsOutboxMessage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationOutboxDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration SMS"]
+      }
+    },
+    "/api/integrations/sms/outbox/{id}/sent": {
+      "patch": {
+        "operationId": "IntegrationController_markSmsOutboxSent",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationOutboxDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration SMS"]
+      }
+    },
+    "/api/integrations/sms/outbox/{id}/failed": {
+      "patch": {
+        "operationId": "IntegrationController_markSmsOutboxFailed",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/FailOutboxMessageDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationOutboxDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration SMS"]
+      }
+    },
+    "/api/integrations/sms/outbox/{id}/retry": {
+      "patch": {
+        "operationId": "IntegrationController_retrySmsOutbox",
         "parameters": [
           {
             "name": "id",
@@ -8802,6 +8980,11 @@
           "payload": { "type": "object" }
         },
         "required": ["providerCode", "recipient", "payload"]
+      },
+      "FailOutboxMessageDto": {
+        "type": "object",
+        "properties": { "error": { "type": "string" } },
+        "required": ["error"]
       },
       "OAuthCallbackContractDto": {
         "type": "object",

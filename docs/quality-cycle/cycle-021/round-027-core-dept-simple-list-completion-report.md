@@ -28,24 +28,7 @@ not mark the entire department product as complete.
 
 ## Verification
 
-- `node --check tools/scripts/smoke-core-dept.mjs`
-- `bash -n tools/scripts/run-local-api-smoke.sh tools/scripts/deploy-local-opencore.sh`
-- `NX_DAEMON=false pnpm nx test system --runInBand --runTestsByPath packages/system/src/system-dept/system-dept.spec.ts`
-- `NX_DAEMON=false pnpm nx test sdk --runInBand --runTestsByPath packages/sdk/src/system-management-client.spec.ts packages/sdk/src/registry-fixtures.spec.ts`
-- `NX_DAEMON=false pnpm nx test api --runInBand --runTestsByPath src/modules/core/system-management/system-management.permission-matrix.spec.ts`
-- `pnpm test:admin`
-- `pnpm openapi:export`
-- `pnpm openapi:check`
-- `pnpm openapi:registry-tags:check`
-- `pnpm sdk:check`
-- `pnpm typecheck`
-- `pnpm lint`
-- `pnpm prisma:validate`
-- `pnpm build`
-- `pnpm format:check`
-- `pnpm test`
-- `pnpm smoke:api:local`
-- `pnpm deploy:opencore`
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
 
 ## Public Verification
 

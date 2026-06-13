@@ -145,6 +145,58 @@ describe('IntegrationRepository', () => {
     });
   });
 
+  it('moves outbox messages through failed, retry, and sent states', async () => {
+    const repository = new SeedIntegrationRepository();
+
+    await repository.enableProvider('mail.sandbox');
+    const queued = await repository.enqueueOutbox('mail', {
+      providerCode: 'mail.sandbox',
+      templateCode: 'mail.welcome',
+      recipient: 'admin@example.test',
+      payload: { name: 'Admin' },
+    });
+
+    await expect(
+      repository.markOutboxFailed('mail', queued.id, {
+        error: 'Sandbox SMTP rejected the message',
+      }),
+    ).resolves.toMatchObject({
+      id: queued.id,
+      status: 'failed',
+      retryCount: 1,
+      error: 'Sandbox SMTP rejected the message',
+      sentAt: undefined,
+    });
+    await expect(
+      repository.retryOutbox('mail', queued.id),
+    ).resolves.toMatchObject({
+      id: queued.id,
+      status: 'queued',
+      retryCount: 1,
+      error: undefined,
+    });
+    await expect(
+      repository.markOutboxFailed('mail', queued.id, { error: ' ' }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      repository.markOutboxSent('mail', queued.id),
+    ).resolves.toMatchObject({
+      id: queued.id,
+      status: 'sent',
+      error: undefined,
+      sentAt: expect.any(String),
+    });
+    await expect(repository.retryOutbox('mail', queued.id)).rejects.toThrow(
+      BadRequestException,
+    );
+    await expect(
+      repository.markOutboxFailed('mail', queued.id, { error: 'too late' }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      repository.markOutboxFailed('sms', queued.id, { error: 'wrong channel' }),
+    ).rejects.toThrow('Integration outbox message not found');
+  });
+
   it('guards outbox enqueue by enabled provider, channel, and template state', async () => {
     const repository = new SeedIntegrationRepository();
 

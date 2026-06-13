@@ -28,24 +28,7 @@ post `delete-list` and Admin selected-row deletion shape.
 
 ## Verification
 
-- `pnpm nx test system --testFile=system-post.spec.ts`
-- `pnpm nx test api --testFile=system-management.permission-matrix.spec.ts`
-- `pnpm nx test sdk --testFile=system-management-client.spec.ts`
-- `pnpm nx test admin`
-- `node --check tools/scripts/smoke-core-post.mjs`
-- `node --check apps/admin/scripts/smoke-test.mjs`
-- `pnpm openapi:export`
-- `pnpm openapi:check`
-- `pnpm sdk:check`
-- `pnpm openapi:registry-tags:check`
-- `pnpm nx run-many -t typecheck --projects=api,admin,sdk,system,module-registry,contracts`
-- `pnpm prisma:validate`
-- `pnpm build:api`
-- `pnpm build:admin`
-- `pnpm format:check`
-- `git diff --check`
-- `pnpm smoke:api:local`
-- `pnpm deploy:opencore`
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
 
 ## Public Verification
 

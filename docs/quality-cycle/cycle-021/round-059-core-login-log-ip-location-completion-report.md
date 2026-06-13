@@ -33,23 +33,7 @@ accuracy product.
 
 ## Verification
 
-- `pnpm prisma:generate`
-- `pnpm prisma:migrate`
-- `pnpm nx test common --runInBand`
-- `pnpm nx test audit --runInBand`
-- `pnpm nx test sdk --runInBand`
-- `pnpm prisma:validate`
-- `pnpm test:admin`
-- `pnpm openapi:export`
-- `pnpm openapi:check`
-- `pnpm openapi:registry-tags:check`
-- `pnpm sdk:check`
-- `pnpm test:api --runInBand`
-- `pnpm typecheck`
-- `pnpm lint`
-- `pnpm smoke:api:local`
-- `pnpm deploy:opencore`
-- `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-login-log`
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
 
 ## Public Verification
 

@@ -432,16 +432,22 @@ try {
     1,
     'mail queued outbox count',
   );
+  assertEqual(mailExecuteResult.sentCount, 0, 'mail execute sent count');
+  assertNumberAtLeast(
+    mailExecuteResult.pendingCount,
+    1,
+    'mail execute pending count',
+  );
   const mailDeliveryPage = await apiRequest(
-    `/core/notices/${encodeURIComponent(draftNotice.id)}/deliveries?channel=mail&providerStatus=sent&username=${encodeURIComponent(username)}`,
+    `/core/notices/${encodeURIComponent(draftNotice.id)}/deliveries?channel=mail&providerStatus=pending&username=${encodeURIComponent(username)}`,
   );
   const mailDelivery = assertPageItemsContainDelivery(
     mailDeliveryPage,
     username,
     'delivered',
     false,
-    'sent',
-    'mail notice delivery provider records',
+    'pending',
+    'mail queued notice delivery provider records',
     { channel: 'mail', provider: 'mail.sandbox' },
   );
   assertString(mailDelivery.recipient, 'mail delivery recipient');
@@ -457,6 +463,88 @@ try {
     draftNotice.id,
     mailDelivery.providerMessageId,
     'mail notice integration outbox',
+  );
+  const repeatMailExecuteResult = await apiRequest(
+    `/core/notices/${encodeURIComponent(draftNotice.id)}/deliveries/execute`,
+    {
+      method: 'POST',
+      body: { channel: 'mail' },
+    },
+  );
+  assertEqual(
+    repeatMailExecuteResult.attemptedCount,
+    0,
+    'repeat mail execute attempted count',
+  );
+  await apiRequest(
+    `/integrations/mail/outbox/${encodeURIComponent(mailDelivery.providerMessageId)}/failed`,
+    {
+      method: 'PATCH',
+      expected: [400],
+      body: { error: ' ' },
+    },
+  );
+  const failedMailOutbox = await apiRequest(
+    `/integrations/mail/outbox/${encodeURIComponent(mailDelivery.providerMessageId)}/failed`,
+    {
+      method: 'PATCH',
+      body: { error: 'Sandbox SMTP rejected the notice' },
+    },
+  );
+  assertEqual(failedMailOutbox.status, 'failed', 'mail outbox failed status');
+  assertEqual(failedMailOutbox.retryCount, 1, 'mail outbox retry count');
+  assertEqual(
+    failedMailOutbox.error,
+    'Sandbox SMTP rejected the notice',
+    'mail outbox error',
+  );
+  const failedMailDeliveryPage = await apiRequest(
+    `/core/notices/${encodeURIComponent(draftNotice.id)}/deliveries?channel=mail&providerStatus=failed&username=${encodeURIComponent(username)}`,
+  );
+  assertPageItemsContainDelivery(
+    failedMailDeliveryPage,
+    username,
+    'delivered',
+    false,
+    'failed',
+    'mail failed notice delivery provider records',
+    { channel: 'mail', provider: 'mail.sandbox' },
+  );
+  const retriedMailOutbox = await apiRequest(
+    `/integrations/mail/outbox/${encodeURIComponent(mailDelivery.providerMessageId)}/retry`,
+    { method: 'PATCH' },
+  );
+  assertEqual(retriedMailOutbox.status, 'queued', 'mail outbox retry status');
+  assertEqual(retriedMailOutbox.error, undefined, 'mail outbox retry error');
+  const retriedMailDeliveryPage = await apiRequest(
+    `/core/notices/${encodeURIComponent(draftNotice.id)}/deliveries?channel=mail&providerStatus=pending&username=${encodeURIComponent(username)}`,
+  );
+  assertPageItemsContainDelivery(
+    retriedMailDeliveryPage,
+    username,
+    'delivered',
+    false,
+    'pending',
+    'mail retried notice delivery provider records',
+    { channel: 'mail', provider: 'mail.sandbox' },
+  );
+  const sentMailOutbox = await apiRequest(
+    `/integrations/mail/outbox/${encodeURIComponent(mailDelivery.providerMessageId)}/sent`,
+    { method: 'PATCH' },
+  );
+  assertEqual(sentMailOutbox.status, 'sent', 'mail outbox sent status');
+  assertString(sentMailOutbox.sentAt, 'mail outbox sentAt');
+  const sentMailDeliveryPage = await apiRequest(
+    `/core/notices/${encodeURIComponent(draftNotice.id)}/deliveries?channel=mail&providerStatus=sent&username=${encodeURIComponent(username)}`,
+  );
+  assertPageItemsContainDelivery(
+    sentMailDeliveryPage,
+    username,
+    'delivered',
+    false,
+    'sent',
+    'mail sent notice delivery provider records',
+    { channel: 'mail', provider: 'mail.sandbox' },
   );
 
   await apiRequest('/integrations/providers/sms.sandbox/enable', {
@@ -487,16 +575,17 @@ try {
     1,
     'SMS queued outbox count',
   );
+  assertEqual(smsExecuteResult.sentCount, 0, 'SMS execute sent count');
   const smsDeliveryPage = await apiRequest(
-    `/core/notices/${encodeURIComponent(draftNotice.id)}/deliveries?channel=sms&providerStatus=sent&username=${encodeURIComponent(username)}`,
+    `/core/notices/${encodeURIComponent(draftNotice.id)}/deliveries?channel=sms&providerStatus=pending&username=${encodeURIComponent(username)}`,
   );
   const smsDelivery = assertPageItemsContainDelivery(
     smsDeliveryPage,
     username,
     'delivered',
     false,
-    'sent',
-    'SMS notice delivery provider records',
+    'pending',
+    'SMS queued notice delivery provider records',
     { channel: 'sms', provider: 'sms.sandbox' },
   );
   assertString(
@@ -511,6 +600,31 @@ try {
     draftNotice.id,
     smsDelivery.providerMessageId,
     'SMS notice integration outbox',
+  );
+  const sentSmsOutbox = await apiRequest(
+    `/integrations/sms/outbox/${encodeURIComponent(smsDelivery.providerMessageId)}/sent`,
+    { method: 'PATCH' },
+  );
+  assertEqual(sentSmsOutbox.status, 'sent', 'SMS outbox sent status');
+  const sentSmsDeliveryPage = await apiRequest(
+    `/core/notices/${encodeURIComponent(draftNotice.id)}/deliveries?channel=sms&providerStatus=sent&username=${encodeURIComponent(username)}`,
+  );
+  assertPageItemsContainDelivery(
+    sentSmsDeliveryPage,
+    username,
+    'delivered',
+    false,
+    'sent',
+    'SMS sent notice delivery provider records',
+    { channel: 'sms', provider: 'sms.sandbox' },
+  );
+  await apiRequest(
+    `/integrations/sms/outbox/${encodeURIComponent(smsDelivery.providerMessageId)}/failed`,
+    {
+      method: 'PATCH',
+      expected: [400],
+      body: { error: 'too late' },
+    },
   );
 
   const inboxItem = await apiRequest(
@@ -652,6 +766,7 @@ try {
         'core.notice.deliveries.provider-sent-records',
         'core.notice.deliveries.provider-execute-idempotent',
         'core.notice.deliveries.mail-outbox-provider',
+        'core.notice.deliveries.outbox-failed-retry-sent-sync',
         'core.notice.deliveries.sms-outbox-provider',
         'core.notice.inbox.unread-item',
         'core.notice.inbox.unread-page',
@@ -844,8 +959,14 @@ function assertPageItemsContainDelivery(
     assertNumberAtLeast(item.attemptCount, 1, `${label} attempt count`);
     assertString(item.lastAttemptAt, `${label} lastAttemptAt`);
     assertString(item.sentAt, `${label} sentAt`);
+    assertEqual(item.lastError, undefined, `${label} lastError`);
+  } else if (providerStatus === 'failed') {
+    assertNumberAtLeast(item.attemptCount, 1, `${label} attempt count`);
+    assertString(item.lastAttemptAt, `${label} lastAttemptAt`);
+    assertString(item.lastError, `${label} lastError`);
   } else {
-    assertEqual(item.attemptCount, 0, `${label} attempt count`);
+    assertEqual(item.sentAt, undefined, `${label} sentAt`);
+    assertEqual(item.lastError, undefined, `${label} lastError`);
   }
 
   if (expectReadAt) {

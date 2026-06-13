@@ -35,15 +35,12 @@ endpoints and `/api/core/dict-data/simple-list`.
 
 ## Verification
 
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
+
 - Syntax checks for the new smoke script and deploy/local smoke shell scripts.
 - Focused system, SDK and API permission-matrix tests.
 - Focused typecheck for system, API and Admin.
 - Admin tests, OpenAPI export/check, SDK check and registry checks.
-- `pnpm smoke:api:local` on fixed smoke port `39173`.
-- Full gates: `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm test`,
-  `pnpm build` and `pnpm prisma:validate`.
-- `pnpm deploy:opencore` deployed API/Admin on fixed ports `39172`/`39174` and
-  ran all deploy smokes successfully.
 - Public verification against `http://144.217.243.161:39172` and
   `http://144.217.243.161:39174`.
 

@@ -29,22 +29,7 @@ not mark the entire config product as complete.
 
 ## Verification
 
-- `node --check tools/scripts/smoke-core-config.mjs`
-- `node --check apps/admin/scripts/smoke-test.mjs`
-- `pnpm nx test system --testFile=packages/system/src/system-config/system-config.spec.ts`
-- `pnpm nx test sdk --testFile=packages/sdk/src/system-management-client.spec.ts`
-- `pnpm nx test api --testFile=apps/api/src/modules/core/system-management/system-management.permission-matrix.spec.ts`
-- `pnpm nx test admin`
-- `pnpm openapi:export`
-- `pnpm openapi:check`
-- `pnpm sdk:check`
-- `pnpm openapi:registry-tags:check`
-- `pnpm registry:admin-routes:check`
-- `pnpm prisma:validate`
-- `pnpm smoke:api:local`
-- `pnpm build:api`
-- `pnpm build:admin`
-- `pnpm deploy:opencore`
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
 
 ## Public Verification
 

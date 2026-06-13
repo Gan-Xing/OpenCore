@@ -33,24 +33,9 @@ depth for a later slice.
 
 ## Verification
 
-- `pnpm nx test contracts`
-- `pnpm nx test module-registry`
-- `pnpm nx test sdk --testFile=registry-fixtures.spec.ts`
-- `pnpm nx test api --testFile=rbac.permission-matrix.spec.ts`
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
+
 - `node scripts/smoke-test.mjs` from `apps/admin`
-- `pnpm nx run-many -t typecheck --projects=api,admin,sdk,system,module-registry,contracts`
-- `pnpm openapi:export`
-- `pnpm sdk:check`
-- `pnpm openapi:check`
-- `pnpm openapi:registry-tags:check`
-- `pnpm nx test admin`
-- `pnpm smoke:api:local`
-- `pnpm prisma:validate`
-- `pnpm build:api`
-- `pnpm build:admin`
-- `pnpm format:check`
-- `git diff --check`
-- `pnpm deploy:opencore`
 
 ## Public Verification
 

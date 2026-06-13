@@ -42,15 +42,13 @@ a defense-in-depth fallback.
 
 ## Verification
 
-- `node --check tools/scripts/serve-admin-static.mjs &&
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
+
 node --check tools/scripts/smoke-core-login-log.mjs &&
 node --check apps/admin/scripts/smoke-test.mjs`
-- `bash -n tools/scripts/deploy-local-opencore.sh tools/scripts/run-local-api-smoke.sh`
-- `pnpm test:admin`
-- `FORCE_UTOOPACK= OPENCORE_ADMIN_BUNDLER=webpack ADMIN_API_BASE_URL=http://144.217.243.161:39172/api pnpm build:admin`
+
 - `rg -l --fixed-strings "http://144.217.243.161:39172/api" apps/admin/dist -g '*.js'`
-- `pnpm format:check && pnpm lint && pnpm typecheck && pnpm test &&
-pnpm openapi:check && pnpm sdk:check && pnpm smoke:api:local`
+  pnpm openapi:check && pnpm sdk:check && pnpm smoke:api:local`
 
 ## Deployed URL Contract
 

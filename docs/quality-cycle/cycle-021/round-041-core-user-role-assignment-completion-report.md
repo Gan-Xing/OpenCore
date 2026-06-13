@@ -30,26 +30,7 @@ Users page still lacked the dedicated user-side workflow.
 
 ## Verification
 
-- `pnpm nx test system --testFile=system-user.spec.ts`
-- `pnpm nx test api --testFile=rbac.permission-matrix.spec.ts`
-- `pnpm nx test sdk --testFile=rbac-client.spec.ts`
-- `pnpm nx test module-registry`
-- `pnpm nx test admin`
-- `pnpm nx test contracts`
-- `node --check tools/scripts/smoke-core-user.mjs`
-- `node --check apps/admin/scripts/smoke-test.mjs`
-- `pnpm openapi:export`
-- `pnpm openapi:check`
-- `pnpm sdk:check`
-- `pnpm openapi:registry-tags:check`
-- `pnpm nx run-many -t typecheck --projects=api,admin,sdk,system,module-registry,contracts`
-- `pnpm prisma:validate`
-- `pnpm build:api`
-- `pnpm build:admin`
-- `pnpm format:check`
-- `git diff --check`
-- `pnpm smoke:api:local`
-- `pnpm deploy:opencore`
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
 
 ## Public Verification
 

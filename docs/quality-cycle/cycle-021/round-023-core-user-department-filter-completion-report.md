@@ -31,22 +31,7 @@ reversible stage, not a claim that the whole user product is finished.
 
 ## Verification
 
-- `node --check tools/scripts/smoke-core-user.mjs`
-- `node --check apps/admin/scripts/smoke-test.mjs`
-- `pnpm nx test system --testFile=packages/system/src/system-user/system-user.spec.ts`
-- `pnpm nx test sdk --testFile=packages/sdk/src/rbac-client.spec.ts`
-- `pnpm nx test admin`
-- `pnpm nx test api --testFile=apps/api/src/modules/core/rbac/permission.guard.spec.ts`
-- `pnpm openapi:export`
-- `pnpm openapi:check`
-- `pnpm sdk:check`
-- `pnpm openapi:registry-tags:check`
-- `pnpm registry:admin-routes:check`
-- `pnpm prisma:validate`
-- `pnpm smoke:api:local`
-- `pnpm build:api`
-- `pnpm build:admin`
-- `pnpm deploy:opencore`
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
 
 ## Public Verification
 

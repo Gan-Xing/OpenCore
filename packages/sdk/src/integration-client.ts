@@ -2,6 +2,7 @@ import type {
   CreateIntegrationProviderRequest,
   CreateIntegrationTemplateRequest,
   CreateOutboxMessageRequest,
+  FailOutboxMessageRequest,
   IntegrationDesignSummary,
   IntegrationOutboxPage,
   IntegrationOutboxQueryRequest,
@@ -80,6 +81,19 @@ export type IntegrationClient = {
     token: string,
     body: CreateOutboxMessageRequest,
   ) => Promise<IntegrationOutboxSummary>;
+  markMailOutboxSent: (
+    token: string,
+    id: string,
+  ) => Promise<IntegrationOutboxSummary>;
+  markMailOutboxFailed: (
+    token: string,
+    id: string,
+    body: FailOutboxMessageRequest,
+  ) => Promise<IntegrationOutboxSummary>;
+  retryMailOutbox: (
+    token: string,
+    id: string,
+  ) => Promise<IntegrationOutboxSummary>;
   listSmsTemplates: (
     token: string,
     query?: IntegrationTemplateQueryRequest,
@@ -107,6 +121,19 @@ export type IntegrationClient = {
   enqueueSms: (
     token: string,
     body: CreateOutboxMessageRequest,
+  ) => Promise<IntegrationOutboxSummary>;
+  markSmsOutboxSent: (
+    token: string,
+    id: string,
+  ) => Promise<IntegrationOutboxSummary>;
+  markSmsOutboxFailed: (
+    token: string,
+    id: string,
+    body: FailOutboxMessageRequest,
+  ) => Promise<IntegrationOutboxSummary>;
+  retrySmsOutbox: (
+    token: string,
+    id: string,
   ) => Promise<IntegrationOutboxSummary>;
   listOAuthProviders: (
     token: string,
@@ -200,6 +227,21 @@ export function createIntegrationClient(
         body,
         token,
       }),
+    markMailOutboxSent: (token, id) =>
+      request<IntegrationOutboxSummary>(
+        `/integrations/mail/outbox/${encodeURIComponent(id)}/sent`,
+        { method: 'PATCH', token },
+      ),
+    markMailOutboxFailed: (token, id, body) =>
+      request<IntegrationOutboxSummary>(
+        `/integrations/mail/outbox/${encodeURIComponent(id)}/failed`,
+        { method: 'PATCH', body, token },
+      ),
+    retryMailOutbox: (token, id) =>
+      request<IntegrationOutboxSummary>(
+        `/integrations/mail/outbox/${encodeURIComponent(id)}/retry`,
+        { method: 'PATCH', token },
+      ),
     listSmsTemplates: (token, query) =>
       request<IntegrationTemplatePage>(
         withQuery('/integrations/sms/templates', query),
@@ -238,6 +280,21 @@ export function createIntegrationClient(
         body,
         token,
       }),
+    markSmsOutboxSent: (token, id) =>
+      request<IntegrationOutboxSummary>(
+        `/integrations/sms/outbox/${encodeURIComponent(id)}/sent`,
+        { method: 'PATCH', token },
+      ),
+    markSmsOutboxFailed: (token, id, body) =>
+      request<IntegrationOutboxSummary>(
+        `/integrations/sms/outbox/${encodeURIComponent(id)}/failed`,
+        { method: 'PATCH', body, token },
+      ),
+    retrySmsOutbox: (token, id) =>
+      request<IntegrationOutboxSummary>(
+        `/integrations/sms/outbox/${encodeURIComponent(id)}/retry`,
+        { method: 'PATCH', token },
+      ),
     listOAuthProviders: (token, query) =>
       request<IntegrationProviderPage>(
         withQuery('/integrations/oauth/providers', query),

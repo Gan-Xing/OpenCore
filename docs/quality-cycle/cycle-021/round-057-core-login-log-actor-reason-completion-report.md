@@ -31,21 +31,7 @@ This keeps failed-login `failureReason` semantics clean while allowing
 
 ## Verification
 
-- `pnpm nx test security --runInBand`
-- `pnpm nx test audit --runInBand`
-- `pnpm nx test sdk --runInBand`
-- `pnpm test:api --runInBand`
-- `pnpm test:admin`
-- `pnpm openapi:export`
-- `pnpm openapi:check`
-- `pnpm openapi:registry-tags:check`
-- `pnpm sdk:check`
-- `pnpm typecheck`
-- `pnpm lint`
-- `pnpm smoke:api:local`
-- `pnpm deploy:opencore`
-- `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-login-log`
-- `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-online-user`
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
 
 ## Public Verification
 

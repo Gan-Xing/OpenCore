@@ -1,7 +1,7 @@
 # Round 65 Completion Report: core.config Feature Flag Audience
 
-Feature+docs commit: this commit,
-`feat(config): target feature flags by audience / 按受众规则定位功能开关`
+Feature+docs commit:
+`f55c8f3 feat(config): target feature flags by audience / 按受众规则定位功能开关`
 
 ## Summary
 
@@ -32,26 +32,7 @@ platform.
 
 ## Verification
 
-- `pnpm exec jest -c packages/system/jest.config.ts packages/system/src/system-config/system-config.spec.ts --runInBand`
-- `pnpm nx test sdk --testFile=packages/sdk/src/system-management-client.spec.ts --testFile=packages/sdk/src/registry-fixtures.spec.ts`
-- `pnpm --dir apps/admin test`
-- `bash -n tools/scripts/deploy-local-opencore.sh`
-- `node --check tools/scripts/smoke-core-config.mjs`
-- `node --check apps/admin/scripts/smoke-test.mjs`
-- `pnpm prisma:validate`
-- `pnpm prisma:seed`
-- `pnpm prisma:generate`
-- `pnpm openapi:export`
-- `pnpm sdk:check`
-- `pnpm openapi:registry-tags:check`
-- `pnpm openapi:check`
-- `pnpm typecheck`
-- `pnpm build:api`
-- `pnpm lint`
-- `pnpm build:admin`
-- `pnpm smoke:api:local`
-- `pnpm exec jest -c packages/system/jest.config.ts --runInBand`
-- `pnpm registry:admin-routes:check`
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
 
 The first local smoke run found a smoke assertion ordering issue: the
 zero-rollout check evaluated a targeted flag without matching attributes and

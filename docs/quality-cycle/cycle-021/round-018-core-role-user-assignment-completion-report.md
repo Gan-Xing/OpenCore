@@ -35,24 +35,11 @@ online-session boundaries.
 
 ## Verification
 
-- `node --check tools/scripts/smoke-core-role.mjs`
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
+
 - Focused tests for system user role assignment, SDK client paths and API
   permission matrix.
 - Focused typecheck for system, API and Admin.
-- `pnpm openapi:export`
-- `pnpm nx test admin`
-- `pnpm sdk:check`
-- `pnpm openapi:check`
-- `pnpm openapi:registry-tags:check`
-- `pnpm registry:admin-routes:check`
-- `pnpm smoke:api:local`
-- `pnpm format:check`
-- `pnpm prisma:validate`
-- `pnpm lint`
-- `pnpm typecheck`
-- `pnpm test`
-- `pnpm build`
-- `pnpm deploy:opencore`
 - Public verification against `http://144.217.243.161:39172` and
   `http://144.217.243.161:39174`.
 

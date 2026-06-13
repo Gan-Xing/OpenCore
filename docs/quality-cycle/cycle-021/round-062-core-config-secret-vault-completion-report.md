@@ -38,25 +38,7 @@ version history, secret access timelines or advanced feature-flag rollout.
 
 ## Verification
 
-- `pnpm nx test system --testFile=packages/system/src/system-config/system-config.spec.ts`
-- `pnpm nx test sdk --testFile=packages/sdk/src/system-management-client.spec.ts --testFile=packages/sdk/src/registry-fixtures.spec.ts`
-- `pnpm --dir apps/admin test`
-- `pnpm prisma:validate`
-- `pnpm prisma:seed`
-- `pnpm openapi:export`
-- `pnpm sdk:check`
-- `pnpm openapi:registry-tags:check`
-- `pnpm openapi:check`
-- `pnpm exec prettier --check ...`
-- `pnpm typecheck`
-- `pnpm build:api`
-- `bash -n tools/scripts/deploy-local-opencore.sh`
-- `pnpm build:admin`
-- `pnpm smoke:api:local`
-- `pnpm lint`
-- `git diff --check`
-- `pnpm deploy:opencore`
-- `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-config`
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
 
 Public deployment:
 

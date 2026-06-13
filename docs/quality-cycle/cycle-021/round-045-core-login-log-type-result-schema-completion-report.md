@@ -37,31 +37,7 @@ verification.
 
 ## Verification
 
-- `pnpm prisma:generate`
-- `pnpm prisma:migrate`
-- `node --check tools/scripts/smoke-core-login-log.mjs`
-- `node --check apps/admin/scripts/smoke-test.mjs`
-- `pnpm nx test security --testFile=security-auth.spec.ts`
-- `pnpm nx test audit --testFile=audit-login-log.spec.ts`
-- `pnpm nx test api --testFile=auth.service.spec.ts`
-- `pnpm nx test sdk --testFile=system-management-client.spec.ts`
-- `pnpm nx test admin`
-- `pnpm openapi:export`
-- `pnpm openapi:check`
-- `pnpm sdk:check`
-- `pnpm openapi:registry-tags:check`
-- `pnpm prisma:validate`
-- `pnpm nx run-many -t typecheck --projects=api,admin,sdk,audit,security,contracts`
-- `pnpm build:api`
-- `pnpm build:admin`
-- `pnpm format:check`
-- `git diff --check`
-- `pnpm lint`
-- `pnpm nx test system --testFile=system-config.spec.ts`
-- `pnpm nx test system --testFile=system-user.spec.ts`
-- `pnpm nx typecheck system`
-- `pnpm smoke:api:local`
-- `pnpm deploy:opencore`
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
 
 Fixed-port local smoke passed on `39173` and included:
 

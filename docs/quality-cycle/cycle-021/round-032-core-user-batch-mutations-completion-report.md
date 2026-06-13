@@ -31,22 +31,9 @@ leaving Excel import/export as a later, higher-dependency slice.
 
 ## Verification
 
-- `pnpm prisma:validate`
-- `pnpm nx test system --testFile=system-user.spec.ts`
-- `pnpm nx test sdk --testFile=rbac-client.spec.ts`
-- `pnpm nx test api --testFile=rbac.permission-matrix.spec.ts`
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
+
 - `node scripts/smoke-test.mjs` from `apps/admin`
-- `pnpm nx run-many -t typecheck --projects=api,admin,sdk,system`
-- `pnpm openapi:export`
-- `pnpm openapi:check`
-- `pnpm sdk:check`
-- `pnpm nx test admin`
-- `pnpm smoke:api:local`
-- `pnpm build:api`
-- `pnpm build:admin`
-- `pnpm format:check`
-- `pnpm openapi:registry-tags:check`
-- `pnpm deploy:opencore`
 
 ## Public Verification
 

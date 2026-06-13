@@ -30,28 +30,7 @@ WebSocket/SMS/Mail adapters are admitted.
 
 ## Verification
 
-- `pnpm prisma:generate`
-- `pnpm prisma:migrate`
-- `pnpm nx test system --testFile=packages/system/src/system-notice/system-notice.spec.ts`
-- `pnpm nx test sdk --testFile=packages/sdk/src/system-management-client.spec.ts --testFile=packages/sdk/src/registry-fixtures.spec.ts`
-- `pnpm --dir apps/admin test`
-- `pnpm prisma:validate`
-- `pnpm prisma:seed`
-- `pnpm openapi:export`
-- `pnpm sdk:check`
-- `pnpm openapi:registry-tags:check`
-- `pnpm openapi:check`
-- `pnpm typecheck`
-- `pnpm lint`
-- `pnpm build:api`
-- `pnpm build:admin`
-- `bash -n tools/scripts/deploy-local-opencore.sh`
-- `pnpm exec prettier --check ...`
-- `git diff --check`
-- `pnpm smoke:api:local`
-- `pnpm registry:admin-routes:check`
-- `pnpm deploy:opencore`
-- `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-notice`
+- Standard round gates passed; repeated command transcripts were removed during docs compaction.
 
 `pnpm lint` passed with existing warnings in
 `packages/system/src/system-user/system-user.prisma-repository.ts` and

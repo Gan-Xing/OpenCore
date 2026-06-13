@@ -127,6 +127,10 @@ export type CreateOutboxMessageRequest = {
   payload: Record<string, unknown>;
 };
 
+export type FailOutboxMessageRequest = {
+  error: string;
+};
+
 export type IntegrationProviderQueryRequest = PageRequest & {
   type?: IntegrationProviderType;
   enabled?: boolean;
