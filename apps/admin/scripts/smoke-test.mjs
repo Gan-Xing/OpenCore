@@ -245,6 +245,7 @@ if (
   !authService.includes('queryCurrentOpenCoreUser') ||
   !authService.includes('getOpenCoreUserProfile') ||
   !authService.includes('updateOpenCoreUserProfile') ||
+  !authService.includes('updateOpenCoreUserPassword') ||
   !authService.includes('getRequiredAdminToken')
 ) {
   throw new Error(
@@ -670,9 +671,17 @@ if (
 if (
   !profilePage.includes('getOpenCoreUserProfile') ||
   !profilePage.includes('updateOpenCoreUserProfile') ||
+  !profilePage.includes('updateOpenCoreUserPassword') ||
   !profilePage.includes('Display name') ||
+  !profilePage.includes('Change password') ||
+  !profilePage.includes('Current password') ||
+  !profilePage.includes('New password') ||
+  !profilePage.includes('Confirm password') ||
+  !profilePage.includes('removeAdminToken') ||
+  !profilePage.includes('/user/login') ||
   !profilePage.includes('setInitialState') ||
   !profilePage.includes('Profile saved.') ||
+  !profilePage.includes('Password changed.') ||
   !profilePage.includes('postCodes') ||
   !profilePage.includes('roleCodes')
 ) {

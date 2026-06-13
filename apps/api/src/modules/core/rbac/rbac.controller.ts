@@ -36,12 +36,14 @@ import {
   RoleSummaryDto,
   SetRoleStatusDto,
   SetUserStatusDto,
+  UpdateUserPasswordDto,
   UpdateUserProfileDto,
   UpdateMenuDto,
   UpdatePermissionDto,
   UpdateRoleDto,
   UpdateUserDto,
   UserProfileDto,
+  UserPasswordMutationResultDto,
   UserMutationResultDto,
   UserSummaryDto,
 } from './rbac.dto';
@@ -103,6 +105,30 @@ export class RbacController {
     @Body() body: UpdateUserProfileDto,
   ): Promise<UserProfileDto> {
     return this.users.updateUserProfile(getAuthenticatedUserId(request), body);
+  }
+
+  @Patch('users/profile/password')
+  @ApiTags('Core Users')
+  @RequireAuthenticated()
+  @ApiOkResponse({ type: UserPasswordMutationResultDto })
+  async updateUserProfilePassword(
+    @Req() request: RequestWithUser,
+    @Body() body: UpdateUserPasswordDto,
+  ): Promise<UserPasswordMutationResultDto> {
+    const user = await this.users.updateUserPassword(
+      getAuthenticatedUserId(request),
+      body,
+    );
+    const revokedSessionCount = await this.revokeActiveSessionsForUsernames(
+      [user.username],
+      'rbac.user-profile-password',
+      `user changed own password for ${user.username}`,
+    );
+
+    return {
+      changed: true,
+      revokedSessionCount,
+    };
   }
 
   @Get('users/:id')

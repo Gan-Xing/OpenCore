@@ -19,6 +19,10 @@ describe('createRbacClient', () => {
     await client.updateUserProfile('token', {
       displayName: 'Profile Name',
     });
+    await client.updateUserPassword('token', {
+      oldPassword: 'old-password',
+      newPassword: 'new-password',
+    });
     await client.getUser('token', 'user_admin');
     await client.createUser('token', {
       username: 'operator',
@@ -92,6 +96,11 @@ describe('createRbacClient', () => {
       { path: '/core/users/profile', token: 'token' },
       {
         path: '/core/users/profile',
+        method: 'PATCH',
+        token: 'token',
+      },
+      {
+        path: '/core/users/profile/password',
         method: 'PATCH',
         token: 'token',
       },

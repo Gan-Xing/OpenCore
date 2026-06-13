@@ -24,6 +24,7 @@ const runId = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 const smokeUsername = `user_security_${runId}`;
 const smokePassword = `UserSecuritySmoke-${runId}`;
 const resetPassword = `UserSecurityReset-${runId}`;
+const selfPassword = `UserSecuritySelf-${runId}`;
 let adminToken;
 let smokeUserId;
 let smokeUserToken;
@@ -210,6 +211,52 @@ try {
     'reset-password smoke user accessToken',
   );
 
+  await request(`${apiPrefix}/core/users/profile/password`, {
+    method: 'PATCH',
+    token: smokeUserToken,
+    expected: [401],
+    body: {
+      oldPassword: 'wrong-password',
+      newPassword: selfPassword,
+    },
+  });
+  await request(`${apiPrefix}/core/users/profile/password`, {
+    method: 'PATCH',
+    token: smokeUserToken,
+    expected: [400],
+    body: {
+      oldPassword: resetPassword,
+      newPassword: resetPassword,
+    },
+  });
+  const selfPasswordUpdate = await request(
+    `${apiPrefix}/core/users/profile/password`,
+    {
+      method: 'PATCH',
+      token: smokeUserToken,
+      body: {
+        oldPassword: resetPassword,
+        newPassword: selfPassword,
+      },
+    },
+  );
+  assertEqual(selfPasswordUpdate.changed, true, 'self password changed result');
+  assertEqual(
+    selfPasswordUpdate.revokedSessionCount,
+    1,
+    'self password change revoked session count',
+  );
+  await request(`${apiPrefix}/auth/me`, {
+    token: smokeUserToken,
+    expected: [401],
+  });
+  await loginSmokeUser(resetPassword, [401]);
+  const selfPasswordLogin = await loginSmokeUser(selfPassword, [200, 201]);
+  smokeUserToken = assertString(
+    selfPasswordLogin.accessToken,
+    'self-password smoke user accessToken',
+  );
+
   const updatedUser = await apiRequest(
     `/core/users/${encodeURIComponent(smokeUserId)}`,
     {
@@ -235,7 +282,7 @@ try {
     expected: [401],
   });
 
-  const updatedLogin = await loginSmokeUser(resetPassword, [200, 201]);
+  const updatedLogin = await loginSmokeUser(selfPassword, [200, 201]);
   smokeUserToken = assertString(
     updatedLogin.accessToken,
     'updated smoke user accessToken',
@@ -262,7 +309,7 @@ try {
     token: smokeUserToken,
     expected: [401],
   });
-  await loginSmokeUser(resetPassword, [401]);
+  await loginSmokeUser(selfPassword, [401]);
   smokeUserId = undefined;
 
   await cleanup();
@@ -296,6 +343,12 @@ try {
         'core.user.reset-password',
         'core.user.reset-password.revoke-session',
         'core.user.reset-password.old-password-blocked',
+        'core.user.profile.password.wrong-old-password-guard',
+        'core.user.profile.password.same-password-guard',
+        'core.user.profile.password.update',
+        'core.user.profile.password.revoke-session',
+        'core.user.profile.password.old-password-blocked',
+        'core.user.profile.password.new-password-login',
         'core.user.post.clear',
         'core.user.update.revoke-session',
         'core.user.delete.revoke-session',

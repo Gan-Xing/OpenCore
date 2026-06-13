@@ -13,9 +13,11 @@ import {
   createRoleUserAssignment,
   normalizeCreateSystemUserInput,
   normalizeAssignRoleUsersInput,
+  normalizeUpdateSystemUserPasswordInput,
   normalizeListSystemUsersQuery,
   normalizeUpdateSystemUserInput,
   normalizeUpdateSystemUserProfileInput,
+  assertSystemUserPasswordChangeAllowed,
   SystemUserRepository,
   type SystemUserListQuery,
   type SystemUserSummaryRecord,
@@ -24,6 +26,7 @@ import { hashSystemUserPassword } from './system-user.password';
 import { seedSystemUsers, type SystemUserRecord } from './system-user.records';
 import type {
   CreateUserDto,
+  UpdateUserPasswordDto,
   UpdateUserProfileDto,
   UpdateUserDto,
 } from './system-user.dto';
@@ -127,6 +130,19 @@ export class SeedSystemUserRepository extends SystemUserRepository {
     const input = normalizeUpdateSystemUserProfileInput(body);
 
     user.displayName = input.displayName ?? user.displayName;
+
+    return cloneSystemUserSummary(user);
+  }
+
+  async updateUserPassword(
+    id: string,
+    body: UpdateUserPasswordDto,
+  ): Promise<SystemUserSummaryRecord> {
+    const user = this.findMutableUserById(id);
+    const input = normalizeUpdateSystemUserPasswordInput(body);
+
+    assertSystemUserPasswordChangeAllowed(user.passwordHash, input);
+    user.passwordHash = hashSystemUserPassword(input.newPassword);
 
     return cloneSystemUserSummary(user);
   }

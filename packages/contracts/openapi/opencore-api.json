@@ -199,6 +199,34 @@
         "tags": ["Rbac", "Core Users"]
       }
     },
+    "/api/core/users/profile/password": {
+      "patch": {
+        "operationId": "RbacController_updateUserProfilePassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateUserPasswordDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserPasswordMutationResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Users"]
+      }
+    },
     "/api/core/users/{id}": {
       "get": {
         "operationId": "RbacController_getUser",
@@ -5296,6 +5324,22 @@
       "UpdateUserProfileDto": {
         "type": "object",
         "properties": { "displayName": { "type": "string" } }
+      },
+      "UpdateUserPasswordDto": {
+        "type": "object",
+        "properties": {
+          "oldPassword": { "type": "string" },
+          "newPassword": { "type": "string" }
+        },
+        "required": ["oldPassword", "newPassword"]
+      },
+      "UserPasswordMutationResultDto": {
+        "type": "object",
+        "properties": {
+          "changed": { "type": "boolean" },
+          "revokedSessionCount": { "type": "number" }
+        },
+        "required": ["changed", "revokedSessionCount"]
       },
       "CreateUserDto": {
         "type": "object",

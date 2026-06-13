@@ -81,6 +81,14 @@ export class UpdateUserProfileDto {
   displayName?: string;
 }
 
+export class UpdateUserPasswordDto {
+  @ApiProperty()
+  oldPassword!: string;
+
+  @ApiProperty()
+  newPassword!: string;
+}
+
 export class SetUserStatusDto {
   @ApiProperty()
   enabled!: boolean;

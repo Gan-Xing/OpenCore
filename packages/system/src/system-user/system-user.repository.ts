@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import type {
   AssignRoleUsersDto,
   CreateUserDto,
@@ -6,9 +6,11 @@ import type {
   ResetUserPasswordDto,
   RoleUserAssignmentDto,
   SetUserStatusDto,
+  UpdateUserPasswordDto,
   UpdateUserProfileDto,
   UpdateUserDto,
 } from './system-user.dto';
+import { verifySystemUserPassword } from './system-user.password';
 import type { SystemUserRecord } from './system-user.records';
 
 export type SystemUserSummaryRecord = Omit<SystemUserRecord, 'passwordHash'>;
@@ -52,6 +54,11 @@ export type NormalizedSystemUserProfileUpdateInput = {
   displayName?: string;
 };
 
+export type NormalizedSystemUserPasswordUpdateInput = {
+  oldPassword: string;
+  newPassword: string;
+};
+
 export type NormalizedSetUserStatusInput = {
   enabled: boolean;
 };
@@ -79,6 +86,11 @@ export abstract class SystemUserRepository {
   abstract updateUserProfile(
     id: string,
     body: UpdateUserProfileDto,
+  ): Promise<SystemUserSummaryRecord>;
+
+  abstract updateUserPassword(
+    id: string,
+    body: UpdateUserPasswordDto,
   ): Promise<SystemUserSummaryRecord>;
 
   abstract deleteUser(id: string): Promise<{ deleted: true }>;
@@ -177,6 +189,24 @@ export function normalizeUpdateSystemUserProfileInput(
   };
 }
 
+export function normalizeUpdateSystemUserPasswordInput(
+  body: UpdateUserPasswordDto,
+): NormalizedSystemUserPasswordUpdateInput {
+  const oldPassword = normalizeRequiredText(body?.oldPassword, 'oldPassword');
+  const newPassword = normalizeRequiredText(body?.newPassword, 'newPassword');
+
+  if (oldPassword === newPassword) {
+    throw new BadRequestException(
+      'New password must be different from old password.',
+    );
+  }
+
+  return {
+    oldPassword,
+    newPassword,
+  };
+}
+
 export function normalizeSetUserStatusInput(
   body: SetUserStatusDto,
 ): NormalizedSetUserStatusInput {
@@ -218,6 +248,21 @@ export function cloneSystemUserSummary(
 export function assertSystemUserMutable(user: SystemUserSummaryRecord): void {
   if (user.system) {
     throw new BadRequestException('System users cannot be updated or deleted.');
+  }
+}
+
+export function assertSystemUserPasswordChangeAllowed(
+  passwordHash: string,
+  input: NormalizedSystemUserPasswordUpdateInput,
+): void {
+  if (!verifySystemUserPassword(input.oldPassword, passwordHash)) {
+    throw new UnauthorizedException('Current password is incorrect.');
+  }
+
+  if (verifySystemUserPassword(input.newPassword, passwordHash)) {
+    throw new BadRequestException(
+      'New password must be different from old password.',
+    );
   }
 }
 

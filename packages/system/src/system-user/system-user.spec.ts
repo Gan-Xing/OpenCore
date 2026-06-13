@@ -1,4 +1,8 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '@opencore/database';
 import { hashSystemUserPassword } from './system-user.password';
@@ -122,6 +126,26 @@ describe('@opencore/system system-user', () => {
     await expect(
       service.resetUserPassword('user_operator', {
         password: 'reset-password',
+      }),
+    ).resolves.toMatchObject({
+      id: 'user_operator',
+    });
+    await expect(
+      service.updateUserPassword('user_operator', {
+        oldPassword: 'wrong-password',
+        newPassword: 'self-password',
+      }),
+    ).rejects.toThrow(UnauthorizedException);
+    await expect(
+      service.updateUserPassword('user_operator', {
+        oldPassword: 'reset-password',
+        newPassword: 'reset-password',
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.updateUserPassword('user_operator', {
+        oldPassword: 'reset-password',
+        newPassword: 'self-password',
       }),
     ).resolves.toMatchObject({
       id: 'user_operator',
@@ -385,6 +409,31 @@ describe('@opencore/system system-user', () => {
         prisma.user.findUniqueOrThrow({ where: { id: user.id } }),
       ).resolves.toMatchObject({
         passwordHash: hashSystemUserPassword('reset-password'),
+      });
+      await expect(
+        service.updateUserPassword(user.id, {
+          oldPassword: 'wrong-password',
+          newPassword: 'self-password',
+        }),
+      ).rejects.toThrow(UnauthorizedException);
+      await expect(
+        service.updateUserPassword(user.id, {
+          oldPassword: 'reset-password',
+          newPassword: 'reset-password',
+        }),
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        service.updateUserPassword(user.id, {
+          oldPassword: 'reset-password',
+          newPassword: 'self-password',
+        }),
+      ).resolves.toMatchObject({
+        username,
+      });
+      await expect(
+        prisma.user.findUniqueOrThrow({ where: { id: user.id } }),
+      ).resolves.toMatchObject({
+        passwordHash: hashSystemUserPassword('self-password'),
       });
 
       await expect(

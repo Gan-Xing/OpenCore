@@ -8,16 +8,19 @@ import { PrismaService } from '@opencore/database';
 import type {
   AssignRoleUsersDto,
   CreateUserDto,
+  UpdateUserPasswordDto,
   UpdateUserProfileDto,
   UpdateUserDto,
 } from './system-user.dto';
 import { hashSystemUserPassword } from './system-user.password';
 import {
   assertSystemUserMutable,
+  assertSystemUserPasswordChangeAllowed,
   createRoleUserAssignment,
   normalizeAssignRoleUsersInput,
   normalizeCreateSystemUserInput,
   normalizeListSystemUsersQuery,
+  normalizeUpdateSystemUserPasswordInput,
   normalizeUpdateSystemUserInput,
   normalizeUpdateSystemUserProfileInput,
   SystemUserRepository,
@@ -29,6 +32,7 @@ type PrismaUserWithRoles = {
   id: string;
   username: string;
   displayName: string;
+  passwordHash: string;
   deptId?: string | null;
   enabled: boolean;
   roles: Array<{ role: { code: string } }>;
@@ -200,6 +204,36 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
       where: { id },
       data: {
         displayName: input.displayName,
+      },
+      include: {
+        roles: {
+          include: {
+            role: true,
+          },
+        },
+        posts: {
+          include: {
+            post: true,
+          },
+        },
+      },
+    });
+
+    return toSystemUserSummaryRecord(user);
+  }
+
+  async updateUserPassword(
+    id: string,
+    body: UpdateUserPasswordDto,
+  ): Promise<SystemUserSummaryRecord> {
+    const existing = await this.findUserEntityById(id);
+    const input = normalizeUpdateSystemUserPasswordInput(body);
+
+    assertSystemUserPasswordChangeAllowed(existing.passwordHash, input);
+    const user = await this.prisma.user.update({
+      where: { id },
+      data: {
+        passwordHash: hashSystemUserPassword(input.newPassword),
       },
       include: {
         roles: {

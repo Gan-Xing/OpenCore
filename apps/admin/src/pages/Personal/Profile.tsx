@@ -1,7 +1,12 @@
-import { ReloadOutlined, SaveOutlined, UserOutlined } from '@ant-design/icons';
+import {
+  LockOutlined,
+  ReloadOutlined,
+  SaveOutlined,
+  UserOutlined,
+} from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
 import type { UserProfileSummary } from '@opencore/sdk';
-import { useModel } from '@umijs/max';
+import { history, useModel } from '@umijs/max';
 import {
   Alert,
   Avatar,
@@ -18,11 +23,19 @@ import type { CSSProperties } from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import {
   getOpenCoreUserProfile,
+  updateOpenCoreUserPassword,
   updateOpenCoreUserProfile,
 } from '@/services/opencore/auth';
+import { removeAdminToken } from '@/services/opencore/token';
 
 type ProfileFormValues = {
   displayName: string;
+};
+
+type PasswordFormValues = {
+  oldPassword: string;
+  newPassword: string;
+  confirmPassword: string;
 };
 
 const profileLayoutStyle: CSSProperties = {
@@ -62,10 +75,12 @@ function renderTags(values: readonly string[]) {
 
 export default function PersonalProfilePage() {
   const [form] = Form.useForm<ProfileFormValues>();
+  const [passwordForm] = Form.useForm<PasswordFormValues>();
   const { initialState, setInitialState } = useModel('@@initialState');
   const [profile, setProfile] = useState<UserProfileSummary>();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
   const [loadError, setLoadError] = useState<string>();
 
   const loadProfile = useCallback(async () => {
@@ -135,6 +150,43 @@ export default function PersonalProfilePage() {
       );
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    const values = await passwordForm.validateFields();
+    setChangingPassword(true);
+    try {
+      const result = await updateOpenCoreUserPassword({
+        oldPassword: values.oldPassword,
+        newPassword: values.newPassword,
+      });
+      passwordForm.resetFields();
+      removeAdminToken();
+      setInitialState((state) =>
+        state
+          ? {
+              ...state,
+              currentUser: undefined,
+              permissions: [],
+            }
+          : state,
+      );
+      message.success(
+        `Password changed. ${result.revokedSessionCount} active session(s) revoked. Sign in again.`,
+      );
+      history.replace({
+        pathname: '/user/login',
+        search: new URLSearchParams({
+          redirect: '/personal/profile',
+        }).toString(),
+      });
+    } catch (error: unknown) {
+      message.error(
+        error instanceof Error ? error.message : 'Unable to change password.',
+      );
+    } finally {
+      setChangingPassword(false);
     }
   };
 
@@ -219,6 +271,83 @@ export default function PersonalProfilePage() {
               loading={saving}
             >
               Save
+            </Button>
+          </Form>
+        </section>
+
+        <section style={profilePanelStyle}>
+          <Typography.Title level={5} style={{ marginTop: 0 }}>
+            Change password
+          </Typography.Title>
+          <Form<PasswordFormValues>
+            form={passwordForm}
+            layout="vertical"
+            onFinish={() => void handlePasswordChange()}
+          >
+            <Form.Item
+              label="Current password"
+              name="oldPassword"
+              rules={[
+                { required: true, message: 'Current password is required.' },
+              ]}
+            >
+              <Input.Password autoComplete="current-password" />
+            </Form.Item>
+            <Form.Item
+              label="New password"
+              name="newPassword"
+              dependencies={['oldPassword']}
+              rules={[
+                { required: true, message: 'New password is required.' },
+                {
+                  min: 6,
+                  message: 'New password must be at least 6 characters.',
+                },
+                ({ getFieldValue }) => ({
+                  validator(_, value) {
+                    if (!value || value !== getFieldValue('oldPassword')) {
+                      return Promise.resolve();
+                    }
+
+                    return Promise.reject(
+                      new Error(
+                        'New password must be different from current password.',
+                      ),
+                    );
+                  },
+                }),
+              ]}
+            >
+              <Input.Password autoComplete="new-password" />
+            </Form.Item>
+            <Form.Item
+              label="Confirm password"
+              name="confirmPassword"
+              dependencies={['newPassword']}
+              rules={[
+                { required: true, message: 'Confirm password is required.' },
+                ({ getFieldValue }) => ({
+                  validator(_, value) {
+                    if (!value || value === getFieldValue('newPassword')) {
+                      return Promise.resolve();
+                    }
+
+                    return Promise.reject(
+                      new Error('The two passwords do not match.'),
+                    );
+                  },
+                }),
+              ]}
+            >
+              <Input.Password autoComplete="new-password" />
+            </Form.Item>
+            <Button
+              type="primary"
+              htmlType="submit"
+              icon={<LockOutlined />}
+              loading={changingPassword}
+            >
+              Change password
             </Button>
           </Form>
         </section>

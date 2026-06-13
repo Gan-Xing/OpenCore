@@ -35,6 +35,16 @@ export type UpdateUserProfileRequest = {
   displayName?: string;
 };
 
+export type UpdateUserPasswordRequest = {
+  oldPassword: string;
+  newPassword: string;
+};
+
+export type UserPasswordMutationSummary = {
+  changed: true;
+  revokedSessionCount: number;
+};
+
 export type ListUsersRequest = {
   deptId?: string;
 };

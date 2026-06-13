@@ -14,6 +14,7 @@ export {
   RoleSummaryDto,
   SetRoleStatusDto,
   SetUserStatusDto,
+  UpdateUserPasswordDto,
   UpdateUserProfileDto,
   UpdateMenuDto,
   UpdateRoleDto,
@@ -98,6 +99,14 @@ export class DeleteResultDto {
 
   @ApiProperty({ required: false })
   revokedSessionCount?: number;
+}
+
+export class UserPasswordMutationResultDto {
+  @ApiProperty()
+  changed!: true;
+
+  @ApiProperty()
+  revokedSessionCount!: number;
 }
 
 export class RbacExportPreviewDto {

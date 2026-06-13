@@ -3,7 +3,9 @@ import {
   type AuthenticatedUser,
   type LoginRequest,
   type LoginResponse,
+  type UpdateUserPasswordRequest,
   type UpdateUserProfileRequest,
+  type UserPasswordMutationSummary,
   type UserProfileSummary,
 } from '@opencore/sdk';
 import {
@@ -51,4 +53,10 @@ export async function updateOpenCoreUserProfile(
   body: UpdateUserProfileRequest,
 ): Promise<UserProfileSummary> {
   return authClient.updateUserProfile(getRequiredAdminToken(), body);
+}
+
+export async function updateOpenCoreUserPassword(
+  body: UpdateUserPasswordRequest,
+): Promise<UserPasswordMutationSummary> {
+  return authClient.updateUserPassword(getRequiredAdminToken(), body);
 }

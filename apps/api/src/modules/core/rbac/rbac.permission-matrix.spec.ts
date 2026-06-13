@@ -40,7 +40,11 @@ const expectedPermissions = {
   updateUser: ['core:user:update'],
 } as const;
 
-const expectedAuthenticatedOnly = ['getUserProfile', 'updateUserProfile'];
+const expectedAuthenticatedOnly = [
+  'getUserProfile',
+  'updateUserProfile',
+  'updateUserProfilePassword',
+];
 
 describe('RbacController permission matrix', () => {
   it('guards every S6 RBAC route with registry permission codes', () => {

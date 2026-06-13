@@ -19,12 +19,14 @@ import type {
   RoleSummary,
   SetRoleStatusRequest,
   SetUserStatusRequest,
+  UpdateUserPasswordRequest,
   UpdateMenuRequest,
   UpdatePermissionRequest,
   UpdateRoleRequest,
   UpdateUserProfileRequest,
   UpdateUserRequest,
   UserMutationSummary,
+  UserPasswordMutationSummary,
   UserProfileSummary,
   UserSummary,
 } from './rbac-types';
@@ -54,6 +56,10 @@ export type RbacClient = {
     token: string,
     body: UpdateUserProfileRequest,
   ) => Promise<UserProfileSummary>;
+  updateUserPassword: (
+    token: string,
+    body: UpdateUserPasswordRequest,
+  ) => Promise<UserPasswordMutationSummary>;
   getUser: (token: string, id: string) => Promise<UserSummary>;
   createUser: (token: string, body: CreateUserRequest) => Promise<UserSummary>;
   updateUser: (
@@ -155,6 +161,12 @@ export function createRbacClient(request: SdkRequest): RbacClient {
       }),
     updateUserProfile: (token, body) =>
       request<UserProfileSummary>('/core/users/profile', {
+        method: 'PATCH',
+        body,
+        token,
+      }),
+    updateUserPassword: (token, body) =>
+      request<UserPasswordMutationSummary>('/core/users/profile/password', {
         method: 'PATCH',
         body,
         token,
