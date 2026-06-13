@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AuditLoginLogModule } from '@opencore/audit';
 import { DatabaseModule } from '@opencore/database';
 import { OnlineUserModule } from '@opencore/online-user';
 import { SchedulerModule } from '@opencore/scheduler';
@@ -7,7 +8,12 @@ import { OperationsRepository } from './operations.repository';
 import { PrismaOperationsRepository } from './prisma-operations.repository';
 
 @Module({
-  imports: [DatabaseModule, OnlineUserModule, SchedulerModule],
+  imports: [
+    AuditLoginLogModule,
+    DatabaseModule,
+    OnlineUserModule,
+    SchedulerModule,
+  ],
   controllers: [OperationsController],
   providers: [
     {

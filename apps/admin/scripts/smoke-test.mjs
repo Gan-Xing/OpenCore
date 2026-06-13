@@ -931,6 +931,8 @@ if (
   !loginLogsPage.includes('account_locked') ||
   !loginLogsPage.includes('serverFilterToolbar') ||
   !loginLogsPage.includes('loginTypeOptions') ||
+  !loginLogsPage.includes('logout.force') ||
+  !loginLogsPage.includes('Forced logout') ||
   !loginLogsPage.includes('loginResultOptions') ||
   !loginLogsPage.includes('formatLoginType') ||
   !loginLogsPage.includes('formatLoginResult') ||

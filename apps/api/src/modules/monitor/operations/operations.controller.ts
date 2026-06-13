@@ -8,7 +8,10 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { AuditLoginLogService } from '@opencore/audit';
+import { getRequestContext } from '@opencore/core';
 import { OnlineUserService } from '@opencore/online-user';
+import type { OnlineUserSessionRecord } from '@opencore/online-user';
 import { SchedulerService } from '@opencore/scheduler';
 import { RequirePermission } from '../../core/rbac/permissions.decorator';
 import {
@@ -47,6 +50,7 @@ export class OperationsController {
     private readonly repository: OperationsRepository,
     private readonly scheduler: SchedulerService,
     private readonly onlineUsers: OnlineUserService,
+    private readonly loginLogs: AuditLoginLogService,
   ) {}
 
   @Get('monitor/operations/summary')
@@ -176,10 +180,18 @@ export class OperationsController {
   @ApiTags('Monitor Online Users')
   @RequirePermission('monitor:online-user:manage')
   @ApiOkResponse({ type: BatchKickOutSessionsResultDto })
-  kickOutSessions(
+  async kickOutSessions(
     @Body() body: BatchKickOutSessionsDto,
   ): Promise<BatchKickOutSessionsResultDto> {
-    return this.onlineUsers.kickOutSessions(body);
+    const result = await this.onlineUsers.kickOutSessions(body);
+
+    await Promise.all(
+      result.items.map((session) =>
+        this.recordForceLogoutLoginLog(session, body),
+      ),
+    );
+
+    return result;
   }
 
   @Get('monitor/online-users/:id')
@@ -194,11 +206,15 @@ export class OperationsController {
   @ApiTags('Monitor Online Users')
   @RequirePermission('monitor:online-user:manage')
   @ApiOkResponse({ type: OnlineUserSessionDto })
-  kickOutSession(
+  async kickOutSession(
     @Param('id') id: string,
     @Body() body: KickOutSessionDto,
   ): Promise<OnlineUserSessionDto> {
-    return this.onlineUsers.kickOutSession(id, body);
+    const session = await this.onlineUsers.kickOutSession(id, body);
+
+    await this.recordForceLogoutLoginLog(session, body);
+
+    return session;
   }
 
   @Get('optional/reports')
@@ -235,5 +251,22 @@ export class OperationsController {
   @ApiOkResponse({ type: ExportJobDesignDto })
   getExportJobDesign(): ExportJobDesignDto {
     return this.repository.getExportJobDesign();
+  }
+
+  private async recordForceLogoutLoginLog(
+    session: OnlineUserSessionRecord,
+    body: KickOutSessionDto,
+  ): Promise<void> {
+    await this.loginLogs.recordLoginAttempt({
+      username: session.username,
+      logType: 'logout.force',
+      result: 'success',
+      success: true,
+      ip: session.ip,
+      userAgent: session.userAgent,
+      requestId:
+        getRequestContext()?.requestId ?? `online-user.kick-out:${session.id}`,
+      failureReason: `forced by ${body.actor}: ${body.reason}`,
+    });
   }
 }

@@ -74,6 +74,7 @@ try {
   assertString(revocationSession.browser, 'revocation session browser');
   assertString(revocationSession.os, 'revocation session os');
 
+  const forceLogoutCreatedFrom = new Date(Date.now() - 1000).toISOString();
   const batchKick = await apiRequest('/monitor/online-users/kick-out', {
     method: 'POST',
     body: {
@@ -85,6 +86,18 @@ try {
   assertEqual(batchKick.requested, 1, 'batch requested count');
   assertEqual(batchKick.kicked, 1, 'batch kicked count');
   assertEqual(batchKick.skipped, 0, 'batch skipped count');
+  const forceLogoutLog = await waitForLoginLog({
+    label: 'force logout',
+    logType: 'logout.force',
+    result: 'success',
+    success: true,
+    username,
+    createdFrom: forceLogoutCreatedFrom,
+  });
+  assertEqual(forceLogoutLog.username, username, 'force logout username');
+  assertEqual(forceLogoutLog.logType, 'logout.force', 'force logout log type');
+  assertEqual(forceLogoutLog.result, 'success', 'force logout result');
+  assertEqual(forceLogoutLog.success, true, 'force logout success flag');
 
   await request(`${apiPrefix}/auth/me`, {
     token: revocationToken,
@@ -173,6 +186,7 @@ try {
         'monitor.online-user.list',
         'monitor.online-user.detail',
         'monitor.online-user.batch-kick-out',
+        'core.login-log.logout-force-recorded',
         realTokenRevoked
           ? 'monitor.online-user.revoked-token-rejected'
           : 'monitor.online-user.revoked-token-unchecked',
@@ -231,6 +245,51 @@ async function login() {
   throw new Error(
     `Unable to authenticate smoke admin ${username}. Set OPENCORE_SMOKE_ADMIN_PASSWORD to the deployed admin password.`,
     { cause: lastError },
+  );
+}
+
+async function waitForLoginLog({
+  label,
+  logType,
+  result,
+  success,
+  username,
+  createdFrom,
+}) {
+  let lastItems = [];
+
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    const page = await apiRequest(
+      `/core/login-logs?page=1&pageSize=10&username=${encodeURIComponent(
+        username,
+      )}&logType=${encodeURIComponent(logType)}&result=${encodeURIComponent(
+        result,
+      )}&success=${encodeURIComponent(
+        String(success),
+      )}&createdFrom=${encodeURIComponent(createdFrom)}`,
+    );
+    assertArray(page.items, `filtered ${label} login log items`);
+    lastItems = page.items;
+
+    const match = page.items.find(
+      (item) =>
+        item.username === username &&
+        item.logType === logType &&
+        item.result === result &&
+        item.success === success,
+    );
+
+    if (match) {
+      return match;
+    }
+
+    await delay(250);
+  }
+
+  throw new Error(
+    `${label} login log was not recorded for ${username}; latest rows=${formatBody(
+      lastItems,
+    )}`,
   );
 }
 
