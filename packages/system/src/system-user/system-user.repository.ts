@@ -1,6 +1,8 @@
 import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import type {
   AssignRoleUsersDto,
+  BatchDeleteUsersDto,
+  BatchSetUserStatusDto,
   CreateUserDto,
   ListUsersQueryDto,
   ResetUserPasswordDto,
@@ -85,8 +87,25 @@ export type NormalizedSetUserStatusInput = {
   enabled: boolean;
 };
 
+export type NormalizedBatchSetUserStatusInput = {
+  userIds: readonly string[];
+  enabled: boolean;
+};
+
+export type NormalizedBatchDeleteUsersInput = {
+  userIds: readonly string[];
+};
+
 export type NormalizedResetUserPasswordInput = {
   password: string;
+};
+
+export type SystemUserBatchMutationRecord = {
+  affected: number;
+  userIds: readonly string[];
+  usernames: readonly string[];
+  enabled?: boolean;
+  deleted?: true;
 };
 
 const USERNAME_PATTERN = /^[a-z][a-z0-9_.-]*$/;
@@ -129,6 +148,14 @@ export abstract class SystemUserRepository {
   abstract clearUserAvatar(id: string): Promise<SystemUserSummaryRecord>;
 
   abstract deleteUser(id: string): Promise<{ deleted: true }>;
+
+  abstract setUsersStatus(
+    body: BatchSetUserStatusDto,
+  ): Promise<SystemUserBatchMutationRecord>;
+
+  abstract deleteUsers(
+    body: BatchDeleteUsersDto,
+  ): Promise<SystemUserBatchMutationRecord>;
 
   abstract getRoleUserAssignment(
     roleCode: string,
@@ -247,6 +274,23 @@ export function normalizeSetUserStatusInput(
 ): NormalizedSetUserStatusInput {
   return {
     enabled: normalizeRequiredBoolean(body?.enabled, 'enabled'),
+  };
+}
+
+export function normalizeBatchSetUserStatusInput(
+  body: BatchSetUserStatusDto,
+): NormalizedBatchSetUserStatusInput {
+  return {
+    userIds: normalizeBatchSystemUserIds(body?.userIds),
+    enabled: normalizeRequiredBoolean(body?.enabled, 'enabled'),
+  };
+}
+
+export function normalizeBatchDeleteUsersInput(
+  body: BatchDeleteUsersDto,
+): NormalizedBatchDeleteUsersInput {
+  return {
+    userIds: normalizeBatchSystemUserIds(body?.userIds),
   };
 }
 
@@ -407,10 +451,29 @@ function normalizeOptionalBoolean(
 
 function normalizeUserId(value: unknown): string {
   if (typeof value !== 'string') {
-    throw new BadRequestException('System role user id must be a string.');
+    throw new BadRequestException('System user id must be a string.');
   }
 
   return normalizeRequiredText(value, 'user id');
+}
+
+function normalizeBatchSystemUserIds(value: unknown): readonly string[] {
+  if (!Array.isArray(value)) {
+    throw new BadRequestException('System userIds must be an array.');
+  }
+
+  if (value.length === 0) {
+    throw new BadRequestException('System userIds must not be empty.');
+  }
+
+  const normalized = value.map((userId) => normalizeUserId(userId));
+  const duplicate = findFirstDuplicate(normalized);
+
+  if (duplicate) {
+    throw new BadRequestException(`System user id is duplicated: ${duplicate}`);
+  }
+
+  return [...normalized].sort();
 }
 
 function normalizeRoleCodes(

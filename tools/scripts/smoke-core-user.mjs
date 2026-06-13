@@ -33,9 +33,12 @@ const smokeUsername = `user_security_${runId}`;
 const smokePassword = `UserSecuritySmoke-${runId}`;
 const resetPassword = `UserSecurityReset-${runId}`;
 const selfPassword = `UserSecuritySelf-${runId}`;
+const batchUsernames = [`user_batch_${runId}_a`, `user_batch_${runId}_b`];
+const batchPassword = `UserBatchSmoke-${runId}`;
 let adminToken;
 let smokeUserId;
 let smokeUserToken;
+const batchUserIds = new Set();
 let originalAdminDisplayName;
 let originalAdminAvatarUpload;
 let adminAvatarTouched = false;
@@ -266,6 +269,168 @@ try {
     'engineering department user options',
   );
 
+  const batchUsers = [];
+  for (const batchUsername of batchUsernames) {
+    const batchUser = await apiRequest('/core/users', {
+      method: 'POST',
+      body: {
+        username: batchUsername,
+        displayName: `Batch User ${batchUsername.slice(-1).toUpperCase()}`,
+        password: batchPassword,
+        roleCodes: ['viewer'],
+        deptId: 'dept_operations',
+        postCodes: ['engineer'],
+        enabled: true,
+      },
+    });
+    const batchUserId = assertString(batchUser.id, 'batch user id');
+    batchUserIds.add(batchUserId);
+    batchUsers.push({
+      id: batchUserId,
+      username: batchUsername,
+    });
+  }
+
+  await apiRequest('/core/users/batch/status', {
+    method: 'PATCH',
+    expected: [400],
+    body: {
+      userIds: [],
+      enabled: false,
+    },
+  });
+  await apiRequest('/core/users/batch/status', {
+    method: 'PATCH',
+    expected: [400],
+    body: {
+      userIds: [batchUsers[0].id, batchUsers[0].id],
+      enabled: false,
+    },
+  });
+  await apiRequest('/core/users/batch/status', {
+    method: 'PATCH',
+    expected: [400],
+    body: {
+      userIds: [adminUserId],
+      enabled: false,
+    },
+  });
+  await apiRequest('/core/users/batch/status', {
+    method: 'PATCH',
+    expected: [404],
+    body: {
+      userIds: ['missing_user'],
+      enabled: false,
+    },
+  });
+  await apiRequest('/core/users/batch', {
+    method: 'DELETE',
+    expected: [400],
+    body: {
+      userIds: [batchUsers[0].id, batchUsers[0].id],
+    },
+  });
+  await apiRequest('/core/users/batch', {
+    method: 'DELETE',
+    expected: [400],
+    body: {
+      userIds: [adminUserId],
+    },
+  });
+
+  const batchLogins = [];
+  for (const batchUser of batchUsers) {
+    const batchLogin = await loginUser(
+      batchUser.username,
+      batchPassword,
+      [200, 201],
+    );
+    batchLogins.push({
+      username: batchUser.username,
+      token: assertString(batchLogin.accessToken, 'batch accessToken'),
+    });
+  }
+
+  const batchDisabled = await apiRequest('/core/users/batch/status', {
+    method: 'PATCH',
+    body: {
+      userIds: batchUsers.map((user) => user.id),
+      enabled: false,
+    },
+  });
+  assertEqual(batchDisabled.affected, 2, 'batch disabled affected count');
+  assertEqual(batchDisabled.enabled, false, 'batch disabled status');
+  assertEqual(
+    batchDisabled.revokedSessionCount,
+    2,
+    'batch disable revoked session count',
+  );
+  for (const batchLogin of batchLogins) {
+    await request(`${apiPrefix}/auth/me`, {
+      token: batchLogin.token,
+      expected: [401],
+    });
+    await loginUser(batchLogin.username, batchPassword, [401]);
+    assertUserOptionNotIncludesUsername(
+      await apiRequest('/core/users/simple-list'),
+      batchLogin.username,
+      'batch disabled simple-list user options',
+    );
+  }
+
+  const batchEnabled = await apiRequest('/core/users/batch/status', {
+    method: 'PATCH',
+    body: {
+      userIds: batchUsers.map((user) => user.id),
+      enabled: true,
+    },
+  });
+  assertEqual(batchEnabled.affected, 2, 'batch enabled affected count');
+  assertEqual(batchEnabled.enabled, true, 'batch enabled status');
+  for (const batchUser of batchUsers) {
+    assertUserOptionIncludesUsername(
+      await apiRequest('/core/users/simple-list'),
+      batchUser.username,
+      'batch enabled simple-list user options',
+    );
+  }
+
+  const batchDeleteLogins = [];
+  for (const batchUser of batchUsers) {
+    const batchLogin = await loginUser(
+      batchUser.username,
+      batchPassword,
+      [200, 201],
+    );
+    batchDeleteLogins.push({
+      username: batchUser.username,
+      token: assertString(batchLogin.accessToken, 'batch delete accessToken'),
+    });
+  }
+  const batchDeleted = await apiRequest('/core/users/batch', {
+    method: 'DELETE',
+    body: {
+      userIds: batchUsers.map((user) => user.id),
+    },
+  });
+  assertEqual(batchDeleted.deleted, true, 'batch deleted result');
+  assertEqual(batchDeleted.affected, 2, 'batch deleted affected count');
+  assertEqual(
+    batchDeleted.revokedSessionCount,
+    2,
+    'batch delete revoked session count',
+  );
+  for (const batchUser of batchUsers) {
+    batchUserIds.delete(batchUser.id);
+  }
+  for (const batchLogin of batchDeleteLogins) {
+    await request(`${apiPrefix}/auth/me`, {
+      token: batchLogin.token,
+      expected: [401],
+    });
+    await loginUser(batchLogin.username, batchPassword, [401]);
+  }
+
   const initialLogin = await loginSmokeUser(smokePassword, [200, 201]);
   smokeUserToken = assertString(
     initialLogin.accessToken,
@@ -483,6 +648,19 @@ try {
         'core.user.dept.subtree-filter',
         'core.user.simple-list.dept-filter',
         'core.user.post.create',
+        'core.user.batch-status.empty-guard',
+        'core.user.batch-status.duplicate-guard',
+        'core.user.batch-status.system-user-guard',
+        'core.user.batch-status.missing-user-guard',
+        'core.user.batch-delete.duplicate-guard',
+        'core.user.batch-delete.system-user-guard',
+        'core.user.batch-status.disable',
+        'core.user.batch-status.revoke-sessions',
+        'core.user.batch-status.login-blocked',
+        'core.user.batch-status.enable',
+        'core.user.batch-delete',
+        'core.user.batch-delete.revoke-sessions',
+        'core.user.batch-delete.login-blocked',
         'core.user.status.disable',
         'core.user.simple-list.disabled-filtered',
         'core.user.status.revoke-session',
@@ -556,12 +734,16 @@ async function loginAdmin() {
 }
 
 async function loginSmokeUser(password, expected) {
+  return loginUser(smokeUsername, password, expected);
+}
+
+async function loginUser(loginUsername, loginPassword, expected) {
   return request(`${apiPrefix}/auth/login`, {
     method: 'POST',
     expected,
     body: {
-      username: smokeUsername,
-      password,
+      username: loginUsername,
+      password: loginPassword,
     },
   });
 }
@@ -601,6 +783,14 @@ async function cleanup() {
     }).catch(() => undefined);
     smokeUserId = undefined;
   }
+
+  for (const batchUserId of [...batchUserIds]) {
+    await apiRequest(`/core/users/${encodeURIComponent(batchUserId)}`, {
+      method: 'DELETE',
+      expected: [200, 404],
+    }).catch(() => undefined);
+    batchUserIds.delete(batchUserId);
+  }
 }
 
 async function restoreAdminProfile() {
@@ -636,9 +826,15 @@ async function restoreAdminProfile() {
 }
 
 async function cleanupSmokeUserSessions() {
+  for (const sessionUsername of [smokeUsername, ...batchUsernames]) {
+    await cleanupUserSessions(sessionUsername);
+  }
+}
+
+async function cleanupUserSessions(sessionUsername) {
   const page = await apiRequest(
     `/monitor/online-users?username=${encodeURIComponent(
-      smokeUsername,
+      sessionUsername,
     )}&active=true&page=1&pageSize=100`,
     {
       expected: [200, 404],
@@ -650,7 +846,7 @@ async function cleanupSmokeUserSessions() {
   }
 
   const ids = page.items
-    .filter((session) => session.username === smokeUsername)
+    .filter((session) => session.username === sessionUsername)
     .map((session) => session.id);
 
   if (ids.length === 0) {
@@ -662,7 +858,7 @@ async function cleanupSmokeUserSessions() {
     body: {
       ids,
       actor: 'core.user.smoke',
-      reason: 'cleanup smoke user security sessions',
+      reason: `cleanup smoke user sessions for ${sessionUsername}`,
     },
     expected: [200, 404],
   }).catch(() => undefined);

@@ -134,12 +134,39 @@ export class SetUserStatusDto {
   enabled!: boolean;
 }
 
+export class BatchSetUserStatusDto extends SetUserStatusDto {
+  @ApiProperty({ type: [String] })
+  userIds!: readonly string[];
+}
+
+export class BatchDeleteUsersDto {
+  @ApiProperty({ type: [String] })
+  userIds!: readonly string[];
+}
+
 export class ResetUserPasswordDto {
   @ApiProperty()
   password!: string;
 }
 
 export class UserMutationResultDto extends UserSummaryDto {
+  @ApiProperty({ required: false })
+  revokedSessionCount?: number;
+}
+
+export class BatchUserMutationResultDto {
+  @ApiProperty()
+  affected!: number;
+
+  @ApiProperty({ type: [String] })
+  userIds!: readonly string[];
+
+  @ApiProperty({ required: false })
+  enabled?: boolean;
+
+  @ApiProperty({ required: false })
+  deleted?: true;
+
   @ApiProperty({ required: false })
   revokedSessionCount?: number;
 }

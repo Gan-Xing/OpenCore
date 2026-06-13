@@ -13,6 +13,8 @@ import {
   createRoleUserAssignment,
   normalizeCreateSystemUserInput,
   normalizeAssignRoleUsersInput,
+  normalizeBatchDeleteUsersInput,
+  normalizeBatchSetUserStatusInput,
   normalizeUpdateSystemUserPasswordInput,
   normalizeListSystemUsersQuery,
   normalizeUpdateSystemUserInput,
@@ -23,12 +25,15 @@ import {
   type SystemUserListQuery,
   type SystemUserAvatarRecord,
   type SystemUserAvatarUpdateInput,
+  type SystemUserBatchMutationRecord,
   type SystemUserOptionRecord,
   type SystemUserSummaryRecord,
 } from './system-user.repository';
 import { hashSystemUserPassword } from './system-user.password';
 import { seedSystemUsers, type SystemUserRecord } from './system-user.records';
 import type {
+  BatchDeleteUsersDto,
+  BatchSetUserStatusDto,
   CreateUserDto,
   UpdateUserPasswordDto,
   UpdateUserProfileDto,
@@ -207,6 +212,49 @@ export class SeedSystemUserRepository extends SystemUserRepository {
     return { deleted: true };
   }
 
+  async setUsersStatus(
+    body: BatchSetUserStatusDto,
+  ): Promise<SystemUserBatchMutationRecord> {
+    const input = normalizeBatchSetUserStatusInput(body);
+    const users = this.findUsersByIds(input.userIds);
+
+    for (const user of users) {
+      assertSystemUserMutable(cloneSystemUserSummary(user));
+    }
+
+    for (const user of users) {
+      user.enabled = input.enabled;
+    }
+
+    return {
+      affected: users.length,
+      userIds: users.map((user) => user.id),
+      usernames: users.map((user) => user.username),
+      enabled: input.enabled,
+    };
+  }
+
+  async deleteUsers(
+    body: BatchDeleteUsersDto,
+  ): Promise<SystemUserBatchMutationRecord> {
+    const input = normalizeBatchDeleteUsersInput(body);
+    const users = this.findUsersByIds(input.userIds);
+
+    for (const user of users) {
+      assertSystemUserMutable(cloneSystemUserSummary(user));
+    }
+
+    const selectedUserIds = new Set(users.map((user) => user.id));
+    this.users = this.users.filter((user) => !selectedUserIds.has(user.id));
+
+    return {
+      affected: users.length,
+      userIds: users.map((user) => user.id),
+      usernames: users.map((user) => user.username),
+      deleted: true,
+    };
+  }
+
   async getRoleUserAssignment(roleCode: string) {
     this.assertRoleCodes([roleCode]);
     return createRoleUserAssignment(roleCode, await this.listUsers());
@@ -250,6 +298,10 @@ export class SeedSystemUserRepository extends SystemUserRepository {
     }
 
     return user;
+  }
+
+  private findUsersByIds(userIds: readonly string[]): SystemUserRecord[] {
+    return userIds.map((userId) => this.findMutableUserById(userId));
   }
 
   private assertRoleCodes(roleCodes: readonly string[]): void {

@@ -88,11 +88,27 @@ export type SetUserStatusRequest = {
   enabled: boolean;
 };
 
+export type BatchSetUserStatusRequest = SetUserStatusRequest & {
+  userIds: readonly string[];
+};
+
+export type BatchDeleteUsersRequest = {
+  userIds: readonly string[];
+};
+
 export type ResetUserPasswordRequest = {
   password: string;
 };
 
 export type UserMutationSummary = UserSummary & {
+  revokedSessionCount?: number;
+};
+
+export type BatchUserMutationSummary = {
+  affected: number;
+  userIds: readonly string[];
+  enabled?: boolean;
+  deleted?: true;
   revokedSessionCount?: number;
 };
 

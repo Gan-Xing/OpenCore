@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import type {
   AssignRoleUsersDto,
+  BatchDeleteUsersDto,
+  BatchSetUserStatusDto,
   CreateUserDto,
   ListUsersQueryDto,
   ResetUserPasswordDto,
@@ -17,6 +19,7 @@ import {
   SystemUserRepository,
   type SystemUserAvatarRecord,
   type SystemUserAvatarUpdateInput,
+  type SystemUserBatchMutationRecord,
   type SystemUserExportPreview,
   type SystemUserOptionRecord,
   type SystemUserSummaryRecord,
@@ -98,6 +101,18 @@ export class SystemUserService {
 
   deleteUser(id: string): Promise<{ deleted: true }> {
     return this.repository.deleteUser(id);
+  }
+
+  async setUsersStatus(
+    body: BatchSetUserStatusDto,
+  ): Promise<SystemUserBatchMutationRecord> {
+    return await this.repository.setUsersStatus(body);
+  }
+
+  async deleteUsers(
+    body: BatchDeleteUsersDto,
+  ): Promise<SystemUserBatchMutationRecord> {
+    return await this.repository.deleteUsers(body);
   }
 
   getRoleUserAssignment(roleCode: string): Promise<RoleUserAssignmentDto> {

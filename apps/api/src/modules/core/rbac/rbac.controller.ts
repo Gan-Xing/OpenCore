@@ -34,6 +34,9 @@ import {
 import {
   AssignRoleMenusDto,
   AssignRoleUsersDto,
+  BatchDeleteUsersDto,
+  BatchSetUserStatusDto,
+  BatchUserMutationResultDto,
   CreateMenuDto,
   CreatePermissionDto,
   CreateRoleDto,
@@ -226,6 +229,50 @@ export class RbacController {
 
     return {
       changed: true,
+      revokedSessionCount,
+    };
+  }
+
+  @Patch('users/batch/status')
+  @ApiTags('Core Users')
+  @RequirePermission('core:user:update')
+  @ApiOkResponse({ type: BatchUserMutationResultDto })
+  async setUsersStatus(
+    @Body() body: BatchSetUserStatusDto,
+  ): Promise<BatchUserMutationResultDto> {
+    const result = await this.users.setUsersStatus(body);
+    const revokedSessionCount = await this.revokeActiveSessionsForUsernames(
+      result.usernames,
+      'rbac.user-batch-status',
+      `user batch status set to ${result.enabled ? 'enabled' : 'disabled'} for ${result.affected} user(s)`,
+    );
+
+    return {
+      affected: result.affected,
+      userIds: result.userIds,
+      enabled: result.enabled,
+      revokedSessionCount,
+    };
+  }
+
+  @Delete('users/batch')
+  @ApiTags('Core Users')
+  @RequirePermission('core:user:delete')
+  @ApiOkResponse({ type: BatchUserMutationResultDto })
+  async deleteUsers(
+    @Body() body: BatchDeleteUsersDto,
+  ): Promise<BatchUserMutationResultDto> {
+    const result = await this.users.deleteUsers(body);
+    const revokedSessionCount = await this.revokeActiveSessionsForUsernames(
+      result.usernames,
+      'rbac.user-batch-delete',
+      `user batch deleted for ${result.affected} user(s)`,
+    );
+
+    return {
+      affected: result.affected,
+      userIds: result.userIds,
+      deleted: true,
       revokedSessionCount,
     };
   }

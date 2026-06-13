@@ -7,8 +7,11 @@ import {
   type AssignRoleUsersRequest,
   type AuditLogQueryRequest,
   type AuditLogSummary,
+  type BatchDeleteUsersRequest,
   type BatchKickOutSessionsRequest,
   type BatchKickOutSessionsResult,
+  type BatchSetUserStatusRequest,
+  type BatchUserMutationSummary,
   type CreateDictItemRequest,
   type CreateDictTypeRequest,
   type CreateFileAssetRequest,
@@ -113,6 +116,12 @@ export function setOpenCoreUserStatus(
   return rbacClient.setUserStatus(getRequiredAdminToken(), id, body);
 }
 
+export function setOpenCoreUsersStatus(
+  body: BatchSetUserStatusRequest,
+): Promise<BatchUserMutationSummary> {
+  return rbacClient.setUsersStatus(getRequiredAdminToken(), body);
+}
+
 export function resetOpenCoreUserPassword(
   id: string,
   body: ResetUserPasswordRequest,
@@ -122,6 +131,12 @@ export function resetOpenCoreUserPassword(
 
 export function deleteOpenCoreUser(id: string): Promise<RbacDeleteResult> {
   return rbacClient.deleteUser(getRequiredAdminToken(), id);
+}
+
+export function deleteOpenCoreUsers(
+  body: BatchDeleteUsersRequest,
+): Promise<BatchUserMutationSummary> {
+  return rbacClient.deleteUsers(getRequiredAdminToken(), body);
 }
 
 export function listOpenCoreRoles(): Promise<RoleSummary[]> {

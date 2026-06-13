@@ -50,10 +50,17 @@ describe('createRbacClient', () => {
     await client.setUserStatus('token', 'user_operator', {
       enabled: true,
     });
+    await client.setUsersStatus('token', {
+      userIds: ['user_operator', 'user_viewer'],
+      enabled: false,
+    });
     await client.resetUserPassword('token', 'user_operator', {
       password: 'reset-password',
     });
     await client.deleteUser('token', 'user_operator');
+    await client.deleteUsers('token', {
+      userIds: ['user_operator', 'user_viewer'],
+    });
     await client.listRoles('token');
     await client.exportRoles('token');
     await client.getRole('token', 'admin');
@@ -141,12 +148,22 @@ describe('createRbacClient', () => {
         token: 'token',
       },
       {
+        path: '/core/users/batch/status',
+        method: 'PATCH',
+        token: 'token',
+      },
+      {
         path: '/core/users/user_operator/reset-password',
         method: 'POST',
         token: 'token',
       },
       {
         path: '/core/users/user_operator',
+        method: 'DELETE',
+        token: 'token',
+      },
+      {
+        path: '/core/users/batch',
         method: 'DELETE',
         token: 'token',
       },

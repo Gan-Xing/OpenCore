@@ -316,7 +316,9 @@ if (
   !opencorePlatformService.includes('getOpenCoreUser') ||
   !opencorePlatformService.includes('createOpenCoreUser') ||
   !opencorePlatformService.includes('updateOpenCoreUser') ||
+  !opencorePlatformService.includes('setOpenCoreUsersStatus') ||
   !opencorePlatformService.includes('deleteOpenCoreUser') ||
+  !opencorePlatformService.includes('deleteOpenCoreUsers') ||
   !opencorePlatformService.includes('listOpenCoreRoles') ||
   !opencorePlatformService.includes('getOpenCoreRole') ||
   !opencorePlatformService.includes('getOpenCoreRoleMenuAssignment') ||
@@ -708,8 +710,10 @@ if (
   !usersPage.includes('createOpenCoreUser') ||
   !usersPage.includes('updateOpenCoreUser') ||
   !usersPage.includes('setOpenCoreUserStatus') ||
+  !usersPage.includes('setOpenCoreUsersStatus') ||
   !usersPage.includes('resetOpenCoreUserPassword') ||
   !usersPage.includes('deleteOpenCoreUser') ||
+  !usersPage.includes('deleteOpenCoreUsers') ||
   !usersPage.includes('listOpenCoreRoles') ||
   !usersPage.includes('listOpenCoreSystemDepts') ||
   !usersPage.includes('listOpenCoreSystemDeptOptions') ||
@@ -722,6 +726,11 @@ if (
   !usersPage.includes('postCodes') ||
   !usersPage.includes('Select posts') ||
   !usersPage.includes('Reset Password') ||
+  !usersPage.includes('Enable selected') ||
+  !usersPage.includes('Disable selected') ||
+  !usersPage.includes('Delete selected') ||
+  !usersPage.includes('selectedUserIds') ||
+  !usersPage.includes('rowSelection') ||
   !usersPage.includes('Revoked sessions') ||
   !usersPage.includes('useCurrentPageFilters') ||
   !usersPage.includes('CurrentPageExportButton') ||

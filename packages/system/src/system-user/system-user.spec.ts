@@ -173,6 +173,79 @@ describe('@opencore/system system-user', () => {
         enabled: 'false' as unknown as boolean,
       }),
     ).rejects.toThrow(BadRequestException);
+    const batchUser = await service.createUser({
+      username: 'batch_operator',
+      displayName: 'Batch Operator',
+      password: 'change-me',
+      roleCodes: ['viewer'],
+      deptId: 'dept_operations',
+      postCodes: ['engineer'],
+    });
+    await expect(
+      service.setUsersStatus({
+        userIds: [user.id, batchUser.id],
+        enabled: false,
+      }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        affected: 2,
+        enabled: false,
+        userIds: expect.arrayContaining([user.id, batchUser.id]),
+        usernames: expect.arrayContaining(['operator', 'batch_operator']),
+      }),
+    );
+    await expect(service.listUserOptions()).resolves.not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: user.id }),
+        expect.objectContaining({ id: batchUser.id }),
+      ]),
+    );
+    await expect(
+      service.setUsersStatus({
+        userIds: [user.id, batchUser.id],
+        enabled: true,
+      }),
+    ).resolves.toMatchObject({
+      affected: 2,
+      enabled: true,
+    });
+    await expect(
+      service.setUsersStatus({
+        userIds: [],
+        enabled: false,
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.setUsersStatus({
+        userIds: [user.id, user.id],
+        enabled: false,
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.setUsersStatus({
+        userIds: ['user_admin'],
+        enabled: false,
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.deleteUsers({ userIds: ['missing_user'] }),
+    ).rejects.toThrow(NotFoundException);
+    await expect(
+      service.deleteUsers({ userIds: ['user_admin'] }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.deleteUsers({ userIds: [batchUser.id] }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        affected: 1,
+        deleted: true,
+        userIds: [batchUser.id],
+        usernames: ['batch_operator'],
+      }),
+    );
+    await expect(service.getUser(batchUser.id)).rejects.toThrow(
+      NotFoundException,
+    );
     await expect(
       service.resetUserPassword('user_operator', {
         password: 'reset-password',
@@ -512,6 +585,92 @@ describe('@opencore/system system-user', () => {
       await expect(service.listUserOptions()).resolves.toEqual(
         expect.arrayContaining([expect.objectContaining({ id: user.id })]),
       );
+      const secondUser = await service.createUser({
+        username: secondUsername,
+        displayName: 'Prisma Batch User',
+        password: 'initial-password',
+        roleCodes: ['viewer'],
+        deptId: 'dept_operations',
+        postCodes: ['engineer'],
+      });
+      await expect(
+        service.setUsersStatus({
+          userIds: [user.id, secondUser.id],
+          enabled: false,
+        }),
+      ).resolves.toEqual(
+        expect.objectContaining({
+          affected: 2,
+          enabled: false,
+          userIds: expect.arrayContaining([user.id, secondUser.id]),
+          usernames: expect.arrayContaining([username, secondUsername]),
+        }),
+      );
+      await expect(service.listUserOptions()).resolves.not.toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ id: user.id }),
+          expect.objectContaining({ id: secondUser.id }),
+        ]),
+      );
+      await expect(
+        service.setUsersStatus({
+          userIds: [user.id, secondUser.id],
+          enabled: true,
+        }),
+      ).resolves.toMatchObject({
+        affected: 2,
+        enabled: true,
+      });
+      await expect(
+        service.setUsersStatus({
+          userIds: [],
+          enabled: false,
+        }),
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        service.setUsersStatus({
+          userIds: [user.id, user.id],
+          enabled: false,
+        }),
+      ).rejects.toThrow(BadRequestException);
+      const adminForBatch = (await service.listUsers()).find(
+        (candidate) => candidate.username === 'admin',
+      );
+
+      expect(adminForBatch).toEqual(expect.objectContaining({ system: true }));
+      await expect(
+        service.setUsersStatus({
+          userIds: [adminForBatch?.id ?? 'missing_admin'],
+          enabled: false,
+        }),
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        service.deleteUsers({ userIds: ['missing_user'] }),
+      ).rejects.toThrow(NotFoundException);
+      await expect(
+        service.deleteUsers({
+          userIds: [adminForBatch?.id ?? 'missing_admin'],
+        }),
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        service.deleteUsers({ userIds: [secondUser.id] }),
+      ).resolves.toEqual(
+        expect.objectContaining({
+          affected: 1,
+          deleted: true,
+          userIds: [secondUser.id],
+          usernames: [secondUsername],
+        }),
+      );
+      await expect(
+        prisma.userRole.count({ where: { userId: secondUser.id } }),
+      ).resolves.toBe(0);
+      await expect(
+        prisma.userPost.count({ where: { userId: secondUser.id } }),
+      ).resolves.toBe(0);
+      await expect(
+        prisma.user.findUnique({ where: { id: secondUser.id } }),
+      ).resolves.toBeNull();
       await expect(
         service.resetUserPassword(user.id, {
           password: 'reset-password',

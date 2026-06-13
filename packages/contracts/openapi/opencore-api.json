@@ -297,6 +297,62 @@
         "tags": ["Rbac", "Core Users"]
       }
     },
+    "/api/core/users/batch/status": {
+      "patch": {
+        "operationId": "RbacController_setUsersStatus",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/BatchSetUserStatusDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchUserMutationResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Users"]
+      }
+    },
+    "/api/core/users/batch": {
+      "delete": {
+        "operationId": "RbacController_deleteUsers",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/BatchDeleteUsersDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchUserMutationResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Users"]
+      }
+    },
     "/api/core/users/{id}/avatar": {
       "get": {
         "operationId": "RbacController_getUserAvatar",
@@ -5458,6 +5514,32 @@
           "revokedSessionCount": { "type": "number" }
         },
         "required": ["changed", "revokedSessionCount"]
+      },
+      "BatchSetUserStatusDto": {
+        "type": "object",
+        "properties": {
+          "enabled": { "type": "boolean" },
+          "userIds": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["enabled", "userIds"]
+      },
+      "BatchUserMutationResultDto": {
+        "type": "object",
+        "properties": {
+          "affected": { "type": "number" },
+          "userIds": { "type": "array", "items": { "type": "string" } },
+          "enabled": { "type": "boolean" },
+          "deleted": { "type": "boolean" },
+          "revokedSessionCount": { "type": "number" }
+        },
+        "required": ["affected", "userIds"]
+      },
+      "BatchDeleteUsersDto": {
+        "type": "object",
+        "properties": {
+          "userIds": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["userIds"]
       },
       "CreateUserDto": {
         "type": "object",

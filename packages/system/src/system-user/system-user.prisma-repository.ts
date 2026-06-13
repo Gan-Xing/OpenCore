@@ -7,6 +7,8 @@ import {
 import { PrismaService } from '@opencore/database';
 import type {
   AssignRoleUsersDto,
+  BatchDeleteUsersDto,
+  BatchSetUserStatusDto,
   CreateUserDto,
   UpdateUserPasswordDto,
   UpdateUserProfileDto,
@@ -17,6 +19,8 @@ import {
   assertSystemUserMutable,
   assertSystemUserPasswordChangeAllowed,
   createRoleUserAssignment,
+  normalizeBatchDeleteUsersInput,
+  normalizeBatchSetUserStatusInput,
   normalizeAssignRoleUsersInput,
   normalizeCreateSystemUserInput,
   normalizeListSystemUsersQuery,
@@ -27,6 +31,7 @@ import {
   toSystemUserOptionRecord,
   type SystemUserAvatarRecord,
   type SystemUserAvatarUpdateInput,
+  type SystemUserBatchMutationRecord,
   type SystemUserListQuery,
   type SystemUserOptionRecord,
   type SystemUserSummaryRecord,
@@ -345,6 +350,51 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
     return { deleted: true };
   }
 
+  async setUsersStatus(
+    body: BatchSetUserStatusDto,
+  ): Promise<SystemUserBatchMutationRecord> {
+    const input = normalizeBatchSetUserStatusInput(body);
+    const users = await this.findMutableBatchUsersByIds(input.userIds);
+
+    await this.prisma.user.updateMany({
+      where: { id: { in: [...input.userIds] } },
+      data: { enabled: input.enabled },
+    });
+
+    return {
+      affected: users.length,
+      userIds: users.map((user) => user.id),
+      usernames: users.map((user) => user.username),
+      enabled: input.enabled,
+    };
+  }
+
+  async deleteUsers(
+    body: BatchDeleteUsersDto,
+  ): Promise<SystemUserBatchMutationRecord> {
+    const input = normalizeBatchDeleteUsersInput(body);
+    const users = await this.findMutableBatchUsersByIds(input.userIds);
+
+    await this.prisma.$transaction([
+      this.prisma.userRole.deleteMany({
+        where: { userId: { in: [...input.userIds] } },
+      }),
+      this.prisma.userPost.deleteMany({
+        where: { userId: { in: [...input.userIds] } },
+      }),
+      this.prisma.user.deleteMany({
+        where: { id: { in: [...input.userIds] } },
+      }),
+    ]);
+
+    return {
+      affected: users.length,
+      userIds: users.map((user) => user.id),
+      usernames: users.map((user) => user.username),
+      deleted: true,
+    };
+  }
+
   async getRoleUserAssignment(roleCode: string) {
     await this.findRoleIdByCode(roleCode);
     return createRoleUserAssignment(roleCode, await this.listUsers());
@@ -454,6 +504,45 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
     if (systemUser) {
       throw new BadRequestException('System users cannot be role-assigned.');
     }
+  }
+
+  private async findMutableBatchUsersByIds(
+    userIds: readonly string[],
+  ): Promise<SystemUserSummaryRecord[]> {
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: [...userIds] } },
+      include: {
+        roles: {
+          include: {
+            role: true,
+          },
+        },
+        posts: {
+          include: {
+            post: true,
+          },
+        },
+      },
+    });
+    const usersById = new Map(
+      users.map((user) => [user.id, toSystemUserSummaryRecord(user)]),
+    );
+    const missing = userIds.find((userId) => !usersById.has(userId));
+
+    if (missing) {
+      throw new NotFoundException(`User not found: ${missing}`);
+    }
+
+    const orderedUsers = userIds.map((userId) => usersById.get(userId)!);
+    const systemUser = orderedUsers.find((user) => user.system);
+
+    if (systemUser) {
+      throw new BadRequestException(
+        'System users cannot be updated or deleted.',
+      );
+    }
+
+    return orderedUsers;
   }
 
   private async assertRolesExist(roleCodes: readonly string[]): Promise<void> {

@@ -41,9 +41,16 @@ import {
   Typography,
   message,
 } from 'antd';
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+  type Key,
+} from 'react';
 import {
   createOpenCoreUser,
+  deleteOpenCoreUsers,
   deleteOpenCoreUser,
   getOpenCoreUser,
   listOpenCoreRoles,
@@ -52,6 +59,7 @@ import {
   listOpenCoreSystemPostOptions,
   listOpenCoreUsers,
   resetOpenCoreUserPassword,
+  setOpenCoreUsersStatus,
   setOpenCoreUserStatus,
   updateOpenCoreUser,
 } from '@/services/opencore/platform';
@@ -410,6 +418,10 @@ export default function UsersPage() {
   const [submitting, setSubmitting] = useState(false);
   const [resetPasswordSubmitting, setResetPasswordSubmitting] = useState(false);
   const [statusUpdatingUserId, setStatusUpdatingUserId] = useState<string>();
+  const [batchAction, setBatchAction] = useState<
+    'delete' | 'disable' | 'enable'
+  >();
+  const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
   const [selectedDeptId, setSelectedDeptId] = useState<string>();
   const flatDeptRows = useMemo(
     () => flattenDeptTree(deptTreeRows),
@@ -437,6 +449,16 @@ export default function UsersPage() {
       searchPlaceholder: 'Search users',
       selectFilters: filterOptions,
     });
+  const selectedUserIds = useMemo(
+    () =>
+      selectedRowKeys
+        .map((key) => String(key))
+        .filter((id) =>
+          filteredRows.some((row) => row.id === id && !row.system),
+        ),
+    [filteredRows, selectedRowKeys],
+  );
+  const selectedUserCount = selectedUserIds.length;
 
   const loadUsers = async (deptId = selectedDeptId) => {
     setLoading(true);
@@ -449,6 +471,11 @@ export default function UsersPage() {
         listOpenCoreSystemPostOptions(),
       ]);
       setRows(users);
+      setSelectedRowKeys((current) =>
+        current.filter((key) =>
+          users.some((user) => user.id === String(key) && !user.system),
+        ),
+      );
       setRoleRows(roles);
       setDeptTreeRows(deptTree);
       setDeptOptionRows(deptOptions);
@@ -456,6 +483,7 @@ export default function UsersPage() {
       setLoadError(undefined);
     } catch (error: unknown) {
       setRows(filterUsersByDept(fallbackRows, fallbackDeptTreeRows, deptId));
+      setSelectedRowKeys([]);
       setRoleRows(fallbackRoleRows);
       setDeptTreeRows(fallbackDeptTreeRows);
       setDeptOptionRows(fallbackDeptOptionRows);
@@ -625,6 +653,56 @@ export default function UsersPage() {
       `User deleted. ${formatRevokedSessions(result.revokedSessionCount)}`,
     );
     await loadUsers();
+  };
+
+  const batchSetUsersStatus = async (enabled: boolean) => {
+    if (selectedUserIds.length === 0) {
+      message.warning('Select at least one custom user.');
+      return;
+    }
+
+    const action = enabled ? 'enable' : 'disable';
+    setBatchAction(action);
+    try {
+      const result = await setOpenCoreUsersStatus({
+        userIds: selectedUserIds,
+        enabled,
+      });
+      message.success(
+        `Selected users ${enabled ? 'enabled' : 'disabled'}. ${formatBatchMutation(
+          result.affected,
+          result.revokedSessionCount,
+        )}`,
+      );
+      setSelectedRowKeys([]);
+      await loadUsers();
+    } finally {
+      setBatchAction(undefined);
+    }
+  };
+
+  const batchDeleteUsers = async () => {
+    if (selectedUserIds.length === 0) {
+      message.warning('Select at least one custom user.');
+      return;
+    }
+
+    setBatchAction('delete');
+    try {
+      const result = await deleteOpenCoreUsers({
+        userIds: selectedUserIds,
+      });
+      message.success(
+        `Selected users deleted. ${formatBatchMutation(
+          result.affected,
+          result.revokedSessionCount,
+        )}`,
+      );
+      setSelectedRowKeys([]);
+      await loadUsers();
+    } finally {
+      setBatchAction(undefined);
+    }
   };
 
   const columns: ProColumns<UserSummary>[] = [
@@ -833,6 +911,40 @@ export default function UsersPage() {
             toolBarRender={() => [
               filterToolbar,
               <Button
+                disabled={selectedUserCount === 0}
+                icon={<CheckCircleOutlined />}
+                key="batch-enable"
+                loading={batchAction === 'enable'}
+                onClick={() => void batchSetUsersStatus(true)}
+              >
+                Enable selected
+              </Button>,
+              <Button
+                disabled={selectedUserCount === 0}
+                icon={<StopOutlined />}
+                key="batch-disable"
+                loading={batchAction === 'disable'}
+                onClick={() => void batchSetUsersStatus(false)}
+              >
+                Disable selected
+              </Button>,
+              <Popconfirm
+                key="batch-delete"
+                title={`Delete ${selectedUserCount} selected user(s)?`}
+                okText="Delete"
+                okButtonProps={{ danger: true }}
+                onConfirm={() => void batchDeleteUsers()}
+              >
+                <Button
+                  danger
+                  disabled={selectedUserCount === 0}
+                  icon={<DeleteOutlined />}
+                  loading={batchAction === 'delete'}
+                >
+                  Delete selected
+                </Button>
+              </Popconfirm>,
+              <Button
                 key="create"
                 type="primary"
                 icon={<PlusOutlined />}
@@ -857,6 +969,14 @@ export default function UsersPage() {
             pagination={{ pageSize: 10 }}
             dataSource={filteredRows}
             columns={columns}
+            rowSelection={{
+              selectedRowKeys,
+              onChange: (keys) => setSelectedRowKeys([...keys]),
+              getCheckboxProps: (record) => ({
+                disabled: record.system,
+                name: record.username,
+              }),
+            }}
           />
         </div>
       </div>
@@ -973,4 +1093,13 @@ export default function UsersPage() {
 
 function formatRevokedSessions(count: number | undefined): string {
   return `Revoked sessions: ${count ?? 0}.`;
+}
+
+function formatBatchMutation(
+  affected: number,
+  revokedSessionCount: number | undefined,
+): string {
+  return `${affected} user(s) affected. ${formatRevokedSessions(
+    revokedSessionCount,
+  )}`;
 }

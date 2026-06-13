@@ -1,6 +1,9 @@
 import type {
   AssignRoleMenusRequest,
   AssignRoleUsersRequest,
+  BatchDeleteUsersRequest,
+  BatchSetUserStatusRequest,
+  BatchUserMutationSummary,
   CreateMenuRequest,
   CreatePermissionRequest,
   CreateRoleRequest,
@@ -84,12 +87,20 @@ export type RbacClient = {
     id: string,
     body: SetUserStatusRequest,
   ) => Promise<UserMutationSummary>;
+  setUsersStatus: (
+    token: string,
+    body: BatchSetUserStatusRequest,
+  ) => Promise<BatchUserMutationSummary>;
   resetUserPassword: (
     token: string,
     id: string,
     body: ResetUserPasswordRequest,
   ) => Promise<UserMutationSummary>;
   deleteUser: (token: string, id: string) => Promise<RbacDeleteResult>;
+  deleteUsers: (
+    token: string,
+    body: BatchDeleteUsersRequest,
+  ) => Promise<BatchUserMutationSummary>;
   listRoles: (token: string) => Promise<RoleSummary[]>;
   exportRoles: (token: string) => Promise<RbacExportPreview>;
   getRole: (token: string, code: string) => Promise<RoleSummary>;
@@ -227,6 +238,12 @@ export function createRbacClient(request: SdkRequest): RbacClient {
           token,
         },
       ),
+    setUsersStatus: (token, body) =>
+      request<BatchUserMutationSummary>('/core/users/batch/status', {
+        method: 'PATCH',
+        body,
+        token,
+      }),
     resetUserPassword: (token, id, body) =>
       request<UserMutationSummary>(
         `/core/users/${encodeURIComponent(id)}/reset-password`,
@@ -239,6 +256,12 @@ export function createRbacClient(request: SdkRequest): RbacClient {
     deleteUser: (token, id) =>
       request<RbacDeleteResult>(`/core/users/${encodeURIComponent(id)}`, {
         method: 'DELETE',
+        token,
+      }),
+    deleteUsers: (token, body) =>
+      request<BatchUserMutationSummary>('/core/users/batch', {
+        method: 'DELETE',
+        body,
         token,
       }),
     listRoles: (token) =>
