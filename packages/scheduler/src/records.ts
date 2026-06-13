@@ -1,4 +1,5 @@
 export {
+  listSchedulerJobRegistry,
   schedulerJobRegistry,
   seedSchedulerJobs,
   seedSchedulerRuns,

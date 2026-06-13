@@ -19,10 +19,10 @@ active debt and decisions that change future execution.
 
 ## Runtime State
 
-Cycle-021 has completed 74 deployable stages across
-System/Security/Monitor/Integration foundations. Round 74 made Monitor Jobs a
-live Admin operation surface and repaired the missing `ReportDefinition`
-migration/seed path that broke operations summary at runtime.
+Cycle-021 has completed 75 deployable stages across
+System/Security/Monitor/Integration foundations. Round 75 made Monitor Jobs
+execute registered handlers, expose registry visibility and record retry,
+duration and failed run diagnostics.
 
 ## Guard Register
 
@@ -39,8 +39,9 @@ migration/seed path that broke operations summary at runtime.
 - Config/secret: smoke covers feature flags, audience rules and no plaintext
   secret-vault leakage.
 - Monitor jobs: smoke covers operations summary, whitelisted job upsert,
-  unsafe policy guards, enable/disable, disabled-trigger rejection, run-now and
-  run-log detail. Deploy also checks the Jobs Admin bundle markers.
+  registry, unsafe policy guards, enable/disable, disabled-trigger rejection,
+  run-now, handler execution, failed retry and run-log detail. Deploy also
+  checks the Jobs Admin bundle markers.
 - Prisma schema/seed drift: migrations and seed must include every Prisma
   model used by smoke-covered runtime endpoints.
 - Admin generated types: run Admin `typecheck` and `lint` sequentially because
@@ -61,6 +62,6 @@ migration/seed path that broke operations summary at runtime.
 - Login log: optional external GeoIP depth and broader mobile/social login
   semantics.
 - Operation log: retention scheduling and enrichment beyond cleanup controls.
-- Scheduler/monitor: real queue handler execution, retries/timeouts and
-  diagnostics beyond the current Admin operation surface.
+- Scheduler/monitor: external worker/cron/queue-metric parity beyond the
+  current registered manual executor.
 - OpenForge Admin: plan/diff/check/apply/manifest/rollback UI.

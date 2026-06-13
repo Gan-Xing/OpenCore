@@ -403,6 +403,7 @@ model JobRunLog {
   status     String
   trigger    String
   attempts   Int           @default(1)
+  durationMs Int?
   startedAt  DateTime      @default(now())
   finishedAt DateTime?
   error      String?

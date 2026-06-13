@@ -39,6 +39,7 @@ try {
     const openApi = await request(`${apiPrefix}/docs-json`, {
       expected: [200],
     });
+    assertOpenApiPath(openApi, '/api/monitor/jobs/registry');
     assertOpenApiPath(openApi, '/api/monitor/jobs/{code}/trigger');
   }
 
@@ -47,6 +48,23 @@ try {
 
   const summary = await apiRequest('/monitor/operations/summary');
   assertNumberAtLeast(summary.jobs.total, 1, 'scheduler summary job total');
+
+  const registry = await apiRequest('/monitor/jobs/registry');
+  assertArray(registry, 'job registry items');
+  const reportRegistry = registry.find((entry) => entry.code === JOB_CODE);
+  if (!reportRegistry) {
+    throw new Error(`Expected scheduler registry to include ${JOB_CODE}`);
+  }
+  assertEqual(
+    reportRegistry.handlerKey,
+    'reports.refresh',
+    'report refresh handler key',
+  );
+  assertEqual(
+    reportRegistry.allowManualTrigger,
+    true,
+    'report refresh manual trigger policy',
+  );
 
   const maintenanceJobs = await apiRequest(
     '/monitor/jobs?page=1&pageSize=20&enabled=true&queueName=maintenance',
@@ -108,12 +126,19 @@ try {
   assertEqual(run.jobCode, JOB_CODE, 'manual run job code');
   assertEqual(run.status, 'completed', 'manual run status');
   assertEqual(run.trigger, 'manual', 'manual run trigger');
+  assertNumberAtLeast(run.durationMs, 0, 'manual run duration');
   assertEqual(run.metadata.actor, username, 'manual run actor');
+  assertEqual(
+    run.metadata.executionMode,
+    'in-process',
+    'manual run execution mode',
+  );
   assertEqual(
     run.metadata.handlerKey,
     'reports.refresh',
     'manual run handler key',
   );
+  assertEqual(run.metadata.result.refreshed, true, 'manual run handler result');
 
   const completedRuns = await apiRequest(
     `/monitor/jobs/${encodeURIComponent(JOB_CODE)}/runs?status=completed`,
@@ -136,12 +161,92 @@ try {
     'monitor.jobs.run-now-smoke',
     'run detail metadata source',
   );
+  assertEqual(
+    runDetail.metadata.result.source,
+    'monitor.jobs.smoke',
+    'run detail handler source',
+  );
+
+  const failedJob = await apiRequest(
+    `/monitor/jobs/${encodeURIComponent(JOB_CODE)}`,
+    {
+      method: 'PATCH',
+      body: {
+        enabled: true,
+        retryLimit: 1,
+        timeoutSeconds: 60,
+        payload: {
+          source: 'monitor.jobs.smoke',
+          simulateFailure: true,
+          runId,
+        },
+      },
+    },
+  );
+  assertEqual(failedJob.enabled, true, 'failed smoke job remains enabled');
+
+  const failedRun = await apiRequest(
+    `/monitor/jobs/${encodeURIComponent(JOB_CODE)}/trigger`,
+    {
+      method: 'POST',
+      body: {
+        actor: username,
+        metadata: { source: 'monitor.jobs.failure-smoke', runId },
+      },
+    },
+  );
+  assertEqual(failedRun.status, 'failed', 'failed run status');
+  assertEqual(failedRun.attempts, 2, 'failed run retry attempts');
+  assertString(failedRun.error, 'failed run error');
+  assertEqual(
+    failedRun.metadata.result.failed,
+    true,
+    'failed run handler result',
+  );
+  assertNumberAtLeast(failedRun.durationMs, 0, 'failed run duration');
+
+  const failedRunDetail = await apiRequest(
+    `/monitor/jobs/${encodeURIComponent(JOB_CODE)}/runs/${encodeURIComponent(
+      failedRun.id,
+    )}`,
+  );
+  assertEqual(failedRunDetail.id, failedRun.id, 'failed run detail id');
+  assertEqual(
+    failedRunDetail.error,
+    'Report refresh failed by scheduler payload.',
+    'failed run detail error',
+  );
+
+  const failedRuns = await apiRequest(
+    `/monitor/jobs/${encodeURIComponent(JOB_CODE)}/runs?status=failed`,
+  );
+  assertArray(failedRuns.items, 'failed job run list items');
+  assertIncludes(
+    failedRuns.items.map((item) => item.id),
+    failedRun.id,
+    'failed job run ids',
+  );
+
+  await apiRequest(`/monitor/jobs/${encodeURIComponent(JOB_CODE)}`, {
+    method: 'PATCH',
+    body: {
+      enabled: true,
+      retryLimit: 2,
+      timeoutSeconds: 60,
+      payload: { source: 'monitor.jobs.smoke', runId },
+    },
+  });
 
   const postRunSummary = await apiRequest('/monitor/operations/summary');
   assertNumberAtLeast(
     postRunSummary.jobRuns.completed,
     summary.jobRuns.completed + 1,
     'scheduler completed run summary',
+  );
+  assertNumberAtLeast(
+    postRunSummary.jobRuns.failed,
+    summary.jobRuns.failed + 1,
+    'scheduler failed run summary',
   );
 
   console.log(
@@ -152,8 +257,14 @@ try {
       checks: [
         'health.live',
         'health.ready',
-        ...(checkDocs ? ['openapi.monitor-job-trigger-path'] : []),
+        ...(checkDocs
+          ? [
+              'openapi.monitor-job-registry-path',
+              'openapi.monitor-job-trigger-path',
+            ]
+          : []),
         'auth.login',
+        'monitor.job.registry',
         'monitor.job.summary',
         'monitor.job.list',
         'monitor.job.upsert-whitelisted',
@@ -162,8 +273,11 @@ try {
         'monitor.job.disabled-trigger-blocked',
         'monitor.job.enable',
         'monitor.job.run-now',
+        'monitor.job.handler-execution',
         'monitor.job.run-list',
         'monitor.job.run-detail',
+        'monitor.job.failed-run-retry',
+        'monitor.job.failed-run-detail',
       ],
     }),
   );

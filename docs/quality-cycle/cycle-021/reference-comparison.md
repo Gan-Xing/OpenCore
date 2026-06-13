@@ -37,7 +37,8 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
 - Config: runtime keys, login policy, feature flags, rollout, audience rules
   and secret-vault encryption are live.
 - Monitor/OpenForge/Scheduler: Monitor Jobs now has a live Admin operation
-  surface; real queue execution and deeper diagnostics remain.
+  surface, registry visibility and registered handler diagnostics; external
+  worker/cron parity remains.
 
 ## Recent Decisions
 
@@ -60,6 +61,8 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
 - Round 74: Monitor Jobs moved from fixture-only Admin display to live
   enable/disable/manual-trigger/run-log operations, and operations summary
   gained the missing report migration/seed guard.
+- Round 75: Monitor Jobs trigger registered handlers, expose handler registry
+  visibility and record retry/duration/failed run diagnostics.
 
 ## Explicit Non-Claims
 
@@ -70,6 +73,6 @@ and AI/RAG/Agent workflow.
 
 ## Next Focus
 
-Choose one foundation stage from scheduler real queue execution, notice
-realtime/provider diagnostics, config governance, operation-log enrichment,
-OpenForge Admin or integration health/config audit.
+Choose one foundation stage from notice realtime/provider diagnostics, config
+governance, operation-log enrichment, OpenForge Admin or integration
+health/config audit.

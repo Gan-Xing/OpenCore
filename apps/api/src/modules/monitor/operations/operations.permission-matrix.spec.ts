@@ -6,6 +6,7 @@ describe('OperationsController permission matrix', () => {
   it('guards job, cache, online-user, report, and export-job routes', () => {
     const expected: Array<[keyof OperationsController, string[]]> = [
       ['listJobs', ['monitor:job:read']],
+      ['listJobRegistry', ['monitor:job:read']],
       ['getJob', ['monitor:job:read']],
       ['createJob', ['monitor:job:create']],
       ['updateJob', ['monitor:job:update']],

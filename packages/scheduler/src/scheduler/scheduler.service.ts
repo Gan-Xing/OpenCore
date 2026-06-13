@@ -10,8 +10,10 @@ import type {
 } from './scheduler.dto';
 import type {
   SchedulerJobDefinitionRecord,
+  SchedulerJobRegistryEntry,
   SchedulerJobRunLogRecord,
 } from './scheduler.records';
+import { listSchedulerJobRegistry } from './scheduler.records';
 import { SchedulerRepository } from './scheduler.repository';
 
 @Injectable()
@@ -26,6 +28,10 @@ export class SchedulerService {
     query: JobQueryDto = {},
   ): Promise<PageResult<SchedulerJobDefinitionRecord>> {
     return this.repository.listJobs(query);
+  }
+
+  listRegistryEntries(): readonly SchedulerJobRegistryEntry[] {
+    return listSchedulerJobRegistry();
   }
 
   getJob(code: string): Promise<SchedulerJobDefinitionRecord> {

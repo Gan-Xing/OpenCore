@@ -66,6 +66,7 @@ import {
   type IntegrationOutboxScheduleResult,
   type JobDefinitionSummary,
   type JobQueryRequest,
+  type JobRegistryEntrySummary,
   type JobRunLogSummary,
   type JobRunQueryRequest,
   type LoginLogQueryRequest,
@@ -327,6 +328,12 @@ export async function listOpenCoreJobs(
     ...query,
   });
   return [...page.items];
+}
+
+export function listOpenCoreJobRegistry(): Promise<
+  readonly JobRegistryEntrySummary[]
+> {
+  return operationsClient.listJobRegistry(getRequiredAdminToken());
 }
 
 export function getOpenCoreJob(code: string): Promise<JobDefinitionSummary> {

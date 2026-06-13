@@ -227,32 +227,6 @@ export function assertJobCanTrigger(input: {
   return entry;
 }
 
-export function createManualRunLog(input: {
-  actor: string;
-  entry: SchedulerJobRegistryEntry;
-  index: number;
-  jobCode: string;
-  metadata?: Record<string, unknown>;
-}): SchedulerJobRunLogRecord {
-  const now = new Date().toISOString();
-
-  return {
-    id: `run_${input.jobCode.replace(/[^a-zA-Z0-9]+/g, '_')}_${input.index}`,
-    jobCode: input.jobCode,
-    status: 'completed',
-    trigger: 'manual',
-    attempts: 1,
-    startedAt: now,
-    finishedAt: now,
-    metadata: {
-      ...(input.metadata ?? {}),
-      actor: input.actor,
-      adapter: 'bullmq',
-      handlerKey: input.entry.handlerKey,
-    },
-  };
-}
-
 export function requireRecord<T>(
   record: T | undefined,
   resource: string,

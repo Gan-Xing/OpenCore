@@ -17,6 +17,7 @@ describe('createOperationsClient', () => {
       enabled: true,
       queueName: 'maintenance',
     });
+    await client.listJobRegistry('token');
     await client.getJob('token', 'openapi.drift-check');
     await client.createJob('token', {
       code: 'report.refresh',
@@ -70,6 +71,7 @@ describe('createOperationsClient', () => {
       {
         path: '/monitor/jobs?page=1&pageSize=5&enabled=true&queueName=maintenance',
       },
+      { path: '/monitor/jobs/registry' },
       { path: '/monitor/jobs/openapi.drift-check' },
       { path: '/monitor/jobs', method: 'POST' },
       { path: '/monitor/jobs/report.refresh', method: 'PATCH' },

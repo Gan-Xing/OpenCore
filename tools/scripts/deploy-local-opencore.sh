@@ -197,12 +197,22 @@ verify_admin_bundle_api_base_url() {
   if ! grep -R \
     --fixed-strings \
     --include='*.js' \
-    "Runtime Operation" \
+    "Registered handlers" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null || \
     ! grep -R \
     --fixed-strings \
     --include='*.js' \
     "Run now" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Execution Mode" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "registered handler execution + retry/timeout diagnostics" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null || \
     ! grep -R \
     --fixed-strings \

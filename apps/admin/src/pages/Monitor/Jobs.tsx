@@ -14,6 +14,7 @@ import { useAccess } from '@umijs/max';
 import {
   createOperationsFixtures,
   type JobDefinitionSummary,
+  type JobRegistryEntrySummary,
   type JobRunLogSummary,
   type OperationsSummary,
 } from '@opencore/sdk';
@@ -34,6 +35,7 @@ import {
   enableOpenCoreJob,
   getOpenCoreJob,
   getOpenCoreOperationsSummary,
+  listOpenCoreJobRegistry,
   listOpenCoreJobRuns,
   listOpenCoreJobs,
   triggerOpenCoreJob,
@@ -54,6 +56,7 @@ const fixtures = createOperationsFixtures();
 const fallbackRows = fixtures.jobs;
 const fallbackSummary = fixtures.summary;
 const fallbackRuns = fixtures.jobRuns;
+const fallbackRegistry = fixtures.jobRegistry;
 
 const exportColumns: CurrentPageExportColumn<JobDefinitionSummary>[] = [
   { title: 'Code', dataIndex: 'code' },
@@ -121,6 +124,8 @@ export default function JobsPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
   const [selected, setSelected] = useState<JobDefinitionSummary>();
+  const [registry, setRegistry] =
+    useState<readonly JobRegistryEntrySummary[]>(fallbackRegistry);
   const [selectedRuns, setSelectedRuns] = useState<readonly JobRunLogSummary[]>(
     [],
   );
@@ -135,19 +140,25 @@ export default function JobsPage() {
       selectFilters: filterOptions,
     });
   const latestRun = selectedRuns[0];
+  const selectedRegistryEntry = selected
+    ? registry.find((entry) => entry.code === selected.code)
+    : undefined;
 
   const loadJobs = async () => {
     setLoading(true);
     try {
-      const [nextSummary, nextRows] = await Promise.all([
+      const [nextSummary, nextRegistry, nextRows] = await Promise.all([
         getOpenCoreOperationsSummary(),
+        listOpenCoreJobRegistry(),
         listOpenCoreJobs(),
       ]);
       setSummary(nextSummary);
+      setRegistry(nextRegistry);
       setRows(nextRows);
       setLoadError(undefined);
     } catch (error: unknown) {
       setSummary(fallbackSummary);
+      setRegistry(fallbackRegistry);
       setRows(fallbackRows);
       setLoadError(
         error instanceof Error ? error.message : 'Unable to load jobs.',
@@ -331,6 +342,7 @@ export default function JobsPage() {
       <Space size="large" style={{ marginBottom: 16 }} wrap>
         <Statistic title="Enabled jobs" value={summary.jobs.enabled} />
         <Statistic title="Disabled jobs" value={summary.jobs.disabled} />
+        <Statistic title="Registered handlers" value={registry.length} />
         <Statistic title="Completed runs" value={summary.jobRuns.completed} />
         <Statistic title="Failed runs" value={summary.jobRuns.failed} />
       </Space>
@@ -373,12 +385,22 @@ export default function JobsPage() {
           { label: 'Retry Limit', value: selected?.retryLimit },
           { label: 'Timeout Seconds', value: selected?.timeoutSeconds },
           { label: 'Adapter', value: selected?.adapter },
+          { label: 'Handler Key', value: selectedRegistryEntry?.handlerKey },
+          {
+            label: 'Manual Trigger',
+            value: selectedRegistryEntry?.allowManualTrigger
+              ? 'allowed'
+              : 'blocked',
+          },
           { label: 'Latest Run', value: latestRun?.id },
           { label: 'Latest Run Status', value: runStatusTag(latestRun) },
+          { label: 'Latest Run Attempts', value: latestRun?.attempts },
+          { label: 'Latest Run Duration', value: latestRun?.durationMs },
+          { label: 'Latest Run Error', value: latestRun?.error },
           { label: 'Recent Run Count', value: selectedRuns.length },
           {
-            label: 'Runtime Operation',
-            value: 'enable/disable + manual trigger + run logs',
+            label: 'Execution Mode',
+            value: 'registered handler execution + retry/timeout diagnostics',
           },
         ]}
         jsonSections={[

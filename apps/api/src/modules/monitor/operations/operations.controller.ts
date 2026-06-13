@@ -27,6 +27,7 @@ import {
   JobDefinitionDto,
   JobDefinitionPageDto,
   JobQueryDto,
+  JobRegistryEntryDto,
   JobRunLogDto,
   JobRunLogPageDto,
   JobRunQueryDto,
@@ -72,6 +73,14 @@ export class OperationsController {
   @ApiOkResponse({ type: JobDefinitionPageDto })
   listJobs(@Query() query: JobQueryDto): Promise<JobDefinitionPageDto> {
     return this.scheduler.listJobs(query);
+  }
+
+  @Get('monitor/jobs/registry')
+  @ApiTags('Monitor Jobs')
+  @RequirePermission('monitor:job:read')
+  @ApiOkResponse({ type: [JobRegistryEntryDto] })
+  listJobRegistry(): readonly JobRegistryEntryDto[] {
+    return this.scheduler.listRegistryEntries();
   }
 
   @Get('monitor/jobs/:code')

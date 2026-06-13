@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import type { PageResult } from '@opencore/common';
 import { PrismaService } from '@opencore/database';
+import { SchedulerJobExecutor } from './scheduler.executor';
 import type {
   SchedulerJobDefinitionRecord,
   SchedulerJobRunLogRecord,
@@ -9,7 +10,6 @@ import type {
 import {
   assertJobCanTrigger,
   assertSafeJobPolicy,
-  createManualRunLog,
   createSchedulerPageResult,
   createSchedulerSummary,
   normalizeRunStatus,
@@ -43,6 +43,7 @@ type JobRunLogRow = {
   status: string;
   trigger: string;
   attempts: number;
+  durationMs: number | null;
   startedAt: Date;
   finishedAt: Date | null;
   error: string | null;
@@ -51,7 +52,10 @@ type JobRunLogRow = {
 
 @Injectable()
 export class PrismaSchedulerRepository extends SchedulerRepository {
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly executor: SchedulerJobExecutor = new SchedulerJobExecutor(),
+  ) {
     super();
   }
 
@@ -158,22 +162,23 @@ export class PrismaSchedulerRepository extends SchedulerRepository {
   ): Promise<SchedulerJobRunLogRecord> {
     const job = await this.findJob(code);
     const entry = assertJobCanTrigger(job);
-    const runSeed = createManualRunLog({
+    const execution = await this.executor.execute({
       actor: body.actor,
       entry,
-      index: Date.now(),
-      jobCode: code,
+      job,
       metadata: body.metadata,
     });
     const run = await this.prisma.jobRunLog.create({
       data: {
         jobCode: code,
-        status: runSeed.status,
-        trigger: runSeed.trigger,
-        attempts: runSeed.attempts,
-        startedAt: new Date(runSeed.startedAt),
-        finishedAt: runSeed.finishedAt ? new Date(runSeed.finishedAt) : null,
-        metadata: runSeed.metadata ? toInputJson(runSeed.metadata) : undefined,
+        status: execution.status,
+        trigger: 'manual',
+        attempts: execution.attempts,
+        durationMs: execution.durationMs,
+        startedAt: new Date(execution.startedAt),
+        finishedAt: new Date(execution.finishedAt),
+        error: execution.error,
+        metadata: toInputJson(execution.metadata),
       },
     });
 
@@ -245,6 +250,7 @@ function toJobRunLogRecord(row: JobRunLogRow): SchedulerJobRunLogRecord {
     status: normalizeRunStatus(row.status),
     trigger: normalizeRunTrigger(row.trigger),
     attempts: row.attempts,
+    durationMs: row.durationMs ?? undefined,
     startedAt: row.startedAt.toISOString(),
     finishedAt: row.finishedAt?.toISOString(),
     error: row.error ?? undefined,

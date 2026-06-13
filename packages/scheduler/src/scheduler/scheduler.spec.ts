@@ -1,4 +1,5 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '@opencore/database';
 import { PrismaSchedulerRepository } from './scheduler.prisma-repository';
@@ -23,6 +24,14 @@ describe('@opencore/scheduler', () => {
       jobs: { total: 1, enabled: 1, disabled: 0 },
       jobRuns: { total: 1, completed: 1 },
     });
+    expect(service.listRegistryEntries()).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'report.refresh',
+          handlerKey: 'reports.refresh',
+        }),
+      ]),
+    );
 
     await expect(
       service.createJob({
@@ -63,15 +72,54 @@ describe('@opencore/scheduler', () => {
       jobCode: job.code,
       status: 'completed',
       trigger: 'manual',
+      attempts: 1,
       metadata: expect.objectContaining({
         adapter: 'bullmq',
+        executionMode: 'in-process',
         handlerKey: 'reports.refresh',
+        result: expect.objectContaining({ refreshed: true }),
       }),
     });
+    expect(run.durationMs).toEqual(expect.any(Number));
     await expect(service.getJobRun(job.code, run.id)).resolves.toMatchObject({
       id: run.id,
       jobCode: job.code,
     });
+  });
+
+  it('records failed handler execution after bounded retries', async () => {
+    const service = new SchedulerService(new SeedSchedulerRepository());
+    await service.createJob({
+      code: 'report.refresh',
+      name: 'Refresh reports failure',
+      queueName: 'reports',
+      retryLimit: 1,
+      timeoutSeconds: 60,
+      payload: { simulateFailure: true },
+    });
+
+    const run = await service.triggerJob('report.refresh', {
+      actor: 'admin',
+      metadata: { reason: 'failure smoke' },
+    });
+
+    expect(run).toMatchObject({
+      attempts: 2,
+      error: 'Report refresh failed by scheduler payload.',
+      jobCode: 'report.refresh',
+      status: 'failed',
+      metadata: expect.objectContaining({
+        executionMode: 'in-process',
+        result: expect.objectContaining({
+          failed: true,
+          lastError: 'Report refresh failed by scheduler payload.',
+        }),
+      }),
+    });
+    expect(run.durationMs).toEqual(expect.any(Number));
+    await expect(
+      service.listJobRuns('report.refresh', { status: 'failed' }),
+    ).resolves.toMatchObject({ total: 1 });
   });
 
   it('rejects invalid cron and unsafe numeric policy', async () => {
@@ -103,8 +151,12 @@ describe('@opencore/scheduler', () => {
     const code = `report.refresh`;
     const jobName = `Scheduler Test ${testRunId}`;
     const createdRunIds: string[] = [];
+    let originalJob: Awaited<
+      ReturnType<typeof prisma.jobDefinition.findUnique>
+    >;
 
     beforeEach(async () => {
+      originalJob = await prisma.jobDefinition.findUnique({ where: { code } });
       await cleanupTestRows();
     });
 
@@ -117,13 +169,31 @@ describe('@opencore/scheduler', () => {
     });
 
     it('persists whitelisted jobs and run logs through Prisma', async () => {
-      await service.createJob({
-        code,
-        name: jobName,
-        queueName: 'reports',
-        retryLimit: 2,
-        timeoutSeconds: 45,
-      });
+      if (originalJob) {
+        await service.updateJob(code, {
+          enabled: true,
+          name: jobName,
+          payload: {
+            reportCode: `scheduler-test.${testRunId}`,
+            source: 'scheduler.spec',
+          },
+          queueName: 'reports',
+          retryLimit: 2,
+          timeoutSeconds: 45,
+        });
+      } else {
+        await service.createJob({
+          code,
+          name: jobName,
+          payload: {
+            reportCode: `scheduler-test.${testRunId}`,
+            source: 'scheduler.spec',
+          },
+          queueName: 'reports',
+          retryLimit: 2,
+          timeoutSeconds: 45,
+        });
+      }
       const run = await service.triggerJob(code, { actor: 'admin' });
       createdRunIds.push(run.id);
 
@@ -133,7 +203,9 @@ describe('@opencore/scheduler', () => {
       });
       await expect(service.getJobRun(code, run.id)).resolves.toMatchObject({
         id: run.id,
+        durationMs: expect.any(Number),
         metadata: expect.objectContaining({
+          executionMode: 'in-process',
           handlerKey: 'reports.refresh',
         }),
       });
@@ -150,6 +222,35 @@ describe('@opencore/scheduler', () => {
       await prisma.jobDefinition.deleteMany({
         where: { code, name: jobName },
       });
+
+      if (originalJob) {
+        await prisma.jobDefinition.upsert({
+          create: {
+            code: originalJob.code,
+            cron: originalJob.cron,
+            enabled: originalJob.enabled,
+            name: originalJob.name,
+            payload: toPrismaJsonInput(originalJob.payload),
+            queueName: originalJob.queueName,
+            retryLimit: originalJob.retryLimit,
+            timeoutSeconds: originalJob.timeoutSeconds,
+          },
+          update: {
+            cron: originalJob.cron,
+            enabled: originalJob.enabled,
+            name: originalJob.name,
+            payload: toPrismaJsonInput(originalJob.payload),
+            queueName: originalJob.queueName,
+            retryLimit: originalJob.retryLimit,
+            timeoutSeconds: originalJob.timeoutSeconds,
+          },
+          where: { code: originalJob.code },
+        });
+      }
     }
   });
 });
+
+function toPrismaJsonInput(value: Prisma.JsonValue): Prisma.InputJsonValue {
+  return value === null ? Prisma.JsonNull : (value as Prisma.InputJsonValue);
+}

@@ -405,6 +405,7 @@ if (
   !opencorePlatformService.includes('publishOpenCoreSystemNotice') ||
   !opencorePlatformService.includes('archiveOpenCoreSystemNotice') ||
   !opencorePlatformService.includes('listOpenCoreJobs') ||
+  !opencorePlatformService.includes('listOpenCoreJobRegistry') ||
   !opencorePlatformService.includes('enableOpenCoreJob') ||
   !opencorePlatformService.includes('disableOpenCoreJob') ||
   !opencorePlatformService.includes('triggerOpenCoreJob')
@@ -1374,6 +1375,7 @@ if (
 if (
   !jobsPage.includes('listOpenCoreJobs') ||
   !jobsPage.includes('getOpenCoreJob') ||
+  !jobsPage.includes('listOpenCoreJobRegistry') ||
   !jobsPage.includes('listOpenCoreJobRuns') ||
   !jobsPage.includes('enableOpenCoreJob') ||
   !jobsPage.includes('disableOpenCoreJob') ||
@@ -1381,11 +1383,13 @@ if (
   !jobsPage.includes('canUpdateJobs') ||
   !jobsPage.includes('canManageJobs') ||
   !jobsPage.includes('Run now') ||
-  !jobsPage.includes('Runtime Operation') ||
-  !jobsPage.includes('enable/disable + manual trigger + run logs')
+  !jobsPage.includes('Registered handlers') ||
+  !jobsPage.includes('Handler Key') ||
+  !jobsPage.includes('Execution Mode') ||
+  !jobsPage.includes('registered handler execution + retry/timeout diagnostics')
 ) {
   throw new Error(
-    'Monitor jobs page must use live job APIs with enable/disable, manual trigger, run-log detail, and permission-gated controls.',
+    'Monitor jobs page must use live job APIs with registry, enable/disable, manual trigger, run-log detail, and permission-gated controls.',
   );
 }
 

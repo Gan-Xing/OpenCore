@@ -10,6 +10,7 @@ export {
   JobDefinitionPageDto,
   JobDefinitionSummaryDto,
   JobQueryDto,
+  JobRegistryEntryDto,
   JobRunLogDto,
   JobRunLogPageDto,
   JobRunQueryDto,

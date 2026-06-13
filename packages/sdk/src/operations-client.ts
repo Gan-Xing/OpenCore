@@ -11,6 +11,7 @@ import type {
   JobDefinitionPage,
   JobDefinitionSummary,
   JobQueryRequest,
+  JobRegistryEntrySummary,
   JobRunLogPage,
   JobRunQueryRequest,
   JobRunLogSummary,
@@ -34,6 +35,9 @@ export type OperationsClient = {
     token: string,
     query?: JobQueryRequest,
   ) => Promise<JobDefinitionPage>;
+  listJobRegistry: (
+    token: string,
+  ) => Promise<readonly JobRegistryEntrySummary[]>;
   getJob: (token: string, code: string) => Promise<JobDefinitionSummary>;
   createJob: (
     token: string,
@@ -104,6 +108,10 @@ export function createOperationsClient(request: SdkRequest): OperationsClient {
       request<OperationsSummary>('/monitor/operations/summary', { token }),
     listJobs: (token, query) =>
       request<JobDefinitionPage>(withQuery('/monitor/jobs', query), { token }),
+    listJobRegistry: (token) =>
+      request<readonly JobRegistryEntrySummary[]>('/monitor/jobs/registry', {
+        token,
+      }),
     getJob: (token, code) =>
       request<JobDefinitionSummary>(
         `/monitor/jobs/${encodeURIComponent(code)}`,

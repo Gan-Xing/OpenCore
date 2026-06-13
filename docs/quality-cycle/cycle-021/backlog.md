@@ -29,28 +29,28 @@ schema/business-code writing.
   runtime login policy.
 - Rounds 50-59: logout audit semantics, ordering, data-scope, notice
   inbox/read analytics, feature flags and login-log location.
-- Rounds 60-74: notice template/delivery/provider/outbox work, SMS HTTP and
+- Rounds 60-75: notice template/delivery/provider/outbox work, SMS HTTP and
   SMTP adapters, config vault and rollout/audience, operation-log cleanup, plus
-  Monitor Jobs Admin runtime operations.
+  Monitor Jobs Admin operations and registered handler diagnostics.
 
-Latest done: Round 74 Monitor Jobs Admin runtime operations with live API
-list/detail, permission-gated enable/disable/manual trigger, run-log detail
-smoke and `ReportDefinition` migration/seed repair.
+Latest done: Round 75 Monitor Jobs registered handler execution with registry
+visibility, manual handler invocation, bounded retry/timeout metadata, failed
+run detail smoke and Admin/SDK/deploy guards.
 
 ## Active P1/P2 Queue
 
-1. Scheduler/monitor depth: real queue handler execution, run-log diagnosis,
-   retry/timeout controls and registry whitelist visibility.
-2. Notice provider reliability: broader provider-secret injection, realtime
+1. Notice provider reliability: broader provider-secret injection, realtime
    push, STARTTLS/attachments/template subject persistence and provider
    diagnostics.
-3. Config governance: multi-environment rollout, external KMS, key rotation
+2. Config governance: multi-environment rollout, external KMS, key rotation
    and secret version history.
-4. Operation-log enrichment: retention scheduling, duration/location fields
+3. Operation-log enrichment: retention scheduling, duration/location fields
    and governance.
-5. OpenForge Admin: plan/diff/check/apply/manifest/rollback surfaces.
-6. Integration health/config audit: provider readiness, failure history,
+4. OpenForge Admin: plan/diff/check/apply/manifest/rollback surfaces.
+5. Integration health/config audit: provider readiness, failure history,
    config validation and operator diagnostics.
+6. Scheduler/monitor worker parity: external BullMQ worker execution, cron
+   dispatch and queue metrics beyond the current registered manual executor.
 
 ## Rework Notes
 

@@ -21,10 +21,21 @@ export type JobRunLogSummary = {
   status: 'completed' | 'failed' | 'queued' | 'running';
   trigger: 'manual' | 'schedule';
   attempts: number;
+  durationMs?: number;
   startedAt: string;
   finishedAt?: string;
   error?: string;
   metadata?: Record<string, unknown>;
+};
+
+export type JobRegistryEntrySummary = {
+  code: string;
+  title: string;
+  queueName: string;
+  handlerKey: string;
+  allowManualTrigger: boolean;
+  defaultCron?: string;
+  defaultPayload?: Record<string, unknown>;
 };
 
 export type CacheKeySummary = {
@@ -176,6 +187,7 @@ export type ReportQueryRequest = PageRequest & {
 
 export type OperationsFixtures = {
   summary: OperationsSummary;
+  jobRegistry: readonly JobRegistryEntrySummary[];
   jobs: readonly JobDefinitionSummary[];
   jobRuns: readonly JobRunLogSummary[];
   cacheKeys: readonly CacheKeySummary[];
@@ -185,6 +197,25 @@ export type OperationsFixtures = {
 };
 
 export function createOperationsFixtures(): OperationsFixtures {
+  const jobRegistry: readonly JobRegistryEntrySummary[] = [
+    {
+      code: 'openapi.drift-check',
+      title: 'OpenAPI drift check',
+      queueName: 'maintenance',
+      handlerKey: 'maintenance.openapiDriftCheck',
+      allowManualTrigger: true,
+      defaultCron: '0 * * * *',
+      defaultPayload: { command: 'pnpm openapi:check' },
+    },
+    {
+      code: 'report.refresh',
+      title: 'Refresh reports',
+      queueName: 'reports',
+      handlerKey: 'reports.refresh',
+      allowManualTrigger: true,
+      defaultPayload: { source: 'monitor.status' },
+    },
+  ];
   const jobs: readonly JobDefinitionSummary[] = [
     {
       id: 'job_openapi_drift',
@@ -206,9 +237,16 @@ export function createOperationsFixtures(): OperationsFixtures {
       status: 'completed',
       trigger: 'manual',
       attempts: 1,
+      durationMs: 1000,
       startedAt: '2026-06-10T00:00:00.000Z',
       finishedAt: '2026-06-10T00:00:01.000Z',
-      metadata: { actor: 'admin' },
+      metadata: {
+        actor: 'admin',
+        attempts: 1,
+        executionMode: 'in-process',
+        handlerKey: 'maintenance.openapiDriftCheck',
+        result: { driftCheck: 'configured' },
+      },
     },
   ];
   const cacheKeys: readonly CacheKeySummary[] = [
@@ -301,6 +339,7 @@ export function createOperationsFixtures(): OperationsFixtures {
       },
       exportJobStatus: exportJobDesign.status,
     },
+    jobRegistry,
     jobs,
     jobRuns,
     cacheKeys,
@@ -321,6 +360,10 @@ export function findJobRunFixture(
   return createOperationsFixtures().jobRuns.find(
     (run) => run.jobCode === jobCode && run.id === id,
   );
+}
+
+export function listJobRegistryFixtures(): readonly JobRegistryEntrySummary[] {
+  return [...createOperationsFixtures().jobRegistry];
 }
 
 export function findOnlineUserFixture(

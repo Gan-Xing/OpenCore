@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
+import { SchedulerJobExecutor } from './scheduler.executor';
 import type {
   SchedulerJobDefinitionRecord,
   SchedulerJobRunLogRecord,
@@ -10,7 +11,6 @@ import {
   assertSafeJobPolicy,
   compareJobs,
   compareRuns,
-  createManualRunLog,
   createSchedulerPageResult,
   createSchedulerSummary,
   normalizeSchedulerJobFilters,
@@ -28,6 +28,12 @@ import {
 export class SeedSchedulerRepository extends SchedulerRepository {
   private jobs = seedSchedulerJobs.map(cloneJob);
   private runs = seedSchedulerRuns.map(cloneRun);
+
+  constructor(
+    private readonly executor: SchedulerJobExecutor = new SchedulerJobExecutor(),
+  ) {
+    super();
+  }
 
   async getSummary() {
     return createSchedulerSummary({
@@ -115,13 +121,24 @@ export class SeedSchedulerRepository extends SchedulerRepository {
   ): Promise<SchedulerJobRunLogRecord> {
     const job = this.findJob(code);
     const entry = assertJobCanTrigger(job);
-    const run = createManualRunLog({
+    const execution = await this.executor.execute({
       actor: body.actor,
       entry,
-      index: this.runs.length + 1,
-      jobCode: code,
+      job,
       metadata: body.metadata,
     });
+    const run: SchedulerJobRunLogRecord = {
+      id: `run_${code.replace(/[^a-zA-Z0-9]+/g, '_')}_${this.runs.length + 1}`,
+      jobCode: code,
+      status: execution.status,
+      trigger: 'manual',
+      attempts: execution.attempts,
+      durationMs: execution.durationMs,
+      startedAt: execution.startedAt,
+      finishedAt: execution.finishedAt,
+      error: execution.error,
+      metadata: execution.metadata,
+    };
     this.runs = [run, ...this.runs];
 
     return cloneRun(run);

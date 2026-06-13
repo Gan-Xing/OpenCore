@@ -27,6 +27,7 @@ export type SchedulerJobRunLogRecord = {
   status: 'queued' | 'running' | 'completed' | 'failed';
   trigger: 'manual' | 'schedule';
   attempts: number;
+  durationMs?: number;
   startedAt: string;
   finishedAt?: string;
   error?: string;
@@ -75,12 +76,22 @@ export const seedSchedulerRuns: readonly SchedulerJobRunLogRecord[] = [
     status: 'completed',
     trigger: 'manual',
     attempts: 1,
+    durationMs: 1000,
     startedAt: '2026-06-10T00:00:00.000Z',
     finishedAt: '2026-06-10T00:00:01.000Z',
     metadata: {
       actor: 'admin',
       adapter: 'bullmq',
+      attempts: 1,
+      executionMode: 'in-process',
       handlerKey: 'maintenance.openapiDriftCheck',
+      result: { driftCheck: 'configured' },
     },
   },
 ];
+
+export function listSchedulerJobRegistry(): SchedulerJobRegistryEntry[] {
+  return JSON.parse(
+    JSON.stringify(schedulerJobRegistry),
+  ) as SchedulerJobRegistryEntry[];
+}

@@ -17,8 +17,10 @@ added queued provider processing, Round 70 added signed callbacks, Round 71
 added bounded retry scheduling, Round 72 added a bounded SMS HTTP adapter and
 Round 73 added SMTP mail delivery. Round 74 moved Monitor Jobs Admin off
 fixtures and caught a missing `ReportDefinition` migration/seed drift through
-runtime smoke. Round 68 also exposed the Admin generated-types race, so Admin
-`typecheck` and `lint` must run sequentially.
+runtime smoke. Round 75 added Monitor Jobs registry visibility, registered
+handler execution and failed retry diagnostics. Round 68 also exposed the
+Admin generated-types race, so Admin `typecheck` and `lint` must run
+sequentially.
 
 ## Guarded Failures
 
@@ -31,9 +33,9 @@ runtime smoke. Round 68 also exposed the Admin generated-types race, so Admin
 - Operation-log cleanup smoke covers guard failures, deleted-detail 404 and
   clean-all target removal.
 - Config smoke covers runtime shape and no plaintext secret storage.
-- Monitor Jobs smoke covers operations summary, job policy guards,
-  enable/disable, disabled-trigger rejection, manual trigger and run-log
-  detail.
+- Monitor Jobs smoke covers operations summary, registry, job policy guards,
+  enable/disable, disabled-trigger rejection, manual trigger, handler
+  execution, failed retry and run-log detail.
 
 ## Documentation Finding
 
@@ -47,9 +49,9 @@ real incident decisions. Do not create per-round reports by default.
   STARTTLS/attachments/template subject persistence and provider diagnostics
   before provider-depth parity.
 - Config still needs multi-environment governance and external KMS/rotation.
-- Scheduler still needs real queue handler execution and deeper run-log
-  diagnostics; operation-log enrichment and OpenForge Admin remain P2
-  foundation work.
+- Scheduler still needs external worker/cron parity beyond the current
+  registered manual executor; operation-log enrichment and OpenForge Admin
+  remain P2 foundation work.
 
 ## Trigger Next Audit
 

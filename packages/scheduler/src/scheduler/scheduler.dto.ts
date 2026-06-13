@@ -49,6 +49,29 @@ export class JobDefinitionPageDto {
   totalPages!: number;
 }
 
+export class JobRegistryEntryDto {
+  @ApiProperty()
+  code!: string;
+
+  @ApiProperty()
+  title!: string;
+
+  @ApiProperty()
+  queueName!: string;
+
+  @ApiProperty()
+  handlerKey!: string;
+
+  @ApiProperty()
+  allowManualTrigger!: boolean;
+
+  @ApiProperty({ required: false })
+  defaultCron?: string;
+
+  @ApiProperty({ required: false })
+  defaultPayload?: Record<string, unknown>;
+}
+
 export class JobQueryDto {
   @ApiProperty({ required: false, default: 1 })
   page?: number | string;
@@ -135,6 +158,9 @@ export class JobRunLogDto {
 
   @ApiProperty()
   attempts!: number;
+
+  @ApiProperty({ required: false })
+  durationMs?: number;
 
   @ApiProperty()
   startedAt!: string;

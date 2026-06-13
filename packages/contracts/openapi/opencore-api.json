@@ -6054,6 +6054,29 @@
         "tags": ["Operations", "Monitor Jobs"]
       }
     },
+    "/api/monitor/jobs/registry": {
+      "get": {
+        "operationId": "OperationsController_listJobRegistry",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/JobRegistryEntryDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Operations", "Monitor Jobs"]
+      }
+    },
     "/api/monitor/jobs/{code}": {
       "get": {
         "operationId": "OperationsController_getJob",
@@ -9503,6 +9526,25 @@
         },
         "required": ["items", "page", "pageSize", "total", "totalPages"]
       },
+      "JobRegistryEntryDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "title": { "type": "string" },
+          "queueName": { "type": "string" },
+          "handlerKey": { "type": "string" },
+          "allowManualTrigger": { "type": "boolean" },
+          "defaultCron": { "type": "string" },
+          "defaultPayload": { "type": "object" }
+        },
+        "required": [
+          "code",
+          "title",
+          "queueName",
+          "handlerKey",
+          "allowManualTrigger"
+        ]
+      },
       "CreateJobDefinitionDto": {
         "type": "object",
         "properties": {
@@ -9548,6 +9590,7 @@
           },
           "trigger": { "type": "string", "enum": ["manual", "schedule"] },
           "attempts": { "type": "number" },
+          "durationMs": { "type": "number" },
           "startedAt": { "type": "string" },
           "finishedAt": { "type": "string" },
           "error": { "type": "string" },
