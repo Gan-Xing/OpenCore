@@ -33,8 +33,8 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
 - Notice: management, inbox/read analytics, templates, delivery records, local
   provider, Integration outbox bridge, state sync, queued processing and signed
   callback intake plus retry scheduling, SMS HTTP adapter, SMTP adapter and
-  mail subject persistence, provider diagnostics and SMS HTTP secret injection
-  are live.
+  mail subject persistence, provider diagnostics, SMS HTTP secret injection and
+  SMTP attachments are live.
 - Config: runtime keys, login policy, feature flags, rollout, audience rules
   and secret-vault encryption are live.
 - Monitor/OpenForge/Scheduler: Monitor Jobs now has a live Admin operation
@@ -71,6 +71,8 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
 - Round 78: SMS HTTP providers inject config-vault secrets into auth headers,
   query parameters and JSON body fields; smoke verifies the resolved request
   shape without exposing the secret.
+- Round 79: SMTP attachments are bounded, persisted on mail outbox rows and
+  verified through received MIME payload smoke.
 
 ## Explicit Non-Claims
 
@@ -81,6 +83,6 @@ and AI/RAG/Agent workflow.
 
 ## Next Focus
 
-Choose one foundation stage from notice realtime, SMTP STARTTLS/attachments,
+Choose one foundation stage from notice realtime, SMTP STARTTLS policy depth,
 config governance, operation-log enrichment, OpenForge Admin or scheduler
 worker parity.

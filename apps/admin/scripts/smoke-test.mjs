@@ -231,6 +231,7 @@ if (
   !deployScript.includes('Process queued outbox') ||
   !deployScript.includes('Run outbox schedule') ||
   !deployScript.includes('HTTP Secret Injection') ||
+  !deployScript.includes('SMTP Attachments') ||
   !deployScript.includes('Mark outbox sent') ||
   !deployScript.includes('Refusing to deploy a stale frontend login page')
 ) {
@@ -740,6 +741,8 @@ if (
   !mailPage.includes('@opencore/sdk') ||
   !mailPage.includes('Outbox Subject') ||
   !mailPage.includes('selectedOutbox?.subject') ||
+  !mailPage.includes('SMTP Attachments') ||
+  !mailPage.includes('Attachment Metadata') ||
   !smsPage.includes('@opencore/sdk') ||
   !oauthPage.includes('@opencore/sdk') ||
   !wechatPage.includes('@opencore/sdk') ||

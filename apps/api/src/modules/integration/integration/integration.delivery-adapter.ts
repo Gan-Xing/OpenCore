@@ -21,6 +21,11 @@ export type ProviderSecretResolver = (secretRef: string) => Promise<string>;
 export type MailSmtpTransport = {
   close?: () => void;
   sendMail: (message: {
+    attachments?: Array<{
+      content: Buffer;
+      contentType: string;
+      filename: string;
+    }>;
     from: string;
     subject: string;
     text: string;
@@ -296,8 +301,10 @@ async function deliverMailSmtpMessage(input: {
     password,
     input.smtpTransportFactory,
   );
+  const attachments = buildMailAttachments(input.message);
   try {
     await transport.sendMail({
+      ...(attachments.length > 0 ? { attachments } : {}),
       from: config.from,
       to: input.message.recipient,
       subject: getMailSubject(input.message),
@@ -436,6 +443,18 @@ function getMailSubject(message: IntegrationOutboxRecord): string {
   }
 
   return message.templateCode ?? 'OpenCore notification';
+}
+
+function buildMailAttachments(message: IntegrationOutboxRecord): Array<{
+  content: Buffer;
+  contentType: string;
+  filename: string;
+}> {
+  return (message.attachments ?? []).map((attachment) => ({
+    content: Buffer.from(attachment.contentBase64, 'base64'),
+    contentType: attachment.contentType,
+    filename: attachment.filename,
+  }));
 }
 
 function normalizeMailSmtpProviderConfig(

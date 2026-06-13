@@ -24,6 +24,8 @@ Round 77 added provider diagnostics for readiness, config-vault hints, outbox
 backlog, last failure and operator actions.
 Round 78 added SMS HTTP config-vault secret injection into headers, query
 parameters and JSON body fields.
+Round 79 added first-class SMTP attachments with bounded validation,
+persistence and MIME smoke coverage.
 Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 `lint` must run sequentially.
 
@@ -35,7 +37,8 @@ Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 - Notice outbox smoke covers pending handoff, retry, process-to-sent, signed
   callback sync, scheduled retry caps, SMS HTTP host allowlist, SMTP
   config-vault auth, SMS HTTP secret injection, mail subject persistence,
-  provider diagnostics, provider failedCount and sent mutation guards.
+  SMTP attachments, provider diagnostics, provider failedCount and sent
+  mutation guards.
 - Operation-log cleanup smoke covers guard failures, deleted-detail 404 and
   clean-all target removal.
 - Config smoke covers runtime shape and no plaintext secret storage.
@@ -51,7 +54,7 @@ real incident decisions. Do not create per-round reports by default.
 
 ## Residual Risk
 
-- Notice still needs realtime push and STARTTLS/attachments before
+- Notice still needs realtime push and STARTTLS smoke/policy depth before
   provider-depth parity.
 - Config still needs multi-environment governance and external KMS/rotation.
 - Scheduler still needs external worker/cron parity beyond the current

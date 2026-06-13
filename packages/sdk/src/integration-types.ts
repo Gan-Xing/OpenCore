@@ -64,6 +64,13 @@ export type IntegrationTemplateSummary = {
   enabled: boolean;
 };
 
+export type IntegrationOutboxAttachmentSummary = {
+  filename: string;
+  contentType: string;
+  contentBase64: string;
+  sizeBytes: number;
+};
+
 export type IntegrationOutboxSummary = {
   id: string;
   channel: 'mail' | 'sms';
@@ -72,6 +79,7 @@ export type IntegrationOutboxSummary = {
   recipient: string;
   subject?: string;
   payload: Record<string, unknown>;
+  attachments?: readonly IntegrationOutboxAttachmentSummary[];
   status: 'failed' | 'queued' | 'sent';
   retryCount: number;
   preview?: string;
@@ -158,6 +166,10 @@ export type CreateOutboxMessageRequest = {
   templateCode?: string;
   recipient: string;
   subject?: string;
+  attachments?: readonly Omit<
+    IntegrationOutboxAttachmentSummary,
+    'sizeBytes'
+  >[];
   payload: Record<string, unknown>;
 };
 
@@ -343,6 +355,14 @@ export function createIntegrationFixtures(): IntegrationFixtures {
       recipient: 'admin@example.test',
       subject: 'Welcome Admin',
       payload: { name: 'Admin' },
+      attachments: [
+        {
+          filename: 'welcome.txt',
+          contentType: 'text/plain',
+          contentBase64: 'T3BlbkNvcmUgYXR0YWNobWVudCBmaXh0dXJlCg==',
+          sizeBytes: 28,
+        },
+      ],
       status: 'queued',
       retryCount: 0,
       preview: 'Hello Admin, welcome to OpenCore.',

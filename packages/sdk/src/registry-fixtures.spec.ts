@@ -219,6 +219,17 @@ describe('registry fixtures', () => {
       findIntegrationOutboxFixture('mail', 'outbox_mail_1')?.providerCode,
     ).toBe('mail.sandbox');
     expect(
+      findIntegrationOutboxFixture('mail', 'outbox_mail_1')?.attachments,
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          filename: 'welcome.txt',
+          contentType: 'text/plain',
+          sizeBytes: 28,
+        }),
+      ]),
+    );
+    expect(
       findIntegrationOutboxFixture('sms', 'outbox_mail_1'),
     ).toBeUndefined();
     expect(

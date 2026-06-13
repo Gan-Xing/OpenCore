@@ -47,7 +47,7 @@ packages and OpenForge direct Prisma/migration/business-code writing.
 
 ## Current State
 
-Cycle-021 has completed 78 deployable stages.
+Cycle-021 has completed 79 deployable stages.
 
 - System/RBAC: notice, dept, post, menu, role, permission, user, dict, config
   and file loops are live.
@@ -61,20 +61,20 @@ Cycle-021 has completed 78 deployable stages.
   delivery records, local provider, Integration outbox bridge, state sync,
   queued processing, signed callback intake, bounded retry scheduling and a
   bounded SMS HTTP adapter plus SMTP mail adapter with outbox subject
-  persistence, provider diagnostics and SMS HTTP secret injection.
+  persistence, provider diagnostics, SMS HTTP secret injection and SMTP
+  attachments.
 - Monitor jobs: API/SDK routes, registry policy, seed job, Admin live list,
   enable/disable, manual trigger, registered handler execution, retry/timeout
   diagnostics and failed run-log detail are smoke-guarded.
 
-Latest runtime stage: Round 78 `integration.sms-http` secret injection. It lets
-SMS HTTP providers inject `secret://config/<key>` values into headers, query
-parameters and JSON body fields, verifies that path through health-check,
-delivery, diagnostics, SDK/Admin fixtures, smoke and deploy bundle guards.
+Latest runtime stage: Round 79 `integration.mail` SMTP attachments. It adds
+first-class mail outbox attachments with size/count guards, persists them in
+Prisma, sends them through SMTP, exposes metadata through SDK/Admin/OpenAPI and
+verifies the MIME payload through notice smoke and deploy bundle guards.
 
 ## Next Queue
 
-1. Notice provider reliability: realtime push and deeper SMTP options such as
-   STARTTLS and attachments.
+1. Notice provider reliability: realtime push and STARTTLS smoke/policy depth.
 2. Config governance: multi-environment rollout, external KMS, key rotation
    and secret versions.
 3. Operation-log enrichment: retention scheduling, duration/location fields

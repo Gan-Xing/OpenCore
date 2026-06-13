@@ -471,6 +471,7 @@ model IntegrationOutbox {
   recipient    String
   subject      String?
   payload      Json
+  attachments  Json?
   status       String    @default("queued")
   retryCount   Int       @default(0)
   preview      String?

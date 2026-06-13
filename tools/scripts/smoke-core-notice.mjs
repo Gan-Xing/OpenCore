@@ -660,6 +660,9 @@ try {
     username: 'smtp-user',
   });
   const smtpProviderCode = 'mail.smtp.smoke';
+  const smtpAttachmentBody = `SMTP smoke attachment ${runId}\n`;
+  const smtpAttachmentBase64 =
+    Buffer.from(smtpAttachmentBody).toString('base64');
   await upsertIntegrationProvider(smtpProviderCode, {
     type: 'mail',
     name: 'Mail SMTP Smoke',
@@ -691,6 +694,13 @@ try {
       providerCode: smtpProviderCode,
       recipient: 'admin@example.test',
       subject: `SMTP smoke subject ${runId}`,
+      attachments: [
+        {
+          filename: `smtp-smoke-${runId}.txt`,
+          contentType: 'text/plain',
+          contentBase64: smtpAttachmentBase64,
+        },
+      ],
       payload: {
         body: `SMTP smoke body ${runId}`,
       },
@@ -701,6 +711,16 @@ try {
     smtpOutbox.subject,
     `SMTP smoke subject ${runId}`,
     'Mail SMTP outbox subject',
+  );
+  assertEqual(
+    smtpOutbox.attachments?.[0]?.filename,
+    `smtp-smoke-${runId}.txt`,
+    'Mail SMTP outbox attachment filename',
+  );
+  assertEqual(
+    smtpOutbox.attachments?.[0]?.contentType,
+    'text/plain',
+    'Mail SMTP outbox attachment contentType',
   );
   const smtpProcess = await apiRequest('/integrations/mail/outbox/process', {
     method: 'POST',
@@ -725,6 +745,11 @@ try {
     `SMTP smoke subject ${runId}`,
     'Mail SMTP sent outbox subject',
   );
+  assertEqual(
+    sentSmtpOutbox.attachments?.[0]?.filename,
+    `smtp-smoke-${runId}.txt`,
+    'Mail SMTP sent outbox attachment filename',
+  );
   assertStringIncludes(
     smtpServer.messages.join('\n'),
     `SMTP smoke subject ${runId}`,
@@ -734,6 +759,16 @@ try {
     smtpServer.messages.join('\n'),
     `SMTP smoke body ${runId}`,
     'Mail SMTP received body',
+  );
+  assertStringIncludes(
+    smtpServer.messages.join('\n'),
+    `smtp-smoke-${runId}.txt`,
+    'Mail SMTP received attachment filename',
+  );
+  assertStringIncludes(
+    smtpServer.messages.join('\n'),
+    smtpAttachmentBase64,
+    'Mail SMTP received attachment body',
   );
   await smtpServer.close();
   smtpServer = undefined;
@@ -1136,6 +1171,7 @@ try {
         'core.notice.deliveries.mail-provider-diagnostics',
         'core.notice.deliveries.mail-smtp-adapter',
         'core.notice.deliveries.mail-smtp-subject',
+        'core.notice.deliveries.mail-smtp-attachments',
         'core.notice.deliveries.outbox-failed-retry-sent-sync',
         'core.notice.deliveries.outbox-callback-signature',
         'core.notice.deliveries.outbox-schedule-retry',

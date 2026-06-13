@@ -47,6 +47,7 @@ import {
   createPage,
   IntegrationRepository,
   normalizeOutboxCallback,
+  normalizeOutboxAttachments,
   normalizeOutboxFailureError,
   normalizeOutboxSchedule,
   normalizeOutboxSubject,
@@ -91,6 +92,7 @@ type OutboxRow = {
   recipient: string;
   subject: string | null;
   payload: unknown;
+  attachments: unknown;
   status: string;
   retryCount: number;
   preview: string | null;
@@ -309,6 +311,7 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
       channel,
       rendered?.subject ?? body.subject,
     );
+    const attachments = normalizeOutboxAttachments(channel, body.attachments);
     const message = await this.prisma.integrationOutbox.create({
       data: {
         channel,
@@ -317,6 +320,7 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
         recipient: body.recipient,
         subject,
         payload: toInputJson(body.payload),
+        attachments: attachments ? toInputJson(attachments) : undefined,
         status: 'queued',
         retryCount: 0,
         preview: rendered?.body,
@@ -777,6 +781,10 @@ function toOutboxRecord(row: OutboxRow): IntegrationOutboxRecord {
     recipient: row.recipient,
     subject: row.subject ?? undefined,
     payload: normalizeRecord(row.payload) ?? {},
+    attachments: normalizeOutboxAttachments(
+      row.channel === 'sms' ? 'sms' : 'mail',
+      row.attachments,
+    ),
     status: normalizeOutboxStatus(row.status),
     retryCount: row.retryCount,
     preview: row.preview ?? undefined,

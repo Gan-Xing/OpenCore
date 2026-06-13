@@ -146,12 +146,31 @@ export default function MailIntegrationPage() {
           },
           { label: 'Sample Outbox', value: selectedOutbox?.id },
           { label: 'Outbox Subject', value: selectedOutbox?.subject },
+          {
+            label: 'SMTP Attachments',
+            value: selectedOutbox?.attachments?.length ?? 0,
+          },
+          {
+            label: 'Attachment Names',
+            value: selectedOutbox?.attachments
+              ?.map((attachment) => attachment.filename)
+              .join(', '),
+          },
           { label: 'Body', value: selected?.body },
         ]}
         jsonSections={[
           {
             title: 'Sample Outbox Payload',
             value: selectedOutbox?.payload ?? {},
+          },
+          {
+            title: 'Attachment Metadata',
+            value:
+              selectedOutbox?.attachments?.map((attachment) => ({
+                filename: attachment.filename,
+                contentType: attachment.contentType,
+                sizeBytes: attachment.sizeBytes,
+              })) ?? [],
           },
         ]}
         onClose={() => {

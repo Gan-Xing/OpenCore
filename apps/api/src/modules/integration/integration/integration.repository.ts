@@ -8,6 +8,7 @@ import type {
   IntegrationOutboxCallbackDto,
   IntegrationOutboxProcessResultDto,
   IntegrationOutboxScheduleResultDto,
+  IntegrationOutboxAttachmentDto,
   IntegrationOutboxQueryDto,
   IntegrationProviderDiagnosticsDto,
   IntegrationProviderQueryDto,
@@ -596,6 +597,70 @@ export function normalizeOutboxSubject(
   return subject;
 }
 
+export function normalizeOutboxAttachments(
+  channel: 'mail' | 'sms',
+  value: unknown,
+): readonly IntegrationOutboxAttachmentDto[] | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  if (channel === 'sms') {
+    throw new BadRequestException(
+      'SMS outbox messages do not support attachments.',
+    );
+  }
+
+  if (!Array.isArray(value)) {
+    throw new BadRequestException('Mail outbox attachments must be an array.');
+  }
+
+  if (value.length === 0) {
+    return undefined;
+  }
+
+  if (value.length > 5) {
+    throw new BadRequestException(
+      'Mail outbox attachments must contain at most 5 files.',
+    );
+  }
+
+  let totalSizeBytes = 0;
+  const attachments = value.map((item, index) => {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) {
+      throw new BadRequestException(
+        `Mail outbox attachment at index ${index} must be an object.`,
+      );
+    }
+    const record = item as Record<string, unknown>;
+    const filename = normalizeAttachmentFilename(record.filename, index);
+    const contentType = normalizeAttachmentContentType(
+      record.contentType,
+      index,
+    );
+    const { contentBase64, sizeBytes } = normalizeAttachmentContentBase64(
+      record.contentBase64,
+      index,
+    );
+    totalSizeBytes += sizeBytes;
+
+    if (totalSizeBytes > 256 * 1024) {
+      throw new BadRequestException(
+        'Mail outbox attachments total size must be at most 256KB.',
+      );
+    }
+
+    return {
+      filename,
+      contentType,
+      contentBase64,
+      sizeBytes,
+    };
+  });
+
+  return attachments;
+}
+
 export function assertSmsSafety(
   recipient: string,
   payload: Record<string, unknown>,
@@ -803,6 +868,74 @@ function normalizeRequiredString(value: unknown, message: string): string {
   }
 
   return normalized;
+}
+
+function normalizeAttachmentFilename(value: unknown, index: number): string {
+  const filename = normalizeRequiredString(
+    value,
+    `Mail outbox attachment filename at index ${index} is required.`,
+  );
+  if (
+    filename.length > 120 ||
+    filename === '.' ||
+    filename === '..' ||
+    /[\\/]/.test(filename) ||
+    hasAsciiControlCharacter(filename)
+  ) {
+    throw new BadRequestException(
+      `Mail outbox attachment filename at index ${index} is invalid.`,
+    );
+  }
+
+  return filename;
+}
+
+function hasAsciiControlCharacter(value: string): boolean {
+  return [...value].some((character) => character.charCodeAt(0) < 32);
+}
+
+function normalizeAttachmentContentType(value: unknown, index: number): string {
+  const contentType = normalizeRequiredString(
+    value,
+    `Mail outbox attachment contentType at index ${index} is required.`,
+  ).toLowerCase();
+  if (
+    contentType.length > 120 ||
+    !/^[a-z0-9][a-z0-9.+-]*\/[a-z0-9][a-z0-9.+-]*$/.test(contentType)
+  ) {
+    throw new BadRequestException(
+      `Mail outbox attachment contentType at index ${index} is invalid.`,
+    );
+  }
+
+  return contentType;
+}
+
+function normalizeAttachmentContentBase64(
+  value: unknown,
+  index: number,
+): { contentBase64: string; sizeBytes: number } {
+  const contentBase64 = normalizeRequiredString(
+    value,
+    `Mail outbox attachment contentBase64 at index ${index} is required.`,
+  );
+  if (
+    contentBase64.length % 4 !== 0 ||
+    !/^[A-Za-z0-9+/]+={0,2}$/.test(contentBase64)
+  ) {
+    throw new BadRequestException(
+      `Mail outbox attachment contentBase64 at index ${index} must be valid base64.`,
+    );
+  }
+
+  const sizeBytes = Buffer.from(contentBase64, 'base64').length;
+  if (sizeBytes < 1 || sizeBytes > 64 * 1024) {
+    throw new BadRequestException(
+      `Mail outbox attachment at index ${index} must be between 1 byte and 64KB.`,
+    );
+  }
+
+  return { contentBase64, sizeBytes };
 }
 
 function normalizeOutboxCallbackSignature(value: unknown): string {

@@ -142,6 +142,9 @@ async function seedIntegrations(): Promise<{
         recipient: message.recipient,
         subject: message.subject ?? null,
         payload: message.payload as Prisma.InputJsonValue,
+        attachments: message.attachments
+          ? ([...message.attachments] as Prisma.InputJsonValue)
+          : null,
         status: message.status,
         retryCount: message.retryCount,
         preview: message.preview ?? null,
@@ -157,6 +160,9 @@ async function seedIntegrations(): Promise<{
         recipient: message.recipient,
         subject: message.subject ?? null,
         payload: message.payload as Prisma.InputJsonValue,
+        attachments: message.attachments
+          ? ([...message.attachments] as Prisma.InputJsonValue)
+          : null,
         status: message.status,
         retryCount: message.retryCount,
         preview: message.preview ?? null,

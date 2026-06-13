@@ -9337,6 +9337,16 @@
         },
         "required": ["channel", "templateCode", "body"]
       },
+      "IntegrationOutboxAttachmentDto": {
+        "type": "object",
+        "properties": {
+          "filename": { "type": "string" },
+          "contentType": { "type": "string" },
+          "contentBase64": { "type": "string" },
+          "sizeBytes": { "type": "number" }
+        },
+        "required": ["filename", "contentType", "contentBase64", "sizeBytes"]
+      },
       "IntegrationOutboxDto": {
         "type": "object",
         "properties": {
@@ -9347,6 +9357,12 @@
           "recipient": { "type": "string" },
           "subject": { "type": "string" },
           "payload": { "type": "object" },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IntegrationOutboxAttachmentDto"
+            }
+          },
           "status": { "type": "string", "enum": ["queued", "sent", "failed"] },
           "retryCount": { "type": "number" },
           "preview": { "type": "string" },
@@ -9379,6 +9395,15 @@
         },
         "required": ["items", "page", "pageSize", "total", "totalPages"]
       },
+      "CreateIntegrationOutboxAttachmentDto": {
+        "type": "object",
+        "properties": {
+          "filename": { "type": "string" },
+          "contentType": { "type": "string" },
+          "contentBase64": { "type": "string" }
+        },
+        "required": ["filename", "contentType", "contentBase64"]
+      },
       "CreateOutboxMessageDto": {
         "type": "object",
         "properties": {
@@ -9386,7 +9411,13 @@
           "templateCode": { "type": "string" },
           "recipient": { "type": "string" },
           "subject": { "type": "string" },
-          "payload": { "type": "object" }
+          "payload": { "type": "object" },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateIntegrationOutboxAttachmentDto"
+            }
+          }
         },
         "required": ["providerCode", "recipient", "payload"]
       },

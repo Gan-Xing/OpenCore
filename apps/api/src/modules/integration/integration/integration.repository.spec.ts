@@ -427,9 +427,23 @@ describe('IntegrationRepository', () => {
       providerCode: 'mail.smtp',
       recipient: 'admin@example.test',
       subject: 'Welcome through SMTP',
+      attachments: [
+        {
+          filename: 'welcome.txt',
+          contentType: 'text/plain',
+          contentBase64: 'U01UUCBhdHRhY2htZW50IGJvZHkgZm9yIEFkbWluCg==',
+        },
+      ],
       payload: { body: 'SMTP body for Admin' },
     });
     expect(queued).toMatchObject({
+      attachments: [
+        {
+          filename: 'welcome.txt',
+          contentType: 'text/plain',
+          sizeBytes: 31,
+        },
+      ],
       subject: 'Welcome through SMTP',
     });
 
@@ -455,6 +469,13 @@ describe('IntegrationRepository', () => {
     );
     const sendMail = transportFactory.mock.results[1]?.value.sendMail;
     expect(sendMail).toHaveBeenCalledWith({
+      attachments: [
+        {
+          content: Buffer.from('SMTP attachment body for Admin\n'),
+          contentType: 'text/plain',
+          filename: 'welcome.txt',
+        },
+      ],
       from: 'no-reply@opencore.test',
       to: 'admin@example.test',
       subject: 'Welcome through SMTP',
@@ -463,6 +484,12 @@ describe('IntegrationRepository', () => {
     await expect(
       repository.getOutboxMessage('mail', queued.id),
     ).resolves.toMatchObject({
+      attachments: [
+        {
+          filename: 'welcome.txt',
+          sizeBytes: 31,
+        },
+      ],
       status: 'sent',
       retryCount: 0,
       error: undefined,
@@ -898,6 +925,22 @@ describe('IntegrationRepository', () => {
       repository.enqueueOutbox('sms', {
         providerCode: 'mail.sandbox',
         recipient: '+15551234567',
+        payload: { code: '123456' },
+      }),
+    ).rejects.toThrow(BadRequestException);
+
+    await repository.enableProvider('sms.sandbox');
+    await expect(
+      repository.enqueueOutbox('sms', {
+        providerCode: 'sms.sandbox',
+        recipient: '+15551234567',
+        attachments: [
+          {
+            filename: 'otp.txt',
+            contentType: 'text/plain',
+            contentBase64: 'MTIzNDU2',
+          },
+        ],
         payload: { code: '123456' },
       }),
     ).rejects.toThrow(BadRequestException);

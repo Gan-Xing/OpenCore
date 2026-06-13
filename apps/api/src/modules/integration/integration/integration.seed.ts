@@ -131,6 +131,14 @@ export const seedIntegrationOutbox: readonly IntegrationOutboxRecord[] = [
     recipient: 'admin@example.test',
     subject: 'Welcome Admin',
     payload: { name: 'Admin' },
+    attachments: [
+      {
+        filename: 'welcome.txt',
+        contentType: 'text/plain',
+        contentBase64: 'T3BlbkNvcmUgYXR0YWNobWVudCBmaXh0dXJlCg==',
+        sizeBytes: 28,
+      },
+    ],
     status: 'queued',
     retryCount: 0,
     preview: 'Hello Admin, welcome to OpenCore.',

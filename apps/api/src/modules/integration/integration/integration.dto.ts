@@ -261,6 +261,31 @@ export class CreateIntegrationTemplateDto {
   enabled?: boolean;
 }
 
+export class IntegrationOutboxAttachmentDto {
+  @ApiProperty()
+  filename!: string;
+
+  @ApiProperty()
+  contentType!: string;
+
+  @ApiProperty()
+  contentBase64!: string;
+
+  @ApiProperty()
+  sizeBytes!: number;
+}
+
+export class CreateIntegrationOutboxAttachmentDto {
+  @ApiProperty()
+  filename!: string;
+
+  @ApiProperty()
+  contentType!: string;
+
+  @ApiProperty()
+  contentBase64!: string;
+}
+
 export class IntegrationOutboxDto {
   @ApiProperty()
   id!: string;
@@ -282,6 +307,9 @@ export class IntegrationOutboxDto {
 
   @ApiProperty()
   payload!: Record<string, unknown>;
+
+  @ApiProperty({ type: [IntegrationOutboxAttachmentDto], required: false })
+  attachments?: readonly IntegrationOutboxAttachmentDto[];
 
   @ApiProperty({ enum: ['queued', 'sent', 'failed'] })
   status!: 'queued' | 'sent' | 'failed';
@@ -356,6 +384,12 @@ export class CreateOutboxMessageDto {
 
   @ApiProperty()
   payload!: Record<string, unknown>;
+
+  @ApiProperty({
+    type: [CreateIntegrationOutboxAttachmentDto],
+    required: false,
+  })
+  attachments?: readonly CreateIntegrationOutboxAttachmentDto[];
 }
 
 export class FailOutboxMessageDto {

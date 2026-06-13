@@ -46,6 +46,7 @@ import {
   IntegrationRepository,
   matchesOptional,
   normalizeOutboxCallback,
+  normalizeOutboxAttachments,
   normalizeOutboxFailureError,
   normalizeOutboxSchedule,
   normalizeOutboxSubject,
@@ -252,6 +253,7 @@ export class SeedIntegrationRepository extends IntegrationRepository {
       channel,
       rendered?.subject ?? body.subject,
     );
+    const attachments = normalizeOutboxAttachments(channel, body.attachments);
     const message: IntegrationOutboxRecord = {
       id: `outbox_${this.outbox.length + 1}`,
       channel,
@@ -260,6 +262,7 @@ export class SeedIntegrationRepository extends IntegrationRepository {
       recipient: body.recipient,
       subject,
       payload: body.payload,
+      attachments,
       status: 'queued',
       retryCount: 0,
       preview: rendered?.body,
