@@ -3,8 +3,8 @@
 Date: 2026-06-13
 Repository: `Gan-Xing/OpenCore`
 Default branch: `main`
-Latest observed feature commit: `1bfd082 feat(core-user): add batch user mutations / 新增用户批量变更闭环`
-Latest deployed feature commit: `1bfd082 feat(core-user): add batch user mutations / 新增用户批量变更闭环`
+Latest observed feature commit: `1c49e36 feat(core-user): add user import loop / 新增用户导入闭环`
+Latest deployed feature commit: `1c49e36 feat(core-user): add user import loop / 新增用户导入闭环`
 Latest deployed hardening commit: `04e446c fix(online-user): stabilize admin session smoke / 稳定在线用户管理员会话冒烟`
 
 ## One-sentence Goal
@@ -98,6 +98,7 @@ productization waterline completion; see
 - Round 30 `core.user` simple-list option source stage 7
 - Round 31 `core.user` profile avatar stage 8
 - Round 32 `core.user` batch status/delete stage 9
+- Round 33 `core.user` import template/CSV import stage 10
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -333,6 +334,28 @@ smoke 和公网 smoke 均证明批量禁用会撤销两个临时用户 token 并
 批量 UI 文案；公网 Admin 代理 `/api/auth/login`、兼容 `/api/api/auth/login`、
 API origin `/api/api/auth/login` 和 Admin 同源 batch guard 均通过。
 
+Round 33 继续补齐 `core.user` 队列：用户现在有导入模板和 CSV 导入闭环。
+参考 RuoYi 的 `/system/user/importTemplate`、`/system/user/importData` 与 Yudao 的
+`/system/user/get-import-template`、`/system/user/import`、结构化
+`createUsernames/updateUsernames/failureUsernames` 返回形状，OpenCore 新增
+`GET /api/core/users/import-template` 和 `POST /api/core/users/import`。本阶段不新增
+独立 `core:user:import` 权限，因为当前 registry 的用户权限仍是 CRUD+export；模板和导入
+先按 `core:user:create` 保护，独立 import 权限如需产品化应单独走权限目录闭环。导入接受
+base64 CSV，列为 `username/displayName/password/roleCodes/deptId/postCodes/enabled`；
+空部门/岗位单元格表示不绑定，角色/岗位用分号分隔；文件级 base64、header、空文件走 400，
+逐行业务错误进入 `failures`，其他行继续导入。`updateExisting` 严格要求 boolean；开启后
+会更新已有普通用户并撤销这些用户名的 active sessions，系统用户仍由仓储保护。SDK/OpenAPI、
+API 权限矩阵、Admin Users 下载模板/上传导入弹窗、Admin static smoke 和固定 core-user
+smoke 均同步该闭环。固定 smoke、部署 smoke 和公网 smoke 均证明模板可读、非法
+`updateExisting: "true"` 返回 400、部分成功返回创建/失败结果、更新已有用户撤销 token、
+导入禁用用户从 simple-list 过滤。公网 Users chunk `p__System__Users.b1acfbc5.async.js`
+已验证包含 `Download import template`、`Import users`、`Update existing users` 和
+`Select CSV file`；当前 main bundle `umi.4dea9225.js` 已验证包含
+`/core/users/import-template` 和 `/core/users/import`；公网 Admin 代理登录、兼容
+`/api/api/auth/login`、API origin `/api/api/auth/login`、Admin 同源模板和导入 boolean
+guard 均通过。注意：这轮关闭的是 CSV-compatible 导入模板/导入结果闭环，不等于用户
+原生 XLSX/binary Excel 文件格式和服务端完整文件导出已经完成。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -342,8 +365,8 @@ The productization waterline now classifies:
   `core.file`, Round 4/16 `core.menu`, Round 5/17/18/20 `core.role`,
   Round 8/21 `core.dict`.
 - First loop, enhance: Round 1 `core.notice`, Round 2/27 `core.dept`, Round
-  3/22/25 `core.post`, Round 7/19/22/23/28/29/30/31/32 `core.user`, Round 9/24
-  `core.config`, Round 11/26 `core.login-log`.
+  3/22/25 `core.post`, Round 7/19/22/23/28/29/30/31/32/33 `core.user`, Round
+  9/24 `core.config`, Round 11/26 `core.login-log`.
 - Thin, rework: none after Round 16.
 
 The P0 remediation queue from the post-Round 13 re-audit is now clear. The next
@@ -358,9 +381,11 @@ finds another blocker:
    Round 30 closed the authenticated user simple-list option source consumed
    by Admin role user assignment; Round 31 closed profile avatar upload,
    public preview, replacement and deletion; Round 32 closed batch
-   enable/disable and batch delete with session revocation. Remaining work is
-   Excel import/export and any dedicated User-page role assignment workflow if
-   admitted.
+   enable/disable and batch delete with session revocation; Round 33 closed
+   CSV-compatible user import template/import results with update-existing
+   session revocation. Remaining work is native XLSX/binary Excel import/export
+   depth, dedicated import permission if admitted and any dedicated User-page
+   role assignment workflow if admitted.
 2. `core.config`: Round 24 closed public get-value-by-key plus cache
    refresh/invalidation. Remaining work is category/name/remark enrichment,
    batch/file export depth and broader runtime propagation boundaries.

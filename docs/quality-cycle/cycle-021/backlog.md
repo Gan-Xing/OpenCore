@@ -899,6 +899,51 @@ batch workflow without opening Excel import/export parsing.
       URL verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 33: core.user Import Template and CSV Import Productization
+
+Why this slice: after batch user mutation, the next lower-dependency
+user-management gap was import template plus import result handling. RuoYi and
+Yudao both expose user import templates and user import endpoints on the user
+management surface, with structured success/failure feedback. OpenCore already
+had user create/update validation, role/dept/post binding and session
+revocation, so this round could admit a CSV-compatible import loop without
+claiming native XLSX/binary Excel import/export completion.
+
+- [x] Recompare RuoYi `importTemplate`/`importData` and Yudao
+      `get-import-template`/`import` result shapes.
+- [x] Add user import template, import request and structured import result
+      DTOs.
+- [x] Add a strict base64 CSV parser with fixed header validation for
+      `username`, `displayName`, `password`, `roleCodes`, `deptId`,
+      `postCodes` and `enabled`.
+- [x] Treat blank department/post cells as no binding and semicolon-delimit
+      role/post code lists.
+- [x] Return file/header/base64 errors as 400 while collecting row-level
+      business failures into `failures`.
+- [x] Require `updateExisting` to be a real boolean and reject string boolean
+      deserialization drift with 400.
+- [x] Create new users through existing repository validation and update
+      existing normal users only when `updateExisting: true`.
+- [x] Keep system-user mutation protection at the repository boundary.
+- [x] Revoke active online sessions for usernames changed by import updates.
+- [x] Add `GET /api/core/users/import-template` and
+      `POST /api/core/users/import` before dynamic `users/:id` routes, guarded
+      by `core:user:create`.
+- [x] Extend API permission-matrix tests, OpenAPI, SDK types/client methods and
+      SDK path tests.
+- [x] Add Admin Users template download, import modal, update-existing checkbox
+      and import result/failure display.
+- [x] Extend Admin static smoke guards for import UI/service markers.
+- [x] Extend fixed-port/deploy/public `core.user` smoke to prove template
+      download, strict boolean guard, partial import result, update-existing
+      session revocation and enabled-user filtering.
+- [x] Verify public Admin Users chunk markers, public main-bundle import API
+      paths, Admin same-origin proxy login, stale `/api/api` login
+      compatibility, Admin same-origin template and import boolean guard.
+- [x] Run focused, typecheck, build, fixed-port smoke, deployment and public
+      URL verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -936,14 +981,16 @@ treat "minimal loop" as "minimal final product".
 - [ ] Round 3/22/25 `core.post`: user-post binding and simple-list option
       source are complete; batch operations and ordered list refinements
       remain.
-- [ ] Round 7/19/22/23/28/29/30/31/32 `core.user`: status toggle, reset password and
-      direct user-mutation session invalidation are complete. Post binding,
-      department side-tree filtering, self-profile basic display-name
+- [ ] Round 7/19/22/23/28/29/30/31/32/33 `core.user`: status toggle, reset
+      password and direct user-mutation session invalidation are complete. Post
+      binding, department side-tree filtering, self-profile basic display-name
       read/update, self-password and authenticated simple-list option source
       are complete. Profile avatar upload/public preview/replace/delete is
-      complete. Batch enable/disable and batch delete are complete. Excel
-      import/export and any dedicated User-page role assignment workflow still
-      need enhancement if admitted.
+      complete. Batch enable/disable and batch delete are complete.
+      CSV-compatible import template/import results with update-existing
+      session revocation are complete. Native XLSX/binary Excel import/export
+      depth, a dedicated import permission and any dedicated User-page role
+      assignment workflow still need enhancement if admitted.
 - [ ] Round 9/24 `core.config`: public get-value-by-key, cache refresh and
       mutation invalidation are complete. Category/name/remark enrichment,
       batch/file export depth and broader runtime propagation boundaries remain.
@@ -987,8 +1034,8 @@ treat "minimal loop" as "minimal final product".
 - Role simple-list endpoints, batch role deletion and standalone data-scope
   endpoint.
 - Registry definition editing and dynamic permission discovery.
-- User Excel import/export file workflows, dedicated User-page role assignment
-  dialog and social endpoints.
+- Native user XLSX/binary Excel import/export depth, dedicated user import
+  permission, dedicated User-page role assignment dialog and social endpoints.
 - Batch dictionary delete, Excel import/export file workflows, dictionary
   color/css/remark fields, app-wide dictionary cache TTL/invalidation and
   dictionary cache refresh.

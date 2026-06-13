@@ -2541,3 +2541,109 @@ Against public endpoints after deploy:
   `1bfd082 feat(core-user): add batch user mutations / 新增用户批量变更闭环`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 33 Capability
+
+Capability: `core.user` import template and CSV import productization.
+
+Goal: close the user-management import-template/import-result workflow while
+preserving existing create/update validation, system-user protection and
+session revocation semantics.
+
+## Round 33 Implemented
+
+- Added user import template, import request, import failure and import result
+  DTOs.
+- Added a CSV-compatible import template with filename
+  `opencore-system-users-import-template.csv`.
+- Added strict base64, CSV header, file-size, empty-file and unclosed-quote
+  validation.
+- Added fixed import columns: `username`, `displayName`, `password`,
+  `roleCodes`, `deptId`, `postCodes` and `enabled`.
+- Treated blank department/post cells as no binding and semicolon-delimited
+  role/post lists.
+- Required `updateExisting` to be a real boolean and rejected string boolean
+  payloads with 400.
+- Returned file-level failures as 400 and row-level business failures inside
+  structured `failures` while allowing other rows to succeed.
+- Created new users through existing repository validation and updated
+  existing normal users only when `updateExisting: true`.
+- Kept system-user mutation protection at the repository boundary.
+- Revoked active online sessions for usernames updated by import.
+- Added `GET /api/core/users/import-template` and
+  `POST /api/core/users/import`, guarded by `core:user:create` and registered
+  before dynamic `users/:id` routes.
+- Extended API permission-matrix tests.
+- Extended OpenAPI snapshot, SDK import request/result types, client methods
+  and SDK path tests.
+- Added Admin platform methods for template download and import submission.
+- Added Admin Users toolbar actions for `Download import template` and
+  `Import users`, plus an import modal with CSV selection, update-existing
+  checkbox and import result/failure display.
+- Extended Admin static smoke guards for import service methods and page
+  markers.
+- Extended `tools/scripts/smoke-core-user.mjs` to prove import template
+  download, strict `updateExisting` boolean guard, partial import results,
+  update-existing session revocation and enabled-user option filtering.
+
+## Round 33 Verification
+
+- `pnpm nx test system --testFile=system-user.spec.ts`
+- `pnpm nx test sdk --testFile=rbac-client.spec.ts`
+- `pnpm nx test api --testFile=rbac.permission-matrix.spec.ts`
+- `node scripts/smoke-test.mjs` from `apps/admin`
+- `pnpm nx run-many -t typecheck --projects=api,admin,sdk,system`
+- `pnpm openapi:export`
+- `pnpm sdk:check`
+- `pnpm nx test admin`
+- `pnpm openapi:check`
+- `pnpm openapi:registry-tags:check`
+- `pnpm format:check`
+- `pnpm smoke:api:local`
+- `pnpm prisma:validate`
+- `pnpm build:api`
+- `pnpm build:admin`
+- `git diff --check`
+- `pnpm deploy:opencore`
+
+`pnpm smoke:api:local` passed on fixed port `39173`, including
+`core.user.import-template`,
+`core.user.import.update-existing-boolean-guard`,
+`core.user.import.partial-result`,
+`core.user.import.update-revoke-session` and
+`core.user.import.enabled-filter`.
+
+`pnpm deploy:opencore` passed, deploying API/Admin on fixed ports
+`39172`/`39174`; deploy smoke includes the new user import checks and the
+existing login-prefix/frontend-cache/session-revocation guards.
+
+## Round 33 Public Verification
+
+Against public endpoints after deploy:
+
+- Public `pnpm smoke:core-user` passed against
+  `http://144.217.243.161:39172` after loading the deployed admin password
+  from `.env.opencore.local` without printing secrets.
+- Public user smoke verified template download, strict `updateExisting`
+  string rejection, partial import result, update-existing session revocation
+  and disabled imported-user filtering from `users/simple-list`.
+- Public Admin `GET http://144.217.243.161:39174/system/users/` returned 200.
+- Public main bundle `umi.4dea9225.js` contains `/core/users/import-template`
+  and `/core/users/import`.
+- Public Users chunk `p__System__Users.b1acfbc5.async.js` contains
+  `Download import template`, `Import users`, `Update existing users` and
+  `Select CSV file`.
+- Public Admin same-origin proxy login returned 201 for `/api/auth/login` and
+  stale-compatible `/api/api/auth/login`; public API origin
+  `/api/api/auth/login` also returned 201.
+- Public Admin same-origin import-template returned the expected filename and
+  sample row `operator_import`.
+- Public Admin same-origin import strict boolean guard returned 400 for
+  `updateExisting: "true"`.
+
+## Round 33 Commit Record
+
+- Feature commit:
+  `1c49e36 feat(core-user): add user import loop / 新增用户导入闭环`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

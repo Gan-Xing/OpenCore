@@ -595,3 +595,40 @@ This stays inside the current S7 System/RBAC user-management boundary. It does
 not introduce Excel import/export file workflows, email/phone profile fields,
 social account binding or a dedicated User-page role assignment dialog in this
 round.
+
+## Round 33 Audit: core.user Import Template and CSV Import
+
+After Round 32, the next lower-dependency `core.user` management gap was import
+template plus import result handling:
+
+- RuoYi exposes `importTemplate` and `importData` directly on the user
+  management surface beside export.
+- Yudao exposes `get-import-template` and `import`, returning structured
+  created, updated and failed username lists.
+- OpenCore already had user create/update validation, role/dept/post binding,
+  system-user mutation protection and online-session revocation, so import
+  could reuse those boundaries instead of inventing a parallel write path.
+- Native XLSX/binary Excel parsing and full export formatting are a broader
+  file-format slice; this round admits a CSV-compatible template/import loop
+  that operators can verify immediately.
+- Route order mattered: static `users/import-template` and `users/import`
+  routes had to be registered before dynamic `users/:id` routes.
+- `updateExisting` needed strict boolean validation so the repeated
+  deserialization failures become a smoke-locked contract instead of an
+  operator-memory rule.
+- Partial row failures needed to be returned in structured `failures` while
+  valid rows continue importing, matching the reference product expectation.
+- Import updates needed to revoke active online sessions for changed usernames
+  so password/status changes do not leave stale tokens alive.
+- Admin needed a real template-download and import-modal flow, not only a raw
+  API endpoint.
+- Fixed-port, deploy and public smoke needed to prove template download,
+  strict boolean guard, partial result handling, update-existing session
+  revocation, disabled-user simple-list filtering, public Admin bundle markers
+  and same-origin proxy access.
+
+This stays inside the current S7 System/RBAC user-management boundary. It does
+not introduce native XLSX/binary Excel import/export depth, a dedicated
+`core:user:import` permission, server-side full Excel export formatting,
+email/phone profile fields, social account binding or a dedicated User-page
+role assignment dialog in this round.

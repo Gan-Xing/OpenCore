@@ -980,6 +980,45 @@ session-revocation semantics added in earlier user rounds:
   login blocking, Admin bundle markers, duplicate `/api/api` login tolerance
   and Admin same-origin proxy access.
 
-OpenCore still does not admit Excel import/export file workflows, email/phone
-profile fields, social account binding or a dedicated User-page role assignment
-dialog in this round.
+OpenCore still does not admit native XLSX/binary Excel import/export depth,
+email/phone profile fields, social account binding or a dedicated User-page
+role assignment dialog in this round.
+
+## Round 33 User Import Reference Shape
+
+RuoYi exposes user import beside export on the System User surface:
+`/system/user/importTemplate` downloads a template, `/system/user/importData`
+accepts uploaded user rows and returns operator-facing success/failure
+messages, and `/system/user/export` remains the paired export workflow.
+
+Yudao exposes the same management surface with `/system/user/get-import-template`
+and `/system/user/import`. Its import response reports created usernames,
+updated usernames and failed usernames so operators can act on partial import
+results rather than treating the file as all-or-nothing.
+
+OpenCore admits the matching stage-10 import loop while preserving current
+permissions and file-format boundaries:
+
+- `GET /api/core/users/import-template` returns a base64 CSV template named
+  `opencore-system-users-import-template.csv`;
+- `POST /api/core/users/import` accepts base64 CSV content with fixed columns
+  `username`, `displayName`, `password`, `roleCodes`, `deptId`, `postCodes`
+  and `enabled`;
+- both endpoints are static routes before `users/:id` and are guarded by
+  `core:user:create`;
+- blank department and post cells mean no binding, while role/post code lists
+  use semicolon delimiters;
+- file-level base64/header/empty-file failures return 400, while row-level
+  validation errors are collected into `failures` so other rows can succeed;
+- `updateExisting` must be a real boolean, preventing the repeated
+  string-boolean deserialization drift from reappearing;
+- updating existing users revokes those usernames' active online-user sessions;
+- Admin Users now supports downloading the template, selecting a CSV, toggling
+  update-existing and reviewing created/updated/failed results;
+- fixed-port, deploy and public smoke prove template download, strict
+  boolean-guard failure, partial result handling, update-session revocation,
+  enabled-user filtering and public Admin bundle/proxy access.
+
+OpenCore still does not claim native XLSX/binary Excel import/export depth,
+server-side full Excel export formatting, a dedicated `core:user:import`
+permission or a dedicated User-page role assignment dialog in this round.
