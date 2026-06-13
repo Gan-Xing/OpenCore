@@ -81,6 +81,10 @@ export default function ProvidersPage() {
     useState<IntegrationProviderDiagnosticsSummary>();
   const [selectedOutbox, setSelectedOutbox] =
     useState<IntegrationOutboxSummary>();
+  const selectedSmtpTlsPolicy =
+    selected?.type === 'mail'
+      ? String(selected.config.tlsMode ?? 'not configured')
+      : undefined;
   const { filteredRows, toolbar: filterToolbar } =
     useCurrentPageFilters<IntegrationProviderSummary>({
       rows,
@@ -161,6 +165,7 @@ export default function ProvidersPage() {
         <Statistic title="SMS HTTP adapter" value="allowlisted" />
         <Statistic title="HTTP Secret Injection" value="header/query/body" />
         <Statistic title="Mail SMTP adapter" value="vault-backed" />
+        <Statistic title="SMTP TLS Policy" value="tlsMode" />
         <Statistic title="Provider Diagnostics" value="read-only" />
         <Statistic
           title="Design topics"
@@ -231,6 +236,10 @@ export default function ProvidersPage() {
           {
             label: 'Mail SMTP Adapter',
             value: 'secretRef -> config vault + SMTP send',
+          },
+          {
+            label: 'SMTP TLS Policy',
+            value: selectedSmtpTlsPolicy,
           },
           {
             label: 'Mail Callback Path',

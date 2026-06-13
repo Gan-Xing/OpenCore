@@ -412,8 +412,7 @@ describe('IntegrationRepository', () => {
         from: 'no-reply@opencore.test',
         host: 'smtp.gateway.test',
         port: 2525,
-        requireTls: false,
-        secure: false,
+        tlsMode: 'starttls-required',
         timeoutMs: 1000,
         username: 'smtp-user',
       },
@@ -463,7 +462,9 @@ describe('IntegrationRepository', () => {
           user: 'smtp-user',
         },
         host: 'smtp.gateway.test',
+        ignoreTLS: false,
         port: 2525,
+        requireTLS: true,
         secure: false,
       }),
     );
@@ -521,6 +522,7 @@ describe('IntegrationRepository', () => {
         adapter: 'smtp',
         from: 'no-reply@opencore.test',
         host: 'smtp.gateway.test',
+        tlsMode: 'starttls-required',
         username: 'smtp-user',
       },
     });
@@ -550,6 +552,64 @@ describe('IntegrationRepository', () => {
       status: 'failed',
       retryCount: 1,
       error: expect.stringContaining('secret://config/<key>'),
+    });
+  });
+
+  it('rejects deprecated SMTP TLS booleans before sending mail', async () => {
+    const transportFactory = jest.fn<
+      ReturnType<MailSmtpTransportFactory>,
+      Parameters<MailSmtpTransportFactory>
+    >(() => ({
+      close: jest.fn(),
+      sendMail: jest.fn().mockResolvedValue({}),
+      verify: jest.fn().mockResolvedValue(true),
+    }));
+    const repository = new SeedIntegrationRepository(
+      createMapProviderSecretResolver(
+        new Map([['integration.mail.smtp.password.secret', 'smtp-password']]),
+      ),
+      transportFactory,
+    );
+
+    await repository.createProvider({
+      code: 'mail.deprecated-tls',
+      type: 'mail',
+      name: 'Deprecated SMTP TLS',
+      enabled: true,
+      secretRef: 'secret://config/integration.mail.smtp.password.secret',
+      config: {
+        adapter: 'smtp',
+        from: 'no-reply@opencore.test',
+        host: 'smtp.gateway.test',
+        requireTls: true,
+        username: 'smtp-user',
+      },
+    });
+    await expect(
+      repository.checkProviderHealth('mail.deprecated-tls'),
+    ).resolves.toMatchObject({
+      healthStatus: 'degraded',
+    });
+    const queued = await repository.enqueueOutbox('mail', {
+      providerCode: 'mail.deprecated-tls',
+      recipient: 'admin@example.test',
+      payload: { body: 'SMTP body for Admin' },
+    });
+    await expect(
+      repository.processOutbox('mail', {
+        providerCode: 'mail.deprecated-tls',
+      }),
+    ).resolves.toMatchObject({
+      attemptedCount: 1,
+      failedCount: 1,
+      sentCount: 0,
+    });
+    expect(transportFactory).not.toHaveBeenCalled();
+    await expect(
+      repository.getOutboxMessage('mail', queued.id),
+    ).resolves.toMatchObject({
+      status: 'failed',
+      error: expect.stringContaining('SMTP tlsMode replaces'),
     });
   });
 

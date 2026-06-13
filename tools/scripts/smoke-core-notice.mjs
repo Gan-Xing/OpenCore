@@ -663,6 +663,41 @@ try {
   const smtpAttachmentBody = `SMTP smoke attachment ${runId}\n`;
   const smtpAttachmentBase64 =
     Buffer.from(smtpAttachmentBody).toString('base64');
+  const startTlsProviderCode = 'mail.smtp.starttls-required.smoke';
+  await upsertIntegrationProvider(startTlsProviderCode, {
+    type: 'mail',
+    name: 'Mail SMTP STARTTLS Policy Smoke',
+    enabled: true,
+    secretRef: 'secret://config/integration.mail.smtp.password.secret',
+    config: {
+      adapter: 'smtp',
+      authMethod: 'PLAIN',
+      from: 'no-reply@opencore.test',
+      host: '127.0.0.1',
+      port: smtpServer.port,
+      tlsMode: 'starttls-required',
+      timeoutMs: 5000,
+      username: 'smtp-user',
+    },
+  });
+  const startTlsCommandsBefore = countSmtpCommands(smtpServer, 'STARTTLS');
+  await apiRequest(
+    `/integrations/providers/${encodeURIComponent(startTlsProviderCode)}/health-check`,
+    {
+      method: 'POST',
+    },
+  ).then((provider) => {
+    assertEqual(
+      provider.healthStatus,
+      'degraded',
+      'Mail SMTP STARTTLS-required provider health',
+    );
+  });
+  assertNumberAtLeast(
+    countSmtpCommands(smtpServer, 'STARTTLS') - startTlsCommandsBefore,
+    1,
+    'Mail SMTP STARTTLS-required command count',
+  );
   await upsertIntegrationProvider(smtpProviderCode, {
     type: 'mail',
     name: 'Mail SMTP Smoke',
@@ -674,12 +709,12 @@ try {
       from: 'no-reply@opencore.test',
       host: '127.0.0.1',
       port: smtpServer.port,
-      requireTls: false,
-      secure: false,
+      tlsMode: 'plain',
       timeoutMs: 5000,
       username: 'smtp-user',
     },
   });
+  const plainStartTlsCommandsBefore = countSmtpCommands(smtpServer, 'STARTTLS');
   await apiRequest(
     `/integrations/providers/${encodeURIComponent(smtpProviderCode)}/health-check`,
     {
@@ -688,6 +723,11 @@ try {
   ).then((provider) => {
     assertEqual(provider.healthStatus, 'healthy', 'Mail SMTP provider health');
   });
+  assertEqual(
+    countSmtpCommands(smtpServer, 'STARTTLS'),
+    plainStartTlsCommandsBefore,
+    'Mail SMTP plain provider skips STARTTLS',
+  );
   const smtpOutbox = await apiRequest('/integrations/mail/outbox', {
     method: 'POST',
     body: {
@@ -769,6 +809,11 @@ try {
     smtpServer.messages.join('\n'),
     smtpAttachmentBase64,
     'Mail SMTP received attachment body',
+  );
+  assertEqual(
+    countSmtpCommands(smtpServer, 'STARTTLS'),
+    plainStartTlsCommandsBefore,
+    'Mail SMTP plain delivery skips STARTTLS',
   );
   await smtpServer.close();
   smtpServer = undefined;
@@ -1172,6 +1217,7 @@ try {
         'core.notice.deliveries.mail-smtp-adapter',
         'core.notice.deliveries.mail-smtp-subject',
         'core.notice.deliveries.mail-smtp-attachments',
+        'core.notice.deliveries.mail-smtp-starttls-policy',
         'core.notice.deliveries.outbox-failed-retry-sent-sync',
         'core.notice.deliveries.outbox-callback-signature',
         'core.notice.deliveries.outbox-schedule-retry',
@@ -1386,6 +1432,7 @@ function readHttpRequestBody(request) {
 
 async function startSmokeSmtpServer({ password, username }) {
   const messages = [];
+  const commands = [];
   const server = net.createServer((socket) => {
     socket.setEncoding('utf8');
     let buffer = '';
@@ -1416,9 +1463,12 @@ async function startSmokeSmtpServer({ password, username }) {
         }
 
         const upper = line.toUpperCase();
+        commands.push(upper);
         if (upper.startsWith('EHLO') || upper.startsWith('HELO')) {
           write('250-opencore-smoke');
           write('250 AUTH PLAIN LOGIN');
+        } else if (upper === 'STARTTLS') {
+          write('454 TLS not available');
         } else if (upper.startsWith('AUTH PLAIN')) {
           const encoded = line.split(/\s+/)[2] ?? '';
           const decoded = Buffer.from(encoded, 'base64').toString('utf8');
@@ -1460,6 +1510,7 @@ async function startSmokeSmtpServer({ password, username }) {
   }
 
   return {
+    commands,
     messages,
     port: address.port,
     close: () =>
@@ -1467,6 +1518,11 @@ async function startSmokeSmtpServer({ password, username }) {
         server.close((error) => (error ? reject(error) : resolve()));
       }),
   };
+}
+
+function countSmtpCommands(server, command) {
+  return server.commands.filter((item) => item === command.toUpperCase())
+    .length;
 }
 
 async function request(pathOrUrl, options = {}) {

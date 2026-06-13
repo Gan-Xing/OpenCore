@@ -4,17 +4,16 @@ Date: 2026-06-13
 
 ## Latest Completed Round
 
-Round 79: `integration.mail` SMTP attachments.
+Round 80: `integration.mail` SMTP TLS policy.
 
 ## Closed
 
-- Added bounded first-class mail outbox attachments with Prisma persistence and
-  OpenAPI/SDK/Admin visibility.
-- SMTP delivery now sends attachments as MIME parts while SMS attachment input
-  is rejected.
-- Adapter tests, static smoke, deploy bundle guard and public notice smoke
-  cover the feature.
+- Replaced ambiguous SMTP TLS booleans with explicit `tlsMode` policy values.
+- SMTP adapter rejects deprecated `secure`/`requireTls`/`startTls` config and
+  maps `tlsMode` to Nodemailer `secure`/`requireTLS`/`ignoreTLS`.
+- SDK/Admin/OpenAPI fixtures and deploy bundle guards expose the policy.
+- Notice smoke verifies STARTTLS-required degradation and plain SMTP delivery.
 
 ## Still Open
 
-- Notice still needs realtime push and STARTTLS smoke/policy depth.
+- Notice still needs realtime push.

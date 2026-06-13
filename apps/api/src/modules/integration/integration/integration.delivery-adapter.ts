@@ -52,13 +52,21 @@ type MailSmtpProviderConfig = {
   ehloName: string;
   from: string;
   host: string;
+  ignoreTls: boolean;
   port: number;
   rejectUnauthorized: boolean;
   requireTls: boolean;
   secure: boolean;
+  tlsMode: MailSmtpTlsMode;
   timeoutMs: number;
   username?: string;
 };
+
+type MailSmtpTlsMode =
+  | 'implicit-tls'
+  | 'plain'
+  | 'starttls-optional'
+  | 'starttls-required';
 
 type SmsHttpSecretInjectionTarget = 'body' | 'header' | 'query';
 
@@ -365,6 +373,7 @@ function createMailSmtpTransport(
     connectionTimeout: config.timeoutMs,
     greetingTimeout: config.timeoutMs,
     host: config.host,
+    ignoreTLS: config.ignoreTls,
     name: config.ehloName,
     port: config.port,
     requireTLS: config.requireTls,
@@ -461,12 +470,11 @@ function normalizeMailSmtpProviderConfig(
   provider: IntegrationProviderRecord,
 ): MailSmtpProviderConfig {
   const config = provider.config;
-  const secure = normalizeBoolean(config.secure, false, 'SMTP secure');
-  const requireTls = normalizeBoolean(
-    config.requireTls ?? config.startTls,
-    false,
-    'SMTP requireTls',
-  );
+  assertNoDeprecatedSmtpTlsConfig(config);
+  const tlsMode = normalizeSmtpTlsMode(config.tlsMode);
+  const secure = tlsMode === 'implicit-tls';
+  const requireTls = tlsMode === 'starttls-required';
+  const ignoreTls = tlsMode === 'plain';
   const username = normalizeOptionalTrimmedString(
     config.username,
     'SMTP username',
@@ -478,11 +486,8 @@ function normalizeMailSmtpProviderConfig(
     ehloName: normalizeSmtpEhloName(config.ehloName),
     from: normalizeEmailAddress(config.from, 'SMTP from address'),
     host: normalizeSmtpHost(config.host),
-    port: normalizePort(
-      config.port,
-      secure ? 465 : requireTls ? 587 : 25,
-      'SMTP port',
-    ),
+    ignoreTls,
+    port: normalizePort(config.port, defaultSmtpPort(tlsMode), 'SMTP port'),
     rejectUnauthorized: normalizeBoolean(
       config.rejectUnauthorized,
       true,
@@ -490,6 +495,7 @@ function normalizeMailSmtpProviderConfig(
     ),
     requireTls,
     secure,
+    tlsMode,
     timeoutMs: normalizeTimeoutMs(config.timeoutMs, DEFAULT_SMTP_TIMEOUT_MS),
     username,
   };
@@ -661,6 +667,50 @@ function normalizeSmtpAuthMethod(
   }
 
   throw new Error('SMTP authMethod must be PLAIN or LOGIN.');
+}
+
+function normalizeSmtpTlsMode(value: unknown): MailSmtpTlsMode {
+  if (typeof value !== 'string' || !value.trim()) {
+    throw new Error(
+      'SMTP tlsMode is required and must be plain, starttls-optional, starttls-required or implicit-tls.',
+    );
+  }
+
+  const tlsMode = value.trim().toLowerCase();
+  if (
+    tlsMode === 'plain' ||
+    tlsMode === 'starttls-optional' ||
+    tlsMode === 'starttls-required' ||
+    tlsMode === 'implicit-tls'
+  ) {
+    return tlsMode;
+  }
+
+  throw new Error(
+    'SMTP tlsMode must be plain, starttls-optional, starttls-required or implicit-tls.',
+  );
+}
+
+function assertNoDeprecatedSmtpTlsConfig(
+  config: Record<string, unknown>,
+): void {
+  for (const key of ['secure', 'requireTls', 'startTls']) {
+    if (Object.prototype.hasOwnProperty.call(config, key)) {
+      throw new Error('SMTP tlsMode replaces secure/requireTls/startTls.');
+    }
+  }
+}
+
+function defaultSmtpPort(tlsMode: MailSmtpTlsMode): number {
+  if (tlsMode === 'implicit-tls') {
+    return 465;
+  }
+
+  if (tlsMode === 'starttls-optional' || tlsMode === 'starttls-required') {
+    return 587;
+  }
+
+  return 25;
 }
 
 function normalizeBoolean(

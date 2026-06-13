@@ -10,6 +10,12 @@ export type IntegrationProviderType =
   | 'websocket'
   | 'wechat';
 
+export type IntegrationMailSmtpTlsMode =
+  | 'implicit-tls'
+  | 'plain'
+  | 'starttls-optional'
+  | 'starttls-required';
+
 export type IntegrationProviderSummary = {
   id: string;
   code: string;
@@ -282,8 +288,7 @@ export function createIntegrationFixtures(): IntegrationFixtures {
         from: 'no-reply@opencore.test',
         host: 'smtp.example.test',
         port: 587,
-        requireTls: true,
-        secure: false,
+        tlsMode: 'starttls-required',
         timeoutMs: 10000,
         username: 'smtp-user',
       },

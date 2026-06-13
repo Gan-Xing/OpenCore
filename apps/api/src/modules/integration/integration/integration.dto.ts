@@ -30,7 +30,14 @@ export class IntegrationProviderDto {
   @ApiProperty()
   secretRef!: string;
 
-  @ApiProperty()
+  @ApiProperty({
+    additionalProperties: true,
+    example: {
+      adapter: 'smtp',
+      host: 'smtp.example.test',
+      tlsMode: 'starttls-required',
+    },
+  })
   config!: Record<string, unknown>;
 
   @ApiProperty({ enum: ['unknown', 'healthy', 'degraded', 'disabled'] })
@@ -181,7 +188,14 @@ export class CreateIntegrationProviderDto {
   @ApiProperty()
   secretRef!: string;
 
-  @ApiProperty()
+  @ApiProperty({
+    additionalProperties: true,
+    example: {
+      adapter: 'smtp',
+      host: 'smtp.example.test',
+      tlsMode: 'starttls-required',
+    },
+  })
   config!: Record<string, unknown>;
 }
 
@@ -195,7 +209,15 @@ export class UpdateIntegrationProviderDto {
   @ApiProperty({ required: false })
   secretRef?: string;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({
+    additionalProperties: true,
+    example: {
+      adapter: 'smtp',
+      host: 'smtp.example.test',
+      tlsMode: 'starttls-required',
+    },
+    required: false,
+  })
   config?: Record<string, unknown>;
 }
 

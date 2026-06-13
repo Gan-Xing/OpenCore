@@ -209,6 +209,12 @@ describe('registry fixtures', () => {
     expect(
       JSON.stringify(findIntegrationProviderFixture('sms.http')),
     ).not.toContain('opencore-local-sms-api-key');
+    expect(findIntegrationProviderFixture('mail.smtp')?.config).toMatchObject({
+      tlsMode: 'starttls-required',
+    });
+    expect(
+      JSON.stringify(findIntegrationProviderFixture('mail.smtp')),
+    ).not.toMatch(/"requireTls"|"secure"/);
     expect(
       findIntegrationTemplateFixture('mail', 'mail.welcome')?.enabled,
     ).toBe(true);

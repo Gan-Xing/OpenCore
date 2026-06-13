@@ -9086,7 +9086,15 @@
           "name": { "type": "string" },
           "enabled": { "type": "boolean" },
           "secretRef": { "type": "string" },
-          "config": { "type": "object" },
+          "config": {
+            "type": "object",
+            "additionalProperties": true,
+            "example": {
+              "adapter": "smtp",
+              "host": "smtp.example.test",
+              "tlsMode": "starttls-required"
+            }
+          },
           "healthStatus": {
             "type": "string",
             "enum": ["unknown", "healthy", "degraded", "disabled"]
@@ -9129,7 +9137,15 @@
           "name": { "type": "string" },
           "enabled": { "type": "boolean", "default": false },
           "secretRef": { "type": "string" },
-          "config": { "type": "object" }
+          "config": {
+            "type": "object",
+            "additionalProperties": true,
+            "example": {
+              "adapter": "smtp",
+              "host": "smtp.example.test",
+              "tlsMode": "starttls-required"
+            }
+          }
         },
         "required": ["code", "type", "name", "secretRef", "config"]
       },
@@ -9139,7 +9155,15 @@
           "name": { "type": "string" },
           "enabled": { "type": "boolean" },
           "secretRef": { "type": "string" },
-          "config": { "type": "object" }
+          "config": {
+            "type": "object",
+            "additionalProperties": true,
+            "example": {
+              "adapter": "smtp",
+              "host": "smtp.example.test",
+              "tlsMode": "starttls-required"
+            }
+          }
         }
       },
       "IntegrationProviderDiagnosticLastFailureDto": {

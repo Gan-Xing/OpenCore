@@ -34,7 +34,7 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   provider, Integration outbox bridge, state sync, queued processing and signed
   callback intake plus retry scheduling, SMS HTTP adapter, SMTP adapter and
   mail subject persistence, provider diagnostics, SMS HTTP secret injection and
-  SMTP attachments are live.
+  SMTP attachments plus explicit SMTP TLS policy are live.
 - Config: runtime keys, login policy, feature flags, rollout, audience rules
   and secret-vault encryption are live.
 - Monitor/OpenForge/Scheduler: Monitor Jobs now has a live Admin operation
@@ -73,6 +73,8 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   shape without exposing the secret.
 - Round 79: SMTP attachments are bounded, persisted on mail outbox rows and
   verified through received MIME payload smoke.
+- Round 80: SMTP TLS policy is explicit through `tlsMode`; deprecated TLS
+  booleans are rejected and STARTTLS-required behavior is smoke-guarded.
 
 ## Explicit Non-Claims
 
@@ -83,6 +85,5 @@ and AI/RAG/Agent workflow.
 
 ## Next Focus
 
-Choose one foundation stage from notice realtime, SMTP STARTTLS policy depth,
-config governance, operation-log enrichment, OpenForge Admin or scheduler
-worker parity.
+Choose one foundation stage from notice realtime, config governance,
+operation-log enrichment, OpenForge Admin or scheduler worker parity.

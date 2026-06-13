@@ -21,7 +21,7 @@ admitted waterline.
 - Fixed ports: API `39172`, Admin `39174`, local smoke `39173`.
 - Repeated failures must become tests, smokes or deploy guards:
   deserialization drift, duplicate `/api/api`, stale Admin bundles and revoked
-  session/token behavior.
+  session/token behavior, seed drift.
 - Feature code, tests, deploy guards and docs should land in one commit.
 - Docs-only cleanup gets format/check, commit and push; no redeploy when
   runtime artifacts are unchanged.
@@ -47,7 +47,7 @@ packages and OpenForge direct Prisma/migration/business-code writing.
 
 ## Current State
 
-Cycle-021 has completed 79 deployable stages.
+Cycle-021 has completed 80 deployable stages.
 
 - System/RBAC: notice, dept, post, menu, role, permission, user, dict, config
   and file loops are live.
@@ -61,20 +61,21 @@ Cycle-021 has completed 79 deployable stages.
   delivery records, local provider, Integration outbox bridge, state sync,
   queued processing, signed callback intake, bounded retry scheduling and a
   bounded SMS HTTP adapter plus SMTP mail adapter with outbox subject
-  persistence, provider diagnostics, SMS HTTP secret injection and SMTP
-  attachments.
+  persistence, provider diagnostics, SMS HTTP secret injection, SMTP
+  attachments and explicit SMTP TLS policy.
 - Monitor jobs: API/SDK routes, registry policy, seed job, Admin live list,
   enable/disable, manual trigger, registered handler execution, retry/timeout
   diagnostics and failed run-log detail are smoke-guarded.
 
-Latest runtime stage: Round 79 `integration.mail` SMTP attachments. It adds
-first-class mail outbox attachments with size/count guards, persists them in
-Prisma, sends them through SMTP, exposes metadata through SDK/Admin/OpenAPI and
-verifies the MIME payload through notice smoke and deploy bundle guards.
+Latest runtime stage: Round 80 `integration.mail` SMTP TLS policy. It replaces
+ambiguous SMTP TLS booleans with explicit `tlsMode` values, enforces deprecated
+field rejection in the adapter, exposes the policy through SDK/Admin/OpenAPI
+fixtures and verifies STARTTLS-required degradation plus plain SMTP delivery in
+notice smoke and deploy bundle guards.
 
 ## Next Queue
 
-1. Notice provider reliability: realtime push and STARTTLS smoke/policy depth.
+1. Notice provider reliability: realtime push.
 2. Config governance: multi-environment rollout, external KMS, key rotation
    and secret versions.
 3. Operation-log enrichment: retention scheduling, duration/location fields
