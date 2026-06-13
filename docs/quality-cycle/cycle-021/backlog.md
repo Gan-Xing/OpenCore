@@ -1195,6 +1195,35 @@ but operators still lacked the expected action from the Users page.
       fixed-port smoke, deployment and public URL verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 42: core.post Batch Deletion
+
+Why this slice: after post CRUD, user-post binding and the dedicated
+enabled-post option source were live, the next lowest-dependency `core.post`
+debt was batch deletion. Yudao exposes `delete-list` for posts and its Admin
+post table has selected-row batch deletion. OpenCore already had single post
+delete, strict post-code identity, simple-list smoke and a live Admin Posts
+page, so this round could close the batch-delete loop without opening ordered
+list drag-sort or broader user workflow changes.
+
+- [x] Recompare Yudao/RuoYi post batch deletion shape against OpenCore.
+- [x] Add `BatchDeleteSystemPostsDto` and
+      `SystemPostBatchMutationResultDto`.
+- [x] Add `deletePosts` repository/service contract for seed and Prisma
+      implementations.
+- [x] Validate batch post codes for array shape, non-empty values, duplicates
+      and missing posts before mutation.
+- [x] Add `DELETE /api/core/posts/batch`, guarded by `core:post:delete`,
+      before the dynamic `posts/:code` route.
+- [x] Extend permission matrix, OpenAPI and SDK types/client/tests.
+- [x] Add Admin platform `deleteOpenCoreSystemPosts`.
+- [x] Add Admin Posts row selection and `Delete selected` batch action.
+- [x] Extend Admin static smoke for batch deletion service/UI markers.
+- [x] Extend fixed-port/deploy/public `core.post` smoke with empty,
+      duplicate, missing-code, success and simple-list cleanup guards.
+- [x] Run focused tests, OpenAPI/SDK checks, typecheck, format, build,
+      fixed-port smoke, deployment and public URL verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -1234,9 +1263,8 @@ treat "minimal loop" as "minimal final product".
 - [ ] Round 2/27 `core.dept`: management tree and simple-list option source
       are complete; user binding path hardening, data-scope workflow
       integration and ordered tree operations remain.
-- [ ] Round 3/22/25 `core.post`: user-post binding and simple-list option
-      source are complete; batch operations and ordered list refinements
-      remain.
+- [ ] Round 3/22/25/42 `core.post`: user-post binding, simple-list option
+      source and batch deletion are complete; ordered list refinements remain.
 - [ ] Round 9/24/37/38/39/40 `core.config`: public get-value-by-key, cache refresh
       and mutation invalidation are complete. Category/name/remark metadata is
       complete. Native XLSX export payload and Admin download are complete.
@@ -1277,7 +1305,7 @@ treat "minimal loop" as "minimal final product".
 - Tenant-scoped notices.
 - Department user binding and data-scope assignment UI.
 - Batch department deletion or drag-sort persistence.
-- Batch post deletion and ordered list refinements.
+- Post ordered list refinements.
 - Menu router-generation expansion, menu cache refresh, save-sort and drag-sort
   persistence.
 - Role simple-list endpoints, batch role deletion and standalone data-scope

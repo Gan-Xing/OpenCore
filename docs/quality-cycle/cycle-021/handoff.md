@@ -3,8 +3,8 @@
 Date: 2026-06-13
 Repository: `Gan-Xing/OpenCore`
 Default branch: `main`
-Latest observed feature commit: `fdfbd12 feat(core-user): add dedicated user role assignment / 新增用户侧角色分配`
-Latest deployed feature commit: `fdfbd12 feat(core-user): add dedicated user role assignment / 新增用户侧角色分配`
+Latest observed feature commit: `885fa9e feat(core-post): add batch post deletion / 新增岗位批量删除`
+Latest deployed feature commit: `885fa9e feat(core-post): add batch post deletion / 新增岗位批量删除`
 Latest deployed hardening commit: `04e446c fix(online-user): stabilize admin session smoke / 稳定在线用户管理员会话冒烟`
 
 ## One-sentence Goal
@@ -107,6 +107,7 @@ productization waterline completion; see
 - Round 39 `core.config` batch deletion stage 5
 - Round 40 `core.config` system deletion policy stage 6
 - Round 41 `core.user` dedicated role assignment stage 14
+- Round 42 `core.post` batch deletion stage 3
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -499,6 +500,20 @@ guard、duplicate/missing role guard、clear/restore 以及旧 token 401；公�
 登录均通过。注意：这轮关闭的是准入的用户侧角色分配水位，不等于邮箱/手机号/社交账号等未准入
 用户资料扩展已完成。
 
+Round 42 回到 `core.post` 队列，补齐岗位批量删除闭环。参考 Yudao
+`DELETE /system/post/delete-list` 与 Admin 岗位表格的批量删除按钮，OpenCore 新增
+`DELETE /api/core/posts/batch`，沿用 `core:post:delete` 权限并放在动态
+`posts/:code` 路由之前。seed/Prisma repository 均复用岗位 code 规范化，拒绝空数组、
+重复 code 和缺失 code，并在任何删除前完成全量校验，避免部分删除。SDK、OpenAPI、
+权限矩阵、Admin platform service 和 Admin Posts 页面同步；Posts 页面新增
+`rowSelection`、`Delete selected` 和批量成功反馈。固定 smoke、部署 smoke 和公网
+smoke 均验证 `core.post.batch-delete.*`，包括 empty/duplicate/missing guards、真实两条
+临时岗位批量删除、详情 404 和 simple-list 清理；公网 Admin
+`p__System__Posts.f86b24a4.async.js` 已验证包含 `Delete selected`、
+`Selected posts deleted` 和 `rowSelection`，公网 Admin 同源代理真实创建两条岗位并通过
+`/api/core/posts/batch` 删除成功。注意：这轮关闭的是岗位批量删除，不等于有序列表/拖拽排序
+等未准入岗位排序增强已完成。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -509,7 +524,7 @@ The productization waterline now classifies:
   Round 8/21 `core.dict`,
   Round 7/19/22/23/28/29/30/31/32/33/34/35/36/41 `core.user`.
 - First loop, enhance: Round 1 `core.notice`, Round 2/27 `core.dept`, Round
-  3/22/25 `core.post`, Round 9/24/37/38/39/40 `core.config`, Round 11/26
+  3/22/25/42 `core.post`, Round 9/24/37/38/39/40 `core.config`, Round 11/26
   `core.login-log`.
 - Thin, rework: none after Round 16.
 
@@ -532,8 +547,9 @@ finds another blocker:
    source consumed by Admin Users. Remaining work is user binding path
    hardening, data-scope workflow integration and ordered tree operations where
    useful.
-4. `core.post`: Round 25 closed the enabled-post simple-list option source.
-   Remaining work is batch operations and ordered list operations where useful.
+4. `core.post`: Round 25 closed the enabled-post simple-list option source;
+   Round 42 closed batch deletion with Admin selected-row deletion and strict
+   batch guards. Remaining work is ordered list operations where useful.
 5. `core.notice`: read/unread state, inbox/header badge and delivery adapter
    design remain below full notice-product depth.
 

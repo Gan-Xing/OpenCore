@@ -3335,3 +3335,85 @@ Against public endpoints after deploy:
   `fdfbd12 feat(core-user): add dedicated user role assignment / 新增用户侧角色分配`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 42 Capability
+
+Capability: `core.post` batch deletion.
+
+Goal: close the next `core.post` foundation gap by adding selected-row batch
+deletion across API/SDK/Admin while preserving strict all-or-nothing validation
+before mutation.
+
+## Round 42 Implemented
+
+- Rechecked Yudao post `delete-list` and Admin table batch-delete shape.
+- Added `BatchDeleteSystemPostsDto` and
+  `SystemPostBatchMutationResultDto`.
+- Added `deletePosts` to the post repository/service contracts.
+- Implemented seed and Prisma batch delete with array/non-empty/duplicate code
+  validation and missing-post preflight before deleting anything.
+- Added `DELETE /api/core/posts/batch`, guarded by `core:post:delete`, before
+  the dynamic `posts/:code` route.
+- Extended API permission matrix, OpenAPI snapshot and SDK types/client/tests.
+- Added Admin platform `deleteOpenCoreSystemPosts`.
+- Added Admin Posts `rowSelection`, `Delete selected`, loading state and
+  selected-row cleanup.
+- Extended Admin static smoke and `tools/scripts/smoke-core-post.mjs` with
+  batch-delete service/UI markers and real HTTP guards.
+
+## Round 42 Verification
+
+- `pnpm nx test system --testFile=system-post.spec.ts`
+- `pnpm nx test api --testFile=system-management.permission-matrix.spec.ts`
+- `pnpm nx test sdk --testFile=system-management-client.spec.ts`
+- `pnpm nx test admin`
+- `node --check tools/scripts/smoke-core-post.mjs`
+- `node --check apps/admin/scripts/smoke-test.mjs`
+- `pnpm openapi:export`
+- `pnpm openapi:check`
+- `pnpm sdk:check`
+- `pnpm openapi:registry-tags:check`
+- `pnpm nx run-many -t typecheck --projects=api,admin,sdk,system,module-registry,contracts`
+- `pnpm prisma:validate`
+- `pnpm build:api`
+- `pnpm build:admin`
+- `pnpm format:check`
+- `git diff --check`
+- `pnpm smoke:api:local`
+- `pnpm deploy:opencore`
+
+`pnpm smoke:api:local` passed on fixed port `39173`, including
+`core.post.batch-delete.empty-guard`,
+`core.post.batch-delete.duplicate-guard`,
+`core.post.batch-delete.missing-guard`,
+`core.post.batch-delete` and
+`core.post.batch-delete.simple-list-cleanup`.
+
+`pnpm deploy:opencore` passed, deploying API/Admin on fixed ports
+`39172`/`39174`; deploy smoke included the same `core.post` batch-delete
+guards, duplicate `/api/api` login guards, Admin bundle cache checks and
+session guards.
+
+## Round 42 Public Verification
+
+Against public endpoints after deploy:
+
+- Public API: `http://144.217.243.161:39172`
+- Public Admin: `http://144.217.243.161:39174`
+- Public `pnpm smoke:core-post` passed and included all
+  `core.post.batch-delete.*` guards.
+- Public Admin Posts chunk `p__System__Posts.f86b24a4.async.js` contains
+  `Delete selected`, `Selected posts deleted` and `rowSelection`.
+- Public Admin main bundle `umi.d7bf768f.js` contains the deployed API origin
+  and does not contain duplicate `/api/api` auth prefixes.
+- Public Admin same-origin `/api/auth/login` succeeded.
+- Public Admin same-origin `/api/core/posts` created two temporary posts, and
+  `/api/core/posts/batch` deleted both with `affected=2`; both detail endpoints
+  then returned 404.
+
+## Round 42 Commit Record
+
+- Feature commit:
+  `885fa9e feat(core-post): add batch post deletion / 新增岗位批量删除`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

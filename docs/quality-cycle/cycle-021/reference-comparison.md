@@ -1268,3 +1268,31 @@ code model and existing session store:
 
 OpenCore does not claim email/phone/social profile expansion in this round;
 those remain outside the currently admitted user-management waterline.
+
+## Round 42 Post Batch Deletion Reference Shape
+
+Yudao exposes post batch deletion as `DELETE /system/post/delete-list`, guarded
+by `system:post:delete`. Its Vue3 Admin post API provides `deletePostList(ids)`
+and the post table exposes a selected-row `批量删除` action that is disabled
+until rows are selected. RuoYi has the same management-table expectation around
+selected post deletion, paired with single delete and export.
+
+OpenCore admits the matching stage-3 post batch-delete loop while preserving
+its stable string `code` identity:
+
+- `DELETE /api/core/posts/batch` is guarded by `core:post:delete`;
+- the request body is `{ codes: string[] }`, because OpenCore post identity is
+  the stable post code rather than a numeric id;
+- the static `posts/batch` route is registered before `posts/:code`;
+- empty arrays, non-string/empty codes, duplicate codes and missing posts are
+  rejected before mutation;
+- successful deletion returns `{ deleted: true, affected, codes }`;
+- SDK and OpenAPI expose typed `deletePosts` contracts;
+- Admin Posts adds selected-row deletion through `rowSelection` and
+  `Delete selected`;
+- fixed-port, deploy and public smoke prove the guard path, successful
+  deletion, `posts/simple-list` cleanup, deployed Admin chunk markers and
+  Admin same-origin proxy behavior.
+
+OpenCore does not claim ordered list persistence, drag-sort operations or
+post-user workflow expansion in this round.

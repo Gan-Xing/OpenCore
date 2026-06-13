@@ -63,6 +63,6 @@ not mark the entire post product as complete.
 
 ## Remaining post.product Debt
 
-- Batch post deletion.
+- Batch post deletion was completed later in Round 42.
 - Ordered list refinements / drag-sort persistence if admitted.
 - Broader batch assignment workflows where they belong to user/role surfaces.
