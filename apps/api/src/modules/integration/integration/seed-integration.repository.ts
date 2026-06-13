@@ -27,6 +27,10 @@ import {
   type OAuthCallbackContractRecord,
 } from './integration.seed';
 import {
+  deliverOutboxMessage,
+  evaluateProviderDeliveryHealth,
+} from './integration.delivery-adapter';
+import {
   assertOutboxCallbackProviderMatch,
   assertOutboxCallbackSignature,
   assertProviderReadyForOutbox,
@@ -138,7 +142,7 @@ export class SeedIntegrationRepository extends IntegrationRepository {
 
   async checkProviderHealth(code: string): Promise<IntegrationProviderRecord> {
     const provider = this.findProvider(code);
-    provider.healthStatus = provider.enabled ? 'healthy' : 'disabled';
+    provider.healthStatus = evaluateProviderDeliveryHealth(provider).status;
     provider.lastCheckedAt = new Date().toISOString();
     return redactProvider(provider);
   }
@@ -342,6 +346,7 @@ export class SeedIntegrationRepository extends IntegrationRepository {
         providerCode,
         attemptedCount: 0,
         sentCount: 0,
+        failedCount: 0,
         skippedCount: 0,
         queuedCount: this.countQueuedOutbox(channel, providerCode),
       };
@@ -357,20 +362,49 @@ export class SeedIntegrationRepository extends IntegrationRepository {
       });
     }
 
+    const providers = new Map(
+      [...new Set(queued.map((message) => message.providerCode))].map(
+        (code) => [code, this.findProvider(code)] as const,
+      ),
+    );
+    let sentCount = 0;
+    let failedCount = 0;
     const sentAt = new Date().toISOString();
     for (const message of queued) {
-      Object.assign(message, {
-        status: 'sent' as const,
-        error: undefined,
-        sentAt,
+      const provider = requireRecord(
+        providers.get(message.providerCode),
+        'Integration provider',
+        message.providerCode,
+      );
+      const delivery = await deliverOutboxMessage({
+        channel,
+        provider,
+        message,
       });
+      if (delivery.status === 'sent') {
+        Object.assign(message, {
+          status: 'sent' as const,
+          error: undefined,
+          sentAt,
+        });
+        sentCount += 1;
+      } else {
+        Object.assign(message, {
+          status: 'failed' as const,
+          retryCount: message.retryCount + 1,
+          error: delivery.error ?? 'Provider delivery failed.',
+          sentAt: undefined,
+        });
+        failedCount += 1;
+      }
     }
 
     return {
       channel,
       providerCode,
       attemptedCount: queued.length,
-      sentCount: queued.length,
+      sentCount,
+      failedCount,
       skippedCount: 0,
       queuedCount: this.countQueuedOutbox(channel, providerCode),
     };

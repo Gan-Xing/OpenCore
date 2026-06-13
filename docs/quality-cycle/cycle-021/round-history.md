@@ -20,8 +20,8 @@ only; the ledger keeps state transitions and git log keeps commits.
   type/result schema, lockout/unlock, cleanup and attempt limits.
 - Rounds 50-59: logout audit semantics, dept/post ordering, data-scope,
   notice inbox/read analytics, feature flags and login-log location.
-- Rounds 60-71: notice templates, delivery records, local/outbox providers,
-  config secret vault, feature-flag rollout/audience, outbox
+- Rounds 60-72: notice templates, delivery records, local/outbox providers,
+  SMS HTTP adapter, config secret vault, feature-flag rollout/audience, outbox
   state/process/callback/schedule handling and operation-log cleanup.
 
 ## Rework Notes

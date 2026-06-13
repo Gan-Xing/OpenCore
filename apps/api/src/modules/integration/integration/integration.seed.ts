@@ -21,6 +21,7 @@ export const seedIntegrationProviders: readonly IntegrationProviderRecord[] = [
     enabled: false,
     secretRef: 'secret://integration/mail/sandbox',
     config: {
+      adapter: 'sandbox',
       host: 'smtp.example.test',
       port: 587,
       clientSecret: '[REDACTED]',
@@ -35,6 +36,7 @@ export const seedIntegrationProviders: readonly IntegrationProviderRecord[] = [
     enabled: false,
     secretRef: 'secret://integration/sms/sandbox',
     config: {
+      adapter: 'sandbox',
       endpoint: 'https://sms.example.test',
       token: '[REDACTED]',
     },

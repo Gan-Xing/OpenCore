@@ -53,5 +53,8 @@ docs. Commit-level detail is available from git history.
 - 2026-06-13 19:25:23 UTC completed cycle-021 round-071 `core.notice`
   outbox retry scheduling; deployed=39172/39174;
   publicVerified=notice-outbox-schedule-retry,admin-notices-run-outbox-schedule,openapi-integration-outbox-schedule.
-- Latest deployed runtime: round-071 `core.notice` outbox retry scheduling on
+- 2026-06-13 20:05:33 UTC completed cycle-021 round-072 `core.notice` SMS
+  HTTP provider adapter; deployed=39172/39174;
+  publicVerified=notice-sms-http-adapter,admin-provider-sms-http-adapter,openapi-integration-process-failed-count.
+- Latest deployed runtime: round-072 `core.notice` SMS HTTP provider adapter on
   API `39172` and Admin `39174`.

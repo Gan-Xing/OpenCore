@@ -330,6 +330,9 @@ export class IntegrationOutboxProcessResultDto {
   sentCount!: number;
 
   @ApiProperty()
+  failedCount!: number;
+
+  @ApiProperty()
   skippedCount!: number;
 
   @ApiProperty()
@@ -368,6 +371,9 @@ export class IntegrationOutboxScheduleResultDto {
 
   @ApiProperty()
   sentCount!: number;
+
+  @ApiProperty()
+  failedCount!: number;
 
   @ApiProperty()
   skippedCount!: number;

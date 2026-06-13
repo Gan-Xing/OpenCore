@@ -178,8 +178,13 @@ verify_admin_bundle_api_base_url() {
     --fixed-strings \
     --include='*.js' \
     "/api/integrations/sms/outbox/callback" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "SMS HTTP adapter" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null; then
-    echo "Admin bundle does not include integration signed callback contracts." >&2
+    echo "Admin bundle does not include integration signed callback and SMS HTTP adapter contracts." >&2
     echo "Refusing to deploy a stale frontend integration provider page." >&2
     exit 1
   fi
@@ -263,6 +268,11 @@ verify_admin_bundle_api_base_url() {
     --fixed-strings \
     --include='*.js' \
     "Run outbox schedule" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "failedCount" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null || \
     ! grep -R \
     --fixed-strings \

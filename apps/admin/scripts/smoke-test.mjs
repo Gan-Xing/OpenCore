@@ -1180,6 +1180,7 @@ if (
   !systemNoticesPage.includes('Process queued outbox') ||
   !systemNoticesPage.includes('Run outbox schedule') ||
   !systemNoticesPage.includes('runOpenCoreIntegrationOutboxSchedule') ||
+  !systemNoticesPage.includes('result.failedCount') ||
   !systemNoticesPage.includes('Mark outbox sent') ||
   !systemNoticesPage.includes('System Notice Delivery Records') ||
   !systemNoticesPage.includes('System Notice Inbox Detail') ||
@@ -1351,12 +1352,14 @@ if (
   !providersPage.includes("label: 'Secret Ref'") ||
   !providersPage.includes('selected?.secretRef, sensitive: true') ||
   !providersPage.includes('Signed callback contract') ||
+  !providersPage.includes('SMS HTTP adapter') ||
+  !providersPage.includes('allowlisted endpoint + status contract') ||
   !providersPage.includes('/api/integrations/mail/outbox/callback') ||
   !providersPage.includes('/api/integrations/sms/outbox/callback') ||
   !providersPage.includes('HMAC-SHA256')
 ) {
   throw new Error(
-    'Integration provider list and detail must redact scalar secret references and show signed callback contracts.',
+    'Integration provider list and detail must redact scalar secret references and show signed callback/provider adapter contracts.',
   );
 }
 

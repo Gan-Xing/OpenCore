@@ -29,15 +29,16 @@ schema/business-code writing.
   runtime login policy.
 - Rounds 50-59: logout audit semantics, ordering, data-scope, notice
   inbox/read analytics, feature flags and login-log location.
-- Rounds 60-71: notice template/delivery/provider/outbox work, config vault
-  and rollout/audience, plus operation-log cleanup.
+- Rounds 60-72: notice template/delivery/provider/outbox work, SMS HTTP
+  adapter, config vault and rollout/audience, plus operation-log cleanup.
 
-Latest done: Round 71 outbox retry scheduling with bounded retry caps,
-provider/channel validation and delivery-state sync.
+Latest done: Round 72 SMS HTTP provider adapter with endpoint allowlisting,
+bounded request config, failedCount reporting and failed delivery-state sync.
 
 ## Active P1/P2 Queue
 
-1. Notice provider reliability: real SMTP/SMS adapters and realtime push.
+1. Notice provider reliability: SMTP adapter, provider-secret injection and
+   realtime push.
 2. Config governance: multi-environment rollout, external KMS, key rotation
    and secret version history.
 3. Operation-log enrichment: retention scheduling, duration/location fields

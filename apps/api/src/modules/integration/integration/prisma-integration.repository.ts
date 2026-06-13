@@ -29,6 +29,11 @@ import {
   type OAuthCallbackContractRecord,
 } from './integration.seed';
 import {
+  deliverOutboxMessage,
+  evaluateProviderDeliveryHealth,
+  type OutboxDeliveryResult,
+} from './integration.delivery-adapter';
+import {
   assertOutboxCallbackProviderMatch,
   assertOutboxCallbackSignature,
   assertProviderReadyForOutbox,
@@ -182,10 +187,11 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
 
   async checkProviderHealth(code: string): Promise<IntegrationProviderRecord> {
     const existing = await this.findProvider(code);
+    const health = evaluateProviderDeliveryHealth(existing);
     const provider = await this.prisma.integrationProvider.update({
       where: { code },
       data: {
-        healthStatus: existing.enabled ? 'healthy' : 'disabled',
+        healthStatus: health.status,
         lastCheckedAt: new Date(),
       },
     });
@@ -429,11 +435,13 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
         providerCode,
         attemptedCount: 0,
         sentCount: 0,
+        failedCount: 0,
         skippedCount: 0,
         queuedCount: await this.countQueuedOutbox(channel, providerCode),
       };
     }
 
+    const providers = new Map<string, IntegrationProviderRecord>();
     for (const code of new Set(queuedRows.map((row) => row.providerCode))) {
       const provider = await this.findProvider(code);
       assertProviderReadyForOutbox({
@@ -442,25 +450,56 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
         enabled: provider.enabled,
         channel,
       });
+      providers.set(code, provider);
+    }
+
+    const deliveries: Array<{
+      row: OutboxRow;
+      result: OutboxDeliveryResult;
+    }> = [];
+    for (const row of queuedRows) {
+      const provider = requireRecord(
+        providers.get(row.providerCode),
+        'Integration provider',
+        row.providerCode,
+      );
+      deliveries.push({
+        row,
+        result: await deliverOutboxMessage({
+          channel,
+          provider,
+          message: toOutboxRecord(row),
+        }),
+      });
     }
 
     const now = new Date();
-    const sentRows = await this.prisma.$transaction(async (tx) => {
+    const updatedRows = await this.prisma.$transaction(async (tx) => {
       const updatedRows: OutboxRow[] = [];
 
-      for (const row of queuedRows) {
+      for (const delivery of deliveries) {
+        const deliveryFailed = delivery.result.status === 'failed';
+        const error = delivery.result.error ?? 'Provider delivery failed.';
         const updated = await tx.integrationOutbox.update({
-          where: { id: row.id },
-          data: {
-            status: 'sent',
-            error: null,
-            sentAt: now,
-          },
+          where: { id: delivery.row.id },
+          data: deliveryFailed
+            ? {
+                status: 'failed',
+                retryCount: { increment: 1 },
+                error,
+                sentAt: null,
+              }
+            : {
+                status: 'sent',
+                error: null,
+                sentAt: now,
+              },
         });
         await syncNoticeDeliveryFromOutbox(tx, updated, {
-          status: 'sent',
+          status: deliveryFailed ? 'failed' : 'sent',
           now,
           previousOutboxStatus: 'queued',
+          error: deliveryFailed ? error : undefined,
         });
         updatedRows.push(updated);
       }
@@ -472,7 +511,8 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
       channel,
       providerCode,
       attemptedCount: queuedRows.length,
-      sentCount: sentRows.length,
+      sentCount: updatedRows.filter((row) => row.status === 'sent').length,
+      failedCount: updatedRows.filter((row) => row.status === 'failed').length,
       skippedCount: 0,
       queuedCount: await this.countQueuedOutbox(channel, providerCode),
     };

@@ -157,6 +157,7 @@ export type IntegrationOutboxProcessResult = {
   providerCode?: string;
   attemptedCount: number;
   sentCount: number;
+  failedCount: number;
   skippedCount: number;
   queuedCount: number;
 };
@@ -175,6 +176,7 @@ export type IntegrationOutboxScheduleResult = {
   retriedCount: number;
   attemptedCount: number;
   sentCount: number;
+  failedCount: number;
   skippedCount: number;
   queuedCount: number;
 };
@@ -214,6 +216,7 @@ export function createIntegrationFixtures(): IntegrationFixtures {
       enabled: false,
       secretRef: 'secret://integration/mail/sandbox',
       config: {
+        adapter: 'sandbox',
         host: 'smtp.example.test',
         clientSecret: '[REDACTED]',
       },

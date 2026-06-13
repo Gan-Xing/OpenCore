@@ -3,6 +3,10 @@ import { createOutboxCallbackSignature } from './integration.repository';
 import { SeedIntegrationRepository } from './seed-integration.repository';
 
 describe('IntegrationRepository', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it('builds a bounded integration center summary', async () => {
     const repository = new SeedIntegrationRepository();
 
@@ -215,6 +219,7 @@ describe('IntegrationRepository', () => {
       providerCode: 'mail.sandbox',
       attemptedCount: 1,
       sentCount: 1,
+      failedCount: 0,
     });
 
     const processed = (await repository.listOutbox('mail', { status: 'sent' }))
@@ -253,6 +258,7 @@ describe('IntegrationRepository', () => {
       retriedCount: 1,
       attemptedCount: 1,
       sentCount: 1,
+      failedCount: 0,
       queuedCount: 0,
       channels: [
         {
@@ -264,6 +270,7 @@ describe('IntegrationRepository', () => {
             providerCode: 'mail.sandbox',
             attemptedCount: 1,
             sentCount: 1,
+            failedCount: 0,
             queuedCount: 0,
           },
         },
@@ -293,6 +300,7 @@ describe('IntegrationRepository', () => {
       retriedCount: 0,
       attemptedCount: 0,
       sentCount: 0,
+      failedCount: 0,
     });
     await expect(
       capped.getOutboxMessage('mail', 'outbox_mail_1'),
@@ -311,6 +319,149 @@ describe('IntegrationRepository', () => {
         providerCode: 'mail.sandbox',
       }),
     ).rejects.toThrow(BadRequestException);
+  });
+
+  it('delivers SMS outbox through the bounded HTTP adapter', async () => {
+    const repository = new SeedIntegrationRepository();
+    const fetchMock = jest.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response('', {
+        status: 202,
+      }),
+    );
+
+    await repository.createProvider({
+      code: 'sms.http',
+      type: 'sms',
+      name: 'SMS HTTP',
+      enabled: true,
+      secretRef: 'secret://integration/sms/http',
+      config: {
+        adapter: 'http',
+        endpoint: 'https://sms.gateway.test/send',
+        allowedHosts: ['sms.gateway.test'],
+        method: 'POST',
+        successStatus: 202,
+        timeoutMs: 1000,
+        headers: {
+          'x-provider': 'opencore-smoke',
+        },
+      },
+    });
+    const queued = await repository.enqueueOutbox('sms', {
+      providerCode: 'sms.http',
+      templateCode: 'sms.otp',
+      recipient: '+15551234567',
+      payload: { code: '123456' },
+    });
+
+    await expect(
+      repository.processOutbox('sms', { providerCode: 'sms.http' }),
+    ).resolves.toMatchObject({
+      channel: 'sms',
+      providerCode: 'sms.http',
+      attemptedCount: 1,
+      sentCount: 1,
+      failedCount: 0,
+      queuedCount: 0,
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.any(URL),
+      expect.objectContaining({
+        method: 'POST',
+        body: expect.any(String),
+      }),
+    );
+    const requestBody = JSON.parse(
+      String((fetchMock.mock.calls[0]?.[1] as RequestInit).body),
+    ) as Record<string, unknown>;
+    expect(requestBody).toMatchObject({
+      messageId: queued.id,
+      providerCode: 'sms.http',
+      recipient: '+15551234567',
+      message: 'Your verification code is 123456.',
+    });
+    await expect(
+      repository.getOutboxMessage('sms', queued.id),
+    ).resolves.toMatchObject({
+      status: 'sent',
+      retryCount: 0,
+      error: undefined,
+      sentAt: expect.any(String),
+    });
+
+    fetchMock.mockResolvedValueOnce(new Response('', { status: 500 }));
+    const failed = await repository.enqueueOutbox('sms', {
+      providerCode: 'sms.http',
+      templateCode: 'sms.otp',
+      recipient: '+15557654321',
+      payload: { code: '654321' },
+    });
+    await expect(
+      repository.processOutbox('sms', { providerCode: 'sms.http' }),
+    ).resolves.toMatchObject({
+      attemptedCount: 1,
+      sentCount: 0,
+      failedCount: 1,
+      queuedCount: 0,
+    });
+    await expect(
+      repository.getOutboxMessage('sms', failed.id),
+    ).resolves.toMatchObject({
+      status: 'failed',
+      retryCount: 1,
+      error: 'SMS HTTP provider returned status 500.',
+      sentAt: undefined,
+    });
+
+    fetchMock.mockRestore();
+  });
+
+  it('marks invalid SMS HTTP provider config degraded and fails delivery', async () => {
+    const repository = new SeedIntegrationRepository();
+    const fetchMock = jest.spyOn(globalThis, 'fetch');
+
+    await repository.createProvider({
+      code: 'sms.bad-http',
+      type: 'sms',
+      name: 'Bad SMS HTTP',
+      enabled: true,
+      secretRef: 'secret://integration/sms/bad-http',
+      config: {
+        adapter: 'http',
+        endpoint: 'https://sms.gateway.test/send',
+        allowedHosts: ['other.test'],
+      },
+    });
+    await expect(
+      repository.checkProviderHealth('sms.bad-http'),
+    ).resolves.toMatchObject({
+      healthStatus: 'degraded',
+      lastCheckedAt: expect.any(String),
+    });
+    const queued = await repository.enqueueOutbox('sms', {
+      providerCode: 'sms.bad-http',
+      templateCode: 'sms.otp',
+      recipient: '+15551230000',
+      payload: { code: '123456' },
+    });
+    await expect(
+      repository.processOutbox('sms', { providerCode: 'sms.bad-http' }),
+    ).resolves.toMatchObject({
+      attemptedCount: 1,
+      sentCount: 0,
+      failedCount: 1,
+      queuedCount: 0,
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+    await expect(
+      repository.getOutboxMessage('sms', queued.id),
+    ).resolves.toMatchObject({
+      status: 'failed',
+      retryCount: 1,
+      error: expect.stringContaining('host is not allowlisted'),
+    });
+
+    fetchMock.mockRestore();
   });
 
   it('accepts only signed outbox provider callbacks', async () => {

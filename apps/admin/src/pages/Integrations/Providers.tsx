@@ -153,6 +153,7 @@ export default function ProvidersPage() {
           title="Signed callback contract"
           value={signedCallbackContract.algorithm}
         />
+        <Statistic title="SMS HTTP adapter" value="allowlisted" />
         <Statistic
           title="Design topics"
           value={summary.designs.designOnlyTopics}
@@ -194,6 +195,10 @@ export default function ProvidersPage() {
           {
             label: 'Signed Callback Contract',
             value: signedCallbackContract.algorithm,
+          },
+          {
+            label: 'SMS HTTP Adapter',
+            value: 'allowlisted endpoint + status contract',
           },
           {
             label: 'Mail Callback Path',

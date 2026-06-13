@@ -794,7 +794,7 @@ export default function SystemNoticesPage() {
       providerCode: record.provider,
     });
     message.success(
-      `${channel} outbox processed: ${result.sentCount} sent, ${result.queuedCount} queued.`,
+      `${channel} outbox processed: ${result.sentCount} sent, ${result.failedCount} failed, ${result.queuedCount} queued.`,
     );
     await refreshOpenDeliveries();
   };
@@ -807,7 +807,7 @@ export default function SystemNoticesPage() {
       limit: 100,
     });
     message.success(
-      `Outbox schedule run: ${result.retriedCount} retried, ${result.sentCount} sent, ${result.queuedCount} queued.`,
+      `Outbox schedule run: ${result.retriedCount} retried, ${result.sentCount} sent, ${result.failedCount} failed, ${result.queuedCount} queued.`,
     );
     await loadInbox();
     await refreshOpenDeliveries();

@@ -362,6 +362,10 @@ export function createOutboxScheduleResult(input: {
       (sum, channel) => sum + channel.process.sentCount,
       0,
     ),
+    failedCount: input.channels.reduce(
+      (sum, channel) => sum + channel.process.failedCount,
+      0,
+    ),
     skippedCount: input.channels.reduce(
       (sum, channel) => sum + channel.process.skippedCount,
       0,

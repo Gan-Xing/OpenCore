@@ -726,6 +726,7 @@ try {
     1,
     'SMS schedule sent count',
   );
+  assertEqual(processedSmsOutbox.failedCount, 0, 'SMS schedule failed count');
   const sentSmsOutbox = await apiRequest(
     `/integrations/sms/outbox/${encodeURIComponent(smsDelivery.providerMessageId)}`,
   );
@@ -750,6 +751,64 @@ try {
       body: { error: 'too late' },
     },
   );
+
+  const smsHttpProviderCode = 'sms.http.smoke';
+  const smsHttpEndpoint = `${baseUrl}/health/live`;
+  const smsHttpHost = new URL(smsHttpEndpoint).host;
+  await upsertIntegrationProvider(smsHttpProviderCode, {
+    type: 'sms',
+    name: 'SMS HTTP Smoke',
+    enabled: true,
+    secretRef: 'secret://integration/sms/http-smoke',
+    config: {
+      adapter: 'http',
+      endpoint: smsHttpEndpoint,
+      allowedHosts: [smsHttpHost],
+      method: 'GET',
+      successStatus: 200,
+      timeoutMs: 5000,
+    },
+  });
+  await apiRequest(
+    `/integrations/providers/${encodeURIComponent(smsHttpProviderCode)}/health-check`,
+    {
+      method: 'POST',
+    },
+  ).then((provider) => {
+    assertEqual(provider.healthStatus, 'healthy', 'SMS HTTP provider health');
+  });
+  const smsHttpOutbox = await apiRequest('/integrations/sms/outbox', {
+    method: 'POST',
+    body: {
+      providerCode: smsHttpProviderCode,
+      templateCode: 'sms.otp',
+      recipient: '+15559876543',
+      payload: { code: '872341' },
+    },
+  });
+  assertEqual(smsHttpOutbox.status, 'queued', 'SMS HTTP outbox queued status');
+  const smsHttpProcess = await apiRequest('/integrations/sms/outbox/process', {
+    method: 'POST',
+    body: {
+      providerCode: smsHttpProviderCode,
+      limit: 100,
+    },
+  });
+  assertNumberAtLeast(
+    smsHttpProcess.attemptedCount,
+    1,
+    'SMS HTTP process attempted count',
+  );
+  assertNumberAtLeast(
+    smsHttpProcess.sentCount,
+    1,
+    'SMS HTTP process sent count',
+  );
+  assertEqual(smsHttpProcess.failedCount, 0, 'SMS HTTP process failed count');
+  const sentSmsHttpOutbox = await apiRequest(
+    `/integrations/sms/outbox/${encodeURIComponent(smsHttpOutbox.id)}`,
+  );
+  assertEqual(sentSmsHttpOutbox.status, 'sent', 'SMS HTTP outbox sent status');
 
   const inboxItem = await apiRequest(
     `/core/notices/inbox/${encodeURIComponent(draftNotice.id)}`,
@@ -894,6 +953,7 @@ try {
         'core.notice.deliveries.outbox-callback-signature',
         'core.notice.deliveries.outbox-schedule-retry',
         'core.notice.deliveries.sms-outbox-provider',
+        'core.notice.deliveries.sms-http-adapter',
         'core.notice.inbox.unread-item',
         'core.notice.inbox.unread-page',
         'core.notice.inbox.unread-list',
@@ -995,6 +1055,33 @@ async function apiRequest(path, options = {}) {
     ...options,
     token,
   });
+}
+
+async function upsertIntegrationProvider(code, body) {
+  try {
+    await apiRequest(`/integrations/providers/${encodeURIComponent(code)}`);
+    return apiRequest(`/integrations/providers/${encodeURIComponent(code)}`, {
+      method: 'PATCH',
+      body: {
+        name: body.name,
+        enabled: body.enabled,
+        secretRef: body.secretRef,
+        config: body.config,
+      },
+    });
+  } catch (error) {
+    if (error instanceof HttpStatusError && error.status === 404) {
+      return apiRequest('/integrations/providers', {
+        method: 'POST',
+        body: {
+          code,
+          ...body,
+        },
+      });
+    }
+
+    throw error;
+  }
 }
 
 async function request(pathOrUrl, options = {}) {

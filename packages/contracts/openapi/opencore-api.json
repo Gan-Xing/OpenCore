@@ -9113,6 +9113,7 @@
           "providerCode": { "type": "string" },
           "attemptedCount": { "type": "number" },
           "sentCount": { "type": "number" },
+          "failedCount": { "type": "number" },
           "skippedCount": { "type": "number" },
           "queuedCount": { "type": "number" }
         },
@@ -9120,6 +9121,7 @@
           "channel",
           "attemptedCount",
           "sentCount",
+          "failedCount",
           "skippedCount",
           "queuedCount"
         ]
@@ -9150,6 +9152,7 @@
           "retriedCount": { "type": "number" },
           "attemptedCount": { "type": "number" },
           "sentCount": { "type": "number" },
+          "failedCount": { "type": "number" },
           "skippedCount": { "type": "number" },
           "queuedCount": { "type": "number" }
         },
@@ -9160,6 +9163,7 @@
           "retriedCount",
           "attemptedCount",
           "sentCount",
+          "failedCount",
           "skippedCount",
           "queuedCount"
         ]
