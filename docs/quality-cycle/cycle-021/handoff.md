@@ -3,8 +3,8 @@
 Date: 2026-06-13
 Repository: `Gan-Xing/OpenCore`
 Default branch: `main`
-Latest observed feature commit: `167bf08 feat(login-log): add login type result schema / 新增登录日志类型结果模型`
-Latest deployed feature commit: `167bf08 feat(login-log): add login type result schema / 新增登录日志类型结果模型`
+Latest observed feature commit: `b0b23ee feat(core-config): add runtime login policy / 新增运行时登录策略`
+Latest deployed feature commit: `b0b23ee feat(core-config): add runtime login policy / 新增运行时登录策略`
 Latest deployed hardening commit: `4df5dd1 fix(system): satisfy xlsx export lint guard / 修复 XLSX 导出 lint 守卫`
 
 ## One-sentence Goal
@@ -111,6 +111,7 @@ productization waterline completion; see
 - Round 43 `core.dept` user-binding delete guard stage 3
 - Round 44 `core.config` runtime Admin config stage 7
 - Round 45 `core.login-log` login type/result schema stage 3
+- Round 46 `core.config` runtime login policy stage 8
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -561,6 +562,23 @@ Result，固定 smoke、部署 smoke 和公网 smoke 均验证 `core.login-log.r
 让全仓 lint gate 通过。注意：这轮关闭的是 login-log type/result schema expansion，不等于
 IP location enrichment、日志删除/清空、用户解锁或 lockout policy 调优已经完成。
 
+Round 46 继续补齐 `core.config` 队列，把内置 `auth.login.lockoutMinutes` 从“配置表存在但
+runtime 不可消费”的状态推进到运行时登录策略 summary。参考 RuoYi 的 `getConfigKey`、验证码/
+账号策略配置读取，以及 Yudao `ConfigApi.getConfigValueByKey(...)` 被用户注册等业务运行时调用，
+OpenCore 本轮将 `auth.login.lockoutMinutes` 调整为 public system config，并通过
+`GET /api/core/config/runtime` 返回 `loginLockoutMinutes`。系统配置 repository 现在校验
+boolean/number value 字符串，service 额外保护 runtime keys：`opencore.admin.title` 必须保持
+public string，`auth.login.lockoutMinutes` 必须保持 public number 且为 1-1440 的整数。Admin
+`getInitialState` 保留完整 runtimeConfig，登录页展示 Login lockout window；SDK/OpenAPI/Admin
+static smoke 和固定 smoke 均同步。固定 smoke、部署 smoke 和公网 smoke 均验证
+`core.config.runtime-login-policy`、`core.config.runtime-login-policy-guards`；公网 Admin
+`umi.e39122bd.js` 已验证包含 API origin、`/core/config/runtime` 且不含重复
+`/api/api/auth/login`，`p__user__login__index.48a5b578.async.js` 已验证包含
+`loginLockoutMinutes` 和登录策略 UI 文案；公网 Admin 同源代理验证 runtime policy、登录、
+重复前缀、非法策略值 400、更新后 API/Admin runtime 同步变更并恢复。注意：这轮关闭的是 config
+runtime login policy summary，不等于真实账号锁定/解锁、验证码、secret vault/KMS 或 broad
+feature-flag propagation 已经完成。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -571,7 +589,7 @@ The productization waterline now classifies:
   Round 8/21 `core.dict`,
   Round 7/19/22/23/28/29/30/31/32/33/34/35/36/41 `core.user`.
 - First loop, enhance: Round 1 `core.notice`, Round 2/27/43 `core.dept`,
-  Round 3/22/25/42 `core.post`, Round 9/24/37/38/39/40/44 `core.config`,
+  Round 3/22/25/42 `core.post`, Round 9/24/37/38/39/40/44/46 `core.config`,
   Round 11/26/45 `core.login-log`.
 - Thin, rework: none after Round 16.
 
@@ -586,9 +604,11 @@ finds another blocker:
    invalidation and Admin selected-row deletion; Round 40 closed persisted
    system/custom config deletion policy with API/Admin/smoke guards; Round 44
    closed the first runtime propagation loop by letting Admin read
-   `opencore.admin.title` through public runtime config. Remaining work is
-   broader runtime propagation boundaries and any admitted secret vault/KMS
-   integration.
+   `opencore.admin.title` through public runtime config; Round 46 added the
+   runtime login policy summary backed by `auth.login.lockoutMinutes`, Admin
+   login consumption and runtime-key guardrails. Remaining work is any admitted
+   secret vault/KMS integration, broader runtime feature-flag propagation and
+   real login lockout/unlock policy if that becomes a security product stage.
 2. `core.login-log`: Round 26 closed browser/OS parsing and server-side IP/time
    filters. Round 45 closed persisted login type/result schema, Admin display
    and result/logType filters. Remaining work is IP/location enrichment where

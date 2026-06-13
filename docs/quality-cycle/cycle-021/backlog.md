@@ -1324,6 +1324,43 @@ without opening cleanup, unlock, lockout tuning or IP geolocation.
       gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 46: core.config Runtime Login Policy
+
+Why this slice: after the Admin title runtime loop, the next lowest-dependency
+config debt was letting another seeded runtime parameter leave the CRUD table
+and become a consumed runtime summary. RuoYi reads config keys for login,
+captcha and account-policy behavior, while Yudao exposes `ConfigApi` for
+runtime business decisions such as user registration. OpenCore already seeded
+`auth.login.lockoutMinutes`, but it was private and not part of the runtime
+summary. This round closes the runtime login-policy display/config guard loop
+without claiming real account lockout, unlock, captcha, secret vault/KMS or
+broad feature-flag propagation.
+
+- [x] Recompare RuoYi config-key runtime consumption and Yudao ConfigApi
+      runtime usage against OpenCore's title-only runtime summary.
+- [x] Make seeded `auth.login.lockoutMinutes` a public system config through
+      seed data and a data migration.
+- [x] Extend `SystemConfigRuntimeDto` and service result with
+      `loginLockoutMinutes`.
+- [x] Read `loginLockoutMinutes` from the existing public config value cache.
+- [x] Add generic boolean/number config value validation in seed and Prisma
+      repositories.
+- [x] Protect runtime keys from being changed to private/secret or incompatible
+      value types.
+- [x] Require `auth.login.lockoutMinutes` to stay an integer between 1 and
+      1440 minutes.
+- [x] Extend SDK types, fixtures and OpenAPI snapshot.
+- [x] Keep Admin runtime config in initial state and show the login lockout
+      window on the Admin login page.
+- [x] Extend Admin static smoke for runtime login policy markers.
+- [x] Extend fixed-port/deploy/public `core.config` smoke with
+      `core.config.runtime-login-policy` and
+      `core.config.runtime-login-policy-guards`.
+- [x] Run focused tests, OpenAPI/SDK checks, Prisma generate/migrate/validate,
+      typecheck, lint, format, build, fixed-port smoke, deployment and public
+      URL verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -1365,13 +1402,15 @@ treat "minimal loop" as "minimal final product".
       workflow integration and ordered tree operations remain.
 - [ ] Round 3/22/25/42 `core.post`: user-post binding, simple-list option
       source and batch deletion are complete; ordered list refinements remain.
-- [ ] Round 9/24/37/38/39/40/44 `core.config`: public get-value-by-key, cache
+- [ ] Round 9/24/37/38/39/40/44/46 `core.config`: public get-value-by-key, cache
       refresh and mutation invalidation are complete. Category/name/remark
       metadata is complete. Native XLSX export payload and Admin download are
       complete. Batch deletion is complete. Persisted system/custom deletion
-      policy is complete. Admin title runtime propagation is complete. Broader
-      runtime propagation boundaries and any admitted secret vault/KMS
-      integration remain.
+      policy is complete. Admin title runtime propagation is complete. Round 46
+      closes runtime login-policy summary and guardrails for
+      `auth.login.lockoutMinutes`. Broader feature-flag propagation, any
+      admitted secret vault/KMS integration and real login lockout/unlock
+      enforcement remain.
 - [ ] Round 11/26/45 `core.login-log`: browser/OS parsing, IP/time filters,
       persisted login type/result schema, Admin display and type/result
       filters are complete. IP/location enrichment where feasible and
@@ -1417,7 +1456,8 @@ treat "minimal loop" as "minimal final product".
 - Batch dictionary delete, Excel import/export file workflows, dictionary
   color/css/remark fields, app-wide dictionary cache TTL/invalidation and
   dictionary cache refresh.
-- Secret vault/KMS integration and runtime feature-flag propagation.
+- Secret vault/KMS integration, broad runtime feature-flag propagation and real
+  login lockout/unlock enforcement.
 - Presigned upload/download URLs, storage-provider config, public
   download/preview/copy-link workflows, batch file delete and object browser
   expansion.

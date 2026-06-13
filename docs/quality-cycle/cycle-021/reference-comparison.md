@@ -1393,3 +1393,39 @@ boundary:
 OpenCore does not claim IP location enrichment, login-log deletion/cleanup,
 user unlock, lockout-policy tuning, logout logging or mobile/social login
 workflows in this round.
+
+## Round 46 Config Runtime Login Policy Reference Shape
+
+RuoYi treats config keys as runtime parameters, not just management rows.
+`SysConfigServiceImpl.selectConfigByKey(...)` reads from cache and database;
+`CaptchaController` calls `selectCaptchaEnabled()` for login captcha behavior;
+`SysLoginController` reads account password-policy keys such as
+`sys.account.passwordValidateDays`; and the Admin API exposes
+`/system/config/configKey/{configKey}` for key-based runtime reads.
+
+Yudao similarly exposes infra config as a runtime dependency:
+`ConfigApi.getConfigValueByKey(...)` is injected into system services, including
+user registration checks such as `system.user.register-enabled`. Its Admin
+config controller also exposes `get-value-by-key`.
+
+OpenCore already had the first runtime summary stage from Round 44:
+`GET /api/core/config/runtime` returned `{ adminTitle }` from the public config
+cache and Admin consumed it for title rendering. Round 46 admits the next
+runtime config stage:
+
+- make seeded `auth.login.lockoutMinutes` public and system-owned;
+- return `loginLockoutMinutes` from `GET /api/core/config/runtime`;
+- keep the value backed by the existing config cache and update invalidation;
+- validate boolean/number config values before they enter seed or Prisma
+  repositories;
+- protect runtime keys from being changed to private/secret or incompatible
+  value types;
+- require the login lockout window to be an integer between 1 and 1440 minutes;
+- keep `AdminInitialState.runtimeConfig` and render the login lockout window on
+  the Admin login page;
+- fixed-port, deploy and public smoke prove invalid values return 400, runtime
+  updates propagate and restored values are clean.
+
+OpenCore does not claim real failed-attempt account lockout, user unlock,
+captcha configuration, secret vault/KMS or broad feature-flag propagation in
+this round.

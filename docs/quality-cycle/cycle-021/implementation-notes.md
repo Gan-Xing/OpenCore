@@ -3688,3 +3688,98 @@ Against public endpoints after deploy:
   `167bf08 feat(login-log): add login type result schema / 新增登录日志类型结果模型`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 46 Capability
+
+Capability: `core.config` runtime login policy.
+
+Goal: move the seeded `auth.login.lockoutMinutes` config from a private CRUD
+row into the public runtime summary consumed by Admin login, while guarding
+runtime config value types so bad operator edits cannot break the runtime
+endpoint.
+
+## Round 46 Implemented
+
+- Rechecked RuoYi remote HEAD `41720e624c5a668c7d3777835e4c87095a7a1dfd`.
+- Rechecked Yudao backend HEAD
+  `51b3d2d8cddd9a2a48e1edc2a7267359f61264cb` and Admin HEAD
+  `caa6fa9be35a7ef13dc3aba082f4675962f5c234`.
+- Compared RuoYi `selectConfigByKey`, captcha/login account-policy config
+  consumption and Yudao `ConfigApi.getConfigValueByKey(...)` runtime usage.
+- Made seeded `auth.login.lockoutMinutes` a public system config.
+- Added migration `20260613072000_config_runtime_login_policy`.
+- Added `loginLockoutMinutes` to `SystemConfigRuntimeDto` and SDK runtime
+  summary types.
+- Read `loginLockoutMinutes` through the existing public config value cache.
+- Added boolean/number config value validation in seed and Prisma repositories.
+- Guarded runtime keys from private/secret visibility or incompatible value
+  types.
+- Required `auth.login.lockoutMinutes` to stay an integer between 1 and 1440.
+- Stored `runtimeConfig` in Admin initial state and displayed the Login lockout
+  window on the Admin login page.
+- Extended Admin static smoke and `tools/scripts/smoke-core-config.mjs`.
+- Refreshed OpenAPI snapshot.
+
+## Round 46 Verification
+
+- `pnpm prisma:generate`
+- `pnpm prisma:migrate`
+- `node --check tools/scripts/smoke-core-config.mjs`
+- `node --check apps/admin/scripts/smoke-test.mjs`
+- `pnpm nx test system --testFile=system-config.spec.ts`
+- `pnpm nx test sdk --testFile=system-management-client.spec.ts`
+- `pnpm nx test admin`
+- `pnpm openapi:export`
+- `pnpm prisma:validate`
+- `pnpm openapi:check`
+- `pnpm sdk:check`
+- `pnpm openapi:registry-tags:check`
+- `pnpm nx run-many -t typecheck --projects=api,admin,sdk,system,contracts`
+- `pnpm build:api`
+- `pnpm build:admin`
+- `pnpm lint`
+- `pnpm format:check`
+- `git diff --check`
+- `pnpm smoke:api:local`
+- `pnpm deploy:opencore`
+
+`pnpm smoke:api:local` passed on fixed port `39173`, including
+`core.config.runtime-login-policy` and
+`core.config.runtime-login-policy-guards`.
+
+`pnpm deploy:opencore` passed, deploying API/Admin on fixed ports
+`39172`/`39174`; deploy smoke included duplicate `/api/api` login guards,
+Admin bundle cache checks and the same runtime login-policy guards.
+
+## Round 46 Public Verification
+
+Against public endpoints after deploy:
+
+- Public API: `http://144.217.243.161:39172`
+- Public Admin: `http://144.217.243.161:39174`
+- Public `pnpm smoke:core-config` passed with
+  `core.config.runtime-login-policy` and
+  `core.config.runtime-login-policy-guards`.
+- Public Admin main bundle `umi.e39122bd.js` contains the deployed API origin,
+  `/core/config/runtime`, runtime config state and no duplicate
+  `/api/api/auth/login`.
+- Public Admin login chunk `p__user__login__index.48a5b578.async.js` contains
+  `loginLockoutMinutes` and `Login lockout window`.
+- Public Admin login page returned `cache-control: no-cache`.
+- Public Admin same-origin `/api/core/config/runtime` matched public API
+  runtime for `adminTitle` and `loginLockoutMinutes`.
+- Public Admin same-origin `/api/auth/login` and compatible
+  `/api/api/auth/login` both succeeded.
+- Public Admin same-origin `auth.login.lockoutMinutes` detail returned
+  `public=true`, `visibility=public` and `valueType=number`.
+- Public Admin same-origin invalid `value=not-a-number` and
+  `visibility=private` updates returned 400.
+- Public Admin same-origin valid login-policy update propagated to both public
+  API and Admin runtime endpoints, then restored the original value.
+
+## Round 46 Commit Record
+
+- Feature commit:
+  `b0b23ee feat(core-config): add runtime login policy / 新增运行时登录策略`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.
