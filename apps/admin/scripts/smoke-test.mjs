@@ -386,6 +386,8 @@ if (
   !accessRuntime.includes('core:dashboard:read') ||
   !accessRuntime.includes('tool:openapi:read') ||
   !accessRuntime.includes('core:user:read') ||
+  !accessRuntime.includes('core:user:import') ||
+  !accessRuntime.includes('canImportUsers') ||
   !accessRuntime.includes('core:role:read') ||
   !accessRuntime.includes('core:permission:read') ||
   !accessRuntime.includes('core:menu:read') ||
@@ -720,6 +722,9 @@ if (
   !usersPage.includes('listOpenCoreSystemPostOptions') ||
   !usersPage.includes('getOpenCoreUserImportTemplate') ||
   !usersPage.includes('importOpenCoreUsers') ||
+  !usersPage.includes('useAccess') ||
+  !usersPage.includes('canImportUsers') ||
+  !usersPage.includes('Missing core:user:import') ||
   !usersPage.includes('Department scope') ||
   !usersPage.includes('All departments') ||
   !usersPage.includes('selectedDeptId') ||

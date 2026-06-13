@@ -15,6 +15,7 @@ import {
   ProTable,
   type ProColumns,
 } from '@ant-design/pro-components';
+import { useAccess } from '@umijs/max';
 import {
   createSystemDeptOptionFixtures,
   createSystemDeptFixtures,
@@ -404,6 +405,8 @@ function createDetailFields(
 }
 
 export default function UsersPage() {
+  const access = useAccess();
+  const canImportUsers = Boolean(access.canImportUsers);
   const [form] = Form.useForm<UserFormValues>();
   const [resetPasswordForm] = Form.useForm<ResetPasswordValues>();
   const [rows, setRows] = useState<readonly UserSummary[]>(fallbackRows);
@@ -1001,20 +1004,36 @@ export default function UsersPage() {
                   Delete selected
                 </Button>
               </Popconfirm>,
-              <Button
-                icon={<DownloadOutlined />}
+              <Tooltip
                 key="download-import-template"
-                onClick={() => void downloadImportTemplate()}
+                title={
+                  canImportUsers
+                    ? 'Download import template'
+                    : 'Missing core:user:import'
+                }
               >
-                Download import template
-              </Button>,
-              <Button
-                icon={<UploadOutlined />}
+                <Button
+                  disabled={!canImportUsers}
+                  icon={<DownloadOutlined />}
+                  onClick={() => void downloadImportTemplate()}
+                >
+                  Download import template
+                </Button>
+              </Tooltip>,
+              <Tooltip
                 key="import-users"
-                onClick={openImportUsers}
+                title={
+                  canImportUsers ? 'Import users' : 'Missing core:user:import'
+                }
               >
-                Import users
-              </Button>,
+                <Button
+                  disabled={!canImportUsers}
+                  icon={<UploadOutlined />}
+                  onClick={openImportUsers}
+                >
+                  Import users
+                </Button>
+              </Tooltip>,
               <Button
                 key="create"
                 type="primary"

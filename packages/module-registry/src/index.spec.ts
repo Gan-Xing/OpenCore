@@ -148,4 +148,20 @@ describe('@opencore/module-registry', () => {
       ]),
     );
   });
+
+  it('registers user import as an explicit permission action', () => {
+    expect(collectPermissionCodes()).toEqual(
+      expect.arrayContaining(['core:user:import']),
+    );
+
+    expect(findModuleByCode('core.user')?.permissions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'core:user:import',
+          title: 'Import users',
+          stage: 'S6',
+        }),
+      ]),
+    );
+  });
 });

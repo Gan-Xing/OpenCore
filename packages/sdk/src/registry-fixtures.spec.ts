@@ -45,6 +45,7 @@ describe('registry fixtures', () => {
 
     expect(permissionCodes.size).toBeGreaterThan(0);
     expect(permissionCodes.has('core:user:read')).toBe(true);
+    expect(permissionCodes.has('core:user:import')).toBe(true);
 
     for (const menu of createMenuSummariesFromRegistry()) {
       if (menu.permissionCode) {

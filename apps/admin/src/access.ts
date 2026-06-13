@@ -13,6 +13,7 @@ export default function access(initialState: InitialState = {}) {
     canAccessDashboard: hasPermission('core:dashboard:read'),
     canReadOpenApiStatus: hasPermission('tool:openapi:read'),
     canReadUsers: hasPermission('core:user:read'),
+    canImportUsers: hasPermission('core:user:import'),
     canReadRoles: hasPermission('core:role:read'),
     canReadPermissions: hasPermission('core:permission:read'),
     canReadMenus: hasPermission('core:menu:read'),

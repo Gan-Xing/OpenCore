@@ -38,10 +38,15 @@ const batchPassword = `UserBatchSmoke-${runId}`;
 const importUsername = `user_import_${runId}`;
 const importPassword = `UserImportSmoke-${runId}`;
 const importUpdatedPassword = `UserImportUpdated-${runId}`;
+const importGuardRoleCode = `user_import_create_only_${runId}`;
+const importGuardUsername = `user_import_guard_${runId}`;
+const importGuardPassword = `UserImportGuard-${runId}`;
 let adminToken;
 let smokeUserId;
 let smokeUserToken;
 let importUserId;
+let importGuardUserId;
+let importGuardRoleCreated = false;
 const batchUserIds = new Set();
 let originalAdminDisplayName;
 let originalAdminAvatarUpload;
@@ -596,6 +601,74 @@ try {
     'updated login roles',
   );
 
+  await apiRequest('/core/roles', {
+    method: 'POST',
+    body: {
+      code: importGuardRoleCode,
+      name: 'User Import Create-only Smoke',
+      permissionCodes: ['core:user:create'],
+      enabled: true,
+      dataScope: 'self',
+      dataScopeDeptIds: [],
+    },
+  });
+  importGuardRoleCreated = true;
+  const importGuardUser = await apiRequest('/core/users', {
+    method: 'POST',
+    body: {
+      username: importGuardUsername,
+      displayName: 'User Import Guard Smoke',
+      password: importGuardPassword,
+      roleCodes: [importGuardRoleCode],
+      deptId: 'dept_operations',
+      postCodes: [],
+      enabled: true,
+    },
+  });
+  importGuardUserId = assertString(importGuardUser.id, 'import guard user id');
+  const importGuardLogin = await loginUser(
+    importGuardUsername,
+    importGuardPassword,
+    [200, 201],
+  );
+  const importGuardToken = assertString(
+    importGuardLogin.accessToken,
+    'import guard accessToken',
+  );
+  assertIncludes(
+    importGuardLogin.user.permissionCodes,
+    'core:user:create',
+    'import guard create permission',
+  );
+  assertNotIncludes(
+    importGuardLogin.user.permissionCodes,
+    'core:user:import',
+    'import guard import permission',
+  );
+  await request(`${apiPrefix}/core/users/import-template`, {
+    token: importGuardToken,
+    expected: [403],
+  });
+  await request(`${apiPrefix}/core/users/import`, {
+    method: 'POST',
+    token: importGuardToken,
+    expected: [403],
+    body: {
+      contentBase64: createUserImportCsvBase64([
+        [
+          `${importUsername}_forbidden`,
+          'Forbidden Import User',
+          importPassword,
+          'viewer',
+          '',
+          '',
+          'true',
+        ],
+      ]),
+      updateExisting: false,
+    },
+  });
+
   const importTemplate = await apiRequest('/core/users/import-template');
   assertEqual(
     importTemplate.filename,
@@ -807,6 +880,7 @@ try {
         'core.user.profile.password.new-password-login',
         'core.user.post.clear',
         'core.user.update.revoke-session',
+        'core.user.import.permission-split',
         'core.user.import-template',
         'core.user.import.update-existing-boolean-guard',
         'core.user.import.partial-result',
@@ -918,6 +992,14 @@ async function cleanup() {
     smokeUserId = undefined;
   }
 
+  if (importGuardUserId) {
+    await apiRequest(`/core/users/${encodeURIComponent(importGuardUserId)}`, {
+      method: 'DELETE',
+      expected: [200, 404],
+    }).catch(() => undefined);
+    importGuardUserId = undefined;
+  }
+
   if (importUserId) {
     await apiRequest(`/core/users/${encodeURIComponent(importUserId)}`, {
       method: 'DELETE',
@@ -932,6 +1014,14 @@ async function cleanup() {
       expected: [200, 404],
     }).catch(() => undefined);
     batchUserIds.delete(batchUserId);
+  }
+
+  if (importGuardRoleCreated) {
+    await apiRequest(`/core/roles/${encodeURIComponent(importGuardRoleCode)}`, {
+      method: 'DELETE',
+      expected: [200, 404],
+    }).catch(() => undefined);
+    importGuardRoleCreated = false;
   }
 }
 
@@ -971,6 +1061,7 @@ async function cleanupSmokeUserSessions() {
   for (const sessionUsername of [
     smokeUsername,
     importUsername,
+    importGuardUsername,
     ...batchUsernames,
   ]) {
     await cleanupUserSessions(sessionUsername);

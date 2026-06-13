@@ -99,13 +99,10 @@ export const moduleRegistry = [
     enabledByDefault: true,
     description: 'User identity management for the minimal RBAC loop.',
     apiTags: ['Core Users'],
-    permissions: definePermissions(
-      'core',
-      'user',
-      'users',
-      'S6',
-      CRUD_PERMISSION_SEEDS,
-    ),
+    permissions: definePermissions('core', 'user', 'users', 'S6', [
+      ...CRUD_PERMISSION_SEEDS,
+      { action: 'import', title: 'Import' },
+    ]),
     menus: [
       defineMenu(
         'system.users',

@@ -35,6 +35,11 @@ describe('@opencore/contracts', () => {
       resource: 'user',
       action: 'read',
     });
+    expect(parsePermissionCode('core:user:import')).toEqual({
+      layer: 'core',
+      resource: 'user',
+      action: 'import',
+    });
     expect(parsePermissionCode('core:user:approve')).toBeNull();
     expect(parsePermissionCode('crm:customer:read')).toBeNull();
   });

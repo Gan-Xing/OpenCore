@@ -135,7 +135,7 @@ export class RbacController {
 
   @Get('users/import-template')
   @ApiTags('Core Users')
-  @RequirePermission('core:user:create')
+  @RequirePermission('core:user:import')
   @ApiOkResponse({ type: UserImportTemplateDto })
   getUserImportTemplate(): UserImportTemplateDto {
     return this.users.createImportTemplate();
@@ -143,7 +143,7 @@ export class RbacController {
 
   @Post('users/import')
   @ApiTags('Core Users')
-  @RequirePermission('core:user:create')
+  @RequirePermission('core:user:import')
   @ApiOkResponse({ type: UserImportResultDto })
   async importUsers(
     @Body() body: ImportUsersDto,
