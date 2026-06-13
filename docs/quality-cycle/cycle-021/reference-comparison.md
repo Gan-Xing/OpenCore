@@ -1082,3 +1082,38 @@ current JSON API boundary:
 
 OpenCore still does not claim native XLSX import parsing or a dedicated
 User-page role assignment dialog in this round.
+
+## Round 36 User XLSX Import Reference Shape
+
+RuoYi pairs user export with `importTemplate` and `importData` on the same
+System User surface, using Excel utility helpers rather than a CSV-only
+contract. Yudao similarly exposes `/system/user/get-import-template` and
+`/system/user/import` as Excel-oriented user-management workflows with
+structured created/updated/failed results.
+
+OpenCore admits the matching stage-13 import-file loop while preserving the
+existing API boundary and import semantics:
+
+- `GET /api/core/users/import-template` now returns
+  `opencore-system-users-import-template.xlsx` with the standard XLSX MIME
+  type and a valid zip payload;
+- `POST /api/core/users/import` automatically accepts XLSX zip payloads or the
+  existing CSV payloads through `contentBase64`;
+- XLSX parsing supports inline strings, shared strings, boolean cells and basic
+  value cells for the fixed columns `username`, `displayName`, `password`,
+  `roleCodes`, `deptId`, `postCodes` and `enabled`;
+- the endpoint keeps `core:user:import`, strict boolean `updateExisting`,
+  partial row failures, role/dept/post validation and update-session
+  revocation;
+- Admin Users advertises `Select CSV/XLSX file` while keeping the existing
+  template download, update-existing toggle and result summary;
+- fixed-port, deploy and public smoke include `core.user.import.xlsx` with
+  dynamically generated XLSX rows, so the XLSX parser is guarded without
+  mutating fixed sample usernames;
+- public Admin verification proves the deployed Users chunk contains the
+  CSV/XLSX upload marker and the same-origin import-template endpoint returns
+  an XLSX `PK` zip payload.
+
+OpenCore still does not claim a dedicated User-page role assignment dialog,
+email/phone/social profile expansion or richer Excel error-highlighting in
+this round.

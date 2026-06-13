@@ -661,3 +661,30 @@ This stays inside the current S7 System/RBAC user-management boundary. It does
 not introduce native XLSX/binary Excel import/export depth, server-side full
 Excel export formatting, email/phone profile fields, social account binding or
 a dedicated User-page role assignment dialog in this round.
+
+## Round 36 Audit: core.user Native XLSX Import
+
+After Round 35, the remaining low-dependency `core.user` Excel gap was native
+XLSX import parsing:
+
+- RuoYi and Yudao both position user import as an Excel file workflow paired
+  with user export, not as a permanently CSV-only side path.
+- OpenCore already had import permission, partial result semantics, strict
+  `updateExisting` validation, role/dept/post validation and session revocation
+  on import updates, so this slice should reuse those semantics rather than
+  create a parallel importer.
+- The import template should move to a real `.xlsx` payload now that export
+  already uses XLSX, while CSV upload remains backwards compatible for any
+  existing scripts/operators.
+- XLSX parsing needs to support the workbook forms OpenCore itself generates
+  and common Excel shared-string workbooks: inline strings, shared strings,
+  boolean cells and basic value cells are enough for this stage.
+- Fixed-port/deploy/public smoke needs a dynamically generated XLSX row so the
+  parser is exercised without importing and then deleting fixed sample
+  usernames on the public deployment.
+- Admin needed to stop presenting the upload as CSV-only; static and public
+  checks now lock the CSV/XLSX marker.
+
+This stays inside the current S7 System/RBAC user-management boundary. It does
+not introduce a dedicated User-page role assignment dialog, email/phone/social
+account expansion or richer Excel style/error-highlighting in this round.

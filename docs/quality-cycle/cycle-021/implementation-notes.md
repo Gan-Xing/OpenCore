@@ -2827,3 +2827,86 @@ Against public endpoints after deploy:
   `407dbd0 feat(core-user): add xlsx user export / 新增用户 Excel 导出`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 36 Capability
+
+Capability: `core.user` native XLSX import productization.
+
+Goal: close the user import file-format gap by returning an XLSX import
+template and accepting XLSX import payloads, while preserving CSV backwards
+compatibility and the existing import permission/result/session semantics.
+
+## Round 36 Implemented
+
+- Rechecked RuoYi and Yudao user import-template/import Excel workflows.
+- Changed `createSystemUserImportTemplate()` to return
+  `opencore-system-users-import-template.xlsx`.
+- Reused the existing `fflate` XLSX zip generation path through a generic
+  workbook helper.
+- Added `parseSystemUserImport()` with automatic XLSX/CSV detection.
+- Added XLSX parsing for `xl/worksheets/sheet1.xml`, inline strings, shared
+  strings, boolean cells and basic value cells.
+- Kept CSV import backwards compatible through `parseSystemUserImportCsv()` as
+  a compatibility wrapper.
+- Preserved `core:user:import`, strict `updateExisting` boolean validation,
+  partial failures, role/dept/post validation and import-update session
+  revocation.
+- Updated OpenAPI import description from CSV-only to CSV/XLSX.
+- Updated Admin Users upload text and accepted file types to CSV/XLSX.
+- Updated Admin static smoke marker to `Select CSV/XLSX file`.
+- Extended `tools/scripts/smoke-core-user.mjs` with `core.user.import.xlsx`,
+  using a dynamically generated XLSX file and dynamic username.
+
+## Round 36 Verification
+
+- `pnpm nx test system --testFile=system-user.spec.ts`
+- `pnpm openapi:export`
+- `pnpm sdk:check`
+- `node --check tools/scripts/smoke-core-user.mjs`
+- `pnpm nx test admin`
+- `pnpm nx test sdk --testFile=rbac-client.spec.ts`
+- `pnpm nx test api --testFile=rbac.permission-matrix.spec.ts`
+- `pnpm nx run-many -t typecheck --projects=api,admin,sdk,system`
+- `pnpm openapi:check`
+- `pnpm openapi:registry-tags:check`
+- `pnpm nx test contracts`
+- `pnpm nx test module-registry`
+- `pnpm format:check`
+- `pnpm smoke:api:local`
+- `pnpm prisma:validate`
+- `pnpm build:api`
+- `pnpm build:admin`
+- `git diff --check`
+- `pnpm deploy:opencore`
+
+`pnpm smoke:api:local` passed on fixed port `39173`, including
+`core.user.import.xlsx`.
+
+`pnpm deploy:opencore` passed, deploying API/Admin on fixed ports
+`39172`/`39174`; deploy smoke also included `core.user.import.xlsx`, the
+duplicate `/api/api` login guards, Admin bundle no-cache guard and session
+revocation guards. Prisma seed reported `permissions: 105`.
+
+## Round 36 Public Verification
+
+Against public endpoints after deploy:
+
+- Public `pnpm smoke:core-user` passed against
+  `http://144.217.243.161:39172` after loading the deployed admin password
+  from `.env.opencore.local` without printing secrets.
+- Public user smoke verified `core.user.import.xlsx` by uploading a dynamic
+  XLSX workbook and creating a dynamic user through the import endpoint.
+- Public Admin bundle check passed for `http://144.217.243.161:39174`, with
+  bundle `/umi.429950b2.js` and no duplicate API prefix.
+- Public Users chunk `p__System__Users.241380ef.async.js` contains
+  `Select CSV/XLSX file`, `Download import template` and `Import users`.
+- Public Admin same-origin `/api/core/users/import-template` returned
+  `opencore-system-users-import-template.xlsx`, the Excel MIME type and an
+  XLSX `PK` zip header.
+
+## Round 36 Commit Record
+
+- Feature commit:
+  `1437eb8 feat(core-user): add xlsx user import / 新增用户 Excel 导入`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

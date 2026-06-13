@@ -1007,6 +1007,38 @@ opening the larger XLSX import parser yet.
       deployment and public URL verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 36: core.user Native XLSX Import
+
+Why this slice: RuoYi and Yudao both treat user import as an Excel file
+workflow paired with export. Round 33 admitted a CSV-compatible loop and Round
+35 admitted native XLSX export, so this round closes the remaining file-format
+gap without expanding into role-assignment workflow or extra user schema fields.
+
+- [x] Recompare RuoYi user import-template/import and Yudao
+      `get-import-template`/`import` Excel workflows.
+- [x] Change `GET /api/core/users/import-template` to return
+      `opencore-system-users-import-template.xlsx` with the standard XLSX MIME
+      type and a valid zip payload.
+- [x] Add XLSX parsing for `POST /api/core/users/import`, including inline
+      strings, shared strings, boolean cells, basic value cells, fixed header
+      validation and non-empty-row validation.
+- [x] Keep CSV import backwards compatible through the same endpoint.
+- [x] Preserve existing `core:user:import` permission, partial failure result,
+      strict `updateExisting` boolean validation and import-update session
+      revocation behavior.
+- [x] Update Admin Users upload affordance from CSV-only to CSV/XLSX.
+- [x] Update OpenAPI description from CSV-only to CSV/XLSX.
+- [x] Extend system tests to verify XLSX template zip payload and import the
+      XLSX template through the service.
+- [x] Extend fixed-port/deploy/public `core.user` smoke with
+      `core.user.import.xlsx` using dynamically generated XLSX rows so public
+      smoke does not mutate fixed sample usernames.
+- [x] Extend Admin static/public verification for the CSV/XLSX upload marker
+      and same-origin XLSX import template.
+- [x] Run focused, typecheck, OpenAPI/SDK, format, build, fixed-port smoke,
+      deployment and public URL verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -1044,7 +1076,7 @@ treat "minimal loop" as "minimal final product".
 - [ ] Round 3/22/25 `core.post`: user-post binding and simple-list option
       source are complete; batch operations and ordered list refinements
       remain.
-- [ ] Round 7/19/22/23/28/29/30/31/32/33/34/35 `core.user`: status toggle, reset
+- [ ] Round 7/19/22/23/28/29/30/31/32/33/34/35/36 `core.user`: status toggle, reset
       password and direct user-mutation session invalidation are complete. Post
       binding, department side-tree filtering, self-profile basic display-name
       read/update, self-password and authenticated simple-list option source
@@ -1053,8 +1085,9 @@ treat "minimal loop" as "minimal final product".
       CSV-compatible import template/import results with update-existing
       session revocation are complete. Dedicated `core:user:import` permission
       is complete. Native XLSX export payload and Admin download are complete.
-      Native XLSX import parsing and any dedicated User-page role assignment
-      workflow still need enhancement if admitted.
+      Native XLSX import template/parsing is complete while CSV import remains
+      backwards compatible. Any dedicated User-page role assignment workflow
+      still needs enhancement if admitted.
 - [ ] Round 9/24 `core.config`: public get-value-by-key, cache refresh and
       mutation invalidation are complete. Category/name/remark enrichment,
       batch/file export depth and broader runtime propagation boundaries remain.
@@ -1098,8 +1131,7 @@ treat "minimal loop" as "minimal final product".
 - Role simple-list endpoints, batch role deletion and standalone data-scope
   endpoint.
 - Registry definition editing and dynamic permission discovery.
-- Native user XLSX import parsing, dedicated User-page role assignment dialog
-  and social endpoints.
+- Dedicated User-page role assignment dialog and social endpoints.
 - Batch dictionary delete, Excel import/export file workflows, dictionary
   color/css/remark fields, app-wide dictionary cache TTL/invalidation and
   dictionary cache refresh.
