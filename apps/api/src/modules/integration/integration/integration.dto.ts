@@ -286,6 +286,34 @@ export class FailOutboxMessageDto {
   error!: string;
 }
 
+export class ProcessOutboxDto {
+  @ApiProperty({ required: false })
+  providerCode?: string;
+
+  @ApiProperty({ required: false, default: 100 })
+  limit?: number;
+}
+
+export class IntegrationOutboxProcessResultDto {
+  @ApiProperty({ enum: ['mail', 'sms'] })
+  channel!: 'mail' | 'sms';
+
+  @ApiProperty({ required: false })
+  providerCode?: string;
+
+  @ApiProperty()
+  attemptedCount!: number;
+
+  @ApiProperty()
+  sentCount!: number;
+
+  @ApiProperty()
+  skippedCount!: number;
+
+  @ApiProperty()
+  queuedCount!: number;
+}
+
 export class PreviewTemplateDto {
   @ApiProperty()
   templateCode!: string;

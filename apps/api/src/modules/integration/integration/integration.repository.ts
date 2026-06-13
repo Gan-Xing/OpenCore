@@ -4,11 +4,13 @@ import type {
   CreateIntegrationTemplateDto,
   CreateOutboxMessageDto,
   FailOutboxMessageDto,
+  IntegrationOutboxProcessResultDto,
   IntegrationOutboxQueryDto,
   IntegrationProviderQueryDto,
   IntegrationProviderType,
   IntegrationSummaryDto,
   IntegrationTemplateQueryDto,
+  ProcessOutboxDto,
   PreviewTemplateDto,
   UpdateIntegrationProviderDto,
 } from './integration.dto';
@@ -94,6 +96,10 @@ export abstract class IntegrationRepository {
     channel: 'mail' | 'sms',
     id: string,
   ): Promise<IntegrationOutboxRecord>;
+  abstract processOutbox(
+    channel: 'mail' | 'sms',
+    body?: ProcessOutboxDto,
+  ): Promise<IntegrationOutboxProcessResultDto>;
 
   abstract listOAuthProviders(
     query?: IntegrationProviderQueryDto,
@@ -282,6 +288,33 @@ export function normalizeOutboxFailureError(value: unknown): string {
   }
 
   return error;
+}
+
+export function normalizeProcessOutboxLimit(value: unknown): number {
+  const parsed = Number(value ?? 100);
+
+  if (!Number.isInteger(parsed) || parsed < 1 || parsed > 100) {
+    throw new BadRequestException(
+      'Outbox process limit must be an integer between 1 and 100.',
+    );
+  }
+
+  return parsed;
+}
+
+export function normalizeOptionalProviderCode(
+  value: unknown,
+): string | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  const providerCode = String(value).trim();
+  if (providerCode.length === 0) {
+    throw new BadRequestException('Outbox providerCode must not be blank.');
+  }
+
+  return providerCode;
 }
 
 export function requireRecord<T>(

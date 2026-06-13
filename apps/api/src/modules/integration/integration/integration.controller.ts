@@ -17,6 +17,7 @@ import {
   IntegrationDesignDto,
   IntegrationOutboxDto,
   IntegrationOutboxPageDto,
+  IntegrationOutboxProcessResultDto,
   IntegrationOutboxQueryDto,
   IntegrationProviderDto,
   IntegrationProviderPageDto,
@@ -26,6 +27,7 @@ import {
   IntegrationTemplatePageDto,
   IntegrationTemplateQueryDto,
   OAuthCallbackContractDto,
+  ProcessOutboxDto,
   PreviewTemplateDto,
   TemplatePreviewDto,
   UpdateIntegrationProviderDto,
@@ -207,6 +209,16 @@ export class IntegrationController {
     return this.repository.retryOutbox('mail', id);
   }
 
+  @Post('mail/outbox/process')
+  @ApiTags('Integration Mail')
+  @RequirePermission('integration:mail:manage')
+  @ApiOkResponse({ type: IntegrationOutboxProcessResultDto })
+  processMailOutbox(
+    @Body() body: ProcessOutboxDto,
+  ): Promise<IntegrationOutboxProcessResultDto> {
+    return this.repository.processOutbox('mail', body);
+  }
+
   @Get('sms/templates')
   @ApiTags('Integration SMS')
   @RequirePermission('integration:sms:read')
@@ -298,6 +310,16 @@ export class IntegrationController {
   @ApiOkResponse({ type: IntegrationOutboxDto })
   retrySmsOutbox(@Param('id') id: string): Promise<IntegrationOutboxDto> {
     return this.repository.retryOutbox('sms', id);
+  }
+
+  @Post('sms/outbox/process')
+  @ApiTags('Integration SMS')
+  @RequirePermission('integration:sms:manage')
+  @ApiOkResponse({ type: IntegrationOutboxProcessResultDto })
+  processSmsOutbox(
+    @Body() body: ProcessOutboxDto,
+  ): Promise<IntegrationOutboxProcessResultDto> {
+    return this.repository.processOutbox('sms', body);
   }
 
   @Get('oauth/providers')

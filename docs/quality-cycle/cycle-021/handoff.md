@@ -70,7 +70,7 @@ generator-core. Admin is Umi Max + Ant Design Pro V6 + ProComponents v3 +
 antd 6 + React 19. The vulnerable `mockjs` / `@umijs/openapi` path must not be
 reintroduced.
 
-Cycle-021 has completed 68 deployable stages. Completed foundation clusters:
+Cycle-021 has completed 69 deployable stages. Completed foundation clusters:
 
 - System/RBAC: notice, department, post, menu, role, permission, user, dict,
   config and file.
@@ -82,18 +82,20 @@ Cycle-021 has completed 68 deployable stages. Completed foundation clusters:
   audience rules and secret vault.
 - Notice: management, inbox/read state, read-user analytics, templates,
   delivery records, local provider, Integration outbox bridge and Round 67
-  outbox status synchronization.
+  outbox status synchronization plus Round 69 queued outbox processing.
 
 ## Latest Runtime Stage
 
-Round 68: `core.audit-log` cleanup maintenance.
+Round 69: `core.notice` outbox provider processing.
 
-- Added permission-gated batch delete and clean-all APIs for operation logs.
-- Added `core:audit-log:delete` to module registry, seed permissions, API
-  permission matrix, SDK and Admin access.
-- Added Operation Logs selected delete and clean-all controls in Admin.
-- Added smoke/deploy guards for empty/duplicate/missing IDs, successful delete,
-  deleted detail 404, clean-all behavior and stale Admin bundle markers.
+- Added permission-gated `mail/sms` outbox process APIs that move queued
+  provider messages to `sent` only when the provider is enabled and channel
+  compatible.
+- Synced processed Integration outbox rows back to notice delivery records.
+- Added SDK and Admin System Notices process action for queued mail/SMS
+  outbox deliveries.
+- Added smoke/deploy guards for process routes, queued-to-sent delivery sync
+  and stale Admin bundle markers.
 - Deployed on API `39172` and Admin `39174`; public verification passed.
 
 Same-commit hashes are not written into this file. Use the ledger and git log
@@ -104,8 +106,8 @@ after the commit lands.
 Pick one stage from this queue unless a new audit reveals a higher-priority
 foundation defect:
 
-1. Notice provider reliability: real SMTP/SMS execution or callback intake,
-   retry policy and realtime push.
+1. Notice provider reliability: signed callback intake, real SMTP/SMS adapters,
+   retry scheduling and realtime push.
 2. Config governance: multi-environment rollout controls, external KMS binding,
    key rotation and secret version history.
 3. Operation-log enrichment: retention scheduling, duration/location fields and

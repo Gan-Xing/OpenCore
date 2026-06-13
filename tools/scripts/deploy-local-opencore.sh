@@ -237,6 +237,11 @@ verify_admin_bundle_api_base_url() {
     ! grep -R \
     --fixed-strings \
     --include='*.js' \
+    "Process queued outbox" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
     "Retry outbox" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null || \
     ! grep -R \

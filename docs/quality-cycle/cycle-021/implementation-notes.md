@@ -37,13 +37,13 @@ evidence stays in `round-history.md` and the quality-cycle ledger.
 
 ## Current Runtime State
 
-Cycle-021 has completed 68 deployable stages. API, SDK, Admin, permissions,
+Cycle-021 has completed 69 deployable stages. API, SDK, Admin, permissions,
 seed data, OpenAPI snapshots and smoke guards now exist across the main
 System/Security/Monitor/Integration foundation areas.
 
-Latest stage: Round 68 added permission-gated operation-log batch delete and
-clean-all APIs, SDK/OpenAPI/Admin support and smoke guards for empty,
-duplicate, missing-ID, deleted-detail and clean-all behavior.
+Latest stage: Round 69 added provider-gated mail/SMS outbox processing,
+SDK/OpenAPI/Admin support and smoke guards for queued-to-sent notice delivery
+sync.
 
 ## Evidence Rule
 
@@ -57,8 +57,8 @@ copy standard test/build/deploy command output into documentation.
 - Stale Admin bundle: deploy script checks current built chunks and required
   page markers.
 - Notice outbox state: `smoke-core-notice.mjs` verifies pending handoff,
-  repeat execute idempotency, blank failure rejection, failed-to-retry-to-sent
-  sync and mutation guards after sent.
+  repeat execute idempotency, blank failure rejection, failed-to-retry,
+  process-to-sent sync and mutation guards after sent.
 - Operation-log cleanup: `smoke-core-audit-log.mjs` verifies batch delete
   guard failures, successful deletion, deleted-detail 404 and clean-all target
   removal while preserving the audit record for the clean request itself.
@@ -71,8 +71,9 @@ copy standard test/build/deploy command output into documentation.
 
 ## Remaining Foundation Debt
 
-- Notice: real external SMTP/SMS provider execution or callback ingestion,
-  WebSocket realtime push and any admitted tenant/member/mobile channels.
+- Notice: signed callback ingestion, real external SMTP/SMS adapters,
+  retry scheduling, WebSocket realtime push and any admitted
+  tenant/member/mobile channels.
 - Config: multi-environment rollout governance, external KMS binding, key
   rotation and secret version history.
 - Login log: optional external GeoIP provider depth and broader mobile/social

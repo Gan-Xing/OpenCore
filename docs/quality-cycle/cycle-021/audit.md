@@ -15,6 +15,8 @@ patterns had to be corrected:
   Round 14 added real token/session revocation.
 - Round 66 used the wrong notice provider state semantics by treating queued
   external outbox handoff as `sent`; Round 67 corrected the state machine.
+- Round 69 moved the next notice reliability step into code by adding an
+  explicit queued outbox process path instead of another manual state note.
 - Round 68 exposed another process issue: running Admin `typecheck` and `lint`
   in parallel can race `max setup` generated types. Those commands must run
   sequentially when both touch Admin generated files.
@@ -29,8 +31,8 @@ Those issues are now guard requirements, not memory items.
   pages.
 - Session/token revocation: auth/online-user/login-log smokes verify revoked
   tokens fail.
-- Notice outbox semantics: smoke verifies pending handoff, retry and explicit
-  sent transitions.
+- Notice outbox semantics: smoke verifies pending handoff, retry, provider
+  process-to-sent and explicit sent mutation guards.
 - Operation-log cleanup: smoke verifies batch-delete guards, deleted-detail 404
   and clean-all target removal.
 - Config/secret drift: smoke verifies runtime config shape and no plaintext
@@ -52,8 +54,8 @@ Going forward:
 
 ## Current Residual Risk
 
-- Notice still needs real SMTP/SMS provider execution or callback intake before
-  claiming full provider delivery depth.
+- Notice still needs signed callbacks, real SMTP/SMS adapters, retry scheduling
+  and realtime push before claiming full provider delivery depth.
 - Config still needs multi-environment governance and external KMS/rotation for
   a stronger enterprise posture.
 - Operation-log retention scheduling/enrichment, scheduler/monitor and

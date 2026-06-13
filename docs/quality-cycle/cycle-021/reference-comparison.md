@@ -11,8 +11,8 @@ permissions, seeds, OpenAPI and smoke guards.
 ## Reference Heads
 
 - RuoYi-Vue: `41720e624c5a668c7d3777835e4c87095a7a1dfd`
-- Yudao backend: `51b3d2d8cddd9a2a48e1edc2a7267359f61264cb`
-- Yudao Admin: `05d6196780a560062e5b5cc70cff677c8dd6c444`
+- Yudao backend: `cdb4204bf8cf214861f1ae6da4bd116190089fa0`
+- Yudao Admin: `17428e98676c8a626f66da780c7c854c73d6089f`
 
 ## Comparison Rules
 
@@ -38,7 +38,7 @@ permissions, seeds, OpenAPI and smoke guards.
   remain.
 - Notice: management, inbox read state, read-user analytics, templates,
   delivery records, local provider execution, Integration outbox bridge and
-  outbox status synchronization are live.
+  outbox status synchronization plus queued provider processing are live.
 - Config: runtime keys, login policy, feature flags, rollout percentage,
   audience rules and secret-vault encryption are live.
 - Monitor/OpenForge/Scheduler: foundations exist, but deeper operator workflows
@@ -69,6 +69,19 @@ visibility:
 - clean-all reports affected rows;
 - the cleanup request itself is still audited by the global interceptor.
 
+## Round 69 Reference Decision
+
+RuoYi/Yudao notification depth assumes provider execution is a distinct step
+after queue creation. OpenCore now has that boundary:
+
+- dispatch creates delivery records;
+- execute creates external outbox rows without claiming provider success;
+- process moves enabled provider queued rows to `sent`;
+- notice delivery state is synchronized from the processed outbox row.
+
+Signed callbacks, real SMTP/SMS adapters, retry scheduling and realtime push
+remain separate notice reliability stages.
+
 ## Explicit Non-Claims
 
 OpenCore does not yet claim full RuoYi/Yudao parity for:
@@ -78,7 +91,7 @@ OpenCore does not yet claim full RuoYi/Yudao parity for:
 - full report designer,
 - real payment/refund/reconciliation,
 - CRM/ERP/MES/WMS/mall/member business suites,
-- real external notification provider fleet,
+- real external notification provider fleet and signed callbacks,
 - AI/RAG/Agent workflow.
 
 Those domains require explicit admission. P0/P1 foundation capabilities do not.
@@ -86,6 +99,6 @@ Those domains require explicit admission. P0/P1 foundation capabilities do not.
 ## Next Comparison Focus
 
 Use the next comparison to choose one foundation stage from the remaining
-queue: notice provider reliability, config rollout governance, operation-log
+queue: notice callbacks/adapters/realtime, config rollout governance, operation-log
 enrichment, scheduler/monitor operation depth, OpenForge Admin or integration
 health/config audit.

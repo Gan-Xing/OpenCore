@@ -62,6 +62,7 @@ import {
   type FileAssetSummary,
   type FailOutboxMessageRequest,
   type IntegrationOutboxSummary,
+  type IntegrationOutboxProcessResult,
   type LoginLogQueryRequest,
   type LoginLogBatchMutationSummary,
   type LoginLogCleanSummary,
@@ -866,6 +867,15 @@ export function markOpenCoreIntegrationOutboxSent(
   return channel === 'mail'
     ? integrationClient.markMailOutboxSent(getRequiredAdminToken(), id)
     : integrationClient.markSmsOutboxSent(getRequiredAdminToken(), id);
+}
+
+export function processOpenCoreIntegrationOutbox(
+  channel: IntegrationOutboxChannel,
+  body?: { providerCode?: string; limit?: number },
+): Promise<IntegrationOutboxProcessResult> {
+  return channel === 'mail'
+    ? integrationClient.processMailOutbox(getRequiredAdminToken(), body)
+    : integrationClient.processSmsOutbox(getRequiredAdminToken(), body);
 }
 
 export async function listOpenCoreSystemNoticeTemplates(

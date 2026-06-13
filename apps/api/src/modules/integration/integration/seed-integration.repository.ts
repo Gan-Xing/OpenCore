@@ -7,6 +7,7 @@ import type {
   IntegrationOutboxQueryDto,
   IntegrationProviderQueryDto,
   IntegrationTemplateQueryDto,
+  ProcessOutboxDto,
   PreviewTemplateDto,
   UpdateIntegrationProviderDto,
 } from './integration.dto';
@@ -32,7 +33,9 @@ import {
   IntegrationRepository,
   matchesOptional,
   normalizeOutboxFailureError,
+  normalizeOptionalProviderCode,
   normalizeOptionalBoolean,
+  normalizeProcessOutboxLimit,
   redactProviderConfig,
   renderTemplate,
   requireRecord,
@@ -313,6 +316,58 @@ export class SeedIntegrationRepository extends IntegrationRepository {
     return { ...message };
   }
 
+  async processOutbox(channel: 'mail' | 'sms', body: ProcessOutboxDto = {}) {
+    const limit = normalizeProcessOutboxLimit(body.limit);
+    const providerCode = normalizeOptionalProviderCode(body.providerCode);
+    const queued = this.outbox
+      .filter(
+        (message) =>
+          message.channel === channel &&
+          message.status === 'queued' &&
+          matchesOptional(message.providerCode, providerCode),
+      )
+      .slice(0, limit);
+
+    if (queued.length === 0) {
+      return {
+        channel,
+        providerCode,
+        attemptedCount: 0,
+        sentCount: 0,
+        skippedCount: 0,
+        queuedCount: this.countQueuedOutbox(channel, providerCode),
+      };
+    }
+
+    for (const code of new Set(queued.map((message) => message.providerCode))) {
+      const provider = this.findProvider(code);
+      assertProviderReadyForOutbox({
+        code: provider.code,
+        type: provider.type,
+        enabled: provider.enabled,
+        channel,
+      });
+    }
+
+    const sentAt = new Date().toISOString();
+    for (const message of queued) {
+      Object.assign(message, {
+        status: 'sent' as const,
+        error: undefined,
+        sentAt,
+      });
+    }
+
+    return {
+      channel,
+      providerCode,
+      attemptedCount: queued.length,
+      sentCount: queued.length,
+      skippedCount: 0,
+      queuedCount: this.countQueuedOutbox(channel, providerCode),
+    };
+  }
+
   async listOAuthProviders(
     query: IntegrationProviderQueryDto = {},
   ): Promise<PageResult<IntegrationProviderRecord>> {
@@ -374,6 +429,18 @@ export class SeedIntegrationRepository extends IntegrationRepository {
       'Integration outbox message',
       id,
     );
+  }
+
+  private countQueuedOutbox(
+    channel: 'mail' | 'sms',
+    providerCode?: string,
+  ): number {
+    return this.outbox.filter(
+      (message) =>
+        message.channel === channel &&
+        message.status === 'queued' &&
+        matchesOptional(message.providerCode, providerCode),
+    ).length;
   }
 }
 

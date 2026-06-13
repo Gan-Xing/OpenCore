@@ -5295,6 +5295,34 @@
         "tags": ["Integration", "Integration Mail"]
       }
     },
+    "/api/integrations/mail/outbox/process": {
+      "post": {
+        "operationId": "IntegrationController_processMailOutbox",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ProcessOutboxDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationOutboxProcessResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Mail"]
+      }
+    },
     "/api/integrations/sms/templates": {
       "get": {
         "operationId": "IntegrationController_listSmsTemplates",
@@ -5607,6 +5635,34 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/IntegrationOutboxDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration SMS"]
+      }
+    },
+    "/api/integrations/sms/outbox/process": {
+      "post": {
+        "operationId": "IntegrationController_processSmsOutbox",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ProcessOutboxDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationOutboxProcessResultDto"
                 }
               }
             }
@@ -9059,6 +9115,31 @@
         "type": "object",
         "properties": { "error": { "type": "string" } },
         "required": ["error"]
+      },
+      "ProcessOutboxDto": {
+        "type": "object",
+        "properties": {
+          "providerCode": { "type": "string" },
+          "limit": { "type": "number", "default": 100 }
+        }
+      },
+      "IntegrationOutboxProcessResultDto": {
+        "type": "object",
+        "properties": {
+          "channel": { "type": "string", "enum": ["mail", "sms"] },
+          "providerCode": { "type": "string" },
+          "attemptedCount": { "type": "number" },
+          "sentCount": { "type": "number" },
+          "skippedCount": { "type": "number" },
+          "queuedCount": { "type": "number" }
+        },
+        "required": [
+          "channel",
+          "attemptedCount",
+          "sentCount",
+          "skippedCount",
+          "queuedCount"
+        ]
       },
       "OAuthCallbackContractDto": {
         "type": "object",

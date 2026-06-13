@@ -58,6 +58,10 @@ describe('createIntegrationClient', () => {
     });
     await client.retryMailOutbox('token', 'outbox_mail_1');
     await client.markMailOutboxSent('token', 'outbox_mail_1');
+    await client.processMailOutbox('token', {
+      providerCode: 'mail.sandbox',
+      limit: 100,
+    });
     await client.listSmsTemplates('token', { enabled: true });
     await client.getSmsTemplate('token', 'sms.otp');
     await client.createSmsTemplate('token', {
@@ -81,6 +85,10 @@ describe('createIntegrationClient', () => {
     });
     await client.retrySmsOutbox('token', 'outbox_sms_1');
     await client.markSmsOutboxSent('token', 'outbox_sms_1');
+    await client.processSmsOutbox('token', {
+      providerCode: 'sms.sandbox',
+      limit: 100,
+    });
     await client.listOAuthProviders('token', { enabled: true });
     await client.getOAuthCallbackContract('token');
     await client.getWeChatDesign('token');
@@ -125,6 +133,10 @@ describe('createIntegrationClient', () => {
         path: '/integrations/mail/outbox/outbox_mail_1/sent',
         method: 'PATCH',
       },
+      {
+        path: '/integrations/mail/outbox/process',
+        method: 'POST',
+      },
       { path: '/integrations/sms/templates?enabled=true' },
       { path: '/integrations/sms/templates/sms.otp' },
       { path: '/integrations/sms/templates', method: 'POST' },
@@ -143,6 +155,10 @@ describe('createIntegrationClient', () => {
       {
         path: '/integrations/sms/outbox/outbox_sms_1/sent',
         method: 'PATCH',
+      },
+      {
+        path: '/integrations/sms/outbox/process',
+        method: 'POST',
       },
       { path: '/integrations/oauth/providers?enabled=true' },
       { path: '/integrations/oauth/callback-contract' },

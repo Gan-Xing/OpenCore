@@ -528,9 +528,25 @@ try {
     'mail retried notice delivery provider records',
     { channel: 'mail', provider: 'mail.sandbox' },
   );
+  const processedMailOutbox = await apiRequest(
+    '/integrations/mail/outbox/process',
+    {
+      method: 'POST',
+      body: { providerCode: 'mail.sandbox' },
+    },
+  );
+  assertNumberAtLeast(
+    processedMailOutbox.attemptedCount,
+    1,
+    'mail process attempted count',
+  );
+  assertNumberAtLeast(
+    processedMailOutbox.sentCount,
+    1,
+    'mail process sent count',
+  );
   const sentMailOutbox = await apiRequest(
-    `/integrations/mail/outbox/${encodeURIComponent(mailDelivery.providerMessageId)}/sent`,
-    { method: 'PATCH' },
+    `/integrations/mail/outbox/${encodeURIComponent(mailDelivery.providerMessageId)}`,
   );
   assertEqual(sentMailOutbox.status, 'sent', 'mail outbox sent status');
   assertString(sentMailOutbox.sentAt, 'mail outbox sentAt');
@@ -601,9 +617,25 @@ try {
     smsDelivery.providerMessageId,
     'SMS notice integration outbox',
   );
+  const processedSmsOutbox = await apiRequest(
+    '/integrations/sms/outbox/process',
+    {
+      method: 'POST',
+      body: { providerCode: 'sms.sandbox' },
+    },
+  );
+  assertNumberAtLeast(
+    processedSmsOutbox.attemptedCount,
+    1,
+    'SMS process attempted count',
+  );
+  assertNumberAtLeast(
+    processedSmsOutbox.sentCount,
+    1,
+    'SMS process sent count',
+  );
   const sentSmsOutbox = await apiRequest(
-    `/integrations/sms/outbox/${encodeURIComponent(smsDelivery.providerMessageId)}/sent`,
-    { method: 'PATCH' },
+    `/integrations/sms/outbox/${encodeURIComponent(smsDelivery.providerMessageId)}`,
   );
   assertEqual(sentSmsOutbox.status, 'sent', 'SMS outbox sent status');
   const sentSmsDeliveryPage = await apiRequest(
@@ -767,6 +799,7 @@ try {
         'core.notice.deliveries.provider-execute-idempotent',
         'core.notice.deliveries.mail-outbox-provider',
         'core.notice.deliveries.outbox-failed-retry-sent-sync',
+        'core.notice.deliveries.outbox-process-provider',
         'core.notice.deliveries.sms-outbox-provider',
         'core.notice.inbox.unread-item',
         'core.notice.inbox.unread-page',

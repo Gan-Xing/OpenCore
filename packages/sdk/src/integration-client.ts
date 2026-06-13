@@ -5,6 +5,7 @@ import type {
   FailOutboxMessageRequest,
   IntegrationDesignSummary,
   IntegrationOutboxPage,
+  IntegrationOutboxProcessResult,
   IntegrationOutboxQueryRequest,
   IntegrationOutboxSummary,
   IntegrationProviderPage,
@@ -16,6 +17,7 @@ import type {
   IntegrationTemplateSummary,
   OAuthCallbackContractSummary,
   PageRequest,
+  ProcessOutboxRequest,
   PreviewTemplateRequest,
   TemplatePreviewSummary,
   UpdateIntegrationProviderRequest,
@@ -94,6 +96,10 @@ export type IntegrationClient = {
     token: string,
     id: string,
   ) => Promise<IntegrationOutboxSummary>;
+  processMailOutbox: (
+    token: string,
+    body?: ProcessOutboxRequest,
+  ) => Promise<IntegrationOutboxProcessResult>;
   listSmsTemplates: (
     token: string,
     query?: IntegrationTemplateQueryRequest,
@@ -135,6 +141,10 @@ export type IntegrationClient = {
     token: string,
     id: string,
   ) => Promise<IntegrationOutboxSummary>;
+  processSmsOutbox: (
+    token: string,
+    body?: ProcessOutboxRequest,
+  ) => Promise<IntegrationOutboxProcessResult>;
   listOAuthProviders: (
     token: string,
     query?: IntegrationProviderQueryRequest,
@@ -242,6 +252,11 @@ export function createIntegrationClient(
         `/integrations/mail/outbox/${encodeURIComponent(id)}/retry`,
         { method: 'PATCH', token },
       ),
+    processMailOutbox: (token, body) =>
+      request<IntegrationOutboxProcessResult>(
+        '/integrations/mail/outbox/process',
+        { method: 'POST', body: body ?? {}, token },
+      ),
     listSmsTemplates: (token, query) =>
       request<IntegrationTemplatePage>(
         withQuery('/integrations/sms/templates', query),
@@ -294,6 +309,11 @@ export function createIntegrationClient(
       request<IntegrationOutboxSummary>(
         `/integrations/sms/outbox/${encodeURIComponent(id)}/retry`,
         { method: 'PATCH', token },
+      ),
+    processSmsOutbox: (token, body) =>
+      request<IntegrationOutboxProcessResult>(
+        '/integrations/sms/outbox/process',
+        { method: 'POST', body: body ?? {}, token },
       ),
     listOAuthProviders: (token, query) =>
       request<IntegrationProviderPage>(

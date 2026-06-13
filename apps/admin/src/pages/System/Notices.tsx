@@ -73,6 +73,7 @@ import {
   markOpenCoreIntegrationOutboxSent,
   markAllOpenCoreSystemNoticesRead,
   markOpenCoreSystemNoticesRead,
+  processOpenCoreIntegrationOutbox,
   publishOpenCoreSystemNotice,
   retryOpenCoreIntegrationOutbox,
   renderOpenCoreSystemNoticeTemplate,
@@ -773,6 +774,21 @@ export default function SystemNoticesPage() {
     await refreshOpenDeliveries();
   };
 
+  const processDeliveryOutbox = async (record: SystemNoticeDeliverySummary) => {
+    const channel = getExternalOutboxChannel(record);
+    if (!channel || !record.providerMessageId) {
+      return;
+    }
+
+    const result = await processOpenCoreIntegrationOutbox(channel, {
+      providerCode: record.provider,
+    });
+    message.success(
+      `${channel} outbox processed: ${result.sentCount} sent, ${result.queuedCount} queued.`,
+    );
+    await refreshOpenDeliveries();
+  };
+
   const archiveNotice = async (record: SystemNoticeSummary) => {
     await archiveOpenCoreSystemNotice(record.id);
     message.success('System notice archived.');
@@ -1134,9 +1150,29 @@ export default function SystemNoticesPage() {
         const channel = getExternalOutboxChannel(record);
         const sent = record.providerStatus === 'sent';
         const failed = record.providerStatus === 'failed';
+        const queued = record.providerStatus === 'pending';
 
         return (
           <Space size="small">
+            <Tooltip
+              title={
+                !channel
+                  ? 'Only mail/SMS outbox deliveries can be processed'
+                  : queued
+                    ? 'Process queued outbox'
+                    : failed
+                      ? 'Retry failed outbox first'
+                      : 'Already sent'
+              }
+            >
+              <Button
+                aria-label={`Process queued outbox ${record.providerMessageId ?? record.id}`}
+                disabled={!channel || !queued}
+                icon={<PlayCircleOutlined />}
+                onClick={() => void processDeliveryOutbox(record)}
+                size="small"
+              />
+            </Tooltip>
             <Popconfirm
               title="Fail outbox?"
               okText="Fail outbox"

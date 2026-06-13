@@ -228,6 +228,7 @@ if (
   !deployScript.includes('System Notice Templates') ||
   !deployScript.includes('Fail outbox') ||
   !deployScript.includes('Retry outbox') ||
+  !deployScript.includes('Process queued outbox') ||
   !deployScript.includes('Mark outbox sent') ||
   !deployScript.includes('Refusing to deploy a stale frontend login page')
 ) {
@@ -1142,6 +1143,7 @@ if (
   !systemNoticesPage.includes('createOpenCoreSystemNoticeFromTemplate') ||
   !systemNoticesPage.includes('markOpenCoreIntegrationOutboxFailed') ||
   !systemNoticesPage.includes('retryOpenCoreIntegrationOutbox') ||
+  !systemNoticesPage.includes('processOpenCoreIntegrationOutbox') ||
   !systemNoticesPage.includes('markOpenCoreIntegrationOutboxSent') ||
   !systemNoticesPage.includes('createOpenCoreSystemNoticeTemplate') ||
   !systemNoticesPage.includes('updateOpenCoreSystemNoticeTemplate') ||
@@ -1174,6 +1176,7 @@ if (
   !systemNoticesPage.includes('Outbox Actions') ||
   !systemNoticesPage.includes('Fail outbox') ||
   !systemNoticesPage.includes('Retry outbox') ||
+  !systemNoticesPage.includes('Process queued outbox') ||
   !systemNoticesPage.includes('Mark outbox sent') ||
   !systemNoticesPage.includes('System Notice Delivery Records') ||
   !systemNoticesPage.includes('System Notice Inbox Detail') ||

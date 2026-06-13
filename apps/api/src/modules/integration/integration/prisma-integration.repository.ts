@@ -12,6 +12,7 @@ import type {
   IntegrationOutboxQueryDto,
   IntegrationProviderQueryDto,
   IntegrationTemplateQueryDto,
+  ProcessOutboxDto,
   PreviewTemplateDto,
   UpdateIntegrationProviderDto,
 } from './integration.dto';
@@ -33,8 +34,10 @@ import {
   createPage,
   IntegrationRepository,
   normalizeOutboxFailureError,
+  normalizeOptionalProviderCode,
   normalizeProviderType,
   normalizeOptionalBoolean,
+  normalizeProcessOutboxLimit,
   redactProviderConfig,
   renderTemplate,
   requireRecord,
@@ -403,6 +406,70 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
     return toOutboxRecord(message);
   }
 
+  async processOutbox(channel: 'mail' | 'sms', body: ProcessOutboxDto = {}) {
+    const limit = normalizeProcessOutboxLimit(body.limit);
+    const providerCode = normalizeOptionalProviderCode(body.providerCode);
+    const queuedRows = await this.prisma.integrationOutbox.findMany({
+      where: { channel, status: 'queued', providerCode },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      take: limit,
+    });
+
+    if (queuedRows.length === 0) {
+      return {
+        channel,
+        providerCode,
+        attemptedCount: 0,
+        sentCount: 0,
+        skippedCount: 0,
+        queuedCount: await this.countQueuedOutbox(channel, providerCode),
+      };
+    }
+
+    for (const code of new Set(queuedRows.map((row) => row.providerCode))) {
+      const provider = await this.findProvider(code);
+      assertProviderReadyForOutbox({
+        code: provider.code,
+        type: provider.type,
+        enabled: provider.enabled,
+        channel,
+      });
+    }
+
+    const now = new Date();
+    const sentRows = await this.prisma.$transaction(async (tx) => {
+      const updatedRows: OutboxRow[] = [];
+
+      for (const row of queuedRows) {
+        const updated = await tx.integrationOutbox.update({
+          where: { id: row.id },
+          data: {
+            status: 'sent',
+            error: null,
+            sentAt: now,
+          },
+        });
+        await syncNoticeDeliveryFromOutbox(tx, updated, {
+          status: 'sent',
+          now,
+          previousOutboxStatus: 'queued',
+        });
+        updatedRows.push(updated);
+      }
+
+      return updatedRows;
+    });
+
+    return {
+      channel,
+      providerCode,
+      attemptedCount: queuedRows.length,
+      sentCount: sentRows.length,
+      skippedCount: 0,
+      queuedCount: await this.countQueuedOutbox(channel, providerCode),
+    };
+  }
+
   async listOAuthProviders(
     query: IntegrationProviderQueryDto = {},
   ): Promise<PageResult<IntegrationProviderRecord>> {
@@ -467,6 +534,15 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
       'Integration outbox message',
       id,
     );
+  }
+
+  private countQueuedOutbox(
+    channel: 'mail' | 'sms',
+    providerCode?: string,
+  ): Promise<number> {
+    return this.prisma.integrationOutbox.count({
+      where: { channel, providerCode, status: 'queued' },
+    });
   }
 }
 

@@ -131,6 +131,20 @@ export type FailOutboxMessageRequest = {
   error: string;
 };
 
+export type ProcessOutboxRequest = {
+  providerCode?: string;
+  limit?: number;
+};
+
+export type IntegrationOutboxProcessResult = {
+  channel: 'mail' | 'sms';
+  providerCode?: string;
+  attemptedCount: number;
+  sentCount: number;
+  skippedCount: number;
+  queuedCount: number;
+};
+
 export type IntegrationProviderQueryRequest = PageRequest & {
   type?: IntegrationProviderType;
   enabled?: boolean;

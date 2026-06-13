@@ -197,6 +197,42 @@ describe('IntegrationRepository', () => {
     ).rejects.toThrow('Integration outbox message not found');
   });
 
+  it('processes queued outbox messages through the provider reliability loop', async () => {
+    const repository = new SeedIntegrationRepository();
+
+    await expect(
+      repository.processOutbox('mail', { providerCode: 'mail.sandbox' }),
+    ).rejects.toThrow(BadRequestException);
+    await repository.enableProvider('mail.sandbox');
+
+    const result = await repository.processOutbox('mail', {
+      providerCode: 'mail.sandbox',
+      limit: 1,
+    });
+    expect(result).toMatchObject({
+      channel: 'mail',
+      providerCode: 'mail.sandbox',
+      attemptedCount: 1,
+      sentCount: 1,
+    });
+
+    const processed = (await repository.listOutbox('mail', { status: 'sent' }))
+      .items[0];
+    expect(processed.sentAt).toEqual(expect.any(String));
+    await expect(
+      repository.markOutboxFailed('mail', processed.id, { error: 'too late' }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(repository.retryOutbox('mail', processed.id)).rejects.toThrow(
+      BadRequestException,
+    );
+    await expect(
+      repository.processOutbox('mail', { providerCode: ' ' }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      repository.processOutbox('mail', { limit: 0 }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
   it('guards outbox enqueue by enabled provider, channel, and template state', async () => {
     const repository = new SeedIntegrationRepository();
 
