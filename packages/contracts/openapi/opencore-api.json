@@ -6134,6 +6134,7 @@
           "description": { "type": "string" },
           "remark": { "type": "string" },
           "public": { "type": "boolean" },
+          "system": { "type": "boolean" },
           "visibility": {
             "type": "string",
             "enum": ["private", "public", "secret"]
@@ -6147,6 +6148,7 @@
           "value",
           "valueType",
           "public",
+          "system",
           "visibility"
         ]
       },

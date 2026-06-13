@@ -74,6 +74,7 @@ export type SystemConfigSummary = {
   description?: string;
   remark?: string;
   public: boolean;
+  system: boolean;
   visibility: 'private' | 'public' | 'secret';
 };
 

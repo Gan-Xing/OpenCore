@@ -83,6 +83,7 @@ const searchFields: CurrentPageSearchField<SystemConfigSummary>[] = [
   'description',
   'remark',
   'visibility',
+  'system',
 ];
 const exportColumns: CurrentPageExportColumn<SystemConfigSummary>[] = [
   { title: 'ID', dataIndex: 'id' },
@@ -96,6 +97,7 @@ const exportColumns: CurrentPageExportColumn<SystemConfigSummary>[] = [
   { title: 'Type', dataIndex: 'valueType' },
   { title: 'Visibility', dataIndex: 'visibility' },
   { title: 'Public', dataIndex: 'public' },
+  { title: 'System', dataIndex: 'system' },
   { title: 'Description', dataIndex: 'description' },
   { title: 'Remark', dataIndex: 'remark' },
 ];
@@ -145,6 +147,15 @@ function createFilterOptions(
       placeholder: 'Public',
       predicate: (record, value) => record.public === (value === 'true'),
     },
+    {
+      key: 'system',
+      options: [
+        { label: 'system', value: 'true' },
+        { label: 'custom', value: 'false' },
+      ],
+      placeholder: 'System',
+      predicate: (record, value) => record.system === (value === 'true'),
+    },
   ];
 }
 
@@ -162,6 +173,7 @@ function createDetailFields(record: SystemConfigSummary): DetailField[] {
     { label: 'Type', value: record.valueType },
     { label: 'Visibility', value: record.visibility },
     { label: 'Public', value: record.public ? 'public' : 'private' },
+    { label: 'System', value: record.system ? 'system' : 'custom' },
     { label: 'Description', value: record.description },
     { label: 'Remark', value: record.remark },
   ];
@@ -180,6 +192,14 @@ function renderValue(record: SystemConfigSummary) {
     >
       {value}
     </Typography.Text>
+  );
+}
+
+function renderSystem(record: SystemConfigSummary) {
+  return (
+    <Tag color={record.system ? 'blue' : 'default'}>
+      {record.system ? 'system' : 'custom'}
+    </Tag>
   );
 }
 
@@ -202,6 +222,15 @@ export default function ConfigPage() {
   const [valueReadingKey, setValueReadingKey] = useState<string>();
   const watchedVisibility = Form.useWatch('visibility', form);
   const filterOptions = useMemo(() => createFilterOptions(rows), [rows]);
+  const selectedDeletableKeys = useMemo(
+    () =>
+      selectedRowKeys
+        .map(String)
+        .filter((key) =>
+          rows.some((record) => record.key === key && !record.system),
+        ),
+    [rows, selectedRowKeys],
+  );
   const { filteredRows, toolbar: filterToolbar } =
     useCurrentPageFilters<SystemConfigSummary>({
       rows,
@@ -357,7 +386,7 @@ export default function ConfigPage() {
   };
 
   const deleteSelectedConfigs = async () => {
-    const keys = selectedRowKeys.map(String);
+    const keys = selectedDeletableKeys;
     if (keys.length === 0) {
       return;
     }
@@ -439,6 +468,12 @@ export default function ConfigPage() {
       width: 96,
       render: (_, record) => (record.public ? 'public' : 'private'),
     },
+    {
+      title: 'System',
+      dataIndex: 'system',
+      width: 104,
+      render: (_, record) => renderSystem(record),
+    },
     { title: 'Description', dataIndex: 'description', ellipsis: true },
     { title: 'Remark', dataIndex: 'remark', ellipsis: true },
     {
@@ -483,12 +518,20 @@ export default function ConfigPage() {
             title="Delete this system config?"
             okText="Delete"
             okButtonProps={{ danger: true }}
+            disabled={record.system}
             onConfirm={() => void deleteConfig(record)}
           >
-            <Tooltip title="Delete">
+            <Tooltip
+              title={
+                record.system
+                  ? 'System built-in configs cannot be deleted'
+                  : 'Delete'
+              }
+            >
               <Button
                 aria-label={`Delete ${record.key}`}
                 danger
+                disabled={record.system}
                 icon={<DeleteOutlined />}
                 size="small"
               />
@@ -542,15 +585,15 @@ export default function ConfigPage() {
           </Button>,
           <Popconfirm
             key="batch-delete"
-            title={`Delete ${selectedRowKeys.length} selected system config(s)?`}
+            title={`Delete ${selectedDeletableKeys.length} selected custom config(s)?`}
             okText="Delete"
             okButtonProps={{ danger: true }}
-            disabled={selectedRowKeys.length === 0}
+            disabled={selectedDeletableKeys.length === 0}
             onConfirm={() => void deleteSelectedConfigs()}
           >
             <Button
               danger
-              disabled={selectedRowKeys.length === 0}
+              disabled={selectedDeletableKeys.length === 0}
               icon={<DeleteOutlined />}
               loading={batchDeleting}
             >
@@ -587,6 +630,10 @@ export default function ConfigPage() {
         rowSelection={{
           selectedRowKeys: [...selectedRowKeys],
           onChange: (keys) => setSelectedRowKeys(keys),
+          getCheckboxProps: (record) => ({
+            disabled: record.system,
+            name: record.key,
+          }),
           preserveSelectedRowKeys: true,
         }}
       />

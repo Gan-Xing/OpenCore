@@ -94,6 +94,7 @@ export function createSystemConfigFixtures(): PageResponse<SystemConfigSummary> 
       description: 'Public Admin title.',
       remark: 'Shown in the Admin shell title.',
       public: true,
+      system: true,
       visibility: 'public',
     },
     {
@@ -106,6 +107,7 @@ export function createSystemConfigFixtures(): PageResponse<SystemConfigSummary> 
       description: 'Safe login lockout display setting.',
       remark: 'Private security policy display setting.',
       public: false,
+      system: true,
       visibility: 'private',
     },
     {
@@ -118,6 +120,7 @@ export function createSystemConfigFixtures(): PageResponse<SystemConfigSummary> 
       description: 'Secret runtime value is stored outside Admin fixtures.',
       remark: 'Secret-like values must remain redacted.',
       public: false,
+      system: true,
       visibility: 'secret',
     },
   ]);

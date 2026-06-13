@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -15,6 +16,7 @@ import {
 } from './system-config.records';
 import {
   assertSafeConfigKey,
+  assertSystemConfigMutable,
   createSystemConfigPageResult,
   normalizeConfigCategory,
   normalizeConfigName,
@@ -71,6 +73,7 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
       description: normalizeOptionalConfigText(body.description, 'description'),
       remark: normalizeOptionalConfigText(body.remark, 'remark'),
       public: visibility === 'public',
+      system: false,
       visibility,
     };
     this.systemConfigs = [config, ...this.systemConfigs];
@@ -114,7 +117,7 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
   }
 
   async deleteConfig(key: string): Promise<{ deleted: true }> {
-    this.findConfig(key);
+    assertSystemConfigMutable(this.findConfig(key));
     this.systemConfigs = this.systemConfigs.filter(
       (config) => config.key !== key,
     );
@@ -132,6 +135,16 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
 
     if (missing) {
       throw new NotFoundException(`System config not found: ${missing}`);
+    }
+
+    const systemConfig = this.systemConfigs.find(
+      (config) => keys.includes(config.key) && config.system,
+    );
+
+    if (systemConfig) {
+      throw new BadRequestException(
+        `System built-in config cannot be deleted: ${systemConfig.key}`,
+      );
     }
 
     this.systemConfigs = this.systemConfigs.filter(

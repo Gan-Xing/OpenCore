@@ -29,8 +29,15 @@ describe('@opencore/system system-config', () => {
       name: 'Admin title',
       public: true,
       remark: 'Shown in the Admin shell title.',
+      system: true,
       visibility: 'public',
     });
+    await expect(service.deleteConfig('opencore.admin.title')).rejects.toThrow(
+      BadRequestException,
+    );
+    await expect(
+      service.deleteConfigs({ keys: ['opencore.admin.title'] }),
+    ).rejects.toThrow(BadRequestException);
     await expect(
       service.getConfigValueByKey('opencore.admin.title'),
     ).resolves.toMatchObject({
@@ -55,6 +62,7 @@ describe('@opencore/system system-config', () => {
     expect(config.category).toBe('feature');
     expect(config.name).toBe('Sample enabled');
     expect(config.remark).toBe('Created from seed repository test.');
+    expect(config.system).toBe(false);
     expect(config.visibility).toBe('public');
     await expect(
       service.getConfigValueByKey('sample.enabled'),
@@ -134,6 +142,7 @@ describe('@opencore/system system-config', () => {
         'valueType',
         'visibility',
         'public',
+        'system',
         'description',
         'remark',
       ],
@@ -201,10 +210,19 @@ describe('@opencore/system system-config', () => {
       ).resolves.toEqual(
         expect.objectContaining({
           items: expect.arrayContaining([
-            expect.objectContaining({ key: 'opencore.admin.title' }),
+            expect.objectContaining({
+              key: 'opencore.admin.title',
+              system: true,
+            }),
           ]),
         }),
       );
+      await expect(
+        service.deleteConfig('opencore.admin.title'),
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        service.deleteConfigs({ keys: ['opencore.admin.title'] }),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('persists config CRUD and keeps secret values redacted through Prisma', async () => {
@@ -219,6 +237,7 @@ describe('@opencore/system system-config', () => {
       });
 
       expect(config.key).toBe(configKey);
+      expect(config.system).toBe(false);
       await expect(service.getConfig(configKey)).resolves.toMatchObject({
         category: 'runtime',
         key: configKey,
@@ -291,6 +310,7 @@ describe('@opencore/system system-config', () => {
           'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         scope: 'current-page',
         contentBase64: expect.any(String),
+        columns: expect.arrayContaining(['system']),
         rowCount: expect.any(Number),
       });
       await service.createConfig({

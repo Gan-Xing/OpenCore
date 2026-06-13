@@ -813,6 +813,10 @@ if (
   !configPage.includes('Delete selected') ||
   !configPage.includes('rowSelection') ||
   !configPage.includes('selectedRowKeys') ||
+  !configPage.includes('selectedDeletableKeys') ||
+  !configPage.includes('getCheckboxProps') ||
+  !configPage.includes('record.system') ||
+  !configPage.includes('System built-in configs cannot be deleted') ||
   !configPage.includes('preserveRedactedSecret') ||
   !configPage.includes('useCurrentPageFilters') ||
   !configPage.includes('CurrentPageExportButton') ||
@@ -820,7 +824,7 @@ if (
   !configPage.includes('rows={filteredRows}')
 ) {
   throw new Error(
-    'System Config page must use live SDK CRUD with redacted secret preservation, bounded filtering and current-page export.',
+    'System Config page must use live SDK CRUD with redacted secret preservation, bounded filtering, system deletion guards and current-page export.',
   );
 }
 

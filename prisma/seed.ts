@@ -491,6 +491,7 @@ async function seedSystemManagement(): Promise<{
         description: config.description,
         remark: config.remark,
         public: config.public,
+        system: config.system,
       },
       create: {
         id: config.id,
@@ -502,6 +503,7 @@ async function seedSystemManagement(): Promise<{
         description: config.description,
         remark: config.remark,
         public: config.public,
+        system: config.system,
       },
     });
   }

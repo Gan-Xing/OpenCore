@@ -12,6 +12,7 @@ export type SystemConfigRecord = {
   description?: string;
   remark?: string;
   public: boolean;
+  system: boolean;
   visibility: SystemConfigVisibility;
 };
 
@@ -26,6 +27,7 @@ export const seedSystemConfigs: readonly SystemConfigRecord[] = [
     description: 'Public Admin title. Secrets are not accepted in core config.',
     remark: 'Shown in the Admin shell title.',
     public: true,
+    system: true,
     visibility: 'public',
   },
   {
@@ -38,6 +40,7 @@ export const seedSystemConfigs: readonly SystemConfigRecord[] = [
     description: 'Safe login lockout display setting.',
     remark: 'Private security policy display setting.',
     public: false,
+    system: true,
     visibility: 'private',
   },
 ];

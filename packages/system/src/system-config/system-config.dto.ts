@@ -28,6 +28,9 @@ export class SystemConfigDto {
   @ApiProperty()
   public!: boolean;
 
+  @ApiProperty()
+  system!: boolean;
+
   @ApiProperty({ enum: ['private', 'public', 'secret'] })
   visibility!: 'private' | 'public' | 'secret';
 }

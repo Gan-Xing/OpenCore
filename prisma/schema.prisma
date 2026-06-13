@@ -137,6 +137,7 @@ model SystemConfig {
   description String?
   remark      String?
   public      Boolean  @default(false)
+  system      Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -13,6 +14,7 @@ import type {
 import type { SystemConfigRecord } from './system-config.records';
 import {
   assertSafeConfigKey,
+  assertSystemConfigMutable,
   createSystemConfigPageResult,
   normalizeConfigCategory,
   normalizeConfigName,
@@ -37,6 +39,7 @@ type PrismaSystemConfig = {
   description: string | null;
   remark: string | null;
   public: boolean;
+  system: boolean;
 };
 
 @Injectable()
@@ -91,6 +94,7 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
         ),
         remark: normalizeOptionalConfigText(body.remark, 'remark'),
         public: visibility === 'public',
+        system: false,
       },
     });
 
@@ -137,7 +141,9 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
   }
 
   async deleteConfig(key: string): Promise<{ deleted: true }> {
-    await this.findConfigByKey(key);
+    assertSystemConfigMutable(
+      toSystemConfigRecord(await this.findConfigByKey(key)),
+    );
     await this.prisma.systemConfig.delete({ where: { key } });
     return { deleted: true };
   }
@@ -148,13 +154,21 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
     const keys = normalizeBatchSystemConfigKeys(body?.keys);
     const configs = await this.prisma.systemConfig.findMany({
       where: { key: { in: [...keys] } },
-      select: { key: true },
+      select: { key: true, system: true },
     });
     const existingKeys = new Set(configs.map((config) => config.key));
     const missing = keys.find((key) => !existingKeys.has(key));
 
     if (missing) {
       throw new NotFoundException(`System config not found: ${missing}`);
+    }
+
+    const systemConfig = configs.find((config) => config.system);
+
+    if (systemConfig) {
+      throw new BadRequestException(
+        `System built-in config cannot be deleted: ${systemConfig.key}`,
+      );
     }
 
     await this.prisma.systemConfig.deleteMany({
@@ -192,6 +206,7 @@ function toSystemConfigRecord(config: PrismaSystemConfig): SystemConfigRecord {
     description: config.description ?? undefined,
     remark: config.remark ?? undefined,
     public: config.public,
+    system: config.system,
     visibility: resolveStoredConfigVisibility({
       key: config.key,
       public: config.public,

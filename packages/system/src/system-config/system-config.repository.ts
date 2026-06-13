@@ -58,6 +58,7 @@ export const SYSTEM_CONFIG_EXPORT_COLUMNS = [
   'valueType',
   'visibility',
   'public',
+  'system',
   'description',
   'remark',
 ] as const;
@@ -150,6 +151,7 @@ function createSystemConfigExportWorksheetRows(
       row.valueType,
       row.visibility,
       row.public ? 'true' : 'false',
+      row.system ? 'true' : 'false',
       row.description ?? '',
       row.remark ?? '',
     ]),
@@ -215,6 +217,14 @@ export function redactSystemConfig(
     visibility,
     value: visibility === 'secret' ? REDACTED_SECRET_VALUE : config.value,
   };
+}
+
+export function assertSystemConfigMutable(config: SystemConfigRecord): void {
+  if (config.system) {
+    throw new BadRequestException(
+      `System built-in config cannot be deleted: ${config.key}`,
+    );
+  }
 }
 
 export function normalizeConfigCategory(value: unknown): string {

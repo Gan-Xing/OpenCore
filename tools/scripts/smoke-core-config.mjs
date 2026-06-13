@@ -55,6 +55,15 @@ try {
   const listResponse = await apiRequest('/core/config?page=1&pageSize=10');
   assertArray(listResponse.items, 'config list items');
 
+  const seededSystemConfig = await apiRequest(
+    '/core/config/opencore.admin.title',
+  );
+  assertEqual(seededSystemConfig.system, true, 'seeded config system flag');
+  await apiRequest('/core/config/opencore.admin.title', {
+    method: 'DELETE',
+    expected: [400],
+  });
+
   const createdConfig = await apiRequest('/core/config', {
     method: 'POST',
     body: {
@@ -82,6 +91,7 @@ try {
     'created config remark',
   );
   assertEqual(createdConfig.value, 'true', 'created config value');
+  assertEqual(createdConfig.system, false, 'created config system flag');
   assertEqual(createdConfig.visibility, 'public', 'created config visibility');
 
   const fetchedConfig = await apiRequest(`/core/config/${plainKey}`);
@@ -184,6 +194,11 @@ try {
   assertIncludes(exportPreview.columns, 'value', 'config export value column');
   assertIncludes(
     exportPreview.columns,
+    'system',
+    'config export system column',
+  );
+  assertIncludes(
+    exportPreview.columns,
     'remark',
     'config export remark column',
   );
@@ -249,6 +264,12 @@ try {
     body: { keys: [plainKey, `opencore.smoke.config.missing.${runId}`] },
     expected: [404],
   });
+  await apiRequest('/core/config/batch', {
+    method: 'DELETE',
+    body: { keys: [plainKey, 'opencore.admin.title'] },
+    expected: [400],
+  });
+  await apiRequest(`/core/config/${encodeURIComponent(plainKey)}`);
 
   await apiRequest('/core/config', {
     method: 'POST',
@@ -321,9 +342,12 @@ try {
         'core.config.export.xlsx',
         'core.config.secret-redaction',
         'core.config.secret-value-blocked',
+        'core.config.system-flag',
+        'core.config.system-delete-guard',
         'core.config.batch-delete.empty-guard',
         'core.config.batch-delete.duplicate-guard',
         'core.config.batch-delete.missing-guard',
+        'core.config.batch-delete.system-guard',
         'core.config.batch-delete',
         'core.config.batch-delete.cache-invalidation',
         'core.config.delete',
