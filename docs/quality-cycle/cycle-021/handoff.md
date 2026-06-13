@@ -3,8 +3,8 @@
 Date: 2026-06-13
 Repository: `Gan-Xing/OpenCore`
 Default branch: `main`
-Latest observed feature commit: `4940291 feat(core-config): add batch config deletion / 新增配置批量删除`
-Latest deployed feature commit: `4940291 feat(core-config): add batch config deletion / 新增配置批量删除`
+Latest observed feature commit: `c7a3db8 feat(core-config): guard system config deletion / 保护系统配置删除`
+Latest deployed feature commit: `c7a3db8 feat(core-config): guard system config deletion / 保护系统配置删除`
 Latest deployed hardening commit: `04e446c fix(online-user): stabilize admin session smoke / 稳定在线用户管理员会话冒烟`
 
 ## One-sentence Goal
@@ -105,6 +105,7 @@ productization waterline completion; see
 - Round 37 `core.config` metadata enrichment stage 3
 - Round 38 `core.config` native XLSX export stage 4
 - Round 39 `core.config` batch deletion stage 5
+- Round 40 `core.config` system deletion policy stage 6
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -461,6 +462,24 @@ smoke 均验证 `core.config.batch-delete.*` 守卫与成功路径；公网 Admi
 404 确认。注意：这轮关闭的是配置批量删除，不等于内置配置不可删字段、secret
 vault/KMS 或更广泛 runtime feature-flag propagation 已完成。
 
+Round 40 继续补齐 `core.config` 队列：系统配置现在补齐 Yudao
+`ConfigTypeEnum.SYSTEM/CUSTOM` 的内置配置删除保护语义。OpenCore 在
+`SystemConfig` 持久化 `system` 标识，seed 和 migration 将
+`opencore.admin.title`、`auth.login.lockoutMinutes` 标记为内置系统配置；新建配置
+默认 `system=false`。seed/Prisma repository 均会阻止单删和批量删除任何
+`system=true` 配置，并在批量请求中先校验后变更，避免部分删除。API/DTO/OpenAPI/SDK/
+fixtures/Admin Config 均同步 `system` 字段；Admin Config 增加 System 列、筛选、详情和
+导出列，并禁用系统项行级删除与复选框，只允许批量删除 custom 配置。固定 smoke、部署
+smoke 和公网 smoke 均验证 `core.config.system-flag`、
+`core.config.system-delete-guard` 和
+`core.config.batch-delete.system-guard`；公网 Admin Config chunk
+`p__System__Config.c06f078e.async.js` 已验证包含
+`System built-in configs cannot be deleted`、`getCheckboxProps`、`selected custom
+config(s)?` 和 `dataIndex:"system"`，公网 Admin main bundle `umi.d3cc4418.js` 已验证
+指向 API `http://144.217.243.161:39172` 且不含 `/api/api`，公网 Admin
+`/api/auth/login` 与公网 API 登录均通过。注意：这轮关闭的是内置配置不可删策略，不等于
+secret vault/KMS 或更广泛 runtime feature-flag propagation 已完成。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -471,7 +490,7 @@ The productization waterline now classifies:
   Round 8/21 `core.dict`.
 - First loop, enhance: Round 1 `core.notice`, Round 2/27 `core.dept`, Round
   3/22/25 `core.post`, Round 7/19/22/23/28/29/30/31/32/33/34/35/36
-  `core.user`, Round 9/24/37/38/39 `core.config`, Round 11/26
+  `core.user`, Round 9/24/37/38/39/40 `core.config`, Round 11/26
   `core.login-log`.
 - Thin, rework: none after Round 16.
 
@@ -499,9 +518,10 @@ finds another blocker:
    refresh/invalidation; Round 37 closed category/name/remark metadata across
    API/SDK/Admin/smoke; Round 38 closed native XLSX export payload plus Admin
    download and smoke guards; Round 39 closed batch deletion with cache
-   invalidation and Admin selected-row deletion. Remaining work is broader
-   runtime propagation boundaries, plus any admitted built-in-config deletion
-   policy.
+   invalidation and Admin selected-row deletion; Round 40 closed persisted
+   system/custom config deletion policy with API/Admin/smoke guards. Remaining
+   work is broader runtime propagation boundaries and any admitted secret
+   vault/KMS integration.
 3. `core.login-log`: Round 26 closed browser/OS parsing and server-side IP/time
    filters. Remaining work is IP/location enrichment where feasible,
    cleanup/unlock policy integration and login-type/result expansion.

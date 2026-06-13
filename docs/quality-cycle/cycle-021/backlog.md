@@ -1129,6 +1129,37 @@ config type policy or broader runtime propagation.
       build, deployment and public URL verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 40: core.config System Deletion Policy
+
+Why this slice: after batch deletion was live, the next lowest-dependency
+config debt was the built-in/system config deletion policy. Yudao marks configs
+as `SYSTEM` or `CUSTOM`, creates operator-added configs as custom, and rejects
+deleting system configs in both single and batch delete flows. OpenCore already
+had metadata, export, batch deletion, cache invalidation and Admin selected-row
+deletion, so this round could add system/custom protection without opening
+secret vault/KMS or broader runtime feature-flag propagation.
+
+- [x] Recompare Yudao/RuoYi built-in config deletion policy against OpenCore.
+- [x] Add persisted `SystemConfig.system` with migration backfill for seeded
+      built-in configs.
+- [x] Mark seeded system configs and SDK fixtures as `system=true`; create new
+      configs as `system=false`.
+- [x] Reject single deletion of `system=true` configs in seed and Prisma
+      repositories.
+- [x] Reject mixed batch deletion containing any `system=true` config before
+      mutation so custom rows are not partially deleted.
+- [x] Expose `system` through DTO/OpenAPI/SDK and config XLSX export columns.
+- [x] Add Admin Config System column/filter/detail/export surface.
+- [x] Disable Admin row deletion and row-selection checkboxes for system
+      configs; batch delete only sends selected custom keys.
+- [x] Extend Admin static smoke for system deletion UI/service markers.
+- [x] Extend fixed-port/deploy/public `core.config` smoke with seeded system
+      flag, single-delete guard, mixed-batch guard and cleanup checks.
+- [x] Run Prisma generate/migrate, focused tests, OpenAPI/SDK, typecheck,
+      format, build, fixed-port smoke, deployment and public URL verification
+      gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -1178,11 +1209,12 @@ treat "minimal loop" as "minimal final product".
       Native XLSX import template/parsing is complete while CSV import remains
       backwards compatible. Any dedicated User-page role assignment workflow
       still needs enhancement if admitted.
-- [ ] Round 9/24/37/38/39 `core.config`: public get-value-by-key, cache refresh
+- [ ] Round 9/24/37/38/39/40 `core.config`: public get-value-by-key, cache refresh
       and mutation invalidation are complete. Category/name/remark metadata is
       complete. Native XLSX export payload and Admin download are complete.
-      Batch deletion is complete. Broader runtime propagation boundaries and
-      any admitted built-in-config deletion policy remain.
+      Batch deletion is complete. Persisted system/custom deletion policy is
+      complete. Broader runtime propagation boundaries and any admitted secret
+      vault/KMS integration remain.
 - [ ] Round 11/26 `core.login-log`: browser/OS parsing and IP/time filters are
       complete. IP/location enrichment where feasible, cleanup/unlock policy
       integration and logType/result schema expansion remain.
@@ -1227,8 +1259,7 @@ treat "minimal loop" as "minimal final product".
 - Batch dictionary delete, Excel import/export file workflows, dictionary
   color/css/remark fields, app-wide dictionary cache TTL/invalidation and
   dictionary cache refresh.
-- Batch config delete, secret vault/KMS integration and runtime feature-flag
-  propagation.
+- Secret vault/KMS integration and runtime feature-flag propagation.
 - Presigned upload/download URLs, storage-provider config, public
   download/preview/copy-link workflows, batch file delete and object browser
   expansion.

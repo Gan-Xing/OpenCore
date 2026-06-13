@@ -1199,5 +1199,33 @@ its key-based configuration model:
   deletion, cache invalidation, deployed Admin chunk markers and Admin
   same-origin proxy behavior.
 
-OpenCore still does not claim a built-in-config deletion policy field, secret
-vault/KMS integration or broad runtime feature-flag propagation in this round.
+Round 39 did not claim a built-in-config deletion policy field, secret
+vault/KMS integration or broad runtime feature-flag propagation.
+
+## Round 40 Config System Deletion Policy Reference Shape
+
+Yudao models configuration type through `ConfigTypeEnum.SYSTEM/CUSTOM`.
+Operator-created configs are saved as custom, and both single delete and batch
+delete reject system configs before deleting rows. RuoYi similarly treats
+built-in framework configuration as a protected operational boundary rather
+than ordinary user-created data.
+
+OpenCore admits the matching stage-6 config deletion-policy loop while
+preserving its key-based configuration model:
+
+- `SystemConfig.system` is persisted and defaults to false;
+- seeded built-in rows such as `opencore.admin.title` and
+  `auth.login.lockoutMinutes` are marked `system=true`;
+- operator-created configs are always `system=false`;
+- single delete rejects `system=true` configs with 400;
+- batch delete rejects any request containing a `system=true` config before
+  mutation, preventing partial custom-row deletion;
+- DTO/OpenAPI/SDK/Admin/export surfaces expose the `system` flag;
+- Admin Config displays System status, filters/details/exports it, disables
+  row delete for built-in configs and prevents selecting them for batch delete;
+- fixed-port, deploy and public smoke prove seeded system flags, single-delete
+  guard, mixed-batch guard, deployed Admin chunk markers and public Admin/API
+  login paths.
+
+OpenCore still does not claim secret vault/KMS integration or broad runtime
+feature-flag propagation in this round.

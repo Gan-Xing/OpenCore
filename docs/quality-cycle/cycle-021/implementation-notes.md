@@ -3153,3 +3153,92 @@ Against public endpoints after deploy:
   `4940291 feat(core-config): add batch config deletion / 新增配置批量删除`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 40 Capability
+
+Capability: `core.config` system deletion policy.
+
+Goal: add a persisted system/custom boundary for configuration rows so seeded
+built-in configs cannot be deleted by single-row or batch-delete flows, while
+operator-created configs remain mutable.
+
+## Round 40 Implemented
+
+- Rechecked Yudao `ConfigTypeEnum.SYSTEM/CUSTOM`, create-as-custom behavior and
+  single/batch delete system-config guards.
+- Added `SystemConfig.system` with Prisma migration backfill for
+  `opencore.admin.title` and `auth.login.lockoutMinutes`.
+- Marked seed records and SDK fixtures with `system=true`; new config creation
+  stores `system=false`.
+- Added shared `assertSystemConfigMutable` and enforced it in seed and Prisma
+  single-delete paths.
+- Added batch-delete preflight rejection for any selected system config before
+  mutation.
+- Exposed `system` through DTO/OpenAPI/SDK types and XLSX export columns.
+- Added Admin Config System column/filter/detail/export support.
+- Disabled row delete and row-selection checkboxes for system rows; batch delete
+  now sends only selected custom keys.
+- Extended Admin static smoke and `tools/scripts/smoke-core-config.mjs` with
+  system flag, single-delete guard and mixed-batch guard checks.
+
+## Round 40 Verification
+
+- `pnpm prisma:generate`
+- `pnpm prisma:migrate`
+- `pnpm nx test system --testFile=system-config.spec.ts`
+- `pnpm nx test sdk --testFile=registry-fixtures.spec.ts`
+- `pnpm nx test admin`
+- `node --check tools/scripts/smoke-core-config.mjs`
+- `node --check apps/admin/scripts/smoke-test.mjs`
+- `pnpm openapi:export`
+- `pnpm sdk:check`
+- `pnpm openapi:check`
+- `pnpm openapi:registry-tags:check`
+- `pnpm nx run-many -t typecheck --projects=api,admin,sdk,system`
+- `pnpm prisma:validate`
+- `pnpm format:check`
+- `git diff --check`
+- `pnpm nx test api --testFile=system-management.permission-matrix.spec.ts`
+- `pnpm nx test contracts`
+- `pnpm nx test module-registry`
+- `pnpm build:api`
+- `pnpm build:admin`
+- `pnpm smoke:api:local`
+- `pnpm deploy:opencore`
+
+`pnpm smoke:api:local` passed on fixed port `39173`, including
+`core.config.system-flag`, `core.config.system-delete-guard` and
+`core.config.batch-delete.system-guard`.
+
+`pnpm deploy:opencore` passed, deploying API/Admin on fixed ports
+`39172`/`39174`; deploy smoke included the same `core.config` system deletion
+guards, duplicate `/api/api` login guards, Admin bundle no-cache checks and
+session guards.
+
+## Round 40 Public Verification
+
+Against public endpoints after deploy:
+
+- Public API: `http://144.217.243.161:39172`
+- Public Admin: `http://144.217.243.161:39174`
+- Public `pnpm smoke:core-config` passed and included
+  `core.config.system-flag`, `core.config.system-delete-guard` and
+  `core.config.batch-delete.system-guard`.
+- Public Admin Config chunk `p__System__Config.c06f078e.async.js` contains
+  `System built-in configs cannot be deleted`, `getCheckboxProps`,
+  `selected custom config(s)?` and `dataIndex:"system"`.
+- Public Admin main bundle `umi.d3cc4418.js` contains the deployed API origin
+  and does not contain `/api/api`.
+- Public Admin same-origin `/api/auth/login` succeeded.
+- Public API `/api/core/config/opencore.admin.title` returned `system=true`.
+- Public API single delete for `opencore.admin.title` returned 400.
+- Public API mixed batch delete with a custom config plus
+  `opencore.admin.title` returned 400 and left the custom config intact before
+  cleanup.
+
+## Round 40 Commit Record
+
+- Feature commit:
+  `c7a3db8 feat(core-config): guard system config deletion / 保护系统配置删除`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.
