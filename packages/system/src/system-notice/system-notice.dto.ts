@@ -2,6 +2,8 @@ import { ApiProperty } from '@nestjs/swagger';
 import type {
   SystemNoticeAudience,
   SystemNoticeDeliveryChannel,
+  SystemNoticeDeliveryProvider,
+  SystemNoticeDeliveryProviderStatus,
   SystemNoticeDeliveryStatus,
   SystemNoticeTemplateRecord,
   SystemNoticeStatus,
@@ -152,6 +154,15 @@ export class SystemNoticeDeliveryDto {
   @ApiProperty({ enum: ['delivered', 'read'] })
   status!: SystemNoticeDeliveryStatus;
 
+  @ApiProperty({ enum: ['in_app.local'] })
+  provider!: SystemNoticeDeliveryProvider;
+
+  @ApiProperty({ enum: ['failed', 'pending', 'sent'] })
+  providerStatus!: SystemNoticeDeliveryProviderStatus;
+
+  @ApiProperty()
+  attemptCount!: number;
+
   @ApiProperty()
   title!: string;
 
@@ -166,6 +177,15 @@ export class SystemNoticeDeliveryDto {
 
   @ApiProperty()
   deliveredAt!: string;
+
+  @ApiProperty({ required: false })
+  lastAttemptAt?: string;
+
+  @ApiProperty({ required: false })
+  sentAt?: string;
+
+  @ApiProperty({ required: false })
+  lastError?: string;
 
   @ApiProperty({ required: false })
   readAt?: string;
@@ -201,6 +221,9 @@ export class SystemNoticeDeliveryMutationResultDto {
   @ApiProperty({ enum: ['in_app'] })
   channel!: SystemNoticeDeliveryChannel;
 
+  @ApiProperty({ enum: ['in_app.local'] })
+  provider!: SystemNoticeDeliveryProvider;
+
   @ApiProperty()
   deliveredCount!: number;
 
@@ -209,6 +232,44 @@ export class SystemNoticeDeliveryMutationResultDto {
 
   @ApiProperty()
   totalRecipientCount!: number;
+
+  @ApiProperty()
+  attemptedCount!: number;
+
+  @ApiProperty()
+  sentCount!: number;
+
+  @ApiProperty()
+  failedCount!: number;
+
+  @ApiProperty()
+  pendingCount!: number;
+}
+
+export class SystemNoticeDeliveryExecutionResultDto {
+  @ApiProperty()
+  noticeId!: string;
+
+  @ApiProperty({ enum: ['in_app'] })
+  channel!: SystemNoticeDeliveryChannel;
+
+  @ApiProperty({ enum: ['in_app.local'] })
+  provider!: SystemNoticeDeliveryProvider;
+
+  @ApiProperty()
+  attemptedCount!: number;
+
+  @ApiProperty()
+  sentCount!: number;
+
+  @ApiProperty()
+  failedCount!: number;
+
+  @ApiProperty()
+  skippedCount!: number;
+
+  @ApiProperty()
+  pendingCount!: number;
 }
 
 export class SystemNoticeTemplateDto {
@@ -361,6 +422,9 @@ export class SystemNoticeDeliveryQueryDto {
 
   @ApiProperty({ required: false, enum: ['in_app'] })
   channel?: SystemNoticeDeliveryChannel | string;
+
+  @ApiProperty({ required: false, enum: ['failed', 'pending', 'sent'] })
+  providerStatus?: SystemNoticeDeliveryProviderStatus | string;
 
   @ApiProperty({ required: false })
   readStatus?: boolean | string;

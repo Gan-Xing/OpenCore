@@ -24,6 +24,7 @@ import {
   type SystemNoticeReadUsersPageQuery,
   type SystemNoticeReadMutationResult,
   type SystemNoticeDeliveryMutationResult,
+  type SystemNoticeDeliveryExecutionResult,
   type SystemNoticeDeliveryPageQuery,
   type SystemNoticeExportPreview,
   type SystemNoticePageQuery,
@@ -94,6 +95,12 @@ export class SystemNoticeService {
 
   dispatchNotice(id: string): Promise<SystemNoticeDeliveryMutationResult> {
     return this.repository.dispatchNotice(id);
+  }
+
+  executeNoticeDeliveries(
+    id: string,
+  ): Promise<SystemNoticeDeliveryExecutionResult> {
+    return this.repository.executeNoticeDeliveries(id);
   }
 
   listNoticeTemplates(

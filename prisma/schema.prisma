@@ -197,28 +197,36 @@ model SystemNoticeReadReceipt {
 }
 
 model SystemNoticeDelivery {
-  id          String       @id @default(cuid())
-  noticeId    String
-  userId      String
-  username    String
-  displayName String
-  channel     String       @default("in_app")
-  status      String       @default("delivered")
-  title       String
-  content     String
-  type        String
-  audience    String
-  deliveredAt DateTime     @default(now())
-  readAt      DateTime?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  notice      SystemNotice @relation(fields: [noticeId], references: [id], onDelete: Cascade)
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String       @id @default(cuid())
+  noticeId       String
+  userId         String
+  username       String
+  displayName    String
+  channel        String       @default("in_app")
+  status         String       @default("delivered")
+  provider       String       @default("in_app.local")
+  providerStatus String       @default("pending")
+  attemptCount   Int          @default(0)
+  title          String
+  content        String
+  type           String
+  audience       String
+  deliveredAt    DateTime     @default(now())
+  lastAttemptAt  DateTime?
+  sentAt         DateTime?
+  lastError      String?
+  readAt         DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  notice         SystemNotice @relation(fields: [noticeId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([noticeId, userId, channel])
   @@index([noticeId, status])
+  @@index([noticeId, providerStatus])
   @@index([userId, status])
   @@index([channel, status])
+  @@index([provider, providerStatus])
 }
 
 model SystemDept {

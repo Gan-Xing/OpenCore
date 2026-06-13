@@ -39,11 +39,14 @@ import {
   normalizeUpdateSystemNoticeInput,
   SystemNoticeRepository,
   toSystemNoticeDeliveryChannel,
+  toSystemNoticeDeliveryProvider,
+  toSystemNoticeDeliveryProviderStatus,
   toSystemNoticeDeliveryStatus,
   toSystemNoticeAudience,
   toSystemNoticeStatus,
   toSystemNoticeType,
   type SystemNoticeDeliveryMutationResult,
+  type SystemNoticeDeliveryExecutionResult,
   type SystemNoticeDeliveryPageQuery,
   type SystemNoticeInboxPageQuery,
   type SystemNoticeInboxRecord,
@@ -95,11 +98,17 @@ type PrismaSystemNoticeDelivery = {
   displayName: string;
   channel: string;
   status: string;
+  provider: string;
+  providerStatus: string;
+  attemptCount: number;
   title: string;
   content: string;
   type: string;
   audience: string;
   deliveredAt: Date;
+  lastAttemptAt: Date | null;
+  sentAt: Date | null;
+  lastError: string | null;
   readAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -325,6 +334,9 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
     const where: Prisma.SystemNoticeDeliveryWhereInput = {
       noticeId: id,
       ...(filters.channel ? { channel: filters.channel } : {}),
+      ...(filters.providerStatus
+        ? { providerStatus: filters.providerStatus }
+        : {}),
       ...(filters.readStatus === true ? { readAt: { not: null } } : {}),
       ...(filters.readStatus === false ? { readAt: null } : {}),
       ...(filters.username
@@ -362,6 +374,14 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
     const notice = toSystemNoticeRecord(await this.findNoticeById(id));
     assertNoticeCanDispatch(notice.status);
     return this.dispatchPublishedNotice(notice);
+  }
+
+  async executeNoticeDeliveries(
+    id: string,
+  ): Promise<SystemNoticeDeliveryExecutionResult> {
+    const notice = toSystemNoticeRecord(await this.findNoticeById(id));
+    assertNoticeCanDispatch(notice.status);
+    return this.executePendingInAppDeliveries(notice.id);
   }
 
   async listNoticeTemplates(
@@ -585,6 +605,9 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
           displayName: recipient.displayName,
           channel: 'in_app',
           status: 'delivered',
+          provider: 'in_app.local',
+          providerStatus: 'pending',
+          attemptCount: 0,
           title: notice.title,
           content: notice.content,
           type: notice.type,
@@ -598,10 +621,84 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
     return {
       noticeId: notice.id,
       channel: 'in_app',
+      provider: 'in_app.local',
       deliveredCount: pendingRecipients.length,
       skippedCount: recipients.length - pendingRecipients.length,
       totalRecipientCount: recipients.length,
+      attemptedCount: 0,
+      sentCount: 0,
+      failedCount: 0,
+      pendingCount: await this.countNoticeDeliveriesByProviderStatus(
+        notice.id,
+        'pending',
+      ),
     };
+  }
+
+  private async executePendingInAppDeliveries(
+    noticeId: string,
+  ): Promise<SystemNoticeDeliveryExecutionResult> {
+    const executableRows = await this.prisma.systemNoticeDelivery.findMany({
+      where: {
+        noticeId,
+        channel: 'in_app',
+        provider: 'in_app.local',
+        providerStatus: { in: ['pending', 'failed'] },
+      },
+      select: { id: true },
+      orderBy: [{ deliveredAt: 'asc' }, { username: 'asc' }],
+    });
+    const totalRows = await this.prisma.systemNoticeDelivery.count({
+      where: {
+        noticeId,
+        channel: 'in_app',
+        provider: 'in_app.local',
+      },
+    });
+    const now = new Date();
+
+    if (executableRows.length > 0) {
+      await this.prisma.systemNoticeDelivery.updateMany({
+        where: {
+          id: { in: executableRows.map((row) => row.id) },
+        },
+        data: {
+          providerStatus: 'sent',
+          attemptCount: { increment: 1 },
+          lastAttemptAt: now,
+          sentAt: now,
+          lastError: null,
+        },
+      });
+    }
+
+    return {
+      noticeId,
+      channel: 'in_app',
+      provider: 'in_app.local',
+      attemptedCount: executableRows.length,
+      sentCount: executableRows.length,
+      failedCount: 0,
+      skippedCount: totalRows - executableRows.length,
+      pendingCount: await this.countNoticeDeliveriesByProviderStatus(
+        noticeId,
+        'pending',
+      ),
+    };
+  }
+
+  private async countNoticeDeliveriesByProviderStatus(
+    noticeId: string,
+    providerStatus: string,
+  ): Promise<number> {
+    return this.prisma.systemNoticeDelivery.count({
+      where: {
+        noticeId,
+        channel: 'in_app',
+        provider: 'in_app.local',
+        providerStatus,
+      },
+    });
   }
 
   private async findNoticeRecipients(): Promise<
@@ -737,11 +834,19 @@ function toSystemNoticeDeliveryRecord(
     displayName: delivery.displayName,
     channel: toSystemNoticeDeliveryChannel(delivery.channel),
     status: toSystemNoticeDeliveryStatus(delivery.status),
+    provider: toSystemNoticeDeliveryProvider(delivery.provider),
+    providerStatus: toSystemNoticeDeliveryProviderStatus(
+      delivery.providerStatus,
+    ),
+    attemptCount: delivery.attemptCount,
     title: delivery.title,
     content: delivery.content,
     type: toSystemNoticeType(delivery.type),
     audience: toSystemNoticeAudience(delivery.audience),
     deliveredAt: delivery.deliveredAt.toISOString(),
+    lastAttemptAt: delivery.lastAttemptAt?.toISOString(),
+    sentAt: delivery.sentAt?.toISOString(),
+    lastError: delivery.lastError ?? undefined,
     readAt: delivery.readAt?.toISOString(),
     createdAt: delivery.createdAt.toISOString(),
     updatedAt: delivery.updatedAt.toISOString(),

@@ -54,6 +54,7 @@ import {
   deleteOpenCoreSystemNotice,
   deleteOpenCoreSystemNoticeTemplate,
   dispatchOpenCoreSystemNotice,
+  executeOpenCoreSystemNoticeDeliveries,
   getOpenCoreSystemNotice,
   getOpenCoreSystemNoticeInboxItem,
   getOpenCoreSystemNoticeTemplate,
@@ -677,6 +678,18 @@ export default function SystemNoticesPage() {
     }
   };
 
+  const executeNoticeDeliveries = async (record: SystemNoticeSummary) => {
+    const result = await executeOpenCoreSystemNoticeDeliveries(record.id);
+    message.success(
+      `Local provider executed: ${result.sentCount} sent, ${result.pendingCount} pending.`,
+    );
+    await loadInbox();
+
+    if (deliveriesOpenFor?.id === record.id) {
+      await openDeliveryRecords(record);
+    }
+  };
+
   const archiveNotice = async (record: SystemNoticeSummary) => {
     await archiveOpenCoreSystemNotice(record.id);
     message.success('System notice archived.');
@@ -837,6 +850,27 @@ export default function SystemNoticesPage() {
               </Tooltip>
             </Popconfirm>
             <Popconfirm
+              title="Execute local notice provider?"
+              okText="Execute"
+              onConfirm={() => void executeNoticeDeliveries(record)}
+              disabled={!published}
+            >
+              <Tooltip
+                title={
+                  published
+                    ? 'Execute local provider'
+                    : 'Only published notices can execute'
+                }
+              >
+                <Button
+                  aria-label={`Execute local provider for ${record.title}`}
+                  disabled={!published}
+                  icon={<PlayCircleOutlined />}
+                  size="small"
+                />
+              </Tooltip>
+            </Popconfirm>
+            <Popconfirm
               title="Archive this notice?"
               okText="Archive"
               onConfirm={() => void archiveNotice(record)}
@@ -895,7 +929,33 @@ export default function SystemNoticesPage() {
         </Tag>
       ),
     },
+    {
+      title: 'Provider',
+      dataIndex: 'provider',
+      render: (_, record) => <Tag>{record.provider}</Tag>,
+    },
+    {
+      title: 'Provider Status',
+      dataIndex: 'providerStatus',
+      render: (_, record) => (
+        <Tag
+          color={
+            record.providerStatus === 'sent'
+              ? 'green'
+              : record.providerStatus === 'failed'
+                ? 'red'
+                : 'gold'
+          }
+        >
+          {record.providerStatus}
+        </Tag>
+      ),
+    },
+    { title: 'Attempts', dataIndex: 'attemptCount' },
     { title: 'Delivered At', dataIndex: 'deliveredAt' },
+    { title: 'Last Attempt At', dataIndex: 'lastAttemptAt' },
+    { title: 'Sent At', dataIndex: 'sentAt' },
+    { title: 'Last Error', dataIndex: 'lastError' },
     { title: 'Read At', dataIndex: 'readAt' },
   ];
 
@@ -1318,6 +1378,7 @@ export default function SystemNoticesPage() {
           options={false}
           toolBarRender={false}
           pagination={{ pageSize: 10 }}
+          scroll={{ x: 1280 }}
           dataSource={[...deliveryRows]}
           columns={deliveryColumns}
         />

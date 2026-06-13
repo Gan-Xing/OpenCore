@@ -39,6 +39,7 @@ export {
   SystemConfigValueDto,
   SystemConfigValueQueryDto,
   SystemNoticeDto,
+  SystemNoticeDeliveryExecutionResultDto,
   SystemNoticeDeliveryMutationResultDto,
   SystemNoticeDeliveryPageDto,
   SystemNoticeDeliveryQueryDto,

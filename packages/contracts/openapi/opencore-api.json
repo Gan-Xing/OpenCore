@@ -2276,6 +2276,15 @@
             "schema": { "type": "string", "enum": ["in_app"] }
           },
           {
+            "name": "providerStatus",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["failed", "pending", "sent"]
+            }
+          },
+          {
             "name": "readStatus",
             "required": false,
             "in": "query",
@@ -2322,6 +2331,33 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SystemNoticeDeliveryMutationResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Notices"]
+      }
+    },
+    "/api/core/notices/{id}/deliveries/execute": {
+      "post": {
+        "operationId": "SystemManagementController_executeNoticeDeliveries",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemNoticeDeliveryExecutionResultDto"
                 }
               }
             }
@@ -7342,6 +7378,12 @@
           "displayName": { "type": "string" },
           "channel": { "type": "string", "enum": ["in_app"] },
           "status": { "type": "string", "enum": ["delivered", "read"] },
+          "provider": { "type": "string", "enum": ["in_app.local"] },
+          "providerStatus": {
+            "type": "string",
+            "enum": ["failed", "pending", "sent"]
+          },
+          "attemptCount": { "type": "number" },
           "title": { "type": "string" },
           "content": { "type": "string" },
           "type": {
@@ -7350,6 +7392,9 @@
           },
           "audience": { "type": "string", "enum": ["all", "admin"] },
           "deliveredAt": { "type": "string" },
+          "lastAttemptAt": { "type": "string" },
+          "sentAt": { "type": "string" },
+          "lastError": { "type": "string" },
           "readAt": { "type": "string" },
           "createdAt": { "type": "string" },
           "updatedAt": { "type": "string" }
@@ -7362,6 +7407,9 @@
           "displayName",
           "channel",
           "status",
+          "provider",
+          "providerStatus",
+          "attemptCount",
           "title",
           "content",
           "type",
@@ -7390,16 +7438,49 @@
         "properties": {
           "noticeId": { "type": "string" },
           "channel": { "type": "string", "enum": ["in_app"] },
+          "provider": { "type": "string", "enum": ["in_app.local"] },
           "deliveredCount": { "type": "number" },
           "skippedCount": { "type": "number" },
-          "totalRecipientCount": { "type": "number" }
+          "totalRecipientCount": { "type": "number" },
+          "attemptedCount": { "type": "number" },
+          "sentCount": { "type": "number" },
+          "failedCount": { "type": "number" },
+          "pendingCount": { "type": "number" }
         },
         "required": [
           "noticeId",
           "channel",
+          "provider",
           "deliveredCount",
           "skippedCount",
-          "totalRecipientCount"
+          "totalRecipientCount",
+          "attemptedCount",
+          "sentCount",
+          "failedCount",
+          "pendingCount"
+        ]
+      },
+      "SystemNoticeDeliveryExecutionResultDto": {
+        "type": "object",
+        "properties": {
+          "noticeId": { "type": "string" },
+          "channel": { "type": "string", "enum": ["in_app"] },
+          "provider": { "type": "string", "enum": ["in_app.local"] },
+          "attemptedCount": { "type": "number" },
+          "sentCount": { "type": "number" },
+          "failedCount": { "type": "number" },
+          "skippedCount": { "type": "number" },
+          "pendingCount": { "type": "number" }
+        },
+        "required": [
+          "noticeId",
+          "channel",
+          "provider",
+          "attemptedCount",
+          "sentCount",
+          "failedCount",
+          "skippedCount",
+          "pendingCount"
         ]
       },
       "SystemNoticeTemplateDto": {

@@ -53,6 +53,9 @@ describe('@opencore/system system-notice', () => {
             username: 'admin',
             channel: 'in_app',
             status: 'delivered',
+            provider: 'in_app.local',
+            providerStatus: 'pending',
+            attemptCount: 0,
           }),
         ],
         total: 1,
@@ -61,9 +64,39 @@ describe('@opencore/system system-notice', () => {
     await expect(service.dispatchNotice(notice.id)).resolves.toMatchObject({
       noticeId: notice.id,
       channel: 'in_app',
+      provider: 'in_app.local',
       deliveredCount: 0,
       skippedCount: 1,
       totalRecipientCount: 1,
+      attemptedCount: 0,
+      sentCount: 0,
+      pendingCount: 1,
+    });
+    await expect(service.executeNoticeDeliveries(notice.id)).resolves.toEqual({
+      noticeId: notice.id,
+      channel: 'in_app',
+      provider: 'in_app.local',
+      attemptedCount: 1,
+      sentCount: 1,
+      failedCount: 0,
+      skippedCount: 0,
+      pendingCount: 0,
+    });
+    await expect(
+      service.listNoticeDeliveries(notice.id, { providerStatus: 'sent' }),
+    ).resolves.toEqual({
+      items: [
+        expect.objectContaining({
+          noticeId: notice.id,
+          providerStatus: 'sent',
+          attemptCount: 1,
+          sentAt: expect.any(String),
+        }),
+      ],
+      page: 1,
+      pageSize: 10,
+      total: 1,
+      totalPages: 1,
     });
     await expect(service.archiveNotice(notice.id)).resolves.toMatchObject({
       status: 'archived',
@@ -436,16 +469,32 @@ describe('@opencore/system system-notice', () => {
               username: `notice_inbox_${testRunId}`,
               status: 'delivered',
               channel: 'in_app',
+              providerStatus: 'pending',
             }),
           ],
           total: 1,
         }),
       );
+      await expect(
+        service.listNoticeDeliveries(notice.id, {
+          providerStatus: 'not-provider-status',
+        }),
+      ).rejects.toThrow(BadRequestException);
       await expect(service.dispatchNotice(notice.id)).resolves.toMatchObject({
         noticeId: notice.id,
         channel: 'in_app',
         deliveredCount: 0,
+        pendingCount: expect.any(Number),
       });
+      await expect(service.executeNoticeDeliveries(notice.id)).resolves.toEqual(
+        expect.objectContaining({
+          noticeId: notice.id,
+          provider: 'in_app.local',
+          attemptedCount: expect.any(Number),
+          sentCount: expect.any(Number),
+          pendingCount: 0,
+        }),
+      );
       await expect(
         service.getNoticeInboxItem(inboxUserId, notice.id),
       ).resolves.toEqual(

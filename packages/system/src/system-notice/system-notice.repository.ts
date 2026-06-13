@@ -17,6 +17,8 @@ import type {
 import type {
   SystemNoticeAudience,
   SystemNoticeDeliveryChannel,
+  SystemNoticeDeliveryProvider,
+  SystemNoticeDeliveryProviderStatus,
   SystemNoticeDeliveryRecord,
   SystemNoticeDeliveryStatus,
   SystemNoticeRecord,
@@ -48,6 +50,7 @@ export type SystemNoticeReadUsersPageQuery = PageQueryInput;
 
 export type SystemNoticeDeliveryPageQuery = PageQueryInput & {
   channel?: string;
+  providerStatus?: string;
   readStatus?: boolean | string;
   username?: string;
 };
@@ -70,6 +73,7 @@ export type SystemNoticeInboxFilters = {
 
 export type SystemNoticeDeliveryFilters = {
   channel?: SystemNoticeDeliveryChannel;
+  providerStatus?: SystemNoticeDeliveryProviderStatus;
   readStatus?: boolean;
   username?: string;
 };
@@ -95,9 +99,25 @@ export type SystemNoticeReadUserRecord = {
 export type SystemNoticeDeliveryMutationResult = {
   noticeId: string;
   channel: SystemNoticeDeliveryChannel;
+  provider: SystemNoticeDeliveryProvider;
   deliveredCount: number;
   skippedCount: number;
   totalRecipientCount: number;
+  attemptedCount: number;
+  sentCount: number;
+  failedCount: number;
+  pendingCount: number;
+};
+
+export type SystemNoticeDeliveryExecutionResult = {
+  noticeId: string;
+  channel: SystemNoticeDeliveryChannel;
+  provider: SystemNoticeDeliveryProvider;
+  attemptedCount: number;
+  sentCount: number;
+  failedCount: number;
+  skippedCount: number;
+  pendingCount: number;
 };
 
 export type SystemNoticeTemplateFilters = {
@@ -188,6 +208,12 @@ const SYSTEM_NOTICE_TYPES = [
 const SYSTEM_NOTICE_AUDIENCES = ['all', 'admin'] as const;
 const SYSTEM_NOTICE_DELIVERY_CHANNELS = ['in_app'] as const;
 const SYSTEM_NOTICE_DELIVERY_STATUSES = ['delivered', 'read'] as const;
+const SYSTEM_NOTICE_DELIVERY_PROVIDERS = ['in_app.local'] as const;
+const SYSTEM_NOTICE_DELIVERY_PROVIDER_STATUSES = [
+  'failed',
+  'pending',
+  'sent',
+] as const;
 
 export abstract class SystemNoticeRepository {
   abstract listNotices(
@@ -233,6 +259,10 @@ export abstract class SystemNoticeRepository {
   abstract dispatchNotice(
     id: string,
   ): Promise<SystemNoticeDeliveryMutationResult>;
+
+  abstract executeNoticeDeliveries(
+    id: string,
+  ): Promise<SystemNoticeDeliveryExecutionResult>;
 
   abstract listNoticeTemplates(
     query?: SystemNoticeTemplatePageQuery,
@@ -302,6 +332,9 @@ export function normalizeSystemNoticeDeliveryFilters(
 ): SystemNoticeDeliveryFilters {
   return {
     channel: toOptionalSystemNoticeDeliveryChannel(query.channel),
+    providerStatus: toOptionalSystemNoticeDeliveryProviderStatus(
+      query.providerStatus,
+    ),
     readStatus: normalizeOptionalBoolean(query.readStatus, 'readStatus'),
     username: normalizeOptionalText(query.username, 'delivery username'),
   };
@@ -691,6 +724,30 @@ export function toSystemNoticeDeliveryStatus(
   );
 }
 
+export function toSystemNoticeDeliveryProvider(
+  value: string,
+): SystemNoticeDeliveryProvider {
+  if (isSystemNoticeDeliveryProvider(value)) {
+    return value;
+  }
+
+  throw new BadRequestException(
+    `Invalid system notice delivery provider: ${value}`,
+  );
+}
+
+export function toSystemNoticeDeliveryProviderStatus(
+  value: string,
+): SystemNoticeDeliveryProviderStatus {
+  if (isSystemNoticeDeliveryProviderStatus(value)) {
+    return value;
+  }
+
+  throw new BadRequestException(
+    `Invalid system notice delivery provider status: ${value}`,
+  );
+}
+
 function toOptionalSystemNoticeStatus(
   value: string | undefined,
 ): SystemNoticeStatus | undefined {
@@ -735,6 +792,16 @@ function toOptionalSystemNoticeDeliveryChannel(
   return toSystemNoticeDeliveryChannel(value);
 }
 
+function toOptionalSystemNoticeDeliveryProviderStatus(
+  value: string | undefined,
+): SystemNoticeDeliveryProviderStatus | undefined {
+  if (value === undefined || value === '') {
+    return undefined;
+  }
+
+  return toSystemNoticeDeliveryProviderStatus(value);
+}
+
 function normalizeOptionalBoolean(
   value: boolean | string | undefined,
   fieldName: string,
@@ -776,6 +843,22 @@ function isSystemNoticeDeliveryStatus(
   value: string,
 ): value is SystemNoticeDeliveryStatus {
   return (SYSTEM_NOTICE_DELIVERY_STATUSES as readonly string[]).includes(value);
+}
+
+function isSystemNoticeDeliveryProvider(
+  value: string,
+): value is SystemNoticeDeliveryProvider {
+  return (SYSTEM_NOTICE_DELIVERY_PROVIDERS as readonly string[]).includes(
+    value,
+  );
+}
+
+function isSystemNoticeDeliveryProviderStatus(
+  value: string,
+): value is SystemNoticeDeliveryProviderStatus {
+  return (
+    SYSTEM_NOTICE_DELIVERY_PROVIDER_STATUSES as readonly string[]
+  ).includes(value);
 }
 
 function normalizeRequiredText(value: string, fieldName: string): string {

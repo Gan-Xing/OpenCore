@@ -1113,6 +1113,7 @@ if (
   !systemNoticesPage.includes('publishOpenCoreSystemNotice') ||
   !systemNoticesPage.includes('archiveOpenCoreSystemNotice') ||
   !systemNoticesPage.includes('deleteOpenCoreSystemNotice') ||
+  !systemNoticesPage.includes('executeOpenCoreSystemNoticeDeliveries') ||
   !systemNoticesPage.includes("key: 'inbox'") ||
   !systemNoticesPage.includes("key: 'templates'") ||
   !systemNoticesPage.includes('System Notice Templates') ||
@@ -1123,6 +1124,8 @@ if (
   !systemNoticesPage.includes('System Notice Read Users') ||
   !systemNoticesPage.includes('Delivery records') ||
   !systemNoticesPage.includes('Dispatch in-app deliveries') ||
+  !systemNoticesPage.includes('Execute local provider') ||
+  !systemNoticesPage.includes('Provider Status') ||
   !systemNoticesPage.includes('System Notice Delivery Records') ||
   !systemNoticesPage.includes('System Notice Inbox Detail') ||
   !systemNoticesPage.includes('System Notice Template Detail') ||

@@ -42,6 +42,7 @@ import type {
   SystemDeptTreeSummary,
   SystemNoticeInboxQueryRequest,
   SystemNoticeInboxSummary,
+  SystemNoticeDeliveryExecutionSummary,
   SystemNoticeDeliveryQueryRequest,
   SystemNoticeDeliverySummary,
   SystemNoticeDispatchSummary,
@@ -267,6 +268,10 @@ export type SystemManagementClient = {
     token: Token,
     id: string,
   ) => Promise<SystemNoticeDispatchSummary>;
+  executeNoticeDeliveries: (
+    token: Token,
+    id: string,
+  ) => Promise<SystemNoticeDeliveryExecutionSummary>;
   listNoticeTemplates: (
     token: Token,
     query?: SystemNoticeTemplateQueryRequest,
@@ -666,6 +671,14 @@ export function createSystemManagementClient(
     dispatchNotice: (token, id) =>
       request<SystemNoticeDispatchSummary>(
         `/core/notices/${encodeURIComponent(id)}/dispatch`,
+        {
+          method: 'POST',
+          token,
+        },
+      ),
+    executeNoticeDeliveries: (token, id) =>
+      request<SystemNoticeDeliveryExecutionSummary>(
+        `/core/notices/${encodeURIComponent(id)}/deliveries/execute`,
         {
           method: 'POST',
           token,

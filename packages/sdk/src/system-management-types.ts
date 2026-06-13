@@ -338,6 +338,10 @@ export type SystemNoticeDeliveryChannel = 'in_app';
 
 export type SystemNoticeDeliveryStatus = 'delivered' | 'read';
 
+export type SystemNoticeDeliveryProvider = 'in_app.local';
+
+export type SystemNoticeDeliveryProviderStatus = 'failed' | 'pending' | 'sent';
+
 export type SystemNoticeDeliverySummary = {
   id: string;
   noticeId: string;
@@ -346,11 +350,17 @@ export type SystemNoticeDeliverySummary = {
   displayName: string;
   channel: SystemNoticeDeliveryChannel;
   status: SystemNoticeDeliveryStatus;
+  provider: SystemNoticeDeliveryProvider;
+  providerStatus: SystemNoticeDeliveryProviderStatus;
+  attemptCount: number;
   title: string;
   content: string;
   type: SystemNoticeType;
   audience: SystemNoticeAudience;
   deliveredAt: string;
+  lastAttemptAt?: string;
+  sentAt?: string;
+  lastError?: string;
   readAt?: string;
   createdAt: string;
   updatedAt: string;
@@ -397,6 +407,7 @@ export type SystemNoticeReadUsersQueryRequest = PageRequest;
 
 export type SystemNoticeDeliveryQueryRequest = PageRequest & {
   channel?: SystemNoticeDeliveryChannel;
+  providerStatus?: SystemNoticeDeliveryProviderStatus;
   readStatus?: boolean;
   username?: string;
 };
@@ -423,9 +434,25 @@ export type SystemNoticeUnreadCountSummary = {
 export type SystemNoticeDispatchSummary = {
   noticeId: string;
   channel: SystemNoticeDeliveryChannel;
+  provider: SystemNoticeDeliveryProvider;
   deliveredCount: number;
   skippedCount: number;
   totalRecipientCount: number;
+  attemptedCount: number;
+  sentCount: number;
+  failedCount: number;
+  pendingCount: number;
+};
+
+export type SystemNoticeDeliveryExecutionSummary = {
+  noticeId: string;
+  channel: SystemNoticeDeliveryChannel;
+  provider: SystemNoticeDeliveryProvider;
+  attemptedCount: number;
+  sentCount: number;
+  failedCount: number;
+  skippedCount: number;
+  pendingCount: number;
 };
 
 export type CreateSystemNoticeRequest = {

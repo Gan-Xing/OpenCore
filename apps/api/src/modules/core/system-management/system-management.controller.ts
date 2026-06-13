@@ -83,6 +83,7 @@ import {
   SystemConfigValueDto,
   SystemConfigValueQueryDto,
   SystemNoticeDto,
+  SystemNoticeDeliveryExecutionResultDto,
   SystemNoticeDeliveryMutationResultDto,
   SystemNoticeDeliveryPageDto,
   SystemNoticeDeliveryQueryDto,
@@ -466,6 +467,16 @@ export class SystemManagementController {
     @Param('id') id: string,
   ): Promise<SystemNoticeDeliveryMutationResultDto> {
     return this.notices.dispatchNotice(id);
+  }
+
+  @Post('notices/:id/deliveries/execute')
+  @ApiTags('Core System Notices')
+  @RequirePermission('core:notice:update')
+  @ApiOkResponse({ type: SystemNoticeDeliveryExecutionResultDto })
+  executeNoticeDeliveries(
+    @Param('id') id: string,
+  ): Promise<SystemNoticeDeliveryExecutionResultDto> {
+    return this.notices.executeNoticeDeliveries(id);
   }
 
   @Get('notices/templates')

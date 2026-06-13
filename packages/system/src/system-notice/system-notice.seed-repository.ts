@@ -36,6 +36,7 @@ import {
   normalizeUpdateSystemNoticeTemplateInput,
   normalizeUpdateSystemNoticeInput,
   SystemNoticeRepository,
+  type SystemNoticeDeliveryExecutionResult,
   type SystemNoticeDeliveryMutationResult,
   type SystemNoticeDeliveryPageQuery,
   type SystemNoticeInboxPageQuery,
@@ -261,6 +262,14 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
     return this.dispatchPublishedNotice(notice);
   }
 
+  async executeNoticeDeliveries(
+    id: string,
+  ): Promise<SystemNoticeDeliveryExecutionResult> {
+    const notice = this.findNotice(id);
+    assertNoticeCanDispatch(notice.status);
+    return this.executePendingInAppDeliveries(notice.id);
+  }
+
   async getNotice(id: string): Promise<SystemNoticeRecord> {
     return { ...this.findNotice(id) };
   }
@@ -453,16 +462,83 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
         continue;
       }
       deliveredCount += 1;
-      this.deliveries.set(key, createDeliveryRecord(notice, user));
+      this.deliveries.set(
+        key,
+        createDeliveryRecord(notice, user, undefined, {
+          attemptCount: 0,
+          providerStatus: 'pending',
+        }),
+      );
     }
 
     return {
       noticeId: notice.id,
       channel: 'in_app',
+      provider: 'in_app.local',
       deliveredCount,
       skippedCount: recipients.length - deliveredCount,
       totalRecipientCount: recipients.length,
+      attemptedCount: 0,
+      sentCount: 0,
+      failedCount: 0,
+      pendingCount: this.countProviderStatus(notice.id, 'pending'),
     };
+  }
+
+  private executePendingInAppDeliveries(
+    noticeId: string,
+  ): SystemNoticeDeliveryExecutionResult {
+    const executableRows = [...this.deliveries.values()].filter(
+      (delivery) =>
+        delivery.noticeId === noticeId &&
+        delivery.channel === 'in_app' &&
+        delivery.provider === 'in_app.local' &&
+        (delivery.providerStatus === 'pending' ||
+          delivery.providerStatus === 'failed'),
+    );
+    const now = new Date().toISOString();
+
+    for (const delivery of executableRows) {
+      Object.assign(delivery, {
+        providerStatus: 'sent' as const,
+        attemptCount: delivery.attemptCount + 1,
+        lastAttemptAt: now,
+        sentAt: now,
+        lastError: undefined,
+        updatedAt: now,
+      });
+    }
+
+    const totalRows = [...this.deliveries.values()].filter(
+      (delivery) =>
+        delivery.noticeId === noticeId &&
+        delivery.channel === 'in_app' &&
+        delivery.provider === 'in_app.local',
+    ).length;
+
+    return {
+      noticeId,
+      channel: 'in_app',
+      provider: 'in_app.local',
+      attemptedCount: executableRows.length,
+      sentCount: executableRows.length,
+      failedCount: 0,
+      skippedCount: totalRows - executableRows.length,
+      pendingCount: this.countProviderStatus(noticeId, 'pending'),
+    };
+  }
+
+  private countProviderStatus(
+    noticeId: string,
+    providerStatus: 'failed' | 'pending' | 'sent',
+  ): number {
+    return [...this.deliveries.values()].filter(
+      (delivery) =>
+        delivery.noticeId === noticeId &&
+        delivery.channel === 'in_app' &&
+        delivery.provider === 'in_app.local' &&
+        delivery.providerStatus === providerStatus,
+    ).length;
   }
 
   private markDeliveriesRead(
@@ -544,6 +620,13 @@ function createDeliveryRecord(
   notice: SystemNoticeRecord,
   user: SystemUserRecord,
   deliveredAt = new Date().toISOString(),
+  providerState: Pick<
+    SystemNoticeDeliveryRecord,
+    'attemptCount' | 'providerStatus'
+  > = {
+    attemptCount: 1,
+    providerStatus: 'sent',
+  },
 ): SystemNoticeDeliveryRecord {
   return {
     id: `notice_delivery_${notice.id}_${user.id}`,
@@ -553,11 +636,22 @@ function createDeliveryRecord(
     displayName: user.displayName,
     channel: 'in_app',
     status: 'delivered',
+    provider: 'in_app.local',
+    providerStatus: providerState.providerStatus,
+    attemptCount: providerState.attemptCount,
     title: notice.title,
     content: notice.content,
     type: notice.type,
     audience: notice.audience,
     deliveredAt,
+    lastAttemptAt:
+      providerState.attemptCount > 0 && providerState.providerStatus === 'sent'
+        ? deliveredAt
+        : undefined,
+    sentAt:
+      providerState.attemptCount > 0 && providerState.providerStatus === 'sent'
+        ? deliveredAt
+        : undefined,
     createdAt: deliveredAt,
     updatedAt: deliveredAt,
   };

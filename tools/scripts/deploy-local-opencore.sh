@@ -148,6 +148,16 @@ verify_admin_bundle_api_base_url() {
     --fixed-strings \
     --include='*.js' \
     "Dispatch in-app deliveries" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Execute local provider" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Provider Status" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null; then
     echo "Admin bundle does not include notice template and delivery management." >&2
     echo "Refusing to deploy a stale frontend notice page." >&2

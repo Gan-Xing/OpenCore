@@ -8,6 +8,10 @@ export type SystemNoticeDeliveryChannel = 'in_app';
 
 export type SystemNoticeDeliveryStatus = 'delivered' | 'read';
 
+export type SystemNoticeDeliveryProvider = 'in_app.local';
+
+export type SystemNoticeDeliveryProviderStatus = 'failed' | 'pending' | 'sent';
+
 export type SystemNoticeRecord = {
   id: string;
   title: string;
@@ -33,11 +37,17 @@ export type SystemNoticeDeliveryRecord = {
   displayName: string;
   channel: SystemNoticeDeliveryChannel;
   status: SystemNoticeDeliveryStatus;
+  provider: SystemNoticeDeliveryProvider;
+  providerStatus: SystemNoticeDeliveryProviderStatus;
+  attemptCount: number;
   title: string;
   content: string;
   type: SystemNoticeType;
   audience: SystemNoticeAudience;
   deliveredAt: string;
+  lastAttemptAt?: string;
+  sentAt?: string;
+  lastError?: string;
   readAt?: string;
   createdAt: string;
   updatedAt: string;

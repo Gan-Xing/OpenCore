@@ -297,6 +297,12 @@ try {
       expected: [400],
     },
   );
+  await apiRequest(
+    `/core/notices/${encodeURIComponent(draftNotice.id)}/deliveries?providerStatus=unknown`,
+    {
+      expected: [400],
+    },
+  );
 
   const publishedNotice = await apiRequest(
     `/core/notices/${encodeURIComponent(draftNotice.id)}/publish`,
@@ -306,13 +312,14 @@ try {
   );
   assertEqual(publishedNotice.status, 'published', 'published notice status');
   const deliveryPage = await apiRequest(
-    `/core/notices/${encodeURIComponent(draftNotice.id)}/deliveries?channel=in_app&readStatus=false&username=${encodeURIComponent(username)}`,
+    `/core/notices/${encodeURIComponent(draftNotice.id)}/deliveries?channel=in_app&providerStatus=pending&readStatus=false&username=${encodeURIComponent(username)}`,
   );
   assertPageItemsContainDelivery(
     deliveryPage,
     username,
     'delivered',
     false,
+    'pending',
     'published notice delivery records',
   );
   const dispatchResult = await apiRequest(
@@ -326,6 +333,49 @@ try {
     dispatchResult.skippedCount,
     1,
     'repeat dispatch skipped count',
+  );
+  assertNumberAtLeast(
+    dispatchResult.pendingCount,
+    1,
+    'repeat dispatch pending provider count',
+  );
+
+  const executeResult = await apiRequest(
+    `/core/notices/${encodeURIComponent(draftNotice.id)}/deliveries/execute`,
+    {
+      method: 'POST',
+    },
+  );
+  assertEqual(executeResult.provider, 'in_app.local', 'execute provider');
+  assertNumberAtLeast(
+    executeResult.attemptedCount,
+    1,
+    'execute attempted count',
+  );
+  assertNumberAtLeast(executeResult.sentCount, 1, 'execute sent count');
+  assertEqual(executeResult.pendingCount, 0, 'execute pending count');
+
+  const sentDeliveryPage = await apiRequest(
+    `/core/notices/${encodeURIComponent(draftNotice.id)}/deliveries?channel=in_app&providerStatus=sent&username=${encodeURIComponent(username)}`,
+  );
+  assertPageItemsContainDelivery(
+    sentDeliveryPage,
+    username,
+    'delivered',
+    false,
+    'sent',
+    'sent notice delivery provider records',
+  );
+  const repeatExecuteResult = await apiRequest(
+    `/core/notices/${encodeURIComponent(draftNotice.id)}/deliveries/execute`,
+    {
+      method: 'POST',
+    },
+  );
+  assertEqual(
+    repeatExecuteResult.attemptedCount,
+    0,
+    'repeat execute attempted count',
   );
 
   const inboxItem = await apiRequest(
@@ -379,6 +429,7 @@ try {
     username,
     'read',
     true,
+    'sent',
     'read notice delivery records',
   );
   const readUsersPage = await apiRequest(
@@ -458,9 +509,13 @@ try {
         'core.notice.deliveries.dispatch-draft-guard',
         'core.notice.deliveries.bad-read-status-guard',
         'core.notice.deliveries.bad-channel-guard',
+        'core.notice.deliveries.bad-provider-status-guard',
         'core.notice.publish',
         'core.notice.deliveries.unread-records',
         'core.notice.deliveries.dispatch-idempotent',
+        'core.notice.deliveries.provider-execute',
+        'core.notice.deliveries.provider-sent-records',
+        'core.notice.deliveries.provider-execute-idempotent',
         'core.notice.inbox.unread-item',
         'core.notice.inbox.unread-page',
         'core.notice.inbox.unread-list',
@@ -631,6 +686,7 @@ function assertPageItemsContainDelivery(
   username,
   status,
   expectReadAt,
+  providerStatus,
   label,
 ) {
   assertArray(page.items, `${label} items`);
@@ -642,7 +698,17 @@ function assertPageItemsContainDelivery(
 
   assertEqual(item.channel, 'in_app', `${label} channel`);
   assertEqual(item.status, status, `${label} status`);
+  assertEqual(item.provider, 'in_app.local', `${label} provider`);
+  assertEqual(item.providerStatus, providerStatus, `${label} provider status`);
   assertString(item.deliveredAt, `${label} deliveredAt`);
+
+  if (providerStatus === 'sent') {
+    assertNumberAtLeast(item.attemptCount, 1, `${label} attempt count`);
+    assertString(item.lastAttemptAt, `${label} lastAttemptAt`);
+    assertString(item.sentAt, `${label} sentAt`);
+  } else {
+    assertEqual(item.attemptCount, 0, `${label} attempt count`);
+  }
 
   if (expectReadAt) {
     assertString(item.readAt, `${label} readAt`);
