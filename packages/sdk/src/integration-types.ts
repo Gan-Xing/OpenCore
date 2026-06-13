@@ -38,6 +38,7 @@ export type IntegrationOutboxSummary = {
   providerCode: string;
   templateCode?: string;
   recipient: string;
+  subject?: string;
   payload: Record<string, unknown>;
   status: 'failed' | 'queued' | 'sent';
   retryCount: number;
@@ -124,6 +125,7 @@ export type CreateOutboxMessageRequest = {
   providerCode: string;
   templateCode?: string;
   recipient: string;
+  subject?: string;
   payload: Record<string, unknown>;
 };
 
@@ -271,6 +273,7 @@ export function createIntegrationFixtures(): IntegrationFixtures {
       providerCode: 'mail.sandbox',
       templateCode: 'mail.welcome',
       recipient: 'admin@example.test',
+      subject: 'Welcome Admin',
       payload: { name: 'Admin' },
       status: 'queued',
       retryCount: 0,

@@ -206,6 +206,9 @@ export class IntegrationOutboxDto {
   @ApiProperty()
   recipient!: string;
 
+  @ApiProperty({ required: false })
+  subject?: string;
+
   @ApiProperty()
   payload!: Record<string, unknown>;
 
@@ -276,6 +279,9 @@ export class CreateOutboxMessageDto {
 
   @ApiProperty()
   recipient!: string;
+
+  @ApiProperty({ required: false })
+  subject?: string;
 
   @ApiProperty()
   payload!: Record<string, unknown>;

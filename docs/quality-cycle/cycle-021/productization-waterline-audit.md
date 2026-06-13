@@ -11,23 +11,23 @@ failures have guards; and remaining omissions are explicit product boundaries.
 
 ## Current Status
 
-| Capability            | Status        | Notes                                                                   |
-| --------------------- | ------------- | ----------------------------------------------------------------------- |
-| `core.permission`     | Meets         | Catalog, registry/custom split and assignments are live.                |
-| `core.audit-log`      | Meets current | List/detail/export/delete/clean are live.                               |
-| `core.dept`           | Meets         | Tree CRUD, options, guards, ordering and data-scope.                    |
-| `core.post`           | Meets         | CRUD, binding, options, batch deletion and ordering.                    |
-| `core.menu`           | Meets         | Tree metadata, route/menu fields and delete guards.                     |
-| `core.role`           | Meets         | Menu/user assignment, status effects and revocation.                    |
-| `core.user`           | Meets         | CRUD, profile, password, avatar, import/export, binds.                  |
-| `core.dict`           | Meets         | Dict/item CRUD and enabled simple-list source.                          |
-| `core.file`           | Meets         | Authenticated upload/download and content smoke.                        |
-| `monitor.online-user` | Meets         | Batch kick-out, revocation and UA/IP fields.                            |
-| `core.login-log`      | Meets current | Schema, lockout, cleanup, actor/reason and location.                    |
-| `core.config`         | Meets current | Runtime keys, feature flags, rollout, audience, vault.                  |
-| `core.notice`         | Enhance       | SMS HTTP and SMTP adapters live; realtime/deeper provider depth remain. |
-| `scheduler/monitor`   | Meets current | Job Admin operations, registry and handler diagnostics are live.        |
-| `OpenForge Admin`     | P2            | CLI/core exists; Admin UX remains.                                      |
+| Capability            | Status        | Notes                                                                     |
+| --------------------- | ------------- | ------------------------------------------------------------------------- |
+| `core.permission`     | Meets         | Catalog, registry/custom split and assignments are live.                  |
+| `core.audit-log`      | Meets current | List/detail/export/delete/clean are live.                                 |
+| `core.dept`           | Meets         | Tree CRUD, options, guards, ordering and data-scope.                      |
+| `core.post`           | Meets         | CRUD, binding, options, batch deletion and ordering.                      |
+| `core.menu`           | Meets         | Tree metadata, route/menu fields and delete guards.                       |
+| `core.role`           | Meets         | Menu/user assignment, status effects and revocation.                      |
+| `core.user`           | Meets         | CRUD, profile, password, avatar, import/export, binds.                    |
+| `core.dict`           | Meets         | Dict/item CRUD and enabled simple-list source.                            |
+| `core.file`           | Meets         | Authenticated upload/download and content smoke.                          |
+| `monitor.online-user` | Meets         | Batch kick-out, revocation and UA/IP fields.                              |
+| `core.login-log`      | Meets current | Schema, lockout, cleanup, actor/reason and location.                      |
+| `core.config`         | Meets current | Runtime keys, feature flags, rollout, audience, vault.                    |
+| `core.notice`         | Enhance       | SMS HTTP, SMTP and mail subject persistence live; provider depth remains. |
+| `scheduler/monitor`   | Meets current | Job Admin operations, registry and handler diagnostics are live.          |
+| `OpenForge Admin`     | P2            | CLI/core exists; Admin UX remains.                                        |
 
 ## Closed Remediation
 
@@ -47,11 +47,13 @@ failures have guards; and remaining omissions are explicit product boundaries.
   `ReportDefinition` migration/seed drift.
 - Round 75 added Monitor Jobs registry visibility, registered handler
   execution, retry/timeout diagnostics and failed run-log detail.
+- Round 76 added first-class mail outbox subject persistence and SMTP subject
+  delivery guards.
 
 ## Active Debt
 
 1. Notice: realtime push, broader provider-secret injection, STARTTLS,
-   attachments/template subject persistence and diagnostics.
+   attachments and provider diagnostics.
 2. Config: multi-environment governance, KMS binding, key rotation and secret
    versions.
 3. Operation log: retention scheduling, duration/location fields and policy.
@@ -67,8 +69,8 @@ failures have guards; and remaining omissions are explicit product boundaries.
 - API prefix: duplicate `/api/api` login guard.
 - Auth: revoked token/session returns 401.
 - Notice outbox: pending, retry, process-to-sent, signed callback, scheduled
-  retry caps, SMS HTTP host allowlist, SMTP config-vault auth, non-2xx/SMTP
-  failedCount and post-sent mutation guards.
+  retry caps, SMS HTTP host allowlist, SMTP config-vault auth, mail outbox
+  subject persistence, non-2xx/SMTP failedCount and post-sent mutation guards.
 - Operation log: delete/clean guards and deleted-detail 404.
 - Monitor jobs: Admin bundle markers and smoke cover summary, registry,
   whitelisted job upsert, unsafe policy guards, enable/disable,

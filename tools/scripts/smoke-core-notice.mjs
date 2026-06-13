@@ -462,11 +462,16 @@ try {
   const mailOutboxPage = await apiRequest(
     '/integrations/mail/outbox?status=queued&providerCode=mail.sandbox',
   );
-  assertOutboxContainsNotice(
+  const noticeMailOutbox = assertOutboxContainsNotice(
     mailOutboxPage,
     draftNotice.id,
     mailDelivery.providerMessageId,
     'mail notice integration outbox',
+  );
+  assertEqual(
+    noticeMailOutbox.subject,
+    draftNotice.title,
+    'mail notice integration outbox subject',
   );
   const repeatMailExecuteResult = await apiRequest(
     `/core/notices/${encodeURIComponent(draftNotice.id)}/deliveries/execute`,
@@ -645,13 +650,18 @@ try {
     body: {
       providerCode: smtpProviderCode,
       recipient: 'admin@example.test',
+      subject: `SMTP smoke subject ${runId}`,
       payload: {
         body: `SMTP smoke body ${runId}`,
-        subject: `SMTP smoke subject ${runId}`,
       },
     },
   });
   assertEqual(smtpOutbox.status, 'queued', 'Mail SMTP outbox queued status');
+  assertEqual(
+    smtpOutbox.subject,
+    `SMTP smoke subject ${runId}`,
+    'Mail SMTP outbox subject',
+  );
   const smtpProcess = await apiRequest('/integrations/mail/outbox/process', {
     method: 'POST',
     body: {
@@ -670,6 +680,11 @@ try {
     `/integrations/mail/outbox/${encodeURIComponent(smtpOutbox.id)}`,
   );
   assertEqual(sentSmtpOutbox.status, 'sent', 'Mail SMTP outbox sent status');
+  assertEqual(
+    sentSmtpOutbox.subject,
+    `SMTP smoke subject ${runId}`,
+    'Mail SMTP sent outbox subject',
+  );
   assertStringIncludes(
     smtpServer.messages.join('\n'),
     `SMTP smoke subject ${runId}`,
@@ -1024,7 +1039,9 @@ try {
         'core.notice.deliveries.provider-sent-records',
         'core.notice.deliveries.provider-execute-idempotent',
         'core.notice.deliveries.mail-outbox-provider',
+        'core.notice.deliveries.mail-outbox-subject',
         'core.notice.deliveries.mail-smtp-adapter',
+        'core.notice.deliveries.mail-smtp-subject',
         'core.notice.deliveries.outbox-failed-retry-sent-sync',
         'core.notice.deliveries.outbox-callback-signature',
         'core.notice.deliveries.outbox-schedule-retry',

@@ -815,6 +815,7 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
           providerCode: provider,
           templateCode: null,
           recipient,
+          subject: channel === 'mail' ? row.title : null,
           payload: {
             audience: row.audience,
             deliveryId: row.id,

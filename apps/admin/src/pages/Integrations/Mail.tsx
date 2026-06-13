@@ -145,6 +145,7 @@ export default function MailIntegrationPage() {
             value: selected?.enabled ? 'preview/send allowed' : 'send blocked',
           },
           { label: 'Sample Outbox', value: selectedOutbox?.id },
+          { label: 'Outbox Subject', value: selectedOutbox?.subject },
           { label: 'Body', value: selected?.body },
         ]}
         jsonSections={[

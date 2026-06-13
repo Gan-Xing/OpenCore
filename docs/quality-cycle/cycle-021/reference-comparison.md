@@ -32,8 +32,8 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   operation-log has list/detail/export/delete/clean.
 - Notice: management, inbox/read analytics, templates, delivery records, local
   provider, Integration outbox bridge, state sync, queued processing and signed
-  callback intake plus retry scheduling, SMS HTTP adapter and SMTP adapter are
-  live.
+  callback intake plus retry scheduling, SMS HTTP adapter, SMTP adapter and
+  mail subject persistence are live.
 - Config: runtime keys, login policy, feature flags, rollout, audience rules
   and secret-vault encryption are live.
 - Monitor/OpenForge/Scheduler: Monitor Jobs now has a live Admin operation
@@ -63,6 +63,8 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   gained the missing report migration/seed guard.
 - Round 75: Monitor Jobs trigger registered handlers, expose handler registry
   visibility and record retry/duration/failed run diagnostics.
+- Round 76: Mail outbox subject is a first-class persisted field; SMTP sends
+  that field and no longer infers subject from payload.
 
 ## Explicit Non-Claims
 
@@ -73,6 +75,6 @@ and AI/RAG/Agent workflow.
 
 ## Next Focus
 
-Choose one foundation stage from notice realtime/provider diagnostics, config
-governance, operation-log enrichment, OpenForge Admin or integration
-health/config audit.
+Choose one foundation stage from notice realtime/provider diagnostics, SMTP
+STARTTLS/attachments, config governance, operation-log enrichment, OpenForge
+Admin or integration health/config audit.

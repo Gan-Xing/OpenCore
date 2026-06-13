@@ -47,6 +47,7 @@ import {
   normalizeOutboxCallback,
   normalizeOutboxFailureError,
   normalizeOutboxSchedule,
+  normalizeOutboxSubject,
   normalizeOptionalProviderCode,
   normalizeOptionalBoolean,
   parseConfigSecretRef,
@@ -234,19 +235,24 @@ export class SeedIntegrationRepository extends IntegrationRepository {
     if (template) {
       assertTemplateEnabled(template);
     }
-    const preview = template
-      ? renderTemplate(template, body.payload).body
+    const rendered = template
+      ? renderTemplate(template, body.payload)
       : undefined;
+    const subject = normalizeOutboxSubject(
+      channel,
+      rendered?.subject ?? body.subject,
+    );
     const message: IntegrationOutboxRecord = {
       id: `outbox_${this.outbox.length + 1}`,
       channel,
       providerCode: body.providerCode,
       templateCode: body.templateCode,
       recipient: body.recipient,
+      subject,
       payload: body.payload,
       status: 'queued',
       retryCount: 0,
-      preview,
+      preview: rendered?.body,
       createdAt: new Date().toISOString(),
     };
     this.outbox = [message, ...this.outbox];

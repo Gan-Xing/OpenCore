@@ -390,11 +390,8 @@ function getMessageText(message: IntegrationOutboxRecord): string {
 }
 
 function getMailSubject(message: IntegrationOutboxRecord): string {
-  for (const key of ['subject', 'title']) {
-    const subject = message.payload[key];
-    if (typeof subject === 'string' && subject.trim()) {
-      return subject;
-    }
+  if (message.subject?.trim()) {
+    return message.subject;
   }
 
   return message.templateCode ?? 'OpenCore notification';

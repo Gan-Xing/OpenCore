@@ -469,6 +469,7 @@ model IntegrationOutbox {
   providerCode String
   templateCode String?
   recipient    String
+  subject      String?
   payload      Json
   status       String    @default("queued")
   retryCount   Int       @default(0)

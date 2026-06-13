@@ -91,6 +91,7 @@ export const seedIntegrationOutbox: readonly IntegrationOutboxRecord[] = [
     providerCode: 'mail.sandbox',
     templateCode: 'mail.welcome',
     recipient: 'admin@example.test',
+    subject: 'Welcome Admin',
     payload: { name: 'Admin' },
     status: 'queued',
     retryCount: 0,

@@ -48,6 +48,7 @@ import {
   normalizeOutboxCallback,
   normalizeOutboxFailureError,
   normalizeOutboxSchedule,
+  normalizeOutboxSubject,
   normalizeOptionalProviderCode,
   parseConfigSecretRef,
   normalizeProviderType,
@@ -87,6 +88,7 @@ type OutboxRow = {
   providerCode: string;
   templateCode: string | null;
   recipient: string;
+  subject: string | null;
   payload: unknown;
   status: string;
   retryCount: number;
@@ -286,19 +288,24 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
     if (template) {
       assertTemplateEnabled(template);
     }
-    const preview = template
-      ? renderTemplate(template, body.payload).body
+    const rendered = template
+      ? renderTemplate(template, body.payload)
       : undefined;
+    const subject = normalizeOutboxSubject(
+      channel,
+      rendered?.subject ?? body.subject,
+    );
     const message = await this.prisma.integrationOutbox.create({
       data: {
         channel,
         providerCode: body.providerCode,
         templateCode: body.templateCode,
         recipient: body.recipient,
+        subject,
         payload: toInputJson(body.payload),
         status: 'queued',
         retryCount: 0,
-        preview,
+        preview: rendered?.body,
       },
     });
 
@@ -754,6 +761,7 @@ function toOutboxRecord(row: OutboxRow): IntegrationOutboxRecord {
     providerCode: row.providerCode,
     templateCode: row.templateCode ?? undefined,
     recipient: row.recipient,
+    subject: row.subject ?? undefined,
     payload: normalizeRecord(row.payload) ?? {},
     status: normalizeOutboxStatus(row.status),
     retryCount: row.retryCount,

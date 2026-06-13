@@ -9255,6 +9255,7 @@
           "providerCode": { "type": "string" },
           "templateCode": { "type": "string" },
           "recipient": { "type": "string" },
+          "subject": { "type": "string" },
           "payload": { "type": "object" },
           "status": { "type": "string", "enum": ["queued", "sent", "failed"] },
           "retryCount": { "type": "number" },
@@ -9294,6 +9295,7 @@
           "providerCode": { "type": "string" },
           "templateCode": { "type": "string" },
           "recipient": { "type": "string" },
+          "subject": { "type": "string" },
           "payload": { "type": "object" }
         },
         "required": ["providerCode", "recipient", "payload"]

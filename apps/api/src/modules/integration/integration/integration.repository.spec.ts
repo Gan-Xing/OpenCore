@@ -143,6 +143,7 @@ describe('IntegrationRepository', () => {
     ).resolves.toMatchObject({
       status: 'queued',
       retryCount: 0,
+      subject: 'Welcome Admin',
       preview: 'Hello Admin, welcome to OpenCore.',
     });
     const message = (await repository.listOutbox('mail')).items[0];
@@ -367,9 +368,12 @@ describe('IntegrationRepository', () => {
     });
     const queued = await repository.enqueueOutbox('mail', {
       providerCode: 'mail.smtp',
-      templateCode: 'mail.welcome',
       recipient: 'admin@example.test',
-      payload: { name: 'Admin', subject: 'Welcome through SMTP' },
+      subject: 'Welcome through SMTP',
+      payload: { body: 'SMTP body for Admin' },
+    });
+    expect(queued).toMatchObject({
+      subject: 'Welcome through SMTP',
     });
 
     await expect(
@@ -397,7 +401,7 @@ describe('IntegrationRepository', () => {
       from: 'no-reply@opencore.test',
       to: 'admin@example.test',
       subject: 'Welcome through SMTP',
-      text: 'Hello Admin, welcome to OpenCore.',
+      text: 'SMTP body for Admin',
     });
     await expect(
       repository.getOutboxMessage('mail', queued.id),

@@ -47,7 +47,7 @@ packages and OpenForge direct Prisma/migration/business-code writing.
 
 ## Current State
 
-Cycle-021 has completed 75 deployable stages.
+Cycle-021 has completed 76 deployable stages.
 
 - System/RBAC: notice, dept, post, menu, role, permission, user, dict, config
   and file loops are live.
@@ -60,21 +60,22 @@ Cycle-021 has completed 75 deployable stages.
 - Notice: management, inbox/read state, read-user analytics, templates,
   delivery records, local provider, Integration outbox bridge, state sync,
   queued processing, signed callback intake, bounded retry scheduling and a
-  bounded SMS HTTP adapter plus SMTP mail adapter.
+  bounded SMS HTTP adapter plus SMTP mail adapter with outbox subject
+  persistence.
 - Monitor jobs: API/SDK routes, registry policy, seed job, Admin live list,
   enable/disable, manual trigger, registered handler execution, retry/timeout
   diagnostics and failed run-log detail are smoke-guarded.
 
-Latest runtime stage: Round 75 `monitor.job` registered handler execution. It
-adds a whitelisted job registry endpoint, executes registered in-process
-handlers on manual trigger, records attempts, duration, failure errors and
-metadata, and surfaces handler visibility in Admin/SDK/smoke/deploy guards.
+Latest runtime stage: Round 76 `notice.mail` outbox subject persistence. It
+adds a first-class `IntegrationOutbox.subject`, renders mail template subjects
+into queued outbox rows, passes only persisted subject to SMTP, surfaces the
+subject in SDK/Admin, and guards notice mail/SMTP subject delivery in smoke.
 
 ## Next Queue
 
 1. Notice provider reliability: broader provider-secret injection, realtime
-   push and deeper SMTP options such as STARTTLS/attachments/template subject
-   persistence.
+   push and deeper SMTP options such as STARTTLS, attachments and provider
+   diagnostics.
 2. Config governance: multi-environment rollout, external KMS, key rotation
    and secret versions.
 3. Operation-log enrichment: retention scheduling, duration/location fields

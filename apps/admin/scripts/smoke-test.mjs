@@ -737,6 +737,8 @@ if (
   !exportJobsPage.includes('@opencore/sdk') ||
   !providersPage.includes('@opencore/sdk') ||
   !mailPage.includes('@opencore/sdk') ||
+  !mailPage.includes('Outbox Subject') ||
+  !mailPage.includes('selectedOutbox?.subject') ||
   !smsPage.includes('@opencore/sdk') ||
   !oauthPage.includes('@opencore/sdk') ||
   !wechatPage.includes('@opencore/sdk') ||

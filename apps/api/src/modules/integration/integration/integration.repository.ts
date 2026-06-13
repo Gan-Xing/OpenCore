@@ -308,6 +308,38 @@ export function renderTemplate(
   };
 }
 
+export function normalizeOutboxSubject(
+  channel: 'mail' | 'sms',
+  value: unknown,
+): string | undefined {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+
+  if (channel === 'sms') {
+    throw new BadRequestException(
+      'SMS outbox messages do not support subject.',
+    );
+  }
+
+  if (typeof value !== 'string') {
+    throw new BadRequestException('Mail outbox subject must be a string.');
+  }
+
+  const subject = value.trim();
+  if (!subject) {
+    return undefined;
+  }
+
+  if (subject.length > 200) {
+    throw new BadRequestException(
+      'Mail outbox subject must be at most 200 characters.',
+    );
+  }
+
+  return subject;
+}
+
 export function assertSmsSafety(
   recipient: string,
   payload: Record<string, unknown>,
