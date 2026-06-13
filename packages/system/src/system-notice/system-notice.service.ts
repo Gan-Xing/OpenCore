@@ -1,13 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
 import type {
+  CreateSystemNoticeFromTemplateDto,
   MarkSystemNoticesReadDto,
   CreateSystemNoticeDto,
+  CreateSystemNoticeTemplateDto,
+  RenderSystemNoticeTemplateDto,
+  UpdateSystemNoticeTemplateDto,
   UpdateSystemNoticeDto,
 } from './system-notice.dto';
-import type { SystemNoticeRecord } from './system-notice.records';
+import type {
+  SystemNoticeRecord,
+  SystemNoticeTemplateRecord,
+} from './system-notice.records';
 import {
   createSystemNoticeExportPreview,
+  renderSystemNoticeTemplate,
   SystemNoticeRepository,
   type SystemNoticeInboxPageQuery,
   type SystemNoticeInboxRecord,
@@ -16,6 +24,9 @@ import {
   type SystemNoticeReadMutationResult,
   type SystemNoticeExportPreview,
   type SystemNoticePageQuery,
+  type SystemNoticeTemplateOptionRecord,
+  type SystemNoticeTemplatePageQuery,
+  type SystemNoticeTemplateRenderRecord,
 } from './system-notice.repository';
 
 @Injectable()
@@ -69,6 +80,56 @@ export class SystemNoticeService {
     query: SystemNoticeReadUsersPageQuery = {},
   ): Promise<PageResult<SystemNoticeReadUserRecord>> {
     return this.repository.listNoticeReadUsers(id, query);
+  }
+
+  listNoticeTemplates(
+    query: SystemNoticeTemplatePageQuery = {},
+  ): Promise<PageResult<SystemNoticeTemplateRecord>> {
+    return this.repository.listNoticeTemplates(query);
+  }
+
+  listNoticeTemplateOptions(): Promise<
+    readonly SystemNoticeTemplateOptionRecord[]
+  > {
+    return this.repository.listNoticeTemplateOptions();
+  }
+
+  getNoticeTemplate(code: string): Promise<SystemNoticeTemplateRecord> {
+    return this.repository.getNoticeTemplate(code);
+  }
+
+  async renderNoticeTemplate(
+    code: string,
+    body: RenderSystemNoticeTemplateDto = {},
+  ): Promise<SystemNoticeTemplateRenderRecord> {
+    return renderSystemNoticeTemplate(
+      await this.repository.getNoticeTemplate(code),
+      body,
+    );
+  }
+
+  createNoticeTemplate(
+    body: CreateSystemNoticeTemplateDto,
+  ): Promise<SystemNoticeTemplateRecord> {
+    return this.repository.createNoticeTemplate(body);
+  }
+
+  updateNoticeTemplate(
+    code: string,
+    body: UpdateSystemNoticeTemplateDto,
+  ): Promise<SystemNoticeTemplateRecord> {
+    return this.repository.updateNoticeTemplate(code, body);
+  }
+
+  deleteNoticeTemplate(code: string): Promise<{ deleted: true }> {
+    return this.repository.deleteNoticeTemplate(code);
+  }
+
+  createNoticeFromTemplate(
+    code: string,
+    body: CreateSystemNoticeFromTemplateDto,
+  ): Promise<SystemNoticeRecord> {
+    return this.repository.createNoticeFromTemplate(code, body);
   }
 
   getNotice(id: string): Promise<SystemNoticeRecord> {

@@ -3,7 +3,9 @@ import {
   DeleteOutlined,
   EditOutlined,
   EyeOutlined,
+  FileTextOutlined,
   PlusOutlined,
+  PlayCircleOutlined,
   ReloadOutlined,
   SendOutlined,
   StopOutlined,
@@ -20,6 +22,8 @@ import {
   type SystemNoticeInboxSummary,
   type SystemNoticeReadUserSummary,
   type SystemNoticeSummary,
+  type SystemNoticeTemplateRenderSummary,
+  type SystemNoticeTemplateSummary,
   type SystemNoticeType,
 } from '@opencore/sdk';
 import { useLocation, useModel } from '@umijs/max';
@@ -42,17 +46,24 @@ import {
 import { useEffect, useState } from 'react';
 import {
   archiveOpenCoreSystemNotice,
+  createOpenCoreSystemNoticeFromTemplate,
   createOpenCoreSystemNotice,
+  createOpenCoreSystemNoticeTemplate,
   deleteOpenCoreSystemNotice,
+  deleteOpenCoreSystemNoticeTemplate,
   getOpenCoreSystemNotice,
   getOpenCoreSystemNoticeInboxItem,
+  getOpenCoreSystemNoticeTemplate,
   listOpenCoreSystemNoticeInbox,
   listOpenCoreSystemNoticeReadUsers,
+  listOpenCoreSystemNoticeTemplates,
   listOpenCoreSystemNotices,
   markAllOpenCoreSystemNoticesRead,
   markOpenCoreSystemNoticesRead,
   publishOpenCoreSystemNotice,
+  renderOpenCoreSystemNoticeTemplate,
   updateOpenCoreSystemNotice,
+  updateOpenCoreSystemNoticeTemplate,
 } from '@/services/opencore/platform';
 import {
   CurrentPageExportButton,
@@ -76,7 +87,23 @@ type NoticeFormValues = {
   type: SystemNoticeType;
 };
 
-type NoticeTab = 'manage' | 'inbox';
+type NoticeTemplateFormValues = {
+  code: string;
+  contentTemplate: string;
+  enabled?: boolean;
+  name: string;
+  remark?: string;
+  titleTemplate: string;
+  type: SystemNoticeType;
+};
+
+type NoticeTemplateRenderFormValues = {
+  audience?: SystemNoticeAudience;
+  pinned?: boolean;
+  templateParams?: Record<string, string>;
+};
+
+type NoticeTab = 'manage' | 'inbox' | 'templates';
 
 const fallbackRows = createSystemNoticeFixtures().items;
 const searchFields: CurrentPageSearchField<SystemNoticeSummary>[] = [
@@ -129,6 +156,42 @@ const exportColumns: CurrentPageExportColumn<SystemNoticeSummary>[] = [
   { title: 'Created At', dataIndex: 'createdAt' },
   { title: 'Updated At', dataIndex: 'updatedAt' },
 ];
+const templateSearchFields: CurrentPageSearchField<SystemNoticeTemplateSummary>[] =
+  ['code', 'name', 'type', 'titleTemplate', 'contentTemplate', 'remark'];
+const templateFilterOptions: CurrentPageFilterOption<SystemNoticeTemplateSummary>[] =
+  [
+    {
+      key: 'type',
+      options: [
+        { label: 'announcement', value: 'announcement' },
+        { label: 'maintenance', value: 'maintenance' },
+        { label: 'security', value: 'security' },
+      ],
+      placeholder: 'Type',
+      predicate: (record, value) => record.type === value,
+    },
+    {
+      key: 'enabled',
+      options: [
+        { label: 'enabled', value: 'true' },
+        { label: 'disabled', value: 'false' },
+      ],
+      placeholder: 'Enabled',
+      predicate: (record, value) => String(record.enabled) === value,
+    },
+  ];
+const templateExportColumns: CurrentPageExportColumn<SystemNoticeTemplateSummary>[] =
+  [
+    { title: 'Code', dataIndex: 'code' },
+    { title: 'Name', dataIndex: 'name' },
+    { title: 'Type', dataIndex: 'type' },
+    { title: 'Enabled', dataIndex: 'enabled' },
+    { title: 'Params', dataIndex: 'params' },
+    { title: 'Title Template', dataIndex: 'titleTemplate' },
+    { title: 'Content Template', dataIndex: 'contentTemplate' },
+    { title: 'Remark', dataIndex: 'remark' },
+    { title: 'Updated At', dataIndex: 'updatedAt' },
+  ];
 
 function createDetailFields(record: SystemNoticeSummary): DetailField[] {
   return [
@@ -159,6 +222,24 @@ function createInboxDetailFields(
   ];
 }
 
+function createTemplateDetailFields(
+  record: SystemNoticeTemplateSummary,
+): DetailField[] {
+  return [
+    { label: 'ID', value: record.id },
+    { label: 'Code', value: record.code },
+    { label: 'Name', value: record.name },
+    { label: 'Type', value: record.type },
+    { label: 'Enabled', value: record.enabled ? 'yes' : 'no' },
+    { label: 'Params', value: record.params.join(', ') || 'none' },
+    { label: 'Title Template', value: record.titleTemplate },
+    { label: 'Content Template', value: record.contentTemplate },
+    { label: 'Remark', value: record.remark },
+    { label: 'Created At', value: record.createdAt },
+    { label: 'Updated At', value: record.updatedAt },
+  ];
+}
+
 function renderStatus(status: SystemNoticeSummary['status']) {
   const color =
     status === 'published' ? 'green' : status === 'draft' ? 'gold' : 'default';
@@ -172,13 +253,19 @@ function renderType(type: SystemNoticeSummary['type']) {
 }
 
 function getNoticeTabFromSearch(search: string): NoticeTab {
-  return new URLSearchParams(search).get('tab') === 'inbox'
-    ? 'inbox'
-    : 'manage';
+  const tab = new URLSearchParams(search).get('tab');
+
+  if (tab === 'inbox' || tab === 'templates') {
+    return tab;
+  }
+
+  return 'manage';
 }
 
 export default function SystemNoticesPage() {
   const [form] = Form.useForm<NoticeFormValues>();
+  const [templateForm] = Form.useForm<NoticeTemplateFormValues>();
+  const [templateRenderForm] = Form.useForm<NoticeTemplateRenderFormValues>();
   const location = useLocation();
   const { initialState } = useModel('@@initialState');
   const [activeTab, setActiveTab] = useState<NoticeTab>(() =>
@@ -191,11 +278,18 @@ export default function SystemNoticesPage() {
   >([]);
   const [loading, setLoading] = useState(true);
   const [inboxLoading, setInboxLoading] = useState(true);
+  const [templates, setTemplates] = useState<
+    readonly SystemNoticeTemplateSummary[]
+  >([]);
+  const [templateLoading, setTemplateLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
   const [inboxLoadError, setInboxLoadError] = useState<string>();
+  const [templateLoadError, setTemplateLoadError] = useState<string>();
   const [selectedDetail, setSelectedDetail] = useState<SystemNoticeSummary>();
   const [selectedInboxDetail, setSelectedInboxDetail] =
     useState<SystemNoticeInboxSummary>();
+  const [selectedTemplateDetail, setSelectedTemplateDetail] =
+    useState<SystemNoticeTemplateSummary>();
   const [readUsersOpenFor, setReadUsersOpenFor] =
     useState<SystemNoticeSummary>();
   const [readUsersRows, setReadUsersRows] = useState<
@@ -206,12 +300,30 @@ export default function SystemNoticesPage() {
   const [editingNotice, setEditingNotice] = useState<SystemNoticeSummary>();
   const [formOpen, setFormOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [editingTemplate, setEditingTemplate] =
+    useState<SystemNoticeTemplateSummary>();
+  const [templateFormOpen, setTemplateFormOpen] = useState(false);
+  const [templateSubmitting, setTemplateSubmitting] = useState(false);
+  const [renderTemplateFor, setRenderTemplateFor] =
+    useState<SystemNoticeTemplateSummary>();
+  const [templateRenderPreview, setTemplateRenderPreview] =
+    useState<SystemNoticeTemplateRenderSummary>();
+  const [templatePreviewLoading, setTemplatePreviewLoading] = useState(false);
+  const [templateNoticeSubmitting, setTemplateNoticeSubmitting] =
+    useState(false);
   const { filteredRows, toolbar: filterToolbar } =
     useCurrentPageFilters<SystemNoticeSummary>({
       rows,
       searchFields,
       searchPlaceholder: 'Search system notices',
       selectFilters: filterOptions,
+    });
+  const { filteredRows: filteredTemplates, toolbar: templateFilterToolbar } =
+    useCurrentPageFilters<SystemNoticeTemplateSummary>({
+      rows: templates,
+      searchFields: templateSearchFields,
+      searchPlaceholder: 'Search system notice templates',
+      selectFilters: templateFilterOptions,
     });
 
   const loadNotices = async () => {
@@ -256,9 +368,31 @@ export default function SystemNoticesPage() {
     }
   };
 
+  const loadTemplates = async () => {
+    setTemplateLoading(true);
+    try {
+      const noticeTemplates = await listOpenCoreSystemNoticeTemplates({
+        page: 1,
+        pageSize: 100,
+      });
+      setTemplates(noticeTemplates);
+      setTemplateLoadError(undefined);
+    } catch (error: unknown) {
+      setTemplates([]);
+      setTemplateLoadError(
+        error instanceof Error
+          ? error.message
+          : 'Unable to load system notice templates.',
+      );
+    } finally {
+      setTemplateLoading(false);
+    }
+  };
+
   useEffect(() => {
     void loadNotices();
     void loadInbox();
+    void loadTemplates();
   }, []);
 
   useEffect(() => {
@@ -296,11 +430,79 @@ export default function SystemNoticesPage() {
     }
   };
 
+  const openCreateTemplateForm = () => {
+    setEditingTemplate(undefined);
+    templateForm.setFieldsValue({
+      code: '',
+      contentTemplate: '',
+      enabled: true,
+      name: '',
+      remark: '',
+      titleTemplate: '',
+      type: 'announcement',
+    });
+    setTemplateFormOpen(true);
+  };
+
+  const openEditTemplateForm = async (record: SystemNoticeTemplateSummary) => {
+    try {
+      const fresh = await getOpenCoreSystemNoticeTemplate(record.code);
+      setEditingTemplate(fresh);
+      templateForm.setFieldsValue({
+        code: fresh.code,
+        contentTemplate: fresh.contentTemplate,
+        enabled: fresh.enabled,
+        name: fresh.name,
+        remark: fresh.remark,
+        titleTemplate: fresh.titleTemplate,
+        type: fresh.type,
+      });
+      setTemplateFormOpen(true);
+    } catch (error: unknown) {
+      message.error(
+        error instanceof Error
+          ? error.message
+          : 'Unable to open notice template.',
+      );
+    }
+  };
+
   const openDetail = async (record: SystemNoticeSummary) => {
     try {
       setSelectedDetail(await getOpenCoreSystemNotice(record.id));
-    } catch (_error) {
+    } catch {
       setSelectedDetail(record);
+    }
+  };
+
+  const openTemplateDetail = async (record: SystemNoticeTemplateSummary) => {
+    try {
+      setSelectedTemplateDetail(
+        await getOpenCoreSystemNoticeTemplate(record.code),
+      );
+    } catch {
+      setSelectedTemplateDetail(record);
+    }
+  };
+
+  const openTemplateRender = async (record: SystemNoticeTemplateSummary) => {
+    try {
+      const fresh = await getOpenCoreSystemNoticeTemplate(record.code);
+      setRenderTemplateFor(fresh);
+      setTemplateRenderPreview(undefined);
+      templateRenderForm.setFieldsValue({
+        audience: 'admin',
+        pinned: false,
+        templateParams: Object.fromEntries(
+          fresh.params.map((param) => [param, '']),
+        ),
+      });
+    } catch (error: unknown) {
+      message.error(
+        error instanceof Error
+          ? error.message
+          : 'Unable to open notice template render preview.',
+      );
     }
   };
 
@@ -351,6 +553,78 @@ export default function SystemNoticesPage() {
     }
   };
 
+  const submitTemplateForm = async () => {
+    const values = await templateForm.validateFields();
+
+    setTemplateSubmitting(true);
+    try {
+      if (editingTemplate) {
+        await updateOpenCoreSystemNoticeTemplate(editingTemplate.code, {
+          contentTemplate: values.contentTemplate,
+          enabled: values.enabled,
+          name: values.name,
+          remark: values.remark,
+          titleTemplate: values.titleTemplate,
+          type: values.type,
+        });
+        message.success('System notice template updated.');
+      } else {
+        await createOpenCoreSystemNoticeTemplate(values);
+        message.success('System notice template created.');
+      }
+      setTemplateFormOpen(false);
+      setEditingTemplate(undefined);
+      await loadTemplates();
+    } finally {
+      setTemplateSubmitting(false);
+    }
+  };
+
+  const renderTemplatePreview = async () => {
+    if (!renderTemplateFor) {
+      return;
+    }
+    const values = await templateRenderForm.validateFields();
+
+    setTemplatePreviewLoading(true);
+    try {
+      const preview = await renderOpenCoreSystemNoticeTemplate(
+        renderTemplateFor.code,
+        {
+          templateParams: values.templateParams ?? {},
+        },
+      );
+      setTemplateRenderPreview(preview);
+    } finally {
+      setTemplatePreviewLoading(false);
+    }
+  };
+
+  const createDraftFromTemplate = async () => {
+    if (!renderTemplateFor) {
+      return;
+    }
+    const values = await templateRenderForm.validateFields();
+    const createdBy = initialState?.currentUser?.username ?? 'admin';
+
+    setTemplateNoticeSubmitting(true);
+    try {
+      await createOpenCoreSystemNoticeFromTemplate(renderTemplateFor.code, {
+        audience: values.audience ?? 'admin',
+        createdBy,
+        pinned: values.pinned,
+        templateParams: values.templateParams ?? {},
+      });
+      message.success('Draft notice created from template.');
+      setRenderTemplateFor(undefined);
+      setTemplateRenderPreview(undefined);
+      await loadNotices();
+      await loadInbox();
+    } finally {
+      setTemplateNoticeSubmitting(false);
+    }
+  };
+
   const publishNotice = async (record: SystemNoticeSummary) => {
     await publishOpenCoreSystemNotice(record.id);
     message.success('System notice published.');
@@ -372,10 +646,16 @@ export default function SystemNoticesPage() {
     await loadInbox();
   };
 
+  const deleteTemplate = async (record: SystemNoticeTemplateSummary) => {
+    await deleteOpenCoreSystemNoticeTemplate(record.code);
+    message.success('System notice template deleted.');
+    await loadTemplates();
+  };
+
   const openInboxDetail = async (record: SystemNoticeInboxSummary) => {
     try {
       setSelectedInboxDetail(await getOpenCoreSystemNoticeInboxItem(record.id));
-    } catch (_error) {
+    } catch {
       setSelectedInboxDetail(record);
     }
   };
@@ -585,6 +865,102 @@ export default function SystemNoticesPage() {
     },
   ];
 
+  const templateColumns: ProColumns<SystemNoticeTemplateSummary>[] = [
+    {
+      title: 'Name',
+      dataIndex: 'name',
+      render: (_, record) => (
+        <Typography.Link onClick={() => void openTemplateDetail(record)}>
+          {record.name}
+        </Typography.Link>
+      ),
+    },
+    { title: 'Code', dataIndex: 'code' },
+    {
+      title: 'Type',
+      dataIndex: 'type',
+      render: (_, record) => renderType(record.type),
+    },
+    {
+      title: 'Enabled',
+      dataIndex: 'enabled',
+      render: (_, record) => (
+        <Tag color={record.enabled ? 'green' : 'default'}>
+          {record.enabled ? 'enabled' : 'disabled'}
+        </Tag>
+      ),
+    },
+    {
+      title: 'Params',
+      dataIndex: 'params',
+      render: (_, record) => (
+        <Space size={[0, 4]} wrap>
+          {record.params.length > 0 ? (
+            record.params.map((param) => <Tag key={param}>{param}</Tag>)
+          ) : (
+            <Tag>none</Tag>
+          )}
+        </Space>
+      ),
+    },
+    { title: 'Updated At', dataIndex: 'updatedAt' },
+    {
+      title: 'Actions',
+      valueType: 'option',
+      width: 240,
+      render: (_, record) => (
+        <Space size="small">
+          <Tooltip title="Detail">
+            <Button
+              aria-label={`View template ${record.name}`}
+              icon={<EyeOutlined />}
+              onClick={() => void openTemplateDetail(record)}
+              size="small"
+            />
+          </Tooltip>
+          <Tooltip title="Edit">
+            <Button
+              aria-label={`Edit template ${record.name}`}
+              icon={<EditOutlined />}
+              onClick={() => void openEditTemplateForm(record)}
+              size="small"
+            />
+          </Tooltip>
+          <Tooltip
+            title={
+              record.enabled
+                ? 'Notice template render preview'
+                : 'Disabled templates cannot render'
+            }
+          >
+            <Button
+              aria-label={`Render template ${record.name}`}
+              disabled={!record.enabled}
+              icon={<PlayCircleOutlined />}
+              onClick={() => void openTemplateRender(record)}
+              size="small"
+            />
+          </Tooltip>
+          <Popconfirm
+            title="Delete this notice template?"
+            okText="Delete"
+            okButtonProps={{ danger: true }}
+            onConfirm={() => void deleteTemplate(record)}
+          >
+            <Tooltip title="Delete">
+              <Button
+                aria-label={`Delete template ${record.name}`}
+                danger
+                icon={<DeleteOutlined />}
+                size="small"
+              />
+            </Tooltip>
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ];
+
   return (
     <PageContainer title="System Notices" subTitle="S7 System">
       <Tabs
@@ -698,6 +1074,58 @@ export default function SystemNoticesPage() {
               </>
             ),
           },
+          {
+            key: 'templates',
+            label: 'System Notice Templates',
+            children: (
+              <>
+                {templateLoadError ? (
+                  <Alert
+                    showIcon
+                    type="warning"
+                    message="Unable to load system notice templates"
+                    description={templateLoadError}
+                    style={{ marginBlockEnd: 16 }}
+                  />
+                ) : null}
+                <ProTable<SystemNoticeTemplateSummary>
+                  rowKey="code"
+                  loading={templateLoading}
+                  search={false}
+                  options={false}
+                  toolBarRender={() => [
+                    templateFilterToolbar,
+                    <Button
+                      key="create"
+                      type="primary"
+                      icon={<FileTextOutlined />}
+                      onClick={openCreateTemplateForm}
+                    >
+                      New Template
+                    </Button>,
+                    <Button
+                      key="refresh"
+                      icon={<ReloadOutlined />}
+                      onClick={() => void loadTemplates()}
+                    >
+                      Refresh
+                    </Button>,
+                    <CurrentPageExportButton<SystemNoticeTemplateSummary>
+                      key="export"
+                      columns={templateExportColumns}
+                      resource="core-notice-templates"
+                      rows={filteredTemplates}
+                    />,
+                  ]}
+                  pagination={{
+                    pageSize: 10,
+                  }}
+                  dataSource={filteredTemplates}
+                  columns={templateColumns}
+                />
+              </>
+            ),
+          },
         ]}
       />
       <ReadOnlyDetailDrawer
@@ -715,6 +1143,16 @@ export default function SystemNoticesPage() {
         onClose={() => setSelectedInboxDetail(undefined)}
         open={Boolean(selectedInboxDetail)}
         title={selectedInboxDetail?.title ?? 'System Notice Inbox Detail'}
+      />
+      <ReadOnlyDetailDrawer
+        fields={
+          selectedTemplateDetail
+            ? createTemplateDetailFields(selectedTemplateDetail)
+            : []
+        }
+        onClose={() => setSelectedTemplateDetail(undefined)}
+        open={Boolean(selectedTemplateDetail)}
+        title={selectedTemplateDetail?.name ?? 'System Notice Template Detail'}
       />
       <Modal
         title={
@@ -811,6 +1249,189 @@ export default function SystemNoticesPage() {
             </Form.Item>
           </Space>
         </Form>
+      </Modal>
+      <Modal
+        title={
+          editingTemplate
+            ? 'Edit System Notice Template'
+            : 'New System Notice Template'
+        }
+        open={templateFormOpen}
+        onCancel={() => {
+          setTemplateFormOpen(false);
+          setEditingTemplate(undefined);
+        }}
+        onOk={() => void submitTemplateForm()}
+        confirmLoading={templateSubmitting}
+        okText={editingTemplate ? 'Save' : 'Create'}
+        width={720}
+      >
+        <Form<NoticeTemplateFormValues> form={templateForm} layout="vertical">
+          <Space align="start" size="middle" wrap>
+            <Form.Item
+              label="Code"
+              name="code"
+              rules={[{ required: true, message: 'Code is required.' }]}
+            >
+              <Input
+                disabled={Boolean(editingTemplate)}
+                maxLength={80}
+                placeholder="release.window"
+                style={{ width: 220 }}
+              />
+            </Form.Item>
+            <Form.Item
+              label="Name"
+              name="name"
+              rules={[{ required: true, message: 'Name is required.' }]}
+            >
+              <Input maxLength={80} style={{ width: 220 }} />
+            </Form.Item>
+            <Form.Item
+              label="Type"
+              name="type"
+              rules={[{ required: true, message: 'Type is required.' }]}
+            >
+              <Select
+                style={{ width: 180 }}
+                options={[
+                  { label: 'announcement', value: 'announcement' },
+                  { label: 'maintenance', value: 'maintenance' },
+                  { label: 'security', value: 'security' },
+                ]}
+              />
+            </Form.Item>
+            <Form.Item label="Enabled" name="enabled" valuePropName="checked">
+              <Switch />
+            </Form.Item>
+          </Space>
+          <Form.Item
+            label="Title Template"
+            name="titleTemplate"
+            rules={[{ required: true, message: 'Title template is required.' }]}
+          >
+            <Input maxLength={160} placeholder="Release window: {{version}}" />
+          </Form.Item>
+          <Form.Item
+            label="Content Template"
+            name="contentTemplate"
+            rules={[
+              { required: true, message: 'Content template is required.' },
+            ]}
+          >
+            <Input.TextArea
+              rows={5}
+              maxLength={2000}
+              placeholder="Version {{version}} is scheduled for {{window}}."
+            />
+          </Form.Item>
+          <Form.Item label="Remark" name="remark">
+            <Input.TextArea rows={2} maxLength={300} />
+          </Form.Item>
+        </Form>
+      </Modal>
+      <Modal
+        title={
+          renderTemplateFor
+            ? `Notice template render preview: ${renderTemplateFor.name}`
+            : 'Notice template render preview'
+        }
+        open={Boolean(renderTemplateFor)}
+        onCancel={() => {
+          setRenderTemplateFor(undefined);
+          setTemplateRenderPreview(undefined);
+        }}
+        footer={[
+          <Button
+            key="preview"
+            icon={<PlayCircleOutlined />}
+            loading={templatePreviewLoading}
+            onClick={() => void renderTemplatePreview()}
+          >
+            Render Preview
+          </Button>,
+          <Button
+            key="cancel"
+            onClick={() => {
+              setRenderTemplateFor(undefined);
+              setTemplateRenderPreview(undefined);
+            }}
+          >
+            Cancel
+          </Button>,
+          <Button
+            key="create"
+            type="primary"
+            icon={<SendOutlined />}
+            loading={templateNoticeSubmitting}
+            onClick={() => void createDraftFromTemplate()}
+          >
+            Create draft from template
+          </Button>,
+        ]}
+        width={720}
+        destroyOnHidden
+      >
+        {renderTemplateFor ? (
+          <Form<NoticeTemplateRenderFormValues>
+            form={templateRenderForm}
+            layout="vertical"
+          >
+            <Space align="start" size="middle" wrap>
+              <Form.Item
+                label="Audience"
+                name="audience"
+                rules={[{ required: true, message: 'Audience is required.' }]}
+              >
+                <Select
+                  style={{ width: 160 }}
+                  options={[
+                    { label: 'all', value: 'all' },
+                    { label: 'admin', value: 'admin' },
+                  ]}
+                />
+              </Form.Item>
+              <Form.Item label="Pinned" name="pinned" valuePropName="checked">
+                <Switch />
+              </Form.Item>
+            </Space>
+            {renderTemplateFor.params.map((param) => (
+              <Form.Item
+                key={param}
+                label={param}
+                name={['templateParams', param]}
+                rules={[{ required: true, message: `${param} is required.` }]}
+              >
+                <Input maxLength={160} />
+              </Form.Item>
+            ))}
+            {renderTemplateFor.params.length === 0 ? (
+              <Alert
+                showIcon
+                type="info"
+                message="This template has no required parameters."
+                style={{ marginBlockEnd: 16 }}
+              />
+            ) : null}
+            {templateRenderPreview ? (
+              <Alert
+                showIcon
+                type="success"
+                message="Notice template render preview"
+                description={
+                  <Space direction="vertical" size={4}>
+                    <Typography.Text strong>
+                      {templateRenderPreview.title}
+                    </Typography.Text>
+                    <Typography.Text>
+                      {templateRenderPreview.content}
+                    </Typography.Text>
+                  </Space>
+                }
+              />
+            ) : null}
+          </Form>
+        ) : null}
       </Modal>
     </PageContainer>
   );

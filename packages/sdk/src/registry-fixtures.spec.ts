@@ -11,6 +11,7 @@ import {
   createQueueStatusFixture,
   createSystemConfigFixtures,
   createSystemDeptOptionFixtures,
+  createSystemNoticeTemplateFixtures,
   createSystemStatusFixture,
   createVersionInfoFixture,
 } from './registry-fixtures';
@@ -110,6 +111,10 @@ describe('registry fixtures', () => {
     expect(createSystemDeptOptionFixtures()[1]).toMatchObject({
       id: 'dept_engineering',
       parentId: 'dept_headquarters',
+    });
+    expect(createSystemNoticeTemplateFixtures().items[0]).toMatchObject({
+      code: 'release.window',
+      params: ['owner', 'version', 'window'],
     });
   });
 

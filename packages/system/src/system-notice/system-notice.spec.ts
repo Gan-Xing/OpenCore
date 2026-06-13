@@ -72,6 +72,94 @@ describe('@opencore/system system-notice', () => {
     ).rejects.toThrow(BadRequestException);
   });
 
+  it('supports notice templates, strict rendering and notice creation', async () => {
+    const service = new SystemNoticeService(new SeedSystemNoticeRepository());
+
+    await expect(
+      service.listNoticeTemplates({ page: 1, pageSize: 10, enabled: true }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        items: [
+          expect.objectContaining({
+            code: 'release.window',
+            params: ['owner', 'version', 'window'],
+          }),
+        ],
+      }),
+    );
+    await expect(service.listNoticeTemplateOptions()).resolves.toEqual([
+      expect.objectContaining({
+        code: 'release.window',
+        params: ['owner', 'version', 'window'],
+      }),
+    ]);
+
+    const template = await service.createNoticeTemplate({
+      code: 'security.rotation',
+      name: 'Security Rotation',
+      type: 'security',
+      titleTemplate: 'Security rotation for {{service}}',
+      contentTemplate:
+        '{{service}} credentials rotate at {{time}} by {{owner}}.',
+      remark: 'Strict parameter rendering test.',
+    });
+
+    expect(template.params).toEqual(['owner', 'service', 'time']);
+    await expect(
+      service.renderNoticeTemplate(template.code, {
+        templateParams: { owner: 'Platform', service: 'API', time: '09:00' },
+      }),
+    ).resolves.toEqual({
+      code: template.code,
+      title: 'Security rotation for API',
+      content: 'API credentials rotate at 09:00 by Platform.',
+      params: ['owner', 'service', 'time'],
+    });
+    await expect(
+      service.renderNoticeTemplate(template.code, {
+        templateParams: { service: 'API', time: '09:00' },
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.renderNoticeTemplate(template.code, {
+        templateParams: {
+          owner: 'Platform',
+          service: 'API',
+          time: '09:00',
+          extra: 'blocked',
+        },
+      }),
+    ).rejects.toThrow(BadRequestException);
+
+    const notice = await service.createNoticeFromTemplate(template.code, {
+      audience: 'admin',
+      createdBy: 'admin',
+      pinned: true,
+      templateParams: { owner: 'Platform', service: 'API', time: '09:00' },
+    });
+
+    expect(notice).toMatchObject({
+      title: 'Security rotation for API',
+      content: 'API credentials rotate at 09:00 by Platform.',
+      type: 'security',
+      audience: 'admin',
+      pinned: true,
+      status: 'draft',
+    });
+
+    await expect(
+      service.updateNoticeTemplate(template.code, { enabled: false }),
+    ).resolves.toMatchObject({ enabled: false });
+    await expect(
+      service.renderNoticeTemplate(template.code, {
+        templateParams: { owner: 'Platform', service: 'API', time: '09:00' },
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(service.deleteNoticeTemplate(template.code)).resolves.toEqual({
+      deleted: true,
+    });
+  });
+
   it('supports per-user notice inbox read state', async () => {
     const service = new SystemNoticeService(new SeedSystemNoticeRepository());
     const userId = 'user_operator';
@@ -163,6 +251,7 @@ describe('@opencore/system system-notice', () => {
     const testRunId = randomUUID().slice(0, 8);
     const title = `System notice ${testRunId}`;
     const inboxTitle = `System notice inbox ${testRunId}`;
+    const templateCode = `notice.template.${testRunId}`;
     const inboxUserId = `notice_inbox_user_${testRunId}`;
 
     beforeEach(async () => {
@@ -224,6 +313,46 @@ describe('@opencore/system system-notice', () => {
       });
       await expect(service.deleteNotice(notice.id)).resolves.toEqual({
         deleted: true,
+      });
+    });
+
+    it('persists notice templates and creates notices from templates through Prisma', async () => {
+      const template = await service.createNoticeTemplate({
+        code: templateCode,
+        name: 'Prisma Notice Template',
+        type: 'maintenance',
+        titleTemplate: 'Maintenance {{window}}',
+        contentTemplate: 'Maintenance owner {{owner}} starts {{window}}.',
+      });
+
+      expect(template.params).toEqual(['owner', 'window']);
+      await expect(
+        service.listNoticeTemplates({ type: 'maintenance', enabled: true }),
+      ).resolves.toEqual(
+        expect.objectContaining({
+          items: expect.arrayContaining([
+            expect.objectContaining({ code: templateCode }),
+          ]),
+        }),
+      );
+      await expect(
+        service.renderNoticeTemplate(templateCode, {
+          templateParams: { owner: 'Ops', window: '02:00 UTC' },
+        }),
+      ).resolves.toMatchObject({
+        title: 'Maintenance 02:00 UTC',
+        content: 'Maintenance owner Ops starts 02:00 UTC.',
+      });
+      await expect(
+        service.createNoticeFromTemplate(templateCode, {
+          audience: 'admin',
+          createdBy: 'admin',
+          templateParams: { owner: 'Ops', window: '02:00 UTC' },
+        }),
+      ).resolves.toMatchObject({
+        title: 'Maintenance 02:00 UTC',
+        content: 'Maintenance owner Ops starts 02:00 UTC.',
+        type: 'maintenance',
       });
     });
 
@@ -293,8 +422,11 @@ describe('@opencore/system system-notice', () => {
       await prisma.systemNoticeReadReceipt.deleteMany({
         where: { userId: inboxUserId },
       });
+      await prisma.systemNoticeTemplate.deleteMany({
+        where: { code: templateCode },
+      });
       await prisma.systemNotice.deleteMany({
-        where: { title: { in: [title, inboxTitle] } },
+        where: { title: { in: [title, inboxTitle, 'Maintenance 02:00 UTC'] } },
       });
       await prisma.user.deleteMany({
         where: { id: inboxUserId },

@@ -9,7 +9,9 @@ import type {
   CreateDictTypeRequest,
   CreateFileAssetRequest,
   CreateSystemDeptRequest,
+  CreateSystemNoticeFromTemplateRequest,
   CreateSystemNoticeRequest,
+  CreateSystemNoticeTemplateRequest,
   CreateSystemPostRequest,
   CreateSystemConfigRequest,
   DeleteResult,
@@ -27,6 +29,7 @@ import type {
   MarkSystemNoticesReadRequest,
   PageRequest,
   PageResponse,
+  RenderSystemNoticeTemplateRequest,
   SystemConfigBatchMutationSummary,
   SystemConfigCacheRefreshSummary,
   SystemConfigRuntimeSummary,
@@ -44,6 +47,10 @@ import type {
   SystemNoticeReadUserSummary,
   SystemNoticeReadUsersQueryRequest,
   SystemNoticeSummary,
+  SystemNoticeTemplateOptionSummary,
+  SystemNoticeTemplateQueryRequest,
+  SystemNoticeTemplateRenderSummary,
+  SystemNoticeTemplateSummary,
   SystemNoticeUnreadCountSummary,
   SystemPostBatchMutationSummary,
   SystemPostOrderMutationSummary,
@@ -58,6 +65,7 @@ import type {
   UpdateSystemDeptOrderRequest,
   UpdateSystemDeptRequest,
   UpdateSystemNoticeRequest,
+  UpdateSystemNoticeTemplateRequest,
   UpdateSystemPostOrderRequest,
   UpdateSystemPostRequest,
   UpdateSystemConfigRequest,
@@ -247,6 +255,37 @@ export type SystemManagementClient = {
     id: string,
     query?: SystemNoticeReadUsersQueryRequest,
   ) => Promise<PageResponse<SystemNoticeReadUserSummary>>;
+  listNoticeTemplates: (
+    token: Token,
+    query?: SystemNoticeTemplateQueryRequest,
+  ) => Promise<PageResponse<SystemNoticeTemplateSummary>>;
+  listNoticeTemplateOptions: (
+    token: Token,
+  ) => Promise<readonly SystemNoticeTemplateOptionSummary[]>;
+  getNoticeTemplate: (
+    token: Token,
+    code: string,
+  ) => Promise<SystemNoticeTemplateSummary>;
+  renderNoticeTemplate: (
+    token: Token,
+    code: string,
+    body: RenderSystemNoticeTemplateRequest,
+  ) => Promise<SystemNoticeTemplateRenderSummary>;
+  createNoticeFromTemplate: (
+    token: Token,
+    code: string,
+    body: CreateSystemNoticeFromTemplateRequest,
+  ) => Promise<SystemNoticeSummary>;
+  createNoticeTemplate: (
+    token: Token,
+    body: CreateSystemNoticeTemplateRequest,
+  ) => Promise<SystemNoticeTemplateSummary>;
+  updateNoticeTemplate: (
+    token: Token,
+    code: string,
+    body: UpdateSystemNoticeTemplateRequest,
+  ) => Promise<SystemNoticeTemplateSummary>;
+  deleteNoticeTemplate: (token: Token, code: string) => Promise<DeleteResult>;
   getNotice: (token: Token, id: string) => Promise<SystemNoticeSummary>;
   exportNotices: (
     token: Token,
@@ -602,6 +641,68 @@ export function createSystemManagementClient(
       request<PageResponse<SystemNoticeReadUserSummary>>(
         withQuery(`/core/notices/${encodeURIComponent(id)}/read-users`, query),
         {
+          token,
+        },
+      ),
+    listNoticeTemplates: (token, query) =>
+      request<PageResponse<SystemNoticeTemplateSummary>>(
+        withQuery('/core/notices/templates', query),
+        {
+          token,
+        },
+      ),
+    listNoticeTemplateOptions: (token) =>
+      request<readonly SystemNoticeTemplateOptionSummary[]>(
+        '/core/notices/templates/simple-list',
+        {
+          token,
+        },
+      ),
+    getNoticeTemplate: (token, code) =>
+      request<SystemNoticeTemplateSummary>(
+        `/core/notices/templates/${encodeURIComponent(code)}`,
+        {
+          token,
+        },
+      ),
+    renderNoticeTemplate: (token, code, body) =>
+      request<SystemNoticeTemplateRenderSummary>(
+        `/core/notices/templates/${encodeURIComponent(code)}/render`,
+        {
+          method: 'POST',
+          body,
+          token,
+        },
+      ),
+    createNoticeFromTemplate: (token, code, body) =>
+      request<SystemNoticeSummary>(
+        `/core/notices/templates/${encodeURIComponent(code)}/create-notice`,
+        {
+          method: 'POST',
+          body,
+          token,
+        },
+      ),
+    createNoticeTemplate: (token, body) =>
+      request<SystemNoticeTemplateSummary>('/core/notices/templates', {
+        method: 'POST',
+        body,
+        token,
+      }),
+    updateNoticeTemplate: (token, code, body) =>
+      request<SystemNoticeTemplateSummary>(
+        `/core/notices/templates/${encodeURIComponent(code)}`,
+        {
+          method: 'PATCH',
+          body,
+          token,
+        },
+      ),
+    deleteNoticeTemplate: (token, code) =>
+      request<DeleteResult>(
+        `/core/notices/templates/${encodeURIComponent(code)}`,
+        {
+          method: 'DELETE',
           token,
         },
       ),

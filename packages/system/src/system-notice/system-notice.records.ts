@@ -21,6 +21,20 @@ export type SystemNoticeRecord = {
   updatedAt: string;
 };
 
+export type SystemNoticeTemplateRecord = {
+  id: string;
+  code: string;
+  name: string;
+  type: SystemNoticeType;
+  titleTemplate: string;
+  contentTemplate: string;
+  params: readonly string[];
+  enabled: boolean;
+  remark?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export const seedSystemNotices: readonly SystemNoticeRecord[] = [
   {
     id: 'notice_welcome',
@@ -50,3 +64,21 @@ export const seedSystemNotices: readonly SystemNoticeRecord[] = [
     updatedAt: '2026-06-10T00:05:00.000Z',
   },
 ];
+
+export const seedSystemNoticeTemplates: readonly SystemNoticeTemplateRecord[] =
+  [
+    {
+      id: 'notice_template_release_window',
+      code: 'release.window',
+      name: 'Release Window',
+      type: 'announcement',
+      titleTemplate: 'Release window: {{version}}',
+      contentTemplate:
+        'Version {{version}} is scheduled for {{window}}. Owner: {{owner}}.',
+      params: ['owner', 'version', 'window'],
+      enabled: true,
+      remark: 'Default in-site notice template for release announcements.',
+      createdAt: '2026-06-10T00:10:00.000Z',
+      updatedAt: '2026-06-10T00:10:00.000Z',
+    },
+  ];

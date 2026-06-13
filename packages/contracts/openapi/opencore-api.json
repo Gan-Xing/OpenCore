@@ -2241,6 +2241,268 @@
         "tags": ["SystemManagement", "Core System Notices"]
       }
     },
+    "/api/core/notices/templates": {
+      "get": {
+        "operationId": "SystemManagementController_listNoticeTemplates",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["announcement", "maintenance", "security"]
+            }
+          },
+          {
+            "name": "enabled",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemNoticeTemplatePageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Notices"]
+      },
+      "post": {
+        "operationId": "SystemManagementController_createNoticeTemplate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSystemNoticeTemplateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemNoticeTemplateDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Notices"]
+      }
+    },
+    "/api/core/notices/templates/simple-list": {
+      "get": {
+        "operationId": "SystemManagementController_listNoticeTemplateOptions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SystemNoticeTemplateOptionDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Notices"]
+      }
+    },
+    "/api/core/notices/templates/{code}": {
+      "get": {
+        "operationId": "SystemManagementController_getNoticeTemplate",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemNoticeTemplateDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Notices"]
+      },
+      "patch": {
+        "operationId": "SystemManagementController_updateNoticeTemplate",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSystemNoticeTemplateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemNoticeTemplateDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Notices"]
+      },
+      "delete": {
+        "operationId": "SystemManagementController_deleteNoticeTemplate",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DeleteResultDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Notices"]
+      }
+    },
+    "/api/core/notices/templates/{code}/render": {
+      "post": {
+        "operationId": "SystemManagementController_renderNoticeTemplate",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenderSystemNoticeTemplateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemNoticeTemplateRenderDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Notices"]
+      }
+    },
+    "/api/core/notices/templates/{code}/create-notice": {
+      "post": {
+        "operationId": "SystemManagementController_createNoticeFromTemplate",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSystemNoticeFromTemplateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SystemNoticeDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Notices"]
+      }
+    },
     "/api/core/notices/{id}": {
       "get": {
         "operationId": "SystemManagementController_getNotice",
@@ -6977,6 +7239,130 @@
           "totalPages": { "type": "number" }
         },
         "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "SystemNoticeTemplateDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "type": {
+            "type": "string",
+            "enum": ["announcement", "maintenance", "security"]
+          },
+          "titleTemplate": { "type": "string" },
+          "contentTemplate": { "type": "string" },
+          "params": { "type": "array", "items": { "type": "string" } },
+          "enabled": { "type": "boolean" },
+          "remark": { "type": "string" },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "type",
+          "titleTemplate",
+          "contentTemplate",
+          "params",
+          "enabled",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "SystemNoticeTemplatePageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SystemNoticeTemplateDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "SystemNoticeTemplateOptionDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "type": {
+            "type": "string",
+            "enum": ["announcement", "maintenance", "security"]
+          },
+          "params": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["code", "name", "type", "params"]
+      },
+      "RenderSystemNoticeTemplateDto": {
+        "type": "object",
+        "properties": { "templateParams": { "type": "object" } }
+      },
+      "SystemNoticeTemplateRenderDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "title": { "type": "string" },
+          "content": { "type": "string" },
+          "params": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["code", "title", "content", "params"]
+      },
+      "CreateSystemNoticeFromTemplateDto": {
+        "type": "object",
+        "properties": {
+          "templateParams": { "type": "object" },
+          "audience": {
+            "type": "string",
+            "enum": ["all", "admin"],
+            "default": "all"
+          },
+          "pinned": { "type": "boolean", "default": false },
+          "validFrom": { "type": "string" },
+          "validTo": { "type": "string" },
+          "createdBy": { "type": "string", "example": "admin" }
+        },
+        "required": ["createdBy"]
+      },
+      "CreateSystemNoticeTemplateDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string", "example": "release.window" },
+          "name": { "type": "string", "example": "Release Window" },
+          "type": {
+            "type": "string",
+            "enum": ["announcement", "maintenance", "security"]
+          },
+          "titleTemplate": {
+            "type": "string",
+            "example": "Release window: {{version}}"
+          },
+          "contentTemplate": {
+            "type": "string",
+            "example": "Version {{version}} is scheduled for {{window}}."
+          },
+          "enabled": { "type": "boolean", "default": true },
+          "remark": { "type": "string" }
+        },
+        "required": ["code", "name", "type", "titleTemplate", "contentTemplate"]
+      },
+      "UpdateSystemNoticeTemplateDto": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "type": {
+            "type": "string",
+            "enum": ["announcement", "maintenance", "security"]
+          },
+          "titleTemplate": { "type": "string" },
+          "contentTemplate": { "type": "string" },
+          "enabled": { "type": "boolean" },
+          "remark": { "type": "string" }
+        }
       },
       "CreateSystemNoticeDto": {
         "type": "object",

@@ -225,10 +225,11 @@ if (
   !deployScript.includes('admin.public-bundle.no-duplicate-api-prefix') ||
   !deployScript.includes('admin.api-proxy.duplicate-prefix-login') ||
   !deployScript.includes('loginMaxFailedAttempts') ||
+  !deployScript.includes('System Notice Templates') ||
   !deployScript.includes('Refusing to deploy a stale frontend login page')
 ) {
   throw new Error(
-    'OpenCore deploy script must verify the public Admin bundle, stale login page content and duplicated /api/api login requests.',
+    'OpenCore deploy script must verify the public Admin bundle, stale login page content, notice template bundles and duplicated /api/api login requests.',
   );
 }
 
@@ -1092,6 +1093,13 @@ if (
   !systemNoticesPage.includes('listOpenCoreSystemNoticeInbox') ||
   !systemNoticesPage.includes('getOpenCoreSystemNoticeInboxItem') ||
   !systemNoticesPage.includes('listOpenCoreSystemNoticeReadUsers') ||
+  !systemNoticesPage.includes('listOpenCoreSystemNoticeTemplates') ||
+  !systemNoticesPage.includes('getOpenCoreSystemNoticeTemplate') ||
+  !systemNoticesPage.includes('renderOpenCoreSystemNoticeTemplate') ||
+  !systemNoticesPage.includes('createOpenCoreSystemNoticeFromTemplate') ||
+  !systemNoticesPage.includes('createOpenCoreSystemNoticeTemplate') ||
+  !systemNoticesPage.includes('updateOpenCoreSystemNoticeTemplate') ||
+  !systemNoticesPage.includes('deleteOpenCoreSystemNoticeTemplate') ||
   !systemNoticesPage.includes('markOpenCoreSystemNoticesRead') ||
   !systemNoticesPage.includes('markAllOpenCoreSystemNoticesRead') ||
   !systemNoticesPage.includes('createOpenCoreSystemNotice') ||
@@ -1100,17 +1108,24 @@ if (
   !systemNoticesPage.includes('archiveOpenCoreSystemNotice') ||
   !systemNoticesPage.includes('deleteOpenCoreSystemNotice') ||
   !systemNoticesPage.includes("key: 'inbox'") ||
+  !systemNoticesPage.includes("key: 'templates'") ||
+  !systemNoticesPage.includes('System Notice Templates') ||
+  !systemNoticesPage.includes('Notice template render preview') ||
+  !systemNoticesPage.includes('Create draft from template') ||
   !systemNoticesPage.includes('Mark all read') ||
   !systemNoticesPage.includes('Read users') ||
   !systemNoticesPage.includes('System Notice Read Users') ||
   !systemNoticesPage.includes('System Notice Inbox Detail') ||
+  !systemNoticesPage.includes('System Notice Template Detail') ||
+  !systemNoticesPage.includes('core-notice-templates') ||
   !systemNoticesPage.includes('useCurrentPageFilters') ||
   !systemNoticesPage.includes('CurrentPageExportButton') ||
   !systemNoticesPage.includes('dataSource={filteredRows}') ||
+  !systemNoticesPage.includes('dataSource={filteredTemplates}') ||
   !systemNoticesPage.includes('rows={filteredRows}')
 ) {
   throw new Error(
-    'System Notices page must use live SDK lifecycle actions with bounded filtering and current-page export.',
+    'System Notices page must use live SDK lifecycle, inbox and template actions with bounded filtering and current-page export.',
   );
 }
 

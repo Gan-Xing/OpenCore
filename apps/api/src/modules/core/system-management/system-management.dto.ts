@@ -18,6 +18,8 @@ export {
   CreateSystemDeptDto,
   CreateSystemConfigDto,
   CreateSystemNoticeDto,
+  CreateSystemNoticeFromTemplateDto,
+  CreateSystemNoticeTemplateDto,
   CreateSystemPostDto,
   DictDataOptionDto,
   DictDataOptionQueryDto,
@@ -43,6 +45,11 @@ export {
   SystemNoticePageDto,
   SystemNoticeQueryDto,
   SystemNoticeReadMutationResultDto,
+  SystemNoticeTemplateDto,
+  SystemNoticeTemplateOptionDto,
+  SystemNoticeTemplatePageDto,
+  SystemNoticeTemplateQueryDto,
+  SystemNoticeTemplateRenderDto,
   SystemNoticeReadUserPageDto,
   SystemNoticeReadUsersQueryDto,
   SystemNoticeUnreadCountDto,
@@ -59,8 +66,10 @@ export {
   UpdateDictTypeDto,
   UpdateSystemConfigDto,
   UpdateSystemNoticeDto,
+  UpdateSystemNoticeTemplateDto,
   UpdateSystemPostDto,
   MarkSystemNoticesReadDto,
+  RenderSystemNoticeTemplateDto,
 } from '@opencore/system';
 
 export class PageQueryDto {

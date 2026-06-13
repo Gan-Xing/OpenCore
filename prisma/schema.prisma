@@ -164,6 +164,22 @@ model SystemNotice {
   @@index([audience, pinned])
 }
 
+model SystemNoticeTemplate {
+  id              String   @id @default(cuid())
+  code            String   @unique
+  name            String
+  type            String
+  titleTemplate   String
+  contentTemplate String
+  params          Json     @default("[]")
+  enabled         Boolean  @default(true)
+  remark          String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([enabled, type])
+}
+
 model SystemNoticeReadReceipt {
   id        String       @id @default(cuid())
   noticeId  String

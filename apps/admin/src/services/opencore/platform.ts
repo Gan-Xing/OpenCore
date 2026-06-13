@@ -26,12 +26,15 @@ import {
   type CreateUserRequest,
   type ImportUsersRequest,
   type CreateSystemDeptRequest,
+  type CreateSystemNoticeFromTemplateRequest,
   type CreateSystemNoticeRequest,
+  type CreateSystemNoticeTemplateRequest,
   type CreateSystemPostRequest,
   type MenuSummary,
   type PermissionSummary,
   type RbacExportPreview,
   type RbacDeleteResult,
+  type RenderSystemNoticeTemplateRequest,
   type RoleMenuAssignmentSummary,
   type RoleMutationSummary,
   type RoleUserAssignmentSummary,
@@ -70,6 +73,10 @@ import {
   type SystemNoticeReadUserSummary,
   type SystemNoticeReadUsersQueryRequest,
   type SystemNoticeSummary,
+  type SystemNoticeTemplateOptionSummary,
+  type SystemNoticeTemplateQueryRequest,
+  type SystemNoticeTemplateRenderSummary,
+  type SystemNoticeTemplateSummary,
   type SystemNoticeUnreadCountSummary,
   type SystemPostBatchMutationSummary,
   type SystemPostOptionSummary,
@@ -85,6 +92,7 @@ import {
   type UpdateFileAssetRequest,
   type UpdateSystemConfigRequest,
   type UpdateSystemNoticeRequest,
+  type UpdateSystemNoticeTemplateRequest,
   type UpdateSystemPostOrderRequest,
   type UpdateSystemPostRequest,
   type UploadFileAssetRequest,
@@ -774,6 +782,84 @@ export async function listOpenCoreSystemNoticeReadUsers(
     query,
   );
   return [...page.items];
+}
+
+export async function listOpenCoreSystemNoticeTemplates(
+  query?: SystemNoticeTemplateQueryRequest,
+): Promise<SystemNoticeTemplateSummary[]> {
+  const page = await systemManagementClient.listNoticeTemplates(
+    getRequiredAdminToken(),
+    query,
+  );
+  return [...page.items];
+}
+
+export function listOpenCoreSystemNoticeTemplateOptions(): Promise<
+  readonly SystemNoticeTemplateOptionSummary[]
+> {
+  return systemManagementClient.listNoticeTemplateOptions(
+    getRequiredAdminToken(),
+  );
+}
+
+export function getOpenCoreSystemNoticeTemplate(
+  code: string,
+): Promise<SystemNoticeTemplateSummary> {
+  return systemManagementClient.getNoticeTemplate(
+    getRequiredAdminToken(),
+    code,
+  );
+}
+
+export function renderOpenCoreSystemNoticeTemplate(
+  code: string,
+  body: RenderSystemNoticeTemplateRequest,
+): Promise<SystemNoticeTemplateRenderSummary> {
+  return systemManagementClient.renderNoticeTemplate(
+    getRequiredAdminToken(),
+    code,
+    body,
+  );
+}
+
+export function createOpenCoreSystemNoticeFromTemplate(
+  code: string,
+  body: CreateSystemNoticeFromTemplateRequest,
+): Promise<SystemNoticeSummary> {
+  return systemManagementClient.createNoticeFromTemplate(
+    getRequiredAdminToken(),
+    code,
+    body,
+  );
+}
+
+export function createOpenCoreSystemNoticeTemplate(
+  body: CreateSystemNoticeTemplateRequest,
+): Promise<SystemNoticeTemplateSummary> {
+  return systemManagementClient.createNoticeTemplate(
+    getRequiredAdminToken(),
+    body,
+  );
+}
+
+export function updateOpenCoreSystemNoticeTemplate(
+  code: string,
+  body: UpdateSystemNoticeTemplateRequest,
+): Promise<SystemNoticeTemplateSummary> {
+  return systemManagementClient.updateNoticeTemplate(
+    getRequiredAdminToken(),
+    code,
+    body,
+  );
+}
+
+export function deleteOpenCoreSystemNoticeTemplate(
+  code: string,
+): Promise<{ deleted: true }> {
+  return systemManagementClient.deleteNoticeTemplate(
+    getRequiredAdminToken(),
+    code,
+  );
 }
 
 export function getOpenCoreSystemNotice(

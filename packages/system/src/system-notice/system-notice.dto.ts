@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import type {
   SystemNoticeAudience,
+  SystemNoticeTemplateRecord,
   SystemNoticeStatus,
   SystemNoticeType,
 } from './system-notice.records';
@@ -127,6 +128,86 @@ export class SystemNoticeReadUserPageDto {
   totalPages!: number;
 }
 
+export class SystemNoticeTemplateDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  code!: string;
+
+  @ApiProperty()
+  name!: string;
+
+  @ApiProperty({ enum: ['announcement', 'maintenance', 'security'] })
+  type!: SystemNoticeType;
+
+  @ApiProperty()
+  titleTemplate!: string;
+
+  @ApiProperty()
+  contentTemplate!: string;
+
+  @ApiProperty({ type: [String] })
+  params!: readonly string[];
+
+  @ApiProperty()
+  enabled!: boolean;
+
+  @ApiProperty({ required: false })
+  remark?: string;
+
+  @ApiProperty()
+  createdAt!: string;
+
+  @ApiProperty()
+  updatedAt!: string;
+}
+
+export class SystemNoticeTemplatePageDto {
+  @ApiProperty({ type: [SystemNoticeTemplateDto] })
+  items!: readonly SystemNoticeTemplateDto[];
+
+  @ApiProperty()
+  page!: number;
+
+  @ApiProperty()
+  pageSize!: number;
+
+  @ApiProperty()
+  total!: number;
+
+  @ApiProperty()
+  totalPages!: number;
+}
+
+export class SystemNoticeTemplateOptionDto {
+  @ApiProperty()
+  code!: string;
+
+  @ApiProperty()
+  name!: string;
+
+  @ApiProperty({ enum: ['announcement', 'maintenance', 'security'] })
+  type!: SystemNoticeType;
+
+  @ApiProperty({ type: [String] })
+  params!: readonly string[];
+}
+
+export class SystemNoticeTemplateRenderDto {
+  @ApiProperty()
+  code!: string;
+
+  @ApiProperty()
+  title!: string;
+
+  @ApiProperty()
+  content!: string;
+
+  @ApiProperty({ type: [String] })
+  params!: readonly string[];
+}
+
 export class MarkSystemNoticesReadDto {
   @ApiProperty({ type: [String] })
   ids!: readonly string[];
@@ -188,6 +269,23 @@ export class SystemNoticeReadUsersQueryDto {
   pageSize?: number | string;
 }
 
+export class SystemNoticeTemplateQueryDto {
+  @ApiProperty({ required: false, default: 1 })
+  page?: number | string;
+
+  @ApiProperty({ required: false, default: 10 })
+  pageSize?: number | string;
+
+  @ApiProperty({
+    required: false,
+    enum: ['announcement', 'maintenance', 'security'],
+  })
+  type?: SystemNoticeType | string;
+
+  @ApiProperty({ required: false })
+  enabled?: boolean | string;
+}
+
 export class CreateSystemNoticeDto {
   @ApiProperty({ example: 'Maintenance Window' })
   title!: string;
@@ -239,3 +337,78 @@ export class UpdateSystemNoticeDto {
   @ApiProperty({ required: false })
   validTo?: string;
 }
+
+export class CreateSystemNoticeTemplateDto {
+  @ApiProperty({ example: 'release.window' })
+  code!: string;
+
+  @ApiProperty({ example: 'Release Window' })
+  name!: string;
+
+  @ApiProperty({ enum: ['announcement', 'maintenance', 'security'] })
+  type!: SystemNoticeType;
+
+  @ApiProperty({ example: 'Release window: {{version}}' })
+  titleTemplate!: string;
+
+  @ApiProperty({
+    example: 'Version {{version}} is scheduled for {{window}}.',
+  })
+  contentTemplate!: string;
+
+  @ApiProperty({ required: false, default: true })
+  enabled?: boolean;
+
+  @ApiProperty({ required: false })
+  remark?: string;
+}
+
+export class UpdateSystemNoticeTemplateDto {
+  @ApiProperty({ required: false })
+  name?: string;
+
+  @ApiProperty({
+    required: false,
+    enum: ['announcement', 'maintenance', 'security'],
+  })
+  type?: SystemNoticeType;
+
+  @ApiProperty({ required: false })
+  titleTemplate?: string;
+
+  @ApiProperty({ required: false })
+  contentTemplate?: string;
+
+  @ApiProperty({ required: false })
+  enabled?: boolean;
+
+  @ApiProperty({ required: false })
+  remark?: string;
+}
+
+export class RenderSystemNoticeTemplateDto {
+  @ApiProperty({ required: false })
+  templateParams?: Record<string, string | number | boolean>;
+}
+
+export class CreateSystemNoticeFromTemplateDto extends RenderSystemNoticeTemplateDto {
+  @ApiProperty({ required: false, enum: ['all', 'admin'], default: 'all' })
+  audience?: SystemNoticeAudience;
+
+  @ApiProperty({ required: false, default: false })
+  pinned?: boolean;
+
+  @ApiProperty({ required: false })
+  validFrom?: string;
+
+  @ApiProperty({ required: false })
+  validTo?: string;
+
+  @ApiProperty({ example: 'admin' })
+  createdBy!: string;
+}
+
+export type SystemNoticeTemplateOption = Pick<
+  SystemNoticeTemplateRecord,
+  'code' | 'name' | 'params' | 'type'
+>;

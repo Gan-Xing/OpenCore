@@ -51,6 +51,8 @@ import {
   CreateSystemDeptDto,
   CreateSystemConfigDto,
   CreateSystemNoticeDto,
+  CreateSystemNoticeFromTemplateDto,
+  CreateSystemNoticeTemplateDto,
   CreateSystemPostDto,
   DeleteResultDto,
   DictDataOptionDto,
@@ -87,6 +89,11 @@ import {
   SystemNoticePageDto,
   SystemNoticeQueryDto,
   SystemNoticeReadMutationResultDto,
+  SystemNoticeTemplateDto,
+  SystemNoticeTemplateOptionDto,
+  SystemNoticeTemplatePageDto,
+  SystemNoticeTemplateQueryDto,
+  SystemNoticeTemplateRenderDto,
   SystemNoticeReadUserPageDto,
   SystemNoticeReadUsersQueryDto,
   SystemNoticeUnreadCountDto,
@@ -105,10 +112,12 @@ import {
   UploadFileAssetDto,
   UpdateSystemConfigDto,
   UpdateSystemNoticeDto,
+  UpdateSystemNoticeTemplateDto,
   UpdateSystemPostDto,
   UnlockLoginUserDto,
   AuditLogDto,
   MarkSystemNoticesReadDto,
+  RenderSystemNoticeTemplateDto,
 } from './system-management.dto';
 import { SystemManagementRepository } from './system-management.repository';
 
@@ -433,6 +442,87 @@ export class SystemManagementController {
     @Query() query: SystemNoticeReadUsersQueryDto,
   ): Promise<SystemNoticeReadUserPageDto> {
     return this.notices.listNoticeReadUsers(id, query);
+  }
+
+  @Get('notices/templates')
+  @ApiTags('Core System Notices')
+  @RequirePermission('core:notice:read')
+  @ApiOkResponse({ type: SystemNoticeTemplatePageDto })
+  listNoticeTemplates(
+    @Query() query: SystemNoticeTemplateQueryDto,
+  ): Promise<SystemNoticeTemplatePageDto> {
+    return this.notices.listNoticeTemplates(query);
+  }
+
+  @Get('notices/templates/simple-list')
+  @ApiTags('Core System Notices')
+  @RequirePermission('core:notice:read')
+  @ApiOkResponse({ type: [SystemNoticeTemplateOptionDto] })
+  listNoticeTemplateOptions(): Promise<
+    readonly SystemNoticeTemplateOptionDto[]
+  > {
+    return this.notices.listNoticeTemplateOptions();
+  }
+
+  @Get('notices/templates/:code')
+  @ApiTags('Core System Notices')
+  @RequirePermission('core:notice:read')
+  @ApiOkResponse({ type: SystemNoticeTemplateDto })
+  getNoticeTemplate(
+    @Param('code') code: string,
+  ): Promise<SystemNoticeTemplateDto> {
+    return this.notices.getNoticeTemplate(code);
+  }
+
+  @Post('notices/templates/:code/render')
+  @ApiTags('Core System Notices')
+  @RequirePermission('core:notice:read')
+  @ApiOkResponse({ type: SystemNoticeTemplateRenderDto })
+  renderNoticeTemplate(
+    @Param('code') code: string,
+    @Body() body: RenderSystemNoticeTemplateDto,
+  ): Promise<SystemNoticeTemplateRenderDto> {
+    return this.notices.renderNoticeTemplate(code, body);
+  }
+
+  @Post('notices/templates/:code/create-notice')
+  @ApiTags('Core System Notices')
+  @RequirePermission('core:notice:create')
+  @ApiOkResponse({ type: SystemNoticeDto })
+  createNoticeFromTemplate(
+    @Param('code') code: string,
+    @Body() body: CreateSystemNoticeFromTemplateDto,
+  ): Promise<SystemNoticeDto> {
+    return this.notices.createNoticeFromTemplate(code, body);
+  }
+
+  @Post('notices/templates')
+  @ApiTags('Core System Notices')
+  @RequirePermission('core:notice:create')
+  @ApiOkResponse({ type: SystemNoticeTemplateDto })
+  createNoticeTemplate(
+    @Body() body: CreateSystemNoticeTemplateDto,
+  ): Promise<SystemNoticeTemplateDto> {
+    return this.notices.createNoticeTemplate(body);
+  }
+
+  @Patch('notices/templates/:code')
+  @ApiTags('Core System Notices')
+  @RequirePermission('core:notice:update')
+  @ApiOkResponse({ type: SystemNoticeTemplateDto })
+  updateNoticeTemplate(
+    @Param('code') code: string,
+    @Body() body: UpdateSystemNoticeTemplateDto,
+  ): Promise<SystemNoticeTemplateDto> {
+    return this.notices.updateNoticeTemplate(code, body);
+  }
+
+  @Delete('notices/templates/:code')
+  @ApiTags('Core System Notices')
+  @RequirePermission('core:notice:delete')
+  @ApiOkResponse({ type: DeleteResultDto })
+  deleteNoticeTemplate(@Param('code') code: string): Promise<DeleteResultDto> {
+    return this.notices.deleteNoticeTemplate(code);
   }
 
   @Get('notices/:id')

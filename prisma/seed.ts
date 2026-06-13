@@ -11,6 +11,7 @@ import {
   seedDictTypes,
   seedSystemConfigs,
   seedSystemDepts,
+  seedSystemNoticeTemplates,
   seedSystemNotices,
   seedSystemPosts,
   seedSystemRoles,
@@ -424,6 +425,7 @@ async function seedSystemManagement(): Promise<{
   dictTypes: number;
   systemConfigs: number;
   systemNotices: number;
+  systemNoticeTemplates: number;
   systemDepts: number;
   systemPosts: number;
   fileAssets: number;
@@ -539,6 +541,34 @@ async function seedSystemManagement(): Promise<{
         archivedAt: notice.archivedAt ? new Date(notice.archivedAt) : null,
         createdBy: notice.createdBy,
         createdAt: new Date(notice.createdAt),
+      },
+    });
+  }
+
+  for (const template of seedSystemNoticeTemplates) {
+    await prisma.systemNoticeTemplate.upsert({
+      where: { code: template.code },
+      update: {
+        name: template.name,
+        type: template.type,
+        titleTemplate: template.titleTemplate,
+        contentTemplate: template.contentTemplate,
+        params: [...template.params] as Prisma.InputJsonValue,
+        enabled: template.enabled,
+        remark: template.remark,
+        createdAt: new Date(template.createdAt),
+      },
+      create: {
+        id: template.id,
+        code: template.code,
+        name: template.name,
+        type: template.type,
+        titleTemplate: template.titleTemplate,
+        contentTemplate: template.contentTemplate,
+        params: [...template.params] as Prisma.InputJsonValue,
+        enabled: template.enabled,
+        remark: template.remark,
+        createdAt: new Date(template.createdAt),
       },
     });
   }
@@ -691,6 +721,7 @@ async function seedSystemManagement(): Promise<{
     dictTypes: seedDictTypes.length,
     systemConfigs: seedSystemConfigs.length,
     systemNotices: seedSystemNotices.length,
+    systemNoticeTemplates: seedSystemNoticeTemplates.length,
     systemDepts: seedSystemDepts.length,
     systemPosts: seedSystemPosts.length,
     fileAssets: seedFileAssets.length,

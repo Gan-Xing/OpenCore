@@ -333,6 +333,32 @@ export type SystemNoticeReadUserSummary = {
   readAt: string;
 };
 
+export type SystemNoticeTemplateSummary = {
+  id: string;
+  code: string;
+  name: string;
+  type: SystemNoticeType;
+  titleTemplate: string;
+  contentTemplate: string;
+  params: readonly string[];
+  enabled: boolean;
+  remark?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type SystemNoticeTemplateOptionSummary = Pick<
+  SystemNoticeTemplateSummary,
+  'code' | 'name' | 'params' | 'type'
+>;
+
+export type SystemNoticeTemplateRenderSummary = {
+  code: string;
+  title: string;
+  content: string;
+  params: readonly string[];
+};
+
 export type SystemNoticeQueryRequest = PageRequest & {
   audience?: SystemNoticeAudience;
   status?: SystemNoticeStatus;
@@ -345,6 +371,11 @@ export type SystemNoticeInboxQueryRequest = PageRequest & {
 };
 
 export type SystemNoticeReadUsersQueryRequest = PageRequest;
+
+export type SystemNoticeTemplateQueryRequest = PageRequest & {
+  enabled?: boolean;
+  type?: SystemNoticeType;
+};
 
 export type MarkSystemNoticesReadRequest = {
   ids: readonly string[];
@@ -383,6 +414,36 @@ export type UpdateSystemNoticeRequest = Partial<
     | 'validTo'
   >
 >;
+
+export type CreateSystemNoticeTemplateRequest = {
+  code: string;
+  name: string;
+  type: SystemNoticeType;
+  titleTemplate: string;
+  contentTemplate: string;
+  enabled?: boolean;
+  remark?: string;
+};
+
+export type UpdateSystemNoticeTemplateRequest = Partial<
+  Pick<
+    SystemNoticeTemplateSummary,
+    'contentTemplate' | 'enabled' | 'name' | 'remark' | 'titleTemplate' | 'type'
+  >
+>;
+
+export type RenderSystemNoticeTemplateRequest = {
+  templateParams?: Record<string, string | number | boolean>;
+};
+
+export type CreateSystemNoticeFromTemplateRequest =
+  RenderSystemNoticeTemplateRequest & {
+    audience?: SystemNoticeAudience;
+    createdBy: string;
+    pinned?: boolean;
+    validFrom?: string;
+    validTo?: string;
+  };
 
 export type AuditLogSummary = {
   id: string;

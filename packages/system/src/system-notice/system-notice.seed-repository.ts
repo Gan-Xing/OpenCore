@@ -6,7 +6,9 @@ import {
 import type { PageResult } from '@opencore/common';
 import {
   seedSystemNotices,
+  seedSystemNoticeTemplates,
   type SystemNoticeRecord,
+  type SystemNoticeTemplateRecord,
 } from './system-notice.records';
 import { seedSystemUsers } from '../system-user/system-user.records';
 import {
@@ -15,13 +17,17 @@ import {
   compareSystemNoticeInboxRecords,
   createSystemNoticeInboxRecord,
   createSystemNoticePageResult,
+  createSystemNoticeFromTemplateInput,
   isSystemNoticeVisibleInInbox,
   normalizeCreateSystemNoticeInput,
+  normalizeCreateSystemNoticeTemplateInput,
   normalizeMarkSystemNoticesReadInput,
   normalizeSystemNoticeInboxFilters,
   normalizeSystemNoticeFilters,
   normalizeSystemNoticePageQuery,
+  normalizeSystemNoticeTemplateFilters,
   normalizeUnreadNoticeLimit,
+  normalizeUpdateSystemNoticeTemplateInput,
   normalizeUpdateSystemNoticeInput,
   SystemNoticeRepository,
   type SystemNoticeInboxPageQuery,
@@ -30,16 +36,26 @@ import {
   type SystemNoticeReadUsersPageQuery,
   type SystemNoticeReadMutationResult,
   type SystemNoticePageQuery,
+  type SystemNoticeTemplateOptionRecord,
+  type SystemNoticeTemplatePageQuery,
 } from './system-notice.repository';
 import type {
+  CreateSystemNoticeFromTemplateDto,
   CreateSystemNoticeDto,
+  CreateSystemNoticeTemplateDto,
   MarkSystemNoticesReadDto,
+  UpdateSystemNoticeTemplateDto,
   UpdateSystemNoticeDto,
 } from './system-notice.dto';
 
 @Injectable()
 export class SeedSystemNoticeRepository extends SystemNoticeRepository {
   private notices = seedSystemNotices.map((notice) => ({ ...notice }));
+  private templates: SystemNoticeTemplateRecord[] =
+    seedSystemNoticeTemplates.map((template) => ({
+      ...template,
+      params: [...template.params],
+    }));
   private readReceipts = new Map<string, string>();
 
   async listNotices(
@@ -188,6 +204,101 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
     return { ...this.findNotice(id) };
   }
 
+  async listNoticeTemplates(
+    query: SystemNoticeTemplatePageQuery = {},
+  ): Promise<PageResult<SystemNoticeTemplateRecord>> {
+    const filters = normalizeSystemNoticeTemplateFilters(query);
+    const rows = this.templates
+      .filter(
+        (template) =>
+          (filters.enabled === undefined ||
+            template.enabled === filters.enabled) &&
+          (!filters.type || template.type === filters.type),
+      )
+      .sort(compareNoticeTemplates);
+    const pagination = normalizeSystemNoticePageQuery(query, rows.length);
+
+    return createSystemNoticePageResult(
+      rows
+        .slice(pagination.skip, pagination.skip + pagination.take)
+        .map(cloneTemplate),
+      pagination,
+    );
+  }
+
+  async listNoticeTemplateOptions(): Promise<
+    readonly SystemNoticeTemplateOptionRecord[]
+  > {
+    return this.templates
+      .filter((template) => template.enabled)
+      .sort(compareNoticeTemplates)
+      .map(({ code, name, params, type }) => ({
+        code,
+        name,
+        params: [...params],
+        type,
+      }));
+  }
+
+  async getNoticeTemplate(code: string): Promise<SystemNoticeTemplateRecord> {
+    return cloneTemplate(this.findTemplate(code));
+  }
+
+  async createNoticeTemplate(
+    body: CreateSystemNoticeTemplateDto,
+  ): Promise<SystemNoticeTemplateRecord> {
+    const input = normalizeCreateSystemNoticeTemplateInput(body);
+
+    if (this.templates.some((template) => template.code === input.code)) {
+      throw new ConflictException(
+        `System notice template already exists: ${input.code}`,
+      );
+    }
+
+    const now = new Date().toISOString();
+    const template: SystemNoticeTemplateRecord = {
+      id: `notice_template_${input.code.replace(/[^a-z0-9]+/g, '_')}`,
+      ...input,
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.templates = [template, ...this.templates];
+    return cloneTemplate(template);
+  }
+
+  async updateNoticeTemplate(
+    code: string,
+    body: UpdateSystemNoticeTemplateDto,
+  ): Promise<SystemNoticeTemplateRecord> {
+    const template = this.findTemplate(code);
+    const input = normalizeUpdateSystemNoticeTemplateInput(template, body);
+
+    Object.assign(template, {
+      ...input,
+      updatedAt: new Date().toISOString(),
+    });
+    return cloneTemplate(template);
+  }
+
+  async deleteNoticeTemplate(code: string): Promise<{ deleted: true }> {
+    this.findTemplate(code);
+    this.templates = this.templates.filter(
+      (template) => template.code !== code,
+    );
+    return { deleted: true };
+  }
+
+  async createNoticeFromTemplate(
+    code: string,
+    body: CreateSystemNoticeFromTemplateDto,
+  ): Promise<SystemNoticeRecord> {
+    const input = createSystemNoticeFromTemplateInput(
+      this.findTemplate(code),
+      body,
+    );
+    return this.createNotice(input);
+  }
+
   async createNotice(body: CreateSystemNoticeDto): Promise<SystemNoticeRecord> {
     const input = normalizeCreateSystemNoticeInput(body);
     const id = `notice_${input.title
@@ -272,6 +383,18 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
     return notice;
   }
 
+  private findTemplate(code: string): SystemNoticeTemplateRecord {
+    const template = this.templates.find(
+      (candidate) => candidate.code === code,
+    );
+
+    if (!template) {
+      throw new NotFoundException(`System notice template not found: ${code}`);
+    }
+
+    return template;
+  }
+
   private listVisibleInboxNotices(userId: string): SystemNoticeInboxRecord[] {
     return this.notices
       .filter((notice) => isSystemNoticeVisibleInInbox(notice))
@@ -312,4 +435,23 @@ function compareReadUsers(
     new Date(right.readAt).getTime() - new Date(left.readAt).getTime() ||
     left.username.localeCompare(right.username)
   );
+}
+
+function compareNoticeTemplates(
+  left: SystemNoticeTemplateRecord,
+  right: SystemNoticeTemplateRecord,
+): number {
+  return (
+    Number(right.enabled) - Number(left.enabled) ||
+    left.code.localeCompare(right.code)
+  );
+}
+
+function cloneTemplate(
+  template: SystemNoticeTemplateRecord,
+): SystemNoticeTemplateRecord {
+  return {
+    ...template,
+    params: [...template.params],
+  };
 }

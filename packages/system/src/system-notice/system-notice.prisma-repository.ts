@@ -5,23 +5,34 @@ import {
 } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
 import { PrismaService } from '@opencore/database';
+import type { Prisma } from '@prisma/client';
 import type {
+  CreateSystemNoticeFromTemplateDto,
   CreateSystemNoticeDto,
+  CreateSystemNoticeTemplateDto,
   MarkSystemNoticesReadDto,
+  UpdateSystemNoticeTemplateDto,
   UpdateSystemNoticeDto,
 } from './system-notice.dto';
-import type { SystemNoticeRecord } from './system-notice.records';
+import type {
+  SystemNoticeRecord,
+  SystemNoticeTemplateRecord,
+} from './system-notice.records';
 import {
   assertNoticeCanPublish,
   assertNoticeNotArchived,
   createSystemNoticeInboxRecord,
   createSystemNoticePageResult,
+  createSystemNoticeFromTemplateInput,
   normalizeCreateSystemNoticeInput,
+  normalizeCreateSystemNoticeTemplateInput,
   normalizeMarkSystemNoticesReadInput,
   normalizeSystemNoticeInboxFilters,
   normalizeSystemNoticeFilters,
   normalizeSystemNoticePageQuery,
+  normalizeSystemNoticeTemplateFilters,
   normalizeUnreadNoticeLimit,
+  normalizeUpdateSystemNoticeTemplateInput,
   normalizeUpdateSystemNoticeInput,
   SystemNoticeRepository,
   toSystemNoticeAudience,
@@ -33,6 +44,8 @@ import {
   type SystemNoticeReadUsersPageQuery,
   type SystemNoticeReadMutationResult,
   type SystemNoticePageQuery,
+  type SystemNoticeTemplateOptionRecord,
+  type SystemNoticeTemplatePageQuery,
 } from './system-notice.repository';
 
 type PrismaSystemNotice = {
@@ -65,6 +78,20 @@ type PrismaSystemNoticeReadReceiptWithUser = {
     username: string;
     displayName: string;
   };
+};
+
+type PrismaSystemNoticeTemplate = {
+  id: string;
+  code: string;
+  name: string;
+  type: string;
+  titleTemplate: string;
+  contentTemplate: string;
+  params: Prisma.JsonValue;
+  enabled: boolean;
+  remark: string | null;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 @Injectable()
@@ -256,6 +283,116 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
     );
   }
 
+  async listNoticeTemplates(
+    query: SystemNoticeTemplatePageQuery = {},
+  ): Promise<PageResult<SystemNoticeTemplateRecord>> {
+    const filters = normalizeSystemNoticeTemplateFilters(query);
+    const where = {
+      ...(filters.enabled === undefined ? {} : { enabled: filters.enabled }),
+      ...(filters.type ? { type: filters.type } : {}),
+    };
+    const total = await this.prisma.systemNoticeTemplate.count({ where });
+    const pagination = normalizeSystemNoticePageQuery(query, total);
+    const rows = await this.prisma.systemNoticeTemplate.findMany({
+      where,
+      orderBy: [{ enabled: 'desc' }, { code: 'asc' }],
+      skip: pagination.skip,
+      take: pagination.take,
+    });
+
+    return createSystemNoticePageResult(
+      rows.map(toSystemNoticeTemplateRecord),
+      pagination,
+    );
+  }
+
+  async listNoticeTemplateOptions(): Promise<
+    readonly SystemNoticeTemplateOptionRecord[]
+  > {
+    const rows = await this.prisma.systemNoticeTemplate.findMany({
+      where: { enabled: true },
+      orderBy: [{ code: 'asc' }],
+    });
+
+    return rows.map((row) => {
+      const template = toSystemNoticeTemplateRecord(row);
+      return {
+        code: template.code,
+        name: template.name,
+        params: template.params,
+        type: template.type,
+      };
+    });
+  }
+
+  async getNoticeTemplate(code: string): Promise<SystemNoticeTemplateRecord> {
+    return toSystemNoticeTemplateRecord(
+      await this.findNoticeTemplateByCode(code),
+    );
+  }
+
+  async createNoticeTemplate(
+    body: CreateSystemNoticeTemplateDto,
+  ): Promise<SystemNoticeTemplateRecord> {
+    const input = normalizeCreateSystemNoticeTemplateInput(body);
+
+    if (
+      await this.prisma.systemNoticeTemplate.findUnique({
+        where: { code: input.code },
+        select: { code: true },
+      })
+    ) {
+      throw new ConflictException(
+        `System notice template already exists: ${input.code}`,
+      );
+    }
+
+    const template = await this.prisma.systemNoticeTemplate.create({
+      data: {
+        ...input,
+        params: [...input.params] as Prisma.InputJsonValue,
+      },
+    });
+
+    return toSystemNoticeTemplateRecord(template);
+  }
+
+  async updateNoticeTemplate(
+    code: string,
+    body: UpdateSystemNoticeTemplateDto,
+  ): Promise<SystemNoticeTemplateRecord> {
+    const existing = toSystemNoticeTemplateRecord(
+      await this.findNoticeTemplateByCode(code),
+    );
+    const input = normalizeUpdateSystemNoticeTemplateInput(existing, body);
+    const template = await this.prisma.systemNoticeTemplate.update({
+      where: { code },
+      data: {
+        ...input,
+        params: [...input.params] as Prisma.InputJsonValue,
+      },
+    });
+
+    return toSystemNoticeTemplateRecord(template);
+  }
+
+  async deleteNoticeTemplate(code: string): Promise<{ deleted: true }> {
+    await this.findNoticeTemplateByCode(code);
+    await this.prisma.systemNoticeTemplate.delete({ where: { code } });
+    return { deleted: true };
+  }
+
+  async createNoticeFromTemplate(
+    code: string,
+    body: CreateSystemNoticeFromTemplateDto,
+  ): Promise<SystemNoticeRecord> {
+    const input = createSystemNoticeFromTemplateInput(
+      toSystemNoticeTemplateRecord(await this.findNoticeTemplateByCode(code)),
+      body,
+    );
+    return this.createNotice(input);
+  }
+
   async getNotice(id: string): Promise<SystemNoticeRecord> {
     return toSystemNoticeRecord(await this.findNoticeById(id));
   }
@@ -349,6 +486,20 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
     return notice;
   }
 
+  private async findNoticeTemplateByCode(
+    code: string,
+  ): Promise<PrismaSystemNoticeTemplate> {
+    const template = await this.prisma.systemNoticeTemplate.findUnique({
+      where: { code },
+    });
+
+    if (!template) {
+      throw new NotFoundException(`System notice template not found: ${code}`);
+    }
+
+    return template;
+  }
+
   private async assertInboxNoticeIdsVisible(
     userId: string,
     ids: readonly string[],
@@ -408,6 +559,40 @@ function toSystemNoticeReadUserRecord(
     displayName: receipt.user.displayName,
     readAt: receipt.readAt.toISOString(),
   };
+}
+
+function toSystemNoticeTemplateRecord(
+  template: PrismaSystemNoticeTemplate,
+): SystemNoticeTemplateRecord {
+  return {
+    id: template.id,
+    code: template.code,
+    name: template.name,
+    type: toSystemNoticeType(template.type),
+    titleTemplate: template.titleTemplate,
+    contentTemplate: template.contentTemplate,
+    params: normalizeStoredTemplateParams(template.params, template.code),
+    enabled: template.enabled,
+    remark: template.remark ?? undefined,
+    createdAt: template.createdAt.toISOString(),
+    updatedAt: template.updatedAt.toISOString(),
+  };
+}
+
+function normalizeStoredTemplateParams(
+  value: Prisma.JsonValue,
+  code: string,
+): readonly string[] {
+  const params = value;
+
+  if (
+    !Array.isArray(params) ||
+    !params.every((entry): entry is string => typeof entry === 'string')
+  ) {
+    throw new Error(`Invalid system notice template params: ${code}`);
+  }
+
+  return [...params].sort((left, right) => left.localeCompare(right));
 }
 
 function createInboxWhere(

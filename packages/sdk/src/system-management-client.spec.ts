@@ -163,6 +163,41 @@ describe('createSystemManagementClient', () => {
       page: 1,
       pageSize: 20,
     });
+    await client.listNoticeTemplates('token', {
+      enabled: true,
+      page: 1,
+      pageSize: 10,
+      type: 'maintenance',
+    });
+    await client.listNoticeTemplateOptions('token');
+    await client.getNoticeTemplate('token', 'release.window');
+    await client.renderNoticeTemplate('token', 'release.window', {
+      templateParams: {
+        owner: 'Ops',
+        version: '2026.6',
+        window: '02:00 UTC',
+      },
+    });
+    await client.createNoticeFromTemplate('token', 'release.window', {
+      audience: 'admin',
+      createdBy: 'admin',
+      templateParams: {
+        owner: 'Ops',
+        version: '2026.6',
+        window: '02:00 UTC',
+      },
+    });
+    await client.createNoticeTemplate('token', {
+      code: 'release.window',
+      name: 'Release Window',
+      type: 'maintenance',
+      titleTemplate: 'Release {{version}}',
+      contentTemplate: 'Release {{version}} at {{window}} by {{owner}}.',
+    });
+    await client.updateNoticeTemplate('token', 'release.window', {
+      enabled: false,
+    });
+    await client.deleteNoticeTemplate('token', 'release.window');
     await client.getNotice('token', 'notice_1');
     await client.createNotice('token', {
       title: 'Maintenance',
@@ -420,6 +455,43 @@ describe('createSystemManagementClient', () => {
       },
       {
         path: '/core/notices/notice_welcome/read-users?page=1&pageSize=20',
+        token: 'token',
+      },
+      {
+        path: '/core/notices/templates?enabled=true&page=1&pageSize=10&type=maintenance',
+        token: 'token',
+      },
+      {
+        path: '/core/notices/templates/simple-list',
+        token: 'token',
+      },
+      {
+        path: '/core/notices/templates/release.window',
+        token: 'token',
+      },
+      {
+        path: '/core/notices/templates/release.window/render',
+        method: 'POST',
+        token: 'token',
+      },
+      {
+        path: '/core/notices/templates/release.window/create-notice',
+        method: 'POST',
+        token: 'token',
+      },
+      {
+        path: '/core/notices/templates',
+        method: 'POST',
+        token: 'token',
+      },
+      {
+        path: '/core/notices/templates/release.window',
+        method: 'PATCH',
+        token: 'token',
+      },
+      {
+        path: '/core/notices/templates/release.window',
+        method: 'DELETE',
         token: 'token',
       },
       {

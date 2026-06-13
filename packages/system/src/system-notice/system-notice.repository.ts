@@ -6,13 +6,18 @@ import {
   type PageResult,
 } from '@opencore/common';
 import type {
+  CreateSystemNoticeFromTemplateDto,
   MarkSystemNoticesReadDto,
   CreateSystemNoticeDto,
+  CreateSystemNoticeTemplateDto,
+  RenderSystemNoticeTemplateDto,
+  UpdateSystemNoticeTemplateDto,
   UpdateSystemNoticeDto,
 } from './system-notice.dto';
 import type {
   SystemNoticeAudience,
   SystemNoticeRecord,
+  SystemNoticeTemplateRecord,
   SystemNoticeStatus,
   SystemNoticeType,
 } from './system-notice.records';
@@ -37,6 +42,11 @@ export type SystemNoticeInboxPageQuery = PageQueryInput & {
 };
 
 export type SystemNoticeReadUsersPageQuery = PageQueryInput;
+
+export type SystemNoticeTemplatePageQuery = PageQueryInput & {
+  enabled?: boolean | string;
+  type?: string;
+};
 
 export type SystemNoticeFilters = {
   audience?: SystemNoticeAudience;
@@ -67,6 +77,23 @@ export type SystemNoticeReadUserRecord = {
   readAt: string;
 };
 
+export type SystemNoticeTemplateFilters = {
+  enabled?: boolean;
+  type?: SystemNoticeType;
+};
+
+export type SystemNoticeTemplateOptionRecord = Pick<
+  SystemNoticeTemplateRecord,
+  'code' | 'name' | 'params' | 'type'
+>;
+
+export type SystemNoticeTemplateRenderRecord = {
+  code: string;
+  title: string;
+  content: string;
+  params: readonly string[];
+};
+
 export type SystemNoticeNormalizedPageQuery = {
   page: number;
   pageSize: number;
@@ -92,6 +119,38 @@ export type NormalizedSystemNoticeUpdateInput = {
   content: string;
   type: SystemNoticeType;
   audience: SystemNoticeAudience;
+  pinned: boolean;
+  validFrom?: string;
+  validTo?: string;
+};
+
+export type NormalizedSystemNoticeTemplateCreateInput = {
+  code: string;
+  name: string;
+  type: SystemNoticeType;
+  titleTemplate: string;
+  contentTemplate: string;
+  params: readonly string[];
+  enabled: boolean;
+  remark?: string;
+};
+
+export type NormalizedSystemNoticeTemplateUpdateInput = {
+  name: string;
+  type: SystemNoticeType;
+  titleTemplate: string;
+  contentTemplate: string;
+  params: readonly string[];
+  enabled: boolean;
+  remark?: string;
+};
+
+export type NormalizedSystemNoticeTemplateRenderInput = Record<string, string>;
+
+export type NormalizedSystemNoticeFromTemplateInput = {
+  templateParams: NormalizedSystemNoticeTemplateRenderInput;
+  audience: SystemNoticeAudience;
+  createdBy: string;
   pinned: boolean;
   validFrom?: string;
   validTo?: string;
@@ -141,6 +200,32 @@ export abstract class SystemNoticeRepository {
     query?: SystemNoticeReadUsersPageQuery,
   ): Promise<PageResult<SystemNoticeReadUserRecord>>;
 
+  abstract listNoticeTemplates(
+    query?: SystemNoticeTemplatePageQuery,
+  ): Promise<PageResult<SystemNoticeTemplateRecord>>;
+
+  abstract listNoticeTemplateOptions(): Promise<
+    readonly SystemNoticeTemplateOptionRecord[]
+  >;
+
+  abstract getNoticeTemplate(code: string): Promise<SystemNoticeTemplateRecord>;
+
+  abstract createNoticeTemplate(
+    body: CreateSystemNoticeTemplateDto,
+  ): Promise<SystemNoticeTemplateRecord>;
+
+  abstract updateNoticeTemplate(
+    code: string,
+    body: UpdateSystemNoticeTemplateDto,
+  ): Promise<SystemNoticeTemplateRecord>;
+
+  abstract deleteNoticeTemplate(code: string): Promise<{ deleted: true }>;
+
+  abstract createNoticeFromTemplate(
+    code: string,
+    body: CreateSystemNoticeFromTemplateDto,
+  ): Promise<SystemNoticeRecord>;
+
   abstract getNotice(id: string): Promise<SystemNoticeRecord>;
 
   abstract createNotice(
@@ -174,6 +259,15 @@ export function normalizeSystemNoticeInboxFilters(
 ): SystemNoticeInboxFilters {
   return {
     readStatus: normalizeOptionalBoolean(query.readStatus, 'readStatus'),
+    type: toOptionalSystemNoticeType(query.type),
+  };
+}
+
+export function normalizeSystemNoticeTemplateFilters(
+  query: SystemNoticeTemplatePageQuery = {},
+): SystemNoticeTemplateFilters {
+  return {
+    enabled: normalizeOptionalBoolean(query.enabled, 'template enabled'),
     type: toOptionalSystemNoticeType(query.type),
   };
 }
@@ -327,6 +421,121 @@ export function normalizeCreateSystemNoticeInput(
 
   assertValidNoticeSchedule(normalized.validFrom, normalized.validTo);
   return normalized;
+}
+
+export function normalizeCreateSystemNoticeTemplateInput(
+  body: CreateSystemNoticeTemplateDto,
+): NormalizedSystemNoticeTemplateCreateInput {
+  const titleTemplate = normalizeRequiredText(
+    body.titleTemplate,
+    'titleTemplate',
+  );
+  const contentTemplate = normalizeRequiredText(
+    body.contentTemplate,
+    'contentTemplate',
+  );
+  const enabled = normalizeOptionalBoolean(body.enabled, 'template enabled');
+
+  return {
+    code: normalizeSystemNoticeTemplateCode(body.code),
+    name: normalizeRequiredText(body.name, 'template name'),
+    type: toSystemNoticeType(body.type),
+    titleTemplate,
+    contentTemplate,
+    params: extractNoticeTemplateParams(titleTemplate, contentTemplate),
+    enabled: enabled ?? true,
+    remark: normalizeOptionalText(body.remark, 'template remark'),
+  };
+}
+
+export function normalizeUpdateSystemNoticeTemplateInput(
+  existing: SystemNoticeTemplateRecord,
+  body: UpdateSystemNoticeTemplateDto,
+): NormalizedSystemNoticeTemplateUpdateInput {
+  const titleTemplate =
+    body.titleTemplate === undefined
+      ? existing.titleTemplate
+      : normalizeRequiredText(body.titleTemplate, 'titleTemplate');
+  const contentTemplate =
+    body.contentTemplate === undefined
+      ? existing.contentTemplate
+      : normalizeRequiredText(body.contentTemplate, 'contentTemplate');
+  const enabled = normalizeOptionalBoolean(body.enabled, 'template enabled');
+
+  return {
+    name:
+      body.name === undefined
+        ? existing.name
+        : normalizeRequiredText(body.name, 'template name'),
+    type:
+      body.type === undefined ? existing.type : toSystemNoticeType(body.type),
+    titleTemplate,
+    contentTemplate,
+    params: extractNoticeTemplateParams(titleTemplate, contentTemplate),
+    enabled: enabled ?? existing.enabled,
+    remark:
+      body.remark === undefined
+        ? existing.remark
+        : normalizeOptionalText(body.remark, 'template remark'),
+  };
+}
+
+export function renderSystemNoticeTemplate(
+  template: SystemNoticeTemplateRecord,
+  body: RenderSystemNoticeTemplateDto = {},
+): SystemNoticeTemplateRenderRecord {
+  assertSystemNoticeTemplateEnabled(template);
+  const params = normalizeSystemNoticeTemplateParams(template, body);
+
+  return {
+    code: template.code,
+    title: applySystemNoticeTemplateParams(template.titleTemplate, params),
+    content: applySystemNoticeTemplateParams(template.contentTemplate, params),
+    params: template.params,
+  };
+}
+
+export function normalizeCreateSystemNoticeFromTemplateInput(
+  template: SystemNoticeTemplateRecord,
+  body: CreateSystemNoticeFromTemplateDto,
+): NormalizedSystemNoticeFromTemplateInput {
+  assertSystemNoticeTemplateEnabled(template);
+  const pinned = normalizeOptionalBoolean(body.pinned, 'template pinned');
+  const normalized: NormalizedSystemNoticeFromTemplateInput = {
+    templateParams: normalizeSystemNoticeTemplateParams(template, body),
+    audience: toSystemNoticeAudience(body.audience ?? 'all'),
+    createdBy: normalizeRequiredText(body.createdBy, 'createdBy'),
+    pinned: pinned ?? false,
+    validFrom: normalizeOptionalDateString(body.validFrom, 'validFrom'),
+    validTo: normalizeOptionalDateString(body.validTo, 'validTo'),
+  };
+
+  assertValidNoticeSchedule(normalized.validFrom, normalized.validTo);
+  return normalized;
+}
+
+export function createSystemNoticeFromTemplateInput(
+  template: SystemNoticeTemplateRecord,
+  body: CreateSystemNoticeFromTemplateDto,
+): NormalizedSystemNoticeCreateInput {
+  const input = normalizeCreateSystemNoticeFromTemplateInput(template, body);
+
+  return {
+    title: applySystemNoticeTemplateParams(
+      template.titleTemplate,
+      input.templateParams,
+    ),
+    content: applySystemNoticeTemplateParams(
+      template.contentTemplate,
+      input.templateParams,
+    ),
+    type: template.type,
+    audience: input.audience,
+    pinned: input.pinned,
+    validFrom: input.validFrom,
+    validTo: input.validTo,
+    createdBy: input.createdBy,
+  };
 }
 
 export function normalizeUpdateSystemNoticeInput(
@@ -487,6 +696,29 @@ function normalizeRequiredText(value: string, fieldName: string): string {
   return normalized;
 }
 
+function normalizeOptionalText(
+  value: string | undefined,
+  fieldName: string,
+): string | undefined {
+  if (value === undefined || value === '') {
+    return undefined;
+  }
+
+  return normalizeRequiredText(value, fieldName);
+}
+
+function normalizeSystemNoticeTemplateCode(value: string): string {
+  const normalized = normalizeRequiredText(value, 'template code');
+
+  if (!/^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/.test(normalized)) {
+    throw new BadRequestException(
+      'System notice template code must use lowercase letters, numbers, dot, underscore or dash segments.',
+    );
+  }
+
+  return normalized;
+}
+
 function normalizeOptionalDateString(
   value: string | undefined,
   fieldName: string,
@@ -502,6 +734,106 @@ function normalizeOptionalDateString(
   }
 
   return date.toISOString();
+}
+
+function extractNoticeTemplateParams(
+  titleTemplate: string,
+  contentTemplate: string,
+): readonly string[] {
+  const params = new Set<string>();
+  const pattern = /\{\{\s*([a-zA-Z][a-zA-Z0-9_]*)\s*\}\}/g;
+
+  for (const template of [titleTemplate, contentTemplate]) {
+    for (const match of template.matchAll(pattern)) {
+      params.add(match[1]);
+    }
+  }
+
+  return [...params].sort((left, right) => left.localeCompare(right));
+}
+
+function normalizeSystemNoticeTemplateParams(
+  template: SystemNoticeTemplateRecord,
+  body: RenderSystemNoticeTemplateDto,
+): NormalizedSystemNoticeTemplateRenderInput {
+  const rawParams = body.templateParams ?? {};
+
+  if (!isPlainRecord(rawParams)) {
+    throw new BadRequestException(
+      'System notice templateParams must be an object.',
+    );
+  }
+
+  const expected = new Set(template.params);
+  const actual = Object.keys(rawParams);
+  const unexpected = actual.find((key) => !expected.has(key));
+
+  if (unexpected) {
+    throw new BadRequestException(
+      `Unexpected system notice template param: ${unexpected}`,
+    );
+  }
+
+  const missing = template.params.find((key) => !(key in rawParams));
+
+  if (missing) {
+    throw new BadRequestException(
+      `Missing system notice template param: ${missing}`,
+    );
+  }
+
+  return Object.fromEntries(
+    template.params.map((key) => [
+      key,
+      normalizeTemplateParamValue(rawParams[key], key),
+    ]),
+  );
+}
+
+function normalizeTemplateParamValue(value: unknown, key: string): string {
+  if (
+    typeof value !== 'string' &&
+    typeof value !== 'number' &&
+    typeof value !== 'boolean'
+  ) {
+    throw new BadRequestException(
+      `System notice template param must be a string, number or boolean: ${key}`,
+    );
+  }
+
+  const normalized = String(value).trim();
+
+  if (!normalized) {
+    throw new BadRequestException(
+      `System notice template param is required: ${key}`,
+    );
+  }
+
+  return normalized;
+}
+
+function applySystemNoticeTemplateParams(
+  template: string,
+  params: NormalizedSystemNoticeTemplateRenderInput,
+): string {
+  return template.replace(
+    /\{\{\s*([a-zA-Z][a-zA-Z0-9_]*)\s*\}\}/g,
+    (_, key) => params[key] ?? '',
+  );
+}
+
+function assertSystemNoticeTemplateEnabled(
+  template: SystemNoticeTemplateRecord,
+): void {
+  if (!template.enabled) {
+    throw new BadRequestException(
+      `System notice template is disabled: ${template.code}`,
+    );
+  }
+}
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function compareNullableIsoDesc(

@@ -19,6 +19,8 @@ export {
 export {
   seedSystemNotices,
   type SystemNoticeRecord,
+  seedSystemNoticeTemplates,
+  type SystemNoticeTemplateRecord,
 } from './system-notice/system-notice.records';
 export {
   seedSystemPosts,

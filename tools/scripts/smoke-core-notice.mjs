@@ -25,8 +25,10 @@ const noticeTitles = [
   `OpenCore Smoke Notice ${runId}`,
   `OpenCore Smoke Notice Mark All ${runId}`,
 ];
+const templateCode = `smoke.template.${runId}`;
 let token;
 const createdNoticeIds = [];
+const createdTemplateCodes = [];
 
 class HttpStatusError extends Error {
   constructor(message, status) {
@@ -48,6 +50,195 @@ try {
 
   const loginResponse = await login();
   token = assertString(loginResponse.accessToken, 'login accessToken');
+
+  await apiRequest('/core/notices/templates/simple-list', {
+    expected: [200],
+  }).then((templates) => {
+    assertArray(templates, 'notice template simple-list');
+    assertItemsContainCode(
+      templates,
+      'release.window',
+      'notice template simple-list',
+    );
+  });
+  await apiRequest('/core/notices/templates/release.window/render', {
+    method: 'POST',
+    body: {
+      templateParams: {
+        owner: 'Ops',
+        version: '2026.6',
+        window: '02:00 UTC',
+      },
+    },
+  }).then((preview) => {
+    assertEqual(
+      preview.title,
+      'Release window: 2026.6',
+      'seed notice template rendered title',
+    );
+    assertEqual(
+      preview.content,
+      'Version 2026.6 is scheduled for 02:00 UTC. Owner: Ops.',
+      'seed notice template rendered content',
+    );
+  });
+  await apiRequest('/core/notices/templates/release.window/render', {
+    method: 'POST',
+    expected: [400],
+    body: {
+      templateParams: {
+        owner: 'Ops',
+        version: '2026.6',
+      },
+    },
+  });
+  await apiRequest('/core/notices/templates/release.window/render', {
+    method: 'POST',
+    expected: [400],
+    body: {
+      templateParams: {
+        extra: 'blocked',
+        owner: 'Ops',
+        version: '2026.6',
+        window: '02:00 UTC',
+      },
+    },
+  });
+  await apiRequest('/core/notices/templates', {
+    method: 'POST',
+    expected: [400],
+    body: {
+      code: `${templateCode}.bad`,
+      name: 'Invalid Notice Template Boolean',
+      type: 'maintenance',
+      titleTemplate: 'Invalid {{service}}',
+      contentTemplate: 'Invalid {{service}}',
+      enabled: 'not-boolean',
+    },
+  });
+
+  const smokeTemplate = await apiRequest('/core/notices/templates', {
+    method: 'POST',
+    body: {
+      code: templateCode,
+      name: 'OpenCore Smoke Notice Template',
+      type: 'maintenance',
+      titleTemplate: 'Smoke maintenance {{service}}',
+      contentTemplate: '{{service}} window {{time}} by {{owner}}.',
+      enabled: true,
+      remark: `Created by notice smoke ${runId}`,
+    },
+  });
+  createdTemplateCodes.push(templateCode);
+  assertEqual(smokeTemplate.code, templateCode, 'created template code');
+  assertArrayIncludes(
+    smokeTemplate.params,
+    'service',
+    'created template params',
+  );
+  assertArrayIncludes(smokeTemplate.params, 'time', 'created template params');
+  assertArrayIncludes(smokeTemplate.params, 'owner', 'created template params');
+  assertPageItemsContainCode(
+    await apiRequest('/core/notices/templates?type=maintenance&enabled=true'),
+    templateCode,
+    'notice template list',
+  );
+
+  const smokeTemplatePreview = await apiRequest(
+    `/core/notices/templates/${encodeURIComponent(templateCode)}/render`,
+    {
+      method: 'POST',
+      body: {
+        templateParams: {
+          owner: 'Ops',
+          service: 'API',
+          time: '09:00 UTC',
+        },
+      },
+    },
+  );
+  assertEqual(
+    smokeTemplatePreview.title,
+    'Smoke maintenance API',
+    'created template rendered title',
+  );
+  assertEqual(
+    smokeTemplatePreview.content,
+    'API window 09:00 UTC by Ops.',
+    'created template rendered content',
+  );
+  await apiRequest(
+    `/core/notices/templates/${encodeURIComponent(templateCode)}/create-notice`,
+    {
+      method: 'POST',
+      expected: [400],
+      body: {
+        audience: 'admin',
+        createdBy: username,
+        pinned: 'not-boolean',
+        templateParams: {
+          owner: 'Ops',
+          service: 'API',
+          time: '09:00 UTC',
+        },
+      },
+    },
+  );
+
+  const templateNotice = await apiRequest(
+    `/core/notices/templates/${encodeURIComponent(templateCode)}/create-notice`,
+    {
+      method: 'POST',
+      body: {
+        audience: 'admin',
+        createdBy: username,
+        pinned: true,
+        templateParams: {
+          owner: 'Ops',
+          service: 'API',
+          time: '09:00 UTC',
+        },
+      },
+    },
+  );
+  createdNoticeIds.push(assertString(templateNotice.id, 'template notice id'));
+  assertEqual(
+    templateNotice.title,
+    'Smoke maintenance API',
+    'template notice title',
+  );
+  assertEqual(templateNotice.status, 'draft', 'template notice status');
+  assertEqual(templateNotice.pinned, true, 'template notice pinned');
+
+  const disabledTemplate = await apiRequest(
+    `/core/notices/templates/${encodeURIComponent(templateCode)}`,
+    {
+      method: 'PATCH',
+      body: { enabled: false },
+    },
+  );
+  assertEqual(disabledTemplate.enabled, false, 'disabled template state');
+  await apiRequest(
+    `/core/notices/templates/${encodeURIComponent(templateCode)}/render`,
+    {
+      method: 'POST',
+      expected: [400],
+      body: {
+        templateParams: {
+          owner: 'Ops',
+          service: 'API',
+          time: '09:00 UTC',
+        },
+      },
+    },
+  );
+  await apiRequest(
+    `/core/notices/templates/${encodeURIComponent(templateCode)}`,
+    {
+      method: 'DELETE',
+    },
+  );
+  createdTemplateCodes.pop();
 
   await apiRequest('/core/notices/inbox?readStatus=not-boolean', {
     expected: [400],
@@ -173,6 +364,7 @@ try {
   );
   assertEqual(markAllResult.unreadCount, 0, 'mark-all unread count');
 
+  await cleanupCreatedTemplates();
   await cleanupCreatedNotices();
 
   console.log(
@@ -186,6 +378,19 @@ try {
         ...(checkDocs ? ['openapi.docs-json'] : []),
         'core.notice.inbox.auth-required',
         'auth.login',
+        'core.notice.template.simple-list',
+        'core.notice.template.render',
+        'core.notice.template.missing-param-guard',
+        'core.notice.template.extra-param-guard',
+        'core.notice.template.enabled-deserialization-guard',
+        'core.notice.template.create',
+        'core.notice.template.list-filter',
+        'core.notice.template.render-created',
+        'core.notice.template.pinned-deserialization-guard',
+        'core.notice.template.create-notice',
+        'core.notice.template.update',
+        'core.notice.template.disabled-render-guard',
+        'core.notice.template.delete',
         'core.notice.inbox.bad-read-status-guard',
         'core.notice.inbox.empty-read-ids-guard',
         'core.notice.inbox.duplicate-read-ids-guard',
@@ -209,6 +414,7 @@ try {
     }),
   );
 } catch (error) {
+  await cleanupCreatedTemplates().catch(() => undefined);
   await cleanupCreatedNotices().catch(() => undefined);
   console.error(
     JSON.stringify({
@@ -241,6 +447,16 @@ async function cleanupCreatedNotices() {
   while (createdNoticeIds.length > 0) {
     const id = createdNoticeIds.pop();
     await apiRequest(`/core/notices/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      expected: [200, 404],
+    }).catch(() => undefined);
+  }
+}
+
+async function cleanupCreatedTemplates() {
+  while (createdTemplateCodes.length > 0) {
+    const code = createdTemplateCodes.pop();
+    await apiRequest(`/core/notices/templates/${encodeURIComponent(code)}`, {
       method: 'DELETE',
       expected: [200, 404],
     }).catch(() => undefined);
@@ -330,6 +546,11 @@ function assertPageItemsContain(page, id, label) {
   assertItemsContain(page.items, id, label);
 }
 
+function assertPageItemsContainCode(page, code, label) {
+  assertArray(page.items, `${label} items`);
+  assertItemsContainCode(page.items, code, label);
+}
+
 function assertPageItemsContainUsername(page, username, label) {
   assertArray(page.items, `${label} items`);
   const item = page.items.find((candidate) => candidate?.username === username);
@@ -344,6 +565,12 @@ function assertPageItemsContainUsername(page, username, label) {
 function assertItemsContain(items, id, label) {
   if (!items.some((item) => item?.id === id)) {
     throw new Error(`${label} must include ${id}`);
+  }
+}
+
+function assertItemsContainCode(items, code, label) {
+  if (!items.some((item) => item?.code === code)) {
+    throw new Error(`${label} must include code ${code}`);
   }
 }
 
