@@ -2987,3 +2987,85 @@ Against public endpoints after deploy:
   `2a1f324 feat(core-config): add config metadata / 新增系统配置元数据`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 38 Capability
+
+Capability: `core.config` native XLSX export.
+
+Goal: move config export from preview metadata to a real downloadable Excel
+payload while preserving the existing JSON API boundary and secret redaction.
+
+## Round 38 Implemented
+
+- Rechecked Yudao `ConfigController` `/export-excel` and Admin
+  `request.download` config export shape.
+- Added `contentType/contentBase64` to `core.config` export results.
+- Changed config export filename to `opencore-system-config.xlsx`.
+- Added workbook columns
+  `category/name/key/value/valueType/visibility/public/description/remark`.
+- Preserved secret value redaction by exporting redacted repository results.
+- Extracted `packages/system/src/export-xlsx.ts` and reused it from user and
+  config exports.
+- Extended OpenAPI and SDK export preview types with optional file payload
+  fields.
+- Added Admin `canExportSystemConfig` access mapping.
+- Added Admin Config `Download Excel` backend export action and
+  `Missing core:config:export` marker.
+- Extracted a shared Admin `downloadBase64File()` helper and reused it from
+  Users and Config.
+- Extended Admin static smoke and `tools/scripts/smoke-core-config.mjs` with
+  XLSX export guards.
+
+## Round 38 Verification
+
+- `node --check tools/scripts/smoke-core-config.mjs`
+- `node --check apps/admin/scripts/smoke-test.mjs`
+- `pnpm nx test system --testFile=system-config.spec.ts`
+- `pnpm nx test admin`
+- `pnpm nx test sdk --testFile=system-management-client.spec.ts`
+- `pnpm nx test api --testFile=rbac.permission-matrix.spec.ts`
+- `pnpm openapi:export && pnpm sdk:check`
+- `pnpm nx run-many -t typecheck --projects=api,admin,sdk,system`
+- `pnpm openapi:check`
+- `pnpm openapi:registry-tags:check`
+- `pnpm nx test contracts`
+- `pnpm nx test module-registry`
+- `pnpm format:check`
+- `pnpm prisma:validate`
+- `pnpm smoke:api:local`
+- `pnpm build:api`
+- `pnpm build:admin`
+- `git diff --check`
+- `pnpm deploy:opencore`
+
+`pnpm smoke:api:local` passed on fixed port `39173`, including
+`core.config.export.xlsx`.
+
+`pnpm deploy:opencore` passed, deploying API/Admin on fixed ports
+`39172`/`39174`; deploy smoke included `core.config.export.xlsx`, duplicate
+`/api/api` login guards, Admin bundle no-cache checks and session guards.
+
+## Round 38 Public Verification
+
+Against public endpoints after deploy:
+
+- Public API: `http://144.217.243.161:39172`
+- Public Admin: `http://144.217.243.161:39174`
+- Public `pnpm smoke:core-config` passed and included
+  `core.config.export.xlsx`.
+- Public Admin Config chunk `p__System__Config.911ece50.async.js` contains
+  `Download Excel`, `Config Excel export downloaded`,
+  `Missing core:config:export`, `contentBase64`, `Refresh cache` and
+  `Read public value by key`.
+- Public Admin same-origin `/api/auth/login` succeeded.
+- Public Admin same-origin
+  `/api/core/config/export?page=1&pageSize=100` returned
+  `opencore-system-config.xlsx`, the XLSX MIME type, a `value` column and a
+  `PK` zip payload.
+
+## Round 38 Commit Record
+
+- Feature commit:
+  `3419c24 feat(core-config): add xlsx config export / 新增配置 Excel 导出`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

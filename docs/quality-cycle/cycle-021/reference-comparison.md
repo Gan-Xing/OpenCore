@@ -1145,3 +1145,32 @@ existing config boundaries:
 OpenCore still does not claim batch config deletion, native Excel config
 export, secret vault/KMS integration or broad runtime feature-flag propagation
 in this round.
+
+## Round 38 Config XLSX Export Reference Shape
+
+Yudao exposes config export as `GET /infra/config/export-excel`, guarded by
+`infra:config:export`, and writes the result through `ExcelUtils.write`.
+Yudao Admin calls the same endpoint with `request.download` from the config
+management toolbar. RuoYi has the same expected product behavior: configuration
+management includes an export action that downloads a spreadsheet rather than
+only reporting export metadata.
+
+OpenCore admits the matching stage-4 config file-export loop while preserving
+its JSON API boundary:
+
+- `GET /api/core/config/export` remains guarded by `core:config:export`;
+- the response keeps the preview metadata and now adds optional
+  `contentType/contentBase64`;
+- the exported file is `opencore-system-config.xlsx` with the standard XLSX
+  MIME type and valid zip payload;
+- export columns include
+  `category/name/key/value/valueType/visibility/public/description/remark`;
+- secret config values are exported as `[REDACTED]` because the service uses
+  the existing redacted repository results;
+- Admin Config adds a `Download Excel` action and missing-permission state for
+  `core:config:export`;
+- fixed-port, deploy and public smoke prove the XLSX filename, MIME, base64,
+  `PK` zip header, value column and Admin same-origin proxy export.
+
+OpenCore still does not claim batch config deletion, secret vault/KMS
+integration or broad runtime feature-flag propagation in this round.

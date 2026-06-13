@@ -717,3 +717,32 @@ operator metadata:
 This stays inside the current S7 System configuration boundary. It does not
 introduce batch config deletion, Excel file export, secret vault/KMS
 integration or broad runtime feature-flag propagation in this round.
+
+## Round 38 Audit: core.config Native XLSX Export
+
+After Round 37, the next lower-dependency `core.config` gap was native file
+export:
+
+- Yudao exposes `GET /infra/config/export-excel`, protects it with
+  `infra:config:export`, and downloads the file from the Admin config toolbar.
+- RuoYi's config management also treats spreadsheet export as a basic operator
+  action rather than a preview-only capability.
+- OpenCore already had `core:config:export`, config metadata, secret redaction,
+  public value-by-key and cache refresh, so this slice did not need schema or
+  new permission work.
+- The current OpenCore export only returned current-page metadata; operators
+  could not download a backend-generated config workbook.
+- The workbook needed to include config `value` to be useful, but secret values
+  had to stay redacted through the existing repository boundary.
+- User XLSX export already introduced a tested workbook-generation path, so
+  this round should extract a shared system helper rather than copy another
+  implementation.
+- Admin needed a backend `Download Excel` action guarded by
+  `core:config:export`, while keeping the existing frontend current-page
+  export button.
+- Fixed-port, deploy and public smoke needed to prove filename, MIME, base64,
+  `PK` zip header, value column and Admin same-origin proxy export.
+
+This stays inside the current S7 System configuration boundary. It does not
+introduce batch config deletion, secret vault/KMS integration or broad runtime
+feature-flag propagation in this round.

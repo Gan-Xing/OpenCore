@@ -3,8 +3,8 @@
 Date: 2026-06-13
 Repository: `Gan-Xing/OpenCore`
 Default branch: `main`
-Latest observed feature commit: `2a1f324 feat(core-config): add config metadata / 新增系统配置元数据`
-Latest deployed feature commit: `2a1f324 feat(core-config): add config metadata / 新增系统配置元数据`
+Latest observed feature commit: `3419c24 feat(core-config): add xlsx config export / 新增配置 Excel 导出`
+Latest deployed feature commit: `3419c24 feat(core-config): add xlsx config export / 新增配置 Excel 导出`
 Latest deployed hardening commit: `04e446c fix(online-user): stabilize admin session smoke / 稳定在线用户管理员会话冒烟`
 
 ## One-sentence Goal
@@ -103,6 +103,7 @@ productization waterline completion; see
 - Round 35 `core.user` native XLSX export stage 12
 - Round 36 `core.user` native XLSX import stage 13
 - Round 37 `core.config` metadata enrichment stage 3
+- Round 38 `core.config` native XLSX export stage 4
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -428,6 +429,23 @@ types、registry fixtures、Admin Config 表格/详情/新建/编辑/筛选、Op
 注意：这轮关闭的是配置元数据水位，不等于批量删除、Excel 文件导出或更广泛 runtime
 feature-flag propagation 已完成。
 
+Round 38 继续补齐 `core.config` 队列：配置导出现在返回原生 XLSX 文件 payload。
+参考 Yudao `ConfigController` 的 `/infra/config/export-excel` +
+`infra:config:export` + `ExcelUtils.write`，以及 RuoYi 配置导出同类产品形状，OpenCore
+保持现有 JSON API 边界，在 `GET /api/core/config/export` 返回
+`opencore-system-config.xlsx` 的 `contentType/contentBase64`。导出列包含
+`category/name/key/value/valueType/visibility/public/description/remark`，其中 secret
+配置继续通过 repository redaction 输出 `[REDACTED]`，不泄露真实值。后端抽取
+`packages/system/src/export-xlsx.ts` 作为系统包 workbook helper，用户 XLSX 导出和配置
+XLSX 导出共用同一实现；Admin Config 新增按 `core:config:export` 控制的
+`Download Excel` 按钮，并抽取 shared base64 下载 helper。固定 smoke、部署 smoke 和公网
+smoke 均验证 `core.config.export.xlsx`；公网 Admin Config chunk
+`p__System__Config.911ece50.async.js` 已验证包含 `Download Excel`、`Config Excel export
+downloaded` 和 `Missing core:config:export`，Admin 同源
+`/api/core/config/export?page=1&pageSize=100` 已验证返回 XLSX `PK` zip header。注意：
+这轮关闭的是配置 Excel 文件导出，不等于批量删除、secret vault/KMS 或更广泛 runtime
+feature-flag propagation 已完成。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -438,7 +456,8 @@ The productization waterline now classifies:
   Round 8/21 `core.dict`.
 - First loop, enhance: Round 1 `core.notice`, Round 2/27 `core.dept`, Round
   3/22/25 `core.post`, Round 7/19/22/23/28/29/30/31/32/33/34/35/36
-  `core.user`, Round 9/24/37 `core.config`, Round 11/26 `core.login-log`.
+  `core.user`, Round 9/24/37/38 `core.config`, Round 11/26
+  `core.login-log`.
 - Thin, rework: none after Round 16.
 
 The P0 remediation queue from the post-Round 13 re-audit is now clear. The next
@@ -463,7 +482,8 @@ finds another blocker:
    admitted.
 2. `core.config`: Round 24 closed public get-value-by-key plus cache
    refresh/invalidation; Round 37 closed category/name/remark metadata across
-   API/SDK/Admin/smoke. Remaining work is batch/file export depth and broader
+   API/SDK/Admin/smoke; Round 38 closed native XLSX export payload plus Admin
+   download and smoke guards. Remaining work is batch deletion and broader
    runtime propagation boundaries.
 3. `core.login-log`: Round 26 closed browser/OS parsing and server-side IP/time
    filters. Remaining work is IP/location enrichment where feasible,

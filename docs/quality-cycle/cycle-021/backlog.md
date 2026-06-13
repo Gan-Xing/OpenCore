@@ -1067,6 +1067,38 @@ runtime feature-flag propagation.
       verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 38: core.config Native XLSX Export
+
+Why this slice: after config metadata reached the operator surface, the next
+lowest-dependency config debt was file export depth. Yudao exposes
+`/infra/config/export-excel` guarded by `infra:config:export`, and RuoYi has
+the same basic config export product shape. OpenCore already had
+`core:config:export`, metadata, secret redaction and value/cache smoke, so this
+round could move config export from preview metadata to a real XLSX file
+without opening batch deletion or broader runtime feature-flag propagation.
+
+- [x] Recompare Yudao/RuoYi config export shape against OpenCore.
+- [x] Extend `GET /api/core/config/export` with
+      `contentType/contentBase64` for `opencore-system-config.xlsx`.
+- [x] Include category, name, key, value, valueType, visibility, public,
+      description and remark columns in the XLSX export.
+- [x] Preserve secret value redaction in the exported workbook payload.
+- [x] Extract a shared system XLSX workbook helper and reuse it from user and
+      config exports.
+- [x] Extend OpenAPI/SDK export preview types with optional file payload
+      fields.
+- [x] Add Admin Config `Download Excel` action guarded by
+      `core:config:export`.
+- [x] Extract shared Admin base64 file download helper and reuse it from Users
+      and Config.
+- [x] Extend Admin static smoke for `canExportSystemConfig`, Excel download UI
+      and missing-permission marker.
+- [x] Extend fixed-port/deploy/public `core.config` smoke to verify filename,
+      MIME, base64 payload, XLSX zip header and value column.
+- [x] Run focused tests, OpenAPI/SDK, typecheck, format, fixed-port smoke,
+      build, deployment and public URL verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -1116,10 +1148,10 @@ treat "minimal loop" as "minimal final product".
       Native XLSX import template/parsing is complete while CSV import remains
       backwards compatible. Any dedicated User-page role assignment workflow
       still needs enhancement if admitted.
-- [ ] Round 9/24/37 `core.config`: public get-value-by-key, cache refresh and
-      mutation invalidation are complete. Category/name/remark metadata is
-      complete. Batch/file export depth and broader runtime propagation
-      boundaries remain.
+- [ ] Round 9/24/37/38 `core.config`: public get-value-by-key, cache refresh
+      and mutation invalidation are complete. Category/name/remark metadata is
+      complete. Native XLSX export payload and Admin download are complete.
+      Batch deletion and broader runtime propagation boundaries remain.
 - [ ] Round 11/26 `core.login-log`: browser/OS parsing and IP/time filters are
       complete. IP/location enrichment where feasible, cleanup/unlock policy
       integration and logType/result schema expansion remain.
@@ -1164,8 +1196,8 @@ treat "minimal loop" as "minimal final product".
 - Batch dictionary delete, Excel import/export file workflows, dictionary
   color/css/remark fields, app-wide dictionary cache TTL/invalidation and
   dictionary cache refresh.
-- Batch config delete, Excel file export, secret vault/KMS integration and
-  runtime feature-flag propagation.
+- Batch config delete, secret vault/KMS integration and runtime feature-flag
+  propagation.
 - Presigned upload/download URLs, storage-provider config, public
   download/preview/copy-link workflows, batch file delete and object browser
   expansion.
