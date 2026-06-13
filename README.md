@@ -171,4 +171,4 @@ Admin 登录/current user 通过 `@opencore/sdk` 调用 `POST /api/auth/login` �
 - [AI Native 路线图](docs/ai/ai-native-roadmap.md)
 - [Handoff 索引](docs/handoff/README.md)
 - [Strategy Blueprint](docs/strategy/README.md)
-- [当前进度与 BE20 证据](docs/strategy/progress.md)
+- [当前压缩状态索引](docs/strategy/progress.md)

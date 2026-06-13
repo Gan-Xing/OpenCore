@@ -67,9 +67,9 @@ NX_DAEMON=false pnpm nx test contracts
 pnpm openforge:gate
 ```
 
-Runtime integration, OpenForge V1, and Quality Cycle 001 final evidence is tracked in [progress.md](../strategy/progress.md) and [cycle-001 completion report](../quality-cycle/cycle-001/completion-report.md). Runtime evidence includes live API smoke for `/health/live`, `/health/ready`, `/api/docs`, `/api/auth/login`, and `/api/monitor/status`.
+Runtime integration, OpenForge V1, and Quality Cycle 001 status is indexed in [progress.md](../strategy/progress.md). Detailed historical evidence belongs in the cycle completion reports, commits, smoke scripts and CI/deploy logs, not in `progress.md`.
 
-Backend Self-Loop BE20 final evidence is tracked in [cycle-020 backlog](../quality-cycle/cycle-020/backlog.md), [cycle-020 implementation notes](../quality-cycle/cycle-020/implementation-notes.md), [cycle-020 completion report](../quality-cycle/cycle-020/completion-report.md), and [progress.md](../strategy/progress.md). BE20 evidence includes full backend gates, API aggregation boundary tests, OpenAPI checks, SDK checks and OpenForge doctor/check/diff/test.
+Backend Self-Loop BE20 final evidence is tracked in [cycle-020 backlog](../quality-cycle/cycle-020/backlog.md), [cycle-020 implementation notes](../quality-cycle/cycle-020/implementation-notes.md), and [cycle-020 completion report](../quality-cycle/cycle-020/completion-report.md). `progress.md` only keeps the compact status pointer.
 
 ## 下一份 handoff 建议
 

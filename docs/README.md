@@ -17,7 +17,7 @@
 | S6     | complete | [契约与权限规范](development/contract-and-permission-standard.md)、[当前进度](strategy/progress.md)                                                                                                                                                                                              |
 | S7     | complete | [优先级路线图](modules/priority-roadmap.md)、[当前进度](strategy/progress.md)                                                                                                                                                                                                                    |
 | S8     | complete | [优先级路线图](modules/priority-roadmap.md)、[当前进度](strategy/progress.md)                                                                                                                                                                                                                    |
-| R-1-R7 | complete | [Runtime inventory](runtime/runtime-inventory.md)、[OpenCore env mapping](runtime/opencore-env-mapping.md)、[进度 ledger](strategy/progress.md)                                                                                                                                                  |
+| R-1-R7 | complete | [Runtime inventory](runtime/runtime-inventory.md)、[OpenCore env mapping](runtime/opencore-env-mapping.md)、[压缩状态索引](strategy/progress.md)                                                                                                                                                 |
 | S9     | complete | [OpenForge 路线图](development/openforge-roadmap.md)、[OpenForge CI Gate](development/openforge-ci-gate.md)                                                                                                                                                                                      |
 | V1     | complete | [OpenForge V1 Architecture](development/openforge-v1-architecture.md)、[Schema Authoring](development/openforge-schema-authoring.md)、[Apply/Rollback Runbook](development/openforge-apply-rollback-runbook.md)                                                                                  |
 | Q001   | complete | [Quality Cycle 001](quality-cycle/cycle-001/completion-report.md)、[Module admission](development/module-admission-checklist.md)、[Workflow admission](development/workflow-admission.md)、[Integration designs](development/integration-payment-provider-design.md)                             |
@@ -31,7 +31,7 @@
 4. [优先级路线图](modules/priority-roadmap.md)
 5. [开发起步](development/getting-started.md)
 6. [Runtime inventory](runtime/runtime-inventory.md)
-7. [当前进度、runtime integration、Q001 与 BE20 证据](strategy/progress.md)
+7. [当前压缩状态索引与活跃 source-of-truth](strategy/progress.md)
 8. [OpenForge V1 Architecture](development/openforge-v1-architecture.md)
 9. [OpenForge Apply/Rollback Runbook](development/openforge-apply-rollback-runbook.md)
 10. [Quality Cycle 001](quality-cycle/cycle-001/completion-report.md)

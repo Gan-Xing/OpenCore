@@ -23,7 +23,7 @@
 | 日志脱敏                   | NestWeb logging/system-log interceptor                                      | S4/S7 设计敏感字段脱敏规则                                       |
 | 当前页 CSV 导出            | Antdpro6 TableExportButton                                                  | S8/S9 转成 OpenCore 表格模板能力                                 |
 | E2E 覆盖关键业务链路       | Antdpro6 Playwright                                                         | OpenCore 先覆盖 shell、RBAC、导出、消息审批                      |
-| 文档和 handoff 结构        | NestWeb docs/handoff                                                        | OpenCore 保留阶段 handoff 和 progress ledger                     |
+| 文档和 handoff 结构        | NestWeb docs/handoff                                                        | OpenCore 保留阶段 handoff；`progress.md` 只做压缩状态索引        |
 
 ## 需要重写但可参考的模块
 
