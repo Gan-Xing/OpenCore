@@ -3,8 +3,8 @@
 Date: 2026-06-13
 Repository: `Gan-Xing/OpenCore`
 Default branch: `main`
-Latest observed feature commit: `e2601a7 feat(notice): add read user analytics / 新增通知已读用户分析`
-Latest deployed feature commit: `e2601a7 feat(notice): add read user analytics / 新增通知已读用户分析`
+Latest observed feature commit: `a47182c feat(login-log): add structured logout actor reason / 新增退出日志操作者原因`
+Latest deployed feature commit: `a47182c feat(login-log): add structured logout actor reason / 新增退出日志操作者原因`
 Latest deployed hardening commit: `4df5dd1 fix(system): satisfy xlsx export lint guard / 修复 XLSX 导出 lint 守卫`
 
 ## One-sentence Goal
@@ -128,6 +128,7 @@ productization waterline completion; see
 - Round 54 `core.user/core.dept` data-scope query enforcement stage 15/5
 - Round 55 `core.notice` inbox/read-state stage 2
 - Round 56 `core.notice` read-user analytics stage 3
+- Round 57 `core.login-log` structured logout actor/reason stage 8
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -677,8 +678,9 @@ OpenCore 不把所有内部 session invalidation 都写成强退日志，避免�
 `OperationsController` 在 `POST /api/monitor/online-users/:id/kick-out` 和
 `POST /api/monitor/online-users/kick-out` 成功返回后按目标 session 的 username/IP/userAgent
 写登录日志，并继续把结构化 actor/reason 保存在 online-user 的
-`revokedBy/revokedReason`；当前登录日志 schema 暂用 `failureReason` 承载
-`forced by actor: reason` 文本。固定 smoke、部署 smoke 和公网 smoke 均验证
+`revokedBy/revokedReason`；当时登录日志 schema 暂用 `failureReason` 承载
+`forced by actor: reason` 文本，已在 Round 57 直接替换为专用
+`actorUsername`/`reason` 字段。固定 smoke、部署 smoke 和公网 smoke 均验证
 `core.login-log.logout-force-recorded`：强退真实第二个 admin token 后，该 token 再访问
 `/auth/me` 返回 401，并能按 `logType=logout.force` 查到成功记录。公网 Admin
 Login Logs chunk `p__Security__LoginLogs.1647b5aa.async.js` 已验证包含
@@ -757,6 +759,20 @@ Admin 验证 `umi.a866353b.js` 与 `p__System__Notices.004f7e06.async.js` 已包
 read-users service 和 UI 标记。注意：这轮关闭的是 read-user analytics，不等于通知
 模板、投递 adapter、WebSocket/mail/SMS fan-out、租户通知或 BPM 审批。
 
+Round 57 回到 `core.login-log/monitor.online-user` 队列，按“没有兼容负担，直接替换最佳实践”
+口径删除 Round 51 的临时语义复用。OpenCore 现在在 `LoginLog` 上持久化
+`actorUsername` 和 `reason`，`logout.self` 写当前用户为 actor、原因 `self logout`；
+Monitor Online Users 显式强退写目标会话的 `logout.force`，并把操作者和强退原因写入
+结构化字段，不再污染 `failureReason`。API/SDK/OpenAPI/Admin 均同步：Login Logs 支持
+`actorUsername` 服务端过滤、列表/详情/导出展示 Actor 和 Reason；seed/Prisma 仓储与测试均覆盖
+结构化过滤。固定 smoke、部署 smoke 和公网 API smoke 均验证
+`core.login-log.logout-self-actor-reason` 与
+`core.login-log.logout-force-actor-reason`，且强退日志的 `failureReason` 为
+`undefined`。公网 Admin 验证 `p__Security__LoginLogs.02712a4e.async.js` 已包含
+`actorUsername`、`Login actor server filter`、`Actor` 和 `Reason` 标记。注意：这轮关闭的是
+退出日志结构化操作者/原因，不等于 IP 归属地、mobile/SMS/social 登录日志或从 Login Logs
+页面直接终止会话已经完成。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -769,7 +785,7 @@ The productization waterline now classifies:
   Round 3/22/25/42/53 `core.post`.
 - First loop, enhance: Round 1/55/56 `core.notice`,
   Round 9/24/37/38/39/40/44/46/49 `core.config`,
-  Round 11/26/45/47/48/49/50/51 `core.login-log`.
+  Round 11/26/45/47/48/49/50/51/57 `core.login-log`.
 - Thin, rework: none after Round 16.
 
 The P0 remediation queue from the post-Round 13 re-audit is now clear. The next
@@ -801,9 +817,10 @@ finds another blocker:
    threshold by driving lockout from `auth.login.maxFailedAttempts`. Round 50
    closed current-user self logout logging and real token/session revocation.
    Round 51 closed explicit online-user force logout login-log recording.
-   Remaining work is IP/location enrichment where feasible, mobile/SMS/social
-   login logging stages and any future structured actor/reason fields for
-   logout records.
+   Round 57 replaced the temporary `failureReason` overload with structured
+   `actorUsername` and `reason` fields for self/force logout records across
+   Prisma, API, SDK, Admin, OpenAPI and smoke. Remaining work is IP/location
+   enrichment where feasible and mobile/SMS/social login logging stages.
 3. `core.dept`: Round 27 closed the enabled-department simple-list option
    source consumed by Admin Users; Round 43 closed user-bound department
    deletion protection and preserved user `deptId` on failed delete. Round 52
@@ -834,7 +851,7 @@ finds another blocker:
 - P1 remaining: `core.notice` delivery adapter/template/fan-out,
   `core.config` broader runtime feature-flag propagation or admitted
   secret vault/KMS integration, and `core.login-log` IP/location enrichment
-  plus structured actor/reason or admitted mobile/SMS/social login logging.
+  or admitted mobile/SMS/social login logging.
   `core.post` is closed at the current admitted waterline after Round 53;
   `core.dept` data-scope workflow is closed at the current admitted waterline
   after Round 54.
@@ -846,7 +863,7 @@ finds another blocker:
 
 Reference parity is measured by product capability waterline, not by replaying
 RuoYi/Yudao commit history. The remaining RuoYi-style foundation backlog after
-Round 56 is roughly several focused P1 loops, not tens of thousands of commits.
+Round 57 is roughly several focused P1 loops, not tens of thousands of commits.
 Yudao Full parity is a different program: BPM, pay, mall, member, CRM, ERP,
 AI and other business domains would require dozens to 100+ separately admitted
 deployable loops, and should not be counted as unfinished cycle-021 foundation

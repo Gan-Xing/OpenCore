@@ -1787,3 +1787,41 @@ OpenCore still does not claim notification templates, delivery adapter
 configuration, WebSocket/mail/SMS fan-out, tenant-scoped notices or BPM approval
 around announcements in this round. Those remain separate notice stages if
 admitted.
+
+## Round 57 Login-Log Structured Logout Actor/Reason Reference Shape
+
+RuoYi online-user force logout is an operator action that terminates a target
+login token. It is not a failed login and should not be modeled as an error
+reason in the login-log surface.
+
+Yudao token deletion similarly records token removal as a logout/delete audit
+event. The important reference shape is that successful token termination can
+carry operator context without pretending it was a failed authentication
+attempt.
+
+OpenCore already had:
+
+- self logout with real bearer token and online-user session revocation;
+- explicit Monitor Online Users single/batch force kick-out;
+- `logType=logout.self` and `logType=logout.force`;
+- Round 51 temporary force-logout operator text stored in `failureReason`;
+- Login Logs Admin table, filters, detail drawer and export.
+
+Round 57 admits the structured actor/reason stage:
+
+- add dedicated `actorUsername` and `reason` fields to `LoginLog`;
+- keep login failure reasons in `failureReason`;
+- write self logout as `actorUsername=<current user>` and
+  `reason=self logout`;
+- write force logout as `actorUsername=<operator>` and
+  `reason=<kick-out reason>`;
+- keep internal RBAC/user mutation session invalidation out of
+  `logout.force` rows;
+- expose actor filtering and Actor/Reason display through API, SDK, Admin,
+  OpenAPI and export;
+- prove in fixed-port, deploy and public smoke that force logout no longer
+  writes actor/reason context into `failureReason`.
+
+OpenCore does not claim IP geolocation, mobile/SMS/social login logging,
+session termination from the Login Logs page or broader operation-log
+retention in this round.

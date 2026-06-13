@@ -4783,3 +4783,105 @@ Against public endpoints after deploy:
   `e2601a7 feat(notice): add read user analytics / 新增通知已读用户分析`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 57 Capability
+
+Capability: `core.login-log` structured logout actor/reason productization.
+
+Round 57 closes the login-log structured actor/reason debt left by Round 51.
+It directly replaces the temporary successful-logout `failureReason` overload
+with dedicated fields; OpenCore does not keep a compatibility dual path for the
+old semantic misuse.
+
+Reference comparison:
+
+- RuoYi online-user force logout treats the operator action as explicit session
+  termination rather than an ordinary failed login.
+- Yudao token deletion writes a logout/delete audit shape for token removal.
+- OpenCore already had real self logout, force logout and session revocation,
+  but needed a correct login-log schema for actor and reason context.
+
+## Round 57 Implemented
+
+- Added Prisma `LoginLog.actorUsername` and `LoginLog.reason` plus migration.
+- Extended Prisma seed upserts to preserve actor/reason values.
+- Extended `@opencore/security` logout recording so self logout writes the
+  current username and `self logout` reason.
+- Extended `@opencore/audit` records, DTOs, seed repository, Prisma repository,
+  filters, export preview and tests with actor/reason.
+- Replaced Monitor Online Users force-kick logging to write `actorUsername` and
+  `reason` instead of overloading `failureReason`.
+- Extended SDK summary/query types, client spec and registry fixtures.
+- Added Admin Login Logs Actor server filter plus Actor/Reason table, detail
+  drawer and current-page export columns.
+- Extended Admin static smoke, login-log smoke and online-user smoke to prove
+  actor/reason behavior.
+- Removed an unstable Prisma audit integration dependency on a fixed seed
+  failed-login row; the test now creates the rows it asserts.
+
+Out of scope for Round 57:
+
+- IP geolocation enrichment;
+- mobile/SMS/social login logging;
+- session termination initiated from the Login Logs page;
+- broader operation-log retention or cleanup policy.
+
+## Round 57 Verification
+
+- `pnpm exec prettier --write ...`
+- `pnpm nx test security --runInBand`
+- `pnpm nx test audit --runInBand`
+- `pnpm nx test sdk --runInBand`
+- `pnpm test:api --runInBand`
+- `pnpm test:admin`
+- `pnpm openapi:export`
+- `pnpm openapi:check`
+- `pnpm openapi:registry-tags:check`
+- `pnpm sdk:check`
+- `pnpm typecheck`
+- `pnpm lint`
+- `pnpm smoke:api:local`
+- `pnpm deploy:opencore`
+- `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-login-log`
+- `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-online-user`
+
+`pnpm smoke:api:local` passed on fixed port `39173`, including
+`core.login-log.logout-self-actor-reason` and
+`core.login-log.logout-force-actor-reason`.
+
+`pnpm deploy:opencore` passed, deploying API/Admin on fixed ports
+`39172`/`39174`; deploy smoke included Admin same-origin login,
+duplicate-prefix login compatibility, public bundle checks, stale
+service-worker retirement, self logout actor/reason and force logout
+actor/reason guards.
+
+`pnpm lint` passed with existing warnings in
+`packages/system/src/system-user/system-user.prisma-repository.ts` and
+`apps/admin/src/pages/shared/CurrentPageExportButton.tsx`; no Round 57 lint
+errors were introduced.
+
+## Round 57 Public Verification
+
+Against public endpoints after deploy:
+
+- Public API: `http://144.217.243.161:39172`
+- Public Admin: `http://144.217.243.161:39174`
+- Admin main bundle: `umi.00ac5552.js`
+- Login Logs chunk: `p__Security__LoginLogs.02712a4e.async.js`
+- Public API login-log smoke passed:
+  `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-login-log`.
+  Checks included self logout recording, self logout actor/reason, server
+  filters, export columns and cleanup guards.
+- Public API online-user smoke passed:
+  `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-online-user`.
+  Checks included force logout recording, force logout actor/reason, revoked
+  token rejection and repeat kick-out protection.
+- Public Login Logs chunk contains `actorUsername`,
+  `Login actor server filter`, `Actor` and `Reason`.
+
+## Round 57 Commit Record
+
+- Feature commit:
+  `a47182c feat(login-log): add structured logout actor reason / 新增退出日志操作者原因`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

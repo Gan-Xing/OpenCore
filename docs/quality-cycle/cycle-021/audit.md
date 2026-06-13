@@ -893,3 +893,34 @@ notice.
 This stays inside the current S7 System notice boundary. It does not introduce
 notification templates, delivery adapter configuration, WebSocket/mail/SMS
 fan-out, tenant notices or BPM approval in this round.
+
+## Round 57 Audit: core.login-log Structured Logout Actor/Reason
+
+After Round 51, OpenCore had real online-user force logout logging, but it
+carried successful logout operator context in `failureReason`. That was a
+temporary schema workaround and conflicted with the clarified rule that old
+wrong paths should be replaced directly instead of preserved for compatibility.
+
+- RuoYi online-user force logout and Yudao token deletion both model successful
+  token termination as an operator/security event, not as a failed login.
+- OpenCore already had `logout.self`, `logout.force`, online-user session
+  revocation, Login Logs Admin and export coverage.
+- The lowest-dependency fix was a schema/API/Admin/SDK/smoke replacement:
+  dedicated `actorUsername` and `reason` fields on login logs.
+- `failureReason` remains reserved for failed login outcomes such as
+  bad credentials, disabled users and account lockout.
+- Monitor Online Users force-kick logging now writes actor/reason to the new
+  fields and explicitly leaves `failureReason` undefined.
+- Self logout writes the current username and `self logout` reason so all
+  logout rows share the same structured shape.
+- Admin needed actor server filtering and Actor/Reason list/detail/export
+  visibility, not only backend fields.
+- Fixed-port, deploy and public smoke needed to prove both self logout and
+  force logout actor/reason, plus the absence of the old
+  `failureReason` overload.
+- The Prisma audit integration test no longer depends on a fixed seed failed
+  login row, because seed drift has repeatedly created false failures.
+
+This stays inside the current S7 Security/System login-log boundary. It does
+not introduce IP geolocation, mobile/SMS/social login logging, session
+termination from the Login Logs page or operation-log retention policy.

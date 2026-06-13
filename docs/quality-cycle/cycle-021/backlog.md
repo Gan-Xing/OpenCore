@@ -1532,9 +1532,9 @@ internal RBAC/user session invalidation.
       `logout.force` logging by placing the logging at the Monitor Online
       Users controller boundary, not in the shared session repository.
 - [x] Preserve structured actor/reason on online-user
-      `revokedBy/revokedReason`; carry the same reason as current
-      login-log `failureReason` text until a future structured actor/reason
-      login-log schema is admitted.
+      `revokedBy/revokedReason`; the temporary login-log `failureReason`
+      overload was later removed by Round 57 after dedicated
+      `actorUsername`/`reason` fields were admitted.
 - [x] Extend fixed-port/deploy/public `core.online-user` smoke with
       `core.login-log.logout-force-recorded`, proving a kicked second admin
       token returns 401 and a filterable `logout.force` row exists.
@@ -1707,6 +1707,41 @@ per notice without first admitting templates or delivery fan-out.
       URL verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 57: core.login-log Structured Logout Actor/Reason Productization
+
+Why this slice: after Round 50/51 made self logout and force logout real,
+OpenCore still carried forced logout operator context through
+`failureReason`, which is semantically wrong for successful logout rows. Since
+the project has no compatibility burden, this round directly replaces that
+temporary path with dedicated fields instead of keeping a dual interpretation.
+
+- [x] Recompare RuoYi online-user forced logout, Yudao token deletion login-log
+      behavior and OpenCore's Round 51 temporary `failureReason` overload
+      before selecting this slice.
+- [x] Add `actorUsername` and `reason` to Prisma `LoginLog` plus migration and
+      seed upsert paths.
+- [x] Extend `@opencore/security` self logout recording so `logout.self`
+      writes the current user as actor with `self logout` reason.
+- [x] Extend `@opencore/audit` records, DTOs, seed repository, Prisma
+      repository, filters and export preview with structured actor/reason.
+- [x] Replace Monitor Online Users force-kick login-log recording so
+      `logout.force` writes `actorUsername` and `reason`, not `failureReason`.
+- [x] Extend SDK types/client/spec and registry fixtures with
+      `actorUsername` query/summary fields.
+- [x] Add Admin Login Logs Actor server filter plus Actor/Reason table,
+      detail drawer and current-page export columns.
+- [x] Extend Admin static smoke to lock the actor filter and Actor/Reason
+      columns.
+- [x] Extend fixed-port/deploy/public `core.login-log` and
+      `core.online-user` smoke with `logout-self-actor-reason` and
+      `logout-force-actor-reason`, including a guard that force logout leaves
+      `failureReason` undefined.
+- [x] Remove an unstable Prisma audit integration dependency on a fixed seed
+      failed-login row; the test now creates and verifies its own records.
+- [x] Run focused tests, OpenAPI/SDK checks, typecheck, lint, fixed-port
+      smoke, deployment and public URL verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -1763,7 +1798,7 @@ treat "minimal loop" as "minimal final product".
       summary, Admin display, security-auth consumption and deploy bundle
       guardrails. Broader feature-flag propagation and any admitted secret
       vault/KMS integration remain.
-- [ ] Round 11/26/45/47/48/49/50/51 `core.login-log`: browser/OS parsing,
+- [ ] Round 11/26/45/47/48/49/50/51/57 `core.login-log`: browser/OS parsing,
       IP/time filters, persisted login type/result schema, Admin display and
       type/result filters are complete. Persisted failed-attempt lockout,
       `account_locked` result mapping and permissioned username unlock are
@@ -1773,9 +1808,10 @@ treat "minimal loop" as "minimal final product".
       revokes the real bearer session and records `logout.self`. Explicit
       Monitor Online Users single/batch kick-out now records filterable
       `logout.force` rows without logging internal RBAC/user session
-      invalidation as forced logout. IP/location enrichment where feasible,
-      structured actor/reason fields for logout records and broader
-      mobile/social logging stages remain.
+      invalidation as forced logout. Round 57 adds structured
+      `actorUsername`/`reason` fields for self/force logout records and removes
+      the old `failureReason` overload. IP/location enrichment where feasible
+      and broader mobile/social logging stages remain.
 
 ### Thin, Must Rework Before More Broad Surfaces
 
@@ -1823,9 +1859,8 @@ treat "minimal loop" as "minimal final product".
   download/preview/copy-link workflows, batch file delete and object browser
   expansion.
 - Lockout-policy tuning beyond current max-attempts/window fields, session
-  termination from the login-log page, IP location enrichment, structured
-  actor/reason fields for login-log logout rows and broader mobile/SMS/social
-  login logging.
+  termination from the login-log page, IP location enrichment and broader
+  mobile/SMS/social login logging.
 - Operation-log deletion/cleanup, batch delete, duration/location/user-agent
   schema expansion, operation type enum expansion, async queue/indexing and
   business-domain audit timeline views.
