@@ -1436,6 +1436,45 @@ login-type recording.
       gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 49: core.config/security-auth Configurable Attempt Limit
+
+Why this slice: Round 47 enforced failed-attempt lockout, but its retry
+threshold was still a hardcoded five-attempt baseline. RuoYi exposes password
+retry count and lock time as runtime configuration (`maxRetryCount` and
+`lockTime`), while Yudao models login outcomes and runtime config consumption.
+OpenCore already had runtime `auth.login.lockoutMinutes`; the next lowest
+dependency foundation was adding the matching runtime failed-attempt threshold
+and proving security-auth consumes it.
+
+- [x] Recompare RuoYi password retry count/lock time and Yudao login-log
+      outcome modeling against OpenCore's hardcoded retry count.
+- [x] Add public system config `auth.login.maxFailedAttempts` with seeded value
+      `5`.
+- [x] Extend `SystemConfigRuntimeDto` and service result with
+      `loginMaxFailedAttempts`.
+- [x] Validate `auth.login.maxFailedAttempts` as an integer between 1 and 20.
+- [x] Protect the runtime key from private visibility or incompatible value
+      types.
+- [x] Update API `SystemSecurityLoginPolicyProvider` to read
+      `loginMaxFailedAttempts` from runtime config instead of a hardcoded
+      constant.
+- [x] Add API provider unit coverage for runtime policy mapping.
+- [x] Extend SDK runtime types, registry fixtures and OpenAPI snapshot.
+- [x] Keep Admin runtime config in initial state and show both failed-attempt
+      threshold and lockout minutes on the login page.
+- [x] Extend Admin static smoke to lock the login page marker and deploy-script
+      stale frontend guard.
+- [x] Extend `pnpm deploy:opencore` to reject Admin bundles missing
+      `loginMaxFailedAttempts` or `Login lockout policy`.
+- [x] Extend fixed-port/deploy/public `core.config` smoke with
+      `core.config.runtime-login-attempt-policy` and guard checks.
+- [x] Extend fixed-port/deploy/public `core.login-log` smoke to temporarily set
+      the threshold to 3, prove lockout uses that value and restore it.
+- [x] Run focused tests, OpenAPI/SDK checks, Prisma validate, typecheck, lint,
+      format, build, fixed-port smoke, deployment and public URL verification
+      gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -1477,22 +1516,25 @@ treat "minimal loop" as "minimal final product".
       workflow integration and ordered tree operations remain.
 - [ ] Round 3/22/25/42 `core.post`: user-post binding, simple-list option
       source and batch deletion are complete; ordered list refinements remain.
-- [ ] Round 9/24/37/38/39/40/44/46 `core.config`: public get-value-by-key, cache
+- [ ] Round 9/24/37/38/39/40/44/46/49 `core.config`: public get-value-by-key, cache
       refresh and mutation invalidation are complete. Category/name/remark
       metadata is complete. Native XLSX export payload and Admin download are
       complete. Batch deletion is complete. Persisted system/custom deletion
       policy is complete. Admin title runtime propagation is complete. Round 46
       closes runtime login-policy summary and guardrails for
       `auth.login.lockoutMinutes`. Round 47 consumes that key from
-      security-auth. Broader feature-flag propagation and any admitted secret
+      security-auth. Round 49 closes `auth.login.maxFailedAttempts` runtime
+      summary, Admin display, security-auth consumption and deploy bundle
+      guardrails. Broader feature-flag propagation and any admitted secret
       vault/KMS integration remain.
-- [ ] Round 11/26/45/47/48 `core.login-log`: browser/OS parsing, IP/time filters,
+- [ ] Round 11/26/45/47/48/49 `core.login-log`: browser/OS parsing, IP/time filters,
       persisted login type/result schema, Admin display and type/result
       filters are complete. Persisted failed-attempt lockout, `account_locked`
       result mapping and permissioned username unlock are complete. Permissioned
       selected-row deletion and clean-all maintenance actions are complete.
-      IP/location enrichment where feasible, configurable failed-attempt
-      threshold and broader logout/mobile/social logging stages remain.
+      Configurable failed-attempt threshold is complete through
+      `auth.login.maxFailedAttempts`. IP/location enrichment where feasible and
+      broader logout/mobile/social logging stages remain.
 
 ### Thin, Must Rework Before More Broad Surfaces
 
@@ -1538,9 +1580,9 @@ treat "minimal loop" as "minimal final product".
 - Presigned upload/download URLs, storage-provider config, public
   download/preview/copy-link workflows, batch file delete and object browser
   expansion.
-- Configurable failed-attempt threshold, lockout-policy tuning beyond the
-  current window, session termination from the login-log page, IP location
-  enrichment and broader logout/mobile/SMS/social login logging.
+- Lockout-policy tuning beyond current max-attempts/window fields, session
+  termination from the login-log page, IP location enrichment and broader
+  logout/mobile/SMS/social login logging.
 - Operation-log deletion/cleanup, batch delete, duration/location/user-agent
   schema expansion, operation type enum expansion, async queue/indexing and
   business-domain audit timeline views.

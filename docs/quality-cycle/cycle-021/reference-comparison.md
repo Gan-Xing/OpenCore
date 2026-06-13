@@ -1498,3 +1498,41 @@ Round 48 admits the cleanup maintenance stage:
 OpenCore does not claim IP location enrichment, configurable failed-attempt
 threshold, logout/mobile/SMS/social login recording or session termination from
 the login-log page in this round.
+
+## Round 49 Runtime Failed-Attempt Policy Reference Shape
+
+RuoYi's password retry service treats both retry count and lock time as
+runtime policy inputs. The reference configuration shape includes
+`user.password.maxRetryCount` and `user.password.lockTime`; the login path
+increments a per-username counter, locks after the configured retry count and
+uses the configured lock duration. RuoYi's login-info surface then provides
+the operator unlock path already translated in Round 47.
+
+Yudao continues to inform the structured login outcome model: login logs carry
+typed results so bad credentials, disabled users and locked accounts can be
+queried and displayed consistently.
+
+OpenCore already had:
+
+- `auth.login.lockoutMinutes` as a public runtime config;
+- security-auth lockout enforcement consuming that lockout window;
+- `account_locked` login-log results and username unlock;
+- fixed-port/deploy/public smoke proving lockout behavior.
+
+Round 49 admits the missing retry-count policy stage:
+
+- seed `auth.login.maxFailedAttempts` as a public system number config;
+- return `loginMaxFailedAttempts` from `GET /api/core/config/runtime`;
+- validate it as an integer between 1 and 20 and keep it public/number typed;
+- expose it through SDK/OpenAPI/Admin runtime state;
+- have the API login policy provider consume it instead of a hardcoded count;
+- render attempts plus minutes on the Admin login page;
+- add smoke that mutates the threshold to 3, proves lockout uses that value and
+  restores the original config;
+- add deploy-script guards so stale Admin bundles missing the runtime login
+  policy marker cannot be deployed.
+
+OpenCore does not claim captcha verification, IP location enrichment, broader
+logout/mobile/SMS/social login recording, session termination from the
+login-log page, secret vault/KMS integration or broad runtime feature flags in
+this round.

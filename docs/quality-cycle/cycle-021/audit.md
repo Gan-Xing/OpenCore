@@ -803,3 +803,34 @@ This stays inside the current S7 Security/System login-log boundary. It does
 not introduce IP location enrichment, configurable failed-attempt threshold,
 logout/mobile/SMS/social logging or session termination from the login-log
 page in this round.
+
+## Round 49 Audit: core.config/security-auth Configurable Attempt Limit
+
+After Round 48, the next lower-dependency login-security gap was the failed
+attempt threshold itself:
+
+- RuoYi reads `user.password.maxRetryCount` and `user.password.lockTime` from
+  runtime configuration in its password retry service, so both retry count and
+  lock duration are operator-configurable policy values.
+- OpenCore Round 46 made `auth.login.lockoutMinutes` runtime-readable and
+  Round 47 consumed it in security-auth, but the retry count remained a
+  hardcoded five-attempt baseline in the API policy provider.
+- Yudao's login-log result modeling continues to justify keeping the
+  lockout-result smoke in the login-log path, while the policy source belongs
+  in `core.config`.
+- The lowest dependency fix was not another login-log schema change; it was a
+  runtime config key, DTO/OpenAPI/SDK/Admin propagation and a provider change
+  in API composition.
+- The runtime key needed strict guards for value type, public visibility and
+  numeric range to avoid repeating loose deserialization failures.
+- Fixed-port, deploy and public smoke needed to mutate the threshold and
+  restore it, proving the product behavior rather than only checking a config
+  row.
+- Because stale frontend bundles have repeatedly broken login, the deploy
+  script also needed a guard that rejects an Admin bundle missing the new login
+  policy field or text.
+
+This stays inside the current S7 System/Security login-policy boundary. It
+does not introduce captcha verification, IP location enrichment,
+logout/mobile/SMS/social login logging, session termination from the login-log
+page, secret vault/KMS integration or broad feature-flag propagation.

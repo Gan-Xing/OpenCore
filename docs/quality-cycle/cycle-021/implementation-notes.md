@@ -3968,3 +3968,108 @@ Against public endpoints after deploy:
   `052d9be feat(login-log): add cleanup maintenance actions / 新增登录日志清理维护动作`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 49 Capability
+
+Capability: `core.config/security-auth` configurable failed-attempt limit.
+
+Goal: replace the hardcoded username/password failed-attempt threshold with
+runtime `auth.login.maxFailedAttempts`, expose it to Admin/SDK/OpenAPI and
+prove security-auth lockout enforcement consumes the configured value.
+
+## Round 49 Implemented
+
+- Rechecked RuoYi password retry settings
+  `user.password.maxRetryCount`/`lockTime` and Yudao login-log outcome
+  modeling.
+- Added seeded public system config `auth.login.maxFailedAttempts` with
+  default value `5`.
+- Extended `SystemConfigRuntimeDto`, service result, SDK runtime type and
+  OpenAPI snapshot with `loginMaxFailedAttempts`.
+- Added runtime-key guardrails requiring
+  `auth.login.maxFailedAttempts` to remain public, number typed and an integer
+  between 1 and 20.
+- Changed API `SystemSecurityLoginPolicyProvider` to read
+  `runtimeConfig.loginMaxFailedAttempts` instead of using a hardcoded value.
+- Added provider unit coverage proving runtime config maps to the security
+  login policy.
+- Updated Admin initial-state tests and login page to render
+  `Login lockout policy: {attempts} failed attempts / {minutes} minutes`.
+- Extended Admin static smoke to require the runtime field and deploy-script
+  stale frontend guard.
+- Extended `pnpm deploy:opencore` to reject Admin bundles missing
+  `loginMaxFailedAttempts` or `Login lockout policy`.
+- Extended `tools/scripts/smoke-core-config.mjs` with runtime failed-attempt
+  update/restore and invalid value/visibility guards.
+- Extended `tools/scripts/smoke-core-login-log.mjs` to set the threshold to 3,
+  trigger lockout at that threshold, verify unlock count and restore the
+  original value.
+
+## Round 49 Verification
+
+- `bash -n tools/scripts/deploy-local-opencore.sh tools/scripts/run-local-api-smoke.sh`
+- `node --check tools/scripts/smoke-core-config.mjs`
+- `node --check tools/scripts/smoke-core-login-log.mjs`
+- `node --check apps/admin/scripts/smoke-test.mjs`
+- `pnpm nx test api --testFile=system-security-login-policy.provider.spec.ts`
+- `pnpm nx test system --testFile=system-config.spec.ts --skip-nx-cache`
+- `pnpm nx test sdk --testFile=registry-fixtures.spec.ts --skip-nx-cache`
+- `pnpm nx test admin --skip-nx-cache`
+- `pnpm nx test security --testFile=security-auth.spec.ts`
+- `pnpm openapi:export`
+- `pnpm prisma:validate`
+- `pnpm openapi:check`
+- `pnpm sdk:check`
+- `pnpm openapi:registry-tags:check`
+- `pnpm nx run-many -t typecheck --projects=api,admin,sdk,security,system,contracts --skip-nx-cache`
+- `pnpm build:api`
+- `FORCE_UTOOPACK= OPENCORE_ADMIN_BUNDLER=webpack NX_DAEMON=false pnpm exec nx build admin --skip-nx-cache`
+- `pnpm lint`
+- `pnpm format:check`
+- `git diff --check`
+- `pnpm smoke:api:local`
+- `pnpm deploy:opencore`
+
+`pnpm smoke:api:local` passed on fixed port `39173`, including
+`core.config.runtime-login-attempt-policy`,
+`core.config.runtime-login-attempt-policy-guards` and
+`auth.login-lockout.configurable-attempt-limit`.
+
+`pnpm deploy:opencore` passed, deploying API/Admin on fixed ports
+`39172`/`39174`; deploy smoke included duplicate-prefix login compatibility,
+Admin no-cache/bundle checks, the new stale frontend login-policy guard and the
+same runtime failed-attempt lockout guards.
+
+## Round 49 Public Verification
+
+Against public endpoints after deploy:
+
+- Public API: `http://144.217.243.161:39172`
+- Public Admin: `http://144.217.243.161:39174`
+- Admin main bundle: `umi.91a0b1a3.js`
+- Login page chunk: `p__user__login__index.b5055d16.async.js`
+- Public API config smoke passed:
+  `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-config`.
+  Checks included `core.config.runtime-login-attempt-policy` and
+  `core.config.runtime-login-attempt-policy-guards`.
+- Public API login-log smoke passed:
+  `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-login-log`.
+  Checks included `auth.login-lockout.configurable-attempt-limit`.
+- Public Admin login page returned no-cache headers.
+- Public Admin main bundle contains API origin
+  `http://144.217.243.161:39172` and no bundle-generated
+  `/api/api/auth/login`.
+- Public Admin login chunk contains `loginMaxFailedAttempts` and
+  `Login lockout policy`.
+- Public API and Admin proxy runtime config both returned
+  `{ adminTitle: "OpenCore Admin", loginLockoutMinutes: 15, loginMaxFailedAttempts: 5 }`.
+- Public Admin same-origin `/api/auth/login`, compatible
+  `/api/api/auth/login` and public API `/api/api/auth/login` all returned a
+  valid access token using the deployed admin credentials.
+
+## Round 49 Commit Record
+
+- Feature commit:
+  `b4a0258 feat(login-policy): add configurable attempt limit / 新增登录失败次数策略`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.
