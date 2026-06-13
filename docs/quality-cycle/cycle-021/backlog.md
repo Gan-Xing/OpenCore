@@ -1252,6 +1252,38 @@ without opening data-scope UI, batch department deletion or drag-sort.
       fixed-port smoke, deployment and public URL verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 44: core.config Runtime Admin Config
+
+Why this slice: after config CRUD, public value reads, cache refresh,
+metadata, XLSX export, batch deletion and system/custom deletion policy were
+live, the next lowest-dependency config debt was actual runtime consumption.
+OpenCore already seeded `opencore.admin.title` as a public system config, but
+the Admin shell and login page still used only hard-coded title text. This
+round closes the first runtime-propagation loop without opening secret
+vault/KMS, multi-environment feature flags or broader hot-propagation design.
+
+- [x] Recompare Yudao/RuoYi config-center positioning against OpenCore's
+      existing public config cache.
+- [x] Add `SystemConfigRuntimeDto` and `SystemConfigRuntimeResult`.
+- [x] Add public `GET /api/core/config/runtime` before dynamic
+      `config/:key`.
+- [x] Build the runtime summary from `opencore.admin.title` through the
+      existing public config value cache.
+- [x] Extend API permission matrix to explicitly keep runtime config public.
+- [x] Extend OpenAPI, SDK types/client/tests with tokenless
+      `getConfigRuntime()`.
+- [x] Add Admin runtime config service and wire `getInitialState` settings
+      title to `adminTitle`.
+- [x] Update the login page to render the runtime title instead of only the
+      hard-coded fallback.
+- [x] Extend Admin static smoke for runtime config service and login runtime
+      title markers.
+- [x] Extend fixed-port/deploy/public `core.config` smoke with
+      `core.config.runtime` and `core.config.runtime-cache-invalidation`.
+- [x] Run focused tests, OpenAPI/SDK checks, typecheck, format, build,
+      fixed-port smoke, deployment and public URL verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -1293,12 +1325,13 @@ treat "minimal loop" as "minimal final product".
       workflow integration and ordered tree operations remain.
 - [ ] Round 3/22/25/42 `core.post`: user-post binding, simple-list option
       source and batch deletion are complete; ordered list refinements remain.
-- [ ] Round 9/24/37/38/39/40 `core.config`: public get-value-by-key, cache refresh
-      and mutation invalidation are complete. Category/name/remark metadata is
-      complete. Native XLSX export payload and Admin download are complete.
-      Batch deletion is complete. Persisted system/custom deletion policy is
-      complete. Broader runtime propagation boundaries and any admitted secret
-      vault/KMS integration remain.
+- [ ] Round 9/24/37/38/39/40/44 `core.config`: public get-value-by-key, cache
+      refresh and mutation invalidation are complete. Category/name/remark
+      metadata is complete. Native XLSX export payload and Admin download are
+      complete. Batch deletion is complete. Persisted system/custom deletion
+      policy is complete. Admin title runtime propagation is complete. Broader
+      runtime propagation boundaries and any admitted secret vault/KMS
+      integration remain.
 - [ ] Round 11/26 `core.login-log`: browser/OS parsing and IP/time filters are
       complete. IP/location enrichment where feasible, cleanup/unlock policy
       integration and logType/result schema expansion remain.

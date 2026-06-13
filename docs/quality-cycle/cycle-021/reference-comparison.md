@@ -1325,3 +1325,34 @@ boundary:
 OpenCore does not claim data-scope assignment UI, batch department deletion,
 drag-sort persistence or a broader department-user assignment workflow in this
 round.
+
+## Round 44 Config Runtime Admin Title Reference Shape
+
+RuoYi and Yudao both position system/infra config management as more than a
+CRUD table: configuration keys are runtime parameters that application code can
+read after operators update them. OpenCore already had public value-by-key,
+cache refresh and cache invalidation, and it seeded
+`opencore.admin.title` as a public system config, but the deployed Admin shell
+and login page still only used hard-coded title text.
+
+OpenCore admits the first stage-7 runtime propagation loop for the config
+product boundary:
+
+- `GET /api/core/config/runtime` is public and registered before dynamic
+  `config/:key`;
+- the response is a stable runtime summary `{ adminTitle }`, backed by the
+  existing public config value cache and `opencore.admin.title`;
+- config update invalidates the cached title through the existing service
+  cache path, so runtime reads reflect operator changes;
+- SDK exposes tokenless `getConfigRuntime()` for frontend bootstrap use;
+- Admin `getInitialState` fetches runtime config and applies the title to
+  layout settings;
+- Admin login uses the runtime title with the hard-coded title only as
+  fallback;
+- fixed-port, deploy and public smoke prove public runtime reads, title update
+  propagation, deployed bundle markers, same-origin Admin proxy behavior and
+  restore of the seeded title.
+
+OpenCore does not claim secret vault/KMS, broad multi-key runtime feature flag
+propagation, per-environment config promotion or cluster-wide push
+invalidation in this round.

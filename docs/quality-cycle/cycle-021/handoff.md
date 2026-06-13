@@ -3,8 +3,8 @@
 Date: 2026-06-13
 Repository: `Gan-Xing/OpenCore`
 Default branch: `main`
-Latest observed feature commit: `b4624cf feat(core-dept): guard deleting assigned departments / 保护已分配用户的部门删除`
-Latest deployed feature commit: `b4624cf feat(core-dept): guard deleting assigned departments / 保护已分配用户的部门删除`
+Latest observed feature commit: `bd55c61 feat(core-config): add runtime admin config / 新增运行时管理端配置`
+Latest deployed feature commit: `bd55c61 feat(core-config): add runtime admin config / 新增运行时管理端配置`
 Latest deployed hardening commit: `04e446c fix(online-user): stabilize admin session smoke / 稳定在线用户管理员会话冒烟`
 
 ## One-sentence Goal
@@ -109,6 +109,7 @@ productization waterline completion; see
 - Round 41 `core.user` dedicated role assignment stage 14
 - Round 42 `core.post` batch deletion stage 3
 - Round 43 `core.dept` user-binding delete guard stage 3
+- Round 44 `core.config` runtime Admin config stage 7
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -528,6 +529,20 @@ smoke 均验证 `core.dept.delete.assigned-user-guard` 与
 证明删除返回 400 且用户部门绑定仍保留。注意：这轮关闭的是用户绑定删除保护，不等于 data-scope
 工作流 UI、批量部门删除或树排序/拖拽已经完成。
 
+Round 44 继续补齐 `core.config` 队列，开启运行时配置传播闭环。参考 Yudao/RuoYi 配置中心作为
+运行时可消费参数源的产品定位，OpenCore 新增公开只读
+`GET /api/core/config/runtime`，从现有 public config cache 中读取
+`opencore.admin.title` 并返回 `{ adminTitle }`；SDK 暴露无 token
+`getConfigRuntime()`；Admin `getInitialState` 和登录页标题使用该 runtime title，避免前端继续只靠
+硬编码 `OpenCore Admin`。固定 smoke、部署 smoke 和公网 smoke 均验证
+`core.config.runtime` 与 `core.config.runtime-cache-invalidation`：更新
+`opencore.admin.title` 后，runtime endpoint 立即返回新标题，随后恢复原值。公网 Admin
+`umi.19450df1.js` 已验证包含 `/core/config/runtime`、API origin
+`http://144.217.243.161:39172` 且不包含 `/api/api/auth/login`；公网 Admin 同源
+`/api/core/config/runtime` 无 token 可读，同源 PATCH 标题后公网 API/Admin runtime 都读到新值并已恢复。
+注意：这轮关闭的是 Admin title 的第一条 runtime propagation，不等于 secret vault/KMS、
+多环境 runtime feature flags 或更广泛配置热传播边界已经完成。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -538,7 +553,7 @@ The productization waterline now classifies:
   Round 8/21 `core.dict`,
   Round 7/19/22/23/28/29/30/31/32/33/34/35/36/41 `core.user`.
 - First loop, enhance: Round 1 `core.notice`, Round 2/27/43 `core.dept`,
-  Round 3/22/25/42 `core.post`, Round 9/24/37/38/39/40 `core.config`,
+  Round 3/22/25/42 `core.post`, Round 9/24/37/38/39/40/44 `core.config`,
   Round 11/26 `core.login-log`.
 - Thin, rework: none after Round 16.
 
@@ -551,9 +566,11 @@ finds another blocker:
    API/SDK/Admin/smoke; Round 38 closed native XLSX export payload plus Admin
    download and smoke guards; Round 39 closed batch deletion with cache
    invalidation and Admin selected-row deletion; Round 40 closed persisted
-   system/custom config deletion policy with API/Admin/smoke guards. Remaining
-   work is broader runtime propagation boundaries and any admitted secret
-   vault/KMS integration.
+   system/custom config deletion policy with API/Admin/smoke guards; Round 44
+   closed the first runtime propagation loop by letting Admin read
+   `opencore.admin.title` through public runtime config. Remaining work is
+   broader runtime propagation boundaries and any admitted secret vault/KMS
+   integration.
 2. `core.login-log`: Round 26 closed browser/OS parsing and server-side IP/time
    filters. Remaining work is IP/location enrichment where feasible,
    cleanup/unlock policy integration and login-type/result expansion.

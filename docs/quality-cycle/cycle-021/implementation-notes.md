@@ -3500,3 +3500,89 @@ Against public endpoints after deploy:
   `b4624cf feat(core-dept): guard deleting assigned departments / 保护已分配用户的部门删除`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 44 Capability
+
+Capability: `core.config` runtime Admin config.
+
+Goal: turn the seeded public `opencore.admin.title` config into an actual
+frontend runtime setting by exposing a public runtime summary endpoint and
+having Admin bootstrap/login consume it.
+
+## Round 44 Implemented
+
+- Rechecked Yudao/RuoYi config-center positioning as runtime parameter sources.
+- Added `SystemConfigRuntimeDto` and `SystemConfigRuntimeResult`.
+- Added public `GET /api/core/config/runtime` before the dynamic
+  `config/:key` route.
+- Built runtime config from `opencore.admin.title` through the existing public
+  config value cache and update invalidation path.
+- Extended API permission matrix to keep the runtime endpoint explicitly
+  public.
+- Extended OpenAPI snapshot, SDK types/client/tests with tokenless
+  `getConfigRuntime()`.
+- Added Admin `runtimeConfig` service.
+- Updated Admin `getInitialState` to load runtime config and set the layout
+  title.
+- Updated the login page to render the runtime title with `OpenCore Admin` as
+  fallback.
+- Extended Admin static smoke for runtime config service and login runtime
+  title markers.
+- Extended `tools/scripts/smoke-core-config.mjs` with
+  `core.config.runtime` and `core.config.runtime-cache-invalidation`.
+
+## Round 44 Verification
+
+- `node --check tools/scripts/smoke-core-config.mjs`
+- `node --check apps/admin/scripts/smoke-test.mjs`
+- `pnpm nx test system --testFile=system-config.spec.ts`
+- `pnpm nx test sdk --testFile=system-management-client.spec.ts`
+- `pnpm nx test api --testFile=system-management.permission-matrix.spec.ts`
+- `pnpm nx test admin`
+- `pnpm openapi:export`
+- `pnpm openapi:check`
+- `pnpm sdk:check`
+- `pnpm openapi:registry-tags:check`
+- `pnpm prisma:validate`
+- `pnpm nx run-many -t typecheck --projects=api,admin,sdk,system,module-registry,contracts`
+- `pnpm build:api`
+- `pnpm build:admin`
+- `pnpm format:check`
+- `git diff --check`
+- `pnpm smoke:api:local`
+- `pnpm deploy:opencore`
+
+`pnpm smoke:api:local` passed on fixed port `39173`, including
+`core.config.runtime` and `core.config.runtime-cache-invalidation`.
+
+`pnpm deploy:opencore` passed, deploying API/Admin on fixed ports
+`39172`/`39174`; deploy smoke included the same `core.config` runtime guards,
+duplicate `/api/api` login guards, Admin bundle cache checks and session
+guards.
+
+## Round 44 Public Verification
+
+Against public endpoints after deploy:
+
+- Public API: `http://144.217.243.161:39172`
+- Public Admin: `http://144.217.243.161:39174`
+- Public `pnpm smoke:core-config` passed and included
+  `core.config.runtime` and `core.config.runtime-cache-invalidation`.
+- Public Admin main bundle `umi.19450df1.js` contains
+  `/core/config/runtime`, the deployed API origin and no duplicate
+  `/api/api/auth/login`.
+- Public login chunk contains the runtime title fallback.
+- Public Admin same-origin `/api/core/config/runtime` succeeded without a
+  bearer token.
+- Public Admin same-origin `/api/auth/login` and compatible
+  `/api/api/auth/login` both succeeded.
+- Public Admin same-origin proxy updated `opencore.admin.title`, public Admin
+  runtime config and public API runtime config both returned the new title, and
+  the original title was restored.
+
+## Round 44 Commit Record
+
+- Feature commit:
+  `bd55c61 feat(core-config): add runtime admin config / 新增运行时管理端配置`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.
