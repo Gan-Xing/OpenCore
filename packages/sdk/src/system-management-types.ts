@@ -273,6 +273,18 @@ export type SystemPostBatchMutationSummary = {
   codes: readonly string[];
 };
 
+export type UpdateSystemPostOrderRequest = {
+  items: readonly {
+    code: string;
+    order: number;
+  }[];
+};
+
+export type SystemPostOrderMutationSummary = {
+  updatedCount: number;
+  items: readonly SystemPostSummary[];
+};
+
 export type CreateSystemPostRequest = {
   code: string;
   name: string;

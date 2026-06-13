@@ -23,6 +23,7 @@ const timeoutMs = Number(process.env.OPENCORE_SMOKE_TIMEOUT_MS || 10000);
 const runId = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 const postCode = `smoke_post_${runId}`;
 const batchPostCodes = [`${postCode}_batch_a`, `${postCode}_batch_b`];
+const orderPostCodes = [`${postCode}_order_a`, `${postCode}_order_b`];
 let token;
 const createdPostCodes = [];
 
@@ -185,6 +186,75 @@ try {
     'batch-delete simple-list options',
   );
 
+  for (const [index, code] of orderPostCodes.entries()) {
+    await apiRequest('/core/posts', {
+      method: 'POST',
+      body: {
+        code,
+        name: `OpenCore Order Smoke Post ${index + 1}`,
+        order: 40 + index,
+        description: 'Post order smoke',
+        enabled: true,
+      },
+    });
+    createdPostCodes.push(code);
+  }
+
+  await apiRequest('/core/posts/order', {
+    method: 'PATCH',
+    expected: [400],
+    body: { items: [{ code: orderPostCodes[0], order: '1' }] },
+  });
+  await apiRequest('/core/posts/order', {
+    method: 'PATCH',
+    expected: [400],
+    body: {
+      items: [
+        { code: orderPostCodes[0], order: 10 },
+        { code: orderPostCodes[0], order: 20 },
+      ],
+    },
+  });
+  await apiRequest('/core/posts/order', {
+    method: 'PATCH',
+    expected: [404],
+    body: {
+      items: [
+        { code: orderPostCodes[0], order: 10 },
+        { code: `${postCode}_missing_order`, order: 20 },
+      ],
+    },
+  });
+
+  const orderUpdate = await apiRequest('/core/posts/order', {
+    method: 'PATCH',
+    body: {
+      items: [
+        { code: orderPostCodes[1], order: 10 },
+        { code: orderPostCodes[0], order: 20 },
+      ],
+    },
+  });
+  assertEqual(orderUpdate.updatedCount, 2, 'post order update count');
+  assertRelativeOrder(
+    orderUpdate.items,
+    orderPostCodes[1],
+    orderPostCodes[0],
+    'post order update result',
+  );
+  assertRelativeOrder(
+    (await apiRequest('/core/posts?page=1&pageSize=100&enabled=true')).items,
+    orderPostCodes[1],
+    orderPostCodes[0],
+    'post order list',
+  );
+  assertRelativeOrder(
+    await publicPostOptions(),
+    orderPostCodes[1],
+    orderPostCodes[0],
+    'post order simple-list',
+  );
+
   await cleanupCreatedPosts();
   assertOptionCodesExclude(
     await publicPostOptions(),
@@ -216,6 +286,12 @@ try {
         'core.post.batch-delete.missing-guard',
         'core.post.batch-delete',
         'core.post.batch-delete.simple-list-cleanup',
+        'core.post.order.bad-order-guard',
+        'core.post.order.duplicate-guard',
+        'core.post.order.missing-guard',
+        'core.post.order.update',
+        'core.post.order.list-order',
+        'core.post.order.simple-list-order',
         'core.post.delete',
       ],
     }),
@@ -282,6 +358,24 @@ function assertPageItemsContain(page, code, label) {
 
   if (!page.items.some((item) => item.code === code)) {
     throw new Error(`${label} must contain post ${code}`);
+  }
+}
+
+function assertRelativeOrder(items, firstCode, secondCode, label) {
+  assertArray(items, `${label} items`);
+
+  const codes = items.map((item) => item.code);
+  const firstIndex = codes.indexOf(firstCode);
+  const secondIndex = codes.indexOf(secondCode);
+
+  if (firstIndex < 0 || secondIndex < 0) {
+    throw new Error(
+      `${label} must include posts ${firstCode} and ${secondCode}`,
+    );
+  }
+
+  if (firstIndex >= secondIndex) {
+    throw new Error(`${label} must order ${firstCode} before ${secondCode}`);
   }
 }
 

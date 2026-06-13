@@ -8,18 +8,22 @@ import { PrismaService } from '@opencore/database';
 import type {
   BatchDeleteSystemPostsDto,
   CreateSystemPostDto,
+  UpdateSystemPostOrderDto,
   UpdateSystemPostDto,
 } from './system-post.dto';
 import type { SystemPostRecord } from './system-post.records';
 import {
   createSystemPostPageResult,
+  compareSystemPostRecords,
   normalizeBatchDeleteSystemPostsInput,
   normalizeCreateSystemPostInput,
   normalizeSystemPostFilters,
   normalizeSystemPostPageQuery,
+  normalizeUpdateSystemPostOrderInput,
   normalizeUpdateSystemPostInput,
   SystemPostRepository,
   type SystemPostBatchMutationRecord,
+  type SystemPostOrderMutationResult,
   type SystemPostOptionRecord,
   type SystemPostPageQuery,
 } from './system-post.repository';
@@ -134,6 +138,34 @@ export class PrismaSystemPostRepository extends SystemPostRepository {
     };
   }
 
+  async updatePostOrder(
+    body: UpdateSystemPostOrderDto,
+  ): Promise<SystemPostOrderMutationResult> {
+    const input = normalizeUpdateSystemPostOrderInput(body);
+    const codes = input.map((item) => item.code);
+    const posts = (
+      await this.prisma.systemPost.findMany({
+        where: { code: { in: codes } },
+      })
+    ).map(toSystemPostRecord);
+
+    assertFoundPostCodes(codes, posts);
+
+    const updated = await this.prisma.$transaction(
+      input.map((item) =>
+        this.prisma.systemPost.update({
+          where: { code: item.code },
+          data: { order: item.order },
+        }),
+      ),
+    );
+
+    return {
+      updatedCount: updated.length,
+      items: updated.map(toSystemPostRecord).sort(compareSystemPostRecords),
+    };
+  }
+
   private async findPostByCode(code: string): Promise<PrismaSystemPost> {
     const post = await this.prisma.systemPost.findUnique({ where: { code } });
 
@@ -156,4 +188,18 @@ function toSystemPostRecord(post: PrismaSystemPost): SystemPostRecord {
     createdAt: post.createdAt.toISOString(),
     updatedAt: post.updatedAt.toISOString(),
   };
+}
+
+function assertFoundPostCodes(
+  expectedCodes: readonly string[],
+  rows: readonly SystemPostRecord[],
+): void {
+  const foundCodes = new Set(rows.map((row) => row.code));
+  const missingCodes = expectedCodes.filter((code) => !foundCodes.has(code));
+
+  if (missingCodes.length > 0) {
+    throw new NotFoundException(
+      `System post not found: ${missingCodes.join(', ')}`,
+    );
+  }
 }

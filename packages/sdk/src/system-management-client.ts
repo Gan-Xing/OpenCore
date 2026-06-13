@@ -39,6 +39,7 @@ import type {
   SystemNoticeQueryRequest,
   SystemNoticeSummary,
   SystemPostBatchMutationSummary,
+  SystemPostOrderMutationSummary,
   SystemPostOptionSummary,
   SystemPostQueryRequest,
   SystemPostSummary,
@@ -50,6 +51,7 @@ import type {
   UpdateSystemDeptOrderRequest,
   UpdateSystemDeptRequest,
   UpdateSystemNoticeRequest,
+  UpdateSystemPostOrderRequest,
   UpdateSystemPostRequest,
   UpdateSystemConfigRequest,
 } from './system-management-types';
@@ -198,6 +200,10 @@ export type SystemManagementClient = {
     code: string,
     body: UpdateSystemPostRequest,
   ) => Promise<SystemPostSummary>;
+  updatePostOrder: (
+    token: Token,
+    body: UpdateSystemPostOrderRequest,
+  ) => Promise<SystemPostOrderMutationSummary>;
   deletePost: (token: Token, code: string) => Promise<DeleteResult>;
   deletePosts: (
     token: Token,
@@ -491,6 +497,12 @@ export function createSystemManagementClient(
       }),
     updatePost: (token, code, body) =>
       request<SystemPostSummary>(`/core/posts/${encodeURIComponent(code)}`, {
+        method: 'PATCH',
+        body,
+        token,
+      }),
+    updatePostOrder: (token, body) =>
+      request<SystemPostOrderMutationSummary>('/core/posts/order', {
         method: 'PATCH',
         body,
         token,

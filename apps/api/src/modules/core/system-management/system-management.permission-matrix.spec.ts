@@ -61,6 +61,7 @@ const expectedPermissions = {
   unlockLoginUser: ['core:login-log:manage'],
   updateNotice: ['core:notice:update'],
   updatePost: ['core:post:update'],
+  updatePostOrder: ['core:post:update'],
 } as const;
 
 const expectedPublicConsumerMethods = [

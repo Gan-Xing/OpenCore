@@ -77,11 +77,13 @@ import {
   SystemNoticeQueryDto,
   SystemPostBatchMutationResultDto,
   SystemPostDto,
+  SystemPostOrderMutationResultDto,
   SystemPostOptionDto,
   SystemPostPageDto,
   SystemPostQueryDto,
   UpdateSystemDeptDto,
   UpdateSystemDeptOrderDto,
+  UpdateSystemPostOrderDto,
   UpdateDictItemDto,
   UpdateDictTypeDto,
   UpdateFileAssetDto,
@@ -485,6 +487,16 @@ export class SystemManagementController {
     @Body() body: BatchDeleteSystemPostsDto,
   ): Promise<SystemPostBatchMutationResultDto> {
     return this.posts.deletePosts(body);
+  }
+
+  @Patch('posts/order')
+  @ApiTags('Core Posts')
+  @RequirePermission('core:post:update')
+  @ApiOkResponse({ type: SystemPostOrderMutationResultDto })
+  updatePostOrder(
+    @Body() body: UpdateSystemPostOrderDto,
+  ): Promise<SystemPostOrderMutationResultDto> {
+    return this.posts.updatePostOrder(body);
   }
 
   @Get('posts/:code')

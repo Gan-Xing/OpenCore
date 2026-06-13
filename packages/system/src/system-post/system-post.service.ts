@@ -3,6 +3,7 @@ import type { PageResult } from '@opencore/common';
 import type {
   BatchDeleteSystemPostsDto,
   CreateSystemPostDto,
+  UpdateSystemPostOrderDto,
   UpdateSystemPostDto,
 } from './system-post.dto';
 import type { SystemPostRecord } from './system-post.records';
@@ -11,6 +12,7 @@ import {
   SystemPostRepository,
   type SystemPostBatchMutationRecord,
   type SystemPostExportPreview,
+  type SystemPostOrderMutationResult,
   type SystemPostOptionRecord,
   type SystemPostPageQuery,
 } from './system-post.repository';
@@ -52,6 +54,12 @@ export class SystemPostService {
     body: BatchDeleteSystemPostsDto,
   ): Promise<SystemPostBatchMutationRecord> {
     return this.repository.deletePosts(body);
+  }
+
+  updatePostOrder(
+    body: UpdateSystemPostOrderDto,
+  ): Promise<SystemPostOrderMutationResult> {
+    return this.repository.updatePostOrder(body);
   }
 
   async createExportPreview(

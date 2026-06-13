@@ -8,6 +8,7 @@ import {
 import type {
   BatchDeleteSystemPostsDto,
   CreateSystemPostDto,
+  UpdateSystemPostOrderDto,
   UpdateSystemPostDto,
 } from './system-post.dto';
 import type { SystemPostRecord } from './system-post.records';
@@ -37,6 +38,16 @@ export type SystemPostBatchMutationRecord = {
   deleted: true;
   affected: number;
   codes: readonly string[];
+};
+
+export type NormalizedSystemPostOrderItem = {
+  code: string;
+  order: number;
+};
+
+export type SystemPostOrderMutationResult = {
+  updatedCount: number;
+  items: SystemPostRecord[];
 };
 
 export type SystemPostNormalizedPageQuery = {
@@ -86,6 +97,10 @@ export abstract class SystemPostRepository {
   abstract deletePosts(
     body: BatchDeleteSystemPostsDto,
   ): Promise<SystemPostBatchMutationRecord>;
+
+  abstract updatePostOrder(
+    body: UpdateSystemPostOrderDto,
+  ): Promise<SystemPostOrderMutationResult>;
 }
 
 export function normalizeSystemPostFilters(
@@ -211,7 +226,39 @@ export function normalizeBatchDeleteSystemPostsInput(
   return [...codes].sort();
 }
 
-function normalizePostCode(value: string): string {
+export function normalizeUpdateSystemPostOrderInput(
+  body: UpdateSystemPostOrderDto,
+): NormalizedSystemPostOrderItem[] {
+  if (!Array.isArray(body.items) || body.items.length === 0) {
+    throw new BadRequestException(
+      'System post order update requires at least one item.',
+    );
+  }
+
+  const seenCodes = new Set<string>();
+  return body.items.map((item, index) => {
+    if (!item || typeof item !== 'object') {
+      throw new BadRequestException(
+        `System post order item ${index + 1} must be an object.`,
+      );
+    }
+
+    const code = normalizePostCode(item.code);
+    if (seenCodes.has(code)) {
+      throw new BadRequestException(
+        `Duplicate system post order item code: ${code}`,
+      );
+    }
+    seenCodes.add(code);
+
+    return {
+      code,
+      order: normalizeOrder(item.order),
+    };
+  });
+}
+
+export function normalizePostCode(value: string): string {
   if (typeof value !== 'string') {
     throw new BadRequestException('System post code must be a string.');
   }

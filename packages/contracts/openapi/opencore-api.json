@@ -2535,6 +2535,36 @@
         "tags": ["SystemManagement", "Core Posts"]
       }
     },
+    "/api/core/posts/order": {
+      "patch": {
+        "operationId": "SystemManagementController_updatePostOrder",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSystemPostOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemPostOrderMutationResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Posts"]
+      }
+    },
     "/api/core/posts/{code}": {
       "get": {
         "operationId": "SystemManagementController_getPost",
@@ -6818,6 +6848,37 @@
           "codes": { "type": "array", "items": { "type": "string" } }
         },
         "required": ["deleted", "affected", "codes"]
+      },
+      "UpdateSystemPostOrderItemDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "order": { "type": "number" }
+        },
+        "required": ["code", "order"]
+      },
+      "UpdateSystemPostOrderDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UpdateSystemPostOrderItemDto"
+            }
+          }
+        },
+        "required": ["items"]
+      },
+      "SystemPostOrderMutationResultDto": {
+        "type": "object",
+        "properties": {
+          "updatedCount": { "type": "number" },
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SystemPostDto" }
+          }
+        },
+        "required": ["updatedCount", "items"]
       },
       "CreateSystemPostDto": {
         "type": "object",

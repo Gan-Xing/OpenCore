@@ -66,6 +66,7 @@ import {
   type SystemNoticeSummary,
   type SystemPostBatchMutationSummary,
   type SystemPostOptionSummary,
+  type SystemPostOrderMutationSummary,
   type SystemPostQueryRequest,
   type SystemPostSummary,
   type ResetUserPasswordRequest,
@@ -77,6 +78,7 @@ import {
   type UpdateFileAssetRequest,
   type UpdateSystemConfigRequest,
   type UpdateSystemNoticeRequest,
+  type UpdateSystemPostOrderRequest,
   type UpdateSystemPostRequest,
   type UploadFileAssetRequest,
   type UpdateMenuRequest,
@@ -686,6 +688,12 @@ export function updateOpenCoreSystemPost(
   body: UpdateSystemPostRequest,
 ): Promise<SystemPostSummary> {
   return systemManagementClient.updatePost(getRequiredAdminToken(), code, body);
+}
+
+export function updateOpenCoreSystemPostOrder(
+  body: UpdateSystemPostOrderRequest,
+): Promise<SystemPostOrderMutationSummary> {
+  return systemManagementClient.updatePostOrder(getRequiredAdminToken(), body);
 }
 
 export function deleteOpenCoreSystemPost(

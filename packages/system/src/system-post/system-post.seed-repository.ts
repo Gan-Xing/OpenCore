@@ -7,6 +7,7 @@ import type { PageResult } from '@opencore/common';
 import type {
   BatchDeleteSystemPostsDto,
   CreateSystemPostDto,
+  UpdateSystemPostOrderDto,
   UpdateSystemPostDto,
 } from './system-post.dto';
 import { seedSystemPosts, type SystemPostRecord } from './system-post.records';
@@ -17,9 +18,11 @@ import {
   normalizeCreateSystemPostInput,
   normalizeSystemPostFilters,
   normalizeSystemPostPageQuery,
+  normalizeUpdateSystemPostOrderInput,
   normalizeUpdateSystemPostInput,
   SystemPostRepository,
   type SystemPostBatchMutationRecord,
+  type SystemPostOrderMutationResult,
   toSystemPostOptionRecord,
   type SystemPostOptionRecord,
   type SystemPostPageQuery,
@@ -111,6 +114,29 @@ export class SeedSystemPostRepository extends SystemPostRepository {
       deleted: true,
       affected: selected.length,
       codes,
+    };
+  }
+
+  async updatePostOrder(
+    body: UpdateSystemPostOrderDto,
+  ): Promise<SystemPostOrderMutationResult> {
+    const input = normalizeUpdateSystemPostOrderInput(body);
+    for (const item of input) {
+      this.findPost(item.code);
+    }
+
+    for (const item of input) {
+      Object.assign(this.findPost(item.code), {
+        order: item.order,
+        updatedAt: new Date().toISOString(),
+      });
+    }
+
+    return {
+      updatedCount: input.length,
+      items: input
+        .map((item) => ({ ...this.findPost(item.code) }))
+        .sort(compareSystemPostRecords),
     };
   }
 

@@ -70,6 +70,27 @@ export class SystemPostBatchMutationResultDto {
   codes!: readonly string[];
 }
 
+export class UpdateSystemPostOrderItemDto {
+  @ApiProperty()
+  code!: string;
+
+  @ApiProperty()
+  order!: number;
+}
+
+export class UpdateSystemPostOrderDto {
+  @ApiProperty({ type: () => [UpdateSystemPostOrderItemDto] })
+  items!: readonly UpdateSystemPostOrderItemDto[];
+}
+
+export class SystemPostOrderMutationResultDto {
+  @ApiProperty()
+  updatedCount!: number;
+
+  @ApiProperty({ type: () => [SystemPostDto] })
+  items!: readonly SystemPostDto[];
+}
+
 export class SystemPostQueryDto {
   @ApiProperty({ required: false, default: 1 })
   page?: number | string;

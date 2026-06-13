@@ -1,4 +1,6 @@
 import {
+  ArrowDownOutlined,
+  ArrowUpOutlined,
   DeleteOutlined,
   EditOutlined,
   EyeOutlined,
@@ -36,6 +38,7 @@ import {
   deleteOpenCoreSystemPosts,
   getOpenCoreSystemPost,
   listOpenCoreSystemPosts,
+  updateOpenCoreSystemPostOrder,
   updateOpenCoreSystemPost,
 } from '@/services/opencore/platform';
 import {
@@ -101,6 +104,31 @@ function createDetailFields(record: SystemPostSummary): DetailField[] {
   ];
 }
 
+function createReorderedPostItems(
+  rows: readonly SystemPostSummary[],
+  code: string,
+  direction: 'down' | 'up',
+): { code: string; order: number }[] | undefined {
+  const index = rows.findIndex((record) => record.code === code);
+  const targetIndex = direction === 'up' ? index - 1 : index + 1;
+
+  if (index < 0 || targetIndex < 0 || targetIndex >= rows.length) {
+    return undefined;
+  }
+
+  const reordered = [...rows];
+  const [moved] = reordered.splice(index, 1);
+  if (!moved) {
+    return undefined;
+  }
+
+  reordered.splice(targetIndex, 0, moved);
+  return reordered.map((record, itemIndex) => ({
+    code: record.code,
+    order: (itemIndex + 1) * 10,
+  }));
+}
+
 export default function PostsPage() {
   const [form] = Form.useForm<PostFormValues>();
   const [rows, setRows] = useState<readonly SystemPostSummary[]>(fallbackRows);
@@ -111,6 +139,7 @@ export default function PostsPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [batchDeleting, setBatchDeleting] = useState(false);
+  const [orderingPostCode, setOrderingPostCode] = useState<string>();
   const [selectedRowKeys, setSelectedRowKeys] = useState<readonly Key[]>([]);
   const selectedPostCodes = useMemo(
     () =>
@@ -245,6 +274,26 @@ export default function PostsPage() {
     }
   };
 
+  const movePost = async (
+    record: SystemPostSummary,
+    direction: 'down' | 'up',
+  ) => {
+    const items = createReorderedPostItems(rows, record.code, direction);
+
+    if (!items) {
+      return;
+    }
+
+    setOrderingPostCode(record.code);
+    try {
+      await updateOpenCoreSystemPostOrder({ items });
+      message.success('Post order saved.');
+      await loadPosts();
+    } finally {
+      setOrderingPostCode(undefined);
+    }
+  };
+
   const columns: ProColumns<SystemPostSummary>[] = [
     {
       title: 'Name',
@@ -270,9 +319,34 @@ export default function PostsPage() {
     {
       title: 'Actions',
       valueType: 'option',
-      width: 184,
+      width: 264,
       render: (_, record) => (
         <Space size="small">
+          <Tooltip title="Move up">
+            <Button
+              aria-label={`Move up ${record.name}`}
+              disabled={
+                rows.findIndex((item) => item.code === record.code) <= 0
+              }
+              icon={<ArrowUpOutlined />}
+              loading={orderingPostCode === record.code}
+              onClick={() => void movePost(record, 'up')}
+              size="small"
+            />
+          </Tooltip>
+          <Tooltip title="Move down">
+            <Button
+              aria-label={`Move down ${record.name}`}
+              disabled={
+                rows.findIndex((item) => item.code === record.code) >=
+                rows.length - 1
+              }
+              icon={<ArrowDownOutlined />}
+              loading={orderingPostCode === record.code}
+              onClick={() => void movePost(record, 'down')}
+              size="small"
+            />
+          </Tooltip>
           <Tooltip title="Detail">
             <Button
               aria-label={`View ${record.name}`}

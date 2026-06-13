@@ -101,6 +101,50 @@ describe('@opencore/system system-post', () => {
     await expect(service.getPost('qa_batch_b')).rejects.toThrow(
       NotFoundException,
     );
+
+    await service.createPost({
+      code: 'qa_order_a',
+      name: 'Quality Order A',
+      order: 40,
+    });
+    await service.createPost({
+      code: 'qa_order_b',
+      name: 'Quality Order B',
+      order: 50,
+    });
+    await expect(
+      service.updatePostOrder({
+        items: [
+          { code: 'qa_order_b', order: 10 },
+          { code: 'qa_order_a', order: 20 },
+        ],
+      }),
+    ).resolves.toMatchObject({
+      updatedCount: 2,
+      items: [
+        expect.objectContaining({ code: 'qa_order_b', order: 10 }),
+        expect.objectContaining({ code: 'qa_order_a', order: 20 }),
+      ],
+    });
+    await expect(
+      service.updatePostOrder({
+        items: [
+          { code: 'qa_order_a', order: 10 },
+          { code: 'qa_order_a', order: 20 },
+        ],
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.updatePostOrder({
+        items: [
+          { code: 'qa_order_a', order: 10 },
+          { code: 'missing_order_post', order: 20 },
+        ],
+      }),
+    ).rejects.toThrow(NotFoundException);
+
+    await service.deletePost('qa_order_a');
+    await service.deletePost('qa_order_b');
     await expect(service.deletePost('qa')).resolves.toEqual({ deleted: true });
   });
 
@@ -131,6 +175,8 @@ describe('@opencore/system system-post', () => {
     const code = `post_${testRunId}`;
     const batchCodeA = `${code}_batch_a`;
     const batchCodeB = `${code}_batch_b`;
+    const orderCodeA = `${code}_order_a`;
+    const orderCodeB = `${code}_order_b`;
 
     beforeEach(async () => {
       await cleanupTestRows();
@@ -245,9 +291,59 @@ describe('@opencore/system system-post', () => {
       ).resolves.toEqual([]);
     });
 
+    it('persists post order updates through Prisma', async () => {
+      await service.createPost({
+        code: orderCodeA,
+        name: 'Prisma Order A',
+        order: 61,
+        enabled: true,
+      });
+      await service.createPost({
+        code: orderCodeB,
+        name: 'Prisma Order B',
+        order: 62,
+        enabled: true,
+      });
+
+      await expect(
+        service.updatePostOrder({
+          items: [
+            { code: orderCodeB, order: 10 },
+            { code: orderCodeA, order: 20 },
+          ],
+        }),
+      ).resolves.toMatchObject({
+        updatedCount: 2,
+        items: [
+          expect.objectContaining({ code: orderCodeB, order: 10 }),
+          expect.objectContaining({ code: orderCodeA, order: 20 }),
+        ],
+      });
+      await expect(
+        service.updatePostOrder({
+          items: [
+            { code: orderCodeA, order: 10 },
+            { code: 'missing_order_post', order: 20 },
+          ],
+        }),
+      ).rejects.toThrow(NotFoundException);
+      await expect(service.getPost(orderCodeA)).resolves.toMatchObject({
+        code: orderCodeA,
+        order: 20,
+      });
+      await expect(service.listPostOptions()).resolves.toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ code: orderCodeB, order: 10 }),
+          expect.objectContaining({ code: orderCodeA, order: 20 }),
+        ]),
+      );
+    });
+
     async function cleanupTestRows(): Promise<void> {
       await prisma.systemPost.deleteMany({
-        where: { code: { in: [code, batchCodeA, batchCodeB] } },
+        where: {
+          code: { in: [code, batchCodeA, batchCodeB, orderCodeA, orderCodeB] },
+        },
       });
     }
   });

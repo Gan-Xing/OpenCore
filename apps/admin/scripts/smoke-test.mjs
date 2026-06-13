@@ -384,6 +384,7 @@ if (
   !opencorePlatformService.includes('getOpenCoreSystemPost') ||
   !opencorePlatformService.includes('createOpenCoreSystemPost') ||
   !opencorePlatformService.includes('updateOpenCoreSystemPost') ||
+  !opencorePlatformService.includes('updateOpenCoreSystemPostOrder') ||
   !opencorePlatformService.includes('deleteOpenCoreSystemPost') ||
   !opencorePlatformService.includes('deleteOpenCoreSystemPosts') ||
   !opencorePlatformService.includes('listOpenCoreSystemNotices') ||
@@ -1027,8 +1028,12 @@ if (
   !postsPage.includes('getOpenCoreSystemPost') ||
   !postsPage.includes('createOpenCoreSystemPost') ||
   !postsPage.includes('updateOpenCoreSystemPost') ||
+  !postsPage.includes('updateOpenCoreSystemPostOrder') ||
   !postsPage.includes('deleteOpenCoreSystemPost') ||
   !postsPage.includes('deleteOpenCoreSystemPosts') ||
+  !postsPage.includes('ArrowUpOutlined') ||
+  !postsPage.includes('ArrowDownOutlined') ||
+  !postsPage.includes('Post order saved.') ||
   !postsPage.includes('selectedPostCodes') ||
   !postsPage.includes('rowSelection') ||
   !postsPage.includes('Delete selected') ||
@@ -1038,7 +1043,7 @@ if (
   !postsPage.includes('rows={filteredRows}')
 ) {
   throw new Error(
-    'Posts page must use live SDK CRUD and batch deletion with bounded filtering and current-page export.',
+    'Posts page must use live SDK CRUD, batch deletion, order updates, bounded filtering and current-page export.',
   );
 }
 
