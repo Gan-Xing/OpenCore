@@ -14,10 +14,13 @@ import type {
 } from './system-config.dto';
 import type { SystemConfigRecord } from './system-config.records';
 import {
+  parseFeatureFlagAudienceRulesConfig,
   createSystemConfigExportPreview,
   SystemConfigRepository,
+  toFeatureFlagAudienceName,
   toFeatureFlagName,
   toFeatureFlagRolloutName,
+  type FeatureFlagAudienceRulesConfig,
   type SystemConfigBatchMutationRecord,
   type SystemConfigExportPreview,
   type SystemConfigPageQuery,
@@ -36,6 +39,7 @@ export type SystemConfigCacheRefreshResult = {
 };
 
 export type SystemConfigFeatureFlagRule = {
+  audienceRules: FeatureFlagAudienceRulesConfig;
   enabled: boolean;
   rolloutPercentage: number;
 };
@@ -54,7 +58,12 @@ export type SystemConfigFeatureFlagEvaluationResult = {
   enabled: boolean;
   rolloutPercentage: number;
   bucket: number;
-  reason: 'global-disabled' | 'matched-rollout' | 'outside-rollout';
+  audienceMatched: boolean;
+  reason:
+    | 'audience-mismatch'
+    | 'global-disabled'
+    | 'matched-rollout'
+    | 'outside-rollout';
 };
 
 const ADMIN_TITLE_CONFIG_KEY = 'opencore.admin.title';
@@ -139,6 +148,9 @@ export class SystemConfigService {
   ): Promise<SystemConfigFeatureFlagEvaluationResult> {
     const flag = normalizeFeatureFlagEvaluationName(query?.flag);
     const subjectKey = normalizeFeatureFlagSubjectKey(query?.subjectKey);
+    const subjectAttributes = normalizeFeatureFlagSubjectAttributes(
+      query?.attributes,
+    );
     const rules = await this.listRuntimeFeatureFlagRules();
     const rule = rules[flag];
 
@@ -147,8 +159,12 @@ export class SystemConfigService {
     }
 
     const bucket = createFeatureFlagBucket(flag, subjectKey);
+    const audienceMatched = matchesFeatureFlagAudience(
+      rule.audienceRules,
+      subjectAttributes,
+    );
     const matched = bucket < rule.rolloutPercentage;
-    const enabled = rule.enabled && matched;
+    const enabled = rule.enabled && audienceMatched && matched;
 
     return {
       flag,
@@ -156,11 +172,14 @@ export class SystemConfigService {
       enabled,
       rolloutPercentage: rule.rolloutPercentage,
       bucket,
+      audienceMatched,
       reason: !rule.enabled
         ? 'global-disabled'
-        : matched
-          ? 'matched-rollout'
-          : 'outside-rollout',
+        : !audienceMatched
+          ? 'audience-mismatch'
+          : matched
+            ? 'matched-rollout'
+            : 'outside-rollout',
     };
   }
 
@@ -241,6 +260,7 @@ export class SystemConfigService {
   > {
     const enabledFlags: Record<string, boolean> = {};
     const rolloutPercentages: Record<string, number> = {};
+    const audienceRules: Record<string, FeatureFlagAudienceRulesConfig> = {};
     let page = 1;
 
     while (true) {
@@ -274,6 +294,20 @@ export class SystemConfigService {
             config.key,
           );
         }
+
+        const audienceName = toFeatureFlagAudienceName(config.key);
+        if (audienceName) {
+          if (config.visibility !== 'public' || config.valueType !== 'json') {
+            throw new BadRequestException(
+              `Feature flag audience config ${config.key} must be public json.`,
+            );
+          }
+
+          audienceRules[audienceName] = parseFeatureFlagAudienceRulesConfig(
+            config.value,
+            config.key,
+          );
+        }
       }
 
       if (page >= result.totalPages) {
@@ -290,12 +324,24 @@ export class SystemConfigService {
       }
     }
 
+    for (const flagName of Object.keys(audienceRules)) {
+      if (enabledFlags[flagName] === undefined) {
+        throw new BadRequestException(
+          `Feature flag audience ${flagName} is missing its enabled config.`,
+        );
+      }
+    }
+
     return Object.fromEntries(
       Object.entries(enabledFlags)
         .sort(([left], [right]) => left.localeCompare(right))
         .map(([name, enabled]) => [
           name,
           {
+            audienceRules: audienceRules[name] ?? {
+              mode: 'all',
+              rules: [],
+            },
             enabled,
             rolloutPercentage: rolloutPercentages[name] ?? 100,
           },
@@ -369,12 +415,134 @@ function normalizeFeatureFlagSubjectKey(value: unknown): string {
   return normalized;
 }
 
+function normalizeFeatureFlagSubjectAttributes(
+  value: unknown,
+): Record<string, string> {
+  if (value === undefined || value === null || value === '') {
+    return {};
+  }
+
+  if (typeof value !== 'string') {
+    throw new BadRequestException(
+      'Feature flag subject attributes must be a JSON object string.',
+    );
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    throw new BadRequestException(
+      'Feature flag subject attributes must be valid JSON.',
+    );
+  }
+
+  if (!isPlainRecord(parsed)) {
+    throw new BadRequestException(
+      'Feature flag subject attributes must be a JSON object.',
+    );
+  }
+
+  const entries = Object.entries(parsed);
+  if (entries.length > 50) {
+    throw new BadRequestException(
+      'Feature flag subject attributes must not exceed 50 keys.',
+    );
+  }
+
+  return Object.fromEntries(
+    entries.map(([key, attributeValue]) => [
+      normalizeFeatureFlagSubjectAttributeKey(key),
+      normalizeFeatureFlagSubjectAttributeValue(attributeValue, key),
+    ]),
+  );
+}
+
 function createFeatureFlagBucket(flag: string, subjectKey: string): number {
   const hash = createHash('sha256')
     .update(`${flag}:${subjectKey}`, 'utf8')
     .digest();
 
   return hash.readUInt32BE(0) % 100;
+}
+
+function matchesFeatureFlagAudience(
+  audienceRules: FeatureFlagAudienceRulesConfig,
+  subjectAttributes: Record<string, string>,
+): boolean {
+  if (audienceRules.rules.length === 0) {
+    return true;
+  }
+
+  const results = audienceRules.rules.map((rule) => {
+    const actual = subjectAttributes[rule.attribute];
+
+    if (actual === undefined) {
+      return rule.operator === 'not_equals' || rule.operator === 'not_in';
+    }
+
+    if (rule.operator === 'equals') {
+      return actual === rule.values[0];
+    }
+
+    if (rule.operator === 'not_equals') {
+      return actual !== rule.values[0];
+    }
+
+    if (rule.operator === 'in') {
+      return rule.values.includes(actual);
+    }
+
+    return !rule.values.includes(actual);
+  });
+
+  return audienceRules.mode === 'all'
+    ? results.every(Boolean)
+    : results.some(Boolean);
+}
+
+function normalizeFeatureFlagSubjectAttributeKey(value: string): string {
+  const normalized = value.trim();
+  if (!/^[A-Za-z0-9_.-]{1,80}$/.test(normalized)) {
+    throw new BadRequestException(
+      'Feature flag subject attribute key is invalid.',
+    );
+  }
+
+  return normalized;
+}
+
+function normalizeFeatureFlagSubjectAttributeValue(
+  value: unknown,
+  key: string,
+): string {
+  if (
+    typeof value !== 'string' &&
+    typeof value !== 'number' &&
+    typeof value !== 'boolean'
+  ) {
+    throw new BadRequestException(
+      `Feature flag subject attribute ${key} must be a string, number or boolean.`,
+    );
+  }
+
+  const normalized = String(value).trim();
+  if (!normalized || normalized.length > 100) {
+    throw new BadRequestException(
+      `Feature flag subject attribute ${key} must be 1 to 100 characters.`,
+    );
+  }
+
+  return normalized;
+}
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return false;
+  }
+
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
 }
 
 function assertRuntimeConfigMutation(

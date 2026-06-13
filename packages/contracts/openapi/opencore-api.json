@@ -1762,6 +1762,15 @@
             "required": true,
             "in": "query",
             "schema": { "example": "user_admin", "type": "string" }
+          },
+          {
+            "name": "attributes",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "{\"dept\":\"operations\",\"role\":\"admin\"}",
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -7106,7 +7115,7 @@
           "value": { "type": "string" },
           "valueType": {
             "type": "string",
-            "enum": ["boolean", "number", "string"]
+            "enum": ["boolean", "json", "number", "string"]
           },
           "encrypted": { "type": "boolean" },
           "description": { "type": "string" },
@@ -7164,12 +7173,23 @@
                   "type": "number",
                   "minimum": 0,
                   "maximum": 100
+                },
+                "audienceRules": {
+                  "type": "object",
+                  "properties": {
+                    "mode": { "type": "string", "enum": ["all", "any"] },
+                    "rules": { "type": "array", "items": { "type": "object" } }
+                  }
                 }
               },
-              "required": ["enabled", "rolloutPercentage"]
+              "required": ["enabled", "rolloutPercentage", "audienceRules"]
             },
             "example": {
-              "notice.inbox": { "enabled": true, "rolloutPercentage": 100 }
+              "notice.inbox": {
+                "enabled": true,
+                "rolloutPercentage": 100,
+                "audienceRules": { "mode": "all", "rules": [] }
+              }
             }
           },
           "loginLockoutMinutes": {
@@ -7200,7 +7220,7 @@
           "value": { "type": "string" },
           "valueType": {
             "type": "string",
-            "enum": ["boolean", "number", "string"]
+            "enum": ["boolean", "json", "number", "string"]
           }
         },
         "required": ["key", "value", "valueType"]
@@ -7217,9 +7237,15 @@
             "maximum": 100
           },
           "bucket": { "type": "number", "minimum": 0, "maximum": 99 },
+          "audienceMatched": { "type": "boolean" },
           "reason": {
             "type": "string",
-            "enum": ["global-disabled", "matched-rollout", "outside-rollout"]
+            "enum": [
+              "audience-mismatch",
+              "global-disabled",
+              "matched-rollout",
+              "outside-rollout"
+            ]
           }
         },
         "required": [
@@ -7228,6 +7254,7 @@
           "enabled",
           "rolloutPercentage",
           "bucket",
+          "audienceMatched",
           "reason"
         ]
       },
@@ -7265,7 +7292,7 @@
           "value": { "type": "string" },
           "valueType": {
             "type": "string",
-            "enum": ["boolean", "number", "string"]
+            "enum": ["boolean", "json", "number", "string"]
           },
           "description": { "type": "string" },
           "remark": { "type": "string" },
@@ -7285,7 +7312,7 @@
           "value": { "type": "string" },
           "valueType": {
             "type": "string",
-            "enum": ["boolean", "number", "string"]
+            "enum": ["boolean", "json", "number", "string"]
           },
           "description": { "type": "string" },
           "remark": { "type": "string" },

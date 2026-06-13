@@ -20,8 +20,8 @@ describe('@opencore/system system-config', () => {
       expect.objectContaining({
         page: 1,
         pageSize: 1,
-        total: 6,
-        totalPages: 6,
+        total: 7,
+        totalPages: 7,
       }),
     );
     await expect(
@@ -55,6 +55,7 @@ describe('@opencore/system system-config', () => {
       },
       featureFlagRules: {
         'notice.inbox': {
+          audienceRules: { mode: 'all', rules: [] },
           enabled: true,
           rolloutPercentage: 100,
         },
@@ -72,6 +73,7 @@ describe('@opencore/system system-config', () => {
       subjectKey: 'user_admin',
       enabled: true,
       rolloutPercentage: 100,
+      audienceMatched: true,
       bucket: expect.any(Number),
       reason: 'matched-rollout',
     });
@@ -198,6 +200,7 @@ describe('@opencore/system system-config', () => {
         'public',
         'featureFlag',
         'featureRollout',
+        'featureAudience',
         'system',
         'description',
         'remark',
@@ -218,6 +221,7 @@ describe('@opencore/system system-config', () => {
       },
       featureFlagRules: {
         'notice.inbox': {
+          audienceRules: { mode: 'all', rules: [] },
           enabled: true,
           rolloutPercentage: 100,
         },
@@ -246,6 +250,7 @@ describe('@opencore/system system-config', () => {
       },
       featureFlagRules: {
         'notice.inbox': {
+          audienceRules: { mode: 'all', rules: [] },
           enabled: false,
           rolloutPercentage: 100,
         },
@@ -271,6 +276,38 @@ describe('@opencore/system system-config', () => {
     });
     await service.updateConfig('feature.notice.inbox.rolloutPercentage', {
       value: '100',
+    });
+    await service.updateConfig('feature.notice.inbox.audienceRules', {
+      value: JSON.stringify({
+        mode: 'all',
+        rules: [
+          { attribute: 'dept', operator: 'equals', values: ['operations'] },
+        ],
+      }),
+    });
+    await expect(
+      service.evaluateFeatureFlag({
+        flag: 'notice.inbox',
+        subjectKey: 'user_admin',
+      }),
+    ).resolves.toMatchObject({
+      audienceMatched: false,
+      enabled: false,
+      reason: 'audience-mismatch',
+    });
+    await expect(
+      service.evaluateFeatureFlag({
+        attributes: '{"dept":"operations"}',
+        flag: 'notice.inbox',
+        subjectKey: 'user_admin',
+      }),
+    ).resolves.toMatchObject({
+      audienceMatched: true,
+      enabled: true,
+      reason: 'matched-rollout',
+    });
+    await service.updateConfig('feature.notice.inbox.audienceRules', {
+      value: '{"mode":"all","rules":[]}',
     });
 
     await expect(
@@ -320,6 +357,36 @@ describe('@opencore/system system-config', () => {
         value: '50.5',
         valueType: 'number',
         visibility: 'public',
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.updateConfig('feature.notice.inbox.audienceRules', {
+        valueType: 'string',
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.updateConfig('feature.notice.inbox.audienceRules', {
+        visibility: 'private',
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.updateConfig('feature.notice.inbox.audienceRules', {
+        value: '{"mode":"some","rules":[]}',
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.createConfig({
+        key: 'feature.sample.audienceRules',
+        value: 'not-json',
+        valueType: 'json',
+        visibility: 'public',
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.evaluateFeatureFlag({
+        attributes: '{"dept":["operations"]}',
+        flag: 'notice.inbox',
+        subjectKey: 'user_admin',
       }),
     ).rejects.toThrow(BadRequestException);
     await expect(
@@ -585,6 +652,7 @@ describe('@opencore/system system-config', () => {
         columns: expect.arrayContaining([
           'featureFlag',
           'featureRollout',
+          'featureAudience',
           'system',
         ]),
         rowCount: expect.any(Number),

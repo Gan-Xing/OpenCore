@@ -1159,3 +1159,41 @@ operator-managed rollout.
 This stays inside the current S7 System config boundary. It does not introduce
 audience targeting, multi-environment rollout governance, AB experiment
 analytics, full experimentation UI or external KMS/secret rotation.
+
+## Round 65 Audit: core.config Feature Flag Audience
+
+After Round 64, `core.config` had global enablement plus deterministic
+percentage rollout, but it could not target a feature by operator-defined user
+or request attributes.
+
+- RuoYi-style config management supports typed operator-owned runtime
+  parameters, which maps cleanly to a public json audience-rules key.
+- Yudao-style infra/system surfaces imply deeper feature governance, but
+  OpenCore should first provide typed attribute targeting before admitting
+  multi-environment approvals or experiment analytics.
+- OpenCore already had config CRUD, runtime config, feature flag boolean
+  guards, secret vault, rollout percentage, evaluate API, Admin Config UI and
+  fixed deploy smoke.
+- The lowest-dependency loop was `feature.*.audienceRules` plus
+  attribute-aware evaluation, not a full experimentation workbench.
+- Repository guards needed to reject private audience rules, non-json value
+  types, invalid json, unsupported modes/operators, malformed attributes and
+  duplicate audience values.
+- Runtime reads needed to include `audienceRules` in `featureFlagRules` while
+  preserving `featureFlags` and rollout fields.
+- Evaluation needed bounded primitive `attributes`, explicit
+  `audienceMatched`, an `audience-mismatch` reason and matching attributes when
+  smoke asserts rollout-only behavior.
+- Admin needed a visible `Audience Rules` column and `Set audience` modal, not
+  a backend-only config key.
+- Fixed-port, deploy and public smoke needed to prove seeded audience rules,
+  runtime propagation, attribute matching, invalid create/update shapes, bad
+  attributes and stale Config bundle markers.
+- The deploy script needed a stale Config bundle guard for `Audience Rules` and
+  `Set audience`, because stale frontend artifacts have repeatedly hidden newly
+  deployed workflows.
+
+This stays inside the current S7 System config boundary. It does not introduce
+multi-environment rollout governance, AB experiment analytics, full
+experimentation UI, nested segment builders, a general rule-expression engine
+or external KMS/secret rotation.

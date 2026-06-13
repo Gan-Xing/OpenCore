@@ -85,7 +85,7 @@ export type SystemConfigSummary = {
   name: string;
   key: string;
   value: string;
-  valueType: 'boolean' | 'number' | 'string';
+  valueType: 'boolean' | 'json' | 'number' | 'string';
   encrypted: boolean;
   description?: string;
   remark?: string;
@@ -105,7 +105,18 @@ export type SystemConfigRuntimeSummary = {
   featureFlags: Record<string, boolean>;
   featureFlagRules: Record<
     string,
-    { enabled: boolean; rolloutPercentage: number }
+    {
+      audienceRules: {
+        mode: 'all' | 'any';
+        rules: readonly {
+          attribute: string;
+          operator: 'equals' | 'in' | 'not_equals' | 'not_in';
+          values: readonly string[];
+        }[];
+      };
+      enabled: boolean;
+      rolloutPercentage: number;
+    }
   >;
   loginLockoutMinutes: number;
   loginMaxFailedAttempts: number;
@@ -117,7 +128,12 @@ export type SystemConfigFeatureFlagEvaluationSummary = {
   enabled: boolean;
   rolloutPercentage: number;
   bucket: number;
-  reason: 'global-disabled' | 'matched-rollout' | 'outside-rollout';
+  audienceMatched: boolean;
+  reason:
+    | 'audience-mismatch'
+    | 'global-disabled'
+    | 'matched-rollout'
+    | 'outside-rollout';
 };
 
 export type SystemConfigCacheRefreshSummary = {

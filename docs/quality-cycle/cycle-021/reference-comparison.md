@@ -2114,3 +2114,51 @@ OpenCore does not claim audience targeting, rule expressions,
 multi-environment rollout approval, AB experiment analytics or a full
 experimentation platform in this round. Those remain separate config
 productization stages after deterministic percentage rollout.
+
+## Round 65 Config Feature Flag Audience Reference Shape
+
+RuoYi-style system config management supports operator-owned runtime
+parameters with explicit keys and types. That shape is enough for a bounded
+json audience-rules value when the repository guards the schema and keeps it
+public-only.
+
+Yudao-style infra/system surfaces imply deeper feature governance can grow into
+approval workflows and experiment analytics later, but a foundation platform
+first needs attribute-aware evaluation that is deterministic, typed and easy to
+smoke. The relevant product shape for OpenCore is therefore flat audience
+matching plus existing rollout evaluation, not a general expression engine or
+full experimentation clone.
+
+OpenCore already had:
+
+- system config CRUD from Round 9;
+- public value-by-key plus cache refresh from Round 24;
+- category/name/remark metadata from Round 37;
+- XLSX export from Round 38;
+- batch delete and system delete policy from Round 39/40;
+- runtime Admin/login policy propagation from Round 44/46/49;
+- public boolean runtime feature flags from Round 58;
+- secret vault foundation from Round 62;
+- percentage rollout and deterministic evaluation from Round 64;
+- fixed-port smoke/deploy and stale Config bundle guards.
+
+Round 65 admits the feature-flag audience stage:
+
+- define `feature.*.audienceRules` as a public json config;
+- validate `{ mode: "all" | "any", rules: [...] }` with bounded flat rules;
+- support `equals`, `in`, `not_equals` and `not_in` operators over primitive
+  subject attributes;
+- expose runtime `featureFlagRules.*.audienceRules`;
+- extend `GET /api/core/config/feature-flags/evaluate` with an `attributes`
+  JSON query parameter;
+- return `audienceMatched` and explicit `audience-mismatch` reason before
+  rollout result reasons;
+- surface audience rules in Admin Config with a `Set audience` control;
+- prove fixed-port, deploy and public smoke for seeded audience rules, runtime
+  propagation, attribute matching, invalid shape guards, bad attributes and
+  stale Admin bundle markers.
+
+OpenCore does not claim multi-environment rollout approval, AB experiment
+analytics, a full experimentation UI, nested segment builders or a general
+rule-expression engine in this round. Those remain separate config
+productization stages after bounded audience targeting.

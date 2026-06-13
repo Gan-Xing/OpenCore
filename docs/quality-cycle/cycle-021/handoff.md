@@ -4,9 +4,9 @@ Date: 2026-06-13
 Repository: `Gan-Xing/OpenCore`
 Default branch: `main`
 Latest observed feature commit: this feature+docs commit,
-`feat(config): evaluate feature flag rollouts / 评估功能开关灰度比例`
+`feat(config): target feature flags by audience / 按受众规则定位功能开关`
 Latest deployed feature commit: this feature+docs commit,
-`feat(config): evaluate feature flag rollouts / 评估功能开关灰度比例`
+`feat(config): target feature flags by audience / 按受众规则定位功能开关`
 Latest deployed hardening commit: `4df5dd1 fix(system): satisfy xlsx export lint guard / 修复 XLSX 导出 lint 守卫`
 
 ## One-sentence Goal
@@ -26,6 +26,9 @@ Use this contract for every follow-up round:
   stage. It does not mean the product only receives a minimal final
   implementation; the same product can and should take multiple rounds until it
   reaches the admitted waterline.
+- Feature code, tests, deploy guards and round documentation for the same
+  stage should land in one feature+docs commit. Use a separate docs-only commit
+  only when the runtime artifacts are unchanged.
 - Sort work by lowest dependency and product foundation value, then fill the
   necessary API, SDK, Admin, permission/menu, seed, OpenAPI, smoke/e2e and docs
   surfaces for that stage.
@@ -151,6 +154,7 @@ productization waterline completion; see
 - Round 62 `core.config` secret vault/KMS foundation stage 11
 - Round 63 `core.notice` local delivery provider execution stage 6
 - Round 64 `core.config` feature flag rollout percentage stage 12
+- Round 65 `core.config` feature flag audience targeting stage 13
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -884,6 +888,21 @@ private visibility、非 number 类型或 0-100 以外的值。固定 smoke、�
 stale Config bundle。注意：这轮关闭的是百分比灰度与确定性评估基础，不等于 audience targeting、规则引擎、
 多环境发布审批、AB 实验指标或完整 experimentation platform 已完成。
 
+Round 65 继续补 `core.config` P1 队列，把 Round 64 留下的 audience targeting 变成
+可运行闭环。OpenCore 现在约定 `feature.*.audienceRules` 为 public json 配置，形态为
+`{ mode: "all" | "any", rules: [{ attribute, operator, values }] }`，支持
+`equals/in/not_equals/not_in` 这组扁平属性匹配；seed 内置
+`feature.notice.inbox.audienceRules={"mode":"all","rules":[]}`。`GET
+/api/core/config/runtime` 的 `featureFlagRules` 现在同时返回
+`audienceRules`，公开 evaluate API 接受 `attributes` JSON 查询参数并返回
+`audienceMatched`，未命中时给出 `audience-mismatch` reason，再与全局开关和百分比灰度共同决定
+`enabled`。API/SDK/OpenAPI/Admin 同步：valueType 扩展为 `json`；SDK
+`evaluateFeatureFlag` 支持 attributes；Admin Config 页面新增 `Audience Rules` 列和
+`Set audience` 弹窗；仓储阻止 audience rules 使用非 public、非 json 或非法规则形态。固定 smoke、部署
+smoke 和公网 smoke 均验证 seeded audience、runtime 传播、attributes evaluate、坏形态守卫、
+Admin stale bundle guard 和 OpenAPI markers。注意：这轮关闭的是基础受众规则，不等于多环境发布审批、
+实验指标、完整 experimentation platform 或通用规则引擎完成。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -895,7 +914,7 @@ The productization waterline now classifies:
   Round 7/19/22/23/28/29/30/31/32/33/34/35/36/41/54 `core.user`,
   Round 3/22/25/42/53 `core.post`.
 - First loop, enhance: Round 1/55/56/60/61/63 `core.notice`,
-  Round 9/24/37/38/39/40/44/46/49/58/62/64 `core.config`,
+  Round 9/24/37/38/39/40/44/46/49/58/62/64/65 `core.config`,
   Round 11/26/45/47/48/49/50/51/57/59 `core.login-log`.
 - Thin, rework: none after Round 16.
 
@@ -923,10 +942,12 @@ finds another blocker:
    database plaintext smoke guards and stale Config bundle checks. Round 64
    adds `feature.*.rolloutPercentage`, runtime `featureFlagRules`, public
    deterministic evaluate API, SDK/Admin rollout controls and smoke/deploy
-   guards. Remaining config work is audience targeting, multi-environment
-   rollout governance or a full experimentation surface; external KMS provider
-   binding, key rotation and secret version history are later security
-   hardening stages, not blockers for this vault foundation.
+   guards. Round 65 adds public json `feature.*.audienceRules`, runtime
+   `audienceRules`, attribute-aware evaluate API, SDK/Admin audience controls
+   and smoke/deploy stale-bundle guards. Remaining config work is
+   multi-environment rollout governance or a full experimentation surface;
+   external KMS provider binding, key rotation and secret version history are
+   later security hardening stages, not blockers for this vault foundation.
 2. `core.login-log`: Round 26 closed browser/OS parsing and server-side IP/time
    filters. Round 45 closed persisted login type/result schema, Admin display
    and result/logType filters. Round 47 closed persisted failed-attempt
@@ -981,7 +1002,7 @@ finds another blocker:
   frontend bundle/cache guards.
 - P1 remaining: `core.notice` real WebSocket/SMS/Mail adapter execution and
   multi-channel retry/failure queues,
-  `core.config` feature-flag audience targeting and full experimentation
+  `core.config` multi-environment rollout governance and full experimentation
   surfaces,
   and `core.login-log` optional external GeoIP country/city/provider depth or
   admitted mobile/SMS/social login logging.
@@ -996,7 +1017,7 @@ finds another blocker:
 
 Reference parity is measured by product capability waterline, not by replaying
 RuoYi/Yudao commit history. The remaining RuoYi-style foundation backlog after
-Round 64 is roughly several focused P1 loops, not tens of thousands of commits.
+Round 65 is roughly several focused P1 loops, not tens of thousands of commits.
 Yudao Full parity is a different program: BPM, pay, mall, member, CRM, ERP,
 AI and other business domains would require dozens to 100+ separately admitted
 deployable loops, and should not be counted as unfinished cycle-021 foundation

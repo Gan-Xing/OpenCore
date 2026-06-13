@@ -134,6 +134,7 @@ export type SystemManagementClient = {
   evaluateFeatureFlag: (
     flag: string,
     subjectKey: string,
+    attributes?: Record<string, boolean | number | string>,
   ) => Promise<SystemConfigFeatureFlagEvaluationSummary>;
   getConfigValueByKey: (
     token: Token,
@@ -451,9 +452,11 @@ export function createSystemManagementClient(
       }),
     getConfigRuntime: () =>
       request<SystemConfigRuntimeSummary>('/core/config/runtime'),
-    evaluateFeatureFlag: (flag, subjectKey) =>
+    evaluateFeatureFlag: (flag, subjectKey, attributes) =>
       request<SystemConfigFeatureFlagEvaluationSummary>(
         withQuery('/core/config/feature-flags/evaluate', {
+          attributes:
+            attributes === undefined ? undefined : JSON.stringify(attributes),
           flag,
           subjectKey,
         }),

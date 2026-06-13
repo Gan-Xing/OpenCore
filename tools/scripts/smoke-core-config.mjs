@@ -36,6 +36,7 @@ const batchKeyB = `opencore.smoke.config.batch.${runId}.b`;
 const featureFlagKey = `feature.smoke.${runId}.enabled`;
 const featureFlagName = `smoke.${runId}`;
 const featureFlagRolloutKey = `feature.smoke.${runId}.rolloutPercentage`;
+const featureFlagAudienceKey = `feature.smoke.${runId}.audienceRules`;
 const secretKey = `auth.token.secret.${runId}`;
 let token;
 let originalAdminTitle;
@@ -169,6 +170,34 @@ try {
     '100',
     'seeded notice inbox rollout value',
   );
+  const seededFeatureAudienceConfig = await apiRequest(
+    '/core/config/feature.notice.inbox.audienceRules',
+  );
+  assertEqual(
+    seededFeatureAudienceConfig.system,
+    true,
+    'seeded notice inbox audience system flag',
+  );
+  assertEqual(
+    seededFeatureAudienceConfig.public,
+    true,
+    'seeded notice inbox audience public flag',
+  );
+  assertEqual(
+    seededFeatureAudienceConfig.visibility,
+    'public',
+    'seeded notice inbox audience visibility',
+  );
+  assertEqual(
+    seededFeatureAudienceConfig.valueType,
+    'json',
+    'seeded notice inbox audience value type',
+  );
+  assertEqual(
+    seededFeatureAudienceConfig.value,
+    '{"mode":"all","rules":[]}',
+    'seeded notice inbox audience value',
+  );
   const seededSecretConfig = await apiRequest(
     '/core/config/auth.jwt.secretRef',
   );
@@ -221,6 +250,11 @@ try {
     100,
     'initial notice inbox feature flag rollout',
   );
+  assertDeepEqual(
+    initialRuntimeConfig.featureFlagRules['notice.inbox'].audienceRules,
+    { mode: 'all', rules: [] },
+    'initial notice inbox feature flag audience',
+  );
   const seededFeatureEvaluation = await request(
     `${apiPrefix}/core/config/feature-flags/evaluate?flag=notice.inbox&subjectKey=smoke-admin`,
   );
@@ -255,6 +289,11 @@ try {
     'matched-rollout',
     'seeded feature evaluation reason',
   );
+  assertEqual(
+    seededFeatureEvaluation.audienceMatched,
+    true,
+    'seeded feature evaluation audience',
+  );
   await request(
     `${apiPrefix}/core/config/feature-flags/evaluate?flag=bad_flag&subjectKey=smoke-admin`,
     { expected: [400] },
@@ -266,6 +305,10 @@ try {
   await request(
     `${apiPrefix}/core/config/feature-flags/evaluate?flag=missing.flag&subjectKey=smoke-admin`,
     { expected: [404] },
+  );
+  await request(
+    `${apiPrefix}/core/config/feature-flags/evaluate?flag=notice.inbox&subjectKey=smoke-admin&attributes=%5B%5D`,
+    { expected: [400] },
   );
   assertEqual(
     initialRuntimeConfig.loginLockoutMinutes,
@@ -463,6 +506,42 @@ try {
     },
     expected: [400],
   });
+  await apiRequest('/core/config', {
+    method: 'POST',
+    body: {
+      category: 'feature',
+      key: `feature.smoke.${runId}.invalid.audienceRules`,
+      name: 'Invalid smoke feature audience',
+      value: 'not-json',
+      valueType: 'json',
+      visibility: 'public',
+    },
+    expected: [400],
+  });
+  await apiRequest('/core/config', {
+    method: 'POST',
+    body: {
+      category: 'feature',
+      key: `feature.smoke.${runId}.invalid.audienceRules`,
+      name: 'Invalid smoke feature audience',
+      value: '{"mode":"all","rules":[]}',
+      valueType: 'string',
+      visibility: 'public',
+    },
+    expected: [400],
+  });
+  await apiRequest('/core/config', {
+    method: 'POST',
+    body: {
+      category: 'feature',
+      key: `feature.smoke.${runId}.invalid.audienceRules`,
+      name: 'Invalid smoke feature audience',
+      value: '{"mode":"all","rules":[]}',
+      valueType: 'json',
+      visibility: 'private',
+    },
+    expected: [400],
+  });
 
   const createdFeatureFlag = await apiRequest('/core/config', {
     method: 'POST',
@@ -576,6 +655,122 @@ try {
       : 'outside-rollout',
     'dynamic feature evaluation reason',
   );
+  const audienceRuleValue = JSON.stringify({
+    mode: 'all',
+    rules: [{ attribute: 'dept', operator: 'equals', values: ['operations'] }],
+  });
+  const createdFeatureAudience = await apiRequest('/core/config', {
+    method: 'POST',
+    body: {
+      category: 'feature',
+      key: featureFlagAudienceKey,
+      name: 'OpenCore smoke feature audience',
+      value: audienceRuleValue,
+      valueType: 'json',
+      description: 'OpenCore scripted runtime feature audience',
+      remark: 'Created by core.config smoke.',
+      visibility: 'public',
+    },
+  });
+  createdKeys.push(featureFlagAudienceKey);
+  assertEqual(
+    createdFeatureAudience.value,
+    audienceRuleValue,
+    'created feature audience value',
+  );
+  assertEqual(
+    createdFeatureAudience.valueType,
+    'json',
+    'created feature audience value type',
+  );
+  assertEqual(
+    createdFeatureAudience.visibility,
+    'public',
+    'created feature audience visibility',
+  );
+  const runtimeWithFeatureAudience = await request(
+    `${apiPrefix}/core/config/runtime`,
+  );
+  assertDeepEqual(
+    runtimeWithFeatureAudience.featureFlagRules[featureFlagName].audienceRules,
+    {
+      mode: 'all',
+      rules: [
+        { attribute: 'dept', operator: 'equals', values: ['operations'] },
+      ],
+    },
+    'runtime feature audience after create',
+  );
+  const missingAudienceEvaluation = await request(
+    `${apiPrefix}/core/config/feature-flags/evaluate?flag=${encodeURIComponent(featureFlagName)}&subjectKey=smoke-subject`,
+  );
+  assertEqual(
+    missingAudienceEvaluation.enabled,
+    false,
+    'missing audience feature evaluation disabled',
+  );
+  assertEqual(
+    missingAudienceEvaluation.audienceMatched,
+    false,
+    'missing audience feature evaluation audience',
+  );
+  assertEqual(
+    missingAudienceEvaluation.reason,
+    'audience-mismatch',
+    'missing audience feature evaluation reason',
+  );
+  const matchingAudienceEvaluation = await request(
+    `${apiPrefix}/core/config/feature-flags/evaluate?flag=${encodeURIComponent(featureFlagName)}&subjectKey=smoke-subject&attributes=${encodeURIComponent(
+      JSON.stringify({ dept: 'operations' }),
+    )}`,
+  );
+  assertEqual(
+    matchingAudienceEvaluation.audienceMatched,
+    true,
+    'matching audience feature evaluation audience',
+  );
+  assertEqual(
+    matchingAudienceEvaluation.enabled,
+    matchingAudienceEvaluation.bucket < 50,
+    'matching audience feature evaluation enabled by bucket',
+  );
+  const rejectedAudienceEvaluation = await request(
+    `${apiPrefix}/core/config/feature-flags/evaluate?flag=${encodeURIComponent(featureFlagName)}&subjectKey=smoke-subject&attributes=${encodeURIComponent(
+      JSON.stringify({ dept: 'engineering' }),
+    )}`,
+  );
+  assertEqual(
+    rejectedAudienceEvaluation.enabled,
+    false,
+    'rejected audience feature evaluation disabled',
+  );
+  assertEqual(
+    rejectedAudienceEvaluation.reason,
+    'audience-mismatch',
+    'rejected audience feature evaluation reason',
+  );
+  await apiRequest(`/core/config/${featureFlagAudienceKey}`, {
+    method: 'PATCH',
+    body: {
+      valueType: 'string',
+    },
+    expected: [400],
+  });
+  await apiRequest(`/core/config/${featureFlagAudienceKey}`, {
+    method: 'PATCH',
+    body: {
+      visibility: 'private',
+    },
+    expected: [400],
+  });
+  await apiRequest(`/core/config/${featureFlagAudienceKey}`, {
+    method: 'PATCH',
+    body: {
+      value:
+        '{"mode":"all","rules":[{"attribute":"dept","operator":"equals","values":["operations","operations"]}]}',
+    },
+    expected: [400],
+  });
   await apiRequest(`/core/config/${featureFlagRolloutKey}`, {
     method: 'PATCH',
     body: {
@@ -604,7 +799,9 @@ try {
     },
   });
   const zeroRolloutEvaluation = await request(
-    `${apiPrefix}/core/config/feature-flags/evaluate?flag=${encodeURIComponent(featureFlagName)}&subjectKey=smoke-subject`,
+    `${apiPrefix}/core/config/feature-flags/evaluate?flag=${encodeURIComponent(featureFlagName)}&subjectKey=smoke-subject&attributes=${encodeURIComponent(
+      JSON.stringify({ dept: 'operations' }),
+    )}`,
   );
   assertEqual(
     zeroRolloutEvaluation.enabled,
@@ -797,6 +994,11 @@ try {
   );
   assertIncludes(
     exportPreview.columns,
+    'featureAudience',
+    'config export feature audience column',
+  );
+  assertIncludes(
+    exportPreview.columns,
     'encrypted',
     'config export encrypted column',
   );
@@ -976,6 +1178,7 @@ try {
         'core.config.runtime-feature-flag-rules',
         'core.config.runtime-feature-flag-evaluate',
         'core.config.runtime-feature-flag-rollout',
+        'core.config.runtime-feature-flag-audience',
         'core.config.runtime-feature-flag-guards',
         'core.config.runtime-login-policy',
         'core.config.runtime-login-policy-guards',
@@ -1235,6 +1438,14 @@ function assertObject(value, label) {
 function assertEqual(actual, expected, label) {
   if (actual !== expected) {
     throw new Error(`${label} expected ${expected}, got ${actual}`);
+  }
+}
+
+function assertDeepEqual(actual, expected, label) {
+  if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+    throw new Error(
+      `${label} expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`,
+    );
   }
 }
 

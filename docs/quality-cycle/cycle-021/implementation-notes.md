@@ -5650,3 +5650,114 @@ Against public endpoints after deploy:
 
 - Feature+docs commit: this commit.
 - Push: `origin/main`.
+
+## Round 65 Capability
+
+Capability: `core.config` feature flag audience targeting productization.
+
+Round 65 extends Round 64 deterministic rollout from percentage-only rules into
+attribute-aware targeting. The goal is still not a full experimentation
+platform; it is the smallest deployable stage that lets operators define
+bounded public audience rules and lets runtime consumers evaluate them with
+subject attributes.
+
+Reference comparison:
+
+- RuoYi-style system config remains a typed runtime parameter center, so
+  feature audience rules belong in guarded public config rows.
+- Yudao-style infra/system capabilities imply richer feature governance, but a
+  foundation platform first needs typed targeting before multi-environment
+  approvals or experiment analytics are useful.
+- OpenCore already had config CRUD, runtime config, feature flag booleans,
+  secret vault, percentage rollout, evaluate API, Admin Config controls and
+  fixed deploy stale-bundle guards. The missing low-dependency layer was a
+  bounded audience-rules shape and attribute-aware evaluation.
+
+## Round 65 Implemented
+
+- Added `json` config value-type support across DTOs, repository normalization,
+  SDK types, registry fixtures and OpenAPI.
+- Added public json `feature.*.audienceRules` config semantics with repository
+  guards for public visibility, json type, `all/any` mode, supported operators,
+  bounded rules and duplicate-value rejection.
+- Seeded `feature.notice.inbox.audienceRules={"mode":"all","rules":[]}` beside
+  the existing notice feature flag boolean and rollout configs.
+- Extended runtime `featureFlagRules` with `audienceRules`.
+- Extended public feature-flag evaluation with `attributes`, `audienceMatched`
+  and explicit `audience-mismatch` reason while preserving deterministic
+  rollout bucket behavior.
+- Updated DTOs, SDK client/spec, registry fixtures and OpenAPI snapshot for
+  audience rules and evaluation summaries.
+- Added Admin Config `Audience Rules` column, audience row tagging,
+  detail/export support and `Set audience` modal.
+- Extended `tools/scripts/smoke-core-config.mjs` for seeded audience rules,
+  runtime propagation, attribute-aware evaluation, invalid audience
+  create/update guards and bad attributes deserialization.
+- Extended Admin static smoke and deploy-script stale bundle guards for
+  `Audience Rules`, `Set audience` and `Feature audience`.
+
+Out of scope for Round 65:
+
+- multi-environment rollout approval/governance;
+- AB experiment metrics and analytics;
+- full experimentation UI;
+- general-purpose rule expressions or nested segment builders;
+- external KMS/HSM provider binding, key rotation or secret version history.
+
+## Round 65 Verification
+
+- `pnpm exec jest -c packages/system/jest.config.ts packages/system/src/system-config/system-config.spec.ts --runInBand`
+- `pnpm nx test sdk --testFile=packages/sdk/src/system-management-client.spec.ts --testFile=packages/sdk/src/registry-fixtures.spec.ts`
+- `pnpm --dir apps/admin test`
+- `bash -n tools/scripts/deploy-local-opencore.sh`
+- `node --check tools/scripts/smoke-core-config.mjs`
+- `node --check apps/admin/scripts/smoke-test.mjs`
+- `pnpm prisma:validate`
+- `pnpm prisma:seed`
+- `pnpm prisma:generate`
+- `pnpm openapi:export`
+- `pnpm sdk:check`
+- `pnpm openapi:registry-tags:check`
+- `pnpm openapi:check`
+- `pnpm typecheck`
+- `pnpm build:api`
+- `pnpm lint`
+- `pnpm build:admin`
+- `pnpm smoke:api:local`
+- `pnpm exec jest -c packages/system/jest.config.ts --runInBand`
+- `pnpm registry:admin-routes:check`
+
+The first `pnpm smoke:api:local` run exposed a smoke-script ordering issue:
+the zero-rollout assertion evaluated a targeted flag without matching
+attributes and therefore correctly returned `audience-mismatch`. The smoke was
+updated to pass matching attributes when it is specifically asserting
+`outside-rollout`, turning the repeated deserialization/ordering class of
+failures into a scripted guard.
+
+`pnpm lint` passed with existing warnings in
+`packages/system/src/system-user/system-user.prisma-repository.ts` and
+`apps/admin/src/pages/shared/CurrentPageExportButton.tsx`; no Round 65 lint
+errors were introduced.
+
+## Round 65 Public Verification
+
+Against public endpoints after deploy:
+
+- Public API: `http://144.217.243.161:39172`
+- Public Admin: `http://144.217.243.161:39174`
+- Admin main bundle: `umi.233257ee.js`
+- System Config chunk: `p__System__Config.8e49d80f.async.js`
+- Public API config smoke:
+  `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-config`.
+  Checks included `core.config.runtime-feature-flag-audience`, attribute-aware
+  evaluate behavior, bad audience guards and export metadata.
+- Public System Config chunk contains `Audience Rules`, `Set audience` and
+  `Feature audience`.
+- Public OpenAPI docs contain `/api/core/config/feature-flags/evaluate`,
+  `audienceRules`, `audienceMatched`, `audience-mismatch` and `json` config
+  value type.
+
+## Round 65 Commit Record
+
+- Feature+docs commit: this commit.
+- Push: `origin/main`.

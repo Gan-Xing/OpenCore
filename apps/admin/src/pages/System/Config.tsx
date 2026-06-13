@@ -1,4 +1,5 @@
 import {
+  ApartmentOutlined,
   DeleteOutlined,
   DownloadOutlined,
   EditOutlined,
@@ -83,6 +84,8 @@ const featureFlagConfigKeyPattern =
   /^feature\.[a-z0-9]+(?:[.-][a-z0-9]+)*\.enabled$/;
 const featureFlagRolloutConfigKeyPattern =
   /^feature\.[a-z0-9]+(?:[.-][a-z0-9]+)*\.rolloutPercentage$/;
+const featureFlagAudienceConfigKeyPattern =
+  /^feature\.[a-z0-9]+(?:[.-][a-z0-9]+)*\.audienceRules$/;
 const searchFields: CurrentPageSearchField<SystemConfigSummary>[] = [
   'name',
   'key',
@@ -110,12 +113,14 @@ const exportColumns: CurrentPageExportColumn<SystemConfigSummary>[] = [
   { title: 'Public', dataIndex: 'public' },
   { title: 'Feature Flag', renderText: renderFeatureFlagExportText },
   { title: 'Rollout %', renderText: renderFeatureFlagRolloutExportText },
+  { title: 'Audience Rules', renderText: renderFeatureFlagAudienceExportText },
   { title: 'System', dataIndex: 'system' },
   { title: 'Description', dataIndex: 'description' },
   { title: 'Remark', dataIndex: 'remark' },
 ];
 const valueTypeOptions: { label: string; value: ConfigValueType }[] = [
   { label: 'string', value: 'string' },
+  { label: 'json', value: 'json' },
   { label: 'number', value: 'number' },
   { label: 'boolean', value: 'boolean' },
 ];
@@ -137,8 +142,16 @@ function isFeatureFlagRolloutConfig(record: SystemConfigSummary): boolean {
   return featureFlagRolloutConfigKeyPattern.test(record.key);
 }
 
+function isFeatureFlagAudienceConfig(record: SystemConfigSummary): boolean {
+  return featureFlagAudienceConfigKeyPattern.test(record.key);
+}
+
 function isFeatureFlagRelatedConfig(record: SystemConfigSummary): boolean {
-  return isFeatureFlagConfig(record) || isFeatureFlagRolloutConfig(record);
+  return (
+    isFeatureFlagConfig(record) ||
+    isFeatureFlagRolloutConfig(record) ||
+    isFeatureFlagAudienceConfig(record)
+  );
 }
 
 function getFeatureFlagName(record: SystemConfigSummary): string | undefined {
@@ -150,11 +163,19 @@ function getFeatureFlagName(record: SystemConfigSummary): string | undefined {
     return record.key.slice('feature.'.length, -'.rolloutPercentage'.length);
   }
 
+  if (isFeatureFlagAudienceConfig(record)) {
+    return record.key.slice('feature.'.length, -'.audienceRules'.length);
+  }
+
   return undefined;
 }
 
 function getFeatureFlagRolloutKey(flagName: string): string {
   return `feature.${flagName}.rolloutPercentage`;
+}
+
+function getFeatureFlagAudienceKey(flagName: string): string {
+  return `feature.${flagName}.audienceRules`;
 }
 
 function findFeatureFlagRolloutRecord(
@@ -166,6 +187,15 @@ function findFeatureFlagRolloutRecord(
   return rows.find((record) => record.key === rolloutKey);
 }
 
+function findFeatureFlagAudienceRecord(
+  rows: readonly SystemConfigSummary[],
+  flagName: string,
+): SystemConfigSummary | undefined {
+  const audienceKey = getFeatureFlagAudienceKey(flagName);
+
+  return rows.find((record) => record.key === audienceKey);
+}
+
 function renderFeatureFlagExportText(record: SystemConfigSummary): string {
   const flagName = getFeatureFlagName(record);
 
@@ -175,7 +205,9 @@ function renderFeatureFlagExportText(record: SystemConfigSummary): string {
 
   return isFeatureFlagConfig(record)
     ? `${flagName}=${record.value}`
-    : `${flagName} rollout`;
+    : isFeatureFlagRolloutConfig(record)
+      ? `${flagName} rollout`
+      : `${flagName} audience`;
 }
 
 function renderFeatureFlagRolloutExportText(
@@ -186,6 +218,42 @@ function renderFeatureFlagRolloutExportText(
   }
 
   return `${record.value}%`;
+}
+
+function renderFeatureFlagAudienceExportText(
+  record: SystemConfigSummary,
+): string {
+  if (!isFeatureFlagAudienceConfig(record)) {
+    return '';
+  }
+
+  return formatAudienceRules(record.value);
+}
+
+function getDefaultAudienceRulesJson(): string {
+  return JSON.stringify({ mode: 'all', rules: [] }, null, 2);
+}
+
+function normalizeAudienceRulesJson(value: string): string {
+  return JSON.stringify(JSON.parse(value));
+}
+
+function formatAudienceRules(value?: string): string {
+  if (!value) {
+    return 'all / 0 rules';
+  }
+
+  try {
+    const parsed = JSON.parse(value) as {
+      mode?: string;
+      rules?: unknown[];
+    };
+    const mode = parsed.mode === 'any' ? 'any' : 'all';
+    const count = Array.isArray(parsed.rules) ? parsed.rules.length : 0;
+    return `${mode} / ${count} rule${count === 1 ? '' : 's'}`;
+  } catch {
+    return 'invalid rules';
+  }
 }
 
 function renderVaultExportText(record: SystemConfigSummary): string {
@@ -283,6 +351,12 @@ function createDetailFields(record: SystemConfigSummary): DetailField[] {
       label: 'Rollout %',
       value: isFeatureFlagRolloutConfig(record) ? `${record.value}%` : '',
     },
+    {
+      label: 'Audience Rules',
+      value: isFeatureFlagAudienceConfig(record)
+        ? formatAudienceRules(record.value)
+        : '',
+    },
     { label: 'System', value: record.system ? 'system' : 'custom' },
     { label: 'Description', value: record.description },
     { label: 'Remark', value: record.remark },
@@ -349,6 +423,13 @@ export default function ConfigPage() {
   const [rolloutConfigTarget, setRolloutConfigTarget] =
     useState<SystemConfigSummary>();
   const [rolloutPercentage, setRolloutPercentage] = useState<number>(100);
+  const [featureFlagAudienceSavingKey, setFeatureFlagAudienceSavingKey] =
+    useState<string>();
+  const [audienceConfigTarget, setAudienceConfigTarget] =
+    useState<SystemConfigSummary>();
+  const [audienceRulesJson, setAudienceRulesJson] = useState<string>(
+    getDefaultAudienceRulesJson(),
+  );
   const watchedVisibility = Form.useWatch('visibility', form);
   const filterOptions = useMemo(() => createFilterOptions(rows), [rows]);
   const selectedDeletableKeys = useMemo(
@@ -632,6 +713,75 @@ export default function ConfigPage() {
     }
   };
 
+  const openFeatureFlagAudience = (record: SystemConfigSummary) => {
+    const flagName = getFeatureFlagName(record);
+
+    if (!flagName || !isFeatureFlagConfig(record)) {
+      return;
+    }
+
+    const audienceRecord = findFeatureFlagAudienceRecord(rows, flagName);
+    try {
+      setAudienceRulesJson(
+        audienceRecord?.value
+          ? JSON.stringify(JSON.parse(audienceRecord.value), null, 2)
+          : getDefaultAudienceRulesJson(),
+      );
+    } catch {
+      setAudienceRulesJson(getDefaultAudienceRulesJson());
+    }
+    setAudienceConfigTarget(record);
+  };
+
+  const saveFeatureFlagAudience = async () => {
+    if (!audienceConfigTarget) {
+      return;
+    }
+
+    const flagName = getFeatureFlagName(audienceConfigTarget);
+
+    if (!flagName) {
+      return;
+    }
+
+    let nextValue: string;
+    try {
+      nextValue = normalizeAudienceRulesJson(audienceRulesJson);
+    } catch {
+      message.error('Audience rules must be valid JSON.');
+      return;
+    }
+
+    const audienceKey = getFeatureFlagAudienceKey(flagName);
+    const existing = findFeatureFlagAudienceRecord(rows, flagName);
+
+    setFeatureFlagAudienceSavingKey(audienceKey);
+    try {
+      if (existing) {
+        await updateOpenCoreSystemConfig(audienceKey, {
+          value: nextValue,
+          valueType: 'json',
+          visibility: 'public',
+        });
+      } else {
+        await createOpenCoreSystemConfig({
+          category: 'feature',
+          description: `Public audience targeting rules for ${flagName}.`,
+          key: audienceKey,
+          name: `${audienceConfigTarget.name} audience`,
+          value: nextValue,
+          valueType: 'json',
+          visibility: 'public',
+        });
+      }
+      message.success(`Feature audience ${flagName} updated.`);
+      setAudienceConfigTarget(undefined);
+      await loadConfig();
+    } finally {
+      setFeatureFlagAudienceSavingKey(undefined);
+    }
+  };
+
   const columns: ProColumns<SystemConfigSummary>[] = [
     {
       title: 'Name',
@@ -703,7 +853,10 @@ export default function ConfigPage() {
             <Tag color="green">runtime</Tag>
           </Space>
         ) : flagName ? (
-          <Tag color="cyan">{flagName} rollout</Tag>
+          <Tag color="cyan">
+            {flagName}{' '}
+            {isFeatureFlagAudienceConfig(record) ? 'audience' : 'rollout'}
+          </Tag>
         ) : (
           <Tag>standard</Tag>
         );
@@ -738,6 +891,43 @@ export default function ConfigPage() {
                     getFeatureFlagRolloutKey(flagName)
                   }
                   onClick={() => openFeatureFlagRollout(record)}
+                  size="small"
+                />
+              </Tooltip>
+            ) : null}
+          </Space>
+        );
+      },
+    },
+    {
+      title: 'Audience Rules',
+      dataIndex: 'key',
+      width: 176,
+      render: (_, record) => {
+        const flagName = getFeatureFlagName(record);
+
+        if (!flagName) {
+          return <Tag>n/a</Tag>;
+        }
+
+        const audienceRecord = findFeatureFlagAudienceRecord(rows, flagName);
+        const audienceValue = isFeatureFlagAudienceConfig(record)
+          ? record.value
+          : audienceRecord?.value;
+
+        return (
+          <Space size="small">
+            <Tag color="geekblue">{formatAudienceRules(audienceValue)}</Tag>
+            {isFeatureFlagConfig(record) ? (
+              <Tooltip title="Set audience">
+                <Button
+                  aria-label={`Set audience for ${record.key}`}
+                  icon={<ApartmentOutlined />}
+                  loading={
+                    featureFlagAudienceSavingKey ===
+                    getFeatureFlagAudienceKey(flagName)
+                  }
+                  onClick={() => openFeatureFlagAudience(record)}
                   size="small"
                 />
               </Tooltip>
@@ -1010,6 +1200,28 @@ export default function ConfigPage() {
             precision={0}
             style={{ width: '100%' }}
             value={rolloutPercentage}
+          />
+        </Space>
+      </Modal>
+      <Modal
+        title="Feature audience"
+        open={Boolean(audienceConfigTarget)}
+        onCancel={() => setAudienceConfigTarget(undefined)}
+        onOk={() => void saveFeatureFlagAudience()}
+        confirmLoading={Boolean(featureFlagAudienceSavingKey)}
+        okText="Set audience"
+      >
+        <Space direction="vertical" style={{ width: '100%' }}>
+          <Typography.Text strong>
+            {audienceConfigTarget
+              ? getFeatureFlagName(audienceConfigTarget)
+              : 'feature flag'}
+          </Typography.Text>
+          <Input.TextArea
+            aria-label="Feature audience rules"
+            rows={8}
+            value={audienceRulesJson}
+            onChange={(event) => setAudienceRulesJson(event.target.value)}
           />
         </Space>
       </Modal>

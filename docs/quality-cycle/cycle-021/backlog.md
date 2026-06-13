@@ -1970,6 +1970,42 @@ stage was a numeric rollout key plus evaluate API and Admin control.
       lint, builds, fixed-port smoke, deployment and public URL verification.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 65: core.config Feature Flag Audience Productization
+
+Why this slice: Round 64 created deterministic percentage rollout, but a
+runtime consumer still could not target a flag by user or request attributes.
+OpenCore already had typed config values, runtime feature-flag rules, evaluate
+API, SDK/Admin control and deploy stale-bundle guards, so the next
+lowest-dependency stage was a public json audience-rules key plus
+attribute-aware evaluation.
+
+- [x] Recompare current RuoYi/Yudao config/feature governance reference shapes
+      before selecting this slice.
+- [x] Add `json` config value type support without keeping stale parallel
+      value-shape compatibility.
+- [x] Add public json `feature.*.audienceRules` config shape with
+      repository-level guards for public visibility, json type, `all/any` mode,
+      supported operators and bounded attribute/value lists.
+- [x] Seed `feature.notice.inbox.audienceRules={"mode":"all","rules":[]}` beside
+      the existing notice feature flag boolean and rollout configs.
+- [x] Extend runtime config `featureFlagRules` with `audienceRules`.
+- [x] Extend public feature-flag evaluation with `attributes`, `audienceMatched`
+      and explicit `audience-mismatch` reason while preserving rollout bucket
+      behavior.
+- [x] Extend DTOs, SDK types/client/spec, registry fixtures and OpenAPI
+      snapshot for json values, audience rules and evaluation summaries.
+- [x] Add Admin Config `Audience Rules` visibility plus `Set audience` modal and
+      feature audience export/detail support.
+- [x] Extend fixed-port/deploy/public `core.config` smoke for seeded audience
+      rules, runtime propagation, attribute-aware evaluation, invalid audience
+      guards and bad attributes deserialization.
+- [x] Extend Admin static smoke and deploy-script stale bundle guards for the
+      Config audience UI markers.
+- [x] Run focused tests, Prisma validate/seed/generate, OpenAPI/SDK checks,
+      typecheck, lint, builds, fixed-port smoke, deployment and public URL
+      verification.
+- [x] Commit code, tests and documentation in one feature+docs commit.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -2019,7 +2055,7 @@ treat "minimal loop" as "minimal final product".
       provider execution are complete. Real WebSocket/SMS/Mail adapters,
       multi-channel retry/failure queues and tenant/member/mobile channels
       remain.
-- [ ] Round 9/24/37/38/39/40/44/46/49/58/62/64 `core.config`: public get-value-by-key, cache
+- [ ] Round 9/24/37/38/39/40/44/46/49/58/62/64/65 `core.config`: public get-value-by-key, cache
       refresh and mutation invalidation are complete. Category/name/remark
       metadata is complete. Native XLSX export payload and Admin download are
       complete. Batch deletion is complete. Persisted system/custom deletion
@@ -2034,9 +2070,12 @@ treat "minimal loop" as "minimal final product".
       encryption, seeded secret references, Admin `encrypted` visibility and
       database plaintext guards. Round 64 closes feature-flag percentage
       rollout with runtime `featureFlagRules`, deterministic evaluate API,
-      Admin rollout controls and stale-bundle guards. Audience targeting,
-      rollout governance and full experimentation remain auto-admissible
-      foundation rounds; external KMS provider binding, key rotation and
+      Admin rollout controls and stale-bundle guards. Round 65 closes
+      feature-flag audience targeting with public json
+      `feature.*.audienceRules`, runtime `audienceRules`, attribute-aware
+      evaluate API, Admin audience controls and stale-bundle guards. Rollout
+      governance and full experimentation remain auto-admissible foundation
+      rounds; external KMS provider binding, key rotation and
       secret version history are later hardening stages.
 - [ ] Round 11/26/45/47/48/49/50/51/57/59 `core.login-log`: browser/OS parsing,
       IP/time filters, persisted login type/result schema, Admin display and
@@ -2100,9 +2139,10 @@ treat "minimal loop" as "minimal final product".
 - Batch dictionary delete, Excel import/export file workflows, dictionary
   color/css/remark fields, app-wide dictionary cache TTL/invalidation and
   dictionary cache refresh.
-- Feature-flag audience rules, rollout governance and full experimentation UI
-  unless admitted as a dedicated foundation round. Percentage rollout and
-  deterministic evaluation are complete through Round 64.
+- Feature-flag rollout governance and full experimentation UI unless admitted
+  as dedicated foundation rounds. Percentage rollout and deterministic
+  evaluation are complete through Round 64; audience rules and
+  attribute-aware evaluation are complete through Round 65.
 - External KMS/HSM provider binding, key rotation and secret version history
   beyond the Round 62 local vault envelope foundation.
 - Presigned upload/download URLs, storage-provider config, public

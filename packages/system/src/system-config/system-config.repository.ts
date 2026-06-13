@@ -59,6 +59,9 @@ const FEATURE_FLAG_CONFIG_KEY_PATTERN =
   /^feature\.[a-z0-9]+(?:[.-][a-z0-9]+)*\.enabled$/;
 const FEATURE_FLAG_ROLLOUT_CONFIG_KEY_PATTERN =
   /^feature\.[a-z0-9]+(?:[.-][a-z0-9]+)*\.rolloutPercentage$/;
+const FEATURE_FLAG_AUDIENCE_CONFIG_KEY_PATTERN =
+  /^feature\.[a-z0-9]+(?:[.-][a-z0-9]+)*\.audienceRules$/;
+const FEATURE_FLAG_AUDIENCE_ATTRIBUTE_PATTERN = /^[A-Za-z0-9_.-]{1,80}$/;
 export const SYSTEM_CONFIG_EXPORT_CONTENT_TYPE = OPENCORE_XLSX_CONTENT_TYPE;
 export const SYSTEM_CONFIG_EXPORT_COLUMNS = [
   'category',
@@ -71,10 +74,28 @@ export const SYSTEM_CONFIG_EXPORT_COLUMNS = [
   'public',
   'featureFlag',
   'featureRollout',
+  'featureAudience',
   'system',
   'description',
   'remark',
 ] as const;
+
+export type FeatureFlagAudienceOperator =
+  | 'equals'
+  | 'in'
+  | 'not_equals'
+  | 'not_in';
+
+export type FeatureFlagAudienceRuleConfig = {
+  attribute: string;
+  operator: FeatureFlagAudienceOperator;
+  values: readonly string[];
+};
+
+export type FeatureFlagAudienceRulesConfig = {
+  mode: 'all' | 'any';
+  rules: readonly FeatureFlagAudienceRuleConfig[];
+};
 
 export abstract class SystemConfigRepository {
   abstract listConfig(
@@ -167,6 +188,7 @@ function createSystemConfigExportWorksheetRows(
       row.public ? 'true' : 'false',
       toFeatureFlagName(row.key) ?? '',
       toFeatureFlagRolloutName(row.key) ?? '',
+      toFeatureFlagAudienceName(row.key) ?? '',
       row.system ? 'true' : 'false',
       row.description ?? '',
       row.remark ?? '',
@@ -218,6 +240,10 @@ export function isFeatureFlagRolloutConfigKey(key: string): boolean {
   return FEATURE_FLAG_ROLLOUT_CONFIG_KEY_PATTERN.test(key);
 }
 
+export function isFeatureFlagAudienceConfigKey(key: string): boolean {
+  return FEATURE_FLAG_AUDIENCE_CONFIG_KEY_PATTERN.test(key);
+}
+
 export function toFeatureFlagName(key: string): string | undefined {
   if (!isFeatureFlagConfigKey(key)) {
     return undefined;
@@ -234,6 +260,14 @@ export function toFeatureFlagRolloutName(key: string): string | undefined {
   return key.slice('feature.'.length, -'.rolloutPercentage'.length);
 }
 
+export function toFeatureFlagAudienceName(key: string): string | undefined {
+  if (!isFeatureFlagAudienceConfigKey(key)) {
+    return undefined;
+  }
+
+  return key.slice('feature.'.length, -'.audienceRules'.length);
+}
+
 export function assertFeatureFlagConfigShape(input: {
   key: string;
   value?: unknown;
@@ -242,14 +276,23 @@ export function assertFeatureFlagConfigShape(input: {
 }): void {
   if (
     !isFeatureFlagConfigKey(input.key) &&
-    !isFeatureFlagRolloutConfigKey(input.key)
+    !isFeatureFlagRolloutConfigKey(input.key) &&
+    !isFeatureFlagAudienceConfigKey(input.key)
   ) {
     return;
   }
 
-  const valueType = isFeatureFlagConfigKey(input.key) ? 'boolean' : 'number';
+  const valueType = isFeatureFlagConfigKey(input.key)
+    ? 'boolean'
+    : isFeatureFlagRolloutConfigKey(input.key)
+      ? 'number'
+      : 'json';
   const valueTypeLabel =
-    valueType === 'boolean' ? 'boolean value type' : 'number value type';
+    valueType === 'boolean'
+      ? 'boolean value type'
+      : valueType === 'number'
+        ? 'number value type'
+        : 'json value type';
 
   if (input.valueType !== valueType) {
     throw new BadRequestException(
@@ -273,6 +316,10 @@ export function assertFeatureFlagConfigShape(input: {
         `Feature flag rollout ${input.key} must be an integer between 0 and 100.`,
       );
     }
+  }
+
+  if (isFeatureFlagAudienceConfigKey(input.key) && input.value !== undefined) {
+    parseFeatureFlagAudienceRulesConfig(input.value, input.key);
   }
 }
 
@@ -429,6 +476,10 @@ export function normalizeConfigValue(
 
   const normalized = value.trim();
 
+  if (valueType === 'json') {
+    return JSON.stringify(parseJsonConfigValue(normalized));
+  }
+
   if (valueType === 'boolean') {
     if (normalized !== 'true' && normalized !== 'false') {
       throw new BadRequestException(
@@ -532,6 +583,7 @@ export function toSystemConfigValueType(
 ): SystemConfigRecord['valueType'] {
   if (
     valueType === 'boolean' ||
+    valueType === 'json' ||
     valueType === 'number' ||
     valueType === 'string'
   ) {
@@ -539,4 +591,172 @@ export function toSystemConfigValueType(
   }
 
   return 'string';
+}
+
+export function parseFeatureFlagAudienceRulesConfig(
+  value: unknown,
+  key: string,
+): FeatureFlagAudienceRulesConfig {
+  const parsed =
+    typeof value === 'string' ? parseJsonConfigValue(value.trim()) : value;
+
+  if (!isPlainRecord(parsed)) {
+    throw new BadRequestException(
+      `Feature flag audience ${key} must be a JSON object.`,
+    );
+  }
+
+  const mode = parsed.mode;
+  if (mode !== 'all' && mode !== 'any') {
+    throw new BadRequestException(
+      `Feature flag audience ${key} mode must be all or any.`,
+    );
+  }
+
+  if (!Array.isArray(parsed.rules)) {
+    throw new BadRequestException(
+      `Feature flag audience ${key} rules must be an array.`,
+    );
+  }
+
+  if (parsed.rules.length > 20) {
+    throw new BadRequestException(
+      `Feature flag audience ${key} must not exceed 20 rules.`,
+    );
+  }
+
+  return {
+    mode,
+    rules: parsed.rules.map((rule, index) =>
+      normalizeFeatureFlagAudienceRule(rule, key, index),
+    ),
+  };
+}
+
+function parseJsonConfigValue(value: string): unknown {
+  try {
+    return JSON.parse(value);
+  } catch {
+    throw new BadRequestException(
+      'JSON system config values must be valid JSON.',
+    );
+  }
+}
+
+function normalizeFeatureFlagAudienceRule(
+  value: unknown,
+  key: string,
+  index: number,
+): FeatureFlagAudienceRuleConfig {
+  if (!isPlainRecord(value)) {
+    throw new BadRequestException(
+      `Feature flag audience ${key} rule ${index + 1} must be a JSON object.`,
+    );
+  }
+
+  const attribute = normalizeFeatureFlagAudienceAttribute(
+    value.attribute,
+    key,
+    index,
+  );
+  const operator = normalizeFeatureFlagAudienceOperator(
+    value.operator,
+    key,
+    index,
+  );
+  const values = normalizeFeatureFlagAudienceValues(value.values, key, index);
+
+  return {
+    attribute,
+    operator,
+    values,
+  };
+}
+
+function normalizeFeatureFlagAudienceAttribute(
+  value: unknown,
+  key: string,
+  index: number,
+): string {
+  if (typeof value !== 'string') {
+    throw new BadRequestException(
+      `Feature flag audience ${key} rule ${index + 1} attribute must be a string.`,
+    );
+  }
+
+  const normalized = value.trim();
+
+  if (!FEATURE_FLAG_AUDIENCE_ATTRIBUTE_PATTERN.test(normalized)) {
+    throw new BadRequestException(
+      `Feature flag audience ${key} rule ${index + 1} attribute is invalid.`,
+    );
+  }
+
+  return normalized;
+}
+
+function normalizeFeatureFlagAudienceOperator(
+  value: unknown,
+  key: string,
+  index: number,
+): FeatureFlagAudienceOperator {
+  if (
+    value === 'equals' ||
+    value === 'in' ||
+    value === 'not_equals' ||
+    value === 'not_in'
+  ) {
+    return value;
+  }
+
+  throw new BadRequestException(
+    `Feature flag audience ${key} rule ${index + 1} operator is invalid.`,
+  );
+}
+
+function normalizeFeatureFlagAudienceValues(
+  value: unknown,
+  key: string,
+  index: number,
+): readonly string[] {
+  if (!Array.isArray(value) || value.length === 0 || value.length > 50) {
+    throw new BadRequestException(
+      `Feature flag audience ${key} rule ${index + 1} values must contain 1 to 50 items.`,
+    );
+  }
+
+  const normalized = value.map((item) => {
+    if (typeof item !== 'string') {
+      throw new BadRequestException(
+        `Feature flag audience ${key} rule ${index + 1} values must be strings.`,
+      );
+    }
+
+    const text = item.trim();
+    if (!text || text.length > 100) {
+      throw new BadRequestException(
+        `Feature flag audience ${key} rule ${index + 1} values must be 1 to 100 characters.`,
+      );
+    }
+
+    return text;
+  });
+
+  const duplicate = findFirstDuplicate(normalized);
+  if (duplicate) {
+    throw new BadRequestException(
+      `Feature flag audience ${key} rule ${index + 1} value is duplicated: ${duplicate}`,
+    );
+  }
+
+  return normalized;
+}
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return false;
+  }
+
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
 }

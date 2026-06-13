@@ -110,6 +110,17 @@ describe('registry fixtures', () => {
       ),
     ).toBe(true);
     expect(
+      createSystemConfigFixtures().items.some(
+        (item) =>
+          item.category === 'feature' &&
+          item.key === 'feature.notice.inbox.audienceRules' &&
+          item.value === '{"mode":"all","rules":[]}' &&
+          item.valueType === 'json' &&
+          item.encrypted === false &&
+          item.visibility === 'public',
+      ),
+    ).toBe(true);
+    expect(
       createSystemConfigFixtures().items.find(
         (item) => item.visibility === 'secret',
       ),

@@ -16,8 +16,8 @@ export class SystemConfigDto {
   @ApiProperty()
   value!: string;
 
-  @ApiProperty({ enum: ['boolean', 'number', 'string'] })
-  valueType!: 'boolean' | 'number' | 'string';
+  @ApiProperty({ enum: ['boolean', 'json', 'number', 'string'] })
+  valueType!: 'boolean' | 'json' | 'number' | 'string';
 
   @ApiProperty()
   encrypted!: boolean;
@@ -50,8 +50,8 @@ export class SystemConfigValueDto {
   @ApiProperty()
   value!: string;
 
-  @ApiProperty({ enum: ['boolean', 'number', 'string'] })
-  valueType!: 'boolean' | 'number' | 'string';
+  @ApiProperty({ enum: ['boolean', 'json', 'number', 'string'] })
+  valueType!: 'boolean' | 'json' | 'number' | 'string';
 }
 
 export class SystemConfigRuntimeDto {
@@ -70,14 +70,38 @@ export class SystemConfigRuntimeDto {
       properties: {
         enabled: { type: 'boolean' },
         rolloutPercentage: { type: 'number', minimum: 0, maximum: 100 },
+        audienceRules: {
+          type: 'object',
+          properties: {
+            mode: { type: 'string', enum: ['all', 'any'] },
+            rules: { type: 'array', items: { type: 'object' } },
+          },
+        },
       },
-      required: ['enabled', 'rolloutPercentage'],
+      required: ['enabled', 'rolloutPercentage', 'audienceRules'],
     },
-    example: { 'notice.inbox': { enabled: true, rolloutPercentage: 100 } },
+    example: {
+      'notice.inbox': {
+        enabled: true,
+        rolloutPercentage: 100,
+        audienceRules: { mode: 'all', rules: [] },
+      },
+    },
   })
   featureFlagRules!: Record<
     string,
-    { enabled: boolean; rolloutPercentage: number }
+    {
+      audienceRules: {
+        mode: 'all' | 'any';
+        rules: readonly {
+          attribute: string;
+          operator: 'equals' | 'in' | 'not_equals' | 'not_in';
+          values: readonly string[];
+        }[];
+      };
+      enabled: boolean;
+      rolloutPercentage: number;
+    }
   >;
 
   @ApiProperty({ example: 15, minimum: 1, maximum: 1440 })
@@ -93,6 +117,12 @@ export class SystemConfigFeatureFlagEvaluationQueryDto {
 
   @ApiProperty({ example: 'user_admin' })
   subjectKey!: string;
+
+  @ApiProperty({
+    required: false,
+    example: '{"dept":"operations","role":"admin"}',
+  })
+  attributes?: string;
 }
 
 export class SystemConfigFeatureFlagEvaluationDto {
@@ -111,10 +141,22 @@ export class SystemConfigFeatureFlagEvaluationDto {
   @ApiProperty({ minimum: 0, maximum: 99 })
   bucket!: number;
 
+  @ApiProperty()
+  audienceMatched!: boolean;
+
   @ApiProperty({
-    enum: ['global-disabled', 'matched-rollout', 'outside-rollout'],
+    enum: [
+      'audience-mismatch',
+      'global-disabled',
+      'matched-rollout',
+      'outside-rollout',
+    ],
   })
-  reason!: 'global-disabled' | 'matched-rollout' | 'outside-rollout';
+  reason!:
+    | 'audience-mismatch'
+    | 'global-disabled'
+    | 'matched-rollout'
+    | 'outside-rollout';
 }
 
 export class SystemConfigCacheRefreshDto {
@@ -174,8 +216,8 @@ export class CreateSystemConfigDto {
   @ApiProperty()
   value!: string;
 
-  @ApiProperty({ enum: ['boolean', 'number', 'string'] })
-  valueType!: 'boolean' | 'number' | 'string';
+  @ApiProperty({ enum: ['boolean', 'json', 'number', 'string'] })
+  valueType!: 'boolean' | 'json' | 'number' | 'string';
 
   @ApiProperty({ required: false })
   description?: string;
@@ -200,8 +242,11 @@ export class UpdateSystemConfigDto {
   @ApiProperty({ required: false })
   value?: string;
 
-  @ApiProperty({ required: false, enum: ['boolean', 'number', 'string'] })
-  valueType?: 'boolean' | 'number' | 'string';
+  @ApiProperty({
+    required: false,
+    enum: ['boolean', 'json', 'number', 'string'],
+  })
+  valueType?: 'boolean' | 'json' | 'number' | 'string';
 
   @ApiProperty({ required: false })
   description?: string;

@@ -44,7 +44,10 @@ describe('createSystemManagementClient', () => {
     await client.listConfig('token', { page: 1, pageSize: 10 });
     await client.getConfig('token', 'opencore.admin.title');
     await client.getConfigRuntime();
-    await client.evaluateFeatureFlag('notice.inbox', 'user_admin');
+    await client.evaluateFeatureFlag('notice.inbox', 'user_admin', {
+      dept: 'operations',
+      role: 'admin',
+    });
     await client.getConfigValueByKey('token', 'opencore.admin.title');
     await client.refreshConfigCache('token');
     await client.exportConfig('token', { page: 1, pageSize: 10 });
@@ -273,7 +276,7 @@ describe('createSystemManagementClient', () => {
         path: '/core/config/runtime',
       },
       {
-        path: '/core/config/feature-flags/evaluate?flag=notice.inbox&subjectKey=user_admin',
+        path: '/core/config/feature-flags/evaluate?attributes=%7B%22dept%22%3A%22operations%22%2C%22role%22%3A%22admin%22%7D&flag=notice.inbox&subjectKey=user_admin',
       },
       {
         path: '/core/config/get-value-by-key?key=opencore.admin.title',

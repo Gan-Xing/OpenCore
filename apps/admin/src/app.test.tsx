@@ -95,6 +95,7 @@ describe('app getInitialState', () => {
       },
       featureFlagRules: {
         'notice.inbox': {
+          audienceRules: { mode: 'all', rules: [] },
           enabled: true,
           rolloutPercentage: 100,
         },
@@ -211,6 +212,7 @@ describe('app getInitialState', () => {
       },
       featureFlagRules: {
         'notice.inbox': {
+          audienceRules: { mode: 'all', rules: [] },
           enabled: false,
           rolloutPercentage: 25,
         },

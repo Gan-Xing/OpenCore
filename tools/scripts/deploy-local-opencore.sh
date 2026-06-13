@@ -117,6 +117,16 @@ verify_admin_bundle_api_base_url() {
     ! grep -R \
     --fixed-strings \
     --include='*.js' \
+    "Audience Rules" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Set audience" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
     "Vault encrypted" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null; then
     echo "Admin bundle does not include the runtime feature flag and config vault surface." >&2

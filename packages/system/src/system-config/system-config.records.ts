@@ -1,6 +1,6 @@
 export type SystemConfigVisibility = 'private' | 'public' | 'secret';
 
-export type SystemConfigValueType = 'boolean' | 'number' | 'string';
+export type SystemConfigValueType = 'boolean' | 'json' | 'number' | 'string';
 
 export type SystemConfigRecord = {
   id: string;
@@ -82,6 +82,20 @@ export const seedSystemConfigs: readonly SystemConfigRecord[] = [
     value: '100',
     valueType: 'number',
     description: 'Public rollout percentage for the notice inbox feature flag.',
+    encrypted: false,
+    remark: 'Returned by the runtime config featureFlagRules map.',
+    public: true,
+    system: true,
+    visibility: 'public',
+  },
+  {
+    id: 'config_feature_notice_inbox_audience',
+    category: 'feature',
+    name: 'Notice inbox audience rules',
+    key: 'feature.notice.inbox.audienceRules',
+    value: '{"mode":"all","rules":[]}',
+    valueType: 'json',
+    description: 'Public runtime audience targeting rules for notice inbox.',
     encrypted: false,
     remark: 'Returned by the runtime config featureFlagRules map.',
     public: true,
