@@ -1475,6 +1475,40 @@ and proving security-auth consumes it.
       gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 50: core.login-log/security-auth Self Logout Revocation
+
+Why this slice: OpenCore already had `logout.self` in the login-log type model
+and real online-user session revocation for operator kick-out, but the Admin
+avatar logout still only cleared the browser token. RuoYi deletes the current
+token and records a logout login-info row on `/logout`; Yudao deletes the
+current OAuth2 access token and records `LOGOUT_SELF`. The next lowest
+dependency foundation was current-user logout that actually revokes the bearer
+session and records `logout.self`.
+
+- [x] Recompare RuoYi logout handler and Yudao auth logout/token removal
+      against OpenCore's local-only Admin logout.
+- [x] Add `POST /api/auth/logout` with bearer auth, `200` response and
+      `LogoutResponseDto`.
+- [x] Extend `SecurityAuthService` with `logout(authorization, context)` that
+      verifies the current bearer token, revokes its online-user session and
+      records `logType=logout.self`, `result=success`.
+- [x] Extend `SecurityAuthSessionRepository` with `revokeSession(tokenId, ...)`
+      and implement it in Prisma, seed and allow-all session repositories.
+- [x] Add security-auth unit coverage proving self logout records
+      `logout.self` and makes the token fail later bearer authentication.
+- [x] Extend SDK RBAC types/client/spec with `logout(token)`.
+- [x] Change Admin avatar logout to call the OpenCore logout API before
+      clearing local token and redirecting.
+- [x] Extend Admin static smoke so future regressions cannot return to
+      local-only logout.
+- [x] Refresh OpenAPI snapshot with `/api/auth/logout`.
+- [x] Extend fixed-port/deploy/public `core.login-log` smoke with
+      `auth.logout.self`, `auth.logout.revokes-session` and
+      `core.login-log.logout-self-recorded`.
+- [x] Run focused tests, OpenAPI/SDK checks, typecheck, lint, format,
+      fixed-port smoke, deployment and public URL verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -1527,14 +1561,16 @@ treat "minimal loop" as "minimal final product".
       summary, Admin display, security-auth consumption and deploy bundle
       guardrails. Broader feature-flag propagation and any admitted secret
       vault/KMS integration remain.
-- [ ] Round 11/26/45/47/48/49 `core.login-log`: browser/OS parsing, IP/time filters,
+- [ ] Round 11/26/45/47/48/49/50 `core.login-log`: browser/OS parsing, IP/time filters,
       persisted login type/result schema, Admin display and type/result
       filters are complete. Persisted failed-attempt lockout, `account_locked`
       result mapping and permissioned username unlock are complete. Permissioned
       selected-row deletion and clean-all maintenance actions are complete.
       Configurable failed-attempt threshold is complete through
-      `auth.login.maxFailedAttempts`. IP/location enrichment where feasible and
-      broader logout/mobile/social logging stages remain.
+      `auth.login.maxFailedAttempts`. Current-user self logout now revokes the
+      real bearer session and records `logout.self`. IP/location enrichment
+      where feasible, force-logout login-log integration and broader
+      mobile/social logging stages remain.
 
 ### Thin, Must Rework Before More Broad Surfaces
 

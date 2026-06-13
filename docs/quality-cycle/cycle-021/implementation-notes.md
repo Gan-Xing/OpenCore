@@ -4073,3 +4073,101 @@ Against public endpoints after deploy:
   `b4a0258 feat(login-policy): add configurable attempt limit / 新增登录失败次数策略`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 50 Capability
+
+Capability: `core.login-log/security-auth` self logout session revocation.
+
+Goal: turn Admin logout from a local-token-only action into a backend security
+operation that revokes the current bearer session and records `logout.self`,
+aligned with RuoYi `/logout` and Yudao `/system/auth/logout`.
+
+## Round 50 Implemented
+
+- Rechecked RuoYi `LogoutSuccessHandlerImpl` and Yudao auth logout flow:
+  both remove the current token and record a logout login-log row.
+- Added `LogoutResponseDto` and `POST /api/auth/logout` with bearer auth,
+  explicit `@HttpCode(200)` and OpenAPI coverage.
+- Added `SecurityAuthService.logout`, which verifies the current bearer token,
+  asserts the session is active, revokes it by tokenId and records
+  `logType=logout.self`, `result=success`.
+- Extended `SecurityAuthSessionRepository` with `revokeSession(tokenId, ...)`.
+- Implemented tokenId revocation in Prisma and seed online-user repositories;
+  the allow-all repository keeps no-op behavior for tests that do not install
+  online-user storage.
+- Added security-auth unit coverage proving logout records `logout.self` and
+  the same token later fails bearer authentication.
+- Extended SDK RBAC types/client/spec with `logout(token)`.
+- Changed Admin avatar logout to call `logoutFromOpenCore()` before clearing
+  local token state and redirecting.
+- Extended Admin static smoke to require `logoutFromOpenCore` in the auth
+  service and avatar menu.
+- Extended `tools/scripts/smoke-core-login-log.mjs` to create a temporary
+  logout user, login, call `/auth/logout`, prove `/auth/me` rejects the same
+  token and verify the `logout.self` row.
+
+## Round 50 Verification
+
+- `pnpm nx test security`
+- `pnpm nx test sdk`
+- `pnpm nx test online-user`
+- `pnpm nx test api`
+- `pnpm nx test admin`
+- `pnpm openapi:export`
+- `pnpm openapi:check`
+- `pnpm sdk:check`
+- `pnpm nx typecheck api`
+- `pnpm nx typecheck admin`
+- `pnpm nx typecheck sdk`
+- `pnpm nx typecheck security`
+- `pnpm nx typecheck online-user`
+- `pnpm smoke:api:local`
+- `pnpm format:check`
+- `pnpm lint`
+- `pnpm deploy:opencore`
+
+`pnpm smoke:api:local` passed on fixed port `39173`, including
+`auth.logout.self`, `auth.logout.revokes-session` and
+`core.login-log.logout-self-recorded`.
+
+`pnpm deploy:opencore` passed, deploying API/Admin on fixed ports
+`39172`/`39174`; deploy smoke included duplicate-prefix login compatibility,
+public Admin no-cache/bundle checks and the same logout session-revocation
+guards.
+
+During the first local smoke run, `/auth/logout` returned Nest's default `201`
+while OpenAPI advertised `200`. The fix was to add `@HttpCode(200)` to the
+new logout controller action and keep the smoke strict. This is now captured as
+a code-level contract instead of a memory note.
+
+`pnpm lint` passed with existing warnings in
+`packages/system/src/system-user/system-user.prisma-repository.ts` and
+`apps/admin/src/pages/shared/CurrentPageExportButton.tsx`; no Round 50 lint
+errors were introduced.
+
+## Round 50 Public Verification
+
+Against public endpoints after deploy:
+
+- Public API: `http://144.217.243.161:39172`
+- Public Admin: `http://144.217.243.161:39174`
+- Admin main bundle: `umi.f9e7d7a1.js`
+- Login page chunk: `p__user__login__index.b5055d16.async.js`
+- Public API login-log smoke passed:
+  `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-login-log`.
+  Checks included `auth.logout.self`, `auth.logout.revokes-session` and
+  `core.login-log.logout-self-recorded`.
+- Public Admin main bundle contains API origin
+  `http://144.217.243.161:39172` and `/auth/logout`.
+- Public Admin main bundle does not contain the API base with an extra `/api`
+  suffix.
+- `pnpm deploy:opencore` also verified Admin same-origin `/api/auth/login`,
+  duplicate `/api/api/auth/login`, public bundle API origin and retired service
+  worker behavior.
+
+## Round 50 Commit Record
+
+- Feature commit:
+  `f4ecd68 feat(auth): add self logout session revocation / 新增自助登出会话撤销`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

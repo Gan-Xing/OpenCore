@@ -3,8 +3,8 @@
 Date: 2026-06-13
 Repository: `Gan-Xing/OpenCore`
 Default branch: `main`
-Latest observed feature commit: `b4a0258 feat(login-policy): add configurable attempt limit / 新增登录失败次数策略`
-Latest deployed feature commit: `b4a0258 feat(login-policy): add configurable attempt limit / 新增登录失败次数策略`
+Latest observed feature commit: `f4ecd68 feat(auth): add self logout session revocation / 新增自助登出会话撤销`
+Latest deployed feature commit: `f4ecd68 feat(auth): add self logout session revocation / 新增自助登出会话撤销`
 Latest deployed hardening commit: `4df5dd1 fix(system): satisfy xlsx export lint guard / 修复 XLSX 导出 lint 守卫`
 
 ## One-sentence Goal
@@ -115,6 +115,7 @@ productization waterline completion; see
 - Round 47 `core.login-log` login lockout/unlock stage 4
 - Round 48 `core.login-log` cleanup maintenance stage 5
 - Round 49 `core.config/security-auth` configurable attempt limit stage 9
+- Round 50 `core.login-log/security-auth` self logout revocation stage 6
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -637,6 +638,24 @@ origin 且不含 bundle 生成的重复 `/api/api/auth/login`，公网登录页 
 `/api/api/auth/login` 均通过。注意：这轮关闭的是 username/password 失败次数阈值可配置化，
 不等于验证码、IP 归属地、logout/mobile/social 登录日志或 secret vault/KMS 已经完成。
 
+Round 50 继续补齐 `core.login-log/security-auth` 队列，把 RuoYi
+`/logout` 会删除当前登录 token 并记录退出日志、Yudao
+`/system/auth/logout` 会删除 OAuth2 access token 并写 `LOGOUT_SELF` 日志的语义，
+转译为 OpenCore 自助登出闭环。OpenCore 新增 `POST /api/auth/logout`，要求 bearer
+鉴权，返回 `{ loggedOut: true }` 并显式 `200`；`SecurityAuthService.logout` 会校验
+当前 token、通过 `SecurityAuthSessionRepository.revokeSession(tokenId, ...)` 撤销
+online-user session，再记录 `logType=logout.self`、`result=success` 的登录日志。
+Prisma/seed online-user repository 均实现按 tokenId revoke。SDK 新增
+`rbac.logout(token)`，Admin 头像退出菜单改为先调用 OpenCore logout API，再清本地
+token 并跳转登录页；Admin 静态 smoke 防止退出逻辑退回到只删本地 token。固定 smoke、
+部署 smoke 和公网 smoke 均验证 `auth.logout.self`、`auth.logout.revokes-session`、
+`core.login-log.logout-self-recorded`：临时用户登录后调用 `/auth/logout`，同一 token 再打
+`/auth/me` 返回 401/403，并能按 `logType=logout.self` 查到成功退出日志。公网 Admin
+`umi.f9e7d7a1.js` 已验证包含 API origin、`/auth/logout` 且不含 `/api` 后缀风险。
+注意：这轮关闭的是当前用户自助登出的真实 session/token 撤销和 `logout.self` 记录，
+不等于 IP 归属地、移动/SMS/social 登录、force-logout login-log 记录或登录日志页终止会话
+已经完成。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -649,7 +668,7 @@ The productization waterline now classifies:
 - First loop, enhance: Round 1 `core.notice`, Round 2/27/43 `core.dept`,
   Round 3/22/25/42 `core.post`,
   Round 9/24/37/38/39/40/44/46/49 `core.config`,
-  Round 11/26/45/47/48/49 `core.login-log`.
+  Round 11/26/45/47/48/49/50 `core.login-log`.
 - Thin, rework: none after Round 16.
 
 The P0 remediation queue from the post-Round 13 re-audit is now clear. The next
@@ -678,9 +697,10 @@ finds another blocker:
    unlock. Round 48 closed permissioned batch deletion and clean-all
    maintenance, including strict empty/duplicate/missing guards and deployed
    Admin cleanup actions. Round 49 closed the configurable failed-attempt
-   threshold by driving lockout from `auth.login.maxFailedAttempts`.
-   Remaining work is IP/location enrichment where feasible and any
-   logout/mobile/social logging stages.
+   threshold by driving lockout from `auth.login.maxFailedAttempts`. Round 50
+   closed current-user self logout logging and real token/session revocation.
+   Remaining work is IP/location enrichment where feasible, force-logout
+   login-log integration and mobile/SMS/social login logging stages.
 3. `core.dept`: Round 27 closed the enabled-department simple-list option
    source consumed by Admin Users; Round 43 closed user-bound department
    deletion protection and preserved user `deptId` on failed delete. Remaining

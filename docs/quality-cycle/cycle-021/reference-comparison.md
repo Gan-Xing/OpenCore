@@ -1536,3 +1536,36 @@ OpenCore does not claim captcha verification, IP location enrichment, broader
 logout/mobile/SMS/social login recording, session termination from the
 login-log page, secret vault/KMS integration or broad runtime feature flags in
 this round.
+
+## Round 50 Self Logout Reference Shape
+
+RuoYi wires Spring Security logout to `/logout`; the logout success handler
+extracts the current login token, removes it from token storage and records a
+login-info row with logout status. Yudao exposes `/system/auth/logout`; the
+auth service removes the current OAuth2 access token and creates a
+`LOGOUT_SELF` login-log entry. Both references treat logout as a backend
+security operation, not just a browser-local token deletion.
+
+OpenCore already had:
+
+- bearer tokens carrying a token ID;
+- online-user sessions registered on login and checked during bearer auth;
+- operator kick-out revoking online-user sessions;
+- `logout.self` and `logout.force` in the login-log type model;
+- Admin avatar logout that only removed local storage.
+
+Round 50 admits the current-user self logout stage:
+
+- expose `POST /api/auth/logout` with bearer auth and a `200` response;
+- verify the current bearer token and revoke its online-user session by
+  tokenId;
+- record a successful `logout.self` login log with request context;
+- keep the Admin logout UX simple while changing it to call the backend logout
+  API before clearing local token state;
+- expose the operation through SDK/OpenAPI;
+- add fixed-port, deploy and public smoke proving the logged-out token is
+  rejected by `/auth/me` and the `logout.self` row is queryable.
+
+OpenCore does not claim IP location enrichment, force-logout login-log
+integration, mobile/SMS/social login recording or a Login Logs page action for
+terminating sessions in this round.
