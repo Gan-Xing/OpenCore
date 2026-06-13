@@ -2949,6 +2949,18 @@
             "schema": { "type": "string" }
           },
           {
+            "name": "logType",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "result",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
             "name": "success",
             "required": false,
             "in": "query",
@@ -3011,6 +3023,18 @@
           },
           {
             "name": "username",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "logType",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "result",
             "required": false,
             "in": "query",
             "schema": { "type": "string" }
@@ -6757,6 +6781,27 @@
         "properties": {
           "id": { "type": "string" },
           "username": { "type": "string" },
+          "logType": {
+            "type": "string",
+            "enum": [
+              "login.mobile",
+              "login.sms",
+              "login.social",
+              "login.username",
+              "logout.force",
+              "logout.self"
+            ]
+          },
+          "result": {
+            "type": "string",
+            "enum": [
+              "bad_credentials",
+              "captcha_code_error",
+              "captcha_not_found",
+              "success",
+              "user_disabled"
+            ]
+          },
           "success": { "type": "boolean" },
           "failureReason": { "type": "string" },
           "ip": { "type": "string" },
@@ -6769,6 +6814,8 @@
         "required": [
           "id",
           "username",
+          "logType",
+          "result",
           "success",
           "ip",
           "userAgent",

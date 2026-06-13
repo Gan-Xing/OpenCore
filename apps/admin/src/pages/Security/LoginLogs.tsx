@@ -12,7 +12,9 @@ import {
 import {
   createLoginLogFixtures,
   type LoginLogQueryRequest,
+  type LoginLogResult,
   type LoginLogSummary,
+  type LoginLogType,
 } from '@opencore/sdk';
 import {
   Alert,
@@ -45,8 +47,25 @@ import {
 } from '../shared/ReadOnlyDetailDrawer';
 
 const fallbackRows = createLoginLogFixtures().items;
+const loginTypeOptions: { label: string; value: LoginLogType }[] = [
+  { label: 'Username login', value: 'login.username' },
+  { label: 'Mobile login', value: 'login.mobile' },
+  { label: 'SMS login', value: 'login.sms' },
+  { label: 'Social login', value: 'login.social' },
+  { label: 'Self logout', value: 'logout.self' },
+  { label: 'Forced logout', value: 'logout.force' },
+];
+const loginResultOptions: { label: string; value: LoginLogResult }[] = [
+  { label: 'Success', value: 'success' },
+  { label: 'Bad credentials', value: 'bad_credentials' },
+  { label: 'User disabled', value: 'user_disabled' },
+  { label: 'Captcha missing', value: 'captcha_not_found' },
+  { label: 'Captcha error', value: 'captcha_code_error' },
+];
 const searchFields: CurrentPageSearchField<LoginLogSummary>[] = [
   'username',
+  'logType',
+  'result',
   'ip',
   'browser',
   'os',
@@ -57,7 +76,8 @@ const exportColumns: CurrentPageExportColumn<LoginLogSummary>[] = [
   { title: 'ID', dataIndex: 'id' },
   { title: 'Time', dataIndex: 'createdAt' },
   { title: 'Username', dataIndex: 'username' },
-  { title: 'Success', dataIndex: 'success' },
+  { title: 'Login Type', dataIndex: 'logType' },
+  { title: 'Result', dataIndex: 'result' },
   { title: 'Failure Reason', dataIndex: 'failureReason' },
   { title: 'IP', dataIndex: 'ip' },
   { title: 'User Agent', dataIndex: 'userAgent' },
@@ -70,7 +90,8 @@ type LoginLogServerFilterDraft = {
   createdFrom: string;
   createdTo: string;
   ip: string;
-  success?: boolean;
+  logType?: LoginLogType;
+  result?: LoginLogResult;
   username: string;
 };
 
@@ -86,13 +107,22 @@ function createFilterOptions(
 ): CurrentPageFilterOption<LoginLogSummary>[] {
   return [
     {
-      key: 'success',
-      options: [
-        { label: 'success', value: 'true' },
-        { label: 'failure', value: 'false' },
-      ],
+      key: 'result',
+      options: loginResultOptions.map((option) => ({
+        label: option.label,
+        value: option.value,
+      })),
       placeholder: 'Result',
-      predicate: (record, value) => record.success === (value === 'true'),
+      predicate: (record, value) => record.result === value,
+    },
+    {
+      key: 'logType',
+      options: loginTypeOptions.map((option) => ({
+        label: option.label,
+        value: option.value,
+      })),
+      placeholder: 'Type',
+      predicate: (record, value) => record.logType === value,
     },
     {
       key: 'username',
@@ -108,7 +138,8 @@ function createDetailFields(record: LoginLogSummary): DetailField[] {
     { label: 'ID', value: record.id },
     { label: 'Time', value: record.createdAt },
     { label: 'Username', value: record.username },
-    { label: 'Result', value: record.success ? 'success' : 'failure' },
+    { label: 'Login Type', value: formatLoginType(record.logType) },
+    { label: 'Result', value: formatLoginResult(record.result) },
     { label: 'Failure Reason', value: record.failureReason },
     { label: 'IP', value: record.ip },
     { label: 'User Agent', value: record.userAgent },
@@ -125,7 +156,8 @@ function createServerFilterQuery(
     createdFrom: toIsoDateTime(draft.createdFrom),
     createdTo: toIsoDateTime(draft.createdTo),
     ip: draft.ip.trim() || undefined,
-    success: draft.success,
+    logType: draft.logType,
+    result: draft.result,
     username: draft.username.trim() || undefined,
   };
 }
@@ -137,6 +169,18 @@ function toIsoDateTime(value: string): string | undefined {
 
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
+}
+
+function formatLoginType(value: LoginLogType): string {
+  return (
+    loginTypeOptions.find((option) => option.value === value)?.label ?? value
+  );
+}
+
+function formatLoginResult(value: LoginLogResult): string {
+  return (
+    loginResultOptions.find((option) => option.value === value)?.label ?? value
+  );
 }
 
 export default function LoginLogsPage() {
@@ -219,12 +263,18 @@ export default function LoginLogsPage() {
       ),
     },
     {
+      title: 'Login Type',
+      dataIndex: 'logType',
+      width: 136,
+      render: (_, record) => <Tag>{formatLoginType(record.logType)}</Tag>,
+    },
+    {
       title: 'Result',
-      dataIndex: 'success',
-      width: 112,
+      dataIndex: 'result',
+      width: 144,
       render: (_, record) => (
         <Tag color={record.success ? 'green' : 'red'}>
-          {record.success ? 'success' : 'failure'}
+          {formatLoginResult(record.result)}
         </Tag>
       ),
     },
@@ -270,23 +320,35 @@ export default function LoginLogsPage() {
         value={serverFilterDraft.ip}
       />
       <Select
+        aria-label="Login type server filter"
+        onChange={(value) =>
+          updateServerFilterDraft(
+            'logType',
+            value === 'all' ? undefined : (value as LoginLogType),
+          )
+        }
+        options={[{ label: 'All', value: 'all' }, ...loginTypeOptions]}
+        style={{ width: 152 }}
+        value={
+          serverFilterDraft.logType === undefined
+            ? 'all'
+            : serverFilterDraft.logType
+        }
+      />
+      <Select
         aria-label="Login result server filter"
         onChange={(value) =>
           updateServerFilterDraft(
-            'success',
-            value === 'all' ? undefined : value === 'true',
+            'result',
+            value === 'all' ? undefined : (value as LoginLogResult),
           )
         }
-        options={[
-          { label: 'All', value: 'all' },
-          { label: 'Success', value: 'true' },
-          { label: 'Failure', value: 'false' },
-        ]}
-        style={{ width: 116 }}
+        options={[{ label: 'All', value: 'all' }, ...loginResultOptions]}
+        style={{ width: 160 }}
         value={
-          serverFilterDraft.success === undefined
+          serverFilterDraft.result === undefined
             ? 'all'
-            : String(serverFilterDraft.success)
+            : serverFilterDraft.result
         }
       />
       <Input

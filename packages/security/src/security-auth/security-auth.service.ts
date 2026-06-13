@@ -6,6 +6,7 @@ import {
   SecurityAuthUserRepository,
   SecurityLoginAttemptRecorder,
   type SecurityLoginAttemptRecord,
+  type SecurityLoginResult,
 } from './security-auth.repository';
 import { SecurityBearerTokenService } from './security-bearer-token.service';
 import { verifySecurityPassword } from './security-password';
@@ -48,17 +49,38 @@ export class SecurityAuthService {
   ): Promise<LoginResponse> {
     const user = await this.repository.findUserByUsername(username);
 
-    if (
-      !user ||
-      !user.enabled ||
-      !verifySecurityPassword(password, user.passwordHash)
-    ) {
-      await this.recordLoginAttempt(username, false, context);
+    if (!user) {
+      await this.recordLoginAttempt(
+        username,
+        'bad_credentials',
+        'invalid-credentials',
+        context,
+      );
+      throw new UnauthorizedException('Invalid username or password');
+    }
+
+    if (!verifySecurityPassword(password, user.passwordHash)) {
+      await this.recordLoginAttempt(
+        username,
+        'bad_credentials',
+        'invalid-credentials',
+        context,
+      );
+      throw new UnauthorizedException('Invalid username or password');
+    }
+
+    if (!user.enabled) {
+      await this.recordLoginAttempt(
+        username,
+        'user_disabled',
+        'user-disabled',
+        context,
+      );
       throw new UnauthorizedException('Invalid username or password');
     }
 
     const session = await this.createSessionForUser(user.id, context);
-    await this.recordLoginAttempt(username, true, context);
+    await this.recordLoginAttempt(username, 'success', undefined, context);
     return session;
   }
 
@@ -117,13 +139,16 @@ export class SecurityAuthService {
 
   private async recordLoginAttempt(
     username: string,
-    success: boolean,
+    result: SecurityLoginResult,
+    failureReason: string | undefined,
     context: LoginContext,
   ): Promise<void> {
     const record: SecurityLoginAttemptRecord = {
       username,
-      success,
-      failureReason: success ? undefined : 'invalid-credentials-or-disabled',
+      logType: 'login.username',
+      result,
+      success: result === 'success',
+      failureReason,
       ip: context.ip ?? 'unknown',
       userAgent: context.userAgent ?? 'unknown',
       requestId: context.requestId ?? 'unknown',

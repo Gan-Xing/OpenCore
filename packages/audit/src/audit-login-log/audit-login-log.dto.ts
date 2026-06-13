@@ -7,6 +7,40 @@ export class LoginLogDto {
   @ApiProperty()
   username!: string;
 
+  @ApiProperty({
+    enum: [
+      'login.mobile',
+      'login.sms',
+      'login.social',
+      'login.username',
+      'logout.force',
+      'logout.self',
+    ],
+  })
+  logType!:
+    | 'login.mobile'
+    | 'login.sms'
+    | 'login.social'
+    | 'login.username'
+    | 'logout.force'
+    | 'logout.self';
+
+  @ApiProperty({
+    enum: [
+      'bad_credentials',
+      'captcha_code_error',
+      'captcha_not_found',
+      'success',
+      'user_disabled',
+    ],
+  })
+  result!:
+    | 'bad_credentials'
+    | 'captcha_code_error'
+    | 'captcha_not_found'
+    | 'success'
+    | 'user_disabled';
+
   @ApiProperty()
   success!: boolean;
 
@@ -58,6 +92,12 @@ export class LoginLogQueryDto {
 
   @ApiProperty({ required: false })
   username?: string;
+
+  @ApiProperty({ required: false })
+  logType?: string;
+
+  @ApiProperty({ required: false })
+  result?: string;
 
   @ApiProperty({ required: false })
   success?: boolean | string;

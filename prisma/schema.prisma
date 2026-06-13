@@ -226,6 +226,8 @@ model AuditLog {
 model LoginLog {
   id            String   @id @default(cuid())
   username      String
+  logType       String   @default("login.username")
+  result        String   @default("success")
   success       Boolean
   failureReason String?
   ip            String

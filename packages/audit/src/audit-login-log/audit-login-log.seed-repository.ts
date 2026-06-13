@@ -28,6 +28,8 @@ export class SeedAuditLoginLogRepository extends AuditLoginLogRepository {
         (log) =>
           (filters.username === undefined ||
             log.username.includes(filters.username)) &&
+          (filters.logType === undefined || log.logType === filters.logType) &&
+          (filters.result === undefined || log.result === filters.result) &&
           (filters.ip === undefined || log.ip.includes(filters.ip)) &&
           (filters.success === undefined || log.success === filters.success),
       )
@@ -52,7 +54,15 @@ export class SeedAuditLoginLogRepository extends AuditLoginLogRepository {
     this.loginLogs = [
       enrichAuditLoginLogRecord({
         id: `login_${this.loginLogs.length + 1}`,
-        ...record,
+        username: record.username,
+        logType: record.logType ?? 'login.username',
+        result:
+          record.result ?? (record.success ? 'success' : 'bad_credentials'),
+        success: record.success,
+        failureReason: record.failureReason,
+        ip: record.ip,
+        userAgent: record.userAgent,
+        requestId: record.requestId,
         createdAt: new Date().toISOString(),
       }),
       ...this.loginLogs,

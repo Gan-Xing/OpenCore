@@ -901,13 +901,19 @@ if (
   !loginLogsPage.includes('rows={filteredRows}') ||
   !loginLogsPage.includes('Read-only audit trail') ||
   !loginLogsPage.includes('serverFilterToolbar') ||
+  !loginLogsPage.includes('loginTypeOptions') ||
+  !loginLogsPage.includes('loginResultOptions') ||
+  !loginLogsPage.includes('formatLoginType') ||
+  !loginLogsPage.includes('formatLoginResult') ||
+  !loginLogsPage.includes('logType') ||
+  !loginLogsPage.includes('result') ||
   !loginLogsPage.includes('createdFrom') ||
   !loginLogsPage.includes('createdTo') ||
   !loginLogsPage.includes('Browser') ||
   !loginLogsPage.includes('OS')
 ) {
   throw new Error(
-    'Login Logs page must use live SDK detail/list with server-side filters, device fields and current-page export.',
+    'Login Logs page must use live SDK detail/list with server-side filters, login type/result fields, device fields and current-page export.',
   );
 }
 

@@ -9,12 +9,16 @@ import {
 } from '@opencore/common';
 import {
   SecurityLoginAttemptRecorder,
+  type SecurityLoginLogType,
+  type SecurityLoginResult,
   type SecurityLoginAttemptRecord,
 } from '@opencore/security';
 import type { AuditLoginLogRecord } from './audit-login-log.records';
 
 export type AuditLoginLogQuery = PageQueryInput & {
   username?: string;
+  logType?: string;
+  result?: string;
   success?: boolean | string;
   ip?: string;
   createdFrom?: string;
@@ -23,6 +27,8 @@ export type AuditLoginLogQuery = PageQueryInput & {
 
 export type AuditLoginLogFilters = {
   username?: string;
+  logType?: SecurityLoginLogType;
+  result?: SecurityLoginResult;
   success?: boolean;
   ip?: string;
   createdFrom?: string;
@@ -45,6 +51,23 @@ export type AuditLoginLogExportPreview = {
   rowCount: number;
   generatedAt: string;
 };
+
+export const AUDIT_LOGIN_LOG_TYPES = [
+  'login.mobile',
+  'login.sms',
+  'login.social',
+  'login.username',
+  'logout.force',
+  'logout.self',
+] as const satisfies readonly SecurityLoginLogType[];
+
+export const AUDIT_LOGIN_RESULTS = [
+  'bad_credentials',
+  'captcha_code_error',
+  'captcha_not_found',
+  'success',
+  'user_disabled',
+] as const satisfies readonly SecurityLoginResult[];
 
 export abstract class AuditLoginLogRepository extends SecurityLoginAttemptRecorder {
   abstract listLoginLogs(
@@ -75,6 +98,8 @@ export function normalizeAuditLoginLogFilters(
 
   return {
     username: normalizeOptionalString(query.username),
+    logType: normalizeOptionalLoginLogType(query.logType),
+    result: normalizeOptionalLoginResult(query.result),
     success: normalizeOptionalBoolean(query.success),
     ip: normalizeOptionalString(query.ip),
     createdFrom,
@@ -123,6 +148,8 @@ export function createAuditLoginLogExportPreview(
     columns: [
       'createdAt',
       'username',
+      'logType',
+      'result',
       'success',
       'failureReason',
       'ip',
@@ -163,4 +190,36 @@ function normalizeOptionalIsoDate(
   }
 
   return date.toISOString();
+}
+
+function normalizeOptionalLoginLogType(
+  value: unknown,
+): SecurityLoginLogType | undefined {
+  return normalizeOptionalEnumValue(value, AUDIT_LOGIN_LOG_TYPES, 'logType');
+}
+
+function normalizeOptionalLoginResult(
+  value: unknown,
+): SecurityLoginResult | undefined {
+  return normalizeOptionalEnumValue(value, AUDIT_LOGIN_RESULTS, 'result');
+}
+
+function normalizeOptionalEnumValue<T extends string>(
+  value: unknown,
+  allowed: readonly T[],
+  fieldName: string,
+): T | undefined {
+  const normalized = normalizeOptionalString(value);
+
+  if (normalized === undefined) {
+    return undefined;
+  }
+
+  if (!allowed.includes(normalized as T)) {
+    throw new BadRequestException(
+      `${fieldName} must be one of: ${allowed.join(', ')}`,
+    );
+  }
+
+  return normalized as T;
 }

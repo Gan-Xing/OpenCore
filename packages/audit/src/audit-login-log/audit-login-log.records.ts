@@ -1,8 +1,14 @@
 import { parseUserAgent } from '@opencore/common';
+import type {
+  SecurityLoginLogType,
+  SecurityLoginResult,
+} from '@opencore/security';
 
 export type AuditLoginLogRecord = {
   id: string;
   username: string;
+  logType: SecurityLoginLogType;
+  result: SecurityLoginResult;
   success: boolean;
   failureReason?: string;
   ip: string;
@@ -31,6 +37,8 @@ export const seedAuditLoginLogs: readonly AuditLoginLogRecord[] = [
   enrichAuditLoginLogRecord({
     id: 'login_success_admin',
     username: 'admin',
+    logType: 'login.username',
+    result: 'success',
     success: true,
     ip: '127.0.0.1',
     userAgent: 'opencore-smoke',
@@ -40,6 +48,8 @@ export const seedAuditLoginLogs: readonly AuditLoginLogRecord[] = [
   enrichAuditLoginLogRecord({
     id: 'login_failure_unknown',
     username: 'unknown',
+    logType: 'login.username',
+    result: 'bad_credentials',
     success: false,
     failureReason: 'Invalid username or password',
     ip: '127.0.0.1',

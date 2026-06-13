@@ -334,6 +334,8 @@ export type AuditLogQueryRequest = PageRequest & {
 export type LoginLogSummary = {
   id: string;
   username: string;
+  logType: LoginLogType;
+  result: LoginLogResult;
   success: boolean;
   failureReason?: string;
   ip: string;
@@ -344,10 +346,27 @@ export type LoginLogSummary = {
   createdAt: string;
 };
 
+export type LoginLogType =
+  | 'login.mobile'
+  | 'login.sms'
+  | 'login.social'
+  | 'login.username'
+  | 'logout.force'
+  | 'logout.self';
+
+export type LoginLogResult =
+  | 'bad_credentials'
+  | 'captcha_code_error'
+  | 'captcha_not_found'
+  | 'success'
+  | 'user_disabled';
+
 export type LoginLogQueryRequest = PageRequest & {
   createdFrom?: string;
   createdTo?: string;
   ip?: string;
+  logType?: LoginLogType;
+  result?: LoginLogResult;
   success?: boolean;
   username?: string;
 };

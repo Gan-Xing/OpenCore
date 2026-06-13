@@ -17,6 +17,8 @@ import {
 type PrismaLoginLog = {
   id: string;
   username: string;
+  logType: string;
+  result: string;
   success: boolean;
   failureReason: string | null;
   ip: string;
@@ -39,6 +41,8 @@ export class PrismaAuditLoginLogRepository extends AuditLoginLogRepository {
       ...(filters.username === undefined
         ? {}
         : { username: { contains: filters.username } }),
+      ...(filters.logType === undefined ? {} : { logType: filters.logType }),
+      ...(filters.result === undefined ? {} : { result: filters.result }),
       ...(filters.ip === undefined ? {} : { ip: { contains: filters.ip } }),
       ...(filters.success === undefined ? {} : { success: filters.success }),
       ...(filters.createdFrom === undefined && filters.createdTo === undefined
@@ -73,6 +77,9 @@ export class PrismaAuditLoginLogRepository extends AuditLoginLogRepository {
     await this.prisma.loginLog.create({
       data: {
         username: record.username,
+        logType: record.logType ?? 'login.username',
+        result:
+          record.result ?? (record.success ? 'success' : 'bad_credentials'),
         success: record.success,
         failureReason: record.failureReason,
         ip: record.ip,
@@ -99,6 +106,25 @@ function toAuditLoginLogRecord(log: PrismaLoginLog): AuditLoginLogRecord {
   return enrichAuditLoginLogRecord({
     id: log.id,
     username: log.username,
+    logType:
+      log.logType === 'login.mobile' ||
+      log.logType === 'login.sms' ||
+      log.logType === 'login.social' ||
+      log.logType === 'login.username' ||
+      log.logType === 'logout.force' ||
+      log.logType === 'logout.self'
+        ? log.logType
+        : 'login.username',
+    result:
+      log.result === 'bad_credentials' ||
+      log.result === 'captcha_code_error' ||
+      log.result === 'captcha_not_found' ||
+      log.result === 'success' ||
+      log.result === 'user_disabled'
+        ? log.result
+        : log.success
+          ? 'success'
+          : 'bad_credentials',
     success: log.success,
     failureReason: log.failureReason ?? undefined,
     ip: log.ip,

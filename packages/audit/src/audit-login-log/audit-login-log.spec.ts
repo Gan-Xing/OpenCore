@@ -16,6 +16,8 @@ describe('@opencore/audit audit-login-log', () => {
       items: [
         expect.objectContaining({
           username: 'admin',
+          logType: 'login.username',
+          result: 'success',
           success: true,
           browser: 'OpenCore Smoke',
           os: 'Unknown',
@@ -32,8 +34,10 @@ describe('@opencore/audit audit-login-log', () => {
 
     await service.recordLoginAttempt({
       username: 'operator',
+      logType: 'login.username',
+      result: 'bad_credentials',
       success: false,
-      failureReason: 'invalid-credentials-or-disabled',
+      failureReason: 'invalid-credentials',
       ip: '127.0.0.1',
       userAgent: 'jest',
       requestId: 'req_seed_login_failure',
@@ -44,6 +48,8 @@ describe('@opencore/audit audit-login-log', () => {
         createdFrom: '2026-01-01T00:00:00.000Z',
         ip: '127.0.0.1',
         success: false,
+        logType: 'login.username',
+        result: 'bad_credentials',
         pageSize: 10,
       }),
     ).resolves.toMatchObject({
@@ -61,6 +67,8 @@ describe('@opencore/audit audit-login-log', () => {
       columns: [
         'createdAt',
         'username',
+        'logType',
+        'result',
         'success',
         'failureReason',
         'ip',
@@ -81,6 +89,12 @@ describe('@opencore/audit audit-login-log', () => {
     await expect(
       service.listLoginLogs({ createdFrom: 'not-a-date' }),
     ).rejects.toThrow('createdFrom must be a valid ISO date-time string');
+    await expect(
+      service.listLoginLogs({ result: 'not-a-result' }),
+    ).rejects.toThrow('result must be one of:');
+    await expect(
+      service.listLoginLogs({ logType: 'login.magic' }),
+    ).rejects.toThrow('logType must be one of:');
   });
 
   describe('PrismaAuditLoginLogRepository integration', () => {
@@ -122,8 +136,10 @@ describe('@opencore/audit audit-login-log', () => {
 
       await service.recordLoginAttempt({
         username: `user_${testRunId}`,
+        logType: 'login.username',
+        result: 'bad_credentials',
         success: false,
-        failureReason: 'invalid-credentials-or-disabled',
+        failureReason: 'invalid-credentials',
         ip: '127.0.0.1',
         userAgent:
           'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -135,6 +151,8 @@ describe('@opencore/audit audit-login-log', () => {
           createdFrom: '2026-01-01T00:00:00.000Z',
           ip: '127.0.0.1',
           username: `user_${testRunId}`,
+          logType: 'login.username',
+          result: 'bad_credentials',
         }),
       ).resolves.toMatchObject({
         total: 1,
@@ -144,7 +162,9 @@ describe('@opencore/audit audit-login-log', () => {
             requestId,
             os: 'Windows',
             success: false,
-            failureReason: 'invalid-credentials-or-disabled',
+            failureReason: 'invalid-credentials',
+            logType: 'login.username',
+            result: 'bad_credentials',
           }),
         ],
       });
@@ -160,7 +180,9 @@ describe('@opencore/audit audit-login-log', () => {
       ).resolves.toMatchObject({
         requestId,
         success: false,
-        failureReason: 'invalid-credentials-or-disabled',
+        failureReason: 'invalid-credentials',
+        logType: 'login.username',
+        result: 'bad_credentials',
       });
     });
 

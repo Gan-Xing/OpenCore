@@ -43,6 +43,8 @@ describe('AuthService', () => {
       items: expect.arrayContaining([
         expect.objectContaining({
           username: 'admin',
+          logType: 'login.username',
+          result: 'success',
           success: true,
           failureReason: undefined,
           ip: '127.0.0.1',
@@ -67,8 +69,10 @@ describe('AuthService', () => {
       items: expect.arrayContaining([
         expect.objectContaining({
           username: 'admin',
+          logType: 'login.username',
+          result: 'bad_credentials',
           success: false,
-          failureReason: 'invalid-credentials-or-disabled',
+          failureReason: 'invalid-credentials',
           ip: '127.0.0.1',
           requestId: 'req_login_failure',
           userAgent: 'jest',

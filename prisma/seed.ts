@@ -657,6 +657,8 @@ async function seedSystemManagement(): Promise<{
       where: { id: loginLog.id },
       update: {
         username: loginLog.username,
+        logType: loginLog.logType,
+        result: loginLog.result,
         success: loginLog.success,
         failureReason: loginLog.failureReason,
         ip: loginLog.ip,
@@ -667,6 +669,8 @@ async function seedSystemManagement(): Promise<{
       create: {
         id: loginLog.id,
         username: loginLog.username,
+        logType: loginLog.logType,
+        result: loginLog.result,
         success: loginLog.success,
         failureReason: loginLog.failureReason,
         ip: loginLog.ip,

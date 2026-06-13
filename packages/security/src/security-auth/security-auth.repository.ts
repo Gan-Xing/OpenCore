@@ -10,12 +10,29 @@ export type SecurityAuthUserRecord = {
 
 export type SecurityLoginAttemptRecord = {
   username: string;
+  logType?: SecurityLoginLogType;
+  result?: SecurityLoginResult;
   success: boolean;
   failureReason?: string;
   ip: string;
   userAgent: string;
   requestId: string;
 };
+
+export type SecurityLoginLogType =
+  | 'login.mobile'
+  | 'login.sms'
+  | 'login.social'
+  | 'login.username'
+  | 'logout.force'
+  | 'logout.self';
+
+export type SecurityLoginResult =
+  | 'bad_credentials'
+  | 'captcha_code_error'
+  | 'captcha_not_found'
+  | 'success'
+  | 'user_disabled';
 
 export type SecurityAuthSessionRecord = {
   userId: string;

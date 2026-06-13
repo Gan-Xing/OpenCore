@@ -290,6 +290,8 @@ export function createLoginLogFixtures(): PageResponse<LoginLogSummary> {
     {
       id: 'login_success_admin',
       username: 'admin',
+      logType: 'login.username',
+      result: 'success',
       success: true,
       ip: '127.0.0.1',
       userAgent: 'opencore-smoke',

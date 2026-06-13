@@ -63,6 +63,8 @@ try {
 
   const failedLog = await waitForFailedLoginLog();
   assertEqual(failedLog.username, failedUsername, 'failed login username');
+  assertEqual(failedLog.logType, 'login.username', 'failed login log type');
+  assertEqual(failedLog.result, 'bad_credentials', 'failed login result');
   assertEqual(failedLog.success, false, 'failed login success flag');
 
   const detailLog = await apiRequest(
@@ -74,6 +76,8 @@ try {
     failedUsername,
     'detail failed login username',
   );
+  assertEqual(detailLog.logType, 'login.username', 'detail login log type');
+  assertEqual(detailLog.result, 'bad_credentials', 'detail login log result');
   assertEqual(detailLog.success, false, 'detail failed login success flag');
   assertString(detailLog.requestId, 'detail login log requestId');
   assertString(detailLog.ip, 'detail login log ip');
@@ -90,7 +94,7 @@ try {
     offsetIsoDate(detailLog.createdAt, 60_000, 'detail login log createdAt'),
   );
   const serverFilteredPage = await apiRequest(
-    `/core/login-logs?page=1&pageSize=10&username=${encodedFailedUsername}&success=false&ip=${encodedIp}&createdFrom=${createdFrom}&createdTo=${createdTo}`,
+    `/core/login-logs?page=1&pageSize=10&username=${encodedFailedUsername}&logType=login.username&result=bad_credentials&success=false&ip=${encodedIp}&createdFrom=${createdFrom}&createdTo=${createdTo}`,
   );
   assertArray(serverFilteredPage.items, 'server filtered login log items');
   if (
@@ -119,12 +123,20 @@ try {
   await apiRequest('/core/login-logs?createdFrom=not-a-date', {
     expected: [400],
   });
+  await apiRequest('/core/login-logs?result=not-a-result', {
+    expected: [400],
+  });
+  await apiRequest('/core/login-logs?logType=login.magic', {
+    expected: [400],
+  });
 
   const exportPreview = await apiRequest(
-    `/core/login-logs/export?username=${encodedFailedUsername}&success=false&ip=${encodedIp}&createdFrom=${createdFrom}&createdTo=${createdTo}`,
+    `/core/login-logs/export?username=${encodedFailedUsername}&logType=login.username&result=bad_credentials&success=false&ip=${encodedIp}&createdFrom=${createdFrom}&createdTo=${createdTo}`,
   );
   assertEqual(exportPreview.scope, 'current-page', 'login log export scope');
   assertArray(exportPreview.columns, 'login log export columns');
+  assertIncludes(exportPreview.columns, 'logType', 'login log export columns');
+  assertIncludes(exportPreview.columns, 'result', 'login log export columns');
   assertIncludes(exportPreview.columns, 'browser', 'login log export columns');
   assertIncludes(exportPreview.columns, 'os', 'login log export columns');
 
@@ -141,6 +153,8 @@ try {
         'auth.failed-login-recorded',
         'core.login-log.list',
         'core.login-log.server-filters',
+        'core.login-log.result-schema',
+        'core.login-log.invalid-result-guard',
         'core.login-log.invalid-time-range-guard',
         'core.login-log.detail',
         'core.login-log.device-fields',
@@ -167,7 +181,7 @@ async function waitForFailedLoginLog() {
     const page = await apiRequest(
       `/core/login-logs?page=1&pageSize=10&username=${encodeURIComponent(
         failedUsername,
-      )}&success=false`,
+      )}&logType=login.username&result=bad_credentials&success=false`,
     );
     assertArray(page.items, 'filtered failed login log items');
     lastItems = page.items;
