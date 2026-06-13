@@ -33,8 +33,9 @@ permissions, seeds, OpenAPI and smoke guards.
 - Auth/session: login policy, logout, force logout, online user kick-out and
   token/session revocation are real runtime behavior, not only audit rows.
 - Logs: login-log has type/result, lockout, cleanup, actor/reason and
-  deterministic location enrichment. Operation-log list/detail/export is live
-  but maintenance depth remains.
+  deterministic location enrichment. Operation-log list/detail/export plus
+  cleanup maintenance are live; retention scheduling and deeper enrichment
+  remain.
 - Notice: management, inbox read state, read-user analytics, templates,
   delivery records, local provider execution, Integration outbox bridge and
   outbox status synchronization are live.
@@ -57,6 +58,17 @@ successful provider send. Round 67 fixes OpenCore's state model:
 This is the correct foundation before connecting real SMTP/SMS providers or
 callback/webhook execution.
 
+## Round 68 Reference Decision
+
+RuoYi/Yudao both expose operation-log cleanup/删除 as a privileged maintenance
+action. OpenCore now matches that foundation without weakening audit
+visibility:
+
+- cleanup is protected by `core:audit-log:delete`;
+- batch delete has empty, duplicate and missing-ID guards;
+- clean-all reports affected rows;
+- the cleanup request itself is still audited by the global interceptor.
+
 ## Explicit Non-Claims
 
 OpenCore does not yet claim full RuoYi/Yudao parity for:
@@ -75,5 +87,5 @@ Those domains require explicit admission. P0/P1 foundation capabilities do not.
 
 Use the next comparison to choose one foundation stage from the remaining
 queue: notice provider reliability, config rollout governance, operation-log
-maintenance, scheduler/monitor operation depth, OpenForge Admin or integration
+enrichment, scheduler/monitor operation depth, OpenForge Admin or integration
 health/config audit.

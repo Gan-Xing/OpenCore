@@ -70,14 +70,14 @@ generator-core. Admin is Umi Max + Ant Design Pro V6 + ProComponents v3 +
 antd 6 + React 19. The vulnerable `mockjs` / `@umijs/openapi` path must not be
 reintroduced.
 
-Cycle-021 has completed 67 deployable stages. Completed foundation clusters:
+Cycle-021 has completed 68 deployable stages. Completed foundation clusters:
 
 - System/RBAC: notice, department, post, menu, role, permission, user, dict,
   config and file.
 - Security/session: login policy, logout, force logout, online-user kick-out
   and real token/session revocation.
 - Logs: login-log type/result, lockout, cleanup, actor/reason and deterministic
-  location. Operation-log list/detail/export.
+  location. Operation-log list/detail/export/batch delete/clean-all.
 - Config: runtime keys, login policy, feature flags, rollout percentage,
   audience rules and secret vault.
 - Notice: management, inbox/read state, read-user analytics, templates,
@@ -86,16 +86,14 @@ Cycle-021 has completed 67 deployable stages. Completed foundation clusters:
 
 ## Latest Runtime Stage
 
-Round 67: `core.notice` outbox status hardening.
+Round 68: `core.audit-log` cleanup maintenance.
 
-- Fixed the Round 66 defect where queued mail/SMS outbox rows were treated as
-  provider `sent`.
-- Added explicit outbox `failed`, `retry` and `sent` transitions for mail and
-  SMS.
-- Synced Integration outbox state back to notice delivery rows.
-- Added Admin delivery-modal outbox actions.
-- Added smoke/deploy guards for pending handoff, retry, sent and stale bundle
-  markers.
+- Added permission-gated batch delete and clean-all APIs for operation logs.
+- Added `core:audit-log:delete` to module registry, seed permissions, API
+  permission matrix, SDK and Admin access.
+- Added Operation Logs selected delete and clean-all controls in Admin.
+- Added smoke/deploy guards for empty/duplicate/missing IDs, successful delete,
+  deleted detail 404, clean-all behavior and stale Admin bundle markers.
 - Deployed on API `39172` and Admin `39174`; public verification passed.
 
 Same-commit hashes are not written into this file. Use the ledger and git log
@@ -110,7 +108,8 @@ foundation defect:
    retry policy and realtime push.
 2. Config governance: multi-environment rollout controls, external KMS binding,
    key rotation and secret version history.
-3. Operation-log maintenance and enrichment.
+3. Operation-log enrichment: retention scheduling, duration/location fields and
+   governance policy.
 4. Scheduler/monitor operation depth.
 5. OpenForge Admin safe plan/diff/check/apply UI.
 6. Integration health/config audit.

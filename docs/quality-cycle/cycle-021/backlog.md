@@ -34,20 +34,20 @@ workflow, industry packages and OpenForge direct schema/business-code writing.
 - Rounds 50-59: logout/force-logout audit semantics, department/post ordering,
   data-scope enforcement, notice inbox/read analytics, actor/reason fields,
   feature flags and login-log IP/location.
-- Rounds 60-67: notice templates, delivery records, secret vault, local
+- Rounds 60-68: notice templates, delivery records, secret vault, local
   provider, feature-flag rollout/audience, Integration outbox bridge and
-  outbox state hardening.
+  outbox state hardening, plus operation-log cleanup maintenance.
 
 ## Latest Done
 
-Round 67 closed the Round 66 mail/SMS outbox state defect:
+Round 68 completed operation-log cleanup maintenance:
 
-- queued external handoff stays `pending`,
-- repeat execute is idempotent for handed-off deliveries,
-- outbox `failed`, `retry` and `sent` APIs exist for mail and SMS,
-- provider state syncs back to notice delivery rows,
-- Admin exposes outbox actions in the delivery modal,
-- smoke/deploy guards cover the state machine and stale Admin bundle markers.
+- `core:audit-log:delete` is registered, seeded and guarded;
+- batch delete rejects empty, duplicate and missing IDs without partial delete;
+- clean-all returns affected count and leaves the clean request auditable;
+- Admin Operation Logs exposes selected delete and clean-all controls;
+- smoke/deploy guards cover API behavior, OpenAPI paths and stale Admin bundle
+  markers.
 
 ## Active P1/P2 Queue
 
@@ -55,8 +55,8 @@ Round 67 closed the Round 66 mail/SMS outbox state defect:
    intake, retry policy and realtime push.
 2. Config governance: multi-environment rollout controls, external KMS binding,
    key rotation and secret version history.
-3. Operation-log maintenance: retention policy, cleanup actions, structured
-   duration/location/user-agent fields and governance.
+3. Operation-log enrichment: retention policy scheduling, structured
+   duration/location fields and governance.
 4. Scheduler/monitor operation depth: enable/disable/run-now, run-log
    diagnosis, retry/timeout controls and registry whitelist visibility.
 5. OpenForge Admin: plan/diff/check/apply/manifest/rollback surfaces over the

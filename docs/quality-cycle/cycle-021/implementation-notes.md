@@ -38,41 +38,42 @@ ledger.
 
 ## Current Runtime State
 
-Cycle-021 has completed 67 deployable stages. The project is no longer a
+Cycle-021 has completed 68 deployable stages. The project is no longer a
 skeleton: API, SDK, Admin, permissions, seed data, OpenAPI snapshots and smoke
 guards exist across the main System/Security/Monitor/Integration foundation
 areas.
 
-The latest runtime stage is Round 67:
+The latest runtime stage is Round 68:
 
-- Capability: `core.notice` and Integration outbox status hardening.
-- Defect closed: Round 66 treated queued mail/SMS outbox handoff as
-  `providerStatus=sent`.
-- Correct state model: external mail/SMS outbox handoff keeps notice delivery
-  `pending`; explicit outbox `failed`, `retry` and `sent` transitions sync
-  back to the delivery row.
-- Idempotency: repeat execute skips deliveries that already have a
-  `providerMessageId`.
-- Admin: System Notices delivery modal exposes outbox actions and provider
-  message state.
-- API/OpenAPI/SDK: mail and SMS outbox `failed`, `retry` and `sent` endpoints
-  are typed and guarded.
+- Capability: `core.audit-log` operation-log cleanup maintenance.
+- API/OpenAPI/SDK: `DELETE /api/core/audit-logs/batch` and
+  `DELETE /api/core/audit-logs/clean` are typed and protected by
+  `core:audit-log:delete`.
+- Runtime: seed and Prisma repositories share strict empty, duplicate and
+  missing-ID guards; clean-all returns the affected count.
+- Admin: `/security/operation-logs` exposes permission-gated selected delete
+  and clean-all controls.
+- Guard: `smoke-core-audit-log.mjs` proves batch-delete guards, successful
+  deletion, detail 404 after deletion and clean-all semantics while allowing
+  the clean-all request itself to be audited.
 
 ## Verification Evidence To Keep
 
 Keep only these high-signal markers in aggregate docs:
 
-- Focused tests passed for Integration repository/permission matrix,
-  System Notice repository and SDK Integration/System clients.
+- Focused tests passed for Audit operation-log repository/service, System
+  Management permission matrix, Module Registry, SDK and Admin smoke/Vitest.
 - Full gates passed for Prisma validate/generate, OpenAPI export/check,
   SDK check, typecheck, lint, API/Admin build and full test/build suites.
 - Local smoke passed on fixed port `39173`.
 - Deployment completed through `pnpm deploy:opencore` on API `39172` and Admin
   `39174`.
 - Public smoke passed against `http://144.217.243.161:39172`.
-- Public Admin chunk at `http://144.217.243.161:39174` contains the outbox
-  action markers.
-- Public OpenAPI at `/api/docs-json` contains the six outbox state endpoints.
+- Public Admin chunk
+  `/p__Security__OperationLogs.c8936563.async.js` contains the cleanup action
+  markers.
+- Public OpenAPI at `/api/docs-json` contains the audit-log batch/clean
+  endpoints and DTO schemas.
 
 The exact command output does not belong here unless a command is unique to a
 new guard.
@@ -86,10 +87,15 @@ new guard.
 - Notice outbox state: `smoke-core-notice.mjs` verifies pending handoff,
   repeat execute idempotency, blank failure rejection, failed-to-retry-to-sent
   sync and mutation guards after sent.
+- Operation-log cleanup: `smoke-core-audit-log.mjs` verifies batch delete
+  guard failures, successful deletion, deleted-detail 404 and clean-all target
+  removal while preserving the audit record for the clean request itself.
 - Secret/config drift: config smoke verifies runtime feature flags, audience
   rules and secret-vault plaintext protection.
 - Session revocation: auth, online-user and login-log smokes verify kicked or
   logged-out tokens return 401.
+- Admin generated types: do not run Admin `typecheck` and `lint` in parallel,
+  because both call `max setup` and can race generated Umi types.
 
 ## Remaining Foundation Debt
 
@@ -99,7 +105,8 @@ new guard.
   rotation and secret version history.
 - Login log: optional external GeoIP provider depth and broader mobile/social
   login semantics.
-- Operation log: retention/cleanup governance and structured enrichment.
+- Operation log: retention policy scheduling and structured enrichment beyond
+  the now-live cleanup controls.
 - Scheduler/monitor: job operation depth, retries/timeouts and richer runtime
   diagnostics.
 - OpenForge Admin: safe plan/diff/check/apply/manifest/rollback UI over the

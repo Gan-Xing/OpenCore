@@ -22,7 +22,7 @@ true:
 | Capability            | Status        | Notes                                                                                                                                                                          |
 | --------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `core.permission`     | Meets         | Permission catalog, registry/custom split and Admin assignment flows are live.                                                                                                 |
-| `core.audit-log`      | Meets         | Immutable list/detail/export is live; cleanup is a retention policy decision.                                                                                                  |
+| `core.audit-log`      | Meets current | List/detail/export plus permission-gated batch delete and clean-all are live. Retention scheduling and richer enrichment remain optional next work.                            |
 | `core.dept`           | Meets         | Tree CRUD, option source, delete guards, ordering and user data-scope integration are live.                                                                                    |
 | `core.post`           | Meets         | CRUD, user binding, option source, batch deletion and ordering are live.                                                                                                       |
 | `core.menu`           | Meets         | Tree metadata, route/menu fields, delete guards and Admin tree operations are live.                                                                                            |
@@ -34,7 +34,6 @@ true:
 | `core.login-log`      | Meets current | Type/result, lockout, cleanup, logout actor/reason and deterministic location are live. External GeoIP depth is optional next work.                                            |
 | `core.config`         | Meets current | Runtime keys, login policy, feature flags, rollout, audience rules and secret vault are live. Multi-env governance/KMS rotation remain.                                        |
 | `core.notice`         | Enhance       | Management, inbox, templates, delivery records, local provider, Integration outbox bridge and Round 67 status sync are live. Real SMTP/SMS callbacks and realtime push remain. |
-| `operation-log`       | P2            | Core audit trail exists; maintenance/enrichment is not yet productized.                                                                                                        |
 | `scheduler/monitor`   | P2            | Runtime packages exist; deeper operator actions and diagnostics remain.                                                                                                        |
 | `OpenForge Admin`     | P2            | CLI/core exists; Admin plan/diff/check/apply UX remains.                                                                                                                       |
 
@@ -46,6 +45,8 @@ true:
 - Round 54 applied admitted user/dept data-scope query enforcement.
 - Round 62 closed secret config storage through encrypted vault fields.
 - Round 67 closed the Round 66 queued-versus-sent outbox defect.
+- Round 68 closed operation-log cleanup maintenance with API/SDK/Admin/smoke
+  coverage.
 
 ## Active Debt Queue
 
@@ -55,8 +56,8 @@ P1/P2 foundation work still worth doing before larger business domains:
    delivery retries and realtime push.
 2. Config governance: multi-environment rollout controls, KMS binding, key
    rotation and secret version history.
-3. Operation-log maintenance: retention, cleanup, structured duration/location
-   and governance.
+3. Operation-log enrichment: retention scheduling, structured
+   duration/location fields and governance.
 4. Scheduler/monitor depth: job enable/disable/run-now, run-log diagnosis,
    retries, timeouts and whitelist visibility.
 5. OpenForge Admin: safe UI over plan/diff/check/apply/manifest/rollback.
@@ -83,5 +84,7 @@ direct schema/business-code writing.
 - Auth: revoked token/session returns 401.
 - Notice outbox: pending handoff, failed/retry/sent sync and post-sent mutation
   guards.
+- Operation log: batch-delete guard failures, deleted-detail 404 and clean-all
+  target removal.
 - Config: runtime flags, rollout/audience shape and secret-vault plaintext
   protection.

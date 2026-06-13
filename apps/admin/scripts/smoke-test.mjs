@@ -451,6 +451,8 @@ if (
   !accessRuntime.includes('core:post:read') ||
   !accessRuntime.includes('core:file:read') ||
   !accessRuntime.includes('core:audit-log:read') ||
+  !accessRuntime.includes('core:audit-log:delete') ||
+  !accessRuntime.includes('canDeleteAuditLogs') ||
   !accessRuntime.includes('core:login-log:read') ||
   !accessRuntime.includes('core:login-log:delete') ||
   !accessRuntime.includes('canDeleteLoginLogs') ||
@@ -935,11 +937,33 @@ if (
   !auditLogsPage.includes('CurrentPageExportButton') ||
   !auditLogsPage.includes('dataSource={filteredRows}') ||
   !auditLogsPage.includes('rows={filteredRows}') ||
-  !auditLogsPage.includes('Read-only audit trail') ||
+  !auditLogsPage.includes('Audit trail with cleanup governance') ||
   !auditLogsPage.includes('jsonSections=')
 ) {
   throw new Error(
     'Operation Logs page must use live SDK detail/list with bounded filtering, metadata detail and current-page export.',
+  );
+}
+
+if (
+  !auditLogsPage.includes('listOpenCoreAuditLogs') ||
+  !auditLogsPage.includes('getOpenCoreAuditLog') ||
+  !auditLogsPage.includes('deleteOpenCoreAuditLogs') ||
+  !auditLogsPage.includes('cleanOpenCoreAuditLogs') ||
+  !auditLogsPage.includes('useCurrentPageFilters') ||
+  !auditLogsPage.includes('CurrentPageExportButton') ||
+  !auditLogsPage.includes('dataSource={filteredRows}') ||
+  !auditLogsPage.includes('rows={filteredRows}') ||
+  !auditLogsPage.includes('Audit trail with cleanup governance') ||
+  !auditLogsPage.includes('core:audit-log:delete') ||
+  !auditLogsPage.includes('canDeleteAuditLogs') ||
+  !auditLogsPage.includes('Delete selected') ||
+  !auditLogsPage.includes('Clean all') ||
+  !auditLogsPage.includes('rowSelection') ||
+  !auditLogsPage.includes('selectedRowKeys')
+) {
+  throw new Error(
+    'Operation Logs page must expose permission-gated cleanup controls over live SDK audit logs.',
   );
 }
 

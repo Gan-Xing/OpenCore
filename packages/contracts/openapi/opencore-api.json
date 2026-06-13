@@ -3642,6 +3642,56 @@
         "tags": ["SystemManagement", "Core Audit Logs"]
       }
     },
+    "/api/core/audit-logs/batch": {
+      "delete": {
+        "operationId": "SystemManagementController_deleteAuditLogs",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchDeleteAuditLogsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditLogBatchMutationResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Audit Logs"]
+      }
+    },
+    "/api/core/audit-logs/clean": {
+      "delete": {
+        "operationId": "SystemManagementController_cleanAuditLogs",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditLogCleanResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Audit Logs"]
+      }
+    },
     "/api/core/audit-logs/{id}": {
       "get": {
         "operationId": "SystemManagementController_getAuditLog",
@@ -8319,6 +8369,30 @@
           "totalPages": { "type": "number" }
         },
         "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "BatchDeleteAuditLogsDto": {
+        "type": "object",
+        "properties": {
+          "ids": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["ids"]
+      },
+      "AuditLogBatchMutationResultDto": {
+        "type": "object",
+        "properties": {
+          "deleted": { "type": "boolean" },
+          "affected": { "type": "number" },
+          "ids": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["deleted", "affected", "ids"]
+      },
+      "AuditLogCleanResultDto": {
+        "type": "object",
+        "properties": {
+          "deleted": { "type": "boolean" },
+          "affected": { "type": "number" }
+        },
+        "required": ["deleted", "affected"]
       },
       "LoginLogDto": {
         "type": "object",

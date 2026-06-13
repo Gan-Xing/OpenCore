@@ -74,3 +74,27 @@ export class AuditLogQueryDto {
   @ApiProperty({ required: false })
   resource?: string;
 }
+
+export class BatchDeleteAuditLogsDto {
+  @ApiProperty({ type: [String] })
+  ids!: readonly string[];
+}
+
+export class AuditLogBatchMutationResultDto {
+  @ApiProperty()
+  deleted!: true;
+
+  @ApiProperty()
+  affected!: number;
+
+  @ApiProperty({ type: [String] })
+  ids!: readonly string[];
+}
+
+export class AuditLogCleanResultDto {
+  @ApiProperty()
+  deleted!: true;
+
+  @ApiProperty()
+  affected!: number;
+}

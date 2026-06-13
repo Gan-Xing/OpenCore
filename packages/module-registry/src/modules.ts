@@ -485,6 +485,7 @@ export const moduleRegistry = [
       [
         { action: 'read', title: 'Read' },
         { action: 'export', title: 'Export' },
+        { action: 'delete', title: 'Delete', dangerous: true },
       ],
     ),
     menus: [

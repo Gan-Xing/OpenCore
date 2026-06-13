@@ -19,6 +19,21 @@ export type BatchDeleteLoginLogsRequest = {
   ids: readonly string[];
 };
 
+export type BatchDeleteAuditLogsRequest = {
+  ids: readonly string[];
+};
+
+export type AuditLogBatchMutationSummary = {
+  deleted: true;
+  affected: number;
+  ids: readonly string[];
+};
+
+export type AuditLogCleanSummary = {
+  deleted: true;
+  affected: number;
+};
+
 export type LoginLogBatchMutationSummary = {
   deleted: true;
   affected: number;

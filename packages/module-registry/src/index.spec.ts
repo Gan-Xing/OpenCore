@@ -196,4 +196,21 @@ describe('@opencore/module-registry', () => {
       ]),
     );
   });
+
+  it('registers audit-log cleanup as a dangerous permission action', () => {
+    expect(collectPermissionCodes()).toEqual(
+      expect.arrayContaining(['core:audit-log:delete']),
+    );
+
+    expect(findModuleByCode('core.audit-log')?.permissions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'core:audit-log:delete',
+          title: 'Delete operation logs',
+          stage: 'S7',
+          dangerous: true,
+        }),
+      ]),
+    );
+  });
 });

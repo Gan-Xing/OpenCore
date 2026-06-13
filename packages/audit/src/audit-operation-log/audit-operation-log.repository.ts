@@ -1,3 +1,4 @@
+import { BadRequestException } from '@nestjs/common';
 import {
   createPageResult,
   normalizeOptionalString,
@@ -5,6 +6,7 @@ import {
   type PageQueryInput,
   type PageResult,
 } from '@opencore/common';
+import type { BatchDeleteAuditLogsDto } from './audit-operation-log.dto';
 import type {
   AuditOperationLogRecord,
   CreateAuditOperationLogRecord,
@@ -39,6 +41,17 @@ export type AuditOperationLogExportPreview = {
   generatedAt: string;
 };
 
+export type AuditOperationLogBatchMutationRecord = {
+  deleted: true;
+  affected: number;
+  ids: readonly string[];
+};
+
+export type AuditOperationLogCleanRecord = {
+  deleted: true;
+  affected: number;
+};
+
 export abstract class AuditOperationLogRepository {
   abstract listOperationLogs(
     query?: AuditOperationLogQuery,
@@ -49,6 +62,12 @@ export abstract class AuditOperationLogRepository {
   abstract recordOperation(
     record: CreateAuditOperationLogRecord,
   ): Promise<void>;
+
+  abstract deleteOperationLogs(
+    body: BatchDeleteAuditLogsDto,
+  ): Promise<AuditOperationLogBatchMutationRecord>;
+
+  abstract cleanOperationLogs(): Promise<AuditOperationLogCleanRecord>;
 }
 
 export function normalizeAuditOperationLogFilters(
@@ -105,6 +124,27 @@ export function createAuditOperationLogExportPreview(
   };
 }
 
+export function normalizeBatchDeleteAuditOperationLogIds(
+  body: BatchDeleteAuditLogsDto,
+): readonly string[] {
+  if (!Array.isArray(body?.ids)) {
+    throw new BadRequestException('Audit log ids must be an array.');
+  }
+
+  if (body.ids.length === 0) {
+    throw new BadRequestException('Audit log ids must not be empty.');
+  }
+
+  const ids = body.ids.map(normalizeAuditOperationLogId);
+  const duplicate = findFirstDuplicate(ids);
+
+  if (duplicate) {
+    throw new BadRequestException(`Audit log id is duplicated: ${duplicate}`);
+  }
+
+  return [...ids].sort();
+}
+
 export function redactAuditMetadata(value: unknown): unknown {
   if (Array.isArray(value)) {
     return value.map((item) => redactAuditMetadata(item));
@@ -135,3 +175,30 @@ export function compareAuditOperationLogRecords(
 }
 
 const SENSITIVE_KEY_PATTERN = /(authorization|cookie|password|secret|token)/i;
+
+function normalizeAuditOperationLogId(value: string): string {
+  if (typeof value !== 'string') {
+    throw new BadRequestException('Audit log id must be a string.');
+  }
+
+  const normalized = value.trim();
+
+  if (!normalized) {
+    throw new BadRequestException('Audit log id is required.');
+  }
+
+  return normalized;
+}
+
+function findFirstDuplicate(values: readonly string[]): string | undefined {
+  const seen = new Set<string>();
+
+  for (const value of values) {
+    if (seen.has(value)) {
+      return value;
+    }
+    seen.add(value);
+  }
+
+  return undefined;
+}

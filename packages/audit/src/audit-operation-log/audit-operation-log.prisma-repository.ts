@@ -6,12 +6,16 @@ import type {
   AuditOperationLogRecord,
   CreateAuditOperationLogRecord,
 } from './audit-operation-log.records';
+import type { BatchDeleteAuditLogsDto } from './audit-operation-log.dto';
 import {
   AuditOperationLogRepository,
   createAuditOperationLogPageResult,
+  normalizeBatchDeleteAuditOperationLogIds,
   normalizeAuditOperationLogFilters,
   normalizeAuditOperationLogPageQuery,
   redactAuditMetadata,
+  type AuditOperationLogBatchMutationRecord,
+  type AuditOperationLogCleanRecord,
   type AuditOperationLogQuery,
 } from './audit-operation-log.repository';
 
@@ -73,7 +77,7 @@ export class PrismaAuditOperationLogRepository extends AuditOperationLogReposito
     });
 
     if (!log) {
-      throw new NotFoundException(`Audit operation log ${id} was not found`);
+      throw new NotFoundException(`Audit log not found: ${id}`);
     }
 
     return toAuditOperationLogRecord(log);
@@ -95,6 +99,41 @@ export class PrismaAuditOperationLogRepository extends AuditOperationLogReposito
         metadata: redactAuditMetadata(record.metadata) as Prisma.InputJsonValue,
       },
     });
+  }
+
+  async deleteOperationLogs(
+    body: BatchDeleteAuditLogsDto,
+  ): Promise<AuditOperationLogBatchMutationRecord> {
+    const ids = normalizeBatchDeleteAuditOperationLogIds(body);
+    const logs = await this.prisma.auditLog.findMany({
+      where: { id: { in: [...ids] } },
+      select: { id: true },
+    });
+    const existingIds = new Set(logs.map((log) => log.id));
+    const missing = ids.find((id) => !existingIds.has(id));
+
+    if (missing) {
+      throw new NotFoundException(`Audit log not found: ${missing}`);
+    }
+
+    await this.prisma.auditLog.deleteMany({
+      where: { id: { in: [...ids] } },
+    });
+
+    return {
+      deleted: true,
+      affected: ids.length,
+      ids,
+    };
+  }
+
+  async cleanOperationLogs(): Promise<AuditOperationLogCleanRecord> {
+    const result = await this.prisma.auditLog.deleteMany();
+
+    return {
+      deleted: true,
+      affected: result.count,
+    };
   }
 }
 

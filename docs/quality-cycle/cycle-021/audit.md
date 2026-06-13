@@ -15,6 +15,9 @@ patterns had to be corrected:
   Round 14 added real token/session revocation.
 - Round 66 used the wrong notice provider state semantics by treating queued
   external outbox handoff as `sent`; Round 67 corrected the state machine.
+- Round 68 exposed another process issue: running Admin `typecheck` and `lint`
+  in parallel can race `max setup` generated types. Those commands must run
+  sequentially when both touch Admin generated files.
 
 Those issues are now guard requirements, not memory items.
 
@@ -28,6 +31,8 @@ Those issues are now guard requirements, not memory items.
   tokens fail.
 - Notice outbox semantics: smoke verifies pending handoff, retry and explicit
   sent transitions.
+- Operation-log cleanup: smoke verifies batch-delete guards, deleted-detail 404
+  and clean-all target removal.
 - Config/secret drift: smoke verifies runtime config shape and no plaintext
   secret storage.
 
@@ -51,8 +56,8 @@ Going forward:
   claiming full provider delivery depth.
 - Config still needs multi-environment governance and external KMS/rotation for
   a stronger enterprise posture.
-- Operation-log, scheduler/monitor and OpenForge Admin still need deeper
-  operator workflows.
+- Operation-log retention scheduling/enrichment, scheduler/monitor and
+  OpenForge Admin still need deeper operator workflows.
 
 ## Next Audit Trigger
 

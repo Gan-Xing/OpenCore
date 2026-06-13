@@ -7,8 +7,11 @@ import {
   type AssignRoleMenusRequest,
   type AssignRoleUsersRequest,
   type AssignUserRolesRequest,
+  type AuditLogBatchMutationSummary,
+  type AuditLogCleanSummary,
   type AuditLogQueryRequest,
   type AuditLogSummary,
+  type BatchDeleteAuditLogsRequest,
   type BatchDeleteLoginLogsRequest,
   type BatchDeleteUsersRequest,
   type BatchDeleteSystemConfigsRequest,
@@ -611,6 +614,16 @@ export async function listOpenCoreAuditLogs(
 
 export function getOpenCoreAuditLog(id: string): Promise<AuditLogSummary> {
   return systemManagementClient.getAuditLog(getRequiredAdminToken(), id);
+}
+
+export function deleteOpenCoreAuditLogs(
+  body: BatchDeleteAuditLogsRequest,
+): Promise<AuditLogBatchMutationSummary> {
+  return systemManagementClient.deleteAuditLogs(getRequiredAdminToken(), body);
+}
+
+export function cleanOpenCoreAuditLogs(): Promise<AuditLogCleanSummary> {
+  return systemManagementClient.cleanAuditLogs(getRequiredAdminToken());
 }
 
 export function listOpenCoreMenus(): Promise<MenuSummary[]> {

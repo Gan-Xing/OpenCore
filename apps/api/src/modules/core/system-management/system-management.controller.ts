@@ -42,6 +42,9 @@ import {
 import {
   AuditLogPageDto,
   AuditLogQueryDto,
+  AuditLogBatchMutationResultDto,
+  AuditLogCleanResultDto,
+  BatchDeleteAuditLogsDto,
   BatchDeleteSystemConfigsDto,
   BatchDeleteLoginLogsDto,
   BatchDeleteSystemPostsDto,
@@ -899,6 +902,24 @@ export class SystemManagementController {
   @ApiOkResponse({ type: ExportPreviewDto })
   exportAuditLogs(@Query() query: AuditLogQueryDto): Promise<ExportPreviewDto> {
     return this.operationLogs.createExportPreview(query);
+  }
+
+  @Delete('audit-logs/batch')
+  @ApiTags('Core Audit Logs')
+  @RequirePermission('core:audit-log:delete')
+  @ApiOkResponse({ type: AuditLogBatchMutationResultDto })
+  deleteAuditLogs(
+    @Body() body: BatchDeleteAuditLogsDto,
+  ): Promise<AuditLogBatchMutationResultDto> {
+    return this.operationLogs.deleteOperationLogs(body);
+  }
+
+  @Delete('audit-logs/clean')
+  @ApiTags('Core Audit Logs')
+  @RequirePermission('core:audit-log:delete')
+  @ApiOkResponse({ type: AuditLogCleanResultDto })
+  cleanAuditLogs(): Promise<AuditLogCleanResultDto> {
+    return this.operationLogs.cleanOperationLogs();
   }
 
   @Get('audit-logs/:id')

@@ -21,9 +21,10 @@ const passwordCandidates = [
 const timeoutMs = Number(process.env.OPENCORE_SMOKE_TIMEOUT_MS || 10000);
 
 const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-const configKey = `opencore.smoke.audit.${runId}`;
+const batchConfigKey = `opencore.smoke.audit.batch.${runId}`;
+const cleanConfigKey = `opencore.smoke.audit.clean.${runId}`;
 let token;
-let createdConfig = false;
+const createdConfigKeys = new Set();
 
 class HttpStatusError extends Error {
   constructor(message, status) {
@@ -48,20 +49,9 @@ try {
   const listResponse = await apiRequest('/core/audit-logs?page=1&pageSize=10');
   assertArray(listResponse.items, 'audit log list items');
 
-  const created = await apiRequest('/core/config', {
-    method: 'POST',
-    body: {
-      key: configKey,
-      value: 'true',
-      valueType: 'boolean',
-      description: 'OpenCore scripted audit smoke config',
-      visibility: 'private',
-    },
-  });
-  createdConfig = true;
-  assertEqual(created.key, configKey, 'created audit smoke config key');
+  await createSmokeConfig(batchConfigKey);
 
-  const operationLog = await waitForCreatedConfigAuditLog();
+  const operationLog = await waitForCreatedConfigAuditLog(batchConfigKey);
   assertEqual(operationLog.actorUsername, username, 'audit log actor');
   assertEqual(operationLog.action, 'POST', 'audit log action');
   assertEqual(operationLog.resource, '/api/core/config', 'audit log resource');
@@ -90,7 +80,76 @@ try {
   assertEqual(exportPreview.scope, 'current-page', 'audit log export scope');
   assertArray(exportPreview.columns, 'audit log export columns');
 
-  await cleanupCreatedConfig();
+  await apiRequest('/core/audit-logs/batch', {
+    method: 'DELETE',
+    body: { ids: [] },
+    expected: [400],
+  });
+  await apiRequest('/core/audit-logs/batch', {
+    method: 'DELETE',
+    body: { ids: [operationLog.id, operationLog.id] },
+    expected: [400],
+  });
+  await apiRequest('/core/audit-logs/batch', {
+    method: 'DELETE',
+    body: { ids: [operationLog.id, `missing_${runId}`] },
+    expected: [404],
+  });
+
+  const deleteResult = await apiRequest('/core/audit-logs/batch', {
+    method: 'DELETE',
+    body: { ids: [operationLog.id] },
+  });
+  assertEqual(deleteResult.deleted, true, 'audit log batch delete result');
+  assertEqual(deleteResult.affected, 1, 'audit log batch delete affected');
+  assertArray(deleteResult.ids, 'audit log batch delete ids');
+  assertEqual(
+    deleteResult.ids[0],
+    operationLog.id,
+    'audit log batch delete id',
+  );
+
+  await apiRequest(`/core/audit-logs/${encodeURIComponent(operationLog.id)}`, {
+    expected: [404],
+  });
+  await cleanupCreatedConfigs();
+
+  await createSmokeConfig(cleanConfigKey);
+  await waitForCreatedConfigAuditLog(cleanConfigKey);
+
+  const cleanResult = await apiRequest('/core/audit-logs/clean', {
+    method: 'DELETE',
+  });
+  assertEqual(cleanResult.deleted, true, 'audit log clean result');
+  if (typeof cleanResult.affected !== 'number' || cleanResult.affected < 1) {
+    throw new Error(
+      `Expected audit log clean affected to be at least 1, received ${formatBody(
+        cleanResult,
+      )}`,
+    );
+  }
+
+  const afterCleanConfigLogs = await apiRequest(
+    `/core/audit-logs?page=1&pageSize=20&resource=${encodeURIComponent(
+      '/api/core/config',
+    )}`,
+  );
+  assertArray(afterCleanConfigLogs.items, 'audit logs after clean items');
+  if (afterCleanConfigLogs.items.length !== 0) {
+    throw new Error(
+      `Expected clean-all to remove config audit logs, received ${formatBody(
+        afterCleanConfigLogs.items,
+      )}`,
+    );
+  }
+
+  await waitForAuditLog({
+    action: 'DELETE',
+    label: 'audit log clean-all operation',
+    resource: '/api/core/audit-logs/clean',
+    statusCode: 200,
+  });
+  await cleanupCreatedConfigs();
 
   console.log(
     JSON.stringify({
@@ -106,12 +165,15 @@ try {
         'core.audit-log.list',
         'core.audit-log.detail',
         'core.audit-log.export',
+        'core.audit-log.batch-delete-guards',
+        'core.audit-log.batch-delete',
+        'core.audit-log.clean',
         'core.config.cleanup',
       ],
     }),
   );
 } catch (error) {
-  await cleanupCreatedConfig().catch(() => undefined);
+  await cleanupCreatedConfigs().catch(() => undefined);
   console.error(
     JSON.stringify({
       status: 'fail',
@@ -123,14 +185,45 @@ try {
   process.exitCode = 1;
 }
 
-async function waitForCreatedConfigAuditLog() {
+async function createSmokeConfig(key) {
+  const created = await apiRequest('/core/config', {
+    method: 'POST',
+    body: {
+      key,
+      value: 'true',
+      valueType: 'boolean',
+      description: 'OpenCore scripted audit smoke config',
+      visibility: 'private',
+    },
+  });
+  createdConfigKeys.add(key);
+  assertEqual(created.key, key, 'created audit smoke config key');
+}
+
+async function waitForCreatedConfigAuditLog(key) {
+  return waitForAuditLog({
+    action: 'POST',
+    label: `config ${key}`,
+    metadataKey: key,
+    resource: '/api/core/config',
+    statusCode: 201,
+  });
+}
+
+async function waitForAuditLog({
+  action,
+  label,
+  metadataKey: expectedMetadataKey,
+  resource,
+  statusCode,
+}) {
   let lastItems = [];
 
   for (let attempt = 0; attempt < 10; attempt += 1) {
     const page = await apiRequest(
-      `/core/audit-logs?page=1&pageSize=20&action=POST&resource=${encodeURIComponent(
-        '/api/core/config',
-      )}`,
+      `/core/audit-logs?page=1&pageSize=20&action=${encodeURIComponent(
+        action,
+      )}&resource=${encodeURIComponent(resource)}`,
     );
     assertArray(page.items, 'filtered audit log items');
     lastItems = page.items;
@@ -142,7 +235,7 @@ async function waitForCreatedConfigAuditLog() {
         'body' in item.metadata
           ? item.metadata.body
           : undefined;
-      const metadataKey =
+      const actualMetadataKey =
         metadataBody &&
         typeof metadataBody === 'object' &&
         'key' in metadataBody
@@ -151,10 +244,11 @@ async function waitForCreatedConfigAuditLog() {
 
       return (
         item.actorUsername === username &&
-        item.action === 'POST' &&
-        item.resource === '/api/core/config' &&
-        item.statusCode === 201 &&
-        metadataKey === configKey
+        item.action === action &&
+        item.resource === resource &&
+        item.statusCode === statusCode &&
+        (expectedMetadataKey === undefined ||
+          actualMetadataKey === expectedMetadataKey)
       );
     });
 
@@ -166,9 +260,7 @@ async function waitForCreatedConfigAuditLog() {
   }
 
   throw new Error(
-    `Audit log was not recorded for config ${configKey}; latest rows=${formatBody(
-      lastItems,
-    )}`,
+    `Audit log was not recorded for ${label}; latest rows=${formatBody(lastItems)}`,
   );
 }
 
@@ -210,16 +302,18 @@ async function login() {
   );
 }
 
-async function cleanupCreatedConfig() {
-  if (!token || !createdConfig) {
+async function cleanupCreatedConfigs() {
+  if (!token || createdConfigKeys.size === 0) {
     return;
   }
 
-  await apiRequest(`/core/config/${encodeURIComponent(configKey)}`, {
-    method: 'DELETE',
-    expected: [200, 404],
-  });
-  createdConfig = false;
+  for (const key of [...createdConfigKeys]) {
+    await apiRequest(`/core/config/${encodeURIComponent(key)}`, {
+      method: 'DELETE',
+      expected: [200, 404],
+    });
+    createdConfigKeys.delete(key);
+  }
 }
 
 async function request(path, options = {}) {

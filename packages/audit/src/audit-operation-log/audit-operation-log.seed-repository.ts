@@ -5,13 +5,17 @@ import {
   type AuditOperationLogRecord,
   type CreateAuditOperationLogRecord,
 } from './audit-operation-log.records';
+import type { BatchDeleteAuditLogsDto } from './audit-operation-log.dto';
 import {
   AuditOperationLogRepository,
   compareAuditOperationLogRecords,
   createAuditOperationLogPageResult,
+  normalizeBatchDeleteAuditOperationLogIds,
   normalizeAuditOperationLogFilters,
   normalizeAuditOperationLogPageQuery,
   redactAuditMetadata,
+  type AuditOperationLogBatchMutationRecord,
+  type AuditOperationLogCleanRecord,
   type AuditOperationLogQuery,
 } from './audit-operation-log.repository';
 
@@ -57,7 +61,7 @@ export class SeedAuditOperationLogRepository extends AuditOperationLogRepository
     const log = this.operationLogs.find((entry) => entry.id === id);
 
     if (!log) {
-      throw new NotFoundException(`Audit operation log ${id} was not found`);
+      throw new NotFoundException(`Audit log not found: ${id}`);
     }
 
     return cloneOperationLog({
@@ -76,6 +80,44 @@ export class SeedAuditOperationLogRepository extends AuditOperationLogRepository
       },
       ...this.operationLogs,
     ];
+  }
+
+  async deleteOperationLogs(
+    body: BatchDeleteAuditLogsDto,
+  ): Promise<AuditOperationLogBatchMutationRecord> {
+    const ids = normalizeBatchDeleteAuditOperationLogIds(body);
+    const selected = ids.map((id) => this.findOperationLog(id));
+    const selectedIds = new Set(selected.map((log) => log.id));
+
+    this.operationLogs = this.operationLogs.filter(
+      (log) => !selectedIds.has(log.id),
+    );
+
+    return {
+      deleted: true,
+      affected: selected.length,
+      ids,
+    };
+  }
+
+  async cleanOperationLogs(): Promise<AuditOperationLogCleanRecord> {
+    const affected = this.operationLogs.length;
+    this.operationLogs = [];
+
+    return {
+      deleted: true,
+      affected,
+    };
+  }
+
+  private findOperationLog(id: string): AuditOperationLogRecord {
+    const log = this.operationLogs.find((entry) => entry.id === id);
+
+    if (!log) {
+      throw new NotFoundException(`Audit log not found: ${id}`);
+    }
+
+    return log;
   }
 }
 

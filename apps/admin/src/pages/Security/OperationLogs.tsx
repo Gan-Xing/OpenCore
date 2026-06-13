@@ -1,13 +1,30 @@
-import { EyeOutlined, ReloadOutlined } from '@ant-design/icons';
+import {
+  ClearOutlined,
+  DeleteOutlined,
+  EyeOutlined,
+  ReloadOutlined,
+} from '@ant-design/icons';
 import {
   PageContainer,
   ProTable,
   type ProColumns,
 } from '@ant-design/pro-components';
+import { useAccess } from '@umijs/max';
 import { createAuditLogFixtures, type AuditLogSummary } from '@opencore/sdk';
-import { Alert, Button, Space, Tag, Tooltip, Typography } from 'antd';
-import { useEffect, useMemo, useState } from 'react';
 import {
+  Alert,
+  Button,
+  message,
+  Modal,
+  Space,
+  Tag,
+  Tooltip,
+  Typography,
+} from 'antd';
+import { useEffect, useMemo, useState, type Key } from 'react';
+import {
+  cleanOpenCoreAuditLogs,
+  deleteOpenCoreAuditLogs,
   getOpenCoreAuditLog,
   listOpenCoreAuditLogs,
 } from '@/services/opencore/platform';
@@ -105,10 +122,15 @@ function createDetailJsonSections(
 }
 
 export default function OperationLogsPage() {
+  const access = useAccess();
+  const canDeleteAuditLogs = Boolean(access.canDeleteAuditLogs);
   const [rows, setRows] = useState<readonly AuditLogSummary[]>(fallbackRows);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
   const [selectedDetail, setSelectedDetail] = useState<AuditLogSummary>();
+  const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
+  const [deletingSelected, setDeletingSelected] = useState(false);
+  const [cleaningLogs, setCleaningLogs] = useState(false);
   const filterOptions = useMemo(() => createFilterOptions(rows), [rows]);
   const { filteredRows, toolbar: filterToolbar } =
     useCurrentPageFilters<AuditLogSummary>({
@@ -117,6 +139,10 @@ export default function OperationLogsPage() {
       searchPlaceholder: 'Search operation logs',
       selectFilters: filterOptions,
     });
+  const selectedRows = useMemo(
+    () => filteredRows.filter((record) => selectedRowKeys.includes(record.id)),
+    [filteredRows, selectedRowKeys],
+  );
 
   const loadAuditLogs = async () => {
     setLoading(true);
@@ -145,6 +171,48 @@ export default function OperationLogsPage() {
     } catch (_error) {
       setSelectedDetail(record);
     }
+  };
+
+  const confirmDeleteSelected = () => {
+    Modal.confirm({
+      title: `Delete ${selectedRows.length} selected operation logs?`,
+      content: 'Selected operation log records will be permanently removed.',
+      okButtonProps: { danger: true },
+      okText: 'Delete selected',
+      onOk: async () => {
+        setDeletingSelected(true);
+        try {
+          const result = await deleteOpenCoreAuditLogs({
+            ids: selectedRows.map((record) => record.id),
+          });
+          message.success(`Deleted ${result.affected} operation logs`);
+          setSelectedRowKeys([]);
+          await loadAuditLogs();
+        } finally {
+          setDeletingSelected(false);
+        }
+      },
+    });
+  };
+
+  const confirmCleanAll = () => {
+    Modal.confirm({
+      title: 'Clean all operation logs?',
+      content: 'Every operation log record will be permanently removed.',
+      okButtonProps: { danger: true },
+      okText: 'Clean all',
+      onOk: async () => {
+        setCleaningLogs(true);
+        try {
+          const result = await cleanOpenCoreAuditLogs();
+          message.success(`Cleaned ${result.affected} operation logs`);
+          setSelectedRowKeys([]);
+          await loadAuditLogs();
+        } finally {
+          setCleaningLogs(false);
+        }
+      },
+    });
   };
 
   const columns: ProColumns<AuditLogSummary>[] = [
@@ -212,9 +280,45 @@ export default function OperationLogsPage() {
         search={false}
         toolBarRender={() => [
           filterToolbar,
-          <Typography.Text key="read-only-policy" type="secondary">
-            Read-only audit trail
+          <Typography.Text key="cleanup-policy" type="secondary">
+            Audit trail with cleanup governance
           </Typography.Text>,
+          <Tooltip
+            key="delete-selected"
+            title={
+              canDeleteAuditLogs
+                ? 'Delete selected operation logs'
+                : 'Requires core:audit-log:delete'
+            }
+          >
+            <Button
+              danger
+              disabled={!canDeleteAuditLogs || selectedRows.length === 0}
+              icon={<DeleteOutlined />}
+              loading={deletingSelected}
+              onClick={confirmDeleteSelected}
+            >
+              Delete selected
+            </Button>
+          </Tooltip>,
+          <Tooltip
+            key="clean-all"
+            title={
+              canDeleteAuditLogs
+                ? 'Clean all operation logs'
+                : 'Requires core:audit-log:delete'
+            }
+          >
+            <Button
+              danger
+              disabled={!canDeleteAuditLogs}
+              icon={<ClearOutlined />}
+              loading={cleaningLogs}
+              onClick={confirmCleanAll}
+            >
+              Clean all
+            </Button>
+          </Tooltip>,
           <CurrentPageExportButton
             columns={exportColumns}
             filename="opencore-operation-logs.csv"
@@ -230,6 +334,13 @@ export default function OperationLogsPage() {
             />
           </Tooltip>,
         ]}
+        rowSelection={{
+          selectedRowKeys,
+          onChange: (keys) => setSelectedRowKeys(keys),
+          getCheckboxProps: () => ({
+            disabled: !canDeleteAuditLogs,
+          }),
+        }}
       />
       <ReadOnlyDetailDrawer
         fields={selectedDetail ? createDetailFields(selectedDetail) : []}

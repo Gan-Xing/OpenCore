@@ -116,6 +116,34 @@ describe('@opencore/audit audit-operation-log', () => {
       ],
       rowCount: 3,
     });
+
+    await expect(service.deleteOperationLogs({ ids: [] })).rejects.toThrow(
+      'Audit log ids must not be empty.',
+    );
+    await expect(
+      service.deleteOperationLogs({ ids: ['audit_3', 'audit_3'] }),
+    ).rejects.toThrow('Audit log id is duplicated: audit_3');
+    await expect(
+      service.deleteOperationLogs({ ids: ['audit_3', 'missing_audit_log'] }),
+    ).rejects.toThrow('Audit log not found: missing_audit_log');
+    await expect(
+      service.deleteOperationLogs({ ids: ['audit_3'] }),
+    ).resolves.toEqual({
+      deleted: true,
+      affected: 1,
+      ids: ['audit_3'],
+    });
+    await expect(service.getOperationLog('audit_3')).rejects.toThrow(
+      'Audit log not found: audit_3',
+    );
+    await expect(service.cleanOperationLogs()).resolves.toEqual({
+      deleted: true,
+      affected: 2,
+    });
+    await expect(service.listOperationLogs()).resolves.toMatchObject({
+      total: 0,
+      items: [],
+    });
   });
 
   it('records write operations through the interceptor and skips disabled metadata', async () => {
@@ -293,6 +321,34 @@ describe('@opencore/audit audit-operation-log', () => {
             authorization: '[REDACTED]',
           },
         }),
+      );
+      await expect(service.deleteOperationLogs({ ids: [] })).rejects.toThrow(
+        'Audit log ids must not be empty.',
+      );
+      await expect(
+        service.deleteOperationLogs({
+          ids: [recordedLog.id, recordedLog.id],
+        }),
+      ).rejects.toThrow(`Audit log id is duplicated: ${recordedLog.id}`);
+      await expect(
+        service.deleteOperationLogs({
+          ids: [recordedLog.id, `missing_${testRunId}`],
+        }),
+      ).rejects.toThrow(`Audit log not found: missing_${testRunId}`);
+      await expect(service.getOperationLog(recordedLog.id)).resolves.toEqual(
+        expect.objectContaining({
+          requestId,
+        }),
+      );
+      await expect(
+        service.deleteOperationLogs({ ids: [recordedLog.id] }),
+      ).resolves.toEqual({
+        deleted: true,
+        affected: 1,
+        ids: [recordedLog.id],
+      });
+      await expect(service.getOperationLog(recordedLog.id)).rejects.toThrow(
+        `Audit log not found: ${recordedLog.id}`,
       );
     });
 
