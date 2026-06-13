@@ -17,12 +17,6 @@
 - Extended Admin smoke checks so core wrappers must render the read-only policy and RBAC mutation-looking controls must stay disabled.
 - Updated OpenForge V1 docs so generated core Admin wrappers show read-only reasons and disable mutation-looking controls until real write contracts are admitted.
 
-## Focused Verification
+## Verification
 
-- `pnpm exec prettier --write ...`
-- `NX_DAEMON=false pnpm nx run-many -t typecheck -p admin,sdk`
-- `NX_DAEMON=false pnpm nx test admin`
-- `NX_DAEMON=false pnpm nx run admin:lint`
-- `NX_DAEMON=false pnpm nx test sdk --runInBand`
-- `pnpm registry:admin-routes:check`
-- `pnpm openforge:doctor && pnpm openforge:gate`
+Focused checks and the applicable gate passed. Command transcripts are intentionally omitted; keep unique defects, guards and decisions only.

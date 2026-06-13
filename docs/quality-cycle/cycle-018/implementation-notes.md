@@ -20,16 +20,9 @@
 - `apps/admin/scripts/smoke-test.mjs` now checks filename sanitization, unsafe-character coverage, fallback behavior and `.csv` enforcement.
 - `docs/development/export-upload-contract.md`, `docs/development/openforge-template-authoring.md` and `docs/development/openforge-v1-architecture.md` now require local `.csv` basename sanitization.
 
-## Focused Verification
+## Verification
 
-- `pnpm exec prettier --write apps/admin/src/pages/shared/CurrentPageExportButton.tsx apps/admin/scripts/smoke-test.mjs docs/development/export-upload-contract.md docs/development/openforge-template-authoring.md docs/development/openforge-v1-architecture.md docs/quality-cycle/cycle-018/audit.md docs/quality-cycle/cycle-018/reference-comparison.md docs/quality-cycle/cycle-018/backlog.md docs/quality-cycle/cycle-018/implementation-notes.md`
-- `NX_DAEMON=false pnpm nx test admin`
-- `NX_DAEMON=false pnpm nx run-many -t typecheck -p admin,sdk`
-- `NX_DAEMON=false pnpm nx run admin:lint`
-- `NX_DAEMON=false pnpm nx test sdk --runInBand`
-- `pnpm registry:admin-routes:check`
-- `pnpm openforge:doctor`
-- `pnpm openforge:gate`
+Focused checks and the applicable gate passed. Command transcripts are intentionally omitted; keep unique defects, guards and decisions only.
 
 ## Full Gate
 

@@ -73,28 +73,7 @@ The cycle intentionally keeps these outside the completed scope:
 
 ## Verification
 
-Focused and full verification passed during the cycle:
-
-- `pnpm typecheck`
-- `pnpm lint`
-- `pnpm test`
-- `pnpm build:api`
-- `pnpm prisma:validate`
-- `pnpm openapi:check`
-- `pnpm format:check`
-- `pnpm openforge:doctor`
-- `pnpm openforge:check -- --schema tools/generator/examples/core.dict.v1.schema.json`
-- `pnpm openforge:diff -- --schema tools/generator/examples/core.dict.v1.schema.json --format json`
-- `pnpm openforge:test`
-
-Known non-blocking notes:
-
-- Admin Biome hints in existing smoke/current-page export files remain
-  non-failing.
-- Jest worker/listener warnings remained non-failing.
-- GitHub reported one high Dependabot vulnerability after the BE20 push; it was
-  remediated in follow-up commit `b0bde79`, and no open Dependabot alerts
-  remained when this documentation reconciliation was prepared.
+Focused checks and the applicable quality gate passed. Repeated command transcripts were removed; use `docs/quality-cycle/ledger.md` and the current handoff for gate/deploy state.
 
 ## Commits
 

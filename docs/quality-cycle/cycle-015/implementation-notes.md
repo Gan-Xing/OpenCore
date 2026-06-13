@@ -22,15 +22,6 @@
 - `apps/admin/scripts/smoke-test.mjs` now checks that current-page CSV export keeps object-cell redaction, sensitive-key coverage, formula-prefix neutralization and the serializer call path.
 - `docs/development/export-upload-contract.md`, `docs/development/openforge-template-authoring.md` and `docs/development/openforge-v1-architecture.md` now require object-cell redaction before export JSON stringification.
 
-## Focused Verification
+## Verification
 
-- `pnpm exec prettier --write apps/admin/src/pages/shared/CurrentPageExportButton.tsx apps/admin/scripts/smoke-test.mjs docs/development/export-upload-contract.md docs/development/openforge-template-authoring.md docs/development/openforge-v1-architecture.md docs/quality-cycle/cycle-015/audit.md docs/quality-cycle/cycle-015/reference-comparison.md docs/quality-cycle/cycle-015/backlog.md docs/quality-cycle/cycle-015/implementation-notes.md`
-- `NX_DAEMON=false pnpm nx test admin`
-- `NX_DAEMON=false pnpm nx run-many -t typecheck -p admin,sdk`
-- `NX_DAEMON=false pnpm nx run admin:lint`
-- `NX_DAEMON=false pnpm nx test sdk --runInBand`
-- `pnpm registry:admin-routes:check`
-- `pnpm openforge:doctor`
-- `pnpm openforge:gate`
-
-The first attempt ran Admin typecheck and Admin test in parallel; both invoke `max setup`, which raced on `apps/admin/src/.umi`. Sequential reruns of `NX_DAEMON=false pnpm nx test admin` and `NX_DAEMON=false pnpm nx run-many -t typecheck -p admin,sdk` passed.
+Focused checks and the applicable gate passed. Command transcripts are intentionally omitted; keep unique defects, guards and decisions only.

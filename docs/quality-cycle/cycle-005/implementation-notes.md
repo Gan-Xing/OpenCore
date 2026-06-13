@@ -29,18 +29,6 @@
 - OpenForge authoring and architecture docs now require list/detail/action-heavy generated modules to define read-only detail endpoints with explicit read permission, redaction, and hidden/deleted-record policy.
 - OpenAPI export now includes 90 paths, 118 operations, and 108 schemas after the detail endpoints were admitted.
 
-## Focused Verification
+## Verification
 
-- `pnpm format`
-- `NX_DAEMON=false pnpm nx run-many -t typecheck -p api,sdk`
-- `NX_DAEMON=false pnpm nx test api --runInBand --testPathPatterns=collaboration`
-- `NX_DAEMON=false pnpm nx test api --runInBand --testPathPatterns=operations`
-- `NX_DAEMON=false pnpm nx test api --runInBand --testPathPatterns=integration`
-- `NX_DAEMON=false pnpm nx test sdk --runInBand`
-- `pnpm openapi:export`
-- `pnpm openapi:registry-tags:check`
-- `pnpm openapi:check`
-- `pnpm openforge:doctor`
-- `pnpm openforge:gate`
-- `NX_DAEMON=false pnpm nx test admin`
-- `pnpm registry:admin-routes:check`
+Focused checks and the applicable gate passed. Command transcripts are intentionally omitted; keep unique defects, guards and decisions only.

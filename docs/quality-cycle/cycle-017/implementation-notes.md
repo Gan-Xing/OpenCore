@@ -23,16 +23,9 @@
 - `apps/admin/scripts/smoke-test.mjs` now checks scalar detail redaction support plus provider and online-session sensitive bindings.
 - `docs/development/openforge-template-authoring.md` and `docs/development/openforge-v1-architecture.md` now require generated Admin detail metadata to mark scalar sensitive fields.
 
-## Focused Verification
+## Verification
 
-- `pnpm exec prettier --write apps/admin/src/pages/shared/ReadOnlyDetailDrawer.tsx apps/admin/src/pages/Integrations/Providers.tsx apps/admin/src/pages/Monitor/OnlineUsers.tsx apps/admin/scripts/smoke-test.mjs docs/development/openforge-template-authoring.md docs/development/openforge-v1-architecture.md docs/quality-cycle/cycle-017/audit.md docs/quality-cycle/cycle-017/reference-comparison.md docs/quality-cycle/cycle-017/backlog.md docs/quality-cycle/cycle-017/implementation-notes.md`
-- `NX_DAEMON=false pnpm nx test admin`
-- `NX_DAEMON=false pnpm nx run-many -t typecheck -p admin,sdk`
-- `NX_DAEMON=false pnpm nx run admin:lint`
-- `NX_DAEMON=false pnpm nx test sdk --runInBand`
-- `pnpm registry:admin-routes:check`
-- `pnpm openforge:doctor`
-- `pnpm openforge:gate`
+Focused checks and the applicable gate passed. Command transcripts are intentionally omitted; keep unique defects, guards and decisions only.
 
 ## Full Gate
 

@@ -21,12 +21,6 @@
 - Extended Admin smoke coverage so core wrappers must render `ReadOnlyDetailDrawer` and core pages must pass `detailFields={detailFields}`.
 - Updated OpenForge V1 docs so generated core Admin wrappers expose read-only detail metadata and config detail redaction.
 
-## Focused Verification
+## Verification
 
-- `pnpm exec prettier --write ...`
-- `NX_DAEMON=false pnpm nx run-many -t typecheck -p admin,sdk`
-- `NX_DAEMON=false pnpm nx test admin`
-- `NX_DAEMON=false pnpm nx run admin:lint`
-- `NX_DAEMON=false pnpm nx test sdk --runInBand`
-- `pnpm registry:admin-routes:check`
-- `pnpm openforge:doctor && pnpm openforge:gate`
+Focused checks and the applicable gate passed. Command transcripts are intentionally omitted; keep unique defects, guards and decisions only.

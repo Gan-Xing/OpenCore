@@ -20,14 +20,10 @@
 - `tools/scripts/check-admin-route-access.ts` now uses TypeScript AST parsing for Admin route `path/access` bindings and access helper `permissionCode/accessKey` bindings.
 - The drift check now reports `mismatched-admin-route-access` when a module registry Admin route path is present but bound to the wrong `.umirc.ts` access key.
 - `docs/development/module-admission-checklist.md` now requires Admin route access keys to map to the same permission code declared by the module registry route.
-- `docs/development/openforge-ci-gate.md` now includes `pnpm openapi:registry-tags:check` and `pnpm registry:admin-routes:check` in the full local gate command list, with CI guidance to fail on route/access binding drift.
+- `docs/development/openforge-ci-gate.md` now includes registry/OpenAPI tag
+  drift and Admin route/access drift checks in the full local gate guidance,
+  with CI guidance to fail on binding drift.
 
-## Focused Verification
+## Verification
 
-- `pnpm exec prettier --write tools/scripts/check-admin-route-access.ts docs/development/module-admission-checklist.md docs/development/openforge-ci-gate.md docs/quality-cycle/cycle-014/audit.md docs/quality-cycle/cycle-014/reference-comparison.md docs/quality-cycle/cycle-014/backlog.md docs/quality-cycle/cycle-014/implementation-notes.md`
-- `pnpm registry:admin-routes:check`
-- `NX_DAEMON=false pnpm nx run-many -t typecheck -p admin,module-registry`
-- `NX_DAEMON=false pnpm nx test admin`
-- `NX_DAEMON=false pnpm nx run admin:lint`
-- `pnpm openforge:doctor`
-- `pnpm openforge:gate`
+Focused checks and the applicable gate passed. Command transcripts are intentionally omitted; keep unique defects, guards and decisions only.

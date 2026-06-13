@@ -9,7 +9,7 @@
   - Files: `tools/generator/src/render/render-template-pack.ts`, `tools/generator/src/render/render-template-pack.spec.ts`.
   - Implementation requirement: Update `renderAdminPageContent` so generated pages use `useCurrentPageFilters`, `CurrentPageExportButton`, and filtered rows for table/export data. Replace ProTable built-in search with bounded current-page filter controls derived from schema filter/list fields.
   - Test requirement: Extend Admin generator pack tests to assert generated page output imports `CurrentPageExportButton`, imports/uses `useCurrentPageFilters`, binds `dataSource={filteredRows}`, and passes `rows={filteredRows}` to export.
-  - Completion standard: `pnpm openforge:test`, `pnpm openforge:gate`, `NX_DAEMON=false pnpm nx test openforge`, and full quality-cycle gate pass with the updated generated Admin page snapshot.
+  - Completion standard: generated Admin page snapshot and full quality-cycle gate pass.
 
 ## Stage 2 - Contracted Export Safety In Generated Admin
 

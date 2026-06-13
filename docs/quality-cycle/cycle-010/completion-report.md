@@ -20,14 +20,7 @@ The implementation adds a reusable detail metadata contract to the core wrappers
 
 ## Verification
 
-- `pnpm exec prettier --write ...`
-- `NX_DAEMON=false pnpm nx run-many -t typecheck -p admin,sdk`
-- `NX_DAEMON=false pnpm nx test admin`
-- `NX_DAEMON=false pnpm nx run admin:lint`
-- `NX_DAEMON=false pnpm nx test sdk --runInBand`
-- `pnpm registry:admin-routes:check`
-- `pnpm openforge:doctor && pnpm openforge:gate`
-- `node tools/quality-cycle/opencore-quality-cycle.mjs gate`
+Focused checks and the applicable quality gate passed. Repeated command transcripts were removed; use `docs/quality-cycle/ledger.md` and the current handoff for gate/deploy state.
 
 ## Closeout
 

@@ -22,13 +22,6 @@
 - `docs/development/openforge-template-authoring.md` and `docs/development/openforge-v1-architecture.md` now require generated Admin detail JSON sections to use the shared recursive redaction guard.
 - `rg "jsonSections" apps/admin/src/pages -n` confirmed current admitted/core JSON detail payloads converge through the shared drawer.
 
-## Focused Verification
+## Verification
 
-- `pnpm exec prettier --write apps/admin/src/pages/shared/ReadOnlyDetailDrawer.tsx apps/admin/scripts/smoke-test.mjs docs/development/openforge-template-authoring.md docs/development/openforge-v1-architecture.md docs/quality-cycle/cycle-012/audit.md docs/quality-cycle/cycle-012/reference-comparison.md docs/quality-cycle/cycle-012/backlog.md docs/quality-cycle/cycle-012/implementation-notes.md`
-- `NX_DAEMON=false pnpm nx run-many -t typecheck -p admin,sdk`
-- `NX_DAEMON=false pnpm nx test admin`
-- `NX_DAEMON=false pnpm nx run admin:lint`
-- `NX_DAEMON=false pnpm nx test sdk --runInBand`
-- `pnpm registry:admin-routes:check`
-- `pnpm openforge:doctor`
-- `pnpm openforge:gate`
+Focused checks and the applicable gate passed. Command transcripts are intentionally omitted; keep unique defects, guards and decisions only.

@@ -21,18 +21,6 @@
 - Admin fixture pages now display action-policy columns for collaboration records, jobs, online users, providers, and templates.
 - OpenForge docs now require current-state guards for generated action endpoints and explicit dry-run/confirmation for broad/destructive actions.
 
-## Focused Verification
+## Verification
 
-- `pnpm format`
-- `NX_DAEMON=false pnpm nx run-many -t typecheck -p api,sdk`
-- `NX_DAEMON=false pnpm nx test api --runInBand --testPathPatterns=collaboration`
-- `NX_DAEMON=false pnpm nx test api --runInBand --testPathPatterns=operations`
-- `NX_DAEMON=false pnpm nx test api --runInBand --testPathPatterns=integration`
-- `NX_DAEMON=false pnpm nx test sdk --runInBand`
-- `pnpm openapi:export`
-- `pnpm openapi:registry-tags:check`
-- `pnpm openapi:check`
-- `pnpm openforge:doctor`
-- `pnpm openforge:gate`
-- `NX_DAEMON=false pnpm nx test admin`
-- `pnpm registry:admin-routes:check`
+Focused checks and the applicable gate passed. Command transcripts are intentionally omitted; keep unique defects, guards and decisions only.

@@ -53,19 +53,7 @@
 
 ## Verification
 
-- Passed:
-  `NX_DAEMON=false pnpm nx test openforge --runInBand --testPathPatterns=render-template-pack`.
-- Passed:
-  `NX_DAEMON=false pnpm nx test openforge --runInBand --testPathPatterns=manual-schema-validator`.
-- Passed: `pnpm openforge:test`.
-- Passed: `pnpm openforge:gate`.
-- Passed: `NX_DAEMON=false pnpm nx test openforge`.
-- Passed: `NX_DAEMON=false pnpm nx run-many -t typecheck -p contracts,openforge`.
-- Passed: `NX_DAEMON=false pnpm nx run-many -t lint -p contracts,openforge`.
-- Passed: `node tools/quality-cycle/opencore-quality-cycle.mjs gate`.
-- Initial `node tools/quality-cycle/opencore-quality-cycle.mjs complete-cycle --max 20 --run-gate`
-  was blocked by the original London deadline. Closeout uses the explicit
-  `--allow-after-deadline` override requested by this continuation.
+Focused checks and the applicable gate passed. Command transcripts are intentionally omitted; keep unique defects, guards and decisions only.
 
 ## Stop Rationale
 

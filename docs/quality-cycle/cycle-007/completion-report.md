@@ -17,13 +17,7 @@ The implementation adds one reusable Admin export kernel, typed export columns w
 
 ## Verification
 
-- `pnpm format`
-- `NX_DAEMON=false pnpm nx run-many -t typecheck -p admin,sdk`
-- `NX_DAEMON=false pnpm nx test admin`
-- `NX_DAEMON=false pnpm nx test sdk --runInBand`
-- `pnpm registry:admin-routes:check`
-- `pnpm openforge:doctor && pnpm openforge:gate`
-- `node tools/quality-cycle/opencore-quality-cycle.mjs gate`
+Focused checks and the applicable quality gate passed. Repeated command transcripts were removed; use `docs/quality-cycle/ledger.md` and the current handoff for gate/deploy state.
 
 ## Closeout
 

@@ -11,12 +11,12 @@
 
 - Added SDK query request types for collaboration, operations, and integration clients.
 - Updated client query serialization to include string/number/boolean filter fields while skipping undefined values.
-- Evidence: `NX_DAEMON=false pnpm nx test sdk --runInBand` passed with filtered URL path assertions.
+- Evidence: SDK filtered URL path assertions passed.
 
 ## Q003-P3-OPENFORGE-FILTER-DOC
 
 - Updated `docs/development/openforge-template-authoring.md` and `docs/development/openforge-v1-architecture.md` with bounded list filter guidance.
-- Evidence: `pnpm openforge:doctor` and `pnpm openforge:gate` passed.
+- Evidence: OpenForge documentation checks passed.
 
 ## Q003-P4-COLLAB-FILTERS
 
@@ -24,7 +24,7 @@
 - `GET /collaboration/notices` supports `status`.
 - `GET /collaboration/todos` supports `status`, `assignee`, and `sourceType`.
 - `GET /collaboration/approvals` supports `status`, `requester`, and `approver`.
-- Evidence: `NX_DAEMON=false pnpm nx test api --runInBand --testPathPatterns=collaboration` passed with 7 tests.
+- Evidence: collaboration filter repository checks passed.
 
 ## Q003-P5-OPERATIONS-FILTERS
 
@@ -33,7 +33,7 @@
 - `GET /monitor/cache` supports `prefix`.
 - `GET /monitor/online-users` supports `active`.
 - `GET /optional/reports` supports `enabled` and `owner`.
-- Evidence: `NX_DAEMON=false pnpm nx test api --runInBand --testPathPatterns=operations` passed with 8 tests.
+- Evidence: operations filter repository checks passed.
 
 ## Q003-P6-INTEGRATION-FILTERS
 
@@ -41,12 +41,11 @@
 - `GET /integrations/mail/templates` and `GET /integrations/sms/templates` support `enabled`.
 - `GET /integrations/mail/outbox` and `GET /integrations/sms/outbox` support `status` and `providerCode`.
 - `GET /integrations/oauth/providers` supports `enabled` and `healthStatus`.
-- Evidence: `NX_DAEMON=false pnpm nx test api --runInBand --testPathPatterns=integration` passed with 8 tests.
+- Evidence: integration filter repository checks passed.
 
 ## Contract Verification
 
-- `pnpm openapi:export`
-- `pnpm openapi:registry-tags:check`
-- `pnpm openapi:check`
-
-`pnpm openapi:check` initially failed because `/tmp` was full (`ENOSPC` while writing the regenerated snapshot). Clearing generated temporary cache directories restored `/tmp` capacity, and the rerun passed cleanly.
+OpenAPI export, registry tag drift and snapshot checks passed. The only useful
+incident to keep: the first snapshot check failed because `/tmp` was full
+(`ENOSPC` while writing the regenerated snapshot). Clearing generated
+temporary cache directories restored capacity and the rerun passed.

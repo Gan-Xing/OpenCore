@@ -41,16 +41,7 @@ rendering behavior.
 
 ## Verification
 
-- `NX_DAEMON=false pnpm nx test openforge --runInBand --testPathPatterns=render-template-pack`
-- `NX_DAEMON=false pnpm nx test openforge --runInBand --testPathPatterns=manual-schema-validator`
-- `pnpm openforge:test`
-- `pnpm openforge:gate`
-- `NX_DAEMON=false pnpm nx test openforge`
-- `NX_DAEMON=false pnpm nx run-many -t typecheck -p contracts,openforge`
-- `NX_DAEMON=false pnpm nx run-many -t lint -p contracts,openforge`
-- `node tools/quality-cycle/opencore-quality-cycle.mjs gate`
-
-All commands passed.
+Focused checks and the applicable quality gate passed. Repeated command transcripts were removed; use `docs/quality-cycle/ledger.md` and the current handoff for gate/deploy state.
 
 ## Scope Guard
 

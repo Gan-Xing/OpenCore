@@ -16,14 +16,7 @@ Completed Admin route/access binding drift enforcement.
 
 ## Verification
 
-- `pnpm exec prettier --write ...`
-- `pnpm registry:admin-routes:check`
-- `NX_DAEMON=false pnpm nx run-many -t typecheck -p admin,module-registry`
-- `NX_DAEMON=false pnpm nx test admin`
-- `NX_DAEMON=false pnpm nx run admin:lint`
-- `pnpm openforge:doctor`
-- `pnpm openforge:gate`
-- `node tools/quality-cycle/opencore-quality-cycle.mjs gate`
+Focused checks and the applicable quality gate passed. Repeated command transcripts were removed; use `docs/quality-cycle/ledger.md` and the current handoff for gate/deploy state.
 
 ## Residual Risk
 

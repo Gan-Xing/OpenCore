@@ -23,40 +23,6 @@ Cycle 002 did not implement BPMN, a workflow designer, a report designer, async 
 
 Payment remains design-only through `integration.billing-design`; no `integration.pay` registry prefix was added.
 
-## Verification Completed Before Final Gate
+## Verification
 
-- `NX_DAEMON=false pnpm nx run-many -t typecheck -p api,sdk,admin`
-- `NX_DAEMON=false pnpm nx test api --runInBand --testPathPatterns=collaboration`
-- `NX_DAEMON=false pnpm nx test api --runInBand --testPathPatterns=operations`
-- `NX_DAEMON=false pnpm nx test api --runInBand --testPathPatterns=integration`
-- `NX_DAEMON=false pnpm nx test sdk --runInBand`
-- `pnpm --dir apps/admin test`
-- `pnpm openapi:export`
-- `pnpm openapi:registry-tags:check`
-- `pnpm openapi:check`
-- `pnpm registry:admin-routes:check`
-
-## Final Gate
-
-Passed on 2026-06-11 with the required full-repository gate plus cycle-002 drift hardening:
-
-- `pnpm format:check`
-- `pnpm lint`
-- `pnpm typecheck`
-- `pnpm test`
-- `pnpm build`
-- `pnpm prisma:validate`
-- `pnpm openapi:export`
-- `pnpm openapi:registry-tags:check`
-- `pnpm openapi:check`
-- `pnpm registry:admin-routes:check`
-- `pnpm test:api`
-- `pnpm test:admin`
-- `NX_DAEMON=false pnpm nx test contracts`
-- `NX_DAEMON=false pnpm nx test module-registry`
-- `NX_DAEMON=false pnpm nx test sdk`
-- `pnpm openforge:check`
-- `pnpm openforge:doctor`
-- `pnpm openforge:gate`
-- `NX_DAEMON=false pnpm nx test openforge`
-- `NX_DAEMON=false pnpm nx build openforge`
+Focused checks and the final full-repository gate passed. Repeated command transcripts were removed; use `docs/quality-cycle/ledger.md` for completion markers.

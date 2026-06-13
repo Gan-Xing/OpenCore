@@ -33,12 +33,6 @@
   - Payment, WeChat and WebSocket drawers remain explicitly design-only.
 - Updated OpenForge docs so generated Admin table pages must keep list, read-only detail drawers, and action buttons separate.
 
-## Focused Verification
+## Verification
 
-- `pnpm format`
-- `NX_DAEMON=false pnpm nx test sdk --runInBand`
-- `NX_DAEMON=false pnpm nx test admin`
-- `NX_DAEMON=false pnpm nx run-many -t typecheck -p admin,sdk`
-- `pnpm registry:admin-routes:check`
-- `pnpm openforge:doctor`
-- `pnpm openforge:gate`
+Focused checks and the applicable gate passed. Command transcripts are intentionally omitted; keep unique defects, guards and decisions only.

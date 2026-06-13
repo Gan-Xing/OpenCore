@@ -18,11 +18,6 @@
 - Kept exports summary-only by omitting or marking sensitive fields such as body/comment/payload/config/secretRef/tokenId/querySchema/accountBinding.
 - Updated OpenForge V1 architecture and template-authoring docs to require generated Admin exports to be current-page CSV only, bounded by the S8 protocol, and sensitive-column excluded.
 
-## Focused Verification
+## Verification
 
-- `pnpm format`
-- `NX_DAEMON=false pnpm nx run-many -t typecheck -p admin,sdk`
-- `NX_DAEMON=false pnpm nx test admin`
-- `NX_DAEMON=false pnpm nx test sdk --runInBand`
-- `pnpm registry:admin-routes:check`
-- `pnpm openforge:doctor && pnpm openforge:gate`
+Focused checks and the applicable gate passed. Command transcripts are intentionally omitted; keep unique defects, guards and decisions only.

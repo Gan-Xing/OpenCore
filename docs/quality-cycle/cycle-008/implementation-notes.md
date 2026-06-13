@@ -18,12 +18,6 @@
 - Extended `apps/admin/scripts/smoke-test.mjs` so admitted S10/S11/S12 pages must use `useCurrentPageFilters`, bind table data to `filteredRows`, and export `filteredRows` when an export button exists.
 - Updated OpenForge V1 docs so generated Admin list pages must pair bounded query DTOs with bounded current-page filters and filtered current-page export rows.
 
-## Focused Verification
+## Verification
 
-- `pnpm format`
-- `NX_DAEMON=false pnpm nx run-many -t typecheck -p admin,sdk`
-- `NX_DAEMON=false pnpm nx test admin`
-- `NX_DAEMON=false pnpm nx run admin:lint`
-- `NX_DAEMON=false pnpm nx test sdk --runInBand`
-- `pnpm registry:admin-routes:check`
-- `pnpm openforge:doctor && pnpm openforge:gate`
+Focused checks and the applicable gate passed. Command transcripts are intentionally omitted; keep unique defects, guards and decisions only.

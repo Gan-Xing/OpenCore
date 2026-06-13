@@ -24,48 +24,6 @@ Cycle 001 did not implement BPMN, a workflow designer, a complete report designe
 
 The payment provider work remains design-only through `integration.billing-design`, deliberately avoiding the forbidden `integration.pay` registry prefix.
 
-## Verification Completed Before Final Gate
+## Verification
 
-- `pnpm prisma:validate`
-- `pnpm prisma:generate`
-- `NX_DAEMON=false pnpm nx test api --runInBand --testPathPatterns=collaboration`
-- `NX_DAEMON=false pnpm nx test api --runInBand --testPathPatterns=operations`
-- `NX_DAEMON=false pnpm nx test api --runInBand --testPathPatterns=integration`
-- `NX_DAEMON=false pnpm nx test sdk --runInBand`
-- `NX_DAEMON=false pnpm nx typecheck api`
-- `NX_DAEMON=false pnpm nx typecheck sdk`
-- `NX_DAEMON=false pnpm nx typecheck admin`
-- `NX_DAEMON=false pnpm nx test module-registry --runInBand`
-- `pnpm --dir apps/admin test`
-- `pnpm registry:admin-routes:check`
-- `pnpm openapi:export`
-- `pnpm openapi:registry-tags:check`
-- `pnpm openapi:check`
-- `pnpm openforge:check`
-- `pnpm openforge:doctor`
-- `pnpm openforge:gate`
-- `NX_DAEMON=false pnpm nx test openforge --runInBand`
-- `NX_DAEMON=false pnpm nx build openforge`
-
-## Final Gate
-
-Passed on 2026-06-11 with the required full-repository gate:
-
-- `pnpm format:check`
-- `pnpm lint`
-- `pnpm typecheck`
-- `pnpm test`
-- `pnpm build`
-- `pnpm prisma:validate`
-- `pnpm openapi:export`
-- `pnpm openapi:check`
-- `pnpm test:api`
-- `pnpm test:admin`
-- `NX_DAEMON=false pnpm nx test contracts`
-- `NX_DAEMON=false pnpm nx test module-registry`
-- `NX_DAEMON=false pnpm nx test sdk`
-- `pnpm openforge:check`
-- `pnpm openforge:doctor`
-- `pnpm openforge:gate`
-- `NX_DAEMON=false pnpm nx test openforge`
-- `NX_DAEMON=false pnpm nx build openforge`
+Focused checks and the final full-repository gate passed. Repeated command transcripts were removed; use `docs/quality-cycle/ledger.md` for completion markers.

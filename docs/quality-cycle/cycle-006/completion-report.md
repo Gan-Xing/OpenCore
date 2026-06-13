@@ -21,37 +21,6 @@ Cycle 006 upgraded existing admitted Admin fixture pages with read-only detail d
 
 Cycle 006 did not add BPMN, workflow designer, report designer, real async export execution, real payment, WeChat production callbacks, WebSocket server runtime, CRM, ERP, MES, WMS, mall, member, multi-tenancy, AI, RAG, or Agent features.
 
-## Verification Completed Before Final Gate
+## Verification
 
-- `pnpm format`
-- `NX_DAEMON=false pnpm nx test sdk --runInBand`
-- `NX_DAEMON=false pnpm nx test admin`
-- `NX_DAEMON=false pnpm nx run-many -t typecheck -p admin,sdk`
-- `pnpm registry:admin-routes:check`
-- `pnpm openforge:doctor`
-- `pnpm openforge:gate`
-
-## Final Gate
-
-Passed on 2026-06-11 with the required full-repository gate:
-
-- `pnpm format:check`
-- `pnpm lint`
-- `pnpm typecheck`
-- `pnpm test`
-- `pnpm build`
-- `pnpm prisma:validate`
-- `pnpm openapi:export`
-- `pnpm openapi:registry-tags:check`
-- `pnpm openapi:check`
-- `pnpm registry:admin-routes:check`
-- `pnpm test:api`
-- `pnpm test:admin`
-- `NX_DAEMON=false pnpm nx test contracts`
-- `NX_DAEMON=false pnpm nx test module-registry`
-- `NX_DAEMON=false pnpm nx test sdk`
-- `pnpm openforge:check`
-- `pnpm openforge:doctor`
-- `pnpm openforge:gate`
-- `NX_DAEMON=false pnpm nx test openforge`
-- `NX_DAEMON=false pnpm nx build openforge`
+Focused checks and the final full-repository gate passed. Repeated command transcripts were removed; use `docs/quality-cycle/ledger.md` for completion markers.

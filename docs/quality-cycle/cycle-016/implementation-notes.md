@@ -22,16 +22,9 @@
 - `apps/admin/scripts/smoke-test.mjs` now checks that current-page filter/search text normalization keeps object fallback redaction and sensitive-key coverage.
 - `docs/development/export-upload-contract.md`, `docs/development/openforge-template-authoring.md` and `docs/development/openforge-v1-architecture.md` now require current-page filter/search object fallback redaction.
 
-## Focused Verification
+## Verification
 
-- `pnpm exec prettier --write apps/admin/src/pages/shared/CurrentPageFilters.tsx apps/admin/scripts/smoke-test.mjs docs/development/export-upload-contract.md docs/development/openforge-template-authoring.md docs/development/openforge-v1-architecture.md docs/quality-cycle/cycle-016/audit.md docs/quality-cycle/cycle-016/reference-comparison.md docs/quality-cycle/cycle-016/backlog.md docs/quality-cycle/cycle-016/implementation-notes.md`
-- `NX_DAEMON=false pnpm nx test admin`
-- `NX_DAEMON=false pnpm nx run-many -t typecheck -p admin,sdk`
-- `NX_DAEMON=false pnpm nx run admin:lint`
-- `NX_DAEMON=false pnpm nx test sdk --runInBand`
-- `pnpm registry:admin-routes:check`
-- `pnpm openforge:doctor`
-- `pnpm openforge:gate`
+Focused checks and the applicable gate passed. Command transcripts are intentionally omitted; keep unique defects, guards and decisions only.
 
 ## Full Gate
 

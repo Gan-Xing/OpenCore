@@ -16,8 +16,7 @@ Cycle 017 hardened Admin scalar sensitive-field rendering. Shared read-only deta
 
 ## Verification
 
-- Focused formatting, Admin test/typecheck/lint, SDK tests, route drift, OpenForge doctor and OpenForge gate passed.
-- Full quality-cycle gate passed.
+Focused checks and the applicable quality gate passed. Repeated command transcripts were removed; use `docs/quality-cycle/ledger.md` and the current handoff for gate/deploy state.
 
 ## Follow-Up
 
