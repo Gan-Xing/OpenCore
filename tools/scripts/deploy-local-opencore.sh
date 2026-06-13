@@ -69,17 +69,35 @@ verify_admin_bundle_api_base_url() {
       ;;
   esac
 
-  if grep -R \
+  if ! grep -R \
     --fixed-strings \
     --include='*.js' \
     "$ADMIN_API_BASE_URL_VALUE" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null; then
-    return
+    echo "Admin bundle does not include ADMIN_API_BASE_URL=$ADMIN_API_BASE_URL_VALUE." >&2
+    echo "Refusing to deploy a frontend that would post to the static server /api path." >&2
+    exit 1
   fi
 
-  echo "Admin bundle does not include ADMIN_API_BASE_URL=$ADMIN_API_BASE_URL_VALUE." >&2
-  echo "Refusing to deploy a frontend that would post to the static server /api path." >&2
-  exit 1
+  if ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "loginMaxFailedAttempts" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null; then
+    echo "Admin bundle does not include runtime login max failed attempts policy." >&2
+    echo "Refusing to deploy a stale frontend login page." >&2
+    exit 1
+  fi
+
+  if ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Login lockout policy" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null; then
+    echo "Admin bundle does not include the runtime login lockout policy text." >&2
+    echo "Refusing to deploy a stale frontend login page." >&2
+    exit 1
+  fi
 }
 
 verify_public_admin_bundle() {

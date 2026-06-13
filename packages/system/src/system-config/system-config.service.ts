@@ -33,12 +33,16 @@ export type SystemConfigCacheRefreshResult = {
 export type SystemConfigRuntimeResult = {
   adminTitle: string;
   loginLockoutMinutes: number;
+  loginMaxFailedAttempts: number;
 };
 
 const ADMIN_TITLE_CONFIG_KEY = 'opencore.admin.title';
 const LOGIN_LOCKOUT_MINUTES_CONFIG_KEY = 'auth.login.lockoutMinutes';
+const LOGIN_MAX_FAILED_ATTEMPTS_CONFIG_KEY = 'auth.login.maxFailedAttempts';
 const MIN_LOGIN_LOCKOUT_MINUTES = 1;
 const MAX_LOGIN_LOCKOUT_MINUTES = 1440;
+const MIN_LOGIN_MAX_FAILED_ATTEMPTS = 1;
+const MAX_LOGIN_MAX_FAILED_ATTEMPTS = 20;
 
 @Injectable()
 export class SystemConfigService {
@@ -73,16 +77,26 @@ export class SystemConfigService {
   }
 
   async getRuntimeConfig(): Promise<SystemConfigRuntimeResult> {
-    const [adminTitle, loginLockoutMinutes] = await Promise.all([
-      this.getConfigValueByKey(ADMIN_TITLE_CONFIG_KEY),
-      this.getConfigValueByKey(LOGIN_LOCKOUT_MINUTES_CONFIG_KEY),
-    ]);
+    const [adminTitle, loginLockoutMinutes, loginMaxFailedAttempts] =
+      await Promise.all([
+        this.getConfigValueByKey(ADMIN_TITLE_CONFIG_KEY),
+        this.getConfigValueByKey(LOGIN_LOCKOUT_MINUTES_CONFIG_KEY),
+        this.getConfigValueByKey(LOGIN_MAX_FAILED_ATTEMPTS_CONFIG_KEY),
+      ]);
 
     return {
       adminTitle: adminTitle.value,
-      loginLockoutMinutes: parseRuntimePositiveInteger(
+      loginLockoutMinutes: parseRuntimeIntegerInRange(
         loginLockoutMinutes.value,
         LOGIN_LOCKOUT_MINUTES_CONFIG_KEY,
+        MIN_LOGIN_LOCKOUT_MINUTES,
+        MAX_LOGIN_LOCKOUT_MINUTES,
+      ),
+      loginMaxFailedAttempts: parseRuntimeIntegerInRange(
+        loginMaxFailedAttempts.value,
+        LOGIN_MAX_FAILED_ATTEMPTS_CONFIG_KEY,
+        MIN_LOGIN_MAX_FAILED_ATTEMPTS,
+        MAX_LOGIN_MAX_FAILED_ATTEMPTS,
       ),
     };
   }
@@ -160,17 +174,18 @@ export class SystemConfigService {
   }
 }
 
-function parseRuntimePositiveInteger(value: string, key: string): number {
+function parseRuntimeIntegerInRange(
+  value: string,
+  key: string,
+  minimum: number,
+  maximum: number,
+): number {
   const normalized = value.trim();
   const parsed = Number(normalized);
 
-  if (
-    !Number.isInteger(parsed) ||
-    parsed < MIN_LOGIN_LOCKOUT_MINUTES ||
-    parsed > MAX_LOGIN_LOCKOUT_MINUTES
-  ) {
+  if (!Number.isInteger(parsed) || parsed < minimum || parsed > maximum) {
     throw new BadRequestException(
-      `Runtime config ${key} must be an integer between ${MIN_LOGIN_LOCKOUT_MINUTES} and ${MAX_LOGIN_LOCKOUT_MINUTES}.`,
+      `Runtime config ${key} must be an integer between ${minimum} and ${maximum}.`,
     );
   }
 
@@ -183,7 +198,8 @@ function assertRuntimeConfigMutation(
 ): void {
   if (
     key !== ADMIN_TITLE_CONFIG_KEY &&
-    key !== LOGIN_LOCKOUT_MINUTES_CONFIG_KEY
+    key !== LOGIN_LOCKOUT_MINUTES_CONFIG_KEY &&
+    key !== LOGIN_MAX_FAILED_ATTEMPTS_CONFIG_KEY
   ) {
     return;
   }
@@ -211,7 +227,22 @@ function assertRuntimeConfigMutation(
   }
 
   if (body.value !== undefined) {
-    parseRuntimePositiveInteger(body.value, key);
+    if (key === LOGIN_LOCKOUT_MINUTES_CONFIG_KEY) {
+      parseRuntimeIntegerInRange(
+        body.value,
+        key,
+        MIN_LOGIN_LOCKOUT_MINUTES,
+        MAX_LOGIN_LOCKOUT_MINUTES,
+      );
+      return;
+    }
+
+    parseRuntimeIntegerInRange(
+      body.value,
+      key,
+      MIN_LOGIN_MAX_FAILED_ATTEMPTS,
+      MAX_LOGIN_MAX_FAILED_ATTEMPTS,
+    );
   }
 }
 

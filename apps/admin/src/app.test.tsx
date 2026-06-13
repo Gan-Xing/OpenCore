@@ -90,6 +90,7 @@ describe('app getInitialState', () => {
     mocks.getOpenCoreAdminRuntimeConfig.mockResolvedValue({
       adminTitle: 'OpenCore Admin',
       loginLockoutMinutes: 15,
+      loginMaxFailedAttempts: 5,
     });
   });
 
@@ -118,6 +119,7 @@ describe('app getInitialState', () => {
     expect(state.permissions).toEqual(['core:dashboard:read']);
     expect(state.settingDrawerOpen).toBe(false);
     expect(state.runtimeConfig?.loginLockoutMinutes).toBe(15);
+    expect(state.runtimeConfig?.loginMaxFailedAttempts).toBe(5);
     expect(state.fetchUserInfo).toBeDefined();
   });
 
@@ -194,6 +196,7 @@ describe('app getInitialState', () => {
     mocks.getOpenCoreAdminRuntimeConfig.mockResolvedValue({
       adminTitle: 'OpenCore Runtime Admin',
       loginLockoutMinutes: 20,
+      loginMaxFailedAttempts: 4,
     });
     mocks.queryCurrentOpenCoreUser.mockResolvedValue({
       user: {
@@ -210,5 +213,6 @@ describe('app getInitialState', () => {
 
     expect(state.settings?.title).toBe('OpenCore Runtime Admin');
     expect(state.runtimeConfig?.loginLockoutMinutes).toBe(20);
+    expect(state.runtimeConfig?.loginMaxFailedAttempts).toBe(4);
   });
 });

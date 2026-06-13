@@ -31,8 +31,10 @@ const secretKey = `auth.token.secret.${runId}`;
 let token;
 let originalAdminTitle;
 let originalLoginLockoutMinutes;
+let originalLoginMaxFailedAttempts;
 let adminTitleMutated = false;
 let loginLockoutMutated = false;
+let loginMaxFailedAttemptsMutated = false;
 
 const createdKeys = [];
 
@@ -98,6 +100,37 @@ try {
     'number',
     'seeded login lockout value type',
   );
+  const seededLoginMaxAttemptsConfig = await apiRequest(
+    '/core/config/auth.login.maxFailedAttempts',
+  );
+  originalLoginMaxFailedAttempts = assertString(
+    seededLoginMaxAttemptsConfig.value,
+    'seeded login max failed attempts value',
+  );
+  const originalLoginMaxFailedAttemptsNumber = parseRuntimeInteger(
+    originalLoginMaxFailedAttempts,
+    'seeded login max failed attempts',
+  );
+  assertEqual(
+    seededLoginMaxAttemptsConfig.system,
+    true,
+    'seeded login max failed attempts system flag',
+  );
+  assertEqual(
+    seededLoginMaxAttemptsConfig.public,
+    true,
+    'seeded login max failed attempts public flag',
+  );
+  assertEqual(
+    seededLoginMaxAttemptsConfig.visibility,
+    'public',
+    'seeded login max failed attempts visibility',
+  );
+  assertEqual(
+    seededLoginMaxAttemptsConfig.valueType,
+    'number',
+    'seeded login max failed attempts value type',
+  );
   const initialRuntimeConfig = await request(
     `${apiPrefix}/core/config/runtime`,
   );
@@ -110,6 +143,11 @@ try {
     initialRuntimeConfig.loginLockoutMinutes,
     originalLoginLockoutMinutesNumber,
     'initial runtime login lockout minutes',
+  );
+  assertEqual(
+    initialRuntimeConfig.loginMaxFailedAttempts,
+    originalLoginMaxFailedAttemptsNumber,
+    'initial runtime login max failed attempts',
   );
   await apiRequest('/core/config/opencore.admin.title', {
     method: 'DELETE',
@@ -130,6 +168,27 @@ try {
     expected: [400],
   });
   await apiRequest('/core/config/auth.login.lockoutMinutes', {
+    method: 'PATCH',
+    body: {
+      visibility: 'private',
+    },
+    expected: [400],
+  });
+  await apiRequest('/core/config/auth.login.maxFailedAttempts', {
+    method: 'PATCH',
+    body: {
+      value: '0',
+    },
+    expected: [400],
+  });
+  await apiRequest('/core/config/auth.login.maxFailedAttempts', {
+    method: 'PATCH',
+    body: {
+      value: '20.5',
+    },
+    expected: [400],
+  });
+  await apiRequest('/core/config/auth.login.maxFailedAttempts', {
     method: 'PATCH',
     body: {
       visibility: 'private',
@@ -188,6 +247,33 @@ try {
     'runtime login lockout minutes after update',
   );
   await restoreLoginLockoutMinutes();
+
+  const smokeLoginMaxFailedAttempts =
+    originalLoginMaxFailedAttemptsNumber === 5 ? 4 : 5;
+  const updatedLoginAttemptPolicy = await apiRequest(
+    '/core/config/auth.login.maxFailedAttempts',
+    {
+      method: 'PATCH',
+      body: {
+        value: String(smokeLoginMaxFailedAttempts),
+      },
+    },
+  );
+  loginMaxFailedAttemptsMutated = true;
+  assertEqual(
+    updatedLoginAttemptPolicy.value,
+    String(smokeLoginMaxFailedAttempts),
+    'updated login max failed attempts config value',
+  );
+  const updatedLoginAttemptPolicyRuntimeConfig = await request(
+    `${apiPrefix}/core/config/runtime`,
+  );
+  assertEqual(
+    updatedLoginAttemptPolicyRuntimeConfig.loginMaxFailedAttempts,
+    smokeLoginMaxFailedAttempts,
+    'runtime login max failed attempts after update',
+  );
+  await restoreLoginMaxFailedAttempts();
 
   const createdConfig = await apiRequest('/core/config', {
     method: 'POST',
@@ -463,6 +549,8 @@ try {
         'core.config.runtime-cache-invalidation',
         'core.config.runtime-login-policy',
         'core.config.runtime-login-policy-guards',
+        'core.config.runtime-login-attempt-policy',
+        'core.config.runtime-login-attempt-policy-guards',
         'core.config.value-by-key',
         'core.config.value-cache-invalidation',
         'core.config.cache-refresh',
@@ -487,6 +575,7 @@ try {
   await cleanupCreatedConfig().catch(() => undefined);
   await restoreAdminTitle().catch(() => undefined);
   await restoreLoginLockoutMinutes().catch(() => undefined);
+  await restoreLoginMaxFailedAttempts().catch(() => undefined);
   console.error(
     JSON.stringify({
       status: 'fail',
@@ -581,6 +670,24 @@ async function restoreLoginLockoutMinutes() {
     },
   });
   loginLockoutMutated = false;
+}
+
+async function restoreLoginMaxFailedAttempts() {
+  if (
+    !token ||
+    !loginMaxFailedAttemptsMutated ||
+    originalLoginMaxFailedAttempts === undefined
+  ) {
+    return;
+  }
+
+  await apiRequest('/core/config/auth.login.maxFailedAttempts', {
+    method: 'PATCH',
+    body: {
+      value: originalLoginMaxFailedAttempts,
+    },
+  });
+  loginMaxFailedAttemptsMutated = false;
 }
 
 async function request(path, options = {}) {

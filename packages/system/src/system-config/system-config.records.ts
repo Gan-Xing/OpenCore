@@ -43,4 +43,17 @@ export const seedSystemConfigs: readonly SystemConfigRecord[] = [
     system: true,
     visibility: 'public',
   },
+  {
+    id: 'config_login_max_failed_attempts',
+    category: 'security',
+    name: 'Login max failed attempts',
+    key: 'auth.login.maxFailedAttempts',
+    value: '5',
+    valueType: 'number',
+    description: 'Public login failed-attempt threshold runtime setting.',
+    remark: 'Shown on the Admin login page as a runtime login policy.',
+    public: true,
+    system: true,
+    visibility: 'public',
+  },
 ];

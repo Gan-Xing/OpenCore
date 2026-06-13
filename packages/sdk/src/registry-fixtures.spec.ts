@@ -77,6 +77,15 @@ describe('registry fixtures', () => {
     );
     expect(createSystemConfigFixtures().items[0].visibility).toBe('public');
     expect(
+      createSystemConfigFixtures().items.some(
+        (item) =>
+          item.key === 'auth.login.maxFailedAttempts' &&
+          item.value === '5' &&
+          item.valueType === 'number' &&
+          item.visibility === 'public',
+      ),
+    ).toBe(true);
+    expect(
       createSystemConfigFixtures().items.find(
         (item) => item.visibility === 'secret',
       )?.value,

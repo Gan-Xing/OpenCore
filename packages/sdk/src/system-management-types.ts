@@ -102,6 +102,7 @@ export type SystemConfigValueSummary = {
 export type SystemConfigRuntimeSummary = {
   adminTitle: string;
   loginLockoutMinutes: number;
+  loginMaxFailedAttempts: number;
 };
 
 export type SystemConfigCacheRefreshSummary = {

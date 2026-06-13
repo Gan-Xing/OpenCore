@@ -5,8 +5,6 @@ import {
   type SecurityLoginPolicy,
 } from '@opencore/security';
 
-const MAX_FAILED_LOGIN_ATTEMPTS = 5;
-
 @Injectable()
 export class SystemSecurityLoginPolicyProvider extends SecurityLoginPolicyProvider {
   constructor(private readonly config: SystemConfigService) {
@@ -17,7 +15,7 @@ export class SystemSecurityLoginPolicyProvider extends SecurityLoginPolicyProvid
     const runtimeConfig = await this.config.getRuntimeConfig();
 
     return {
-      maxFailedAttempts: MAX_FAILED_LOGIN_ATTEMPTS,
+      maxFailedAttempts: runtimeConfig.loginMaxFailedAttempts,
       lockoutMinutes: runtimeConfig.loginLockoutMinutes,
     };
   }

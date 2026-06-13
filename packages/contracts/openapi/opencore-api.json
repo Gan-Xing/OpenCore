@@ -6405,9 +6405,19 @@
             "example": 15,
             "minimum": 1,
             "maximum": 1440
+          },
+          "loginMaxFailedAttempts": {
+            "type": "number",
+            "example": 5,
+            "minimum": 1,
+            "maximum": 20
           }
         },
-        "required": ["adminTitle", "loginLockoutMinutes"]
+        "required": [
+          "adminTitle",
+          "loginLockoutMinutes",
+          "loginMaxFailedAttempts"
+        ]
       },
       "SystemConfigValueDto": {
         "type": "object",

@@ -223,10 +223,12 @@ if (
   !deployScript.includes('verify_public_admin_bundle') ||
   !deployScript.includes('/api/api/auth/login') ||
   !deployScript.includes('admin.public-bundle.no-duplicate-api-prefix') ||
-  !deployScript.includes('admin.api-proxy.duplicate-prefix-login')
+  !deployScript.includes('admin.api-proxy.duplicate-prefix-login') ||
+  !deployScript.includes('loginMaxFailedAttempts') ||
+  !deployScript.includes('Refusing to deploy a stale frontend login page')
 ) {
   throw new Error(
-    'OpenCore deploy script must verify the public Admin bundle and keep stale /api/api login requests working through the proxy.',
+    'OpenCore deploy script must verify the public Admin bundle, stale login page content and duplicated /api/api login requests.',
   );
 }
 
@@ -237,7 +239,8 @@ if (
   !loginPage.includes('runtimeTitle') ||
   !loginPage.includes('title={runtimeTitle}') ||
   !loginPage.includes('loginLockoutMinutes') ||
-  !loginPage.includes('Login lockout window')
+  !loginPage.includes('loginMaxFailedAttempts') ||
+  !loginPage.includes('Login lockout policy')
 ) {
   throw new Error(
     'Admin login must call OpenCore auth, use runtime config title/login policy and avoid demo login services.',

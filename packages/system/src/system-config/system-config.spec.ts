@@ -6,6 +6,7 @@ import {
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '@opencore/database';
 import { PrismaSystemConfigRepository } from './system-config.prisma-repository';
+import { seedSystemConfigs } from './system-config.records';
 import { SeedSystemConfigRepository } from './system-config.seed-repository';
 import { SystemConfigService } from './system-config.service';
 
@@ -17,8 +18,8 @@ describe('@opencore/system system-config', () => {
       expect.objectContaining({
         page: 1,
         pageSize: 1,
-        total: 2,
-        totalPages: 2,
+        total: 3,
+        totalPages: 3,
       }),
     );
     await expect(
@@ -48,12 +49,20 @@ describe('@opencore/system system-config', () => {
     await expect(service.getRuntimeConfig()).resolves.toEqual({
       adminTitle: 'OpenCore Admin',
       loginLockoutMinutes: 15,
+      loginMaxFailedAttempts: 5,
     });
     await expect(
       service.getConfigValueByKey('auth.login.lockoutMinutes'),
     ).resolves.toEqual({
       key: 'auth.login.lockoutMinutes',
       value: '15',
+      valueType: 'number',
+    });
+    await expect(
+      service.getConfigValueByKey('auth.login.maxFailedAttempts'),
+    ).resolves.toEqual({
+      key: 'auth.login.maxFailedAttempts',
+      value: '5',
       valueType: 'number',
     });
 
@@ -166,6 +175,7 @@ describe('@opencore/system system-config', () => {
     await expect(service.getRuntimeConfig()).resolves.toEqual({
       adminTitle: 'OpenCore Admin',
       loginLockoutMinutes: 15,
+      loginMaxFailedAttempts: 5,
     });
 
     await service.updateConfig('opencore.admin.title', {
@@ -174,10 +184,14 @@ describe('@opencore/system system-config', () => {
     await service.updateConfig('auth.login.lockoutMinutes', {
       value: '20',
     });
+    await service.updateConfig('auth.login.maxFailedAttempts', {
+      value: '4',
+    });
 
     await expect(service.getRuntimeConfig()).resolves.toEqual({
       adminTitle: 'OpenCore Runtime Admin',
       loginLockoutMinutes: 20,
+      loginMaxFailedAttempts: 4,
     });
 
     await expect(
@@ -188,6 +202,21 @@ describe('@opencore/system system-config', () => {
     await expect(
       service.updateConfig('auth.login.lockoutMinutes', {
         value: 'not-a-number',
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.updateConfig('auth.login.maxFailedAttempts', {
+        value: '0',
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.updateConfig('auth.login.maxFailedAttempts', {
+        value: '20.5',
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.updateConfig('auth.login.maxFailedAttempts', {
+        visibility: 'private',
       }),
     ).rejects.toThrow(BadRequestException);
     await expect(
@@ -239,6 +268,10 @@ describe('@opencore/system system-config', () => {
     const configKey = `system.config.${testRunId}`;
     const batchConfigKey = `system.config.batch.${testRunId}`;
     const secretKey = `auth.token.secret.${testRunId}`;
+
+    beforeAll(async () => {
+      await ensureSeedSystemConfigs();
+    });
 
     beforeEach(async () => {
       await cleanupTestRows();
@@ -328,6 +361,13 @@ describe('@opencore/system system-config', () => {
         value: '15',
         valueType: 'number',
       });
+      await expect(
+        service.getConfigValueByKey('auth.login.maxFailedAttempts'),
+      ).resolves.toEqual({
+        key: 'auth.login.maxFailedAttempts',
+        value: '5',
+        valueType: 'number',
+      });
 
       const secret = await service.createConfig({
         category: 'security',
@@ -392,6 +432,36 @@ describe('@opencore/system system-config', () => {
       await prisma.systemConfig.deleteMany({
         where: { key: { in: [configKey, batchConfigKey, secretKey] } },
       });
+    }
+
+    async function ensureSeedSystemConfigs(): Promise<void> {
+      for (const config of seedSystemConfigs) {
+        await prisma.systemConfig.upsert({
+          where: { key: config.key },
+          update: {
+            category: config.category,
+            name: config.name,
+            value: config.value,
+            valueType: config.valueType,
+            description: config.description,
+            remark: config.remark,
+            public: config.public,
+            system: config.system,
+          },
+          create: {
+            id: config.id,
+            category: config.category,
+            name: config.name,
+            key: config.key,
+            value: config.value,
+            valueType: config.valueType,
+            description: config.description,
+            remark: config.remark,
+            public: config.public,
+            system: config.system,
+          },
+        });
+      }
     }
   });
 });

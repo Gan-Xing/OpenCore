@@ -25,11 +25,13 @@ const failedUsername = `opencore-smoke-login-${runId}`;
 const lockoutUsername = `opencore-smoke-lockout-${runId}`;
 const postCleanUsername = `opencore-smoke-login-clean-${runId}`;
 const lockoutPassword = `Lockout-${runId}-A1`;
-const loginLockoutAttemptLimit = 5;
+const smokeLoginMaxFailedAttempts = 3;
 const failedLoginUserAgent =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 let token;
 let lockoutUserId;
+let originalLoginMaxFailedAttempts;
+let loginMaxFailedAttemptsMutated = false;
 
 class HttpStatusError extends Error {
   constructor(message, status) {
@@ -189,6 +191,45 @@ try {
     expected: [404],
   });
 
+  const seededLoginMaxAttemptsConfig = await apiRequest(
+    '/core/config/auth.login.maxFailedAttempts',
+  );
+  originalLoginMaxFailedAttempts = assertString(
+    seededLoginMaxAttemptsConfig.value,
+    'seeded login max failed attempts value',
+  );
+  assertEqual(
+    seededLoginMaxAttemptsConfig.valueType,
+    'number',
+    'seeded login max failed attempts value type',
+  );
+  assertEqual(
+    seededLoginMaxAttemptsConfig.visibility,
+    'public',
+    'seeded login max failed attempts visibility',
+  );
+  const updatedLoginMaxAttemptsConfig = await apiRequest(
+    '/core/config/auth.login.maxFailedAttempts',
+    {
+      method: 'PATCH',
+      body: { value: String(smokeLoginMaxFailedAttempts) },
+    },
+  );
+  loginMaxFailedAttemptsMutated = true;
+  assertEqual(
+    updatedLoginMaxAttemptsConfig.value,
+    String(smokeLoginMaxFailedAttempts),
+    'updated login max failed attempts config value',
+  );
+  const updatedRuntimePolicy = await request(
+    `${apiPrefix}/core/config/runtime`,
+  );
+  assertEqual(
+    updatedRuntimePolicy.loginMaxFailedAttempts,
+    smokeLoginMaxFailedAttempts,
+    'runtime login max failed attempts after update',
+  );
+
   const createdLockoutUser = await apiRequest('/core/users', {
     method: 'POST',
     body: {
@@ -215,7 +256,7 @@ try {
   );
   assertEqual(emptyUnlockResult.unlocked, false, 'empty unlock result');
 
-  for (let attempt = 0; attempt < loginLockoutAttemptLimit; attempt += 1) {
+  for (let attempt = 0; attempt < smokeLoginMaxFailedAttempts; attempt += 1) {
     await request(`${apiPrefix}/auth/login`, {
       method: 'POST',
       expected: [401, 403],
@@ -266,7 +307,7 @@ try {
   assertEqual(unlockResult.unlocked, true, 'unlock result');
   assertEqual(
     unlockResult.failedAttempts,
-    loginLockoutAttemptLimit,
+    smokeLoginMaxFailedAttempts,
     'unlock failed attempt count',
   );
   assertString(unlockResult.lockedUntil, 'unlock lockedUntil');
@@ -285,6 +326,7 @@ try {
     method: 'DELETE',
   });
   lockoutUserId = undefined;
+  await restoreLoginMaxFailedAttempts();
 
   const cleanResult = await apiRequest('/core/login-logs/clean', {
     method: 'DELETE',
@@ -354,6 +396,7 @@ try {
         'core.login-log.batch-delete-detail-404',
         'core.login-log.unlock-empty',
         'auth.login-lockout.enforced',
+        'auth.login-lockout.configurable-attempt-limit',
         'core.login-log.account-locked-filter',
         'core.login-log.unlock-restores-login',
         'core.login-log.clean-all',
@@ -363,6 +406,7 @@ try {
     }),
   );
 } catch (error) {
+  await restoreLoginMaxFailedAttempts().catch(() => undefined);
   console.error(
     JSON.stringify({
       status: 'fail',
@@ -372,6 +416,24 @@ try {
     }),
   );
   process.exitCode = 1;
+}
+
+async function restoreLoginMaxFailedAttempts() {
+  if (
+    !token ||
+    !loginMaxFailedAttemptsMutated ||
+    originalLoginMaxFailedAttempts === undefined
+  ) {
+    return;
+  }
+
+  await apiRequest('/core/config/auth.login.maxFailedAttempts', {
+    method: 'PATCH',
+    body: {
+      value: originalLoginMaxFailedAttempts,
+    },
+  });
+  loginMaxFailedAttemptsMutated = false;
 }
 
 async function waitForFailedLoginLog() {

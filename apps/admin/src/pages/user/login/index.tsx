@@ -104,6 +104,8 @@ const Login: React.FC = () => {
   const runtimeTitle =
     initialState?.settings?.title ?? Settings.title ?? 'OpenCore Admin';
   const loginLockoutMinutes = initialState?.runtimeConfig?.loginLockoutMinutes;
+  const loginMaxFailedAttempts =
+    initialState?.runtimeConfig?.loginMaxFailedAttempts;
 
   const fetchUserInfo = async () => {
     const userInfo = await initialState?.fetchUserInfo?.();
@@ -195,12 +197,14 @@ const Login: React.FC = () => {
                   defaultMessage: 'OpenCore enterprise administration console',
                 })}
               </span>
-              {typeof loginLockoutMinutes === 'number' ? (
+              {typeof loginLockoutMinutes === 'number' &&
+              typeof loginMaxFailedAttempts === 'number' ? (
                 <Typography.Text
                   className={styles.loginPolicyText}
                   type="secondary"
                 >
-                  Login lockout window: {loginLockoutMinutes} minutes
+                  Login lockout policy: {loginMaxFailedAttempts} failed attempts
+                  / {loginLockoutMinutes} minutes
                 </Typography.Text>
               ) : null}
             </Space>

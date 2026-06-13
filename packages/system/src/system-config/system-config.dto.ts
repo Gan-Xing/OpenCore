@@ -57,6 +57,9 @@ export class SystemConfigRuntimeDto {
 
   @ApiProperty({ example: 15, minimum: 1, maximum: 1440 })
   loginLockoutMinutes!: number;
+
+  @ApiProperty({ example: 5, minimum: 1, maximum: 20 })
+  loginMaxFailedAttempts!: number;
 }
 
 export class SystemConfigCacheRefreshDto {
