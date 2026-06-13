@@ -81,3 +81,4 @@
 - 2026-06-13 03:26:36 UTC completed cycle-021 round-036 core.user native XLSX import productization; featureCommit=1437eb8; deployed=39172/39174; publicVerified=user-import-xlsx,admin-users-csv-xlsx-upload,admin-proxy-import-template
 - 2026-06-13 03:43:57 UTC completed cycle-021 round-037 core.config metadata productization; featureCommit=2a1f324; deployed=39172/39174; publicVerified=config-metadata,admin-config-metadata-fields,admin-proxy-config-list
 - 2026-06-13 04:05:18 UTC completed cycle-021 round-038 core.config native XLSX export productization; featureCommit=3419c24; deployed=39172/39174; publicVerified=config-export-xlsx,admin-config-download-excel,admin-proxy-config-export
+- 2026-06-13 04:33:19 UTC completed cycle-021 round-039 core.config batch deletion productization; featureCommit=4940291; deployed=39172/39174; publicVerified=config-batch-delete,admin-config-delete-selected,admin-proxy-config-batch

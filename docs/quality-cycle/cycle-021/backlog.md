@@ -1099,6 +1099,36 @@ without opening batch deletion or broader runtime feature-flag propagation.
       build, deployment and public URL verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 39: core.config Batch Deletion
+
+Why this slice: after config metadata and native XLSX export, the next
+lowest-dependency config debt was batch deletion. Yudao exposes
+`/infra/config/delete-list` guarded by `infra:config:delete`, and its Admin
+config API has `deleteConfigList(ids)`. OpenCore already had single config
+delete, metadata, cache invalidation and export, so this round could add the
+selected-row batch delete loop without opening secret vault/KMS, built-in
+config type policy or broader runtime propagation.
+
+- [x] Recompare Yudao/RuoYi config delete-list shape against OpenCore.
+- [x] Add `BatchDeleteSystemConfigsDto` and
+      `SystemConfigBatchMutationResultDto`.
+- [x] Add `deleteConfigs` repository/service contract for seed and Prisma
+      implementations.
+- [x] Validate batch keys for array shape, non-empty values, duplicates and
+      missing configs before mutation.
+- [x] Invalidate public value cache for every deleted key after a successful
+      batch delete.
+- [x] Add `DELETE /api/core/config/batch`, guarded by `core:config:delete`,
+      before the dynamic `config/:key` route.
+- [x] Extend permission-matrix, OpenAPI and SDK with config batch deletion.
+- [x] Add Admin Config row selection and `Delete selected` action.
+- [x] Extend Admin static smoke for batch deletion UI/service markers.
+- [x] Extend fixed-port/deploy/public `core.config` smoke with empty,
+      duplicate, missing-key, success and cache-invalidation guards.
+- [x] Run focused tests, OpenAPI/SDK, typecheck, format, fixed-port smoke,
+      build, deployment and public URL verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -1148,10 +1178,11 @@ treat "minimal loop" as "minimal final product".
       Native XLSX import template/parsing is complete while CSV import remains
       backwards compatible. Any dedicated User-page role assignment workflow
       still needs enhancement if admitted.
-- [ ] Round 9/24/37/38 `core.config`: public get-value-by-key, cache refresh
+- [ ] Round 9/24/37/38/39 `core.config`: public get-value-by-key, cache refresh
       and mutation invalidation are complete. Category/name/remark metadata is
       complete. Native XLSX export payload and Admin download are complete.
-      Batch deletion and broader runtime propagation boundaries remain.
+      Batch deletion is complete. Broader runtime propagation boundaries and
+      any admitted built-in-config deletion policy remain.
 - [ ] Round 11/26 `core.login-log`: browser/OS parsing and IP/time filters are
       complete. IP/location enrichment where feasible, cleanup/unlock policy
       integration and logType/result schema expansion remain.

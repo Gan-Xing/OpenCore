@@ -3069,3 +3069,87 @@ Against public endpoints after deploy:
   `3419c24 feat(core-config): add xlsx config export / 新增配置 Excel 导出`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 39 Capability
+
+Capability: `core.config` batch deletion.
+
+Goal: add a permission-gated selected-row batch delete loop for system config
+while preserving OpenCore's key-based config identity and value-cache
+invalidation semantics.
+
+## Round 39 Implemented
+
+- Rechecked Yudao `ConfigController` `/delete-list` and Admin
+  `deleteConfigList(ids)` config deletion shape.
+- Added `BatchDeleteSystemConfigsDto` and
+  `SystemConfigBatchMutationResultDto`.
+- Added `deleteConfigs` to the system config repository/service contract and
+  both seed and Prisma implementations.
+- Added strict batch key normalization for array shape, non-empty values and
+  duplicates.
+- Added missing-config validation before mutation.
+- Added service-level cache invalidation for every deleted key.
+- Added `DELETE /api/core/config/batch`, guarded by `core:config:delete`,
+  before the dynamic `config/:key` route.
+- Extended OpenAPI, SDK types/client and SDK path tests.
+- Added Admin Config `rowSelection`, selected-key state and `Delete selected`
+  action using `deleteOpenCoreSystemConfigs`.
+- Extended Admin static smoke for batch-delete UI/service markers.
+- Extended `tools/scripts/smoke-core-config.mjs` with empty-array,
+  duplicate-key, missing-key, success and cache-invalidation guards.
+
+## Round 39 Verification
+
+- `pnpm nx test sdk --testFile=system-management-client.spec.ts`
+- `pnpm nx test admin`
+- `pnpm nx test api --testFile=system-management.permission-matrix.spec.ts`
+- `node --check tools/scripts/smoke-core-config.mjs`
+- `pnpm nx test system --testFile=system-config.spec.ts`
+- `pnpm openapi:export`
+- `pnpm sdk:check`
+- `pnpm openapi:check`
+- `pnpm openapi:registry-tags:check`
+- `pnpm nx run-many -t typecheck --projects=api,admin,sdk,system`
+- `pnpm nx test contracts`
+- `pnpm nx test module-registry`
+- `pnpm format:check`
+- `pnpm prisma:validate`
+- `git diff --check`
+- `pnpm build:api`
+- `pnpm build:admin`
+- `pnpm smoke:api:local`
+- `pnpm deploy:opencore`
+
+`pnpm smoke:api:local` passed on fixed port `39173`, including
+`core.config.batch-delete.empty-guard`,
+`core.config.batch-delete.duplicate-guard`,
+`core.config.batch-delete.missing-guard`, `core.config.batch-delete` and
+`core.config.batch-delete.cache-invalidation`.
+
+`pnpm deploy:opencore` passed, deploying API/Admin on fixed ports
+`39172`/`39174`; deploy smoke included the same `core.config` batch-delete
+guards, duplicate `/api/api` login guards, Admin bundle no-cache checks and
+session guards.
+
+## Round 39 Public Verification
+
+Against public endpoints after deploy:
+
+- Public API: `http://144.217.243.161:39172`
+- Public Admin: `http://144.217.243.161:39174`
+- Public `pnpm smoke:core-config` passed and included
+  `core.config.batch-delete.*` guards.
+- Public Admin Config chunk `p__System__Config.8795ee37.async.js` contains
+  `Delete selected`, `rowSelection` and `Selected configs deleted`.
+- Public Admin main bundle `umi.257e0bb2.js` contains `/core/config/batch`.
+- Public Admin same-origin `/api/auth/login` succeeded.
+- Public Admin same-origin `/api/core/config/batch` created two temporary
+  configs, batch-deleted both and confirmed both return 404.
+
+## Round 39 Commit Record
+
+- Feature commit:
+  `4940291 feat(core-config): add batch config deletion / 新增配置批量删除`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

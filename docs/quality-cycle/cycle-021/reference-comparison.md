@@ -1174,3 +1174,30 @@ its JSON API boundary:
 
 OpenCore still does not claim batch config deletion, secret vault/KMS
 integration or broad runtime feature-flag propagation in this round.
+
+## Round 39 Config Batch Deletion Reference Shape
+
+Yudao exposes config batch deletion as `DELETE /infra/config/delete-list`,
+guarded by `infra:config:delete`. Its Vue3 Admin config API provides
+`deleteConfigList(ids)` and sends the selected ids to the backend. This is a
+basic management-table operation paired with single-row delete and export.
+
+OpenCore admits the matching stage-5 config batch-delete loop while preserving
+its key-based configuration model:
+
+- `DELETE /api/core/config/batch` is guarded by `core:config:delete`;
+- the request body is `{ keys: string[] }`, because OpenCore config identity is
+  the stable config key rather than a numeric infra id;
+- the static `config/batch` route is registered before `config/:key`;
+- empty arrays, non-string/empty keys, duplicate keys and missing configs are
+  rejected before mutation;
+- successful deletion returns `{ deleted: true, affected, keys }`;
+- service cache invalidation runs for every deleted key;
+- Admin Config adds selected-row deletion through `rowSelection` and
+  `Delete selected`;
+- fixed-port, deploy and public smoke prove the guard path, successful
+  deletion, cache invalidation, deployed Admin chunk markers and Admin
+  same-origin proxy behavior.
+
+OpenCore still does not claim a built-in-config deletion policy field, secret
+vault/KMS integration or broad runtime feature-flag propagation in this round.

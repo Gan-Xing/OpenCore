@@ -746,3 +746,30 @@ export:
 This stays inside the current S7 System configuration boundary. It does not
 introduce batch config deletion, secret vault/KMS integration or broad runtime
 feature-flag propagation in this round.
+
+## Round 39 Audit: core.config Batch Deletion
+
+After Round 38, the next lower-dependency `core.config` gap was batch deletion:
+
+- Yudao exposes `DELETE /infra/config/delete-list`, protects it with
+  `infra:config:delete`, and the Vue3 Admin config API calls
+  `deleteConfigList(ids)` with comma-joined ids.
+- RuoYi-style config management also treats multi-row delete as a basic table
+  operation beside single-row delete and export.
+- OpenCore already had single config delete, `core:config:delete`, metadata,
+  secret redaction, XLSX export and value-cache invalidation.
+- The batch route needed to be registered before `config/:key` so the static
+  batch path cannot be swallowed by dynamic key routing.
+- The batch input needed strict guards for empty arrays, non-string/empty keys,
+  duplicate keys and missing configs, because repeated deserialization and
+  route-shape regressions must become smoke/test coverage.
+- Successful batch delete needed to invalidate every deleted key from the
+  public value cache, not just delete rows.
+- Admin needed selected-row deletion on the real Config page, not another
+  fixture-only control.
+- Fixed-port, deploy and public smoke needed to prove both the API guard path
+  and the deployed Admin same-origin `/api/core/config/batch` path.
+
+This stays inside the current S7 System configuration boundary. It does not
+introduce a built-in-config type/policy field, secret vault/KMS integration or
+broad runtime feature-flag propagation in this round.

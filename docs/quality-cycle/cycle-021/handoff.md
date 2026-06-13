@@ -3,8 +3,8 @@
 Date: 2026-06-13
 Repository: `Gan-Xing/OpenCore`
 Default branch: `main`
-Latest observed feature commit: `3419c24 feat(core-config): add xlsx config export / 新增配置 Excel 导出`
-Latest deployed feature commit: `3419c24 feat(core-config): add xlsx config export / 新增配置 Excel 导出`
+Latest observed feature commit: `4940291 feat(core-config): add batch config deletion / 新增配置批量删除`
+Latest deployed feature commit: `4940291 feat(core-config): add batch config deletion / 新增配置批量删除`
 Latest deployed hardening commit: `04e446c fix(online-user): stabilize admin session smoke / 稳定在线用户管理员会话冒烟`
 
 ## One-sentence Goal
@@ -104,6 +104,7 @@ productization waterline completion; see
 - Round 36 `core.user` native XLSX import stage 13
 - Round 37 `core.config` metadata enrichment stage 3
 - Round 38 `core.config` native XLSX export stage 4
+- Round 39 `core.config` batch deletion stage 5
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -446,6 +447,20 @@ downloaded` 和 `Missing core:config:export`，Admin 同源
 这轮关闭的是配置 Excel 文件导出，不等于批量删除、secret vault/KMS 或更广泛 runtime
 feature-flag propagation 已完成。
 
+Round 39 继续补齐 `core.config` 队列：系统配置现在对齐 Yudao
+`/infra/config/delete-list` 的批量删除操作水位。OpenCore 新增
+`DELETE /api/core/config/batch`，沿用 `core:config:delete` 权限，输入
+`{ keys: string[] }` 并严格校验空数组、非字符串、空 key、重复 key 和缺失 key。
+API/DTO/repository/service/SDK/OpenAPI/Admin Config 均同步；Admin Config 新增表格
+row selection 和 `Delete selected` 批量删除动作。service 会在批量删除成功后逐 key
+失效 public value cache，避免已缓存配置值继续可读。固定 smoke、部署 smoke 和公网
+smoke 均验证 `core.config.batch-delete.*` 守卫与成功路径；公网 Admin Config chunk
+`p__System__Config.8795ee37.async.js` 已验证包含 `Delete selected`、`rowSelection`
+和 `Selected configs deleted`，公网 Admin main bundle `umi.257e0bb2.js` 已验证包含
+`/core/config/batch`，Admin 同源 `/api/core/config/batch` 已通过真实创建、批量删除和
+404 确认。注意：这轮关闭的是配置批量删除，不等于内置配置不可删字段、secret
+vault/KMS 或更广泛 runtime feature-flag propagation 已完成。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -456,7 +471,7 @@ The productization waterline now classifies:
   Round 8/21 `core.dict`.
 - First loop, enhance: Round 1 `core.notice`, Round 2/27 `core.dept`, Round
   3/22/25 `core.post`, Round 7/19/22/23/28/29/30/31/32/33/34/35/36
-  `core.user`, Round 9/24/37/38 `core.config`, Round 11/26
+  `core.user`, Round 9/24/37/38/39 `core.config`, Round 11/26
   `core.login-log`.
 - Thin, rework: none after Round 16.
 
@@ -483,8 +498,10 @@ finds another blocker:
 2. `core.config`: Round 24 closed public get-value-by-key plus cache
    refresh/invalidation; Round 37 closed category/name/remark metadata across
    API/SDK/Admin/smoke; Round 38 closed native XLSX export payload plus Admin
-   download and smoke guards. Remaining work is batch deletion and broader
-   runtime propagation boundaries.
+   download and smoke guards; Round 39 closed batch deletion with cache
+   invalidation and Admin selected-row deletion. Remaining work is broader
+   runtime propagation boundaries, plus any admitted built-in-config deletion
+   policy.
 3. `core.login-log`: Round 26 closed browser/OS parsing and server-side IP/time
    filters. Remaining work is IP/location enrichment where feasible,
    cleanup/unlock policy integration and login-type/result expansion.
