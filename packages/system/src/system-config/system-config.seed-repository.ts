@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -30,6 +31,7 @@ import {
   redactSystemConfig,
   resolveConfigVisibility,
   SystemConfigRepository,
+  type SystemConfigSecretValueResult,
   type SystemConfigPageQuery,
 } from './system-config.repository';
 
@@ -72,6 +74,33 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
 
   async getConfig(key: string): Promise<SystemConfigRecord> {
     return redactSystemConfig(this.findConfig(key));
+  }
+
+  async resolveSecretConfigValue(
+    key: string,
+  ): Promise<SystemConfigSecretValueResult> {
+    const config = this.findConfig(key);
+
+    if (config.visibility !== 'secret') {
+      throw new ForbiddenException(`System config is not secret: ${key}`);
+    }
+
+    if (config.valueType !== 'string') {
+      throw new BadRequestException(
+        `Secret system config ${key} must keep string value type.`,
+      );
+    }
+
+    return {
+      key,
+      value: normalizeExistingConfigValue({
+        key,
+        value: config.value,
+        valueType: config.valueType,
+        visibility: config.visibility,
+      }),
+      valueType: 'string',
+    };
   }
 
   async createConfig(body: CreateSystemConfigDto): Promise<SystemConfigRecord> {

@@ -29,6 +29,8 @@ import {
 import {
   deliverOutboxMessage,
   evaluateProviderDeliveryHealth,
+  type MailSmtpTransportFactory,
+  type ProviderSecretResolver,
 } from './integration.delivery-adapter';
 import {
   assertOutboxCallbackProviderMatch,
@@ -47,6 +49,7 @@ import {
   normalizeOutboxSchedule,
   normalizeOptionalProviderCode,
   normalizeOptionalBoolean,
+  parseConfigSecretRef,
   normalizeProcessOutboxLimit,
   redactProviderConfig,
   renderTemplate,
@@ -56,6 +59,13 @@ import {
 
 @Injectable()
 export class SeedIntegrationRepository extends IntegrationRepository {
+  constructor(
+    private readonly secretResolver?: ProviderSecretResolver,
+    private readonly smtpTransportFactory?: MailSmtpTransportFactory,
+  ) {
+    super();
+  }
+
   private providers: IntegrationProviderRecord[] =
     seedIntegrationProviders.map(cloneProvider);
   private templates: IntegrationTemplateRecord[] = seedIntegrationTemplates.map(
@@ -142,7 +152,11 @@ export class SeedIntegrationRepository extends IntegrationRepository {
 
   async checkProviderHealth(code: string): Promise<IntegrationProviderRecord> {
     const provider = this.findProvider(code);
-    provider.healthStatus = evaluateProviderDeliveryHealth(provider).status;
+    const health = await evaluateProviderDeliveryHealth(provider, {
+      secretResolver: this.secretResolver,
+      smtpTransportFactory: this.smtpTransportFactory,
+    });
+    provider.healthStatus = health.status;
     provider.lastCheckedAt = new Date().toISOString();
     return redactProvider(provider);
   }
@@ -380,6 +394,8 @@ export class SeedIntegrationRepository extends IntegrationRepository {
         channel,
         provider,
         message,
+        secretResolver: this.secretResolver,
+        smtpTransportFactory: this.smtpTransportFactory,
       });
       if (delivery.status === 'sent') {
         Object.assign(message, {
@@ -581,6 +597,20 @@ export class SeedIntegrationRepository extends IntegrationRepository {
 
     return eligible.length;
   }
+}
+
+export function createMapProviderSecretResolver(
+  secrets: ReadonlyMap<string, string>,
+): ProviderSecretResolver {
+  return async (secretRef: string) => {
+    const key = parseConfigSecretRef(secretRef);
+    const value = secrets.get(key);
+    if (value === undefined) {
+      throw new BadRequestException(`System config secret not found: ${key}`);
+    }
+
+    return value;
+  };
 }
 
 function redactProvider(

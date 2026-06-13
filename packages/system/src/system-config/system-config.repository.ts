@@ -36,6 +36,12 @@ export type SystemConfigExportPreview = {
   generatedAt: string;
 };
 
+export type SystemConfigSecretValueResult = {
+  key: string;
+  value: string;
+  valueType: 'string';
+};
+
 export type SystemConfigBatchMutationRecord = {
   deleted: true;
   affected: number;
@@ -103,6 +109,10 @@ export abstract class SystemConfigRepository {
   ): Promise<PageResult<SystemConfigRecord>>;
 
   abstract getConfig(key: string): Promise<SystemConfigRecord>;
+
+  abstract resolveSecretConfigValue(
+    key: string,
+  ): Promise<SystemConfigSecretValueResult>;
 
   abstract createConfig(
     body: CreateSystemConfigDto,

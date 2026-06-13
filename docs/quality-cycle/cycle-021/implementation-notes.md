@@ -19,10 +19,10 @@ active debt and decisions that change future execution.
 
 ## Runtime State
 
-Cycle-021 has completed 72 deployable stages across
-System/Security/Monitor/Integration foundations. Round 72 added a bounded SMS
-HTTP provider adapter with allowlisted endpoint validation, failedCount
-reporting and failed delivery-state sync.
+Cycle-021 has completed 73 deployable stages across
+System/Security/Monitor/Integration foundations. Round 73 added SMTP mail
+delivery through nodemailer with config-vault password resolution and
+failedCount delivery-state sync.
 
 ## Guard Register
 
@@ -32,8 +32,8 @@ reporting and failed delivery-state sync.
   tokens to return 401.
 - Notice outbox: smoke covers pending handoff, idempotent execute, blank
   failure rejection, failed-to-retry, process-to-sent sync, signed callback
-  sync, scheduled retry caps, SMS HTTP host allowlist, non-2xx failures and
-  sent-state mutation guards.
+  sync, scheduled retry caps, SMS HTTP host allowlist, SMTP config-vault auth,
+  provider failures and sent-state mutation guards.
 - Operation log: smoke covers batch-delete guards, deleted-detail 404 and
   clean-all target removal while preserving the clean request audit row.
 - Config/secret: smoke covers feature flags, audience rules and no plaintext
@@ -48,8 +48,9 @@ reporting and failed delivery-state sync.
 
 ## Remaining Foundation Debt
 
-- Notice: SMTP adapter, provider-secret injection, WebSocket realtime push and
-  any admitted tenant/member/mobile channels.
+- Notice: WebSocket realtime push, broader provider-secret injection,
+  STARTTLS/attachments/template subject persistence and any admitted
+  tenant/member/mobile channels.
 - Config: multi-environment governance, external KMS, key rotation and secret
   version history.
 - Login log: optional external GeoIP depth and broader mobile/social login

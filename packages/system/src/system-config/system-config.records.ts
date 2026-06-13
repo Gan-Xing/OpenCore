@@ -116,4 +116,18 @@ export const seedSystemConfigs: readonly SystemConfigRecord[] = [
     system: true,
     visibility: 'secret',
   },
+  {
+    id: 'config_integration_mail_smtp_password',
+    category: 'integration',
+    name: 'Mail SMTP password',
+    key: 'integration.mail.smtp.password.secret',
+    value: 'opencore-local-smtp-password',
+    valueType: 'string',
+    description: 'Secret password used by the default disabled SMTP provider.',
+    encrypted: false,
+    remark: 'Runtime SMTP adapters resolve this value only through secretRef.',
+    public: false,
+    system: true,
+    visibility: 'secret',
+  },
 ];

@@ -4,6 +4,7 @@ import {
   PrismaService,
   type PrismaTransactionClient,
 } from '@opencore/database';
+import { SystemConfigService } from '@opencore/system';
 import type {
   CreateIntegrationProviderDto,
   CreateIntegrationTemplateDto,
@@ -48,6 +49,7 @@ import {
   normalizeOutboxFailureError,
   normalizeOutboxSchedule,
   normalizeOptionalProviderCode,
+  parseConfigSecretRef,
   normalizeProviderType,
   normalizeOptionalBoolean,
   normalizeProcessOutboxLimit,
@@ -96,9 +98,20 @@ type OutboxRow = {
 
 @Injectable()
 export class PrismaIntegrationRepository extends IntegrationRepository {
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly systemConfig: SystemConfigService,
+  ) {
     super();
   }
+
+  private readonly resolveProviderSecret = async (
+    secretRef: string,
+  ): Promise<string> => {
+    const key = parseConfigSecretRef(secretRef);
+    const secret = await this.systemConfig.resolveSecretConfigValue(key);
+    return secret.value;
+  };
 
   async getSummary() {
     const [providers, outbox] = await Promise.all([
@@ -187,7 +200,9 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
 
   async checkProviderHealth(code: string): Promise<IntegrationProviderRecord> {
     const existing = await this.findProvider(code);
-    const health = evaluateProviderDeliveryHealth(existing);
+    const health = await evaluateProviderDeliveryHealth(existing, {
+      secretResolver: this.resolveProviderSecret,
+    });
     const provider = await this.prisma.integrationProvider.update({
       where: { code },
       data: {
@@ -469,6 +484,7 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
           channel,
           provider,
           message: toOutboxRecord(row),
+          secretResolver: this.resolveProviderSecret,
         }),
       });
     }

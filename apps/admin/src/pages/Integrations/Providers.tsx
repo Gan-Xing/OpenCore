@@ -154,6 +154,7 @@ export default function ProvidersPage() {
           value={signedCallbackContract.algorithm}
         />
         <Statistic title="SMS HTTP adapter" value="allowlisted" />
+        <Statistic title="Mail SMTP adapter" value="vault-backed" />
         <Statistic
           title="Design topics"
           value={summary.designs.designOnlyTopics}
@@ -199,6 +200,10 @@ export default function ProvidersPage() {
           {
             label: 'SMS HTTP Adapter',
             value: 'allowlisted endpoint + status contract',
+          },
+          {
+            label: 'Mail SMTP Adapter',
+            value: 'secretRef -> config vault + SMTP send',
           },
           {
             label: 'Mail Callback Path',

@@ -32,7 +32,8 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   operation-log has list/detail/export/delete/clean.
 - Notice: management, inbox/read analytics, templates, delivery records, local
   provider, Integration outbox bridge, state sync, queued processing and signed
-  callback intake plus retry scheduling and SMS HTTP adapter are live.
+  callback intake plus retry scheduling, SMS HTTP adapter and SMTP adapter are
+  live.
 - Config: runtime keys, login policy, feature flags, rollout, audience rules
   and secret-vault encryption are live.
 - Monitor/OpenForge/Scheduler: foundations exist; deeper operator workflows
@@ -54,6 +55,8 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   it.
 - Round 72: SMS HTTP delivery is bounded by endpoint allowlisting, safe request
   config and explicit non-2xx failure sync.
+- Round 73: SMTP delivery uses config-vault password resolution and explicit
+  SMTP success/failure state sync.
 
 ## Explicit Non-Claims
 
@@ -64,6 +67,6 @@ and AI/RAG/Agent workflow.
 
 ## Next Focus
 
-Choose one foundation stage from notice SMTP/secrets/realtime, config
+Choose one foundation stage from notice realtime/provider diagnostics, config
 governance, operation-log enrichment, scheduler/monitor depth, OpenForge Admin
 or integration health/config audit.

@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -30,6 +31,7 @@ import {
   resolveConfigVisibility,
   resolveStoredConfigVisibility,
   SystemConfigRepository,
+  type SystemConfigSecretValueResult,
   toSystemConfigValueType,
   type SystemConfigPageQuery,
 } from './system-config.repository';
@@ -74,6 +76,34 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
     return redactSystemConfig(
       toSystemConfigRecord(await this.findConfigByKey(key)),
     );
+  }
+
+  async resolveSecretConfigValue(
+    key: string,
+  ): Promise<SystemConfigSecretValueResult> {
+    const row = await this.findConfigByKey(key);
+    const record = toSystemConfigRecord(row);
+
+    if (record.visibility !== 'secret') {
+      throw new ForbiddenException(`System config is not secret: ${key}`);
+    }
+
+    if (record.valueType !== 'string') {
+      throw new BadRequestException(
+        `Secret system config ${key} must keep string value type.`,
+      );
+    }
+
+    return {
+      key,
+      value: normalizeExistingConfigValue({
+        key,
+        value: row.value,
+        valueType: record.valueType,
+        visibility: record.visibility,
+      }),
+      valueType: 'string',
+    };
   }
 
   async createConfig(body: CreateSystemConfigDto): Promise<SystemConfigRecord> {

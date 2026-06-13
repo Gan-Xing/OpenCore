@@ -20,8 +20,8 @@ describe('@opencore/system system-config', () => {
       expect.objectContaining({
         page: 1,
         pageSize: 1,
-        total: 7,
-        totalPages: 7,
+        total: 8,
+        totalPages: 8,
       }),
     );
     await expect(
@@ -466,6 +466,16 @@ describe('@opencore/system system-config', () => {
     await expect(service.getConfigValueByKey(secret.key)).rejects.toThrow(
       ForbiddenException,
     );
+    await expect(service.resolveSecretConfigValue(secret.key)).resolves.toEqual(
+      {
+        key: secret.key,
+        value: 'unsafe',
+        valueType: 'string',
+      },
+    );
+    await expect(
+      service.resolveSecretConfigValue('opencore.admin.title'),
+    ).rejects.toThrow(ForbiddenException);
     await expect(
       service.createConfig({
         key: 'auth.boolean.secret',
@@ -638,6 +648,13 @@ describe('@opencore/system system-config', () => {
       await expect(service.getConfigValueByKey(secretKey)).rejects.toThrow(
         ForbiddenException,
       );
+      await expect(
+        service.resolveSecretConfigValue(secretKey),
+      ).resolves.toEqual({
+        key: secretKey,
+        value: 'super-secret',
+        valueType: 'string',
+      });
       expect(
         JSON.stringify(await service.listConfig({ pageSize: 50 })),
       ).not.toContain('super-secret');

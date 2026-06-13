@@ -1,6 +1,10 @@
 import { BadRequestException } from '@nestjs/common';
+import type { MailSmtpTransportFactory } from './integration.delivery-adapter';
 import { createOutboxCallbackSignature } from './integration.repository';
-import { SeedIntegrationRepository } from './seed-integration.repository';
+import {
+  createMapProviderSecretResolver,
+  SeedIntegrationRepository,
+} from './seed-integration.repository';
 
 describe('IntegrationRepository', () => {
   afterEach(() => {
@@ -11,7 +15,7 @@ describe('IntegrationRepository', () => {
     const repository = new SeedIntegrationRepository();
 
     expect(await repository.getSummary()).toMatchObject({
-      providers: { total: 2, enabled: 0, disabled: 2, degraded: 0 },
+      providers: { total: 3, enabled: 0, disabled: 3, degraded: 0 },
       mailOutbox: { total: 1, queued: 1 },
       smsOutbox: { total: 0, queued: 0 },
       oauthProviders: 0,
@@ -28,7 +32,7 @@ describe('IntegrationRepository', () => {
         enabled: false,
         healthStatus: 'disabled',
       }),
-    ).resolves.toMatchObject({ total: 1 });
+    ).resolves.toMatchObject({ total: 2 });
     await expect(
       repository.listTemplates('mail', { enabled: true }),
     ).resolves.toMatchObject({ total: 1 });
@@ -319,6 +323,146 @@ describe('IntegrationRepository', () => {
         providerCode: 'mail.sandbox',
       }),
     ).rejects.toThrow(BadRequestException);
+  });
+
+  it('delivers mail outbox through the authenticated SMTP adapter', async () => {
+    const smtpSecretKey = 'integration.mail.smtp.password.secret';
+    const transportFactory = jest.fn<
+      ReturnType<MailSmtpTransportFactory>,
+      Parameters<MailSmtpTransportFactory>
+    >(() => ({
+      close: jest.fn(),
+      sendMail: jest.fn().mockResolvedValue({ messageId: 'smtp-message-1' }),
+      verify: jest.fn().mockResolvedValue(true),
+    }));
+    const repository = new SeedIntegrationRepository(
+      createMapProviderSecretResolver(
+        new Map([[smtpSecretKey, 'smtp-password']]),
+      ),
+      transportFactory,
+    );
+
+    await repository.createProvider({
+      code: 'mail.smtp',
+      type: 'mail',
+      name: 'Mail SMTP',
+      enabled: true,
+      secretRef: `secret://config/${smtpSecretKey}`,
+      config: {
+        adapter: 'smtp',
+        authMethod: 'PLAIN',
+        from: 'no-reply@opencore.test',
+        host: 'smtp.gateway.test',
+        port: 2525,
+        requireTls: false,
+        secure: false,
+        timeoutMs: 1000,
+        username: 'smtp-user',
+      },
+    });
+    await expect(
+      repository.checkProviderHealth('mail.smtp'),
+    ).resolves.toMatchObject({
+      healthStatus: 'healthy',
+    });
+    const queued = await repository.enqueueOutbox('mail', {
+      providerCode: 'mail.smtp',
+      templateCode: 'mail.welcome',
+      recipient: 'admin@example.test',
+      payload: { name: 'Admin', subject: 'Welcome through SMTP' },
+    });
+
+    await expect(
+      repository.processOutbox('mail', { providerCode: 'mail.smtp' }),
+    ).resolves.toMatchObject({
+      attemptedCount: 1,
+      failedCount: 0,
+      sentCount: 1,
+    });
+
+    expect(transportFactory).toHaveBeenCalledWith(
+      expect.objectContaining({
+        auth: {
+          method: 'PLAIN',
+          pass: 'smtp-password',
+          user: 'smtp-user',
+        },
+        host: 'smtp.gateway.test',
+        port: 2525,
+        secure: false,
+      }),
+    );
+    const sendMail = transportFactory.mock.results[1]?.value.sendMail;
+    expect(sendMail).toHaveBeenCalledWith({
+      from: 'no-reply@opencore.test',
+      to: 'admin@example.test',
+      subject: 'Welcome through SMTP',
+      text: 'Hello Admin, welcome to OpenCore.',
+    });
+    await expect(
+      repository.getOutboxMessage('mail', queued.id),
+    ).resolves.toMatchObject({
+      status: 'sent',
+      retryCount: 0,
+      error: undefined,
+      sentAt: expect.any(String),
+    });
+  });
+
+  it('requires config-backed SMTP secrets before sending mail', async () => {
+    const transportFactory = jest.fn<
+      ReturnType<MailSmtpTransportFactory>,
+      Parameters<MailSmtpTransportFactory>
+    >(() => ({
+      close: jest.fn(),
+      sendMail: jest.fn().mockResolvedValue({}),
+      verify: jest.fn().mockResolvedValue(true),
+    }));
+    const repository = new SeedIntegrationRepository(
+      undefined,
+      transportFactory,
+    );
+
+    await repository.createProvider({
+      code: 'mail.bad-smtp',
+      type: 'mail',
+      name: 'Bad Mail SMTP',
+      enabled: true,
+      secretRef: 'secret://integration/mail/bad-smtp',
+      config: {
+        adapter: 'smtp',
+        from: 'no-reply@opencore.test',
+        host: 'smtp.gateway.test',
+        username: 'smtp-user',
+      },
+    });
+    await expect(
+      repository.checkProviderHealth('mail.bad-smtp'),
+    ).resolves.toMatchObject({
+      healthStatus: 'degraded',
+      lastCheckedAt: expect.any(String),
+    });
+    const queued = await repository.enqueueOutbox('mail', {
+      providerCode: 'mail.bad-smtp',
+      templateCode: 'mail.welcome',
+      recipient: 'admin@example.test',
+      payload: { name: 'Admin' },
+    });
+    await expect(
+      repository.processOutbox('mail', { providerCode: 'mail.bad-smtp' }),
+    ).resolves.toMatchObject({
+      attemptedCount: 1,
+      failedCount: 1,
+      sentCount: 0,
+    });
+    expect(transportFactory).not.toHaveBeenCalled();
+    await expect(
+      repository.getOutboxMessage('mail', queued.id),
+    ).resolves.toMatchObject({
+      status: 'failed',
+      retryCount: 1,
+      error: expect.stringContaining('secret://config/<key>'),
+    });
   });
 
   it('delivers SMS outbox through the bounded HTTP adapter', async () => {

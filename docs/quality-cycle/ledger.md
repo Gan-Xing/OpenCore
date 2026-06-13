@@ -56,5 +56,8 @@ docs. Commit-level detail is available from git history.
 - 2026-06-13 20:05:33 UTC completed cycle-021 round-072 `core.notice` SMS
   HTTP provider adapter; deployed=39172/39174;
   publicVerified=notice-sms-http-adapter,admin-provider-sms-http-adapter,openapi-integration-process-failed-count.
-- Latest deployed runtime: round-072 `core.notice` SMS HTTP provider adapter on
+- 2026-06-13 20:33:53 UTC completed cycle-021 round-073 `core.notice` SMTP
+  mail provider adapter; deployed=39172/39174;
+  publicVerified=notice-mail-smtp-adapter,admin-provider-mail-smtp-adapter,config-vault-smtp-secret.
+- Latest deployed runtime: round-073 `core.notice` SMTP mail provider adapter on
   API `39172` and Admin `39174`.

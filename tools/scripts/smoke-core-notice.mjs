@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { createHmac } from 'node:crypto';
+import net from 'node:net';
 
 const DEFAULT_PORT = '39173';
 
@@ -29,6 +30,7 @@ const noticeTitles = [
 ];
 const templateCode = `smoke.template.${runId}`;
 let token;
+let smtpServer;
 const createdNoticeIds = [];
 const createdTemplateCodes = [];
 
@@ -608,6 +610,79 @@ try {
     { channel: 'mail', provider: 'mail.sandbox' },
   );
 
+  smtpServer = await startSmokeSmtpServer({
+    password: 'opencore-local-smtp-password',
+    username: 'smtp-user',
+  });
+  const smtpProviderCode = 'mail.smtp.smoke';
+  await upsertIntegrationProvider(smtpProviderCode, {
+    type: 'mail',
+    name: 'Mail SMTP Smoke',
+    enabled: true,
+    secretRef: 'secret://config/integration.mail.smtp.password.secret',
+    config: {
+      adapter: 'smtp',
+      authMethod: 'PLAIN',
+      from: 'no-reply@opencore.test',
+      host: '127.0.0.1',
+      port: smtpServer.port,
+      requireTls: false,
+      secure: false,
+      timeoutMs: 5000,
+      username: 'smtp-user',
+    },
+  });
+  await apiRequest(
+    `/integrations/providers/${encodeURIComponent(smtpProviderCode)}/health-check`,
+    {
+      method: 'POST',
+    },
+  ).then((provider) => {
+    assertEqual(provider.healthStatus, 'healthy', 'Mail SMTP provider health');
+  });
+  const smtpOutbox = await apiRequest('/integrations/mail/outbox', {
+    method: 'POST',
+    body: {
+      providerCode: smtpProviderCode,
+      recipient: 'admin@example.test',
+      payload: {
+        body: `SMTP smoke body ${runId}`,
+        subject: `SMTP smoke subject ${runId}`,
+      },
+    },
+  });
+  assertEqual(smtpOutbox.status, 'queued', 'Mail SMTP outbox queued status');
+  const smtpProcess = await apiRequest('/integrations/mail/outbox/process', {
+    method: 'POST',
+    body: {
+      providerCode: smtpProviderCode,
+      limit: 100,
+    },
+  });
+  assertNumberAtLeast(
+    smtpProcess.attemptedCount,
+    1,
+    'Mail SMTP process attempted count',
+  );
+  assertNumberAtLeast(smtpProcess.sentCount, 1, 'Mail SMTP process sent count');
+  assertEqual(smtpProcess.failedCount, 0, 'Mail SMTP process failed count');
+  const sentSmtpOutbox = await apiRequest(
+    `/integrations/mail/outbox/${encodeURIComponent(smtpOutbox.id)}`,
+  );
+  assertEqual(sentSmtpOutbox.status, 'sent', 'Mail SMTP outbox sent status');
+  assertStringIncludes(
+    smtpServer.messages.join('\n'),
+    `SMTP smoke subject ${runId}`,
+    'Mail SMTP received subject',
+  );
+  assertStringIncludes(
+    smtpServer.messages.join('\n'),
+    `SMTP smoke body ${runId}`,
+    'Mail SMTP received body',
+  );
+  await smtpServer.close();
+  smtpServer = undefined;
+
   await apiRequest('/integrations/providers/sms.sandbox/enable', {
     method: 'PATCH',
   });
@@ -949,6 +1024,7 @@ try {
         'core.notice.deliveries.provider-sent-records',
         'core.notice.deliveries.provider-execute-idempotent',
         'core.notice.deliveries.mail-outbox-provider',
+        'core.notice.deliveries.mail-smtp-adapter',
         'core.notice.deliveries.outbox-failed-retry-sent-sync',
         'core.notice.deliveries.outbox-callback-signature',
         'core.notice.deliveries.outbox-schedule-retry',
@@ -971,6 +1047,7 @@ try {
     }),
   );
 } catch (error) {
+  await smtpServer?.close().catch(() => undefined);
   await cleanupCreatedTemplates().catch(() => undefined);
   await cleanupCreatedNotices().catch(() => undefined);
   console.error(
@@ -1082,6 +1159,91 @@ async function upsertIntegrationProvider(code, body) {
 
     throw error;
   }
+}
+
+async function startSmokeSmtpServer({ password, username }) {
+  const messages = [];
+  const server = net.createServer((socket) => {
+    socket.setEncoding('utf8');
+    let buffer = '';
+    let dataMode = false;
+    let dataLines = [];
+    let authenticated = false;
+
+    const write = (line) => socket.write(`${line}\r\n`);
+    write('220 opencore-smoke ESMTP');
+
+    socket.on('data', (chunk) => {
+      buffer += chunk;
+      const lines = buffer.split(/\r?\n/);
+      buffer = lines.pop() ?? '';
+
+      for (const rawLine of lines) {
+        const line = rawLine.replace(/\r$/, '');
+        if (dataMode) {
+          if (line === '.') {
+            messages.push(dataLines.join('\n'));
+            dataLines = [];
+            dataMode = false;
+            write('250 queued');
+          } else {
+            dataLines.push(line.startsWith('..') ? line.slice(1) : line);
+          }
+          continue;
+        }
+
+        const upper = line.toUpperCase();
+        if (upper.startsWith('EHLO') || upper.startsWith('HELO')) {
+          write('250-opencore-smoke');
+          write('250 AUTH PLAIN LOGIN');
+        } else if (upper.startsWith('AUTH PLAIN')) {
+          const encoded = line.split(/\s+/)[2] ?? '';
+          const decoded = Buffer.from(encoded, 'base64').toString('utf8');
+          authenticated = decoded === `\u0000${username}\u0000${password}`;
+          write(
+            authenticated
+              ? '235 authentication successful'
+              : '535 authentication failed',
+          );
+        } else if (upper.startsWith('MAIL FROM')) {
+          write(
+            authenticated ? '250 sender ok' : '530 authentication required',
+          );
+        } else if (upper.startsWith('RCPT TO')) {
+          write('250 recipient ok');
+        } else if (upper === 'DATA') {
+          dataMode = true;
+          dataLines = [];
+          write('354 end with <CR><LF>.<CR><LF>');
+        } else if (upper === 'RSET' || upper === 'NOOP') {
+          write('250 ok');
+        } else if (upper === 'QUIT') {
+          write('221 bye');
+          socket.end();
+        } else {
+          write('250 ok');
+        }
+      }
+    });
+  });
+
+  await new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', resolve);
+  });
+  const address = server.address();
+  if (!address || typeof address === 'string') {
+    throw new Error('Smoke SMTP server address is unavailable');
+  }
+
+  return {
+    messages,
+    port: address.port,
+    close: () =>
+      new Promise((resolve, reject) => {
+        server.close((error) => (error ? reject(error) : resolve()));
+      }),
+  };
 }
 
 async function request(pathOrUrl, options = {}) {
@@ -1264,6 +1426,13 @@ function assertString(value, label) {
     throw new Error(`${label} must be a non-empty string`);
   }
   return value;
+}
+
+function assertStringIncludes(value, expected, label) {
+  assertString(value, label);
+  if (!value.includes(expected)) {
+    throw new Error(`${label} must include ${expected}`);
+  }
 }
 
 function assertEqual(actual, expected, label) {

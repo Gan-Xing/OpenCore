@@ -25,7 +25,7 @@ failures have guards; and remaining omissions are explicit product boundaries.
 | `monitor.online-user` | Meets         | Batch kick-out, revocation and UA/IP fields.                            |
 | `core.login-log`      | Meets current | Schema, lockout, cleanup, actor/reason and location.                    |
 | `core.config`         | Meets current | Runtime keys, feature flags, rollout, audience, vault.                  |
-| `core.notice`         | Enhance       | Management through SMS HTTP adapter live; SMTP/secrets/realtime remain. |
+| `core.notice`         | Enhance       | SMS HTTP and SMTP adapters live; realtime/deeper provider depth remain. |
 | `scheduler/monitor`   | P2            | Runtime exists; deeper operations remain.                               |
 | `OpenForge Admin`     | P2            | CLI/core exists; Admin UX remains.                                      |
 
@@ -42,10 +42,12 @@ failures have guards; and remaining omissions are explicit product boundaries.
 - Round 70 added signed outbox callback intake and delivery sync.
 - Round 71 added bounded outbox retry scheduling and delivery sync.
 - Round 72 added a bounded SMS HTTP adapter and failed delivery sync.
+- Round 73 added SMTP mail adapter and config-vault password resolution.
 
 ## Active Debt
 
-1. Notice: SMTP adapter, provider-secret injection and realtime push.
+1. Notice: realtime push, broader provider-secret injection, STARTTLS,
+   attachments/template subject persistence and diagnostics.
 2. Config: multi-environment governance, KMS binding, key rotation and secret
    versions.
 3. Operation log: retention scheduling, duration/location fields and policy.
@@ -61,7 +63,7 @@ failures have guards; and remaining omissions are explicit product boundaries.
 - API prefix: duplicate `/api/api` login guard.
 - Auth: revoked token/session returns 401.
 - Notice outbox: pending, retry, process-to-sent, signed callback, scheduled
-  retry caps, SMS HTTP host allowlist, non-2xx failedCount and post-sent
-  mutation guards.
+  retry caps, SMS HTTP host allowlist, SMTP config-vault auth, non-2xx/SMTP
+  failedCount and post-sent mutation guards.
 - Operation log: delete/clean guards and deleted-detail 404.
 - Config: runtime shape and secret-vault plaintext protection.

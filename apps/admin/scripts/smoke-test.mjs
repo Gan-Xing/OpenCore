@@ -1353,7 +1353,9 @@ if (
   !providersPage.includes('selected?.secretRef, sensitive: true') ||
   !providersPage.includes('Signed callback contract') ||
   !providersPage.includes('SMS HTTP adapter') ||
+  !providersPage.includes('Mail SMTP adapter') ||
   !providersPage.includes('allowlisted endpoint + status contract') ||
+  !providersPage.includes('secretRef -> config vault + SMTP send') ||
   !providersPage.includes('/api/integrations/mail/outbox/callback') ||
   !providersPage.includes('/api/integrations/sms/outbox/callback') ||
   !providersPage.includes('HMAC-SHA256')

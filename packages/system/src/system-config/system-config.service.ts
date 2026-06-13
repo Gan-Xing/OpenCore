@@ -21,6 +21,7 @@ import {
   toFeatureFlagName,
   toFeatureFlagRolloutName,
   type FeatureFlagAudienceRulesConfig,
+  type SystemConfigSecretValueResult,
   type SystemConfigBatchMutationRecord,
   type SystemConfigExportPreview,
   type SystemConfigPageQuery,
@@ -88,6 +89,14 @@ export class SystemConfigService {
 
   getConfig(key: string): Promise<SystemConfigRecord> {
     return this.repository.getConfig(key);
+  }
+
+  resolveSecretConfigValue(
+    key: string | undefined,
+  ): Promise<SystemConfigSecretValueResult> {
+    return this.repository.resolveSecretConfigValue(
+      normalizeConfigValueKey(key),
+    );
   }
 
   async getConfigValueByKey(

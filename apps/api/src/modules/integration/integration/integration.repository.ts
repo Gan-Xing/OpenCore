@@ -173,6 +173,7 @@ export function buildIntegrationSummary(input: {
 
 const SECRET_KEY_PATTERN =
   /(authorization|clientSecret|password|secret|token)/i;
+const CONFIG_SECRET_REF_PREFIX = 'secret://config/';
 
 export function createPage<T>(
   rows: readonly T[],
@@ -230,6 +231,26 @@ export function assertSecretRef(secretRef: string): void {
       'Integration credentials must be stored as secret:// references.',
     );
   }
+}
+
+export function parseConfigSecretRef(secretRef: string): string {
+  assertSecretRef(secretRef);
+  if (!secretRef.startsWith(CONFIG_SECRET_REF_PREFIX)) {
+    throw new BadRequestException(
+      'Integration provider secretRef must use secret://config/<key> for runtime secret resolution.',
+    );
+  }
+
+  const key = decodeURIComponent(
+    secretRef.slice(CONFIG_SECRET_REF_PREFIX.length),
+  ).trim();
+  if (!key) {
+    throw new BadRequestException(
+      'Integration provider config secret key is required.',
+    );
+  }
+
+  return key;
 }
 
 export function assertProviderReadyForOutbox(input: {

@@ -222,6 +222,26 @@ export function createIntegrationFixtures(): IntegrationFixtures {
       },
       healthStatus: 'disabled',
     },
+    {
+      id: 'provider_mail_smtp',
+      code: 'mail.smtp',
+      type: 'mail',
+      name: 'Mail SMTP',
+      enabled: false,
+      secretRef: 'secret://config/integration.mail.smtp.password.secret',
+      config: {
+        adapter: 'smtp',
+        authMethod: 'PLAIN',
+        from: 'no-reply@opencore.test',
+        host: 'smtp.example.test',
+        port: 587,
+        requireTls: true,
+        secure: false,
+        timeoutMs: 10000,
+        username: 'smtp-user',
+      },
+      healthStatus: 'disabled',
+    },
   ];
   const mailTemplates: readonly IntegrationTemplateSummary[] = [
     {

@@ -1,3 +1,5 @@
+import { createTransport } from 'nodemailer';
+import type SMTPTransport from 'nodemailer/lib/smtp-transport';
 import type {
   IntegrationOutboxRecord,
   IntegrationProviderRecord,
@@ -14,6 +16,22 @@ export type ProviderDeliveryHealth = {
 };
 
 type FetchLike = (input: string | URL, init?: RequestInit) => Promise<Response>;
+export type ProviderSecretResolver = (secretRef: string) => Promise<string>;
+
+export type MailSmtpTransport = {
+  close?: () => void;
+  sendMail: (message: {
+    from: string;
+    subject: string;
+    text: string;
+    to: string;
+  }) => Promise<unknown>;
+  verify?: () => Promise<unknown>;
+};
+
+export type MailSmtpTransportFactory = (
+  options: SMTPTransport.Options,
+) => MailSmtpTransport;
 
 type SmsHttpProviderConfig = {
   endpoint: URL;
@@ -23,19 +41,38 @@ type SmsHttpProviderConfig = {
   headers: Record<string, string>;
 };
 
+type MailSmtpProviderConfig = {
+  authMethod?: 'LOGIN' | 'PLAIN';
+  ehloName: string;
+  from: string;
+  host: string;
+  port: number;
+  rejectUnauthorized: boolean;
+  requireTls: boolean;
+  secure: boolean;
+  timeoutMs: number;
+  username?: string;
+};
+
 const DEFAULT_HTTP_SUCCESS_STATUSES = [200, 201, 202, 204] as const;
+const DEFAULT_SMTP_TIMEOUT_MS = 10000;
+const CONFIG_SECRET_REF_PREFIX = 'secret://config/';
 const SENSITIVE_HTTP_HEADER_PATTERN =
   /^(authorization|cookie|proxy-authorization|x-api-key|api-key|.*token.*|.*secret.*)$/i;
 
-export function evaluateProviderDeliveryHealth(
+export async function evaluateProviderDeliveryHealth(
   provider: IntegrationProviderRecord,
-): ProviderDeliveryHealth {
+  options: {
+    secretResolver?: ProviderSecretResolver;
+    smtpTransportFactory?: MailSmtpTransportFactory;
+  } = {},
+): Promise<ProviderDeliveryHealth> {
   if (!provider.enabled) {
     return { status: 'disabled' };
   }
 
   try {
-    assertDeliveryAdapterConfig(provider);
+    await assertDeliveryAdapterConfig(provider, options);
     return { status: 'healthy' };
   } catch (error) {
     return {
@@ -50,6 +87,8 @@ export async function deliverOutboxMessage(input: {
   provider: IntegrationProviderRecord;
   message: IntegrationOutboxRecord;
   fetchImpl?: FetchLike;
+  secretResolver?: ProviderSecretResolver;
+  smtpTransportFactory?: MailSmtpTransportFactory;
 }): Promise<OutboxDeliveryResult> {
   const adapter = getProviderAdapter(input.provider);
 
@@ -61,6 +100,10 @@ export async function deliverOutboxMessage(input: {
     return deliverSmsHttpMessage(input);
   }
 
+  if (input.channel === 'mail' && adapter === 'smtp') {
+    return deliverMailSmtpMessage(input);
+  }
+
   return {
     status: 'failed',
     error: truncateAdapterError(
@@ -69,9 +112,13 @@ export async function deliverOutboxMessage(input: {
   };
 }
 
-function assertDeliveryAdapterConfig(
+async function assertDeliveryAdapterConfig(
   provider: IntegrationProviderRecord,
-): void {
+  options: {
+    secretResolver?: ProviderSecretResolver;
+    smtpTransportFactory?: MailSmtpTransportFactory;
+  },
+): Promise<void> {
   const adapter = getProviderAdapter(provider);
 
   if (adapter === 'sandbox') {
@@ -80,6 +127,13 @@ function assertDeliveryAdapterConfig(
 
   if (provider.type === 'sms' && adapter === 'http') {
     normalizeSmsHttpProviderConfig(provider);
+    return;
+  }
+
+  if (provider.type === 'mail' && adapter === 'smtp') {
+    const config = normalizeMailSmtpProviderConfig(provider);
+    await resolveMailSmtpPassword(provider, config, options.secretResolver);
+    await verifyMailSmtpTransport(provider, config, options);
     return;
   }
 
@@ -160,6 +214,133 @@ async function deliverSmsHttpMessage(input: {
   }
 }
 
+async function deliverMailSmtpMessage(input: {
+  provider: IntegrationProviderRecord;
+  message: IntegrationOutboxRecord;
+  secretResolver?: ProviderSecretResolver;
+  smtpTransportFactory?: MailSmtpTransportFactory;
+}): Promise<OutboxDeliveryResult> {
+  let config: MailSmtpProviderConfig;
+  let password: string | undefined;
+  try {
+    config = normalizeMailSmtpProviderConfig(input.provider);
+    password = await resolveMailSmtpPassword(
+      input.provider,
+      config,
+      input.secretResolver,
+    );
+  } catch (error) {
+    return {
+      status: 'failed',
+      error: truncateAdapterError(
+        `Mail SMTP provider config invalid: ${formatAdapterError(error)}`,
+      ),
+    };
+  }
+
+  const transport = createMailSmtpTransport(
+    config,
+    password,
+    input.smtpTransportFactory,
+  );
+  try {
+    await transport.sendMail({
+      from: config.from,
+      to: input.message.recipient,
+      subject: getMailSubject(input.message),
+      text: getMessageText(input.message),
+    });
+    return { status: 'sent' };
+  } catch (error) {
+    return {
+      status: 'failed',
+      error: truncateAdapterError(
+        `Mail SMTP provider request failed: ${formatAdapterError(error)}`,
+      ),
+    };
+  } finally {
+    transport.close?.();
+  }
+}
+
+async function verifyMailSmtpTransport(
+  provider: IntegrationProviderRecord,
+  config: MailSmtpProviderConfig,
+  options: {
+    secretResolver?: ProviderSecretResolver;
+    smtpTransportFactory?: MailSmtpTransportFactory;
+  },
+): Promise<void> {
+  const password = await resolveMailSmtpPassword(
+    provider,
+    config,
+    options.secretResolver,
+  );
+  const transport = createMailSmtpTransport(
+    config,
+    password,
+    options.smtpTransportFactory,
+  );
+  try {
+    await transport.verify?.();
+  } finally {
+    transport.close?.();
+  }
+}
+
+function createMailSmtpTransport(
+  config: MailSmtpProviderConfig,
+  password: string | undefined,
+  factory: MailSmtpTransportFactory | undefined,
+): MailSmtpTransport {
+  const options: SMTPTransport.Options = {
+    auth:
+      config.username && password
+        ? {
+            method: config.authMethod,
+            pass: password,
+            user: config.username,
+          }
+        : undefined,
+    connectionTimeout: config.timeoutMs,
+    greetingTimeout: config.timeoutMs,
+    host: config.host,
+    name: config.ehloName,
+    port: config.port,
+    requireTLS: config.requireTls,
+    secure: config.secure,
+    socketTimeout: config.timeoutMs,
+    tls: {
+      rejectUnauthorized: config.rejectUnauthorized,
+      servername: config.host,
+    },
+  };
+
+  return factory ? factory(options) : createTransport(options);
+}
+
+async function resolveMailSmtpPassword(
+  provider: IntegrationProviderRecord,
+  config: MailSmtpProviderConfig,
+  secretResolver: ProviderSecretResolver | undefined,
+): Promise<string | undefined> {
+  if (!config.username) {
+    return undefined;
+  }
+
+  assertConfigSecretRef(provider.secretRef);
+  if (!secretResolver) {
+    throw new Error('Mail SMTP provider secret resolver is unavailable.');
+  }
+
+  const password = await secretResolver(provider.secretRef);
+  if (!password.trim()) {
+    throw new Error('Mail SMTP provider secret is empty.');
+  }
+
+  return password;
+}
+
 function appendSmsHttpQuery(
   url: URL,
   provider: IntegrationProviderRecord,
@@ -208,6 +389,55 @@ function getMessageText(message: IntegrationOutboxRecord): string {
   return JSON.stringify(message.payload);
 }
 
+function getMailSubject(message: IntegrationOutboxRecord): string {
+  for (const key of ['subject', 'title']) {
+    const subject = message.payload[key];
+    if (typeof subject === 'string' && subject.trim()) {
+      return subject;
+    }
+  }
+
+  return message.templateCode ?? 'OpenCore notification';
+}
+
+function normalizeMailSmtpProviderConfig(
+  provider: IntegrationProviderRecord,
+): MailSmtpProviderConfig {
+  const config = provider.config;
+  const secure = normalizeBoolean(config.secure, false, 'SMTP secure');
+  const requireTls = normalizeBoolean(
+    config.requireTls ?? config.startTls,
+    false,
+    'SMTP requireTls',
+  );
+  const username = normalizeOptionalTrimmedString(
+    config.username,
+    'SMTP username',
+    200,
+  );
+
+  return {
+    authMethod: normalizeSmtpAuthMethod(config.authMethod, username),
+    ehloName: normalizeSmtpEhloName(config.ehloName),
+    from: normalizeEmailAddress(config.from, 'SMTP from address'),
+    host: normalizeSmtpHost(config.host),
+    port: normalizePort(
+      config.port,
+      secure ? 465 : requireTls ? 587 : 25,
+      'SMTP port',
+    ),
+    rejectUnauthorized: normalizeBoolean(
+      config.rejectUnauthorized,
+      true,
+      'SMTP rejectUnauthorized',
+    ),
+    requireTls,
+    secure,
+    timeoutMs: normalizeTimeoutMs(config.timeoutMs, DEFAULT_SMTP_TIMEOUT_MS),
+    username,
+  };
+}
+
 function normalizeSmsHttpProviderConfig(
   provider: IntegrationProviderRecord,
 ): SmsHttpProviderConfig {
@@ -219,7 +449,7 @@ function normalizeSmsHttpProviderConfig(
     endpoint,
     method: normalizeHttpMethod(config.method),
     successStatuses: normalizeSuccessStatuses(config.successStatus),
-    timeoutMs: normalizeTimeoutMs(config.timeoutMs),
+    timeoutMs: normalizeTimeoutMs(config.timeoutMs, 3000),
     headers: normalizeHttpHeaders(config.headers),
   };
 }
@@ -302,15 +532,139 @@ function normalizeSuccessStatuses(value: unknown): ReadonlySet<number> {
   return new Set(statuses);
 }
 
-function normalizeTimeoutMs(value: unknown): number {
-  const timeoutMs = Number(value ?? 3000);
+function normalizeTimeoutMs(value: unknown, defaultValue: number): number {
+  const timeoutMs = Number(value ?? defaultValue);
   if (!Number.isInteger(timeoutMs) || timeoutMs < 100 || timeoutMs > 30000) {
     throw new Error(
-      'SMS HTTP adapter timeoutMs must be an integer between 100 and 30000.',
+      'Provider adapter timeoutMs must be an integer between 100 and 30000.',
     );
   }
 
   return timeoutMs;
+}
+
+function normalizeSmtpHost(value: unknown): string {
+  const host = normalizeTrimmedString(value, 'SMTP host', 253);
+  if (
+    !/^[A-Za-z0-9.-]+$/.test(host) ||
+    host.startsWith('.') ||
+    host.endsWith('.') ||
+    host.includes('..')
+  ) {
+    throw new Error('SMTP host must be a hostname or IP address.');
+  }
+
+  return host;
+}
+
+function normalizeSmtpEhloName(value: unknown): string {
+  if (value === undefined || value === null || value === '') {
+    return 'opencore.local';
+  }
+
+  return normalizeSmtpHost(value);
+}
+
+function normalizePort(
+  value: unknown,
+  defaultValue: number,
+  label: string,
+): number {
+  const port = Number(value ?? defaultValue);
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new Error(`${label} must be an integer between 1 and 65535.`);
+  }
+
+  return port;
+}
+
+function normalizeSmtpAuthMethod(
+  value: unknown,
+  username: string | undefined,
+): 'LOGIN' | 'PLAIN' | undefined {
+  if (!username) {
+    return undefined;
+  }
+
+  if (value === undefined || value === null || value === '') {
+    return 'PLAIN';
+  }
+
+  const method = String(value).trim().toUpperCase();
+  if (method === 'LOGIN' || method === 'PLAIN') {
+    return method;
+  }
+
+  throw new Error('SMTP authMethod must be PLAIN or LOGIN.');
+}
+
+function normalizeBoolean(
+  value: unknown,
+  defaultValue: boolean,
+  label: string,
+): boolean {
+  if (value === undefined || value === null || value === '') {
+    return defaultValue;
+  }
+
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  throw new Error(`${label} must be a boolean.`);
+}
+
+function normalizeEmailAddress(value: unknown, label: string): string {
+  const address = normalizeTrimmedString(value, label, 320);
+  if (!/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(address)) {
+    throw new Error(`${label} must be an email address.`);
+  }
+
+  return address;
+}
+
+function normalizeOptionalTrimmedString(
+  value: unknown,
+  label: string,
+  maxLength: number,
+): string | undefined {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+
+  return normalizeTrimmedString(value, label, maxLength);
+}
+
+function normalizeTrimmedString(
+  value: unknown,
+  label: string,
+  maxLength: number,
+): string {
+  if (typeof value !== 'string') {
+    throw new Error(`${label} must be a string.`);
+  }
+
+  const normalized = value.trim();
+  if (!normalized) {
+    throw new Error(`${label} is required.`);
+  }
+
+  if (normalized.length > maxLength || /[\r\n]/.test(normalized)) {
+    throw new Error(`${label} is invalid.`);
+  }
+
+  return normalized;
+}
+
+function assertConfigSecretRef(secretRef: string): void {
+  if (
+    !secretRef.startsWith(CONFIG_SECRET_REF_PREFIX) ||
+    secretRef.length === CONFIG_SECRET_REF_PREFIX.length
+  ) {
+    throw new Error(
+      'Mail SMTP provider secretRef must use secret://config/<key>.',
+    );
+  }
 }
 
 function normalizeHttpHeaders(value: unknown): Record<string, string> {
