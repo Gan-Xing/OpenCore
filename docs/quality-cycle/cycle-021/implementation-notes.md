@@ -3417,3 +3417,86 @@ Against public endpoints after deploy:
   `885fa9e feat(core-post): add batch post deletion / 新增岗位批量删除`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 43 Capability
+
+Capability: `core.dept` user-binding delete guard.
+
+Goal: prevent deleting a department while users are assigned to it, and prove
+the failed delete preserves each bound user's `deptId` instead of letting the
+Prisma relation silently set it to null.
+
+## Round 43 Implemented
+
+- Rechecked RuoYi/Yudao department deletion guards and OpenCore's
+  `User.deptId` relation behavior.
+- Added a shared department repository guard for assigned-user counts.
+- Applied the guard to seed and Prisma `deleteDept` implementations after the
+  existing child-department preflight and before mutation.
+- Extended seed repository tests to reject deleting a department with assigned
+  users and keep the department row present.
+- Extended Prisma repository tests to create a temporary department/user, reject
+  department deletion while assigned, verify the user `deptId` remains, then
+  delete the user and successfully clean up the department.
+- Extended `tools/scripts/smoke-core-dept.mjs` with
+  `core.dept.delete.assigned-user-guard` and
+  `core.dept.delete.assigned-user-preserved`.
+- Added Admin Departments delete-error handling with an assigned-user fallback
+  message.
+- Extended Admin static smoke to lock the assigned-user delete warning.
+
+## Round 43 Verification
+
+- `node --check tools/scripts/smoke-core-dept.mjs`
+- `node --check apps/admin/scripts/smoke-test.mjs`
+- `pnpm nx test system --testFile=system-dept.spec.ts`
+- `pnpm nx test admin`
+- `pnpm nx test api --testFile=system-management.permission-matrix.spec.ts`
+- `pnpm openapi:export`
+- `pnpm openapi:check`
+- `pnpm sdk:check`
+- `pnpm openapi:registry-tags:check`
+- `pnpm prisma:validate`
+- `pnpm nx run-many -t typecheck --projects=api,admin,sdk,system,module-registry,contracts`
+- `pnpm build:api`
+- `pnpm build:admin`
+- `pnpm format:check`
+- `git diff --check`
+- `pnpm smoke:api:local`
+- `pnpm deploy:opencore`
+
+`pnpm smoke:api:local` passed on fixed port `39173`, including
+`core.dept.delete.assigned-user-guard` and
+`core.dept.delete.assigned-user-preserved`.
+
+`pnpm deploy:opencore` passed, deploying API/Admin on fixed ports
+`39172`/`39174`; deploy smoke included the same `core.dept` assigned-user
+delete guards, duplicate `/api/api` login guards, Admin bundle cache checks and
+session guards.
+
+## Round 43 Public Verification
+
+Against public endpoints after deploy:
+
+- Public API: `http://144.217.243.161:39172`
+- Public Admin: `http://144.217.243.161:39174`
+- Public `pnpm smoke:core-dept` passed and included
+  `core.dept.delete.assigned-user-guard` and
+  `core.dept.delete.assigned-user-preserved`.
+- Public Admin Departments chunk `p__System__Departments.f85a1a09.async.js`
+  contains `assigned users cannot be deleted`.
+- Public Admin main bundle contains the deployed API origin and does not
+  contain duplicate `/api/api` auth prefixes.
+- Public Admin same-origin `/api/auth/login` and compatible
+  `/api/api/auth/login` both succeeded.
+- Public Admin same-origin proxy created a temporary department plus bound
+  user, `DELETE /api/core/depts/:id` returned 400, `GET /api/core/users/:id`
+  preserved the same `deptId`, and cleanup deleted the user then the
+  department.
+
+## Round 43 Commit Record
+
+- Feature commit:
+  `b4624cf feat(core-dept): guard deleting assigned departments / 保护已分配用户的部门删除`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

@@ -1224,6 +1224,34 @@ list drag-sort or broader user workflow changes.
       fixed-port smoke, deployment and public URL verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 43: core.dept User Binding Delete Guard
+
+Why this slice: after department CRUD and the enabled-department option source
+were live, the next lowest-dependency `core.dept` debt was preventing
+operators from deleting a department that still has assigned users. OpenCore's
+Prisma relation uses `onDelete: SetNull` for `User.deptId`, so without an
+explicit repository guard, deleting a leaf department silently clears the
+organization binding from users. This round closes that data integrity loop
+without opening data-scope UI, batch department deletion or drag-sort.
+
+- [x] Recompare RuoYi/Yudao department delete behavior and OpenCore's
+      `User.deptId` relation risk.
+- [x] Add shared `assertNoDeptUsers` repository guard.
+- [x] Apply the guard to seed and Prisma department delete implementations.
+- [x] Count assigned users before deleting a department and return 400 when
+      any user still references that department.
+- [x] Preserve the existing child-department delete guard before mutation.
+- [x] Extend department repository tests for assigned-user rejection and
+      `deptId` preservation after failed delete.
+- [x] Extend fixed-port/deploy/public `core.dept` smoke with assigned-user
+      delete guard and preserved-user-dept checks.
+- [x] Add Admin Departments delete-error handling with assigned-user fallback
+      copy.
+- [x] Extend Admin static smoke for the assigned-user delete warning.
+- [x] Run focused tests, OpenAPI/SDK checks, typecheck, format, build,
+      fixed-port smoke, deployment and public URL verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -1260,9 +1288,9 @@ treat "minimal loop" as "minimal final product".
 
 - [ ] Round 1 `core.notice`: read/unread state, inbox/header badge and delivery
       adapter design.
-- [ ] Round 2/27 `core.dept`: management tree and simple-list option source
-      are complete; user binding path hardening, data-scope workflow
-      integration and ordered tree operations remain.
+- [ ] Round 2/27/43 `core.dept`: management tree, simple-list option source
+      and user-bound department deletion protection are complete; data-scope
+      workflow integration and ordered tree operations remain.
 - [ ] Round 3/22/25/42 `core.post`: user-post binding, simple-list option
       source and batch deletion are complete; ordered list refinements remain.
 - [ ] Round 9/24/37/38/39/40 `core.config`: public get-value-by-key, cache refresh
@@ -1303,7 +1331,7 @@ treat "minimal loop" as "minimal final product".
 - Message bus push, WebSocket delivery or mail/SMS fan-out.
 - BPMN/workflow approval around announcements.
 - Tenant-scoped notices.
-- Department user binding and data-scope assignment UI.
+- Department user binding Admin workflow and data-scope assignment UI.
 - Batch department deletion or drag-sort persistence.
 - Post ordered list refinements.
 - Menu router-generation expansion, menu cache refresh, save-sort and drag-sort

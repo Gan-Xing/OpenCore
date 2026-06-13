@@ -1296,3 +1296,32 @@ its stable string `code` identity:
 
 OpenCore does not claim ordered list persistence, drag-sort operations or
 post-user workflow expansion in this round.
+
+## Round 43 Department User Binding Delete Guard Reference Shape
+
+RuoYi and Yudao both treat department deletion as an organization-tree
+integrity operation. Their current service paths guard parent departments with
+children before deletion. OpenCore already had the child-department guard, but
+its Prisma relation from `User.deptId` to `SystemDept.id` used
+`onDelete: SetNull`; that meant a leaf department could be deleted even while
+users were assigned to it, silently clearing their department binding.
+
+OpenCore admits the stricter stage-3 department deletion loop for this product
+boundary:
+
+- department delete still rejects rows with child departments before mutation;
+- seed and Prisma repositories also count users whose `deptId` equals the
+  target department id;
+- any assigned user makes `DELETE /api/core/depts/:id` return 400 before the
+  database delete runs;
+- failed deletes preserve each bound user's `deptId` instead of allowing the
+  relation to set it to null;
+- Admin Departments catches delete failures and exposes an assigned-user delete
+  warning;
+- fixed-port, deploy and public smoke prove assigned-user rejection, preserved
+  user department binding, deployed Departments chunk markers and Admin
+  same-origin proxy behavior.
+
+OpenCore does not claim data-scope assignment UI, batch department deletion,
+drag-sort persistence or a broader department-user assignment workflow in this
+round.

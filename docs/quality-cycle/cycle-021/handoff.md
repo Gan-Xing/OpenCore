@@ -3,8 +3,8 @@
 Date: 2026-06-13
 Repository: `Gan-Xing/OpenCore`
 Default branch: `main`
-Latest observed feature commit: `885fa9e feat(core-post): add batch post deletion / 新增岗位批量删除`
-Latest deployed feature commit: `885fa9e feat(core-post): add batch post deletion / 新增岗位批量删除`
+Latest observed feature commit: `b4624cf feat(core-dept): guard deleting assigned departments / 保护已分配用户的部门删除`
+Latest deployed feature commit: `b4624cf feat(core-dept): guard deleting assigned departments / 保护已分配用户的部门删除`
 Latest deployed hardening commit: `04e446c fix(online-user): stabilize admin session smoke / 稳定在线用户管理员会话冒烟`
 
 ## One-sentence Goal
@@ -108,6 +108,7 @@ productization waterline completion; see
 - Round 40 `core.config` system deletion policy stage 6
 - Round 41 `core.user` dedicated role assignment stage 14
 - Round 42 `core.post` batch deletion stage 3
+- Round 43 `core.dept` user-binding delete guard stage 3
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -514,6 +515,19 @@ smoke 均验证 `core.post.batch-delete.*`，包括 empty/duplicate/missing guar
 `/api/core/posts/batch` 删除成功。注意：这轮关闭的是岗位批量删除，不等于有序列表/拖拽排序
 等未准入岗位排序增强已完成。
 
+Round 43 回到 `core.dept` 队列，补齐部门删除时的用户绑定保护闭环。OpenCore 的 Prisma
+关系在用户绑定部门被删除时原本会 `onDelete: SetNull`，这会让 leaf department 删除绕过真实
+组织约束并静默清空用户 `deptId`。本轮在 seed/Prisma repository 删除路径加入 assigned-user
+preflight：仍先阻止有子部门的删除，再阻止任何仍绑定用户的部门删除；失败返回 400 且用户
+`deptId` 保持不变。Admin Departments 删除动作现在会展示
+`Departments with assigned users cannot be deleted` 兜底文案；固定 smoke、部署 smoke 和公网
+smoke 均验证 `core.dept.delete.assigned-user-guard` 与
+`core.dept.delete.assigned-user-preserved`。公网 Admin
+`p__System__Departments.f85a1a09.async.js` 已验证包含删除保护文案，公网 Admin 同源
+`/api/auth/login` 和兼容 `/api/api/auth/login` 均通过，并通过 Admin 代理真实创建部门和绑定用户后
+证明删除返回 400 且用户部门绑定仍保留。注意：这轮关闭的是用户绑定删除保护，不等于 data-scope
+工作流 UI、批量部门删除或树排序/拖拽已经完成。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -523,9 +537,9 @@ The productization waterline now classifies:
   `core.file`, Round 4/16 `core.menu`, Round 5/17/18/20 `core.role`,
   Round 8/21 `core.dict`,
   Round 7/19/22/23/28/29/30/31/32/33/34/35/36/41 `core.user`.
-- First loop, enhance: Round 1 `core.notice`, Round 2/27 `core.dept`, Round
-  3/22/25/42 `core.post`, Round 9/24/37/38/39/40 `core.config`, Round 11/26
-  `core.login-log`.
+- First loop, enhance: Round 1 `core.notice`, Round 2/27/43 `core.dept`,
+  Round 3/22/25/42 `core.post`, Round 9/24/37/38/39/40 `core.config`,
+  Round 11/26 `core.login-log`.
 - Thin, rework: none after Round 16.
 
 The P0 remediation queue from the post-Round 13 re-audit is now clear. The next
@@ -544,8 +558,9 @@ finds another blocker:
    filters. Remaining work is IP/location enrichment where feasible,
    cleanup/unlock policy integration and login-type/result expansion.
 3. `core.dept`: Round 27 closed the enabled-department simple-list option
-   source consumed by Admin Users. Remaining work is user binding path
-   hardening, data-scope workflow integration and ordered tree operations where
+   source consumed by Admin Users; Round 43 closed user-bound department
+   deletion protection and preserved user `deptId` on failed delete. Remaining
+   work is data-scope workflow integration and ordered tree operations where
    useful.
 4. `core.post`: Round 25 closed the enabled-post simple-list option source;
    Round 42 closed batch deletion with Admin selected-row deletion and strict
