@@ -4,19 +4,19 @@ Date: 2026-06-13
 
 ## Latest Completed Round
 
-Round 81: `core.notice` inbox realtime events.
+Round 82: `core.config` environment overrides.
 
 ## Closed
 
-- Added authenticated SSE notice inbox events at
-  `/core/notices/inbox/events`.
-- Publish/read mutations emit process-local realtime events with current unread
-  count and unread snapshot rows.
-- SDK/Admin/OpenAPI and deploy bundle guards expose the stream path.
-- Notice smoke verifies auth-required, snapshot and read-event behavior.
+- Added `SystemConfigEnvironmentOverride` storage with one override per
+  public config key and environment.
+- Runtime config, public value lookup and feature-flag evaluation can resolve
+  an `environment` query and fall back to default values.
+- SDK/Admin/OpenAPI expose override list/upsert/delete workflows.
+- Config smoke verifies secret/default-environment guards, runtime override,
+  feature rollout override and delete fallback behavior.
 
 ## Still Open
 
-- Realtime is process-local for the current single-node deploy; multi-instance
-  fanout can be promoted later through Redis/BullMQ if deployment topology
-  requires it.
+- Config secret governance still needs external KMS binding, key rotation and
+  secret version history as separate stages.

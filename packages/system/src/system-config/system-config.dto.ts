@@ -41,6 +41,9 @@ export class SystemConfigDto {
 export class SystemConfigValueQueryDto {
   @ApiProperty({ example: 'opencore.admin.title' })
   key!: string;
+
+  @ApiProperty({ required: false, example: 'staging' })
+  environment?: string;
 }
 
 export class SystemConfigValueDto {
@@ -52,9 +55,23 @@ export class SystemConfigValueDto {
 
   @ApiProperty({ enum: ['boolean', 'json', 'number', 'string'] })
   valueType!: 'boolean' | 'json' | 'number' | 'string';
+
+  @ApiProperty({ example: 'default' })
+  environment!: string;
+
+  @ApiProperty()
+  overridden!: boolean;
+}
+
+export class SystemConfigRuntimeQueryDto {
+  @ApiProperty({ required: false, example: 'staging' })
+  environment?: string;
 }
 
 export class SystemConfigRuntimeDto {
+  @ApiProperty({ example: 'default' })
+  environment!: string;
+
   @ApiProperty({ example: 'OpenCore Admin' })
   adminTitle!: string;
 
@@ -118,6 +135,9 @@ export class SystemConfigFeatureFlagEvaluationQueryDto {
   @ApiProperty({ example: 'user_admin' })
   subjectKey!: string;
 
+  @ApiProperty({ required: false, example: 'staging' })
+  environment?: string;
+
   @ApiProperty({
     required: false,
     example: '{"dept":"operations","role":"admin"}',
@@ -128,6 +148,9 @@ export class SystemConfigFeatureFlagEvaluationQueryDto {
 export class SystemConfigFeatureFlagEvaluationDto {
   @ApiProperty({ example: 'notice.inbox' })
   flag!: string;
+
+  @ApiProperty({ example: 'default' })
+  environment!: string;
 
   @ApiProperty({ example: 'user_admin' })
   subjectKey!: string;
@@ -203,6 +226,41 @@ export class SystemConfigPageDto {
   totalPages!: number;
 }
 
+export class SystemConfigEnvironmentOverrideDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  key!: string;
+
+  @ApiProperty({ example: 'staging' })
+  environment!: string;
+
+  @ApiProperty()
+  value!: string;
+
+  @ApiProperty({ enum: ['boolean', 'json', 'number', 'string'] })
+  valueType!: 'boolean' | 'json' | 'number' | 'string';
+
+  @ApiProperty({ required: false })
+  description?: string;
+
+  @ApiProperty({ required: false })
+  remark?: string;
+
+  @ApiProperty()
+  public!: true;
+
+  @ApiProperty({ enum: ['public'] })
+  visibility!: 'public';
+
+  @ApiProperty()
+  createdAt!: string;
+
+  @ApiProperty()
+  updatedAt!: string;
+}
+
 export class CreateSystemConfigDto {
   @ApiProperty({ required: false, example: 'system' })
   category?: string;
@@ -259,4 +317,15 @@ export class UpdateSystemConfigDto {
 
   @ApiProperty({ required: false, enum: ['private', 'public', 'secret'] })
   visibility?: 'private' | 'public' | 'secret';
+}
+
+export class UpsertSystemConfigEnvironmentOverrideDto {
+  @ApiProperty()
+  value!: string;
+
+  @ApiProperty({ required: false })
+  description?: string;
+
+  @ApiProperty({ required: false })
+  remark?: string;
 }

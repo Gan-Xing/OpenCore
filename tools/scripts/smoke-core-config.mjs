@@ -223,6 +223,11 @@ try {
     `${apiPrefix}/core/config/runtime`,
   );
   assertEqual(
+    initialRuntimeConfig.environment,
+    'default',
+    'initial runtime environment',
+  );
+  assertEqual(
     initialRuntimeConfig.adminTitle,
     originalAdminTitle,
     'initial runtime admin title',
@@ -264,6 +269,11 @@ try {
     'seeded feature evaluation flag',
   );
   assertEqual(
+    seededFeatureEvaluation.environment,
+    'default',
+    'seeded feature evaluation environment',
+  );
+  assertEqual(
     seededFeatureEvaluation.subjectKey,
     'smoke-admin',
     'seeded feature evaluation subject',
@@ -293,6 +303,115 @@ try {
     seededFeatureEvaluation.audienceMatched,
     true,
     'seeded feature evaluation audience',
+  );
+  await apiRequest('/core/config/auth.jwt.secretRef/environments/staging', {
+    method: 'PATCH',
+    expected: [400],
+    body: { value: 'env:STAGING_AUTH_TOKEN_SECRET' },
+  });
+  await apiRequest('/core/config/opencore.admin.title/environments/default', {
+    method: 'PATCH',
+    expected: [400],
+    body: { value: 'Blocked default override' },
+  });
+  const stagingAdminTitle = `OpenCore Staging Admin ${runId}`;
+  const stagingTitleOverride = await apiRequest(
+    '/core/config/opencore.admin.title/environments/staging',
+    {
+      method: 'PATCH',
+      body: {
+        remark: 'Created by core.config smoke environment override.',
+        value: stagingAdminTitle,
+      },
+    },
+  );
+  assertEqual(
+    stagingTitleOverride.environment,
+    'staging',
+    'environment override environment',
+  );
+  assertEqual(
+    stagingTitleOverride.value,
+    stagingAdminTitle,
+    'environment override value',
+  );
+  const stagingTitleOverrides = await apiRequest(
+    '/core/config/opencore.admin.title/environments',
+  );
+  assertArray(stagingTitleOverrides, 'environment override list');
+  assertItemsContainEnvironment(
+    stagingTitleOverrides,
+    'staging',
+    'environment override list',
+  );
+  const stagingTitleValue = await apiRequest(
+    '/core/config/get-value-by-key?key=opencore.admin.title&environment=staging',
+  );
+  assertEqual(
+    stagingTitleValue.environment,
+    'staging',
+    'environment value environment',
+  );
+  assertEqual(
+    stagingTitleValue.overridden,
+    true,
+    'environment value overridden flag',
+  );
+  assertEqual(stagingTitleValue.value, stagingAdminTitle, 'environment value');
+  const stagingRuntimeConfig = await request(
+    `${apiPrefix}/core/config/runtime?environment=staging`,
+  );
+  assertEqual(
+    stagingRuntimeConfig.environment,
+    'staging',
+    'environment runtime environment',
+  );
+  assertEqual(
+    stagingRuntimeConfig.adminTitle,
+    stagingAdminTitle,
+    'environment runtime admin title',
+  );
+  await apiRequest(
+    '/core/config/feature.notice.inbox.rolloutPercentage/environments/staging',
+    {
+      method: 'PATCH',
+      body: { value: '0' },
+    },
+  );
+  const stagingFeatureEvaluation = await request(
+    `${apiPrefix}/core/config/feature-flags/evaluate?flag=notice.inbox&subjectKey=smoke-admin&environment=staging`,
+  );
+  assertEqual(
+    stagingFeatureEvaluation.environment,
+    'staging',
+    'environment feature evaluation environment',
+  );
+  assertEqual(
+    stagingFeatureEvaluation.rolloutPercentage,
+    0,
+    'environment feature evaluation rollout',
+  );
+  assertEqual(
+    stagingFeatureEvaluation.reason,
+    'outside-rollout',
+    'environment feature evaluation reason',
+  );
+  await apiRequest(
+    '/core/config/feature.notice.inbox.rolloutPercentage/environments/staging',
+    {
+      method: 'DELETE',
+    },
+  );
+  await apiRequest('/core/config/opencore.admin.title/environments/staging', {
+    method: 'DELETE',
+  });
+  const stagingRuntimeAfterDelete = await request(
+    `${apiPrefix}/core/config/runtime?environment=staging`,
+  );
+  assertEqual(
+    stagingRuntimeAfterDelete.adminTitle,
+    originalAdminTitle,
+    'environment runtime delete fallback',
   );
   await request(
     `${apiPrefix}/core/config/feature-flags/evaluate?flag=bad_flag&subjectKey=smoke-admin`,
@@ -1185,6 +1304,10 @@ try {
         'core.config.runtime-login-attempt-policy',
         'core.config.runtime-login-attempt-policy-guards',
         'core.config.seed-secret-vault',
+        'core.config.environment-override.guards',
+        'core.config.environment-override.crud',
+        'core.config.environment-runtime',
+        'core.config.environment-feature-rollout',
         'core.config.value-by-key',
         'core.config.value-cache-invalidation',
         'core.config.cache-refresh',
@@ -1452,6 +1575,13 @@ function assertDeepEqual(actual, expected, label) {
 function assertIncludes(values, expected, label) {
   if (!Array.isArray(values) || !values.includes(expected)) {
     throw new Error(`${label} must include ${expected}`);
+  }
+}
+
+function assertItemsContainEnvironment(items, environment, label) {
+  assertArray(items, label);
+  if (!items.some((item) => item?.environment === environment)) {
+    throw new Error(`${label} must include environment ${environment}`);
   }
 }
 

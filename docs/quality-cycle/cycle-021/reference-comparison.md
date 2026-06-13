@@ -36,8 +36,8 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   mail subject persistence, provider diagnostics, SMS HTTP secret injection and
   SMTP attachments plus explicit SMTP TLS policy and authenticated inbox
   realtime events are live.
-- Config: runtime keys, login policy, feature flags, rollout, audience rules
-  and secret-vault encryption are live.
+- Config: runtime keys, login policy, feature flags, rollout, audience rules,
+  environment overrides and secret-vault encryption are live.
 - Monitor/OpenForge/Scheduler: Monitor Jobs now has a live Admin operation
   surface, registry visibility and registered handler diagnostics; external
   worker/cron parity remains.
@@ -79,6 +79,9 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
 - Round 81: Notice inbox realtime is an authenticated SSE stream with snapshot
   and read/publish events; multi-instance fanout remains a deployment-topology
   upgrade, not a current single-node blocker.
+- Round 82: Config environment overrides are first-class public-config records;
+  runtime config and feature evaluation resolve `environment` with default
+  fallback, while secret/private config waits for KMS/secret-version stages.
 
 ## Explicit Non-Claims
 
@@ -89,5 +92,5 @@ and AI/RAG/Agent workflow.
 
 ## Next Focus
 
-Choose one foundation stage from config governance, operation-log enrichment,
-OpenForge Admin or scheduler worker parity.
+Choose one foundation stage from KMS/secret rotation, operation-log
+enrichment, OpenForge Admin or scheduler worker parity.

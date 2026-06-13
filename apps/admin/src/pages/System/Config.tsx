@@ -40,14 +40,17 @@ import {
 import { useEffect, useMemo, useState, type Key } from 'react';
 import {
   createOpenCoreSystemConfig,
+  deleteOpenCoreSystemConfigEnvironmentOverride,
   deleteOpenCoreSystemConfig,
   deleteOpenCoreSystemConfigs,
   exportOpenCoreSystemConfig,
   getOpenCoreSystemConfig,
   getOpenCoreSystemConfigValue,
+  listOpenCoreSystemConfigEnvironmentOverrides,
   listOpenCoreSystemConfig,
   refreshOpenCoreSystemConfigCache,
   updateOpenCoreSystemConfig,
+  upsertOpenCoreSystemConfigEnvironmentOverride,
 } from '@/services/opencore/platform';
 import {
   CurrentPageExportButton,
@@ -77,6 +80,13 @@ type ConfigFormValues = {
   value?: string;
   valueType: ConfigValueType;
   visibility: ConfigVisibility;
+};
+
+type EnvironmentOverrideFormValues = {
+  description?: string;
+  environment: string;
+  remark?: string;
+  value: string;
 };
 
 const fallbackRows = createSystemConfigFixtures().items;
@@ -403,6 +413,7 @@ export default function ConfigPage() {
   const access = useAccess();
   const canExportSystemConfig = Boolean(access.canExportSystemConfig);
   const [form] = Form.useForm<ConfigFormValues>();
+  const [environmentForm] = Form.useForm<EnvironmentOverrideFormValues>();
   const [rows, setRows] =
     useState<readonly SystemConfigSummary[]>(fallbackRows);
   const [loading, setLoading] = useState(true);
@@ -430,6 +441,12 @@ export default function ConfigPage() {
   const [audienceRulesJson, setAudienceRulesJson] = useState<string>(
     getDefaultAudienceRulesJson(),
   );
+  const [environmentConfigTarget, setEnvironmentConfigTarget] =
+    useState<SystemConfigSummary>();
+  const [environmentOverrideLoading, setEnvironmentOverrideLoading] =
+    useState(false);
+  const [environmentOverrideSaving, setEnvironmentOverrideSaving] =
+    useState(false);
   const watchedVisibility = Form.useWatch('visibility', form);
   const filterOptions = useMemo(() => createFilterOptions(rows), [rows]);
   const selectedDeletableKeys = useMemo(
@@ -629,6 +646,88 @@ export default function ConfigPage() {
       message.info(`${result.key} = ${result.value}`);
     } finally {
       setValueReadingKey(undefined);
+    }
+  };
+
+  const openEnvironmentOverride = async (record: SystemConfigSummary) => {
+    if (record.visibility !== 'public') {
+      return;
+    }
+
+    setEnvironmentConfigTarget(record);
+    setEnvironmentOverrideLoading(true);
+    try {
+      const overrides = await listOpenCoreSystemConfigEnvironmentOverrides(
+        record.key,
+      );
+      const stagingOverride = overrides.find(
+        (override) => override.environment === 'staging',
+      );
+      environmentForm.setFieldsValue({
+        description: stagingOverride?.description ?? '',
+        environment: stagingOverride?.environment ?? 'staging',
+        remark: stagingOverride?.remark ?? '',
+        value: stagingOverride?.value ?? record.value,
+      });
+    } catch (error: unknown) {
+      environmentForm.setFieldsValue({
+        description: '',
+        environment: 'staging',
+        remark: '',
+        value: record.value,
+      });
+      message.warning(
+        error instanceof Error
+          ? error.message
+          : 'Unable to load environment overrides.',
+      );
+    } finally {
+      setEnvironmentOverrideLoading(false);
+    }
+  };
+
+  const saveEnvironmentOverride = async () => {
+    if (!environmentConfigTarget) {
+      return;
+    }
+
+    const values = await environmentForm.validateFields();
+    const environment = values.environment.trim();
+    setEnvironmentOverrideSaving(true);
+    try {
+      await upsertOpenCoreSystemConfigEnvironmentOverride(
+        environmentConfigTarget.key,
+        environment,
+        {
+          description: values.description?.trim() || undefined,
+          remark: values.remark?.trim() || undefined,
+          value: values.value.trim(),
+        },
+      );
+      message.success(`Environment override ${environment} saved.`);
+      setEnvironmentConfigTarget(undefined);
+    } finally {
+      setEnvironmentOverrideSaving(false);
+    }
+  };
+
+  const deleteEnvironmentOverride = async () => {
+    if (!environmentConfigTarget) {
+      return;
+    }
+
+    const environment =
+      environmentForm.getFieldValue('environment')?.trim() ?? 'staging';
+    setEnvironmentOverrideSaving(true);
+    try {
+      await deleteOpenCoreSystemConfigEnvironmentOverride(
+        environmentConfigTarget.key,
+        environment,
+      );
+      message.success(`Environment override ${environment} deleted.`);
+      setEnvironmentConfigTarget(undefined);
+    } finally {
+      setEnvironmentOverrideSaving(false);
     }
   };
 
@@ -974,6 +1073,21 @@ export default function ConfigPage() {
               size="small"
             />
           </Tooltip>
+          <Tooltip
+            title={
+              record.visibility === 'public'
+                ? 'Environment Override'
+                : 'Only public config can define environment overrides'
+            }
+          >
+            <Button
+              aria-label={`Environment override ${record.key}`}
+              disabled={record.visibility !== 'public'}
+              icon={<ApartmentOutlined />}
+              onClick={() => void openEnvironmentOverride(record)}
+              size="small"
+            />
+          </Tooltip>
           <Tooltip title="Edit">
             <Button
               aria-label={`Edit ${record.key}`}
@@ -1167,6 +1281,72 @@ export default function ConfigPage() {
               <Select options={visibilityOptions} style={{ width: 150 }} />
             </Form.Item>
           </Space>
+          <Form.Item label="Description" name="description">
+            <Input.TextArea maxLength={240} rows={3} />
+          </Form.Item>
+          <Form.Item label="Remark" name="remark">
+            <Input.TextArea maxLength={500} rows={3} />
+          </Form.Item>
+        </Form>
+      </Modal>
+      <Modal
+        title="Environment Override"
+        open={Boolean(environmentConfigTarget)}
+        confirmLoading={environmentOverrideSaving}
+        onCancel={() => setEnvironmentConfigTarget(undefined)}
+        onOk={() => void saveEnvironmentOverride()}
+        okText="Save override"
+        footer={[
+          <Button
+            key="delete"
+            danger
+            loading={environmentOverrideSaving}
+            onClick={() => void deleteEnvironmentOverride()}
+          >
+            Delete override
+          </Button>,
+          <Button
+            key="cancel"
+            onClick={() => setEnvironmentConfigTarget(undefined)}
+          >
+            Cancel
+          </Button>,
+          <Button
+            key="save"
+            type="primary"
+            loading={environmentOverrideSaving}
+            onClick={() => void saveEnvironmentOverride()}
+          >
+            Save override
+          </Button>,
+        ]}
+      >
+        <Alert
+          showIcon
+          type="info"
+          message="Environment overrides"
+          description={environmentConfigTarget?.key}
+          style={{ marginBlockEnd: 16 }}
+        />
+        <Form<EnvironmentOverrideFormValues>
+          form={environmentForm}
+          layout="vertical"
+          disabled={environmentOverrideLoading}
+        >
+          <Form.Item
+            label="Environment"
+            name="environment"
+            rules={[{ required: true, message: 'Environment is required.' }]}
+          >
+            <Input maxLength={40} />
+          </Form.Item>
+          <Form.Item
+            label="Value"
+            name="value"
+            rules={[{ required: true, message: 'Value is required.' }]}
+          >
+            <Input.TextArea rows={3} maxLength={500} />
+          </Form.Item>
           <Form.Item label="Description" name="description">
             <Input.TextArea maxLength={240} rows={3} />
           </Form.Item>

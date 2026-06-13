@@ -24,7 +24,7 @@ failures have guards; and remaining omissions are explicit product boundaries.
 | `core.file`           | Meets         | Authenticated upload/download and content smoke.                                                 |
 | `monitor.online-user` | Meets         | Batch kick-out, revocation and UA/IP fields.                                                     |
 | `core.login-log`      | Meets current | Schema, lockout, cleanup, actor/reason and location.                                             |
-| `core.config`         | Meets current | Runtime keys, feature flags, rollout, audience, vault.                                           |
+| `core.config`         | Meets current | Runtime keys, feature flags, rollout, audience, environment overrides, vault.                    |
 | `core.notice`         | Enhance       | SMS HTTP, SMTP, mail subject, diagnostics, secrets, attachments, TLS policy and realtime events. |
 | `scheduler/monitor`   | Meets current | Job Admin operations, registry and handler diagnostics are live.                                 |
 | `OpenForge Admin`     | P2            | CLI/core exists; Admin UX remains.                                                               |
@@ -59,11 +59,12 @@ failures have guards; and remaining omissions are explicit product boundaries.
   Admin/SDK/OpenAPI visibility and STARTTLS-required smoke coverage.
 - Round 81 added authenticated notice inbox SSE snapshots/read events with
   SDK/Admin/OpenAPI visibility and public smoke coverage.
+- Round 82 added public config environment overrides with environment-aware
+  runtime/evaluate APIs, SDK/Admin/OpenAPI visibility and smoke/deploy guards.
 
 ## Active Debt
 
-1. Config: multi-environment governance, KMS binding, key rotation and secret
-   versions.
+1. Config: external KMS binding, key rotation and secret versions.
 2. Operation log: retention scheduling, duration/location fields and policy.
 3. OpenForge Admin: safe plan/diff/check/apply/manifest/rollback UI.
 4. Integration: provider readiness, failure history and config diagnostics.
@@ -86,4 +87,5 @@ failures have guards; and remaining omissions are explicit product boundaries.
   whitelisted job upsert, unsafe policy guards, enable/disable,
   disabled-trigger rejection, manual trigger, handler execution, retry failure
   and run-log detail.
-- Config: runtime shape and secret-vault plaintext protection.
+- Config: runtime shape, environment override governance and secret-vault
+  plaintext protection.

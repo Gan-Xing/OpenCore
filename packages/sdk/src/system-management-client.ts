@@ -35,6 +35,7 @@ import type {
   RenderSystemNoticeTemplateRequest,
   SystemConfigBatchMutationSummary,
   SystemConfigCacheRefreshSummary,
+  SystemConfigEnvironmentOverrideSummary,
   SystemConfigFeatureFlagEvaluationSummary,
   SystemConfigRuntimeSummary,
   SystemConfigSummary,
@@ -79,6 +80,7 @@ import type {
   UpdateSystemPostOrderRequest,
   UpdateSystemPostRequest,
   UpdateSystemConfigRequest,
+  UpsertSystemConfigEnvironmentOverrideRequest,
 } from './system-management-types';
 
 type Token = string;
@@ -135,16 +137,35 @@ export type SystemManagementClient = {
   ) => Promise<PageResponse<SystemConfigSummary>>;
   exportConfig: (token: Token, query?: PageRequest) => Promise<ExportPreview>;
   getConfig: (token: Token, key: string) => Promise<SystemConfigSummary>;
-  getConfigRuntime: () => Promise<SystemConfigRuntimeSummary>;
+  getConfigRuntime: (
+    environment?: string,
+  ) => Promise<SystemConfigRuntimeSummary>;
   evaluateFeatureFlag: (
     flag: string,
     subjectKey: string,
     attributes?: Record<string, boolean | number | string>,
+    environment?: string,
   ) => Promise<SystemConfigFeatureFlagEvaluationSummary>;
   getConfigValueByKey: (
     token: Token,
     key: string,
+    environment?: string,
   ) => Promise<SystemConfigValueSummary>;
+  listConfigEnvironmentOverrides: (
+    token: Token,
+    key: string,
+  ) => Promise<readonly SystemConfigEnvironmentOverrideSummary[]>;
+  upsertConfigEnvironmentOverride: (
+    token: Token,
+    key: string,
+    environment: string,
+    body: UpsertSystemConfigEnvironmentOverrideRequest,
+  ) => Promise<SystemConfigEnvironmentOverrideSummary>;
+  deleteConfigEnvironmentOverride: (
+    token: Token,
+    key: string,
+    environment: string,
+  ) => Promise<DeleteResult>;
   refreshConfigCache: (
     token: Token,
   ) => Promise<SystemConfigCacheRefreshSummary>;
@@ -463,21 +484,46 @@ export function createSystemManagementClient(
       request<SystemConfigSummary>(`/core/config/${encodeURIComponent(key)}`, {
         token,
       }),
-    getConfigRuntime: () =>
-      request<SystemConfigRuntimeSummary>('/core/config/runtime'),
-    evaluateFeatureFlag: (flag, subjectKey, attributes) =>
+    getConfigRuntime: (environment) =>
+      request<SystemConfigRuntimeSummary>(
+        withQuery('/core/config/runtime', { environment }),
+      ),
+    evaluateFeatureFlag: (flag, subjectKey, attributes, environment) =>
       request<SystemConfigFeatureFlagEvaluationSummary>(
         withQuery('/core/config/feature-flags/evaluate', {
           attributes:
             attributes === undefined ? undefined : JSON.stringify(attributes),
+          environment,
           flag,
           subjectKey,
         }),
       ),
-    getConfigValueByKey: (token, key) =>
+    getConfigValueByKey: (token, key, environment) =>
       request<SystemConfigValueSummary>(
-        withQuery('/core/config/get-value-by-key', { key }),
+        withQuery('/core/config/get-value-by-key', { environment, key }),
         {
+          token,
+        },
+      ),
+    listConfigEnvironmentOverrides: (token, key) =>
+      request<readonly SystemConfigEnvironmentOverrideSummary[]>(
+        `/core/config/${encodeURIComponent(key)}/environments`,
+        { token },
+      ),
+    upsertConfigEnvironmentOverride: (token, key, environment, body) =>
+      request<SystemConfigEnvironmentOverrideSummary>(
+        `/core/config/${encodeURIComponent(key)}/environments/${encodeURIComponent(environment)}`,
+        {
+          method: 'PATCH',
+          body,
+          token,
+        },
+      ),
+    deleteConfigEnvironmentOverride: (token, key, environment) =>
+      request<DeleteResult>(
+        `/core/config/${encodeURIComponent(key)}/environments/${encodeURIComponent(environment)}`,
+        {
+          method: 'DELETE',
           token,
         },
       ),

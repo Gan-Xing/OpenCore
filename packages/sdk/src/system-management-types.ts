@@ -113,9 +113,12 @@ export type SystemConfigValueSummary = {
   key: string;
   value: string;
   valueType: SystemConfigSummary['valueType'];
+  environment: string;
+  overridden: boolean;
 };
 
 export type SystemConfigRuntimeSummary = {
+  environment: string;
   adminTitle: string;
   featureFlags: Record<string, boolean>;
   featureFlagRules: Record<
@@ -139,6 +142,7 @@ export type SystemConfigRuntimeSummary = {
 
 export type SystemConfigFeatureFlagEvaluationSummary = {
   flag: string;
+  environment: string;
   subjectKey: string;
   enabled: boolean;
   rolloutPercentage: number;
@@ -167,6 +171,20 @@ export type SystemConfigBatchMutationSummary = {
   keys: readonly string[];
 };
 
+export type SystemConfigEnvironmentOverrideSummary = {
+  id: string;
+  key: string;
+  environment: string;
+  value: string;
+  valueType: SystemConfigSummary['valueType'];
+  description?: string;
+  remark?: string;
+  public: true;
+  visibility: 'public';
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type CreateSystemConfigRequest = {
   category?: string;
   key: string;
@@ -192,6 +210,12 @@ export type UpdateSystemConfigRequest = Partial<
     | 'visibility'
   >
 >;
+
+export type UpsertSystemConfigEnvironmentOverrideRequest = {
+  value: string;
+  description?: string;
+  remark?: string;
+};
 
 export type FileAssetSummary = {
   id: string;

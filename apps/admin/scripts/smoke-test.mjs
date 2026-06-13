@@ -396,6 +396,15 @@ if (
   !opencorePlatformService.includes('updateOpenCoreSystemPostOrder') ||
   !opencorePlatformService.includes('deleteOpenCoreSystemPost') ||
   !opencorePlatformService.includes('deleteOpenCoreSystemPosts') ||
+  !opencorePlatformService.includes(
+    'listOpenCoreSystemConfigEnvironmentOverrides',
+  ) ||
+  !opencorePlatformService.includes(
+    'upsertOpenCoreSystemConfigEnvironmentOverride',
+  ) ||
+  !opencorePlatformService.includes(
+    'deleteOpenCoreSystemConfigEnvironmentOverride',
+  ) ||
   !opencorePlatformService.includes('listOpenCoreSystemNotices') ||
   !opencorePlatformService.includes('listOpenCoreSystemNoticeInbox') ||
   !opencorePlatformService.includes('getOpenCoreSystemNoticeInboxEventsPath') ||
@@ -896,6 +905,15 @@ if (
   !configPage.includes('Audience Rules') ||
   !configPage.includes('Set audience') ||
   !configPage.includes('featureFlagAudienceSavingKey') ||
+  !configPage.includes('Environment Override') ||
+  !configPage.includes('Environment overrides') ||
+  !configPage.includes('environmentConfigTarget') ||
+  !configPage.includes('openEnvironmentOverride') ||
+  !configPage.includes('saveEnvironmentOverride') ||
+  !configPage.includes('deleteEnvironmentOverride') ||
+  !configPage.includes('listOpenCoreSystemConfigEnvironmentOverrides') ||
+  !configPage.includes('upsertOpenCoreSystemConfigEnvironmentOverride') ||
+  !configPage.includes('deleteOpenCoreSystemConfigEnvironmentOverride') ||
   !configPage.includes('canExportSystemConfig') ||
   !configPage.includes('Download Excel') ||
   !configPage.includes('Config Excel export downloaded') ||

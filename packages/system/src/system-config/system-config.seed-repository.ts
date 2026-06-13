@@ -10,12 +10,15 @@ import type {
   BatchDeleteSystemConfigsDto,
   CreateSystemConfigDto,
   UpdateSystemConfigDto,
+  UpsertSystemConfigEnvironmentOverrideDto,
 } from './system-config.dto';
 import {
   seedSystemConfigs,
+  type SystemConfigEnvironmentOverrideRecord,
   type SystemConfigRecord,
 } from './system-config.records';
 import {
+  assertEnvironmentOverrideConfig,
   assertSafeConfigKey,
   assertFeatureFlagConfigShape,
   assertSecretConfigShape,
@@ -26,6 +29,7 @@ import {
   normalizeConfigName,
   normalizeBatchSystemConfigKeys,
   normalizeOptionalConfigText,
+  normalizeRequiredSystemConfigEnvironment,
   normalizeSystemConfigPageQuery,
   normalizeStoredConfigValue,
   redactSystemConfig,
@@ -53,6 +57,7 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
       visibility,
     };
   });
+  private environmentOverrides: SystemConfigEnvironmentOverrideRecord[] = [];
 
   async listConfig(
     query: SystemConfigPageQuery = {},
@@ -213,6 +218,9 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
     this.systemConfigs = this.systemConfigs.filter(
       (config) => config.key !== key,
     );
+    this.environmentOverrides = this.environmentOverrides.filter(
+      (override) => override.key !== key,
+    );
     return { deleted: true };
   }
 
@@ -242,12 +250,124 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
     this.systemConfigs = this.systemConfigs.filter(
       (config) => !keys.includes(config.key),
     );
+    this.environmentOverrides = this.environmentOverrides.filter(
+      (override) => !keys.includes(override.key),
+    );
 
     return {
       deleted: true,
       affected: keys.length,
       keys,
     };
+  }
+
+  async listConfigEnvironmentOverrides(
+    key: string,
+  ): Promise<readonly SystemConfigEnvironmentOverrideRecord[]> {
+    const config = this.findConfig(key);
+    assertEnvironmentOverrideConfig(config);
+
+    return this.environmentOverrides
+      .filter((override) => override.key === key)
+      .sort((left, right) => left.environment.localeCompare(right.environment))
+      .map((override) => ({ ...override }));
+  }
+
+  async getConfigEnvironmentOverride(
+    key: string,
+    environment: string,
+  ): Promise<SystemConfigEnvironmentOverrideRecord> {
+    const normalizedEnvironment =
+      normalizeRequiredSystemConfigEnvironment(environment);
+    const override = this.environmentOverrides.find(
+      (candidate) =>
+        candidate.key === key &&
+        candidate.environment === normalizedEnvironment,
+    );
+
+    if (!override) {
+      throw new NotFoundException(
+        `System config environment override not found: ${key}/${normalizedEnvironment}`,
+      );
+    }
+
+    return { ...override };
+  }
+
+  async upsertConfigEnvironmentOverride(
+    key: string,
+    environment: string,
+    body: UpsertSystemConfigEnvironmentOverrideDto,
+  ): Promise<SystemConfigEnvironmentOverrideRecord> {
+    const config = this.findConfig(key);
+    const normalizedEnvironment =
+      normalizeRequiredSystemConfigEnvironment(environment);
+    assertEnvironmentOverrideConfig(config);
+    assertFeatureFlagConfigShape({
+      key,
+      value: body.value,
+      valueType: config.valueType,
+      visibility: 'public',
+    });
+
+    const now = new Date().toISOString();
+    const value = normalizeStoredConfigValue({
+      key,
+      value: body.value,
+      valueType: config.valueType,
+      visibility: 'public',
+    });
+    const existing = this.environmentOverrides.find(
+      (candidate) =>
+        candidate.key === key &&
+        candidate.environment === normalizedEnvironment,
+    );
+
+    if (existing) {
+      Object.assign(existing, {
+        description: normalizeOptionalConfigText(
+          body.description,
+          'description',
+        ),
+        remark: normalizeOptionalConfigText(body.remark, 'remark'),
+        updatedAt: now,
+        value,
+        valueType: config.valueType,
+      });
+      return { ...existing };
+    }
+
+    const override: SystemConfigEnvironmentOverrideRecord = {
+      id: `config_override_${key.replaceAll('.', '_')}_${normalizedEnvironment}`,
+      key,
+      environment: normalizedEnvironment,
+      value,
+      valueType: config.valueType,
+      description: normalizeOptionalConfigText(body.description, 'description'),
+      remark: normalizeOptionalConfigText(body.remark, 'remark'),
+      public: true,
+      visibility: 'public',
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.environmentOverrides = [override, ...this.environmentOverrides];
+
+    return { ...override };
+  }
+
+  async deleteConfigEnvironmentOverride(
+    key: string,
+    environment: string,
+  ): Promise<{ deleted: true }> {
+    const normalizedEnvironment =
+      normalizeRequiredSystemConfigEnvironment(environment);
+    await this.getConfigEnvironmentOverride(key, normalizedEnvironment);
+    this.environmentOverrides = this.environmentOverrides.filter(
+      (override) =>
+        override.key !== key || override.environment !== normalizedEnvironment,
+    );
+
+    return { deleted: true };
   }
 
   private findConfig(key: string): SystemConfigRecord {

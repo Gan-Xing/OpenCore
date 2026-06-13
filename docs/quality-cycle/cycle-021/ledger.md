@@ -14,3 +14,4 @@ This ledger records state transitions only. Git log keeps commit hashes.
 | 79    | Notice Mail  | Mail outbox attachments became bounded persisted SMTP delivery state.         | Adapter tests and notice smoke cover SMTP MIME attachments.    |
 | 80    | Notice Mail  | SMTP TLS behavior became explicit `tlsMode` policy.                           | Adapter tests and notice smoke cover STARTTLS-required policy. |
 | 81    | Notice Inbox | Notice inbox realtime became authenticated SSE snapshot/read events.          | Notice smoke covers auth, snapshot and read-event streaming.   |
+| 82    | Config       | Public config values gained environment-specific runtime overrides.           | Config smoke covers guards, runtime and feature rollout.       |

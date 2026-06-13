@@ -17,6 +17,20 @@ export type SystemConfigRecord = {
   visibility: SystemConfigVisibility;
 };
 
+export type SystemConfigEnvironmentOverrideRecord = {
+  id: string;
+  key: string;
+  environment: string;
+  value: string;
+  valueType: SystemConfigValueType;
+  description?: string;
+  remark?: string;
+  public: true;
+  visibility: 'public';
+  createdAt: string;
+  updatedAt: string;
+};
+
 export const seedSystemConfigs: readonly SystemConfigRecord[] = [
   {
     id: 'config_admin_title',

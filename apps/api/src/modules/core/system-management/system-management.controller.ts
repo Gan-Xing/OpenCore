@@ -81,10 +81,12 @@ import {
   SystemDeptTreeDto,
   SystemConfigDto,
   SystemConfigCacheRefreshDto,
+  SystemConfigEnvironmentOverrideDto,
   SystemConfigFeatureFlagEvaluationDto,
   SystemConfigFeatureFlagEvaluationQueryDto,
   SystemConfigBatchMutationResultDto,
   SystemConfigPageDto,
+  SystemConfigRuntimeQueryDto,
   SystemConfigRuntimeDto,
   SystemConfigValueDto,
   SystemConfigValueQueryDto,
@@ -124,6 +126,7 @@ import {
   UpdateFileAssetDto,
   UploadFileAssetDto,
   UpdateSystemConfigDto,
+  UpsertSystemConfigEnvironmentOverrideDto,
   UpdateSystemNoticeDto,
   UpdateSystemNoticeTemplateDto,
   UpdateSystemPostDto,
@@ -296,8 +299,10 @@ export class SystemManagementController {
   @Get('config/runtime')
   @ApiTags('Core System Config')
   @ApiOkResponse({ type: SystemConfigRuntimeDto })
-  getConfigRuntime(): Promise<SystemConfigRuntimeDto> {
-    return this.config.getRuntimeConfig();
+  getConfigRuntime(
+    @Query() query: SystemConfigRuntimeQueryDto,
+  ): Promise<SystemConfigRuntimeDto> {
+    return this.config.getRuntimeConfig(query);
   }
 
   @Get('config/get-value-by-key')
@@ -306,7 +311,7 @@ export class SystemManagementController {
   getConfigValueByKey(
     @Query() query: SystemConfigValueQueryDto,
   ): Promise<SystemConfigValueDto> {
-    return this.config.getConfigValueByKey(query.key);
+    return this.config.getConfigValueByKey(query.key, query.environment);
   }
 
   @Get('config/feature-flags/evaluate')
@@ -334,6 +339,39 @@ export class SystemManagementController {
     @Body() body: BatchDeleteSystemConfigsDto,
   ): Promise<SystemConfigBatchMutationResultDto> {
     return this.config.deleteConfigs(body);
+  }
+
+  @Get('config/:key/environments')
+  @ApiTags('Core System Config')
+  @RequirePermission('core:config:read')
+  @ApiOkResponse({ type: [SystemConfigEnvironmentOverrideDto] })
+  listConfigEnvironmentOverrides(
+    @Param('key') key: string,
+  ): Promise<readonly SystemConfigEnvironmentOverrideDto[]> {
+    return this.config.listConfigEnvironmentOverrides(key);
+  }
+
+  @Patch('config/:key/environments/:environment')
+  @ApiTags('Core System Config')
+  @RequirePermission('core:config:update')
+  @ApiOkResponse({ type: SystemConfigEnvironmentOverrideDto })
+  upsertConfigEnvironmentOverride(
+    @Param('key') key: string,
+    @Param('environment') environment: string,
+    @Body() body: UpsertSystemConfigEnvironmentOverrideDto,
+  ): Promise<SystemConfigEnvironmentOverrideDto> {
+    return this.config.upsertConfigEnvironmentOverride(key, environment, body);
+  }
+
+  @Delete('config/:key/environments/:environment')
+  @ApiTags('Core System Config')
+  @RequirePermission('core:config:update')
+  @ApiOkResponse({ type: DeleteResultDto })
+  deleteConfigEnvironmentOverride(
+    @Param('key') key: string,
+    @Param('environment') environment: string,
+  ): Promise<DeleteResultDto> {
+    return this.config.deleteConfigEnvironmentOverride(key, environment);
   }
 
   @Get('config/:key')

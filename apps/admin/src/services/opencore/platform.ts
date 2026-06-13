@@ -53,6 +53,7 @@ import {
   type SystemConfigSummary,
   type SystemConfigBatchMutationSummary,
   type SystemConfigCacheRefreshSummary,
+  type SystemConfigEnvironmentOverrideSummary,
   type SystemConfigValueSummary,
   type SystemDeptOptionSummary,
   type SystemDeptOrderMutationSummary,
@@ -112,6 +113,7 @@ import {
   type UpdateDictTypeRequest,
   type UpdateFileAssetRequest,
   type UpdateSystemConfigRequest,
+  type UpsertSystemConfigEnvironmentOverrideRequest,
   type UpdateSystemNoticeRequest,
   type UpdateSystemNoticeTemplateRequest,
   type UpdateSystemPostOrderRequest,
@@ -510,10 +512,45 @@ export function getOpenCoreSystemConfig(
 
 export function getOpenCoreSystemConfigValue(
   key: string,
+  environment?: string,
 ): Promise<SystemConfigValueSummary> {
   return systemManagementClient.getConfigValueByKey(
     getRequiredAdminToken(),
     key,
+    environment,
+  );
+}
+
+export function listOpenCoreSystemConfigEnvironmentOverrides(
+  key: string,
+): Promise<readonly SystemConfigEnvironmentOverrideSummary[]> {
+  return systemManagementClient.listConfigEnvironmentOverrides(
+    getRequiredAdminToken(),
+    key,
+  );
+}
+
+export function upsertOpenCoreSystemConfigEnvironmentOverride(
+  key: string,
+  environment: string,
+  body: UpsertSystemConfigEnvironmentOverrideRequest,
+): Promise<SystemConfigEnvironmentOverrideSummary> {
+  return systemManagementClient.upsertConfigEnvironmentOverride(
+    getRequiredAdminToken(),
+    key,
+    environment,
+    body,
+  );
+}
+
+export function deleteOpenCoreSystemConfigEnvironmentOverride(
+  key: string,
+  environment: string,
+): Promise<{ deleted: true }> {
+  return systemManagementClient.deleteConfigEnvironmentOverride(
+    getRequiredAdminToken(),
+    key,
+    environment,
   );
 }
 

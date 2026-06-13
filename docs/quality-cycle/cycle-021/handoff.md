@@ -47,7 +47,7 @@ packages and OpenForge direct Prisma/migration/business-code writing.
 
 ## Current State
 
-Cycle-021 has completed 81 deployable stages.
+Cycle-021 has completed 82 deployable stages.
 
 - System/RBAC: notice, dept, post, menu, role, permission, user, dict, config
   and file loops are live.
@@ -55,8 +55,8 @@ Cycle-021 has completed 81 deployable stages.
   and real revocation are live.
 - Logs: login-log type/result, lockout, cleanup, actor/reason and
   deterministic location; operation-log list/detail/export/delete/clean.
-- Config: runtime keys, login policy, feature flags, rollout, audience rules
-  and secret vault.
+- Config: runtime keys, login policy, feature flags, rollout, audience rules,
+  environment overrides and secret vault.
 - Notice: management, inbox/read state, read-user analytics, templates,
   delivery records, local provider, Integration outbox bridge, state sync,
   queued processing, signed callback intake, bounded retry scheduling and a
@@ -68,16 +68,15 @@ Cycle-021 has completed 81 deployable stages.
   enable/disable, manual trigger, registered handler execution, retry/timeout
   diagnostics and failed run-log detail are smoke-guarded.
 
-Latest runtime stage: Round 81 `core.notice` inbox realtime events. It adds an
-authenticated SSE endpoint for notice inbox snapshots and read/publish events,
-routes publish/read mutations through a process-local realtime bus, exposes the
-stream path through SDK/Admin/OpenAPI and verifies auth-required, snapshot and
-read-event behavior in notice smoke plus deploy bundle guards.
+Latest runtime stage: Round 82 `core.config` environment overrides. It adds a
+first-class `SystemConfigEnvironmentOverride` table, public-config override
+CRUD, environment-aware runtime config and feature-flag evaluation, SDK/Admin
+OpenAPI exposure and smoke/deploy guards for override guards, runtime fallback
+and environment rollout behavior.
 
 ## Next Queue
 
-1. Config governance: multi-environment rollout, external KMS, key rotation
-   and secret versions.
+1. Config governance: external KMS binding, key rotation and secret versions.
 2. Operation-log enrichment: retention scheduling, duration/location fields
    and governance policy.
 3. OpenForge Admin safe plan/diff/check/apply UI.

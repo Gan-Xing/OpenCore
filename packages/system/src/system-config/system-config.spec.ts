@@ -49,6 +49,7 @@ describe('@opencore/system system-config', () => {
       valueType: 'string',
     });
     await expect(service.getRuntimeConfig()).resolves.toEqual({
+      environment: 'default',
       adminTitle: 'OpenCore Admin',
       featureFlags: {
         'notice.inbox': true,
@@ -70,6 +71,7 @@ describe('@opencore/system system-config', () => {
       }),
     ).resolves.toMatchObject({
       flag: 'notice.inbox',
+      environment: 'default',
       subjectKey: 'user_admin',
       enabled: true,
       rolloutPercentage: 100,
@@ -79,17 +81,21 @@ describe('@opencore/system system-config', () => {
     });
     await expect(
       service.getConfigValueByKey('auth.login.lockoutMinutes'),
-    ).resolves.toEqual({
+    ).resolves.toMatchObject({
       key: 'auth.login.lockoutMinutes',
       value: '15',
       valueType: 'number',
+      environment: 'default',
+      overridden: false,
     });
     await expect(
       service.getConfigValueByKey('auth.login.maxFailedAttempts'),
-    ).resolves.toEqual({
+    ).resolves.toMatchObject({
       key: 'auth.login.maxFailedAttempts',
       value: '5',
       valueType: 'number',
+      environment: 'default',
+      overridden: false,
     });
     await expect(
       service.getConfig('auth.jwt.secretRef'),
@@ -121,10 +127,12 @@ describe('@opencore/system system-config', () => {
     expect(config.visibility).toBe('public');
     await expect(
       service.getConfigValueByKey('sample.enabled'),
-    ).resolves.toEqual({
+    ).resolves.toMatchObject({
       key: 'sample.enabled',
       value: 'true',
       valueType: 'boolean',
+      environment: 'default',
+      overridden: false,
     });
     const updated = await service.updateConfig('sample.enabled', {
       category: 'feature-flags',
@@ -140,10 +148,12 @@ describe('@opencore/system system-config', () => {
     });
     await expect(
       service.getConfigValueByKey('sample.enabled'),
-    ).resolves.toEqual({
+    ).resolves.toMatchObject({
       key: 'sample.enabled',
       value: 'false',
       valueType: 'boolean',
+      environment: 'default',
+      overridden: false,
     });
     const secondConfig = await service.createConfig({
       category: 'feature',
@@ -215,6 +225,7 @@ describe('@opencore/system system-config', () => {
     const service = new SystemConfigService(new SeedSystemConfigRepository());
 
     await expect(service.getRuntimeConfig()).resolves.toEqual({
+      environment: 'default',
       adminTitle: 'OpenCore Admin',
       featureFlags: {
         'notice.inbox': true,
@@ -244,6 +255,7 @@ describe('@opencore/system system-config', () => {
     });
 
     await expect(service.getRuntimeConfig()).resolves.toEqual({
+      environment: 'default',
       adminTitle: 'OpenCore Runtime Admin',
       featureFlags: {
         'notice.inbox': false,
@@ -437,6 +449,117 @@ describe('@opencore/system system-config', () => {
     ).rejects.toThrow(BadRequestException);
   });
 
+  it('resolves public config environment overrides for runtime config and feature flags', async () => {
+    const service = new SystemConfigService(new SeedSystemConfigRepository());
+
+    await expect(
+      service.upsertConfigEnvironmentOverride('auth.jwt.secretRef', 'staging', {
+        value: 'env:STAGING_AUTH_TOKEN_SECRET',
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.upsertConfigEnvironmentOverride(
+        'opencore.admin.title',
+        'default',
+        {
+          value: 'Blocked',
+        },
+      ),
+    ).rejects.toThrow(BadRequestException);
+
+    const titleOverride = await service.upsertConfigEnvironmentOverride(
+      'opencore.admin.title',
+      'staging',
+      {
+        value: 'OpenCore Staging Admin',
+        remark: 'Staging title override.',
+      },
+    );
+    expect(titleOverride).toMatchObject({
+      environment: 'staging',
+      key: 'opencore.admin.title',
+      remark: 'Staging title override.',
+      value: 'OpenCore Staging Admin',
+      valueType: 'string',
+      visibility: 'public',
+    });
+    await expect(
+      service.listConfigEnvironmentOverrides('opencore.admin.title'),
+    ).resolves.toEqual([
+      expect.objectContaining({
+        environment: 'staging',
+        value: 'OpenCore Staging Admin',
+      }),
+    ]);
+    await expect(
+      service.getConfigValueByKey('opencore.admin.title', 'staging'),
+    ).resolves.toMatchObject({
+      environment: 'staging',
+      key: 'opencore.admin.title',
+      overridden: true,
+      value: 'OpenCore Staging Admin',
+    });
+    await expect(
+      service.getConfigValueByKey('opencore.admin.title', 'prod'),
+    ).resolves.toMatchObject({
+      environment: 'prod',
+      overridden: false,
+      value: 'OpenCore Admin',
+    });
+
+    await service.upsertConfigEnvironmentOverride(
+      'feature.notice.inbox.rolloutPercentage',
+      'staging',
+      { value: '0' },
+    );
+    await expect(
+      service.getRuntimeConfig({ environment: 'staging' }),
+    ).resolves.toMatchObject({
+      adminTitle: 'OpenCore Staging Admin',
+      environment: 'staging',
+      featureFlagRules: {
+        'notice.inbox': expect.objectContaining({
+          rolloutPercentage: 0,
+        }),
+      },
+    });
+    await expect(
+      service.evaluateFeatureFlag({
+        environment: 'staging',
+        flag: 'notice.inbox',
+        subjectKey: 'user_admin',
+      }),
+    ).resolves.toMatchObject({
+      enabled: false,
+      environment: 'staging',
+      reason: 'outside-rollout',
+      rolloutPercentage: 0,
+    });
+
+    await expect(
+      service.upsertConfigEnvironmentOverride(
+        'feature.notice.inbox.rolloutPercentage',
+        'staging',
+        { value: '101' },
+      ),
+    ).rejects.toThrow(BadRequestException);
+    await service.deleteConfigEnvironmentOverride(
+      'feature.notice.inbox.rolloutPercentage',
+      'staging',
+    );
+    await expect(
+      service.evaluateFeatureFlag({
+        environment: 'staging',
+        flag: 'notice.inbox',
+        subjectKey: 'user_admin',
+      }),
+    ).resolves.toMatchObject({
+      enabled: true,
+      environment: 'staging',
+      rolloutPercentage: 100,
+    });
+  });
+
   it('requires explicit secret visibility and redacts secret config values', async () => {
     const service = new SystemConfigService(new SeedSystemConfigRepository());
 
@@ -554,10 +677,14 @@ describe('@opencore/system system-config', () => {
         value: 'true',
         visibility: 'public',
       });
-      await expect(service.getConfigValueByKey(configKey)).resolves.toEqual({
+      await expect(
+        service.getConfigValueByKey(configKey),
+      ).resolves.toMatchObject({
         key: configKey,
         value: 'true',
         valueType: 'boolean',
+        environment: 'default',
+        overridden: false,
       });
       const updated = await service.updateConfig(configKey, {
         category: 'runtime-updated',
@@ -571,10 +698,14 @@ describe('@opencore/system system-config', () => {
         remark: 'Prisma metadata smoke config updated.',
         value: 'false',
       });
-      await expect(service.getConfigValueByKey(configKey)).resolves.toEqual({
+      await expect(
+        service.getConfigValueByKey(configKey),
+      ).resolves.toMatchObject({
         key: configKey,
         value: 'false',
         valueType: 'boolean',
+        environment: 'default',
+        overridden: false,
       });
       await expect(service.refreshConfigCache()).resolves.toMatchObject({
         refreshed: true,
@@ -583,17 +714,75 @@ describe('@opencore/system system-config', () => {
       });
       await expect(
         service.getConfigValueByKey('auth.login.lockoutMinutes'),
-      ).resolves.toEqual({
+      ).resolves.toMatchObject({
         key: 'auth.login.lockoutMinutes',
         value: '15',
         valueType: 'number',
+        environment: 'default',
+        overridden: false,
       });
       await expect(
         service.getConfigValueByKey('auth.login.maxFailedAttempts'),
-      ).resolves.toEqual({
+      ).resolves.toMatchObject({
         key: 'auth.login.maxFailedAttempts',
         value: '5',
         valueType: 'number',
+        environment: 'default',
+        overridden: false,
+      });
+      const override = await service.upsertConfigEnvironmentOverride(
+        configKey,
+        'staging',
+        {
+          value: 'true',
+          remark: 'Prisma environment override.',
+        },
+      );
+      expect(override).toMatchObject({
+        environment: 'staging',
+        key: configKey,
+        remark: 'Prisma environment override.',
+        value: 'true',
+      });
+      await expect(
+        service.getConfigValueByKey(configKey, 'staging'),
+      ).resolves.toMatchObject({
+        environment: 'staging',
+        key: configKey,
+        overridden: true,
+        value: 'true',
+      });
+      await expect(
+        service.listConfigEnvironmentOverrides(configKey),
+      ).resolves.toEqual([
+        expect.objectContaining({
+          environment: 'staging',
+          value: 'true',
+        }),
+      ]);
+      await expect(
+        prisma.systemConfigEnvironmentOverride.findUnique({
+          where: {
+            key_environment: {
+              environment: 'staging',
+              key: configKey,
+            },
+          },
+        }),
+      ).resolves.toMatchObject({
+        environment: 'staging',
+        key: configKey,
+        value: 'true',
+      });
+      await expect(
+        service.deleteConfigEnvironmentOverride(configKey, 'staging'),
+      ).resolves.toEqual({ deleted: true });
+      await expect(
+        service.getConfigValueByKey(configKey, 'staging'),
+      ).resolves.toMatchObject({
+        environment: 'staging',
+        overridden: false,
+        value: 'false',
       });
 
       const secret = await service.createConfig({

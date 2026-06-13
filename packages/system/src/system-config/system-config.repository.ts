@@ -9,12 +9,14 @@ import type {
   BatchDeleteSystemConfigsDto,
   CreateSystemConfigDto,
   UpdateSystemConfigDto,
+  UpsertSystemConfigEnvironmentOverrideDto,
 } from './system-config.dto';
 import {
   createOpenCoreXlsxWorkbookBase64,
   OPENCORE_XLSX_CONTENT_TYPE,
 } from '../export-xlsx';
 import type {
+  SystemConfigEnvironmentOverrideRecord,
   SystemConfigRecord,
   SystemConfigValueType,
   SystemConfigVisibility,
@@ -49,6 +51,7 @@ export type SystemConfigBatchMutationRecord = {
 };
 
 export type SystemConfigPageQuery = PageQueryInput;
+export type SystemConfigEnvironment = string;
 
 export type SystemConfigNormalizedPageQuery = {
   page: number;
@@ -68,6 +71,8 @@ const FEATURE_FLAG_ROLLOUT_CONFIG_KEY_PATTERN =
 const FEATURE_FLAG_AUDIENCE_CONFIG_KEY_PATTERN =
   /^feature\.[a-z0-9]+(?:[.-][a-z0-9]+)*\.audienceRules$/;
 const FEATURE_FLAG_AUDIENCE_ATTRIBUTE_PATTERN = /^[A-Za-z0-9_.-]{1,80}$/;
+const SYSTEM_CONFIG_ENVIRONMENT_PATTERN = /^[a-z][a-z0-9-]{1,39}$/;
+export const SYSTEM_CONFIG_DEFAULT_ENVIRONMENT = 'default';
 export const SYSTEM_CONFIG_EXPORT_CONTENT_TYPE = OPENCORE_XLSX_CONTENT_TYPE;
 export const SYSTEM_CONFIG_EXPORT_COLUMNS = [
   'category',
@@ -128,6 +133,26 @@ export abstract class SystemConfigRepository {
   abstract deleteConfigs(
     body: BatchDeleteSystemConfigsDto,
   ): Promise<SystemConfigBatchMutationRecord>;
+
+  abstract listConfigEnvironmentOverrides(
+    key: string,
+  ): Promise<readonly SystemConfigEnvironmentOverrideRecord[]>;
+
+  abstract getConfigEnvironmentOverride(
+    key: string,
+    environment: string,
+  ): Promise<SystemConfigEnvironmentOverrideRecord>;
+
+  abstract upsertConfigEnvironmentOverride(
+    key: string,
+    environment: string,
+    body: UpsertSystemConfigEnvironmentOverrideDto,
+  ): Promise<SystemConfigEnvironmentOverrideRecord>;
+
+  abstract deleteConfigEnvironmentOverride(
+    key: string,
+    environment: string,
+  ): Promise<{ deleted: true }>;
 }
 
 export function normalizeSystemConfigPageQuery(
@@ -330,6 +355,30 @@ export function assertFeatureFlagConfigShape(input: {
 
   if (isFeatureFlagAudienceConfigKey(input.key) && input.value !== undefined) {
     parseFeatureFlagAudienceRulesConfig(input.value, input.key);
+  }
+}
+
+export function assertEnvironmentOverrideConfig(config: {
+  key: string;
+  valueType: SystemConfigValueType;
+  visibility: SystemConfigVisibility;
+}): void {
+  if (config.visibility !== 'public') {
+    throw new BadRequestException(
+      `Only public system config can define environment overrides: ${config.key}`,
+    );
+  }
+
+  if (
+    isFeatureFlagConfigKey(config.key) ||
+    isFeatureFlagRolloutConfigKey(config.key) ||
+    isFeatureFlagAudienceConfigKey(config.key)
+  ) {
+    assertFeatureFlagConfigShape({
+      key: config.key,
+      valueType: config.valueType,
+      visibility: 'public',
+    });
   }
 }
 
@@ -536,6 +585,42 @@ export function normalizeOptionalConfigText(
   }
 
   return normalized;
+}
+
+export function normalizeSystemConfigEnvironment(value: unknown): string {
+  if (value === undefined || value === null || value === '') {
+    return SYSTEM_CONFIG_DEFAULT_ENVIRONMENT;
+  }
+
+  if (typeof value !== 'string') {
+    throw new BadRequestException(
+      'System config environment must be a string.',
+    );
+  }
+
+  const normalized = value.trim().toLowerCase();
+
+  if (!SYSTEM_CONFIG_ENVIRONMENT_PATTERN.test(normalized)) {
+    throw new BadRequestException(
+      'System config environment must be 2 to 40 lowercase letters, numbers or hyphens, starting with a letter.',
+    );
+  }
+
+  return normalized;
+}
+
+export function normalizeRequiredSystemConfigEnvironment(
+  value: unknown,
+): string {
+  const environment = normalizeSystemConfigEnvironment(value);
+
+  if (environment === SYSTEM_CONFIG_DEFAULT_ENVIRONMENT) {
+    throw new BadRequestException(
+      'System config environment override cannot target the default environment.',
+    );
+  }
+
+  return environment;
 }
 
 export function normalizeBatchSystemConfigKeys(

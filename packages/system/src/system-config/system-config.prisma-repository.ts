@@ -11,9 +11,14 @@ import type {
   BatchDeleteSystemConfigsDto,
   CreateSystemConfigDto,
   UpdateSystemConfigDto,
+  UpsertSystemConfigEnvironmentOverrideDto,
 } from './system-config.dto';
-import type { SystemConfigRecord } from './system-config.records';
+import type {
+  SystemConfigEnvironmentOverrideRecord,
+  SystemConfigRecord,
+} from './system-config.records';
 import {
+  assertEnvironmentOverrideConfig,
   assertSafeConfigKey,
   assertFeatureFlagConfigShape,
   assertSecretConfigShape,
@@ -25,6 +30,7 @@ import {
   normalizeConfigName,
   normalizeBatchSystemConfigKeys,
   normalizeOptionalConfigText,
+  normalizeRequiredSystemConfigEnvironment,
   normalizeSystemConfigPageQuery,
   normalizeStoredConfigValue,
   redactSystemConfig,
@@ -47,6 +53,18 @@ type PrismaSystemConfig = {
   remark: string | null;
   public: boolean;
   system: boolean;
+};
+
+type PrismaSystemConfigEnvironmentOverride = {
+  id: string;
+  key: string;
+  environment: string;
+  value: string;
+  valueType: string;
+  description: string | null;
+  remark: string | null;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 @Injectable()
@@ -262,6 +280,109 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
     };
   }
 
+  async listConfigEnvironmentOverrides(
+    key: string,
+  ): Promise<readonly SystemConfigEnvironmentOverrideRecord[]> {
+    assertEnvironmentOverrideConfig(
+      toSystemConfigRecord(await this.findConfigByKey(key)),
+    );
+    const rows = await this.prisma.systemConfigEnvironmentOverride.findMany({
+      where: { key },
+      orderBy: [{ environment: 'asc' }],
+    });
+
+    return rows.map(toSystemConfigEnvironmentOverrideRecord);
+  }
+
+  async getConfigEnvironmentOverride(
+    key: string,
+    environment: string,
+  ): Promise<SystemConfigEnvironmentOverrideRecord> {
+    const normalizedEnvironment =
+      normalizeRequiredSystemConfigEnvironment(environment);
+    const row = await this.prisma.systemConfigEnvironmentOverride.findUnique({
+      where: {
+        key_environment: {
+          key,
+          environment: normalizedEnvironment,
+        },
+      },
+    });
+
+    if (!row) {
+      throw new NotFoundException(
+        `System config environment override not found: ${key}/${normalizedEnvironment}`,
+      );
+    }
+
+    return toSystemConfigEnvironmentOverrideRecord(row);
+  }
+
+  async upsertConfigEnvironmentOverride(
+    key: string,
+    environment: string,
+    body: UpsertSystemConfigEnvironmentOverrideDto,
+  ): Promise<SystemConfigEnvironmentOverrideRecord> {
+    const config = toSystemConfigRecord(await this.findConfigByKey(key));
+    const normalizedEnvironment =
+      normalizeRequiredSystemConfigEnvironment(environment);
+    assertEnvironmentOverrideConfig(config);
+    assertFeatureFlagConfigShape({
+      key,
+      value: body.value,
+      valueType: config.valueType,
+      visibility: 'public',
+    });
+
+    const value = normalizeStoredConfigValue({
+      key,
+      value: body.value,
+      valueType: config.valueType,
+      visibility: 'public',
+    });
+    const data = {
+      description: normalizeOptionalConfigText(body.description, 'description'),
+      remark: normalizeOptionalConfigText(body.remark, 'remark'),
+      value,
+      valueType: config.valueType,
+    };
+    const row = await this.prisma.systemConfigEnvironmentOverride.upsert({
+      where: {
+        key_environment: {
+          key,
+          environment: normalizedEnvironment,
+        },
+      },
+      create: {
+        ...data,
+        key,
+        environment: normalizedEnvironment,
+      },
+      update: data,
+    });
+
+    return toSystemConfigEnvironmentOverrideRecord(row);
+  }
+
+  async deleteConfigEnvironmentOverride(
+    key: string,
+    environment: string,
+  ): Promise<{ deleted: true }> {
+    const normalizedEnvironment =
+      normalizeRequiredSystemConfigEnvironment(environment);
+    await this.getConfigEnvironmentOverride(key, normalizedEnvironment);
+    await this.prisma.systemConfigEnvironmentOverride.delete({
+      where: {
+        key_environment: {
+          key,
+          environment: normalizedEnvironment,
+        },
+      },
+    });
+
+    return { deleted: true };
+  }
+
   private async findConfigByKey(key: string): Promise<PrismaSystemConfig> {
     const config = await this.prisma.systemConfig.findUnique({
       where: { key },
@@ -297,5 +418,23 @@ function toSystemConfigRecord(config: PrismaSystemConfig): SystemConfigRecord {
     public: config.public,
     system: config.system,
     visibility,
+  };
+}
+
+function toSystemConfigEnvironmentOverrideRecord(
+  override: PrismaSystemConfigEnvironmentOverride,
+): SystemConfigEnvironmentOverrideRecord {
+  return {
+    id: override.id,
+    key: override.key,
+    environment: override.environment,
+    value: override.value,
+    valueType: toSystemConfigValueType(override.valueType),
+    description: override.description ?? undefined,
+    remark: override.remark ?? undefined,
+    public: true,
+    visibility: 'public',
+    createdAt: override.createdAt.toISOString(),
+    updatedAt: override.updatedAt.toISOString(),
   };
 }

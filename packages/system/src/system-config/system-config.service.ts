@@ -10,12 +10,20 @@ import type {
   BatchDeleteSystemConfigsDto,
   CreateSystemConfigDto,
   SystemConfigFeatureFlagEvaluationQueryDto,
+  SystemConfigRuntimeQueryDto,
   UpdateSystemConfigDto,
+  UpsertSystemConfigEnvironmentOverrideDto,
 } from './system-config.dto';
-import type { SystemConfigRecord } from './system-config.records';
+import type {
+  SystemConfigEnvironmentOverrideRecord,
+  SystemConfigRecord,
+} from './system-config.records';
 import {
+  SYSTEM_CONFIG_DEFAULT_ENVIRONMENT,
   parseFeatureFlagAudienceRulesConfig,
   createSystemConfigExportPreview,
+  normalizeRequiredSystemConfigEnvironment,
+  normalizeSystemConfigEnvironment,
   SystemConfigRepository,
   toFeatureFlagAudienceName,
   toFeatureFlagName,
@@ -31,6 +39,8 @@ export type SystemConfigValueResult = {
   key: string;
   value: string;
   valueType: SystemConfigRecord['valueType'];
+  environment: string;
+  overridden: boolean;
 };
 
 export type SystemConfigCacheRefreshResult = {
@@ -46,6 +56,7 @@ export type SystemConfigFeatureFlagRule = {
 };
 
 export type SystemConfigRuntimeResult = {
+  environment: string;
   adminTitle: string;
   featureFlags: Record<string, boolean>;
   featureFlagRules: Record<string, SystemConfigFeatureFlagRule>;
@@ -55,6 +66,7 @@ export type SystemConfigRuntimeResult = {
 
 export type SystemConfigFeatureFlagEvaluationResult = {
   flag: string;
+  environment: string;
   subjectKey: string;
   enabled: boolean;
   rolloutPercentage: number;
@@ -101,34 +113,48 @@ export class SystemConfigService {
 
   async getConfigValueByKey(
     key: string | undefined,
+    environment?: string,
   ): Promise<SystemConfigValueResult> {
     const normalizedKey = normalizeConfigValueKey(key);
-    const cached = this.valueCache.get(normalizedKey);
+    const normalizedEnvironment = normalizeSystemConfigEnvironment(environment);
+    const cacheKey = createConfigValueCacheKey(
+      normalizedKey,
+      normalizedEnvironment,
+    );
+    const cached = this.valueCache.get(cacheKey);
     if (cached) {
       return { ...cached };
     }
 
-    const value = toPublicConfigValue(
-      await this.repository.getConfig(normalizedKey),
+    const value = await this.resolvePublicConfigValue(
+      normalizedKey,
+      normalizedEnvironment,
     );
-    this.valueCache.set(normalizedKey, value);
+    this.valueCache.set(cacheKey, value);
     return { ...value };
   }
 
-  async getRuntimeConfig(): Promise<SystemConfigRuntimeResult> {
+  async getRuntimeConfig(
+    query: SystemConfigRuntimeQueryDto = {},
+  ): Promise<SystemConfigRuntimeResult> {
+    const environment = normalizeSystemConfigEnvironment(query.environment);
     const [
       adminTitle,
       featureFlagRules,
       loginLockoutMinutes,
       loginMaxFailedAttempts,
     ] = await Promise.all([
-      this.getConfigValueByKey(ADMIN_TITLE_CONFIG_KEY),
-      this.listRuntimeFeatureFlagRules(),
-      this.getConfigValueByKey(LOGIN_LOCKOUT_MINUTES_CONFIG_KEY),
-      this.getConfigValueByKey(LOGIN_MAX_FAILED_ATTEMPTS_CONFIG_KEY),
+      this.getConfigValueByKey(ADMIN_TITLE_CONFIG_KEY, environment),
+      this.listRuntimeFeatureFlagRules(environment),
+      this.getConfigValueByKey(LOGIN_LOCKOUT_MINUTES_CONFIG_KEY, environment),
+      this.getConfigValueByKey(
+        LOGIN_MAX_FAILED_ATTEMPTS_CONFIG_KEY,
+        environment,
+      ),
     ]);
 
     return {
+      environment,
       adminTitle: adminTitle.value,
       featureFlags: Object.fromEntries(
         Object.entries(featureFlagRules).map(([name, rule]) => [
@@ -156,11 +182,12 @@ export class SystemConfigService {
     query: SystemConfigFeatureFlagEvaluationQueryDto,
   ): Promise<SystemConfigFeatureFlagEvaluationResult> {
     const flag = normalizeFeatureFlagEvaluationName(query?.flag);
+    const environment = normalizeSystemConfigEnvironment(query?.environment);
     const subjectKey = normalizeFeatureFlagSubjectKey(query?.subjectKey);
     const subjectAttributes = normalizeFeatureFlagSubjectAttributes(
       query?.attributes,
     );
-    const rules = await this.listRuntimeFeatureFlagRules();
+    const rules = await this.listRuntimeFeatureFlagRules(environment);
     const rule = rules[flag];
 
     if (!rule) {
@@ -177,6 +204,7 @@ export class SystemConfigService {
 
     return {
       flag,
+      environment,
       subjectKey,
       enabled,
       rolloutPercentage: rule.rolloutPercentage,
@@ -201,8 +229,18 @@ export class SystemConfigService {
       const result = await this.repository.listConfig({ page, pageSize: 100 });
       for (const config of result.items) {
         if (config.visibility === 'public') {
-          const value = toPublicConfigValue(config);
-          this.valueCache.set(value.key, value);
+          const value = toPublicConfigValue(
+            config,
+            SYSTEM_CONFIG_DEFAULT_ENVIRONMENT,
+            false,
+          );
+          this.valueCache.set(
+            createConfigValueCacheKey(
+              value.key,
+              SYSTEM_CONFIG_DEFAULT_ENVIRONMENT,
+            ),
+            value,
+          );
           cachedKeys += 1;
         }
       }
@@ -252,6 +290,48 @@ export class SystemConfigService {
     return result;
   }
 
+  listConfigEnvironmentOverrides(
+    key: string,
+  ): Promise<readonly SystemConfigEnvironmentOverrideRecord[]> {
+    return this.repository.listConfigEnvironmentOverrides(
+      normalizeConfigValueKey(key),
+    );
+  }
+
+  async upsertConfigEnvironmentOverride(
+    key: string,
+    environment: string,
+    body: UpsertSystemConfigEnvironmentOverrideDto,
+  ): Promise<SystemConfigEnvironmentOverrideRecord> {
+    const normalizedKey = normalizeConfigValueKey(key);
+    const normalizedEnvironment =
+      normalizeRequiredSystemConfigEnvironment(environment);
+    const override = await this.repository.upsertConfigEnvironmentOverride(
+      normalizedKey,
+      normalizedEnvironment,
+      body,
+    );
+    this.invalidateValueCache(normalizedKey);
+
+    return override;
+  }
+
+  async deleteConfigEnvironmentOverride(
+    key: string,
+    environment: string,
+  ): Promise<{ deleted: true }> {
+    const normalizedKey = normalizeConfigValueKey(key);
+    const normalizedEnvironment =
+      normalizeRequiredSystemConfigEnvironment(environment);
+    const result = await this.repository.deleteConfigEnvironmentOverride(
+      normalizedKey,
+      normalizedEnvironment,
+    );
+    this.invalidateValueCache(normalizedKey);
+
+    return result;
+  }
+
   async createExportPreview(
     query: SystemConfigPageQuery = {},
   ): Promise<SystemConfigExportPreview> {
@@ -260,13 +340,53 @@ export class SystemConfigService {
     );
   }
 
-  private invalidateValueCache(key: string): void {
-    this.valueCache.delete(key);
+  private async resolvePublicConfigValue(
+    key: string,
+    environment: string,
+  ): Promise<SystemConfigValueResult> {
+    const baseValue = toPublicConfigValue(
+      await this.repository.getConfig(key),
+      environment,
+      false,
+    );
+
+    if (environment === SYSTEM_CONFIG_DEFAULT_ENVIRONMENT) {
+      return baseValue;
+    }
+
+    try {
+      const override = await this.repository.getConfigEnvironmentOverride(
+        key,
+        environment,
+      );
+
+      return {
+        key,
+        value: override.value,
+        valueType: override.valueType,
+        environment,
+        overridden: true,
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        return baseValue;
+      }
+
+      throw error;
+    }
   }
 
-  private async listRuntimeFeatureFlagRules(): Promise<
-    Record<string, SystemConfigFeatureFlagRule>
-  > {
+  private invalidateValueCache(key: string): void {
+    for (const cacheKey of this.valueCache.keys()) {
+      if (cacheKey.endsWith(`\0${key}`)) {
+        this.valueCache.delete(cacheKey);
+      }
+    }
+  }
+
+  private async listRuntimeFeatureFlagRules(
+    environment: string,
+  ): Promise<Record<string, SystemConfigFeatureFlagRule>> {
     const enabledFlags: Record<string, boolean> = {};
     const rolloutPercentages: Record<string, number> = {};
     const audienceRules: Record<string, FeatureFlagAudienceRulesConfig> = {};
@@ -287,7 +407,8 @@ export class SystemConfigService {
             );
           }
 
-          enabledFlags[flagName] = config.value === 'true';
+          const value = await this.getConfigValueByKey(config.key, environment);
+          enabledFlags[flagName] = value.value === 'true';
         }
 
         const rolloutName = toFeatureFlagRolloutName(config.key);
@@ -298,8 +419,9 @@ export class SystemConfigService {
             );
           }
 
+          const value = await this.getConfigValueByKey(config.key, environment);
           rolloutPercentages[rolloutName] = parseFeatureFlagRolloutPercentage(
-            config.value,
+            value.value,
             config.key,
           );
         }
@@ -312,8 +434,9 @@ export class SystemConfigService {
             );
           }
 
+          const value = await this.getConfigValueByKey(config.key, environment);
           audienceRules[audienceName] = parseFeatureFlagAudienceRulesConfig(
-            config.value,
+            value.value,
             config.key,
           );
         }
@@ -622,6 +745,8 @@ function normalizeConfigValueKey(key: string | undefined): string {
 
 function toPublicConfigValue(
   config: SystemConfigRecord,
+  environment: string,
+  overridden: boolean,
 ): SystemConfigValueResult {
   if (config.visibility !== 'public') {
     throw new ForbiddenException(
@@ -633,5 +758,11 @@ function toPublicConfigValue(
     key: config.key,
     value: config.value,
     valueType: config.valueType,
+    environment,
+    overridden,
   };
+}
+
+function createConfigValueCacheKey(key: string, environment: string): string {
+  return `${environment}\0${key}`;
 }

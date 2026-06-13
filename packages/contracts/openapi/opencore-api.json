@@ -1703,7 +1703,14 @@
     "/api/core/config/runtime": {
       "get": {
         "operationId": "SystemManagementController_getConfigRuntime",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "environment",
+            "required": false,
+            "in": "query",
+            "schema": { "example": "staging", "type": "string" }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -1729,6 +1736,12 @@
             "required": true,
             "in": "query",
             "schema": { "example": "opencore.admin.title", "type": "string" }
+          },
+          {
+            "name": "environment",
+            "required": false,
+            "in": "query",
+            "schema": { "example": "staging", "type": "string" }
           }
         ],
         "responses": {
@@ -1762,6 +1775,12 @@
             "required": true,
             "in": "query",
             "schema": { "example": "user_admin", "type": "string" }
+          },
+          {
+            "name": "environment",
+            "required": false,
+            "in": "query",
+            "schema": { "example": "staging", "type": "string" }
           },
           {
             "name": "attributes",
@@ -1831,6 +1850,108 @@
                 "schema": {
                   "$ref": "#/components/schemas/SystemConfigBatchMutationResultDto"
                 }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Config"]
+      }
+    },
+    "/api/core/config/{key}/environments": {
+      "get": {
+        "operationId": "SystemManagementController_listConfigEnvironmentOverrides",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SystemConfigEnvironmentOverrideDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Config"]
+      }
+    },
+    "/api/core/config/{key}/environments/{environment}": {
+      "patch": {
+        "operationId": "SystemManagementController_upsertConfigEnvironmentOverride",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "environment",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertSystemConfigEnvironmentOverrideDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemConfigEnvironmentOverrideDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Config"]
+      },
+      "delete": {
+        "operationId": "SystemManagementController_deleteConfigEnvironmentOverride",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "environment",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DeleteResultDto" }
               }
             }
           }
@@ -7619,6 +7740,7 @@
       "SystemConfigRuntimeDto": {
         "type": "object",
         "properties": {
+          "environment": { "type": "string", "example": "default" },
           "adminTitle": { "type": "string", "example": "OpenCore Admin" },
           "featureFlags": {
             "type": "object",
@@ -7668,6 +7790,7 @@
           }
         },
         "required": [
+          "environment",
           "adminTitle",
           "featureFlags",
           "featureFlagRules",
@@ -7683,14 +7806,17 @@
           "valueType": {
             "type": "string",
             "enum": ["boolean", "json", "number", "string"]
-          }
+          },
+          "environment": { "type": "string", "example": "default" },
+          "overridden": { "type": "boolean" }
         },
-        "required": ["key", "value", "valueType"]
+        "required": ["key", "value", "valueType", "environment", "overridden"]
       },
       "SystemConfigFeatureFlagEvaluationDto": {
         "type": "object",
         "properties": {
           "flag": { "type": "string", "example": "notice.inbox" },
+          "environment": { "type": "string", "example": "default" },
           "subjectKey": { "type": "string", "example": "user_admin" },
           "enabled": { "type": "boolean" },
           "rolloutPercentage": {
@@ -7712,6 +7838,7 @@
         },
         "required": [
           "flag",
+          "environment",
           "subjectKey",
           "enabled",
           "rolloutPercentage",
@@ -7744,6 +7871,45 @@
           "keys": { "type": "array", "items": { "type": "string" } }
         },
         "required": ["deleted", "affected", "keys"]
+      },
+      "SystemConfigEnvironmentOverrideDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "key": { "type": "string" },
+          "environment": { "type": "string", "example": "staging" },
+          "value": { "type": "string" },
+          "valueType": {
+            "type": "string",
+            "enum": ["boolean", "json", "number", "string"]
+          },
+          "description": { "type": "string" },
+          "remark": { "type": "string" },
+          "public": { "type": "boolean" },
+          "visibility": { "type": "string", "enum": ["public"] },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "key",
+          "environment",
+          "value",
+          "valueType",
+          "public",
+          "visibility",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "UpsertSystemConfigEnvironmentOverrideDto": {
+        "type": "object",
+        "properties": {
+          "value": { "type": "string" },
+          "description": { "type": "string" },
+          "remark": { "type": "string" }
+        },
+        "required": ["value"]
       },
       "CreateSystemConfigDto": {
         "type": "object",
