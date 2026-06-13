@@ -4,6 +4,10 @@ export type SystemNoticeType = 'announcement' | 'maintenance' | 'security';
 
 export type SystemNoticeAudience = 'admin' | 'all';
 
+export type SystemNoticeDeliveryChannel = 'in_app';
+
+export type SystemNoticeDeliveryStatus = 'delivered' | 'read';
+
 export type SystemNoticeRecord = {
   id: string;
   title: string;
@@ -17,6 +21,24 @@ export type SystemNoticeRecord = {
   publishedAt?: string;
   archivedAt?: string;
   createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type SystemNoticeDeliveryRecord = {
+  id: string;
+  noticeId: string;
+  userId: string;
+  username: string;
+  displayName: string;
+  channel: SystemNoticeDeliveryChannel;
+  status: SystemNoticeDeliveryStatus;
+  title: string;
+  content: string;
+  type: SystemNoticeType;
+  audience: SystemNoticeAudience;
+  deliveredAt: string;
+  readAt?: string;
   createdAt: string;
   updatedAt: string;
 };

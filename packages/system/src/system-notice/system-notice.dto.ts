@@ -1,6 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import type {
   SystemNoticeAudience,
+  SystemNoticeDeliveryChannel,
+  SystemNoticeDeliveryStatus,
   SystemNoticeTemplateRecord,
   SystemNoticeStatus,
   SystemNoticeType,
@@ -126,6 +128,87 @@ export class SystemNoticeReadUserPageDto {
 
   @ApiProperty()
   totalPages!: number;
+}
+
+export class SystemNoticeDeliveryDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  noticeId!: string;
+
+  @ApiProperty()
+  userId!: string;
+
+  @ApiProperty()
+  username!: string;
+
+  @ApiProperty()
+  displayName!: string;
+
+  @ApiProperty({ enum: ['in_app'] })
+  channel!: SystemNoticeDeliveryChannel;
+
+  @ApiProperty({ enum: ['delivered', 'read'] })
+  status!: SystemNoticeDeliveryStatus;
+
+  @ApiProperty()
+  title!: string;
+
+  @ApiProperty()
+  content!: string;
+
+  @ApiProperty({ enum: ['announcement', 'maintenance', 'security'] })
+  type!: SystemNoticeType;
+
+  @ApiProperty({ enum: ['all', 'admin'] })
+  audience!: SystemNoticeAudience;
+
+  @ApiProperty()
+  deliveredAt!: string;
+
+  @ApiProperty({ required: false })
+  readAt?: string;
+
+  @ApiProperty()
+  createdAt!: string;
+
+  @ApiProperty()
+  updatedAt!: string;
+}
+
+export class SystemNoticeDeliveryPageDto {
+  @ApiProperty({ type: [SystemNoticeDeliveryDto] })
+  items!: readonly SystemNoticeDeliveryDto[];
+
+  @ApiProperty()
+  page!: number;
+
+  @ApiProperty()
+  pageSize!: number;
+
+  @ApiProperty()
+  total!: number;
+
+  @ApiProperty()
+  totalPages!: number;
+}
+
+export class SystemNoticeDeliveryMutationResultDto {
+  @ApiProperty()
+  noticeId!: string;
+
+  @ApiProperty({ enum: ['in_app'] })
+  channel!: SystemNoticeDeliveryChannel;
+
+  @ApiProperty()
+  deliveredCount!: number;
+
+  @ApiProperty()
+  skippedCount!: number;
+
+  @ApiProperty()
+  totalRecipientCount!: number;
 }
 
 export class SystemNoticeTemplateDto {
@@ -267,6 +350,23 @@ export class SystemNoticeReadUsersQueryDto {
 
   @ApiProperty({ required: false, default: 10 })
   pageSize?: number | string;
+}
+
+export class SystemNoticeDeliveryQueryDto {
+  @ApiProperty({ required: false, default: 1 })
+  page?: number | string;
+
+  @ApiProperty({ required: false, default: 10 })
+  pageSize?: number | string;
+
+  @ApiProperty({ required: false, enum: ['in_app'] })
+  channel?: SystemNoticeDeliveryChannel | string;
+
+  @ApiProperty({ required: false })
+  readStatus?: boolean | string;
+
+  @ApiProperty({ required: false })
+  username?: string;
 }
 
 export class SystemNoticeTemplateQueryDto {

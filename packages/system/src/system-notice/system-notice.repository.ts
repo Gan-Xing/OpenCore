@@ -16,6 +16,9 @@ import type {
 } from './system-notice.dto';
 import type {
   SystemNoticeAudience,
+  SystemNoticeDeliveryChannel,
+  SystemNoticeDeliveryRecord,
+  SystemNoticeDeliveryStatus,
   SystemNoticeRecord,
   SystemNoticeTemplateRecord,
   SystemNoticeStatus,
@@ -43,6 +46,12 @@ export type SystemNoticeInboxPageQuery = PageQueryInput & {
 
 export type SystemNoticeReadUsersPageQuery = PageQueryInput;
 
+export type SystemNoticeDeliveryPageQuery = PageQueryInput & {
+  channel?: string;
+  readStatus?: boolean | string;
+  username?: string;
+};
+
 export type SystemNoticeTemplatePageQuery = PageQueryInput & {
   enabled?: boolean | string;
   type?: string;
@@ -57,6 +66,12 @@ export type SystemNoticeFilters = {
 export type SystemNoticeInboxFilters = {
   readStatus?: boolean;
   type?: SystemNoticeType;
+};
+
+export type SystemNoticeDeliveryFilters = {
+  channel?: SystemNoticeDeliveryChannel;
+  readStatus?: boolean;
+  username?: string;
 };
 
 export type SystemNoticeInboxRecord = SystemNoticeRecord & {
@@ -75,6 +90,14 @@ export type SystemNoticeReadUserRecord = {
   username: string;
   displayName: string;
   readAt: string;
+};
+
+export type SystemNoticeDeliveryMutationResult = {
+  noticeId: string;
+  channel: SystemNoticeDeliveryChannel;
+  deliveredCount: number;
+  skippedCount: number;
+  totalRecipientCount: number;
 };
 
 export type SystemNoticeTemplateFilters = {
@@ -163,6 +186,8 @@ const SYSTEM_NOTICE_TYPES = [
   'security',
 ] as const;
 const SYSTEM_NOTICE_AUDIENCES = ['all', 'admin'] as const;
+const SYSTEM_NOTICE_DELIVERY_CHANNELS = ['in_app'] as const;
+const SYSTEM_NOTICE_DELIVERY_STATUSES = ['delivered', 'read'] as const;
 
 export abstract class SystemNoticeRepository {
   abstract listNotices(
@@ -199,6 +224,15 @@ export abstract class SystemNoticeRepository {
     id: string,
     query?: SystemNoticeReadUsersPageQuery,
   ): Promise<PageResult<SystemNoticeReadUserRecord>>;
+
+  abstract listNoticeDeliveries(
+    id: string,
+    query?: SystemNoticeDeliveryPageQuery,
+  ): Promise<PageResult<SystemNoticeDeliveryRecord>>;
+
+  abstract dispatchNotice(
+    id: string,
+  ): Promise<SystemNoticeDeliveryMutationResult>;
 
   abstract listNoticeTemplates(
     query?: SystemNoticeTemplatePageQuery,
@@ -260,6 +294,16 @@ export function normalizeSystemNoticeInboxFilters(
   return {
     readStatus: normalizeOptionalBoolean(query.readStatus, 'readStatus'),
     type: toOptionalSystemNoticeType(query.type),
+  };
+}
+
+export function normalizeSystemNoticeDeliveryFilters(
+  query: SystemNoticeDeliveryPageQuery = {},
+): SystemNoticeDeliveryFilters {
+  return {
+    channel: toOptionalSystemNoticeDeliveryChannel(query.channel),
+    readStatus: normalizeOptionalBoolean(query.readStatus, 'readStatus'),
+    username: normalizeOptionalText(query.username, 'delivery username'),
   };
 }
 
@@ -580,6 +624,14 @@ export function assertNoticeCanPublish(status: SystemNoticeStatus): void {
   }
 }
 
+export function assertNoticeCanDispatch(status: SystemNoticeStatus): void {
+  if (status !== 'published') {
+    throw new BadRequestException(
+      'System notice deliveries can only be dispatched after publish.',
+    );
+  }
+}
+
 export function assertNoticeNotArchived(
   status: SystemNoticeStatus,
   action: string,
@@ -613,6 +665,30 @@ export function toSystemNoticeAudience(value: string): SystemNoticeAudience {
   }
 
   throw new BadRequestException(`Invalid system notice audience: ${value}`);
+}
+
+export function toSystemNoticeDeliveryChannel(
+  value: string,
+): SystemNoticeDeliveryChannel {
+  if (isSystemNoticeDeliveryChannel(value)) {
+    return value;
+  }
+
+  throw new BadRequestException(
+    `Invalid system notice delivery channel: ${value}`,
+  );
+}
+
+export function toSystemNoticeDeliveryStatus(
+  value: string,
+): SystemNoticeDeliveryStatus {
+  if (isSystemNoticeDeliveryStatus(value)) {
+    return value;
+  }
+
+  throw new BadRequestException(
+    `Invalid system notice delivery status: ${value}`,
+  );
 }
 
 function toOptionalSystemNoticeStatus(
@@ -649,6 +725,16 @@ function toOptionalSystemNoticeAudience(
   return toSystemNoticeAudience(value);
 }
 
+function toOptionalSystemNoticeDeliveryChannel(
+  value: string | undefined,
+): SystemNoticeDeliveryChannel | undefined {
+  if (value === undefined || value === '') {
+    return undefined;
+  }
+
+  return toSystemNoticeDeliveryChannel(value);
+}
+
 function normalizeOptionalBoolean(
   value: boolean | string | undefined,
   fieldName: string,
@@ -678,6 +764,18 @@ function isSystemNoticeType(value: string): value is SystemNoticeType {
 
 function isSystemNoticeAudience(value: string): value is SystemNoticeAudience {
   return (SYSTEM_NOTICE_AUDIENCES as readonly string[]).includes(value);
+}
+
+function isSystemNoticeDeliveryChannel(
+  value: string,
+): value is SystemNoticeDeliveryChannel {
+  return (SYSTEM_NOTICE_DELIVERY_CHANNELS as readonly string[]).includes(value);
+}
+
+function isSystemNoticeDeliveryStatus(
+  value: string,
+): value is SystemNoticeDeliveryStatus {
+  return (SYSTEM_NOTICE_DELIVERY_STATUSES as readonly string[]).includes(value);
 }
 
 function normalizeRequiredText(value: string, fieldName: string): string {

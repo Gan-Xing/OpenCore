@@ -163,6 +163,14 @@ describe('createSystemManagementClient', () => {
       page: 1,
       pageSize: 20,
     });
+    await client.listNoticeDeliveries('token', 'notice_welcome', {
+      channel: 'in_app',
+      page: 1,
+      pageSize: 20,
+      readStatus: false,
+      username: 'admin',
+    });
+    await client.dispatchNotice('token', 'notice_welcome');
     await client.listNoticeTemplates('token', {
       enabled: true,
       page: 1,
@@ -455,6 +463,15 @@ describe('createSystemManagementClient', () => {
       },
       {
         path: '/core/notices/notice_welcome/read-users?page=1&pageSize=20',
+        token: 'token',
+      },
+      {
+        path: '/core/notices/notice_welcome/deliveries?channel=in_app&page=1&pageSize=20&readStatus=false&username=admin',
+        token: 'token',
+      },
+      {
+        path: '/core/notices/notice_welcome/dispatch',
+        method: 'POST',
         token: 'token',
       },
       {

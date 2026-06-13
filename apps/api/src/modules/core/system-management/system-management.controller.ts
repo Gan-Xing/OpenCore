@@ -83,6 +83,9 @@ import {
   SystemConfigValueDto,
   SystemConfigValueQueryDto,
   SystemNoticeDto,
+  SystemNoticeDeliveryMutationResultDto,
+  SystemNoticeDeliveryPageDto,
+  SystemNoticeDeliveryQueryDto,
   SystemNoticeInboxItemDto,
   SystemNoticeInboxPageDto,
   SystemNoticeInboxQueryDto,
@@ -442,6 +445,27 @@ export class SystemManagementController {
     @Query() query: SystemNoticeReadUsersQueryDto,
   ): Promise<SystemNoticeReadUserPageDto> {
     return this.notices.listNoticeReadUsers(id, query);
+  }
+
+  @Get('notices/:id/deliveries')
+  @ApiTags('Core System Notices')
+  @RequirePermission('core:notice:read')
+  @ApiOkResponse({ type: SystemNoticeDeliveryPageDto })
+  listNoticeDeliveries(
+    @Param('id') id: string,
+    @Query() query: SystemNoticeDeliveryQueryDto,
+  ): Promise<SystemNoticeDeliveryPageDto> {
+    return this.notices.listNoticeDeliveries(id, query);
+  }
+
+  @Post('notices/:id/dispatch')
+  @ApiTags('Core System Notices')
+  @RequirePermission('core:notice:update')
+  @ApiOkResponse({ type: SystemNoticeDeliveryMutationResultDto })
+  dispatchNotice(
+    @Param('id') id: string,
+  ): Promise<SystemNoticeDeliveryMutationResultDto> {
+    return this.notices.dispatchNotice(id);
   }
 
   @Get('notices/templates')

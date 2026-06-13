@@ -10,6 +10,7 @@ import type {
   UpdateSystemNoticeDto,
 } from './system-notice.dto';
 import type {
+  SystemNoticeDeliveryRecord,
   SystemNoticeRecord,
   SystemNoticeTemplateRecord,
 } from './system-notice.records';
@@ -22,6 +23,8 @@ import {
   type SystemNoticeReadUserRecord,
   type SystemNoticeReadUsersPageQuery,
   type SystemNoticeReadMutationResult,
+  type SystemNoticeDeliveryMutationResult,
+  type SystemNoticeDeliveryPageQuery,
   type SystemNoticeExportPreview,
   type SystemNoticePageQuery,
   type SystemNoticeTemplateOptionRecord,
@@ -80,6 +83,17 @@ export class SystemNoticeService {
     query: SystemNoticeReadUsersPageQuery = {},
   ): Promise<PageResult<SystemNoticeReadUserRecord>> {
     return this.repository.listNoticeReadUsers(id, query);
+  }
+
+  listNoticeDeliveries(
+    id: string,
+    query: SystemNoticeDeliveryPageQuery = {},
+  ): Promise<PageResult<SystemNoticeDeliveryRecord>> {
+    return this.repository.listNoticeDeliveries(id, query);
+  }
+
+  dispatchNotice(id: string): Promise<SystemNoticeDeliveryMutationResult> {
+    return this.repository.dispatchNotice(id);
   }
 
   listNoticeTemplates(

@@ -36,9 +36,34 @@ describe('@opencore/system system-notice', () => {
     expect(
       (await service.updateNotice(notice.id, { pinned: true })).pinned,
     ).toBe(true);
+    await expect(service.dispatchNotice(notice.id)).rejects.toThrow(
+      BadRequestException,
+    );
     await expect(service.publishNotice(notice.id)).resolves.toMatchObject({
       status: 'published',
       publishedAt: expect.any(String),
+    });
+    await expect(
+      service.listNoticeDeliveries(notice.id, { readStatus: false }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        items: [
+          expect.objectContaining({
+            noticeId: notice.id,
+            username: 'admin',
+            channel: 'in_app',
+            status: 'delivered',
+          }),
+        ],
+        total: 1,
+      }),
+    );
+    await expect(service.dispatchNotice(notice.id)).resolves.toMatchObject({
+      noticeId: notice.id,
+      channel: 'in_app',
+      deliveredCount: 0,
+      skippedCount: 1,
+      totalRecipientCount: 1,
     });
     await expect(service.archiveNotice(notice.id)).resolves.toMatchObject({
       status: 'archived',
@@ -236,6 +261,29 @@ describe('@opencore/system system-notice', () => {
       }),
     );
     await expect(
+      service.markNoticesRead('user_admin', { ids: ['notice_welcome'] }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        ids: ['notice_welcome'],
+        markedReadCount: 1,
+      }),
+    );
+    await expect(
+      service.listNoticeDeliveries('notice_welcome', { readStatus: true }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        items: [
+          expect.objectContaining({
+            noticeId: 'notice_welcome',
+            username: 'admin',
+            status: 'read',
+            readAt: expect.any(String),
+          }),
+        ],
+        total: 1,
+      }),
+    );
+    await expect(
       service.listNoticeReadUsers('missing_notice', { page: 1, pageSize: 5 }),
     ).rejects.toThrow('System notice not found');
     await expect(
@@ -376,6 +424,29 @@ describe('@opencore/system system-notice', () => {
       await service.publishNotice(notice.id);
 
       await expect(
+        service.listNoticeDeliveries(notice.id, {
+          readStatus: false,
+          username: `notice_inbox_${testRunId}`,
+        }),
+      ).resolves.toEqual(
+        expect.objectContaining({
+          items: [
+            expect.objectContaining({
+              noticeId: notice.id,
+              username: `notice_inbox_${testRunId}`,
+              status: 'delivered',
+              channel: 'in_app',
+            }),
+          ],
+          total: 1,
+        }),
+      );
+      await expect(service.dispatchNotice(notice.id)).resolves.toMatchObject({
+        noticeId: notice.id,
+        channel: 'in_app',
+        deliveredCount: 0,
+      });
+      await expect(
         service.getNoticeInboxItem(inboxUserId, notice.id),
       ).resolves.toEqual(
         expect.objectContaining({
@@ -390,6 +461,24 @@ describe('@opencore/system system-notice', () => {
         expect.objectContaining({
           ids: [notice.id],
           markedReadCount: 1,
+        }),
+      );
+      await expect(
+        service.listNoticeDeliveries(notice.id, {
+          readStatus: true,
+          username: `notice_inbox_${testRunId}`,
+        }),
+      ).resolves.toEqual(
+        expect.objectContaining({
+          items: [
+            expect.objectContaining({
+              noticeId: notice.id,
+              username: `notice_inbox_${testRunId}`,
+              status: 'read',
+              readAt: expect.any(String),
+            }),
+          ],
+          total: 1,
         }),
       );
       await expect(
@@ -419,6 +508,9 @@ describe('@opencore/system system-notice', () => {
     });
 
     async function cleanupTestRows(): Promise<void> {
+      await prisma.systemNoticeDelivery.deleteMany({
+        where: { userId: inboxUserId },
+      });
       await prisma.systemNoticeReadReceipt.deleteMany({
         where: { userId: inboxUserId },
       });

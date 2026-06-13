@@ -333,6 +333,28 @@ export type SystemNoticeReadUserSummary = {
   readAt: string;
 };
 
+export type SystemNoticeDeliveryChannel = 'in_app';
+
+export type SystemNoticeDeliveryStatus = 'delivered' | 'read';
+
+export type SystemNoticeDeliverySummary = {
+  id: string;
+  noticeId: string;
+  userId: string;
+  username: string;
+  displayName: string;
+  channel: SystemNoticeDeliveryChannel;
+  status: SystemNoticeDeliveryStatus;
+  title: string;
+  content: string;
+  type: SystemNoticeType;
+  audience: SystemNoticeAudience;
+  deliveredAt: string;
+  readAt?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type SystemNoticeTemplateSummary = {
   id: string;
   code: string;
@@ -372,6 +394,12 @@ export type SystemNoticeInboxQueryRequest = PageRequest & {
 
 export type SystemNoticeReadUsersQueryRequest = PageRequest;
 
+export type SystemNoticeDeliveryQueryRequest = PageRequest & {
+  channel?: SystemNoticeDeliveryChannel;
+  readStatus?: boolean;
+  username?: string;
+};
+
 export type SystemNoticeTemplateQueryRequest = PageRequest & {
   enabled?: boolean;
   type?: SystemNoticeType;
@@ -389,6 +417,14 @@ export type SystemNoticeReadMutationSummary = {
 
 export type SystemNoticeUnreadCountSummary = {
   unreadCount: number;
+};
+
+export type SystemNoticeDispatchSummary = {
+  noticeId: string;
+  channel: SystemNoticeDeliveryChannel;
+  deliveredCount: number;
+  skippedCount: number;
+  totalRecipientCount: number;
 };
 
 export type CreateSystemNoticeRequest = {

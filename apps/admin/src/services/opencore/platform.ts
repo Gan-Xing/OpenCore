@@ -69,6 +69,9 @@ import {
   type SystemNoticeQueryRequest,
   type SystemNoticeInboxQueryRequest,
   type SystemNoticeInboxSummary,
+  type SystemNoticeDeliveryQueryRequest,
+  type SystemNoticeDeliverySummary,
+  type SystemNoticeDispatchSummary,
   type SystemNoticeReadMutationSummary,
   type SystemNoticeReadUserSummary,
   type SystemNoticeReadUsersQueryRequest,
@@ -782,6 +785,24 @@ export async function listOpenCoreSystemNoticeReadUsers(
     query,
   );
   return [...page.items];
+}
+
+export async function listOpenCoreSystemNoticeDeliveries(
+  id: string,
+  query?: SystemNoticeDeliveryQueryRequest,
+): Promise<SystemNoticeDeliverySummary[]> {
+  const page = await systemManagementClient.listNoticeDeliveries(
+    getRequiredAdminToken(),
+    id,
+    query,
+  );
+  return [...page.items];
+}
+
+export function dispatchOpenCoreSystemNotice(
+  id: string,
+): Promise<SystemNoticeDispatchSummary> {
+  return systemManagementClient.dispatchNotice(getRequiredAdminToken(), id);
 }
 
 export async function listOpenCoreSystemNoticeTemplates(

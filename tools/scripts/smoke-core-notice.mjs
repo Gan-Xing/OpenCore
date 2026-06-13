@@ -259,6 +259,12 @@ try {
       expected: [404],
     },
   );
+  await apiRequest(
+    '/core/notices/missing_notice/deliveries?page=1&pageSize=10',
+    {
+      expected: [404],
+    },
+  );
 
   const draftNotice = await createNotice(noticeTitles[0]);
   await apiRequest(
@@ -272,6 +278,25 @@ try {
     expected: [404],
     body: { ids: [draftNotice.id] },
   });
+  await apiRequest(
+    `/core/notices/${encodeURIComponent(draftNotice.id)}/dispatch`,
+    {
+      method: 'POST',
+      expected: [400],
+    },
+  );
+  await apiRequest(
+    `/core/notices/${encodeURIComponent(draftNotice.id)}/deliveries?readStatus=not-boolean`,
+    {
+      expected: [400],
+    },
+  );
+  await apiRequest(
+    `/core/notices/${encodeURIComponent(draftNotice.id)}/deliveries?channel=email`,
+    {
+      expected: [400],
+    },
+  );
 
   const publishedNotice = await apiRequest(
     `/core/notices/${encodeURIComponent(draftNotice.id)}/publish`,
@@ -280,6 +305,28 @@ try {
     },
   );
   assertEqual(publishedNotice.status, 'published', 'published notice status');
+  const deliveryPage = await apiRequest(
+    `/core/notices/${encodeURIComponent(draftNotice.id)}/deliveries?channel=in_app&readStatus=false&username=${encodeURIComponent(username)}`,
+  );
+  assertPageItemsContainDelivery(
+    deliveryPage,
+    username,
+    'delivered',
+    false,
+    'published notice delivery records',
+  );
+  const dispatchResult = await apiRequest(
+    `/core/notices/${encodeURIComponent(draftNotice.id)}/dispatch`,
+    {
+      method: 'POST',
+    },
+  );
+  assertEqual(dispatchResult.deliveredCount, 0, 'repeat dispatch new count');
+  assertNumberAtLeast(
+    dispatchResult.skippedCount,
+    1,
+    'repeat dispatch skipped count',
+  );
 
   const inboxItem = await apiRequest(
     `/core/notices/inbox/${encodeURIComponent(draftNotice.id)}`,
@@ -324,6 +371,16 @@ try {
   assertString(readItem.readAt, 'read inbox item readAt');
   const readPage = await apiRequest('/core/notices/inbox?readStatus=true');
   assertPageItemsContain(readPage, draftNotice.id, 'read inbox page');
+  const readDeliveryPage = await apiRequest(
+    `/core/notices/${encodeURIComponent(draftNotice.id)}/deliveries?readStatus=true&username=${encodeURIComponent(username)}`,
+  );
+  assertPageItemsContainDelivery(
+    readDeliveryPage,
+    username,
+    'read',
+    true,
+    'read notice delivery records',
+  );
   const readUsersPage = await apiRequest(
     `/core/notices/${encodeURIComponent(draftNotice.id)}/read-users?page=1&pageSize=10`,
   );
@@ -395,9 +452,15 @@ try {
         'core.notice.inbox.empty-read-ids-guard',
         'core.notice.inbox.duplicate-read-ids-guard',
         'core.notice.read-users.missing-guard',
+        'core.notice.deliveries.missing-guard',
         'core.notice.inbox.draft-hidden',
         'core.notice.inbox.mark-draft-hidden-guard',
+        'core.notice.deliveries.dispatch-draft-guard',
+        'core.notice.deliveries.bad-read-status-guard',
+        'core.notice.deliveries.bad-channel-guard',
         'core.notice.publish',
+        'core.notice.deliveries.unread-records',
+        'core.notice.deliveries.dispatch-idempotent',
         'core.notice.inbox.unread-item',
         'core.notice.inbox.unread-page',
         'core.notice.inbox.unread-list',
@@ -406,6 +469,7 @@ try {
         'core.notice.inbox.mark-read',
         'core.notice.inbox.repeat-read-idempotent',
         'core.notice.inbox.read-page',
+        'core.notice.deliveries.read-records',
         'core.notice.read-users.list',
         'core.notice.inbox.unread-list-after-read',
         'core.notice.inbox.mark-all-read',
@@ -560,6 +624,31 @@ function assertPageItemsContainUsername(page, username, label) {
   }
 
   assertString(item.readAt, `${label} readAt`);
+}
+
+function assertPageItemsContainDelivery(
+  page,
+  username,
+  status,
+  expectReadAt,
+  label,
+) {
+  assertArray(page.items, `${label} items`);
+  const item = page.items.find((candidate) => candidate?.username === username);
+
+  if (!item) {
+    throw new Error(`${label} must include username ${username}`);
+  }
+
+  assertEqual(item.channel, 'in_app', `${label} channel`);
+  assertEqual(item.status, status, `${label} status`);
+  assertString(item.deliveredAt, `${label} deliveredAt`);
+
+  if (expectReadAt) {
+    assertString(item.readAt, `${label} readAt`);
+  } else if (item.readAt !== undefined) {
+    throw new Error(`${label} readAt must be empty before read`);
+  }
 }
 
 function assertItemsContain(items, id, label) {

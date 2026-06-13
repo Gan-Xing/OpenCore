@@ -15,10 +15,12 @@ import type {
   UpdateSystemNoticeDto,
 } from './system-notice.dto';
 import type {
+  SystemNoticeDeliveryRecord,
   SystemNoticeRecord,
   SystemNoticeTemplateRecord,
 } from './system-notice.records';
 import {
+  assertNoticeCanDispatch,
   assertNoticeCanPublish,
   assertNoticeNotArchived,
   createSystemNoticeInboxRecord,
@@ -27,6 +29,7 @@ import {
   normalizeCreateSystemNoticeInput,
   normalizeCreateSystemNoticeTemplateInput,
   normalizeMarkSystemNoticesReadInput,
+  normalizeSystemNoticeDeliveryFilters,
   normalizeSystemNoticeInboxFilters,
   normalizeSystemNoticeFilters,
   normalizeSystemNoticePageQuery,
@@ -35,9 +38,13 @@ import {
   normalizeUpdateSystemNoticeTemplateInput,
   normalizeUpdateSystemNoticeInput,
   SystemNoticeRepository,
+  toSystemNoticeDeliveryChannel,
+  toSystemNoticeDeliveryStatus,
   toSystemNoticeAudience,
   toSystemNoticeStatus,
   toSystemNoticeType,
+  type SystemNoticeDeliveryMutationResult,
+  type SystemNoticeDeliveryPageQuery,
   type SystemNoticeInboxPageQuery,
   type SystemNoticeInboxRecord,
   type SystemNoticeReadUserRecord,
@@ -80,6 +87,24 @@ type PrismaSystemNoticeReadReceiptWithUser = {
   };
 };
 
+type PrismaSystemNoticeDelivery = {
+  id: string;
+  noticeId: string;
+  userId: string;
+  username: string;
+  displayName: string;
+  channel: string;
+  status: string;
+  title: string;
+  content: string;
+  type: string;
+  audience: string;
+  deliveredAt: Date;
+  readAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 type PrismaSystemNoticeTemplate = {
   id: string;
   code: string;
@@ -92,6 +117,12 @@ type PrismaSystemNoticeTemplate = {
   remark: string | null;
   createdAt: Date;
   updatedAt: Date;
+};
+
+type PrismaNoticeDeliveryRecipient = {
+  id: string;
+  username: string;
+  displayName: string;
 };
 
 @Injectable()
@@ -216,6 +247,7 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
       })),
       skipDuplicates: true,
     });
+    await this.markDeliveriesRead(userId, ids, now);
 
     return {
       ids,
@@ -244,6 +276,7 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
             })),
             skipDuplicates: true,
           });
+    await this.markDeliveriesRead(userId, ids, now);
 
     return {
       ids,
@@ -281,6 +314,54 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
       rows.map(toSystemNoticeReadUserRecord),
       pagination,
     );
+  }
+
+  async listNoticeDeliveries(
+    id: string,
+    query: SystemNoticeDeliveryPageQuery = {},
+  ): Promise<PageResult<SystemNoticeDeliveryRecord>> {
+    await this.findNoticeById(id);
+    const filters = normalizeSystemNoticeDeliveryFilters(query);
+    const where: Prisma.SystemNoticeDeliveryWhereInput = {
+      noticeId: id,
+      ...(filters.channel ? { channel: filters.channel } : {}),
+      ...(filters.readStatus === true ? { readAt: { not: null } } : {}),
+      ...(filters.readStatus === false ? { readAt: null } : {}),
+      ...(filters.username
+        ? {
+            OR: [
+              { username: { contains: filters.username, mode: 'insensitive' } },
+              {
+                displayName: {
+                  contains: filters.username,
+                  mode: 'insensitive',
+                },
+              },
+            ],
+          }
+        : {}),
+    };
+    const total = await this.prisma.systemNoticeDelivery.count({ where });
+    const pagination = normalizeSystemNoticePageQuery(query, total);
+    const rows = await this.prisma.systemNoticeDelivery.findMany({
+      where,
+      orderBy: [{ deliveredAt: 'desc' }, { username: 'asc' }],
+      skip: pagination.skip,
+      take: pagination.take,
+    });
+
+    return createSystemNoticePageResult(
+      rows.map(toSystemNoticeDeliveryRecord),
+      pagination,
+    );
+  }
+
+  async dispatchNotice(
+    id: string,
+  ): Promise<SystemNoticeDeliveryMutationResult> {
+    const notice = toSystemNoticeRecord(await this.findNoticeById(id));
+    assertNoticeCanDispatch(notice.status);
+    return this.dispatchPublishedNotice(notice);
   }
 
   async listNoticeTemplates(
@@ -452,6 +533,7 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
         archivedAt: null,
       },
     });
+    await this.dispatchPublishedNotice(toSystemNoticeRecord(notice));
 
     return toSystemNoticeRecord(notice);
   }
@@ -474,6 +556,89 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
     await this.findNoticeById(id);
     await this.prisma.systemNotice.delete({ where: { id } });
     return { deleted: true };
+  }
+
+  private async dispatchPublishedNotice(
+    notice: SystemNoticeRecord,
+  ): Promise<SystemNoticeDeliveryMutationResult> {
+    assertNoticeCanDispatch(notice.status);
+    const recipients = await this.findNoticeRecipients();
+    const existingRows = await this.prisma.systemNoticeDelivery.findMany({
+      where: {
+        noticeId: notice.id,
+        channel: 'in_app',
+      },
+      select: { userId: true },
+    });
+    const existingUserIds = new Set(existingRows.map((row) => row.userId));
+    const pendingRecipients = recipients.filter(
+      (recipient) => !existingUserIds.has(recipient.id),
+    );
+    const deliveredAt = new Date();
+
+    if (pendingRecipients.length > 0) {
+      await this.prisma.systemNoticeDelivery.createMany({
+        data: pendingRecipients.map((recipient) => ({
+          noticeId: notice.id,
+          userId: recipient.id,
+          username: recipient.username,
+          displayName: recipient.displayName,
+          channel: 'in_app',
+          status: 'delivered',
+          title: notice.title,
+          content: notice.content,
+          type: notice.type,
+          audience: notice.audience,
+          deliveredAt,
+        })),
+        skipDuplicates: true,
+      });
+    }
+
+    return {
+      noticeId: notice.id,
+      channel: 'in_app',
+      deliveredCount: pendingRecipients.length,
+      skippedCount: recipients.length - pendingRecipients.length,
+      totalRecipientCount: recipients.length,
+    };
+  }
+
+  private async findNoticeRecipients(): Promise<
+    readonly PrismaNoticeDeliveryRecipient[]
+  > {
+    return this.prisma.user.findMany({
+      where: { enabled: true },
+      select: {
+        id: true,
+        username: true,
+        displayName: true,
+      },
+      orderBy: [{ username: 'asc' }],
+    });
+  }
+
+  private async markDeliveriesRead(
+    userId: string,
+    noticeIds: readonly string[],
+    readAt: Date,
+  ): Promise<void> {
+    if (noticeIds.length === 0) {
+      return;
+    }
+
+    await this.prisma.systemNoticeDelivery.updateMany({
+      where: {
+        userId,
+        noticeId: { in: [...noticeIds] },
+        channel: 'in_app',
+        readAt: null,
+      },
+      data: {
+        status: 'read',
+        readAt,
+      },
+    });
   }
 
   private async findNoticeById(id: string): Promise<PrismaSystemNotice> {
@@ -558,6 +723,28 @@ function toSystemNoticeReadUserRecord(
     username: receipt.user.username,
     displayName: receipt.user.displayName,
     readAt: receipt.readAt.toISOString(),
+  };
+}
+
+function toSystemNoticeDeliveryRecord(
+  delivery: PrismaSystemNoticeDelivery,
+): SystemNoticeDeliveryRecord {
+  return {
+    id: delivery.id,
+    noticeId: delivery.noticeId,
+    userId: delivery.userId,
+    username: delivery.username,
+    displayName: delivery.displayName,
+    channel: toSystemNoticeDeliveryChannel(delivery.channel),
+    status: toSystemNoticeDeliveryStatus(delivery.status),
+    title: delivery.title,
+    content: delivery.content,
+    type: toSystemNoticeType(delivery.type),
+    audience: toSystemNoticeAudience(delivery.audience),
+    deliveredAt: delivery.deliveredAt.toISOString(),
+    readAt: delivery.readAt?.toISOString(),
+    createdAt: delivery.createdAt.toISOString(),
+    updatedAt: delivery.updatedAt.toISOString(),
   };
 }
 

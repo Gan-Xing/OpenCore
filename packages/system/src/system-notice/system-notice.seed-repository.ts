@@ -7,11 +7,16 @@ import type { PageResult } from '@opencore/common';
 import {
   seedSystemNotices,
   seedSystemNoticeTemplates,
+  type SystemNoticeDeliveryRecord,
   type SystemNoticeRecord,
   type SystemNoticeTemplateRecord,
 } from './system-notice.records';
-import { seedSystemUsers } from '../system-user/system-user.records';
 import {
+  seedSystemUsers,
+  type SystemUserRecord,
+} from '../system-user/system-user.records';
+import {
+  assertNoticeCanDispatch,
   assertNoticeCanPublish,
   assertNoticeNotArchived,
   compareSystemNoticeInboxRecords,
@@ -22,6 +27,7 @@ import {
   normalizeCreateSystemNoticeInput,
   normalizeCreateSystemNoticeTemplateInput,
   normalizeMarkSystemNoticesReadInput,
+  normalizeSystemNoticeDeliveryFilters,
   normalizeSystemNoticeInboxFilters,
   normalizeSystemNoticeFilters,
   normalizeSystemNoticePageQuery,
@@ -30,6 +36,8 @@ import {
   normalizeUpdateSystemNoticeTemplateInput,
   normalizeUpdateSystemNoticeInput,
   SystemNoticeRepository,
+  type SystemNoticeDeliveryMutationResult,
+  type SystemNoticeDeliveryPageQuery,
   type SystemNoticeInboxPageQuery,
   type SystemNoticeInboxRecord,
   type SystemNoticeReadUserRecord,
@@ -57,6 +65,21 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
       params: [...template.params],
     }));
   private readReceipts = new Map<string, string>();
+  private deliveries = new Map<string, SystemNoticeDeliveryRecord>(
+    seedSystemNotices
+      .filter((notice) => notice.status === 'published')
+      .flatMap((notice) =>
+        seedSystemUsers
+          .filter((user) => user.enabled)
+          .map(
+            (user) =>
+              [
+                createDeliveryKey(notice.id, user.id),
+                createDeliveryRecord(notice, user, notice.publishedAt),
+              ] as const,
+          ),
+      ),
+  );
 
   async listNotices(
     query: SystemNoticePageQuery = {},
@@ -142,6 +165,7 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
       }
       this.readReceipts.set(key, now);
     }
+    this.markDeliveriesRead(userId, ids, now);
 
     return {
       ids,
@@ -161,6 +185,7 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
     for (const id of unreadIds) {
       this.readReceipts.set(createReadReceiptKey(userId, id), now);
     }
+    this.markDeliveriesRead(userId, unreadIds, now);
 
     return {
       ids: unreadIds,
@@ -198,6 +223,42 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
       rows.slice(pagination.skip, pagination.skip + pagination.take),
       pagination,
     );
+  }
+
+  async listNoticeDeliveries(
+    id: string,
+    query: SystemNoticeDeliveryPageQuery = {},
+  ): Promise<PageResult<SystemNoticeDeliveryRecord>> {
+    this.findNotice(id);
+    const filters = normalizeSystemNoticeDeliveryFilters(query);
+    const rows = [...this.deliveries.values()]
+      .filter(
+        (delivery) =>
+          delivery.noticeId === id &&
+          (!filters.channel || delivery.channel === filters.channel) &&
+          (filters.readStatus === undefined ||
+            Boolean(delivery.readAt) === filters.readStatus) &&
+          (!filters.username ||
+            delivery.username.includes(filters.username) ||
+            delivery.displayName.includes(filters.username)),
+      )
+      .sort(compareNoticeDeliveries);
+    const pagination = normalizeSystemNoticePageQuery(query, rows.length);
+
+    return createSystemNoticePageResult(
+      rows
+        .slice(pagination.skip, pagination.skip + pagination.take)
+        .map((delivery) => ({ ...delivery })),
+      pagination,
+    );
+  }
+
+  async dispatchNotice(
+    id: string,
+  ): Promise<SystemNoticeDeliveryMutationResult> {
+    const notice = this.findNotice(id);
+    assertNoticeCanDispatch(notice.status);
+    return this.dispatchPublishedNotice(notice);
   }
 
   async getNotice(id: string): Promise<SystemNoticeRecord> {
@@ -347,6 +408,7 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
       archivedAt: undefined,
       updatedAt: now,
     });
+    this.dispatchPublishedNotice(notice);
     return { ...notice };
   }
 
@@ -370,7 +432,54 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
         this.readReceipts.delete(key);
       }
     }
+    for (const key of this.deliveries.keys()) {
+      if (key.startsWith(`${id}:`)) {
+        this.deliveries.delete(key);
+      }
+    }
     return { deleted: true };
+  }
+
+  private dispatchPublishedNotice(
+    notice: SystemNoticeRecord,
+  ): SystemNoticeDeliveryMutationResult {
+    assertNoticeCanDispatch(notice.status);
+    let deliveredCount = 0;
+    const recipients = seedSystemUsers.filter((user) => user.enabled);
+
+    for (const user of recipients) {
+      const key = createDeliveryKey(notice.id, user.id);
+      if (this.deliveries.has(key)) {
+        continue;
+      }
+      deliveredCount += 1;
+      this.deliveries.set(key, createDeliveryRecord(notice, user));
+    }
+
+    return {
+      noticeId: notice.id,
+      channel: 'in_app',
+      deliveredCount,
+      skippedCount: recipients.length - deliveredCount,
+      totalRecipientCount: recipients.length,
+    };
+  }
+
+  private markDeliveriesRead(
+    userId: string,
+    noticeIds: readonly string[],
+    readAt: string,
+  ): void {
+    for (const noticeId of noticeIds) {
+      const delivery = this.deliveries.get(createDeliveryKey(noticeId, userId));
+      if (delivery && !delivery.readAt) {
+        Object.assign(delivery, {
+          status: 'read' as const,
+          readAt,
+          updatedAt: readAt,
+        });
+      }
+    }
   }
 
   private findNotice(id: string): SystemNoticeRecord {
@@ -425,6 +534,44 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
 
 function createReadReceiptKey(userId: string, noticeId: string): string {
   return `${userId}:${noticeId}`;
+}
+
+function createDeliveryKey(noticeId: string, userId: string): string {
+  return `${noticeId}:${userId}:in_app`;
+}
+
+function createDeliveryRecord(
+  notice: SystemNoticeRecord,
+  user: SystemUserRecord,
+  deliveredAt = new Date().toISOString(),
+): SystemNoticeDeliveryRecord {
+  return {
+    id: `notice_delivery_${notice.id}_${user.id}`,
+    noticeId: notice.id,
+    userId: user.id,
+    username: user.username,
+    displayName: user.displayName,
+    channel: 'in_app',
+    status: 'delivered',
+    title: notice.title,
+    content: notice.content,
+    type: notice.type,
+    audience: notice.audience,
+    deliveredAt,
+    createdAt: deliveredAt,
+    updatedAt: deliveredAt,
+  };
+}
+
+function compareNoticeDeliveries(
+  left: SystemNoticeDeliveryRecord,
+  right: SystemNoticeDeliveryRecord,
+): number {
+  return (
+    new Date(right.deliveredAt).getTime() -
+      new Date(left.deliveredAt).getTime() ||
+    left.username.localeCompare(right.username)
+  );
 }
 
 function compareReadUsers(

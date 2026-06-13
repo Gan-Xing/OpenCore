@@ -22,6 +22,7 @@ model User {
   roles            UserRole[]
   posts            UserPost[]
   noticeReads      SystemNoticeReadReceipt[]
+  noticeDeliveries SystemNoticeDelivery[]
   createdAt        DateTime                  @default(now())
   updatedAt        DateTime                  @updatedAt
 
@@ -157,6 +158,7 @@ model SystemNotice {
   archivedAt   DateTime?
   createdBy    String
   readReceipts SystemNoticeReadReceipt[]
+  deliveries   SystemNoticeDelivery[]
   createdAt    DateTime                  @default(now())
   updatedAt    DateTime                  @updatedAt
 
@@ -192,6 +194,31 @@ model SystemNoticeReadReceipt {
   @@unique([noticeId, userId])
   @@index([userId, readAt])
   @@index([noticeId, readAt])
+}
+
+model SystemNoticeDelivery {
+  id          String       @id @default(cuid())
+  noticeId    String
+  userId      String
+  username    String
+  displayName String
+  channel     String       @default("in_app")
+  status      String       @default("delivered")
+  title       String
+  content     String
+  type        String
+  audience    String
+  deliveredAt DateTime     @default(now())
+  readAt      DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  notice      SystemNotice @relation(fields: [noticeId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([noticeId, userId, channel])
+  @@index([noticeId, status])
+  @@index([userId, status])
+  @@index([channel, status])
 }
 
 model SystemDept {

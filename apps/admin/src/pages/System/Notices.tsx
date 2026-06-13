@@ -4,6 +4,7 @@ import {
   EditOutlined,
   EyeOutlined,
   FileTextOutlined,
+  InboxOutlined,
   PlusOutlined,
   PlayCircleOutlined,
   ReloadOutlined,
@@ -19,6 +20,7 @@ import {
 import {
   createSystemNoticeFixtures,
   type SystemNoticeAudience,
+  type SystemNoticeDeliverySummary,
   type SystemNoticeInboxSummary,
   type SystemNoticeReadUserSummary,
   type SystemNoticeSummary,
@@ -51,10 +53,12 @@ import {
   createOpenCoreSystemNoticeTemplate,
   deleteOpenCoreSystemNotice,
   deleteOpenCoreSystemNoticeTemplate,
+  dispatchOpenCoreSystemNotice,
   getOpenCoreSystemNotice,
   getOpenCoreSystemNoticeInboxItem,
   getOpenCoreSystemNoticeTemplate,
   listOpenCoreSystemNoticeInbox,
+  listOpenCoreSystemNoticeDeliveries,
   listOpenCoreSystemNoticeReadUsers,
   listOpenCoreSystemNoticeTemplates,
   listOpenCoreSystemNotices,
@@ -297,6 +301,13 @@ export default function SystemNoticesPage() {
   >([]);
   const [readUsersLoading, setReadUsersLoading] = useState(false);
   const [readUsersLoadError, setReadUsersLoadError] = useState<string>();
+  const [deliveriesOpenFor, setDeliveriesOpenFor] =
+    useState<SystemNoticeSummary>();
+  const [deliveryRows, setDeliveryRows] = useState<
+    readonly SystemNoticeDeliverySummary[]
+  >([]);
+  const [deliveriesLoading, setDeliveriesLoading] = useState(false);
+  const [deliveriesLoadError, setDeliveriesLoadError] = useState<string>();
   const [editingNotice, setEditingNotice] = useState<SystemNoticeSummary>();
   const [formOpen, setFormOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -528,6 +539,28 @@ export default function SystemNoticesPage() {
     }
   };
 
+  const openDeliveryRecords = async (record: SystemNoticeSummary) => {
+    setDeliveriesOpenFor(record);
+    setDeliveriesLoading(true);
+    try {
+      const deliveries = await listOpenCoreSystemNoticeDeliveries(record.id, {
+        page: 1,
+        pageSize: 100,
+      });
+      setDeliveryRows(deliveries);
+      setDeliveriesLoadError(undefined);
+    } catch (error: unknown) {
+      setDeliveryRows([]);
+      setDeliveriesLoadError(
+        error instanceof Error
+          ? error.message
+          : 'Unable to load system notice delivery records.',
+      );
+    } finally {
+      setDeliveriesLoading(false);
+    }
+  };
+
   const submitForm = async () => {
     const values = await form.validateFields();
     const createdBy = initialState?.currentUser?.username ?? 'admin';
@@ -627,9 +660,21 @@ export default function SystemNoticesPage() {
 
   const publishNotice = async (record: SystemNoticeSummary) => {
     await publishOpenCoreSystemNotice(record.id);
-    message.success('System notice published.');
+    message.success('System notice published and in-app deliveries created.');
     await loadNotices();
     await loadInbox();
+  };
+
+  const dispatchNoticeDeliveries = async (record: SystemNoticeSummary) => {
+    const result = await dispatchOpenCoreSystemNotice(record.id);
+    message.success(
+      `System notice delivery dispatched: ${result.deliveredCount} new, ${result.skippedCount} skipped.`,
+    );
+    await loadInbox();
+
+    if (deliveriesOpenFor?.id === record.id) {
+      await openDeliveryRecords(record);
+    }
   };
 
   const archiveNotice = async (record: SystemNoticeSummary) => {
@@ -710,10 +755,11 @@ export default function SystemNoticesPage() {
     {
       title: 'Actions',
       valueType: 'option',
-      width: 280,
+      width: 360,
       render: (_, record) => {
         const archived = record.status === 'archived';
         const draft = record.status === 'draft';
+        const published = record.status === 'published';
 
         return (
           <Space size="small">
@@ -730,6 +776,14 @@ export default function SystemNoticesPage() {
                 aria-label={`View read users for ${record.title}`}
                 icon={<TeamOutlined />}
                 onClick={() => void openReadUsers(record)}
+                size="small"
+              />
+            </Tooltip>
+            <Tooltip title="Delivery records">
+              <Button
+                aria-label={`View delivery records for ${record.title}`}
+                icon={<InboxOutlined />}
+                onClick={() => void openDeliveryRecords(record)}
                 size="small"
               />
             </Tooltip>
@@ -756,6 +810,27 @@ export default function SystemNoticesPage() {
                 <Button
                   aria-label={`Publish ${record.title}`}
                   disabled={!draft}
+                  icon={<SendOutlined />}
+                  size="small"
+                />
+              </Tooltip>
+            </Popconfirm>
+            <Popconfirm
+              title="Dispatch in-app delivery records?"
+              okText="Dispatch"
+              onConfirm={() => void dispatchNoticeDeliveries(record)}
+              disabled={!published}
+            >
+              <Tooltip
+                title={
+                  published
+                    ? 'Dispatch in-app deliveries'
+                    : 'Only published notices can dispatch'
+                }
+              >
+                <Button
+                  aria-label={`Dispatch delivery records for ${record.title}`}
+                  disabled={!published}
                   icon={<SendOutlined />}
                   size="small"
                 />
@@ -800,6 +875,27 @@ export default function SystemNoticesPage() {
   const readUserColumns: ProColumns<SystemNoticeReadUserSummary>[] = [
     { title: 'Username', dataIndex: 'username' },
     { title: 'Display Name', dataIndex: 'displayName' },
+    { title: 'Read At', dataIndex: 'readAt' },
+  ];
+
+  const deliveryColumns: ProColumns<SystemNoticeDeliverySummary>[] = [
+    { title: 'Username', dataIndex: 'username' },
+    { title: 'Display Name', dataIndex: 'displayName' },
+    {
+      title: 'Channel',
+      dataIndex: 'channel',
+      render: (_, record) => <Tag>{record.channel}</Tag>,
+    },
+    {
+      title: 'Status',
+      dataIndex: 'status',
+      render: (_, record) => (
+        <Tag color={record.status === 'read' ? 'default' : 'blue'}>
+          {record.status}
+        </Tag>
+      ),
+    },
+    { title: 'Delivered At', dataIndex: 'deliveredAt' },
     { title: 'Read At', dataIndex: 'readAt' },
   ];
 
@@ -1188,6 +1284,42 @@ export default function SystemNoticesPage() {
           pagination={{ pageSize: 10 }}
           dataSource={[...readUsersRows]}
           columns={readUserColumns}
+        />
+      </Modal>
+      <Modal
+        title={
+          deliveriesOpenFor
+            ? `System Notice Delivery Records: ${deliveriesOpenFor.title}`
+            : 'System Notice Delivery Records'
+        }
+        open={Boolean(deliveriesOpenFor)}
+        onCancel={() => {
+          setDeliveriesOpenFor(undefined);
+          setDeliveryRows([]);
+          setDeliveriesLoadError(undefined);
+        }}
+        footer={null}
+        width={860}
+        destroyOnHidden
+      >
+        {deliveriesLoadError ? (
+          <Alert
+            showIcon
+            type="warning"
+            message="Unable to load system notice delivery records"
+            description={deliveriesLoadError}
+            style={{ marginBlockEnd: 16 }}
+          />
+        ) : null}
+        <ProTable<SystemNoticeDeliverySummary>
+          rowKey="id"
+          loading={deliveriesLoading}
+          search={false}
+          options={false}
+          toolBarRender={false}
+          pagination={{ pageSize: 10 }}
+          dataSource={[...deliveryRows]}
+          columns={deliveryColumns}
         />
       </Modal>
       <Modal

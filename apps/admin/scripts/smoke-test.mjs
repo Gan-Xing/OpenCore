@@ -393,6 +393,8 @@ if (
   !opencorePlatformService.includes('listOpenCoreUnreadSystemNotices') ||
   !opencorePlatformService.includes('getOpenCoreSystemNoticeUnreadCount') ||
   !opencorePlatformService.includes('listOpenCoreSystemNoticeReadUsers') ||
+  !opencorePlatformService.includes('listOpenCoreSystemNoticeDeliveries') ||
+  !opencorePlatformService.includes('dispatchOpenCoreSystemNotice') ||
   !opencorePlatformService.includes('markOpenCoreSystemNoticesRead') ||
   !opencorePlatformService.includes('markAllOpenCoreSystemNoticesRead') ||
   !opencorePlatformService.includes('publishOpenCoreSystemNotice') ||
@@ -1093,6 +1095,8 @@ if (
   !systemNoticesPage.includes('listOpenCoreSystemNoticeInbox') ||
   !systemNoticesPage.includes('getOpenCoreSystemNoticeInboxItem') ||
   !systemNoticesPage.includes('listOpenCoreSystemNoticeReadUsers') ||
+  !systemNoticesPage.includes('listOpenCoreSystemNoticeDeliveries') ||
+  !systemNoticesPage.includes('dispatchOpenCoreSystemNotice') ||
   !systemNoticesPage.includes('listOpenCoreSystemNoticeTemplates') ||
   !systemNoticesPage.includes('getOpenCoreSystemNoticeTemplate') ||
   !systemNoticesPage.includes('renderOpenCoreSystemNoticeTemplate') ||
@@ -1115,6 +1119,9 @@ if (
   !systemNoticesPage.includes('Mark all read') ||
   !systemNoticesPage.includes('Read users') ||
   !systemNoticesPage.includes('System Notice Read Users') ||
+  !systemNoticesPage.includes('Delivery records') ||
+  !systemNoticesPage.includes('Dispatch in-app deliveries') ||
+  !systemNoticesPage.includes('System Notice Delivery Records') ||
   !systemNoticesPage.includes('System Notice Inbox Detail') ||
   !systemNoticesPage.includes('System Notice Template Detail') ||
   !systemNoticesPage.includes('core-notice-templates') ||

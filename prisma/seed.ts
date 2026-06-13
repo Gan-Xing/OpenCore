@@ -42,6 +42,7 @@ async function main(): Promise<void> {
   const roleCount = await seedRoles();
   const systemManagementCount = await seedSystemManagement();
   const userCount = await seedUsers(bootstrapPassword);
+  const systemNoticeDeliveryCount = await seedSystemNoticeDeliveries();
   const onlineUserSessionCount = await seedOnlineUserSessions();
   const schedulerCount = await seedScheduler();
 
@@ -52,6 +53,7 @@ async function main(): Promise<void> {
         menus: menuCount,
         roles: roleCount,
         users: userCount,
+        systemNoticeDeliveries: systemNoticeDeliveryCount,
         onlineUserSessions: onlineUserSessionCount,
         scheduler: schedulerCount,
         systemManagement: systemManagementCount,
@@ -383,6 +385,72 @@ async function seedUsers(bootstrapPassword: string): Promise<number> {
   }
 
   return seedSystemUsers.length;
+}
+
+async function seedSystemNoticeDeliveries(): Promise<number> {
+  let count = 0;
+
+  for (const notice of seedSystemNotices) {
+    if (notice.status !== 'published') {
+      continue;
+    }
+
+    for (const seedUser of seedSystemUsers.filter(
+      (candidate) => candidate.enabled,
+    )) {
+      const user = await prisma.user.findUnique({
+        where: { username: seedUser.username },
+        select: {
+          id: true,
+          username: true,
+          displayName: true,
+        },
+      });
+
+      if (!user) {
+        throw new Error(
+          `Seed notice delivery user not found: ${seedUser.username}`,
+        );
+      }
+
+      const deliveredAt = new Date(notice.publishedAt ?? notice.createdAt);
+      await prisma.systemNoticeDelivery.upsert({
+        where: {
+          noticeId_userId_channel: {
+            noticeId: notice.id,
+            userId: user.id,
+            channel: 'in_app',
+          },
+        },
+        update: {
+          username: user.username,
+          displayName: user.displayName,
+          title: notice.title,
+          content: notice.content,
+          type: notice.type,
+          audience: notice.audience,
+        },
+        create: {
+          id: `notice_delivery_${notice.id}_${user.id}`,
+          noticeId: notice.id,
+          userId: user.id,
+          username: user.username,
+          displayName: user.displayName,
+          channel: 'in_app',
+          status: 'delivered',
+          title: notice.title,
+          content: notice.content,
+          type: notice.type,
+          audience: notice.audience,
+          deliveredAt,
+          createdAt: deliveredAt,
+        },
+      });
+      count += 1;
+    }
+  }
+
+  return count;
 }
 
 async function assertSeedUserDeptExists(

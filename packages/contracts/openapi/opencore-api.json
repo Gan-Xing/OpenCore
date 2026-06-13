@@ -2241,6 +2241,96 @@
         "tags": ["SystemManagement", "Core System Notices"]
       }
     },
+    "/api/core/notices/{id}/deliveries": {
+      "get": {
+        "operationId": "SystemManagementController_listNoticeDeliveries",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "channel",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string", "enum": ["in_app"] }
+          },
+          {
+            "name": "readStatus",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
+          },
+          {
+            "name": "username",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemNoticeDeliveryPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Notices"]
+      }
+    },
+    "/api/core/notices/{id}/dispatch": {
+      "post": {
+        "operationId": "SystemManagementController_dispatchNotice",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemNoticeDeliveryMutationResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Notices"]
+      }
+    },
     "/api/core/notices/templates": {
       "get": {
         "operationId": "SystemManagementController_listNoticeTemplates",
@@ -7239,6 +7329,76 @@
           "totalPages": { "type": "number" }
         },
         "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "SystemNoticeDeliveryDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "noticeId": { "type": "string" },
+          "userId": { "type": "string" },
+          "username": { "type": "string" },
+          "displayName": { "type": "string" },
+          "channel": { "type": "string", "enum": ["in_app"] },
+          "status": { "type": "string", "enum": ["delivered", "read"] },
+          "title": { "type": "string" },
+          "content": { "type": "string" },
+          "type": {
+            "type": "string",
+            "enum": ["announcement", "maintenance", "security"]
+          },
+          "audience": { "type": "string", "enum": ["all", "admin"] },
+          "deliveredAt": { "type": "string" },
+          "readAt": { "type": "string" },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "noticeId",
+          "userId",
+          "username",
+          "displayName",
+          "channel",
+          "status",
+          "title",
+          "content",
+          "type",
+          "audience",
+          "deliveredAt",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "SystemNoticeDeliveryPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SystemNoticeDeliveryDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "SystemNoticeDeliveryMutationResultDto": {
+        "type": "object",
+        "properties": {
+          "noticeId": { "type": "string" },
+          "channel": { "type": "string", "enum": ["in_app"] },
+          "deliveredCount": { "type": "number" },
+          "skippedCount": { "type": "number" },
+          "totalRecipientCount": { "type": "number" }
+        },
+        "required": [
+          "noticeId",
+          "channel",
+          "deliveredCount",
+          "skippedCount",
+          "totalRecipientCount"
+        ]
       },
       "SystemNoticeTemplateDto": {
         "type": "object",
