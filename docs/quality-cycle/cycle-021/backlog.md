@@ -979,6 +979,34 @@ bulk import.
       URL verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 35: core.user Native XLSX Export
+
+Why this slice: RuoYi and Yudao both treat user Excel export as a basic user
+management action protected by `system:user:export`. OpenCore still returned a
+JSON export preview, so this round moves one small but real Excel step without
+opening the larger XLSX import parser yet.
+
+- [x] Recompare RuoYi `SysUserController` `/export` with `ExcelUtil` and Yudao
+      `UserController` `/export-excel` with `ExcelUtils.write`.
+- [x] Extend user export response with `contentType` and `contentBase64` while
+      preserving the existing JSON API boundary.
+- [x] Generate `opencore-system-users.xlsx` with a valid XLSX zip container and
+      user columns `username/displayName/roleCodes/deptId/postCodes/enabled/system`.
+- [x] Keep `core:user:export` as the API permission guard.
+- [x] Extend SDK/OpenAPI types for optional file payload fields.
+- [x] Add `canExportUsers` in Admin access and a Users page `Download Excel`
+      button that downloads the backend XLSX payload.
+- [x] Extend Admin static smoke for the export service, permission helper and
+      Excel UI markers.
+- [x] Extend fixed-port/deploy/public `core.user` smoke to verify filename,
+      MIME, columns, base64 payload, XLSX zip header and byte length.
+- [x] Add `tools/scripts/sync-prisma-client-instances.mjs` and run it from
+      `pnpm prisma:generate` so pnpm workspace `@prisma/client` peer instances
+      do not keep stale generated schemas after install.
+- [x] Run focused, typecheck, OpenAPI/SDK, format, build, fixed-port smoke,
+      deployment and public URL verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -1016,7 +1044,7 @@ treat "minimal loop" as "minimal final product".
 - [ ] Round 3/22/25 `core.post`: user-post binding and simple-list option
       source are complete; batch operations and ordered list refinements
       remain.
-- [ ] Round 7/19/22/23/28/29/30/31/32/33/34 `core.user`: status toggle, reset
+- [ ] Round 7/19/22/23/28/29/30/31/32/33/34/35 `core.user`: status toggle, reset
       password and direct user-mutation session invalidation are complete. Post
       binding, department side-tree filtering, self-profile basic display-name
       read/update, self-password and authenticated simple-list option source
@@ -1024,9 +1052,9 @@ treat "minimal loop" as "minimal final product".
       complete. Batch enable/disable and batch delete are complete.
       CSV-compatible import template/import results with update-existing
       session revocation are complete. Dedicated `core:user:import` permission
-      is complete. Native XLSX/binary Excel import/export depth and any
-      dedicated User-page role assignment workflow still need enhancement if
-      admitted.
+      is complete. Native XLSX export payload and Admin download are complete.
+      Native XLSX import parsing and any dedicated User-page role assignment
+      workflow still need enhancement if admitted.
 - [ ] Round 9/24 `core.config`: public get-value-by-key, cache refresh and
       mutation invalidation are complete. Category/name/remark enrichment,
       batch/file export depth and broader runtime propagation boundaries remain.
@@ -1070,8 +1098,8 @@ treat "minimal loop" as "minimal final product".
 - Role simple-list endpoints, batch role deletion and standalone data-scope
   endpoint.
 - Registry definition editing and dynamic permission discovery.
-- Native user XLSX/binary Excel import/export depth, dedicated User-page role
-  assignment dialog and social endpoints.
+- Native user XLSX import parsing, dedicated User-page role assignment dialog
+  and social endpoints.
 - Batch dictionary delete, Excel import/export file workflows, dictionary
   color/css/remark fields, app-wide dictionary cache TTL/invalidation and
   dictionary cache refresh.

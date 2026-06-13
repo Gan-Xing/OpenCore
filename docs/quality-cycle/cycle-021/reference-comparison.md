@@ -1055,3 +1055,30 @@ OpenCore admits the matching stage-11 permission loop:
 OpenCore still does not claim native XLSX/binary Excel import/export depth,
 server-side full Excel export formatting or a dedicated User-page role
 assignment dialog in this round.
+
+## Round 35 User XLSX Export Reference Shape
+
+RuoYi guards user export with `@ss.hasPermi('system:user:export')` and writes
+the file through `ExcelUtil.exportExcel`. Yudao guards `/export-excel` with
+`@ss.hasPermission('system:user:export')` and writes an Excel file through
+`ExcelUtils.write`.
+
+OpenCore admits the matching stage-12 export-file loop while preserving the
+current JSON API boundary:
+
+- `GET /api/core/users/export` remains guarded by `core:user:export`;
+- the response now includes `contentType` and `contentBase64` in addition to
+  the existing export metadata;
+- `core.user` returns `opencore-system-users.xlsx` with the standard XLSX MIME
+  type and a valid zip container;
+- Admin access exposes `canExportUsers`;
+- Admin Users adds a `Download Excel` backend export button and shows
+  `Missing core:user:export` when permission is absent;
+- fixed-port, deploy and public smoke decode the base64 payload and verify the
+  XLSX `PK` zip header;
+- public Admin verification proves the deployed main bundle contains
+  `core:user:export` and `/core/users/export`, the Users chunk contains Excel
+  export UI markers and the same-origin Admin proxy returns the XLSX payload.
+
+OpenCore still does not claim native XLSX import parsing or a dedicated
+User-page role assignment dialog in this round.

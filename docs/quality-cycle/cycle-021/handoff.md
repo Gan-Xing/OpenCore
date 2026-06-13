@@ -3,8 +3,8 @@
 Date: 2026-06-13
 Repository: `Gan-Xing/OpenCore`
 Default branch: `main`
-Latest observed feature commit: `f152c4d feat(core-user): add import permission / 新增用户导入权限`
-Latest deployed feature commit: `f152c4d feat(core-user): add import permission / 新增用户导入权限`
+Latest observed feature commit: `407dbd0 feat(core-user): add xlsx user export / 新增用户 Excel 导出`
+Latest deployed feature commit: `407dbd0 feat(core-user): add xlsx user export / 新增用户 Excel 导出`
 Latest deployed hardening commit: `04e446c fix(online-user): stabilize admin session smoke / 稳定在线用户管理员会话冒烟`
 
 ## One-sentence Goal
@@ -100,6 +100,7 @@ productization waterline completion; see
 - Round 32 `core.user` batch status/delete stage 9
 - Round 33 `core.user` import template/CSV import stage 10
 - Round 34 `core.user` import permission stage 11
+- Round 35 `core.user` native XLSX export stage 12
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -374,6 +375,24 @@ Admin Users 使用 `canImportUsers` 控制下载模板和导入按钮，缺权�
 `/api/api/auth/login` 均通过。注意：这轮关闭的是独立导入权限，不等于原生 XLSX/binary
 Excel 导入导出深度已经完成。
 
+Round 35 继续补齐 `core.user` 队列：用户导出现在返回原生 XLSX 文件 payload。
+参考 RuoYi `SysUserController` 的 `@ss.hasPermi('system:user:export')`
+`/export` + `ExcelUtil.exportExcel`，以及 Yudao `UserController`
+`/export-excel` + `ExcelUtils.write`，OpenCore 保持现有 JSON API 边界，先在
+`GET /api/core/users/export` 返回 `filename/contentType/contentBase64`，文件名为
+`opencore-system-users.xlsx`，MIME 为
+`application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`。Admin Users
+新增按 `core:user:export` 控制的 `Download Excel` 按钮；SDK/OpenAPI/Admin static
+smoke 和 `core.user` fixed/deploy/public smoke 均验证 XLSX zip header。为避免本轮
+引入大依赖和 lockfile 噪音，XLSX 容器用现有 lock 中的 `fflate` 生成，同时新增
+`tools/scripts/sync-prisma-client-instances.mjs` 并挂到 `pnpm prisma:generate`，把
+Prisma 多 peer 实例生成物同步问题沉淀为脚本守卫。公网 Admin `umi.c69be9c1.js`
+已验证包含 `core:user:export` 和 `/core/users/export`，Users chunk
+`p__System__Users.375bc26e.async.js` 已验证包含 `Download Excel`、
+`User Excel export downloaded` 与 `Missing core:user:export`；公网 Admin 同源
+`/api/core/users/export?deptId=dept_operations` 已验证返回 XLSX payload。注意：
+这轮关闭的是原生 XLSX 导出文件，不等于 XLSX 导入解析已完成。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -383,8 +402,8 @@ The productization waterline now classifies:
   `core.file`, Round 4/16 `core.menu`, Round 5/17/18/20 `core.role`,
   Round 8/21 `core.dict`.
 - First loop, enhance: Round 1 `core.notice`, Round 2/27 `core.dept`, Round
-  3/22/25 `core.post`, Round 7/19/22/23/28/29/30/31/32/33/34 `core.user`,
-  Round 9/24 `core.config`, Round 11/26 `core.login-log`.
+  3/22/25 `core.post`, Round 7/19/22/23/28/29/30/31/32/33/34/35
+  `core.user`, Round 9/24 `core.config`, Round 11/26 `core.login-log`.
 - Thin, rework: none after Round 16.
 
 The P0 remediation queue from the post-Round 13 re-audit is now clear. The next
@@ -402,9 +421,10 @@ finds another blocker:
    enable/disable and batch delete with session revocation; Round 33 closed
    CSV-compatible user import template/import results with update-existing
    session revocation; Round 34 closed the dedicated `core:user:import`
-   permission across registry/API/Admin/smoke. Remaining work is native
-   XLSX/binary Excel import/export depth and any dedicated User-page role
-   assignment workflow if admitted.
+   permission across registry/API/Admin/smoke; Round 35 closed native XLSX
+   export payload plus Admin download and smoke guards. Remaining work is
+   native XLSX import parsing and any dedicated User-page role assignment
+   workflow if admitted.
 2. `core.config`: Round 24 closed public get-value-by-key plus cache
    refresh/invalidation. Remaining work is category/name/remark enrichment,
    batch/file export depth and broader runtime propagation boundaries.

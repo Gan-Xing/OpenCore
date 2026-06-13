@@ -2736,3 +2736,94 @@ Against public endpoints after deploy:
   `f152c4d feat(core-user): add import permission / 新增用户导入权限`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 35 Capability
+
+Capability: `core.user` native XLSX export productization.
+
+Goal: move user export from a metadata preview to a real downloadable Excel
+file payload while keeping XLSX import parsing as a later, separate loop.
+
+## Round 35 Implemented
+
+- Rechecked RuoYi user `/export` plus `ExcelUtil.exportExcel` and Yudao
+  `/export-excel` plus `ExcelUtils.write`.
+- Added `contentType` and `contentBase64` to the shared RBAC export response
+  shape.
+- Changed `core.user` export to return `opencore-system-users.xlsx` with MIME
+  `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`.
+- Generated the XLSX container with `fflate`, avoiding a large new Excel
+  dependency and lockfile churn.
+- Preserved `core:user:export` on `GET /api/core/users/export`.
+- Added SDK/OpenAPI optional export payload fields.
+- Added Admin `canExportUsers` access mapping.
+- Added an Admin Users `Download Excel` backend export button guarded by
+  `core:user:export`.
+- Extended Admin static smoke for export service, permission and UI markers.
+- Extended `tools/scripts/smoke-core-user.mjs` with `core.user.export.xlsx`,
+  checking filename, MIME, columns, base64, XLSX zip header and byte length.
+- Added `tools/scripts/sync-prisma-client-instances.mjs` and chained it from
+  `pnpm prisma:generate` so pnpm workspace `@prisma/client` peer instances do
+  not keep stale generated schemas after install.
+
+## Round 35 Verification
+
+- `pnpm nx test contracts`
+- `pnpm nx test module-registry`
+- `pnpm nx test sdk --testFile=rbac-client.spec.ts`
+- `pnpm nx test api --testFile=rbac.permission-matrix.spec.ts`
+- `pnpm nx test system --testFile=system-user.spec.ts`
+- `node scripts/smoke-test.mjs` from `apps/admin`
+- `pnpm nx test admin`
+- `pnpm install --frozen-lockfile --ignore-scripts`
+- `pnpm prisma:generate`
+- `pnpm nx run-many -t typecheck --projects=api,admin,sdk,system`
+- `pnpm openapi:export`
+- `pnpm sdk:check`
+- `pnpm openapi:check`
+- `pnpm openapi:registry-tags:check`
+- `pnpm format:check`
+- `pnpm smoke:api:local`
+- `pnpm prisma:validate`
+- `pnpm build:api`
+- `pnpm build:admin`
+- `git diff --check`
+- `pnpm deploy:opencore`
+
+`pnpm smoke:api:local` passed on fixed port `39173`, including
+`core.user.export.xlsx`.
+
+`pnpm deploy:opencore` passed, deploying API/Admin on fixed ports
+`39172`/`39174`; deploy smoke also included `core.user.export.xlsx` and the
+existing login-prefix/frontend-cache/session-revocation guards. Prisma seed
+reported `permissions: 105`.
+
+## Round 35 Public Verification
+
+Against public endpoints after deploy:
+
+- Public `pnpm smoke:core-user` passed against
+  `http://144.217.243.161:39172` after loading the deployed admin password
+  from `.env.opencore.local` without printing secrets.
+- Public user smoke verified `core.user.export.xlsx`: filename
+  `opencore-system-users.xlsx`, Excel MIME, export columns, base64 body and
+  XLSX zip header.
+- Public Admin `GET http://144.217.243.161:39174/system/users/` returned 200.
+- Public main bundle `umi.c69be9c1.js` contains `core:user:export` and
+  `/core/users/export`.
+- Public Users chunk `p__System__Users.375bc26e.async.js` contains
+  `Download Excel`, `User Excel export downloaded`,
+  `Missing core:user:export` and `Download import template`.
+- Public Admin same-origin proxy login returned 201 for `/api/auth/login` and
+  stale-compatible `/api/api/auth/login`; public API origin
+  `/api/api/auth/login` also returned 201.
+- Public Admin same-origin
+  `/api/core/users/export?deptId=dept_operations` returned an XLSX payload with
+  the expected filename, MIME, columns and `PK` zip header.
+
+## Round 35 Commit Record
+
+- Feature commit:
+  `407dbd0 feat(core-user): add xlsx user export / 新增用户 Excel 导出`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.
