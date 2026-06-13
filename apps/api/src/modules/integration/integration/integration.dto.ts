@@ -74,6 +74,77 @@ export class IntegrationProviderQueryDto extends PageQueryDto {
   healthStatus?: 'unknown' | 'healthy' | 'degraded' | 'disabled';
 }
 
+export class IntegrationProviderDiagnosticCheckDto {
+  @ApiProperty()
+  code!: string;
+
+  @ApiProperty({ enum: ['pass', 'warn', 'fail'] })
+  status!: 'pass' | 'warn' | 'fail';
+
+  @ApiProperty()
+  message!: string;
+}
+
+export class IntegrationProviderDiagnosticLastFailureDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty({ required: false })
+  error?: string;
+
+  @ApiProperty()
+  retryCount!: number;
+
+  @ApiProperty()
+  createdAt!: string;
+}
+
+export class IntegrationProviderDiagnosticOutboxDto {
+  @ApiProperty()
+  total!: number;
+
+  @ApiProperty()
+  queued!: number;
+
+  @ApiProperty()
+  sent!: number;
+
+  @ApiProperty()
+  failed!: number;
+
+  @ApiProperty()
+  retryableFailed!: number;
+
+  @ApiProperty({
+    type: IntegrationProviderDiagnosticLastFailureDto,
+    required: false,
+  })
+  lastFailure?: IntegrationProviderDiagnosticLastFailureDto;
+}
+
+export class IntegrationProviderDiagnosticsDto {
+  @ApiProperty({ type: IntegrationProviderDto })
+  provider!: IntegrationProviderDto;
+
+  @ApiProperty({ enum: ['mail', 'sms'], required: false })
+  channel?: 'mail' | 'sms';
+
+  @ApiProperty({ enum: ['ready', 'attention', 'blocked', 'unsupported'] })
+  readiness!: 'ready' | 'attention' | 'blocked' | 'unsupported';
+
+  @ApiProperty({ type: IntegrationProviderDiagnosticOutboxDto })
+  outbox!: IntegrationProviderDiagnosticOutboxDto;
+
+  @ApiProperty({ type: [IntegrationProviderDiagnosticCheckDto] })
+  checks!: readonly IntegrationProviderDiagnosticCheckDto[];
+
+  @ApiProperty({ type: [String] })
+  actions!: readonly string[];
+
+  @ApiProperty()
+  generatedAt!: string;
+}
+
 export class IntegrationProviderSummaryDto {
   @ApiProperty()
   total!: number;

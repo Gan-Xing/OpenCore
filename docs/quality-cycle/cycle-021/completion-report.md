@@ -4,17 +4,18 @@ Date: 2026-06-13
 
 ## Latest Completed Round
 
-Round 76: `notice.mail` outbox subject persistence.
+Round 77: `integration.provider` diagnostics.
 
 ## Closed
 
-- Added `IntegrationOutbox.subject` and Prisma migration/seed support.
-- Rendered mail template subjects into queued outbox rows.
-- SMTP delivery now sends the persisted outbox subject instead of reading
-  `payload.subject` or `payload.title`.
-- SDK/Admin/OpenAPI/smoke/deploy guards expose and verify mail outbox subject.
+- Added read-only provider diagnostics for readiness, config checks, outbox
+  backlog, retryable failures, last failure and operator actions.
+- Exposed diagnostics through API, OpenAPI, SDK client/types and Admin provider
+  detail.
+- Smoke and deploy bundle guards verify the diagnostics endpoint and frontend
+  surface.
 
 ## Still Open
 
-- Notice still needs realtime push, broader provider-secret injection,
-  STARTTLS/attachments and provider diagnostics.
+- Notice still needs realtime push, broader provider-secret injection and
+  STARTTLS/attachments.

@@ -6,7 +6,9 @@ import {
 import {
   createIntegrationFixtures,
   findIntegrationOutboxFixture,
+  findIntegrationProviderDiagnosticsFixture,
   findIntegrationProviderFixture,
+  type IntegrationProviderDiagnosticsSummary,
   type IntegrationOutboxSummary,
   type IntegrationProviderSummary,
 } from '@opencore/sdk';
@@ -75,6 +77,8 @@ const filterOptions: CurrentPageFilterOption<IntegrationProviderSummary>[] = [
 
 export default function ProvidersPage() {
   const [selected, setSelected] = useState<IntegrationProviderSummary>();
+  const [selectedDiagnostics, setSelectedDiagnostics] =
+    useState<IntegrationProviderDiagnosticsSummary>();
   const [selectedOutbox, setSelectedOutbox] =
     useState<IntegrationOutboxSummary>();
   const { filteredRows, toolbar: filterToolbar } =
@@ -91,6 +95,7 @@ export default function ProvidersPage() {
       (message) => message.providerCode === code,
     );
     setSelected(provider);
+    setSelectedDiagnostics(findIntegrationProviderDiagnosticsFixture(code));
     setSelectedOutbox(
       outbox
         ? findIntegrationOutboxFixture(outbox.channel, outbox.id)
@@ -155,6 +160,7 @@ export default function ProvidersPage() {
         />
         <Statistic title="SMS HTTP adapter" value="allowlisted" />
         <Statistic title="Mail SMTP adapter" value="vault-backed" />
+        <Statistic title="Provider Diagnostics" value="read-only" />
         <Statistic
           title="Design topics"
           value={summary.designs.designOnlyTopics}
@@ -190,6 +196,22 @@ export default function ProvidersPage() {
           { label: 'Health', value: selected?.healthStatus },
           { label: 'Last Checked At', value: selected?.lastCheckedAt },
           {
+            label: 'Diagnostics Readiness',
+            value: selectedDiagnostics?.readiness,
+          },
+          {
+            label: 'Diagnostics Channel',
+            value: selectedDiagnostics?.channel,
+          },
+          {
+            label: 'Outbox Failed',
+            value: selectedDiagnostics?.outbox.failed,
+          },
+          {
+            label: 'Retryable Failed',
+            value: selectedDiagnostics?.outbox.retryableFailed,
+          },
+          {
             label: 'Outbox Policy',
             value: selected?.enabled ? 'enqueue allowed' : 'enqueue blocked',
           },
@@ -222,12 +244,17 @@ export default function ProvidersPage() {
             value: signedCallbackContract,
           },
           {
+            title: 'Provider Diagnostics',
+            value: selectedDiagnostics ?? {},
+          },
+          {
             title: 'Sample Outbox Payload',
             value: selectedOutbox?.payload ?? {},
           },
         ]}
         onClose={() => {
           setSelected(undefined);
+          setSelectedDiagnostics(undefined);
           setSelectedOutbox(undefined);
         }}
         open={Boolean(selected)}

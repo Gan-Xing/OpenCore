@@ -39,6 +39,7 @@ import {
   assertSecretRef,
   assertSmsSafety,
   assertTemplateEnabled,
+  buildProviderDiagnostics,
   buildIntegrationSummary,
   createOutboxScheduleResult,
   createPage,
@@ -160,6 +161,15 @@ export class SeedIntegrationRepository extends IntegrationRepository {
     provider.healthStatus = health.status;
     provider.lastCheckedAt = new Date().toISOString();
     return redactProvider(provider);
+  }
+
+  async getProviderDiagnostics(code: string) {
+    const provider = this.findProvider(code);
+
+    return buildProviderDiagnostics({
+      provider,
+      outbox: this.outbox,
+    });
   }
 
   async listTemplates(

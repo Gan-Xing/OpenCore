@@ -19,10 +19,10 @@ active debt and decisions that change future execution.
 
 ## Runtime State
 
-Cycle-021 has completed 76 deployable stages across
-System/Security/Monitor/Integration foundations. Round 76 made mail outbox
-subject a first-class delivery field, rendered template subjects into outbox
-rows and made SMTP send use the persisted subject instead of payload fallback.
+Cycle-021 has completed 77 deployable stages across
+System/Security/Monitor/Integration foundations. Round 77 added provider
+diagnostics for readiness checks, config-vault hints, outbox backlog, last
+failure and operator actions.
 
 ## Guard Register
 
@@ -33,8 +33,8 @@ rows and made SMTP send use the persisted subject instead of payload fallback.
 - Notice outbox: smoke covers pending handoff, idempotent execute, blank
   failure rejection, failed-to-retry, process-to-sent sync, signed callback
   sync, scheduled retry caps, SMS HTTP host allowlist, SMTP config-vault auth,
-  mail outbox subject persistence, provider failures and sent-state mutation
-  guards.
+  mail outbox subject persistence, provider diagnostics, provider failures and
+  sent-state mutation guards.
 - Operation log: smoke covers batch-delete guards, deleted-detail 404 and
   clean-all target removal while preserving the clean request audit row.
 - Config/secret: smoke covers feature flags, audience rules and no plaintext
@@ -56,8 +56,7 @@ rows and made SMTP send use the persisted subject instead of payload fallback.
 ## Remaining Foundation Debt
 
 - Notice: WebSocket realtime push, broader provider-secret injection,
-  STARTTLS/attachments, provider diagnostics and any admitted
-  tenant/member/mobile channels.
+  STARTTLS/attachments and any admitted tenant/member/mobile channels.
 - Config: multi-environment governance, external KMS, key rotation and secret
   version history.
 - Login log: optional external GeoIP depth and broader mobile/social login

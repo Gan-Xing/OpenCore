@@ -114,6 +114,63 @@ describe('IntegrationRepository', () => {
     });
   });
 
+  it('builds provider diagnostics from health, secret, and outbox state', async () => {
+    const repository = new SeedIntegrationRepository();
+
+    await expect(
+      repository.getProviderDiagnostics('mail.sandbox'),
+    ).resolves.toMatchObject({
+      channel: 'mail',
+      readiness: 'blocked',
+      provider: {
+        code: 'mail.sandbox',
+        config: { clientSecret: '[REDACTED]' },
+      },
+      outbox: {
+        total: 1,
+        queued: 1,
+        failed: 0,
+        retryableFailed: 0,
+      },
+      checks: expect.arrayContaining([
+        expect.objectContaining({ code: 'provider.enabled', status: 'fail' }),
+        expect.objectContaining({ code: 'outbox.queued', status: 'warn' }),
+      ]),
+      actions: expect.arrayContaining([
+        'Enable the provider before processing outbox messages.',
+        'Move runtime provider credentials to secret://config/<key>.',
+      ]),
+    });
+
+    await repository.enableProvider('mail.sandbox');
+    await repository.checkProviderHealth('mail.sandbox');
+    await repository.markOutboxFailed('mail', 'outbox_mail_1', {
+      error: 'Sandbox SMTP rejected the notice',
+    });
+
+    await expect(
+      repository.getProviderDiagnostics('mail.sandbox'),
+    ).resolves.toMatchObject({
+      readiness: 'blocked',
+      outbox: {
+        failed: 1,
+        retryableFailed: 1,
+        lastFailure: {
+          id: 'outbox_mail_1',
+          error: 'Sandbox SMTP rejected the notice',
+          retryCount: 1,
+        },
+      },
+      checks: expect.arrayContaining([
+        expect.objectContaining({ code: 'provider.health', status: 'pass' }),
+        expect.objectContaining({ code: 'outbox.failed', status: 'fail' }),
+      ]),
+      actions: expect.arrayContaining([
+        'Inspect and retry failed outbox messages.',
+      ]),
+    });
+  });
+
   it('renders mail templates and queues outbox messages with retry metadata', async () => {
     const repository = new SeedIntegrationRepository();
 

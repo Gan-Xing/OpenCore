@@ -9,6 +9,7 @@ import type {
   IntegrationOutboxProcessResultDto,
   IntegrationOutboxScheduleResultDto,
   IntegrationOutboxQueryDto,
+  IntegrationProviderDiagnosticsDto,
   IntegrationProviderQueryDto,
   IntegrationProviderType,
   IntegrationSummaryDto,
@@ -70,6 +71,9 @@ export abstract class IntegrationRepository {
   abstract checkProviderHealth(
     code: string,
   ): Promise<IntegrationProviderRecord>;
+  abstract getProviderDiagnostics(
+    code: string,
+  ): Promise<IntegrationProviderDiagnosticsDto>;
 
   abstract listTemplates(
     channel: 'mail' | 'sms',
@@ -168,6 +172,205 @@ export function buildIntegrationSummary(input: {
       ).length,
       topics: input.designs.map((design) => design.topic),
     },
+  };
+}
+
+export function buildProviderDiagnostics(input: {
+  provider: IntegrationProviderRecord;
+  outbox: readonly IntegrationOutboxRecord[];
+  generatedAt?: string;
+}): IntegrationProviderDiagnosticsDto {
+  const channel =
+    input.provider.type === 'mail' || input.provider.type === 'sms'
+      ? input.provider.type
+      : undefined;
+  const providerOutbox = input.outbox.filter(
+    (message) =>
+      message.providerCode === input.provider.code &&
+      (channel === undefined || message.channel === channel),
+  );
+  const failedRows = providerOutbox.filter(
+    (message) => message.status === 'failed',
+  );
+  const lastFailure = [...failedRows].sort(
+    (left, right) =>
+      Date.parse(right.createdAt) - Date.parse(left.createdAt) ||
+      right.id.localeCompare(left.id),
+  )[0];
+  const checks: Array<IntegrationProviderDiagnosticsDto['checks'][number]> = [];
+  const actions: string[] = [];
+
+  const addCheck = (
+    code: string,
+    status: IntegrationProviderDiagnosticsDto['checks'][number]['status'],
+    message: string,
+  ) => {
+    checks.push({ code, status, message });
+  };
+
+  if (!channel) {
+    addCheck(
+      'provider.delivery-channel',
+      'warn',
+      `Provider type ${input.provider.type} has no delivery outbox diagnostics.`,
+    );
+    actions.push(
+      'Use provider diagnostics only for mail and sms delivery providers.',
+    );
+  } else if (input.provider.type === channel) {
+    addCheck(
+      'provider.delivery-channel',
+      'pass',
+      `Provider type matches ${channel} delivery outbox.`,
+    );
+  }
+
+  if (!input.provider.enabled) {
+    addCheck('provider.enabled', 'fail', 'Provider is disabled.');
+    actions.push('Enable the provider before processing outbox messages.');
+  } else {
+    addCheck('provider.enabled', 'pass', 'Provider is enabled.');
+  }
+
+  if (input.provider.healthStatus === 'healthy') {
+    addCheck('provider.health', 'pass', 'Provider health check is healthy.');
+  } else if (input.provider.healthStatus === 'degraded') {
+    addCheck('provider.health', 'fail', 'Provider health check is degraded.');
+    actions.push('Run health-check and inspect provider configuration.');
+  } else if (input.provider.healthStatus === 'disabled') {
+    addCheck('provider.health', 'fail', 'Provider health status is disabled.');
+    actions.push('Run provider health-check after enabling the provider.');
+  } else {
+    addCheck(
+      'provider.health',
+      'warn',
+      'Provider health has not been checked.',
+    );
+    actions.push('Run provider health-check before scheduled processing.');
+  }
+
+  if (input.provider.lastCheckedAt) {
+    addCheck(
+      'provider.last-check',
+      'pass',
+      `Last checked at ${input.provider.lastCheckedAt}.`,
+    );
+  } else {
+    addCheck(
+      'provider.last-check',
+      'warn',
+      'Provider has no health-check timestamp.',
+    );
+  }
+
+  if (input.provider.secretRef.startsWith(CONFIG_SECRET_REF_PREFIX)) {
+    addCheck(
+      'provider.secret-ref',
+      'pass',
+      'Provider secretRef resolves through the config vault.',
+    );
+  } else {
+    addCheck(
+      'provider.secret-ref',
+      'warn',
+      'Provider secretRef is not backed by the config vault.',
+    );
+    actions.push('Move runtime provider credentials to secret://config/<key>.');
+  }
+
+  const adapter =
+    typeof input.provider.config.adapter === 'string'
+      ? input.provider.config.adapter
+      : undefined;
+  const supportedAdapters =
+    channel === 'mail'
+      ? ['sandbox', 'smtp']
+      : channel === 'sms'
+        ? ['sandbox', 'http']
+        : [];
+  if (!channel) {
+    addCheck(
+      'provider.adapter',
+      'warn',
+      'No delivery adapter check is available.',
+    );
+  } else if (adapter && supportedAdapters.includes(adapter)) {
+    addCheck(
+      'provider.adapter',
+      'pass',
+      `Provider uses supported ${channel} adapter ${adapter}.`,
+    );
+  } else {
+    addCheck(
+      'provider.adapter',
+      'fail',
+      `Provider adapter must be one of ${supportedAdapters.join(', ')}.`,
+    );
+    actions.push('Fix provider adapter configuration before sending.');
+  }
+
+  if (failedRows.length > 0) {
+    addCheck(
+      'outbox.failed',
+      'fail',
+      `${failedRows.length} failed outbox message(s) require attention.`,
+    );
+    actions.push('Inspect and retry failed outbox messages.');
+  } else {
+    addCheck('outbox.failed', 'pass', 'No failed outbox messages.');
+  }
+
+  const queuedCount = providerOutbox.filter(
+    (message) => message.status === 'queued',
+  ).length;
+  if (queuedCount > 0) {
+    addCheck(
+      'outbox.queued',
+      'warn',
+      `${queuedCount} queued outbox message(s) are pending processing.`,
+    );
+    actions.push('Run outbox process or the retry schedule for this provider.');
+  } else {
+    addCheck('outbox.queued', 'pass', 'No queued outbox backlog.');
+  }
+
+  if (actions.length === 0) {
+    actions.push('No immediate operator action required.');
+  }
+
+  return {
+    provider: {
+      ...input.provider,
+      config: redactProviderConfig(input.provider.config),
+    },
+    channel,
+    readiness: !channel
+      ? 'unsupported'
+      : checks.some((check) => check.status === 'fail')
+        ? 'blocked'
+        : checks.some((check) => check.status === 'warn')
+          ? 'attention'
+          : 'ready',
+    outbox: {
+      total: providerOutbox.length,
+      queued: queuedCount,
+      sent: providerOutbox.filter((message) => message.status === 'sent')
+        .length,
+      failed: failedRows.length,
+      retryableFailed: failedRows.filter((message) => message.retryCount < 3)
+        .length,
+      lastFailure: lastFailure
+        ? {
+            id: lastFailure.id,
+            error: lastFailure.error,
+            retryCount: lastFailure.retryCount,
+            createdAt: lastFailure.createdAt,
+          }
+        : undefined,
+    },
+    checks,
+    actions: [...new Set(actions)],
+    generatedAt: input.generatedAt ?? new Date().toISOString(),
   };
 }
 

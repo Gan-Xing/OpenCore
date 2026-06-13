@@ -9,6 +9,7 @@ import type {
   IntegrationOutboxQueryRequest,
   IntegrationOutboxScheduleResult,
   IntegrationOutboxSummary,
+  IntegrationProviderDiagnosticsSummary,
   IntegrationProviderPage,
   IntegrationProviderQueryRequest,
   IntegrationProviderSummary,
@@ -58,6 +59,10 @@ export type IntegrationClient = {
     token: string,
     code: string,
   ) => Promise<IntegrationProviderSummary>;
+  getProviderDiagnostics: (
+    token: string,
+    code: string,
+  ) => Promise<IntegrationProviderDiagnosticsSummary>;
   runOutboxSchedule: (
     token: string,
     body?: ScheduleOutboxRequest,
@@ -213,6 +218,11 @@ export function createIntegrationClient(
       request<IntegrationProviderSummary>(
         `/integrations/providers/${encodeURIComponent(code)}/health-check`,
         { method: 'POST', token },
+      ),
+    getProviderDiagnostics: (token, code) =>
+      request<IntegrationProviderDiagnosticsSummary>(
+        `/integrations/providers/${encodeURIComponent(code)}/diagnostics`,
+        { token },
       ),
     runOutboxSchedule: (token, body) =>
       request<IntegrationOutboxScheduleResult>(

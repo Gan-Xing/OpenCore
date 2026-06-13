@@ -31,6 +31,7 @@ import {
 import {
   findIntegrationDesignFixture,
   findIntegrationOutboxFixture,
+  findIntegrationProviderDiagnosticsFixture,
   findIntegrationProviderFixture,
   findIntegrationTemplateFixture,
   findOAuthCallbackContractFixture,
@@ -200,6 +201,12 @@ describe('registry fixtures', () => {
     expect(
       findIntegrationOutboxFixture('sms', 'outbox_mail_1'),
     ).toBeUndefined();
+    expect(
+      findIntegrationProviderDiagnosticsFixture('mail.sandbox')?.outbox.queued,
+    ).toBe(1);
+    expect(
+      findIntegrationProviderDiagnosticsFixture('mail.sandbox')?.readiness,
+    ).toBe('blocked');
     expect(
       findOAuthCallbackContractFixture(
         '/api/integrations/oauth/callback/:providerCode',

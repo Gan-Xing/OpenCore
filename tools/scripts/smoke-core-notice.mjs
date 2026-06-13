@@ -507,6 +507,44 @@ try {
     'Sandbox SMTP rejected the notice',
     'mail outbox error',
   );
+  const mailProviderDiagnostics = await apiRequest(
+    '/integrations/providers/mail.sandbox/diagnostics',
+  );
+  assertEqual(
+    mailProviderDiagnostics.provider.code,
+    'mail.sandbox',
+    'mail provider diagnostics provider',
+  );
+  assertEqual(
+    mailProviderDiagnostics.channel,
+    'mail',
+    'mail provider diagnostics channel',
+  );
+  assertEqual(
+    mailProviderDiagnostics.readiness,
+    'blocked',
+    'mail provider diagnostics readiness',
+  );
+  assertNumberAtLeast(
+    mailProviderDiagnostics.outbox.failed,
+    1,
+    'mail provider diagnostics failed outbox',
+  );
+  assertEqual(
+    mailProviderDiagnostics.outbox.lastFailure.id,
+    mailDelivery.providerMessageId,
+    'mail provider diagnostics last failure',
+  );
+  assertArrayIncludes(
+    mailProviderDiagnostics.checks.map((check) => check.code),
+    'outbox.failed',
+    'mail provider diagnostics checks',
+  );
+  assertArrayIncludes(
+    mailProviderDiagnostics.actions,
+    'Inspect and retry failed outbox messages.',
+    'mail provider diagnostics actions',
+  );
   const failedMailDeliveryPage = await apiRequest(
     `/core/notices/${encodeURIComponent(draftNotice.id)}/deliveries?channel=mail&providerStatus=failed&username=${encodeURIComponent(username)}`,
   );
@@ -1040,6 +1078,7 @@ try {
         'core.notice.deliveries.provider-execute-idempotent',
         'core.notice.deliveries.mail-outbox-provider',
         'core.notice.deliveries.mail-outbox-subject',
+        'core.notice.deliveries.mail-provider-diagnostics',
         'core.notice.deliveries.mail-smtp-adapter',
         'core.notice.deliveries.mail-smtp-subject',
         'core.notice.deliveries.outbox-failed-retry-sent-sync',

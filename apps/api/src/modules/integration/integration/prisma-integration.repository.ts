@@ -41,6 +41,7 @@ import {
   assertSecretRef,
   assertSmsSafety,
   assertTemplateEnabled,
+  buildProviderDiagnostics,
   buildIntegrationSummary,
   createOutboxScheduleResult,
   createPage,
@@ -214,6 +215,19 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
     });
 
     return redactProvider(toProviderRecord(provider));
+  }
+
+  async getProviderDiagnostics(code: string) {
+    const provider = await this.findProvider(code);
+    const outbox = await this.prisma.integrationOutbox.findMany({
+      where: { providerCode: code },
+      orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+    });
+
+    return buildProviderDiagnostics({
+      provider,
+      outbox: outbox.map(toOutboxRecord),
+    });
   }
 
   async listTemplates(

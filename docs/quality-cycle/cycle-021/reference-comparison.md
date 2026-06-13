@@ -33,7 +33,7 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
 - Notice: management, inbox/read analytics, templates, delivery records, local
   provider, Integration outbox bridge, state sync, queued processing and signed
   callback intake plus retry scheduling, SMS HTTP adapter, SMTP adapter and
-  mail subject persistence are live.
+  mail subject persistence and provider diagnostics are live.
 - Config: runtime keys, login policy, feature flags, rollout, audience rules
   and secret-vault encryption are live.
 - Monitor/OpenForge/Scheduler: Monitor Jobs now has a live Admin operation
@@ -65,6 +65,8 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   visibility and record retry/duration/failed run diagnostics.
 - Round 76: Mail outbox subject is a first-class persisted field; SMTP sends
   that field and no longer infers subject from payload.
+- Round 77: Provider diagnostics expose readiness, config-vault hints, outbox
+  backlog, last failure and operator actions through API/SDK/Admin.
 
 ## Explicit Non-Claims
 
@@ -75,6 +77,6 @@ and AI/RAG/Agent workflow.
 
 ## Next Focus
 
-Choose one foundation stage from notice realtime/provider diagnostics, SMTP
-STARTTLS/attachments, config governance, operation-log enrichment, OpenForge
-Admin or integration health/config audit.
+Choose one foundation stage from notice realtime, SMTP STARTTLS/attachments,
+config governance, operation-log enrichment, OpenForge Admin or integration
+health/config audit.

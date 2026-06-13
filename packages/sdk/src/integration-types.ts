@@ -22,6 +22,38 @@ export type IntegrationProviderSummary = {
   lastCheckedAt?: string;
 };
 
+export type IntegrationProviderDiagnosticCheck = {
+  code: string;
+  status: 'fail' | 'pass' | 'warn';
+  message: string;
+};
+
+export type IntegrationProviderDiagnosticLastFailure = {
+  id: string;
+  error?: string;
+  retryCount: number;
+  createdAt: string;
+};
+
+export type IntegrationProviderDiagnosticOutbox = {
+  total: number;
+  queued: number;
+  sent: number;
+  failed: number;
+  retryableFailed: number;
+  lastFailure?: IntegrationProviderDiagnosticLastFailure;
+};
+
+export type IntegrationProviderDiagnosticsSummary = {
+  provider: IntegrationProviderSummary;
+  channel?: 'mail' | 'sms';
+  readiness: 'attention' | 'blocked' | 'ready' | 'unsupported';
+  outbox: IntegrationProviderDiagnosticOutbox;
+  checks: readonly IntegrationProviderDiagnosticCheck[];
+  actions: readonly string[];
+  generatedAt: string;
+};
+
 export type IntegrationTemplateSummary = {
   id: string;
   code: string;
@@ -201,6 +233,7 @@ export type IntegrationOutboxQueryRequest = PageRequest & {
 export type IntegrationFixtures = {
   summary: IntegrationSummary;
   providers: readonly IntegrationProviderSummary[];
+  providerDiagnostics: readonly IntegrationProviderDiagnosticsSummary[];
   mailTemplates: readonly IntegrationTemplateSummary[];
   smsTemplates: readonly IntegrationTemplateSummary[];
   outbox: readonly IntegrationOutboxSummary[];
@@ -310,6 +343,9 @@ export function createIntegrationFixtures(): IntegrationFixtures {
   ];
   const mailOutbox = outbox.filter((message) => message.channel === 'mail');
   const smsOutbox = outbox.filter((message) => message.channel === 'sms');
+  const providerDiagnostics = providers.map((provider) =>
+    buildProviderDiagnosticsFixture(provider, outbox),
+  );
 
   return {
     summary: {
@@ -333,6 +369,7 @@ export function createIntegrationFixtures(): IntegrationFixtures {
       },
     },
     providers,
+    providerDiagnostics,
     mailTemplates,
     smsTemplates,
     outbox,
@@ -346,6 +383,14 @@ export function findIntegrationProviderFixture(
 ): IntegrationProviderSummary | undefined {
   return createIntegrationFixtures().providers.find(
     (provider) => provider.code === code,
+  );
+}
+
+export function findIntegrationProviderDiagnosticsFixture(
+  code: string,
+): IntegrationProviderDiagnosticsSummary | undefined {
+  return createIntegrationFixtures().providerDiagnostics.find(
+    (diagnostics) => diagnostics.provider.code === code,
   );
 }
 
@@ -387,6 +432,93 @@ export function findIntegrationDesignFixture(
 export type IntegrationProviderPage = PageResponse<IntegrationProviderSummary>;
 export type IntegrationTemplatePage = PageResponse<IntegrationTemplateSummary>;
 export type IntegrationOutboxPage = PageResponse<IntegrationOutboxSummary>;
+
+function buildProviderDiagnosticsFixture(
+  provider: IntegrationProviderSummary,
+  outbox: readonly IntegrationOutboxSummary[],
+): IntegrationProviderDiagnosticsSummary {
+  const channel =
+    provider.type === 'mail' || provider.type === 'sms'
+      ? provider.type
+      : undefined;
+  const providerOutbox = outbox.filter(
+    (message) =>
+      message.providerCode === provider.code &&
+      (channel === undefined || message.channel === channel),
+  );
+  const failedRows = providerOutbox.filter(
+    (message) => message.status === 'failed',
+  );
+  const queued = providerOutbox.filter(
+    (message) => message.status === 'queued',
+  ).length;
+  const checks: IntegrationProviderDiagnosticCheck[] = [
+    {
+      code: 'provider.enabled',
+      status: provider.enabled ? 'pass' : 'fail',
+      message: provider.enabled
+        ? 'Provider is enabled.'
+        : 'Provider is disabled.',
+    },
+    {
+      code: 'provider.health',
+      status: provider.healthStatus === 'healthy' ? 'pass' : 'fail',
+      message: `Provider health status is ${provider.healthStatus}.`,
+    },
+    {
+      code: 'provider.secret-ref',
+      status: provider.secretRef.startsWith('secret://config/')
+        ? 'pass'
+        : 'warn',
+      message: provider.secretRef.startsWith('secret://config/')
+        ? 'Provider secretRef resolves through the config vault.'
+        : 'Provider secretRef is not backed by the config vault.',
+    },
+    {
+      code: 'outbox.failed',
+      status: failedRows.length > 0 ? 'fail' : 'pass',
+      message:
+        failedRows.length > 0
+          ? `${failedRows.length} failed outbox message(s) require attention.`
+          : 'No failed outbox messages.',
+    },
+    {
+      code: 'outbox.queued',
+      status: queued > 0 ? 'warn' : 'pass',
+      message:
+        queued > 0
+          ? `${queued} queued outbox message(s) are pending processing.`
+          : 'No queued outbox backlog.',
+    },
+  ];
+
+  return {
+    provider,
+    channel,
+    readiness: !channel
+      ? 'unsupported'
+      : checks.some((check) => check.status === 'fail')
+        ? 'blocked'
+        : checks.some((check) => check.status === 'warn')
+          ? 'attention'
+          : 'ready',
+    outbox: {
+      total: providerOutbox.length,
+      queued,
+      sent: providerOutbox.filter((message) => message.status === 'sent')
+        .length,
+      failed: failedRows.length,
+      retryableFailed: failedRows.filter((message) => message.retryCount < 3)
+        .length,
+      lastFailure: undefined,
+    },
+    checks,
+    actions: provider.enabled
+      ? ['Run provider health-check before scheduled processing.']
+      : ['Enable the provider before processing outbox messages.'],
+    generatedAt: '2026-06-10T00:00:00.000Z',
+  };
+}
 
 function buildOutboxSummary(rows: readonly IntegrationOutboxSummary[]) {
   return {

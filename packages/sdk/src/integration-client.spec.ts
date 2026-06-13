@@ -31,6 +31,7 @@ describe('createIntegrationClient', () => {
     await client.enableProvider('token', 'mail.sandbox');
     await client.disableProvider('token', 'mail.sandbox');
     await client.checkProviderHealth('token', 'mail.sandbox');
+    await client.getProviderDiagnostics('token', 'mail.sandbox');
     await client.runOutboxSchedule('token', {
       channels: ['mail', 'sms'],
       retryFailed: true,
@@ -129,6 +130,9 @@ describe('createIntegrationClient', () => {
       {
         path: '/integrations/providers/mail.sandbox/health-check',
         method: 'POST',
+      },
+      {
+        path: '/integrations/providers/mail.sandbox/diagnostics',
       },
       {
         path: '/integrations/outbox/schedule/run',

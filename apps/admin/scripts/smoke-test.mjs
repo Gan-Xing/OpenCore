@@ -1361,6 +1361,8 @@ if (
   !providersPage.includes("label: 'Secret Ref'") ||
   !providersPage.includes('selected?.secretRef, sensitive: true') ||
   !providersPage.includes('Signed callback contract') ||
+  !providersPage.includes('Provider Diagnostics') ||
+  !providersPage.includes('selectedDiagnostics?.readiness') ||
   !providersPage.includes('SMS HTTP adapter') ||
   !providersPage.includes('Mail SMTP adapter') ||
   !providersPage.includes('allowlisted endpoint + status contract') ||

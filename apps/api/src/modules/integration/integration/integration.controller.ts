@@ -21,6 +21,7 @@ import {
   IntegrationOutboxProcessResultDto,
   IntegrationOutboxQueryDto,
   IntegrationOutboxScheduleResultDto,
+  IntegrationProviderDiagnosticsDto,
   IntegrationProviderDto,
   IntegrationProviderPageDto,
   IntegrationProviderQueryDto,
@@ -115,6 +116,16 @@ export class IntegrationController {
     @Param('code') code: string,
   ): Promise<IntegrationProviderDto> {
     return this.repository.checkProviderHealth(code);
+  }
+
+  @Get('providers/:code/diagnostics')
+  @ApiTags('Integration Providers')
+  @RequirePermission('integration:provider:read')
+  @ApiOkResponse({ type: IntegrationProviderDiagnosticsDto })
+  getProviderDiagnostics(
+    @Param('code') code: string,
+  ): Promise<IntegrationProviderDiagnosticsDto> {
+    return this.repository.getProviderDiagnostics(code);
   }
 
   @Post('outbox/schedule/run')

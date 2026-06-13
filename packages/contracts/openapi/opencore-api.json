@@ -4974,6 +4974,33 @@
         "tags": ["Integration", "Integration Providers"]
       }
     },
+    "/api/integrations/providers/{code}/diagnostics": {
+      "get": {
+        "operationId": "IntegrationController_getProviderDiagnostics",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationProviderDiagnosticsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Providers"]
+      }
+    },
     "/api/integrations/outbox/schedule/run": {
       "post": {
         "operationId": "IntegrationController_runOutboxSchedule",
@@ -9114,6 +9141,69 @@
           "secretRef": { "type": "string" },
           "config": { "type": "object" }
         }
+      },
+      "IntegrationProviderDiagnosticLastFailureDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "error": { "type": "string" },
+          "retryCount": { "type": "number" },
+          "createdAt": { "type": "string" }
+        },
+        "required": ["id", "retryCount", "createdAt"]
+      },
+      "IntegrationProviderDiagnosticOutboxDto": {
+        "type": "object",
+        "properties": {
+          "total": { "type": "number" },
+          "queued": { "type": "number" },
+          "sent": { "type": "number" },
+          "failed": { "type": "number" },
+          "retryableFailed": { "type": "number" },
+          "lastFailure": {
+            "$ref": "#/components/schemas/IntegrationProviderDiagnosticLastFailureDto"
+          }
+        },
+        "required": ["total", "queued", "sent", "failed", "retryableFailed"]
+      },
+      "IntegrationProviderDiagnosticCheckDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "status": { "type": "string", "enum": ["pass", "warn", "fail"] },
+          "message": { "type": "string" }
+        },
+        "required": ["code", "status", "message"]
+      },
+      "IntegrationProviderDiagnosticsDto": {
+        "type": "object",
+        "properties": {
+          "provider": { "$ref": "#/components/schemas/IntegrationProviderDto" },
+          "channel": { "type": "string", "enum": ["mail", "sms"] },
+          "readiness": {
+            "type": "string",
+            "enum": ["ready", "attention", "blocked", "unsupported"]
+          },
+          "outbox": {
+            "$ref": "#/components/schemas/IntegrationProviderDiagnosticOutboxDto"
+          },
+          "checks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IntegrationProviderDiagnosticCheckDto"
+            }
+          },
+          "actions": { "type": "array", "items": { "type": "string" } },
+          "generatedAt": { "type": "string" }
+        },
+        "required": [
+          "provider",
+          "readiness",
+          "outbox",
+          "checks",
+          "actions",
+          "generatedAt"
+        ]
       },
       "ScheduleOutboxDto": {
         "type": "object",

@@ -12,6 +12,7 @@ describe('IntegrationController permission matrix', () => {
       ['enableProvider', ['integration:provider:update']],
       ['disableProvider', ['integration:provider:update']],
       ['checkProviderHealth', ['integration:provider:manage']],
+      ['getProviderDiagnostics', ['integration:provider:read']],
       ['runOutboxSchedule', ['integration:provider:manage']],
       ['listMailTemplates', ['integration:mail:read']],
       ['getMailTemplate', ['integration:mail:read']],
