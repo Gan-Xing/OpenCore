@@ -816,6 +816,47 @@ management user summaries.
       verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 31: core.user Profile Avatar Productization
+
+Why this slice: after the authenticated user option source, the next
+lower-dependency user-profile gap was avatar upload and preview. RuoYi exposes
+`/system/user/profile/avatar` as a dedicated current-user avatar upload path,
+while Yudao carries `avatar` on the current-user profile update shape. OpenCore
+already had a productized file storage boundary from Round 15, so avatar could
+be admitted without opening Excel import/export or broader batch user
+workflows.
+
+- [x] Add persisted user avatar metadata:
+      `avatarUrl/avatarStorageKey/avatarMimeType/avatarSizeBytes/avatarUpdatedAt`.
+- [x] Add Prisma migration for user avatar metadata.
+- [x] Extend system user seed/Prisma repositories with internal avatar
+      read/set/clear contracts while keeping storage keys out of public user
+      summaries.
+- [x] Expose `avatarUrl` through auth user records so login and `/auth/me`
+      refresh the top-bar avatar without changing token payload semantics.
+- [x] Add authenticated `POST /api/core/users/profile/avatar` before
+      `users/:id`, backed by `FileStorageService`.
+- [x] Validate avatar original name, base64, size, MIME type and image magic
+      bytes; reject SVG and arbitrary text.
+- [x] Add authenticated `DELETE /api/core/users/profile/avatar` for cleanup
+      and replacement-safe state reset.
+- [x] Add public read-only `GET /api/core/users/:id/avatar` for browser image
+      preview, returning stored bytes with image content type.
+- [x] Extend API permission-matrix tests so upload/delete remain auth-only and
+      preview remains intentionally public.
+- [x] Extend OpenAPI, SDK types/client methods and SDK path tests.
+- [x] Add Admin Profile avatar upload/remove controls and map `avatarUrl` to
+      Ant Design Pro's `avatar` field.
+- [x] Extend static Admin smoke guards for avatar service methods, page
+      markers and current-user avatar mapping.
+- [x] Extend fixed-port/deploy/public `core.user` smoke to prove auth guard,
+      MIME/base64 guards, upload, public byte download, `/auth/me` avatar
+      refresh, delete and post-delete 404.
+- [x] Verify public Admin same-origin `/api` avatar upload and preview bytes.
+- [x] Run focused, typecheck, build, fixed-port smoke, deployment and public
+      URL verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -853,12 +894,12 @@ treat "minimal loop" as "minimal final product".
 - [ ] Round 3/22/25 `core.post`: user-post binding and simple-list option
       source are complete; batch operations and ordered list refinements
       remain.
-- [ ] Round 7/19/22/23/28/29/30 `core.user`: status toggle, reset password and
+- [ ] Round 7/19/22/23/28/29/30/31 `core.user`: status toggle, reset password and
       direct user-mutation session invalidation are complete. Post binding,
       department side-tree filtering, self-profile basic display-name
       read/update, self-password and authenticated simple-list option source
-      are complete. Avatar, import/export and batch workflows still need
-      enhancement.
+      are complete. Profile avatar upload/public preview/replace/delete is
+      complete. Import/export and batch workflows still need enhancement.
 - [ ] Round 9/24 `core.config`: public get-value-by-key, cache refresh and
       mutation invalidation are complete. Category/name/remark enrichment,
       batch/file export depth and broader runtime propagation boundaries remain.
@@ -903,7 +944,7 @@ treat "minimal loop" as "minimal final product".
   endpoint.
 - Registry definition editing and dynamic permission discovery.
 - User Excel import/export file workflows, dedicated User-page role assignment
-  dialog, avatar/social endpoints and batch user delete.
+  dialog, social endpoints and batch user delete.
 - Batch dictionary delete, Excel import/export file workflows, dictionary
   color/css/remark fields, app-wide dictionary cache TTL/invalidation and
   dictionary cache refresh.

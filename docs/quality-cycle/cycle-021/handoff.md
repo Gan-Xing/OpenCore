@@ -3,8 +3,8 @@
 Date: 2026-06-13
 Repository: `Gan-Xing/OpenCore`
 Default branch: `main`
-Latest observed feature commit: `3dd1b5a feat(core-user): add simple-list option source / 新增用户精简选项源`
-Latest deployed feature commit: `3dd1b5a feat(core-user): add simple-list option source / 新增用户精简选项源`
+Latest observed feature commit: `09cb9b0 feat(core-user): add profile avatar loop / 新增用户头像闭环`
+Latest deployed feature commit: `09cb9b0 feat(core-user): add profile avatar loop / 新增用户头像闭环`
 Latest deployed hardening commit: `04e446c fix(online-user): stabilize admin session smoke / 稳定在线用户管理员会话冒烟`
 
 ## One-sentence Goal
@@ -71,6 +71,7 @@ productization waterline completion; see
 - Round 28 `core.user` self-profile basic info stage 5
 - Round 29 `core.user` self-password stage 6
 - Round 30 `core.user` simple-list option source stage 7
+- Round 31 `core.user` profile avatar stage 8
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -272,6 +273,25 @@ user 过滤、enabled user 回归以及 option shape 管理字段不泄露。公
 和 `Assigned users`；公网 Admin 代理 `/api/auth/login`、兼容 `/api/api/auth/login`
 以及 API origin `/api/api/auth/login` 均返回 201。
 
+Round 31 继续补齐 `core.user` 队列：用户现在有个人头像上传、公开预览、替换和删除闭环。
+`POST /api/core/users/profile/avatar` 使用 auth-only guard，不要求 `core:user:update`
+管理权限，接收 `originalName/mimeType/contentBase64`，只允许 PNG/JPEG/WebP/GIF，
+校验 base64、大小和图片 magic bytes，并通过 `FileStorageService` 写真实对象；
+`DELETE /api/core/users/profile/avatar` 清除当前用户头像并删除旧对象；公开只读
+`GET /api/core/users/:id/avatar` 返回头像 bytes，供 Admin 顶栏和个人资料页直接预览。
+用户 summary/profile/auth-me 返回 `avatarUrl` 和公开头像元数据，但不暴露 storage key。
+SDK/OpenAPI、Prisma migration、seed/Prisma 仓储、API 权限矩阵、Admin static smoke
+和固定 core-user smoke 均同步该闭环。Admin `/personal/profile` 新增上传和移除头像按钮，
+并把 `avatarUrl` 同步到 ProLayout 使用的 `avatar` 字段。固定 smoke、部署 smoke 和公网
+smoke 均证明未登录上传 401、非法 MIME/base64 400、上传后公网下载 bytes 与原文件一致、
+`/auth/me` 返回头像 URL、删除后公开 URL 404。公网 Profile 页返回 200；当前 main bundle
+`umi.04ac3a19.js` 已验证包含 API origin `http://144.217.243.161:39172` 且不包含
+`/api/api/auth/login`；公网 Profile chunk `p__Personal__Profile.e34daa22.async.js`
+已验证包含 `Upload avatar`、`Remove avatar`、`Avatar updated.`、`Avatar removed.`
+和 `avatarUrl`；公网 Admin 同源 `/api` 上传后，使用 Admin 域名访问返回的 `avatarUrl`
+可下载原始图片 bytes；公网 Admin 代理 `/api/auth/login`、兼容 `/api/api/auth/login`
+以及 API origin `/api/api/auth/login` 均返回 201。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -281,7 +301,7 @@ The productization waterline now classifies:
   `core.file`, Round 4/16 `core.menu`, Round 5/17/18/20 `core.role`,
   Round 8/21 `core.dict`.
 - First loop, enhance: Round 1 `core.notice`, Round 2/27 `core.dept`, Round
-  3/22/25 `core.post`, Round 7/19/22/23/28/29/30 `core.user`, Round 9/24
+  3/22/25 `core.post`, Round 7/19/22/23/28/29/30/31 `core.user`, Round 9/24
   `core.config`, Round 11/26 `core.login-log`.
 - Thin, rework: none after Round 16.
 
@@ -295,8 +315,9 @@ finds another blocker:
    self-profile basic display-name read/update; Round 29 closed authenticated
    self-password change with old-password verification and session revocation;
    Round 30 closed the authenticated user simple-list option source consumed
-   by Admin role user assignment. Remaining work is avatar, import/export and
-   batch workflows.
+   by Admin role user assignment; Round 31 closed profile avatar upload,
+   public preview, replacement and deletion. Remaining work is import/export
+   and batch workflows.
 2. `core.config`: Round 24 closed public get-value-by-key plus cache
    refresh/invalidation. Remaining work is category/name/remark enrichment,
    batch/file export depth and broader runtime propagation boundaries.

@@ -538,3 +538,33 @@ a reusable option source:
 This stays inside the current S7 System/RBAC boundary. It does not introduce
 avatar upload, Excel import/export workflows, batch user delete, batch
 enable/disable or a separate User-page role assignment dialog in this round.
+
+## Round 31 Audit: core.user Profile Avatar
+
+After Round 30, the next lower-dependency `core.user` profile gap was avatar
+upload and preview:
+
+- RuoYi exposes a dedicated current-user avatar upload endpoint and updates the
+  cached login user after upload.
+- Yudao carries the avatar URL on the current-user profile response/update
+  shape, keeping avatar as part of the personal profile surface.
+- OpenCore already productized real file upload/download in Round 15, so
+  avatar could reuse the existing file storage boundary instead of introducing
+  a new storage subsystem.
+- The Admin top bar already has an `avatar` slot, but it was never backed by
+  live profile data; profile upload had to refresh both `/auth/me` and the
+  Admin initial state.
+- The public preview URL had to work through the deployed Admin same-origin
+  `/api` proxy, not only against the API origin, because browser `<img>` tags
+  do not attach bearer tokens.
+- Runtime validation needed to reject unsupported MIME types, malformed base64
+  and payloads whose bytes do not match the declared image type, so this does
+  not become another deserialization/shape issue left to operator memory.
+- Fixed-port, deploy and public smoke needed to upload an actual PNG, download
+  it byte-for-byte, prove `/auth/me` sees `avatarUrl`, delete it and verify the
+  old URL returns 404 while restoring any pre-existing admin avatar state.
+
+This stays inside the current S7 System/RBAC profile boundary. It does not
+introduce email/phone profile fields, social account binding, Excel
+import/export workflows, batch user delete, batch enable/disable or a separate
+User-page role assignment dialog in this round.

@@ -915,3 +915,38 @@ privacy boundary for people data:
 OpenCore still does not admit avatar upload, email/phone profile fields,
 social account binding, user import/export file workflows, batch user deletion
 or a dedicated User-page role assignment dialog in this round.
+
+## Round 31 User Profile Avatar Reference Shape
+
+RuoYi exposes current-user avatar upload as a dedicated profile endpoint:
+`POST /system/user/profile/avatar` accepts an `avatarfile`, writes image
+content through its upload utility, updates the current user's avatar path,
+deletes the old avatar file and refreshes the cached login user.
+
+Yudao carries `avatar` on the current-user profile response/update shape. Its
+profile update accepts an avatar URL as part of current-user profile data,
+while password change remains a separate current-user endpoint.
+
+OpenCore admits the matching stage-8 loop by combining those two shapes inside
+its existing file-storage boundary:
+
+- `POST /api/core/users/profile/avatar` is an authenticated current-user
+  endpoint that accepts `originalName/mimeType/contentBase64`;
+- the upload path validates file name, base64, max size, allowed image MIME and
+  magic bytes before storage;
+- the image bytes are stored through `FileStorageService`, not in the user row;
+- user rows persist `avatarUrl`, internal `avatarStorageKey`, MIME, size and
+  update time;
+- public user summary/profile/auth records expose `avatarUrl` and public
+  metadata but never expose storage keys;
+- `GET /api/core/users/:id/avatar` is a public read-only preview endpoint for
+  browser image tags and Admin same-origin proxy previews;
+- `DELETE /api/core/users/profile/avatar` clears the current user's avatar and
+  removes the stored object;
+- fixed-port, deploy and public smoke prove auth guard, malformed MIME/base64
+  rejection, byte-for-byte public download, `/auth/me` avatar refresh,
+  deletion cleanup and Admin same-origin preview.
+
+OpenCore still does not admit email/phone profile fields, social account
+binding, Excel import/export workflows, batch user deletion or a dedicated
+User-page role assignment dialog in this round.

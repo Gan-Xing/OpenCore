@@ -2329,3 +2329,111 @@ Against public endpoints after deploy:
   `3dd1b5a feat(core-user): add simple-list option source / 新增用户精简选项源`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 31 Capability
+
+Capability: `core.user` profile avatar productization.
+
+Goal: close the next user profile gap by adding authenticated current-user
+avatar upload/removal and public preview backed by OpenCore file storage.
+
+## Round 31 Implemented
+
+- Added nullable user avatar metadata columns:
+  `avatarUrl`, internal `avatarStorageKey`, `avatarMimeType`,
+  `avatarSizeBytes` and `avatarUpdatedAt`.
+- Added Prisma migration
+  `20260613010000_user_profile_avatar/migration.sql`.
+- Extended system user seed/Prisma repository and service contracts with
+  `getUserAvatar()`, `updateUserAvatar()` and `clearUserAvatar()`.
+- Kept `avatarStorageKey` out of public user summary/profile DTOs while
+  exposing `avatarUrl` and public metadata.
+- Extended security auth user records and `/auth/me` user payload with
+  `avatarUrl`.
+- Added `POST /api/core/users/profile/avatar` as an auth-only current-user
+  upload endpoint before dynamic `users/:id` routes.
+- Added file-name, base64, max-size, allowed MIME and image magic-byte
+  validation; SVG and arbitrary text are rejected.
+- Stored avatar bytes through `FileStorageService` and delete old avatar
+  objects on replacement.
+- Added `DELETE /api/core/users/profile/avatar` to clear the current user's
+  avatar and remove the stored object.
+- Added public read-only `GET /api/core/users/:id/avatar` for browser image
+  preview and Admin same-origin proxy usage.
+- Extended API permission-matrix tests so upload/delete stay authenticated-only
+  without `core:user:update`, while preview stays intentionally public.
+- Extended OpenAPI and `@opencore/sdk` avatar request/types/client methods.
+- Added Admin Profile upload/remove avatar controls, client-side MIME/size
+  checks and `avatarUrl` synchronization to Ant Design Pro's `avatar` field.
+- Extended Admin static smoke markers for the avatar service methods, page
+  controls and current-user avatar mapping.
+- Extended `tools/scripts/smoke-core-user.mjs` to prove auth guard,
+  MIME/base64 rejection, upload, public byte-for-byte download, `/auth/me`
+  avatar refresh, delete and post-delete 404 while preserving any pre-existing
+  admin avatar.
+
+## Round 31 Verification
+
+- `pnpm prisma:validate`
+- `pnpm prisma:generate`
+- `pnpm prisma:migrate`
+- `pnpm nx test system --testFile=system-user.spec.ts`
+- `pnpm nx test security --testFile=security-auth.spec.ts`
+- `pnpm nx test sdk --testFile=rbac-client.spec.ts`
+- `pnpm nx test api --testFile=rbac.permission-matrix.spec.ts`
+- `node scripts/smoke-test.mjs` from `apps/admin`
+- `pnpm nx run-many -t typecheck --projects=api,admin,sdk,system,security`
+- `pnpm openapi:export`
+- `pnpm openapi:check`
+- `pnpm sdk:check`
+- `pnpm nx test admin`
+- `pnpm smoke:api:local`
+- `pnpm build:api`
+- `pnpm build:admin`
+- `pnpm format:check`
+- `pnpm openapi:registry-tags:check`
+- `pnpm deploy:opencore`
+
+`pnpm smoke:api:local` passed on fixed port `39173`, including
+`core.user.profile.avatar.auth-guard`,
+`core.user.profile.avatar.mime-guard`,
+`core.user.profile.avatar.base64-guard`,
+`core.user.profile.avatar.upload`,
+`core.user.profile.avatar.public-download`,
+`core.user.profile.avatar.auth-me-refresh`,
+`core.user.profile.avatar.delete` and
+`core.user.profile.avatar.delete-removes-public-download`.
+
+`pnpm deploy:opencore` passed, deploying API/Admin on fixed ports
+`39172`/`39174`; deploy smoke includes the new user avatar checks and the
+existing login-prefix/frontend-cache/session-revocation guards.
+
+## Round 31 Public Verification
+
+Against public endpoints after deploy:
+
+- Public `pnpm smoke:core-user` passed against
+  `http://144.217.243.161:39172` after loading the deployed admin password
+  from `.env.opencore.local` without printing secrets.
+- Public user smoke verified unauthenticated avatar upload 401, invalid MIME
+  400, invalid base64 400, avatar upload, public byte-for-byte download,
+  `/auth/me` avatar URL refresh, delete and post-delete 404.
+- `GET http://144.217.243.161:39172/health/ready` returned 200.
+- `GET http://144.217.243.161:39174/` returned 200.
+- `GET http://144.217.243.161:39174/personal/profile` returned 200.
+- Public Admin same-origin proxy login returned 201 for both `/api/auth/login`
+  and stale-compatible `/api/api/auth/login`; public API origin
+  `/api/api/auth/login` also returned 201.
+- Public Profile chunk `p__Personal__Profile.e34daa22.async.js` contains
+  `Upload avatar`, `Remove avatar`, `Avatar updated.`, `Avatar removed.` and
+  `avatarUrl`.
+- Public Admin same-origin avatar verification uploaded a PNG via
+  `http://144.217.243.161:39174/api/core/users/profile/avatar`, then fetched
+  the returned `avatarUrl` through the Admin origin and matched the image bytes.
+
+## Round 31 Commit Record
+
+- Feature commit:
+  `09cb9b0 feat(core-user): add profile avatar loop / 新增用户头像闭环`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.
