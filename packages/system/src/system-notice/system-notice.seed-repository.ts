@@ -8,6 +8,7 @@ import {
   seedSystemNotices,
   type SystemNoticeRecord,
 } from './system-notice.records';
+import { seedSystemUsers } from '../system-user/system-user.records';
 import {
   assertNoticeCanPublish,
   assertNoticeNotArchived,
@@ -25,6 +26,8 @@ import {
   SystemNoticeRepository,
   type SystemNoticeInboxPageQuery,
   type SystemNoticeInboxRecord,
+  type SystemNoticeReadUserRecord,
+  type SystemNoticeReadUsersPageQuery,
   type SystemNoticeReadMutationResult,
   type SystemNoticePageQuery,
 } from './system-notice.repository';
@@ -150,6 +153,37 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
     };
   }
 
+  async listNoticeReadUsers(
+    id: string,
+    query: SystemNoticeReadUsersPageQuery = {},
+  ): Promise<PageResult<SystemNoticeReadUserRecord>> {
+    this.findNotice(id);
+    const rows = [...this.readReceipts.entries()]
+      .map(([key, readAt]) => {
+        const [userId, noticeId] = key.split(':');
+        return { noticeId, readAt, userId };
+      })
+      .filter((receipt) => receipt.noticeId === id)
+      .map((receipt) => {
+        const user = seedSystemUsers.find(
+          (candidate) => candidate.id === receipt.userId,
+        );
+        return {
+          userId: receipt.userId,
+          username: user?.username ?? receipt.userId,
+          displayName: user?.displayName ?? receipt.userId,
+          readAt: receipt.readAt,
+        };
+      })
+      .sort(compareReadUsers);
+    const pagination = normalizeSystemNoticePageQuery(query, rows.length);
+
+    return createSystemNoticePageResult(
+      rows.slice(pagination.skip, pagination.skip + pagination.take),
+      pagination,
+    );
+  }
+
   async getNotice(id: string): Promise<SystemNoticeRecord> {
     return { ...this.findNotice(id) };
   }
@@ -268,4 +302,14 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
 
 function createReadReceiptKey(userId: string, noticeId: string): string {
   return `${userId}:${noticeId}`;
+}
+
+function compareReadUsers(
+  left: SystemNoticeReadUserRecord,
+  right: SystemNoticeReadUserRecord,
+): number {
+  return (
+    new Date(right.readAt).getTime() - new Date(left.readAt).getTime() ||
+    left.username.localeCompare(right.username)
+  );
 }

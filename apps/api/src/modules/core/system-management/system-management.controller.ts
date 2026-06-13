@@ -87,6 +87,8 @@ import {
   SystemNoticePageDto,
   SystemNoticeQueryDto,
   SystemNoticeReadMutationResultDto,
+  SystemNoticeReadUserPageDto,
+  SystemNoticeReadUsersQueryDto,
   SystemNoticeUnreadCountDto,
   SystemPostBatchMutationResultDto,
   SystemPostDto,
@@ -420,6 +422,17 @@ export class SystemManagementController {
     @Req() request: RequestWithUser,
   ): Promise<SystemNoticeInboxItemDto> {
     return this.notices.getNoticeInboxItem(getAuthenticatedUserId(request), id);
+  }
+
+  @Get('notices/:id/read-users')
+  @ApiTags('Core System Notices')
+  @RequirePermission('core:notice:read')
+  @ApiOkResponse({ type: SystemNoticeReadUserPageDto })
+  listNoticeReadUsers(
+    @Param('id') id: string,
+    @Query() query: SystemNoticeReadUsersQueryDto,
+  ): Promise<SystemNoticeReadUserPageDto> {
+    return this.notices.listNoticeReadUsers(id, query);
   }
 
   @Get('notices/:id')

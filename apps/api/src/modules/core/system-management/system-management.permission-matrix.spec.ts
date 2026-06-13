@@ -42,6 +42,7 @@ const expectedPermissions = {
   getNotice: ['core:notice:read'],
   getPost: ['core:post:read'],
   archiveNotice: ['core:notice:update'],
+  listNoticeReadUsers: ['core:notice:read'],
   listAuditLogs: ['core:audit-log:read'],
   listConfig: ['core:config:read'],
   listDepts: ['core:dept:read'],

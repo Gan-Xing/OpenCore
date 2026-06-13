@@ -7,6 +7,7 @@ import {
   ReloadOutlined,
   SendOutlined,
   StopOutlined,
+  TeamOutlined,
 } from '@ant-design/icons';
 import {
   PageContainer,
@@ -17,6 +18,7 @@ import {
   createSystemNoticeFixtures,
   type SystemNoticeAudience,
   type SystemNoticeInboxSummary,
+  type SystemNoticeReadUserSummary,
   type SystemNoticeSummary,
   type SystemNoticeType,
 } from '@opencore/sdk';
@@ -45,6 +47,7 @@ import {
   getOpenCoreSystemNotice,
   getOpenCoreSystemNoticeInboxItem,
   listOpenCoreSystemNoticeInbox,
+  listOpenCoreSystemNoticeReadUsers,
   listOpenCoreSystemNotices,
   markAllOpenCoreSystemNoticesRead,
   markOpenCoreSystemNoticesRead,
@@ -193,6 +196,13 @@ export default function SystemNoticesPage() {
   const [selectedDetail, setSelectedDetail] = useState<SystemNoticeSummary>();
   const [selectedInboxDetail, setSelectedInboxDetail] =
     useState<SystemNoticeInboxSummary>();
+  const [readUsersOpenFor, setReadUsersOpenFor] =
+    useState<SystemNoticeSummary>();
+  const [readUsersRows, setReadUsersRows] = useState<
+    readonly SystemNoticeReadUserSummary[]
+  >([]);
+  const [readUsersLoading, setReadUsersLoading] = useState(false);
+  const [readUsersLoadError, setReadUsersLoadError] = useState<string>();
   const [editingNotice, setEditingNotice] = useState<SystemNoticeSummary>();
   const [formOpen, setFormOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -291,6 +301,28 @@ export default function SystemNoticesPage() {
       setSelectedDetail(await getOpenCoreSystemNotice(record.id));
     } catch (_error) {
       setSelectedDetail(record);
+    }
+  };
+
+  const openReadUsers = async (record: SystemNoticeSummary) => {
+    setReadUsersOpenFor(record);
+    setReadUsersLoading(true);
+    try {
+      const users = await listOpenCoreSystemNoticeReadUsers(record.id, {
+        page: 1,
+        pageSize: 100,
+      });
+      setReadUsersRows(users);
+      setReadUsersLoadError(undefined);
+    } catch (error: unknown) {
+      setReadUsersRows([]);
+      setReadUsersLoadError(
+        error instanceof Error
+          ? error.message
+          : 'Unable to load system notice read users.',
+      );
+    } finally {
+      setReadUsersLoading(false);
     }
   };
 
@@ -398,7 +430,7 @@ export default function SystemNoticesPage() {
     {
       title: 'Actions',
       valueType: 'option',
-      width: 236,
+      width: 280,
       render: (_, record) => {
         const archived = record.status === 'archived';
         const draft = record.status === 'draft';
@@ -410,6 +442,14 @@ export default function SystemNoticesPage() {
                 aria-label={`View ${record.title}`}
                 icon={<EyeOutlined />}
                 onClick={() => void openDetail(record)}
+                size="small"
+              />
+            </Tooltip>
+            <Tooltip title="Read users">
+              <Button
+                aria-label={`View read users for ${record.title}`}
+                icon={<TeamOutlined />}
+                onClick={() => void openReadUsers(record)}
                 size="small"
               />
             </Tooltip>
@@ -475,6 +515,12 @@ export default function SystemNoticesPage() {
         );
       },
     },
+  ];
+
+  const readUserColumns: ProColumns<SystemNoticeReadUserSummary>[] = [
+    { title: 'Username', dataIndex: 'username' },
+    { title: 'Display Name', dataIndex: 'displayName' },
+    { title: 'Read At', dataIndex: 'readAt' },
   ];
 
   const inboxColumns: ProColumns<SystemNoticeInboxSummary>[] = [
@@ -670,6 +716,42 @@ export default function SystemNoticesPage() {
         open={Boolean(selectedInboxDetail)}
         title={selectedInboxDetail?.title ?? 'System Notice Inbox Detail'}
       />
+      <Modal
+        title={
+          readUsersOpenFor
+            ? `System Notice Read Users: ${readUsersOpenFor.title}`
+            : 'System Notice Read Users'
+        }
+        open={Boolean(readUsersOpenFor)}
+        onCancel={() => {
+          setReadUsersOpenFor(undefined);
+          setReadUsersRows([]);
+          setReadUsersLoadError(undefined);
+        }}
+        footer={null}
+        width={720}
+        destroyOnHidden
+      >
+        {readUsersLoadError ? (
+          <Alert
+            showIcon
+            type="warning"
+            message="Unable to load system notice read users"
+            description={readUsersLoadError}
+            style={{ marginBlockEnd: 16 }}
+          />
+        ) : null}
+        <ProTable<SystemNoticeReadUserSummary>
+          rowKey="userId"
+          loading={readUsersLoading}
+          search={false}
+          options={false}
+          toolBarRender={false}
+          pagination={{ pageSize: 10 }}
+          dataSource={[...readUsersRows]}
+          columns={readUserColumns}
+        />
+      </Modal>
       <Modal
         title={editingNotice ? 'Edit System Notice' : 'New System Notice'}
         open={formOpen}

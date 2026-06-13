@@ -152,6 +152,10 @@ describe('createSystemManagementClient', () => {
     await client.getNoticeUnreadCount('token');
     await client.markNoticesRead('token', { ids: ['notice_welcome'] });
     await client.markAllNoticesRead('token');
+    await client.listNoticeReadUsers('token', 'notice_welcome', {
+      page: 1,
+      pageSize: 20,
+    });
     await client.getNotice('token', 'notice_1');
     await client.createNotice('token', {
       title: 'Maintenance',
@@ -405,6 +409,10 @@ describe('createSystemManagementClient', () => {
       {
         path: '/core/notices/inbox/read-all',
         method: 'POST',
+        token: 'token',
+      },
+      {
+        path: '/core/notices/notice_welcome/read-users?page=1&pageSize=20',
         token: 'token',
       },
       {

@@ -11,6 +11,8 @@ import {
   SystemNoticeRepository,
   type SystemNoticeInboxPageQuery,
   type SystemNoticeInboxRecord,
+  type SystemNoticeReadUserRecord,
+  type SystemNoticeReadUsersPageQuery,
   type SystemNoticeReadMutationResult,
   type SystemNoticeExportPreview,
   type SystemNoticePageQuery,
@@ -60,6 +62,13 @@ export class SystemNoticeService {
 
   markAllNoticesRead(userId: string): Promise<SystemNoticeReadMutationResult> {
     return this.repository.markAllNoticesRead(userId);
+  }
+
+  listNoticeReadUsers(
+    id: string,
+    query: SystemNoticeReadUsersPageQuery = {},
+  ): Promise<PageResult<SystemNoticeReadUserRecord>> {
+    return this.repository.listNoticeReadUsers(id, query);
   }
 
   getNotice(id: string): Promise<SystemNoticeRecord> {

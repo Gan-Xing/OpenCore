@@ -2196,6 +2196,51 @@
         "tags": ["SystemManagement", "Core System Notices"]
       }
     },
+    "/api/core/notices/{id}/read-users": {
+      "get": {
+        "operationId": "SystemManagementController_listNoticeReadUsers",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemNoticeReadUserPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Notices"]
+      }
+    },
     "/api/core/notices/{id}": {
       "get": {
         "operationId": "SystemManagementController_getNotice",
@@ -6878,6 +6923,30 @@
           "unreadCount": { "type": "number" }
         },
         "required": ["markedReadCount", "ids", "unreadCount"]
+      },
+      "SystemNoticeReadUserDto": {
+        "type": "object",
+        "properties": {
+          "userId": { "type": "string" },
+          "username": { "type": "string" },
+          "displayName": { "type": "string" },
+          "readAt": { "type": "string" }
+        },
+        "required": ["userId", "username", "displayName", "readAt"]
+      },
+      "SystemNoticeReadUserPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SystemNoticeReadUserDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
       },
       "CreateSystemNoticeDto": {
         "type": "object",

@@ -41,6 +41,8 @@ import type {
   SystemNoticeInboxSummary,
   SystemNoticeQueryRequest,
   SystemNoticeReadMutationSummary,
+  SystemNoticeReadUserSummary,
+  SystemNoticeReadUsersQueryRequest,
   SystemNoticeSummary,
   SystemNoticeUnreadCountSummary,
   SystemPostBatchMutationSummary,
@@ -240,6 +242,11 @@ export type SystemManagementClient = {
   markAllNoticesRead: (
     token: Token,
   ) => Promise<SystemNoticeReadMutationSummary>;
+  listNoticeReadUsers: (
+    token: Token,
+    id: string,
+    query?: SystemNoticeReadUsersQueryRequest,
+  ) => Promise<PageResponse<SystemNoticeReadUserSummary>>;
   getNotice: (token: Token, id: string) => Promise<SystemNoticeSummary>;
   exportNotices: (
     token: Token,
@@ -591,6 +598,13 @@ export function createSystemManagementClient(
         method: 'POST',
         token,
       }),
+    listNoticeReadUsers: (token, id, query) =>
+      request<PageResponse<SystemNoticeReadUserSummary>>(
+        withQuery(`/core/notices/${encodeURIComponent(id)}/read-users`, query),
+        {
+          token,
+        },
+      ),
     getNotice: (token, id) =>
       request<SystemNoticeSummary>(`/core/notices/${encodeURIComponent(id)}`, {
         token,

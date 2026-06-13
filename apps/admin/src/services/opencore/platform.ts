@@ -67,6 +67,8 @@ import {
   type SystemNoticeInboxQueryRequest,
   type SystemNoticeInboxSummary,
   type SystemNoticeReadMutationSummary,
+  type SystemNoticeReadUserSummary,
+  type SystemNoticeReadUsersQueryRequest,
   type SystemNoticeSummary,
   type SystemNoticeUnreadCountSummary,
   type SystemPostBatchMutationSummary,
@@ -760,6 +762,18 @@ export function markOpenCoreSystemNoticesRead(
 
 export function markAllOpenCoreSystemNoticesRead(): Promise<SystemNoticeReadMutationSummary> {
   return systemManagementClient.markAllNoticesRead(getRequiredAdminToken());
+}
+
+export async function listOpenCoreSystemNoticeReadUsers(
+  id: string,
+  query?: SystemNoticeReadUsersQueryRequest,
+): Promise<SystemNoticeReadUserSummary[]> {
+  const page = await systemManagementClient.listNoticeReadUsers(
+    getRequiredAdminToken(),
+    id,
+    query,
+  );
+  return [...page.items];
 }
 
 export function getOpenCoreSystemNotice(

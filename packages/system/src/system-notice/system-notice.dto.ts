@@ -96,6 +96,37 @@ export class SystemNoticeUnreadCountDto {
   unreadCount!: number;
 }
 
+export class SystemNoticeReadUserDto {
+  @ApiProperty()
+  userId!: string;
+
+  @ApiProperty()
+  username!: string;
+
+  @ApiProperty()
+  displayName!: string;
+
+  @ApiProperty()
+  readAt!: string;
+}
+
+export class SystemNoticeReadUserPageDto {
+  @ApiProperty({ type: [SystemNoticeReadUserDto] })
+  items!: readonly SystemNoticeReadUserDto[];
+
+  @ApiProperty()
+  page!: number;
+
+  @ApiProperty()
+  pageSize!: number;
+
+  @ApiProperty()
+  total!: number;
+
+  @ApiProperty()
+  totalPages!: number;
+}
+
 export class MarkSystemNoticesReadDto {
   @ApiProperty({ type: [String] })
   ids!: readonly string[];
@@ -147,6 +178,14 @@ export class SystemNoticeInboxQueryDto {
 
   @ApiProperty({ required: false })
   readStatus?: boolean | string;
+}
+
+export class SystemNoticeReadUsersQueryDto {
+  @ApiProperty({ required: false, default: 1 })
+  page?: number | string;
+
+  @ApiProperty({ required: false, default: 10 })
+  pageSize?: number | string;
 }
 
 export class CreateSystemNoticeDto {

@@ -391,6 +391,7 @@ if (
   !opencorePlatformService.includes('listOpenCoreSystemNoticeInbox') ||
   !opencorePlatformService.includes('listOpenCoreUnreadSystemNotices') ||
   !opencorePlatformService.includes('getOpenCoreSystemNoticeUnreadCount') ||
+  !opencorePlatformService.includes('listOpenCoreSystemNoticeReadUsers') ||
   !opencorePlatformService.includes('markOpenCoreSystemNoticesRead') ||
   !opencorePlatformService.includes('markAllOpenCoreSystemNoticesRead') ||
   !opencorePlatformService.includes('publishOpenCoreSystemNotice') ||
@@ -1080,6 +1081,7 @@ if (
   !systemNoticesPage.includes('listOpenCoreSystemNotices') ||
   !systemNoticesPage.includes('listOpenCoreSystemNoticeInbox') ||
   !systemNoticesPage.includes('getOpenCoreSystemNoticeInboxItem') ||
+  !systemNoticesPage.includes('listOpenCoreSystemNoticeReadUsers') ||
   !systemNoticesPage.includes('markOpenCoreSystemNoticesRead') ||
   !systemNoticesPage.includes('markAllOpenCoreSystemNoticesRead') ||
   !systemNoticesPage.includes('createOpenCoreSystemNotice') ||
@@ -1089,6 +1091,8 @@ if (
   !systemNoticesPage.includes('deleteOpenCoreSystemNotice') ||
   !systemNoticesPage.includes("key: 'inbox'") ||
   !systemNoticesPage.includes('Mark all read') ||
+  !systemNoticesPage.includes('Read users') ||
+  !systemNoticesPage.includes('System Notice Read Users') ||
   !systemNoticesPage.includes('System Notice Inbox Detail') ||
   !systemNoticesPage.includes('useCurrentPageFilters') ||
   !systemNoticesPage.includes('CurrentPageExportButton') ||

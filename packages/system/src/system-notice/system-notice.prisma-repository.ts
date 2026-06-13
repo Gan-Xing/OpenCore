@@ -29,6 +29,8 @@ import {
   toSystemNoticeType,
   type SystemNoticeInboxPageQuery,
   type SystemNoticeInboxRecord,
+  type SystemNoticeReadUserRecord,
+  type SystemNoticeReadUsersPageQuery,
   type SystemNoticeReadMutationResult,
   type SystemNoticePageQuery,
 } from './system-notice.repository';
@@ -54,6 +56,15 @@ type PrismaSystemNoticeWithReadReceipt = PrismaSystemNotice & {
   readReceipts: readonly {
     readAt: Date;
   }[];
+};
+
+type PrismaSystemNoticeReadReceiptWithUser = {
+  readAt: Date;
+  user: {
+    id: string;
+    username: string;
+    displayName: string;
+  };
 };
 
 @Injectable()
@@ -214,6 +225,37 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
     };
   }
 
+  async listNoticeReadUsers(
+    id: string,
+    query: SystemNoticeReadUsersPageQuery = {},
+  ): Promise<PageResult<SystemNoticeReadUserRecord>> {
+    await this.findNoticeById(id);
+    const total = await this.prisma.systemNoticeReadReceipt.count({
+      where: { noticeId: id },
+    });
+    const pagination = normalizeSystemNoticePageQuery(query, total);
+    const rows = await this.prisma.systemNoticeReadReceipt.findMany({
+      where: { noticeId: id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            displayName: true,
+          },
+        },
+      },
+      orderBy: [{ readAt: 'desc' }, { userId: 'asc' }],
+      skip: pagination.skip,
+      take: pagination.take,
+    });
+
+    return createSystemNoticePageResult(
+      rows.map(toSystemNoticeReadUserRecord),
+      pagination,
+    );
+  }
+
   async getNotice(id: string): Promise<SystemNoticeRecord> {
     return toSystemNoticeRecord(await this.findNoticeById(id));
   }
@@ -355,6 +397,17 @@ function toSystemNoticeInboxRecord(
     toSystemNoticeRecord(notice),
     notice.readReceipts[0]?.readAt.toISOString(),
   );
+}
+
+function toSystemNoticeReadUserRecord(
+  receipt: PrismaSystemNoticeReadReceiptWithUser,
+): SystemNoticeReadUserRecord {
+  return {
+    userId: receipt.user.id,
+    username: receipt.user.username,
+    displayName: receipt.user.displayName,
+    readAt: receipt.readAt.toISOString(),
+  };
 }
 
 function createInboxWhere(

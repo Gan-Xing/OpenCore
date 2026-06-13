@@ -325,6 +325,13 @@ export type SystemNoticeInboxSummary = SystemNoticeSummary & {
   readAt?: string;
 };
 
+export type SystemNoticeReadUserSummary = {
+  userId: string;
+  username: string;
+  displayName: string;
+  readAt: string;
+};
+
 export type SystemNoticeQueryRequest = PageRequest & {
   audience?: SystemNoticeAudience;
   status?: SystemNoticeStatus;
@@ -335,6 +342,8 @@ export type SystemNoticeInboxQueryRequest = PageRequest & {
   readStatus?: boolean;
   type?: SystemNoticeType;
 };
+
+export type SystemNoticeReadUsersQueryRequest = PageRequest;
 
 export type MarkSystemNoticesReadRequest = {
   ids: readonly string[];

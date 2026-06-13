@@ -43,6 +43,8 @@ export {
   SystemNoticePageDto,
   SystemNoticeQueryDto,
   SystemNoticeReadMutationResultDto,
+  SystemNoticeReadUserPageDto,
+  SystemNoticeReadUsersQueryDto,
   SystemNoticeUnreadCountDto,
   SystemPostDto,
   SystemPostBatchMutationResultDto,

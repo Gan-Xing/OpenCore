@@ -62,6 +62,12 @@ try {
     expected: [400],
     body: { ids: ['notice_welcome', 'notice_welcome'] },
   });
+  await apiRequest(
+    '/core/notices/missing_notice/read-users?page=1&pageSize=10',
+    {
+      expected: [404],
+    },
+  );
 
   const draftNotice = await createNotice(noticeTitles[0]);
   await apiRequest(
@@ -127,6 +133,14 @@ try {
   assertString(readItem.readAt, 'read inbox item readAt');
   const readPage = await apiRequest('/core/notices/inbox?readStatus=true');
   assertPageItemsContain(readPage, draftNotice.id, 'read inbox page');
+  const readUsersPage = await apiRequest(
+    `/core/notices/${encodeURIComponent(draftNotice.id)}/read-users?page=1&pageSize=10`,
+  );
+  assertPageItemsContainUsername(
+    readUsersPage,
+    username,
+    'notice read users page',
+  );
   assertItemsExclude(
     await apiRequest('/core/notices/inbox/unread-list?limit=10'),
     draftNotice.id,
@@ -175,6 +189,7 @@ try {
         'core.notice.inbox.bad-read-status-guard',
         'core.notice.inbox.empty-read-ids-guard',
         'core.notice.inbox.duplicate-read-ids-guard',
+        'core.notice.read-users.missing-guard',
         'core.notice.inbox.draft-hidden',
         'core.notice.inbox.mark-draft-hidden-guard',
         'core.notice.publish',
@@ -186,6 +201,7 @@ try {
         'core.notice.inbox.mark-read',
         'core.notice.inbox.repeat-read-idempotent',
         'core.notice.inbox.read-page',
+        'core.notice.read-users.list',
         'core.notice.inbox.unread-list-after-read',
         'core.notice.inbox.mark-all-read',
         'core.notice.cleanup',
@@ -312,6 +328,17 @@ async function request(pathOrUrl, options = {}) {
 function assertPageItemsContain(page, id, label) {
   assertArray(page.items, `${label} items`);
   assertItemsContain(page.items, id, label);
+}
+
+function assertPageItemsContainUsername(page, username, label) {
+  assertArray(page.items, `${label} items`);
+  const item = page.items.find((candidate) => candidate?.username === username);
+
+  if (!item) {
+    throw new Error(`${label} must include username ${username}`);
+  }
+
+  assertString(item.readAt, `${label} readAt`);
 }
 
 function assertItemsContain(items, id, label) {

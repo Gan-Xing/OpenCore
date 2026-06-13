@@ -36,6 +36,8 @@ export type SystemNoticeInboxPageQuery = PageQueryInput & {
   type?: string;
 };
 
+export type SystemNoticeReadUsersPageQuery = PageQueryInput;
+
 export type SystemNoticeFilters = {
   audience?: SystemNoticeAudience;
   status?: SystemNoticeStatus;
@@ -56,6 +58,13 @@ export type SystemNoticeReadMutationResult = {
   markedReadCount: number;
   ids: readonly string[];
   unreadCount: number;
+};
+
+export type SystemNoticeReadUserRecord = {
+  userId: string;
+  username: string;
+  displayName: string;
+  readAt: string;
 };
 
 export type SystemNoticeNormalizedPageQuery = {
@@ -126,6 +135,11 @@ export abstract class SystemNoticeRepository {
   abstract markAllNoticesRead(
     userId: string,
   ): Promise<SystemNoticeReadMutationResult>;
+
+  abstract listNoticeReadUsers(
+    id: string,
+    query?: SystemNoticeReadUsersPageQuery,
+  ): Promise<PageResult<SystemNoticeReadUserRecord>>;
 
   abstract getNotice(id: string): Promise<SystemNoticeRecord>;
 

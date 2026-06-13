@@ -133,6 +133,24 @@ describe('@opencore/system system-notice', () => {
       }),
     );
     await expect(
+      service.listNoticeReadUsers('notice_welcome', { page: 1, pageSize: 5 }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        items: [
+          expect.objectContaining({
+            userId,
+            username: userId,
+            displayName: userId,
+            readAt: expect.any(String),
+          }),
+        ],
+        total: 1,
+      }),
+    );
+    await expect(
+      service.listNoticeReadUsers('missing_notice', { page: 1, pageSize: 5 }),
+    ).rejects.toThrow('System notice not found');
+    await expect(
       service.listNoticeInbox(userId, { readStatus: false }),
     ).resolves.toEqual(expect.objectContaining({ total: 0 }));
   });
@@ -252,6 +270,21 @@ describe('@opencore/system system-notice', () => {
           id: notice.id,
           read: true,
           readAt: expect.any(String),
+        }),
+      );
+      await expect(
+        service.listNoticeReadUsers(notice.id, { page: 1, pageSize: 5 }),
+      ).resolves.toEqual(
+        expect.objectContaining({
+          items: [
+            expect.objectContaining({
+              userId: inboxUserId,
+              username: `notice_inbox_${testRunId}`,
+              displayName: 'Notice Inbox Test User',
+              readAt: expect.any(String),
+            }),
+          ],
+          total: 1,
         }),
       );
     });
