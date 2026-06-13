@@ -11,7 +11,7 @@ import {
   useIntl,
   useModel,
 } from '@umijs/max';
-import { Alert, App } from 'antd';
+import { Alert, App, Space, Typography } from 'antd';
 import { createStyles } from 'antd-style';
 import React, { startTransition, useState } from 'react';
 import { Footer } from '@/components';
@@ -46,6 +46,10 @@ const useStyles = createStyles(({ token }) => {
       backgroundImage:
         "url('https://mdn.alipayobjects.com/yuyan_qk0oxh/afts/img/V-_oS6r-i7wAAAAAAAAAAAAAFl94AQBr')",
       backgroundSize: '100% 100%',
+    },
+    loginPolicyText: {
+      fontSize: 12,
+      lineHeight: '20px',
     },
   };
 });
@@ -99,6 +103,7 @@ const Login: React.FC = () => {
   const intl = useIntl();
   const runtimeTitle =
     initialState?.settings?.title ?? Settings.title ?? 'OpenCore Admin';
+  const loginLockoutMinutes = initialState?.runtimeConfig?.loginLockoutMinutes;
 
   const fetchUserInfo = async () => {
     const userInfo = await initialState?.fetchUserInfo?.();
@@ -182,10 +187,24 @@ const Login: React.FC = () => {
           }}
           logo={<img alt="logo" src="/logo.svg" />}
           title={runtimeTitle}
-          subTitle={intl.formatMessage({
-            id: 'pages.layouts.userLayout.title',
-            defaultMessage: 'OpenCore enterprise administration console',
-          })}
+          subTitle={
+            <Space direction="vertical" size={2}>
+              <span>
+                {intl.formatMessage({
+                  id: 'pages.layouts.userLayout.title',
+                  defaultMessage: 'OpenCore enterprise administration console',
+                })}
+              </span>
+              {typeof loginLockoutMinutes === 'number' ? (
+                <Typography.Text
+                  className={styles.loginPolicyText}
+                  type="secondary"
+                >
+                  Login lockout window: {loginLockoutMinutes} minutes
+                </Typography.Text>
+              ) : null}
+            </Space>
+          }
           initialValues={{
             autoLogin: true,
           }}

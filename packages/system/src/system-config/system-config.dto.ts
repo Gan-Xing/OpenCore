@@ -54,6 +54,9 @@ export class SystemConfigValueDto {
 export class SystemConfigRuntimeDto {
   @ApiProperty({ example: 'OpenCore Admin' })
   adminTitle!: string;
+
+  @ApiProperty({ example: 15, minimum: 1, maximum: 1440 })
+  loginLockoutMinutes!: number;
 }
 
 export class SystemConfigCacheRefreshDto {

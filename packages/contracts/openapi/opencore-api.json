@@ -6321,9 +6321,15 @@
       "SystemConfigRuntimeDto": {
         "type": "object",
         "properties": {
-          "adminTitle": { "type": "string", "example": "OpenCore Admin" }
+          "adminTitle": { "type": "string", "example": "OpenCore Admin" },
+          "loginLockoutMinutes": {
+            "type": "number",
+            "example": 15,
+            "minimum": 1,
+            "maximum": 1440
+          }
         },
-        "required": ["adminTitle"]
+        "required": ["adminTitle", "loginLockoutMinutes"]
       },
       "SystemConfigValueDto": {
         "type": "object",

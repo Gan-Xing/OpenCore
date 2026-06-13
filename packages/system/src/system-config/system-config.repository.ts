@@ -16,6 +16,7 @@ import {
 } from '../export-xlsx';
 import type {
   SystemConfigRecord,
+  SystemConfigValueType,
   SystemConfigVisibility,
 } from './system-config.records';
 
@@ -269,6 +270,39 @@ export function normalizeConfigName(value: unknown, key: string): string {
   if (normalized.length > 100) {
     throw new BadRequestException(
       'System config name must not exceed 100 characters.',
+    );
+  }
+
+  return normalized;
+}
+
+export function normalizeConfigValue(
+  value: unknown,
+  valueType: SystemConfigValueType,
+): string {
+  if (typeof value !== 'string') {
+    throw new BadRequestException('System config value must be a string.');
+  }
+
+  if (valueType === 'string') {
+    return value;
+  }
+
+  const normalized = value.trim();
+
+  if (valueType === 'boolean') {
+    if (normalized !== 'true' && normalized !== 'false') {
+      throw new BadRequestException(
+        'Boolean system config values must be "true" or "false".',
+      );
+    }
+
+    return normalized;
+  }
+
+  if (!normalized || !Number.isFinite(Number(normalized))) {
+    throw new BadRequestException(
+      'Number system config values must be finite numbers.',
     );
   }
 

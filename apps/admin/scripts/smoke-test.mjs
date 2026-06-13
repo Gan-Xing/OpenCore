@@ -235,10 +235,12 @@ if (
   loginPage.includes('getFakeCaptcha') ||
   loginPage.includes('@/services/ant-design-pro') ||
   !loginPage.includes('runtimeTitle') ||
-  !loginPage.includes('title={runtimeTitle}')
+  !loginPage.includes('title={runtimeTitle}') ||
+  !loginPage.includes('loginLockoutMinutes') ||
+  !loginPage.includes('Login lockout window')
 ) {
   throw new Error(
-    'Admin login must call OpenCore auth, use runtime config title and avoid demo login services.',
+    'Admin login must call OpenCore auth, use runtime config title/login policy and avoid demo login services.',
   );
 }
 
@@ -249,7 +251,8 @@ const runtimeConfigService = readFileSync(
 
 if (
   !runtimeConfigService.includes('getOpenCoreAdminRuntimeConfig') ||
-  !runtimeConfigService.includes('getConfigRuntime')
+  !runtimeConfigService.includes('getConfigRuntime') ||
+  !runtimeConfigService.includes('SystemConfigRuntimeSummary')
 ) {
   throw new Error(
     'Admin runtime config service must read OpenCore public runtime config through the SDK.',

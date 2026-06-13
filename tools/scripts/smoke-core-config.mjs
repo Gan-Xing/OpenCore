@@ -30,7 +30,9 @@ const batchKeyB = `opencore.smoke.config.batch.${runId}.b`;
 const secretKey = `auth.token.secret.${runId}`;
 let token;
 let originalAdminTitle;
+let originalLoginLockoutMinutes;
 let adminTitleMutated = false;
+let loginLockoutMutated = false;
 
 const createdKeys = [];
 
@@ -65,6 +67,37 @@ try {
     'seeded admin title value',
   );
   assertEqual(seededSystemConfig.system, true, 'seeded config system flag');
+  const seededLoginPolicyConfig = await apiRequest(
+    '/core/config/auth.login.lockoutMinutes',
+  );
+  originalLoginLockoutMinutes = assertString(
+    seededLoginPolicyConfig.value,
+    'seeded login lockout minutes value',
+  );
+  const originalLoginLockoutMinutesNumber = parseRuntimeInteger(
+    originalLoginLockoutMinutes,
+    'seeded login lockout minutes',
+  );
+  assertEqual(
+    seededLoginPolicyConfig.system,
+    true,
+    'seeded login lockout system flag',
+  );
+  assertEqual(
+    seededLoginPolicyConfig.public,
+    true,
+    'seeded login lockout public flag',
+  );
+  assertEqual(
+    seededLoginPolicyConfig.visibility,
+    'public',
+    'seeded login lockout visibility',
+  );
+  assertEqual(
+    seededLoginPolicyConfig.valueType,
+    'number',
+    'seeded login lockout value type',
+  );
   const initialRuntimeConfig = await request(
     `${apiPrefix}/core/config/runtime`,
   );
@@ -73,8 +106,34 @@ try {
     originalAdminTitle,
     'initial runtime admin title',
   );
+  assertEqual(
+    initialRuntimeConfig.loginLockoutMinutes,
+    originalLoginLockoutMinutesNumber,
+    'initial runtime login lockout minutes',
+  );
   await apiRequest('/core/config/opencore.admin.title', {
     method: 'DELETE',
+    expected: [400],
+  });
+  await apiRequest('/core/config/auth.login.lockoutMinutes', {
+    method: 'PATCH',
+    body: {
+      value: 'not-a-number',
+    },
+    expected: [400],
+  });
+  await apiRequest('/core/config/auth.login.lockoutMinutes', {
+    method: 'PATCH',
+    body: {
+      value: '20.5',
+    },
+    expected: [400],
+  });
+  await apiRequest('/core/config/auth.login.lockoutMinutes', {
+    method: 'PATCH',
+    body: {
+      visibility: 'private',
+    },
     expected: [400],
   });
   const smokeAdminTitle = `OpenCore Smoke Admin ${runId}`;
@@ -102,6 +161,33 @@ try {
     'runtime admin title after update',
   );
   await restoreAdminTitle();
+
+  const smokeLoginLockoutMinutes =
+    originalLoginLockoutMinutesNumber === 15 ? 16 : 15;
+  const updatedLoginPolicy = await apiRequest(
+    '/core/config/auth.login.lockoutMinutes',
+    {
+      method: 'PATCH',
+      body: {
+        value: String(smokeLoginLockoutMinutes),
+      },
+    },
+  );
+  loginLockoutMutated = true;
+  assertEqual(
+    updatedLoginPolicy.value,
+    String(smokeLoginLockoutMinutes),
+    'updated login lockout config value',
+  );
+  const updatedLoginPolicyRuntimeConfig = await request(
+    `${apiPrefix}/core/config/runtime`,
+  );
+  assertEqual(
+    updatedLoginPolicyRuntimeConfig.loginLockoutMinutes,
+    smokeLoginLockoutMinutes,
+    'runtime login lockout minutes after update',
+  );
+  await restoreLoginLockoutMinutes();
 
   const createdConfig = await apiRequest('/core/config', {
     method: 'POST',
@@ -375,6 +461,8 @@ try {
         'core.config.metadata',
         'core.config.runtime',
         'core.config.runtime-cache-invalidation',
+        'core.config.runtime-login-policy',
+        'core.config.runtime-login-policy-guards',
         'core.config.value-by-key',
         'core.config.value-cache-invalidation',
         'core.config.cache-refresh',
@@ -398,6 +486,7 @@ try {
 } catch (error) {
   await cleanupCreatedConfig().catch(() => undefined);
   await restoreAdminTitle().catch(() => undefined);
+  await restoreLoginLockoutMinutes().catch(() => undefined);
   console.error(
     JSON.stringify({
       status: 'fail',
@@ -474,6 +563,24 @@ async function restoreAdminTitle() {
     },
   });
   adminTitleMutated = false;
+}
+
+async function restoreLoginLockoutMinutes() {
+  if (
+    !token ||
+    !loginLockoutMutated ||
+    originalLoginLockoutMinutes === undefined
+  ) {
+    return;
+  }
+
+  await apiRequest('/core/config/auth.login.lockoutMinutes', {
+    method: 'PATCH',
+    body: {
+      value: originalLoginLockoutMinutes,
+    },
+  });
+  loginLockoutMutated = false;
 }
 
 async function request(path, options = {}) {
@@ -569,6 +676,16 @@ function assertNumberAtLeast(actual, expected, label) {
   if (typeof actual !== 'number' || actual < expected) {
     throw new Error(`${label} expected >= ${expected}, got ${actual}`);
   }
+}
+
+function parseRuntimeInteger(value, label) {
+  const parsed = Number(value);
+
+  if (!Number.isInteger(parsed)) {
+    throw new Error(`${label} must be an integer`);
+  }
+
+  return parsed;
 }
 
 function formatBody(value) {

@@ -32,9 +32,13 @@ export type SystemConfigCacheRefreshResult = {
 
 export type SystemConfigRuntimeResult = {
   adminTitle: string;
+  loginLockoutMinutes: number;
 };
 
 const ADMIN_TITLE_CONFIG_KEY = 'opencore.admin.title';
+const LOGIN_LOCKOUT_MINUTES_CONFIG_KEY = 'auth.login.lockoutMinutes';
+const MIN_LOGIN_LOCKOUT_MINUTES = 1;
+const MAX_LOGIN_LOCKOUT_MINUTES = 1440;
 
 @Injectable()
 export class SystemConfigService {
@@ -69,10 +73,17 @@ export class SystemConfigService {
   }
 
   async getRuntimeConfig(): Promise<SystemConfigRuntimeResult> {
-    const adminTitle = await this.getConfigValueByKey(ADMIN_TITLE_CONFIG_KEY);
+    const [adminTitle, loginLockoutMinutes] = await Promise.all([
+      this.getConfigValueByKey(ADMIN_TITLE_CONFIG_KEY),
+      this.getConfigValueByKey(LOGIN_LOCKOUT_MINUTES_CONFIG_KEY),
+    ]);
 
     return {
       adminTitle: adminTitle.value,
+      loginLockoutMinutes: parseRuntimePositiveInteger(
+        loginLockoutMinutes.value,
+        LOGIN_LOCKOUT_MINUTES_CONFIG_KEY,
+      ),
     };
   }
 
@@ -114,6 +125,7 @@ export class SystemConfigService {
     key: string,
     body: UpdateSystemConfigDto,
   ): Promise<SystemConfigRecord> {
+    assertRuntimeConfigMutation(key, body);
     const config = await this.repository.updateConfig(key, body);
     this.invalidateValueCache(config.key);
     return config;
@@ -145,6 +157,61 @@ export class SystemConfigService {
 
   private invalidateValueCache(key: string): void {
     this.valueCache.delete(key);
+  }
+}
+
+function parseRuntimePositiveInteger(value: string, key: string): number {
+  const normalized = value.trim();
+  const parsed = Number(normalized);
+
+  if (
+    !Number.isInteger(parsed) ||
+    parsed < MIN_LOGIN_LOCKOUT_MINUTES ||
+    parsed > MAX_LOGIN_LOCKOUT_MINUTES
+  ) {
+    throw new BadRequestException(
+      `Runtime config ${key} must be an integer between ${MIN_LOGIN_LOCKOUT_MINUTES} and ${MAX_LOGIN_LOCKOUT_MINUTES}.`,
+    );
+  }
+
+  return parsed;
+}
+
+function assertRuntimeConfigMutation(
+  key: string,
+  body: UpdateSystemConfigDto,
+): void {
+  if (
+    key !== ADMIN_TITLE_CONFIG_KEY &&
+    key !== LOGIN_LOCKOUT_MINUTES_CONFIG_KEY
+  ) {
+    return;
+  }
+
+  if (
+    body.public === false ||
+    (body.visibility !== undefined && body.visibility !== 'public')
+  ) {
+    throw new BadRequestException(`Runtime config ${key} must remain public.`);
+  }
+
+  if (key === ADMIN_TITLE_CONFIG_KEY) {
+    if (body.valueType !== undefined && body.valueType !== 'string') {
+      throw new BadRequestException(
+        `Runtime config ${key} must keep string value type.`,
+      );
+    }
+    return;
+  }
+
+  if (body.valueType !== undefined && body.valueType !== 'number') {
+    throw new BadRequestException(
+      `Runtime config ${key} must keep number value type.`,
+    );
+  }
+
+  if (body.value !== undefined) {
+    parseRuntimePositiveInteger(body.value, key);
   }
 }
 

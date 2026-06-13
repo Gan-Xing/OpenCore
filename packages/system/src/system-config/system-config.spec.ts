@@ -47,10 +47,15 @@ describe('@opencore/system system-config', () => {
     });
     await expect(service.getRuntimeConfig()).resolves.toEqual({
       adminTitle: 'OpenCore Admin',
+      loginLockoutMinutes: 15,
     });
     await expect(
       service.getConfigValueByKey('auth.login.lockoutMinutes'),
-    ).rejects.toThrow(ForbiddenException);
+    ).resolves.toEqual({
+      key: 'auth.login.lockoutMinutes',
+      value: '15',
+      valueType: 'number',
+    });
 
     const config = await service.createConfig({
       category: 'feature',
@@ -160,15 +165,39 @@ describe('@opencore/system system-config', () => {
 
     await expect(service.getRuntimeConfig()).resolves.toEqual({
       adminTitle: 'OpenCore Admin',
+      loginLockoutMinutes: 15,
     });
 
     await service.updateConfig('opencore.admin.title', {
       value: 'OpenCore Runtime Admin',
     });
+    await service.updateConfig('auth.login.lockoutMinutes', {
+      value: '20',
+    });
 
     await expect(service.getRuntimeConfig()).resolves.toEqual({
       adminTitle: 'OpenCore Runtime Admin',
+      loginLockoutMinutes: 20,
     });
+
+    await expect(
+      service.updateConfig('auth.login.lockoutMinutes', {
+        value: '20.5',
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.updateConfig('auth.login.lockoutMinutes', {
+        value: 'not-a-number',
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.createConfig({
+        key: 'sample.boolean.invalid',
+        value: 'yes',
+        valueType: 'boolean',
+        visibility: 'public',
+      }),
+    ).rejects.toThrow(BadRequestException);
   });
 
   it('requires explicit secret visibility and redacts secret config values', async () => {
@@ -294,7 +323,11 @@ describe('@opencore/system system-config', () => {
       });
       await expect(
         service.getConfigValueByKey('auth.login.lockoutMinutes'),
-      ).rejects.toThrow(ForbiddenException);
+      ).resolves.toEqual({
+        key: 'auth.login.lockoutMinutes',
+        value: '15',
+        valueType: 'number',
+      });
 
       const secret = await service.createConfig({
         category: 'security',

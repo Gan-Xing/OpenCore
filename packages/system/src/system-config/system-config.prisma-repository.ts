@@ -18,6 +18,7 @@ import {
   createSystemConfigPageResult,
   normalizeConfigCategory,
   normalizeConfigName,
+  normalizeConfigValue,
   normalizeBatchSystemConfigKeys,
   normalizeOptionalConfigText,
   normalizeSystemConfigPageQuery,
@@ -86,8 +87,8 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
         category: normalizeConfigCategory(body.category),
         name: normalizeConfigName(body.name, body.key),
         key: body.key,
-        value: body.value,
         valueType: body.valueType,
+        value: normalizeConfigValue(body.value, body.valueType),
         description: normalizeOptionalConfigText(
           body.description,
           'description',
@@ -106,6 +107,13 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
     body: UpdateSystemConfigDto,
   ): Promise<SystemConfigRecord> {
     const existing = await this.findConfigByKey(key);
+    const nextValueType = toSystemConfigValueType(
+      body.valueType ?? existing.valueType,
+    );
+    const nextValue =
+      body.value === undefined
+        ? normalizeConfigValue(existing.value, nextValueType)
+        : normalizeConfigValue(body.value, nextValueType);
     const visibility = resolveStoredConfigVisibility({
       key,
       public: body.public ?? existing.public,
@@ -123,8 +131,8 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
           body.name === undefined
             ? existing.name
             : normalizeConfigName(body.name, key),
-        value: body.value ?? existing.value,
-        valueType: body.valueType ?? existing.valueType,
+        value: nextValue,
+        valueType: nextValueType,
         description:
           body.description === undefined
             ? existing.description

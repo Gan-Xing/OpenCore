@@ -27,6 +27,7 @@ import {
   type AdminCurrentUser,
 } from '@/services/opencore/auth';
 import { getOpenCoreAdminRuntimeConfig } from '@/services/opencore/runtimeConfig';
+import type { SystemConfigRuntimeSummary } from '@opencore/sdk';
 import useShadcnTheme from '@/theme/shadcnTheme';
 import defaultSettings from '../config/defaultSettings';
 import { errorConfig } from './requestErrorConfig';
@@ -44,6 +45,7 @@ export type AdminInitialState = {
   permissions: readonly string[];
   menus: readonly ShellMenuItem[];
   registrySummary: typeof registrySummary;
+  runtimeConfig?: SystemConfigRuntimeSummary;
   loading?: boolean;
   fetchUserInfo?: () => Promise<AdminCurrentUser | undefined>;
   settingDrawerOpen?: boolean;
@@ -82,6 +84,7 @@ export async function getInitialState(): Promise<AdminInitialState> {
     menus: shellMenuItems,
     permissions: [],
     registrySummary,
+    runtimeConfig,
     settings: {
       ...(defaultSettings as Partial<LayoutSettings>),
       title: runtimeConfig?.adminTitle ?? fallbackAdminTitle,

@@ -89,6 +89,7 @@ describe('app getInitialState', () => {
     };
     mocks.getOpenCoreAdminRuntimeConfig.mockResolvedValue({
       adminTitle: 'OpenCore Admin',
+      loginLockoutMinutes: 15,
     });
   });
 
@@ -116,6 +117,7 @@ describe('app getInitialState', () => {
     });
     expect(state.permissions).toEqual(['core:dashboard:read']);
     expect(state.settingDrawerOpen).toBe(false);
+    expect(state.runtimeConfig?.loginLockoutMinutes).toBe(15);
     expect(state.fetchUserInfo).toBeDefined();
   });
 
@@ -191,6 +193,7 @@ describe('app getInitialState', () => {
     const { getInitialState } = await import('./app');
     mocks.getOpenCoreAdminRuntimeConfig.mockResolvedValue({
       adminTitle: 'OpenCore Runtime Admin',
+      loginLockoutMinutes: 20,
     });
     mocks.queryCurrentOpenCoreUser.mockResolvedValue({
       user: {
@@ -206,5 +209,6 @@ describe('app getInitialState', () => {
     const state = await getInitialState();
 
     expect(state.settings?.title).toBe('OpenCore Runtime Admin');
+    expect(state.runtimeConfig?.loginLockoutMinutes).toBe(20);
   });
 });

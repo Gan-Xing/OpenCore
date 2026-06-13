@@ -20,6 +20,7 @@ import {
   createSystemConfigPageResult,
   normalizeConfigCategory,
   normalizeConfigName,
+  normalizeConfigValue,
   normalizeBatchSystemConfigKeys,
   normalizeOptionalConfigText,
   normalizeSystemConfigPageQuery,
@@ -68,8 +69,8 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
       category: normalizeConfigCategory(body.category),
       name: normalizeConfigName(body.name, body.key),
       key: body.key,
-      value: body.value,
       valueType: body.valueType,
+      value: normalizeConfigValue(body.value, body.valueType),
       description: normalizeOptionalConfigText(body.description, 'description'),
       remark: normalizeOptionalConfigText(body.remark, 'remark'),
       public: visibility === 'public',
@@ -85,6 +86,11 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
     body: UpdateSystemConfigDto,
   ): Promise<SystemConfigRecord> {
     const config = this.findConfig(key);
+    const nextValueType = body.valueType ?? config.valueType;
+    const nextValue =
+      body.value === undefined
+        ? normalizeConfigValue(config.value, nextValueType)
+        : normalizeConfigValue(body.value, nextValueType);
     const visibility = resolveConfigVisibility({
       key,
       public: body.public ?? config.public,
@@ -100,8 +106,8 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
         body.name === undefined
           ? config.name
           : normalizeConfigName(body.name, key),
-      value: body.value ?? config.value,
-      valueType: body.valueType ?? config.valueType,
+      value: nextValue,
+      valueType: nextValueType,
       description:
         body.description === undefined
           ? config.description
