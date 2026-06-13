@@ -35,6 +35,7 @@ const batchKeyA = `opencore.smoke.config.batch.${runId}.a`;
 const batchKeyB = `opencore.smoke.config.batch.${runId}.b`;
 const featureFlagKey = `feature.smoke.${runId}.enabled`;
 const featureFlagName = `smoke.${runId}`;
+const featureFlagRolloutKey = `feature.smoke.${runId}.rolloutPercentage`;
 const secretKey = `auth.token.secret.${runId}`;
 let token;
 let originalAdminTitle;
@@ -140,6 +141,34 @@ try {
     'number',
     'seeded login max failed attempts value type',
   );
+  const seededFeatureRolloutConfig = await apiRequest(
+    '/core/config/feature.notice.inbox.rolloutPercentage',
+  );
+  assertEqual(
+    seededFeatureRolloutConfig.system,
+    true,
+    'seeded notice inbox rollout system flag',
+  );
+  assertEqual(
+    seededFeatureRolloutConfig.public,
+    true,
+    'seeded notice inbox rollout public flag',
+  );
+  assertEqual(
+    seededFeatureRolloutConfig.visibility,
+    'public',
+    'seeded notice inbox rollout visibility',
+  );
+  assertEqual(
+    seededFeatureRolloutConfig.valueType,
+    'number',
+    'seeded notice inbox rollout value type',
+  );
+  assertEqual(
+    seededFeatureRolloutConfig.value,
+    '100',
+    'seeded notice inbox rollout value',
+  );
   const seededSecretConfig = await apiRequest(
     '/core/config/auth.jwt.secretRef',
   );
@@ -177,6 +206,66 @@ try {
     initialRuntimeConfig.featureFlags['notice.inbox'],
     true,
     'initial notice inbox feature flag',
+  );
+  assertObject(
+    initialRuntimeConfig.featureFlagRules,
+    'initial runtime feature flag rules',
+  );
+  assertEqual(
+    initialRuntimeConfig.featureFlagRules['notice.inbox'].enabled,
+    true,
+    'initial notice inbox feature flag rule enabled',
+  );
+  assertEqual(
+    initialRuntimeConfig.featureFlagRules['notice.inbox'].rolloutPercentage,
+    100,
+    'initial notice inbox feature flag rollout',
+  );
+  const seededFeatureEvaluation = await request(
+    `${apiPrefix}/core/config/feature-flags/evaluate?flag=notice.inbox&subjectKey=smoke-admin`,
+  );
+  assertEqual(
+    seededFeatureEvaluation.flag,
+    'notice.inbox',
+    'seeded feature evaluation flag',
+  );
+  assertEqual(
+    seededFeatureEvaluation.subjectKey,
+    'smoke-admin',
+    'seeded feature evaluation subject',
+  );
+  assertEqual(
+    seededFeatureEvaluation.enabled,
+    true,
+    'seeded feature evaluation enabled',
+  );
+  assertEqual(
+    seededFeatureEvaluation.rolloutPercentage,
+    100,
+    'seeded feature evaluation rollout',
+  );
+  assertNumberBetween(
+    seededFeatureEvaluation.bucket,
+    0,
+    99,
+    'seeded feature evaluation bucket',
+  );
+  assertEqual(
+    seededFeatureEvaluation.reason,
+    'matched-rollout',
+    'seeded feature evaluation reason',
+  );
+  await request(
+    `${apiPrefix}/core/config/feature-flags/evaluate?flag=bad_flag&subjectKey=smoke-admin`,
+    { expected: [400] },
+  );
+  await request(
+    `${apiPrefix}/core/config/feature-flags/evaluate?flag=notice.inbox&subjectKey=`,
+    { expected: [400] },
+  );
+  await request(
+    `${apiPrefix}/core/config/feature-flags/evaluate?flag=missing.flag&subjectKey=smoke-admin`,
+    { expected: [404] },
   );
   assertEqual(
     initialRuntimeConfig.loginLockoutMinutes,
@@ -338,6 +427,42 @@ try {
     },
     expected: [400],
   });
+  await apiRequest('/core/config', {
+    method: 'POST',
+    body: {
+      category: 'feature',
+      key: `feature.smoke.${runId}.invalid.rolloutPercentage`,
+      name: 'Invalid smoke feature rollout',
+      value: '101',
+      valueType: 'number',
+      visibility: 'public',
+    },
+    expected: [400],
+  });
+  await apiRequest('/core/config', {
+    method: 'POST',
+    body: {
+      category: 'feature',
+      key: `feature.smoke.${runId}.invalid.rolloutPercentage`,
+      name: 'Invalid smoke feature rollout',
+      value: '50',
+      valueType: 'string',
+      visibility: 'public',
+    },
+    expected: [400],
+  });
+  await apiRequest('/core/config', {
+    method: 'POST',
+    body: {
+      category: 'feature',
+      key: `feature.smoke.${runId}.invalid.rolloutPercentage`,
+      name: 'Invalid smoke feature rollout',
+      value: '50',
+      valueType: 'number',
+      visibility: 'private',
+    },
+    expected: [400],
+  });
 
   const createdFeatureFlag = await apiRequest('/core/config', {
     method: 'POST',
@@ -371,6 +496,125 @@ try {
     runtimeWithFeatureFlag.featureFlags[featureFlagName],
     true,
     'runtime feature flag after create',
+  );
+  assertEqual(
+    runtimeWithFeatureFlag.featureFlagRules[featureFlagName].enabled,
+    true,
+    'runtime feature flag rule after create',
+  );
+  assertEqual(
+    runtimeWithFeatureFlag.featureFlagRules[featureFlagName].rolloutPercentage,
+    100,
+    'runtime feature flag default rollout after create',
+  );
+  const createdFeatureRollout = await apiRequest('/core/config', {
+    method: 'POST',
+    body: {
+      category: 'feature',
+      key: featureFlagRolloutKey,
+      name: 'OpenCore smoke feature rollout',
+      value: '50',
+      valueType: 'number',
+      description: 'OpenCore scripted runtime feature rollout',
+      remark: 'Created by core.config smoke.',
+      visibility: 'public',
+    },
+  });
+  createdKeys.push(featureFlagRolloutKey);
+  assertEqual(
+    createdFeatureRollout.value,
+    '50',
+    'created feature rollout value',
+  );
+  assertEqual(
+    createdFeatureRollout.valueType,
+    'number',
+    'created feature rollout value type',
+  );
+  assertEqual(
+    createdFeatureRollout.visibility,
+    'public',
+    'created feature rollout visibility',
+  );
+  const runtimeWithFeatureRollout = await request(
+    `${apiPrefix}/core/config/runtime`,
+  );
+  assertEqual(
+    runtimeWithFeatureRollout.featureFlagRules[featureFlagName]
+      .rolloutPercentage,
+    50,
+    'runtime feature rollout after create',
+  );
+  const dynamicFeatureEvaluation = await request(
+    `${apiPrefix}/core/config/feature-flags/evaluate?flag=${encodeURIComponent(featureFlagName)}&subjectKey=smoke-subject`,
+  );
+  assertEqual(
+    dynamicFeatureEvaluation.flag,
+    featureFlagName,
+    'dynamic feature evaluation flag',
+  );
+  assertEqual(
+    dynamicFeatureEvaluation.rolloutPercentage,
+    50,
+    'dynamic feature evaluation rollout',
+  );
+  assertNumberBetween(
+    dynamicFeatureEvaluation.bucket,
+    0,
+    99,
+    'dynamic feature evaluation bucket',
+  );
+  assertEqual(
+    dynamicFeatureEvaluation.enabled,
+    dynamicFeatureEvaluation.bucket < 50,
+    'dynamic feature evaluation enabled by bucket',
+  );
+  assertEqual(
+    dynamicFeatureEvaluation.reason,
+    dynamicFeatureEvaluation.bucket < 50
+      ? 'matched-rollout'
+      : 'outside-rollout',
+    'dynamic feature evaluation reason',
+  );
+  await apiRequest(`/core/config/${featureFlagRolloutKey}`, {
+    method: 'PATCH',
+    body: {
+      valueType: 'string',
+    },
+    expected: [400],
+  });
+  await apiRequest(`/core/config/${featureFlagRolloutKey}`, {
+    method: 'PATCH',
+    body: {
+      visibility: 'private',
+    },
+    expected: [400],
+  });
+  await apiRequest(`/core/config/${featureFlagRolloutKey}`, {
+    method: 'PATCH',
+    body: {
+      value: '-1',
+    },
+    expected: [400],
+  });
+  await apiRequest(`/core/config/${featureFlagRolloutKey}`, {
+    method: 'PATCH',
+    body: {
+      value: '0',
+    },
+  });
+  const zeroRolloutEvaluation = await request(
+    `${apiPrefix}/core/config/feature-flags/evaluate?flag=${encodeURIComponent(featureFlagName)}&subjectKey=smoke-subject`,
+  );
+  assertEqual(
+    zeroRolloutEvaluation.enabled,
+    false,
+    'zero rollout feature evaluation disabled',
+  );
+  assertEqual(
+    zeroRolloutEvaluation.reason,
+    'outside-rollout',
+    'zero rollout feature evaluation reason',
   );
   await apiRequest(`/core/config/${featureFlagKey}`, {
     method: 'PATCH',
@@ -406,6 +650,11 @@ try {
     runtimeAfterFeatureFlagUpdate.featureFlags[featureFlagName],
     false,
     'runtime feature flag after update',
+  );
+  assertEqual(
+    runtimeAfterFeatureFlagUpdate.featureFlagRules[featureFlagName].enabled,
+    false,
+    'runtime feature flag rule disabled after update',
   );
 
   const createdConfig = await apiRequest('/core/config', {
@@ -540,6 +789,11 @@ try {
     exportPreview.columns,
     'featureFlag',
     'config export feature flag column',
+  );
+  assertIncludes(
+    exportPreview.columns,
+    'featureRollout',
+    'config export feature rollout column',
   );
   assertIncludes(
     exportPreview.columns,
@@ -719,6 +973,9 @@ try {
         'core.config.runtime',
         'core.config.runtime-cache-invalidation',
         'core.config.runtime-feature-flags',
+        'core.config.runtime-feature-flag-rules',
+        'core.config.runtime-feature-flag-evaluate',
+        'core.config.runtime-feature-flag-rollout',
         'core.config.runtime-feature-flag-guards',
         'core.config.runtime-login-policy',
         'core.config.runtime-login-policy-guards',
@@ -1002,6 +1259,14 @@ function assertStringExcludes(value, expected, label) {
 function assertNumberAtLeast(actual, expected, label) {
   if (typeof actual !== 'number' || actual < expected) {
     throw new Error(`${label} expected >= ${expected}, got ${actual}`);
+  }
+}
+
+function assertNumberBetween(actual, minimum, maximum, label) {
+  if (typeof actual !== 'number' || actual < minimum || actual > maximum) {
+    throw new Error(
+      `${label} expected between ${minimum} and ${maximum}, got ${actual}`,
+    );
   }
 }
 

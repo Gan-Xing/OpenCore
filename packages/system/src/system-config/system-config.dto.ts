@@ -64,11 +64,57 @@ export class SystemConfigRuntimeDto {
   })
   featureFlags!: Record<string, boolean>;
 
+  @ApiProperty({
+    additionalProperties: {
+      type: 'object',
+      properties: {
+        enabled: { type: 'boolean' },
+        rolloutPercentage: { type: 'number', minimum: 0, maximum: 100 },
+      },
+      required: ['enabled', 'rolloutPercentage'],
+    },
+    example: { 'notice.inbox': { enabled: true, rolloutPercentage: 100 } },
+  })
+  featureFlagRules!: Record<
+    string,
+    { enabled: boolean; rolloutPercentage: number }
+  >;
+
   @ApiProperty({ example: 15, minimum: 1, maximum: 1440 })
   loginLockoutMinutes!: number;
 
   @ApiProperty({ example: 5, minimum: 1, maximum: 20 })
   loginMaxFailedAttempts!: number;
+}
+
+export class SystemConfigFeatureFlagEvaluationQueryDto {
+  @ApiProperty({ example: 'notice.inbox' })
+  flag!: string;
+
+  @ApiProperty({ example: 'user_admin' })
+  subjectKey!: string;
+}
+
+export class SystemConfigFeatureFlagEvaluationDto {
+  @ApiProperty({ example: 'notice.inbox' })
+  flag!: string;
+
+  @ApiProperty({ example: 'user_admin' })
+  subjectKey!: string;
+
+  @ApiProperty()
+  enabled!: boolean;
+
+  @ApiProperty({ minimum: 0, maximum: 100 })
+  rolloutPercentage!: number;
+
+  @ApiProperty({ minimum: 0, maximum: 99 })
+  bucket!: number;
+
+  @ApiProperty({
+    enum: ['global-disabled', 'matched-rollout', 'outside-rollout'],
+  })
+  reason!: 'global-disabled' | 'matched-rollout' | 'outside-rollout';
 }
 
 export class SystemConfigCacheRefreshDto {

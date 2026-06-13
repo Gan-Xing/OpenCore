@@ -34,6 +34,8 @@ export {
   SystemConfigBatchMutationResultDto,
   SystemConfigDto,
   SystemConfigCacheRefreshDto,
+  SystemConfigFeatureFlagEvaluationDto,
+  SystemConfigFeatureFlagEvaluationQueryDto,
   SystemConfigPageDto,
   SystemConfigRuntimeDto,
   SystemConfigValueDto,

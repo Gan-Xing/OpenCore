@@ -862,8 +862,13 @@ if (
   !configPage.includes('Vault encrypted') ||
   !configPage.includes('renderVault') ||
   !configPage.includes('featureFlagConfigKeyPattern') ||
+  !configPage.includes('featureFlagRolloutConfigKeyPattern') ||
   !configPage.includes('Toggle feature flag') ||
   !configPage.includes('featureFlagTogglingKey') ||
+  !configPage.includes('Feature rollout') ||
+  !configPage.includes('Rollout %') ||
+  !configPage.includes('Set rollout') ||
+  !configPage.includes('featureFlagRolloutSavingKey') ||
   !configPage.includes('canExportSystemConfig') ||
   !configPage.includes('Download Excel') ||
   !configPage.includes('Config Excel export downloaded') ||

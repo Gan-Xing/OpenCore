@@ -99,6 +99,17 @@ describe('registry fixtures', () => {
       ),
     ).toBe(true);
     expect(
+      createSystemConfigFixtures().items.some(
+        (item) =>
+          item.category === 'feature' &&
+          item.key === 'feature.notice.inbox.rolloutPercentage' &&
+          item.value === '100' &&
+          item.valueType === 'number' &&
+          item.encrypted === false &&
+          item.visibility === 'public',
+      ),
+    ).toBe(true);
+    expect(
       createSystemConfigFixtures().items.find(
         (item) => item.visibility === 'secret',
       ),

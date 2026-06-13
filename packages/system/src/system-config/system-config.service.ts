@@ -2,11 +2,14 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
+import { createHash } from 'node:crypto';
 import type { PageResult } from '@opencore/common';
 import type {
   BatchDeleteSystemConfigsDto,
   CreateSystemConfigDto,
+  SystemConfigFeatureFlagEvaluationQueryDto,
   UpdateSystemConfigDto,
 } from './system-config.dto';
 import type { SystemConfigRecord } from './system-config.records';
@@ -14,6 +17,7 @@ import {
   createSystemConfigExportPreview,
   SystemConfigRepository,
   toFeatureFlagName,
+  toFeatureFlagRolloutName,
   type SystemConfigBatchMutationRecord,
   type SystemConfigExportPreview,
   type SystemConfigPageQuery,
@@ -31,11 +35,26 @@ export type SystemConfigCacheRefreshResult = {
   refreshedAt: string;
 };
 
+export type SystemConfigFeatureFlagRule = {
+  enabled: boolean;
+  rolloutPercentage: number;
+};
+
 export type SystemConfigRuntimeResult = {
   adminTitle: string;
   featureFlags: Record<string, boolean>;
+  featureFlagRules: Record<string, SystemConfigFeatureFlagRule>;
   loginLockoutMinutes: number;
   loginMaxFailedAttempts: number;
+};
+
+export type SystemConfigFeatureFlagEvaluationResult = {
+  flag: string;
+  subjectKey: string;
+  enabled: boolean;
+  rolloutPercentage: number;
+  bucket: number;
+  reason: 'global-disabled' | 'matched-rollout' | 'outside-rollout';
 };
 
 const ADMIN_TITLE_CONFIG_KEY = 'opencore.admin.title';
@@ -81,19 +100,25 @@ export class SystemConfigService {
   async getRuntimeConfig(): Promise<SystemConfigRuntimeResult> {
     const [
       adminTitle,
-      featureFlags,
+      featureFlagRules,
       loginLockoutMinutes,
       loginMaxFailedAttempts,
     ] = await Promise.all([
       this.getConfigValueByKey(ADMIN_TITLE_CONFIG_KEY),
-      this.listRuntimeFeatureFlags(),
+      this.listRuntimeFeatureFlagRules(),
       this.getConfigValueByKey(LOGIN_LOCKOUT_MINUTES_CONFIG_KEY),
       this.getConfigValueByKey(LOGIN_MAX_FAILED_ATTEMPTS_CONFIG_KEY),
     ]);
 
     return {
       adminTitle: adminTitle.value,
-      featureFlags,
+      featureFlags: Object.fromEntries(
+        Object.entries(featureFlagRules).map(([name, rule]) => [
+          name,
+          rule.enabled,
+        ]),
+      ),
+      featureFlagRules,
       loginLockoutMinutes: parseRuntimeIntegerInRange(
         loginLockoutMinutes.value,
         LOGIN_LOCKOUT_MINUTES_CONFIG_KEY,
@@ -106,6 +131,36 @@ export class SystemConfigService {
         MIN_LOGIN_MAX_FAILED_ATTEMPTS,
         MAX_LOGIN_MAX_FAILED_ATTEMPTS,
       ),
+    };
+  }
+
+  async evaluateFeatureFlag(
+    query: SystemConfigFeatureFlagEvaluationQueryDto,
+  ): Promise<SystemConfigFeatureFlagEvaluationResult> {
+    const flag = normalizeFeatureFlagEvaluationName(query?.flag);
+    const subjectKey = normalizeFeatureFlagSubjectKey(query?.subjectKey);
+    const rules = await this.listRuntimeFeatureFlagRules();
+    const rule = rules[flag];
+
+    if (!rule) {
+      throw new NotFoundException(`Feature flag not found: ${flag}`);
+    }
+
+    const bucket = createFeatureFlagBucket(flag, subjectKey);
+    const matched = bucket < rule.rolloutPercentage;
+    const enabled = rule.enabled && matched;
+
+    return {
+      flag,
+      subjectKey,
+      enabled,
+      rolloutPercentage: rule.rolloutPercentage,
+      bucket,
+      reason: !rule.enabled
+        ? 'global-disabled'
+        : matched
+          ? 'matched-rollout'
+          : 'outside-rollout',
     };
   }
 
@@ -181,8 +236,11 @@ export class SystemConfigService {
     this.valueCache.delete(key);
   }
 
-  private async listRuntimeFeatureFlags(): Promise<Record<string, boolean>> {
-    const featureFlags: Record<string, boolean> = {};
+  private async listRuntimeFeatureFlagRules(): Promise<
+    Record<string, SystemConfigFeatureFlagRule>
+  > {
+    const enabledFlags: Record<string, boolean> = {};
+    const rolloutPercentages: Record<string, number> = {};
     let page = 1;
 
     while (true) {
@@ -190,17 +248,32 @@ export class SystemConfigService {
 
       for (const config of result.items) {
         const flagName = toFeatureFlagName(config.key);
-        if (!flagName) {
-          continue;
+        if (flagName) {
+          if (
+            config.visibility !== 'public' ||
+            config.valueType !== 'boolean'
+          ) {
+            throw new BadRequestException(
+              `Feature flag config ${config.key} must be public boolean.`,
+            );
+          }
+
+          enabledFlags[flagName] = config.value === 'true';
         }
 
-        if (config.visibility !== 'public' || config.valueType !== 'boolean') {
-          throw new BadRequestException(
-            `Feature flag config ${config.key} must be public boolean.`,
+        const rolloutName = toFeatureFlagRolloutName(config.key);
+        if (rolloutName) {
+          if (config.visibility !== 'public' || config.valueType !== 'number') {
+            throw new BadRequestException(
+              `Feature flag rollout config ${config.key} must be public number.`,
+            );
+          }
+
+          rolloutPercentages[rolloutName] = parseFeatureFlagRolloutPercentage(
+            config.value,
+            config.key,
           );
         }
-
-        featureFlags[flagName] = config.value === 'true';
       }
 
       if (page >= result.totalPages) {
@@ -209,7 +282,25 @@ export class SystemConfigService {
       page += 1;
     }
 
-    return featureFlags;
+    for (const flagName of Object.keys(rolloutPercentages)) {
+      if (enabledFlags[flagName] === undefined) {
+        throw new BadRequestException(
+          `Feature flag rollout ${flagName} is missing its enabled config.`,
+        );
+      }
+    }
+
+    return Object.fromEntries(
+      Object.entries(enabledFlags)
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([name, enabled]) => [
+          name,
+          {
+            enabled,
+            rolloutPercentage: rolloutPercentages[name] ?? 100,
+          },
+        ]),
+    );
   }
 }
 
@@ -229,6 +320,61 @@ function parseRuntimeIntegerInRange(
   }
 
   return parsed;
+}
+
+function parseFeatureFlagRolloutPercentage(value: string, key: string): number {
+  const normalized = value.trim();
+  const parsed = Number(normalized);
+
+  if (!Number.isInteger(parsed) || parsed < 0 || parsed > 100) {
+    throw new BadRequestException(
+      `Feature flag rollout ${key} must be an integer between 0 and 100.`,
+    );
+  }
+
+  return parsed;
+}
+
+function normalizeFeatureFlagEvaluationName(value: unknown): string {
+  if (typeof value !== 'string') {
+    throw new BadRequestException('Feature flag name must be a string.');
+  }
+
+  const normalized = value.trim();
+
+  if (!/^[a-z0-9]+(?:[.-][a-z0-9]+)*$/.test(normalized)) {
+    throw new BadRequestException('Feature flag name is invalid.');
+  }
+
+  return normalized;
+}
+
+function normalizeFeatureFlagSubjectKey(value: unknown): string {
+  if (typeof value !== 'string') {
+    throw new BadRequestException('Feature flag subject key must be a string.');
+  }
+
+  const normalized = value.trim();
+
+  if (!normalized) {
+    throw new BadRequestException('Feature flag subject key is required.');
+  }
+
+  if (normalized.length > 200) {
+    throw new BadRequestException(
+      'Feature flag subject key must not exceed 200 characters.',
+    );
+  }
+
+  return normalized;
+}
+
+function createFeatureFlagBucket(flag: string, subjectKey: string): number {
+  const hash = createHash('sha256')
+    .update(`${flag}:${subjectKey}`, 'utf8')
+    .digest();
+
+  return hash.readUInt32BE(0) % 100;
 }
 
 function assertRuntimeConfigMutation(

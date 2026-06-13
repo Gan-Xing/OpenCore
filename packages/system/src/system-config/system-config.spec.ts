@@ -20,8 +20,8 @@ describe('@opencore/system system-config', () => {
       expect.objectContaining({
         page: 1,
         pageSize: 1,
-        total: 5,
-        totalPages: 5,
+        total: 6,
+        totalPages: 6,
       }),
     );
     await expect(
@@ -53,8 +53,27 @@ describe('@opencore/system system-config', () => {
       featureFlags: {
         'notice.inbox': true,
       },
+      featureFlagRules: {
+        'notice.inbox': {
+          enabled: true,
+          rolloutPercentage: 100,
+        },
+      },
       loginLockoutMinutes: 15,
       loginMaxFailedAttempts: 5,
+    });
+    await expect(
+      service.evaluateFeatureFlag({
+        flag: 'notice.inbox',
+        subjectKey: 'user_admin',
+      }),
+    ).resolves.toMatchObject({
+      flag: 'notice.inbox',
+      subjectKey: 'user_admin',
+      enabled: true,
+      rolloutPercentage: 100,
+      bucket: expect.any(Number),
+      reason: 'matched-rollout',
     });
     await expect(
       service.getConfigValueByKey('auth.login.lockoutMinutes'),
@@ -178,6 +197,7 @@ describe('@opencore/system system-config', () => {
         'encrypted',
         'public',
         'featureFlag',
+        'featureRollout',
         'system',
         'description',
         'remark',
@@ -195,6 +215,12 @@ describe('@opencore/system system-config', () => {
       adminTitle: 'OpenCore Admin',
       featureFlags: {
         'notice.inbox': true,
+      },
+      featureFlagRules: {
+        'notice.inbox': {
+          enabled: true,
+          rolloutPercentage: 100,
+        },
       },
       loginLockoutMinutes: 15,
       loginMaxFailedAttempts: 5,
@@ -218,8 +244,33 @@ describe('@opencore/system system-config', () => {
       featureFlags: {
         'notice.inbox': false,
       },
+      featureFlagRules: {
+        'notice.inbox': {
+          enabled: false,
+          rolloutPercentage: 100,
+        },
+      },
       loginLockoutMinutes: 20,
       loginMaxFailedAttempts: 4,
+    });
+    await service.updateConfig('feature.notice.inbox.enabled', {
+      value: 'true',
+    });
+    await service.updateConfig('feature.notice.inbox.rolloutPercentage', {
+      value: '0',
+    });
+    await expect(
+      service.evaluateFeatureFlag({
+        flag: 'notice.inbox',
+        subjectKey: 'user_admin',
+      }),
+    ).resolves.toMatchObject({
+      enabled: false,
+      rolloutPercentage: 0,
+      reason: 'outside-rollout',
+    });
+    await service.updateConfig('feature.notice.inbox.rolloutPercentage', {
+      value: '100',
     });
 
     await expect(
@@ -246,6 +297,41 @@ describe('@opencore/system system-config', () => {
         value: 'true',
         valueType: 'boolean',
         visibility: 'private',
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.updateConfig('feature.notice.inbox.rolloutPercentage', {
+        valueType: 'string',
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.updateConfig('feature.notice.inbox.rolloutPercentage', {
+        visibility: 'private',
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.updateConfig('feature.notice.inbox.rolloutPercentage', {
+        value: '101',
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.createConfig({
+        key: 'feature.sample.rolloutPercentage',
+        value: '50.5',
+        valueType: 'number',
+        visibility: 'public',
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.evaluateFeatureFlag({
+        flag: 'missing.flag',
+        subjectKey: 'user_admin',
+      }),
+    ).rejects.toThrow(NotFoundException);
+    await expect(
+      service.evaluateFeatureFlag({
+        flag: 'notice.inbox',
+        subjectKey: '',
       }),
     ).rejects.toThrow(BadRequestException);
 
@@ -496,7 +582,11 @@ describe('@opencore/system system-config', () => {
           'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         scope: 'current-page',
         contentBase64: expect.any(String),
-        columns: expect.arrayContaining(['featureFlag', 'system']),
+        columns: expect.arrayContaining([
+          'featureFlag',
+          'featureRollout',
+          'system',
+        ]),
         rowCount: expect.any(Number),
       });
       await service.createConfig({

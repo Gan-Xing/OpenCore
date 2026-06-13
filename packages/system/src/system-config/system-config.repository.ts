@@ -57,6 +57,8 @@ const SENSITIVE_CONFIG_KEY_PATTERN =
   /(authorization|cookie|password|secret|token)/i;
 const FEATURE_FLAG_CONFIG_KEY_PATTERN =
   /^feature\.[a-z0-9]+(?:[.-][a-z0-9]+)*\.enabled$/;
+const FEATURE_FLAG_ROLLOUT_CONFIG_KEY_PATTERN =
+  /^feature\.[a-z0-9]+(?:[.-][a-z0-9]+)*\.rolloutPercentage$/;
 export const SYSTEM_CONFIG_EXPORT_CONTENT_TYPE = OPENCORE_XLSX_CONTENT_TYPE;
 export const SYSTEM_CONFIG_EXPORT_COLUMNS = [
   'category',
@@ -68,6 +70,7 @@ export const SYSTEM_CONFIG_EXPORT_COLUMNS = [
   'encrypted',
   'public',
   'featureFlag',
+  'featureRollout',
   'system',
   'description',
   'remark',
@@ -163,6 +166,7 @@ function createSystemConfigExportWorksheetRows(
       row.encrypted ? 'true' : 'false',
       row.public ? 'true' : 'false',
       toFeatureFlagName(row.key) ?? '',
+      toFeatureFlagRolloutName(row.key) ?? '',
       row.system ? 'true' : 'false',
       row.description ?? '',
       row.remark ?? '',
@@ -210,6 +214,10 @@ export function isFeatureFlagConfigKey(key: string): boolean {
   return FEATURE_FLAG_CONFIG_KEY_PATTERN.test(key);
 }
 
+export function isFeatureFlagRolloutConfigKey(key: string): boolean {
+  return FEATURE_FLAG_ROLLOUT_CONFIG_KEY_PATTERN.test(key);
+}
+
 export function toFeatureFlagName(key: string): string | undefined {
   if (!isFeatureFlagConfigKey(key)) {
     return undefined;
@@ -218,18 +226,34 @@ export function toFeatureFlagName(key: string): string | undefined {
   return key.slice('feature.'.length, -'.enabled'.length);
 }
 
+export function toFeatureFlagRolloutName(key: string): string | undefined {
+  if (!isFeatureFlagRolloutConfigKey(key)) {
+    return undefined;
+  }
+
+  return key.slice('feature.'.length, -'.rolloutPercentage'.length);
+}
+
 export function assertFeatureFlagConfigShape(input: {
   key: string;
+  value?: unknown;
   valueType: SystemConfigValueType;
   visibility: SystemConfigVisibility;
 }): void {
-  if (!isFeatureFlagConfigKey(input.key)) {
+  if (
+    !isFeatureFlagConfigKey(input.key) &&
+    !isFeatureFlagRolloutConfigKey(input.key)
+  ) {
     return;
   }
 
-  if (input.valueType !== 'boolean') {
+  const valueType = isFeatureFlagConfigKey(input.key) ? 'boolean' : 'number';
+  const valueTypeLabel =
+    valueType === 'boolean' ? 'boolean value type' : 'number value type';
+
+  if (input.valueType !== valueType) {
     throw new BadRequestException(
-      `Feature flag config ${input.key} must keep boolean value type.`,
+      `Feature flag config ${input.key} must keep ${valueTypeLabel}.`,
     );
   }
 
@@ -237,6 +261,18 @@ export function assertFeatureFlagConfigShape(input: {
     throw new BadRequestException(
       `Feature flag config ${input.key} must remain public.`,
     );
+  }
+
+  if (isFeatureFlagRolloutConfigKey(input.key) && input.value !== undefined) {
+    const normalized =
+      typeof input.value === 'string' ? input.value.trim() : input.value;
+    const percentage = Number(normalized);
+
+    if (!Number.isInteger(percentage) || percentage < 0 || percentage > 100) {
+      throw new BadRequestException(
+        `Feature flag rollout ${input.key} must be an integer between 0 and 100.`,
+      );
+    }
   }
 }
 

@@ -142,6 +142,21 @@ export function createSystemConfigFixtures(): PageResponse<SystemConfigSummary> 
       visibility: 'public',
     },
     {
+      id: 'config_feature_notice_inbox_rollout',
+      category: 'feature',
+      name: 'Notice inbox rollout percentage',
+      key: 'feature.notice.inbox.rolloutPercentage',
+      value: '100',
+      valueType: 'number',
+      description:
+        'Public rollout percentage for the notice inbox feature flag.',
+      encrypted: false,
+      remark: 'Returned by the runtime config featureFlagRules map.',
+      public: true,
+      system: true,
+      visibility: 'public',
+    },
+    {
       id: 'config_jwt_secret_ref',
       category: 'security',
       name: 'JWT secret reference',

@@ -79,6 +79,7 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
     assertSafeConfigKey(body.key, visibility);
     assertFeatureFlagConfigShape({
       key: body.key,
+      value: body.value,
       valueType: body.valueType,
       visibility,
     });
@@ -138,6 +139,7 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
     assertSafeConfigKey(key, visibility);
     assertFeatureFlagConfigShape({
       key,
+      value: nextValue,
       valueType: nextValueType,
       visibility,
     });

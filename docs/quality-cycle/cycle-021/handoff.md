@@ -3,8 +3,10 @@
 Date: 2026-06-13
 Repository: `Gan-Xing/OpenCore`
 Default branch: `main`
-Latest observed feature commit: `b53edcc feat(notice): execute local delivery provider / 执行本地通知投递提供器`
-Latest deployed feature commit: `b53edcc feat(notice): execute local delivery provider / 执行本地通知投递提供器`
+Latest observed feature commit: this feature+docs commit,
+`feat(config): evaluate feature flag rollouts / 评估功能开关灰度比例`
+Latest deployed feature commit: this feature+docs commit,
+`feat(config): evaluate feature flag rollouts / 评估功能开关灰度比例`
 Latest deployed hardening commit: `4df5dd1 fix(system): satisfy xlsx export lint guard / 修复 XLSX 导出 lint 守卫`
 
 ## One-sentence Goal
@@ -148,6 +150,7 @@ productization waterline completion; see
 - Round 61 `core.notice` delivery/message-record stage 5
 - Round 62 `core.config` secret vault/KMS foundation stage 11
 - Round 63 `core.notice` local delivery provider execution stage 6
+- Round 64 `core.config` feature flag rollout percentage stage 12
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -867,6 +870,20 @@ guard、pending records、provider execute、sent records 和 repeat execute ide
 `Execute local provider`/`Provider Status`。注意：这轮关闭的是本地 provider execution 状态机和 operator
 手动执行/重试入口，不等于真实 WebSocket/SMS/Mail adapter、跨渠道失败重试队列、租户通知或 BPM 审批完成。
 
+Round 64 回到 `core.config` P1 队列，把 Round 58 的 boolean feature flags 推进到可灰度评估的
+runtime foundation。OpenCore 现在约定 `feature.*.rolloutPercentage` 为 public number 0-100，
+并在 `GET /api/core/config/runtime` 返回 `featureFlagRules`，包含每个 flag 的 `enabled` 与
+`rolloutPercentage`；seed 内置 `feature.notice.inbox.rolloutPercentage=100`。新增公开评估 API
+`GET /api/core/config/feature-flags/evaluate?flag=notice.inbox&subjectKey=...`，使用稳定
+SHA-256 bucket 计算命中结果，返回 `bucket/reason/enabled`，并在 disabled、outside rollout、matched rollout
+之间给出明确原因。API/SDK/OpenAPI/Admin 同步：SDK 新增 `evaluateFeatureFlag`；Admin Config 页面新增
+`Rollout %` 列、feature flag rollout 行标记和 `Set rollout` 弹窗；配置仓储会阻止 rollout key 使用
+private visibility、非 number 类型或 0-100 以外的值。固定 smoke、部署 smoke 和公网 API smoke 均验证
+`core.config.runtime-feature-flag-rules`、`core.config.runtime-feature-flag-evaluate`、
+`core.config.runtime-feature-flag-rollout` 和坏形态守卫；部署脚本拒绝缺少 `Rollout %`/`Set rollout` 的
+stale Config bundle。注意：这轮关闭的是百分比灰度与确定性评估基础，不等于 audience targeting、规则引擎、
+多环境发布审批、AB 实验指标或完整 experimentation platform 已完成。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -878,7 +895,7 @@ The productization waterline now classifies:
   Round 7/19/22/23/28/29/30/31/32/33/34/35/36/41/54 `core.user`,
   Round 3/22/25/42/53 `core.post`.
 - First loop, enhance: Round 1/55/56/60/61/63 `core.notice`,
-  Round 9/24/37/38/39/40/44/46/49/58/62 `core.config`,
+  Round 9/24/37/38/39/40/44/46/49/58/62/64 `core.config`,
   Round 11/26/45/47/48/49/50/51/57/59 `core.login-log`.
 - Thin, rework: none after Round 16.
 
@@ -903,11 +920,13 @@ finds another blocker:
    Admin Config feature-flag toggles, SDK/OpenAPI propagation and smoke/deploy
    guards. Round 62 adds secret config at-rest vault encryption, a seeded
    `auth.jwt.secretRef` reference, API/SDK/OpenAPI/Admin `encrypted` status,
-   database plaintext smoke guards and stale Config bundle checks. Remaining
-   config work is advanced feature-flag rollout such as percentage rules,
-   targeting or a full experimentation surface; external KMS provider binding,
-   key rotation and secret version history are later security hardening stages,
-   not blockers for this vault foundation.
+   database plaintext smoke guards and stale Config bundle checks. Round 64
+   adds `feature.*.rolloutPercentage`, runtime `featureFlagRules`, public
+   deterministic evaluate API, SDK/Admin rollout controls and smoke/deploy
+   guards. Remaining config work is audience targeting, multi-environment
+   rollout governance or a full experimentation surface; external KMS provider
+   binding, key rotation and secret version history are later security
+   hardening stages, not blockers for this vault foundation.
 2. `core.login-log`: Round 26 closed browser/OS parsing and server-side IP/time
    filters. Round 45 closed persisted login type/result schema, Admin display
    and result/logType filters. Round 47 closed persisted failed-attempt
@@ -962,7 +981,8 @@ finds another blocker:
   frontend bundle/cache guards.
 - P1 remaining: `core.notice` real WebSocket/SMS/Mail adapter execution and
   multi-channel retry/failure queues,
-  `core.config` advanced feature-flag rollout,
+  `core.config` feature-flag audience targeting and full experimentation
+  surfaces,
   and `core.login-log` optional external GeoIP country/city/provider depth or
   admitted mobile/SMS/social login logging.
   `core.post` is closed at the current admitted waterline after Round 53;
@@ -976,7 +996,7 @@ finds another blocker:
 
 Reference parity is measured by product capability waterline, not by replaying
 RuoYi/Yudao commit history. The remaining RuoYi-style foundation backlog after
-Round 63 is roughly several focused P1 loops, not tens of thousands of commits.
+Round 64 is roughly several focused P1 loops, not tens of thousands of commits.
 Yudao Full parity is a different program: BPM, pay, mall, member, CRM, ERP,
 AI and other business domains would require dozens to 100+ separately admitted
 deployable loops, and should not be counted as unfinished cycle-021 foundation

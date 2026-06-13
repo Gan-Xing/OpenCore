@@ -103,8 +103,21 @@ export type SystemConfigValueSummary = {
 export type SystemConfigRuntimeSummary = {
   adminTitle: string;
   featureFlags: Record<string, boolean>;
+  featureFlagRules: Record<
+    string,
+    { enabled: boolean; rolloutPercentage: number }
+  >;
   loginLockoutMinutes: number;
   loginMaxFailedAttempts: number;
+};
+
+export type SystemConfigFeatureFlagEvaluationSummary = {
+  flag: string;
+  subjectKey: string;
+  enabled: boolean;
+  rolloutPercentage: number;
+  bucket: number;
+  reason: 'global-disabled' | 'matched-rollout' | 'outside-rollout';
 };
 
 export type SystemConfigCacheRefreshSummary = {

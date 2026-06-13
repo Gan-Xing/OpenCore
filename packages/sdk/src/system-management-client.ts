@@ -32,6 +32,7 @@ import type {
   RenderSystemNoticeTemplateRequest,
   SystemConfigBatchMutationSummary,
   SystemConfigCacheRefreshSummary,
+  SystemConfigFeatureFlagEvaluationSummary,
   SystemConfigRuntimeSummary,
   SystemConfigSummary,
   SystemConfigValueSummary,
@@ -130,6 +131,10 @@ export type SystemManagementClient = {
   exportConfig: (token: Token, query?: PageRequest) => Promise<ExportPreview>;
   getConfig: (token: Token, key: string) => Promise<SystemConfigSummary>;
   getConfigRuntime: () => Promise<SystemConfigRuntimeSummary>;
+  evaluateFeatureFlag: (
+    flag: string,
+    subjectKey: string,
+  ) => Promise<SystemConfigFeatureFlagEvaluationSummary>;
   getConfigValueByKey: (
     token: Token,
     key: string,
@@ -446,6 +451,13 @@ export function createSystemManagementClient(
       }),
     getConfigRuntime: () =>
       request<SystemConfigRuntimeSummary>('/core/config/runtime'),
+    evaluateFeatureFlag: (flag, subjectKey) =>
+      request<SystemConfigFeatureFlagEvaluationSummary>(
+        withQuery('/core/config/feature-flags/evaluate', {
+          flag,
+          subjectKey,
+        }),
+      ),
     getConfigValueByKey: (token, key) =>
       request<SystemConfigValueSummary>(
         withQuery('/core/config/get-value-by-key', { key }),

@@ -93,6 +93,12 @@ describe('app getInitialState', () => {
       featureFlags: {
         'notice.inbox': true,
       },
+      featureFlagRules: {
+        'notice.inbox': {
+          enabled: true,
+          rolloutPercentage: 100,
+        },
+      },
       loginLockoutMinutes: 15,
       loginMaxFailedAttempts: 5,
     });
@@ -202,6 +208,12 @@ describe('app getInitialState', () => {
       adminTitle: 'OpenCore Runtime Admin',
       featureFlags: {
         'notice.inbox': false,
+      },
+      featureFlagRules: {
+        'notice.inbox': {
+          enabled: false,
+          rolloutPercentage: 25,
+        },
       },
       loginLockoutMinutes: 20,
       loginMaxFailedAttempts: 4,

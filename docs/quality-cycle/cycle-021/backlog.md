@@ -1936,6 +1936,40 @@ WebSocket/SMS/Mail adapters or multi-channel retry queues.
       verification.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 64: core.config Feature Flag Rollout Productization
+
+Why this slice: Round 58 created public boolean runtime feature flags, but a
+real operator rollout path needs percentage rollout and deterministic
+evaluation before audience targeting or experimentation can be admitted.
+OpenCore already had config CRUD, runtime config, feature flag booleans,
+secret vault and deploy stale-bundle guards, so the lowest-dependency next
+stage was a numeric rollout key plus evaluate API and Admin control.
+
+- [x] Recompare RuoYi/Yudao config/feature/notify reference shapes before
+      selecting this slice.
+- [x] Add public numeric `feature.*.rolloutPercentage` config shape with
+      repository-level guards for public visibility, number type and integer
+      `0..100` value.
+- [x] Seed `feature.notice.inbox.rolloutPercentage=100` beside the existing
+      `feature.notice.inbox.enabled=true` flag.
+- [x] Extend runtime config with `featureFlagRules` while preserving the
+      existing `featureFlags` boolean map.
+- [x] Add public deterministic evaluation API
+      `GET /api/core/config/feature-flags/evaluate` with stable bucket,
+      enabled result and explicit reason.
+- [x] Extend DTOs, SDK types/client/spec, registry fixtures and OpenAPI
+      snapshot for rollout rules and evaluation summaries.
+- [x] Add Admin Config `Rollout %` visibility plus `Set rollout` modal and
+      feature rollout export/detail support.
+- [x] Extend fixed-port/deploy/public `core.config` smoke for seeded rollout,
+      runtime rules, evaluate API, dynamic rollout updates, disabled rollout
+      behavior and bad shape guards.
+- [x] Extend Admin static smoke and deploy-script stale bundle guards for the
+      Config rollout UI markers.
+- [x] Run focused tests, Prisma validate/seed, OpenAPI/SDK checks, typecheck,
+      lint, builds, fixed-port smoke, deployment and public URL verification.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -1985,7 +2019,7 @@ treat "minimal loop" as "minimal final product".
       provider execution are complete. Real WebSocket/SMS/Mail adapters,
       multi-channel retry/failure queues and tenant/member/mobile channels
       remain.
-- [ ] Round 9/24/37/38/39/40/44/46/49/58/62 `core.config`: public get-value-by-key, cache
+- [ ] Round 9/24/37/38/39/40/44/46/49/58/62/64 `core.config`: public get-value-by-key, cache
       refresh and mutation invalidation are complete. Category/name/remark
       metadata is complete. Native XLSX export payload and Admin download are
       complete. Batch deletion is complete. Persisted system/custom deletion
@@ -1998,9 +2032,12 @@ treat "minimal loop" as "minimal final product".
       flags with Admin Config toggles, SDK/OpenAPI propagation and
       smoke/deploy guards. Round 62 closes secret config at-rest vault
       encryption, seeded secret references, Admin `encrypted` visibility and
-      database plaintext guards. Advanced feature-flag rollout remains an
-      auto-admissible foundation round; external KMS provider binding, key
-      rotation and secret version history are later hardening stages.
+      database plaintext guards. Round 64 closes feature-flag percentage
+      rollout with runtime `featureFlagRules`, deterministic evaluate API,
+      Admin rollout controls and stale-bundle guards. Audience targeting,
+      rollout governance and full experimentation remain auto-admissible
+      foundation rounds; external KMS provider binding, key rotation and
+      secret version history are later hardening stages.
 - [ ] Round 11/26/45/47/48/49/50/51/57/59 `core.login-log`: browser/OS parsing,
       IP/time filters, persisted login type/result schema, Admin display and
       type/result filters are complete. Persisted failed-attempt lockout,
@@ -2063,8 +2100,9 @@ treat "minimal loop" as "minimal final product".
 - Batch dictionary delete, Excel import/export file workflows, dictionary
   color/css/remark fields, app-wide dictionary cache TTL/invalidation and
   dictionary cache refresh.
-- Advanced feature-flag rollout such as percentage targeting, audience rules
-  and full experimentation UI unless admitted as a dedicated foundation round.
+- Feature-flag audience rules, rollout governance and full experimentation UI
+  unless admitted as a dedicated foundation round. Percentage rollout and
+  deterministic evaluation are complete through Round 64.
 - External KMS/HSM provider binding, key rotation and secret version history
   beyond the Round 62 local vault envelope foundation.
 - Presigned upload/download URLs, storage-provider config, public

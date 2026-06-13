@@ -1124,3 +1124,38 @@ outbox still represented rows, not execution.
 This stays inside the current S7 System notice boundary. It does not introduce
 real WebSocket/SMS/Mail adapters, multi-channel failure queues, external
 provider credentials, tenant/member/mobile notices or BPM approval.
+
+## Round 64 Audit: core.config Feature Flag Rollout
+
+After Round 58, `core.config` had runtime boolean feature flags, but any
+consumer could only see globally enabled/disabled state. That was too thin for
+operator-managed rollout.
+
+- RuoYi-style config management supports operator-owned runtime parameters,
+  which maps cleanly to a public numeric rollout percentage key.
+- Yudao-style infra/system surfaces imply deeper feature governance, but
+  OpenCore should first provide deterministic evaluation before admitting
+  targeting rules or full experimentation.
+- OpenCore already had config CRUD, runtime config, feature flag boolean
+  guards, secret vault, Admin Config UI and fixed deploy smoke.
+- The lowest-dependency loop was `feature.*.rolloutPercentage` plus a public
+  evaluate endpoint, not an audience-rule engine.
+- Repository guards needed to reject private rollout rules, non-number rollout
+  value types and values outside integer `0..100`.
+- Runtime reads needed a richer `featureFlagRules` map while preserving the
+  existing `featureFlags` boolean map for consumers already using it.
+- Evaluation needed a stable bucket from `flag:subjectKey`, explicit
+  `global-disabled`, `matched-rollout` and `outside-rollout` reasons, and
+  400/404 guards for malformed or missing flags.
+- Admin needed a visible `Rollout %` column and `Set rollout` modal, not a
+  backend-only config key.
+- Fixed-port, deploy and public smoke needed to prove seeded rollout,
+  evaluation, dynamic rollout changes, disabled rollout behavior, invalid
+  create/update shapes and stale Config bundle markers.
+- The deploy script needed a stale Config bundle guard for `Rollout %` and
+  `Set rollout`, because stale frontend artifacts have repeatedly hidden newly
+  deployed workflows.
+
+This stays inside the current S7 System config boundary. It does not introduce
+audience targeting, multi-environment rollout governance, AB experiment
+analytics, full experimentation UI or external KMS/secret rotation.

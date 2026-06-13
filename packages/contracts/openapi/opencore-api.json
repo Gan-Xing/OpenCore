@@ -1747,6 +1747,39 @@
         "tags": ["SystemManagement", "Core System Config"]
       }
     },
+    "/api/core/config/feature-flags/evaluate": {
+      "get": {
+        "operationId": "SystemManagementController_evaluateFeatureFlag",
+        "parameters": [
+          {
+            "name": "flag",
+            "required": true,
+            "in": "query",
+            "schema": { "example": "notice.inbox", "type": "string" }
+          },
+          {
+            "name": "subjectKey",
+            "required": true,
+            "in": "query",
+            "schema": { "example": "user_admin", "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemConfigFeatureFlagEvaluationDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Config"]
+      }
+    },
     "/api/core/config/refresh-cache": {
       "post": {
         "operationId": "SystemManagementController_refreshConfigCache",
@@ -7121,6 +7154,24 @@
             "additionalProperties": { "type": "boolean" },
             "example": { "notice.inbox": true }
           },
+          "featureFlagRules": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "enabled": { "type": "boolean" },
+                "rolloutPercentage": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
+                }
+              },
+              "required": ["enabled", "rolloutPercentage"]
+            },
+            "example": {
+              "notice.inbox": { "enabled": true, "rolloutPercentage": 100 }
+            }
+          },
           "loginLockoutMinutes": {
             "type": "number",
             "example": 15,
@@ -7137,6 +7188,7 @@
         "required": [
           "adminTitle",
           "featureFlags",
+          "featureFlagRules",
           "loginLockoutMinutes",
           "loginMaxFailedAttempts"
         ]
@@ -7152,6 +7204,32 @@
           }
         },
         "required": ["key", "value", "valueType"]
+      },
+      "SystemConfigFeatureFlagEvaluationDto": {
+        "type": "object",
+        "properties": {
+          "flag": { "type": "string", "example": "notice.inbox" },
+          "subjectKey": { "type": "string", "example": "user_admin" },
+          "enabled": { "type": "boolean" },
+          "rolloutPercentage": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "bucket": { "type": "number", "minimum": 0, "maximum": 99 },
+          "reason": {
+            "type": "string",
+            "enum": ["global-disabled", "matched-rollout", "outside-rollout"]
+          }
+        },
+        "required": [
+          "flag",
+          "subjectKey",
+          "enabled",
+          "rolloutPercentage",
+          "bucket",
+          "reason"
+        ]
       },
       "SystemConfigCacheRefreshDto": {
         "type": "object",

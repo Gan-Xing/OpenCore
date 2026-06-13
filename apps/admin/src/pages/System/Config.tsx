@@ -5,6 +5,7 @@ import {
   EyeOutlined,
   KeyOutlined,
   LockOutlined,
+  PercentageOutlined,
   PlusOutlined,
   ReloadOutlined,
   SyncOutlined,
@@ -24,6 +25,7 @@ import {
   Button,
   Form,
   Input,
+  InputNumber,
   Modal,
   Popconfirm,
   Select,
@@ -79,6 +81,8 @@ type ConfigFormValues = {
 const fallbackRows = createSystemConfigFixtures().items;
 const featureFlagConfigKeyPattern =
   /^feature\.[a-z0-9]+(?:[.-][a-z0-9]+)*\.enabled$/;
+const featureFlagRolloutConfigKeyPattern =
+  /^feature\.[a-z0-9]+(?:[.-][a-z0-9]+)*\.rolloutPercentage$/;
 const searchFields: CurrentPageSearchField<SystemConfigSummary>[] = [
   'name',
   'key',
@@ -88,7 +92,7 @@ const searchFields: CurrentPageSearchField<SystemConfigSummary>[] = [
   'remark',
   'visibility',
   'encrypted',
-  isFeatureFlagConfig,
+  isFeatureFlagRelatedConfig,
   'system',
 ];
 const exportColumns: CurrentPageExportColumn<SystemConfigSummary>[] = [
@@ -105,6 +109,7 @@ const exportColumns: CurrentPageExportColumn<SystemConfigSummary>[] = [
   { title: 'Vault', renderText: renderVaultExportText },
   { title: 'Public', dataIndex: 'public' },
   { title: 'Feature Flag', renderText: renderFeatureFlagExportText },
+  { title: 'Rollout %', renderText: renderFeatureFlagRolloutExportText },
   { title: 'System', dataIndex: 'system' },
   { title: 'Description', dataIndex: 'description' },
   { title: 'Remark', dataIndex: 'remark' },
@@ -128,10 +133,59 @@ function isFeatureFlagConfig(record: SystemConfigSummary): boolean {
   return featureFlagConfigKeyPattern.test(record.key);
 }
 
+function isFeatureFlagRolloutConfig(record: SystemConfigSummary): boolean {
+  return featureFlagRolloutConfigKeyPattern.test(record.key);
+}
+
+function isFeatureFlagRelatedConfig(record: SystemConfigSummary): boolean {
+  return isFeatureFlagConfig(record) || isFeatureFlagRolloutConfig(record);
+}
+
+function getFeatureFlagName(record: SystemConfigSummary): string | undefined {
+  if (isFeatureFlagConfig(record)) {
+    return record.key.slice('feature.'.length, -'.enabled'.length);
+  }
+
+  if (isFeatureFlagRolloutConfig(record)) {
+    return record.key.slice('feature.'.length, -'.rolloutPercentage'.length);
+  }
+
+  return undefined;
+}
+
+function getFeatureFlagRolloutKey(flagName: string): string {
+  return `feature.${flagName}.rolloutPercentage`;
+}
+
+function findFeatureFlagRolloutRecord(
+  rows: readonly SystemConfigSummary[],
+  flagName: string,
+): SystemConfigSummary | undefined {
+  const rolloutKey = getFeatureFlagRolloutKey(flagName);
+
+  return rows.find((record) => record.key === rolloutKey);
+}
+
 function renderFeatureFlagExportText(record: SystemConfigSummary): string {
+  const flagName = getFeatureFlagName(record);
+
+  if (!flagName) {
+    return '';
+  }
+
   return isFeatureFlagConfig(record)
-    ? `${record.key.slice('feature.'.length, -'.enabled'.length)}=${record.value}`
-    : '';
+    ? `${flagName}=${record.value}`
+    : `${flagName} rollout`;
+}
+
+function renderFeatureFlagRolloutExportText(
+  record: SystemConfigSummary,
+): string {
+  if (!isFeatureFlagRolloutConfig(record)) {
+    return '';
+  }
+
+  return `${record.value}%`;
 }
 
 function renderVaultExportText(record: SystemConfigSummary): string {
@@ -190,7 +244,7 @@ function createFilterOptions(
       ],
       placeholder: 'Feature flag',
       predicate: (record, value) =>
-        isFeatureFlagConfig(record) === (value === 'true'),
+        isFeatureFlagRelatedConfig(record) === (value === 'true'),
     },
     {
       key: 'system',
@@ -221,9 +275,13 @@ function createDetailFields(record: SystemConfigSummary): DetailField[] {
     { label: 'Public', value: record.public ? 'public' : 'private' },
     {
       label: 'Feature Flag',
-      value: isFeatureFlagConfig(record)
+      value: isFeatureFlagRelatedConfig(record)
         ? renderFeatureFlagExportText(record)
         : 'standard config',
+    },
+    {
+      label: 'Rollout %',
+      value: isFeatureFlagRolloutConfig(record) ? `${record.value}%` : '',
     },
     { label: 'System', value: record.system ? 'system' : 'custom' },
     { label: 'Description', value: record.description },
@@ -286,6 +344,11 @@ export default function ConfigPage() {
   const [valueReadingKey, setValueReadingKey] = useState<string>();
   const [featureFlagTogglingKey, setFeatureFlagTogglingKey] =
     useState<string>();
+  const [featureFlagRolloutSavingKey, setFeatureFlagRolloutSavingKey] =
+    useState<string>();
+  const [rolloutConfigTarget, setRolloutConfigTarget] =
+    useState<SystemConfigSummary>();
+  const [rolloutPercentage, setRolloutPercentage] = useState<number>(100);
   const watchedVisibility = Form.useWatch('visibility', form);
   const filterOptions = useMemo(() => createFilterOptions(rows), [rows]);
   const selectedDeletableKeys = useMemo(
@@ -508,6 +571,67 @@ export default function ConfigPage() {
     }
   };
 
+  const openFeatureFlagRollout = (record: SystemConfigSummary) => {
+    const flagName = getFeatureFlagName(record);
+
+    if (!flagName || !isFeatureFlagConfig(record)) {
+      return;
+    }
+
+    const rolloutRecord = findFeatureFlagRolloutRecord(rows, flagName);
+    const currentPercentage = Number(rolloutRecord?.value ?? '100');
+    setRolloutPercentage(
+      Number.isInteger(currentPercentage) &&
+        currentPercentage >= 0 &&
+        currentPercentage <= 100
+        ? currentPercentage
+        : 100,
+    );
+    setRolloutConfigTarget(record);
+  };
+
+  const saveFeatureFlagRollout = async () => {
+    if (!rolloutConfigTarget) {
+      return;
+    }
+
+    const flagName = getFeatureFlagName(rolloutConfigTarget);
+
+    if (!flagName) {
+      return;
+    }
+
+    const rolloutKey = getFeatureFlagRolloutKey(flagName);
+    const existing = findFeatureFlagRolloutRecord(rows, flagName);
+    const nextValue = String(rolloutPercentage);
+
+    setFeatureFlagRolloutSavingKey(rolloutKey);
+    try {
+      if (existing) {
+        await updateOpenCoreSystemConfig(rolloutKey, {
+          value: nextValue,
+          valueType: 'number',
+          visibility: 'public',
+        });
+      } else {
+        await createOpenCoreSystemConfig({
+          category: 'feature',
+          description: `Public rollout percentage for ${flagName}.`,
+          key: rolloutKey,
+          name: `${rolloutConfigTarget.name} rollout`,
+          value: nextValue,
+          valueType: 'number',
+          visibility: 'public',
+        });
+      }
+      message.success(`Feature rollout ${flagName} set to ${nextValue}%.`);
+      setRolloutConfigTarget(undefined);
+      await loadConfig();
+    } finally {
+      setFeatureFlagRolloutSavingKey(undefined);
+    }
+  };
+
   const columns: ProColumns<SystemConfigSummary>[] = [
     {
       title: 'Name',
@@ -564,8 +688,10 @@ export default function ConfigPage() {
       title: 'Feature Flag',
       dataIndex: 'key',
       width: 156,
-      render: (_, record) =>
-        isFeatureFlagConfig(record) ? (
+      render: (_, record) => {
+        const flagName = getFeatureFlagName(record);
+
+        return isFeatureFlagConfig(record) ? (
           <Space size="small">
             <Switch
               aria-label={`Toggle feature flag ${record.key}`}
@@ -576,9 +702,49 @@ export default function ConfigPage() {
             />
             <Tag color="green">runtime</Tag>
           </Space>
+        ) : flagName ? (
+          <Tag color="cyan">{flagName} rollout</Tag>
         ) : (
           <Tag>standard</Tag>
-        ),
+        );
+      },
+    },
+    {
+      title: 'Rollout %',
+      dataIndex: 'key',
+      width: 148,
+      render: (_, record) => {
+        const flagName = getFeatureFlagName(record);
+
+        if (!flagName) {
+          return <Tag>n/a</Tag>;
+        }
+
+        const rolloutRecord = findFeatureFlagRolloutRecord(rows, flagName);
+        const rolloutValue = isFeatureFlagRolloutConfig(record)
+          ? record.value
+          : (rolloutRecord?.value ?? '100');
+
+        return (
+          <Space size="small">
+            <Tag color="cyan">{rolloutValue}%</Tag>
+            {isFeatureFlagConfig(record) ? (
+              <Tooltip title="Set rollout">
+                <Button
+                  aria-label={`Set rollout for ${record.key}`}
+                  icon={<PercentageOutlined />}
+                  loading={
+                    featureFlagRolloutSavingKey ===
+                    getFeatureFlagRolloutKey(flagName)
+                  }
+                  onClick={() => openFeatureFlagRollout(record)}
+                  size="small"
+                />
+              </Tooltip>
+            ) : null}
+          </Space>
+        );
+      },
     },
     {
       title: 'System',
@@ -818,6 +984,34 @@ export default function ConfigPage() {
             <Input.TextArea maxLength={500} rows={3} />
           </Form.Item>
         </Form>
+      </Modal>
+      <Modal
+        title="Feature rollout"
+        open={Boolean(rolloutConfigTarget)}
+        onCancel={() => setRolloutConfigTarget(undefined)}
+        onOk={() => void saveFeatureFlagRollout()}
+        confirmLoading={Boolean(featureFlagRolloutSavingKey)}
+        okText="Set rollout"
+      >
+        <Space direction="vertical" style={{ width: '100%' }}>
+          <Typography.Text strong>
+            {rolloutConfigTarget
+              ? getFeatureFlagName(rolloutConfigTarget)
+              : 'feature flag'}
+          </Typography.Text>
+          <InputNumber
+            aria-label="Feature rollout percentage"
+            addonAfter="%"
+            max={100}
+            min={0}
+            onChange={(value) =>
+              setRolloutPercentage(typeof value === 'number' ? value : 100)
+            }
+            precision={0}
+            style={{ width: '100%' }}
+            value={rolloutPercentage}
+          />
+        </Space>
       </Modal>
     </PageContainer>
   );

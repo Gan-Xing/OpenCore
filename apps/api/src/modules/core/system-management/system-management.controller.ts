@@ -77,6 +77,8 @@ import {
   SystemDeptTreeDto,
   SystemConfigDto,
   SystemConfigCacheRefreshDto,
+  SystemConfigFeatureFlagEvaluationDto,
+  SystemConfigFeatureFlagEvaluationQueryDto,
   SystemConfigBatchMutationResultDto,
   SystemConfigPageDto,
   SystemConfigRuntimeDto,
@@ -291,6 +293,15 @@ export class SystemManagementController {
     @Query() query: SystemConfigValueQueryDto,
   ): Promise<SystemConfigValueDto> {
     return this.config.getConfigValueByKey(query.key);
+  }
+
+  @Get('config/feature-flags/evaluate')
+  @ApiTags('Core System Config')
+  @ApiOkResponse({ type: SystemConfigFeatureFlagEvaluationDto })
+  evaluateFeatureFlag(
+    @Query() query: SystemConfigFeatureFlagEvaluationQueryDto,
+  ): Promise<SystemConfigFeatureFlagEvaluationDto> {
+    return this.config.evaluateFeatureFlag(query);
   }
 
   @Post('config/refresh-cache')

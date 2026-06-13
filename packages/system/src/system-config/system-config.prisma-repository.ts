@@ -81,6 +81,7 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
     assertSafeConfigKey(body.key, visibility);
     assertFeatureFlagConfigShape({
       key: body.key,
+      value: body.value,
       valueType: body.valueType,
       visibility,
     });
@@ -135,17 +136,6 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
       public: body.public ?? existing.public,
       visibility: body.visibility,
     });
-    assertSafeConfigKey(key, visibility);
-    assertFeatureFlagConfigShape({
-      key,
-      valueType: nextValueType,
-      visibility,
-    });
-    assertSecretConfigShape({
-      key,
-      valueType: nextValueType,
-      visibility,
-    });
     const nextValue =
       body.value === undefined
         ? normalizeExistingConfigValue({
@@ -155,6 +145,18 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
             visibility: existingRecord.visibility,
           })
         : body.value;
+    assertSafeConfigKey(key, visibility);
+    assertFeatureFlagConfigShape({
+      key,
+      value: nextValue,
+      valueType: nextValueType,
+      visibility,
+    });
+    assertSecretConfigShape({
+      key,
+      valueType: nextValueType,
+      visibility,
+    });
     const config = await this.prisma.systemConfig.update({
       where: { key },
       data: {

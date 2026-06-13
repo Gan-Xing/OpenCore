@@ -2069,3 +2069,48 @@ OpenCore does not claim real WebSocket/SMS/Mail adapters, multi-channel
 retry/failure queues, external provider credentials, tenant notifications, BPM
 approval or member/mobile notice channels in this round. Those remain separate
 notice productization stages after the local provider state machine.
+
+## Round 64 Config Feature Flag Rollout Reference Shape
+
+RuoYi-style system config management treats runtime parameters as
+operator-owned rows with clear keys, values and type/visibility constraints.
+That shape is enough for public rollout percentages when the values are
+guarded and runtime-readable.
+
+Yudao-style infra/system capabilities imply deeper feature governance can grow
+later, but a foundation platform first needs deterministic runtime evaluation
+before audience rules, multi-environment approval or AB analytics are useful.
+The relevant product shape for OpenCore is therefore a typed rollout rule plus
+stable evaluation, not a full experimentation clone.
+
+OpenCore already had:
+
+- system config CRUD from Round 9;
+- public value-by-key plus cache refresh from Round 24;
+- category/name/remark metadata from Round 37;
+- XLSX export from Round 38;
+- batch delete and system delete policy from Round 39/40;
+- runtime Admin/login policy propagation from Round 44/46/49;
+- public boolean runtime feature flags from Round 58;
+- secret vault foundation from Round 62;
+- fixed-port smoke/deploy and stale Config bundle guards.
+
+Round 64 admits the feature-flag rollout stage:
+
+- define `feature.*.rolloutPercentage` as a public numeric config with integer
+  `0..100` semantics;
+- expose runtime `featureFlagRules` beside existing `featureFlags`;
+- keep boolean `feature.*.enabled` as the global kill switch for a flag;
+- expose deterministic public evaluation through
+  `GET /api/core/config/feature-flags/evaluate`;
+- compute a stable bucket from `flag:subjectKey` and return
+  `enabled`, `rolloutPercentage`, `bucket` and `reason`;
+- surface rollout percentage in Admin Config with a `Set rollout` control;
+- prove fixed-port, deploy and public smoke for seeded rollout, evaluation,
+  dynamic rollout changes, disabled rollout behavior, invalid shape guards and
+  stale Admin bundle markers.
+
+OpenCore does not claim audience targeting, rule expressions,
+multi-environment rollout approval, AB experiment analytics or a full
+experimentation platform in this round. Those remain separate config
+productization stages after deterministic percentage rollout.

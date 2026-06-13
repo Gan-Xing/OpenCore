@@ -5534,3 +5534,119 @@ Against public endpoints after deploy:
   `b53edcc feat(notice): execute local delivery provider / 执行本地通知投递提供器`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 64 Capability
+
+Capability: `core.config` feature flag rollout productization.
+
+Round 64 extends Round 58 runtime feature flags from boolean enablement into a
+deterministic percentage rollout foundation. The goal is not a full
+experimentation platform; it is the smallest deployable stage that lets an
+operator configure rollout percentage and lets runtime consumers evaluate a
+stable per-subject result.
+
+Reference comparison:
+
+- RuoYi-style system config remains a parameter center where operators manage
+  public runtime values with explicit types.
+- Yudao-style infra/config capabilities imply feature controls should be
+  runtime-readable and guarded by shape validation before deeper targeting or
+  experimentation is admitted.
+- OpenCore already had config CRUD, runtime config, feature flag booleans,
+  secret vault, Admin Config UI and fixed deploy stale-bundle guards. The
+  missing low-dependency layer was a numeric rollout rule and evaluation API.
+
+## Round 64 Implemented
+
+- Added public numeric `feature.*.rolloutPercentage` config semantics with
+  repository guards for public visibility, number type and integer `0..100`
+  values.
+- Seeded `feature.notice.inbox.rolloutPercentage=100` beside the existing
+  `feature.notice.inbox.enabled=true` flag.
+- Extended runtime config with `featureFlagRules` while preserving existing
+  `featureFlags`.
+- Added public deterministic evaluation through
+  `GET /api/core/config/feature-flags/evaluate`, including stable SHA-256
+  bucket, enabled result, rollout percentage and reason.
+- Updated DTOs, SDK types/client/spec, registry fixtures and OpenAPI snapshot
+  for rollout rules and evaluation results.
+- Added Admin Config `Rollout %` column, rollout row tagging, detail/export
+  support and `Set rollout` modal.
+- Extended `tools/scripts/smoke-core-config.mjs` for seeded rollout, runtime
+  rule propagation, evaluate API, dynamic rollout updates, disabled rollout
+  behavior and bad-shape guards.
+- Extended Admin static smoke and deploy-script stale bundle guards for
+  `Rollout %`, `Set rollout` and `Feature rollout`.
+
+Out of scope for Round 64:
+
+- audience targeting rules;
+- multi-environment rollout approval/governance;
+- AB experiment metrics and analytics;
+- full experimentation UI;
+- external KMS/HSM provider binding, key rotation or secret version history.
+
+## Round 64 Verification
+
+- `pnpm exec jest -c packages/system/jest.config.ts packages/system/src/system-config/system-config.spec.ts --runInBand`
+- `pnpm exec jest -c packages/system/jest.config.ts --runInBand`
+- `pnpm nx test sdk --testFile=packages/sdk/src/system-management-client.spec.ts --testFile=packages/sdk/src/registry-fixtures.spec.ts`
+- `pnpm --dir apps/admin test`
+- `pnpm prisma:validate`
+- `pnpm prisma:seed`
+- `pnpm prisma:generate`
+- `pnpm openapi:export`
+- `pnpm sdk:check`
+- `pnpm openapi:registry-tags:check`
+- `pnpm openapi:check`
+- `pnpm typecheck`
+- `pnpm lint`
+- `pnpm build:api`
+- `pnpm build:admin`
+- `bash -n tools/scripts/deploy-local-opencore.sh`
+- `node --check tools/scripts/smoke-core-config.mjs`
+- `node --check apps/admin/scripts/smoke-test.mjs`
+- `pnpm smoke:api:local`
+- `pnpm registry:admin-routes:check`
+
+`pnpm smoke:api:local` passed on fixed port `39173`, including
+`core.config.runtime-feature-flag-rules`,
+`core.config.runtime-feature-flag-evaluate` and
+`core.config.runtime-feature-flag-rollout`.
+
+An initial `pnpm nx test system --testFile=...` invocation ran unrelated system
+suites in parallel and exposed the existing shared local database notice FK
+drift. The focused system config suite and the full system Jest run with
+`--runInBand` both passed.
+
+`pnpm lint` passed with existing warnings in
+`packages/system/src/system-user/system-user.prisma-repository.ts` and
+`apps/admin/src/pages/shared/CurrentPageExportButton.tsx`; no Round 64 lint
+errors were introduced.
+
+`pnpm deploy:opencore` passed, deploying API/Admin on fixed ports
+`39172`/`39174`; deploy smoke included Admin same-origin login,
+duplicate-prefix login compatibility, public bundle checks, stale
+service-worker retirement and the new config feature-rollout smoke checks.
+
+## Round 64 Public Verification
+
+Against public endpoints after deploy:
+
+- Public API: `http://144.217.243.161:39172`
+- Public Admin: `http://144.217.243.161:39174`
+- Admin main bundle: `umi.c5667446.js`
+- System Config chunk: `p__System__Config.328ad703.async.js`
+- Public API config smoke:
+  `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-config`.
+  Checks included runtime feature-flag rules, evaluate API, rollout update
+  guards, dynamic rollout behavior and export metadata.
+- Public System Config chunk contains `Rollout %`, `Set rollout` and
+  `Feature rollout`.
+- Public OpenAPI docs contain `/api/core/config/feature-flags/evaluate`,
+  `featureFlagRules` and `SystemConfigFeatureFlagEvaluationDto`.
+
+## Round 64 Commit Record
+
+- Feature+docs commit: this commit.
+- Push: `origin/main`.
