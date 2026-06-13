@@ -3,8 +3,8 @@
 Date: 2026-06-13
 Repository: `Gan-Xing/OpenCore`
 Default branch: `main`
-Latest observed feature commit: `bfd2454 feat(login-log): record forced logout entries / 记录强退登出日志`
-Latest deployed feature commit: `bfd2454 feat(login-log): record forced logout entries / 记录强退登出日志`
+Latest observed feature commit: `2086842 feat(dept): add sibling order updates / 新增部门同级排序`
+Latest deployed feature commit: `2086842 feat(dept): add sibling order updates / 新增部门同级排序`
 Latest deployed hardening commit: `4df5dd1 fix(system): satisfy xlsx export lint guard / 修复 XLSX 导出 lint 守卫`
 
 ## One-sentence Goal
@@ -117,6 +117,7 @@ productization waterline completion; see
 - Round 49 `core.config/security-auth` configurable attempt limit stage 9
 - Round 50 `core.login-log/security-auth` self logout revocation stage 6
 - Round 51 `core.login-log/monitor.online-user` forced logout logging stage 7
+- Round 52 `core.dept` sibling order stage 4
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -675,6 +676,22 @@ Login Logs chunk `p__Security__LoginLogs.1647b5aa.async.js` 已验证包含
 `logout.force` 登录日志，不等于 IP 归属地、mobile/SMS/social 登录、登录日志表结构化
 actor/reason 字段或从 Login Logs 页面直接终止会话已经完成。
 
+Round 52 回到 `core.dept` 队列，补齐若依部门 `updateSort` 和芋道部门 `sort`
+字段所代表的同级排序基础闭环。OpenCore 新增
+`PATCH /api/core/depts/order`，使用 `core:dept:update` 权限，只允许同一父级下的
+部门批量更新 `order`，并把重复 ID、缺失 ID、跨父级、错误类型 order 都沉淀为
+repository/API/smoke 守卫。SDK 暴露 `updateDeptOrder`，Admin Departments 行级新增
+Move up / Move down 图标按钮，按当前兄弟节点顺序生成 `(index + 1) * 10` 的稳定排序值。
+固定 smoke、部署 smoke 和公网 API smoke 均验证
+`core.dept.order.duplicate-guard`、`core.dept.order.missing-guard`、
+`core.dept.order.same-parent-guard`、`core.dept.order.bad-order-guard`、
+`core.dept.order.update`、`core.dept.order.tree-order` 和
+`core.dept.order.simple-list-order`。公网 Admin `umi.c97fac69.js` 已验证包含固定 API
+origin、`/core/depts/order` 且不含 `/api/api/auth/login`；公网 Departments chunk
+`p__System__Departments.a9ff471b.async.js` 已验证包含 Move up / Move down 和
+`Department order saved.` 标记。注意：这轮关闭的是同级部门排序保存，不等于
+data-scope workflow、批量部门删除、拖拽排序 UI 或角色数据范围分配 UI 已经完成。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -684,7 +701,7 @@ The productization waterline now classifies:
   `core.file`, Round 4/16 `core.menu`, Round 5/17/18/20 `core.role`,
   Round 8/21 `core.dict`,
   Round 7/19/22/23/28/29/30/31/32/33/34/35/36/41 `core.user`.
-- First loop, enhance: Round 1 `core.notice`, Round 2/27/43 `core.dept`,
+- First loop, enhance: Round 1 `core.notice`, Round 2/27/43/52 `core.dept`,
   Round 3/22/25/42 `core.post`,
   Round 9/24/37/38/39/40/44/46/49 `core.config`,
   Round 11/26/45/47/48/49/50/51 `core.login-log`.
@@ -724,9 +741,11 @@ finds another blocker:
    logout records.
 3. `core.dept`: Round 27 closed the enabled-department simple-list option
    source consumed by Admin Users; Round 43 closed user-bound department
-   deletion protection and preserved user `deptId` on failed delete. Remaining
-   work is data-scope workflow integration and ordered tree operations where
-   useful.
+   deletion protection and preserved user `deptId` on failed delete. Round 52
+   closed same-parent sibling order updates across API/SDK/Admin/smoke and
+   proved the saved order through both tree and simple-list consumers.
+   Remaining work is data-scope workflow integration, plus batch department
+   deletion or drag-sort UI only if separately admitted.
 4. `core.post`: Round 25 closed the enabled-post simple-list option source;
    Round 42 closed batch deletion with Admin selected-row deletion and strict
    batch guards. Remaining work is ordered list operations where useful.

@@ -1544,6 +1544,36 @@ internal RBAC/user session invalidation.
       fixed-port smoke, deployment and public URL verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 52: core.dept Sibling Order Productization
+
+Why this slice: `core.dept` still had an ordered-tree operations gap after
+tree CRUD, simple-list consumers and user-bound delete protection were live.
+RuoYi exposes department sort updates through `SysDeptController.updateSort`,
+and Yudao keeps department `sort` as a first-class saved field. The next
+lowest-dependency department product stage was saving same-parent sibling order
+through API/SDK/Admin and proving both tree and simple-list consumers honor it.
+
+- [x] Recompare RuoYi `SysDeptController.updateSort`, Yudao department `sort`
+      save shape and OpenCore's existing `order` field.
+- [x] Add department order DTOs and repository/service contracts.
+- [x] Implement seed and Prisma same-parent order updates.
+- [x] Reject empty/non-array items, duplicate IDs, missing IDs, malformed order
+      values and cross-parent order batches before mutation.
+- [x] Add permissioned `PATCH /api/core/depts/order` before dynamic department
+      detail routes.
+- [x] Extend API permission matrix with `core:dept:update`.
+- [x] Extend SDK types/client/spec with `updateDeptOrder`.
+- [x] Add Admin Departments Move up / Move down actions with same-sibling
+      order payload generation.
+- [x] Extend Admin static smoke for department order service/UI markers.
+- [x] Refresh OpenAPI snapshot.
+- [x] Extend fixed-port/deploy/public `core.dept` smoke with duplicate,
+      missing, cross-parent, malformed-order, update, tree-order and
+      simple-list-order guards.
+- [x] Run focused tests, full gates, fixed-port smoke, deployment and public
+      URL verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -1580,9 +1610,11 @@ treat "minimal loop" as "minimal final product".
 
 - [ ] Round 1 `core.notice`: read/unread state, inbox/header badge and delivery
       adapter design.
-- [ ] Round 2/27/43 `core.dept`: management tree, simple-list option source
-      and user-bound department deletion protection are complete; data-scope
-      workflow integration and ordered tree operations remain.
+- [ ] Round 2/27/43/52 `core.dept`: management tree, simple-list option
+      source, user-bound department deletion protection and same-parent sibling
+      order updates are complete; data-scope workflow integration remains.
+      Batch department deletion or drag-sort persistence remain separate
+      admission decisions.
 - [ ] Round 3/22/25/42 `core.post`: user-post binding, simple-list option
       source and batch deletion are complete; ordered list refinements remain.
 - [ ] Round 9/24/37/38/39/40/44/46/49 `core.config`: public get-value-by-key, cache
@@ -1638,7 +1670,7 @@ treat "minimal loop" as "minimal final product".
 - Message bus push, WebSocket delivery or mail/SMS fan-out.
 - BPMN/workflow approval around announcements.
 - Tenant-scoped notices.
-- Department user binding Admin workflow and data-scope assignment UI.
+- Department data-scope workflow integration and role data-scope assignment UI.
 - Batch department deletion or drag-sort persistence.
 - Post ordered list refinements.
 - Menu router-generation expansion, menu cache refresh, save-sort and drag-sort

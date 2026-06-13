@@ -1612,3 +1612,30 @@ without being operator online-user kick-out events. This round also does not
 claim IP location enrichment, mobile/SMS/social login logging, structured
 login-log actor/reason columns or a Login Logs page action for terminating
 sessions.
+
+## Round 52 Department Order Reference Shape
+
+RuoYi exposes department sorting as an explicit management operation:
+`SysDeptController.updateSort` accepts department IDs plus target order numbers
+and protects the route with `system:dept:edit`. This keeps tree display order
+editable without requiring a broader department workflow change.
+
+Yudao keeps department `sort` in the department save request shape and returns
+department lists ordered by that saved value. Its reference shape treats sort
+as a basic organization-tree field, not a separate optional feature.
+
+OpenCore already had a persisted `SystemDept.order` field and sorted tree plus
+simple-list reads, but no way for an operator to save sibling order after tree
+CRUD. Round 52 admits the same-parent order stage:
+
+- expose `PATCH /api/core/depts/order` with `core:dept:update`;
+- accept an item list of `{ id, order }` values;
+- reject duplicate IDs, missing IDs, malformed order values and cross-parent
+  batches before mutation;
+- keep order updates scoped to siblings under the same `parentId`;
+- add SDK and Admin Departments Move up / Move down actions;
+- prove saved order through both tree and simple-list consumers in fixed-port,
+  deploy and public smoke.
+
+OpenCore does not claim drag-sort UI, batch department deletion, data-scope
+workflow integration or role data-scope assignment UI in this round.

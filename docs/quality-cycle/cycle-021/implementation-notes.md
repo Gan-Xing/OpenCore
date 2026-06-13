@@ -4267,3 +4267,108 @@ Against public endpoints after deploy:
   `bfd2454 feat(login-log): record forced logout entries / 记录强退登出日志`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 52 Capability
+
+Capability: `core.dept` sibling order updates.
+
+Goal: close the department ordered-tree operations gap by adding a same-parent
+order update API/SDK/Admin loop, aligned with RuoYi `updateSort` and Yudao
+department `sort`, while keeping data-scope workflow and drag-sort UI outside
+this stage.
+
+## Round 52 Implemented
+
+- Rechecked RuoYi `SysDeptController.updateSort` and Yudao department save
+  shape before selecting the slice.
+- Added department order DTOs and mutation result DTOs in `@opencore/system`.
+- Added repository/service order-update contracts with normalized item input.
+- Implemented seed and Prisma same-parent order updates.
+- Rejected duplicate IDs, missing IDs, cross-parent batches and malformed
+  order values before mutation.
+- Added `PATCH /api/core/depts/order` with `core:dept:update` permission.
+- Updated API permission matrix, OpenAPI snapshot, SDK types/client/spec and
+  Admin platform service.
+- Added Admin Departments Move up / Move down row actions and a success
+  message after saved order updates.
+- Extended Admin static smoke with department order UI/service markers.
+- Extended `tools/scripts/smoke-core-dept.mjs` with duplicate, missing,
+  same-parent, bad-order, update, tree-order and simple-list-order checks.
+
+## Round 52 Verification
+
+- `node --check tools/scripts/smoke-core-dept.mjs`
+- `node --check apps/admin/scripts/smoke-test.mjs`
+- `pnpm nx test system --testFile=system-dept.spec.ts`
+- `pnpm nx test api --testFile=system-management.permission-matrix.spec.ts`
+- `pnpm nx test sdk --testFile=system-management-client.spec.ts`
+- `pnpm nx test admin`
+- `pnpm nx typecheck system`
+- `pnpm nx typecheck api`
+- `pnpm nx typecheck sdk`
+- `pnpm nx typecheck admin`
+- `pnpm openapi:export`
+- `pnpm openapi:check`
+- `pnpm sdk:check`
+- `pnpm prisma:validate`
+- `pnpm smoke:api:local`
+- `pnpm format:check`
+- `pnpm lint`
+- `pnpm openapi:registry-tags:check`
+- `pnpm registry:admin-routes:check`
+- `pnpm typecheck`
+- `pnpm build`
+- `pnpm prisma:seed`
+- `pnpm nx test audit`
+- `pnpm test`
+- `git diff --check`
+- `pnpm deploy:opencore`
+
+`pnpm smoke:api:local` passed on fixed port `39173`, including
+`core.dept.order.duplicate-guard`, `core.dept.order.missing-guard`,
+`core.dept.order.same-parent-guard`, `core.dept.order.bad-order-guard`,
+`core.dept.order.update`, `core.dept.order.tree-order` and
+`core.dept.order.simple-list-order`.
+
+`pnpm deploy:opencore` passed, deploying API/Admin on fixed ports
+`39172`/`39174`; deploy smoke included Admin same-origin login,
+duplicate-prefix login compatibility, public bundle checks, stale
+service-worker retirement and the same department order guards.
+
+The first `pnpm test` run failed at `audit:test` because a prior login-log
+clean-all smoke had removed seeded login-log rows expected by existing audit
+tests. After `pnpm prisma:seed`, both `pnpm nx test audit` and full
+`pnpm test` passed. Nx still reported `audit:test` as flaky due to this
+test-data precondition.
+
+`pnpm lint` passed with existing warnings in
+`packages/system/src/system-user/system-user.prisma-repository.ts` and
+`apps/admin/src/pages/shared/CurrentPageExportButton.tsx`; no Round 52 lint
+errors were introduced.
+
+## Round 52 Public Verification
+
+Against public endpoints after deploy:
+
+- Public API: `http://144.217.243.161:39172`
+- Public Admin: `http://144.217.243.161:39174`
+- Admin main bundle: `umi.c97fac69.js`
+- Departments chunk: `p__System__Departments.a9ff471b.async.js`
+- Public API department smoke passed:
+  `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-dept`.
+  Checks included `core.dept.order.duplicate-guard`,
+  `core.dept.order.missing-guard`, `core.dept.order.same-parent-guard`,
+  `core.dept.order.bad-order-guard`, `core.dept.order.update`,
+  `core.dept.order.tree-order` and `core.dept.order.simple-list-order`.
+- Public Admin main bundle contains API origin
+  `http://144.217.243.161:39172`, `/core/depts/order` and no
+  `/api/api/auth/login`.
+- Public Admin Departments chunk contains `Move up`, `Move down` and
+  `Department order saved.`.
+
+## Round 52 Commit Record
+
+- Feature commit:
+  `2086842 feat(dept): add sibling order updates / 新增部门同级排序`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.
