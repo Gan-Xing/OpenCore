@@ -314,6 +314,26 @@ export class IntegrationOutboxProcessResultDto {
   queuedCount!: number;
 }
 
+export class IntegrationOutboxCallbackDto {
+  @ApiProperty()
+  providerCode!: string;
+
+  @ApiProperty()
+  messageId!: string;
+
+  @ApiProperty({ enum: ['sent', 'failed'] })
+  status!: 'sent' | 'failed';
+
+  @ApiProperty({ required: false })
+  error?: string;
+
+  @ApiProperty({
+    description:
+      'HMAC-SHA256 hex signature over channel, providerCode, messageId, status and error.',
+  })
+  signature!: string;
+}
+
 export class PreviewTemplateDto {
   @ApiProperty()
   templateCode!: string;

@@ -4,6 +4,7 @@ import type {
   CreateIntegrationTemplateDto,
   CreateOutboxMessageDto,
   FailOutboxMessageDto,
+  IntegrationOutboxCallbackDto,
   IntegrationOutboxQueryDto,
   IntegrationProviderQueryDto,
   IntegrationTemplateQueryDto,
@@ -24,6 +25,8 @@ import {
   type OAuthCallbackContractRecord,
 } from './integration.seed';
 import {
+  assertOutboxCallbackProviderMatch,
+  assertOutboxCallbackSignature,
   assertProviderReadyForOutbox,
   assertSecretRef,
   assertSmsSafety,
@@ -32,6 +35,7 @@ import {
   createPage,
   IntegrationRepository,
   matchesOptional,
+  normalizeOutboxCallback,
   normalizeOutboxFailureError,
   normalizeOptionalProviderCode,
   normalizeOptionalBoolean,
@@ -366,6 +370,33 @@ export class SeedIntegrationRepository extends IntegrationRepository {
       skippedCount: 0,
       queuedCount: this.countQueuedOutbox(channel, providerCode),
     };
+  }
+
+  async callbackOutbox(
+    channel: 'mail' | 'sms',
+    body: IntegrationOutboxCallbackDto,
+  ): Promise<IntegrationOutboxRecord> {
+    const callback = normalizeOutboxCallback(channel, body);
+    const provider = this.findProvider(callback.providerCode);
+    assertProviderReadyForOutbox({
+      code: provider.code,
+      type: provider.type,
+      enabled: provider.enabled,
+      channel,
+    });
+    const message = this.findOutboxMessage(channel, callback.messageId);
+    assertOutboxCallbackProviderMatch({
+      expectedProviderCode: callback.providerCode,
+      actualProviderCode: message.providerCode,
+      messageId: message.id,
+    });
+    assertOutboxCallbackSignature(callback, provider);
+
+    return callback.status === 'sent'
+      ? this.markOutboxSent(channel, message.id)
+      : this.markOutboxFailed(channel, message.id, {
+          error: callback.error ?? '',
+        });
   }
 
   async listOAuthProviders(

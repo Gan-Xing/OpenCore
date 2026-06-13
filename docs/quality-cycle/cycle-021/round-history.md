@@ -22,9 +22,9 @@ quality-cycle ledger keeps commit, deploy and public verification markers.
 - Rounds 50-59: self/force logout audit semantics, department/post ordering,
   user/dept data-scope enforcement, notice inbox/read analytics, actor/reason
   fields, runtime feature flags and login-log location.
-- Rounds 60-69: notice templates, delivery records, local/outbox providers,
+- Rounds 60-70: notice templates, delivery records, local/outbox providers,
   config secret vault, feature-flag rollout/audience, outbox state hardening
-  and process handling, plus operation-log cleanup maintenance.
+  plus process/callback handling, and operation-log cleanup maintenance.
 
 ## Rework Notes
 

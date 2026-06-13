@@ -33,7 +33,7 @@ true:
 | `monitor.online-user` | Meets         | Batch kick-out, real token/session revocation and UA/IP fields are live.                                                                                                                                         |
 | `core.login-log`      | Meets current | Type/result, lockout, cleanup, logout actor/reason and deterministic location are live. External GeoIP depth is optional next work.                                                                              |
 | `core.config`         | Meets current | Runtime keys, login policy, feature flags, rollout, audience rules and secret vault are live. Multi-env governance/KMS rotation remain.                                                                          |
-| `core.notice`         | Enhance       | Management, inbox, templates, delivery records, local provider, Integration outbox bridge, status sync and queued outbox processing are live. Signed callbacks, real SMTP/SMS adapters and realtime push remain. |
+| `core.notice`         | Enhance       | Management, inbox, templates, delivery records, local provider, Integration outbox bridge, status sync, queued outbox processing and signed callbacks are live. Real SMTP/SMS adapters and realtime push remain. |
 | `scheduler/monitor`   | P2            | Runtime packages exist; deeper operator actions and diagnostics remain.                                                                                                                                          |
 | `OpenForge Admin`     | P2            | CLI/core exists; Admin plan/diff/check/apply UX remains.                                                                                                                                                         |
 
@@ -49,13 +49,15 @@ true:
   coverage.
 - Round 69 added provider-gated queued outbox processing and notice delivery
   sent-state synchronization.
+- Round 70 added signed Integration outbox callback intake with delivery
+  state synchronization.
 
 ## Active Debt Queue
 
 P1/P2 foundation work still worth doing before larger business domains:
 
-1. Notice provider reliability: signed callback intake, real SMTP/SMS adapters,
-   retry scheduling and realtime push.
+1. Notice provider reliability: real SMTP/SMS adapters, retry scheduling and
+   realtime push.
 2. Config governance: multi-environment rollout controls, KMS binding, key
    rotation and secret version history.
 3. Operation-log enrichment: retention scheduling, structured
@@ -84,8 +86,8 @@ direct schema/business-code writing.
 - Admin stale bundle: route/chunk marker checks for each changed page.
 - API prefix: duplicate `/api/api` login guard.
 - Auth: revoked token/session returns 401.
-- Notice outbox: pending handoff, failed/retry/process-to-sent sync and
-  post-sent mutation guards.
+- Notice outbox: pending handoff, failed/retry/process-to-sent sync, signed
+  callback sync and post-sent mutation guards.
 - Operation log: batch-delete guard failures, deleted-detail 404 and clean-all
   target removal.
 - Config: runtime flags, rollout/audience shape and secret-vault plaintext

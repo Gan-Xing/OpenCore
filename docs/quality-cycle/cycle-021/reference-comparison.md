@@ -11,7 +11,7 @@ permissions, seeds, OpenAPI and smoke guards.
 ## Reference Heads
 
 - RuoYi-Vue: `41720e624c5a668c7d3777835e4c87095a7a1dfd`
-- Yudao backend: `cdb4204bf8cf214861f1ae6da4bd116190089fa0`
+- Yudao backend: `51b3d2d8cddd9a2a48e1edc2a7267359f61264cb`
 - Yudao Admin: `17428e98676c8a626f66da780c7c854c73d6089f`
 
 ## Comparison Rules
@@ -38,7 +38,8 @@ permissions, seeds, OpenAPI and smoke guards.
   remain.
 - Notice: management, inbox read state, read-user analytics, templates,
   delivery records, local provider execution, Integration outbox bridge and
-  outbox status synchronization plus queued provider processing are live.
+  outbox status synchronization plus queued provider processing and signed
+  callback intake are live.
 - Config: runtime keys, login policy, feature flags, rollout percentage,
   audience rules and secret-vault encryption are live.
 - Monitor/OpenForge/Scheduler: foundations exist, but deeper operator workflows
@@ -79,8 +80,24 @@ after queue creation. OpenCore now has that boundary:
 - process moves enabled provider queued rows to `sent`;
 - notice delivery state is synchronized from the processed outbox row.
 
-Signed callbacks, real SMTP/SMS adapters, retry scheduling and realtime push
-remain separate notice reliability stages.
+Real SMTP/SMS adapters, retry scheduling and realtime push remain separate
+notice reliability stages.
+
+## Round 70 Reference Decision
+
+RuoYi/Yudao notification reliability assumes external providers report
+delivery results through authenticated callback-style paths. OpenCore now has
+the safe foundation for that boundary:
+
+- callback payloads identify channel, provider, message id, status and error;
+- callback signatures are HMAC-SHA256 over a stable canonical payload;
+- provider/channel and provider-message ownership are checked before mutation;
+- accepted callbacks reuse the same sent/failed paths as manual/process
+  actions, keeping notice delivery records synchronized.
+
+The public anonymous webhook boundary remains a later stage until OpenCore has
+a general public-route policy. This round deliberately keeps callbacks inside
+the existing permission-gated integration manage boundary.
 
 ## Explicit Non-Claims
 
@@ -91,7 +108,7 @@ OpenCore does not yet claim full RuoYi/Yudao parity for:
 - full report designer,
 - real payment/refund/reconciliation,
 - CRM/ERP/MES/WMS/mall/member business suites,
-- real external notification provider fleet and signed callbacks,
+- real external notification provider fleet,
 - AI/RAG/Agent workflow.
 
 Those domains require explicit admission. P0/P1 foundation capabilities do not.
@@ -99,6 +116,6 @@ Those domains require explicit admission. P0/P1 foundation capabilities do not.
 ## Next Comparison Focus
 
 Use the next comparison to choose one foundation stage from the remaining
-queue: notice callbacks/adapters/realtime, config rollout governance, operation-log
-enrichment, scheduler/monitor operation depth, OpenForge Admin or integration
-health/config audit.
+queue: notice adapters/retry/realtime, config rollout governance,
+operation-log enrichment, scheduler/monitor operation depth, OpenForge Admin
+or integration health/config audit.

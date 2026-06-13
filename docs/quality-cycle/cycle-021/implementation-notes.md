@@ -19,6 +19,8 @@ evidence stays in `round-history.md` and the quality-cycle ledger.
   together. Use a docs-only commit only when runtime artifacts do not change.
 - Avoid self-hash placeholders. A same-commit hash cannot be written inside
   that commit; report it after commit or backfill it in the next metadata pass.
+- Quality-cycle docs are checked by `quality-docs:check`; completed prompts and
+  historical reports must stay concise archives, not command transcripts.
 
 ## Execution Contract
 
@@ -37,13 +39,13 @@ evidence stays in `round-history.md` and the quality-cycle ledger.
 
 ## Current Runtime State
 
-Cycle-021 has completed 69 deployable stages. API, SDK, Admin, permissions,
+Cycle-021 has completed 70 deployable stages. API, SDK, Admin, permissions,
 seed data, OpenAPI snapshots and smoke guards now exist across the main
 System/Security/Monitor/Integration foundation areas.
 
-Latest stage: Round 69 added provider-gated mail/SMS outbox processing,
-SDK/OpenAPI/Admin support and smoke guards for queued-to-sent notice delivery
-sync.
+Latest stage: Round 70 added signed mail/SMS outbox callback intake,
+SDK/OpenAPI/Admin support and smoke guards for HMAC verification plus
+callback-to-delivery state sync.
 
 ## Evidence Rule
 
@@ -58,7 +60,7 @@ copy standard test/build/deploy command output into documentation.
   page markers.
 - Notice outbox state: `smoke-core-notice.mjs` verifies pending handoff,
   repeat execute idempotency, blank failure rejection, failed-to-retry,
-  process-to-sent sync and mutation guards after sent.
+  process-to-sent sync, signed callback sync and mutation guards after sent.
 - Operation-log cleanup: `smoke-core-audit-log.mjs` verifies batch delete
   guard failures, successful deletion, deleted-detail 404 and clean-all target
   removal while preserving the audit record for the clean request itself.
@@ -68,12 +70,17 @@ copy standard test/build/deploy command output into documentation.
   logged-out tokens return 401.
 - Admin generated types: do not run Admin `typecheck` and `lint` in parallel,
   because both call `max setup` and can race generated Umi types.
+- Seed drift: Prisma integration tests must create and clean the records they
+  require when prior smokes can legitimately mutate seed-like runtime tables.
+- Shared Prisma test database: `packages/system` Jest runs with one worker so
+  package-level integration specs do not race delivery/config/user fixtures.
+- Documentation noise: `quality-docs:check` blocks quality-cycle files that
+  accumulate repeated command-like lines instead of durable decisions.
 
 ## Remaining Foundation Debt
 
-- Notice: signed callback ingestion, real external SMTP/SMS adapters,
-  retry scheduling, WebSocket realtime push and any admitted
-  tenant/member/mobile channels.
+- Notice: real external SMTP/SMS adapters, retry scheduling, WebSocket
+  realtime push and any admitted tenant/member/mobile channels.
 - Config: multi-environment rollout governance, external KMS binding, key
   rotation and secret version history.
 - Login log: optional external GeoIP provider depth and broader mobile/social

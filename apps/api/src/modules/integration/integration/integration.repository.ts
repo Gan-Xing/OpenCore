@@ -1,9 +1,11 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { createHmac, timingSafeEqual } from 'node:crypto';
 import type {
   CreateIntegrationProviderDto,
   CreateIntegrationTemplateDto,
   CreateOutboxMessageDto,
   FailOutboxMessageDto,
+  IntegrationOutboxCallbackDto,
   IntegrationOutboxProcessResultDto,
   IntegrationOutboxQueryDto,
   IntegrationProviderQueryDto,
@@ -28,6 +30,15 @@ export type PageResult<T> = {
   pageSize: number;
   total: number;
   totalPages: number;
+};
+
+export type NormalizedOutboxCallback = {
+  channel: 'mail' | 'sms';
+  providerCode: string;
+  messageId: string;
+  status: 'failed' | 'sent';
+  error?: string;
+  signature: string;
 };
 
 export abstract class IntegrationRepository {
@@ -100,6 +111,10 @@ export abstract class IntegrationRepository {
     channel: 'mail' | 'sms',
     body?: ProcessOutboxDto,
   ): Promise<IntegrationOutboxProcessResultDto>;
+  abstract callbackOutbox(
+    channel: 'mail' | 'sms',
+    body: IntegrationOutboxCallbackDto,
+  ): Promise<IntegrationOutboxRecord>;
 
   abstract listOAuthProviders(
     query?: IntegrationProviderQueryDto,
@@ -317,6 +332,88 @@ export function normalizeOptionalProviderCode(
   return providerCode;
 }
 
+export function normalizeOutboxCallback(
+  channel: 'mail' | 'sms',
+  body: IntegrationOutboxCallbackDto,
+): NormalizedOutboxCallback {
+  const providerCode = normalizeRequiredString(
+    body.providerCode,
+    'Outbox callback providerCode is required.',
+  );
+  const messageId = normalizeRequiredString(
+    body.messageId,
+    'Outbox callback messageId is required.',
+  );
+  const signature = normalizeOutboxCallbackSignature(body.signature);
+
+  if (body.status !== 'sent' && body.status !== 'failed') {
+    throw new BadRequestException(
+      'Outbox callback status must be sent or failed.',
+    );
+  }
+
+  return {
+    channel,
+    providerCode,
+    messageId,
+    status: body.status,
+    error:
+      body.status === 'failed'
+        ? normalizeOutboxFailureError(body.error)
+        : undefined,
+    signature,
+  };
+}
+
+export function assertOutboxCallbackProviderMatch(input: {
+  expectedProviderCode: string;
+  actualProviderCode: string;
+  messageId: string;
+}): void {
+  if (input.expectedProviderCode !== input.actualProviderCode) {
+    throw new BadRequestException(
+      `Outbox callback provider mismatch for message ${input.messageId}.`,
+    );
+  }
+}
+
+export function assertOutboxCallbackSignature(
+  callback: NormalizedOutboxCallback,
+  provider: IntegrationProviderRecord,
+): void {
+  const signingKey = resolveOutboxCallbackSigningKey(provider);
+  const expected = Buffer.from(
+    createOutboxCallbackSignature(callback, signingKey),
+    'hex',
+  );
+  const actual = Buffer.from(callback.signature, 'hex');
+
+  if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) {
+    throw new BadRequestException('Outbox callback signature is invalid.');
+  }
+}
+
+export function createOutboxCallbackSignature(
+  input: Omit<NormalizedOutboxCallback, 'signature'>,
+  signingKey: string,
+): string {
+  return createHmac('sha256', signingKey)
+    .update(createOutboxCallbackCanonicalPayload(input))
+    .digest('hex');
+}
+
+export function createOutboxCallbackCanonicalPayload(
+  input: Omit<NormalizedOutboxCallback, 'signature'>,
+): string {
+  return [
+    input.channel,
+    input.providerCode,
+    input.messageId,
+    input.status,
+    input.error ?? '',
+  ].join('\n');
+}
+
 export function requireRecord<T>(
   record: T | null | undefined,
   resource: string,
@@ -327,6 +424,43 @@ export function requireRecord<T>(
   }
 
   return record;
+}
+
+function normalizeRequiredString(value: unknown, message: string): string {
+  const normalized = typeof value === 'string' ? value.trim() : '';
+
+  if (normalized.length === 0) {
+    throw new BadRequestException(message);
+  }
+
+  return normalized;
+}
+
+function normalizeOutboxCallbackSignature(value: unknown): string {
+  const signature = normalizeRequiredString(
+    value,
+    'Outbox callback signature is required.',
+  ).replace(/^sha256=/i, '');
+
+  if (!/^[a-f0-9]{64}$/i.test(signature)) {
+    throw new BadRequestException(
+      'Outbox callback signature must be a SHA-256 hex digest.',
+    );
+  }
+
+  return signature.toLowerCase();
+}
+
+function resolveOutboxCallbackSigningKey(
+  provider: IntegrationProviderRecord,
+): string {
+  const configured = provider.config.callbackSigningSecret;
+
+  if (typeof configured === 'string' && configured.trim().length > 0) {
+    return configured.trim();
+  }
+
+  return provider.secretRef;
 }
 
 function normalizePositiveInteger(

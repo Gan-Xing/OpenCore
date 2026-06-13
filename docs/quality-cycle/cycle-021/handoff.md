@@ -70,7 +70,7 @@ generator-core. Admin is Umi Max + Ant Design Pro V6 + ProComponents v3 +
 antd 6 + React 19. The vulnerable `mockjs` / `@umijs/openapi` path must not be
 reintroduced.
 
-Cycle-021 has completed 69 deployable stages. Completed foundation clusters:
+Cycle-021 has completed 70 deployable stages. Completed foundation clusters:
 
 - System/RBAC: notice, department, post, menu, role, permission, user, dict,
   config and file.
@@ -81,20 +81,22 @@ Cycle-021 has completed 69 deployable stages. Completed foundation clusters:
 - Config: runtime keys, login policy, feature flags, rollout percentage,
   audience rules and secret vault.
 - Notice: management, inbox/read state, read-user analytics, templates,
-  delivery records, local provider, Integration outbox bridge and Round 67
-  outbox status synchronization plus Round 69 queued outbox processing.
+  delivery records, local provider, Integration outbox bridge, Round 67
+  outbox status synchronization, Round 69 queued outbox processing and Round
+  70 signed callback intake.
 
 ## Latest Runtime Stage
 
-Round 69: `core.notice` outbox provider processing.
+Round 70: `core.notice` signed outbox callback intake.
 
-- Added permission-gated `mail/sms` outbox process APIs that move queued
-  provider messages to `sent` only when the provider is enabled and channel
-  compatible.
-- Synced processed Integration outbox rows back to notice delivery records.
-- Added SDK and Admin System Notices process action for queued mail/SMS
-  outbox deliveries.
-- Added smoke/deploy guards for process routes, queued-to-sent delivery sync
+- Added permission-gated `mail/sms` outbox callback APIs that require
+  HMAC-SHA256 signatures over channel, provider, message id, status and error.
+- Callback intake validates provider/channel readiness, provider-message
+  ownership and failure reason before mutating outbox state.
+- Reuses the existing outbox sent/failed state paths so matching notice
+  delivery records stay synchronized.
+- Added SDK/OpenAPI/Admin provider contract markers plus smoke/deploy guards
+  for bad signatures, blank failure reasons, callback-to-sent delivery sync
   and stale Admin bundle markers.
 - Deployed on API `39172` and Admin `39174`; public verification passed.
 
@@ -106,8 +108,8 @@ after the commit lands.
 Pick one stage from this queue unless a new audit reveals a higher-priority
 foundation defect:
 
-1. Notice provider reliability: signed callback intake, real SMTP/SMS adapters,
-   retry scheduling and realtime push.
+1. Notice provider reliability: real SMTP/SMS adapters, retry scheduling and
+   realtime push.
 2. Config governance: multi-environment rollout controls, external KMS binding,
    key rotation and secret version history.
 3. Operation-log enrichment: retention scheduling, duration/location fields and

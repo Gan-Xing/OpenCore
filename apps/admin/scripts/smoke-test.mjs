@@ -1346,10 +1346,14 @@ if (
 if (
   !providersPage.includes('<Typography.Text type="secondary">[redacted]') ||
   !providersPage.includes("label: 'Secret Ref'") ||
-  !providersPage.includes('selected?.secretRef, sensitive: true')
+  !providersPage.includes('selected?.secretRef, sensitive: true') ||
+  !providersPage.includes('Signed callback contract') ||
+  !providersPage.includes('/api/integrations/mail/outbox/callback') ||
+  !providersPage.includes('/api/integrations/sms/outbox/callback') ||
+  !providersPage.includes('HMAC-SHA256')
 ) {
   throw new Error(
-    'Integration provider list and detail must redact scalar secret references.',
+    'Integration provider list and detail must redact scalar secret references and show signed callback contracts.',
   );
 }
 

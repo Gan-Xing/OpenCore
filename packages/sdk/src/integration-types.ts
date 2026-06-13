@@ -136,6 +136,14 @@ export type ProcessOutboxRequest = {
   limit?: number;
 };
 
+export type OutboxCallbackRequest = {
+  providerCode: string;
+  messageId: string;
+  status: 'failed' | 'sent';
+  error?: string;
+  signature: string;
+};
+
 export type IntegrationOutboxProcessResult = {
   channel: 'mail' | 'sms';
   providerCode?: string;

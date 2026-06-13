@@ -34,28 +34,30 @@ workflow, industry packages and OpenForge direct schema/business-code writing.
 - Rounds 50-59: logout/force-logout audit semantics, department/post ordering,
   data-scope enforcement, notice inbox/read analytics, actor/reason fields,
   feature flags and login-log IP/location.
-- Rounds 60-69: notice templates, delivery records, secret vault, local
+- Rounds 60-70: notice templates, delivery records, secret vault, local
   provider, feature-flag rollout/audience, Integration outbox bridge and
-  outbox state hardening/process, plus operation-log cleanup maintenance.
+  outbox state hardening/process/callback intake, plus operation-log cleanup
+  maintenance.
 
 ## Latest Done
 
-Round 69 completed notice outbox provider processing:
+Round 70 completed notice signed outbox callback intake:
 
-- mail/SMS process APIs are protected by existing integration manage
+- mail/SMS callback APIs are protected by existing integration manage
   permissions;
-- queued outbox rows require enabled channel-compatible providers before they
-  can move to `sent`;
-- processed outbox rows synchronize matching notice delivery records to
-  `sent`;
-- Admin System Notices exposes a queued outbox process action;
-- smoke/deploy guards cover queued-to-sent behavior, OpenAPI paths and stale
-  Admin markers.
+- callbacks require HMAC-SHA256 signatures over channel/provider/message
+  status data;
+- callback intake rejects bad signatures, blank failure reasons and
+  provider-message mismatches;
+- accepted callbacks reuse outbox sent/failed paths so notice delivery records
+  synchronize;
+- Admin Providers exposes the signed callback contract and deploy guards check
+  the built marker.
 
 ## Active P1/P2 Queue
 
-1. Notice provider reliability: signed callback intake, real SMTP/SMS adapters,
-   retry scheduling and realtime push.
+1. Notice provider reliability: real SMTP/SMS adapters, retry scheduling and
+   realtime push.
 2. Config governance: multi-environment rollout controls, external KMS binding,
    key rotation and secret version history.
 3. Operation-log enrichment: retention policy scheduling, structured

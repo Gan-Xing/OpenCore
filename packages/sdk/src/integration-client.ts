@@ -16,6 +16,7 @@ import type {
   IntegrationTemplateQueryRequest,
   IntegrationTemplateSummary,
   OAuthCallbackContractSummary,
+  OutboxCallbackRequest,
   PageRequest,
   ProcessOutboxRequest,
   PreviewTemplateRequest,
@@ -100,6 +101,10 @@ export type IntegrationClient = {
     token: string,
     body?: ProcessOutboxRequest,
   ) => Promise<IntegrationOutboxProcessResult>;
+  callbackMailOutbox: (
+    token: string,
+    body: OutboxCallbackRequest,
+  ) => Promise<IntegrationOutboxSummary>;
   listSmsTemplates: (
     token: string,
     query?: IntegrationTemplateQueryRequest,
@@ -145,6 +150,10 @@ export type IntegrationClient = {
     token: string,
     body?: ProcessOutboxRequest,
   ) => Promise<IntegrationOutboxProcessResult>;
+  callbackSmsOutbox: (
+    token: string,
+    body: OutboxCallbackRequest,
+  ) => Promise<IntegrationOutboxSummary>;
   listOAuthProviders: (
     token: string,
     query?: IntegrationProviderQueryRequest,
@@ -257,6 +266,12 @@ export function createIntegrationClient(
         '/integrations/mail/outbox/process',
         { method: 'POST', body: body ?? {}, token },
       ),
+    callbackMailOutbox: (token, body) =>
+      request<IntegrationOutboxSummary>('/integrations/mail/outbox/callback', {
+        method: 'POST',
+        body,
+        token,
+      }),
     listSmsTemplates: (token, query) =>
       request<IntegrationTemplatePage>(
         withQuery('/integrations/sms/templates', query),
@@ -315,6 +330,12 @@ export function createIntegrationClient(
         '/integrations/sms/outbox/process',
         { method: 'POST', body: body ?? {}, token },
       ),
+    callbackSmsOutbox: (token, body) =>
+      request<IntegrationOutboxSummary>('/integrations/sms/outbox/callback', {
+        method: 'POST',
+        body,
+        token,
+      }),
     listOAuthProviders: (token, query) =>
       request<IntegrationProviderPage>(
         withQuery('/integrations/oauth/providers', query),

@@ -62,6 +62,12 @@ describe('createIntegrationClient', () => {
       providerCode: 'mail.sandbox',
       limit: 100,
     });
+    await client.callbackMailOutbox('token', {
+      providerCode: 'mail.sandbox',
+      messageId: 'outbox_mail_1',
+      status: 'sent',
+      signature: 'a'.repeat(64),
+    });
     await client.listSmsTemplates('token', { enabled: true });
     await client.getSmsTemplate('token', 'sms.otp');
     await client.createSmsTemplate('token', {
@@ -88,6 +94,13 @@ describe('createIntegrationClient', () => {
     await client.processSmsOutbox('token', {
       providerCode: 'sms.sandbox',
       limit: 100,
+    });
+    await client.callbackSmsOutbox('token', {
+      providerCode: 'sms.sandbox',
+      messageId: 'outbox_sms_1',
+      status: 'failed',
+      error: 'Gateway throttled',
+      signature: 'b'.repeat(64),
     });
     await client.listOAuthProviders('token', { enabled: true });
     await client.getOAuthCallbackContract('token');
@@ -137,6 +150,10 @@ describe('createIntegrationClient', () => {
         path: '/integrations/mail/outbox/process',
         method: 'POST',
       },
+      {
+        path: '/integrations/mail/outbox/callback',
+        method: 'POST',
+      },
       { path: '/integrations/sms/templates?enabled=true' },
       { path: '/integrations/sms/templates/sms.otp' },
       { path: '/integrations/sms/templates', method: 'POST' },
@@ -158,6 +175,10 @@ describe('createIntegrationClient', () => {
       },
       {
         path: '/integrations/sms/outbox/process',
+        method: 'POST',
+      },
+      {
+        path: '/integrations/sms/outbox/callback',
         method: 'POST',
       },
       { path: '/integrations/oauth/providers?enabled=true' },

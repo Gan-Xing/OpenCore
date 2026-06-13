@@ -253,6 +253,7 @@ describe('@opencore/audit audit-operation-log', () => {
     const service = new AuditOperationLogService(repository);
     const testRunId = randomUUID().slice(0, 8);
     const requestId = `req_audit_${testRunId}`;
+    const seedRequestId = `req_s7_seed_config_${testRunId}`;
 
     beforeEach(async () => {
       await cleanupTestRows();
@@ -267,13 +268,30 @@ describe('@opencore/audit audit-operation-log', () => {
     });
 
     it('reads seeded operation logs and persists redacted operations through Prisma', async () => {
+      await prisma.auditLog.create({
+        data: {
+          actorUsername: 'admin',
+          action: 'read',
+          resource: 'core.config',
+          method: 'GET',
+          path: '/api/core/config',
+          statusCode: 200,
+          ip: '127.0.0.1',
+          userAgent: 'jest',
+          requestId: seedRequestId,
+          metadata: {
+            filter: 'current-page',
+          },
+        },
+      });
+
       await expect(
         service.listOperationLogs({ resource: 'core.config', pageSize: 20 }),
       ).resolves.toEqual(
         expect.objectContaining({
           items: expect.arrayContaining([
             expect.objectContaining({
-              requestId: 'req_s7_seed_config',
+              requestId: seedRequestId,
               resource: 'core.config',
             }),
           ]),
@@ -354,7 +372,7 @@ describe('@opencore/audit audit-operation-log', () => {
 
     async function cleanupTestRows(): Promise<void> {
       await prisma.auditLog.deleteMany({
-        where: { requestId },
+        where: { requestId: { in: [requestId, seedRequestId] } },
       });
     }
   });

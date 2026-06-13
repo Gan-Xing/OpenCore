@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+import { createHmac } from 'node:crypto';
+
 const DEFAULT_PORT = '39173';
 
 const port = process.env.OPENCORE_SMOKE_PORT || DEFAULT_PORT;
@@ -528,23 +530,66 @@ try {
     'mail retried notice delivery provider records',
     { channel: 'mail', provider: 'mail.sandbox' },
   );
-  const processedMailOutbox = await apiRequest(
-    '/integrations/mail/outbox/process',
+  await apiRequest('/integrations/mail/outbox/callback', {
+    method: 'POST',
+    expected: [400],
+    body: {
+      providerCode: 'mail.sandbox',
+      messageId: mailDelivery.providerMessageId,
+      status: 'sent',
+      signature: '0'.repeat(64),
+    },
+  });
+  await apiRequest('/integrations/mail/outbox/callback', {
+    method: 'POST',
+    expected: [400],
+    body: {
+      providerCode: 'mail.sandbox',
+      messageId: mailDelivery.providerMessageId,
+      status: 'failed',
+      error: ' ',
+      signature: signOutboxCallback({
+        channel: 'mail',
+        providerCode: 'mail.sandbox',
+        messageId: mailDelivery.providerMessageId,
+        status: 'failed',
+        error: '',
+      }),
+    },
+  });
+  await apiRequest('/integrations/mail/outbox/callback', {
+    method: 'POST',
+    expected: [400],
+    body: {
+      providerCode: 'sms.sandbox',
+      messageId: mailDelivery.providerMessageId,
+      status: 'sent',
+      signature: signOutboxCallback({
+        channel: 'mail',
+        providerCode: 'sms.sandbox',
+        messageId: mailDelivery.providerMessageId,
+        status: 'sent',
+      }),
+    },
+  });
+  const callbackMailOutbox = await apiRequest(
+    '/integrations/mail/outbox/callback',
     {
       method: 'POST',
-      body: { providerCode: 'mail.sandbox' },
+      body: {
+        providerCode: 'mail.sandbox',
+        messageId: mailDelivery.providerMessageId,
+        status: 'sent',
+        signature: signOutboxCallback({
+          channel: 'mail',
+          providerCode: 'mail.sandbox',
+          messageId: mailDelivery.providerMessageId,
+          status: 'sent',
+        }),
+      },
     },
   );
-  assertNumberAtLeast(
-    processedMailOutbox.attemptedCount,
-    1,
-    'mail process attempted count',
-  );
-  assertNumberAtLeast(
-    processedMailOutbox.sentCount,
-    1,
-    'mail process sent count',
-  );
+  assertEqual(callbackMailOutbox.status, 'sent', 'mail callback sent status');
   const sentMailOutbox = await apiRequest(
     `/integrations/mail/outbox/${encodeURIComponent(mailDelivery.providerMessageId)}`,
   );
@@ -799,6 +844,7 @@ try {
         'core.notice.deliveries.provider-execute-idempotent',
         'core.notice.deliveries.mail-outbox-provider',
         'core.notice.deliveries.outbox-failed-retry-sent-sync',
+        'core.notice.deliveries.outbox-callback-signature',
         'core.notice.deliveries.outbox-process-provider',
         'core.notice.deliveries.sms-outbox-provider',
         'core.notice.inbox.unread-item',
@@ -1028,6 +1074,24 @@ function assertOutboxContainsNotice(page, noticeId, providerMessageId, label) {
   assertEqual(item.status, 'queued', `${label} status`);
   assertString(item.preview, `${label} preview`);
   return item;
+}
+
+function signOutboxCallback(input) {
+  const signingKey =
+    input.providerCode === 'sms.sandbox'
+      ? 'secret://integration/sms/sandbox'
+      : 'secret://integration/mail/sandbox';
+  return createHmac('sha256', signingKey)
+    .update(
+      [
+        input.channel,
+        input.providerCode,
+        input.messageId,
+        input.status,
+        input.error ?? '',
+      ].join('\n'),
+    )
+    .digest('hex');
 }
 
 function assertItemsContain(items, id, label) {

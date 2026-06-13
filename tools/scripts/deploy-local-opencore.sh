@@ -167,6 +167,26 @@ verify_admin_bundle_api_base_url() {
   if ! grep -R \
     --fixed-strings \
     --include='*.js' \
+    "Signed callback contract" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "/api/integrations/mail/outbox/callback" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "/api/integrations/sms/outbox/callback" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null; then
+    echo "Admin bundle does not include integration signed callback contracts." >&2
+    echo "Refusing to deploy a stale frontend integration provider page." >&2
+    exit 1
+  fi
+
+  if ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
     "System Notice Templates" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null || \
     ! grep -R \

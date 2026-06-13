@@ -1,4 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
+import { createOutboxCallbackSignature } from './integration.repository';
 import { SeedIntegrationRepository } from './seed-integration.repository';
 
 describe('IntegrationRepository', () => {
@@ -231,6 +232,58 @@ describe('IntegrationRepository', () => {
     await expect(
       repository.processOutbox('mail', { limit: 0 }),
     ).rejects.toThrow(BadRequestException);
+  });
+
+  it('accepts only signed outbox provider callbacks', async () => {
+    const repository = new SeedIntegrationRepository();
+    await repository.enableProvider('mail.sandbox');
+    const queued = await repository.enqueueOutbox('mail', {
+      providerCode: 'mail.sandbox',
+      templateCode: 'mail.welcome',
+      recipient: 'admin@example.test',
+      payload: { name: 'Admin' },
+    });
+    const callback = {
+      channel: 'mail' as const,
+      providerCode: 'mail.sandbox',
+      messageId: queued.id,
+      status: 'sent' as const,
+    };
+    const signature = createOutboxCallbackSignature(
+      callback,
+      'secret://integration/mail/sandbox',
+    );
+
+    await expect(
+      repository.callbackOutbox('mail', {
+        ...callback,
+        signature: '0'.repeat(64),
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      repository.callbackOutbox('mail', {
+        providerCode: 'mail.sandbox',
+        messageId: queued.id,
+        status: 'failed',
+        error: ' ',
+        signature,
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      repository.callbackOutbox('sms', {
+        ...callback,
+        signature,
+      }),
+    ).rejects.toThrow(BadRequestException);
+
+    await expect(
+      repository.callbackOutbox('mail', { ...callback, signature }),
+    ).resolves.toMatchObject({
+      id: queued.id,
+      status: 'sent',
+      error: undefined,
+      sentAt: expect.any(String),
+    });
   });
 
   it('guards outbox enqueue by enabled provider, channel, and template state', async () => {

@@ -5323,6 +5323,36 @@
         "tags": ["Integration", "Integration Mail"]
       }
     },
+    "/api/integrations/mail/outbox/callback": {
+      "post": {
+        "operationId": "IntegrationController_callbackMailOutbox",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IntegrationOutboxCallbackDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationOutboxDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Mail"]
+      }
+    },
     "/api/integrations/sms/templates": {
       "get": {
         "operationId": "IntegrationController_listSmsTemplates",
@@ -5663,6 +5693,36 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/IntegrationOutboxProcessResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration SMS"]
+      }
+    },
+    "/api/integrations/sms/outbox/callback": {
+      "post": {
+        "operationId": "IntegrationController_callbackSmsOutbox",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IntegrationOutboxCallbackDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationOutboxDto"
                 }
               }
             }
@@ -9140,6 +9200,20 @@
           "skippedCount",
           "queuedCount"
         ]
+      },
+      "IntegrationOutboxCallbackDto": {
+        "type": "object",
+        "properties": {
+          "providerCode": { "type": "string" },
+          "messageId": { "type": "string" },
+          "status": { "type": "string", "enum": ["sent", "failed"] },
+          "error": { "type": "string" },
+          "signature": {
+            "type": "string",
+            "description": "HMAC-SHA256 hex signature over channel, providerCode, messageId, status and error."
+          }
+        },
+        "required": ["providerCode", "messageId", "status", "signature"]
       },
       "OAuthCallbackContractDto": {
         "type": "object",

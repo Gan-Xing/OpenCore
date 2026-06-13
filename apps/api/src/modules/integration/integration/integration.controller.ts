@@ -15,6 +15,7 @@ import {
   CreateOutboxMessageDto,
   FailOutboxMessageDto,
   IntegrationDesignDto,
+  IntegrationOutboxCallbackDto,
   IntegrationOutboxDto,
   IntegrationOutboxPageDto,
   IntegrationOutboxProcessResultDto,
@@ -219,6 +220,16 @@ export class IntegrationController {
     return this.repository.processOutbox('mail', body);
   }
 
+  @Post('mail/outbox/callback')
+  @ApiTags('Integration Mail')
+  @RequirePermission('integration:mail:manage')
+  @ApiOkResponse({ type: IntegrationOutboxDto })
+  callbackMailOutbox(
+    @Body() body: IntegrationOutboxCallbackDto,
+  ): Promise<IntegrationOutboxDto> {
+    return this.repository.callbackOutbox('mail', body);
+  }
+
   @Get('sms/templates')
   @ApiTags('Integration SMS')
   @RequirePermission('integration:sms:read')
@@ -320,6 +331,16 @@ export class IntegrationController {
     @Body() body: ProcessOutboxDto,
   ): Promise<IntegrationOutboxProcessResultDto> {
     return this.repository.processOutbox('sms', body);
+  }
+
+  @Post('sms/outbox/callback')
+  @ApiTags('Integration SMS')
+  @RequirePermission('integration:sms:manage')
+  @ApiOkResponse({ type: IntegrationOutboxDto })
+  callbackSmsOutbox(
+    @Body() body: IntegrationOutboxCallbackDto,
+  ): Promise<IntegrationOutboxDto> {
+    return this.repository.callbackOutbox('sms', body);
   }
 
   @Get('oauth/providers')

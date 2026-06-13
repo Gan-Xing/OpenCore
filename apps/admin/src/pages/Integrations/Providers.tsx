@@ -27,6 +27,12 @@ import { ReadOnlyDetailDrawer } from '../shared/ReadOnlyDetailDrawer';
 const fixtures = createIntegrationFixtures();
 const rows = fixtures.providers;
 const summary = fixtures.summary;
+const signedCallbackContract = {
+  algorithm: 'HMAC-SHA256',
+  mailPath: '/api/integrations/mail/outbox/callback',
+  smsPath: '/api/integrations/sms/outbox/callback',
+  canonicalPayload: 'channel\\nproviderCode\\nmessageId\\nstatus\\nerror',
+};
 const exportColumns: CurrentPageExportColumn<IntegrationProviderSummary>[] = [
   { title: 'Code', dataIndex: 'code' },
   { title: 'Type', dataIndex: 'type' },
@@ -144,6 +150,10 @@ export default function ProvidersPage() {
         />
         <Statistic title="Queued mail" value={summary.mailOutbox.queued} />
         <Statistic
+          title="Signed callback contract"
+          value={signedCallbackContract.algorithm}
+        />
+        <Statistic
           title="Design topics"
           value={summary.designs.designOnlyTopics}
         />
@@ -181,10 +191,26 @@ export default function ProvidersPage() {
             label: 'Outbox Policy',
             value: selected?.enabled ? 'enqueue allowed' : 'enqueue blocked',
           },
+          {
+            label: 'Signed Callback Contract',
+            value: signedCallbackContract.algorithm,
+          },
+          {
+            label: 'Mail Callback Path',
+            value: signedCallbackContract.mailPath,
+          },
+          {
+            label: 'SMS Callback Path',
+            value: signedCallbackContract.smsPath,
+          },
           { label: 'Sample Outbox', value: selectedOutbox?.id },
         ]}
         jsonSections={[
           { title: 'Redacted Config', value: selected?.config ?? {} },
+          {
+            title: 'Signed Callback Canonical Payload',
+            value: signedCallbackContract,
+          },
           {
             title: 'Sample Outbox Payload',
             value: selectedOutbox?.payload ?? {},
