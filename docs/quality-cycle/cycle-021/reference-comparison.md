@@ -2162,3 +2162,49 @@ OpenCore does not claim multi-environment rollout approval, AB experiment
 analytics, a full experimentation UI, nested segment builders or a general
 rule-expression engine in this round. Those remain separate config
 productization stages after bounded audience targeting.
+
+## Round 66 Notice Integration Outbox Provider Bridge Reference Shape
+
+RuoYi-style system notices are simpler announcements with publication and
+read-side management. That reference does not require OpenCore to put SMTP/SMS
+supplier credentials directly inside the notice module, but operator-visible
+delivery execution still needs a durable handoff.
+
+Yudao-style notify/message surfaces separate reusable templates, recipient
+messages, channel providers and send/outbox execution. The relevant OpenCore
+shape is therefore a notice delivery row that can hand off mail/SMS work to an
+integration outbox before real external provider callbacks and retry queues are
+admitted.
+
+OpenCore already had:
+
+- system notice management CRUD from Round 1;
+- authenticated inbox/read state from Round 55;
+- management read-user analytics from Round 56;
+- notification templates and draft generation from Round 60;
+- durable in-app delivery records and idempotent dispatch from Round 61;
+- local provider execution state from Round 63;
+- Integration provider/template/outbox models;
+- `core:notice:*` permissions, Admin System Notices routing and fixed/deploy/
+  public `core.notice` smoke.
+
+Round 66 admits the integration-outbox provider bridge stage:
+
+- allow notice dispatch and execute APIs to select `in_app`, `mail` or `sms`;
+- map channels to `in_app.local`, `mail.sandbox` and `sms.sandbox` providers;
+- require the integration provider to exist, match the channel type and be
+  enabled before execution;
+- create `IntegrationOutbox` rows for mail/SMS delivery execution;
+- record delivery `recipient`, `providerMessageId`, attempt and sentAt
+  metadata;
+- expose mail/SMS dispatch and execute controls plus provider message columns
+  in Admin;
+- prove fixed-port, deploy and public smoke for disabled provider guard,
+  provider enablement, queued outbox rows, delivery provider ids and stale
+  Admin bundle markers.
+
+OpenCore does not claim real external SMTP/SMS provider sending, callback
+reconciliation, retry/failure queue orchestration, WebSocket realtime push,
+tenant/member/mobile notice channels or BPM approval in this round. Those
+remain separate notice productization stages after the integration outbox
+handoff is proven.

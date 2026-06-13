@@ -566,4 +566,35 @@ describe('createSystemManagementClient', () => {
       },
     ]);
   });
+
+  it('sends notice delivery channel bodies for provider dispatch and execution', async () => {
+    const calls: Array<{ body?: unknown; method?: string; path: string }> = [];
+    const request: SdkRequest = async (path, options) => {
+      calls.push({
+        body: options?.body,
+        method: options?.method,
+        path,
+      });
+      return {} as never;
+    };
+    const client = createSystemManagementClient(request);
+
+    await client.dispatchNotice('token', 'notice_welcome', { channel: 'mail' });
+    await client.executeNoticeDeliveries('token', 'notice_welcome', {
+      channel: 'sms',
+    });
+
+    expect(calls).toEqual([
+      {
+        body: { channel: 'mail' },
+        method: 'POST',
+        path: '/core/notices/notice_welcome/dispatch',
+      },
+      {
+        body: { channel: 'sms' },
+        method: 'POST',
+        path: '/core/notices/notice_welcome/deliveries/execute',
+      },
+    ]);
+  });
 });

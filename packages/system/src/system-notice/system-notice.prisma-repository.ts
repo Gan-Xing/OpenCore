@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -11,10 +12,14 @@ import type {
   CreateSystemNoticeDto,
   CreateSystemNoticeTemplateDto,
   MarkSystemNoticesReadDto,
+  SystemNoticeDeliveryExecuteDto,
+  SystemNoticeDispatchDto,
   UpdateSystemNoticeTemplateDto,
   UpdateSystemNoticeDto,
 } from './system-notice.dto';
 import type {
+  SystemNoticeDeliveryChannel,
+  SystemNoticeDeliveryProvider,
   SystemNoticeDeliveryRecord,
   SystemNoticeRecord,
   SystemNoticeTemplateRecord,
@@ -29,6 +34,7 @@ import {
   normalizeCreateSystemNoticeInput,
   normalizeCreateSystemNoticeTemplateInput,
   normalizeMarkSystemNoticesReadInput,
+  normalizeSystemNoticeDeliveryChannelInput,
   normalizeSystemNoticeDeliveryFilters,
   normalizeSystemNoticeInboxFilters,
   normalizeSystemNoticeFilters,
@@ -37,6 +43,7 @@ import {
   normalizeUnreadNoticeLimit,
   normalizeUpdateSystemNoticeTemplateInput,
   normalizeUpdateSystemNoticeInput,
+  getSystemNoticeDeliveryProvider,
   SystemNoticeRepository,
   toSystemNoticeDeliveryChannel,
   toSystemNoticeDeliveryProvider,
@@ -100,6 +107,8 @@ type PrismaSystemNoticeDelivery = {
   status: string;
   provider: string;
   providerStatus: string;
+  recipient: string | null;
+  providerMessageId: string | null;
   attemptCount: number;
   title: string;
   content: string;
@@ -370,18 +379,26 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
 
   async dispatchNotice(
     id: string,
+    body: SystemNoticeDispatchDto = {},
   ): Promise<SystemNoticeDeliveryMutationResult> {
     const notice = toSystemNoticeRecord(await this.findNoticeById(id));
     assertNoticeCanDispatch(notice.status);
-    return this.dispatchPublishedNotice(notice);
+    return this.dispatchPublishedNotice(
+      notice,
+      normalizeSystemNoticeDeliveryChannelInput(body.channel),
+    );
   }
 
   async executeNoticeDeliveries(
     id: string,
+    body: SystemNoticeDeliveryExecuteDto = {},
   ): Promise<SystemNoticeDeliveryExecutionResult> {
     const notice = toSystemNoticeRecord(await this.findNoticeById(id));
     assertNoticeCanDispatch(notice.status);
-    return this.executePendingInAppDeliveries(notice.id);
+    return this.executePendingDeliveries(
+      notice.id,
+      normalizeSystemNoticeDeliveryChannelInput(body.channel),
+    );
   }
 
   async listNoticeTemplates(
@@ -553,7 +570,7 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
         archivedAt: null,
       },
     });
-    await this.dispatchPublishedNotice(toSystemNoticeRecord(notice));
+    await this.dispatchPublishedNotice(toSystemNoticeRecord(notice), 'in_app');
 
     return toSystemNoticeRecord(notice);
   }
@@ -580,13 +597,15 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
 
   private async dispatchPublishedNotice(
     notice: SystemNoticeRecord,
+    channel: SystemNoticeDeliveryChannel,
   ): Promise<SystemNoticeDeliveryMutationResult> {
     assertNoticeCanDispatch(notice.status);
+    const provider = getSystemNoticeDeliveryProvider(channel);
     const recipients = await this.findNoticeRecipients();
     const existingRows = await this.prisma.systemNoticeDelivery.findMany({
       where: {
         noticeId: notice.id,
-        channel: 'in_app',
+        channel,
       },
       select: { userId: true },
     });
@@ -603,10 +622,11 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
           userId: recipient.id,
           username: recipient.username,
           displayName: recipient.displayName,
-          channel: 'in_app',
+          channel,
           status: 'delivered',
-          provider: 'in_app.local',
+          provider,
           providerStatus: 'pending',
+          recipient: createNoticeDeliveryRecipient(channel, recipient),
           attemptCount: 0,
           title: notice.title,
           content: notice.content,
@@ -620,8 +640,8 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
 
     return {
       noticeId: notice.id,
-      channel: 'in_app',
-      provider: 'in_app.local',
+      channel,
+      provider,
       deliveredCount: pendingRecipients.length,
       skippedCount: recipients.length - pendingRecipients.length,
       totalRecipientCount: recipients.length,
@@ -630,40 +650,195 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
       failedCount: 0,
       pendingCount: await this.countNoticeDeliveriesByProviderStatus(
         notice.id,
+        channel,
+        provider,
         'pending',
       ),
     };
   }
 
-  private async executePendingInAppDeliveries(
+  private async executePendingDeliveries(
     noticeId: string,
+    channel: SystemNoticeDeliveryChannel,
   ): Promise<SystemNoticeDeliveryExecutionResult> {
+    const provider = getSystemNoticeDeliveryProvider(channel);
+    if (channel !== 'in_app') {
+      await this.assertIntegrationProviderReady(provider, channel);
+    }
+
     const executableRows = await this.prisma.systemNoticeDelivery.findMany({
       where: {
         noticeId,
-        channel: 'in_app',
-        provider: 'in_app.local',
+        channel,
+        provider,
         providerStatus: { in: ['pending', 'failed'] },
       },
-      select: { id: true },
+      select: {
+        id: true,
+        username: true,
+        displayName: true,
+        recipient: true,
+        title: true,
+        content: true,
+        type: true,
+        audience: true,
+      },
       orderBy: [{ deliveredAt: 'asc' }, { username: 'asc' }],
     });
     const totalRows = await this.prisma.systemNoticeDelivery.count({
       where: {
         noticeId,
-        channel: 'in_app',
-        provider: 'in_app.local',
+        channel,
+        provider,
       },
     });
     const now = new Date();
+    let queuedOutboxCount = 0;
 
     if (executableRows.length > 0) {
-      await this.prisma.systemNoticeDelivery.updateMany({
-        where: {
-          id: { in: executableRows.map((row) => row.id) },
+      if (channel === 'in_app') {
+        await this.prisma.systemNoticeDelivery.updateMany({
+          where: {
+            id: { in: executableRows.map((row) => row.id) },
+          },
+          data: {
+            providerStatus: 'sent',
+            attemptCount: { increment: 1 },
+            lastAttemptAt: now,
+            sentAt: now,
+            lastError: null,
+          },
+        });
+      } else {
+        queuedOutboxCount = await this.enqueueNoticeIntegrationOutbox(
+          noticeId,
+          channel,
+          provider,
+          executableRows,
+          now,
+        );
+      }
+    }
+
+    return {
+      noticeId,
+      channel,
+      provider,
+      attemptedCount: executableRows.length,
+      sentCount: executableRows.length,
+      failedCount: 0,
+      skippedCount: totalRows - executableRows.length,
+      pendingCount: await this.countNoticeDeliveriesByProviderStatus(
+        noticeId,
+        channel,
+        provider,
+        'pending',
+      ),
+      queuedOutboxCount,
+    };
+  }
+
+  private async countNoticeDeliveriesByProviderStatus(
+    noticeId: string,
+    channel: SystemNoticeDeliveryChannel,
+    provider: SystemNoticeDeliveryProvider,
+    providerStatus: string,
+  ): Promise<number> {
+    return this.prisma.systemNoticeDelivery.count({
+      where: {
+        noticeId,
+        channel,
+        provider,
+        providerStatus,
+      },
+    });
+  }
+
+  private async assertIntegrationProviderReady(
+    provider: SystemNoticeDeliveryProvider,
+    channel: Exclude<SystemNoticeDeliveryChannel, 'in_app'>,
+  ): Promise<void> {
+    const integrationProvider =
+      await this.prisma.integrationProvider.findUnique({
+        where: { code: provider },
+        select: { code: true, enabled: true, type: true },
+      });
+
+    if (!integrationProvider) {
+      throw new BadRequestException(
+        `Integration provider is not configured for notice delivery: ${provider}`,
+      );
+    }
+
+    if (integrationProvider.type !== channel) {
+      throw new BadRequestException(
+        `Integration provider ${provider} is not a ${channel} provider.`,
+      );
+    }
+
+    if (!integrationProvider.enabled) {
+      throw new BadRequestException(
+        `Integration provider ${provider} must be enabled before notice delivery execution.`,
+      );
+    }
+  }
+
+  private async enqueueNoticeIntegrationOutbox(
+    noticeId: string,
+    channel: Exclude<SystemNoticeDeliveryChannel, 'in_app'>,
+    provider: SystemNoticeDeliveryProvider,
+    rows: readonly {
+      id: string;
+      username: string;
+      displayName: string;
+      recipient: string | null;
+      title: string;
+      content: string;
+      type: string;
+      audience: string;
+    }[],
+    now: Date,
+  ): Promise<number> {
+    let queuedOutboxCount = 0;
+
+    for (const row of rows) {
+      const recipient =
+        row.recipient ??
+        createExternalNoticeDeliveryRecipient(channel, {
+          username: row.username,
+        });
+
+      assertNoticeDeliveryRecipient(channel, recipient);
+
+      const outbox = await this.prisma.integrationOutbox.create({
+        data: {
+          channel,
+          providerCode: provider,
+          templateCode: null,
+          recipient,
+          payload: {
+            audience: row.audience,
+            deliveryId: row.id,
+            displayName: row.displayName,
+            noticeId,
+            title: row.title,
+            type: row.type,
+            username: row.username,
+          } satisfies Prisma.InputJsonObject,
+          status: 'queued',
+          retryCount: 0,
+          preview: row.content,
         },
+        select: { id: true },
+      });
+      queuedOutboxCount += 1;
+
+      await this.prisma.systemNoticeDelivery.update({
+        where: { id: row.id },
         data: {
           providerStatus: 'sent',
+          recipient,
+          providerMessageId: outbox.id,
           attemptCount: { increment: 1 },
           lastAttemptAt: now,
           sentAt: now,
@@ -672,33 +847,7 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
       });
     }
 
-    return {
-      noticeId,
-      channel: 'in_app',
-      provider: 'in_app.local',
-      attemptedCount: executableRows.length,
-      sentCount: executableRows.length,
-      failedCount: 0,
-      skippedCount: totalRows - executableRows.length,
-      pendingCount: await this.countNoticeDeliveriesByProviderStatus(
-        noticeId,
-        'pending',
-      ),
-    };
-  }
-
-  private async countNoticeDeliveriesByProviderStatus(
-    noticeId: string,
-    providerStatus: string,
-  ): Promise<number> {
-    return this.prisma.systemNoticeDelivery.count({
-      where: {
-        noticeId,
-        channel: 'in_app',
-        provider: 'in_app.local',
-        providerStatus,
-      },
-    });
+    return queuedOutboxCount;
   }
 
   private async findNoticeRecipients(): Promise<
@@ -838,6 +987,8 @@ function toSystemNoticeDeliveryRecord(
     providerStatus: toSystemNoticeDeliveryProviderStatus(
       delivery.providerStatus,
     ),
+    recipient: delivery.recipient ?? undefined,
+    providerMessageId: delivery.providerMessageId ?? undefined,
     attemptCount: delivery.attemptCount,
     title: delivery.title,
     content: delivery.content,
@@ -851,6 +1002,65 @@ function toSystemNoticeDeliveryRecord(
     createdAt: delivery.createdAt.toISOString(),
     updatedAt: delivery.updatedAt.toISOString(),
   };
+}
+
+function createNoticeDeliveryRecipient(
+  channel: SystemNoticeDeliveryChannel,
+  recipient: Pick<PrismaNoticeDeliveryRecipient, 'username'>,
+): string | undefined {
+  if (channel === 'mail') {
+    return `${normalizeRecipientLocalPart(recipient.username)}@opencore.local`;
+  }
+
+  if (channel === 'sms') {
+    return `+1555${createStableNumericSuffix(recipient.username)}`;
+  }
+
+  return undefined;
+}
+
+function createExternalNoticeDeliveryRecipient(
+  channel: Exclude<SystemNoticeDeliveryChannel, 'in_app'>,
+  recipient: Pick<PrismaNoticeDeliveryRecipient, 'username'>,
+): string {
+  return channel === 'mail'
+    ? `${normalizeRecipientLocalPart(recipient.username)}@opencore.local`
+    : `+1555${createStableNumericSuffix(recipient.username)}`;
+}
+
+function assertNoticeDeliveryRecipient(
+  channel: Exclude<SystemNoticeDeliveryChannel, 'in_app'>,
+  recipient: string,
+): void {
+  if (channel === 'mail' && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(recipient)) {
+    throw new BadRequestException(
+      `Notice mail delivery recipient is invalid: ${recipient}`,
+    );
+  }
+
+  if (channel === 'sms' && !/^\+?[0-9]{6,20}$/.test(recipient)) {
+    throw new BadRequestException(
+      `Notice SMS delivery recipient is invalid: ${recipient}`,
+    );
+  }
+}
+
+function normalizeRecipientLocalPart(username: string): string {
+  const normalized = username
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, '.')
+    .replace(/^[._-]+|[._-]+$/g, '');
+
+  return normalized || 'user';
+}
+
+function createStableNumericSuffix(value: string): string {
+  const sum = [...value].reduce(
+    (current, character) => current + character.charCodeAt(0),
+    0,
+  );
+
+  return String(sum % 10000000).padStart(7, '0');
 }
 
 function toSystemNoticeTemplateRecord(

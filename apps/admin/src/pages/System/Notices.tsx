@@ -5,6 +5,8 @@ import {
   EyeOutlined,
   FileTextOutlined,
   InboxOutlined,
+  MailOutlined,
+  MessageOutlined,
   PlusOutlined,
   PlayCircleOutlined,
   ReloadOutlined,
@@ -20,6 +22,7 @@ import {
 import {
   createSystemNoticeFixtures,
   type SystemNoticeAudience,
+  type SystemNoticeDeliveryChannel,
   type SystemNoticeDeliverySummary,
   type SystemNoticeInboxSummary,
   type SystemNoticeReadUserSummary,
@@ -666,10 +669,13 @@ export default function SystemNoticesPage() {
     await loadInbox();
   };
 
-  const dispatchNoticeDeliveries = async (record: SystemNoticeSummary) => {
-    const result = await dispatchOpenCoreSystemNotice(record.id);
+  const dispatchNoticeDeliveries = async (
+    record: SystemNoticeSummary,
+    channel: SystemNoticeDeliveryChannel,
+  ) => {
+    const result = await dispatchOpenCoreSystemNotice(record.id, channel);
     message.success(
-      `System notice delivery dispatched: ${result.deliveredCount} new, ${result.skippedCount} skipped.`,
+      `${result.channel} delivery dispatched: ${result.deliveredCount} new, ${result.skippedCount} skipped.`,
     );
     await loadInbox();
 
@@ -678,10 +684,16 @@ export default function SystemNoticesPage() {
     }
   };
 
-  const executeNoticeDeliveries = async (record: SystemNoticeSummary) => {
-    const result = await executeOpenCoreSystemNoticeDeliveries(record.id);
+  const executeNoticeDeliveries = async (
+    record: SystemNoticeSummary,
+    channel: SystemNoticeDeliveryChannel,
+  ) => {
+    const result = await executeOpenCoreSystemNoticeDeliveries(
+      record.id,
+      channel,
+    );
     message.success(
-      `Local provider executed: ${result.sentCount} sent, ${result.pendingCount} pending.`,
+      `${result.provider} executed: ${result.sentCount} sent, ${result.pendingCount} pending, ${result.queuedOutboxCount} queued.`,
     );
     await loadInbox();
 
@@ -768,7 +780,7 @@ export default function SystemNoticesPage() {
     {
       title: 'Actions',
       valueType: 'option',
-      width: 360,
+      width: 520,
       render: (_, record) => {
         const archived = record.status === 'archived';
         const draft = record.status === 'draft';
@@ -831,7 +843,7 @@ export default function SystemNoticesPage() {
             <Popconfirm
               title="Dispatch in-app delivery records?"
               okText="Dispatch"
-              onConfirm={() => void dispatchNoticeDeliveries(record)}
+              onConfirm={() => void dispatchNoticeDeliveries(record, 'in_app')}
               disabled={!published}
             >
               <Tooltip
@@ -850,9 +862,51 @@ export default function SystemNoticesPage() {
               </Tooltip>
             </Popconfirm>
             <Popconfirm
+              title="Dispatch mail delivery records?"
+              okText="Dispatch"
+              onConfirm={() => void dispatchNoticeDeliveries(record, 'mail')}
+              disabled={!published}
+            >
+              <Tooltip
+                title={
+                  published
+                    ? 'Dispatch mail deliveries'
+                    : 'Only published notices can dispatch'
+                }
+              >
+                <Button
+                  aria-label={`Dispatch mail delivery records for ${record.title}`}
+                  disabled={!published}
+                  icon={<MailOutlined />}
+                  size="small"
+                />
+              </Tooltip>
+            </Popconfirm>
+            <Popconfirm
+              title="Dispatch SMS delivery records?"
+              okText="Dispatch"
+              onConfirm={() => void dispatchNoticeDeliveries(record, 'sms')}
+              disabled={!published}
+            >
+              <Tooltip
+                title={
+                  published
+                    ? 'Dispatch SMS deliveries'
+                    : 'Only published notices can dispatch'
+                }
+              >
+                <Button
+                  aria-label={`Dispatch SMS delivery records for ${record.title}`}
+                  disabled={!published}
+                  icon={<MessageOutlined />}
+                  size="small"
+                />
+              </Tooltip>
+            </Popconfirm>
+            <Popconfirm
               title="Execute local notice provider?"
               okText="Execute"
-              onConfirm={() => void executeNoticeDeliveries(record)}
+              onConfirm={() => void executeNoticeDeliveries(record, 'in_app')}
               disabled={!published}
             >
               <Tooltip
@@ -866,6 +920,48 @@ export default function SystemNoticesPage() {
                   aria-label={`Execute local provider for ${record.title}`}
                   disabled={!published}
                   icon={<PlayCircleOutlined />}
+                  size="small"
+                />
+              </Tooltip>
+            </Popconfirm>
+            <Popconfirm
+              title="Execute mail outbox provider?"
+              okText="Execute"
+              onConfirm={() => void executeNoticeDeliveries(record, 'mail')}
+              disabled={!published}
+            >
+              <Tooltip
+                title={
+                  published
+                    ? 'Execute mail outbox provider'
+                    : 'Only published notices can execute'
+                }
+              >
+                <Button
+                  aria-label={`Execute mail provider for ${record.title}`}
+                  disabled={!published}
+                  icon={<MailOutlined />}
+                  size="small"
+                />
+              </Tooltip>
+            </Popconfirm>
+            <Popconfirm
+              title="Execute SMS outbox provider?"
+              okText="Execute"
+              onConfirm={() => void executeNoticeDeliveries(record, 'sms')}
+              disabled={!published}
+            >
+              <Tooltip
+                title={
+                  published
+                    ? 'Execute SMS outbox provider'
+                    : 'Only published notices can execute'
+                }
+              >
+                <Button
+                  aria-label={`Execute SMS provider for ${record.title}`}
+                  disabled={!published}
+                  icon={<MessageOutlined />}
                   size="small"
                 />
               </Tooltip>
@@ -934,6 +1030,7 @@ export default function SystemNoticesPage() {
       dataIndex: 'provider',
       render: (_, record) => <Tag>{record.provider}</Tag>,
     },
+    { title: 'Recipient', dataIndex: 'recipient' },
     {
       title: 'Provider Status',
       dataIndex: 'providerStatus',
@@ -955,6 +1052,7 @@ export default function SystemNoticesPage() {
     { title: 'Delivered At', dataIndex: 'deliveredAt' },
     { title: 'Last Attempt At', dataIndex: 'lastAttemptAt' },
     { title: 'Sent At', dataIndex: 'sentAt' },
+    { title: 'Provider Message', dataIndex: 'providerMessageId' },
     { title: 'Last Error', dataIndex: 'lastError' },
     { title: 'Read At', dataIndex: 'readAt' },
   ];

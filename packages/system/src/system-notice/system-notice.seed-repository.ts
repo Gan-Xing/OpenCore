@@ -23,10 +23,12 @@ import {
   createSystemNoticeInboxRecord,
   createSystemNoticePageResult,
   createSystemNoticeFromTemplateInput,
+  getSystemNoticeDeliveryProvider,
   isSystemNoticeVisibleInInbox,
   normalizeCreateSystemNoticeInput,
   normalizeCreateSystemNoticeTemplateInput,
   normalizeMarkSystemNoticesReadInput,
+  normalizeSystemNoticeDeliveryChannelInput,
   normalizeSystemNoticeDeliveryFilters,
   normalizeSystemNoticeInboxFilters,
   normalizeSystemNoticeFilters,
@@ -53,9 +55,12 @@ import type {
   CreateSystemNoticeDto,
   CreateSystemNoticeTemplateDto,
   MarkSystemNoticesReadDto,
+  SystemNoticeDeliveryExecuteDto,
+  SystemNoticeDispatchDto,
   UpdateSystemNoticeTemplateDto,
   UpdateSystemNoticeDto,
 } from './system-notice.dto';
+import type { SystemNoticeDeliveryChannel } from './system-notice.records';
 
 @Injectable()
 export class SeedSystemNoticeRepository extends SystemNoticeRepository {
@@ -256,18 +261,26 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
 
   async dispatchNotice(
     id: string,
+    body: SystemNoticeDispatchDto = {},
   ): Promise<SystemNoticeDeliveryMutationResult> {
     const notice = this.findNotice(id);
     assertNoticeCanDispatch(notice.status);
-    return this.dispatchPublishedNotice(notice);
+    return this.dispatchPublishedNotice(
+      notice,
+      normalizeSystemNoticeDeliveryChannelInput(body.channel),
+    );
   }
 
   async executeNoticeDeliveries(
     id: string,
+    body: SystemNoticeDeliveryExecuteDto = {},
   ): Promise<SystemNoticeDeliveryExecutionResult> {
     const notice = this.findNotice(id);
     assertNoticeCanDispatch(notice.status);
-    return this.executePendingInAppDeliveries(notice.id);
+    return this.executePendingDeliveries(
+      notice.id,
+      normalizeSystemNoticeDeliveryChannelInput(body.channel),
+    );
   }
 
   async getNotice(id: string): Promise<SystemNoticeRecord> {
@@ -417,7 +430,7 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
       archivedAt: undefined,
       updatedAt: now,
     });
-    this.dispatchPublishedNotice(notice);
+    this.dispatchPublishedNotice(notice, 'in_app');
     return { ...notice };
   }
 
@@ -451,20 +464,22 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
 
   private dispatchPublishedNotice(
     notice: SystemNoticeRecord,
+    channel: SystemNoticeDeliveryChannel,
   ): SystemNoticeDeliveryMutationResult {
     assertNoticeCanDispatch(notice.status);
+    const provider = getSystemNoticeDeliveryProvider(channel);
     let deliveredCount = 0;
     const recipients = seedSystemUsers.filter((user) => user.enabled);
 
     for (const user of recipients) {
-      const key = createDeliveryKey(notice.id, user.id);
+      const key = createDeliveryKey(notice.id, user.id, channel);
       if (this.deliveries.has(key)) {
         continue;
       }
       deliveredCount += 1;
       this.deliveries.set(
         key,
-        createDeliveryRecord(notice, user, undefined, {
+        createDeliveryRecord(notice, user, undefined, channel, {
           attemptCount: 0,
           providerStatus: 'pending',
         }),
@@ -473,70 +488,82 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
 
     return {
       noticeId: notice.id,
-      channel: 'in_app',
-      provider: 'in_app.local',
+      channel,
+      provider,
       deliveredCount,
       skippedCount: recipients.length - deliveredCount,
       totalRecipientCount: recipients.length,
       attemptedCount: 0,
       sentCount: 0,
       failedCount: 0,
-      pendingCount: this.countProviderStatus(notice.id, 'pending'),
+      pendingCount: this.countProviderStatus(notice.id, channel, 'pending'),
     };
   }
 
-  private executePendingInAppDeliveries(
+  private executePendingDeliveries(
     noticeId: string,
+    channel: SystemNoticeDeliveryChannel,
   ): SystemNoticeDeliveryExecutionResult {
+    const provider = getSystemNoticeDeliveryProvider(channel);
     const executableRows = [...this.deliveries.values()].filter(
       (delivery) =>
         delivery.noticeId === noticeId &&
-        delivery.channel === 'in_app' &&
-        delivery.provider === 'in_app.local' &&
+        delivery.channel === channel &&
+        delivery.provider === provider &&
         (delivery.providerStatus === 'pending' ||
           delivery.providerStatus === 'failed'),
     );
     const now = new Date().toISOString();
+    let queuedOutboxCount = 0;
 
     for (const delivery of executableRows) {
+      const providerMessageId =
+        channel === 'in_app' ? undefined : `outbox_${delivery.id}`;
       Object.assign(delivery, {
         providerStatus: 'sent' as const,
+        providerMessageId,
         attemptCount: delivery.attemptCount + 1,
         lastAttemptAt: now,
         sentAt: now,
         lastError: undefined,
         updatedAt: now,
       });
+      if (providerMessageId) {
+        queuedOutboxCount += 1;
+      }
     }
 
     const totalRows = [...this.deliveries.values()].filter(
       (delivery) =>
         delivery.noticeId === noticeId &&
-        delivery.channel === 'in_app' &&
-        delivery.provider === 'in_app.local',
+        delivery.channel === channel &&
+        delivery.provider === provider,
     ).length;
 
     return {
       noticeId,
-      channel: 'in_app',
-      provider: 'in_app.local',
+      channel,
+      provider,
       attemptedCount: executableRows.length,
       sentCount: executableRows.length,
       failedCount: 0,
       skippedCount: totalRows - executableRows.length,
-      pendingCount: this.countProviderStatus(noticeId, 'pending'),
+      pendingCount: this.countProviderStatus(noticeId, channel, 'pending'),
+      queuedOutboxCount,
     };
   }
 
   private countProviderStatus(
     noticeId: string,
+    channel: SystemNoticeDeliveryChannel,
     providerStatus: 'failed' | 'pending' | 'sent',
   ): number {
+    const provider = getSystemNoticeDeliveryProvider(channel);
     return [...this.deliveries.values()].filter(
       (delivery) =>
         delivery.noticeId === noticeId &&
-        delivery.channel === 'in_app' &&
-        delivery.provider === 'in_app.local' &&
+        delivery.channel === channel &&
+        delivery.provider === provider &&
         delivery.providerStatus === providerStatus,
     ).length;
   }
@@ -612,14 +639,19 @@ function createReadReceiptKey(userId: string, noticeId: string): string {
   return `${userId}:${noticeId}`;
 }
 
-function createDeliveryKey(noticeId: string, userId: string): string {
-  return `${noticeId}:${userId}:in_app`;
+function createDeliveryKey(
+  noticeId: string,
+  userId: string,
+  channel: SystemNoticeDeliveryChannel = 'in_app',
+): string {
+  return `${noticeId}:${userId}:${channel}`;
 }
 
 function createDeliveryRecord(
   notice: SystemNoticeRecord,
   user: SystemUserRecord,
   deliveredAt = new Date().toISOString(),
+  channel: SystemNoticeDeliveryChannel = 'in_app',
   providerState: Pick<
     SystemNoticeDeliveryRecord,
     'attemptCount' | 'providerStatus'
@@ -628,16 +660,18 @@ function createDeliveryRecord(
     providerStatus: 'sent',
   },
 ): SystemNoticeDeliveryRecord {
+  const provider = getSystemNoticeDeliveryProvider(channel);
   return {
-    id: `notice_delivery_${notice.id}_${user.id}`,
+    id: `notice_delivery_${notice.id}_${user.id}_${channel}`,
     noticeId: notice.id,
     userId: user.id,
     username: user.username,
     displayName: user.displayName,
-    channel: 'in_app',
+    channel,
     status: 'delivered',
-    provider: 'in_app.local',
+    provider,
     providerStatus: providerState.providerStatus,
+    recipient: createSeedNoticeDeliveryRecipient(channel, user),
     attemptCount: providerState.attemptCount,
     title: notice.title,
     content: notice.content,
@@ -655,6 +689,21 @@ function createDeliveryRecord(
     createdAt: deliveredAt,
     updatedAt: deliveredAt,
   };
+}
+
+function createSeedNoticeDeliveryRecipient(
+  channel: SystemNoticeDeliveryChannel,
+  user: SystemUserRecord,
+): string | undefined {
+  if (channel === 'mail') {
+    return `${user.username}@opencore.local`;
+  }
+
+  if (channel === 'sms') {
+    return '+15550000001';
+  }
+
+  return undefined;
 }
 
 function compareNoticeDeliveries(

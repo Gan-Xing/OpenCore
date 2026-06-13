@@ -4,11 +4,14 @@ export type SystemNoticeType = 'announcement' | 'maintenance' | 'security';
 
 export type SystemNoticeAudience = 'admin' | 'all';
 
-export type SystemNoticeDeliveryChannel = 'in_app';
+export type SystemNoticeDeliveryChannel = 'in_app' | 'mail' | 'sms';
 
 export type SystemNoticeDeliveryStatus = 'delivered' | 'read';
 
-export type SystemNoticeDeliveryProvider = 'in_app.local';
+export type SystemNoticeDeliveryProvider =
+  | 'in_app.local'
+  | 'mail.sandbox'
+  | 'sms.sandbox';
 
 export type SystemNoticeDeliveryProviderStatus = 'failed' | 'pending' | 'sent';
 
@@ -39,6 +42,8 @@ export type SystemNoticeDeliveryRecord = {
   status: SystemNoticeDeliveryStatus;
   provider: SystemNoticeDeliveryProvider;
   providerStatus: SystemNoticeDeliveryProviderStatus;
+  recipient?: string;
+  providerMessageId?: string;
   attemptCount: number;
   title: string;
   content: string;

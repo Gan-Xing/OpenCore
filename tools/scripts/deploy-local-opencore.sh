@@ -172,7 +172,32 @@ verify_admin_bundle_api_base_url() {
     ! grep -R \
     --fixed-strings \
     --include='*.js' \
+    "Dispatch mail deliveries" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Dispatch SMS deliveries" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Execute mail outbox provider" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Execute SMS outbox provider" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
     "Execute local provider" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Provider Message" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null || \
     ! grep -R \
     --fixed-strings \

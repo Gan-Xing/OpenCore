@@ -5761,3 +5761,129 @@ Against public endpoints after deploy:
 
 - Feature+docs commit: this commit.
 - Push: `origin/main`.
+
+## Round 66 Capability
+
+Capability: `core.notice` integration outbox provider bridge productization.
+
+Round 66 extends Round 63 local provider execution from in-app only into
+channel-specific mail/SMS sandbox dispatch backed by the existing Integration
+outbox boundary. The goal is still not real SMTP/SMS external sending; it is
+the smallest deployable stage that proves notice delivery rows can queue
+mail/SMS provider work, expose provider ids to operators and fail closed when
+the integration provider is disabled or misconfigured.
+
+Reference comparison:
+
+- RuoYi-style notices remain operator-managed announcements, but the richer
+  OpenCore waterline now includes durable delivery records and explicit
+  provider execution.
+- Yudao-style notify/message surfaces separate templates, messages and send
+  execution. The relevant OpenCore bridge is therefore a provider/outbox row
+  handoff before external callback/retry orchestration.
+- OpenCore already had notice CRUD, inbox/read-state, read-user analytics,
+  templates, in-app delivery records, local provider execution, Integration
+  provider/template/outbox models and fixed deploy stale-bundle guards. The
+  missing low-dependency layer was mail/SMS delivery execution into the
+  Integration outbox runtime.
+
+## Round 66 Implemented
+
+- Extended `SystemNoticeDelivery` with `recipient` and `providerMessageId`
+  fields plus index/migration.
+- Added the missing integration runtime table migration and seed integration
+  providers/templates/outbox to remove Prisma schema/seed drift.
+- Extended notice dispatch and delivery execution APIs with optional
+  `channel=in_app|mail|sms` request bodies.
+- Added provider mapping for `in_app.local`, `mail.sandbox` and `sms.sandbox`
+  with provider type/enabled-state guards.
+- Queued mail/SMS pending deliveries into `IntegrationOutbox`, recorded
+  delivery `recipient/providerMessageId`, attempt metadata and
+  `queuedOutboxCount`.
+- Updated DTOs, repository/service contracts, seed repository, SDK
+  types/client/spec and OpenAPI snapshot.
+- Added Admin System Notices mail/SMS dispatch and execute actions plus
+  Recipient and Provider Message delivery columns.
+- Extended `tools/scripts/smoke-core-notice.mjs` for disabled provider guard,
+  provider enablement, mail/SMS outbox rows and matching delivery/outbox
+  payload verification.
+- Extended Admin static smoke and deploy-script stale bundle guards for the
+  mail/SMS provider UI markers.
+
+Out of scope for Round 66:
+
+- real external SMTP/SMS provider sending;
+- webhook/callback reconciliation;
+- retry/failure queue orchestration;
+- WebSocket realtime push;
+- tenant/member/mobile notice channels;
+- BPM approval around announcements.
+
+## Round 66 Verification
+
+- `pnpm exec jest -c packages/system/jest.config.ts packages/system/src/system-notice/system-notice.spec.ts --runInBand`
+- `pnpm nx test sdk --testFile=packages/sdk/src/system-management-client.spec.ts --testFile=packages/sdk/src/integration-client.spec.ts --testFile=packages/sdk/src/registry-fixtures.spec.ts`
+- `pnpm --dir apps/admin test`
+- `bash -n tools/scripts/deploy-local-opencore.sh`
+- `node --check tools/scripts/smoke-core-notice.mjs`
+- `node --check apps/admin/scripts/smoke-test.mjs`
+- `pnpm prisma:validate`
+- `pnpm prisma:migrate`
+- `pnpm prisma:generate`
+- `pnpm prisma:seed`
+- `pnpm typecheck`
+- `pnpm openapi:export`
+- `pnpm sdk:check`
+- `pnpm openapi:registry-tags:check`
+- `pnpm openapi:check`
+- `pnpm lint`
+- `pnpm build:api`
+- `pnpm build:admin`
+- `pnpm smoke:api:local`
+- `pnpm format:check`
+- `git diff --check`
+- `pnpm exec jest -c packages/system/jest.config.ts --runInBand`
+- `pnpm registry:admin-routes:check`
+- `pnpm deploy:opencore`
+
+Initial focused system-notice test placement put the new mail assertion before
+the created notice variable and failed with a `ReferenceError`; the test was
+moved into the correct lifecycle block and now guards the seed repository mail
+execution path. Initial `pnpm prisma:seed` exposed that the integration models
+already existed in Prisma schema but their runtime tables were missing from the
+migration chain; Round 66 adds the integration runtime table migration and seed
+counts so this drift is now visible and repeatable. Initial typecheck/OpenAPI
+export exposed `string | undefined` recipient flow into Prisma create data; the
+repository now asserts external mail/SMS recipients before outbox creation.
+
+`pnpm lint` passed with existing warnings in
+`packages/system/src/system-user/system-user.prisma-repository.ts` and
+`apps/admin/src/pages/shared/CurrentPageExportButton.tsx`; no Round 66 lint
+errors were introduced.
+
+`pnpm smoke:api:local` passed on fixed port `39173`, including
+`core.notice.deliveries.mail-outbox-provider` and
+`core.notice.deliveries.sms-outbox-provider`.
+
+## Round 66 Public Verification
+
+Against public endpoints after deploy:
+
+- Public API: `http://144.217.243.161:39172`
+- Public Admin: `http://144.217.243.161:39174`
+- Admin main bundle: `umi.244622b2.js`
+- System Notices chunk: `p__System__Notices.b68b76ed.async.js`
+- Public API notice smoke:
+  `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-notice`.
+  Checks included `core.notice.deliveries.mail-outbox-provider` and
+  `core.notice.deliveries.sms-outbox-provider`.
+- Public System Notices chunk contains `Dispatch mail deliveries`,
+  `Dispatch SMS deliveries`, `Execute mail outbox provider`,
+  `Execute SMS outbox provider` and `Provider Message`.
+- Public OpenAPI docs contain dispatch/execute channel schemas for mail/SMS and
+  delivery `recipient/providerMessageId`.
+
+## Round 66 Commit Record
+
+- Feature+docs commit: this commit.
+- Push: `origin/main`.

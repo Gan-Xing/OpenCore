@@ -23,6 +23,11 @@ import {
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { seedFileAssets } from '../apps/api/src/modules/core/system-management/system-management.seed';
+import {
+  seedIntegrationOutbox,
+  seedIntegrationProviders,
+  seedIntegrationTemplates,
+} from '../apps/api/src/modules/integration/integration/integration.seed';
 
 const LOCAL_ENV_FILE = '.env.opencore.local';
 const BOOTSTRAP_ADMIN_USERNAME = 'admin';
@@ -41,6 +46,7 @@ async function main(): Promise<void> {
   const permissionCount = await seedPermissions();
   const menuCount = await seedMenus();
   const roleCount = await seedRoles();
+  const integrationCount = await seedIntegrations();
   const systemManagementCount = await seedSystemManagement();
   const userCount = await seedUsers(bootstrapPassword);
   const systemNoticeDeliveryCount = await seedSystemNoticeDeliveries();
@@ -56,6 +62,7 @@ async function main(): Promise<void> {
         users: userCount,
         systemNoticeDeliveries: systemNoticeDeliveryCount,
         onlineUserSessions: onlineUserSessionCount,
+        integrations: integrationCount,
         scheduler: schedulerCount,
         systemManagement: systemManagementCount,
         bootstrapAdminUsername: BOOTSTRAP_ADMIN_USERNAME,
@@ -63,6 +70,103 @@ async function main(): Promise<void> {
       },
     }),
   );
+}
+
+async function seedIntegrations(): Promise<{
+  providers: number;
+  templates: number;
+  outbox: number;
+}> {
+  for (const provider of seedIntegrationProviders) {
+    await prisma.integrationProvider.upsert({
+      where: { code: provider.code },
+      update: {
+        type: provider.type,
+        name: provider.name,
+        enabled: provider.enabled,
+        secretRef: provider.secretRef,
+        config: provider.config as Prisma.InputJsonValue,
+        healthStatus: provider.healthStatus,
+        lastCheckedAt: provider.lastCheckedAt
+          ? new Date(provider.lastCheckedAt)
+          : null,
+      },
+      create: {
+        id: provider.id,
+        code: provider.code,
+        type: provider.type,
+        name: provider.name,
+        enabled: provider.enabled,
+        secretRef: provider.secretRef,
+        config: provider.config as Prisma.InputJsonValue,
+        healthStatus: provider.healthStatus,
+        lastCheckedAt: provider.lastCheckedAt
+          ? new Date(provider.lastCheckedAt)
+          : null,
+      },
+    });
+  }
+
+  for (const template of seedIntegrationTemplates) {
+    await prisma.integrationTemplate.upsert({
+      where: { code: template.code },
+      update: {
+        channel: template.channel,
+        name: template.name,
+        subject: template.subject ?? null,
+        body: template.body,
+        enabled: template.enabled,
+      },
+      create: {
+        id: template.id,
+        code: template.code,
+        channel: template.channel,
+        name: template.name,
+        subject: template.subject ?? null,
+        body: template.body,
+        enabled: template.enabled,
+      },
+    });
+  }
+
+  for (const message of seedIntegrationOutbox) {
+    await prisma.integrationOutbox.upsert({
+      where: { id: message.id },
+      update: {
+        channel: message.channel,
+        providerCode: message.providerCode,
+        templateCode: message.templateCode ?? null,
+        recipient: message.recipient,
+        payload: message.payload as Prisma.InputJsonValue,
+        status: message.status,
+        retryCount: message.retryCount,
+        preview: message.preview ?? null,
+        error: message.error ?? null,
+        sentAt: message.sentAt ? new Date(message.sentAt) : null,
+        createdAt: new Date(message.createdAt),
+      },
+      create: {
+        id: message.id,
+        channel: message.channel,
+        providerCode: message.providerCode,
+        templateCode: message.templateCode ?? null,
+        recipient: message.recipient,
+        payload: message.payload as Prisma.InputJsonValue,
+        status: message.status,
+        retryCount: message.retryCount,
+        preview: message.preview ?? null,
+        error: message.error ?? null,
+        sentAt: message.sentAt ? new Date(message.sentAt) : null,
+        createdAt: new Date(message.createdAt),
+      },
+    });
+  }
+
+  return {
+    providers: seedIntegrationProviders.length,
+    templates: seedIntegrationTemplates.length,
+    outbox: seedIntegrationOutbox.length,
+  };
 }
 
 async function seedOnlineUserSessions(): Promise<number> {

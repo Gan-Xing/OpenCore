@@ -6,6 +6,8 @@ import type {
   CreateSystemNoticeDto,
   CreateSystemNoticeTemplateDto,
   RenderSystemNoticeTemplateDto,
+  SystemNoticeDeliveryExecuteDto,
+  SystemNoticeDispatchDto,
   UpdateSystemNoticeTemplateDto,
   UpdateSystemNoticeDto,
 } from './system-notice.dto';
@@ -93,14 +95,18 @@ export class SystemNoticeService {
     return this.repository.listNoticeDeliveries(id, query);
   }
 
-  dispatchNotice(id: string): Promise<SystemNoticeDeliveryMutationResult> {
-    return this.repository.dispatchNotice(id);
+  dispatchNotice(
+    id: string,
+    body?: SystemNoticeDispatchDto,
+  ): Promise<SystemNoticeDeliveryMutationResult> {
+    return this.repository.dispatchNotice(id, body);
   }
 
   executeNoticeDeliveries(
     id: string,
+    body?: SystemNoticeDeliveryExecuteDto,
   ): Promise<SystemNoticeDeliveryExecutionResult> {
-    return this.repository.executeNoticeDeliveries(id);
+    return this.repository.executeNoticeDeliveries(id, body);
   }
 
   listNoticeTemplates(

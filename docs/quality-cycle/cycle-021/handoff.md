@@ -4,9 +4,9 @@ Date: 2026-06-13
 Repository: `Gan-Xing/OpenCore`
 Default branch: `main`
 Latest observed feature commit: this feature+docs commit,
-`feat(config): target feature flags by audience / 按受众规则定位功能开关`
+`feat(notice): bridge deliveries to integration outbox / 打通通知投递集成发件箱`
 Latest deployed feature commit: this feature+docs commit,
-`feat(config): target feature flags by audience / 按受众规则定位功能开关`
+`feat(notice): bridge deliveries to integration outbox / 打通通知投递集成发件箱`
 Latest deployed hardening commit: `4df5dd1 fix(system): satisfy xlsx export lint guard / 修复 XLSX 导出 lint 守卫`
 
 ## One-sentence Goal
@@ -155,6 +155,7 @@ productization waterline completion; see
 - Round 63 `core.notice` local delivery provider execution stage 6
 - Round 64 `core.config` feature flag rollout percentage stage 12
 - Round 65 `core.config` feature flag audience targeting stage 13
+- Round 66 `core.notice` mail/SMS integration outbox bridge stage 7
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -903,6 +904,22 @@ smoke 和公网 smoke 均验证 seeded audience、runtime 传播、attributes ev
 Admin stale bundle guard 和 OpenAPI markers。注意：这轮关闭的是基础受众规则，不等于多环境发布审批、
 实验指标、完整 experimentation platform 或通用规则引擎完成。
 
+Round 66 继续补 `core.notice` P1 队列，把 Round 63 的本地 provider execution 推进到
+mail/SMS sandbox integration outbox bridge。OpenCore 现在支持在
+`POST /api/core/notices/:id/dispatch` 和
+`POST /api/core/notices/:id/deliveries/execute` 请求体里指定
+`channel=in_app|mail|sms`；`mail.sandbox`/`sms.sandbox` provider 会校验
+Integration provider 是否存在、类型匹配且启用，然后把通知投递转成
+`IntegrationOutbox` 行，并把 delivery 写入 `recipient`、`providerMessageId`、
+attempt 和 sentAt。Prisma migration 补齐 `SystemNoticeDelivery` 的外部投递字段，并补上历史
+integration runtime tables migration，避免 schema/seed 漂移。API/SDK/OpenAPI/Admin 同步：
+System Notices 页面新增 `Dispatch mail deliveries`、`Dispatch SMS deliveries`、
+`Execute mail outbox provider`、`Execute SMS outbox provider`，delivery modal 展示
+Recipient 和 Provider Message；固定 smoke、部署 smoke 和公网 smoke 均验证 disabled provider guard、
+provider enable、mail/SMS outbox rows、delivery provider id 和 stale Admin bundle markers。注意：
+这轮关闭的是通知投递到集成发件箱的 provider bridge，不等于真实 SMTP/SMS 外部发送、回调 webhook、
+失败重试队列、WebSocket 实时推送、租户/member/mobile notice 已完成。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -913,7 +930,7 @@ The productization waterline now classifies:
   Round 8/21 `core.dict`, Round 2/27/43/52/54 `core.dept`,
   Round 7/19/22/23/28/29/30/31/32/33/34/35/36/41/54 `core.user`,
   Round 3/22/25/42/53 `core.post`.
-- First loop, enhance: Round 1/55/56/60/61/63 `core.notice`,
+- First loop, enhance: Round 1/55/56/60/61/63/66 `core.notice`,
   Round 9/24/37/38/39/40/44/46/49/58/62/64/65 `core.config`,
   Round 11/26/45/47/48/49/50/51/57/59 `core.login-log`.
 - Thin, rework: none after Round 16.
@@ -990,9 +1007,14 @@ finds another blocker:
    read-status synchronization. Round 63 closed local provider execution with
    separate `providerStatus`, pending/sent transition metadata, explicit
    `execute` API, Admin provider execution action, provider columns and
-   fixed/deploy/public smoke guards. Remaining notice work is real
-   WebSocket/SMS/Mail adapter execution, multi-channel retry/failure queues and
-   any admitted tenant/member/mobile channels.
+   fixed/deploy/public smoke guards. Round 66 closed the mail/SMS sandbox
+   integration outbox bridge with channel-specific dispatch/execute bodies,
+   provider readiness checks, `IntegrationOutbox` queue rows, delivery
+   `recipient/providerMessageId` visibility, Admin mail/SMS controls and
+   smoke/deploy stale-bundle guards. Remaining notice work is real external
+   SMTP/SMS provider execution/callbacks, WebSocket realtime push,
+   multi-channel retry/failure queues and any admitted tenant/member/mobile
+   channels.
 
 ### Current P0/P1/P2 Scope Snapshot
 
@@ -1000,8 +1022,9 @@ finds another blocker:
   content upload/download, menu tree metadata, plus deployment hardening for
   fixed ports, Admin API origin, duplicate `/api/api` compatibility and stale
   frontend bundle/cache guards.
-- P1 remaining: `core.notice` real WebSocket/SMS/Mail adapter execution and
-  multi-channel retry/failure queues,
+- P1 remaining: `core.notice` real external SMTP/SMS provider
+  execution/callbacks, WebSocket realtime push and multi-channel retry/failure
+  queues,
   `core.config` multi-environment rollout governance and full experimentation
   surfaces,
   and `core.login-log` optional external GeoIP country/city/provider depth or
@@ -1017,7 +1040,7 @@ finds another blocker:
 
 Reference parity is measured by product capability waterline, not by replaying
 RuoYi/Yudao commit history. The remaining RuoYi-style foundation backlog after
-Round 65 is roughly several focused P1 loops, not tens of thousands of commits.
+Round 66 is roughly several focused P1 loops, not tens of thousands of commits.
 Yudao Full parity is a different program: BPM, pay, mall, member, CRM, ERP,
 AI and other business domains would require dozens to 100+ separately admitted
 deployable loops, and should not be counted as unfinished cycle-021 foundation

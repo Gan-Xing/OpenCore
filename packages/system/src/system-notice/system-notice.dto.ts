@@ -148,13 +148,13 @@ export class SystemNoticeDeliveryDto {
   @ApiProperty()
   displayName!: string;
 
-  @ApiProperty({ enum: ['in_app'] })
+  @ApiProperty({ enum: ['in_app', 'mail', 'sms'] })
   channel!: SystemNoticeDeliveryChannel;
 
   @ApiProperty({ enum: ['delivered', 'read'] })
   status!: SystemNoticeDeliveryStatus;
 
-  @ApiProperty({ enum: ['in_app.local'] })
+  @ApiProperty({ enum: ['in_app.local', 'mail.sandbox', 'sms.sandbox'] })
   provider!: SystemNoticeDeliveryProvider;
 
   @ApiProperty({ enum: ['failed', 'pending', 'sent'] })
@@ -162,6 +162,12 @@ export class SystemNoticeDeliveryDto {
 
   @ApiProperty()
   attemptCount!: number;
+
+  @ApiProperty({ required: false })
+  recipient?: string;
+
+  @ApiProperty({ required: false })
+  providerMessageId?: string;
 
   @ApiProperty()
   title!: string;
@@ -214,14 +220,19 @@ export class SystemNoticeDeliveryPageDto {
   totalPages!: number;
 }
 
+export class SystemNoticeDispatchDto {
+  @ApiProperty({ enum: ['in_app', 'mail', 'sms'], required: false })
+  channel?: SystemNoticeDeliveryChannel;
+}
+
 export class SystemNoticeDeliveryMutationResultDto {
   @ApiProperty()
   noticeId!: string;
 
-  @ApiProperty({ enum: ['in_app'] })
+  @ApiProperty({ enum: ['in_app', 'mail', 'sms'] })
   channel!: SystemNoticeDeliveryChannel;
 
-  @ApiProperty({ enum: ['in_app.local'] })
+  @ApiProperty({ enum: ['in_app.local', 'mail.sandbox', 'sms.sandbox'] })
   provider!: SystemNoticeDeliveryProvider;
 
   @ApiProperty()
@@ -246,14 +257,19 @@ export class SystemNoticeDeliveryMutationResultDto {
   pendingCount!: number;
 }
 
+export class SystemNoticeDeliveryExecuteDto {
+  @ApiProperty({ enum: ['in_app', 'mail', 'sms'], required: false })
+  channel?: SystemNoticeDeliveryChannel;
+}
+
 export class SystemNoticeDeliveryExecutionResultDto {
   @ApiProperty()
   noticeId!: string;
 
-  @ApiProperty({ enum: ['in_app'] })
+  @ApiProperty({ enum: ['in_app', 'mail', 'sms'] })
   channel!: SystemNoticeDeliveryChannel;
 
-  @ApiProperty({ enum: ['in_app.local'] })
+  @ApiProperty({ enum: ['in_app.local', 'mail.sandbox', 'sms.sandbox'] })
   provider!: SystemNoticeDeliveryProvider;
 
   @ApiProperty()
@@ -270,6 +286,9 @@ export class SystemNoticeDeliveryExecutionResultDto {
 
   @ApiProperty()
   pendingCount!: number;
+
+  @ApiProperty()
+  queuedOutboxCount!: number;
 }
 
 export class SystemNoticeTemplateDto {
@@ -420,7 +439,7 @@ export class SystemNoticeDeliveryQueryDto {
   @ApiProperty({ required: false, default: 10 })
   pageSize?: number | string;
 
-  @ApiProperty({ required: false, enum: ['in_app'] })
+  @ApiProperty({ required: false, enum: ['in_app', 'mail', 'sms'] })
   channel?: SystemNoticeDeliveryChannel | string;
 
   @ApiProperty({ required: false, enum: ['failed', 'pending', 'sent'] })

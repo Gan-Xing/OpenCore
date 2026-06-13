@@ -363,11 +363,14 @@ export type SystemNoticeReadUserSummary = {
   readAt: string;
 };
 
-export type SystemNoticeDeliveryChannel = 'in_app';
+export type SystemNoticeDeliveryChannel = 'in_app' | 'mail' | 'sms';
 
 export type SystemNoticeDeliveryStatus = 'delivered' | 'read';
 
-export type SystemNoticeDeliveryProvider = 'in_app.local';
+export type SystemNoticeDeliveryProvider =
+  | 'in_app.local'
+  | 'mail.sandbox'
+  | 'sms.sandbox';
 
 export type SystemNoticeDeliveryProviderStatus = 'failed' | 'pending' | 'sent';
 
@@ -381,6 +384,8 @@ export type SystemNoticeDeliverySummary = {
   status: SystemNoticeDeliveryStatus;
   provider: SystemNoticeDeliveryProvider;
   providerStatus: SystemNoticeDeliveryProviderStatus;
+  recipient?: string;
+  providerMessageId?: string;
   attemptCount: number;
   title: string;
   content: string;
@@ -473,6 +478,10 @@ export type SystemNoticeDispatchSummary = {
   pendingCount: number;
 };
 
+export type SystemNoticeDispatchRequest = {
+  channel?: SystemNoticeDeliveryChannel;
+};
+
 export type SystemNoticeDeliveryExecutionSummary = {
   noticeId: string;
   channel: SystemNoticeDeliveryChannel;
@@ -482,6 +491,11 @@ export type SystemNoticeDeliveryExecutionSummary = {
   failedCount: number;
   skippedCount: number;
   pendingCount: number;
+  queuedOutboxCount: number;
+};
+
+export type SystemNoticeDeliveryExecutionRequest = {
+  channel?: SystemNoticeDeliveryChannel;
 };
 
 export type CreateSystemNoticeRequest = {

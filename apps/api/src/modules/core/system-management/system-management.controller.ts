@@ -85,10 +85,12 @@ import {
   SystemConfigValueDto,
   SystemConfigValueQueryDto,
   SystemNoticeDto,
+  SystemNoticeDeliveryExecuteDto,
   SystemNoticeDeliveryExecutionResultDto,
   SystemNoticeDeliveryMutationResultDto,
   SystemNoticeDeliveryPageDto,
   SystemNoticeDeliveryQueryDto,
+  SystemNoticeDispatchDto,
   SystemNoticeInboxItemDto,
   SystemNoticeInboxPageDto,
   SystemNoticeInboxQueryDto,
@@ -476,8 +478,9 @@ export class SystemManagementController {
   @ApiOkResponse({ type: SystemNoticeDeliveryMutationResultDto })
   dispatchNotice(
     @Param('id') id: string,
+    @Body() body: SystemNoticeDispatchDto = {},
   ): Promise<SystemNoticeDeliveryMutationResultDto> {
-    return this.notices.dispatchNotice(id);
+    return this.notices.dispatchNotice(id, body);
   }
 
   @Post('notices/:id/deliveries/execute')
@@ -486,8 +489,9 @@ export class SystemManagementController {
   @ApiOkResponse({ type: SystemNoticeDeliveryExecutionResultDto })
   executeNoticeDeliveries(
     @Param('id') id: string,
+    @Body() body: SystemNoticeDeliveryExecuteDto = {},
   ): Promise<SystemNoticeDeliveryExecutionResultDto> {
-    return this.notices.executeNoticeDeliveries(id);
+    return this.notices.executeNoticeDeliveries(id, body);
   }
 
   @Get('notices/templates')

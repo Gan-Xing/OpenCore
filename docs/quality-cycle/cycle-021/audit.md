@@ -1197,3 +1197,41 @@ This stays inside the current S7 System config boundary. It does not introduce
 multi-environment rollout governance, AB experiment analytics, full
 experimentation UI, nested segment builders, a general rule-expression engine
 or external KMS/secret rotation.
+
+## Round 66 Audit: core.notice Integration Outbox Provider Bridge
+
+After Round 63, `core.notice` had local provider execution state, but mail/SMS
+delivery rows still had no product handoff beyond in-app delivery status.
+
+- Yudao-style notify/message surfaces separate templates, recipient messages,
+  channel providers and send/outbox execution; RuoYi-style notice CRUD is
+  shallower, so OpenCore's product waterline should add the provider handoff
+  without overfitting to one external supplier.
+- OpenCore already had notice CRUD/lifecycle, inbox/read-state, read-user
+  analytics, templates, delivery records, local provider execution,
+  Integration provider/template/outbox models and fixed deploy smoke.
+- The lowest-dependency loop was channel-specific dispatch/execute into
+  `IntegrationOutbox`, not real SMTP/SMS credentials, callbacks or retry
+  orchestration.
+- Dispatch and execute needed an explicit `channel` body so mail/SMS can be
+  run independently from in-app publish-time auto-dispatch.
+- Provider execution needed to fail closed when the sandbox integration
+  provider is missing, disabled or type-mismatched.
+- Mail/SMS delivery rows needed operator-visible `recipient` and
+  `providerMessageId` fields so Admin can trace the outbox handoff.
+- `pnpm prisma:seed` exposed that integration models existed in Prisma schema
+  but not the migration chain; Round 66 converts that drift into a real
+  migration plus seeded provider/template/outbox counts.
+- Admin needed explicit `Dispatch mail deliveries`, `Dispatch SMS deliveries`,
+  `Execute mail outbox provider` and `Execute SMS outbox provider` actions, not
+  backend-only channels.
+- Fixed-port, deploy and public smoke needed to prove disabled provider guard,
+  provider enablement, queued outbox rows, delivery provider ids and matching
+  outbox payloads.
+- The deploy script needed stale System Notices bundle guards for the mail/SMS
+  action markers and Provider Message column.
+
+This stays inside the current S7 System notice boundary. It does not introduce
+real external SMTP/SMS provider sending, webhook/callback reconciliation,
+retry/failure queue orchestration, WebSocket realtime push, tenant/member/mobile
+notices or BPM approval.

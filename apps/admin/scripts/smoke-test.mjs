@@ -1134,7 +1134,12 @@ if (
   !systemNoticesPage.includes('System Notice Read Users') ||
   !systemNoticesPage.includes('Delivery records') ||
   !systemNoticesPage.includes('Dispatch in-app deliveries') ||
+  !systemNoticesPage.includes('Dispatch mail deliveries') ||
+  !systemNoticesPage.includes('Dispatch SMS deliveries') ||
+  !systemNoticesPage.includes('Execute mail outbox provider') ||
+  !systemNoticesPage.includes('Execute SMS outbox provider') ||
   !systemNoticesPage.includes('Execute local provider') ||
+  !systemNoticesPage.includes('Provider Message') ||
   !systemNoticesPage.includes('Provider Status') ||
   !systemNoticesPage.includes('System Notice Delivery Records') ||
   !systemNoticesPage.includes('System Notice Inbox Detail') ||

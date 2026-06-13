@@ -11,6 +11,8 @@ import type {
   CreateSystemNoticeDto,
   CreateSystemNoticeTemplateDto,
   RenderSystemNoticeTemplateDto,
+  SystemNoticeDeliveryExecuteDto,
+  SystemNoticeDispatchDto,
   UpdateSystemNoticeTemplateDto,
   UpdateSystemNoticeDto,
 } from './system-notice.dto';
@@ -118,6 +120,7 @@ export type SystemNoticeDeliveryExecutionResult = {
   failedCount: number;
   skippedCount: number;
   pendingCount: number;
+  queuedOutboxCount: number;
 };
 
 export type SystemNoticeTemplateFilters = {
@@ -206,9 +209,13 @@ const SYSTEM_NOTICE_TYPES = [
   'security',
 ] as const;
 const SYSTEM_NOTICE_AUDIENCES = ['all', 'admin'] as const;
-const SYSTEM_NOTICE_DELIVERY_CHANNELS = ['in_app'] as const;
+const SYSTEM_NOTICE_DELIVERY_CHANNELS = ['in_app', 'mail', 'sms'] as const;
 const SYSTEM_NOTICE_DELIVERY_STATUSES = ['delivered', 'read'] as const;
-const SYSTEM_NOTICE_DELIVERY_PROVIDERS = ['in_app.local'] as const;
+const SYSTEM_NOTICE_DELIVERY_PROVIDERS = [
+  'in_app.local',
+  'mail.sandbox',
+  'sms.sandbox',
+] as const;
 const SYSTEM_NOTICE_DELIVERY_PROVIDER_STATUSES = [
   'failed',
   'pending',
@@ -258,10 +265,12 @@ export abstract class SystemNoticeRepository {
 
   abstract dispatchNotice(
     id: string,
+    body?: SystemNoticeDispatchDto,
   ): Promise<SystemNoticeDeliveryMutationResult>;
 
   abstract executeNoticeDeliveries(
     id: string,
+    body?: SystemNoticeDeliveryExecuteDto,
   ): Promise<SystemNoticeDeliveryExecutionResult>;
 
   abstract listNoticeTemplates(
@@ -338,6 +347,26 @@ export function normalizeSystemNoticeDeliveryFilters(
     readStatus: normalizeOptionalBoolean(query.readStatus, 'readStatus'),
     username: normalizeOptionalText(query.username, 'delivery username'),
   };
+}
+
+export function normalizeSystemNoticeDeliveryChannelInput(
+  channel: string | undefined,
+): SystemNoticeDeliveryChannel {
+  return toSystemNoticeDeliveryChannel(channel ?? 'in_app');
+}
+
+export function getSystemNoticeDeliveryProvider(
+  channel: SystemNoticeDeliveryChannel,
+): SystemNoticeDeliveryProvider {
+  if (channel === 'mail') {
+    return 'mail.sandbox';
+  }
+
+  if (channel === 'sms') {
+    return 'sms.sandbox';
+  }
+
+  return 'in_app.local';
 }
 
 export function normalizeSystemNoticeTemplateFilters(

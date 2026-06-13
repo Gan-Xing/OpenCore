@@ -2006,6 +2006,45 @@ attribute-aware evaluation.
       verification.
 - [x] Commit code, tests and documentation in one feature+docs commit.
 
+## Round 66: core.notice Integration Outbox Provider Bridge Productization
+
+Why this slice: Round 63 created a local provider execution state machine, but
+mail/SMS delivery rows still had no provider bridge. OpenCore already had
+notice lifecycle, templates, in-app delivery records, local execution state,
+Integration provider/template/outbox models and fixed deploy stale-bundle
+guards, so the next lowest-dependency stage was to bridge notice mail/SMS
+deliveries into the existing Integration outbox boundary without claiming real
+external SMTP/SMS sending.
+
+- [x] Recompare current RuoYi/Yudao notice/message/provider reference shapes
+      before selecting this slice.
+- [x] Extend `SystemNoticeDelivery` with external `recipient` and
+      `providerMessageId` fields plus migration/index.
+- [x] Add the missing integration runtime table migration so Prisma schema,
+      seed and deployed databases no longer drift.
+- [x] Seed integration providers/templates/outbox through `prisma/seed.ts`.
+- [x] Extend notice dispatch and delivery execution APIs to accept
+      `channel=in_app|mail|sms` while preserving in-app publish behavior.
+- [x] Add `mail.sandbox` and `sms.sandbox` provider mapping, provider type/
+      enabled-state guards and deterministic sandbox recipients.
+- [x] Execute mail/SMS pending deliveries by creating `IntegrationOutbox` rows
+      and recording `recipient`, `providerMessageId`, attempt and sentAt on the
+      delivery.
+- [x] Update DTOs, service/repository contracts, seed repository, SDK
+      types/client/spec and OpenAPI snapshot.
+- [x] Add Admin System Notices mail/SMS dispatch and execute actions plus
+      Recipient/Provider Message delivery columns.
+- [x] Extend fixed-port/deploy/public `core.notice` smoke for disabled provider
+      guard, provider enablement, queued outbox rows, delivery provider id and
+      matching outbox payload.
+- [x] Extend Admin static smoke and deploy-script stale bundle guards for the
+      mail/SMS notice provider UI markers.
+- [x] Run focused tests, Prisma validate/migrate/seed/generate, OpenAPI/SDK
+      checks, typecheck, lint, builds, fixed-port smoke, deployment and public
+      URL verification.
+- [x] Commit feature code, tests, deploy guards and documentation in one
+      feature+docs commit.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -2047,14 +2086,15 @@ treat "minimal loop" as "minimal final product".
 
 ### First Loop, Needs Enhancement
 
-- [ ] Round 1/55/56/60/61/63 `core.notice`: management CRUD, persisted per-user
+- [ ] Round 1/55/56/60/61/63/66 `core.notice`: management CRUD, persisted per-user
       read receipts, authenticated inbox APIs, Admin Inbox tab, header unread
       badge, management read-user analytics, notification template CRUD, strict
       render preview, draft notice creation from template, persisted in-app
       delivery records, idempotent dispatch, read-status sync and local
-      provider execution are complete. Real WebSocket/SMS/Mail adapters,
-      multi-channel retry/failure queues and tenant/member/mobile channels
-      remain.
+      provider execution plus mail/SMS sandbox integration outbox bridge are
+      complete. Real external SMTP/SMS provider execution/callbacks, WebSocket
+      realtime push, multi-channel retry/failure queues and tenant/member/
+      mobile channels remain.
 - [ ] Round 9/24/37/38/39/40/44/46/49/58/62/64/65 `core.config`: public get-value-by-key, cache
       refresh and mutation invalidation are complete. Category/name/remark
       metadata is complete. Native XLSX export payload and Admin download are
@@ -2120,10 +2160,12 @@ treat "minimal loop" as "minimal final product".
 
 - Large-scale message bus push and multi-channel fan-out orchestration unless
   admitted as a dedicated foundation round.
-- Notification templates, in-app delivery records and local provider execution
-  are complete through Round 60/61/63. Real WebSocket/SMS/Mail adapters,
-  multi-channel retry/failure queues and tenant/member/mobile channels remain
-  P1 foundation work when admitted as independent rounds with smoke.
+- Notification templates, in-app delivery records, local provider execution
+  and the mail/SMS sandbox integration outbox bridge are complete through
+  Round 60/61/63/66. Real external SMTP/SMS provider execution/callbacks,
+  WebSocket realtime push, multi-channel retry/failure queues and
+  tenant/member/mobile channels remain P1 foundation work when admitted as
+  independent rounds with smoke.
 - BPMN/workflow approval around announcements.
 - Tenant-scoped notices.
 - Department data-scope workflow integration and role data-scope assignment UI.

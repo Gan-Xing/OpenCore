@@ -70,6 +70,7 @@ import {
   type SystemNoticeInboxQueryRequest,
   type SystemNoticeInboxSummary,
   type SystemNoticeDeliveryQueryRequest,
+  type SystemNoticeDeliveryChannel,
   type SystemNoticeDeliveryExecutionSummary,
   type SystemNoticeDeliverySummary,
   type SystemNoticeDispatchSummary,
@@ -802,16 +803,21 @@ export async function listOpenCoreSystemNoticeDeliveries(
 
 export function dispatchOpenCoreSystemNotice(
   id: string,
+  channel: SystemNoticeDeliveryChannel = 'in_app',
 ): Promise<SystemNoticeDispatchSummary> {
-  return systemManagementClient.dispatchNotice(getRequiredAdminToken(), id);
+  return systemManagementClient.dispatchNotice(getRequiredAdminToken(), id, {
+    channel,
+  });
 }
 
 export function executeOpenCoreSystemNoticeDeliveries(
   id: string,
+  channel: SystemNoticeDeliveryChannel = 'in_app',
 ): Promise<SystemNoticeDeliveryExecutionSummary> {
   return systemManagementClient.executeNoticeDeliveries(
     getRequiredAdminToken(),
     id,
+    { channel },
   );
 }
 

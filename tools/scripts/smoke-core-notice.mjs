@@ -378,6 +378,141 @@ try {
     'repeat execute attempted count',
   );
 
+  await apiRequest('/integrations/providers/mail.sandbox/disable', {
+    method: 'PATCH',
+  });
+  const mailDispatchResult = await apiRequest(
+    `/core/notices/${encodeURIComponent(draftNotice.id)}/dispatch`,
+    {
+      method: 'POST',
+      body: { channel: 'mail' },
+    },
+  );
+  assertEqual(mailDispatchResult.channel, 'mail', 'mail dispatch channel');
+  assertEqual(
+    mailDispatchResult.provider,
+    'mail.sandbox',
+    'mail dispatch provider',
+  );
+  assertNumberAtLeast(
+    mailDispatchResult.deliveredCount,
+    1,
+    'mail dispatch new count',
+  );
+  assertNumberAtLeast(
+    mailDispatchResult.pendingCount,
+    1,
+    'mail dispatch pending count',
+  );
+  await apiRequest(
+    `/core/notices/${encodeURIComponent(draftNotice.id)}/deliveries/execute`,
+    {
+      method: 'POST',
+      expected: [400],
+      body: { channel: 'mail' },
+    },
+  );
+  await apiRequest('/integrations/providers/mail.sandbox/enable', {
+    method: 'PATCH',
+  });
+  const mailExecuteResult = await apiRequest(
+    `/core/notices/${encodeURIComponent(draftNotice.id)}/deliveries/execute`,
+    {
+      method: 'POST',
+      body: { channel: 'mail' },
+    },
+  );
+  assertEqual(
+    mailExecuteResult.provider,
+    'mail.sandbox',
+    'mail execute provider',
+  );
+  assertNumberAtLeast(
+    mailExecuteResult.queuedOutboxCount,
+    1,
+    'mail queued outbox count',
+  );
+  const mailDeliveryPage = await apiRequest(
+    `/core/notices/${encodeURIComponent(draftNotice.id)}/deliveries?channel=mail&providerStatus=sent&username=${encodeURIComponent(username)}`,
+  );
+  const mailDelivery = assertPageItemsContainDelivery(
+    mailDeliveryPage,
+    username,
+    'delivered',
+    false,
+    'sent',
+    'mail notice delivery provider records',
+    { channel: 'mail', provider: 'mail.sandbox' },
+  );
+  assertString(mailDelivery.recipient, 'mail delivery recipient');
+  assertString(
+    mailDelivery.providerMessageId,
+    'mail delivery provider message id',
+  );
+  const mailOutboxPage = await apiRequest(
+    '/integrations/mail/outbox?status=queued&providerCode=mail.sandbox',
+  );
+  assertOutboxContainsNotice(
+    mailOutboxPage,
+    draftNotice.id,
+    mailDelivery.providerMessageId,
+    'mail notice integration outbox',
+  );
+
+  await apiRequest('/integrations/providers/sms.sandbox/enable', {
+    method: 'PATCH',
+  });
+  const smsDispatchResult = await apiRequest(
+    `/core/notices/${encodeURIComponent(draftNotice.id)}/dispatch`,
+    {
+      method: 'POST',
+      body: { channel: 'sms' },
+    },
+  );
+  assertEqual(smsDispatchResult.channel, 'sms', 'SMS dispatch channel');
+  assertEqual(
+    smsDispatchResult.provider,
+    'sms.sandbox',
+    'SMS dispatch provider',
+  );
+  const smsExecuteResult = await apiRequest(
+    `/core/notices/${encodeURIComponent(draftNotice.id)}/deliveries/execute`,
+    {
+      method: 'POST',
+      body: { channel: 'sms' },
+    },
+  );
+  assertNumberAtLeast(
+    smsExecuteResult.queuedOutboxCount,
+    1,
+    'SMS queued outbox count',
+  );
+  const smsDeliveryPage = await apiRequest(
+    `/core/notices/${encodeURIComponent(draftNotice.id)}/deliveries?channel=sms&providerStatus=sent&username=${encodeURIComponent(username)}`,
+  );
+  const smsDelivery = assertPageItemsContainDelivery(
+    smsDeliveryPage,
+    username,
+    'delivered',
+    false,
+    'sent',
+    'SMS notice delivery provider records',
+    { channel: 'sms', provider: 'sms.sandbox' },
+  );
+  assertString(
+    smsDelivery.providerMessageId,
+    'SMS delivery provider message id',
+  );
+  const smsOutboxPage = await apiRequest(
+    '/integrations/sms/outbox?status=queued&providerCode=sms.sandbox',
+  );
+  assertOutboxContainsNotice(
+    smsOutboxPage,
+    draftNotice.id,
+    smsDelivery.providerMessageId,
+    'SMS notice integration outbox',
+  );
+
   const inboxItem = await apiRequest(
     `/core/notices/inbox/${encodeURIComponent(draftNotice.id)}`,
   );
@@ -516,6 +651,8 @@ try {
         'core.notice.deliveries.provider-execute',
         'core.notice.deliveries.provider-sent-records',
         'core.notice.deliveries.provider-execute-idempotent',
+        'core.notice.deliveries.mail-outbox-provider',
+        'core.notice.deliveries.sms-outbox-provider',
         'core.notice.inbox.unread-item',
         'core.notice.inbox.unread-page',
         'core.notice.inbox.unread-list',
@@ -688,6 +825,7 @@ function assertPageItemsContainDelivery(
   expectReadAt,
   providerStatus,
   label,
+  expected = { channel: 'in_app', provider: 'in_app.local' },
 ) {
   assertArray(page.items, `${label} items`);
   const item = page.items.find((candidate) => candidate?.username === username);
@@ -696,9 +834,9 @@ function assertPageItemsContainDelivery(
     throw new Error(`${label} must include username ${username}`);
   }
 
-  assertEqual(item.channel, 'in_app', `${label} channel`);
+  assertEqual(item.channel, expected.channel, `${label} channel`);
   assertEqual(item.status, status, `${label} status`);
-  assertEqual(item.provider, 'in_app.local', `${label} provider`);
+  assertEqual(item.provider, expected.provider, `${label} provider`);
   assertEqual(item.providerStatus, providerStatus, `${label} provider status`);
   assertString(item.deliveredAt, `${label} deliveredAt`);
 
@@ -715,6 +853,27 @@ function assertPageItemsContainDelivery(
   } else if (item.readAt !== undefined) {
     throw new Error(`${label} readAt must be empty before read`);
   }
+
+  return item;
+}
+
+function assertOutboxContainsNotice(page, noticeId, providerMessageId, label) {
+  assertArray(page.items, `${label} items`);
+  const item = page.items.find(
+    (candidate) =>
+      candidate?.id === providerMessageId &&
+      candidate?.payload?.noticeId === noticeId,
+  );
+
+  if (!item) {
+    throw new Error(
+      `${label} must include provider message ${providerMessageId} for notice ${noticeId}`,
+    );
+  }
+
+  assertEqual(item.status, 'queued', `${label} status`);
+  assertString(item.preview, `${label} preview`);
+  return item;
 }
 
 function assertItemsContain(items, id, label) {

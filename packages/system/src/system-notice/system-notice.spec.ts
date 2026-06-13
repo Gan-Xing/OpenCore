@@ -81,6 +81,7 @@ describe('@opencore/system system-notice', () => {
       failedCount: 0,
       skippedCount: 0,
       pendingCount: 0,
+      queuedOutboxCount: 0,
     });
     await expect(
       service.listNoticeDeliveries(notice.id, { providerStatus: 'sent' }),
@@ -98,6 +99,42 @@ describe('@opencore/system system-notice', () => {
       total: 1,
       totalPages: 1,
     });
+    await expect(
+      service.dispatchNotice(notice.id, { channel: 'mail' }),
+    ).resolves.toMatchObject({
+      noticeId: notice.id,
+      channel: 'mail',
+      provider: 'mail.sandbox',
+      deliveredCount: 1,
+      pendingCount: 1,
+    });
+    await expect(
+      service.executeNoticeDeliveries(notice.id, { channel: 'mail' }),
+    ).resolves.toEqual({
+      noticeId: notice.id,
+      channel: 'mail',
+      provider: 'mail.sandbox',
+      attemptedCount: 1,
+      sentCount: 1,
+      failedCount: 0,
+      skippedCount: 0,
+      pendingCount: 0,
+      queuedOutboxCount: 1,
+    });
+    await expect(
+      service.listNoticeDeliveries(notice.id, { channel: 'mail' }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        items: [
+          expect.objectContaining({
+            channel: 'mail',
+            provider: 'mail.sandbox',
+            providerMessageId: expect.stringContaining('outbox_'),
+            recipient: 'admin@opencore.local',
+          }),
+        ],
+      }),
+    );
     await expect(service.archiveNotice(notice.id)).resolves.toMatchObject({
       status: 'archived',
       archivedAt: expect.any(String),
@@ -493,6 +530,7 @@ describe('@opencore/system system-notice', () => {
           attemptedCount: expect.any(Number),
           sentCount: expect.any(Number),
           pendingCount: 0,
+          queuedOutboxCount: 0,
         }),
       );
       await expect(
