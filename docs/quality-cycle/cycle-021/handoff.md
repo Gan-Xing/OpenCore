@@ -3,8 +3,8 @@
 Date: 2026-06-13
 Repository: `Gan-Xing/OpenCore`
 Default branch: `main`
-Latest observed feature commit: `2086842 feat(dept): add sibling order updates / 新增部门同级排序`
-Latest deployed feature commit: `2086842 feat(dept): add sibling order updates / 新增部门同级排序`
+Latest observed feature commit: `99078df feat(post): add ordered list updates / 新增岗位排序更新`
+Latest deployed feature commit: `99078df feat(post): add ordered list updates / 新增岗位排序更新`
 Latest deployed hardening commit: `4df5dd1 fix(system): satisfy xlsx export lint guard / 修复 XLSX 导出 lint 守卫`
 
 ## One-sentence Goal
@@ -118,6 +118,7 @@ productization waterline completion; see
 - Round 50 `core.login-log/security-auth` self logout revocation stage 6
 - Round 51 `core.login-log/monitor.online-user` forced logout logging stage 7
 - Round 52 `core.dept` sibling order stage 4
+- Round 53 `core.post` ordered list stage 4
 
 Round 9 还沉淀了固定端口本地 smoke/deploy 路径：
 `pnpm smoke:api:local` 使用 `39173`，`pnpm deploy:opencore` 使用 API
@@ -692,6 +693,22 @@ origin、`/core/depts/order` 且不含 `/api/api/auth/login`；公网 Department
 `Department order saved.` 标记。注意：这轮关闭的是同级部门排序保存，不等于
 data-scope workflow、批量部门删除、拖拽排序 UI 或角色数据范围分配 UI 已经完成。
 
+Round 53 回到 `core.post` 队列，补齐 RuoYi 岗位 `postSort` 和 Yudao 岗位
+`sort` 所代表的有序列表维护闭环。OpenCore 新增
+`PATCH /api/core/posts/order`，使用 `core:post:update` 权限，按岗位 code 批量保存
+`order`，并把重复 code、缺失 code、字符串/错误类型 order 都沉淀为
+repository/API/smoke 守卫。SDK 暴露 `updatePostOrder`，Admin Posts 行级新增
+Move up / Move down 图标按钮，按当前岗位列表顺序生成 `(index + 1) * 10` 的稳定排序值。
+固定 smoke、部署 smoke 和公网 API smoke 均验证
+`core.post.order.bad-order-guard`、`core.post.order.duplicate-guard`、
+`core.post.order.missing-guard`、`core.post.order.update`、
+`core.post.order.list-order` 和 `core.post.order.simple-list-order`。公网 Admin
+`umi.1d2d9305.js` 已验证包含固定 API origin、`/core/posts/order` 且不含
+`/api/api/auth/login`；公网 Posts chunk `p__System__Posts.f6a42e2e.async.js`
+已验证包含 Move up / Move down 和 `Post order saved.` 标记。注意：这轮关闭的是
+岗位有序列表保存，当前 admitted `core.post` 水位已闭合；拖拽排序 UI 或更复杂岗位工作流
+只在后续单独准入时处理。
+
 Post Round 13 re-audit corrected the meaning of "minimal loop": one round is a
 minimal deployable, testable and reversible stage, not a minimal final product.
 The productization waterline now classifies:
@@ -700,9 +717,9 @@ The productization waterline now classifies:
   `core.audit-log`, Round 13/14 `monitor.online-user`, Round 10/15
   `core.file`, Round 4/16 `core.menu`, Round 5/17/18/20 `core.role`,
   Round 8/21 `core.dict`,
-  Round 7/19/22/23/28/29/30/31/32/33/34/35/36/41 `core.user`.
+  Round 7/19/22/23/28/29/30/31/32/33/34/35/36/41 `core.user`,
+  Round 3/22/25/42/53 `core.post`.
 - First loop, enhance: Round 1 `core.notice`, Round 2/27/43/52 `core.dept`,
-  Round 3/22/25/42 `core.post`,
   Round 9/24/37/38/39/40/44/46/49 `core.config`,
   Round 11/26/45/47/48/49/50/51 `core.login-log`.
 - Thin, rework: none after Round 16.
@@ -748,9 +765,38 @@ finds another blocker:
    deletion or drag-sort UI only if separately admitted.
 4. `core.post`: Round 25 closed the enabled-post simple-list option source;
    Round 42 closed batch deletion with Admin selected-row deletion and strict
-   batch guards. Remaining work is ordered list operations where useful.
+   batch guards; Round 53 closed ordered list updates across API/SDK/Admin and
+   fixed/deploy/public smoke. No remaining `core.post` work is in the current
+   admitted P1 waterline; drag-sort UI or broader岗位 workflow would require
+   separate admission.
 5. `core.notice`: read/unread state, inbox/header badge and delivery adapter
    design remain below full notice-product depth.
+
+### Current P0/P1/P2 Scope Snapshot
+
+- P0 completed: the thin-loop rework for online-user token revocation, file
+  content upload/download, menu tree metadata, plus deployment hardening for
+  fixed ports, Admin API origin, duplicate `/api/api` compatibility and stale
+  frontend bundle/cache guards.
+- P1 remaining: `core.notice` inbox/read-state/delivery records,
+  `core.dept` data-scope workflow integration, `core.config` broader runtime
+  feature-flag propagation or admitted secret vault/KMS integration, and
+  `core.login-log` IP/location enrichment plus structured actor/reason or
+  admitted mobile/SMS/social login logging. `core.post` is closed at the
+  current admitted waterline after Round 53.
+- P2 should be the backend-platform extension layer: scheduler/monitor
+  operation depth, OpenForge Admin productization, operation-log retention and
+  structured fields, report/analytics design-only surfaces and integration
+  health/config audit. CRM/ERP/MES/WMS/mall/member/pay/AI remain separate
+  business-domain admissions, not automatic cycle-021 follow-up work.
+
+Reference parity is measured by product capability waterline, not by replaying
+RuoYi/Yudao commit history. The remaining RuoYi-style foundation backlog after
+Round 53 is roughly several focused P1 loops, not tens of thousands of commits.
+Yudao Full parity is a different program: BPM, pay, mall, member, CRM, ERP,
+AI and other business domains would require dozens to 100+ separately admitted
+deployable loops, and should not be counted as unfinished cycle-021 foundation
+work.
 
 Commit `f4569a4` also fixed the remaining stale-login failure at API level:
 `@opencore/core` now normalizes duplicate global prefixes before Nest route

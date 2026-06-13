@@ -1639,3 +1639,36 @@ CRUD. Round 52 admits the same-parent order stage:
 
 OpenCore does not claim drag-sort UI, batch department deletion, data-scope
 workflow integration or role data-scope assignment UI in this round.
+
+## Round 53 Post Order Reference Shape
+
+RuoYi treats岗位 order as part of the normal post management surface:
+`SysPost` carries `postSort`, the post table renders `岗位排序`, and the create/edit
+form exposes `岗位顺序` through a bounded number input. That makes ordering a
+basic post list field rather than a separate business workflow.
+
+Yudao similarly keeps岗位 `sort` on `PostDO`, `PostSaveReqVO`,
+`PostRespVO` and `PostSimpleRespVO`. Its user and post option flows consume
+the ordered post shape, so a saved sort value must affect both management and
+consumer lists.
+
+OpenCore already had:
+
+- `SystemPost.order` persisted in Prisma and seed records;
+- post CRUD, export and Admin management;
+- user-post binding;
+- enabled-post `posts/simple-list` consumer;
+- selected-row batch deletion.
+
+Round 53 admits the remaining ordered-list stage:
+
+- expose `PATCH /api/core/posts/order` with `core:post:update`;
+- accept an item list of `{ code, order }` values;
+- reject duplicate codes, missing codes and malformed order values before
+  mutation;
+- add SDK and Admin Posts Move up / Move down actions;
+- prove saved order through both management list and simple-list consumers in
+  fixed-port, deploy and public smoke.
+
+OpenCore does not claim drag-sort-only UI or broader岗位 workflow automation in
+this round; those are separate admissions if product demand appears.

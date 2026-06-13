@@ -4372,3 +4372,101 @@ Against public endpoints after deploy:
   `2086842 feat(dept): add sibling order updates / 新增部门同级排序`.
 - Docs commit: this documentation commit.
 - Push: `origin/main`.
+
+## Round 53 Capability
+
+Capability: `core.post` ordered list updates.
+
+Goal: close the post ordered-list refinement gap by adding a batch order update
+API/SDK/Admin loop, aligned with RuoYi `postSort` and Yudao岗位 `sort`, while
+keeping drag-sort-only UI and broader岗位 workflow automation outside this
+stage.
+
+## Round 53 Implemented
+
+- Rechecked RuoYi post `postSort` table/form usage and Yudao岗位 `sort` save/
+  response shape before selecting the slice.
+- Added post order DTOs and mutation result DTOs in `@opencore/system`.
+- Added repository/service order-update contracts with normalized item input.
+- Implemented seed and Prisma order updates by post code.
+- Rejected duplicate codes, missing codes and malformed order values before
+  mutation.
+- Added `PATCH /api/core/posts/order` with `core:post:update` permission before
+  dynamic post detail routes.
+- Updated API permission matrix, OpenAPI snapshot, SDK types/client/spec and
+  Admin platform service.
+- Added Admin Posts Move up / Move down row actions and a success message after
+  saved order updates.
+- Extended Admin static smoke with post order UI/service markers.
+- Extended `tools/scripts/smoke-core-post.mjs` with bad-order, duplicate,
+  missing, update, management-list-order and simple-list-order checks.
+
+## Round 53 Verification
+
+- `node --check tools/scripts/smoke-core-post.mjs`
+- `node --check apps/admin/scripts/smoke-test.mjs`
+- `pnpm nx test system --testFile=system-post.spec.ts`
+- `pnpm nx test api --testFile=system-management.permission-matrix.spec.ts`
+- `pnpm nx test sdk --testFile=system-management-client.spec.ts`
+- `pnpm nx test admin`
+- `pnpm nx typecheck system`
+- `pnpm nx typecheck api`
+- `pnpm nx typecheck sdk`
+- `pnpm nx typecheck admin`
+- `pnpm openapi:export`
+- `pnpm openapi:check`
+- `pnpm sdk:check`
+- `pnpm prisma:validate`
+- `pnpm smoke:api:local`
+- `pnpm openapi:registry-tags:check`
+- `pnpm registry:admin-routes:check`
+- `pnpm format:check`
+- `git diff --check`
+- `pnpm lint`
+- `pnpm typecheck`
+- `pnpm build`
+- `pnpm prisma:seed`
+- `pnpm test`
+- `pnpm deploy:opencore`
+
+`pnpm smoke:api:local` passed on fixed port `39173`, including
+`core.post.order.bad-order-guard`, `core.post.order.duplicate-guard`,
+`core.post.order.missing-guard`, `core.post.order.update`,
+`core.post.order.list-order` and `core.post.order.simple-list-order`.
+
+`pnpm deploy:opencore` passed, deploying API/Admin on fixed ports
+`39172`/`39174`; deploy smoke included Admin same-origin login,
+duplicate-prefix login compatibility, public bundle checks, stale
+service-worker retirement and the same post order guards.
+
+`pnpm lint` passed with existing warnings in
+`packages/system/src/system-user/system-user.prisma-repository.ts` and
+`apps/admin/src/pages/shared/CurrentPageExportButton.tsx`; no Round 53 lint
+errors were introduced.
+
+## Round 53 Public Verification
+
+Against public endpoints after deploy:
+
+- Public API: `http://144.217.243.161:39172`
+- Public Admin: `http://144.217.243.161:39174`
+- Admin main bundle: `umi.1d2d9305.js`
+- Posts chunk: `p__System__Posts.f6a42e2e.async.js`
+- Public API post smoke passed:
+  `OPENCORE_SMOKE_BASE_URL=http://144.217.243.161:39172 pnpm smoke:core-post`.
+  Checks included `core.post.order.bad-order-guard`,
+  `core.post.order.duplicate-guard`, `core.post.order.missing-guard`,
+  `core.post.order.update`, `core.post.order.list-order` and
+  `core.post.order.simple-list-order`.
+- Public Admin main bundle contains API origin
+  `http://144.217.243.161:39172`, `/core/posts/order` and no
+  `/api/api/auth/login`.
+- Public Admin Posts chunk contains `Move up`, `Move down` and
+  `Post order saved.`.
+
+## Round 53 Commit Record
+
+- Feature commit:
+  `99078df feat(post): add ordered list updates / 新增岗位排序更新`.
+- Docs commit: this documentation commit.
+- Push: `origin/main`.

@@ -1574,6 +1574,37 @@ through API/SDK/Admin and proving both tree and simple-list consumers honor it.
       URL verification gates.
 - [x] Commit and push this independently accepted product slice.
 
+## Round 53: core.post Ordered List Productization
+
+Why this slice: after `core.post` CRUD, user-post binding, simple-list
+consumers and batch deletion were live, the only remaining admitted P1 post
+gap was ordered-list maintenance. RuoYi exposes `postSort` on岗位 list/form
+surfaces, and Yudao keeps岗位 `sort` as a first-class saved field. The next
+lowest-dependency post product stage was saving the post list order through
+API/SDK/Admin and proving both management list and simple-list consumers honor
+it.
+
+- [x] Recompare RuoYi `postSort`, Yudao岗位 `sort` and OpenCore's existing
+      `order` field before selecting the slice.
+- [x] Add post order DTOs and repository/service contracts.
+- [x] Implement seed and Prisma order updates by post code.
+- [x] Reject empty/non-array items, duplicate codes, missing codes and
+      malformed order values before mutation.
+- [x] Add permissioned `PATCH /api/core/posts/order` before dynamic post detail
+      routes.
+- [x] Extend API permission matrix with `core:post:update`.
+- [x] Extend SDK types/client/spec with `updatePostOrder`.
+- [x] Add Admin Posts Move up / Move down actions with stable order payload
+      generation.
+- [x] Extend Admin static smoke for post order service/UI markers.
+- [x] Refresh OpenAPI snapshot.
+- [x] Extend fixed-port/deploy/public `core.post` smoke with duplicate,
+      missing, malformed-order, update, management-list-order and
+      simple-list-order guards.
+- [x] Run focused tests, full gates, fixed-port smoke, deployment and public
+      URL verification gates.
+- [x] Commit and push this independently accepted product slice.
+
 ## Productization Waterline Re-Audit
 
 User clarification: one round should remain a minimal deployable, verifiable and
@@ -1605,6 +1636,9 @@ treat "minimal loop" as "minimal final product".
       department filtering, self-profile/password/avatar, batch mutations,
       import/export, import permission and dedicated user-side role assignment
       are live for the current admitted waterline.
+- [x] Round 3/22/25/42/53 `core.post`: post CRUD, user-post binding,
+      simple-list consumer, batch deletion and ordered-list updates are live
+      for the current admitted waterline.
 
 ### First Loop, Needs Enhancement
 
@@ -1615,8 +1649,6 @@ treat "minimal loop" as "minimal final product".
       order updates are complete; data-scope workflow integration remains.
       Batch department deletion or drag-sort persistence remain separate
       admission decisions.
-- [ ] Round 3/22/25/42 `core.post`: user-post binding, simple-list option
-      source and batch deletion are complete; ordered list refinements remain.
 - [ ] Round 9/24/37/38/39/40/44/46/49 `core.config`: public get-value-by-key, cache
       refresh and mutation invalidation are complete. Category/name/remark
       metadata is complete. Native XLSX export payload and Admin download are
@@ -1672,7 +1704,8 @@ treat "minimal loop" as "minimal final product".
 - Tenant-scoped notices.
 - Department data-scope workflow integration and role data-scope assignment UI.
 - Batch department deletion or drag-sort persistence.
-- Post ordered list refinements.
+- Post drag-sort-only UI beyond the admitted Move up / Move down order update
+  loop.
 - Menu router-generation expansion, menu cache refresh, save-sort and drag-sort
   persistence.
 - Role simple-list endpoints, batch role deletion and standalone data-scope
