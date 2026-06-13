@@ -792,6 +792,11 @@ if (
   !configPage.includes('refreshOpenCoreSystemConfigCache') ||
   !configPage.includes('Read public value by key') ||
   !configPage.includes('Refresh cache') ||
+  !configPage.includes('Category') ||
+  !configPage.includes('Name') ||
+  !configPage.includes('Remark') ||
+  !configPage.includes('category') ||
+  !configPage.includes('remark') ||
   !configPage.includes('createOpenCoreSystemConfig') ||
   !configPage.includes('updateOpenCoreSystemConfig') ||
   !configPage.includes('deleteOpenCoreSystemConfig') ||

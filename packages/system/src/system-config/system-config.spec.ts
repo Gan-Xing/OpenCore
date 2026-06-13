@@ -20,8 +20,11 @@ describe('@opencore/system system-config', () => {
     await expect(
       service.getConfig('opencore.admin.title'),
     ).resolves.toMatchObject({
+      category: 'system',
       key: 'opencore.admin.title',
+      name: 'Admin title',
       public: true,
+      remark: 'Shown in the Admin shell title.',
       visibility: 'public',
     });
     await expect(
@@ -36,12 +39,18 @@ describe('@opencore/system system-config', () => {
     ).rejects.toThrow(ForbiddenException);
 
     const config = await service.createConfig({
+      category: 'feature',
       key: 'sample.enabled',
+      name: 'Sample enabled',
       value: 'true',
       valueType: 'boolean',
+      remark: 'Created from seed repository test.',
       visibility: 'public',
     });
 
+    expect(config.category).toBe('feature');
+    expect(config.name).toBe('Sample enabled');
+    expect(config.remark).toBe('Created from seed repository test.');
     expect(config.visibility).toBe('public');
     await expect(
       service.getConfigValueByKey('sample.enabled'),
@@ -50,9 +59,18 @@ describe('@opencore/system system-config', () => {
       value: 'true',
       valueType: 'boolean',
     });
-    expect(
-      (await service.updateConfig('sample.enabled', { value: 'false' })).value,
-    ).toBe('false');
+    const updated = await service.updateConfig('sample.enabled', {
+      category: 'feature-flags',
+      name: 'Sample enabled flag',
+      value: 'false',
+      remark: 'Updated from seed repository test.',
+    });
+    expect(updated).toMatchObject({
+      category: 'feature-flags',
+      name: 'Sample enabled flag',
+      remark: 'Updated from seed repository test.',
+      value: 'false',
+    });
     await expect(
       service.getConfigValueByKey('sample.enabled'),
     ).resolves.toEqual({
@@ -68,7 +86,7 @@ describe('@opencore/system system-config', () => {
     await expect(service.createExportPreview()).resolves.toMatchObject({
       filename: 'opencore-config.csv',
       scope: 'current-page',
-      columns: ['key', 'valueType', 'visibility'],
+      columns: ['category', 'name', 'key', 'valueType', 'visibility', 'remark'],
     });
     await expect(service.deleteConfig('sample.enabled')).resolves.toEqual({
       deleted: true,
@@ -140,15 +158,21 @@ describe('@opencore/system system-config', () => {
 
     it('persists config CRUD and keeps secret values redacted through Prisma', async () => {
       const config = await service.createConfig({
+        category: 'runtime',
         key: configKey,
+        name: 'Runtime smoke config',
         value: 'true',
         valueType: 'boolean',
+        remark: 'Prisma metadata smoke config.',
         public: true,
       });
 
       expect(config.key).toBe(configKey);
       await expect(service.getConfig(configKey)).resolves.toMatchObject({
+        category: 'runtime',
         key: configKey,
+        name: 'Runtime smoke config',
+        remark: 'Prisma metadata smoke config.',
         value: 'true',
         visibility: 'public',
       });
@@ -157,9 +181,18 @@ describe('@opencore/system system-config', () => {
         value: 'true',
         valueType: 'boolean',
       });
-      expect(
-        (await service.updateConfig(configKey, { value: 'false' })).value,
-      ).toBe('false');
+      const updated = await service.updateConfig(configKey, {
+        category: 'runtime-updated',
+        name: 'Runtime smoke config updated',
+        value: 'false',
+        remark: 'Prisma metadata smoke config updated.',
+      });
+      expect(updated).toMatchObject({
+        category: 'runtime-updated',
+        name: 'Runtime smoke config updated',
+        remark: 'Prisma metadata smoke config updated.',
+        value: 'false',
+      });
       await expect(service.getConfigValueByKey(configKey)).resolves.toEqual({
         key: configKey,
         value: 'false',
@@ -175,12 +208,18 @@ describe('@opencore/system system-config', () => {
       ).rejects.toThrow(ForbiddenException);
 
       const secret = await service.createConfig({
+        category: 'security',
         key: secretKey,
+        name: 'Secret token setting',
         value: 'super-secret',
         valueType: 'string',
+        remark: 'Redaction must preserve metadata.',
         visibility: 'secret',
       });
 
+      expect(secret.category).toBe('security');
+      expect(secret.name).toBe('Secret token setting');
+      expect(secret.remark).toBe('Redaction must preserve metadata.');
       expect(secret.value).toBe('[REDACTED]');
       await expect(service.getConfig(secretKey)).resolves.toMatchObject({
         key: secretKey,

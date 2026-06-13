@@ -94,7 +94,7 @@ export function createSystemConfigExportPreview(
   return {
     filename: 'opencore-config.csv',
     scope: 'current-page',
-    columns: ['key', 'valueType', 'visibility'],
+    columns: ['category', 'name', 'key', 'valueType', 'visibility', 'remark'],
     rowCount: page.items.length,
     generatedAt: new Date().toISOString(),
   };
@@ -159,6 +159,83 @@ export function redactSystemConfig(
     visibility,
     value: visibility === 'secret' ? REDACTED_SECRET_VALUE : config.value,
   };
+}
+
+export function normalizeConfigCategory(value: unknown): string {
+  if (value === undefined || value === null) {
+    return 'system';
+  }
+
+  if (typeof value !== 'string') {
+    throw new BadRequestException('System config category must be a string.');
+  }
+
+  const normalized = value.trim();
+
+  if (!normalized) {
+    throw new BadRequestException('System config category is required.');
+  }
+
+  if (normalized.length > 50) {
+    throw new BadRequestException(
+      'System config category must not exceed 50 characters.',
+    );
+  }
+
+  return normalized;
+}
+
+export function normalizeConfigName(value: unknown, key: string): string {
+  if (value === undefined || value === null) {
+    return key;
+  }
+
+  if (typeof value !== 'string') {
+    throw new BadRequestException('System config name must be a string.');
+  }
+
+  const normalized = value.trim();
+
+  if (!normalized) {
+    throw new BadRequestException('System config name is required.');
+  }
+
+  if (normalized.length > 100) {
+    throw new BadRequestException(
+      'System config name must not exceed 100 characters.',
+    );
+  }
+
+  return normalized;
+}
+
+export function normalizeOptionalConfigText(
+  value: unknown,
+  fieldName: 'description' | 'remark',
+): string | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  if (typeof value !== 'string') {
+    throw new BadRequestException(
+      `System config ${fieldName} must be a string.`,
+    );
+  }
+
+  const normalized = value.trim();
+
+  if (!normalized) {
+    return undefined;
+  }
+
+  if (normalized.length > 500) {
+    throw new BadRequestException(
+      `System config ${fieldName} must not exceed 500 characters.`,
+    );
+  }
+
+  return normalized;
 }
 
 export function toSystemConfigValueType(

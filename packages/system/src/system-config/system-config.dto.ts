@@ -5,6 +5,12 @@ export class SystemConfigDto {
   id!: string;
 
   @ApiProperty()
+  category!: string;
+
+  @ApiProperty()
+  name!: string;
+
+  @ApiProperty()
   key!: string;
 
   @ApiProperty()
@@ -15,6 +21,9 @@ export class SystemConfigDto {
 
   @ApiProperty({ required: false })
   description?: string;
+
+  @ApiProperty({ required: false })
+  remark?: string;
 
   @ApiProperty()
   public!: boolean;
@@ -68,6 +77,12 @@ export class SystemConfigPageDto {
 }
 
 export class CreateSystemConfigDto {
+  @ApiProperty({ required: false, example: 'system' })
+  category?: string;
+
+  @ApiProperty({ required: false, example: 'Admin title' })
+  name?: string;
+
   @ApiProperty({ example: 'opencore.admin.title' })
   key!: string;
 
@@ -80,6 +95,9 @@ export class CreateSystemConfigDto {
   @ApiProperty({ required: false })
   description?: string;
 
+  @ApiProperty({ required: false })
+  remark?: string;
+
   @ApiProperty({ required: false, default: false })
   public?: boolean;
 
@@ -89,6 +107,12 @@ export class CreateSystemConfigDto {
 
 export class UpdateSystemConfigDto {
   @ApiProperty({ required: false })
+  category?: string;
+
+  @ApiProperty({ required: false })
+  name?: string;
+
+  @ApiProperty({ required: false })
   value?: string;
 
   @ApiProperty({ required: false, enum: ['boolean', 'number', 'string'] })
@@ -96,6 +120,9 @@ export class UpdateSystemConfigDto {
 
   @ApiProperty({ required: false })
   description?: string;
+
+  @ApiProperty({ required: false })
+  remark?: string;
 
   @ApiProperty({ required: false })
   public?: boolean;

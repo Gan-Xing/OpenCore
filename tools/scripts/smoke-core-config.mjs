@@ -54,20 +54,45 @@ try {
   const createdConfig = await apiRequest('/core/config', {
     method: 'POST',
     body: {
+      category: 'smoke',
       key: plainKey,
+      name: 'OpenCore smoke config',
       value: 'true',
       valueType: 'boolean',
       description: 'OpenCore scripted smoke config',
+      remark: 'Created by core.config smoke.',
       visibility: 'public',
     },
   });
   createdKeys.push(plainKey);
+  assertEqual(createdConfig.category, 'smoke', 'created config category');
+  assertEqual(
+    createdConfig.name,
+    'OpenCore smoke config',
+    'created config name',
+  );
   assertEqual(createdConfig.key, plainKey, 'created config key');
+  assertEqual(
+    createdConfig.remark,
+    'Created by core.config smoke.',
+    'created config remark',
+  );
   assertEqual(createdConfig.value, 'true', 'created config value');
   assertEqual(createdConfig.visibility, 'public', 'created config visibility');
 
   const fetchedConfig = await apiRequest(`/core/config/${plainKey}`);
+  assertEqual(fetchedConfig.category, 'smoke', 'detail config category');
+  assertEqual(
+    fetchedConfig.name,
+    'OpenCore smoke config',
+    'detail config name',
+  );
   assertEqual(fetchedConfig.key, plainKey, 'detail config key');
+  assertEqual(
+    fetchedConfig.remark,
+    'Created by core.config smoke.',
+    'detail config remark',
+  );
   assertEqual(fetchedConfig.value, 'true', 'detail config value');
 
   const fetchedValue = await apiRequest(
@@ -80,11 +105,29 @@ try {
   const updatedConfig = await apiRequest(`/core/config/${plainKey}`, {
     method: 'PATCH',
     body: {
+      category: 'smoke-updated',
+      name: 'OpenCore smoke config updated',
       value: 'false',
       valueType: 'boolean',
       description: 'OpenCore scripted smoke config updated',
+      remark: 'Updated by core.config smoke.',
     },
   });
+  assertEqual(
+    updatedConfig.category,
+    'smoke-updated',
+    'updated config category',
+  );
+  assertEqual(
+    updatedConfig.name,
+    'OpenCore smoke config updated',
+    'updated config name',
+  );
+  assertEqual(
+    updatedConfig.remark,
+    'Updated by core.config smoke.',
+    'updated config remark',
+  );
   assertEqual(updatedConfig.value, 'false', 'updated config value');
 
   const updatedValue = await apiRequest(
@@ -104,19 +147,44 @@ try {
   );
   assertEqual(exportPreview.scope, 'current-page', 'config export scope');
   assertArray(exportPreview.columns, 'config export columns');
+  assertIncludes(
+    exportPreview.columns,
+    'category',
+    'config export category column',
+  );
+  assertIncludes(exportPreview.columns, 'name', 'config export name column');
+  assertIncludes(
+    exportPreview.columns,
+    'remark',
+    'config export remark column',
+  );
 
   const secretConfig = await apiRequest('/core/config', {
     method: 'POST',
     body: {
+      category: 'security',
       key: secretKey,
+      name: 'OpenCore smoke secret config',
       value: 'super-secret-smoke-value',
       valueType: 'string',
       description: 'OpenCore scripted smoke secret config',
+      remark: 'Secret config metadata remains visible.',
       visibility: 'secret',
     },
   });
   createdKeys.push(secretKey);
+  assertEqual(secretConfig.category, 'security', 'created secret category');
+  assertEqual(
+    secretConfig.name,
+    'OpenCore smoke secret config',
+    'created secret name',
+  );
   assertEqual(secretConfig.key, secretKey, 'created secret config key');
+  assertEqual(
+    secretConfig.remark,
+    'Secret config metadata remains visible.',
+    'created secret remark',
+  );
   assertEqual(
     secretConfig.value,
     REDACTED_SECRET_VALUE,
@@ -151,6 +219,7 @@ try {
         'auth.login',
         'core.config.list',
         'core.config.detail',
+        'core.config.metadata',
         'core.config.value-by-key',
         'core.config.value-cache-invalidation',
         'core.config.cache-refresh',
@@ -309,6 +378,12 @@ function assertArray(value, label) {
 function assertEqual(actual, expected, label) {
   if (actual !== expected) {
     throw new Error(`${label} expected ${expected}, got ${actual}`);
+  }
+}
+
+function assertIncludes(values, expected, label) {
+  if (!Array.isArray(values) || !values.includes(expected)) {
+    throw new Error(`${label} must include ${expected}`);
   }
 }
 

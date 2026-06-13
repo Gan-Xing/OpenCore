@@ -484,17 +484,23 @@ async function seedSystemManagement(): Promise<{
     await prisma.systemConfig.upsert({
       where: { key: config.key },
       update: {
+        category: config.category,
+        name: config.name,
         value: config.value,
         valueType: config.valueType,
         description: config.description,
+        remark: config.remark,
         public: config.public,
       },
       create: {
         id: config.id,
+        category: config.category,
+        name: config.name,
         key: config.key,
         value: config.value,
         valueType: config.valueType,
         description: config.description,
+        remark: config.remark,
         public: config.public,
       },
     });

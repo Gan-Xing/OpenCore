@@ -59,8 +59,11 @@ type ConfigValueType = SystemConfigSummary['valueType'];
 type ConfigVisibility = SystemConfigSummary['visibility'];
 
 type ConfigFormValues = {
+  category: string;
   description?: string;
   key: string;
+  name: string;
+  remark?: string;
   value?: string;
   valueType: ConfigValueType;
   visibility: ConfigVisibility;
@@ -68,13 +71,18 @@ type ConfigFormValues = {
 
 const fallbackRows = createSystemConfigFixtures().items;
 const searchFields: CurrentPageSearchField<SystemConfigSummary>[] = [
+  'name',
   'key',
+  'category',
   'valueType',
   'description',
+  'remark',
   'visibility',
 ];
 const exportColumns: CurrentPageExportColumn<SystemConfigSummary>[] = [
   { title: 'ID', dataIndex: 'id' },
+  { title: 'Category', dataIndex: 'category' },
+  { title: 'Name', dataIndex: 'name' },
   { title: 'Key', dataIndex: 'key' },
   {
     title: 'Value',
@@ -84,6 +92,7 @@ const exportColumns: CurrentPageExportColumn<SystemConfigSummary>[] = [
   { title: 'Visibility', dataIndex: 'visibility' },
   { title: 'Public', dataIndex: 'public' },
   { title: 'Description', dataIndex: 'description' },
+  { title: 'Remark', dataIndex: 'remark' },
 ];
 const valueTypeOptions: { label: string; value: ConfigValueType }[] = [
   { label: 'string', value: 'string' },
@@ -104,6 +113,12 @@ function createFilterOptions(
   rows: readonly SystemConfigSummary[],
 ): CurrentPageFilterOption<SystemConfigSummary>[] {
   return [
+    {
+      key: 'category',
+      options: createCurrentPageFilterOptions(rows, 'category'),
+      placeholder: 'Category',
+      predicate: (record, value) => record.category === value,
+    },
     {
       key: 'valueType',
       options: createCurrentPageFilterOptions(rows, 'valueType'),
@@ -131,6 +146,8 @@ function createFilterOptions(
 function createDetailFields(record: SystemConfigSummary): DetailField[] {
   return [
     { label: 'ID', value: record.id },
+    { label: 'Category', value: record.category },
+    { label: 'Name', value: record.name },
     { label: 'Key', value: record.key },
     {
       label: 'Value',
@@ -141,6 +158,7 @@ function createDetailFields(record: SystemConfigSummary): DetailField[] {
     { label: 'Visibility', value: record.visibility },
     { label: 'Public', value: record.public ? 'public' : 'private' },
     { label: 'Description', value: record.description },
+    { label: 'Remark', value: record.remark },
   ];
 }
 
@@ -208,8 +226,11 @@ export default function ConfigPage() {
   const openCreateForm = () => {
     setEditingConfig(undefined);
     form.setFieldsValue({
+      category: 'system',
       description: '',
       key: '',
+      name: '',
+      remark: '',
       value: '',
       valueType: 'string',
       visibility: 'private',
@@ -222,8 +243,11 @@ export default function ConfigPage() {
       const fresh = await getOpenCoreSystemConfig(record.key);
       setEditingConfig(fresh);
       form.setFieldsValue({
+        category: fresh.category,
         description: fresh.description,
         key: fresh.key,
+        name: fresh.name,
+        remark: fresh.remark,
         value: fresh.visibility === 'secret' ? '' : fresh.value,
         valueType: fresh.valueType,
         visibility: fresh.visibility,
@@ -249,12 +273,17 @@ export default function ConfigPage() {
   const submitForm = async () => {
     const values = await form.validateFields();
     const key = values.key.trim();
+    const name = values.name.trim();
+    const category = values.category.trim();
     const visibility = values.visibility ?? 'private';
     const valueType = values.valueType ?? 'string';
     const value = values.value?.trim() ?? '';
     const commonBody = {
+      category,
       description: values.description?.trim() || undefined,
+      name,
       public: visibility === 'public',
+      remark: values.remark?.trim() || undefined,
       valueType,
       visibility,
     };
@@ -316,13 +345,25 @@ export default function ConfigPage() {
 
   const columns: ProColumns<SystemConfigSummary>[] = [
     {
-      title: 'Key',
-      dataIndex: 'key',
+      title: 'Name',
+      dataIndex: 'name',
+      ellipsis: true,
       render: (_, record) => (
         <Typography.Link onClick={() => void openDetail(record)}>
-          {record.key}
+          {record.name}
         </Typography.Link>
       ),
+    },
+    {
+      title: 'Category',
+      dataIndex: 'category',
+      width: 132,
+      render: (_, record) => <Tag>{record.category}</Tag>,
+    },
+    {
+      title: 'Key',
+      dataIndex: 'key',
+      ellipsis: true,
     },
     {
       title: 'Value',
@@ -349,6 +390,7 @@ export default function ConfigPage() {
       render: (_, record) => (record.public ? 'public' : 'private'),
     },
     { title: 'Description', dataIndex: 'description', ellipsis: true },
+    { title: 'Remark', dataIndex: 'remark', ellipsis: true },
     {
       title: 'Actions',
       valueType: 'option',
@@ -478,6 +520,20 @@ export default function ConfigPage() {
       >
         <Form<ConfigFormValues> form={form} layout="vertical">
           <Form.Item
+            label="Name"
+            name="name"
+            rules={[{ required: true, message: 'Name is required.' }]}
+          >
+            <Input maxLength={100} />
+          </Form.Item>
+          <Form.Item
+            label="Category"
+            name="category"
+            rules={[{ required: true, message: 'Category is required.' }]}
+          >
+            <Input maxLength={50} />
+          </Form.Item>
+          <Form.Item
             label="Key"
             name="key"
             rules={[{ required: true, message: 'Key is required.' }]}
@@ -509,6 +565,9 @@ export default function ConfigPage() {
           </Space>
           <Form.Item label="Description" name="description">
             <Input.TextArea maxLength={240} rows={3} />
+          </Form.Item>
+          <Form.Item label="Remark" name="remark">
+            <Input.TextArea maxLength={500} rows={3} />
           </Form.Item>
         </Form>
       </Modal>

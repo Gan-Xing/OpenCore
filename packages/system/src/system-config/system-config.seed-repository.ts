@@ -15,6 +15,9 @@ import {
 import {
   assertSafeConfigKey,
   createSystemConfigPageResult,
+  normalizeConfigCategory,
+  normalizeConfigName,
+  normalizeOptionalConfigText,
   normalizeSystemConfigPageQuery,
   redactSystemConfig,
   resolveConfigVisibility,
@@ -58,10 +61,13 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
 
     const config: SystemConfigRecord = {
       id: `config_${body.key.replaceAll('.', '_')}`,
+      category: normalizeConfigCategory(body.category),
+      name: normalizeConfigName(body.name, body.key),
       key: body.key,
       value: body.value,
       valueType: body.valueType,
-      description: body.description,
+      description: normalizeOptionalConfigText(body.description, 'description'),
+      remark: normalizeOptionalConfigText(body.remark, 'remark'),
       public: visibility === 'public',
       visibility,
     };
@@ -81,9 +87,24 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
     });
     assertSafeConfigKey(key, visibility);
     Object.assign(config, {
+      category:
+        body.category === undefined
+          ? config.category
+          : normalizeConfigCategory(body.category),
+      name:
+        body.name === undefined
+          ? config.name
+          : normalizeConfigName(body.name, key),
       value: body.value ?? config.value,
       valueType: body.valueType ?? config.valueType,
-      description: body.description ?? config.description,
+      description:
+        body.description === undefined
+          ? config.description
+          : normalizeOptionalConfigText(body.description, 'description'),
+      remark:
+        body.remark === undefined
+          ? config.remark
+          : normalizeOptionalConfigText(body.remark, 'remark'),
       public: visibility === 'public',
       visibility,
     });

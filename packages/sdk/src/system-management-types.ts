@@ -66,10 +66,13 @@ export type UpdateDictItemRequest = Partial<
 
 export type SystemConfigSummary = {
   id: string;
+  category: string;
+  name: string;
   key: string;
   value: string;
   valueType: 'boolean' | 'number' | 'string';
   description?: string;
+  remark?: string;
   public: boolean;
   visibility: 'private' | 'public' | 'secret';
 };
@@ -87,10 +90,13 @@ export type SystemConfigCacheRefreshSummary = {
 };
 
 export type CreateSystemConfigRequest = {
+  category?: string;
   key: string;
+  name?: string;
   value: string;
   valueType: SystemConfigSummary['valueType'];
   description?: string;
+  remark?: string;
   public?: boolean;
   visibility?: SystemConfigSummary['visibility'];
 };
@@ -98,7 +104,14 @@ export type CreateSystemConfigRequest = {
 export type UpdateSystemConfigRequest = Partial<
   Pick<
     SystemConfigSummary,
-    'description' | 'public' | 'value' | 'valueType' | 'visibility'
+    | 'category'
+    | 'description'
+    | 'name'
+    | 'public'
+    | 'remark'
+    | 'value'
+    | 'valueType'
+    | 'visibility'
   >
 >;
 

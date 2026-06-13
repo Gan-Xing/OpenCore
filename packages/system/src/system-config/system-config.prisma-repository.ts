@@ -13,6 +13,9 @@ import type { SystemConfigRecord } from './system-config.records';
 import {
   assertSafeConfigKey,
   createSystemConfigPageResult,
+  normalizeConfigCategory,
+  normalizeConfigName,
+  normalizeOptionalConfigText,
   normalizeSystemConfigPageQuery,
   redactSystemConfig,
   resolveConfigVisibility,
@@ -24,10 +27,13 @@ import {
 
 type PrismaSystemConfig = {
   id: string;
+  category: string;
+  name: string;
   key: string;
   value: string;
   valueType: string;
   description: string | null;
+  remark: string | null;
   public: boolean;
 };
 
@@ -72,10 +78,16 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
 
     const config = await this.prisma.systemConfig.create({
       data: {
+        category: normalizeConfigCategory(body.category),
+        name: normalizeConfigName(body.name, body.key),
         key: body.key,
         value: body.value,
         valueType: body.valueType,
-        description: body.description,
+        description: normalizeOptionalConfigText(
+          body.description,
+          'description',
+        ),
+        remark: normalizeOptionalConfigText(body.remark, 'remark'),
         public: visibility === 'public',
       },
     });
@@ -97,9 +109,24 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
     const config = await this.prisma.systemConfig.update({
       where: { key },
       data: {
+        category:
+          body.category === undefined
+            ? existing.category
+            : normalizeConfigCategory(body.category),
+        name:
+          body.name === undefined
+            ? existing.name
+            : normalizeConfigName(body.name, key),
         value: body.value ?? existing.value,
         valueType: body.valueType ?? existing.valueType,
-        description: body.description ?? existing.description,
+        description:
+          body.description === undefined
+            ? existing.description
+            : normalizeOptionalConfigText(body.description, 'description'),
+        remark:
+          body.remark === undefined
+            ? existing.remark
+            : normalizeOptionalConfigText(body.remark, 'remark'),
         public: visibility === 'public',
       },
     });
@@ -129,10 +156,13 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
 function toSystemConfigRecord(config: PrismaSystemConfig): SystemConfigRecord {
   return {
     id: config.id,
+    category: config.category,
+    name: config.name,
     key: config.key,
     value: config.value,
     valueType: toSystemConfigValueType(config.valueType),
     description: config.description ?? undefined,
+    remark: config.remark ?? undefined,
     public: config.public,
     visibility: resolveStoredConfigVisibility({
       key: config.key,

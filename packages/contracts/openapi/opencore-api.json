@@ -6091,6 +6091,8 @@
         "type": "object",
         "properties": {
           "id": { "type": "string" },
+          "category": { "type": "string" },
+          "name": { "type": "string" },
           "key": { "type": "string" },
           "value": { "type": "string" },
           "valueType": {
@@ -6098,13 +6100,23 @@
             "enum": ["boolean", "number", "string"]
           },
           "description": { "type": "string" },
+          "remark": { "type": "string" },
           "public": { "type": "boolean" },
           "visibility": {
             "type": "string",
             "enum": ["private", "public", "secret"]
           }
         },
-        "required": ["id", "key", "value", "valueType", "public", "visibility"]
+        "required": [
+          "id",
+          "category",
+          "name",
+          "key",
+          "value",
+          "valueType",
+          "public",
+          "visibility"
+        ]
       },
       "SystemConfigPageDto": {
         "type": "object",
@@ -6144,6 +6156,8 @@
       "CreateSystemConfigDto": {
         "type": "object",
         "properties": {
+          "category": { "type": "string", "example": "system" },
+          "name": { "type": "string", "example": "Admin title" },
           "key": { "type": "string", "example": "opencore.admin.title" },
           "value": { "type": "string" },
           "valueType": {
@@ -6151,6 +6165,7 @@
             "enum": ["boolean", "number", "string"]
           },
           "description": { "type": "string" },
+          "remark": { "type": "string" },
           "public": { "type": "boolean", "default": false },
           "visibility": {
             "type": "string",
@@ -6162,12 +6177,15 @@
       "UpdateSystemConfigDto": {
         "type": "object",
         "properties": {
+          "category": { "type": "string" },
+          "name": { "type": "string" },
           "value": { "type": "string" },
           "valueType": {
             "type": "string",
             "enum": ["boolean", "number", "string"]
           },
           "description": { "type": "string" },
+          "remark": { "type": "string" },
           "public": { "type": "boolean" },
           "visibility": {
             "type": "string",

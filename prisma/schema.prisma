@@ -129,10 +129,13 @@ model DictItem {
 
 model SystemConfig {
   id          String   @id @default(cuid())
+  category    String   @default("system")
+  name        String
   key         String   @unique
   value       String
   valueType   String
   description String?
+  remark      String?
   public      Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
