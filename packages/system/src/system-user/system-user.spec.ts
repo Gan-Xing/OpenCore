@@ -294,8 +294,8 @@ describe('@opencore/system system-user', () => {
     expect(exportWorkbook.length).toBeGreaterThan(1000);
     const importTemplate = service.createImportTemplate();
     expect(importTemplate).toMatchObject({
-      filename: 'opencore-system-users-import-template.csv',
-      contentType: 'text/csv;charset=utf-8',
+      filename: 'opencore-system-users-import-template.xlsx',
+      contentType: SYSTEM_USER_EXPORT_CONTENT_TYPE,
       columns: [
         'username',
         'displayName',
@@ -307,15 +307,47 @@ describe('@opencore/system system-user', () => {
       ],
       rowCount: 2,
     });
-    expect(
-      Buffer.from(importTemplate.contentBase64, 'base64').toString('utf8'),
-    ).toContain('operator_import');
+    const importTemplateWorkbook = Buffer.from(
+      importTemplate.contentBase64,
+      'base64',
+    );
+    expect(importTemplateWorkbook.subarray(0, 2).toString('utf8')).toBe('PK');
+    expect(importTemplateWorkbook.length).toBeGreaterThan(1000);
     await expect(
       service.importUsers({
         contentBase64: importTemplate.contentBase64,
         updateExisting: 'true' as unknown as boolean,
       }),
     ).rejects.toThrow(BadRequestException);
+    const templateImportResult = await service.importUsers({
+      contentBase64: importTemplate.contentBase64,
+      updateExisting: true,
+    });
+    expect(templateImportResult).toMatchObject({
+      totalRows: 2,
+      created: 2,
+      updated: 0,
+      failed: 0,
+      createdUsernames: ['operator_import', 'auditor_import'],
+      updatedUsernames: [],
+      updatedSessionUsernames: [],
+    });
+    await expect(
+      service.getUser('user_operator_import'),
+    ).resolves.toMatchObject({
+      username: 'operator_import',
+      deptId: 'dept_operations',
+      postCodes: ['engineer'],
+      enabled: true,
+    });
+    await expect(service.getUser('user_auditor_import')).resolves.toMatchObject(
+      {
+        username: 'auditor_import',
+        deptId: undefined,
+        postCodes: [],
+        enabled: false,
+      },
+    );
     const importResult = await service.importUsers({
       contentBase64: createUserImportCsvBase64([
         [
@@ -412,6 +444,12 @@ describe('@opencore/system system-user', () => {
       deleted: true,
     });
     await expect(service.deleteUser('user_operator')).resolves.toEqual({
+      deleted: true,
+    });
+    await expect(service.deleteUser('user_operator_import')).resolves.toEqual({
+      deleted: true,
+    });
+    await expect(service.deleteUser('user_auditor_import')).resolves.toEqual({
       deleted: true,
     });
   });

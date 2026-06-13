@@ -5516,7 +5516,7 @@
         "properties": {
           "contentBase64": {
             "type": "string",
-            "description": "Base64-encoded CSV content."
+            "description": "Base64-encoded CSV or XLSX content."
           },
           "updateExisting": { "type": "boolean", "default": false }
         },

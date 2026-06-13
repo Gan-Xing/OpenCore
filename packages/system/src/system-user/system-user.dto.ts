@@ -162,7 +162,7 @@ export class UserImportTemplateDto {
 }
 
 export class ImportUsersDto {
-  @ApiProperty({ description: 'Base64-encoded CSV content.' })
+  @ApiProperty({ description: 'Base64-encoded CSV or XLSX content.' })
   contentBase64!: string;
 
   @ApiProperty({ required: false, default: false })

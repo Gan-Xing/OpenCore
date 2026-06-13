@@ -1,4 +1,11 @@
 #!/usr/bin/env node
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+const {
+  strToU8,
+  zipSync,
+} = require('../../packages/system/node_modules/fflate');
 
 const DEFAULT_PORT = '39173';
 
@@ -38,6 +45,7 @@ const selfPassword = `UserSecuritySelf-${runId}`;
 const batchUsernames = [`user_batch_${runId}_a`, `user_batch_${runId}_b`];
 const batchPassword = `UserBatchSmoke-${runId}`;
 const importUsername = `user_import_${runId}`;
+const xlsxImportUsername = `user_import_xlsx_${runId}`;
 const importPassword = `UserImportSmoke-${runId}`;
 const importUpdatedPassword = `UserImportUpdated-${runId}`;
 const importGuardRoleCode = `user_import_create_only_${runId}`;
@@ -47,6 +55,7 @@ let adminToken;
 let smokeUserId;
 let smokeUserToken;
 let importUserId;
+let xlsxImportUserId;
 let importGuardUserId;
 let importGuardRoleCreated = false;
 const batchUserIds = new Set();
@@ -700,21 +709,85 @@ try {
   const importTemplate = await apiRequest('/core/users/import-template');
   assertEqual(
     importTemplate.filename,
-    'opencore-system-users-import-template.csv',
+    'opencore-system-users-import-template.xlsx',
     'user import template filename',
+  );
+  assertEqual(
+    importTemplate.contentType,
+    xlsxContentType,
+    'user import template MIME type',
   );
   assertIncludes(
     importTemplate.columns,
     'username',
     'user import template columns',
   );
+  const importTemplateWorkbook = Buffer.from(
+    assertString(importTemplate.contentBase64, 'user import template body'),
+    'base64',
+  );
+  assertEqual(
+    importTemplateWorkbook.subarray(0, 2).toString('utf8'),
+    'PK',
+    'user import template XLSX zip header',
+  );
+  assertEqual(
+    importTemplateWorkbook.length > 1000,
+    true,
+    'user import template XLSX byte length',
+  );
+  const xlsxImportResult = await apiRequest('/core/users/import', {
+    method: 'POST',
+    body: {
+      contentBase64: createUserImportXlsxBase64([
+        [
+          xlsxImportUsername,
+          'XLSX Import Smoke User',
+          importPassword,
+          'viewer',
+          'dept_operations',
+          'engineer',
+          'true',
+        ],
+      ]),
+      updateExisting: false,
+    },
+  });
+  assertEqual(xlsxImportResult.totalRows, 1, 'user XLSX import total rows');
+  assertEqual(xlsxImportResult.created, 1, 'user XLSX import created count');
+  assertEqual(xlsxImportResult.failed, 0, 'user XLSX import failed count');
   assertIncludes(
+    xlsxImportResult.createdUsernames,
+    xlsxImportUsername,
+    'user XLSX import created usernames',
+  );
+  const xlsxImportedUser = (await apiRequest('/core/users')).find(
+    (user) => user.username === xlsxImportUsername,
+  );
+  xlsxImportUserId = assertString(
+    xlsxImportedUser?.id,
+    'XLSX imported user id',
+  );
+  assertEqual(
+    xlsxImportedUser?.deptId,
+    'dept_operations',
+    'XLSX imported user department',
+  );
+  assertIncludes(
+    xlsxImportedUser?.postCodes ?? [],
+    'engineer',
+    'XLSX imported user posts',
+  );
+  assertEqual(xlsxImportedUser?.enabled, true, 'XLSX imported user enabled');
+  assertEqual(
     Buffer.from(
       assertString(importTemplate.contentBase64, 'user import template body'),
       'base64',
-    ).toString('utf8'),
-    'operator_import',
-    'user import template sample row',
+    )
+      .subarray(0, 2)
+      .toString('utf8'),
+    'PK',
+    'user import template binary payload',
   );
   await apiRequest('/core/users/import', {
     method: 'POST',
@@ -911,6 +984,7 @@ try {
         'core.user.update.revoke-session',
         'core.user.import.permission-split',
         'core.user.import-template',
+        'core.user.import.xlsx',
         'core.user.import.update-existing-boolean-guard',
         'core.user.import.partial-result',
         'core.user.import.update-revoke-session',
@@ -1037,6 +1111,14 @@ async function cleanup() {
     importUserId = undefined;
   }
 
+  if (xlsxImportUserId) {
+    await apiRequest(`/core/users/${encodeURIComponent(xlsxImportUserId)}`, {
+      method: 'DELETE',
+      expected: [200, 404],
+    }).catch(() => undefined);
+    xlsxImportUserId = undefined;
+  }
+
   for (const batchUserId of [...batchUserIds]) {
     await apiRequest(`/core/users/${encodeURIComponent(batchUserId)}`, {
       method: 'DELETE',
@@ -1090,6 +1172,7 @@ async function cleanupSmokeUserSessions() {
   for (const sessionUsername of [
     smokeUsername,
     importUsername,
+    xlsxImportUsername,
     importGuardUsername,
     ...batchUsernames,
   ]) {
@@ -1247,6 +1330,119 @@ function createUserImportCsvBase64(rows) {
     csvRows.map((row) => row.map(escapeCsvCell).join(',')).join('\n'),
     'utf8',
   ).toString('base64');
+}
+
+function createUserImportXlsxBase64(rows) {
+  const worksheetRows = [
+    [
+      'username',
+      'displayName',
+      'password',
+      'roleCodes',
+      'deptId',
+      'postCodes',
+      'enabled',
+    ],
+    ...rows,
+  ];
+  const workbook = zipSync(
+    {
+      '[Content_Types].xml': strToU8(createXlsxContentTypesXml()),
+      '_rels/.rels': strToU8(createXlsxRootRelationshipsXml()),
+      'xl/workbook.xml': strToU8(createXlsxWorkbookXml()),
+      'xl/_rels/workbook.xml.rels': strToU8(
+        createXlsxWorkbookRelationshipsXml(),
+      ),
+      'xl/worksheets/sheet1.xml': strToU8(
+        createXlsxWorksheetXml(worksheetRows),
+      ),
+    },
+    { level: 6 },
+  );
+
+  return Buffer.from(workbook).toString('base64');
+}
+
+function createXlsxContentTypesXml() {
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+  <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+</Types>`;
+}
+
+function createXlsxRootRelationshipsXml() {
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+</Relationships>`;
+}
+
+function createXlsxWorkbookXml() {
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <sheets>
+    <sheet name="Users" sheetId="1" r:id="rId1"/>
+  </sheets>
+</workbook>`;
+}
+
+function createXlsxWorkbookRelationshipsXml() {
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+</Relationships>`;
+}
+
+function createXlsxWorksheetXml(rows) {
+  const rowXml = rows
+    .map((row, rowIndex) => {
+      const excelRow = rowIndex + 1;
+      const cellXml = row
+        .map((value, columnIndex) => {
+          const style = rowIndex === 0 ? ' s="1"' : '';
+          return `<c r="${columnIndexToName(columnIndex)}${excelRow}" t="inlineStr"${style}><is><t>${escapeXml(value)}</t></is></c>`;
+        })
+        .join('');
+
+      return `<row r="${excelRow}">${cellXml}</row>`;
+    })
+    .join('');
+  const lastColumn = columnIndexToName(Math.max(rows[0]?.length ?? 1, 1) - 1);
+  const lastRow = Math.max(rows.length, 1);
+  const range = `A1:${lastColumn}${lastRow}`;
+
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <dimension ref="${range}"/>
+  <sheetData>${rowXml}</sheetData>
+  <autoFilter ref="${range}"/>
+</worksheet>`;
+}
+
+function columnIndexToName(index) {
+  let remaining = index + 1;
+  let name = '';
+
+  while (remaining > 0) {
+    const modulo = (remaining - 1) % 26;
+    name = String.fromCharCode(65 + modulo) + name;
+    remaining = Math.floor((remaining - modulo) / 26);
+  }
+
+  return name;
+}
+
+function escapeXml(value) {
+  return value
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
 }
 
 function escapeCsvCell(value) {

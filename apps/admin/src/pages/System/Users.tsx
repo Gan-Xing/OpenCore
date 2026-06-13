@@ -770,7 +770,7 @@ export default function UsersPage() {
     const file = importFileList[0]?.originFileObj;
 
     if (!file) {
-      message.warning('Select a CSV file to import.');
+      message.warning('Select a CSV or XLSX file to import.');
       return;
     }
 
@@ -1135,7 +1135,7 @@ export default function UsersPage() {
       >
         <Space direction="vertical" style={{ width: '100%' }} size="middle">
           <Upload
-            accept=".csv,text/csv"
+            accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             beforeUpload={(file) => {
               setImportFileList([file]);
               setImportResult(undefined);
@@ -1148,7 +1148,7 @@ export default function UsersPage() {
               setImportResult(undefined);
             }}
           >
-            <Button icon={<UploadOutlined />}>Select CSV file</Button>
+            <Button icon={<UploadOutlined />}>Select CSV/XLSX file</Button>
           </Upload>
           <Checkbox
             checked={importUpdateExisting}

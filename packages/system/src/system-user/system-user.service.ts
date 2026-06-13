@@ -17,7 +17,7 @@ import {
   createSystemUserImportTemplate,
   createSystemUserExportPreview,
   normalizeSystemUserImportRecord,
-  parseSystemUserImportCsv,
+  parseSystemUserImport,
   normalizeResetUserPasswordInput,
   normalizeSetUserStatusInput,
   SystemUserRepository,
@@ -147,7 +147,7 @@ export class SystemUserService {
   async importUsers(
     body: ImportUsersDto,
   ): Promise<SystemUserImportResultRecord> {
-    const records = parseSystemUserImportCsv(body);
+    const records = parseSystemUserImport(body);
     const updateExisting = normalizeImportUpdateExisting(body.updateExisting);
     const existingUsers = new Map(
       (await this.repository.listUsers()).map((user) => [user.username, user]),

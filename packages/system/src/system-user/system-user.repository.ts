@@ -1,5 +1,5 @@
 import { BadRequestException, UnauthorizedException } from '@nestjs/common';
-import { strToU8, zipSync } from 'fflate';
+import { strToU8, unzipSync, zipSync } from 'fflate';
 import type {
   AssignRoleUsersDto,
   BatchDeleteUsersDto,
@@ -155,8 +155,9 @@ export type SystemUserImportResultRecord = {
 
 const USERNAME_PATTERN = /^[a-z][a-z0-9_.-]*$/;
 const USER_IMPORT_MAX_BYTES = 262_144;
-export const SYSTEM_USER_EXPORT_CONTENT_TYPE =
+export const SYSTEM_USER_XLSX_CONTENT_TYPE =
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+export const SYSTEM_USER_EXPORT_CONTENT_TYPE = SYSTEM_USER_XLSX_CONTENT_TYPE;
 export const SYSTEM_USER_EXPORT_COLUMNS = [
   'username',
   'displayName',
@@ -241,7 +242,10 @@ export function createSystemUserExportPreview(
   return {
     filename: 'opencore-system-users.xlsx',
     contentType: SYSTEM_USER_EXPORT_CONTENT_TYPE,
-    contentBase64: createSystemUserExportWorkbook(rows, generatedAt),
+    contentBase64: createSystemUserWorkbook(
+      createSystemUserExportWorksheetRows(rows),
+      generatedAt,
+    ),
     scope: 'current-page',
     columns: SYSTEM_USER_EXPORT_COLUMNS,
     rowCount: rows.length,
@@ -249,11 +253,10 @@ export function createSystemUserExportPreview(
   };
 }
 
-function createSystemUserExportWorkbook(
+function createSystemUserExportWorksheetRows(
   rows: readonly SystemUserSummaryRecord[],
-  generatedAt: string,
-): string {
-  const worksheetRows = [
+): readonly (readonly string[])[] {
+  return [
     SYSTEM_USER_EXPORT_COLUMNS,
     ...rows.map((row) => [
       row.username,
@@ -265,6 +268,12 @@ function createSystemUserExportWorkbook(
       row.system ? 'true' : 'false',
     ]),
   ];
+}
+
+function createSystemUserWorkbook(
+  worksheetRows: readonly (readonly string[])[],
+  generatedAt: string,
+): string {
   const workbook = zipSync(
     {
       '[Content_Types].xml': strToU8(createXlsxContentTypesXml()),
@@ -376,8 +385,12 @@ function createXlsxWorksheetXml(rows: readonly (readonly string[])[]): string {
       return `<row r="${excelRow}">${cellXml}</row>`;
     })
     .join('');
+  const columnCount = Math.max(
+    1,
+    ...rows.map((row) => Math.max(row.length, 1)),
+  );
   const lastRow = Math.max(rows.length, 1);
-  const range = `A1:${columnIndexToName(SYSTEM_USER_EXPORT_COLUMNS.length - 1)}${lastRow}`;
+  const range = `A1:${columnIndexToName(columnCount - 1)}${lastRow}`;
 
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
@@ -431,7 +444,7 @@ function escapeXml(value: string): string {
 }
 
 export function createSystemUserImportTemplate(): SystemUserImportTemplateRecord {
-  const rows = [
+  const rows: readonly (readonly string[])[] = [
     SYSTEM_USER_IMPORT_COLUMNS,
     [
       'operator_import',
@@ -452,61 +465,29 @@ export function createSystemUserImportTemplate(): SystemUserImportTemplateRecord
       'false',
     ],
   ];
-  const csv = rows.map((row) => row.map(escapeCsvCell).join(',')).join('\n');
 
   return {
-    filename: 'opencore-system-users-import-template.csv',
-    contentType: 'text/csv;charset=utf-8',
-    contentBase64: Buffer.from(csv, 'utf8').toString('base64'),
+    filename: 'opencore-system-users-import-template.xlsx',
+    contentType: SYSTEM_USER_XLSX_CONTENT_TYPE,
+    contentBase64: createSystemUserWorkbook(rows, new Date().toISOString()),
     columns: SYSTEM_USER_IMPORT_COLUMNS,
     rowCount: rows.length - 1,
   };
 }
 
-export function parseSystemUserImportCsv(
+export function parseSystemUserImport(
   body: ImportUsersDto,
 ): readonly SystemUserImportCsvRecord[] {
-  const contentBase64 = normalizeRequiredText(
-    body?.contentBase64,
-    'import contentBase64',
-  );
-  const normalizedBase64 = contentBase64.includes(',')
-    ? contentBase64.slice(contentBase64.indexOf(',') + 1)
-    : contentBase64;
-
-  const trimmedBase64 = normalizedBase64.trim();
-
-  if (
-    trimmedBase64.length % 4 !== 0 ||
-    !/^[A-Za-z0-9+/]+={0,2}$/.test(trimmedBase64)
-  ) {
-    throw new BadRequestException('System user import content must be base64.');
-  }
-
-  const content = Buffer.from(trimmedBase64, 'base64');
-  const canonical = content.toString('base64');
-
-  if (
-    content.byteLength === 0 ||
-    canonical.replace(/=+$/, '') !== trimmedBase64.replace(/=+$/, '')
-  ) {
-    throw new BadRequestException(
-      'System user import content must not be empty.',
-    );
-  }
-
-  if (content.byteLength > USER_IMPORT_MAX_BYTES) {
-    throw new BadRequestException(
-      `System user import content must not exceed ${USER_IMPORT_MAX_BYTES} bytes.`,
-    );
-  }
-
-  const csv = stripUtf8Bom(content.toString('utf8'));
-  const rows = parseCsvRows(csv);
+  const content = decodeSystemUserImportContent(body);
+  const isXlsx = isXlsxContent(content);
+  const rows = isXlsx
+    ? parseXlsxRows(content)
+    : parseCsvRows(stripUtf8Bom(content.toString('utf8')));
+  const label = isXlsx ? 'XLSX' : 'CSV';
 
   if (rows.length < 2) {
     throw new BadRequestException(
-      'System user import CSV must contain a header and at least one data row.',
+      `System user import ${label} must contain a header and at least one data row.`,
     );
   }
 
@@ -517,7 +498,7 @@ export function parseSystemUserImportCsv(
 
   if (missingHeader) {
     throw new BadRequestException(
-      `System user import CSV is missing column: ${missingHeader}`,
+      `System user import ${label} is missing column: ${missingHeader}`,
     );
   }
 
@@ -542,11 +523,17 @@ export function parseSystemUserImportCsv(
 
   if (records.length === 0) {
     throw new BadRequestException(
-      'System user import CSV must contain at least one non-empty data row.',
+      `System user import ${label} must contain at least one non-empty data row.`,
     );
   }
 
   return records;
+}
+
+export function parseSystemUserImportCsv(
+  body: ImportUsersDto,
+): readonly SystemUserImportCsvRecord[] {
+  return parseSystemUserImport(body);
 }
 
 export function normalizeSystemUserImportRecord(
@@ -967,6 +954,233 @@ function splitImportCodes(value: string): readonly string[] {
     .filter(Boolean);
 }
 
+function decodeSystemUserImportContent(body: ImportUsersDto): Buffer {
+  const contentBase64 = normalizeRequiredText(
+    body?.contentBase64,
+    'import contentBase64',
+  );
+  const normalizedBase64 = contentBase64.includes(',')
+    ? contentBase64.slice(contentBase64.indexOf(',') + 1)
+    : contentBase64;
+  const trimmedBase64 = normalizedBase64.trim();
+
+  if (
+    trimmedBase64.length % 4 !== 0 ||
+    !/^[A-Za-z0-9+/]+={0,2}$/.test(trimmedBase64)
+  ) {
+    throw new BadRequestException('System user import content must be base64.');
+  }
+
+  const content = Buffer.from(trimmedBase64, 'base64');
+  const canonical = content.toString('base64');
+
+  if (
+    content.byteLength === 0 ||
+    canonical.replace(/=+$/, '') !== trimmedBase64.replace(/=+$/, '')
+  ) {
+    throw new BadRequestException(
+      'System user import content must not be empty.',
+    );
+  }
+
+  if (content.byteLength > USER_IMPORT_MAX_BYTES) {
+    throw new BadRequestException(
+      `System user import content must not exceed ${USER_IMPORT_MAX_BYTES} bytes.`,
+    );
+  }
+
+  return content;
+}
+
+function isXlsxContent(content: Buffer): boolean {
+  return content[0] === 0x50 && content[1] === 0x4b;
+}
+
+function parseXlsxRows(content: Buffer): string[][] {
+  let files: Record<string, Uint8Array>;
+
+  try {
+    files = unzipSync(new Uint8Array(content));
+  } catch {
+    throw new BadRequestException(
+      'System user import XLSX must be a valid workbook.',
+    );
+  }
+
+  const worksheet = files['xl/worksheets/sheet1.xml'];
+
+  if (!worksheet) {
+    throw new BadRequestException(
+      'System user import XLSX must contain xl/worksheets/sheet1.xml.',
+    );
+  }
+
+  return parseXlsxWorksheetRows(
+    Buffer.from(worksheet).toString('utf8'),
+    parseXlsxSharedStrings(files['xl/sharedStrings.xml']),
+  );
+}
+
+function parseXlsxSharedStrings(sharedStrings?: Uint8Array): readonly string[] {
+  if (!sharedStrings) {
+    return [];
+  }
+
+  const xml = Buffer.from(sharedStrings).toString('utf8');
+  const values: string[] = [];
+  const stringPattern = /<si\b[^>]*>([\s\S]*?)<\/si>/gi;
+  let match: RegExpExecArray | null;
+
+  while ((match = stringPattern.exec(xml))) {
+    values.push(readXlsxTextNodes(match[1]));
+  }
+
+  return values;
+}
+
+function parseXlsxWorksheetRows(
+  worksheetXml: string,
+  sharedStrings: readonly string[],
+): string[][] {
+  const rows: string[][] = [];
+  const rowPattern = /<row\b[^>]*>([\s\S]*?)<\/row>/gi;
+  let rowMatch: RegExpExecArray | null;
+
+  while ((rowMatch = rowPattern.exec(worksheetXml))) {
+    const cells: string[] = [];
+    const cellPattern = /<c\b([^>]*)>([\s\S]*?)<\/c>/gi;
+    let cellMatch: RegExpExecArray | null;
+    let fallbackIndex = 0;
+
+    while ((cellMatch = cellPattern.exec(rowMatch[1]))) {
+      const columnIndex = getXlsxCellColumnIndex(cellMatch[1], fallbackIndex);
+      cells[columnIndex] = parseXlsxCellValue(
+        cellMatch[1],
+        cellMatch[2],
+        sharedStrings,
+      );
+      fallbackIndex = columnIndex + 1;
+    }
+
+    rows.push(cells.map((cell) => cell ?? ''));
+  }
+
+  return rows.filter((row) => row.some((cell) => cell.trim()));
+}
+
+function getXlsxCellColumnIndex(attrs: string, fallbackIndex: number): number {
+  const reference = getXmlAttribute(attrs, 'r');
+  const match = reference ? /^([A-Z]+)\d+$/i.exec(reference) : undefined;
+
+  return match ? columnNameToIndex(match[1]) : fallbackIndex;
+}
+
+function parseXlsxCellValue(
+  attrs: string,
+  body: string,
+  sharedStrings: readonly string[],
+): string {
+  const cellType = getXmlAttribute(attrs, 't');
+
+  if (cellType === 'inlineStr') {
+    return readXlsxTextNodes(body);
+  }
+
+  const rawValue = readXmlElementText(body, 'v');
+
+  if (cellType === 's') {
+    const sharedStringIndex =
+      rawValue === undefined ? Number.NaN : Number.parseInt(rawValue, 10);
+    return Number.isInteger(sharedStringIndex)
+      ? (sharedStrings[sharedStringIndex] ?? '')
+      : '';
+  }
+
+  if (cellType === 'b') {
+    if (rawValue === '1') {
+      return 'true';
+    }
+
+    if (rawValue === '0') {
+      return 'false';
+    }
+  }
+
+  if (rawValue !== undefined) {
+    return rawValue;
+  }
+
+  return readXlsxTextNodes(body);
+}
+
+function readXlsxTextNodes(xml: string): string {
+  const values: string[] = [];
+  const textPattern = /<t\b[^>]*>([\s\S]*?)<\/t>/gi;
+  let match: RegExpExecArray | null;
+
+  while ((match = textPattern.exec(xml))) {
+    values.push(unescapeXml(match[1]));
+  }
+
+  return values.join('');
+}
+
+function readXmlElementText(xml: string, name: string): string | undefined {
+  const pattern = new RegExp(`<${name}\\b[^>]*>([\\s\\S]*?)<\\/${name}>`, 'i');
+  const match = pattern.exec(xml);
+
+  return match ? unescapeXml(match[1]) : undefined;
+}
+
+function getXmlAttribute(attrs: string, name: string): string | undefined {
+  const pattern = new RegExp(`\\b${name}="([^"]*)"`, 'i');
+  const match = pattern.exec(attrs);
+
+  return match ? unescapeXml(match[1]) : undefined;
+}
+
+function columnNameToIndex(name: string): number {
+  let index = 0;
+
+  for (const char of name.toUpperCase()) {
+    index = index * 26 + char.charCodeAt(0) - 64;
+  }
+
+  return Math.max(index - 1, 0);
+}
+
+function unescapeXml(value: string): string {
+  return value.replace(
+    /&(#x[0-9a-f]+|#\d+|quot|apos|lt|gt|amp);/gi,
+    (_entity, code: string) => {
+      const normalizedCode = code.toLowerCase();
+
+      switch (normalizedCode) {
+        case 'quot':
+          return '"';
+        case 'apos':
+          return "'";
+        case 'lt':
+          return '<';
+        case 'gt':
+          return '>';
+        case 'amp':
+          return '&';
+        default:
+          if (normalizedCode.startsWith('#x')) {
+            return String.fromCodePoint(
+              Number.parseInt(normalizedCode.slice(2), 16),
+            );
+          }
+
+          return String.fromCodePoint(
+            Number.parseInt(normalizedCode.slice(1), 10),
+          );
+      }
+    },
+  );
+}
+
 function stripUtf8Bom(value: string): string {
   return value.charCodeAt(0) === 0xfeff ? value.slice(1) : value;
 }
@@ -1026,12 +1240,4 @@ function parseCsvRows(csv: string): string[][] {
   return rows.filter((candidate) =>
     candidate.some((candidateCell) => candidateCell.trim()),
   );
-}
-
-function escapeCsvCell(value: string): string {
-  if (!/[",\n\r]/.test(value)) {
-    return value;
-  }
-
-  return `"${value.replace(/"/g, '""')}"`;
 }

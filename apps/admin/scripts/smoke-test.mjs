@@ -744,7 +744,7 @@ if (
   !usersPage.includes('Download import template') ||
   !usersPage.includes('Import users') ||
   !usersPage.includes('Update existing users') ||
-  !usersPage.includes('Select CSV file') ||
+  !usersPage.includes('Select CSV/XLSX file') ||
   !usersPage.includes('formatImportSummary') ||
   !usersPage.includes('selectedUserIds') ||
   !usersPage.includes('rowSelection') ||
