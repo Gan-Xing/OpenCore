@@ -12,10 +12,7 @@ import {
   ProTable,
   type ProColumns,
 } from '@ant-design/pro-components';
-import {
-  createSystemPostFixtures,
-  type SystemPostSummary,
-} from '@opencore/sdk';
+import type { SystemPostSummary } from '@opencore/sdk';
 import {
   Alert,
   Button,
@@ -63,7 +60,6 @@ type PostFormValues = {
   order?: number;
 };
 
-const fallbackRows = createSystemPostFixtures().items;
 const searchFields: CurrentPageSearchField<SystemPostSummary>[] = [
   'code',
   'name',
@@ -131,7 +127,7 @@ function createReorderedPostItems(
 
 export default function PostsPage() {
   const [form] = Form.useForm<PostFormValues>();
-  const [rows, setRows] = useState<readonly SystemPostSummary[]>(fallbackRows);
+  const [rows, setRows] = useState<readonly SystemPostSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
   const [selectedDetail, setSelectedDetail] = useState<SystemPostSummary>();
@@ -168,7 +164,10 @@ export default function PostsPage() {
       );
       setLoadError(undefined);
     } catch (error: unknown) {
-      setRows(fallbackRows);
+      setRows([]);
+      setSelectedRowKeys([]);
+      setSelectedDetail(undefined);
+      setEditingPost(undefined);
       setLoadError(
         error instanceof Error ? error.message : 'Unable to load posts.',
       );
@@ -215,8 +214,13 @@ export default function PostsPage() {
   const openDetail = async (record: SystemPostSummary) => {
     try {
       setSelectedDetail(await getOpenCoreSystemPost(record.code));
-    } catch (_error) {
-      setSelectedDetail(record);
+    } catch (error: unknown) {
+      setSelectedDetail(undefined);
+      message.error(
+        error instanceof Error
+          ? error.message
+          : 'Unable to load live post detail.',
+      );
     }
   };
 
@@ -388,8 +392,8 @@ export default function PostsPage() {
       {loadError ? (
         <Alert
           showIcon
-          type="warning"
-          message="Using fallback post snapshot"
+          type="error"
+          message="Unable to load live posts"
           description={loadError}
           style={{ marginBlockEnd: 16 }}
         />

@@ -251,6 +251,39 @@ verify_admin_bundle_api_base_url() {
     exit 1
   fi
 
+  if grep \
+    --fixed-strings \
+    "createSystemPostFixtures" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Posts.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "Using fallback post snapshot" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Posts.tsx" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Unable to load live posts" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Post order saved." \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Delete selected" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "core-posts" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null; then
+    echo "Admin Posts page must use live-only data and batch/order controls without fixture fallback." >&2
+    echo "Refusing to deploy a stale or fixture-backed Posts frontend page." >&2
+    exit 1
+  fi
+
   if ! grep -R \
     --fixed-strings \
     --include='*.js' \

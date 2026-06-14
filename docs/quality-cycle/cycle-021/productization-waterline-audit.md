@@ -16,7 +16,7 @@ failures have guards; and remaining omissions are explicit product boundaries.
 | `core.permission`     | Meets         | Catalog, registry/custom split and assignments are live.                                             |
 | `core.audit-log`      | Meets current | List/detail/export/delete, duration/location, retention cleanup, scheduled job and Admin server filters. |
 | `core.dept`           | Meets         | Tree CRUD, options, guards, ordering, data-scope and live-only Admin without fixture fallback.        |
-| `core.post`           | Meets         | CRUD, binding, options, batch deletion and ordering.                                                 |
+| `core.post`           | Meets         | CRUD, binding, options, batch deletion, ordering and live-only Admin without fixture fallback.        |
 | `core.menu`           | Meets         | Tree metadata, route/menu fields and delete guards.                                                  |
 | `core.role`           | Meets         | Menu/user assignment, status effects and revocation.                                                 |
 | `core.user`           | Meets         | CRUD, profile, password, avatar, import/export, binds.                                               |
@@ -150,6 +150,9 @@ failures have guards; and remaining omissions are explicit product boundaries.
 - Round 115 removed the System Departments Admin fixture fallback, made
   tree/detail/order operations live-only and added smoke/deploy guards for
   stale Departments bundles.
+- Round 116 removed the System Posts Admin fixture fallback, made
+  list/detail/batch/order operations live-only and added smoke/deploy guards
+  for stale Posts bundles.
 
 ## Active Debt
 
@@ -243,3 +246,6 @@ failures have guards; and remaining omissions are explicit product boundaries.
 - System departments: core dept smoke covers tree CRUD, ordering, simple-list
   consumers and delete guards; Admin/deploy guards reject fixture fallback and
   require live tree/order management markers.
+- System posts: core post smoke covers CRUD, batch deletion, ordering,
+  simple-list consumers and delete guards; Admin/deploy guards reject fixture
+  fallback and require live batch/order management markers.

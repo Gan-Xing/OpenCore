@@ -27,7 +27,8 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
 - System/RBAC: menu, role, permission, user, dept, post, dict and config are
   live with multiple hardening stages. Dicts Admin now uses live list/detail
   and item operations only, and Departments Admin now uses live tree/detail and
-  order operations only, matching the reference organization/dictionary
+  order operations only. Posts Admin now uses live list/detail, batch and order
+  operations only, matching the reference organization/post/dictionary
   management expectation without fixture fallback.
 - Auth/session: login policy, logout, force logout, online-user kick-out,
   token/session revocation, registered-token allowlist enforcement and expired
@@ -227,6 +228,9 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
 - Round 115: System Departments Admin now uses live tree/detail/order APIs
   only, so organization API/session/seed failures cannot be hidden behind SDK
   fixture rows.
+- Round 116: System Posts Admin now uses live list/detail/batch/order APIs
+  only, so post API/session/seed failures cannot be hidden behind SDK fixture
+  rows.
 
 ## Explicit Non-Claims
 

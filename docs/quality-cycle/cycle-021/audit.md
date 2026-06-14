@@ -123,6 +123,9 @@ Dicts bundles in Admin smoke and deployment.
 Round 115 removed the System Departments Admin fixture fallback, kept
 department tree/detail and order operations live-only through SDK calls and
 guarded stale Departments bundles in Admin smoke and deployment.
+Round 116 removed the System Posts Admin fixture fallback, kept post
+list/detail, batch deletion and order operations live-only through SDK calls
+and guarded stale Posts bundles in Admin smoke and deployment.
 Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 `lint` must run sequentially.
 
@@ -154,6 +157,9 @@ Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 - System Departments smoke covers department tree CRUD, ordering, simple-list
   consumers and delete guards; Admin/deploy guards reject Departments fixture
   fallback and require live tree/order management markers.
+- System Posts smoke covers post CRUD, batch deletion, ordering, simple-list
+  consumers and delete guards; Admin/deploy guards reject Posts fixture
+  fallback and require live batch/order management markers.
 - Config smoke covers runtime shape, environment override governance, legacy
   vault envelope deserialization, secret version history, secret rotation,
   vault key rotation, managed KMS provider status and no plaintext secret

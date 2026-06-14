@@ -48,12 +48,13 @@ packages and OpenForge direct Prisma/migration/business-code writing.
 
 ## Current State
 
-Cycle-021 has completed 115 deployable stages.
+Cycle-021 has completed 116 deployable stages.
 
 - System/RBAC: notice, dept, post, menu, role, permission, user, dict, config
   and file loops are live. Dicts Admin is live-only for list/detail/item CRUD
-  and Departments Admin is live-only for tree/detail/order CRUD; neither falls
-  back to SDK fixtures.
+  and Departments/Posts Admin are live-only for tree/detail/order and
+  list/detail/batch/order CRUD; these pages no longer fall back to SDK
+  fixtures.
 - Security/session: login policy, logout, force logout, online-user kick-out,
   registered-token allowlist enforcement and expired session cleanup are live;
   Online Users Admin is live-only for list/detail/kick-out/cleanup and no
@@ -113,10 +114,10 @@ Cycle-021 has completed 115 deployable stages.
   operations for list, detail, create, approve and reject. These pages have
   seed coverage, dedicated smoke and Admin/deploy guards.
 
-Latest runtime stage: Round 115 System Departments Admin live-only. It removes
-the Departments Admin fixture fallback, keeps tree/detail/order operations
-backed by live SDK calls only and adds smoke/deploy guards for stale
-fixture-backed Departments bundles.
+Latest runtime stage: Round 116 System Posts Admin live-only. It removes the
+Posts Admin fixture fallback, keeps list/detail/batch/order operations backed
+by live SDK calls only and adds smoke/deploy guards for stale fixture-backed
+Posts bundles.
 
 ## Next Queue
 

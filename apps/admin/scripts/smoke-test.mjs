@@ -1516,6 +1516,10 @@ if (
 }
 
 if (
+  postsPage.includes('createSystemPostFixtures') ||
+  postsPage.includes('Using fallback post snapshot') ||
+  !postsPage.includes('Unable to load live posts') ||
+  !postsPage.includes('Unable to load live post detail.') ||
   !postsPage.includes('listOpenCoreSystemPosts') ||
   !postsPage.includes('getOpenCoreSystemPost') ||
   !postsPage.includes('createOpenCoreSystemPost') ||
@@ -1535,7 +1539,7 @@ if (
   !postsPage.includes('rows={filteredRows}')
 ) {
   throw new Error(
-    'Posts page must use live SDK CRUD, batch deletion, order updates, bounded filtering and current-page export.',
+    'Posts page must use live-only SDK CRUD, batch deletion, order updates, bounded filtering and current-page export, without fixture fallback.',
   );
 }
 

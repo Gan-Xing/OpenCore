@@ -4,13 +4,14 @@ Date: 2026-06-14
 
 ## Latest Completed Round
 
-Round 115: System Departments Admin live-only tree and order operations.
+Round 116: System Posts Admin live-only list, batch and order operations.
 
 ## Closed
 
-- Removed the System Departments Admin fixture fallback path.
-- Kept department tree/detail/order CRUD backed by live SDK calls only.
-- Added Admin smoke and deploy guards against stale fixture-backed Departments
+- Removed the System Posts Admin fixture fallback path.
+- Kept post list/detail, batch deletion and order CRUD backed by live SDK calls
+  only.
+- Added Admin smoke and deploy guards against stale fixture-backed Posts
   bundles.
 
 ## Still Open
