@@ -29,6 +29,7 @@ import {
   type CacheValueSummary,
   type CleanAuditLogsRequest,
   type ClaimQueuedJobsRequest,
+  type CreateExportPreviewRequest,
   type CreateDictItemRequest,
   type CreateDictTypeRequest,
   type CreateFileAssetRequest,
@@ -78,6 +79,8 @@ import {
   type DictItemSummary,
   type DictTypeSummary,
   type ExportPreview,
+  type CurrentPageExportProtocolSummary,
+  type ExportPlanSummary,
   type SystemConfigSummary,
   type SystemConfigBatchMutationSummary,
   type SystemConfigCacheRefreshSummary,
@@ -186,6 +189,16 @@ const toolingClient = createToolingClient(opencoreSdkRequest);
 
 export function getOpenCoreOpenApiDriftStatus(): Promise<OpenApiDriftStatus> {
   return toolingClient.getOpenApiDriftStatus(getRequiredAdminToken());
+}
+
+export function getOpenCoreExportProtocol(): Promise<CurrentPageExportProtocolSummary> {
+  return toolingClient.getExportProtocol(getRequiredAdminToken());
+}
+
+export function createOpenCoreExportPreview(
+  body: CreateExportPreviewRequest,
+): Promise<ExportPlanSummary> {
+  return toolingClient.createExportPreview(getRequiredAdminToken(), body);
 }
 
 export function getOpenCoreOpenForgeStatus(): Promise<OpenForgeStatusSummary> {

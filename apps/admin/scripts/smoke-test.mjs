@@ -748,6 +748,8 @@ if (
   !openApiPage.includes('@opencore/sdk') ||
   !openApiPage.includes('getOpenCoreOpenApiDriftStatus') ||
   !exportPage.includes('@opencore/sdk') ||
+  !exportPage.includes('getOpenCoreExportProtocol') ||
+  !exportPage.includes('createOpenCoreExportPreview') ||
   !openForgePage.includes('@opencore/sdk') ||
   !openForgePage.includes('createOpenCoreOpenForgePlan') ||
   !openForgePage.includes('createOpenCoreOpenForgeDiff') ||
@@ -784,6 +786,23 @@ if (
 ) {
   throw new Error(
     'Admin platform, collaboration, operations, and integration pages must consume SDK types or fixtures.',
+  );
+}
+
+if (
+  exportPage.includes('createCurrentPageExportProtocolFixture') ||
+  exportPage.includes('createExportPlanFixture') ||
+  !exportPage.includes('Live export protocol') ||
+  !exportPage.includes('Create export preview') ||
+  !exportPage.includes('Bounded row preview') ||
+  !exportPage.includes('Server capped rows') ||
+  !opencorePlatformService.includes('getOpenCoreExportProtocol') ||
+  !opencorePlatformService.includes('toolingClient.getExportProtocol') ||
+  !opencorePlatformService.includes('createOpenCoreExportPreview') ||
+  !opencorePlatformService.includes('toolingClient.createExportPreview')
+) {
+  throw new Error(
+    'Export Tools page must use live SDK protocol and preview APIs instead of static fixtures.',
   );
 }
 

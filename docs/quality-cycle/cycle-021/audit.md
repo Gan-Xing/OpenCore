@@ -74,6 +74,8 @@ deployment metadata, including deploy-script commit/build injection and
 API/Admin smoke guards.
 Round 97 replaced the Tool OpenAPI fixture page with live contract snapshot
 metadata and tool/Admin/deploy guards.
+Round 98 replaced the Tool Export fixture page with live protocol and preview
+calls plus row-cap smoke and Admin/deploy guards.
 Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 `lint` must run sequentially.
 
@@ -114,6 +116,8 @@ Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
   commit/build/deployment metadata injection.
 - Tool OpenAPI smoke covers live drift snapshot metadata and OpenAPI path;
   Admin/deploy guards reject fixture-backed or stale OpenAPI pages.
+- Tool Export smoke covers live protocol, preview creation and row caps;
+  Admin/deploy guards reject fixture-backed or stale Export Tools pages.
 - OpenForge smoke covers status, doctor, plan, diff, check, apply dry-run,
   manifest list, manifest preview, rollback dry-run, dry-run confirmation,
   write-intent rejection and unsafe schema/config/manifest guards.
@@ -136,6 +140,8 @@ real incident decisions. Do not create per-round reports by default.
   precision remains outside the current request-time lookup surface.
 - OpenForge direct generated schema/migration/business writes remain outside
   the admitted surface.
+- Tool Export shared `CurrentPageExportButton` still needs live protocol
+  wiring.
 
 ## Trigger Next Audit
 

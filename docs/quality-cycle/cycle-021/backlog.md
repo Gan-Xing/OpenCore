@@ -29,7 +29,7 @@ schema/business-code writing.
   runtime login policy.
 - Rounds 50-59: logout audit semantics, ordering, data-scope, notice
   inbox/read analytics, feature flags and login-log location.
-- Rounds 60-97: notice template/delivery/provider/outbox work, SMS HTTP and
+- Rounds 60-98: notice template/delivery/provider/outbox work, SMS HTTP and
   SMTP adapters, config vault and rollout/audience, operation-log cleanup, plus
   mail subject persistence, provider diagnostics, SMS HTTP secret injection,
   SMTP attachments, explicit SMTP TLS policy, inbox realtime events, Monitor
@@ -43,15 +43,17 @@ schema/business-code writing.
   blacklist maintenance, OAuth token inventory/revoke lifecycle and managed
   HTTP JSON KMS v3 secret-vault envelopes, Redis-backed Monitor Cache
   namespace/key operations and live Monitor Version runtime/deployment
-  metadata, plus live Tool OpenAPI drift snapshot metadata.
+  metadata, live Tool OpenAPI drift snapshot metadata and live Tool Export
+  protocol/preview Admin wiring.
 
-Latest done: Round 97 Tool OpenAPI live drift metadata with real
-`/tools/openapi/drift` Admin wiring, snapshot hash/count metadata, OpenAPI/SDK
-visibility, tool smoke, Admin smoke and deploy guards.
+Latest done: Round 98 Tool Export live protocol preview with real
+`/tools/export/protocol` and `/tools/export/preview` Admin wiring, server row
+cap smoke, Admin smoke and deploy guards.
 
 ## Active P1/P2 Queue
 
-1. OpenForge direct schema/migration/business logic writes still require user
+1. Tool Export shared `CurrentPageExportButton` live protocol wiring.
+2. OpenForge direct schema/migration/business logic writes still require user
    admission.
 
 ## Rework Notes

@@ -39,6 +39,8 @@ try {
       expected: [200],
     });
     assertOpenApiPath(openApi, '/api/tools/openapi/drift');
+    assertOpenApiPath(openApi, '/api/tools/export/protocol');
+    assertOpenApiPath(openApi, '/api/tools/export/preview');
     assertOpenApiPath(openApi, '/api/tools/openforge/status');
     assertOpenApiPath(openApi, '/api/tools/openforge/plan');
     assertOpenApiPath(openApi, '/api/tools/openforge/apply/dry-run');
@@ -65,6 +67,46 @@ try {
   assertNumberAtLeast(drift.pathCount, 1, 'openapi path count');
   assertNumberAtLeast(drift.schemaCount, 1, 'openapi schema count');
   assertNumberAtLeast(drift.operationCount, 1, 'openapi operation count');
+
+  const exportProtocol = await apiRequest('/tools/export/protocol');
+  assertEqual(exportProtocol.stage, 'S8', 'export protocol stage');
+  assertEqual(exportProtocol.status, 'active', 'export protocol status');
+  assertEqual(exportProtocol.scope, 'current-page', 'export protocol scope');
+  assertIncludes(
+    exportProtocol.supportedFormats,
+    'csv',
+    'export protocol supported formats',
+  );
+  assertEqual(exportProtocol.asyncExport, false, 'export protocol async flag');
+  assertNumberAtLeast(exportProtocol.maxRows, 1, 'export protocol max rows');
+
+  const exportPreview = await apiRequest('/tools/export/preview', {
+    method: 'POST',
+    body: {
+      resource: 'system-users',
+      columns: ['username', 'displayName', 'email', 'status'],
+      rowCount: exportProtocol.maxRows + 25,
+    },
+  });
+  assertEqual(
+    exportPreview.resource,
+    'system-users',
+    'export preview resource',
+  );
+  assertEqual(
+    exportPreview.filename,
+    'opencore-system-users.csv',
+    'export preview filename',
+  );
+  assertEqual(exportPreview.format, 'csv', 'export preview format');
+  assertEqual(exportPreview.scope, 'current-page', 'export preview scope');
+  assertEqual(
+    exportPreview.rowCount,
+    exportProtocol.maxRows,
+    'export preview capped rows',
+  );
+  assertIncludes(exportPreview.columns, 'username', 'export preview columns');
+  assertString(exportPreview.generatedAt, 'export preview generatedAt');
 
   const status = await apiRequest('/tools/openforge/status');
   assertEqual(status.status, 'workspace-ready', 'openforge status');
@@ -237,6 +279,9 @@ try {
         'auth.login',
         'tool.openapi.live-drift-status',
         'tool.openapi.snapshot-metadata',
+        'tool.export.protocol',
+        'tool.export.preview',
+        'tool.export.row-cap',
         'tool.openforge.status',
         'tool.openforge.doctor',
         'tool.openforge.plan',

@@ -30,3 +30,4 @@ This ledger records state transitions only. Git log keeps commit hashes.
 | 95    | Monitor Cache   | Cache monitor moved from seed/Admin fixtures to real Redis operations.        | API tests, monitor smoke and Admin bundle markers.              |
 | 96    | Monitor Version | Version page moved from fixtures to live runtime/deployment metadata.         | API tests, monitor smoke and Admin bundle markers.              |
 | 97    | Tool OpenAPI    | OpenAPI page moved from fixtures to live drift snapshot metadata.             | API tests, tool smoke and Admin bundle markers.                 |
+| 98    | Tool Export     | Export page moved from fixtures to live protocol and preview APIs.            | API tests, tool smoke and Admin bundle markers.                 |

@@ -53,9 +53,10 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   claim and scheduler queue metrics; Monitor Cache has Redis-backed
   namespace/key operations with safe value preview and confirmed deletion;
   Monitor Version exposes live runtime/deployment metadata instead of fixtures;
-  Tool OpenAPI exposes live drift snapshot metadata instead of fixtures;
-  OpenForge has a live safe planning/dry-run workbench with confirmation and
-  manifest preview/detail.
+  Tool OpenAPI exposes live drift snapshot metadata instead of fixtures; Tool
+  Export exposes live protocol/preview row-cap behavior in Admin; OpenForge has
+  a live safe planning/dry-run workbench with confirmation and manifest
+  preview/detail.
 
 ## Recent Decisions
 
@@ -146,6 +147,10 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   static fixture page: `/tools/openapi/drift` exposes snapshot existence,
   hash, path/schema/operation counts and command metadata through
   API/SDK/Admin with tool smoke and deploy guards.
+- Round 98: Tool Export is a live protocol/preview surface, not a static
+  fixture page: `/tools/export/protocol` and `/tools/export/preview` expose the
+  current-page CSV contract and server row-cap behavior through API/SDK/Admin
+  with tool smoke and deploy guards.
 
 ## Explicit Non-Claims
 

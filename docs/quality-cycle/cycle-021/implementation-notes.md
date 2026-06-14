@@ -19,7 +19,7 @@ active debt and decisions that change future execution.
 
 ## Runtime State
 
-Cycle-021 has completed 97 deployable stages across
+Cycle-021 has completed 98 deployable stages across
 System/Security/Monitor/Integration/Tools foundations. Round 91 added
 token/session blacklist maintenance with registered-token allowlist
 enforcement, expired-session cleanup, API/SDK/Admin/OpenAPI visibility, smoke
@@ -35,7 +35,9 @@ namespace/key scans, safe value previews, dry-run prefix clear and confirmed
 key/prefix deletion. Round 96 replaced the Monitor Version fixture page with
 live runtime/deployment metadata and fixed deploy-script commit/build
 injection. Round 97 replaced the Tool OpenAPI fixture page with live drift
-snapshot metadata including hash and path/schema/operation counts.
+snapshot metadata including hash and path/schema/operation counts. Round 98
+replaced the Tool Export fixture page with live protocol and preview calls,
+including server row-cap verification.
 
 ## Guard Register
 
@@ -89,6 +91,10 @@ snapshot metadata including hash and path/schema/operation counts.
 - Tool OpenAPI: tool smoke verifies live `/tools/openapi/drift` snapshot
   metadata and OpenAPI path; Admin smoke rejects `createOpenApiDriftFixture()`
   on the OpenAPI page, and deploy checks live drift bundle markers.
+- Tool Export: tool smoke verifies live `/tools/export/protocol`,
+  `/tools/export/preview` and row-cap behavior; Admin smoke rejects
+  `createCurrentPageExportProtocolFixture()` and `createExportPlanFixture()`
+  on the Export Tools page, and deploy checks live export bundle markers.
 - OpenForge: smoke covers status, doctor, plan, diff, check, apply dry-run,
   manifest list, manifest preview, rollback dry-run, dry-run confirmation
   guards, write-intent rejection and unsafe schema/config/manifest guards.
@@ -117,3 +123,6 @@ snapshot metadata including hash and path/schema/operation counts.
   precision is not part of the current request-time lookup surface.
 - OpenForge: direct schema/migration/business writes still require user
   admission.
+- Tool Export: shared `CurrentPageExportButton` still reads the fixture
+  protocol locally and should be moved to live protocol wiring in a dedicated
+  round.

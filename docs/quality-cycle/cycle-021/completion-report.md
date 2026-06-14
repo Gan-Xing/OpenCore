@@ -4,16 +4,19 @@ Date: 2026-06-14
 
 ## Latest Completed Round
 
-Round 97: Tool OpenAPI live drift metadata.
+Round 98: Tool Export live protocol preview.
 
 ## Closed
 
-- Replaced the static Admin OpenAPI fixture with live SDK/API drift status.
-- Added snapshot existence/hash/path/schema/operation metadata to the drift
-  DTO/OpenAPI/SDK contract.
-- Added tool smoke, Admin smoke and deploy bundle guards for the OpenAPI page.
+- Replaced the static Admin Export Tools fixture with live SDK/API protocol
+  and preview calls.
+- Added tool smoke coverage for protocol shape, preview creation and server
+  row caps.
+- Added Admin smoke and deploy bundle guards for the Export Tools page.
 
 ## Still Open
 
+- Tool Export shared `CurrentPageExportButton` live protocol wiring remains
+  open.
 - OpenForge direct schema/migration/business code writes remain outside the
   admitted surface.

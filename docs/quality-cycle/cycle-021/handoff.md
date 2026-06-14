@@ -47,7 +47,7 @@ packages and OpenForge direct Prisma/migration/business-code writing.
 
 ## Current State
 
-Cycle-021 has completed 97 deployable stages.
+Cycle-021 has completed 98 deployable stages.
 
 - System/RBAC: notice, dept, post, menu, role, permission, user, dict, config
   and file loops are live.
@@ -83,19 +83,23 @@ Cycle-021 has completed 97 deployable stages.
   Version now uses live runtime/deployment metadata instead of an Admin
   fixture page.
 - Tools/OpenForge: Tool OpenAPI drift now reads live contract snapshot metadata
-  through API/SDK/Admin instead of a fixture page. CLI/core safety remains
-  no-write by default; Admin now has a live safe workbench for status, doctor,
-  plan, diff, check, manifest list and apply/rollback dry-run, dry-run
-  confirmation and manifest preview/detail.
+  through API/SDK/Admin instead of a fixture page. Tool Export now exposes live
+  protocol and preview APIs in Admin with server-side row caps. CLI/core safety
+  remains no-write by default; Admin now has a live safe workbench for status,
+  doctor, plan, diff, check, manifest list and apply/rollback dry-run,
+  dry-run confirmation and manifest preview/detail.
 
-Latest runtime stage: Round 97 Tool OpenAPI live drift metadata. It replaces
-the Admin OpenAPI fixture page with live SDK drift status, adds snapshot
-exists/hash/path/schema/operation metadata to the API/OpenAPI/SDK contract and
-guards the page through tool smoke, Admin smoke and deploy bundle markers.
+Latest runtime stage: Round 98 Tool Export live protocol preview. It replaces
+the Admin Export Tools fixture page with live SDK protocol and preview calls,
+verifies server row-cap behavior through tool smoke and guards the Admin bundle
+against stale fixture pages.
 
 ## Next Queue
 
-1. OpenForge direct Prisma/migration/business-code writes remain out of scope
+1. Tool Export shared `CurrentPageExportButton` still reads the SDK fixture
+   protocol locally; move it to the live Tool Export protocol or delete the
+   stale fixture path in a dedicated foundation round.
+2. OpenForge direct Prisma/migration/business-code writes remain out of scope
    until explicitly admitted.
 
 ## Docs Rule
