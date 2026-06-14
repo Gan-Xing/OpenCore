@@ -54,6 +54,6 @@ Backend Self-Loop BE20-P01 至 BE20-P24 已完成：OpenCore 后端 runtime 已�
 
 ## 后续 Codex 规则
 
-后续不应继续复用 S3-S8、runtime integration、S9、OpenForge V1 或 BE20 backend self-loop handoff 做新业务实现。OpenForge V1 已完成安全生成器闭环，但不生成业务逻辑，不写 Prisma schema/migration，不绕过 patch plan 修改 human-authored entry files。若继续，应另起 S10+ hardening 或专项 handoff/goal。
+后续不应复用 S3-S8、runtime integration、S9、OpenForge V1 或 BE20 backend self-loop handoff 做新业务实现。OpenForge V1 已完成安全生成器闭环，但不生成业务逻辑，不写 Prisma schema/migration，不绕过 patch plan 修改 human-authored entry files。后续工作必须另起 S10+ hardening 或专项 handoff/goal，并使用有限验收清单。
 
 P4/P5 能力仍保留长期 backlog：CRM、ERP、MES、WMS、商城、支付、会员、多租户、知识库、RAG、Agent 均不得无 handoff 直接实现。

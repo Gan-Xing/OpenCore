@@ -17,7 +17,7 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
 - Compare product capabilities and operator workflows, not raw commit volume.
 - Keep OpenCore-native boundaries: package-owned runtime, typed SDK, Umi
   Admin, OpenAPI snapshots and smoke/deploy guards.
-- A minimal loop is one deployable stage, not permission to leave the product
+- A minimal stage is one deployable acceptance unit, not permission to leave the product
   thin forever.
 - State admitted boundary and remaining debt once; do not repeat parity
   disclaimers every round.
@@ -81,6 +81,28 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   operations. Approval Lite has live list/detail, create, approve and reject
   operations. This meets the current collaboration live-operations waterline;
   BPMN/full workflow remains a separate explicit-admission domain.
+
+## Productization Acceptance
+
+This comparison now includes acceptance state, not only whether RuoYi/Yudao has
+an analogous feature.
+
+| Capability | RuoYi/Yudao counterpart | OpenCore API status | OpenCore Admin status | Live-only | Public API smoke | Public Admin smoke | Fixture fallback | Still needed |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| System Users | System user management | live | fixture-backed | no | yes | no | yes | Remove Admin fallback and add public Admin smoke. |
+| System Roles | System role management | live | fixture-backed | no | yes | no | yes | Remove Admin fallback and add public Admin smoke. |
+| System Permissions | System permission catalog | live | live-only | yes | yes | yes | no | Keep public smoke and deploy guard current. |
+| System Posts | System post management | live | live-only | yes | yes | yes | no | Keep public smoke and deploy guard current. |
+| System Files | Infra file service | live | fixture-backed | no | yes | no | yes | Remove Admin fallback and add public Admin smoke. |
+| System Config | System/config management | live | fixture-backed | no | yes | no | yes | Remove Admin fallback; preserve vault/KMS smoke. |
+| System Notices | System notices | live | fixture-backed | no | yes | no | yes | Remove Admin fallback; keep delivery/provider smoke. |
+| Scheduler/Monitor | Job, queue, status, cache, version | live | live-only | yes | yes | yes | no | Keep admitted scheduler/monitor scope guarded. |
+| Integration | Provider health, OAuth, Mail/SMS, design pages | live | live-only for admitted scope | yes | yes | yes | no | Real payment/billing/provider expansion stays out of scope. |
+| Online Users | Online sessions | live | live-only | yes | yes | yes | no | None. |
+| OAuth | OAuth token inventory | live | live-only | yes | yes | yes | no | Full SSO provider flow remains out of scope. |
+| Security Logs | Login and operation logs | live | live-only | yes | yes | yes | no | Historical GeoIP backfill remains out of scope. |
+| Departments | Organization/dept management | live | live-only | yes | yes | yes | no | None. |
+| Dicts | Dictionary management | live | live-only | yes | yes | yes | no | None. |
 
 ## Recent Decisions
 
@@ -183,7 +205,7 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   detail, render preview and queued-processing controls instead of fixture
   rows.
 - Round 101: Integration SMS now uses the same live template/outbox operator
-  loop as Mail, including detail, render preview, queued-processing controls,
+  surface as Mail, including detail, render preview, queued-processing controls,
   filtered current-page exports and stale-fixture deploy guards.
 - Round 102: Collaboration Messages moved from fixture rows to live message
   lifecycle operations: list/detail, create, mark-read, archive and delete are

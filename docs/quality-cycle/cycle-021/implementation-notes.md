@@ -9,17 +9,18 @@ active debt and decisions that change future execution.
 
 - Deploy path: `pnpm deploy:opencore`.
 - Ports: API `39172`, Admin `39174`, local smoke `39173`.
-- P0/P1 foundation work is auto-admissible, including Collaboration center
-  foundations; large business domains, production multi-tenancy, real
-  payments, BPMN/full workflow, full report designer, RAG/Agent/AI workflow
-  and OpenForge direct schema/business writes need explicit user admission.
+- P0/P1 foundation work is limited to the pre-authorized Capstone scope,
+  including Collaboration center foundations; large business domains,
+  production multi-tenancy, real payments, BPMN/full workflow, full report
+  designer, RAG/Agent/AI workflow and OpenForge direct schema/business writes
+  need explicit user admission.
 - No legacy compatibility burden: replace stale DTOs, SDK shapes, routes,
   seeds and Admin flows directly.
 - Do not paste standard test/build/deploy command lists into docs.
 
 ## Runtime State
 
-Cycle-021 has completed 118 deployable stages across
+Cycle-021 has recorded deployable stages through Round 118 across
 System/Security/Monitor/Integration/Tools foundations. Round 91 added
 token/session blacklist maintenance with registered-token allowlist
 enforcement, expired-session cleanup, API/SDK/Admin/OpenAPI visibility, smoke

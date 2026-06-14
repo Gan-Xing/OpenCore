@@ -73,4 +73,4 @@ Backend Self-Loop BE20 final evidence is tracked in [cycle-020 backlog](../quali
 
 ## 下一份 handoff 建议
 
-Quality Cycle 001 和 Backend Self-Loop BE20 已完成。下一份 handoff 可进入 S10+ hardening、cycle-021 recursion 或专项模块 hardening。不得复用 OpenForge V1 或 BE20 继续偷偷扩大为业务逻辑生成、migration 创建、行业业务包、真实支付或 AI/RAG/Agent 实现。
+Quality Cycle 001 和 Backend Self-Loop BE20 已完成。后续 handoff 必须指向明确的有限验收清单、S10+ hardening 或专项模块 hardening。不得复用 OpenForge V1 或 BE20 继续偷偷扩大为业务逻辑生成、migration 创建、行业业务包、真实支付或 AI/RAG/Agent 实现。

@@ -7,7 +7,7 @@ only; the ledger keeps state transitions and git log keeps commits.
 
 ## Delivered Clusters
 
-- Rounds 1-13: first API/SDK/Admin/permission/seed/OpenAPI loops for notice,
+- Rounds 1-13: first API/SDK/Admin/permission/seed/OpenAPI stages for notice,
   dept, post, menu, role, permission, user, dict, config, file, login-log,
   audit-log and online-user.
 - Rounds 14-23: online-user revocation, file content, menu metadata, role

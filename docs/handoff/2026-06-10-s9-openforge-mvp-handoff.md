@@ -183,7 +183,7 @@ docs/handoff/2026-06-10-s9-openforge-mvp-handoff.md
 7. 更新相关文档。
 8. 更新 docs/strategy/progress.md。
 9. 检查 handoff 剩余内容。
-10. 自动进入下一子阶段。
+10. 停在当前子阶段验收结果，等待明确准入后再进入下一子阶段。
 ```
 
 不得完成一个小改动后停止并要求重新规划。必须持续推进到 S9 handoff 全部完成，或遇到真实阻塞并在 `progress.md` 中记录证据。

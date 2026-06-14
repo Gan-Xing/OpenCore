@@ -280,7 +280,7 @@ docs/handoff/2026-06-10-openforge-v1-full-implementation-handoff.md
 7. 更新 docs/strategy/progress.md。
 8. 更新相关文档。
 9. 如 Stage 完成，commit。
-10. 继续进入下一 Stage。
+10. 停在当前 Stage 验收结果，等待明确准入后再进入下一 Stage。
 ```
 
 不得只完成一个子任务后停止重新规划。不得把一个阶段拆成几个小 goal 挤牙膏。当前 handoff 的目标是让 Codex 连续工作数小时，直到 OpenForge V1 完整落地。

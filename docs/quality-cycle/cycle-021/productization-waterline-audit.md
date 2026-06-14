@@ -4,37 +4,46 @@ Date: 2026-06-14
 
 ## Waterline
 
-A foundation capability meets the current waterline when API, SDK, Admin,
-permissions/menu, seed/OpenAPI and smoke coverage are live; the Admin supports
-the operator workflow; security effects are real runtime behavior; repeated
-failures have guards; and remaining omissions are explicit product boundaries.
+A foundation capability meets the current waterline only when API, SDK, Admin,
+permissions/menu, seed/OpenAPI, smoke coverage and deployment guards are live.
+The Admin must support the operator workflow, security effects must be real
+runtime behavior, repeated failures must have guards, and remaining omissions
+must be explicit product boundaries.
+
+Strict Capstone rules:
+
+- Any capability with Admin fixture fallback must not be marked `Meets`.
+- Any capability without public API smoke and public Admin smoke must not be
+  marked full `Meets`; use `Meets local only` when local smoke is present but
+  public smoke is missing.
+- Bundle marker smoke checks built Admin chunks for required/forbidden marker
+  strings. It is not a substitute for public API/Admin smoke.
+- Deploy guard means the fixed deployment script blocks stale or fixture-backed
+  artifacts. It is separate from local smoke and public smoke.
+- Printing or linking a public URL does not count as public verification. Only
+  successful real requests to the public API/Admin URLs count as public smoke.
 
 ## Current Status
 
-| Capability            | Status        | Notes                                                                                                |
-| --------------------- | ------------- | ---------------------------------------------------------------------------------------------------- |
-| `core.permission`     | Meets         | Catalog, registry/custom split, assignments and live-only Admin CRUD/export are guarded.             |
-| `core.audit-log`      | Meets current | List/detail/export/delete, duration/location, retention cleanup, scheduled job and Admin server filters. |
-| `core.dept`           | Meets         | Tree CRUD, options, guards, ordering, data-scope and live-only Admin without fixture fallback.        |
-| `core.post`           | Meets         | CRUD, binding, options, batch deletion, ordering and live-only Admin without fixture fallback.        |
-| `core.menu`           | Meets         | Tree metadata, route/menu fields, delete guards and live-only Admin tree CRUD/export.                 |
-| `core.role`           | Admin debt    | API supports assignment, status effects and revocation; Roles Admin still has fixture fallback.       |
-| `core.user`           | Admin debt    | API supports CRUD, profile, password, avatar, import/export and binds; Users Admin still has fixture fallback. |
-| `core.dict`           | Meets         | Dict/item CRUD, enabled simple-list source and live-only Admin without fixture fallback.              |
-| `core.file`           | Admin debt    | Authenticated upload/download and content smoke are live; Files Admin still has fixture fallback.     |
-| `monitor.online-user` | Meets         | Batch kick-out, revocation, registered-token allowlist, cleanup, UA/IP fields and live-only Admin.   |
-| `core.login-log`      | Meets current | Schema, lockout, cleanup, actor/reason, location, IP/location lookup and live-only Admin data.       |
-| `core.config`         | Admin debt    | Runtime config, rollout, overrides, vault versions and KMS are live; Config Admin still has fixture fallback. |
-| `core.notice`         | Enhance/Admin debt | Delivery reliability is live through SMS/SMTP/realtime work; System Notices Admin still has fixture fallback. |
-| `integration`         | Meets current | Provider audit/diagnostics live-only Admin, OAuth live-only Admin, Mail/SMS operations and WeChat/WebSocket design Admin reads are live. |
-| `scheduler/monitor`   | Meets current | Job Admin operations, registry, cron dispatch, worker claim, queue metrics, queue pause/resume and run-log cleanup. |
-| `monitor.status`      | Meets current | Live dependency checks plus CPU, memory, disk and process resource snapshot.                         |
-| `monitor.cache`       | Meets current | Redis namespace/key scans, safe value preview, dry-run clear and confirmed key/prefix deletion.      |
-| `monitor.version`     | Meets current | Live runtime/deployment metadata uses API/SDK/Admin, deploy injection and smoke/deploy guards.       |
-| `tool.openapi`        | Meets current | Live drift snapshot metadata uses API/SDK/Admin, OpenAPI contract fields and tool/deploy guards.     |
-| `tool.export`         | Meets current | Admin protocol/preview and shared current-page export buttons use the live protocol with row caps.   |
-| `OpenForge Admin`     | Meets current | Safe workbench, dry-run confirmation, write-intent rejection and manifest preview/detail.            |
-| `collaboration`       | Meets current | Messages, Notices, Todos and Approval Lite live operations are API/SDK/Admin/smoke guarded.          |
+| Capability | Status | Notes |
+| --- | --- | --- |
+| System Users (`core.user`) | Partial | API/SDK flows are live, but Users Admin still has role/dept/post fixture fallback. |
+| System Roles (`core.role`) | Partial | Assignment/status/revocation APIs are live, but Roles Admin still has permission/dept fixture fallback. |
+| System Permissions (`core.permission`) | Meets | Catalog/detail/custom CRUD/export are live-only with smoke and deploy guards. |
+| System Posts (`core.post`) | Meets | List/detail/batch/order operations are live-only with smoke and deploy guards. |
+| System Files (`core.file`) | Partial | Authenticated upload/download are live, but Files Admin still has fixture fallback. |
+| System Config (`core.config`) | Enhance | Runtime config, rollout, overrides, vault and KMS are live; Config Admin still has fixture fallback. |
+| System Notices (`core.notice`) | Enhance | Notice delivery reliability is live; System Notices Admin still has fixture fallback. |
+| Scheduler/Monitor | Meets current | Jobs, queues, status, cache and version surfaces are live-only with smoke/deploy guards. |
+| Integration | Meets current | Providers, OAuth, Mail/SMS and design surfaces are live-only for admitted scope; payment/billing remains out of scope. |
+| Online Users (`monitor.online-user`) | Meets | Live list/detail/kick-out/cleanup, token revocation and deployment guards are present. |
+| OAuth (`integration.oauth-token`) | Meets current | Token inventory/detail/revoke lifecycle is live-only; full SSO provider flows remain explicit out of scope. |
+| Security Logs | Meets current | Login/operation log Admin pages are live-only with server filters and guard coverage. |
+| Departments (`core.dept`) | Meets | Tree/detail/order operations are live-only with smoke and deploy guards. |
+| Dicts (`core.dict`) | Meets | Dict/item operations are live-only with smoke and deploy guards. |
+| System Menus (`core.menu`) | Meets | Tree/detail CRUD/export and permission options are live-only with smoke and deploy guards. |
+| Tooling/OpenForge | Meets current | OpenAPI, Export and OpenForge Admin are live for safe/read/dry-run scope; direct writes remain out of scope. |
+| Collaboration | Meets current | Messages, Notices, Todos and Approval Lite are live-only for admitted lightweight collaboration scope. |
 
 ## Closed Remediation
 
@@ -170,8 +179,8 @@ failures have guards; and remaining omissions are explicit product boundaries.
    designer and big-data async export are out of scope.
 4. OpenForge direct schema/migration/business-code writes still require user
    admission.
-5. The next admitted P0/P1 foundation gap should be selected by a fresh
-   remaining Admin/productization debt audit.
+5. Public smoke must be split into public API smoke and public Admin smoke;
+   printed URLs or bundle markers do not count as public verification.
 
 ## Guard Matrix
 

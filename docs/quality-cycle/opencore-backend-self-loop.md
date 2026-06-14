@@ -31,5 +31,5 @@ TypeScript/NestJS monorepo structure:
 - Repeated failures belong in tests, smoke checks, deploy guards or concise
   handoff rules, not in repeated command transcripts.
 
-Current recursive productization work continues from
+Current bounded productization work is tracked from
 `docs/quality-cycle/cycle-021/handoff.md`.

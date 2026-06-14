@@ -6,18 +6,19 @@ Branch: `main`
 
 ## Goal
 
-Continue cycle-021 capability-map productization. Compare RuoYi/Yudao
-capabilities to OpenCore's TS/NestJS boundaries, then ship one deployable,
-verifiable, reversible foundation loop per round. A minimal loop is not a
-minimal product; a product can span multiple rounds until it reaches the
-admitted waterline.
+Close the finite Cycle-021 Capstone Acceptance queue. Compare RuoYi/Yudao
+capabilities to OpenCore's TS/NestJS boundaries, then ship deployable,
+verifiable and reversible stages. A minimal stage is not a minimal product; a
+product can span multiple finite stages until it reaches the admitted
+waterline.
 
-## Fixed Loop
+## Fixed Acceptance Execution
 
-- Read this file before the next round.
-- Sort by lowest dependency and foundation value.
+- Read this file and `acceptance-matrix.md` before selecting a capstone task.
+- Pick only from the finite backlog queue.
 - Code changes: test, commit, push, deploy through `pnpm deploy:opencore`,
-  then verify public API/Admin URLs.
+  then run public API smoke and public Admin smoke. Printing a public URL does
+  not count as verification.
 - Fixed ports: API `39172`, Admin `39174`, local smoke `39173`.
 - Repeated failures must become tests, smokes or deploy guards:
   deserialization drift, duplicate `/api/api`, stale Admin bundles and revoked
@@ -35,11 +36,11 @@ is better.
 
 ## Admission
 
-Auto-admitted foundation work: System, Security, Monitor, Tools/OpenForge
-foundation, Collaboration center foundations, IP/location, OAuth token
-management, JWT blacklist, notice templates/delivery/provider reliability,
-KMS/secret vault, operation-log maintenance, scheduler/monitor depth and
-config runtime governance.
+Pre-authorized Capstone foundation scope: System, Security, Monitor,
+Tools/OpenForge foundation, Collaboration center foundations, IP/location,
+OAuth token management, JWT blacklist, notice templates/delivery/provider
+reliability, KMS/secret vault, operation-log maintenance, scheduler/monitor
+depth and config runtime governance.
 
 Requires explicit user admission: CRM/ERP/MES/WMS/mall/member, real
 payment/refund/reconciliation, production multi-tenancy, BPMN/full workflow,
@@ -48,10 +49,13 @@ packages and OpenForge direct Prisma/migration/business-code writing.
 
 ## Current State
 
-Cycle-021 has completed 118 deployable stages.
+Cycle-021 has recorded deployable stages through Round 118. The Capstone
+Acceptance baseline remains Round 115 until the acceptance matrix,
+no-fixture-fallback guard, public API/Admin smoke and doc reconciliation are
+complete.
 
 - System/RBAC: notice, dept, post, menu, role, permission, user, dict, config
-  and file API/SDK loops are live. Dicts Admin is live-only for
+  and file API/SDK surfaces are live. Dicts Admin is live-only for
   list/detail/item CRUD and Departments/Posts Admin are live-only for
   tree/detail/order and list/detail/batch/order CRUD; Permissions Admin is
   live-only for catalog/detail/custom CRUD/export; Menus Admin is live-only
