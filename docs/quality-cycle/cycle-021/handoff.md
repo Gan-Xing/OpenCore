@@ -115,7 +115,7 @@ packages and OpenForge direct Prisma/migration/business-code writing.
 
 ## Current State
 
-Cycle-021 has recorded deployable stages through Round 122. The Capstone
+Cycle-021 has recorded deployable stages through Round 123. The Capstone
 Acceptance baseline remains Round 115 until the acceptance matrix,
 no-fixture-fallback guard, public API/Admin smoke and doc reconciliation are
 complete.
@@ -136,8 +136,9 @@ complete.
   backend Excel export and current-page export. System Notices Admin is
   live-only for management list/detail CRUD, publish/archive/delete, inbox
   read actions, template CRUD/render/create-draft, read-user analytics,
-  delivery records and outbox provider actions. Files Admin still has fixture
-  fallback and remains live-only closure debt.
+  delivery records and outbox provider actions. Files Admin is live-only for
+  list/detail, upload/download, metadata update, delete and current-page
+  export without fixture fallback.
 - Security/session: login policy, logout, force logout, online-user kick-out,
   registered-token allowlist enforcement and expired session cleanup are live;
   Online Users Admin is live-only for list/detail/kick-out/cleanup and no
@@ -198,26 +199,23 @@ complete.
   operations for list, detail, create, approve and reject. These pages have
   seed coverage, dedicated smoke and Admin/deploy guards.
 
-Latest runtime stage: Round 122 System Notices Admin live-only. It removes the
-System Notices Admin fixture fallback, stale management/template/inbox detail
-fallback and fallback UI, keeps notice management CRUD, publish/archive/delete,
-inbox read actions, template CRUD/render/create-draft, read-user analytics,
-delivery records, outbox provider actions and current-page export backed by
-live SDK calls only and adds Admin/deploy guards for stale fixture-backed
-System Notices bundles.
+Latest runtime stage: Round 123 System Files Admin live-only. It removes the
+Files Admin fixture fallback, stale detail fallback and fallback UI, keeps file
+list/detail, upload/download, metadata update, delete and current-page export
+backed by live SDK calls only, and adds Admin/deploy guards for stale
+fixture-backed Files bundles.
 
 ## Next Queue
 
-1. Close remaining fixture-backed Admin debt by dependency order: Files.
-2. Confirm or close Permissions and Posts local-only rows against the strict
+1. Confirm or close Permissions and Posts local-only rows against the strict
    matrix, public smoke and global guard.
-3. Add seven-page unified no-fixture-fallback guard coverage.
-4. Reconcile progress, handoff, ledger and completion-report docs.
-5. Payment/BillingDesign remains explicit-admission because real payment,
+2. Add seven-page unified no-fixture-fallback guard coverage.
+3. Reconcile progress, handoff, ledger and completion-report docs.
+4. Payment/BillingDesign remains explicit-admission because real payment,
    refund and reconciliation are out of scope.
-6. Optional Reports/ExportJobs remain explicit-admission because full report
+5. Optional Reports/ExportJobs remain explicit-admission because full report
    designer and big-data async export are out of scope.
-7. OpenForge direct Prisma/migration/business-code writes remain out of scope
+6. OpenForge direct Prisma/migration/business-code writes remain out of scope
    until explicitly admitted.
 
 ## Stop Condition

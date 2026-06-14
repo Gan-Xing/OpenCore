@@ -625,6 +625,56 @@ verify_admin_bundle_api_base_url() {
     exit 1
   fi
 
+  if grep \
+    --fixed-strings \
+    "createFileAssetFixtures" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Files.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "fallbackRows" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Files.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "Using fallback file fixtures" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Files.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "setRows(fallbackRows)" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Files.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "setSelectedDetail(record)" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Files.tsx" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Unable to load live files" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Unable to load live file detail." \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Upload File" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Choose file" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "core-files" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null; then
+    echo "Admin Files page must use live-only upload, download, metadata and delete data without fixture fallback." >&2
+    echo "Refusing to deploy a stale or fixture-backed Files frontend page." >&2
+    exit 1
+  fi
+
   if ! grep -R \
     --fixed-strings \
     --include='*.js' \

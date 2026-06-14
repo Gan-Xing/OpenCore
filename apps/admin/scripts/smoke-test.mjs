@@ -1337,12 +1337,19 @@ if (
 }
 
 if (
+  filesPage.includes('createFileAssetFixtures') ||
+  filesPage.includes('fallbackRows') ||
+  filesPage.includes('Using fallback file fixtures') ||
+  filesPage.includes('setRows(fallbackRows)') ||
+  filesPage.includes('setSelectedDetail(record)') ||
   !filesPage.includes('listOpenCoreFiles') ||
   !filesPage.includes('getOpenCoreFile') ||
   !filesPage.includes('uploadOpenCoreFile') ||
   !filesPage.includes('downloadOpenCoreFile') ||
   !filesPage.includes('updateOpenCoreFile') ||
   !filesPage.includes('deleteOpenCoreFile') ||
+  !filesPage.includes('Unable to load live files') ||
+  !filesPage.includes('Unable to load live file detail.') ||
   !filesPage.includes('Choose file') ||
   !filesPage.includes('Upload File') ||
   !filesPage.includes('DownloadOutlined') ||
@@ -1352,7 +1359,7 @@ if (
   !filesPage.includes('rows={filteredRows}')
 ) {
   throw new Error(
-    'Files page must use live SDK upload/download with bounded filtering and current-page export.',
+    'Files page must use live-only SDK upload/download/edit/delete with bounded filtering and current-page export without fixture fallback.',
   );
 }
 

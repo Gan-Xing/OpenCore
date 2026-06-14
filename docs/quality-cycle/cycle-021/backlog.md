@@ -45,7 +45,7 @@ In scope:
 - [x] Clean System Roles fallback.
 - [ ] Clean System Permissions fallback or confirm closure.
 - [ ] Clean System Posts fallback or confirm closure.
-- [ ] Clean System Files fallback.
+- [x] Clean System Files fallback.
 - [x] Clean System Config fallback.
 - [x] Clean System Notices fallback.
 - [ ] Add explicit public smoke, split into public API smoke and public Admin

@@ -4,19 +4,16 @@ Date: 2026-06-14
 
 ## Latest Completed Round
 
-Round 122: System Notices Admin live-only management, inbox, template and
-delivery operations.
+Round 123: System Files Admin live-only list/detail, upload/download,
+metadata, delete and export operations.
 
 ## Closed
 
-- Removed the System Notices Admin fixture fallback path, stale
-  management/template/inbox detail fallback and fallback UI.
-- Kept notice management list/detail/create/update, publish/archive/delete,
-  inbox read actions, template CRUD/render/create-draft, read-user analytics,
-  delivery records, outbox provider actions and current-page export backed by
-  live SDK calls only.
-- Added Admin/deploy guards against stale fixture-backed System Notices
-  bundles.
+- Removed the System Files Admin fixture fallback path, stale detail fallback
+  and fallback UI.
+- Kept file list/detail, upload/download, metadata update, delete and
+  current-page export backed by live SDK calls only.
+- Added Admin/deploy guards against stale fixture-backed Files bundles.
 
 ## Still Open
 
@@ -26,4 +23,5 @@ delivery operations.
   designer and big-data async export are outside the admitted surface.
 - OpenForge direct schema/migration/business code writes remain outside the
   admitted surface.
-- System Files Admin fallback closure remains in the finite seven-page queue.
+- System Permissions and System Posts still need closure-flow public smoke
+  confirmation and unified guard coverage.

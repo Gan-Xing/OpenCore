@@ -20,7 +20,7 @@ active debt and decisions that change future execution.
 
 ## Runtime State
 
-Cycle-021 has recorded deployable stages through Round 122 across
+Cycle-021 has recorded deployable stages through Round 123 across
 System/Security/Monitor/Integration/Tools foundations. Round 91 added
 token/session blacklist maintenance with registered-token allowlist
 enforcement, expired-session cleanup, API/SDK/Admin/OpenAPI visibility, smoke
@@ -104,7 +104,11 @@ fallback, stale management/template/inbox detail fallback and fallback UI,
 keeps notice management CRUD, publish/archive/delete, inbox read actions,
 template CRUD/render/create-draft, read-user analytics, delivery records,
 outbox provider actions and current-page export live-only through SDK calls
-and blocks stale System Notices bundles through Admin/deploy guards.
+and blocks stale System Notices bundles through Admin/deploy guards. Round
+123 removed the System Files Admin fixture fallback, stale detail fallback and
+fallback UI, keeps file list/detail, upload/download, metadata update, delete
+and current-page export live-only through SDK calls and blocks stale Files
+bundles through Admin/deploy guards.
 
 ## Guard Register
 
@@ -159,6 +163,11 @@ and blocks stale System Notices bundles through Admin/deploy guards.
   reject `createPermissionSummariesFromRegistry` and fallback copy on the
   Permissions page and require live permission management markers in the built
   bundle.
+- System files: smoke covers file list/detail, upload/download, metadata
+  update, export and delete. Admin/deploy guards reject
+  `createFileAssetFixtures`, `fallbackRows`, fallback copy and stale detail
+  fallback on the Files page, and require live file operation markers in the
+  built bundle.
 - System menus: smoke covers menu tree metadata, create/update/export, parent
   delete guards and delete cleanup. Admin/deploy guards reject
   `createMenuSummariesFromRegistry`, `createPermissionSummariesFromRegistry`

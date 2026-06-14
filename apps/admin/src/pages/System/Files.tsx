@@ -11,7 +11,7 @@ import {
   ProTable,
   type ProColumns,
 } from '@ant-design/pro-components';
-import { createFileAssetFixtures, type FileAssetSummary } from '@opencore/sdk';
+import type { FileAssetSummary } from '@opencore/sdk';
 import {
   Alert,
   Button,
@@ -59,7 +59,6 @@ type FileFormValues = {
   uploadedBy: string;
 };
 
-const fallbackRows = createFileAssetFixtures().items;
 const searchFields: CurrentPageSearchField<FileAssetSummary>[] = [
   'originalName',
   'mimeType',
@@ -143,9 +142,13 @@ function readFileContentBase64(file: File): Promise<string> {
   });
 }
 
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
+}
+
 export default function FilesPage() {
   const [form] = Form.useForm<FileFormValues>();
-  const [rows, setRows] = useState<readonly FileAssetSummary[]>(fallbackRows);
+  const [rows, setRows] = useState<readonly FileAssetSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
   const [selectedDetail, setSelectedDetail] = useState<FileAssetSummary>();
@@ -168,10 +171,12 @@ export default function FilesPage() {
       setRows(await listOpenCoreFiles());
       setLoadError(undefined);
     } catch (error: unknown) {
-      setRows(fallbackRows);
-      setLoadError(
-        error instanceof Error ? error.message : 'Unable to load files.',
-      );
+      setRows([]);
+      setSelectedDetail(undefined);
+      setEditingFile(undefined);
+      setSelectedUploadFile(undefined);
+      setFormOpen(false);
+      setLoadError(getErrorMessage(error, 'Unable to load live files.'));
     } finally {
       setLoading(false);
     }
@@ -207,17 +212,16 @@ export default function FilesPage() {
       });
       setFormOpen(true);
     } catch (error: unknown) {
-      message.error(
-        error instanceof Error ? error.message : 'Unable to open file asset.',
-      );
+      message.error(getErrorMessage(error, 'Unable to load live file detail.'));
     }
   };
 
   const openDetail = async (record: FileAssetSummary) => {
     try {
       setSelectedDetail(await getOpenCoreFile(record.id));
-    } catch (_error) {
-      setSelectedDetail(record);
+    } catch (error: unknown) {
+      setSelectedDetail(undefined);
+      message.error(getErrorMessage(error, 'Unable to load live file detail.'));
     }
   };
 
@@ -356,9 +360,9 @@ export default function FilesPage() {
     <PageContainer title="File Center" subTitle="S7 System">
       {loadError ? (
         <Alert
-          message="Using fallback file fixtures"
+          message="Unable to load live files"
           description={loadError}
-          type="warning"
+          type="error"
           showIcon
           style={{ marginBottom: 16 }}
         />
