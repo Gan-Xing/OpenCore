@@ -4,25 +4,20 @@ Date: 2026-06-14
 
 ## Latest Completed Round
 
-Round 86: `tool.openforge` Admin safe workbench.
+Round 87: Integration health/config audit.
 
 ## Closed
 
-- Added guarded OpenForge API routes for status, doctor, plan, diff, check,
-  manifest list and dry-run apply/rollback.
-- Added SDK types/client methods/fixtures and replaced the static Admin page
-  with a live safe generator workbench.
-- Added repo-root-safe generator-core readers so API and tests do not depend on
-  caller cwd.
-- Added `smoke-tool-openforge` and deploy Admin bundle markers for OpenForge
-  workbench controls.
-- Fixed the operations summary test to account for the seeded audit-retention
-  scheduler job.
+- Added `GET /integrations/providers/health-audit` for provider-wide
+  readiness totals, config-vault debt, outbox backlog and failure history.
+- Added SDK types/client/fixtures and moved the Integration Providers Admin
+  page to a live API-first audit surface with fixture fallback.
+- Added `smoke-integration-health`, OpenAPI exposure and deploy Admin bundle
+  markers for health/config audit and failure history.
 
 ## Still Open
 
-- Integration health/config audit and scheduler worker parity remain next
-  foundation candidates.
+- Scheduler worker parity remains the next foundation candidate.
 - OpenForge write/apply confirmation UX and direct generated code write paths
   remain later explicit stages.
 - Managed cloud KMS adapters remain optional deployment integration beyond the

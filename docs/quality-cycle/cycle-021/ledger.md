@@ -19,3 +19,4 @@ This ledger records state transitions only. Git log keeps commit hashes.
 | 84    | Config       | Secret vault gained env keyring status and vault key rotation.                | Config smoke covers legacy/v2 envelopes, rewrap and leaks.      |
 | 85    | Audit Logs   | Operation logs gained duration/location fields and retention scheduling.      | Audit smoke covers filters, retention cleanup and job registry. |
 | 86    | OpenForge    | Admin gained a live safe generator workbench backed by API/SDK.               | OpenForge smoke and Admin bundle markers cover dry-run flows.   |
+| 87    | Integration  | Providers gained a global health/config audit across diagnostics and outbox.  | Integration health smoke and Admin bundle markers cover audit.  |

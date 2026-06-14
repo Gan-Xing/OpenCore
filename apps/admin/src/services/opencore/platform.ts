@@ -80,6 +80,7 @@ import {
   type SystemDeptTreeSummary,
   type FileAssetSummary,
   type FailOutboxMessageRequest,
+  type IntegrationProviderHealthAuditSummary,
   type IntegrationOutboxSummary,
   type IntegrationOutboxProcessResult,
   type IntegrationOutboxScheduleResult,
@@ -1092,6 +1093,10 @@ export function runOpenCoreIntegrationOutboxSchedule(
   body?: ScheduleOutboxRequest,
 ): Promise<IntegrationOutboxScheduleResult> {
   return integrationClient.runOutboxSchedule(getRequiredAdminToken(), body);
+}
+
+export function getOpenCoreIntegrationProviderHealthAudit(): Promise<IntegrationProviderHealthAuditSummary> {
+  return integrationClient.getProviderHealthAudit(getRequiredAdminToken());
 }
 
 export async function listOpenCoreSystemNoticeTemplates(

@@ -26,6 +26,7 @@ failures have guards; and remaining omissions are explicit product boundaries.
 | `core.login-log`      | Meets current | Schema, lockout, cleanup, actor/reason and location.                                                     |
 | `core.config`         | Meets current | Runtime keys, feature flags, rollout, audience, environment overrides, vault, versions and key rotation. |
 | `core.notice`         | Enhance       | SMS HTTP, SMTP, mail subject, diagnostics, secrets, attachments, TLS policy and realtime events.         |
+| `integration`         | Meets current | Provider health/config audit, readiness totals, config-vault debt, outbox backlog and failure history.   |
 | `scheduler/monitor`   | Meets current | Job Admin operations, registry and handler diagnostics are live.                                         |
 | `OpenForge Admin`     | Meets current | Safe workbench for status, doctor, plan/diff/check, manifests and dry-run apply/rollback.                |
 
@@ -70,17 +71,18 @@ failures have guards; and remaining omissions are explicit product boundaries.
   retentionDays cleanup and the scheduled `audit-log.retention-clean` job.
 - Round 86 added the OpenForge Admin/API/SDK workbench for guarded status,
   doctor, plan, diff, check, manifest list and dry-run apply/rollback.
+- Round 87 added Integration provider health/config audit with API/SDK/Admin,
+  OpenAPI and smoke/deploy coverage.
 
 ## Active Debt
 
-1. Integration: provider readiness, failure history and config diagnostics.
-2. Scheduler/monitor: external worker parity, cron dispatch and queue metrics
+1. Scheduler/monitor: external worker parity, cron dispatch and queue metrics
    beyond the current registered manual executor.
-3. OpenForge: write/apply confirmation UX, manifest detail and rollback
+2. OpenForge: write/apply confirmation UX, manifest detail and rollback
    execution remain later stages; direct schema/migration/business-code writes
    still require user admission.
-4. Optional managed-KMS provider adapter if deployment requires cloud KMS APIs.
-5. Optional operation-log external GeoIP enrichment if deployment needs real
+3. Optional managed-KMS provider adapter if deployment requires cloud KMS APIs.
+4. Optional operation-log external GeoIP enrichment if deployment needs real
    IP attribution beyond deterministic categories.
 
 ## Guard Matrix
@@ -103,6 +105,9 @@ failures have guards; and remaining omissions are explicit product boundaries.
 - OpenForge: smoke covers status, doctor, plan, diff, check, apply dry-run,
   manifest list, rollback dry-run and unsafe schema/config/manifest guards;
   deploy checks Admin workbench markers.
+- Integration: health audit smoke covers provider-wide readiness totals,
+  config-vault debt, outbox backlog, diagnostics parity, failure history and
+  secret-leak guards; deploy checks Admin health/config audit markers.
 - Config: runtime shape, environment override governance, secret-vault
   plaintext protection, legacy envelope deserialization, secret version
   history, secret rotation and vault key rotation guards.

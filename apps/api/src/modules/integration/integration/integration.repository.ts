@@ -9,6 +9,7 @@ import type {
   IntegrationOutboxProcessResultDto,
   IntegrationOutboxScheduleResultDto,
   IntegrationOutboxAttachmentDto,
+  IntegrationProviderHealthAuditDto,
   IntegrationOutboxQueryDto,
   IntegrationProviderDiagnosticsDto,
   IntegrationProviderQueryDto,
@@ -75,6 +76,7 @@ export abstract class IntegrationRepository {
   abstract getProviderDiagnostics(
     code: string,
   ): Promise<IntegrationProviderDiagnosticsDto>;
+  abstract getProviderHealthAudit(): Promise<IntegrationProviderHealthAuditDto>;
 
   abstract listTemplates(
     channel: 'mail' | 'sms',
@@ -409,9 +411,86 @@ export function buildProviderDiagnostics(input: {
   };
 }
 
+export function buildProviderHealthAudit(input: {
+  providers: readonly IntegrationProviderRecord[];
+  outbox: readonly IntegrationOutboxRecord[];
+  generatedAt?: string;
+}): IntegrationProviderHealthAuditDto {
+  const generatedAt = input.generatedAt ?? new Date().toISOString();
+  const providers = input.providers
+    .map((provider) =>
+      buildProviderDiagnostics({
+        provider,
+        outbox: input.outbox,
+        generatedAt,
+      }),
+    )
+    .sort(
+      (left, right) =>
+        readinessRank(left.readiness) - readinessRank(right.readiness) ||
+        left.provider.type.localeCompare(right.provider.type) ||
+        left.provider.code.localeCompare(right.provider.code),
+    );
+  const configVaultBacked = providers.filter((item) =>
+    item.provider.secretRef.startsWith(CONFIG_SECRET_REF_PREFIX),
+  ).length;
+
+  return {
+    generatedAt,
+    totals: {
+      total: providers.length,
+      ready: countByReadiness(providers, 'ready'),
+      attention: countByReadiness(providers, 'attention'),
+      blocked: countByReadiness(providers, 'blocked'),
+      unsupported: countByReadiness(providers, 'unsupported'),
+      queued: providers.reduce((sum, item) => sum + item.outbox.queued, 0),
+      failed: providers.reduce((sum, item) => sum + item.outbox.failed, 0),
+      retryableFailed: providers.reduce(
+        (sum, item) => sum + item.outbox.retryableFailed,
+        0,
+      ),
+      unchecked: providers.filter((item) => !item.provider.lastCheckedAt)
+        .length,
+      configVaultBacked,
+      configVaultMissing: providers.length - configVaultBacked,
+    },
+    providers,
+    actions: [
+      ...new Set(
+        providers
+          .flatMap((item) => item.actions)
+          .filter(
+            (action) => action !== 'No immediate operator action required.',
+          ),
+      ),
+    ],
+  };
+}
+
 const SECRET_KEY_PATTERN =
   /(authorization|clientSecret|password|secret|token)/i;
 const CONFIG_SECRET_REF_PREFIX = 'secret://config/';
+
+function readinessRank(
+  readiness: IntegrationProviderDiagnosticsDto['readiness'],
+): number {
+  return (
+    {
+      blocked: 0,
+      attention: 1,
+      unsupported: 2,
+      ready: 3,
+    } satisfies Record<IntegrationProviderDiagnosticsDto['readiness'], number>
+  )[readiness];
+}
+
+function countByReadiness(
+  providers: readonly IntegrationProviderDiagnosticsDto[],
+  readiness: IntegrationProviderDiagnosticsDto['readiness'],
+): number {
+  return providers.filter((provider) => provider.readiness === readiness)
+    .length;
+}
 
 export function createPage<T>(
   rows: readonly T[],

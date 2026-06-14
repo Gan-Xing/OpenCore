@@ -43,6 +43,9 @@ cleanup and scheduled retention job registration.
 Round 86 moved OpenForge Admin from static text to a live safe workbench and
 added repo-root-safe generator-core readers so API/runtime tests no longer
 depend on caller cwd.
+Round 87 moved Integration provider health from per-provider diagnostics to a
+global health/config audit with readiness totals, config-vault debt, outbox
+backlog, failure history and live Admin visibility.
 Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 `lint` must run sequentially.
 
@@ -67,6 +70,9 @@ Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
   execution, failed retry and run-log detail.
 - OpenForge smoke covers status, doctor, plan, diff, check, apply dry-run,
   manifest list, rollback dry-run and unsafe schema/config/manifest guards.
+- Integration health smoke covers provider-wide readiness totals,
+  config-vault debt, outbox backlog, diagnostics parity, failure history and
+  secret-leak guards.
 
 ## Documentation Finding
 

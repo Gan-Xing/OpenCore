@@ -42,6 +42,7 @@ import {
   findIntegrationProviderFixture,
   findIntegrationTemplateFixture,
   findOAuthCallbackContractFixture,
+  createIntegrationProviderHealthAuditFixture,
 } from './integration-types';
 
 describe('registry fixtures', () => {
@@ -227,6 +228,11 @@ describe('registry fixtures', () => {
     expect(
       JSON.stringify(findIntegrationProviderFixture('sms.http')),
     ).not.toContain('opencore-local-sms-api-key');
+    expect(findIntegrationProviderFixture('sms.sandbox')?.config).toMatchObject(
+      {
+        token: '[REDACTED]',
+      },
+    );
     expect(findIntegrationProviderFixture('mail.smtp')?.config).toMatchObject({
       tlsMode: 'starttls-required',
     });
@@ -272,6 +278,24 @@ describe('registry fixtures', () => {
         }),
       ]),
     );
+    expect(createIntegrationProviderHealthAuditFixture()).toMatchObject({
+      totals: {
+        total: 4,
+        blocked: 4,
+        queued: 1,
+        configVaultBacked: 2,
+        configVaultMissing: 2,
+      },
+      providers: expect.arrayContaining([
+        expect.objectContaining({
+          provider: expect.objectContaining({ code: 'mail.sandbox' }),
+          outbox: expect.objectContaining({ queued: 1 }),
+        }),
+        expect.objectContaining({
+          provider: expect.objectContaining({ code: 'sms.sandbox' }),
+        }),
+      ]),
+    });
     expect(
       findOAuthCallbackContractFixture(
         '/api/integrations/oauth/callback/:providerCode',

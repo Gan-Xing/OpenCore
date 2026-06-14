@@ -23,6 +23,7 @@ import {
   IntegrationOutboxScheduleResultDto,
   IntegrationProviderDiagnosticsDto,
   IntegrationProviderDto,
+  IntegrationProviderHealthAuditDto,
   IntegrationProviderPageDto,
   IntegrationProviderQueryDto,
   IntegrationSummaryDto,
@@ -59,6 +60,14 @@ export class IntegrationController {
     @Query() query: IntegrationProviderQueryDto,
   ): Promise<IntegrationProviderPageDto> {
     return this.repository.listProviders(query);
+  }
+
+  @Get('providers/health-audit')
+  @ApiTags('Integration Providers')
+  @RequirePermission('integration:provider:read')
+  @ApiOkResponse({ type: IntegrationProviderHealthAuditDto })
+  getProviderHealthAudit(): Promise<IntegrationProviderHealthAuditDto> {
+    return this.repository.getProviderHealthAudit();
   }
 
   @Get('providers/:code')

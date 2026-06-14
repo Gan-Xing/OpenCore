@@ -6,6 +6,7 @@ describe('IntegrationController permission matrix', () => {
   it('guards provider, mail, SMS, OAuth, and design routes', () => {
     const expected: Array<[keyof IntegrationController, string[]]> = [
       ['listProviders', ['integration:provider:read']],
+      ['getProviderHealthAudit', ['integration:provider:read']],
       ['getProvider', ['integration:provider:read']],
       ['createProvider', ['integration:provider:create']],
       ['updateProvider', ['integration:provider:update']],

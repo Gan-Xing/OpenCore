@@ -171,6 +171,57 @@ describe('IntegrationRepository', () => {
     });
   });
 
+  it('builds a provider health audit across readiness and config debt', async () => {
+    const repository = new SeedIntegrationRepository();
+
+    await repository.enableProvider('mail.sandbox');
+    await repository.checkProviderHealth('mail.sandbox');
+    await repository.markOutboxFailed('mail', 'outbox_mail_1', {
+      error: 'Sandbox SMTP rejected the notice',
+    });
+
+    await expect(repository.getProviderHealthAudit()).resolves.toMatchObject({
+      totals: {
+        total: 4,
+        blocked: 4,
+        failed: 1,
+        retryableFailed: 1,
+        configVaultBacked: 2,
+        configVaultMissing: 2,
+      },
+      providers: expect.arrayContaining([
+        expect.objectContaining({
+          provider: expect.objectContaining({
+            code: 'mail.sandbox',
+            config: expect.objectContaining({ clientSecret: '[REDACTED]' }),
+          }),
+          outbox: expect.objectContaining({
+            failed: 1,
+            lastFailure: expect.objectContaining({
+              error: 'Sandbox SMTP rejected the notice',
+            }),
+          }),
+        }),
+        expect.objectContaining({
+          provider: expect.objectContaining({ code: 'sms.http' }),
+          checks: expect.arrayContaining([
+            expect.objectContaining({
+              code: 'provider.secret-injections',
+              status: 'pass',
+            }),
+          ]),
+        }),
+      ]),
+      actions: expect.arrayContaining([
+        'Inspect and retry failed outbox messages.',
+        'Move runtime provider credentials to secret://config/<key>.',
+      ]),
+    });
+    expect(
+      JSON.stringify(await repository.getProviderHealthAudit()),
+    ).not.toContain('unsafe');
+  });
+
   it('renders mail templates and queues outbox messages with retry metadata', async () => {
     const repository = new SeedIntegrationRepository();
 

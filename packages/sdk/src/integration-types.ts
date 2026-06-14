@@ -60,6 +60,27 @@ export type IntegrationProviderDiagnosticsSummary = {
   generatedAt: string;
 };
 
+export type IntegrationProviderHealthAuditTotals = {
+  total: number;
+  ready: number;
+  attention: number;
+  blocked: number;
+  unsupported: number;
+  queued: number;
+  failed: number;
+  retryableFailed: number;
+  unchecked: number;
+  configVaultBacked: number;
+  configVaultMissing: number;
+};
+
+export type IntegrationProviderHealthAuditSummary = {
+  generatedAt: string;
+  totals: IntegrationProviderHealthAuditTotals;
+  providers: readonly IntegrationProviderDiagnosticsSummary[];
+  actions: readonly string[];
+};
+
 export type IntegrationTemplateSummary = {
   id: string;
   code: string;
@@ -252,6 +273,7 @@ export type IntegrationFixtures = {
   summary: IntegrationSummary;
   providers: readonly IntegrationProviderSummary[];
   providerDiagnostics: readonly IntegrationProviderDiagnosticsSummary[];
+  providerHealthAudit: IntegrationProviderHealthAuditSummary;
   mailTemplates: readonly IntegrationTemplateSummary[];
   smsTemplates: readonly IntegrationTemplateSummary[];
   outbox: readonly IntegrationOutboxSummary[];
@@ -291,6 +313,20 @@ export function createIntegrationFixtures(): IntegrationFixtures {
         tlsMode: 'starttls-required',
         timeoutMs: 10000,
         username: 'smtp-user',
+      },
+      healthStatus: 'disabled',
+    },
+    {
+      id: 'provider_sms_sandbox',
+      code: 'sms.sandbox',
+      type: 'sms',
+      name: 'SMS Sandbox',
+      enabled: false,
+      secretRef: 'secret://integration/sms/sandbox',
+      config: {
+        adapter: 'sandbox',
+        endpoint: 'https://sms.example.test',
+        token: '[REDACTED]',
       },
       healthStatus: 'disabled',
     },
@@ -406,6 +442,8 @@ export function createIntegrationFixtures(): IntegrationFixtures {
   const providerDiagnostics = providers.map((provider) =>
     buildProviderDiagnosticsFixture(provider, outbox),
   );
+  const providerHealthAudit =
+    buildProviderHealthAuditFixture(providerDiagnostics);
 
   return {
     summary: {
@@ -430,6 +468,7 @@ export function createIntegrationFixtures(): IntegrationFixtures {
     },
     providers,
     providerDiagnostics,
+    providerHealthAudit,
     mailTemplates,
     smsTemplates,
     outbox,
@@ -452,6 +491,10 @@ export function findIntegrationProviderDiagnosticsFixture(
   return createIntegrationFixtures().providerDiagnostics.find(
     (diagnostics) => diagnostics.provider.code === code,
   );
+}
+
+export function createIntegrationProviderHealthAuditFixture(): IntegrationProviderHealthAuditSummary {
+  return createIntegrationFixtures().providerHealthAudit;
 }
 
 export function findIntegrationTemplateFixture(
@@ -593,6 +636,45 @@ function buildProviderDiagnosticsFixture(
   };
 }
 
+function buildProviderHealthAuditFixture(
+  providers: readonly IntegrationProviderDiagnosticsSummary[],
+): IntegrationProviderHealthAuditSummary {
+  const configVaultBacked = providers.filter((item) =>
+    item.provider.secretRef.startsWith('secret://config/'),
+  ).length;
+
+  return {
+    generatedAt: '2026-06-10T00:00:00.000Z',
+    totals: {
+      total: providers.length,
+      ready: countReadiness(providers, 'ready'),
+      attention: countReadiness(providers, 'attention'),
+      blocked: countReadiness(providers, 'blocked'),
+      unsupported: countReadiness(providers, 'unsupported'),
+      queued: providers.reduce((sum, item) => sum + item.outbox.queued, 0),
+      failed: providers.reduce((sum, item) => sum + item.outbox.failed, 0),
+      retryableFailed: providers.reduce(
+        (sum, item) => sum + item.outbox.retryableFailed,
+        0,
+      ),
+      unchecked: providers.filter((item) => !item.provider.lastCheckedAt)
+        .length,
+      configVaultBacked,
+      configVaultMissing: providers.length - configVaultBacked,
+    },
+    providers,
+    actions: [
+      ...new Set(
+        providers.flatMap((item) =>
+          item.actions.filter(
+            (action) => action !== 'No immediate operator action required.',
+          ),
+        ),
+      ),
+    ],
+  };
+}
+
 function buildOutboxSummary(rows: readonly IntegrationOutboxSummary[]) {
   return {
     total: rows.length,
@@ -608,4 +690,12 @@ function countByField<T, K extends keyof T>(
   value: string,
 ): number {
   return rows.filter((row) => row[field] === value).length;
+}
+
+function countReadiness(
+  providers: readonly IntegrationProviderDiagnosticsSummary[],
+  readiness: IntegrationProviderDiagnosticsSummary['readiness'],
+): number {
+  return providers.filter((provider) => provider.readiness === readiness)
+    .length;
 }

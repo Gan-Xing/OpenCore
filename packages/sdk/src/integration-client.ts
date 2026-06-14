@@ -10,6 +10,7 @@ import type {
   IntegrationOutboxScheduleResult,
   IntegrationOutboxSummary,
   IntegrationProviderDiagnosticsSummary,
+  IntegrationProviderHealthAuditSummary,
   IntegrationProviderPage,
   IntegrationProviderQueryRequest,
   IntegrationProviderSummary,
@@ -63,6 +64,9 @@ export type IntegrationClient = {
     token: string,
     code: string,
   ) => Promise<IntegrationProviderDiagnosticsSummary>;
+  getProviderHealthAudit: (
+    token: string,
+  ) => Promise<IntegrationProviderHealthAuditSummary>;
   runOutboxSchedule: (
     token: string,
     body?: ScheduleOutboxRequest,
@@ -222,6 +226,11 @@ export function createIntegrationClient(
     getProviderDiagnostics: (token, code) =>
       request<IntegrationProviderDiagnosticsSummary>(
         `/integrations/providers/${encodeURIComponent(code)}/diagnostics`,
+        { token },
+      ),
+    getProviderHealthAudit: (token) =>
+      request<IntegrationProviderHealthAuditSummary>(
+        '/integrations/providers/health-audit',
         { token },
       ),
     runOutboxSchedule: (token, body) =>

@@ -5,15 +5,16 @@ import {
 } from '@ant-design/pro-components';
 import {
   createIntegrationFixtures,
+  createIntegrationProviderHealthAuditFixture,
   findIntegrationOutboxFixture,
-  findIntegrationProviderDiagnosticsFixture,
-  findIntegrationProviderFixture,
+  type IntegrationProviderHealthAuditSummary,
   type IntegrationProviderDiagnosticsSummary,
   type IntegrationOutboxSummary,
   type IntegrationProviderSummary,
 } from '@opencore/sdk';
-import { Space, Statistic, Tag, Typography } from 'antd';
-import { useState } from 'react';
+import { Alert, Button, Space, Statistic, Tag, Typography } from 'antd';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { getOpenCoreIntegrationProviderHealthAudit } from '@/services/opencore/platform';
 import {
   CurrentPageExportButton,
   type CurrentPageExportColumn,
@@ -27,8 +28,7 @@ import {
 import { ReadOnlyDetailDrawer } from '../shared/ReadOnlyDetailDrawer';
 
 const fixtures = createIntegrationFixtures();
-const rows = fixtures.providers;
-const summary = fixtures.summary;
+const fallbackHealthAudit = createIntegrationProviderHealthAuditFixture();
 const signedCallbackContract = {
   algorithm: 'HMAC-SHA256',
   mailPath: '/api/integrations/mail/outbox/callback',
@@ -51,36 +51,53 @@ const searchFields: CurrentPageSearchField<IntegrationProviderSummary>[] = [
   'name',
   'healthStatus',
 ];
-const filterOptions: CurrentPageFilterOption<IntegrationProviderSummary>[] = [
-  {
-    key: 'type',
-    options: createCurrentPageFilterOptions(rows, 'type'),
-    placeholder: 'Type',
-    predicate: (record, value) => record.type === value,
-  },
-  {
-    key: 'enabled',
-    options: [
-      { label: 'enabled', value: 'true' },
-      { label: 'disabled', value: 'false' },
-    ],
-    placeholder: 'Enabled',
-    predicate: (record, value) => record.enabled === (value === 'true'),
-  },
-  {
-    key: 'healthStatus',
-    options: createCurrentPageFilterOptions(rows, 'healthStatus'),
-    placeholder: 'Health',
-    predicate: (record, value) => record.healthStatus === value,
-  },
-];
 
 export default function ProvidersPage() {
+  const [healthAudit, setHealthAudit] =
+    useState<IntegrationProviderHealthAuditSummary>(fallbackHealthAudit);
   const [selected, setSelected] = useState<IntegrationProviderSummary>();
   const [selectedDiagnostics, setSelectedDiagnostics] =
     useState<IntegrationProviderDiagnosticsSummary>();
   const [selectedOutbox, setSelectedOutbox] =
     useState<IntegrationOutboxSummary>();
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string>();
+  const rows = useMemo(
+    () => healthAudit.providers.map((item) => item.provider),
+    [healthAudit],
+  );
+  const diagnosticsByCode = useMemo(
+    () =>
+      new Map(healthAudit.providers.map((item) => [item.provider.code, item])),
+    [healthAudit],
+  );
+  const filterOptions: CurrentPageFilterOption<IntegrationProviderSummary>[] =
+    useMemo(
+      () => [
+        {
+          key: 'type',
+          options: createCurrentPageFilterOptions(rows, 'type'),
+          placeholder: 'Type',
+          predicate: (record, value) => record.type === value,
+        },
+        {
+          key: 'enabled',
+          options: [
+            { label: 'enabled', value: 'true' },
+            { label: 'disabled', value: 'false' },
+          ],
+          placeholder: 'Enabled',
+          predicate: (record, value) => record.enabled === (value === 'true'),
+        },
+        {
+          key: 'healthStatus',
+          options: createCurrentPageFilterOptions(rows, 'healthStatus'),
+          placeholder: 'Health',
+          predicate: (record, value) => record.healthStatus === value,
+        },
+      ],
+      [rows],
+    );
   const selectedSmtpTlsPolicy =
     selected?.type === 'mail'
       ? String(selected.config.tlsMode ?? 'not configured')
@@ -93,13 +110,37 @@ export default function ProvidersPage() {
       selectFilters: filterOptions,
     });
 
+  const loadHealthAudit = useCallback(async () => {
+    setLoading(true);
+    try {
+      const nextAudit = await getOpenCoreIntegrationProviderHealthAudit();
+
+      setHealthAudit(nextAudit);
+      setLoadError(undefined);
+    } catch (error: unknown) {
+      setHealthAudit(fallbackHealthAudit);
+      setLoadError(
+        error instanceof Error
+          ? error.message
+          : 'Unable to load integration health audit.',
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadHealthAudit();
+  }, [loadHealthAudit]);
+
   const openDetail = (code: string) => {
-    const provider = findIntegrationProviderFixture(code);
+    const diagnostics = diagnosticsByCode.get(code);
+    const provider = diagnostics?.provider;
     const outbox = fixtures.outbox.find(
       (message) => message.providerCode === code,
     );
     setSelected(provider);
-    setSelectedDiagnostics(findIntegrationProviderDiagnosticsFixture(code));
+    setSelectedDiagnostics(diagnostics);
     setSelectedOutbox(
       outbox
         ? findIntegrationOutboxFixture(outbox.channel, outbox.id)
@@ -126,6 +167,42 @@ export default function ProvidersPage() {
       ),
     },
     {
+      title: 'Readiness',
+      render: (_, record) => {
+        const readiness = diagnosticsByCode.get(record.code)?.readiness;
+        return (
+          <Tag color={readiness === 'ready' ? 'green' : 'red'}>{readiness}</Tag>
+        );
+      },
+    },
+    {
+      title: 'Config Audit',
+      render: (_, record) => (
+        <Tag
+          color={
+            record.secretRef.startsWith('secret://config/') ? 'green' : 'gold'
+          }
+        >
+          {record.secretRef.startsWith('secret://config/')
+            ? 'vault-backed'
+            : 'needs vault'}
+        </Tag>
+      ),
+    },
+    {
+      title: 'Failure History',
+      render: (_, record) => {
+        const diagnostics = diagnosticsByCode.get(record.code);
+        return (
+          <Typography.Text
+            type={diagnostics?.outbox.failed ? 'danger' : 'secondary'}
+          >
+            {diagnostics?.outbox.lastFailure?.id ?? 'none'}
+          </Typography.Text>
+        );
+      },
+    },
+    {
       title: 'Health',
       render: (_, record) => <Tag color="blue">{record.healthStatus}</Tag>,
     },
@@ -148,16 +225,39 @@ export default function ProvidersPage() {
 
   return (
     <PageContainer title="Providers" subTitle="S12 Integrations">
+      {loadError ? (
+        <Alert
+          showIcon
+          style={{ marginBottom: 16 }}
+          type="warning"
+          message="Using fallback Integration Health Audit data"
+          description={loadError}
+          action={
+            <Button onClick={() => void loadHealthAudit()}>Reload</Button>
+          }
+        />
+      ) : null}
       <Space size="large" style={{ marginBottom: 16 }} wrap>
         <Statistic
           title="Enabled providers"
-          value={summary.providers.enabled}
+          value={rows.filter((provider) => provider.enabled).length}
         />
         <Statistic
-          title="Degraded providers"
-          value={summary.providers.degraded}
+          title="Health Audit"
+          value={healthAudit.totals.blocked}
+          suffix={`/ ${healthAudit.totals.total}`}
         />
-        <Statistic title="Queued mail" value={summary.mailOutbox.queued} />
+        <Statistic title="Queued outbox" value={healthAudit.totals.queued} />
+        <Statistic title="Failed outbox" value={healthAudit.totals.failed} />
+        <Statistic
+          title="Config Audit"
+          value={healthAudit.totals.configVaultBacked}
+          suffix={`/ ${healthAudit.totals.total}`}
+        />
+        <Statistic
+          title="Failure History"
+          value={healthAudit.totals.retryableFailed}
+        />
         <Statistic
           title="Signed callback contract"
           value={signedCallbackContract.algorithm}
@@ -169,7 +269,7 @@ export default function ProvidersPage() {
         <Statistic title="Provider Diagnostics" value="read-only" />
         <Statistic
           title="Design topics"
-          value={summary.designs.designOnlyTopics}
+          value={fixtures.summary.designs.designOnlyTopics}
         />
       </Space>
       <ProTable<IntegrationProviderSummary>
@@ -186,6 +286,7 @@ export default function ProvidersPage() {
           />,
         ]}
         pagination={false}
+        loading={loading}
         dataSource={filteredRows}
         columns={columns}
       />
@@ -204,6 +305,20 @@ export default function ProvidersPage() {
           {
             label: 'Diagnostics Readiness',
             value: selectedDiagnostics?.readiness,
+          },
+          {
+            label: 'Health Audit Generated At',
+            value: healthAudit.generatedAt,
+          },
+          {
+            label: 'Config Audit',
+            value: selected?.secretRef.startsWith('secret://config/')
+              ? 'vault-backed'
+              : 'needs vault',
+          },
+          {
+            label: 'Failure History',
+            value: selectedDiagnostics?.outbox.lastFailure?.id ?? 'none',
           },
           {
             label: 'Diagnostics Channel',

@@ -19,11 +19,10 @@ active debt and decisions that change future execution.
 
 ## Runtime State
 
-Cycle-021 has completed 86 deployable stages across
-System/Security/Monitor/Integration/Tools foundations. Round 86 moved
-OpenForge Admin from static status text to a live safe workbench backed by
-API/SDK/OpenAPI for status, doctor, plan, diff, check, manifest list and
-dry-run apply/rollback.
+Cycle-021 has completed 87 deployable stages across
+System/Security/Monitor/Integration/Tools foundations. Round 87 added
+Integration provider health/config audit backed by API/SDK/Admin/OpenAPI for
+readiness totals, config-vault debt, outbox backlog and failure history.
 
 ## Guard Register
 
@@ -51,6 +50,9 @@ dry-run apply/rollback.
 - OpenForge: smoke covers status, doctor, plan, diff, check, apply dry-run,
   manifest list, rollback dry-run and unsafe schema/config/manifest guards.
   Deploy checks Admin workbench markers.
+- Integration: smoke covers provider-wide health audit, diagnostics parity,
+  config-vault debt, outbox backlog, failure history and secret-leak guards.
+  Deploy checks Admin health/config audit markers.
 - Prisma schema/seed drift: migrations and seed must include every Prisma
   model used by smoke-covered runtime endpoints.
 - Admin generated types: run Admin `typecheck` and `lint` sequentially because

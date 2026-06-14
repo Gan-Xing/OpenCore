@@ -37,6 +37,9 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   mail subject persistence, provider diagnostics, SMS HTTP secret injection and
   SMTP attachments plus explicit SMTP TLS policy and authenticated inbox
   realtime events are live.
+- Integration: provider health/config audit is live with readiness totals,
+  config-vault debt, outbox backlog, last failure and operator actions across
+  API/SDK/Admin/OpenAPI/smoke.
 - Config: runtime keys, login policy, feature flags, rollout, audience rules,
   environment overrides, secret-vault encryption, secret version history,
   explicit rotation, env-bound keyring status and vault key rotation are live.
@@ -98,6 +101,9 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   API/SDK/Admin for status, doctor, plan, diff, check, manifests and dry-run
   apply/rollback; write-enabled code generation remains a later explicit
   stage.
+- Round 87: Integration Providers expose a global health/config audit that
+  aggregates existing diagnostics, config-vault debt, outbox backlog and
+  failure history into API/SDK/Admin and deploy smoke guards.
 
 ## Explicit Non-Claims
 
@@ -108,7 +114,7 @@ and AI/RAG/Agent workflow.
 
 ## Next Focus
 
-Choose one foundation stage from integration health/config audit or scheduler
-worker parity. OpenForge write/apply confirmation UX is a later explicit stage.
-Managed cloud KMS adapters and external operation-log GeoIP are optional
-deployment integrations beyond the current foundation waterline.
+Choose scheduler worker parity next. OpenForge write/apply confirmation UX is
+a later explicit stage. Managed cloud KMS adapters and external operation-log
+GeoIP are optional deployment integrations beyond the current foundation
+waterline.

@@ -5171,6 +5171,26 @@
         "tags": ["Integration", "Integration Providers"]
       }
     },
+    "/api/integrations/providers/health-audit": {
+      "get": {
+        "operationId": "IntegrationController_getProviderHealthAudit",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationProviderHealthAuditDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Providers"]
+      }
+    },
     "/api/integrations/providers/{code}": {
       "get": {
         "operationId": "IntegrationController_getProvider",
@@ -9873,45 +9893,34 @@
         },
         "required": ["items", "page", "pageSize", "total", "totalPages"]
       },
-      "CreateIntegrationProviderDto": {
+      "IntegrationProviderHealthAuditTotalsDto": {
         "type": "object",
         "properties": {
-          "code": { "type": "string" },
-          "type": {
-            "type": "string",
-            "enum": ["mail", "oauth", "pay", "sms", "websocket", "wechat"]
-          },
-          "name": { "type": "string" },
-          "enabled": { "type": "boolean", "default": false },
-          "secretRef": { "type": "string" },
-          "config": {
-            "type": "object",
-            "additionalProperties": true,
-            "example": {
-              "adapter": "smtp",
-              "host": "smtp.example.test",
-              "tlsMode": "starttls-required"
-            }
-          }
+          "total": { "type": "number" },
+          "ready": { "type": "number" },
+          "attention": { "type": "number" },
+          "blocked": { "type": "number" },
+          "unsupported": { "type": "number" },
+          "queued": { "type": "number" },
+          "failed": { "type": "number" },
+          "retryableFailed": { "type": "number" },
+          "unchecked": { "type": "number" },
+          "configVaultBacked": { "type": "number" },
+          "configVaultMissing": { "type": "number" }
         },
-        "required": ["code", "type", "name", "secretRef", "config"]
-      },
-      "UpdateIntegrationProviderDto": {
-        "type": "object",
-        "properties": {
-          "name": { "type": "string" },
-          "enabled": { "type": "boolean" },
-          "secretRef": { "type": "string" },
-          "config": {
-            "type": "object",
-            "additionalProperties": true,
-            "example": {
-              "adapter": "smtp",
-              "host": "smtp.example.test",
-              "tlsMode": "starttls-required"
-            }
-          }
-        }
+        "required": [
+          "total",
+          "ready",
+          "attention",
+          "blocked",
+          "unsupported",
+          "queued",
+          "failed",
+          "retryableFailed",
+          "unchecked",
+          "configVaultBacked",
+          "configVaultMissing"
+        ]
       },
       "IntegrationProviderDiagnosticLastFailureDto": {
         "type": "object",
@@ -9975,6 +9984,63 @@
           "actions",
           "generatedAt"
         ]
+      },
+      "IntegrationProviderHealthAuditDto": {
+        "type": "object",
+        "properties": {
+          "generatedAt": { "type": "string" },
+          "totals": {
+            "$ref": "#/components/schemas/IntegrationProviderHealthAuditTotalsDto"
+          },
+          "providers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IntegrationProviderDiagnosticsDto"
+            }
+          },
+          "actions": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["generatedAt", "totals", "providers", "actions"]
+      },
+      "CreateIntegrationProviderDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "type": {
+            "type": "string",
+            "enum": ["mail", "oauth", "pay", "sms", "websocket", "wechat"]
+          },
+          "name": { "type": "string" },
+          "enabled": { "type": "boolean", "default": false },
+          "secretRef": { "type": "string" },
+          "config": {
+            "type": "object",
+            "additionalProperties": true,
+            "example": {
+              "adapter": "smtp",
+              "host": "smtp.example.test",
+              "tlsMode": "starttls-required"
+            }
+          }
+        },
+        "required": ["code", "type", "name", "secretRef", "config"]
+      },
+      "UpdateIntegrationProviderDto": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "enabled": { "type": "boolean" },
+          "secretRef": { "type": "string" },
+          "config": {
+            "type": "object",
+            "additionalProperties": true,
+            "example": {
+              "adapter": "smtp",
+              "host": "smtp.example.test",
+              "tlsMode": "starttls-required"
+            }
+          }
+        }
       },
       "ScheduleOutboxDto": {
         "type": "object",

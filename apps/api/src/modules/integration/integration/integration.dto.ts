@@ -152,6 +152,55 @@ export class IntegrationProviderDiagnosticsDto {
   generatedAt!: string;
 }
 
+export class IntegrationProviderHealthAuditTotalsDto {
+  @ApiProperty()
+  total!: number;
+
+  @ApiProperty()
+  ready!: number;
+
+  @ApiProperty()
+  attention!: number;
+
+  @ApiProperty()
+  blocked!: number;
+
+  @ApiProperty()
+  unsupported!: number;
+
+  @ApiProperty()
+  queued!: number;
+
+  @ApiProperty()
+  failed!: number;
+
+  @ApiProperty()
+  retryableFailed!: number;
+
+  @ApiProperty()
+  unchecked!: number;
+
+  @ApiProperty()
+  configVaultBacked!: number;
+
+  @ApiProperty()
+  configVaultMissing!: number;
+}
+
+export class IntegrationProviderHealthAuditDto {
+  @ApiProperty()
+  generatedAt!: string;
+
+  @ApiProperty({ type: IntegrationProviderHealthAuditTotalsDto })
+  totals!: IntegrationProviderHealthAuditTotalsDto;
+
+  @ApiProperty({ type: [IntegrationProviderDiagnosticsDto] })
+  providers!: readonly IntegrationProviderDiagnosticsDto[];
+
+  @ApiProperty({ type: [String] })
+  actions!: readonly string[];
+}
+
 export class IntegrationProviderSummaryDto {
   @ApiProperty()
   total!: number;
