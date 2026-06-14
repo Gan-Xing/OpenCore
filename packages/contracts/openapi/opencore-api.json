@@ -1960,6 +1960,56 @@
         "tags": ["SystemManagement", "Core System Config"]
       }
     },
+    "/api/core/config/vault/status": {
+      "get": {
+        "operationId": "SystemManagementController_getConfigVaultStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemConfigVaultStatusDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Config"]
+      }
+    },
+    "/api/core/config/vault/rotate-key": {
+      "post": {
+        "operationId": "SystemManagementController_rotateConfigVaultKey",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RotateSystemConfigVaultKeyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemConfigVaultKeyRotationDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Config"]
+      }
+    },
     "/api/core/config/{key}/secret-versions": {
       "get": {
         "operationId": "SystemManagementController_listConfigSecretVersions",
@@ -7978,6 +8028,71 @@
         },
         "required": ["value"]
       },
+      "SystemConfigVaultStatusDto": {
+        "type": "object",
+        "properties": {
+          "provider": { "type": "string", "enum": ["env"] },
+          "activeKeyId": { "type": "string" },
+          "keyIds": { "type": "array", "items": { "type": "string" } },
+          "legacyDecryptEnabled": { "type": "boolean" },
+          "encryptedConfigCount": { "type": "number" },
+          "secretVersionCount": { "type": "number" },
+          "activeKeyConfigCount": { "type": "number" },
+          "legacyEnvelopeCount": { "type": "number" },
+          "staleKeyEnvelopeCount": { "type": "number" }
+        },
+        "required": [
+          "provider",
+          "activeKeyId",
+          "keyIds",
+          "legacyDecryptEnabled",
+          "encryptedConfigCount",
+          "secretVersionCount",
+          "activeKeyConfigCount",
+          "legacyEnvelopeCount",
+          "staleKeyEnvelopeCount"
+        ]
+      },
+      "RotateSystemConfigVaultKeyDto": {
+        "type": "object",
+        "properties": {
+          "rotatedBy": { "type": "string", "example": "admin" },
+          "reason": { "type": "string" }
+        }
+      },
+      "SystemConfigVaultKeyRotationDto": {
+        "type": "object",
+        "properties": {
+          "provider": { "type": "string", "enum": ["env"] },
+          "activeKeyId": { "type": "string" },
+          "keyIds": { "type": "array", "items": { "type": "string" } },
+          "legacyDecryptEnabled": { "type": "boolean" },
+          "encryptedConfigCount": { "type": "number" },
+          "secretVersionCount": { "type": "number" },
+          "activeKeyConfigCount": { "type": "number" },
+          "legacyEnvelopeCount": { "type": "number" },
+          "staleKeyEnvelopeCount": { "type": "number" },
+          "rotatedAt": { "type": "string" },
+          "rotatedBy": { "type": "string" },
+          "reason": { "type": "string" },
+          "rewrappedConfigCount": { "type": "number" },
+          "rewrappedSecretVersionCount": { "type": "number" }
+        },
+        "required": [
+          "provider",
+          "activeKeyId",
+          "keyIds",
+          "legacyDecryptEnabled",
+          "encryptedConfigCount",
+          "secretVersionCount",
+          "activeKeyConfigCount",
+          "legacyEnvelopeCount",
+          "staleKeyEnvelopeCount",
+          "rotatedAt",
+          "rewrappedConfigCount",
+          "rewrappedSecretVersionCount"
+        ]
+      },
       "SystemConfigSecretVersionDto": {
         "type": "object",
         "properties": {
@@ -7986,11 +8101,23 @@
           "version": { "type": "number" },
           "active": { "type": "boolean" },
           "encrypted": { "type": "boolean" },
+          "envelopeVersion": { "type": "string", "enum": ["v1", "v2"] },
+          "vaultKeyId": { "type": "string" },
+          "activeVaultKey": { "type": "boolean" },
           "rotatedBy": { "type": "string" },
           "reason": { "type": "string" },
           "createdAt": { "type": "string" }
         },
-        "required": ["id", "key", "version", "active", "encrypted", "createdAt"]
+        "required": [
+          "id",
+          "key",
+          "version",
+          "active",
+          "encrypted",
+          "envelopeVersion",
+          "activeVaultKey",
+          "createdAt"
+        ]
       },
       "RotateSystemConfigSecretDto": {
         "type": "object",

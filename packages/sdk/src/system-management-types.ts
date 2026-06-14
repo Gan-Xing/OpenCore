@@ -191,10 +191,34 @@ export type SystemConfigSecretVersionSummary = {
   version: number;
   active: boolean;
   encrypted: true;
+  envelopeVersion: 'v1' | 'v2';
+  vaultKeyId?: string;
+  activeVaultKey: boolean;
   rotatedBy?: string;
   reason?: string;
   createdAt: string;
 };
+
+export type SystemConfigVaultStatusSummary = {
+  provider: 'env';
+  activeKeyId: string;
+  keyIds: readonly string[];
+  legacyDecryptEnabled: boolean;
+  encryptedConfigCount: number;
+  secretVersionCount: number;
+  activeKeyConfigCount: number;
+  legacyEnvelopeCount: number;
+  staleKeyEnvelopeCount: number;
+};
+
+export type SystemConfigVaultKeyRotationSummary =
+  SystemConfigVaultStatusSummary & {
+    rotatedAt: string;
+    rotatedBy?: string;
+    reason?: string;
+    rewrappedConfigCount: number;
+    rewrappedSecretVersionCount: number;
+  };
 
 export type CreateSystemConfigRequest = {
   category?: string;
@@ -230,6 +254,11 @@ export type UpsertSystemConfigEnvironmentOverrideRequest = {
 
 export type RotateSystemConfigSecretRequest = {
   value: string;
+  rotatedBy?: string;
+  reason?: string;
+};
+
+export type RotateSystemConfigVaultKeyRequest = {
   rotatedBy?: string;
   reason?: string;
 };

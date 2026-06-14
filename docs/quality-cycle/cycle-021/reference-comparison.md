@@ -1,6 +1,6 @@
 # cycle-021 Reference Comparison
 
-Date: 2026-06-13
+Date: 2026-06-14
 
 Reference comparison is capability-based, not commit-count based. OpenCore
 should translate stable enterprise admin foundations into its own API, SDK,
@@ -37,8 +37,8 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   SMTP attachments plus explicit SMTP TLS policy and authenticated inbox
   realtime events are live.
 - Config: runtime keys, login policy, feature flags, rollout, audience rules,
-  environment overrides, secret-vault encryption, secret version history and
-  explicit rotation are live.
+  environment overrides, secret-vault encryption, secret version history,
+  explicit rotation, env-bound keyring status and vault key rotation are live.
 - Monitor/OpenForge/Scheduler: Monitor Jobs now has a live Admin operation
   surface, registry visibility and registered handler diagnostics; external
   worker/cron parity remains.
@@ -86,6 +86,9 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
 - Round 83: Secret config version history is first-class metadata; explicit
   rotation updates current encrypted value and records active/inactive
   versions without exposing secret material.
+- Round 84: Config vault envelopes now carry key IDs, expose env keyring
+  status and support vault-key rewrap for current and versioned secrets while
+  preserving legacy unversioned envelope deserialization.
 
 ## Explicit Non-Claims
 
@@ -96,5 +99,6 @@ and AI/RAG/Agent workflow.
 
 ## Next Focus
 
-Choose one foundation stage from external KMS/vault key rotation,
-operation-log enrichment, OpenForge Admin or scheduler worker parity.
+Choose one foundation stage from operation-log enrichment, OpenForge Admin,
+integration health/config audit or scheduler worker parity. Managed cloud KMS
+adapters are optional deployment integration beyond the current env keyring.

@@ -1,6 +1,6 @@
 # cycle-021 Productization Waterline Audit
 
-Date: 2026-06-13
+Date: 2026-06-14
 
 ## Waterline
 
@@ -24,7 +24,7 @@ failures have guards; and remaining omissions are explicit product boundaries.
 | `core.file`           | Meets         | Authenticated upload/download and content smoke.                                                  |
 | `monitor.online-user` | Meets         | Batch kick-out, revocation and UA/IP fields.                                                      |
 | `core.login-log`      | Meets current | Schema, lockout, cleanup, actor/reason and location.                                              |
-| `core.config`         | Meets current | Runtime keys, feature flags, rollout, audience, environment overrides, vault and secret versions. |
+| `core.config`         | Meets current | Runtime keys, feature flags, rollout, audience, environment overrides, vault, versions and key rotation. |
 | `core.notice`         | Enhance       | SMS HTTP, SMTP, mail subject, diagnostics, secrets, attachments, TLS policy and realtime events.  |
 | `scheduler/monitor`   | Meets current | Job Admin operations, registry and handler diagnostics are live.                                  |
 | `OpenForge Admin`     | P2            | CLI/core exists; Admin UX remains.                                                                |
@@ -63,15 +63,18 @@ failures have guards; and remaining omissions are explicit product boundaries.
   runtime/evaluate APIs, SDK/Admin/OpenAPI visibility and smoke/deploy guards.
 - Round 83 added config secret version history and explicit rotation with
   SDK/Admin/OpenAPI visibility and plaintext-leakage smoke guards.
+- Round 84 added env-bound KMS keyring status, v2 key-ID envelopes, legacy
+  unversioned envelope deserialization, current/versioned secret rewrap and
+  vault-key rotation smoke guards.
 
 ## Active Debt
 
-1. Config: external KMS binding and vault key rotation.
-2. Operation log: retention scheduling, duration/location fields and policy.
-3. OpenForge Admin: safe plan/diff/check/apply/manifest/rollback UI.
-4. Integration: provider readiness, failure history and config diagnostics.
-5. Scheduler/monitor: external worker parity, cron dispatch and queue metrics
+1. Operation log: retention scheduling, duration/location fields and policy.
+2. OpenForge Admin: safe plan/diff/check/apply/manifest/rollback UI.
+3. Integration: provider readiness, failure history and config diagnostics.
+4. Scheduler/monitor: external worker parity, cron dispatch and queue metrics
    beyond the current registered manual executor.
+5. Optional managed-KMS provider adapter if deployment requires cloud KMS APIs.
 
 ## Guard Matrix
 
@@ -90,4 +93,5 @@ failures have guards; and remaining omissions are explicit product boundaries.
   disabled-trigger rejection, manual trigger, handler execution, retry failure
   and run-log detail.
 - Config: runtime shape, environment override governance, secret-vault
-  plaintext protection, secret version history and rotation guards.
+  plaintext protection, legacy envelope deserialization, secret version
+  history, secret rotation and vault key rotation guards.

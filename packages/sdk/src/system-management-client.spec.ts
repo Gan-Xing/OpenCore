@@ -86,6 +86,11 @@ describe('createSystemManagementClient', () => {
       rotatedBy: 'admin',
       reason: 'SDK path guard',
     });
+    await client.getConfigVaultStatus('token');
+    await client.rotateConfigVaultKey('token', {
+      rotatedBy: 'admin',
+      reason: 'SDK vault key path guard',
+    });
     await client.refreshConfigCache('token');
     await client.exportConfig('token', { page: 1, pageSize: 10 });
     await client.createConfig('token', {
@@ -354,6 +359,15 @@ describe('createSystemManagementClient', () => {
       },
       {
         path: '/core/config/auth.jwt.secretRef/rotate-secret',
+        method: 'POST',
+        token: 'token',
+      },
+      {
+        path: '/core/config/vault/status',
+        token: 'token',
+      },
+      {
+        path: '/core/config/vault/rotate-key',
         method: 'POST',
         token: 'token',
       },

@@ -1,6 +1,6 @@
 # cycle-021 Ledger
 
-Date: 2026-06-13
+Date: 2026-06-14
 
 This ledger records state transitions only. Git log keeps commit hashes.
 
@@ -16,3 +16,4 @@ This ledger records state transitions only. Git log keeps commit hashes.
 | 81    | Notice Inbox | Notice inbox realtime became authenticated SSE snapshot/read events.          | Notice smoke covers auth, snapshot and read-event streaming.   |
 | 82    | Config       | Public config values gained environment-specific runtime overrides.           | Config smoke covers guards, runtime and feature rollout.       |
 | 83    | Config       | Secret config values gained version history and explicit rotation.            | Config smoke covers seed versions, guards and plaintext leaks. |
+| 84    | Config       | Secret vault gained env keyring status and vault key rotation.                | Config smoke covers legacy/v2 envelopes, rewrap and leaks.     |

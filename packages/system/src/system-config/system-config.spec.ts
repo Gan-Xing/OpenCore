@@ -3,14 +3,26 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
-import { randomUUID } from 'node:crypto';
+import {
+  createCipheriv,
+  createHash,
+  randomBytes,
+  randomUUID,
+} from 'node:crypto';
 import { PrismaService } from '@opencore/database';
 import { PrismaSystemConfigRepository } from './system-config.prisma-repository';
-import { normalizeStoredConfigValue } from './system-config.repository';
+import {
+  normalizeExistingConfigValue,
+  normalizeStoredConfigValue,
+} from './system-config.repository';
 import { seedSystemConfigs } from './system-config.records';
 import { SeedSystemConfigRepository } from './system-config.seed-repository';
 import { SystemConfigService } from './system-config.service';
-import { SYSTEM_CONFIG_SECRET_VALUE_PREFIX } from './system-config.vault';
+import {
+  inspectSystemConfigSecretEnvelope,
+  SYSTEM_CONFIG_SECRET_VALUE_PREFIX,
+  SYSTEM_CONFIG_SECRET_VALUE_V2_PREFIX,
+} from './system-config.vault';
 
 describe('@opencore/system system-config', () => {
   it('supports seeded config CRUD and export previews', async () => {
@@ -117,11 +129,23 @@ describe('@opencore/system system-config', () => {
     ).resolves.toEqual([
       expect.objectContaining({
         active: true,
+        activeVaultKey: true,
         encrypted: true,
+        envelopeVersion: 'v2',
         key: 'auth.jwt.secretRef',
+        vaultKeyId: 'local',
         version: 1,
       }),
     ]);
+    await expect(service.getConfigVaultStatus()).resolves.toMatchObject({
+      activeKeyConfigCount: 3,
+      activeKeyId: 'local',
+      encryptedConfigCount: 3,
+      legacyEnvelopeCount: 0,
+      provider: 'env',
+      secretVersionCount: 3,
+      staleKeyEnvelopeCount: 0,
+    });
     await expect(
       service.rotateSecretConfig('auth.jwt.secretRef', {
         reason: 'Seed repository rotation.',
@@ -146,9 +170,46 @@ describe('@opencore/system system-config', () => {
     await expect(
       service.listConfigSecretVersions('auth.jwt.secretRef'),
     ).resolves.toEqual([
-      expect.objectContaining({ active: true, version: 2 }),
-      expect.objectContaining({ active: false, version: 1 }),
+      expect.objectContaining({
+        active: true,
+        activeVaultKey: true,
+        envelopeVersion: 'v2',
+        vaultKeyId: 'local',
+        version: 2,
+      }),
+      expect.objectContaining({
+        active: false,
+        activeVaultKey: true,
+        envelopeVersion: 'v2',
+        vaultKeyId: 'local',
+        version: 1,
+      }),
     ]);
+    await expect(
+      service.rotateConfigVaultKey({
+        reason: 'Seed repository vault key rewrap.',
+        rotatedBy: 'admin',
+      }),
+    ).resolves.toMatchObject({
+      activeKeyConfigCount: 3,
+      activeKeyId: 'local',
+      encryptedConfigCount: 3,
+      legacyEnvelopeCount: 0,
+      provider: 'env',
+      reason: 'Seed repository vault key rewrap.',
+      rewrappedConfigCount: 3,
+      rewrappedSecretVersionCount: 4,
+      rotatedBy: 'admin',
+      secretVersionCount: 4,
+      staleKeyEnvelopeCount: 0,
+    });
+    await expect(
+      service.resolveSecretConfigValue('auth.jwt.secretRef'),
+    ).resolves.toEqual({
+      key: 'auth.jwt.secretRef',
+      value: 'env:ROTATED_AUTH_TOKEN_SECRET',
+      valueType: 'string',
+    });
     await expect(
       service.rotateSecretConfig('auth.jwt.secretRef', { value: '   ' }),
     ).rejects.toThrow(BadRequestException);
@@ -603,6 +664,163 @@ describe('@opencore/system system-config', () => {
     });
   });
 
+  it('decrypts legacy unversioned vault envelopes and rewraps them as v2', () => {
+    const previousActiveKeyId = process.env.OPENCORE_CONFIG_KMS_ACTIVE_KEY_ID;
+    const previousKey = process.env.OPENCORE_CONFIG_KMS_KEY;
+    const previousKeyring = process.env.OPENCORE_CONFIG_KMS_KEYRING;
+
+    try {
+      process.env.OPENCORE_CONFIG_KMS_KEY = 'legacy-vault-key';
+      delete process.env.OPENCORE_CONFIG_KMS_ACTIVE_KEY_ID;
+      delete process.env.OPENCORE_CONFIG_KMS_KEYRING;
+
+      const legacyValue = createLegacySystemConfigSecretValue({
+        key: 'auth.legacy.secret',
+        material: 'legacy-vault-key',
+        plaintext: 'legacy-secret',
+      });
+
+      expect(inspectSystemConfigSecretEnvelope(legacyValue)).toMatchObject({
+        activeKey: false,
+        encrypted: true,
+        envelopeVersion: 'v1',
+      });
+      expect(
+        normalizeExistingConfigValue({
+          key: 'auth.legacy.secret',
+          value: legacyValue,
+          valueType: 'string',
+          visibility: 'secret',
+        }),
+      ).toBe('legacy-secret');
+
+      const rewrappedValue = normalizeStoredConfigValue({
+        key: 'auth.legacy.secret',
+        value: 'legacy-secret',
+        valueType: 'string',
+        visibility: 'secret',
+      });
+
+      expect(rewrappedValue).toEqual(
+        expect.stringContaining(SYSTEM_CONFIG_SECRET_VALUE_V2_PREFIX),
+      );
+      expect(
+        normalizeExistingConfigValue({
+          key: 'auth.legacy.secret',
+          value: rewrappedValue,
+          valueType: 'string',
+          visibility: 'secret',
+        }),
+      ).toBe('legacy-secret');
+    } finally {
+      if (previousActiveKeyId === undefined) {
+        delete process.env.OPENCORE_CONFIG_KMS_ACTIVE_KEY_ID;
+      } else {
+        process.env.OPENCORE_CONFIG_KMS_ACTIVE_KEY_ID = previousActiveKeyId;
+      }
+      if (previousKey === undefined) {
+        delete process.env.OPENCORE_CONFIG_KMS_KEY;
+      } else {
+        process.env.OPENCORE_CONFIG_KMS_KEY = previousKey;
+      }
+      if (previousKeyring === undefined) {
+        delete process.env.OPENCORE_CONFIG_KMS_KEYRING;
+      } else {
+        process.env.OPENCORE_CONFIG_KMS_KEYRING = previousKeyring;
+      }
+    }
+  });
+
+  it('rewraps seeded secret configs when the active vault key changes', async () => {
+    const previousActiveKeyId = process.env.OPENCORE_CONFIG_KMS_ACTIVE_KEY_ID;
+    const previousKey = process.env.OPENCORE_CONFIG_KMS_KEY;
+    const previousKeyring = process.env.OPENCORE_CONFIG_KMS_KEYRING;
+
+    try {
+      process.env.OPENCORE_CONFIG_KMS_KEY = 'test-local-vault-key';
+      delete process.env.OPENCORE_CONFIG_KMS_ACTIVE_KEY_ID;
+      delete process.env.OPENCORE_CONFIG_KMS_KEYRING;
+
+      const service = new SystemConfigService(new SeedSystemConfigRepository());
+
+      await expect(service.getConfigVaultStatus()).resolves.toMatchObject({
+        activeKeyConfigCount: 3,
+        activeKeyId: 'local',
+        encryptedConfigCount: 3,
+        legacyEnvelopeCount: 0,
+        secretVersionCount: 3,
+        staleKeyEnvelopeCount: 0,
+      });
+
+      process.env.OPENCORE_CONFIG_KMS_ACTIVE_KEY_ID = 'next';
+      process.env.OPENCORE_CONFIG_KMS_KEYRING = JSON.stringify({
+        local: 'test-local-vault-key',
+        next: 'test-next-vault-key',
+      });
+
+      await expect(service.getConfigVaultStatus()).resolves.toMatchObject({
+        activeKeyConfigCount: 0,
+        activeKeyId: 'next',
+        encryptedConfigCount: 3,
+        keyIds: ['local', 'next'],
+        legacyEnvelopeCount: 0,
+        secretVersionCount: 3,
+        staleKeyEnvelopeCount: 6,
+      });
+      await expect(
+        service.rotateConfigVaultKey({
+          reason: 'Seed active key switch.',
+          rotatedBy: 'admin',
+        }),
+      ).resolves.toMatchObject({
+        activeKeyConfigCount: 3,
+        activeKeyId: 'next',
+        encryptedConfigCount: 3,
+        legacyEnvelopeCount: 0,
+        reason: 'Seed active key switch.',
+        rewrappedConfigCount: 3,
+        rewrappedSecretVersionCount: 3,
+        rotatedBy: 'admin',
+        secretVersionCount: 3,
+        staleKeyEnvelopeCount: 0,
+      });
+      await expect(
+        service.resolveSecretConfigValue('auth.jwt.secretRef'),
+      ).resolves.toEqual({
+        key: 'auth.jwt.secretRef',
+        value: 'env:AUTH_TOKEN_SECRET',
+        valueType: 'string',
+      });
+      await expect(
+        service.listConfigSecretVersions('auth.jwt.secretRef'),
+      ).resolves.toEqual([
+        expect.objectContaining({
+          active: true,
+          activeVaultKey: true,
+          envelopeVersion: 'v2',
+          vaultKeyId: 'next',
+          version: 1,
+        }),
+      ]);
+    } finally {
+      if (previousActiveKeyId === undefined) {
+        delete process.env.OPENCORE_CONFIG_KMS_ACTIVE_KEY_ID;
+      } else {
+        process.env.OPENCORE_CONFIG_KMS_ACTIVE_KEY_ID = previousActiveKeyId;
+      }
+      if (previousKey === undefined) {
+        delete process.env.OPENCORE_CONFIG_KMS_KEY;
+      } else {
+        process.env.OPENCORE_CONFIG_KMS_KEY = previousKey;
+      }
+      if (previousKeyring === undefined) {
+        delete process.env.OPENCORE_CONFIG_KMS_KEYRING;
+      } else {
+        process.env.OPENCORE_CONFIG_KMS_KEYRING = previousKeyring;
+      }
+    }
+  });
+
   it('requires explicit secret visibility and redacts secret config values', async () => {
     const service = new SystemConfigService(new SeedSystemConfigRepository());
 
@@ -856,14 +1074,20 @@ describe('@opencore/system system-config', () => {
       expect(storedSecret?.value).toEqual(
         expect.stringContaining(SYSTEM_CONFIG_SECRET_VALUE_PREFIX),
       );
+      expect(storedSecret?.value).toEqual(
+        expect.stringContaining(SYSTEM_CONFIG_SECRET_VALUE_V2_PREFIX),
+      );
       expect(storedSecret?.value).not.toContain('super-secret');
       await expect(
         service.listConfigSecretVersions(secretKey),
       ).resolves.toEqual([
         expect.objectContaining({
           active: true,
+          activeVaultKey: true,
           encrypted: true,
+          envelopeVersion: 'v2',
           key: secretKey,
+          vaultKeyId: 'local',
           version: 1,
         }),
       ]);
@@ -887,6 +1111,9 @@ describe('@opencore/system system-config', () => {
       expect(storedSecretAfterMetadataUpdate?.value).toEqual(
         expect.stringContaining(SYSTEM_CONFIG_SECRET_VALUE_PREFIX),
       );
+      expect(storedSecretAfterMetadataUpdate?.value).toEqual(
+        expect.stringContaining(SYSTEM_CONFIG_SECRET_VALUE_V2_PREFIX),
+      );
       expect(storedSecretAfterMetadataUpdate?.value).not.toContain(
         'super-secret',
       );
@@ -895,6 +1122,9 @@ describe('@opencore/system system-config', () => {
       ).resolves.toEqual([
         expect.objectContaining({
           active: true,
+          activeVaultKey: true,
+          envelopeVersion: 'v2',
+          vaultKeyId: 'local',
           version: 1,
         }),
       ]);
@@ -940,19 +1170,38 @@ describe('@opencore/system system-config', () => {
       ).resolves.toEqual([
         expect.objectContaining({
           active: true,
+          activeVaultKey: true,
           encrypted: true,
+          envelopeVersion: 'v2',
           key: secretKey,
           reason: 'Prisma rotation.',
           rotatedBy: 'admin',
+          vaultKeyId: 'local',
           version: 2,
         }),
         expect.objectContaining({
           active: false,
+          activeVaultKey: true,
           encrypted: true,
+          envelopeVersion: 'v2',
           key: secretKey,
+          vaultKeyId: 'local',
           version: 1,
         }),
       ]);
+      const vaultStatusBeforeKeyRotation = await service.getConfigVaultStatus();
+      expect(vaultStatusBeforeKeyRotation).toMatchObject({
+        activeKeyId: 'local',
+        legacyEnvelopeCount: 0,
+        provider: 'env',
+        staleKeyEnvelopeCount: 0,
+      });
+      expect(vaultStatusBeforeKeyRotation.encryptedConfigCount).toBeGreaterThan(
+        0,
+      );
+      expect(vaultStatusBeforeKeyRotation.secretVersionCount).toBeGreaterThan(
+        0,
+      );
       const storedSecretVersions =
         await prisma.systemConfigSecretVersion.findMany({
           where: { key: secretKey },
@@ -967,9 +1216,85 @@ describe('@opencore/system system-config', () => {
         expect(version.value).toEqual(
           expect.stringContaining(SYSTEM_CONFIG_SECRET_VALUE_PREFIX),
         );
+        expect(version.value).toEqual(
+          expect.stringContaining(SYSTEM_CONFIG_SECRET_VALUE_V2_PREFIX),
+        );
         expect(version.value).not.toContain('super-secret');
         expect(version.value).not.toContain('rotated-super-secret');
       }
+      const storedSecretBeforeVaultKeyRotation =
+        await prisma.systemConfig.findUnique({
+          where: { key: secretKey },
+          select: { value: true },
+        });
+      const storedSecretVersionsBeforeVaultKeyRotation =
+        await prisma.systemConfigSecretVersion.findMany({
+          where: { key: secretKey },
+          orderBy: { version: 'asc' },
+          select: { value: true },
+        });
+      await expect(
+        service.rotateConfigVaultKey({
+          reason: 'Prisma vault key rewrap.',
+          rotatedBy: 'admin',
+        }),
+      ).resolves.toMatchObject({
+        activeKeyConfigCount: vaultStatusBeforeKeyRotation.encryptedConfigCount,
+        activeKeyId: 'local',
+        encryptedConfigCount: vaultStatusBeforeKeyRotation.encryptedConfigCount,
+        legacyEnvelopeCount: 0,
+        provider: 'env',
+        reason: 'Prisma vault key rewrap.',
+        rewrappedConfigCount: vaultStatusBeforeKeyRotation.encryptedConfigCount,
+        rewrappedSecretVersionCount:
+          vaultStatusBeforeKeyRotation.secretVersionCount,
+        rotatedBy: 'admin',
+        secretVersionCount: vaultStatusBeforeKeyRotation.secretVersionCount,
+        staleKeyEnvelopeCount: 0,
+      });
+      const storedSecretAfterVaultKeyRotation =
+        await prisma.systemConfig.findUnique({
+          where: { key: secretKey },
+          select: { value: true },
+        });
+      expect(storedSecretAfterVaultKeyRotation?.value).toEqual(
+        expect.stringContaining(SYSTEM_CONFIG_SECRET_VALUE_V2_PREFIX),
+      );
+      expect(storedSecretAfterVaultKeyRotation?.value).not.toEqual(
+        storedSecretBeforeVaultKeyRotation?.value,
+      );
+      expect(storedSecretAfterVaultKeyRotation?.value).not.toContain(
+        'rotated-super-secret',
+      );
+      const storedSecretVersionsAfterVaultKeyRotation =
+        await prisma.systemConfigSecretVersion.findMany({
+          where: { key: secretKey },
+          orderBy: { version: 'asc' },
+          select: { value: true },
+        });
+      expect(
+        storedSecretVersionsAfterVaultKeyRotation.map(
+          (version) => version.value,
+        ),
+      ).not.toEqual(
+        storedSecretVersionsBeforeVaultKeyRotation.map(
+          (version) => version.value,
+        ),
+      );
+      for (const version of storedSecretVersionsAfterVaultKeyRotation) {
+        expect(version.value).toEqual(
+          expect.stringContaining(SYSTEM_CONFIG_SECRET_VALUE_V2_PREFIX),
+        );
+        expect(version.value).not.toContain('super-secret');
+        expect(version.value).not.toContain('rotated-super-secret');
+      }
+      await expect(
+        service.resolveSecretConfigValue(secretKey),
+      ).resolves.toEqual({
+        key: secretKey,
+        value: 'rotated-super-secret',
+        valueType: 'string',
+      });
       expect(
         JSON.stringify(await service.listConfig({ pageSize: 50 })),
       ).not.toContain('super-secret');
@@ -1057,7 +1382,66 @@ describe('@opencore/system system-config', () => {
             system: config.system,
           },
         });
+
+        if (config.visibility === 'secret') {
+          await prisma.systemConfigSecretVersion.updateMany({
+            where: { key: config.key, active: true },
+            data: { active: false },
+          });
+          await prisma.systemConfigSecretVersion.upsert({
+            where: {
+              key_version: {
+                key: config.key,
+                version: 1,
+              },
+            },
+            update: {
+              active: true,
+              reason: 'Seeded secret baseline.',
+              rotatedBy: 'seed',
+              value: storedValue,
+              valueType: 'string',
+            },
+            create: {
+              active: true,
+              key: config.key,
+              reason: 'Seeded secret baseline.',
+              rotatedBy: 'seed',
+              value: storedValue,
+              valueType: 'string',
+              version: 1,
+            },
+          });
+        }
       }
     }
   });
 });
+
+function createLegacySystemConfigSecretValue(input: {
+  key: string;
+  material: string;
+  plaintext: string;
+}): string {
+  const iv = randomBytes(12);
+  const vaultKey = createHash('sha256')
+    .update(`opencore-system-config-vault:${input.material}`, 'utf8')
+    .digest();
+  const cipher = createCipheriv('aes-256-gcm', vaultKey, iv);
+  cipher.setAAD(Buffer.from(`system-config:${input.key}`, 'utf8'));
+  const ciphertext = Buffer.concat([
+    cipher.update(input.plaintext, 'utf8'),
+    cipher.final(),
+  ]);
+  const envelope = {
+    alg: 'aes-256-gcm',
+    ciphertext: ciphertext.toString('base64url'),
+    iv: iv.toString('base64url'),
+    tag: cipher.getAuthTag().toString('base64url'),
+  };
+
+  return `${SYSTEM_CONFIG_SECRET_VALUE_PREFIX}${Buffer.from(
+    JSON.stringify(envelope),
+    'utf8',
+  ).toString('base64url')}`;
+}

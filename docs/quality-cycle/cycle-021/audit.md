@@ -1,6 +1,6 @@
 # cycle-021 Audit
 
-Date: 2026-06-13
+Date: 2026-06-14
 
 ## Conclusion
 
@@ -35,6 +35,9 @@ resolution, secret/default-environment guards and delete fallback smoke
 coverage.
 Round 83 added config secret version history and explicit rotation with seeded
 version, non-secret/blank guard and plaintext-leakage smoke coverage.
+Round 84 added env-bound KMS keyring status, v2 key-ID envelopes, legacy
+unversioned vault-envelope deserialization guards and current/versioned secret
+rewrap through vault key rotation.
 Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 `lint` must run sequentially.
 
@@ -50,8 +53,9 @@ Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
   diagnostics, provider failedCount and sent mutation guards.
 - Operation-log cleanup smoke covers guard failures, deleted-detail 404 and
   clean-all target removal.
-- Config smoke covers runtime shape, environment override governance, secret
-  version history, secret rotation and no plaintext secret storage.
+- Config smoke covers runtime shape, environment override governance, legacy
+  vault envelope deserialization, secret version history, secret rotation,
+  vault key rotation and no plaintext secret storage.
 - Monitor Jobs smoke covers operations summary, registry, job policy guards,
   enable/disable, disabled-trigger rejection, manual trigger, handler
   execution, failed retry and run-log detail.
@@ -66,7 +70,8 @@ real incident decisions. Do not create per-round reports by default.
 
 - Notice realtime is single-node process-local; multi-instance fanout remains a
   deployment-topology upgrade if needed.
-- Config still needs external KMS binding and vault key rotation.
+- Managed cloud KMS provider adapters are optional deployment integration; the
+  current foundation waterline has env-bound keyring status and rotation.
 - Scheduler still needs external worker/cron parity beyond the current
   registered manual executor; operation-log enrichment and OpenForge Admin
   remain P2 foundation work.

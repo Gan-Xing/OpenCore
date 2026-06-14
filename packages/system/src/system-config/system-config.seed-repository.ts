@@ -10,6 +10,7 @@ import type {
   BatchDeleteSystemConfigsDto,
   CreateSystemConfigDto,
   RotateSystemConfigSecretDto,
+  RotateSystemConfigVaultKeyDto,
   UpdateSystemConfigDto,
   UpsertSystemConfigEnvironmentOverrideDto,
 } from './system-config.dto';
@@ -18,6 +19,8 @@ import {
   type SystemConfigEnvironmentOverrideRecord,
   type SystemConfigRecord,
   type SystemConfigSecretVersionRecord,
+  type SystemConfigVaultKeyRotationRecord,
+  type SystemConfigVaultStatusRecord,
 } from './system-config.records';
 import {
   assertEnvironmentOverrideConfig,
@@ -26,6 +29,8 @@ import {
   assertSecretConfigShape,
   assertSecretVersionedConfig,
   assertSystemConfigMutable,
+  createSystemConfigVaultKeyRotationRecord,
+  createSystemConfigVaultStatus,
   createSystemConfigPageResult,
   normalizeExistingConfigValue,
   normalizeConfigCategory,
@@ -43,6 +48,11 @@ import {
   type SystemConfigSecretValueResult,
   type SystemConfigPageQuery,
 } from './system-config.repository';
+import { inspectSystemConfigSecretEnvelope } from './system-config.vault';
+
+type SeedSystemConfigSecretVersion = SystemConfigSecretVersionRecord & {
+  value: string;
+};
 
 @Injectable()
 export class SeedSystemConfigRepository extends SystemConfigRepository {
@@ -63,17 +73,20 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
     };
   });
   private environmentOverrides: SystemConfigEnvironmentOverrideRecord[] = [];
-  private secretVersions: SystemConfigSecretVersionRecord[] = this.systemConfigs
+  private secretVersions: SeedSystemConfigSecretVersion[] = this.systemConfigs
     .filter((config) => config.visibility === 'secret')
     .map((config) => ({
-      id: `secret_version_${config.key.replaceAll('.', '_')}_1`,
-      key: config.key,
-      version: 1,
-      active: true,
-      encrypted: true,
-      rotatedBy: 'seed',
-      reason: 'Seeded secret baseline.',
-      createdAt: new Date().toISOString(),
+      ...createSecretVersionRecordMetadata({
+        active: true,
+        createdAt: new Date().toISOString(),
+        id: `secret_version_${config.key.replaceAll('.', '_')}_1`,
+        key: config.key,
+        reason: 'Seeded secret baseline.',
+        rotatedBy: 'seed',
+        value: config.value,
+        version: 1,
+      }),
+      value: config.value,
     }));
 
   async listConfig(
@@ -414,7 +427,7 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
     return this.secretVersions
       .filter((version) => version.key === key)
       .sort((left, right) => right.version - left.version)
-      .map((version) => ({ ...version }));
+      .map(toSecretVersionRecord);
   }
 
   async rotateSecretConfig(
@@ -442,6 +455,74 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
     });
   }
 
+  async getConfigVaultStatus(): Promise<SystemConfigVaultStatusRecord> {
+    return this.createVaultStatus();
+  }
+
+  async rotateConfigVaultKey(
+    body: RotateSystemConfigVaultKeyDto,
+  ): Promise<SystemConfigVaultKeyRotationRecord> {
+    let rewrappedConfigCount = 0;
+    let rewrappedSecretVersionCount = 0;
+
+    this.systemConfigs = this.systemConfigs.map((config) => {
+      if (config.visibility !== 'secret') {
+        return config;
+      }
+
+      const value = normalizeExistingConfigValue({
+        key: config.key,
+        value: config.value,
+        valueType: 'string',
+        visibility: 'secret',
+      });
+      rewrappedConfigCount += 1;
+
+      return {
+        ...config,
+        encrypted: true,
+        value: normalizeStoredConfigValue({
+          key: config.key,
+          value,
+          valueType: 'string',
+          visibility: 'secret',
+        }),
+      };
+    });
+    this.secretVersions = this.secretVersions.map((version) => {
+      const value = normalizeExistingConfigValue({
+        key: version.key,
+        value: version.value,
+        valueType: 'string',
+        visibility: 'secret',
+      });
+      const nextValue = normalizeStoredConfigValue({
+        key: version.key,
+        value,
+        valueType: 'string',
+        visibility: 'secret',
+      });
+      rewrappedSecretVersionCount += 1;
+
+      return {
+        ...createSecretVersionRecordMetadata({
+          ...version,
+          value: nextValue,
+        }),
+        value: nextValue,
+      };
+    });
+
+    return createSystemConfigVaultKeyRotationRecord({
+      ...this.createVaultStatusValues(),
+      reason: normalizeOptionalConfigText(body.reason, 'remark'),
+      rewrappedConfigCount,
+      rewrappedSecretVersionCount,
+      rotatedAt: new Date().toISOString(),
+      rotatedBy: normalizeSecretRotationActor(body.rotatedBy),
+    });
+  }
+
   private findConfig(key: string): SystemConfigRecord {
     const config = this.systemConfigs.find(
       (candidate) => candidate.key === key,
@@ -462,19 +543,39 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
     this.secretVersions = this.secretVersions.map((version) =>
       version.key === config.key ? { ...version, active: false } : version,
     );
-    const version = {
-      id: `secret_version_${config.key.replaceAll('.', '_')}_${this.nextSecretVersion(config.key)}`,
-      key: config.key,
-      version: this.nextSecretVersion(config.key),
-      active: true,
-      encrypted: true as const,
-      rotatedBy: input.rotatedBy,
-      reason: input.reason,
-      createdAt: new Date().toISOString(),
+    const nextVersion = this.nextSecretVersion(config.key);
+    const version: SeedSystemConfigSecretVersion = {
+      ...createSecretVersionRecordMetadata({
+        active: true,
+        createdAt: new Date().toISOString(),
+        id: `secret_version_${config.key.replaceAll('.', '_')}_${nextVersion}`,
+        key: config.key,
+        reason: input.reason,
+        rotatedBy: input.rotatedBy,
+        value: config.value,
+        version: nextVersion,
+      }),
+      value: config.value,
     };
     this.secretVersions = [version, ...this.secretVersions];
 
-    return { ...version };
+    return toSecretVersionRecord(version);
+  }
+
+  private createVaultStatus(): SystemConfigVaultStatusRecord {
+    return createSystemConfigVaultStatus(this.createVaultStatusValues());
+  }
+
+  private createVaultStatusValues(): {
+    currentSecretValues: readonly string[];
+    secretVersionValues: readonly string[];
+  } {
+    return {
+      currentSecretValues: this.systemConfigs
+        .filter((config) => config.visibility === 'secret')
+        .map((config) => config.value),
+      secretVersionValues: this.secretVersions.map((version) => version.value),
+    };
   }
 
   private nextSecretVersion(key: string): number {
@@ -487,4 +588,49 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
       ) + 1
     );
   }
+}
+
+function createSecretVersionRecordMetadata(input: {
+  active: boolean;
+  createdAt: string;
+  id: string;
+  key: string;
+  reason?: string;
+  rotatedBy?: string;
+  value: string;
+  version: number;
+}): SystemConfigSecretVersionRecord {
+  const envelope = inspectSystemConfigSecretEnvelope(input.value);
+
+  return {
+    id: input.id,
+    key: input.key,
+    version: input.version,
+    active: input.active,
+    encrypted: true,
+    envelopeVersion: envelope.envelopeVersion === 'v2' ? 'v2' : 'v1',
+    vaultKeyId: envelope.keyId,
+    activeVaultKey: envelope.activeKey,
+    rotatedBy: input.rotatedBy,
+    reason: input.reason,
+    createdAt: input.createdAt,
+  };
+}
+
+function toSecretVersionRecord(
+  version: SeedSystemConfigSecretVersion,
+): SystemConfigSecretVersionRecord {
+  return {
+    id: version.id,
+    key: version.key,
+    version: version.version,
+    active: version.active,
+    encrypted: true,
+    envelopeVersion: version.envelopeVersion,
+    vaultKeyId: version.vaultKeyId,
+    activeVaultKey: version.activeVaultKey,
+    rotatedBy: version.rotatedBy,
+    reason: version.reason,
+    createdAt: version.createdAt,
+  };
 }

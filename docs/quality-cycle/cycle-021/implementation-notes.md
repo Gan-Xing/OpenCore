@@ -1,6 +1,6 @@
 # cycle-021 Implementation Notes
 
-Date: 2026-06-13
+Date: 2026-06-14
 
 This is the compact implementation record. Keep only current guard facts,
 active debt and decisions that change future execution.
@@ -19,10 +19,11 @@ active debt and decisions that change future execution.
 
 ## Runtime State
 
-Cycle-021 has completed 83 deployable stages across
-System/Security/Monitor/Integration foundations. Round 83 added config secret
-version history and explicit rotation with SDK/Admin/OpenAPI visibility and
-smoke coverage for seed versions, guard failures and plaintext leakage.
+Cycle-021 has completed 84 deployable stages across
+System/Security/Monitor/Integration foundations. Round 84 added config
+env-bound KMS keyring status, v2 key-ID envelopes, legacy unversioned envelope
+deserialization and vault-key rewrap for current and versioned secret values
+with SDK/Admin/OpenAPI visibility and smoke coverage.
 
 ## Guard Register
 
@@ -39,8 +40,9 @@ smoke coverage for seed versions, guard failures and plaintext leakage.
 - Operation log: smoke covers batch-delete guards, deleted-detail 404 and
   clean-all target removal while preserving the clean request audit row.
 - Config/secret: smoke covers feature flags, audience rules, environment
-  overrides, secret version history, explicit rotation and no plaintext
-  secret-vault leakage.
+  overrides, legacy vault envelope deserialization, secret version history,
+  explicit secret rotation, vault key rotation and no plaintext secret-vault
+  leakage.
 - Monitor jobs: smoke covers operations summary, whitelisted job upsert,
   registry, unsafe policy guards, enable/disable, disabled-trigger rejection,
   run-now, handler execution, failed retry and run-log detail. Deploy also
@@ -60,7 +62,8 @@ smoke coverage for seed versions, guard failures and plaintext leakage.
 - Notice: optional multi-instance realtime fanout if deployment topology moves
   beyond the current single-node process, plus any admitted
   tenant/member/mobile channels.
-- Config: external KMS binding and vault key rotation.
+- Config: managed cloud KMS provider adapters are optional deployment
+  integration beyond the current env-bound keyring.
 - Login log: optional external GeoIP depth and broader mobile/social login
   semantics.
 - Operation log: retention scheduling and enrichment beyond cleanup controls.

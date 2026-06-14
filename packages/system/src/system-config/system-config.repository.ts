@@ -9,6 +9,7 @@ import type {
   BatchDeleteSystemConfigsDto,
   CreateSystemConfigDto,
   RotateSystemConfigSecretDto,
+  RotateSystemConfigVaultKeyDto,
   UpdateSystemConfigDto,
   UpsertSystemConfigEnvironmentOverrideDto,
 } from './system-config.dto';
@@ -20,12 +21,16 @@ import type {
   SystemConfigEnvironmentOverrideRecord,
   SystemConfigRecord,
   SystemConfigSecretVersionRecord,
+  SystemConfigVaultKeyRotationRecord,
+  SystemConfigVaultStatusRecord,
   SystemConfigValueType,
   SystemConfigVisibility,
 } from './system-config.records';
 import {
   decryptSystemConfigSecretValue,
   encryptSystemConfigSecretValue,
+  getSystemConfigVaultBindingStatus,
+  inspectSystemConfigSecretEnvelope,
   isEncryptedSystemConfigSecretValue,
   SYSTEM_CONFIG_REDACTED_SECRET_VALUE,
 } from './system-config.vault';
@@ -164,6 +169,12 @@ export abstract class SystemConfigRepository {
     key: string,
     body: RotateSystemConfigSecretDto,
   ): Promise<SystemConfigSecretVersionRecord>;
+
+  abstract getConfigVaultStatus(): Promise<SystemConfigVaultStatusRecord>;
+
+  abstract rotateConfigVaultKey(
+    body: RotateSystemConfigVaultKeyDto,
+  ): Promise<SystemConfigVaultKeyRotationRecord>;
 }
 
 export function normalizeSystemConfigPageQuery(
@@ -658,6 +669,54 @@ export function normalizeSecretRotationValue(value: unknown): string {
   }
 
   return value;
+}
+
+export function createSystemConfigVaultStatus(input: {
+  currentSecretValues: readonly string[];
+  secretVersionValues: readonly string[];
+}): SystemConfigVaultStatusRecord {
+  const binding = getSystemConfigVaultBindingStatus();
+  const infos = [
+    ...input.currentSecretValues,
+    ...input.secretVersionValues,
+  ].map(inspectSystemConfigSecretEnvelope);
+  const currentInfos = input.currentSecretValues.map(
+    inspectSystemConfigSecretEnvelope,
+  );
+
+  return {
+    ...binding,
+    activeKeyConfigCount: currentInfos.filter((info) => info.activeKey).length,
+    encryptedConfigCount: currentInfos.filter((info) => info.encrypted).length,
+    legacyEnvelopeCount: infos.filter((info) => info.envelopeVersion === 'v1')
+      .length,
+    secretVersionCount: input.secretVersionValues.length,
+    staleKeyEnvelopeCount: infos.filter(
+      (info) => info.encrypted && !info.activeKey,
+    ).length,
+  };
+}
+
+export function createSystemConfigVaultKeyRotationRecord(input: {
+  currentSecretValues: readonly string[];
+  reason?: string;
+  rewrappedConfigCount: number;
+  rewrappedSecretVersionCount: number;
+  rotatedAt: string;
+  rotatedBy?: string;
+  secretVersionValues: readonly string[];
+}): SystemConfigVaultKeyRotationRecord {
+  return {
+    ...createSystemConfigVaultStatus({
+      currentSecretValues: input.currentSecretValues,
+      secretVersionValues: input.secretVersionValues,
+    }),
+    reason: input.reason,
+    rewrappedConfigCount: input.rewrappedConfigCount,
+    rewrappedSecretVersionCount: input.rewrappedSecretVersionCount,
+    rotatedAt: input.rotatedAt,
+    rotatedBy: input.rotatedBy,
+  };
 }
 
 export function normalizeSystemConfigEnvironment(value: unknown): string {

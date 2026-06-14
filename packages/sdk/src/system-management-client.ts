@@ -34,6 +34,7 @@ import type {
   PageResponse,
   RenderSystemNoticeTemplateRequest,
   RotateSystemConfigSecretRequest,
+  RotateSystemConfigVaultKeyRequest,
   SystemConfigBatchMutationSummary,
   SystemConfigCacheRefreshSummary,
   SystemConfigEnvironmentOverrideSummary,
@@ -41,6 +42,8 @@ import type {
   SystemConfigRuntimeSummary,
   SystemConfigSecretVersionSummary,
   SystemConfigSummary,
+  SystemConfigVaultKeyRotationSummary,
+  SystemConfigVaultStatusSummary,
   SystemConfigValueSummary,
   SystemDeptOrderMutationSummary,
   SystemDeptOptionSummary,
@@ -177,6 +180,13 @@ export type SystemManagementClient = {
     key: string,
     body: RotateSystemConfigSecretRequest,
   ) => Promise<SystemConfigSecretVersionSummary>;
+  getConfigVaultStatus: (
+    token: Token,
+  ) => Promise<SystemConfigVaultStatusSummary>;
+  rotateConfigVaultKey: (
+    token: Token,
+    body: RotateSystemConfigVaultKeyRequest,
+  ) => Promise<SystemConfigVaultKeyRotationSummary>;
   refreshConfigCache: (
     token: Token,
   ) => Promise<SystemConfigCacheRefreshSummary>;
@@ -546,6 +556,19 @@ export function createSystemManagementClient(
     rotateConfigSecret: (token, key, body) =>
       request<SystemConfigSecretVersionSummary>(
         `/core/config/${encodeURIComponent(key)}/rotate-secret`,
+        {
+          method: 'POST',
+          body,
+          token,
+        },
+      ),
+    getConfigVaultStatus: (token) =>
+      request<SystemConfigVaultStatusSummary>('/core/config/vault/status', {
+        token,
+      }),
+    rotateConfigVaultKey: (token, body) =>
+      request<SystemConfigVaultKeyRotationSummary>(
+        '/core/config/vault/rotate-key',
         {
           method: 'POST',
           body,

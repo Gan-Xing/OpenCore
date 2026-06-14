@@ -1,6 +1,6 @@
 # OpenCore Cycle-021 Handoff
 
-Date: 2026-06-13
+Date: 2026-06-14
 Repository: `Gan-Xing/OpenCore`
 Branch: `main`
 
@@ -47,7 +47,7 @@ packages and OpenForge direct Prisma/migration/business-code writing.
 
 ## Current State
 
-Cycle-021 has completed 83 deployable stages.
+Cycle-021 has completed 84 deployable stages.
 
 - System/RBAC: notice, dept, post, menu, role, permission, user, dict, config
   and file loops are live.
@@ -56,8 +56,8 @@ Cycle-021 has completed 83 deployable stages.
 - Logs: login-log type/result, lockout, cleanup, actor/reason and
   deterministic location; operation-log list/detail/export/delete/clean.
 - Config: runtime keys, login policy, feature flags, rollout, audience rules,
-  environment overrides, secret vault, secret version history and explicit
-  secret rotation.
+  environment overrides, secret vault, secret version history, explicit secret
+  rotation, env-bound KMS keyring status and vault key rotation.
 - Notice: management, inbox/read state, read-user analytics, templates,
   delivery records, local provider, Integration outbox bridge, state sync,
   queued processing, signed callback intake, bounded retry scheduling and a
@@ -69,20 +69,22 @@ Cycle-021 has completed 83 deployable stages.
   enable/disable, manual trigger, registered handler execution, retry/timeout
   diagnostics and failed run-log detail are smoke-guarded.
 
-Latest runtime stage: Round 83 `core.config` secret versions. It adds a
-first-class `SystemConfigSecretVersion` table, create-time v1 baselines,
-explicit secret rotation, SDK/Admin/OpenAPI exposure and smoke/deploy guards
-for seeded versions, non-secret/blank guards and plaintext leakage.
+Latest runtime stage: Round 84 `core.config` vault key rotation. It adds
+env-bound KMS keyring status, v2 secret envelopes with key IDs, legacy
+unversioned-vault deserialization guards, current/versioned secret rewrap,
+SDK/Admin/OpenAPI exposure and smoke/deploy guards for plaintext leakage,
+active-key state and stale Admin bundles.
 
 ## Next Queue
 
-1. Config governance: external KMS binding and vault key rotation.
-2. Operation-log enrichment: retention scheduling, duration/location fields
+1. Operation-log enrichment: retention scheduling, duration/location fields
    and governance policy.
-3. OpenForge Admin safe plan/diff/check/apply UI.
-4. Integration health/config audit.
-5. Scheduler/monitor worker parity: external BullMQ worker execution, cron
+2. OpenForge Admin safe plan/diff/check/apply UI.
+3. Integration health/config audit.
+4. Scheduler/monitor worker parity: external BullMQ worker execution, cron
    dispatch and queue metrics beyond the current registered manual executor.
+5. Optional managed-KMS provider adapter if deployment needs a cloud KMS API
+   instead of the current env-bound keyring.
 
 ## Docs Rule
 

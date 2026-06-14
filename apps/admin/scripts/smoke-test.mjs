@@ -407,6 +407,8 @@ if (
   ) ||
   !opencorePlatformService.includes('listOpenCoreSystemConfigSecretVersions') ||
   !opencorePlatformService.includes('rotateOpenCoreSystemConfigSecret') ||
+  !opencorePlatformService.includes('getOpenCoreSystemConfigVaultStatus') ||
+  !opencorePlatformService.includes('rotateOpenCoreSystemConfigVaultKey') ||
   !opencorePlatformService.includes('listOpenCoreSystemNotices') ||
   !opencorePlatformService.includes('listOpenCoreSystemNoticeInbox') ||
   !opencorePlatformService.includes('getOpenCoreSystemNoticeInboxEventsPath') ||
@@ -923,6 +925,13 @@ if (
   !configPage.includes('rotateSecret') ||
   !configPage.includes('listOpenCoreSystemConfigSecretVersions') ||
   !configPage.includes('rotateOpenCoreSystemConfigSecret') ||
+  !configPage.includes('Vault Key Rotation') ||
+  !configPage.includes('Rotate vault key') ||
+  !configPage.includes('Active vault key') ||
+  !configPage.includes('openVaultStatus') ||
+  !configPage.includes('rotateVaultKey') ||
+  !configPage.includes('getOpenCoreSystemConfigVaultStatus') ||
+  !configPage.includes('rotateOpenCoreSystemConfigVaultKey') ||
   !configPage.includes('canExportSystemConfig') ||
   !configPage.includes('Download Excel') ||
   !configPage.includes('Config Excel export downloaded') ||

@@ -11,6 +11,7 @@ import type {
   BatchDeleteSystemConfigsDto,
   CreateSystemConfigDto,
   RotateSystemConfigSecretDto,
+  RotateSystemConfigVaultKeyDto,
   UpdateSystemConfigDto,
   UpsertSystemConfigEnvironmentOverrideDto,
 } from './system-config.dto';
@@ -18,6 +19,8 @@ import type {
   SystemConfigEnvironmentOverrideRecord,
   SystemConfigRecord,
   SystemConfigSecretVersionRecord,
+  SystemConfigVaultKeyRotationRecord,
+  SystemConfigVaultStatusRecord,
 } from './system-config.records';
 import {
   assertEnvironmentOverrideConfig,
@@ -26,6 +29,8 @@ import {
   assertSecretConfigShape,
   assertSecretVersionedConfig,
   assertSystemConfigMutable,
+  createSystemConfigVaultKeyRotationRecord,
+  createSystemConfigVaultStatus,
   createSystemConfigPageResult,
   isSystemConfigSecretEncrypted,
   normalizeExistingConfigValue,
@@ -46,6 +51,7 @@ import {
   toSystemConfigValueType,
   type SystemConfigPageQuery,
 } from './system-config.repository';
+import { inspectSystemConfigSecretEnvelope } from './system-config.vault';
 
 type PrismaSystemConfig = {
   id: string;
@@ -76,6 +82,7 @@ type PrismaSystemConfigSecretVersion = {
   id: string;
   key: string;
   version: number;
+  value: string;
   active: boolean;
   rotatedBy: string | null;
   reason: string | null;
@@ -513,6 +520,89 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
     return toSystemConfigSecretVersionRecord(version);
   }
 
+  async getConfigVaultStatus(): Promise<SystemConfigVaultStatusRecord> {
+    return createSystemConfigVaultStatus(await this.readVaultStatusValues());
+  }
+
+  async rotateConfigVaultKey(
+    body: RotateSystemConfigVaultKeyDto,
+  ): Promise<SystemConfigVaultKeyRotationRecord> {
+    const rotatedBy = normalizeSecretRotationActor(body.rotatedBy);
+    const reason = normalizeOptionalConfigText(body.reason, 'remark');
+    const rotatedAt = new Date().toISOString();
+    const result = await this.prisma.$transaction(async (tx) => {
+      const configs = await tx.systemConfig.findMany();
+      const secretConfigs = configs.filter(
+        (config) => toSystemConfigRecord(config).visibility === 'secret',
+      );
+      const secretVersions = await tx.systemConfigSecretVersion.findMany();
+      const currentSecretValues: string[] = [];
+      const secretVersionValues: string[] = [];
+
+      for (const config of secretConfigs) {
+        const value = normalizeExistingConfigValue({
+          key: config.key,
+          value: config.value,
+          valueType: 'string',
+          visibility: 'secret',
+        });
+        const rewrapped = normalizeStoredConfigValue({
+          key: config.key,
+          value,
+          valueType: 'string',
+          visibility: 'secret',
+        });
+        await tx.systemConfig.update({
+          where: { key: config.key },
+          data: { value: rewrapped, valueType: 'string', public: false },
+        });
+        currentSecretValues.push(rewrapped);
+      }
+
+      for (const version of secretVersions) {
+        const value = normalizeExistingConfigValue({
+          key: version.key,
+          value: version.value,
+          valueType: 'string',
+          visibility: 'secret',
+        });
+        const rewrapped = normalizeStoredConfigValue({
+          key: version.key,
+          value,
+          valueType: 'string',
+          visibility: 'secret',
+        });
+        await tx.systemConfigSecretVersion.update({
+          where: {
+            key_version: {
+              key: version.key,
+              version: version.version,
+            },
+          },
+          data: { value: rewrapped, valueType: 'string' },
+        });
+        secretVersionValues.push(rewrapped);
+      }
+
+      return {
+        currentSecretValues,
+        rewrappedConfigCount: secretConfigs.length,
+        rewrappedSecretVersionCount: secretVersions.length,
+        secretVersionValues,
+      };
+    });
+
+    return createSystemConfigVaultKeyRotationRecord({
+      currentSecretValues: result.currentSecretValues,
+      reason,
+      rewrappedConfigCount: result.rewrappedConfigCount,
+      rewrappedSecretVersionCount: result.rewrappedSecretVersionCount,
+      rotatedAt,
+      rotatedBy,
+      secretVersionValues: result.secretVersionValues,
+    });
+  }
+
   private async findConfigByKey(key: string): Promise<PrismaSystemConfig> {
     const config = await this.prisma.systemConfig.findUnique({
       where: { key },
@@ -523,6 +613,27 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
     }
 
     return config;
+  }
+
+  private async readVaultStatusValues(): Promise<{
+    currentSecretValues: readonly string[];
+    secretVersionValues: readonly string[];
+  }> {
+    const configs = await this.prisma.systemConfig.findMany();
+    const secretVersions = await this.prisma.systemConfigSecretVersion.findMany(
+      {
+        select: { value: true },
+      },
+    );
+
+    return {
+      currentSecretValues: configs
+        .filter(
+          (config) => toSystemConfigRecord(config).visibility === 'secret',
+        )
+        .map((config) => config.value),
+      secretVersionValues: secretVersions.map((version) => version.value),
+    };
   }
 }
 
@@ -572,12 +683,17 @@ function toSystemConfigEnvironmentOverrideRecord(
 function toSystemConfigSecretVersionRecord(
   version: PrismaSystemConfigSecretVersion,
 ): SystemConfigSecretVersionRecord {
+  const envelope = inspectSystemConfigSecretEnvelope(version.value);
+
   return {
     id: version.id,
     key: version.key,
     version: version.version,
     active: version.active,
     encrypted: true,
+    envelopeVersion: envelope.envelopeVersion === 'v2' ? 'v2' : 'v1',
+    vaultKeyId: envelope.keyId,
+    activeVaultKey: envelope.activeKey,
     rotatedBy: version.rotatedBy ?? undefined,
     reason: version.reason ?? undefined,
     createdAt: version.createdAt.toISOString(),

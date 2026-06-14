@@ -75,6 +75,7 @@ import {
   LoginUnlockResultDto,
   PageQueryDto,
   RotateSystemConfigSecretDto,
+  RotateSystemConfigVaultKeyDto,
   SystemDeptDto,
   SystemDeptOrderMutationResultDto,
   SystemDeptOptionDto,
@@ -90,6 +91,8 @@ import {
   SystemConfigRuntimeQueryDto,
   SystemConfigRuntimeDto,
   SystemConfigSecretVersionDto,
+  SystemConfigVaultKeyRotationDto,
+  SystemConfigVaultStatusDto,
   SystemConfigValueDto,
   SystemConfigValueQueryDto,
   SystemNoticeDto,
@@ -374,6 +377,24 @@ export class SystemManagementController {
     @Param('environment') environment: string,
   ): Promise<DeleteResultDto> {
     return this.config.deleteConfigEnvironmentOverride(key, environment);
+  }
+
+  @Get('config/vault/status')
+  @ApiTags('Core System Config')
+  @RequirePermission('core:config:read')
+  @ApiOkResponse({ type: SystemConfigVaultStatusDto })
+  getConfigVaultStatus(): Promise<SystemConfigVaultStatusDto> {
+    return this.config.getConfigVaultStatus();
+  }
+
+  @Post('config/vault/rotate-key')
+  @ApiTags('Core System Config')
+  @RequirePermission('core:config:update')
+  @ApiOkResponse({ type: SystemConfigVaultKeyRotationDto })
+  rotateConfigVaultKey(
+    @Body() body: RotateSystemConfigVaultKeyDto,
+  ): Promise<SystemConfigVaultKeyRotationDto> {
+    return this.config.rotateConfigVaultKey(body);
   }
 
   @Get('config/:key/secret-versions')

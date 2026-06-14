@@ -21,6 +21,7 @@ import {
   createSystemConfigFixtures,
   type SystemConfigSecretVersionSummary,
   type SystemConfigSummary,
+  type SystemConfigVaultStatusSummary,
 } from '@opencore/sdk';
 import {
   Alert,
@@ -47,11 +48,13 @@ import {
   exportOpenCoreSystemConfig,
   getOpenCoreSystemConfig,
   getOpenCoreSystemConfigValue,
+  getOpenCoreSystemConfigVaultStatus,
   listOpenCoreSystemConfigEnvironmentOverrides,
   listOpenCoreSystemConfigSecretVersions,
   listOpenCoreSystemConfig,
   refreshOpenCoreSystemConfigCache,
   rotateOpenCoreSystemConfigSecret,
+  rotateOpenCoreSystemConfigVaultKey,
   updateOpenCoreSystemConfig,
   upsertOpenCoreSystemConfigEnvironmentOverride,
 } from '@/services/opencore/platform';
@@ -96,6 +99,11 @@ type SecretRotationFormValues = {
   reason?: string;
   rotatedBy?: string;
   value: string;
+};
+
+type VaultRotationFormValues = {
+  reason?: string;
+  rotatedBy?: string;
 };
 
 const fallbackRows = createSystemConfigFixtures().items;
@@ -424,6 +432,7 @@ export default function ConfigPage() {
   const [form] = Form.useForm<ConfigFormValues>();
   const [environmentForm] = Form.useForm<EnvironmentOverrideFormValues>();
   const [secretRotationForm] = Form.useForm<SecretRotationFormValues>();
+  const [vaultRotationForm] = Form.useForm<VaultRotationFormValues>();
   const [rows, setRows] =
     useState<readonly SystemConfigSummary[]>(fallbackRows);
   const [loading, setLoading] = useState(true);
@@ -464,6 +473,11 @@ export default function ConfigPage() {
   >([]);
   const [secretVersionsLoading, setSecretVersionsLoading] = useState(false);
   const [secretRotating, setSecretRotating] = useState(false);
+  const [vaultStatus, setVaultStatus] =
+    useState<SystemConfigVaultStatusSummary>();
+  const [vaultStatusOpen, setVaultStatusOpen] = useState(false);
+  const [vaultStatusLoading, setVaultStatusLoading] = useState(false);
+  const [vaultKeyRotating, setVaultKeyRotating] = useState(false);
   const watchedVisibility = Form.useWatch('visibility', form);
   const filterOptions = useMemo(() => createFilterOptions(rows), [rows]);
   const selectedDeletableKeys = useMemo(
@@ -797,6 +811,42 @@ export default function ConfigPage() {
       await loadConfig();
     } finally {
       setSecretRotating(false);
+    }
+  };
+
+  const openVaultStatus = async () => {
+    setVaultStatusOpen(true);
+    vaultRotationForm.setFieldsValue({
+      reason: '',
+      rotatedBy: 'admin',
+    });
+    setVaultStatusLoading(true);
+    try {
+      setVaultStatus(await getOpenCoreSystemConfigVaultStatus());
+    } catch (error: unknown) {
+      message.warning(
+        error instanceof Error ? error.message : 'Unable to load vault status.',
+      );
+    } finally {
+      setVaultStatusLoading(false);
+    }
+  };
+
+  const rotateVaultKey = async () => {
+    const values = await vaultRotationForm.validateFields();
+    setVaultKeyRotating(true);
+    try {
+      const result = await rotateOpenCoreSystemConfigVaultKey({
+        reason: values.reason?.trim() || undefined,
+        rotatedBy: values.rotatedBy?.trim() || undefined,
+      });
+      setVaultStatus(result);
+      message.success(
+        `Vault key rotation rewrapped ${result.rewrappedConfigCount} config(s) and ${result.rewrappedSecretVersionCount} version(s).`,
+      );
+      await loadConfig();
+    } finally {
+      setVaultKeyRotating(false);
     }
   };
 
@@ -1243,6 +1293,14 @@ export default function ConfigPage() {
             Refresh cache
           </Button>,
           <Button
+            key="vault-key-rotation"
+            icon={<KeyOutlined />}
+            loading={vaultStatusLoading || vaultKeyRotating}
+            onClick={() => void openVaultStatus()}
+          >
+            Vault Key Rotation
+          </Button>,
+          <Button
             key="refresh"
             icon={<ReloadOutlined />}
             onClick={() => void loadConfig()}
@@ -1471,8 +1529,13 @@ export default function ConfigPage() {
                 </Tag>
                 <Tag>{version.active ? 'active' : 'inactive'}</Tag>
                 <Tag color={version.encrypted ? 'purple' : 'orange'}>
-                  encrypted
+                  {version.envelopeVersion}
                 </Tag>
+                {version.vaultKeyId ? (
+                  <Tag color={version.activeVaultKey ? 'green' : 'orange'}>
+                    {version.vaultKeyId}
+                  </Tag>
+                ) : null}
                 {version.rotatedBy ? <Tag>{version.rotatedBy}</Tag> : null}
                 {version.reason ? (
                   <Typography.Text type="secondary">
@@ -1504,6 +1567,63 @@ export default function ConfigPage() {
           >
             <Input.Password autoComplete="new-password" maxLength={500} />
           </Form.Item>
+          <Form.Item label="Rotated by" name="rotatedBy">
+            <Input maxLength={100} />
+          </Form.Item>
+          <Form.Item label="Reason" name="reason">
+            <Input.TextArea maxLength={500} rows={2} />
+          </Form.Item>
+        </Form>
+      </Modal>
+      <Modal
+        title="Vault Key Rotation"
+        open={vaultStatusOpen}
+        confirmLoading={vaultKeyRotating}
+        onCancel={() => setVaultStatusOpen(false)}
+        onOk={() => void rotateVaultKey()}
+        okText="Rotate vault key"
+      >
+        <Alert
+          showIcon
+          type="info"
+          message="Active vault key"
+          description={vaultStatus?.activeKeyId ?? 'Loading vault status'}
+          style={{ marginBlockEnd: 16 }}
+        />
+        <Space direction="vertical" style={{ width: '100%' }}>
+          <Space wrap>
+            <Tag color="blue">{vaultStatus?.provider ?? 'env'}</Tag>
+            <Tag>
+              {vaultStatus?.legacyDecryptEnabled ? 'v1 decrypt' : 'v2 only'}
+            </Tag>
+            {(vaultStatus?.keyIds ?? []).map((keyId) => (
+              <Tag
+                color={keyId === vaultStatus?.activeKeyId ? 'green' : 'default'}
+                key={keyId}
+              >
+                {keyId}
+              </Tag>
+            ))}
+          </Space>
+          <Space wrap>
+            <Tag>configs {vaultStatus?.encryptedConfigCount ?? 0}</Tag>
+            <Tag>versions {vaultStatus?.secretVersionCount ?? 0}</Tag>
+            <Tag>active key {vaultStatus?.activeKeyConfigCount ?? 0}</Tag>
+            <Tag color={vaultStatus?.legacyEnvelopeCount ? 'orange' : 'green'}>
+              legacy {vaultStatus?.legacyEnvelopeCount ?? 0}
+            </Tag>
+            <Tag
+              color={vaultStatus?.staleKeyEnvelopeCount ? 'orange' : 'green'}
+            >
+              stale {vaultStatus?.staleKeyEnvelopeCount ?? 0}
+            </Tag>
+          </Space>
+        </Space>
+        <Form<VaultRotationFormValues>
+          form={vaultRotationForm}
+          layout="vertical"
+          style={{ marginBlockStart: 16 }}
+        >
           <Form.Item label="Rotated by" name="rotatedBy">
             <Input maxLength={100} />
           </Form.Item>

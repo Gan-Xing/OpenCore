@@ -10,6 +10,7 @@ import type {
   BatchDeleteSystemConfigsDto,
   CreateSystemConfigDto,
   RotateSystemConfigSecretDto,
+  RotateSystemConfigVaultKeyDto,
   SystemConfigFeatureFlagEvaluationQueryDto,
   SystemConfigRuntimeQueryDto,
   UpdateSystemConfigDto,
@@ -19,6 +20,8 @@ import type {
   SystemConfigEnvironmentOverrideRecord,
   SystemConfigRecord,
   SystemConfigSecretVersionRecord,
+  SystemConfigVaultKeyRotationRecord,
+  SystemConfigVaultStatusRecord,
 } from './system-config.records';
 import {
   SYSTEM_CONFIG_DEFAULT_ENVIRONMENT,
@@ -354,6 +357,19 @@ export class SystemConfigService {
     this.invalidateValueCache(normalizedKey);
 
     return version;
+  }
+
+  getConfigVaultStatus(): Promise<SystemConfigVaultStatusRecord> {
+    return this.repository.getConfigVaultStatus();
+  }
+
+  async rotateConfigVaultKey(
+    body: RotateSystemConfigVaultKeyDto,
+  ): Promise<SystemConfigVaultKeyRotationRecord> {
+    const result = await this.repository.rotateConfigVaultKey(body);
+    this.valueCache.clear();
+
+    return result;
   }
 
   async createExportPreview(

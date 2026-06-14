@@ -37,10 +37,34 @@ export type SystemConfigSecretVersionRecord = {
   version: number;
   active: boolean;
   encrypted: true;
+  envelopeVersion: 'v1' | 'v2';
+  vaultKeyId?: string;
+  activeVaultKey: boolean;
   rotatedBy?: string;
   reason?: string;
   createdAt: string;
 };
+
+export type SystemConfigVaultStatusRecord = {
+  provider: 'env';
+  activeKeyId: string;
+  keyIds: readonly string[];
+  legacyDecryptEnabled: boolean;
+  encryptedConfigCount: number;
+  secretVersionCount: number;
+  activeKeyConfigCount: number;
+  legacyEnvelopeCount: number;
+  staleKeyEnvelopeCount: number;
+};
+
+export type SystemConfigVaultKeyRotationRecord =
+  SystemConfigVaultStatusRecord & {
+    rotatedAt: string;
+    rotatedBy?: string;
+    reason?: string;
+    rewrappedConfigCount: number;
+    rewrappedSecretVersionCount: number;
+  };
 
 export const seedSystemConfigs: readonly SystemConfigRecord[] = [
   {

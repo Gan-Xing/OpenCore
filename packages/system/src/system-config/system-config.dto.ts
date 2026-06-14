@@ -277,6 +277,15 @@ export class SystemConfigSecretVersionDto {
   @ApiProperty()
   encrypted!: true;
 
+  @ApiProperty({ enum: ['v1', 'v2'] })
+  envelopeVersion!: 'v1' | 'v2';
+
+  @ApiProperty({ required: false })
+  vaultKeyId?: string;
+
+  @ApiProperty()
+  activeVaultKey!: boolean;
+
   @ApiProperty({ required: false })
   rotatedBy?: string;
 
@@ -285,6 +294,52 @@ export class SystemConfigSecretVersionDto {
 
   @ApiProperty()
   createdAt!: string;
+}
+
+export class SystemConfigVaultStatusDto {
+  @ApiProperty({ enum: ['env'] })
+  provider!: 'env';
+
+  @ApiProperty()
+  activeKeyId!: string;
+
+  @ApiProperty({ type: [String] })
+  keyIds!: readonly string[];
+
+  @ApiProperty()
+  legacyDecryptEnabled!: boolean;
+
+  @ApiProperty()
+  encryptedConfigCount!: number;
+
+  @ApiProperty()
+  secretVersionCount!: number;
+
+  @ApiProperty()
+  activeKeyConfigCount!: number;
+
+  @ApiProperty()
+  legacyEnvelopeCount!: number;
+
+  @ApiProperty()
+  staleKeyEnvelopeCount!: number;
+}
+
+export class SystemConfigVaultKeyRotationDto extends SystemConfigVaultStatusDto {
+  @ApiProperty()
+  rotatedAt!: string;
+
+  @ApiProperty({ required: false })
+  rotatedBy?: string;
+
+  @ApiProperty({ required: false })
+  reason?: string;
+
+  @ApiProperty()
+  rewrappedConfigCount!: number;
+
+  @ApiProperty()
+  rewrappedSecretVersionCount!: number;
 }
 
 export class CreateSystemConfigDto {
@@ -360,6 +415,14 @@ export class RotateSystemConfigSecretDto {
   @ApiProperty()
   value!: string;
 
+  @ApiProperty({ required: false, example: 'admin' })
+  rotatedBy?: string;
+
+  @ApiProperty({ required: false })
+  reason?: string;
+}
+
+export class RotateSystemConfigVaultKeyDto {
   @ApiProperty({ required: false, example: 'admin' })
   rotatedBy?: string;
 

@@ -40,6 +40,7 @@ import {
   type RbacDeleteResult,
   type RenderSystemNoticeTemplateRequest,
   type RotateSystemConfigSecretRequest,
+  type RotateSystemConfigVaultKeyRequest,
   type RoleMenuAssignmentSummary,
   type RoleMutationSummary,
   type RoleUserAssignmentSummary,
@@ -56,6 +57,8 @@ import {
   type SystemConfigCacheRefreshSummary,
   type SystemConfigEnvironmentOverrideSummary,
   type SystemConfigSecretVersionSummary,
+  type SystemConfigVaultKeyRotationSummary,
+  type SystemConfigVaultStatusSummary,
   type SystemConfigValueSummary,
   type SystemDeptOptionSummary,
   type SystemDeptOrderMutationSummary,
@@ -572,6 +575,19 @@ export function rotateOpenCoreSystemConfigSecret(
   return systemManagementClient.rotateConfigSecret(
     getRequiredAdminToken(),
     key,
+    body,
+  );
+}
+
+export function getOpenCoreSystemConfigVaultStatus(): Promise<SystemConfigVaultStatusSummary> {
+  return systemManagementClient.getConfigVaultStatus(getRequiredAdminToken());
+}
+
+export function rotateOpenCoreSystemConfigVaultKey(
+  body: RotateSystemConfigVaultKeyRequest,
+): Promise<SystemConfigVaultKeyRotationSummary> {
+  return systemManagementClient.rotateConfigVaultKey(
+    getRequiredAdminToken(),
     body,
   );
 }

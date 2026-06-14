@@ -7,7 +7,8 @@ const { PrismaPg } = require('@prisma/adapter-pg');
 
 const DEFAULT_PORT = '39173';
 const REDACTED_SECRET_VALUE = '[REDACTED]';
-const SECRET_VALUE_PREFIX = 'opencore:vault:v1:';
+const SECRET_VALUE_PREFIX = 'opencore:vault:';
+const SECRET_VALUE_V2_PREFIX = 'opencore:vault:v2:';
 const XLSX_CONTENT_TYPE =
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
@@ -235,6 +236,16 @@ try {
     true,
     'seeded secret version encrypted flag',
   );
+  assertEqual(
+    seededSecretVersions[0]?.envelopeVersion,
+    'v2',
+    'seeded secret version envelope',
+  );
+  assertEqual(
+    seededSecretVersions[0]?.activeVaultKey,
+    true,
+    'seeded secret version active vault key',
+  );
   assertNoOwnProperty(
     seededSecretVersions[0],
     'value',
@@ -251,6 +262,30 @@ try {
     expected: [400],
     body: { value: 'not-a-secret' },
   });
+  const initialVaultStatus = await apiRequest('/core/config/vault/status');
+  assertEqual(initialVaultStatus.provider, 'env', 'vault provider');
+  assertString(initialVaultStatus.activeKeyId, 'vault active key id');
+  assertArray(initialVaultStatus.keyIds, 'vault key ids');
+  assertIncludes(
+    initialVaultStatus.keyIds,
+    initialVaultStatus.activeKeyId,
+    'vault key ids active key',
+  );
+  assertEqual(
+    initialVaultStatus.legacyDecryptEnabled,
+    true,
+    'vault legacy decrypt flag',
+  );
+  assertNumberAtLeast(
+    initialVaultStatus.encryptedConfigCount,
+    1,
+    'vault encrypted config count',
+  );
+  assertNumberAtLeast(
+    initialVaultStatus.secretVersionCount,
+    1,
+    'vault secret version count',
+  );
   const initialRuntimeConfig = await request(
     `${apiPrefix}/core/config/runtime`,
   );
@@ -1212,6 +1247,16 @@ try {
     true,
     'created secret initial version active flag',
   );
+  assertEqual(
+    initialSecretVersions[0]?.envelopeVersion,
+    'v2',
+    'created secret initial version envelope',
+  );
+  assertEqual(
+    initialSecretVersions[0]?.activeVaultKey,
+    true,
+    'created secret initial version active vault key',
+  );
   assertNoOwnProperty(
     initialSecretVersions[0],
     'value',
@@ -1234,7 +1279,7 @@ try {
   assertString(storedSecretValue, 'stored secret config value');
   assertStringIncludes(
     storedSecretValue,
-    SECRET_VALUE_PREFIX,
+    SECRET_VALUE_V2_PREFIX,
     'stored secret config vault envelope',
   );
   assertStringExcludes(
@@ -1305,6 +1350,16 @@ try {
     'rotated secret latest active flag',
   );
   assertEqual(
+    rotatedSecretVersions[0]?.envelopeVersion,
+    'v2',
+    'rotated secret latest envelope',
+  );
+  assertEqual(
+    rotatedSecretVersions[0]?.activeVaultKey,
+    true,
+    'rotated secret latest active vault key',
+  );
+  assertEqual(
     rotatedSecretVersions[1]?.version,
     1,
     'rotated secret previous version',
@@ -1317,7 +1372,7 @@ try {
   const rotatedStoredSecretValue = await readStoredConfigValue(secretKey);
   assertStringIncludes(
     rotatedStoredSecretValue,
-    SECRET_VALUE_PREFIX,
+    SECRET_VALUE_V2_PREFIX,
     'rotated stored secret vault envelope',
   );
   assertStringExcludes(
@@ -1335,7 +1390,7 @@ try {
   for (const versionValue of storedSecretVersionValues) {
     assertStringIncludes(
       versionValue,
-      SECRET_VALUE_PREFIX,
+      SECRET_VALUE_V2_PREFIX,
       'stored secret version vault envelope',
     );
     assertStringExcludes(
@@ -1347,6 +1402,89 @@ try {
       versionValue,
       'rotated-secret-smoke-value',
       'stored secret version rotated plaintext',
+    );
+  }
+  const vaultRotation = await apiRequest('/core/config/vault/rotate-key', {
+    method: 'POST',
+    body: {
+      reason: 'Smoke vault key rotation',
+      rotatedBy: username,
+    },
+  });
+  assertEqual(vaultRotation.provider, 'env', 'vault key rotation provider');
+  assertString(vaultRotation.activeKeyId, 'vault key rotation active key id');
+  assertNumberAtLeast(
+    vaultRotation.rewrappedConfigCount,
+    1,
+    'vault key rotation config count',
+  );
+  assertNumberAtLeast(
+    vaultRotation.rewrappedSecretVersionCount,
+    1,
+    'vault key rotation version count',
+  );
+  assertEqual(vaultRotation.rotatedBy, username, 'vault key rotation actor');
+  assertEqual(
+    vaultRotation.reason,
+    'Smoke vault key rotation',
+    'vault key rotation reason',
+  );
+  assertEqual(
+    vaultRotation.staleKeyEnvelopeCount,
+    0,
+    'vault key rotation stale envelope count',
+  );
+  assertEqual(
+    vaultRotation.legacyEnvelopeCount,
+    0,
+    'vault key rotation legacy envelope count',
+  );
+  assertEqual(
+    vaultRotation.activeKeyConfigCount,
+    vaultRotation.encryptedConfigCount,
+    'vault key rotation active config count',
+  );
+  const rewrappedStoredSecretValue = await readStoredConfigValue(secretKey);
+  assertStringIncludes(
+    rewrappedStoredSecretValue,
+    SECRET_VALUE_V2_PREFIX,
+    'rewrapped stored secret vault envelope',
+  );
+  assertNotEqual(
+    rewrappedStoredSecretValue,
+    rotatedStoredSecretValue,
+    'rewrapped stored secret value',
+  );
+  assertStringExcludes(
+    rewrappedStoredSecretValue,
+    'rotated-secret-smoke-value',
+    'rewrapped stored secret plaintext',
+  );
+  const rewrappedSecretVersions = await apiRequest(
+    `/core/config/${secretKey}/secret-versions`,
+  );
+  assertEqual(
+    rewrappedSecretVersions[0]?.activeVaultKey,
+    true,
+    'rewrapped secret latest active vault key',
+  );
+  assertEqual(
+    rewrappedSecretVersions[0]?.envelopeVersion,
+    'v2',
+    'rewrapped secret latest envelope',
+  );
+  const rewrappedSecretVersionValues =
+    await readStoredSecretVersionValues(secretKey);
+  for (const versionValue of rewrappedSecretVersionValues) {
+    assertStringIncludes(
+      versionValue,
+      SECRET_VALUE_V2_PREFIX,
+      'rewrapped secret version vault envelope',
+    );
+    assertStringExcludes(
+      versionValue,
+      'rotated-secret-smoke-value',
+      'rewrapped secret version plaintext',
     );
   }
 
@@ -1449,6 +1587,8 @@ try {
         'core.config.runtime-login-attempt-policy',
         'core.config.runtime-login-attempt-policy-guards',
         'core.config.seed-secret-vault',
+        'core.config.vault.status',
+        'core.config.vault.key-rotation',
         'core.config.secret-version.seed',
         'core.config.secret-version.guards',
         'core.config.secret-version.rotate',
@@ -1730,6 +1870,12 @@ function assertObject(value, label) {
 function assertEqual(actual, expected, label) {
   if (actual !== expected) {
     throw new Error(`${label} expected ${expected}, got ${actual}`);
+  }
+}
+
+function assertNotEqual(actual, expected, label) {
+  if (actual === expected) {
+    throw new Error(`${label} must change`);
   }
 }
 
