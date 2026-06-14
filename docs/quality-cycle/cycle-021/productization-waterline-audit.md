@@ -33,7 +33,7 @@ failures have guards; and remaining omissions are explicit product boundaries.
 | `tool.openapi`        | Meets current | Live drift snapshot metadata uses API/SDK/Admin, OpenAPI contract fields and tool/deploy guards.     |
 | `tool.export`         | Meets current | Admin protocol/preview and shared current-page export buttons use the live protocol with row caps.   |
 | `OpenForge Admin`     | Meets current | Safe workbench, dry-run confirmation, write-intent rejection and manifest preview/detail.            |
-| `collaboration`       | Enhance       | Messages, Notices and Todos are live; Approval Lite Admin page still needs live operations.          |
+| `collaboration`       | Meets current | Messages, Notices, Todos and Approval Lite live operations are API/SDK/Admin/smoke guarded.          |
 
 ## Closed Remediation
 
@@ -121,13 +121,15 @@ failures have guards; and remaining omissions are explicit product boundaries.
   list/detail, create, publish and archive controls.
 - Round 104 replaced the Collaboration Todos Admin fixture page with live
   list/detail, create, assign, complete and cancel controls.
+- Round 105 replaced the Collaboration Approval Lite Admin fixture page with
+  live list/detail, create, approve and reject controls.
 
 ## Active Debt
 
-1. Collaboration Approval Lite Admin page still needs live API/SDK operations
-   instead of fixture rows.
-2. OpenForge direct schema/migration/business-code writes still require user
+1. OpenForge direct schema/migration/business-code writes still require user
    admission.
+2. The next admitted P0/P1 foundation gap should be selected by a fresh
+   remaining Admin/productization debt audit.
 
 ## Guard Matrix
 
@@ -183,7 +185,10 @@ failures have guards; and remaining omissions are explicit product boundaries.
   markers. Todo smoke covers seeded list/detail, create, assign, complete,
   terminal-action guards, cancel and canceled-list filtering; Admin/deploy
   guards reject fixture-backed Todos source and require live todo operation
-  markers.
+  markers. Approval smoke covers seeded list/detail, create, approve,
+  terminal-action guards, approved-list filtering, reject and rejected-list
+  filtering; Admin/deploy guards reject fixture-backed Approval Lite source
+  and require live approval operation markers.
 - Config: runtime shape, environment override governance, secret-vault
   plaintext protection, legacy envelope deserialization, secret version
   history, secret rotation, vault key rotation, managed KMS host allowlist and

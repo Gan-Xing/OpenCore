@@ -803,6 +803,17 @@ if (
   !todosPage.includes('collaboration:todo:create') ||
   !todosPage.includes('collaboration:todo:update') ||
   !approvalsPage.includes('@opencore/sdk') ||
+  !approvalsPage.includes('listOpenCoreApprovalLiteRequests') ||
+  !approvalsPage.includes('getOpenCoreApprovalLiteRequest') ||
+  !approvalsPage.includes('createOpenCoreApprovalLiteRequest') ||
+  !approvalsPage.includes('approveOpenCoreApprovalLiteRequest') ||
+  !approvalsPage.includes('rejectOpenCoreApprovalLiteRequest') ||
+  !approvalsPage.includes('Live approvals') ||
+  !approvalsPage.includes('Create approval') ||
+  !approvalsPage.includes('Approve request') ||
+  !approvalsPage.includes('Reject request') ||
+  !approvalsPage.includes('collaboration:approval-lite:create') ||
+  !approvalsPage.includes('collaboration:approval-lite:update') ||
   !jobsPage.includes('@opencore/sdk') ||
   !cachePage.includes('@opencore/sdk') ||
   !onlineUsersPage.includes('@opencore/sdk') ||
@@ -890,6 +901,30 @@ if (
 ) {
   throw new Error(
     'Collaboration Todos page must use live todo SDK APIs instead of static fixtures.',
+  );
+}
+
+if (
+  approvalsPage.includes('createCollaborationFixtures') ||
+  approvalsPage.includes('findApprovalLiteFixture') ||
+  !opencorePlatformService.includes(
+    'collaborationClient.listApprovalLiteRequests',
+  ) ||
+  !opencorePlatformService.includes(
+    'collaborationClient.getApprovalLiteRequest',
+  ) ||
+  !opencorePlatformService.includes(
+    'collaborationClient.createApprovalLiteRequest',
+  ) ||
+  !opencorePlatformService.includes(
+    'collaborationClient.approveApprovalLiteRequest',
+  ) ||
+  !opencorePlatformService.includes(
+    'collaborationClient.rejectApprovalLiteRequest',
+  )
+) {
+  throw new Error(
+    'Collaboration Approval Lite page must use live approval SDK APIs instead of static fixtures.',
   );
 }
 

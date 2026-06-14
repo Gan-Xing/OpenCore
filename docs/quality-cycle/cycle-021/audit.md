@@ -89,6 +89,9 @@ Round 103 moved Collaboration Notices Admin from fixtures to live list/detail,
 create, publish and archive operations with smoke and deploy guards.
 Round 104 moved Collaboration Todos Admin from fixtures to live list/detail,
 create, assign, complete and cancel operations with smoke and deploy guards.
+Round 105 moved Collaboration Approval Lite Admin from fixtures to live
+list/detail, create, approve and reject operations with smoke and deploy
+guards.
 Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 `lint` must run sequentially.
 
@@ -145,8 +148,11 @@ Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
   Collaboration Notices smoke covers seed-backed list/detail, create, publish,
   guarded repeat-publish, archive and guarded repeat-archive; Collaboration
   Todos smoke covers seed-backed list/detail, create, assign, complete,
-  terminal-action guards, cancel and canceled-list filtering; Admin/deploy
-  guards reject fixture-backed Messages, Notices and Todos pages.
+  terminal-action guards, cancel and canceled-list filtering; Collaboration
+  Approval Lite smoke covers seed-backed list/detail, create, approve,
+  terminal-action guards, approved-list filtering, reject and rejected-list
+  filtering; Admin/deploy guards reject fixture-backed Messages, Notices,
+  Todos and Approval Lite pages.
 
 ## Documentation Finding
 
@@ -160,8 +166,6 @@ real incident decisions. Do not create per-round reports by default.
   deployment-topology upgrade if needed.
 - Automatic backfill of historical login/operation logs with external GeoIP
   precision remains outside the current request-time lookup surface.
-- Collaboration Approval Lite Admin page remains fixture backed until its
-  focused live-operations loop lands.
 - OpenForge direct generated schema/migration/business writes remain outside
   the admitted surface.
 

@@ -6,6 +6,8 @@ import {
   createRbacClient,
   createSystemManagementClient,
   createToolingClient,
+  type ApprovalLiteQueryRequest,
+  type ApprovalLiteSummary,
   type AssignRoleMenusRequest,
   type AssignRoleUsersRequest,
   type AssignTodoRequest,
@@ -44,9 +46,11 @@ import {
   type ClearCacheRequest,
   type CollaborationDeleteResult,
   type CollaborationSummary,
+  type CreateApprovalLiteRequest,
   type CreateMessageRequest,
   type CreateNoticeRequest,
   type CreateTodoRequest,
+  type DecideApprovalLiteRequest,
   type DeleteCacheKeyRequest,
   type OpenForgeApplyDryRunRequest,
   type OpenForgeApplyDryRunSummary,
@@ -329,6 +333,60 @@ export function cancelOpenCoreTodo(
   body: TodoActionRequest,
 ): Promise<TodoSummary> {
   return collaborationClient.cancelTodo(getRequiredAdminToken(), id, body);
+}
+
+export async function listOpenCoreApprovalLiteRequests(
+  query?: ApprovalLiteQueryRequest,
+): Promise<ApprovalLiteSummary[]> {
+  const page = await collaborationClient.listApprovalLiteRequests(
+    getRequiredAdminToken(),
+    {
+      page: 1,
+      pageSize: 100,
+      ...query,
+    },
+  );
+  return [...page.items];
+}
+
+export function getOpenCoreApprovalLiteRequest(
+  id: string,
+): Promise<ApprovalLiteSummary> {
+  return collaborationClient.getApprovalLiteRequest(
+    getRequiredAdminToken(),
+    id,
+  );
+}
+
+export function createOpenCoreApprovalLiteRequest(
+  body: CreateApprovalLiteRequest,
+): Promise<ApprovalLiteSummary> {
+  return collaborationClient.createApprovalLiteRequest(
+    getRequiredAdminToken(),
+    body,
+  );
+}
+
+export function approveOpenCoreApprovalLiteRequest(
+  id: string,
+  body: DecideApprovalLiteRequest,
+): Promise<ApprovalLiteSummary> {
+  return collaborationClient.approveApprovalLiteRequest(
+    getRequiredAdminToken(),
+    id,
+    body,
+  );
+}
+
+export function rejectOpenCoreApprovalLiteRequest(
+  id: string,
+  body: DecideApprovalLiteRequest,
+): Promise<ApprovalLiteSummary> {
+  return collaborationClient.rejectApprovalLiteRequest(
+    getRequiredAdminToken(),
+    id,
+    body,
+  );
 }
 
 export function getOpenCoreOpenForgeStatus(): Promise<OpenForgeStatusSummary> {

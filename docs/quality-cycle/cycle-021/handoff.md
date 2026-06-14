@@ -48,7 +48,7 @@ packages and OpenForge direct Prisma/migration/business-code writing.
 
 ## Current State
 
-Cycle-021 has completed 104 deployable stages.
+Cycle-021 has completed 105 deployable stages.
 
 - System/RBAC: notice, dept, post, menu, role, permission, user, dict, config
   and file loops are live.
@@ -95,19 +95,19 @@ Cycle-021 has completed 104 deployable stages.
   list, detail, create, mark-read, archive and delete. Notices now use live
   API/SDK/Admin operations for list, detail, create, publish and archive.
   Todos now use live API/SDK/Admin operations for list, detail, create,
-  assign, complete and cancel. These pages have seed coverage, dedicated smoke
-  and Admin/deploy guards. Approval Lite still needs the same live-operations
-  treatment.
+  assign, complete and cancel. Approval Lite now uses live API/SDK/Admin
+  operations for list, detail, create, approve and reject. These pages have
+  seed coverage, dedicated smoke and Admin/deploy guards.
 
-Latest runtime stage: Round 104 Collaboration Todos live operations. It
-replaces the fixture-backed Todos Admin page with live list/detail, create,
-assign, complete and cancel controls through the SDK, plus smoke and deploy
+Latest runtime stage: Round 105 Collaboration Approval Lite live operations.
+It replaces the fixture-backed Approval Lite Admin page with live list/detail,
+create, approve and reject controls through the SDK, plus smoke and deploy
 guards.
 
 ## Next Queue
 
-1. Move Collaboration Approval Lite Admin page from fixtures to live API/SDK
-   operations in a focused follow-up loop.
+1. Audit remaining fixture-backed Admin/productization debt and select the
+   next admitted P0/P1 foundation loop by dependency order.
 2. OpenForge direct Prisma/migration/business-code writes remain out of scope
    until explicitly admitted.
 

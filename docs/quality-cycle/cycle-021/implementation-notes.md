@@ -19,7 +19,7 @@ active debt and decisions that change future execution.
 
 ## Runtime State
 
-Cycle-021 has completed 104 deployable stages across
+Cycle-021 has completed 105 deployable stages across
 System/Security/Monitor/Integration/Tools foundations. Round 91 added
 token/session blacklist maintenance with registered-token allowlist
 enforcement, expired-session cleanup, API/SDK/Admin/OpenAPI visibility, smoke
@@ -48,6 +48,8 @@ delete operations with seed and smoke coverage. Round 103 moved Collaboration
 Notices from fixtures to live list/detail, create, publish and archive
 operations with smoke and deploy guards. Round 104 moved Collaboration Todos
 from fixtures to live list/detail, create, assign, complete and cancel
+operations with smoke and deploy guards. Round 105 moved Collaboration
+Approval Lite from fixtures to live list/detail, create, approve and reject
 operations with smoke and deploy guards.
 
 ## Guard Register
@@ -123,8 +125,11 @@ operations with smoke and deploy guards.
   Notice smoke covers seed-backed list/detail, create, publish,
   repeat-publish guard, archive and repeat-archive guard. Todo smoke covers
   seed-backed list/detail, create, assign, complete, terminal-action guards,
-  cancel and canceled-list filtering. Admin/deploy guards reject fixture-backed
-  Messages/Notices/Todos source and require live operation markers.
+  cancel and canceled-list filtering. Approval smoke covers seed-backed
+  list/detail, create, approve, terminal-action guards, approved-list
+  filtering, reject and rejected-list filtering. Admin/deploy guards reject
+  fixture-backed Messages/Notices/Todos/Approval Lite source and require live
+  operation markers.
 - Prisma schema/seed drift: migrations and seed must include every Prisma
   model used by smoke-covered runtime endpoints.
 - Admin generated types: run Admin `typecheck` and `lint` sequentially because
@@ -144,5 +149,6 @@ operations with smoke and deploy guards.
   precision is not part of the current request-time lookup surface.
 - OpenForge: direct schema/migration/business writes still require user
   admission.
-- Collaboration: Approval Lite Admin page still needs live API/SDK operations
-  instead of fixture rows.
+- Collaboration: current live-operations Admin waterline is met for Messages,
+  Notices, Todos and Approval Lite. BPMN/full workflow remains explicit
+  admission.

@@ -684,6 +684,49 @@ verify_admin_bundle_api_base_url() {
     exit 1
   fi
 
+  if grep \
+    --fixed-strings \
+    "createCollaborationFixtures" \
+    "$ROOT_DIR/apps/admin/src/pages/Collaboration/Approvals.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "findApprovalLiteFixture" \
+    "$ROOT_DIR/apps/admin/src/pages/Collaboration/Approvals.tsx" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Live approvals" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Create approval" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Approve request" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Reject request" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "collaboration:approval-lite:create" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "collaboration:approval-lite:update" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null; then
+    echo "Admin bundle does not include live collaboration approval operations." >&2
+    echo "Refusing to deploy a stale frontend Collaboration Approval Lite page." >&2
+    exit 1
+  fi
+
   if ! grep -R \
     --fixed-strings \
     --include='*.js' \
@@ -1418,6 +1461,11 @@ run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
   node "$ROOT_DIR/tools/scripts/smoke-core-collaboration-todos.mjs"
+
+run_with_env env \
+  OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \
+  OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
+  node "$ROOT_DIR/tools/scripts/smoke-core-collaboration-approvals.mjs"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \

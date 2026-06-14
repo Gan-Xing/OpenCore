@@ -61,8 +61,9 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   archive and delete operations across API/SDK/Admin with seed, smoke and
   deploy guards. Notices have live list/detail, create, publish and archive
   operations. Todos have live list/detail, create, assign, complete and cancel
-  operations. Approval Lite still needs the same live treatment before
-  claiming the collaboration center is complete.
+  operations. Approval Lite has live list/detail, create, approve and reject
+  operations. This meets the current collaboration live-operations waterline;
+  BPMN/full workflow remains a separate explicit-admission domain.
 
 ## Recent Decisions
 
@@ -176,6 +177,9 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
 - Round 104: Collaboration Todos moved from fixture rows to live todo
   lifecycle operations: list/detail, create, assign, complete and cancel are
   SDK-backed and smoke-guarded.
+- Round 105: Collaboration Approval Lite moved from fixture rows to live
+  approval operations: list/detail, create, approve and reject are SDK-backed
+  and smoke-guarded.
 
 ## Explicit Non-Claims
 
@@ -186,6 +190,6 @@ and AI/RAG/Agent workflow.
 
 ## Next Focus
 
-Collaboration Approval Lite live operations are the next admitted foundation
-gap. OpenForge direct schema/migration/business writes still require explicit
-user admission.
+Next round should audit remaining fixture-backed Admin/productization debt and
+select the next admitted P0/P1 foundation gap. OpenForge direct
+schema/migration/business writes still require explicit user admission.
