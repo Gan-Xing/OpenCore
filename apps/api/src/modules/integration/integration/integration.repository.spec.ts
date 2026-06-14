@@ -19,7 +19,7 @@ describe('IntegrationRepository', () => {
       mailOutbox: { total: 1, queued: 1 },
       smsOutbox: { total: 0, queued: 0 },
       oauthProviders: 1,
-      oauthTokens: { total: 3, active: 1, expired: 1, revoked: 1 },
+      oauthTokens: { total: 4, active: 2, expired: 1, revoked: 1 },
       designs: { designOnlyTopics: 3 },
     });
   });
@@ -1121,8 +1121,8 @@ describe('IntegrationRepository', () => {
     const repository = new SeedIntegrationRepository();
 
     await expect(repository.getOAuthTokenSummary()).resolves.toMatchObject({
-      total: 3,
-      active: 1,
+      total: 4,
+      active: 2,
       expired: 1,
       revoked: 1,
       providers: 1,
@@ -1130,7 +1130,7 @@ describe('IntegrationRepository', () => {
     await expect(
       repository.listOAuthTokens({ providerCode: 'oauth.github' }),
     ).resolves.toMatchObject({
-      total: 3,
+      total: 4,
       items: expect.arrayContaining([
         expect.objectContaining({
           id: 'oauth_token_github_admin_active',
@@ -1170,7 +1170,7 @@ describe('IntegrationRepository', () => {
       revokeReason: 'Round92 smoke revoke',
     });
     await expect(repository.getOAuthTokenSummary()).resolves.toMatchObject({
-      active: 0,
+      active: 1,
       expired: 1,
       revoked: 2,
     });

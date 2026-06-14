@@ -18,6 +18,7 @@ const passwordCandidates = [
 ].filter((candidate, index, candidates) => {
   return Boolean(candidate) && candidates.indexOf(candidate) === index;
 });
+const smokeTokenId = 'oauth_token_github_smoke_revoke';
 let token;
 
 class HttpStatusError extends Error {
@@ -69,7 +70,10 @@ try {
   );
   assertAtLeast(activePage.total, 1, 'active OAuth token page total');
   assertArray(activePage.items, 'active OAuth token items');
-  const activeToken = activePage.items[0];
+  const activeToken = activePage.items.find((item) => item.id === smokeTokenId);
+  if (!activeToken) {
+    throw new Error(`Expected active OAuth smoke token ${smokeTokenId}.`);
+  }
   assertString(activeToken.id, 'active OAuth token id');
   assertEqual(activeToken.status, 'active', 'active OAuth token status');
   assertString(activeToken.accessTokenRef, 'active OAuth token ref');

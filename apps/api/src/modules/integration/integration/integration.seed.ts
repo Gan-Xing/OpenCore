@@ -211,6 +211,22 @@ export const seedIntegrationOAuthTokens: readonly OAuthTokenRecord[] = [
     createdAt: '2025-12-01T00:00:00.000Z',
   },
   {
+    id: 'oauth_token_github_smoke_revoke',
+    providerCode: 'oauth.github',
+    subjectType: 'system-user',
+    subjectId: 'user_smoke',
+    providerAccountId: 'github:opencore-smoke',
+    scopes: ['read:user'],
+    accessTokenRef:
+      'secret://config/integration.oauth.github.smoke.access-token',
+    refreshTokenRef:
+      'secret://config/integration.oauth.github.smoke.refresh-token',
+    status: 'active',
+    expiresAt: '2099-01-01T00:00:00.000Z',
+    lastRotatedAt: '2026-06-10T00:00:00.000Z',
+    createdAt: '2026-06-10T00:00:00.000Z',
+  },
+  {
     id: 'oauth_token_github_auditor_revoked',
     providerCode: 'oauth.github',
     subjectType: 'system-user',
