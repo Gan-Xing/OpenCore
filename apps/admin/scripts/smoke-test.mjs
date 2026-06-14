@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { runAdminFallbackClosureGuard } from '../../../tools/scripts/admin-fallback-closure-guard.mjs';
 
 const root = process.cwd();
 const packageJson = JSON.parse(
@@ -18,6 +19,8 @@ const templatePlaceholder = (name) => `\${${name}}`;
 const pathTemplatePlaceholder = templatePlaceholder('path');
 const textTemplatePlaceholder = templatePlaceholder('text');
 const resourceTemplatePlaceholder = templatePlaceholder('resource');
+
+runAdminFallbackClosureGuard({ rootDir: resolve(root, '../..') });
 
 if (deps.mockjs || deps['@umijs/max-plugin-openapi']) {
   throw new Error(
@@ -226,6 +229,7 @@ if (
   !deployScript.includes('admin.api-proxy.duplicate-prefix-login') ||
   !deployScript.includes('loginMaxFailedAttempts') ||
   !deployScript.includes('System Notice Templates') ||
+  !deployScript.includes('admin-fallback-closure-guard.mjs') ||
   !deployScript.includes('Fail outbox') ||
   !deployScript.includes('Retry outbox') ||
   !deployScript.includes('Process queued outbox') ||

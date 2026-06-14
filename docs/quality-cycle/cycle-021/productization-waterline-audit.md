@@ -197,11 +197,13 @@ Strict Capstone rules:
   Permissions without runtime changes.
 - Round 125 confirmed closure-flow public API/Admin smoke for System Posts
   without runtime changes.
+- Round 126 added the seven-page unified no-fixture-fallback guard and wired
+  it into Admin smoke and the fixed deploy script.
 
 ## Active Debt
 
-1. Seven-page unified no-fixture-fallback guard coverage still needs a final
-   closure stage.
+1. Final progress, handoff, ledger and completion-report reconciliation remains
+   open.
 2. Payment/BillingDesign remains explicit-admission because real payment,
    refund and reconciliation are out of scope.
 3. Optional Reports/ExportJobs remain explicit-admission because full report

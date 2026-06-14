@@ -40,7 +40,7 @@ In scope:
 ## Active Queue
 
 - [x] Build `docs/quality-cycle/cycle-021/acceptance-matrix.md`.
-- [ ] Build a global no-fixture-fallback guard for the seven pages.
+- [x] Build a global no-fixture-fallback guard for the seven pages.
 - [x] Clean System Users fallback.
 - [x] Clean System Roles fallback.
 - [x] Clean System Permissions fallback or confirm closure.

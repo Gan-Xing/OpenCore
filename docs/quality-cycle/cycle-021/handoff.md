@@ -211,15 +211,19 @@ ordering, simple-list and export surface and records real public API and Admin
 requests for the strict matrix. Round 124 did the same for System
 Permissions.
 
+Latest guard stage: Round 126 seven-page unified no-fixture-fallback guard. It
+adds `tools/scripts/admin-fallback-closure-guard.mjs`, wires it into Admin
+smoke and the fixed deploy script, and checks both source pages and built Admin
+bundles for the seven fixed System Admin rows.
+
 ## Next Queue
 
-1. Add seven-page unified no-fixture-fallback guard coverage.
-2. Reconcile progress, handoff, ledger and completion-report docs.
-3. Payment/BillingDesign remains explicit-admission because real payment,
+1. Reconcile progress, handoff, ledger and completion-report docs.
+2. Payment/BillingDesign remains explicit-admission because real payment,
    refund and reconciliation are out of scope.
-4. Optional Reports/ExportJobs remain explicit-admission because full report
+3. Optional Reports/ExportJobs remain explicit-admission because full report
    designer and big-data async export are out of scope.
-5. OpenForge direct Prisma/migration/business-code writes remain out of scope
+4. OpenForge direct Prisma/migration/business-code writes remain out of scope
    until explicitly admitted.
 
 ## Stop Condition

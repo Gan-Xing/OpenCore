@@ -53,7 +53,8 @@ Current state:
   API/Admin smoke confirmation.
 - A seven-page acceptance matrix now separates runtime completion from Admin
   live-only acceptance.
-- A global no-fixture-fallback guard is still required.
+- A global no-fixture-fallback guard now protects all seven fixed System Admin
+  closure rows through Admin smoke and deployment.
 - Public API/Admin smoke is explicit for all seven fixed System Admin rows.
 - Progress, handoff, ledger and completion-report docs still need one final
   reconciliation pass.
@@ -116,7 +117,6 @@ See `docs/quality-cycle/cycle-021/round-history.md` for the maintained version.
 Current foundation queue from Cycle-021:
 
 - Build and keep the acceptance matrix current.
-- Add a global no-fixture-fallback guard.
 - Reconcile progress, handoff, ledger and completion-report docs.
 
 Large domains such as business modules, payment, multitenancy, BPM, AI and

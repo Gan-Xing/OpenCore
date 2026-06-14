@@ -58,3 +58,4 @@ This ledger records state transitions only. Git log keeps commit hashes.
 | 123   | System Files       | Files Admin became live-only for upload/download, metadata and delete.        | File smoke plus Admin/deploy guards reject file fixture fallback.            |
 | 124   | System Permissions | Permissions row gained public API/Admin smoke acceptance.                     | Public permission smoke plus Admin page request confirmed the guarded page.  |
 | 125   | System Posts       | Posts row gained public API/Admin smoke acceptance.                           | Public post smoke plus Admin page request confirmed the guarded page.        |
+| 126   | Seven-page Guard   | Unified guard now covers all fixed System Admin fallback closure rows.        | Admin smoke and deploy script run the shared source/dist fallback guard.     |

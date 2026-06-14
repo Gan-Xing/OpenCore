@@ -71,6 +71,7 @@
     "typecheck": "NX_DAEMON=false nx run-many -t typecheck",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "guard:admin-fallback-closure": "node tools/scripts/admin-fallback-closure-guard.mjs",
     "nx": "NX_DAEMON=false nx"
   },
   "devDependencies": {

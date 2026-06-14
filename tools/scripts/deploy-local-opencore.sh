@@ -110,6 +110,10 @@ verify_admin_bundle_api_base_url() {
     exit 1
   fi
 
+  node "$ROOT_DIR/tools/scripts/admin-fallback-closure-guard.mjs" \
+    --root "$ROOT_DIR" \
+    --dist "$ROOT_DIR/apps/admin/dist"
+
   if ! grep -R \
     --fixed-strings \
     --include='*.js' \

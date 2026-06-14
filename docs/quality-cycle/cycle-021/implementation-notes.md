@@ -111,12 +111,17 @@ and current-page export live-only through SDK calls and blocks stale Files
 bundles through Admin/deploy guards. Round 124 confirmed System Permissions
 closure-flow public API/Admin smoke without runtime changes. Round 125
 confirmed System Posts closure-flow public API/Admin smoke without runtime
-changes.
+changes. Round 126 added the seven-page unified no-fixture-fallback guard and
+wired it into Admin smoke plus the fixed deploy script.
 
 ## Guard Register
 
 - API prefix: deploy/Admin smoke reject duplicate `/api/api` login.
 - Admin bundle: deploy script checks built chunks and current page markers.
+- Admin fallback closure: `tools/scripts/admin-fallback-closure-guard.mjs`
+  covers the seven fixed System Admin pages in one source of truth. Admin smoke
+  runs source checks, while deployment runs source plus built-bundle checks for
+  Roles, Users, Config, Notices, Files, Permissions and Posts.
 - Session revocation: auth, online-user and login-log smokes require revoked
   tokens to return 401; online-user unit tests also reject unknown and expired
   token sessions.

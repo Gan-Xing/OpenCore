@@ -4,16 +4,15 @@ Date: 2026-06-14
 
 ## Latest Completed Round
 
-Round 125: System Posts public smoke confirmation.
+Round 126: seven-page unified no-fixture-fallback guard.
 
 ## Closed
 
-- Confirmed System Posts public API smoke for simple-list, CRUD, batch delete,
-  ordering, export and guard coverage.
-- Confirmed the public Admin `/system/posts/` page returns the live Admin
-  bundle.
-- Kept existing Admin/deploy guards against post fixture fallback.
-- System Permissions was previously confirmed in Round 124.
+- Added `tools/scripts/admin-fallback-closure-guard.mjs` as the shared guard
+  for Roles, Users, Config, Notices, Files, Permissions and Posts.
+- Wired the guard into Admin smoke for source-page checks.
+- Wired the guard into the fixed deploy script for source and built-bundle
+  checks.
 
 ## Still Open
 
@@ -23,7 +22,5 @@ Round 125: System Posts public smoke confirmation.
   designer and big-data async export are outside the admitted surface.
 - OpenForge direct schema/migration/business code writes remain outside the
   admitted surface.
-- Seven-page unified no-fixture-fallback guard coverage still needs final
-  closure.
 - Final progress, handoff, ledger and completion-report reconciliation remains
   open.
