@@ -7,6 +7,13 @@ import {
   createLoginLogFixtures,
   createMenuSummariesFromRegistry,
   createOpenApiDriftFixture,
+  createOpenForgeApplyDryRunFixture,
+  createOpenForgeDiffFixture,
+  createOpenForgeDoctorFixture,
+  createOpenForgeManifestListFixture,
+  createOpenForgePlanFixture,
+  createOpenForgePreflightFixture,
+  createOpenForgeStatusFixture,
   createPermissionSummariesFromRegistry,
   createQueueStatusFixture,
   createSystemConfigFixtures,
@@ -166,6 +173,17 @@ describe('registry fixtures', () => {
     );
     expect(createCurrentPageExportProtocolFixture().asyncExport).toBe(false);
     expect(createExportPlanFixture().scope).toBe('current-page');
+    expect(createOpenForgeStatusFixture().workspace.noWrite).toBe(true);
+    expect(createOpenForgeDoctorFixture().valid).toBe(true);
+    expect(createOpenForgePlanFixture().safety.blockPrismaSchemaWrites).toBe(
+      true,
+    );
+    expect(createOpenForgeDiffFixture().entries[0].status).toBe('would-create');
+    expect(createOpenForgePreflightFixture().noWrite).toBe(true);
+    expect(createOpenForgeApplyDryRunFixture().applied).toBe(false);
+    expect(createOpenForgeManifestListFixture().manifests[0].id).toBe(
+      'openforge-fixture-manifest',
+    );
   });
 
   it('resolves S10 collaboration fixture details by detail route keys', () => {

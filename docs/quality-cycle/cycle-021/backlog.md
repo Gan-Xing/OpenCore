@@ -29,26 +29,29 @@ schema/business-code writing.
   runtime login policy.
 - Rounds 50-59: logout audit semantics, ordering, data-scope, notice
   inbox/read analytics, feature flags and login-log location.
-- Rounds 60-85: notice template/delivery/provider/outbox work, SMS HTTP and
+- Rounds 60-86: notice template/delivery/provider/outbox work, SMS HTTP and
   SMTP adapters, config vault and rollout/audience, operation-log cleanup, plus
   mail subject persistence, provider diagnostics, SMS HTTP secret injection,
   SMTP attachments, explicit SMTP TLS policy, inbox realtime events, Monitor
   Jobs Admin operations, registered handler diagnostics and config
   environment overrides plus config secret version history/rotation and vault
-  keyring rotation, plus operation-log enrichment and retention scheduling.
+  keyring rotation, operation-log enrichment and retention scheduling, plus the
+  OpenForge Admin safe workbench.
 
-Latest done: Round 85 operation-log enrichment with duration/location fields,
-server filters/export columns, retentionDays cleanup, scheduled
-`audit-log.retention-clean` job seed/registry, SDK/Admin/OpenAPI visibility and
-smoke/deploy coverage for enriched filters and retention cleanup.
+Latest done: Round 86 OpenForge Admin safe workbench with API/SDK/Admin
+surfaces for status, doctor, plan, diff, check, manifest list and dry-run
+apply/rollback, plus repo-root-safe generator-core readers, OpenAPI exposure
+and smoke/deploy coverage.
 
 ## Active P1/P2 Queue
 
-1. OpenForge Admin: plan/diff/check/apply/manifest/rollback surfaces.
-2. Integration health/config audit: provider readiness, failure history,
+1. Integration health/config audit: provider readiness, failure history,
    config validation and operator diagnostics.
-3. Scheduler/monitor worker parity: external BullMQ worker execution, cron
+2. Scheduler/monitor worker parity: external BullMQ worker execution, cron
    dispatch and queue metrics beyond the current registered manual executor.
+3. OpenForge write/apply confirmation UX, manifest detail and rollback
+   execution as a later explicit stage; direct Prisma/migration/business logic
+   writes still require user admission.
 4. Optional managed-KMS provider adapter if deployment needs cloud KMS APIs
    beyond the current env-bound keyring.
 5. Optional operation-log external GeoIP enrichment if deployment needs real

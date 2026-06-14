@@ -4,6 +4,7 @@ import {
   createOperationsClient,
   createRbacClient,
   createSystemManagementClient,
+  createToolingClient,
   type AssignRoleMenusRequest,
   type AssignRoleUsersRequest,
   type AssignUserRolesRequest,
@@ -29,6 +30,17 @@ import {
   type CreateRoleRequest,
   type CreateSystemConfigRequest,
   type CreateUserRequest,
+  type OpenForgeApplyDryRunRequest,
+  type OpenForgeApplyDryRunSummary,
+  type OpenForgeDiffSummary,
+  type OpenForgeDoctorSummary,
+  type OpenForgeManifestListSummary,
+  type OpenForgePlanSummary,
+  type OpenForgePreflightSummary,
+  type OpenForgeRollbackDryRunRequest,
+  type OpenForgeRollbackDryRunSummary,
+  type OpenForgeSchemaRequest,
+  type OpenForgeStatusSummary,
   type ImportUsersRequest,
   type CreateSystemDeptRequest,
   type CreateSystemNoticeFromTemplateRequest,
@@ -143,6 +155,55 @@ const integrationClient = createIntegrationClient(opencoreSdkRequest);
 const monitoringClient = createMonitoringClient(opencoreSdkRequest);
 const operationsClient = createOperationsClient(opencoreSdkRequest);
 const systemManagementClient = createSystemManagementClient(opencoreSdkRequest);
+const toolingClient = createToolingClient(opencoreSdkRequest);
+
+export function getOpenCoreOpenForgeStatus(): Promise<OpenForgeStatusSummary> {
+  return toolingClient.getOpenForgeStatus(getRequiredAdminToken());
+}
+
+export function getOpenCoreOpenForgeDoctor(): Promise<OpenForgeDoctorSummary> {
+  return toolingClient.getOpenForgeDoctor(getRequiredAdminToken());
+}
+
+export function createOpenCoreOpenForgePlan(
+  body: OpenForgeSchemaRequest,
+): Promise<OpenForgePlanSummary> {
+  return toolingClient.createOpenForgePlan(getRequiredAdminToken(), body);
+}
+
+export function createOpenCoreOpenForgeDiff(
+  body: OpenForgeSchemaRequest,
+): Promise<OpenForgeDiffSummary> {
+  return toolingClient.createOpenForgeDiff(getRequiredAdminToken(), body);
+}
+
+export function createOpenCoreOpenForgePreflight(
+  body: OpenForgeSchemaRequest,
+): Promise<OpenForgePreflightSummary> {
+  return toolingClient.createOpenForgePreflight(getRequiredAdminToken(), body);
+}
+
+export function createOpenCoreOpenForgeApplyDryRun(
+  body: OpenForgeApplyDryRunRequest,
+): Promise<OpenForgeApplyDryRunSummary> {
+  return toolingClient.createOpenForgeApplyDryRun(
+    getRequiredAdminToken(),
+    body,
+  );
+}
+
+export function listOpenCoreOpenForgeManifests(): Promise<OpenForgeManifestListSummary> {
+  return toolingClient.listOpenForgeManifests(getRequiredAdminToken());
+}
+
+export function createOpenCoreOpenForgeRollbackDryRun(
+  body: OpenForgeRollbackDryRunRequest,
+): Promise<OpenForgeRollbackDryRunSummary> {
+  return toolingClient.createOpenForgeRollbackDryRun(
+    getRequiredAdminToken(),
+    body,
+  );
+}
 
 export function listOpenCoreUsers(
   query?: ListUsersRequest,

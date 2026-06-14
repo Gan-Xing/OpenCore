@@ -8,8 +8,11 @@ export type LoadedOpenForgeSchema = {
   raw: unknown;
 };
 
-export function loadManualSchema(schemaPath: string): LoadedOpenForgeSchema {
-  const absolutePath = resolve(process.cwd(), schemaPath);
+export function loadManualSchema(
+  schemaPath: string,
+  repoRoot = process.cwd(),
+): LoadedOpenForgeSchema {
+  const absolutePath = resolve(repoRoot, schemaPath);
   const raw = JSON.parse(readFileSync(absolutePath, 'utf8')) as unknown;
 
   return {

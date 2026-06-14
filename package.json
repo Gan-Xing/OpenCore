@@ -55,6 +55,7 @@
     "smoke:core-post": "node tools/scripts/smoke-core-post.mjs",
     "smoke:core-role": "node tools/scripts/smoke-core-role.mjs",
     "smoke:core-user": "node tools/scripts/smoke-core-user.mjs",
+    "smoke:tool-openforge": "node tools/scripts/smoke-tool-openforge.mjs",
     "test": "NX_DAEMON=false nx run-many -t test",
     "test:admin": "NX_DAEMON=false nx test admin",
     "test:api": "NX_DAEMON=false nx test api",

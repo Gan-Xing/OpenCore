@@ -742,7 +742,19 @@ if (
   !queuesPage.includes('@opencore/sdk') ||
   !openApiPage.includes('@opencore/sdk') ||
   !exportPage.includes('@opencore/sdk') ||
-  !openForgePage.includes('OpenForge') ||
+  !openForgePage.includes('@opencore/sdk') ||
+  !openForgePage.includes('createOpenCoreOpenForgePlan') ||
+  !openForgePage.includes('createOpenCoreOpenForgeDiff') ||
+  !openForgePage.includes('createOpenCoreOpenForgePreflight') ||
+  !openForgePage.includes('createOpenCoreOpenForgeApplyDryRun') ||
+  !openForgePage.includes('createOpenCoreOpenForgeRollbackDryRun') ||
+  !openForgePage.includes('listOpenCoreOpenForgeManifests') ||
+  !openForgePage.includes('Plan artifacts') ||
+  !openForgePage.includes('Diff plan') ||
+  !openForgePage.includes('Doctor checks') ||
+  !openForgePage.includes('OpenForge manifests') ||
+  !openForgePage.includes('Dry-run apply') ||
+  !openForgePage.includes('tool:openforge:manage') ||
   !messagesPage.includes('@opencore/sdk') ||
   !noticesPage.includes('@opencore/sdk') ||
   !todosPage.includes('@opencore/sdk') ||

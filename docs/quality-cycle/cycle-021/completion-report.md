@@ -4,19 +4,26 @@ Date: 2026-06-14
 
 ## Latest Completed Round
 
-Round 85: `core.audit-log` enrichment and retention governance.
+Round 86: `tool.openforge` Admin safe workbench.
 
 ## Closed
 
-- Added `durationMs` and deterministic `location` to operation logs.
-- Added server filters and export columns for duration/location/status/time.
-- Replaced unbounded cleanup semantics with a `retentionDays` policy.
-- Seeded and registered `audit-log.retention-clean` for scheduled retention.
-- SDK/Admin/OpenAPI/smoke expose and guard the enrichment and retention flow.
+- Added guarded OpenForge API routes for status, doctor, plan, diff, check,
+  manifest list and dry-run apply/rollback.
+- Added SDK types/client methods/fixtures and replaced the static Admin page
+  with a live safe generator workbench.
+- Added repo-root-safe generator-core readers so API and tests do not depend on
+  caller cwd.
+- Added `smoke-tool-openforge` and deploy Admin bundle markers for OpenForge
+  workbench controls.
+- Fixed the operations summary test to account for the seeded audit-retention
+  scheduler job.
 
 ## Still Open
 
-- OpenForge Admin, integration health/config audit and scheduler worker parity
-  remain next foundation candidates.
+- Integration health/config audit and scheduler worker parity remain next
+  foundation candidates.
+- OpenForge write/apply confirmation UX and direct generated code write paths
+  remain later explicit stages.
 - Managed cloud KMS adapters remain optional deployment integration beyond the
   current env-bound keyring.

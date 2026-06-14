@@ -113,6 +113,7 @@ function toArtifactKinds(value: unknown): readonly OpenForgeArtifactKind[] {
 
 export function loadOpenForgeGeneratorConfig(
   configPath?: string,
+  repoRoot = process.cwd(),
 ): LoadedOpenForgeGeneratorConfig {
   if (!configPath) {
     return {
@@ -121,7 +122,7 @@ export function loadOpenForgeGeneratorConfig(
     };
   }
 
-  const absolutePath = resolve(process.cwd(), configPath);
+  const absolutePath = resolve(repoRoot, configPath);
   const raw = JSON.parse(readFileSync(absolutePath, 'utf8')) as unknown;
   const overrides = isRecord(raw) ? raw : {};
   const outputRoot =

@@ -13,14 +13,17 @@ import { validateOpenForgeManualSchema } from '../validators/manual-schema-valid
 
 export type BuildPreflightReportOptions = {
   schemaPath: string;
+  repoRoot?: string;
+  sourceRoot?: string;
 };
 
 export function buildPreflightReport(
   options: BuildPreflightReportOptions,
 ): OpenForgePreflightReport {
+  const sourceRoot = options.sourceRoot ?? options.repoRoot ?? process.cwd();
   const registry = readModuleRegistrySnapshot();
-  const openApi = readOpenApiSnapshot();
-  const loadedSchema = loadManualSchema(options.schemaPath);
+  const openApi = readOpenApiSnapshot(undefined, sourceRoot);
+  const loadedSchema = loadManualSchema(options.schemaPath, sourceRoot);
   const validation = validateOpenForgeManualSchema(
     loadedSchema.schema,
     registry,

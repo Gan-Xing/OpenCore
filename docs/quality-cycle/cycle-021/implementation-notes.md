@@ -19,11 +19,11 @@ active debt and decisions that change future execution.
 
 ## Runtime State
 
-Cycle-021 has completed 85 deployable stages across
-System/Security/Monitor/Integration foundations. Round 85 added operation-log
-duration/location enrichment, server filters/export columns, retentionDays
-cleanup and the scheduled `audit-log.retention-clean` job with SDK/Admin/OpenAPI
-visibility and smoke coverage.
+Cycle-021 has completed 86 deployable stages across
+System/Security/Monitor/Integration/Tools foundations. Round 86 moved
+OpenForge Admin from static status text to a live safe workbench backed by
+API/SDK/OpenAPI for status, doctor, plan, diff, check, manifest list and
+dry-run apply/rollback.
 
 ## Guard Register
 
@@ -48,6 +48,9 @@ visibility and smoke coverage.
   registry, unsafe policy guards, enable/disable, disabled-trigger rejection,
   run-now, handler execution, failed retry and run-log detail. Deploy also
   checks the Jobs Admin bundle markers.
+- OpenForge: smoke covers status, doctor, plan, diff, check, apply dry-run,
+  manifest list, rollback dry-run and unsafe schema/config/manifest guards.
+  Deploy checks Admin workbench markers.
 - Prisma schema/seed drift: migrations and seed must include every Prisma
   model used by smoke-covered runtime endpoints.
 - Admin generated types: run Admin `typecheck` and `lint` sequentially because
@@ -71,4 +74,6 @@ visibility and smoke coverage.
   network categories.
 - Scheduler/monitor: external worker/cron/queue-metric parity beyond the
   current registered manual executor.
-- OpenForge Admin: plan/diff/check/apply/manifest/rollback UI.
+- OpenForge: write/apply confirmation UX, manifest detail and rollback
+  execution remain later stages; direct schema/migration/business writes still
+  require user admission.

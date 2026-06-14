@@ -36,6 +36,7 @@ export type ApplyOpenForgeOptions = {
   mode?: OpenForgeApplyMode;
   yes?: boolean;
   repoRoot?: string;
+  sourceRoot?: string;
   command?: string;
 };
 
@@ -211,14 +212,18 @@ function evaluateApplyEntry(
 
 function prepareApply(options: ApplyOpenForgeOptions): PreparedApply {
   const repoRoot = resolve(process.cwd(), options.repoRoot ?? '.');
-  const loadedSchema = loadManualSchema(options.schemaPath);
-  const loadedConfig = loadOpenForgeGeneratorConfig(options.configPath);
+  const sourceRoot = resolve(process.cwd(), options.sourceRoot ?? '.');
+  const loadedSchema = loadManualSchema(options.schemaPath, sourceRoot);
+  const loadedConfig = loadOpenForgeGeneratorConfig(
+    options.configPath,
+    sourceRoot,
+  );
   const config = {
     ...loadedConfig.config,
     applyMode: options.mode ?? loadedConfig.config.applyMode,
   };
   const registry = readModuleRegistrySnapshot();
-  const openApi = readOpenApiSnapshot();
+  const openApi = readOpenApiSnapshot(undefined, sourceRoot);
   const schemaValidation = validateOpenForgeManualSchema(
     loadedSchema.schema,
     registry,

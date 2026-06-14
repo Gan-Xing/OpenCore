@@ -20,15 +20,15 @@ only; the ledger keeps state transitions and git log keeps commits.
   type/result schema, lockout/unlock, cleanup and attempt limits.
 - Rounds 50-59: logout audit semantics, dept/post ordering, data-scope,
   notice inbox/read analytics, feature flags and login-log location.
-- Rounds 60-85: notice templates, delivery records, local/outbox providers,
+- Rounds 60-86: notice templates, delivery records, local/outbox providers,
   SMS HTTP and SMTP adapters, config secret vault, feature-flag
   rollout/audience, outbox state/process/callback/schedule handling and
   mail subject persistence, provider diagnostics, SMS HTTP secret injection,
   SMTP attachments, explicit SMTP TLS policy, inbox realtime events,
   operation-log cleanup, config environment overrides, config secret
   versions/rotation, config vault keyring rotation, operation-log enrichment
-  and retention scheduling, plus Monitor Jobs Admin operations and registered
-  handler diagnostics.
+  and retention scheduling, plus Monitor Jobs Admin operations, registered
+  handler diagnostics and the OpenForge safe Admin workbench.
 
 ## Rework Notes
 
@@ -41,6 +41,8 @@ only; the ledger keeps state transitions and git log keeps commits.
   endpoints must have migrations and seed records before deployment.
 - Round 84 captured legacy unversioned `opencore:vault:` envelope
   deserialization as a permanent unit/smoke guard before future vault changes.
+- Round 86 captured OpenForge repo-root resolution as a code invariant:
+  API/runtime callers must pass sourceRoot instead of relying on cwd.
 
 ## Rule
 

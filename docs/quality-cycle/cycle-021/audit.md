@@ -40,6 +40,9 @@ unversioned vault-envelope deserialization guards and current/versioned secret
 rewrap through vault key rotation.
 Round 85 added operation-log duration/location enrichment, retentionDays
 cleanup and scheduled retention job registration.
+Round 86 moved OpenForge Admin from static text to a live safe workbench and
+added repo-root-safe generator-core readers so API/runtime tests no longer
+depend on caller cwd.
 Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 `lint` must run sequentially.
 
@@ -62,6 +65,8 @@ Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 - Monitor Jobs smoke covers operations summary, registry, job policy guards,
   enable/disable, disabled-trigger rejection, manual trigger, handler
   execution, failed retry and run-log detail.
+- OpenForge smoke covers status, doctor, plan, diff, check, apply dry-run,
+  manifest list, rollback dry-run and unsafe schema/config/manifest guards.
 
 ## Documentation Finding
 
@@ -76,7 +81,9 @@ real incident decisions. Do not create per-round reports by default.
 - Managed cloud KMS provider adapters are optional deployment integration; the
   current foundation waterline has env-bound keyring status and rotation.
 - Scheduler still needs external worker/cron parity beyond the current
-  registered manual executor; OpenForge Admin remains P2 foundation work.
+  registered manual executor.
+- OpenForge write/apply confirmation UX and direct generated code writes remain
+  later explicit stages.
 
 ## Trigger Next Audit
 

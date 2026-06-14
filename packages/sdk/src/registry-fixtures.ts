@@ -25,6 +25,13 @@ import type {
   CurrentPageExportProtocolSummary,
   ExportPlanSummary,
   OpenApiDriftStatus,
+  OpenForgeApplyDryRunSummary,
+  OpenForgeDiffSummary,
+  OpenForgeDoctorSummary,
+  OpenForgeManifestListSummary,
+  OpenForgePlanSummary,
+  OpenForgePreflightSummary,
+  OpenForgeStatusSummary,
 } from './tooling-types';
 
 export function createPermissionSummariesFromRegistry(): PermissionSummary[] {
@@ -519,6 +526,214 @@ export function createExportPlanFixture(): ExportPlanSummary {
     columns: ['code', 'name', 'enabled'],
     rowCount: Math.min(2, protocol.maxRows),
     generatedAt: '2026-06-10T00:00:00.000Z',
+  };
+}
+
+function createOpenForgeSafetyFixture() {
+  return {
+    noWrite: true,
+    dryRunOnly: true,
+    protectedPaths: [
+      '.env',
+      '.env.*',
+      '.env.opencore.local',
+      'prisma/schema.prisma',
+      'prisma/migrations/**',
+    ],
+    forbiddenPathPatterns: ['/**', '../**'],
+    requireGeneratedMarkerForUpdate: true,
+    blockPrismaSchemaWrites: true,
+    blockPrismaMigrations: true,
+    blockP4P5Modules: true,
+  } as const;
+}
+
+export function createOpenForgeStatusFixture(): OpenForgeStatusSummary {
+  return {
+    status: 'workspace-ready',
+    message:
+      'OpenForge is available as a guarded planning and dry-run workspace.',
+    workspace: {
+      packageName: '@opencore/openforge',
+      projectName: 'openforge',
+      templateVersion: 's9-openforge-mvp-v1',
+      protocol: {
+        stage: 'S9',
+        status: 'read-only-plan',
+        noWrite: true,
+      },
+      noWrite: true,
+    },
+    generatorCore: {
+      packageName: '@opencore/generator-core',
+      projectName: 'generator-core',
+      templateVersion: 's9-openforge-mvp-v1',
+      protocol: {
+        stage: 'S9',
+        status: 'read-only-plan',
+        noWrite: true,
+      },
+      noWrite: true,
+    },
+  };
+}
+
+export function createOpenForgeDoctorFixture(): OpenForgeDoctorSummary {
+  return {
+    generatedAt: '2026-06-10T00:00:00.000Z',
+    repoRoot: '/home/ubuntu/dev/opencore',
+    valid: true,
+    checks: [
+      {
+        id: 'workspace-root',
+        label: 'Workspace root',
+        status: 'pass',
+        message: 'Workspace root is readable.',
+      },
+      {
+        id: 'template-packs',
+        label: 'Template packs',
+        status: 'pass',
+        message: 'Default template pack renders safely.',
+      },
+    ],
+    errors: [],
+  };
+}
+
+export function createOpenForgePlanFixture(): OpenForgePlanSummary {
+  return {
+    moduleCode: 'core.dict',
+    templateVersion: 's9-openforge-mvp-v1',
+    schemaHash: 'openforge-fixture-schema',
+    openApiSnapshotHash: 'openforge-fixture-openapi',
+    registrySnapshotHash: 'openforge-fixture-registry',
+    artifacts: [
+      {
+        kind: 'api.controller',
+        targetPath: 'apps/api/src/modules/core/dict/dict.controller.ts',
+        action: 'would-create',
+        protected: false,
+        overwritePolicy: 'generated-marker-required',
+        contentHash: 'fixture-api-controller',
+        reason: 'Controller skeleton aligned with manual schema actions.',
+      },
+      {
+        kind: 'prisma.hint',
+        targetPath: 'prisma/schema.prisma',
+        action: 'hint',
+        protected: true,
+        overwritePolicy: 'never',
+        contentHash: 'fixture-prisma-hint',
+        reason: 'Prisma changes are manual review hints only in S9.',
+      },
+    ],
+    permissions: ['core:dict:read', 'core:dict:create'],
+    openapiTags: ['Core System Management'],
+    warnings: [],
+    errors: [],
+    safety: createOpenForgeSafetyFixture(),
+  };
+}
+
+export function createOpenForgeDiffFixture(): OpenForgeDiffSummary {
+  return {
+    moduleCode: 'core.dict',
+    templateVersion: 's9-openforge-mvp-v1',
+    generatedAt: '2026-06-10T00:00:00.000Z',
+    entries: [
+      {
+        targetPath: 'apps/api/src/modules/core/dict/dict.controller.ts',
+        kind: 'api.controller',
+        status: 'would-create',
+        protected: false,
+        reason: 'Target path does not exist; OpenForge would create it later.',
+        afterHash: 'fixture-api-controller',
+      },
+      {
+        targetPath: 'prisma/schema.prisma',
+        kind: 'prisma.hint',
+        status: 'protected-conflict',
+        protected: true,
+        reason: 'Protected path is blocked by safety policy.',
+        afterHash: 'fixture-prisma-hint',
+      },
+    ],
+    warnings: [],
+    errors: [],
+    safety: createOpenForgeSafetyFixture(),
+  };
+}
+
+export function createOpenForgePreflightFixture(): OpenForgePreflightSummary {
+  return {
+    templateVersion: 's9-openforge-mvp-v1',
+    generatedAt: '2026-06-10T00:00:00.000Z',
+    schemaPath: 'tools/generator/examples/core.dict.v1.schema.json',
+    moduleCode: 'core.dict',
+    valid: true,
+    noWrite: true,
+    registry: {
+      valid: true,
+      moduleCount: 1,
+      permissionCount: 2,
+      menuCount: 1,
+      issueCount: 0,
+    },
+    openApi: {
+      snapshotPath: 'packages/contracts/openapi/opencore-api.json',
+      pathCount: 1,
+      operationCount: 1,
+      tagCount: 1,
+      schemaCount: 1,
+    },
+    safety: createOpenForgeSafetyFixture(),
+    warnings: [],
+    errors: [],
+  };
+}
+
+export function createOpenForgeApplyDryRunFixture(): OpenForgeApplyDryRunSummary {
+  const plan = createOpenForgePlanFixture();
+
+  return {
+    mode: 'dry-run',
+    applied: false,
+    manifest: {
+      id: 'openforge-fixture-manifest',
+      createdAt: '2026-06-10T00:00:00.000Z',
+      command:
+        'pnpm openforge:apply -- --schema tools/generator/examples/core.dict.v1.schema.json --dry-run',
+      schemaPath: 'tools/generator/examples/core.dict.v1.schema.json',
+      moduleCode: plan.moduleCode,
+      templateVersion: plan.templateVersion,
+      inputHashes: {
+        schemaHash: plan.schemaHash,
+        registryHash: plan.registrySnapshotHash,
+        openApiHash: plan.openApiSnapshotHash,
+      },
+      entries: [],
+    },
+    entries: [],
+    warnings: [],
+    errors: [],
+  };
+}
+
+export function createOpenForgeManifestListFixture(): OpenForgeManifestListSummary {
+  return {
+    manifests: [
+      {
+        id: 'openforge-fixture-manifest',
+        path: '.openforge/manifests/openforge-fixture-manifest.json',
+        createdAt: '2026-06-10T00:00:00.000Z',
+        moduleCode: 'core.dict',
+        templateVersion: 's9-openforge-mvp-v1',
+        entryCount: 0,
+      },
+    ],
+    warnings: [],
+    errors: [],
   };
 }
 

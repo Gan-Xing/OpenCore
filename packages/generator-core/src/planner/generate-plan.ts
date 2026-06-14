@@ -42,6 +42,8 @@ export const OPENFORGE_SAFETY_POLICY: OpenForgeSafetyPolicy = {
 export type BuildGeneratePlanOptions = {
   schemaPath: string;
   openApiPath?: string;
+  repoRoot?: string;
+  sourceRoot?: string;
   strictOpenApiTags?: boolean;
 };
 
@@ -237,9 +239,10 @@ function buildPlanFromSnapshots(
 export function buildGeneratePlan(
   options: BuildGeneratePlanOptions,
 ): OpenForgePlan {
-  const loadedSchema = loadManualSchema(options.schemaPath);
+  const sourceRoot = options.sourceRoot ?? options.repoRoot ?? process.cwd();
+  const loadedSchema = loadManualSchema(options.schemaPath, sourceRoot);
   const registry = readModuleRegistrySnapshot();
-  const openApi = readOpenApiSnapshot(options.openApiPath);
+  const openApi = readOpenApiSnapshot(options.openApiPath, sourceRoot);
   const validation = validateOpenForgeManualSchema(
     loadedSchema.schema,
     registry,

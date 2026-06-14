@@ -7067,6 +7067,235 @@
         "security": [{ "bearer": [] }],
         "tags": ["Tooling", "Tool Export"]
       }
+    },
+    "/api/tools/openforge/status": {
+      "get": {
+        "operationId": "ToolingController_getOpenForgeStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OpenForgeStatusDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Tooling", "Tool OpenForge"]
+      }
+    },
+    "/api/tools/openforge/doctor": {
+      "get": {
+        "operationId": "ToolingController_getOpenForgeDoctor",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OpenForgeDoctorDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Tooling", "Tool OpenForge"]
+      }
+    },
+    "/api/tools/openforge/plan": {
+      "post": {
+        "operationId": "ToolingController_createOpenForgePlan",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenForgeSchemaRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OpenForgePlanDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Tooling", "Tool OpenForge"]
+      }
+    },
+    "/api/tools/openforge/diff": {
+      "post": {
+        "operationId": "ToolingController_createOpenForgeDiff",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenForgeSchemaRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OpenForgeDiffDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Tooling", "Tool OpenForge"]
+      }
+    },
+    "/api/tools/openforge/check": {
+      "post": {
+        "operationId": "ToolingController_createOpenForgePreflight",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenForgeSchemaRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenForgePreflightDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Tooling", "Tool OpenForge"]
+      }
+    },
+    "/api/tools/openforge/apply/dry-run": {
+      "post": {
+        "operationId": "ToolingController_createOpenForgeApplyDryRun",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenForgeApplyDryRunRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenForgeApplyDryRunDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Tooling", "Tool OpenForge"]
+      }
+    },
+    "/api/tools/openforge/manifests": {
+      "get": {
+        "operationId": "ToolingController_listOpenForgeManifests",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenForgeManifestListDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Tooling", "Tool OpenForge"]
+      }
+    },
+    "/api/tools/openforge/manifests/{manifestId}": {
+      "get": {
+        "operationId": "ToolingController_getOpenForgeManifest",
+        "parameters": [
+          {
+            "name": "manifestId",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenForgeManifestDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Tooling", "Tool OpenForge"]
+      }
+    },
+    "/api/tools/openforge/rollback/dry-run": {
+      "post": {
+        "operationId": "ToolingController_createOpenForgeRollbackDryRun",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenForgeRollbackDryRunRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenForgeRollbackDryRunDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Tooling", "Tool OpenForge"]
+      }
     }
   },
   "info": {
@@ -10531,6 +10760,177 @@
           "rowCount",
           "generatedAt"
         ]
+      },
+      "OpenForgeStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string", "enum": ["workspace-ready"] },
+          "message": { "type": "string" },
+          "workspace": { "type": "object" },
+          "generatorCore": { "type": "object" }
+        },
+        "required": ["status", "message", "workspace", "generatorCore"]
+      },
+      "OpenForgeDoctorDto": {
+        "type": "object",
+        "properties": {
+          "generatedAt": { "type": "string" },
+          "repoRoot": { "type": "string" },
+          "valid": { "type": "boolean" },
+          "checks": { "type": "array", "items": { "type": "object" } },
+          "errors": { "type": "array", "items": { "type": "object" } }
+        },
+        "required": ["generatedAt", "repoRoot", "valid", "checks", "errors"]
+      },
+      "OpenForgeSchemaRequestDto": {
+        "type": "object",
+        "properties": {
+          "schemaPath": {
+            "type": "string",
+            "default": "tools/generator/examples/core.dict.v1.schema.json"
+          }
+        },
+        "required": ["schemaPath"]
+      },
+      "OpenForgePlanDto": {
+        "type": "object",
+        "properties": {
+          "moduleCode": { "type": "string" },
+          "templateVersion": { "type": "string" },
+          "artifacts": { "type": "array", "items": { "type": "object" } },
+          "permissions": { "type": "array", "items": { "type": "string" } },
+          "openapiTags": { "type": "array", "items": { "type": "string" } },
+          "warnings": { "type": "array", "items": { "type": "object" } },
+          "errors": { "type": "array", "items": { "type": "object" } },
+          "safety": { "type": "object" }
+        },
+        "required": [
+          "moduleCode",
+          "templateVersion",
+          "artifacts",
+          "permissions",
+          "openapiTags",
+          "warnings",
+          "errors",
+          "safety"
+        ]
+      },
+      "OpenForgeDiffDto": {
+        "type": "object",
+        "properties": {
+          "moduleCode": { "type": "string" },
+          "templateVersion": { "type": "string" },
+          "generatedAt": { "type": "string" },
+          "entries": { "type": "array", "items": { "type": "object" } },
+          "warnings": { "type": "array", "items": { "type": "object" } },
+          "errors": { "type": "array", "items": { "type": "object" } },
+          "safety": { "type": "object" }
+        },
+        "required": [
+          "moduleCode",
+          "templateVersion",
+          "generatedAt",
+          "entries",
+          "warnings",
+          "errors",
+          "safety"
+        ]
+      },
+      "OpenForgePreflightDto": {
+        "type": "object",
+        "properties": {
+          "templateVersion": { "type": "string" },
+          "generatedAt": { "type": "string" },
+          "schemaPath": { "type": "string" },
+          "moduleCode": { "type": "string" },
+          "valid": { "type": "boolean" },
+          "noWrite": { "type": "boolean" },
+          "registry": { "type": "object" },
+          "openApi": { "type": "object" },
+          "safety": { "type": "object" },
+          "warnings": { "type": "array", "items": { "type": "object" } },
+          "errors": { "type": "array", "items": { "type": "object" } }
+        },
+        "required": [
+          "templateVersion",
+          "generatedAt",
+          "schemaPath",
+          "moduleCode",
+          "valid",
+          "noWrite",
+          "registry",
+          "openApi",
+          "safety",
+          "warnings",
+          "errors"
+        ]
+      },
+      "OpenForgeApplyDryRunRequestDto": {
+        "type": "object",
+        "properties": {
+          "schemaPath": {
+            "type": "string",
+            "default": "tools/generator/examples/core.dict.v1.schema.json"
+          },
+          "configPath": {
+            "type": "string",
+            "default": "tools/generator/examples/openforge.v1.config.json"
+          }
+        },
+        "required": ["schemaPath"]
+      },
+      "OpenForgeApplyDryRunDto": {
+        "type": "object",
+        "properties": {
+          "mode": { "type": "string", "enum": ["dry-run"] },
+          "applied": { "type": "boolean" },
+          "manifest": { "type": "object" },
+          "entries": { "type": "array", "items": { "type": "object" } },
+          "warnings": { "type": "array", "items": { "type": "object" } },
+          "errors": { "type": "array", "items": { "type": "object" } }
+        },
+        "required": ["mode", "applied", "entries", "warnings", "errors"]
+      },
+      "OpenForgeManifestListDto": {
+        "type": "object",
+        "properties": {
+          "manifests": { "type": "array", "items": { "type": "object" } },
+          "warnings": { "type": "array", "items": { "type": "object" } },
+          "errors": { "type": "array", "items": { "type": "object" } }
+        },
+        "required": ["manifests", "warnings", "errors"]
+      },
+      "OpenForgeManifestDetailDto": {
+        "type": "object",
+        "properties": {
+          "manifestPath": { "type": "string" },
+          "manifest": { "type": "object" },
+          "warnings": { "type": "array", "items": { "type": "object" } },
+          "errors": { "type": "array", "items": { "type": "object" } }
+        },
+        "required": ["manifestPath", "warnings", "errors"]
+      },
+      "OpenForgeRollbackDryRunRequestDto": {
+        "type": "object",
+        "properties": {
+          "manifestId": {
+            "type": "string",
+            "description": "Manifest id returned by the OpenForge manifest list."
+          }
+        },
+        "required": ["manifestId"]
+      },
+      "OpenForgeRollbackDryRunDto": {
+        "type": "object",
+        "properties": {
+          "mode": { "type": "string", "enum": ["dry-run"] },
+          "rolledBack": { "type": "boolean" },
+          "manifest": { "type": "object" },
+          "entries": { "type": "array", "items": { "type": "object" } },
+          "warnings": { "type": "array", "items": { "type": "object" } },
+          "errors": { "type": "array", "items": { "type": "object" } }
+        },
+        "required": ["mode", "rolledBack", "entries", "warnings", "errors"]
       }
     }
   }

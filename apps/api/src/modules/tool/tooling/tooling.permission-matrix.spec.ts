@@ -3,7 +3,7 @@ import { REQUIRED_PERMISSIONS_KEY } from '../../core/rbac/permissions.decorator'
 import { ToolingController } from './tooling.controller';
 
 describe('ToolingController permission matrix', () => {
-  it('guards tool routes with S8 permission codes', () => {
+  it('guards tool routes with S8/S9 permission codes', () => {
     expect(
       Reflect.getMetadata(
         REQUIRED_PERMISSIONS_KEY,
@@ -22,5 +22,59 @@ describe('ToolingController permission matrix', () => {
         ToolingController.prototype.createExportPreview,
       ),
     ).toEqual(['tool:export:export']);
+    expect(
+      Reflect.getMetadata(
+        REQUIRED_PERMISSIONS_KEY,
+        ToolingController.prototype.getOpenForgeStatus,
+      ),
+    ).toEqual(['tool:openforge:read']);
+    expect(
+      Reflect.getMetadata(
+        REQUIRED_PERMISSIONS_KEY,
+        ToolingController.prototype.getOpenForgeDoctor,
+      ),
+    ).toEqual(['tool:openforge:read']);
+    expect(
+      Reflect.getMetadata(
+        REQUIRED_PERMISSIONS_KEY,
+        ToolingController.prototype.createOpenForgePlan,
+      ),
+    ).toEqual(['tool:openforge:read']);
+    expect(
+      Reflect.getMetadata(
+        REQUIRED_PERMISSIONS_KEY,
+        ToolingController.prototype.createOpenForgeDiff,
+      ),
+    ).toEqual(['tool:openforge:read']);
+    expect(
+      Reflect.getMetadata(
+        REQUIRED_PERMISSIONS_KEY,
+        ToolingController.prototype.createOpenForgePreflight,
+      ),
+    ).toEqual(['tool:openforge:read']);
+    expect(
+      Reflect.getMetadata(
+        REQUIRED_PERMISSIONS_KEY,
+        ToolingController.prototype.listOpenForgeManifests,
+      ),
+    ).toEqual(['tool:openforge:read']);
+    expect(
+      Reflect.getMetadata(
+        REQUIRED_PERMISSIONS_KEY,
+        ToolingController.prototype.getOpenForgeManifest,
+      ),
+    ).toEqual(['tool:openforge:read']);
+    expect(
+      Reflect.getMetadata(
+        REQUIRED_PERMISSIONS_KEY,
+        ToolingController.prototype.createOpenForgeApplyDryRun,
+      ),
+    ).toEqual(['tool:openforge:manage']);
+    expect(
+      Reflect.getMetadata(
+        REQUIRED_PERMISSIONS_KEY,
+        ToolingController.prototype.createOpenForgeRollbackDryRun,
+      ),
+    ).toEqual(['tool:openforge:manage']);
   });
 });

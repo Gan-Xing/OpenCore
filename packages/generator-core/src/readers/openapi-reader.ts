@@ -42,8 +42,9 @@ function extractStringArray(value: unknown): readonly string[] {
 
 export function readOpenApiSnapshot(
   snapshotPath = 'packages/contracts/openapi/opencore-api.json',
+  repoRoot = process.cwd(),
 ): OpenForgeOpenApiSnapshot {
-  const absolutePath = resolve(process.cwd(), snapshotPath);
+  const absolutePath = resolve(repoRoot, snapshotPath);
   const raw = JSON.parse(readFileSync(absolutePath, 'utf8')) as unknown;
   const pathsRecord = isRecord(raw) && isRecord(raw.paths) ? raw.paths : {};
   const operations: OpenForgeOpenApiOperation[] = [];

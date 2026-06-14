@@ -23,4 +23,65 @@ describe('ToolingRepository', () => {
       rowCount: 1000,
     });
   });
+
+  it('exposes OpenForge status, doctor, plan, diff, check and dry-run apply', () => {
+    const repository = new ToolingRepository();
+    const request = {
+      schemaPath: 'tools/generator/examples/core.dict.v1.schema.json',
+    };
+
+    expect(repository.getOpenForgeStatus()).toMatchObject({
+      status: 'workspace-ready',
+      workspace: {
+        noWrite: true,
+      },
+      generatorCore: {
+        noWrite: true,
+      },
+    });
+    expect(repository.getOpenForgeDoctor()).toMatchObject({
+      valid: true,
+    });
+    expect(repository.createOpenForgePlan(request)).toMatchObject({
+      moduleCode: 'core.dict',
+      safety: {
+        noWrite: true,
+        blockPrismaSchemaWrites: true,
+      },
+    });
+    expect(repository.createOpenForgeDiff(request)).toMatchObject({
+      moduleCode: 'core.dict',
+      safety: {
+        noWrite: true,
+      },
+    });
+    expect(repository.createOpenForgePreflight(request)).toMatchObject({
+      moduleCode: 'core.dict',
+      noWrite: true,
+    });
+    expect(repository.createOpenForgeApplyDryRun(request)).toMatchObject({
+      mode: 'dry-run',
+      applied: false,
+    });
+  });
+
+  it('blocks unsafe OpenForge paths from API inputs', () => {
+    const repository = new ToolingRepository();
+
+    expect(() =>
+      repository.createOpenForgePlan({ schemaPath: '../.env' }),
+    ).toThrow('schemaPath must be a safe repo-relative path.');
+    expect(() =>
+      repository.createOpenForgePlan({ schemaPath: 'prisma/schema.prisma' }),
+    ).toThrow('schemaPath must point to an OpenForge example schema.');
+    expect(() =>
+      repository.createOpenForgeApplyDryRun({
+        schemaPath: 'tools/generator/examples/core.dict.v1.schema.json',
+        configPath: '.env.opencore.local',
+      }),
+    ).toThrow('configPath must point to the OpenForge example config.');
+    expect(() => repository.getOpenForgeManifest('../secret')).toThrow(
+      'manifestId may contain only letters, numbers, dot, underscore and dash.',
+    );
+  });
 });

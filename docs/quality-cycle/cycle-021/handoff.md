@@ -47,7 +47,7 @@ packages and OpenForge direct Prisma/migration/business-code writing.
 
 ## Current State
 
-Cycle-021 has completed 85 deployable stages.
+Cycle-021 has completed 86 deployable stages.
 
 - System/RBAC: notice, dept, post, menu, role, permission, user, dict, config
   and file loops are live.
@@ -69,19 +69,24 @@ Cycle-021 has completed 85 deployable stages.
 - Monitor jobs: API/SDK routes, registry policy, seed job, Admin live list,
   enable/disable, manual trigger, registered handler execution, retry/timeout
   diagnostics and failed run-log detail are smoke-guarded.
+- OpenForge: CLI/core safety remains no-write by default; Admin now has a live
+  safe workbench for status, doctor, plan, diff, check, manifest list and
+  apply/rollback dry-run.
 
-Latest runtime stage: Round 85 `core.audit-log` enrichment. It adds
-`durationMs` and deterministic `location` fields, server filters/export
-columns, retentionDays-governed cleanup, an `audit-log.retention-clean`
-scheduled job/registry seed, Admin retention controls, SDK/OpenAPI exposure
-and smoke/deploy guards for enriched filters and retention cleanup.
+Latest runtime stage: Round 86 `tool.openforge` Admin workbench. It exposes
+existing OpenForge core through guarded API/SDK/Admin routes for status,
+doctor, plan, diff, check, manifest list and dry-run apply/rollback. It also
+adds repo-root-safe generator-core readers, OpenAPI exposure, Admin bundle
+guards and `smoke-tool-openforge`.
 
 ## Next Queue
 
-1. OpenForge Admin safe plan/diff/check/apply UI.
-2. Integration health/config audit.
-3. Scheduler/monitor worker parity: external BullMQ worker execution, cron
+1. Integration health/config audit.
+2. Scheduler/monitor worker parity: external BullMQ worker execution, cron
    dispatch and queue metrics beyond the current registered manual executor.
+3. OpenForge write/apply/rollback confirmation UX and manifest detail can be a
+   later explicit stage; direct Prisma/migration/business-code writes still
+   require user admission.
 4. Optional managed-KMS provider adapter if deployment needs a cloud KMS API
    instead of the current env-bound keyring.
 5. Optional operation-log external GeoIP enrichment if deployment needs real

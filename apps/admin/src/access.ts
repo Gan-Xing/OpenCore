@@ -36,6 +36,7 @@ export default function access(initialState: InitialState = {}) {
     canReadQueues: hasPermission('monitor:queue:read'),
     canReadExportTools: hasPermission('tool:export:read'),
     canReadOpenForge: hasPermission('tool:openforge:read'),
+    canManageOpenForge: hasPermission('tool:openforge:manage'),
     canReadMessages: hasPermission('collaboration:message:read'),
     canReadNotices: hasPermission('collaboration:notice:read'),
     canReadTodos: hasPermission('collaboration:todo:read'),

@@ -143,8 +143,8 @@ export function runOpenForgeDoctor(
     : {};
   const scripts = getScripts(packageJson);
   const registry = readModuleRegistrySnapshot();
-  const openApi = readOpenApiSnapshot();
-  const loadedConfig = loadOpenForgeGeneratorConfig();
+  const openApi = readOpenApiSnapshot(undefined, repoRoot);
+  const loadedConfig = loadOpenForgeGeneratorConfig(undefined, repoRoot);
   const exampleSchemaPaths = [
     'tools/generator/examples/core.dict.v1.schema.json',
     'tools/generator/examples/tool.openapi.v1.schema.json',
@@ -304,7 +304,7 @@ export function runOpenForgeDoctor(
       > = {};
 
       for (const schemaPath of exampleSchemaPaths) {
-        const loadedSchema = loadManualSchema(schemaPath);
+        const loadedSchema = loadManualSchema(schemaPath, repoRoot);
         const validation = validateOpenForgeManualSchema(
           loadedSchema.schema,
           registry,
@@ -364,7 +364,7 @@ export function runOpenForgeDoctor(
         (artifactKind) => !templateKinds.has(artifactKind),
       );
       const renderedFiles = renderTemplatePack(
-        loadManualSchema(exampleSchemaPaths[0]).schema,
+        loadManualSchema(exampleSchemaPaths[0], repoRoot).schema,
         loadedConfig.config,
       );
       const unsafeRenderedPaths = renderedFiles

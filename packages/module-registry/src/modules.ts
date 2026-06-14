@@ -730,11 +730,11 @@ export const moduleRegistry = [
     title: 'OpenForge',
     layer: 'tool',
     priority: 'P0',
-    status: 'planned',
+    status: 'active',
     stage: 'S9',
     enabledByDefault: true,
     description:
-      'Read-only generate plan, diff plan, safety report, and preflight checks for OpenCore modules.',
+      'Safe generator workbench for plan, diff, check, manifest and dry-run apply/rollback flows.',
     apiTags: ['Tool OpenForge'],
     permissions: definePermissions('tool', 'openforge', 'OpenForge', 'S9', [
       { action: 'read', title: 'Read' },

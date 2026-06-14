@@ -126,6 +126,7 @@ describe('@opencore/module-registry', () => {
       code: 'tool.openforge',
       layer: 'tool',
       priority: 'P0',
+      status: 'active',
       stage: 'S9',
       enabledByDefault: true,
       apiTags: ['Tool OpenForge'],
