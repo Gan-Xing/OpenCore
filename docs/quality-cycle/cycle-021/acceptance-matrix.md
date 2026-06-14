@@ -33,3 +33,7 @@ Public smoke rule:
 | System Files Admin live-only       | yes      | yes      | yes             | yes             | yes            | yes     | yes         | yes          | yes              | yes                | yes                 | yes          | None.          | Meets  |
 | System Permissions Admin live-only | yes      | yes      | yes             | yes             | yes            | yes     | yes         | yes          | yes              | yes                | yes                 | yes          | None.          | Meets  |
 | System Posts Admin live-only       | yes      | yes      | yes             | yes             | yes            | yes     | yes         | yes          | yes              | yes                | yes                 | yes          | None.          | Meets  |
+
+Closure status: Round 127 reconciled the remaining progress, handoff,
+waterline, ledger and completion-report docs. No in-scope seven-page Admin
+fallback closure debt remains.

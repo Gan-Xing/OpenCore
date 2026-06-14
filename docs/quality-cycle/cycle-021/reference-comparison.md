@@ -17,8 +17,8 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
 - Compare product capabilities and operator workflows, not raw commit volume.
 - Keep OpenCore-native boundaries: package-owned runtime, typed SDK, Umi
   Admin, OpenAPI snapshots and smoke/deploy guards.
-- A minimal stage is one deployable acceptance unit, not permission to leave the product
-  thin forever.
+- A minimal stage is one deployable acceptance unit, not permission to leave
+  the product thin forever.
 - State admitted boundary and remaining debt once; do not repeat parity
   disclaimers every round.
 
@@ -261,6 +261,9 @@ an analogous feature.
 - Round 118: System Menus Admin now uses live tree/detail CRUD/export APIs and
   live permission options only, so RBAC menu API/session/seed failures cannot
   be hidden behind registry fixture rows.
+- Rounds 119-127: the finite System Admin fallback closure finished Roles,
+  Users, Config, Notices, Files, public acceptance for Permissions/Posts, the
+  unified seven-page guard and final docs reconciliation.
 
 ## Explicit Non-Claims
 
@@ -271,6 +274,7 @@ and AI/RAG/Agent workflow.
 
 ## Next Focus
 
-Next round should continue the remaining admitted P0/P1 foundation queue by
-dependency value while keeping Payment, Reports/ExportJobs and OpenForge
-direct writes behind explicit user admission.
+No next automatic foundation loop is selected by this comparison. New
+implementation work needs an explicit finite admitted queue; Payment,
+Reports/ExportJobs and OpenForge direct writes remain behind explicit user
+admission.

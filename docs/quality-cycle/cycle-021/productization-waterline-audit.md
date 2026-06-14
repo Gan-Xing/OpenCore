@@ -202,16 +202,18 @@ Strict Capstone rules:
 
 ## Active Debt
 
-1. Final progress, handoff, ledger and completion-report reconciliation remains
-   open.
-2. Payment/BillingDesign remains explicit-admission because real payment,
+No in-scope seven-page Admin fallback closure debt remains. All seven strict
+matrix rows require live API/SDK/Admin, no Admin fixture fallback, public API
+smoke, public Admin smoke and deploy guard coverage.
+
+Explicit out-of-scope boundaries remain:
+
+1. Payment/BillingDesign remains explicit-admission because real payment,
    refund and reconciliation are out of scope.
-3. Optional Reports/ExportJobs remain explicit-admission because full report
+2. Optional Reports/ExportJobs remain explicit-admission because full report
    designer and big-data async export are out of scope.
-4. OpenForge direct schema/migration/business-code writes still require user
+3. OpenForge direct schema/migration/business-code writes still require user
    admission.
-5. Public smoke must be split into public API smoke and public Admin smoke;
-   printed URLs or bundle markers do not count as public verification.
 
 ## Guard Matrix
 

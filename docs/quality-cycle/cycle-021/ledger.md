@@ -59,3 +59,4 @@ This ledger records state transitions only. Git log keeps commit hashes.
 | 124   | System Permissions | Permissions row gained public API/Admin smoke acceptance.                     | Public permission smoke plus Admin page request confirmed the guarded page.  |
 | 125   | System Posts       | Posts row gained public API/Admin smoke acceptance.                           | Public post smoke plus Admin page request confirmed the guarded page.        |
 | 126   | Seven-page Guard   | Unified guard now covers all fixed System Admin fallback closure rows.        | Admin smoke and deploy script run the shared source/dist fallback guard.     |
+| 127   | Documentation      | Final docs reconciliation closed the finite seven-page fallback queue.        | Docs checks plus clean pushed status prove the closure state.                |

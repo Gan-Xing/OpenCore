@@ -51,9 +51,9 @@ In scope:
 - [x] Add explicit public smoke, split into public API smoke and public Admin
       smoke.
 - [x] Rejudge the waterline with strict `Meets` rules.
-- [ ] Sync progress, handoff, ledger and completion report.
+- [x] Sync progress, handoff, ledger and completion report.
 
-Execution priority after this planning round:
+No unchecked in-scope queue item remains. The closed execution order was:
 
 1. System Roles
 2. System Users

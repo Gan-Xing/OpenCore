@@ -133,6 +133,9 @@ Admin smoke and deployment checks.
 Round 118 removed the System Menus Admin registry fixture fallback, kept menu
 tree/detail CRUD/export operations and permission options live-only through
 SDK calls and guarded stale Menus bundles in Admin smoke and deployment.
+Rounds 119-127 closed the finite System Admin fallback queue for Roles, Users,
+Config, Notices, Files, public Permissions/Posts acceptance, the unified
+seven-page guard and final docs reconciliation.
 Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 `lint` must run sequentially.
 
@@ -271,4 +274,5 @@ real incident decisions. Do not create per-round reports by default.
 ## Trigger Next Audit
 
 Audit again when a repeated failure returns, docs grow faster than code, a new
-P0/P1 foundation domain starts, or public smoke fails after local tests pass.
+explicitly admitted finite foundation domain starts, or public smoke fails
+after local tests pass.

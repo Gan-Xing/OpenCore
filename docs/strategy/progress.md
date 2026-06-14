@@ -26,9 +26,10 @@ OpenCore is in Cycle-021 capability-map productization. The project has moved
 past strategy-only planning, S3-S8 foundation, runtime integration, OpenForge
 V1, Admin Ant Design Pro V6 migration, and backend package extraction.
 
-Cycle-021 has delivered 123 deployable stages, but remains in System Admin
-Fallback Closure until the seven-page acceptance matrix, live-only guard,
-public smoke and doc reconciliation are complete.
+Cycle-021 has delivered 126 deployable/runtime and guard stages, plus Round
+127 docs-only reconciliation. The finite System Admin Fallback Closure is
+complete; this does not claim full Cycle-021 completion or admit new large
+domains.
 
 Current state:
 
@@ -56,8 +57,8 @@ Current state:
 - A global no-fixture-fallback guard now protects all seven fixed System Admin
   closure rows through Admin smoke and deployment.
 - Public API/Admin smoke is explicit for all seven fixed System Admin rows.
-- Progress, handoff, ledger and completion-report docs still need one final
-  reconciliation pass.
+- Progress, handoff, ledger and completion-report docs are reconciled for the
+  finite System Admin fallback closure.
 
 Fixed deployment entrypoints:
 
@@ -81,7 +82,7 @@ Admin smoke.
 | OpenForge V1            | Complete | Schema/config DSL, template pack, safe apply, manifest rollback, doctor, gate, and generated API/Admin/SDK/docs skeletons landed.          |
 | Admin V6 migration      | Complete | Admin moved to official Ant Design Pro V6 structure; official OpenCore pages, login/request, route registry and smoke guards were aligned. |
 | Backend extraction BE20 | Complete | Runtime capabilities were extracted into `packages/*`; `apps/api` is now bootstrap, HTTP aggregation, config and OpenAPI export/check.     |
-| Cycle-021               | Active   | Core/system/security/monitor/integration foundations are in finite Capstone Acceptance & Debt Closure.                                     |
+| Cycle-021               | Active   | The finite System Admin fallback closure is complete; new large domains still require explicit admission.                                  |
 
 ## Cycle-021 Compressed History
 
@@ -114,10 +115,8 @@ See `docs/quality-cycle/cycle-021/round-history.md` for the maintained version.
 
 ## Active Productization Queue
 
-Current foundation queue from Cycle-021:
-
-- Build and keep the acceptance matrix current.
-- Reconcile progress, handoff, ledger and completion-report docs.
+No in-scope System Admin fallback closure item remains. This file must not be
+used to automatically select another foundation loop.
 
 Large domains such as business modules, payment, multitenancy, BPM, AI and
 report designer still require explicit admission before implementation.

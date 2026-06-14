@@ -115,10 +115,11 @@ packages and OpenForge direct Prisma/migration/business-code writing.
 
 ## Current State
 
-Cycle-021 has recorded deployable stages through Round 123. The Capstone
-Acceptance baseline remains Round 115 until the acceptance matrix,
-no-fixture-fallback guard, public API/Admin smoke and doc reconciliation are
-complete.
+Cycle-021 has recorded deployable/runtime and guard stages through Round 126,
+plus Round 127 docs-only reconciliation. The finite System Admin Fallback
+Closure is complete: all seven strict matrix rows are accepted, unified
+no-fixture-fallback guard coverage is present, public API/Admin smoke is
+recorded and aggregate docs are reconciled.
 
 - System/RBAC: notice, dept, post, menu, role, permission, user, dict, config
   and file API/SDK surfaces are live. Dicts Admin is live-only for
@@ -216,21 +217,30 @@ adds `tools/scripts/admin-fallback-closure-guard.mjs`, wires it into Admin
 smoke and the fixed deploy script, and checks both source pages and built Admin
 bundles for the seven fixed System Admin rows.
 
-## Next Queue
+Latest documentation reconciliation: Round 127 aligned acceptance matrix,
+backlog, handoff, waterline, implementation notes, completion report, ledger
+and strategy progress without runtime artifact changes.
 
-1. Reconcile progress, handoff, ledger and completion-report docs.
-2. Payment/BillingDesign remains explicit-admission because real payment,
+## Closure Queue
+
+No remaining in-scope System Admin fallback closure queue item remains.
+
+Out of scope until explicit user admission:
+
+1. Payment/BillingDesign remains explicit-admission because real payment,
    refund and reconciliation are out of scope.
-3. Optional Reports/ExportJobs remain explicit-admission because full report
+2. Optional Reports/ExportJobs remain explicit-admission because full report
    designer and big-data async export are out of scope.
-4. OpenForge direct Prisma/migration/business-code writes remain out of scope
+3. OpenForge direct Prisma/migration/business-code writes remain out of scope
    until explicitly admitted.
 
 ## Stop Condition
 
-Stop this closure track only when all seven matrix rows are accepted, global
+This closure track stops when all seven matrix rows are accepted, global
 no-fixture-fallback guard coverage is present, public API/Admin smoke is
 recorded, docs are reconciled and `git status --short` is empty after push.
+Round 127 satisfies the document state portion; the final pushed working tree
+must remain clean.
 
 ## Docs Rule
 
