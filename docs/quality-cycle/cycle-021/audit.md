@@ -80,6 +80,8 @@ Round 99 moved shared current-page export buttons to the live Tool Export
 protocol and removed stale Tool Export SDK fixture helpers.
 Round 100 moved Integration Mail Admin from SDK fixtures to live
 template/outbox list, detail, preview and queued-processing controls.
+Round 101 moved Integration SMS Admin from SDK fixtures to live template/outbox
+list, detail, preview and queued-processing controls.
 Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 `lint` must run sequentially.
 
@@ -130,7 +132,7 @@ Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
   config-vault debt, outbox backlog, diagnostics parity, failure history and
   secret-leak guards; OAuth token smoke covers summary, list/detail, revoke,
   idempotent revoke and secret-leak guards; Admin/deploy guards require live
-  Mail template/outbox operations.
+  Mail/SMS template/outbox operations.
 
 ## Documentation Finding
 
@@ -144,7 +146,6 @@ real incident decisions. Do not create per-round reports by default.
   deployment-topology upgrade if needed.
 - Automatic backfill of historical login/operation logs with external GeoIP
   precision remains outside the current request-time lookup surface.
-- Integration SMS Admin still needs live template/outbox operations.
 - OpenForge direct generated schema/migration/business writes remain outside
   the admitted surface.
 

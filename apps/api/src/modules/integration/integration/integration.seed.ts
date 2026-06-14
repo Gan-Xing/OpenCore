@@ -163,6 +163,19 @@ export const seedIntegrationOutbox: readonly IntegrationOutboxRecord[] = [
     preview: 'Hello Admin, welcome to OpenCore.',
     createdAt: '2026-06-10T00:00:00.000Z',
   },
+  {
+    id: 'outbox_sms_otp_1',
+    channel: 'sms',
+    providerCode: 'sms.sandbox',
+    templateCode: 'sms.otp',
+    recipient: '+15551234567',
+    payload: { code: '123456' },
+    status: 'sent',
+    retryCount: 0,
+    preview: 'Your verification code is 123456.',
+    sentAt: '2026-06-10T00:05:00.000Z',
+    createdAt: '2026-06-10T00:00:00.000Z',
+  },
 ];
 
 export const oauthCallbackContract: OAuthCallbackContractRecord = {

@@ -19,7 +19,7 @@ active debt and decisions that change future execution.
 
 ## Runtime State
 
-Cycle-021 has completed 100 deployable stages across
+Cycle-021 has completed 101 deployable stages across
 System/Security/Monitor/Integration/Tools foundations. Round 91 added
 token/session blacklist maintenance with registered-token allowlist
 enforcement, expired-session cleanup, API/SDK/Admin/OpenAPI visibility, smoke
@@ -40,7 +40,9 @@ replaced the Tool Export fixture page with live protocol and preview calls,
 including server row-cap verification. Round 99 moved shared current-page
 export buttons to the live Tool Export protocol and removed stale Tool Export
 SDK fixture helpers. Round 100 moved the Integration Mail Admin page to live
-template/outbox list, detail, preview and queued-processing controls.
+template/outbox list, detail, preview and queued-processing controls. Round
+101 moved the Integration SMS Admin page to live template/outbox list, detail,
+preview and queued-processing controls.
 
 ## Guard Register
 
@@ -108,8 +110,8 @@ template/outbox list, detail, preview and queued-processing controls.
 - Integration: smoke covers provider-wide health audit, diagnostics parity,
   config-vault debt, outbox backlog, failure history and secret-leak guards;
   OAuth token smoke covers summary, list/detail, revoke, idempotent revoke and
-  secret-leak guards. Admin/deploy guards reject fixture-backed Mail pages and
-  require live Mail template/outbox markers.
+  secret-leak guards. Admin/deploy guards reject fixture-backed Mail/SMS pages
+  and require live Mail/SMS template/outbox markers.
 - Prisma schema/seed drift: migrations and seed must include every Prisma
   model used by smoke-covered runtime endpoints.
 - Admin generated types: run Admin `typecheck` and `lint` sequentially because
@@ -122,8 +124,6 @@ template/outbox list, detail, preview and queued-processing controls.
 
 ## Remaining Foundation Debt
 
-- Integration SMS Admin still needs live template/outbox list, detail, preview
-  and queued-processing controls.
 - Notice: optional multi-instance realtime fanout if deployment topology moves
   beyond the current single-node process, plus any admitted
   tenant/member/mobile channels.

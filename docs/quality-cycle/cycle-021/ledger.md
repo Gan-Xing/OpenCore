@@ -33,3 +33,4 @@ This ledger records state transitions only. Git log keeps commit hashes.
 | 98    | Tool Export      | Export page moved from fixtures to live protocol and preview APIs.            | API tests, tool smoke and Admin bundle markers.                 |
 | 99    | Tool Export      | Shared current-page export buttons moved from SDK fixtures to live protocol.  | Admin smoke and deploy bundle markers cover shared export.      |
 | 100   | Integration Mail | Mail Admin moved from fixtures to live template/outbox operations.            | Admin smoke and deploy bundle markers cover live Mail page.     |
+| 101   | Integration SMS  | SMS Admin moved from fixtures to live template/outbox operations.             | Admin smoke and deploy bundle markers cover live SMS page.      |

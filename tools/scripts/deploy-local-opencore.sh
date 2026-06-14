@@ -523,6 +523,36 @@ verify_admin_bundle_api_base_url() {
   if ! grep -R \
     --fixed-strings \
     --include='*.js' \
+    "Live SMS templates" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "SMS outbox operations" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Process queued SMS outbox" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Preview template" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "integration:sms:manage" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null; then
+    echo "Admin bundle does not include live integration SMS template/outbox operations." >&2
+    echo "Refusing to deploy a stale frontend SMS integration page." >&2
+    exit 1
+  fi
+
+  if ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
     "Registered handlers" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null || \
     ! grep -R \

@@ -789,6 +789,19 @@ if (
   !mailPage.includes('SMTP Attachments') ||
   !mailPage.includes('Attachment Metadata') ||
   !smsPage.includes('@opencore/sdk') ||
+  !smsPage.includes('listOpenCoreSmsTemplates') ||
+  !smsPage.includes('listOpenCoreSmsOutbox') ||
+  !smsPage.includes('getOpenCoreSmsTemplate') ||
+  !smsPage.includes('getOpenCoreSmsOutboxMessage') ||
+  !smsPage.includes('previewOpenCoreSmsTemplate') ||
+  !smsPage.includes("processOpenCoreIntegrationOutbox('sms'") ||
+  !smsPage.includes('Live SMS templates') ||
+  !smsPage.includes('SMS outbox operations') ||
+  !smsPage.includes('Process queued SMS outbox') ||
+  !smsPage.includes('Preview template') ||
+  !smsPage.includes('integration:sms:manage') ||
+  !smsPage.includes('Outbox Recipient') ||
+  !smsPage.includes('Sample Outbox Payload') ||
   !oauthPage.includes('@opencore/sdk') ||
   !wechatPage.includes('@opencore/sdk') ||
   !websocketPage.includes('@opencore/sdk') ||
@@ -812,6 +825,22 @@ if (
 ) {
   throw new Error(
     'Integration Mail page must use live mail template/outbox SDK APIs instead of static fixtures.',
+  );
+}
+
+if (
+  smsPage.includes('createIntegrationFixtures') ||
+  smsPage.includes('findIntegrationTemplateFixture') ||
+  smsPage.includes('findIntegrationOutboxFixture') ||
+  !opencorePlatformService.includes('listOpenCoreSmsTemplates') ||
+  !opencorePlatformService.includes('integrationClient.listSmsTemplates') ||
+  !opencorePlatformService.includes('listOpenCoreSmsOutbox') ||
+  !opencorePlatformService.includes('integrationClient.listSmsOutbox') ||
+  !opencorePlatformService.includes('previewOpenCoreSmsTemplate') ||
+  !opencorePlatformService.includes('integrationClient.previewSmsTemplate')
+) {
+  throw new Error(
+    'Integration SMS page must use live SMS template/outbox SDK APIs instead of static fixtures.',
   );
 }
 
@@ -1620,7 +1649,6 @@ const admittedFilteredPages = [
   { exportsRows: true, name: 'reports', source: reportsPage },
   { exportsRows: true, name: 'export jobs', source: exportJobsPage },
   { exportsRows: true, name: 'providers', source: providersPage },
-  { exportsRows: true, name: 'sms', source: smsPage },
   { exportsRows: true, name: 'oauth', source: oauthPage },
   { exportsRows: true, name: 'wechat', source: wechatPage },
   { exportsRows: true, name: 'websocket', source: websocketPage },
@@ -1653,6 +1681,18 @@ if (
 ) {
   throw new Error(
     'Integration Mail page must expose bounded filters and current-page exports for live templates and outbox rows.',
+  );
+}
+
+if (
+  !smsPage.includes('useCurrentPageFilters') ||
+  !smsPage.includes('dataSource={filteredTemplates}') ||
+  !smsPage.includes('dataSource={filteredOutboxRows}') ||
+  !smsPage.includes('rows={filteredTemplates}') ||
+  !smsPage.includes('rows={filteredOutboxRows}')
+) {
+  throw new Error(
+    'Integration SMS page must expose bounded filters and current-page exports for live templates and outbox rows.',
   );
 }
 

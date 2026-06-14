@@ -1279,6 +1279,49 @@ export function getOpenCoreMailOutboxMessage(
   return integrationClient.getMailOutboxMessage(getRequiredAdminToken(), id);
 }
 
+export async function listOpenCoreSmsTemplates(
+  query?: IntegrationTemplateQueryRequest,
+): Promise<IntegrationTemplateSummary[]> {
+  const page = await integrationClient.listSmsTemplates(
+    getRequiredAdminToken(),
+    {
+      page: 1,
+      pageSize: 100,
+      ...query,
+    },
+  );
+  return [...page.items];
+}
+
+export function getOpenCoreSmsTemplate(
+  code: string,
+): Promise<IntegrationTemplateSummary> {
+  return integrationClient.getSmsTemplate(getRequiredAdminToken(), code);
+}
+
+export function previewOpenCoreSmsTemplate(
+  body: PreviewTemplateRequest,
+): Promise<TemplatePreviewSummary> {
+  return integrationClient.previewSmsTemplate(getRequiredAdminToken(), body);
+}
+
+export async function listOpenCoreSmsOutbox(
+  query?: IntegrationOutboxQueryRequest,
+): Promise<IntegrationOutboxSummary[]> {
+  const page = await integrationClient.listSmsOutbox(getRequiredAdminToken(), {
+    page: 1,
+    pageSize: 100,
+    ...query,
+  });
+  return [...page.items];
+}
+
+export function getOpenCoreSmsOutboxMessage(
+  id: string,
+): Promise<IntegrationOutboxSummary> {
+  return integrationClient.getSmsOutboxMessage(getRequiredAdminToken(), id);
+}
+
 export function getOpenCoreIntegrationProviderHealthAudit(): Promise<IntegrationProviderHealthAuditSummary> {
   return integrationClient.getProviderHealthAudit(getRequiredAdminToken());
 }

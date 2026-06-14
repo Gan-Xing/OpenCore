@@ -288,6 +288,12 @@ describe('registry fixtures', () => {
       findIntegrationOutboxFixture('sms', 'outbox_mail_1'),
     ).toBeUndefined();
     expect(
+      findIntegrationOutboxFixture('sms', 'outbox_sms_otp_1')?.providerCode,
+    ).toBe('sms.sandbox');
+    expect(
+      findIntegrationOutboxFixture('sms', 'outbox_sms_otp_1')?.preview,
+    ).toContain('123456');
+    expect(
       findIntegrationProviderDiagnosticsFixture('mail.sandbox')?.outbox.queued,
     ).toBe(1);
     expect(

@@ -42,8 +42,8 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   realtime events are live.
 - Integration: provider health/config audit is live with readiness totals,
   config-vault debt, outbox backlog, last failure and operator actions plus
-  OAuth token inventory/summary/detail/revoke across API/SDK/Admin/OpenAPI/
-  smoke.
+  OAuth token inventory/summary/detail/revoke and live Mail/SMS
+  template/outbox Admin operations across API/SDK/Admin/OpenAPI/smoke.
 - Config: runtime keys, login policy, feature flags, rollout, audience rules,
   environment overrides, secret-vault encryption, secret version history,
   explicit rotation, env-bound keyring status, managed HTTP JSON KMS v3
@@ -158,6 +158,9 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   notification provider operations: Admin uses live template/outbox list,
   detail, render preview and queued-processing controls instead of fixture
   rows.
+- Round 101: Integration SMS now uses the same live template/outbox operator
+  loop as Mail, including detail, render preview, queued-processing controls,
+  filtered current-page exports and stale-fixture deploy guards.
 
 ## Explicit Non-Claims
 

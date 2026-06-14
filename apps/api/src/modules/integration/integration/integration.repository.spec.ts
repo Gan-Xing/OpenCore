@@ -17,7 +17,7 @@ describe('IntegrationRepository', () => {
     expect(await repository.getSummary()).toMatchObject({
       providers: { total: 5, enabled: 1, disabled: 4, degraded: 0 },
       mailOutbox: { total: 1, queued: 1 },
-      smsOutbox: { total: 0, queued: 0 },
+      smsOutbox: { total: 1, queued: 0 },
       oauthProviders: 1,
       oauthTokens: { total: 4, active: 2, expired: 1, revoked: 1 },
       designs: { designOnlyTopics: 3 },
