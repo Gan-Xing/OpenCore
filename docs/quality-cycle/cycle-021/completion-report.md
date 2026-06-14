@@ -4,16 +4,16 @@ Date: 2026-06-14
 
 ## Latest Completed Round
 
-Round 106: Integration WeChat/WebSocket design live Admin.
+Round 107: Monitor Status runtime resources.
 
 ## Closed
 
-- Replaced fixture-backed WeChat and WebSocket design Admin pages with live
-  API/SDK design reads.
-- Added dedicated integration design smoke coverage for both design endpoints
-  and integration summary topics.
-- Added Admin smoke, local smoke and deploy guards for live design markers and
-  stale fixture rejection.
+- Extended `/monitor/status` with live CPU, memory, disk and process resource
+  snapshots alongside dependency probes.
+- Replaced the Monitor Status Admin fixture fallback with live-only runtime
+  resource rendering.
+- Added dedicated monitor status smoke, OpenAPI runtime schemas and Admin/local
+  deploy guards for live runtime resource markers.
 
 ## Still Open
 

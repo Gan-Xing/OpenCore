@@ -464,6 +464,42 @@ export function createSystemStatusFixture(): SystemStatusSummary {
     status: 'ok',
     checkedAt: '2026-06-10T00:00:00.000Z',
     uptimeSeconds: 42,
+    runtime: {
+      sampledAt: '2026-06-10T00:00:00.000Z',
+      process: {
+        pid: 1234,
+        nodeVersion: 'v22.x',
+        platform: 'linux',
+        arch: 'x64',
+        uptimeSeconds: 42,
+        startedAt: '2026-06-10T00:00:00.000Z',
+      },
+      cpu: {
+        logicalCores: 4,
+        loadAverage1m: 0.12,
+        loadAverage5m: 0.1,
+        loadAverage15m: 0.08,
+        processUserMicros: 1200,
+        processSystemMicros: 300,
+      },
+      memory: {
+        rssBytes: 128 * 1024 * 1024,
+        heapUsedBytes: 64 * 1024 * 1024,
+        heapTotalBytes: 96 * 1024 * 1024,
+        externalBytes: 8 * 1024 * 1024,
+        systemTotalBytes: 8 * 1024 * 1024 * 1024,
+        systemFreeBytes: 4 * 1024 * 1024 * 1024,
+        processRssRatio: 0.015625,
+        systemUsedRatio: 0.5,
+      },
+      disk: {
+        path: '/srv/opencore',
+        totalBytes: 64 * 1024 * 1024 * 1024,
+        freeBytes: 32 * 1024 * 1024 * 1024,
+        usedBytes: 32 * 1024 * 1024 * 1024,
+        usedRatio: 0.5,
+      },
+    },
     dependencies: [
       {
         name: 'api',

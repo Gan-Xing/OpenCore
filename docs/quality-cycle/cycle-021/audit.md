@@ -95,6 +95,9 @@ guards.
 Round 106 moved Integration WeChat/WebSocket design Admin pages from fixtures
 to live API/SDK design reads with dedicated smoke and stale frontend deploy
 guards.
+Round 107 extended Monitor Status from dependency-only status into live CPU,
+memory, disk and process resource monitoring and removed the Admin fixture
+fallback.
 Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 `lint` must run sequentially.
 
@@ -126,6 +129,10 @@ Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
   enable/disable, disabled-trigger rejection, manual trigger, handler
   execution, failed retry, run-log detail, cron dispatch, worker claim and
   scheduler queue metrics.
+- Monitor Status smoke covers live dependencies, CPU, memory, disk and process
+  runtime resources, OpenAPI runtime schemas and no-secret leakage;
+  Admin/deploy guards reject fixture fallback and require live resource
+  markers.
 - Monitor Cache smoke covers Redis-backed namespace/key listing, safe JSON
   field redaction, secret-key redaction, dry-run prefix clear, confirmed key
   deletion and confirmed prefix clear; Admin smoke rejects fixture-backed

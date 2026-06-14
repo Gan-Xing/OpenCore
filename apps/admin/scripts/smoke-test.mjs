@@ -742,6 +742,14 @@ if (
   !loginLogsPage.includes('@opencore/sdk') ||
   !statusPage.includes('@opencore/sdk') ||
   !statusPage.includes('getOpenCoreSystemStatus') ||
+  !statusPage.includes('Live runtime status') ||
+  !statusPage.includes('Runtime resources') ||
+  !statusPage.includes('CPU load 1m') ||
+  !statusPage.includes('Memory usage') ||
+  !statusPage.includes('Disk usage') ||
+  !statusPage.includes('Live runtime resources') ||
+  !statusPage.includes('monitor:status:read') ||
+  !statusPage.includes('Reload runtime status') ||
   !versionPage.includes('@opencore/sdk') ||
   !versionPage.includes('getOpenCoreVersionInfo') ||
   !queuesPage.includes('@opencore/sdk') ||
@@ -1023,6 +1031,17 @@ if (
 ) {
   throw new Error(
     'OpenAPI page must load live drift status through the SDK and expose snapshot metadata, not static fixtures.',
+  );
+}
+
+if (
+  statusPage.includes('createSystemStatusFixture') ||
+  statusPage.includes('Using fallback monitor snapshot') ||
+  !opencorePlatformService.includes('getOpenCoreSystemStatus') ||
+  !opencorePlatformService.includes('monitoringClient.getStatus')
+) {
+  throw new Error(
+    'Monitor Status page must use live runtime resource SDK status without fixture fallback.',
   );
 }
 

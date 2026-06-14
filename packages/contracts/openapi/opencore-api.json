@@ -10880,6 +10880,95 @@
         },
         "required": ["topic", "status", "boundaries", "documentPath"]
       },
+      "RuntimeProcessStatusDto": {
+        "type": "object",
+        "properties": {
+          "pid": { "type": "number" },
+          "nodeVersion": { "type": "string" },
+          "platform": { "type": "string" },
+          "arch": { "type": "string" },
+          "uptimeSeconds": { "type": "number" },
+          "startedAt": { "type": "string" }
+        },
+        "required": [
+          "pid",
+          "nodeVersion",
+          "platform",
+          "arch",
+          "uptimeSeconds",
+          "startedAt"
+        ]
+      },
+      "RuntimeCpuStatusDto": {
+        "type": "object",
+        "properties": {
+          "logicalCores": { "type": "number" },
+          "loadAverage1m": { "type": "number" },
+          "loadAverage5m": { "type": "number" },
+          "loadAverage15m": { "type": "number" },
+          "processUserMicros": { "type": "number" },
+          "processSystemMicros": { "type": "number" }
+        },
+        "required": [
+          "logicalCores",
+          "loadAverage1m",
+          "loadAverage5m",
+          "loadAverage15m",
+          "processUserMicros",
+          "processSystemMicros"
+        ]
+      },
+      "RuntimeMemoryStatusDto": {
+        "type": "object",
+        "properties": {
+          "rssBytes": { "type": "number" },
+          "heapUsedBytes": { "type": "number" },
+          "heapTotalBytes": { "type": "number" },
+          "externalBytes": { "type": "number" },
+          "systemTotalBytes": { "type": "number" },
+          "systemFreeBytes": { "type": "number" },
+          "processRssRatio": { "type": "number" },
+          "systemUsedRatio": { "type": "number" }
+        },
+        "required": [
+          "rssBytes",
+          "heapUsedBytes",
+          "heapTotalBytes",
+          "externalBytes",
+          "systemTotalBytes",
+          "systemFreeBytes",
+          "processRssRatio",
+          "systemUsedRatio"
+        ]
+      },
+      "RuntimeDiskStatusDto": {
+        "type": "object",
+        "properties": {
+          "path": { "type": "string" },
+          "totalBytes": { "type": "number" },
+          "freeBytes": { "type": "number" },
+          "usedBytes": { "type": "number" },
+          "usedRatio": { "type": "number" }
+        },
+        "required": [
+          "path",
+          "totalBytes",
+          "freeBytes",
+          "usedBytes",
+          "usedRatio"
+        ]
+      },
+      "RuntimeResourceStatusDto": {
+        "type": "object",
+        "properties": {
+          "sampledAt": { "type": "string" },
+          "process": { "$ref": "#/components/schemas/RuntimeProcessStatusDto" },
+          "cpu": { "$ref": "#/components/schemas/RuntimeCpuStatusDto" },
+          "memory": { "$ref": "#/components/schemas/RuntimeMemoryStatusDto" },
+          "disk": { "$ref": "#/components/schemas/RuntimeDiskStatusDto" }
+        },
+        "required": ["sampledAt", "process", "cpu", "memory", "disk"]
+      },
       "DependencyStatusDto": {
         "type": "object",
         "properties": {
@@ -10896,12 +10985,21 @@
           "status": { "type": "string", "enum": ["degraded", "ok"] },
           "checkedAt": { "type": "string" },
           "uptimeSeconds": { "type": "number" },
+          "runtime": {
+            "$ref": "#/components/schemas/RuntimeResourceStatusDto"
+          },
           "dependencies": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/DependencyStatusDto" }
           }
         },
-        "required": ["status", "checkedAt", "uptimeSeconds", "dependencies"]
+        "required": [
+          "status",
+          "checkedAt",
+          "uptimeSeconds",
+          "runtime",
+          "dependencies"
+        ]
       },
       "VersionInfoDto": {
         "type": "object",

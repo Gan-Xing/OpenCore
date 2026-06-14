@@ -9,7 +9,53 @@ export type SystemStatusSummary = {
   status: 'degraded' | 'ok';
   checkedAt: string;
   uptimeSeconds: number;
+  runtime: RuntimeResourceSummary;
   dependencies: readonly DependencyStatusSummary[];
+};
+
+export type RuntimeCpuSummary = {
+  logicalCores: number;
+  loadAverage1m: number;
+  loadAverage5m: number;
+  loadAverage15m: number;
+  processUserMicros: number;
+  processSystemMicros: number;
+};
+
+export type RuntimeMemorySummary = {
+  rssBytes: number;
+  heapUsedBytes: number;
+  heapTotalBytes: number;
+  externalBytes: number;
+  systemTotalBytes: number;
+  systemFreeBytes: number;
+  processRssRatio: number;
+  systemUsedRatio: number;
+};
+
+export type RuntimeDiskSummary = {
+  path: string;
+  totalBytes: number;
+  freeBytes: number;
+  usedBytes: number;
+  usedRatio: number;
+};
+
+export type RuntimeProcessSummary = {
+  pid: number;
+  nodeVersion: string;
+  platform: string;
+  arch: string;
+  uptimeSeconds: number;
+  startedAt: string;
+};
+
+export type RuntimeResourceSummary = {
+  sampledAt: string;
+  process: RuntimeProcessSummary;
+  cpu: RuntimeCpuSummary;
+  memory: RuntimeMemorySummary;
+  disk: RuntimeDiskSummary;
 };
 
 export type VersionInfoSummary = {

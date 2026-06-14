@@ -1,4 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { statfsSync } from 'node:fs';
+import { arch, cpus, freemem, loadavg, platform, totalmem } from 'node:os';
 import {
   MONITOR_RUNTIME_DIAGNOSTICS,
   type MonitorRuntimeDiagnostics,
@@ -15,7 +17,53 @@ export type SystemStatus = {
   status: 'degraded' | 'ok';
   checkedAt: string;
   uptimeSeconds: number;
+  runtime: RuntimeResourceStatus;
   dependencies: readonly DependencyStatus[];
+};
+
+export type RuntimeCpuStatus = {
+  logicalCores: number;
+  loadAverage1m: number;
+  loadAverage5m: number;
+  loadAverage15m: number;
+  processUserMicros: number;
+  processSystemMicros: number;
+};
+
+export type RuntimeMemoryStatus = {
+  rssBytes: number;
+  heapUsedBytes: number;
+  heapTotalBytes: number;
+  externalBytes: number;
+  systemTotalBytes: number;
+  systemFreeBytes: number;
+  processRssRatio: number;
+  systemUsedRatio: number;
+};
+
+export type RuntimeDiskStatus = {
+  path: string;
+  totalBytes: number;
+  freeBytes: number;
+  usedBytes: number;
+  usedRatio: number;
+};
+
+export type RuntimeProcessStatus = {
+  pid: number;
+  nodeVersion: string;
+  platform: string;
+  arch: string;
+  uptimeSeconds: number;
+  startedAt: string;
+};
+
+export type RuntimeResourceStatus = {
+  sampledAt: string;
+  process: RuntimeProcessStatus;
+  cpu: RuntimeCpuStatus;
+  memory: RuntimeMemoryStatus;
+  disk: RuntimeDiskStatus;
 };
 
 export type VersionInfo = {
@@ -92,6 +140,7 @@ export class MonitorRepository {
         : 'degraded',
       checkedAt: new Date().toISOString(),
       uptimeSeconds: Math.floor(process.uptime()),
+      runtime: createRuntimeResourceStatus(),
       dependencies,
     };
   }
@@ -139,4 +188,83 @@ export class MonitorRepository {
       queues: queueProbe.queues,
     };
   }
+}
+
+function createRuntimeResourceStatus(): RuntimeResourceStatus {
+  const memory = process.memoryUsage();
+  const systemTotalBytes = totalmem();
+  const systemFreeBytes = freemem();
+  const cpu = process.cpuUsage();
+  const [loadAverage1m = 0, loadAverage5m = 0, loadAverage15m = 0] = loadavg();
+
+  return {
+    sampledAt: new Date().toISOString(),
+    process: {
+      pid: process.pid,
+      nodeVersion: process.version,
+      platform: platform(),
+      arch: arch(),
+      uptimeSeconds: Math.floor(process.uptime()),
+      startedAt: processStartedAt,
+    },
+    cpu: {
+      logicalCores: Math.max(1, cpus().length),
+      loadAverage1m,
+      loadAverage5m,
+      loadAverage15m,
+      processUserMicros: cpu.user,
+      processSystemMicros: cpu.system,
+    },
+    memory: {
+      rssBytes: memory.rss,
+      heapUsedBytes: memory.heapUsed,
+      heapTotalBytes: memory.heapTotal,
+      externalBytes: memory.external,
+      systemTotalBytes,
+      systemFreeBytes,
+      processRssRatio: safeRatio(memory.rss, systemTotalBytes),
+      systemUsedRatio: safeRatio(
+        systemTotalBytes - systemFreeBytes,
+        systemTotalBytes,
+      ),
+    },
+    disk: readDiskStatus(process.cwd()),
+  };
+}
+
+function readDiskStatus(path: string): RuntimeDiskStatus {
+  try {
+    const stat = statfsSync(path);
+    const totalBytes = stat.blocks * stat.bsize;
+    const freeBytes = stat.bavail * stat.bsize;
+    const usedBytes = Math.max(0, totalBytes - freeBytes);
+
+    return {
+      path,
+      totalBytes,
+      freeBytes,
+      usedBytes,
+      usedRatio: safeRatio(usedBytes, totalBytes),
+    };
+  } catch {
+    return {
+      path,
+      totalBytes: 0,
+      freeBytes: 0,
+      usedBytes: 0,
+      usedRatio: 0,
+    };
+  }
+}
+
+function safeRatio(numerator: number, denominator: number): number {
+  if (
+    !Number.isFinite(numerator) ||
+    !Number.isFinite(denominator) ||
+    denominator <= 0
+  ) {
+    return 0;
+  }
+
+  return Number(Math.min(1, Math.max(0, numerator / denominator)).toFixed(6));
 }

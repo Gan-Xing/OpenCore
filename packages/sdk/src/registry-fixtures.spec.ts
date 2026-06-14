@@ -175,6 +175,12 @@ describe('registry fixtures', () => {
 
   it('creates S8 monitor and tool fixtures without sensitive data', () => {
     expect(createSystemStatusFixture().dependencies[0].name).toBe('api');
+    expect(createSystemStatusFixture().runtime).toMatchObject({
+      cpu: expect.objectContaining({ logicalCores: expect.any(Number) }),
+      memory: expect.objectContaining({ systemUsedRatio: expect.any(Number) }),
+      disk: expect.objectContaining({ usedRatio: expect.any(Number) }),
+      process: expect.objectContaining({ nodeVersion: expect.any(String) }),
+    });
     expect(JSON.stringify(createSystemStatusFixture())).not.toContain(
       'DATABASE_URL',
     );

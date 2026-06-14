@@ -20,7 +20,7 @@ only; the ledger keeps state transitions and git log keeps commits.
   type/result schema, lockout/unlock, cleanup and attempt limits.
 - Rounds 50-59: logout audit semantics, dept/post ordering, data-scope,
   notice inbox/read analytics, feature flags and login-log location.
-- Rounds 60-106: notice templates, delivery records, local/outbox providers,
+- Rounds 60-107: notice templates, delivery records, local/outbox providers,
   SMS HTTP and SMTP adapters, config secret vault, feature-flag
   rollout/audience, outbox state/process/callback/schedule handling and
   mail subject persistence, provider diagnostics, SMS HTTP secret injection,
@@ -39,7 +39,8 @@ only; the ledger keeps state transitions and git log keeps commits.
   live Tool Export protocol/preview wiring, shared live current-page export
   protocol, live Integration Mail/SMS template/outbox Admin operations, live
   Collaboration Messages/Notices/Todos/Approval Lite operations and live
-  Integration WeChat/WebSocket design Admin reads.
+  Integration WeChat/WebSocket design Admin reads, plus Monitor Status live
+  CPU/memory/disk/process runtime resources.
 
 ## Rework Notes
 

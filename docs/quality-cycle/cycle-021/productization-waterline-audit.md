@@ -28,6 +28,7 @@ failures have guards; and remaining omissions are explicit product boundaries.
 | `core.notice`         | Enhance       | SMS HTTP, SMTP, mail subject, diagnostics, secrets, attachments, TLS policy and realtime events.     |
 | `integration`         | Meets current | Provider audit, OAuth, Mail/SMS operations and WeChat/WebSocket design Admin reads are live.         |
 | `scheduler/monitor`   | Meets current | Job Admin operations, registry, handler diagnostics, cron dispatch, worker claim and queue metrics.  |
+| `monitor.status`      | Meets current | Live dependency checks plus CPU, memory, disk and process resource snapshot.                         |
 | `monitor.cache`       | Meets current | Redis namespace/key scans, safe value preview, dry-run clear and confirmed key/prefix deletion.      |
 | `monitor.version`     | Meets current | Live runtime/deployment metadata uses API/SDK/Admin, deploy injection and smoke/deploy guards.       |
 | `tool.openapi`        | Meets current | Live drift snapshot metadata uses API/SDK/Admin, OpenAPI contract fields and tool/deploy guards.     |
@@ -125,6 +126,8 @@ failures have guards; and remaining omissions are explicit product boundaries.
   live list/detail, create, approve and reject controls.
 - Round 106 replaced the Integration WeChat/WebSocket design Admin fixture
   pages with live API/SDK design reads and smoke/deploy guards.
+- Round 107 added live Monitor Status runtime CPU, memory, disk and process
+  resources and removed the Admin fixture fallback.
 
 ## Active Debt
 
@@ -160,6 +163,10 @@ failures have guards; and remaining omissions are explicit product boundaries.
   whitelisted job upsert, unsafe policy guards, enable/disable,
   disabled-trigger rejection, manual trigger, handler execution, retry failure
   and run-log detail, cron dispatch, worker claim and scheduler queue metrics.
+- Monitor status: smoke covers `/monitor/status` dependency checks, CPU,
+  memory, disk and process runtime resources, OpenAPI schemas and no-secret
+  leakage; Admin/deploy guards reject fixture fallback and require runtime
+  resource markers.
 - Monitor cache: smoke writes temporary Redis keys and covers namespace/key
   listing, safe JSON redaction, secret-key redaction, dry-run clear, confirmed
   key deletion and confirmed prefix clear; deploy checks live Redis cache Admin

@@ -48,7 +48,7 @@ packages and OpenForge direct Prisma/migration/business-code writing.
 
 ## Current State
 
-Cycle-021 has completed 106 deployable stages.
+Cycle-021 has completed 107 deployable stages.
 
 - System/RBAC: notice, dept, post, menu, role, permission, user, dict, config
   and file loops are live.
@@ -78,6 +78,8 @@ Cycle-021 has completed 106 deployable stages.
   calls for list, detail, preview and queued processing. WeChat and WebSocket
   design Admin pages now use live design API/SDK endpoints with smoke and
   deploy guards while remaining design-only boundaries.
+- Monitor status now exposes live runtime CPU, memory, disk and process
+  resources through API/SDK/Admin/OpenAPI/smoke without Admin fixture fallback.
 - Monitor jobs: API/SDK routes, registry policy, seed job, Admin live list,
   enable/disable, manual trigger, registered handler execution, retry/timeout
   diagnostics, failed run-log detail, cron dispatch, worker claim and scheduler
@@ -101,10 +103,9 @@ Cycle-021 has completed 106 deployable stages.
   operations for list, detail, create, approve and reject. These pages have
   seed coverage, dedicated smoke and Admin/deploy guards.
 
-Latest runtime stage: Round 106 Integration WeChat/WebSocket design live
-Admin. It replaces the fixture-backed WeChat and WebSocket design Admin pages
-with live API/SDK design reads, a dedicated smoke, local/deploy smoke wiring
-and stale frontend guards.
+Latest runtime stage: Round 107 Monitor Status runtime resources. It extends
+`/monitor/status` with live CPU, memory, disk and process resource snapshots,
+removes the Admin fixture fallback, adds a dedicated smoke and deploy guards.
 
 ## Next Queue
 

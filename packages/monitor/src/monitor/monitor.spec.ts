@@ -49,6 +49,38 @@ describe('@opencore/monitor', () => {
     const payload = JSON.stringify(await service.getSystemStatus());
 
     expect(payload).toContain('database');
+    await expect(service.getSystemStatus()).resolves.toMatchObject({
+      runtime: {
+        process: {
+          pid: expect.any(Number),
+          nodeVersion: expect.stringMatching(/^v/),
+          platform: expect.any(String),
+          arch: expect.any(String),
+          uptimeSeconds: expect.any(Number),
+          startedAt: expect.any(String),
+        },
+        cpu: {
+          logicalCores: expect.any(Number),
+          loadAverage1m: expect.any(Number),
+          processUserMicros: expect.any(Number),
+          processSystemMicros: expect.any(Number),
+        },
+        memory: {
+          rssBytes: expect.any(Number),
+          heapUsedBytes: expect.any(Number),
+          systemTotalBytes: expect.any(Number),
+          systemFreeBytes: expect.any(Number),
+          systemUsedRatio: expect.any(Number),
+        },
+        disk: {
+          path: expect.any(String),
+          totalBytes: expect.any(Number),
+          freeBytes: expect.any(Number),
+          usedBytes: expect.any(Number),
+          usedRatio: expect.any(Number),
+        },
+      },
+    });
     expect(payload).not.toContain('secret');
     expect(payload).not.toContain('postgresql://');
   });

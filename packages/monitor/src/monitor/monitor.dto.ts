@@ -45,6 +45,106 @@ export class DependencyStatusDto {
   message!: string;
 }
 
+export class RuntimeCpuStatusDto {
+  @ApiProperty()
+  logicalCores!: number;
+
+  @ApiProperty()
+  loadAverage1m!: number;
+
+  @ApiProperty()
+  loadAverage5m!: number;
+
+  @ApiProperty()
+  loadAverage15m!: number;
+
+  @ApiProperty()
+  processUserMicros!: number;
+
+  @ApiProperty()
+  processSystemMicros!: number;
+}
+
+export class RuntimeMemoryStatusDto {
+  @ApiProperty()
+  rssBytes!: number;
+
+  @ApiProperty()
+  heapUsedBytes!: number;
+
+  @ApiProperty()
+  heapTotalBytes!: number;
+
+  @ApiProperty()
+  externalBytes!: number;
+
+  @ApiProperty()
+  systemTotalBytes!: number;
+
+  @ApiProperty()
+  systemFreeBytes!: number;
+
+  @ApiProperty()
+  processRssRatio!: number;
+
+  @ApiProperty()
+  systemUsedRatio!: number;
+}
+
+export class RuntimeDiskStatusDto {
+  @ApiProperty()
+  path!: string;
+
+  @ApiProperty()
+  totalBytes!: number;
+
+  @ApiProperty()
+  freeBytes!: number;
+
+  @ApiProperty()
+  usedBytes!: number;
+
+  @ApiProperty()
+  usedRatio!: number;
+}
+
+export class RuntimeProcessStatusDto {
+  @ApiProperty()
+  pid!: number;
+
+  @ApiProperty()
+  nodeVersion!: string;
+
+  @ApiProperty()
+  platform!: string;
+
+  @ApiProperty()
+  arch!: string;
+
+  @ApiProperty()
+  uptimeSeconds!: number;
+
+  @ApiProperty()
+  startedAt!: string;
+}
+
+export class RuntimeResourceStatusDto {
+  @ApiProperty()
+  sampledAt!: string;
+
+  @ApiProperty({ type: RuntimeProcessStatusDto })
+  process!: RuntimeProcessStatusDto;
+
+  @ApiProperty({ type: RuntimeCpuStatusDto })
+  cpu!: RuntimeCpuStatusDto;
+
+  @ApiProperty({ type: RuntimeMemoryStatusDto })
+  memory!: RuntimeMemoryStatusDto;
+
+  @ApiProperty({ type: RuntimeDiskStatusDto })
+  disk!: RuntimeDiskStatusDto;
+}
+
 export class SystemStatusDto {
   @ApiProperty({ enum: ['degraded', 'ok'] })
   status!: 'degraded' | 'ok';
@@ -54,6 +154,9 @@ export class SystemStatusDto {
 
   @ApiProperty()
   uptimeSeconds!: number;
+
+  @ApiProperty({ type: RuntimeResourceStatusDto })
+  runtime!: RuntimeResourceStatusDto;
 
   @ApiProperty({ type: [DependencyStatusDto] })
   dependencies!: readonly DependencyStatusDto[];

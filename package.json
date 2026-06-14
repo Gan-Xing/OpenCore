@@ -54,6 +54,7 @@
     "smoke:core-collaboration-todos": "node tools/scripts/smoke-core-collaboration-todos.mjs",
     "smoke:core-collaboration-approvals": "node tools/scripts/smoke-core-collaboration-approvals.mjs",
     "smoke:core-monitor-jobs": "node tools/scripts/smoke-core-monitor-jobs.mjs",
+    "smoke:monitor-status": "node tools/scripts/smoke-monitor-status.mjs",
     "smoke:core-notice": "node tools/scripts/smoke-core-notice.mjs",
     "smoke:integration-designs": "node tools/scripts/smoke-integration-designs.mjs",
     "smoke:integration-health": "node tools/scripts/smoke-integration-health.mjs",
