@@ -3,9 +3,9 @@ import { createMonitoringClient } from './monitoring-client';
 
 describe('createMonitoringClient', () => {
   it('uses stable S8 monitor API paths', async () => {
-    const calls: string[] = [];
-    const request: SdkRequest = async (path) => {
-      calls.push(path);
+    const calls: Array<{ method: string; path: string }> = [];
+    const request: SdkRequest = async (path, options) => {
+      calls.push({ method: options?.method ?? 'GET', path });
       return {} as never;
     };
     const client = createMonitoringClient(request);
@@ -13,11 +13,15 @@ describe('createMonitoringClient', () => {
     await client.getStatus('token');
     await client.getVersion('token');
     await client.listQueues('token');
+    await client.pauseQueue('token', 'maintenance');
+    await client.resumeQueue('token', 'maintenance');
 
     expect(calls).toEqual([
-      '/monitor/status',
-      '/monitor/version',
-      '/monitor/queues',
+      { method: 'GET', path: '/monitor/status' },
+      { method: 'GET', path: '/monitor/version' },
+      { method: 'GET', path: '/monitor/queues' },
+      { method: 'POST', path: '/monitor/queues/maintenance/pause' },
+      { method: 'POST', path: '/monitor/queues/maintenance/resume' },
     ]);
   });
 });

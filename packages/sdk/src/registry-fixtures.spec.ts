@@ -189,7 +189,7 @@ describe('registry fixtures', () => {
       runtime: 'node',
       deploymentId: 'fixture',
     });
-    expect(createQueueStatusFixture().queues[0].readOnly).toBe(true);
+    expect(createQueueStatusFixture().queues[0].controlMode).toBe('managed');
     expect(
       createQueueStatusFixture().queues.map((queue) => queue.name),
     ).toEqual(['maintenance', 'reports']);

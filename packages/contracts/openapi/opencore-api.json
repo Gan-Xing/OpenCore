@@ -6525,6 +6525,60 @@
         "tags": ["Monitoring", "Monitor Queues"]
       }
     },
+    "/api/monitor/queues/{name}/pause": {
+      "post": {
+        "operationId": "MonitoringController_pauseQueue",
+        "parameters": [
+          {
+            "name": "name",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueueControlResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Monitoring", "Monitor Queues"]
+      }
+    },
+    "/api/monitor/queues/{name}/resume": {
+      "post": {
+        "operationId": "MonitoringController_resumeQueue",
+        "parameters": [
+          {
+            "name": "name",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueueControlResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Monitoring", "Monitor Queues"]
+      }
+    },
     "/api/monitor/operations/summary": {
       "get": {
         "operationId": "OperationsController_getSummary",
@@ -11046,7 +11100,10 @@
           "completed": { "type": "number" },
           "failed": { "type": "number" },
           "paused": { "type": "boolean" },
-          "readOnly": { "type": "boolean" }
+          "controlMode": {
+            "type": "string",
+            "enum": ["managed", "unavailable"]
+          }
         },
         "required": [
           "name",
@@ -11056,7 +11113,7 @@
           "completed",
           "failed",
           "paused",
-          "readOnly"
+          "controlMode"
         ]
       },
       "QueueStatusListDto": {
@@ -11069,6 +11126,16 @@
           }
         },
         "required": ["checkedAt", "queues"]
+      },
+      "QueueControlResultDto": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "action": { "type": "string", "enum": ["pause", "resume"] },
+          "appliedAt": { "type": "string" },
+          "queue": { "$ref": "#/components/schemas/QueueStatusDto" }
+        },
+        "required": ["name", "action", "appliedAt", "queue"]
       },
       "JobDefinitionSummaryDto": {
         "type": "object",

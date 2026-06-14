@@ -4,16 +4,16 @@ Date: 2026-06-14
 
 ## Latest Completed Round
 
-Round 107: Monitor Status runtime resources.
+Round 108: Monitor Queue control.
 
 ## Closed
 
-- Extended `/monitor/status` with live CPU, memory, disk and process resource
-  snapshots alongside dependency probes.
-- Replaced the Monitor Status Admin fixture fallback with live-only runtime
-  resource rendering.
-- Added dedicated monitor status smoke, OpenAPI runtime schemas and Admin/local
-  deploy guards for live runtime resource markers.
+- Added guarded BullMQ queue pause/resume through
+  `/monitor/queues/:name/pause|resume`.
+- Added SDK/Admin controls gated by `monitor:queue:manage` and removed the
+  Queue Admin fixture fallback.
+- Extended monitor smoke, OpenAPI, seed permissions and deploy guards so
+  queue control is verified and recovered to resumed state.
 
 ## Still Open
 

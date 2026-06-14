@@ -34,6 +34,7 @@ export default function access(initialState: InitialState = {}) {
     canReadSystemStatus: hasPermission('monitor:status:read'),
     canReadVersion: hasPermission('monitor:version:read'),
     canReadQueues: hasPermission('monitor:queue:read'),
+    canManageQueues: hasPermission('monitor:queue:manage'),
     canReadExportTools: hasPermission('tool:export:read'),
     canReadOpenForge: hasPermission('tool:openforge:read'),
     canManageOpenForge: hasPermission('tool:openforge:manage'),

@@ -24,8 +24,8 @@ describe('RuntimeDiagnosticsService integration', () => {
       expect.arrayContaining([
         expect.objectContaining({
           name: 'maintenance',
-          driver: 'bullmq-redis-readonly',
-          readOnly: true,
+          driver: 'bullmq-redis-managed',
+          controlMode: 'managed',
         }),
       ]),
     );

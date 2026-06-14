@@ -26,6 +26,8 @@ export type MonitorRuntimeDiagnostics = {
   checkRedis: () => Promise<DependencyStatus>;
   checkS3: () => Promise<DependencyStatus>;
   listQueues: () => Promise<RuntimeQueueProbe>;
+  pauseQueue: (name: MonitorQueueName) => Promise<QueueStatus>;
+  resumeQueue: (name: MonitorQueueName) => Promise<QueueStatus>;
 };
 
 export const MONITOR_RUNTIME_DIAGNOSTICS = Symbol(
@@ -95,22 +97,83 @@ export class MonitorRuntimeDiagnosticsService implements MonitorRuntimeDiagnosti
         status: 'degraded',
         latencyMs: Date.now() - startedAt,
         message:
-          'BullMQ read-only queue probe failed without exposing Redis details.',
+          'BullMQ managed queue probe failed without exposing Redis details.',
         queues: monitorQueueNames.map((name) => ({
           name,
-          driver: 'bullmq-redis-readonly-unavailable',
+          driver: 'bullmq-redis-unavailable',
           waiting: 0,
           active: 0,
           completed: 0,
           failed: 0,
           paused: false,
-          readOnly: true,
+          controlMode: 'unavailable',
         })),
       };
     }
   }
 
+  async pauseQueue(name: MonitorQueueName): Promise<QueueStatus> {
+    return this.controlQueue(name, 'pause');
+  }
+
+  async resumeQueue(name: MonitorQueueName): Promise<QueueStatus> {
+    return this.controlQueue(name, 'resume');
+  }
+
   private async readQueue(name: MonitorQueueName): Promise<QueueStatus> {
+    const queue = this.createQueue(name);
+
+    try {
+      return await this.readQueueStatus(name, queue);
+    } finally {
+      await queue.close();
+    }
+  }
+
+  private async controlQueue(
+    name: MonitorQueueName,
+    action: 'pause' | 'resume',
+  ): Promise<QueueStatus> {
+    const queue = this.createQueue(name);
+
+    try {
+      if (action === 'pause') {
+        await queue.pause();
+      } else {
+        await queue.resume();
+      }
+
+      return await this.readQueueStatus(name, queue);
+    } finally {
+      await queue.close();
+    }
+  }
+
+  private async readQueueStatus(
+    name: MonitorQueueName,
+    queue: Queue,
+  ): Promise<QueueStatus> {
+    const counts = await queue.getJobCounts(
+      'waiting',
+      'active',
+      'completed',
+      'failed',
+    );
+    const paused = await queue.isPaused();
+
+    return {
+      name,
+      driver: 'bullmq-redis-managed',
+      waiting: counts.waiting ?? 0,
+      active: counts.active ?? 0,
+      completed: counts.completed ?? 0,
+      failed: counts.failed ?? 0,
+      paused,
+      controlMode: 'managed',
+    };
+  }
+
+  private createQueue(name: MonitorQueueName): Queue {
     const queue = new Queue(name, {
       connection: this.createBullMqRedisOptions(),
       prefix: this.redisOptions.bullmqQueuePrefix,
@@ -119,28 +182,7 @@ export class MonitorRuntimeDiagnosticsService implements MonitorRuntimeDiagnosti
     });
     queue.on('error', () => undefined);
 
-    try {
-      const counts = await queue.getJobCounts(
-        'waiting',
-        'active',
-        'completed',
-        'failed',
-      );
-      const paused = await queue.isPaused();
-
-      return {
-        name,
-        driver: 'bullmq-redis-readonly',
-        waiting: counts.waiting ?? 0,
-        active: counts.active ?? 0,
-        completed: counts.completed ?? 0,
-        failed: counts.failed ?? 0,
-        paused,
-        readOnly: true,
-      };
-    } finally {
-      await queue.close();
-    }
+    return queue;
   }
 
   private createRedisClient() {

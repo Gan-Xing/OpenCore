@@ -623,10 +623,11 @@ export const moduleRegistry = [
     stage: 'S8',
     enabledByDefault: true,
     description:
-      'Read-only queue status diagnostics without scheduler management.',
+      'BullMQ queue status diagnostics with guarded pause and resume controls.',
     apiTags: ['Monitor Queues'],
     permissions: definePermissions('monitor', 'queue', 'queues', 'S8', [
       { action: 'read', title: 'Read' },
+      { action: 'manage', title: 'Manage', dangerous: true },
     ]),
     menus: [
       defineMenu(

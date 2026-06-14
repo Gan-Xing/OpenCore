@@ -40,3 +40,4 @@ This ledger records state transitions only. Git log keeps commit hashes.
 | 105   | Collaboration    | Approval Lite Admin moved from fixtures to live lifecycle operations.         | Approval smoke plus Admin/deploy guards cover live Approvals.    |
 | 106   | Integration      | WeChat/WebSocket design Admin moved from fixtures to live design reads.       | Design smoke plus Admin/deploy guards cover live design pages.   |
 | 107   | Monitor Status   | Status gained live CPU, memory, disk and process runtime resources.           | Status smoke plus Admin/deploy guards cover live runtime fields. |
+| 108   | Monitor Queues   | Queues gained guarded BullMQ pause/resume and live-only Admin data.           | Monitor smoke plus Admin/deploy guards cover queue control.      |

@@ -1,8 +1,9 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Param, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { MonitorService } from '@opencore/monitor';
 import { RequirePermission } from '../../core/rbac/permissions.decorator';
 import {
+  QueueControlResultDto,
   QueueStatusListDto,
   SystemStatusDto,
   VersionInfoDto,
@@ -35,5 +36,21 @@ export class MonitoringController {
   @ApiOkResponse({ type: QueueStatusListDto })
   listQueues(): Promise<QueueStatusListDto> {
     return this.monitor.listQueues();
+  }
+
+  @Post('queues/:name/pause')
+  @ApiTags('Monitor Queues')
+  @RequirePermission('monitor:queue:manage')
+  @ApiOkResponse({ type: QueueControlResultDto })
+  pauseQueue(@Param('name') name: string): Promise<QueueControlResultDto> {
+    return this.monitor.pauseQueue(name);
+  }
+
+  @Post('queues/:name/resume')
+  @ApiTags('Monitor Queues')
+  @RequirePermission('monitor:queue:manage')
+  @ApiOkResponse({ type: QueueControlResultDto })
+  resumeQueue(@Param('name') name: string): Promise<QueueControlResultDto> {
+    return this.monitor.resumeQueue(name);
   }
 }

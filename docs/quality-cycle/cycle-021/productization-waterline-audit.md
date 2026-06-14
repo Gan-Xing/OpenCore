@@ -27,7 +27,7 @@ failures have guards; and remaining omissions are explicit product boundaries.
 | `core.config`         | Meets current | Runtime keys, feature flags, rollout, audience, overrides, vault versions, env and managed KMS.      |
 | `core.notice`         | Enhance       | SMS HTTP, SMTP, mail subject, diagnostics, secrets, attachments, TLS policy and realtime events.     |
 | `integration`         | Meets current | Provider audit, OAuth, Mail/SMS operations and WeChat/WebSocket design Admin reads are live.         |
-| `scheduler/monitor`   | Meets current | Job Admin operations, registry, handler diagnostics, cron dispatch, worker claim and queue metrics.  |
+| `scheduler/monitor`   | Meets current | Job Admin operations, registry, cron dispatch, worker claim, queue metrics and queue pause/resume.   |
 | `monitor.status`      | Meets current | Live dependency checks plus CPU, memory, disk and process resource snapshot.                         |
 | `monitor.cache`       | Meets current | Redis namespace/key scans, safe value preview, dry-run clear and confirmed key/prefix deletion.      |
 | `monitor.version`     | Meets current | Live runtime/deployment metadata uses API/SDK/Admin, deploy injection and smoke/deploy guards.       |
@@ -128,6 +128,8 @@ failures have guards; and remaining omissions are explicit product boundaries.
   pages with live API/SDK design reads and smoke/deploy guards.
 - Round 107 added live Monitor Status runtime CPU, memory, disk and process
   resources and removed the Admin fixture fallback.
+- Round 108 added guarded Monitor Queue pause/resume controls with
+  `monitor:queue:manage`, live-only Admin data and smoke/deploy guards.
 
 ## Active Debt
 
@@ -162,7 +164,8 @@ failures have guards; and remaining omissions are explicit product boundaries.
 - Monitor jobs: Admin bundle markers and smoke cover summary, registry,
   whitelisted job upsert, unsafe policy guards, enable/disable,
   disabled-trigger rejection, manual trigger, handler execution, retry failure
-  and run-log detail, cron dispatch, worker claim and scheduler queue metrics.
+  and run-log detail, cron dispatch, worker claim, scheduler queue metrics and
+  queue pause/resume with recovery.
 - Monitor status: smoke covers `/monitor/status` dependency checks, CPU,
   memory, disk and process runtime resources, OpenAPI schemas and no-secret
   leakage; Admin/deploy guards reject fixture fallback and require runtime

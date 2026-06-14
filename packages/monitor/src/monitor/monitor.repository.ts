@@ -1,10 +1,16 @@
-import { Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { statfsSync } from 'node:fs';
 import { arch, cpus, freemem, loadavg, platform, totalmem } from 'node:os';
 import {
   MONITOR_RUNTIME_DIAGNOSTICS,
   type MonitorRuntimeDiagnostics,
 } from './monitor.runtime-diagnostics.service';
+import { monitorQueueNames, type MonitorQueueName } from './monitor.records';
 
 export type DependencyStatus = {
   name: string;
@@ -91,7 +97,16 @@ export type QueueStatus = {
   completed: number;
   failed: number;
   paused: boolean;
-  readOnly: true;
+  controlMode: 'managed' | 'unavailable';
+};
+
+export type QueueControlAction = 'pause' | 'resume';
+
+export type QueueControlResult = {
+  name: MonitorQueueName;
+  action: QueueControlAction;
+  appliedAt: string;
+  queue: QueueStatus;
 };
 
 const processStartedAt = new Date().toISOString();
@@ -188,6 +203,37 @@ export class MonitorRepository {
       queues: queueProbe.queues,
     };
   }
+
+  async pauseQueue(name: string): Promise<QueueControlResult> {
+    return this.controlQueue(assertMonitorQueueName(name), 'pause');
+  }
+
+  async resumeQueue(name: string): Promise<QueueControlResult> {
+    return this.controlQueue(assertMonitorQueueName(name), 'resume');
+  }
+
+  private async controlQueue(
+    name: MonitorQueueName,
+    action: QueueControlAction,
+  ): Promise<QueueControlResult> {
+    try {
+      const queue =
+        action === 'pause'
+          ? await this.diagnostics.pauseQueue(name)
+          : await this.diagnostics.resumeQueue(name);
+
+      return {
+        name,
+        action,
+        appliedAt: new Date().toISOString(),
+        queue,
+      };
+    } catch {
+      throw new ServiceUnavailableException(
+        'BullMQ queue control failed without exposing Redis details.',
+      );
+    }
+  }
 }
 
 function createRuntimeResourceStatus(): RuntimeResourceStatus {
@@ -267,4 +313,16 @@ function safeRatio(numerator: number, denominator: number): number {
   }
 
   return Number(Math.min(1, Math.max(0, numerator / denominator)).toFixed(6));
+}
+
+function assertMonitorQueueName(value: string): MonitorQueueName {
+  if ((monitorQueueNames as readonly string[]).includes(value)) {
+    return value as MonitorQueueName;
+  }
+
+  throw new BadRequestException(
+    `Unsupported monitor queue "${value}". Allowed queues: ${monitorQueueNames.join(
+      ', ',
+    )}.`,
+  );
 }

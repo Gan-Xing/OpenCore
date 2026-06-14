@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type {
+  QueueControlResultDto,
   QueueStatusListDto,
   SystemStatusDto,
   VersionInfoDto,
@@ -20,5 +21,13 @@ export class MonitorService {
 
   listQueues(): Promise<QueueStatusListDto> {
     return this.repository.listQueues();
+  }
+
+  pauseQueue(name: string): Promise<QueueControlResultDto> {
+    return this.repository.pauseQueue(name);
+  }
+
+  resumeQueue(name: string): Promise<QueueControlResultDto> {
+    return this.repository.resumeQueue(name);
   }
 }

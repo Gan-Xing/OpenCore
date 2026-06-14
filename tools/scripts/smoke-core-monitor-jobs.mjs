@@ -57,6 +57,8 @@ try {
     assertOpenApiPath(openApi, '/api/monitor/jobs/dispatch-due');
     assertOpenApiPath(openApi, '/api/monitor/jobs/worker/claim');
     assertOpenApiPath(openApi, '/api/monitor/queues');
+    assertOpenApiPath(openApi, '/api/monitor/queues/{name}/pause');
+    assertOpenApiPath(openApi, '/api/monitor/queues/{name}/resume');
     assertOpenApiPath(openApi, '/api/monitor/version');
     assertOpenApiPath(openApi, '/api/monitor/cache/names');
     assertOpenApiPath(openApi, '/api/monitor/cache/value');
@@ -117,6 +119,7 @@ try {
     'reports',
     'scheduler reports queue',
   );
+  await verifyQueueControl();
 
   const maintenanceJobs = await apiRequest(
     '/monitor/jobs?page=1&pageSize=20&enabled=true&queueName=maintenance',
@@ -384,6 +387,8 @@ try {
               'openapi.monitor-job-dispatch-path',
               'openapi.monitor-job-worker-path',
               'openapi.monitor-queues-path',
+              'openapi.monitor-queue-pause-path',
+              'openapi.monitor-queue-resume-path',
               'openapi.monitor-version-path',
               'openapi.monitor-cache-names-path',
               'openapi.monitor-cache-value-path',
@@ -403,6 +408,8 @@ try {
         'monitor.job.registry',
         'monitor.job.audit-retention-registry',
         'monitor.job.scheduler-queues',
+        'monitor.queue.pause',
+        'monitor.queue.resume',
         'monitor.job.summary',
         'monitor.job.list',
         'monitor.job.upsert-whitelisted',
@@ -483,6 +490,62 @@ async function verifyMonitorVersion() {
   assertNotIncludes(payload, 'AUTH_TOKEN_SECRET', 'monitor version payload');
   assertNotIncludes(payload, 'postgresql://', 'monitor version payload');
   assertNotIncludes(payload, 'redis://', 'monitor version payload');
+}
+
+async function verifyQueueControl() {
+  let needsResume = false;
+
+  try {
+    const resumedBefore = await apiRequest(
+      '/monitor/queues/maintenance/resume',
+      {
+        method: 'POST',
+      },
+    );
+    assertEqual(resumedBefore.name, 'maintenance', 'queue pre-resume name');
+    assertEqual(resumedBefore.action, 'resume', 'queue pre-resume action');
+    assertEqual(resumedBefore.queue.paused, false, 'queue pre-resume paused');
+    assertEqual(
+      resumedBefore.queue.controlMode,
+      'managed',
+      'queue pre-resume control mode',
+    );
+
+    const paused = await apiRequest('/monitor/queues/maintenance/pause', {
+      method: 'POST',
+    });
+    needsResume = true;
+    assertEqual(paused.name, 'maintenance', 'queue pause name');
+    assertEqual(paused.action, 'pause', 'queue pause action');
+    assertString(paused.appliedAt, 'queue pause appliedAt');
+    assertEqual(paused.queue.paused, true, 'queue paused state');
+    assertEqual(paused.queue.controlMode, 'managed', 'queue pause mode');
+
+    const resumed = await apiRequest('/monitor/queues/maintenance/resume', {
+      method: 'POST',
+    });
+    needsResume = false;
+    assertEqual(resumed.name, 'maintenance', 'queue resume name');
+    assertEqual(resumed.action, 'resume', 'queue resume action');
+    assertString(resumed.appliedAt, 'queue resume appliedAt');
+    assertEqual(resumed.queue.paused, false, 'queue resumed state');
+    assertEqual(resumed.queue.controlMode, 'managed', 'queue resume mode');
+
+    const queues = await apiRequest('/monitor/queues');
+    const maintenance = queues.queues.find(
+      (queue) => queue.name === 'maintenance',
+    );
+    if (!maintenance) {
+      throw new Error('Expected maintenance queue after resume.');
+    }
+    assertEqual(maintenance.paused, false, 'queue list resumed state');
+  } finally {
+    if (needsResume) {
+      await apiRequest('/monitor/queues/maintenance/resume', {
+        method: 'POST',
+      }).catch(() => undefined);
+    }
+  }
 }
 
 async function cleanupRedisSmokeCache() {

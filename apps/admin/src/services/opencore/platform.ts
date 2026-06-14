@@ -147,6 +147,7 @@ import {
   type CleanExpiredOnlineUserSessionsResult,
   type OperationsSummary,
   type SystemNoticeQueryRequest,
+  type QueueControlResultSummary,
   type QueueStatusList,
   type SchedulerDispatchResultSummary,
   type SchedulerWorkerResultSummary,
@@ -641,6 +642,18 @@ export function getOpenCoreVersionInfo(): Promise<VersionInfoSummary> {
 
 export function listOpenCoreMonitorQueues(): Promise<QueueStatusList> {
   return monitoringClient.listQueues(getRequiredAdminToken());
+}
+
+export function pauseOpenCoreMonitorQueue(
+  name: string,
+): Promise<QueueControlResultSummary> {
+  return monitoringClient.pauseQueue(getRequiredAdminToken(), name);
+}
+
+export function resumeOpenCoreMonitorQueue(
+  name: string,
+): Promise<QueueControlResultSummary> {
+  return monitoringClient.resumeQueue(getRequiredAdminToken(), name);
 }
 
 export function getOpenCoreOperationsSummary(): Promise<OperationsSummary> {

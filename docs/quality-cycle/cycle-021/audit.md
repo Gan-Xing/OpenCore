@@ -98,6 +98,9 @@ guards.
 Round 107 extended Monitor Status from dependency-only status into live CPU,
 memory, disk and process resource monitoring and removed the Admin fixture
 fallback.
+Round 108 added Monitor Queue pause/resume controls through API/SDK/Admin,
+removed the Queue Admin fixture fallback and guarded the flow with
+pause/resume smoke plus deploy bundle markers.
 Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 `lint` must run sequentially.
 
@@ -128,7 +131,7 @@ Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 - Monitor Jobs smoke covers operations summary, registry, job policy guards,
   enable/disable, disabled-trigger rejection, manual trigger, handler
   execution, failed retry, run-log detail, cron dispatch, worker claim and
-  scheduler queue metrics.
+  scheduler queue metrics plus queue pause/resume with recovery.
 - Monitor Status smoke covers live dependencies, CPU, memory, disk and process
   runtime resources, OpenAPI runtime schemas and no-secret leakage;
   Admin/deploy guards reject fixture fallback and require live resource

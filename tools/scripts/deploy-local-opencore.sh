@@ -876,7 +876,15 @@ verify_admin_bundle_api_base_url() {
     exit 1
   fi
 
-  if ! grep -R \
+  if grep \
+    --fixed-strings \
+    "createQueueStatusFixture" \
+    "$ROOT_DIR/apps/admin/src/pages/Monitor/Queues.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "Using fallback queue fixtures" \
+    "$ROOT_DIR/apps/admin/src/pages/Monitor/Queues.tsx" >/dev/null || \
+    ! grep -R \
     --fixed-strings \
     --include='*.js' \
     "Scheduler queues" \
@@ -885,8 +893,28 @@ verify_admin_bundle_api_base_url() {
     --fixed-strings \
     --include='*.js' \
     "Queue metrics" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Queue control" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Pause queue" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Resume queue" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "monitor:queue:manage" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null; then
-    echo "Admin bundle does not include monitor queue metrics." >&2
+    echo "Admin bundle does not include managed monitor queue controls." >&2
     echo "Refusing to deploy a stale frontend monitor queues page." >&2
     exit 1
   fi

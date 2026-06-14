@@ -429,7 +429,10 @@ if (
   !opencorePlatformService.includes('listOpenCoreJobRegistry') ||
   !opencorePlatformService.includes('enableOpenCoreJob') ||
   !opencorePlatformService.includes('disableOpenCoreJob') ||
-  !opencorePlatformService.includes('triggerOpenCoreJob')
+  !opencorePlatformService.includes('triggerOpenCoreJob') ||
+  !opencorePlatformService.includes('listOpenCoreMonitorQueues') ||
+  !opencorePlatformService.includes('pauseOpenCoreMonitorQueue') ||
+  !opencorePlatformService.includes('resumeOpenCoreMonitorQueue')
 ) {
   throw new Error(
     'Admin platform service must expose live System, Notice and Monitor SDK clients.',
@@ -489,6 +492,8 @@ if (
   !accessRuntime.includes('monitor:status:read') ||
   !accessRuntime.includes('monitor:version:read') ||
   !accessRuntime.includes('monitor:queue:read') ||
+  !accessRuntime.includes('monitor:queue:manage') ||
+  !accessRuntime.includes('canManageQueues') ||
   !accessRuntime.includes('tool:export:read') ||
   !accessRuntime.includes('tool:openforge:read') ||
   !accessRuntime.includes('collaboration:message:read') ||
@@ -753,6 +758,16 @@ if (
   !versionPage.includes('@opencore/sdk') ||
   !versionPage.includes('getOpenCoreVersionInfo') ||
   !queuesPage.includes('@opencore/sdk') ||
+  !queuesPage.includes('listOpenCoreMonitorQueues') ||
+  !queuesPage.includes('pauseOpenCoreMonitorQueue') ||
+  !queuesPage.includes('resumeOpenCoreMonitorQueue') ||
+  !queuesPage.includes('canManageQueues') ||
+  !queuesPage.includes('Queue control') ||
+  !queuesPage.includes('Pause queue') ||
+  !queuesPage.includes('Resume queue') ||
+  !queuesPage.includes('monitor:queue:manage') ||
+  queuesPage.includes('createQueueStatusFixture') ||
+  queuesPage.includes('Using fallback queue fixtures') ||
   !openApiPage.includes('@opencore/sdk') ||
   !openApiPage.includes('getOpenCoreOpenApiDriftStatus') ||
   !exportPage.includes('@opencore/sdk') ||

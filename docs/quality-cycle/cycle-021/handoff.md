@@ -48,7 +48,7 @@ packages and OpenForge direct Prisma/migration/business-code writing.
 
 ## Current State
 
-Cycle-021 has completed 107 deployable stages.
+Cycle-021 has completed 108 deployable stages.
 
 - System/RBAC: notice, dept, post, menu, role, permission, user, dict, config
   and file loops are live.
@@ -83,7 +83,8 @@ Cycle-021 has completed 107 deployable stages.
 - Monitor jobs: API/SDK routes, registry policy, seed job, Admin live list,
   enable/disable, manual trigger, registered handler execution, retry/timeout
   diagnostics, failed run-log detail, cron dispatch, worker claim and scheduler
-  queue metrics are smoke-guarded. Monitor Cache now uses real Redis
+  queue metrics plus guarded queue pause/resume are smoke-guarded. Monitor
+  Cache now uses real Redis
   namespace/key scans, safe value previews, dry-run prefix clear and confirmed
   key/prefix deletion instead of Admin fixtures or seed key arrays. Monitor
   Version now uses live runtime/deployment metadata instead of an Admin
@@ -103,9 +104,9 @@ Cycle-021 has completed 107 deployable stages.
   operations for list, detail, create, approve and reject. These pages have
   seed coverage, dedicated smoke and Admin/deploy guards.
 
-Latest runtime stage: Round 107 Monitor Status runtime resources. It extends
-`/monitor/status` with live CPU, memory, disk and process resource snapshots,
-removes the Admin fixture fallback, adds a dedicated smoke and deploy guards.
+Latest runtime stage: Round 108 Monitor Queue control. It adds guarded BullMQ
+queue pause/resume through API/SDK/Admin, replaces the Queue Admin fixture
+fallback with live-only data and extends monitor smoke/deploy guards.
 
 ## Next Queue
 

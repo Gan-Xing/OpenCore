@@ -1,5 +1,6 @@
 export {
   DependencyStatusDto,
+  QueueControlResultDto,
   QueueStatusDto,
   QueueStatusListDto,
   RuntimeCpuStatusDto,

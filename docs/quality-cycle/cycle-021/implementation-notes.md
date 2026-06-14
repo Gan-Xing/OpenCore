@@ -19,7 +19,7 @@ active debt and decisions that change future execution.
 
 ## Runtime State
 
-Cycle-021 has completed 107 deployable stages across
+Cycle-021 has completed 108 deployable stages across
 System/Security/Monitor/Integration/Tools foundations. Round 91 added
 token/session blacklist maintenance with registered-token allowlist
 enforcement, expired-session cleanup, API/SDK/Admin/OpenAPI visibility, smoke
@@ -54,7 +54,9 @@ operations with smoke and deploy guards. Round 106 moved Integration
 WeChat/WebSocket design Admin pages from fixtures to live API/SDK design reads
 with a dedicated smoke and stale frontend deploy guards. Round 107 extended
 Monitor Status with live CPU, memory, disk and process resource snapshots and
-removed the Admin fixture fallback.
+removed the Admin fixture fallback. Round 108 added guarded BullMQ queue
+pause/resume through API/SDK/Admin, replaced Queue Admin fixture fallback with
+live-only data and added `monitor:queue:manage` smoke/deploy guards.
 
 ## Guard Register
 
@@ -94,10 +96,11 @@ removed the Admin fixture fallback.
 - Monitor jobs: smoke covers operations summary, whitelisted job upsert,
   registry, unsafe policy guards, enable/disable, disabled-trigger rejection,
   run-now, handler execution, failed retry, run-log detail, cron dispatch,
-  worker claim and scheduler queue metrics; dispatch smoke uses a per-run
-  far-future non-zero-minute cron tick so repeated deploys cannot collide with
-  persisted `scheduledAt` de-dup metadata or seeded hourly jobs. Deploy also
-  checks the Jobs and Queues Admin bundle markers.
+  worker claim, scheduler queue metrics and queue pause/resume with a resume
+  recovery guard; dispatch smoke uses a per-run far-future non-zero-minute
+  cron tick so repeated deploys cannot collide with persisted `scheduledAt`
+  de-dup metadata or seeded hourly jobs. Deploy also checks the Jobs and
+  Queues Admin bundle markers.
 - Monitor status: smoke covers live dependency checks plus CPU, memory, disk
   and process runtime resources from `/monitor/status`, OpenAPI runtime
   schemas and no-secret leakage. Admin/deploy guards reject

@@ -1,6 +1,8 @@
 export {
   MonitorRepository as MonitoringRepository,
   type DependencyStatus,
+  type QueueControlAction,
+  type QueueControlResult,
   type QueueStatus,
   type RuntimeCpuStatus,
   type RuntimeDiskStatus,

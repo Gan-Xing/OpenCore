@@ -83,10 +83,17 @@ export type QueueStatusSummary = {
   completed: number;
   failed: number;
   paused: boolean;
-  readOnly: true;
+  controlMode: 'managed' | 'unavailable';
 };
 
 export type QueueStatusList = {
   checkedAt: string;
   queues: readonly QueueStatusSummary[];
+};
+
+export type QueueControlResultSummary = {
+  name: string;
+  action: 'pause' | 'resume';
+  appliedAt: string;
+  queue: QueueStatusSummary;
 };

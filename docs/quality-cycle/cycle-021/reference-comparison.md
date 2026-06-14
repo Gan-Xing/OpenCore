@@ -52,9 +52,10 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   envelopes and vault key rotation are live.
 - Monitor/OpenForge/Scheduler: Monitor Jobs has a live Admin operation surface,
   registry visibility, registered handler diagnostics, cron dispatch, worker
-  claim and scheduler queue metrics; Monitor Status exposes live dependency
-  checks plus CPU, memory, disk and process runtime resources; Monitor Cache
-  has Redis-backed namespace/key operations with safe value preview and confirmed deletion;
+  claim, scheduler queue metrics and guarded queue pause/resume; Monitor
+  Status exposes live dependency checks plus CPU, memory, disk and process
+  runtime resources; Monitor Cache has Redis-backed namespace/key operations
+  with safe value preview and confirmed deletion;
   Monitor Version exposes live runtime/deployment metadata instead of fixtures;
   Tool OpenAPI exposes live drift snapshot metadata instead of fixtures; Tool
   Export exposes live protocol/preview row-cap behavior in Admin; OpenForge has
@@ -191,6 +192,10 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   server monitoring: `/monitor/status` returns live dependency probes plus
   CPU, memory, disk and process resource snapshots, and Admin no longer falls
   back to SDK fixtures.
+- Round 108: Monitor Queues moved beyond read-only metrics: operators can
+  pause/resume admitted BullMQ queues through API/SDK/Admin under
+  `monitor:queue:manage`, and smoke always restores the queue to resumed
+  state.
 
 ## Explicit Non-Claims
 

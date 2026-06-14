@@ -29,6 +29,7 @@
 core:user:read
 core:user:create
 monitor:queue:read
+monitor:queue:manage
 tool:openapi:read
 tool:export:run
 ```

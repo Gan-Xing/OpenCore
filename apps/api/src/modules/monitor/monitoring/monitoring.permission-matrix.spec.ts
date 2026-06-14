@@ -22,5 +22,17 @@ describe('MonitoringController permission matrix', () => {
         MonitoringController.prototype.listQueues,
       ),
     ).toEqual(['monitor:queue:read']);
+    expect(
+      Reflect.getMetadata(
+        REQUIRED_PERMISSIONS_KEY,
+        MonitoringController.prototype.pauseQueue,
+      ),
+    ).toEqual(['monitor:queue:manage']);
+    expect(
+      Reflect.getMetadata(
+        REQUIRED_PERMISSIONS_KEY,
+        MonitoringController.prototype.resumeQueue,
+      ),
+    ).toEqual(['monitor:queue:manage']);
   });
 });

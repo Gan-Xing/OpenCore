@@ -73,7 +73,7 @@ flowchart TD
 | 操作日志      | `/security/operation-logs`         | `core:audit-log:read`         | RuoYi/Yudao operatelog，Antdpro6 System/SystemLogs | S7   | 与 API 审计模型绑定                 |
 | 系统状态      | `/monitor/status`                  | `monitor:status:read`         | Antdpro6 System/Status                             | S8   | 数据库、Redis、队列、对象存储诊断   |
 | 版本信息      | `/monitor/version`                 | `monitor:version:read`        | Antdpro6 System/Version                            | S8   | 版本、commit、build time            |
-| 队列监控      | `/monitor/queues`                  | `monitor:queue:read`          | Antdpro6 System/Queues                             | S8   | BullMQ 只读状态先行                 |
+| 队列监控      | `/monitor/queues`                  | `monitor:queue:read/manage`   | Antdpro6 System/Queues                             | S8   | BullMQ 指标、暂停与恢复             |
 | 缓存监控      | `/monitor/cache`                   | `monitor:cache:read`          | Yudao infra/redis                                  | S12  | Redis 接入稳定后做                  |
 | 在线用户      | `/monitor/online-users`            | `monitor:online-user:read`    | RuoYi/Yudao online user                            | S12  | session 模型稳定后做                |
 | OpenAPI 状态  | `/tools/openapi`                   | `tool:openapi:read`           | NestWeb OpenAPI workflow                           | S8   | 展示契约导出和 SDK drift 状态       |

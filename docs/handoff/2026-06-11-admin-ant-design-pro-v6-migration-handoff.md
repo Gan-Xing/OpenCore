@@ -563,6 +563,7 @@ core:login-log:read
 monitor:status:read
 monitor:version:read
 monitor:queue:read
+monitor:queue:manage
 tool:openapi:read
 tool:export:read
 tool:openforge:read

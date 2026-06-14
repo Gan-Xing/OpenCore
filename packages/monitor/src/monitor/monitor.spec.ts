@@ -106,7 +106,7 @@ describe('@opencore/monitor', () => {
     });
   });
 
-  it('returns read-only queue status without scheduler controls', async () => {
+  it('returns managed queue status and controls allowed queues', async () => {
     const service = new MonitorService(
       new MonitorRepository(createFakeDiagnostics()),
     );
@@ -115,10 +115,33 @@ describe('@opencore/monitor', () => {
       queues: expect.arrayContaining([
         expect.objectContaining({
           name: 'maintenance',
-          driver: 'bullmq-redis-readonly',
-          readOnly: true,
+          driver: 'bullmq-redis-managed',
+          controlMode: 'managed',
         }),
       ]),
+    });
+    await expect(service.pauseQueue('maintenance')).resolves.toMatchObject({
+      name: 'maintenance',
+      action: 'pause',
+      appliedAt: expect.any(String),
+      queue: {
+        name: 'maintenance',
+        paused: true,
+        controlMode: 'managed',
+      },
+    });
+    await expect(service.resumeQueue('maintenance')).resolves.toMatchObject({
+      name: 'maintenance',
+      action: 'resume',
+      appliedAt: expect.any(String),
+      queue: {
+        name: 'maintenance',
+        paused: false,
+        controlMode: 'managed',
+      },
+    });
+    await expect(service.pauseQueue('unknown')).rejects.toMatchObject({
+      status: 400,
     });
   });
 
@@ -177,8 +200,8 @@ describe('@opencore/monitor', () => {
         expect.arrayContaining([
           expect.objectContaining({
             name: 'maintenance',
-            driver: 'bullmq-redis-readonly',
-            readOnly: true,
+            driver: 'bullmq-redis-managed',
+            controlMode: 'managed',
           }),
         ]),
       );
@@ -223,25 +246,45 @@ function createFakeDiagnostics(
       queues: [
         {
           name: 'maintenance',
-          driver: 'bullmq-redis-readonly',
+          driver: 'bullmq-redis-managed',
           waiting: 0,
           active: 0,
           completed: 0,
           failed: 0,
           paused: false,
-          readOnly: true,
+          controlMode: 'managed',
         },
         {
           name: 'reports',
-          driver: 'bullmq-redis-readonly',
+          driver: 'bullmq-redis-managed',
           waiting: 0,
           active: 0,
           completed: 0,
           failed: 0,
           paused: false,
-          readOnly: true,
+          controlMode: 'managed',
         },
       ],
+    }),
+    pauseQueue: async (name) => ({
+      name,
+      driver: 'bullmq-redis-managed',
+      waiting: 0,
+      active: 0,
+      completed: 0,
+      failed: 0,
+      paused: true,
+      controlMode: 'managed',
+    }),
+    resumeQueue: async (name) => ({
+      name,
+      driver: 'bullmq-redis-managed',
+      waiting: 0,
+      active: 0,
+      completed: 0,
+      failed: 0,
+      paused: false,
+      controlMode: 'managed',
     }),
   };
 }

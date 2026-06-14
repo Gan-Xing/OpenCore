@@ -548,23 +548,23 @@ export function createQueueStatusFixture(): QueueStatusList {
     queues: [
       {
         name: 'maintenance',
-        driver: 'bullmq-redis-readonly',
+        driver: 'bullmq-redis-managed',
         waiting: 0,
         active: 0,
         completed: 0,
         failed: 0,
         paused: false,
-        readOnly: true,
+        controlMode: 'managed',
       },
       {
         name: 'reports',
-        driver: 'bullmq-redis-readonly',
+        driver: 'bullmq-redis-managed',
         waiting: 0,
         active: 0,
         completed: 0,
         failed: 0,
         paused: false,
-        readOnly: true,
+        controlMode: 'managed',
       },
     ],
   };

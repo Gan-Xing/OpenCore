@@ -228,8 +228,8 @@ export class QueueStatusDto {
   @ApiProperty()
   paused!: boolean;
 
-  @ApiProperty()
-  readOnly!: true;
+  @ApiProperty({ enum: ['managed', 'unavailable'] })
+  controlMode!: 'managed' | 'unavailable';
 }
 
 export class QueueStatusListDto {
@@ -238,4 +238,18 @@ export class QueueStatusListDto {
 
   @ApiProperty({ type: [QueueStatusDto] })
   queues!: readonly QueueStatusDto[];
+}
+
+export class QueueControlResultDto {
+  @ApiProperty()
+  name!: string;
+
+  @ApiProperty({ enum: ['pause', 'resume'] })
+  action!: 'pause' | 'resume';
+
+  @ApiProperty()
+  appliedAt!: string;
+
+  @ApiProperty({ type: QueueStatusDto })
+  queue!: QueueStatusDto;
 }
