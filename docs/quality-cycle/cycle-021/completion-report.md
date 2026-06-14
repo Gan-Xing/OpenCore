@@ -4,15 +4,16 @@ Date: 2026-06-14
 
 ## Latest Completed Round
 
-Round 124: System Permissions public smoke confirmation.
+Round 125: System Posts public smoke confirmation.
 
 ## Closed
 
-- Confirmed System Permissions public API smoke for list/detail, system
-  mutation guards, custom create/update/export/delete and authentication.
-- Confirmed the public Admin `/system/permissions/` page returns the live
-  Admin bundle.
-- Kept existing Admin/deploy guards against registry fixture fallback.
+- Confirmed System Posts public API smoke for simple-list, CRUD, batch delete,
+  ordering, export and guard coverage.
+- Confirmed the public Admin `/system/posts/` page returns the live Admin
+  bundle.
+- Kept existing Admin/deploy guards against post fixture fallback.
+- System Permissions was previously confirmed in Round 124.
 
 ## Still Open
 
@@ -22,5 +23,7 @@ Round 124: System Permissions public smoke confirmation.
   designer and big-data async export are outside the admitted surface.
 - OpenForge direct schema/migration/business code writes remain outside the
   admitted surface.
-- System Posts still needs closure-flow public smoke confirmation and unified
-  guard coverage.
+- Seven-page unified no-fixture-fallback guard coverage still needs final
+  closure.
+- Final progress, handoff, ledger and completion-report reconciliation remains
+  open.

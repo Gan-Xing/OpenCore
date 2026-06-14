@@ -109,7 +109,9 @@ and blocks stale System Notices bundles through Admin/deploy guards. Round
 fallback UI, keeps file list/detail, upload/download, metadata update, delete
 and current-page export live-only through SDK calls and blocks stale Files
 bundles through Admin/deploy guards. Round 124 confirmed System Permissions
-closure-flow public API/Admin smoke without runtime changes.
+closure-flow public API/Admin smoke without runtime changes. Round 125
+confirmed System Posts closure-flow public API/Admin smoke without runtime
+changes.
 
 ## Guard Register
 

@@ -44,13 +44,13 @@ In scope:
 - [x] Clean System Users fallback.
 - [x] Clean System Roles fallback.
 - [x] Clean System Permissions fallback or confirm closure.
-- [ ] Clean System Posts fallback or confirm closure.
+- [x] Clean System Posts fallback or confirm closure.
 - [x] Clean System Files fallback.
 - [x] Clean System Config fallback.
 - [x] Clean System Notices fallback.
-- [ ] Add explicit public smoke, split into public API smoke and public Admin
+- [x] Add explicit public smoke, split into public API smoke and public Admin
       smoke.
-- [ ] Rejudge the waterline with strict `Meets` rules.
+- [x] Rejudge the waterline with strict `Meets` rules.
 - [ ] Sync progress, handoff, ledger and completion report.
 
 Execution priority after this planning round:

@@ -49,11 +49,12 @@ Current state:
   metadata update, delete and current-page export.
 - System Permissions Admin is now accepted as full `Meets` after
   closure-flow public API/Admin smoke confirmation.
+- System Posts Admin is now accepted as full `Meets` after closure-flow public
+  API/Admin smoke confirmation.
 - A seven-page acceptance matrix now separates runtime completion from Admin
   live-only acceptance.
 - A global no-fixture-fallback guard is still required.
-- Public smoke coverage must be explicit before any capability is marked full
-  `Meets`.
+- Public API/Admin smoke is explicit for all seven fixed System Admin rows.
 - Progress, handoff, ledger and completion-report docs still need one final
   reconciliation pass.
 
@@ -116,9 +117,6 @@ Current foundation queue from Cycle-021:
 
 - Build and keep the acceptance matrix current.
 - Add a global no-fixture-fallback guard.
-- Confirm or close System Posts local-only row against the strict matrix,
-  public smoke and global guard.
-- Add explicit public smoke before marking capabilities as full `Meets`.
 - Reconcile progress, handoff, ledger and completion-report docs.
 
 Large domains such as business modules, payment, multitenancy, BPM, AI and

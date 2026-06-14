@@ -205,22 +205,21 @@ list/detail, upload/download, metadata update, delete and current-page export
 backed by live SDK calls only, and adds Admin/deploy guards for stale
 fixture-backed Files bundles.
 
-Latest acceptance confirmation: Round 124 System Permissions public API/Admin
-smoke confirmation. It keeps the existing live-only catalog/detail/custom
-CRUD/export surface and records real public API and Admin requests for the
-strict matrix.
+Latest acceptance confirmation: Round 125 System Posts public API/Admin smoke
+confirmation. It keeps the existing live-only list/detail, batch deletion,
+ordering, simple-list and export surface and records real public API and Admin
+requests for the strict matrix. Round 124 did the same for System
+Permissions.
 
 ## Next Queue
 
-1. Confirm or close Posts local-only row against the strict matrix, public
-   smoke and global guard.
-2. Add seven-page unified no-fixture-fallback guard coverage.
-3. Reconcile progress, handoff, ledger and completion-report docs.
-4. Payment/BillingDesign remains explicit-admission because real payment,
+1. Add seven-page unified no-fixture-fallback guard coverage.
+2. Reconcile progress, handoff, ledger and completion-report docs.
+3. Payment/BillingDesign remains explicit-admission because real payment,
    refund and reconciliation are out of scope.
-5. Optional Reports/ExportJobs remain explicit-admission because full report
+4. Optional Reports/ExportJobs remain explicit-admission because full report
    designer and big-data async export are out of scope.
-6. OpenForge direct Prisma/migration/business-code writes remain out of scope
+5. OpenForge direct Prisma/migration/business-code writes remain out of scope
    until explicitly admitted.
 
 ## Stop Condition
