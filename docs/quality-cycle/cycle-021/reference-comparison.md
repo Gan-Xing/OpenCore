@@ -29,8 +29,9 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
 - Auth/session: login policy, logout, force logout, online-user kick-out,
   token/session revocation, registered-token allowlist enforcement and expired
   cleanup are real behavior.
-- Logs: login-log has schema, lockout, cleanup, actor/reason, location and
-  structured IP/location provider lookup; operation-log has
+- Logs: login-log has schema, lockout, cleanup, actor/reason, location,
+  structured IP/location provider lookup and external HTTP JSON GeoIP adapter;
+  operation-log has
   list/detail/export/delete, duration/location enrichment, retention cleanup
   and scheduled retention job.
 - Notice: management, inbox/read analytics, templates, delivery records, local
@@ -122,6 +123,9 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
 - Round 92: OAuth token management is a token-inventory and revoke lifecycle,
   not a full third-party OAuth flow; token material stays behind secret refs
   while operators can list, inspect and revoke records through API/SDK/Admin.
+- Round 93: External GeoIP is config-driven through a generic HTTP JSON
+  adapter, with endpoint host allowlisting, timeout bounds, non-public-IP
+  no-send behavior and builtin offline fallback diagnostics.
 
 ## Explicit Non-Claims
 
@@ -132,6 +136,6 @@ and AI/RAG/Agent workflow.
 
 ## Next Focus
 
-Managed cloud KMS adapters and external precise GeoIP providers are optional
-deployment integrations beyond the current foundation waterline. OpenForge
-direct schema/migration/business writes still require explicit user admission.
+Managed cloud KMS adapters are optional deployment integration beyond the
+current foundation waterline. OpenForge direct schema/migration/business writes
+still require explicit user admission.

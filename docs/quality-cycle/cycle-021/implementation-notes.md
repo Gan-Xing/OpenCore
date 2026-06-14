@@ -19,13 +19,15 @@ active debt and decisions that change future execution.
 
 ## Runtime State
 
-Cycle-021 has completed 92 deployable stages across
+Cycle-021 has completed 93 deployable stages across
 System/Security/Monitor/Integration/Tools foundations. Round 91 added
 token/session blacklist maintenance with registered-token allowlist
 enforcement, expired-session cleanup, API/SDK/Admin/OpenAPI visibility, smoke
 and Admin deploy markers. Round 92 added OAuth token inventory, summary,
 detail and revoke lifecycle with Prisma model/seed, SDK/Admin/OpenAPI
-visibility, dedicated smoke and Admin deploy markers.
+visibility, dedicated smoke and Admin deploy markers. Round 93 added a
+guarded external HTTP JSON GeoIP adapter with host allowlisting, bounded
+timeouts, non-public-IP no-send behavior and offline fallback diagnostics.
 
 ## Guard Register
 
@@ -44,8 +46,14 @@ visibility, dedicated smoke and Admin deploy markers.
   duration/location filters, retentionDays cleanup and the retention scheduler
   job registry while preserving the clean request audit row.
 - IP/location: login-log smoke covers provider status, OpenAPI paths,
-  documentation-network lookup, invalid lookup and missing-IP guards; Admin
-  deploy checks GeoIP provider/lookup markers.
+  documentation-network lookup, invalid lookup and missing-IP guards; common
+  tests cover the external HTTP JSON provider, host allowlist, non-public-IP
+  no-send behavior and fallback diagnostics; Admin deploy checks external
+  GeoIP adapter and lookup markers.
+  Enable with `OPENCORE_IP_LOCATION_PROVIDER=opencore.http-json`,
+  `OPENCORE_IP_LOCATION_ENDPOINT_URL` and
+  `OPENCORE_IP_LOCATION_ALLOWED_HOSTS`; optional auth uses
+  `OPENCORE_IP_LOCATION_AUTH_HEADER_NAME/VALUE`.
 - Online users: smoke covers summary, expired cleanup, force-logout audit and
   revoked-token rejection; deploy checks token blacklist maintenance markers.
 - Config/secret: smoke covers feature flags, audience rules, environment
@@ -83,7 +91,7 @@ visibility, dedicated smoke and Admin deploy markers.
   tenant/member/mobile channels.
 - Config: managed cloud KMS provider adapters are optional deployment
   integration beyond the current env-bound keyring.
-- Login/operation log: optional external precise GeoIP provider adapter beyond
-  the current built-in offline network categories.
+- Login/operation log: automatic historical log backfill with external GeoIP
+  precision is not part of the current request-time lookup surface.
 - OpenForge: direct schema/migration/business writes still require user
   admission.

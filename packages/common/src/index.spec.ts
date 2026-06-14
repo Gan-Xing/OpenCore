@@ -15,6 +15,7 @@ import {
   normalizePagination,
   normalizeSort,
   normalizeStringArray,
+  createHttpJsonIpLocationProvider,
   getIpLocationProviderStatus,
   lookupIpLocation,
   parseIpLocation,
@@ -216,6 +217,109 @@ describe('@opencore/common', () => {
         'unknown',
       ],
       checkedAt: '2026-06-14T00:00:00.000Z',
+    });
+  });
+
+  it('looks up public IP addresses through an allowlisted HTTP JSON GeoIP provider', async () => {
+    const fetchMock = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        countryCode: 'US',
+        regionName: 'California',
+        city: 'Mountain View',
+      }),
+    });
+    const provider = createHttpJsonIpLocationProvider({
+      endpointUrl: 'https://geo.example.test/lookup?format=json',
+      allowedHosts: ['geo.example.test'],
+      fetch: fetchMock,
+      timeoutMs: 500,
+    });
+
+    expect(provider.getStatus('2026-06-14T00:00:00.000Z')).toMatchObject({
+      provider: 'opencore.http-json',
+      mode: 'external',
+      ready: true,
+      externalLookupEnabled: true,
+      endpointHost: 'geo.example.test',
+      timeoutMs: 500,
+    });
+
+    await expect(provider.lookup('8.8.8.8')).resolves.toMatchObject({
+      ip: '8.8.8.8',
+      location: 'Mountain View, California, US',
+      category: 'Public network',
+      networkType: 'public',
+      provider: 'opencore.http-json',
+      source: 'external-http-json',
+      confidence: 'exact',
+      enriched: true,
+      countryCode: 'US',
+      region: 'California',
+      city: 'Mountain View',
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://geo.example.test/lookup?format=json&ip=8.8.8.8',
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
+  });
+
+  it('does not send non-public IP addresses to the external GeoIP provider', async () => {
+    const fetchMock = jest.fn();
+    const provider = createHttpJsonIpLocationProvider({
+      endpointUrl: 'https://geo.example.test/lookup/{ip}',
+      allowedHosts: ['geo.example.test'],
+      fetch: fetchMock,
+    });
+
+    await expect(provider.lookup('192.168.1.5')).resolves.toMatchObject({
+      location: 'Private network',
+      provider: 'opencore.builtin',
+      source: 'builtin-cidr',
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('falls back to the builtin GeoIP result when external lookup fails', async () => {
+    const provider = createHttpJsonIpLocationProvider({
+      endpointUrl: 'https://geo.example.test/lookup/{ip}',
+      allowedHosts: ['geo.example.test'],
+      fetch: jest.fn().mockResolvedValue({
+        ok: false,
+        status: 503,
+        json: async () => ({}),
+      }),
+    });
+
+    await expect(provider.lookup('8.8.8.8')).resolves.toMatchObject({
+      location: 'Public network',
+      provider: 'opencore.builtin',
+      source: 'builtin-cidr',
+      fallbackReason: 'Provider returned HTTP 503',
+    });
+  });
+
+  it('marks the HTTP JSON GeoIP provider unready when its host is not allowlisted', async () => {
+    const provider = createHttpJsonIpLocationProvider({
+      endpointUrl: 'https://geo.example.test/lookup/{ip}',
+      allowedHosts: ['other.example.test'],
+      fetch: jest.fn(),
+    });
+
+    expect(provider.getStatus('2026-06-14T00:00:00.000Z')).toMatchObject({
+      provider: 'opencore.http-json',
+      mode: 'external',
+      ready: false,
+      externalLookupEnabled: false,
+      lastError: 'Endpoint host is not allowlisted',
+    });
+
+    await expect(provider.lookup('8.8.8.8')).resolves.toMatchObject({
+      location: 'Public network',
+      provider: 'opencore.builtin',
+      source: 'builtin-cidr',
+      fallbackReason: 'Endpoint host is not allowlisted',
     });
   });
 });

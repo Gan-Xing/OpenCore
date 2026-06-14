@@ -172,7 +172,12 @@ verify_admin_bundle_api_base_url() {
     ! grep -R \
     --fixed-strings \
     --include='*.js' \
-    "GeoIP provider" \
+    "External GeoIP adapter" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "GeoIP endpoint" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null || \
     ! grep -R \
     --fixed-strings \

@@ -9598,8 +9598,11 @@
       "IpLocationProviderStatusDto": {
         "type": "object",
         "properties": {
-          "provider": { "type": "string", "example": "opencore.builtin" },
-          "mode": { "type": "string", "example": "offline" },
+          "provider": {
+            "type": "string",
+            "enum": ["opencore.builtin", "opencore.http-json"]
+          },
+          "mode": { "type": "string", "enum": ["external", "offline"] },
           "ready": { "type": "boolean" },
           "externalLookupEnabled": { "type": "boolean" },
           "datasetVersion": { "type": "string", "example": "builtin-cidr-v1" },
@@ -9608,7 +9611,10 @@
             "type": "array",
             "items": { "type": "string" }
           },
-          "checkedAt": { "type": "string" }
+          "checkedAt": { "type": "string" },
+          "endpointHost": { "type": "string" },
+          "timeoutMs": { "type": "number" },
+          "lastError": { "type": "string" }
         },
         "required": [
           "provider",
@@ -9638,8 +9644,14 @@
               "unknown"
             ]
           },
-          "provider": { "type": "string", "example": "opencore.builtin" },
-          "source": { "type": "string", "example": "builtin-cidr" },
+          "provider": {
+            "type": "string",
+            "enum": ["opencore.builtin", "opencore.http-json"]
+          },
+          "source": {
+            "type": "string",
+            "enum": ["builtin-cidr", "external-http-json"]
+          },
           "confidence": {
             "type": "string",
             "enum": ["exact", "none", "range"]
@@ -9647,7 +9659,8 @@
           "enriched": { "type": "boolean" },
           "countryCode": { "type": "string" },
           "region": { "type": "string" },
-          "city": { "type": "string" }
+          "city": { "type": "string" },
+          "fallbackReason": { "type": "string" }
         },
         "required": [
           "ip",

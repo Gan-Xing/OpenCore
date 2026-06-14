@@ -20,7 +20,7 @@ only; the ledger keeps state transitions and git log keeps commits.
   type/result schema, lockout/unlock, cleanup and attempt limits.
 - Rounds 50-59: logout audit semantics, dept/post ordering, data-scope,
   notice inbox/read analytics, feature flags and login-log location.
-- Rounds 60-92: notice templates, delivery records, local/outbox providers,
+- Rounds 60-93: notice templates, delivery records, local/outbox providers,
   SMS HTTP and SMTP adapters, config secret vault, feature-flag
   rollout/audience, outbox state/process/callback/schedule handling and
   mail subject persistence, provider diagnostics, SMS HTTP secret injection,
@@ -31,8 +31,9 @@ only; the ledger keeps state transitions and git log keeps commits.
   handler diagnostics, cron dispatch, worker claim and scheduler queue metrics,
   the OpenForge safe Admin workbench, dry-run confirmation, manifest
   preview/detail, Integration provider health/config audit and structured
-  IP/location provider lookup plus token/session blacklist maintenance and
-  OAuth token inventory/revoke lifecycle.
+  IP/location provider lookup, external HTTP JSON GeoIP adapter,
+  token/session blacklist maintenance and OAuth token inventory/revoke
+  lifecycle.
 
 ## Rework Notes
 

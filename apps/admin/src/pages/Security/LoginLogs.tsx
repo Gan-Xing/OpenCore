@@ -219,7 +219,19 @@ function formatLoginResult(value: LoginLogResult): string {
 }
 
 function formatIpLocationLookup(result: IpLocationLookupSummary): string {
-  return `${result.location} / ${result.networkType} / ${result.provider} / ${result.source}`;
+  const preciseLocation = [result.countryCode, result.region, result.city]
+    .filter(Boolean)
+    .join(' / ');
+  return [
+    result.location,
+    result.networkType,
+    result.provider,
+    result.source,
+    preciseLocation,
+    result.fallbackReason ? `fallback: ${result.fallbackReason}` : undefined,
+  ]
+    .filter(Boolean)
+    .join(' / ');
 }
 
 export default function LoginLogsPage() {
@@ -606,14 +618,23 @@ export default function LoginLogsPage() {
             Audit trail with unlock and cleanup
           </Typography.Text>,
           <Typography.Text key="geoip-provider" type="secondary">
-            GeoIP provider{' '}
+            External GeoIP adapter{' '}
             {ipLocationStatus
               ? `${ipLocationStatus.provider} / ${ipLocationStatus.datasetVersion}`
               : 'loading'}
           </Typography.Text>,
+          <Typography.Text key="geoip-endpoint" type="secondary">
+            {ipLocationStatus?.endpointHost
+              ? `GeoIP endpoint ${ipLocationStatus.endpointHost}`
+              : 'GeoIP endpoint offline'}
+          </Typography.Text>,
           <Tag
             color={
-              ipLocationStatus?.externalLookupEnabled ? 'green' : 'default'
+              ipLocationStatus?.ready && ipLocationStatus.externalLookupEnabled
+                ? 'green'
+                : ipLocationStatus?.lastError
+                  ? 'red'
+                  : 'default'
             }
             key="external-lookup"
           >

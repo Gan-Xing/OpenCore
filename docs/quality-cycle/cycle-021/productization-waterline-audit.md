@@ -23,7 +23,7 @@ failures have guards; and remaining omissions are explicit product boundaries.
 | `core.dict`           | Meets         | Dict/item CRUD and enabled simple-list source.                                                           |
 | `core.file`           | Meets         | Authenticated upload/download and content smoke.                                                         |
 | `monitor.online-user` | Meets         | Batch kick-out, revocation, registered-token allowlist, cleanup and UA/IP fields.                        |
-| `core.login-log`      | Meets current | Schema, lockout, cleanup, actor/reason, location and IP/location provider lookup.                        |
+| `core.login-log`      | Meets current | Schema, lockout, cleanup, actor/reason, location and IP/location lookup with external GeoIP adapter.     |
 | `core.config`         | Meets current | Runtime keys, feature flags, rollout, audience, environment overrides, vault, versions and key rotation. |
 | `core.notice`         | Enhance       | SMS HTTP, SMTP, mail subject, diagnostics, secrets, attachments, TLS policy and realtime events.         |
 | `integration`         | Meets current | Provider health/config audit, readiness totals, outbox failure history and OAuth token inventory/revoke. |
@@ -87,13 +87,14 @@ failures have guards; and remaining omissions are explicit product boundaries.
 - Round 92 added OAuth token inventory, summary, detail and revoke lifecycle
   with Prisma model/seed, SDK/Admin/OpenAPI visibility, smoke and deploy
   guards.
+- Round 93 added a guarded external HTTP JSON GeoIP adapter with host
+  allowlisting, bounded timeout, non-public-IP no-send behavior, fallback
+  diagnostics, API/SDK/Admin visibility and deploy guards.
 
 ## Active Debt
 
 1. Optional managed-KMS provider adapter if deployment requires cloud KMS APIs.
-2. Optional external GeoIP provider adapter if deployment needs precise
-   country/region/city attribution beyond built-in offline categories.
-3. OpenForge direct schema/migration/business-code writes still require user
+2. OpenForge direct schema/migration/business-code writes still require user
    admission.
 
 ## Guard Matrix
@@ -110,8 +111,9 @@ failures have guards; and remaining omissions are explicit product boundaries.
 - Operation log: delete guards, deleted-detail 404, duration/location filters,
   retentionDays cleanup and scheduled retention job registry.
 - IP/location: login-log smoke covers provider status, documentation-network
-  lookup, invalid lookup, missing-IP guard and OpenAPI paths; deploy checks
-  Admin GeoIP bundle markers.
+  lookup, invalid lookup, missing-IP guard and OpenAPI paths; common tests
+  cover the external HTTP JSON adapter, host allowlist, non-public-IP no-send
+  behavior and fallback diagnostics; deploy checks Admin GeoIP bundle markers.
 - Online users: smoke covers summary, expired cleanup, revoked-token rejection
   and Admin blacklist-maintenance bundle markers.
 - Monitor jobs: Admin bundle markers and smoke cover summary, registry,

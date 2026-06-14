@@ -694,23 +694,27 @@ export type IpLocationLookupSummary = {
   location: string;
   category: string;
   networkType: IpLocationNetworkType;
-  provider: 'opencore.builtin';
-  source: 'builtin-cidr';
+  provider: 'opencore.builtin' | 'opencore.http-json';
+  source: 'builtin-cidr' | 'external-http-json';
   confidence: 'exact' | 'none' | 'range';
   enriched: boolean;
   countryCode?: string;
   region?: string;
   city?: string;
+  fallbackReason?: string;
 };
 
 export type IpLocationProviderStatusSummary = {
-  provider: 'opencore.builtin';
-  mode: 'offline';
-  ready: true;
-  externalLookupEnabled: false;
-  datasetVersion: 'builtin-cidr-v1';
+  provider: 'opencore.builtin' | 'opencore.http-json';
+  mode: 'external' | 'offline';
+  ready: boolean;
+  externalLookupEnabled: boolean;
+  datasetVersion: string;
   supportedNetworks: readonly IpLocationNetworkType[];
   checkedAt: string;
+  endpointHost?: string;
+  timeoutMs?: number;
+  lastError?: string;
 };
 
 export type AuditLogQueryRequest = PageRequest & {

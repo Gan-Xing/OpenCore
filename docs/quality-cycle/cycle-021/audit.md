@@ -60,6 +60,9 @@ guards.
 Round 92 added OAuth token management: Prisma-backed token inventory, summary,
 detail and revoke lifecycle across API/SDK/Admin with dedicated smoke and
 deploy guards.
+Round 93 added a guarded external HTTP JSON GeoIP adapter with host
+allowlisting, bounded timeout, non-public-IP no-send behavior, API/SDK/Admin
+visibility and offline fallback diagnostics.
 Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 `lint` must run sequentially.
 
@@ -77,8 +80,9 @@ Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
   duration/location filters, retentionDays cleanup and scheduled retention job
   registry.
 - IP/location smoke covers provider status, OpenAPI paths, documentation
-  network lookup, invalid lookup and missing-IP guards; deploy checks Admin
-  GeoIP bundle markers.
+  network lookup, invalid lookup and missing-IP guards; common tests cover the
+  external HTTP JSON adapter, host allowlist, non-public-IP no-send behavior
+  and fallback diagnostics; deploy checks Admin GeoIP bundle markers.
 - Online-user smoke covers summary, expired cleanup, force-logout audit,
   revoked-token rejection and Admin blacklist-maintenance bundle markers.
 - Config smoke covers runtime shape, environment override governance, legacy
@@ -108,8 +112,8 @@ real incident decisions. Do not create per-round reports by default.
   deployment-topology upgrade if needed.
 - Managed cloud KMS provider adapters are optional deployment integration; the
   current foundation waterline has env-bound keyring status and rotation.
-- External precise GeoIP provider adapters are optional deployment integration;
-  the current foundation waterline has built-in offline network categories.
+- Automatic backfill of historical login/operation logs with external GeoIP
+  precision remains outside the current request-time lookup surface.
 - OpenForge direct generated schema/migration/business writes remain outside
   the admitted surface.
 

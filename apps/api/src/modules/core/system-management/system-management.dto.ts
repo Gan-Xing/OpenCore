@@ -160,11 +160,11 @@ export class IpLocationLookupDto {
     | 'shared'
     | 'unknown';
 
-  @ApiProperty({ example: 'opencore.builtin' })
-  provider!: 'opencore.builtin';
+  @ApiProperty({ enum: ['opencore.builtin', 'opencore.http-json'] })
+  provider!: 'opencore.builtin' | 'opencore.http-json';
 
-  @ApiProperty({ example: 'builtin-cidr' })
-  source!: 'builtin-cidr';
+  @ApiProperty({ enum: ['builtin-cidr', 'external-http-json'] })
+  source!: 'builtin-cidr' | 'external-http-json';
 
   @ApiProperty({ enum: ['exact', 'none', 'range'] })
   confidence!: 'exact' | 'none' | 'range';
@@ -180,23 +180,26 @@ export class IpLocationLookupDto {
 
   @ApiProperty({ required: false })
   city?: string;
+
+  @ApiProperty({ required: false })
+  fallbackReason?: string;
 }
 
 export class IpLocationProviderStatusDto {
-  @ApiProperty({ example: 'opencore.builtin' })
-  provider!: 'opencore.builtin';
+  @ApiProperty({ enum: ['opencore.builtin', 'opencore.http-json'] })
+  provider!: 'opencore.builtin' | 'opencore.http-json';
 
-  @ApiProperty({ example: 'offline' })
-  mode!: 'offline';
-
-  @ApiProperty()
-  ready!: true;
+  @ApiProperty({ enum: ['external', 'offline'] })
+  mode!: 'external' | 'offline';
 
   @ApiProperty()
-  externalLookupEnabled!: false;
+  ready!: boolean;
+
+  @ApiProperty()
+  externalLookupEnabled!: boolean;
 
   @ApiProperty({ example: 'builtin-cidr-v1' })
-  datasetVersion!: 'builtin-cidr-v1';
+  datasetVersion!: string;
 
   @ApiProperty({
     type: [String],
@@ -206,6 +209,15 @@ export class IpLocationProviderStatusDto {
 
   @ApiProperty()
   checkedAt!: string;
+
+  @ApiProperty({ required: false })
+  endpointHost?: string;
+
+  @ApiProperty({ required: false })
+  timeoutMs?: number;
+
+  @ApiProperty({ required: false })
+  lastError?: string;
 }
 
 export class FileAssetDto {

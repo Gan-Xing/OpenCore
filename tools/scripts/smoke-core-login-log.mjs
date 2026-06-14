@@ -72,6 +72,7 @@ try {
     false,
     'IP location external lookup flag',
   );
+  assertEqual(ipLocationStatus.mode, 'offline', 'IP location provider mode');
   assertEqual(ipLocationStatus.ready, true, 'IP location provider readiness');
   assertEqual(
     ipLocationStatus.datasetVersion,
@@ -105,6 +106,11 @@ try {
     documentationLookup.source,
     'builtin-cidr',
     'documentation IP source',
+  );
+  assertEqual(
+    documentationLookup.provider,
+    'opencore.builtin',
+    'documentation IP provider',
   );
   assertEqual(
     documentationLookup.enriched,

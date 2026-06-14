@@ -23,10 +23,7 @@ import {
   AuditLoginLogService,
   AuditOperationLogService,
 } from '@opencore/audit';
-import {
-  getIpLocationProviderStatus,
-  lookupIpLocation,
-} from '@opencore/common';
+import { createIpLocationProviderFromEnv } from '@opencore/common';
 import { FileStorageService } from '@opencore/file';
 import {
   SystemConfigService,
@@ -167,6 +164,8 @@ type RequestWithUser = SecurityRequestWithAuth;
 @ApiBearerAuth()
 @Controller('core')
 export class SystemManagementController {
+  private readonly ipLocationProvider = createIpLocationProviderFromEnv();
+
   constructor(
     private readonly dicts: SystemDictService,
     private readonly config: SystemConfigService,
@@ -1029,21 +1028,21 @@ export class SystemManagementController {
   @RequirePermission('core:login-log:read')
   @ApiOkResponse({ type: IpLocationProviderStatusDto })
   getIpLocationProviderStatus(): IpLocationProviderStatusDto {
-    return getIpLocationProviderStatus();
+    return this.ipLocationProvider.getStatus();
   }
 
   @Get('ip-location/lookup')
   @ApiTags('Core IP Location')
   @RequirePermission('core:login-log:read')
   @ApiOkResponse({ type: IpLocationLookupDto })
-  lookupIpLocation(
+  async lookupIpLocation(
     @Query() query: IpLocationLookupQueryDto,
-  ): IpLocationLookupDto {
+  ): Promise<IpLocationLookupDto> {
     if (!query.ip?.trim()) {
       throw new BadRequestException('IP address is required');
     }
 
-    return lookupIpLocation(query.ip);
+    return this.ipLocationProvider.lookup(query.ip);
   }
 
   @Get('audit-logs')
