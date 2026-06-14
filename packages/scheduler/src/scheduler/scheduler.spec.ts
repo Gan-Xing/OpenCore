@@ -109,6 +109,19 @@ describe('@opencore/scheduler', () => {
       id: run.id,
       jobCode: job.code,
     });
+    const seedCleanResult = await service.cleanJobRuns(job.code, {
+      retentionDays: 0,
+      status: 'completed',
+    });
+    expect(seedCleanResult).toMatchObject({
+      deleted: true,
+      jobCode: job.code,
+      statuses: ['completed'],
+    });
+    expect(seedCleanResult.affected).toBeGreaterThanOrEqual(1);
+    await expect(service.getJobRun(job.code, run.id)).rejects.toThrow(
+      NotFoundException,
+    );
   });
 
   it('records failed handler execution after bounded retries', async () => {
@@ -236,6 +249,12 @@ describe('@opencore/scheduler', () => {
         retryLimit: 99,
       }),
     ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.cleanJobRuns('openapi.drift-check', {
+        retentionDays: 0,
+        status: 'queued',
+      } as never),
+    ).rejects.toThrow(BadRequestException);
   });
 
   describe('PrismaSchedulerRepository integration', () => {
@@ -304,6 +323,19 @@ describe('@opencore/scheduler', () => {
           handlerKey: 'reports.refresh',
         }),
       });
+      const cleanResult = await service.cleanJobRuns(code, {
+        retentionDays: 0,
+        status: 'completed',
+      });
+      expect(cleanResult).toMatchObject({
+        deleted: true,
+        jobCode: code,
+        statuses: ['completed'],
+      });
+      expect(cleanResult.affected).toBeGreaterThanOrEqual(1);
+      await expect(service.getJobRun(code, run.id)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('persists cron dispatch and worker claim through Prisma', async () => {

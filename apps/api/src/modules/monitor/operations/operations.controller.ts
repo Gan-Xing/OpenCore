@@ -24,6 +24,7 @@ import {
   CacheValueDto,
   BatchKickOutSessionsDto,
   BatchKickOutSessionsResultDto,
+  CleanJobRunLogsDto,
   CleanExpiredOnlineUserSessionsQueryDto,
   CleanExpiredOnlineUserSessionsResultDto,
   ClaimQueuedJobsDto,
@@ -37,6 +38,7 @@ import {
   JobDefinitionPageDto,
   JobQueryDto,
   JobRegistryEntryDto,
+  JobRunCleanResultDto,
   JobRunLogDto,
   JobRunLogPageDto,
   JobRunQueryDto,
@@ -189,6 +191,17 @@ export class OperationsController {
     @Param('id') id: string,
   ): Promise<JobRunLogDto> {
     return this.scheduler.getJobRun(code, id);
+  }
+
+  @Delete('monitor/jobs/:code/runs')
+  @ApiTags('Monitor Jobs')
+  @RequirePermission('monitor:job:manage')
+  @ApiOkResponse({ type: JobRunCleanResultDto })
+  cleanJobRuns(
+    @Param('code') code: string,
+    @Query() query: CleanJobRunLogsDto,
+  ): Promise<JobRunCleanResultDto> {
+    return this.scheduler.cleanJobRuns(code, query);
   }
 
   @Get('monitor/cache')

@@ -5,6 +5,7 @@ import { PageQueryDto } from '../../core/system-management/system-management.dto
 
 export { PageQueryDto };
 export {
+  CleanJobRunLogsDto,
   CreateJobDefinitionDto,
   ClaimQueuedJobsDto,
   DispatchDueJobsDto,
@@ -13,6 +14,7 @@ export {
   JobDefinitionSummaryDto,
   JobQueryDto,
   JobRegistryEntryDto,
+  JobRunCleanResultDto,
   JobRunLogDto,
   JobRunLogPageDto,
   JobRunQueryDto,

@@ -48,6 +48,10 @@ describe('createOperationsClient', () => {
       'openapi.drift-check',
       'run_openapi_drift_1',
     );
+    await client.cleanJobRuns('token', 'openapi.drift-check', {
+      retentionDays: 30,
+      status: 'completed',
+    });
     await client.listCacheKeys('token', { prefix: 'opencore:admin' });
     await client.listCacheNames('token');
     await client.getCacheValue('token', 'opencore:admin:shell');
@@ -103,6 +107,10 @@ describe('createOperationsClient', () => {
       },
       {
         path: '/monitor/jobs/openapi.drift-check/runs/run_openapi_drift_1',
+      },
+      {
+        path: '/monitor/jobs/openapi.drift-check/runs?retentionDays=30&status=completed',
+        method: 'DELETE',
       },
       { path: '/monitor/cache?prefix=opencore%3Aadmin' },
       { path: '/monitor/cache/names' },

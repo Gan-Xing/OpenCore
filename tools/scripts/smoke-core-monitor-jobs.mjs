@@ -56,6 +56,7 @@ try {
     assertOpenApiPath(openApi, '/api/monitor/jobs/{code}/trigger');
     assertOpenApiPath(openApi, '/api/monitor/jobs/dispatch-due');
     assertOpenApiPath(openApi, '/api/monitor/jobs/worker/claim');
+    assertOpenApiMethod(openApi, '/api/monitor/jobs/{code}/runs', 'delete');
     assertOpenApiPath(openApi, '/api/monitor/queues');
     assertOpenApiPath(openApi, '/api/monitor/queues/{name}/pause');
     assertOpenApiPath(openApi, '/api/monitor/queues/{name}/resume');
@@ -372,6 +373,41 @@ try {
     'scheduler failed run summary',
   );
 
+  await apiRequest(
+    `/monitor/jobs/${encodeURIComponent(JOB_CODE)}/runs?status=queued&retentionDays=0`,
+    {
+      method: 'DELETE',
+      expected: [400],
+    },
+  );
+  const cleanFailedRuns = await apiRequest(
+    `/monitor/jobs/${encodeURIComponent(JOB_CODE)}/runs?status=failed&retentionDays=0`,
+    { method: 'DELETE' },
+  );
+  assertEqual(cleanFailedRuns.deleted, true, 'scheduler run clean deleted');
+  assertEqual(cleanFailedRuns.jobCode, JOB_CODE, 'scheduler run clean job');
+  assertEqual(
+    cleanFailedRuns.retentionDays,
+    0,
+    'scheduler run clean retention',
+  );
+  assertIncludes(
+    cleanFailedRuns.statuses,
+    'failed',
+    'scheduler run clean statuses',
+  );
+  assertNumberAtLeast(
+    cleanFailedRuns.affected,
+    1,
+    'scheduler run clean affected',
+  );
+  await apiRequest(
+    `/monitor/jobs/${encodeURIComponent(JOB_CODE)}/runs/${encodeURIComponent(
+      failedRun.id,
+    )}`,
+    { expected: [404] },
+  );
+
   console.log(
     JSON.stringify({
       status: 'pass',
@@ -386,6 +422,7 @@ try {
               'openapi.monitor-job-trigger-path',
               'openapi.monitor-job-dispatch-path',
               'openapi.monitor-job-worker-path',
+              'openapi.monitor-job-run-clean-method',
               'openapi.monitor-queues-path',
               'openapi.monitor-queue-pause-path',
               'openapi.monitor-queue-resume-path',
@@ -425,6 +462,8 @@ try {
         'monitor.job.failed-run-detail',
         'monitor.job.cron-dispatch',
         'monitor.job.worker-claim',
+        'monitor.job.run-clean-terminal-guard',
+        'monitor.job.run-clean',
       ],
     }),
   );
@@ -779,6 +818,15 @@ async function request(path, options = {}) {
 function assertOpenApiPath(openApi, path) {
   if (!openApi?.paths?.[path]) {
     throw new Error(`Expected OpenAPI docs to include ${path}`);
+  }
+}
+
+function assertOpenApiMethod(openApi, path, method) {
+  assertOpenApiPath(openApi, path);
+  if (!openApi.paths[path]?.[method]) {
+    throw new Error(
+      `Expected OpenAPI docs to include ${method.toUpperCase()} ${path}`,
+    );
   }
 }
 

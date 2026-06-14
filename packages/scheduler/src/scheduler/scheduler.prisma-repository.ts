@@ -19,6 +19,7 @@ import {
   normalizeSchedulerDispatchNow,
   normalizeSchedulerJobFilters,
   normalizeSchedulerPageQuery,
+  normalizeSchedulerRunCleanPolicy,
   normalizeSchedulerWorkerLimit,
   SchedulerRepository,
   requireRecord,
@@ -27,6 +28,7 @@ import {
   type DispatchDueSchedulerJobsInput,
   type SchedulerJobQuery,
   type SchedulerRunQuery,
+  type SchedulerRunCleanQuery,
   type TriggerSchedulerJobInput,
   type UpdateSchedulerJobInput,
 } from './scheduler.repository';
@@ -365,6 +367,27 @@ export class PrismaSchedulerRepository extends SchedulerRepository {
       'Job run log',
       id,
     );
+  }
+
+  async cleanJobRuns(code: string, query: SchedulerRunCleanQuery = {}) {
+    await this.findJob(code);
+    const policy = normalizeSchedulerRunCleanPolicy(query);
+    const result = await this.prisma.jobRunLog.deleteMany({
+      where: {
+        jobCode: code,
+        startedAt: { lt: policy.cutoffBefore },
+        status: { in: [...policy.statuses] },
+      },
+    });
+
+    return {
+      deleted: true as const,
+      jobCode: code,
+      affected: result.count,
+      cutoffBefore: policy.cutoffBefore.toISOString(),
+      retentionDays: policy.retentionDays,
+      statuses: policy.statuses,
+    };
   }
 
   private async findJob(code: string): Promise<SchedulerJobDefinitionRecord> {

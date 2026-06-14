@@ -104,6 +104,9 @@ pause/resume smoke plus deploy bundle markers.
 Round 109 removed Security operation/login log Admin fixture fallbacks, added
 operation-log server-side filters and guarded both pages with Admin smoke plus
 deploy checks.
+Round 110 added Monitor Jobs terminal run-log retention cleanup through
+API/SDK/Admin, rejected queued/running cleanup and guarded the Jobs Admin page
+against fixture fallback.
 Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 `lint` must run sequentially.
 
@@ -135,7 +138,8 @@ Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 - Monitor Jobs smoke covers operations summary, registry, job policy guards,
   enable/disable, disabled-trigger rejection, manual trigger, handler
   execution, failed retry, run-log detail, cron dispatch, worker claim and
-  scheduler queue metrics plus queue pause/resume with recovery.
+  scheduler queue metrics plus queue pause/resume with recovery, terminal
+  run-log cleanup and queued/running cleanup rejection.
 - Monitor Status smoke covers live dependencies, CPU, memory, disk and process
   runtime resources, OpenAPI runtime schemas and no-secret leakage;
   Admin/deploy guards reject fixture fallback and require live resource

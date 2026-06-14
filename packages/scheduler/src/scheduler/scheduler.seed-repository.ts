@@ -18,6 +18,7 @@ import {
   normalizeSchedulerDispatchNow,
   normalizeSchedulerJobFilters,
   normalizeSchedulerPageQuery,
+  normalizeSchedulerRunCleanPolicy,
   normalizeSchedulerWorkerLimit,
   SchedulerRepository,
   requireRecord,
@@ -26,6 +27,8 @@ import {
   type DispatchDueSchedulerJobsInput,
   type SchedulerJobQuery,
   type SchedulerRunQuery,
+  type SchedulerRunCleanQuery,
+  type SchedulerRunTerminalStatus,
   type TriggerSchedulerJobInput,
   type UpdateSchedulerJobInput,
 } from './scheduler.repository';
@@ -297,6 +300,31 @@ export class SeedSchedulerRepository extends SchedulerRepository {
         id,
       ),
     );
+  }
+
+  async cleanJobRuns(code: string, query: SchedulerRunCleanQuery = {}) {
+    this.findJob(code);
+    const policy = normalizeSchedulerRunCleanPolicy(query);
+    const beforeCount = this.runs.length;
+    this.runs = this.runs.filter((run) => {
+      if (run.jobCode !== code) {
+        return true;
+      }
+      if (!policy.statuses.includes(run.status as SchedulerRunTerminalStatus)) {
+        return true;
+      }
+
+      return new Date(run.startedAt) >= policy.cutoffBefore;
+    });
+
+    return {
+      deleted: true as const,
+      jobCode: code,
+      affected: beforeCount - this.runs.length,
+      cutoffBefore: policy.cutoffBefore.toISOString(),
+      retentionDays: policy.retentionDays,
+      statuses: policy.statuses,
+    };
   }
 
   private findJob(code: string): SchedulerJobDefinitionRecord {

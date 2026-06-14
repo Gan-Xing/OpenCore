@@ -1,4 +1,5 @@
 import {
+  ClearOutlined,
   ClockCircleOutlined,
   DeploymentUnitOutlined,
   EyeOutlined,
@@ -13,17 +14,19 @@ import {
   type ProColumns,
 } from '@ant-design/pro-components';
 import { useAccess } from '@umijs/max';
-import {
-  createOperationsFixtures,
-  type JobDefinitionSummary,
-  type JobRegistryEntrySummary,
-  type JobRunLogSummary,
-  type OperationsSummary,
+import type {
+  JobDefinitionSummary,
+  JobRegistryEntrySummary,
+  JobRunCleanStatus,
+  JobRunLogSummary,
+  OperationsSummary,
 } from '@opencore/sdk';
 import {
   Alert,
   Button,
+  InputNumber,
   Modal,
+  Select,
   Space,
   Statistic,
   Tag,
@@ -33,8 +36,9 @@ import {
 } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 import {
-  disableOpenCoreJob,
   claimOpenCoreQueuedJobs,
+  cleanOpenCoreJobRuns,
+  disableOpenCoreJob,
   dispatchOpenCoreDueJobs,
   enableOpenCoreJob,
   getOpenCoreJob,
@@ -56,11 +60,51 @@ import {
 } from '../shared/CurrentPageFilters';
 import { ReadOnlyDetailDrawer } from '../shared/ReadOnlyDetailDrawer';
 
-const fixtures = createOperationsFixtures();
-const fallbackRows = fixtures.jobs;
-const fallbackSummary = fixtures.summary;
-const fallbackRuns = fixtures.jobRuns;
-const fallbackRegistry = fixtures.jobRegistry;
+type RunRetentionStatus = 'all-terminal' | JobRunCleanStatus;
+
+const emptySummary: OperationsSummary = {
+  cache: {
+    keyCount: 0,
+    provider: 'redis',
+    scanComplete: false,
+    scanLimit: 0,
+    totalSizeBytes: 0,
+  },
+  exportJobStatus: 'design-only',
+  jobRuns: {
+    completed: 0,
+    failed: 0,
+    queued: 0,
+    running: 0,
+    total: 0,
+  },
+  jobs: {
+    disabled: 0,
+    enabled: 0,
+    total: 0,
+  },
+  onlineUsers: {
+    active: 0,
+    cleanupEligible: 0,
+    expired: 0,
+    revoked: 0,
+    total: 0,
+  },
+  reports: {
+    disabled: 0,
+    enabled: 0,
+    total: 0,
+  },
+};
+
+const runRetentionStatusOptions: {
+  label: string;
+  value: RunRetentionStatus;
+}[] = [
+  { label: 'Terminal', value: 'all-terminal' },
+  { label: 'Completed', value: 'completed' },
+  { label: 'Failed', value: 'failed' },
+];
 
 const exportColumns: CurrentPageExportColumn<JobDefinitionSummary>[] = [
   { title: 'Code', dataIndex: 'code' },
@@ -122,21 +166,25 @@ export default function JobsPage() {
   const access = useAccess();
   const canUpdateJobs = Boolean(access.canUpdateJobs);
   const canManageJobs = Boolean(access.canManageJobs);
-  const [rows, setRows] =
-    useState<readonly JobDefinitionSummary[]>(fallbackRows);
-  const [summary, setSummary] = useState<OperationsSummary>(fallbackSummary);
+  const [rows, setRows] = useState<readonly JobDefinitionSummary[]>([]);
+  const [summary, setSummary] = useState<OperationsSummary>(emptySummary);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
   const [selected, setSelected] = useState<JobDefinitionSummary>();
-  const [registry, setRegistry] =
-    useState<readonly JobRegistryEntrySummary[]>(fallbackRegistry);
+  const [registry, setRegistry] = useState<
+    readonly JobRegistryEntrySummary[]
+  >([]);
   const [selectedRuns, setSelectedRuns] = useState<readonly JobRunLogSummary[]>(
     [],
   );
   const [actionJobCode, setActionJobCode] = useState<string>();
   const [triggeringJobCode, setTriggeringJobCode] = useState<string>();
+  const [cleaningJobCode, setCleaningJobCode] = useState<string>();
   const [dispatchingDueJobs, setDispatchingDueJobs] = useState(false);
   const [claimingQueuedJobs, setClaimingQueuedJobs] = useState(false);
+  const [runRetentionDays, setRunRetentionDays] = useState(30);
+  const [runCleanStatus, setRunCleanStatus] =
+    useState<RunRetentionStatus>('all-terminal');
   const filterOptions = useMemo(() => createFilterOptions(rows), [rows]);
   const { filteredRows, toolbar: filterToolbar } =
     useCurrentPageFilters<JobDefinitionSummary>({
@@ -163,9 +211,11 @@ export default function JobsPage() {
       setRows(nextRows);
       setLoadError(undefined);
     } catch (error: unknown) {
-      setSummary(fallbackSummary);
-      setRegistry(fallbackRegistry);
-      setRows(fallbackRows);
+      setSummary(emptySummary);
+      setRegistry([]);
+      setRows([]);
+      setSelected(undefined);
+      setSelectedRuns([]);
       setLoadError(
         error instanceof Error ? error.message : 'Unable to load jobs.',
       );
@@ -186,10 +236,13 @@ export default function JobsPage() {
       ]);
       setSelected(job);
       setSelectedRuns(runs);
-    } catch (_error) {
+    } catch (error: unknown) {
       setSelected(record);
-      setSelectedRuns(
-        fallbackRuns.filter((run) => run.jobCode === record.code),
+      setSelectedRuns([]);
+      message.error(
+        error instanceof Error
+          ? error.message
+          : 'Unable to load live job run detail.',
       );
     }
   };
@@ -232,6 +285,42 @@ export default function JobsPage() {
           await openDetail(record);
         } finally {
           setTriggeringJobCode(undefined);
+        }
+      },
+    });
+  };
+
+  const confirmCleanJobRuns = (record: JobDefinitionSummary) => {
+    const statusLabel =
+      runCleanStatus === 'all-terminal'
+        ? 'completed/failed'
+        : runCleanStatus;
+    Modal.confirm({
+      title: `Clean ${statusLabel} run logs for ${record.code}?`,
+      content:
+        `Deletes terminal run logs older than ${runRetentionDays} day(s). ` +
+        'Queued and running runs are retained.',
+      okButtonProps: { danger: true },
+      okText: 'Clean run logs',
+      onOk: async () => {
+        setCleaningJobCode(record.code);
+        try {
+          const result = await cleanOpenCoreJobRuns(record.code, {
+            retentionDays: runRetentionDays,
+            status:
+              runCleanStatus === 'all-terminal'
+                ? undefined
+                : runCleanStatus,
+          });
+          message.success(
+            `Cleaned ${result.affected} run logs before ${result.cutoffBefore}`,
+          );
+          await loadJobs();
+          if (selected?.code === record.code) {
+            await openDetail(record);
+          }
+        } finally {
+          setCleaningJobCode(undefined);
         }
       },
     });
@@ -361,6 +450,23 @@ export default function JobsPage() {
               size="small"
             />
           </Tooltip>
+          <Tooltip
+            title={
+              canManageJobs
+                ? 'Clean terminal run logs'
+                : 'Requires monitor:job:manage'
+            }
+          >
+            <Button
+              aria-label={`Clean run logs for job ${record.code}`}
+              danger
+              disabled={!canManageJobs}
+              icon={<ClearOutlined />}
+              loading={cleaningJobCode === record.code}
+              onClick={() => confirmCleanJobRuns(record)}
+              size="small"
+            />
+          </Tooltip>
         </Space>
       ),
     },
@@ -370,9 +476,9 @@ export default function JobsPage() {
     <PageContainer title="Jobs" subTitle="S11 Operations">
       {loadError ? (
         <Alert
-          message="Using fallback job fixtures"
+          message="Unable to load live scheduler jobs"
           description={loadError}
-          type="warning"
+          type="error"
           showIcon
           style={{ marginBottom: 16 }}
         />
@@ -393,7 +499,30 @@ export default function JobsPage() {
         search={false}
         options={false}
         toolBarRender={() => [
+          <Typography.Text key="live-policy" type="secondary">
+            Live scheduler jobs
+          </Typography.Text>,
           filterToolbar,
+          <Typography.Text key="run-retention-policy" type="secondary">
+            Run log retention
+          </Typography.Text>,
+          <InputNumber
+            addonAfter="days"
+            key="run-retention-days"
+            max={3650}
+            min={0}
+            onChange={(value) => setRunRetentionDays(Number(value ?? 30))}
+            precision={0}
+            style={{ width: 132 }}
+            value={runRetentionDays}
+          />,
+          <Select
+            key="run-retention-status"
+            onChange={(value) => setRunCleanStatus(value)}
+            options={runRetentionStatusOptions}
+            style={{ width: 132 }}
+            value={runCleanStatus}
+          />,
           <CurrentPageExportButton<JobDefinitionSummary>
             key="export"
             columns={exportColumns}

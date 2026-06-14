@@ -258,6 +258,22 @@ export type JobRunQueryRequest = PageRequest & {
   status?: 'completed' | 'failed' | 'queued' | 'running';
 };
 
+export type JobRunCleanStatus = 'completed' | 'failed';
+
+export type CleanJobRunLogsRequest = {
+  retentionDays?: number;
+  status?: JobRunCleanStatus;
+};
+
+export type JobRunCleanSummary = {
+  deleted: true;
+  jobCode: string;
+  affected: number;
+  retentionDays: number;
+  cutoffBefore: string;
+  statuses: readonly JobRunCleanStatus[];
+};
+
 export type CacheKeyQueryRequest = PageRequest & {
   prefix?: string;
 };

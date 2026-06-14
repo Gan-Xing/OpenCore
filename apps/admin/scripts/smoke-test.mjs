@@ -430,6 +430,7 @@ if (
   !opencorePlatformService.includes('enableOpenCoreJob') ||
   !opencorePlatformService.includes('disableOpenCoreJob') ||
   !opencorePlatformService.includes('triggerOpenCoreJob') ||
+  !opencorePlatformService.includes('cleanOpenCoreJobRuns') ||
   !opencorePlatformService.includes('listOpenCoreMonitorQueues') ||
   !opencorePlatformService.includes('pauseOpenCoreMonitorQueue') ||
   !opencorePlatformService.includes('resumeOpenCoreMonitorQueue')
@@ -1781,16 +1782,23 @@ if (
   !jobsPage.includes('enableOpenCoreJob') ||
   !jobsPage.includes('disableOpenCoreJob') ||
   !jobsPage.includes('triggerOpenCoreJob') ||
+  !jobsPage.includes('cleanOpenCoreJobRuns') ||
   !jobsPage.includes('canUpdateJobs') ||
   !jobsPage.includes('canManageJobs') ||
   !jobsPage.includes('Run now') ||
+  !jobsPage.includes('Run log retention') ||
+  !jobsPage.includes('Clean run logs') ||
+  !jobsPage.includes('Live scheduler jobs') ||
+  !jobsPage.includes('Unable to load live scheduler jobs') ||
   !jobsPage.includes('Registered handlers') ||
   !jobsPage.includes('Handler Key') ||
   !jobsPage.includes('Execution Mode') ||
-  !jobsPage.includes('registered handler execution + retry/timeout diagnostics')
+  !jobsPage.includes('registered handler execution + retry/timeout diagnostics') ||
+  jobsPage.includes('createOperationsFixtures') ||
+  jobsPage.includes('Using fallback job fixtures')
 ) {
   throw new Error(
-    'Monitor jobs page must use live job APIs with registry, enable/disable, manual trigger, run-log detail, and permission-gated controls.',
+    'Monitor jobs page must use live job APIs with registry, enable/disable, manual trigger, run-log detail, run-log cleanup, live-only data and permission-gated controls.',
   );
 }
 

@@ -19,7 +19,7 @@ active debt and decisions that change future execution.
 
 ## Runtime State
 
-Cycle-021 has completed 109 deployable stages across
+Cycle-021 has completed 110 deployable stages across
 System/Security/Monitor/Integration/Tools foundations. Round 91 added
 token/session blacklist maintenance with registered-token allowlist
 enforcement, expired-session cleanup, API/SDK/Admin/OpenAPI visibility, smoke
@@ -59,7 +59,9 @@ pause/resume through API/SDK/Admin, replaced Queue Admin fixture fallback with
 live-only data and added `monitor:queue:manage` smoke/deploy guards. Round
 109 removed Security operation/login log Admin fixture fallbacks, added
 operation-log server-side filters and guarded the pages through Admin smoke
-and deploy markers.
+and deploy markers. Round 110 added Monitor Jobs terminal run-log retention
+cleanup through API/SDK/Admin, rejects queued/running cleanup and keeps the
+Jobs Admin page live-only through smoke/deploy guards.
 
 ## Guard Register
 
@@ -102,10 +104,11 @@ and deploy markers.
   registry, unsafe policy guards, enable/disable, disabled-trigger rejection,
   run-now, handler execution, failed retry, run-log detail, cron dispatch,
   worker claim, scheduler queue metrics and queue pause/resume with a resume
-  recovery guard; dispatch smoke uses a per-run far-future non-zero-minute
+  recovery guard, plus terminal run-log cleanup and queued/running cleanup
+  rejection; dispatch smoke uses a per-run far-future non-zero-minute
   cron tick so repeated deploys cannot collide with persisted `scheduledAt`
-  de-dup metadata or seeded hourly jobs. Deploy also checks the Jobs and
-  Queues Admin bundle markers.
+  de-dup metadata or seeded hourly jobs. Deploy also checks the Jobs run-log
+  retention markers and Queues Admin bundle markers.
 - Monitor status: smoke covers live dependency checks plus CPU, memory, disk
   and process runtime resources from `/monitor/status`, OpenAPI runtime
   schemas and no-secret leakage. Admin/deploy guards reject

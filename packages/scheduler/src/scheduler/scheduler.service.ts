@@ -1,9 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
 import type {
+  CleanJobRunLogsDto,
   CreateJobDefinitionDto,
   ClaimQueuedJobsDto,
   DispatchDueJobsDto,
+  JobRunCleanResultDto,
   JobQueryDto,
   JobRunQueryDto,
   SchedulerDispatchResultDto,
@@ -89,5 +91,12 @@ export class SchedulerService {
 
   getJobRun(code: string, id: string): Promise<SchedulerJobRunLogRecord> {
     return this.repository.getJobRun(code, id);
+  }
+
+  cleanJobRuns(
+    code: string,
+    query: CleanJobRunLogsDto = {},
+  ): Promise<JobRunCleanResultDto> {
+    return this.repository.cleanJobRuns(code, query);
   }
 }

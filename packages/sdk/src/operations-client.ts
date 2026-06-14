@@ -10,6 +10,7 @@ import type {
   CacheKeyQueryRequest,
   CacheValueSummary,
   ClaimQueuedJobsRequest,
+  CleanJobRunLogsRequest,
   ClearCacheRequest,
   CreateJobDefinitionRequest,
   DispatchDueJobsRequest,
@@ -21,6 +22,7 @@ import type {
   JobQueryRequest,
   JobRegistryEntrySummary,
   JobRunLogPage,
+  JobRunCleanSummary,
   JobRunQueryRequest,
   JobRunLogSummary,
   KickOutSessionRequest,
@@ -84,6 +86,11 @@ export type OperationsClient = {
     code: string,
     id: string,
   ) => Promise<JobRunLogSummary>;
+  cleanJobRuns: (
+    token: string,
+    code: string,
+    query?: CleanJobRunLogsRequest,
+  ) => Promise<JobRunCleanSummary>;
   listCacheKeys: (
     token: string,
     query?: CacheKeyQueryRequest,
@@ -197,6 +204,11 @@ export function createOperationsClient(request: SdkRequest): OperationsClient {
         )}`,
         { token },
       ),
+    cleanJobRuns: (token, code, query) =>
+      request<JobRunCleanSummary>(
+        withQuery(`/monitor/jobs/${encodeURIComponent(code)}/runs`, query),
+        { method: 'DELETE', token },
+      ),
     listCacheKeys: (token, query) =>
       request<CacheKeyPage>(withQuery('/monitor/cache', query), { token }),
     listCacheNames: (token) =>
@@ -272,7 +284,7 @@ export function createOperationsClient(request: SdkRequest): OperationsClient {
 
 function withQuery(
   path: `/${string}`,
-  query: PageRequest & Record<string, unknown> = {},
+  query: Record<string, unknown> = {},
 ): `/${string}` {
   const params = new URLSearchParams();
 

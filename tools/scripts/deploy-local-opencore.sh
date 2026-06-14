@@ -646,6 +646,39 @@ verify_admin_bundle_api_base_url() {
 
   if grep \
     --fixed-strings \
+    "createOperationsFixtures" \
+    "$ROOT_DIR/apps/admin/src/pages/Monitor/Jobs.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "Using fallback job fixtures" \
+    "$ROOT_DIR/apps/admin/src/pages/Monitor/Jobs.tsx" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Live scheduler jobs" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Run log retention" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Clean run logs" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Unable to load live scheduler jobs" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null; then
+    echo "Admin bundle does not include live scheduler job run retention controls." >&2
+    echo "Refusing to deploy a stale or fixture-backed Monitor Jobs page." >&2
+    exit 1
+  fi
+
+  if grep \
+    --fixed-strings \
     "createIntegrationFixtures" \
     "$ROOT_DIR/apps/admin/src/pages/Integrations/WeChat.tsx" >/dev/null || \
     grep \

@@ -42,3 +42,4 @@ This ledger records state transitions only. Git log keeps commit hashes.
 | 107   | Monitor Status   | Status gained live CPU, memory, disk and process runtime resources.           | Status smoke plus Admin/deploy guards cover live runtime fields. |
 | 108   | Monitor Queues   | Queues gained guarded BullMQ pause/resume and live-only Admin data.           | Monitor smoke plus Admin/deploy guards cover queue control.      |
 | 109   | Security Logs    | Log Admin pages became live-only and operation logs gained server filters.    | Admin smoke plus deploy guards reject fixture-backed log pages.  |
+| 110   | Monitor Jobs     | Jobs gained terminal run-log retention cleanup and live-only Admin guards.    | Scheduler tests, monitor smoke and deploy guards cover cleanup.  |

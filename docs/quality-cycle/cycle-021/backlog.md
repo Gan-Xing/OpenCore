@@ -30,7 +30,7 @@ schema/business-code writing.
   runtime login policy.
 - Rounds 50-59: logout audit semantics, ordering, data-scope, notice
   inbox/read analytics, feature flags and login-log location.
-- Rounds 60-109: notice template/delivery/provider/outbox work, SMS HTTP and
+- Rounds 60-110: notice template/delivery/provider/outbox work, SMS HTTP and
   SMTP adapters, config vault and rollout/audience, operation-log cleanup, plus
   mail subject persistence, provider diagnostics, SMS HTTP secret injection,
   SMTP attachments, explicit SMTP TLS policy, inbox realtime events, Monitor
@@ -50,11 +50,12 @@ schema/business-code writing.
   Integration WeChat/WebSocket design Admin reads, plus live Collaboration
   Messages, Notices, Todos and Approval Lite operations, Monitor Status live
   CPU/memory/disk/process runtime resources, Monitor Queue pause/resume
-  controls and Security Logs live-only Admin filtering.
+  controls, Security Logs live-only Admin filtering and Monitor Jobs terminal
+  run-log retention cleanup.
 
-Latest done: Round 109 Security Logs Admin live-only filtering with
-operation/login log fixture fallbacks removed, operation-log server-side
-filters wired and Admin/deploy guards rejecting stale fixture-backed pages.
+Latest done: Round 110 Monitor Jobs terminal run-log retention cleanup with
+API/SDK/Admin coverage, queued/running cleanup rejection and deploy guards
+against stale fixture-backed Jobs pages.
 
 ## Active P1/P2 Queue
 

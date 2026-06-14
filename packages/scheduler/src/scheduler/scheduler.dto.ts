@@ -234,6 +234,37 @@ export class JobRunQueryDto {
   status?: 'queued' | 'running' | 'completed' | 'failed';
 }
 
+export class CleanJobRunLogsDto {
+  @ApiProperty({ required: false, default: 30, type: Number })
+  retentionDays?: number | string;
+
+  @ApiProperty({
+    enum: ['completed', 'failed'],
+    required: false,
+  })
+  status?: 'completed' | 'failed';
+}
+
+export class JobRunCleanResultDto {
+  @ApiProperty()
+  deleted!: true;
+
+  @ApiProperty()
+  jobCode!: string;
+
+  @ApiProperty()
+  affected!: number;
+
+  @ApiProperty()
+  retentionDays!: number;
+
+  @ApiProperty()
+  cutoffBefore!: string;
+
+  @ApiProperty({ enum: ['completed', 'failed'], isArray: true })
+  statuses!: readonly ('completed' | 'failed')[];
+}
+
 export class JobDefinitionSummaryDto {
   @ApiProperty()
   total!: number;

@@ -17,6 +17,7 @@ describe('OperationsController permission matrix', () => {
       ['claimQueuedJobs', ['monitor:job:manage']],
       ['listJobRuns', ['monitor:job:read']],
       ['getJobRun', ['monitor:job:read']],
+      ['cleanJobRuns', ['monitor:job:manage']],
       ['listCacheKeys', ['monitor:cache:read']],
       ['listCacheNames', ['monitor:cache:read']],
       ['getCacheValue', ['monitor:cache:read']],

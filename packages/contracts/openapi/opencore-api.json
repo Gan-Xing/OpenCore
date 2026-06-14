@@ -6946,6 +6946,43 @@
         },
         "security": [{ "bearer": [] }],
         "tags": ["Operations", "Monitor Jobs"]
+      },
+      "delete": {
+        "operationId": "OperationsController_cleanJobRuns",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "retentionDays",
+            "required": false,
+            "in": "query",
+            "schema": { "default": 30, "type": "number" }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string", "enum": ["completed", "failed"] }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobRunCleanResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Operations", "Monitor Jobs"]
       }
     },
     "/api/monitor/jobs/{code}/runs/{id}": {
@@ -11407,6 +11444,28 @@
           "totalPages": { "type": "number" }
         },
         "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "JobRunCleanResultDto": {
+        "type": "object",
+        "properties": {
+          "deleted": { "type": "boolean" },
+          "jobCode": { "type": "string" },
+          "affected": { "type": "number" },
+          "retentionDays": { "type": "number" },
+          "cutoffBefore": { "type": "string" },
+          "statuses": {
+            "type": "array",
+            "items": { "type": "string", "enum": ["completed", "failed"] }
+          }
+        },
+        "required": [
+          "deleted",
+          "jobCode",
+          "affected",
+          "retentionDays",
+          "cutoffBefore",
+          "statuses"
+        ]
       },
       "CacheKeyDto": {
         "type": "object",

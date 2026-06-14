@@ -53,7 +53,8 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   envelopes and vault key rotation are live.
 - Monitor/OpenForge/Scheduler: Monitor Jobs has a live Admin operation surface,
   registry visibility, registered handler diagnostics, cron dispatch, worker
-  claim, scheduler queue metrics and guarded queue pause/resume; Monitor
+  claim, scheduler queue metrics, guarded queue pause/resume and terminal
+  run-log retention cleanup; Monitor
   Status exposes live dependency checks plus CPU, memory, disk and process
   runtime resources; Monitor Cache has Redis-backed namespace/key operations
   with safe value preview and confirmed deletion;
@@ -200,6 +201,9 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
 - Round 109: Security log Admin pages no longer mask API failures with fixture
   rows; operation logs now use the API's actor/action/resource/location/status,
   duration and time filters from Admin.
+- Round 110: Monitor Jobs now exposes terminal run-log retention cleanup
+  through API/SDK/Admin, rejects queued/running cleanup and keeps the Jobs page
+  live-only with smoke/deploy guards.
 
 ## Explicit Non-Claims
 

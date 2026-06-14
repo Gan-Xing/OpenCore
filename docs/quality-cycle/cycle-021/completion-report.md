@@ -4,15 +4,14 @@ Date: 2026-06-14
 
 ## Latest Completed Round
 
-Round 109: Security Logs Admin live-only filtering.
+Round 110: Monitor Jobs terminal run-log retention cleanup.
 
 ## Closed
 
-- Removed operation/login log Admin fixture fallbacks.
-- Added operation-log Admin server-side filters for actor/action/resource,
-  location, status, duration and time.
-- Extended Admin smoke and deploy guards to reject stale fixture-backed
-  Security log pages.
+- Added managed terminal run-log cleanup across API/SDK/Admin.
+- Rejected queued/running cleanup and retained terminal-only cleanup semantics.
+- Kept Monitor Jobs Admin live-only with smoke/deploy guards against stale
+  fixture-backed bundles.
 
 ## Still Open
 

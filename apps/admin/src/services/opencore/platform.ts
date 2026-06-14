@@ -124,9 +124,11 @@ import {
   type TemplatePreviewSummary,
   type IpLocationLookupSummary,
   type IpLocationProviderStatusSummary,
+  type CleanJobRunLogsRequest,
   type JobDefinitionSummary,
   type JobQueryRequest,
   type JobRegistryEntrySummary,
+  type JobRunCleanSummary,
   type JobRunLogSummary,
   type JobRunQueryRequest,
   type LoginLogQueryRequest,
@@ -724,6 +726,13 @@ export async function listOpenCoreJobRuns(
     },
   );
   return [...page.items];
+}
+
+export function cleanOpenCoreJobRuns(
+  code: string,
+  query?: CleanJobRunLogsRequest,
+): Promise<JobRunCleanSummary> {
+  return operationsClient.cleanJobRuns(getRequiredAdminToken(), code, query);
 }
 
 export async function listOpenCoreCacheKeys(

@@ -29,6 +29,16 @@ export type SchedulerRunQuery = PageQueryInput & {
   status?: SchedulerJobRunLogRecord['status'];
 };
 
+export type SchedulerRunTerminalStatus = Extract<
+  SchedulerJobRunLogRecord['status'],
+  'completed' | 'failed'
+>;
+
+export type SchedulerRunCleanQuery = {
+  retentionDays?: number | string;
+  status?: SchedulerJobRunLogRecord['status'];
+};
+
 export type CreateSchedulerJobInput = {
   code: string;
   name: string;
@@ -67,6 +77,26 @@ export type SchedulerJobFilters = {
   enabled?: boolean;
   queueName?: string;
 };
+
+export type SchedulerRunCleanPolicy = {
+  cutoffBefore: Date;
+  retentionDays: number;
+  statuses: readonly SchedulerRunTerminalStatus[];
+};
+
+export type SchedulerRunCleanRecord = {
+  deleted: true;
+  jobCode: string;
+  affected: number;
+  retentionDays: number;
+  cutoffBefore: string;
+  statuses: readonly SchedulerRunTerminalStatus[];
+};
+
+const terminalRunStatuses: readonly SchedulerRunTerminalStatus[] = [
+  'completed',
+  'failed',
+];
 
 export type SchedulerNormalizedPageQuery = {
   page: number;
@@ -121,6 +151,11 @@ export abstract class SchedulerRepository {
     code: string,
     id: string,
   ): Promise<SchedulerJobRunLogRecord>;
+
+  abstract cleanJobRuns(
+    code: string,
+    query?: SchedulerRunCleanQuery,
+  ): Promise<SchedulerRunCleanRecord>;
 }
 
 export function normalizeSchedulerJobFilters(
@@ -326,6 +361,52 @@ export function normalizeSchedulerWorkerLimit(value: unknown): number {
   }
 
   return limit;
+}
+
+export function normalizeSchedulerRunCleanPolicy(
+  query: SchedulerRunCleanQuery = {},
+): SchedulerRunCleanPolicy {
+  const retentionDays = normalizeSchedulerRunRetentionDays(
+    query.retentionDays,
+  );
+  const statuses =
+    query.status === undefined
+      ? terminalRunStatuses
+      : normalizeSchedulerRunCleanStatus(query.status);
+
+  return {
+    cutoffBefore: new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000),
+    retentionDays,
+    statuses,
+  };
+}
+
+function normalizeSchedulerRunRetentionDays(value: unknown): number {
+  const retentionDays = Number(value ?? 30);
+
+  if (
+    !Number.isInteger(retentionDays) ||
+    retentionDays < 0 ||
+    retentionDays > 3650
+  ) {
+    throw new BadRequestException(
+      'Scheduler run retentionDays must be an integer between 0 and 3650.',
+    );
+  }
+
+  return retentionDays;
+}
+
+function normalizeSchedulerRunCleanStatus(
+  value: SchedulerJobRunLogRecord['status'],
+): readonly SchedulerRunTerminalStatus[] {
+  if (value === 'completed' || value === 'failed') {
+    return [value];
+  }
+
+  throw new BadRequestException(
+    'Scheduler run cleanup only supports completed or failed terminal runs.',
+  );
 }
 
 export function normalizeSchedulerDispatchNow(value: unknown): Date {
