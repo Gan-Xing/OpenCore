@@ -105,6 +105,8 @@ import {
   type ListUsersRequest,
   type OnlineUserQueryRequest,
   type OnlineUserSessionSummary,
+  type OnlineUserSummary,
+  type CleanExpiredOnlineUserSessionsResult,
   type OperationsSummary,
   type SystemNoticeQueryRequest,
   type QueueStatusList,
@@ -495,6 +497,16 @@ export async function listOpenCoreOnlineUsers(
     ...query,
   });
   return [...page.items];
+}
+
+export function getOpenCoreOnlineUserSummary(): Promise<OnlineUserSummary> {
+  return operationsClient.getOnlineUserSummary(getRequiredAdminToken());
+}
+
+export function cleanExpiredOpenCoreOnlineUsers(): Promise<CleanExpiredOnlineUserSessionsResult> {
+  return operationsClient.cleanExpiredOnlineUserSessions(
+    getRequiredAdminToken(),
+  );
 }
 
 export function getOpenCoreOnlineUser(

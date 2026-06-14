@@ -47,12 +47,12 @@ packages and OpenForge direct Prisma/migration/business-code writing.
 
 ## Current State
 
-Cycle-021 has completed 90 deployable stages.
+Cycle-021 has completed 91 deployable stages.
 
 - System/RBAC: notice, dept, post, menu, role, permission, user, dict, config
   and file loops are live.
-- Security/session: login policy, logout, force logout, online-user kick-out
-  and real revocation are live.
+- Security/session: login policy, logout, force logout, online-user kick-out,
+  registered-token allowlist enforcement and expired session cleanup are live.
 - Logs: login-log type/result, lockout, cleanup, actor/reason, deterministic
   location and structured IP/location provider lookup; operation-log
   list/detail/export/delete, duration and location fields, retention policy
@@ -78,11 +78,11 @@ Cycle-021 has completed 90 deployable stages.
   safe workbench for status, doctor, plan, diff, check, manifest list and
   apply/rollback dry-run, dry-run confirmation and manifest preview/detail.
 
-Latest runtime stage: Round 90 IP/location provider lookup. It adds a shared
-offline `opencore.builtin` lookup/status contract, exposes it through
-API/SDK/Admin, registers the OpenAPI tag and guards provider status,
-documentation-network lookup, invalid input and Admin bundle markers through
-smoke/deploy checks.
+Latest runtime stage: Round 91 token/session blacklist maintenance. It makes
+the Prisma-backed session registry an allowlist, rejects unknown token
+sessions, exposes online-user summary and expired-session cleanup through
+API/SDK/Admin and guards the flow through OpenAPI, smoke and deploy bundle
+markers.
 
 ## Next Queue
 

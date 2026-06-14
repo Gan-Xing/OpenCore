@@ -29,7 +29,7 @@ schema/business-code writing.
   runtime login policy.
 - Rounds 50-59: logout audit semantics, ordering, data-scope, notice
   inbox/read analytics, feature flags and login-log location.
-- Rounds 60-90: notice template/delivery/provider/outbox work, SMS HTTP and
+- Rounds 60-91: notice template/delivery/provider/outbox work, SMS HTTP and
   SMTP adapters, config vault and rollout/audience, operation-log cleanup, plus
   mail subject persistence, provider diagnostics, SMS HTTP secret injection,
   SMTP attachments, explicit SMTP TLS policy, inbox realtime events, Monitor
@@ -39,11 +39,11 @@ schema/business-code writing.
   keyring rotation, operation-log enrichment and retention scheduling, plus the
   OpenForge Admin safe workbench, dry-run confirmation, manifest preview/detail
   and Integration provider health/config audit, plus structured IP/location
-  provider lookup.
+  provider lookup and token/session blacklist maintenance.
 
-Latest done: Round 90 IP/location provider lookup with shared offline provider
-status, lookup API/SDK/Admin visibility, OpenAPI tag registration, smoke guards
-and Admin deploy markers.
+Latest done: Round 91 token/session blacklist maintenance with registered-token
+allowlist enforcement, expired-session cleanup, online-user summary
+API/SDK/Admin visibility, OpenAPI, smoke and deploy guards.
 
 ## Active P1/P2 Queue
 

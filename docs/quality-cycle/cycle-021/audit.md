@@ -54,6 +54,9 @@ manifest preview/detail through SDK/Admin with smoke coverage.
 Round 90 added structured IP/location provider status and lookup with shared
 common semantics, API/SDK/Admin visibility, OpenAPI tag registration and
 login-log smoke/deploy guards.
+Round 91 added token/session blacklist maintenance: registered-token allowlist
+enforcement, expired-session cleanup, Admin summary visibility and smoke/deploy
+guards.
 Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 `lint` must run sequentially.
 
@@ -61,7 +64,7 @@ Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 
 - Duplicate `/api/api` login is blocked by deploy/Admin smoke.
 - Stale Admin deployment is blocked by built bundle markers.
-- Revoked sessions/tokens must return 401.
+- Revoked, expired or unknown sessions/tokens must return 401.
 - Notice outbox smoke covers pending handoff, retry, process-to-sent, signed
   callback sync, scheduled retry caps, SMS HTTP host allowlist, SMTP
   config-vault auth, SMTP TLS policy, SMS HTTP secret injection, mail subject
@@ -73,6 +76,8 @@ Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 - IP/location smoke covers provider status, OpenAPI paths, documentation
   network lookup, invalid lookup and missing-IP guards; deploy checks Admin
   GeoIP bundle markers.
+- Online-user smoke covers summary, expired cleanup, force-logout audit,
+  revoked-token rejection and Admin blacklist-maintenance bundle markers.
 - Config smoke covers runtime shape, environment override governance, legacy
   vault envelope deserialization, secret version history, secret rotation,
   vault key rotation and no plaintext secret storage.

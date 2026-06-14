@@ -25,6 +25,8 @@ export {
 export {
   BatchKickOutSessionsDto,
   BatchKickOutSessionsResultDto,
+  CleanExpiredOnlineUserSessionsQueryDto,
+  CleanExpiredOnlineUserSessionsResultDto,
   KickOutSessionDto,
   OnlineUserQueryDto,
   OnlineUserSessionDto,

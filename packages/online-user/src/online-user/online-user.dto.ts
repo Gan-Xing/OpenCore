@@ -96,6 +96,22 @@ export class BatchKickOutSessionsResultDto {
   items!: readonly OnlineUserSessionDto[];
 }
 
+export class CleanExpiredOnlineUserSessionsQueryDto {
+  @ApiProperty({ required: false })
+  expiredBefore?: string;
+}
+
+export class CleanExpiredOnlineUserSessionsResultDto {
+  @ApiProperty()
+  deleted!: true;
+
+  @ApiProperty()
+  affected!: number;
+
+  @ApiProperty()
+  expiredBefore!: string;
+}
+
 export class OnlineUserSummaryDto {
   @ApiProperty()
   total!: number;
@@ -105,4 +121,10 @@ export class OnlineUserSummaryDto {
 
   @ApiProperty()
   revoked!: number;
+
+  @ApiProperty()
+  expired!: number;
+
+  @ApiProperty()
+  cleanupEligible!: number;
 }

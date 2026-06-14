@@ -1466,6 +1466,8 @@ if (
   !onlineUsersPage.includes('getOpenCoreOnlineUser') ||
   !onlineUsersPage.includes('kickOutOpenCoreOnlineUser') ||
   !onlineUsersPage.includes('kickOutOpenCoreOnlineUsers') ||
+  !onlineUsersPage.includes('getOpenCoreOnlineUserSummary') ||
+  !onlineUsersPage.includes('cleanExpiredOpenCoreOnlineUsers') ||
   !onlineUsersPage.includes('canManageOnlineUsers') ||
   !onlineUsersPage.includes('useAccess') ||
   !onlineUsersPage.includes('useCurrentPageFilters') ||
@@ -1473,6 +1475,9 @@ if (
   !onlineUsersPage.includes('dataSource={filteredRows}') ||
   !onlineUsersPage.includes('rows={filteredRows}') ||
   !onlineUsersPage.includes('Kick-out invalidates active bearer sessions') ||
+  !onlineUsersPage.includes('Token blacklist maintenance') ||
+  !onlineUsersPage.includes('Clean expired sessions') ||
+  !onlineUsersPage.includes('Cleanup eligible') ||
   !onlineUsersPage.includes('activeSelectedRows') ||
   !onlineUsersPage.includes('Kick selected') ||
   !onlineUsersPage.includes("label: 'Browser'") ||

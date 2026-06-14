@@ -22,7 +22,7 @@ failures have guards; and remaining omissions are explicit product boundaries.
 | `core.user`           | Meets         | CRUD, profile, password, avatar, import/export, binds.                                                   |
 | `core.dict`           | Meets         | Dict/item CRUD and enabled simple-list source.                                                           |
 | `core.file`           | Meets         | Authenticated upload/download and content smoke.                                                         |
-| `monitor.online-user` | Meets         | Batch kick-out, revocation and UA/IP fields.                                                             |
+| `monitor.online-user` | Meets         | Batch kick-out, revocation, registered-token allowlist, cleanup and UA/IP fields.                        |
 | `core.login-log`      | Meets current | Schema, lockout, cleanup, actor/reason, location and IP/location provider lookup.                        |
 | `core.config`         | Meets current | Runtime keys, feature flags, rollout, audience, environment overrides, vault, versions and key rotation. |
 | `core.notice`         | Enhance       | SMS HTTP, SMTP, mail subject, diagnostics, secrets, attachments, TLS policy and realtime events.         |
@@ -81,6 +81,9 @@ failures have guards; and remaining omissions are explicit product boundaries.
   coverage.
 - Round 90 added structured IP/location provider status and lookup through
   common/API/SDK/Admin, registered OpenAPI tags and smoke/deploy guards.
+- Round 91 added token/session blacklist maintenance with registered-token
+  allowlist enforcement, expired cleanup, Admin visibility and smoke/deploy
+  guards.
 
 ## Active Debt
 
@@ -95,7 +98,7 @@ failures have guards; and remaining omissions are explicit product boundaries.
 - Deployment: fixed script and fixed ports.
 - Admin: stale bundle marker checks.
 - API prefix: duplicate `/api/api` login guard.
-- Auth: revoked token/session returns 401.
+- Auth: revoked, expired or unknown token/session returns 401.
 - Notice outbox: pending, retry, process-to-sent, signed callback, scheduled
   retry caps, SMS HTTP host allowlist and secret injection, SMTP config-vault
   auth, SMTP TLS policy, mail outbox subject persistence, SMTP attachments,
@@ -106,6 +109,8 @@ failures have guards; and remaining omissions are explicit product boundaries.
 - IP/location: login-log smoke covers provider status, documentation-network
   lookup, invalid lookup, missing-IP guard and OpenAPI paths; deploy checks
   Admin GeoIP bundle markers.
+- Online users: smoke covers summary, expired cleanup, revoked-token rejection
+  and Admin blacklist-maintenance bundle markers.
 - Monitor jobs: Admin bundle markers and smoke cover summary, registry,
   whitelisted job upsert, unsafe policy guards, enable/disable,
   disabled-trigger rejection, manual trigger, handler execution, retry failure

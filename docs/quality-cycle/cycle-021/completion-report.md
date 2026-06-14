@@ -4,15 +4,16 @@ Date: 2026-06-14
 
 ## Latest Completed Round
 
-Round 90: IP/location provider status and lookup.
+Round 91: token/session blacklist maintenance.
 
 ## Closed
 
-- Added shared offline `opencore.builtin` IP/location status and lookup
-  contracts while preserving existing deterministic location labels.
-- Exposed lookup/status through API, SDK and the Login Logs Admin surface.
-- Added OpenAPI tag registration, login-log smoke checks and Admin deploy
-  bundle markers for GeoIP controls.
+- Made the Prisma-backed online-user session table a registered-token
+  allowlist: unknown, revoked and expired token sessions are rejected.
+- Added online-user summary and expired-session cleanup through API, SDK and
+  the Admin Online Users page.
+- Updated seed fixtures away from expired mock sessions and added OpenAPI,
+  smoke and deploy guards for blacklist maintenance.
 
 ## Still Open
 

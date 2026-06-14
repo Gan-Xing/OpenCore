@@ -6909,6 +6909,53 @@
         "tags": ["Operations", "Monitor Online Users"]
       }
     },
+    "/api/monitor/online-users/summary": {
+      "get": {
+        "operationId": "OperationsController_getOnlineUserSummary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnlineUserSummaryDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Operations", "Monitor Online Users"]
+      }
+    },
+    "/api/monitor/online-users/expired": {
+      "delete": {
+        "operationId": "OperationsController_cleanExpiredOnlineUserSessions",
+        "parameters": [
+          {
+            "name": "expiredBefore",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CleanExpiredOnlineUserSessionsResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Operations", "Monitor Online Users"]
+      }
+    },
     "/api/monitor/online-users/kick-out": {
       "post": {
         "operationId": "OperationsController_kickOutSessions",
@@ -10610,9 +10657,11 @@
         "properties": {
           "total": { "type": "number" },
           "active": { "type": "number" },
-          "revoked": { "type": "number" }
+          "revoked": { "type": "number" },
+          "expired": { "type": "number" },
+          "cleanupEligible": { "type": "number" }
         },
-        "required": ["total", "active", "revoked"]
+        "required": ["total", "active", "revoked", "expired", "cleanupEligible"]
       },
       "ReportSummaryDto": {
         "type": "object",
@@ -10921,6 +10970,15 @@
           "totalPages": { "type": "number" }
         },
         "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "CleanExpiredOnlineUserSessionsResultDto": {
+        "type": "object",
+        "properties": {
+          "deleted": { "type": "boolean" },
+          "affected": { "type": "number" },
+          "expiredBefore": { "type": "string" }
+        },
+        "required": ["deleted", "affected", "expiredBefore"]
       },
       "BatchKickOutSessionsDto": {
         "type": "object",

@@ -19,17 +19,19 @@ active debt and decisions that change future execution.
 
 ## Runtime State
 
-Cycle-021 has completed 90 deployable stages across
-System/Security/Monitor/Integration/Tools foundations. Round 90 added
-structured IP/location provider status and lookup backed by shared common
-semantics, API/SDK/Admin/OpenAPI, login-log smoke and Admin deploy markers.
+Cycle-021 has completed 91 deployable stages across
+System/Security/Monitor/Integration/Tools foundations. Round 91 added
+token/session blacklist maintenance with registered-token allowlist
+enforcement, expired-session cleanup, API/SDK/Admin/OpenAPI visibility, smoke
+and Admin deploy markers.
 
 ## Guard Register
 
 - API prefix: deploy/Admin smoke reject duplicate `/api/api` login.
 - Admin bundle: deploy script checks built chunks and current page markers.
 - Session revocation: auth, online-user and login-log smokes require revoked
-  tokens to return 401.
+  tokens to return 401; online-user unit tests also reject unknown and expired
+  token sessions.
 - Notice outbox: smoke covers pending handoff, idempotent execute, blank
   failure rejection, failed-to-retry, process-to-sent sync, signed callback
   sync, scheduled retry caps, SMS HTTP host allowlist, SMTP config-vault auth,
@@ -42,6 +44,8 @@ semantics, API/SDK/Admin/OpenAPI, login-log smoke and Admin deploy markers.
 - IP/location: login-log smoke covers provider status, OpenAPI paths,
   documentation-network lookup, invalid lookup and missing-IP guards; Admin
   deploy checks GeoIP provider/lookup markers.
+- Online users: smoke covers summary, expired cleanup, force-logout audit and
+  revoked-token rejection; deploy checks token blacklist maintenance markers.
 - Config/secret: smoke covers feature flags, audience rules, environment
   overrides, legacy vault envelope deserialization, secret version history,
   explicit secret rotation, vault key rotation and no plaintext secret-vault

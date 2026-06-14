@@ -25,6 +25,8 @@ describe('@opencore/online-user', () => {
       total: 2,
       active: 2,
       revoked: 0,
+      expired: 0,
+      cleanupEligible: 0,
     });
     await expect(
       service.kickOutSession('session_admin', {
@@ -41,6 +43,8 @@ describe('@opencore/online-user', () => {
       total: 2,
       active: 1,
       revoked: 1,
+      expired: 0,
+      cleanupEligible: 0,
     });
     await expect(
       service.kickOutSession('session_admin', {
@@ -90,6 +94,48 @@ describe('@opencore/online-user', () => {
     await expect(repository.assertSessionActive(tokenId)).rejects.toThrow(
       UnauthorizedException,
     );
+    await expect(
+      repository.assertSessionActive(`missing_${tokenId}`),
+    ).rejects.toThrow(UnauthorizedException);
+  });
+
+  it('summarizes and cleans expired seed token sessions', async () => {
+    const repository = new SeedOnlineUserRepository();
+    const service = new OnlineUserService(repository);
+    const tokenId = `token_expired_${randomUUID()}`;
+    const expiresAt = '2026-06-10T00:00:00.000Z';
+
+    await repository.registerSession({
+      userId: 'user_admin',
+      username: 'expired-admin',
+      tokenId,
+      ip: '10.0.0.2',
+      userAgent: 'jest',
+      lastSeenAt: '2026-06-09T00:00:00.000Z',
+      expiresAt,
+    });
+
+    await expect(
+      service.listOnlineUsers({ active: false, username: 'expired-admin' }),
+    ).resolves.toMatchObject({
+      total: 1,
+      items: [expect.objectContaining({ tokenId })],
+    });
+    await expect(repository.assertSessionActive(tokenId)).rejects.toThrow(
+      UnauthorizedException,
+    );
+    await expect(
+      service.cleanExpiredSessions({
+        expiredBefore: '2026-06-10T00:00:00.000Z',
+      }),
+    ).resolves.toEqual({
+      deleted: true,
+      affected: 1,
+      expiredBefore: '2026-06-10T00:00:00.000Z',
+    });
+    await expect(
+      service.listOnlineUsers({ username: 'expired-admin' }),
+    ).resolves.toMatchObject({ total: 0 });
   });
 
   describe('PrismaOnlineUserRepository integration', () => {
@@ -99,6 +145,8 @@ describe('@opencore/online-user', () => {
     const testRunId = randomUUID().slice(0, 8);
     const id = `session_test_${testRunId}`;
     const tokenId = `token_test_${testRunId}`;
+    const expiredId = `session_expired_${testRunId}`;
+    const expiredTokenId = `token_expired_${testRunId}`;
 
     beforeEach(async () => {
       await cleanupTestRows();
@@ -111,6 +159,17 @@ describe('@opencore/online-user', () => {
           userAgent: 'jest',
           lastSeenAt: new Date('2026-06-10T00:10:00.000Z'),
           expiresAt: new Date('2099-06-10T01:10:00.000Z'),
+        },
+      });
+      await prisma.onlineUserSession.create({
+        data: {
+          id: expiredId,
+          username: `expired_${testRunId}`,
+          tokenId: expiredTokenId,
+          ip: '127.0.0.2',
+          userAgent: 'jest',
+          lastSeenAt: new Date('2026-06-10T00:10:00.000Z'),
+          expiresAt: new Date('2026-06-10T01:10:00.000Z'),
         },
       });
     });
@@ -150,11 +209,46 @@ describe('@opencore/online-user', () => {
       await expect(repository.assertSessionActive(tokenId)).rejects.toThrow(
         UnauthorizedException,
       );
+      await expect(
+        repository.assertSessionActive(`missing_${tokenId}`),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('summarizes and cleans expired Prisma sessions without deleting active sessions', async () => {
+      await expect(
+        service.listOnlineUsers({ active: false, username: testRunId }),
+      ).resolves.toMatchObject({
+        total: 1,
+        items: [expect.objectContaining({ id: expiredId })],
+      });
+      await expect(
+        repository.assertSessionActive(expiredTokenId),
+      ).rejects.toThrow(UnauthorizedException);
+      const cleanResult = await service.cleanExpiredSessions({
+        expiredBefore: '2026-06-10T01:10:00.000Z',
+      });
+      expect(cleanResult).toMatchObject({
+        deleted: true,
+        expiredBefore: '2026-06-10T01:10:00.000Z',
+      });
+      expect(cleanResult.affected).toBeGreaterThanOrEqual(1);
+      await expect(service.getOnlineUser(id)).resolves.toMatchObject({
+        id,
+        tokenId,
+      });
+      await expect(service.getOnlineUser(expiredId)).rejects.toThrow();
     });
 
     async function cleanupTestRows(): Promise<void> {
       await prisma.onlineUserSession.deleteMany({
-        where: { OR: [{ id }, { tokenId }] },
+        where: {
+          OR: [
+            { id },
+            { tokenId },
+            { id: expiredId },
+            { tokenId: expiredTokenId },
+          ],
+        },
       });
     }
   });

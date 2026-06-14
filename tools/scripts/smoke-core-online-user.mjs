@@ -38,7 +38,11 @@ try {
   await request('/health/ready', { expected: [200] });
 
   if (checkDocs) {
-    await request(`${apiPrefix}/docs-json`, { expected: [200] });
+    const openApi = await request(`${apiPrefix}/docs-json`, {
+      expected: [200],
+    });
+    assertOpenApiPath(openApi, '/api/monitor/online-users/summary');
+    assertOpenApiPath(openApi, '/api/monitor/online-users/expired');
   }
 
   const loginResponse = await login();
@@ -51,6 +55,24 @@ try {
     'revocation login accessToken',
   );
   const revocationTokenId = parseBearerTokenId(revocationToken);
+
+  const summary = await apiRequest('/monitor/online-users/summary');
+  assertNumberAtLeast(summary.total, 1, 'online user summary total');
+  assertNumberAtLeast(summary.active, 1, 'online user summary active');
+  assertNumberAtLeast(summary.revoked, 0, 'online user summary revoked');
+  assertNumberAtLeast(summary.expired, 0, 'online user summary expired');
+  assertNumberAtLeast(
+    summary.cleanupEligible,
+    0,
+    'online user summary cleanupEligible',
+  );
+
+  const cleanupExpired = await apiRequest('/monitor/online-users/expired', {
+    method: 'DELETE',
+  });
+  assertEqual(cleanupExpired.deleted, true, 'expired cleanup deleted flag');
+  assertNumberAtLeast(cleanupExpired.affected, 0, 'expired cleanup affected');
+  assertString(cleanupExpired.expiredBefore, 'expired cleanup cutoff');
 
   const page = await apiRequest('/monitor/online-users?page=1&pageSize=20');
   assertArray(page.items, 'online user list items');
@@ -192,8 +214,16 @@ try {
       checks: [
         'health.live',
         'health.ready',
-        ...(checkDocs ? ['openapi.docs-json'] : []),
+        ...(checkDocs
+          ? [
+              'openapi.docs-json',
+              'openapi.online-user-summary-path',
+              'openapi.online-user-expired-cleanup-path',
+            ]
+          : []),
         'auth.login',
+        'monitor.online-user.summary',
+        'monitor.online-user.expired-cleanup',
         'monitor.online-user.list',
         'monitor.online-user.detail',
         'monitor.online-user.batch-kick-out',
@@ -400,6 +430,22 @@ function assertEqual(actual, expected, label) {
         expected,
       )}, received ${JSON.stringify(actual)}`,
     );
+  }
+}
+
+function assertNumberAtLeast(value, minimum, label) {
+  if (typeof value !== 'number' || value < minimum) {
+    throw new Error(
+      `Expected ${label} to be a number >= ${minimum}, received ${JSON.stringify(
+        value,
+      )}`,
+    );
+  }
+}
+
+function assertOpenApiPath(openApi, path) {
+  if (!openApi?.paths || !Object.hasOwn(openApi.paths, path)) {
+    throw new Error(`OpenAPI docs-json does not include ${path}`);
   }
 }
 

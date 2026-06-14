@@ -16,7 +16,13 @@ describe('OperationsRepository', () => {
       jobs: { total: 2, enabled: 2, disabled: 0 },
       jobRuns: { total: 1, completed: 1, failed: 0 },
       cache: { keyCount: 2, totalSizeBytes: 4608 },
-      onlineUsers: { total: 2, active: 2, revoked: 0 },
+      onlineUsers: {
+        total: 2,
+        active: 2,
+        revoked: 0,
+        expired: 0,
+        cleanupEligible: 0,
+      },
       reports: { total: 1, enabled: 1, disabled: 0 },
       exportJobStatus: 'design-only',
     });

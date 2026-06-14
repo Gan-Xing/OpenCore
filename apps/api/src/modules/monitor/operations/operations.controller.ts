@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -20,6 +21,8 @@ import {
   CacheKeyQueryDto,
   BatchKickOutSessionsDto,
   BatchKickOutSessionsResultDto,
+  CleanExpiredOnlineUserSessionsQueryDto,
+  CleanExpiredOnlineUserSessionsResultDto,
   ClaimQueuedJobsDto,
   ClearCacheDto,
   CreateJobDefinitionDto,
@@ -36,6 +39,7 @@ import {
   KickOutSessionDto,
   OnlineUserSessionDto,
   OnlineUserSessionPageDto,
+  OnlineUserSummaryDto,
   OnlineUserQueryDto,
   OperationsSummaryDto,
   ReportDefinitionDto,
@@ -207,6 +211,24 @@ export class OperationsController {
     @Query() query: OnlineUserQueryDto,
   ): Promise<OnlineUserSessionPageDto> {
     return this.onlineUsers.listOnlineUsers(query);
+  }
+
+  @Get('monitor/online-users/summary')
+  @ApiTags('Monitor Online Users')
+  @RequirePermission('monitor:online-user:read')
+  @ApiOkResponse({ type: OnlineUserSummaryDto })
+  getOnlineUserSummary(): Promise<OnlineUserSummaryDto> {
+    return this.onlineUsers.getSummary();
+  }
+
+  @Delete('monitor/online-users/expired')
+  @ApiTags('Monitor Online Users')
+  @RequirePermission('monitor:online-user:manage')
+  @ApiOkResponse({ type: CleanExpiredOnlineUserSessionsResultDto })
+  cleanExpiredOnlineUserSessions(
+    @Query() query: CleanExpiredOnlineUserSessionsQueryDto,
+  ): Promise<CleanExpiredOnlineUserSessionsResultDto> {
+    return this.onlineUsers.cleanExpiredSessions(query);
   }
 
   @Post('monitor/online-users/kick-out')

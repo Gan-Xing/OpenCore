@@ -1,6 +1,8 @@
 import type {
   BatchKickOutSessionsRequest,
   BatchKickOutSessionsResult,
+  CleanExpiredOnlineUserSessionsRequest,
+  CleanExpiredOnlineUserSessionsResult,
   CacheClearResultSummary,
   CacheKeyPage,
   CacheKeyQueryRequest,
@@ -21,6 +23,7 @@ import type {
   OnlineUserSessionPage,
   OnlineUserQueryRequest,
   OnlineUserSessionSummary,
+  OnlineUserSummary,
   OperationsSummary,
   PageRequest,
   ReportDefinitionPage,
@@ -89,6 +92,11 @@ export type OperationsClient = {
     token: string,
     query?: OnlineUserQueryRequest,
   ) => Promise<OnlineUserSessionPage>;
+  getOnlineUserSummary: (token: string) => Promise<OnlineUserSummary>;
+  cleanExpiredOnlineUserSessions: (
+    token: string,
+    query?: CleanExpiredOnlineUserSessionsRequest,
+  ) => Promise<CleanExpiredOnlineUserSessionsResult>;
   getOnlineUser: (
     token: string,
     id: string,
@@ -191,6 +199,16 @@ export function createOperationsClient(request: SdkRequest): OperationsClient {
       request<OnlineUserSessionPage>(
         withQuery('/monitor/online-users', query),
         { token },
+      ),
+    getOnlineUserSummary: (token) =>
+      request<OnlineUserSummary>('/monitor/online-users/summary', { token }),
+    cleanExpiredOnlineUserSessions: (token, query) =>
+      request<CleanExpiredOnlineUserSessionsResult>(
+        withQuery('/monitor/online-users/expired', query),
+        {
+          method: 'DELETE',
+          token,
+        },
       ),
     getOnlineUser: (token, id) =>
       request<OnlineUserSessionSummary>(

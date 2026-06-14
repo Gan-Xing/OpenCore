@@ -3,6 +3,8 @@ import type { PageResult } from '@opencore/common';
 import type {
   BatchKickOutSessionsDto,
   BatchKickOutSessionsResultDto,
+  CleanExpiredOnlineUserSessionsQueryDto,
+  CleanExpiredOnlineUserSessionsResultDto,
   KickOutSessionDto,
   OnlineUserSummaryDto,
 } from './online-user.dto';
@@ -41,5 +43,11 @@ export class OnlineUserService {
 
   getSummary(): Promise<OnlineUserSummaryDto> {
     return this.repository.getSummary();
+  }
+
+  cleanExpiredSessions(
+    input: CleanExpiredOnlineUserSessionsQueryDto = {},
+  ): Promise<CleanExpiredOnlineUserSessionsResultDto> {
+    return this.repository.cleanExpiredSessions(input);
   }
 }

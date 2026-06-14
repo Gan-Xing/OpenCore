@@ -108,6 +108,8 @@ export type OperationsSummary = {
     total: number;
     active: number;
     revoked: number;
+    expired: number;
+    cleanupEligible: number;
   };
   reports: {
     total: number;
@@ -183,6 +185,18 @@ export type BatchKickOutSessionsResult = {
   kicked: number;
   skipped: number;
   items: readonly OnlineUserSessionSummary[];
+};
+
+export type OnlineUserSummary = OperationsSummary['onlineUsers'];
+
+export type CleanExpiredOnlineUserSessionsRequest = {
+  expiredBefore?: string;
+};
+
+export type CleanExpiredOnlineUserSessionsResult = {
+  deleted: true;
+  affected: number;
+  expiredBefore: string;
 };
 
 export type CreateReportDefinitionRequest = Omit<
@@ -340,7 +354,7 @@ export function createOperationsFixtures(): OperationsFixtures {
       browser: 'OpenCore Admin',
       os: 'Unknown',
       lastSeenAt: '2026-06-10T00:00:00.000Z',
-      expiresAt: '2026-06-10T01:00:00.000Z',
+      expiresAt: '2099-06-10T01:00:00.000Z',
     },
     {
       id: 'session_operator',
@@ -351,7 +365,7 @@ export function createOperationsFixtures(): OperationsFixtures {
       browser: 'OpenCore Smoke',
       os: 'Unknown',
       lastSeenAt: '2026-06-10T00:05:00.000Z',
-      expiresAt: '2026-06-10T01:05:00.000Z',
+      expiresAt: '2099-06-10T01:05:00.000Z',
     },
   ];
   const reports: readonly ReportDefinitionSummary[] = [
@@ -406,6 +420,8 @@ export function createOperationsFixtures(): OperationsFixtures {
         total: onlineUsers.length,
         active: onlineUsers.filter((session) => !session.revokedAt).length,
         revoked: onlineUsers.filter((session) => session.revokedAt).length,
+        expired: 0,
+        cleanupEligible: 0,
       },
       reports: {
         total: reports.length,

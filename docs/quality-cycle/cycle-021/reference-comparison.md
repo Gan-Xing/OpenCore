@@ -26,8 +26,9 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
 
 - System/RBAC: menu, role, permission, user, dept, post, dict and config are
   live with multiple hardening stages.
-- Auth/session: login policy, logout, force logout, online-user kick-out and
-  token/session revocation are real behavior.
+- Auth/session: login policy, logout, force logout, online-user kick-out,
+  token/session revocation, registered-token allowlist enforcement and expired
+  cleanup are real behavior.
 - Logs: login-log has schema, lockout, cleanup, actor/reason, location and
   structured IP/location provider lookup; operation-log has
   list/detail/export/delete, duration/location enrichment, retention cleanup
@@ -114,6 +115,9 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
 - Round 90: IP/location is a shared offline provider contract with
   lookup/status API, SDK/Admin visibility, OpenAPI tag registration and
   login-log smoke/deploy guards.
+- Round 91: Online-user sessions act as the bearer-token allowlist/blacklist;
+  unknown, revoked and expired sessions are rejected, expired records can be
+  cleaned through API/SDK/Admin and the flow is smoke/deploy guarded.
 
 ## Explicit Non-Claims
 

@@ -41,6 +41,16 @@ export type BatchKickOutSessionsResult = {
   items: readonly OnlineUserSessionRecord[];
 };
 
+export type CleanExpiredOnlineUserSessionsInput = {
+  expiredBefore?: string;
+};
+
+export type CleanExpiredOnlineUserSessionsResult = {
+  deleted: true;
+  affected: number;
+  expiredBefore: string;
+};
+
 export type OnlineUserNormalizedPageQuery = {
   page: number;
   pageSize: number;
@@ -63,6 +73,10 @@ export abstract class OnlineUserRepository extends SecurityAuthSessionRepository
   ): Promise<OnlineUserSessionRecord>;
 
   abstract getSummary(): Promise<OnlineUserSummaryDto>;
+
+  abstract cleanExpiredSessions(
+    input?: CleanExpiredOnlineUserSessionsInput,
+  ): Promise<CleanExpiredOnlineUserSessionsResult>;
 
   async kickOutSessions(
     body: BatchKickOutSessionsInput,
@@ -142,12 +156,22 @@ export function createOnlineUserPageResult<T>(
 }
 
 export function createOnlineUserSummary(
-  sessions: readonly Pick<OnlineUserSessionRecord, 'revokedAt'>[],
+  sessions: readonly Pick<OnlineUserSessionRecord, 'expiresAt' | 'revokedAt'>[],
+  now = new Date().toISOString(),
 ): OnlineUserSummaryDto {
+  const expired = sessions.filter((session) =>
+    isOnlineUserSessionExpired(session, now),
+  ).length;
+
   return {
     total: sessions.length,
-    active: sessions.filter((session) => !session.revokedAt).length,
+    active: sessions.filter(
+      (session) =>
+        !session.revokedAt && !isOnlineUserSessionExpired(session, now),
+    ).length,
     revoked: sessions.filter((session) => session.revokedAt).length,
+    expired,
+    cleanupEligible: expired,
   };
 }
 
@@ -174,6 +198,39 @@ export function assertTokenSessionActive(input: {
   if (input.expiresAt && input.expiresAt <= new Date().toISOString()) {
     throw new UnauthorizedException('Bearer token session expired');
   }
+}
+
+export function assertTokenSessionRegistered<T>(
+  session: T | null | undefined,
+  tokenId: string,
+): NonNullable<T> {
+  if (!session) {
+    throw new UnauthorizedException(
+      `Bearer token session is not registered: ${tokenId}`,
+    );
+  }
+
+  return session;
+}
+
+export function isOnlineUserSessionExpired(
+  session: Pick<OnlineUserSessionRecord, 'expiresAt'>,
+  now = new Date().toISOString(),
+): boolean {
+  return session.expiresAt <= now;
+}
+
+export function normalizeExpiredBefore(value: string | undefined): string {
+  if (!value) {
+    return new Date().toISOString();
+  }
+
+  const timestamp = Date.parse(value);
+  if (Number.isNaN(timestamp)) {
+    throw new BadRequestException('expiredBefore must be an ISO date-time');
+  }
+
+  return new Date(timestamp).toISOString();
 }
 
 export function requireOnlineUserSession<T>(

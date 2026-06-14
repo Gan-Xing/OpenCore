@@ -23,7 +23,7 @@ export const seedOnlineUserSessions: readonly OnlineUserSessionRecord[] = [
     browser: 'OpenCore Admin',
     os: 'Unknown',
     lastSeenAt: '2026-06-10T00:00:00.000Z',
-    expiresAt: '2026-06-10T01:00:00.000Z',
+    expiresAt: '2099-06-10T01:00:00.000Z',
   },
   {
     id: 'session_operator',
@@ -34,6 +34,6 @@ export const seedOnlineUserSessions: readonly OnlineUserSessionRecord[] = [
     browser: 'OpenCore Smoke',
     os: 'Unknown',
     lastSeenAt: '2026-06-10T00:05:00.000Z',
-    expiresAt: '2026-06-10T01:05:00.000Z',
+    expiresAt: '2099-06-10T01:05:00.000Z',
   },
 ];

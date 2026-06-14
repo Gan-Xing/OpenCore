@@ -20,6 +20,8 @@ describe('OperationsController permission matrix', () => {
       ['listCacheKeys', ['monitor:cache:read']],
       ['clearCache', ['monitor:cache:manage']],
       ['listOnlineUsers', ['monitor:online-user:read']],
+      ['getOnlineUserSummary', ['monitor:online-user:read']],
+      ['cleanExpiredOnlineUserSessions', ['monitor:online-user:manage']],
       ['getOnlineUser', ['monitor:online-user:read']],
       ['kickOutSessions', ['monitor:online-user:manage']],
       ['kickOutSession', ['monitor:online-user:manage']],

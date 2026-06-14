@@ -8,14 +8,17 @@ import type {
 import type { OnlineUserSessionRecord } from './online-user.records';
 import {
   assertTokenSessionActive,
+  assertTokenSessionRegistered,
   assertSessionActive,
   createOnlineUserPageResult,
   createOnlineUserSummary,
+  normalizeExpiredBefore,
   normalizeOnlineUserFilters,
   normalizeOnlineUserPageQuery,
   OnlineUserRepository,
   parseOnlineUserAgent,
   requireOnlineUserSession,
+  type CleanExpiredOnlineUserSessionsInput,
   type KickOutSessionInput,
   type OnlineUserQuery,
 } from './online-user.repository';
@@ -46,9 +49,17 @@ export class PrismaOnlineUserRepository extends OnlineUserRepository {
     const where = {
       ...(filters.active === undefined
         ? {}
-        : {
-            revokedAt: filters.active ? null : { not: null },
-          }),
+        : filters.active
+          ? {
+              revokedAt: null,
+              expiresAt: { gt: new Date() },
+            }
+          : {
+              OR: [
+                { revokedAt: { not: null } },
+                { expiresAt: { lte: new Date() } },
+              ],
+            }),
       ...(filters.username === undefined
         ? {}
         : { username: { contains: filters.username } }),
@@ -107,14 +118,12 @@ export class PrismaOnlineUserRepository extends OnlineUserRepository {
       },
     });
 
-    if (!session) {
-      return;
-    }
+    const registeredSession = assertTokenSessionRegistered(session, tokenId);
 
     assertTokenSessionActive({
       tokenId,
-      revokedAt: session.revokedAt?.toISOString(),
-      expiresAt: session.expiresAt.toISOString(),
+      revokedAt: registeredSession.revokedAt?.toISOString(),
+      expiresAt: registeredSession.expiresAt.toISOString(),
     });
 
     await this.prisma.onlineUserSession.update({
@@ -166,14 +175,30 @@ export class PrismaOnlineUserRepository extends OnlineUserRepository {
 
   async getSummary() {
     const sessions = await this.prisma.onlineUserSession.findMany({
-      select: { revokedAt: true },
+      select: { expiresAt: true, revokedAt: true },
     });
 
     return createOnlineUserSummary(
       sessions.map((session) => ({
+        expiresAt: session.expiresAt.toISOString(),
         revokedAt: session.revokedAt?.toISOString(),
       })),
     );
+  }
+
+  async cleanExpiredSessions(input: CleanExpiredOnlineUserSessionsInput = {}) {
+    const expiredBefore = normalizeExpiredBefore(input.expiredBefore);
+    const result = await this.prisma.onlineUserSession.deleteMany({
+      where: {
+        expiresAt: { lte: new Date(expiredBefore) },
+      },
+    });
+
+    return {
+      deleted: true as const,
+      affected: result.count,
+      expiredBefore,
+    };
   }
 
   private async findSession(id: string): Promise<OnlineUserSessionRecord> {

@@ -54,6 +54,10 @@ describe('createOperationsClient', () => {
       dryRun: true,
     });
     await client.listOnlineUsers('token', { active: true });
+    await client.getOnlineUserSummary('token');
+    await client.cleanExpiredOnlineUserSessions('token', {
+      expiredBefore: '2026-06-10T00:00:00.000Z',
+    });
     await client.getOnlineUser('token', 'session_admin');
     await client.kickOutSession('token', 'session_admin', {
       actor: 'admin',
@@ -97,6 +101,11 @@ describe('createOperationsClient', () => {
       { path: '/monitor/cache?prefix=opencore%3Aadmin' },
       { path: '/monitor/cache/clear', method: 'POST' },
       { path: '/monitor/online-users?active=true' },
+      { path: '/monitor/online-users/summary' },
+      {
+        path: '/monitor/online-users/expired?expiredBefore=2026-06-10T00%3A00%3A00.000Z',
+        method: 'DELETE',
+      },
       { path: '/monitor/online-users/session_admin' },
       { path: '/monitor/online-users/session_admin/kick-out', method: 'POST' },
       { path: '/monitor/online-users/kick-out', method: 'POST' },

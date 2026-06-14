@@ -10,16 +10,20 @@ import {
 } from './online-user.records';
 import {
   assertTokenSessionActive,
+  assertTokenSessionRegistered,
   assertSessionActive,
   compareOnlineUserSessions,
   createOnlineUserPageResult,
   createOnlineUserSummary,
+  isOnlineUserSessionExpired,
+  normalizeExpiredBefore,
   normalizeOnlineUserFilters,
   normalizeOnlineUserPageQuery,
   OnlineUserRepository,
   parseOnlineUserAgent,
   requireOnlineUserSession,
   type KickOutSessionInput,
+  type CleanExpiredOnlineUserSessionsInput,
   type OnlineUserQuery,
 } from './online-user.repository';
 
@@ -65,6 +69,9 @@ export class SeedOnlineUserRepository extends OnlineUserRepository {
       userAgent: record.userAgent,
       lastSeenAt: record.lastSeenAt,
       expiresAt: record.expiresAt,
+      revokedAt: undefined,
+      revokedBy: undefined,
+      revokedReason: undefined,
     });
 
     if (existing) {
@@ -76,12 +83,10 @@ export class SeedOnlineUserRepository extends OnlineUserRepository {
   }
 
   async assertSessionActive(tokenId: string): Promise<void> {
-    const session = this.sessions.find((row) => row.tokenId === tokenId);
-
-    if (!session) {
-      return;
-    }
-
+    const session = assertTokenSessionRegistered(
+      this.sessions.find((row) => row.tokenId === tokenId),
+      tokenId,
+    );
     assertTokenSessionActive(session);
     session.lastSeenAt = new Date().toISOString();
   }
@@ -118,6 +123,20 @@ export class SeedOnlineUserRepository extends OnlineUserRepository {
     return createOnlineUserSummary(this.sessions);
   }
 
+  async cleanExpiredSessions(input: CleanExpiredOnlineUserSessionsInput = {}) {
+    const expiredBefore = normalizeExpiredBefore(input.expiredBefore);
+    const beforeCount = this.sessions.length;
+    this.sessions = this.sessions.filter(
+      (session) => !isOnlineUserSessionExpired(session, expiredBefore),
+    );
+
+    return {
+      deleted: true as const,
+      affected: beforeCount - this.sessions.length,
+      expiredBefore,
+    };
+  }
+
   private findSession(id: string): OnlineUserSessionRecord {
     return requireOnlineUserSession(
       this.sessions.find((session) => session.id === id),
@@ -133,8 +152,8 @@ function matchesActive(
   return active === undefined
     ? true
     : active
-      ? !session.revokedAt
-      : Boolean(session.revokedAt);
+      ? !session.revokedAt && !isOnlineUserSessionExpired(session)
+      : Boolean(session.revokedAt) || isOnlineUserSessionExpired(session);
 }
 
 function matchesUsername(

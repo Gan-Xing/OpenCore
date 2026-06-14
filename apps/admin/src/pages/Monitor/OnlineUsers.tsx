@@ -1,4 +1,5 @@
 import {
+  ClearOutlined,
   DisconnectOutlined,
   EyeOutlined,
   ReloadOutlined,
@@ -12,12 +13,14 @@ import { useAccess } from '@umijs/max';
 import {
   createOperationsFixtures,
   type OnlineUserSessionSummary,
+  type OnlineUserSummary,
 } from '@opencore/sdk';
 import {
   Alert,
   Button,
   Modal,
   Space,
+  Statistic,
   Tag,
   Tooltip,
   Typography,
@@ -25,7 +28,9 @@ import {
 } from 'antd';
 import { useEffect, useMemo, useState, type Key } from 'react';
 import {
+  cleanExpiredOpenCoreOnlineUsers,
   getOpenCoreOnlineUser,
+  getOpenCoreOnlineUserSummary,
   kickOutOpenCoreOnlineUsers,
   kickOutOpenCoreOnlineUser,
   listOpenCoreOnlineUsers,
@@ -46,6 +51,7 @@ import {
 } from '../shared/ReadOnlyDetailDrawer';
 
 const fallbackRows = createOperationsFixtures().onlineUsers;
+const fallbackSummary = createOperationsFixtures().summary.onlineUsers;
 const exportColumns: CurrentPageExportColumn<OnlineUserSessionSummary>[] = [
   { title: 'ID', dataIndex: 'id' },
   { title: 'Username', dataIndex: 'username' },
@@ -80,10 +86,15 @@ function createFilterOptions(
       options: [
         { label: 'active', value: 'active' },
         { label: 'revoked', value: 'revoked' },
+        { label: 'expired', value: 'expired' },
       ],
       placeholder: 'Status',
       predicate: (record, value) =>
-        value === 'active' ? !record.revokedAt : Boolean(record.revokedAt),
+        value === 'active'
+          ? isOnlineUserActive(record)
+          : value === 'expired'
+            ? isOnlineUserExpired(record)
+            : Boolean(record.revokedAt),
     },
     {
       key: 'username',
@@ -117,7 +128,7 @@ function createDetailFields(record: OnlineUserSessionSummary): DetailField[] {
     { label: 'User Agent', value: record.userAgent },
     { label: 'Last Seen', value: record.lastSeenAt },
     { label: 'Expires At', value: record.expiresAt },
-    { label: 'Status', value: record.revokedAt ? 'revoked' : 'active' },
+    { label: 'Status', value: formatOnlineUserStatus(record) },
     { label: 'Revoked At', value: record.revokedAt },
     { label: 'Revoked By', value: record.revokedBy },
     {
@@ -126,6 +137,30 @@ function createDetailFields(record: OnlineUserSessionSummary): DetailField[] {
       sensitive: true,
     },
   ];
+}
+
+function isOnlineUserExpired(record: OnlineUserSessionSummary): boolean {
+  return record.expiresAt <= new Date().toISOString();
+}
+
+function isOnlineUserActive(record: OnlineUserSessionSummary): boolean {
+  return !record.revokedAt && !isOnlineUserExpired(record);
+}
+
+function formatOnlineUserStatus(record: OnlineUserSessionSummary): string {
+  if (record.revokedAt) {
+    return 'revoked';
+  }
+
+  return isOnlineUserExpired(record) ? 'expired' : 'active';
+}
+
+function statusColor(record: OnlineUserSessionSummary): string {
+  if (record.revokedAt) {
+    return 'red';
+  }
+
+  return isOnlineUserExpired(record) ? 'orange' : 'green';
 }
 
 export default function OnlineUsersPage() {
@@ -139,6 +174,8 @@ export default function OnlineUsersPage() {
     useState<OnlineUserSessionSummary>();
   const [kickingId, setKickingId] = useState<string>();
   const [bulkKicking, setBulkKicking] = useState(false);
+  const [cleaningExpired, setCleaningExpired] = useState(false);
+  const [summary, setSummary] = useState<OnlineUserSummary>(fallbackSummary);
   const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
   const filterOptions = useMemo(() => createFilterOptions(rows), [rows]);
   const { filteredRows, toolbar: filterToolbar } =
@@ -151,7 +188,7 @@ export default function OnlineUsersPage() {
   const activeSelectedRows = useMemo(
     () =>
       filteredRows.filter(
-        (row) => selectedRowKeys.includes(row.id) && !row.revokedAt,
+        (row) => selectedRowKeys.includes(row.id) && isOnlineUserActive(row),
       ),
     [filteredRows, selectedRowKeys],
   );
@@ -159,7 +196,12 @@ export default function OnlineUsersPage() {
   const loadOnlineUsers = async () => {
     setLoading(true);
     try {
-      setRows(await listOpenCoreOnlineUsers());
+      const [nextRows, nextSummary] = await Promise.all([
+        listOpenCoreOnlineUsers(),
+        getOpenCoreOnlineUserSummary(),
+      ]);
+      setRows(nextRows);
+      setSummary(nextSummary);
       setLoadError(undefined);
     } catch (error: unknown) {
       setRows(fallbackRows);
@@ -200,6 +242,27 @@ export default function OnlineUsersPage() {
           await loadOnlineUsers();
         } finally {
           setKickingId(undefined);
+        }
+      },
+    });
+  };
+
+  const confirmCleanExpired = () => {
+    Modal.confirm({
+      title: 'Clean expired sessions?',
+      content:
+        'Expired bearer session records will be removed after their JWT expiry has passed.',
+      okButtonProps: { danger: true },
+      okText: 'Clean expired',
+      onOk: async () => {
+        setCleaningExpired(true);
+        try {
+          const result = await cleanExpiredOpenCoreOnlineUsers();
+          message.success(`Cleaned ${result.affected} expired sessions`);
+          setSelectedRowKeys([]);
+          await loadOnlineUsers();
+        } finally {
+          setCleaningExpired(false);
         }
       },
     });
@@ -251,9 +314,7 @@ export default function OnlineUsersPage() {
       title: 'Status',
       width: 112,
       render: (_, record) => (
-        <Tag color={record.revokedAt ? 'red' : 'green'}>
-          {record.revokedAt ? 'revoked' : 'active'}
-        </Tag>
+        <Tag color={statusColor(record)}>{formatOnlineUserStatus(record)}</Tag>
       ),
     },
     {
@@ -272,8 +333,8 @@ export default function OnlineUsersPage() {
           </Tooltip>
           <Tooltip
             title={
-              record.revokedAt
-                ? 'Already revoked'
+              !isOnlineUserActive(record)
+                ? `Already ${formatOnlineUserStatus(record)}`
                 : canManageOnlineUsers
                   ? 'Kick out'
                   : 'Requires monitor:online-user:manage'
@@ -282,7 +343,7 @@ export default function OnlineUsersPage() {
             <Button
               aria-label={`Kick out online user ${record.id}`}
               danger
-              disabled={Boolean(record.revokedAt) || !canManageOnlineUsers}
+              disabled={!isOnlineUserActive(record) || !canManageOnlineUsers}
               icon={<DisconnectOutlined />}
               loading={kickingId === record.id}
               onClick={() => confirmKickOut(record)}
@@ -305,6 +366,15 @@ export default function OnlineUsersPage() {
           style={{ marginBottom: 16 }}
         />
       ) : null}
+      <Space size="large" style={{ marginBottom: 16 }} wrap>
+        <Typography.Text type="secondary">
+          Token blacklist maintenance
+        </Typography.Text>
+        <Statistic title="Active sessions" value={summary.active} />
+        <Statistic title="Revoked sessions" value={summary.revoked} />
+        <Statistic title="Expired sessions" value={summary.expired} />
+        <Statistic title="Cleanup eligible" value={summary.cleanupEligible} />
+      </Space>
       <ProTable<OnlineUserSessionSummary>
         rowKey="id"
         search={false}
@@ -314,6 +384,24 @@ export default function OnlineUsersPage() {
           <Typography.Text key="kick-out-policy" type="secondary">
             Kick-out invalidates active bearer sessions
           </Typography.Text>,
+          <Tooltip
+            key="clean-expired"
+            title={
+              canManageOnlineUsers
+                ? 'Clean expired sessions'
+                : 'Requires monitor:online-user:manage'
+            }
+          >
+            <Button
+              danger
+              disabled={!canManageOnlineUsers}
+              icon={<ClearOutlined />}
+              loading={cleaningExpired}
+              onClick={confirmCleanExpired}
+            >
+              Clean expired sessions
+            </Button>
+          </Tooltip>,
           <Tooltip
             key="bulk-kick"
             title={
@@ -357,7 +445,7 @@ export default function OnlineUsersPage() {
           selectedRowKeys,
           onChange: (keys) => setSelectedRowKeys(keys),
           getCheckboxProps: (record) => ({
-            disabled: Boolean(record.revokedAt) || !canManageOnlineUsers,
+            disabled: !isOnlineUserActive(record) || !canManageOnlineUsers,
           }),
         }}
       />
