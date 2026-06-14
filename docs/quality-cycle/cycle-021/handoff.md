@@ -47,7 +47,7 @@ packages and OpenForge direct Prisma/migration/business-code writing.
 
 ## Current State
 
-Cycle-021 has completed 96 deployable stages.
+Cycle-021 has completed 97 deployable stages.
 
 - System/RBAC: notice, dept, post, menu, role, permission, user, dict, config
   and file loops are live.
@@ -82,15 +82,16 @@ Cycle-021 has completed 96 deployable stages.
   key/prefix deletion instead of Admin fixtures or seed key arrays. Monitor
   Version now uses live runtime/deployment metadata instead of an Admin
   fixture page.
-- OpenForge: CLI/core safety remains no-write by default; Admin now has a live
-  safe workbench for status, doctor, plan, diff, check, manifest list and
-  apply/rollback dry-run, dry-run confirmation and manifest preview/detail.
+- Tools/OpenForge: Tool OpenAPI drift now reads live contract snapshot metadata
+  through API/SDK/Admin instead of a fixture page. CLI/core safety remains
+  no-write by default; Admin now has a live safe workbench for status, doctor,
+  plan, diff, check, manifest list and apply/rollback dry-run, dry-run
+  confirmation and manifest preview/detail.
 
-Latest runtime stage: Round 96 Monitor Version live runtime metadata. It moves
-the Admin Version page from `createVersionInfoFixture()` to the live SDK
-version API, adds runtime/deployment fields, injects commit/build metadata in
-the fixed deploy script and guards the API/Admin surface through smoke/deploy
-checks.
+Latest runtime stage: Round 97 Tool OpenAPI live drift metadata. It replaces
+the Admin OpenAPI fixture page with live SDK drift status, adds snapshot
+exists/hash/path/schema/operation metadata to the API/OpenAPI/SDK contract and
+guards the page through tool smoke, Admin smoke and deploy bundle markers.
 
 ## Next Queue
 

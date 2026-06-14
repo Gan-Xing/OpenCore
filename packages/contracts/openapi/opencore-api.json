@@ -11523,18 +11523,33 @@
       "OpenApiDriftStatusDto": {
         "type": "object",
         "properties": {
-          "status": { "type": "string", "enum": ["configured"] },
+          "status": {
+            "type": "string",
+            "enum": ["configured", "invalid", "missing"]
+          },
           "snapshotPath": { "type": "string" },
           "exportCommand": { "type": "string" },
           "driftCheckCommand": { "type": "string" },
-          "checkedAt": { "type": "string" }
+          "checkedAt": { "type": "string" },
+          "snapshotExists": { "type": "boolean" },
+          "snapshotUpdatedAt": { "type": "string", "nullable": true },
+          "snapshotSha256": { "type": "string", "nullable": true },
+          "pathCount": { "type": "number" },
+          "schemaCount": { "type": "number" },
+          "operationCount": { "type": "number" }
         },
         "required": [
           "status",
           "snapshotPath",
           "exportCommand",
           "driftCheckCommand",
-          "checkedAt"
+          "checkedAt",
+          "snapshotExists",
+          "snapshotUpdatedAt",
+          "snapshotSha256",
+          "pathCount",
+          "schemaCount",
+          "operationCount"
         ]
       },
       "CurrentPageExportProtocolDto": {

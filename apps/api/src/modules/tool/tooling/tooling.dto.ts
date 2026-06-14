@@ -1,8 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class OpenApiDriftStatusDto {
-  @ApiProperty({ enum: ['configured'] })
-  status!: 'configured';
+  @ApiProperty({ enum: ['configured', 'invalid', 'missing'] })
+  status!: 'configured' | 'invalid' | 'missing';
 
   @ApiProperty()
   snapshotPath!: string;
@@ -15,6 +15,24 @@ export class OpenApiDriftStatusDto {
 
   @ApiProperty()
   checkedAt!: string;
+
+  @ApiProperty()
+  snapshotExists!: boolean;
+
+  @ApiProperty({ nullable: true, type: String })
+  snapshotUpdatedAt!: string | null;
+
+  @ApiProperty({ nullable: true, type: String })
+  snapshotSha256!: string | null;
+
+  @ApiProperty()
+  pathCount!: number;
+
+  @ApiProperty()
+  schemaCount!: number;
+
+  @ApiProperty()
+  operationCount!: number;
 }
 
 export class CurrentPageExportProtocolDto {

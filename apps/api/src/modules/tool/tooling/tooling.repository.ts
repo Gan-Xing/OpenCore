@@ -1,4 +1,5 @@
-import { existsSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import {
   CURRENT_PAGE_EXPORT_PROTOCOL,
@@ -25,6 +26,17 @@ const DEFAULT_OPENFORGE_CONFIG_PATH =
 const ALLOWED_OPENFORGE_SCHEMA_PREFIX = 'tools/generator/examples/';
 const OPENFORGE_MANIFEST_ID_PATTERN = /^[a-zA-Z0-9._-]+$/;
 const OPENFORGE_DRY_RUN_CONFIRMATION_TEXT = 'OPENFORGE DRY RUN';
+const OPENAPI_SNAPSHOT_PATH = 'packages/contracts/openapi/opencore-api.json';
+const OPENAPI_HTTP_METHODS = new Set([
+  'delete',
+  'get',
+  'head',
+  'options',
+  'patch',
+  'post',
+  'put',
+  'trace',
+]);
 
 function findWorkspaceRoot(start = process.cwd()): string {
   let current = resolve(start);
@@ -131,13 +143,74 @@ export class ToolingRepository {
   }
 
   getOpenApiDriftStatus() {
-    return {
-      status: 'configured' as const,
-      snapshotPath: 'packages/contracts/openapi/opencore-api.json',
+    const checkedAt = new Date().toISOString();
+    const snapshotPath = OPENAPI_SNAPSHOT_PATH;
+    const absoluteSnapshotPath = resolve(
+      this.getOpenForgeRepoRoot(),
+      snapshotPath,
+    );
+    const base = {
+      snapshotPath,
       exportCommand: 'pnpm openapi:export',
       driftCheckCommand: 'pnpm openapi:check',
-      checkedAt: new Date().toISOString(),
+      checkedAt,
     };
+
+    if (!existsSync(absoluteSnapshotPath)) {
+      return {
+        ...base,
+        status: 'missing' as const,
+        snapshotExists: false,
+        snapshotUpdatedAt: null,
+        snapshotSha256: null,
+        pathCount: 0,
+        schemaCount: 0,
+        operationCount: 0,
+      };
+    }
+
+    const snapshot = readFileSync(absoluteSnapshotPath, 'utf8');
+
+    try {
+      const document = JSON.parse(snapshot) as {
+        components?: { schemas?: Record<string, unknown> };
+        paths?: Record<string, Record<string, unknown>>;
+      };
+      const pathCount = Object.keys(document.paths ?? {}).length;
+      const schemaCount = Object.keys(
+        document.components?.schemas ?? {},
+      ).length;
+      const operationCount = Object.values(document.paths ?? {}).reduce(
+        (total, pathItem) =>
+          total +
+          Object.keys(pathItem ?? {}).filter((method) =>
+            OPENAPI_HTTP_METHODS.has(method.toLowerCase()),
+          ).length,
+        0,
+      );
+
+      return {
+        ...base,
+        status: 'configured' as const,
+        snapshotExists: true,
+        snapshotUpdatedAt: statSync(absoluteSnapshotPath).mtime.toISOString(),
+        snapshotSha256: createHash('sha256').update(snapshot).digest('hex'),
+        pathCount,
+        schemaCount,
+        operationCount,
+      };
+    } catch {
+      return {
+        ...base,
+        status: 'invalid' as const,
+        snapshotExists: true,
+        snapshotUpdatedAt: statSync(absoluteSnapshotPath).mtime.toISOString(),
+        snapshotSha256: createHash('sha256').update(snapshot).digest('hex'),
+        pathCount: 0,
+        schemaCount: 0,
+        operationCount: 0,
+      };
+    }
   }
 
   getExportProtocol() {

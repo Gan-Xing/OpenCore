@@ -746,6 +746,7 @@ if (
   !versionPage.includes('getOpenCoreVersionInfo') ||
   !queuesPage.includes('@opencore/sdk') ||
   !openApiPage.includes('@opencore/sdk') ||
+  !openApiPage.includes('getOpenCoreOpenApiDriftStatus') ||
   !exportPage.includes('@opencore/sdk') ||
   !openForgePage.includes('@opencore/sdk') ||
   !openForgePage.includes('createOpenCoreOpenForgePlan') ||
@@ -783,6 +784,20 @@ if (
 ) {
   throw new Error(
     'Admin platform, collaboration, operations, and integration pages must consume SDK types or fixtures.',
+  );
+}
+
+if (
+  openApiPage.includes('createOpenApiDriftFixture') ||
+  !openApiPage.includes('Live OpenAPI drift') ||
+  !openApiPage.includes('Reload OpenAPI drift') ||
+  !openApiPage.includes('Snapshot SHA-256') ||
+  !openApiPage.includes('Snapshot operations') ||
+  !opencorePlatformService.includes('getOpenCoreOpenApiDriftStatus') ||
+  !opencorePlatformService.includes('toolingClient.getOpenApiDriftStatus')
+) {
+  throw new Error(
+    'OpenAPI page must load live drift status through the SDK and expose snapshot metadata, not static fixtures.',
   );
 }
 

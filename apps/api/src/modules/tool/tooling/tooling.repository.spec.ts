@@ -6,6 +6,11 @@ describe('ToolingRepository', () => {
       status: 'configured',
       exportCommand: 'pnpm openapi:export',
       driftCheckCommand: 'pnpm openapi:check',
+      snapshotExists: true,
+      snapshotSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      pathCount: expect.any(Number),
+      schemaCount: expect.any(Number),
+      operationCount: expect.any(Number),
     });
   });
 

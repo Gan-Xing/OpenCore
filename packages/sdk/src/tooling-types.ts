@@ -1,9 +1,15 @@
 export type OpenApiDriftStatus = {
-  status: 'configured';
+  status: 'configured' | 'invalid' | 'missing';
   snapshotPath: string;
   exportCommand: string;
   driftCheckCommand: string;
   checkedAt: string;
+  snapshotExists: boolean;
+  snapshotUpdatedAt: string | null;
+  snapshotSha256: string | null;
+  pathCount: number;
+  schemaCount: number;
+  operationCount: number;
 };
 
 export type CurrentPageExportProtocolSummary = {

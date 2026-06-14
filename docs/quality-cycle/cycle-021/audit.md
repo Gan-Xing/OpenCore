@@ -72,6 +72,8 @@ redaction, dry-run prefix clear and confirmed key/prefix deletion.
 Round 96 replaced the Monitor Version fixture page with live runtime and
 deployment metadata, including deploy-script commit/build injection and
 API/Admin smoke guards.
+Round 97 replaced the Tool OpenAPI fixture page with live contract snapshot
+metadata and tool/Admin/deploy guards.
 Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 `lint` must run sequentially.
 
@@ -110,6 +112,8 @@ Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 - Monitor Version smoke covers live runtime fields and no secret leakage;
   Admin/deploy guards reject fixture-backed or stale version pages and require
   commit/build/deployment metadata injection.
+- Tool OpenAPI smoke covers live drift snapshot metadata and OpenAPI path;
+  Admin/deploy guards reject fixture-backed or stale OpenAPI pages.
 - OpenForge smoke covers status, doctor, plan, diff, check, apply dry-run,
   manifest list, manifest preview, rollback dry-run, dry-run confirmation,
   write-intent rejection and unsafe schema/config/manifest guards.

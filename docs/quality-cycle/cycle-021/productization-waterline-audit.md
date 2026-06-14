@@ -30,6 +30,7 @@ failures have guards; and remaining omissions are explicit product boundaries.
 | `scheduler/monitor`   | Meets current | Job Admin operations, registry, handler diagnostics, cron dispatch, worker claim and queue metrics.      |
 | `monitor.cache`       | Meets current | Redis namespace/key scans, safe value preview, dry-run clear and confirmed key/prefix deletion.          |
 | `monitor.version`     | Meets current | Live runtime/deployment metadata uses API/SDK/Admin, deploy injection and smoke/deploy guards.           |
+| `tool.openapi`        | Meets current | Live drift snapshot metadata uses API/SDK/Admin, OpenAPI contract fields and tool/deploy guards.         |
 | `OpenForge Admin`     | Meets current | Safe workbench, dry-run confirmation, write-intent rejection and manifest preview/detail.                |
 
 ## Closed Remediation
@@ -101,6 +102,8 @@ failures have guards; and remaining omissions are explicit product boundaries.
 - Round 96 replaced the Monitor Version Admin fixture page with live runtime
   metadata, deployment commit/build injection and API/Admin smoke/deploy
   guards.
+- Round 97 replaced the Tool OpenAPI Admin fixture page with live drift
+  snapshot metadata, API/OpenAPI/SDK fields and tool/Admin/deploy guards.
 
 ## Active Debt
 
@@ -137,6 +140,9 @@ failures have guards; and remaining omissions are explicit product boundaries.
 - Monitor version: smoke covers live `/monitor/version` runtime fields and
   no-secret leakage; deploy injects commit/build/deployment metadata and checks
   Admin Version bundle markers while Admin smoke rejects fixture-backed pages.
+- Tool OpenAPI: smoke covers live `/tools/openapi/drift` snapshot metadata and
+  OpenAPI path; Admin/deploy guards reject fixture-backed or stale OpenAPI
+  pages.
 - OpenForge: smoke covers status, doctor, plan, diff, check, apply dry-run,
   manifest list, manifest preview, rollback dry-run, confirmation guards,
   write-intent rejection and unsafe schema/config/manifest guards; deploy

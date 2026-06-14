@@ -4,14 +4,14 @@ Date: 2026-06-14
 
 ## Latest Completed Round
 
-Round 96: Monitor Version live runtime metadata.
+Round 97: Tool OpenAPI live drift metadata.
 
 ## Closed
 
-- Replaced the static Admin Version fixture with live SDK/API data.
-- Added runtime/deployment fields to version DTOs and SDK types.
-- Added fixed deploy-script commit/build/deployment metadata injection.
-- Added API smoke, Admin smoke and deploy bundle guards for the version page.
+- Replaced the static Admin OpenAPI fixture with live SDK/API drift status.
+- Added snapshot existence/hash/path/schema/operation metadata to the drift
+  DTO/OpenAPI/SDK contract.
+- Added tool smoke, Admin smoke and deploy bundle guards for the OpenAPI page.
 
 ## Still Open
 

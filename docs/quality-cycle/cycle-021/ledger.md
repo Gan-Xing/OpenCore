@@ -29,3 +29,4 @@ This ledger records state transitions only. Git log keeps commit hashes.
 | 94    | Config          | Secret vault gained managed HTTP JSON KMS v3 envelopes.                       | System tests, config smoke and Admin bundle markers.            |
 | 95    | Monitor Cache   | Cache monitor moved from seed/Admin fixtures to real Redis operations.        | API tests, monitor smoke and Admin bundle markers.              |
 | 96    | Monitor Version | Version page moved from fixtures to live runtime/deployment metadata.         | API tests, monitor smoke and Admin bundle markers.              |
+| 97    | Tool OpenAPI    | OpenAPI page moved from fixtures to live drift snapshot metadata.             | API tests, tool smoke and Admin bundle markers.                 |

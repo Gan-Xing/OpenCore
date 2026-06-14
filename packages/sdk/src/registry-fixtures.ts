@@ -543,6 +543,13 @@ export function createOpenApiDriftFixture(): OpenApiDriftStatus {
     exportCommand: 'pnpm openapi:export',
     driftCheckCommand: 'pnpm openapi:check',
     checkedAt: '2026-06-10T00:00:00.000Z',
+    snapshotExists: true,
+    snapshotUpdatedAt: '2026-06-10T00:00:00.000Z',
+    snapshotSha256:
+      '0000000000000000000000000000000000000000000000000000000000000000',
+    pathCount: 1,
+    schemaCount: 1,
+    operationCount: 1,
   };
 }
 

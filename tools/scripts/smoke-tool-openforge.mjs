@@ -38,6 +38,7 @@ try {
     const openApi = await request(`${apiPrefix}/docs-json`, {
       expected: [200],
     });
+    assertOpenApiPath(openApi, '/api/tools/openapi/drift');
     assertOpenApiPath(openApi, '/api/tools/openforge/status');
     assertOpenApiPath(openApi, '/api/tools/openforge/plan');
     assertOpenApiPath(openApi, '/api/tools/openforge/apply/dry-run');
@@ -48,6 +49,22 @@ try {
 
   const loginResponse = await login();
   token = assertString(loginResponse.accessToken, 'login accessToken');
+
+  const drift = await apiRequest('/tools/openapi/drift');
+  assertEqual(drift.status, 'configured', 'openapi drift status');
+  assertEqual(drift.snapshotExists, true, 'openapi snapshot exists');
+  assertString(drift.snapshotPath, 'openapi snapshot path');
+  assertString(drift.exportCommand, 'openapi export command');
+  assertString(drift.driftCheckCommand, 'openapi drift check command');
+  assertString(drift.checkedAt, 'openapi drift checkedAt');
+  assertString(drift.snapshotUpdatedAt, 'openapi snapshot updatedAt');
+  assertString(drift.snapshotSha256, 'openapi snapshot sha256');
+  if (!/^[a-f0-9]{64}$/.test(drift.snapshotSha256)) {
+    throw new Error('Expected OpenAPI snapshot SHA-256 to be a hex digest.');
+  }
+  assertNumberAtLeast(drift.pathCount, 1, 'openapi path count');
+  assertNumberAtLeast(drift.schemaCount, 1, 'openapi schema count');
+  assertNumberAtLeast(drift.operationCount, 1, 'openapi operation count');
 
   const status = await apiRequest('/tools/openforge/status');
   assertEqual(status.status, 'workspace-ready', 'openforge status');
@@ -216,8 +233,10 @@ try {
       checks: [
         'health.live',
         'health.ready',
-        ...(checkDocs ? ['openapi.tool-openforge-paths'] : []),
+        ...(checkDocs ? ['openapi.tool-paths'] : []),
         'auth.login',
+        'tool.openapi.live-drift-status',
+        'tool.openapi.snapshot-metadata',
         'tool.openforge.status',
         'tool.openforge.doctor',
         'tool.openforge.plan',
@@ -335,6 +354,14 @@ function assertIncludes(values, expected, label) {
   if (!values.includes(expected)) {
     throw new Error(
       `Expected ${label} to include ${JSON.stringify(expected)}, received ${formatBody(values)}`,
+    );
+  }
+}
+
+function assertNumberAtLeast(value, minimum, label) {
+  if (typeof value !== 'number' || value < minimum) {
+    throw new Error(
+      `Expected ${label} to be at least ${minimum}, received ${formatBody(value)}`,
     );
   }
 }

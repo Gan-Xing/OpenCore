@@ -53,6 +53,7 @@ import {
   type OpenForgeRollbackDryRunSummary,
   type OpenForgeSchemaRequest,
   type OpenForgeStatusSummary,
+  type OpenApiDriftStatus,
   type ImportUsersRequest,
   type CreateSystemDeptRequest,
   type CreateSystemNoticeFromTemplateRequest,
@@ -182,6 +183,10 @@ const monitoringClient = createMonitoringClient(opencoreSdkRequest);
 const operationsClient = createOperationsClient(opencoreSdkRequest);
 const systemManagementClient = createSystemManagementClient(opencoreSdkRequest);
 const toolingClient = createToolingClient(opencoreSdkRequest);
+
+export function getOpenCoreOpenApiDriftStatus(): Promise<OpenApiDriftStatus> {
+  return toolingClient.getOpenApiDriftStatus(getRequiredAdminToken());
+}
 
 export function getOpenCoreOpenForgeStatus(): Promise<OpenForgeStatusSummary> {
   return toolingClient.getOpenForgeStatus(getRequiredAdminToken());
