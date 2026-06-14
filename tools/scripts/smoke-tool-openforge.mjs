@@ -41,6 +41,8 @@ try {
     assertOpenApiPath(openApi, '/api/tools/openforge/status');
     assertOpenApiPath(openApi, '/api/tools/openforge/plan');
     assertOpenApiPath(openApi, '/api/tools/openforge/apply/dry-run');
+    assertOpenApiPath(openApi, '/api/tools/openforge/manifests/preview');
+    assertOpenApiPath(openApi, '/api/tools/openforge/manifests/{manifestId}');
     assertOpenApiPath(openApi, '/api/tools/openforge/rollback/dry-run');
   }
 
@@ -54,6 +56,16 @@ try {
     status.generatorCore.noWrite,
     true,
     'openforge generator-core noWrite',
+  );
+  assertEqual(
+    status.operationPolicy.dryRunOnly,
+    true,
+    'openforge operation dry-run policy',
+  );
+  assertEqual(
+    status.operationPolicy.confirmationText,
+    'OPENFORGE DRY RUN',
+    'openforge operation confirmation text',
   );
 
   const doctor = await apiRequest('/tools/openforge/doctor');
@@ -101,19 +113,51 @@ try {
 
   const applyDryRun = await apiRequest('/tools/openforge/apply/dry-run', {
     method: 'POST',
-    body: { schemaPath: SCHEMA_PATH, configPath: CONFIG_PATH },
+    body: {
+      schemaPath: SCHEMA_PATH,
+      configPath: CONFIG_PATH,
+      confirmationText: status.operationPolicy.confirmationText,
+      requestedMode: 'dry-run',
+    },
   });
   assertEqual(applyDryRun.mode, 'dry-run', 'openforge apply mode');
   assertEqual(applyDryRun.applied, false, 'openforge apply dry-run applied');
+  assertEqual(
+    applyDryRun.manifest.moduleCode,
+    'core.dict',
+    'openforge apply manifest module',
+  );
   assertArray(applyDryRun.entries, 'openforge apply dry-run entries');
   assertArray(applyDryRun.errors, 'openforge apply dry-run errors');
 
   const manifests = await apiRequest('/tools/openforge/manifests');
   assertArray(manifests.manifests, 'openforge manifests');
 
+  const manifestPreview = await apiRequest(
+    '/tools/openforge/manifests/preview',
+    {
+      method: 'POST',
+      body: { schemaPath: SCHEMA_PATH, configPath: CONFIG_PATH },
+    },
+  );
+  assertEqual(
+    manifestPreview.manifest.moduleCode,
+    'core.dict',
+    'openforge manifest preview module',
+  );
+  assertEqual(
+    manifestPreview.manifestPath,
+    `dry-run:${manifestPreview.manifest.id}`,
+    'openforge manifest preview path',
+  );
+
   const rollbackDryRun = await apiRequest('/tools/openforge/rollback/dry-run', {
     method: 'POST',
-    body: { manifestId: 'missing-openforge-smoke-manifest' },
+    body: {
+      manifestId: 'missing-openforge-smoke-manifest',
+      confirmationText: status.operationPolicy.confirmationText,
+      requestedMode: 'dry-run',
+    },
   });
   assertEqual(rollbackDryRun.mode, 'dry-run', 'openforge rollback mode');
   assertEqual(
@@ -133,7 +177,31 @@ try {
   });
   await apiRequest('/tools/openforge/apply/dry-run', {
     method: 'POST',
-    body: { schemaPath: SCHEMA_PATH, configPath: '.env.opencore.local' },
+    body: {
+      schemaPath: SCHEMA_PATH,
+      configPath: '.env.opencore.local',
+      confirmationText: status.operationPolicy.confirmationText,
+    },
+    expected: [400],
+  });
+  await apiRequest('/tools/openforge/apply/dry-run', {
+    method: 'POST',
+    body: { schemaPath: SCHEMA_PATH, configPath: CONFIG_PATH },
+    expected: [400],
+  });
+  await apiRequest('/tools/openforge/apply/dry-run', {
+    method: 'POST',
+    body: {
+      schemaPath: SCHEMA_PATH,
+      configPath: CONFIG_PATH,
+      confirmationText: status.operationPolicy.confirmationText,
+      requestedMode: 'write',
+    },
+    expected: [400],
+  });
+  await apiRequest('/tools/openforge/rollback/dry-run', {
+    method: 'POST',
+    body: { manifestId: 'missing-openforge-smoke-manifest' },
     expected: [400],
   });
   await apiRequest('/tools/openforge/manifests/bad%24id', {
@@ -157,7 +225,9 @@ try {
         'tool.openforge.check',
         'tool.openforge.apply-dry-run',
         'tool.openforge.manifests',
+        'tool.openforge.manifest-preview',
         'tool.openforge.rollback-dry-run',
+        'tool.openforge.confirmation-guards',
         'tool.openforge.path-guards',
       ],
     }),

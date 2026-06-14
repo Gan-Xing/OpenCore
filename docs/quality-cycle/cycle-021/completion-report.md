@@ -4,20 +4,20 @@ Date: 2026-06-14
 
 ## Latest Completed Round
 
-Round 88: Scheduler/monitor worker parity.
+Round 89: OpenForge dry-run confirmation and manifest preview/detail.
 
 ## Closed
 
-- Added `POST /monitor/jobs/dispatch-due` and
-  `POST /monitor/jobs/worker/claim` for due cron queueing and worker execution.
-- Added SDK types/client methods plus Admin Monitor Jobs controls for Cron
-  dispatch and Worker claim, and moved Monitor Queues to the live queue API.
-- Added monitor job smoke coverage, OpenAPI exposure and deploy Admin bundle
-  markers for dispatch, worker claim and queue metrics.
+- Added OpenForge dry-run confirmation policy to status, apply dry-run and
+  rollback dry-run, with API rejection for write-mode intent.
+- Added manifest preview plus Admin manifest preview/detail modals backed by
+  SDK methods.
+- Added OpenAPI, smoke and deploy Admin bundle guards for confirmation and
+  manifest surfaces.
 
 ## Still Open
 
-- OpenForge write/apply confirmation UX and direct generated code write paths
-  remain later explicit stages.
 - Managed cloud KMS adapters remain optional deployment integration beyond the
   current env-bound keyring.
+- OpenForge direct schema/migration/business code writes remain outside the
+  admitted surface.

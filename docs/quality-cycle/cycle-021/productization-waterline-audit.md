@@ -28,7 +28,7 @@ failures have guards; and remaining omissions are explicit product boundaries.
 | `core.notice`         | Enhance       | SMS HTTP, SMTP, mail subject, diagnostics, secrets, attachments, TLS policy and realtime events.         |
 | `integration`         | Meets current | Provider health/config audit, readiness totals, config-vault debt, outbox backlog and failure history.   |
 | `scheduler/monitor`   | Meets current | Job Admin operations, registry, handler diagnostics, cron dispatch, worker claim and queue metrics.      |
-| `OpenForge Admin`     | Meets current | Safe workbench for status, doctor, plan/diff/check, manifests and dry-run apply/rollback.                |
+| `OpenForge Admin`     | Meets current | Safe workbench, dry-run confirmation, write-intent rejection and manifest preview/detail.                |
 
 ## Closed Remediation
 
@@ -76,15 +76,17 @@ failures have guards; and remaining omissions are explicit product boundaries.
 - Round 88 added Scheduler/monitor cron dispatch, queued schedule runs,
   worker claim execution, queue metrics and Admin controls with smoke/deploy
   coverage.
+- Round 89 added OpenForge dry-run confirmation, write-intent rejection and
+  manifest preview/detail with API/SDK/Admin, OpenAPI and smoke/deploy
+  coverage.
 
 ## Active Debt
 
-1. OpenForge: write/apply confirmation UX, manifest detail and rollback
-   execution remain later stages; direct schema/migration/business-code writes
-   still require user admission.
-2. Optional managed-KMS provider adapter if deployment requires cloud KMS APIs.
-3. Optional operation-log external GeoIP enrichment if deployment needs real
+1. Optional managed-KMS provider adapter if deployment requires cloud KMS APIs.
+2. Optional operation-log external GeoIP enrichment if deployment needs real
    IP attribution beyond deterministic categories.
+3. OpenForge direct schema/migration/business-code writes still require user
+   admission.
 
 ## Guard Matrix
 
@@ -104,8 +106,9 @@ failures have guards; and remaining omissions are explicit product boundaries.
   disabled-trigger rejection, manual trigger, handler execution, retry failure
   and run-log detail, cron dispatch, worker claim and scheduler queue metrics.
 - OpenForge: smoke covers status, doctor, plan, diff, check, apply dry-run,
-  manifest list, rollback dry-run and unsafe schema/config/manifest guards;
-  deploy checks Admin workbench markers.
+  manifest list, manifest preview, rollback dry-run, confirmation guards,
+  write-intent rejection and unsafe schema/config/manifest guards; deploy
+  checks Admin workbench and manifest markers.
 - Integration: health audit smoke covers provider-wide readiness totals,
   config-vault debt, outbox backlog, diagnostics parity, failure history and
   secret-leak guards; deploy checks Admin health/config audit markers.

@@ -19,11 +19,10 @@ active debt and decisions that change future execution.
 
 ## Runtime State
 
-Cycle-021 has completed 88 deployable stages across
-System/Security/Monitor/Integration/Tools foundations. Round 88 added
-Scheduler/monitor worker parity backed by API/SDK/Admin/OpenAPI for due cron
-dispatch, queued schedule runs, worker claim execution and scheduler queue
-metrics.
+Cycle-021 has completed 89 deployable stages across
+System/Security/Monitor/Integration/Tools foundations. Round 89 added
+OpenForge dry-run confirmation and manifest preview/detail backed by
+API/SDK/Admin/OpenAPI, with write-mode intent rejected at the API boundary.
 
 ## Guard Register
 
@@ -50,8 +49,9 @@ metrics.
   worker claim and scheduler queue metrics. Deploy also checks the Jobs and
   Queues Admin bundle markers.
 - OpenForge: smoke covers status, doctor, plan, diff, check, apply dry-run,
-  manifest list, rollback dry-run and unsafe schema/config/manifest guards.
-  Deploy checks Admin workbench markers.
+  manifest list, manifest preview, rollback dry-run, dry-run confirmation
+  guards, write-intent rejection and unsafe schema/config/manifest guards.
+  Deploy checks Admin workbench, confirmation and manifest markers.
 - Integration: smoke covers provider-wide health audit, diagnostics parity,
   config-vault debt, outbox backlog, failure history and secret-leak guards.
   Deploy checks Admin health/config audit markers.
@@ -76,6 +76,5 @@ metrics.
   semantics.
 - Operation log: optional external GeoIP attribution beyond deterministic
   network categories.
-- OpenForge: write/apply confirmation UX, manifest detail and rollback
-  execution remain later stages; direct schema/migration/business writes still
-  require user admission.
+- OpenForge: direct schema/migration/business writes still require user
+  admission.

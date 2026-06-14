@@ -23,6 +23,8 @@ import {
   type OpenForgeArtifactSummary,
   type OpenForgeDiffEntrySummary,
   type OpenForgeDoctorCheckSummary,
+  type OpenForgeManifestDetailSummary,
+  type OpenForgeManifestEntrySummary,
   type OpenForgeManifestListEntrySummary,
   type OpenForgeManifestListSummary,
   type OpenForgePlanSummary,
@@ -46,9 +48,11 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   createOpenCoreOpenForgeApplyDryRun,
   createOpenCoreOpenForgeDiff,
+  createOpenCoreOpenForgeManifestPreview,
   createOpenCoreOpenForgePlan,
   createOpenCoreOpenForgePreflight,
   createOpenCoreOpenForgeRollbackDryRun,
+  getOpenCoreOpenForgeManifest,
   getOpenCoreOpenForgeDoctor,
   getOpenCoreOpenForgeStatus,
   listOpenCoreOpenForgeManifests,
@@ -122,6 +126,23 @@ const manifestColumns: ProColumns<OpenForgeManifestListEntrySummary>[] = [
   { title: 'Created at', dataIndex: 'createdAt', width: 220 },
 ];
 
+const manifestEntryColumns: ProColumns<OpenForgeManifestEntrySummary>[] = [
+  { title: 'Kind', dataIndex: 'artifactKind', width: 180 },
+  { title: 'Target path', dataIndex: 'targetPath' },
+  {
+    title: 'Action',
+    dataIndex: 'action',
+    width: 120,
+    render: (_, record) => <Tag>{record.action}</Tag>,
+  },
+  {
+    title: 'Rollback',
+    dataIndex: 'rollbackAction',
+    width: 120,
+    render: (_, record) => <Tag>{record.rollbackAction}</Tag>,
+  },
+];
+
 function countProtected(plan: OpenForgePlanSummary): number {
   return plan.artifacts.filter((artifact) => artifact.protected).length;
 }
@@ -151,6 +172,7 @@ export default function OpenForgePage() {
   const [loadError, setLoadError] = useState<string>();
   const firstManifestId = manifests.manifests[0]?.id;
   const activeManifestId = selectedManifestId ?? firstManifestId;
+  const dryRunConfirmationText = status.operationPolicy.confirmationText;
 
   const loadWorkbench = async () => {
     setLoading(true);
@@ -198,40 +220,106 @@ export default function OpenForgePage() {
     void loadWorkbench();
   }, []);
 
-  const runApplyDryRun = async () => {
+  const showManifestDetail = (
+    detail: OpenForgeManifestDetailSummary,
+    title: string,
+  ) => {
+    const manifest = detail.manifest;
+
+    Modal.info({
+      title,
+      width: 920,
+      content: (
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          <Descriptions column={1} size="small">
+            <Descriptions.Item label="Manifest path">
+              {detail.manifestPath || 'dry-run'}
+            </Descriptions.Item>
+            <Descriptions.Item label="Manifest ID">
+              {manifest?.id ?? 'not available'}
+            </Descriptions.Item>
+            <Descriptions.Item label="Module">
+              {manifest?.moduleCode ?? 'not available'}
+            </Descriptions.Item>
+            <Descriptions.Item label="Entries">
+              {manifest?.entries.length ?? 0}
+            </Descriptions.Item>
+            <Descriptions.Item label="Errors">
+              {detail.errors.length}
+            </Descriptions.Item>
+          </Descriptions>
+          {manifest ? (
+            <ProTable<OpenForgeManifestEntrySummary>
+              columns={manifestEntryColumns}
+              dataSource={[...manifest.entries]}
+              pagination={{ pageSize: 5 }}
+              rowKey="targetPath"
+              search={false}
+              size="small"
+              toolBarRender={false}
+            />
+          ) : null}
+        </Space>
+      ),
+    });
+  };
+
+  const runApplyDryRun = () => {
+    Modal.confirm({
+      title: 'Confirm OpenForge dry-run apply',
+      okText: 'Dry-run apply',
+      content: `Dry-run confirmation required: ${dryRunConfirmationText}`,
+      onOk: async () => {
+        setDryRunning(true);
+        try {
+          const result = await createOpenCoreOpenForgeApplyDryRun({
+            schemaPath,
+            configPath: DEFAULT_CONFIG_PATH,
+            confirmationText: dryRunConfirmationText,
+            requestedMode: 'dry-run',
+          });
+          showManifestDetail(
+            {
+              manifestPath: result.manifest
+                ? `dry-run:${result.manifest.id}`
+                : '',
+              manifest: result.manifest,
+              warnings: result.warnings,
+              errors: result.errors,
+            },
+            'OpenForge dry-run apply manifest',
+          );
+        } catch (error: unknown) {
+          message.error(
+            error instanceof Error
+              ? error.message
+              : 'OpenForge dry-run failed.',
+          );
+        } finally {
+          setDryRunning(false);
+        }
+      },
+    });
+  };
+
+  const runManifestPreview = async () => {
     setDryRunning(true);
     try {
-      const result = await createOpenCoreOpenForgeApplyDryRun({
+      const result = await createOpenCoreOpenForgeManifestPreview({
         schemaPath,
         configPath: DEFAULT_CONFIG_PATH,
       });
-      Modal.info({
-        title: 'OpenForge dry-run apply',
-        content: (
-          <Descriptions column={1} size="small">
-            <Descriptions.Item label="Mode">{result.mode}</Descriptions.Item>
-            <Descriptions.Item label="Applied">
-              {String(result.applied)}
-            </Descriptions.Item>
-            <Descriptions.Item label="Entries">
-              {result.entries.length}
-            </Descriptions.Item>
-            <Descriptions.Item label="Errors">
-              {result.errors.length}
-            </Descriptions.Item>
-          </Descriptions>
-        ),
-      });
+      showManifestDetail(result, 'OpenForge manifest preview');
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'OpenForge dry-run failed.',
+        error instanceof Error ? error.message : 'OpenForge preview failed.',
       );
     } finally {
       setDryRunning(false);
     }
   };
 
-  const runRollbackDryRun = async () => {
+  const viewManifestDetail = async () => {
     if (!activeManifestId) {
       message.warning('No OpenForge manifest selected.');
       return;
@@ -239,33 +327,59 @@ export default function OpenForgePage() {
 
     setDryRunning(true);
     try {
-      const result = await createOpenCoreOpenForgeRollbackDryRun({
-        manifestId: activeManifestId,
-      });
-      Modal.info({
-        title: 'OpenForge rollback dry-run',
-        content: (
-          <Descriptions column={1} size="small">
-            <Descriptions.Item label="Mode">{result.mode}</Descriptions.Item>
-            <Descriptions.Item label="Rolled back">
-              {String(result.rolledBack)}
-            </Descriptions.Item>
-            <Descriptions.Item label="Entries">
-              {result.entries.length}
-            </Descriptions.Item>
-            <Descriptions.Item label="Errors">
-              {result.errors.length}
-            </Descriptions.Item>
-          </Descriptions>
-        ),
-      });
+      const result = await getOpenCoreOpenForgeManifest(activeManifestId);
+      showManifestDetail(result, 'OpenForge manifest detail');
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'OpenForge rollback failed.',
+        error instanceof Error
+          ? error.message
+          : 'OpenForge manifest detail failed.',
       );
     } finally {
       setDryRunning(false);
     }
+  };
+
+  const runRollbackDryRun = () => {
+    if (!activeManifestId) {
+      message.warning('No OpenForge manifest selected.');
+      return;
+    }
+
+    Modal.confirm({
+      title: 'Confirm OpenForge rollback dry-run',
+      okText: 'Dry-run rollback',
+      content: `Dry-run confirmation required: ${dryRunConfirmationText}`,
+      onOk: async () => {
+        setDryRunning(true);
+        try {
+          const result = await createOpenCoreOpenForgeRollbackDryRun({
+            confirmationText: dryRunConfirmationText,
+            manifestId: activeManifestId,
+            requestedMode: 'dry-run',
+          });
+          showManifestDetail(
+            {
+              manifestPath: result.manifest
+                ? `.openforge/manifests/${result.manifest.id}.json`
+                : '',
+              manifest: result.manifest,
+              warnings: result.warnings,
+              errors: result.errors,
+            },
+            'OpenForge rollback dry-run manifest',
+          );
+        } catch (error: unknown) {
+          message.error(
+            error instanceof Error
+              ? error.message
+              : 'OpenForge rollback failed.',
+          );
+        } finally {
+          setDryRunning(false);
+        }
+      },
+    });
   };
 
   const summaryStats = useMemo(
@@ -325,6 +439,9 @@ export default function OpenForgePage() {
               {String(status.workspace.noWrite)}
             </Tag>
           </Descriptions.Item>
+          <Descriptions.Item label="Dry-run confirmation">
+            {dryRunConfirmationText}
+          </Descriptions.Item>
           <Descriptions.Item label="Preflight">
             <Tag color={preflight.valid ? 'green' : 'red'}>
               {preflight.valid ? 'valid' : 'invalid'}
@@ -355,6 +472,25 @@ export default function OpenForgePage() {
               onClick={runApplyDryRun}
             >
               Dry-run apply
+            </Button>
+          </Tooltip>
+          <Tooltip title="Manifest preview">
+            <Button
+              icon={<FileSearchOutlined />}
+              loading={dryRunning}
+              onClick={() => void runManifestPreview()}
+            >
+              Manifest preview
+            </Button>
+          </Tooltip>
+          <Tooltip title="Manifest detail">
+            <Button
+              icon={<FileSearchOutlined />}
+              loading={dryRunning}
+              disabled={!activeManifestId}
+              onClick={() => void viewManifestDetail()}
+            >
+              Manifest detail
             </Button>
           </Tooltip>
           <Tooltip title="Requires tool:openforge:manage">
@@ -426,8 +562,8 @@ export default function OpenForgePage() {
         />
 
         <Typography.Paragraph type="secondary">
-          {fallbackApplyDryRun.mode} apply is the only Admin apply surface in
-          this round.
+          {fallbackApplyDryRun.mode} apply is guarded by dry-run confirmation;
+          write apply remains outside the admitted OpenForge surface.
         </Typography.Paragraph>
       </Space>
     </PageContainer>

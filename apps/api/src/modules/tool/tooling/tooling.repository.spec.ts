@@ -59,9 +59,23 @@ describe('ToolingRepository', () => {
       moduleCode: 'core.dict',
       noWrite: true,
     });
-    expect(repository.createOpenForgeApplyDryRun(request)).toMatchObject({
+    expect(
+      repository.createOpenForgeApplyDryRun({
+        ...request,
+        confirmationText: 'OPENFORGE DRY RUN',
+      }),
+    ).toMatchObject({
       mode: 'dry-run',
       applied: false,
+      manifest: {
+        moduleCode: 'core.dict',
+      },
+    });
+    expect(repository.createOpenForgeManifestPreview(request)).toMatchObject({
+      manifestPath: expect.stringContaining('dry-run:'),
+      manifest: {
+        moduleCode: 'core.dict',
+      },
     });
   });
 
@@ -78,8 +92,21 @@ describe('ToolingRepository', () => {
       repository.createOpenForgeApplyDryRun({
         schemaPath: 'tools/generator/examples/core.dict.v1.schema.json',
         configPath: '.env.opencore.local',
+        confirmationText: 'OPENFORGE DRY RUN',
       }),
     ).toThrow('configPath must point to the OpenForge example config.');
+    expect(() =>
+      repository.createOpenForgeApplyDryRun({
+        schemaPath: 'tools/generator/examples/core.dict.v1.schema.json',
+      }),
+    ).toThrow('OpenForge dry-run requires confirmationText');
+    expect(() =>
+      repository.createOpenForgeApplyDryRun({
+        confirmationText: 'OPENFORGE DRY RUN',
+        requestedMode: 'write',
+        schemaPath: 'tools/generator/examples/core.dict.v1.schema.json',
+      }),
+    ).toThrow('OpenForge API only supports dry-run operations');
     expect(() => repository.getOpenForgeManifest('../secret')).toThrow(
       'manifestId may contain only letters, numbers, dot, underscore and dash.',
     );

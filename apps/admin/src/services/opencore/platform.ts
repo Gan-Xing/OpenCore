@@ -36,7 +36,9 @@ import {
   type OpenForgeApplyDryRunSummary,
   type OpenForgeDiffSummary,
   type OpenForgeDoctorSummary,
+  type OpenForgeManifestDetailSummary,
   type OpenForgeManifestListSummary,
+  type OpenForgeManifestPreviewRequest,
   type OpenForgePlanSummary,
   type OpenForgePreflightSummary,
   type OpenForgeRollbackDryRunRequest,
@@ -200,6 +202,24 @@ export function createOpenCoreOpenForgeApplyDryRun(
 
 export function listOpenCoreOpenForgeManifests(): Promise<OpenForgeManifestListSummary> {
   return toolingClient.listOpenForgeManifests(getRequiredAdminToken());
+}
+
+export function createOpenCoreOpenForgeManifestPreview(
+  body: OpenForgeManifestPreviewRequest,
+): Promise<OpenForgeManifestDetailSummary> {
+  return toolingClient.createOpenForgeManifestPreview(
+    getRequiredAdminToken(),
+    body,
+  );
+}
+
+export function getOpenCoreOpenForgeManifest(
+  manifestId: string,
+): Promise<OpenForgeManifestDetailSummary> {
+  return toolingClient.getOpenForgeManifest(
+    getRequiredAdminToken(),
+    manifestId,
+  );
 }
 
 export function createOpenCoreOpenForgeRollbackDryRun(

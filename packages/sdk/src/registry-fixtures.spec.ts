@@ -178,6 +178,9 @@ describe('registry fixtures', () => {
     expect(createCurrentPageExportProtocolFixture().asyncExport).toBe(false);
     expect(createExportPlanFixture().scope).toBe('current-page');
     expect(createOpenForgeStatusFixture().workspace.noWrite).toBe(true);
+    expect(createOpenForgeStatusFixture().operationPolicy.dryRunOnly).toBe(
+      true,
+    );
     expect(createOpenForgeDoctorFixture().valid).toBe(true);
     expect(createOpenForgePlanFixture().safety.blockPrismaSchemaWrites).toBe(
       true,

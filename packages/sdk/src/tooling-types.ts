@@ -67,6 +67,11 @@ export type OpenForgeStatusSummary = {
     protocol: Record<string, unknown>;
     noWrite: true;
   };
+  operationPolicy: {
+    dryRunOnly: true;
+    confirmationText: string;
+    writeRequiresUserAdmission: true;
+  };
 };
 
 export type OpenForgeDoctorCheckSummary = {
@@ -90,6 +95,12 @@ export type OpenForgeSchemaRequest = {
 };
 
 export type OpenForgeApplyDryRunRequest = OpenForgeSchemaRequest & {
+  configPath?: string;
+  confirmationText: string;
+  requestedMode?: 'dry-run' | 'write';
+};
+
+export type OpenForgeManifestPreviewRequest = OpenForgeSchemaRequest & {
   configPath?: string;
 };
 
@@ -227,7 +238,9 @@ export type OpenForgeApplyDryRunSummary = {
 };
 
 export type OpenForgeRollbackDryRunRequest = {
+  confirmationText: string;
   manifestId: string;
+  requestedMode?: 'dry-run' | 'write';
 };
 
 export type OpenForgeRollbackEntrySummary = {

@@ -575,6 +575,11 @@ export function createOpenForgeStatusFixture(): OpenForgeStatusSummary {
       },
       noWrite: true,
     },
+    operationPolicy: {
+      dryRunOnly: true,
+      confirmationText: 'OPENFORGE DRY RUN',
+      writeRequiresUserAdmission: true,
+    },
   };
 }
 

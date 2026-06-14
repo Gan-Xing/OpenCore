@@ -29,7 +29,7 @@ schema/business-code writing.
   runtime login policy.
 - Rounds 50-59: logout audit semantics, ordering, data-scope, notice
   inbox/read analytics, feature flags and login-log location.
-- Rounds 60-88: notice template/delivery/provider/outbox work, SMS HTTP and
+- Rounds 60-89: notice template/delivery/provider/outbox work, SMS HTTP and
   SMTP adapters, config vault and rollout/audience, operation-log cleanup, plus
   mail subject persistence, provider diagnostics, SMS HTTP secret injection,
   SMTP attachments, explicit SMTP TLS policy, inbox realtime events, Monitor
@@ -37,21 +37,21 @@ schema/business-code writing.
   claim, scheduler queue metrics and config
   environment overrides plus config secret version history/rotation and vault
   keyring rotation, operation-log enrichment and retention scheduling, plus the
-  OpenForge Admin safe workbench and Integration provider health/config audit.
+  OpenForge Admin safe workbench, dry-run confirmation, manifest preview/detail
+  and Integration provider health/config audit.
 
-Latest done: Round 88 Scheduler/monitor worker parity with cron dispatch,
-queued schedule runs, worker claim execution, queue metrics, live Admin
-controls, OpenAPI/SDK exposure and smoke/deploy coverage.
+Latest done: Round 89 OpenForge dry-run confirmation and manifest
+preview/detail with write-intent rejection, SDK/Admin exposure, OpenAPI,
+smoke and deploy coverage.
 
 ## Active P1/P2 Queue
 
-1. OpenForge write/apply confirmation UX, manifest detail and rollback
-   execution as a later explicit stage; direct Prisma/migration/business logic
-   writes still require user admission.
-2. Optional managed-KMS provider adapter if deployment needs cloud KMS APIs
+1. Optional managed-KMS provider adapter if deployment needs cloud KMS APIs
    beyond the current env-bound keyring.
-3. Optional operation-log external GeoIP enrichment if deployment needs real
+2. Optional operation-log external GeoIP enrichment if deployment needs real
    IP attribution beyond deterministic network categories.
+3. OpenForge direct schema/migration/business logic writes still require user
+   admission.
 
 ## Rework Notes
 

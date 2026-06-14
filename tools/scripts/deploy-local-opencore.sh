@@ -207,9 +207,24 @@ verify_admin_bundle_api_base_url() {
     ! grep -R \
     --fixed-strings \
     --include='*.js' \
+    "Manifest preview" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Manifest detail" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Dry-run confirmation" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
     "tool:openforge:manage" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null; then
-    echo "Admin bundle does not include OpenForge plan/dry-run workbench controls." >&2
+    echo "Admin bundle does not include OpenForge plan/dry-run/manifest confirmation controls." >&2
     echo "Refusing to deploy a stale frontend OpenForge page." >&2
     exit 1
   fi

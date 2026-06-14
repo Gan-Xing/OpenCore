@@ -47,7 +47,7 @@ packages and OpenForge direct Prisma/migration/business-code writing.
 
 ## Current State
 
-Cycle-021 has completed 88 deployable stages.
+Cycle-021 has completed 89 deployable stages.
 
 - System/RBAC: notice, dept, post, menu, role, permission, user, dict, config
   and file loops are live.
@@ -75,22 +75,21 @@ Cycle-021 has completed 88 deployable stages.
   queue metrics are smoke-guarded.
 - OpenForge: CLI/core safety remains no-write by default; Admin now has a live
   safe workbench for status, doctor, plan, diff, check, manifest list and
-  apply/rollback dry-run.
+  apply/rollback dry-run, dry-run confirmation and manifest preview/detail.
 
-Latest runtime stage: Round 88 Scheduler/monitor worker parity. It dispatches
-due cron jobs into queued schedule runs, lets a worker claim and execute queued
-runs, exposes scheduler queue metrics in Admin and guards the flow through
-OpenAPI, SDK, smoke and deploy bundle markers.
+Latest runtime stage: Round 89 OpenForge dry-run confirmation and manifest
+preview. It makes dry-run operations require explicit confirmation, rejects
+write-mode intent at the API boundary, exposes manifest preview/detail through
+SDK/Admin and guards the flow through OpenAPI, smoke and deploy bundle markers.
 
 ## Next Queue
 
-1. OpenForge write/apply/rollback confirmation UX and manifest detail can be a
-   later explicit stage; direct Prisma/migration/business-code writes still
-   require user admission.
-2. Optional managed-KMS provider adapter if deployment needs a cloud KMS API
+1. Optional managed-KMS provider adapter if deployment needs a cloud KMS API
    instead of the current env-bound keyring.
-3. Optional operation-log external GeoIP enrichment if deployment needs real
+2. Optional operation-log external GeoIP enrichment if deployment needs real
    IP attribution beyond deterministic network categories.
+3. OpenForge direct Prisma/migration/business-code writes remain out of scope
+   until explicitly admitted.
 
 ## Docs Rule
 

@@ -46,7 +46,7 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
 - Monitor/OpenForge/Scheduler: Monitor Jobs has a live Admin operation surface,
   registry visibility, registered handler diagnostics, cron dispatch, worker
   claim and scheduler queue metrics; OpenForge has a live safe
-  planning/dry-run workbench.
+  planning/dry-run workbench with confirmation and manifest preview/detail.
 
 ## Recent Decisions
 
@@ -107,6 +107,9 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
 - Round 88: Scheduler/monitor dispatches due cron jobs into queued schedule
   runs, lets a worker claim and execute them, exposes queue metrics in Admin
   and guards the flow through OpenAPI/SDK/smoke/deploy checks.
+- Round 89: OpenForge dry-run operations require confirmation, reject
+  write-mode intent at the API boundary and expose manifest preview/detail
+  through SDK/Admin and smoke/deploy guards.
 
 ## Explicit Non-Claims
 
@@ -117,6 +120,6 @@ and AI/RAG/Agent workflow.
 
 ## Next Focus
 
-Choose OpenForge write/apply confirmation UX next if continuing Tools
-foundation. Managed cloud KMS adapters and external operation-log GeoIP are
-optional deployment integrations beyond the current foundation waterline.
+Managed cloud KMS adapters and external operation-log GeoIP are optional
+deployment integrations beyond the current foundation waterline. OpenForge
+direct schema/migration/business writes still require explicit user admission.

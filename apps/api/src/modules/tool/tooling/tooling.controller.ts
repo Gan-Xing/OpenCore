@@ -12,6 +12,7 @@ import {
   OpenForgeDoctorDto,
   OpenForgeManifestDetailDto,
   OpenForgeManifestListDto,
+  OpenForgeManifestPreviewRequestDto,
   OpenForgePlanDto,
   OpenForgePreflightDto,
   OpenForgeRollbackDryRunDto,
@@ -112,6 +113,16 @@ export class ToolingController {
   @ApiOkResponse({ type: OpenForgeManifestListDto })
   listOpenForgeManifests(): OpenForgeManifestListDto {
     return this.repository.listOpenForgeManifests();
+  }
+
+  @Post('openforge/manifests/preview')
+  @ApiTags('Tool OpenForge')
+  @RequirePermission('tool:openforge:read')
+  @ApiOkResponse({ type: OpenForgeManifestDetailDto })
+  createOpenForgeManifestPreview(
+    @Body() body: OpenForgeManifestPreviewRequestDto,
+  ): OpenForgeManifestDetailDto {
+    return this.repository.createOpenForgeManifestPreview(body);
   }
 
   @Get('openforge/manifests/:manifestId')

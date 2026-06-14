@@ -7316,6 +7316,36 @@
         "tags": ["Tooling", "Tool OpenForge"]
       }
     },
+    "/api/tools/openforge/manifests/preview": {
+      "post": {
+        "operationId": "ToolingController_createOpenForgeManifestPreview",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenForgeManifestPreviewRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenForgeManifestDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Tooling", "Tool OpenForge"]
+      }
+    },
     "/api/tools/openforge/manifests/{manifestId}": {
       "get": {
         "operationId": "ToolingController_getOpenForgeManifest",
@@ -10949,9 +10979,16 @@
           "status": { "type": "string", "enum": ["workspace-ready"] },
           "message": { "type": "string" },
           "workspace": { "type": "object" },
-          "generatorCore": { "type": "object" }
+          "generatorCore": { "type": "object" },
+          "operationPolicy": { "type": "object" }
         },
-        "required": ["status", "message", "workspace", "generatorCore"]
+        "required": [
+          "status",
+          "message",
+          "workspace",
+          "generatorCore",
+          "operationPolicy"
+        ]
       },
       "OpenForgeDoctorDto": {
         "type": "object",
@@ -11057,9 +11094,15 @@
           "configPath": {
             "type": "string",
             "default": "tools/generator/examples/openforge.v1.config.json"
+          },
+          "requestedMode": { "type": "string", "enum": ["dry-run", "write"] },
+          "confirmationText": {
+            "type": "string",
+            "default": "OPENFORGE DRY RUN",
+            "description": "Required confirmation text for Admin-triggered dry-runs."
           }
         },
-        "required": ["schemaPath"]
+        "required": ["schemaPath", "confirmationText"]
       },
       "OpenForgeApplyDryRunDto": {
         "type": "object",
@@ -11082,6 +11125,20 @@
         },
         "required": ["manifests", "warnings", "errors"]
       },
+      "OpenForgeManifestPreviewRequestDto": {
+        "type": "object",
+        "properties": {
+          "schemaPath": {
+            "type": "string",
+            "default": "tools/generator/examples/core.dict.v1.schema.json"
+          },
+          "configPath": {
+            "type": "string",
+            "default": "tools/generator/examples/openforge.v1.config.json"
+          }
+        },
+        "required": ["schemaPath"]
+      },
       "OpenForgeManifestDetailDto": {
         "type": "object",
         "properties": {
@@ -11098,9 +11155,15 @@
           "manifestId": {
             "type": "string",
             "description": "Manifest id returned by the OpenForge manifest list."
+          },
+          "requestedMode": { "type": "string", "enum": ["dry-run", "write"] },
+          "confirmationText": {
+            "type": "string",
+            "default": "OPENFORGE DRY RUN",
+            "description": "Required confirmation text for Admin-triggered dry-runs."
           }
         },
-        "required": ["manifestId"]
+        "required": ["manifestId", "confirmationText"]
       },
       "OpenForgeRollbackDryRunDto": {
         "type": "object",

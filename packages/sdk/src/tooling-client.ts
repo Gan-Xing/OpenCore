@@ -9,6 +9,7 @@ import type {
   OpenForgeDoctorSummary,
   OpenForgeManifestDetailSummary,
   OpenForgeManifestListSummary,
+  OpenForgeManifestPreviewRequest,
   OpenForgePlanSummary,
   OpenForgePreflightSummary,
   OpenForgeRollbackDryRunRequest,
@@ -48,6 +49,10 @@ export type ToolingClient = {
   listOpenForgeManifests: (
     token: string,
   ) => Promise<OpenForgeManifestListSummary>;
+  createOpenForgeManifestPreview: (
+    token: string,
+    body: OpenForgeManifestPreviewRequest,
+  ) => Promise<OpenForgeManifestDetailSummary>;
   getOpenForgeManifest: (
     token: string,
     manifestId: string,
@@ -110,6 +115,15 @@ export function createToolingClient(request: SdkRequest): ToolingClient {
       request<OpenForgeManifestListSummary>('/tools/openforge/manifests', {
         token,
       }),
+    createOpenForgeManifestPreview: (token, body) =>
+      request<OpenForgeManifestDetailSummary>(
+        '/tools/openforge/manifests/preview',
+        {
+          method: 'POST',
+          body,
+          token,
+        },
+      ),
     getOpenForgeManifest: (token, manifestId) =>
       request<OpenForgeManifestDetailSummary>(
         `/tools/openforge/manifests/${encodeURIComponent(manifestId)}`,

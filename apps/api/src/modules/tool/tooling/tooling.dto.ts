@@ -90,6 +90,23 @@ export class OpenForgeApplyDryRunRequestDto extends OpenForgeSchemaRequestDto {
     default: 'tools/generator/examples/openforge.v1.config.json',
   })
   configPath?: string;
+
+  @ApiProperty({ required: false, enum: ['dry-run', 'write'] })
+  requestedMode?: 'dry-run' | 'write';
+
+  @ApiProperty({
+    default: 'OPENFORGE DRY RUN',
+    description: 'Required confirmation text for Admin-triggered dry-runs.',
+  })
+  confirmationText!: string;
+}
+
+export class OpenForgeManifestPreviewRequestDto extends OpenForgeSchemaRequestDto {
+  @ApiProperty({
+    required: false,
+    default: 'tools/generator/examples/openforge.v1.config.json',
+  })
+  configPath?: string;
 }
 
 export class OpenForgeRollbackDryRunRequestDto {
@@ -97,6 +114,15 @@ export class OpenForgeRollbackDryRunRequestDto {
     description: 'Manifest id returned by the OpenForge manifest list.',
   })
   manifestId!: string;
+
+  @ApiProperty({ required: false, enum: ['dry-run', 'write'] })
+  requestedMode?: 'dry-run' | 'write';
+
+  @ApiProperty({
+    default: 'OPENFORGE DRY RUN',
+    description: 'Required confirmation text for Admin-triggered dry-runs.',
+  })
+  confirmationText!: string;
 }
 
 export class OpenForgeStatusDto {
@@ -111,6 +137,9 @@ export class OpenForgeStatusDto {
 
   @ApiProperty({ type: Object })
   generatorCore!: object;
+
+  @ApiProperty({ type: Object })
+  operationPolicy!: object;
 }
 
 export class OpenForgeDoctorDto {

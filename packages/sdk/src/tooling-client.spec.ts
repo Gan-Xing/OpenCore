@@ -32,11 +32,16 @@ describe('createToolingClient', () => {
       schemaPath: 'tools/generator/examples/core.dict.v1.schema.json',
     });
     await client.createOpenForgeApplyDryRun('token', {
+      confirmationText: 'OPENFORGE DRY RUN',
       schemaPath: 'tools/generator/examples/core.dict.v1.schema.json',
     });
     await client.listOpenForgeManifests('token');
+    await client.createOpenForgeManifestPreview('token', {
+      schemaPath: 'tools/generator/examples/core.dict.v1.schema.json',
+    });
     await client.getOpenForgeManifest('token', 'manifest-1');
     await client.createOpenForgeRollbackDryRun('token', {
+      confirmationText: 'OPENFORGE DRY RUN',
       manifestId: 'manifest-1',
     });
 
@@ -75,6 +80,10 @@ describe('createToolingClient', () => {
       },
       {
         path: '/tools/openforge/manifests',
+      },
+      {
+        path: '/tools/openforge/manifests/preview',
+        method: 'POST',
       },
       {
         path: '/tools/openforge/manifests/manifest-1',

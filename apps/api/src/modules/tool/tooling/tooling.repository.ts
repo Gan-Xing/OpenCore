@@ -24,6 +24,7 @@ const DEFAULT_OPENFORGE_CONFIG_PATH =
   'tools/generator/examples/openforge.v1.config.json';
 const ALLOWED_OPENFORGE_SCHEMA_PREFIX = 'tools/generator/examples/';
 const OPENFORGE_MANIFEST_ID_PATTERN = /^[a-zA-Z0-9._-]+$/;
+const OPENFORGE_DRY_RUN_CONFIRMATION_TEXT = 'OPENFORGE DRY RUN';
 
 function findWorkspaceRoot(start = process.cwd()): string {
   let current = resolve(start);
@@ -106,6 +107,23 @@ function manifestPathFromId(manifestId: string): string {
   return `.openforge/manifests/${normalized.replace(/\.json$/, '')}.json`;
 }
 
+function assertOpenForgeDryRunConfirmation(input: {
+  confirmationText?: string;
+  requestedMode?: string;
+}): void {
+  if (input.requestedMode && input.requestedMode !== 'dry-run') {
+    throw new BadRequestException(
+      'OpenForge API only supports dry-run operations; direct code writes require explicit user admission.',
+    );
+  }
+
+  if (input.confirmationText !== OPENFORGE_DRY_RUN_CONFIRMATION_TEXT) {
+    throw new BadRequestException(
+      `OpenForge dry-run requires confirmationText "${OPENFORGE_DRY_RUN_CONFIRMATION_TEXT}".`,
+    );
+  }
+}
+
 @Injectable()
 export class ToolingRepository {
   private getOpenForgeRepoRoot(): string {
@@ -139,6 +157,11 @@ export class ToolingRepository {
       status: 'workspace-ready' as const,
       workspace: getOpenForgeWorkspaceStatus(),
       generatorCore: getOpenForgeGeneratorCoreStatus(),
+      operationPolicy: {
+        dryRunOnly: true,
+        confirmationText: OPENFORGE_DRY_RUN_CONFIRMATION_TEXT,
+        writeRequiresUserAdmission: true,
+      },
       message:
         'OpenForge is available as a guarded planning and dry-run workspace.',
     };
@@ -177,9 +200,13 @@ export class ToolingRepository {
   }
 
   createOpenForgeApplyDryRun(input: {
+    confirmationText?: string;
     configPath?: string;
+    requestedMode?: string;
     schemaPath?: string;
   }) {
+    assertOpenForgeDryRunConfirmation(input);
+
     const repoRoot = this.getOpenForgeRepoRoot();
     const schemaPath = normalizeOpenForgeSchemaPath(input.schemaPath);
     const configPath = normalizeOpenForgeConfigPath(input.configPath);
@@ -207,6 +234,37 @@ export class ToolingRepository {
     };
   }
 
+  createOpenForgeManifestPreview(input: {
+    configPath?: string;
+    schemaPath?: string;
+  }) {
+    const repoRoot = this.getOpenForgeRepoRoot();
+    const schemaPath = normalizeOpenForgeSchemaPath(input.schemaPath);
+    const configPath = normalizeOpenForgeConfigPath(input.configPath);
+    const result = applyOpenForge({
+      schemaPath,
+      configPath,
+      mode: 'dry-run',
+      yes: false,
+      repoRoot,
+      sourceRoot: repoRoot,
+      command: [
+        'pnpm openforge:apply --',
+        '--schema',
+        schemaPath,
+        ...(configPath ? ['--config', configPath] : []),
+        '--dry-run',
+      ].join(' '),
+    });
+
+    return {
+      manifestPath: result.manifest ? `dry-run:${result.manifest.id}` : '',
+      manifest: result.manifest,
+      warnings: result.warnings,
+      errors: result.errors,
+    };
+  }
+
   listOpenForgeManifests() {
     return listOpenForgeManifests({
       repoRoot: this.getOpenForgeRepoRoot(),
@@ -220,7 +278,13 @@ export class ToolingRepository {
     });
   }
 
-  createOpenForgeRollbackDryRun(input: { manifestId: string }) {
+  createOpenForgeRollbackDryRun(input: {
+    confirmationText?: string;
+    manifestId: string;
+    requestedMode?: string;
+  }) {
+    assertOpenForgeDryRunConfirmation(input);
+
     const manifestPath = manifestPathFromId(input.manifestId);
 
     const result = rollbackOpenForge({

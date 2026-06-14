@@ -49,6 +49,8 @@ backlog, failure history and live Admin visibility.
 Round 88 added Scheduler/monitor cron dispatch, queued schedule runs, worker
 claim execution and scheduler queue metrics with Admin controls and smoke
 coverage.
+Round 89 added OpenForge dry-run confirmation, API write-intent rejection and
+manifest preview/detail through SDK/Admin with smoke coverage.
 Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 `lint` must run sequentially.
 
@@ -73,7 +75,8 @@ Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
   execution, failed retry, run-log detail, cron dispatch, worker claim and
   scheduler queue metrics.
 - OpenForge smoke covers status, doctor, plan, diff, check, apply dry-run,
-  manifest list, rollback dry-run and unsafe schema/config/manifest guards.
+  manifest list, manifest preview, rollback dry-run, dry-run confirmation,
+  write-intent rejection and unsafe schema/config/manifest guards.
 - Integration health smoke covers provider-wide readiness totals,
   config-vault debt, outbox backlog, diagnostics parity, failure history and
   secret-leak guards.
@@ -90,8 +93,8 @@ real incident decisions. Do not create per-round reports by default.
   deployment-topology upgrade if needed.
 - Managed cloud KMS provider adapters are optional deployment integration; the
   current foundation waterline has env-bound keyring status and rotation.
-- OpenForge write/apply confirmation UX and direct generated code writes remain
-  later explicit stages.
+- OpenForge direct generated schema/migration/business writes remain outside
+  the admitted surface.
 
 ## Trigger Next Audit
 

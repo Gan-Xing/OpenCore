@@ -61,6 +61,12 @@ describe('ToolingController permission matrix', () => {
     expect(
       Reflect.getMetadata(
         REQUIRED_PERMISSIONS_KEY,
+        ToolingController.prototype.createOpenForgeManifestPreview,
+      ),
+    ).toEqual(['tool:openforge:read']);
+    expect(
+      Reflect.getMetadata(
+        REQUIRED_PERMISSIONS_KEY,
         ToolingController.prototype.getOpenForgeManifest,
       ),
     ).toEqual(['tool:openforge:read']);
