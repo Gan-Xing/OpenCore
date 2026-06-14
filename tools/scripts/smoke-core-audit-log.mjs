@@ -184,7 +184,7 @@ try {
   await waitForAuditLog({
     action: 'DELETE',
     label: 'audit log retention clean operation',
-    resource: '/api/core/audit-logs/clean',
+    resource: '/api/core/audit-logs/clean?retentionDays=0',
     statusCode: 200,
   });
   await cleanupCreatedConfigs();
