@@ -1,18 +1,25 @@
-# cycle-021 Capstone Acceptance Backlog
+# cycle-021 Admin Fallback Closure Backlog
 
 Started: 2026-06-12
 Last compacted: 2026-06-14
 
-This is the finite Capstone Acceptance & Debt Closure queue. It must not be
-expanded into automatic follow-up work.
+This is the finite Admin fallback closure queue for the seven fixed System
+Admin pages. It must not be expanded into automatic follow-up work or general
+capability-map productization.
 
 ## Scope
 
-Pre-authorized foundation scope: System, Security, Monitor,
-Tools/OpenForge foundation, Collaboration center foundations, IP/location,
-OAuth token management, JWT blacklist, notice templates/delivery, KMS/secret
-vault, operation-log maintenance, scheduler/monitor depth and config runtime
-governance.
+In scope:
+
+- System Notices Admin live-only
+- System Files Admin live-only
+- System Posts Admin live-only
+- System Config Admin live-only
+- System Users Admin live-only
+- System Roles Admin live-only
+- System Permissions Admin live-only
+- Shared no-fixture-fallback guard, public smoke and documentation
+  reconciliation for the seven rows only.
 
 ## Delivered Clusters
 
@@ -32,19 +39,31 @@ governance.
 
 ## Active Queue
 
-1. Build `docs/quality-cycle/cycle-021/acceptance-matrix.md`.
-2. Build a global no-fixture-fallback guard.
-3. Clean System Users fallback.
-4. Clean System Roles fallback.
-5. Clean or verify System Permissions fallback closure.
-6. Clean or verify System Posts fallback closure.
-7. Clean System Files fallback.
-8. Clean System Config fallback.
-9. Clean System Notices fallback.
-10. Add explicit public smoke, split into public API smoke and public Admin
-    smoke.
-11. Rejudge the waterline with strict `Meets` rules.
-12. Sync progress, handoff, ledger and completion report.
+- [x] Build `docs/quality-cycle/cycle-021/acceptance-matrix.md`.
+- [ ] Build a global no-fixture-fallback guard for the seven pages.
+- [ ] Clean System Users fallback.
+- [ ] Clean System Roles fallback.
+- [ ] Clean System Permissions fallback or confirm closure.
+- [ ] Clean System Posts fallback or confirm closure.
+- [ ] Clean System Files fallback.
+- [ ] Clean System Config fallback.
+- [ ] Clean System Notices fallback.
+- [ ] Add explicit public smoke, split into public API smoke and public Admin
+      smoke.
+- [ ] Rejudge the waterline with strict `Meets` rules.
+- [ ] Sync progress, handoff, ledger and completion report.
+
+Execution priority after this planning round:
+
+1. System Roles
+2. System Users
+3. System Config
+4. System Notices
+5. System Files
+6. System Permissions
+7. System Posts
+8. Unified Admin smoke/deploy guard coverage for the seven pages
+9. Documentation reconciliation
 
 ## Public Smoke Rule
 

@@ -26,16 +26,16 @@ OpenCore is in Cycle-021 capability-map productization. The project has moved
 past strategy-only planning, S3-S8 foundation, runtime integration, OpenForge
 V1, Admin Ant Design Pro V6 migration, and backend package extraction.
 
-Cycle-021 has delivered 115 deployable stages, but remains in Capstone
-Acceptance & Debt Closure until acceptance-matrix, live-only guard, public
-smoke, and doc reconciliation are complete.
+Cycle-021 has delivered 115 deployable stages, but remains in System Admin
+Fallback Closure until the seven-page acceptance matrix, live-only guard,
+public smoke and doc reconciliation are complete.
 
 Current state:
 
 - Many API/SDK/Admin live-only local stages have shipped across system,
   security, monitor, integration, tools and collaboration foundations.
-- A global acceptance matrix is now required to separate runtime completion
-  from Admin live-only acceptance.
+- A seven-page acceptance matrix now separates runtime completion from Admin
+  live-only acceptance.
 - A global no-fixture-fallback guard is still required.
 - Public smoke coverage must be explicit before any capability is marked full
   `Meets`.
@@ -55,26 +55,26 @@ Admin smoke.
 
 ## Milestone Summary
 
-| Area                   | State    | Compact record                                                                                                                             |
-| ---------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| Strategy blueprint     | Complete | Target vision, capability matrix, API architecture, Admin map, staged roadmap and offline visual were created.                             |
-| S3-S8 foundation       | Complete | Contracts/shared/module-registry, API foundation, Admin shell, auth/RBAC, system management, monitor/tool baseline shipped.                |
-| Runtime integration    | Complete | Legacy app runtime frozen; OpenCore received isolated PostgreSQL, Redis/BullMQ and MinIO/S3 boundaries plus live smoke.                    |
-| OpenForge S9 MVP       | Complete | Registry entry, contracts, read-only plan/diff/check, safety preflight and docs landed.                                                    |
-| OpenForge V1           | Complete | Schema/config DSL, template pack, safe apply, manifest rollback, doctor, gate, and generated API/Admin/SDK/docs skeletons landed.          |
-| Admin V6 migration     | Complete | Admin moved to official Ant Design Pro V6 structure; official OpenCore pages, login/request, route registry and smoke guards were aligned. |
-| Backend extraction BE20 | Complete | Runtime capabilities were extracted into `packages/*`; `apps/api` is now bootstrap, HTTP aggregation, config and OpenAPI export/check.    |
-| Cycle-021              | Active   | Core/system/security/monitor/integration foundations are in finite Capstone Acceptance & Debt Closure.                                     |
+| Area                    | State    | Compact record                                                                                                                             |
+| ----------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Strategy blueprint      | Complete | Target vision, capability matrix, API architecture, Admin map, staged roadmap and offline visual were created.                             |
+| S3-S8 foundation        | Complete | Contracts/shared/module-registry, API foundation, Admin shell, auth/RBAC, system management, monitor/tool baseline shipped.                |
+| Runtime integration     | Complete | Legacy app runtime frozen; OpenCore received isolated PostgreSQL, Redis/BullMQ and MinIO/S3 boundaries plus live smoke.                    |
+| OpenForge S9 MVP        | Complete | Registry entry, contracts, read-only plan/diff/check, safety preflight and docs landed.                                                    |
+| OpenForge V1            | Complete | Schema/config DSL, template pack, safe apply, manifest rollback, doctor, gate, and generated API/Admin/SDK/docs skeletons landed.          |
+| Admin V6 migration      | Complete | Admin moved to official Ant Design Pro V6 structure; official OpenCore pages, login/request, route registry and smoke guards were aligned. |
+| Backend extraction BE20 | Complete | Runtime capabilities were extracted into `packages/*`; `apps/api` is now bootstrap, HTTP aggregation, config and OpenAPI export/check.     |
+| Cycle-021               | Active   | Core/system/security/monitor/integration foundations are in finite Capstone Acceptance & Debt Closure.                                     |
 
 ## Cycle-021 Compressed History
 
-| Rounds | Focus                                                                                                                                              |
-| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1-13   | First live API/SDK/Admin stages for notice, dept, post, menu, role, permission, user, dict, config, file, login-log, operation-log and online-user. |
-| 14-23  | Online-user revocation, file content, menu metadata, role/user hardening, dict item boundaries, config category/public/secret preparation.         |
-| 24-36  | Config cache/value/runtime, option sources, profile/password/avatar, scheduler lifecycle and monitor details.                                      |
-| 37-49  | Config export/batch/runtime, login-log schema/lockout/cleanup, operation-log filter/detail/export and online-user location/device/session fields.  |
-| 50-59  | Logout audit semantics, dept/post ordering, data-scope, notice publish flow, scheduler controls, monitor runtime/queue details.                    |
+| Rounds | Focus                                                                                                                                                 |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1-13   | First live API/SDK/Admin stages for notice, dept, post, menu, role, permission, user, dict, config, file, login-log, operation-log and online-user.   |
+| 14-23  | Online-user revocation, file content, menu metadata, role/user hardening, dict item boundaries, config category/public/secret preparation.            |
+| 24-36  | Config cache/value/runtime, option sources, profile/password/avatar, scheduler lifecycle and monitor details.                                         |
+| 37-49  | Config export/batch/runtime, login-log schema/lockout/cleanup, operation-log filter/detail/export and online-user location/device/session fields.     |
+| 50-59  | Logout audit semantics, dept/post ordering, data-scope, notice publish flow, scheduler controls, monitor runtime/queue details.                       |
 | 60-115 | Notice provider/outbox reliability, config vault/KMS, monitor/jobs/cache/version, OpenForge, integration/collaboration and Admin live-only hardening. |
 
 See `docs/quality-cycle/cycle-021/round-history.md` for the maintained version.
@@ -101,7 +101,9 @@ Current foundation queue from Cycle-021:
 
 - Build and keep the acceptance matrix current.
 - Add a global no-fixture-fallback guard.
-- Remove remaining System Users, Roles, Files, Config and Notices fallback.
+- Remove remaining System Roles, Users, Config, Notices and Files fallback.
+- Confirm or close System Permissions and Posts local-only rows against the
+  strict matrix, public smoke and global guard.
 - Add explicit public smoke before marking capabilities as full `Meets`.
 - Reconcile progress, handoff, ledger and completion-report docs.
 

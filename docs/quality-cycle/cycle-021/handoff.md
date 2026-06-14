@@ -6,16 +6,41 @@ Branch: `main`
 
 ## Goal
 
-Close the finite Cycle-021 Capstone Acceptance queue. Compare RuoYi/Yudao
-capabilities to OpenCore's TS/NestJS boundaries, then ship deployable,
-verifiable and reversible stages. A minimal stage is not a minimal product; a
-product can span multiple finite stages until it reaches the admitted
-waterline.
+Close only the finite Cycle-021 System Admin fallback debt queue. This handoff
+is the source of truth for the seven fixed System Admin pages below. Do not
+restore the old capability-map productization recursion goal or select new
+P0/P1 work outside this list.
+
+Fixed pages:
+
+1. System Roles Admin live-only
+2. System Users Admin live-only
+3. System Config Admin live-only
+4. System Notices Admin live-only
+5. System Files Admin live-only
+6. System Permissions Admin live-only
+7. System Posts Admin live-only
 
 ## Fixed Acceptance Execution
 
 - Read this file and `acceptance-matrix.md` before selecting a capstone task.
-- Pick only from the finite backlog queue.
+- Pick only from the seven-page finite backlog queue.
+- If the acceptance matrix is missing or does not list the seven fixed pages,
+  the round is docs-only planning: update `acceptance-matrix.md`, rewrite
+  `backlog.md` as a finite seven-page closure queue, update this handoff, do
+  not edit runtime/source code, do not deploy, run docs checks, commit and
+  push.
+- If the acceptance matrix is present, each code round closes exactly one Open
+  page in this order:
+  1. System Roles
+  2. System Users
+  3. System Config
+  4. System Notices
+  5. System Files
+  6. System Permissions
+  7. System Posts
+  8. Seven-page unified Admin smoke/deploy guard coverage
+  9. Documentation reconciliation
 - Code changes: test, commit, push, deploy through `pnpm deploy:opencore`,
   then run public API smoke and public Admin smoke. Printing a public URL does
   not count as verification.
@@ -26,6 +51,47 @@ waterline.
 - Feature code, tests, deploy guards and docs should land in one commit.
 - Docs-only cleanup gets format/check, commit and push; no redeploy when
   runtime artifacts are unchanged.
+
+## Page Closure Requirements
+
+For the selected page:
+
+- Remove `create*Fixtures` or registry fixture fallback imports/usages.
+- Remove `fallbackRows` and related fallback data constants.
+- Remove `Using fallback...`, `fallback snapshot` and equivalent UI copy.
+- Remove API failure paths that call `setRows(fallbackRows)` or equivalent.
+- Remove detail failure paths that call `setSelected(record)` or
+  `setSelectedDetail(record)`.
+- API/list/detail/form option load failures must show explicit error or empty
+  error state. They must not show fake data.
+- Add or update Admin smoke/static guard and deploy guard so fallback cannot
+  reappear silently.
+- Update only the docs whose state actually changed.
+
+## Checks
+
+Docs-only planning round:
+
+- `pnpm exec prettier --check <changed docs>`
+- `pnpm quality-docs:check`
+- `git diff --check`
+- commit and push
+
+Code round:
+
+- `pnpm lint`
+- `pnpm typecheck`
+- `pnpm test`
+- relevant focused smoke
+- Admin smoke/static guard
+- `pnpm deploy:opencore`
+- local fixed-port verification: API `39172`, Admin `39174`
+- public URL verification:
+  - `http://144.217.243.161:39172/health/live`
+  - `http://144.217.243.161:39172/health/ready`
+  - `http://144.217.243.161:39174/`
+
+Only successful real requests count as public smoke.
 
 ## Compatibility
 
@@ -128,14 +194,24 @@ for stale fixture-backed Menus bundles.
 
 ## Next Queue
 
-1. Close remaining fixture-backed Admin debt by dependency order: Roles,
-   Users, Config, Files and System Notices.
-2. Payment/BillingDesign remains explicit-admission because real payment,
+1. Close remaining fixture-backed Admin debt by dependency order: Roles, Users,
+   Config, System Notices and Files.
+2. Confirm or close Permissions and Posts local-only rows against the strict
+   matrix, public smoke and global guard.
+3. Add seven-page unified no-fixture-fallback guard coverage.
+4. Reconcile progress, handoff, ledger and completion-report docs.
+5. Payment/BillingDesign remains explicit-admission because real payment,
    refund and reconciliation are out of scope.
-3. Optional Reports/ExportJobs remain explicit-admission because full report
+6. Optional Reports/ExportJobs remain explicit-admission because full report
    designer and big-data async export are out of scope.
-4. OpenForge direct Prisma/migration/business-code writes remain out of scope
+7. OpenForge direct Prisma/migration/business-code writes remain out of scope
    until explicitly admitted.
+
+## Stop Condition
+
+Stop this closure track only when all seven matrix rows are accepted, global
+no-fixture-fallback guard coverage is present, public API/Admin smoke is
+recorded, docs are reconciled and `git status --short` is empty after push.
 
 ## Docs Rule
 
