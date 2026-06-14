@@ -19,7 +19,7 @@ active debt and decisions that change future execution.
 
 ## Runtime State
 
-Cycle-021 has completed 102 deployable stages across
+Cycle-021 has completed 103 deployable stages across
 System/Security/Monitor/Integration/Tools foundations. Round 91 added
 token/session blacklist maintenance with registered-token allowlist
 enforcement, expired-session cleanup, API/SDK/Admin/OpenAPI visibility, smoke
@@ -44,7 +44,9 @@ template/outbox list, detail, preview and queued-processing controls. Round
 101 moved the Integration SMS Admin page to live template/outbox list, detail,
 preview and queued-processing controls. Round 102 moved Collaboration Messages
 from fixtures to live summary, list/detail, create, mark-read, archive and
-delete operations with seed and smoke coverage.
+delete operations with seed and smoke coverage. Round 103 moved Collaboration
+Notices from fixtures to live list/detail, create, publish and archive
+operations with smoke and deploy guards.
 
 ## Guard Register
 
@@ -116,8 +118,10 @@ delete operations with seed and smoke coverage.
   and require live Mail/SMS template/outbox markers.
 - Collaboration: message smoke covers seed-backed list/detail, create,
   idempotent mark-read, archive, delete and post-delete hiding.
-  Admin/deploy guards reject fixture-backed Messages source and require live
-  message operation markers.
+  Notice smoke covers seed-backed list/detail, create, publish,
+  repeat-publish guard, archive and repeat-archive guard. Admin/deploy guards
+  reject fixture-backed Messages/Notices source and require live operation
+  markers.
 - Prisma schema/seed drift: migrations and seed must include every Prisma
   model used by smoke-covered runtime endpoints.
 - Admin generated types: run Admin `typecheck` and `lint` sequentially because
@@ -137,5 +141,5 @@ delete operations with seed and smoke coverage.
   precision is not part of the current request-time lookup surface.
 - OpenForge: direct schema/migration/business writes still require user
   admission.
-- Collaboration: Notices, Todos and Approval Lite Admin pages still need live
-  API/SDK operations instead of fixture rows.
+- Collaboration: Todos and Approval Lite Admin pages still need live API/SDK
+  operations instead of fixture rows.

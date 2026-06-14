@@ -85,6 +85,8 @@ list, detail, preview and queued-processing controls.
 Round 102 moved Collaboration Messages Admin from fixtures to live
 summary/list/detail, create, mark-read, archive and delete operations with
 Prisma migration, seed and smoke coverage.
+Round 103 moved Collaboration Notices Admin from fixtures to live list/detail,
+create, publish and archive operations with smoke and deploy guards.
 Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 `lint` must run sequentially.
 
@@ -138,7 +140,9 @@ Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
   Mail/SMS template/outbox operations.
 - Collaboration Messages smoke covers seed-backed list/detail, create,
   idempotent mark-read, archive, delete and post-delete hiding;
-  Admin/deploy guards reject the fixture-backed Messages page.
+  Collaboration Notices smoke covers seed-backed list/detail, create, publish,
+  guarded repeat-publish, archive and guarded repeat-archive; Admin/deploy
+  guards reject fixture-backed Messages and Notices pages.
 
 ## Documentation Finding
 
@@ -152,8 +156,8 @@ real incident decisions. Do not create per-round reports by default.
   deployment-topology upgrade if needed.
 - Automatic backfill of historical login/operation logs with external GeoIP
   precision remains outside the current request-time lookup surface.
-- Collaboration Notices, Todos and Approval Lite Admin pages remain fixture
-  backed until their focused live-operations loops land.
+- Collaboration Todos and Approval Lite Admin pages remain fixture backed until
+  their focused live-operations loops land.
 - OpenForge direct generated schema/migration/business writes remain outside
   the admitted surface.
 

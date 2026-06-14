@@ -777,6 +777,17 @@ if (
   !messagesPage.includes('collaboration:message:create') ||
   !messagesPage.includes('collaboration:message:delete') ||
   !noticesPage.includes('@opencore/sdk') ||
+  !noticesPage.includes('listOpenCoreNotices') ||
+  !noticesPage.includes('getOpenCoreNotice') ||
+  !noticesPage.includes('createOpenCoreNotice') ||
+  !noticesPage.includes('publishOpenCoreNotice') ||
+  !noticesPage.includes('archiveOpenCoreNotice') ||
+  !noticesPage.includes('Live notices') ||
+  !noticesPage.includes('Create notice') ||
+  !noticesPage.includes('Publish notice') ||
+  !noticesPage.includes('Archive notice') ||
+  !noticesPage.includes('collaboration:notice:create') ||
+  !noticesPage.includes('collaboration:notice:update') ||
   !todosPage.includes('@opencore/sdk') ||
   !approvalsPage.includes('@opencore/sdk') ||
   !jobsPage.includes('@opencore/sdk') ||
@@ -837,6 +848,20 @@ if (
 ) {
   throw new Error(
     'Collaboration Messages page must use live message SDK APIs instead of static fixtures.',
+  );
+}
+
+if (
+  noticesPage.includes('createCollaborationFixtures') ||
+  noticesPage.includes('findNoticeFixture') ||
+  !opencorePlatformService.includes('collaborationClient.listNotices') ||
+  !opencorePlatformService.includes('collaborationClient.getNotice') ||
+  !opencorePlatformService.includes('collaborationClient.createNotice') ||
+  !opencorePlatformService.includes('collaborationClient.publishNotice') ||
+  !opencorePlatformService.includes('collaborationClient.archiveNotice')
+) {
+  throw new Error(
+    'Collaboration Notices page must use live notice SDK APIs instead of static fixtures.',
   );
 }
 

@@ -44,6 +44,7 @@ import {
   type CollaborationDeleteResult,
   type CollaborationSummary,
   type CreateMessageRequest,
+  type CreateNoticeRequest,
   type DeleteCacheKeyRequest,
   type OpenForgeApplyDryRunRequest,
   type OpenForgeApplyDryRunSummary,
@@ -129,6 +130,8 @@ import {
   type MarkSystemNoticesReadRequest,
   type MessageQueryRequest,
   type MessageSummary,
+  type NoticeQueryRequest,
+  type NoticeSummary,
   type KickOutSessionRequest,
   type ListUsersRequest,
   type OnlineUserQueryRequest,
@@ -250,6 +253,35 @@ export function deleteOpenCoreMessage(
   id: string,
 ): Promise<CollaborationDeleteResult> {
   return collaborationClient.deleteMessage(getRequiredAdminToken(), id);
+}
+
+export async function listOpenCoreNotices(
+  query?: NoticeQueryRequest,
+): Promise<NoticeSummary[]> {
+  const page = await collaborationClient.listNotices(getRequiredAdminToken(), {
+    page: 1,
+    pageSize: 100,
+    ...query,
+  });
+  return [...page.items];
+}
+
+export function getOpenCoreNotice(id: string): Promise<NoticeSummary> {
+  return collaborationClient.getNotice(getRequiredAdminToken(), id);
+}
+
+export function createOpenCoreNotice(
+  body: CreateNoticeRequest,
+): Promise<NoticeSummary> {
+  return collaborationClient.createNotice(getRequiredAdminToken(), body);
+}
+
+export function publishOpenCoreNotice(id: string): Promise<NoticeSummary> {
+  return collaborationClient.publishNotice(getRequiredAdminToken(), id);
+}
+
+export function archiveOpenCoreNotice(id: string): Promise<NoticeSummary> {
+  return collaborationClient.archiveNotice(getRequiredAdminToken(), id);
 }
 
 export function getOpenCoreOpenForgeStatus(): Promise<OpenForgeStatusSummary> {

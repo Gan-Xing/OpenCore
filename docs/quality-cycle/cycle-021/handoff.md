@@ -48,7 +48,7 @@ packages and OpenForge direct Prisma/migration/business-code writing.
 
 ## Current State
 
-Cycle-021 has completed 102 deployable stages.
+Cycle-021 has completed 103 deployable stages.
 
 - System/RBAC: notice, dept, post, menu, role, permission, user, dict, config
   and file loops are live.
@@ -92,21 +92,21 @@ Cycle-021 has completed 102 deployable stages.
   workbench for status, doctor, plan, diff, check, manifest list and
   apply/rollback dry-run, dry-run confirmation and manifest preview/detail.
 - Collaboration: Messages now use live API/SDK/Admin operations for summary,
-  list, detail, create, mark-read, archive and delete, with Prisma migration
-  and seed coverage, a dedicated smoke and Admin/deploy guards. Notices, Todos
-  and Approval Lite Admin pages still need the same live-operations treatment.
+  list, detail, create, mark-read, archive and delete. Notices now use live
+  API/SDK/Admin operations for list, detail, create, publish and archive.
+  Both have Prisma migration/seed coverage, dedicated smoke and Admin/deploy
+  guards. Todos and Approval Lite Admin pages still need the same
+  live-operations treatment.
 
-Latest runtime stage: Round 102 Collaboration Messages live operations. It
-replaces the fixture-backed Messages Admin page with live summary/list/detail,
-create, mark-read, archive and delete controls through the SDK, plus migration,
-seed, smoke and deploy guards.
+Latest runtime stage: Round 103 Collaboration Notices live operations. It
+replaces the fixture-backed Notices Admin page with live list/detail, create,
+publish and archive controls through the SDK, plus smoke and deploy guards.
 
 ## Next Queue
 
-1. Move Collaboration Notices Admin from fixtures to live API/SDK operations.
-2. Move Collaboration Todos and Approval Lite Admin pages from fixtures to
+1. Move Collaboration Todos and Approval Lite Admin pages from fixtures to
    live API/SDK operations in focused follow-up loops.
-3. OpenForge direct Prisma/migration/business-code writes remain out of scope
+2. OpenForge direct Prisma/migration/business-code writes remain out of scope
    until explicitly admitted.
 
 ## Docs Rule

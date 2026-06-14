@@ -30,7 +30,7 @@ schema/business-code writing.
   runtime login policy.
 - Rounds 50-59: logout audit semantics, ordering, data-scope, notice
   inbox/read analytics, feature flags and login-log location.
-- Rounds 60-102: notice template/delivery/provider/outbox work, SMS HTTP and
+- Rounds 60-103: notice template/delivery/provider/outbox work, SMS HTTP and
   SMTP adapters, config vault and rollout/audience, operation-log cleanup, plus
   mail subject persistence, provider diagnostics, SMS HTTP secret injection,
   SMTP attachments, explicit SMTP TLS policy, inbox realtime events, Monitor
@@ -47,18 +47,16 @@ schema/business-code writing.
   metadata, live Tool OpenAPI drift snapshot metadata, live Tool Export
   protocol/preview Admin wiring, shared live current-page export protocol and
   live Integration Mail/SMS template/outbox Admin operations, plus live
-  Collaboration Messages operations.
+  Collaboration Messages and Notices operations.
 
-Latest done: Round 102 Collaboration Messages live operations with summary,
-list/detail, create, mark-read, archive, delete, Prisma seed, Admin smoke,
-API smoke and deploy guards.
+Latest done: Round 103 Collaboration Notices live operations with list/detail,
+create, publish, archive, Admin smoke, API smoke and deploy guards.
 
 ## Active P1/P2 Queue
 
-1. Move Collaboration Notices Admin from fixtures to live API/SDK operations.
-2. Move Collaboration Todos and Approval Lite Admin pages from fixtures to
+1. Move Collaboration Todos and Approval Lite Admin pages from fixtures to
    live API/SDK operations.
-3. OpenForge direct schema/migration/business logic writes still require user
+2. OpenForge direct schema/migration/business logic writes still require user
    admission.
 
 ## Rework Notes

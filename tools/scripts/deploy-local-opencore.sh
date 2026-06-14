@@ -593,6 +593,49 @@ verify_admin_bundle_api_base_url() {
     exit 1
   fi
 
+  if grep \
+    --fixed-strings \
+    "createCollaborationFixtures" \
+    "$ROOT_DIR/apps/admin/src/pages/Collaboration/Notices.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "findNoticeFixture" \
+    "$ROOT_DIR/apps/admin/src/pages/Collaboration/Notices.tsx" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Live notices" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Create notice" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Publish notice" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Archive notice" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "collaboration:notice:create" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "collaboration:notice:update" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null; then
+    echo "Admin bundle does not include live collaboration notice operations." >&2
+    echo "Refusing to deploy a stale frontend Collaboration Notices page." >&2
+    exit 1
+  fi
+
   if ! grep -R \
     --fixed-strings \
     --include='*.js' \
@@ -1317,6 +1360,11 @@ run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
   node "$ROOT_DIR/tools/scripts/smoke-core-collaboration-messages.mjs"
+
+run_with_env env \
+  OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \
+  OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
+  node "$ROOT_DIR/tools/scripts/smoke-core-collaboration-notices.mjs"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \

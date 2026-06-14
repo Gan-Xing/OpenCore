@@ -33,7 +33,7 @@ failures have guards; and remaining omissions are explicit product boundaries.
 | `tool.openapi`        | Meets current | Live drift snapshot metadata uses API/SDK/Admin, OpenAPI contract fields and tool/deploy guards.     |
 | `tool.export`         | Meets current | Admin protocol/preview and shared current-page export buttons use the live protocol with row caps.   |
 | `OpenForge Admin`     | Meets current | Safe workbench, dry-run confirmation, write-intent rejection and manifest preview/detail.            |
-| `collaboration`       | Enhance       | Messages are live; Notices, Todos and Approval Lite Admin pages still need live operations.          |
+| `collaboration`       | Enhance       | Messages and Notices are live; Todos and Approval Lite Admin pages still need live operations.       |
 
 ## Closed Remediation
 
@@ -117,11 +117,13 @@ failures have guards; and remaining omissions are explicit product boundaries.
 - Round 102 replaced the Collaboration Messages Admin fixture page with live
   summary/list/detail, create, mark-read, archive and delete controls, plus
   Prisma migration, seed and smoke coverage.
+- Round 103 replaced the Collaboration Notices Admin fixture page with live
+  list/detail, create, publish and archive controls.
 
 ## Active Debt
 
-1. Collaboration Notices, Todos and Approval Lite Admin pages still need live
-   API/SDK operations instead of fixture rows.
+1. Collaboration Todos and Approval Lite Admin pages still need live API/SDK
+   operations instead of fixture rows.
 2. OpenForge direct schema/migration/business-code writes still require user
    admission.
 
@@ -173,6 +175,9 @@ failures have guards; and remaining omissions are explicit product boundaries.
 - Collaboration: message smoke covers seeded list/detail, create, idempotent
   mark-read, archive, delete and post-delete hiding; Admin/deploy guards
   reject fixture-backed Messages source and require live message operation
+  markers. Notice smoke covers seeded list/detail, create, publish,
+  repeat-publish guard, archive and repeat-archive guard; Admin/deploy guards
+  reject fixture-backed Notices source and require live notice operation
   markers.
 - Config: runtime shape, environment override governance, secret-vault
   plaintext protection, legacy envelope deserialization, secret version
