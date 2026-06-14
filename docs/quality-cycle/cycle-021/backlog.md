@@ -43,7 +43,7 @@ In scope:
 - [ ] Build a global no-fixture-fallback guard for the seven pages.
 - [x] Clean System Users fallback.
 - [x] Clean System Roles fallback.
-- [ ] Clean System Permissions fallback or confirm closure.
+- [x] Clean System Permissions fallback or confirm closure.
 - [ ] Clean System Posts fallback or confirm closure.
 - [x] Clean System Files fallback.
 - [x] Clean System Config fallback.

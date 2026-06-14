@@ -29,7 +29,7 @@ Strict Capstone rules:
 | -------------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | System Users (`core.user`)             | Meets            | User CRUD, role assignment, status/batch mutations, reset password, department filtering, post/dept selectors, import/export and current-page export are live-only with public smoke and Admin/deploy guards.   |
 | System Roles (`core.role`)             | Meets            | Role CRUD, menu/user assignment, status changes, data-scope dept selection and current-page export are live-only with public smoke and Admin/deploy guards.                                                     |
-| System Permissions (`core.permission`) | Meets local only | Catalog/detail/custom CRUD/export are live-only with local smoke and deploy guards; closure-flow public smoke confirmation is still pending.                                                                    |
+| System Permissions (`core.permission`) | Meets            | Catalog/detail/custom CRUD/export are live-only with public smoke and Admin/deploy guards.                                                                                                                      |
 | System Posts (`core.post`)             | Meets local only | List/detail/batch/order operations are live-only with local smoke and deploy guards; closure-flow public smoke confirmation is still pending.                                                                   |
 | System Files (`core.file`)             | Meets            | List/detail, upload/download, metadata update, delete and current-page export are live-only with public smoke and Admin/deploy guards.                                                                          |
 | System Config (`core.config`)          | Meets            | Config CRUD, value reads, cache refresh, batch deletion, environment overrides, feature rollout/audience controls, secret/vault operations and exports are live-only with public smoke and Admin/deploy guards. |
@@ -193,11 +193,13 @@ Strict Capstone rules:
   fallback and fallback UI, made file list/detail, upload/download, metadata
   update, delete and current-page export live-only and added Admin/deploy
   guards for stale Files bundles.
+- Round 124 confirmed closure-flow public API/Admin smoke for System
+  Permissions without runtime changes.
 
 ## Active Debt
 
-1. System Permissions and System Posts still need closure-flow public
-   API/Admin smoke confirmation and unified guard coverage.
+1. System Posts still needs closure-flow public API/Admin smoke confirmation
+   and unified guard coverage.
 2. Payment/BillingDesign remains explicit-admission because real payment,
    refund and reconciliation are out of scope.
 3. Optional Reports/ExportJobs remain explicit-admission because full report

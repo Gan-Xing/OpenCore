@@ -47,6 +47,8 @@ Current state:
   read-user analytics, delivery records and outbox provider actions.
 - System Files Admin is now live-only for list/detail, upload/download,
   metadata update, delete and current-page export.
+- System Permissions Admin is now accepted as full `Meets` after
+  closure-flow public API/Admin smoke confirmation.
 - A seven-page acceptance matrix now separates runtime completion from Admin
   live-only acceptance.
 - A global no-fixture-fallback guard is still required.
@@ -114,8 +116,8 @@ Current foundation queue from Cycle-021:
 
 - Build and keep the acceptance matrix current.
 - Add a global no-fixture-fallback guard.
-- Confirm or close System Permissions and Posts local-only rows against the
-  strict matrix, public smoke and global guard.
+- Confirm or close System Posts local-only row against the strict matrix,
+  public smoke and global guard.
 - Add explicit public smoke before marking capabilities as full `Meets`.
 - Reconcile progress, handoff, ledger and completion-report docs.
 

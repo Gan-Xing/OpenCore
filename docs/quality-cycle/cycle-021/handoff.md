@@ -205,10 +205,15 @@ list/detail, upload/download, metadata update, delete and current-page export
 backed by live SDK calls only, and adds Admin/deploy guards for stale
 fixture-backed Files bundles.
 
+Latest acceptance confirmation: Round 124 System Permissions public API/Admin
+smoke confirmation. It keeps the existing live-only catalog/detail/custom
+CRUD/export surface and records real public API and Admin requests for the
+strict matrix.
+
 ## Next Queue
 
-1. Confirm or close Permissions and Posts local-only rows against the strict
-   matrix, public smoke and global guard.
+1. Confirm or close Posts local-only row against the strict matrix, public
+   smoke and global guard.
 2. Add seven-page unified no-fixture-fallback guard coverage.
 3. Reconcile progress, handoff, ledger and completion-report docs.
 4. Payment/BillingDesign remains explicit-admission because real payment,

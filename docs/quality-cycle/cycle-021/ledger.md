@@ -56,3 +56,4 @@ This ledger records state transitions only. Git log keeps commit hashes.
 | 121   | System Config      | Config Admin became live-only for CRUD, runtime controls, vault and export.   | Config smoke plus Admin/deploy guards reject config fixture fallback.        |
 | 122   | System Notices     | Notices Admin became live-only for management, inbox, templates and delivery. | Notice smoke plus Admin/deploy guards reject notice fixture fallback.        |
 | 123   | System Files       | Files Admin became live-only for upload/download, metadata and delete.        | File smoke plus Admin/deploy guards reject file fixture fallback.            |
+| 124   | System Permissions | Permissions row gained public API/Admin smoke acceptance.                     | Public permission smoke plus Admin page request confirmed the guarded page.  |

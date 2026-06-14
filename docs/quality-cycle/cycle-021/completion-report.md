@@ -4,16 +4,15 @@ Date: 2026-06-14
 
 ## Latest Completed Round
 
-Round 123: System Files Admin live-only list/detail, upload/download,
-metadata, delete and export operations.
+Round 124: System Permissions public smoke confirmation.
 
 ## Closed
 
-- Removed the System Files Admin fixture fallback path, stale detail fallback
-  and fallback UI.
-- Kept file list/detail, upload/download, metadata update, delete and
-  current-page export backed by live SDK calls only.
-- Added Admin/deploy guards against stale fixture-backed Files bundles.
+- Confirmed System Permissions public API smoke for list/detail, system
+  mutation guards, custom create/update/export/delete and authentication.
+- Confirmed the public Admin `/system/permissions/` page returns the live
+  Admin bundle.
+- Kept existing Admin/deploy guards against registry fixture fallback.
 
 ## Still Open
 
@@ -23,5 +22,5 @@ metadata, delete and export operations.
   designer and big-data async export are outside the admitted surface.
 - OpenForge direct schema/migration/business code writes remain outside the
   admitted surface.
-- System Permissions and System Posts still need closure-flow public smoke
-  confirmation and unified guard coverage.
+- System Posts still needs closure-flow public smoke confirmation and unified
+  guard coverage.
