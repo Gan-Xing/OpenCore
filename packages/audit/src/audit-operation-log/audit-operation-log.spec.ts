@@ -72,8 +72,10 @@ describe('@opencore/audit audit-operation-log', () => {
       path: '/api/core/notices',
       statusCode: 201,
       ip: '127.0.0.1',
+      location: 'Loopback',
       userAgent: 'jest',
       requestId: 'req_seed_audit_create',
+      durationMs: 25,
       metadata: {
         body: {
           password: 'secret',
@@ -88,6 +90,8 @@ describe('@opencore/audit audit-operation-log', () => {
       items: [
         expect.objectContaining({
           requestId: 'req_seed_audit_create',
+          durationMs: 25,
+          location: 'Loopback',
           metadata: {
             body: {
               password: '[REDACTED]',
@@ -113,9 +117,31 @@ describe('@opencore/audit audit-operation-log', () => {
         'action',
         'resource',
         'statusCode',
+        'durationMs',
+        'location',
       ],
       rowCount: 3,
     });
+    await expect(
+      service.listOperationLogs({
+        location: 'Loopback',
+        minDurationMs: 20,
+        maxDurationMs: 30,
+        status: 'success',
+      }),
+    ).resolves.toMatchObject({
+      total: 1,
+      items: [
+        expect.objectContaining({
+          durationMs: 25,
+          location: 'Loopback',
+          requestId: 'req_seed_audit_create',
+        }),
+      ],
+    });
+    await expect(
+      service.listOperationLogs({ minDurationMs: 40, maxDurationMs: 10 }),
+    ).rejects.toThrow('Audit log minDurationMs must not exceed maxDurationMs.');
 
     await expect(service.deleteOperationLogs({ ids: [] })).rejects.toThrow(
       'Audit log ids must not be empty.',
@@ -136,9 +162,13 @@ describe('@opencore/audit audit-operation-log', () => {
     await expect(service.getOperationLog('audit_3')).rejects.toThrow(
       'Audit log not found: audit_3',
     );
-    await expect(service.cleanOperationLogs()).resolves.toEqual({
+    await expect(
+      service.cleanOperationLogs({ retentionDays: 0 }),
+    ).resolves.toEqual({
       deleted: true,
       affected: 2,
+      cutoffBefore: expect.any(String),
+      retentionDays: 0,
     });
     await expect(service.listOperationLogs()).resolves.toMatchObject({
       total: 0,
@@ -194,6 +224,8 @@ describe('@opencore/audit audit-operation-log', () => {
               authorization: '[REDACTED]',
             }),
           }),
+          durationMs: expect.any(Number),
+          location: 'Loopback',
         }),
       ]),
     });
@@ -242,6 +274,8 @@ describe('@opencore/audit audit-operation-log', () => {
       items: expect.arrayContaining([
         expect.objectContaining({
           statusCode: 400,
+          durationMs: expect.any(Number),
+          location: 'Unknown',
         }),
       ]),
     });
@@ -277,8 +311,10 @@ describe('@opencore/audit audit-operation-log', () => {
           path: '/api/core/config',
           statusCode: 200,
           ip: '127.0.0.1',
+          location: 'Loopback',
           userAgent: 'jest',
           requestId: seedRequestId,
+          durationMs: 14,
           metadata: {
             filter: 'current-page',
           },
@@ -306,8 +342,10 @@ describe('@opencore/audit audit-operation-log', () => {
         path: '/api/test',
         statusCode: 201,
         ip: '127.0.0.1',
+        location: 'Loopback',
         userAgent: 'jest',
         requestId,
+        durationMs: 35,
         metadata: {
           authorization: 'Bearer secret',
         },
@@ -320,9 +358,26 @@ describe('@opencore/audit audit-operation-log', () => {
         items: [
           expect.objectContaining({
             requestId,
+            durationMs: 35,
+            location: 'Loopback',
             metadata: {
               authorization: '[REDACTED]',
             },
+          }),
+        ],
+      });
+      await expect(
+        service.listOperationLogs({
+          location: 'Loopback',
+          minDurationMs: 30,
+          resource: `test.resource.${testRunId}`,
+          status: 'success',
+        }),
+      ).resolves.toMatchObject({
+        total: 1,
+        items: [
+          expect.objectContaining({
+            requestId,
           }),
         ],
       });
@@ -335,6 +390,8 @@ describe('@opencore/audit audit-operation-log', () => {
         expect.objectContaining({
           id: recordedLog.id,
           requestId,
+          durationMs: 35,
+          location: 'Loopback',
           metadata: {
             authorization: '[REDACTED]',
           },
@@ -368,11 +425,67 @@ describe('@opencore/audit audit-operation-log', () => {
       await expect(service.getOperationLog(recordedLog.id)).rejects.toThrow(
         `Audit log not found: ${recordedLog.id}`,
       );
+
+      const oldRequestId = `req_old_${testRunId}`;
+      const recentRequestId = `req_recent_${testRunId}`;
+
+      await prisma.auditLog.createMany({
+        data: [
+          {
+            actorUsername: 'operator',
+            action: 'DELETE',
+            createdAt: new Date('2000-01-01T00:00:00.000Z'),
+            durationMs: 45,
+            ip: '127.0.0.1',
+            location: 'Loopback',
+            method: 'DELETE',
+            path: '/api/test/old',
+            requestId: oldRequestId,
+            resource: `test.retention.${testRunId}`,
+            statusCode: 200,
+            userAgent: 'jest',
+          },
+          {
+            actorUsername: 'operator',
+            action: 'DELETE',
+            durationMs: 15,
+            ip: '127.0.0.1',
+            location: 'Loopback',
+            method: 'DELETE',
+            path: '/api/test/recent',
+            requestId: recentRequestId,
+            resource: `test.retention.${testRunId}`,
+            statusCode: 200,
+            userAgent: 'jest',
+          },
+        ],
+      });
+      await expect(
+        service.cleanOperationLogs({ retentionDays: 3650 }),
+      ).resolves.toMatchObject({
+        deleted: true,
+        retentionDays: 3650,
+      });
+      await expect(
+        prisma.auditLog.findFirst({ where: { requestId: oldRequestId } }),
+      ).resolves.toBeNull();
+      await expect(
+        prisma.auditLog.findFirst({ where: { requestId: recentRequestId } }),
+      ).resolves.toMatchObject({ requestId: recentRequestId });
     });
 
     async function cleanupTestRows(): Promise<void> {
       await prisma.auditLog.deleteMany({
-        where: { requestId: { in: [requestId, seedRequestId] } },
+        where: {
+          requestId: {
+            in: [
+              requestId,
+              seedRequestId,
+              `req_old_${testRunId}`,
+              `req_recent_${testRunId}`,
+            ],
+          },
+        },
       });
     }
   });

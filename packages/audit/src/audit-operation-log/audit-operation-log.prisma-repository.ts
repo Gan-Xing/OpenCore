@@ -6,14 +6,19 @@ import type {
   AuditOperationLogRecord,
   CreateAuditOperationLogRecord,
 } from './audit-operation-log.records';
-import type { BatchDeleteAuditLogsDto } from './audit-operation-log.dto';
+import type {
+  BatchDeleteAuditLogsDto,
+  CleanAuditLogsDto,
+} from './audit-operation-log.dto';
 import {
   AuditOperationLogRepository,
   createAuditOperationLogPageResult,
   normalizeBatchDeleteAuditOperationLogIds,
   normalizeAuditOperationLogFilters,
   normalizeAuditOperationLogPageQuery,
+  normalizeAuditOperationLogRetentionPolicy,
   redactAuditMetadata,
+  resolveAuditOperationLogLocation,
   type AuditOperationLogBatchMutationRecord,
   type AuditOperationLogCleanRecord,
   type AuditOperationLogQuery,
@@ -29,8 +34,10 @@ type PrismaAuditLog = {
   path: string;
   statusCode: number;
   ip: string;
+  location: string;
   userAgent: string;
   requestId: string;
+  durationMs: number;
   metadata: unknown;
   createdAt: Date;
 };
@@ -55,7 +62,40 @@ export class PrismaAuditOperationLogRepository extends AuditOperationLogReposito
       ...(filters.resource === undefined
         ? {}
         : { resource: { contains: filters.resource } }),
-    };
+      ...(filters.location === undefined
+        ? {}
+        : { location: { contains: filters.location } }),
+      ...(filters.status === undefined
+        ? {}
+        : filters.status === 'success'
+          ? { statusCode: { lt: 400 } }
+          : { statusCode: { gte: 400 } }),
+      ...(filters.createdFrom === undefined && filters.createdTo === undefined
+        ? {}
+        : {
+            createdAt: {
+              ...(filters.createdFrom === undefined
+                ? {}
+                : { gte: filters.createdFrom }),
+              ...(filters.createdTo === undefined
+                ? {}
+                : { lte: filters.createdTo }),
+            },
+          }),
+      ...(filters.minDurationMs === undefined &&
+      filters.maxDurationMs === undefined
+        ? {}
+        : {
+            durationMs: {
+              ...(filters.minDurationMs === undefined
+                ? {}
+                : { gte: filters.minDurationMs }),
+              ...(filters.maxDurationMs === undefined
+                ? {}
+                : { lte: filters.maxDurationMs }),
+            },
+          }),
+    } satisfies Prisma.AuditLogWhereInput;
     const total = await this.prisma.auditLog.count({ where });
     const pagination = normalizeAuditOperationLogPageQuery(query, total);
     const rows = await this.prisma.auditLog.findMany({
@@ -94,8 +134,11 @@ export class PrismaAuditOperationLogRepository extends AuditOperationLogReposito
         path: record.path,
         statusCode: record.statusCode,
         ip: record.ip,
+        location:
+          record.location || resolveAuditOperationLogLocation(record.ip),
         userAgent: record.userAgent,
         requestId: record.requestId,
+        durationMs: record.durationMs,
         metadata: redactAuditMetadata(record.metadata) as Prisma.InputJsonValue,
       },
     });
@@ -127,12 +170,19 @@ export class PrismaAuditOperationLogRepository extends AuditOperationLogReposito
     };
   }
 
-  async cleanOperationLogs(): Promise<AuditOperationLogCleanRecord> {
-    const result = await this.prisma.auditLog.deleteMany();
+  async cleanOperationLogs(
+    policy: CleanAuditLogsDto = {},
+  ): Promise<AuditOperationLogCleanRecord> {
+    const retention = normalizeAuditOperationLogRetentionPolicy(policy);
+    const result = await this.prisma.auditLog.deleteMany({
+      where: { createdAt: { lt: retention.cutoffBefore } },
+    });
 
     return {
       deleted: true,
       affected: result.count,
+      cutoffBefore: retention.cutoffBefore.toISOString(),
+      retentionDays: retention.retentionDays,
     };
   }
 }
@@ -150,8 +200,10 @@ function toAuditOperationLogRecord(
     path: log.path,
     statusCode: log.statusCode,
     ip: log.ip,
+    location: log.location,
     userAgent: log.userAgent,
     requestId: log.requestId,
+    durationMs: log.durationMs,
     metadata: redactAuditMetadata(log.metadata),
     createdAt: log.createdAt.toISOString(),
   };

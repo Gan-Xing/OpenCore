@@ -14,24 +14,48 @@ describe('@opencore/scheduler', () => {
     await expect(
       service.listJobs({ enabled: true, queueName: 'maintenance' }),
     ).resolves.toMatchObject({
-      total: 1,
-      items: [expect.objectContaining({ code: 'openapi.drift-check' })],
+      total: 2,
+      items: expect.arrayContaining([
+        expect.objectContaining({ code: 'openapi.drift-check' }),
+        expect.objectContaining({ code: 'audit-log.retention-clean' }),
+      ]),
     });
     await expect(
       service.listJobRuns('openapi.drift-check', { status: 'completed' }),
     ).resolves.toMatchObject({ total: 1 });
     await expect(service.getSummary()).resolves.toMatchObject({
-      jobs: { total: 1, enabled: 1, disabled: 0 },
+      jobs: { total: 2, enabled: 2, disabled: 0 },
       jobRuns: { total: 1, completed: 1 },
     });
     expect(service.listRegistryEntries()).toEqual(
       expect.arrayContaining([
+        expect.objectContaining({
+          code: 'audit-log.retention-clean',
+          handlerKey: 'maintenance.auditLogRetention',
+        }),
         expect.objectContaining({
           code: 'report.refresh',
           handlerKey: 'reports.refresh',
         }),
       ]),
     );
+
+    await expect(
+      service.triggerJob('audit-log.retention-clean', {
+        actor: 'admin',
+        metadata: { reason: 'seed retention dry-run' },
+      }),
+    ).resolves.toMatchObject({
+      jobCode: 'audit-log.retention-clean',
+      status: 'completed',
+      metadata: expect.objectContaining({
+        handlerKey: 'maintenance.auditLogRetention',
+        result: expect.objectContaining({
+          dryRun: true,
+          retentionDays: 90,
+        }),
+      }),
+    });
 
     await expect(
       service.createJob({

@@ -14,6 +14,7 @@ import { createAuditLogFixtures, type AuditLogSummary } from '@opencore/sdk';
 import {
   Alert,
   Button,
+  InputNumber,
   message,
   Modal,
   Space,
@@ -52,6 +53,7 @@ const searchFields: CurrentPageSearchField<AuditLogSummary>[] = [
   'resourceId',
   'method',
   'path',
+  'location',
   'requestId',
 ];
 const exportColumns: CurrentPageExportColumn<AuditLogSummary>[] = [
@@ -64,6 +66,8 @@ const exportColumns: CurrentPageExportColumn<AuditLogSummary>[] = [
   { title: 'Method', dataIndex: 'method' },
   { title: 'Path', dataIndex: 'path' },
   { title: 'Status Code', dataIndex: 'statusCode' },
+  { title: 'Duration ms', dataIndex: 'durationMs' },
+  { title: 'Location', dataIndex: 'location' },
   { title: 'Request ID', dataIndex: 'requestId' },
 ];
 
@@ -82,6 +86,12 @@ function createFilterOptions(
       options: createCurrentPageFilterOptions(rows, 'action'),
       placeholder: 'Action',
       predicate: (record, value) => record.action === value,
+    },
+    {
+      key: 'location',
+      options: createCurrentPageFilterOptions(rows, 'location'),
+      placeholder: 'Location',
+      predicate: (record, value) => record.location === value,
     },
     {
       key: 'status',
@@ -110,6 +120,8 @@ function createDetailFields(record: AuditLogSummary): DetailField[] {
     { label: 'Path', value: record.path },
     { label: 'Status Code', value: record.statusCode },
     { label: 'IP', value: record.ip },
+    { label: 'Location', value: record.location },
+    { label: 'Duration ms', value: record.durationMs },
     { label: 'User Agent', value: record.userAgent },
     { label: 'Request ID', value: record.requestId },
   ];
@@ -131,6 +143,7 @@ export default function OperationLogsPage() {
   const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
   const [deletingSelected, setDeletingSelected] = useState(false);
   const [cleaningLogs, setCleaningLogs] = useState(false);
+  const [retentionDays, setRetentionDays] = useState(90);
   const filterOptions = useMemo(() => createFilterOptions(rows), [rows]);
   const { filteredRows, toolbar: filterToolbar } =
     useCurrentPageFilters<AuditLogSummary>({
@@ -195,17 +208,20 @@ export default function OperationLogsPage() {
     });
   };
 
-  const confirmCleanAll = () => {
+  const confirmCleanExpired = () => {
     Modal.confirm({
-      title: 'Clean all operation logs?',
-      content: 'Every operation log record will be permanently removed.',
+      title: `Clean operation logs older than ${retentionDays} day(s)?`,
+      content:
+        'Recent operation logs and the cleanup audit record are retained.',
       okButtonProps: { danger: true },
-      okText: 'Clean all',
+      okText: 'Clean expired',
       onOk: async () => {
         setCleaningLogs(true);
         try {
-          const result = await cleanOpenCoreAuditLogs();
-          message.success(`Cleaned ${result.affected} operation logs`);
+          const result = await cleanOpenCoreAuditLogs({ retentionDays });
+          message.success(
+            `Cleaned ${result.affected} operation logs before ${result.cutoffBefore}`,
+          );
           setSelectedRowKeys([]);
           await loadAuditLogs();
         } finally {
@@ -229,6 +245,13 @@ export default function OperationLogsPage() {
     { title: 'Action', dataIndex: 'action', width: 132 },
     { title: 'Resource', dataIndex: 'resource', ellipsis: true },
     { title: 'Method', dataIndex: 'method', width: 96 },
+    { title: 'Location', dataIndex: 'location', width: 148 },
+    {
+      title: 'Duration',
+      dataIndex: 'durationMs',
+      width: 112,
+      render: (_, record) => `${record.durationMs} ms`,
+    },
     {
       title: 'Status',
       dataIndex: 'statusCode',
@@ -281,8 +304,18 @@ export default function OperationLogsPage() {
         toolBarRender={() => [
           filterToolbar,
           <Typography.Text key="cleanup-policy" type="secondary">
-            Audit trail with cleanup governance
+            Retention policy
           </Typography.Text>,
+          <InputNumber
+            addonAfter="days"
+            key="retention-days"
+            max={3650}
+            min={0}
+            onChange={(value) => setRetentionDays(Number(value ?? 90))}
+            precision={0}
+            style={{ width: 132 }}
+            value={retentionDays}
+          />,
           <Tooltip
             key="delete-selected"
             title={
@@ -302,10 +335,10 @@ export default function OperationLogsPage() {
             </Button>
           </Tooltip>,
           <Tooltip
-            key="clean-all"
+            key="clean-expired"
             title={
               canDeleteAuditLogs
-                ? 'Clean all operation logs'
+                ? 'Clean expired operation logs'
                 : 'Requires core:audit-log:delete'
             }
           >
@@ -314,9 +347,9 @@ export default function OperationLogsPage() {
               disabled={!canDeleteAuditLogs}
               icon={<ClearOutlined />}
               loading={cleaningLogs}
-              onClick={confirmCleanAll}
+              onClick={confirmCleanExpired}
             >
-              Clean all
+              Clean expired
             </Button>
           </Tooltip>,
           <CurrentPageExportButton

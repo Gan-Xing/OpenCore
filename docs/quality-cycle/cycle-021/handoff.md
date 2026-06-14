@@ -47,14 +47,15 @@ packages and OpenForge direct Prisma/migration/business-code writing.
 
 ## Current State
 
-Cycle-021 has completed 84 deployable stages.
+Cycle-021 has completed 85 deployable stages.
 
 - System/RBAC: notice, dept, post, menu, role, permission, user, dict, config
   and file loops are live.
 - Security/session: login policy, logout, force logout, online-user kick-out
   and real revocation are live.
 - Logs: login-log type/result, lockout, cleanup, actor/reason and
-  deterministic location; operation-log list/detail/export/delete/clean.
+  deterministic location; operation-log list/detail/export/delete, duration
+  and location fields, retention policy cleanup and scheduled retention job.
 - Config: runtime keys, login policy, feature flags, rollout, audience rules,
   environment overrides, secret vault, secret version history, explicit secret
   rotation, env-bound KMS keyring status and vault key rotation.
@@ -69,22 +70,22 @@ Cycle-021 has completed 84 deployable stages.
   enable/disable, manual trigger, registered handler execution, retry/timeout
   diagnostics and failed run-log detail are smoke-guarded.
 
-Latest runtime stage: Round 84 `core.config` vault key rotation. It adds
-env-bound KMS keyring status, v2 secret envelopes with key IDs, legacy
-unversioned-vault deserialization guards, current/versioned secret rewrap,
-SDK/Admin/OpenAPI exposure and smoke/deploy guards for plaintext leakage,
-active-key state and stale Admin bundles.
+Latest runtime stage: Round 85 `core.audit-log` enrichment. It adds
+`durationMs` and deterministic `location` fields, server filters/export
+columns, retentionDays-governed cleanup, an `audit-log.retention-clean`
+scheduled job/registry seed, Admin retention controls, SDK/OpenAPI exposure
+and smoke/deploy guards for enriched filters and retention cleanup.
 
 ## Next Queue
 
-1. Operation-log enrichment: retention scheduling, duration/location fields
-   and governance policy.
-2. OpenForge Admin safe plan/diff/check/apply UI.
-3. Integration health/config audit.
-4. Scheduler/monitor worker parity: external BullMQ worker execution, cron
+1. OpenForge Admin safe plan/diff/check/apply UI.
+2. Integration health/config audit.
+3. Scheduler/monitor worker parity: external BullMQ worker execution, cron
    dispatch and queue metrics beyond the current registered manual executor.
-5. Optional managed-KMS provider adapter if deployment needs a cloud KMS API
+4. Optional managed-KMS provider adapter if deployment needs a cloud KMS API
    instead of the current env-bound keyring.
+5. Optional operation-log external GeoIP enrichment if deployment needs real
+   IP attribution beyond deterministic network categories.
 
 ## Docs Rule
 

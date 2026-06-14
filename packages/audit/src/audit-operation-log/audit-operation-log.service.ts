@@ -4,7 +4,10 @@ import type {
   AuditOperationLogRecord,
   CreateAuditOperationLogRecord,
 } from './audit-operation-log.records';
-import type { BatchDeleteAuditLogsDto } from './audit-operation-log.dto';
+import type {
+  BatchDeleteAuditLogsDto,
+  CleanAuditLogsDto,
+} from './audit-operation-log.dto';
 import {
   AuditOperationLogRepository,
   createAuditOperationLogExportPreview,
@@ -38,8 +41,10 @@ export class AuditOperationLogService {
     return this.repository.deleteOperationLogs(body);
   }
 
-  cleanOperationLogs(): Promise<AuditOperationLogCleanRecord> {
-    return this.repository.cleanOperationLogs();
+  cleanOperationLogs(
+    policy: CleanAuditLogsDto = {},
+  ): Promise<AuditOperationLogCleanRecord> {
+    return this.repository.cleanOperationLogs(policy);
   }
 
   async createExportPreview(

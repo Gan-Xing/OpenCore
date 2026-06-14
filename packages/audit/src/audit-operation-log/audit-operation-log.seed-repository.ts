@@ -5,7 +5,10 @@ import {
   type AuditOperationLogRecord,
   type CreateAuditOperationLogRecord,
 } from './audit-operation-log.records';
-import type { BatchDeleteAuditLogsDto } from './audit-operation-log.dto';
+import type {
+  BatchDeleteAuditLogsDto,
+  CleanAuditLogsDto,
+} from './audit-operation-log.dto';
 import {
   AuditOperationLogRepository,
   compareAuditOperationLogRecords,
@@ -13,7 +16,9 @@ import {
   normalizeBatchDeleteAuditOperationLogIds,
   normalizeAuditOperationLogFilters,
   normalizeAuditOperationLogPageQuery,
+  normalizeAuditOperationLogRetentionPolicy,
   redactAuditMetadata,
+  resolveAuditOperationLogLocation,
   type AuditOperationLogBatchMutationRecord,
   type AuditOperationLogCleanRecord,
   type AuditOperationLogQuery,
@@ -35,7 +40,21 @@ export class SeedAuditOperationLogRepository extends AuditOperationLogRepository
           (filters.action === undefined ||
             log.action.includes(filters.action)) &&
           (filters.resource === undefined ||
-            log.resource.includes(filters.resource)),
+            log.resource.includes(filters.resource)) &&
+          (filters.location === undefined ||
+            log.location.includes(filters.location)) &&
+          (filters.status === undefined ||
+            (filters.status === 'success'
+              ? log.statusCode < 400
+              : log.statusCode >= 400)) &&
+          (filters.minDurationMs === undefined ||
+            log.durationMs >= filters.minDurationMs) &&
+          (filters.maxDurationMs === undefined ||
+            log.durationMs <= filters.maxDurationMs) &&
+          (filters.createdFrom === undefined ||
+            new Date(log.createdAt) >= filters.createdFrom) &&
+          (filters.createdTo === undefined ||
+            new Date(log.createdAt) <= filters.createdTo),
       )
       .sort(compareAuditOperationLogRecords)
       .map((log) => ({
@@ -75,6 +94,8 @@ export class SeedAuditOperationLogRepository extends AuditOperationLogRepository
       {
         id: `audit_${this.operationLogs.length + 1}`,
         ...record,
+        location:
+          record.location || resolveAuditOperationLogLocation(record.ip),
         metadata: redactAuditMetadata(record.metadata),
         createdAt: new Date().toISOString(),
       },
@@ -100,13 +121,21 @@ export class SeedAuditOperationLogRepository extends AuditOperationLogRepository
     };
   }
 
-  async cleanOperationLogs(): Promise<AuditOperationLogCleanRecord> {
-    const affected = this.operationLogs.length;
-    this.operationLogs = [];
+  async cleanOperationLogs(
+    policy: CleanAuditLogsDto = {},
+  ): Promise<AuditOperationLogCleanRecord> {
+    const retention = normalizeAuditOperationLogRetentionPolicy(policy);
+    const before = this.operationLogs.length;
+
+    this.operationLogs = this.operationLogs.filter(
+      (log) => new Date(log.createdAt) >= retention.cutoffBefore,
+    );
 
     return {
       deleted: true,
-      affected,
+      affected: before - this.operationLogs.length,
+      cutoffBefore: retention.cutoffBefore.toISOString(),
+      retentionDays: retention.retentionDays,
     };
   }
 

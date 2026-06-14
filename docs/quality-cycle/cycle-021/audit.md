@@ -38,6 +38,8 @@ version, non-secret/blank guard and plaintext-leakage smoke coverage.
 Round 84 added env-bound KMS keyring status, v2 key-ID envelopes, legacy
 unversioned vault-envelope deserialization guards and current/versioned secret
 rewrap through vault key rotation.
+Round 85 added operation-log duration/location enrichment, retentionDays
+cleanup and scheduled retention job registration.
 Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 `lint` must run sequentially.
 
@@ -51,8 +53,9 @@ Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
   config-vault auth, SMTP TLS policy, SMS HTTP secret injection, mail subject
   persistence, SMTP attachments, authenticated inbox realtime events, provider
   diagnostics, provider failedCount and sent mutation guards.
-- Operation-log cleanup smoke covers guard failures, deleted-detail 404 and
-  clean-all target removal.
+- Operation-log smoke covers guard failures, deleted-detail 404,
+  duration/location filters, retentionDays cleanup and scheduled retention job
+  registry.
 - Config smoke covers runtime shape, environment override governance, legacy
   vault envelope deserialization, secret version history, secret rotation,
   vault key rotation and no plaintext secret storage.
@@ -73,8 +76,7 @@ real incident decisions. Do not create per-round reports by default.
 - Managed cloud KMS provider adapters are optional deployment integration; the
   current foundation waterline has env-bound keyring status and rotation.
 - Scheduler still needs external worker/cron parity beyond the current
-  registered manual executor; operation-log enrichment and OpenForge Admin
-  remain P2 foundation work.
+  registered manual executor; OpenForge Admin remains P2 foundation work.
 
 ## Trigger Next Audit
 

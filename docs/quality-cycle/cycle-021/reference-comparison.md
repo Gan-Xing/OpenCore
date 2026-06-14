@@ -29,7 +29,8 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
 - Auth/session: login policy, logout, force logout, online-user kick-out and
   token/session revocation are real behavior.
 - Logs: login-log has schema, lockout, cleanup, actor/reason and location;
-  operation-log has list/detail/export/delete/clean.
+  operation-log has list/detail/export/delete, duration/location enrichment,
+  retention cleanup and scheduled retention job.
 - Notice: management, inbox/read analytics, templates, delivery records, local
   provider, Integration outbox bridge, state sync, queued processing and signed
   callback intake plus retry scheduling, SMS HTTP adapter, SMTP adapter and
@@ -89,6 +90,9 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
 - Round 84: Config vault envelopes now carry key IDs, expose env keyring
   status and support vault-key rewrap for current and versioned secrets while
   preserving legacy unversioned envelope deserialization.
+- Round 85: Operation logs record duration/location, filter/export enriched
+  fields and use retentionDays cleanup backed by the
+  `audit-log.retention-clean` scheduled job.
 
 ## Explicit Non-Claims
 
@@ -99,6 +103,7 @@ and AI/RAG/Agent workflow.
 
 ## Next Focus
 
-Choose one foundation stage from operation-log enrichment, OpenForge Admin,
-integration health/config audit or scheduler worker parity. Managed cloud KMS
-adapters are optional deployment integration beyond the current env keyring.
+Choose one foundation stage from OpenForge Admin, integration health/config
+audit or scheduler worker parity. Managed cloud KMS adapters and external
+operation-log GeoIP are optional deployment integrations beyond the current
+foundation waterline.

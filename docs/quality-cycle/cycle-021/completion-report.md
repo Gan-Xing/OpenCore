@@ -4,23 +4,19 @@ Date: 2026-06-14
 
 ## Latest Completed Round
 
-Round 84: `core.config` vault key rotation.
+Round 85: `core.audit-log` enrichment and retention governance.
 
 ## Closed
 
-- Added env-bound KMS keyring status and v2 secret envelopes with key IDs.
-- Vault key rotation rewraps current secret config values and versioned secret
-  rows without creating new business secret versions.
-- Legacy unversioned `opencore:vault:` envelopes remain decryptable and are
-  covered by tests before rewrap to v2.
-- SDK/Admin/OpenAPI expose vault status and rotate-key workflows without
-  returning secret material.
-- Config smoke verifies active-key state, rewrap counts, no plaintext leakage
-  and Admin bundle markers.
+- Added `durationMs` and deterministic `location` to operation logs.
+- Added server filters and export columns for duration/location/status/time.
+- Replaced unbounded cleanup semantics with a `retentionDays` policy.
+- Seeded and registered `audit-log.retention-clean` for scheduled retention.
+- SDK/Admin/OpenAPI/smoke expose and guard the enrichment and retention flow.
 
 ## Still Open
 
-- Operation-log enrichment, OpenForge Admin, integration health/config audit
-  and scheduler worker parity remain next foundation candidates.
+- OpenForge Admin, integration health/config audit and scheduler worker parity
+  remain next foundation candidates.
 - Managed cloud KMS adapters remain optional deployment integration beyond the
   current env-bound keyring.

@@ -29,10 +29,16 @@ export class AuditLogDto {
   ip!: string;
 
   @ApiProperty()
+  location!: string;
+
+  @ApiProperty()
   userAgent!: string;
 
   @ApiProperty()
   requestId!: string;
+
+  @ApiProperty()
+  durationMs!: number;
 
   @ApiProperty({ required: false, type: Object })
   metadata?: unknown;
@@ -73,6 +79,24 @@ export class AuditLogQueryDto {
 
   @ApiProperty({ required: false })
   resource?: string;
+
+  @ApiProperty({ required: false })
+  location?: string;
+
+  @ApiProperty({ required: false, enum: ['error', 'success'] })
+  status?: 'error' | 'success';
+
+  @ApiProperty({ required: false })
+  createdFrom?: string;
+
+  @ApiProperty({ required: false })
+  createdTo?: string;
+
+  @ApiProperty({ required: false })
+  minDurationMs?: number | string;
+
+  @ApiProperty({ required: false })
+  maxDurationMs?: number | string;
 }
 
 export class BatchDeleteAuditLogsDto {
@@ -97,4 +121,15 @@ export class AuditLogCleanResultDto {
 
   @ApiProperty()
   affected!: number;
+
+  @ApiProperty()
+  retentionDays!: number;
+
+  @ApiProperty()
+  cutoffBefore!: string;
+}
+
+export class CleanAuditLogsDto {
+  @ApiProperty({ required: false, default: 90 })
+  retentionDays?: number | string;
 }

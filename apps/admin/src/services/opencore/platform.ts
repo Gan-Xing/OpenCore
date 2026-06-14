@@ -20,6 +20,7 @@ import {
   type BatchKickOutSessionsResult,
   type BatchSetUserStatusRequest,
   type BatchUserMutationSummary,
+  type CleanAuditLogsRequest,
   type CreateDictItemRequest,
   type CreateDictTypeRequest,
   type CreateFileAssetRequest,
@@ -765,8 +766,10 @@ export function deleteOpenCoreAuditLogs(
   return systemManagementClient.deleteAuditLogs(getRequiredAdminToken(), body);
 }
 
-export function cleanOpenCoreAuditLogs(): Promise<AuditLogCleanSummary> {
-  return systemManagementClient.cleanAuditLogs(getRequiredAdminToken());
+export function cleanOpenCoreAuditLogs(
+  query?: CleanAuditLogsRequest,
+): Promise<AuditLogCleanSummary> {
+  return systemManagementClient.cleanAuditLogs(getRequiredAdminToken(), query);
 }
 
 export function listOpenCoreMenus(): Promise<MenuSummary[]> {

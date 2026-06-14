@@ -19,11 +19,11 @@ active debt and decisions that change future execution.
 
 ## Runtime State
 
-Cycle-021 has completed 84 deployable stages across
-System/Security/Monitor/Integration foundations. Round 84 added config
-env-bound KMS keyring status, v2 key-ID envelopes, legacy unversioned envelope
-deserialization and vault-key rewrap for current and versioned secret values
-with SDK/Admin/OpenAPI visibility and smoke coverage.
+Cycle-021 has completed 85 deployable stages across
+System/Security/Monitor/Integration foundations. Round 85 added operation-log
+duration/location enrichment, server filters/export columns, retentionDays
+cleanup and the scheduled `audit-log.retention-clean` job with SDK/Admin/OpenAPI
+visibility and smoke coverage.
 
 ## Guard Register
 
@@ -37,8 +37,9 @@ with SDK/Admin/OpenAPI visibility and smoke coverage.
   SMTP TLS policy, SMS HTTP secret injection, mail outbox subject persistence,
   SMTP attachments, authenticated inbox realtime events, provider diagnostics,
   provider failures and sent-state mutation guards.
-- Operation log: smoke covers batch-delete guards, deleted-detail 404 and
-  clean-all target removal while preserving the clean request audit row.
+- Operation log: smoke covers batch-delete guards, deleted-detail 404,
+  duration/location filters, retentionDays cleanup and the retention scheduler
+  job registry while preserving the clean request audit row.
 - Config/secret: smoke covers feature flags, audience rules, environment
   overrides, legacy vault envelope deserialization, secret version history,
   explicit secret rotation, vault key rotation and no plaintext secret-vault
@@ -66,7 +67,8 @@ with SDK/Admin/OpenAPI visibility and smoke coverage.
   integration beyond the current env-bound keyring.
 - Login log: optional external GeoIP depth and broader mobile/social login
   semantics.
-- Operation log: retention scheduling and enrichment beyond cleanup controls.
+- Operation log: optional external GeoIP attribution beyond deterministic
+  network categories.
 - Scheduler/monitor: external worker/cron/queue-metric parity beyond the
   current registered manual executor.
 - OpenForge Admin: plan/diff/check/apply/manifest/rollback UI.

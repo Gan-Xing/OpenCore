@@ -167,6 +167,7 @@ export class PrismaSchedulerRepository extends SchedulerRepository {
       entry,
       job,
       metadata: body.metadata,
+      prisma: this.prisma,
     });
     const run = await this.prisma.jobRunLog.create({
       data: {

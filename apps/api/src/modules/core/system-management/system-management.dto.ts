@@ -6,6 +6,7 @@ export {
   AuditLogBatchMutationResultDto,
   AuditLogCleanResultDto,
   BatchDeleteAuditLogsDto,
+  CleanAuditLogsDto,
   BatchDeleteLoginLogsDto,
   LoginLogBatchMutationResultDto,
   LoginLogCleanResultDto,

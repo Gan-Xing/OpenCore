@@ -385,8 +385,10 @@ export function createAuditLogFixtures(): PageResponse<AuditLogSummary> {
       path: '/api/auth/login',
       statusCode: 200,
       ip: '127.0.0.1',
+      location: 'Loopback',
       userAgent: 'opencore-smoke',
       requestId: 'req_s7_seed_login',
+      durationMs: 12,
       metadata: {
         username: 'admin',
         password: '[REDACTED]',

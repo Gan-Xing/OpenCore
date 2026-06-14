@@ -110,7 +110,7 @@ describe('createSystemManagementClient', () => {
     await client.getAuditLog('token', 'audit_config_create');
     await client.exportAuditLogs('token', { action: 'POST' });
     await client.deleteAuditLogs('token', { ids: ['audit_config_create'] });
-    await client.cleanAuditLogs('token');
+    await client.cleanAuditLogs('token', { retentionDays: 90 });
     await client.listLoginLogs('token', {
       actorUsername: 'admin',
       createdFrom: '2026-06-10T00:00:00.000Z',
@@ -408,7 +408,7 @@ describe('createSystemManagementClient', () => {
         token: 'token',
       },
       {
-        path: '/core/audit-logs/clean',
+        path: '/core/audit-logs/clean?retentionDays=90',
         method: 'DELETE',
         token: 'token',
       },

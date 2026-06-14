@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import type { PrismaService } from '@opencore/database';
 import type {
   SchedulerJobDefinitionRecord,
   SchedulerJobRegistryEntry,
@@ -9,6 +10,7 @@ export type SchedulerJobExecutionInput = {
   entry: SchedulerJobRegistryEntry;
   job: SchedulerJobDefinitionRecord;
   metadata?: Record<string, unknown>;
+  prisma?: PrismaService;
 };
 
 export type SchedulerJobHandlerInput = SchedulerJobExecutionInput & {
@@ -105,6 +107,26 @@ export const defaultSchedulerJobHandlers: Readonly<
       driftCheck: 'configured',
     },
   }),
+  'maintenance.auditLogRetention': async ({ job, prisma }) => {
+    const retentionDays = normalizeRetentionDays(job.payload?.retentionDays);
+    const cutoffBefore = new Date(
+      Date.now() - retentionDays * 24 * 60 * 60 * 1000,
+    );
+    const result = prisma
+      ? await prisma.auditLog.deleteMany({
+          where: { createdAt: { lt: cutoffBefore } },
+        })
+      : { count: 0 };
+
+    return {
+      metadata: {
+        affected: result.count,
+        cutoffBefore: cutoffBefore.toISOString(),
+        dryRun: !prisma,
+        retentionDays,
+      },
+    };
+  },
   'reports.refresh': async ({ job }) => {
     if (job.payload?.simulateFailure === true) {
       throw new Error('Report refresh failed by scheduler payload.');
@@ -134,6 +156,18 @@ export const defaultSchedulerJobHandlers: Readonly<
     };
   },
 };
+
+function normalizeRetentionDays(value: unknown): number {
+  const normalized = Number(value ?? 90);
+
+  if (!Number.isInteger(normalized) || normalized < 0 || normalized > 3650) {
+    throw new Error(
+      'Audit log retentionDays must be an integer between 0 and 3650.',
+    );
+  }
+
+  return normalized;
+}
 
 function createExecutionMetadata(
   input: SchedulerJobExecutionInput,

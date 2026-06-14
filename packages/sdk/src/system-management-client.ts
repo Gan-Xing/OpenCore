@@ -8,6 +8,7 @@ import type {
   BatchDeleteLoginLogsRequest,
   BatchDeleteSystemConfigsRequest,
   BatchDeleteSystemPostsRequest,
+  CleanAuditLogsRequest,
   CreateDictItemRequest,
   CreateDictTypeRequest,
   CreateFileAssetRequest,
@@ -389,7 +390,10 @@ export type SystemManagementClient = {
     token: Token,
     body: BatchDeleteAuditLogsRequest,
   ) => Promise<AuditLogBatchMutationSummary>;
-  cleanAuditLogs: (token: Token) => Promise<AuditLogCleanSummary>;
+  cleanAuditLogs: (
+    token: Token,
+    query?: CleanAuditLogsRequest,
+  ) => Promise<AuditLogCleanSummary>;
   listLoginLogs: (
     token: Token,
     query?: LoginLogQueryRequest,
@@ -933,11 +937,14 @@ export function createSystemManagementClient(
         body,
         token,
       }),
-    cleanAuditLogs: (token) =>
-      request<AuditLogCleanSummary>('/core/audit-logs/clean', {
-        method: 'DELETE',
-        token,
-      }),
+    cleanAuditLogs: (token, query) =>
+      request<AuditLogCleanSummary>(
+        withQuery('/core/audit-logs/clean', query),
+        {
+          method: 'DELETE',
+          token,
+        },
+      ),
     listLoginLogs: (token, query) =>
       request<PageResponse<LoginLogSummary>>(
         withQuery('/core/login-logs', query),

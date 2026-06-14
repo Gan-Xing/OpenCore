@@ -29,30 +29,30 @@ schema/business-code writing.
   runtime login policy.
 - Rounds 50-59: logout audit semantics, ordering, data-scope, notice
   inbox/read analytics, feature flags and login-log location.
-- Rounds 60-84: notice template/delivery/provider/outbox work, SMS HTTP and
+- Rounds 60-85: notice template/delivery/provider/outbox work, SMS HTTP and
   SMTP adapters, config vault and rollout/audience, operation-log cleanup, plus
   mail subject persistence, provider diagnostics, SMS HTTP secret injection,
   SMTP attachments, explicit SMTP TLS policy, inbox realtime events, Monitor
   Jobs Admin operations, registered handler diagnostics and config
   environment overrides plus config secret version history/rotation and vault
-  keyring rotation.
+  keyring rotation, plus operation-log enrichment and retention scheduling.
 
-Latest done: Round 84 config vault key rotation with env-bound keyring status,
-v2 key-ID envelopes, legacy unversioned envelope deserialization, current and
-versioned secret rewrap, SDK/Admin/OpenAPI visibility and smoke/deploy
-coverage for active-key state, guards and plaintext leakage.
+Latest done: Round 85 operation-log enrichment with duration/location fields,
+server filters/export columns, retentionDays cleanup, scheduled
+`audit-log.retention-clean` job seed/registry, SDK/Admin/OpenAPI visibility and
+smoke/deploy coverage for enriched filters and retention cleanup.
 
 ## Active P1/P2 Queue
 
-1. Operation-log enrichment: retention scheduling, duration/location fields
-   and governance.
-2. OpenForge Admin: plan/diff/check/apply/manifest/rollback surfaces.
-3. Integration health/config audit: provider readiness, failure history,
+1. OpenForge Admin: plan/diff/check/apply/manifest/rollback surfaces.
+2. Integration health/config audit: provider readiness, failure history,
    config validation and operator diagnostics.
-4. Scheduler/monitor worker parity: external BullMQ worker execution, cron
+3. Scheduler/monitor worker parity: external BullMQ worker execution, cron
    dispatch and queue metrics beyond the current registered manual executor.
-5. Optional managed-KMS provider adapter if deployment needs cloud KMS APIs
+4. Optional managed-KMS provider adapter if deployment needs cloud KMS APIs
    beyond the current env-bound keyring.
+5. Optional operation-log external GeoIP enrichment if deployment needs real
+   IP attribution beyond deterministic network categories.
 
 ## Rework Notes
 

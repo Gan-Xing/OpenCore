@@ -49,6 +49,7 @@ import {
   BatchDeleteSystemConfigsDto,
   BatchDeleteLoginLogsDto,
   BatchDeleteSystemPostsDto,
+  CleanAuditLogsDto,
   CreateDictItemDto,
   CreateDictTypeDto,
   CreateFileAssetDto,
@@ -1046,8 +1047,10 @@ export class SystemManagementController {
   @ApiTags('Core Audit Logs')
   @RequirePermission('core:audit-log:delete')
   @ApiOkResponse({ type: AuditLogCleanResultDto })
-  cleanAuditLogs(): Promise<AuditLogCleanResultDto> {
-    return this.operationLogs.cleanOperationLogs();
+  cleanAuditLogs(
+    @Query() query: CleanAuditLogsDto,
+  ): Promise<AuditLogCleanResultDto> {
+    return this.operationLogs.cleanOperationLogs(query);
   }
 
   @Get('audit-logs/:id')

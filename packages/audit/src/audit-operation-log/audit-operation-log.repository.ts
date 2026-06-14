@@ -3,10 +3,14 @@ import {
   createPageResult,
   normalizeOptionalString,
   normalizePagination,
+  parseIpLocation,
   type PageQueryInput,
   type PageResult,
 } from '@opencore/common';
-import type { BatchDeleteAuditLogsDto } from './audit-operation-log.dto';
+import type {
+  BatchDeleteAuditLogsDto,
+  CleanAuditLogsDto,
+} from './audit-operation-log.dto';
 import type {
   AuditOperationLogRecord,
   CreateAuditOperationLogRecord,
@@ -15,13 +19,25 @@ import type {
 export type AuditOperationLogQuery = PageQueryInput & {
   actorUsername?: string;
   action?: string;
+  createdFrom?: string;
+  createdTo?: string;
+  location?: string;
+  maxDurationMs?: number | string;
+  minDurationMs?: number | string;
   resource?: string;
+  status?: 'error' | 'success';
 };
 
 export type AuditOperationLogFilters = {
   actorUsername?: string;
   action?: string;
+  createdFrom?: Date;
+  createdTo?: Date;
+  location?: string;
+  maxDurationMs?: number;
+  minDurationMs?: number;
   resource?: string;
+  status?: 'error' | 'success';
 };
 
 export type AuditOperationLogNormalizedPageQuery = {
@@ -50,6 +66,13 @@ export type AuditOperationLogBatchMutationRecord = {
 export type AuditOperationLogCleanRecord = {
   deleted: true;
   affected: number;
+  cutoffBefore: string;
+  retentionDays: number;
+};
+
+export type AuditOperationLogRetentionPolicy = {
+  cutoffBefore: Date;
+  retentionDays: number;
 };
 
 export abstract class AuditOperationLogRepository {
@@ -67,16 +90,43 @@ export abstract class AuditOperationLogRepository {
     body: BatchDeleteAuditLogsDto,
   ): Promise<AuditOperationLogBatchMutationRecord>;
 
-  abstract cleanOperationLogs(): Promise<AuditOperationLogCleanRecord>;
+  abstract cleanOperationLogs(
+    policy?: CleanAuditLogsDto,
+  ): Promise<AuditOperationLogCleanRecord>;
 }
 
 export function normalizeAuditOperationLogFilters(
   query: AuditOperationLogQuery = {},
 ): AuditOperationLogFilters {
+  const minDurationMs = normalizeOptionalDurationMs(
+    query.minDurationMs,
+    'minDurationMs',
+  );
+  const maxDurationMs = normalizeOptionalDurationMs(
+    query.maxDurationMs,
+    'maxDurationMs',
+  );
+
+  if (
+    minDurationMs !== undefined &&
+    maxDurationMs !== undefined &&
+    minDurationMs > maxDurationMs
+  ) {
+    throw new BadRequestException(
+      'Audit log minDurationMs must not exceed maxDurationMs.',
+    );
+  }
+
   return {
     actorUsername: normalizeOptionalString(query.actorUsername),
     action: normalizeOptionalString(query.action),
+    createdFrom: normalizeOptionalIsoDate(query.createdFrom, 'createdFrom'),
+    createdTo: normalizeOptionalIsoDate(query.createdTo, 'createdTo'),
+    location: normalizeOptionalString(query.location),
+    maxDurationMs,
+    minDurationMs,
     resource: normalizeOptionalString(query.resource),
+    status: normalizeOptionalAuditOperationLogStatus(query.status),
   };
 }
 
@@ -118,10 +168,37 @@ export function createAuditOperationLogExportPreview(
   return {
     filename: 'opencore-audit-logs.csv',
     scope: 'current-page',
-    columns: ['createdAt', 'actorUsername', 'action', 'resource', 'statusCode'],
+    columns: [
+      'createdAt',
+      'actorUsername',
+      'action',
+      'resource',
+      'statusCode',
+      'durationMs',
+      'location',
+    ],
     rowCount: page.items.length,
     generatedAt: new Date().toISOString(),
   };
+}
+
+export function normalizeAuditOperationLogRetentionPolicy(
+  policy: CleanAuditLogsDto = {},
+  now = new Date(),
+): AuditOperationLogRetentionPolicy {
+  const retentionDays = normalizeRetentionDays(policy.retentionDays);
+  const cutoffBefore = new Date(
+    now.getTime() - retentionDays * 24 * 60 * 60 * 1000,
+  );
+
+  return {
+    cutoffBefore,
+    retentionDays,
+  };
+}
+
+export function resolveAuditOperationLogLocation(ip: string): string {
+  return parseIpLocation(ip);
 }
 
 export function normalizeBatchDeleteAuditOperationLogIds(
@@ -175,6 +252,8 @@ export function compareAuditOperationLogRecords(
 }
 
 const SENSITIVE_KEY_PATTERN = /(authorization|cookie|password|secret|token)/i;
+const DEFAULT_RETENTION_DAYS = 90;
+const MAX_RETENTION_DAYS = 3650;
 
 function normalizeAuditOperationLogId(value: string): string {
   if (typeof value !== 'string') {
@@ -201,4 +280,84 @@ function findFirstDuplicate(values: readonly string[]): string | undefined {
   }
 
   return undefined;
+}
+
+function normalizeOptionalAuditOperationLogStatus(
+  value: unknown,
+): 'error' | 'success' | undefined {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+
+  if (value !== 'error' && value !== 'success') {
+    throw new BadRequestException(
+      'Audit log status filter must be "success" or "error".',
+    );
+  }
+
+  return value;
+}
+
+function normalizeOptionalDurationMs(
+  value: unknown,
+  fieldName: 'maxDurationMs' | 'minDurationMs',
+): number | undefined {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+
+  const normalized = Number(value);
+
+  if (!Number.isInteger(normalized) || normalized < 0) {
+    throw new BadRequestException(
+      `Audit log ${fieldName} must be a non-negative integer.`,
+    );
+  }
+
+  return normalized;
+}
+
+function normalizeOptionalIsoDate(
+  value: unknown,
+  fieldName: 'createdFrom' | 'createdTo',
+): Date | undefined {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+
+  if (typeof value !== 'string') {
+    throw new BadRequestException(
+      `Audit log ${fieldName} must be an ISO datetime string.`,
+    );
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    throw new BadRequestException(
+      `Audit log ${fieldName} must be an ISO datetime string.`,
+    );
+  }
+
+  return date;
+}
+
+function normalizeRetentionDays(value: unknown): number {
+  if (value === undefined || value === null || value === '') {
+    return DEFAULT_RETENTION_DAYS;
+  }
+
+  const normalized = Number(value);
+
+  if (
+    !Number.isInteger(normalized) ||
+    normalized < 0 ||
+    normalized > MAX_RETENTION_DAYS
+  ) {
+    throw new BadRequestException(
+      `Audit log retentionDays must be an integer between 0 and ${MAX_RETENTION_DAYS}.`,
+    );
+  }
+
+  return normalized;
 }

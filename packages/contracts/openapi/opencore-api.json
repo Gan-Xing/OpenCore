@@ -3829,6 +3829,42 @@
             "required": false,
             "in": "query",
             "schema": { "type": "string" }
+          },
+          {
+            "name": "location",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string", "enum": ["error", "success"] }
+          },
+          {
+            "name": "createdFrom",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "createdTo",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "minDurationMs",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
+          },
+          {
+            "name": "maxDurationMs",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
           }
         ],
         "responses": {
@@ -3884,6 +3920,42 @@
             "required": false,
             "in": "query",
             "schema": { "type": "string" }
+          },
+          {
+            "name": "location",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string", "enum": ["error", "success"] }
+          },
+          {
+            "name": "createdFrom",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "createdTo",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "minDurationMs",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
+          },
+          {
+            "name": "maxDurationMs",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
           }
         ],
         "responses": {
@@ -3933,7 +4005,17 @@
     "/api/core/audit-logs/clean": {
       "delete": {
         "operationId": "SystemManagementController_cleanAuditLogs",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "retentionDays",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 90,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -8961,8 +9043,10 @@
           "path": { "type": "string" },
           "statusCode": { "type": "number" },
           "ip": { "type": "string" },
+          "location": { "type": "string" },
           "userAgent": { "type": "string" },
           "requestId": { "type": "string" },
+          "durationMs": { "type": "number" },
           "metadata": { "type": "object" },
           "createdAt": { "type": "string" }
         },
@@ -8975,8 +9059,10 @@
           "path",
           "statusCode",
           "ip",
+          "location",
           "userAgent",
           "requestId",
+          "durationMs",
           "createdAt"
         ]
       },
@@ -9014,9 +9100,11 @@
         "type": "object",
         "properties": {
           "deleted": { "type": "boolean" },
-          "affected": { "type": "number" }
+          "affected": { "type": "number" },
+          "retentionDays": { "type": "number" },
+          "cutoffBefore": { "type": "string" }
         },
-        "required": ["deleted", "affected"]
+        "required": ["deleted", "affected", "retentionDays", "cutoffBefore"]
       },
       "LoginLogDto": {
         "type": "object",

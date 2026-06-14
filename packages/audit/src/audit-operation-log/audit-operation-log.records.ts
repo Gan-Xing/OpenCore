@@ -8,8 +8,10 @@ export type AuditOperationLogRecord = {
   path: string;
   statusCode: number;
   ip: string;
+  location: string;
   userAgent: string;
   requestId: string;
+  durationMs: number;
   metadata?: unknown;
   createdAt: string;
 };
@@ -30,8 +32,10 @@ export const seedAuditOperationLogs: readonly AuditOperationLogRecord[] = [
     path: '/api/auth/login',
     statusCode: 200,
     ip: '127.0.0.1',
+    location: 'Loopback',
     userAgent: 'opencore-smoke',
     requestId: 'req_s7_seed_login',
+    durationMs: 12,
     metadata: {
       username: 'admin',
       password: 'admin123',
@@ -48,8 +52,10 @@ export const seedAuditOperationLogs: readonly AuditOperationLogRecord[] = [
     path: '/api/core/config',
     statusCode: 200,
     ip: '127.0.0.1',
+    location: 'Loopback',
     userAgent: 'opencore-smoke',
     requestId: 'req_s7_seed_config',
+    durationMs: 18,
     metadata: {
       filter: 'current-page',
     },

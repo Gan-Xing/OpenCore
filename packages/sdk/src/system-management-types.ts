@@ -32,6 +32,12 @@ export type AuditLogBatchMutationSummary = {
 export type AuditLogCleanSummary = {
   deleted: true;
   affected: number;
+  cutoffBefore: string;
+  retentionDays: number;
+};
+
+export type CleanAuditLogsRequest = {
+  retentionDays?: number;
 };
 
 export type LoginLogBatchMutationSummary = {
@@ -662,8 +668,10 @@ export type AuditLogSummary = {
   path: string;
   statusCode: number;
   ip: string;
+  location: string;
   userAgent: string;
   requestId: string;
+  durationMs: number;
   metadata?: unknown;
   createdAt: string;
 };
@@ -671,7 +679,13 @@ export type AuditLogSummary = {
 export type AuditLogQueryRequest = PageRequest & {
   actorUsername?: string;
   action?: string;
+  createdFrom?: string;
+  createdTo?: string;
+  location?: string;
+  maxDurationMs?: number;
+  minDurationMs?: number;
   resource?: string;
+  status?: 'error' | 'success';
 };
 
 export type LoginLogSummary = {

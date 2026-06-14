@@ -322,10 +322,16 @@ model AuditLog {
   path          String
   statusCode    Int
   ip            String
+  location      String   @default("Unknown")
   userAgent     String
   requestId     String
+  durationMs    Int      @default(0)
   metadata      Json?
   createdAt     DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([resource, createdAt])
+  @@index([location])
 }
 
 model LoginLog {

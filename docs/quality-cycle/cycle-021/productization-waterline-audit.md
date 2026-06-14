@@ -11,23 +11,23 @@ failures have guards; and remaining omissions are explicit product boundaries.
 
 ## Current Status
 
-| Capability            | Status        | Notes                                                                                             |
-| --------------------- | ------------- | ------------------------------------------------------------------------------------------------- |
-| `core.permission`     | Meets         | Catalog, registry/custom split and assignments are live.                                          |
-| `core.audit-log`      | Meets current | List/detail/export/delete/clean are live.                                                         |
-| `core.dept`           | Meets         | Tree CRUD, options, guards, ordering and data-scope.                                              |
-| `core.post`           | Meets         | CRUD, binding, options, batch deletion and ordering.                                              |
-| `core.menu`           | Meets         | Tree metadata, route/menu fields and delete guards.                                               |
-| `core.role`           | Meets         | Menu/user assignment, status effects and revocation.                                              |
-| `core.user`           | Meets         | CRUD, profile, password, avatar, import/export, binds.                                            |
-| `core.dict`           | Meets         | Dict/item CRUD and enabled simple-list source.                                                    |
-| `core.file`           | Meets         | Authenticated upload/download and content smoke.                                                  |
-| `monitor.online-user` | Meets         | Batch kick-out, revocation and UA/IP fields.                                                      |
-| `core.login-log`      | Meets current | Schema, lockout, cleanup, actor/reason and location.                                              |
+| Capability            | Status        | Notes                                                                                                    |
+| --------------------- | ------------- | -------------------------------------------------------------------------------------------------------- |
+| `core.permission`     | Meets         | Catalog, registry/custom split and assignments are live.                                                 |
+| `core.audit-log`      | Meets current | List/detail/export/delete, duration/location, retention cleanup and scheduled retention job.             |
+| `core.dept`           | Meets         | Tree CRUD, options, guards, ordering and data-scope.                                                     |
+| `core.post`           | Meets         | CRUD, binding, options, batch deletion and ordering.                                                     |
+| `core.menu`           | Meets         | Tree metadata, route/menu fields and delete guards.                                                      |
+| `core.role`           | Meets         | Menu/user assignment, status effects and revocation.                                                     |
+| `core.user`           | Meets         | CRUD, profile, password, avatar, import/export, binds.                                                   |
+| `core.dict`           | Meets         | Dict/item CRUD and enabled simple-list source.                                                           |
+| `core.file`           | Meets         | Authenticated upload/download and content smoke.                                                         |
+| `monitor.online-user` | Meets         | Batch kick-out, revocation and UA/IP fields.                                                             |
+| `core.login-log`      | Meets current | Schema, lockout, cleanup, actor/reason and location.                                                     |
 | `core.config`         | Meets current | Runtime keys, feature flags, rollout, audience, environment overrides, vault, versions and key rotation. |
-| `core.notice`         | Enhance       | SMS HTTP, SMTP, mail subject, diagnostics, secrets, attachments, TLS policy and realtime events.  |
-| `scheduler/monitor`   | Meets current | Job Admin operations, registry and handler diagnostics are live.                                  |
-| `OpenForge Admin`     | P2            | CLI/core exists; Admin UX remains.                                                                |
+| `core.notice`         | Enhance       | SMS HTTP, SMTP, mail subject, diagnostics, secrets, attachments, TLS policy and realtime events.         |
+| `scheduler/monitor`   | Meets current | Job Admin operations, registry and handler diagnostics are live.                                         |
+| `OpenForge Admin`     | P2            | CLI/core exists; Admin UX remains.                                                                       |
 
 ## Closed Remediation
 
@@ -66,15 +66,18 @@ failures have guards; and remaining omissions are explicit product boundaries.
 - Round 84 added env-bound KMS keyring status, v2 key-ID envelopes, legacy
   unversioned envelope deserialization, current/versioned secret rewrap and
   vault-key rotation smoke guards.
+- Round 85 added operation-log duration/location fields, enriched filters,
+  retentionDays cleanup and the scheduled `audit-log.retention-clean` job.
 
 ## Active Debt
 
-1. Operation log: retention scheduling, duration/location fields and policy.
-2. OpenForge Admin: safe plan/diff/check/apply/manifest/rollback UI.
-3. Integration: provider readiness, failure history and config diagnostics.
-4. Scheduler/monitor: external worker parity, cron dispatch and queue metrics
+1. OpenForge Admin: safe plan/diff/check/apply/manifest/rollback UI.
+2. Integration: provider readiness, failure history and config diagnostics.
+3. Scheduler/monitor: external worker parity, cron dispatch and queue metrics
    beyond the current registered manual executor.
-5. Optional managed-KMS provider adapter if deployment requires cloud KMS APIs.
+4. Optional managed-KMS provider adapter if deployment requires cloud KMS APIs.
+5. Optional operation-log external GeoIP enrichment if deployment needs real
+   IP attribution beyond deterministic categories.
 
 ## Guard Matrix
 
@@ -87,7 +90,8 @@ failures have guards; and remaining omissions are explicit product boundaries.
   auth, SMTP TLS policy, mail outbox subject persistence, SMTP attachments,
   authenticated inbox realtime events, provider diagnostics, non-2xx/SMTP
   failedCount and post-sent mutation guards.
-- Operation log: delete/clean guards and deleted-detail 404.
+- Operation log: delete guards, deleted-detail 404, duration/location filters,
+  retentionDays cleanup and scheduled retention job registry.
 - Monitor jobs: Admin bundle markers and smoke cover summary, registry,
   whitelisted job upsert, unsafe policy guards, enable/disable,
   disabled-trigger rejection, manual trigger, handler execution, retry failure

@@ -990,7 +990,9 @@ if (
   !auditLogsPage.includes('CurrentPageExportButton') ||
   !auditLogsPage.includes('dataSource={filteredRows}') ||
   !auditLogsPage.includes('rows={filteredRows}') ||
-  !auditLogsPage.includes('Audit trail with cleanup governance') ||
+  !auditLogsPage.includes('Retention policy') ||
+  !auditLogsPage.includes('durationMs') ||
+  !auditLogsPage.includes('location') ||
   !auditLogsPage.includes('jsonSections=')
 ) {
   throw new Error(
@@ -1007,11 +1009,12 @@ if (
   !auditLogsPage.includes('CurrentPageExportButton') ||
   !auditLogsPage.includes('dataSource={filteredRows}') ||
   !auditLogsPage.includes('rows={filteredRows}') ||
-  !auditLogsPage.includes('Audit trail with cleanup governance') ||
+  !auditLogsPage.includes('Retention policy') ||
   !auditLogsPage.includes('core:audit-log:delete') ||
   !auditLogsPage.includes('canDeleteAuditLogs') ||
   !auditLogsPage.includes('Delete selected') ||
-  !auditLogsPage.includes('Clean all') ||
+  !auditLogsPage.includes('Clean expired') ||
+  !auditLogsPage.includes('retentionDays') ||
   !auditLogsPage.includes('rowSelection') ||
   !auditLogsPage.includes('selectedRowKeys')
 ) {

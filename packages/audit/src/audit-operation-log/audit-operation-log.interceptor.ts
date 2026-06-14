@@ -11,7 +11,10 @@ import {
   AUDIT_OPERATION_KEY,
   type AuditOperationOptions,
 } from './audit-operation-log.decorators';
-import { redactAuditMetadata } from './audit-operation-log.repository';
+import {
+  redactAuditMetadata,
+  resolveAuditOperationLogLocation,
+} from './audit-operation-log.repository';
 import { AuditOperationLogService } from './audit-operation-log.service';
 
 type RequestWithAuditContext = {
@@ -58,12 +61,15 @@ export class AuditOperationLogInterceptor implements NestInterceptor {
       return next.handle();
     }
 
+    const startedAt = Date.now();
+
     return next.handle().pipe(
       tap(() => {
         void this.writeOperationLog(
           request,
           response.statusCode ?? 200,
           options,
+          startedAt,
         );
       }),
       catchError((error: unknown) => {
@@ -71,6 +77,7 @@ export class AuditOperationLogInterceptor implements NestInterceptor {
           request,
           getErrorStatusCode(error),
           options,
+          startedAt,
         );
         return throwError(() => error);
       }),
@@ -81,9 +88,11 @@ export class AuditOperationLogInterceptor implements NestInterceptor {
     request: RequestWithAuditContext,
     statusCode: number,
     options: AuditOperationOptions | undefined,
+    startedAt: number,
   ): Promise<void> {
     const method = normalizeMethod(request.method);
     const path = normalizePath(request);
+    const ip = request.ip ?? 'unknown';
 
     await this.operationLogs.recordOperation({
       actorUsername: request.user?.username ?? 'anonymous',
@@ -93,9 +102,11 @@ export class AuditOperationLogInterceptor implements NestInterceptor {
       method,
       path,
       statusCode,
-      ip: request.ip ?? 'unknown',
+      ip,
+      location: resolveAuditOperationLogLocation(ip),
       userAgent: getHeaderValue(request.headers, 'user-agent') ?? 'unknown',
       requestId: getRequestContext()?.requestId ?? 'unknown',
+      durationMs: Math.max(0, Date.now() - startedAt),
       metadata: redactAuditMetadata({
         body: request.body,
         headers: {

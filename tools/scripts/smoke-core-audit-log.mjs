@@ -57,6 +57,8 @@ try {
   assertEqual(operationLog.resource, '/api/core/config', 'audit log resource');
   assertEqual(operationLog.method, 'POST', 'audit log method');
   assertEqual(operationLog.statusCode, 201, 'audit log status code');
+  assertEqual(operationLog.location, 'Loopback', 'audit log location');
+  assertNumberAtLeast(operationLog.durationMs, 0, 'audit log duration');
   assertString(operationLog.requestId, 'audit log requestId');
 
   const detailLog = await apiRequest(
@@ -71,6 +73,8 @@ try {
     'detail audit log resource',
   );
   assertEqual(detailLog.statusCode, 201, 'detail audit log status code');
+  assertEqual(detailLog.location, 'Loopback', 'detail audit log location');
+  assertNumberAtLeast(detailLog.durationMs, 0, 'detail audit log duration');
 
   const exportPreview = await apiRequest(
     `/core/audit-logs/export?action=POST&resource=${encodeURIComponent(
@@ -79,6 +83,35 @@ try {
   );
   assertEqual(exportPreview.scope, 'current-page', 'audit log export scope');
   assertArray(exportPreview.columns, 'audit log export columns');
+  assertIncludes(
+    exportPreview.columns,
+    'durationMs',
+    'audit log export duration column',
+  );
+  assertIncludes(
+    exportPreview.columns,
+    'location',
+    'audit log export location column',
+  );
+  const enrichedFilterPage = await apiRequest(
+    `/core/audit-logs?page=1&pageSize=20&location=${encodeURIComponent(
+      'Loopback',
+    )}&minDurationMs=0&status=success&resource=${encodeURIComponent(
+      '/api/core/config',
+    )}`,
+  );
+  assertArray(enrichedFilterPage.items, 'enriched audit filter items');
+  if (!enrichedFilterPage.items.some((item) => item.id === operationLog.id)) {
+    throw new Error(
+      `Expected enriched filters to include ${operationLog.id}, received ${formatBody(
+        enrichedFilterPage.items,
+      )}`,
+    );
+  }
+  await apiRequest('/core/audit-logs?status=unknown', { expected: [400] });
+  await apiRequest('/core/audit-logs?minDurationMs=50&maxDurationMs=10', {
+    expected: [400],
+  });
 
   await apiRequest('/core/audit-logs/batch', {
     method: 'DELETE',
@@ -117,10 +150,15 @@ try {
   await createSmokeConfig(cleanConfigKey);
   await waitForCreatedConfigAuditLog(cleanConfigKey);
 
-  const cleanResult = await apiRequest('/core/audit-logs/clean', {
-    method: 'DELETE',
-  });
+  const cleanResult = await apiRequest(
+    '/core/audit-logs/clean?retentionDays=0',
+    {
+      method: 'DELETE',
+    },
+  );
   assertEqual(cleanResult.deleted, true, 'audit log clean result');
+  assertEqual(cleanResult.retentionDays, 0, 'audit log clean retention days');
+  assertString(cleanResult.cutoffBefore, 'audit log clean cutoff');
   if (typeof cleanResult.affected !== 'number' || cleanResult.affected < 1) {
     throw new Error(
       `Expected audit log clean affected to be at least 1, received ${formatBody(
@@ -137,7 +175,7 @@ try {
   assertArray(afterCleanConfigLogs.items, 'audit logs after clean items');
   if (afterCleanConfigLogs.items.length !== 0) {
     throw new Error(
-      `Expected clean-all to remove config audit logs, received ${formatBody(
+      `Expected retention clean to remove expired config audit logs, received ${formatBody(
         afterCleanConfigLogs.items,
       )}`,
     );
@@ -145,7 +183,7 @@ try {
 
   await waitForAuditLog({
     action: 'DELETE',
-    label: 'audit log clean-all operation',
+    label: 'audit log retention clean operation',
     resource: '/api/core/audit-logs/clean',
     statusCode: 200,
   });
@@ -165,9 +203,10 @@ try {
         'core.audit-log.list',
         'core.audit-log.detail',
         'core.audit-log.export',
+        'core.audit-log.enrichment-filters',
         'core.audit-log.batch-delete-guards',
         'core.audit-log.batch-delete',
-        'core.audit-log.clean',
+        'core.audit-log.retention-clean',
         'core.config.cleanup',
       ],
     }),
@@ -390,12 +429,32 @@ function assertArray(value, label) {
   }
 }
 
+function assertIncludes(values, expected, label) {
+  if (!Array.isArray(values) || !values.includes(expected)) {
+    throw new Error(
+      `Expected ${label} to include ${JSON.stringify(
+        expected,
+      )}, received ${formatBody(values)}`,
+    );
+  }
+}
+
 function assertEqual(actual, expected, label) {
   if (actual !== expected) {
     throw new Error(
       `Expected ${label} to be ${JSON.stringify(
         expected,
       )}, received ${JSON.stringify(actual)}`,
+    );
+  }
+}
+
+function assertNumberAtLeast(value, minimum, label) {
+  if (typeof value !== 'number' || value < minimum) {
+    throw new Error(
+      `Expected ${label} to be at least ${minimum}, received ${JSON.stringify(
+        value,
+      )}`,
     );
   }
 }

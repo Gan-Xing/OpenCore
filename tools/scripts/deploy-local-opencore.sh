@@ -177,19 +177,19 @@ verify_admin_bundle_api_base_url() {
   if ! grep -R \
     --fixed-strings \
     --include='*.js' \
-    "Audit trail with cleanup governance" \
+    "Retention policy" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null || \
     ! grep -R \
     --fixed-strings \
     --include='*.js' \
-    "Clean all operation logs" \
+    "Clean expired operation logs" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null || \
     ! grep -R \
     --fixed-strings \
     --include='*.js' \
     "core:audit-log:delete" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null; then
-    echo "Admin bundle does not include operation-log cleanup controls." >&2
+    echo "Admin bundle does not include operation-log retention cleanup controls." >&2
     echo "Refusing to deploy a stale frontend operation-log page." >&2
     exit 1
   fi

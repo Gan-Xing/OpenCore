@@ -45,6 +45,15 @@ export const schedulerJobRegistry: readonly SchedulerJobRegistryEntry[] = [
     defaultPayload: { command: 'pnpm openapi:check' },
   },
   {
+    code: 'audit-log.retention-clean',
+    title: 'Audit log retention clean',
+    queueName: 'maintenance',
+    handlerKey: 'maintenance.auditLogRetention',
+    allowManualTrigger: true,
+    defaultCron: '0 3 * * *',
+    defaultPayload: { retentionDays: 90 },
+  },
+  {
     code: 'report.refresh',
     title: 'Refresh reports',
     queueName: 'reports',
@@ -66,6 +75,18 @@ export const seedSchedulerJobs: readonly SchedulerJobDefinitionRecord[] = [
     timeoutSeconds: 120,
     adapter: 'bullmq',
     payload: { command: 'pnpm openapi:check' },
+  },
+  {
+    id: 'job_audit_log_retention_clean',
+    code: 'audit-log.retention-clean',
+    name: 'Audit log retention clean',
+    queueName: 'maintenance',
+    cron: '0 3 * * *',
+    enabled: true,
+    retryLimit: 1,
+    timeoutSeconds: 60,
+    adapter: 'bullmq',
+    payload: { retentionDays: 90 },
   },
 ];
 

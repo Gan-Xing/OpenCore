@@ -52,8 +52,16 @@ try {
   const registry = await apiRequest('/monitor/jobs/registry');
   assertArray(registry, 'job registry items');
   const reportRegistry = registry.find((entry) => entry.code === JOB_CODE);
+  const auditRetentionRegistry = registry.find(
+    (entry) => entry.code === 'audit-log.retention-clean',
+  );
   if (!reportRegistry) {
     throw new Error(`Expected scheduler registry to include ${JOB_CODE}`);
+  }
+  if (!auditRetentionRegistry) {
+    throw new Error(
+      'Expected scheduler registry to include audit-log.retention-clean',
+    );
   }
   assertEqual(
     reportRegistry.handlerKey,
@@ -65,6 +73,11 @@ try {
     true,
     'report refresh manual trigger policy',
   );
+  assertEqual(
+    auditRetentionRegistry.handlerKey,
+    'maintenance.auditLogRetention',
+    'audit retention handler key',
+  );
 
   const maintenanceJobs = await apiRequest(
     '/monitor/jobs?page=1&pageSize=20&enabled=true&queueName=maintenance',
@@ -74,6 +87,11 @@ try {
     maintenanceJobs.items.map((job) => job.code),
     'openapi.drift-check',
     'maintenance job list',
+  );
+  assertIncludes(
+    maintenanceJobs.items.map((job) => job.code),
+    'audit-log.retention-clean',
+    'maintenance retention job list',
   );
 
   const job = await upsertSmokeJob();
@@ -265,6 +283,7 @@ try {
           : []),
         'auth.login',
         'monitor.job.registry',
+        'monitor.job.audit-retention-registry',
         'monitor.job.summary',
         'monitor.job.list',
         'monitor.job.upsert-whitelisted',
