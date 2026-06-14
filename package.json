@@ -38,6 +38,7 @@
     "prisma:studio": "prisma studio --schema prisma/schema.prisma",
     "prisma:validate": "prisma validate --schema prisma/schema.prisma",
     "quality-docs:check": "node tools/scripts/check-quality-doc-noise.mjs",
+    "release:gate": "bash tools/scripts/release-readiness-gate.sh",
     "registry:admin-routes:check": "TS_NODE_PROJECT=tsconfig.base.json TS_NODE_COMPILER_OPTIONS='{\"moduleResolution\":\"node10\",\"module\":\"commonjs\",\"customConditions\":null}' node -r ts-node/register -r tsconfig-paths/register tools/scripts/check-admin-route-access.ts",
     "sdk:check": "node tools/scripts/check-sdk-generate.mjs",
     "sdk:generate": "node tools/scripts/check-sdk-generate.mjs",

@@ -43,9 +43,15 @@ unregisters stale Workbox service workers and clears their caches.
 ## Commands
 
 ```bash
+pnpm release:gate
 pnpm smoke:api:local
 pnpm deploy:opencore
 ```
+
+`pnpm release:gate` is the release-readiness entrypoint. It runs the full
+quality gate, build, fixed-port local smoke, fixed-port deployment and public
+API/Admin/default-account smoke. See
+`docs/deployment/opencore-release-readiness.md`.
 
 `pnpm smoke:api:local` starts a temporary API on port `39173`, loads
 `.env.opencore.local` without printing secrets, refreshes local seed data for a
