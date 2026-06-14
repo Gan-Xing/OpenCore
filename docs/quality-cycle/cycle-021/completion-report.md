@@ -4,14 +4,14 @@ Date: 2026-06-14
 
 ## Latest Completed Round
 
-Round 110: Monitor Jobs terminal run-log retention cleanup.
+Round 111: Integration OAuth Admin live-only list/detail/revoke.
 
 ## Closed
 
-- Added managed terminal run-log cleanup across API/SDK/Admin.
-- Rejected queued/running cleanup and retained terminal-only cleanup semantics.
-- Kept Monitor Jobs Admin live-only with smoke/deploy guards against stale
-  fixture-backed bundles.
+- Removed the OAuth token Admin fixture fallback path.
+- Loaded token detail through the live SDK/API instead of local fixture lookup.
+- Gated revoke controls with `integration:oauth:manage` and added
+  smoke/deploy guards against stale fixture-backed OAuth bundles.
 
 ## Still Open
 

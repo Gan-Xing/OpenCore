@@ -874,6 +874,13 @@ if (
   !smsPage.includes('Outbox Recipient') ||
   !smsPage.includes('Sample Outbox Payload') ||
   !oauthPage.includes('@opencore/sdk') ||
+  !oauthPage.includes('listOpenCoreOAuthTokens') ||
+  !oauthPage.includes('getOpenCoreOAuthToken') ||
+  !oauthPage.includes('revokeOpenCoreOAuthToken') ||
+  !oauthPage.includes('Live OAuth token inventory') ||
+  !oauthPage.includes('Unable to load live OAuth token inventory') ||
+  !oauthPage.includes('canManageOAuthIntegration') ||
+  !oauthPage.includes('integration:oauth:manage') ||
   !wechatPage.includes('@opencore/sdk') ||
   !wechatPage.includes('getOpenCoreWeChatDesign') ||
   !wechatPage.includes('Live WeChat design') ||
@@ -989,6 +996,19 @@ if (
 ) {
   throw new Error(
     'Integration SMS page must use live SMS template/outbox SDK APIs instead of static fixtures.',
+  );
+}
+
+if (
+  oauthPage.includes('createIntegrationFixtures') ||
+  oauthPage.includes('findOAuthTokenFixture') ||
+  oauthPage.includes('Using fallback OAuth token inventory data') ||
+  !opencorePlatformService.includes('integrationClient.listOAuthTokens') ||
+  !opencorePlatformService.includes('integrationClient.getOAuthToken') ||
+  !opencorePlatformService.includes('integrationClient.revokeOAuthToken')
+) {
+  throw new Error(
+    'Integration OAuth page must use live token list/detail/revoke SDK APIs without fixture fallback.',
   );
 }
 

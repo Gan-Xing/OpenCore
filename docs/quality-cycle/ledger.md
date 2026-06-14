@@ -62,8 +62,8 @@ docs. Commit-level detail is available from git history.
 - 2026-06-13 20:55:34 UTC completed cycle-021 round-074 `monitor.job` Admin
   runtime operations; deployed=39172/39174;
   publicVerified=monitor-job-run-now,admin-monitor-jobs-runtime-ops,report-definition-seed-migration.
-- 2026-06-14 UTC rounds 075-110 continued foundation productization across
+- 2026-06-14 UTC rounds 075-111 continued foundation productization across
   monitor, config, security logs, OpenForge, integration and collaboration.
-- Latest deployed runtime: round-110 `monitor.job` terminal run-log retention
-  cleanup
+- Latest deployed runtime: round-111 `integration.oauth` Admin live-only
+  list/detail/revoke
   on API `39172` and Admin `39174`.

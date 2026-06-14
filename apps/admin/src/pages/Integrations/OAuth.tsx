@@ -3,12 +3,11 @@ import {
   ProTable,
   type ProColumns,
 } from '@ant-design/pro-components';
-import {
-  createIntegrationFixtures,
-  findOAuthTokenFixture,
-  type OAuthCallbackContractSummary,
-  type OAuthTokenInventorySummary,
-  type OAuthTokenSummary,
+import { useAccess } from '@umijs/max';
+import type {
+  OAuthCallbackContractSummary,
+  OAuthTokenInventorySummary,
+  OAuthTokenSummary,
 } from '@opencore/sdk';
 import {
   Alert,
@@ -23,6 +22,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   getOpenCoreOAuthCallbackContract,
+  getOpenCoreOAuthToken,
   getOpenCoreOAuthTokenSummary,
   listOpenCoreOAuthTokens,
   revokeOpenCoreOAuthToken,
@@ -39,11 +39,17 @@ import {
 } from '../shared/CurrentPageFilters';
 import { ReadOnlyDetailDrawer } from '../shared/ReadOnlyDetailDrawer';
 
-const fixtures = createIntegrationFixtures();
-const fallbackTokens = fixtures.oauthTokens;
-const fallbackSummary = fixtures.oauthTokenSummary;
-const fallbackContract = fixtures.oauthContract;
 const OAUTH_MANAGE_PERMISSION_MARKER = 'integration:oauth:manage';
+
+const emptySummary: OAuthTokenInventorySummary = {
+  active: 0,
+  expired: 0,
+  expiringSoon: 0,
+  generatedAt: '',
+  providers: 0,
+  revoked: 0,
+  total: 0,
+};
 
 const exportColumns: CurrentPageExportColumn<OAuthTokenSummary>[] = [
   { title: 'ID', dataIndex: 'id' },
@@ -77,16 +83,18 @@ function statusColor(status: OAuthTokenSummary['status']): string {
 }
 
 export default function OAuthIntegrationPage() {
-  const [rows, setRows] =
-    useState<readonly OAuthTokenSummary[]>(fallbackTokens);
+  const access = useAccess();
+  const canManageOAuthIntegration = Boolean(access.canManageOAuthIntegration);
+  const [rows, setRows] = useState<readonly OAuthTokenSummary[]>([]);
   const [summary, setSummary] =
-    useState<OAuthTokenInventorySummary>(fallbackSummary);
+    useState<OAuthTokenInventorySummary>(emptySummary);
   const [callbackContract, setCallbackContract] =
-    useState<OAuthCallbackContractSummary>(fallbackContract);
+    useState<OAuthCallbackContractSummary>();
   const [selected, setSelected] = useState<OAuthTokenSummary>();
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
   const [revokingId, setRevokingId] = useState<string>();
+  const [detailLoadingId, setDetailLoadingId] = useState<string>();
 
   const filterOptions: CurrentPageFilterOption<OAuthTokenSummary>[] = useMemo(
     () => [
@@ -126,9 +134,10 @@ export default function OAuthIntegrationPage() {
       setCallbackContract(nextContract);
       setLoadError(undefined);
     } catch (error: unknown) {
-      setSummary(fallbackSummary);
-      setRows(fallbackTokens);
-      setCallbackContract(fallbackContract);
+      setSummary(emptySummary);
+      setRows([]);
+      setCallbackContract(undefined);
+      setSelected(undefined);
       setLoadError(
         error instanceof Error
           ? error.message
@@ -143,10 +152,21 @@ export default function OAuthIntegrationPage() {
     void loadTokens();
   }, [loadTokens]);
 
-  const openDetail = (id: string) => {
-    setSelected(
-      rows.find((record) => record.id === id) ?? findOAuthTokenFixture(id),
-    );
+  const openDetail = async (id: string) => {
+    setDetailLoadingId(id);
+    try {
+      const token = await getOpenCoreOAuthToken(id);
+      setSelected(token);
+    } catch (error: unknown) {
+      setSelected(undefined);
+      message.error(
+        error instanceof Error
+          ? error.message
+          : 'Unable to load live OAuth token detail.',
+      );
+    } finally {
+      setDetailLoadingId(undefined);
+    }
   };
 
   const confirmRevoke = (record: OAuthTokenSummary) => {
@@ -177,7 +197,7 @@ export default function OAuthIntegrationPage() {
       title: 'Token',
       dataIndex: 'id',
       render: (_, record) => (
-        <Typography.Link onClick={() => openDetail(record.id)}>
+        <Typography.Link onClick={() => void openDetail(record.id)}>
           {record.id}
         </Typography.Link>
       ),
@@ -201,12 +221,18 @@ export default function OAuthIntegrationPage() {
       title: 'Action',
       valueType: 'option',
       render: (_, record) => [
-        <a key="detail" onClick={() => openDetail(record.id)}>
+        <Button
+          key="detail"
+          loading={detailLoadingId === record.id}
+          onClick={() => void openDetail(record.id)}
+          size="small"
+          type="link"
+        >
           Detail
-        </a>,
+        </Button>,
         <Button
           danger
-          disabled={record.status === 'revoked'}
+          disabled={record.status === 'revoked' || !canManageOAuthIntegration}
           key="revoke"
           loading={revokingId === record.id}
           onClick={() => confirmRevoke(record)}
@@ -226,8 +252,8 @@ export default function OAuthIntegrationPage() {
         <Alert
           showIcon
           style={{ marginBottom: 16 }}
-          type="warning"
-          message="Using fallback OAuth token inventory data"
+          type="error"
+          message="Unable to load live OAuth token inventory"
           description={loadError}
           action={<Button onClick={() => void loadTokens()}>Reload</Button>}
         />
@@ -249,6 +275,9 @@ export default function OAuthIntegrationPage() {
         options={false}
         loading={loading}
         toolBarRender={() => [
+          <Typography.Text key="live-policy" type="secondary">
+            Live OAuth token inventory
+          </Typography.Text>,
           filterToolbar,
           <CurrentPageExportButton<OAuthTokenSummary>
             key="export"
@@ -289,7 +318,7 @@ export default function OAuthIntegrationPage() {
         jsonSections={[
           {
             title: 'OAuth Callback Contract',
-            value: callbackContract,
+            value: callbackContract ?? {},
           },
         ]}
         onClose={() => setSelected(undefined)}

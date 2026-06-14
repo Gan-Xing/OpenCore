@@ -559,10 +559,32 @@ verify_admin_bundle_api_base_url() {
     exit 1
   fi
 
-  if ! grep -R \
+  if grep \
+    --fixed-strings \
+    "createIntegrationFixtures" \
+    "$ROOT_DIR/apps/admin/src/pages/Integrations/OAuth.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "findOAuthTokenFixture" \
+    "$ROOT_DIR/apps/admin/src/pages/Integrations/OAuth.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "Using fallback OAuth token inventory data" \
+    "$ROOT_DIR/apps/admin/src/pages/Integrations/OAuth.tsx" >/dev/null || \
+    ! grep -R \
     --fixed-strings \
     --include='*.js' \
     "OAuth token inventory" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Live OAuth token inventory" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Unable to load live OAuth token inventory" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null || \
     ! grep -R \
     --fixed-strings \

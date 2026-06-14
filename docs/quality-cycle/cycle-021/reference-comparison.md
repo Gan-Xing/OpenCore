@@ -43,10 +43,12 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   realtime events are live.
 - Integration: provider health/config audit is live with readiness totals,
   config-vault debt, outbox backlog, last failure and operator actions plus
-  OAuth token inventory/summary/detail/revoke and live Mail/SMS
-  template/outbox Admin operations across API/SDK/Admin/OpenAPI/smoke. WeChat
-  and WebSocket design Admin pages now read live design endpoints instead of
-  fixtures while staying design-only boundaries.
+  OAuth token inventory/summary/detail/revoke. The OAuth Admin page is
+  live-only for list/detail/revoke and no longer masks API failures with
+  fixture fallback. Mail/SMS template/outbox Admin operations are live across
+  API/SDK/Admin/OpenAPI/smoke. WeChat and WebSocket design Admin pages now
+  read live design endpoints instead of fixtures while staying design-only
+  boundaries.
 - Config: runtime keys, login policy, feature flags, rollout, audience rules,
   environment overrides, secret-vault encryption, secret version history,
   explicit rotation, env-bound keyring status, managed HTTP JSON KMS v3
@@ -204,6 +206,9 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
 - Round 110: Monitor Jobs now exposes terminal run-log retention cleanup
   through API/SDK/Admin, rejects queued/running cleanup and keeps the Jobs page
   live-only with smoke/deploy guards.
+- Round 111: OAuth token Admin now uses live list/detail/revoke APIs only,
+  disables revoke without `integration:oauth:manage` and has smoke/deploy
+  guards that reject fixture fallback or stale bundles.
 
 ## Explicit Non-Claims
 

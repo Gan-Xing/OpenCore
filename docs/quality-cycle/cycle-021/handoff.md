@@ -48,7 +48,7 @@ packages and OpenForge direct Prisma/migration/business-code writing.
 
 ## Current State
 
-Cycle-021 has completed 110 deployable stages.
+Cycle-021 has completed 111 deployable stages.
 
 - System/RBAC: notice, dept, post, menu, role, permission, user, dict, config
   and file loops are live.
@@ -75,10 +75,12 @@ Cycle-021 has completed 110 deployable stages.
   with readiness totals, config-vault debt, outbox backlog, last failure and
   operator actions. OAuth token inventory, detail, summary and revoke
   lifecycle are live across API/SDK/Admin/OpenAPI/smoke with secret-ref-only
-  storage. Mail and SMS templates/outbox Admin operations now use live API/SDK
-  calls for list, detail, preview and queued processing. WeChat and WebSocket
-  design Admin pages now use live design API/SDK endpoints with smoke and
-  deploy guards while remaining design-only boundaries.
+  storage, and the OAuth Admin page is live-only for list/detail/revoke
+  without fixture fallback. Mail and SMS templates/outbox Admin operations now
+  use live API/SDK calls for list, detail, preview and queued processing.
+  WeChat and WebSocket design Admin pages now use live design API/SDK
+  endpoints with smoke and deploy guards while remaining design-only
+  boundaries.
 - Monitor status now exposes live runtime CPU, memory, disk and process
   resources through API/SDK/Admin/OpenAPI/smoke without Admin fixture fallback.
 - Monitor jobs: API/SDK routes, registry policy, seed job, Admin live list,
@@ -106,10 +108,11 @@ Cycle-021 has completed 110 deployable stages.
   operations for list, detail, create, approve and reject. These pages have
   seed coverage, dedicated smoke and Admin/deploy guards.
 
-Latest runtime stage: Round 110 Monitor Jobs run-log retention cleanup. It
-adds a managed terminal run-log cleanup API/SDK/Admin flow, rejects
-queued/running cleanup, keeps the Jobs Admin page live-only and adds
-smoke/deploy guards for stale fixture-backed bundles.
+Latest runtime stage: Round 111 Integration OAuth Admin live-only
+list/detail/revoke. It removes the OAuth token Admin fixture fallback, loads
+details through the live SDK API, gates revoke controls with
+`integration:oauth:manage` and adds smoke/deploy guards for stale OAuth Admin
+bundles.
 
 ## Next Queue
 

@@ -26,7 +26,7 @@ failures have guards; and remaining omissions are explicit product boundaries.
 | `core.login-log`      | Meets current | Schema, lockout, cleanup, actor/reason, location, IP/location lookup and live-only Admin data.       |
 | `core.config`         | Meets current | Runtime keys, feature flags, rollout, audience, overrides, vault versions, env and managed KMS.      |
 | `core.notice`         | Enhance       | SMS HTTP, SMTP, mail subject, diagnostics, secrets, attachments, TLS policy and realtime events.     |
-| `integration`         | Meets current | Provider audit, OAuth, Mail/SMS operations and WeChat/WebSocket design Admin reads are live.         |
+| `integration`         | Meets current | Provider audit, OAuth live-only Admin, Mail/SMS operations and WeChat/WebSocket design Admin reads are live. |
 | `scheduler/monitor`   | Meets current | Job Admin operations, registry, cron dispatch, worker claim, queue metrics, queue pause/resume and run-log cleanup. |
 | `monitor.status`      | Meets current | Live dependency checks plus CPU, memory, disk and process resource snapshot.                         |
 | `monitor.cache`       | Meets current | Redis namespace/key scans, safe value preview, dry-run clear and confirmed key/prefix deletion.      |
@@ -135,6 +135,9 @@ failures have guards; and remaining omissions are explicit product boundaries.
 - Round 110 added Monitor Jobs terminal run-log retention cleanup across
   API/SDK/Admin and removed the Jobs Admin fixture fallback path from the
   deployable surface.
+- Round 111 removed the OAuth token Admin fixture fallback, made token detail
+  load through the live SDK API, gated revoke controls with
+  `integration:oauth:manage` and added smoke/deploy stale-bundle guards.
 
 ## Active Debt
 
@@ -197,9 +200,11 @@ failures have guards; and remaining omissions are explicit product boundaries.
 - Integration: health audit smoke covers provider-wide readiness totals,
   config-vault debt, outbox backlog, diagnostics parity, failure history and
   secret-leak guards; OAuth token smoke covers summary, list/detail, revoke,
-  idempotent revoke and secret-leak guards; design smoke covers WeChat and
-  WebSocket design endpoints plus summary topics; Admin/deploy guards reject
-  stale Mail/SMS and WeChat/WebSocket fixture pages and require live markers.
+  idempotent revoke and secret-leak guards, while Admin/deploy guards reject
+  OAuth fixture fallback and require live list/detail/revoke markers; design
+  smoke covers WeChat and WebSocket design endpoints plus summary topics;
+  Admin/deploy guards reject stale Mail/SMS and WeChat/WebSocket fixture pages
+  and require live markers.
 - Collaboration: message smoke covers seeded list/detail, create, idempotent
   mark-read, archive, delete and post-delete hiding; Admin/deploy guards
   reject fixture-backed Messages source and require live message operation

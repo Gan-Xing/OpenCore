@@ -19,7 +19,7 @@ active debt and decisions that change future execution.
 
 ## Runtime State
 
-Cycle-021 has completed 110 deployable stages across
+Cycle-021 has completed 111 deployable stages across
 System/Security/Monitor/Integration/Tools foundations. Round 91 added
 token/session blacklist maintenance with registered-token allowlist
 enforcement, expired-session cleanup, API/SDK/Admin/OpenAPI visibility, smoke
@@ -61,7 +61,10 @@ live-only data and added `monitor:queue:manage` smoke/deploy guards. Round
 operation-log server-side filters and guarded the pages through Admin smoke
 and deploy markers. Round 110 added Monitor Jobs terminal run-log retention
 cleanup through API/SDK/Admin, rejects queued/running cleanup and keeps the
-Jobs Admin page live-only through smoke/deploy guards.
+Jobs Admin page live-only through smoke/deploy guards. Round 111 removed the
+OAuth token Admin fixture fallback, loads token detail through the live SDK
+API, gates revoke controls with `integration:oauth:manage` and blocks stale
+OAuth bundles through Admin smoke and deploy guards.
 
 ## Guard Register
 
@@ -137,9 +140,10 @@ Jobs Admin page live-only through smoke/deploy guards.
 - Integration: smoke covers provider-wide health audit, diagnostics parity,
   config-vault debt, outbox backlog, failure history and secret-leak guards;
   OAuth token smoke covers summary, list/detail, revoke, idempotent revoke and
-  secret-leak guards; design smoke covers WeChat/WebSocket design reads and
-  summary topics. Admin/deploy guards reject fixture-backed Mail/SMS and
-  WeChat/WebSocket pages and require live markers.
+  secret-leak guards. Admin/deploy guards reject OAuth fixture fallback and
+  require live list/detail/revoke markers. Design smoke covers
+  WeChat/WebSocket design reads and summary topics. Admin/deploy guards reject
+  fixture-backed Mail/SMS and WeChat/WebSocket pages and require live markers.
 - Collaboration: message smoke covers seed-backed list/detail, create,
   idempotent mark-read, archive, delete and post-delete hiding.
   Notice smoke covers seed-backed list/detail, create, publish,

@@ -55,6 +55,7 @@ export default function access(initialState: InitialState = {}) {
     canReadMailIntegration: hasPermission('integration:mail:read'),
     canReadSmsIntegration: hasPermission('integration:sms:read'),
     canReadOAuthIntegration: hasPermission('integration:oauth:read'),
+    canManageOAuthIntegration: hasPermission('integration:oauth:manage'),
     canReadWeChatIntegration: hasPermission('integration:wechat:read'),
     canReadWebSocketIntegration: hasPermission('integration:websocket:read'),
     canReadBillingDesign: hasPermission('integration:billing-design:read'),
