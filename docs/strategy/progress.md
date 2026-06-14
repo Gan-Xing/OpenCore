@@ -1,6 +1,6 @@
 # OpenCore Strategy Progress
 
-更新时间：2026-06-13
+更新时间：2026-06-14
 
 This file is now a compact progress index. It must not be used as a per-round
 execution transcript. Do not paste repeated command lists, smoke logs, changed
@@ -25,7 +25,7 @@ OpenCore is in Cycle-021 capability-map productization. The project has moved
 past strategy-only planning, S3-S8 foundation, runtime integration, OpenForge
 V1, Admin Ant Design Pro V6 migration, and backend self-loop package extraction.
 
-Cycle-021 has completed 71 deployable stages as of the current handoff. The
+Cycle-021 has completed 118 deployable stages as of the current handoff. The
 active queue remains foundation-level backend/admin capability hardening, not
 large business-domain admission.
 
@@ -61,7 +61,7 @@ commit, push, deploy, and public URL verification through the fixed script.
 | 24-36  | Config cache/value/runtime, option sources, profile/password/avatar, scheduler lifecycle and monitor details.                                      |
 | 37-49  | Config export/batch/runtime, login-log schema/lockout/cleanup, operation-log filter/detail/export and online-user location/device/session fields.  |
 | 50-59  | Logout audit semantics, dept/post ordering, data-scope, notice publish flow, scheduler controls, monitor runtime/queue details.                    |
-| 60-71  | Notice templates, deliveries, provider/outbox boundaries, config vault, operation-log cleanup, outbox process/callback/retry scheduling.           |
+| 60-118 | Notice provider/outbox reliability, config vault/KMS, monitor/jobs/cache/version, OpenForge, integration/collaboration and Admin live-only hardening. |
 
 See `docs/quality-cycle/cycle-021/round-history.md` for the maintained version.
 
@@ -85,14 +85,12 @@ See `docs/quality-cycle/cycle-021/round-history.md` for the maintained version.
 
 Current foundation queue from Cycle-021:
 
-- Notice provider reliability: real SMTP/SMS adapters, provider-secret injection
-  and realtime push.
-- Config governance: multi-environment rollout, external KMS, key rotation and
-  secret versions.
-- Operation-log enrichment and retention governance.
-- Scheduler/monitor operation depth.
-- OpenForge Admin UI.
-- Integration health/config audit.
+- Admin live-only closure: System Roles, Users, Config, Files and System
+  Notices still have fixture fallback and must fail visibly instead.
+- Config governance: continue only where it adds runtime governance or removes
+  Admin fallback debt; environment, KMS and key rotation foundations are live.
+- After the remaining Admin fallback pages are closed, select the next
+  admitted P0/P1 foundation gap from the active cycle handoff.
 
 Large domains such as business modules, payment, multitenancy, BPM, AI and
 report designer still require explicit admission before implementation.

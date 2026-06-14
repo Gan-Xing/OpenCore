@@ -51,12 +51,13 @@ packages and OpenForge direct Prisma/migration/business-code writing.
 Cycle-021 has completed 118 deployable stages.
 
 - System/RBAC: notice, dept, post, menu, role, permission, user, dict, config
-  and file loops are live. Dicts Admin is live-only for list/detail/item CRUD
-  and Departments/Posts Admin are live-only for tree/detail/order and
-  list/detail/batch/order CRUD; Permissions Admin is live-only for
-  catalog/detail/custom CRUD/export; Menus Admin is live-only for tree CRUD,
-  detail/export and live permission options. These pages no longer fall back
-  to SDK or registry fixtures.
+  and file API/SDK loops are live. Dicts Admin is live-only for
+  list/detail/item CRUD and Departments/Posts Admin are live-only for
+  tree/detail/order and list/detail/batch/order CRUD; Permissions Admin is
+  live-only for catalog/detail/custom CRUD/export; Menus Admin is live-only
+  for tree CRUD, detail/export and live permission options. Roles, Users,
+  Config, Files and System Notices Admin still have fixture fallback and remain
+  live-only closure debt.
 - Security/session: login policy, logout, force logout, online-user kick-out,
   registered-token allowlist enforcement and expired session cleanup are live;
   Online Users Admin is live-only for list/detail/kick-out/cleanup and no
@@ -123,8 +124,8 @@ for stale fixture-backed Menus bundles.
 
 ## Next Queue
 
-1. Audit remaining fixture-backed Admin/productization debt and select the
-   next admitted P0/P1 foundation loop by dependency order.
+1. Close remaining fixture-backed Admin debt by dependency order: Roles,
+   Users, Config, Files and System Notices.
 2. Payment/BillingDesign remains explicit-admission because real payment,
    refund and reconciliation are out of scope.
 3. Optional Reports/ExportJobs remain explicit-admission because full report

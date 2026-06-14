@@ -18,14 +18,14 @@ failures have guards; and remaining omissions are explicit product boundaries.
 | `core.dept`           | Meets         | Tree CRUD, options, guards, ordering, data-scope and live-only Admin without fixture fallback.        |
 | `core.post`           | Meets         | CRUD, binding, options, batch deletion, ordering and live-only Admin without fixture fallback.        |
 | `core.menu`           | Meets         | Tree metadata, route/menu fields, delete guards and live-only Admin tree CRUD/export.                 |
-| `core.role`           | Meets         | Menu/user assignment, status effects and revocation.                                                 |
-| `core.user`           | Meets         | CRUD, profile, password, avatar, import/export, binds.                                               |
+| `core.role`           | Admin debt    | API supports assignment, status effects and revocation; Roles Admin still has fixture fallback.       |
+| `core.user`           | Admin debt    | API supports CRUD, profile, password, avatar, import/export and binds; Users Admin still has fixture fallback. |
 | `core.dict`           | Meets         | Dict/item CRUD, enabled simple-list source and live-only Admin without fixture fallback.              |
-| `core.file`           | Meets         | Authenticated upload/download and content smoke.                                                     |
+| `core.file`           | Admin debt    | Authenticated upload/download and content smoke are live; Files Admin still has fixture fallback.     |
 | `monitor.online-user` | Meets         | Batch kick-out, revocation, registered-token allowlist, cleanup, UA/IP fields and live-only Admin.   |
 | `core.login-log`      | Meets current | Schema, lockout, cleanup, actor/reason, location, IP/location lookup and live-only Admin data.       |
-| `core.config`         | Meets current | Runtime keys, feature flags, rollout, audience, overrides, vault versions, env and managed KMS.      |
-| `core.notice`         | Enhance       | SMS HTTP, SMTP, mail subject, diagnostics, secrets, attachments, TLS policy and realtime events.     |
+| `core.config`         | Admin debt    | Runtime config, rollout, overrides, vault versions and KMS are live; Config Admin still has fixture fallback. |
+| `core.notice`         | Enhance/Admin debt | Delivery reliability is live through SMS/SMTP/realtime work; System Notices Admin still has fixture fallback. |
 | `integration`         | Meets current | Provider audit/diagnostics live-only Admin, OAuth live-only Admin, Mail/SMS operations and WeChat/WebSocket design Admin reads are live. |
 | `scheduler/monitor`   | Meets current | Job Admin operations, registry, cron dispatch, worker claim, queue metrics, queue pause/resume and run-log cleanup. |
 | `monitor.status`      | Meets current | Live dependency checks plus CPU, memory, disk and process resource snapshot.                         |
@@ -162,13 +162,15 @@ failures have guards; and remaining omissions are explicit product boundaries.
 
 ## Active Debt
 
-1. Payment/BillingDesign remains explicit-admission because real payment,
+1. System Roles, Users, Config, Files and System Notices Admin pages still
+   have fixture fallback and need live-only closure stages.
+2. Payment/BillingDesign remains explicit-admission because real payment,
    refund and reconciliation are out of scope.
-2. Optional Reports/ExportJobs remain explicit-admission because full report
+3. Optional Reports/ExportJobs remain explicit-admission because full report
    designer and big-data async export are out of scope.
-3. OpenForge direct schema/migration/business-code writes still require user
+4. OpenForge direct schema/migration/business-code writes still require user
    admission.
-4. The next admitted P0/P1 foundation gap should be selected by a fresh
+5. The next admitted P0/P1 foundation gap should be selected by a fresh
    remaining Admin/productization debt audit.
 
 ## Guard Matrix
