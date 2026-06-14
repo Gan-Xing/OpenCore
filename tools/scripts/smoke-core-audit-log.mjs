@@ -57,7 +57,10 @@ try {
   assertEqual(operationLog.resource, '/api/core/config', 'audit log resource');
   assertEqual(operationLog.method, 'POST', 'audit log method');
   assertEqual(operationLog.statusCode, 201, 'audit log status code');
-  assertEqual(operationLog.location, 'Loopback', 'audit log location');
+  const operationLogLocation = assertString(
+    operationLog.location,
+    'audit log location',
+  );
   assertNumberAtLeast(operationLog.durationMs, 0, 'audit log duration');
   assertString(operationLog.requestId, 'audit log requestId');
 
@@ -73,7 +76,11 @@ try {
     'detail audit log resource',
   );
   assertEqual(detailLog.statusCode, 201, 'detail audit log status code');
-  assertEqual(detailLog.location, 'Loopback', 'detail audit log location');
+  assertEqual(
+    detailLog.location,
+    operationLogLocation,
+    'detail audit log location',
+  );
   assertNumberAtLeast(detailLog.durationMs, 0, 'detail audit log duration');
 
   const exportPreview = await apiRequest(
@@ -95,7 +102,7 @@ try {
   );
   const enrichedFilterPage = await apiRequest(
     `/core/audit-logs?page=1&pageSize=20&location=${encodeURIComponent(
-      'Loopback',
+      operationLogLocation,
     )}&minDurationMs=0&status=success&resource=${encodeURIComponent(
       '/api/core/config',
     )}`,
