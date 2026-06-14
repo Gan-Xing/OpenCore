@@ -484,7 +484,33 @@ verify_admin_bundle_api_base_url() {
     exit 1
   fi
 
-  if ! grep -R \
+  if grep \
+    --fixed-strings \
+    "createIntegrationFixtures" \
+    "$ROOT_DIR/apps/admin/src/pages/Integrations/Providers.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "createIntegrationProviderHealthAuditFixture" \
+    "$ROOT_DIR/apps/admin/src/pages/Integrations/Providers.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "findIntegrationOutboxFixture" \
+    "$ROOT_DIR/apps/admin/src/pages/Integrations/Providers.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "Using fallback Integration Health Audit data" \
+    "$ROOT_DIR/apps/admin/src/pages/Integrations/Providers.tsx" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Live Integration Health Audit" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Unable to load live Integration Health Audit data" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
     --fixed-strings \
     --include='*.js' \
     "Signed callback contract" \
@@ -533,8 +559,13 @@ verify_admin_bundle_api_base_url() {
     --fixed-strings \
     --include='*.js' \
     "Provider Diagnostics" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Live Outbox Summary" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null; then
-    echo "Admin bundle does not include integration signed callback, SMS HTTP, secret injection, Mail SMTP, SMTP TLS policy, outbox subject, SMTP attachments and provider diagnostics surfaces." >&2
+    echo "Admin bundle does not include live integration provider health audit, signed callback, SMS HTTP, secret injection, Mail SMTP, SMTP TLS policy, outbox subject, SMTP attachments and provider diagnostics surfaces." >&2
     echo "Refusing to deploy a stale frontend integration provider page." >&2
     exit 1
   fi

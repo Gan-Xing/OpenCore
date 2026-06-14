@@ -109,6 +109,7 @@ import {
   type FailOutboxMessageRequest,
   type IntegrationDesignSummary,
   type IntegrationOutboxQueryRequest,
+  type IntegrationProviderDiagnosticsSummary,
   type IntegrationProviderHealthAuditSummary,
   type IntegrationOutboxSummary,
   type IntegrationOutboxProcessResult,
@@ -1530,6 +1531,12 @@ export function getOpenCoreSmsOutboxMessage(
 
 export function getOpenCoreIntegrationProviderHealthAudit(): Promise<IntegrationProviderHealthAuditSummary> {
   return integrationClient.getProviderHealthAudit(getRequiredAdminToken());
+}
+
+export function getOpenCoreIntegrationProviderDiagnostics(
+  code: string,
+): Promise<IntegrationProviderDiagnosticsSummary> {
+  return integrationClient.getProviderDiagnostics(getRequiredAdminToken(), code);
 }
 
 export function getOpenCoreWeChatDesign(): Promise<IntegrationDesignSummary> {

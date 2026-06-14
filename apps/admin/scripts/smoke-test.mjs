@@ -1774,6 +1774,10 @@ if (
   !providersPage.includes('<Typography.Text type="secondary">[redacted]') ||
   !providersPage.includes("label: 'Secret Ref'") ||
   !providersPage.includes('selected?.secretRef, sensitive: true') ||
+  !providersPage.includes('getOpenCoreIntegrationProviderHealthAudit') ||
+  !providersPage.includes('getOpenCoreIntegrationProviderDiagnostics') ||
+  !providersPage.includes('Live Integration Health Audit') ||
+  !providersPage.includes('Unable to load live Integration Health Audit data') ||
   !providersPage.includes('Signed callback contract') ||
   !providersPage.includes('Provider Diagnostics') ||
   !providersPage.includes('selectedDiagnostics?.readiness') ||
@@ -1787,10 +1791,18 @@ if (
   !providersPage.includes('secretRef -> config vault + SMTP send') ||
   !providersPage.includes('/api/integrations/mail/outbox/callback') ||
   !providersPage.includes('/api/integrations/sms/outbox/callback') ||
-  !providersPage.includes('HMAC-SHA256')
+  !providersPage.includes('HMAC-SHA256') ||
+  providersPage.includes('createIntegrationFixtures') ||
+  providersPage.includes('createIntegrationProviderHealthAuditFixture') ||
+  providersPage.includes('findIntegrationOutboxFixture') ||
+  providersPage.includes('Using fallback Integration Health Audit data') ||
+  !opencorePlatformService.includes(
+    'integrationClient.getProviderHealthAudit',
+  ) ||
+  !opencorePlatformService.includes('integrationClient.getProviderDiagnostics')
 ) {
   throw new Error(
-    'Integration provider list and detail must redact scalar secret references and show signed callback/provider adapter contracts.',
+    'Integration provider list and detail must use live health audit/diagnostics data, redact scalar secret references and show signed callback/provider adapter contracts without fixture fallback.',
   );
 }
 

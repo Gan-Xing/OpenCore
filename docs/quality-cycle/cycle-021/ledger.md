@@ -45,3 +45,4 @@ This ledger records state transitions only. Git log keeps commit hashes.
 | 110   | Monitor Jobs     | Jobs gained terminal run-log retention cleanup and live-only Admin guards.    | Scheduler tests, monitor smoke and deploy guards cover cleanup.  |
 | 111   | OAuth Tokens     | OAuth Admin became live-only for token list/detail/revoke controls.           | Admin smoke and deploy guards reject OAuth fixture fallback.     |
 | 112   | Online Users     | Online Users Admin became live-only for session operations.                   | Admin smoke and deploy guards reject online-user fixture fallback. |
+| 113   | Integration      | Providers Admin became live-only for health audit and diagnostics.            | Admin smoke and deploy guards reject provider fixture fallback.  |

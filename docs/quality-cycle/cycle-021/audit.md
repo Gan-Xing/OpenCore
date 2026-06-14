@@ -114,6 +114,9 @@ deployment.
 Round 112 removed the Online Users Admin fixture fallback, made session detail
 API failures visible and guarded stale online-user bundles in Admin smoke and
 deployment.
+Round 113 removed the Integration Providers Admin fixture fallback, made
+provider detail load through the live diagnostics API and guarded stale
+provider bundles in Admin smoke and deployment.
 Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 `lint` must run sequentially.
 
@@ -170,12 +173,13 @@ Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
   write-intent rejection and unsafe schema/config/manifest guards.
 - Integration health smoke covers provider-wide readiness totals,
   config-vault debt, outbox backlog, diagnostics parity, failure history and
-  secret-leak guards; OAuth token smoke covers summary, list/detail, revoke,
-  idempotent revoke and secret-leak guards; Admin/deploy guards reject OAuth
-  fixture fallback and require live list/detail/revoke markers; design smoke
-  covers WeChat/WebSocket endpoints and summary topics; Admin/deploy guards
-  require live Mail/SMS template/outbox operations and live WeChat/WebSocket
-  design markers.
+  secret-leak guards; Admin/deploy guards reject Providers fixture fallback
+  and require live health-audit/diagnostics markers. OAuth token smoke covers
+  summary, list/detail, revoke, idempotent revoke and secret-leak guards;
+  Admin/deploy guards reject OAuth fixture fallback and require live
+  list/detail/revoke markers; design smoke covers WeChat/WebSocket endpoints
+  and summary topics; Admin/deploy guards require live Mail/SMS
+  template/outbox operations and live WeChat/WebSocket design markers.
 - Collaboration Messages smoke covers seed-backed list/detail, create,
   idempotent mark-read, archive, delete and post-delete hiding;
   Collaboration Notices smoke covers seed-backed list/detail, create, publish,

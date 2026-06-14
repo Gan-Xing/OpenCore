@@ -3,18 +3,17 @@ import {
   ProTable,
   type ProColumns,
 } from '@ant-design/pro-components';
-import {
-  createIntegrationFixtures,
-  createIntegrationProviderHealthAuditFixture,
-  findIntegrationOutboxFixture,
-  type IntegrationProviderHealthAuditSummary,
-  type IntegrationProviderDiagnosticsSummary,
-  type IntegrationOutboxSummary,
-  type IntegrationProviderSummary,
+import type {
+  IntegrationProviderHealthAuditSummary,
+  IntegrationProviderDiagnosticsSummary,
+  IntegrationProviderSummary,
 } from '@opencore/sdk';
-import { Alert, Button, Space, Statistic, Tag, Typography } from 'antd';
+import { Alert, Button, Space, Statistic, Tag, Typography, message } from 'antd';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { getOpenCoreIntegrationProviderHealthAudit } from '@/services/opencore/platform';
+import {
+  getOpenCoreIntegrationProviderDiagnostics,
+  getOpenCoreIntegrationProviderHealthAudit,
+} from '@/services/opencore/platform';
 import {
   CurrentPageExportButton,
   type CurrentPageExportColumn,
@@ -27,8 +26,25 @@ import {
 } from '../shared/CurrentPageFilters';
 import { ReadOnlyDetailDrawer } from '../shared/ReadOnlyDetailDrawer';
 
-const fixtures = createIntegrationFixtures();
-const fallbackHealthAudit = createIntegrationProviderHealthAuditFixture();
+const emptyHealthAudit: IntegrationProviderHealthAuditSummary = {
+  actions: [],
+  generatedAt: '',
+  providers: [],
+  totals: {
+    attention: 0,
+    blocked: 0,
+    configVaultBacked: 0,
+    configVaultMissing: 0,
+    failed: 0,
+    queued: 0,
+    ready: 0,
+    retryableFailed: 0,
+    total: 0,
+    unchecked: 0,
+    unsupported: 0,
+  },
+};
+
 const signedCallbackContract = {
   algorithm: 'HMAC-SHA256',
   mailPath: '/api/integrations/mail/outbox/callback',
@@ -54,12 +70,11 @@ const searchFields: CurrentPageSearchField<IntegrationProviderSummary>[] = [
 
 export default function ProvidersPage() {
   const [healthAudit, setHealthAudit] =
-    useState<IntegrationProviderHealthAuditSummary>(fallbackHealthAudit);
+    useState<IntegrationProviderHealthAuditSummary>(emptyHealthAudit);
   const [selected, setSelected] = useState<IntegrationProviderSummary>();
   const [selectedDiagnostics, setSelectedDiagnostics] =
     useState<IntegrationProviderDiagnosticsSummary>();
-  const [selectedOutbox, setSelectedOutbox] =
-    useState<IntegrationOutboxSummary>();
+  const [detailLoadingCode, setDetailLoadingCode] = useState<string>();
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
   const rows = useMemo(
@@ -69,6 +84,13 @@ export default function ProvidersPage() {
   const diagnosticsByCode = useMemo(
     () =>
       new Map(healthAudit.providers.map((item) => [item.provider.code, item])),
+    [healthAudit],
+  );
+  const designTopicCount = useMemo(
+    () =>
+      healthAudit.providers.filter((item) =>
+        ['wechat', 'websocket'].includes(item.provider.type),
+      ).length,
     [healthAudit],
   );
   const filterOptions: CurrentPageFilterOption<IntegrationProviderSummary>[] =
@@ -118,7 +140,9 @@ export default function ProvidersPage() {
       setHealthAudit(nextAudit);
       setLoadError(undefined);
     } catch (error: unknown) {
-      setHealthAudit(fallbackHealthAudit);
+      setHealthAudit(emptyHealthAudit);
+      setSelected(undefined);
+      setSelectedDiagnostics(undefined);
       setLoadError(
         error instanceof Error
           ? error.message
@@ -133,19 +157,23 @@ export default function ProvidersPage() {
     void loadHealthAudit();
   }, [loadHealthAudit]);
 
-  const openDetail = (code: string) => {
-    const diagnostics = diagnosticsByCode.get(code);
-    const provider = diagnostics?.provider;
-    const outbox = fixtures.outbox.find(
-      (message) => message.providerCode === code,
-    );
-    setSelected(provider);
-    setSelectedDiagnostics(diagnostics);
-    setSelectedOutbox(
-      outbox
-        ? findIntegrationOutboxFixture(outbox.channel, outbox.id)
-        : undefined,
-    );
+  const openDetail = async (code: string) => {
+    setDetailLoadingCode(code);
+    try {
+      const diagnostics = await getOpenCoreIntegrationProviderDiagnostics(code);
+      setSelected(diagnostics.provider);
+      setSelectedDiagnostics(diagnostics);
+    } catch (error: unknown) {
+      setSelected(undefined);
+      setSelectedDiagnostics(undefined);
+      message.error(
+        error instanceof Error
+          ? error.message
+          : 'Unable to load live provider diagnostics.',
+      );
+    } finally {
+      setDetailLoadingCode(undefined);
+    }
   };
 
   const columns: ProColumns<IntegrationProviderSummary>[] = [
@@ -153,7 +181,7 @@ export default function ProvidersPage() {
       title: 'Code',
       dataIndex: 'code',
       render: (_, record) => (
-        <Typography.Link onClick={() => openDetail(record.code)}>
+        <Typography.Link onClick={() => void openDetail(record.code)}>
           {record.code}
         </Typography.Link>
       ),
@@ -218,7 +246,14 @@ export default function ProvidersPage() {
       title: 'Action',
       valueType: 'option',
       render: (_, record) => (
-        <a onClick={() => openDetail(record.code)}>Detail</a>
+        <Button
+          loading={detailLoadingCode === record.code}
+          onClick={() => void openDetail(record.code)}
+          size="small"
+          type="link"
+        >
+          Detail
+        </Button>
       ),
     },
   ];
@@ -229,8 +264,8 @@ export default function ProvidersPage() {
         <Alert
           showIcon
           style={{ marginBottom: 16 }}
-          type="warning"
-          message="Using fallback Integration Health Audit data"
+          type="error"
+          message="Unable to load live Integration Health Audit data"
           description={loadError}
           action={
             <Button onClick={() => void loadHealthAudit()}>Reload</Button>
@@ -238,6 +273,9 @@ export default function ProvidersPage() {
         />
       ) : null}
       <Space size="large" style={{ marginBottom: 16 }} wrap>
+        <Typography.Text type="secondary">
+          Live Integration Health Audit
+        </Typography.Text>
         <Statistic
           title="Enabled providers"
           value={rows.filter((provider) => provider.enabled).length}
@@ -269,7 +307,7 @@ export default function ProvidersPage() {
         <Statistic title="Provider Diagnostics" value="read-only" />
         <Statistic
           title="Design topics"
-          value={fixtures.summary.designs.designOnlyTopics}
+          value={designTopicCount}
         />
       </Space>
       <ProTable<IntegrationProviderSummary>
@@ -364,7 +402,10 @@ export default function ProvidersPage() {
             label: 'SMS Callback Path',
             value: signedCallbackContract.smsPath,
           },
-          { label: 'Sample Outbox', value: selectedOutbox?.id },
+          {
+            label: 'Live Outbox Total',
+            value: selectedDiagnostics?.outbox.total,
+          },
         ]}
         jsonSections={[
           { title: 'Redacted Config', value: selected?.config ?? {} },
@@ -377,14 +418,13 @@ export default function ProvidersPage() {
             value: selectedDiagnostics ?? {},
           },
           {
-            title: 'Sample Outbox Payload',
-            value: selectedOutbox?.payload ?? {},
+            title: 'Live Outbox Summary',
+            value: selectedDiagnostics?.outbox ?? {},
           },
         ]}
         onClose={() => {
           setSelected(undefined);
           setSelectedDiagnostics(undefined);
-          setSelectedOutbox(undefined);
         }}
         open={Boolean(selected)}
         title={selected?.name ?? 'Provider Detail'}

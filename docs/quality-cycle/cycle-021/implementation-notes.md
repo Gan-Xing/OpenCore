@@ -19,7 +19,7 @@ active debt and decisions that change future execution.
 
 ## Runtime State
 
-Cycle-021 has completed 112 deployable stages across
+Cycle-021 has completed 113 deployable stages across
 System/Security/Monitor/Integration/Tools foundations. Round 91 added
 token/session blacklist maintenance with registered-token allowlist
 enforcement, expired-session cleanup, API/SDK/Admin/OpenAPI visibility, smoke
@@ -66,7 +66,10 @@ OAuth token Admin fixture fallback, loads token detail through the live SDK
 API, gates revoke controls with `integration:oauth:manage` and blocks stale
 OAuth bundles through Admin smoke and deploy guards. Round 112 removed the
 Online Users Admin fixture fallback, makes detail API failures visible and
-blocks stale online-user bundles through Admin smoke and deploy guards.
+blocks stale online-user bundles through Admin smoke and deploy guards. Round
+113 removed the Integration Providers Admin fixture fallback, loads provider
+detail through the live diagnostics API and blocks stale provider bundles
+through Admin smoke and deploy guards.
 
 ## Guard Register
 
@@ -144,11 +147,13 @@ blocks stale online-user bundles through Admin smoke and deploy guards.
   Deploy checks Admin workbench, confirmation and manifest markers.
 - Integration: smoke covers provider-wide health audit, diagnostics parity,
   config-vault debt, outbox backlog, failure history and secret-leak guards;
-  OAuth token smoke covers summary, list/detail, revoke, idempotent revoke and
-  secret-leak guards. Admin/deploy guards reject OAuth fixture fallback and
-  require live list/detail/revoke markers. Design smoke covers
-  WeChat/WebSocket design reads and summary topics. Admin/deploy guards reject
-  fixture-backed Mail/SMS and WeChat/WebSocket pages and require live markers.
+  Admin/deploy guards reject Providers fixture fallback and require live
+  health-audit/diagnostics markers. OAuth token smoke covers summary,
+  list/detail, revoke, idempotent revoke and secret-leak guards. Admin/deploy
+  guards reject OAuth fixture fallback and require live list/detail/revoke
+  markers. Design smoke covers WeChat/WebSocket design reads and summary
+  topics. Admin/deploy guards reject fixture-backed Mail/SMS and
+  WeChat/WebSocket pages and require live markers.
 - Collaboration: message smoke covers seed-backed list/detail, create,
   idempotent mark-read, archive, delete and post-delete hiding.
   Notice smoke covers seed-backed list/detail, create, publish,

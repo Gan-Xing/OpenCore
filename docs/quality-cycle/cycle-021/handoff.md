@@ -48,7 +48,7 @@ packages and OpenForge direct Prisma/migration/business-code writing.
 
 ## Current State
 
-Cycle-021 has completed 112 deployable stages.
+Cycle-021 has completed 113 deployable stages.
 
 - System/RBAC: notice, dept, post, menu, role, permission, user, dict, config
   and file loops are live.
@@ -75,14 +75,15 @@ Cycle-021 has completed 112 deployable stages.
   events.
 - Integration: provider health/config audit is live across API/SDK/Admin,
   with readiness totals, config-vault debt, outbox backlog, last failure and
-  operator actions. OAuth token inventory, detail, summary and revoke
-  lifecycle are live across API/SDK/Admin/OpenAPI/smoke with secret-ref-only
-  storage, and the OAuth Admin page is live-only for list/detail/revoke
-  without fixture fallback. Mail and SMS templates/outbox Admin operations now
-  use live API/SDK calls for list, detail, preview and queued processing.
-  WeChat and WebSocket design Admin pages now use live design API/SDK
-  endpoints with smoke and deploy guards while remaining design-only
-  boundaries.
+  operator actions. The Providers Admin page is live-only for health audit and
+  provider diagnostics without fixture fallback. OAuth token inventory, detail,
+  summary and revoke lifecycle are live across API/SDK/Admin/OpenAPI/smoke with
+  secret-ref-only storage, and the OAuth Admin page is live-only for
+  list/detail/revoke without fixture fallback. Mail and SMS templates/outbox
+  Admin operations now use live API/SDK calls for list, detail, preview and
+  queued processing. WeChat and WebSocket design Admin pages now use live
+  design API/SDK endpoints with smoke and deploy guards while remaining
+  design-only boundaries.
 - Monitor status now exposes live runtime CPU, memory, disk and process
   resources through API/SDK/Admin/OpenAPI/smoke without Admin fixture fallback.
 - Monitor jobs: API/SDK routes, registry policy, seed job, Admin live list,
@@ -110,10 +111,10 @@ Cycle-021 has completed 112 deployable stages.
   operations for list, detail, create, approve and reject. These pages have
   seed coverage, dedicated smoke and Admin/deploy guards.
 
-Latest runtime stage: Round 112 Monitor Online Users Admin live-only. It
-removes the Online Users Admin fixture fallback, makes detail failure visible,
-keeps kick-out/expired-cleanup controls permission-gated and adds smoke/deploy
-guards for stale Online Users bundles.
+Latest runtime stage: Round 113 Integration Providers Admin live-only. It
+removes the Providers Admin fixture fallback, loads provider detail through the
+live diagnostics API, uses live audit data for provider/outbox summaries and
+adds smoke/deploy guards for stale Providers bundles.
 
 ## Next Queue
 

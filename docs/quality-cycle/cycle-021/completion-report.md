@@ -4,15 +4,15 @@ Date: 2026-06-14
 
 ## Latest Completed Round
 
-Round 112: Monitor Online Users Admin live-only session operations.
+Round 113: Integration Providers Admin live-only health audit and diagnostics.
 
 ## Closed
 
-- Removed the Online Users Admin fixture fallback path.
-- Made session detail load failures visible instead of falling back to the
-  table row.
-- Kept kick-out and expired cleanup permission-gated and added smoke/deploy
-  guards against stale fixture-backed Online Users bundles.
+- Removed the Integration Providers Admin fixture fallback path.
+- Loaded provider detail through the live diagnostics API instead of fixture
+  outbox rows.
+- Used live health audit data for provider/outbox summaries and added
+  smoke/deploy guards against stale fixture-backed Providers bundles.
 
 ## Still Open
 

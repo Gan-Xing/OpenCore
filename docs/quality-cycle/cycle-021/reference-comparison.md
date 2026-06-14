@@ -44,13 +44,14 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   SMTP attachments plus explicit SMTP TLS policy and authenticated inbox
   realtime events are live.
 - Integration: provider health/config audit is live with readiness totals,
-  config-vault debt, outbox backlog, last failure and operator actions plus
-  OAuth token inventory/summary/detail/revoke. The OAuth Admin page is
-  live-only for list/detail/revoke and no longer masks API failures with
-  fixture fallback. Mail/SMS template/outbox Admin operations are live across
-  API/SDK/Admin/OpenAPI/smoke. WeChat and WebSocket design Admin pages now
-  read live design endpoints instead of fixtures while staying design-only
-  boundaries.
+  config-vault debt, outbox backlog, last failure and operator actions. The
+  Providers Admin page is live-only for health audit and provider diagnostics
+  and no longer masks API failures with fixture fallback. OAuth token
+  inventory/summary/detail/revoke is live, and the OAuth Admin page is
+  live-only for list/detail/revoke. Mail/SMS template/outbox Admin operations
+  are live across API/SDK/Admin/OpenAPI/smoke. WeChat and WebSocket design
+  Admin pages now read live design endpoints instead of fixtures while staying
+  design-only boundaries.
 - Config: runtime keys, login policy, feature flags, rollout, audience rules,
   environment overrides, secret-vault encryption, secret version history,
   explicit rotation, env-bound keyring status, managed HTTP JSON KMS v3
@@ -214,6 +215,9 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
 - Round 112: Online Users Admin now uses live list/detail/kick-out and expired
   cleanup APIs only, so session/token failures cannot be hidden behind SDK
   fixture rows.
+- Round 113: Integration Providers Admin now uses live health audit and
+  diagnostics APIs only, so provider readiness/config/outbox failures cannot
+  be hidden behind SDK fixture rows.
 
 ## Explicit Non-Claims
 
