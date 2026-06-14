@@ -4,16 +4,14 @@ Date: 2026-06-14
 
 ## Latest Completed Round
 
-Round 117: System Permissions Admin live-only catalog/detail/custom CRUD/export
-operations.
+Round 118: System Menus Admin live-only tree/detail CRUD/export operations.
 
 ## Closed
 
-- Removed the System Permissions Admin registry fixture fallback path.
-- Kept permission catalog/detail/custom create/update/delete/export backed by
-  live SDK calls only.
-- Added dedicated permission smoke plus Admin/deploy guards against stale
-  fixture-backed Permissions bundles.
+- Removed the System Menus Admin registry fixture fallback path.
+- Kept menu tree/detail create/update/delete/export and permission options
+  backed by live SDK calls only.
+- Added Admin/deploy guards against stale fixture-backed Menus bundles.
 
 ## Still Open
 

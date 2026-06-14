@@ -17,7 +17,7 @@ failures have guards; and remaining omissions are explicit product boundaries.
 | `core.audit-log`      | Meets current | List/detail/export/delete, duration/location, retention cleanup, scheduled job and Admin server filters. |
 | `core.dept`           | Meets         | Tree CRUD, options, guards, ordering, data-scope and live-only Admin without fixture fallback.        |
 | `core.post`           | Meets         | CRUD, binding, options, batch deletion, ordering and live-only Admin without fixture fallback.        |
-| `core.menu`           | Meets         | Tree metadata, route/menu fields and delete guards.                                                  |
+| `core.menu`           | Meets         | Tree metadata, route/menu fields, delete guards and live-only Admin tree CRUD/export.                 |
 | `core.role`           | Meets         | Menu/user assignment, status effects and revocation.                                                 |
 | `core.user`           | Meets         | CRUD, profile, password, avatar, import/export, binds.                                               |
 | `core.dict`           | Meets         | Dict/item CRUD, enabled simple-list source and live-only Admin without fixture fallback.              |
@@ -156,6 +156,9 @@ failures have guards; and remaining omissions are explicit product boundaries.
 - Round 117 removed the System Permissions Admin registry fixture fallback,
   made catalog/detail/custom CRUD/export operations live-only and added a
   dedicated permission smoke plus deploy guards for stale Permissions bundles.
+- Round 118 removed the System Menus Admin registry fixture fallback, made
+  tree/detail CRUD/export and permission options live-only and added deploy
+  guards for stale Menus bundles.
 
 ## Active Debt
 
@@ -256,3 +259,6 @@ failures have guards; and remaining omissions are explicit product boundaries.
   create/update/export/delete and system mutation guards; Admin/deploy guards
   reject registry fixture fallback and require live permission management
   markers.
+- System menus: core menu smoke covers tree metadata, create/update/export,
+  parent delete guards and delete cleanup; Admin/deploy guards reject registry
+  fixture fallback and require live menu tree management markers.

@@ -317,6 +317,43 @@ verify_admin_bundle_api_base_url() {
     exit 1
   fi
 
+  if grep \
+    --fixed-strings \
+    "createMenuSummariesFromRegistry" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Menus.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "createPermissionSummariesFromRegistry" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Menus.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "Using fallback menu snapshot" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Menus.tsx" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Unable to load live menus" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Menu created." \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Add child" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "core-menus" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null; then
+    echo "Admin Menus page must use live-only data and live permission options without registry fixture fallback." >&2
+    echo "Refusing to deploy a stale or fixture-backed Menus frontend page." >&2
+    exit 1
+  fi
+
   if ! grep -R \
     --fixed-strings \
     --include='*.js' \

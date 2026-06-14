@@ -29,8 +29,9 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   and item operations only, and Departments Admin now uses live tree/detail and
   order operations only. Posts Admin now uses live list/detail, batch and order
   operations only, and Permissions Admin now uses live catalog/detail/custom
-  CRUD/export APIs only, matching the reference organization/post/dictionary
-  and permission catalog management expectation without fixture fallback.
+  CRUD/export APIs only. Menus Admin now uses live tree/detail CRUD/export and
+  live permission options only, matching the reference organization/post/dictionary,
+  menu and permission catalog management expectation without fixture fallback.
 - Auth/session: login policy, logout, force logout, online-user kick-out,
   token/session revocation, registered-token allowlist enforcement and expired
   cleanup are real behavior. Online Users Admin now uses live session
@@ -234,6 +235,9 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   rows.
 - Round 117: System Permissions Admin now uses live catalog/detail/custom
   CRUD/export APIs only, so RBAC permission API/session/seed failures cannot
+  be hidden behind registry fixture rows.
+- Round 118: System Menus Admin now uses live tree/detail CRUD/export APIs and
+  live permission options only, so RBAC menu API/session/seed failures cannot
   be hidden behind registry fixture rows.
 
 ## Explicit Non-Claims

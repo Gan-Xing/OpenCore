@@ -81,7 +81,9 @@ blocks stale Posts bundles through Admin smoke and deploy guards. Round 117
 removed the System Permissions Admin registry fixture fallback, keeps
 catalog/detail/custom CRUD/export live-only through SDK calls and blocks stale
 Permissions bundles through a dedicated permission smoke plus Admin/deploy
-guards.
+guards. Round 118 removed the System Menus Admin registry fixture fallback,
+keeps tree/detail CRUD/export and permission options live-only through SDK
+calls and blocks stale Menus bundles through Admin/deploy guards.
 
 ## Guard Register
 
@@ -132,6 +134,11 @@ guards.
   reject `createPermissionSummariesFromRegistry` and fallback copy on the
   Permissions page and require live permission management markers in the built
   bundle.
+- System menus: smoke covers menu tree metadata, create/update/export, parent
+  delete guards and delete cleanup. Admin/deploy guards reject
+  `createMenuSummariesFromRegistry`, `createPermissionSummariesFromRegistry`
+  and fallback copy on the Menus page and require live menu management markers
+  in the built bundle.
 - Config/secret: smoke covers feature flags, audience rules, environment
   overrides, legacy vault envelope deserialization, secret version history,
   explicit secret rotation, vault key rotation, managed KMS provider status,

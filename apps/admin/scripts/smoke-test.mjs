@@ -1548,7 +1548,13 @@ if (
 }
 
 if (
+  menusPage.includes('createMenuSummariesFromRegistry') ||
+  menusPage.includes('createPermissionSummariesFromRegistry') ||
+  menusPage.includes('Using fallback menu snapshot') ||
+  !menusPage.includes('Unable to load live menus') ||
+  !menusPage.includes('Unable to load live menu detail.') ||
   !menusPage.includes('listOpenCoreMenus') ||
+  !menusPage.includes('listOpenCorePermissions') ||
   !menusPage.includes('getOpenCoreMenu') ||
   !menusPage.includes('createOpenCoreMenu') ||
   !menusPage.includes('updateOpenCoreMenu') ||
@@ -1563,7 +1569,7 @@ if (
   !menusPage.includes('rows={filteredRows}')
 ) {
   throw new Error(
-    'Menus page must use live SDK tree CRUD with bounded filtering and current-page export.',
+    'Menus page must use live-only SDK tree CRUD with live permission options, bounded filtering and current-page export, without registry fixture fallback.',
   );
 }
 

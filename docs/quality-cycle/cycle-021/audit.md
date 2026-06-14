@@ -130,6 +130,9 @@ Round 117 removed the System Permissions Admin registry fixture fallback, kept
 permission catalog/detail/custom CRUD/export operations live-only through SDK
 calls and guarded stale Permissions bundles with dedicated permission smoke,
 Admin smoke and deployment checks.
+Round 118 removed the System Menus Admin registry fixture fallback, kept menu
+tree/detail CRUD/export operations and permission options live-only through
+SDK calls and guarded stale Menus bundles in Admin smoke and deployment.
 Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 `lint` must run sequentially.
 
@@ -168,6 +171,9 @@ Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
   create/update/export/delete and system mutation guards; Admin/deploy guards
   reject Permissions registry fixture fallback and require live permission
   management markers.
+- System Menus smoke covers tree metadata, create/update/export, parent delete
+  guards and delete cleanup; Admin/deploy guards reject Menus registry fixture
+  fallback and require live menu management markers.
 - Config smoke covers runtime shape, environment override governance, legacy
   vault envelope deserialization, secret version history, secret rotation,
   vault key rotation, managed KMS provider status and no plaintext secret

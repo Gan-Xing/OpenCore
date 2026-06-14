@@ -48,14 +48,15 @@ packages and OpenForge direct Prisma/migration/business-code writing.
 
 ## Current State
 
-Cycle-021 has completed 117 deployable stages.
+Cycle-021 has completed 118 deployable stages.
 
 - System/RBAC: notice, dept, post, menu, role, permission, user, dict, config
   and file loops are live. Dicts Admin is live-only for list/detail/item CRUD
   and Departments/Posts Admin are live-only for tree/detail/order and
   list/detail/batch/order CRUD; Permissions Admin is live-only for
-  catalog/detail/custom CRUD/export. These pages no longer fall back to SDK or
-  registry fixtures.
+  catalog/detail/custom CRUD/export; Menus Admin is live-only for tree CRUD,
+  detail/export and live permission options. These pages no longer fall back
+  to SDK or registry fixtures.
 - Security/session: login policy, logout, force logout, online-user kick-out,
   registered-token allowlist enforcement and expired session cleanup are live;
   Online Users Admin is live-only for list/detail/kick-out/cleanup and no
@@ -115,10 +116,10 @@ Cycle-021 has completed 117 deployable stages.
   operations for list, detail, create, approve and reject. These pages have
   seed coverage, dedicated smoke and Admin/deploy guards.
 
-Latest runtime stage: Round 117 System Permissions Admin live-only. It removes
-the Permissions Admin registry fixture fallback, keeps catalog/detail/custom
-CRUD/export backed by live SDK calls only and adds a dedicated permission smoke
-plus Admin/deploy guards for stale fixture-backed Permissions bundles.
+Latest runtime stage: Round 118 System Menus Admin live-only. It removes the
+Menus Admin registry fixture fallback, keeps menu tree/detail CRUD/export and
+permission options backed by live SDK calls only and adds Admin/deploy guards
+for stale fixture-backed Menus bundles.
 
 ## Next Queue
 

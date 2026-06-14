@@ -10,12 +10,11 @@ import {
   ProTable,
   type ProColumns,
 } from '@ant-design/pro-components';
-import {
-  createMenuSummariesFromRegistry,
-  createPermissionSummariesFromRegistry,
-  type MenuStatus,
-  type MenuSummary,
-  type MenuType,
+import type {
+  MenuStatus,
+  MenuSummary,
+  MenuType,
+  PermissionSummary,
 } from '@opencore/sdk';
 import {
   Alert,
@@ -39,6 +38,7 @@ import {
   createOpenCoreMenu,
   deleteOpenCoreMenu,
   getOpenCoreMenu,
+  listOpenCorePermissions,
   listOpenCoreMenus,
   updateOpenCoreMenu,
 } from '@/services/opencore/platform';
@@ -82,7 +82,6 @@ type TreeSelectNode = {
   value: string;
 };
 
-const fallbackRows = createMenuSummariesFromRegistry();
 const searchFields: CurrentPageSearchField<MenuSummary>[] = [
   'key',
   'title',
@@ -234,7 +233,10 @@ function createChildPath(parent: MenuSummary): string {
 
 export default function MenusPage() {
   const [form] = Form.useForm<MenuFormValues>();
-  const [rows, setRows] = useState<readonly MenuSummary[]>(fallbackRows);
+  const [rows, setRows] = useState<readonly MenuSummary[]>([]);
+  const [permissionRows, setPermissionRows] = useState<
+    readonly PermissionSummary[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
   const [selectedDetail, setSelectedDetail] = useState<MenuSummary>();
@@ -260,8 +262,8 @@ export default function MenusPage() {
     [excludedParentKeys, treeRows],
   );
   const permissionOptions = useMemo(
-    () => createPermissionOptions(flatRows),
-    [flatRows],
+    () => createPermissionOptions(permissionRows, flatRows),
+    [flatRows, permissionRows],
   );
   const filterOptions = useMemo<CurrentPageFilterOption<MenuSummary>[]>(
     () => [
@@ -301,12 +303,21 @@ export default function MenusPage() {
   const loadMenus = async () => {
     setLoading(true);
     try {
-      setRows(await listOpenCoreMenus());
+      const [menuRows, permissionRows] = await Promise.all([
+        listOpenCoreMenus(),
+        listOpenCorePermissions(),
+      ]);
+      setRows(menuRows);
+      setPermissionRows(permissionRows);
       setLoadError(undefined);
     } catch (error: unknown) {
-      setRows(fallbackRows);
+      setRows([]);
+      setPermissionRows([]);
+      setSelectedDetail(undefined);
+      setEditingMenu(undefined);
+      setFormOpen(false);
       setLoadError(
-        error instanceof Error ? error.message : 'Unable to load menus.',
+        error instanceof Error ? error.message : 'Unable to load live menus.',
       );
     } finally {
       setLoading(false);
@@ -365,8 +376,13 @@ export default function MenusPage() {
   const openDetail = async (record: MenuSummary) => {
     try {
       setSelectedDetail(await getOpenCoreMenu(record.key));
-    } catch (_error) {
-      setSelectedDetail(record);
+    } catch (error: unknown) {
+      setSelectedDetail(undefined);
+      message.error(
+        error instanceof Error
+          ? error.message
+          : 'Unable to load live menu detail.',
+      );
     }
   };
 
@@ -550,8 +566,8 @@ export default function MenusPage() {
       {loadError ? (
         <Alert
           showIcon
-          type="warning"
-          message="Using fallback menu snapshot"
+          type="error"
+          message="Unable to load live menus"
           description={loadError}
           style={{ marginBlockEnd: 16 }}
         />
@@ -709,12 +725,13 @@ export default function MenusPage() {
   );
 }
 
-function createPermissionOptions(rows: readonly MenuSummary[]) {
+function createPermissionOptions(
+  permissions: readonly PermissionSummary[],
+  rows: readonly MenuSummary[],
+) {
   return Array.from(
     new Set([
-      ...createPermissionSummariesFromRegistry().map(
-        (permission) => permission.code,
-      ),
+      ...permissions.map((permission) => permission.code),
       ...rows
         .map((row) => row.permissionCode)
         .filter((code): code is string => Boolean(code)),
