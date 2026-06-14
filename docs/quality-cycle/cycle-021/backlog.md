@@ -29,7 +29,7 @@ schema/business-code writing.
   runtime login policy.
 - Rounds 50-59: logout audit semantics, ordering, data-scope, notice
   inbox/read analytics, feature flags and login-log location.
-- Rounds 60-89: notice template/delivery/provider/outbox work, SMS HTTP and
+- Rounds 60-90: notice template/delivery/provider/outbox work, SMS HTTP and
   SMTP adapters, config vault and rollout/audience, operation-log cleanup, plus
   mail subject persistence, provider diagnostics, SMS HTTP secret injection,
   SMTP attachments, explicit SMTP TLS policy, inbox realtime events, Monitor
@@ -38,18 +38,19 @@ schema/business-code writing.
   environment overrides plus config secret version history/rotation and vault
   keyring rotation, operation-log enrichment and retention scheduling, plus the
   OpenForge Admin safe workbench, dry-run confirmation, manifest preview/detail
-  and Integration provider health/config audit.
+  and Integration provider health/config audit, plus structured IP/location
+  provider lookup.
 
-Latest done: Round 89 OpenForge dry-run confirmation and manifest
-preview/detail with write-intent rejection, SDK/Admin exposure, OpenAPI,
-smoke and deploy coverage.
+Latest done: Round 90 IP/location provider lookup with shared offline provider
+status, lookup API/SDK/Admin visibility, OpenAPI tag registration, smoke guards
+and Admin deploy markers.
 
 ## Active P1/P2 Queue
 
 1. Optional managed-KMS provider adapter if deployment needs cloud KMS APIs
    beyond the current env-bound keyring.
-2. Optional operation-log external GeoIP enrichment if deployment needs real
-   IP attribution beyond deterministic network categories.
+2. Optional external GeoIP provider adapter if deployment needs precise
+   country/region/city attribution beyond built-in offline network categories.
 3. OpenForge direct schema/migration/business logic writes still require user
    admission.
 

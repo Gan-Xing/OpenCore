@@ -28,9 +28,10 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   live with multiple hardening stages.
 - Auth/session: login policy, logout, force logout, online-user kick-out and
   token/session revocation are real behavior.
-- Logs: login-log has schema, lockout, cleanup, actor/reason and location;
-  operation-log has list/detail/export/delete, duration/location enrichment,
-  retention cleanup and scheduled retention job.
+- Logs: login-log has schema, lockout, cleanup, actor/reason, location and
+  structured IP/location provider lookup; operation-log has
+  list/detail/export/delete, duration/location enrichment, retention cleanup
+  and scheduled retention job.
 - Notice: management, inbox/read analytics, templates, delivery records, local
   provider, Integration outbox bridge, state sync, queued processing and signed
   callback intake plus retry scheduling, SMS HTTP adapter, SMTP adapter and
@@ -110,6 +111,9 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
 - Round 89: OpenForge dry-run operations require confirmation, reject
   write-mode intent at the API boundary and expose manifest preview/detail
   through SDK/Admin and smoke/deploy guards.
+- Round 90: IP/location is a shared offline provider contract with
+  lookup/status API, SDK/Admin visibility, OpenAPI tag registration and
+  login-log smoke/deploy guards.
 
 ## Explicit Non-Claims
 
@@ -120,6 +124,6 @@ and AI/RAG/Agent workflow.
 
 ## Next Focus
 
-Managed cloud KMS adapters and external operation-log GeoIP are optional
+Managed cloud KMS adapters and external precise GeoIP providers are optional
 deployment integrations beyond the current foundation waterline. OpenForge
 direct schema/migration/business writes still require explicit user admission.

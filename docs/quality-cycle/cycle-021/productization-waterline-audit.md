@@ -23,7 +23,7 @@ failures have guards; and remaining omissions are explicit product boundaries.
 | `core.dict`           | Meets         | Dict/item CRUD and enabled simple-list source.                                                           |
 | `core.file`           | Meets         | Authenticated upload/download and content smoke.                                                         |
 | `monitor.online-user` | Meets         | Batch kick-out, revocation and UA/IP fields.                                                             |
-| `core.login-log`      | Meets current | Schema, lockout, cleanup, actor/reason and location.                                                     |
+| `core.login-log`      | Meets current | Schema, lockout, cleanup, actor/reason, location and IP/location provider lookup.                        |
 | `core.config`         | Meets current | Runtime keys, feature flags, rollout, audience, environment overrides, vault, versions and key rotation. |
 | `core.notice`         | Enhance       | SMS HTTP, SMTP, mail subject, diagnostics, secrets, attachments, TLS policy and realtime events.         |
 | `integration`         | Meets current | Provider health/config audit, readiness totals, config-vault debt, outbox backlog and failure history.   |
@@ -79,12 +79,14 @@ failures have guards; and remaining omissions are explicit product boundaries.
 - Round 89 added OpenForge dry-run confirmation, write-intent rejection and
   manifest preview/detail with API/SDK/Admin, OpenAPI and smoke/deploy
   coverage.
+- Round 90 added structured IP/location provider status and lookup through
+  common/API/SDK/Admin, registered OpenAPI tags and smoke/deploy guards.
 
 ## Active Debt
 
 1. Optional managed-KMS provider adapter if deployment requires cloud KMS APIs.
-2. Optional operation-log external GeoIP enrichment if deployment needs real
-   IP attribution beyond deterministic categories.
+2. Optional external GeoIP provider adapter if deployment needs precise
+   country/region/city attribution beyond built-in offline categories.
 3. OpenForge direct schema/migration/business-code writes still require user
    admission.
 
@@ -101,6 +103,9 @@ failures have guards; and remaining omissions are explicit product boundaries.
   failedCount and post-sent mutation guards.
 - Operation log: delete guards, deleted-detail 404, duration/location filters,
   retentionDays cleanup and scheduled retention job registry.
+- IP/location: login-log smoke covers provider status, documentation-network
+  lookup, invalid lookup, missing-IP guard and OpenAPI paths; deploy checks
+  Admin GeoIP bundle markers.
 - Monitor jobs: Admin bundle markers and smoke cover summary, registry,
   whitelisted job upsert, unsafe policy guards, enable/disable,
   disabled-trigger rejection, manual trigger, handler execution, retry failure

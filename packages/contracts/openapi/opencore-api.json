@@ -3790,6 +3790,51 @@
         "tags": ["SystemManagement", "Core Files"]
       }
     },
+    "/api/core/ip-location/status": {
+      "get": {
+        "operationId": "SystemManagementController_getIpLocationProviderStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IpLocationProviderStatusDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core IP Location"]
+      }
+    },
+    "/api/core/ip-location/lookup": {
+      "get": {
+        "operationId": "SystemManagementController_lookupIpLocation",
+        "parameters": [
+          {
+            "name": "ip",
+            "required": true,
+            "in": "query",
+            "schema": { "example": "203.0.113.8", "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/IpLocationLookupDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core IP Location"]
+      }
+    },
     "/api/core/audit-logs": {
       "get": {
         "operationId": "SystemManagementController_listAuditLogs",
@@ -7435,6 +7480,7 @@
     { "name": "Core Departments", "description": "core.dept: Departments" },
     { "name": "Core Dictionaries", "description": "core.dict: Dictionaries" },
     { "name": "Core Files", "description": "core.file: File Center" },
+    { "name": "Core IP Location", "description": "core.login-log: Login Logs" },
     { "name": "Core Login Logs", "description": "core.login-log: Login Logs" },
     { "name": "Core Menus", "description": "core.menu: Menus" },
     {
@@ -9365,6 +9411,71 @@
           "checksum": { "type": "string" },
           "uploadedBy": { "type": "string" }
         }
+      },
+      "IpLocationProviderStatusDto": {
+        "type": "object",
+        "properties": {
+          "provider": { "type": "string", "example": "opencore.builtin" },
+          "mode": { "type": "string", "example": "offline" },
+          "ready": { "type": "boolean" },
+          "externalLookupEnabled": { "type": "boolean" },
+          "datasetVersion": { "type": "string", "example": "builtin-cidr-v1" },
+          "supportedNetworks": {
+            "example": ["documentation", "loopback", "private", "public"],
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "checkedAt": { "type": "string" }
+        },
+        "required": [
+          "provider",
+          "mode",
+          "ready",
+          "externalLookupEnabled",
+          "datasetVersion",
+          "supportedNetworks",
+          "checkedAt"
+        ]
+      },
+      "IpLocationLookupDto": {
+        "type": "object",
+        "properties": {
+          "ip": { "type": "string", "example": "203.0.113.8" },
+          "location": { "type": "string", "example": "Documentation network" },
+          "category": { "type": "string", "example": "Documentation network" },
+          "networkType": {
+            "type": "string",
+            "enum": [
+              "documentation",
+              "link-local",
+              "loopback",
+              "private",
+              "public",
+              "shared",
+              "unknown"
+            ]
+          },
+          "provider": { "type": "string", "example": "opencore.builtin" },
+          "source": { "type": "string", "example": "builtin-cidr" },
+          "confidence": {
+            "type": "string",
+            "enum": ["exact", "none", "range"]
+          },
+          "enriched": { "type": "boolean" },
+          "countryCode": { "type": "string" },
+          "region": { "type": "string" },
+          "city": { "type": "string" }
+        },
+        "required": [
+          "ip",
+          "location",
+          "category",
+          "networkType",
+          "provider",
+          "source",
+          "confidence",
+          "enriched"
+        ]
       },
       "AuditLogDto": {
         "type": "object",

@@ -2,6 +2,7 @@ import {
   ClearOutlined,
   DeleteOutlined,
   EyeOutlined,
+  GlobalOutlined,
   ReloadOutlined,
   SearchOutlined,
   UnlockOutlined,
@@ -14,6 +15,8 @@ import {
 import { useAccess } from '@umijs/max';
 import {
   createLoginLogFixtures,
+  type IpLocationLookupSummary,
+  type IpLocationProviderStatusSummary,
   type LoginLogQueryRequest,
   type LoginLogResult,
   type LoginLogSummary,
@@ -36,7 +39,9 @@ import {
   cleanOpenCoreLoginLogs,
   deleteOpenCoreLoginLogs,
   getOpenCoreLoginLog,
+  getOpenCoreIpLocationProviderStatus,
   listOpenCoreLoginLogs,
+  lookupOpenCoreIpLocation,
   unlockOpenCoreLoginUser,
 } from '@/services/opencore/platform';
 import {
@@ -213,6 +218,10 @@ function formatLoginResult(value: LoginLogResult): string {
   );
 }
 
+function formatIpLocationLookup(result: IpLocationLookupSummary): string {
+  return `${result.location} / ${result.networkType} / ${result.provider} / ${result.source}`;
+}
+
 export default function LoginLogsPage() {
   const access = useAccess();
   const canDeleteLoginLogs = Boolean(access.canDeleteLoginLogs);
@@ -229,6 +238,10 @@ export default function LoginLogsPage() {
     useState<LoginLogQueryRequest>({});
   const [serverFilterDraft, setServerFilterDraft] =
     useState<LoginLogServerFilterDraft>({ ...emptyServerFilterDraft });
+  const [ipLocationStatus, setIpLocationStatus] =
+    useState<IpLocationProviderStatusSummary>();
+  const [ipLookup, setIpLookup] = useState<IpLocationLookupSummary>();
+  const [ipLookupLoading, setIpLookupLoading] = useState(false);
   const filterOptions = useMemo(() => createFilterOptions(rows), [rows]);
   const { filteredRows, toolbar: filterToolbar } =
     useCurrentPageFilters<LoginLogSummary>({
@@ -259,6 +272,14 @@ export default function LoginLogsPage() {
     }
   };
 
+  const loadIpLocationStatus = async () => {
+    try {
+      setIpLocationStatus(await getOpenCoreIpLocationProviderStatus());
+    } catch (_error) {
+      setIpLocationStatus(undefined);
+    }
+  };
+
   const updateServerFilterDraft = <
     Field extends keyof LoginLogServerFilterDraft,
   >(
@@ -282,6 +303,7 @@ export default function LoginLogsPage() {
 
   useEffect(() => {
     void loadLoginLogs({});
+    void loadIpLocationStatus();
   }, []);
 
   const openDetail = async (record: LoginLogSummary) => {
@@ -355,6 +377,21 @@ export default function LoginLogsPage() {
         }
       },
     });
+  };
+
+  const runIpLocationLookup = async () => {
+    const lookupIp =
+      serverFilterDraft.ip.trim() ||
+      filteredRows.find((record) => record.ip)?.ip ||
+      '203.0.113.8';
+    setIpLookupLoading(true);
+    try {
+      const result = await lookupOpenCoreIpLocation(lookupIp);
+      setIpLookup(result);
+      message.success(`GeoIP lookup: ${result.location}`);
+    } finally {
+      setIpLookupLoading(false);
+    }
   };
 
   const columns: ProColumns<LoginLogSummary>[] = [
@@ -545,6 +582,15 @@ export default function LoginLogsPage() {
           style={{ marginBottom: 16 }}
         />
       ) : null}
+      {ipLookup ? (
+        <Alert
+          message={`GeoIP lookup ${ipLookup.ip}`}
+          description={formatIpLocationLookup(ipLookup)}
+          type="info"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+      ) : null}
       <ProTable<LoginLogSummary>
         columns={columns}
         dataSource={filteredRows}
@@ -559,6 +605,29 @@ export default function LoginLogsPage() {
           <Typography.Text key="read-only-policy" type="secondary">
             Audit trail with unlock and cleanup
           </Typography.Text>,
+          <Typography.Text key="geoip-provider" type="secondary">
+            GeoIP provider{' '}
+            {ipLocationStatus
+              ? `${ipLocationStatus.provider} / ${ipLocationStatus.datasetVersion}`
+              : 'loading'}
+          </Typography.Text>,
+          <Tag
+            color={
+              ipLocationStatus?.externalLookupEnabled ? 'green' : 'default'
+            }
+            key="external-lookup"
+          >
+            External lookup{' '}
+            {ipLocationStatus?.externalLookupEnabled ? 'on' : 'off'}
+          </Tag>,
+          <Tooltip key="geoip-lookup" title="GeoIP lookup">
+            <Button
+              aria-label="GeoIP lookup"
+              icon={<GlobalOutlined />}
+              loading={ipLookupLoading}
+              onClick={() => void runIpLocationLookup()}
+            />
+          </Tooltip>,
           <Tooltip
             key="delete-selected"
             title={

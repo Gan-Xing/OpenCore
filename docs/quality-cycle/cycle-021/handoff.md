@@ -47,15 +47,16 @@ packages and OpenForge direct Prisma/migration/business-code writing.
 
 ## Current State
 
-Cycle-021 has completed 89 deployable stages.
+Cycle-021 has completed 90 deployable stages.
 
 - System/RBAC: notice, dept, post, menu, role, permission, user, dict, config
   and file loops are live.
 - Security/session: login policy, logout, force logout, online-user kick-out
   and real revocation are live.
-- Logs: login-log type/result, lockout, cleanup, actor/reason and
-  deterministic location; operation-log list/detail/export/delete, duration
-  and location fields, retention policy cleanup and scheduled retention job.
+- Logs: login-log type/result, lockout, cleanup, actor/reason, deterministic
+  location and structured IP/location provider lookup; operation-log
+  list/detail/export/delete, duration and location fields, retention policy
+  cleanup and scheduled retention job.
 - Config: runtime keys, login policy, feature flags, rollout, audience rules,
   environment overrides, secret vault, secret version history, explicit secret
   rotation, env-bound KMS keyring status and vault key rotation.
@@ -77,17 +78,19 @@ Cycle-021 has completed 89 deployable stages.
   safe workbench for status, doctor, plan, diff, check, manifest list and
   apply/rollback dry-run, dry-run confirmation and manifest preview/detail.
 
-Latest runtime stage: Round 89 OpenForge dry-run confirmation and manifest
-preview. It makes dry-run operations require explicit confirmation, rejects
-write-mode intent at the API boundary, exposes manifest preview/detail through
-SDK/Admin and guards the flow through OpenAPI, smoke and deploy bundle markers.
+Latest runtime stage: Round 90 IP/location provider lookup. It adds a shared
+offline `opencore.builtin` lookup/status contract, exposes it through
+API/SDK/Admin, registers the OpenAPI tag and guards provider status,
+documentation-network lookup, invalid input and Admin bundle markers through
+smoke/deploy checks.
 
 ## Next Queue
 
 1. Optional managed-KMS provider adapter if deployment needs a cloud KMS API
    instead of the current env-bound keyring.
-2. Optional operation-log external GeoIP enrichment if deployment needs real
-   IP attribution beyond deterministic network categories.
+2. Optional external GeoIP provider adapter if deployment needs precise
+   country/region/city attribution beyond the built-in offline network
+   categories.
 3. OpenForge direct Prisma/migration/business-code writes remain out of scope
    until explicitly admitted.
 

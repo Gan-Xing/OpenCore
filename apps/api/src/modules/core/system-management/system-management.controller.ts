@@ -23,6 +23,10 @@ import {
   AuditLoginLogService,
   AuditOperationLogService,
 } from '@opencore/audit';
+import {
+  getIpLocationProviderStatus,
+  lookupIpLocation,
+} from '@opencore/common';
 import { FileStorageService } from '@opencore/file';
 import {
   SystemConfigService,
@@ -73,6 +77,9 @@ import {
   LoginLogDto,
   LoginLogBatchMutationResultDto,
   LoginLogCleanResultDto,
+  IpLocationLookupDto,
+  IpLocationLookupQueryDto,
+  IpLocationProviderStatusDto,
   LoginUnlockResultDto,
   PageQueryDto,
   RotateSystemConfigSecretDto,
@@ -1015,6 +1022,28 @@ export class SystemManagementController {
     const file = await this.repository.getFile(id);
     await this.files.deleteObject(file.storageKey);
     return this.repository.deleteFile(id);
+  }
+
+  @Get('ip-location/status')
+  @ApiTags('Core IP Location')
+  @RequirePermission('core:login-log:read')
+  @ApiOkResponse({ type: IpLocationProviderStatusDto })
+  getIpLocationProviderStatus(): IpLocationProviderStatusDto {
+    return getIpLocationProviderStatus();
+  }
+
+  @Get('ip-location/lookup')
+  @ApiTags('Core IP Location')
+  @RequirePermission('core:login-log:read')
+  @ApiOkResponse({ type: IpLocationLookupDto })
+  lookupIpLocation(
+    @Query() query: IpLocationLookupQueryDto,
+  ): IpLocationLookupDto {
+    if (!query.ip?.trim()) {
+      throw new BadRequestException('IP address is required');
+    }
+
+    return lookupIpLocation(query.ip);
   }
 
   @Get('audit-logs')

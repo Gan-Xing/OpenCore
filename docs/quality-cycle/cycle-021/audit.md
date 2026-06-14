@@ -51,6 +51,9 @@ claim execution and scheduler queue metrics with Admin controls and smoke
 coverage.
 Round 89 added OpenForge dry-run confirmation, API write-intent rejection and
 manifest preview/detail through SDK/Admin with smoke coverage.
+Round 90 added structured IP/location provider status and lookup with shared
+common semantics, API/SDK/Admin visibility, OpenAPI tag registration and
+login-log smoke/deploy guards.
 Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 `lint` must run sequentially.
 
@@ -67,6 +70,9 @@ Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 - Operation-log smoke covers guard failures, deleted-detail 404,
   duration/location filters, retentionDays cleanup and scheduled retention job
   registry.
+- IP/location smoke covers provider status, OpenAPI paths, documentation
+  network lookup, invalid lookup and missing-IP guards; deploy checks Admin
+  GeoIP bundle markers.
 - Config smoke covers runtime shape, environment override governance, legacy
   vault envelope deserialization, secret version history, secret rotation,
   vault key rotation and no plaintext secret storage.
@@ -93,6 +99,8 @@ real incident decisions. Do not create per-round reports by default.
   deployment-topology upgrade if needed.
 - Managed cloud KMS provider adapters are optional deployment integration; the
   current foundation waterline has env-bound keyring status and rotation.
+- External precise GeoIP provider adapters are optional deployment integration;
+  the current foundation waterline has built-in offline network categories.
 - OpenForge direct generated schema/migration/business writes remain outside
   the admitted surface.
 

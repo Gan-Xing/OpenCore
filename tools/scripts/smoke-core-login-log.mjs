@@ -50,12 +50,74 @@ try {
   await request('/health/ready', { expected: [200] });
 
   if (checkDocs) {
-    await request(`${apiPrefix}/docs-json`, { expected: [200] });
+    const openApi = await request(`${apiPrefix}/docs-json`, {
+      expected: [200],
+    });
+    assertOpenApiPath(openApi, '/api/core/ip-location/status');
+    assertOpenApiPath(openApi, '/api/core/ip-location/lookup');
   }
 
   const loginResponse = await login();
 
   token = assertString(loginResponse.accessToken, 'login accessToken');
+
+  const ipLocationStatus = await apiRequest('/core/ip-location/status');
+  assertEqual(
+    ipLocationStatus.provider,
+    'opencore.builtin',
+    'IP location provider',
+  );
+  assertEqual(
+    ipLocationStatus.externalLookupEnabled,
+    false,
+    'IP location external lookup flag',
+  );
+  assertEqual(ipLocationStatus.ready, true, 'IP location provider readiness');
+  assertEqual(
+    ipLocationStatus.datasetVersion,
+    'builtin-cidr-v1',
+    'IP location dataset version',
+  );
+  assertArray(
+    ipLocationStatus.supportedNetworks,
+    'IP location supported networks',
+  );
+  assertIncludes(
+    ipLocationStatus.supportedNetworks,
+    'documentation',
+    'IP location supported networks',
+  );
+
+  const documentationLookup = await apiRequest(
+    '/core/ip-location/lookup?ip=203.0.113.8',
+  );
+  assertEqual(
+    documentationLookup.location,
+    'Documentation network',
+    'documentation IP location',
+  );
+  assertEqual(
+    documentationLookup.networkType,
+    'documentation',
+    'documentation IP network type',
+  );
+  assertEqual(
+    documentationLookup.source,
+    'builtin-cidr',
+    'documentation IP source',
+  );
+  assertEqual(
+    documentationLookup.enriched,
+    true,
+    'documentation IP enriched flag',
+  );
+
+  const invalidLookup = await apiRequest('/core/ip-location/lookup?ip=bad-ip');
+  assertEqual(invalidLookup.location, 'Unknown', 'invalid IP location');
+  assertEqual(invalidLookup.networkType, 'unknown', 'invalid IP network type');
+  assertEqual(invalidLookup.confidence, 'none', 'invalid IP confidence');
+
+  await apiRequest('/core/ip-location/lookup', { expected: [400] });
 
   const listResponse = await apiRequest('/core/login-logs?page=1&pageSize=10');
   assertArray(listResponse.items, 'login log list items');
@@ -456,8 +518,18 @@ try {
       checks: [
         'health.live',
         'health.ready',
-        ...(checkDocs ? ['openapi.docs-json'] : []),
+        ...(checkDocs
+          ? [
+              'openapi.docs-json',
+              'openapi.core-ip-location-status',
+              'openapi.core-ip-location-lookup',
+            ]
+          : []),
         'auth.login',
+        'core.ip-location.status',
+        'core.ip-location.lookup',
+        'core.ip-location.invalid-lookup',
+        'core.ip-location.missing-ip-guard',
         'auth.logout.self',
         'auth.logout.revokes-session',
         'core.login-log.logout-self-recorded',
@@ -731,6 +803,12 @@ function assertNumberAtLeast(value, minimum, label) {
         value,
       )}`,
     );
+  }
+}
+
+function assertOpenApiPath(openApi, path) {
+  if (!openApi?.paths || !Object.hasOwn(openApi.paths, path)) {
+    throw new Error(`OpenAPI docs-json does not include ${path}`);
   }
 }
 

@@ -676,6 +676,43 @@ export type AuditLogSummary = {
   createdAt: string;
 };
 
+export type IpLocationNetworkType =
+  | 'documentation'
+  | 'link-local'
+  | 'loopback'
+  | 'private'
+  | 'public'
+  | 'shared'
+  | 'unknown';
+
+export type IpLocationLookupRequest = {
+  ip: string;
+};
+
+export type IpLocationLookupSummary = {
+  ip: string;
+  location: string;
+  category: string;
+  networkType: IpLocationNetworkType;
+  provider: 'opencore.builtin';
+  source: 'builtin-cidr';
+  confidence: 'exact' | 'none' | 'range';
+  enriched: boolean;
+  countryCode?: string;
+  region?: string;
+  city?: string;
+};
+
+export type IpLocationProviderStatusSummary = {
+  provider: 'opencore.builtin';
+  mode: 'offline';
+  ready: true;
+  externalLookupEnabled: false;
+  datasetVersion: 'builtin-cidr-v1';
+  supportedNetworks: readonly IpLocationNetworkType[];
+  checkedAt: string;
+};
+
 export type AuditLogQueryRequest = PageRequest & {
   actorUsername?: string;
   action?: string;

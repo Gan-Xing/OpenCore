@@ -4,6 +4,8 @@ import {
   createDictFixtures,
   createExportPlanFixture,
   createFileAssetFixtures,
+  createIpLocationLookupFixture,
+  createIpLocationProviderStatusFixture,
   createLoginLogFixtures,
   createMenuSummariesFromRegistry,
   createOpenApiDriftFixture,
@@ -152,6 +154,16 @@ describe('registry fixtures', () => {
       password: '[REDACTED]',
     });
     expect(createLoginLogFixtures().items[0].success).toBe(true);
+    expect(createIpLocationProviderStatusFixture()).toMatchObject({
+      provider: 'opencore.builtin',
+      externalLookupEnabled: false,
+      datasetVersion: 'builtin-cidr-v1',
+    });
+    expect(createIpLocationLookupFixture()).toMatchObject({
+      ip: '203.0.113.8',
+      networkType: 'documentation',
+      confidence: 'range',
+    });
     expect(createSystemDeptOptionFixtures()[1]).toMatchObject({
       id: 'dept_engineering',
       parentId: 'dept_headquarters',

@@ -111,6 +111,8 @@ describe('createSystemManagementClient', () => {
     await client.exportAuditLogs('token', { action: 'POST' });
     await client.deleteAuditLogs('token', { ids: ['audit_config_create'] });
     await client.cleanAuditLogs('token', { retentionDays: 90 });
+    await client.getIpLocationProviderStatus('token');
+    await client.lookupIpLocation('token', { ip: '203.0.113.8' });
     await client.listLoginLogs('token', {
       actorUsername: 'admin',
       createdFrom: '2026-06-10T00:00:00.000Z',
@@ -410,6 +412,14 @@ describe('createSystemManagementClient', () => {
       {
         path: '/core/audit-logs/clean?retentionDays=90',
         method: 'DELETE',
+        token: 'token',
+      },
+      {
+        path: '/core/ip-location/status',
+        token: 'token',
+      },
+      {
+        path: '/core/ip-location/lookup?ip=203.0.113.8',
         token: 'token',
       },
       {

@@ -12,6 +12,8 @@ import type {
   AuditLogSummary,
   DictTypeSummary,
   FileAssetSummary,
+  IpLocationLookupSummary,
+  IpLocationProviderStatusSummary,
   LoginLogSummary,
   PageResponse,
   SystemConfigSummary,
@@ -424,6 +426,39 @@ export function createLoginLogFixtures(): PageResponse<LoginLogSummary> {
       createdAt: '2026-06-10T00:00:00.000Z',
     },
   ]);
+}
+
+export function createIpLocationProviderStatusFixture(): IpLocationProviderStatusSummary {
+  return {
+    provider: 'opencore.builtin',
+    mode: 'offline',
+    ready: true,
+    externalLookupEnabled: false,
+    datasetVersion: 'builtin-cidr-v1',
+    supportedNetworks: [
+      'documentation',
+      'link-local',
+      'loopback',
+      'private',
+      'public',
+      'shared',
+      'unknown',
+    ],
+    checkedAt: '2026-06-14T00:00:00.000Z',
+  };
+}
+
+export function createIpLocationLookupFixture(): IpLocationLookupSummary {
+  return {
+    ip: '203.0.113.8',
+    location: 'Documentation network',
+    category: 'Documentation network',
+    networkType: 'documentation',
+    provider: 'opencore.builtin',
+    source: 'builtin-cidr',
+    confidence: 'range',
+    enriched: true,
+  };
 }
 
 export function createSystemStatusFixture(): SystemStatusSummary {

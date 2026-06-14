@@ -518,7 +518,7 @@ export const moduleRegistry = [
     stage: 'S7',
     enabledByDefault: true,
     description: 'Login audit log created after the S6 auth baseline exists.',
-    apiTags: ['Core Login Logs'],
+    apiTags: ['Core Login Logs', 'Core IP Location'],
     permissions: definePermissions('core', 'login-log', 'login logs', 'S7', [
       { action: 'read', title: 'Read' },
       { action: 'export', title: 'Export' },

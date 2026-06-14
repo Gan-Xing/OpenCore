@@ -4,20 +4,21 @@ Date: 2026-06-14
 
 ## Latest Completed Round
 
-Round 89: OpenForge dry-run confirmation and manifest preview/detail.
+Round 90: IP/location provider status and lookup.
 
 ## Closed
 
-- Added OpenForge dry-run confirmation policy to status, apply dry-run and
-  rollback dry-run, with API rejection for write-mode intent.
-- Added manifest preview plus Admin manifest preview/detail modals backed by
-  SDK methods.
-- Added OpenAPI, smoke and deploy Admin bundle guards for confirmation and
-  manifest surfaces.
+- Added shared offline `opencore.builtin` IP/location status and lookup
+  contracts while preserving existing deterministic location labels.
+- Exposed lookup/status through API, SDK and the Login Logs Admin surface.
+- Added OpenAPI tag registration, login-log smoke checks and Admin deploy
+  bundle markers for GeoIP controls.
 
 ## Still Open
 
 - Managed cloud KMS adapters remain optional deployment integration beyond the
   current env-bound keyring.
+- External precise GeoIP provider adapters remain optional deployment
+  integration beyond the built-in offline network categories.
 - OpenForge direct schema/migration/business code writes remain outside the
   admitted surface.

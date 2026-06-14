@@ -22,3 +22,4 @@ This ledger records state transitions only. Git log keeps commit hashes.
 | 87    | Integration  | Providers gained a global health/config audit across diagnostics and outbox.  | Integration health smoke and Admin bundle markers cover audit.  |
 | 88    | Monitor Jobs | Scheduler gained cron dispatch, worker claim execution and queue metrics.     | Monitor jobs smoke and Admin bundle markers cover worker flow.  |
 | 89    | OpenForge    | Dry-run operations gained confirmation plus manifest preview/detail.          | OpenForge smoke and Admin bundle markers cover dry-run guards.  |
+| 90    | IP Location  | Login logs gained structured offline provider status and lookup.              | Login-log smoke and Admin bundle markers cover GeoIP lookup.    |

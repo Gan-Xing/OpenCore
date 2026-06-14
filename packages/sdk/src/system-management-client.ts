@@ -25,6 +25,9 @@ import type {
   DictTypeSummary,
   ExportPreview,
   FileAssetSummary,
+  IpLocationLookupRequest,
+  IpLocationLookupSummary,
+  IpLocationProviderStatusSummary,
   LoginLogQueryRequest,
   LoginLogBatchMutationSummary,
   LoginLogCleanSummary,
@@ -394,6 +397,13 @@ export type SystemManagementClient = {
     token: Token,
     query?: CleanAuditLogsRequest,
   ) => Promise<AuditLogCleanSummary>;
+  getIpLocationProviderStatus: (
+    token: Token,
+  ) => Promise<IpLocationProviderStatusSummary>;
+  lookupIpLocation: (
+    token: Token,
+    query: IpLocationLookupRequest,
+  ) => Promise<IpLocationLookupSummary>;
   listLoginLogs: (
     token: Token,
     query?: LoginLogQueryRequest,
@@ -942,6 +952,17 @@ export function createSystemManagementClient(
         withQuery('/core/audit-logs/clean', query),
         {
           method: 'DELETE',
+          token,
+        },
+      ),
+    getIpLocationProviderStatus: (token) =>
+      request<IpLocationProviderStatusSummary>('/core/ip-location/status', {
+        token,
+      }),
+    lookupIpLocation: (token, query) =>
+      request<IpLocationLookupSummary>(
+        withQuery('/core/ip-location/lookup', query),
+        {
           token,
         },
       ),

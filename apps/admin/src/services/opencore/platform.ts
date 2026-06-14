@@ -88,6 +88,8 @@ import {
   type IntegrationOutboxSummary,
   type IntegrationOutboxProcessResult,
   type IntegrationOutboxScheduleResult,
+  type IpLocationLookupSummary,
+  type IpLocationProviderStatusSummary,
   type JobDefinitionSummary,
   type JobQueryRequest,
   type JobRegistryEntrySummary,
@@ -842,6 +844,20 @@ export function unlockOpenCoreLoginUser(
 ): Promise<LoginUnlockSummary> {
   return systemManagementClient.unlockLoginUser(getRequiredAdminToken(), {
     username,
+  });
+}
+
+export function getOpenCoreIpLocationProviderStatus(): Promise<IpLocationProviderStatusSummary> {
+  return systemManagementClient.getIpLocationProviderStatus(
+    getRequiredAdminToken(),
+  );
+}
+
+export function lookupOpenCoreIpLocation(
+  ip: string,
+): Promise<IpLocationLookupSummary> {
+  return systemManagementClient.lookupIpLocation(getRequiredAdminToken(), {
+    ip,
   });
 }
 

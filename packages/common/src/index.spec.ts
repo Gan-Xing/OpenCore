@@ -15,6 +15,8 @@ import {
   normalizePagination,
   normalizeSort,
   normalizeStringArray,
+  getIpLocationProviderStatus,
+  lookupIpLocation,
   parseIpLocation,
   parseUserAgent,
   sanitizeErrorCode,
@@ -162,5 +164,58 @@ describe('@opencore/common', () => {
     expect(parseIpLocation('203.0.113.8')).toBe('Documentation network');
     expect(parseIpLocation('8.8.8.8')).toBe('Public network');
     expect(parseIpLocation('bad-ip')).toBe('Unknown');
+  });
+
+  it('looks up IP addresses with provider and confidence metadata', () => {
+    expect(lookupIpLocation('203.0.113.8')).toEqual({
+      ip: '203.0.113.8',
+      location: 'Documentation network',
+      category: 'Documentation network',
+      networkType: 'documentation',
+      provider: 'opencore.builtin',
+      source: 'builtin-cidr',
+      confidence: 'range',
+      enriched: true,
+    });
+    expect(lookupIpLocation('127.0.0.1')).toMatchObject({
+      ip: '127.0.0.1',
+      location: 'Loopback',
+      networkType: 'loopback',
+      confidence: 'exact',
+      enriched: true,
+    });
+    expect(lookupIpLocation('8.8.8.8')).toMatchObject({
+      location: 'Public network',
+      networkType: 'public',
+      confidence: 'range',
+      enriched: false,
+    });
+    expect(lookupIpLocation('bad-ip')).toMatchObject({
+      ip: 'bad-ip',
+      location: 'Unknown',
+      networkType: 'unknown',
+      confidence: 'none',
+      enriched: false,
+    });
+  });
+
+  it('reports the offline IP location provider status', () => {
+    expect(getIpLocationProviderStatus('2026-06-14T00:00:00.000Z')).toEqual({
+      provider: 'opencore.builtin',
+      mode: 'offline',
+      ready: true,
+      externalLookupEnabled: false,
+      datasetVersion: 'builtin-cidr-v1',
+      supportedNetworks: [
+        'documentation',
+        'link-local',
+        'loopback',
+        'private',
+        'public',
+        'shared',
+        'unknown',
+      ],
+      checkedAt: '2026-06-14T00:00:00.000Z',
+    });
   });
 });

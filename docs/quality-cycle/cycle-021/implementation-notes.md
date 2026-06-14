@@ -19,10 +19,10 @@ active debt and decisions that change future execution.
 
 ## Runtime State
 
-Cycle-021 has completed 89 deployable stages across
-System/Security/Monitor/Integration/Tools foundations. Round 89 added
-OpenForge dry-run confirmation and manifest preview/detail backed by
-API/SDK/Admin/OpenAPI, with write-mode intent rejected at the API boundary.
+Cycle-021 has completed 90 deployable stages across
+System/Security/Monitor/Integration/Tools foundations. Round 90 added
+structured IP/location provider status and lookup backed by shared common
+semantics, API/SDK/Admin/OpenAPI, login-log smoke and Admin deploy markers.
 
 ## Guard Register
 
@@ -39,6 +39,9 @@ API/SDK/Admin/OpenAPI, with write-mode intent rejected at the API boundary.
 - Operation log: smoke covers batch-delete guards, deleted-detail 404,
   duration/location filters, retentionDays cleanup and the retention scheduler
   job registry while preserving the clean request audit row.
+- IP/location: login-log smoke covers provider status, OpenAPI paths,
+  documentation-network lookup, invalid lookup and missing-IP guards; Admin
+  deploy checks GeoIP provider/lookup markers.
 - Config/secret: smoke covers feature flags, audience rules, environment
   overrides, legacy vault envelope deserialization, secret version history,
   explicit secret rotation, vault key rotation and no plaintext secret-vault
@@ -72,9 +75,7 @@ API/SDK/Admin/OpenAPI, with write-mode intent rejected at the API boundary.
   tenant/member/mobile channels.
 - Config: managed cloud KMS provider adapters are optional deployment
   integration beyond the current env-bound keyring.
-- Login log: optional external GeoIP depth and broader mobile/social login
-  semantics.
-- Operation log: optional external GeoIP attribution beyond deterministic
-  network categories.
+- Login/operation log: optional external precise GeoIP provider adapter beyond
+  the current built-in offline network categories.
 - OpenForge: direct schema/migration/business writes still require user
   admission.

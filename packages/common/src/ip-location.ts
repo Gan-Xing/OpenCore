@@ -9,19 +9,80 @@ export type IpLocationCategory =
   | 'Shared address space'
   | 'Unknown';
 
+export type IpLocationNetworkType =
+  | 'documentation'
+  | 'link-local'
+  | 'loopback'
+  | 'private'
+  | 'public'
+  | 'shared'
+  | 'unknown';
+
+export type IpLocationLookupConfidence = 'exact' | 'none' | 'range';
+
+export type IpLocationLookupResult = {
+  ip: string;
+  location: IpLocationCategory;
+  category: IpLocationCategory;
+  networkType: IpLocationNetworkType;
+  provider: 'opencore.builtin';
+  source: 'builtin-cidr';
+  confidence: IpLocationLookupConfidence;
+  enriched: boolean;
+  countryCode?: string;
+  region?: string;
+  city?: string;
+};
+
+export type IpLocationProviderStatus = {
+  provider: 'opencore.builtin';
+  mode: 'offline';
+  ready: true;
+  externalLookupEnabled: false;
+  datasetVersion: 'builtin-cidr-v1';
+  supportedNetworks: readonly IpLocationNetworkType[];
+  checkedAt: string;
+};
+
+const SUPPORTED_NETWORKS = [
+  'documentation',
+  'link-local',
+  'loopback',
+  'private',
+  'public',
+  'shared',
+  'unknown',
+] as const satisfies readonly IpLocationNetworkType[];
+
 export function parseIpLocation(value: string): IpLocationCategory {
+  return lookupIpLocation(value).location;
+}
+
+export function lookupIpLocation(value: string): IpLocationLookupResult {
   const ip = normalizeIpAddress(value);
 
   if (!ip || isIP(ip) === 0 || ip === '0.0.0.0' || ip === '::') {
-    return 'Unknown';
+    return createLookupResult(ip, 'Unknown');
   }
 
   const octets = parseIpv4Octets(ip);
-  if (octets) {
-    return parseIpv4Location(octets);
-  }
+  const location = octets ? parseIpv4Location(octets) : parseIpv6Location(ip);
 
-  return parseIpv6Location(ip);
+  return createLookupResult(ip, location);
+}
+
+export function getIpLocationProviderStatus(
+  checkedAt = new Date().toISOString(),
+): IpLocationProviderStatus {
+  return {
+    provider: 'opencore.builtin',
+    mode: 'offline',
+    ready: true,
+    externalLookupEnabled: false,
+    datasetVersion: 'builtin-cidr-v1',
+    supportedNetworks: SUPPORTED_NETWORKS,
+    checkedAt,
+  };
 }
 
 export function normalizeIpAddress(value: string): string {
@@ -112,4 +173,50 @@ function parseIpv4Octets(ip: string): readonly number[] | undefined {
   }
 
   return octets;
+}
+
+function createLookupResult(
+  ip: string,
+  location: IpLocationCategory,
+): IpLocationLookupResult {
+  const networkType = toNetworkType(location);
+  return {
+    ip,
+    location,
+    category: location,
+    networkType,
+    provider: 'opencore.builtin',
+    source: 'builtin-cidr',
+    confidence: toLookupConfidence(networkType),
+    enriched: !['public', 'unknown'].includes(networkType),
+  };
+}
+
+function toNetworkType(location: IpLocationCategory): IpLocationNetworkType {
+  switch (location) {
+    case 'Documentation network':
+      return 'documentation';
+    case 'Link-local':
+      return 'link-local';
+    case 'Loopback':
+      return 'loopback';
+    case 'Private network':
+      return 'private';
+    case 'Public network':
+      return 'public';
+    case 'Shared address space':
+      return 'shared';
+    case 'Unknown':
+      return 'unknown';
+  }
+}
+
+function toLookupConfidence(
+  networkType: IpLocationNetworkType,
+): IpLocationLookupConfidence {
+  if (networkType === 'unknown') {
+    return 'none';
+  }
+
+  return networkType === 'loopback' ? 'exact' : 'range';
 }

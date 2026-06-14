@@ -125,6 +125,89 @@ export class LoginUnlockResultDto {
   lockedUntil?: string;
 }
 
+export class IpLocationLookupQueryDto {
+  @ApiProperty({ example: '203.0.113.8' })
+  ip!: string;
+}
+
+export class IpLocationLookupDto {
+  @ApiProperty({ example: '203.0.113.8' })
+  ip!: string;
+
+  @ApiProperty({ example: 'Documentation network' })
+  location!: string;
+
+  @ApiProperty({ example: 'Documentation network' })
+  category!: string;
+
+  @ApiProperty({
+    enum: [
+      'documentation',
+      'link-local',
+      'loopback',
+      'private',
+      'public',
+      'shared',
+      'unknown',
+    ],
+  })
+  networkType!:
+    | 'documentation'
+    | 'link-local'
+    | 'loopback'
+    | 'private'
+    | 'public'
+    | 'shared'
+    | 'unknown';
+
+  @ApiProperty({ example: 'opencore.builtin' })
+  provider!: 'opencore.builtin';
+
+  @ApiProperty({ example: 'builtin-cidr' })
+  source!: 'builtin-cidr';
+
+  @ApiProperty({ enum: ['exact', 'none', 'range'] })
+  confidence!: 'exact' | 'none' | 'range';
+
+  @ApiProperty()
+  enriched!: boolean;
+
+  @ApiProperty({ required: false })
+  countryCode?: string;
+
+  @ApiProperty({ required: false })
+  region?: string;
+
+  @ApiProperty({ required: false })
+  city?: string;
+}
+
+export class IpLocationProviderStatusDto {
+  @ApiProperty({ example: 'opencore.builtin' })
+  provider!: 'opencore.builtin';
+
+  @ApiProperty({ example: 'offline' })
+  mode!: 'offline';
+
+  @ApiProperty()
+  ready!: true;
+
+  @ApiProperty()
+  externalLookupEnabled!: false;
+
+  @ApiProperty({ example: 'builtin-cidr-v1' })
+  datasetVersion!: 'builtin-cidr-v1';
+
+  @ApiProperty({
+    type: [String],
+    example: ['documentation', 'loopback', 'private', 'public'],
+  })
+  supportedNetworks!: readonly string[];
+
+  @ApiProperty()
+  checkedAt!: string;
+}
+
 export class FileAssetDto {
   @ApiProperty()
   id!: string;
