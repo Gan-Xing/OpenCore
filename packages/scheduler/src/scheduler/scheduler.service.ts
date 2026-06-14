@@ -2,9 +2,13 @@ import { Injectable } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
 import type {
   CreateJobDefinitionDto,
+  ClaimQueuedJobsDto,
+  DispatchDueJobsDto,
   JobQueryDto,
   JobRunQueryDto,
+  SchedulerDispatchResultDto,
   SchedulerSummaryDto,
+  SchedulerWorkerResultDto,
   TriggerJobDto,
   UpdateJobDefinitionDto,
 } from './scheduler.dto';
@@ -64,6 +68,16 @@ export class SchedulerService {
     body: TriggerJobDto,
   ): Promise<SchedulerJobRunLogRecord> {
     return this.repository.triggerJob(code, body);
+  }
+
+  dispatchDueJobs(
+    body: DispatchDueJobsDto,
+  ): Promise<SchedulerDispatchResultDto> {
+    return this.repository.dispatchDueJobs(body);
+  }
+
+  claimQueuedJobs(body: ClaimQueuedJobsDto): Promise<SchedulerWorkerResultDto> {
+    return this.repository.claimQueuedJobs(body);
   }
 
   listJobRuns(

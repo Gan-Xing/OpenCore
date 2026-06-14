@@ -307,6 +307,16 @@ verify_admin_bundle_api_base_url() {
     ! grep -R \
     --fixed-strings \
     --include='*.js' \
+    "Cron dispatch" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Worker claim" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
     "registered handler execution + retry/timeout diagnostics" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null || \
     ! grep -R \
@@ -316,6 +326,21 @@ verify_admin_bundle_api_base_url() {
     "$ROOT_DIR/apps/admin/dist" >/dev/null; then
     echo "Admin bundle does not include monitor job runtime operation controls." >&2
     echo "Refusing to deploy a stale frontend monitor jobs page." >&2
+    exit 1
+  fi
+
+  if ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Scheduler queues" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Queue metrics" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null; then
+    echo "Admin bundle does not include monitor queue metrics." >&2
+    echo "Refusing to deploy a stale frontend monitor queues page." >&2
     exit 1
   fi
 

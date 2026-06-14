@@ -21,6 +21,7 @@ const passwordCandidates = [
 });
 const timeoutMs = Number(process.env.OPENCORE_SMOKE_TIMEOUT_MS || 10000);
 const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+const smokeCron = createSmokeCron(runId);
 let token;
 
 class HttpStatusError extends Error {
@@ -41,6 +42,9 @@ try {
     });
     assertOpenApiPath(openApi, '/api/monitor/jobs/registry');
     assertOpenApiPath(openApi, '/api/monitor/jobs/{code}/trigger');
+    assertOpenApiPath(openApi, '/api/monitor/jobs/dispatch-due');
+    assertOpenApiPath(openApi, '/api/monitor/jobs/worker/claim');
+    assertOpenApiPath(openApi, '/api/monitor/queues');
   }
 
   const loginResponse = await login();
@@ -77,6 +81,19 @@ try {
     auditRetentionRegistry.handlerKey,
     'maintenance.auditLogRetention',
     'audit retention handler key',
+  );
+
+  const queues = await apiRequest('/monitor/queues');
+  assertArray(queues.queues, 'monitor queue items');
+  assertIncludes(
+    queues.queues.map((queue) => queue.name),
+    'maintenance',
+    'scheduler maintenance queue',
+  );
+  assertIncludes(
+    queues.queues.map((queue) => queue.name),
+    'reports',
+    'scheduler reports queue',
   );
 
   const maintenanceJobs = await apiRequest(
@@ -249,16 +266,79 @@ try {
     method: 'PATCH',
     body: {
       enabled: true,
+      cron: smokeCron.cron,
       retryLimit: 2,
       timeoutSeconds: 60,
       payload: { source: 'monitor.jobs.smoke', runId },
     },
   });
 
+  const dispatch = await apiRequest('/monitor/jobs/dispatch-due', {
+    method: 'POST',
+    body: {
+      actor: username,
+      limit: 1,
+      metadata: { source: 'monitor.jobs.dispatch-smoke', runId },
+      now: smokeCron.now,
+    },
+  });
+  assertEqual(dispatch.dispatchedCount, 1, 'scheduler dispatch count');
+  assertEqual(dispatch.skippedCount, 0, 'scheduler dispatch skipped count');
+  assertArray(dispatch.queuedRuns, 'scheduler dispatch queued runs');
+  const queuedRun = dispatch.queuedRuns[0];
+  assertEqual(queuedRun.jobCode, JOB_CODE, 'scheduler queued run job code');
+  assertEqual(queuedRun.status, 'queued', 'scheduler queued run status');
+  assertEqual(queuedRun.trigger, 'schedule', 'scheduler queued run trigger');
+  assertEqual(
+    queuedRun.metadata.executionMode,
+    'queued',
+    'scheduler queued run execution mode',
+  );
+
+  const worker = await apiRequest('/monitor/jobs/worker/claim', {
+    method: 'POST',
+    body: {
+      actor: username,
+      limit: 1,
+      metadata: { source: 'monitor.jobs.worker-smoke', runId },
+      queueName: 'reports',
+    },
+  });
+  assertEqual(worker.claimedCount, 1, 'scheduler worker claimed count');
+  assertEqual(worker.completedCount, 1, 'scheduler worker completed count');
+  assertEqual(worker.failedCount, 0, 'scheduler worker failed count');
+  assertArray(worker.runs, 'scheduler worker runs');
+  const workerRun = worker.runs[0];
+  assertEqual(workerRun.id, queuedRun.id, 'scheduler worker run id');
+  assertEqual(workerRun.status, 'completed', 'scheduler worker run status');
+  assertEqual(workerRun.trigger, 'schedule', 'scheduler worker trigger');
+  assertEqual(
+    workerRun.metadata.executionMode,
+    'worker',
+    'scheduler worker execution mode',
+  );
+  assertEqual(
+    workerRun.metadata.queuedRunId,
+    queuedRun.id,
+    'scheduler worker queued run id',
+  );
+
+  const workerRunDetail = await apiRequest(
+    `/monitor/jobs/${encodeURIComponent(JOB_CODE)}/runs/${encodeURIComponent(
+      workerRun.id,
+    )}`,
+  );
+  assertEqual(workerRunDetail.id, workerRun.id, 'worker run detail id');
+  assertEqual(
+    workerRunDetail.metadata.source,
+    'monitor.jobs.worker-smoke',
+    'worker run detail source',
+  );
+
   const postRunSummary = await apiRequest('/monitor/operations/summary');
   assertNumberAtLeast(
     postRunSummary.jobRuns.completed,
-    summary.jobRuns.completed + 1,
+    summary.jobRuns.completed + 2,
     'scheduler completed run summary',
   );
   assertNumberAtLeast(
@@ -279,11 +359,15 @@ try {
           ? [
               'openapi.monitor-job-registry-path',
               'openapi.monitor-job-trigger-path',
+              'openapi.monitor-job-dispatch-path',
+              'openapi.monitor-job-worker-path',
+              'openapi.monitor-queues-path',
             ]
           : []),
         'auth.login',
         'monitor.job.registry',
         'monitor.job.audit-retention-registry',
+        'monitor.job.scheduler-queues',
         'monitor.job.summary',
         'monitor.job.list',
         'monitor.job.upsert-whitelisted',
@@ -297,6 +381,8 @@ try {
         'monitor.job.run-detail',
         'monitor.job.failed-run-retry',
         'monitor.job.failed-run-detail',
+        'monitor.job.cron-dispatch',
+        'monitor.job.worker-claim',
       ],
     }),
   );
@@ -322,6 +408,7 @@ async function upsertSmokeJob() {
   const body = {
     name: `Smoke Report Refresh ${runId}`,
     queueName: 'reports',
+    cron: smokeCron.cron,
     enabled: true,
     retryLimit: 2,
     timeoutSeconds: 60,
@@ -342,6 +429,23 @@ async function upsertSmokeJob() {
       ...body,
     },
   });
+}
+
+function createSmokeCron(value) {
+  const hash = [...value].reduce(
+    (total, char) => total + char.charCodeAt(0),
+    0,
+  );
+  const minute = (hash % 59) + 1;
+  const hour = Math.floor(hash / 60) % 24;
+  const day = (Math.floor(hash / (60 * 24)) % 28) + 1;
+  const month = (Math.floor(hash / (60 * 24 * 28)) % 12) + 1;
+  const now = new Date(Date.UTC(2026, month - 1, day, hour, minute, 0, 0));
+
+  return {
+    cron: `${minute} ${hour} ${day} ${month} *`,
+    now: now.toISOString(),
+  };
 }
 
 async function apiRequest(path, options = {}) {

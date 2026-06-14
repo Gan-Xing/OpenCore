@@ -1,4 +1,4 @@
-export const monitorQueueNames = ['system-audit', 'table-export'] as const;
+export const monitorQueueNames = ['maintenance', 'reports'] as const;
 
 export type MonitorQueueName = (typeof monitorQueueNames)[number];
 

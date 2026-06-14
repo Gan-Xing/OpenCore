@@ -8,6 +8,7 @@ import type {
 export type SchedulerJobExecutionInput = {
   actor: string;
   entry: SchedulerJobRegistryEntry;
+  executionMode?: 'in-process' | 'worker';
   job: SchedulerJobDefinitionRecord;
   metadata?: Record<string, unknown>;
   prisma?: PrismaService;
@@ -179,7 +180,7 @@ function createExecutionMetadata(
     actor: input.actor,
     adapter: input.job.adapter,
     attempts,
-    executionMode: 'in-process',
+    executionMode: input.executionMode ?? 'in-process',
     handlerKey: input.entry.handlerKey,
     result: resultMetadata ?? {},
   };

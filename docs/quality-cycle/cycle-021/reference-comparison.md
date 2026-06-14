@@ -44,9 +44,9 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   environment overrides, secret-vault encryption, secret version history,
   explicit rotation, env-bound keyring status and vault key rotation are live.
 - Monitor/OpenForge/Scheduler: Monitor Jobs has a live Admin operation surface,
-  registry visibility and registered handler diagnostics; OpenForge has a live
-  safe planning/dry-run workbench; external scheduler worker/cron parity
-  remains.
+  registry visibility, registered handler diagnostics, cron dispatch, worker
+  claim and scheduler queue metrics; OpenForge has a live safe
+  planning/dry-run workbench.
 
 ## Recent Decisions
 
@@ -104,6 +104,9 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
 - Round 87: Integration Providers expose a global health/config audit that
   aggregates existing diagnostics, config-vault debt, outbox backlog and
   failure history into API/SDK/Admin and deploy smoke guards.
+- Round 88: Scheduler/monitor dispatches due cron jobs into queued schedule
+  runs, lets a worker claim and execute them, exposes queue metrics in Admin
+  and guards the flow through OpenAPI/SDK/smoke/deploy checks.
 
 ## Explicit Non-Claims
 
@@ -114,7 +117,6 @@ and AI/RAG/Agent workflow.
 
 ## Next Focus
 
-Choose scheduler worker parity next. OpenForge write/apply confirmation UX is
-a later explicit stage. Managed cloud KMS adapters and external operation-log
-GeoIP are optional deployment integrations beyond the current foundation
-waterline.
+Choose OpenForge write/apply confirmation UX next if continuing Tools
+foundation. Managed cloud KMS adapters and external operation-log GeoIP are
+optional deployment integrations beyond the current foundation waterline.

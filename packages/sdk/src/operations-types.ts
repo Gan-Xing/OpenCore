@@ -133,6 +133,36 @@ export type TriggerJobRequest = {
   metadata?: Record<string, unknown>;
 };
 
+export type DispatchDueJobsRequest = {
+  actor: string;
+  now?: string;
+  limit?: number;
+  metadata?: Record<string, unknown>;
+};
+
+export type ClaimQueuedJobsRequest = {
+  actor: string;
+  queueName?: string;
+  limit?: number;
+  metadata?: Record<string, unknown>;
+};
+
+export type SchedulerDispatchResultSummary = {
+  checkedAt: string;
+  dispatchedCount: number;
+  skippedCount: number;
+  queuedRuns: readonly JobRunLogSummary[];
+};
+
+export type SchedulerWorkerResultSummary = {
+  checkedAt: string;
+  claimedCount: number;
+  completedCount: number;
+  failedCount: number;
+  skippedCount: number;
+  runs: readonly JobRunLogSummary[];
+};
+
 export type ClearCacheRequest = {
   prefix: string;
   dryRun: boolean;
@@ -269,6 +299,28 @@ export function createOperationsFixtures(): OperationsFixtures {
         result: { driftCheck: 'configured' },
       },
     },
+    {
+      id: 'run_audit_retention_worker_1',
+      jobCode: 'audit-log.retention-clean',
+      status: 'completed',
+      trigger: 'schedule',
+      attempts: 1,
+      durationMs: 250,
+      startedAt: '2026-06-10T03:00:00.000Z',
+      finishedAt: '2026-06-10T03:00:00.250Z',
+      metadata: {
+        actor: 'scheduler-worker',
+        attempts: 1,
+        executionMode: 'worker',
+        handlerKey: 'maintenance.auditLogRetention',
+        queuedRunId: 'run_audit_retention_queued_1',
+        result: {
+          affected: 0,
+          dryRun: true,
+          retentionDays: 90,
+        },
+      },
+    },
   ];
   const cacheKeys: readonly CacheKeySummary[] = [
     {
@@ -339,7 +391,9 @@ export function createOperationsFixtures(): OperationsFixtures {
         running: countByStatus(jobRuns, 'running'),
         completed: countByStatus(jobRuns, 'completed'),
         failed: countByStatus(jobRuns, 'failed'),
-        latestStartedAt: jobRuns[0]?.startedAt,
+        latestStartedAt: [...jobRuns]
+          .map((run) => run.startedAt)
+          .sort((left, right) => right.localeCompare(left))[0],
       },
       cache: {
         keyCount: cacheKeys.length,

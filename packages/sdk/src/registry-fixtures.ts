@@ -469,7 +469,7 @@ export function createQueueStatusFixture(): QueueStatusList {
     checkedAt: '2026-06-10T00:00:00.000Z',
     queues: [
       {
-        name: 'system-audit',
+        name: 'maintenance',
         driver: 'bullmq-redis-readonly',
         waiting: 0,
         active: 0,
@@ -479,7 +479,7 @@ export function createQueueStatusFixture(): QueueStatusList {
         readOnly: true,
       },
       {
-        name: 'table-export',
+        name: 'reports',
         driver: 'bullmq-redis-readonly',
         waiting: 0,
         active: 0,

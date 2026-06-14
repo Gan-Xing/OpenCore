@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import type { PageResult } from '@opencore/common';
+import { normalizeOptionalString, type PageResult } from '@opencore/common';
 import { PrismaService } from '@opencore/database';
 import { SchedulerJobExecutor } from './scheduler.executor';
 import type {
@@ -11,14 +11,20 @@ import {
   assertJobCanTrigger,
   assertSafeJobPolicy,
   createSchedulerPageResult,
+  createSchedulerDispatchTick,
   createSchedulerSummary,
+  isCronDue,
   normalizeRunStatus,
   normalizeRunTrigger,
+  normalizeSchedulerDispatchNow,
   normalizeSchedulerJobFilters,
   normalizeSchedulerPageQuery,
+  normalizeSchedulerWorkerLimit,
   SchedulerRepository,
   requireRecord,
+  type ClaimQueuedSchedulerJobsInput,
   type CreateSchedulerJobInput,
+  type DispatchDueSchedulerJobsInput,
   type SchedulerJobQuery,
   type SchedulerRunQuery,
   type TriggerSchedulerJobInput,
@@ -186,6 +192,151 @@ export class PrismaSchedulerRepository extends SchedulerRepository {
     return toJobRunLogRecord(run);
   }
 
+  async dispatchDueJobs(body: DispatchDueSchedulerJobsInput) {
+    const now = normalizeSchedulerDispatchNow(body.now);
+    const dispatchTick = createSchedulerDispatchTick(now);
+    const limit = normalizeSchedulerWorkerLimit(body.limit);
+    const jobs = await this.prisma.jobDefinition.findMany({
+      where: { enabled: true, cron: { not: null } },
+      orderBy: [{ code: 'asc' }],
+    });
+    const queuedRuns: SchedulerJobRunLogRecord[] = [];
+    let skippedCount = 0;
+
+    for (const row of jobs) {
+      const job = toJobDefinitionRecord(row);
+      if (!job.cron || !isCronDue(job.cron, now)) {
+        continue;
+      }
+      assertSafeJobPolicy(job);
+      const scheduledRuns = await this.prisma.jobRunLog.findMany({
+        where: {
+          jobCode: job.code,
+          trigger: 'schedule',
+        },
+      });
+      if (
+        scheduledRuns.some(
+          (run) =>
+            toJobRunLogRecord(run).metadata?.scheduledAt === dispatchTick,
+        )
+      ) {
+        skippedCount += 1;
+        continue;
+      }
+      if (queuedRuns.length >= limit) {
+        skippedCount += 1;
+        continue;
+      }
+
+      const run = await this.prisma.jobRunLog.create({
+        data: {
+          jobCode: job.code,
+          status: 'queued',
+          trigger: 'schedule',
+          attempts: 0,
+          startedAt: now,
+          metadata: toInputJson({
+            ...(body.metadata ?? {}),
+            actor: body.actor,
+            cron: job.cron,
+            executionMode: 'queued',
+            queueName: job.queueName,
+            scheduledAt: dispatchTick,
+          }),
+        },
+      });
+      queuedRuns.push(toJobRunLogRecord(run));
+    }
+
+    return {
+      checkedAt: now.toISOString(),
+      dispatchedCount: queuedRuns.length,
+      skippedCount,
+      queuedRuns,
+    };
+  }
+
+  async claimQueuedJobs(body: ClaimQueuedSchedulerJobsInput) {
+    const limit = normalizeSchedulerWorkerLimit(body.limit);
+    const queueName = normalizeOptionalString(body.queueName);
+    const queuedRows = await this.prisma.jobRunLog.findMany({
+      where: { status: 'queued', trigger: 'schedule' },
+      orderBy: [{ startedAt: 'asc' }, { id: 'asc' }],
+      take: limit * 3,
+    });
+    const runs: SchedulerJobRunLogRecord[] = [];
+    let completedCount = 0;
+    let failedCount = 0;
+    let skippedCount = 0;
+
+    for (const row of queuedRows) {
+      const job = await this.findJob(row.jobCode);
+      if (queueName && job.queueName !== queueName) {
+        skippedCount += 1;
+        continue;
+      }
+      if (runs.length >= limit) {
+        skippedCount += 1;
+        continue;
+      }
+
+      if (!job.enabled) {
+        const failedRun = await this.failQueuedRun(row, body);
+        runs.push(failedRun);
+        failedCount += 1;
+        continue;
+      }
+
+      await this.prisma.jobRunLog.update({
+        where: { id: row.id },
+        data: { status: 'running' },
+      });
+      const entry = assertSafeJobPolicy(job);
+      const execution = await this.executor.execute({
+        actor: body.actor,
+        entry,
+        executionMode: 'worker',
+        job,
+        metadata: {
+          ...(toJobRunLogRecord(row).metadata ?? {}),
+          ...(body.metadata ?? {}),
+          queuedRunId: row.id,
+          workerQueueName: job.queueName,
+        },
+        prisma: this.prisma,
+      });
+      const updated = await this.prisma.jobRunLog.update({
+        where: { id: row.id },
+        data: {
+          attempts: execution.attempts,
+          durationMs: execution.durationMs,
+          error: execution.error,
+          finishedAt: new Date(execution.finishedAt),
+          metadata: toInputJson(execution.metadata),
+          startedAt: new Date(execution.startedAt),
+          status: execution.status,
+        },
+      });
+      const run = toJobRunLogRecord(updated);
+      runs.push(run);
+      if (run.status === 'completed') {
+        completedCount += 1;
+      } else {
+        failedCount += 1;
+      }
+    }
+
+    return {
+      checkedAt: new Date().toISOString(),
+      claimedCount: runs.length,
+      completedCount,
+      failedCount,
+      skippedCount,
+      runs,
+    };
+  }
+
   async listJobRuns(
     code: string,
     query: SchedulerRunQuery = {},
@@ -224,6 +375,33 @@ export class PrismaSchedulerRepository extends SchedulerRepository {
       'Job definition',
       code,
     );
+  }
+
+  private async failQueuedRun(
+    row: JobRunLogRow,
+    body: ClaimQueuedSchedulerJobsInput,
+  ): Promise<SchedulerJobRunLogRecord> {
+    const finishedAt = new Date();
+    const existing = toJobRunLogRecord(row);
+    const updated = await this.prisma.jobRunLog.update({
+      where: { id: row.id },
+      data: {
+        attempts: 0,
+        durationMs: 0,
+        error: 'Job definition is disabled before worker execution.',
+        finishedAt,
+        metadata: toInputJson({
+          ...(existing.metadata ?? {}),
+          ...(body.metadata ?? {}),
+          actor: body.actor,
+          executionMode: 'worker',
+          result: { failed: true, skippedDisabledJob: true },
+        }),
+        status: 'failed',
+      },
+    });
+
+    return toJobRunLogRecord(updated);
   }
 }
 

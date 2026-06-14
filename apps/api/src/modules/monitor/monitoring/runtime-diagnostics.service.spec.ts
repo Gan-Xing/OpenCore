@@ -23,7 +23,7 @@ describe('RuntimeDiagnosticsService integration', () => {
     expect(queues.queues).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          name: 'table-export',
+          name: 'maintenance',
           driver: 'bullmq-redis-readonly',
           readOnly: true,
         }),

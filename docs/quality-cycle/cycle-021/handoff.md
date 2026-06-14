@@ -47,7 +47,7 @@ packages and OpenForge direct Prisma/migration/business-code writing.
 
 ## Current State
 
-Cycle-021 has completed 87 deployable stages.
+Cycle-021 has completed 88 deployable stages.
 
 - System/RBAC: notice, dept, post, menu, role, permission, user, dict, config
   and file loops are live.
@@ -71,25 +71,25 @@ Cycle-021 has completed 87 deployable stages.
   operator actions.
 - Monitor jobs: API/SDK routes, registry policy, seed job, Admin live list,
   enable/disable, manual trigger, registered handler execution, retry/timeout
-  diagnostics and failed run-log detail are smoke-guarded.
+  diagnostics, failed run-log detail, cron dispatch, worker claim and scheduler
+  queue metrics are smoke-guarded.
 - OpenForge: CLI/core safety remains no-write by default; Admin now has a live
   safe workbench for status, doctor, plan, diff, check, manifest list and
   apply/rollback dry-run.
 
-Latest runtime stage: Round 87 Integration health/config audit. It exposes a
-provider-wide health audit endpoint, SDK method, live Admin provider page,
-OpenAPI contract, deploy bundle markers and `smoke-integration-health`.
+Latest runtime stage: Round 88 Scheduler/monitor worker parity. It dispatches
+due cron jobs into queued schedule runs, lets a worker claim and execute queued
+runs, exposes scheduler queue metrics in Admin and guards the flow through
+OpenAPI, SDK, smoke and deploy bundle markers.
 
 ## Next Queue
 
-1. Scheduler/monitor worker parity: external BullMQ worker execution, cron
-   dispatch and queue metrics beyond the current registered manual executor.
-2. OpenForge write/apply/rollback confirmation UX and manifest detail can be a
+1. OpenForge write/apply/rollback confirmation UX and manifest detail can be a
    later explicit stage; direct Prisma/migration/business-code writes still
    require user admission.
-3. Optional managed-KMS provider adapter if deployment needs a cloud KMS API
+2. Optional managed-KMS provider adapter if deployment needs a cloud KMS API
    instead of the current env-bound keyring.
-4. Optional operation-log external GeoIP enrichment if deployment needs real
+3. Optional operation-log external GeoIP enrichment if deployment needs real
    IP attribution beyond deterministic network categories.
 
 ## Docs Rule

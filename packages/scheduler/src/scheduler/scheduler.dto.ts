@@ -143,6 +143,34 @@ export class TriggerJobDto {
   metadata?: Record<string, unknown>;
 }
 
+export class DispatchDueJobsDto {
+  @ApiProperty()
+  actor!: string;
+
+  @ApiProperty({ required: false })
+  now?: string;
+
+  @ApiProperty({ required: false, default: 20 })
+  limit?: number;
+
+  @ApiProperty({ required: false })
+  metadata?: Record<string, unknown>;
+}
+
+export class ClaimQueuedJobsDto {
+  @ApiProperty()
+  actor!: string;
+
+  @ApiProperty({ required: false })
+  queueName?: string;
+
+  @ApiProperty({ required: false, default: 20 })
+  limit?: number;
+
+  @ApiProperty({ required: false })
+  metadata?: Record<string, unknown>;
+}
+
 export class JobRunLogDto {
   @ApiProperty()
   id!: string;
@@ -243,4 +271,38 @@ export class SchedulerSummaryDto {
 
   @ApiProperty({ type: JobRunSummaryDto })
   jobRuns!: JobRunSummaryDto;
+}
+
+export class SchedulerDispatchResultDto {
+  @ApiProperty()
+  checkedAt!: string;
+
+  @ApiProperty()
+  dispatchedCount!: number;
+
+  @ApiProperty()
+  skippedCount!: number;
+
+  @ApiProperty({ type: [JobRunLogDto] })
+  queuedRuns!: readonly JobRunLogDto[];
+}
+
+export class SchedulerWorkerResultDto {
+  @ApiProperty()
+  checkedAt!: string;
+
+  @ApiProperty()
+  claimedCount!: number;
+
+  @ApiProperty()
+  completedCount!: number;
+
+  @ApiProperty()
+  failedCount!: number;
+
+  @ApiProperty()
+  skippedCount!: number;
+
+  @ApiProperty({ type: [JobRunLogDto] })
+  runs!: readonly JobRunLogDto[];
 }

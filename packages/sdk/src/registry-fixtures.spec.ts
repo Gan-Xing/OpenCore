@@ -169,6 +169,9 @@ describe('registry fixtures', () => {
     );
     expect(createVersionInfoFixture().name).toBe('opencore-api');
     expect(createQueueStatusFixture().queues[0].readOnly).toBe(true);
+    expect(
+      createQueueStatusFixture().queues.map((queue) => queue.name),
+    ).toEqual(['maintenance', 'reports']);
     expect(createOpenApiDriftFixture().driftCheckCommand).toBe(
       'pnpm openapi:check',
     );
@@ -202,6 +205,12 @@ describe('registry fixtures', () => {
     expect(
       findJobRunFixture('openapi.drift-check', 'run_openapi_drift_1')?.status,
     ).toBe('completed');
+    expect(
+      findJobRunFixture(
+        'audit-log.retention-clean',
+        'run_audit_retention_worker_1',
+      )?.metadata,
+    ).toMatchObject({ executionMode: 'worker' });
     expect(
       findJobRunFixture('wrong.job', 'run_openapi_drift_1'),
     ).toBeUndefined();

@@ -4,8 +4,10 @@ import type {
   CacheClearResultSummary,
   CacheKeyPage,
   CacheKeyQueryRequest,
+  ClaimQueuedJobsRequest,
   ClearCacheRequest,
   CreateJobDefinitionRequest,
+  DispatchDueJobsRequest,
   CreateReportDefinitionRequest,
   ExportJobDesignSummary,
   JobDefinitionPage,
@@ -24,6 +26,8 @@ import type {
   ReportDefinitionPage,
   ReportQueryRequest,
   ReportDefinitionSummary,
+  SchedulerDispatchResultSummary,
+  SchedulerWorkerResultSummary,
   TriggerJobRequest,
   UpdateJobDefinitionRequest,
 } from './operations-types';
@@ -55,6 +59,14 @@ export type OperationsClient = {
     code: string,
     body: TriggerJobRequest,
   ) => Promise<JobRunLogSummary>;
+  dispatchDueJobs: (
+    token: string,
+    body: DispatchDueJobsRequest,
+  ) => Promise<SchedulerDispatchResultSummary>;
+  claimQueuedJobs: (
+    token: string,
+    body: ClaimQueuedJobsRequest,
+  ) => Promise<SchedulerWorkerResultSummary>;
   listJobRuns: (
     token: string,
     code: string,
@@ -143,6 +155,18 @@ export function createOperationsClient(request: SdkRequest): OperationsClient {
         `/monitor/jobs/${encodeURIComponent(code)}/trigger`,
         { method: 'POST', body, token },
       ),
+    dispatchDueJobs: (token, body) =>
+      request<SchedulerDispatchResultSummary>('/monitor/jobs/dispatch-due', {
+        method: 'POST',
+        body,
+        token,
+      }),
+    claimQueuedJobs: (token, body) =>
+      request<SchedulerWorkerResultSummary>('/monitor/jobs/worker/claim', {
+        method: 'POST',
+        body,
+        token,
+      }),
     listJobRuns: (token, code, query) =>
       request<JobRunLogPage>(
         withQuery(`/monitor/jobs/${encodeURIComponent(code)}/runs`, query),

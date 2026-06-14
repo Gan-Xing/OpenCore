@@ -72,7 +72,7 @@ describe('@opencore/monitor', () => {
     await expect(service.listQueues()).resolves.toMatchObject({
       queues: expect.arrayContaining([
         expect.objectContaining({
-          name: 'table-export',
+          name: 'maintenance',
           driver: 'bullmq-redis-readonly',
           readOnly: true,
         }),
@@ -114,7 +114,7 @@ describe('@opencore/monitor', () => {
       expect(queues.queues).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            name: 'table-export',
+            name: 'maintenance',
             driver: 'bullmq-redis-readonly',
             readOnly: true,
           }),
@@ -160,7 +160,7 @@ function createFakeDiagnostics(
         'BullMQ queues were read from Redis using the OpenCore queue prefix.',
       queues: [
         {
-          name: 'system-audit',
+          name: 'maintenance',
           driver: 'bullmq-redis-readonly',
           waiting: 0,
           active: 0,
@@ -170,7 +170,7 @@ function createFakeDiagnostics(
           readOnly: true,
         },
         {
-          name: 'table-export',
+          name: 'reports',
           driver: 'bullmq-redis-readonly',
           waiting: 0,
           active: 0,

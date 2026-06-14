@@ -146,6 +146,77 @@ describe('@opencore/scheduler', () => {
     ).resolves.toMatchObject({ total: 1 });
   });
 
+  it('dispatches due cron jobs once and lets a worker claim queued runs', async () => {
+    const service = new SchedulerService(new SeedSchedulerRepository());
+    const now = '2026-06-10T03:00:00.000Z';
+
+    const dispatch = await service.dispatchDueJobs({
+      actor: 'scheduler-dispatcher',
+      limit: 1,
+      metadata: { source: 'scheduler.spec.dispatch' },
+      now,
+    });
+
+    expect(dispatch).toMatchObject({
+      checkedAt: now,
+      dispatchedCount: 1,
+      skippedCount: 1,
+      queuedRuns: [
+        expect.objectContaining({
+          jobCode: 'audit-log.retention-clean',
+          status: 'queued',
+          trigger: 'schedule',
+          attempts: 0,
+          metadata: expect.objectContaining({
+            executionMode: 'queued',
+            scheduledAt: now,
+            source: 'scheduler.spec.dispatch',
+          }),
+        }),
+      ],
+    });
+
+    const worker = await service.claimQueuedJobs({
+      actor: 'scheduler-worker',
+      limit: 1,
+      metadata: { source: 'scheduler.spec.worker' },
+      queueName: 'maintenance',
+    });
+
+    expect(worker).toMatchObject({
+      claimedCount: 1,
+      completedCount: 1,
+      failedCount: 0,
+      runs: [
+        expect.objectContaining({
+          id: dispatch.queuedRuns[0].id,
+          jobCode: 'audit-log.retention-clean',
+          status: 'completed',
+          trigger: 'schedule',
+          metadata: expect.objectContaining({
+            actor: 'scheduler-worker',
+            executionMode: 'worker',
+            queuedRunId: dispatch.queuedRuns[0].id,
+            source: 'scheduler.spec.worker',
+          }),
+        }),
+      ],
+    });
+    await expect(
+      service.getJobRun('audit-log.retention-clean', dispatch.queuedRuns[0].id),
+    ).resolves.toMatchObject({
+      status: 'completed',
+      metadata: expect.objectContaining({ executionMode: 'worker' }),
+    });
+
+    await expect(
+      service.dispatchDueJobs({ actor: 'scheduler-dispatcher', now }),
+    ).resolves.toMatchObject({
+      dispatchedCount: 1,
+      skippedCount: 1,
+    });
+  });
+
   it('rejects invalid cron and unsafe numeric policy', async () => {
     const service = new SchedulerService(new SeedSchedulerRepository());
 
@@ -232,6 +303,86 @@ describe('@opencore/scheduler', () => {
           executionMode: 'in-process',
           handlerKey: 'reports.refresh',
         }),
+      });
+    });
+
+    it('persists cron dispatch and worker claim through Prisma', async () => {
+      const cronNow = '2026-06-10T04:15:00.000Z';
+      if (originalJob) {
+        await service.updateJob(code, {
+          cron: '15 4 * * *',
+          enabled: true,
+          name: jobName,
+          payload: {
+            reportCode: `scheduler-worker.${testRunId}`,
+            source: 'scheduler.spec.worker',
+          },
+          queueName: 'reports',
+          retryLimit: 1,
+          timeoutSeconds: 45,
+        });
+      } else {
+        await service.createJob({
+          code,
+          cron: '15 4 * * *',
+          enabled: true,
+          name: jobName,
+          payload: {
+            reportCode: `scheduler-worker.${testRunId}`,
+            source: 'scheduler.spec.worker',
+          },
+          queueName: 'reports',
+          retryLimit: 1,
+          timeoutSeconds: 45,
+        });
+      }
+
+      const dispatch = await service.dispatchDueJobs({
+        actor: 'scheduler-dispatcher',
+        metadata: { source: `scheduler.spec.dispatch.${testRunId}` },
+        now: cronNow,
+      });
+      createdRunIds.push(...dispatch.queuedRuns.map((run) => run.id));
+
+      expect(dispatch).toMatchObject({
+        dispatchedCount: 1,
+        queuedRuns: [
+          expect.objectContaining({
+            jobCode: code,
+            status: 'queued',
+            trigger: 'schedule',
+          }),
+        ],
+      });
+
+      const worker = await service.claimQueuedJobs({
+        actor: 'scheduler-worker',
+        metadata: { source: `scheduler.spec.claim.${testRunId}` },
+        queueName: 'reports',
+      });
+
+      expect(worker).toMatchObject({
+        claimedCount: 1,
+        completedCount: 1,
+        failedCount: 0,
+        runs: [
+          expect.objectContaining({
+            id: dispatch.queuedRuns[0].id,
+            status: 'completed',
+            trigger: 'schedule',
+            metadata: expect.objectContaining({
+              actor: 'scheduler-worker',
+              executionMode: 'worker',
+              queuedRunId: dispatch.queuedRuns[0].id,
+            }),
+          }),
+        ],
+      });
+      await expect(
+        service.getJobRun(code, dispatch.queuedRuns[0].id),
+      ).resolves.toMatchObject({
+        status: 'completed',
+        metadata: expect.objectContaining({ executionMode: 'worker' }),
       });
     });
 

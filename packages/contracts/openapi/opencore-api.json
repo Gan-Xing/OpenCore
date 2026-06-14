@@ -6464,6 +6464,62 @@
         "tags": ["Operations", "Monitor Jobs"]
       }
     },
+    "/api/monitor/jobs/dispatch-due": {
+      "post": {
+        "operationId": "OperationsController_dispatchDueJobs",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/DispatchDueJobsDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchedulerDispatchResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Operations", "Monitor Jobs"]
+      }
+    },
+    "/api/monitor/jobs/worker/claim": {
+      "post": {
+        "operationId": "OperationsController_claimQueuedJobs",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ClaimQueuedJobsDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchedulerWorkerResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Operations", "Monitor Jobs"]
+      }
+    },
     "/api/monitor/jobs/{code}": {
       "get": {
         "operationId": "OperationsController_getJob",
@@ -10505,6 +10561,92 @@
           "allowManualTrigger"
         ]
       },
+      "DispatchDueJobsDto": {
+        "type": "object",
+        "properties": {
+          "actor": { "type": "string" },
+          "now": { "type": "string" },
+          "limit": { "type": "number", "default": 20 },
+          "metadata": { "type": "object" }
+        },
+        "required": ["actor"]
+      },
+      "JobRunLogDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "jobCode": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["queued", "running", "completed", "failed"]
+          },
+          "trigger": { "type": "string", "enum": ["manual", "schedule"] },
+          "attempts": { "type": "number" },
+          "durationMs": { "type": "number" },
+          "startedAt": { "type": "string" },
+          "finishedAt": { "type": "string" },
+          "error": { "type": "string" },
+          "metadata": { "type": "object" }
+        },
+        "required": [
+          "id",
+          "jobCode",
+          "status",
+          "trigger",
+          "attempts",
+          "startedAt"
+        ]
+      },
+      "SchedulerDispatchResultDto": {
+        "type": "object",
+        "properties": {
+          "checkedAt": { "type": "string" },
+          "dispatchedCount": { "type": "number" },
+          "skippedCount": { "type": "number" },
+          "queuedRuns": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/JobRunLogDto" }
+          }
+        },
+        "required": [
+          "checkedAt",
+          "dispatchedCount",
+          "skippedCount",
+          "queuedRuns"
+        ]
+      },
+      "ClaimQueuedJobsDto": {
+        "type": "object",
+        "properties": {
+          "actor": { "type": "string" },
+          "queueName": { "type": "string" },
+          "limit": { "type": "number", "default": 20 },
+          "metadata": { "type": "object" }
+        },
+        "required": ["actor"]
+      },
+      "SchedulerWorkerResultDto": {
+        "type": "object",
+        "properties": {
+          "checkedAt": { "type": "string" },
+          "claimedCount": { "type": "number" },
+          "completedCount": { "type": "number" },
+          "failedCount": { "type": "number" },
+          "skippedCount": { "type": "number" },
+          "runs": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/JobRunLogDto" }
+          }
+        },
+        "required": [
+          "checkedAt",
+          "claimedCount",
+          "completedCount",
+          "failedCount",
+          "skippedCount",
+          "runs"
+        ]
+      },
       "CreateJobDefinitionDto": {
         "type": "object",
         "properties": {
@@ -10538,32 +10680,6 @@
           "metadata": { "type": "object" }
         },
         "required": ["actor"]
-      },
-      "JobRunLogDto": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string" },
-          "jobCode": { "type": "string" },
-          "status": {
-            "type": "string",
-            "enum": ["queued", "running", "completed", "failed"]
-          },
-          "trigger": { "type": "string", "enum": ["manual", "schedule"] },
-          "attempts": { "type": "number" },
-          "durationMs": { "type": "number" },
-          "startedAt": { "type": "string" },
-          "finishedAt": { "type": "string" },
-          "error": { "type": "string" },
-          "metadata": { "type": "object" }
-        },
-        "required": [
-          "id",
-          "jobCode",
-          "status",
-          "trigger",
-          "attempts",
-          "startedAt"
-        ]
       },
       "JobRunLogPageDto": {
         "type": "object",

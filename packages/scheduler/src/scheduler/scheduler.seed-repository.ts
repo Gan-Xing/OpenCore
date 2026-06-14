@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { PageResult } from '@opencore/common';
+import { normalizeOptionalString, type PageResult } from '@opencore/common';
 import { SchedulerJobExecutor } from './scheduler.executor';
 import type {
   SchedulerJobDefinitionRecord,
@@ -13,11 +13,17 @@ import {
   compareRuns,
   createSchedulerPageResult,
   createSchedulerSummary,
+  createSchedulerDispatchTick,
+  isCronDue,
+  normalizeSchedulerDispatchNow,
   normalizeSchedulerJobFilters,
   normalizeSchedulerPageQuery,
+  normalizeSchedulerWorkerLimit,
   SchedulerRepository,
   requireRecord,
+  type ClaimQueuedSchedulerJobsInput,
   type CreateSchedulerJobInput,
+  type DispatchDueSchedulerJobsInput,
   type SchedulerJobQuery,
   type SchedulerRunQuery,
   type TriggerSchedulerJobInput,
@@ -144,6 +150,124 @@ export class SeedSchedulerRepository extends SchedulerRepository {
     return cloneRun(run);
   }
 
+  async dispatchDueJobs(body: DispatchDueSchedulerJobsInput) {
+    const now = normalizeSchedulerDispatchNow(body.now);
+    const dispatchTick = createSchedulerDispatchTick(now);
+    const limit = normalizeSchedulerWorkerLimit(body.limit);
+    const queuedRuns: SchedulerJobRunLogRecord[] = [];
+    let skippedCount = 0;
+
+    for (const job of this.jobs.sort(compareJobs)) {
+      if (!job.enabled || !job.cron || !isCronDue(job.cron, now)) {
+        continue;
+      }
+      assertSafeJobPolicy(job);
+      if (this.hasScheduledRunForTick(job.code, dispatchTick)) {
+        skippedCount += 1;
+        continue;
+      }
+      if (queuedRuns.length >= limit) {
+        skippedCount += 1;
+        continue;
+      }
+
+      const run: SchedulerJobRunLogRecord = {
+        id: `run_${job.code.replace(/[^a-zA-Z0-9]+/g, '_')}_${this.runs.length + 1}`,
+        jobCode: job.code,
+        status: 'queued',
+        trigger: 'schedule',
+        attempts: 0,
+        startedAt: now.toISOString(),
+        metadata: {
+          ...(body.metadata ?? {}),
+          actor: body.actor,
+          cron: job.cron,
+          executionMode: 'queued',
+          queueName: job.queueName,
+          scheduledAt: dispatchTick,
+        },
+      };
+      this.runs = [run, ...this.runs];
+      queuedRuns.push(cloneRun(run));
+    }
+
+    return {
+      checkedAt: now.toISOString(),
+      dispatchedCount: queuedRuns.length,
+      skippedCount,
+      queuedRuns,
+    };
+  }
+
+  async claimQueuedJobs(body: ClaimQueuedSchedulerJobsInput) {
+    const limit = normalizeSchedulerWorkerLimit(body.limit);
+    const queueName = normalizeOptionalString(body.queueName);
+    const runs = this.runs
+      .filter((run) => run.status === 'queued' && run.trigger === 'schedule')
+      .sort((left, right) => left.startedAt.localeCompare(right.startedAt));
+    const claimedRuns: SchedulerJobRunLogRecord[] = [];
+    let completedCount = 0;
+    let failedCount = 0;
+    let skippedCount = 0;
+
+    for (const run of runs) {
+      const job = this.findJob(run.jobCode);
+      if (queueName && job.queueName !== queueName) {
+        skippedCount += 1;
+        continue;
+      }
+      if (claimedRuns.length >= limit) {
+        skippedCount += 1;
+        continue;
+      }
+
+      if (!job.enabled) {
+        const failedRun = this.failQueuedRun(run, body, nowIso());
+        failedCount += 1;
+        claimedRuns.push(cloneRun(failedRun));
+        continue;
+      }
+
+      const entry = assertSafeJobPolicy(job);
+      const execution = await this.executor.execute({
+        actor: body.actor,
+        entry,
+        executionMode: 'worker',
+        job,
+        metadata: {
+          ...(run.metadata ?? {}),
+          ...(body.metadata ?? {}),
+          queuedRunId: run.id,
+          workerQueueName: job.queueName,
+        },
+      });
+      Object.assign(run, {
+        status: execution.status,
+        attempts: execution.attempts,
+        durationMs: execution.durationMs,
+        startedAt: execution.startedAt,
+        finishedAt: execution.finishedAt,
+        error: execution.error,
+        metadata: execution.metadata,
+      });
+      if (run.status === 'completed') {
+        completedCount += 1;
+      } else {
+        failedCount += 1;
+      }
+      claimedRuns.push(cloneRun(run));
+    }
+
+    return {
+      checkedAt: nowIso(),
+      claimedCount: claimedRuns.length,
+      completedCount,
+      failedCount,
+      skippedCount,
+      runs: claimedRuns,
+    };
+  }
+
   async listJobRuns(
     code: string,
     query: SchedulerRunQuery = {},
@@ -182,6 +306,38 @@ export class SeedSchedulerRepository extends SchedulerRepository {
       code,
     );
   }
+
+  private hasScheduledRunForTick(code: string, dispatchTick: string): boolean {
+    return this.runs.some(
+      (run) =>
+        run.jobCode === code &&
+        run.trigger === 'schedule' &&
+        run.metadata?.scheduledAt === dispatchTick,
+    );
+  }
+
+  private failQueuedRun(
+    run: SchedulerJobRunLogRecord,
+    body: ClaimQueuedSchedulerJobsInput,
+    finishedAt: string,
+  ): SchedulerJobRunLogRecord {
+    Object.assign(run, {
+      status: 'failed' as const,
+      attempts: 0,
+      durationMs: 0,
+      finishedAt,
+      error: 'Job definition is disabled before worker execution.',
+      metadata: {
+        ...(run.metadata ?? {}),
+        ...(body.metadata ?? {}),
+        actor: body.actor,
+        executionMode: 'worker',
+        result: { failed: true, skippedDisabledJob: true },
+      },
+    });
+
+    return run;
+  }
 }
 
 function matchesOptional<T>(
@@ -199,4 +355,8 @@ function cloneJob(
 
 function cloneRun(run: SchedulerJobRunLogRecord): SchedulerJobRunLogRecord {
   return JSON.parse(JSON.stringify(run)) as SchedulerJobRunLogRecord;
+}
+
+function nowIso(): string {
+  return new Date().toISOString();
 }

@@ -32,6 +32,14 @@ describe('createOperationsClient', () => {
     await client.enableJob('token', 'report.refresh');
     await client.disableJob('token', 'report.refresh');
     await client.triggerJob('token', 'openapi.drift-check', { actor: 'admin' });
+    await client.dispatchDueJobs('token', {
+      actor: 'scheduler-dispatcher',
+      now: '2026-06-10T03:00:00.000Z',
+    });
+    await client.claimQueuedJobs('token', {
+      actor: 'scheduler-worker',
+      queueName: 'maintenance',
+    });
     await client.listJobRuns('token', 'openapi.drift-check', {
       status: 'completed',
     });
@@ -78,6 +86,8 @@ describe('createOperationsClient', () => {
       { path: '/monitor/jobs/report.refresh/enable', method: 'PATCH' },
       { path: '/monitor/jobs/report.refresh/disable', method: 'PATCH' },
       { path: '/monitor/jobs/openapi.drift-check/trigger', method: 'POST' },
+      { path: '/monitor/jobs/dispatch-due', method: 'POST' },
+      { path: '/monitor/jobs/worker/claim', method: 'POST' },
       {
         path: '/monitor/jobs/openapi.drift-check/runs?status=completed',
       },

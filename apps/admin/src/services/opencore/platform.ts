@@ -22,11 +22,13 @@ import {
   type BatchSetUserStatusRequest,
   type BatchUserMutationSummary,
   type CleanAuditLogsRequest,
+  type ClaimQueuedJobsRequest,
   type CreateDictItemRequest,
   type CreateDictTypeRequest,
   type CreateFileAssetRequest,
   type CreateMenuRequest,
   type CreatePermissionRequest,
+  type DispatchDueJobsRequest,
   type CreateRoleRequest,
   type CreateSystemConfigRequest,
   type CreateUserRequest,
@@ -101,6 +103,9 @@ import {
   type OnlineUserSessionSummary,
   type OperationsSummary,
   type SystemNoticeQueryRequest,
+  type QueueStatusList,
+  type SchedulerDispatchResultSummary,
+  type SchedulerWorkerResultSummary,
   type SystemNoticeInboxQueryRequest,
   type SystemNoticeInboxSummary,
   type SystemNoticeDeliveryQueryRequest,
@@ -385,6 +390,10 @@ export function getOpenCoreSystemStatus(): Promise<SystemStatusSummary> {
   return monitoringClient.getStatus(getRequiredAdminToken());
 }
 
+export function listOpenCoreMonitorQueues(): Promise<QueueStatusList> {
+  return monitoringClient.listQueues(getRequiredAdminToken());
+}
+
 export function getOpenCoreOperationsSummary(): Promise<OperationsSummary> {
   return operationsClient.getSummary(getRequiredAdminToken());
 }
@@ -425,6 +434,18 @@ export function triggerOpenCoreJob(
   body: TriggerJobRequest,
 ): Promise<JobRunLogSummary> {
   return operationsClient.triggerJob(getRequiredAdminToken(), code, body);
+}
+
+export function dispatchOpenCoreDueJobs(
+  body: DispatchDueJobsRequest,
+): Promise<SchedulerDispatchResultSummary> {
+  return operationsClient.dispatchDueJobs(getRequiredAdminToken(), body);
+}
+
+export function claimOpenCoreQueuedJobs(
+  body: ClaimQueuedJobsRequest,
+): Promise<SchedulerWorkerResultSummary> {
+  return operationsClient.claimQueuedJobs(getRequiredAdminToken(), body);
 }
 
 export async function listOpenCoreJobRuns(

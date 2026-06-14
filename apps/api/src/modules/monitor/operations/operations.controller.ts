@@ -20,9 +20,11 @@ import {
   CacheKeyQueryDto,
   BatchKickOutSessionsDto,
   BatchKickOutSessionsResultDto,
+  ClaimQueuedJobsDto,
   ClearCacheDto,
   CreateJobDefinitionDto,
   CreateReportDefinitionDto,
+  DispatchDueJobsDto,
   ExportJobDesignDto,
   JobDefinitionDto,
   JobDefinitionPageDto,
@@ -39,6 +41,8 @@ import {
   ReportDefinitionDto,
   ReportDefinitionPageDto,
   ReportQueryDto,
+  SchedulerDispatchResultDto,
+  SchedulerWorkerResultDto,
   TriggerJobDto,
   UpdateJobDefinitionDto,
 } from './operations.dto';
@@ -81,6 +85,26 @@ export class OperationsController {
   @ApiOkResponse({ type: [JobRegistryEntryDto] })
   listJobRegistry(): readonly JobRegistryEntryDto[] {
     return this.scheduler.listRegistryEntries();
+  }
+
+  @Post('monitor/jobs/dispatch-due')
+  @ApiTags('Monitor Jobs')
+  @RequirePermission('monitor:job:manage')
+  @ApiOkResponse({ type: SchedulerDispatchResultDto })
+  dispatchDueJobs(
+    @Body() body: DispatchDueJobsDto,
+  ): Promise<SchedulerDispatchResultDto> {
+    return this.scheduler.dispatchDueJobs(body);
+  }
+
+  @Post('monitor/jobs/worker/claim')
+  @ApiTags('Monitor Jobs')
+  @RequirePermission('monitor:job:manage')
+  @ApiOkResponse({ type: SchedulerWorkerResultDto })
+  claimQueuedJobs(
+    @Body() body: ClaimQueuedJobsDto,
+  ): Promise<SchedulerWorkerResultDto> {
+    return this.scheduler.claimQueuedJobs(body);
   }
 
   @Get('monitor/jobs/:code')

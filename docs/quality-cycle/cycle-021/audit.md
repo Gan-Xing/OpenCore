@@ -46,6 +46,9 @@ depend on caller cwd.
 Round 87 moved Integration provider health from per-provider diagnostics to a
 global health/config audit with readiness totals, config-vault debt, outbox
 backlog, failure history and live Admin visibility.
+Round 88 added Scheduler/monitor cron dispatch, queued schedule runs, worker
+claim execution and scheduler queue metrics with Admin controls and smoke
+coverage.
 Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 `lint` must run sequentially.
 
@@ -67,7 +70,8 @@ Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
   vault key rotation and no plaintext secret storage.
 - Monitor Jobs smoke covers operations summary, registry, job policy guards,
   enable/disable, disabled-trigger rejection, manual trigger, handler
-  execution, failed retry and run-log detail.
+  execution, failed retry, run-log detail, cron dispatch, worker claim and
+  scheduler queue metrics.
 - OpenForge smoke covers status, doctor, plan, diff, check, apply dry-run,
   manifest list, rollback dry-run and unsafe schema/config/manifest guards.
 - Integration health smoke covers provider-wide readiness totals,
@@ -86,8 +90,6 @@ real incident decisions. Do not create per-round reports by default.
   deployment-topology upgrade if needed.
 - Managed cloud KMS provider adapters are optional deployment integration; the
   current foundation waterline has env-bound keyring status and rotation.
-- Scheduler still needs external worker/cron parity beyond the current
-  registered manual executor.
 - OpenForge write/apply confirmation UX and direct generated code writes remain
   later explicit stages.
 

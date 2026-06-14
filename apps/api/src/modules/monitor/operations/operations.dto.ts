@@ -6,6 +6,8 @@ import { PageQueryDto } from '../../core/system-management/system-management.dto
 export { PageQueryDto };
 export {
   CreateJobDefinitionDto,
+  ClaimQueuedJobsDto,
+  DispatchDueJobsDto,
   JobDefinitionDto,
   JobDefinitionPageDto,
   JobDefinitionSummaryDto,
@@ -15,6 +17,8 @@ export {
   JobRunLogPageDto,
   JobRunQueryDto,
   JobRunSummaryDto,
+  SchedulerDispatchResultDto,
+  SchedulerWorkerResultDto,
   TriggerJobDto,
   UpdateJobDefinitionDto,
 } from '@opencore/scheduler';

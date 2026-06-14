@@ -13,6 +13,8 @@ describe('OperationsController permission matrix', () => {
       ['enableJob', ['monitor:job:update']],
       ['disableJob', ['monitor:job:update']],
       ['triggerJob', ['monitor:job:manage']],
+      ['dispatchDueJobs', ['monitor:job:manage']],
+      ['claimQueuedJobs', ['monitor:job:manage']],
       ['listJobRuns', ['monitor:job:read']],
       ['getJobRun', ['monitor:job:read']],
       ['listCacheKeys', ['monitor:cache:read']],

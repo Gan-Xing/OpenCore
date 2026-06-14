@@ -1,4 +1,6 @@
 import {
+  ClockCircleOutlined,
+  DeploymentUnitOutlined,
   EyeOutlined,
   PauseCircleOutlined,
   PlayCircleOutlined,
@@ -32,6 +34,8 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import {
   disableOpenCoreJob,
+  claimOpenCoreQueuedJobs,
+  dispatchOpenCoreDueJobs,
   enableOpenCoreJob,
   getOpenCoreJob,
   getOpenCoreOperationsSummary,
@@ -131,6 +135,8 @@ export default function JobsPage() {
   );
   const [actionJobCode, setActionJobCode] = useState<string>();
   const [triggeringJobCode, setTriggeringJobCode] = useState<string>();
+  const [dispatchingDueJobs, setDispatchingDueJobs] = useState(false);
+  const [claimingQueuedJobs, setClaimingQueuedJobs] = useState(false);
   const filterOptions = useMemo(() => createFilterOptions(rows), [rows]);
   const { filteredRows, toolbar: filterToolbar } =
     useCurrentPageFilters<JobDefinitionSummary>({
@@ -229,6 +235,38 @@ export default function JobsPage() {
         }
       },
     });
+  };
+
+  const dispatchDueJobs = async () => {
+    setDispatchingDueJobs(true);
+    try {
+      const result = await dispatchOpenCoreDueJobs({
+        actor: 'admin',
+        metadata: { source: 'admin.monitor.jobs.dispatch' },
+      });
+      message.success(`Cron dispatch queued ${result.dispatchedCount}`);
+      await loadJobs();
+    } finally {
+      setDispatchingDueJobs(false);
+    }
+  };
+
+  const claimQueuedJobs = async () => {
+    setClaimingQueuedJobs(true);
+    try {
+      const result = await claimOpenCoreQueuedJobs({
+        actor: 'admin',
+        limit: 5,
+        metadata: { source: 'admin.monitor.jobs.worker' },
+      });
+      message.success(`Worker claim completed ${result.completedCount}`);
+      await loadJobs();
+      if (selected) {
+        await openDetail(selected);
+      }
+    } finally {
+      setClaimingQueuedJobs(false);
+    }
   };
 
   const columns: ProColumns<JobDefinitionSummary>[] = [
@@ -343,8 +381,12 @@ export default function JobsPage() {
         <Statistic title="Enabled jobs" value={summary.jobs.enabled} />
         <Statistic title="Disabled jobs" value={summary.jobs.disabled} />
         <Statistic title="Registered handlers" value={registry.length} />
+        <Statistic title="Queued runs" value={summary.jobRuns.queued} />
+        <Statistic title="Running runs" value={summary.jobRuns.running} />
         <Statistic title="Completed runs" value={summary.jobRuns.completed} />
         <Statistic title="Failed runs" value={summary.jobRuns.failed} />
+        <Statistic title="Cron dispatch" value="due jobs" />
+        <Statistic title="Worker claim" value="queued runs" />
       </Space>
       <ProTable<JobDefinitionSummary>
         rowKey="code"
@@ -364,6 +406,24 @@ export default function JobsPage() {
               aria-label="Reload jobs"
               icon={<ReloadOutlined />}
               onClick={() => void loadJobs()}
+            />
+          </Tooltip>,
+          <Tooltip key="dispatch-due" title="Cron dispatch">
+            <Button
+              aria-label="Dispatch due jobs"
+              disabled={!canManageJobs}
+              icon={<ClockCircleOutlined />}
+              loading={dispatchingDueJobs}
+              onClick={() => void dispatchDueJobs()}
+            />
+          </Tooltip>,
+          <Tooltip key="worker-claim" title="Worker claim">
+            <Button
+              aria-label="Claim queued jobs"
+              disabled={!canManageJobs}
+              icon={<DeploymentUnitOutlined />}
+              loading={claimingQueuedJobs}
+              onClick={() => void claimQueuedJobs()}
             />
           </Tooltip>,
         ]}
