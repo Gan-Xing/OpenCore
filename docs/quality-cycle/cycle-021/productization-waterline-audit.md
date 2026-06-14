@@ -29,6 +29,7 @@ failures have guards; and remaining omissions are explicit product boundaries.
 | `integration`         | Meets current | Provider health/config audit, readiness totals, outbox failure history and OAuth token inventory/revoke. |
 | `scheduler/monitor`   | Meets current | Job Admin operations, registry, handler diagnostics, cron dispatch, worker claim and queue metrics.      |
 | `monitor.cache`       | Meets current | Redis namespace/key scans, safe value preview, dry-run clear and confirmed key/prefix deletion.          |
+| `monitor.version`     | Meets current | Live runtime/deployment metadata uses API/SDK/Admin, deploy injection and smoke/deploy guards.           |
 | `OpenForge Admin`     | Meets current | Safe workbench, dry-run confirmation, write-intent rejection and manifest preview/detail.                |
 
 ## Closed Remediation
@@ -97,6 +98,9 @@ failures have guards; and remaining omissions are explicit product boundaries.
 - Round 95 replaced Monitor Cache seed/Admin fixtures with Redis-backed
   namespace/key listing, safe value preview redaction, dry-run prefix clear,
   confirmed key/prefix deletion and smoke/deploy guards.
+- Round 96 replaced the Monitor Version Admin fixture page with live runtime
+  metadata, deployment commit/build injection and API/Admin smoke/deploy
+  guards.
 
 ## Active Debt
 
@@ -130,6 +134,9 @@ failures have guards; and remaining omissions are explicit product boundaries.
   listing, safe JSON redaction, secret-key redaction, dry-run clear, confirmed
   key deletion and confirmed prefix clear; deploy checks live Redis cache Admin
   bundle markers and Admin smoke rejects fixture-backed cache pages.
+- Monitor version: smoke covers live `/monitor/version` runtime fields and
+  no-secret leakage; deploy injects commit/build/deployment metadata and checks
+  Admin Version bundle markers while Admin smoke rejects fixture-backed pages.
 - OpenForge: smoke covers status, doctor, plan, diff, check, apply dry-run,
   manifest list, manifest preview, rollback dry-run, confirmation guards,
   write-intent rejection and unsafe schema/config/manifest guards; deploy

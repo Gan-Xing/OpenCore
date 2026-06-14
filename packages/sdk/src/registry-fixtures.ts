@@ -496,6 +496,15 @@ export function createVersionInfoFixture(): VersionInfoSummary {
     commit: 'unknown',
     buildTime: 'unknown',
     nodeVersion: 'v22.x',
+    runtime: 'node',
+    environment: 'fixture',
+    platform: 'linux',
+    arch: 'x64',
+    processId: 1,
+    uptimeSeconds: 0,
+    startedAt: '2026-06-10T00:00:00.000Z',
+    timezone: 'UTC',
+    deploymentId: 'fixture',
   };
 }
 

@@ -69,6 +69,9 @@ wrap/unwrap requests, and provider status is visible through API/SDK/Admin.
 Round 95 replaced Monitor Cache seed arrays and Admin fixtures with a real
 Redis-backed operator surface covering namespace/key scans, safe value preview
 redaction, dry-run prefix clear and confirmed key/prefix deletion.
+Round 96 replaced the Monitor Version fixture page with live runtime and
+deployment metadata, including deploy-script commit/build injection and
+API/Admin smoke guards.
 Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 `lint` must run sequentially.
 
@@ -104,6 +107,9 @@ Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
   field redaction, secret-key redaction, dry-run prefix clear, confirmed key
   deletion and confirmed prefix clear; Admin smoke rejects fixture-backed
   cache pages.
+- Monitor Version smoke covers live runtime fields and no secret leakage;
+  Admin/deploy guards reject fixture-backed or stale version pages and require
+  commit/build/deployment metadata injection.
 - OpenForge smoke covers status, doctor, plan, diff, check, apply dry-run,
   manifest list, manifest preview, rollback dry-run, dry-run confirmation,
   write-intent rejection and unsafe schema/config/manifest guards.

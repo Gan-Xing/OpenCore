@@ -20,7 +20,7 @@ only; the ledger keeps state transitions and git log keeps commits.
   type/result schema, lockout/unlock, cleanup and attempt limits.
 - Rounds 50-59: logout audit semantics, dept/post ordering, data-scope,
   notice inbox/read analytics, feature flags and login-log location.
-- Rounds 60-95: notice templates, delivery records, local/outbox providers,
+- Rounds 60-96: notice templates, delivery records, local/outbox providers,
   SMS HTTP and SMTP adapters, config secret vault, feature-flag
   rollout/audience, outbox state/process/callback/schedule handling and
   mail subject persistence, provider diagnostics, SMS HTTP secret injection,
@@ -34,7 +34,8 @@ only; the ledger keeps state transitions and git log keeps commits.
   IP/location provider lookup, external HTTP JSON GeoIP adapter,
   token/session blacklist maintenance, OAuth token inventory/revoke lifecycle
   and managed HTTP JSON KMS v3 secret-vault envelopes, plus Redis-backed
-  Monitor Cache namespace/key operations.
+  Monitor Cache namespace/key operations and live Monitor Version
+  runtime/deployment metadata.
 
 ## Rework Notes
 

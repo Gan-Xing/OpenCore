@@ -234,10 +234,14 @@ if (
   !deployScript.includes('SMTP Attachments') ||
   !deployScript.includes('SMTP TLS Policy') ||
   !deployScript.includes('Mark outbox sent') ||
+  !deployScript.includes('OPENCORE_GIT_COMMIT') ||
+  !deployScript.includes('OPENCORE_BUILD_TIME') ||
+  !deployScript.includes('OPENCORE_DEPLOYMENT_ID') ||
+  !deployScript.includes('Live runtime version') ||
   !deployScript.includes('Refusing to deploy a stale frontend login page')
 ) {
   throw new Error(
-    'OpenCore deploy script must verify the public Admin bundle, stale login page content, notice template bundles and duplicated /api/api login requests.',
+    'OpenCore deploy script must verify the public Admin bundle, stale login/version page content, runtime deploy metadata and duplicated /api/api login requests.',
   );
 }
 
@@ -739,6 +743,7 @@ if (
   !statusPage.includes('@opencore/sdk') ||
   !statusPage.includes('getOpenCoreSystemStatus') ||
   !versionPage.includes('@opencore/sdk') ||
+  !versionPage.includes('getOpenCoreVersionInfo') ||
   !queuesPage.includes('@opencore/sdk') ||
   !openApiPage.includes('@opencore/sdk') ||
   !exportPage.includes('@opencore/sdk') ||
@@ -778,6 +783,20 @@ if (
 ) {
   throw new Error(
     'Admin platform, collaboration, operations, and integration pages must consume SDK types or fixtures.',
+  );
+}
+
+if (
+  versionPage.includes('createVersionInfoFixture') ||
+  !versionPage.includes('Live runtime version') ||
+  !versionPage.includes('OpenCore runtime') ||
+  !versionPage.includes('Deployment ID') ||
+  !versionPage.includes('Reload version info') ||
+  !opencorePlatformService.includes('getOpenCoreVersionInfo') ||
+  !opencorePlatformService.includes('monitoringClient.getVersion')
+) {
+  throw new Error(
+    'Monitor Version page must use the live SDK version API and expose runtime/deployment metadata, not static fixtures.',
   );
 }
 

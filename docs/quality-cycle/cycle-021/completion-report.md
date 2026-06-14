@@ -4,17 +4,14 @@ Date: 2026-06-14
 
 ## Latest Completed Round
 
-Round 95: Monitor Cache Redis operations.
+Round 96: Monitor Version live runtime metadata.
 
 ## Closed
 
-- Replaced seed/in-memory cache keys and Admin fixtures with Redis-backed
-  namespace/key listing.
-- Added safe cache value preview with JSON sensitive-field redaction and
-  secret-key redaction.
-- Added dry-run prefix clear plus confirmed key and prefix deletion through
-  API/SDK/Admin/OpenAPI.
-- Added Redis smoke coverage and Admin deploy stale-bundle markers.
+- Replaced the static Admin Version fixture with live SDK/API data.
+- Added runtime/deployment fields to version DTOs and SDK types.
+- Added fixed deploy-script commit/build/deployment metadata injection.
+- Added API smoke, Admin smoke and deploy bundle guards for the version page.
 
 ## Still Open
 

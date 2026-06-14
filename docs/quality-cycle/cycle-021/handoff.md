@@ -47,7 +47,7 @@ packages and OpenForge direct Prisma/migration/business-code writing.
 
 ## Current State
 
-Cycle-021 has completed 95 deployable stages.
+Cycle-021 has completed 96 deployable stages.
 
 - System/RBAC: notice, dept, post, menu, role, permission, user, dict, config
   and file loops are live.
@@ -79,15 +79,18 @@ Cycle-021 has completed 95 deployable stages.
   diagnostics, failed run-log detail, cron dispatch, worker claim and scheduler
   queue metrics are smoke-guarded. Monitor Cache now uses real Redis
   namespace/key scans, safe value previews, dry-run prefix clear and confirmed
-  key/prefix deletion instead of Admin fixtures or seed key arrays.
+  key/prefix deletion instead of Admin fixtures or seed key arrays. Monitor
+  Version now uses live runtime/deployment metadata instead of an Admin
+  fixture page.
 - OpenForge: CLI/core safety remains no-write by default; Admin now has a live
   safe workbench for status, doctor, plan, diff, check, manifest list and
   apply/rollback dry-run, dry-run confirmation and manifest preview/detail.
 
-Latest runtime stage: Round 95 Monitor Cache Redis operations. It replaces the
-old seed/fixture cache view with Redis-backed namespace and key listing, safe
-value preview redaction, dry-run prefix clear, confirmed key/prefix deletion,
-API/SDK/Admin/OpenAPI visibility and smoke/deploy guards.
+Latest runtime stage: Round 96 Monitor Version live runtime metadata. It moves
+the Admin Version page from `createVersionInfoFixture()` to the live SDK
+version API, adds runtime/deployment fields, injects commit/build metadata in
+the fixed deploy script and guards the API/Admin surface through smoke/deploy
+checks.
 
 ## Next Queue
 

@@ -74,6 +74,33 @@ export class VersionInfoDto {
 
   @ApiProperty()
   nodeVersion!: string;
+
+  @ApiProperty()
+  runtime!: string;
+
+  @ApiProperty()
+  environment!: string;
+
+  @ApiProperty()
+  platform!: string;
+
+  @ApiProperty()
+  arch!: string;
+
+  @ApiProperty()
+  processId!: number;
+
+  @ApiProperty()
+  uptimeSeconds!: number;
+
+  @ApiProperty()
+  startedAt!: string;
+
+  @ApiProperty()
+  timezone!: string;
+
+  @ApiProperty()
+  deploymentId!: string;
 }
 
 export class QueueStatusDto {

@@ -180,7 +180,11 @@ describe('registry fixtures', () => {
     expect(JSON.stringify(createSystemStatusFixture())).not.toContain(
       'DATABASE_URL',
     );
-    expect(createVersionInfoFixture().name).toBe('opencore-api');
+    expect(createVersionInfoFixture()).toMatchObject({
+      name: 'opencore-api',
+      runtime: 'node',
+      deploymentId: 'fixture',
+    });
     expect(createQueueStatusFixture().queues[0].readOnly).toBe(true);
     expect(
       createQueueStatusFixture().queues.map((queue) => queue.name),

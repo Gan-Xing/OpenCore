@@ -125,6 +125,7 @@ import {
   type QueueStatusList,
   type SchedulerDispatchResultSummary,
   type SchedulerWorkerResultSummary,
+  type VersionInfoSummary,
   type SystemNoticeInboxQueryRequest,
   type SystemNoticeInboxSummary,
   type SystemNoticeDeliveryQueryRequest,
@@ -425,6 +426,10 @@ export function deleteOpenCorePermission(
 
 export function getOpenCoreSystemStatus(): Promise<SystemStatusSummary> {
   return monitoringClient.getStatus(getRequiredAdminToken());
+}
+
+export function getOpenCoreVersionInfo(): Promise<VersionInfoSummary> {
+  return monitoringClient.getVersion(getRequiredAdminToken());
 }
 
 export function listOpenCoreMonitorQueues(): Promise<QueueStatusList> {

@@ -10910,9 +10910,33 @@
           "version": { "type": "string" },
           "commit": { "type": "string" },
           "buildTime": { "type": "string" },
-          "nodeVersion": { "type": "string" }
+          "nodeVersion": { "type": "string" },
+          "runtime": { "type": "string" },
+          "environment": { "type": "string" },
+          "platform": { "type": "string" },
+          "arch": { "type": "string" },
+          "processId": { "type": "number" },
+          "uptimeSeconds": { "type": "number" },
+          "startedAt": { "type": "string" },
+          "timezone": { "type": "string" },
+          "deploymentId": { "type": "string" }
         },
-        "required": ["name", "version", "commit", "buildTime", "nodeVersion"]
+        "required": [
+          "name",
+          "version",
+          "commit",
+          "buildTime",
+          "nodeVersion",
+          "runtime",
+          "environment",
+          "platform",
+          "arch",
+          "processId",
+          "uptimeSeconds",
+          "startedAt",
+          "timezone",
+          "deploymentId"
+        ]
       },
       "QueueStatusDto": {
         "type": "object",

@@ -57,6 +57,7 @@ try {
     assertOpenApiPath(openApi, '/api/monitor/jobs/dispatch-due');
     assertOpenApiPath(openApi, '/api/monitor/jobs/worker/claim');
     assertOpenApiPath(openApi, '/api/monitor/queues');
+    assertOpenApiPath(openApi, '/api/monitor/version');
     assertOpenApiPath(openApi, '/api/monitor/cache/names');
     assertOpenApiPath(openApi, '/api/monitor/cache/value');
     assertOpenApiPath(openApi, '/api/monitor/cache/key/delete');
@@ -65,6 +66,7 @@ try {
   const loginResponse = await login();
   token = assertString(loginResponse.accessToken, 'login accessToken');
 
+  await verifyMonitorVersion();
   await seedRedisSmokeCache();
   await verifyMonitorCache();
 
@@ -382,12 +384,15 @@ try {
               'openapi.monitor-job-dispatch-path',
               'openapi.monitor-job-worker-path',
               'openapi.monitor-queues-path',
+              'openapi.monitor-version-path',
               'openapi.monitor-cache-names-path',
               'openapi.monitor-cache-value-path',
               'openapi.monitor-cache-key-delete-path',
             ]
           : []),
         'auth.login',
+        'monitor.version.live-runtime',
+        'monitor.version.no-secret-leak',
         'monitor.cache.redis-list',
         'monitor.cache.names',
         'monitor.cache.safe-value-preview',
@@ -454,6 +459,30 @@ async function seedRedisSmokeCache() {
     300,
   );
   await redisClient.set(cacheSmokeSecretKey, 'must-not-leak', 'EX', 300);
+}
+
+async function verifyMonitorVersion() {
+  const versionInfo = await apiRequest('/monitor/version');
+  assertEqual(versionInfo.name, 'opencore-api', 'monitor version name');
+  assertString(versionInfo.version, 'monitor version app version');
+  assertString(versionInfo.commit, 'monitor version commit');
+  assertString(versionInfo.buildTime, 'monitor version build time');
+  assertString(versionInfo.nodeVersion, 'monitor version node version');
+  assertEqual(versionInfo.runtime, 'node', 'monitor version runtime');
+  assertString(versionInfo.environment, 'monitor version environment');
+  assertString(versionInfo.platform, 'monitor version platform');
+  assertString(versionInfo.arch, 'monitor version arch');
+  assertNumberAtLeast(versionInfo.processId, 1, 'monitor version process id');
+  assertNumberAtLeast(versionInfo.uptimeSeconds, 0, 'monitor version uptime');
+  assertString(versionInfo.startedAt, 'monitor version started at');
+  assertString(versionInfo.timezone, 'monitor version timezone');
+  assertString(versionInfo.deploymentId, 'monitor version deployment id');
+
+  const payload = JSON.stringify(versionInfo);
+  assertNotIncludes(payload, 'DATABASE_URL', 'monitor version payload');
+  assertNotIncludes(payload, 'AUTH_TOKEN_SECRET', 'monitor version payload');
+  assertNotIncludes(payload, 'postgresql://', 'monitor version payload');
+  assertNotIncludes(payload, 'redis://', 'monitor version payload');
 }
 
 async function cleanupRedisSmokeCache() {
@@ -718,6 +747,12 @@ function assertIncludes(values, expected, label) {
         values,
       )}`,
     );
+  }
+}
+
+function assertNotIncludes(value, expected, label) {
+  if (value.includes(expected)) {
+    throw new Error(`Expected ${label} not to include ${formatBody(expected)}`);
   }
 }
 

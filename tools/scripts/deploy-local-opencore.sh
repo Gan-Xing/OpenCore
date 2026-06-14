@@ -18,6 +18,17 @@ API_PID_FILE="$RUN_DIR/opencore-api.pid"
 ADMIN_PID_FILE="$RUN_DIR/opencore-admin.pid"
 API_LOG_FILE="$RUN_DIR/opencore-api.log"
 ADMIN_LOG_FILE="$RUN_DIR/opencore-admin.log"
+DEPLOY_GIT_COMMIT="$(git -C "$ROOT_DIR" rev-parse --short HEAD 2>/dev/null || echo unknown)"
+DEPLOY_BUILD_TIME="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+DEPLOY_BUILD_STAMP="$(date -u '+%Y%m%dT%H%M%SZ')"
+DEPLOY_APP_VERSION="$(
+  node - "$ROOT_DIR/package.json" <<'NODE' 2>/dev/null || echo "0.0.0"
+const { readFileSync } = require('node:fs');
+const packageJson = JSON.parse(readFileSync(process.argv[2], 'utf8'));
+process.stdout.write(String(packageJson.version || '0.0.0'));
+NODE
+)"
+DEPLOYMENT_ID="${DEPLOY_GIT_COMMIT}-${DEPLOY_BUILD_STAMP}"
 
 mkdir -p "$RUN_DIR"
 
@@ -246,6 +257,31 @@ verify_admin_bundle_api_base_url() {
     "$ROOT_DIR/apps/admin/dist" >/dev/null; then
     echo "Admin bundle does not include live Redis cache monitor controls." >&2
     echo "Refusing to deploy a stale frontend cache page." >&2
+    exit 1
+  fi
+
+  if ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Live runtime version" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "OpenCore runtime" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Deployment ID" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Reload version info" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null; then
+    echo "Admin bundle does not include live runtime version metadata controls." >&2
+    echo "Refusing to deploy a stale frontend monitor version page." >&2
     exit 1
   fi
 
@@ -1038,6 +1074,10 @@ echo "Starting OpenCore API on fixed port $API_PORT"
   append_deploy_cors_origins
   export PORT="$API_PORT"
   export NODE_ENV="${OPENCORE_DEPLOY_NODE_ENV:-${NODE_ENV:-development}}"
+  export OPENCORE_APP_VERSION="$DEPLOY_APP_VERSION"
+  export OPENCORE_GIT_COMMIT="$DEPLOY_GIT_COMMIT"
+  export OPENCORE_BUILD_TIME="$DEPLOY_BUILD_TIME"
+  export OPENCORE_DEPLOYMENT_ID="$DEPLOYMENT_ID"
   setsid node dist/apps/api/main.js </dev/null >>"$API_LOG_FILE" 2>&1 &
   echo "$!" > "$API_PID_FILE"
 )

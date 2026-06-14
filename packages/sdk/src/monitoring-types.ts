@@ -18,6 +18,15 @@ export type VersionInfoSummary = {
   commit: string;
   buildTime: string;
   nodeVersion: string;
+  runtime: string;
+  environment: string;
+  platform: string;
+  arch: string;
+  processId: number;
+  uptimeSeconds: number;
+  startedAt: string;
+  timezone: string;
+  deploymentId: string;
 };
 
 export type QueueStatusSummary = {

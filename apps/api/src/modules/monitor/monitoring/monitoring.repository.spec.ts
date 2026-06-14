@@ -4,10 +4,20 @@ import type { RuntimeDiagnostics } from './runtime-diagnostics.service';
 describe('MonitoringRepository', () => {
   const originalDatabaseUrl = process.env.DATABASE_URL;
   const originalAuthTokenSecret = process.env.AUTH_TOKEN_SECRET;
+  const originalGitCommit = process.env.OPENCORE_GIT_COMMIT;
+  const originalBuildTime = process.env.OPENCORE_BUILD_TIME;
+  const originalAppVersion = process.env.OPENCORE_APP_VERSION;
+  const originalDeploymentId = process.env.OPENCORE_DEPLOYMENT_ID;
+  const originalNodeEnv = process.env.NODE_ENV;
 
   afterEach(() => {
     restoreEnv('DATABASE_URL', originalDatabaseUrl);
     restoreEnv('AUTH_TOKEN_SECRET', originalAuthTokenSecret);
+    restoreEnv('OPENCORE_GIT_COMMIT', originalGitCommit);
+    restoreEnv('OPENCORE_BUILD_TIME', originalBuildTime);
+    restoreEnv('OPENCORE_APP_VERSION', originalAppVersion);
+    restoreEnv('OPENCORE_DEPLOYMENT_ID', originalDeploymentId);
+    restoreEnv('NODE_ENV', originalNodeEnv);
   });
 
   it('returns status checks without leaking sensitive configuration', async () => {
@@ -55,13 +65,33 @@ describe('MonitoringRepository', () => {
   });
 
   it('returns safe version metadata', () => {
+    process.env.OPENCORE_GIT_COMMIT = 'abc1234';
+    process.env.OPENCORE_BUILD_TIME = '2026-06-14T00:00:00Z';
+    process.env.OPENCORE_APP_VERSION = '1.2.3';
+    process.env.OPENCORE_DEPLOYMENT_ID = 'abc1234-20260614T000000Z';
+    process.env.NODE_ENV = 'production';
     const repository = new MonitoringRepository(createFakeDiagnostics());
+    const payload = JSON.stringify(repository.getVersionInfo());
 
     expect(repository.getVersionInfo()).toMatchObject({
       name: 'opencore-api',
-      version: expect.any(String),
+      version: '1.2.3',
+      commit: 'abc1234',
+      buildTime: '2026-06-14T00:00:00Z',
       nodeVersion: expect.stringMatching(/^v/),
+      runtime: 'node',
+      environment: 'production',
+      platform: expect.any(String),
+      arch: expect.any(String),
+      processId: expect.any(Number),
+      uptimeSeconds: expect.any(Number),
+      startedAt: expect.any(String),
+      timezone: expect.any(String),
+      deploymentId: 'abc1234-20260614T000000Z',
     });
+    expect(payload).not.toContain('DATABASE_URL');
+    expect(payload).not.toContain('AUTH_TOKEN_SECRET');
+    expect(payload).not.toContain('postgresql://');
   });
 });
 

@@ -24,6 +24,15 @@ export type VersionInfo = {
   commit: string;
   buildTime: string;
   nodeVersion: string;
+  runtime: string;
+  environment: string;
+  platform: string;
+  arch: string;
+  processId: number;
+  uptimeSeconds: number;
+  startedAt: string;
+  timezone: string;
+  deploymentId: string;
 };
 
 export type QueueStatus = {
@@ -36,6 +45,8 @@ export type QueueStatus = {
   paused: boolean;
   readOnly: true;
 };
+
+const processStartedAt = new Date().toISOString();
 
 @Injectable()
 export class MonitorRepository {
@@ -86,12 +97,34 @@ export class MonitorRepository {
   }
 
   getVersionInfo(): VersionInfo {
+    const commit =
+      process.env.OPENCORE_GIT_COMMIT ?? process.env.GIT_COMMIT ?? 'unknown';
+    const buildTime =
+      process.env.OPENCORE_BUILD_TIME ?? process.env.BUILD_TIME ?? 'unknown';
+    const deploymentId =
+      process.env.OPENCORE_DEPLOYMENT_ID ??
+      (commit !== 'unknown' || buildTime !== 'unknown'
+        ? `${commit}:${buildTime}`
+        : 'unknown');
+
     return {
       name: 'opencore-api',
-      version: process.env.npm_package_version ?? '0.0.0',
-      commit: process.env.GIT_COMMIT ?? 'unknown',
-      buildTime: process.env.BUILD_TIME ?? 'unknown',
+      version:
+        process.env.OPENCORE_APP_VERSION ??
+        process.env.npm_package_version ??
+        '0.0.0',
+      commit,
+      buildTime,
       nodeVersion: process.version,
+      runtime: 'node',
+      environment: process.env.NODE_ENV ?? 'development',
+      platform: process.platform,
+      arch: process.arch,
+      processId: process.pid,
+      uptimeSeconds: Math.floor(process.uptime()),
+      startedAt: processStartedAt,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'UTC',
+      deploymentId,
     };
   }
 

@@ -19,7 +19,7 @@ active debt and decisions that change future execution.
 
 ## Runtime State
 
-Cycle-021 has completed 95 deployable stages across
+Cycle-021 has completed 96 deployable stages across
 System/Security/Monitor/Integration/Tools foundations. Round 91 added
 token/session blacklist maintenance with registered-token allowlist
 enforcement, expired-session cleanup, API/SDK/Admin/OpenAPI visibility, smoke
@@ -32,7 +32,9 @@ Round 94 added a managed HTTP JSON KMS adapter with v3 secret-vault envelopes
 and remote data-key wrap/unwrap while preserving env as the default provider.
 Round 95 replaced the Monitor Cache seed/fixture surface with Redis-backed
 namespace/key scans, safe value previews, dry-run prefix clear and confirmed
-key/prefix deletion.
+key/prefix deletion. Round 96 replaced the Monitor Version fixture page with
+live runtime/deployment metadata and fixed deploy-script commit/build
+injection.
 
 ## Guard Register
 
@@ -79,6 +81,10 @@ key/prefix deletion.
   confirmed key deletion and confirmed prefix clear. Admin smoke rejects
   `createOperationsFixtures()` on the Cache page and deploy checks live Redis
   cache bundle markers.
+- Monitor version: smoke verifies live runtime fields and no secret leakage
+  from `/monitor/version`; Admin smoke rejects `createVersionInfoFixture()` on
+  the Version page, and deploy checks runtime metadata bundle markers plus
+  injected commit/build/deployment env vars.
 - OpenForge: smoke covers status, doctor, plan, diff, check, apply dry-run,
   manifest list, manifest preview, rollback dry-run, dry-run confirmation
   guards, write-intent rejection and unsafe schema/config/manifest guards.

@@ -52,6 +52,7 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   registry visibility, registered handler diagnostics, cron dispatch, worker
   claim and scheduler queue metrics; Monitor Cache has Redis-backed
   namespace/key operations with safe value preview and confirmed deletion;
+  Monitor Version exposes live runtime/deployment metadata instead of fixtures;
   OpenForge has a live safe planning/dry-run workbench with confirmation and
   manifest preview/detail.
 
@@ -136,6 +137,10 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
 - Round 95: Monitor Cache is a real Redis operator surface, not fixtures:
   namespace/key listing, safe value preview redaction, dry-run prefix clear and
   confirmed key/prefix deletion are exposed through API/SDK/Admin and smoke.
+- Round 96: Monitor Version is a live runtime/deployment surface, not a static
+  fixture page: `/monitor/version` exposes process/runtime/deployment metadata,
+  the fixed deploy script injects commit/build identifiers and Admin/smoke
+  guards reject fixture-backed or stale version bundles.
 
 ## Explicit Non-Claims
 
