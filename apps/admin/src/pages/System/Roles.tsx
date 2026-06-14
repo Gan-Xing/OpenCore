@@ -14,17 +14,15 @@ import {
   ProTable,
   type ProColumns,
 } from '@ant-design/pro-components';
-import {
-  createPermissionSummariesFromRegistry,
-  createSystemDeptFixtures,
-  type MenuSummary,
-  type PermissionSummary,
-  type RoleDataScope,
-  type RoleSummary,
-  type SystemDeptSummary,
-  type SystemDeptTreeSummary,
-  type UserOptionSummary,
-  type UserSummary,
+import type {
+  MenuSummary,
+  PermissionSummary,
+  RoleDataScope,
+  RoleSummary,
+  SystemDeptSummary,
+  SystemDeptTreeSummary,
+  UserOptionSummary,
+  UserSummary,
 } from '@opencore/sdk';
 import {
   Alert,
@@ -96,40 +94,6 @@ type UserTransferItem = {
   description: string;
 };
 
-const fallbackPermissionRows = createPermissionSummariesFromRegistry();
-const allPermissionCodes = fallbackPermissionRows.map(
-  (permission) => permission.code,
-);
-const fallbackRows: RoleSummary[] = [
-  {
-    id: 'role_admin',
-    code: 'admin',
-    name: 'Administrator',
-    enabled: true,
-    permissionCodes: allPermissionCodes,
-    system: true,
-    dataScope: 'all',
-    dataScopeDeptIds: [],
-  },
-  {
-    id: 'role_viewer',
-    code: 'viewer',
-    name: 'Viewer',
-    enabled: true,
-    permissionCodes: [
-      'core:dashboard:read',
-      'tool:openapi:read',
-      'core:user:read',
-      'core:role:read',
-      'core:permission:read',
-      'core:menu:read',
-    ],
-    system: true,
-    dataScope: 'self',
-    dataScopeDeptIds: [],
-  },
-];
-const fallbackDeptRows = flattenDeptTree(createSystemDeptFixtures());
 const dataScopeLabels: Record<RoleDataScope, string> = {
   all: 'All data',
   custom: 'Custom departments',
@@ -332,13 +296,12 @@ function formatRevokedSessions(count: number | undefined): string {
 
 export default function RolesPage() {
   const [form] = Form.useForm<RoleFormValues>();
-  const [rows, setRows] = useState<readonly RoleSummary[]>(fallbackRows);
+  const [rows, setRows] = useState<readonly RoleSummary[]>([]);
   const [permissionRows, setPermissionRows] = useState<
     readonly PermissionSummary[]
-  >(fallbackPermissionRows);
+  >([]);
   const [menuRows, setMenuRows] = useState<readonly MenuSummary[]>([]);
-  const [deptRows, setDeptRows] =
-    useState<readonly SystemDeptSummary[]>(fallbackDeptRows);
+  const [deptRows, setDeptRows] = useState<readonly SystemDeptSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
   const [selectedDetail, setSelectedDetail] = useState<RoleSummary>();
@@ -398,12 +361,22 @@ export default function RolesPage() {
       setMenuRows(menus);
       setLoadError(undefined);
     } catch (error: unknown) {
-      setRows(fallbackRows);
-      setDeptRows(fallbackDeptRows);
-      setPermissionRows(fallbackPermissionRows);
+      setRows([]);
+      setDeptRows([]);
+      setPermissionRows([]);
       setMenuRows([]);
+      setSelectedDetail(undefined);
+      setEditingRole(undefined);
+      setAssigningMenuRole(undefined);
+      setAssigningUserRole(undefined);
+      setCheckedMenuKeys([]);
+      setAssignedUserIds([]);
+      setUserTransferItems([]);
+      setFormOpen(false);
+      setMenuAssignmentOpen(false);
+      setUserAssignmentOpen(false);
       setLoadError(
-        error instanceof Error ? error.message : 'Unable to load roles.',
+        error instanceof Error ? error.message : 'Unable to load live roles.',
       );
     } finally {
       setLoading(false);
@@ -448,8 +421,13 @@ export default function RolesPage() {
   const openDetail = async (record: RoleSummary) => {
     try {
       setSelectedDetail(await getOpenCoreRole(record.code));
-    } catch (_error) {
-      setSelectedDetail(record);
+    } catch (error: unknown) {
+      setSelectedDetail(undefined);
+      message.error(
+        error instanceof Error
+          ? error.message
+          : 'Unable to load live role detail.',
+      );
     }
   };
 
@@ -752,8 +730,8 @@ export default function RolesPage() {
       {loadError ? (
         <Alert
           showIcon
-          type="warning"
-          message="Using fallback role snapshot"
+          type="error"
+          message="Unable to load live roles"
           description={loadError}
           style={{ marginBlockEnd: 16 }}
         />

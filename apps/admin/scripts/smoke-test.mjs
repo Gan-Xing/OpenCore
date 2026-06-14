@@ -1439,6 +1439,14 @@ if (
 }
 
 if (
+  rolesPage.includes('createPermissionSummariesFromRegistry') ||
+  rolesPage.includes('createSystemDeptFixtures') ||
+  rolesPage.includes('fallbackRows') ||
+  rolesPage.includes('Using fallback role snapshot') ||
+  rolesPage.includes('setRows(fallbackRows)') ||
+  rolesPage.includes('setSelectedDetail(record)') ||
+  !rolesPage.includes('Unable to load live roles') ||
+  !rolesPage.includes('Unable to load live role detail.') ||
   !rolesPage.includes('listOpenCoreRoles') ||
   !rolesPage.includes('getOpenCoreRole') ||
   !rolesPage.includes('getOpenCoreRoleMenuAssignment') ||
@@ -1467,7 +1475,7 @@ if (
   !rolesPage.includes('rows={filteredRows}')
 ) {
   throw new Error(
-    'Roles page must use live SDK CRUD with bounded filtering and current-page export.',
+    'Roles page must use live-only SDK CRUD with bounded filtering, assignments and current-page export without registry fixture fallback.',
   );
 }
 
@@ -1799,7 +1807,9 @@ if (
   !providersPage.includes('getOpenCoreIntegrationProviderHealthAudit') ||
   !providersPage.includes('getOpenCoreIntegrationProviderDiagnostics') ||
   !providersPage.includes('Live Integration Health Audit') ||
-  !providersPage.includes('Unable to load live Integration Health Audit data') ||
+  !providersPage.includes(
+    'Unable to load live Integration Health Audit data',
+  ) ||
   !providersPage.includes('Signed callback contract') ||
   !providersPage.includes('Provider Diagnostics') ||
   !providersPage.includes('selectedDiagnostics?.readiness') ||
@@ -1847,7 +1857,9 @@ if (
   !jobsPage.includes('Registered handlers') ||
   !jobsPage.includes('Handler Key') ||
   !jobsPage.includes('Execution Mode') ||
-  !jobsPage.includes('registered handler execution + retry/timeout diagnostics') ||
+  !jobsPage.includes(
+    'registered handler execution + retry/timeout diagnostics',
+  ) ||
   jobsPage.includes('createOperationsFixtures') ||
   jobsPage.includes('Using fallback job fixtures')
 ) {

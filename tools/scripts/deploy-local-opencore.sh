@@ -354,6 +354,56 @@ verify_admin_bundle_api_base_url() {
     exit 1
   fi
 
+  if grep \
+    --fixed-strings \
+    "createPermissionSummariesFromRegistry" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Roles.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "createSystemDeptFixtures" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Roles.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "fallbackRows" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Roles.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "Using fallback role snapshot" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Roles.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "setSelectedDetail(record)" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Roles.tsx" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Unable to load live roles" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Unable to load live role detail." \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Role menus updated." \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Role users updated." \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "core-roles" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null; then
+    echo "Admin Roles page must use live-only data and role assignment controls without fixture fallback." >&2
+    echo "Refusing to deploy a stale or fixture-backed Roles frontend page." >&2
+    exit 1
+  fi
+
   if ! grep -R \
     --fixed-strings \
     --include='*.js' \

@@ -84,7 +84,11 @@ catalog/detail/custom CRUD/export live-only through SDK calls and blocks stale
 Permissions bundles through a dedicated permission smoke plus Admin/deploy
 guards. Round 118 removed the System Menus Admin registry fixture fallback,
 keeps tree/detail CRUD/export and permission options live-only through SDK
-calls and blocks stale Menus bundles through Admin/deploy guards.
+calls and blocks stale Menus bundles through Admin/deploy guards. Round 119
+removed the System Roles Admin permission/dept fixture fallback, stale detail
+fallback and fallback UI, keeps role CRUD, menu/user assignment, status
+changes, data-scope dept selection and current-page export live-only through
+SDK calls and blocks stale Roles bundles through Admin/deploy guards.
 
 ## Guard Register
 
@@ -140,6 +144,12 @@ calls and blocks stale Menus bundles through Admin/deploy guards.
   `createMenuSummariesFromRegistry`, `createPermissionSummariesFromRegistry`
   and fallback copy on the Menus page and require live menu management markers
   in the built bundle.
+- System roles: smoke covers role menu assignment, user assignment, status
+  changes, update/delete session revocation and relogin refresh. Admin/deploy
+  guards reject `createPermissionSummariesFromRegistry`,
+  `createSystemDeptFixtures`, `fallbackRows`, fallback copy and stale detail
+  fallback on the Roles page, and require live role management markers in the
+  built bundle.
 - Config/secret: smoke covers feature flags, audience rules, environment
   overrides, legacy vault envelope deserialization, secret version history,
   explicit secret rotation, vault key rotation, managed KMS provider status,

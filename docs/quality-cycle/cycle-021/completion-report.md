@@ -4,14 +4,17 @@ Date: 2026-06-14
 
 ## Latest Completed Round
 
-Round 118: System Menus Admin live-only tree/detail CRUD/export operations.
+Round 119: System Roles Admin live-only CRUD, assignment, status and export
+operations.
 
 ## Closed
 
-- Removed the System Menus Admin registry fixture fallback path.
-- Kept menu tree/detail create/update/delete/export and permission options
+- Removed the System Roles Admin permission/dept fixture fallback path, stale
+  detail fallback and fallback UI.
+- Kept role list/detail/create/update/delete, menu assignment, user assignment,
+  status changes, data-scope dept selection and current-page export
   backed by live SDK calls only.
-- Added Admin/deploy guards against stale fixture-backed Menus bundles.
+- Added Admin/deploy guards against stale fixture-backed Roles bundles.
 
 ## Still Open
 
@@ -21,5 +24,5 @@ Round 118: System Menus Admin live-only tree/detail CRUD/export operations.
   designer and big-data async export are outside the admitted surface.
 - OpenForge direct schema/migration/business code writes remain outside the
   admitted surface.
-- Next round should continue the remaining admitted P0/P1 foundation queue by
-  dependency value.
+- System Users, Config, Notices and Files Admin fallback closure remain in the
+  finite seven-page queue.

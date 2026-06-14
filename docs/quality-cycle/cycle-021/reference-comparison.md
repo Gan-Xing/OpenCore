@@ -87,22 +87,22 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
 This comparison now includes acceptance state, not only whether RuoYi/Yudao has
 an analogous feature.
 
-| Capability | RuoYi/Yudao counterpart | OpenCore API status | OpenCore Admin status | Live-only | Public API smoke | Public Admin smoke | Fixture fallback | Still needed |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| System Users | System user management | live | fixture-backed | no | yes | no | yes | Remove Admin fallback and add public Admin smoke. |
-| System Roles | System role management | live | fixture-backed | no | yes | no | yes | Remove Admin fallback and add public Admin smoke. |
-| System Permissions | System permission catalog | live | live-only | yes | yes | yes | no | Keep public smoke and deploy guard current. |
-| System Posts | System post management | live | live-only | yes | yes | yes | no | Keep public smoke and deploy guard current. |
-| System Files | Infra file service | live | fixture-backed | no | yes | no | yes | Remove Admin fallback and add public Admin smoke. |
-| System Config | System/config management | live | fixture-backed | no | yes | no | yes | Remove Admin fallback; preserve vault/KMS smoke. |
-| System Notices | System notices | live | fixture-backed | no | yes | no | yes | Remove Admin fallback; keep delivery/provider smoke. |
-| Scheduler/Monitor | Job, queue, status, cache, version | live | live-only | yes | yes | yes | no | Keep admitted scheduler/monitor scope guarded. |
-| Integration | Provider health, OAuth, Mail/SMS, design pages | live | live-only for admitted scope | yes | yes | yes | no | Real payment/billing/provider expansion stays out of scope. |
-| Online Users | Online sessions | live | live-only | yes | yes | yes | no | None. |
-| OAuth | OAuth token inventory | live | live-only | yes | yes | yes | no | Full SSO provider flow remains out of scope. |
-| Security Logs | Login and operation logs | live | live-only | yes | yes | yes | no | Historical GeoIP backfill remains out of scope. |
-| Departments | Organization/dept management | live | live-only | yes | yes | yes | no | None. |
-| Dicts | Dictionary management | live | live-only | yes | yes | yes | no | None. |
+| Capability         | RuoYi/Yudao counterpart                        | OpenCore API status | OpenCore Admin status        | Live-only | Public API smoke | Public Admin smoke | Fixture fallback | Still needed                                                |
+| ------------------ | ---------------------------------------------- | ------------------- | ---------------------------- | --------- | ---------------- | ------------------ | ---------------- | ----------------------------------------------------------- |
+| System Users       | System user management                         | live                | fixture-backed               | no        | yes              | no                 | yes              | Remove Admin fallback and add public Admin smoke.           |
+| System Roles       | System role management                         | live                | live-only                    | yes       | yes              | yes                | no               | Keep guard and public smoke current.                        |
+| System Permissions | System permission catalog                      | live                | live-only                    | yes       | yes              | yes                | no               | Keep public smoke and deploy guard current.                 |
+| System Posts       | System post management                         | live                | live-only                    | yes       | yes              | yes                | no               | Keep public smoke and deploy guard current.                 |
+| System Files       | Infra file service                             | live                | fixture-backed               | no        | yes              | no                 | yes              | Remove Admin fallback and add public Admin smoke.           |
+| System Config      | System/config management                       | live                | fixture-backed               | no        | yes              | no                 | yes              | Remove Admin fallback; preserve vault/KMS smoke.            |
+| System Notices     | System notices                                 | live                | fixture-backed               | no        | yes              | no                 | yes              | Remove Admin fallback; keep delivery/provider smoke.        |
+| Scheduler/Monitor  | Job, queue, status, cache, version             | live                | live-only                    | yes       | yes              | yes                | no               | Keep admitted scheduler/monitor scope guarded.              |
+| Integration        | Provider health, OAuth, Mail/SMS, design pages | live                | live-only for admitted scope | yes       | yes              | yes                | no               | Real payment/billing/provider expansion stays out of scope. |
+| Online Users       | Online sessions                                | live                | live-only                    | yes       | yes              | yes                | no               | None.                                                       |
+| OAuth              | OAuth token inventory                          | live                | live-only                    | yes       | yes              | yes                | no               | Full SSO provider flow remains out of scope.                |
+| Security Logs      | Login and operation logs                       | live                | live-only                    | yes       | yes              | yes                | no               | Historical GeoIP backfill remains out of scope.             |
+| Departments        | Organization/dept management                   | live                | live-only                    | yes       | yes              | yes                | no               | None.                                                       |
+| Dicts              | Dictionary management                          | live                | live-only                    | yes       | yes              | yes                | no               | None.                                                       |
 
 ## Recent Decisions
 
