@@ -8,6 +8,7 @@ import {
   createToolingClient,
   type AssignRoleMenusRequest,
   type AssignRoleUsersRequest,
+  type AssignTodoRequest,
   type AssignUserRolesRequest,
   type AuditLogBatchMutationSummary,
   type AuditLogCleanSummary,
@@ -45,6 +46,7 @@ import {
   type CollaborationSummary,
   type CreateMessageRequest,
   type CreateNoticeRequest,
+  type CreateTodoRequest,
   type DeleteCacheKeyRequest,
   type OpenForgeApplyDryRunRequest,
   type OpenForgeApplyDryRunSummary,
@@ -165,6 +167,9 @@ import {
   type SystemPostOrderMutationSummary,
   type SystemPostQueryRequest,
   type SystemPostSummary,
+  type TodoActionRequest,
+  type TodoQueryRequest,
+  type TodoSummary,
   type ResetUserPasswordRequest,
   type ScheduleOutboxRequest,
   type SetUserStatusRequest,
@@ -282,6 +287,48 @@ export function publishOpenCoreNotice(id: string): Promise<NoticeSummary> {
 
 export function archiveOpenCoreNotice(id: string): Promise<NoticeSummary> {
   return collaborationClient.archiveNotice(getRequiredAdminToken(), id);
+}
+
+export async function listOpenCoreTodos(
+  query?: TodoQueryRequest,
+): Promise<TodoSummary[]> {
+  const page = await collaborationClient.listTodos(getRequiredAdminToken(), {
+    page: 1,
+    pageSize: 100,
+    ...query,
+  });
+  return [...page.items];
+}
+
+export function getOpenCoreTodo(id: string): Promise<TodoSummary> {
+  return collaborationClient.getTodo(getRequiredAdminToken(), id);
+}
+
+export function createOpenCoreTodo(
+  body: CreateTodoRequest,
+): Promise<TodoSummary> {
+  return collaborationClient.createTodo(getRequiredAdminToken(), body);
+}
+
+export function assignOpenCoreTodo(
+  id: string,
+  body: AssignTodoRequest,
+): Promise<TodoSummary> {
+  return collaborationClient.assignTodo(getRequiredAdminToken(), id, body);
+}
+
+export function completeOpenCoreTodo(
+  id: string,
+  body: TodoActionRequest,
+): Promise<TodoSummary> {
+  return collaborationClient.completeTodo(getRequiredAdminToken(), id, body);
+}
+
+export function cancelOpenCoreTodo(
+  id: string,
+  body: TodoActionRequest,
+): Promise<TodoSummary> {
+  return collaborationClient.cancelTodo(getRequiredAdminToken(), id, body);
 }
 
 export function getOpenCoreOpenForgeStatus(): Promise<OpenForgeStatusSummary> {

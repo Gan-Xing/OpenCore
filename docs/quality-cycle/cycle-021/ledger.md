@@ -36,3 +36,4 @@ This ledger records state transitions only. Git log keeps commit hashes.
 | 101   | Integration SMS  | SMS Admin moved from fixtures to live template/outbox operations.             | Admin smoke and deploy bundle markers cover live SMS page.       |
 | 102   | Collaboration    | Messages Admin moved from fixtures to live lifecycle operations.              | Message smoke plus Admin/deploy guards cover live Messages page. |
 | 103   | Collaboration    | Notices Admin moved from fixtures to live lifecycle operations.               | Notice smoke plus Admin/deploy guards cover live Notices page.   |
+| 104   | Collaboration    | Todos Admin moved from fixtures to live lifecycle operations.                 | Todo smoke plus Admin/deploy guards cover live Todos page.       |

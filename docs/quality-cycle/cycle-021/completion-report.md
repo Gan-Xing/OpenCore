@@ -4,16 +4,16 @@ Date: 2026-06-14
 
 ## Latest Completed Round
 
-Round 103: Collaboration Notices live operations.
+Round 104: Collaboration Todos live operations.
 
 ## Closed
 
-- Replaced the fixture-backed Notices Admin page with live API/SDK list/detail.
-- Added create, publish and archive controls with smoke coverage.
-- Added Admin smoke and deploy guards for the live Notices page.
+- Replaced the fixture-backed Todos Admin page with live API/SDK list/detail.
+- Added create, assign, complete and cancel controls with smoke coverage.
+- Added Admin smoke and deploy guards for the live Todos page.
 
 ## Still Open
 
-- Collaboration Todos and Approval Lite still need live Admin operations.
+- Collaboration Approval Lite still needs live Admin operations.
 - OpenForge direct schema/migration/business code writes remain outside the
   admitted surface.

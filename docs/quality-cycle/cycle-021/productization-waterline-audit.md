@@ -33,7 +33,7 @@ failures have guards; and remaining omissions are explicit product boundaries.
 | `tool.openapi`        | Meets current | Live drift snapshot metadata uses API/SDK/Admin, OpenAPI contract fields and tool/deploy guards.     |
 | `tool.export`         | Meets current | Admin protocol/preview and shared current-page export buttons use the live protocol with row caps.   |
 | `OpenForge Admin`     | Meets current | Safe workbench, dry-run confirmation, write-intent rejection and manifest preview/detail.            |
-| `collaboration`       | Enhance       | Messages and Notices are live; Todos and Approval Lite Admin pages still need live operations.       |
+| `collaboration`       | Enhance       | Messages, Notices and Todos are live; Approval Lite Admin page still needs live operations.          |
 
 ## Closed Remediation
 
@@ -119,11 +119,13 @@ failures have guards; and remaining omissions are explicit product boundaries.
   Prisma migration, seed and smoke coverage.
 - Round 103 replaced the Collaboration Notices Admin fixture page with live
   list/detail, create, publish and archive controls.
+- Round 104 replaced the Collaboration Todos Admin fixture page with live
+  list/detail, create, assign, complete and cancel controls.
 
 ## Active Debt
 
-1. Collaboration Todos and Approval Lite Admin pages still need live API/SDK
-   operations instead of fixture rows.
+1. Collaboration Approval Lite Admin page still needs live API/SDK operations
+   instead of fixture rows.
 2. OpenForge direct schema/migration/business-code writes still require user
    admission.
 
@@ -178,6 +180,9 @@ failures have guards; and remaining omissions are explicit product boundaries.
   markers. Notice smoke covers seeded list/detail, create, publish,
   repeat-publish guard, archive and repeat-archive guard; Admin/deploy guards
   reject fixture-backed Notices source and require live notice operation
+  markers. Todo smoke covers seeded list/detail, create, assign, complete,
+  terminal-action guards, cancel and canceled-list filtering; Admin/deploy
+  guards reject fixture-backed Todos source and require live todo operation
   markers.
 - Config: runtime shape, environment override governance, secret-vault
   plaintext protection, legacy envelope deserialization, secret version

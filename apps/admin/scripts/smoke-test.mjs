@@ -789,6 +789,19 @@ if (
   !noticesPage.includes('collaboration:notice:create') ||
   !noticesPage.includes('collaboration:notice:update') ||
   !todosPage.includes('@opencore/sdk') ||
+  !todosPage.includes('listOpenCoreTodos') ||
+  !todosPage.includes('getOpenCoreTodo') ||
+  !todosPage.includes('createOpenCoreTodo') ||
+  !todosPage.includes('assignOpenCoreTodo') ||
+  !todosPage.includes('completeOpenCoreTodo') ||
+  !todosPage.includes('cancelOpenCoreTodo') ||
+  !todosPage.includes('Live todos') ||
+  !todosPage.includes('Create todo') ||
+  !todosPage.includes('Assign todo') ||
+  !todosPage.includes('Complete todo') ||
+  !todosPage.includes('Cancel todo') ||
+  !todosPage.includes('collaboration:todo:create') ||
+  !todosPage.includes('collaboration:todo:update') ||
   !approvalsPage.includes('@opencore/sdk') ||
   !jobsPage.includes('@opencore/sdk') ||
   !cachePage.includes('@opencore/sdk') ||
@@ -862,6 +875,21 @@ if (
 ) {
   throw new Error(
     'Collaboration Notices page must use live notice SDK APIs instead of static fixtures.',
+  );
+}
+
+if (
+  todosPage.includes('createCollaborationFixtures') ||
+  todosPage.includes('findTodoFixture') ||
+  !opencorePlatformService.includes('collaborationClient.listTodos') ||
+  !opencorePlatformService.includes('collaborationClient.getTodo') ||
+  !opencorePlatformService.includes('collaborationClient.createTodo') ||
+  !opencorePlatformService.includes('collaborationClient.assignTodo') ||
+  !opencorePlatformService.includes('collaborationClient.completeTodo') ||
+  !opencorePlatformService.includes('collaborationClient.cancelTodo')
+) {
+  throw new Error(
+    'Collaboration Todos page must use live todo SDK APIs instead of static fixtures.',
   );
 }
 
