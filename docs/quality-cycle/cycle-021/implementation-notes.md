@@ -77,7 +77,11 @@ fallback, keeps department tree/detail/order operations live-only through SDK
 calls and blocks stale Departments bundles through Admin smoke and deploy
 guards. Round 116 removed the System Posts Admin fixture fallback, keeps post
 list/detail, batch deletion and ordering live-only through SDK calls and
-blocks stale Posts bundles through Admin smoke and deploy guards.
+blocks stale Posts bundles through Admin smoke and deploy guards. Round 117
+removed the System Permissions Admin registry fixture fallback, keeps
+catalog/detail/custom CRUD/export live-only through SDK calls and blocks stale
+Permissions bundles through a dedicated permission smoke plus Admin/deploy
+guards.
 
 ## Guard Register
 
@@ -123,6 +127,11 @@ blocks stale Posts bundles through Admin smoke and deploy guards.
   consumers and delete guards. Admin/deploy guards reject
   `createSystemPostFixtures` and fallback copy on the Posts page and require
   live batch/order management markers in the built bundle.
+- System permissions: smoke covers permission list/detail, custom
+  create/update/export/delete and system mutation guards. Admin/deploy guards
+  reject `createPermissionSummariesFromRegistry` and fallback copy on the
+  Permissions page and require live permission management markers in the built
+  bundle.
 - Config/secret: smoke covers feature flags, audience rules, environment
   overrides, legacy vault envelope deserialization, secret version history,
   explicit secret rotation, vault key rotation, managed KMS provider status,

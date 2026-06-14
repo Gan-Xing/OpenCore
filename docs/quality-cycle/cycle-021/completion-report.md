@@ -4,15 +4,16 @@ Date: 2026-06-14
 
 ## Latest Completed Round
 
-Round 116: System Posts Admin live-only list, batch and order operations.
+Round 117: System Permissions Admin live-only catalog/detail/custom CRUD/export
+operations.
 
 ## Closed
 
-- Removed the System Posts Admin fixture fallback path.
-- Kept post list/detail, batch deletion and order CRUD backed by live SDK calls
-  only.
-- Added Admin smoke and deploy guards against stale fixture-backed Posts
-  bundles.
+- Removed the System Permissions Admin registry fixture fallback path.
+- Kept permission catalog/detail/custom create/update/delete/export backed by
+  live SDK calls only.
+- Added dedicated permission smoke plus Admin/deploy guards against stale
+  fixture-backed Permissions bundles.
 
 ## Still Open
 

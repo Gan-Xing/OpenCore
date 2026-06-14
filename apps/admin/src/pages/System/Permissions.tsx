@@ -10,10 +10,7 @@ import {
   ProTable,
   type ProColumns,
 } from '@ant-design/pro-components';
-import {
-  createPermissionSummariesFromRegistry,
-  type PermissionSummary,
-} from '@opencore/sdk';
+import type { PermissionSummary } from '@opencore/sdk';
 import {
   Alert,
   Button,
@@ -55,7 +52,6 @@ type PermissionFormValues = {
   title: string;
 };
 
-const fallbackRows = createPermissionSummariesFromRegistry();
 const permissionCodePattern =
   /^(core|monitor|tool|collaboration|optional|integration|experimental):[a-z][a-z0-9-]*:(create|read|update|delete|export|manage)$/;
 const searchFields: CurrentPageSearchField<PermissionSummary>[] = [
@@ -85,7 +81,7 @@ function createDetailFields(record: PermissionSummary): DetailField[] {
 
 export default function PermissionsPage() {
   const [form] = Form.useForm<PermissionFormValues>();
-  const [rows, setRows] = useState<readonly PermissionSummary[]>(fallbackRows);
+  const [rows, setRows] = useState<readonly PermissionSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
   const [selectedDetail, setSelectedDetail] = useState<PermissionSummary>();
@@ -136,9 +132,14 @@ export default function PermissionsPage() {
       setRows(await listOpenCorePermissions());
       setLoadError(undefined);
     } catch (error: unknown) {
-      setRows(fallbackRows);
+      setRows([]);
+      setSelectedDetail(undefined);
+      setEditingPermission(undefined);
+      setFormOpen(false);
       setLoadError(
-        error instanceof Error ? error.message : 'Unable to load permissions.',
+        error instanceof Error
+          ? error.message
+          : 'Unable to load live permissions.',
       );
     } finally {
       setLoading(false);
@@ -177,8 +178,13 @@ export default function PermissionsPage() {
   const openDetail = async (record: PermissionSummary) => {
     try {
       setSelectedDetail(await getOpenCorePermission(record.code));
-    } catch (_error) {
-      setSelectedDetail(record);
+    } catch (error: unknown) {
+      setSelectedDetail(undefined);
+      message.error(
+        error instanceof Error
+          ? error.message
+          : 'Unable to load live permission detail.',
+      );
     }
   };
 
@@ -308,8 +314,8 @@ export default function PermissionsPage() {
       {loadError ? (
         <Alert
           showIcon
-          type="warning"
-          message="Using fallback permission snapshot"
+          type="error"
+          message="Unable to load live permissions"
           description={loadError}
           style={{ marginBlockEnd: 16 }}
         />

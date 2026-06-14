@@ -284,6 +284,39 @@ verify_admin_bundle_api_base_url() {
     exit 1
   fi
 
+  if grep \
+    --fixed-strings \
+    "createPermissionSummariesFromRegistry" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Permissions.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "Using fallback permission snapshot" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Permissions.tsx" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Unable to load live permissions" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Permission created." \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "System permissions cannot be edited" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "core-permissions" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null; then
+    echo "Admin Permissions page must use live-only data and CRUD controls without registry fixture fallback." >&2
+    echo "Refusing to deploy a stale or fixture-backed Permissions frontend page." >&2
+    exit 1
+  fi
+
   if ! grep -R \
     --fixed-strings \
     --include='*.js' \
@@ -1812,6 +1845,11 @@ run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
   node "$ROOT_DIR/tools/scripts/smoke-core-menu.mjs"
+
+run_with_env env \
+  OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \
+  OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
+  node "$ROOT_DIR/tools/scripts/smoke-core-permission.mjs"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \

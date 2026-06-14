@@ -13,7 +13,7 @@ failures have guards; and remaining omissions are explicit product boundaries.
 
 | Capability            | Status        | Notes                                                                                                |
 | --------------------- | ------------- | ---------------------------------------------------------------------------------------------------- |
-| `core.permission`     | Meets         | Catalog, registry/custom split and assignments are live.                                             |
+| `core.permission`     | Meets         | Catalog, registry/custom split, assignments and live-only Admin CRUD/export are guarded.             |
 | `core.audit-log`      | Meets current | List/detail/export/delete, duration/location, retention cleanup, scheduled job and Admin server filters. |
 | `core.dept`           | Meets         | Tree CRUD, options, guards, ordering, data-scope and live-only Admin without fixture fallback.        |
 | `core.post`           | Meets         | CRUD, binding, options, batch deletion, ordering and live-only Admin without fixture fallback.        |
@@ -153,6 +153,9 @@ failures have guards; and remaining omissions are explicit product boundaries.
 - Round 116 removed the System Posts Admin fixture fallback, made
   list/detail/batch/order operations live-only and added smoke/deploy guards
   for stale Posts bundles.
+- Round 117 removed the System Permissions Admin registry fixture fallback,
+  made catalog/detail/custom CRUD/export operations live-only and added a
+  dedicated permission smoke plus deploy guards for stale Permissions bundles.
 
 ## Active Debt
 
@@ -249,3 +252,7 @@ failures have guards; and remaining omissions are explicit product boundaries.
 - System posts: core post smoke covers CRUD, batch deletion, ordering,
   simple-list consumers and delete guards; Admin/deploy guards reject fixture
   fallback and require live batch/order management markers.
+- System permissions: core permission smoke covers list/detail, custom
+  create/update/export/delete and system mutation guards; Admin/deploy guards
+  reject registry fixture fallback and require live permission management
+  markers.

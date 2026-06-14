@@ -49,3 +49,4 @@ This ledger records state transitions only. Git log keeps commit hashes.
 | 114   | System Dicts     | Dicts Admin became live-only for dictionary and item operations.              | Admin smoke and deploy guards reject dict fixture fallback.      |
 | 115   | System Depts     | Departments Admin became live-only for tree and order operations.             | Admin smoke and deploy guards reject dept fixture fallback.      |
 | 116   | System Posts     | Posts Admin became live-only for list, batch and order operations.            | Admin smoke and deploy guards reject post fixture fallback.      |
+| 117   | System Permissions | Permissions Admin became live-only for catalog and custom CRUD/export.       | Permission smoke plus Admin/deploy guards reject registry fixture fallback. |

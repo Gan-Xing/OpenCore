@@ -126,6 +126,10 @@ guarded stale Departments bundles in Admin smoke and deployment.
 Round 116 removed the System Posts Admin fixture fallback, kept post
 list/detail, batch deletion and order operations live-only through SDK calls
 and guarded stale Posts bundles in Admin smoke and deployment.
+Round 117 removed the System Permissions Admin registry fixture fallback, kept
+permission catalog/detail/custom CRUD/export operations live-only through SDK
+calls and guarded stale Permissions bundles with dedicated permission smoke,
+Admin smoke and deployment checks.
 Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 `lint` must run sequentially.
 
@@ -160,6 +164,10 @@ Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 - System Posts smoke covers post CRUD, batch deletion, ordering, simple-list
   consumers and delete guards; Admin/deploy guards reject Posts fixture
   fallback and require live batch/order management markers.
+- System Permissions smoke covers permission list/detail, custom
+  create/update/export/delete and system mutation guards; Admin/deploy guards
+  reject Permissions registry fixture fallback and require live permission
+  management markers.
 - Config smoke covers runtime shape, environment override governance, legacy
   vault envelope deserialization, secret version history, secret rotation,
   vault key rotation, managed KMS provider status and no plaintext secret

@@ -1472,6 +1472,10 @@ if (
 }
 
 if (
+  permissionsPage.includes('createPermissionSummariesFromRegistry') ||
+  permissionsPage.includes('Using fallback permission snapshot') ||
+  !permissionsPage.includes('Unable to load live permissions') ||
+  !permissionsPage.includes('Unable to load live permission detail.') ||
   !permissionsPage.includes('listOpenCorePermissions') ||
   !permissionsPage.includes('getOpenCorePermission') ||
   !permissionsPage.includes('createOpenCorePermission') ||
@@ -1483,7 +1487,7 @@ if (
   !permissionsPage.includes('rows={filteredRows}')
 ) {
   throw new Error(
-    'Permissions page must use live SDK CRUD with bounded filtering and current-page export.',
+    'Permissions page must use live-only SDK CRUD with bounded filtering and current-page export, without registry fixture fallback.',
   );
 }
 
