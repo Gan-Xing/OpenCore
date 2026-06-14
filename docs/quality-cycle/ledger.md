@@ -62,9 +62,9 @@ docs. Commit-level detail is available from git history.
 - 2026-06-13 20:55:34 UTC completed cycle-021 round-074 `monitor.job` Admin
   runtime operations; deployed=39172/39174;
   publicVerified=monitor-job-run-now,admin-monitor-jobs-runtime-ops,report-definition-seed-migration.
-- 2026-06-14 UTC rounds 075-114 continued foundation productization across
+- 2026-06-14 UTC rounds 075-115 continued foundation productization across
   system, monitor, config, security logs, OpenForge, integration and
   collaboration.
-- Latest deployed runtime: round-114 `system.dicts` Admin live-only dictionary
+- Latest deployed runtime: round-115 `system.depts` Admin live-only tree/order
   operations
   on API `39172` and Admin `39174`.

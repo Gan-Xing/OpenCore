@@ -1488,6 +1488,10 @@ if (
 }
 
 if (
+  departmentsPage.includes('createSystemDeptFixtures') ||
+  departmentsPage.includes('Using fallback department snapshot') ||
+  !departmentsPage.includes('Unable to load live departments') ||
+  !departmentsPage.includes('Unable to load live department detail.') ||
   !departmentsPage.includes('listOpenCoreSystemDepts') ||
   !departmentsPage.includes('getOpenCoreSystemDept') ||
   !departmentsPage.includes('createOpenCoreSystemDept') ||
@@ -1507,7 +1511,7 @@ if (
   !departmentsPage.includes('rows={filteredRows}')
 ) {
   throw new Error(
-    'Departments page must use live SDK tree CRUD, sibling order updates, bounded filtering and current-page export.',
+    'Departments page must use live-only SDK tree CRUD, sibling order updates, bounded filtering and current-page export, without fixture fallback.',
   );
 }
 

@@ -47,3 +47,4 @@ This ledger records state transitions only. Git log keeps commit hashes.
 | 112   | Online Users     | Online Users Admin became live-only for session operations.                   | Admin smoke and deploy guards reject online-user fixture fallback. |
 | 113   | Integration      | Providers Admin became live-only for health audit and diagnostics.            | Admin smoke and deploy guards reject provider fixture fallback.  |
 | 114   | System Dicts     | Dicts Admin became live-only for dictionary and item operations.              | Admin smoke and deploy guards reject dict fixture fallback.      |
+| 115   | System Depts     | Departments Admin became live-only for tree and order operations.             | Admin smoke and deploy guards reject dept fixture fallback.      |

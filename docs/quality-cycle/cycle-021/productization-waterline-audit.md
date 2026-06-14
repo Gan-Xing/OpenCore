@@ -15,7 +15,7 @@ failures have guards; and remaining omissions are explicit product boundaries.
 | --------------------- | ------------- | ---------------------------------------------------------------------------------------------------- |
 | `core.permission`     | Meets         | Catalog, registry/custom split and assignments are live.                                             |
 | `core.audit-log`      | Meets current | List/detail/export/delete, duration/location, retention cleanup, scheduled job and Admin server filters. |
-| `core.dept`           | Meets         | Tree CRUD, options, guards, ordering and data-scope.                                                 |
+| `core.dept`           | Meets         | Tree CRUD, options, guards, ordering, data-scope and live-only Admin without fixture fallback.        |
 | `core.post`           | Meets         | CRUD, binding, options, batch deletion and ordering.                                                 |
 | `core.menu`           | Meets         | Tree metadata, route/menu fields and delete guards.                                                  |
 | `core.role`           | Meets         | Menu/user assignment, status effects and revocation.                                                 |
@@ -147,6 +147,9 @@ failures have guards; and remaining omissions are explicit product boundaries.
 - Round 114 removed the System Dicts Admin fixture fallback, made list/detail
   and item operations live-only and added smoke/deploy guards for stale Dicts
   bundles.
+- Round 115 removed the System Departments Admin fixture fallback, made
+  tree/detail/order operations live-only and added smoke/deploy guards for
+  stale Departments bundles.
 
 ## Active Debt
 
@@ -237,3 +240,6 @@ failures have guards; and remaining omissions are explicit product boundaries.
 - System dicts: core dict smoke covers type/item CRUD and simple-list
   consumers; Admin/deploy guards reject fixture fallback and require live
   dictionary list/detail/item management markers.
+- System departments: core dept smoke covers tree CRUD, ordering, simple-list
+  consumers and delete guards; Admin/deploy guards reject fixture fallback and
+  require live tree/order management markers.

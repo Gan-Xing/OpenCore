@@ -19,7 +19,7 @@ active debt and decisions that change future execution.
 
 ## Runtime State
 
-Cycle-021 has completed 114 deployable stages across
+Cycle-021 has completed 115 deployable stages across
 System/Security/Monitor/Integration/Tools foundations. Round 91 added
 token/session blacklist maintenance with registered-token allowlist
 enforcement, expired-session cleanup, API/SDK/Admin/OpenAPI visibility, smoke
@@ -72,7 +72,10 @@ detail through the live diagnostics API and blocks stale provider bundles
 through Admin smoke and deploy guards. Round 114 removed the System Dicts
 Admin fixture fallback, keeps dictionary list/detail and item operations
 live-only through SDK calls and blocks stale Dicts bundles through Admin smoke
-and deploy guards.
+and deploy guards. Round 115 removed the System Departments Admin fixture
+fallback, keeps department tree/detail/order operations live-only through SDK
+calls and blocks stale Departments bundles through Admin smoke and deploy
+guards.
 
 ## Guard Register
 
@@ -110,6 +113,10 @@ and deploy guards.
   consumers and guard failures. Admin/deploy guards reject `createDictFixtures`
   and fallback copy on the Dicts page and require live dictionary management
   markers in the built bundle.
+- System departments: smoke covers department tree CRUD, ordering,
+  simple-list consumers and delete guards. Admin/deploy guards reject
+  `createSystemDeptFixtures` and fallback copy on the Departments page and
+  require live tree/order management markers in the built bundle.
 - Config/secret: smoke covers feature flags, audience rules, environment
   overrides, legacy vault envelope deserialization, secret version history,
   explicit secret rotation, vault key rotation, managed KMS provider status,

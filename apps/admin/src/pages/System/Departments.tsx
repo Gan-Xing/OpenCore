@@ -12,11 +12,7 @@ import {
   ProTable,
   type ProColumns,
 } from '@ant-design/pro-components';
-import {
-  createSystemDeptFixtures,
-  type SystemDeptSummary,
-  type SystemDeptTreeSummary,
-} from '@opencore/sdk';
+import type { SystemDeptSummary, SystemDeptTreeSummary } from '@opencore/sdk';
 import {
   Alert,
   Button,
@@ -77,7 +73,6 @@ type MutableDeptTreeSummary = SystemDeptSummary & {
   children: MutableDeptTreeSummary[];
 };
 
-const fallbackRows = createSystemDeptFixtures();
 const searchFields: CurrentPageSearchField<SystemDeptSummary>[] = [
   'code',
   'name',
@@ -261,7 +256,7 @@ function toTreeSelectData(
 export default function DepartmentsPage() {
   const [form] = Form.useForm<DeptFormValues>();
   const [rows, setRows] =
-    useState<readonly SystemDeptTreeSummary[]>(fallbackRows);
+    useState<readonly SystemDeptTreeSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
   const [selectedDetail, setSelectedDetail] = useState<SystemDeptSummary>();
@@ -289,7 +284,9 @@ export default function DepartmentsPage() {
       setRows(await listOpenCoreSystemDepts());
       setLoadError(undefined);
     } catch (error: unknown) {
-      setRows(fallbackRows);
+      setRows([]);
+      setSelectedDetail(undefined);
+      setEditingDept(undefined);
       setLoadError(
         error instanceof Error ? error.message : 'Unable to load departments.',
       );
@@ -342,8 +339,13 @@ export default function DepartmentsPage() {
   const openDetail = async (record: SystemDeptSummary) => {
     try {
       setSelectedDetail(await getOpenCoreSystemDept(record.id));
-    } catch (_error) {
-      setSelectedDetail(record);
+    } catch (error: unknown) {
+      setSelectedDetail(undefined);
+      message.error(
+        error instanceof Error
+          ? error.message
+          : 'Unable to load live department detail.',
+      );
     }
   };
 
@@ -559,8 +561,8 @@ export default function DepartmentsPage() {
       {loadError ? (
         <Alert
           showIcon
-          type="warning"
-          message="Using fallback department snapshot"
+          type="error"
+          message="Unable to load live departments"
           description={loadError}
           style={{ marginBlockEnd: 16 }}
         />

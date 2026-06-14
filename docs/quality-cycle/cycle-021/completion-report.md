@@ -4,13 +4,13 @@ Date: 2026-06-14
 
 ## Latest Completed Round
 
-Round 114: System Dicts Admin live-only dictionary operations.
+Round 115: System Departments Admin live-only tree and order operations.
 
 ## Closed
 
-- Removed the System Dicts Admin fixture fallback path.
-- Kept dictionary list/detail and item CRUD backed by live SDK calls only.
-- Added Admin smoke and deploy guards against stale fixture-backed Dicts
+- Removed the System Departments Admin fixture fallback path.
+- Kept department tree/detail/order CRUD backed by live SDK calls only.
+- Added Admin smoke and deploy guards against stale fixture-backed Departments
   bundles.
 
 ## Still Open

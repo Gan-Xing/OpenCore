@@ -218,6 +218,39 @@ verify_admin_bundle_api_base_url() {
     exit 1
   fi
 
+  if grep \
+    --fixed-strings \
+    "createSystemDeptFixtures" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Departments.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "Using fallback department snapshot" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Departments.tsx" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Unable to load live departments" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Department order saved." \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Departments with children cannot be deleted" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "core-depts" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null; then
+    echo "Admin Departments page must use live-only data and tree/order controls without fixture fallback." >&2
+    echo "Refusing to deploy a stale or fixture-backed Departments frontend page." >&2
+    exit 1
+  fi
+
   if ! grep -R \
     --fixed-strings \
     --include='*.js' \
