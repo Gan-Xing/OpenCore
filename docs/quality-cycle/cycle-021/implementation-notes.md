@@ -80,8 +80,10 @@ template/outbox list, detail, preview and queued-processing controls.
 - Monitor jobs: smoke covers operations summary, whitelisted job upsert,
   registry, unsafe policy guards, enable/disable, disabled-trigger rejection,
   run-now, handler execution, failed retry, run-log detail, cron dispatch,
-  worker claim and scheduler queue metrics. Deploy also checks the Jobs and
-  Queues Admin bundle markers.
+  worker claim and scheduler queue metrics; dispatch smoke uses a per-run
+  far-future cron tick so repeated deploys cannot collide with persisted
+  `scheduledAt` de-dup metadata. Deploy also checks the Jobs and Queues Admin
+  bundle markers.
 - Monitor cache: smoke writes temporary Redis keys and verifies namespace/key
   listing, safe JSON field redaction, secret-key redaction, dry-run clear,
   confirmed key deletion and confirmed prefix clear. Admin smoke rejects

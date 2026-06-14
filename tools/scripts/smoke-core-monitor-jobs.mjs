@@ -617,15 +617,20 @@ async function upsertSmokeJob() {
 }
 
 function createSmokeCron(value) {
-  const hash = [...value].reduce(
-    (total, char) => total + char.charCodeAt(0),
-    0,
-  );
-  const minute = (hash % 59) + 1;
-  const hour = Math.floor(hash / 60) % 24;
-  const day = (Math.floor(hash / (60 * 24)) % 28) + 1;
-  const month = (Math.floor(hash / (60 * 24 * 28)) % 12) + 1;
-  const now = new Date(Date.UTC(2026, month - 1, day, hour, minute, 0, 0));
+  const [timestampPart, randomPart = '0'] = value.split('-');
+  const timestamp = Number.parseInt(timestampPart, 10);
+  const random = Number.parseInt(randomPart, 36);
+  const minuteOffset =
+    ((Number.isFinite(timestamp) ? timestamp : Date.now()) +
+      (Number.isFinite(random) ? random : 0)) %
+    (365 * 24 * 60);
+  const now = new Date(Date.UTC(2099, 0, 1, 0, 0, 0, 0));
+  now.setUTCMinutes(minuteOffset);
+
+  const minute = now.getUTCMinutes();
+  const hour = now.getUTCHours();
+  const day = now.getUTCDate();
+  const month = now.getUTCMonth() + 1;
 
   return {
     cron: `${minute} ${hour} ${day} ${month} *`,
