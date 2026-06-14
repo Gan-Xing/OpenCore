@@ -31,7 +31,7 @@ failures have guards; and remaining omissions are explicit product boundaries.
 | `monitor.cache`       | Meets current | Redis namespace/key scans, safe value preview, dry-run clear and confirmed key/prefix deletion.          |
 | `monitor.version`     | Meets current | Live runtime/deployment metadata uses API/SDK/Admin, deploy injection and smoke/deploy guards.           |
 | `tool.openapi`        | Meets current | Live drift snapshot metadata uses API/SDK/Admin, OpenAPI contract fields and tool/deploy guards.         |
-| `tool.export`         | Enhance       | Admin protocol/preview is live with row caps; shared export button still needs live protocol wiring.     |
+| `tool.export`         | Meets current | Admin protocol/preview and shared current-page export buttons use the live protocol with row caps.       |
 | `OpenForge Admin`     | Meets current | Safe workbench, dry-run confirmation, write-intent rejection and manifest preview/detail.                |
 
 ## Closed Remediation
@@ -107,12 +107,12 @@ failures have guards; and remaining omissions are explicit product boundaries.
   snapshot metadata, API/OpenAPI/SDK fields and tool/Admin/deploy guards.
 - Round 98 replaced the Tool Export Admin fixture page with live protocol and
   preview calls, including row-cap smoke and Admin/deploy guards.
+- Round 99 moved shared current-page export buttons to the live Tool Export
+  protocol and removed stale Tool Export SDK fixture helpers.
 
 ## Active Debt
 
-1. Tool Export shared `CurrentPageExportButton` live protocol wiring remains a
-   foundation debt.
-2. OpenForge direct schema/migration/business-code writes still require user
+1. OpenForge direct schema/migration/business-code writes still require user
    admission.
 
 ## Guard Matrix
@@ -150,7 +150,7 @@ failures have guards; and remaining omissions are explicit product boundaries.
   pages.
 - Tool Export: smoke covers live `/tools/export/protocol`, preview creation and
   server row caps; Admin/deploy guards reject fixture-backed or stale Export
-  Tools pages.
+  Tools pages and shared current-page export buttons.
 - OpenForge: smoke covers status, doctor, plan, diff, check, apply dry-run,
   manifest list, manifest preview, rollback dry-run, confirmation guards,
   write-intent rejection and unsafe schema/config/manifest guards; deploy

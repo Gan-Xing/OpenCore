@@ -24,8 +24,6 @@ import type {
   SystemPostSummary,
 } from './system-management-types';
 import type {
-  CurrentPageExportProtocolSummary,
-  ExportPlanSummary,
   OpenApiDriftStatus,
   OpenForgeApplyDryRunSummary,
   OpenForgeDiffSummary,
@@ -550,33 +548,6 @@ export function createOpenApiDriftFixture(): OpenApiDriftStatus {
     pathCount: 1,
     schemaCount: 1,
     operationCount: 1,
-  };
-}
-
-export function createCurrentPageExportProtocolFixture(): CurrentPageExportProtocolSummary {
-  return {
-    stage: 'S8',
-    status: 'active',
-    scope: 'current-page',
-    supportedFormats: ['csv'],
-    maxRows: 1000,
-    asyncExport: false,
-    sensitiveFieldPolicy: 'exclude-sensitive-fields-before-export',
-    ownerPackage: '@opencore/contracts',
-  };
-}
-
-export function createExportPlanFixture(): ExportPlanSummary {
-  const protocol = createCurrentPageExportProtocolFixture();
-
-  return {
-    resource: 'dicts',
-    filename: 'opencore-dicts.csv',
-    format: 'csv',
-    scope: protocol.scope,
-    columns: ['code', 'name', 'enabled'],
-    rowCount: Math.min(2, protocol.maxRows),
-    generatedAt: '2026-06-10T00:00:00.000Z',
   };
 }
 

@@ -31,3 +31,4 @@ This ledger records state transitions only. Git log keeps commit hashes.
 | 96    | Monitor Version | Version page moved from fixtures to live runtime/deployment metadata.         | API tests, monitor smoke and Admin bundle markers.              |
 | 97    | Tool OpenAPI    | OpenAPI page moved from fixtures to live drift snapshot metadata.             | API tests, tool smoke and Admin bundle markers.                 |
 | 98    | Tool Export     | Export page moved from fixtures to live protocol and preview APIs.            | API tests, tool smoke and Admin bundle markers.                 |
+| 99    | Tool Export     | Shared current-page export buttons moved from SDK fixtures to live protocol.  | Admin smoke and deploy bundle markers cover shared export.      |

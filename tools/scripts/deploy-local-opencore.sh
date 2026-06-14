@@ -335,6 +335,26 @@ verify_admin_bundle_api_base_url() {
     exit 1
   fi
 
+  if grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "createCurrentPageExportProtocolFixture" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Live current-page export protocol" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Server capped current-page export" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null; then
+    echo "Admin bundle does not include live shared current-page export protocol wiring." >&2
+    echo "Refusing to deploy stale fixture-backed current-page export buttons." >&2
+    exit 1
+  fi
+
   if ! grep -R \
     --fixed-strings \
     --include='*.js' \

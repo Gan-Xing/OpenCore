@@ -19,7 +19,7 @@ active debt and decisions that change future execution.
 
 ## Runtime State
 
-Cycle-021 has completed 98 deployable stages across
+Cycle-021 has completed 99 deployable stages across
 System/Security/Monitor/Integration/Tools foundations. Round 91 added
 token/session blacklist maintenance with registered-token allowlist
 enforcement, expired-session cleanup, API/SDK/Admin/OpenAPI visibility, smoke
@@ -37,7 +37,9 @@ live runtime/deployment metadata and fixed deploy-script commit/build
 injection. Round 97 replaced the Tool OpenAPI fixture page with live drift
 snapshot metadata including hash and path/schema/operation counts. Round 98
 replaced the Tool Export fixture page with live protocol and preview calls,
-including server row-cap verification.
+including server row-cap verification. Round 99 moved shared current-page
+export buttons to the live Tool Export protocol and removed stale Tool Export
+SDK fixture helpers.
 
 ## Guard Register
 
@@ -94,7 +96,8 @@ including server row-cap verification.
 - Tool Export: tool smoke verifies live `/tools/export/protocol`,
   `/tools/export/preview` and row-cap behavior; Admin smoke rejects
   `createCurrentPageExportProtocolFixture()` and `createExportPlanFixture()`
-  on the Export Tools page, and deploy checks live export bundle markers.
+  on the Export Tools page and shared export button, and deploy checks live
+  export bundle markers plus shared button protocol markers.
 - OpenForge: smoke covers status, doctor, plan, diff, check, apply dry-run,
   manifest list, manifest preview, rollback dry-run, dry-run confirmation
   guards, write-intent rejection and unsafe schema/config/manifest guards.
@@ -123,6 +126,3 @@ including server row-cap verification.
   precision is not part of the current request-time lookup surface.
 - OpenForge: direct schema/migration/business writes still require user
   admission.
-- Tool Export: shared `CurrentPageExportButton` still reads the fixture
-  protocol locally and should be moved to live protocol wiring in a dedicated
-  round.

@@ -151,6 +151,9 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   fixture page: `/tools/export/protocol` and `/tools/export/preview` expose the
   current-page CSV contract and server row-cap behavior through API/SDK/Admin
   with tool smoke and deploy guards.
+- Round 99: shared current-page export buttons use the live Tool Export
+  protocol instead of SDK fixtures, so table exports across Admin pages honor
+  the same server row-cap contract.
 
 ## Explicit Non-Claims
 

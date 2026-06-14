@@ -1,8 +1,6 @@
 import {
   createAuditLogFixtures,
-  createCurrentPageExportProtocolFixture,
   createDictFixtures,
-  createExportPlanFixture,
   createFileAssetFixtures,
   createIpLocationLookupFixture,
   createIpLocationProviderStatusFixture,
@@ -192,8 +190,6 @@ describe('registry fixtures', () => {
     expect(createOpenApiDriftFixture().driftCheckCommand).toBe(
       'pnpm openapi:check',
     );
-    expect(createCurrentPageExportProtocolFixture().asyncExport).toBe(false);
-    expect(createExportPlanFixture().scope).toBe('current-page');
     expect(createOpenForgeStatusFixture().workspace.noWrite).toBe(true);
     expect(createOpenForgeStatusFixture().operationPolicy.dryRunOnly).toBe(
       true,

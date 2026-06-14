@@ -790,6 +790,20 @@ if (
 }
 
 if (
+  currentPageExportButton.includes('createCurrentPageExportProtocolFixture') ||
+  !currentPageExportButton.includes('getOpenCoreExportProtocol') ||
+  !currentPageExportButton.includes('Live current-page export protocol') ||
+  !currentPageExportButton.includes('Server capped current-page export') ||
+  !currentPageExportButton.includes('loadCurrentPageExportProtocol') ||
+  !currentPageExportButton.includes('currentPageExportProtocolCache') ||
+  !opencorePlatformService.includes('getOpenCoreExportProtocol')
+) {
+  throw new Error(
+    'CurrentPageExportButton must use the live Tool Export protocol instead of SDK fixtures.',
+  );
+}
+
+if (
   exportPage.includes('createCurrentPageExportProtocolFixture') ||
   exportPage.includes('createExportPlanFixture') ||
   !exportPage.includes('Live export protocol') ||

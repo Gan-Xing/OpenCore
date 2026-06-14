@@ -1,6 +1,8 @@
 import { DownloadOutlined } from '@ant-design/icons';
-import { createCurrentPageExportProtocolFixture } from '@opencore/sdk';
+import type { CurrentPageExportProtocolSummary } from '@opencore/sdk';
 import { Button, message } from 'antd';
+import { useCallback, useEffect, useState } from 'react';
+import { getOpenCoreExportProtocol } from '../../services/opencore/platform';
 
 export type CurrentPageExportColumn<T extends object> = {
   dataIndex?: keyof T | string;
@@ -17,7 +19,10 @@ type CurrentPageExportButtonProps<T extends object> = {
   rows: readonly T[];
 };
 
-const exportProtocol = createCurrentPageExportProtocolFixture();
+const LIVE_CURRENT_PAGE_EXPORT_PROTOCOL_LABEL =
+  'Live current-page export protocol';
+const SERVER_CAPPED_CURRENT_PAGE_EXPORT_LABEL =
+  'Server capped current-page export';
 const CSV_FORMULA_PREFIX_PATTERN = /^\s*[=+\-@]/;
 const CSV_FILENAME_UNSAFE_PATTERN = new RegExp(
   '[\\\\/:*?"<>|\\x00-\\x1F]+',
@@ -26,6 +31,95 @@ const CSV_FILENAME_UNSAFE_PATTERN = new RegExp(
 const REDACTED_EXPORT_CELL_VALUE = '[redacted]';
 const EXPORT_CELL_SENSITIVE_KEY_PATTERN =
   /password|secret|token|credential|authorization|api[-_]?key|client[-_]?secret/i;
+let currentPageExportProtocolCache:
+  | CurrentPageExportProtocolSummary
+  | undefined;
+let currentPageExportProtocolPromise:
+  | Promise<CurrentPageExportProtocolSummary>
+  | undefined;
+
+function loadCurrentPageExportProtocol(): Promise<CurrentPageExportProtocolSummary> {
+  if (currentPageExportProtocolCache) {
+    return Promise.resolve(currentPageExportProtocolCache);
+  }
+
+  currentPageExportProtocolPromise ??= Promise.resolve()
+    .then(() => getOpenCoreExportProtocol())
+    .then((protocol) => {
+      currentPageExportProtocolCache = protocol;
+      return protocol;
+    })
+    .catch((error) => {
+      currentPageExportProtocolPromise = undefined;
+      throw error;
+    });
+
+  return currentPageExportProtocolPromise;
+}
+
+function isUsableCurrentPageCsvProtocol(
+  protocol: CurrentPageExportProtocolSummary,
+): boolean {
+  return (
+    protocol.status === 'active' &&
+    protocol.scope === 'current-page' &&
+    protocol.supportedFormats.includes('csv') &&
+    protocol.asyncExport === false &&
+    Number.isFinite(protocol.maxRows) &&
+    protocol.maxRows > 0
+  );
+}
+
+function useCurrentPageExportProtocol() {
+  const [protocol, setProtocol] = useState<
+    CurrentPageExportProtocolSummary | undefined
+  >(currentPageExportProtocolCache);
+  const [loading, setLoading] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const liveProtocol = await loadCurrentPageExportProtocol();
+      setProtocol(liveProtocol);
+      return liveProtocol;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    if (currentPageExportProtocolCache) {
+      setProtocol(currentPageExportProtocolCache);
+      return () => {
+        mounted = false;
+      };
+    }
+
+    setLoading(true);
+    loadCurrentPageExportProtocol()
+      .then((liveProtocol) => {
+        if (mounted) {
+          setProtocol(liveProtocol);
+        }
+      })
+      .catch(() => {
+        // Click handling surfaces the failure without spamming page load.
+      })
+      .finally(() => {
+        if (mounted) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  return { load, loading, protocol };
+}
 
 function isPlainExportCellObject(
   value: unknown,
@@ -167,25 +261,52 @@ export function CurrentPageExportButton<T extends object>({
   resource,
   rows,
 }: CurrentPageExportButtonProps<T>) {
+  const { load, loading, protocol } = useCurrentPageExportProtocol();
+
+  const handleExport = async () => {
+    let liveProtocol = protocol;
+    if (!liveProtocol) {
+      try {
+        liveProtocol = await load();
+      } catch {
+        message.error(`${LIVE_CURRENT_PAGE_EXPORT_PROTOCOL_LABEL} unavailable`);
+        return;
+      }
+    }
+
+    if (!isUsableCurrentPageCsvProtocol(liveProtocol)) {
+      message.error(`${LIVE_CURRENT_PAGE_EXPORT_PROTOCOL_LABEL} inactive`);
+      return;
+    }
+
+    const safeColumns = getExportableColumns(columns);
+    const maxRows = Math.floor(liveProtocol.maxRows);
+    const exportRows = rows.slice(0, maxRows);
+
+    if (exportRows.length === 0) {
+      message.warning('There is no data to export');
+      return;
+    }
+
+    const csv = buildCurrentPageCsv(exportRows, safeColumns);
+    downloadCsv(
+      sanitizeCsvFilename(filename ?? `opencore-${resource}.csv`),
+      csv,
+    );
+
+    if (rows.length > exportRows.length) {
+      message.info(`${SERVER_CAPPED_CURRENT_PAGE_EXPORT_LABEL} at ${maxRows}`);
+    }
+    message.success(`Exported ${exportRows.length} current-page rows`);
+  };
+
   return (
     <Button
       disabled={disabled}
       icon={<DownloadOutlined />}
+      loading={loading && !protocol}
       onClick={() => {
-        const safeColumns = getExportableColumns(columns);
-        const exportRows = rows.slice(0, exportProtocol.maxRows);
-
-        if (exportRows.length === 0) {
-          message.warning('There is no data to export');
-          return;
-        }
-
-        const csv = buildCurrentPageCsv(exportRows, safeColumns);
-        downloadCsv(
-          sanitizeCsvFilename(filename ?? `opencore-${resource}.csv`),
-          csv,
-        );
-        message.success(`Exported ${exportRows.length} current-page rows`);
+        void handleExport();
       }}
     >
       Export
