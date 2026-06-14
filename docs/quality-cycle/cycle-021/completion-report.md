@@ -4,16 +4,15 @@ Date: 2026-06-14
 
 ## Latest Completed Round
 
-Round 108: Monitor Queue control.
+Round 109: Security Logs Admin live-only filtering.
 
 ## Closed
 
-- Added guarded BullMQ queue pause/resume through
-  `/monitor/queues/:name/pause|resume`.
-- Added SDK/Admin controls gated by `monitor:queue:manage` and removed the
-  Queue Admin fixture fallback.
-- Extended monitor smoke, OpenAPI, seed permissions and deploy guards so
-  queue control is verified and recovered to resumed state.
+- Removed operation/login log Admin fixture fallbacks.
+- Added operation-log Admin server-side filters for actor/action/resource,
+  location, status, duration and time.
+- Extended Admin smoke and deploy guards to reject stale fixture-backed
+  Security log pages.
 
 ## Still Open
 
@@ -23,5 +22,5 @@ Round 108: Monitor Queue control.
   designer and big-data async export are outside the admitted surface.
 - OpenForge direct schema/migration/business code writes remain outside the
   admitted surface.
-- Next round should audit remaining fixture-backed Admin/productization debt
-  and select the next admitted P0/P1 foundation gap.
+- Next round should continue the remaining admitted P0/P1 foundation queue by
+  dependency value.

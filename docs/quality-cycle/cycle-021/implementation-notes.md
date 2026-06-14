@@ -19,7 +19,7 @@ active debt and decisions that change future execution.
 
 ## Runtime State
 
-Cycle-021 has completed 108 deployable stages across
+Cycle-021 has completed 109 deployable stages across
 System/Security/Monitor/Integration/Tools foundations. Round 91 added
 token/session blacklist maintenance with registered-token allowlist
 enforcement, expired-session cleanup, API/SDK/Admin/OpenAPI visibility, smoke
@@ -56,7 +56,10 @@ with a dedicated smoke and stale frontend deploy guards. Round 107 extended
 Monitor Status with live CPU, memory, disk and process resource snapshots and
 removed the Admin fixture fallback. Round 108 added guarded BullMQ queue
 pause/resume through API/SDK/Admin, replaced Queue Admin fixture fallback with
-live-only data and added `monitor:queue:manage` smoke/deploy guards.
+live-only data and added `monitor:queue:manage` smoke/deploy guards. Round
+109 removed Security operation/login log Admin fixture fallbacks, added
+operation-log server-side filters and guarded the pages through Admin smoke
+and deploy markers.
 
 ## Guard Register
 
@@ -73,7 +76,9 @@ live-only data and added `monitor:queue:manage` smoke/deploy guards.
   provider failures and sent-state mutation guards.
 - Operation log: smoke covers batch-delete guards, deleted-detail 404,
   duration/location filters, retentionDays cleanup and the retention scheduler
-  job registry while preserving the clean request audit row.
+  job registry while preserving the clean request audit row. Admin smoke and
+  deploy guards require live-only Security log pages and operation-log
+  server-side filters instead of fixture fallback.
 - IP/location: login-log smoke covers provider status, OpenAPI paths,
   documentation-network lookup, invalid lookup and missing-IP guards; common
   tests cover the external HTTP JSON provider, host allowlist, non-public-IP

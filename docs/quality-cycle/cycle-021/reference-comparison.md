@@ -33,7 +33,8 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   structured IP/location provider lookup and external HTTP JSON GeoIP adapter;
   operation-log has
   list/detail/export/delete, duration/location enrichment, retention cleanup
-  and scheduled retention job.
+  and scheduled retention job. Security log Admin pages now use live-only data,
+  and operation logs expose server-side Admin filters.
 - Notice: management, inbox/read analytics, templates, delivery records, local
   provider, Integration outbox bridge, state sync, queued processing and signed
   callback intake plus retry scheduling, SMS HTTP adapter, SMTP adapter and
@@ -196,6 +197,9 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   pause/resume admitted BullMQ queues through API/SDK/Admin under
   `monitor:queue:manage`, and smoke always restores the queue to resumed
   state.
+- Round 109: Security log Admin pages no longer mask API failures with fixture
+  rows; operation logs now use the API's actor/action/resource/location/status,
+  duration and time filters from Admin.
 
 ## Explicit Non-Claims
 
@@ -206,6 +210,6 @@ and AI/RAG/Agent workflow.
 
 ## Next Focus
 
-Next round should audit remaining fixture-backed Admin/productization debt and
-select the next admitted P0/P1 foundation gap while keeping Payment,
-Reports/ExportJobs and OpenForge direct writes behind explicit user admission.
+Next round should continue the remaining admitted P0/P1 foundation queue by
+dependency value while keeping Payment, Reports/ExportJobs and OpenForge
+direct writes behind explicit user admission.

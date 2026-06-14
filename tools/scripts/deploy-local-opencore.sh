@@ -235,6 +235,47 @@ verify_admin_bundle_api_base_url() {
     exit 1
   fi
 
+  if grep \
+    --fixed-strings \
+    "createAuditLogFixtures" \
+    "$ROOT_DIR/apps/admin/src/pages/Security/OperationLogs.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "Using fallback operation log fixtures" \
+    "$ROOT_DIR/apps/admin/src/pages/Security/OperationLogs.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "createLoginLogFixtures" \
+    "$ROOT_DIR/apps/admin/src/pages/Security/LoginLogs.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "Using fallback login log fixtures" \
+    "$ROOT_DIR/apps/admin/src/pages/Security/LoginLogs.tsx" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Operation actor server filter" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Apply operation log server filters" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Unable to load live operation logs" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Unable to load live login logs" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null; then
+    echo "Admin Security Logs pages must use live-only data and operation-log server filters without fixture fallback." >&2
+    echo "Refusing to deploy stale or fixture-backed Security Logs pages." >&2
+    exit 1
+  fi
+
   if ! grep -R \
     --fixed-strings \
     --include='*.js' \

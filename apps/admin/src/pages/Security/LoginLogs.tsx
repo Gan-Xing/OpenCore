@@ -13,14 +13,13 @@ import {
   type ProColumns,
 } from '@ant-design/pro-components';
 import { useAccess } from '@umijs/max';
-import {
-  createLoginLogFixtures,
-  type IpLocationLookupSummary,
-  type IpLocationProviderStatusSummary,
-  type LoginLogQueryRequest,
-  type LoginLogResult,
-  type LoginLogSummary,
-  type LoginLogType,
+import type {
+  IpLocationLookupSummary,
+  IpLocationProviderStatusSummary,
+  LoginLogQueryRequest,
+  LoginLogResult,
+  LoginLogSummary,
+  LoginLogType,
 } from '@opencore/sdk';
 import {
   Alert,
@@ -59,7 +58,6 @@ import {
   type DetailField,
 } from '../shared/ReadOnlyDetailDrawer';
 
-const fallbackRows = createLoginLogFixtures().items;
 const loginTypeOptions: { label: string; value: LoginLogType }[] = [
   { label: 'Username login', value: 'login.username' },
   { label: 'Mobile login', value: 'login.mobile' },
@@ -238,7 +236,7 @@ export default function LoginLogsPage() {
   const access = useAccess();
   const canDeleteLoginLogs = Boolean(access.canDeleteLoginLogs);
   const canManageLoginLogs = Boolean(access.canManageLoginLogs);
-  const [rows, setRows] = useState<readonly LoginLogSummary[]>(fallbackRows);
+  const [rows, setRows] = useState<readonly LoginLogSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
   const [selectedDetail, setSelectedDetail] = useState<LoginLogSummary>();
@@ -275,7 +273,8 @@ export default function LoginLogsPage() {
       setRows(await listOpenCoreLoginLogs(query));
       setLoadError(undefined);
     } catch (error: unknown) {
-      setRows(fallbackRows);
+      setRows([]);
+      setSelectedRowKeys([]);
       setLoadError(
         error instanceof Error ? error.message : 'Unable to load login logs.',
       );
@@ -587,9 +586,9 @@ export default function LoginLogsPage() {
     <PageContainer title="Login Logs" subTitle="S7 System">
       {loadError ? (
         <Alert
-          message="Using fallback login log fixtures"
+          message="Unable to load live login logs"
           description={loadError}
-          type="warning"
+          type="error"
           showIcon
           style={{ marginBottom: 16 }}
         />

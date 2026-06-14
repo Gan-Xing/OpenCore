@@ -1315,16 +1315,29 @@ if (
   !auditLogsPage.includes('listOpenCoreAuditLogs') ||
   !auditLogsPage.includes('getOpenCoreAuditLog') ||
   !auditLogsPage.includes('useCurrentPageFilters') ||
+  !auditLogsPage.includes('serverFilterToolbar') ||
   !auditLogsPage.includes('CurrentPageExportButton') ||
   !auditLogsPage.includes('dataSource={filteredRows}') ||
   !auditLogsPage.includes('rows={filteredRows}') ||
+  !auditLogsPage.includes('Operation actor server filter') ||
+  !auditLogsPage.includes('Operation action server filter') ||
+  !auditLogsPage.includes('Operation resource server filter') ||
+  !auditLogsPage.includes('Operation location server filter') ||
+  !auditLogsPage.includes('Operation status server filter') ||
+  !auditLogsPage.includes('Operation minimum duration server filter') ||
+  !auditLogsPage.includes('Operation maximum duration server filter') ||
+  !auditLogsPage.includes('Operation created from server filter') ||
+  !auditLogsPage.includes('Operation created to server filter') ||
+  !auditLogsPage.includes('Apply operation log server filters') ||
   !auditLogsPage.includes('Retention policy') ||
   !auditLogsPage.includes('durationMs') ||
   !auditLogsPage.includes('location') ||
-  !auditLogsPage.includes('jsonSections=')
+  !auditLogsPage.includes('jsonSections=') ||
+  auditLogsPage.includes('createAuditLogFixtures') ||
+  auditLogsPage.includes('Using fallback operation log fixtures')
 ) {
   throw new Error(
-    'Operation Logs page must use live SDK detail/list with bounded filtering, metadata detail and current-page export.',
+    'Operation Logs page must use live SDK detail/list with server-side filters, metadata detail and current-page export without fixture fallback.',
   );
 }
 
@@ -1344,7 +1357,8 @@ if (
   !auditLogsPage.includes('Clean expired') ||
   !auditLogsPage.includes('retentionDays') ||
   !auditLogsPage.includes('rowSelection') ||
-  !auditLogsPage.includes('selectedRowKeys')
+  !auditLogsPage.includes('selectedRowKeys') ||
+  !auditLogsPage.includes('Unable to load live operation logs')
 ) {
   throw new Error(
     'Operation Logs page must expose permission-gated cleanup controls over live SDK audit logs.',
@@ -1389,10 +1403,13 @@ if (
   !loginLogsPage.includes('createdFrom') ||
   !loginLogsPage.includes('createdTo') ||
   !loginLogsPage.includes('Browser') ||
-  !loginLogsPage.includes('OS')
+  !loginLogsPage.includes('OS') ||
+  !loginLogsPage.includes('Unable to load live login logs') ||
+  loginLogsPage.includes('createLoginLogFixtures') ||
+  loginLogsPage.includes('Using fallback login log fixtures')
 ) {
   throw new Error(
-    'Login Logs page must use live SDK detail/list/unlock with server-side filters, login type/result fields, device fields and current-page export.',
+    'Login Logs page must use live SDK detail/list/unlock with server-side filters, login type/result fields, device fields and current-page export without fixture fallback.',
   );
 }
 

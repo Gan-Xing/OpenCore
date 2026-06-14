@@ -101,6 +101,9 @@ fallback.
 Round 108 added Monitor Queue pause/resume controls through API/SDK/Admin,
 removed the Queue Admin fixture fallback and guarded the flow with
 pause/resume smoke plus deploy bundle markers.
+Round 109 removed Security operation/login log Admin fixture fallbacks, added
+operation-log server-side filters and guarded both pages with Admin smoke plus
+deploy checks.
 Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 `lint` must run sequentially.
 
@@ -116,7 +119,8 @@ Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
   diagnostics, provider failedCount and sent mutation guards.
 - Operation-log smoke covers guard failures, deleted-detail 404,
   duration/location filters, retentionDays cleanup and scheduled retention job
-  registry.
+  registry; Admin/deploy guards reject Security log fixture fallbacks and
+  require operation-log server-side filter markers.
 - IP/location smoke covers provider status, OpenAPI paths, documentation
   network lookup, invalid lookup and missing-IP guards; common tests cover the
   external HTTP JSON adapter, host allowlist, non-public-IP no-send behavior

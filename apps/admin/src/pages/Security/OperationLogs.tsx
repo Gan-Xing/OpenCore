@@ -3,6 +3,7 @@ import {
   DeleteOutlined,
   EyeOutlined,
   ReloadOutlined,
+  SearchOutlined,
 } from '@ant-design/icons';
 import {
   PageContainer,
@@ -10,13 +11,15 @@ import {
   type ProColumns,
 } from '@ant-design/pro-components';
 import { useAccess } from '@umijs/max';
-import { createAuditLogFixtures, type AuditLogSummary } from '@opencore/sdk';
+import type { AuditLogQueryRequest, AuditLogSummary } from '@opencore/sdk';
 import {
   Alert,
   Button,
+  Input,
   InputNumber,
   message,
   Modal,
+  Select,
   Space,
   Tag,
   Tooltip,
@@ -45,7 +48,34 @@ import {
   type DetailJsonSection,
 } from '../shared/ReadOnlyDetailDrawer';
 
-const fallbackRows = createAuditLogFixtures().items;
+type AuditLogStatus = NonNullable<AuditLogQueryRequest['status']>;
+
+type AuditLogServerFilterDraft = {
+  actorUsername: string;
+  action: string;
+  createdFrom: string;
+  createdTo: string;
+  location: string;
+  maxDurationMs?: number;
+  minDurationMs?: number;
+  resource: string;
+  status?: AuditLogStatus;
+};
+
+const emptyServerFilterDraft: AuditLogServerFilterDraft = {
+  actorUsername: '',
+  action: '',
+  createdFrom: '',
+  createdTo: '',
+  location: '',
+  resource: '',
+};
+
+const auditStatusOptions: { label: string; value: AuditLogStatus }[] = [
+  { label: 'Success', value: 'success' },
+  { label: 'Error', value: 'error' },
+];
+
 const searchFields: CurrentPageSearchField<AuditLogSummary>[] = [
   'actorUsername',
   'action',
@@ -133,10 +163,35 @@ function createDetailJsonSections(
   return [{ title: 'Metadata', value: record.metadata ?? {} }];
 }
 
+function createServerFilterQuery(
+  draft: AuditLogServerFilterDraft,
+): AuditLogQueryRequest {
+  return {
+    action: draft.action.trim() || undefined,
+    actorUsername: draft.actorUsername.trim() || undefined,
+    createdFrom: toIsoDateTime(draft.createdFrom),
+    createdTo: toIsoDateTime(draft.createdTo),
+    location: draft.location.trim() || undefined,
+    maxDurationMs: draft.maxDurationMs,
+    minDurationMs: draft.minDurationMs,
+    resource: draft.resource.trim() || undefined,
+    status: draft.status,
+  };
+}
+
+function toIsoDateTime(value: string): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
+}
+
 export default function OperationLogsPage() {
   const access = useAccess();
   const canDeleteAuditLogs = Boolean(access.canDeleteAuditLogs);
-  const [rows, setRows] = useState<readonly AuditLogSummary[]>(fallbackRows);
+  const [rows, setRows] = useState<readonly AuditLogSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
   const [selectedDetail, setSelectedDetail] = useState<AuditLogSummary>();
@@ -144,6 +199,10 @@ export default function OperationLogsPage() {
   const [deletingSelected, setDeletingSelected] = useState(false);
   const [cleaningLogs, setCleaningLogs] = useState(false);
   const [retentionDays, setRetentionDays] = useState(90);
+  const [activeServerQuery, setActiveServerQuery] =
+    useState<AuditLogQueryRequest>({});
+  const [serverFilterDraft, setServerFilterDraft] =
+    useState<AuditLogServerFilterDraft>({ ...emptyServerFilterDraft });
   const filterOptions = useMemo(() => createFilterOptions(rows), [rows]);
   const { filteredRows, toolbar: filterToolbar } =
     useCurrentPageFilters<AuditLogSummary>({
@@ -157,13 +216,16 @@ export default function OperationLogsPage() {
     [filteredRows, selectedRowKeys],
   );
 
-  const loadAuditLogs = async () => {
+  const loadAuditLogs = async (
+    query: AuditLogQueryRequest = activeServerQuery,
+  ) => {
     setLoading(true);
     try {
-      setRows(await listOpenCoreAuditLogs());
+      setRows(await listOpenCoreAuditLogs(query));
       setLoadError(undefined);
     } catch (error: unknown) {
-      setRows(fallbackRows);
+      setRows([]);
+      setSelectedRowKeys([]);
       setLoadError(
         error instanceof Error
           ? error.message
@@ -174,8 +236,29 @@ export default function OperationLogsPage() {
     }
   };
 
+  const updateServerFilterDraft = <
+    Field extends keyof AuditLogServerFilterDraft,
+  >(
+    field: Field,
+    value: AuditLogServerFilterDraft[Field],
+  ) => {
+    setServerFilterDraft((previous) => ({ ...previous, [field]: value }));
+  };
+
+  const applyServerFilters = async () => {
+    const query = createServerFilterQuery(serverFilterDraft);
+    setActiveServerQuery(query);
+    await loadAuditLogs(query);
+  };
+
+  const resetServerFilters = async () => {
+    setServerFilterDraft({ ...emptyServerFilterDraft });
+    setActiveServerQuery({});
+    await loadAuditLogs({});
+  };
+
   useEffect(() => {
-    void loadAuditLogs();
+    void loadAuditLogs({});
   }, []);
 
   const openDetail = async (record: AuditLogSummary) => {
@@ -282,13 +365,132 @@ export default function OperationLogsPage() {
     },
   ];
 
+  const serverFilterToolbar = (
+    <Space key="server-filters" size="small" wrap>
+      <Input
+        aria-label="Operation actor server filter"
+        onChange={(event) =>
+          updateServerFilterDraft('actorUsername', event.target.value)
+        }
+        placeholder="Actor"
+        style={{ width: 132 }}
+        value={serverFilterDraft.actorUsername}
+      />
+      <Input
+        aria-label="Operation action server filter"
+        onChange={(event) =>
+          updateServerFilterDraft('action', event.target.value)
+        }
+        placeholder="Action"
+        style={{ width: 132 }}
+        value={serverFilterDraft.action}
+      />
+      <Input
+        aria-label="Operation resource server filter"
+        onChange={(event) =>
+          updateServerFilterDraft('resource', event.target.value)
+        }
+        placeholder="Resource"
+        style={{ width: 164 }}
+        value={serverFilterDraft.resource}
+      />
+      <Input
+        aria-label="Operation location server filter"
+        onChange={(event) =>
+          updateServerFilterDraft('location', event.target.value)
+        }
+        placeholder="Location"
+        style={{ width: 148 }}
+        value={serverFilterDraft.location}
+      />
+      <Select
+        aria-label="Operation status server filter"
+        onChange={(value) =>
+          updateServerFilterDraft(
+            'status',
+            value === 'all' ? undefined : (value as AuditLogStatus),
+          )
+        }
+        options={[{ label: 'All', value: 'all' }, ...auditStatusOptions]}
+        style={{ width: 132 }}
+        value={
+          serverFilterDraft.status === undefined
+            ? 'all'
+            : serverFilterDraft.status
+        }
+      />
+      <InputNumber
+        aria-label="Operation minimum duration server filter"
+        addonAfter="ms"
+        min={0}
+        onChange={(value) =>
+          updateServerFilterDraft(
+            'minDurationMs',
+            typeof value === 'number' ? value : undefined,
+          )
+        }
+        placeholder="Min"
+        precision={0}
+        style={{ width: 116 }}
+        value={serverFilterDraft.minDurationMs}
+      />
+      <InputNumber
+        aria-label="Operation maximum duration server filter"
+        addonAfter="ms"
+        min={0}
+        onChange={(value) =>
+          updateServerFilterDraft(
+            'maxDurationMs',
+            typeof value === 'number' ? value : undefined,
+          )
+        }
+        placeholder="Max"
+        precision={0}
+        style={{ width: 116 }}
+        value={serverFilterDraft.maxDurationMs}
+      />
+      <Input
+        aria-label="Operation created from server filter"
+        onChange={(event) =>
+          updateServerFilterDraft('createdFrom', event.target.value)
+        }
+        style={{ width: 180 }}
+        type="datetime-local"
+        value={serverFilterDraft.createdFrom}
+      />
+      <Input
+        aria-label="Operation created to server filter"
+        onChange={(event) =>
+          updateServerFilterDraft('createdTo', event.target.value)
+        }
+        style={{ width: 180 }}
+        type="datetime-local"
+        value={serverFilterDraft.createdTo}
+      />
+      <Tooltip title="Apply server filters">
+        <Button
+          aria-label="Apply operation log server filters"
+          icon={<SearchOutlined />}
+          onClick={() => void applyServerFilters()}
+        />
+      </Tooltip>
+      <Tooltip title="Reset server filters">
+        <Button
+          aria-label="Reset operation log server filters"
+          icon={<ClearOutlined />}
+          onClick={() => void resetServerFilters()}
+        />
+      </Tooltip>
+    </Space>
+  );
+
   return (
     <PageContainer title="Operation Logs" subTitle="S7 System">
       {loadError ? (
         <Alert
-          message="Using fallback operation log fixtures"
+          message="Unable to load live operation logs"
           description={loadError}
-          type="warning"
+          type="error"
           showIcon
           style={{ marginBottom: 16 }}
         />
@@ -302,6 +504,7 @@ export default function OperationLogsPage() {
         rowKey="id"
         search={false}
         toolBarRender={() => [
+          serverFilterToolbar,
           filterToolbar,
           <Typography.Text key="cleanup-policy" type="secondary">
             Retention policy

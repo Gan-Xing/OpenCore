@@ -14,7 +14,7 @@ failures have guards; and remaining omissions are explicit product boundaries.
 | Capability            | Status        | Notes                                                                                                |
 | --------------------- | ------------- | ---------------------------------------------------------------------------------------------------- |
 | `core.permission`     | Meets         | Catalog, registry/custom split and assignments are live.                                             |
-| `core.audit-log`      | Meets current | List/detail/export/delete, duration/location, retention cleanup and scheduled retention job.         |
+| `core.audit-log`      | Meets current | List/detail/export/delete, duration/location, retention cleanup, scheduled job and Admin server filters. |
 | `core.dept`           | Meets         | Tree CRUD, options, guards, ordering and data-scope.                                                 |
 | `core.post`           | Meets         | CRUD, binding, options, batch deletion and ordering.                                                 |
 | `core.menu`           | Meets         | Tree metadata, route/menu fields and delete guards.                                                  |
@@ -23,7 +23,7 @@ failures have guards; and remaining omissions are explicit product boundaries.
 | `core.dict`           | Meets         | Dict/item CRUD and enabled simple-list source.                                                       |
 | `core.file`           | Meets         | Authenticated upload/download and content smoke.                                                     |
 | `monitor.online-user` | Meets         | Batch kick-out, revocation, registered-token allowlist, cleanup and UA/IP fields.                    |
-| `core.login-log`      | Meets current | Schema, lockout, cleanup, actor/reason, location and IP/location lookup with external GeoIP adapter. |
+| `core.login-log`      | Meets current | Schema, lockout, cleanup, actor/reason, location, IP/location lookup and live-only Admin data.       |
 | `core.config`         | Meets current | Runtime keys, feature flags, rollout, audience, overrides, vault versions, env and managed KMS.      |
 | `core.notice`         | Enhance       | SMS HTTP, SMTP, mail subject, diagnostics, secrets, attachments, TLS policy and realtime events.     |
 | `integration`         | Meets current | Provider audit, OAuth, Mail/SMS operations and WeChat/WebSocket design Admin reads are live.         |
@@ -130,6 +130,8 @@ failures have guards; and remaining omissions are explicit product boundaries.
   resources and removed the Admin fixture fallback.
 - Round 108 added guarded Monitor Queue pause/resume controls with
   `monitor:queue:manage`, live-only Admin data and smoke/deploy guards.
+- Round 109 removed Security operation/login log Admin fixture fallbacks and
+  wired operation-log server-side filters with Admin/deploy guards.
 
 ## Active Debt
 
@@ -154,7 +156,8 @@ failures have guards; and remaining omissions are explicit product boundaries.
   authenticated inbox realtime events, provider diagnostics, non-2xx/SMTP
   failedCount and post-sent mutation guards.
 - Operation log: delete guards, deleted-detail 404, duration/location filters,
-  retentionDays cleanup and scheduled retention job registry.
+  retentionDays cleanup, scheduled retention job registry, Admin server-side
+  filters and live-only Security log page guards.
 - IP/location: login-log smoke covers provider status, documentation-network
   lookup, invalid lookup, missing-IP guard and OpenAPI paths; common tests
   cover the external HTTP JSON adapter, host allowlist, non-public-IP no-send
