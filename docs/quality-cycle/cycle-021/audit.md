@@ -150,7 +150,7 @@ public smoke.
 | System Permissions | System permission catalog                      | live                | live-only                    | yes       | yes              | yes                | no               | Keep guard and public smoke current.                  |
 | System Posts       | System post management                         | live                | live-only                    | yes       | yes              | yes                | no               | Keep guard and public smoke current.                  |
 | System Files       | Infra file service                             | live                | fixture-backed               | no        | yes              | no                 | yes              | Remove Admin fallback and add public Admin smoke.     |
-| System Config      | System/config management                       | live                | fixture-backed               | no        | yes              | no                 | yes              | Remove Admin fallback; keep vault/KMS guards.         |
+| System Config      | System/config management                       | live                | live-only                    | yes       | yes              | yes                | no               | Keep guard and public smoke current.                  |
 | System Notices     | System notices                                 | live                | fixture-backed               | no        | yes              | no                 | yes              | Remove Admin fallback; keep delivery/provider guards. |
 | Scheduler/Monitor  | Job, queue, status, cache, version             | live                | live-only                    | yes       | yes              | yes                | no               | Keep admitted scope guarded.                          |
 | Integration        | Provider health, OAuth, Mail/SMS, design pages | live                | live-only for admitted scope | yes       | yes              | yes                | no               | Payment/BillingDesign remains out of scope.           |
@@ -202,7 +202,8 @@ public smoke.
   vault envelope deserialization, secret version history, secret rotation,
   vault key rotation, managed KMS provider status and no plaintext secret
   storage; unit tests cover v3 managed KMS data-key wrap/unwrap and host
-  allowlist rejection.
+  allowlist rejection. Admin/deploy guards reject Config fixture fallback and
+  require live config, environment override, secret/vault and export markers.
 - Monitor Jobs smoke covers operations summary, registry, job policy guards,
   enable/disable, disabled-trigger rejection, manual trigger, handler
   execution, failed retry, run-log detail, cron dispatch, worker claim and

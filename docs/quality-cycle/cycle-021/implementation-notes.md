@@ -20,7 +20,7 @@ active debt and decisions that change future execution.
 
 ## Runtime State
 
-Cycle-021 has recorded deployable stages through Round 118 across
+Cycle-021 has recorded deployable stages through Round 121 across
 System/Security/Monitor/Integration/Tools foundations. Round 91 added
 token/session blacklist maintenance with registered-token allowlist
 enforcement, expired-session cleanup, API/SDK/Admin/OpenAPI visibility, smoke
@@ -93,7 +93,13 @@ SDK calls and blocks stale Roles bundles through Admin/deploy guards. Round
 detail fallback and fallback UI, keeps user CRUD, role assignment,
 status/batch mutations, reset password, department filtering, post/dept
 selectors, import/export and current-page export live-only through SDK calls
-and blocks stale Users bundles through Admin/deploy guards.
+and blocks stale Users bundles through Admin/deploy guards. Round 121 removed
+the System Config Admin fixture fallback, stale detail fallback and fallback
+UI, keeps config CRUD, value reads, cache refresh, batch deletion,
+environment overrides, feature flag rollout/audience controls, secret version
+rotation, vault key rotation, backend Excel export and current-page export
+live-only through SDK calls and blocks stale Config bundles through
+Admin/deploy guards.
 
 ## Guard Register
 
@@ -165,7 +171,10 @@ and blocks stale Users bundles through Admin/deploy guards.
 - Config/secret: smoke covers feature flags, audience rules, environment
   overrides, legacy vault envelope deserialization, secret version history,
   explicit secret rotation, vault key rotation, managed KMS provider status,
-  v3 managed envelopes and no plaintext secret-vault leakage.
+  v3 managed envelopes and no plaintext secret-vault leakage. Admin/deploy
+  guards reject `createSystemConfigFixtures`, `fallbackRows`, fallback copy
+  and stale detail fallback on the Config page, and require live config,
+  environment override, secret/vault and export markers in the built bundle.
   Enable managed KMS with `OPENCORE_CONFIG_KMS_PROVIDER=opencore.http-json`,
   `OPENCORE_CONFIG_KMS_WRAP_URL`, `OPENCORE_CONFIG_KMS_UNWRAP_URL` and
   `OPENCORE_CONFIG_KMS_ALLOWED_HOSTS`; optional auth uses

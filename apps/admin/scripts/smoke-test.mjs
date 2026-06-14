@@ -1247,6 +1247,16 @@ if (
 }
 
 if (
+  configPage.includes('createSystemConfigFixtures') ||
+  configPage.includes('fallbackRows') ||
+  configPage.includes('Using fallback config snapshot') ||
+  configPage.includes('setRows(fallbackRows)') ||
+  configPage.includes('setSelectedDetail(record)') ||
+  !configPage.includes('Unable to load live system config') ||
+  !configPage.includes('Unable to load live system config detail.') ||
+  !configPage.includes('Unable to load live config environment overrides.') ||
+  !configPage.includes('Unable to load live config secret versions.') ||
+  !configPage.includes('Unable to load live config vault status.') ||
   !configPage.includes('listOpenCoreSystemConfig') ||
   !configPage.includes('getOpenCoreSystemConfig') ||
   !configPage.includes('getOpenCoreSystemConfigValue') ||
@@ -1322,7 +1332,7 @@ if (
   !configPage.includes('rows={filteredRows}')
 ) {
   throw new Error(
-    'System Config page must use live SDK CRUD with redacted secret preservation, bounded filtering, system deletion guards and current-page export.',
+    'System Config page must use live-only SDK CRUD with redacted secret preservation, bounded filtering, system deletion guards, vault/KMS controls, environment overrides and current-page export without fixture fallback.',
   );
 }
 

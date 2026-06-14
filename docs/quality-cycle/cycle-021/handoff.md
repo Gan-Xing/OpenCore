@@ -115,7 +115,7 @@ packages and OpenForge direct Prisma/migration/business-code writing.
 
 ## Current State
 
-Cycle-021 has recorded deployable stages through Round 120. The Capstone
+Cycle-021 has recorded deployable stages through Round 121. The Capstone
 Acceptance baseline remains Round 115 until the acceptance matrix,
 no-fixture-fallback guard, public API/Admin smoke and doc reconciliation are
 complete.
@@ -130,8 +130,11 @@ complete.
   changes, data-scope dept selection and current-page export. Users Admin is
   live-only for list/detail CRUD, role assignment, status/batch mutations,
   reset password, department filtering, post/dept selectors, import/export and
-  current-page export. Config, Files and System Notices Admin still have
-  fixture fallback and remain live-only closure debt.
+  current-page export. Config Admin is live-only for list/detail CRUD, value
+  reads, cache refresh, batch deletion, environment overrides, feature flag
+  rollout/audience controls, secret version rotation, vault key rotation,
+  backend Excel export and current-page export. Files and System Notices Admin
+  still have fixture fallback and remain live-only closure debt.
 - Security/session: login policy, logout, force logout, online-user kick-out,
   registered-token allowlist enforcement and expired session cleanup are live;
   Online Users Admin is live-only for list/detail/kick-out/cleanup and no
@@ -145,7 +148,7 @@ complete.
 - Config: runtime keys, login policy, feature flags, rollout, audience rules,
   environment overrides, secret vault, secret version history, explicit secret
   rotation, env-bound keyring, managed HTTP JSON KMS v3 envelopes and vault
-  key rotation.
+  key rotation are live across API/SDK/Admin with no Admin fixture fallback.
 - Notice: management, inbox/read state, read-user analytics, templates,
   delivery records, local provider, Integration outbox bridge, state sync,
   queued processing, signed callback intake, bounded retry scheduling and a
@@ -191,17 +194,18 @@ complete.
   operations for list, detail, create, approve and reject. These pages have
   seed coverage, dedicated smoke and Admin/deploy guards.
 
-Latest runtime stage: Round 120 System Users Admin live-only. It removes the
-Users Admin user/role/dept/post fixture fallback, stale detail fallback and
-fallback UI, keeps user CRUD, role assignment, status/batch mutations, reset
-password, department filtering, post/dept selectors, import/export and
-current-page export backed by live SDK calls only and adds Admin/deploy guards
-for stale fixture-backed Users bundles.
+Latest runtime stage: Round 121 System Config Admin live-only. It removes the
+Config Admin fixture fallback, stale detail fallback and fallback UI, keeps
+config CRUD, value reads, cache refresh, batch deletion, environment
+overrides, feature flag rollout/audience controls, secret version rotation,
+vault key rotation, backend Excel export and current-page export backed by
+live SDK calls only and adds Admin/deploy guards for stale fixture-backed
+Config bundles.
 
 ## Next Queue
 
-1. Close remaining fixture-backed Admin debt by dependency order: Config,
-   System Notices and Files.
+1. Close remaining fixture-backed Admin debt by dependency order: System
+   Notices and Files.
 2. Confirm or close Permissions and Posts local-only rows against the strict
    matrix, public smoke and global guard.
 3. Add seven-page unified no-fixture-fallback guard coverage.

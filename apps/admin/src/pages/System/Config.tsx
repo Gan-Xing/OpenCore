@@ -17,11 +17,10 @@ import {
   type ProColumns,
 } from '@ant-design/pro-components';
 import { useAccess } from '@umijs/max';
-import {
-  createSystemConfigFixtures,
-  type SystemConfigSecretVersionSummary,
-  type SystemConfigSummary,
-  type SystemConfigVaultStatusSummary,
+import type {
+  SystemConfigSecretVersionSummary,
+  SystemConfigSummary,
+  SystemConfigVaultStatusSummary,
 } from '@opencore/sdk';
 import {
   Alert,
@@ -106,7 +105,6 @@ type VaultRotationFormValues = {
   rotatedBy?: string;
 };
 
-const fallbackRows = createSystemConfigFixtures().items;
 const featureFlagConfigKeyPattern =
   /^feature\.[a-z0-9]+(?:[.-][a-z0-9]+)*\.enabled$/;
 const featureFlagRolloutConfigKeyPattern =
@@ -426,6 +424,10 @@ function renderSystem(record: SystemConfigSummary) {
   );
 }
 
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
+}
+
 export default function ConfigPage() {
   const access = useAccess();
   const canExportSystemConfig = Boolean(access.canExportSystemConfig);
@@ -433,8 +435,7 @@ export default function ConfigPage() {
   const [environmentForm] = Form.useForm<EnvironmentOverrideFormValues>();
   const [secretRotationForm] = Form.useForm<SecretRotationFormValues>();
   const [vaultRotationForm] = Form.useForm<VaultRotationFormValues>();
-  const [rows, setRows] =
-    useState<readonly SystemConfigSummary[]>(fallbackRows);
+  const [rows, setRows] = useState<readonly SystemConfigSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
   const [selectedDetail, setSelectedDetail] = useState<SystemConfigSummary>();
@@ -471,10 +472,12 @@ export default function ConfigPage() {
   const [secretVersions, setSecretVersions] = useState<
     readonly SystemConfigSecretVersionSummary[]
   >([]);
+  const [secretVersionsError, setSecretVersionsError] = useState<string>();
   const [secretVersionsLoading, setSecretVersionsLoading] = useState(false);
   const [secretRotating, setSecretRotating] = useState(false);
   const [vaultStatus, setVaultStatus] =
     useState<SystemConfigVaultStatusSummary>();
+  const [vaultStatusError, setVaultStatusError] = useState<string>();
   const [vaultStatusOpen, setVaultStatusOpen] = useState(false);
   const [vaultStatusLoading, setVaultStatusLoading] = useState(false);
   const [vaultKeyRotating, setVaultKeyRotating] = useState(false);
@@ -505,11 +508,19 @@ export default function ConfigPage() {
       setRows(await listOpenCoreSystemConfig());
       setLoadError(undefined);
     } catch (error: unknown) {
-      setRows(fallbackRows);
+      setRows([]);
+      setSelectedRowKeys([]);
+      setSelectedDetail(undefined);
+      setEditingConfig(undefined);
+      setFormOpen(false);
+      setRolloutConfigTarget(undefined);
+      setAudienceConfigTarget(undefined);
+      setEnvironmentConfigTarget(undefined);
+      setSecretConfigTarget(undefined);
+      setSecretVersions([]);
+      setSecretVersionsError(undefined);
       setLoadError(
-        error instanceof Error
-          ? error.message
-          : 'Unable to load system config.',
+        getErrorMessage(error, 'Unable to load live system config.'),
       );
     } finally {
       setLoading(false);
@@ -585,8 +596,11 @@ export default function ConfigPage() {
   const openDetail = async (record: SystemConfigSummary) => {
     try {
       setSelectedDetail(await getOpenCoreSystemConfig(record.key));
-    } catch (_error) {
-      setSelectedDetail(record);
+    } catch (error: unknown) {
+      setSelectedDetail(undefined);
+      message.error(
+        getErrorMessage(error, 'Unable to load live system config detail.'),
+      );
     }
   };
 
@@ -701,16 +715,13 @@ export default function ConfigPage() {
         value: stagingOverride?.value ?? record.value,
       });
     } catch (error: unknown) {
-      environmentForm.setFieldsValue({
-        description: '',
-        environment: 'staging',
-        remark: '',
-        value: record.value,
-      });
-      message.warning(
-        error instanceof Error
-          ? error.message
-          : 'Unable to load environment overrides.',
+      setEnvironmentConfigTarget(undefined);
+      environmentForm.resetFields();
+      message.error(
+        getErrorMessage(
+          error,
+          'Unable to load live config environment overrides.',
+        ),
       );
     } finally {
       setEnvironmentOverrideLoading(false);
@@ -769,6 +780,7 @@ export default function ConfigPage() {
 
     setSecretConfigTarget(record);
     setSecretVersions([]);
+    setSecretVersionsError(undefined);
     secretRotationForm.setFieldsValue({
       reason: '',
       rotatedBy: 'admin',
@@ -780,11 +792,13 @@ export default function ConfigPage() {
         await listOpenCoreSystemConfigSecretVersions(record.key),
       );
     } catch (error: unknown) {
-      message.warning(
-        error instanceof Error
-          ? error.message
-          : 'Unable to load secret versions.',
+      setSecretVersions([]);
+      const nextError = getErrorMessage(
+        error,
+        'Unable to load live config secret versions.',
       );
+      setSecretVersionsError(nextError);
+      message.error(nextError);
     } finally {
       setSecretVersionsLoading(false);
     }
@@ -816,6 +830,8 @@ export default function ConfigPage() {
 
   const openVaultStatus = async () => {
     setVaultStatusOpen(true);
+    setVaultStatus(undefined);
+    setVaultStatusError(undefined);
     vaultRotationForm.setFieldsValue({
       reason: '',
       rotatedBy: 'admin',
@@ -824,9 +840,13 @@ export default function ConfigPage() {
     try {
       setVaultStatus(await getOpenCoreSystemConfigVaultStatus());
     } catch (error: unknown) {
-      message.warning(
-        error instanceof Error ? error.message : 'Unable to load vault status.',
+      setVaultStatus(undefined);
+      const nextError = getErrorMessage(
+        error,
+        'Unable to load live config vault status.',
       );
+      setVaultStatusError(nextError);
+      message.error(nextError);
     } finally {
       setVaultStatusLoading(false);
     }
@@ -1263,8 +1283,8 @@ export default function ConfigPage() {
       {loadError ? (
         <Alert
           showIcon
-          type="warning"
-          message="Using fallback config snapshot"
+          type="error"
+          message="Unable to load live system config"
           description={loadError}
           style={{ marginBlockEnd: 16 }}
         />
@@ -1517,6 +1537,13 @@ export default function ConfigPage() {
             <Typography.Text type="secondary">
               Loading versions...
             </Typography.Text>
+          ) : secretVersionsError ? (
+            <Alert
+              showIcon
+              type="error"
+              message="Unable to load live config secret versions"
+              description={secretVersionsError}
+            />
           ) : secretVersions.length === 0 ? (
             <Typography.Text type="secondary">
               No secret versions
@@ -1588,72 +1615,84 @@ export default function ConfigPage() {
       >
         <Alert
           showIcon
-          type="info"
+          type={vaultStatusError ? 'error' : 'info'}
           message="Active vault key"
-          description={vaultStatus?.activeKeyId ?? 'Loading vault status'}
+          description={
+            vaultStatusError ??
+            vaultStatus?.activeKeyId ??
+            (vaultStatusLoading
+              ? 'Loading vault status'
+              : 'No live vault status')
+          }
           style={{ marginBlockEnd: 16 }}
         />
-        <Space direction="vertical" style={{ width: '100%' }}>
-          <Space wrap>
-            <Tag color="blue">Managed KMS provider</Tag>
-            <Tag
-              color={
-                vaultStatus?.provider === 'opencore.http-json'
-                  ? 'purple'
-                  : 'blue'
-              }
-            >
-              {vaultStatus?.provider ?? 'env'}
-            </Tag>
-            <Tag>{vaultStatus?.mode ?? 'local'}</Tag>
-            <Tag color={vaultStatus?.ready === false ? 'red' : 'green'}>
-              KMS {vaultStatus?.ready === false ? 'not ready' : 'ready'}
-            </Tag>
-            <Tag
-              color={
-                vaultStatus?.externalEncryptionEnabled ? 'purple' : 'default'
-              }
-            >
-              External encryption{' '}
-              {vaultStatus?.externalEncryptionEnabled ? 'on' : 'off'}
-            </Tag>
-            {vaultStatus?.endpointHost ? (
-              <Tag>KMS endpoint {vaultStatus.endpointHost}</Tag>
-            ) : null}
-            <Tag>
-              {vaultStatus?.legacyDecryptEnabled ? 'v1 decrypt' : 'v2 only'}
-            </Tag>
-            {(vaultStatus?.keyIds ?? []).map((keyId) => (
+        {vaultStatusError ? null : (
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <Space wrap>
+              <Tag color="blue">Managed KMS provider</Tag>
               <Tag
-                color={keyId === vaultStatus?.activeKeyId ? 'green' : 'default'}
-                key={keyId}
+                color={
+                  vaultStatus?.provider === 'opencore.http-json'
+                    ? 'purple'
+                    : 'blue'
+                }
               >
-                {keyId}
+                {vaultStatus?.provider ?? 'env'}
               </Tag>
-            ))}
+              <Tag>{vaultStatus?.mode ?? 'local'}</Tag>
+              <Tag color={vaultStatus?.ready === false ? 'red' : 'green'}>
+                KMS {vaultStatus?.ready === false ? 'not ready' : 'ready'}
+              </Tag>
+              <Tag
+                color={
+                  vaultStatus?.externalEncryptionEnabled ? 'purple' : 'default'
+                }
+              >
+                External encryption{' '}
+                {vaultStatus?.externalEncryptionEnabled ? 'on' : 'off'}
+              </Tag>
+              {vaultStatus?.endpointHost ? (
+                <Tag>KMS endpoint {vaultStatus.endpointHost}</Tag>
+              ) : null}
+              <Tag>
+                {vaultStatus?.legacyDecryptEnabled ? 'v1 decrypt' : 'v2 only'}
+              </Tag>
+              {(vaultStatus?.keyIds ?? []).map((keyId) => (
+                <Tag
+                  color={
+                    keyId === vaultStatus?.activeKeyId ? 'green' : 'default'
+                  }
+                  key={keyId}
+                >
+                  {keyId}
+                </Tag>
+              ))}
+            </Space>
+            <Space wrap>
+              <Tag>configs {vaultStatus?.encryptedConfigCount ?? 0}</Tag>
+              <Tag>versions {vaultStatus?.secretVersionCount ?? 0}</Tag>
+              <Tag>active key {vaultStatus?.activeKeyConfigCount ?? 0}</Tag>
+              <Tag
+                color={vaultStatus?.legacyEnvelopeCount ? 'orange' : 'green'}
+              >
+                legacy {vaultStatus?.legacyEnvelopeCount ?? 0}
+              </Tag>
+              <Tag
+                color={vaultStatus?.staleKeyEnvelopeCount ? 'orange' : 'green'}
+              >
+                stale {vaultStatus?.staleKeyEnvelopeCount ?? 0}
+              </Tag>
+            </Space>
+            {vaultStatus?.lastError ? (
+              <Alert
+                showIcon
+                type="warning"
+                message="Managed KMS provider not ready"
+                description={vaultStatus.lastError}
+              />
+            ) : null}
           </Space>
-          <Space wrap>
-            <Tag>configs {vaultStatus?.encryptedConfigCount ?? 0}</Tag>
-            <Tag>versions {vaultStatus?.secretVersionCount ?? 0}</Tag>
-            <Tag>active key {vaultStatus?.activeKeyConfigCount ?? 0}</Tag>
-            <Tag color={vaultStatus?.legacyEnvelopeCount ? 'orange' : 'green'}>
-              legacy {vaultStatus?.legacyEnvelopeCount ?? 0}
-            </Tag>
-            <Tag
-              color={vaultStatus?.staleKeyEnvelopeCount ? 'orange' : 'green'}
-            >
-              stale {vaultStatus?.staleKeyEnvelopeCount ?? 0}
-            </Tag>
-          </Space>
-          {vaultStatus?.lastError ? (
-            <Alert
-              showIcon
-              type="warning"
-              message="Managed KMS provider not ready"
-              description={vaultStatus.lastError}
-            />
-          ) : null}
-        </Space>
+        )}
         <Form<VaultRotationFormValues>
           form={vaultRotationForm}
           layout="vertical"

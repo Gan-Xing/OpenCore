@@ -25,25 +25,25 @@ Strict Capstone rules:
 
 ## Current Status
 
-| Capability                             | Status        | Notes                                                                                                                                                                                                         |
-| -------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| System Users (`core.user`)             | Meets         | User CRUD, role assignment, status/batch mutations, reset password, department filtering, post/dept selectors, import/export and current-page export are live-only with public smoke and Admin/deploy guards. |
-| System Roles (`core.role`)             | Meets         | Role CRUD, menu/user assignment, status changes, data-scope dept selection and current-page export are live-only with public smoke and Admin/deploy guards.                                                   |
-| System Permissions (`core.permission`) | Meets         | Catalog/detail/custom CRUD/export are live-only with smoke and deploy guards.                                                                                                                                 |
-| System Posts (`core.post`)             | Meets         | List/detail/batch/order operations are live-only with smoke and deploy guards.                                                                                                                                |
-| System Files (`core.file`)             | Partial       | Authenticated upload/download are live, but Files Admin still has fixture fallback.                                                                                                                           |
-| System Config (`core.config`)          | Enhance       | Runtime config, rollout, overrides, vault and KMS are live; Config Admin still has fixture fallback.                                                                                                          |
-| System Notices (`core.notice`)         | Enhance       | Notice delivery reliability is live; System Notices Admin still has fixture fallback.                                                                                                                         |
-| Scheduler/Monitor                      | Meets current | Jobs, queues, status, cache and version surfaces are live-only with smoke/deploy guards.                                                                                                                      |
-| Integration                            | Meets current | Providers, OAuth, Mail/SMS and design surfaces are live-only for admitted scope; payment/billing remains out of scope.                                                                                        |
-| Online Users (`monitor.online-user`)   | Meets         | Live list/detail/kick-out/cleanup, token revocation and deployment guards are present.                                                                                                                        |
-| OAuth (`integration.oauth-token`)      | Meets current | Token inventory/detail/revoke lifecycle is live-only; full SSO provider flows remain explicit out of scope.                                                                                                   |
-| Security Logs                          | Meets current | Login/operation log Admin pages are live-only with server filters and guard coverage.                                                                                                                         |
-| Departments (`core.dept`)              | Meets         | Tree/detail/order operations are live-only with smoke and deploy guards.                                                                                                                                      |
-| Dicts (`core.dict`)                    | Meets         | Dict/item operations are live-only with smoke and deploy guards.                                                                                                                                              |
-| System Menus (`core.menu`)             | Meets         | Tree/detail CRUD/export and permission options are live-only with smoke and deploy guards.                                                                                                                    |
-| Tooling/OpenForge                      | Meets current | OpenAPI, Export and OpenForge Admin are live for safe/read/dry-run scope; direct writes remain out of scope.                                                                                                  |
-| Collaboration                          | Meets current | Messages, Notices, Todos and Approval Lite are live-only for admitted lightweight collaboration scope.                                                                                                        |
+| Capability                             | Status        | Notes                                                                                                                                                                                                           |
+| -------------------------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| System Users (`core.user`)             | Meets         | User CRUD, role assignment, status/batch mutations, reset password, department filtering, post/dept selectors, import/export and current-page export are live-only with public smoke and Admin/deploy guards.   |
+| System Roles (`core.role`)             | Meets         | Role CRUD, menu/user assignment, status changes, data-scope dept selection and current-page export are live-only with public smoke and Admin/deploy guards.                                                     |
+| System Permissions (`core.permission`) | Meets         | Catalog/detail/custom CRUD/export are live-only with smoke and deploy guards.                                                                                                                                   |
+| System Posts (`core.post`)             | Meets         | List/detail/batch/order operations are live-only with smoke and deploy guards.                                                                                                                                  |
+| System Files (`core.file`)             | Partial       | Authenticated upload/download are live, but Files Admin still has fixture fallback.                                                                                                                             |
+| System Config (`core.config`)          | Meets         | Config CRUD, value reads, cache refresh, batch deletion, environment overrides, feature rollout/audience controls, secret/vault operations and exports are live-only with public smoke and Admin/deploy guards. |
+| System Notices (`core.notice`)         | Enhance       | Notice delivery reliability is live; System Notices Admin still has fixture fallback.                                                                                                                           |
+| Scheduler/Monitor                      | Meets current | Jobs, queues, status, cache and version surfaces are live-only with smoke/deploy guards.                                                                                                                        |
+| Integration                            | Meets current | Providers, OAuth, Mail/SMS and design surfaces are live-only for admitted scope; payment/billing remains out of scope.                                                                                          |
+| Online Users (`monitor.online-user`)   | Meets         | Live list/detail/kick-out/cleanup, token revocation and deployment guards are present.                                                                                                                          |
+| OAuth (`integration.oauth-token`)      | Meets current | Token inventory/detail/revoke lifecycle is live-only; full SSO provider flows remain explicit out of scope.                                                                                                     |
+| Security Logs                          | Meets current | Login/operation log Admin pages are live-only with server filters and guard coverage.                                                                                                                           |
+| Departments (`core.dept`)              | Meets         | Tree/detail/order operations are live-only with smoke and deploy guards.                                                                                                                                        |
+| Dicts (`core.dict`)                    | Meets         | Dict/item operations are live-only with smoke and deploy guards.                                                                                                                                                |
+| System Menus (`core.menu`)             | Meets         | Tree/detail CRUD/export and permission options are live-only with smoke and deploy guards.                                                                                                                      |
+| Tooling/OpenForge                      | Meets current | OpenAPI, Export and OpenForge Admin are live for safe/read/dry-run scope; direct writes remain out of scope.                                                                                                    |
+| Collaboration                          | Meets current | Messages, Notices, Todos and Approval Lite are live-only for admitted lightweight collaboration scope.                                                                                                          |
 
 ## Closed Remediation
 
@@ -177,11 +177,17 @@ Strict Capstone rules:
   assignment, status/batch mutations, reset password, department filtering,
   post/dept selectors, import/export and current-page export live-only and
   added Admin/deploy guards for stale Users bundles.
+- Round 121 removed the System Config Admin fixture fallback, stale detail
+  fallback and fallback UI, made config CRUD, value reads, cache refresh,
+  batch deletion, environment overrides, feature flag rollout/audience
+  controls, secret version rotation, vault key rotation, backend Excel export
+  and current-page export live-only and added Admin/deploy guards for stale
+  Config bundles.
 
 ## Active Debt
 
-1. System Config, Files and System Notices Admin pages still have fixture
-   fallback and need live-only closure stages.
+1. System Files and System Notices Admin pages still have fixture fallback and
+   need live-only closure stages.
 2. Payment/BillingDesign remains explicit-admission because real payment,
    refund and reconciliation are out of scope.
 3. Optional Reports/ExportJobs remain explicit-admission because full report

@@ -467,6 +467,81 @@ verify_admin_bundle_api_base_url() {
     exit 1
   fi
 
+  if grep \
+    --fixed-strings \
+    "createSystemConfigFixtures" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Config.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "fallbackRows" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Config.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "Using fallback config snapshot" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Config.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "setRows(fallbackRows)" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Config.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "setSelectedDetail(record)" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Config.tsx" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Unable to load live system config" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Unable to load live system config detail." \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Unable to load live config environment overrides." \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Unable to load live config secret versions." \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Unable to load live config vault status." \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Config Excel export downloaded" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Vault Key Rotation" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Managed KMS provider" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Feature audience" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "core-config" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null; then
+    echo "Admin Config page must use live-only data, environment overrides, secret vault controls and exports without fixture fallback." >&2
+    echo "Refusing to deploy a stale or fixture-backed Config frontend page." >&2
+    exit 1
+  fi
+
   if ! grep -R \
     --fixed-strings \
     --include='*.js' \
