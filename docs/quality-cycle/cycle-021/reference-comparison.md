@@ -154,6 +154,10 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
 - Round 99: shared current-page export buttons use the live Tool Export
   protocol instead of SDK fixtures, so table exports across Admin pages honor
   the same server row-cap contract.
+- Round 100: Integration Mail matches the current foundation expectation for
+  notification provider operations: Admin uses live template/outbox list,
+  detail, render preview and queued-processing controls instead of fixture
+  rows.
 
 ## Explicit Non-Claims
 

@@ -4,16 +4,17 @@ Date: 2026-06-14
 
 ## Latest Completed Round
 
-Round 99: Tool Export shared live protocol.
+Round 100: Integration Mail live operations.
 
 ## Closed
 
-- Moved shared current-page export buttons to the live Tool Export protocol.
-- Removed stale Tool Export SDK fixture helpers.
-- Added Admin smoke and deploy bundle guards for fixture-backed shared export
-  buttons.
+- Replaced the fixture-backed Mail Admin page with live template/outbox
+  list/detail.
+- Added live mail template preview and queued outbox processing controls.
+- Added Admin smoke and deploy bundle guards for the live Mail page.
 
 ## Still Open
 
+- Integration SMS Admin live template/outbox operations remain open.
 - OpenForge direct schema/migration/business code writes remain outside the
   admitted surface.

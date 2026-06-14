@@ -11,28 +11,28 @@ failures have guards; and remaining omissions are explicit product boundaries.
 
 ## Current Status
 
-| Capability            | Status        | Notes                                                                                                    |
-| --------------------- | ------------- | -------------------------------------------------------------------------------------------------------- |
-| `core.permission`     | Meets         | Catalog, registry/custom split and assignments are live.                                                 |
-| `core.audit-log`      | Meets current | List/detail/export/delete, duration/location, retention cleanup and scheduled retention job.             |
-| `core.dept`           | Meets         | Tree CRUD, options, guards, ordering and data-scope.                                                     |
-| `core.post`           | Meets         | CRUD, binding, options, batch deletion and ordering.                                                     |
-| `core.menu`           | Meets         | Tree metadata, route/menu fields and delete guards.                                                      |
-| `core.role`           | Meets         | Menu/user assignment, status effects and revocation.                                                     |
-| `core.user`           | Meets         | CRUD, profile, password, avatar, import/export, binds.                                                   |
-| `core.dict`           | Meets         | Dict/item CRUD and enabled simple-list source.                                                           |
-| `core.file`           | Meets         | Authenticated upload/download and content smoke.                                                         |
-| `monitor.online-user` | Meets         | Batch kick-out, revocation, registered-token allowlist, cleanup and UA/IP fields.                        |
-| `core.login-log`      | Meets current | Schema, lockout, cleanup, actor/reason, location and IP/location lookup with external GeoIP adapter.     |
-| `core.config`         | Meets current | Runtime keys, feature flags, rollout, audience, overrides, vault versions, env and managed KMS.          |
-| `core.notice`         | Enhance       | SMS HTTP, SMTP, mail subject, diagnostics, secrets, attachments, TLS policy and realtime events.         |
-| `integration`         | Meets current | Provider health/config audit, readiness totals, outbox failure history and OAuth token inventory/revoke. |
-| `scheduler/monitor`   | Meets current | Job Admin operations, registry, handler diagnostics, cron dispatch, worker claim and queue metrics.      |
-| `monitor.cache`       | Meets current | Redis namespace/key scans, safe value preview, dry-run clear and confirmed key/prefix deletion.          |
-| `monitor.version`     | Meets current | Live runtime/deployment metadata uses API/SDK/Admin, deploy injection and smoke/deploy guards.           |
-| `tool.openapi`        | Meets current | Live drift snapshot metadata uses API/SDK/Admin, OpenAPI contract fields and tool/deploy guards.         |
-| `tool.export`         | Meets current | Admin protocol/preview and shared current-page export buttons use the live protocol with row caps.       |
-| `OpenForge Admin`     | Meets current | Safe workbench, dry-run confirmation, write-intent rejection and manifest preview/detail.                |
+| Capability            | Status        | Notes                                                                                                  |
+| --------------------- | ------------- | ------------------------------------------------------------------------------------------------------ |
+| `core.permission`     | Meets         | Catalog, registry/custom split and assignments are live.                                               |
+| `core.audit-log`      | Meets current | List/detail/export/delete, duration/location, retention cleanup and scheduled retention job.           |
+| `core.dept`           | Meets         | Tree CRUD, options, guards, ordering and data-scope.                                                   |
+| `core.post`           | Meets         | CRUD, binding, options, batch deletion and ordering.                                                   |
+| `core.menu`           | Meets         | Tree metadata, route/menu fields and delete guards.                                                    |
+| `core.role`           | Meets         | Menu/user assignment, status effects and revocation.                                                   |
+| `core.user`           | Meets         | CRUD, profile, password, avatar, import/export, binds.                                                 |
+| `core.dict`           | Meets         | Dict/item CRUD and enabled simple-list source.                                                         |
+| `core.file`           | Meets         | Authenticated upload/download and content smoke.                                                       |
+| `monitor.online-user` | Meets         | Batch kick-out, revocation, registered-token allowlist, cleanup and UA/IP fields.                      |
+| `core.login-log`      | Meets current | Schema, lockout, cleanup, actor/reason, location and IP/location lookup with external GeoIP adapter.   |
+| `core.config`         | Meets current | Runtime keys, feature flags, rollout, audience, overrides, vault versions, env and managed KMS.        |
+| `core.notice`         | Enhance       | SMS HTTP, SMTP, mail subject, diagnostics, secrets, attachments, TLS policy and realtime events.       |
+| `integration`         | Enhance       | Provider audit, OAuth and Mail Admin are live; SMS Admin template/outbox page still needs live wiring. |
+| `scheduler/monitor`   | Meets current | Job Admin operations, registry, handler diagnostics, cron dispatch, worker claim and queue metrics.    |
+| `monitor.cache`       | Meets current | Redis namespace/key scans, safe value preview, dry-run clear and confirmed key/prefix deletion.        |
+| `monitor.version`     | Meets current | Live runtime/deployment metadata uses API/SDK/Admin, deploy injection and smoke/deploy guards.         |
+| `tool.openapi`        | Meets current | Live drift snapshot metadata uses API/SDK/Admin, OpenAPI contract fields and tool/deploy guards.       |
+| `tool.export`         | Meets current | Admin protocol/preview and shared current-page export buttons use the live protocol with row caps.     |
+| `OpenForge Admin`     | Meets current | Safe workbench, dry-run confirmation, write-intent rejection and manifest preview/detail.              |
 
 ## Closed Remediation
 
@@ -109,10 +109,14 @@ failures have guards; and remaining omissions are explicit product boundaries.
   preview calls, including row-cap smoke and Admin/deploy guards.
 - Round 99 moved shared current-page export buttons to the live Tool Export
   protocol and removed stale Tool Export SDK fixture helpers.
+- Round 100 replaced the Integration Mail Admin fixture page with live
+  template/outbox list, detail, preview and queued-processing controls.
 
 ## Active Debt
 
-1. OpenForge direct schema/migration/business-code writes still require user
+1. Integration SMS Admin live template/outbox operations remain a foundation
+   debt.
+2. OpenForge direct schema/migration/business-code writes still require user
    admission.
 
 ## Guard Matrix
@@ -158,8 +162,8 @@ failures have guards; and remaining omissions are explicit product boundaries.
 - Integration: health audit smoke covers provider-wide readiness totals,
   config-vault debt, outbox backlog, diagnostics parity, failure history and
   secret-leak guards; OAuth token smoke covers summary, list/detail, revoke,
-  idempotent revoke and secret-leak guards; deploy checks Admin health/config
-  audit and OAuth token markers.
+  idempotent revoke and secret-leak guards; Admin/deploy guards reject stale
+  Mail fixture pages and require live Mail template/outbox markers.
 - Config: runtime shape, environment override governance, secret-vault
   plaintext protection, legacy envelope deserialization, secret version
   history, secret rotation, vault key rotation, managed KMS host allowlist and

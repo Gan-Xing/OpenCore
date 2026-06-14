@@ -96,15 +96,20 @@ import {
   type SystemDeptTreeSummary,
   type FileAssetSummary,
   type FailOutboxMessageRequest,
+  type IntegrationOutboxQueryRequest,
   type IntegrationProviderHealthAuditSummary,
   type IntegrationOutboxSummary,
   type IntegrationOutboxProcessResult,
   type IntegrationOutboxScheduleResult,
+  type IntegrationTemplateQueryRequest,
+  type IntegrationTemplateSummary,
   type OAuthCallbackContractSummary,
   type OAuthTokenInventorySummary,
   type OAuthTokenQueryRequest,
   type OAuthTokenSummary,
+  type PreviewTemplateRequest,
   type RevokeOAuthTokenRequest,
+  type TemplatePreviewSummary,
   type IpLocationLookupSummary,
   type IpLocationProviderStatusSummary,
   type JobDefinitionSummary,
@@ -1229,6 +1234,49 @@ export function runOpenCoreIntegrationOutboxSchedule(
   body?: ScheduleOutboxRequest,
 ): Promise<IntegrationOutboxScheduleResult> {
   return integrationClient.runOutboxSchedule(getRequiredAdminToken(), body);
+}
+
+export async function listOpenCoreMailTemplates(
+  query?: IntegrationTemplateQueryRequest,
+): Promise<IntegrationTemplateSummary[]> {
+  const page = await integrationClient.listMailTemplates(
+    getRequiredAdminToken(),
+    {
+      page: 1,
+      pageSize: 100,
+      ...query,
+    },
+  );
+  return [...page.items];
+}
+
+export function getOpenCoreMailTemplate(
+  code: string,
+): Promise<IntegrationTemplateSummary> {
+  return integrationClient.getMailTemplate(getRequiredAdminToken(), code);
+}
+
+export function previewOpenCoreMailTemplate(
+  body: PreviewTemplateRequest,
+): Promise<TemplatePreviewSummary> {
+  return integrationClient.previewMailTemplate(getRequiredAdminToken(), body);
+}
+
+export async function listOpenCoreMailOutbox(
+  query?: IntegrationOutboxQueryRequest,
+): Promise<IntegrationOutboxSummary[]> {
+  const page = await integrationClient.listMailOutbox(getRequiredAdminToken(), {
+    page: 1,
+    pageSize: 100,
+    ...query,
+  });
+  return [...page.items];
+}
+
+export function getOpenCoreMailOutboxMessage(
+  id: string,
+): Promise<IntegrationOutboxSummary> {
+  return integrationClient.getMailOutboxMessage(getRequiredAdminToken(), id);
 }
 
 export function getOpenCoreIntegrationProviderHealthAudit(): Promise<IntegrationProviderHealthAuditSummary> {

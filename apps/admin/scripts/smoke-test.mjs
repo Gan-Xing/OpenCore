@@ -774,8 +774,18 @@ if (
   !exportJobsPage.includes('@opencore/sdk') ||
   !providersPage.includes('@opencore/sdk') ||
   !mailPage.includes('@opencore/sdk') ||
+  !mailPage.includes('listOpenCoreMailTemplates') ||
+  !mailPage.includes('listOpenCoreMailOutbox') ||
+  !mailPage.includes('getOpenCoreMailTemplate') ||
+  !mailPage.includes('getOpenCoreMailOutboxMessage') ||
+  !mailPage.includes('previewOpenCoreMailTemplate') ||
+  !mailPage.includes("processOpenCoreIntegrationOutbox('mail'") ||
+  !mailPage.includes('Live mail templates') ||
+  !mailPage.includes('Mail outbox operations') ||
+  !mailPage.includes('Process queued mail outbox') ||
+  !mailPage.includes('Preview template') ||
+  !mailPage.includes('integration:mail:manage') ||
   !mailPage.includes('Outbox Subject') ||
-  !mailPage.includes('selectedOutbox?.subject') ||
   !mailPage.includes('SMTP Attachments') ||
   !mailPage.includes('Attachment Metadata') ||
   !smsPage.includes('@opencore/sdk') ||
@@ -786,6 +796,22 @@ if (
 ) {
   throw new Error(
     'Admin platform, collaboration, operations, and integration pages must consume SDK types or fixtures.',
+  );
+}
+
+if (
+  mailPage.includes('createIntegrationFixtures') ||
+  mailPage.includes('findIntegrationTemplateFixture') ||
+  mailPage.includes('findIntegrationOutboxFixture') ||
+  !opencorePlatformService.includes('listOpenCoreMailTemplates') ||
+  !opencorePlatformService.includes('integrationClient.listMailTemplates') ||
+  !opencorePlatformService.includes('listOpenCoreMailOutbox') ||
+  !opencorePlatformService.includes('integrationClient.listMailOutbox') ||
+  !opencorePlatformService.includes('previewOpenCoreMailTemplate') ||
+  !opencorePlatformService.includes('integrationClient.previewMailTemplate')
+) {
+  throw new Error(
+    'Integration Mail page must use live mail template/outbox SDK APIs instead of static fixtures.',
   );
 }
 
@@ -1594,7 +1620,6 @@ const admittedFilteredPages = [
   { exportsRows: true, name: 'reports', source: reportsPage },
   { exportsRows: true, name: 'export jobs', source: exportJobsPage },
   { exportsRows: true, name: 'providers', source: providersPage },
-  { exportsRows: true, name: 'mail', source: mailPage },
   { exportsRows: true, name: 'sms', source: smsPage },
   { exportsRows: true, name: 'oauth', source: oauthPage },
   { exportsRows: true, name: 'wechat', source: wechatPage },
@@ -1617,6 +1642,18 @@ for (const page of admittedFilteredPages) {
       `Admin admitted page export must use filtered rows: ${page.name}`,
     );
   }
+}
+
+if (
+  !mailPage.includes('useCurrentPageFilters') ||
+  !mailPage.includes('dataSource={filteredTemplates}') ||
+  !mailPage.includes('dataSource={filteredOutboxRows}') ||
+  !mailPage.includes('rows={filteredTemplates}') ||
+  !mailPage.includes('rows={filteredOutboxRows}')
+) {
+  throw new Error(
+    'Integration Mail page must expose bounded filters and current-page exports for live templates and outbox rows.',
+  );
 }
 
 const requestSpec = readFileSync(resolve(root, 'src/utils/request.ts'), 'utf8');

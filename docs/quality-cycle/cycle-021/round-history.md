@@ -20,7 +20,7 @@ only; the ledger keeps state transitions and git log keeps commits.
   type/result schema, lockout/unlock, cleanup and attempt limits.
 - Rounds 50-59: logout audit semantics, dept/post ordering, data-scope,
   notice inbox/read analytics, feature flags and login-log location.
-- Rounds 60-99: notice templates, delivery records, local/outbox providers,
+- Rounds 60-100: notice templates, delivery records, local/outbox providers,
   SMS HTTP and SMTP adapters, config secret vault, feature-flag
   rollout/audience, outbox state/process/callback/schedule handling and
   mail subject persistence, provider diagnostics, SMS HTTP secret injection,
@@ -36,8 +36,8 @@ only; the ledger keeps state transitions and git log keeps commits.
   and managed HTTP JSON KMS v3 secret-vault envelopes, plus Redis-backed
   Monitor Cache namespace/key operations and live Monitor Version
   runtime/deployment metadata, live Tool OpenAPI drift snapshot metadata,
-  live Tool Export protocol/preview wiring and shared live current-page
-  export protocol.
+  live Tool Export protocol/preview wiring, shared live current-page export
+  protocol and live Integration Mail template/outbox Admin operations.
 
 ## Rework Notes
 

@@ -47,7 +47,7 @@ packages and OpenForge direct Prisma/migration/business-code writing.
 
 ## Current State
 
-Cycle-021 has completed 99 deployable stages.
+Cycle-021 has completed 100 deployable stages.
 
 - System/RBAC: notice, dept, post, menu, role, permission, user, dict, config
   and file loops are live.
@@ -73,7 +73,9 @@ Cycle-021 has completed 99 deployable stages.
   with readiness totals, config-vault debt, outbox backlog, last failure and
   operator actions. OAuth token inventory, detail, summary and revoke
   lifecycle are live across API/SDK/Admin/OpenAPI/smoke with secret-ref-only
-  storage.
+  storage. Mail templates/outbox Admin operations now use live API/SDK calls
+  for list, detail, preview and queued processing; SMS Admin is the next
+  fixture-backed integration surface to replace.
 - Monitor jobs: API/SDK routes, registry policy, seed job, Admin live list,
   enable/disable, manual trigger, registered handler execution, retry/timeout
   diagnostics, failed run-log detail, cron dispatch, worker claim and scheduler
@@ -90,14 +92,16 @@ Cycle-021 has completed 99 deployable stages.
   workbench for status, doctor, plan, diff, check, manifest list and
   apply/rollback dry-run, dry-run confirmation and manifest preview/detail.
 
-Latest runtime stage: Round 99 Tool Export shared live protocol. It moves the
-shared current-page export button to the live Tool Export protocol, removes the
-stale Tool Export SDK fixture helpers and guards the Admin bundle against
-fixture-backed export buttons.
+Latest runtime stage: Round 100 Integration Mail live operations. It replaces
+the fixture-backed Mail Admin page with live template/outbox list, detail,
+preview and queued-processing controls through the SDK, plus Admin smoke and
+deploy bundle guards.
 
 ## Next Queue
 
-1. OpenForge direct Prisma/migration/business-code writes remain out of scope
+1. Integration SMS Admin still reads SDK fixtures for templates/outbox; replace
+   it with live SMS template/outbox list, detail, preview and process controls.
+2. OpenForge direct Prisma/migration/business-code writes remain out of scope
    until explicitly admitted.
 
 ## Docs Rule
