@@ -8,6 +8,7 @@ import {
 import type {
   BatchDeleteSystemConfigsDto,
   CreateSystemConfigDto,
+  RotateSystemConfigSecretDto,
   UpdateSystemConfigDto,
   UpsertSystemConfigEnvironmentOverrideDto,
 } from './system-config.dto';
@@ -18,6 +19,7 @@ import {
 import type {
   SystemConfigEnvironmentOverrideRecord,
   SystemConfigRecord,
+  SystemConfigSecretVersionRecord,
   SystemConfigValueType,
   SystemConfigVisibility,
 } from './system-config.records';
@@ -153,6 +155,15 @@ export abstract class SystemConfigRepository {
     key: string,
     environment: string,
   ): Promise<{ deleted: true }>;
+
+  abstract listConfigSecretVersions(
+    key: string,
+  ): Promise<readonly SystemConfigSecretVersionRecord[]>;
+
+  abstract rotateSecretConfig(
+    key: string,
+    body: RotateSystemConfigSecretDto,
+  ): Promise<SystemConfigSecretVersionRecord>;
 }
 
 export function normalizeSystemConfigPageQuery(
@@ -263,6 +274,24 @@ export function assertSecretConfigShape(input: {
   if (input.valueType !== 'string') {
     throw new BadRequestException(
       `Secret system config ${input.key} must keep string value type.`,
+    );
+  }
+}
+
+export function assertSecretVersionedConfig(config: {
+  key: string;
+  valueType: SystemConfigValueType;
+  visibility: SystemConfigVisibility;
+}): void {
+  if (config.visibility !== 'secret') {
+    throw new BadRequestException(
+      `Only secret system config can keep secret versions: ${config.key}`,
+    );
+  }
+
+  if (config.valueType !== 'string') {
+    throw new BadRequestException(
+      `Secret system config ${config.key} must keep string value type.`,
     );
   }
 }
@@ -585,6 +614,50 @@ export function normalizeOptionalConfigText(
   }
 
   return normalized;
+}
+
+export function normalizeSecretRotationActor(
+  value: unknown,
+): string | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  if (typeof value !== 'string') {
+    throw new BadRequestException(
+      'System config secret rotation actor must be a string.',
+    );
+  }
+
+  const normalized = value.trim();
+
+  if (!normalized) {
+    return undefined;
+  }
+
+  if (normalized.length > 100) {
+    throw new BadRequestException(
+      'System config secret rotation actor must not exceed 100 characters.',
+    );
+  }
+
+  return normalized;
+}
+
+export function normalizeSecretRotationValue(value: unknown): string {
+  if (typeof value !== 'string') {
+    throw new BadRequestException(
+      'System config secret rotation value must be a string.',
+    );
+  }
+
+  if (!value.trim()) {
+    throw new BadRequestException(
+      'System config secret rotation value is required.',
+    );
+  }
+
+  return value;
 }
 
 export function normalizeSystemConfigEnvironment(value: unknown): string {

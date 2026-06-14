@@ -29,21 +29,20 @@ schema/business-code writing.
   runtime login policy.
 - Rounds 50-59: logout audit semantics, ordering, data-scope, notice
   inbox/read analytics, feature flags and login-log location.
-- Rounds 60-82: notice template/delivery/provider/outbox work, SMS HTTP and
+- Rounds 60-83: notice template/delivery/provider/outbox work, SMS HTTP and
   SMTP adapters, config vault and rollout/audience, operation-log cleanup, plus
   mail subject persistence, provider diagnostics, SMS HTTP secret injection,
   SMTP attachments, explicit SMTP TLS policy, inbox realtime events, Monitor
   Jobs Admin operations, registered handler diagnostics and config
-  environment overrides.
+  environment overrides plus config secret version history/rotation.
 
-Latest done: Round 82 config environment overrides with public-config override
-CRUD, environment-aware runtime/evaluate APIs, SDK/Admin/OpenAPI visibility and
-smoke/deploy coverage.
+Latest done: Round 83 config secret versions with create-time baselines,
+explicit rotation, SDK/Admin/OpenAPI visibility and smoke/deploy coverage for
+seed drift, guards and plaintext leakage.
 
 ## Active P1/P2 Queue
 
-1. Config governance: external KMS binding, key rotation and secret version
-   history.
+1. Config governance: external KMS binding and vault key rotation.
 2. Operation-log enrichment: retention scheduling, duration/location fields
    and governance.
 3. OpenForge Admin: plan/diff/check/apply/manifest/rollback surfaces.

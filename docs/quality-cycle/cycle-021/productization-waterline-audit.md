@@ -11,23 +11,23 @@ failures have guards; and remaining omissions are explicit product boundaries.
 
 ## Current Status
 
-| Capability            | Status        | Notes                                                                                            |
-| --------------------- | ------------- | ------------------------------------------------------------------------------------------------ |
-| `core.permission`     | Meets         | Catalog, registry/custom split and assignments are live.                                         |
-| `core.audit-log`      | Meets current | List/detail/export/delete/clean are live.                                                        |
-| `core.dept`           | Meets         | Tree CRUD, options, guards, ordering and data-scope.                                             |
-| `core.post`           | Meets         | CRUD, binding, options, batch deletion and ordering.                                             |
-| `core.menu`           | Meets         | Tree metadata, route/menu fields and delete guards.                                              |
-| `core.role`           | Meets         | Menu/user assignment, status effects and revocation.                                             |
-| `core.user`           | Meets         | CRUD, profile, password, avatar, import/export, binds.                                           |
-| `core.dict`           | Meets         | Dict/item CRUD and enabled simple-list source.                                                   |
-| `core.file`           | Meets         | Authenticated upload/download and content smoke.                                                 |
-| `monitor.online-user` | Meets         | Batch kick-out, revocation and UA/IP fields.                                                     |
-| `core.login-log`      | Meets current | Schema, lockout, cleanup, actor/reason and location.                                             |
-| `core.config`         | Meets current | Runtime keys, feature flags, rollout, audience, environment overrides, vault.                    |
-| `core.notice`         | Enhance       | SMS HTTP, SMTP, mail subject, diagnostics, secrets, attachments, TLS policy and realtime events. |
-| `scheduler/monitor`   | Meets current | Job Admin operations, registry and handler diagnostics are live.                                 |
-| `OpenForge Admin`     | P2            | CLI/core exists; Admin UX remains.                                                               |
+| Capability            | Status        | Notes                                                                                             |
+| --------------------- | ------------- | ------------------------------------------------------------------------------------------------- |
+| `core.permission`     | Meets         | Catalog, registry/custom split and assignments are live.                                          |
+| `core.audit-log`      | Meets current | List/detail/export/delete/clean are live.                                                         |
+| `core.dept`           | Meets         | Tree CRUD, options, guards, ordering and data-scope.                                              |
+| `core.post`           | Meets         | CRUD, binding, options, batch deletion and ordering.                                              |
+| `core.menu`           | Meets         | Tree metadata, route/menu fields and delete guards.                                               |
+| `core.role`           | Meets         | Menu/user assignment, status effects and revocation.                                              |
+| `core.user`           | Meets         | CRUD, profile, password, avatar, import/export, binds.                                            |
+| `core.dict`           | Meets         | Dict/item CRUD and enabled simple-list source.                                                    |
+| `core.file`           | Meets         | Authenticated upload/download and content smoke.                                                  |
+| `monitor.online-user` | Meets         | Batch kick-out, revocation and UA/IP fields.                                                      |
+| `core.login-log`      | Meets current | Schema, lockout, cleanup, actor/reason and location.                                              |
+| `core.config`         | Meets current | Runtime keys, feature flags, rollout, audience, environment overrides, vault and secret versions. |
+| `core.notice`         | Enhance       | SMS HTTP, SMTP, mail subject, diagnostics, secrets, attachments, TLS policy and realtime events.  |
+| `scheduler/monitor`   | Meets current | Job Admin operations, registry and handler diagnostics are live.                                  |
+| `OpenForge Admin`     | P2            | CLI/core exists; Admin UX remains.                                                                |
 
 ## Closed Remediation
 
@@ -61,10 +61,12 @@ failures have guards; and remaining omissions are explicit product boundaries.
   SDK/Admin/OpenAPI visibility and public smoke coverage.
 - Round 82 added public config environment overrides with environment-aware
   runtime/evaluate APIs, SDK/Admin/OpenAPI visibility and smoke/deploy guards.
+- Round 83 added config secret version history and explicit rotation with
+  SDK/Admin/OpenAPI visibility and plaintext-leakage smoke guards.
 
 ## Active Debt
 
-1. Config: external KMS binding, key rotation and secret versions.
+1. Config: external KMS binding and vault key rotation.
 2. Operation log: retention scheduling, duration/location fields and policy.
 3. OpenForge Admin: safe plan/diff/check/apply/manifest/rollback UI.
 4. Integration: provider readiness, failure history and config diagnostics.
@@ -87,5 +89,5 @@ failures have guards; and remaining omissions are explicit product boundaries.
   whitelisted job upsert, unsafe policy guards, enable/disable,
   disabled-trigger rejection, manual trigger, handler execution, retry failure
   and run-log detail.
-- Config: runtime shape, environment override governance and secret-vault
-  plaintext protection.
+- Config: runtime shape, environment override governance, secret-vault
+  plaintext protection, secret version history and rotation guards.

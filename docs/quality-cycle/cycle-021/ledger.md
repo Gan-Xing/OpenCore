@@ -15,3 +15,4 @@ This ledger records state transitions only. Git log keeps commit hashes.
 | 80    | Notice Mail  | SMTP TLS behavior became explicit `tlsMode` policy.                           | Adapter tests and notice smoke cover STARTTLS-required policy. |
 | 81    | Notice Inbox | Notice inbox realtime became authenticated SSE snapshot/read events.          | Notice smoke covers auth, snapshot and read-event streaming.   |
 | 82    | Config       | Public config values gained environment-specific runtime overrides.           | Config smoke covers guards, runtime and feature rollout.       |
+| 83    | Config       | Secret config values gained version history and explicit rotation.            | Config smoke covers seed versions, guards and plaintext leaks. |

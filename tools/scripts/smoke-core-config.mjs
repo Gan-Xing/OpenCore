@@ -216,8 +216,40 @@ try {
     true,
     'seeded secret encrypted flag',
   );
+  const seededSecretVersions = await apiRequest(
+    '/core/config/auth.jwt.secretRef/secret-versions',
+  );
+  assertArray(seededSecretVersions, 'seeded secret versions');
+  assertEqual(
+    seededSecretVersions[0]?.version,
+    1,
+    'seeded secret version baseline',
+  );
+  assertEqual(
+    seededSecretVersions[0]?.active,
+    true,
+    'seeded secret version active flag',
+  );
+  assertEqual(
+    seededSecretVersions[0]?.encrypted,
+    true,
+    'seeded secret version encrypted flag',
+  );
+  assertNoOwnProperty(
+    seededSecretVersions[0],
+    'value',
+    'seeded secret version value exposure',
+  );
   await apiRequest('/core/config/get-value-by-key?key=auth.jwt.secretRef', {
     expected: [403],
+  });
+  await apiRequest('/core/config/opencore.admin.title/secret-versions', {
+    expected: [400],
+  });
+  await apiRequest('/core/config/opencore.admin.title/rotate-secret', {
+    method: 'POST',
+    expected: [400],
+    body: { value: 'not-a-secret' },
   });
   const initialRuntimeConfig = await request(
     `${apiPrefix}/core/config/runtime`,
@@ -1165,6 +1197,26 @@ try {
   );
   assertEqual(secretConfig.visibility, 'secret', 'created secret visibility');
   assertEqual(secretConfig.encrypted, true, 'created secret encrypted flag');
+  const initialSecretVersions = await apiRequest(
+    `/core/config/${secretKey}/secret-versions`,
+  );
+  assertArray(initialSecretVersions, 'created secret versions');
+  assertEqual(initialSecretVersions.length, 1, 'created secret version count');
+  assertEqual(
+    initialSecretVersions[0]?.version,
+    1,
+    'created secret initial version',
+  );
+  assertEqual(
+    initialSecretVersions[0]?.active,
+    true,
+    'created secret initial version active flag',
+  );
+  assertNoOwnProperty(
+    initialSecretVersions[0],
+    'value',
+    'created secret version value exposure',
+  );
   await apiRequest('/core/config', {
     method: 'POST',
     body: {
@@ -1204,6 +1256,99 @@ try {
       expected: [403],
     },
   );
+  await apiRequest(`/core/config/${secretKey}/rotate-secret`, {
+    method: 'POST',
+    expected: [400],
+    body: { value: '   ' },
+  });
+  const rotatedSecretVersion = await apiRequest(
+    `/core/config/${secretKey}/rotate-secret`,
+    {
+      method: 'POST',
+      body: {
+        reason: 'Smoke rotation',
+        rotatedBy: username,
+        value: 'rotated-secret-smoke-value',
+      },
+    },
+  );
+  assertEqual(rotatedSecretVersion.version, 2, 'rotated secret version number');
+  assertEqual(rotatedSecretVersion.active, true, 'rotated secret active flag');
+  assertEqual(
+    rotatedSecretVersion.encrypted,
+    true,
+    'rotated secret encrypted flag',
+  );
+  assertEqual(rotatedSecretVersion.rotatedBy, username, 'rotated secret actor');
+  assertEqual(
+    rotatedSecretVersion.reason,
+    'Smoke rotation',
+    'rotated secret reason',
+  );
+  assertNoOwnProperty(
+    rotatedSecretVersion,
+    'value',
+    'rotated secret version value exposure',
+  );
+  const rotatedSecretVersions = await apiRequest(
+    `/core/config/${secretKey}/secret-versions`,
+  );
+  assertEqual(rotatedSecretVersions.length, 2, 'rotated secret version count');
+  assertEqual(
+    rotatedSecretVersions[0]?.version,
+    2,
+    'rotated secret latest version',
+  );
+  assertEqual(
+    rotatedSecretVersions[0]?.active,
+    true,
+    'rotated secret latest active flag',
+  );
+  assertEqual(
+    rotatedSecretVersions[1]?.version,
+    1,
+    'rotated secret previous version',
+  );
+  assertEqual(
+    rotatedSecretVersions[1]?.active,
+    false,
+    'rotated secret previous inactive flag',
+  );
+  const rotatedStoredSecretValue = await readStoredConfigValue(secretKey);
+  assertStringIncludes(
+    rotatedStoredSecretValue,
+    SECRET_VALUE_PREFIX,
+    'rotated stored secret vault envelope',
+  );
+  assertStringExcludes(
+    rotatedStoredSecretValue,
+    'rotated-secret-smoke-value',
+    'rotated stored secret plaintext',
+  );
+  const storedSecretVersionValues =
+    await readStoredSecretVersionValues(secretKey);
+  assertEqual(
+    storedSecretVersionValues.length,
+    2,
+    'stored secret version row count',
+  );
+  for (const versionValue of storedSecretVersionValues) {
+    assertStringIncludes(
+      versionValue,
+      SECRET_VALUE_PREFIX,
+      'stored secret version vault envelope',
+    );
+    assertStringExcludes(
+      versionValue,
+      'super-secret-smoke-value',
+      'stored secret version original plaintext',
+    );
+    assertStringExcludes(
+      versionValue,
+      'rotated-secret-smoke-value',
+      'stored secret version rotated plaintext',
+    );
+  }
 
   await apiRequest('/core/config/batch', {
     method: 'DELETE',
@@ -1304,6 +1449,10 @@ try {
         'core.config.runtime-login-attempt-policy',
         'core.config.runtime-login-attempt-policy-guards',
         'core.config.seed-secret-vault',
+        'core.config.secret-version.seed',
+        'core.config.secret-version.guards',
+        'core.config.secret-version.rotate',
+        'core.config.secret-version.no-plaintext',
         'core.config.environment-override.guards',
         'core.config.environment-override.crud',
         'core.config.environment-runtime',
@@ -1421,6 +1570,26 @@ async function readStoredConfigValue(key) {
   }
 
   return row.value;
+}
+
+async function readStoredSecretVersionValues(key) {
+  if (!prisma) {
+    const connectionString = assertString(
+      process.env.DATABASE_URL,
+      'DATABASE_URL',
+    );
+    prisma = new PrismaClient({
+      adapter: new PrismaPg({ connectionString }),
+    });
+  }
+
+  const rows = await prisma.systemConfigSecretVersion.findMany({
+    where: { key },
+    orderBy: { version: 'asc' },
+    select: { value: true },
+  });
+
+  return rows.map((row) => row.value);
 }
 
 async function restoreAdminTitle() {
@@ -1594,6 +1763,13 @@ function assertStringIncludes(value, expected, label) {
 function assertStringExcludes(value, expected, label) {
   if (typeof value !== 'string' || value.includes(expected)) {
     throw new Error(`${label} must not include ${expected}`);
+  }
+}
+
+function assertNoOwnProperty(value, property, label) {
+  assertObject(value, label);
+  if (Object.prototype.hasOwnProperty.call(value, property)) {
+    throw new Error(`${label} must not expose ${property}`);
   }
 }
 

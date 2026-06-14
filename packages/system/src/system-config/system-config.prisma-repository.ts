@@ -10,18 +10,21 @@ import { PrismaService } from '@opencore/database';
 import type {
   BatchDeleteSystemConfigsDto,
   CreateSystemConfigDto,
+  RotateSystemConfigSecretDto,
   UpdateSystemConfigDto,
   UpsertSystemConfigEnvironmentOverrideDto,
 } from './system-config.dto';
 import type {
   SystemConfigEnvironmentOverrideRecord,
   SystemConfigRecord,
+  SystemConfigSecretVersionRecord,
 } from './system-config.records';
 import {
   assertEnvironmentOverrideConfig,
   assertSafeConfigKey,
   assertFeatureFlagConfigShape,
   assertSecretConfigShape,
+  assertSecretVersionedConfig,
   assertSystemConfigMutable,
   createSystemConfigPageResult,
   isSystemConfigSecretEncrypted,
@@ -31,6 +34,8 @@ import {
   normalizeBatchSystemConfigKeys,
   normalizeOptionalConfigText,
   normalizeRequiredSystemConfigEnvironment,
+  normalizeSecretRotationActor,
+  normalizeSecretRotationValue,
   normalizeSystemConfigPageQuery,
   normalizeStoredConfigValue,
   redactSystemConfig,
@@ -65,6 +70,16 @@ type PrismaSystemConfigEnvironmentOverride = {
   remark: string | null;
   createdAt: Date;
   updatedAt: Date;
+};
+
+type PrismaSystemConfigSecretVersion = {
+  id: string;
+  key: string;
+  version: number;
+  active: boolean;
+  rotatedBy: string | null;
+  reason: string | null;
+  createdAt: Date;
 };
 
 @Injectable()
@@ -145,26 +160,46 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
       throw new ConflictException(`System config already exists: ${body.key}`);
     }
 
-    const config = await this.prisma.systemConfig.create({
-      data: {
-        category: normalizeConfigCategory(body.category),
-        name: normalizeConfigName(body.name, body.key),
-        key: body.key,
-        valueType: body.valueType,
-        value: normalizeStoredConfigValue({
-          key: body.key,
-          value: body.value,
-          valueType: body.valueType,
-          visibility,
-        }),
-        description: normalizeOptionalConfigText(
-          body.description,
-          'description',
-        ),
-        remark: normalizeOptionalConfigText(body.remark, 'remark'),
-        public: visibility === 'public',
-        system: false,
-      },
+    const value =
+      visibility === 'secret'
+        ? normalizeSecretRotationValue(body.value)
+        : body.value;
+    const storedValue = normalizeStoredConfigValue({
+      key: body.key,
+      value,
+      valueType: body.valueType,
+      visibility,
+    });
+    const data = {
+      category: normalizeConfigCategory(body.category),
+      name: normalizeConfigName(body.name, body.key),
+      key: body.key,
+      valueType: body.valueType,
+      value: storedValue,
+      description: normalizeOptionalConfigText(body.description, 'description'),
+      remark: normalizeOptionalConfigText(body.remark, 'remark'),
+      public: visibility === 'public',
+      system: false,
+    };
+    const config = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.systemConfig.create({
+        data,
+      });
+
+      if (visibility === 'secret') {
+        await tx.systemConfigSecretVersion.create({
+          data: {
+            active: true,
+            key: body.key,
+            reason: 'Initial secret config value.',
+            value: storedValue,
+            valueType: 'string',
+            version: 1,
+          },
+        });
+      }
+
+      return created;
     });
 
     return redactSystemConfig(toSystemConfigRecord(config));
@@ -192,7 +227,12 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
             valueType: nextValueType,
             visibility: existingRecord.visibility,
           })
-        : body.value;
+        : visibility === 'secret'
+          ? normalizeSecretRotationValue(body.value)
+          : body.value;
+    const shouldCreateSecretVersion =
+      visibility === 'secret' &&
+      (body.value !== undefined || existingRecord.visibility !== 'secret');
     assertSafeConfigKey(key, visibility);
     assertFeatureFlagConfigShape({
       key,
@@ -205,34 +245,61 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
       valueType: nextValueType,
       visibility,
     });
-    const config = await this.prisma.systemConfig.update({
-      where: { key },
-      data: {
-        category:
-          body.category === undefined
-            ? existing.category
-            : normalizeConfigCategory(body.category),
-        name:
-          body.name === undefined
-            ? existing.name
-            : normalizeConfigName(body.name, key),
-        value: normalizeStoredConfigValue({
-          key,
-          value: nextValue,
-          valueType: nextValueType,
-          visibility,
-        }),
-        valueType: nextValueType,
-        description:
-          body.description === undefined
-            ? existing.description
-            : normalizeOptionalConfigText(body.description, 'description'),
-        remark:
-          body.remark === undefined
-            ? existing.remark
-            : normalizeOptionalConfigText(body.remark, 'remark'),
-        public: visibility === 'public',
-      },
+    const storedValue = normalizeStoredConfigValue({
+      key,
+      value: nextValue,
+      valueType: nextValueType,
+      visibility,
+    });
+    const updateData = {
+      category:
+        body.category === undefined
+          ? existing.category
+          : normalizeConfigCategory(body.category),
+      name:
+        body.name === undefined
+          ? existing.name
+          : normalizeConfigName(body.name, key),
+      value: storedValue,
+      valueType: nextValueType,
+      description:
+        body.description === undefined
+          ? existing.description
+          : normalizeOptionalConfigText(body.description, 'description'),
+      remark:
+        body.remark === undefined
+          ? existing.remark
+          : normalizeOptionalConfigText(body.remark, 'remark'),
+      public: visibility === 'public',
+    };
+    const config = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.systemConfig.update({
+        where: { key },
+        data: updateData,
+      });
+
+      if (shouldCreateSecretVersion) {
+        await tx.systemConfigSecretVersion.updateMany({
+          where: { key, active: true },
+          data: { active: false },
+        });
+        const latest = await tx.systemConfigSecretVersion.aggregate({
+          where: { key },
+          _max: { version: true },
+        });
+        await tx.systemConfigSecretVersion.create({
+          data: {
+            active: true,
+            key,
+            reason: 'Updated secret config value.',
+            value: storedValue,
+            valueType: 'string',
+            version: (latest._max.version ?? 0) + 1,
+          },
+        });
+      }
+
+      return updated;
     });
 
     return redactSystemConfig(toSystemConfigRecord(config));
@@ -383,6 +450,69 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
     return { deleted: true };
   }
 
+  async listConfigSecretVersions(
+    key: string,
+  ): Promise<readonly SystemConfigSecretVersionRecord[]> {
+    assertSecretVersionedConfig(
+      toSystemConfigRecord(await this.findConfigByKey(key)),
+    );
+    const rows = await this.prisma.systemConfigSecretVersion.findMany({
+      where: { key },
+      orderBy: [{ version: 'desc' }],
+    });
+
+    return rows.map(toSystemConfigSecretVersionRecord);
+  }
+
+  async rotateSecretConfig(
+    key: string,
+    body: RotateSystemConfigSecretDto,
+  ): Promise<SystemConfigSecretVersionRecord> {
+    const config = toSystemConfigRecord(await this.findConfigByKey(key));
+    assertSecretVersionedConfig(config);
+
+    const storedValue = normalizeStoredConfigValue({
+      key,
+      value: normalizeSecretRotationValue(body.value),
+      valueType: 'string',
+      visibility: 'secret',
+    });
+    const rotatedBy = normalizeSecretRotationActor(body.rotatedBy);
+    const reason = normalizeOptionalConfigText(body.reason, 'remark');
+    const version = await this.prisma.$transaction(async (tx) => {
+      await tx.systemConfig.update({
+        where: { key },
+        data: {
+          public: false,
+          value: storedValue,
+          valueType: 'string',
+        },
+      });
+      await tx.systemConfigSecretVersion.updateMany({
+        where: { key, active: true },
+        data: { active: false },
+      });
+      const latest = await tx.systemConfigSecretVersion.aggregate({
+        where: { key },
+        _max: { version: true },
+      });
+
+      return tx.systemConfigSecretVersion.create({
+        data: {
+          active: true,
+          key,
+          reason,
+          rotatedBy,
+          value: storedValue,
+          valueType: 'string',
+          version: (latest._max.version ?? 0) + 1,
+        },
+      });
+    });
+
+    return toSystemConfigSecretVersionRecord(version);
+  }
+
   private async findConfigByKey(key: string): Promise<PrismaSystemConfig> {
     const config = await this.prisma.systemConfig.findUnique({
       where: { key },
@@ -436,5 +566,20 @@ function toSystemConfigEnvironmentOverrideRecord(
     visibility: 'public',
     createdAt: override.createdAt.toISOString(),
     updatedAt: override.updatedAt.toISOString(),
+  };
+}
+
+function toSystemConfigSecretVersionRecord(
+  version: PrismaSystemConfigSecretVersion,
+): SystemConfigSecretVersionRecord {
+  return {
+    id: version.id,
+    key: version.key,
+    version: version.version,
+    active: version.active,
+    encrypted: true,
+    rotatedBy: version.rotatedBy ?? undefined,
+    reason: version.reason ?? undefined,
+    createdAt: version.createdAt.toISOString(),
   };
 }

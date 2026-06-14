@@ -9,6 +9,7 @@ import type { PageResult } from '@opencore/common';
 import type {
   BatchDeleteSystemConfigsDto,
   CreateSystemConfigDto,
+  RotateSystemConfigSecretDto,
   UpdateSystemConfigDto,
   UpsertSystemConfigEnvironmentOverrideDto,
 } from './system-config.dto';
@@ -16,12 +17,14 @@ import {
   seedSystemConfigs,
   type SystemConfigEnvironmentOverrideRecord,
   type SystemConfigRecord,
+  type SystemConfigSecretVersionRecord,
 } from './system-config.records';
 import {
   assertEnvironmentOverrideConfig,
   assertSafeConfigKey,
   assertFeatureFlagConfigShape,
   assertSecretConfigShape,
+  assertSecretVersionedConfig,
   assertSystemConfigMutable,
   createSystemConfigPageResult,
   normalizeExistingConfigValue,
@@ -30,6 +33,8 @@ import {
   normalizeBatchSystemConfigKeys,
   normalizeOptionalConfigText,
   normalizeRequiredSystemConfigEnvironment,
+  normalizeSecretRotationActor,
+  normalizeSecretRotationValue,
   normalizeSystemConfigPageQuery,
   normalizeStoredConfigValue,
   redactSystemConfig,
@@ -58,6 +63,18 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
     };
   });
   private environmentOverrides: SystemConfigEnvironmentOverrideRecord[] = [];
+  private secretVersions: SystemConfigSecretVersionRecord[] = this.systemConfigs
+    .filter((config) => config.visibility === 'secret')
+    .map((config) => ({
+      id: `secret_version_${config.key.replaceAll('.', '_')}_1`,
+      key: config.key,
+      version: 1,
+      active: true,
+      encrypted: true,
+      rotatedBy: 'seed',
+      reason: 'Seeded secret baseline.',
+      createdAt: new Date().toISOString(),
+    }));
 
   async listConfig(
     query: SystemConfigPageQuery = {},
@@ -147,6 +164,11 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
       visibility,
     };
     this.systemConfigs = [config, ...this.systemConfigs];
+    if (visibility === 'secret') {
+      this.createSecretVersion(config, {
+        reason: 'Initial secret config value.',
+      });
+    }
     return redactSystemConfig(config);
   }
 
@@ -170,6 +192,9 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
       public: body.public ?? config.public,
       visibility: body.visibility ?? config.visibility,
     });
+    const shouldCreateSecretVersion =
+      visibility === 'secret' &&
+      (body.value !== undefined || config.visibility !== 'secret');
     assertSafeConfigKey(key, visibility);
     assertFeatureFlagConfigShape({
       key,
@@ -210,6 +235,11 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
       visibility,
       encrypted: visibility === 'secret',
     });
+    if (shouldCreateSecretVersion) {
+      this.createSecretVersion(config, {
+        reason: 'Updated secret config value.',
+      });
+    }
     return redactSystemConfig(config);
   }
 
@@ -220,6 +250,9 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
     );
     this.environmentOverrides = this.environmentOverrides.filter(
       (override) => override.key !== key,
+    );
+    this.secretVersions = this.secretVersions.filter(
+      (version) => version.key !== key,
     );
     return { deleted: true };
   }
@@ -252,6 +285,9 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
     );
     this.environmentOverrides = this.environmentOverrides.filter(
       (override) => !keys.includes(override.key),
+    );
+    this.secretVersions = this.secretVersions.filter(
+      (version) => !keys.includes(version.key),
     );
 
     return {
@@ -370,6 +406,42 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
     return { deleted: true };
   }
 
+  async listConfigSecretVersions(
+    key: string,
+  ): Promise<readonly SystemConfigSecretVersionRecord[]> {
+    assertSecretVersionedConfig(this.findConfig(key));
+
+    return this.secretVersions
+      .filter((version) => version.key === key)
+      .sort((left, right) => right.version - left.version)
+      .map((version) => ({ ...version }));
+  }
+
+  async rotateSecretConfig(
+    key: string,
+    body: RotateSystemConfigSecretDto,
+  ): Promise<SystemConfigSecretVersionRecord> {
+    const config = this.findConfig(key);
+    assertSecretVersionedConfig(config);
+
+    const value = normalizeSecretRotationValue(body.value);
+    config.value = normalizeStoredConfigValue({
+      key,
+      value,
+      valueType: 'string',
+      visibility: 'secret',
+    });
+    config.valueType = 'string';
+    config.public = false;
+    config.visibility = 'secret';
+    config.encrypted = true;
+
+    return this.createSecretVersion(config, {
+      reason: normalizeOptionalConfigText(body.reason, 'remark'),
+      rotatedBy: normalizeSecretRotationActor(body.rotatedBy),
+    });
+  }
+
   private findConfig(key: string): SystemConfigRecord {
     const config = this.systemConfigs.find(
       (candidate) => candidate.key === key,
@@ -380,5 +452,39 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
     }
 
     return config;
+  }
+
+  private createSecretVersion(
+    config: SystemConfigRecord,
+    input: { reason?: string; rotatedBy?: string } = {},
+  ): SystemConfigSecretVersionRecord {
+    assertSecretVersionedConfig(config);
+    this.secretVersions = this.secretVersions.map((version) =>
+      version.key === config.key ? { ...version, active: false } : version,
+    );
+    const version = {
+      id: `secret_version_${config.key.replaceAll('.', '_')}_${this.nextSecretVersion(config.key)}`,
+      key: config.key,
+      version: this.nextSecretVersion(config.key),
+      active: true,
+      encrypted: true as const,
+      rotatedBy: input.rotatedBy,
+      reason: input.reason,
+      createdAt: new Date().toISOString(),
+    };
+    this.secretVersions = [version, ...this.secretVersions];
+
+    return { ...version };
+  }
+
+  private nextSecretVersion(key: string): number {
+    return (
+      Math.max(
+        0,
+        ...this.secretVersions
+          .filter((version) => version.key === key)
+          .map((version) => version.version),
+      ) + 1
+    );
   }
 }

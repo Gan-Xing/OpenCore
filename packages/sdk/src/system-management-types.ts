@@ -185,6 +185,17 @@ export type SystemConfigEnvironmentOverrideSummary = {
   updatedAt: string;
 };
 
+export type SystemConfigSecretVersionSummary = {
+  id: string;
+  key: string;
+  version: number;
+  active: boolean;
+  encrypted: true;
+  rotatedBy?: string;
+  reason?: string;
+  createdAt: string;
+};
+
 export type CreateSystemConfigRequest = {
   category?: string;
   key: string;
@@ -215,6 +226,12 @@ export type UpsertSystemConfigEnvironmentOverrideRequest = {
   value: string;
   description?: string;
   remark?: string;
+};
+
+export type RotateSystemConfigSecretRequest = {
+  value: string;
+  rotatedBy?: string;
+  reason?: string;
 };
 
 export type FileAssetSummary = {

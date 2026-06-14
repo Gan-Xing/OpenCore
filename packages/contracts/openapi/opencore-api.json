@@ -1960,6 +1960,73 @@
         "tags": ["SystemManagement", "Core System Config"]
       }
     },
+    "/api/core/config/{key}/secret-versions": {
+      "get": {
+        "operationId": "SystemManagementController_listConfigSecretVersions",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SystemConfigSecretVersionDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Config"]
+      }
+    },
+    "/api/core/config/{key}/rotate-secret": {
+      "post": {
+        "operationId": "SystemManagementController_rotateConfigSecret",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RotateSystemConfigSecretDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemConfigSecretVersionDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Config"]
+      }
+    },
     "/api/core/config/{key}": {
       "get": {
         "operationId": "SystemManagementController_getConfig",
@@ -7908,6 +7975,29 @@
           "value": { "type": "string" },
           "description": { "type": "string" },
           "remark": { "type": "string" }
+        },
+        "required": ["value"]
+      },
+      "SystemConfigSecretVersionDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "key": { "type": "string" },
+          "version": { "type": "number" },
+          "active": { "type": "boolean" },
+          "encrypted": { "type": "boolean" },
+          "rotatedBy": { "type": "string" },
+          "reason": { "type": "string" },
+          "createdAt": { "type": "string" }
+        },
+        "required": ["id", "key", "version", "active", "encrypted", "createdAt"]
+      },
+      "RotateSystemConfigSecretDto": {
+        "type": "object",
+        "properties": {
+          "value": { "type": "string" },
+          "rotatedBy": { "type": "string", "example": "admin" },
+          "reason": { "type": "string" }
         },
         "required": ["value"]
       },

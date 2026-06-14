@@ -37,7 +37,8 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   SMTP attachments plus explicit SMTP TLS policy and authenticated inbox
   realtime events are live.
 - Config: runtime keys, login policy, feature flags, rollout, audience rules,
-  environment overrides and secret-vault encryption are live.
+  environment overrides, secret-vault encryption, secret version history and
+  explicit rotation are live.
 - Monitor/OpenForge/Scheduler: Monitor Jobs now has a live Admin operation
   surface, registry visibility and registered handler diagnostics; external
   worker/cron parity remains.
@@ -81,7 +82,10 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   upgrade, not a current single-node blocker.
 - Round 82: Config environment overrides are first-class public-config records;
   runtime config and feature evaluation resolve `environment` with default
-  fallback, while secret/private config waits for KMS/secret-version stages.
+  fallback.
+- Round 83: Secret config version history is first-class metadata; explicit
+  rotation updates current encrypted value and records active/inactive
+  versions without exposing secret material.
 
 ## Explicit Non-Claims
 
@@ -92,5 +96,5 @@ and AI/RAG/Agent workflow.
 
 ## Next Focus
 
-Choose one foundation stage from KMS/secret rotation, operation-log
-enrichment, OpenForge Admin or scheduler worker parity.
+Choose one foundation stage from external KMS/vault key rotation,
+operation-log enrichment, OpenForge Admin or scheduler worker parity.

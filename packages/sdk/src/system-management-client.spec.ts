@@ -80,6 +80,12 @@ describe('createSystemManagementClient', () => {
       'opencore.admin.title',
       'staging',
     );
+    await client.listConfigSecretVersions('token', 'auth.jwt.secretRef');
+    await client.rotateConfigSecret('token', 'auth.jwt.secretRef', {
+      value: 'rotated-secret',
+      rotatedBy: 'admin',
+      reason: 'SDK path guard',
+    });
     await client.refreshConfigCache('token');
     await client.exportConfig('token', { page: 1, pageSize: 10 });
     await client.createConfig('token', {
@@ -340,6 +346,15 @@ describe('createSystemManagementClient', () => {
       {
         path: '/core/config/opencore.admin.title/environments/staging',
         method: 'DELETE',
+        token: 'token',
+      },
+      {
+        path: '/core/config/auth.jwt.secretRef/secret-versions',
+        token: 'token',
+      },
+      {
+        path: '/core/config/auth.jwt.secretRef/rotate-secret',
+        method: 'POST',
         token: 'token',
       },
       {

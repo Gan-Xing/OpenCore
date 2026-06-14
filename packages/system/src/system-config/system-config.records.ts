@@ -31,6 +31,17 @@ export type SystemConfigEnvironmentOverrideRecord = {
   updatedAt: string;
 };
 
+export type SystemConfigSecretVersionRecord = {
+  id: string;
+  key: string;
+  version: number;
+  active: boolean;
+  encrypted: true;
+  rotatedBy?: string;
+  reason?: string;
+  createdAt: string;
+};
+
 export const seedSystemConfigs: readonly SystemConfigRecord[] = [
   {
     id: 'config_admin_title',

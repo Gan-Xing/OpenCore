@@ -4,19 +4,20 @@ Date: 2026-06-13
 
 ## Latest Completed Round
 
-Round 82: `core.config` environment overrides.
+Round 83: `core.config` secret versions and rotation.
 
 ## Closed
 
-- Added `SystemConfigEnvironmentOverride` storage with one override per
-  public config key and environment.
-- Runtime config, public value lookup and feature-flag evaluation can resolve
-  an `environment` query and fall back to default values.
-- SDK/Admin/OpenAPI expose override list/upsert/delete workflows.
-- Config smoke verifies secret/default-environment guards, runtime override,
-  feature rollout override and delete fallback behavior.
+- Added `SystemConfigSecretVersion` storage with create-time v1 baselines for
+  secret config.
+- Explicit secret rotation updates the current encrypted value, closes the old
+  active version and creates the next active version.
+- SDK/Admin/OpenAPI expose version list and rotate workflows without returning
+  secret material.
+- Config smoke verifies seeded versions, non-secret/blank guards, rotation and
+  no plaintext leakage in current or versioned storage.
 
 ## Still Open
 
-- Config secret governance still needs external KMS binding, key rotation and
-  secret version history as separate stages.
+- Config secret governance still needs external KMS binding and vault key
+  rotation as separate stages.

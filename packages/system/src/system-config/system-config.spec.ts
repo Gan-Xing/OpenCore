@@ -109,6 +109,49 @@ describe('@opencore/system system-config', () => {
     await expect(
       service.getConfigValueByKey('auth.jwt.secretRef'),
     ).rejects.toThrow(ForbiddenException);
+    await expect(
+      service.listConfigSecretVersions('opencore.admin.title'),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.listConfigSecretVersions('auth.jwt.secretRef'),
+    ).resolves.toEqual([
+      expect.objectContaining({
+        active: true,
+        encrypted: true,
+        key: 'auth.jwt.secretRef',
+        version: 1,
+      }),
+    ]);
+    await expect(
+      service.rotateSecretConfig('auth.jwt.secretRef', {
+        reason: 'Seed repository rotation.',
+        rotatedBy: 'admin',
+        value: 'env:ROTATED_AUTH_TOKEN_SECRET',
+      }),
+    ).resolves.toMatchObject({
+      active: true,
+      encrypted: true,
+      key: 'auth.jwt.secretRef',
+      reason: 'Seed repository rotation.',
+      rotatedBy: 'admin',
+      version: 2,
+    });
+    await expect(
+      service.resolveSecretConfigValue('auth.jwt.secretRef'),
+    ).resolves.toEqual({
+      key: 'auth.jwt.secretRef',
+      value: 'env:ROTATED_AUTH_TOKEN_SECRET',
+      valueType: 'string',
+    });
+    await expect(
+      service.listConfigSecretVersions('auth.jwt.secretRef'),
+    ).resolves.toEqual([
+      expect.objectContaining({ active: true, version: 2 }),
+      expect.objectContaining({ active: false, version: 1 }),
+    ]);
+    await expect(
+      service.rotateSecretConfig('auth.jwt.secretRef', { value: '   ' }),
+    ).rejects.toThrow(BadRequestException);
 
     const config = await service.createConfig({
       category: 'feature',
@@ -814,6 +857,19 @@ describe('@opencore/system system-config', () => {
         expect.stringContaining(SYSTEM_CONFIG_SECRET_VALUE_PREFIX),
       );
       expect(storedSecret?.value).not.toContain('super-secret');
+      await expect(
+        service.listConfigSecretVersions(secretKey),
+      ).resolves.toEqual([
+        expect.objectContaining({
+          active: true,
+          encrypted: true,
+          key: secretKey,
+          version: 1,
+        }),
+      ]);
+      await expect(service.listConfigSecretVersions(configKey)).rejects.toThrow(
+        BadRequestException,
+      );
       const updatedSecret = await service.updateConfig(secretKey, {
         remark: 'Secret metadata update keeps the vault envelope.',
       });
@@ -834,6 +890,14 @@ describe('@opencore/system system-config', () => {
       expect(storedSecretAfterMetadataUpdate?.value).not.toContain(
         'super-secret',
       );
+      await expect(
+        service.listConfigSecretVersions(secretKey),
+      ).resolves.toEqual([
+        expect.objectContaining({
+          active: true,
+          version: 1,
+        }),
+      ]);
       await expect(service.getConfigValueByKey(secretKey)).rejects.toThrow(
         ForbiddenException,
       );
@@ -844,9 +908,74 @@ describe('@opencore/system system-config', () => {
         value: 'super-secret',
         valueType: 'string',
       });
+      await expect(
+        service.rotateSecretConfig(configKey, { value: 'not-secret' }),
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        service.rotateSecretConfig(secretKey, { value: '   ' }),
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        service.rotateSecretConfig(secretKey, {
+          reason: 'Prisma rotation.',
+          rotatedBy: 'admin',
+          value: 'rotated-super-secret',
+        }),
+      ).resolves.toMatchObject({
+        active: true,
+        encrypted: true,
+        key: secretKey,
+        reason: 'Prisma rotation.',
+        rotatedBy: 'admin',
+        version: 2,
+      });
+      await expect(
+        service.resolveSecretConfigValue(secretKey),
+      ).resolves.toEqual({
+        key: secretKey,
+        value: 'rotated-super-secret',
+        valueType: 'string',
+      });
+      await expect(
+        service.listConfigSecretVersions(secretKey),
+      ).resolves.toEqual([
+        expect.objectContaining({
+          active: true,
+          encrypted: true,
+          key: secretKey,
+          reason: 'Prisma rotation.',
+          rotatedBy: 'admin',
+          version: 2,
+        }),
+        expect.objectContaining({
+          active: false,
+          encrypted: true,
+          key: secretKey,
+          version: 1,
+        }),
+      ]);
+      const storedSecretVersions =
+        await prisma.systemConfigSecretVersion.findMany({
+          where: { key: secretKey },
+          orderBy: { version: 'asc' },
+          select: { active: true, value: true, version: true },
+        });
+      expect(storedSecretVersions).toEqual([
+        expect.objectContaining({ active: false, version: 1 }),
+        expect.objectContaining({ active: true, version: 2 }),
+      ]);
+      for (const version of storedSecretVersions) {
+        expect(version.value).toEqual(
+          expect.stringContaining(SYSTEM_CONFIG_SECRET_VALUE_PREFIX),
+        );
+        expect(version.value).not.toContain('super-secret');
+        expect(version.value).not.toContain('rotated-super-secret');
+      }
       expect(
         JSON.stringify(await service.listConfig({ pageSize: 50 })),
       ).not.toContain('super-secret');
+      expect(
+        JSON.stringify(await service.listConfigSecretVersions(secretKey)),
+      ).not.toContain('rotated-super-secret');
       await expect(
         service.createExportPreview({ page: 1, pageSize: 20 }),
       ).resolves.toMatchObject({
@@ -884,6 +1013,9 @@ describe('@opencore/system system-config', () => {
       await expect(service.deleteConfig(secretKey)).resolves.toEqual({
         deleted: true,
       });
+      await expect(
+        prisma.systemConfigSecretVersion.count({ where: { key: secretKey } }),
+      ).resolves.toBe(0);
     });
 
     async function cleanupTestRows(): Promise<void> {

@@ -47,7 +47,7 @@ packages and OpenForge direct Prisma/migration/business-code writing.
 
 ## Current State
 
-Cycle-021 has completed 82 deployable stages.
+Cycle-021 has completed 83 deployable stages.
 
 - System/RBAC: notice, dept, post, menu, role, permission, user, dict, config
   and file loops are live.
@@ -56,7 +56,8 @@ Cycle-021 has completed 82 deployable stages.
 - Logs: login-log type/result, lockout, cleanup, actor/reason and
   deterministic location; operation-log list/detail/export/delete/clean.
 - Config: runtime keys, login policy, feature flags, rollout, audience rules,
-  environment overrides and secret vault.
+  environment overrides, secret vault, secret version history and explicit
+  secret rotation.
 - Notice: management, inbox/read state, read-user analytics, templates,
   delivery records, local provider, Integration outbox bridge, state sync,
   queued processing, signed callback intake, bounded retry scheduling and a
@@ -68,15 +69,14 @@ Cycle-021 has completed 82 deployable stages.
   enable/disable, manual trigger, registered handler execution, retry/timeout
   diagnostics and failed run-log detail are smoke-guarded.
 
-Latest runtime stage: Round 82 `core.config` environment overrides. It adds a
-first-class `SystemConfigEnvironmentOverride` table, public-config override
-CRUD, environment-aware runtime config and feature-flag evaluation, SDK/Admin
-OpenAPI exposure and smoke/deploy guards for override guards, runtime fallback
-and environment rollout behavior.
+Latest runtime stage: Round 83 `core.config` secret versions. It adds a
+first-class `SystemConfigSecretVersion` table, create-time v1 baselines,
+explicit secret rotation, SDK/Admin/OpenAPI exposure and smoke/deploy guards
+for seeded versions, non-secret/blank guards and plaintext leakage.
 
 ## Next Queue
 
-1. Config governance: external KMS binding, key rotation and secret versions.
+1. Config governance: external KMS binding and vault key rotation.
 2. Operation-log enrichment: retention scheduling, duration/location fields
    and governance policy.
 3. OpenForge Admin safe plan/diff/check/apply UI.

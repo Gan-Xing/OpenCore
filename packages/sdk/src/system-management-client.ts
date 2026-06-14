@@ -33,11 +33,13 @@ import type {
   PageRequest,
   PageResponse,
   RenderSystemNoticeTemplateRequest,
+  RotateSystemConfigSecretRequest,
   SystemConfigBatchMutationSummary,
   SystemConfigCacheRefreshSummary,
   SystemConfigEnvironmentOverrideSummary,
   SystemConfigFeatureFlagEvaluationSummary,
   SystemConfigRuntimeSummary,
+  SystemConfigSecretVersionSummary,
   SystemConfigSummary,
   SystemConfigValueSummary,
   SystemDeptOrderMutationSummary,
@@ -166,6 +168,15 @@ export type SystemManagementClient = {
     key: string,
     environment: string,
   ) => Promise<DeleteResult>;
+  listConfigSecretVersions: (
+    token: Token,
+    key: string,
+  ) => Promise<readonly SystemConfigSecretVersionSummary[]>;
+  rotateConfigSecret: (
+    token: Token,
+    key: string,
+    body: RotateSystemConfigSecretRequest,
+  ) => Promise<SystemConfigSecretVersionSummary>;
   refreshConfigCache: (
     token: Token,
   ) => Promise<SystemConfigCacheRefreshSummary>;
@@ -524,6 +535,20 @@ export function createSystemManagementClient(
         `/core/config/${encodeURIComponent(key)}/environments/${encodeURIComponent(environment)}`,
         {
           method: 'DELETE',
+          token,
+        },
+      ),
+    listConfigSecretVersions: (token, key) =>
+      request<readonly SystemConfigSecretVersionSummary[]>(
+        `/core/config/${encodeURIComponent(key)}/secret-versions`,
+        { token },
+      ),
+    rotateConfigSecret: (token, key, body) =>
+      request<SystemConfigSecretVersionSummary>(
+        `/core/config/${encodeURIComponent(key)}/rotate-secret`,
+        {
+          method: 'POST',
+          body,
           token,
         },
       ),

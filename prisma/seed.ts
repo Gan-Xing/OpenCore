@@ -652,6 +652,7 @@ async function assertSeedUserPostsExist(
 async function seedSystemManagement(): Promise<{
   dictTypes: number;
   systemConfigs: number;
+  systemConfigSecretVersions: number;
   systemNotices: number;
   systemNoticeTemplates: number;
   systemDepts: number;
@@ -710,6 +711,7 @@ async function seedSystemManagement(): Promise<{
     }
   }
 
+  let systemConfigSecretVersions = 0;
   for (const config of seedSystemConfigs) {
     const storedConfigValue = normalizeStoredConfigValue({
       key: config.key,
@@ -742,6 +744,37 @@ async function seedSystemManagement(): Promise<{
         system: config.system,
       },
     });
+    if (config.visibility === 'secret') {
+      await prisma.systemConfigSecretVersion.updateMany({
+        where: { key: config.key },
+        data: { active: false },
+      });
+      await prisma.systemConfigSecretVersion.upsert({
+        where: {
+          key_version: {
+            key: config.key,
+            version: 1,
+          },
+        },
+        update: {
+          active: true,
+          reason: 'Seeded secret baseline.',
+          rotatedBy: 'seed',
+          value: storedConfigValue,
+          valueType: config.valueType,
+        },
+        create: {
+          active: true,
+          key: config.key,
+          reason: 'Seeded secret baseline.',
+          rotatedBy: 'seed',
+          value: storedConfigValue,
+          valueType: config.valueType,
+          version: 1,
+        },
+      });
+      systemConfigSecretVersions += 1;
+    }
   }
 
   for (const notice of seedSystemNotices) {
@@ -954,6 +987,7 @@ async function seedSystemManagement(): Promise<{
   return {
     dictTypes: seedDictTypes.length,
     systemConfigs: seedSystemConfigs.length,
+    systemConfigSecretVersions,
     systemNotices: seedSystemNotices.length,
     systemNoticeTemplates: seedSystemNoticeTemplates.length,
     systemDepts: seedSystemDepts.length,

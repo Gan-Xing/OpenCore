@@ -141,6 +141,7 @@ model SystemConfig {
   public      Boolean                           @default(false)
   system      Boolean                           @default(false)
   overrides   SystemConfigEnvironmentOverride[]
+  secrets     SystemConfigSecretVersion[]
   createdAt   DateTime                          @default(now())
   updatedAt   DateTime                          @updatedAt
 }
@@ -159,6 +160,23 @@ model SystemConfigEnvironmentOverride {
 
   @@unique([key, environment])
   @@index([environment])
+}
+
+model SystemConfigSecretVersion {
+  id        String       @id @default(cuid())
+  key       String
+  version   Int
+  value     String
+  valueType String
+  active    Boolean      @default(false)
+  rotatedBy String?
+  reason    String?
+  config    SystemConfig @relation(fields: [key], references: [key], onDelete: Cascade)
+  createdAt DateTime     @default(now())
+
+  @@unique([key, version])
+  @@index([key, active])
+  @@index([createdAt])
 }
 
 model SystemNotice {

@@ -137,9 +137,19 @@ verify_admin_bundle_api_base_url() {
     ! grep -R \
     --fixed-strings \
     --include='*.js' \
+    "Secret Versions" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Rotate secret" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
     "Vault encrypted" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null; then
-    echo "Admin bundle does not include the runtime feature flag, environment override and config vault surface." >&2
+    echo "Admin bundle does not include the runtime feature flag, environment override and config vault secret version surface." >&2
     echo "Refusing to deploy a stale frontend config page." >&2
     exit 1
   fi

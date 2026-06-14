@@ -19,10 +19,10 @@ active debt and decisions that change future execution.
 
 ## Runtime State
 
-Cycle-021 has completed 82 deployable stages across
-System/Security/Monitor/Integration foundations. Round 82 added public config
-environment overrides with SDK/Admin/OpenAPI visibility and smoke coverage for
-guard failures, runtime resolution, feature rollout and delete fallback.
+Cycle-021 has completed 83 deployable stages across
+System/Security/Monitor/Integration foundations. Round 83 added config secret
+version history and explicit rotation with SDK/Admin/OpenAPI visibility and
+smoke coverage for seed versions, guard failures and plaintext leakage.
 
 ## Guard Register
 
@@ -39,7 +39,8 @@ guard failures, runtime resolution, feature rollout and delete fallback.
 - Operation log: smoke covers batch-delete guards, deleted-detail 404 and
   clean-all target removal while preserving the clean request audit row.
 - Config/secret: smoke covers feature flags, audience rules, environment
-  overrides and no plaintext secret-vault leakage.
+  overrides, secret version history, explicit rotation and no plaintext
+  secret-vault leakage.
 - Monitor jobs: smoke covers operations summary, whitelisted job upsert,
   registry, unsafe policy guards, enable/disable, disabled-trigger rejection,
   run-now, handler execution, failed retry and run-log detail. Deploy also
@@ -59,7 +60,7 @@ guard failures, runtime resolution, feature rollout and delete fallback.
 - Notice: optional multi-instance realtime fanout if deployment topology moves
   beyond the current single-node process, plus any admitted
   tenant/member/mobile channels.
-- Config: external KMS binding, key rotation and secret version history.
+- Config: external KMS binding and vault key rotation.
 - Login log: optional external GeoIP depth and broader mobile/social login
   semantics.
 - Operation log: retention scheduling and enrichment beyond cleanup controls.

@@ -9,6 +9,7 @@ import type { PageResult } from '@opencore/common';
 import type {
   BatchDeleteSystemConfigsDto,
   CreateSystemConfigDto,
+  RotateSystemConfigSecretDto,
   SystemConfigFeatureFlagEvaluationQueryDto,
   SystemConfigRuntimeQueryDto,
   UpdateSystemConfigDto,
@@ -17,6 +18,7 @@ import type {
 import type {
   SystemConfigEnvironmentOverrideRecord,
   SystemConfigRecord,
+  SystemConfigSecretVersionRecord,
 } from './system-config.records';
 import {
   SYSTEM_CONFIG_DEFAULT_ENVIRONMENT,
@@ -330,6 +332,28 @@ export class SystemConfigService {
     this.invalidateValueCache(normalizedKey);
 
     return result;
+  }
+
+  listConfigSecretVersions(
+    key: string,
+  ): Promise<readonly SystemConfigSecretVersionRecord[]> {
+    return this.repository.listConfigSecretVersions(
+      normalizeConfigValueKey(key),
+    );
+  }
+
+  async rotateSecretConfig(
+    key: string,
+    body: RotateSystemConfigSecretDto,
+  ): Promise<SystemConfigSecretVersionRecord> {
+    const normalizedKey = normalizeConfigValueKey(key);
+    const version = await this.repository.rotateSecretConfig(
+      normalizedKey,
+      body,
+    );
+    this.invalidateValueCache(normalizedKey);
+
+    return version;
   }
 
   async createExportPreview(

@@ -261,6 +261,32 @@ export class SystemConfigEnvironmentOverrideDto {
   updatedAt!: string;
 }
 
+export class SystemConfigSecretVersionDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  key!: string;
+
+  @ApiProperty()
+  version!: number;
+
+  @ApiProperty()
+  active!: boolean;
+
+  @ApiProperty()
+  encrypted!: true;
+
+  @ApiProperty({ required: false })
+  rotatedBy?: string;
+
+  @ApiProperty({ required: false })
+  reason?: string;
+
+  @ApiProperty()
+  createdAt!: string;
+}
+
 export class CreateSystemConfigDto {
   @ApiProperty({ required: false, example: 'system' })
   category?: string;
@@ -328,4 +354,15 @@ export class UpsertSystemConfigEnvironmentOverrideDto {
 
   @ApiProperty({ required: false })
   remark?: string;
+}
+
+export class RotateSystemConfigSecretDto {
+  @ApiProperty()
+  value!: string;
+
+  @ApiProperty({ required: false, example: 'admin' })
+  rotatedBy?: string;
+
+  @ApiProperty({ required: false })
+  reason?: string;
 }

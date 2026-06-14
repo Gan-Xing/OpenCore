@@ -405,6 +405,8 @@ if (
   !opencorePlatformService.includes(
     'deleteOpenCoreSystemConfigEnvironmentOverride',
   ) ||
+  !opencorePlatformService.includes('listOpenCoreSystemConfigSecretVersions') ||
+  !opencorePlatformService.includes('rotateOpenCoreSystemConfigSecret') ||
   !opencorePlatformService.includes('listOpenCoreSystemNotices') ||
   !opencorePlatformService.includes('listOpenCoreSystemNoticeInbox') ||
   !opencorePlatformService.includes('getOpenCoreSystemNoticeInboxEventsPath') ||
@@ -914,6 +916,13 @@ if (
   !configPage.includes('listOpenCoreSystemConfigEnvironmentOverrides') ||
   !configPage.includes('upsertOpenCoreSystemConfigEnvironmentOverride') ||
   !configPage.includes('deleteOpenCoreSystemConfigEnvironmentOverride') ||
+  !configPage.includes('Secret Versions') ||
+  !configPage.includes('Rotate secret') ||
+  !configPage.includes('secretConfigTarget') ||
+  !configPage.includes('openSecretVersions') ||
+  !configPage.includes('rotateSecret') ||
+  !configPage.includes('listOpenCoreSystemConfigSecretVersions') ||
+  !configPage.includes('rotateOpenCoreSystemConfigSecret') ||
   !configPage.includes('canExportSystemConfig') ||
   !configPage.includes('Download Excel') ||
   !configPage.includes('Config Excel export downloaded') ||

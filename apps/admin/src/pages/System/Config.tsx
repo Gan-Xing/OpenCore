@@ -19,6 +19,7 @@ import {
 import { useAccess } from '@umijs/max';
 import {
   createSystemConfigFixtures,
+  type SystemConfigSecretVersionSummary,
   type SystemConfigSummary,
 } from '@opencore/sdk';
 import {
@@ -47,8 +48,10 @@ import {
   getOpenCoreSystemConfig,
   getOpenCoreSystemConfigValue,
   listOpenCoreSystemConfigEnvironmentOverrides,
+  listOpenCoreSystemConfigSecretVersions,
   listOpenCoreSystemConfig,
   refreshOpenCoreSystemConfigCache,
+  rotateOpenCoreSystemConfigSecret,
   updateOpenCoreSystemConfig,
   upsertOpenCoreSystemConfigEnvironmentOverride,
 } from '@/services/opencore/platform';
@@ -86,6 +89,12 @@ type EnvironmentOverrideFormValues = {
   description?: string;
   environment: string;
   remark?: string;
+  value: string;
+};
+
+type SecretRotationFormValues = {
+  reason?: string;
+  rotatedBy?: string;
   value: string;
 };
 
@@ -414,6 +423,7 @@ export default function ConfigPage() {
   const canExportSystemConfig = Boolean(access.canExportSystemConfig);
   const [form] = Form.useForm<ConfigFormValues>();
   const [environmentForm] = Form.useForm<EnvironmentOverrideFormValues>();
+  const [secretRotationForm] = Form.useForm<SecretRotationFormValues>();
   const [rows, setRows] =
     useState<readonly SystemConfigSummary[]>(fallbackRows);
   const [loading, setLoading] = useState(true);
@@ -447,6 +457,13 @@ export default function ConfigPage() {
     useState(false);
   const [environmentOverrideSaving, setEnvironmentOverrideSaving] =
     useState(false);
+  const [secretConfigTarget, setSecretConfigTarget] =
+    useState<SystemConfigSummary>();
+  const [secretVersions, setSecretVersions] = useState<
+    readonly SystemConfigSecretVersionSummary[]
+  >([]);
+  const [secretVersionsLoading, setSecretVersionsLoading] = useState(false);
+  const [secretRotating, setSecretRotating] = useState(false);
   const watchedVisibility = Form.useWatch('visibility', form);
   const filterOptions = useMemo(() => createFilterOptions(rows), [rows]);
   const selectedDeletableKeys = useMemo(
@@ -728,6 +745,58 @@ export default function ConfigPage() {
       setEnvironmentConfigTarget(undefined);
     } finally {
       setEnvironmentOverrideSaving(false);
+    }
+  };
+
+  const openSecretVersions = async (record: SystemConfigSummary) => {
+    if (record.visibility !== 'secret') {
+      return;
+    }
+
+    setSecretConfigTarget(record);
+    setSecretVersions([]);
+    secretRotationForm.setFieldsValue({
+      reason: '',
+      rotatedBy: 'admin',
+      value: '',
+    });
+    setSecretVersionsLoading(true);
+    try {
+      setSecretVersions(
+        await listOpenCoreSystemConfigSecretVersions(record.key),
+      );
+    } catch (error: unknown) {
+      message.warning(
+        error instanceof Error
+          ? error.message
+          : 'Unable to load secret versions.',
+      );
+    } finally {
+      setSecretVersionsLoading(false);
+    }
+  };
+
+  const rotateSecret = async () => {
+    if (!secretConfigTarget) {
+      return;
+    }
+
+    const values = await secretRotationForm.validateFields();
+    setSecretRotating(true);
+    try {
+      await rotateOpenCoreSystemConfigSecret(secretConfigTarget.key, {
+        reason: values.reason?.trim() || undefined,
+        rotatedBy: values.rotatedBy?.trim() || undefined,
+        value: values.value,
+      });
+      message.success('Secret rotated.');
+      secretRotationForm.setFieldsValue({ reason: '', value: '' });
+      setSecretVersions(
+        await listOpenCoreSystemConfigSecretVersions(secretConfigTarget.key),
+      );
+      await loadConfig();
+    } finally {
+      setSecretRotating(false);
     }
   };
 
@@ -1046,7 +1115,7 @@ export default function ConfigPage() {
     {
       title: 'Actions',
       valueType: 'option',
-      width: 232,
+      width: 272,
       render: (_, record) => (
         <Space size="small">
           <Tooltip title="Detail">
@@ -1085,6 +1154,21 @@ export default function ConfigPage() {
               disabled={record.visibility !== 'public'}
               icon={<ApartmentOutlined />}
               onClick={() => void openEnvironmentOverride(record)}
+              size="small"
+            />
+          </Tooltip>
+          <Tooltip
+            title={
+              record.visibility === 'secret'
+                ? 'Secret Versions'
+                : 'Only secret config keeps secret versions'
+            }
+          >
+            <Button
+              aria-label={`Secret versions ${record.key}`}
+              disabled={record.visibility !== 'secret'}
+              icon={<LockOutlined />}
+              onClick={() => void openSecretVersions(record)}
               size="small"
             />
           </Tooltip>
@@ -1352,6 +1436,79 @@ export default function ConfigPage() {
           </Form.Item>
           <Form.Item label="Remark" name="remark">
             <Input.TextArea maxLength={500} rows={3} />
+          </Form.Item>
+        </Form>
+      </Modal>
+      <Modal
+        title="Secret Versions"
+        open={Boolean(secretConfigTarget)}
+        confirmLoading={secretRotating}
+        onCancel={() => setSecretConfigTarget(undefined)}
+        onOk={() => void rotateSecret()}
+        okText="Rotate secret"
+      >
+        <Alert
+          showIcon
+          type="info"
+          message="Secret version history"
+          description={secretConfigTarget?.key}
+          style={{ marginBlockEnd: 16 }}
+        />
+        <Space direction="vertical" style={{ width: '100%' }}>
+          {secretVersionsLoading ? (
+            <Typography.Text type="secondary">
+              Loading versions...
+            </Typography.Text>
+          ) : secretVersions.length === 0 ? (
+            <Typography.Text type="secondary">
+              No secret versions
+            </Typography.Text>
+          ) : (
+            secretVersions.map((version) => (
+              <Space key={version.id} wrap>
+                <Tag color={version.active ? 'green' : 'default'}>
+                  v{version.version}
+                </Tag>
+                <Tag>{version.active ? 'active' : 'inactive'}</Tag>
+                <Tag color={version.encrypted ? 'purple' : 'orange'}>
+                  encrypted
+                </Tag>
+                {version.rotatedBy ? <Tag>{version.rotatedBy}</Tag> : null}
+                {version.reason ? (
+                  <Typography.Text type="secondary">
+                    {version.reason}
+                  </Typography.Text>
+                ) : null}
+                <Typography.Text type="secondary">
+                  {version.createdAt}
+                </Typography.Text>
+              </Space>
+            ))
+          )}
+        </Space>
+        <Form<SecretRotationFormValues>
+          form={secretRotationForm}
+          layout="vertical"
+          style={{ marginBlockStart: 16 }}
+        >
+          <Form.Item
+            label="New secret value"
+            name="value"
+            rules={[
+              {
+                required: true,
+                whitespace: true,
+                message: 'New secret value is required.',
+              },
+            ]}
+          >
+            <Input.Password autoComplete="new-password" maxLength={500} />
+          </Form.Item>
+          <Form.Item label="Rotated by" name="rotatedBy">
+            <Input maxLength={100} />
+          </Form.Item>
+          <Form.Item label="Reason" name="reason">
+            <Input.TextArea maxLength={500} rows={2} />
           </Form.Item>
         </Form>
       </Modal>

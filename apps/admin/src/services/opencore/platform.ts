@@ -39,6 +39,7 @@ import {
   type RbacExportPreview,
   type RbacDeleteResult,
   type RenderSystemNoticeTemplateRequest,
+  type RotateSystemConfigSecretRequest,
   type RoleMenuAssignmentSummary,
   type RoleMutationSummary,
   type RoleUserAssignmentSummary,
@@ -54,6 +55,7 @@ import {
   type SystemConfigBatchMutationSummary,
   type SystemConfigCacheRefreshSummary,
   type SystemConfigEnvironmentOverrideSummary,
+  type SystemConfigSecretVersionSummary,
   type SystemConfigValueSummary,
   type SystemDeptOptionSummary,
   type SystemDeptOrderMutationSummary,
@@ -551,6 +553,26 @@ export function deleteOpenCoreSystemConfigEnvironmentOverride(
     getRequiredAdminToken(),
     key,
     environment,
+  );
+}
+
+export function listOpenCoreSystemConfigSecretVersions(
+  key: string,
+): Promise<readonly SystemConfigSecretVersionSummary[]> {
+  return systemManagementClient.listConfigSecretVersions(
+    getRequiredAdminToken(),
+    key,
+  );
+}
+
+export function rotateOpenCoreSystemConfigSecret(
+  key: string,
+  body: RotateSystemConfigSecretRequest,
+): Promise<SystemConfigSecretVersionSummary> {
+  return systemManagementClient.rotateConfigSecret(
+    getRequiredAdminToken(),
+    key,
+    body,
   );
 }
 
