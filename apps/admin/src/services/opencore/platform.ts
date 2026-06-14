@@ -1,4 +1,5 @@
 import {
+  createCollaborationClient,
   createIntegrationClient,
   createMonitoringClient,
   createOperationsClient,
@@ -40,6 +41,9 @@ import {
   type CreateSystemConfigRequest,
   type CreateUserRequest,
   type ClearCacheRequest,
+  type CollaborationDeleteResult,
+  type CollaborationSummary,
+  type CreateMessageRequest,
   type DeleteCacheKeyRequest,
   type OpenForgeApplyDryRunRequest,
   type OpenForgeApplyDryRunSummary,
@@ -123,6 +127,8 @@ import {
   type LoginLogSummary,
   type LoginUnlockSummary,
   type MarkSystemNoticesReadRequest,
+  type MessageQueryRequest,
+  type MessageSummary,
   type KickOutSessionRequest,
   type ListUsersRequest,
   type OnlineUserQueryRequest,
@@ -186,6 +192,7 @@ import {
 import { getRequiredAdminToken, opencoreSdkRequest } from './client';
 
 const rbacClient = createRbacClient(opencoreSdkRequest);
+const collaborationClient = createCollaborationClient(opencoreSdkRequest);
 const integrationClient = createIntegrationClient(opencoreSdkRequest);
 const monitoringClient = createMonitoringClient(opencoreSdkRequest);
 const operationsClient = createOperationsClient(opencoreSdkRequest);
@@ -204,6 +211,45 @@ export function createOpenCoreExportPreview(
   body: CreateExportPreviewRequest,
 ): Promise<ExportPlanSummary> {
   return toolingClient.createExportPreview(getRequiredAdminToken(), body);
+}
+
+export function getOpenCoreCollaborationSummary(): Promise<CollaborationSummary> {
+  return collaborationClient.getSummary(getRequiredAdminToken());
+}
+
+export async function listOpenCoreMessages(
+  query?: MessageQueryRequest,
+): Promise<MessageSummary[]> {
+  const page = await collaborationClient.listMessages(getRequiredAdminToken(), {
+    page: 1,
+    pageSize: 100,
+    ...query,
+  });
+  return [...page.items];
+}
+
+export function getOpenCoreMessage(id: string): Promise<MessageSummary> {
+  return collaborationClient.getMessage(getRequiredAdminToken(), id);
+}
+
+export function createOpenCoreMessage(
+  body: CreateMessageRequest,
+): Promise<MessageSummary> {
+  return collaborationClient.createMessage(getRequiredAdminToken(), body);
+}
+
+export function markOpenCoreMessageRead(id: string): Promise<MessageSummary> {
+  return collaborationClient.markMessageRead(getRequiredAdminToken(), id);
+}
+
+export function archiveOpenCoreMessage(id: string): Promise<MessageSummary> {
+  return collaborationClient.archiveMessage(getRequiredAdminToken(), id);
+}
+
+export function deleteOpenCoreMessage(
+  id: string,
+): Promise<CollaborationDeleteResult> {
+  return collaborationClient.deleteMessage(getRequiredAdminToken(), id);
 }
 
 export function getOpenCoreOpenForgeStatus(): Promise<OpenForgeStatusSummary> {

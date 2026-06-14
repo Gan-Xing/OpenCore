@@ -374,6 +374,11 @@ model CollaborationMessage {
   deletedAt    DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+
+  @@index([recipient, status, createdAt])
+  @@index([sender, createdAt])
+  @@index([businessType, businessId])
+  @@index([deletedAt])
 }
 
 model CollaborationNotice {
@@ -389,6 +394,9 @@ model CollaborationNotice {
   createdBy      String
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+
+  @@index([status, createdAt])
+  @@index([createdBy, createdAt])
 }
 
 model CollaborationTodo {
@@ -405,6 +413,10 @@ model CollaborationTodo {
   canceledAt   DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+
+  @@index([assignee, status, createdAt])
+  @@index([sourceType, status])
+  @@index([businessType, businessId])
 }
 
 model CollaborationApprovalLite {
@@ -420,6 +432,10 @@ model CollaborationApprovalLite {
   decidedAt    DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+
+  @@index([requester, status, createdAt])
+  @@index([approver, status, createdAt])
+  @@index([businessType, businessId])
 }
 
 model JobDefinition {

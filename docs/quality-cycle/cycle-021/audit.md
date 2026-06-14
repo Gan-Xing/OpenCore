@@ -82,6 +82,9 @@ Round 100 moved Integration Mail Admin from SDK fixtures to live
 template/outbox list, detail, preview and queued-processing controls.
 Round 101 moved Integration SMS Admin from SDK fixtures to live template/outbox
 list, detail, preview and queued-processing controls.
+Round 102 moved Collaboration Messages Admin from fixtures to live
+summary/list/detail, create, mark-read, archive and delete operations with
+Prisma migration, seed and smoke coverage.
 Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 `lint` must run sequentially.
 
@@ -133,6 +136,9 @@ Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
   secret-leak guards; OAuth token smoke covers summary, list/detail, revoke,
   idempotent revoke and secret-leak guards; Admin/deploy guards require live
   Mail/SMS template/outbox operations.
+- Collaboration Messages smoke covers seed-backed list/detail, create,
+  idempotent mark-read, archive, delete and post-delete hiding;
+  Admin/deploy guards reject the fixture-backed Messages page.
 
 ## Documentation Finding
 
@@ -146,6 +152,8 @@ real incident decisions. Do not create per-round reports by default.
   deployment-topology upgrade if needed.
 - Automatic backfill of historical login/operation logs with external GeoIP
   precision remains outside the current request-time lookup surface.
+- Collaboration Notices, Todos and Approval Lite Admin pages remain fixture
+  backed until their focused live-operations loops land.
 - OpenForge direct generated schema/migration/business writes remain outside
   the admitted surface.
 

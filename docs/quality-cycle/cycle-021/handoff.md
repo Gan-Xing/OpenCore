@@ -36,9 +36,10 @@ is better.
 ## Admission
 
 Auto-admitted foundation work: System, Security, Monitor, Tools/OpenForge
-foundation, IP/location, OAuth token management, JWT blacklist, notice
-templates/delivery/provider reliability, KMS/secret vault, operation-log
-maintenance, scheduler/monitor depth and config runtime governance.
+foundation, Collaboration center foundations, IP/location, OAuth token
+management, JWT blacklist, notice templates/delivery/provider reliability,
+KMS/secret vault, operation-log maintenance, scheduler/monitor depth and
+config runtime governance.
 
 Requires explicit user admission: CRM/ERP/MES/WMS/mall/member, real
 payment/refund/reconciliation, production multi-tenancy, BPMN/full workflow,
@@ -47,7 +48,7 @@ packages and OpenForge direct Prisma/migration/business-code writing.
 
 ## Current State
 
-Cycle-021 has completed 101 deployable stages.
+Cycle-021 has completed 102 deployable stages.
 
 - System/RBAC: notice, dept, post, menu, role, permission, user, dict, config
   and file loops are live.
@@ -90,16 +91,22 @@ Cycle-021 has completed 101 deployable stages.
   CLI/core safety remains no-write by default; Admin now has a live safe
   workbench for status, doctor, plan, diff, check, manifest list and
   apply/rollback dry-run, dry-run confirmation and manifest preview/detail.
+- Collaboration: Messages now use live API/SDK/Admin operations for summary,
+  list, detail, create, mark-read, archive and delete, with Prisma migration
+  and seed coverage, a dedicated smoke and Admin/deploy guards. Notices, Todos
+  and Approval Lite Admin pages still need the same live-operations treatment.
 
-Latest runtime stage: Round 101 Integration SMS live operations. It replaces
-the fixture-backed SMS Admin page with live template/outbox list, detail,
-preview and queued-processing controls through the SDK, plus Admin smoke and
-deploy bundle guards.
+Latest runtime stage: Round 102 Collaboration Messages live operations. It
+replaces the fixture-backed Messages Admin page with live summary/list/detail,
+create, mark-read, archive and delete controls through the SDK, plus migration,
+seed, smoke and deploy guards.
 
 ## Next Queue
 
-1. Re-audit the admitted foundation map for the next P1/P2 gap.
-2. OpenForge direct Prisma/migration/business-code writes remain out of scope
+1. Move Collaboration Notices Admin from fixtures to live API/SDK operations.
+2. Move Collaboration Todos and Approval Lite Admin pages from fixtures to
+   live API/SDK operations in focused follow-up loops.
+3. OpenForge direct Prisma/migration/business-code writes remain out of scope
    until explicitly admitted.
 
 ## Docs Rule

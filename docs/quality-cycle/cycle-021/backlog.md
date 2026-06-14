@@ -8,9 +8,10 @@ This is the working queue, not a transcript.
 ## Scope
 
 Auto-admitted P0/P1 foundation work: System, Security, Monitor,
-Tools/OpenForge foundation, IP/location, OAuth token management, JWT
-blacklist, notice templates/delivery, KMS/secret vault, operation-log
-maintenance, scheduler/monitor depth and config runtime governance.
+Tools/OpenForge foundation, Collaboration center foundations, IP/location,
+OAuth token management, JWT blacklist, notice templates/delivery, KMS/secret
+vault, operation-log maintenance, scheduler/monitor depth and config runtime
+governance.
 
 Explicit admission required: CRM/ERP/MES/WMS/mall/member, real payment,
 production multi-tenancy, BPMN/full workflow, full report designer, big-data
@@ -29,7 +30,7 @@ schema/business-code writing.
   runtime login policy.
 - Rounds 50-59: logout audit semantics, ordering, data-scope, notice
   inbox/read analytics, feature flags and login-log location.
-- Rounds 60-101: notice template/delivery/provider/outbox work, SMS HTTP and
+- Rounds 60-102: notice template/delivery/provider/outbox work, SMS HTTP and
   SMTP adapters, config vault and rollout/audience, operation-log cleanup, plus
   mail subject persistence, provider diagnostics, SMS HTTP secret injection,
   SMTP attachments, explicit SMTP TLS policy, inbox realtime events, Monitor
@@ -45,16 +46,19 @@ schema/business-code writing.
   namespace/key operations and live Monitor Version runtime/deployment
   metadata, live Tool OpenAPI drift snapshot metadata, live Tool Export
   protocol/preview Admin wiring, shared live current-page export protocol and
-  live Integration Mail/SMS template/outbox Admin operations.
+  live Integration Mail/SMS template/outbox Admin operations, plus live
+  Collaboration Messages operations.
 
-Latest done: Round 101 Integration SMS live operations with live template and
-outbox list/detail, template preview, queued outbox processing, Admin smoke and
-deploy bundle guards.
+Latest done: Round 102 Collaboration Messages live operations with summary,
+list/detail, create, mark-read, archive, delete, Prisma seed, Admin smoke,
+API smoke and deploy guards.
 
 ## Active P1/P2 Queue
 
-1. Re-audit the admitted foundation map for the next P1/P2 gap.
-2. OpenForge direct schema/migration/business logic writes still require user
+1. Move Collaboration Notices Admin from fixtures to live API/SDK operations.
+2. Move Collaboration Todos and Approval Lite Admin pages from fixtures to
+   live API/SDK operations.
+3. OpenForge direct schema/migration/business logic writes still require user
    admission.
 
 ## Rework Notes

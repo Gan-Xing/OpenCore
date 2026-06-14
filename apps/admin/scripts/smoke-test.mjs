@@ -764,6 +764,18 @@ if (
   !openForgePage.includes('Dry-run apply') ||
   !openForgePage.includes('tool:openforge:manage') ||
   !messagesPage.includes('@opencore/sdk') ||
+  !messagesPage.includes('listOpenCoreMessages') ||
+  !messagesPage.includes('getOpenCoreMessage') ||
+  !messagesPage.includes('createOpenCoreMessage') ||
+  !messagesPage.includes('markOpenCoreMessageRead') ||
+  !messagesPage.includes('archiveOpenCoreMessage') ||
+  !messagesPage.includes('deleteOpenCoreMessage') ||
+  !messagesPage.includes('Live messages') ||
+  !messagesPage.includes('Create message') ||
+  !messagesPage.includes('Mark read') ||
+  !messagesPage.includes('Archive message') ||
+  !messagesPage.includes('collaboration:message:create') ||
+  !messagesPage.includes('collaboration:message:delete') ||
   !noticesPage.includes('@opencore/sdk') ||
   !todosPage.includes('@opencore/sdk') ||
   !approvalsPage.includes('@opencore/sdk') ||
@@ -809,6 +821,22 @@ if (
 ) {
   throw new Error(
     'Admin platform, collaboration, operations, and integration pages must consume SDK types or fixtures.',
+  );
+}
+
+if (
+  messagesPage.includes('createCollaborationFixtures') ||
+  messagesPage.includes('findMessageFixture') ||
+  !opencorePlatformService.includes('createCollaborationClient') ||
+  !opencorePlatformService.includes('collaborationClient.listMessages') ||
+  !opencorePlatformService.includes('collaborationClient.getMessage') ||
+  !opencorePlatformService.includes('collaborationClient.createMessage') ||
+  !opencorePlatformService.includes('collaborationClient.markMessageRead') ||
+  !opencorePlatformService.includes('collaborationClient.archiveMessage') ||
+  !opencorePlatformService.includes('collaborationClient.deleteMessage')
+) {
+  throw new Error(
+    'Collaboration Messages page must use live message SDK APIs instead of static fixtures.',
   );
 }
 

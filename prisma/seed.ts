@@ -23,6 +23,12 @@ import {
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { seedFileAssets } from '../apps/api/src/modules/core/system-management/system-management.seed';
+import {
+  seedApprovalLiteRequests,
+  seedMessages,
+  seedNotices,
+  seedTodos,
+} from '../apps/api/src/modules/collaboration/collaboration/collaboration.seed';
 import { seedReports } from '../apps/api/src/modules/monitor/operations/operations.seed';
 import {
   seedIntegrationOutbox,
@@ -55,6 +61,7 @@ async function main(): Promise<void> {
   const onlineUserSessionCount = await seedOnlineUserSessions();
   const schedulerCount = await seedScheduler();
   const operationsCount = await seedOperations();
+  const collaborationCount = await seedCollaboration();
 
   console.log(
     JSON.stringify({
@@ -66,6 +73,7 @@ async function main(): Promise<void> {
         systemNoticeDeliveries: systemNoticeDeliveryCount,
         onlineUserSessions: onlineUserSessionCount,
         integrations: integrationCount,
+        collaboration: collaborationCount,
         scheduler: schedulerCount,
         operations: operationsCount,
         systemManagement: systemManagementCount,
@@ -223,6 +231,148 @@ async function seedIntegrations(): Promise<{
     templates: seedIntegrationTemplates.length,
     outbox: seedIntegrationOutbox.length,
     oauthTokens: seedIntegrationOAuthTokens.length,
+  };
+}
+
+async function seedCollaboration(): Promise<{
+  approvals: number;
+  messages: number;
+  notices: number;
+  todos: number;
+}> {
+  for (const message of seedMessages) {
+    await prisma.collaborationMessage.upsert({
+      where: { id: message.id },
+      update: {
+        title: message.title,
+        body: message.body,
+        sender: message.sender,
+        recipient: message.recipient,
+        status: message.status,
+        businessType: message.businessType ?? null,
+        businessId: message.businessId ?? null,
+        readAt: message.readAt ? new Date(message.readAt) : null,
+        archivedAt: message.archivedAt ? new Date(message.archivedAt) : null,
+        deletedAt: message.deletedAt ? new Date(message.deletedAt) : null,
+        createdAt: new Date(message.createdAt),
+      },
+      create: {
+        id: message.id,
+        title: message.title,
+        body: message.body,
+        sender: message.sender,
+        recipient: message.recipient,
+        status: message.status,
+        businessType: message.businessType ?? null,
+        businessId: message.businessId ?? null,
+        readAt: message.readAt ? new Date(message.readAt) : null,
+        archivedAt: message.archivedAt ? new Date(message.archivedAt) : null,
+        deletedAt: message.deletedAt ? new Date(message.deletedAt) : null,
+        createdAt: new Date(message.createdAt),
+      },
+    });
+  }
+
+  for (const notice of seedNotices) {
+    await prisma.collaborationNotice.upsert({
+      where: { id: notice.id },
+      update: {
+        title: notice.title,
+        body: notice.body,
+        status: notice.status,
+        targetAudience: notice.targetAudience as Prisma.InputJsonValue,
+        validFrom: notice.validFrom ? new Date(notice.validFrom) : null,
+        validTo: notice.validTo ? new Date(notice.validTo) : null,
+        publishedAt: notice.publishedAt ? new Date(notice.publishedAt) : null,
+        archivedAt: notice.archivedAt ? new Date(notice.archivedAt) : null,
+        createdBy: notice.createdBy,
+        createdAt: new Date(notice.createdAt),
+      },
+      create: {
+        id: notice.id,
+        title: notice.title,
+        body: notice.body,
+        status: notice.status,
+        targetAudience: notice.targetAudience as Prisma.InputJsonValue,
+        validFrom: notice.validFrom ? new Date(notice.validFrom) : null,
+        validTo: notice.validTo ? new Date(notice.validTo) : null,
+        publishedAt: notice.publishedAt ? new Date(notice.publishedAt) : null,
+        archivedAt: notice.archivedAt ? new Date(notice.archivedAt) : null,
+        createdBy: notice.createdBy,
+        createdAt: new Date(notice.createdAt),
+      },
+    });
+  }
+
+  for (const todo of seedTodos) {
+    await prisma.collaborationTodo.upsert({
+      where: { id: todo.id },
+      update: {
+        title: todo.title,
+        description: todo.description ?? null,
+        sourceType: todo.sourceType,
+        businessType: todo.businessType ?? null,
+        businessId: todo.businessId ?? null,
+        assignee: todo.assignee,
+        status: todo.status,
+        timeline: toInputJson(todo.timeline),
+        completedAt: todo.completedAt ? new Date(todo.completedAt) : null,
+        canceledAt: todo.canceledAt ? new Date(todo.canceledAt) : null,
+        createdAt: new Date(todo.createdAt),
+      },
+      create: {
+        id: todo.id,
+        title: todo.title,
+        description: todo.description ?? null,
+        sourceType: todo.sourceType,
+        businessType: todo.businessType ?? null,
+        businessId: todo.businessId ?? null,
+        assignee: todo.assignee,
+        status: todo.status,
+        timeline: toInputJson(todo.timeline),
+        completedAt: todo.completedAt ? new Date(todo.completedAt) : null,
+        canceledAt: todo.canceledAt ? new Date(todo.canceledAt) : null,
+        createdAt: new Date(todo.createdAt),
+      },
+    });
+  }
+
+  for (const approval of seedApprovalLiteRequests) {
+    await prisma.collaborationApprovalLite.upsert({
+      where: { id: approval.id },
+      update: {
+        title: approval.title,
+        requester: approval.requester,
+        approver: approval.approver,
+        businessType: approval.businessType ?? null,
+        businessId: approval.businessId ?? null,
+        status: approval.status,
+        comment: approval.comment ?? null,
+        timeline: toInputJson(approval.timeline),
+        decidedAt: approval.decidedAt ? new Date(approval.decidedAt) : null,
+        createdAt: new Date(approval.createdAt),
+      },
+      create: {
+        id: approval.id,
+        title: approval.title,
+        requester: approval.requester,
+        approver: approval.approver,
+        businessType: approval.businessType ?? null,
+        businessId: approval.businessId ?? null,
+        status: approval.status,
+        comment: approval.comment ?? null,
+        timeline: toInputJson(approval.timeline),
+        decidedAt: approval.decidedAt ? new Date(approval.decidedAt) : null,
+        createdAt: new Date(approval.createdAt),
+      },
+    });
+  }
+
+  return {
+    approvals: seedApprovalLiteRequests.length,
+    messages: seedMessages.length,
+    notices: seedNotices.length,
+    todos: seedTodos.length,
   };
 }
 

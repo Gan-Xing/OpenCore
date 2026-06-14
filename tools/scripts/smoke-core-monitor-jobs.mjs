@@ -620,15 +620,15 @@ function createSmokeCron(value) {
   const [timestampPart, randomPart = '0'] = value.split('-');
   const timestamp = Number.parseInt(timestampPart, 10);
   const random = Number.parseInt(randomPart, 36);
-  const minuteOffset =
+  const seed =
     ((Number.isFinite(timestamp) ? timestamp : Date.now()) +
       (Number.isFinite(random) ? random : 0)) %
-    (365 * 24 * 60);
-  const now = new Date(Date.UTC(2099, 0, 1, 0, 0, 0, 0));
-  now.setUTCMinutes(minuteOffset);
+    (365 * 24 * 59);
+  const minute = 1 + (seed % 59);
+  const hour = Math.floor(seed / 59) % 24;
+  const dayOffset = Math.floor(seed / (59 * 24)) % 365;
+  const now = new Date(Date.UTC(2099, 0, 1 + dayOffset, hour, minute, 0, 0));
 
-  const minute = now.getUTCMinutes();
-  const hour = now.getUTCHours();
   const day = now.getUTCDate();
   const month = now.getUTCMonth() + 1;
 

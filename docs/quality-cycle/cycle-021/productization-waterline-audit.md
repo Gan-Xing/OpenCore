@@ -33,6 +33,7 @@ failures have guards; and remaining omissions are explicit product boundaries.
 | `tool.openapi`        | Meets current | Live drift snapshot metadata uses API/SDK/Admin, OpenAPI contract fields and tool/deploy guards.     |
 | `tool.export`         | Meets current | Admin protocol/preview and shared current-page export buttons use the live protocol with row caps.   |
 | `OpenForge Admin`     | Meets current | Safe workbench, dry-run confirmation, write-intent rejection and manifest preview/detail.            |
+| `collaboration`       | Enhance       | Messages are live; Notices, Todos and Approval Lite Admin pages still need live operations.          |
 
 ## Closed Remediation
 
@@ -113,10 +114,15 @@ failures have guards; and remaining omissions are explicit product boundaries.
   template/outbox list, detail, preview and queued-processing controls.
 - Round 101 replaced the Integration SMS Admin fixture page with live
   template/outbox list, detail, preview and queued-processing controls.
+- Round 102 replaced the Collaboration Messages Admin fixture page with live
+  summary/list/detail, create, mark-read, archive and delete controls, plus
+  Prisma migration, seed and smoke coverage.
 
 ## Active Debt
 
-1. OpenForge direct schema/migration/business-code writes still require user
+1. Collaboration Notices, Todos and Approval Lite Admin pages still need live
+   API/SDK operations instead of fixture rows.
+2. OpenForge direct schema/migration/business-code writes still require user
    admission.
 
 ## Guard Matrix
@@ -164,6 +170,10 @@ failures have guards; and remaining omissions are explicit product boundaries.
   secret-leak guards; OAuth token smoke covers summary, list/detail, revoke,
   idempotent revoke and secret-leak guards; Admin/deploy guards reject stale
   Mail/SMS fixture pages and require live Mail/SMS template/outbox markers.
+- Collaboration: message smoke covers seeded list/detail, create, idempotent
+  mark-read, archive, delete and post-delete hiding; Admin/deploy guards
+  reject fixture-backed Messages source and require live message operation
+  markers.
 - Config: runtime shape, environment override governance, secret-vault
   plaintext protection, legacy envelope deserialization, secret version
   history, secret rotation, vault key rotation, managed KMS host allowlist and

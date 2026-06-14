@@ -57,6 +57,10 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   Export exposes live protocol/preview row-cap behavior in Admin; OpenForge has
   a live safe planning/dry-run workbench with confirmation and manifest
   preview/detail.
+- Collaboration: Messages have live summary/list/detail, create, mark-read,
+  archive and delete operations across API/SDK/Admin with seed, smoke and
+  deploy guards. Notices, Todos and Approval Lite still need the same live
+  treatment before claiming the collaboration center is complete.
 
 ## Recent Decisions
 
@@ -161,6 +165,9 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
 - Round 101: Integration SMS now uses the same live template/outbox operator
   loop as Mail, including detail, render preview, queued-processing controls,
   filtered current-page exports and stale-fixture deploy guards.
+- Round 102: Collaboration Messages moved from fixture rows to live message
+  lifecycle operations: list/detail, create, mark-read, archive and delete are
+  seed-backed, SDK-backed and smoke-guarded.
 
 ## Explicit Non-Claims
 
@@ -171,5 +178,6 @@ and AI/RAG/Agent workflow.
 
 ## Next Focus
 
-OpenForge direct schema/migration/business writes still require explicit user
-admission.
+Collaboration Notices, Todos and Approval Lite live operations are the next
+admitted foundation gaps. OpenForge direct schema/migration/business writes
+still require explicit user admission.

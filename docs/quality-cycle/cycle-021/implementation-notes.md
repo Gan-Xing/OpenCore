@@ -9,17 +9,17 @@ active debt and decisions that change future execution.
 
 - Deploy path: `pnpm deploy:opencore`.
 - Ports: API `39172`, Admin `39174`, local smoke `39173`.
-- P0/P1 foundation work is auto-admissible; large business domains,
-  production multi-tenancy, real payments, BPMN/full workflow, full report
-  designer, RAG/Agent/AI workflow and OpenForge direct schema/business writes
-  need explicit user admission.
+- P0/P1 foundation work is auto-admissible, including Collaboration center
+  foundations; large business domains, production multi-tenancy, real
+  payments, BPMN/full workflow, full report designer, RAG/Agent/AI workflow
+  and OpenForge direct schema/business writes need explicit user admission.
 - No legacy compatibility burden: replace stale DTOs, SDK shapes, routes,
   seeds and Admin flows directly.
 - Do not paste standard test/build/deploy command lists into docs.
 
 ## Runtime State
 
-Cycle-021 has completed 101 deployable stages across
+Cycle-021 has completed 102 deployable stages across
 System/Security/Monitor/Integration/Tools foundations. Round 91 added
 token/session blacklist maintenance with registered-token allowlist
 enforcement, expired-session cleanup, API/SDK/Admin/OpenAPI visibility, smoke
@@ -42,7 +42,9 @@ export buttons to the live Tool Export protocol and removed stale Tool Export
 SDK fixture helpers. Round 100 moved the Integration Mail Admin page to live
 template/outbox list, detail, preview and queued-processing controls. Round
 101 moved the Integration SMS Admin page to live template/outbox list, detail,
-preview and queued-processing controls.
+preview and queued-processing controls. Round 102 moved Collaboration Messages
+from fixtures to live summary, list/detail, create, mark-read, archive and
+delete operations with seed and smoke coverage.
 
 ## Guard Register
 
@@ -83,9 +85,9 @@ preview and queued-processing controls.
   registry, unsafe policy guards, enable/disable, disabled-trigger rejection,
   run-now, handler execution, failed retry, run-log detail, cron dispatch,
   worker claim and scheduler queue metrics; dispatch smoke uses a per-run
-  far-future cron tick so repeated deploys cannot collide with persisted
-  `scheduledAt` de-dup metadata. Deploy also checks the Jobs and Queues Admin
-  bundle markers.
+  far-future non-zero-minute cron tick so repeated deploys cannot collide with
+  persisted `scheduledAt` de-dup metadata or seeded hourly jobs. Deploy also
+  checks the Jobs and Queues Admin bundle markers.
 - Monitor cache: smoke writes temporary Redis keys and verifies namespace/key
   listing, safe JSON field redaction, secret-key redaction, dry-run clear,
   confirmed key deletion and confirmed prefix clear. Admin smoke rejects
@@ -112,6 +114,10 @@ preview and queued-processing controls.
   OAuth token smoke covers summary, list/detail, revoke, idempotent revoke and
   secret-leak guards. Admin/deploy guards reject fixture-backed Mail/SMS pages
   and require live Mail/SMS template/outbox markers.
+- Collaboration: message smoke covers seed-backed list/detail, create,
+  idempotent mark-read, archive, delete and post-delete hiding.
+  Admin/deploy guards reject fixture-backed Messages source and require live
+  message operation markers.
 - Prisma schema/seed drift: migrations and seed must include every Prisma
   model used by smoke-covered runtime endpoints.
 - Admin generated types: run Admin `typecheck` and `lint` sequentially because
@@ -131,3 +137,5 @@ preview and queued-processing controls.
   precision is not part of the current request-time lookup surface.
 - OpenForge: direct schema/migration/business writes still require user
   admission.
+- Collaboration: Notices, Todos and Approval Lite Admin pages still need live
+  API/SDK operations instead of fixture rows.
