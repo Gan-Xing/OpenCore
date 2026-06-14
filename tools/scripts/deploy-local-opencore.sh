@@ -542,6 +542,89 @@ verify_admin_bundle_api_base_url() {
     exit 1
   fi
 
+  if grep \
+    --fixed-strings \
+    "createSystemNoticeFixtures" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Notices.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "fallbackRows" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Notices.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "Using fallback system notice snapshot" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Notices.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "setRows(fallbackRows)" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Notices.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "setSelectedDetail(record)" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Notices.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "setSelectedTemplateDetail(record)" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Notices.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "setSelectedInboxDetail(record)" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Notices.tsx" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Unable to load live system notices" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Unable to load live system notice detail." \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Unable to load live system notice template detail." \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Unable to load live system notice inbox detail." \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Unable to load live system notice templates" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Unable to load live system notice delivery records" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Run outbox schedule" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Create draft from template" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "core-notices" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "core-notice-templates" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null; then
+    echo "Admin System Notices page must use live-only lifecycle, inbox, template and delivery data without fixture fallback." >&2
+    echo "Refusing to deploy a stale or fixture-backed System Notices frontend page." >&2
+    exit 1
+  fi
+
   if ! grep -R \
     --fixed-strings \
     --include='*.js' \

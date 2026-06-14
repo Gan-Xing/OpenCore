@@ -47,7 +47,7 @@ In scope:
 - [ ] Clean System Posts fallback or confirm closure.
 - [ ] Clean System Files fallback.
 - [x] Clean System Config fallback.
-- [ ] Clean System Notices fallback.
+- [x] Clean System Notices fallback.
 - [ ] Add explicit public smoke, split into public API smoke and public Admin
       smoke.
 - [ ] Rejudge the waterline with strict `Meets` rules.

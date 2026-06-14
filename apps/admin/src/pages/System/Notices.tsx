@@ -22,17 +22,16 @@ import {
   ProTable,
   type ProColumns,
 } from '@ant-design/pro-components';
-import {
-  createSystemNoticeFixtures,
-  type SystemNoticeAudience,
-  type SystemNoticeDeliveryChannel,
-  type SystemNoticeDeliverySummary,
-  type SystemNoticeInboxSummary,
-  type SystemNoticeReadUserSummary,
-  type SystemNoticeSummary,
-  type SystemNoticeTemplateRenderSummary,
-  type SystemNoticeTemplateSummary,
-  type SystemNoticeType,
+import type {
+  SystemNoticeAudience,
+  SystemNoticeDeliveryChannel,
+  SystemNoticeDeliverySummary,
+  SystemNoticeInboxSummary,
+  SystemNoticeReadUserSummary,
+  SystemNoticeSummary,
+  SystemNoticeTemplateRenderSummary,
+  SystemNoticeTemplateSummary,
+  SystemNoticeType,
 } from '@opencore/sdk';
 import { useLocation, useModel } from '@umijs/max';
 import {
@@ -127,7 +126,6 @@ type ExternalNoticeDeliveryChannel = Extract<
 
 type NoticeTab = 'manage' | 'inbox' | 'templates';
 
-const fallbackRows = createSystemNoticeFixtures().items;
 const searchFields: CurrentPageSearchField<SystemNoticeSummary>[] = [
   'title',
   'content',
@@ -306,6 +304,10 @@ function isSchedulableExternalOutboxDelivery(
   );
 }
 
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
+}
+
 export default function SystemNoticesPage() {
   const [form] = Form.useForm<NoticeFormValues>();
   const [templateForm] = Form.useForm<NoticeTemplateFormValues>();
@@ -315,8 +317,7 @@ export default function SystemNoticesPage() {
   const [activeTab, setActiveTab] = useState<NoticeTab>(() =>
     getNoticeTabFromSearch(location.search),
   );
-  const [rows, setRows] =
-    useState<readonly SystemNoticeSummary[]>(fallbackRows);
+  const [rows, setRows] = useState<readonly SystemNoticeSummary[]>([]);
   const [inboxRows, setInboxRows] = useState<
     readonly SystemNoticeInboxSummary[]
   >([]);
@@ -388,11 +389,18 @@ export default function SystemNoticesPage() {
       setRows(notices);
       setLoadError(undefined);
     } catch (error: unknown) {
-      setRows(fallbackRows);
+      setRows([]);
+      setSelectedDetail(undefined);
+      setReadUsersOpenFor(undefined);
+      setReadUsersRows([]);
+      setReadUsersLoadError(undefined);
+      setDeliveriesOpenFor(undefined);
+      setDeliveryRows([]);
+      setDeliveriesLoadError(undefined);
+      setEditingNotice(undefined);
+      setFormOpen(false);
       setLoadError(
-        error instanceof Error
-          ? error.message
-          : 'Unable to load system notices.',
+        getErrorMessage(error, 'Unable to load live system notices.'),
       );
     } finally {
       setLoading(false);
@@ -411,9 +419,7 @@ export default function SystemNoticesPage() {
     } catch (error: unknown) {
       setInboxRows([]);
       setInboxLoadError(
-        error instanceof Error
-          ? error.message
-          : 'Unable to load system notice inbox.',
+        getErrorMessage(error, 'Unable to load live system notice inbox.'),
       );
     } finally {
       setInboxLoading(false);
@@ -431,10 +437,13 @@ export default function SystemNoticesPage() {
       setTemplateLoadError(undefined);
     } catch (error: unknown) {
       setTemplates([]);
+      setSelectedTemplateDetail(undefined);
+      setEditingTemplate(undefined);
+      setTemplateFormOpen(false);
+      setRenderTemplateFor(undefined);
+      setTemplateRenderPreview(undefined);
       setTemplateLoadError(
-        error instanceof Error
-          ? error.message
-          : 'Unable to load system notice templates.',
+        getErrorMessage(error, 'Unable to load live system notice templates.'),
       );
     } finally {
       setTemplateLoading(false);
@@ -477,7 +486,7 @@ export default function SystemNoticesPage() {
       setFormOpen(true);
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'Unable to open notice.',
+        getErrorMessage(error, 'Unable to open live system notice.'),
       );
     }
   };
@@ -512,9 +521,7 @@ export default function SystemNoticesPage() {
       setTemplateFormOpen(true);
     } catch (error: unknown) {
       message.error(
-        error instanceof Error
-          ? error.message
-          : 'Unable to open notice template.',
+        getErrorMessage(error, 'Unable to open live system notice template.'),
       );
     }
   };
@@ -522,8 +529,11 @@ export default function SystemNoticesPage() {
   const openDetail = async (record: SystemNoticeSummary) => {
     try {
       setSelectedDetail(await getOpenCoreSystemNotice(record.id));
-    } catch {
-      setSelectedDetail(record);
+    } catch (error: unknown) {
+      setSelectedDetail(undefined);
+      message.error(
+        getErrorMessage(error, 'Unable to load live system notice detail.'),
+      );
     }
   };
 
@@ -532,8 +542,14 @@ export default function SystemNoticesPage() {
       setSelectedTemplateDetail(
         await getOpenCoreSystemNoticeTemplate(record.code),
       );
-    } catch {
-      setSelectedTemplateDetail(record);
+    } catch (error: unknown) {
+      setSelectedTemplateDetail(undefined);
+      message.error(
+        getErrorMessage(
+          error,
+          'Unable to load live system notice template detail.',
+        ),
+      );
     }
   };
 
@@ -551,15 +567,18 @@ export default function SystemNoticesPage() {
       });
     } catch (error: unknown) {
       message.error(
-        error instanceof Error
-          ? error.message
-          : 'Unable to open notice template render preview.',
+        getErrorMessage(
+          error,
+          'Unable to open live system notice template render preview.',
+        ),
       );
     }
   };
 
   const openReadUsers = async (record: SystemNoticeSummary) => {
     setReadUsersOpenFor(record);
+    setReadUsersRows([]);
+    setReadUsersLoadError(undefined);
     setReadUsersLoading(true);
     try {
       const users = await listOpenCoreSystemNoticeReadUsers(record.id, {
@@ -571,9 +590,7 @@ export default function SystemNoticesPage() {
     } catch (error: unknown) {
       setReadUsersRows([]);
       setReadUsersLoadError(
-        error instanceof Error
-          ? error.message
-          : 'Unable to load system notice read users.',
+        getErrorMessage(error, 'Unable to load live system notice read users.'),
       );
     } finally {
       setReadUsersLoading(false);
@@ -582,6 +599,8 @@ export default function SystemNoticesPage() {
 
   const openDeliveryRecords = async (record: SystemNoticeSummary) => {
     setDeliveriesOpenFor(record);
+    setDeliveryRows([]);
+    setDeliveriesLoadError(undefined);
     setDeliveriesLoading(true);
     try {
       const deliveries = await listOpenCoreSystemNoticeDeliveries(record.id, {
@@ -593,9 +612,10 @@ export default function SystemNoticesPage() {
     } catch (error: unknown) {
       setDeliveryRows([]);
       setDeliveriesLoadError(
-        error instanceof Error
-          ? error.message
-          : 'Unable to load system notice delivery records.',
+        getErrorMessage(
+          error,
+          'Unable to load live system notice delivery records.',
+        ),
       );
     } finally {
       setDeliveriesLoading(false);
@@ -838,8 +858,14 @@ export default function SystemNoticesPage() {
   const openInboxDetail = async (record: SystemNoticeInboxSummary) => {
     try {
       setSelectedInboxDetail(await getOpenCoreSystemNoticeInboxItem(record.id));
-    } catch {
-      setSelectedInboxDetail(record);
+    } catch (error: unknown) {
+      setSelectedInboxDetail(undefined);
+      message.error(
+        getErrorMessage(
+          error,
+          'Unable to load live system notice inbox detail.',
+        ),
+      );
     }
   };
 
@@ -1445,8 +1471,8 @@ export default function SystemNoticesPage() {
                 {loadError ? (
                   <Alert
                     showIcon
-                    type="warning"
-                    message="Using fallback system notice snapshot"
+                    type="error"
+                    message="Unable to load live system notices"
                     description={loadError}
                     style={{ marginBlockEnd: 16 }}
                   />
@@ -1504,8 +1530,8 @@ export default function SystemNoticesPage() {
                 {inboxLoadError ? (
                   <Alert
                     showIcon
-                    type="warning"
-                    message="Unable to load notice inbox"
+                    type="error"
+                    message="Unable to load live system notice inbox"
                     description={inboxLoadError}
                     style={{ marginBlockEnd: 16 }}
                   />
@@ -1559,8 +1585,8 @@ export default function SystemNoticesPage() {
                 {templateLoadError ? (
                   <Alert
                     showIcon
-                    type="warning"
-                    message="Unable to load system notice templates"
+                    type="error"
+                    message="Unable to load live system notice templates"
                     description={templateLoadError}
                     style={{ marginBlockEnd: 16 }}
                   />
@@ -1650,8 +1676,8 @@ export default function SystemNoticesPage() {
         {readUsersLoadError ? (
           <Alert
             showIcon
-            type="warning"
-            message="Unable to load system notice read users"
+            type="error"
+            message="Unable to load live system notice read users"
             description={readUsersLoadError}
             style={{ marginBlockEnd: 16 }}
           />
@@ -1686,8 +1712,8 @@ export default function SystemNoticesPage() {
         {deliveriesLoadError ? (
           <Alert
             showIcon
-            type="warning"
-            message="Unable to load system notice delivery records"
+            type="error"
+            message="Unable to load live system notice delivery records"
             description={deliveriesLoadError}
             style={{ marginBlockEnd: 16 }}
           />

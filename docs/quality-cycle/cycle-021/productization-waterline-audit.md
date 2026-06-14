@@ -33,7 +33,7 @@ Strict Capstone rules:
 | System Posts (`core.post`)             | Meets         | List/detail/batch/order operations are live-only with smoke and deploy guards.                                                                                                                                  |
 | System Files (`core.file`)             | Partial       | Authenticated upload/download are live, but Files Admin still has fixture fallback.                                                                                                                             |
 | System Config (`core.config`)          | Meets         | Config CRUD, value reads, cache refresh, batch deletion, environment overrides, feature rollout/audience controls, secret/vault operations and exports are live-only with public smoke and Admin/deploy guards. |
-| System Notices (`core.notice`)         | Enhance       | Notice delivery reliability is live; System Notices Admin still has fixture fallback.                                                                                                                           |
+| System Notices (`core.notice`)         | Meets         | Notice management, inbox, templates, read-user analytics, delivery records, outbox provider actions and exports are live-only with public smoke and Admin/deploy guards.                                        |
 | Scheduler/Monitor                      | Meets current | Jobs, queues, status, cache and version surfaces are live-only with smoke/deploy guards.                                                                                                                        |
 | Integration                            | Meets current | Providers, OAuth, Mail/SMS and design surfaces are live-only for admitted scope; payment/billing remains out of scope.                                                                                          |
 | Online Users (`monitor.online-user`)   | Meets         | Live list/detail/kick-out/cleanup, token revocation and deployment guards are present.                                                                                                                          |
@@ -183,11 +183,17 @@ Strict Capstone rules:
   controls, secret version rotation, vault key rotation, backend Excel export
   and current-page export live-only and added Admin/deploy guards for stale
   Config bundles.
+- Round 122 removed the System Notices Admin fixture fallback, stale
+  management/template/inbox detail fallback and fallback UI, made notice
+  management CRUD, publish/archive/delete, inbox read actions, template
+  CRUD/render/create-draft, read-user analytics, delivery records, outbox
+  provider actions and current-page export live-only and added Admin/deploy
+  guards for stale System Notices bundles.
 
 ## Active Debt
 
-1. System Files and System Notices Admin pages still have fixture fallback and
-   need live-only closure stages.
+1. System Files Admin still has fixture fallback and needs a live-only closure
+   stage.
 2. Payment/BillingDesign remains explicit-admission because real payment,
    refund and reconciliation are out of scope.
 3. Optional Reports/ExportJobs remain explicit-admission because full report

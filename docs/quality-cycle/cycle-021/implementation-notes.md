@@ -20,7 +20,7 @@ active debt and decisions that change future execution.
 
 ## Runtime State
 
-Cycle-021 has recorded deployable stages through Round 121 across
+Cycle-021 has recorded deployable stages through Round 122 across
 System/Security/Monitor/Integration/Tools foundations. Round 91 added
 token/session blacklist maintenance with registered-token allowlist
 enforcement, expired-session cleanup, API/SDK/Admin/OpenAPI visibility, smoke
@@ -99,7 +99,12 @@ UI, keeps config CRUD, value reads, cache refresh, batch deletion,
 environment overrides, feature flag rollout/audience controls, secret version
 rotation, vault key rotation, backend Excel export and current-page export
 live-only through SDK calls and blocks stale Config bundles through
-Admin/deploy guards.
+Admin/deploy guards. Round 122 removed the System Notices Admin fixture
+fallback, stale management/template/inbox detail fallback and fallback UI,
+keeps notice management CRUD, publish/archive/delete, inbox read actions,
+template CRUD/render/create-draft, read-user analytics, delivery records,
+outbox provider actions and current-page export live-only through SDK calls
+and blocks stale System Notices bundles through Admin/deploy guards.
 
 ## Guard Register
 
@@ -113,7 +118,11 @@ Admin/deploy guards.
   sync, scheduled retry caps, SMS HTTP host allowlist, SMTP config-vault auth,
   SMTP TLS policy, SMS HTTP secret injection, mail outbox subject persistence,
   SMTP attachments, authenticated inbox realtime events, provider diagnostics,
-  provider failures and sent-state mutation guards.
+  provider failures and sent-state mutation guards. System Notices
+  Admin/deploy guards reject `createSystemNoticeFixtures`, `fallbackRows`,
+  fallback copy and stale management/template/inbox detail fallback on the
+  Notices page, and require live management, inbox, template, delivery and
+  outbox operation markers in the built bundle.
 - Operation log: smoke covers batch-delete guards, deleted-detail 404,
   duration/location filters, retentionDays cleanup and the retention scheduler
   job registry while preserving the clean request audit row. Admin smoke and

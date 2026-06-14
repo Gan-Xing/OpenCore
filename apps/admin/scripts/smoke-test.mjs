@@ -1602,6 +1602,26 @@ if (
 }
 
 if (
+  systemNoticesPage.includes('createSystemNoticeFixtures') ||
+  systemNoticesPage.includes('fallbackRows') ||
+  systemNoticesPage.includes('Using fallback system notice snapshot') ||
+  systemNoticesPage.includes('setRows(fallbackRows)') ||
+  systemNoticesPage.includes('setSelectedDetail(record)') ||
+  systemNoticesPage.includes('setSelectedTemplateDetail(record)') ||
+  systemNoticesPage.includes('setSelectedInboxDetail(record)') ||
+  !systemNoticesPage.includes('Unable to load live system notices') ||
+  !systemNoticesPage.includes('Unable to load live system notice detail.') ||
+  !systemNoticesPage.includes(
+    'Unable to load live system notice template detail.',
+  ) ||
+  !systemNoticesPage.includes(
+    'Unable to load live system notice inbox detail.',
+  ) ||
+  !systemNoticesPage.includes('Unable to load live system notice templates') ||
+  !systemNoticesPage.includes('Unable to load live system notice read users') ||
+  !systemNoticesPage.includes(
+    'Unable to load live system notice delivery records',
+  ) ||
   !systemNoticesPage.includes('listOpenCoreSystemNotices') ||
   !systemNoticesPage.includes('listOpenCoreSystemNoticeInbox') ||
   !systemNoticesPage.includes('getOpenCoreSystemNoticeInboxEventsPath') ||
@@ -1666,7 +1686,7 @@ if (
   !systemNoticesPage.includes('rows={filteredRows}')
 ) {
   throw new Error(
-    'System Notices page must use live SDK lifecycle, inbox, template and outbox delivery actions with bounded filtering and current-page export.',
+    'System Notices page must use live-only SDK lifecycle, inbox, template and outbox delivery actions with bounded filtering and current-page export without fixture fallback.',
   );
 }
 

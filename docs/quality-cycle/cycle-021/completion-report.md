@@ -4,18 +4,19 @@ Date: 2026-06-14
 
 ## Latest Completed Round
 
-Round 121: System Config Admin live-only CRUD, runtime controls, secret/vault
-operations and export operations.
+Round 122: System Notices Admin live-only management, inbox, template and
+delivery operations.
 
 ## Closed
 
-- Removed the System Config Admin fixture fallback path, stale detail fallback
-  and fallback UI.
-- Kept config list/detail/create/update/delete, value reads, cache refresh,
-  batch deletion, environment overrides, feature flag rollout/audience
-  controls, secret version rotation, vault key rotation, backend Excel export
-  and current-page export backed by live SDK calls only.
-- Added Admin/deploy guards against stale fixture-backed Config bundles.
+- Removed the System Notices Admin fixture fallback path, stale
+  management/template/inbox detail fallback and fallback UI.
+- Kept notice management list/detail/create/update, publish/archive/delete,
+  inbox read actions, template CRUD/render/create-draft, read-user analytics,
+  delivery records, outbox provider actions and current-page export backed by
+  live SDK calls only.
+- Added Admin/deploy guards against stale fixture-backed System Notices
+  bundles.
 
 ## Still Open
 
@@ -25,5 +26,4 @@ operations and export operations.
   designer and big-data async export are outside the admitted surface.
 - OpenForge direct schema/migration/business code writes remain outside the
   admitted surface.
-- System Notices and Files Admin fallback closure remain in the finite
-  seven-page queue.
+- System Files Admin fallback closure remains in the finite seven-page queue.
