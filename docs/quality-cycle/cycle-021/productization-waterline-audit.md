@@ -22,7 +22,7 @@ failures have guards; and remaining omissions are explicit product boundaries.
 | `core.user`           | Meets         | CRUD, profile, password, avatar, import/export, binds.                                               |
 | `core.dict`           | Meets         | Dict/item CRUD and enabled simple-list source.                                                       |
 | `core.file`           | Meets         | Authenticated upload/download and content smoke.                                                     |
-| `monitor.online-user` | Meets         | Batch kick-out, revocation, registered-token allowlist, cleanup and UA/IP fields.                    |
+| `monitor.online-user` | Meets         | Batch kick-out, revocation, registered-token allowlist, cleanup, UA/IP fields and live-only Admin.   |
 | `core.login-log`      | Meets current | Schema, lockout, cleanup, actor/reason, location, IP/location lookup and live-only Admin data.       |
 | `core.config`         | Meets current | Runtime keys, feature flags, rollout, audience, overrides, vault versions, env and managed KMS.      |
 | `core.notice`         | Enhance       | SMS HTTP, SMTP, mail subject, diagnostics, secrets, attachments, TLS policy and realtime events.     |
@@ -138,6 +138,9 @@ failures have guards; and remaining omissions are explicit product boundaries.
 - Round 111 removed the OAuth token Admin fixture fallback, made token detail
   load through the live SDK API, gated revoke controls with
   `integration:oauth:manage` and added smoke/deploy stale-bundle guards.
+- Round 112 removed the Online Users Admin fixture fallback, made detail
+  failure visible and added smoke/deploy guards for live-only session
+  list/detail/kick-out/expired-cleanup controls.
 
 ## Active Debt
 
@@ -168,8 +171,10 @@ failures have guards; and remaining omissions are explicit product boundaries.
   lookup, invalid lookup, missing-IP guard and OpenAPI paths; common tests
   cover the external HTTP JSON adapter, host allowlist, non-public-IP no-send
   behavior and fallback diagnostics; deploy checks Admin GeoIP bundle markers.
-- Online users: smoke covers summary, expired cleanup, revoked-token rejection
-  and Admin blacklist-maintenance bundle markers.
+- Online users: smoke covers summary, expired cleanup, revoked-token
+  rejection, list/detail, batch kick-out, single kick-out and preserved admin
+  session behavior; Admin/deploy guards reject fixture fallback and require
+  live session markers.
 - Monitor jobs: Admin bundle markers and smoke cover summary, registry,
   whitelisted job upsert, unsafe policy guards, enable/disable,
   disabled-trigger rejection, manual trigger, handler execution, retry failure

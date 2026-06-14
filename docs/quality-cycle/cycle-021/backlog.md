@@ -30,7 +30,7 @@ schema/business-code writing.
   runtime login policy.
 - Rounds 50-59: logout audit semantics, ordering, data-scope, notice
   inbox/read analytics, feature flags and login-log location.
-- Rounds 60-111: notice template/delivery/provider/outbox work, SMS HTTP and
+- Rounds 60-112: notice template/delivery/provider/outbox work, SMS HTTP and
   SMTP adapters, config vault and rollout/audience, operation-log cleanup, plus
   mail subject persistence, provider diagnostics, SMS HTTP secret injection,
   SMTP attachments, explicit SMTP TLS policy, inbox realtime events, Monitor
@@ -51,12 +51,12 @@ schema/business-code writing.
   Messages, Notices, Todos and Approval Lite operations, Monitor Status live
   CPU/memory/disk/process runtime resources, Monitor Queue pause/resume
   controls, Security Logs live-only Admin filtering, Monitor Jobs terminal
-  run-log retention cleanup and OAuth token Admin live-only detail/revoke
-  controls.
+  run-log retention cleanup, OAuth token Admin live-only detail/revoke controls
+  and Online Users Admin live-only session operations.
 
-Latest done: Round 111 Integration OAuth Admin live-only list/detail/revoke
-with fixture fallback removed, live detail loading, permission-gated revoke
-controls and deploy guards against stale fixture-backed OAuth pages.
+Latest done: Round 112 Monitor Online Users Admin live-only list/detail,
+kick-out and expired cleanup with fixture fallback removed, visible detail
+failures and deploy guards against stale fixture-backed Online Users pages.
 
 ## Active P1/P2 Queue
 

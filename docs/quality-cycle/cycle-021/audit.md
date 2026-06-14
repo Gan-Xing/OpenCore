@@ -111,6 +111,9 @@ Round 111 removed the OAuth token Admin fixture fallback, made token detail
 load through the live SDK API, gated revoke controls with
 `integration:oauth:manage` and guarded stale OAuth bundles in Admin smoke and
 deployment.
+Round 112 removed the Online Users Admin fixture fallback, made session detail
+API failures visible and guarded stale online-user bundles in Admin smoke and
+deployment.
 Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 `lint` must run sequentially.
 
@@ -133,7 +136,9 @@ Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
   external HTTP JSON adapter, host allowlist, non-public-IP no-send behavior
   and fallback diagnostics; deploy checks Admin GeoIP bundle markers.
 - Online-user smoke covers summary, expired cleanup, force-logout audit,
-  revoked-token rejection and Admin blacklist-maintenance bundle markers.
+  revoked-token rejection, list/detail, batch kick-out, single kick-out,
+  repeat-kick guard and preserved admin session behavior; Admin/deploy guards
+  reject Online Users fixture fallback and require live session markers.
 - Config smoke covers runtime shape, environment override governance, legacy
   vault envelope deserialization, secret version history, secret rotation,
   vault key rotation, managed KMS provider status and no plaintext secret

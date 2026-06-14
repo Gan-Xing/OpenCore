@@ -4,14 +4,15 @@ Date: 2026-06-14
 
 ## Latest Completed Round
 
-Round 111: Integration OAuth Admin live-only list/detail/revoke.
+Round 112: Monitor Online Users Admin live-only session operations.
 
 ## Closed
 
-- Removed the OAuth token Admin fixture fallback path.
-- Loaded token detail through the live SDK/API instead of local fixture lookup.
-- Gated revoke controls with `integration:oauth:manage` and added
-  smoke/deploy guards against stale fixture-backed OAuth bundles.
+- Removed the Online Users Admin fixture fallback path.
+- Made session detail load failures visible instead of falling back to the
+  table row.
+- Kept kick-out and expired cleanup permission-gated and added smoke/deploy
+  guards against stale fixture-backed Online Users bundles.
 
 ## Still Open
 

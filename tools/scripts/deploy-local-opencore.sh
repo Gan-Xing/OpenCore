@@ -1015,7 +1015,25 @@ verify_admin_bundle_api_base_url() {
     exit 1
   fi
 
-  if ! grep -R \
+  if grep \
+    --fixed-strings \
+    "createOperationsFixtures" \
+    "$ROOT_DIR/apps/admin/src/pages/Monitor/OnlineUsers.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "Using fallback online user fixtures" \
+    "$ROOT_DIR/apps/admin/src/pages/Monitor/OnlineUsers.tsx" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Live online user sessions" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Unable to load live online users" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
     --fixed-strings \
     --include='*.js' \
     "Token blacklist maintenance" \

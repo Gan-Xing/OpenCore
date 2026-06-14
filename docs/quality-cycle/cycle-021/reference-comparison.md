@@ -28,7 +28,9 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   live with multiple hardening stages.
 - Auth/session: login policy, logout, force logout, online-user kick-out,
   token/session revocation, registered-token allowlist enforcement and expired
-  cleanup are real behavior.
+  cleanup are real behavior. Online Users Admin now uses live session
+  list/detail/kick-out/cleanup data only and fails visibly instead of showing
+  fixtures.
 - Logs: login-log has schema, lockout, cleanup, actor/reason, location,
   structured IP/location provider lookup and external HTTP JSON GeoIP adapter;
   operation-log has
@@ -209,6 +211,9 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
 - Round 111: OAuth token Admin now uses live list/detail/revoke APIs only,
   disables revoke without `integration:oauth:manage` and has smoke/deploy
   guards that reject fixture fallback or stale bundles.
+- Round 112: Online Users Admin now uses live list/detail/kick-out and expired
+  cleanup APIs only, so session/token failures cannot be hidden behind SDK
+  fixture rows.
 
 ## Explicit Non-Claims
 

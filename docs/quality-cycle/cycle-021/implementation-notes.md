@@ -19,7 +19,7 @@ active debt and decisions that change future execution.
 
 ## Runtime State
 
-Cycle-021 has completed 111 deployable stages across
+Cycle-021 has completed 112 deployable stages across
 System/Security/Monitor/Integration/Tools foundations. Round 91 added
 token/session blacklist maintenance with registered-token allowlist
 enforcement, expired-session cleanup, API/SDK/Admin/OpenAPI visibility, smoke
@@ -64,7 +64,9 @@ cleanup through API/SDK/Admin, rejects queued/running cleanup and keeps the
 Jobs Admin page live-only through smoke/deploy guards. Round 111 removed the
 OAuth token Admin fixture fallback, loads token detail through the live SDK
 API, gates revoke controls with `integration:oauth:manage` and blocks stale
-OAuth bundles through Admin smoke and deploy guards.
+OAuth bundles through Admin smoke and deploy guards. Round 112 removed the
+Online Users Admin fixture fallback, makes detail API failures visible and
+blocks stale online-user bundles through Admin smoke and deploy guards.
 
 ## Guard Register
 
@@ -93,8 +95,11 @@ OAuth bundles through Admin smoke and deploy guards.
   `OPENCORE_IP_LOCATION_ENDPOINT_URL` and
   `OPENCORE_IP_LOCATION_ALLOWED_HOSTS`; optional auth uses
   `OPENCORE_IP_LOCATION_AUTH_HEADER_NAME/VALUE`.
-- Online users: smoke covers summary, expired cleanup, force-logout audit and
-  revoked-token rejection; deploy checks token blacklist maintenance markers.
+- Online users: smoke covers summary, expired cleanup, force-logout audit,
+  revoked-token rejection, list/detail, batch kick-out, single kick-out,
+  repeat-kick guard and preserved admin session behavior. Admin smoke and
+  deploy guards reject fixture-backed Online Users pages and require live
+  session markers.
 - Config/secret: smoke covers feature flags, audience rules, environment
   overrides, legacy vault envelope deserialization, secret version history,
   explicit secret rotation, vault key rotation, managed KMS provider status,

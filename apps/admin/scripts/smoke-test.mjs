@@ -1835,6 +1835,8 @@ if (
   !onlineUsersPage.includes('CurrentPageExportButton') ||
   !onlineUsersPage.includes('dataSource={filteredRows}') ||
   !onlineUsersPage.includes('rows={filteredRows}') ||
+  !onlineUsersPage.includes('Live online user sessions') ||
+  !onlineUsersPage.includes('Unable to load live online users') ||
   !onlineUsersPage.includes('Kick-out invalidates active bearer sessions') ||
   !onlineUsersPage.includes('Token blacklist maintenance') ||
   !onlineUsersPage.includes('Clean expired sessions') ||
@@ -1847,10 +1849,12 @@ if (
   !onlineUsersPage.includes('value: record.tokenId, sensitive: true') ||
   !onlineUsersPage.includes("label: 'Revoked Reason'") ||
   !onlineUsersPage.includes('value: record.revokedReason') ||
-  (onlineUsersPage.match(/sensitive: true/g) ?? []).length < 2
+  (onlineUsersPage.match(/sensitive: true/g) ?? []).length < 2 ||
+  onlineUsersPage.includes('createOperationsFixtures') ||
+  onlineUsersPage.includes('Using fallback online user fixtures')
 ) {
   throw new Error(
-    'Online user detail must redact scalar token and revoked-reason fields.',
+    'Online user Admin must use live-only list/detail/kick-out data and redact scalar token fields without fixture fallback.',
   );
 }
 

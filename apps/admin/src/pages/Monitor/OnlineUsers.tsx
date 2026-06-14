@@ -10,10 +10,9 @@ import {
   type ProColumns,
 } from '@ant-design/pro-components';
 import { useAccess } from '@umijs/max';
-import {
-  createOperationsFixtures,
-  type OnlineUserSessionSummary,
-  type OnlineUserSummary,
+import type {
+  OnlineUserSessionSummary,
+  OnlineUserSummary,
 } from '@opencore/sdk';
 import {
   Alert,
@@ -50,8 +49,14 @@ import {
   type DetailField,
 } from '../shared/ReadOnlyDetailDrawer';
 
-const fallbackRows = createOperationsFixtures().onlineUsers;
-const fallbackSummary = createOperationsFixtures().summary.onlineUsers;
+const emptySummary: OnlineUserSummary = {
+  active: 0,
+  cleanupEligible: 0,
+  expired: 0,
+  revoked: 0,
+  total: 0,
+};
+
 const exportColumns: CurrentPageExportColumn<OnlineUserSessionSummary>[] = [
   { title: 'ID', dataIndex: 'id' },
   { title: 'Username', dataIndex: 'username' },
@@ -166,16 +171,16 @@ function statusColor(record: OnlineUserSessionSummary): string {
 export default function OnlineUsersPage() {
   const access = useAccess();
   const canManageOnlineUsers = Boolean(access.canManageOnlineUsers);
-  const [rows, setRows] =
-    useState<readonly OnlineUserSessionSummary[]>(fallbackRows);
+  const [rows, setRows] = useState<readonly OnlineUserSessionSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
   const [selectedDetail, setSelectedDetail] =
     useState<OnlineUserSessionSummary>();
+  const [detailLoadingId, setDetailLoadingId] = useState<string>();
   const [kickingId, setKickingId] = useState<string>();
   const [bulkKicking, setBulkKicking] = useState(false);
   const [cleaningExpired, setCleaningExpired] = useState(false);
-  const [summary, setSummary] = useState<OnlineUserSummary>(fallbackSummary);
+  const [summary, setSummary] = useState<OnlineUserSummary>(emptySummary);
   const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
   const filterOptions = useMemo(() => createFilterOptions(rows), [rows]);
   const { filteredRows, toolbar: filterToolbar } =
@@ -204,7 +209,10 @@ export default function OnlineUsersPage() {
       setSummary(nextSummary);
       setLoadError(undefined);
     } catch (error: unknown) {
-      setRows(fallbackRows);
+      setRows([]);
+      setSummary(emptySummary);
+      setSelectedDetail(undefined);
+      setSelectedRowKeys([]);
       setLoadError(
         error instanceof Error ? error.message : 'Unable to load online users.',
       );
@@ -218,10 +226,18 @@ export default function OnlineUsersPage() {
   }, []);
 
   const openDetail = async (record: OnlineUserSessionSummary) => {
+    setDetailLoadingId(record.id);
     try {
       setSelectedDetail(await getOpenCoreOnlineUser(record.id));
-    } catch (_error) {
-      setSelectedDetail(record);
+    } catch (error: unknown) {
+      setSelectedDetail(undefined);
+      message.error(
+        error instanceof Error
+          ? error.message
+          : 'Unable to load live online user detail.',
+      );
+    } finally {
+      setDetailLoadingId(undefined);
     }
   };
 
@@ -327,6 +343,7 @@ export default function OnlineUsersPage() {
             <Button
               aria-label={`View online user ${record.id}`}
               icon={<EyeOutlined />}
+              loading={detailLoadingId === record.id}
               onClick={() => void openDetail(record)}
               size="small"
             />
@@ -359,14 +376,17 @@ export default function OnlineUsersPage() {
     <PageContainer title="Online Users" subTitle="S11 Operations">
       {loadError ? (
         <Alert
-          message="Using fallback online user fixtures"
+          message="Unable to load live online users"
           description={loadError}
-          type="warning"
+          type="error"
           showIcon
           style={{ marginBottom: 16 }}
         />
       ) : null}
       <Space size="large" style={{ marginBottom: 16 }} wrap>
+        <Typography.Text type="secondary">
+          Live online user sessions
+        </Typography.Text>
         <Typography.Text type="secondary">
           Token blacklist maintenance
         </Typography.Text>

@@ -48,12 +48,14 @@ packages and OpenForge direct Prisma/migration/business-code writing.
 
 ## Current State
 
-Cycle-021 has completed 111 deployable stages.
+Cycle-021 has completed 112 deployable stages.
 
 - System/RBAC: notice, dept, post, menu, role, permission, user, dict, config
   and file loops are live.
 - Security/session: login policy, logout, force logout, online-user kick-out,
-  registered-token allowlist enforcement and expired session cleanup are live.
+  registered-token allowlist enforcement and expired session cleanup are live;
+  Online Users Admin is live-only for list/detail/kick-out/cleanup and no
+  longer falls back to SDK fixtures.
 - Logs: login-log type/result, lockout, cleanup, actor/reason, deterministic
   location, structured IP/location provider lookup and a guarded external
   HTTP JSON GeoIP adapter; operation-log
@@ -108,11 +110,10 @@ Cycle-021 has completed 111 deployable stages.
   operations for list, detail, create, approve and reject. These pages have
   seed coverage, dedicated smoke and Admin/deploy guards.
 
-Latest runtime stage: Round 111 Integration OAuth Admin live-only
-list/detail/revoke. It removes the OAuth token Admin fixture fallback, loads
-details through the live SDK API, gates revoke controls with
-`integration:oauth:manage` and adds smoke/deploy guards for stale OAuth Admin
-bundles.
+Latest runtime stage: Round 112 Monitor Online Users Admin live-only. It
+removes the Online Users Admin fixture fallback, makes detail failure visible,
+keeps kick-out/expired-cleanup controls permission-gated and adds smoke/deploy
+guards for stale Online Users bundles.
 
 ## Next Queue
 
