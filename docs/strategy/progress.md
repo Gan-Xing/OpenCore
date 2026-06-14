@@ -26,7 +26,7 @@ OpenCore is in Cycle-021 capability-map productization. The project has moved
 past strategy-only planning, S3-S8 foundation, runtime integration, OpenForge
 V1, Admin Ant Design Pro V6 migration, and backend package extraction.
 
-Cycle-021 has delivered 119 deployable stages, but remains in System Admin
+Cycle-021 has delivered 120 deployable stages, but remains in System Admin
 Fallback Closure until the seven-page acceptance matrix, live-only guard,
 public smoke and doc reconciliation are complete.
 
@@ -36,6 +36,9 @@ Current state:
   security, monitor, integration, tools and collaboration foundations.
 - System Roles Admin is now live-only for CRUD, menu/user assignment, status,
   data-scope dept selection and current-page export.
+- System Users Admin is now live-only for CRUD, role assignment, status/batch
+  mutations, reset password, department filtering, post/dept selectors,
+  import/export and current-page export.
 - A seven-page acceptance matrix now separates runtime completion from Admin
   live-only acceptance.
 - A global no-fixture-fallback guard is still required.
@@ -103,7 +106,7 @@ Current foundation queue from Cycle-021:
 
 - Build and keep the acceptance matrix current.
 - Add a global no-fixture-fallback guard.
-- Remove remaining System Users, Config, Notices and Files fallback.
+- Remove remaining System Config, Notices and Files fallback.
 - Confirm or close System Permissions and Posts local-only rows against the
   strict matrix, public smoke and global guard.
 - Add explicit public smoke before marking capabilities as full `Meets`.

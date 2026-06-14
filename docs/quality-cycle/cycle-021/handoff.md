@@ -115,7 +115,7 @@ packages and OpenForge direct Prisma/migration/business-code writing.
 
 ## Current State
 
-Cycle-021 has recorded deployable stages through Round 119. The Capstone
+Cycle-021 has recorded deployable stages through Round 120. The Capstone
 Acceptance baseline remains Round 115 until the acceptance matrix,
 no-fixture-fallback guard, public API/Admin smoke and doc reconciliation are
 complete.
@@ -127,9 +127,11 @@ complete.
   live-only for catalog/detail/custom CRUD/export; Menus Admin is live-only
   for tree CRUD, detail/export and live permission options. Roles Admin is
   live-only for list/detail CRUD, menu assignment, user assignment, status
-  changes, data-scope dept selection and current-page export. Users, Config,
-  Files and System Notices Admin still have fixture fallback and remain
-  live-only closure debt.
+  changes, data-scope dept selection and current-page export. Users Admin is
+  live-only for list/detail CRUD, role assignment, status/batch mutations,
+  reset password, department filtering, post/dept selectors, import/export and
+  current-page export. Config, Files and System Notices Admin still have
+  fixture fallback and remain live-only closure debt.
 - Security/session: login policy, logout, force logout, online-user kick-out,
   registered-token allowlist enforcement and expired session cleanup are live;
   Online Users Admin is live-only for list/detail/kick-out/cleanup and no
@@ -189,16 +191,17 @@ complete.
   operations for list, detail, create, approve and reject. These pages have
   seed coverage, dedicated smoke and Admin/deploy guards.
 
-Latest runtime stage: Round 119 System Roles Admin live-only. It removes the
-Roles Admin permission/dept fixture fallback, stale detail fallback and
-fallback UI, keeps role CRUD, menu/user assignment, status changes and
+Latest runtime stage: Round 120 System Users Admin live-only. It removes the
+Users Admin user/role/dept/post fixture fallback, stale detail fallback and
+fallback UI, keeps user CRUD, role assignment, status/batch mutations, reset
+password, department filtering, post/dept selectors, import/export and
 current-page export backed by live SDK calls only and adds Admin/deploy guards
-for stale fixture-backed Roles bundles.
+for stale fixture-backed Users bundles.
 
 ## Next Queue
 
-1. Close remaining fixture-backed Admin debt by dependency order: Users,
-   Config, System Notices and Files.
+1. Close remaining fixture-backed Admin debt by dependency order: Config,
+   System Notices and Files.
 2. Confirm or close Permissions and Posts local-only rows against the strict
    matrix, public smoke and global guard.
 3. Add seven-page unified no-fixture-fallback guard coverage.

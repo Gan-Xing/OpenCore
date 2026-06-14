@@ -1147,6 +1147,16 @@ if (
 }
 
 if (
+  usersPage.includes('createSystemDeptOptionFixtures') ||
+  usersPage.includes('createSystemDeptFixtures') ||
+  usersPage.includes('createSystemPostFixtures') ||
+  usersPage.includes('fallbackRows') ||
+  usersPage.includes('fallbackRoleRows') ||
+  usersPage.includes('Using fallback user snapshot') ||
+  usersPage.includes('setRows(fallbackRows)') ||
+  usersPage.includes('setSelectedDetail(record)') ||
+  !usersPage.includes('Unable to load live users') ||
+  !usersPage.includes('Unable to load live user detail.') ||
   !usersPage.includes('listOpenCoreUsers') ||
   !usersPage.includes('getOpenCoreUser') ||
   !usersPage.includes('getOpenCoreUserRoleAssignment') ||
@@ -1202,7 +1212,7 @@ if (
   !usersPage.includes('rows={filteredRows}')
 ) {
   throw new Error(
-    'Users page must use live SDK CRUD with role/dept selectors, dedicated role assignment, department tree filtering, bounded filtering, backend Excel export, and current-page export.',
+    'Users page must use live-only SDK CRUD with role/dept/post selectors, dedicated role assignment, department tree filtering, bounded filtering, backend Excel export, import and current-page export without fixture fallback.',
   );
 }
 

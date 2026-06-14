@@ -17,18 +17,15 @@ import {
   type ProColumns,
 } from '@ant-design/pro-components';
 import { useAccess } from '@umijs/max';
-import {
-  createSystemDeptOptionFixtures,
-  createSystemDeptFixtures,
-  createSystemPostFixtures,
-  type RoleSummary,
-  type SystemDeptOptionSummary,
-  type SystemDeptSummary,
-  type SystemDeptTreeSummary,
-  type SystemPostOptionSummary,
-  type UserImportResultSummary,
-  type UserRoleAssignmentSummary,
-  type UserSummary,
+import type {
+  RoleSummary,
+  SystemDeptOptionSummary,
+  SystemDeptSummary,
+  SystemDeptTreeSummary,
+  SystemPostOptionSummary,
+  UserImportResultSummary,
+  UserRoleAssignmentSummary,
+  UserSummary,
 } from '@opencore/sdk';
 import {
   Alert,
@@ -148,43 +145,6 @@ const deptFilterTreeStyle: CSSProperties = {
   marginBlockStart: 8,
 };
 
-const fallbackRows: UserSummary[] = [
-  {
-    id: 'user_admin',
-    username: 'admin',
-    displayName: 'OpenCore Admin',
-    roleCodes: ['admin'],
-    deptId: 'dept_headquarters',
-    postCodes: ['admin'],
-    enabled: true,
-    system: true,
-  },
-];
-const fallbackRoleRows: RoleSummary[] = [
-  {
-    id: 'role_admin',
-    code: 'admin',
-    name: 'Administrator',
-    enabled: true,
-    permissionCodes: [],
-    system: true,
-    dataScope: 'all',
-    dataScopeDeptIds: [],
-  },
-  {
-    id: 'role_viewer',
-    code: 'viewer',
-    name: 'Viewer',
-    enabled: true,
-    permissionCodes: [],
-    system: true,
-    dataScope: 'self',
-    dataScopeDeptIds: [],
-  },
-];
-const fallbackDeptTreeRows = createSystemDeptFixtures();
-const fallbackDeptOptionRows = createSystemDeptOptionFixtures();
-const fallbackPostRows = createSystemPostFixtures().items;
 const searchFields: CurrentPageSearchField<UserSummary>[] = [
   'username',
   'displayName',
@@ -328,51 +288,6 @@ function toDeptFilterTreeData(
   }));
 }
 
-function collectDeptSubtreeIds(
-  rows: readonly SystemDeptTreeSummary[],
-  deptId: string,
-): Set<string> | undefined {
-  for (const row of rows) {
-    if (row.id === deptId) {
-      const ids = new Set<string>();
-      collectDeptIds(row, ids);
-      return ids;
-    }
-
-    const childIds = collectDeptSubtreeIds(row.children, deptId);
-    if (childIds) {
-      return childIds;
-    }
-  }
-
-  return undefined;
-}
-
-function collectDeptIds(row: SystemDeptTreeSummary, ids: Set<string>): void {
-  ids.add(row.id);
-
-  for (const child of row.children) {
-    collectDeptIds(child, ids);
-  }
-}
-
-function filterUsersByDept(
-  rows: readonly UserSummary[],
-  deptTree: readonly SystemDeptTreeSummary[],
-  deptId: string | undefined,
-): readonly UserSummary[] {
-  if (!deptId) {
-    return rows;
-  }
-
-  const deptIds = collectDeptSubtreeIds(deptTree, deptId);
-  if (!deptIds) {
-    return [];
-  }
-
-  return rows.filter((row) => row.deptId && deptIds.has(row.deptId));
-}
-
 function createDetailFields(
   record: UserSummary,
   deptNames: ReadonlyMap<string, string>,
@@ -422,16 +337,17 @@ export default function UsersPage() {
   const [form] = Form.useForm<UserFormValues>();
   const [resetPasswordForm] = Form.useForm<ResetPasswordValues>();
   const [assignRolesForm] = Form.useForm<AssignRolesValues>();
-  const [rows, setRows] = useState<readonly UserSummary[]>(fallbackRows);
-  const [roleRows, setRoleRows] =
-    useState<readonly RoleSummary[]>(fallbackRoleRows);
-  const [deptTreeRows, setDeptTreeRows] =
-    useState<readonly SystemDeptTreeSummary[]>(fallbackDeptTreeRows);
+  const [rows, setRows] = useState<readonly UserSummary[]>([]);
+  const [roleRows, setRoleRows] = useState<readonly RoleSummary[]>([]);
+  const [deptTreeRows, setDeptTreeRows] = useState<
+    readonly SystemDeptTreeSummary[]
+  >([]);
   const [deptOptionRows, setDeptOptionRows] = useState<
     readonly SystemDeptOptionSummary[]
-  >(fallbackDeptOptionRows);
-  const [postRows, setPostRows] =
-    useState<readonly SystemPostOptionSummary[]>(fallbackPostRows);
+  >([]);
+  const [postRows, setPostRows] = useState<readonly SystemPostOptionSummary[]>(
+    [],
+  );
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
   const [selectedDetail, setSelectedDetail] = useState<UserSummary>();
@@ -516,14 +432,24 @@ export default function UsersPage() {
       setPostRows(posts);
       setLoadError(undefined);
     } catch (error: unknown) {
-      setRows(filterUsersByDept(fallbackRows, fallbackDeptTreeRows, deptId));
+      setRows([]);
       setSelectedRowKeys([]);
-      setRoleRows(fallbackRoleRows);
-      setDeptTreeRows(fallbackDeptTreeRows);
-      setDeptOptionRows(fallbackDeptOptionRows);
-      setPostRows(fallbackPostRows);
+      setRoleRows([]);
+      setDeptTreeRows([]);
+      setDeptOptionRows([]);
+      setPostRows([]);
+      setSelectedDetail(undefined);
+      setEditingUser(undefined);
+      setResetPasswordUser(undefined);
+      setAssigningRoleUser(undefined);
+      setFormOpen(false);
+      setResetPasswordOpen(false);
+      setAssignRolesOpen(false);
+      setImportOpen(false);
+      setImportFileList([]);
+      setImportResult(undefined);
       setLoadError(
-        error instanceof Error ? error.message : 'Unable to load users.',
+        error instanceof Error ? error.message : 'Unable to load live users.',
       );
     } finally {
       setLoading(false);
@@ -624,8 +550,13 @@ export default function UsersPage() {
   const openDetail = async (record: UserSummary) => {
     try {
       setSelectedDetail(await getOpenCoreUser(record.id));
-    } catch (_error) {
-      setSelectedDetail(record);
+    } catch (error: unknown) {
+      setSelectedDetail(undefined);
+      message.error(
+        error instanceof Error
+          ? error.message
+          : 'Unable to load live user detail.',
+      );
     }
   };
 
@@ -1033,8 +964,8 @@ export default function UsersPage() {
       {loadError ? (
         <Alert
           showIcon
-          type="warning"
-          message="Using fallback user snapshot"
+          type="error"
+          message="Unable to load live users"
           description={loadError}
           style={{ marginBlockEnd: 16 }}
         />

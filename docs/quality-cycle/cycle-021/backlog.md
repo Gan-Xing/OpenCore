@@ -41,7 +41,7 @@ In scope:
 
 - [x] Build `docs/quality-cycle/cycle-021/acceptance-matrix.md`.
 - [ ] Build a global no-fixture-fallback guard for the seven pages.
-- [ ] Clean System Users fallback.
+- [x] Clean System Users fallback.
 - [x] Clean System Roles fallback.
 - [ ] Clean System Permissions fallback or confirm closure.
 - [ ] Clean System Posts fallback or confirm closure.

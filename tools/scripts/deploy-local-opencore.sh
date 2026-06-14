@@ -404,6 +404,69 @@ verify_admin_bundle_api_base_url() {
     exit 1
   fi
 
+  if grep \
+    --fixed-strings \
+    "createSystemDeptOptionFixtures" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Users.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "createSystemDeptFixtures" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Users.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "createSystemPostFixtures" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Users.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "fallbackRows" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Users.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "fallbackRoleRows" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Users.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "Using fallback user snapshot" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Users.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "setSelectedDetail(record)" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Users.tsx" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Unable to load live users" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Unable to load live user detail." \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "User Excel export downloaded" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Imported " \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Assign Roles" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "core-users" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null; then
+    echo "Admin Users page must use live-only data, imports, exports and assignment controls without fixture fallback." >&2
+    echo "Refusing to deploy a stale or fixture-backed Users frontend page." >&2
+    exit 1
+  fi
+
   if ! grep -R \
     --fixed-strings \
     --include='*.js' \

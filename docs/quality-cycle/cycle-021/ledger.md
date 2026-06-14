@@ -52,3 +52,4 @@ This ledger records state transitions only. Git log keeps commit hashes.
 | 117   | System Permissions | Permissions Admin became live-only for catalog and custom CRUD/export.        | Permission smoke plus Admin/deploy guards reject registry fixture fallback.  |
 | 118   | System Menus       | Menus Admin became live-only for tree CRUD/export and permission options.     | Menu smoke plus Admin/deploy guards reject registry fixture fallback.        |
 | 119   | System Roles       | Roles Admin became live-only for CRUD, assignments, status and export.        | Role smoke plus Admin/deploy guards reject permission/dept fixture fallback. |
+| 120   | System Users       | Users Admin became live-only for CRUD, import/export, assignments and status. | User smoke plus Admin/deploy guards reject user/role/dept/post fallback.     |

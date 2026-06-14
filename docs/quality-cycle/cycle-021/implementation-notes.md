@@ -88,7 +88,12 @@ calls and blocks stale Menus bundles through Admin/deploy guards. Round 119
 removed the System Roles Admin permission/dept fixture fallback, stale detail
 fallback and fallback UI, keeps role CRUD, menu/user assignment, status
 changes, data-scope dept selection and current-page export live-only through
-SDK calls and blocks stale Roles bundles through Admin/deploy guards.
+SDK calls and blocks stale Roles bundles through Admin/deploy guards. Round
+120 removed the System Users Admin user/role/dept/post fixture fallback, stale
+detail fallback and fallback UI, keeps user CRUD, role assignment,
+status/batch mutations, reset password, department filtering, post/dept
+selectors, import/export and current-page export live-only through SDK calls
+and blocks stale Users bundles through Admin/deploy guards.
 
 ## Guard Register
 
@@ -150,6 +155,13 @@ SDK calls and blocks stale Roles bundles through Admin/deploy guards.
   `createSystemDeptFixtures`, `fallbackRows`, fallback copy and stale detail
   fallback on the Roles page, and require live role management markers in the
   built bundle.
+- System users: smoke covers profile, avatar, user CRUD, department/data-scope
+  filtering, post assignment, status/batch mutations, role assignment,
+  reset-password, import/export and session revocation. Admin/deploy guards
+  reject `createSystemDeptOptionFixtures`, `createSystemDeptFixtures`,
+  `createSystemPostFixtures`, `fallbackRows`, `fallbackRoleRows`, fallback
+  copy and stale detail fallback on the Users page, and require live user
+  management markers in the built bundle.
 - Config/secret: smoke covers feature flags, audience rules, environment
   overrides, legacy vault envelope deserialization, secret version history,
   explicit secret rotation, vault key rotation, managed KMS provider status,
