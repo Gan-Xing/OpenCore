@@ -20,7 +20,7 @@ only; the ledger keeps state transitions and git log keeps commits.
   type/result schema, lockout/unlock, cleanup and attempt limits.
 - Rounds 50-59: logout audit semantics, dept/post ordering, data-scope,
   notice inbox/read analytics, feature flags and login-log location.
-- Rounds 60-113: notice templates, delivery records, local/outbox providers,
+- Rounds 60-114: notice templates, delivery records, local/outbox providers,
   SMS HTTP and SMTP adapters, config secret vault, feature-flag
   rollout/audience, outbox state/process/callback/schedule handling and
   mail subject persistence, provider diagnostics, SMS HTTP secret injection,
@@ -43,8 +43,9 @@ only; the ledger keeps state transitions and git log keeps commits.
   CPU/memory/disk/process runtime resources, Monitor Queue pause/resume
   controls, Security Logs live-only Admin filtering, Monitor Jobs terminal
   run-log retention cleanup, OAuth token Admin live-only detail/revoke controls,
-  Online Users Admin live-only session operations and Integration Providers
-  Admin live-only health audit/diagnostics.
+  Online Users Admin live-only session operations, Integration Providers
+  Admin live-only health audit/diagnostics and System Dicts Admin live-only
+  dictionary operations.
 
 ## Rework Notes
 

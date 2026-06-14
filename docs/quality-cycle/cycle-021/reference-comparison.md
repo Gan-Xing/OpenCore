@@ -25,7 +25,9 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
 ## Coverage
 
 - System/RBAC: menu, role, permission, user, dept, post, dict and config are
-  live with multiple hardening stages.
+  live with multiple hardening stages. Dicts Admin now uses live list/detail
+  and item operations only, matching the reference dictionary-management
+  expectation without fixture fallback.
 - Auth/session: login policy, logout, force logout, online-user kick-out,
   token/session revocation, registered-token allowlist enforcement and expired
   cleanup are real behavior. Online Users Admin now uses live session
@@ -218,6 +220,9 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
 - Round 113: Integration Providers Admin now uses live health audit and
   diagnostics APIs only, so provider readiness/config/outbox failures cannot
   be hidden behind SDK fixture rows.
+- Round 114: System Dicts Admin now uses live dictionary list/detail and item
+  CRUD APIs only, so dictionary API/session/seed failures cannot be hidden
+  behind SDK fixture rows.
 
 ## Explicit Non-Claims
 

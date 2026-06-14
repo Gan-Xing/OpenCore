@@ -4,15 +4,14 @@ Date: 2026-06-14
 
 ## Latest Completed Round
 
-Round 113: Integration Providers Admin live-only health audit and diagnostics.
+Round 114: System Dicts Admin live-only dictionary operations.
 
 ## Closed
 
-- Removed the Integration Providers Admin fixture fallback path.
-- Loaded provider detail through the live diagnostics API instead of fixture
-  outbox rows.
-- Used live health audit data for provider/outbox summaries and added
-  smoke/deploy guards against stale fixture-backed Providers bundles.
+- Removed the System Dicts Admin fixture fallback path.
+- Kept dictionary list/detail and item CRUD backed by live SDK calls only.
+- Added Admin smoke and deploy guards against stale fixture-backed Dicts
+  bundles.
 
 ## Still Open
 

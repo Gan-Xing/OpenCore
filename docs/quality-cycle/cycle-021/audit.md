@@ -117,6 +117,9 @@ deployment.
 Round 113 removed the Integration Providers Admin fixture fallback, made
 provider detail load through the live diagnostics API and guarded stale
 provider bundles in Admin smoke and deployment.
+Round 114 removed the System Dicts Admin fixture fallback, kept dictionary
+list/detail and item operations live-only through SDK calls and guarded stale
+Dicts bundles in Admin smoke and deployment.
 Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 `lint` must run sequentially.
 
@@ -142,6 +145,9 @@ Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
   revoked-token rejection, list/detail, batch kick-out, single kick-out,
   repeat-kick guard and preserved admin session behavior; Admin/deploy guards
   reject Online Users fixture fallback and require live session markers.
+- System Dicts smoke covers dictionary type/item CRUD and simple-list
+  consumers; Admin/deploy guards reject Dicts fixture fallback and require
+  live dictionary management markers.
 - Config smoke covers runtime shape, environment override governance, legacy
   vault envelope deserialization, secret version history, secret rotation,
   vault key rotation, managed KMS provider status and no plaintext secret

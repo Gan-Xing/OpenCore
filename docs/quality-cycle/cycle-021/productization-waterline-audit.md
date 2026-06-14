@@ -20,7 +20,7 @@ failures have guards; and remaining omissions are explicit product boundaries.
 | `core.menu`           | Meets         | Tree metadata, route/menu fields and delete guards.                                                  |
 | `core.role`           | Meets         | Menu/user assignment, status effects and revocation.                                                 |
 | `core.user`           | Meets         | CRUD, profile, password, avatar, import/export, binds.                                               |
-| `core.dict`           | Meets         | Dict/item CRUD and enabled simple-list source.                                                       |
+| `core.dict`           | Meets         | Dict/item CRUD, enabled simple-list source and live-only Admin without fixture fallback.              |
 | `core.file`           | Meets         | Authenticated upload/download and content smoke.                                                     |
 | `monitor.online-user` | Meets         | Batch kick-out, revocation, registered-token allowlist, cleanup, UA/IP fields and live-only Admin.   |
 | `core.login-log`      | Meets current | Schema, lockout, cleanup, actor/reason, location, IP/location lookup and live-only Admin data.       |
@@ -144,6 +144,9 @@ failures have guards; and remaining omissions are explicit product boundaries.
 - Round 113 removed the Integration Providers Admin fixture fallback, made
   provider detail load through the live diagnostics API and added smoke/deploy
   guards for live-only health audit and diagnostics surfaces.
+- Round 114 removed the System Dicts Admin fixture fallback, made list/detail
+  and item operations live-only and added smoke/deploy guards for stale Dicts
+  bundles.
 
 ## Active Debt
 
@@ -231,3 +234,6 @@ failures have guards; and remaining omissions are explicit product boundaries.
   plaintext protection, legacy envelope deserialization, secret version
   history, secret rotation, vault key rotation, managed KMS host allowlist and
   v3 envelope guards.
+- System dicts: core dict smoke covers type/item CRUD and simple-list
+  consumers; Admin/deploy guards reject fixture fallback and require live
+  dictionary list/detail/item management markers.

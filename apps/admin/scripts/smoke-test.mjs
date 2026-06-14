@@ -1207,6 +1207,10 @@ if (
 }
 
 if (
+  dictsPage.includes('createDictFixtures') ||
+  dictsPage.includes('Live data unavailable; showing SDK fixtures.') ||
+  !dictsPage.includes('Unable to load live dictionaries') ||
+  !dictsPage.includes('Unable to load live dictionary detail.') ||
   !dictsPage.includes('listOpenCoreDicts') ||
   !dictsPage.includes('getOpenCoreDict') ||
   !dictsPage.includes('listOpenCoreDictDataOptions') ||
@@ -1228,7 +1232,7 @@ if (
   !dictsPage.includes('rows={filteredRows}')
 ) {
   throw new Error(
-    'Dictionaries page must use live SDK CRUD with item editing, bounded filtering and current-page export.',
+    'Dictionaries page must use live-only SDK CRUD with item editing, bounded filtering and current-page export, without fixture fallback.',
   );
 }
 

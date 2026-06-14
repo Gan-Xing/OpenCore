@@ -12,11 +12,7 @@ import {
   ProTable,
   type ProColumns,
 } from '@ant-design/pro-components';
-import {
-  createDictFixtures,
-  type DictItemSummary,
-  type DictTypeSummary,
-} from '@opencore/sdk';
+import type { DictItemSummary, DictTypeSummary } from '@opencore/sdk';
 import {
   Alert,
   Button,
@@ -76,7 +72,6 @@ type DictFormValues = {
   name: string;
 };
 
-const fallbackRows = createDictFixtures().items;
 const searchFields: CurrentPageSearchField<DictTypeSummary>[] = [
   'code',
   'name',
@@ -172,7 +167,7 @@ function renderStatus(enabled: boolean) {
 export default function DictsPage() {
   const [form] = Form.useForm<DictFormValues>();
   const [itemForm] = Form.useForm<DictItemFormValue>();
-  const [rows, setRows] = useState<readonly DictTypeSummary[]>(fallbackRows);
+  const [rows, setRows] = useState<readonly DictTypeSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
   const [selectedDetail, setSelectedDetail] = useState<DictTypeSummary>();
@@ -201,7 +196,12 @@ export default function DictsPage() {
       setRows(await listOpenCoreDicts());
       setLoadError(undefined);
     } catch (error: unknown) {
-      setRows(fallbackRows);
+      setRows([]);
+      setSelectedDetail(undefined);
+      setEditingDict(undefined);
+      setItemsDict(undefined);
+      setItemRows([]);
+      setConsumerOptionCount(0);
       setLoadError(
         error instanceof Error ? error.message : 'Unable to load dictionaries.',
       );
@@ -248,13 +248,20 @@ export default function DictsPage() {
   const openDetail = async (record: DictTypeSummary) => {
     try {
       setSelectedDetail(await getOpenCoreDict(record.code));
-    } catch (_error) {
-      setSelectedDetail(record);
+    } catch (error: unknown) {
+      setSelectedDetail(undefined);
+      message.error(
+        error instanceof Error
+          ? error.message
+          : 'Unable to load live dictionary detail.',
+      );
     }
   };
 
   const loadDictItems = async (record: DictTypeSummary) => {
     setItemsLoading(true);
+    setItemRows([]);
+    setConsumerOptionCount(0);
     try {
       const [items, options] = await Promise.all([
         listOpenCoreDictItems(record.code),
@@ -493,8 +500,8 @@ export default function DictsPage() {
       {loadError ? (
         <Alert
           showIcon
-          type="warning"
-          message="Live data unavailable; showing SDK fixtures."
+          type="error"
+          message="Unable to load live dictionaries"
           description={loadError}
           style={{ marginBlockEnd: 16 }}
         />

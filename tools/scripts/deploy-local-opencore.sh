@@ -185,6 +185,39 @@ verify_admin_bundle_api_base_url() {
     exit 1
   fi
 
+  if grep \
+    --fixed-strings \
+    "createDictFixtures" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Dicts.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "Live data unavailable; showing SDK fixtures." \
+    "$ROOT_DIR/apps/admin/src/pages/System/Dicts.tsx" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Unable to load live dictionaries" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Dictionary Items" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "simple-list consumer endpoint" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "core-dicts" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null; then
+    echo "Admin Dicts page must use live-only data and dictionary item controls without fixture fallback." >&2
+    echo "Refusing to deploy a stale or fixture-backed Dicts frontend page." >&2
+    exit 1
+  fi
+
   if ! grep -R \
     --fixed-strings \
     --include='*.js' \
