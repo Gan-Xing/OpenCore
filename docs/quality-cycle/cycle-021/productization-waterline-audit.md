@@ -26,7 +26,7 @@ failures have guards; and remaining omissions are explicit product boundaries.
 | `core.login-log`      | Meets current | Schema, lockout, cleanup, actor/reason, location and IP/location lookup with external GeoIP adapter. |
 | `core.config`         | Meets current | Runtime keys, feature flags, rollout, audience, overrides, vault versions, env and managed KMS.      |
 | `core.notice`         | Enhance       | SMS HTTP, SMTP, mail subject, diagnostics, secrets, attachments, TLS policy and realtime events.     |
-| `integration`         | Meets current | Provider audit, OAuth and Mail/SMS Admin template/outbox operations are live.                        |
+| `integration`         | Meets current | Provider audit, OAuth, Mail/SMS operations and WeChat/WebSocket design Admin reads are live.         |
 | `scheduler/monitor`   | Meets current | Job Admin operations, registry, handler diagnostics, cron dispatch, worker claim and queue metrics.  |
 | `monitor.cache`       | Meets current | Redis namespace/key scans, safe value preview, dry-run clear and confirmed key/prefix deletion.      |
 | `monitor.version`     | Meets current | Live runtime/deployment metadata uses API/SDK/Admin, deploy injection and smoke/deploy guards.       |
@@ -123,12 +123,18 @@ failures have guards; and remaining omissions are explicit product boundaries.
   list/detail, create, assign, complete and cancel controls.
 - Round 105 replaced the Collaboration Approval Lite Admin fixture page with
   live list/detail, create, approve and reject controls.
+- Round 106 replaced the Integration WeChat/WebSocket design Admin fixture
+  pages with live API/SDK design reads and smoke/deploy guards.
 
 ## Active Debt
 
-1. OpenForge direct schema/migration/business-code writes still require user
+1. Payment/BillingDesign remains explicit-admission because real payment,
+   refund and reconciliation are out of scope.
+2. Optional Reports/ExportJobs remain explicit-admission because full report
+   designer and big-data async export are out of scope.
+3. OpenForge direct schema/migration/business-code writes still require user
    admission.
-2. The next admitted P0/P1 foundation gap should be selected by a fresh
+4. The next admitted P0/P1 foundation gap should be selected by a fresh
    remaining Admin/productization debt audit.
 
 ## Guard Matrix
@@ -174,8 +180,9 @@ failures have guards; and remaining omissions are explicit product boundaries.
 - Integration: health audit smoke covers provider-wide readiness totals,
   config-vault debt, outbox backlog, diagnostics parity, failure history and
   secret-leak guards; OAuth token smoke covers summary, list/detail, revoke,
-  idempotent revoke and secret-leak guards; Admin/deploy guards reject stale
-  Mail/SMS fixture pages and require live Mail/SMS template/outbox markers.
+  idempotent revoke and secret-leak guards; design smoke covers WeChat and
+  WebSocket design endpoints plus summary topics; Admin/deploy guards reject
+  stale Mail/SMS and WeChat/WebSocket fixture pages and require live markers.
 - Collaboration: message smoke covers seeded list/detail, create, idempotent
   mark-read, archive, delete and post-delete hiding; Admin/deploy guards
   reject fixture-backed Messages source and require live message operation

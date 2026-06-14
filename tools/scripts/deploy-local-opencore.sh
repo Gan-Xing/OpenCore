@@ -552,6 +552,62 @@ verify_admin_bundle_api_base_url() {
 
   if grep \
     --fixed-strings \
+    "createIntegrationFixtures" \
+    "$ROOT_DIR/apps/admin/src/pages/Integrations/WeChat.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "findIntegrationDesignFixture" \
+    "$ROOT_DIR/apps/admin/src/pages/Integrations/WeChat.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "createIntegrationFixtures" \
+    "$ROOT_DIR/apps/admin/src/pages/Integrations/WebSocket.tsx" >/dev/null || \
+    grep \
+    --fixed-strings \
+    "findIntegrationDesignFixture" \
+    "$ROOT_DIR/apps/admin/src/pages/Integrations/WebSocket.tsx" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Live WeChat design" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Reload live WeChat design" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "integration:wechat:read" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Live WebSocket design" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Reload live WebSocket design" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "integration:websocket:read" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Integration design boundary" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null; then
+    echo "Admin bundle does not include live integration design operations." >&2
+    echo "Refusing to deploy stale frontend WeChat/WebSocket integration design pages." >&2
+    exit 1
+  fi
+
+  if grep \
+    --fixed-strings \
     "createCollaborationFixtures" \
     "$ROOT_DIR/apps/admin/src/pages/Collaboration/Messages.tsx" >/dev/null || \
     grep \
@@ -1481,6 +1537,11 @@ run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
   node "$ROOT_DIR/tools/scripts/smoke-integration-oauth-tokens.mjs"
+
+run_with_env env \
+  OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \
+  OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
+  node "$ROOT_DIR/tools/scripts/smoke-integration-designs.mjs"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \

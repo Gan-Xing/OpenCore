@@ -30,7 +30,7 @@ schema/business-code writing.
   runtime login policy.
 - Rounds 50-59: logout audit semantics, ordering, data-scope, notice
   inbox/read analytics, feature flags and login-log location.
-- Rounds 60-105: notice template/delivery/provider/outbox work, SMS HTTP and
+- Rounds 60-106: notice template/delivery/provider/outbox work, SMS HTTP and
   SMTP adapters, config vault and rollout/audience, operation-log cleanup, plus
   mail subject persistence, provider diagnostics, SMS HTTP secret injection,
   SMTP attachments, explicit SMTP TLS policy, inbox realtime events, Monitor
@@ -46,17 +46,22 @@ schema/business-code writing.
   namespace/key operations and live Monitor Version runtime/deployment
   metadata, live Tool OpenAPI drift snapshot metadata, live Tool Export
   protocol/preview Admin wiring, shared live current-page export protocol and
-  live Integration Mail/SMS template/outbox Admin operations, plus live
-  Collaboration Messages, Notices, Todos and Approval Lite operations.
+  live Integration Mail/SMS template/outbox Admin operations, live
+  Integration WeChat/WebSocket design Admin reads, plus live Collaboration
+  Messages, Notices, Todos and Approval Lite operations.
 
-Latest done: Round 105 Collaboration Approval Lite live operations with
-list/detail, create, approve, reject, Admin smoke, API smoke and deploy guards.
+Latest done: Round 106 Integration WeChat/WebSocket design live Admin with
+API/SDK design reads, Admin smoke, API smoke and deploy guards.
 
 ## Active P1/P2 Queue
 
 1. Audit remaining fixture-backed Admin/productization debt and select the
    next admitted P0/P1 foundation loop by dependency order.
-2. OpenForge direct schema/migration/business logic writes still require user
+2. Payment/BillingDesign remains explicit-admission because real payment,
+   refund and reconciliation are out of scope.
+3. Optional Reports/ExportJobs remain explicit-admission because full report
+   designer and big-data async export are out of scope.
+4. OpenForge direct schema/migration/business logic writes still require user
    admission.
 
 ## Rework Notes

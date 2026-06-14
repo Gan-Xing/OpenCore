@@ -38,3 +38,4 @@ This ledger records state transitions only. Git log keeps commit hashes.
 | 103   | Collaboration    | Notices Admin moved from fixtures to live lifecycle operations.               | Notice smoke plus Admin/deploy guards cover live Notices page.   |
 | 104   | Collaboration    | Todos Admin moved from fixtures to live lifecycle operations.                 | Todo smoke plus Admin/deploy guards cover live Todos page.       |
 | 105   | Collaboration    | Approval Lite Admin moved from fixtures to live lifecycle operations.         | Approval smoke plus Admin/deploy guards cover live Approvals.    |
+| 106   | Integration      | WeChat/WebSocket design Admin moved from fixtures to live design reads.       | Design smoke plus Admin/deploy guards cover live design pages.   |

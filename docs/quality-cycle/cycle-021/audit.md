@@ -92,6 +92,9 @@ create, assign, complete and cancel operations with smoke and deploy guards.
 Round 105 moved Collaboration Approval Lite Admin from fixtures to live
 list/detail, create, approve and reject operations with smoke and deploy
 guards.
+Round 106 moved Integration WeChat/WebSocket design Admin pages from fixtures
+to live API/SDK design reads with dedicated smoke and stale frontend deploy
+guards.
 Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 `lint` must run sequentially.
 
@@ -141,8 +144,10 @@ Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 - Integration health smoke covers provider-wide readiness totals,
   config-vault debt, outbox backlog, diagnostics parity, failure history and
   secret-leak guards; OAuth token smoke covers summary, list/detail, revoke,
-  idempotent revoke and secret-leak guards; Admin/deploy guards require live
-  Mail/SMS template/outbox operations.
+  idempotent revoke and secret-leak guards; design smoke covers
+  WeChat/WebSocket endpoints and summary topics; Admin/deploy guards require
+  live Mail/SMS template/outbox operations and live WeChat/WebSocket design
+  markers.
 - Collaboration Messages smoke covers seed-backed list/detail, create,
   idempotent mark-read, archive, delete and post-delete hiding;
   Collaboration Notices smoke covers seed-backed list/detail, create, publish,
@@ -168,6 +173,9 @@ real incident decisions. Do not create per-round reports by default.
   precision remains outside the current request-time lookup surface.
 - OpenForge direct generated schema/migration/business writes remain outside
   the admitted surface.
+- Payment/BillingDesign and Optional Reports/ExportJobs remain outside the
+  admitted surface until real payments, full report designer or big-data async
+  export are explicitly admitted.
 
 ## Trigger Next Audit
 

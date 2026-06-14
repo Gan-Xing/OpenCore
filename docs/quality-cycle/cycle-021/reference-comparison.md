@@ -43,7 +43,9 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
 - Integration: provider health/config audit is live with readiness totals,
   config-vault debt, outbox backlog, last failure and operator actions plus
   OAuth token inventory/summary/detail/revoke and live Mail/SMS
-  template/outbox Admin operations across API/SDK/Admin/OpenAPI/smoke.
+  template/outbox Admin operations across API/SDK/Admin/OpenAPI/smoke. WeChat
+  and WebSocket design Admin pages now read live design endpoints instead of
+  fixtures while staying design-only boundaries.
 - Config: runtime keys, login policy, feature flags, rollout, audience rules,
   environment overrides, secret-vault encryption, secret version history,
   explicit rotation, env-bound keyring status, managed HTTP JSON KMS v3
@@ -180,6 +182,10 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
 - Round 105: Collaboration Approval Lite moved from fixture rows to live
   approval operations: list/detail, create, approve and reject are SDK-backed
   and smoke-guarded.
+- Round 106: Integration WeChat/WebSocket design pages moved from fixture rows
+  to live design reads through API/SDK/Admin, with design smoke and stale
+  frontend guards. Payment/BillingDesign remains explicit-admission because it
+  touches real payment/refund/reconciliation scope.
 
 ## Explicit Non-Claims
 
@@ -191,5 +197,5 @@ and AI/RAG/Agent workflow.
 ## Next Focus
 
 Next round should audit remaining fixture-backed Admin/productization debt and
-select the next admitted P0/P1 foundation gap. OpenForge direct
-schema/migration/business writes still require explicit user admission.
+select the next admitted P0/P1 foundation gap while keeping Payment,
+Reports/ExportJobs and OpenForge direct writes behind explicit user admission.

@@ -851,7 +851,15 @@ if (
   !smsPage.includes('Sample Outbox Payload') ||
   !oauthPage.includes('@opencore/sdk') ||
   !wechatPage.includes('@opencore/sdk') ||
+  !wechatPage.includes('getOpenCoreWeChatDesign') ||
+  !wechatPage.includes('Live WeChat design') ||
+  !wechatPage.includes('Reload live WeChat design') ||
+  !wechatPage.includes('integration:wechat:read') ||
   !websocketPage.includes('@opencore/sdk') ||
+  !websocketPage.includes('getOpenCoreWebSocketDesign') ||
+  !websocketPage.includes('Live WebSocket design') ||
+  !websocketPage.includes('Reload live WebSocket design') ||
+  !websocketPage.includes('integration:websocket:read') ||
   !billingDesignPage.includes('@opencore/sdk')
 ) {
   throw new Error(
@@ -957,6 +965,19 @@ if (
 ) {
   throw new Error(
     'Integration SMS page must use live SMS template/outbox SDK APIs instead of static fixtures.',
+  );
+}
+
+if (
+  wechatPage.includes('createIntegrationFixtures') ||
+  wechatPage.includes('findIntegrationDesignFixture') ||
+  websocketPage.includes('createIntegrationFixtures') ||
+  websocketPage.includes('findIntegrationDesignFixture') ||
+  !opencorePlatformService.includes('integrationClient.getWeChatDesign') ||
+  !opencorePlatformService.includes('integrationClient.getWebSocketDesign')
+) {
+  throw new Error(
+    'Integration WeChat/WebSocket design pages must use live design SDK APIs instead of static fixtures.',
   );
 }
 

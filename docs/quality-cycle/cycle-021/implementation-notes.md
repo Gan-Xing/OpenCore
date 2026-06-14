@@ -19,7 +19,7 @@ active debt and decisions that change future execution.
 
 ## Runtime State
 
-Cycle-021 has completed 105 deployable stages across
+Cycle-021 has completed 106 deployable stages across
 System/Security/Monitor/Integration/Tools foundations. Round 91 added
 token/session blacklist maintenance with registered-token allowlist
 enforcement, expired-session cleanup, API/SDK/Admin/OpenAPI visibility, smoke
@@ -50,7 +50,9 @@ operations with smoke and deploy guards. Round 104 moved Collaboration Todos
 from fixtures to live list/detail, create, assign, complete and cancel
 operations with smoke and deploy guards. Round 105 moved Collaboration
 Approval Lite from fixtures to live list/detail, create, approve and reject
-operations with smoke and deploy guards.
+operations with smoke and deploy guards. Round 106 moved Integration
+WeChat/WebSocket design Admin pages from fixtures to live API/SDK design reads
+with a dedicated smoke and stale frontend deploy guards.
 
 ## Guard Register
 
@@ -118,8 +120,9 @@ operations with smoke and deploy guards.
 - Integration: smoke covers provider-wide health audit, diagnostics parity,
   config-vault debt, outbox backlog, failure history and secret-leak guards;
   OAuth token smoke covers summary, list/detail, revoke, idempotent revoke and
-  secret-leak guards. Admin/deploy guards reject fixture-backed Mail/SMS pages
-  and require live Mail/SMS template/outbox markers.
+  secret-leak guards; design smoke covers WeChat/WebSocket design reads and
+  summary topics. Admin/deploy guards reject fixture-backed Mail/SMS and
+  WeChat/WebSocket pages and require live markers.
 - Collaboration: message smoke covers seed-backed list/detail, create,
   idempotent mark-read, archive, delete and post-delete hiding.
   Notice smoke covers seed-backed list/detail, create, publish,
@@ -149,6 +152,10 @@ operations with smoke and deploy guards.
   precision is not part of the current request-time lookup surface.
 - OpenForge: direct schema/migration/business writes still require user
   admission.
+- Integration: Payment/BillingDesign remains explicit-admission because real
+  payment, refund and reconciliation are outside the admitted surface.
+- Optional Reports/ExportJobs remain explicit-admission because full report
+  designer and big-data async export are outside the admitted surface.
 - Collaboration: current live-operations Admin waterline is met for Messages,
   Notices, Todos and Approval Lite. BPMN/full workflow remains explicit
   admission.

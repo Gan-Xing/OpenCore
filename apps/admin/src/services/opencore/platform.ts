@@ -107,6 +107,7 @@ import {
   type SystemDeptTreeSummary,
   type FileAssetSummary,
   type FailOutboxMessageRequest,
+  type IntegrationDesignSummary,
   type IntegrationOutboxQueryRequest,
   type IntegrationProviderHealthAuditSummary,
   type IntegrationOutboxSummary,
@@ -1507,6 +1508,14 @@ export function getOpenCoreSmsOutboxMessage(
 
 export function getOpenCoreIntegrationProviderHealthAudit(): Promise<IntegrationProviderHealthAuditSummary> {
   return integrationClient.getProviderHealthAudit(getRequiredAdminToken());
+}
+
+export function getOpenCoreWeChatDesign(): Promise<IntegrationDesignSummary> {
+  return integrationClient.getWeChatDesign(getRequiredAdminToken());
+}
+
+export function getOpenCoreWebSocketDesign(): Promise<IntegrationDesignSummary> {
+  return integrationClient.getWebSocketDesign(getRequiredAdminToken());
 }
 
 export function getOpenCoreOAuthCallbackContract(): Promise<OAuthCallbackContractSummary> {
