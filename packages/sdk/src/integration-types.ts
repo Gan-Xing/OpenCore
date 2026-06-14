@@ -123,6 +123,36 @@ export type OAuthCallbackContractSummary = {
   auditAction: string;
 };
 
+export type OAuthTokenStatus = 'active' | 'expired' | 'revoked';
+
+export type OAuthTokenSummary = {
+  id: string;
+  providerCode: string;
+  subjectType: string;
+  subjectId: string;
+  providerAccountId: string;
+  scopes: readonly string[];
+  accessTokenRef: string;
+  refreshTokenRef?: string;
+  status: OAuthTokenStatus;
+  expiresAt?: string;
+  lastRotatedAt?: string;
+  revokedAt?: string;
+  revokedBy?: string;
+  revokeReason?: string;
+  createdAt: string;
+};
+
+export type OAuthTokenInventorySummary = {
+  total: number;
+  active: number;
+  expired: number;
+  revoked: number;
+  expiringSoon: number;
+  providers: number;
+  generatedAt: string;
+};
+
 export type IntegrationDesignSummary = {
   topic: 'pay' | 'websocket' | 'wechat';
   status: 'design-only';
@@ -152,6 +182,7 @@ export type IntegrationSummary = {
     failed: number;
   };
   oauthProviders: number;
+  oauthTokens: OAuthTokenInventorySummary;
   designs: {
     designOnlyTopics: number;
     topics: readonly string[];
@@ -269,6 +300,16 @@ export type IntegrationOutboxQueryRequest = PageRequest & {
   providerCode?: string;
 };
 
+export type OAuthTokenQueryRequest = PageRequest & {
+  providerCode?: string;
+  subjectId?: string;
+  status?: OAuthTokenStatus;
+};
+
+export type RevokeOAuthTokenRequest = {
+  reason?: string;
+};
+
 export type IntegrationFixtures = {
   summary: IntegrationSummary;
   providers: readonly IntegrationProviderSummary[];
@@ -278,6 +319,8 @@ export type IntegrationFixtures = {
   smsTemplates: readonly IntegrationTemplateSummary[];
   outbox: readonly IntegrationOutboxSummary[];
   oauthContract: OAuthCallbackContractSummary;
+  oauthTokenSummary: OAuthTokenInventorySummary;
+  oauthTokens: readonly OAuthTokenSummary[];
   designs: readonly IntegrationDesignSummary[];
 };
 
@@ -365,6 +408,25 @@ export function createIntegrationFixtures(): IntegrationFixtures {
       },
       healthStatus: 'disabled',
     },
+    {
+      id: 'provider_oauth_github',
+      code: 'oauth.github',
+      type: 'oauth',
+      name: 'GitHub OAuth',
+      enabled: true,
+      secretRef:
+        'secret://config/integration.oauth.github.client-secret.secret',
+      config: {
+        adapter: 'oauth2',
+        authorizationUrl: 'https://github.com/login/oauth/authorize',
+        callbackPath: '/api/integrations/oauth/callback/github',
+        clientId: 'opencore-github',
+        clientSecret: '[REDACTED]',
+        scopes: ['read:user', 'user:email'],
+        tokenUrl: 'https://github.com/login/oauth/access_token',
+      },
+      healthStatus: 'unknown',
+    },
   ];
   const mailTemplates: readonly IntegrationTemplateSummary[] = [
     {
@@ -417,6 +479,58 @@ export function createIntegrationFixtures(): IntegrationFixtures {
     accountBinding: ['user id', 'provider code', 'provider account id'],
     auditAction: 'integration.oauth.callback',
   };
+  const oauthTokens: readonly OAuthTokenSummary[] = [
+    {
+      id: 'oauth_token_github_admin_active',
+      providerCode: 'oauth.github',
+      subjectType: 'system-user',
+      subjectId: 'user_admin',
+      providerAccountId: 'github:opencore-admin',
+      scopes: ['read:user', 'user:email'],
+      accessTokenRef:
+        'secret://config/integration.oauth.github.admin.access-token',
+      refreshTokenRef:
+        'secret://config/integration.oauth.github.admin.refresh-token',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00.000Z',
+      lastRotatedAt: '2026-06-10T00:00:00.000Z',
+      createdAt: '2026-06-10T00:00:00.000Z',
+    },
+    {
+      id: 'oauth_token_github_ops_expired',
+      providerCode: 'oauth.github',
+      subjectType: 'system-user',
+      subjectId: 'user_ops',
+      providerAccountId: 'github:opencore-ops',
+      scopes: ['read:user'],
+      accessTokenRef:
+        'secret://config/integration.oauth.github.ops.access-token',
+      refreshTokenRef:
+        'secret://config/integration.oauth.github.ops.refresh-token',
+      status: 'expired',
+      expiresAt: '2026-01-01T00:00:00.000Z',
+      lastRotatedAt: '2025-12-01T00:00:00.000Z',
+      createdAt: '2025-12-01T00:00:00.000Z',
+    },
+    {
+      id: 'oauth_token_github_auditor_revoked',
+      providerCode: 'oauth.github',
+      subjectType: 'system-user',
+      subjectId: 'user_auditor',
+      providerAccountId: 'github:opencore-auditor',
+      scopes: ['read:user'],
+      accessTokenRef:
+        'secret://config/integration.oauth.github.auditor.access-token',
+      status: 'revoked',
+      expiresAt: '2099-01-01T00:00:00.000Z',
+      lastRotatedAt: '2026-06-01T00:00:00.000Z',
+      revokedAt: '2026-06-12T00:00:00.000Z',
+      revokedBy: 'admin',
+      revokeReason: 'Seeded revoked OAuth token',
+      createdAt: '2026-06-01T00:00:00.000Z',
+    },
+  ];
+  const oauthTokenSummary = buildOAuthTokenInventorySummaryFixture(oauthTokens);
   const designs: readonly IntegrationDesignSummary[] = [
     {
       topic: 'wechat',
@@ -459,6 +573,7 @@ export function createIntegrationFixtures(): IntegrationFixtures {
       smsOutbox: buildOutboxSummary(smsOutbox),
       oauthProviders: providers.filter((provider) => provider.type === 'oauth')
         .length,
+      oauthTokens: oauthTokenSummary,
       designs: {
         designOnlyTopics: designs.filter(
           (design) => design.status === 'design-only',
@@ -473,6 +588,8 @@ export function createIntegrationFixtures(): IntegrationFixtures {
     smsTemplates,
     outbox,
     oauthContract,
+    oauthTokenSummary,
+    oauthTokens,
     designs,
   };
 }
@@ -524,6 +641,14 @@ export function findOAuthCallbackContractFixture(
   return fixture.callbackPath === callbackPath ? fixture : undefined;
 }
 
+export function findOAuthTokenFixture(
+  id: string,
+): OAuthTokenSummary | undefined {
+  return createIntegrationFixtures().oauthTokens.find(
+    (token) => token.id === id,
+  );
+}
+
 export function findIntegrationDesignFixture(
   topic: IntegrationDesignSummary['topic'],
 ): IntegrationDesignSummary | undefined {
@@ -535,6 +660,7 @@ export function findIntegrationDesignFixture(
 export type IntegrationProviderPage = PageResponse<IntegrationProviderSummary>;
 export type IntegrationTemplatePage = PageResponse<IntegrationTemplateSummary>;
 export type IntegrationOutboxPage = PageResponse<IntegrationOutboxSummary>;
+export type OAuthTokenPage = PageResponse<OAuthTokenSummary>;
 
 function buildProviderDiagnosticsFixture(
   provider: IntegrationProviderSummary,
@@ -681,6 +807,20 @@ function buildOutboxSummary(rows: readonly IntegrationOutboxSummary[]) {
     queued: countByField(rows, 'status', 'queued'),
     sent: countByField(rows, 'status', 'sent'),
     failed: countByField(rows, 'status', 'failed'),
+  };
+}
+
+function buildOAuthTokenInventorySummaryFixture(
+  rows: readonly OAuthTokenSummary[],
+): OAuthTokenInventorySummary {
+  return {
+    total: rows.length,
+    active: countByField(rows, 'status', 'active'),
+    expired: countByField(rows, 'status', 'expired'),
+    revoked: countByField(rows, 'status', 'revoked'),
+    expiringSoon: 0,
+    providers: new Set(rows.map((token) => token.providerCode)).size,
+    generatedAt: '2026-06-10T00:00:00.000Z',
   };
 }
 

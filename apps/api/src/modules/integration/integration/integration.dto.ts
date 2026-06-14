@@ -623,6 +623,111 @@ export class OAuthCallbackContractDto {
   auditAction!: string;
 }
 
+export type OAuthTokenStatus = 'active' | 'expired' | 'revoked';
+
+export class OAuthTokenDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  providerCode!: string;
+
+  @ApiProperty()
+  subjectType!: string;
+
+  @ApiProperty()
+  subjectId!: string;
+
+  @ApiProperty()
+  providerAccountId!: string;
+
+  @ApiProperty({ type: [String] })
+  scopes!: readonly string[];
+
+  @ApiProperty()
+  accessTokenRef!: string;
+
+  @ApiProperty({ required: false })
+  refreshTokenRef?: string;
+
+  @ApiProperty({ enum: ['active', 'expired', 'revoked'] })
+  status!: OAuthTokenStatus;
+
+  @ApiProperty({ required: false })
+  expiresAt?: string;
+
+  @ApiProperty({ required: false })
+  lastRotatedAt?: string;
+
+  @ApiProperty({ required: false })
+  revokedAt?: string;
+
+  @ApiProperty({ required: false })
+  revokedBy?: string;
+
+  @ApiProperty({ required: false })
+  revokeReason?: string;
+
+  @ApiProperty()
+  createdAt!: string;
+}
+
+export class OAuthTokenPageDto {
+  @ApiProperty({ type: [OAuthTokenDto] })
+  items!: readonly OAuthTokenDto[];
+
+  @ApiProperty()
+  page!: number;
+
+  @ApiProperty()
+  pageSize!: number;
+
+  @ApiProperty()
+  total!: number;
+
+  @ApiProperty()
+  totalPages!: number;
+}
+
+export class OAuthTokenQueryDto extends PageQueryDto {
+  @ApiProperty({ required: false })
+  providerCode?: string;
+
+  @ApiProperty({ required: false })
+  subjectId?: string;
+
+  @ApiProperty({ enum: ['active', 'expired', 'revoked'], required: false })
+  status?: OAuthTokenStatus;
+}
+
+export class OAuthTokenInventorySummaryDto {
+  @ApiProperty()
+  total!: number;
+
+  @ApiProperty()
+  active!: number;
+
+  @ApiProperty()
+  expired!: number;
+
+  @ApiProperty()
+  revoked!: number;
+
+  @ApiProperty()
+  expiringSoon!: number;
+
+  @ApiProperty()
+  providers!: number;
+
+  @ApiProperty()
+  generatedAt!: string;
+}
+
+export class RevokeOAuthTokenDto {
+  @ApiProperty({ required: false })
+  reason?: string;
+}
+
 export class IntegrationDesignDto {
   @ApiProperty()
   topic!: 'pay' | 'websocket' | 'wechat';
@@ -657,6 +762,9 @@ export class IntegrationSummaryDto {
 
   @ApiProperty()
   oauthProviders!: number;
+
+  @ApiProperty({ type: OAuthTokenInventorySummaryDto })
+  oauthTokens!: OAuthTokenInventorySummaryDto;
 
   @ApiProperty({ type: IntegrationDesignSummaryDto })
   designs!: IntegrationDesignSummaryDto;

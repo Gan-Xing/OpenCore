@@ -19,10 +19,15 @@ import type {
   IntegrationTemplateQueryRequest,
   IntegrationTemplateSummary,
   OAuthCallbackContractSummary,
+  OAuthTokenInventorySummary,
+  OAuthTokenPage,
+  OAuthTokenQueryRequest,
+  OAuthTokenSummary,
   OutboxCallbackRequest,
   PageRequest,
   ProcessOutboxRequest,
   PreviewTemplateRequest,
+  RevokeOAuthTokenRequest,
   ScheduleOutboxRequest,
   TemplatePreviewSummary,
   UpdateIntegrationProviderRequest,
@@ -176,6 +181,17 @@ export type IntegrationClient = {
   getOAuthCallbackContract: (
     token: string,
   ) => Promise<OAuthCallbackContractSummary>;
+  getOAuthTokenSummary: (token: string) => Promise<OAuthTokenInventorySummary>;
+  listOAuthTokens: (
+    token: string,
+    query?: OAuthTokenQueryRequest,
+  ) => Promise<OAuthTokenPage>;
+  getOAuthToken: (token: string, id: string) => Promise<OAuthTokenSummary>;
+  revokeOAuthToken: (
+    token: string,
+    id: string,
+    body?: RevokeOAuthTokenRequest,
+  ) => Promise<OAuthTokenSummary>;
   getWeChatDesign: (token: string) => Promise<IntegrationDesignSummary>;
   getWebSocketDesign: (token: string) => Promise<IntegrationDesignSummary>;
   getPaymentDesign: (token: string) => Promise<IntegrationDesignSummary>;
@@ -375,6 +391,25 @@ export function createIntegrationClient(
       request<OAuthCallbackContractSummary>(
         '/integrations/oauth/callback-contract',
         { token },
+      ),
+    getOAuthTokenSummary: (token) =>
+      request<OAuthTokenInventorySummary>(
+        '/integrations/oauth/tokens/summary',
+        { token },
+      ),
+    listOAuthTokens: (token, query) =>
+      request<OAuthTokenPage>(withQuery('/integrations/oauth/tokens', query), {
+        token,
+      }),
+    getOAuthToken: (token, id) =>
+      request<OAuthTokenSummary>(
+        `/integrations/oauth/tokens/${encodeURIComponent(id)}`,
+        { token },
+      ),
+    revokeOAuthToken: (token, id, body) =>
+      request<OAuthTokenSummary>(
+        `/integrations/oauth/tokens/${encodeURIComponent(id)}/revoke`,
+        { method: 'PATCH', body: body ?? {}, token },
       ),
     getWeChatDesign: (token) =>
       request<IntegrationDesignSummary>('/integrations/designs/wechat', {

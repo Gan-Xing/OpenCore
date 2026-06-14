@@ -40,8 +40,9 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   SMTP attachments plus explicit SMTP TLS policy and authenticated inbox
   realtime events are live.
 - Integration: provider health/config audit is live with readiness totals,
-  config-vault debt, outbox backlog, last failure and operator actions across
-  API/SDK/Admin/OpenAPI/smoke.
+  config-vault debt, outbox backlog, last failure and operator actions plus
+  OAuth token inventory/summary/detail/revoke across API/SDK/Admin/OpenAPI/
+  smoke.
 - Config: runtime keys, login policy, feature flags, rollout, audience rules,
   environment overrides, secret-vault encryption, secret version history,
   explicit rotation, env-bound keyring status and vault key rotation are live.
@@ -118,6 +119,9 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
 - Round 91: Online-user sessions act as the bearer-token allowlist/blacklist;
   unknown, revoked and expired sessions are rejected, expired records can be
   cleaned through API/SDK/Admin and the flow is smoke/deploy guarded.
+- Round 92: OAuth token management is a token-inventory and revoke lifecycle,
+  not a full third-party OAuth flow; token material stays behind secret refs
+  while operators can list, inspect and revoke records through API/SDK/Admin.
 
 ## Explicit Non-Claims
 

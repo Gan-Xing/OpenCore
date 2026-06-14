@@ -15,10 +15,11 @@ describe('IntegrationRepository', () => {
     const repository = new SeedIntegrationRepository();
 
     expect(await repository.getSummary()).toMatchObject({
-      providers: { total: 4, enabled: 0, disabled: 4, degraded: 0 },
+      providers: { total: 5, enabled: 1, disabled: 4, degraded: 0 },
       mailOutbox: { total: 1, queued: 1 },
       smsOutbox: { total: 0, queued: 0 },
-      oauthProviders: 0,
+      oauthProviders: 1,
+      oauthTokens: { total: 3, active: 1, expired: 1, revoked: 1 },
       designs: { designOnlyTopics: 3 },
     });
   });
@@ -44,7 +45,7 @@ describe('IntegrationRepository', () => {
     ).resolves.toMatchObject({ total: 1 });
     await expect(
       repository.listOAuthProviders({ enabled: true }),
-    ).resolves.toMatchObject({ total: 0 });
+    ).resolves.toMatchObject({ total: 1 });
   });
 
   it('stores providers with secret refs and redacts credential config', async () => {
@@ -182,11 +183,12 @@ describe('IntegrationRepository', () => {
 
     await expect(repository.getProviderHealthAudit()).resolves.toMatchObject({
       totals: {
-        total: 4,
+        total: 5,
         blocked: 4,
+        unsupported: 1,
         failed: 1,
         retryableFailed: 1,
-        configVaultBacked: 2,
+        configVaultBacked: 3,
         configVaultMissing: 2,
       },
       providers: expect.arrayContaining([
@@ -1112,6 +1114,80 @@ describe('IntegrationRepository', () => {
     );
     expect(repository.getDesign('pay').boundaries.join(' ')).toContain(
       'callback idempotency',
+    );
+  });
+
+  it('manages OAuth token inventory and revoke lifecycle', async () => {
+    const repository = new SeedIntegrationRepository();
+
+    await expect(repository.getOAuthTokenSummary()).resolves.toMatchObject({
+      total: 3,
+      active: 1,
+      expired: 1,
+      revoked: 1,
+      providers: 1,
+    });
+    await expect(
+      repository.listOAuthTokens({ providerCode: 'oauth.github' }),
+    ).resolves.toMatchObject({
+      total: 3,
+      items: expect.arrayContaining([
+        expect.objectContaining({
+          id: 'oauth_token_github_admin_active',
+          status: 'active',
+          accessTokenRef:
+            'secret://config/integration.oauth.github.admin.access-token',
+        }),
+      ]),
+    });
+    await expect(
+      repository.listOAuthTokens({ status: 'expired' }),
+    ).resolves.toMatchObject({
+      total: 1,
+      items: [
+        expect.objectContaining({
+          id: 'oauth_token_github_ops_expired',
+          status: 'expired',
+        }),
+      ],
+    });
+
+    await expect(
+      repository.revokeOAuthToken('oauth_token_github_admin_active', {
+        reason: 'Round92 smoke revoke',
+      }),
+    ).resolves.toMatchObject({
+      id: 'oauth_token_github_admin_active',
+      status: 'revoked',
+      revokedBy: 'admin',
+      revokeReason: 'Round92 smoke revoke',
+      revokedAt: expect.any(String),
+    });
+    await expect(
+      repository.getOAuthToken('oauth_token_github_admin_active'),
+    ).resolves.toMatchObject({
+      status: 'revoked',
+      revokeReason: 'Round92 smoke revoke',
+    });
+    await expect(repository.getOAuthTokenSummary()).resolves.toMatchObject({
+      active: 0,
+      expired: 1,
+      revoked: 2,
+    });
+    await expect(
+      repository.revokeOAuthToken('oauth_token_github_admin_active', {
+        reason: 'second click',
+      }),
+    ).resolves.toMatchObject({
+      revokeReason: 'Round92 smoke revoke',
+    });
+    await expect(
+      repository.revokeOAuthToken('oauth_token_github_ops_expired', {
+        reason: ' ',
+      }),
+    ).rejects.toThrow(BadRequestException);
+    expect(JSON.stringify(await repository.listOAuthTokens())).not.toContain(
+      'ghp_',
     );
   });
 });

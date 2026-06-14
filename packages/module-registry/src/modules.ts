@@ -1244,7 +1244,7 @@ export const moduleRegistry = [
     stage: 'S12',
     enabledByDefault: true,
     description:
-      'OAuth provider config, callback contract, state security, account binding, audit.',
+      'OAuth provider config, callback contract, token inventory, revoke lifecycle, state security, account binding, audit.',
     apiTags: ['Integration OAuth'],
     permissions: definePermissions('integration', 'oauth', 'OAuth', 'S12', [
       { action: 'read', title: 'Read' },

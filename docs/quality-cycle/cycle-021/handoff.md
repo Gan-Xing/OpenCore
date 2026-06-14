@@ -47,7 +47,7 @@ packages and OpenForge direct Prisma/migration/business-code writing.
 
 ## Current State
 
-Cycle-021 has completed 91 deployable stages.
+Cycle-021 has completed 92 deployable stages.
 
 - System/RBAC: notice, dept, post, menu, role, permission, user, dict, config
   and file loops are live.
@@ -69,7 +69,9 @@ Cycle-021 has completed 91 deployable stages.
   events.
 - Integration: provider health/config audit is live across API/SDK/Admin,
   with readiness totals, config-vault debt, outbox backlog, last failure and
-  operator actions.
+  operator actions. OAuth token inventory, detail, summary and revoke
+  lifecycle are live across API/SDK/Admin/OpenAPI/smoke with secret-ref-only
+  storage.
 - Monitor jobs: API/SDK routes, registry policy, seed job, Admin live list,
   enable/disable, manual trigger, registered handler execution, retry/timeout
   diagnostics, failed run-log detail, cron dispatch, worker claim and scheduler
@@ -78,11 +80,10 @@ Cycle-021 has completed 91 deployable stages.
   safe workbench for status, doctor, plan, diff, check, manifest list and
   apply/rollback dry-run, dry-run confirmation and manifest preview/detail.
 
-Latest runtime stage: Round 91 token/session blacklist maintenance. It makes
-the Prisma-backed session registry an allowlist, rejects unknown token
-sessions, exposes online-user summary and expired-session cleanup through
-API/SDK/Admin and guards the flow through OpenAPI, smoke and deploy bundle
-markers.
+Latest runtime stage: Round 92 OAuth token management. It adds the
+`IntegrationOAuthToken` model/migration/seed, token inventory summary,
+list/detail/revoke APIs, SDK methods, live Admin OAuth token page, OpenAPI
+snapshot, dedicated smoke and deploy bundle markers.
 
 ## Next Queue
 

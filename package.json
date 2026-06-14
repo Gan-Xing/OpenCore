@@ -52,6 +52,7 @@
     "smoke:core-monitor-jobs": "node tools/scripts/smoke-core-monitor-jobs.mjs",
     "smoke:core-notice": "node tools/scripts/smoke-core-notice.mjs",
     "smoke:integration-health": "node tools/scripts/smoke-integration-health.mjs",
+    "smoke:integration-oauth-tokens": "node tools/scripts/smoke-integration-oauth-tokens.mjs",
     "smoke:core-online-user": "node tools/scripts/smoke-core-online-user.mjs",
     "smoke:core-post": "node tools/scripts/smoke-core-post.mjs",
     "smoke:core-role": "node tools/scripts/smoke-core-role.mjs",

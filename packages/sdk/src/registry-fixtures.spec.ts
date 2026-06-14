@@ -44,6 +44,7 @@ import {
   findIntegrationProviderFixture,
   findIntegrationTemplateFixture,
   findOAuthCallbackContractFixture,
+  findOAuthTokenFixture,
   createIntegrationProviderHealthAuditFixture,
 } from './integration-types';
 
@@ -304,10 +305,11 @@ describe('registry fixtures', () => {
     );
     expect(createIntegrationProviderHealthAuditFixture()).toMatchObject({
       totals: {
-        total: 4,
+        total: 5,
         blocked: 4,
+        unsupported: 1,
         queued: 1,
-        configVaultBacked: 2,
+        configVaultBacked: 3,
         configVaultMissing: 2,
       },
       providers: expect.arrayContaining([
@@ -325,6 +327,14 @@ describe('registry fixtures', () => {
         '/api/integrations/oauth/callback/:providerCode',
       )?.stateTtlSeconds,
     ).toBe(300);
+    expect(
+      findOAuthTokenFixture('oauth_token_github_admin_active'),
+    ).toMatchObject({
+      providerCode: 'oauth.github',
+      status: 'active',
+      accessTokenRef:
+        'secret://config/integration.oauth.github.admin.access-token',
+    });
     expect(findIntegrationDesignFixture('wechat')?.status).toBe('design-only');
   });
 });

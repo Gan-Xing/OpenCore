@@ -1,6 +1,7 @@
 import type {
   IntegrationDesignDto,
   IntegrationOutboxDto,
+  OAuthTokenDto,
   IntegrationProviderDto,
   IntegrationTemplateDto,
   OAuthCallbackContractDto,
@@ -10,6 +11,7 @@ export type IntegrationProviderRecord = IntegrationProviderDto;
 export type IntegrationTemplateRecord = IntegrationTemplateDto;
 export type IntegrationOutboxRecord = IntegrationOutboxDto;
 export type OAuthCallbackContractRecord = OAuthCallbackContractDto;
+export type OAuthTokenRecord = OAuthTokenDto;
 export type IntegrationDesignRecord = IntegrationDesignDto;
 
 export const seedIntegrationProviders: readonly IntegrationProviderRecord[] = [
@@ -99,6 +101,24 @@ export const seedIntegrationProviders: readonly IntegrationProviderRecord[] = [
     },
     healthStatus: 'disabled',
   },
+  {
+    id: 'provider_oauth_github',
+    code: 'oauth.github',
+    type: 'oauth',
+    name: 'GitHub OAuth',
+    enabled: true,
+    secretRef: 'secret://config/integration.oauth.github.client-secret.secret',
+    config: {
+      adapter: 'oauth2',
+      clientId: 'opencore-github',
+      clientSecret: '[REDACTED]',
+      authorizationUrl: 'https://github.com/login/oauth/authorize',
+      tokenUrl: 'https://github.com/login/oauth/access_token',
+      callbackPath: '/api/integrations/oauth/callback/github',
+      scopes: ['read:user', 'user:email'],
+    },
+    healthStatus: 'unknown',
+  },
 ];
 
 export const seedIntegrationTemplates: readonly IntegrationTemplateRecord[] = [
@@ -157,6 +177,57 @@ export const oauthCallbackContract: OAuthCallbackContractRecord = {
   accountBinding: ['user id', 'provider code', 'provider account id'],
   auditAction: 'integration.oauth.callback',
 };
+
+export const seedIntegrationOAuthTokens: readonly OAuthTokenRecord[] = [
+  {
+    id: 'oauth_token_github_admin_active',
+    providerCode: 'oauth.github',
+    subjectType: 'system-user',
+    subjectId: 'user_admin',
+    providerAccountId: 'github:opencore-admin',
+    scopes: ['read:user', 'user:email'],
+    accessTokenRef:
+      'secret://config/integration.oauth.github.admin.access-token',
+    refreshTokenRef:
+      'secret://config/integration.oauth.github.admin.refresh-token',
+    status: 'active',
+    expiresAt: '2099-01-01T00:00:00.000Z',
+    lastRotatedAt: '2026-06-10T00:00:00.000Z',
+    createdAt: '2026-06-10T00:00:00.000Z',
+  },
+  {
+    id: 'oauth_token_github_ops_expired',
+    providerCode: 'oauth.github',
+    subjectType: 'system-user',
+    subjectId: 'user_ops',
+    providerAccountId: 'github:opencore-ops',
+    scopes: ['read:user'],
+    accessTokenRef: 'secret://config/integration.oauth.github.ops.access-token',
+    refreshTokenRef:
+      'secret://config/integration.oauth.github.ops.refresh-token',
+    status: 'expired',
+    expiresAt: '2026-01-01T00:00:00.000Z',
+    lastRotatedAt: '2025-12-01T00:00:00.000Z',
+    createdAt: '2025-12-01T00:00:00.000Z',
+  },
+  {
+    id: 'oauth_token_github_auditor_revoked',
+    providerCode: 'oauth.github',
+    subjectType: 'system-user',
+    subjectId: 'user_auditor',
+    providerAccountId: 'github:opencore-auditor',
+    scopes: ['read:user'],
+    accessTokenRef:
+      'secret://config/integration.oauth.github.auditor.access-token',
+    status: 'revoked',
+    expiresAt: '2099-01-01T00:00:00.000Z',
+    lastRotatedAt: '2026-06-01T00:00:00.000Z',
+    revokedAt: '2026-06-12T00:00:00.000Z',
+    revokedBy: 'admin',
+    revokeReason: 'Seeded revoked OAuth token',
+    createdAt: '2026-06-01T00:00:00.000Z',
+  },
+];
 
 export const integrationDesigns: readonly IntegrationDesignRecord[] = [
   {

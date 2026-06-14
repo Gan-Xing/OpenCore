@@ -24,3 +24,4 @@ This ledger records state transitions only. Git log keeps commit hashes.
 | 89    | OpenForge    | Dry-run operations gained confirmation plus manifest preview/detail.          | OpenForge smoke and Admin bundle markers cover dry-run guards.  |
 | 90    | IP Location  | Login logs gained structured offline provider status and lookup.              | Login-log smoke and Admin bundle markers cover GeoIP lookup.    |
 | 91    | Online Users | Token sessions gained allowlist enforcement and expired cleanup.              | Online-user smoke and Admin bundle markers cover maintenance.   |
+| 92    | OAuth Tokens | Integration OAuth tokens gained inventory, detail and revoke lifecycle.       | OAuth token smoke and Admin bundle markers cover token revoke.   |

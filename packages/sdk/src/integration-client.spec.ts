@@ -111,6 +111,15 @@ describe('createIntegrationClient', () => {
     });
     await client.listOAuthProviders('token', { enabled: true });
     await client.getOAuthCallbackContract('token');
+    await client.getOAuthTokenSummary('token');
+    await client.listOAuthTokens('token', {
+      providerCode: 'oauth.github',
+      status: 'active',
+    });
+    await client.getOAuthToken('token', 'oauth_token_github_admin_active');
+    await client.revokeOAuthToken('token', 'oauth_token_github_admin_active', {
+      reason: 'Revoke from SDK spec',
+    });
     await client.getWeChatDesign('token');
     await client.getWebSocketDesign('token');
     await client.getPaymentDesign('token');
@@ -200,6 +209,15 @@ describe('createIntegrationClient', () => {
       },
       { path: '/integrations/oauth/providers?enabled=true' },
       { path: '/integrations/oauth/callback-contract' },
+      { path: '/integrations/oauth/tokens/summary' },
+      {
+        path: '/integrations/oauth/tokens?providerCode=oauth.github&status=active',
+      },
+      { path: '/integrations/oauth/tokens/oauth_token_github_admin_active' },
+      {
+        path: '/integrations/oauth/tokens/oauth_token_github_admin_active/revoke',
+        method: 'PATCH',
+      },
       { path: '/integrations/designs/wechat' },
       { path: '/integrations/designs/websocket' },
       { path: '/integrations/designs/pay' },

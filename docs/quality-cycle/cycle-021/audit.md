@@ -57,6 +57,9 @@ login-log smoke/deploy guards.
 Round 91 added token/session blacklist maintenance: registered-token allowlist
 enforcement, expired-session cleanup, Admin summary visibility and smoke/deploy
 guards.
+Round 92 added OAuth token management: Prisma-backed token inventory, summary,
+detail and revoke lifecycle across API/SDK/Admin with dedicated smoke and
+deploy guards.
 Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 `lint` must run sequentially.
 
@@ -90,7 +93,8 @@ Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
   write-intent rejection and unsafe schema/config/manifest guards.
 - Integration health smoke covers provider-wide readiness totals,
   config-vault debt, outbox backlog, diagnostics parity, failure history and
-  secret-leak guards.
+  secret-leak guards; OAuth token smoke covers summary, list/detail, revoke,
+  idempotent revoke and secret-leak guards.
 
 ## Documentation Finding
 

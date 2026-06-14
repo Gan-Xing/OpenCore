@@ -26,6 +26,7 @@ import { seedFileAssets } from '../apps/api/src/modules/core/system-management/s
 import { seedReports } from '../apps/api/src/modules/monitor/operations/operations.seed';
 import {
   seedIntegrationOutbox,
+  seedIntegrationOAuthTokens,
   seedIntegrationProviders,
   seedIntegrationTemplates,
 } from '../apps/api/src/modules/integration/integration/integration.seed';
@@ -79,6 +80,7 @@ async function seedIntegrations(): Promise<{
   providers: number;
   templates: number;
   outbox: number;
+  oauthTokens: number;
 }> {
   for (const provider of seedIntegrationProviders) {
     await prisma.integrationProvider.upsert({
@@ -173,10 +175,54 @@ async function seedIntegrations(): Promise<{
     });
   }
 
+  for (const token of seedIntegrationOAuthTokens) {
+    await prisma.integrationOAuthToken.upsert({
+      where: { id: token.id },
+      update: {
+        providerCode: token.providerCode,
+        subjectType: token.subjectType,
+        subjectId: token.subjectId,
+        providerAccountId: token.providerAccountId,
+        scopes: token.scopes as Prisma.InputJsonValue,
+        accessTokenRef: token.accessTokenRef,
+        refreshTokenRef: token.refreshTokenRef ?? null,
+        status: token.status,
+        expiresAt: token.expiresAt ? new Date(token.expiresAt) : null,
+        lastRotatedAt: token.lastRotatedAt
+          ? new Date(token.lastRotatedAt)
+          : null,
+        revokedAt: token.revokedAt ? new Date(token.revokedAt) : null,
+        revokedBy: token.revokedBy ?? null,
+        revokeReason: token.revokeReason ?? null,
+        createdAt: new Date(token.createdAt),
+      },
+      create: {
+        id: token.id,
+        providerCode: token.providerCode,
+        subjectType: token.subjectType,
+        subjectId: token.subjectId,
+        providerAccountId: token.providerAccountId,
+        scopes: token.scopes as Prisma.InputJsonValue,
+        accessTokenRef: token.accessTokenRef,
+        refreshTokenRef: token.refreshTokenRef ?? null,
+        status: token.status,
+        expiresAt: token.expiresAt ? new Date(token.expiresAt) : null,
+        lastRotatedAt: token.lastRotatedAt
+          ? new Date(token.lastRotatedAt)
+          : null,
+        revokedAt: token.revokedAt ? new Date(token.revokedAt) : null,
+        revokedBy: token.revokedBy ?? null,
+        revokeReason: token.revokeReason ?? null,
+        createdAt: new Date(token.createdAt),
+      },
+    });
+  }
+
   return {
     providers: seedIntegrationProviders.length,
     templates: seedIntegrationTemplates.length,
     outbox: seedIntegrationOutbox.length,
+    oauthTokens: seedIntegrationOAuthTokens.length,
   };
 }
 

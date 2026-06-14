@@ -6275,6 +6275,142 @@
         "tags": ["Integration", "Integration OAuth"]
       }
     },
+    "/api/integrations/oauth/tokens/summary": {
+      "get": {
+        "operationId": "IntegrationController_getOAuthTokenSummary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthTokenInventorySummaryDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration OAuth"]
+      }
+    },
+    "/api/integrations/oauth/tokens": {
+      "get": {
+        "operationId": "IntegrationController_listOAuthTokens",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "providerCode",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "subjectId",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["active", "expired", "revoked"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OAuthTokenPageDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration OAuth"]
+      }
+    },
+    "/api/integrations/oauth/tokens/{id}": {
+      "get": {
+        "operationId": "IntegrationController_getOAuthToken",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OAuthTokenDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration OAuth"]
+      }
+    },
+    "/api/integrations/oauth/tokens/{id}/revoke": {
+      "patch": {
+        "operationId": "IntegrationController_revokeOAuthToken",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RevokeOAuthTokenDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OAuthTokenDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration OAuth"]
+      }
+    },
     "/api/integrations/designs/wechat": {
       "get": {
         "operationId": "IntegrationController_getWeChatDesign",
@@ -10052,6 +10188,27 @@
         },
         "required": ["total", "queued", "sent", "failed"]
       },
+      "OAuthTokenInventorySummaryDto": {
+        "type": "object",
+        "properties": {
+          "total": { "type": "number" },
+          "active": { "type": "number" },
+          "expired": { "type": "number" },
+          "revoked": { "type": "number" },
+          "expiringSoon": { "type": "number" },
+          "providers": { "type": "number" },
+          "generatedAt": { "type": "string" }
+        },
+        "required": [
+          "total",
+          "active",
+          "expired",
+          "revoked",
+          "expiringSoon",
+          "providers",
+          "generatedAt"
+        ]
+      },
       "IntegrationDesignSummaryDto": {
         "type": "object",
         "properties": {
@@ -10073,6 +10230,9 @@
             "$ref": "#/components/schemas/IntegrationOutboxSummaryDto"
           },
           "oauthProviders": { "type": "number" },
+          "oauthTokens": {
+            "$ref": "#/components/schemas/OAuthTokenInventorySummaryDto"
+          },
           "designs": {
             "$ref": "#/components/schemas/IntegrationDesignSummaryDto"
           }
@@ -10082,6 +10242,7 @@
           "mailOutbox",
           "smsOutbox",
           "oauthProviders",
+          "oauthTokens",
           "designs"
         ]
       },
@@ -10544,6 +10705,58 @@
           "accountBinding",
           "auditAction"
         ]
+      },
+      "OAuthTokenDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "providerCode": { "type": "string" },
+          "subjectType": { "type": "string" },
+          "subjectId": { "type": "string" },
+          "providerAccountId": { "type": "string" },
+          "scopes": { "type": "array", "items": { "type": "string" } },
+          "accessTokenRef": { "type": "string" },
+          "refreshTokenRef": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["active", "expired", "revoked"]
+          },
+          "expiresAt": { "type": "string" },
+          "lastRotatedAt": { "type": "string" },
+          "revokedAt": { "type": "string" },
+          "revokedBy": { "type": "string" },
+          "revokeReason": { "type": "string" },
+          "createdAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "providerCode",
+          "subjectType",
+          "subjectId",
+          "providerAccountId",
+          "scopes",
+          "accessTokenRef",
+          "status",
+          "createdAt"
+        ]
+      },
+      "OAuthTokenPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/OAuthTokenDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "RevokeOAuthTokenDto": {
+        "type": "object",
+        "properties": { "reason": { "type": "string" } }
       },
       "IntegrationDesignDto": {
         "type": "object",

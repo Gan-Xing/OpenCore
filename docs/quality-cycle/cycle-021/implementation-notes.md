@@ -19,11 +19,13 @@ active debt and decisions that change future execution.
 
 ## Runtime State
 
-Cycle-021 has completed 91 deployable stages across
+Cycle-021 has completed 92 deployable stages across
 System/Security/Monitor/Integration/Tools foundations. Round 91 added
 token/session blacklist maintenance with registered-token allowlist
 enforcement, expired-session cleanup, API/SDK/Admin/OpenAPI visibility, smoke
-and Admin deploy markers.
+and Admin deploy markers. Round 92 added OAuth token inventory, summary,
+detail and revoke lifecycle with Prisma model/seed, SDK/Admin/OpenAPI
+visibility, dedicated smoke and Admin deploy markers.
 
 ## Guard Register
 
@@ -60,8 +62,10 @@ and Admin deploy markers.
   guards, write-intent rejection and unsafe schema/config/manifest guards.
   Deploy checks Admin workbench, confirmation and manifest markers.
 - Integration: smoke covers provider-wide health audit, diagnostics parity,
-  config-vault debt, outbox backlog, failure history and secret-leak guards.
-  Deploy checks Admin health/config audit markers.
+  config-vault debt, outbox backlog, failure history and secret-leak guards;
+  OAuth token smoke covers summary, list/detail, revoke, idempotent revoke and
+  secret-leak guards. Deploy checks Admin health/config audit and OAuth token
+  markers.
 - Prisma schema/seed drift: migrations and seed must include every Prisma
   model used by smoke-covered runtime endpoints.
 - Admin generated types: run Admin `typecheck` and `lint` sequentially because

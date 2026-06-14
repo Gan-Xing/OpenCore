@@ -4,16 +4,14 @@ Date: 2026-06-14
 
 ## Latest Completed Round
 
-Round 91: token/session blacklist maintenance.
+Round 92: OAuth token management.
 
 ## Closed
 
-- Made the Prisma-backed online-user session table a registered-token
-  allowlist: unknown, revoked and expired token sessions are rejected.
-- Added online-user summary and expired-session cleanup through API, SDK and
-  the Admin Online Users page.
-- Updated seed fixtures away from expired mock sessions and added OpenAPI,
-  smoke and deploy guards for blacklist maintenance.
+- Added `IntegrationOAuthToken` schema/migration/seed records.
+- Added OAuth token summary, list, detail and revoke APIs with permissions.
+- Added SDK methods, live Admin OAuth token inventory, OpenAPI snapshot,
+  dedicated smoke and deploy stale-bundle guards.
 
 ## Still Open
 

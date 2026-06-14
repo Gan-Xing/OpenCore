@@ -31,8 +31,13 @@ import {
   IntegrationTemplatePageDto,
   IntegrationTemplateQueryDto,
   OAuthCallbackContractDto,
+  OAuthTokenDto,
+  OAuthTokenInventorySummaryDto,
+  OAuthTokenPageDto,
+  OAuthTokenQueryDto,
   ProcessOutboxDto,
   PreviewTemplateDto,
+  RevokeOAuthTokenDto,
   ScheduleOutboxDto,
   TemplatePreviewDto,
   UpdateIntegrationProviderDto,
@@ -391,6 +396,43 @@ export class IntegrationController {
   @ApiOkResponse({ type: OAuthCallbackContractDto })
   getOAuthCallbackContract(): OAuthCallbackContractDto {
     return this.repository.getOAuthCallbackContract();
+  }
+
+  @Get('oauth/tokens/summary')
+  @ApiTags('Integration OAuth')
+  @RequirePermission('integration:oauth:read')
+  @ApiOkResponse({ type: OAuthTokenInventorySummaryDto })
+  getOAuthTokenSummary(): Promise<OAuthTokenInventorySummaryDto> {
+    return this.repository.getOAuthTokenSummary();
+  }
+
+  @Get('oauth/tokens')
+  @ApiTags('Integration OAuth')
+  @RequirePermission('integration:oauth:read')
+  @ApiOkResponse({ type: OAuthTokenPageDto })
+  listOAuthTokens(
+    @Query() query: OAuthTokenQueryDto,
+  ): Promise<OAuthTokenPageDto> {
+    return this.repository.listOAuthTokens(query);
+  }
+
+  @Get('oauth/tokens/:id')
+  @ApiTags('Integration OAuth')
+  @RequirePermission('integration:oauth:read')
+  @ApiOkResponse({ type: OAuthTokenDto })
+  getOAuthToken(@Param('id') id: string): Promise<OAuthTokenDto> {
+    return this.repository.getOAuthToken(id);
+  }
+
+  @Patch('oauth/tokens/:id/revoke')
+  @ApiTags('Integration OAuth')
+  @RequirePermission('integration:oauth:manage')
+  @ApiOkResponse({ type: OAuthTokenDto })
+  revokeOAuthToken(
+    @Param('id') id: string,
+    @Body() body: RevokeOAuthTokenDto,
+  ): Promise<OAuthTokenDto> {
+    return this.repository.revokeOAuthToken(id, body);
   }
 
   @Get('designs/wechat')

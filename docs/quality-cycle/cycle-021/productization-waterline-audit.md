@@ -26,7 +26,7 @@ failures have guards; and remaining omissions are explicit product boundaries.
 | `core.login-log`      | Meets current | Schema, lockout, cleanup, actor/reason, location and IP/location provider lookup.                        |
 | `core.config`         | Meets current | Runtime keys, feature flags, rollout, audience, environment overrides, vault, versions and key rotation. |
 | `core.notice`         | Enhance       | SMS HTTP, SMTP, mail subject, diagnostics, secrets, attachments, TLS policy and realtime events.         |
-| `integration`         | Meets current | Provider health/config audit, readiness totals, config-vault debt, outbox backlog and failure history.   |
+| `integration`         | Meets current | Provider health/config audit, readiness totals, outbox failure history and OAuth token inventory/revoke. |
 | `scheduler/monitor`   | Meets current | Job Admin operations, registry, handler diagnostics, cron dispatch, worker claim and queue metrics.      |
 | `OpenForge Admin`     | Meets current | Safe workbench, dry-run confirmation, write-intent rejection and manifest preview/detail.                |
 
@@ -84,6 +84,9 @@ failures have guards; and remaining omissions are explicit product boundaries.
 - Round 91 added token/session blacklist maintenance with registered-token
   allowlist enforcement, expired cleanup, Admin visibility and smoke/deploy
   guards.
+- Round 92 added OAuth token inventory, summary, detail and revoke lifecycle
+  with Prisma model/seed, SDK/Admin/OpenAPI visibility, smoke and deploy
+  guards.
 
 ## Active Debt
 
@@ -121,7 +124,9 @@ failures have guards; and remaining omissions are explicit product boundaries.
   checks Admin workbench and manifest markers.
 - Integration: health audit smoke covers provider-wide readiness totals,
   config-vault debt, outbox backlog, diagnostics parity, failure history and
-  secret-leak guards; deploy checks Admin health/config audit markers.
+  secret-leak guards; OAuth token smoke covers summary, list/detail, revoke,
+  idempotent revoke and secret-leak guards; deploy checks Admin health/config
+  audit and OAuth token markers.
 - Config: runtime shape, environment override governance, secret-vault
   plaintext protection, legacy envelope deserialization, secret version
   history, secret rotation and vault key rotation guards.

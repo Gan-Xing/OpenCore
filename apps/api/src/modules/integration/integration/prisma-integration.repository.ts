@@ -15,8 +15,10 @@ import type {
   IntegrationOutboxScheduleChannelResultDto,
   IntegrationProviderQueryDto,
   IntegrationTemplateQueryDto,
+  OAuthTokenQueryDto,
   ProcessOutboxDto,
   PreviewTemplateDto,
+  RevokeOAuthTokenDto,
   ScheduleOutboxDto,
   UpdateIntegrationProviderDto,
 } from './integration.dto';
@@ -28,6 +30,7 @@ import {
   type IntegrationProviderRecord,
   type IntegrationTemplateRecord,
   type OAuthCallbackContractRecord,
+  type OAuthTokenRecord,
 } from './integration.seed';
 import {
   deliverOutboxMessage,
@@ -44,14 +47,19 @@ import {
   buildProviderHealthAudit,
   buildProviderDiagnostics,
   buildIntegrationSummary,
+  buildOAuthTokenSummary,
   createOutboxScheduleResult,
   createPage,
   IntegrationRepository,
+  matchesOAuthTokenQuery,
   normalizeOutboxCallback,
   normalizeOutboxAttachments,
   normalizeOutboxFailureError,
   normalizeOutboxSchedule,
   normalizeOutboxSubject,
+  normalizeOAuthRevokeReason,
+  normalizeOAuthTokenRecord,
+  normalizeOAuthTokenStatus,
   normalizeOptionalProviderCode,
   parseConfigSecretRef,
   normalizeProviderType,
@@ -102,6 +110,24 @@ type OutboxRow = {
   createdAt: Date;
 };
 
+type OAuthTokenRow = {
+  id: string;
+  providerCode: string;
+  subjectType: string;
+  subjectId: string;
+  providerAccountId: string;
+  scopes: unknown;
+  accessTokenRef: string;
+  refreshTokenRef: string | null;
+  status: string;
+  expiresAt: Date | null;
+  lastRotatedAt: Date | null;
+  revokedAt: Date | null;
+  revokedBy: string | null;
+  revokeReason: string | null;
+  createdAt: Date;
+};
+
 @Injectable()
 export class PrismaIntegrationRepository extends IntegrationRepository {
   constructor(
@@ -120,14 +146,16 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
   };
 
   async getSummary() {
-    const [providers, outbox] = await Promise.all([
+    const [providers, outbox, oauthTokens] = await Promise.all([
       this.prisma.integrationProvider.findMany(),
       this.prisma.integrationOutbox.findMany(),
+      this.prisma.integrationOAuthToken.findMany(),
     ]);
 
     return buildIntegrationSummary({
       providers: providers.map(toProviderRecord),
       outbox: outbox.map(toOutboxRecord),
+      oauthTokens: oauthTokens.map(toOAuthTokenRecord),
       designs: integrationDesigns,
     });
   }
@@ -645,6 +673,69 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
     return { ...oauthCallbackContract };
   }
 
+  async getOAuthTokenSummary() {
+    const rows = await this.prisma.integrationOAuthToken.findMany({
+      orderBy: [{ providerCode: 'asc' }, { subjectId: 'asc' }],
+    });
+
+    return buildOAuthTokenSummary(rows.map(toOAuthTokenRecord));
+  }
+
+  async listOAuthTokens(
+    query: OAuthTokenQueryDto = {},
+  ): Promise<PageResult<OAuthTokenRecord>> {
+    const rows = await this.prisma.integrationOAuthToken.findMany({
+      where: {
+        providerCode: normalizeOptionalWhereText(query.providerCode),
+        subjectId: normalizeOptionalWhereText(query.subjectId),
+      },
+      orderBy: [{ providerCode: 'asc' }, { subjectId: 'asc' }],
+    });
+
+    return createPage(
+      rows
+        .map(toOAuthTokenRecord)
+        .map((token) => normalizeOAuthTokenRecord(token))
+        .filter((token) => matchesOAuthTokenQuery(token, query)),
+      query,
+    );
+  }
+
+  async getOAuthToken(id: string): Promise<OAuthTokenRecord> {
+    return normalizeOAuthTokenRecord(
+      requireRecord(
+        await this.prisma.integrationOAuthToken
+          .findUnique({ where: { id } })
+          .then((token) => (token ? toOAuthTokenRecord(token) : undefined)),
+        'OAuth token',
+        id,
+      ),
+    );
+  }
+
+  async revokeOAuthToken(
+    id: string,
+    body: RevokeOAuthTokenDto = {},
+  ): Promise<OAuthTokenRecord> {
+    const existing = await this.getOAuthToken(id);
+
+    if (existing.status === 'revoked') {
+      return existing;
+    }
+
+    const revoked = await this.prisma.integrationOAuthToken.update({
+      where: { id },
+      data: {
+        status: 'revoked',
+        revokedAt: new Date(),
+        revokedBy: 'admin',
+        revokeReason: normalizeOAuthRevokeReason(body.reason),
+      },
+    });
+
+    return normalizeOAuthTokenRecord(toOAuthTokenRecord(revoked));
+  }
+
   getDesign(topic: 'pay' | 'websocket' | 'wechat'): IntegrationDesignRecord {
     return requireRecord(
       integrationDesigns.find((design) => design.topic === topic),
@@ -811,6 +902,26 @@ function toOutboxRecord(row: OutboxRow): IntegrationOutboxRecord {
   };
 }
 
+function toOAuthTokenRecord(row: OAuthTokenRow): OAuthTokenRecord {
+  return {
+    id: row.id,
+    providerCode: row.providerCode,
+    subjectType: row.subjectType,
+    subjectId: row.subjectId,
+    providerAccountId: row.providerAccountId,
+    scopes: normalizeScopes(row.scopes),
+    accessTokenRef: row.accessTokenRef,
+    refreshTokenRef: row.refreshTokenRef ?? undefined,
+    status: normalizeOAuthTokenStatus(row.status),
+    expiresAt: row.expiresAt?.toISOString(),
+    lastRotatedAt: row.lastRotatedAt?.toISOString(),
+    revokedAt: row.revokedAt?.toISOString(),
+    revokedBy: row.revokedBy ?? undefined,
+    revokeReason: row.revokeReason ?? undefined,
+    createdAt: row.createdAt.toISOString(),
+  };
+}
+
 function redactProvider(
   provider: IntegrationProviderRecord,
 ): IntegrationProviderRecord {
@@ -824,6 +935,25 @@ function normalizeRecord(value: unknown): Record<string, unknown> | undefined {
   return value && typeof value === 'object' && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : undefined;
+}
+
+function normalizeScopes(value: unknown): readonly string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((item) => (typeof item === 'string' ? item.trim() : ''))
+    .filter(Boolean);
+}
+
+function normalizeOptionalWhereText(value: unknown): string | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  const text = String(value).trim();
+  return text ? text : undefined;
 }
 
 function normalizeHealthStatus(

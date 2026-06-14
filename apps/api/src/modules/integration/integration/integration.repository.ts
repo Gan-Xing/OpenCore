@@ -16,8 +16,12 @@ import type {
   IntegrationProviderType,
   IntegrationSummaryDto,
   IntegrationTemplateQueryDto,
+  OAuthTokenInventorySummaryDto,
+  OAuthTokenQueryDto,
+  OAuthTokenStatus,
   ProcessOutboxDto,
   PreviewTemplateDto,
+  RevokeOAuthTokenDto,
   ScheduleOutboxDto,
   UpdateIntegrationProviderDto,
 } from './integration.dto';
@@ -27,6 +31,7 @@ import type {
   IntegrationProviderRecord,
   IntegrationTemplateRecord,
   OAuthCallbackContractRecord,
+  OAuthTokenRecord,
 } from './integration.seed';
 
 export type PageResult<T> = {
@@ -140,6 +145,15 @@ export abstract class IntegrationRepository {
     query?: IntegrationProviderQueryDto,
   ): Promise<PageResult<IntegrationProviderRecord>>;
   abstract getOAuthCallbackContract(): OAuthCallbackContractRecord;
+  abstract getOAuthTokenSummary(): Promise<OAuthTokenInventorySummaryDto>;
+  abstract listOAuthTokens(
+    query?: OAuthTokenQueryDto,
+  ): Promise<PageResult<OAuthTokenRecord>>;
+  abstract getOAuthToken(id: string): Promise<OAuthTokenRecord>;
+  abstract revokeOAuthToken(
+    id: string,
+    body?: RevokeOAuthTokenDto,
+  ): Promise<OAuthTokenRecord>;
   abstract getDesign(
     topic: 'pay' | 'websocket' | 'wechat',
   ): IntegrationDesignRecord;
@@ -148,6 +162,7 @@ export abstract class IntegrationRepository {
 export function buildIntegrationSummary(input: {
   providers: readonly IntegrationProviderRecord[];
   outbox: readonly IntegrationOutboxRecord[];
+  oauthTokens: readonly OAuthTokenRecord[];
   designs: readonly IntegrationDesignRecord[];
 }): IntegrationSummaryDto {
   const mailOutbox = input.outbox.filter(
@@ -169,12 +184,31 @@ export function buildIntegrationSummary(input: {
     oauthProviders: input.providers.filter(
       (provider) => provider.type === 'oauth',
     ).length,
+    oauthTokens: buildOAuthTokenSummary(input.oauthTokens),
     designs: {
       designOnlyTopics: input.designs.filter(
         (design) => design.status === 'design-only',
       ).length,
       topics: input.designs.map((design) => design.topic),
     },
+  };
+}
+
+export function buildOAuthTokenSummary(
+  rows: readonly OAuthTokenRecord[],
+  generatedAt = new Date().toISOString(),
+): OAuthTokenInventorySummaryDto {
+  const normalizedRows = rows.map((token) => normalizeOAuthTokenRecord(token));
+  return {
+    total: normalizedRows.length,
+    active: countByStatus(normalizedRows, 'active', 'status'),
+    expired: countByStatus(normalizedRows, 'expired', 'status'),
+    revoked: countByStatus(normalizedRows, 'revoked', 'status'),
+    expiringSoon: normalizedRows.filter((token) =>
+      isOAuthTokenExpiringSoon(token, generatedAt),
+    ).length,
+    providers: new Set(normalizedRows.map((token) => token.providerCode)).size,
+    generatedAt,
   };
 }
 
@@ -627,6 +661,65 @@ export function normalizeProviderType(value: string): IntegrationProviderType {
   return 'mail';
 }
 
+export function normalizeOAuthTokenStatus(value: string): OAuthTokenStatus {
+  return value === 'expired' || value === 'revoked' ? value : 'active';
+}
+
+export function normalizeOAuthTokenRecord(
+  token: OAuthTokenRecord,
+  now = new Date(),
+): OAuthTokenRecord {
+  const status =
+    token.revokedAt || token.status === 'revoked'
+      ? 'revoked'
+      : token.expiresAt && Date.parse(token.expiresAt) <= now.getTime()
+        ? 'expired'
+        : normalizeOAuthTokenStatus(token.status);
+
+  return {
+    ...token,
+    scopes: normalizeOAuthTokenScopes(token.scopes),
+    status,
+  };
+}
+
+export function matchesOAuthTokenQuery(
+  token: OAuthTokenRecord,
+  query: OAuthTokenQueryDto = {},
+): boolean {
+  const normalized = normalizeOAuthTokenRecord(token);
+  return (
+    matchesOptional(
+      normalized.providerCode,
+      normalizeOptionalText(query.providerCode),
+    ) &&
+    matchesOptional(
+      normalized.subjectId,
+      normalizeOptionalText(query.subjectId),
+    ) &&
+    matchesOptional(normalized.status, query.status)
+  );
+}
+
+export function normalizeOAuthRevokeReason(value: unknown): string {
+  const reason =
+    typeof value === 'string' ? value.trim() : 'Revoked from OpenCore Admin.';
+
+  if (!reason) {
+    throw new BadRequestException(
+      'OAuth token revoke reason must not be blank.',
+    );
+  }
+
+  if (reason.length > 300) {
+    throw new BadRequestException(
+      'OAuth token revoke reason must be at most 300 characters.',
+    );
+  }
+
+  return reason;
+}
+
 export function renderTemplate(
   template: IntegrationTemplateRecord,
   payload: Record<string, unknown>,
@@ -947,6 +1040,38 @@ function normalizeRequiredString(value: unknown, message: string): string {
   }
 
   return normalized;
+}
+
+function normalizeOptionalText(value: unknown): string | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  const text = String(value).trim();
+  return text ? text : undefined;
+}
+
+function normalizeOAuthTokenScopes(value: unknown): readonly string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((item) => (typeof item === 'string' ? item.trim() : ''))
+    .filter(Boolean);
+}
+
+function isOAuthTokenExpiringSoon(
+  token: OAuthTokenRecord,
+  generatedAt: string,
+): boolean {
+  if (token.status !== 'active' || !token.expiresAt) {
+    return false;
+  }
+
+  const now = Date.parse(generatedAt);
+  const expiresAt = Date.parse(token.expiresAt);
+  return expiresAt > now && expiresAt - now <= 7 * 24 * 60 * 60 * 1000;
 }
 
 function normalizeAttachmentFilename(value: unknown, index: number): string {

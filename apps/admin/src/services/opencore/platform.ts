@@ -88,6 +88,11 @@ import {
   type IntegrationOutboxSummary,
   type IntegrationOutboxProcessResult,
   type IntegrationOutboxScheduleResult,
+  type OAuthCallbackContractSummary,
+  type OAuthTokenInventorySummary,
+  type OAuthTokenQueryRequest,
+  type OAuthTokenSummary,
+  type RevokeOAuthTokenRequest,
   type IpLocationLookupSummary,
   type IpLocationProviderStatusSummary,
   type JobDefinitionSummary,
@@ -1166,6 +1171,39 @@ export function runOpenCoreIntegrationOutboxSchedule(
 
 export function getOpenCoreIntegrationProviderHealthAudit(): Promise<IntegrationProviderHealthAuditSummary> {
   return integrationClient.getProviderHealthAudit(getRequiredAdminToken());
+}
+
+export function getOpenCoreOAuthCallbackContract(): Promise<OAuthCallbackContractSummary> {
+  return integrationClient.getOAuthCallbackContract(getRequiredAdminToken());
+}
+
+export function getOpenCoreOAuthTokenSummary(): Promise<OAuthTokenInventorySummary> {
+  return integrationClient.getOAuthTokenSummary(getRequiredAdminToken());
+}
+
+export async function listOpenCoreOAuthTokens(
+  query?: OAuthTokenQueryRequest,
+): Promise<OAuthTokenSummary[]> {
+  const page = await integrationClient.listOAuthTokens(
+    getRequiredAdminToken(),
+    {
+      page: 1,
+      pageSize: 100,
+      ...query,
+    },
+  );
+  return [...page.items];
+}
+
+export function getOpenCoreOAuthToken(id: string): Promise<OAuthTokenSummary> {
+  return integrationClient.getOAuthToken(getRequiredAdminToken(), id);
+}
+
+export function revokeOpenCoreOAuthToken(
+  id: string,
+  body?: RevokeOAuthTokenRequest,
+): Promise<OAuthTokenSummary> {
+  return integrationClient.revokeOAuthToken(getRequiredAdminToken(), id, body);
 }
 
 export async function listOpenCoreSystemNoticeTemplates(

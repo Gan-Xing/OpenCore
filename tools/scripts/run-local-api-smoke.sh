@@ -83,6 +83,8 @@ if ! ensure_port_clear "$SMOKE_PORT"; then
 fi
 
 if [ "${OPENCORE_SMOKE_SEED:-true}" = "true" ]; then
+  echo "Applying local smoke migrations"
+  run_with_env pnpm prisma:migrate
   echo "Refreshing local seed data for smoke login"
   run_with_env pnpm prisma:seed
 fi
@@ -145,6 +147,12 @@ run_with_env env \
   OPENCORE_SMOKE_PORT="$SMOKE_PORT" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
   node "$ROOT_DIR/tools/scripts/smoke-core-notice.mjs"
+
+run_with_env env \
+  OPENCORE_SMOKE_BASE_URL="$BASE_URL" \
+  OPENCORE_SMOKE_PORT="$SMOKE_PORT" \
+  OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
+  node "$ROOT_DIR/tools/scripts/smoke-integration-oauth-tokens.mjs"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$BASE_URL" \

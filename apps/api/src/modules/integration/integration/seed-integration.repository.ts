@@ -9,8 +9,10 @@ import type {
   IntegrationOutboxScheduleChannelResultDto,
   IntegrationProviderQueryDto,
   IntegrationTemplateQueryDto,
+  OAuthTokenQueryDto,
   ProcessOutboxDto,
   PreviewTemplateDto,
+  RevokeOAuthTokenDto,
   ScheduleOutboxDto,
   UpdateIntegrationProviderDto,
 } from './integration.dto';
@@ -18,6 +20,7 @@ import {
   integrationDesigns,
   oauthCallbackContract,
   seedIntegrationOutbox,
+  seedIntegrationOAuthTokens,
   seedIntegrationProviders,
   seedIntegrationTemplates,
   type IntegrationDesignRecord,
@@ -25,6 +28,7 @@ import {
   type IntegrationProviderRecord,
   type IntegrationTemplateRecord,
   type OAuthCallbackContractRecord,
+  type OAuthTokenRecord,
 } from './integration.seed';
 import {
   deliverOutboxMessage,
@@ -42,15 +46,19 @@ import {
   buildProviderHealthAudit,
   buildProviderDiagnostics,
   buildIntegrationSummary,
+  buildOAuthTokenSummary,
   createOutboxScheduleResult,
   createPage,
   IntegrationRepository,
   matchesOptional,
+  matchesOAuthTokenQuery,
   normalizeOutboxCallback,
   normalizeOutboxAttachments,
   normalizeOutboxFailureError,
   normalizeOutboxSchedule,
   normalizeOutboxSubject,
+  normalizeOAuthRevokeReason,
+  normalizeOAuthTokenRecord,
   normalizeOptionalProviderCode,
   normalizeOptionalBoolean,
   parseConfigSecretRef,
@@ -78,11 +86,14 @@ export class SeedIntegrationRepository extends IntegrationRepository {
   private outbox: IntegrationOutboxRecord[] = seedIntegrationOutbox.map(
     (message) => ({ ...message }),
   );
+  private oauthTokens: OAuthTokenRecord[] =
+    seedIntegrationOAuthTokens.map(cloneOAuthToken);
 
   async getSummary() {
     return buildIntegrationSummary({
       providers: this.providers,
       outbox: this.outbox,
+      oauthTokens: this.oauthTokens,
       designs: integrationDesigns,
     });
   }
@@ -527,6 +538,45 @@ export class SeedIntegrationRepository extends IntegrationRepository {
     return { ...oauthCallbackContract };
   }
 
+  async getOAuthTokenSummary() {
+    return buildOAuthTokenSummary(this.oauthTokens);
+  }
+
+  async listOAuthTokens(
+    query: OAuthTokenQueryDto = {},
+  ): Promise<PageResult<OAuthTokenRecord>> {
+    return createPage(
+      this.oauthTokens
+        .map((token) => normalizeOAuthTokenRecord(token))
+        .filter((token) => matchesOAuthTokenQuery(token, query)),
+      query,
+    );
+  }
+
+  async getOAuthToken(id: string): Promise<OAuthTokenRecord> {
+    return normalizeOAuthTokenRecord(this.findOAuthToken(id));
+  }
+
+  async revokeOAuthToken(
+    id: string,
+    body: RevokeOAuthTokenDto = {},
+  ): Promise<OAuthTokenRecord> {
+    const token = this.findOAuthToken(id);
+
+    if (token.revokedAt || token.status === 'revoked') {
+      return normalizeOAuthTokenRecord(token);
+    }
+
+    Object.assign(token, {
+      status: 'revoked' as const,
+      revokedAt: new Date().toISOString(),
+      revokedBy: 'admin',
+      revokeReason: normalizeOAuthRevokeReason(body.reason),
+    });
+
+    return normalizeOAuthTokenRecord(token);
+  }
+
   getDesign(topic: 'pay' | 'websocket' | 'wechat'): IntegrationDesignRecord {
     return requireRecord(
       integrationDesigns.find((design) => design.topic === topic),
@@ -565,6 +615,14 @@ export class SeedIntegrationRepository extends IntegrationRepository {
         (message) => message.channel === channel && message.id === id,
       ),
       'Integration outbox message',
+      id,
+    );
+  }
+
+  private findOAuthToken(id: string): OAuthTokenRecord {
+    return requireRecord(
+      this.oauthTokens.find((token) => token.id === id),
+      'OAuth token',
       id,
     );
   }
@@ -655,5 +713,12 @@ function cloneProvider(
   return {
     ...provider,
     config: { ...provider.config },
+  };
+}
+
+function cloneOAuthToken(token: OAuthTokenRecord): OAuthTokenRecord {
+  return {
+    ...token,
+    scopes: [...token.scopes],
   };
 }
