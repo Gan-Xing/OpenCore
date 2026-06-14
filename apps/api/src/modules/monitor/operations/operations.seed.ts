@@ -21,15 +21,19 @@ export {
 export const seedCacheKeys: readonly CacheKeyRecord[] = [
   {
     key: 'opencore:admin:shell',
+    name: 'opencore:admin',
     prefix: 'opencore:admin',
     ttlSeconds: 300,
     sizeBytes: 512,
+    type: 'string',
   },
   {
     key: 'opencore:openapi:snapshot',
+    name: 'opencore:openapi',
     prefix: 'opencore:openapi',
     ttlSeconds: 900,
     sizeBytes: 4096,
+    type: 'string',
   },
 ];
 

@@ -28,6 +28,7 @@ failures have guards; and remaining omissions are explicit product boundaries.
 | `core.notice`         | Enhance       | SMS HTTP, SMTP, mail subject, diagnostics, secrets, attachments, TLS policy and realtime events.         |
 | `integration`         | Meets current | Provider health/config audit, readiness totals, outbox failure history and OAuth token inventory/revoke. |
 | `scheduler/monitor`   | Meets current | Job Admin operations, registry, handler diagnostics, cron dispatch, worker claim and queue metrics.      |
+| `monitor.cache`       | Meets current | Redis namespace/key scans, safe value preview, dry-run clear and confirmed key/prefix deletion.          |
 | `OpenForge Admin`     | Meets current | Safe workbench, dry-run confirmation, write-intent rejection and manifest preview/detail.                |
 
 ## Closed Remediation
@@ -93,6 +94,9 @@ failures have guards; and remaining omissions are explicit product boundaries.
 - Round 94 added a guarded HTTP JSON managed KMS adapter with v3 secret-vault
   envelopes, remote data-key wrap/unwrap, API/SDK/Admin visibility and deploy
   guards.
+- Round 95 replaced Monitor Cache seed/Admin fixtures with Redis-backed
+  namespace/key listing, safe value preview redaction, dry-run prefix clear,
+  confirmed key/prefix deletion and smoke/deploy guards.
 
 ## Active Debt
 
@@ -122,6 +126,10 @@ failures have guards; and remaining omissions are explicit product boundaries.
   whitelisted job upsert, unsafe policy guards, enable/disable,
   disabled-trigger rejection, manual trigger, handler execution, retry failure
   and run-log detail, cron dispatch, worker claim and scheduler queue metrics.
+- Monitor cache: smoke writes temporary Redis keys and covers namespace/key
+  listing, safe JSON redaction, secret-key redaction, dry-run clear, confirmed
+  key deletion and confirmed prefix clear; deploy checks live Redis cache Admin
+  bundle markers and Admin smoke rejects fixture-backed cache pages.
 - OpenForge: smoke covers status, doctor, plan, diff, check, apply dry-run,
   manifest list, manifest preview, rollback dry-run, confirmation guards,
   write-intent rejection and unsafe schema/config/manifest guards; deploy

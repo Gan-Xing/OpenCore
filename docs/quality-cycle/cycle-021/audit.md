@@ -66,6 +66,9 @@ visibility and offline fallback diagnostics.
 Round 94 added a managed HTTP JSON KMS adapter: v3 secret-vault envelopes
 encrypt values with random data keys, remote KMS receives only data-key
 wrap/unwrap requests, and provider status is visible through API/SDK/Admin.
+Round 95 replaced Monitor Cache seed arrays and Admin fixtures with a real
+Redis-backed operator surface covering namespace/key scans, safe value preview
+redaction, dry-run prefix clear and confirmed key/prefix deletion.
 Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 `lint` must run sequentially.
 
@@ -97,6 +100,10 @@ Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
   enable/disable, disabled-trigger rejection, manual trigger, handler
   execution, failed retry, run-log detail, cron dispatch, worker claim and
   scheduler queue metrics.
+- Monitor Cache smoke covers Redis-backed namespace/key listing, safe JSON
+  field redaction, secret-key redaction, dry-run prefix clear, confirmed key
+  deletion and confirmed prefix clear; Admin smoke rejects fixture-backed
+  cache pages.
 - OpenForge smoke covers status, doctor, plan, diff, check, apply dry-run,
   manifest list, manifest preview, rollback dry-run, dry-run confirmation,
   write-intent rejection and unsafe schema/config/manifest guards.

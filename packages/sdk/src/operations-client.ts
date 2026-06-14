@@ -4,12 +4,16 @@ import type {
   CleanExpiredOnlineUserSessionsRequest,
   CleanExpiredOnlineUserSessionsResult,
   CacheClearResultSummary,
+  CacheKeyDeleteResultSummary,
   CacheKeyPage,
+  CacheNameList,
   CacheKeyQueryRequest,
+  CacheValueSummary,
   ClaimQueuedJobsRequest,
   ClearCacheRequest,
   CreateJobDefinitionRequest,
   DispatchDueJobsRequest,
+  DeleteCacheKeyRequest,
   CreateReportDefinitionRequest,
   ExportJobDesignSummary,
   JobDefinitionPage,
@@ -84,10 +88,16 @@ export type OperationsClient = {
     token: string,
     query?: CacheKeyQueryRequest,
   ) => Promise<CacheKeyPage>;
+  listCacheNames: (token: string) => Promise<CacheNameList>;
+  getCacheValue: (token: string, key: string) => Promise<CacheValueSummary>;
   clearCache: (
     token: string,
     body: ClearCacheRequest,
   ) => Promise<CacheClearResultSummary>;
+  deleteCacheKey: (
+    token: string,
+    body: DeleteCacheKeyRequest,
+  ) => Promise<CacheKeyDeleteResultSummary>;
   listOnlineUsers: (
     token: string,
     query?: OnlineUserQueryRequest,
@@ -189,8 +199,20 @@ export function createOperationsClient(request: SdkRequest): OperationsClient {
       ),
     listCacheKeys: (token, query) =>
       request<CacheKeyPage>(withQuery('/monitor/cache', query), { token }),
+    listCacheNames: (token) =>
+      request<CacheNameList>('/monitor/cache/names', { token }),
+    getCacheValue: (token, key) =>
+      request<CacheValueSummary>(withQuery('/monitor/cache/value', { key }), {
+        token,
+      }),
     clearCache: (token, body) =>
       request<CacheClearResultSummary>('/monitor/cache/clear', {
+        method: 'POST',
+        body,
+        token,
+      }),
+    deleteCacheKey: (token, body) =>
+      request<CacheKeyDeleteResultSummary>('/monitor/cache/key/delete', {
         method: 'POST',
         body,
         token,

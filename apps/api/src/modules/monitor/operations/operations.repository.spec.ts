@@ -4,6 +4,7 @@ import {
   SeedOnlineUserRepository,
 } from '@opencore/online-user';
 import { SchedulerService, SeedSchedulerRepository } from '@opencore/scheduler';
+import { PrismaOperationsRepository } from './prisma-operations.repository';
 import { SeedOperationsRepository } from './seed-operations.repository';
 
 describe('OperationsRepository', () => {
@@ -33,7 +34,35 @@ describe('OperationsRepository', () => {
 
     await expect(
       repository.listCacheKeys({ prefix: 'opencore:admin' }),
-    ).resolves.toMatchObject({ total: 1 });
+    ).resolves.toMatchObject({
+      total: 1,
+      scanComplete: true,
+      items: [
+        expect.objectContaining({
+          key: 'opencore:admin:shell',
+          name: 'opencore:admin',
+          type: 'string',
+        }),
+      ],
+    });
+    await expect(repository.listCacheNames()).resolves.toMatchObject({
+      total: 2,
+      items: expect.arrayContaining([
+        expect.objectContaining({
+          name: 'opencore:admin',
+          keyCount: 1,
+          sampleKey: 'opencore:admin:shell',
+        }),
+      ]),
+    });
+    await expect(
+      repository.getCacheValue('opencore:admin:shell'),
+    ).resolves.toMatchObject({
+      key: 'opencore:admin:shell',
+      valuePreview: expect.stringContaining('fixture'),
+      sensitive: false,
+      truncated: false,
+    });
     await expect(
       repository.listReports({ enabled: true, owner: 'admin' }),
     ).resolves.toMatchObject({ total: 1 });
@@ -53,6 +82,9 @@ describe('OperationsRepository', () => {
       repository.clearCache({ prefix: 'opencore:admin', dryRun: false }),
     ).rejects.toThrow(BadRequestException);
     await expect(
+      repository.clearCache({ prefix: 'opencore:*', dryRun: true }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
       repository.clearCache({
         prefix: 'opencore:admin',
         dryRun: false,
@@ -61,6 +93,31 @@ describe('OperationsRepository', () => {
     ).resolves.toMatchObject({
       dryRun: false,
       clearedKeys: 1,
+    });
+    await expect(
+      repository.deleteCacheKey({
+        key: 'opencore:openapi:snapshot',
+        dryRun: true,
+      }),
+    ).resolves.toMatchObject({
+      existed: true,
+      deleted: false,
+    });
+    await expect(
+      repository.deleteCacheKey({
+        key: 'opencore:openapi:snapshot',
+        dryRun: false,
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      repository.deleteCacheKey({
+        key: 'opencore:openapi:snapshot',
+        dryRun: false,
+        confirmed: true,
+      }),
+    ).resolves.toMatchObject({
+      existed: true,
+      deleted: true,
     });
   });
 
@@ -87,6 +144,72 @@ describe('OperationsRepository', () => {
       requiredBindings: expect.arrayContaining(['file asset id']),
     });
   });
+
+  it('uses Redis for cache listing, safe value preview and confirmed deletion', async () => {
+    const redis = createRedisMock({
+      'opencore:admin:shell': 'shell-cache',
+      'opencore:system:config': JSON.stringify({
+        theme: 'dark',
+        password: 'must-not-leak',
+      }),
+      'opencore:secret:token': 'must-not-leak',
+    });
+    const repository = new PrismaOperationsRepository(
+      createPrismaMock(),
+      redis,
+    );
+
+    await expect(
+      repository.listCacheKeys({ prefix: 'opencore:system' }),
+    ).resolves.toMatchObject({
+      total: 1,
+      scanComplete: true,
+      items: [
+        expect.objectContaining({
+          key: 'opencore:system:config',
+          name: 'opencore:system',
+          type: 'string',
+        }),
+      ],
+    });
+    await expect(repository.listCacheNames()).resolves.toMatchObject({
+      items: expect.arrayContaining([
+        expect.objectContaining({ name: 'opencore:admin', keyCount: 1 }),
+        expect.objectContaining({ name: 'opencore:system', keyCount: 1 }),
+      ]),
+    });
+
+    const safeValue = await repository.getCacheValue('opencore:system:config');
+    expect(safeValue.valuePreview).toContain('"theme":"dark"');
+    expect(safeValue.valuePreview).toContain('"password":"[redacted]"');
+    expect(safeValue.valuePreview).not.toContain('must-not-leak');
+    await expect(
+      repository.getCacheValue('opencore:secret:token'),
+    ).resolves.toMatchObject({
+      sensitive: true,
+      valuePreview: '[redacted sensitive cache value]',
+    });
+    await expect(
+      repository.clearCache({
+        prefix: 'opencore:admin',
+        dryRun: false,
+        confirmed: true,
+      }),
+    ).resolves.toMatchObject({
+      matchedKeys: 1,
+      clearedKeys: 1,
+    });
+    await expect(
+      repository.deleteCacheKey({
+        key: 'opencore:system:config',
+        dryRun: false,
+        confirmed: true,
+      }),
+    ).resolves.toMatchObject({
+      existed: true,
+      deleted: true,
+    });
+  });
 });
 
 async function createSeedSchedulerSummary() {
@@ -95,4 +218,61 @@ async function createSeedSchedulerSummary() {
 
 async function createSeedOnlineUserSummary() {
   return new OnlineUserService(new SeedOnlineUserRepository()).getSummary();
+}
+
+function createPrismaMock() {
+  return {
+    reportDefinition: {
+      findMany: async () => [],
+      findUnique: async () => undefined,
+      create: async (input: {
+        data: {
+          code: string;
+          name: string;
+          description?: string;
+          querySchema: Record<string, unknown>;
+          enabled: boolean;
+          owner: string;
+        };
+      }) => ({
+        id: `report_${input.data.code}`,
+        ...input.data,
+      }),
+    },
+  } as never;
+}
+
+function createRedisMock(values: Record<string, string>) {
+  const entries = new Map(Object.entries(values));
+
+  return {
+    scan: async (_cursor: string, options: { match?: string } = {}) => {
+      const prefix = options.match?.endsWith('*')
+        ? options.match.slice(0, -1)
+        : undefined;
+      const keys = [...entries.keys()].filter((key) =>
+        prefix ? key.startsWith(prefix) : true,
+      );
+
+      return ['0', keys] as [string, string[]];
+    },
+    ttl: async (key: string) => (entries.has(key) ? 300 : -2),
+    type: async (key: string) => (entries.has(key) ? 'string' : 'none'),
+    memoryUsage: async (key: string) =>
+      entries.has(key)
+        ? Buffer.byteLength(entries.get(key) ?? '', 'utf8')
+        : null,
+    get: async (key: string) => entries.get(key) ?? null,
+    delete: async (...keys: readonly string[]) => {
+      let deleted = 0;
+
+      for (const key of keys) {
+        if (entries.delete(key)) {
+          deleted += 1;
+        }
+      }
+
+      return deleted;
+    },
+  } as never;
 }

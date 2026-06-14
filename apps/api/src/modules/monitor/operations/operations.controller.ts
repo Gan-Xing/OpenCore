@@ -17,8 +17,11 @@ import { SchedulerService } from '@opencore/scheduler';
 import { RequirePermission } from '../../core/rbac/permissions.decorator';
 import {
   CacheClearResultDto,
+  CacheKeyDeleteResultDto,
   CacheKeyPageDto,
   CacheKeyQueryDto,
+  CacheNameListDto,
+  CacheValueDto,
   BatchKickOutSessionsDto,
   BatchKickOutSessionsResultDto,
   CleanExpiredOnlineUserSessionsQueryDto,
@@ -27,6 +30,7 @@ import {
   ClearCacheDto,
   CreateJobDefinitionDto,
   CreateReportDefinitionDto,
+  DeleteCacheKeyDto,
   DispatchDueJobsDto,
   ExportJobDesignDto,
   JobDefinitionDto,
@@ -195,12 +199,38 @@ export class OperationsController {
     return this.repository.listCacheKeys(query);
   }
 
+  @Get('monitor/cache/names')
+  @ApiTags('Monitor Cache')
+  @RequirePermission('monitor:cache:read')
+  @ApiOkResponse({ type: CacheNameListDto })
+  listCacheNames(): Promise<CacheNameListDto> {
+    return this.repository.listCacheNames();
+  }
+
+  @Get('monitor/cache/value')
+  @ApiTags('Monitor Cache')
+  @RequirePermission('monitor:cache:read')
+  @ApiOkResponse({ type: CacheValueDto })
+  getCacheValue(@Query('key') key: string): Promise<CacheValueDto> {
+    return this.repository.getCacheValue(key);
+  }
+
   @Post('monitor/cache/clear')
   @ApiTags('Monitor Cache')
   @RequirePermission('monitor:cache:manage')
   @ApiOkResponse({ type: CacheClearResultDto })
   clearCache(@Body() body: ClearCacheDto): Promise<CacheClearResultDto> {
     return this.repository.clearCache(body);
+  }
+
+  @Post('monitor/cache/key/delete')
+  @ApiTags('Monitor Cache')
+  @RequirePermission('monitor:cache:manage')
+  @ApiOkResponse({ type: CacheKeyDeleteResultDto })
+  deleteCacheKey(
+    @Body() body: DeleteCacheKeyDto,
+  ): Promise<CacheKeyDeleteResultDto> {
+    return this.repository.deleteCacheKey(body);
   }
 
   @Get('monitor/online-users')

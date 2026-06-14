@@ -19,7 +19,7 @@ active debt and decisions that change future execution.
 
 ## Runtime State
 
-Cycle-021 has completed 94 deployable stages across
+Cycle-021 has completed 95 deployable stages across
 System/Security/Monitor/Integration/Tools foundations. Round 91 added
 token/session blacklist maintenance with registered-token allowlist
 enforcement, expired-session cleanup, API/SDK/Admin/OpenAPI visibility, smoke
@@ -30,6 +30,9 @@ guarded external HTTP JSON GeoIP adapter with host allowlisting, bounded
 timeouts, non-public-IP no-send behavior and offline fallback diagnostics.
 Round 94 added a managed HTTP JSON KMS adapter with v3 secret-vault envelopes
 and remote data-key wrap/unwrap while preserving env as the default provider.
+Round 95 replaced the Monitor Cache seed/fixture surface with Redis-backed
+namespace/key scans, safe value previews, dry-run prefix clear and confirmed
+key/prefix deletion.
 
 ## Guard Register
 
@@ -71,6 +74,11 @@ and remote data-key wrap/unwrap while preserving env as the default provider.
   run-now, handler execution, failed retry, run-log detail, cron dispatch,
   worker claim and scheduler queue metrics. Deploy also checks the Jobs and
   Queues Admin bundle markers.
+- Monitor cache: smoke writes temporary Redis keys and verifies namespace/key
+  listing, safe JSON field redaction, secret-key redaction, dry-run clear,
+  confirmed key deletion and confirmed prefix clear. Admin smoke rejects
+  `createOperationsFixtures()` on the Cache page and deploy checks live Redis
+  cache bundle markers.
 - OpenForge: smoke covers status, doctor, plan, diff, check, apply dry-run,
   manifest list, manifest preview, rollback dry-run, dry-run confirmation
   guards, write-intent rejection and unsafe schema/config/manifest guards.

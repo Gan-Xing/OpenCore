@@ -6968,6 +6968,49 @@
         "tags": ["Operations", "Monitor Cache"]
       }
     },
+    "/api/monitor/cache/names": {
+      "get": {
+        "operationId": "OperationsController_listCacheNames",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CacheNameListDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Operations", "Monitor Cache"]
+      }
+    },
+    "/api/monitor/cache/value": {
+      "get": {
+        "operationId": "OperationsController_getCacheValue",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CacheValueDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Operations", "Monitor Cache"]
+      }
+    },
     "/api/monitor/cache/clear": {
       "post": {
         "operationId": "OperationsController_clearCache",
@@ -6986,6 +7029,34 @@
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/CacheClearResultDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Operations", "Monitor Cache"]
+      }
+    },
+    "/api/monitor/cache/key/delete": {
+      "post": {
+        "operationId": "OperationsController_deleteCacheKey",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/DeleteCacheKeyDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CacheKeyDeleteResultDto"
+                }
               }
             }
           }
@@ -10902,9 +10973,18 @@
         "type": "object",
         "properties": {
           "keyCount": { "type": "number" },
-          "totalSizeBytes": { "type": "number" }
+          "totalSizeBytes": { "type": "number" },
+          "provider": { "type": "string" },
+          "scanLimit": { "type": "number" },
+          "scanComplete": { "type": "boolean" }
         },
-        "required": ["keyCount", "totalSizeBytes"]
+        "required": [
+          "keyCount",
+          "totalSizeBytes",
+          "provider",
+          "scanLimit",
+          "scanComplete"
+        ]
       },
       "OnlineUserSummaryDto": {
         "type": "object",
@@ -11143,11 +11223,13 @@
         "type": "object",
         "properties": {
           "key": { "type": "string" },
+          "name": { "type": "string" },
           "prefix": { "type": "string" },
           "ttlSeconds": { "type": "number" },
-          "sizeBytes": { "type": "number" }
+          "sizeBytes": { "type": "number" },
+          "type": { "type": "string" }
         },
-        "required": ["key", "prefix", "ttlSeconds", "sizeBytes"]
+        "required": ["key", "name", "prefix", "ttlSeconds", "sizeBytes", "type"]
       },
       "CacheKeyPageDto": {
         "type": "object",
@@ -11159,9 +11241,80 @@
           "page": { "type": "number" },
           "pageSize": { "type": "number" },
           "total": { "type": "number" },
-          "totalPages": { "type": "number" }
+          "totalPages": { "type": "number" },
+          "scanLimit": { "type": "number" },
+          "scanComplete": { "type": "boolean" }
         },
-        "required": ["items", "page", "pageSize", "total", "totalPages"]
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "total",
+          "totalPages",
+          "scanLimit",
+          "scanComplete"
+        ]
+      },
+      "CacheNameDto": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "prefix": { "type": "string" },
+          "keyCount": { "type": "number" },
+          "totalSizeBytes": { "type": "number" },
+          "expiringKeys": { "type": "number" },
+          "persistentKeys": { "type": "number" },
+          "sampleKey": { "type": "string" }
+        },
+        "required": [
+          "name",
+          "prefix",
+          "keyCount",
+          "totalSizeBytes",
+          "expiringKeys",
+          "persistentKeys",
+          "sampleKey"
+        ]
+      },
+      "CacheNameListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/CacheNameDto" }
+          },
+          "total": { "type": "number" },
+          "scanLimit": { "type": "number" },
+          "scanComplete": { "type": "boolean" }
+        },
+        "required": ["items", "total", "scanLimit", "scanComplete"]
+      },
+      "CacheValueDto": {
+        "type": "object",
+        "properties": {
+          "key": { "type": "string" },
+          "name": { "type": "string" },
+          "prefix": { "type": "string" },
+          "ttlSeconds": { "type": "number" },
+          "sizeBytes": { "type": "number" },
+          "type": { "type": "string" },
+          "valuePreview": { "type": "string" },
+          "encoding": { "type": "string" },
+          "sensitive": { "type": "boolean" },
+          "truncated": { "type": "boolean" }
+        },
+        "required": [
+          "key",
+          "name",
+          "prefix",
+          "ttlSeconds",
+          "sizeBytes",
+          "type",
+          "valuePreview",
+          "encoding",
+          "sensitive",
+          "truncated"
+        ]
       },
       "ClearCacheDto": {
         "type": "object",
@@ -11182,6 +11335,26 @@
           "policy": { "type": "string" }
         },
         "required": ["prefix", "dryRun", "matchedKeys", "clearedKeys", "policy"]
+      },
+      "DeleteCacheKeyDto": {
+        "type": "object",
+        "properties": {
+          "key": { "type": "string" },
+          "dryRun": { "type": "boolean", "default": true },
+          "confirmed": { "type": "boolean" }
+        },
+        "required": ["key", "dryRun"]
+      },
+      "CacheKeyDeleteResultDto": {
+        "type": "object",
+        "properties": {
+          "key": { "type": "string" },
+          "dryRun": { "type": "boolean" },
+          "existed": { "type": "boolean" },
+          "deleted": { "type": "boolean" },
+          "policy": { "type": "string" }
+        },
+        "required": ["key", "dryRun", "existed", "deleted", "policy"]
       },
       "OnlineUserSessionDto": {
         "type": "object",

@@ -970,11 +970,11 @@ export const moduleRegistry = [
     title: 'Cache',
     layer: 'monitor',
     priority: 'P2',
-    status: 'planned',
+    status: 'active',
     stage: 'S11',
     enabledByDefault: true,
     description:
-      'Read-only cache key listing and confirmed prefix clear policy.',
+      'Redis cache namespace/key listing, safe value preview and confirmed delete/clear operations.',
     apiTags: ['Monitor Cache'],
     permissions: definePermissions('monitor', 'cache', 'cache', 'S11', [
       { action: 'read', title: 'Read' },

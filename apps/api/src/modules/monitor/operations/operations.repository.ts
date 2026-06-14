@@ -2,6 +2,10 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import type { OnlineUserSummaryDto } from '@opencore/online-user';
 import type { SchedulerSummaryDto } from '@opencore/scheduler';
 import type {
+  CacheNameListDto,
+  CacheValueDto,
+  DeleteCacheKeyDto,
+  CacheKeyPageDto,
   CacheKeyQueryDto,
   ClearCacheDto,
   CreateReportDefinitionDto,
@@ -20,6 +24,8 @@ export type PageResult<T> = {
   pageSize: number;
   total: number;
   totalPages: number;
+  scanLimit?: number;
+  scanComplete?: boolean;
 };
 
 export type CacheClearResult = {
@@ -30,16 +36,27 @@ export type CacheClearResult = {
   policy: string;
 };
 
+export type CacheKeyDeleteResult = {
+  key: string;
+  dryRun: boolean;
+  existed: boolean;
+  deleted: boolean;
+  policy: string;
+};
+
 export abstract class OperationsRepository {
   abstract getSummary(
     scheduler: SchedulerSummaryDto,
     onlineUsers: OnlineUserSummaryDto,
   ): Promise<OperationsSummaryDto>;
 
-  abstract listCacheKeys(
-    query?: CacheKeyQueryDto,
-  ): Promise<PageResult<CacheKeyRecord>>;
+  abstract listCacheKeys(query?: CacheKeyQueryDto): Promise<CacheKeyPageDto>;
+  abstract listCacheNames(): Promise<CacheNameListDto>;
+  abstract getCacheValue(key: string): Promise<CacheValueDto>;
   abstract clearCache(body: ClearCacheDto): Promise<CacheClearResult>;
+  abstract deleteCacheKey(
+    body: DeleteCacheKeyDto,
+  ): Promise<CacheKeyDeleteResult>;
 
   abstract listReports(
     query?: ReportQueryDto,
@@ -54,6 +71,8 @@ export abstract class OperationsRepository {
 export function buildOperationsSummary(input: {
   scheduler: SchedulerSummaryDto;
   cacheKeys: readonly CacheKeyRecord[];
+  cacheScanLimit?: number;
+  cacheScanComplete?: boolean;
   onlineUsers: OnlineUserSummaryDto;
   reports: readonly ReportDefinitionRecord[];
   exportJobDesign: ExportJobDesignRecord;
@@ -67,6 +86,9 @@ export function buildOperationsSummary(input: {
         (total, key) => total + key.sizeBytes,
         0,
       ),
+      provider: 'redis',
+      scanLimit: input.cacheScanLimit ?? input.cacheKeys.length,
+      scanComplete: input.cacheScanComplete ?? true,
     },
     onlineUsers: input.onlineUsers,
     reports: {
@@ -117,7 +139,7 @@ export function applyCacheClearPolicy(
   keys: readonly CacheKeyRecord[],
   body: ClearCacheDto,
 ): CacheClearResult {
-  const prefix = body.prefix.trim();
+  const prefix = normalizeCachePrefix(body.prefix);
 
   if (!prefix || prefix.length < 3) {
     throw new BadRequestException(
@@ -141,6 +163,60 @@ export function applyCacheClearPolicy(
     clearedKeys: dryRun ? 0 : matchedKeys,
     policy: 'prefix-only; dry-run by default; confirmed=true required',
   };
+}
+
+export function applyCacheKeyDeletePolicy(
+  keyExists: boolean,
+  body: DeleteCacheKeyDto,
+): CacheKeyDeleteResult {
+  const key = normalizeCacheKey(body.key);
+  const dryRun = body.dryRun !== false;
+
+  if (!dryRun && !body.confirmed) {
+    throw new BadRequestException(
+      'Cache key delete write mode requires confirmed=true.',
+    );
+  }
+
+  return {
+    key,
+    dryRun,
+    existed: keyExists,
+    deleted: !dryRun && keyExists,
+    policy: 'single-key delete; dry-run by default; confirmed=true required',
+  };
+}
+
+export function normalizeCachePrefix(prefix: string): string {
+  const normalized = prefix.trim();
+
+  if (!normalized || normalized.length < 3) {
+    throw new BadRequestException(
+      'Cache clear prefix must be at least 3 chars.',
+    );
+  }
+
+  if (/[*?[\]]/.test(normalized)) {
+    throw new BadRequestException(
+      'Cache clear prefix must not contain glob wildcards.',
+    );
+  }
+
+  return normalized;
+}
+
+export function normalizeCacheKey(key: string): string {
+  const normalized = key.trim();
+
+  if (!normalized || normalized.length < 3) {
+    throw new BadRequestException('Cache key must be at least 3 chars.');
+  }
+
+  if (/[\r\n]/.test(normalized)) {
+    throw new BadRequestException('Cache key must be a single line.');
+  }
+
+  return normalized;
 }
 
 export function requireRecord<T>(

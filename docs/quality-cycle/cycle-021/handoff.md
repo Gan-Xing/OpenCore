@@ -47,7 +47,7 @@ packages and OpenForge direct Prisma/migration/business-code writing.
 
 ## Current State
 
-Cycle-021 has completed 94 deployable stages.
+Cycle-021 has completed 95 deployable stages.
 
 - System/RBAC: notice, dept, post, menu, role, permission, user, dict, config
   and file loops are live.
@@ -77,16 +77,17 @@ Cycle-021 has completed 94 deployable stages.
 - Monitor jobs: API/SDK routes, registry policy, seed job, Admin live list,
   enable/disable, manual trigger, registered handler execution, retry/timeout
   diagnostics, failed run-log detail, cron dispatch, worker claim and scheduler
-  queue metrics are smoke-guarded.
+  queue metrics are smoke-guarded. Monitor Cache now uses real Redis
+  namespace/key scans, safe value previews, dry-run prefix clear and confirmed
+  key/prefix deletion instead of Admin fixtures or seed key arrays.
 - OpenForge: CLI/core safety remains no-write by default; Admin now has a live
   safe workbench for status, doctor, plan, diff, check, manifest list and
   apply/rollback dry-run, dry-run confirmation and manifest preview/detail.
 
-Latest runtime stage: Round 94 managed KMS adapter. It adds an
-`opencore.http-json` secret-vault provider with host allowlisting, bounded
-timeouts, v3 managed envelopes, remote data-key wrap/unwrap, API/SDK/Admin
-visibility and smoke/deploy guards while preserving the env keyring as the
-default provider.
+Latest runtime stage: Round 95 Monitor Cache Redis operations. It replaces the
+old seed/fixture cache view with Redis-backed namespace and key listing, safe
+value preview redaction, dry-run prefix clear, confirmed key/prefix deletion,
+API/SDK/Admin/OpenAPI visibility and smoke/deploy guards.
 
 ## Next Queue
 

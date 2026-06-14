@@ -782,6 +782,27 @@ if (
 }
 
 if (
+  cachePage.includes('createOperationsFixtures') ||
+  !cachePage.includes('listOpenCoreCacheKeys') ||
+  !cachePage.includes('listOpenCoreCacheNames') ||
+  !cachePage.includes('getOpenCoreCacheValue') ||
+  !cachePage.includes('clearOpenCoreCache') ||
+  !cachePage.includes('deleteOpenCoreCacheKey') ||
+  !cachePage.includes('canManageCache') ||
+  !cachePage.includes('Redis Monitor') ||
+  !cachePage.includes(
+    'Redis live monitor; dry-run by default; confirmed clear required',
+  ) ||
+  !cachePage.includes('Safe Value Preview') ||
+  !cachePage.includes('CurrentPageExportButton') ||
+  !cachePage.includes('rows={filteredRows}')
+) {
+  throw new Error(
+    'Cache page must use live Redis cache APIs with namespace/key operations, safe value preview, permissions and current-page export.',
+  );
+}
+
+if (
   !profilePage.includes('getOpenCoreUserProfile') ||
   !profilePage.includes('updateOpenCoreUserProfile') ||
   !profilePage.includes('updateOpenCoreUserAvatar') ||
@@ -1501,7 +1522,7 @@ const admittedFilteredPages = [
   { exportsRows: true, name: 'todos', source: todosPage },
   { exportsRows: true, name: 'approvals', source: approvalsPage },
   { exportsRows: true, name: 'jobs', source: jobsPage },
-  { exportsRows: false, name: 'cache', source: cachePage },
+  { exportsRows: true, name: 'cache', source: cachePage },
   { exportsRows: true, name: 'online users', source: onlineUsersPage },
   { exportsRows: true, name: 'reports', source: reportsPage },
   { exportsRows: true, name: 'export jobs', source: exportJobsPage },

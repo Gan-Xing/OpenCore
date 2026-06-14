@@ -29,7 +29,7 @@ schema/business-code writing.
   runtime login policy.
 - Rounds 50-59: logout audit semantics, ordering, data-scope, notice
   inbox/read analytics, feature flags and login-log location.
-- Rounds 60-94: notice template/delivery/provider/outbox work, SMS HTTP and
+- Rounds 60-95: notice template/delivery/provider/outbox work, SMS HTTP and
   SMTP adapters, config vault and rollout/audience, operation-log cleanup, plus
   mail subject persistence, provider diagnostics, SMS HTTP secret injection,
   SMTP attachments, explicit SMTP TLS policy, inbox realtime events, Monitor
@@ -41,11 +41,13 @@ schema/business-code writing.
   and Integration provider health/config audit, plus structured IP/location
   provider lookup and external HTTP JSON GeoIP adapter, token/session
   blacklist maintenance, OAuth token inventory/revoke lifecycle and managed
-  HTTP JSON KMS v3 secret-vault envelopes.
+  HTTP JSON KMS v3 secret-vault envelopes, and Redis-backed Monitor Cache
+  namespace/key operations.
 
-Latest done: Round 94 managed KMS adapter with config-driven HTTP JSON
-data-key wrap/unwrap, host allowlisting, timeout bounds, v3 secret-vault
-envelopes, API/SDK/Admin visibility, smoke and deploy guards.
+Latest done: Round 95 Monitor Cache Redis operations with real namespace/key
+scans, safe value preview redaction, dry-run prefix clear, confirmed
+key/prefix deletion, API/SDK/Admin/OpenAPI visibility, smoke and deploy
+guards.
 
 ## Active P1/P2 Queue
 

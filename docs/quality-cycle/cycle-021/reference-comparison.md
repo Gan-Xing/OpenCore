@@ -50,8 +50,10 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   envelopes and vault key rotation are live.
 - Monitor/OpenForge/Scheduler: Monitor Jobs has a live Admin operation surface,
   registry visibility, registered handler diagnostics, cron dispatch, worker
-  claim and scheduler queue metrics; OpenForge has a live safe
-  planning/dry-run workbench with confirmation and manifest preview/detail.
+  claim and scheduler queue metrics; Monitor Cache has Redis-backed
+  namespace/key operations with safe value preview and confirmed deletion;
+  OpenForge has a live safe planning/dry-run workbench with confirmation and
+  manifest preview/detail.
 
 ## Recent Decisions
 
@@ -131,6 +133,9 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   secret values use v3 envelopes with local data-key encryption and remote
   data-key wrap/unwrap, so the KMS protocol does not receive business secret
   plaintext.
+- Round 95: Monitor Cache is a real Redis operator surface, not fixtures:
+  namespace/key listing, safe value preview redaction, dry-run prefix clear and
+  confirmed key/prefix deletion are exposed through API/SDK/Admin and smoke.
 
 ## Explicit Non-Claims
 

@@ -103,6 +103,12 @@ describe('@opencore/redis', () => {
     });
     await expect(service.delete(key)).resolves.toBe(1);
     await expect(service.getJson(key)).resolves.toBeUndefined();
+    await expect(
+      service.scan('0', { match: 'opencore:*', count: 10 }),
+    ).resolves.toEqual(['0', []]);
+    await expect(service.ttl(key)).resolves.toBe(-2);
+    await expect(service.type(key)).resolves.toBe('none');
+    await expect(service.memoryUsage(key)).resolves.toBeNull();
 
     expect(client.setCalls).toEqual([
       { key, value: '{"ok":true}', mode: 'EX', ttlSeconds: 60 },
@@ -148,5 +154,10 @@ function createRedisClientMock(): RedisClientLike & {
 
       return deleted;
     },
+    scan: async () => ['0', [...values.keys()]],
+    ttl: async (key) => (values.has(key) ? -1 : -2),
+    type: async (key) => (values.has(key) ? 'string' : 'none'),
+    memoryUsage: async (key) =>
+      values.has(key) ? Buffer.byteLength(values.get(key) ?? '') : null,
   };
 }

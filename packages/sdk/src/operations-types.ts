@@ -40,9 +40,35 @@ export type JobRegistryEntrySummary = {
 
 export type CacheKeySummary = {
   key: string;
+  name: string;
   prefix: string;
   ttlSeconds: number;
   sizeBytes: number;
+  type: string;
+};
+
+export type CacheNameSummary = {
+  name: string;
+  prefix: string;
+  keyCount: number;
+  totalSizeBytes: number;
+  expiringKeys: number;
+  persistentKeys: number;
+  sampleKey: string;
+};
+
+export type CacheNameList = {
+  items: readonly CacheNameSummary[];
+  total: number;
+  scanLimit: number;
+  scanComplete: boolean;
+};
+
+export type CacheValueSummary = CacheKeySummary & {
+  valuePreview: string;
+  encoding: 'string' | 'non-string' | 'missing';
+  sensitive: boolean;
+  truncated: boolean;
 };
 
 export type CacheClearResultSummary = {
@@ -50,6 +76,14 @@ export type CacheClearResultSummary = {
   dryRun: boolean;
   matchedKeys: number;
   clearedKeys: number;
+  policy: string;
+};
+
+export type CacheKeyDeleteResultSummary = {
+  key: string;
+  dryRun: boolean;
+  existed: boolean;
+  deleted: boolean;
   policy: string;
 };
 
@@ -103,6 +137,9 @@ export type OperationsSummary = {
   cache: {
     keyCount: number;
     totalSizeBytes: number;
+    provider: 'redis';
+    scanLimit: number;
+    scanComplete: boolean;
   };
   onlineUsers: {
     total: number;
@@ -167,6 +204,12 @@ export type SchedulerWorkerResultSummary = {
 
 export type ClearCacheRequest = {
   prefix: string;
+  dryRun: boolean;
+  confirmed?: boolean;
+};
+
+export type DeleteCacheKeyRequest = {
+  key: string;
   dryRun: boolean;
   confirmed?: boolean;
 };
@@ -339,9 +382,11 @@ export function createOperationsFixtures(): OperationsFixtures {
   const cacheKeys: readonly CacheKeySummary[] = [
     {
       key: 'opencore:admin:shell',
+      name: 'opencore:admin',
       prefix: 'opencore:admin',
       ttlSeconds: 300,
       sizeBytes: 512,
+      type: 'string',
     },
   ];
   const onlineUsers: readonly OnlineUserSessionSummary[] = [
@@ -415,6 +460,9 @@ export function createOperationsFixtures(): OperationsFixtures {
           (total, key) => total + key.sizeBytes,
           0,
         ),
+        provider: 'redis',
+        scanLimit: 2_000,
+        scanComplete: true,
       },
       onlineUsers: {
         total: onlineUsers.length,
@@ -482,7 +530,10 @@ export function findExportJobDesignFixture(
 
 export type JobDefinitionPage = PageResponse<JobDefinitionSummary>;
 export type JobRunLogPage = PageResponse<JobRunLogSummary>;
-export type CacheKeyPage = PageResponse<CacheKeySummary>;
+export type CacheKeyPage = PageResponse<CacheKeySummary> & {
+  scanLimit: number;
+  scanComplete: boolean;
+};
 export type OnlineUserSessionPage = PageResponse<OnlineUserSessionSummary>;
 export type ReportDefinitionPage = PageResponse<ReportDefinitionSummary>;
 

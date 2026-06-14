@@ -227,6 +227,31 @@ verify_admin_bundle_api_base_url() {
   if ! grep -R \
     --fixed-strings \
     --include='*.js' \
+    "Redis Monitor" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Reload Redis cache" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Safe Value Preview" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Redis live monitor; dry-run by default; confirmed clear required" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null; then
+    echo "Admin bundle does not include live Redis cache monitor controls." >&2
+    echo "Refusing to deploy a stale frontend cache page." >&2
+    exit 1
+  fi
+
+  if ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
     "Plan artifacts" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null || \
     ! grep -R \

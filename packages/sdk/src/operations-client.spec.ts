@@ -49,8 +49,14 @@ describe('createOperationsClient', () => {
       'run_openapi_drift_1',
     );
     await client.listCacheKeys('token', { prefix: 'opencore:admin' });
+    await client.listCacheNames('token');
+    await client.getCacheValue('token', 'opencore:admin:shell');
     await client.clearCache('token', {
       prefix: 'opencore:admin',
+      dryRun: true,
+    });
+    await client.deleteCacheKey('token', {
+      key: 'opencore:admin:shell',
       dryRun: true,
     });
     await client.listOnlineUsers('token', { active: true });
@@ -99,7 +105,10 @@ describe('createOperationsClient', () => {
         path: '/monitor/jobs/openapi.drift-check/runs/run_openapi_drift_1',
       },
       { path: '/monitor/cache?prefix=opencore%3Aadmin' },
+      { path: '/monitor/cache/names' },
+      { path: '/monitor/cache/value?key=opencore%3Aadmin%3Ashell' },
       { path: '/monitor/cache/clear', method: 'POST' },
+      { path: '/monitor/cache/key/delete', method: 'POST' },
       { path: '/monitor/online-users?active=true' },
       { path: '/monitor/online-users/summary' },
       {

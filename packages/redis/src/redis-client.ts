@@ -13,6 +13,13 @@ export type RedisClientLike = {
     ttlSeconds?: number,
   ) => Promise<'OK' | null>;
   del: (...keys: string[]) => Promise<number>;
+  scan: (
+    cursor: string,
+    ...args: readonly string[]
+  ) => Promise<[cursor: string, keys: string[]]>;
+  ttl: (key: string) => Promise<number>;
+  type: (key: string) => Promise<string>;
+  memoryUsage: (key: string) => Promise<number | null>;
 };
 
 export function createRedisClient(options: RedisOptionsConfig): Redis {
@@ -39,6 +46,16 @@ export function createRedisClientAdapter(
       return client.set(key, value);
     },
     del: (...keys) => client.del(...keys),
+    scan: (cursor, ...args) =>
+      (
+        client.scan as unknown as (
+          cursor: string,
+          ...args: string[]
+        ) => Promise<[cursor: string, keys: string[]]>
+      )(cursor, ...args),
+    ttl: (key) => client.ttl(key),
+    type: (key) => client.type(key),
+    memoryUsage: (key) => client.memory('USAGE', key) as Promise<number | null>,
   };
 }
 

@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+import Redis from 'ioredis';
+
 const DEFAULT_PORT = '39173';
 const JOB_CODE = 'report.refresh';
 
@@ -22,7 +24,17 @@ const passwordCandidates = [
 const timeoutMs = Number(process.env.OPENCORE_SMOKE_TIMEOUT_MS || 10000);
 const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 const smokeCron = createSmokeCron(runId);
+const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379/1';
+const redisKeyPrefix = normalizeRedisPrefix(
+  process.env.REDIS_KEY_PREFIX || 'opencore',
+);
+const cacheSmokePrefix = `${redisKeyPrefix}monitor-cache-smoke:${runId}`;
+const cacheSmokeName = `${redisKeyPrefix}monitor-cache-smoke`.replace(/:$/, '');
+const cacheSmokeKey = `${cacheSmokePrefix}:value`;
+const cacheSmokeSecretKey = `${cacheSmokePrefix}:secret-token`;
+let redisClient;
 let token;
+let failed = false;
 
 class HttpStatusError extends Error {
   constructor(message, status) {
@@ -45,13 +57,21 @@ try {
     assertOpenApiPath(openApi, '/api/monitor/jobs/dispatch-due');
     assertOpenApiPath(openApi, '/api/monitor/jobs/worker/claim');
     assertOpenApiPath(openApi, '/api/monitor/queues');
+    assertOpenApiPath(openApi, '/api/monitor/cache/names');
+    assertOpenApiPath(openApi, '/api/monitor/cache/value');
+    assertOpenApiPath(openApi, '/api/monitor/cache/key/delete');
   }
 
   const loginResponse = await login();
   token = assertString(loginResponse.accessToken, 'login accessToken');
 
+  await seedRedisSmokeCache();
+  await verifyMonitorCache();
+
   const summary = await apiRequest('/monitor/operations/summary');
   assertNumberAtLeast(summary.jobs.total, 1, 'scheduler summary job total');
+  assertEqual(summary.cache.provider, 'redis', 'cache summary provider');
+  assertNumberAtLeast(summary.cache.keyCount, 0, 'cache summary key count');
 
   const registry = await apiRequest('/monitor/jobs/registry');
   assertArray(registry, 'job registry items');
@@ -362,9 +382,19 @@ try {
               'openapi.monitor-job-dispatch-path',
               'openapi.monitor-job-worker-path',
               'openapi.monitor-queues-path',
+              'openapi.monitor-cache-names-path',
+              'openapi.monitor-cache-value-path',
+              'openapi.monitor-cache-key-delete-path',
             ]
           : []),
         'auth.login',
+        'monitor.cache.redis-list',
+        'monitor.cache.names',
+        'monitor.cache.safe-value-preview',
+        'monitor.cache.secret-redaction',
+        'monitor.cache.dry-run-clear',
+        'monitor.cache.confirmed-key-delete',
+        'monitor.cache.confirmed-prefix-clear',
         'monitor.job.registry',
         'monitor.job.audit-retention-registry',
         'monitor.job.scheduler-queues',
@@ -395,7 +425,133 @@ try {
       error: error instanceof Error ? error.message : String(error),
     }),
   );
-  process.exit(1);
+  failed = true;
+} finally {
+  await cleanupRedisSmokeCache();
+  if (failed) {
+    process.exit(1);
+  }
+}
+
+async function seedRedisSmokeCache() {
+  redisClient = new Redis(redisUrl, {
+    lazyConnect: true,
+    connectTimeout: timeoutMs,
+    commandTimeout: timeoutMs,
+    enableOfflineQueue: false,
+    maxRetriesPerRequest: 1,
+    retryStrategy: () => null,
+  });
+  await redisClient.connect();
+  await redisClient.set(
+    cacheSmokeKey,
+    JSON.stringify({
+      source: 'monitor-cache-smoke',
+      runId,
+      password: 'must-not-leak',
+    }),
+    'EX',
+    300,
+  );
+  await redisClient.set(cacheSmokeSecretKey, 'must-not-leak', 'EX', 300);
+}
+
+async function cleanupRedisSmokeCache() {
+  if (!redisClient) {
+    return;
+  }
+
+  try {
+    await redisClient.del(cacheSmokeKey, cacheSmokeSecretKey);
+  } finally {
+    redisClient.disconnect();
+  }
+}
+
+async function verifyMonitorCache() {
+  const cacheKeys = await apiRequest(
+    `/monitor/cache?prefix=${encodeURIComponent(cacheSmokePrefix)}`,
+  );
+  assertEqual(cacheKeys.scanComplete, true, 'cache key scan complete');
+  assertArray(cacheKeys.items, 'cache key list items');
+  assertIncludes(
+    cacheKeys.items.map((item) => item.key),
+    cacheSmokeKey,
+    'cache key list',
+  );
+  assertIncludes(
+    cacheKeys.items.map((item) => item.key),
+    cacheSmokeSecretKey,
+    'cache key list',
+  );
+
+  const cacheNames = await apiRequest('/monitor/cache/names');
+  assertArray(cacheNames.items, 'cache namespace list items');
+  assertIncludes(
+    cacheNames.items.map((item) => item.name),
+    cacheSmokeName,
+    'cache namespace list',
+  );
+
+  const cacheValue = await apiRequest(
+    `/monitor/cache/value?key=${encodeURIComponent(cacheSmokeKey)}`,
+  );
+  assertEqual(cacheValue.key, cacheSmokeKey, 'cache value key');
+  assertEqual(cacheValue.encoding, 'string', 'cache value encoding');
+  assertEqual(cacheValue.sensitive, true, 'cache value redacted JSON flag');
+  assertIncludes(
+    [cacheValue.valuePreview.includes('"password":"[redacted]"')],
+    true,
+    'cache value password redaction',
+  );
+  if (cacheValue.valuePreview.includes('must-not-leak')) {
+    throw new Error('Cache value preview leaked a redacted secret.');
+  }
+
+  const secretValue = await apiRequest(
+    `/monitor/cache/value?key=${encodeURIComponent(cacheSmokeSecretKey)}`,
+  );
+  assertEqual(secretValue.sensitive, true, 'cache secret value redacted flag');
+  assertEqual(
+    secretValue.valuePreview,
+    '[redacted sensitive cache value]',
+    'cache secret value preview',
+  );
+
+  const dryRun = await apiRequest('/monitor/cache/clear', {
+    method: 'POST',
+    body: {
+      prefix: cacheSmokePrefix,
+      dryRun: true,
+    },
+  });
+  assertEqual(dryRun.matchedKeys, 2, 'cache dry-run matched keys');
+  assertEqual(dryRun.clearedKeys, 0, 'cache dry-run cleared keys');
+
+  const keyDelete = await apiRequest('/monitor/cache/key/delete', {
+    method: 'POST',
+    body: {
+      key: cacheSmokeSecretKey,
+      dryRun: false,
+      confirmed: true,
+    },
+  });
+  assertEqual(keyDelete.existed, true, 'cache key delete existed');
+  assertEqual(keyDelete.deleted, true, 'cache key delete deleted');
+  await apiRequest(
+    `/monitor/cache/value?key=${encodeURIComponent(cacheSmokeSecretKey)}`,
+    { expected: [404] },
+  );
+
+  const clear = await apiRequest('/monitor/cache/clear', {
+    method: 'POST',
+    body: {
+      prefix: cacheSmokePrefix,
+      dryRun: false,
+      confirmed: true,
+    },
+  });
+  assertNumberAtLeast(clear.clearedKeys, 1, 'cache confirmed clear keys');
 }
 
 async function upsertSmokeJob() {
@@ -576,6 +732,11 @@ function assertNumberAtLeast(value, minimum, label) {
 function normalizeApiPrefix(value) {
   const trimmed = trimTrailingSlash(value || '/api');
   return trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+}
+
+function normalizeRedisPrefix(value) {
+  const trimmed = String(value || 'opencore').trim();
+  return trimmed.endsWith(':') ? trimmed : `${trimmed}:`;
 }
 
 function trimTrailingSlash(value) {

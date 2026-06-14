@@ -2,6 +2,10 @@ import { Injectable } from '@nestjs/common';
 import type { OnlineUserSummaryDto } from '@opencore/online-user';
 import type { SchedulerSummaryDto } from '@opencore/scheduler';
 import type {
+  CacheNameListDto,
+  CacheValueDto,
+  DeleteCacheKeyDto,
+  CacheKeyPageDto,
   CacheKeyQueryDto,
   ClearCacheDto,
   CreateReportDefinitionDto,
@@ -17,6 +21,7 @@ import {
 } from './operations.seed';
 import {
   applyCacheClearPolicy,
+  applyCacheKeyDeletePolicy,
   buildOperationsSummary,
   createPage,
   matchesOptional,
@@ -24,6 +29,7 @@ import {
   OperationsRepository,
   requireRecord,
   type CacheClearResult,
+  type CacheKeyDeleteResult,
   type PageResult,
 } from './operations.repository';
 
@@ -49,15 +55,69 @@ export class SeedOperationsRepository extends OperationsRepository {
     });
   }
 
-  async listCacheKeys(
-    query: CacheKeyQueryDto = {},
-  ): Promise<PageResult<CacheKeyRecord>> {
-    return createPage(
-      this.cacheKeys.filter((key) =>
-        query.prefix ? key.key.startsWith(query.prefix) : true,
+  async listCacheKeys(query: CacheKeyQueryDto = {}): Promise<CacheKeyPageDto> {
+    return {
+      ...createPage(
+        this.cacheKeys.filter((key) =>
+          query.prefix ? key.key.startsWith(query.prefix) : true,
+        ),
+        query,
       ),
-      query,
+      scanLimit: this.cacheKeys.length,
+      scanComplete: true,
+    };
+  }
+
+  async listCacheNames(): Promise<CacheNameListDto> {
+    const items = Array.from(
+      this.cacheKeys.reduce((names, key) => {
+        const current = names.get(key.name) ?? {
+          name: key.name,
+          prefix: key.prefix,
+          keyCount: 0,
+          totalSizeBytes: 0,
+          expiringKeys: 0,
+          persistentKeys: 0,
+          sampleKey: key.key,
+        };
+
+        current.keyCount += 1;
+        current.totalSizeBytes += key.sizeBytes;
+
+        if (key.ttlSeconds >= 0) {
+          current.expiringKeys += 1;
+        } else {
+          current.persistentKeys += 1;
+        }
+
+        names.set(key.name, current);
+        return names;
+      }, new Map<string, CacheNameListDto['items'][number]>()),
+      ([, value]) => value,
     );
+
+    return {
+      items,
+      total: items.length,
+      scanLimit: this.cacheKeys.length,
+      scanComplete: true,
+    };
+  }
+
+  async getCacheValue(key: string): Promise<CacheValueDto> {
+    const record = requireRecord(
+      this.cacheKeys.find((cacheKey) => cacheKey.key === key),
+      'Cache key',
+      key,
+    );
+
+    return {
+      ...record,
+      valuePreview: JSON.stringify({ key: record.key, fixture: true }),
+      encoding: 'string',
+      sensitive: false,
+      truncated: false,
+    };
   }
 
   async clearCache(body: ClearCacheDto): Promise<CacheClearResult> {
@@ -67,6 +127,19 @@ export class SeedOperationsRepository extends OperationsRepository {
       this.cacheKeys = this.cacheKeys.filter(
         (key) => !key.key.startsWith(result.prefix),
       );
+    }
+
+    return result;
+  }
+
+  async deleteCacheKey(body: DeleteCacheKeyDto): Promise<CacheKeyDeleteResult> {
+    const result = applyCacheKeyDeletePolicy(
+      this.cacheKeys.some((key) => key.key === body.key.trim()),
+      body,
+    );
+
+    if (!result.dryRun && result.existed) {
+      this.cacheKeys = this.cacheKeys.filter((key) => key.key !== result.key);
     }
 
     return result;

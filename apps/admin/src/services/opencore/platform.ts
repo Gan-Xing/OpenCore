@@ -21,6 +21,12 @@ import {
   type BatchKickOutSessionsResult,
   type BatchSetUserStatusRequest,
   type BatchUserMutationSummary,
+  type CacheClearResultSummary,
+  type CacheKeyDeleteResultSummary,
+  type CacheKeyQueryRequest,
+  type CacheKeySummary,
+  type CacheNameList,
+  type CacheValueSummary,
   type CleanAuditLogsRequest,
   type ClaimQueuedJobsRequest,
   type CreateDictItemRequest,
@@ -32,6 +38,8 @@ import {
   type CreateRoleRequest,
   type CreateSystemConfigRequest,
   type CreateUserRequest,
+  type ClearCacheRequest,
+  type DeleteCacheKeyRequest,
   type OpenForgeApplyDryRunRequest,
   type OpenForgeApplyDryRunSummary,
   type OpenForgeDiffSummary,
@@ -491,6 +499,37 @@ export async function listOpenCoreJobRuns(
     },
   );
   return [...page.items];
+}
+
+export async function listOpenCoreCacheKeys(
+  query?: CacheKeyQueryRequest,
+): Promise<CacheKeySummary[]> {
+  const page = await operationsClient.listCacheKeys(getRequiredAdminToken(), {
+    page: 1,
+    pageSize: 100,
+    ...query,
+  });
+  return [...page.items];
+}
+
+export function listOpenCoreCacheNames(): Promise<CacheNameList> {
+  return operationsClient.listCacheNames(getRequiredAdminToken());
+}
+
+export function getOpenCoreCacheValue(key: string): Promise<CacheValueSummary> {
+  return operationsClient.getCacheValue(getRequiredAdminToken(), key);
+}
+
+export function clearOpenCoreCache(
+  body: ClearCacheRequest,
+): Promise<CacheClearResultSummary> {
+  return operationsClient.clearCache(getRequiredAdminToken(), body);
+}
+
+export function deleteOpenCoreCacheKey(
+  body: DeleteCacheKeyRequest,
+): Promise<CacheKeyDeleteResultSummary> {
+  return operationsClient.deleteCacheKey(getRequiredAdminToken(), body);
 }
 
 export async function listOpenCoreOnlineUsers(

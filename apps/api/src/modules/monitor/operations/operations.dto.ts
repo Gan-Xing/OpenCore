@@ -39,6 +39,9 @@ export class CacheKeyDto {
   key!: string;
 
   @ApiProperty()
+  name!: string;
+
+  @ApiProperty()
   prefix!: string;
 
   @ApiProperty()
@@ -46,6 +49,60 @@ export class CacheKeyDto {
 
   @ApiProperty()
   sizeBytes!: number;
+
+  @ApiProperty()
+  type!: string;
+}
+
+export class CacheNameDto {
+  @ApiProperty()
+  name!: string;
+
+  @ApiProperty()
+  prefix!: string;
+
+  @ApiProperty()
+  keyCount!: number;
+
+  @ApiProperty()
+  totalSizeBytes!: number;
+
+  @ApiProperty()
+  expiringKeys!: number;
+
+  @ApiProperty()
+  persistentKeys!: number;
+
+  @ApiProperty()
+  sampleKey!: string;
+}
+
+export class CacheNameListDto {
+  @ApiProperty({ type: [CacheNameDto] })
+  items!: readonly CacheNameDto[];
+
+  @ApiProperty()
+  total!: number;
+
+  @ApiProperty()
+  scanLimit!: number;
+
+  @ApiProperty()
+  scanComplete!: boolean;
+}
+
+export class CacheValueDto extends CacheKeyDto {
+  @ApiProperty()
+  valuePreview!: string;
+
+  @ApiProperty()
+  encoding!: 'string' | 'non-string' | 'missing';
+
+  @ApiProperty()
+  sensitive!: boolean;
+
+  @ApiProperty()
+  truncated!: boolean;
 }
 
 export class CacheKeyPageDto {
@@ -63,6 +120,12 @@ export class CacheKeyPageDto {
 
   @ApiProperty()
   totalPages!: number;
+
+  @ApiProperty()
+  scanLimit!: number;
+
+  @ApiProperty()
+  scanComplete!: boolean;
 }
 
 export class CacheKeyQueryDto extends PageQueryDto {
@@ -73,6 +136,17 @@ export class CacheKeyQueryDto extends PageQueryDto {
 export class ClearCacheDto {
   @ApiProperty()
   prefix!: string;
+
+  @ApiProperty({ default: true })
+  dryRun!: boolean;
+
+  @ApiProperty({ required: false })
+  confirmed?: boolean;
+}
+
+export class DeleteCacheKeyDto {
+  @ApiProperty()
+  key!: string;
 
   @ApiProperty({ default: true })
   dryRun!: boolean;
@@ -98,12 +172,38 @@ export class CacheClearResultDto {
   policy!: string;
 }
 
+export class CacheKeyDeleteResultDto {
+  @ApiProperty()
+  key!: string;
+
+  @ApiProperty()
+  dryRun!: boolean;
+
+  @ApiProperty()
+  existed!: boolean;
+
+  @ApiProperty()
+  deleted!: boolean;
+
+  @ApiProperty()
+  policy!: string;
+}
+
 export class CacheSummaryDto {
   @ApiProperty()
   keyCount!: number;
 
   @ApiProperty()
   totalSizeBytes!: number;
+
+  @ApiProperty()
+  provider!: 'redis';
+
+  @ApiProperty()
+  scanLimit!: number;
+
+  @ApiProperty()
+  scanComplete!: boolean;
 }
 
 export class ReportDefinitionDto {

@@ -15,6 +15,11 @@ export type RedisCacheSetOptions = {
   ttlSeconds?: TtlInput;
 };
 
+export type RedisScanOptions = {
+  match?: string;
+  count?: number;
+};
+
 export class RedisService implements OnModuleInit, OnModuleDestroy {
   private readonly client: RedisClientLike;
 
@@ -65,6 +70,10 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     return JSON.parse(value) as T;
   }
 
+  get(key: string): Promise<string | null> {
+    return this.client.get(key);
+  }
+
   async setJson<T>(
     key: string,
     value: T,
@@ -87,5 +96,34 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
 
     return this.client.del(...keys);
+  }
+
+  scan(
+    cursor: string,
+    options: RedisScanOptions = {},
+  ): Promise<[cursor: string, keys: string[]]> {
+    const args: string[] = [];
+
+    if (options.match) {
+      args.push('MATCH', options.match);
+    }
+
+    if (options.count !== undefined) {
+      args.push('COUNT', String(options.count));
+    }
+
+    return this.client.scan(cursor, ...args);
+  }
+
+  ttl(key: string): Promise<number> {
+    return this.client.ttl(key);
+  }
+
+  type(key: string): Promise<string> {
+    return this.client.type(key);
+  }
+
+  memoryUsage(key: string): Promise<number | null> {
+    return this.client.memoryUsage(key);
   }
 }
