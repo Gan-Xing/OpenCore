@@ -938,6 +938,8 @@ if (
   !configPage.includes('listOpenCoreSystemConfigSecretVersions') ||
   !configPage.includes('rotateOpenCoreSystemConfigSecret') ||
   !configPage.includes('Vault Key Rotation') ||
+  !configPage.includes('Managed KMS provider') ||
+  !configPage.includes('External encryption') ||
   !configPage.includes('Rotate vault key') ||
   !configPage.includes('Active vault key') ||
   !configPage.includes('openVaultStatus') ||

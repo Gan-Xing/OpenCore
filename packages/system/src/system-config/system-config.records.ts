@@ -37,7 +37,8 @@ export type SystemConfigSecretVersionRecord = {
   version: number;
   active: boolean;
   encrypted: true;
-  envelopeVersion: 'v1' | 'v2';
+  envelopeVersion: 'v1' | 'v2' | 'v3';
+  vaultProvider?: 'env' | 'opencore.http-json';
   vaultKeyId?: string;
   activeVaultKey: boolean;
   rotatedBy?: string;
@@ -46,10 +47,16 @@ export type SystemConfigSecretVersionRecord = {
 };
 
 export type SystemConfigVaultStatusRecord = {
-  provider: 'env';
+  provider: 'env' | 'opencore.http-json';
   activeKeyId: string;
+  endpointHost?: string;
+  externalEncryptionEnabled: boolean;
   keyIds: readonly string[];
+  lastError?: string;
   legacyDecryptEnabled: boolean;
+  mode: 'local' | 'managed';
+  ready: boolean;
+  timeoutMs?: number;
   encryptedConfigCount: number;
   secretVersionCount: number;
   activeKeyConfigCount: number;

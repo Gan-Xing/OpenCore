@@ -277,8 +277,11 @@ export class SystemConfigSecretVersionDto {
   @ApiProperty()
   encrypted!: true;
 
-  @ApiProperty({ enum: ['v1', 'v2'] })
-  envelopeVersion!: 'v1' | 'v2';
+  @ApiProperty({ enum: ['v1', 'v2', 'v3'] })
+  envelopeVersion!: 'v1' | 'v2' | 'v3';
+
+  @ApiProperty({ enum: ['env', 'opencore.http-json'], required: false })
+  vaultProvider?: 'env' | 'opencore.http-json';
 
   @ApiProperty({ required: false })
   vaultKeyId?: string;
@@ -297,17 +300,35 @@ export class SystemConfigSecretVersionDto {
 }
 
 export class SystemConfigVaultStatusDto {
-  @ApiProperty({ enum: ['env'] })
-  provider!: 'env';
+  @ApiProperty({ enum: ['env', 'opencore.http-json'] })
+  provider!: 'env' | 'opencore.http-json';
 
   @ApiProperty()
   activeKeyId!: string;
 
+  @ApiProperty({ required: false })
+  endpointHost?: string;
+
+  @ApiProperty()
+  externalEncryptionEnabled!: boolean;
+
   @ApiProperty({ type: [String] })
   keyIds!: readonly string[];
 
+  @ApiProperty({ required: false })
+  lastError?: string;
+
   @ApiProperty()
   legacyDecryptEnabled!: boolean;
+
+  @ApiProperty({ enum: ['local', 'managed'] })
+  mode!: 'local' | 'managed';
+
+  @ApiProperty()
+  ready!: boolean;
+
+  @ApiProperty({ required: false })
+  timeoutMs?: number;
 
   @ApiProperty()
   encryptedConfigCount!: number;

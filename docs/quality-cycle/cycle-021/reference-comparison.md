@@ -46,7 +46,8 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
   smoke.
 - Config: runtime keys, login policy, feature flags, rollout, audience rules,
   environment overrides, secret-vault encryption, secret version history,
-  explicit rotation, env-bound keyring status and vault key rotation are live.
+  explicit rotation, env-bound keyring status, managed HTTP JSON KMS v3
+  envelopes and vault key rotation are live.
 - Monitor/OpenForge/Scheduler: Monitor Jobs has a live Admin operation surface,
   registry visibility, registered handler diagnostics, cron dispatch, worker
   claim and scheduler queue metrics; OpenForge has a live safe
@@ -126,6 +127,10 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
 - Round 93: External GeoIP is config-driven through a generic HTTP JSON
   adapter, with endpoint host allowlisting, timeout bounds, non-public-IP
   no-send behavior and builtin offline fallback diagnostics.
+- Round 94: Managed KMS is config-driven through a generic HTTP JSON adapter;
+  secret values use v3 envelopes with local data-key encryption and remote
+  data-key wrap/unwrap, so the KMS protocol does not receive business secret
+  plaintext.
 
 ## Explicit Non-Claims
 
@@ -136,6 +141,5 @@ and AI/RAG/Agent workflow.
 
 ## Next Focus
 
-Managed cloud KMS adapters are optional deployment integration beyond the
-current foundation waterline. OpenForge direct schema/migration/business writes
-still require explicit user admission.
+OpenForge direct schema/migration/business writes still require explicit user
+admission.

@@ -33,6 +33,7 @@ import {
   createSystemConfigVaultStatus,
   createSystemConfigPageResult,
   isSystemConfigSecretEncrypted,
+  normalizeExistingConfigValueAsync,
   normalizeExistingConfigValue,
   normalizeConfigCategory,
   normalizeConfigName,
@@ -42,6 +43,7 @@ import {
   normalizeSecretRotationActor,
   normalizeSecretRotationValue,
   normalizeSystemConfigPageQuery,
+  normalizeStoredConfigValueAsync,
   normalizeStoredConfigValue,
   redactSystemConfig,
   resolveConfigVisibility,
@@ -136,7 +138,7 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
 
     return {
       key,
-      value: normalizeExistingConfigValue({
+      value: await normalizeExistingConfigValueAsync({
         key,
         value: row.value,
         valueType: record.valueType,
@@ -171,7 +173,7 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
       visibility === 'secret'
         ? normalizeSecretRotationValue(body.value)
         : body.value;
-    const storedValue = normalizeStoredConfigValue({
+    const storedValue = await normalizeStoredConfigValueAsync({
       key: body.key,
       value,
       valueType: body.valueType,
@@ -228,7 +230,7 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
     });
     const nextValue =
       body.value === undefined
-        ? normalizeExistingConfigValue({
+        ? await normalizeExistingConfigValueAsync({
             key,
             value: existing.value,
             valueType: nextValueType,
@@ -252,7 +254,7 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
       valueType: nextValueType,
       visibility,
     });
-    const storedValue = normalizeStoredConfigValue({
+    const storedValue = await normalizeStoredConfigValueAsync({
       key,
       value: nextValue,
       valueType: nextValueType,
@@ -478,7 +480,7 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
     const config = toSystemConfigRecord(await this.findConfigByKey(key));
     assertSecretVersionedConfig(config);
 
-    const storedValue = normalizeStoredConfigValue({
+    const storedValue = await normalizeStoredConfigValueAsync({
       key,
       value: normalizeSecretRotationValue(body.value),
       valueType: 'string',
@@ -540,13 +542,13 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
       const secretVersionValues: string[] = [];
 
       for (const config of secretConfigs) {
-        const value = normalizeExistingConfigValue({
+        const value = await normalizeExistingConfigValueAsync({
           key: config.key,
           value: config.value,
           valueType: 'string',
           visibility: 'secret',
         });
-        const rewrapped = normalizeStoredConfigValue({
+        const rewrapped = await normalizeStoredConfigValueAsync({
           key: config.key,
           value,
           valueType: 'string',
@@ -560,13 +562,13 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
       }
 
       for (const version of secretVersions) {
-        const value = normalizeExistingConfigValue({
+        const value = await normalizeExistingConfigValueAsync({
           key: version.key,
           value: version.value,
           valueType: 'string',
           visibility: 'secret',
         });
-        const rewrapped = normalizeStoredConfigValue({
+        const rewrapped = await normalizeStoredConfigValueAsync({
           key: version.key,
           value,
           valueType: 'string',
@@ -691,7 +693,13 @@ function toSystemConfigSecretVersionRecord(
     version: version.version,
     active: version.active,
     encrypted: true,
-    envelopeVersion: envelope.envelopeVersion === 'v2' ? 'v2' : 'v1',
+    envelopeVersion:
+      envelope.envelopeVersion === 'v3'
+        ? 'v3'
+        : envelope.envelopeVersion === 'v2'
+          ? 'v2'
+          : 'v1',
+    vaultProvider: envelope.provider,
     vaultKeyId: envelope.keyId,
     activeVaultKey: envelope.activeKey,
     rotatedBy: version.rotatedBy ?? undefined,

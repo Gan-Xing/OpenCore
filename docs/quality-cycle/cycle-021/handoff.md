@@ -47,7 +47,7 @@ packages and OpenForge direct Prisma/migration/business-code writing.
 
 ## Current State
 
-Cycle-021 has completed 93 deployable stages.
+Cycle-021 has completed 94 deployable stages.
 
 - System/RBAC: notice, dept, post, menu, role, permission, user, dict, config
   and file loops are live.
@@ -60,7 +60,8 @@ Cycle-021 has completed 93 deployable stages.
   cleanup and scheduled retention job.
 - Config: runtime keys, login policy, feature flags, rollout, audience rules,
   environment overrides, secret vault, secret version history, explicit secret
-  rotation, env-bound KMS keyring status and vault key rotation.
+  rotation, env-bound keyring, managed HTTP JSON KMS v3 envelopes and vault
+  key rotation.
 - Notice: management, inbox/read state, read-user analytics, templates,
   delivery records, local provider, Integration outbox bridge, state sync,
   queued processing, signed callback intake, bounded retry scheduling and a
@@ -81,17 +82,15 @@ Cycle-021 has completed 93 deployable stages.
   safe workbench for status, doctor, plan, diff, check, manifest list and
   apply/rollback dry-run, dry-run confirmation and manifest preview/detail.
 
-Latest runtime stage: Round 93 external GeoIP adapter. It adds a config-driven
-HTTP JSON IP-location provider with host allowlisting, timeout bounds,
-non-public-IP no-send behavior, offline fallback diagnostics, API/SDK/Admin
-visibility and smoke/deploy guards while preserving the built-in offline
-provider as the default.
+Latest runtime stage: Round 94 managed KMS adapter. It adds an
+`opencore.http-json` secret-vault provider with host allowlisting, bounded
+timeouts, v3 managed envelopes, remote data-key wrap/unwrap, API/SDK/Admin
+visibility and smoke/deploy guards while preserving the env keyring as the
+default provider.
 
 ## Next Queue
 
-1. Optional managed-KMS provider adapter if deployment needs a cloud KMS API
-   instead of the current env-bound keyring.
-2. OpenForge direct Prisma/migration/business-code writes remain out of scope
+1. OpenForge direct Prisma/migration/business-code writes remain out of scope
    until explicitly admitted.
 
 ## Docs Rule

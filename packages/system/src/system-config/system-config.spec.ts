@@ -12,16 +12,20 @@ import {
 import { PrismaService } from '@opencore/database';
 import { PrismaSystemConfigRepository } from './system-config.prisma-repository';
 import {
+  normalizeExistingConfigValueAsync,
   normalizeExistingConfigValue,
+  normalizeStoredConfigValueAsync,
   normalizeStoredConfigValue,
 } from './system-config.repository';
 import { seedSystemConfigs } from './system-config.records';
 import { SeedSystemConfigRepository } from './system-config.seed-repository';
 import { SystemConfigService } from './system-config.service';
 import {
+  getSystemConfigVaultBindingStatus,
   inspectSystemConfigSecretEnvelope,
   SYSTEM_CONFIG_SECRET_VALUE_PREFIX,
   SYSTEM_CONFIG_SECRET_VALUE_V2_PREFIX,
+  SYSTEM_CONFIG_SECRET_VALUE_V3_PREFIX,
 } from './system-config.vault';
 
 describe('@opencore/system system-config', () => {
@@ -728,6 +732,145 @@ describe('@opencore/system system-config', () => {
       } else {
         process.env.OPENCORE_CONFIG_KMS_KEYRING = previousKeyring;
       }
+    }
+  });
+
+  it('wraps new secret values through the managed HTTP JSON KMS provider', async () => {
+    const previousProvider = process.env.OPENCORE_CONFIG_KMS_PROVIDER;
+    const previousActiveKeyId = process.env.OPENCORE_CONFIG_KMS_ACTIVE_KEY_ID;
+    const previousWrapUrl = process.env.OPENCORE_CONFIG_KMS_WRAP_URL;
+    const previousUnwrapUrl = process.env.OPENCORE_CONFIG_KMS_UNWRAP_URL;
+    const previousAllowedHosts = process.env.OPENCORE_CONFIG_KMS_ALLOWED_HOSTS;
+    const previousTimeout = process.env.OPENCORE_CONFIG_KMS_TIMEOUT_MS;
+    const previousFetch = globalThis.fetch;
+    const wrappedKeys = new Map<string, string>();
+    const fetchMock = jest.fn(async (url: string, init?: { body?: string }) => {
+      const payload = JSON.parse(init?.body ?? '{}') as {
+        encryptedKey?: string;
+        plaintextKey?: string;
+      };
+
+      if (url.endsWith('/wrap')) {
+        const encryptedKey = `wrapped-${wrappedKeys.size + 1}`;
+        wrappedKeys.set(encryptedKey, payload.plaintextKey ?? '');
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ encryptedKey }),
+        };
+      }
+
+      if (url.endsWith('/unwrap')) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            plaintextKey: wrappedKeys.get(payload.encryptedKey ?? ''),
+          }),
+        };
+      }
+
+      return { ok: false, status: 404, json: async () => ({}) };
+    });
+
+    try {
+      process.env.OPENCORE_CONFIG_KMS_PROVIDER = 'opencore.http-json';
+      process.env.OPENCORE_CONFIG_KMS_ACTIVE_KEY_ID = 'managed';
+      process.env.OPENCORE_CONFIG_KMS_WRAP_URL =
+        'https://kms.example.test/wrap';
+      process.env.OPENCORE_CONFIG_KMS_UNWRAP_URL =
+        'https://kms.example.test/unwrap';
+      process.env.OPENCORE_CONFIG_KMS_ALLOWED_HOSTS = 'kms.example.test';
+      process.env.OPENCORE_CONFIG_KMS_TIMEOUT_MS = '500';
+      globalThis.fetch = fetchMock as typeof fetch;
+
+      expect(getSystemConfigVaultBindingStatus()).toMatchObject({
+        activeKeyId: 'managed',
+        endpointHost: 'kms.example.test',
+        externalEncryptionEnabled: true,
+        mode: 'managed',
+        provider: 'opencore.http-json',
+        ready: true,
+        timeoutMs: 500,
+      });
+
+      const stored = await normalizeStoredConfigValueAsync({
+        key: 'auth.managed.secret',
+        value: 'managed-secret-value',
+        valueType: 'string',
+        visibility: 'secret',
+      });
+
+      expect(stored).toEqual(
+        expect.stringContaining(SYSTEM_CONFIG_SECRET_VALUE_V3_PREFIX),
+      );
+      expect(stored).not.toContain('managed-secret-value');
+      expect(inspectSystemConfigSecretEnvelope(stored)).toMatchObject({
+        activeKey: true,
+        encrypted: true,
+        envelopeVersion: 'v3',
+        keyId: 'managed',
+        provider: 'opencore.http-json',
+      });
+      expect(JSON.stringify(fetchMock.mock.calls)).not.toContain(
+        'managed-secret-value',
+      );
+      await expect(
+        normalizeExistingConfigValueAsync({
+          key: 'auth.managed.secret',
+          value: stored,
+          valueType: 'string',
+          visibility: 'secret',
+        }),
+      ).resolves.toBe('managed-secret-value');
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://kms.example.test/wrap',
+        expect.objectContaining({ method: 'POST' }),
+      );
+    } finally {
+      restoreEnv('OPENCORE_CONFIG_KMS_PROVIDER', previousProvider);
+      restoreEnv('OPENCORE_CONFIG_KMS_ACTIVE_KEY_ID', previousActiveKeyId);
+      restoreEnv('OPENCORE_CONFIG_KMS_WRAP_URL', previousWrapUrl);
+      restoreEnv('OPENCORE_CONFIG_KMS_UNWRAP_URL', previousUnwrapUrl);
+      restoreEnv('OPENCORE_CONFIG_KMS_ALLOWED_HOSTS', previousAllowedHosts);
+      restoreEnv('OPENCORE_CONFIG_KMS_TIMEOUT_MS', previousTimeout);
+      globalThis.fetch = previousFetch;
+    }
+  });
+
+  it('blocks managed KMS writes when the endpoint host is not allowlisted', async () => {
+    const previousProvider = process.env.OPENCORE_CONFIG_KMS_PROVIDER;
+    const previousWrapUrl = process.env.OPENCORE_CONFIG_KMS_WRAP_URL;
+    const previousUnwrapUrl = process.env.OPENCORE_CONFIG_KMS_UNWRAP_URL;
+    const previousAllowedHosts = process.env.OPENCORE_CONFIG_KMS_ALLOWED_HOSTS;
+
+    try {
+      process.env.OPENCORE_CONFIG_KMS_PROVIDER = 'opencore.http-json';
+      process.env.OPENCORE_CONFIG_KMS_WRAP_URL =
+        'https://kms.example.test/wrap';
+      process.env.OPENCORE_CONFIG_KMS_UNWRAP_URL =
+        'https://kms.example.test/unwrap';
+      process.env.OPENCORE_CONFIG_KMS_ALLOWED_HOSTS = 'other.example.test';
+
+      expect(getSystemConfigVaultBindingStatus()).toMatchObject({
+        externalEncryptionEnabled: false,
+        lastError: 'Managed KMS endpoint host is not allowlisted.',
+        provider: 'opencore.http-json',
+        ready: false,
+      });
+      await expect(
+        normalizeStoredConfigValueAsync({
+          key: 'auth.managed.secret',
+          value: 'managed-secret-value',
+          valueType: 'string',
+          visibility: 'secret',
+        }),
+      ).rejects.toThrow(BadRequestException);
+    } finally {
+      restoreEnv('OPENCORE_CONFIG_KMS_PROVIDER', previousProvider);
+      restoreEnv('OPENCORE_CONFIG_KMS_WRAP_URL', previousWrapUrl);
+      restoreEnv('OPENCORE_CONFIG_KMS_UNWRAP_URL', previousUnwrapUrl);
+      restoreEnv('OPENCORE_CONFIG_KMS_ALLOWED_HOSTS', previousAllowedHosts);
     }
   });
 
@@ -1444,4 +1587,13 @@ function createLegacySystemConfigSecretValue(input: {
     JSON.stringify(envelope),
     'utf8',
   ).toString('base64url')}`;
+}
+
+function restoreEnv(key: string, value: string | undefined): void {
+  if (value === undefined) {
+    delete process.env[key];
+    return;
+  }
+
+  process.env[key] = value;
 }

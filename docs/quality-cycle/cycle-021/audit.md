@@ -63,6 +63,9 @@ deploy guards.
 Round 93 added a guarded external HTTP JSON GeoIP adapter with host
 allowlisting, bounded timeout, non-public-IP no-send behavior, API/SDK/Admin
 visibility and offline fallback diagnostics.
+Round 94 added a managed HTTP JSON KMS adapter: v3 secret-vault envelopes
+encrypt values with random data keys, remote KMS receives only data-key
+wrap/unwrap requests, and provider status is visible through API/SDK/Admin.
 Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
 `lint` must run sequentially.
 
@@ -87,7 +90,9 @@ Round 68 also exposed the Admin generated-types race, so Admin `typecheck` and
   revoked-token rejection and Admin blacklist-maintenance bundle markers.
 - Config smoke covers runtime shape, environment override governance, legacy
   vault envelope deserialization, secret version history, secret rotation,
-  vault key rotation and no plaintext secret storage.
+  vault key rotation, managed KMS provider status and no plaintext secret
+  storage; unit tests cover v3 managed KMS data-key wrap/unwrap and host
+  allowlist rejection.
 - Monitor Jobs smoke covers operations summary, registry, job policy guards,
   enable/disable, disabled-trigger rejection, manual trigger, handler
   execution, failed retry, run-log detail, cron dispatch, worker claim and
@@ -110,8 +115,6 @@ real incident decisions. Do not create per-round reports by default.
 
 - Notice realtime is single-node process-local; multi-instance fanout remains a
   deployment-topology upgrade if needed.
-- Managed cloud KMS provider adapters are optional deployment integration; the
-  current foundation waterline has env-bound keyring status and rotation.
 - Automatic backfill of historical login/operation logs with external GeoIP
   precision remains outside the current request-time lookup surface.
 - OpenForge direct generated schema/migration/business writes remain outside

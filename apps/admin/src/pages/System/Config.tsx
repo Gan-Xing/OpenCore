@@ -1531,6 +1531,9 @@ export default function ConfigPage() {
                 <Tag color={version.encrypted ? 'purple' : 'orange'}>
                   {version.envelopeVersion}
                 </Tag>
+                {version.vaultProvider ? (
+                  <Tag>{version.vaultProvider}</Tag>
+                ) : null}
                 {version.vaultKeyId ? (
                   <Tag color={version.activeVaultKey ? 'green' : 'orange'}>
                     {version.vaultKeyId}
@@ -1592,7 +1595,31 @@ export default function ConfigPage() {
         />
         <Space direction="vertical" style={{ width: '100%' }}>
           <Space wrap>
-            <Tag color="blue">{vaultStatus?.provider ?? 'env'}</Tag>
+            <Tag color="blue">Managed KMS provider</Tag>
+            <Tag
+              color={
+                vaultStatus?.provider === 'opencore.http-json'
+                  ? 'purple'
+                  : 'blue'
+              }
+            >
+              {vaultStatus?.provider ?? 'env'}
+            </Tag>
+            <Tag>{vaultStatus?.mode ?? 'local'}</Tag>
+            <Tag color={vaultStatus?.ready === false ? 'red' : 'green'}>
+              KMS {vaultStatus?.ready === false ? 'not ready' : 'ready'}
+            </Tag>
+            <Tag
+              color={
+                vaultStatus?.externalEncryptionEnabled ? 'purple' : 'default'
+              }
+            >
+              External encryption{' '}
+              {vaultStatus?.externalEncryptionEnabled ? 'on' : 'off'}
+            </Tag>
+            {vaultStatus?.endpointHost ? (
+              <Tag>KMS endpoint {vaultStatus.endpointHost}</Tag>
+            ) : null}
             <Tag>
               {vaultStatus?.legacyDecryptEnabled ? 'v1 decrypt' : 'v2 only'}
             </Tag>
@@ -1618,6 +1645,14 @@ export default function ConfigPage() {
               stale {vaultStatus?.staleKeyEnvelopeCount ?? 0}
             </Tag>
           </Space>
+          {vaultStatus?.lastError ? (
+            <Alert
+              showIcon
+              type="warning"
+              message="Managed KMS provider not ready"
+              description={vaultStatus.lastError}
+            />
+          ) : null}
         </Space>
         <Form<VaultRotationFormValues>
           form={vaultRotationForm}

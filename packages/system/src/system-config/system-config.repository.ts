@@ -27,7 +27,9 @@ import type {
   SystemConfigVisibility,
 } from './system-config.records';
 import {
+  decryptSystemConfigSecretValueAsync,
   decryptSystemConfigSecretValue,
+  encryptSystemConfigSecretValueAsync,
   encryptSystemConfigSecretValue,
   getSystemConfigVaultBindingStatus,
   inspectSystemConfigSecretEnvelope,
@@ -482,6 +484,21 @@ export function normalizeStoredConfigValue(input: {
   return encryptSystemConfigSecretValue(input.key, normalized);
 }
 
+export async function normalizeStoredConfigValueAsync(input: {
+  key: string;
+  value: unknown;
+  valueType: SystemConfigValueType;
+  visibility: SystemConfigVisibility;
+}): Promise<string> {
+  const normalized = normalizeConfigValue(input.value, input.valueType);
+
+  if (input.visibility !== 'secret') {
+    return normalized;
+  }
+
+  return encryptSystemConfigSecretValueAsync(input.key, normalized);
+}
+
 export function normalizeExistingConfigValue(input: {
   key: string;
   value: string;
@@ -491,6 +508,20 @@ export function normalizeExistingConfigValue(input: {
   const value =
     input.visibility === 'secret'
       ? decryptSystemConfigSecretValue(input.key, input.value)
+      : input.value;
+
+  return normalizeConfigValue(value, input.valueType);
+}
+
+export async function normalizeExistingConfigValueAsync(input: {
+  key: string;
+  value: string;
+  valueType: SystemConfigValueType;
+  visibility: SystemConfigVisibility;
+}): Promise<string> {
+  const value =
+    input.visibility === 'secret'
+      ? await decryptSystemConfigSecretValueAsync(input.key, input.value)
       : input.value;
 
   return normalizeConfigValue(value, input.valueType);

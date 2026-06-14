@@ -26,3 +26,4 @@ This ledger records state transitions only. Git log keeps commit hashes.
 | 91    | Online Users | Token sessions gained allowlist enforcement and expired cleanup.              | Online-user smoke and Admin bundle markers cover maintenance.   |
 | 92    | OAuth Tokens | Integration OAuth tokens gained inventory, detail and revoke lifecycle.       | OAuth token smoke and Admin bundle markers cover token revoke.  |
 | 93    | IP Location  | GeoIP gained a guarded external HTTP JSON adapter with offline fallback.      | Common tests, login-log smoke and Admin bundle markers.         |
+| 94    | Config       | Secret vault gained managed HTTP JSON KMS v3 envelopes.                       | System tests, config smoke and Admin bundle markers.            |

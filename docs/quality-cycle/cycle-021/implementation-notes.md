@@ -19,7 +19,7 @@ active debt and decisions that change future execution.
 
 ## Runtime State
 
-Cycle-021 has completed 93 deployable stages across
+Cycle-021 has completed 94 deployable stages across
 System/Security/Monitor/Integration/Tools foundations. Round 91 added
 token/session blacklist maintenance with registered-token allowlist
 enforcement, expired-session cleanup, API/SDK/Admin/OpenAPI visibility, smoke
@@ -28,6 +28,8 @@ detail and revoke lifecycle with Prisma model/seed, SDK/Admin/OpenAPI
 visibility, dedicated smoke and Admin deploy markers. Round 93 added a
 guarded external HTTP JSON GeoIP adapter with host allowlisting, bounded
 timeouts, non-public-IP no-send behavior and offline fallback diagnostics.
+Round 94 added a managed HTTP JSON KMS adapter with v3 secret-vault envelopes
+and remote data-key wrap/unwrap while preserving env as the default provider.
 
 ## Guard Register
 
@@ -58,8 +60,12 @@ timeouts, non-public-IP no-send behavior and offline fallback diagnostics.
   revoked-token rejection; deploy checks token blacklist maintenance markers.
 - Config/secret: smoke covers feature flags, audience rules, environment
   overrides, legacy vault envelope deserialization, secret version history,
-  explicit secret rotation, vault key rotation and no plaintext secret-vault
-  leakage.
+  explicit secret rotation, vault key rotation, managed KMS provider status,
+  v3 managed envelopes and no plaintext secret-vault leakage.
+  Enable managed KMS with `OPENCORE_CONFIG_KMS_PROVIDER=opencore.http-json`,
+  `OPENCORE_CONFIG_KMS_WRAP_URL`, `OPENCORE_CONFIG_KMS_UNWRAP_URL` and
+  `OPENCORE_CONFIG_KMS_ALLOWED_HOSTS`; optional auth uses
+  `OPENCORE_CONFIG_KMS_AUTH_HEADER_NAME/VALUE`.
 - Monitor jobs: smoke covers operations summary, whitelisted job upsert,
   registry, unsafe policy guards, enable/disable, disabled-trigger rejection,
   run-now, handler execution, failed retry, run-log detail, cron dispatch,
@@ -89,8 +95,6 @@ timeouts, non-public-IP no-send behavior and offline fallback diagnostics.
 - Notice: optional multi-instance realtime fanout if deployment topology moves
   beyond the current single-node process, plus any admitted
   tenant/member/mobile channels.
-- Config: managed cloud KMS provider adapters are optional deployment
-  integration beyond the current env-bound keyring.
 - Login/operation log: automatic historical log backfill with external GeoIP
   precision is not part of the current request-time lookup surface.
 - OpenForge: direct schema/migration/business writes still require user

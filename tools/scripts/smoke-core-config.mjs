@@ -264,6 +264,13 @@ try {
   });
   const initialVaultStatus = await apiRequest('/core/config/vault/status');
   assertEqual(initialVaultStatus.provider, 'env', 'vault provider');
+  assertEqual(initialVaultStatus.mode, 'local', 'vault provider mode');
+  assertEqual(initialVaultStatus.ready, true, 'vault provider readiness');
+  assertEqual(
+    initialVaultStatus.externalEncryptionEnabled,
+    false,
+    'vault external encryption flag',
+  );
   assertString(initialVaultStatus.activeKeyId, 'vault active key id');
   assertArray(initialVaultStatus.keyIds, 'vault key ids');
   assertIncludes(
@@ -1412,6 +1419,13 @@ try {
     },
   });
   assertEqual(vaultRotation.provider, 'env', 'vault key rotation provider');
+  assertEqual(vaultRotation.mode, 'local', 'vault key rotation provider mode');
+  assertEqual(vaultRotation.ready, true, 'vault key rotation provider ready');
+  assertEqual(
+    vaultRotation.externalEncryptionEnabled,
+    false,
+    'vault key rotation external encryption flag',
+  );
   assertString(vaultRotation.activeKeyId, 'vault key rotation active key id');
   assertNumberAtLeast(
     vaultRotation.rewrappedConfigCount,

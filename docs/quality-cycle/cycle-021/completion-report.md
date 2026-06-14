@@ -4,22 +4,19 @@ Date: 2026-06-14
 
 ## Latest Completed Round
 
-Round 93: external GeoIP adapter.
+Round 94: managed KMS adapter.
 
 ## Closed
 
-- Added a config-driven HTTP JSON GeoIP provider with host allowlisting,
-  bounded timeout and optional auth header support.
-- Preserved built-in offline lookup as the default and as fallback for
-  provider failures.
-- Added API/SDK/Admin visibility for external provider mode, endpoint host,
-  precise country/region/city fields and fallback diagnostics.
-- Added common unit coverage, login-log smoke status guards and Admin deploy
+- Added an `opencore.http-json` managed KMS provider for config secret vault.
+- Added v3 envelopes that encrypt secret values locally with a random data key
+  and send only that data key through remote wrap/unwrap.
+- Added host allowlisting, timeout bounds, provider readiness diagnostics and
+  API/SDK/Admin/OpenAPI visibility.
+- Added unit coverage, config smoke status guards and Admin deploy
   stale-bundle markers.
 
 ## Still Open
 
-- Managed cloud KMS adapters remain optional deployment integration beyond the
-  current env-bound keyring.
 - OpenForge direct schema/migration/business code writes remain outside the
   admitted surface.

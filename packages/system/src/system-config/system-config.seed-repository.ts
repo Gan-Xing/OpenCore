@@ -608,7 +608,13 @@ function createSecretVersionRecordMetadata(input: {
     version: input.version,
     active: input.active,
     encrypted: true,
-    envelopeVersion: envelope.envelopeVersion === 'v2' ? 'v2' : 'v1',
+    envelopeVersion:
+      envelope.envelopeVersion === 'v3'
+        ? 'v3'
+        : envelope.envelopeVersion === 'v2'
+          ? 'v2'
+          : 'v1',
+    vaultProvider: envelope.provider,
     vaultKeyId: envelope.keyId,
     activeVaultKey: envelope.activeKey,
     rotatedBy: input.rotatedBy,
@@ -627,6 +633,7 @@ function toSecretVersionRecord(
     active: version.active,
     encrypted: true,
     envelopeVersion: version.envelopeVersion,
+    vaultProvider: version.vaultProvider,
     vaultKeyId: version.vaultKeyId,
     activeVaultKey: version.activeVaultKey,
     rotatedBy: version.rotatedBy,

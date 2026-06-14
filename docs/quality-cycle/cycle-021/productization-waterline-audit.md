@@ -24,7 +24,7 @@ failures have guards; and remaining omissions are explicit product boundaries.
 | `core.file`           | Meets         | Authenticated upload/download and content smoke.                                                         |
 | `monitor.online-user` | Meets         | Batch kick-out, revocation, registered-token allowlist, cleanup and UA/IP fields.                        |
 | `core.login-log`      | Meets current | Schema, lockout, cleanup, actor/reason, location and IP/location lookup with external GeoIP adapter.     |
-| `core.config`         | Meets current | Runtime keys, feature flags, rollout, audience, environment overrides, vault, versions and key rotation. |
+| `core.config`         | Meets current | Runtime keys, feature flags, rollout, audience, overrides, vault versions, env and managed KMS.          |
 | `core.notice`         | Enhance       | SMS HTTP, SMTP, mail subject, diagnostics, secrets, attachments, TLS policy and realtime events.         |
 | `integration`         | Meets current | Provider health/config audit, readiness totals, outbox failure history and OAuth token inventory/revoke. |
 | `scheduler/monitor`   | Meets current | Job Admin operations, registry, handler diagnostics, cron dispatch, worker claim and queue metrics.      |
@@ -90,11 +90,13 @@ failures have guards; and remaining omissions are explicit product boundaries.
 - Round 93 added a guarded external HTTP JSON GeoIP adapter with host
   allowlisting, bounded timeout, non-public-IP no-send behavior, fallback
   diagnostics, API/SDK/Admin visibility and deploy guards.
+- Round 94 added a guarded HTTP JSON managed KMS adapter with v3 secret-vault
+  envelopes, remote data-key wrap/unwrap, API/SDK/Admin visibility and deploy
+  guards.
 
 ## Active Debt
 
-1. Optional managed-KMS provider adapter if deployment requires cloud KMS APIs.
-2. OpenForge direct schema/migration/business-code writes still require user
+1. OpenForge direct schema/migration/business-code writes still require user
    admission.
 
 ## Guard Matrix
@@ -131,4 +133,5 @@ failures have guards; and remaining omissions are explicit product boundaries.
   audit and OAuth token markers.
 - Config: runtime shape, environment override governance, secret-vault
   plaintext protection, legacy envelope deserialization, secret version
-  history, secret rotation and vault key rotation guards.
+  history, secret rotation, vault key rotation, managed KMS host allowlist and
+  v3 envelope guards.

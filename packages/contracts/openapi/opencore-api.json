@@ -8677,10 +8677,19 @@
       "SystemConfigVaultStatusDto": {
         "type": "object",
         "properties": {
-          "provider": { "type": "string", "enum": ["env"] },
+          "provider": {
+            "type": "string",
+            "enum": ["env", "opencore.http-json"]
+          },
           "activeKeyId": { "type": "string" },
+          "endpointHost": { "type": "string" },
+          "externalEncryptionEnabled": { "type": "boolean" },
           "keyIds": { "type": "array", "items": { "type": "string" } },
+          "lastError": { "type": "string" },
           "legacyDecryptEnabled": { "type": "boolean" },
+          "mode": { "type": "string", "enum": ["local", "managed"] },
+          "ready": { "type": "boolean" },
+          "timeoutMs": { "type": "number" },
           "encryptedConfigCount": { "type": "number" },
           "secretVersionCount": { "type": "number" },
           "activeKeyConfigCount": { "type": "number" },
@@ -8690,8 +8699,11 @@
         "required": [
           "provider",
           "activeKeyId",
+          "externalEncryptionEnabled",
           "keyIds",
           "legacyDecryptEnabled",
+          "mode",
+          "ready",
           "encryptedConfigCount",
           "secretVersionCount",
           "activeKeyConfigCount",
@@ -8709,10 +8721,19 @@
       "SystemConfigVaultKeyRotationDto": {
         "type": "object",
         "properties": {
-          "provider": { "type": "string", "enum": ["env"] },
+          "provider": {
+            "type": "string",
+            "enum": ["env", "opencore.http-json"]
+          },
           "activeKeyId": { "type": "string" },
+          "endpointHost": { "type": "string" },
+          "externalEncryptionEnabled": { "type": "boolean" },
           "keyIds": { "type": "array", "items": { "type": "string" } },
+          "lastError": { "type": "string" },
           "legacyDecryptEnabled": { "type": "boolean" },
+          "mode": { "type": "string", "enum": ["local", "managed"] },
+          "ready": { "type": "boolean" },
+          "timeoutMs": { "type": "number" },
           "encryptedConfigCount": { "type": "number" },
           "secretVersionCount": { "type": "number" },
           "activeKeyConfigCount": { "type": "number" },
@@ -8727,8 +8748,11 @@
         "required": [
           "provider",
           "activeKeyId",
+          "externalEncryptionEnabled",
           "keyIds",
           "legacyDecryptEnabled",
+          "mode",
+          "ready",
           "encryptedConfigCount",
           "secretVersionCount",
           "activeKeyConfigCount",
@@ -8747,7 +8771,11 @@
           "version": { "type": "number" },
           "active": { "type": "boolean" },
           "encrypted": { "type": "boolean" },
-          "envelopeVersion": { "type": "string", "enum": ["v1", "v2"] },
+          "envelopeVersion": { "type": "string", "enum": ["v1", "v2", "v3"] },
+          "vaultProvider": {
+            "type": "string",
+            "enum": ["env", "opencore.http-json"]
+          },
           "vaultKeyId": { "type": "string" },
           "activeVaultKey": { "type": "boolean" },
           "rotatedBy": { "type": "string" },
