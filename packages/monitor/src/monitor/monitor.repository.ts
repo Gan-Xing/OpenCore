@@ -4,6 +4,7 @@ import {
   Injectable,
   ServiceUnavailableException,
 } from '@nestjs/common';
+import { createApiErrorBody } from '@opencore/common';
 import { statfsSync } from 'node:fs';
 import { arch, cpus, freemem, loadavg, platform, totalmem } from 'node:os';
 import {
@@ -11,6 +12,16 @@ import {
   type MonitorRuntimeDiagnostics,
 } from './monitor.runtime-diagnostics.service';
 import { monitorQueueNames, type MonitorQueueName } from './monitor.records';
+
+function monitorBadRequest(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): BadRequestException {
+  return new BadRequestException(
+    createApiErrorBody({ code, message, details }),
+  );
+}
 
 export type DependencyStatus = {
   name: string;
@@ -320,9 +331,11 @@ function assertMonitorQueueName(value: string): MonitorQueueName {
     return value as MonitorQueueName;
   }
 
-  throw new BadRequestException(
+  throw monitorBadRequest(
+    'MONITOR_QUEUE_UNSUPPORTED',
     `Unsupported monitor queue "${value}". Allowed queues: ${monitorQueueNames.join(
       ', ',
     )}.`,
+    { allowedQueues: monitorQueueNames, queueName: value },
   );
 }

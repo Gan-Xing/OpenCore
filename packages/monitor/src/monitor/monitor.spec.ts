@@ -140,9 +140,10 @@ describe('@opencore/monitor', () => {
         controlMode: 'managed',
       },
     });
-    await expect(service.pauseQueue('unknown')).rejects.toMatchObject({
-      status: 400,
-    });
+    await expectHttpExceptionCode(
+      service.pauseQueue('unknown'),
+      'MONITOR_QUEUE_UNSUPPORTED',
+    );
   });
 
   it('returns safe version metadata', () => {
@@ -296,4 +297,31 @@ function restoreEnv(key: string, value: string | undefined): void {
   }
 
   process.env[key] = value;
+}
+
+async function expectHttpExceptionCode(
+  promise: Promise<unknown>,
+  code: string,
+): Promise<void> {
+  try {
+    await promise;
+  } catch (error) {
+    expect(getHttpExceptionResponse(error)).toMatchObject({ code });
+    return;
+  }
+
+  throw new Error(`Expected HTTP exception code ${code}`);
+}
+
+function getHttpExceptionResponse(error: unknown): unknown {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'getResponse' in error &&
+    typeof error.getResponse === 'function'
+  ) {
+    return error.getResponse();
+  }
+
+  return undefined;
 }

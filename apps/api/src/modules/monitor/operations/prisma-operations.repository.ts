@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '@opencore/database';
 import type { OnlineUserSummaryDto } from '@opencore/online-user';
@@ -32,6 +28,8 @@ import {
   normalizeCacheKey,
   normalizeCachePrefix,
   normalizeOptionalBoolean,
+  operationsBadRequest,
+  operationsNotFound,
   OperationsRepository,
   requireRecord,
   type CacheClearResult,
@@ -176,8 +174,10 @@ export class PrismaOperationsRepository extends OperationsRepository {
     const result = applyCacheClearPolicy(cache.records, body);
 
     if (!result.dryRun && !cache.scanComplete) {
-      throw new BadRequestException(
+      throw operationsBadRequest(
+        'MONITOR_OPERATIONS_CACHE_CLEAR_SCAN_LIMIT_EXCEEDED',
         'Cache clear matched the scan limit; narrow the prefix before confirmed deletion.',
+        { prefix },
       );
     }
 
@@ -440,5 +440,9 @@ function truncateCacheValuePreview(
 }
 
 function throwCacheNotFound(key: string): never {
-  throw new NotFoundException(`Cache key not found: ${key}`);
+  throw operationsNotFound(
+    'MONITOR_OPERATIONS_CACHE_KEY_NOT_FOUND',
+    `Cache key not found: ${key}`,
+    { key },
+  );
 }

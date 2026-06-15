@@ -116,66 +116,6 @@
       "file": "apps/api/src/modules/core/system-management/system-management.controller.ts"
     },
     {
-      "argument": "'Cache clear prefix must be at least 3 chars.'",
-      "count": 2,
-      "exception": "BadRequestException",
-      "file": "apps/api/src/modules/monitor/operations/operations.repository.ts"
-    },
-    {
-      "argument": "'Cache clear prefix must not contain glob wildcards.'",
-      "count": 1,
-      "exception": "BadRequestException",
-      "file": "apps/api/src/modules/monitor/operations/operations.repository.ts"
-    },
-    {
-      "argument": "'Cache clear write mode requires confirmed=true.'",
-      "count": 1,
-      "exception": "BadRequestException",
-      "file": "apps/api/src/modules/monitor/operations/operations.repository.ts"
-    },
-    {
-      "argument": "'Cache key delete write mode requires confirmed=true.'",
-      "count": 1,
-      "exception": "BadRequestException",
-      "file": "apps/api/src/modules/monitor/operations/operations.repository.ts"
-    },
-    {
-      "argument": "'Cache key must be a single line.'",
-      "count": 1,
-      "exception": "BadRequestException",
-      "file": "apps/api/src/modules/monitor/operations/operations.repository.ts"
-    },
-    {
-      "argument": "'Cache key must be at least 3 chars.'",
-      "count": 1,
-      "exception": "BadRequestException",
-      "file": "apps/api/src/modules/monitor/operations/operations.repository.ts"
-    },
-    {
-      "argument": "`${resource} not found: ${id}`",
-      "count": 1,
-      "exception": "NotFoundException",
-      "file": "apps/api/src/modules/monitor/operations/operations.repository.ts"
-    },
-    {
-      "argument": "'Cache clear matched the scan limit; narrow the prefix before confirmed deletion.'",
-      "count": 1,
-      "exception": "BadRequestException",
-      "file": "apps/api/src/modules/monitor/operations/prisma-operations.repository.ts"
-    },
-    {
-      "argument": "`Cache key not found: ${key}`",
-      "count": 1,
-      "exception": "NotFoundException",
-      "file": "apps/api/src/modules/monitor/operations/prisma-operations.repository.ts"
-    },
-    {
-      "argument": "`Unsupported monitor queue \"${value}\". Allowed queues: ${monitorQueueNames.join( ', ', )}.`",
-      "count": 1,
-      "exception": "BadRequestException",
-      "file": "packages/monitor/src/monitor/monitor.repository.ts"
-    },
-    {
       "argument": "'BullMQ queue control failed without exposing Redis details.'",
       "count": 1,
       "exception": "ServiceUnavailableException",

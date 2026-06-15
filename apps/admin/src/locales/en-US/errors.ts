@@ -342,6 +342,25 @@ export default {
     'The scheduler run retention period is invalid.',
   'error.SCHEDULER_WORKER_LIMIT_INVALID':
     'The scheduler worker claim limit is invalid.',
+  'error.MONITOR_OPERATIONS_CACHE_CLEAR_CONFIRMATION_REQUIRED':
+    'Cache clear requires confirmation.',
+  'error.MONITOR_OPERATIONS_CACHE_CLEAR_PREFIX_INVALID':
+    'The cache clear prefix must be at least 3 characters.',
+  'error.MONITOR_OPERATIONS_CACHE_CLEAR_PREFIX_WILDCARD_INVALID':
+    'The cache clear prefix must not contain wildcards.',
+  'error.MONITOR_OPERATIONS_CACHE_CLEAR_SCAN_LIMIT_EXCEEDED':
+    'Cache clear matched the scan limit. Narrow the prefix.',
+  'error.MONITOR_OPERATIONS_CACHE_KEY_DELETE_CONFIRMATION_REQUIRED':
+    'Cache key deletion requires confirmation.',
+  'error.MONITOR_OPERATIONS_CACHE_KEY_INVALID':
+    'The cache key must be at least 3 characters.',
+  'error.MONITOR_OPERATIONS_CACHE_KEY_NOT_FOUND':
+    'The cache key does not exist.',
+  'error.MONITOR_OPERATIONS_CACHE_KEY_SINGLE_LINE_INVALID':
+    'The cache key must be a single line.',
+  'error.MONITOR_OPERATIONS_RESOURCE_NOT_FOUND':
+    'The operations resource does not exist.',
+  'error.MONITOR_QUEUE_UNSUPPORTED': 'The monitor queue is not supported.',
   'error.TOOL_AREA_DATASET_DEPTH_TOO_DEEP':
     'The area dataset hierarchy is too deep.',
   'error.TOOL_AREA_DATASET_ENTRIES_INVALID':

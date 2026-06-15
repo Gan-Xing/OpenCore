@@ -256,6 +256,23 @@ export default {
   'error.SCHEDULER_RUN_RETENTION_DAYS_INVALID':
     '调度运行记录保留天数无效。',
   'error.SCHEDULER_WORKER_LIMIT_INVALID': '调度 worker 领取数量无效。',
+  'error.MONITOR_OPERATIONS_CACHE_CLEAR_CONFIRMATION_REQUIRED':
+    '清理缓存需要确认。',
+  'error.MONITOR_OPERATIONS_CACHE_CLEAR_PREFIX_INVALID':
+    '缓存清理前缀至少需要 3 个字符。',
+  'error.MONITOR_OPERATIONS_CACHE_CLEAR_PREFIX_WILDCARD_INVALID':
+    '缓存清理前缀不能包含通配符。',
+  'error.MONITOR_OPERATIONS_CACHE_CLEAR_SCAN_LIMIT_EXCEEDED':
+    '缓存清理命中扫描上限，请缩小前缀。',
+  'error.MONITOR_OPERATIONS_CACHE_KEY_DELETE_CONFIRMATION_REQUIRED':
+    '删除缓存 key 需要确认。',
+  'error.MONITOR_OPERATIONS_CACHE_KEY_INVALID':
+    '缓存 key 至少需要 3 个字符。',
+  'error.MONITOR_OPERATIONS_CACHE_KEY_NOT_FOUND': '缓存 key 不存在。',
+  'error.MONITOR_OPERATIONS_CACHE_KEY_SINGLE_LINE_INVALID':
+    '缓存 key 必须是单行文本。',
+  'error.MONITOR_OPERATIONS_RESOURCE_NOT_FOUND': '运维资源不存在。',
+  'error.MONITOR_QUEUE_UNSUPPORTED': '不支持的监控队列。',
   'error.TOOL_AREA_DATASET_DEPTH_TOO_DEEP': '地区数据集层级过深。',
   'error.TOOL_AREA_DATASET_ENTRIES_INVALID': '地区数据集条目必须是数组。',
   'error.TOOL_AREA_DATASET_ENTRIES_SIZE_INVALID':

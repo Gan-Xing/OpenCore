@@ -1,4 +1,3 @@
-import { BadRequestException } from '@nestjs/common';
 import {
   OnlineUserService,
   SeedOnlineUserRepository,
@@ -78,12 +77,14 @@ describe('OperationsRepository', () => {
       matchedKeys: 1,
       clearedKeys: 0,
     });
-    await expect(
+    await expectHttpExceptionCode(
       repository.clearCache({ prefix: 'opencore:admin', dryRun: false }),
-    ).rejects.toThrow(BadRequestException);
-    await expect(
+      'MONITOR_OPERATIONS_CACHE_CLEAR_CONFIRMATION_REQUIRED',
+    );
+    await expectHttpExceptionCode(
       repository.clearCache({ prefix: 'opencore:*', dryRun: true }),
-    ).rejects.toThrow(BadRequestException);
+      'MONITOR_OPERATIONS_CACHE_CLEAR_PREFIX_WILDCARD_INVALID',
+    );
     await expect(
       repository.clearCache({
         prefix: 'opencore:admin',
@@ -103,12 +104,13 @@ describe('OperationsRepository', () => {
       existed: true,
       deleted: false,
     });
-    await expect(
+    await expectHttpExceptionCode(
       repository.deleteCacheKey({
         key: 'opencore:openapi:snapshot',
         dryRun: false,
       }),
-    ).rejects.toThrow(BadRequestException);
+      'MONITOR_OPERATIONS_CACHE_KEY_DELETE_CONFIRMATION_REQUIRED',
+    );
     await expect(
       repository.deleteCacheKey({
         key: 'opencore:openapi:snapshot',
@@ -119,6 +121,10 @@ describe('OperationsRepository', () => {
       existed: true,
       deleted: true,
     });
+    await expectHttpExceptionCode(
+      repository.getCacheValue('missing:cache:key'),
+      'MONITOR_OPERATIONS_RESOURCE_NOT_FOUND',
+    );
   });
 
   it('creates report definitions and exposes async export job design', async () => {
@@ -189,6 +195,10 @@ describe('OperationsRepository', () => {
       sensitive: true,
       valuePreview: '[redacted sensitive cache value]',
     });
+    await expectHttpExceptionCode(
+      repository.getCacheValue('opencore:missing:key'),
+      'MONITOR_OPERATIONS_CACHE_KEY_NOT_FOUND',
+    );
     await expect(
       repository.clearCache({
         prefix: 'opencore:admin',
@@ -240,6 +250,33 @@ function createPrismaMock() {
       }),
     },
   } as never;
+}
+
+async function expectHttpExceptionCode(
+  promise: Promise<unknown>,
+  code: string,
+): Promise<void> {
+  try {
+    await promise;
+  } catch (error) {
+    expect(getHttpExceptionResponse(error)).toMatchObject({ code });
+    return;
+  }
+
+  throw new Error(`Expected HTTP exception code ${code}`);
+}
+
+function getHttpExceptionResponse(error: unknown): unknown {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'getResponse' in error &&
+    typeof error.getResponse === 'function'
+  ) {
+    return error.getResponse();
+  }
+
+  return undefined;
 }
 
 function createRedisMock(values: Record<string, string>) {

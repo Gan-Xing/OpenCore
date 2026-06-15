@@ -1,4 +1,5 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { createApiErrorBody } from '@opencore/common';
 import type { OnlineUserSummaryDto } from '@opencore/online-user';
 import type { SchedulerSummaryDto } from '@opencore/scheduler';
 import type {
@@ -66,6 +67,24 @@ export abstract class OperationsRepository {
     body: CreateReportDefinitionDto,
   ): Promise<ReportDefinitionRecord>;
   abstract getExportJobDesign(): ExportJobDesignRecord;
+}
+
+export function operationsBadRequest(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): BadRequestException {
+  return new BadRequestException(
+    createApiErrorBody({ code, message, details }),
+  );
+}
+
+export function operationsNotFound(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): NotFoundException {
+  return new NotFoundException(createApiErrorBody({ code, message, details }));
 }
 
 export function buildOperationsSummary(input: {
@@ -142,8 +161,10 @@ export function applyCacheClearPolicy(
   const prefix = normalizeCachePrefix(body.prefix);
 
   if (!prefix || prefix.length < 3) {
-    throw new BadRequestException(
+    throw operationsBadRequest(
+      'MONITOR_OPERATIONS_CACHE_CLEAR_PREFIX_INVALID',
       'Cache clear prefix must be at least 3 chars.',
+      { prefix },
     );
   }
 
@@ -151,8 +172,10 @@ export function applyCacheClearPolicy(
   const dryRun = body.dryRun !== false;
 
   if (!dryRun && !body.confirmed) {
-    throw new BadRequestException(
+    throw operationsBadRequest(
+      'MONITOR_OPERATIONS_CACHE_CLEAR_CONFIRMATION_REQUIRED',
       'Cache clear write mode requires confirmed=true.',
+      { prefix },
     );
   }
 
@@ -173,8 +196,10 @@ export function applyCacheKeyDeletePolicy(
   const dryRun = body.dryRun !== false;
 
   if (!dryRun && !body.confirmed) {
-    throw new BadRequestException(
+    throw operationsBadRequest(
+      'MONITOR_OPERATIONS_CACHE_KEY_DELETE_CONFIRMATION_REQUIRED',
       'Cache key delete write mode requires confirmed=true.',
+      { key },
     );
   }
 
@@ -191,14 +216,18 @@ export function normalizeCachePrefix(prefix: string): string {
   const normalized = prefix.trim();
 
   if (!normalized || normalized.length < 3) {
-    throw new BadRequestException(
+    throw operationsBadRequest(
+      'MONITOR_OPERATIONS_CACHE_CLEAR_PREFIX_INVALID',
       'Cache clear prefix must be at least 3 chars.',
+      { prefix },
     );
   }
 
   if (/[*?[\]]/.test(normalized)) {
-    throw new BadRequestException(
+    throw operationsBadRequest(
+      'MONITOR_OPERATIONS_CACHE_CLEAR_PREFIX_WILDCARD_INVALID',
       'Cache clear prefix must not contain glob wildcards.',
+      { prefix: normalized },
     );
   }
 
@@ -209,11 +238,19 @@ export function normalizeCacheKey(key: string): string {
   const normalized = key.trim();
 
   if (!normalized || normalized.length < 3) {
-    throw new BadRequestException('Cache key must be at least 3 chars.');
+    throw operationsBadRequest(
+      'MONITOR_OPERATIONS_CACHE_KEY_INVALID',
+      'Cache key must be at least 3 chars.',
+      { key },
+    );
   }
 
   if (/[\r\n]/.test(normalized)) {
-    throw new BadRequestException('Cache key must be a single line.');
+    throw operationsBadRequest(
+      'MONITOR_OPERATIONS_CACHE_KEY_SINGLE_LINE_INVALID',
+      'Cache key must be a single line.',
+      { key },
+    );
   }
 
   return normalized;
@@ -225,7 +262,11 @@ export function requireRecord<T>(
   id: string,
 ): T {
   if (!record) {
-    throw new NotFoundException(`${resource} not found: ${id}`);
+    throw operationsNotFound(
+      'MONITOR_OPERATIONS_RESOURCE_NOT_FOUND',
+      `${resource} not found: ${id}`,
+      { id, resource },
+    );
   }
 
   return record;
