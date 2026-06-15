@@ -1,5 +1,11 @@
-import { BadRequestException } from '@nestjs/common';
 import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
+import {
+  createApiErrorBody,
   createPageResult,
   normalizePagination,
   type PageQueryInput,
@@ -179,6 +185,44 @@ export abstract class SystemConfigRepository {
   ): Promise<SystemConfigVaultKeyRotationRecord>;
 }
 
+export function systemConfigBadRequest(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): BadRequestException {
+  return new BadRequestException(
+    createApiErrorBody({ code, message, details }),
+  );
+}
+
+export function systemConfigConflict(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): ConflictException {
+  return new ConflictException(
+    createApiErrorBody({ code, message, details }),
+  );
+}
+
+export function systemConfigForbidden(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): ForbiddenException {
+  return new ForbiddenException(
+    createApiErrorBody({ code, message, details }),
+  );
+}
+
+export function systemConfigNotFound(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): NotFoundException {
+  return new NotFoundException(createApiErrorBody({ code, message, details }));
+}
+
 export function normalizeSystemConfigPageQuery(
   query: SystemConfigPageQuery = {},
   total: number,
@@ -263,14 +307,18 @@ export function assertSafeConfigKey(
   }),
 ): void {
   if (SENSITIVE_CONFIG_KEY_PATTERN.test(key) && visibility !== 'secret') {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_SECRET_KEY_VISIBILITY_REQUIRED',
       'Secret-like system config keys must be explicitly marked with secret visibility.',
+      { key, visibility },
     );
   }
 
   if (visibility === 'secret' && !SENSITIVE_CONFIG_KEY_PATTERN.test(key)) {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_SECRET_VISIBILITY_KEY_REQUIRED',
       'Secret system config visibility requires a secret-like key name.',
+      { key, visibility },
     );
   }
 }
@@ -285,8 +333,10 @@ export function assertSecretConfigShape(input: {
   }
 
   if (input.valueType !== 'string') {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_SECRET_VALUE_TYPE_INVALID',
       `Secret system config ${input.key} must keep string value type.`,
+      { key: input.key, valueType: input.valueType },
     );
   }
 }
@@ -297,14 +347,18 @@ export function assertSecretVersionedConfig(config: {
   visibility: SystemConfigVisibility;
 }): void {
   if (config.visibility !== 'secret') {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_SECRET_VERSION_VISIBILITY_INVALID',
       `Only secret system config can keep secret versions: ${config.key}`,
+      { key: config.key, visibility: config.visibility },
     );
   }
 
   if (config.valueType !== 'string') {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_SECRET_VALUE_TYPE_INVALID',
       `Secret system config ${config.key} must keep string value type.`,
+      { key: config.key, valueType: config.valueType },
     );
   }
 }
@@ -372,14 +426,18 @@ export function assertFeatureFlagConfigShape(input: {
         : 'json value type';
 
   if (input.valueType !== valueType) {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_FEATURE_FLAG_VALUE_TYPE_INVALID',
       `Feature flag config ${input.key} must keep ${valueTypeLabel}.`,
+      { expectedValueType: valueType, key: input.key, valueType: input.valueType },
     );
   }
 
   if (input.visibility !== 'public') {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_FEATURE_FLAG_VISIBILITY_INVALID',
       `Feature flag config ${input.key} must remain public.`,
+      { key: input.key, visibility: input.visibility },
     );
   }
 
@@ -389,8 +447,10 @@ export function assertFeatureFlagConfigShape(input: {
     const percentage = Number(normalized);
 
     if (!Number.isInteger(percentage) || percentage < 0 || percentage > 100) {
-      throw new BadRequestException(
+      throw systemConfigBadRequest(
+        'SYSTEM_CONFIG_FEATURE_FLAG_ROLLOUT_INVALID',
         `Feature flag rollout ${input.key} must be an integer between 0 and 100.`,
+        { key: input.key, maximum: 100, minimum: 0, value: input.value },
       );
     }
   }
@@ -406,8 +466,10 @@ export function assertEnvironmentOverrideConfig(config: {
   visibility: SystemConfigVisibility;
 }): void {
   if (config.visibility !== 'public') {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_ENVIRONMENT_OVERRIDE_VISIBILITY_INVALID',
       `Only public system config can define environment overrides: ${config.key}`,
+      { key: config.key, visibility: config.visibility },
     );
   }
 
@@ -538,8 +600,10 @@ export function isSystemConfigSecretEncrypted(
 
 export function assertSystemConfigMutable(config: SystemConfigRecord): void {
   if (config.system) {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_SYSTEM_IMMUTABLE',
       `System built-in config cannot be deleted: ${config.key}`,
+      { key: config.key },
     );
   }
 }
@@ -550,18 +614,28 @@ export function normalizeConfigCategory(value: unknown): string {
   }
 
   if (typeof value !== 'string') {
-    throw new BadRequestException('System config category must be a string.');
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_CATEGORY_INVALID_TYPE',
+      'System config category must be a string.',
+      { field: 'category' },
+    );
   }
 
   const normalized = value.trim();
 
   if (!normalized) {
-    throw new BadRequestException('System config category is required.');
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_CATEGORY_REQUIRED',
+      'System config category is required.',
+      { field: 'category' },
+    );
   }
 
   if (normalized.length > 50) {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_CATEGORY_TOO_LONG',
       'System config category must not exceed 50 characters.',
+      { field: 'category', maxLength: 50 },
     );
   }
 
@@ -574,18 +648,28 @@ export function normalizeConfigName(value: unknown, key: string): string {
   }
 
   if (typeof value !== 'string') {
-    throw new BadRequestException('System config name must be a string.');
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_NAME_INVALID_TYPE',
+      'System config name must be a string.',
+      { field: 'name' },
+    );
   }
 
   const normalized = value.trim();
 
   if (!normalized) {
-    throw new BadRequestException('System config name is required.');
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_NAME_REQUIRED',
+      'System config name is required.',
+      { field: 'name' },
+    );
   }
 
   if (normalized.length > 100) {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_NAME_TOO_LONG',
       'System config name must not exceed 100 characters.',
+      { field: 'name', maxLength: 100 },
     );
   }
 
@@ -597,7 +681,11 @@ export function normalizeConfigValue(
   valueType: SystemConfigValueType,
 ): string {
   if (typeof value !== 'string') {
-    throw new BadRequestException('System config value must be a string.');
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_VALUE_INVALID_TYPE',
+      'System config value must be a string.',
+      { field: 'value' },
+    );
   }
 
   if (valueType === 'string') {
@@ -612,8 +700,10 @@ export function normalizeConfigValue(
 
   if (valueType === 'boolean') {
     if (normalized !== 'true' && normalized !== 'false') {
-      throw new BadRequestException(
+      throw systemConfigBadRequest(
+        'SYSTEM_CONFIG_VALUE_BOOLEAN_INVALID',
         'Boolean system config values must be "true" or "false".',
+        { value },
       );
     }
 
@@ -621,8 +711,10 @@ export function normalizeConfigValue(
   }
 
   if (!normalized || !Number.isFinite(Number(normalized))) {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_VALUE_NUMBER_INVALID',
       'Number system config values must be finite numbers.',
+      { value },
     );
   }
 
@@ -638,8 +730,10 @@ export function normalizeOptionalConfigText(
   }
 
   if (typeof value !== 'string') {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_TEXT_INVALID_TYPE',
       `System config ${fieldName} must be a string.`,
+      { field: fieldName },
     );
   }
 
@@ -650,8 +744,10 @@ export function normalizeOptionalConfigText(
   }
 
   if (normalized.length > 500) {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_TEXT_TOO_LONG',
       `System config ${fieldName} must not exceed 500 characters.`,
+      { field: fieldName, maxLength: 500 },
     );
   }
 
@@ -666,8 +762,10 @@ export function normalizeSecretRotationActor(
   }
 
   if (typeof value !== 'string') {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_SECRET_ROTATION_ACTOR_INVALID_TYPE',
       'System config secret rotation actor must be a string.',
+      { field: 'rotatedBy' },
     );
   }
 
@@ -678,8 +776,10 @@ export function normalizeSecretRotationActor(
   }
 
   if (normalized.length > 100) {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_SECRET_ROTATION_ACTOR_TOO_LONG',
       'System config secret rotation actor must not exceed 100 characters.',
+      { field: 'rotatedBy', maxLength: 100 },
     );
   }
 
@@ -688,14 +788,18 @@ export function normalizeSecretRotationActor(
 
 export function normalizeSecretRotationValue(value: unknown): string {
   if (typeof value !== 'string') {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_SECRET_ROTATION_VALUE_INVALID_TYPE',
       'System config secret rotation value must be a string.',
+      { field: 'value' },
     );
   }
 
   if (!value.trim()) {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_SECRET_ROTATION_VALUE_REQUIRED',
       'System config secret rotation value is required.',
+      { field: 'value' },
     );
   }
 
@@ -756,16 +860,20 @@ export function normalizeSystemConfigEnvironment(value: unknown): string {
   }
 
   if (typeof value !== 'string') {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_ENVIRONMENT_INVALID_TYPE',
       'System config environment must be a string.',
+      { field: 'environment' },
     );
   }
 
   const normalized = value.trim().toLowerCase();
 
   if (!SYSTEM_CONFIG_ENVIRONMENT_PATTERN.test(normalized)) {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_ENVIRONMENT_INVALID',
       'System config environment must be 2 to 40 lowercase letters, numbers or hyphens, starting with a letter.',
+      { environment: value },
     );
   }
 
@@ -778,8 +886,10 @@ export function normalizeRequiredSystemConfigEnvironment(
   const environment = normalizeSystemConfigEnvironment(value);
 
   if (environment === SYSTEM_CONFIG_DEFAULT_ENVIRONMENT) {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_ENVIRONMENT_DEFAULT_FORBIDDEN',
       'System config environment override cannot target the default environment.',
+      { environment },
     );
   }
 
@@ -790,19 +900,29 @@ export function normalizeBatchSystemConfigKeys(
   value: unknown,
 ): readonly string[] {
   if (!Array.isArray(value)) {
-    throw new BadRequestException('System config keys must be an array.');
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_KEYS_INVALID',
+      'System config keys must be an array.',
+      { field: 'keys' },
+    );
   }
 
   if (value.length === 0) {
-    throw new BadRequestException('System config keys must not be empty.');
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_KEYS_EMPTY',
+      'System config keys must not be empty.',
+      { field: 'keys' },
+    );
   }
 
   const normalized = value.map(normalizeSystemConfigKey);
   const duplicate = findFirstDuplicate(normalized);
 
   if (duplicate) {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_KEY_DUPLICATED',
       `System config key is duplicated: ${duplicate}`,
+      { key: duplicate },
     );
   }
 
@@ -811,13 +931,21 @@ export function normalizeBatchSystemConfigKeys(
 
 function normalizeSystemConfigKey(value: unknown): string {
   if (typeof value !== 'string') {
-    throw new BadRequestException('System config key must be a string.');
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_KEY_INVALID_TYPE',
+      'System config key must be a string.',
+      { field: 'key' },
+    );
   }
 
   const normalized = value.trim();
 
   if (!normalized) {
-    throw new BadRequestException('System config key is required.');
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_KEY_REQUIRED',
+      'System config key is required.',
+      { field: 'key' },
+    );
   }
 
   return normalized;
@@ -859,27 +987,35 @@ export function parseFeatureFlagAudienceRulesConfig(
     typeof value === 'string' ? parseJsonConfigValue(value.trim()) : value;
 
   if (!isPlainRecord(parsed)) {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_FEATURE_AUDIENCE_INVALID',
       `Feature flag audience ${key} must be a JSON object.`,
+      { key, reason: 'not-object' },
     );
   }
 
   const mode = parsed.mode;
   if (mode !== 'all' && mode !== 'any') {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_FEATURE_AUDIENCE_MODE_INVALID',
       `Feature flag audience ${key} mode must be all or any.`,
+      { key, mode },
     );
   }
 
   if (!Array.isArray(parsed.rules)) {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_FEATURE_AUDIENCE_RULES_INVALID',
       `Feature flag audience ${key} rules must be an array.`,
+      { key },
     );
   }
 
   if (parsed.rules.length > 20) {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_FEATURE_AUDIENCE_RULES_TOO_MANY',
       `Feature flag audience ${key} must not exceed 20 rules.`,
+      { key, maxItems: 20 },
     );
   }
 
@@ -895,8 +1031,10 @@ function parseJsonConfigValue(value: string): unknown {
   try {
     return JSON.parse(value);
   } catch {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_VALUE_JSON_INVALID',
       'JSON system config values must be valid JSON.',
+      { value },
     );
   }
 }
@@ -907,8 +1045,10 @@ function normalizeFeatureFlagAudienceRule(
   index: number,
 ): FeatureFlagAudienceRuleConfig {
   if (!isPlainRecord(value)) {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_FEATURE_AUDIENCE_RULE_INVALID',
       `Feature flag audience ${key} rule ${index + 1} must be a JSON object.`,
+      { index, key },
     );
   }
 
@@ -937,16 +1077,20 @@ function normalizeFeatureFlagAudienceAttribute(
   index: number,
 ): string {
   if (typeof value !== 'string') {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_FEATURE_AUDIENCE_ATTRIBUTE_INVALID_TYPE',
       `Feature flag audience ${key} rule ${index + 1} attribute must be a string.`,
+      { index, key },
     );
   }
 
   const normalized = value.trim();
 
   if (!FEATURE_FLAG_AUDIENCE_ATTRIBUTE_PATTERN.test(normalized)) {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_FEATURE_AUDIENCE_ATTRIBUTE_INVALID',
       `Feature flag audience ${key} rule ${index + 1} attribute is invalid.`,
+      { attribute: value, index, key },
     );
   }
 
@@ -967,8 +1111,10 @@ function normalizeFeatureFlagAudienceOperator(
     return value;
   }
 
-  throw new BadRequestException(
+  throw systemConfigBadRequest(
+    'SYSTEM_CONFIG_FEATURE_AUDIENCE_OPERATOR_INVALID',
     `Feature flag audience ${key} rule ${index + 1} operator is invalid.`,
+    { index, key, operator: value },
   );
 }
 
@@ -978,22 +1124,28 @@ function normalizeFeatureFlagAudienceValues(
   index: number,
 ): readonly string[] {
   if (!Array.isArray(value) || value.length === 0 || value.length > 50) {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_FEATURE_AUDIENCE_VALUES_INVALID',
       `Feature flag audience ${key} rule ${index + 1} values must contain 1 to 50 items.`,
+      { index, key, maxItems: 50, minItems: 1 },
     );
   }
 
   const normalized = value.map((item) => {
     if (typeof item !== 'string') {
-      throw new BadRequestException(
+      throw systemConfigBadRequest(
+        'SYSTEM_CONFIG_FEATURE_AUDIENCE_VALUE_INVALID_TYPE',
         `Feature flag audience ${key} rule ${index + 1} values must be strings.`,
+        { index, key },
       );
     }
 
     const text = item.trim();
     if (!text || text.length > 100) {
-      throw new BadRequestException(
+      throw systemConfigBadRequest(
+        'SYSTEM_CONFIG_FEATURE_AUDIENCE_VALUE_INVALID',
         `Feature flag audience ${key} rule ${index + 1} values must be 1 to 100 characters.`,
+        { index, key, maxLength: 100, minLength: 1 },
       );
     }
 
@@ -1002,8 +1154,10 @@ function normalizeFeatureFlagAudienceValues(
 
   const duplicate = findFirstDuplicate(normalized);
   if (duplicate) {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_FEATURE_AUDIENCE_VALUE_DUPLICATED',
       `Feature flag audience ${key} rule ${index + 1} value is duplicated: ${duplicate}`,
+      { index, key, value: duplicate },
     );
   }
 

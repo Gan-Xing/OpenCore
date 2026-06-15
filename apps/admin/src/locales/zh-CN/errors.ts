@@ -94,6 +94,124 @@ export default {
   'error.SYSTEM_USER_ROLE_NOT_FOUND': '用户角色不存在。',
   'error.SYSTEM_USER_SYSTEM_IMMUTABLE': '系统内置用户不能修改或删除。',
   'error.SYSTEM_USER_USERNAME_INVALID': '用户名格式无效。',
+  'error.SYSTEM_CONFIG_ALREADY_EXISTS': '配置键已存在。',
+  'error.SYSTEM_CONFIG_CATEGORY_INVALID_TYPE': '配置分类必须是字符串。',
+  'error.SYSTEM_CONFIG_CATEGORY_REQUIRED': '配置分类不能为空。',
+  'error.SYSTEM_CONFIG_CATEGORY_TOO_LONG': '配置分类过长。',
+  'error.SYSTEM_CONFIG_ENVIRONMENT_DEFAULT_FORBIDDEN':
+    '环境覆盖不能使用默认环境。',
+  'error.SYSTEM_CONFIG_ENVIRONMENT_INVALID': '配置环境格式无效。',
+  'error.SYSTEM_CONFIG_ENVIRONMENT_INVALID_TYPE': '配置环境必须是字符串。',
+  'error.SYSTEM_CONFIG_ENVIRONMENT_OVERRIDE_NOT_FOUND': '配置环境覆盖不存在。',
+  'error.SYSTEM_CONFIG_ENVIRONMENT_OVERRIDE_VISIBILITY_INVALID':
+    '只有公开配置可以设置环境覆盖。',
+  'error.SYSTEM_CONFIG_FEATURE_AUDIENCE_ATTRIBUTE_INVALID':
+    '功能受众属性格式无效。',
+  'error.SYSTEM_CONFIG_FEATURE_AUDIENCE_ATTRIBUTE_INVALID_TYPE':
+    '功能受众属性必须是字符串。',
+  'error.SYSTEM_CONFIG_FEATURE_AUDIENCE_ENABLED_MISSING':
+    '功能受众配置缺少启用开关。',
+  'error.SYSTEM_CONFIG_FEATURE_AUDIENCE_INVALID':
+    '功能受众规则必须是 JSON 对象。',
+  'error.SYSTEM_CONFIG_FEATURE_AUDIENCE_MODE_INVALID':
+    '功能受众匹配模式无效。',
+  'error.SYSTEM_CONFIG_FEATURE_AUDIENCE_OPERATOR_INVALID':
+    '功能受众操作符无效。',
+  'error.SYSTEM_CONFIG_FEATURE_AUDIENCE_RULES_INVALID':
+    '功能受众规则列表必须是数组。',
+  'error.SYSTEM_CONFIG_FEATURE_AUDIENCE_RULES_TOO_MANY':
+    '功能受众规则数量过多。',
+  'error.SYSTEM_CONFIG_FEATURE_AUDIENCE_RULE_INVALID':
+    '功能受众规则必须是对象。',
+  'error.SYSTEM_CONFIG_FEATURE_AUDIENCE_VALUES_INVALID':
+    '功能受众取值列表无效。',
+  'error.SYSTEM_CONFIG_FEATURE_AUDIENCE_VALUE_DUPLICATED':
+    '功能受众取值重复。',
+  'error.SYSTEM_CONFIG_FEATURE_AUDIENCE_VALUE_INVALID':
+    '功能受众取值无效。',
+  'error.SYSTEM_CONFIG_FEATURE_AUDIENCE_VALUE_INVALID_TYPE':
+    '功能受众取值必须是字符串。',
+  'error.SYSTEM_CONFIG_FEATURE_FLAG_NAME_INVALID': '功能开关名称无效。',
+  'error.SYSTEM_CONFIG_FEATURE_FLAG_NAME_INVALID_TYPE':
+    '功能开关名称必须是字符串。',
+  'error.SYSTEM_CONFIG_FEATURE_FLAG_NOT_FOUND': '功能开关不存在。',
+  'error.SYSTEM_CONFIG_FEATURE_FLAG_ROLLOUT_INVALID':
+    '功能开关灰度比例必须是 0 到 100 的整数。',
+  'error.SYSTEM_CONFIG_FEATURE_FLAG_RUNTIME_SHAPE_INVALID':
+    '功能开关运行时配置结构无效。',
+  'error.SYSTEM_CONFIG_FEATURE_FLAG_SUBJECT_ATTRIBUTES_INVALID_TYPE':
+    '功能开关主体属性必须是 JSON 对象字符串。',
+  'error.SYSTEM_CONFIG_FEATURE_FLAG_SUBJECT_ATTRIBUTES_JSON_INVALID':
+    '功能开关主体属性必须是有效 JSON。',
+  'error.SYSTEM_CONFIG_FEATURE_FLAG_SUBJECT_ATTRIBUTES_OBJECT_INVALID':
+    '功能开关主体属性必须是 JSON 对象。',
+  'error.SYSTEM_CONFIG_FEATURE_FLAG_SUBJECT_ATTRIBUTES_TOO_MANY':
+    '功能开关主体属性数量过多。',
+  'error.SYSTEM_CONFIG_FEATURE_FLAG_SUBJECT_ATTRIBUTE_KEY_INVALID':
+    '功能开关主体属性键无效。',
+  'error.SYSTEM_CONFIG_FEATURE_FLAG_SUBJECT_ATTRIBUTE_VALUE_INVALID':
+    '功能开关主体属性值无效。',
+  'error.SYSTEM_CONFIG_FEATURE_FLAG_SUBJECT_ATTRIBUTE_VALUE_INVALID_TYPE':
+    '功能开关主体属性值类型无效。',
+  'error.SYSTEM_CONFIG_FEATURE_FLAG_SUBJECT_KEY_INVALID_TYPE':
+    '功能开关主体标识必须是字符串。',
+  'error.SYSTEM_CONFIG_FEATURE_FLAG_SUBJECT_KEY_REQUIRED':
+    '功能开关主体标识不能为空。',
+  'error.SYSTEM_CONFIG_FEATURE_FLAG_SUBJECT_KEY_TOO_LONG':
+    '功能开关主体标识过长。',
+  'error.SYSTEM_CONFIG_FEATURE_FLAG_VALUE_TYPE_INVALID':
+    '功能开关配置值类型无效。',
+  'error.SYSTEM_CONFIG_FEATURE_FLAG_VISIBILITY_INVALID':
+    '功能开关配置必须保持公开。',
+  'error.SYSTEM_CONFIG_FEATURE_ROLLOUT_ENABLED_MISSING':
+    '功能开关灰度配置缺少启用开关。',
+  'error.SYSTEM_CONFIG_KEYS_EMPTY': '配置键列表不能为空。',
+  'error.SYSTEM_CONFIG_KEYS_INVALID': '配置键列表必须是数组。',
+  'error.SYSTEM_CONFIG_KEY_DUPLICATED': '配置键重复。',
+  'error.SYSTEM_CONFIG_KEY_INVALID_TYPE': '配置键必须是字符串。',
+  'error.SYSTEM_CONFIG_KEY_REQUIRED': '配置键不能为空。',
+  'error.SYSTEM_CONFIG_KMS_NOT_READY': '配置密钥管理服务未就绪。',
+  'error.SYSTEM_CONFIG_NAME_INVALID_TYPE': '配置名称必须是字符串。',
+  'error.SYSTEM_CONFIG_NAME_REQUIRED': '配置名称不能为空。',
+  'error.SYSTEM_CONFIG_NAME_TOO_LONG': '配置名称过长。',
+  'error.SYSTEM_CONFIG_NOT_FOUND': '配置不存在。',
+  'error.SYSTEM_CONFIG_NOT_SECRET': '配置不是密钥配置。',
+  'error.SYSTEM_CONFIG_RUNTIME_INTEGER_INVALID':
+    '运行时配置值必须是允许范围内的整数。',
+  'error.SYSTEM_CONFIG_RUNTIME_VALUE_TYPE_INVALID':
+    '运行时配置值类型无效。',
+  'error.SYSTEM_CONFIG_RUNTIME_VISIBILITY_INVALID':
+    '运行时配置必须保持公开。',
+  'error.SYSTEM_CONFIG_SECRET_KEY_VISIBILITY_REQUIRED':
+    '密钥类配置键必须显式标记为密钥可见性。',
+  'error.SYSTEM_CONFIG_SECRET_ROTATION_ACTOR_INVALID_TYPE':
+    '密钥轮换操作人必须是字符串。',
+  'error.SYSTEM_CONFIG_SECRET_ROTATION_ACTOR_TOO_LONG':
+    '密钥轮换操作人过长。',
+  'error.SYSTEM_CONFIG_SECRET_ROTATION_VALUE_INVALID_TYPE':
+    '密钥轮换值必须是字符串。',
+  'error.SYSTEM_CONFIG_SECRET_ROTATION_VALUE_REQUIRED': '密钥轮换值不能为空。',
+  'error.SYSTEM_CONFIG_SECRET_VALUE_TYPE_INVALID':
+    '密钥配置值类型必须保持字符串。',
+  'error.SYSTEM_CONFIG_SECRET_VERSION_VISIBILITY_INVALID':
+    '只有密钥配置可以保留密钥版本。',
+  'error.SYSTEM_CONFIG_SECRET_VISIBILITY_KEY_REQUIRED':
+    '密钥可见性需要匹配密钥类配置键。',
+  'error.SYSTEM_CONFIG_SYSTEM_IMMUTABLE': '系统内置配置不能删除。',
+  'error.SYSTEM_CONFIG_TEXT_INVALID_TYPE': '配置文本字段必须是字符串。',
+  'error.SYSTEM_CONFIG_TEXT_TOO_LONG': '配置文本字段过长。',
+  'error.SYSTEM_CONFIG_VALUE_BOOLEAN_INVALID': '布尔配置值无效。',
+  'error.SYSTEM_CONFIG_VALUE_INVALID_TYPE': '配置值必须是字符串。',
+  'error.SYSTEM_CONFIG_VALUE_JSON_INVALID': 'JSON 配置值无效。',
+  'error.SYSTEM_CONFIG_VALUE_NOT_PUBLIC': '配置值不是公开配置。',
+  'error.SYSTEM_CONFIG_VALUE_NUMBER_INVALID': '数字配置值无效。',
+  'error.SYSTEM_CONFIG_VAULT_ACTIVE_KEY_MISSING':
+    '配置密钥环缺少当前激活密钥。',
+  'error.SYSTEM_CONFIG_VAULT_DECRYPT_FAILED': '配置密钥值解密失败。',
+  'error.SYSTEM_CONFIG_VAULT_KEYRING_INVALID': '配置密钥环格式无效。',
+  'error.SYSTEM_CONFIG_VAULT_KEY_ID_INVALID': '配置密钥 ID 格式无效。',
+  'error.SYSTEM_CONFIG_VAULT_KEY_MATERIAL_INVALID': '配置密钥材料无效。',
+  'error.SYSTEM_CONFIG_VAULT_KEY_NOT_CONFIGURED': '配置密钥未配置。',
   'error.SYSTEM_ROLE_ALREADY_EXISTS': '角色编码已存在。',
   'error.SYSTEM_ROLE_BOOLEAN_INVALID': '角色布尔字段必须是布尔值。',
   'error.SYSTEM_ROLE_CANNOT_DELETE_SYSTEM': '系统内置角色不能删除。',

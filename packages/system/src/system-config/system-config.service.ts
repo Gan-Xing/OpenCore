@@ -1,6 +1,4 @@
 import {
-  BadRequestException,
-  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -29,6 +27,9 @@ import {
   createSystemConfigExportPreview,
   normalizeRequiredSystemConfigEnvironment,
   normalizeSystemConfigEnvironment,
+  systemConfigBadRequest,
+  systemConfigForbidden,
+  systemConfigNotFound,
   SystemConfigRepository,
   toFeatureFlagAudienceName,
   toFeatureFlagName,
@@ -196,7 +197,11 @@ export class SystemConfigService {
     const rule = rules[flag];
 
     if (!rule) {
-      throw new NotFoundException(`Feature flag not found: ${flag}`);
+      throw systemConfigNotFound(
+        'SYSTEM_CONFIG_FEATURE_FLAG_NOT_FOUND',
+        `Feature flag not found: ${flag}`,
+        { flag },
+      );
     }
 
     const bucket = createFeatureFlagBucket(flag, subjectKey);
@@ -442,8 +447,16 @@ export class SystemConfigService {
             config.visibility !== 'public' ||
             config.valueType !== 'boolean'
           ) {
-            throw new BadRequestException(
+            throw systemConfigBadRequest(
+              'SYSTEM_CONFIG_FEATURE_FLAG_RUNTIME_SHAPE_INVALID',
               `Feature flag config ${config.key} must be public boolean.`,
+              {
+                expectedValueType: 'boolean',
+                expectedVisibility: 'public',
+                key: config.key,
+                valueType: config.valueType,
+                visibility: config.visibility,
+              },
             );
           }
 
@@ -454,8 +467,16 @@ export class SystemConfigService {
         const rolloutName = toFeatureFlagRolloutName(config.key);
         if (rolloutName) {
           if (config.visibility !== 'public' || config.valueType !== 'number') {
-            throw new BadRequestException(
+            throw systemConfigBadRequest(
+              'SYSTEM_CONFIG_FEATURE_FLAG_RUNTIME_SHAPE_INVALID',
               `Feature flag rollout config ${config.key} must be public number.`,
+              {
+                expectedValueType: 'number',
+                expectedVisibility: 'public',
+                key: config.key,
+                valueType: config.valueType,
+                visibility: config.visibility,
+              },
             );
           }
 
@@ -469,8 +490,16 @@ export class SystemConfigService {
         const audienceName = toFeatureFlagAudienceName(config.key);
         if (audienceName) {
           if (config.visibility !== 'public' || config.valueType !== 'json') {
-            throw new BadRequestException(
+            throw systemConfigBadRequest(
+              'SYSTEM_CONFIG_FEATURE_FLAG_RUNTIME_SHAPE_INVALID',
               `Feature flag audience config ${config.key} must be public json.`,
+              {
+                expectedValueType: 'json',
+                expectedVisibility: 'public',
+                key: config.key,
+                valueType: config.valueType,
+                visibility: config.visibility,
+              },
             );
           }
 
@@ -490,16 +519,20 @@ export class SystemConfigService {
 
     for (const flagName of Object.keys(rolloutPercentages)) {
       if (enabledFlags[flagName] === undefined) {
-        throw new BadRequestException(
+        throw systemConfigBadRequest(
+          'SYSTEM_CONFIG_FEATURE_ROLLOUT_ENABLED_MISSING',
           `Feature flag rollout ${flagName} is missing its enabled config.`,
+          { flag: flagName },
         );
       }
     }
 
     for (const flagName of Object.keys(audienceRules)) {
       if (enabledFlags[flagName] === undefined) {
-        throw new BadRequestException(
+        throw systemConfigBadRequest(
+          'SYSTEM_CONFIG_FEATURE_AUDIENCE_ENABLED_MISSING',
           `Feature flag audience ${flagName} is missing its enabled config.`,
+          { flag: flagName },
         );
       }
     }
@@ -532,8 +565,10 @@ function parseRuntimeIntegerInRange(
   const parsed = Number(normalized);
 
   if (!Number.isInteger(parsed) || parsed < minimum || parsed > maximum) {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_RUNTIME_INTEGER_INVALID',
       `Runtime config ${key} must be an integer between ${minimum} and ${maximum}.`,
+      { key, maximum, minimum, value },
     );
   }
 
@@ -545,8 +580,10 @@ function parseFeatureFlagRolloutPercentage(value: string, key: string): number {
   const parsed = Number(normalized);
 
   if (!Number.isInteger(parsed) || parsed < 0 || parsed > 100) {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_FEATURE_FLAG_ROLLOUT_INVALID',
       `Feature flag rollout ${key} must be an integer between 0 and 100.`,
+      { key, maximum: 100, minimum: 0, value },
     );
   }
 
@@ -555,13 +592,21 @@ function parseFeatureFlagRolloutPercentage(value: string, key: string): number {
 
 function normalizeFeatureFlagEvaluationName(value: unknown): string {
   if (typeof value !== 'string') {
-    throw new BadRequestException('Feature flag name must be a string.');
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_FEATURE_FLAG_NAME_INVALID_TYPE',
+      'Feature flag name must be a string.',
+      { field: 'flag' },
+    );
   }
 
   const normalized = value.trim();
 
   if (!/^[a-z0-9]+(?:[.-][a-z0-9]+)*$/.test(normalized)) {
-    throw new BadRequestException('Feature flag name is invalid.');
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_FEATURE_FLAG_NAME_INVALID',
+      'Feature flag name is invalid.',
+      { flag: value },
+    );
   }
 
   return normalized;
@@ -569,18 +614,28 @@ function normalizeFeatureFlagEvaluationName(value: unknown): string {
 
 function normalizeFeatureFlagSubjectKey(value: unknown): string {
   if (typeof value !== 'string') {
-    throw new BadRequestException('Feature flag subject key must be a string.');
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_FEATURE_FLAG_SUBJECT_KEY_INVALID_TYPE',
+      'Feature flag subject key must be a string.',
+      { field: 'subjectKey' },
+    );
   }
 
   const normalized = value.trim();
 
   if (!normalized) {
-    throw new BadRequestException('Feature flag subject key is required.');
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_FEATURE_FLAG_SUBJECT_KEY_REQUIRED',
+      'Feature flag subject key is required.',
+      { field: 'subjectKey' },
+    );
   }
 
   if (normalized.length > 200) {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_FEATURE_FLAG_SUBJECT_KEY_TOO_LONG',
       'Feature flag subject key must not exceed 200 characters.',
+      { field: 'subjectKey', maxLength: 200 },
     );
   }
 
@@ -595,8 +650,10 @@ function normalizeFeatureFlagSubjectAttributes(
   }
 
   if (typeof value !== 'string') {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_FEATURE_FLAG_SUBJECT_ATTRIBUTES_INVALID_TYPE',
       'Feature flag subject attributes must be a JSON object string.',
+      { field: 'attributes' },
     );
   }
 
@@ -604,21 +661,27 @@ function normalizeFeatureFlagSubjectAttributes(
   try {
     parsed = JSON.parse(value);
   } catch {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_FEATURE_FLAG_SUBJECT_ATTRIBUTES_JSON_INVALID',
       'Feature flag subject attributes must be valid JSON.',
+      { field: 'attributes' },
     );
   }
 
   if (!isPlainRecord(parsed)) {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_FEATURE_FLAG_SUBJECT_ATTRIBUTES_OBJECT_INVALID',
       'Feature flag subject attributes must be a JSON object.',
+      { field: 'attributes' },
     );
   }
 
   const entries = Object.entries(parsed);
   if (entries.length > 50) {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_FEATURE_FLAG_SUBJECT_ATTRIBUTES_TOO_MANY',
       'Feature flag subject attributes must not exceed 50 keys.',
+      { field: 'attributes', maxKeys: 50 },
     );
   }
 
@@ -676,8 +739,10 @@ function matchesFeatureFlagAudience(
 function normalizeFeatureFlagSubjectAttributeKey(value: string): string {
   const normalized = value.trim();
   if (!/^[A-Za-z0-9_.-]{1,80}$/.test(normalized)) {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_FEATURE_FLAG_SUBJECT_ATTRIBUTE_KEY_INVALID',
       'Feature flag subject attribute key is invalid.',
+      { attribute: value },
     );
   }
 
@@ -693,15 +758,19 @@ function normalizeFeatureFlagSubjectAttributeValue(
     typeof value !== 'number' &&
     typeof value !== 'boolean'
   ) {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_FEATURE_FLAG_SUBJECT_ATTRIBUTE_VALUE_INVALID_TYPE',
       `Feature flag subject attribute ${key} must be a string, number or boolean.`,
+      { attribute: key },
     );
   }
 
   const normalized = String(value).trim();
   if (!normalized || normalized.length > 100) {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_FEATURE_FLAG_SUBJECT_ATTRIBUTE_VALUE_INVALID',
       `Feature flag subject attribute ${key} must be 1 to 100 characters.`,
+      { attribute: key, maxLength: 100, minLength: 1 },
     );
   }
 
@@ -733,21 +802,29 @@ function assertRuntimeConfigMutation(
     body.public === false ||
     (body.visibility !== undefined && body.visibility !== 'public')
   ) {
-    throw new BadRequestException(`Runtime config ${key} must remain public.`);
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_RUNTIME_VISIBILITY_INVALID',
+      `Runtime config ${key} must remain public.`,
+      { key, visibility: body.visibility ?? (body.public === false ? 'private' : undefined) },
+    );
   }
 
   if (key === ADMIN_TITLE_CONFIG_KEY) {
     if (body.valueType !== undefined && body.valueType !== 'string') {
-      throw new BadRequestException(
+      throw systemConfigBadRequest(
+        'SYSTEM_CONFIG_RUNTIME_VALUE_TYPE_INVALID',
         `Runtime config ${key} must keep string value type.`,
+        { expectedValueType: 'string', key, valueType: body.valueType },
       );
     }
     return;
   }
 
   if (body.valueType !== undefined && body.valueType !== 'number') {
-    throw new BadRequestException(
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_RUNTIME_VALUE_TYPE_INVALID',
       `Runtime config ${key} must keep number value type.`,
+      { expectedValueType: 'number', key, valueType: body.valueType },
     );
   }
 
@@ -773,12 +850,20 @@ function assertRuntimeConfigMutation(
 
 function normalizeConfigValueKey(key: string | undefined): string {
   if (typeof key !== 'string') {
-    throw new BadRequestException('System config key is required.');
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_KEY_REQUIRED',
+      'System config key is required.',
+      { field: 'key' },
+    );
   }
 
   const normalized = key.trim();
   if (!normalized) {
-    throw new BadRequestException('System config key is required.');
+    throw systemConfigBadRequest(
+      'SYSTEM_CONFIG_KEY_REQUIRED',
+      'System config key is required.',
+      { field: 'key' },
+    );
   }
   return normalized;
 }
@@ -789,8 +874,10 @@ function toPublicConfigValue(
   overridden: boolean,
 ): SystemConfigValueResult {
   if (config.visibility !== 'public') {
-    throw new ForbiddenException(
+    throw systemConfigForbidden(
+      'SYSTEM_CONFIG_VALUE_NOT_PUBLIC',
       `System config value is not public: ${config.key}`,
+      { key: config.key, visibility: config.visibility },
     );
   }
 

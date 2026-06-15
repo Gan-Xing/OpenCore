@@ -1,10 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
 import type {
   BatchDeleteSystemConfigsDto,
@@ -44,6 +38,10 @@ import {
   normalizeStoredConfigValue,
   redactSystemConfig,
   resolveConfigVisibility,
+  systemConfigBadRequest,
+  systemConfigConflict,
+  systemConfigForbidden,
+  systemConfigNotFound,
   SystemConfigRepository,
   type SystemConfigSecretValueResult,
   type SystemConfigPageQuery,
@@ -117,12 +115,18 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
     const config = this.findConfig(key);
 
     if (config.visibility !== 'secret') {
-      throw new ForbiddenException(`System config is not secret: ${key}`);
+      throw systemConfigForbidden(
+        'SYSTEM_CONFIG_NOT_SECRET',
+        `System config is not secret: ${key}`,
+        { key, visibility: config.visibility },
+      );
     }
 
     if (config.valueType !== 'string') {
-      throw new BadRequestException(
+      throw systemConfigBadRequest(
+        'SYSTEM_CONFIG_SECRET_VALUE_TYPE_INVALID',
         `Secret system config ${key} must keep string value type.`,
+        { key, valueType: config.valueType },
       );
     }
 
@@ -154,7 +158,11 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
     });
 
     if (this.systemConfigs.some((config) => config.key === body.key)) {
-      throw new ConflictException(`System config already exists: ${body.key}`);
+      throw systemConfigConflict(
+        'SYSTEM_CONFIG_ALREADY_EXISTS',
+        `System config already exists: ${body.key}`,
+        { key: body.key },
+      );
     }
 
     const config: SystemConfigRecord = {
@@ -280,7 +288,11 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
     const missing = keys.find((key) => !existingKeys.has(key));
 
     if (missing) {
-      throw new NotFoundException(`System config not found: ${missing}`);
+      throw systemConfigNotFound(
+        'SYSTEM_CONFIG_NOT_FOUND',
+        `System config not found: ${missing}`,
+        { key: missing },
+      );
     }
 
     const systemConfig = this.systemConfigs.find(
@@ -288,8 +300,10 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
     );
 
     if (systemConfig) {
-      throw new BadRequestException(
+      throw systemConfigBadRequest(
+        'SYSTEM_CONFIG_SYSTEM_IMMUTABLE',
         `System built-in config cannot be deleted: ${systemConfig.key}`,
+        { key: systemConfig.key },
       );
     }
 
@@ -335,8 +349,10 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
     );
 
     if (!override) {
-      throw new NotFoundException(
+      throw systemConfigNotFound(
+        'SYSTEM_CONFIG_ENVIRONMENT_OVERRIDE_NOT_FOUND',
         `System config environment override not found: ${key}/${normalizedEnvironment}`,
+        { environment: normalizedEnvironment, key },
       );
     }
 
@@ -529,7 +545,11 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
     );
 
     if (!config) {
-      throw new NotFoundException(`System config not found: ${key}`);
+      throw systemConfigNotFound(
+        'SYSTEM_CONFIG_NOT_FOUND',
+        `System config not found: ${key}`,
+        { key },
+      );
     }
 
     return config;

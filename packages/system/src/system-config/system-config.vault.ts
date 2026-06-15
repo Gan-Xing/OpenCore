@@ -1,4 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
+import { createApiErrorBody } from '@opencore/common';
 import {
   createCipheriv,
   createDecipheriv,
@@ -289,9 +290,11 @@ export function decryptSystemConfigSecretValue(
 
     return plaintext.toString('utf8');
   } catch (error) {
-    throw new BadRequestException(
+    throw systemConfigVaultBadRequest(
+      'SYSTEM_CONFIG_VAULT_DECRYPT_FAILED',
       `System config secret value cannot be decrypted: ${key}`,
-      { cause: error },
+      { key },
+      error,
     );
   }
 }
@@ -332,9 +335,11 @@ export async function decryptSystemConfigSecretValueAsync(
 
     return plaintext.toString('utf8');
   } catch (error) {
-    throw new BadRequestException(
+    throw systemConfigVaultBadRequest(
+      'SYSTEM_CONFIG_VAULT_DECRYPT_FAILED',
       `System config secret value cannot be decrypted: ${key}`,
-      { cause: error },
+      { key },
+      error,
     );
   }
 }
@@ -431,8 +436,10 @@ function getSystemConfigVaultKeyById(keyId: string): Buffer {
   );
 
   if (!material) {
-    throw new BadRequestException(
+    throw systemConfigVaultBadRequest(
+      'SYSTEM_CONFIG_VAULT_KEY_NOT_CONFIGURED',
       `System config vault key is not configured: ${keyId}`,
+      { keyId },
     );
   }
 
@@ -466,7 +473,8 @@ function readSystemConfigVaultKeyring(): Map<string, string> {
     const parsed = JSON.parse(rawKeyring) as unknown;
 
     if (!isPlainStringRecord(parsed)) {
-      throw new BadRequestException(
+      throw systemConfigVaultBadRequest(
+        'SYSTEM_CONFIG_VAULT_KEYRING_INVALID',
         'OPENCORE_CONFIG_KMS_KEYRING must be a JSON object of keyId to key material.',
       );
     }
@@ -487,8 +495,10 @@ function readSystemConfigVaultKeyring(): Map<string, string> {
   }
 
   if (!keyring.has(activeKeyId)) {
-    throw new BadRequestException(
+    throw systemConfigVaultBadRequest(
+      'SYSTEM_CONFIG_VAULT_ACTIVE_KEY_MISSING',
       `OPENCORE_CONFIG_KMS_ACTIVE_KEY_ID is not present in OPENCORE_CONFIG_KMS_KEYRING: ${activeKeyId}`,
+      { activeKeyId },
     );
   }
 
@@ -637,8 +647,10 @@ async function requestHttpJsonKms(
 
 function assertHttpJsonKmsReady(kms: SystemConfigHttpJsonKmsOptions): void {
   if (!kms.ready) {
-    throw new BadRequestException(
+    throw systemConfigVaultBadRequest(
+      'SYSTEM_CONFIG_KMS_NOT_READY',
       `Managed KMS provider is not ready: ${kms.lastError}`,
+      { lastError: kms.lastError, provider: 'opencore.http-json' },
     );
   }
 }
@@ -735,8 +747,10 @@ function normalizeVaultKeyId(value: string): string {
   const normalized = value.trim().toLowerCase();
 
   if (!VAULT_KEY_ID_PATTERN.test(normalized)) {
-    throw new BadRequestException(
+    throw systemConfigVaultBadRequest(
+      'SYSTEM_CONFIG_VAULT_KEY_ID_INVALID',
       'System config vault key id must start with a letter and contain only lowercase letters, numbers, dots, underscores or hyphens.',
+      { keyId: value },
     );
   }
 
@@ -745,7 +759,8 @@ function normalizeVaultKeyId(value: string): string {
 
 function normalizeVaultKeyMaterial(value: unknown): string {
   if (typeof value !== 'string' || !value.trim()) {
-    throw new BadRequestException(
+    throw systemConfigVaultBadRequest(
+      'SYSTEM_CONFIG_VAULT_KEY_MATERIAL_INVALID',
       'System config vault key material must be a non-empty string.',
     );
   }
@@ -764,4 +779,16 @@ function isPlainStringRecord(value: unknown): value is Record<string, string> {
 
 function createSystemConfigAad(key: string): Buffer {
   return Buffer.from(`system-config:${key}`, 'utf8');
+}
+
+function systemConfigVaultBadRequest(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+  cause?: unknown,
+): BadRequestException {
+  return new BadRequestException(
+    createApiErrorBody({ code, message, details }),
+    cause === undefined ? undefined : { cause },
+  );
 }

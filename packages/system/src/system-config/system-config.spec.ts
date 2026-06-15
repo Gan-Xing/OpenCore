@@ -858,14 +858,15 @@ describe('@opencore/system system-config', () => {
         provider: 'opencore.http-json',
         ready: false,
       });
-      await expect(
+      await expectHttpExceptionCode(
         normalizeStoredConfigValueAsync({
           key: 'auth.managed.secret',
           value: 'managed-secret-value',
           valueType: 'string',
           visibility: 'secret',
         }),
-      ).rejects.toThrow(BadRequestException);
+        'SYSTEM_CONFIG_KMS_NOT_READY',
+      );
     } finally {
       restoreEnv('OPENCORE_CONFIG_KMS_PROVIDER', previousProvider);
       restoreEnv('OPENCORE_CONFIG_KMS_WRAP_URL', previousWrapUrl);
@@ -1011,6 +1012,47 @@ describe('@opencore/system system-config', () => {
         visibility: 'secret',
       }),
     ).rejects.toThrow(BadRequestException);
+  });
+
+  it('returns stable error codes for system-config guards', async () => {
+    const service = new SystemConfigService(new SeedSystemConfigRepository());
+
+    await expectHttpExceptionCode(
+      service.deleteConfig('opencore.admin.title'),
+      'SYSTEM_CONFIG_SYSTEM_IMMUTABLE',
+    );
+    await expectHttpExceptionCode(
+      service.getConfigValueByKey('auth.jwt.secretRef'),
+      'SYSTEM_CONFIG_VALUE_NOT_PUBLIC',
+    );
+    await expectHttpExceptionCode(
+      service.resolveSecretConfigValue('opencore.admin.title'),
+      'SYSTEM_CONFIG_NOT_SECRET',
+    );
+    await expectHttpExceptionCode(
+      service.createConfig({
+        key: 'auth.token.secret',
+        value: 'unsafe',
+        valueType: 'string',
+      }),
+      'SYSTEM_CONFIG_SECRET_KEY_VISIBILITY_REQUIRED',
+    );
+    await expectHttpExceptionCode(
+      service.createConfig({
+        key: 'feature.sample.enabled',
+        value: 'true',
+        valueType: 'string',
+        visibility: 'public',
+      }),
+      'SYSTEM_CONFIG_FEATURE_FLAG_VALUE_TYPE_INVALID',
+    );
+    await expectHttpExceptionCode(
+      service.evaluateFeatureFlag({
+        flag: 'missing.flag',
+        subjectKey: 'user_admin',
+      }),
+      'SYSTEM_CONFIG_FEATURE_FLAG_NOT_FOUND',
+    );
   });
 
   describe('PrismaSystemConfigRepository integration', () => {
@@ -1596,4 +1638,31 @@ function restoreEnv(key: string, value: string | undefined): void {
   }
 
   process.env[key] = value;
+}
+
+async function expectHttpExceptionCode(
+  promise: Promise<unknown>,
+  code: string,
+): Promise<void> {
+  try {
+    await promise;
+  } catch (error) {
+    expect(getHttpExceptionResponse(error)).toMatchObject({ code });
+    return;
+  }
+
+  throw new Error(`Expected HTTP exception code ${code}`);
+}
+
+function getHttpExceptionResponse(error: unknown): unknown {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'getResponse' in error &&
+    typeof error.getResponse === 'function'
+  ) {
+    return error.getResponse();
+  }
+
+  return undefined;
 }

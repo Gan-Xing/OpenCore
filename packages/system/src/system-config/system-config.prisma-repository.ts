@@ -1,10 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
 import { PrismaService } from '@opencore/database';
 import type {
@@ -34,7 +28,6 @@ import {
   createSystemConfigPageResult,
   isSystemConfigSecretEncrypted,
   normalizeExistingConfigValueAsync,
-  normalizeExistingConfigValue,
   normalizeConfigCategory,
   normalizeConfigName,
   normalizeBatchSystemConfigKeys,
@@ -48,6 +41,10 @@ import {
   redactSystemConfig,
   resolveConfigVisibility,
   resolveStoredConfigVisibility,
+  systemConfigBadRequest,
+  systemConfigConflict,
+  systemConfigForbidden,
+  systemConfigNotFound,
   SystemConfigRepository,
   type SystemConfigSecretValueResult,
   toSystemConfigValueType,
@@ -127,12 +124,18 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
     const record = toSystemConfigRecord(row);
 
     if (record.visibility !== 'secret') {
-      throw new ForbiddenException(`System config is not secret: ${key}`);
+      throw systemConfigForbidden(
+        'SYSTEM_CONFIG_NOT_SECRET',
+        `System config is not secret: ${key}`,
+        { key, visibility: record.visibility },
+      );
     }
 
     if (record.valueType !== 'string') {
-      throw new BadRequestException(
+      throw systemConfigBadRequest(
+        'SYSTEM_CONFIG_SECRET_VALUE_TYPE_INVALID',
         `Secret system config ${key} must keep string value type.`,
+        { key, valueType: record.valueType },
       );
     }
 
@@ -166,7 +169,11 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
     if (
       await this.prisma.systemConfig.findUnique({ where: { key: body.key } })
     ) {
-      throw new ConflictException(`System config already exists: ${body.key}`);
+      throw systemConfigConflict(
+        'SYSTEM_CONFIG_ALREADY_EXISTS',
+        `System config already exists: ${body.key}`,
+        { key: body.key },
+      );
     }
 
     const value =
@@ -334,14 +341,20 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
     const missing = keys.find((key) => !existingKeys.has(key));
 
     if (missing) {
-      throw new NotFoundException(`System config not found: ${missing}`);
+      throw systemConfigNotFound(
+        'SYSTEM_CONFIG_NOT_FOUND',
+        `System config not found: ${missing}`,
+        { key: missing },
+      );
     }
 
     const systemConfig = configs.find((config) => config.system);
 
     if (systemConfig) {
-      throw new BadRequestException(
+      throw systemConfigBadRequest(
+        'SYSTEM_CONFIG_SYSTEM_IMMUTABLE',
         `System built-in config cannot be deleted: ${systemConfig.key}`,
+        { key: systemConfig.key },
       );
     }
 
@@ -386,8 +399,10 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
     });
 
     if (!row) {
-      throw new NotFoundException(
+      throw systemConfigNotFound(
+        'SYSTEM_CONFIG_ENVIRONMENT_OVERRIDE_NOT_FOUND',
         `System config environment override not found: ${key}/${normalizedEnvironment}`,
+        { environment: normalizedEnvironment, key },
       );
     }
 
@@ -611,7 +626,11 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
     });
 
     if (!config) {
-      throw new NotFoundException(`System config not found: ${key}`);
+      throw systemConfigNotFound(
+        'SYSTEM_CONFIG_NOT_FOUND',
+        `System config not found: ${key}`,
+        { key },
+      );
     }
 
     return config;

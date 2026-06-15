@@ -128,6 +128,143 @@ export default {
   'error.SYSTEM_USER_SYSTEM_IMMUTABLE':
     'Built-in system users cannot be changed or deleted.',
   'error.SYSTEM_USER_USERNAME_INVALID': 'The username is invalid.',
+  'error.SYSTEM_CONFIG_ALREADY_EXISTS': 'The config key already exists.',
+  'error.SYSTEM_CONFIG_CATEGORY_INVALID_TYPE':
+    'The config category must be a string.',
+  'error.SYSTEM_CONFIG_CATEGORY_REQUIRED': 'The config category is required.',
+  'error.SYSTEM_CONFIG_CATEGORY_TOO_LONG': 'The config category is too long.',
+  'error.SYSTEM_CONFIG_ENVIRONMENT_DEFAULT_FORBIDDEN':
+    'Environment overrides cannot target the default environment.',
+  'error.SYSTEM_CONFIG_ENVIRONMENT_INVALID':
+    'The config environment is invalid.',
+  'error.SYSTEM_CONFIG_ENVIRONMENT_INVALID_TYPE':
+    'The config environment must be a string.',
+  'error.SYSTEM_CONFIG_ENVIRONMENT_OVERRIDE_NOT_FOUND':
+    'The config environment override does not exist.',
+  'error.SYSTEM_CONFIG_ENVIRONMENT_OVERRIDE_VISIBILITY_INVALID':
+    'Only public config can define environment overrides.',
+  'error.SYSTEM_CONFIG_FEATURE_AUDIENCE_ATTRIBUTE_INVALID':
+    'The feature audience attribute is invalid.',
+  'error.SYSTEM_CONFIG_FEATURE_AUDIENCE_ATTRIBUTE_INVALID_TYPE':
+    'The feature audience attribute must be a string.',
+  'error.SYSTEM_CONFIG_FEATURE_AUDIENCE_ENABLED_MISSING':
+    'The feature audience config is missing its enabled flag.',
+  'error.SYSTEM_CONFIG_FEATURE_AUDIENCE_INVALID':
+    'The feature audience rules must be a JSON object.',
+  'error.SYSTEM_CONFIG_FEATURE_AUDIENCE_MODE_INVALID':
+    'The feature audience match mode is invalid.',
+  'error.SYSTEM_CONFIG_FEATURE_AUDIENCE_OPERATOR_INVALID':
+    'The feature audience operator is invalid.',
+  'error.SYSTEM_CONFIG_FEATURE_AUDIENCE_RULES_INVALID':
+    'The feature audience rules must be an array.',
+  'error.SYSTEM_CONFIG_FEATURE_AUDIENCE_RULES_TOO_MANY':
+    'The feature audience has too many rules.',
+  'error.SYSTEM_CONFIG_FEATURE_AUDIENCE_RULE_INVALID':
+    'The feature audience rule must be an object.',
+  'error.SYSTEM_CONFIG_FEATURE_AUDIENCE_VALUES_INVALID':
+    'The feature audience values are invalid.',
+  'error.SYSTEM_CONFIG_FEATURE_AUDIENCE_VALUE_DUPLICATED':
+    'The feature audience value is duplicated.',
+  'error.SYSTEM_CONFIG_FEATURE_AUDIENCE_VALUE_INVALID':
+    'The feature audience value is invalid.',
+  'error.SYSTEM_CONFIG_FEATURE_AUDIENCE_VALUE_INVALID_TYPE':
+    'The feature audience value must be a string.',
+  'error.SYSTEM_CONFIG_FEATURE_FLAG_NAME_INVALID':
+    'The feature flag name is invalid.',
+  'error.SYSTEM_CONFIG_FEATURE_FLAG_NAME_INVALID_TYPE':
+    'The feature flag name must be a string.',
+  'error.SYSTEM_CONFIG_FEATURE_FLAG_NOT_FOUND':
+    'The feature flag does not exist.',
+  'error.SYSTEM_CONFIG_FEATURE_FLAG_ROLLOUT_INVALID':
+    'The feature flag rollout must be an integer between 0 and 100.',
+  'error.SYSTEM_CONFIG_FEATURE_FLAG_RUNTIME_SHAPE_INVALID':
+    'The feature flag runtime config shape is invalid.',
+  'error.SYSTEM_CONFIG_FEATURE_FLAG_SUBJECT_ATTRIBUTES_INVALID_TYPE':
+    'The feature flag subject attributes must be a JSON object string.',
+  'error.SYSTEM_CONFIG_FEATURE_FLAG_SUBJECT_ATTRIBUTES_JSON_INVALID':
+    'The feature flag subject attributes must be valid JSON.',
+  'error.SYSTEM_CONFIG_FEATURE_FLAG_SUBJECT_ATTRIBUTES_OBJECT_INVALID':
+    'The feature flag subject attributes must be a JSON object.',
+  'error.SYSTEM_CONFIG_FEATURE_FLAG_SUBJECT_ATTRIBUTES_TOO_MANY':
+    'The feature flag subject has too many attributes.',
+  'error.SYSTEM_CONFIG_FEATURE_FLAG_SUBJECT_ATTRIBUTE_KEY_INVALID':
+    'The feature flag subject attribute key is invalid.',
+  'error.SYSTEM_CONFIG_FEATURE_FLAG_SUBJECT_ATTRIBUTE_VALUE_INVALID':
+    'The feature flag subject attribute value is invalid.',
+  'error.SYSTEM_CONFIG_FEATURE_FLAG_SUBJECT_ATTRIBUTE_VALUE_INVALID_TYPE':
+    'The feature flag subject attribute value type is invalid.',
+  'error.SYSTEM_CONFIG_FEATURE_FLAG_SUBJECT_KEY_INVALID_TYPE':
+    'The feature flag subject key must be a string.',
+  'error.SYSTEM_CONFIG_FEATURE_FLAG_SUBJECT_KEY_REQUIRED':
+    'The feature flag subject key is required.',
+  'error.SYSTEM_CONFIG_FEATURE_FLAG_SUBJECT_KEY_TOO_LONG':
+    'The feature flag subject key is too long.',
+  'error.SYSTEM_CONFIG_FEATURE_FLAG_VALUE_TYPE_INVALID':
+    'The feature flag config value type is invalid.',
+  'error.SYSTEM_CONFIG_FEATURE_FLAG_VISIBILITY_INVALID':
+    'The feature flag config must remain public.',
+  'error.SYSTEM_CONFIG_FEATURE_ROLLOUT_ENABLED_MISSING':
+    'The feature rollout config is missing its enabled flag.',
+  'error.SYSTEM_CONFIG_KEYS_EMPTY': 'The config key list must not be empty.',
+  'error.SYSTEM_CONFIG_KEYS_INVALID': 'The config key list must be an array.',
+  'error.SYSTEM_CONFIG_KEY_DUPLICATED': 'The config key is duplicated.',
+  'error.SYSTEM_CONFIG_KEY_INVALID_TYPE': 'The config key must be a string.',
+  'error.SYSTEM_CONFIG_KEY_REQUIRED': 'The config key is required.',
+  'error.SYSTEM_CONFIG_KMS_NOT_READY':
+    'The config key management service is not ready.',
+  'error.SYSTEM_CONFIG_NAME_INVALID_TYPE':
+    'The config name must be a string.',
+  'error.SYSTEM_CONFIG_NAME_REQUIRED': 'The config name is required.',
+  'error.SYSTEM_CONFIG_NAME_TOO_LONG': 'The config name is too long.',
+  'error.SYSTEM_CONFIG_NOT_FOUND': 'The config does not exist.',
+  'error.SYSTEM_CONFIG_NOT_SECRET': 'The config is not a secret config.',
+  'error.SYSTEM_CONFIG_RUNTIME_INTEGER_INVALID':
+    'The runtime config value must be an integer in the allowed range.',
+  'error.SYSTEM_CONFIG_RUNTIME_VALUE_TYPE_INVALID':
+    'The runtime config value type is invalid.',
+  'error.SYSTEM_CONFIG_RUNTIME_VISIBILITY_INVALID':
+    'The runtime config must remain public.',
+  'error.SYSTEM_CONFIG_SECRET_KEY_VISIBILITY_REQUIRED':
+    'Secret-like config keys must be explicitly marked as secret.',
+  'error.SYSTEM_CONFIG_SECRET_ROTATION_ACTOR_INVALID_TYPE':
+    'The secret rotation actor must be a string.',
+  'error.SYSTEM_CONFIG_SECRET_ROTATION_ACTOR_TOO_LONG':
+    'The secret rotation actor is too long.',
+  'error.SYSTEM_CONFIG_SECRET_ROTATION_VALUE_INVALID_TYPE':
+    'The secret rotation value must be a string.',
+  'error.SYSTEM_CONFIG_SECRET_ROTATION_VALUE_REQUIRED':
+    'The secret rotation value is required.',
+  'error.SYSTEM_CONFIG_SECRET_VALUE_TYPE_INVALID':
+    'Secret config values must keep string value type.',
+  'error.SYSTEM_CONFIG_SECRET_VERSION_VISIBILITY_INVALID':
+    'Only secret config can keep secret versions.',
+  'error.SYSTEM_CONFIG_SECRET_VISIBILITY_KEY_REQUIRED':
+    'Secret visibility requires a secret-like config key.',
+  'error.SYSTEM_CONFIG_SYSTEM_IMMUTABLE':
+    'Built-in system config cannot be deleted.',
+  'error.SYSTEM_CONFIG_TEXT_INVALID_TYPE':
+    'The config text field must be a string.',
+  'error.SYSTEM_CONFIG_TEXT_TOO_LONG': 'The config text field is too long.',
+  'error.SYSTEM_CONFIG_VALUE_BOOLEAN_INVALID':
+    'The boolean config value is invalid.',
+  'error.SYSTEM_CONFIG_VALUE_INVALID_TYPE':
+    'The config value must be a string.',
+  'error.SYSTEM_CONFIG_VALUE_JSON_INVALID': 'The JSON config value is invalid.',
+  'error.SYSTEM_CONFIG_VALUE_NOT_PUBLIC': 'The config value is not public.',
+  'error.SYSTEM_CONFIG_VALUE_NUMBER_INVALID':
+    'The number config value is invalid.',
+  'error.SYSTEM_CONFIG_VAULT_ACTIVE_KEY_MISSING':
+    'The config keyring is missing the active key.',
+  'error.SYSTEM_CONFIG_VAULT_DECRYPT_FAILED':
+    'The config secret value could not be decrypted.',
+  'error.SYSTEM_CONFIG_VAULT_KEYRING_INVALID':
+    'The config keyring format is invalid.',
+  'error.SYSTEM_CONFIG_VAULT_KEY_ID_INVALID':
+    'The config vault key ID is invalid.',
+  'error.SYSTEM_CONFIG_VAULT_KEY_MATERIAL_INVALID':
+    'The config vault key material is invalid.',
+  'error.SYSTEM_CONFIG_VAULT_KEY_NOT_CONFIGURED':
+    'The config vault key is not configured.',
   'error.SYSTEM_ROLE_ALREADY_EXISTS': 'The role code already exists.',
   'error.SYSTEM_ROLE_BOOLEAN_INVALID':
     'The role boolean field must be a boolean.',
