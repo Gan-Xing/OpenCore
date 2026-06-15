@@ -7,6 +7,9 @@ Rules:
 
 - Use `createTypedSmokeRuntime()` for base URL, auth, request timeouts and SDK
   client wiring.
+- `tools/scripts/smoke-helpers.mjs` is only the compatibility adapter for
+  legacy `.mjs` smoke scripts; shared runtime behavior belongs in
+  `runtime.ts`.
 - Prefer SDK clients for accepted 2xx API paths so request and response DTOs
   stay type-checked against `@opencore/sdk`.
 - Keep `smoke.apiRequest()` for negative-path guards, malformed payloads,

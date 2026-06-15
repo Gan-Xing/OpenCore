@@ -21,7 +21,7 @@ export class HttpStatusError extends Error {
   readonly body: unknown;
   readonly status: number;
 
-  constructor(message: string, status: number, body: unknown) {
+  constructor(message: string, status: number, body?: unknown) {
     super(message);
     this.name = 'HttpStatusError';
     this.body = body;
@@ -30,6 +30,8 @@ export class HttpStatusError extends Error {
 }
 
 export type TypedSmokeRuntime = ReturnType<typeof createTypedSmokeRuntime>;
+
+export const createSmokeRuntime = createTypedSmokeRuntime;
 
 export function createTypedSmokeRuntime() {
   const port = process.env.OPENCORE_SMOKE_PORT || '39173';
@@ -49,6 +51,7 @@ export function createTypedSmokeRuntime() {
     return Boolean(candidate) && candidates.indexOf(candidate) === index;
   });
   const timeoutMs = Number(process.env.OPENCORE_SMOKE_TIMEOUT_MS || 10000);
+  let token: string | undefined;
 
   const sdkRequest: SdkRequest = (path, options) => {
     return apiRequest(path, options);
@@ -114,6 +117,7 @@ export function createTypedSmokeRuntime() {
   ): Promise<T> {
     return request<T>(`${apiPrefix}${path}`, {
       ...options,
+      token: options.token ?? token,
       expected: options.expected || [200, 201],
     });
   }
@@ -149,6 +153,9 @@ export function createTypedSmokeRuntime() {
     clients,
     login,
     request,
+    setToken(value: string | undefined) {
+      token = value;
+    },
     timeoutMs,
     username,
   };
@@ -160,6 +167,18 @@ export function assertArray(
 ): asserts value is readonly unknown[] {
   if (!Array.isArray(value)) {
     throw new Error(`Expected ${label} to be an array`);
+  }
+}
+
+export function assertAtLeast(
+  actual: unknown,
+  expected: number,
+  label: string,
+) {
+  if (typeof actual !== 'number' || actual < expected) {
+    throw new Error(
+      `Expected ${label} to be at least ${expected}, received ${formatBody(actual)}`,
+    );
   }
 }
 
@@ -181,16 +200,31 @@ export function assertEqual<T>(actual: T, expected: T, label: string) {
   }
 }
 
-export function assertIncludes<T>(
-  values: readonly T[],
-  expected: T,
-  label: string,
-) {
-  if (!values.includes(expected)) {
+export function assertIncludes<T>(values: unknown, expected: T, label: string) {
+  if (!Array.isArray(values) || !values.includes(expected)) {
     throw new Error(
       `Expected ${label} to include ${JSON.stringify(expected)}, received ${formatBody(values)}`,
     );
   }
+}
+
+export function assertNotIncludes<T>(
+  values: unknown,
+  expected: T,
+  label: string,
+) {
+  if (!Array.isArray(values) || values.includes(expected)) {
+    throw new Error(
+      `Expected ${label} not to include ${JSON.stringify(expected)}, received ${formatBody(values)}`,
+    );
+  }
+}
+
+export function assertNumber(value: unknown, label: string) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new Error(`Expected ${label} to be a finite number`);
+  }
+  return value;
 }
 
 export function assertNumberAtLeast(
@@ -198,11 +232,7 @@ export function assertNumberAtLeast(
   minimum: number,
   label: string,
 ) {
-  if (!Number.isFinite(value) || value < minimum) {
-    throw new Error(
-      `Expected ${label} to be at least ${minimum}, received ${formatBody(value)}`,
-    );
-  }
+  assertAtLeast(value, minimum, label);
 }
 
 export function assertOpenApiPath(openApi: unknown, path: string) {
@@ -215,11 +245,31 @@ export function assertOpenApiPath(openApi: unknown, path: string) {
   }
 }
 
+export function assertOpenApiSchema(openApi: unknown, schema: string) {
+  if (
+    !openApi ||
+    typeof openApi !== 'object' ||
+    !(
+      schema in
+      (((openApi as { components?: { schemas?: Record<string, unknown> } })
+        .components?.schemas as Record<string, unknown> | undefined) ?? {})
+    )
+  ) {
+    throw new Error(`OpenAPI docs-json does not include schema ${schema}`);
+  }
+}
+
 export function assertString(value: unknown, label: string): string {
   if (typeof value !== 'string' || value.length === 0) {
     throw new Error(`Expected ${label} to be a non-empty string`);
   }
   return value;
+}
+
+export function delay(ms: number) {
+  return new Promise<void>((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
 
 export function formatBody(body: unknown) {
