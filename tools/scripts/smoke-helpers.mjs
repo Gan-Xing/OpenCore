@@ -156,6 +156,14 @@ export function assertIncludes(values, expected, label) {
   }
 }
 
+export function assertNotIncludes(values, expected, label) {
+  if (!Array.isArray(values) || values.includes(expected)) {
+    throw new Error(
+      `Expected ${label} not to include ${JSON.stringify(expected)}, received ${formatBody(values)}`,
+    );
+  }
+}
+
 export function assertNumber(value, label) {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
     throw new Error(`Expected ${label} to be a finite number`);
