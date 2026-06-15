@@ -23,6 +23,7 @@ import type {
   RevokeOAuthTokenDto,
   ScheduleOutboxDto,
   TestIntegrationProviderDto,
+  TestOutboxMessageDto,
   UpdateIntegrationProviderDto,
 } from './integration.dto';
 import {
@@ -535,6 +536,32 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
     });
 
     return toOutboxRecord(message);
+  }
+
+  async sendTestOutbox(channel: 'mail' | 'sms', body: TestOutboxMessageDto) {
+    const queued = await this.enqueueOutbox(channel, body);
+    const provider = await this.findProvider(body.providerCode);
+    const delivery = await deliverOutboxMessage({
+      channel,
+      provider,
+      message: queued,
+      secretResolver: this.resolveProviderSecret,
+    });
+    const message =
+      delivery.status === 'sent'
+        ? await this.markOutboxSent(channel, queued.id)
+        : await this.markOutboxFailed(channel, queued.id, {
+            error: delivery.error ?? 'Provider test delivery failed.',
+          });
+
+    return {
+      channel,
+      providerCode: body.providerCode,
+      message,
+      status: delivery.status,
+      error: delivery.error,
+      testedAt: new Date().toISOString(),
+    };
   }
 
   async listOutbox(

@@ -604,6 +604,15 @@ export class CreateOutboxMessageDto {
   attachments?: readonly CreateIntegrationOutboxAttachmentDto[];
 }
 
+export class TestOutboxMessageDto extends CreateOutboxMessageDto {
+  @ApiProperty({
+    required: false,
+    description:
+      'Optional operator reason recorded in the test-send result context.',
+  })
+  reason?: string;
+}
+
 export class FailOutboxMessageDto {
   @ApiProperty()
   error!: string;
@@ -660,6 +669,26 @@ export class IntegrationOutboxProcessResultDto {
 
   @ApiProperty()
   queuedCount!: number;
+}
+
+export class IntegrationOutboxTestResultDto {
+  @ApiProperty({ enum: ['mail', 'sms'] })
+  channel!: 'mail' | 'sms';
+
+  @ApiProperty()
+  providerCode!: string;
+
+  @ApiProperty({ type: IntegrationOutboxDto })
+  message!: IntegrationOutboxDto;
+
+  @ApiProperty({ enum: ['failed', 'sent'] })
+  status!: 'failed' | 'sent';
+
+  @ApiProperty({ required: false })
+  error?: string;
+
+  @ApiProperty()
+  testedAt!: string;
 }
 
 export class IntegrationOutboxScheduleChannelResultDto {

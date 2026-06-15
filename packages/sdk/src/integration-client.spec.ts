@@ -67,6 +67,12 @@ describe('createIntegrationClient', () => {
       recipient: 'admin@example.test',
       payload: { name: 'Admin' },
     });
+    await client.sendMailTest('token', {
+      providerCode: 'mail.sandbox',
+      recipient: 'admin@example.test',
+      payload: { name: 'Admin' },
+      reason: 'SDK mail test-send',
+    });
     await client.markMailOutboxFailed('token', 'outbox_mail_1', {
       error: 'SMTP rejected',
     });
@@ -99,6 +105,12 @@ describe('createIntegrationClient', () => {
       providerCode: 'sms.sandbox',
       recipient: '+15551234567',
       payload: { code: '123456' },
+    });
+    await client.sendSmsTest('token', {
+      providerCode: 'sms.sandbox',
+      recipient: '+15551234567',
+      payload: { code: '123456' },
+      reason: 'SDK SMS test-send',
     });
     await client.markSmsOutboxFailed('token', 'outbox_sms_1', {
       error: 'Gateway throttled',
@@ -174,6 +186,7 @@ describe('createIntegrationClient', () => {
       },
       { path: '/integrations/mail/outbox/outbox_mail_1' },
       { path: '/integrations/mail/outbox', method: 'POST' },
+      { path: '/integrations/mail/test-send', method: 'POST' },
       {
         path: '/integrations/mail/outbox/outbox_mail_1/failed',
         method: 'PATCH',
@@ -201,6 +214,7 @@ describe('createIntegrationClient', () => {
       { path: '/integrations/sms/outbox?status=queued' },
       { path: '/integrations/sms/outbox/outbox_sms_1' },
       { path: '/integrations/sms/outbox', method: 'POST' },
+      { path: '/integrations/sms/test-send', method: 'POST' },
       {
         path: '/integrations/sms/outbox/outbox_sms_1/failed',
         method: 'PATCH',

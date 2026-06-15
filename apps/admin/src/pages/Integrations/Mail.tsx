@@ -6,6 +6,7 @@ import {
 import type {
   IntegrationOutboxProcessResult,
   IntegrationOutboxSummary,
+  IntegrationOutboxTestResult,
   IntegrationTemplateSummary,
   TemplatePreviewSummary,
 } from '@opencore/sdk';
@@ -26,6 +27,7 @@ import {
   listOpenCoreMailTemplates,
   previewOpenCoreMailTemplate,
   processOpenCoreIntegrationOutbox,
+  sendOpenCoreIntegrationTestOutbox,
 } from '@/services/opencore/platform';
 import {
   CurrentPageExportButton,
@@ -100,6 +102,18 @@ function buildPreviewPayload(
   return Object.keys(payload).length > 0 ? payload : { name: 'Admin' };
 }
 
+function selectMailProviderCode(
+  outboxRows: readonly IntegrationOutboxSummary[],
+  templateCode: string,
+): string {
+  return (
+    outboxRows.find((message) => message.templateCode === templateCode)
+      ?.providerCode ??
+    outboxRows[0]?.providerCode ??
+    'mail.sandbox'
+  );
+}
+
 export default function MailIntegrationPage() {
   const [templates, setTemplates] = useState<
     readonly IntegrationTemplateSummary[]
@@ -113,9 +127,12 @@ export default function MailIntegrationPage() {
   const [preview, setPreview] = useState<TemplatePreviewSummary>();
   const [lastProcess, setLastProcess] =
     useState<IntegrationOutboxProcessResult>();
+  const [lastTestSend, setLastTestSend] =
+    useState<IntegrationOutboxTestResult>();
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [previewingCode, setPreviewingCode] = useState<string>();
+  const [testSendingCode, setTestSendingCode] = useState<string>();
   const [loadError, setLoadError] = useState<string>();
 
   const templateFilterOptions: CurrentPageFilterOption<IntegrationTemplateSummary>[] =
@@ -282,6 +299,34 @@ export default function MailIntegrationPage() {
     }
   };
 
+  const sendTestMessage = async (record: IntegrationTemplateSummary) => {
+    const outbox = outboxRows.find(
+      (message) => message.templateCode === record.code,
+    );
+    setTestSendingCode(record.code);
+    try {
+      const result = await sendOpenCoreIntegrationTestOutbox('mail', {
+        providerCode: selectMailProviderCode(outboxRows, record.code),
+        templateCode: record.code,
+        recipient: 'admin@example.test',
+        payload: buildPreviewPayload(record, outbox),
+        reason: 'Admin mail test-send',
+      });
+
+      setSelected(record);
+      setSelectedOutbox(result.message);
+      setLastTestSend(result);
+      message.success(`Mail test-send ${result.status}.`);
+      await loadMailOperations();
+    } catch (error: unknown) {
+      message.error(
+        error instanceof Error ? error.message : 'Unable to send mail test.',
+      );
+    } finally {
+      setTestSendingCode(undefined);
+    }
+  };
+
   const templateColumns: ProColumns<IntegrationTemplateSummary>[] = [
     {
       title: 'Code',
@@ -325,6 +370,16 @@ export default function MailIntegrationPage() {
           type="link"
         >
           Preview template
+        </Button>,
+        <Button
+          key="test-send"
+          loading={testSendingCode === record.code}
+          onClick={() => void sendTestMessage(record)}
+          size="small"
+          title={MAIL_MANAGE_PERMISSION_MARKER}
+          type="link"
+        >
+          Send test
         </Button>,
       ],
     },
@@ -386,6 +441,10 @@ export default function MailIntegrationPage() {
           title="Last mail process"
           value={lastProcess?.attemptedCount ?? 0}
           suffix={`sent ${lastProcess?.sentCount ?? 0}`}
+        />
+        <Statistic
+          title="Last mail test-send"
+          value={lastTestSend?.status ?? 'not run'}
         />
       </Space>
       <ProTable<IntegrationTemplateSummary>
@@ -453,6 +512,9 @@ export default function MailIntegrationPage() {
           { label: 'Outbox Status', value: selectedOutbox?.status },
           { label: 'Outbox Retry Count', value: selectedOutbox?.retryCount },
           { label: 'Outbox Sent At', value: selectedOutbox?.sentAt },
+          { label: 'Test Send Status', value: lastTestSend?.status },
+          { label: 'Test Send Error', value: lastTestSend?.error },
+          { label: 'Test Send At', value: lastTestSend?.testedAt },
           {
             label: 'SMTP Attachments',
             value: selectedOutbox?.attachments?.length ?? 0,
@@ -490,6 +552,10 @@ export default function MailIntegrationPage() {
           {
             title: 'Last Process Result',
             value: lastProcess,
+          },
+          {
+            title: 'Last Test Send Result',
+            value: lastTestSend,
           },
         ]}
         onClose={() => {

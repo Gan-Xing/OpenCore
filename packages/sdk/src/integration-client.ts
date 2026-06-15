@@ -9,6 +9,7 @@ import type {
   IntegrationOutboxQueryRequest,
   IntegrationOutboxScheduleResult,
   IntegrationOutboxSummary,
+  IntegrationOutboxTestResult,
   IntegrationProviderDiagnosticsSummary,
   IntegrationProviderAuditLogPage,
   IntegrationProviderAuditLogQueryRequest,
@@ -33,6 +34,7 @@ import type {
   RevokeOAuthTokenRequest,
   ScheduleOutboxRequest,
   TestIntegrationProviderRequest,
+  TestOutboxMessageRequest,
   TemplatePreviewSummary,
   UpdateIntegrationProviderRequest,
 } from './integration-types';
@@ -118,6 +120,10 @@ export type IntegrationClient = {
     token: string,
     body: CreateOutboxMessageRequest,
   ) => Promise<IntegrationOutboxSummary>;
+  sendMailTest: (
+    token: string,
+    body: TestOutboxMessageRequest,
+  ) => Promise<IntegrationOutboxTestResult>;
   markMailOutboxSent: (
     token: string,
     id: string,
@@ -167,6 +173,10 @@ export type IntegrationClient = {
     token: string,
     body: CreateOutboxMessageRequest,
   ) => Promise<IntegrationOutboxSummary>;
+  sendSmsTest: (
+    token: string,
+    body: TestOutboxMessageRequest,
+  ) => Promise<IntegrationOutboxTestResult>;
   markSmsOutboxSent: (
     token: string,
     id: string,
@@ -319,6 +329,12 @@ export function createIntegrationClient(
         body,
         token,
       }),
+    sendMailTest: (token, body) =>
+      request<IntegrationOutboxTestResult>('/integrations/mail/test-send', {
+        method: 'POST',
+        body,
+        token,
+      }),
     markMailOutboxSent: (token, id) =>
       request<IntegrationOutboxSummary>(
         `/integrations/mail/outbox/${encodeURIComponent(id)}/sent`,
@@ -379,6 +395,12 @@ export function createIntegrationClient(
       ),
     enqueueSms: (token, body) =>
       request<IntegrationOutboxSummary>('/integrations/sms/outbox', {
+        method: 'POST',
+        body,
+        token,
+      }),
+    sendSmsTest: (token, body) =>
+      request<IntegrationOutboxTestResult>('/integrations/sms/test-send', {
         method: 'POST',
         body,
         token,

@@ -399,6 +399,68 @@ describe('IntegrationRepository', () => {
     ).rejects.toThrow('Integration outbox message not found');
   });
 
+  it('sends isolated mail and SMS provider test messages through outbox', async () => {
+    const repository = new SeedIntegrationRepository();
+
+    await repository.enableProvider('mail.sandbox');
+    await expect(
+      repository.sendTestOutbox('mail', {
+        providerCode: 'mail.sandbox',
+        templateCode: 'mail.welcome',
+        recipient: 'admin@example.test',
+        payload: { name: 'Admin' },
+        reason: 'Repository mail test-send',
+      }),
+    ).resolves.toMatchObject({
+      channel: 'mail',
+      providerCode: 'mail.sandbox',
+      status: 'sent',
+      message: {
+        providerCode: 'mail.sandbox',
+        status: 'sent',
+        subject: 'Welcome Admin',
+        preview: 'Hello Admin, welcome to OpenCore.',
+        sentAt: expect.any(String),
+      },
+      testedAt: expect.any(String),
+    });
+
+    await repository.enableProvider('sms.sandbox');
+    await expect(
+      repository.sendTestOutbox('sms', {
+        providerCode: 'sms.sandbox',
+        templateCode: 'sms.otp',
+        recipient: '+15551234567',
+        payload: { code: '123456' },
+        reason: 'Repository SMS test-send',
+      }),
+    ).resolves.toMatchObject({
+      channel: 'sms',
+      providerCode: 'sms.sandbox',
+      status: 'sent',
+      message: {
+        providerCode: 'sms.sandbox',
+        status: 'sent',
+        preview: 'Your verification code is 123456.',
+        sentAt: expect.any(String),
+      },
+    });
+
+    await expect(
+      repository.listOutbox('mail', {
+        status: 'sent',
+        providerCode: 'mail.sandbox',
+      }),
+    ).resolves.toMatchObject({ total: 1 });
+    await expect(
+      repository.sendTestOutbox('sms', {
+        providerCode: 'sms.sandbox',
+        recipient: 'bad-phone',
+        payload: { code: '123456' },
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
   it('processes queued outbox messages through the provider reliability loop', async () => {
     const repository = new SeedIntegrationRepository();
 

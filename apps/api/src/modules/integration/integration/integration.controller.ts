@@ -21,6 +21,7 @@ import {
   IntegrationOutboxProcessResultDto,
   IntegrationOutboxQueryDto,
   IntegrationOutboxScheduleResultDto,
+  IntegrationOutboxTestResultDto,
   IntegrationProviderAuditLogPageDto,
   IntegrationProviderDiagnosticsDto,
   IntegrationProviderDto,
@@ -44,6 +45,7 @@ import {
   ScheduleOutboxDto,
   TestIntegrationProviderDto,
   TemplatePreviewDto,
+  TestOutboxMessageDto,
   UpdateIntegrationProviderDto,
 } from './integration.dto';
 import { IntegrationRepository } from './integration.repository';
@@ -246,6 +248,16 @@ export class IntegrationController {
     return this.repository.enqueueOutbox('mail', body);
   }
 
+  @Post('mail/test-send')
+  @ApiTags('Integration Mail')
+  @RequirePermission('integration:mail:manage')
+  @ApiOkResponse({ type: IntegrationOutboxTestResultDto })
+  sendMailTest(
+    @Body() body: TestOutboxMessageDto,
+  ): Promise<IntegrationOutboxTestResultDto> {
+    return this.repository.sendTestOutbox('mail', body);
+  }
+
   @Patch('mail/outbox/:id/sent')
   @ApiTags('Integration Mail')
   @RequirePermission('integration:mail:manage')
@@ -357,6 +369,16 @@ export class IntegrationController {
     @Body() body: CreateOutboxMessageDto,
   ): Promise<IntegrationOutboxDto> {
     return this.repository.enqueueOutbox('sms', body);
+  }
+
+  @Post('sms/test-send')
+  @ApiTags('Integration SMS')
+  @RequirePermission('integration:sms:manage')
+  @ApiOkResponse({ type: IntegrationOutboxTestResultDto })
+  sendSmsTest(
+    @Body() body: TestOutboxMessageDto,
+  ): Promise<IntegrationOutboxTestResultDto> {
+    return this.repository.sendTestOutbox('sms', body);
   }
 
   @Patch('sms/outbox/:id/sent')

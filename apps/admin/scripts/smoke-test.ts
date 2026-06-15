@@ -866,9 +866,12 @@ if (
   !mailPage.includes('getOpenCoreMailOutboxMessage') ||
   !mailPage.includes('previewOpenCoreMailTemplate') ||
   !mailPage.includes("processOpenCoreIntegrationOutbox('mail'") ||
+  !mailPage.includes("sendOpenCoreIntegrationTestOutbox('mail'") ||
   !mailPage.includes('Live mail templates') ||
   !mailPage.includes('Mail outbox operations') ||
   !mailPage.includes('Process queued mail outbox') ||
+  !mailPage.includes('Last mail test-send') ||
+  !mailPage.includes('Send test') ||
   !mailPage.includes('Preview template') ||
   !mailPage.includes('integration:mail:manage') ||
   !mailPage.includes('Outbox Subject') ||
@@ -881,9 +884,12 @@ if (
   !smsPage.includes('getOpenCoreSmsOutboxMessage') ||
   !smsPage.includes('previewOpenCoreSmsTemplate') ||
   !smsPage.includes("processOpenCoreIntegrationOutbox('sms'") ||
+  !smsPage.includes("sendOpenCoreIntegrationTestOutbox('sms'") ||
   !smsPage.includes('Live SMS templates') ||
   !smsPage.includes('SMS outbox operations') ||
   !smsPage.includes('Process queued SMS outbox') ||
+  !smsPage.includes('Last SMS test-send') ||
+  !smsPage.includes('Send test') ||
   !smsPage.includes('Preview template') ||
   !smsPage.includes('integration:sms:manage') ||
   !smsPage.includes('Outbox Recipient') ||

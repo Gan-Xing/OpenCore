@@ -28,6 +28,7 @@ import type {
   RevokeOAuthTokenDto,
   ScheduleOutboxDto,
   TestIntegrationProviderDto,
+  TestOutboxMessageDto,
   UpdateIntegrationProviderDto,
 } from './integration.dto';
 import type {
@@ -137,6 +138,17 @@ export abstract class IntegrationRepository {
     channel: 'mail' | 'sms',
     body: CreateOutboxMessageDto,
   ): Promise<IntegrationOutboxRecord>;
+  abstract sendTestOutbox(
+    channel: 'mail' | 'sms',
+    body: TestOutboxMessageDto,
+  ): Promise<{
+    channel: 'mail' | 'sms';
+    providerCode: string;
+    message: IntegrationOutboxRecord;
+    status: 'failed' | 'sent';
+    error?: string;
+    testedAt: string;
+  }>;
   abstract listOutbox(
     channel: 'mail' | 'sms',
     query?: IntegrationOutboxQueryDto,

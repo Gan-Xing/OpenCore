@@ -5748,6 +5748,34 @@
         "tags": ["Integration", "Integration Mail"]
       }
     },
+    "/api/integrations/mail/test-send": {
+      "post": {
+        "operationId": "IntegrationController_sendMailTest",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/TestOutboxMessageDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationOutboxTestResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Mail"]
+      }
+    },
     "/api/integrations/mail/outbox/{id}/sent": {
       "patch": {
         "operationId": "IntegrationController_markMailOutboxSent",
@@ -6118,6 +6146,34 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/IntegrationOutboxDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration SMS"]
+      }
+    },
+    "/api/integrations/sms/test-send": {
+      "post": {
+        "operationId": "IntegrationController_sendSmsTest",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/TestOutboxMessageDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationOutboxTestResultDto"
                 }
               }
             }
@@ -11041,6 +11097,39 @@
           }
         },
         "required": ["providerCode", "recipient", "payload"]
+      },
+      "TestOutboxMessageDto": {
+        "type": "object",
+        "properties": {
+          "providerCode": { "type": "string" },
+          "templateCode": { "type": "string" },
+          "recipient": { "type": "string" },
+          "subject": { "type": "string" },
+          "payload": { "type": "object" },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateIntegrationOutboxAttachmentDto"
+            }
+          },
+          "reason": {
+            "type": "string",
+            "description": "Optional operator reason recorded in the test-send result context."
+          }
+        },
+        "required": ["providerCode", "recipient", "payload"]
+      },
+      "IntegrationOutboxTestResultDto": {
+        "type": "object",
+        "properties": {
+          "channel": { "type": "string", "enum": ["mail", "sms"] },
+          "providerCode": { "type": "string" },
+          "message": { "$ref": "#/components/schemas/IntegrationOutboxDto" },
+          "status": { "type": "string", "enum": ["failed", "sent"] },
+          "error": { "type": "string" },
+          "testedAt": { "type": "string" }
+        },
+        "required": ["channel", "providerCode", "message", "status", "testedAt"]
       },
       "FailOutboxMessageDto": {
         "type": "object",

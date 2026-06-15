@@ -17,6 +17,7 @@ import type {
   RevokeOAuthTokenDto,
   ScheduleOutboxDto,
   TestIntegrationProviderDto,
+  TestOutboxMessageDto,
   UpdateIntegrationProviderDto,
 } from './integration.dto';
 import {
@@ -372,6 +373,44 @@ export class SeedIntegrationRepository extends IntegrationRepository {
     };
     this.outbox = [message, ...this.outbox];
     return { ...message };
+  }
+
+  async sendTestOutbox(channel: 'mail' | 'sms', body: TestOutboxMessageDto) {
+    const queued = await this.enqueueOutbox(channel, body);
+    const provider = this.findProvider(body.providerCode);
+    const message = this.findOutboxMessage(channel, queued.id);
+    const delivery = await deliverOutboxMessage({
+      channel,
+      provider,
+      message,
+      secretResolver: this.secretResolver,
+      smtpTransportFactory: this.smtpTransportFactory,
+    });
+    const testedAt = new Date().toISOString();
+
+    if (delivery.status === 'sent') {
+      Object.assign(message, {
+        status: 'sent' as const,
+        error: undefined,
+        sentAt: testedAt,
+      });
+    } else {
+      Object.assign(message, {
+        status: 'failed' as const,
+        retryCount: message.retryCount + 1,
+        error: delivery.error ?? 'Provider test delivery failed.',
+        sentAt: undefined,
+      });
+    }
+
+    return {
+      channel,
+      providerCode: body.providerCode,
+      message: { ...message },
+      status: delivery.status,
+      error: delivery.error,
+      testedAt,
+    };
   }
 
   async listOutbox(

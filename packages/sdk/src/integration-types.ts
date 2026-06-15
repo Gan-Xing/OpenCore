@@ -165,6 +165,15 @@ export type IntegrationOutboxSummary = {
   createdAt: string;
 };
 
+export type IntegrationOutboxTestResult = {
+  channel: 'mail' | 'sms';
+  providerCode: string;
+  message: IntegrationOutboxSummary;
+  status: 'failed' | 'sent';
+  error?: string;
+  testedAt: string;
+};
+
 export type OAuthCallbackContractSummary = {
   callbackPath: string;
   stateTtlSeconds: number;
@@ -291,6 +300,10 @@ export type CreateOutboxMessageRequest = {
     'sizeBytes'
   >[];
   payload: Record<string, unknown>;
+};
+
+export type TestOutboxMessageRequest = CreateOutboxMessageRequest & {
+  reason?: string;
 };
 
 export type FailOutboxMessageRequest = {

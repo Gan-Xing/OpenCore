@@ -6,6 +6,7 @@ import {
 import type {
   IntegrationOutboxProcessResult,
   IntegrationOutboxSummary,
+  IntegrationOutboxTestResult,
   IntegrationTemplateSummary,
   TemplatePreviewSummary,
 } from '@opencore/sdk';
@@ -26,6 +27,7 @@ import {
   listOpenCoreSmsTemplates,
   previewOpenCoreSmsTemplate,
   processOpenCoreIntegrationOutbox,
+  sendOpenCoreIntegrationTestOutbox,
 } from '@/services/opencore/platform';
 import {
   CurrentPageExportButton,
@@ -106,6 +108,18 @@ function buildPreviewPayload(
   return Object.keys(payload).length > 0 ? payload : { code: '123456' };
 }
 
+function selectSmsProviderCode(
+  outboxRows: readonly IntegrationOutboxSummary[],
+  templateCode: string,
+): string {
+  return (
+    outboxRows.find((message) => message.templateCode === templateCode)
+      ?.providerCode ??
+    outboxRows[0]?.providerCode ??
+    'sms.sandbox'
+  );
+}
+
 export default function SmsIntegrationPage() {
   const [templates, setTemplates] = useState<
     readonly IntegrationTemplateSummary[]
@@ -119,9 +133,12 @@ export default function SmsIntegrationPage() {
   const [preview, setPreview] = useState<TemplatePreviewSummary>();
   const [lastProcess, setLastProcess] =
     useState<IntegrationOutboxProcessResult>();
+  const [lastTestSend, setLastTestSend] =
+    useState<IntegrationOutboxTestResult>();
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [previewingCode, setPreviewingCode] = useState<string>();
+  const [testSendingCode, setTestSendingCode] = useState<string>();
   const [loadError, setLoadError] = useState<string>();
 
   const templateFilterOptions: CurrentPageFilterOption<IntegrationTemplateSummary>[] =
@@ -288,6 +305,34 @@ export default function SmsIntegrationPage() {
     }
   };
 
+  const sendTestMessage = async (record: IntegrationTemplateSummary) => {
+    const outbox = outboxRows.find(
+      (message) => message.templateCode === record.code,
+    );
+    setTestSendingCode(record.code);
+    try {
+      const result = await sendOpenCoreIntegrationTestOutbox('sms', {
+        providerCode: selectSmsProviderCode(outboxRows, record.code),
+        templateCode: record.code,
+        recipient: '+15551234567',
+        payload: buildPreviewPayload(record, outbox),
+        reason: 'Admin SMS test-send',
+      });
+
+      setSelected(record);
+      setSelectedOutbox(result.message);
+      setLastTestSend(result);
+      message.success(`SMS test-send ${result.status}.`);
+      await loadSmsOperations();
+    } catch (error: unknown) {
+      message.error(
+        error instanceof Error ? error.message : 'Unable to send SMS test.',
+      );
+    } finally {
+      setTestSendingCode(undefined);
+    }
+  };
+
   const templateColumns: ProColumns<IntegrationTemplateSummary>[] = [
     {
       title: 'Code',
@@ -327,6 +372,16 @@ export default function SmsIntegrationPage() {
           type="link"
         >
           Preview template
+        </Button>,
+        <Button
+          key="test-send"
+          loading={testSendingCode === record.code}
+          onClick={() => void sendTestMessage(record)}
+          size="small"
+          title={SMS_MANAGE_PERMISSION_MARKER}
+          type="link"
+        >
+          Send test
         </Button>,
       ],
     },
@@ -387,6 +442,10 @@ export default function SmsIntegrationPage() {
           title="Last SMS process"
           value={lastProcess?.attemptedCount ?? 0}
           suffix={`sent ${lastProcess?.sentCount ?? 0}`}
+        />
+        <Statistic
+          title="Last SMS test-send"
+          value={lastTestSend?.status ?? 'not run'}
         />
       </Space>
       <ProTable<IntegrationTemplateSummary>
@@ -454,6 +513,9 @@ export default function SmsIntegrationPage() {
           { label: 'Outbox Retry Count', value: selectedOutbox?.retryCount },
           { label: 'Outbox Sent At', value: selectedOutbox?.sentAt },
           { label: 'Outbox Error', value: selectedOutbox?.error },
+          { label: 'Test Send Status', value: lastTestSend?.status },
+          { label: 'Test Send Error', value: lastTestSend?.error },
+          { label: 'Test Send At', value: lastTestSend?.testedAt },
           { label: 'Preview Body', value: preview?.body },
           { label: 'Body', value: selected?.body },
           { label: 'Rendered Preview', value: preview?.body },
@@ -472,6 +534,10 @@ export default function SmsIntegrationPage() {
           {
             title: 'Last Process Result',
             value: lastProcess,
+          },
+          {
+            title: 'Last Test Send Result',
+            value: lastTestSend,
           },
         ]}
         onClose={() => {

@@ -117,6 +117,7 @@ import {
   type IntegrationOutboxSummary,
   type IntegrationOutboxProcessResult,
   type IntegrationOutboxScheduleResult,
+  type IntegrationOutboxTestResult,
   type IntegrationTemplateQueryRequest,
   type IntegrationTemplateSummary,
   type OAuthCallbackContractSummary,
@@ -126,6 +127,7 @@ import {
   type PreviewTemplateRequest,
   type RevokeOAuthTokenRequest,
   type TemplatePreviewSummary,
+  type TestOutboxMessageRequest,
   type IpLocationLookupSummary,
   type IpLocationProviderStatusSummary,
   type CleanJobRunLogsRequest,
@@ -1438,6 +1440,15 @@ export function processOpenCoreIntegrationOutbox(
   return channel === 'mail'
     ? integrationClient.processMailOutbox(getRequiredAdminToken(), body)
     : integrationClient.processSmsOutbox(getRequiredAdminToken(), body);
+}
+
+export function sendOpenCoreIntegrationTestOutbox(
+  channel: IntegrationOutboxChannel,
+  body: TestOutboxMessageRequest,
+): Promise<IntegrationOutboxTestResult> {
+  return channel === 'mail'
+    ? integrationClient.sendMailTest(getRequiredAdminToken(), body)
+    : integrationClient.sendSmsTest(getRequiredAdminToken(), body);
 }
 
 export function runOpenCoreIntegrationOutboxSchedule(

@@ -25,6 +25,8 @@ async function main() {
     assertOpenApiPath(openApi, '/api/integrations/providers/health-audit');
     assertOpenApiPath(openApi, '/api/integrations/providers/{code}/test');
     assertOpenApiPath(openApi, '/api/integrations/providers/{code}/audit-logs');
+    assertOpenApiPath(openApi, '/api/integrations/mail/test-send');
+    assertOpenApiPath(openApi, '/api/integrations/sms/test-send');
   }
 
   const loginResponse = await smoke.login();
@@ -126,9 +128,61 @@ async function main() {
     'mail sandbox provider audit action',
   );
 
+  const mailProviderBefore = await clients.integration.getProvider(
+    token,
+    'mail.sandbox',
+  );
+  if (!mailProviderBefore.enabled) {
+    await clients.integration.enableProvider(token, 'mail.sandbox');
+  }
+  const mailTestSend = await clients.integration.sendMailTest(token, {
+    providerCode: 'mail.sandbox',
+    templateCode: 'mail.welcome',
+    recipient: 'admin@example.test',
+    payload: { name: 'Admin' },
+    reason: 'smoke mail test-send',
+  });
+  assertEqual(mailTestSend.status, 'sent', 'mail test-send status');
+  assertEqual(
+    mailTestSend.message.status,
+    'sent',
+    'mail test-send outbox status',
+  );
+  assertString(mailTestSend.message.sentAt, 'mail test-send sentAt');
+  if (!mailProviderBefore.enabled) {
+    await clients.integration.disableProvider(token, 'mail.sandbox');
+  }
+
+  const smsProviderBefore = await clients.integration.getProvider(
+    token,
+    'sms.sandbox',
+  );
+  if (!smsProviderBefore.enabled) {
+    await clients.integration.enableProvider(token, 'sms.sandbox');
+  }
+  const smsTestSend = await clients.integration.sendSmsTest(token, {
+    providerCode: 'sms.sandbox',
+    templateCode: 'sms.otp',
+    recipient: '+15551234567',
+    payload: { code: '123456' },
+    reason: 'smoke SMS test-send',
+  });
+  assertEqual(smsTestSend.status, 'sent', 'SMS test-send status');
+  assertEqual(
+    smsTestSend.message.status,
+    'sent',
+    'SMS test-send outbox status',
+  );
+  assertString(smsTestSend.message.sentAt, 'SMS test-send sentAt');
+  if (!smsProviderBefore.enabled) {
+    await clients.integration.disableProvider(token, 'sms.sandbox');
+  }
+
   assertNoSecretLeak(audit);
   assertNoSecretLeak(providerTest);
   assertNoSecretLeak(auditLogs);
+  assertNoSecretLeak(mailTestSend);
+  assertNoSecretLeak(smsTestSend);
 
   console.log(
     JSON.stringify({
@@ -141,11 +195,15 @@ async function main() {
         ...(checkDocs ? ['openapi.integration-health-audit'] : []),
         ...(checkDocs ? ['openapi.integration-provider-test'] : []),
         ...(checkDocs ? ['openapi.integration-provider-audit-logs'] : []),
+        ...(checkDocs ? ['openapi.integration-mail-test-send'] : []),
+        ...(checkDocs ? ['openapi.integration-sms-test-send'] : []),
         'auth.login',
         'integration.provider-health-audit',
         'integration.provider-diagnostics-parity',
         'integration.provider-credential-test',
         'integration.provider-audit-logs',
+        'integration.mail-test-send',
+        'integration.sms-test-send',
         'integration.config-vault-audit',
         'integration.failure-history',
         'integration.secret-leak-guard',
