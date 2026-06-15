@@ -4,25 +4,26 @@ import { createHmac } from 'node:crypto';
 import http from 'node:http';
 import net from 'node:net';
 
-const DEFAULT_PORT = '39173';
+import {
+  HttpStatusError,
+  assertArray,
+  assertEqual,
+  assertNumberAtLeast,
+  assertString,
+  createSmokeRuntime,
+} from './smoke-helpers.mjs';
 
-const port = process.env.OPENCORE_SMOKE_PORT || DEFAULT_PORT;
-const baseUrl = trimTrailingSlash(
-  process.env.OPENCORE_SMOKE_BASE_URL || `http://127.0.0.1:${port}`,
-);
-const apiPrefix = normalizeApiPrefix(
-  process.env.OPENCORE_SMOKE_API_PREFIX || '/api',
-);
-const checkDocs = parseBoolean(process.env.OPENCORE_SMOKE_CHECK_DOCS, true);
-const username = process.env.OPENCORE_SMOKE_ADMIN_USERNAME || 'admin';
-const passwordCandidates = [
-  process.env.OPENCORE_SMOKE_ADMIN_PASSWORD,
-  process.env.BOOTSTRAP_ADMIN_PASSWORD,
-  'admin123',
-].filter((candidate, index, candidates) => {
-  return Boolean(candidate) && candidates.indexOf(candidate) === index;
-});
-const timeoutMs = Number(process.env.OPENCORE_SMOKE_TIMEOUT_MS || 10000);
+const smoke = createSmokeRuntime();
+const {
+  apiPrefix,
+  apiRequest,
+  baseUrl,
+  checkDocs,
+  login,
+  request,
+  timeoutMs,
+  username,
+} = smoke;
 
 const runId = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 const noticeTitles = [
@@ -35,14 +36,6 @@ let smsHttpServer;
 let smtpServer;
 const createdNoticeIds = [];
 const createdTemplateCodes = [];
-
-class HttpStatusError extends Error {
-  constructor(message, status) {
-    super(message);
-    this.name = 'HttpStatusError';
-    this.status = status;
-  }
-}
 
 try {
   await request('/health/live', { expected: [200] });
@@ -57,6 +50,7 @@ try {
 
   const loginResponse = await login();
   token = assertString(loginResponse.accessToken, 'login accessToken');
+  smoke.setToken(token);
 
   await apiRequest('/core/notices/templates/simple-list', {
     expected: [200],
@@ -1369,43 +1363,6 @@ async function cleanupCreatedTemplates() {
   }
 }
 
-async function login() {
-  let lastError;
-
-  for (const password of passwordCandidates) {
-    try {
-      return await request(`${apiPrefix}/auth/login`, {
-        method: 'POST',
-        expected: [200, 201],
-        body: {
-          username,
-          password,
-        },
-      });
-    } catch (error) {
-      lastError = error;
-      if (
-        !(error instanceof HttpStatusError) ||
-        ![401, 403].includes(error.status)
-      ) {
-        throw error;
-      }
-    }
-  }
-
-  throw new Error(
-    `Unable to authenticate smoke admin ${username}. Set OPENCORE_SMOKE_ADMIN_PASSWORD to the deployed admin password.`,
-    { cause: lastError },
-  );
-}
-
-async function apiRequest(path, options = {}) {
-  return request(`${apiPrefix}${path}`, {
-    ...options,
-    token,
-  });
-}
-
 async function upsertIntegrationProvider(code, body) {
   try {
     await apiRequest(`/integrations/providers/${encodeURIComponent(code)}`);
@@ -1696,47 +1653,6 @@ function parseSseEvent(rawEvent) {
   };
 }
 
-async function request(pathOrUrl, options = {}) {
-  const url = pathOrUrl.startsWith('http')
-    ? pathOrUrl
-    : `${baseUrl}${pathOrUrl}`;
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    const response = await fetch(url, {
-      method: options.method || 'GET',
-      headers: {
-        ...(options.body ? { 'content-type': 'application/json' } : {}),
-        ...(options.token ? { authorization: `Bearer ${options.token}` } : {}),
-      },
-      body: options.body ? JSON.stringify(options.body) : undefined,
-      signal: controller.signal,
-    });
-    const contentType = response.headers.get('content-type') || '';
-    const responseBody = contentType.includes('application/json')
-      ? await response.json()
-      : await response.text();
-    const expected = options.expected || [200, 201];
-
-    if (!expected.includes(response.status)) {
-      throw new HttpStatusError(
-        `${options.method || 'GET'} ${url} returned ${response.status}: ${formatResponseBody(responseBody)}`,
-        response.status,
-      );
-    }
-
-    return responseBody;
-  } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
-      throw new Error(`${options.method || 'GET'} ${url} timed out`);
-    }
-    throw error;
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
 function assertPageItemsContain(page, id, label) {
   assertArray(page.items, `${label} items`);
   assertItemsContain(page.items, id, label);
@@ -1865,66 +1781,9 @@ function assertArrayIncludes(values, expected, label) {
   }
 }
 
-function assertArray(value, label) {
-  if (!Array.isArray(value)) {
-    throw new Error(`${label} must be an array`);
-  }
-}
-
-function assertString(value, label) {
-  if (typeof value !== 'string' || value.length === 0) {
-    throw new Error(`${label} must be a non-empty string`);
-  }
-  return value;
-}
-
 function assertStringIncludes(value, expected, label) {
   assertString(value, label);
   if (!value.includes(expected)) {
     throw new Error(`${label} must include ${expected}`);
   }
-}
-
-function assertEqual(actual, expected, label) {
-  if (actual !== expected) {
-    throw new Error(`${label}: expected ${expected}, received ${actual}`);
-  }
-}
-
-function assertNumberAtLeast(value, min, label) {
-  if (typeof value !== 'number' || value < min) {
-    throw new Error(`${label}: expected at least ${min}, received ${value}`);
-  }
-}
-
-function trimTrailingSlash(value) {
-  return value.replace(/\/+$/, '');
-}
-
-function normalizeApiPrefix(value) {
-  const withLeadingSlash = value.startsWith('/') ? value : `/${value}`;
-  return trimTrailingSlash(withLeadingSlash);
-}
-
-function parseBoolean(value, defaultValue) {
-  if (value === undefined || value === '') {
-    return defaultValue;
-  }
-
-  if (value === 'true' || value === '1') {
-    return true;
-  }
-
-  if (value === 'false' || value === '0') {
-    return false;
-  }
-
-  throw new Error(`Invalid boolean value: ${value}`);
-}
-
-function formatResponseBody(body) {
-  if (typeof body === 'string') {
-    return body.slice(0, 500);
-  }
-  return JSON.stringify(body).slice(0, 500);
 }
