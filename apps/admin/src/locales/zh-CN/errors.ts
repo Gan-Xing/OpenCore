@@ -217,6 +217,22 @@ export default {
   'error.INTEGRATION_WEBSOCKET_PUBLISH_EVENT_TYPE_INVALID':
     'WebSocket 发布事件类型无效。',
   'error.INTEGRATION_WEBSOCKET_ROOM_INVALID': 'WebSocket 房间名无效。',
+  'error.SCHEDULER_DISPATCH_NOW_INVALID':
+    '调度触发时间必须是有效的 ISO 时间。',
+  'error.SCHEDULER_HANDLER_NOT_FOUND': '调度任务处理器不存在。',
+  'error.SCHEDULER_JOB_CRON_INVALID': '调度任务 cron 表达式无效。',
+  'error.SCHEDULER_JOB_DISABLED': '调度任务已停用。',
+  'error.SCHEDULER_JOB_MANUAL_TRIGGER_FORBIDDEN':
+    '该调度任务不允许手动触发。',
+  'error.SCHEDULER_JOB_QUEUE_MISMATCH': '调度任务队列与注册配置不匹配。',
+  'error.SCHEDULER_JOB_RETRY_LIMIT_INVALID': '调度任务重试次数无效。',
+  'error.SCHEDULER_JOB_TIMEOUT_INVALID': '调度任务超时时间无效。',
+  'error.SCHEDULER_RESOURCE_NOT_FOUND': '调度资源不存在。',
+  'error.SCHEDULER_RUN_CLEAN_STATUS_INVALID':
+    '调度运行记录清理只支持终态记录。',
+  'error.SCHEDULER_RUN_RETENTION_DAYS_INVALID':
+    '调度运行记录保留天数无效。',
+  'error.SCHEDULER_WORKER_LIMIT_INVALID': '调度 worker 领取数量无效。',
   'error.TOOL_AREA_DATASET_DEPTH_TOO_DEEP': '地区数据集层级过深。',
   'error.TOOL_AREA_DATASET_ENTRIES_INVALID': '地区数据集条目必须是数组。',
   'error.TOOL_AREA_DATASET_ENTRIES_SIZE_INVALID':

@@ -1,7 +1,7 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '@opencore/database';
+import { SchedulerJobExecutor } from './scheduler.executor';
 import { PrismaSchedulerRepository } from './scheduler.prisma-repository';
 import { SeedSchedulerRepository } from './scheduler.seed-repository';
 import { SchedulerService } from './scheduler.service';
@@ -57,20 +57,22 @@ describe('@opencore/scheduler', () => {
       }),
     });
 
-    await expect(
+    await expectHttpExceptionCode(
       service.createJob({
         code: 'unknown.job',
         name: 'Unknown',
         queueName: 'maintenance',
       }),
-    ).rejects.toThrow(NotFoundException);
-    await expect(
+      'SCHEDULER_RESOURCE_NOT_FOUND',
+    );
+    await expectHttpExceptionCode(
       service.createJob({
         code: 'report.refresh',
         name: 'Refresh reports',
         queueName: 'wrong',
       }),
-    ).rejects.toThrow(BadRequestException);
+      'SCHEDULER_JOB_QUEUE_MISMATCH',
+    );
 
     const job = await service.createJob({
       code: 'report.refresh',
@@ -82,9 +84,10 @@ describe('@opencore/scheduler', () => {
     await expect(service.disableJob(job.code)).resolves.toMatchObject({
       enabled: false,
     });
-    await expect(
+    await expectHttpExceptionCode(
       service.triggerJob(job.code, { actor: 'admin' }),
-    ).rejects.toThrow(BadRequestException);
+      'SCHEDULER_JOB_DISABLED',
+    );
     await expect(service.enableJob(job.code)).resolves.toMatchObject({
       enabled: true,
     });
@@ -119,8 +122,9 @@ describe('@opencore/scheduler', () => {
       statuses: ['completed'],
     });
     expect(seedCleanResult.affected).toBeGreaterThanOrEqual(1);
-    await expect(service.getJobRun(job.code, run.id)).rejects.toThrow(
-      NotFoundException,
+    await expectHttpExceptionCode(
+      service.getJobRun(job.code, run.id),
+      'SCHEDULER_RESOURCE_NOT_FOUND',
     );
   });
 
@@ -233,28 +237,59 @@ describe('@opencore/scheduler', () => {
   it('rejects invalid cron and unsafe numeric policy', async () => {
     const service = new SchedulerService(new SeedSchedulerRepository());
 
-    await expect(
+    await expectHttpExceptionCode(
       service.createJob({
         code: 'report.refresh',
         name: 'Refresh reports',
         queueName: 'reports',
         cron: 'bad cron',
       }),
-    ).rejects.toThrow(BadRequestException);
-    await expect(
+      'SCHEDULER_JOB_CRON_INVALID',
+    );
+    await expectHttpExceptionCode(
       service.createJob({
         code: 'report.refresh',
         name: 'Refresh reports',
         queueName: 'reports',
         retryLimit: 99,
       }),
-    ).rejects.toThrow(BadRequestException);
-    await expect(
+      'SCHEDULER_JOB_RETRY_LIMIT_INVALID',
+    );
+    await expectHttpExceptionCode(
       service.cleanJobRuns('openapi.drift-check', {
         retentionDays: 0,
         status: 'queued',
       } as never),
-    ).rejects.toThrow(BadRequestException);
+      'SCHEDULER_RUN_CLEAN_STATUS_INVALID',
+    );
+  });
+
+  it('rejects missing scheduler handlers with stable error codes', async () => {
+    const executor = new SchedulerJobExecutor();
+
+    await expectHttpExceptionCode(
+      executor.execute({
+        actor: 'admin',
+        entry: {
+          allowManualTrigger: true,
+          code: 'missing.handler',
+          handlerKey: 'missing.handler',
+          queueName: 'maintenance',
+          title: 'Missing handler',
+        },
+        job: {
+          adapter: 'bullmq',
+          code: 'missing.handler',
+          enabled: true,
+          id: 'job_missing_handler',
+          name: 'Missing handler',
+          queueName: 'maintenance',
+          retryLimit: 0,
+          timeoutSeconds: 10,
+        },
+      }),
+      'SCHEDULER_HANDLER_NOT_FOUND',
+    );
   });
 
   describe('PrismaSchedulerRepository integration', () => {
@@ -333,8 +368,9 @@ describe('@opencore/scheduler', () => {
         statuses: ['completed'],
       });
       expect(cleanResult.affected).toBeGreaterThanOrEqual(1);
-      await expect(service.getJobRun(code, run.id)).rejects.toThrow(
-        NotFoundException,
+      await expectHttpExceptionCode(
+        service.getJobRun(code, run.id),
+        'SCHEDULER_RESOURCE_NOT_FOUND',
       );
     });
 
@@ -460,4 +496,31 @@ describe('@opencore/scheduler', () => {
 
 function toPrismaJsonInput(value: Prisma.JsonValue): Prisma.InputJsonValue {
   return value === null ? Prisma.JsonNull : (value as Prisma.InputJsonValue);
+}
+
+async function expectHttpExceptionCode(
+  promise: Promise<unknown>,
+  code: string,
+): Promise<void> {
+  try {
+    await promise;
+  } catch (error) {
+    expect(getHttpExceptionResponse(error)).toMatchObject({ code });
+    return;
+  }
+
+  throw new Error(`Expected HTTP exception code ${code}`);
+}
+
+function getHttpExceptionResponse(error: unknown): unknown {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'getResponse' in error &&
+    typeof error.getResponse === 'function'
+  ) {
+    return error.getResponse();
+  }
+
+  return undefined;
 }

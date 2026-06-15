@@ -1,5 +1,6 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import {
+  createApiErrorBody,
   createPageResult,
   normalizeOptionalString,
   normalizePagination,
@@ -97,6 +98,24 @@ const terminalRunStatuses: readonly SchedulerRunTerminalStatus[] = [
   'completed',
   'failed',
 ];
+
+export function schedulerBadRequest(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): BadRequestException {
+  return new BadRequestException(
+    createApiErrorBody({ code, message, details }),
+  );
+}
+
+export function schedulerNotFound(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): NotFoundException {
+  return new NotFoundException(createApiErrorBody({ code, message, details }));
+}
 
 export type SchedulerNormalizedPageQuery = {
   page: number;
@@ -245,23 +264,43 @@ export function assertSafeJobPolicy(input: {
   const entry = requireRegisteredJob(input.code);
 
   if (input.queueName !== entry.queueName) {
-    throw new BadRequestException(
+    throw schedulerBadRequest(
+      'SCHEDULER_JOB_QUEUE_MISMATCH',
       `Job ${input.code} must use registered queue: ${entry.queueName}`,
+      {
+        code: input.code,
+        expectedQueueName: entry.queueName,
+        queueName: input.queueName,
+      },
     );
   }
 
   if (input.retryLimit < 0 || input.retryLimit > 10) {
-    throw new BadRequestException('Job retry limit must be between 0 and 10.');
+    throw schedulerBadRequest(
+      'SCHEDULER_JOB_RETRY_LIMIT_INVALID',
+      'Job retry limit must be between 0 and 10.',
+      { maxRetryLimit: 10, minRetryLimit: 0, retryLimit: input.retryLimit },
+    );
   }
 
   if (input.timeoutSeconds < 1 || input.timeoutSeconds > 3600) {
-    throw new BadRequestException(
+    throw schedulerBadRequest(
+      'SCHEDULER_JOB_TIMEOUT_INVALID',
       'Job timeout must be between 1 and 3600 seconds.',
+      {
+        maxTimeoutSeconds: 3600,
+        minTimeoutSeconds: 1,
+        timeoutSeconds: input.timeoutSeconds,
+      },
     );
   }
 
   if (input.cron !== undefined && !isValidCronExpression(input.cron)) {
-    throw new BadRequestException(`Invalid cron expression: ${input.cron}`);
+    throw schedulerBadRequest(
+      'SCHEDULER_JOB_CRON_INVALID',
+      `Invalid cron expression: ${input.cron}`,
+      { cron: input.cron },
+    );
   }
 
   return entry;
@@ -274,13 +313,19 @@ export function assertJobCanTrigger(input: {
   const entry = requireRegisteredJob(input.code);
 
   if (!entry.allowManualTrigger) {
-    throw new BadRequestException(
+    throw schedulerBadRequest(
+      'SCHEDULER_JOB_MANUAL_TRIGGER_FORBIDDEN',
       `Job does not allow manual trigger: ${input.code}`,
+      { code: input.code },
     );
   }
 
   if (!input.enabled) {
-    throw new BadRequestException(`Job definition is disabled: ${input.code}`);
+    throw schedulerBadRequest(
+      'SCHEDULER_JOB_DISABLED',
+      `Job definition is disabled: ${input.code}`,
+      { code: input.code },
+    );
   }
 
   return entry;
@@ -292,7 +337,11 @@ export function requireRecord<T>(
   id: string,
 ): T {
   if (!record) {
-    throw new NotFoundException(`${resource} not found: ${id}`);
+    throw schedulerNotFound(
+      'SCHEDULER_RESOURCE_NOT_FOUND',
+      `${resource} not found: ${id}`,
+      { id, resource },
+    );
   }
 
   return record;
@@ -355,8 +404,10 @@ export function normalizeSchedulerWorkerLimit(value: unknown): number {
   const limit = Number(value ?? 20);
 
   if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
-    throw new BadRequestException(
+    throw schedulerBadRequest(
+      'SCHEDULER_WORKER_LIMIT_INVALID',
       'Scheduler worker limit must be an integer between 1 and 100.',
+      { limit, maxLimit: 100, minLimit: 1 },
     );
   }
 
@@ -389,8 +440,10 @@ function normalizeSchedulerRunRetentionDays(value: unknown): number {
     retentionDays < 0 ||
     retentionDays > 3650
   ) {
-    throw new BadRequestException(
+    throw schedulerBadRequest(
+      'SCHEDULER_RUN_RETENTION_DAYS_INVALID',
       'Scheduler run retentionDays must be an integer between 0 and 3650.',
+      { maxRetentionDays: 3650, minRetentionDays: 0, retentionDays },
     );
   }
 
@@ -404,8 +457,10 @@ function normalizeSchedulerRunCleanStatus(
     return [value];
   }
 
-  throw new BadRequestException(
+  throw schedulerBadRequest(
+    'SCHEDULER_RUN_CLEAN_STATUS_INVALID',
     'Scheduler run cleanup only supports completed or failed terminal runs.',
+    { status: value },
   );
 }
 
@@ -415,15 +470,19 @@ export function normalizeSchedulerDispatchNow(value: unknown): Date {
   }
 
   if (typeof value !== 'string') {
-    throw new BadRequestException(
+    throw schedulerBadRequest(
+      'SCHEDULER_DISPATCH_NOW_INVALID',
       'Scheduler dispatch now must be an ISO date.',
+      { now: value },
     );
   }
 
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) {
-    throw new BadRequestException(
+    throw schedulerBadRequest(
+      'SCHEDULER_DISPATCH_NOW_INVALID',
       'Scheduler dispatch now must be an ISO date.',
+      { now: value },
     );
   }
 

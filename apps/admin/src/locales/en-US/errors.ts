@@ -287,6 +287,29 @@ export default {
     'The WebSocket publish event type is invalid.',
   'error.INTEGRATION_WEBSOCKET_ROOM_INVALID':
     'The WebSocket room is invalid.',
+  'error.SCHEDULER_DISPATCH_NOW_INVALID':
+    'The scheduler dispatch time must be a valid ISO date-time.',
+  'error.SCHEDULER_HANDLER_NOT_FOUND':
+    'The scheduler job handler does not exist.',
+  'error.SCHEDULER_JOB_CRON_INVALID':
+    'The scheduler job cron expression is invalid.',
+  'error.SCHEDULER_JOB_DISABLED': 'The scheduler job is disabled.',
+  'error.SCHEDULER_JOB_MANUAL_TRIGGER_FORBIDDEN':
+    'The scheduler job does not allow manual trigger.',
+  'error.SCHEDULER_JOB_QUEUE_MISMATCH':
+    'The scheduler job queue does not match the registry.',
+  'error.SCHEDULER_JOB_RETRY_LIMIT_INVALID':
+    'The scheduler job retry limit is invalid.',
+  'error.SCHEDULER_JOB_TIMEOUT_INVALID':
+    'The scheduler job timeout is invalid.',
+  'error.SCHEDULER_RESOURCE_NOT_FOUND':
+    'The scheduler resource does not exist.',
+  'error.SCHEDULER_RUN_CLEAN_STATUS_INVALID':
+    'Scheduler run cleanup supports only terminal records.',
+  'error.SCHEDULER_RUN_RETENTION_DAYS_INVALID':
+    'The scheduler run retention period is invalid.',
+  'error.SCHEDULER_WORKER_LIMIT_INVALID':
+    'The scheduler worker claim limit is invalid.',
   'error.TOOL_AREA_DATASET_DEPTH_TOO_DEEP':
     'The area dataset hierarchy is too deep.',
   'error.TOOL_AREA_DATASET_ENTRIES_INVALID':

@@ -1,5 +1,6 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import type { PrismaService } from '@opencore/database';
+import { schedulerBadRequest } from './scheduler.repository';
 import type {
   SchedulerJobDefinitionRecord,
   SchedulerJobRegistryEntry,
@@ -46,8 +47,10 @@ export class SchedulerJobExecutor {
     const handler = this.handlers[input.entry.handlerKey];
 
     if (!handler) {
-      throw new BadRequestException(
+      throw schedulerBadRequest(
+        'SCHEDULER_HANDLER_NOT_FOUND',
         `No scheduler handler registered: ${input.entry.handlerKey}`,
+        { handlerKey: input.entry.handlerKey },
       );
     }
 
