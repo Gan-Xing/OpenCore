@@ -10,6 +10,15 @@ import {
   type ApprovalLiteSummary,
   type AssignRoleMenusRequest,
   type AssignRoleUsersRequest,
+  type AreaDatasetImportRequest,
+  type AreaDatasetImportResultSummary,
+  type AreaDatasetSummary,
+  type AreaDatasetVersionListSummary,
+  type AreaIpLookupRequest,
+  type AreaIpLookupSummary,
+  type AreaRegionListSummary,
+  type AreaRegionQueryRequest,
+  type AreaRegionSummary,
   type AssignTodoRequest,
   type AssignUserRolesRequest,
   type AuditLogBatchMutationSummary,
@@ -468,6 +477,38 @@ export function createOpenCoreOpenForgeRollbackDryRun(
     getRequiredAdminToken(),
     body,
   );
+}
+
+export function getOpenCoreAreaDatasetStatus(): Promise<AreaDatasetSummary> {
+  return toolingClient.getAreaDatasetStatus(getRequiredAdminToken());
+}
+
+export function listOpenCoreAreaDatasetVersions(): Promise<AreaDatasetVersionListSummary> {
+  return toolingClient.listAreaDatasetVersions(getRequiredAdminToken());
+}
+
+export function listOpenCoreAreaRegions(
+  query?: AreaRegionQueryRequest,
+): Promise<AreaRegionListSummary> {
+  return toolingClient.listAreaRegions(getRequiredAdminToken(), query);
+}
+
+export function getOpenCoreAreaRegion(
+  code: string,
+): Promise<AreaRegionSummary> {
+  return toolingClient.getAreaRegion(getRequiredAdminToken(), code);
+}
+
+export function lookupOpenCoreAreaIp(
+  body: AreaIpLookupRequest,
+): Promise<AreaIpLookupSummary> {
+  return toolingClient.lookupAreaIp(getRequiredAdminToken(), body);
+}
+
+export function importOpenCoreAreaDataset(
+  body: AreaDatasetImportRequest,
+): Promise<AreaDatasetImportResultSummary> {
+  return toolingClient.importAreaDataset(getRequiredAdminToken(), body);
 }
 
 export function listOpenCoreUsers(

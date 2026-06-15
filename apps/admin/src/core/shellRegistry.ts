@@ -25,6 +25,7 @@ const SHELL_MODULE_CODES = [
   'monitor.queue',
   'tool.openapi',
   'tool.export',
+  'tool.area',
   'tool.openforge',
   'collaboration.message',
   'collaboration.notice',

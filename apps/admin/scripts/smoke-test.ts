@@ -105,6 +105,7 @@ for (const requiredRoute of [
   "path: '/monitor/version'",
   "path: '/monitor/queues'",
   "path: '/tools/export'",
+  "path: '/tools/area'",
   "path: '/tools/openforge'",
   "path: '/collaboration/messages'",
   "path: '/collaboration/notices'",
@@ -669,6 +670,10 @@ const exportPage = readFileSync(
   resolve(root, 'src/pages/Tools/Export/index.tsx'),
   'utf8',
 );
+const areaPage = readFileSync(
+  resolve(root, 'src/pages/Tools/Area/index.tsx'),
+  'utf8',
+);
 const openForgePage = readFileSync(
   resolve(root, 'src/pages/Tools/OpenForge/index.tsx'),
   'utf8',
@@ -858,6 +863,16 @@ if (
   !onlineUsersPage.includes('@opencore/sdk') ||
   !reportsPage.includes('@opencore/sdk') ||
   !exportJobsPage.includes('@opencore/sdk') ||
+  !areaPage.includes('@opencore/sdk') ||
+  !areaPage.includes('Area data boundary') ||
+  !areaPage.includes('Reload area dataset') ||
+  !areaPage.includes('Area dataset versions') ||
+  !areaPage.includes('Area region query') ||
+  !areaPage.includes('IP boundary lookup') ||
+  !areaPage.includes('Validate area import') ||
+  !areaPage.includes('Activate area import') ||
+  !areaPage.includes('tool:area:read') ||
+  !areaPage.includes('tool:area:import') ||
   !providersPage.includes('@opencore/sdk') ||
   !mailPage.includes('@opencore/sdk') ||
   !mailPage.includes('listOpenCoreMailTemplates') ||
@@ -1101,6 +1116,29 @@ if (
 ) {
   throw new Error(
     'Export Tools page must use live SDK protocol and preview APIs instead of static fixtures.',
+  );
+}
+
+if (
+  areaPage.includes('createAreaDatasetFixture') ||
+  areaPage.includes('setRows(fallbackRows)') ||
+  !areaPage.includes('listOpenCoreAreaDatasetVersions') ||
+  !areaPage.includes('listOpenCoreAreaRegions') ||
+  !areaPage.includes('lookupOpenCoreAreaIp') ||
+  !areaPage.includes('importOpenCoreAreaDataset') ||
+  !opencorePlatformService.includes('getOpenCoreAreaDatasetStatus') ||
+  !opencorePlatformService.includes('toolingClient.getAreaDatasetStatus') ||
+  !opencorePlatformService.includes('listOpenCoreAreaDatasetVersions') ||
+  !opencorePlatformService.includes('toolingClient.listAreaDatasetVersions') ||
+  !opencorePlatformService.includes('listOpenCoreAreaRegions') ||
+  !opencorePlatformService.includes('toolingClient.listAreaRegions') ||
+  !opencorePlatformService.includes('lookupOpenCoreAreaIp') ||
+  !opencorePlatformService.includes('toolingClient.lookupAreaIp') ||
+  !opencorePlatformService.includes('importOpenCoreAreaDataset') ||
+  !opencorePlatformService.includes('toolingClient.importAreaDataset')
+) {
+  throw new Error(
+    'Area Data page must use live SDK dataset, region query, IP lookup and import APIs instead of static fixtures.',
   );
 }
 

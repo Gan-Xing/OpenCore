@@ -55,6 +55,7 @@ export const DocLink: React.FC = () => {
 
 const versionItems: MenuProps['items'] = [
   { key: '/tools/openapi', label: 'OpenAPI' },
+  { key: '/tools/area', label: 'Area Data' },
   { key: '/tools/openforge', label: 'OpenForge' },
   { key: '/monitor/version', label: `Version ${__APP_VERSION__}` },
 ];

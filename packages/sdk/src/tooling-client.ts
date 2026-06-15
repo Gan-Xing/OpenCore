@@ -1,5 +1,14 @@
 import type { SdkRequest } from './rbac-client';
 import type {
+  AreaDatasetImportRequest,
+  AreaDatasetImportResultSummary,
+  AreaDatasetSummary,
+  AreaDatasetVersionListSummary,
+  AreaIpLookupRequest,
+  AreaIpLookupSummary,
+  AreaRegionListSummary,
+  AreaRegionQueryRequest,
+  AreaRegionSummary,
   CreateExportPreviewRequest,
   CurrentPageExportProtocolSummary,
   ExportPlanSummary,
@@ -28,6 +37,23 @@ export type ToolingClient = {
     token: string,
     body: CreateExportPreviewRequest,
   ) => Promise<ExportPlanSummary>;
+  getAreaDatasetStatus: (token: string) => Promise<AreaDatasetSummary>;
+  listAreaDatasetVersions: (
+    token: string,
+  ) => Promise<AreaDatasetVersionListSummary>;
+  listAreaRegions: (
+    token: string,
+    query?: AreaRegionQueryRequest,
+  ) => Promise<AreaRegionListSummary>;
+  getAreaRegion: (token: string, code: string) => Promise<AreaRegionSummary>;
+  lookupAreaIp: (
+    token: string,
+    body: AreaIpLookupRequest,
+  ) => Promise<AreaIpLookupSummary>;
+  importAreaDataset: (
+    token: string,
+    body: AreaDatasetImportRequest,
+  ) => Promise<AreaDatasetImportResultSummary>;
   getOpenForgeStatus: (token: string) => Promise<OpenForgeStatusSummary>;
   getOpenForgeDoctor: (token: string) => Promise<OpenForgeDoctorSummary>;
   createOpenForgePlan: (
@@ -75,6 +101,34 @@ export function createToolingClient(request: SdkRequest): ToolingClient {
       }),
     createExportPreview: (token, body) =>
       request<ExportPlanSummary>('/tools/export/preview', {
+        method: 'POST',
+        body,
+        token,
+      }),
+    getAreaDatasetStatus: (token) =>
+      request<AreaDatasetSummary>('/tools/area/dataset', { token }),
+    listAreaDatasetVersions: (token) =>
+      request<AreaDatasetVersionListSummary>('/tools/area/dataset/versions', {
+        token,
+      }),
+    listAreaRegions: (token, query = {}) =>
+      request<AreaRegionListSummary>(
+        `/tools/area/regions${toQueryString(query)}`,
+        { token },
+      ),
+    getAreaRegion: (token, code) =>
+      request<AreaRegionSummary>(
+        `/tools/area/regions/${encodeURIComponent(code)}`,
+        { token },
+      ),
+    lookupAreaIp: (token, body) =>
+      request<AreaIpLookupSummary>('/tools/area/ip/lookup', {
+        method: 'POST',
+        body,
+        token,
+      }),
+    importAreaDataset: (token, body) =>
+      request<AreaDatasetImportResultSummary>('/tools/area/import', {
         method: 'POST',
         body,
         token,
@@ -139,4 +193,21 @@ export function createToolingClient(request: SdkRequest): ToolingClient {
         },
       ),
   };
+}
+
+function toQueryString(query: AreaRegionQueryRequest): string {
+  const search = new URLSearchParams();
+
+  if (query.query) {
+    search.set('query', query.query);
+  }
+  if (query.parentCode) {
+    search.set('parentCode', query.parentCode);
+  }
+  if (query.limit !== undefined) {
+    search.set('limit', String(query.limit));
+  }
+
+  const value = search.toString();
+  return value ? `?${value}` : '';
 }

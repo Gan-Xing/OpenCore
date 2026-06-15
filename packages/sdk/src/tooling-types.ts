@@ -39,6 +39,93 @@ export type ExportPlanSummary = {
   generatedAt: string;
 };
 
+export type AreaIpRangeSummary = {
+  cidr: string;
+  startIp: string;
+  endIp: string;
+};
+
+export type AreaRegionSummary = {
+  aliases: readonly string[];
+  code: string;
+  ipRanges: readonly AreaIpRangeSummary[];
+  level: number;
+  name: string;
+  parentCode: string | null;
+  path: readonly string[];
+};
+
+export type AreaDatasetSummary = {
+  capabilities: readonly string[];
+  checksum: string;
+  importedAt: string;
+  ipRangeCount: number;
+  maxDepth: number;
+  regionCount: number;
+  source: string;
+  status: 'active';
+  version: string;
+};
+
+export type AreaDatasetVersionSummary = AreaDatasetSummary & {
+  active: boolean;
+};
+
+export type AreaDatasetVersionListSummary = {
+  activeVersion: string;
+  versions: readonly AreaDatasetVersionSummary[];
+};
+
+export type AreaRegionQueryRequest = {
+  limit?: number;
+  parentCode?: string;
+  query?: string;
+};
+
+export type AreaRegionListSummary = {
+  datasetVersion: string;
+  items: readonly AreaRegionSummary[];
+  limit: number;
+  total: number;
+};
+
+export type AreaIpLookupRequest = {
+  ip: string;
+};
+
+export type AreaIpLookupSummary = {
+  datasetVersion: string;
+  ip: string;
+  location: string;
+  matched: boolean;
+  networkType: string;
+  normalizedIp: string;
+  range: AreaIpRangeSummary | null;
+  region: AreaRegionSummary | null;
+};
+
+export type AreaDatasetImportEntryRequest = {
+  aliases?: readonly string[];
+  code: string;
+  ipRanges?: readonly string[];
+  name: string;
+  parentCode?: string;
+};
+
+export type AreaDatasetImportRequest = {
+  dryRun?: boolean;
+  entries: readonly AreaDatasetImportEntryRequest[];
+  source: string;
+  version: string;
+};
+
+export type AreaDatasetImportResultSummary = {
+  applied: boolean;
+  dataset: AreaDatasetSummary;
+  dryRun: boolean;
+  warnings: readonly string[];
+};
+
 export type OpenForgeIssueSummary = {
   severity: 'error' | 'warning';
   path: string;

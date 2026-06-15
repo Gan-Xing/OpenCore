@@ -183,6 +183,12 @@ export default [
         access: 'canReadExportTools',
       },
       {
+        name: 'Area Data',
+        path: '/tools/area',
+        component: './Tools/Area',
+        access: 'canReadAreaData',
+      },
+      {
         name: 'OpenForge',
         path: '/tools/openforge',
         component: './Tools/OpenForge',

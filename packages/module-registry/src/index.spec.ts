@@ -122,6 +122,33 @@ describe('@opencore/module-registry', () => {
   });
 
   it('registers OpenForge as the S9 read-only planning tool', () => {
+    expect(findModuleByCode('tool.area')).toMatchObject({
+      code: 'tool.area',
+      layer: 'tool',
+      priority: 'P1',
+      status: 'active',
+      stage: 'S12',
+      enabledByDefault: true,
+      apiTags: ['Tool Area'],
+      admin: {
+        basePath: '/tools/area',
+      },
+    });
+
+    expect(collectPermissionCodes()).toEqual(
+      expect.arrayContaining(['tool:area:read', 'tool:area:import']),
+    );
+
+    expect(collectMenus()).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          key: 'tools.area',
+          path: '/tools/area',
+          permissionCode: 'tool:area:read',
+        }),
+      ]),
+    );
+
     expect(findModuleByCode('tool.openforge')).toMatchObject({
       code: 'tool.openforge',
       layer: 'tool',

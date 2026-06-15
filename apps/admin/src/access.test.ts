@@ -34,6 +34,8 @@ describe('access', () => {
     expect(result.canAssignUserRoles).toBe(false);
     expect(result.canExportUsers).toBe(false);
     expect(result.canReadUsers).toBe(false);
+    expect(result.canReadAreaData).toBe(false);
+    expect(result.canImportAreaData).toBe(false);
     expect(result.canReadOpenForge).toBe(false);
     expect(result.canUpdateIntegrationProviders).toBe(false);
     expect(result.canManageIntegrationProviders).toBe(false);

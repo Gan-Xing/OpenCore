@@ -7951,6 +7951,166 @@
         "tags": ["Tooling", "Tool Export"]
       }
     },
+    "/api/tools/area/dataset": {
+      "get": {
+        "operationId": "ToolingController_getAreaDatasetStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AreaDatasetSummaryDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Tooling", "Tool Area"]
+      }
+    },
+    "/api/tools/area/dataset/versions": {
+      "get": {
+        "operationId": "ToolingController_listAreaDatasetVersions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AreaDatasetVersionListDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Tooling", "Tool Area"]
+      }
+    },
+    "/api/tools/area/regions": {
+      "get": {
+        "operationId": "ToolingController_listAreaRegions",
+        "parameters": [
+          {
+            "name": "query",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "parentCode",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "number" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AreaRegionListDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Tooling", "Tool Area"]
+      }
+    },
+    "/api/tools/area/regions/{code}": {
+      "get": {
+        "operationId": "ToolingController_getAreaRegion",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AreaRegionDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Tooling", "Tool Area"]
+      }
+    },
+    "/api/tools/area/ip/lookup": {
+      "post": {
+        "operationId": "ToolingController_lookupAreaIp",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AreaIpLookupRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AreaIpLookupDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Tooling", "Tool Area"]
+      }
+    },
+    "/api/tools/area/import": {
+      "post": {
+        "operationId": "ToolingController_importAreaDataset",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AreaDatasetImportRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AreaDatasetImportResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Tooling", "Tool Area"]
+      }
+    },
     "/api/tools/openforge/status": {
       "get": {
         "operationId": "ToolingController_getOpenForgeStatus",
@@ -8299,6 +8459,7 @@
       "description": "optional.export-job: Export Job Design"
     },
     { "name": "Optional Reports", "description": "optional.report: Reports" },
+    { "name": "Tool Area", "description": "tool.area: Area Data" },
     { "name": "Tool Export", "description": "tool.export: Export Tools" },
     { "name": "Tool OpenAPI", "description": "tool.openapi: OpenAPI" },
     { "name": "Tool OpenForge", "description": "tool.openforge: OpenForge" }
@@ -12604,6 +12765,187 @@
           "rowCount",
           "generatedAt"
         ]
+      },
+      "AreaDatasetSummaryDto": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string", "enum": ["active"] },
+          "version": { "type": "string" },
+          "source": { "type": "string" },
+          "importedAt": { "type": "string" },
+          "checksum": { "type": "string" },
+          "regionCount": { "type": "number" },
+          "ipRangeCount": { "type": "number" },
+          "maxDepth": { "type": "number" },
+          "capabilities": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": [
+          "status",
+          "version",
+          "source",
+          "importedAt",
+          "checksum",
+          "regionCount",
+          "ipRangeCount",
+          "maxDepth",
+          "capabilities"
+        ]
+      },
+      "AreaDatasetVersionDto": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string", "enum": ["active"] },
+          "version": { "type": "string" },
+          "source": { "type": "string" },
+          "importedAt": { "type": "string" },
+          "checksum": { "type": "string" },
+          "regionCount": { "type": "number" },
+          "ipRangeCount": { "type": "number" },
+          "maxDepth": { "type": "number" },
+          "capabilities": { "type": "array", "items": { "type": "string" } },
+          "active": { "type": "boolean" }
+        },
+        "required": [
+          "status",
+          "version",
+          "source",
+          "importedAt",
+          "checksum",
+          "regionCount",
+          "ipRangeCount",
+          "maxDepth",
+          "capabilities",
+          "active"
+        ]
+      },
+      "AreaDatasetVersionListDto": {
+        "type": "object",
+        "properties": {
+          "activeVersion": { "type": "string" },
+          "versions": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/AreaDatasetVersionDto" }
+          }
+        },
+        "required": ["activeVersion", "versions"]
+      },
+      "AreaIpRangeDto": {
+        "type": "object",
+        "properties": {
+          "cidr": { "type": "string" },
+          "startIp": { "type": "string" },
+          "endIp": { "type": "string" }
+        },
+        "required": ["cidr", "startIp", "endIp"]
+      },
+      "AreaRegionDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "parentCode": { "type": "string", "nullable": true },
+          "level": { "type": "number" },
+          "path": { "type": "array", "items": { "type": "string" } },
+          "aliases": { "type": "array", "items": { "type": "string" } },
+          "ipRanges": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/AreaIpRangeDto" }
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "parentCode",
+          "level",
+          "path",
+          "aliases",
+          "ipRanges"
+        ]
+      },
+      "AreaRegionListDto": {
+        "type": "object",
+        "properties": {
+          "datasetVersion": { "type": "string" },
+          "total": { "type": "number" },
+          "limit": { "type": "number" },
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/AreaRegionDto" }
+          }
+        },
+        "required": ["datasetVersion", "total", "limit", "items"]
+      },
+      "AreaIpLookupRequestDto": {
+        "type": "object",
+        "properties": { "ip": { "type": "string", "example": "203.0.113.7" } },
+        "required": ["ip"]
+      },
+      "AreaIpLookupDto": {
+        "type": "object",
+        "properties": {
+          "ip": { "type": "string" },
+          "normalizedIp": { "type": "string" },
+          "networkType": { "type": "string" },
+          "location": { "type": "string" },
+          "datasetVersion": { "type": "string" },
+          "matched": { "type": "boolean" },
+          "region": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [{ "$ref": "#/components/schemas/AreaRegionDto" }]
+          },
+          "range": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [{ "$ref": "#/components/schemas/AreaIpRangeDto" }]
+          }
+        },
+        "required": [
+          "ip",
+          "normalizedIp",
+          "networkType",
+          "location",
+          "datasetVersion",
+          "matched",
+          "region",
+          "range"
+        ]
+      },
+      "AreaDatasetImportEntryDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "parentCode": { "type": "string" },
+          "aliases": { "type": "array", "items": { "type": "string" } },
+          "ipRanges": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["code", "name"]
+      },
+      "AreaDatasetImportRequestDto": {
+        "type": "object",
+        "properties": {
+          "version": { "type": "string" },
+          "source": { "type": "string" },
+          "dryRun": { "type": "boolean", "default": true },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AreaDatasetImportEntryDto"
+            }
+          }
+        },
+        "required": ["version", "source", "entries"]
+      },
+      "AreaDatasetImportResultDto": {
+        "type": "object",
+        "properties": {
+          "dryRun": { "type": "boolean" },
+          "applied": { "type": "boolean" },
+          "dataset": { "$ref": "#/components/schemas/AreaDatasetSummaryDto" },
+          "warnings": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["dryRun", "applied", "dataset", "warnings"]
       },
       "OpenForgeStatusDto": {
         "type": "object",

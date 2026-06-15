@@ -1,6 +1,8 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, statSync } from 'node:fs';
+import { isIP } from 'node:net';
 import { dirname, resolve } from 'node:path';
+import { lookupIpLocation, normalizeIpAddress } from '@opencore/common';
 import {
   CURRENT_PAGE_EXPORT_PROTOCOL,
   createCurrentPageExportPlan,
@@ -17,7 +19,11 @@ import {
   showOpenForgeManifest,
 } from '@opencore/generator-core';
 import { getOpenForgeWorkspaceStatus } from '@opencore/openforge';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 
 const DEFAULT_OPENFORGE_SCHEMA_PATH =
   'tools/generator/examples/core.dict.v1.schema.json';
@@ -27,6 +33,12 @@ const ALLOWED_OPENFORGE_SCHEMA_PREFIX = 'tools/generator/examples/';
 const OPENFORGE_MANIFEST_ID_PATTERN = /^[a-zA-Z0-9._-]+$/;
 const OPENFORGE_DRY_RUN_CONFIRMATION_TEXT = 'OPENFORGE DRY RUN';
 const OPENAPI_SNAPSHOT_PATH = 'packages/contracts/openapi/opencore-api.json';
+const AREA_DATASET_MAX_ENTRIES = 500;
+const AREA_DATASET_MAX_DEPTH = 6;
+const AREA_DATASET_MAX_ALIASES = 8;
+const AREA_DATASET_MAX_IP_RANGES_PER_REGION = 16;
+const AREA_DATASET_VERSION_PATTERN = /^[a-zA-Z0-9._:-]{3,80}$/;
+const AREA_REGION_CODE_PATTERN = /^[a-zA-Z0-9._:-]{2,32}$/;
 const OPENAPI_HTTP_METHODS = new Set([
   'delete',
   'get',
@@ -37,6 +49,102 @@ const OPENAPI_HTTP_METHODS = new Set([
   'put',
   'trace',
 ]);
+
+type AreaDatasetImportEntryInput = {
+  aliases?: readonly string[];
+  code?: string;
+  ipRanges?: readonly string[];
+  name?: string;
+  parentCode?: string;
+};
+
+type AreaDatasetImportInput = {
+  dryRun?: boolean;
+  entries?: readonly AreaDatasetImportEntryInput[];
+  source?: string;
+  version?: string;
+};
+
+type AreaRegionQueryInput = {
+  limit?: number | string;
+  parentCode?: string;
+  query?: string;
+};
+
+type AreaIpRangeRecord = {
+  cidr: string;
+  end: number;
+  endIp: string;
+  start: number;
+  startIp: string;
+};
+
+type AreaRegionRecord = {
+  aliases: readonly string[];
+  code: string;
+  ipRanges: readonly AreaIpRangeRecord[];
+  level: number;
+  name: string;
+  parentCode: string | null;
+  path: readonly string[];
+};
+
+type AreaDatasetRecord = {
+  checksum: string;
+  importedAt: string;
+  regions: readonly AreaRegionRecord[];
+  source: string;
+  version: string;
+};
+
+const BUILTIN_AREA_IMPORT = {
+  version: 'opencore-area-boundary-v1',
+  source: 'builtin-opencore',
+  entries: [
+    {
+      code: '000000',
+      name: 'Global',
+      aliases: ['all'],
+    },
+    {
+      code: 'RFC-EXAMPLE',
+      name: 'RFC example networks',
+      parentCode: '000000',
+      aliases: ['documentation', 'example'],
+      ipRanges: ['192.0.2.0/24', '198.51.100.0/24', '203.0.113.0/24'],
+    },
+    {
+      code: 'US',
+      name: 'United States',
+      parentCode: '000000',
+      aliases: ['USA', 'United States of America'],
+    },
+    {
+      code: 'US-CA',
+      name: 'California',
+      parentCode: 'US',
+      aliases: ['CA'],
+    },
+    {
+      code: 'US-CA-SFO',
+      name: 'San Francisco',
+      parentCode: 'US-CA',
+      aliases: ['SFO'],
+    },
+    {
+      code: 'CN',
+      name: 'China',
+      parentCode: '000000',
+      aliases: ['PRC'],
+    },
+    {
+      code: 'CN-SH',
+      name: 'Shanghai',
+      parentCode: 'CN',
+      aliases: ['沪'],
+    },
+  ],
+} as const satisfies AreaDatasetImportInput;
 
 function findWorkspaceRoot(start = process.cwd()): string {
   let current = resolve(start);
@@ -136,8 +244,558 @@ function assertOpenForgeDryRunConfirmation(input: {
   }
 }
 
+class AreaDatasetStore {
+  private active = createAreaDataset(BUILTIN_AREA_IMPORT, {
+    importedAt: '2026-01-01T00:00:00.000Z',
+  });
+  private readonly versions = new Map<string, AreaDatasetRecord>([
+    [this.active.version, this.active],
+  ]);
+
+  getStatus() {
+    return toAreaDatasetSummary(this.active);
+  }
+
+  listVersions() {
+    return {
+      activeVersion: this.active.version,
+      versions: [...this.versions.values()]
+        .map((dataset) => ({
+          ...toAreaDatasetSummary(dataset),
+          active: dataset.version === this.active.version,
+        }))
+        .sort((left, right) => right.importedAt.localeCompare(left.importedAt)),
+    };
+  }
+
+  listRegions(input: AreaRegionQueryInput = {}) {
+    const limit = clampAreaListLimit(input.limit);
+    const query = input.query?.trim().toLowerCase();
+    const parentCode = normalizeOptionalAreaCode(input.parentCode);
+    const items = this.active.regions.filter((region) => {
+      if (parentCode && region.parentCode !== parentCode) {
+        return false;
+      }
+
+      if (!query) {
+        return true;
+      }
+
+      return [
+        region.code,
+        region.name,
+        region.parentCode ?? '',
+        ...region.aliases,
+        ...region.path,
+      ].some((value) => value.toLowerCase().includes(query));
+    });
+
+    return {
+      datasetVersion: this.active.version,
+      total: items.length,
+      limit,
+      items: items.slice(0, limit).map(toAreaRegionDto),
+    };
+  }
+
+  getRegion(code: string) {
+    const normalized = normalizeRequiredAreaCode(code, 'code');
+    const region = this.active.regions.find(
+      (candidate) => candidate.code === normalized,
+    );
+
+    if (!region) {
+      throw new NotFoundException(`Area region ${normalized} was not found.`);
+    }
+
+    return toAreaRegionDto(region);
+  }
+
+  lookupIp(input: { ip?: string }) {
+    const ip = input.ip?.trim() ?? '';
+    const normalizedIp = normalizeIpAddress(ip);
+
+    if (!normalizedIp || isIP(normalizedIp) === 0) {
+      throw new BadRequestException('ip must be a valid IP address.');
+    }
+
+    const providerResult = lookupIpLocation(normalizedIp);
+    const ipNumber = parseIpv4Number(normalizedIp);
+    const match =
+      typeof ipNumber === 'number'
+        ? findAreaIpRangeMatch(this.active, ipNumber)
+        : undefined;
+
+    return {
+      ip,
+      normalizedIp,
+      networkType: providerResult.networkType,
+      location: providerResult.location,
+      datasetVersion: this.active.version,
+      matched: Boolean(match),
+      region: match ? toAreaRegionDto(match.region) : null,
+      range: match ? toAreaIpRangeDto(match.range) : null,
+    };
+  }
+
+  importDataset(input: AreaDatasetImportInput) {
+    const dryRun = input.dryRun !== false;
+    const dataset = createAreaDataset(input);
+    const warnings = createAreaDatasetWarnings(dataset);
+
+    if (!dryRun) {
+      this.active = dataset;
+      this.versions.set(dataset.version, dataset);
+    }
+
+    return {
+      dryRun,
+      applied: !dryRun,
+      dataset: toAreaDatasetSummary(dataset),
+      warnings,
+    };
+  }
+}
+
+function createAreaDataset(
+  input: AreaDatasetImportInput,
+  options: { importedAt?: string } = {},
+): AreaDatasetRecord {
+  const version = normalizeAreaDatasetVersion(input.version);
+  const source = normalizeAreaDatasetSource(input.source);
+  const entries = normalizeAreaDatasetEntries(input.entries);
+  const byCode = new Map(entries.map((entry) => [entry.code, entry]));
+  const pathCache = new Map<string, readonly string[]>();
+  const regions = entries
+    .map((entry) => {
+      const path = resolveAreaPath(entry.code, byCode, pathCache);
+      return {
+        aliases: entry.aliases,
+        code: entry.code,
+        ipRanges: entry.ipRanges,
+        level: path.length,
+        name: entry.name,
+        parentCode: entry.parentCode,
+        path,
+      } satisfies AreaRegionRecord;
+    })
+    .sort((left, right) => left.code.localeCompare(right.code));
+
+  const maxDepth = Math.max(...regions.map((region) => region.level));
+  if (maxDepth > AREA_DATASET_MAX_DEPTH) {
+    throw new BadRequestException(
+      `Area dataset depth must not exceed ${AREA_DATASET_MAX_DEPTH}.`,
+    );
+  }
+
+  return {
+    checksum: createAreaDatasetChecksum({ regions, source, version }),
+    importedAt: options.importedAt ?? new Date().toISOString(),
+    regions,
+    source,
+    version,
+  };
+}
+
+function normalizeAreaDatasetVersion(version: unknown): string {
+  if (
+    typeof version !== 'string' ||
+    !AREA_DATASET_VERSION_PATTERN.test(version)
+  ) {
+    throw new BadRequestException(
+      'version must be 3-80 characters and may contain letters, numbers, dot, underscore, colon or dash.',
+    );
+  }
+
+  return version;
+}
+
+function normalizeAreaDatasetSource(source: unknown): string {
+  if (typeof source !== 'string') {
+    throw new BadRequestException('source is required.');
+  }
+
+  const normalized = source.trim();
+  if (!normalized || normalized.length > 120) {
+    throw new BadRequestException('source must be 1-120 characters.');
+  }
+
+  return normalized;
+}
+
+function normalizeAreaDatasetEntries(
+  entries: AreaDatasetImportInput['entries'],
+) {
+  if (!Array.isArray(entries)) {
+    throw new BadRequestException('entries must be an array.');
+  }
+
+  if (entries.length === 0 || entries.length > AREA_DATASET_MAX_ENTRIES) {
+    throw new BadRequestException(
+      `entries must contain 1-${AREA_DATASET_MAX_ENTRIES} regions.`,
+    );
+  }
+
+  const seenCodes = new Set<string>();
+  const normalized = entries.map((entry, index) => {
+    const code = normalizeRequiredAreaCode(
+      entry.code,
+      `entries[${index}].code`,
+    );
+    const parentCode = normalizeOptionalAreaCode(entry.parentCode);
+    if (parentCode === code) {
+      throw new BadRequestException(
+        `Area region ${code} cannot parent itself.`,
+      );
+    }
+
+    if (seenCodes.has(code)) {
+      throw new BadRequestException(`Duplicate area region code ${code}.`);
+    }
+    seenCodes.add(code);
+
+    return {
+      aliases: normalizeAreaAliases(entry.aliases, code),
+      code,
+      ipRanges: normalizeAreaIpRanges(entry.ipRanges, code),
+      name: normalizeAreaName(entry.name, code),
+      parentCode,
+    };
+  });
+
+  const codes = new Set(normalized.map((entry) => entry.code));
+  for (const entry of normalized) {
+    if (entry.parentCode && !codes.has(entry.parentCode)) {
+      throw new BadRequestException(
+        `Area region ${entry.code} references missing parentCode ${entry.parentCode}.`,
+      );
+    }
+  }
+
+  return normalized;
+}
+
+function normalizeRequiredAreaCode(value: unknown, label: string): string {
+  if (typeof value !== 'string') {
+    throw new BadRequestException(`${label} is required.`);
+  }
+
+  const normalized = value.trim();
+  if (!AREA_REGION_CODE_PATTERN.test(normalized)) {
+    throw new BadRequestException(
+      `${label} must be 2-32 characters and may contain letters, numbers, dot, underscore, colon or dash.`,
+    );
+  }
+
+  return normalized;
+}
+
+function normalizeOptionalAreaCode(value: unknown): string | null {
+  if (value === undefined || value === null || value === '') {
+    return null;
+  }
+
+  return normalizeRequiredAreaCode(value, 'parentCode');
+}
+
+function normalizeAreaName(value: unknown, code: string): string {
+  if (typeof value !== 'string') {
+    throw new BadRequestException(`Area region ${code} name is required.`);
+  }
+
+  const normalized = value.trim();
+  if (!normalized || normalized.length > 120) {
+    throw new BadRequestException(
+      `Area region ${code} name must be 1-120 characters.`,
+    );
+  }
+
+  return normalized;
+}
+
+function normalizeAreaAliases(value: unknown, code: string): readonly string[] {
+  if (value === undefined || value === null) {
+    return [];
+  }
+
+  if (!Array.isArray(value)) {
+    throw new BadRequestException(
+      `Area region ${code} aliases must be an array.`,
+    );
+  }
+
+  if (value.length > AREA_DATASET_MAX_ALIASES) {
+    throw new BadRequestException(
+      `Area region ${code} may declare at most ${AREA_DATASET_MAX_ALIASES} aliases.`,
+    );
+  }
+
+  return value.map((alias, index) => {
+    if (typeof alias !== 'string') {
+      throw new BadRequestException(
+        `Area region ${code} aliases[${index}] must be a string.`,
+      );
+    }
+
+    const normalized = alias.trim();
+    if (!normalized || normalized.length > 80) {
+      throw new BadRequestException(
+        `Area region ${code} aliases[${index}] must be 1-80 characters.`,
+      );
+    }
+
+    return normalized;
+  });
+}
+
+function normalizeAreaIpRanges(
+  value: unknown,
+  code: string,
+): readonly AreaIpRangeRecord[] {
+  if (value === undefined || value === null) {
+    return [];
+  }
+
+  if (!Array.isArray(value)) {
+    throw new BadRequestException(
+      `Area region ${code} ipRanges must be an array.`,
+    );
+  }
+
+  if (value.length > AREA_DATASET_MAX_IP_RANGES_PER_REGION) {
+    throw new BadRequestException(
+      `Area region ${code} may declare at most ${AREA_DATASET_MAX_IP_RANGES_PER_REGION} IP ranges.`,
+    );
+  }
+
+  return value.map((range, index) => {
+    if (typeof range !== 'string') {
+      throw new BadRequestException(
+        `Area region ${code} ipRanges[${index}] must be a string.`,
+      );
+    }
+
+    return parseAreaIpRange(range, `Area region ${code} ipRanges[${index}]`);
+  });
+}
+
+function resolveAreaPath(
+  code: string,
+  entries: ReadonlyMap<string, { code: string; parentCode: string | null }>,
+  cache: Map<string, readonly string[]>,
+  stack: readonly string[] = [],
+): readonly string[] {
+  const cached = cache.get(code);
+  if (cached) {
+    return cached;
+  }
+
+  if (stack.includes(code)) {
+    throw new BadRequestException(
+      `Area dataset contains a parent cycle at ${code}.`,
+    );
+  }
+
+  const entry = entries.get(code);
+  if (!entry) {
+    throw new BadRequestException(`Area region ${code} was not found.`);
+  }
+
+  const path = entry.parentCode
+    ? [
+        ...resolveAreaPath(entry.parentCode, entries, cache, [...stack, code]),
+        code,
+      ]
+    : [code];
+
+  cache.set(code, path);
+  return path;
+}
+
+function parseAreaIpRange(value: string, label: string): AreaIpRangeRecord {
+  const normalized = value.trim();
+  if (!normalized) {
+    throw new BadRequestException(`${label} must not be empty.`);
+  }
+
+  const parts = normalized.split('/');
+  if (parts.length > 2) {
+    throw new BadRequestException(`${label} must use IPv4 CIDR or exact IPv4.`);
+  }
+
+  const [ip, prefixPart] = parts;
+  const startIp = normalizeIpAddress(ip ?? '');
+  if (!startIp || isIP(startIp) !== 4) {
+    throw new BadRequestException(`${label} must use IPv4 CIDR or exact IPv4.`);
+  }
+
+  const prefix =
+    prefixPart === undefined ? 32 : Number.parseInt(prefixPart.trim(), 10);
+  if (prefixPart !== undefined && !/^\d{1,2}$/.test(prefixPart.trim())) {
+    throw new BadRequestException(`${label} CIDR prefix must be 0-32.`);
+  }
+  if (!Number.isInteger(prefix) || prefix < 0 || prefix > 32) {
+    throw new BadRequestException(`${label} CIDR prefix must be 0-32.`);
+  }
+
+  const startNumber = parseIpv4Number(startIp);
+  if (typeof startNumber !== 'number') {
+    throw new BadRequestException(`${label} must use a valid IPv4 address.`);
+  }
+
+  const blockSize = 2 ** (32 - prefix);
+  const networkStart = Math.floor(startNumber / blockSize) * blockSize;
+  const networkEnd = networkStart + blockSize - 1;
+  const cidr =
+    prefix === 32
+      ? numberToIpv4(networkStart)
+      : `${numberToIpv4(networkStart)}/${prefix}`;
+
+  return {
+    cidr,
+    end: networkEnd,
+    endIp: numberToIpv4(networkEnd),
+    start: networkStart,
+    startIp: numberToIpv4(networkStart),
+  };
+}
+
+function parseIpv4Number(value: string): number | undefined {
+  if (isIP(value) !== 4) {
+    return undefined;
+  }
+
+  const octets = value.split('.').map((part) => Number.parseInt(part, 10));
+  if (
+    octets.length !== 4 ||
+    octets.some((octet) => !Number.isInteger(octet) || octet < 0 || octet > 255)
+  ) {
+    return undefined;
+  }
+
+  return (
+    octets[0] * 256 ** 3 + octets[1] * 256 ** 2 + octets[2] * 256 + octets[3]
+  );
+}
+
+function numberToIpv4(value: number): string {
+  return [
+    Math.floor(value / 256 ** 3) % 256,
+    Math.floor(value / 256 ** 2) % 256,
+    Math.floor(value / 256) % 256,
+    value % 256,
+  ].join('.');
+}
+
+function findAreaIpRangeMatch(dataset: AreaDatasetRecord, ipNumber: number) {
+  for (const region of dataset.regions) {
+    for (const range of region.ipRanges) {
+      if (ipNumber >= range.start && ipNumber <= range.end) {
+        return { range, region };
+      }
+    }
+  }
+
+  return undefined;
+}
+
+function clampAreaListLimit(value: number | string | undefined): number {
+  const parsed =
+    typeof value === 'string' ? Number.parseInt(value, 10) : (value ?? 50);
+
+  if (!Number.isFinite(parsed)) {
+    return 50;
+  }
+
+  return Math.min(Math.max(Math.trunc(parsed), 1), 100);
+}
+
+function toAreaDatasetSummary(dataset: AreaDatasetRecord) {
+  const maxDepth = Math.max(...dataset.regions.map((region) => region.level));
+  const ipRangeCount = dataset.regions.reduce(
+    (total, region) => total + region.ipRanges.length,
+    0,
+  );
+
+  return {
+    status: 'active' as const,
+    version: dataset.version,
+    source: dataset.source,
+    importedAt: dataset.importedAt,
+    checksum: dataset.checksum,
+    regionCount: dataset.regions.length,
+    ipRangeCount,
+    maxDepth,
+    capabilities: [
+      'versioned-area-dataset',
+      'bounded-json-import',
+      'hierarchical-region-query',
+      'ipv4-range-lookup',
+    ],
+  };
+}
+
+function toAreaRegionDto(region: AreaRegionRecord) {
+  return {
+    code: region.code,
+    name: region.name,
+    parentCode: region.parentCode,
+    level: region.level,
+    path: region.path,
+    aliases: region.aliases,
+    ipRanges: region.ipRanges.map(toAreaIpRangeDto),
+  };
+}
+
+function toAreaIpRangeDto(range: AreaIpRangeRecord) {
+  return {
+    cidr: range.cidr,
+    startIp: range.startIp,
+    endIp: range.endIp,
+  };
+}
+
+function createAreaDatasetChecksum(input: {
+  regions: readonly AreaRegionRecord[];
+  source: string;
+  version: string;
+}): string {
+  return createHash('sha256')
+    .update(
+      JSON.stringify({
+        regions: input.regions.map((region) => ({
+          aliases: region.aliases,
+          code: region.code,
+          ipRanges: region.ipRanges.map((range) => range.cidr),
+          name: region.name,
+          parentCode: region.parentCode,
+        })),
+        source: input.source,
+        version: input.version,
+      }),
+    )
+    .digest('hex');
+}
+
+function createAreaDatasetWarnings(
+  dataset: AreaDatasetRecord,
+): readonly string[] {
+  const warnings: string[] = [];
+  const hasIpRanges = dataset.regions.some(
+    (region) => region.ipRanges.length > 0,
+  );
+
+  if (!hasIpRanges) {
+    warnings.push('Dataset has no IP ranges; region queries will still work.');
+  }
+
+  return warnings;
+}
+
 @Injectable()
 export class ToolingRepository {
+  private readonly areaDatasetStore = new AreaDatasetStore();
+
   private getOpenForgeRepoRoot(): string {
     return findWorkspaceRoot();
   }
@@ -223,6 +881,30 @@ export class ToolingRepository {
     rowCount: number;
   }) {
     return createCurrentPageExportPlan(input);
+  }
+
+  getAreaDatasetStatus() {
+    return this.areaDatasetStore.getStatus();
+  }
+
+  listAreaDatasetVersions() {
+    return this.areaDatasetStore.listVersions();
+  }
+
+  listAreaRegions(query: AreaRegionQueryInput = {}) {
+    return this.areaDatasetStore.listRegions(query);
+  }
+
+  getAreaRegion(code: string) {
+    return this.areaDatasetStore.getRegion(code);
+  }
+
+  lookupAreaIp(input: { ip?: string }) {
+    return this.areaDatasetStore.lookupIp(input);
+  }
+
+  importAreaDataset(input: AreaDatasetImportInput) {
+    return this.areaDatasetStore.importDataset(input);
   }
 
   getOpenForgeStatus() {

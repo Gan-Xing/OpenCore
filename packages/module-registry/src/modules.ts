@@ -727,6 +727,42 @@ export const moduleRegistry = [
     },
   },
   {
+    code: 'tool.area',
+    title: 'Area Data',
+    layer: 'tool',
+    priority: 'P1',
+    status: 'active',
+    stage: 'S12',
+    enabledByDefault: true,
+    description:
+      'Versioned area dataset boundary with bounded import, region query, and IPv4 range lookup.',
+    apiTags: ['Tool Area'],
+    permissions: definePermissions('tool', 'area', 'area data', 'S12', [
+      { action: 'read', title: 'Read' },
+      { action: 'import', title: 'Import' },
+    ]),
+    menus: [
+      defineMenu(
+        'tools.area',
+        'Area Data',
+        '/tools/area',
+        'tool:area:read',
+        515,
+        'S12',
+      ),
+    ],
+    admin: {
+      basePath: '/tools/area',
+      routes: [
+        {
+          path: '/tools/area',
+          title: 'Area Data',
+          permissionCode: 'tool:area:read',
+        },
+      ],
+    },
+  },
+  {
     code: 'tool.openforge',
     title: 'OpenForge',
     layer: 'tool',

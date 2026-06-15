@@ -20,6 +20,22 @@ describe('createToolingClient', () => {
       columns: ['code', 'name'],
       rowCount: 2,
     });
+    await client.getAreaDatasetStatus('token');
+    await client.listAreaDatasetVersions('token');
+    await client.listAreaRegions('token', {
+      limit: 5,
+      query: 'san',
+    });
+    await client.getAreaRegion('token', 'US-CA-SFO');
+    await client.lookupAreaIp('token', {
+      ip: '203.0.113.7',
+    });
+    await client.importAreaDataset('token', {
+      dryRun: true,
+      entries: [{ code: 'ROOT', name: 'Root' }],
+      source: 'sdk-test',
+      version: 'sdk-area-v1',
+    });
     await client.getOpenForgeStatus('token');
     await client.getOpenForgeDoctor('token');
     await client.createOpenForgePlan('token', {
@@ -54,6 +70,26 @@ describe('createToolingClient', () => {
       },
       {
         path: '/tools/export/preview',
+        method: 'POST',
+      },
+      {
+        path: '/tools/area/dataset',
+      },
+      {
+        path: '/tools/area/dataset/versions',
+      },
+      {
+        path: '/tools/area/regions?query=san&limit=5',
+      },
+      {
+        path: '/tools/area/regions/US-CA-SFO',
+      },
+      {
+        path: '/tools/area/ip/lookup',
+        method: 'POST',
+      },
+      {
+        path: '/tools/area/import',
         method: 'POST',
       },
       {

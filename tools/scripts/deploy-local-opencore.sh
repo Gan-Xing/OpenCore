@@ -960,6 +960,51 @@ verify_admin_bundle_api_base_url() {
   if ! grep -R \
     --fixed-strings \
     --include='*.js' \
+    "Area data boundary" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Reload area dataset" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Area dataset versions" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Area region query" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "IP boundary lookup" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Validate area import" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Activate area import" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "tool:area:read" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null; then
+    echo "Admin bundle does not include Area Data boundary, query, IP lookup and import controls." >&2
+    echo "Refusing to deploy a stale frontend Area Data page." >&2
+    exit 1
+  fi
+
+  if ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
     "Plan artifacts" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null || \
     ! grep -R \
@@ -2406,6 +2451,12 @@ run_with_env env \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
   run_tools_ts_script "$ROOT_DIR/tools/scripts/run-typed-smoke.ts" \
     "$ROOT_DIR/tools/smoke/smoke-core-audit-log.ts"
+
+run_with_env env \
+  OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \
+  OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
+  run_tools_ts_script "$ROOT_DIR/tools/scripts/run-typed-smoke.ts" \
+    "$ROOT_DIR/tools/smoke/smoke-tool-area.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \

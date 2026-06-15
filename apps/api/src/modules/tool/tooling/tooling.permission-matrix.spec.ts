@@ -25,6 +25,42 @@ describe('ToolingController permission matrix', () => {
     expect(
       Reflect.getMetadata(
         REQUIRED_PERMISSIONS_KEY,
+        ToolingController.prototype.getAreaDatasetStatus,
+      ),
+    ).toEqual(['tool:area:read']);
+    expect(
+      Reflect.getMetadata(
+        REQUIRED_PERMISSIONS_KEY,
+        ToolingController.prototype.listAreaDatasetVersions,
+      ),
+    ).toEqual(['tool:area:read']);
+    expect(
+      Reflect.getMetadata(
+        REQUIRED_PERMISSIONS_KEY,
+        ToolingController.prototype.listAreaRegions,
+      ),
+    ).toEqual(['tool:area:read']);
+    expect(
+      Reflect.getMetadata(
+        REQUIRED_PERMISSIONS_KEY,
+        ToolingController.prototype.getAreaRegion,
+      ),
+    ).toEqual(['tool:area:read']);
+    expect(
+      Reflect.getMetadata(
+        REQUIRED_PERMISSIONS_KEY,
+        ToolingController.prototype.lookupAreaIp,
+      ),
+    ).toEqual(['tool:area:read']);
+    expect(
+      Reflect.getMetadata(
+        REQUIRED_PERMISSIONS_KEY,
+        ToolingController.prototype.importAreaDataset,
+      ),
+    ).toEqual(['tool:area:import']);
+    expect(
+      Reflect.getMetadata(
+        REQUIRED_PERMISSIONS_KEY,
         ToolingController.prototype.getOpenForgeStatus,
       ),
     ).toEqual(['tool:openforge:read']);

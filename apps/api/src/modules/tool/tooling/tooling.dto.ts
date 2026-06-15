@@ -95,6 +95,183 @@ export class ExportPlanDto {
   generatedAt!: string;
 }
 
+export class AreaIpRangeDto {
+  @ApiProperty()
+  cidr!: string;
+
+  @ApiProperty()
+  startIp!: string;
+
+  @ApiProperty()
+  endIp!: string;
+}
+
+export class AreaRegionDto {
+  @ApiProperty()
+  code!: string;
+
+  @ApiProperty()
+  name!: string;
+
+  @ApiProperty({ nullable: true, type: String })
+  parentCode!: string | null;
+
+  @ApiProperty()
+  level!: number;
+
+  @ApiProperty({ type: [String] })
+  path!: readonly string[];
+
+  @ApiProperty({ type: [String] })
+  aliases!: readonly string[];
+
+  @ApiProperty({ type: [AreaIpRangeDto] })
+  ipRanges!: readonly AreaIpRangeDto[];
+}
+
+export class AreaDatasetSummaryDto {
+  @ApiProperty({ enum: ['active'] })
+  status!: 'active';
+
+  @ApiProperty()
+  version!: string;
+
+  @ApiProperty()
+  source!: string;
+
+  @ApiProperty()
+  importedAt!: string;
+
+  @ApiProperty()
+  checksum!: string;
+
+  @ApiProperty()
+  regionCount!: number;
+
+  @ApiProperty()
+  ipRangeCount!: number;
+
+  @ApiProperty()
+  maxDepth!: number;
+
+  @ApiProperty({ type: [String] })
+  capabilities!: readonly string[];
+}
+
+export class AreaDatasetVersionDto extends AreaDatasetSummaryDto {
+  @ApiProperty()
+  active!: boolean;
+}
+
+export class AreaDatasetVersionListDto {
+  @ApiProperty()
+  activeVersion!: string;
+
+  @ApiProperty({ type: [AreaDatasetVersionDto] })
+  versions!: readonly AreaDatasetVersionDto[];
+}
+
+export class AreaRegionListDto {
+  @ApiProperty()
+  datasetVersion!: string;
+
+  @ApiProperty()
+  total!: number;
+
+  @ApiProperty()
+  limit!: number;
+
+  @ApiProperty({ type: [AreaRegionDto] })
+  items!: readonly AreaRegionDto[];
+}
+
+export class AreaRegionQueryDto {
+  @ApiProperty({ required: false })
+  query?: string;
+
+  @ApiProperty({ required: false })
+  parentCode?: string;
+
+  @ApiProperty({ required: false })
+  limit?: number;
+}
+
+export class AreaIpLookupRequestDto {
+  @ApiProperty({ example: '203.0.113.7' })
+  ip!: string;
+}
+
+export class AreaIpLookupDto {
+  @ApiProperty()
+  ip!: string;
+
+  @ApiProperty()
+  normalizedIp!: string;
+
+  @ApiProperty()
+  networkType!: string;
+
+  @ApiProperty()
+  location!: string;
+
+  @ApiProperty()
+  datasetVersion!: string;
+
+  @ApiProperty()
+  matched!: boolean;
+
+  @ApiProperty({ nullable: true, type: AreaRegionDto })
+  region!: AreaRegionDto | null;
+
+  @ApiProperty({ nullable: true, type: AreaIpRangeDto })
+  range!: AreaIpRangeDto | null;
+}
+
+export class AreaDatasetImportEntryDto {
+  @ApiProperty()
+  code!: string;
+
+  @ApiProperty()
+  name!: string;
+
+  @ApiProperty({ required: false })
+  parentCode?: string;
+
+  @ApiProperty({ required: false, type: [String] })
+  aliases?: readonly string[];
+
+  @ApiProperty({ required: false, type: [String] })
+  ipRanges?: readonly string[];
+}
+
+export class AreaDatasetImportRequestDto {
+  @ApiProperty()
+  version!: string;
+
+  @ApiProperty()
+  source!: string;
+
+  @ApiProperty({ default: true, required: false })
+  dryRun?: boolean;
+
+  @ApiProperty({ type: [AreaDatasetImportEntryDto] })
+  entries!: readonly AreaDatasetImportEntryDto[];
+}
+
+export class AreaDatasetImportResultDto {
+  @ApiProperty()
+  dryRun!: boolean;
+
+  @ApiProperty()
+  applied!: boolean;
+
+  @ApiProperty({ type: AreaDatasetSummaryDto })
+  dataset!: AreaDatasetSummaryDto;
+
+  @ApiProperty({ type: [String] })
+  warnings!: readonly string[];
+}
+
 export class OpenForgeSchemaRequestDto {
   @ApiProperty({
     default: 'tools/generator/examples/core.dict.v1.schema.json',
