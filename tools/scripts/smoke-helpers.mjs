@@ -121,6 +121,7 @@ export function createSmokeRuntime() {
     setToken(value) {
       token = value;
     },
+    username,
   };
 }
 
