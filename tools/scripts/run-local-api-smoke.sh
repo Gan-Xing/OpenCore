@@ -134,7 +134,8 @@ run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$BASE_URL" \
   OPENCORE_SMOKE_PORT="$SMOKE_PORT" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
-  node "$ROOT_DIR/tools/scripts/smoke-monitor-status.mjs"
+  node "$ROOT_DIR/tools/scripts/run-typed-smoke.mjs" \
+    "$ROOT_DIR/tools/smoke/smoke-monitor-status.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$BASE_URL" \
@@ -188,7 +189,8 @@ run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$BASE_URL" \
   OPENCORE_SMOKE_PORT="$SMOKE_PORT" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
-  node "$ROOT_DIR/tools/scripts/smoke-integration-designs.mjs"
+  node "$ROOT_DIR/tools/scripts/run-typed-smoke.mjs" \
+    "$ROOT_DIR/tools/smoke/smoke-integration-designs.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$BASE_URL" \

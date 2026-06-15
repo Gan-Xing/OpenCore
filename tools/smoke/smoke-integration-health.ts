@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+import type { IntegrationProviderDiagnosticsSummary } from '@opencore/sdk';
 
 import {
   assertArray,
@@ -7,14 +7,13 @@ import {
   assertIncludes,
   assertOpenApiPath,
   assertString,
-  createSmokeRuntime,
-} from './smoke-helpers.mjs';
+  createTypedSmokeRuntime,
+} from './runtime';
 
-const smoke = createSmokeRuntime();
-const { apiPrefix, apiRequest, baseUrl, checkDocs, login, request } = smoke;
-let token;
+const smoke = createTypedSmokeRuntime();
+const { apiPrefix, baseUrl, checkDocs, clients, request } = smoke;
 
-try {
+async function main() {
   await request('/health/live', { expected: [200] });
   await request('/health/ready', { expected: [200] });
 
@@ -25,11 +24,10 @@ try {
     assertOpenApiPath(openApi, '/api/integrations/providers/health-audit');
   }
 
-  const loginResponse = await login();
-  token = assertString(loginResponse.accessToken, 'login accessToken');
-  smoke.setToken(token);
+  const loginResponse = await smoke.login();
+  const token = assertString(loginResponse.accessToken, 'login accessToken');
 
-  const audit = await apiRequest('/integrations/providers/health-audit');
+  const audit = await clients.integration.getProviderHealthAudit(token);
   assertString(audit.generatedAt, 'health audit generatedAt');
   assertArray(audit.providers, 'health audit providers');
   assertArray(audit.actions, 'health audit actions');
@@ -72,8 +70,9 @@ try {
     'health audit actions',
   );
 
-  const diagnostics = await apiRequest(
-    '/integrations/providers/mail.sandbox/diagnostics',
+  const diagnostics = await clients.integration.getProviderDiagnostics(
+    token,
+    'mail.sandbox',
   );
   assertEqual(
     diagnostics.readiness,
@@ -101,19 +100,12 @@ try {
       ],
     }),
   );
-} catch (error) {
-  console.error(
-    JSON.stringify({
-      status: 'fail',
-      baseUrl,
-      apiPrefix,
-      error: error instanceof Error ? error.message : String(error),
-    }),
-  );
-  process.exitCode = 1;
 }
 
-function assertProvider(byCode, code) {
+function assertProvider(
+  byCode: ReadonlyMap<string, IntegrationProviderDiagnosticsSummary>,
+  code: string,
+) {
   const provider = byCode.get(code);
   if (!provider) {
     throw new Error(`Expected health audit provider ${code}.`);
@@ -122,7 +114,7 @@ function assertProvider(byCode, code) {
   return provider;
 }
 
-function assertNoSecretLeak(value) {
+function assertNoSecretLeak(value: unknown) {
   const text = JSON.stringify(value);
   const forbidden = [
     'opencore-local-sms-api-key',
@@ -135,3 +127,15 @@ function assertNoSecretLeak(value) {
     }
   }
 }
+
+main().catch((error: unknown) => {
+  console.error(
+    JSON.stringify({
+      status: 'fail',
+      baseUrl,
+      apiPrefix,
+      error: error instanceof Error ? error.message : String(error),
+    }),
+  );
+  process.exitCode = 1;
+});

@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+import type { IntegrationDesignSummary } from '@opencore/sdk';
 
 import {
   assertArray,
@@ -7,14 +7,13 @@ import {
   assertIncludes,
   assertOpenApiPath,
   assertString,
-  createSmokeRuntime,
-} from './smoke-helpers.mjs';
+  createTypedSmokeRuntime,
+} from './runtime';
 
-const smoke = createSmokeRuntime();
-const { apiPrefix, apiRequest, baseUrl, checkDocs, login, request } = smoke;
-let token;
+const smoke = createTypedSmokeRuntime();
+const { apiPrefix, baseUrl, checkDocs, clients, request } = smoke;
 
-try {
+async function main() {
   await request('/health/live', { expected: [200] });
   await request('/health/ready', { expected: [200] });
 
@@ -26,27 +25,26 @@ try {
     assertOpenApiPath(openApi, '/api/integrations/designs/websocket');
   }
 
-  const loginResponse = await login();
-  token = assertString(loginResponse.accessToken, 'login accessToken');
-  smoke.setToken(token);
+  const loginResponse = await smoke.login();
+  const token = assertString(loginResponse.accessToken, 'login accessToken');
 
-  const wechat = await apiRequest('/integrations/designs/wechat');
+  const wechat = await clients.integration.getWeChatDesign(token);
   assertIntegrationDesign(wechat, {
-    topic: 'wechat',
-    status: 'design-only',
-    documentPath: 'docs/development/integration-wechat-design.md',
     boundary: 'provider config and health check only',
-  });
-
-  const websocket = await apiRequest('/integrations/designs/websocket');
-  assertIntegrationDesign(websocket, {
-    topic: 'websocket',
+    documentPath: 'docs/development/integration-wechat-design.md',
     status: 'design-only',
-    documentPath: 'docs/development/integration-websocket-design.md',
-    boundary: 'auth required during connection upgrade',
+    topic: 'wechat',
   });
 
-  const summary = await apiRequest('/integrations/summary');
+  const websocket = await clients.integration.getWebSocketDesign(token);
+  assertIntegrationDesign(websocket, {
+    boundary: 'auth required during connection upgrade',
+    documentPath: 'docs/development/integration-websocket-design.md',
+    status: 'design-only',
+    topic: 'websocket',
+  });
+
+  const summary = await clients.integration.getSummary(token);
   assertAtLeast(summary.designs?.designOnlyTopics, 2, 'design-only topics');
   assertIncludes(summary.designs?.topics ?? [], 'wechat', 'design topics');
   assertIncludes(summary.designs?.topics ?? [], 'websocket', 'design topics');
@@ -72,19 +70,17 @@ try {
       ],
     }),
   );
-} catch (error) {
-  console.error(
-    JSON.stringify({
-      status: 'fail',
-      baseUrl,
-      apiPrefix,
-      error: error instanceof Error ? error.message : String(error),
-    }),
-  );
-  process.exitCode = 1;
 }
 
-function assertIntegrationDesign(actual, expected) {
+function assertIntegrationDesign(
+  actual: IntegrationDesignSummary,
+  expected: Pick<
+    IntegrationDesignSummary,
+    'documentPath' | 'status' | 'topic'
+  > & {
+    boundary: string;
+  },
+) {
   assertEqual(actual.topic, expected.topic, `${expected.topic} design topic`);
   assertEqual(
     actual.status,
@@ -103,3 +99,15 @@ function assertIntegrationDesign(actual, expected) {
     `${expected.topic} design boundaries`,
   );
 }
+
+main().catch((error: unknown) => {
+  console.error(
+    JSON.stringify({
+      status: 'fail',
+      baseUrl,
+      apiPrefix,
+      error: error instanceof Error ? error.message : String(error),
+    }),
+  );
+  process.exitCode = 1;
+});

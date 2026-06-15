@@ -1,9 +1,19 @@
 import {
+  createCollaborationClient,
+  createIntegrationClient,
+  createMonitoringClient,
+  createOperationsClient,
   createRbacClient,
+  createSystemManagementClient,
   createToolingClient,
+  type CollaborationClient,
+  type IntegrationClient,
   type LoginResponse,
+  type MonitoringClient,
+  type OperationsClient,
   type RbacClient,
   type SdkRequest,
+  type SystemManagementClient,
   type ToolingClient,
 } from '@opencore/sdk';
 
@@ -57,7 +67,18 @@ export function createTypedSmokeRuntime() {
     return apiRequest(path, options);
   };
   const clients = {
+    collaboration: createCollaborationClient(
+      sdkRequest,
+    ) satisfies CollaborationClient,
+    integration: createIntegrationClient(
+      sdkRequest,
+    ) satisfies IntegrationClient,
+    monitoring: createMonitoringClient(sdkRequest) satisfies MonitoringClient,
+    operations: createOperationsClient(sdkRequest) satisfies OperationsClient,
     rbac: createRbacClient(sdkRequest) satisfies RbacClient,
+    system: createSystemManagementClient(
+      sdkRequest,
+    ) satisfies SystemManagementClient,
     tooling: createToolingClient(sdkRequest) satisfies ToolingClient,
   };
 
