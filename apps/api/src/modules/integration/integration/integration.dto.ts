@@ -1105,12 +1105,152 @@ export class OAuthCallbackResultDto {
   completedAt?: string;
 }
 
+export type WebSocketRuntimeConnectionStatus = 'closed' | 'connected';
+export type WebSocketRuntimeSubscriptionStatus = 'active' | 'closed';
+export type WebSocketRuntimeEventDeliveryStatus =
+  | 'delivered'
+  | 'no_subscribers';
+
+export class WebSocketRuntimeConnectionDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  subjectId!: string;
+
+  @ApiProperty({ enum: ['sse'] })
+  transport!: 'sse';
+
+  @ApiProperty({ enum: ['closed', 'connected'] })
+  status!: WebSocketRuntimeConnectionStatus;
+
+  @ApiProperty({ type: [String] })
+  rooms!: readonly string[];
+
+  @ApiProperty()
+  connectedAt!: string;
+
+  @ApiProperty()
+  lastSeenAt!: string;
+
+  @ApiProperty({ required: false })
+  closedAt?: string;
+
+  @ApiProperty({ required: false })
+  closeReason?: string;
+}
+
+export class WebSocketRuntimeSubscriptionDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  connectionId!: string;
+
+  @ApiProperty()
+  room!: string;
+
+  @ApiProperty({ type: [String] })
+  eventTypes!: readonly string[];
+
+  @ApiProperty({ enum: ['active', 'closed'] })
+  status!: WebSocketRuntimeSubscriptionStatus;
+
+  @ApiProperty()
+  subscribedAt!: string;
+
+  @ApiProperty({ required: false })
+  closedAt?: string;
+}
+
+export class WebSocketRuntimeEventDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  room!: string;
+
+  @ApiProperty()
+  type!: string;
+
+  @ApiProperty()
+  payloadPreview!: Record<string, unknown>;
+
+  @ApiProperty({ required: false })
+  traceId?: string;
+
+  @ApiProperty()
+  deliveredCount!: number;
+
+  @ApiProperty({ enum: ['delivered', 'no_subscribers'] })
+  status!: WebSocketRuntimeEventDeliveryStatus;
+
+  @ApiProperty()
+  createdAt!: string;
+}
+
+export class WebSocketRuntimeSummaryDto {
+  @ApiProperty()
+  activeConnections!: number;
+
+  @ApiProperty()
+  totalConnections!: number;
+
+  @ApiProperty()
+  activeSubscriptions!: number;
+
+  @ApiProperty()
+  recentEvents!: number;
+
+  @ApiProperty({ required: false })
+  lastEventAt?: string;
+
+  @ApiProperty()
+  generatedAt!: string;
+}
+
+export class WebSocketRuntimeDiagnosticsDto {
+  @ApiProperty({ type: WebSocketRuntimeSummaryDto })
+  summary!: WebSocketRuntimeSummaryDto;
+
+  @ApiProperty({ type: [WebSocketRuntimeConnectionDto] })
+  connections!: readonly WebSocketRuntimeConnectionDto[];
+
+  @ApiProperty({ type: [WebSocketRuntimeSubscriptionDto] })
+  subscriptions!: readonly WebSocketRuntimeSubscriptionDto[];
+
+  @ApiProperty({ type: [WebSocketRuntimeEventDto] })
+  events!: readonly WebSocketRuntimeEventDto[];
+}
+
+export class WebSocketRuntimeStreamQueryDto {
+  @ApiProperty({ required: false })
+  room?: string;
+
+  @ApiProperty({ required: false })
+  eventTypes?: string;
+}
+
+export class PublishWebSocketRuntimeEventDto {
+  @ApiProperty({ required: false })
+  room?: string;
+
+  @ApiProperty()
+  type!: string;
+
+  @ApiProperty({ required: false })
+  payload?: Record<string, unknown>;
+
+  @ApiProperty({ required: false })
+  traceId?: string;
+}
+
 export class IntegrationDesignDto {
   @ApiProperty()
   topic!: 'pay' | 'websocket' | 'wechat';
 
-  @ApiProperty()
-  status!: 'design-only';
+  @ApiProperty({ enum: ['design-only', 'runtime-active'] })
+  status!: 'design-only' | 'runtime-active';
 
   @ApiProperty({ type: [String] })
   boundaries!: readonly string[];

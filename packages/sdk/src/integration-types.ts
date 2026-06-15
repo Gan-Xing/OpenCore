@@ -249,7 +249,7 @@ export type OAuthTokenInventorySummary = {
 
 export type IntegrationDesignSummary = {
   topic: 'pay' | 'websocket' | 'wechat';
-  status: 'design-only';
+  status: 'design-only' | 'runtime-active';
   boundaries: readonly string[];
   documentPath: string;
 };
@@ -459,6 +459,68 @@ export type OAuthCallbackResult = {
   audit: OAuthCallbackAuditSummary;
   token?: OAuthTokenSummary;
   completedAt?: string;
+};
+
+export type WebSocketRuntimeConnectionStatus = 'closed' | 'connected';
+export type WebSocketRuntimeSubscriptionStatus = 'active' | 'closed';
+export type WebSocketRuntimeEventDeliveryStatus =
+  | 'delivered'
+  | 'no_subscribers';
+
+export type WebSocketRuntimeConnectionSummary = {
+  id: string;
+  subjectId: string;
+  transport: 'sse';
+  status: WebSocketRuntimeConnectionStatus;
+  rooms: readonly string[];
+  connectedAt: string;
+  lastSeenAt: string;
+  closedAt?: string;
+  closeReason?: string;
+};
+
+export type WebSocketRuntimeSubscriptionSummary = {
+  id: string;
+  connectionId: string;
+  room: string;
+  eventTypes: readonly string[];
+  status: WebSocketRuntimeSubscriptionStatus;
+  subscribedAt: string;
+  closedAt?: string;
+};
+
+export type WebSocketRuntimeEventSummary = {
+  id: string;
+  room: string;
+  type: string;
+  payloadPreview: Record<string, unknown>;
+  traceId?: string;
+  deliveredCount: number;
+  status: WebSocketRuntimeEventDeliveryStatus;
+  createdAt: string;
+};
+
+export type WebSocketRuntimeSummary = {
+  activeConnections: number;
+  totalConnections: number;
+  activeSubscriptions: number;
+  recentEvents: number;
+  lastEventAt?: string;
+  generatedAt: string;
+};
+
+export type WebSocketRuntimeDiagnosticsSummary = {
+  summary: WebSocketRuntimeSummary;
+  connections: readonly WebSocketRuntimeConnectionSummary[];
+  subscriptions: readonly WebSocketRuntimeSubscriptionSummary[];
+  events: readonly WebSocketRuntimeEventSummary[];
+};
+
+export type PublishWebSocketRuntimeEventRequest = {
+  room?: string;
+  type: string;
+  payload?: Record<string, unknown>;
+  traceId?: string;
 };
 
 export type IntegrationFixtures = {
@@ -762,7 +824,7 @@ export function createIntegrationFixtures(): IntegrationFixtures {
     },
     {
       topic: 'websocket',
-      status: 'design-only',
+      status: 'runtime-active',
       boundaries: ['auth required during connection upgrade'],
       documentPath: 'docs/development/integration-websocket-design.md',
     },

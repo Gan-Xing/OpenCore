@@ -54,6 +54,9 @@ describe('IntegrationController permission matrix', () => {
       ['revokeOAuthToken', ['integration:oauth:manage']],
       ['getWeChatDesign', ['integration:wechat:read']],
       ['getWebSocketDesign', ['integration:websocket:read']],
+      ['getWebSocketRuntimeDiagnostics', ['integration:websocket:read']],
+      ['publishWebSocketRuntimeEvent', ['integration:websocket:read']],
+      ['streamWebSocketRuntimeEvents', ['integration:websocket:read']],
       ['getPaymentDesign', ['integration:billing-design:read']],
     ];
 

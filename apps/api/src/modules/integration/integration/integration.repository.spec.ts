@@ -20,7 +20,7 @@ describe('IntegrationRepository', () => {
       smsOutbox: { total: 1, queued: 0 },
       oauthProviders: 1,
       oauthTokens: { total: 4, active: 2, expired: 1, revoked: 1 },
-      designs: { designOnlyTopics: 3 },
+      designs: { designOnlyTopics: 2 },
     });
   });
 
@@ -1354,6 +1354,97 @@ describe('IntegrationRepository', () => {
         }),
       ],
     });
+  });
+
+  it('tracks WebSocket runtime connections, subscriptions, and diagnostic events', () => {
+    const repository = new SeedIntegrationRepository();
+    const delivered: unknown[] = [];
+    const handle = repository.openWebSocketRuntimeConnection({
+      subjectId: 'user_admin',
+      query: {
+        eventTypes: 'diagnostic.ping',
+        room: 'integration.diagnostics',
+      },
+      emit: (event) => delivered.push(event),
+    });
+
+    expect(repository.getWebSocketRuntimeDiagnostics()).toMatchObject({
+      summary: {
+        activeConnections: 1,
+        activeSubscriptions: 1,
+        recentEvents: 0,
+        totalConnections: 1,
+      },
+      connections: [
+        expect.objectContaining({
+          id: handle.connection.id,
+          status: 'connected',
+          subjectId: 'user_admin',
+          transport: 'sse',
+        }),
+      ],
+      subscriptions: [
+        expect.objectContaining({
+          connectionId: handle.connection.id,
+          eventTypes: ['diagnostic.ping'],
+          room: 'integration.diagnostics',
+          status: 'active',
+        }),
+      ],
+    });
+
+    const event = repository.publishWebSocketRuntimeEvent({
+      room: 'integration.diagnostics',
+      type: 'diagnostic.ping',
+      payload: {
+        clientSecret: 'unsafe',
+        message: 'runtime smoke',
+      },
+      traceId: 'trace-websocket-runtime',
+    });
+    expect(event).toMatchObject({
+      deliveredCount: 1,
+      payloadPreview: {
+        clientSecret: '[REDACTED]',
+        message: 'runtime smoke',
+      },
+      status: 'delivered',
+      traceId: 'trace-websocket-runtime',
+      type: 'diagnostic.ping',
+    });
+    expect(delivered).toHaveLength(1);
+    expect(
+      JSON.stringify(repository.getWebSocketRuntimeDiagnostics()),
+    ).not.toContain('unsafe');
+
+    handle.heartbeat();
+    handle.close('test_complete');
+    expect(repository.getWebSocketRuntimeDiagnostics()).toMatchObject({
+      summary: {
+        activeConnections: 0,
+        activeSubscriptions: 0,
+        recentEvents: 1,
+      },
+      connections: [
+        expect.objectContaining({
+          closeReason: 'test_complete',
+          status: 'closed',
+        }),
+      ],
+    });
+    const skipped = repository.publishWebSocketRuntimeEvent({
+      room: 'integration.diagnostics',
+      type: 'diagnostic.ping',
+    });
+    expect(skipped.status).toBe('no_subscribers');
+    expect(delivered).toHaveLength(1);
+
+    expect(() =>
+      repository.publishWebSocketRuntimeEvent({
+        room: 'integration.diagnostics',
+        type: 'chat.message',
+      }),
+    ).toThrow(BadRequestException);
   });
 
   it('manages OAuth token inventory and revoke lifecycle', async () => {

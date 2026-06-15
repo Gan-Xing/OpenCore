@@ -5,6 +5,9 @@ import type {
   OAuthCallbackAuditDto,
   OAuthTokenDto,
   OAuthFlowDto,
+  WebSocketRuntimeConnectionDto,
+  WebSocketRuntimeEventDto,
+  WebSocketRuntimeSubscriptionDto,
   IntegrationProviderDto,
   IntegrationTemplateDto,
   OAuthCallbackContractDto,
@@ -18,6 +21,10 @@ export type OAuthCallbackContractRecord = OAuthCallbackContractDto;
 export type OAuthFlowRecord = OAuthFlowDto;
 export type OAuthCallbackAuditRecord = OAuthCallbackAuditDto;
 export type OAuthTokenRecord = OAuthTokenDto;
+export type WebSocketRuntimeConnectionRecord = WebSocketRuntimeConnectionDto;
+export type WebSocketRuntimeSubscriptionRecord =
+  WebSocketRuntimeSubscriptionDto;
+export type WebSocketRuntimeEventRecord = WebSocketRuntimeEventDto;
 export type IntegrationDesignRecord = IntegrationDesignDto;
 
 export const seedIntegrationProviders: readonly IntegrationProviderRecord[] = [
@@ -287,7 +294,7 @@ export const integrationDesigns: readonly IntegrationDesignRecord[] = [
   },
   {
     topic: 'websocket',
-    status: 'design-only',
+    status: 'runtime-active',
     boundaries: [
       'auth required during connection upgrade',
       'rooms are permission scoped',

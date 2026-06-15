@@ -1310,14 +1310,14 @@ export const moduleRegistry = [
   },
   {
     code: 'integration.websocket',
-    title: 'WebSocket Design',
+    title: 'WebSocket Runtime',
     layer: 'integration',
     priority: 'P4',
-    status: 'planned',
+    status: 'active',
     stage: 'S12',
     enabledByDefault: false,
     description:
-      'WebSocket auth, room, event, audit, and security design boundary.',
+      'Authenticated runtime connection diagnostics, subscription routing, diagnostic event stream, and security boundary.',
     apiTags: ['Integration WebSocket'],
     permissions: definePermissions(
       'integration',

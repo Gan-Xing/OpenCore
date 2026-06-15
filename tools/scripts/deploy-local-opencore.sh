@@ -1332,12 +1332,32 @@ verify_admin_bundle_api_base_url() {
     ! grep -R \
     --fixed-strings \
     --include='*.js' \
-    "Live WebSocket design" \
+    "WebSocket Runtime" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null || \
     ! grep -R \
     --fixed-strings \
     --include='*.js' \
-    "Reload live WebSocket design" \
+    "Reload live WebSocket runtime" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Open diagnostic stream" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Runtime connection status" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Subscription event routing" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Diagnostic runtime events" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null || \
     ! grep -R \
     --fixed-strings \
@@ -1347,10 +1367,10 @@ verify_admin_bundle_api_base_url() {
     ! grep -R \
     --fixed-strings \
     --include='*.js' \
-    "Integration design boundary" \
+    "Live WebSocket runtime boundary" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null; then
-    echo "Admin bundle does not include live integration design operations." >&2
-    echo "Refusing to deploy stale frontend WeChat/WebSocket integration design pages." >&2
+    echo "Admin bundle does not include live integration WebSocket runtime operations." >&2
+    echo "Refusing to deploy stale frontend WeChat/WebSocket integration pages." >&2
     exit 1
   fi
 

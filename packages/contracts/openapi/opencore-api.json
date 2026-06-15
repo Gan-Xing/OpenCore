@@ -6785,6 +6785,89 @@
         "tags": ["Integration", "Integration WebSocket"]
       }
     },
+    "/api/integrations/websocket/runtime": {
+      "get": {
+        "operationId": "IntegrationController_getWebSocketRuntimeDiagnostics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebSocketRuntimeDiagnosticsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration WebSocket"]
+      }
+    },
+    "/api/integrations/websocket/runtime/events": {
+      "post": {
+        "operationId": "IntegrationController_publishWebSocketRuntimeEvent",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishWebSocketRuntimeEventDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebSocketRuntimeEventDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration WebSocket"]
+      }
+    },
+    "/api/integrations/websocket/runtime/stream": {
+      "get": {
+        "operationId": "IntegrationController_streamWebSocketRuntimeEvents",
+        "parameters": [
+          {
+            "name": "room",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "eventTypes",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebSocketRuntimeEventDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration WebSocket"]
+      }
+    },
     "/api/integrations/designs/pay": {
       "get": {
         "operationId": "IntegrationController_getPaymentDesign",
@@ -8190,7 +8273,7 @@
     { "name": "Integration SMS", "description": "integration.sms: SMS" },
     {
       "name": "Integration WebSocket",
-      "description": "integration.websocket: WebSocket Design"
+      "description": "integration.websocket: WebSocket Runtime"
     },
     {
       "name": "Integration WeChat",
@@ -11531,11 +11614,135 @@
         "type": "object",
         "properties": {
           "topic": { "type": "string" },
-          "status": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["design-only", "runtime-active"]
+          },
           "boundaries": { "type": "array", "items": { "type": "string" } },
           "documentPath": { "type": "string" }
         },
         "required": ["topic", "status", "boundaries", "documentPath"]
+      },
+      "WebSocketRuntimeSummaryDto": {
+        "type": "object",
+        "properties": {
+          "activeConnections": { "type": "number" },
+          "totalConnections": { "type": "number" },
+          "activeSubscriptions": { "type": "number" },
+          "recentEvents": { "type": "number" },
+          "lastEventAt": { "type": "string" },
+          "generatedAt": { "type": "string" }
+        },
+        "required": [
+          "activeConnections",
+          "totalConnections",
+          "activeSubscriptions",
+          "recentEvents",
+          "generatedAt"
+        ]
+      },
+      "WebSocketRuntimeConnectionDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "subjectId": { "type": "string" },
+          "transport": { "type": "string", "enum": ["sse"] },
+          "status": { "type": "string", "enum": ["closed", "connected"] },
+          "rooms": { "type": "array", "items": { "type": "string" } },
+          "connectedAt": { "type": "string" },
+          "lastSeenAt": { "type": "string" },
+          "closedAt": { "type": "string" },
+          "closeReason": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "subjectId",
+          "transport",
+          "status",
+          "rooms",
+          "connectedAt",
+          "lastSeenAt"
+        ]
+      },
+      "WebSocketRuntimeSubscriptionDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "connectionId": { "type": "string" },
+          "room": { "type": "string" },
+          "eventTypes": { "type": "array", "items": { "type": "string" } },
+          "status": { "type": "string", "enum": ["active", "closed"] },
+          "subscribedAt": { "type": "string" },
+          "closedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "connectionId",
+          "room",
+          "eventTypes",
+          "status",
+          "subscribedAt"
+        ]
+      },
+      "WebSocketRuntimeEventDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "room": { "type": "string" },
+          "type": { "type": "string" },
+          "payloadPreview": { "type": "object" },
+          "traceId": { "type": "string" },
+          "deliveredCount": { "type": "number" },
+          "status": {
+            "type": "string",
+            "enum": ["delivered", "no_subscribers"]
+          },
+          "createdAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "room",
+          "type",
+          "payloadPreview",
+          "deliveredCount",
+          "status",
+          "createdAt"
+        ]
+      },
+      "WebSocketRuntimeDiagnosticsDto": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "$ref": "#/components/schemas/WebSocketRuntimeSummaryDto"
+          },
+          "connections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WebSocketRuntimeConnectionDto"
+            }
+          },
+          "subscriptions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WebSocketRuntimeSubscriptionDto"
+            }
+          },
+          "events": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/WebSocketRuntimeEventDto" }
+          }
+        },
+        "required": ["summary", "connections", "subscriptions", "events"]
+      },
+      "PublishWebSocketRuntimeEventDto": {
+        "type": "object",
+        "properties": {
+          "room": { "type": "string" },
+          "type": { "type": "string" },
+          "payload": { "type": "object" },
+          "traceId": { "type": "string" }
+        },
+        "required": ["type"]
       },
       "RuntimeProcessStatusDto": {
         "type": "object",

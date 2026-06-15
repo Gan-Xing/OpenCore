@@ -65,7 +65,7 @@
 | Integrations  | `/integrations/sms`            | `integration.sms`                   | live template/outbox operations                               |
 | Integrations  | `/integrations/oauth`          | `integration.oauth`                 | live token inventory/detail/revoke                            |
 | Integrations  | `/integrations/wechat`         | `integration.wechat`                | live design read, not real official-account flow              |
-| Integrations  | `/integrations/websocket`      | `integration.websocket`             | live design read, not production realtime provider            |
+| Integrations  | `/integrations/websocket`      | `integration.websocket`             | live runtime diagnostics, connection stream, subscription routing; not IM chat |
 | Integrations  | `/integrations/billing-design` | `integration.billing-design`        | design boundary only, not real payment                        |
 | Exceptions    | `/403`                         | none                                | formal exception page                                         |
 | Exceptions    | `/404`                         | none                                | formal exception page                                         |

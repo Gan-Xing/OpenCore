@@ -30,12 +30,15 @@ import type {
   PageQueryDto,
   ProcessOutboxDto,
   PreviewTemplateDto,
+  PublishWebSocketRuntimeEventDto,
   RevokeOAuthTokenDto,
   ScheduleOutboxDto,
   StartOAuthFlowDto,
   TestIntegrationProviderDto,
   TestOutboxMessageDto,
   UpdateIntegrationProviderDto,
+  WebSocketRuntimeDiagnosticsDto,
+  WebSocketRuntimeStreamQueryDto,
 } from './integration.dto';
 import type {
   IntegrationDesignRecord,
@@ -47,6 +50,9 @@ import type {
   OAuthCallbackContractRecord,
   OAuthFlowRecord,
   OAuthTokenRecord,
+  WebSocketRuntimeConnectionRecord,
+  WebSocketRuntimeEventRecord,
+  WebSocketRuntimeSubscriptionRecord,
 } from './integration.seed';
 
 export type PageResult<T> = {
@@ -106,6 +112,15 @@ export type NormalizedOAuthCallback = {
   scopes?: readonly string[];
   expiresInSeconds: number;
 };
+
+export type WebSocketRuntimeConnectionHandle = {
+  connection: WebSocketRuntimeConnectionRecord;
+  subscription: WebSocketRuntimeSubscriptionRecord;
+  close: (reason?: string) => void;
+  heartbeat: () => void;
+};
+
+export type WebSocketRuntimeSink = (event: WebSocketRuntimeEventRecord) => void;
 
 export abstract class IntegrationRepository {
   abstract getSummary(): Promise<IntegrationSummaryDto>;
@@ -244,6 +259,15 @@ export abstract class IntegrationRepository {
   abstract getDesign(
     topic: 'pay' | 'websocket' | 'wechat',
   ): IntegrationDesignRecord;
+  abstract getWebSocketRuntimeDiagnostics(): WebSocketRuntimeDiagnosticsDto;
+  abstract publishWebSocketRuntimeEvent(
+    body: PublishWebSocketRuntimeEventDto,
+  ): WebSocketRuntimeEventRecord;
+  abstract openWebSocketRuntimeConnection(input: {
+    subjectId: string;
+    query?: WebSocketRuntimeStreamQueryDto;
+    emit: WebSocketRuntimeSink;
+  }): WebSocketRuntimeConnectionHandle;
 }
 
 export function buildIntegrationSummary(input: {
@@ -1110,6 +1134,172 @@ export function createOAuthTokenId(input: {
   )}_${slugForRef(input.providerAccountId)}`;
 }
 
+export class IntegrationWebSocketRuntimeStore {
+  private readonly connections = new Map<
+    string,
+    WebSocketRuntimeConnectionRecord
+  >();
+  private readonly subscriptions = new Map<
+    string,
+    WebSocketRuntimeSubscriptionRecord
+  >();
+  private readonly sinks = new Map<
+    string,
+    { emit: WebSocketRuntimeSink; subscriptionId: string }
+  >();
+  private events: WebSocketRuntimeEventRecord[] = [];
+  private sequence = 0;
+
+  getDiagnostics(): WebSocketRuntimeDiagnosticsDto {
+    const connections = [...this.connections.values()].sort(
+      compareConnectedDesc,
+    );
+    const subscriptions = [...this.subscriptions.values()].sort(
+      compareSubscribedDesc,
+    );
+    const events = [...this.events].sort(compareCreatedDesc);
+
+    return {
+      summary: {
+        activeConnections: connections.filter(
+          (connection) => connection.status === 'connected',
+        ).length,
+        totalConnections: connections.length,
+        activeSubscriptions: subscriptions.filter(
+          (subscription) => subscription.status === 'active',
+        ).length,
+        recentEvents: events.length,
+        lastEventAt: events[0]?.createdAt,
+        generatedAt: new Date().toISOString(),
+      },
+      connections: connections.slice(0, 50).map(clone),
+      subscriptions: subscriptions.slice(0, 100).map(clone),
+      events: events.slice(0, 100).map(clone),
+    };
+  }
+
+  openConnection(input: {
+    subjectId: string;
+    query?: WebSocketRuntimeStreamQueryDto;
+    emit: WebSocketRuntimeSink;
+  }): WebSocketRuntimeConnectionHandle {
+    const now = new Date().toISOString();
+    const room = normalizeWebSocketRuntimeRoom(input.query?.room);
+    const eventTypes = normalizeWebSocketRuntimeEventTypes(
+      input.query?.eventTypes,
+    );
+    const connection: WebSocketRuntimeConnectionRecord = {
+      id: this.nextId('ws_conn'),
+      subjectId: normalizeRequiredString(
+        input.subjectId,
+        'WebSocket runtime subjectId is required.',
+      ),
+      transport: 'sse',
+      status: 'connected',
+      rooms: [room],
+      connectedAt: now,
+      lastSeenAt: now,
+    };
+    const subscription: WebSocketRuntimeSubscriptionRecord = {
+      id: this.nextId('ws_sub'),
+      connectionId: connection.id,
+      room,
+      eventTypes,
+      status: 'active',
+      subscribedAt: now,
+    };
+    this.connections.set(connection.id, connection);
+    this.subscriptions.set(subscription.id, subscription);
+    this.sinks.set(connection.id, {
+      emit: input.emit,
+      subscriptionId: subscription.id,
+    });
+
+    return {
+      connection: clone(connection),
+      subscription: clone(subscription),
+      close: (reason = 'client_closed') =>
+        this.closeConnection(connection.id, reason),
+      heartbeat: () => this.touchConnection(connection.id),
+    };
+  }
+
+  publish(body: PublishWebSocketRuntimeEventDto): WebSocketRuntimeEventRecord {
+    const room = normalizeWebSocketRuntimeRoom(body.room);
+    const type = normalizeWebSocketRuntimePublishEventType(body.type);
+    const event: WebSocketRuntimeEventRecord = {
+      id: this.nextId('ws_evt'),
+      room,
+      type,
+      payloadPreview: redactWebSocketRuntimePayload(body.payload ?? {}),
+      traceId: normalizeOptionalText(body.traceId),
+      deliveredCount: 0,
+      status: 'no_subscribers',
+      createdAt: new Date().toISOString(),
+    };
+
+    for (const [connectionId, sink] of this.sinks) {
+      const connection = this.connections.get(connectionId);
+      const subscription = this.subscriptions.get(sink.subscriptionId);
+      if (
+        !connection ||
+        !subscription ||
+        connection.status !== 'connected' ||
+        subscription.status !== 'active' ||
+        subscription.room !== room ||
+        !matchesWebSocketRuntimeEventType(subscription.eventTypes, type)
+      ) {
+        continue;
+      }
+
+      sink.emit(clone(event));
+      event.deliveredCount += 1;
+      connection.lastSeenAt = event.createdAt;
+    }
+
+    event.status = event.deliveredCount > 0 ? 'delivered' : 'no_subscribers';
+    this.events = [event, ...this.events].slice(0, 100);
+    return clone(event);
+  }
+
+  private closeConnection(connectionId: string, reason: string): void {
+    const connection = this.connections.get(connectionId);
+    if (!connection || connection.status === 'closed') {
+      return;
+    }
+
+    const closedAt = new Date().toISOString();
+    connection.status = 'closed';
+    connection.closedAt = closedAt;
+    connection.closeReason = normalizeOptionalText(reason) ?? 'closed';
+    connection.lastSeenAt = closedAt;
+
+    for (const subscription of this.subscriptions.values()) {
+      if (
+        subscription.connectionId === connectionId &&
+        subscription.status === 'active'
+      ) {
+        subscription.status = 'closed';
+        subscription.closedAt = closedAt;
+      }
+    }
+
+    this.sinks.delete(connectionId);
+  }
+
+  private touchConnection(connectionId: string): void {
+    const connection = this.connections.get(connectionId);
+    if (connection?.status === 'connected') {
+      connection.lastSeenAt = new Date().toISOString();
+    }
+  }
+
+  private nextId(prefix: string): string {
+    this.sequence += 1;
+    return `${prefix}_${this.sequence}`;
+  }
+}
+
 export function normalizeOAuthRevokeReason(value: unknown): string {
   const reason =
     typeof value === 'string' ? value.trim() : 'Revoked from OpenCore Admin.';
@@ -1512,6 +1702,124 @@ function normalizeOAuthExpiresInSeconds(value: unknown): number {
   }
 
   return parsed;
+}
+
+function normalizeWebSocketRuntimeRoom(value: unknown): string {
+  const room = normalizeOptionalText(value) ?? 'integration.diagnostics';
+  if (
+    room.length > 120 ||
+    !room.startsWith('integration.') ||
+    !/^[a-z0-9][a-z0-9._:-]+$/.test(room)
+  ) {
+    throw new BadRequestException(
+      'WebSocket runtime room must be an integration.* identifier.',
+    );
+  }
+
+  return room;
+}
+
+function normalizeWebSocketRuntimeEventTypes(
+  value: unknown,
+): readonly string[] {
+  const raw =
+    typeof value === 'string'
+      ? value.split(/[,\s]+/)
+      : Array.isArray(value)
+        ? value
+        : ['*'];
+  const eventTypes = raw
+    .map((item) => (typeof item === 'string' ? item.trim() : ''))
+    .filter(Boolean);
+
+  if (eventTypes.length === 0) {
+    return ['*'];
+  }
+
+  return [...new Set(eventTypes.map(normalizeWebSocketRuntimeEventType))];
+}
+
+function normalizeWebSocketRuntimePublishEventType(value: unknown): string {
+  const type = normalizeWebSocketRuntimeEventType(value);
+  if (!type.startsWith('diagnostic.')) {
+    throw new BadRequestException(
+      'WebSocket runtime only accepts diagnostic.* events.',
+    );
+  }
+
+  return type;
+}
+
+function normalizeWebSocketRuntimeEventType(value: unknown): string {
+  const type = normalizeRequiredString(
+    value,
+    'WebSocket runtime event type is required.',
+  );
+  if (
+    type !== '*' &&
+    (type.length > 120 || !/^[a-z0-9][a-z0-9.-]+$/.test(type))
+  ) {
+    throw new BadRequestException(
+      'WebSocket runtime event type must be a safe event identifier.',
+    );
+  }
+
+  return type;
+}
+
+function matchesWebSocketRuntimeEventType(
+  subscriptionEventTypes: readonly string[],
+  type: string,
+): boolean {
+  return (
+    subscriptionEventTypes.includes('*') ||
+    subscriptionEventTypes.includes(type)
+  );
+}
+
+function redactWebSocketRuntimePayload(
+  value: Record<string, unknown>,
+): Record<string, unknown> {
+  const redacted = Object.fromEntries(
+    Object.entries(value).map(([key, item]) => [
+      key,
+      SECRET_KEY_PATTERN.test(key)
+        ? '[REDACTED]'
+        : item && typeof item === 'object' && !Array.isArray(item)
+          ? redactWebSocketRuntimePayload(item as Record<string, unknown>)
+          : item,
+    ]),
+  );
+  const serialized = JSON.stringify(redacted);
+  if (serialized.length <= 1000) {
+    return redacted;
+  }
+
+  return {
+    truncated: true,
+    preview: `${serialized.slice(0, 997)}...`,
+  };
+}
+
+function compareCreatedDesc<T extends { createdAt: string }>(
+  left: T,
+  right: T,
+): number {
+  return Date.parse(right.createdAt) - Date.parse(left.createdAt);
+}
+
+function compareConnectedDesc(
+  left: WebSocketRuntimeConnectionRecord,
+  right: WebSocketRuntimeConnectionRecord,
+): number {
+  return Date.parse(right.connectedAt) - Date.parse(left.connectedAt);
+}
+
+function compareSubscribedDesc(
+  left: WebSocketRuntimeSubscriptionRecord,
+  right: WebSocketRuntimeSubscriptionRecord,
+): number {
+  return Date.parse(right.subscribedAt) - Date.parse(left.subscribedAt);
 }
 
 function slugForRef(value: string): string {

@@ -126,10 +126,13 @@ import {
   type OAuthTokenInventorySummary,
   type OAuthTokenQueryRequest,
   type OAuthTokenSummary,
+  type PublishWebSocketRuntimeEventRequest,
   type PreviewTemplateRequest,
   type RevokeOAuthTokenRequest,
   type TemplatePreviewSummary,
   type TestOutboxMessageRequest,
+  type WebSocketRuntimeDiagnosticsSummary,
+  type WebSocketRuntimeEventSummary,
   type IpLocationLookupSummary,
   type IpLocationProviderStatusSummary,
   type CleanJobRunLogsRequest,
@@ -1598,6 +1601,61 @@ export function getOpenCoreWeChatDesign(): Promise<IntegrationDesignSummary> {
 
 export function getOpenCoreWebSocketDesign(): Promise<IntegrationDesignSummary> {
   return integrationClient.getWebSocketDesign(getRequiredAdminToken());
+}
+
+export function getOpenCoreWebSocketRuntimeDiagnostics(): Promise<WebSocketRuntimeDiagnosticsSummary> {
+  return integrationClient.getWebSocketRuntimeDiagnostics(
+    getRequiredAdminToken(),
+  );
+}
+
+export function publishOpenCoreWebSocketRuntimeEvent(
+  body: PublishWebSocketRuntimeEventRequest,
+): Promise<WebSocketRuntimeEventSummary> {
+  return integrationClient.publishWebSocketRuntimeEvent(
+    getRequiredAdminToken(),
+    body,
+  );
+}
+
+export function openOpenCoreWebSocketRuntimeStream(input: {
+  onChunk: (chunk: string) => void;
+  onError?: (error: unknown) => void;
+  onOpen?: () => void;
+}) {
+  const controller = new AbortController();
+  const params = new URLSearchParams({
+    eventTypes: 'diagnostic.ping',
+    room: 'integration.diagnostics',
+  });
+
+  void fetch(`/api/integrations/websocket/runtime/stream?${params}`, {
+    headers: { Authorization: `Bearer ${getRequiredAdminToken()}` },
+    signal: controller.signal,
+  })
+    .then(async (response) => {
+      if (!response.ok || !response.body) {
+        throw new Error(`WebSocket runtime stream failed: ${response.status}`);
+      }
+      input.onOpen?.();
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (!controller.signal.aborted) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        input.onChunk(decoder.decode(value, { stream: true }));
+      }
+    })
+    .catch((error: unknown) => {
+      if (!controller.signal.aborted) {
+        input.onError?.(error);
+      }
+    });
+
+  return {
+    close: () => controller.abort(),
+  };
 }
 
 export function getOpenCoreOAuthCallbackContract(): Promise<OAuthCallbackContractSummary> {

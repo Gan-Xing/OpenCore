@@ -24,12 +24,14 @@ import type {
   PageQueryDto,
   ProcessOutboxDto,
   PreviewTemplateDto,
+  PublishWebSocketRuntimeEventDto,
   RevokeOAuthTokenDto,
   ScheduleOutboxDto,
   StartOAuthFlowDto,
   TestIntegrationProviderDto,
   TestOutboxMessageDto,
   UpdateIntegrationProviderDto,
+  WebSocketRuntimeStreamQueryDto,
 } from './integration.dto';
 import {
   integrationDesigns,
@@ -66,6 +68,7 @@ import {
   createOAuthTokenId,
   createOAuthTokenSecretRefs,
   createOutboxScheduleResult,
+  IntegrationWebSocketRuntimeStore,
   createPage,
   IntegrationRepository,
   matchesOAuthCallbackAuditQuery,
@@ -97,6 +100,7 @@ import {
   validateProviderSecretRef,
   type PageResult,
   type ProviderTestResult,
+  type WebSocketRuntimeSink,
 } from './integration.repository';
 
 type ProviderRow = {
@@ -211,6 +215,8 @@ type OAuthCallbackAuditRow = {
 
 @Injectable()
 export class PrismaIntegrationRepository extends IntegrationRepository {
+  private readonly websocketRuntime = new IntegrationWebSocketRuntimeStore();
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly systemConfig: SystemConfigService,
@@ -1252,6 +1258,22 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
       'Integration design',
       topic,
     );
+  }
+
+  getWebSocketRuntimeDiagnostics() {
+    return this.websocketRuntime.getDiagnostics();
+  }
+
+  publishWebSocketRuntimeEvent(body: PublishWebSocketRuntimeEventDto) {
+    return this.websocketRuntime.publish(body);
+  }
+
+  openWebSocketRuntimeConnection(input: {
+    subjectId: string;
+    query?: WebSocketRuntimeStreamQueryDto;
+    emit: WebSocketRuntimeSink;
+  }) {
+    return this.websocketRuntime.openConnection(input);
   }
 
   private async createOAuthCallbackAudit(input: {

@@ -6,8 +6,17 @@ import {
   Patch,
   Post,
   Query,
+  Req,
+  Res,
+  UnauthorizedException,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOkResponse,
+  ApiProduces,
+  ApiTags,
+} from '@nestjs/swagger';
+import type { SecurityRequestWithAuth } from '@opencore/security';
 import { RequirePermission } from '../../core/rbac/permissions.decorator';
 import {
   CreateIntegrationProviderDto,
@@ -48,6 +57,7 @@ import {
   PageQueryDto,
   ProcessOutboxDto,
   PreviewTemplateDto,
+  PublishWebSocketRuntimeEventDto,
   RevokeOAuthTokenDto,
   ScheduleOutboxDto,
   StartOAuthFlowDto,
@@ -55,8 +65,20 @@ import {
   TemplatePreviewDto,
   TestOutboxMessageDto,
   UpdateIntegrationProviderDto,
+  WebSocketRuntimeDiagnosticsDto,
+  WebSocketRuntimeEventDto,
+  WebSocketRuntimeStreamQueryDto,
 } from './integration.dto';
 import { IntegrationRepository } from './integration.repository';
+
+type SseResponse = {
+  end?: () => void;
+  flushHeaders?: () => void;
+  set(headers: Record<string, string>): void;
+  write(chunk: string): void;
+};
+
+type RequestWithUser = SecurityRequestWithAuth;
 
 @ApiBearerAuth()
 @Controller('integrations')
@@ -543,6 +565,61 @@ export class IntegrationController {
     return this.repository.getDesign('websocket');
   }
 
+  @Get('websocket/runtime')
+  @ApiTags('Integration WebSocket')
+  @RequirePermission('integration:websocket:read')
+  @ApiOkResponse({ type: WebSocketRuntimeDiagnosticsDto })
+  getWebSocketRuntimeDiagnostics(): WebSocketRuntimeDiagnosticsDto {
+    return this.repository.getWebSocketRuntimeDiagnostics();
+  }
+
+  @Post('websocket/runtime/events')
+  @ApiTags('Integration WebSocket')
+  @RequirePermission('integration:websocket:read')
+  @ApiOkResponse({ type: WebSocketRuntimeEventDto })
+  publishWebSocketRuntimeEvent(
+    @Body() body: PublishWebSocketRuntimeEventDto,
+  ): WebSocketRuntimeEventDto {
+    return this.repository.publishWebSocketRuntimeEvent(body);
+  }
+
+  @Get('websocket/runtime/stream')
+  @ApiTags('Integration WebSocket')
+  @ApiProduces('text/event-stream')
+  @RequirePermission('integration:websocket:read')
+  @ApiOkResponse({ type: WebSocketRuntimeEventDto })
+  streamWebSocketRuntimeEvents(
+    @Req() request: RequestWithUser,
+    @Res() response: SseResponse,
+    @Query() query: WebSocketRuntimeStreamQueryDto,
+  ): void {
+    response.set({
+      'cache-control': 'no-cache, no-transform',
+      connection: 'keep-alive',
+      'content-type': 'text/event-stream; charset=utf-8',
+      'x-accel-buffering': 'no',
+    });
+    response.flushHeaders?.();
+
+    const handle = this.repository.openWebSocketRuntimeConnection({
+      subjectId: getAuthenticatedUserId(request),
+      query,
+      emit: (event) => writeSseEvent(response, event.type, event),
+    });
+    const heartbeat = setInterval(() => {
+      handle.heartbeat();
+      response.write(': heartbeat\n\n');
+    }, 15000);
+    const cleanup = () => {
+      clearInterval(heartbeat);
+      handle.close('client_closed');
+    };
+
+    getCloseableRequest(request).on('close', cleanup);
+    writeSseEvent(response, 'runtime.connected', handle.connection);
+    writeSseEvent(response, 'runtime.subscribed', handle.subscription);
+  }
+
   @Get('designs/pay')
   @ApiTags('Integration Payment')
   @RequirePermission('integration:billing-design:read')
@@ -550,4 +627,36 @@ export class IntegrationController {
   getPaymentDesign(): IntegrationDesignDto {
     return this.repository.getDesign('pay');
   }
+}
+
+function getAuthenticatedUserId(request: RequestWithUser): string {
+  const userId = request.user?.id;
+
+  if (!userId) {
+    throw new UnauthorizedException('Missing authenticated user');
+  }
+
+  return userId;
+}
+
+function writeSseEvent(
+  response: SseResponse,
+  eventName: string,
+  data: unknown,
+): void {
+  const id =
+    data && typeof data === 'object' && 'id' in data
+      ? String((data as { id?: unknown }).id)
+      : `${Date.now()}`;
+  response.write(`id: ${id}\n`);
+  response.write(`event: ${eventName}\n`);
+  response.write(`data: ${JSON.stringify(data)}\n\n`);
+}
+
+function getCloseableRequest(request: RequestWithUser): {
+  on(event: 'close', listener: () => void): void;
+} {
+  return request as RequestWithUser & {
+    on(event: 'close', listener: () => void): void;
+  };
 }

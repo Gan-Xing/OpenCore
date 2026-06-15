@@ -917,8 +917,15 @@ if (
   !wechatPage.includes('integration:wechat:read') ||
   !websocketPage.includes('@opencore/sdk') ||
   !websocketPage.includes('getOpenCoreWebSocketDesign') ||
-  !websocketPage.includes('Live WebSocket design') ||
-  !websocketPage.includes('Reload live WebSocket design') ||
+  !websocketPage.includes('getOpenCoreWebSocketRuntimeDiagnostics') ||
+  !websocketPage.includes('openOpenCoreWebSocketRuntimeStream') ||
+  !websocketPage.includes('publishOpenCoreWebSocketRuntimeEvent') ||
+  !websocketPage.includes('WebSocket Runtime') ||
+  !websocketPage.includes('Reload live WebSocket runtime') ||
+  !websocketPage.includes('Open diagnostic stream') ||
+  !websocketPage.includes('Runtime connection status') ||
+  !websocketPage.includes('Subscription event routing') ||
+  !websocketPage.includes('Diagnostic runtime events') ||
   !websocketPage.includes('integration:websocket:read') ||
   !billingDesignPage.includes('@opencore/sdk')
 ) {
@@ -1053,10 +1060,16 @@ if (
   websocketPage.includes('createIntegrationFixtures') ||
   websocketPage.includes('findIntegrationDesignFixture') ||
   !opencorePlatformService.includes('integrationClient.getWeChatDesign') ||
-  !opencorePlatformService.includes('integrationClient.getWebSocketDesign')
+  !opencorePlatformService.includes('integrationClient.getWebSocketDesign') ||
+  !opencorePlatformService.includes(
+    'integrationClient.getWebSocketRuntimeDiagnostics',
+  ) ||
+  !opencorePlatformService.includes(
+    'integrationClient.publishWebSocketRuntimeEvent',
+  )
 ) {
   throw new Error(
-    'Integration WeChat/WebSocket design pages must use live design SDK APIs instead of static fixtures.',
+    'Integration WeChat/WebSocket pages must use live design/runtime SDK APIs instead of static fixtures.',
   );
 }
 

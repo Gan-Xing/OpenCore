@@ -38,6 +38,7 @@ import type {
   PageRequest,
   ProcessOutboxRequest,
   PreviewTemplateRequest,
+  PublishWebSocketRuntimeEventRequest,
   RevokeOAuthTokenRequest,
   ScheduleOutboxRequest,
   StartOAuthFlowRequest,
@@ -45,6 +46,8 @@ import type {
   TestOutboxMessageRequest,
   TemplatePreviewSummary,
   UpdateIntegrationProviderRequest,
+  WebSocketRuntimeDiagnosticsSummary,
+  WebSocketRuntimeEventSummary,
 } from './integration-types';
 import type { SdkRequest } from './rbac-client';
 
@@ -242,6 +245,13 @@ export type IntegrationClient = {
   ) => Promise<OAuthTokenSummary>;
   getWeChatDesign: (token: string) => Promise<IntegrationDesignSummary>;
   getWebSocketDesign: (token: string) => Promise<IntegrationDesignSummary>;
+  getWebSocketRuntimeDiagnostics: (
+    token: string,
+  ) => Promise<WebSocketRuntimeDiagnosticsSummary>;
+  publishWebSocketRuntimeEvent: (
+    token: string,
+    body: PublishWebSocketRuntimeEventRequest,
+  ) => Promise<WebSocketRuntimeEventSummary>;
   getPaymentDesign: (token: string) => Promise<IntegrationDesignSummary>;
 };
 
@@ -514,6 +524,16 @@ export function createIntegrationClient(
       request<IntegrationDesignSummary>('/integrations/designs/websocket', {
         token,
       }),
+    getWebSocketRuntimeDiagnostics: (token) =>
+      request<WebSocketRuntimeDiagnosticsSummary>(
+        '/integrations/websocket/runtime',
+        { token },
+      ),
+    publishWebSocketRuntimeEvent: (token, body) =>
+      request<WebSocketRuntimeEventSummary>(
+        '/integrations/websocket/runtime/events',
+        { method: 'POST', body, token },
+      ),
     getPaymentDesign: (token) =>
       request<IntegrationDesignSummary>('/integrations/designs/pay', { token }),
   };

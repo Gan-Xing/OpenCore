@@ -160,6 +160,13 @@ describe('createIntegrationClient', () => {
     });
     await client.getWeChatDesign('token');
     await client.getWebSocketDesign('token');
+    await client.getWebSocketRuntimeDiagnostics('token');
+    await client.publishWebSocketRuntimeEvent('token', {
+      room: 'integration.diagnostics',
+      type: 'diagnostic.ping',
+      payload: { message: 'SDK runtime ping' },
+      traceId: 'trace-sdk-websocket',
+    });
     await client.getPaymentDesign('token');
 
     expect(calls).toEqual([
@@ -277,6 +284,8 @@ describe('createIntegrationClient', () => {
       },
       { path: '/integrations/designs/wechat' },
       { path: '/integrations/designs/websocket' },
+      { path: '/integrations/websocket/runtime' },
+      { path: '/integrations/websocket/runtime/events', method: 'POST' },
       { path: '/integrations/designs/pay' },
     ]);
   });
