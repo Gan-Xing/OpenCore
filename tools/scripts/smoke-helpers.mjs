@@ -154,6 +154,17 @@ export function assertIncludes(values, expected, label) {
   }
 }
 
+export function assertNumber(value, label) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new Error(`Expected ${label} to be a finite number`);
+  }
+  return value;
+}
+
+export function assertNumberAtLeast(value, minimum, label) {
+  assertAtLeast(value, minimum, label);
+}
+
 export function assertOpenApiPath(openApi, path) {
   if (!openApi || typeof openApi !== 'object' || !openApi.paths?.[path]) {
     throw new Error(`OpenAPI docs-json does not include ${path}`);
