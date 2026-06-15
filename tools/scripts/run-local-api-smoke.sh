@@ -110,7 +110,8 @@ run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$BASE_URL" \
   OPENCORE_SMOKE_PORT="$SMOKE_PORT" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-true}" \
-  node "$ROOT_DIR/tools/scripts/smoke-core-config.mjs"
+  node "$ROOT_DIR/tools/scripts/run-typed-smoke.mjs" \
+    "$ROOT_DIR/tools/smoke/smoke-core-config.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$BASE_URL" \
@@ -137,7 +138,8 @@ run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$BASE_URL" \
   OPENCORE_SMOKE_PORT="$SMOKE_PORT" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
-  node "$ROOT_DIR/tools/scripts/smoke-core-role.mjs"
+  node "$ROOT_DIR/tools/scripts/run-typed-smoke.mjs" \
+    "$ROOT_DIR/tools/smoke/smoke-core-role.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$BASE_URL" \
@@ -156,7 +158,8 @@ run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$BASE_URL" \
   OPENCORE_SMOKE_PORT="$SMOKE_PORT" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
-  node "$ROOT_DIR/tools/scripts/smoke-core-post.mjs"
+  node "$ROOT_DIR/tools/scripts/run-typed-smoke.mjs" \
+    "$ROOT_DIR/tools/smoke/smoke-core-post.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$BASE_URL" \
@@ -210,13 +213,15 @@ run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$BASE_URL" \
   OPENCORE_SMOKE_PORT="$SMOKE_PORT" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
-  node "$ROOT_DIR/tools/scripts/smoke-core-dept.mjs"
+  node "$ROOT_DIR/tools/scripts/run-typed-smoke.mjs" \
+    "$ROOT_DIR/tools/smoke/smoke-core-dept.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$BASE_URL" \
   OPENCORE_SMOKE_PORT="$SMOKE_PORT" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
-  node "$ROOT_DIR/tools/scripts/smoke-core-user.mjs"
+  node "$ROOT_DIR/tools/scripts/run-typed-smoke.mjs" \
+    "$ROOT_DIR/tools/smoke/smoke-core-user.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$BASE_URL" \

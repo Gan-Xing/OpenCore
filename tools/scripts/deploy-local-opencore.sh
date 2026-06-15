@@ -2196,7 +2196,8 @@ verify_public_admin_bundle
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
-  node "$ROOT_DIR/tools/scripts/smoke-core-config.mjs"
+  node "$ROOT_DIR/tools/scripts/run-typed-smoke.mjs" \
+    "$ROOT_DIR/tools/smoke/smoke-core-config.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \
@@ -2219,7 +2220,8 @@ run_with_env env \
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
-  node "$ROOT_DIR/tools/scripts/smoke-core-role.mjs"
+  node "$ROOT_DIR/tools/scripts/run-typed-smoke.mjs" \
+    "$ROOT_DIR/tools/smoke/smoke-core-role.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \
@@ -2235,7 +2237,8 @@ run_with_env env \
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
-  node "$ROOT_DIR/tools/scripts/smoke-core-post.mjs"
+  node "$ROOT_DIR/tools/scripts/run-typed-smoke.mjs" \
+    "$ROOT_DIR/tools/smoke/smoke-core-post.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \
@@ -2287,12 +2290,14 @@ run_with_env env \
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
-  node "$ROOT_DIR/tools/scripts/smoke-core-dept.mjs"
+  node "$ROOT_DIR/tools/scripts/run-typed-smoke.mjs" \
+    "$ROOT_DIR/tools/smoke/smoke-core-dept.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
-  node "$ROOT_DIR/tools/scripts/smoke-core-user.mjs"
+  node "$ROOT_DIR/tools/scripts/run-typed-smoke.mjs" \
+    "$ROOT_DIR/tools/smoke/smoke-core-user.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \

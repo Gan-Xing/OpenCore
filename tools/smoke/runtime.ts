@@ -185,7 +185,7 @@ export function createTypedSmokeRuntime() {
 export function assertArray(
   value: unknown,
   label: string,
-): asserts value is readonly unknown[] {
+): asserts value is readonly any[] {
   if (!Array.isArray(value)) {
     throw new Error(`Expected ${label} to be an array`);
   }
