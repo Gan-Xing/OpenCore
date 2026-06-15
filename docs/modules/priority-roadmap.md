@@ -4,22 +4,24 @@ OpenCore 采用阶段化推进，避免过早写业务代码或把 P4/P5 深水�
 
 ## 已完成阶段
 
-| 阶段   | 状态     | 结果                                                                                                                                                         |
-| ------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| S0/S1  | complete | 建立 pnpm workspace + Nx、apps/packages/tools/infra/docs 目录、品牌和基础文档                                                                                |
-| D1-D6  | complete | 平台边界、模块分类、契约权限、API/Admin 启动计划、OpenForge/AI 路线                                                                                          |
-| S2     | complete | 初始化 `apps/api` 和 `apps/admin` 双主干                                                                                                                     |
-| S3     | complete | `packages/shared`、`packages/contracts`、`packages/module-registry`                                                                                          |
-| S4     | complete | API foundation、OpenAPI export、安全/配置/日志/错误/request id                                                                                               |
-| S5     | complete | Admin shell、Dashboard、异常页、request/access、registry 菜单                                                                                                |
-| S6     | complete | auth/RBAC、Prisma/PostgreSQL schema、RBAC API/SDK/Admin 页面                                                                                                 |
-| S7     | complete | dict、system config、file asset、audit log、login log、系统管理页面                                                                                          |
-| S8     | complete | status/version/queue、OpenAPI drift check、export protocol、Monitor/Tool 页面                                                                                |
-| R-1-R7 | complete | legacy app freeze、runtime audit、OpenCore env、PostgreSQL migration/seed、Prisma persistence、Redis/BullMQ/MinIO diagnostics、integration smoke、final docs |
-| S9     | complete | OpenForge 只读 generate plan、diff plan、safety/preflight report、contracts、workspace tool、CLI 和测试                                                      |
-| V1     | complete | OpenForge safe generator：schema/config DSL、template/VFS、apply/manifest/rollback、API/Admin/SDK/Test/Docs pack、doctor/gate/e2e、final docs                |
-| Q001   | complete | 平台内核和契约加固、OpenForge gate、轻量 collaboration、monitor job/cache/online-user、optional report/export-job design、integration provider/design 边界   |
-| BE20   | complete | 后端自循环：common/core/database/redis/file/system/security/audit/online-user/scheduler/monitor/generator-core/tools/api aggregation 按依赖顺序完成          |
+| 阶段      | 状态     | 结果                                                                                                                                                         |
+| --------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| S0/S1     | complete | 建立 pnpm workspace + Nx、apps/packages/tools/infra/docs 目录、品牌和基础文档                                                                                |
+| D1-D6     | complete | 平台边界、模块分类、契约权限、API/Admin 启动计划、OpenForge/AI 路线                                                                                          |
+| S2        | complete | 初始化 `apps/api` 和 `apps/admin` 双主干                                                                                                                     |
+| S3        | complete | `packages/shared`、`packages/contracts`、`packages/module-registry`                                                                                          |
+| S4        | complete | API foundation、OpenAPI export、安全/配置/日志/错误/request id                                                                                               |
+| S5        | complete | Admin shell、Dashboard、异常页、request/access、registry 菜单                                                                                                |
+| S6        | complete | auth/RBAC、Prisma/PostgreSQL schema、RBAC API/SDK/Admin 页面                                                                                                 |
+| S7        | complete | dict、system config、file asset、audit log、login log、系统管理页面                                                                                          |
+| S8        | complete | status/version/queue、OpenAPI drift check、export protocol、Monitor/Tool 页面                                                                                |
+| R-1-R7    | complete | legacy app freeze、runtime audit、OpenCore env、PostgreSQL migration/seed、Prisma persistence、Redis/BullMQ/MinIO diagnostics、integration smoke、final docs |
+| S9        | complete | OpenForge 只读 generate plan、diff plan、safety/preflight report、contracts、workspace tool、CLI 和测试                                                      |
+| V1        | complete | OpenForge safe generator：schema/config DSL、template/VFS、apply/manifest/rollback、API/Admin/SDK/Test/Docs pack、doctor/gate/e2e、final docs                |
+| Q001      | complete | 平台内核和契约加固、OpenForge gate、轻量 collaboration、monitor job/cache/online-user、optional report/export-job design、integration provider/design 边界   |
+| BE20      | complete | 后端自循环：common/core/database/redis/file/system/security/audit/online-user/scheduler/monitor/generator-core/tools/api aggregation 按依赖顺序完成          |
+| Admin V6  | complete | 官方 Ant Design Pro V6 架构、正式 OpenCore routes、request/access/OpenAPI/SDK 对齐、demo routes/services/mocks 清理                                          |
+| Cycle-021 | closed   | 有限 System Admin fallback closure：七个 System Admin 页面完成 live-only、no fixture fallback、public smoke 和 deploy guard 验收                             |
 
 ## Runtime Integration
 
@@ -99,14 +101,16 @@ BE20 验收记录：
 - [Backend Self-Loop implementation notes](../quality-cycle/cycle-020/implementation-notes.md)
 - [Backend Self-Loop completion report](../quality-cycle/cycle-020/completion-report.md)
 
-## S10 以后
+## 后续准入式阶段
 
-| 阶段 | 建议主题                     | 边界                                                              |
-| ---- | ---------------------------- | ----------------------------------------------------------------- |
-| S10  | collaboration hardening      | Q001 已有轻量协同；后续只能加固消息/待办/Approval Lite，不做 BPMN |
-| S11  | operations/report hardening  | BE20 已有 scheduler/monitor runtime；后续不做完整报表设计器       |
-| S12  | integration hardening        | Q001 已有 provider/mail/sms/oauth/design；不做真实支付或行业业务  |
-| S13+ | industry/ai independent eval | CRM、ERP、MES、WMS、商城、会员、IoT、AI 等独立评估                |
+历史 S10/S11/S12 的很多 foundation hardening 已在 Cycle-021 中完成。后续不再自动沿用这些阶段名推进；新的实现必须先给出有限队列和验收矩阵。
+
+| 候选主题                     | 边界                                                                                  |
+| ---------------------------- | ------------------------------------------------------------------------------------- |
+| collaboration hardening      | 只能在明确准入时补消息/待办/Approval Lite 的产品化缺口；不自动进入 BPMN/full workflow |
+| operations/report hardening  | scheduler/monitor 已有 runtime；完整报表设计器和大数据异步导出仍需单独准入            |
+| integration hardening        | provider/mail/sms/oauth/design 已有 foundation；真实支付或大供应商运营面仍需单独准入  |
+| industry/ai independent eval | CRM、ERP、MES、WMS、商城、会员、IoT、AI/RAG/Agent 等独立评估                          |
 
 ## P4/P5 长期 backlog
 

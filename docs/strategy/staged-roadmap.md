@@ -1,16 +1,16 @@
 # Staged Roadmap
 
-更新时间：2026-06-12
+更新时间：2026-06-15
 
-本路线图从 S3 开始。S0/S1/D1-D6 已完成文档和 monorepo 基线，S2 已初始化 `apps/api` 和 `apps/admin` 空主干。S3-S9、runtime integration、OpenForge V1 A-L、Quality Cycle 001 和 Backend Self-Loop BE20 已完成。后续不能跳过 admission/gate 直接写行业业务模块。
+本路线图从 S3 开始。S0/S1/D1-D6 已完成文档和 monorepo 基线，S2 已初始化 `apps/api` 和 `apps/admin` 空主干。S3-S9、runtime integration、OpenForge V1 A-L、Quality Cycle 001、Backend Self-Loop BE20、Admin Pro V6 migration 和 Cycle-021 System Admin fallback closure 已完成。后续不能跳过 admission/gate 直接写行业业务模块。
 
-重要口径：S3-S8 是 OpenCore 从“空主干”走到“可创办公司/公开开发的企业后台基础架构”的实现主线；BE20 已把若依/芋道主干后台能力下沉为 OpenCore TS/NestJS runtime packages；Q001 已把轻量 collaboration、operations/report 设计位和 integration provider/design 边界纳入平台，但 CRM/ERP/MES/WMS/商城/会员/真实支付/AI/RAG/Agent 仍必须独立准入。
+重要口径：这是历史路线图和阶段依赖说明，不是当前自动执行 goal。历史 S10/S11/S12 的大量 foundation hardening 已在 Cycle-021 中完成；新工作必须另立有限队列和验收矩阵。CRM/ERP/MES/WMS/商城/会员/真实支付/AI/RAG/Agent 仍必须独立准入。
 
 ## Roadmap Overview
 
 ```mermaid
 gantt
-  title OpenCore S3-S12 Roadmap
+  title OpenCore Historical S3-S12 Roadmap
   dateFormat  YYYY-MM-DD
   axisFormat  S%q
   section Foundation
@@ -62,6 +62,8 @@ flowchart LR
 
 ## 阶段详情
 
+S10/S11/S12 行保留为历史规划槽位。它们不能单独作为当前执行 goal；后续只允许在用户明确准入并给出有限验收队列后启动。
+
 | 阶段                                     | 目标                                         | 新增模块                                                                                                                 | 后端交付                                                                              | 前端交付                                        | 文档交付                                                   | 验收标准                                                    | 不做什么                                        | 风险点                                   |
 | ---------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------- | ----------------------------------------------- | ---------------------------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------- | ---------------------------------------- |
 | S3 contracts/shared/module-registry 基线 | 建立契约、共享类型、模块注册表的单一事实来源 | `packages/contracts`、`packages/shared`、`packages/module-registry`                                                      | OpenAPI 导出命令、契约保存规范、权限码/菜单 schema 草案                               | Admin 读取静态 registry 或 mock，不连业务接口   | 更新 OpenAPI workflow、module registry spec、SDK workflow  | `pnpm` 命令可空跑；契约、权限、菜单字段可校验；无业务模块   | 不做登录、RBAC、数据库、Prisma schema           | schema 设计过早过细会锁死后续模块        |
@@ -72,13 +74,16 @@ flowchart LR
 | S8 monitor / tool                        | 建立可观测和工具基线                         | `monitor.status`、`monitor.version`、`monitor.queue`、`tool.openapi`、`tool.export`                                      | 系统状态、版本、队列状态、OpenAPI drift check、导出协议                               | 状态、版本、队列、OpenAPI 状态、当前页导出模板  | Monitor runbook、OpenAPI drift guide、export guide         | drift check 失败能阻止提交；状态页可诊断依赖                | 当时不做完整任务调度平台、不做大数据异步导出    | 监控页暴露敏感配置                       |
 | S9 OpenForge code generator MVP          | 建立只读和 dry-run 生成器                    | `tool.openforge`                                                                                                         | 读取 module registry、OpenAPI、人工 schema；输出生成计划和 diff                       | OpenForge 页面展示 dry-run 结果                 | OpenForge MVP spec、template safety rules                  | 默认不覆盖人工文件；重复运行无无意义 diff                   | 不生成业务逻辑，不写 Prisma schema              | 生成器越权修改文件                       |
 | OpenForge V1 safe generator              | 建立安全、可审计、可回滚的生成器闭环         | `tool.openforge`                                                                                                         | Schema/config DSL、template/VFS、apply/manifest/rollback、doctor/gate                 | 生成 Admin skeleton 和 patch plan               | Schema/template authoring、apply/rollback runbook、CI gate | `--yes` 才写 generated-owned files；manifest 可 rollback    | 不写 Prisma schema/migration、不生成业务逻辑    | patch plan 被误当自动修改                |
-| Q001 quality cycle                       | 完成第一轮质量递归                           | `collaboration.*`、`monitor.job/cache/online-user`、`optional.report/export-job`、`integration.*` 设计边界               | 平台内核加固、契约 gate、轻量协同、operations/report、integration provider/design API | Admin 对应页面和 SDK fixtures                   | Cycle audit、implementation notes、completion report       | 全 backlog 完成并通过 full gate                             | 不做行业业务、真实支付、BPMN、RAG/Agent         | 范围过宽导致 gate 失焦                   |
+| Q001 quality cycle                       | 完成第一轮质量循环                           | `collaboration.*`、`monitor.job/cache/online-user`、`optional.report/export-job`、`integration.*` 设计边界               | 平台内核加固、契约 gate、轻量协同、operations/report、integration provider/design API | Admin 对应页面和 SDK fixtures                   | Cycle audit、implementation notes、completion report       | 全 backlog 完成并通过 full gate                             | 不做行业业务、真实支付、BPMN、RAG/Agent         | 范围过宽导致 gate 失焦                   |
 | BE20 backend self-loop                   | 完成后端 runtime 包化和 API 聚合收尾         | `common/core/database/redis/file/system/security/audit/online-user/scheduler/monitor/generator-core`                     | 若依/芋道主干后台能力转译为 package-owned runtime；`apps/api` 只做 composition root   | Admin 保持消费 SDK/registry/OpenAPI             | BE20 backlog、implementation notes、completion report      | P01-P24 全完成；full backend gate、OpenForge gate 通过      | 不做行业业务、真实支付、AI/RAG/Agent            | 误把 API app 重新变成业务堆叠目录        |
+| Cycle-021 closure                        | 关闭有限 System Admin fallback debt          | 七个固定 System Admin 页面                                                                                               | 补齐 API/SDK/Admin live-only、public smoke、deploy guard 和 no-fixture-fallback guard | System Admin 七页 live-only                     | acceptance matrix、waterline、handoff、completion report   | 七页均 Meets；不自动选择下一队列                            | 不做新业务域、不扩大为泛化队列                  | 文档若不收敛会误导下一轮                 |
 | S10 collaboration hardening              | 加固轻量协同                                 | `collaboration.message`、`collaboration.notice`、`collaboration.todo`、`collaboration.approval-lite`                     | 优化消息/通知/待办/单步审批 API；保持 `businessType + businessId` 关联                | 消息中心、待办、Approval Lite 页面增强          | Message/Approval Lite integration guide                    | 通知可读、待办可完成、审批不可重复处理                      | 不做 BPMN、流程设计器、复杂工作流               | Approval Lite 膨胀成工作流               |
 | S11 operations/report hardening          | 加固 operations 和 report 设计位             | `monitor.job`、`monitor.cache`、`monitor.online-user`、`optional.report`、`optional.export-job`                          | 加固任务、缓存、在线用户、报表定义、异步导出设计                                      | 对应页面按模块开关出现                          | Module admission and export job runbook                    | 每个模块有权限、菜单、OpenAPI tag、SDK、Admin、测试         | 不做完整调度平台、大数据导出、报表设计器        | 可选模块过多导致主线失焦                 |
 | S12 integration hardening                | 加固 integration provider 边界               | `integration.provider`、`integration.mail`、`integration.sms`、`integration.oauth`、design-only WeChat/WebSocket/billing | 凭据引用、redaction、health check、模板/outbox、OAuth callback contract               | Integration provider/mail/sms/oauth/design 页面 | Integration design docs                                    | provider/config/secret/audit/SDK/Admin/tests 可追踪         | 不做真实支付、行业业务、微信业务闭环            | provider 凭据和回调安全不足              |
 
 ## 阶段依赖图
+
+下图保留历史依赖视角。Cycle-021 已覆盖大量 S10-S12 foundation hardening；后续不得仅因图中存在箭头就自动启动下一阶段。
 
 ```mermaid
 flowchart TD
@@ -101,16 +106,17 @@ flowchart TD
 
 ## 第一年路线建议
 
-| 时间段 | 建议范围 | 成功标准                                                                                   |
-| ------ | -------- | ------------------------------------------------------------------------------------------ |
-| 第一段 | S3-S5    | 契约、模块注册表、API foundation、Admin shell 都能空跑                                     |
-| 第二段 | S6-S7    | RBAC 和系统管理闭环可用，旧项目核心经验被重写吸收                                          |
-| 第三段 | S8-BE20  | 监控、工具、OpenForge V1、轻量协同、operations、integration design 和后端 runtime 包化完成 |
-| 延后   | S10-S12  | 只做 hardening 和 admission-driven extension，谨慎实现                                     |
+| 时间段 | 建议范围   | 成功标准                                                                                   |
+| ------ | ---------- | ------------------------------------------------------------------------------------------ |
+| 第一段 | S3-S5      | 契约、模块注册表、API foundation、Admin shell 都能空跑                                     |
+| 第二段 | S6-S7      | RBAC 和系统管理闭环可用，旧项目核心经验被重写吸收                                          |
+| 第三段 | S8-BE20    | 监控、工具、OpenForge V1、轻量协同、operations、integration design 和后端 runtime 包化完成 |
+| 第四段 | Cycle-021  | System Admin fallback closure、live-only guards、public smoke 和文档 reconciliation 完成   |
+| 延后   | 准入式阶段 | 只做 finite queue 和 admission-driven extension，谨慎实现                                  |
 
-## S12 之后的长期能力队列
+## 后续长期能力队列
 
-为了实现“若依/芋道有的企业后台能力，OpenCore 都有长期归宿”，S12 之后建议继续拆成独立阶段，而不是把 P5 混进 core：
+为了实现“若依/芋道有的企业后台能力，OpenCore 都有长期归宿”，后续建议继续拆成独立准入阶段，而不是把 P5 混进 core：
 
 | 后续阶段 | 建议主题                              | 说明                                                                                       |
 | -------- | ------------------------------------- | ------------------------------------------------------------------------------------------ |

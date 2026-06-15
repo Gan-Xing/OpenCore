@@ -62,9 +62,16 @@ docs. Commit-level detail is available from git history.
 - 2026-06-13 20:55:34 UTC completed cycle-021 round-074 `monitor.job` Admin
   runtime operations; deployed=39172/39174;
   publicVerified=monitor-job-run-now,admin-monitor-jobs-runtime-ops,report-definition-seed-migration.
-- 2026-06-14 UTC rounds 075-118 delivered bounded foundation productization across
-  system, monitor, config, security logs, OpenForge, integration and
+- 2026-06-14 UTC rounds 075-118 delivered bounded foundation productization
+  across system, monitor, config, security logs, OpenForge, integration and
   collaboration.
-- Latest deployed runtime: round-118 `system.menus` Admin live-only tree CRUD
-  and export operations
-  on API `39172` and Admin `39174`.
+- 2026-06-14 UTC rounds 119-126 closed the finite System Admin fallback queue
+  for Roles, Users, Config, Notices, Files, public Permissions/Posts
+  acceptance and the unified seven-page Admin smoke/deploy guard.
+- 2026-06-14 UTC round 127 reconciled acceptance matrix, backlog, handoff,
+  waterline, implementation notes, completion report, audit/reference
+  comparison and strategy progress. No in-scope System Admin fallback closure
+  item remains.
+- Current deployment and release evidence belongs in
+  `docs/deployment/opencore-release-readiness.md`, deploy logs, smoke scripts
+  and git history. This ledger records state transitions only.

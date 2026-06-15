@@ -1,10 +1,11 @@
 # cycle-021 Reference Comparison
 
-Date: 2026-06-14
+Date: 2026-06-15
 
 Reference comparison is capability-based, not commit-count based. OpenCore
-should translate stable enterprise admin foundations into its own API, SDK,
-Admin, permission, seed, OpenAPI and smoke boundaries.
+translates stable enterprise admin foundations into its own package-owned
+runtime, typed SDK, Umi Admin, permission/menu registry, OpenAPI snapshots,
+smoke scripts and deploy guards.
 
 ## Reference Heads
 
@@ -12,269 +13,67 @@ Admin, permission, seed, OpenAPI and smoke boundaries.
 - Yudao backend: `51b3d2d8cddd9a2a48e1edc2a7267359f61264cb`
 - Yudao Admin: `17428e98676c8a626f66da780c7c854c73d6089f`
 
-## Rules
+## Comparison Rules
 
 - Compare product capabilities and operator workflows, not raw commit volume.
 - Keep OpenCore-native boundaries: package-owned runtime, typed SDK, Umi
   Admin, OpenAPI snapshots and smoke/deploy guards.
-- A minimal stage is one deployable acceptance unit, not permission to leave
-  the product thin forever.
-- State admitted boundary and remaining debt once; do not repeat parity
-  disclaimers every round.
-
-## Coverage
-
-- System/RBAC: menu, role, permission, user, dept, post, dict and config are
-  live with multiple hardening stages. Dicts Admin now uses live list/detail
-  and item operations only, and Departments Admin now uses live tree/detail and
-  order operations only. Posts Admin now uses live list/detail, batch and order
-  operations only, and Permissions Admin now uses live catalog/detail/custom
-  CRUD/export APIs only. Menus Admin now uses live tree/detail CRUD/export and
-  live permission options only, matching the reference organization/post/dictionary,
-  menu and permission catalog management expectation without fixture fallback.
-- Auth/session: login policy, logout, force logout, online-user kick-out,
-  token/session revocation, registered-token allowlist enforcement and expired
-  cleanup are real behavior. Online Users Admin now uses live session
-  list/detail/kick-out/cleanup data only and fails visibly instead of showing
-  fixtures.
-- Logs: login-log has schema, lockout, cleanup, actor/reason, location,
-  structured IP/location provider lookup and external HTTP JSON GeoIP adapter;
-  operation-log has
-  list/detail/export/delete, duration/location enrichment, retention cleanup
-  and scheduled retention job. Security log Admin pages now use live-only data,
-  and operation logs expose server-side Admin filters.
-- Notice: management, inbox/read analytics, templates, delivery records, local
-  provider, Integration outbox bridge, state sync, queued processing and signed
-  callback intake plus retry scheduling, SMS HTTP adapter, SMTP adapter and
-  mail subject persistence, provider diagnostics, SMS HTTP secret injection and
-  SMTP attachments plus explicit SMTP TLS policy and authenticated inbox
-  realtime events are live.
-- Integration: provider health/config audit is live with readiness totals,
-  config-vault debt, outbox backlog, last failure and operator actions. The
-  Providers Admin page is live-only for health audit and provider diagnostics
-  and no longer masks API failures with fixture fallback. OAuth token
-  inventory/summary/detail/revoke is live, and the OAuth Admin page is
-  live-only for list/detail/revoke. Mail/SMS template/outbox Admin operations
-  are live across API/SDK/Admin/OpenAPI/smoke. WeChat and WebSocket design
-  Admin pages now read live design endpoints instead of fixtures while staying
-  design-only boundaries.
-- Config: runtime keys, login policy, feature flags, rollout, audience rules,
-  environment overrides, secret-vault encryption, secret version history,
-  explicit rotation, env-bound keyring status, managed HTTP JSON KMS v3
-  envelopes and vault key rotation are live.
-- Monitor/OpenForge/Scheduler: Monitor Jobs has a live Admin operation surface,
-  registry visibility, registered handler diagnostics, cron dispatch, worker
-  claim, scheduler queue metrics, guarded queue pause/resume and terminal
-  run-log retention cleanup; Monitor
-  Status exposes live dependency checks plus CPU, memory, disk and process
-  runtime resources; Monitor Cache has Redis-backed namespace/key operations
-  with safe value preview and confirmed deletion;
-  Monitor Version exposes live runtime/deployment metadata instead of fixtures;
-  Tool OpenAPI exposes live drift snapshot metadata instead of fixtures; Tool
-  Export exposes live protocol/preview row-cap behavior in Admin; OpenForge has
-  a live safe planning/dry-run workbench with confirmation and manifest
-  preview/detail.
-- Collaboration: Messages have live summary/list/detail, create, mark-read,
-  archive and delete operations across API/SDK/Admin with seed, smoke and
-  deploy guards. Notices have live list/detail, create, publish and archive
-  operations. Todos have live list/detail, create, assign, complete and cancel
-  operations. Approval Lite has live list/detail, create, approve and reject
-  operations. This meets the current collaboration live-operations waterline;
-  BPMN/full workflow remains a separate explicit-admission domain.
+- A minimal stage is one deployable acceptance unit, not permission to leave a
+  product thin forever.
+- Full `Meets` requires live API, live SDK, live-only Admin, no fixture
+  fallback, local smoke, public API smoke, public Admin smoke and deploy guard.
+- Bundle marker smoke is not a substitute for real public API/Admin smoke.
 
 ## Productization Acceptance
 
-This comparison now includes acceptance state, not only whether RuoYi/Yudao has
-an analogous feature.
+This table is a comparison index. The detailed acceptance matrix for the seven
+fixed closure rows lives in `acceptance-matrix.md`; current waterline details
+live in `productization-waterline-audit.md`.
 
-| Capability         | RuoYi/Yudao counterpart                        | OpenCore API status | OpenCore Admin status        | Live-only | Public API smoke | Public Admin smoke | Fixture fallback | Still needed                                                |
-| ------------------ | ---------------------------------------------- | ------------------- | ---------------------------- | --------- | ---------------- | ------------------ | ---------------- | ----------------------------------------------------------- |
-| System Users       | System user management                         | live                | live-only                    | yes       | yes              | yes                | no               | Keep guard and public smoke current.                        |
-| System Roles       | System role management                         | live                | live-only                    | yes       | yes              | yes                | no               | Keep guard and public smoke current.                        |
-| System Permissions | System permission catalog                      | live                | live-only                    | yes       | yes              | yes                | no               | Keep guard and public smoke current.                        |
-| System Posts       | System post management                         | live                | live-only                    | yes       | yes              | yes                | no               | Keep guard and public smoke current.                        |
-| System Files       | Infra file service                             | live                | live-only                    | yes       | yes              | yes                | no               | Keep guard and public smoke current.                        |
-| System Config      | System/config management                       | live                | live-only                    | yes       | yes              | yes                | no               | Keep guard and public smoke current.                        |
-| System Notices     | System notices                                 | live                | live-only                    | yes       | yes              | yes                | no               | Keep guard and public smoke current.                        |
-| Scheduler/Monitor  | Job, queue, status, cache, version             | live                | live-only                    | yes       | yes              | yes                | no               | Keep admitted scheduler/monitor scope guarded.              |
-| Integration        | Provider health, OAuth, Mail/SMS, design pages | live                | live-only for admitted scope | yes       | yes              | yes                | no               | Real payment/billing/provider expansion stays out of scope. |
-| Online Users       | Online sessions                                | live                | live-only                    | yes       | yes              | yes                | no               | None.                                                       |
-| OAuth              | OAuth token inventory                          | live                | live-only                    | yes       | yes              | yes                | no               | Full SSO provider flow remains out of scope.                |
-| Security Logs      | Login and operation logs                       | live                | live-only                    | yes       | yes              | yes                | no               | Historical GeoIP backfill remains out of scope.             |
-| Departments        | Organization/dept management                   | live                | live-only                    | yes       | yes              | yes                | no               | None.                                                       |
-| Dicts              | Dictionary management                          | live                | live-only                    | yes       | yes              | yes                | no               | None.                                                       |
+| Capability         | RuoYi/Yudao counterpart                        | OpenCore API            | OpenCore Admin               | Live-only | Public smoke | Fixture fallback | Still needed                                                                          |
+| ------------------ | ---------------------------------------------- | ----------------------- | ---------------------------- | --------- | ------------ | ---------------- | ------------------------------------------------------------------------------------- |
+| System Users       | System user management                         | live                    | live-only                    | yes       | yes          | no               | Keep guard and public smoke current.                                                  |
+| System Roles       | System role management                         | live                    | live-only                    | yes       | yes          | no               | Keep guard and public smoke current.                                                  |
+| System Permissions | Permission catalog/menu authority              | live                    | live-only                    | yes       | yes          | no               | Keep guard and public smoke current.                                                  |
+| System Menus       | Menu tree and route authority                  | live                    | live-only                    | yes       | yes          | no               | Keep registry/access drift guard current.                                             |
+| System Posts       | Post management                                | live                    | live-only                    | yes       | yes          | no               | Keep guard and public smoke current.                                                  |
+| Departments        | Organization/dept management                   | live                    | live-only                    | yes       | yes          | no               | None in admitted scope.                                                               |
+| Dicts              | Dictionary management                          | live                    | live-only                    | yes       | yes          | no               | None in admitted scope.                                                               |
+| System Config      | Config, runtime, feature flags, secrets        | live                    | live-only                    | yes       | yes          | no               | Full external KMS fleet expansion needs explicit admission.                           |
+| System Notices     | Notice management/inbox/templates/outbox       | live                    | live-only                    | yes       | yes          | no               | Real provider fleet operations need explicit admission.                               |
+| System Files       | File service and file center                   | live                    | live-only                    | yes       | yes          | no               | File provider expansion needs explicit admission.                                     |
+| Security Logs      | Login and operation logs                       | live                    | live-only                    | yes       | yes          | no               | Historical GeoIP backfill remains out of scope.                                       |
+| Online Users       | Online sessions/token revocation               | live                    | live-only                    | yes       | yes          | no               | None in admitted scope.                                                               |
+| Scheduler/Monitor  | Jobs, queues, status, cache, version           | live                    | live-only                    | yes       | yes          | no               | Keep admitted operator surfaces guarded.                                              |
+| Tools/OpenForge    | OpenAPI, Export, safe OpenForge workbench      | live                    | live-only                    | yes       | yes          | no               | Direct schema/migration/business-code writes remain out of scope.                     |
+| Integration        | Provider health, Mail/SMS, OAuth, design pages | live for admitted scope | live-only for admitted scope | yes       | yes          | no               | Payment/BillingDesign, full SSO and provider fleet expansion need explicit admission. |
+| Collaboration      | Messages, notices, todos, approval-lite        | live                    | live-only                    | yes       | yes          | no               | BPMN/full workflow remains out of scope.                                              |
 
-## Recent Decisions
+## Coverage Summary
 
-- Round 67: queue insertion is `pending`, not provider `sent`; retry and
-  provider success/failure are explicit state transitions.
-- Round 68: operation-log cleanup is a privileged maintenance action and the
-  cleanup request itself remains audited.
-- Round 69: provider execution is distinct from queue creation; processing
-  enabled queued outbox rows moves notice delivery to `sent`.
-- Round 70: provider callbacks are signed, ownership-checked and reuse the
-  same sent/failed sync paths. Public anonymous webhooks wait for a general
-  public-route policy.
-- Round 71: retry scheduling is explicit and bounded; failed outbox rows only
-  return to queue when provider/channel validation passes and retry caps allow
-  it.
-- Round 72: SMS HTTP delivery is bounded by endpoint allowlisting, safe request
-  config and explicit non-2xx failure sync.
-- Round 73: SMTP delivery uses config-vault password resolution and explicit
-  SMTP success/failure state sync.
-- Round 74: Monitor Jobs moved from fixture-only Admin display to live
-  enable/disable/manual-trigger/run-log operations, and operations summary
-  gained the missing report migration/seed guard.
-- Round 75: Monitor Jobs trigger registered handlers, expose handler registry
-  visibility and record retry/duration/failed run diagnostics.
-- Round 76: Mail outbox subject is a first-class persisted field; SMTP sends
-  that field and no longer infers subject from payload.
-- Round 77: Provider diagnostics expose readiness, config-vault hints, outbox
-  backlog, last failure and operator actions through API/SDK/Admin.
-- Round 78: SMS HTTP providers inject config-vault secrets into auth headers,
-  query parameters and JSON body fields; smoke verifies the resolved request
-  shape without exposing the secret.
-- Round 79: SMTP attachments are bounded, persisted on mail outbox rows and
-  verified through received MIME payload smoke.
-- Round 80: SMTP TLS policy is explicit through `tlsMode`; deprecated TLS
-  booleans are rejected and STARTTLS-required behavior is smoke-guarded.
-- Round 81: Notice inbox realtime is an authenticated SSE stream with snapshot
-  and read/publish events; multi-instance fanout remains a deployment-topology
-  upgrade, not a current single-node blocker.
-- Round 82: Config environment overrides are first-class public-config records;
-  runtime config and feature evaluation resolve `environment` with default
-  fallback.
-- Round 83: Secret config version history is first-class metadata; explicit
-  rotation updates current encrypted value and records active/inactive
-  versions without exposing secret material.
-- Round 84: Config vault envelopes now carry key IDs, expose env keyring
-  status and support vault-key rewrap for current and versioned secrets while
-  preserving legacy unversioned envelope deserialization.
-- Round 85: Operation logs record duration/location, filter/export enriched
-  fields and use retentionDays cleanup backed by the
-  `audit-log.retention-clean` scheduled job.
-- Round 86: OpenForge Admin exposes the existing safe generator core through
-  API/SDK/Admin for status, doctor, plan, diff, check, manifests and dry-run
-  apply/rollback; write-enabled code generation remains a later explicit
-  stage.
-- Round 87: Integration Providers expose a global health/config audit that
-  aggregates existing diagnostics, config-vault debt, outbox backlog and
-  failure history into API/SDK/Admin and deploy smoke guards.
-- Round 88: Scheduler/monitor dispatches due cron jobs into queued schedule
-  runs, lets a worker claim and execute them, exposes queue metrics in Admin
-  and guards the flow through OpenAPI/SDK/smoke/deploy checks.
-- Round 89: OpenForge dry-run operations require confirmation, reject
-  write-mode intent at the API boundary and expose manifest preview/detail
-  through SDK/Admin and smoke/deploy guards.
-- Round 90: IP/location is a shared offline provider contract with
-  lookup/status API, SDK/Admin visibility, OpenAPI tag registration and
-  login-log smoke/deploy guards.
-- Round 91: Online-user sessions act as the bearer-token allowlist/blacklist;
-  unknown, revoked and expired sessions are rejected, expired records can be
-  cleaned through API/SDK/Admin and the flow is smoke/deploy guarded.
-- Round 92: OAuth token management is a token-inventory and revoke lifecycle,
-  not a full third-party OAuth flow; token material stays behind secret refs
-  while operators can list, inspect and revoke records through API/SDK/Admin.
-- Round 93: External GeoIP is config-driven through a generic HTTP JSON
-  adapter, with endpoint host allowlisting, timeout bounds, non-public-IP
-  no-send behavior and builtin offline fallback diagnostics.
-- Round 94: Managed KMS is config-driven through a generic HTTP JSON adapter;
-  secret values use v3 envelopes with local data-key encryption and remote
-  data-key wrap/unwrap, so the KMS protocol does not receive business secret
-  plaintext.
-- Round 95: Monitor Cache is a real Redis operator surface, not fixtures:
-  namespace/key listing, safe value preview redaction, dry-run prefix clear and
-  confirmed key/prefix deletion are exposed through API/SDK/Admin and smoke.
-- Round 96: Monitor Version is a live runtime/deployment surface, not a static
-  fixture page: `/monitor/version` exposes process/runtime/deployment metadata,
-  the fixed deploy script injects commit/build identifiers and Admin/smoke
-  guards reject fixture-backed or stale version bundles.
-- Round 97: Tool OpenAPI Drift is a live contract snapshot surface, not a
-  static fixture page: `/tools/openapi/drift` exposes snapshot existence,
-  hash, path/schema/operation counts and command metadata through
-  API/SDK/Admin with tool smoke and deploy guards.
-- Round 98: Tool Export is a live protocol/preview surface, not a static
-  fixture page: `/tools/export/protocol` and `/tools/export/preview` expose the
-  current-page CSV contract and server row-cap behavior through API/SDK/Admin
-  with tool smoke and deploy guards.
-- Round 99: shared current-page export buttons use the live Tool Export
-  protocol instead of SDK fixtures, so table exports across Admin pages honor
-  the same server row-cap contract.
-- Round 100: Integration Mail matches the current foundation expectation for
-  notification provider operations: Admin uses live template/outbox list,
-  detail, render preview and queued-processing controls instead of fixture
-  rows.
-- Round 101: Integration SMS now uses the same live template/outbox operator
-  surface as Mail, including detail, render preview, queued-processing controls,
-  filtered current-page exports and stale-fixture deploy guards.
-- Round 102: Collaboration Messages moved from fixture rows to live message
-  lifecycle operations: list/detail, create, mark-read, archive and delete are
-  seed-backed, SDK-backed and smoke-guarded.
-- Round 103: Collaboration Notices moved from fixture rows to live notice
-  lifecycle operations: list/detail, create, publish and archive are SDK-backed
-  and smoke-guarded.
-- Round 104: Collaboration Todos moved from fixture rows to live todo
-  lifecycle operations: list/detail, create, assign, complete and cancel are
-  SDK-backed and smoke-guarded.
-- Round 105: Collaboration Approval Lite moved from fixture rows to live
-  approval operations: list/detail, create, approve and reject are SDK-backed
-  and smoke-guarded.
-- Round 106: Integration WeChat/WebSocket design pages moved from fixture rows
-  to live design reads through API/SDK/Admin, with design smoke and stale
-  frontend guards. Payment/BillingDesign remains explicit-admission because it
-  touches real payment/refund/reconciliation scope.
-- Round 107: Monitor Status now matches the current foundation expectation for
-  server monitoring: `/monitor/status` returns live dependency probes plus
-  CPU, memory, disk and process resource snapshots, and Admin no longer falls
-  back to SDK fixtures.
-- Round 108: Monitor Queues moved beyond read-only metrics: operators can
-  pause/resume admitted BullMQ queues through API/SDK/Admin under
-  `monitor:queue:manage`, and smoke always restores the queue to resumed
-  state.
-- Round 109: Security log Admin pages no longer mask API failures with fixture
-  rows; operation logs now use the API's actor/action/resource/location/status,
-  duration and time filters from Admin.
-- Round 110: Monitor Jobs now exposes terminal run-log retention cleanup
-  through API/SDK/Admin, rejects queued/running cleanup and keeps the Jobs page
-  live-only with smoke/deploy guards.
-- Round 111: OAuth token Admin now uses live list/detail/revoke APIs only,
-  disables revoke without `integration:oauth:manage` and has smoke/deploy
-  guards that reject fixture fallback or stale bundles.
-- Round 112: Online Users Admin now uses live list/detail/kick-out and expired
-  cleanup APIs only, so session/token failures cannot be hidden behind SDK
-  fixture rows.
-- Round 113: Integration Providers Admin now uses live health audit and
-  diagnostics APIs only, so provider readiness/config/outbox failures cannot
-  be hidden behind SDK fixture rows.
-- Round 114: System Dicts Admin now uses live dictionary list/detail and item
-  CRUD APIs only, so dictionary API/session/seed failures cannot be hidden
-  behind SDK fixture rows.
-- Round 115: System Departments Admin now uses live tree/detail/order APIs
-  only, so organization API/session/seed failures cannot be hidden behind SDK
-  fixture rows.
-- Round 116: System Posts Admin now uses live list/detail/batch/order APIs
-  only, so post API/session/seed failures cannot be hidden behind SDK fixture
-  rows.
-- Round 117: System Permissions Admin now uses live catalog/detail/custom
-  CRUD/export APIs only, so RBAC permission API/session/seed failures cannot
-  be hidden behind registry fixture rows.
-- Round 118: System Menus Admin now uses live tree/detail CRUD/export APIs and
-  live permission options only, so RBAC menu API/session/seed failures cannot
-  be hidden behind registry fixture rows.
-- Rounds 119-127: the finite System Admin fallback closure finished Roles,
-  Users, Config, Notices, Files, public acceptance for Permissions/Posts, the
-  unified seven-page guard and final docs reconciliation.
+- System/RBAC: user, role, permission, menu, dept, post, dict, config, notice
+  and file have live API/SDK/Admin surfaces within admitted scope.
+- Auth/session: login policy, logout, force logout, registered-token allowlist,
+  revocation and expired cleanup are real behavior.
+- Logs/location: login-log and operation-log include filtering, cleanup,
+  retention and structured IP/location provider boundaries.
+- Notice/integration: templates, outbox, provider processing, callback sync,
+  retry, SMS HTTP, SMTP, OAuth token inventory and provider health audit are
+  live for the admitted foundation surface.
+- Monitor/tools: jobs, queues, cache, status, version, OpenAPI drift, export
+  protocol and OpenForge safe workbench are live operator surfaces.
+- Collaboration: message, notice, todo and approval-lite are live lightweight
+  collaboration operations; full workflow is a separate domain.
 
 ## Explicit Non-Claims
 
 Explicit user admission is still required for production multi-tenancy,
-BPMN/full workflow, full report designer, real payment/refund/reconciliation,
-CRM/ERP/MES/WMS/mall/member suites, real external notification provider fleet
-and AI/RAG/Agent workflow.
+BPMN/full workflow, full report designer, big-data async export, real
+payment/refund/reconciliation, CRM/ERP/MES/WMS/mall/member suites, real
+external notification provider fleet and AI/RAG/Agent workflow.
 
-## Next Focus
+## Next Work Rule
 
-No next automatic foundation loop is selected by this comparison. New
-implementation work needs an explicit finite admitted queue; Payment,
-Reports/ExportJobs and OpenForge direct writes remain behind explicit user
-admission.
+This comparison selects no next queue. New implementation work needs an
+explicit finite admitted queue with API, SDK, Admin, permission/menu,
+seed/migration, OpenAPI, smoke, deploy guard and docs requirements.

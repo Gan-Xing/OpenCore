@@ -8,23 +8,26 @@
 
 - S0/S1：品牌、monorepo 骨架、pnpm workspace、Nx 基础配置、占位应用目录和基础文档。
 - D1-D6：平台边界、模块分类、契约与权限规范、API 启动计划、Admin 启动计划、OpenForge 路线图。
-- S2：初始化 `apps/api` 和 `apps/admin` 空项目，接入 Nx targets、health/OpenAPI skeleton 和 Admin smoke/typecheck/build 基线。
-- S3：contracts/shared/module-registry 基线。
-- S4：API core foundation。
-- S5：Admin core shell。
-- S6：auth/RBAC system。
-- S7：system management。
-- S8：monitor/tool baseline。
-- S9：OpenForge MVP，只读 generate plan、diff plan、safety/preflight report。
+- S2-S9：API/Admin 双主干、contracts/shared/module-registry、API foundation、Admin shell、auth/RBAC、system management、monitor/tool baseline、OpenForge MVP。
 - Runtime integration R-1-R7：legacy app freeze、runtime audit、env mapping、PostgreSQL migration/seed、Prisma persistence、Redis/BullMQ/MinIO diagnostics、integration smoke、final docs。
 - OpenForge V1 A-L：safe generator pipeline、schema/config DSL、template/VFS、apply/manifest/rollback、API/Admin/SDK/Test/Docs pack、doctor/gate/e2e、final docs。
 - Quality Cycle 001：平台内核加固、契约 gate、OpenForge V1 验证、轻量协同、operations/report 设计位、integration provider/design 边界、全仓 gate。
-- 2026-06-11 Admin Pro V6 migration：在 `fix/admin-ant-design-pro-v6` 上保留官方 Ant Design Pro V6 config/app/layout/request/i18n/openapi 底座，迁移 OpenCore Dashboard/System/Security/Monitor/Tools/Collaboration/Optional/Integrations 页面，删除 demo routes/pages/services/mocks，并将 auth/me 接到 OpenCore API。
+- 2026-06-11 Admin Pro V6 migration：官方 Ant Design Pro V6 架构、正式 OpenCore 页面、request/access/OpenAPI/SDK 对齐。
 - 2026-06-12 Backend Self-Loop BE20：按依赖顺序完成 common/core/database/redis/file/system/security/audit/online-user/scheduler/monitor/generator-core/tools/api aggregation 后端闭环。
+- Cycle-021 System Admin fallback closure：七个固定 System Admin 页面已完成 live-only、no fixture fallback、public API/Admin smoke 和 deploy guard 验收。
 
-S3-S9 handoff、runtime integration handoff、OpenForge V1 full implementation handoff、Quality Cycle 001 与 Backend Self-Loop BE20 范围均已完成。若继续推进，应另起 S10+ hardening、cycle-021 或专项 handoff，并继续保留行业业务、真实支付、AI/RAG/Agent 的准入边界。
+旧 handoff 是历史交接记录，不是当前执行 goal。新的实现工作必须另起明确的有限验收清单；不得从旧 handoff 自动推导下一轮工作。
 
-## 交接文档
+## 当前事实来源
+
+- [Strategy progress](../strategy/progress.md)
+- [Cycle-021 handoff](../quality-cycle/cycle-021/handoff.md)
+- [Cycle-021 acceptance matrix](../quality-cycle/cycle-021/acceptance-matrix.md)
+- [Cycle-021 productization waterline](../quality-cycle/cycle-021/productization-waterline-audit.md)
+- [OpenCore local deploy](../deployment/opencore-local-deploy.md)
+- [OpenCore release readiness](../deployment/opencore-release-readiness.md)
+
+## 交接文档归档
 
 - [OpenCore monorepo 启动 handoff](opencore-monorepo-start-handoff.md)
 - [2026-06-09 启动设计 handoff](2026-06-09-start-design-handoff.md)
@@ -38,18 +41,9 @@ S3-S9 handoff、runtime integration handoff、OpenForge V1 full implementation h
 - [2026-06-11 Admin Ant Design Pro V6 Migration Handoff](2026-06-11-admin-ant-design-pro-v6-migration-handoff.md)
 - [2026-06-11 Admin Ant Design Pro V6 Migration Notes](admin-ant-design-pro-v6-migration-notes.md)
 
-## D1-D6 设计文档
+## 验收入口
 
-- [平台边界](../architecture/platform-boundaries.md)
-- [模块分类](../modules/module-taxonomy.md)
-- [契约与权限规范](../development/contract-and-permission-standard.md)
-- [API 启动计划](../development/api-bootstrap-plan.md)
-- [Admin 启动计划](../development/admin-bootstrap-plan.md)
-- [OpenForge 路线图](../development/openforge-roadmap.md)
-- [OpenForge V1 架构](../development/openforge-v1-architecture.md)
-- [OpenForge Apply/Rollback Runbook](../development/openforge-apply-rollback-runbook.md)
-
-## S3-S8 / Runtime 验收入口
+历史全仓/后端门禁：
 
 ```bash
 pnpm format:check
@@ -67,10 +61,18 @@ NX_DAEMON=false pnpm nx test contracts
 pnpm openforge:gate
 ```
 
-Runtime integration, OpenForge V1, and Quality Cycle 001 status is indexed in [progress.md](../strategy/progress.md). Detailed historical evidence belongs in the cycle completion reports, commits, smoke scripts and CI/deploy logs, not in `progress.md`.
+代码改动还必须执行固定部署脚本和公网验证：
 
-Backend Self-Loop BE20 final evidence is tracked in [cycle-020 backlog](../quality-cycle/cycle-020/backlog.md), [cycle-020 implementation notes](../quality-cycle/cycle-020/implementation-notes.md), and [cycle-020 completion report](../quality-cycle/cycle-020/completion-report.md). `progress.md` only keeps the compact status pointer.
+```bash
+pnpm deploy:opencore
+```
 
-## 下一份 handoff 建议
+- API: `http://144.217.243.161:39172`
+- Admin: `http://144.217.243.161:39174`
+- Local smoke: `39173`
 
-Quality Cycle 001 和 Backend Self-Loop BE20 已完成。后续 handoff 必须指向明确的有限验收清单、S10+ hardening 或专项模块 hardening。不得复用 OpenForge V1 或 BE20 继续偷偷扩大为业务逻辑生成、migration 创建、行业业务包、真实支付或 AI/RAG/Agent 实现。
+Docs-only cleanup 不需要部署，但仍需要格式/文档检查、commit 和 push。
+
+## 下一份 handoff 规则
+
+下一份 handoff 只能描述明确范围、有限队列、验收矩阵、测试/smoke/deploy guard 和回滚边界。不得复用 OpenForge V1、BE20 或 Cycle-021 closure 继续扩大为业务逻辑生成、migration 创建、行业业务包、真实支付、生产多租户、完整 BPMN/report 或 AI/RAG/Agent 实现。

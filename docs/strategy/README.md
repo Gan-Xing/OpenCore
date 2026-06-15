@@ -1,59 +1,52 @@
 # OpenCore Strategy Blueprint
 
-更新时间：2026-06-12
+更新时间：2026-06-15
 
-本目录是 OpenCore 战略蓝图文档包。它回答“OpenCore 最终要做成什么、API 和 Admin 会长成什么、哪些能力要做、哪些能力暂缓、旧项目经验如何复用、后续阶段怎么走”。
+本目录回答“OpenCore 最终要做成什么、如何对标若依/芋道、哪些能力已经进入基础平台、哪些能力仍需显式准入”。这里不保存每轮执行流水账；轮次细节归 `docs/quality-cycle/**`，当前状态归 `progress.md`。
 
 ## 当前状态
 
-S3-S8 实现目标已经完成：
+已完成：
 
-- S3 contracts / shared / module-registry：complete。
-- S4 API core foundation：complete。
-- S5 Admin core shell：complete。
-- S6 auth / RBAC system：complete。
-- S7 system management：complete。
-- S8 monitor / tool baseline：complete。
+- S3-S8：contracts/shared/module-registry、API foundation、Admin shell、auth/RBAC、system management、monitor/tool baseline。
+- Runtime integration R-1-R7：独立 PostgreSQL、Redis/BullMQ、MinIO/S3、env boundary、migration/seed、live smoke。
+- S9 + OpenForge V1：安全生成器、schema/config DSL、template/VFS、manifest/rollback、doctor/gate、generated skeleton 和 patch plan。
+- Quality Cycle 001：平台内核加固、轻量 collaboration、operations/report 设计位、integration provider/design 边界。
+- Backend Self-Loop BE20：common/core/database/redis/file/system/security/audit/online-user/scheduler/monitor/generator-core/tools/api aggregation 后端 runtime 包化。
+- Admin Pro V6 migration：官方 Ant Design Pro V6 架构、正式 OpenCore routes、request/access/OpenAPI/SDK 对齐。
+- Cycle-021 System Admin fallback closure：七个 System Admin 页面完成 strict acceptance，均为 live-only、无 fixture fallback、具备 public API/Admin smoke 和 deploy guard。
 
-S9 OpenForge MVP 已完成：只读 generate plan、diff plan、safety/preflight report、OpenForge contracts、`tools/generator` Nx tool 和 `tool.openforge` registry 登记均已落地。
-
-OpenForge V1 A-L 已完成：schema/config DSL、template/VFS、safe apply、manifest、rollback、API/Admin/SDK/Test/Docs generator pack、doctor、gate、temp repo e2e 和最终文档已落地。OpenForge 默认 dry-run；真实写入必须显式 `--yes`，且仍不写 Prisma schema/migration，不实现 P4/P5 模块。
-
-Backend Self-Loop BE20-P01 至 BE20-P24 已完成：OpenCore 后端 runtime 已按依赖顺序下沉到 `packages/common`、`packages/core`、`packages/database`、`packages/redis`、`packages/file`、`packages/system`、`packages/security`、`packages/audit`、`packages/online-user`、`packages/scheduler`、`packages/monitor` 和 `packages/generator-core`；`tools/generator` 保留 OpenForge CLI wrapper；`apps/api` 只保留启动、HTTP entry aggregation、模块聚合、runtime config 和 OpenAPI export/check。
+Cycle-021 closure 只确认七个固定 System Admin fallback debt 已关闭；新的业务域或大域能力必须另立有限验收清单。
 
 ## 推荐阅读顺序
 
-| 顺序 | 文件                                                                                                           | 先回答的问题                                            |
-| ---- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| 1    | [opencore-target-vision.md](opencore-target-vision.md)                                                         | OpenCore 最终是什么，和 RuoYi/Yudao 是什么关系          |
-| 2    | [ruoyi-yudao-capability-matrix.md](ruoyi-yudao-capability-matrix.md)                                           | 对标后哪些模块做、哪些不做、哪些以后做                  |
-| 3    | [api-target-architecture.md](api-target-architecture.md)                                                       | `apps/api` 最终模块层次和后端建设顺序                   |
-| 4    | [admin-page-map.md](admin-page-map.md)                                                                         | `apps/admin` 最终一级菜单、页面地图和前端建设顺序       |
-| 5    | [legacy-reuse-audit.md](legacy-reuse-audit.md)                                                                 | NestWeb / Antdpro6 哪些经验可复用，哪些不迁移           |
-| 6    | [staged-roadmap.md](staged-roadmap.md)                                                                         | S3 到 S12 每阶段交付什么、不做什么、怎么验收            |
-| 7    | [visual/opencore-blueprint.html](visual/opencore-blueprint.html)                                               | 给 owner 快速浏览的单文件可视化总览                     |
-| 8    | [progress.md](progress.md)                                                                                     | 当前压缩状态索引、关键 guardrail 和活跃 source-of-truth |
-| 9    | [../handoff/2026-06-10-s3-s8-implementation-handoff.md](../handoff/2026-06-10-s3-s8-implementation-handoff.md) | S3-S8 实现 handoff 和阶段门禁                           |
-| 10   | [../development/openforge-v1-architecture.md](../development/openforge-v1-architecture.md)                     | OpenForge V1 safe generator 架构和边界                  |
-| 11   | [../development/openforge-apply-rollback-runbook.md](../development/openforge-apply-rollback-runbook.md)       | 如何 apply、review manifest 和 rollback                 |
-| 12   | [../quality-cycle/cycle-020/completion-report.md](../quality-cycle/cycle-020/completion-report.md)             | BE20 后端自循环完成范围、验证和提交证据                 |
+| 顺序 | 文件                                                                                                                         | 先回答的问题                                            |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| 1    | [progress.md](progress.md)                                                                                                   | 当前事实、source of truth、固定部署口径和无自动队列边界 |
+| 2    | [../quality-cycle/cycle-021/handoff.md](../quality-cycle/cycle-021/handoff.md)                                               | Cycle-021 closure 的固定范围和准入边界                  |
+| 3    | [../quality-cycle/cycle-021/acceptance-matrix.md](../quality-cycle/cycle-021/acceptance-matrix.md)                           | 七个 System Admin 页面的验收状态                        |
+| 4    | [../quality-cycle/cycle-021/productization-waterline-audit.md](../quality-cycle/cycle-021/productization-waterline-audit.md) | 当前产品化水位和剩余债务                                |
+| 5    | [ruoyi-yudao-capability-matrix.md](ruoyi-yudao-capability-matrix.md)                                                         | 若依/芋道能力如何映射到 OpenCore 层级和准入             |
+| 6    | [admin-page-map.md](admin-page-map.md)                                                                                       | 当前 Admin 路由、菜单、页面和权限归属                   |
+| 7    | [api-target-architecture.md](api-target-architecture.md)                                                                     | 后端 package-owned runtime 和 API composition root 目标 |
+| 8    | [staged-roadmap.md](staged-roadmap.md)                                                                                       | 历史阶段和未来准入式阶段如何衔接                        |
+| 9    | [legacy-reuse-audit.md](legacy-reuse-audit.md)                                                                               | 旧项目经验哪些已吸收、哪些不迁移                        |
+| 10   | [opencore-target-vision.md](opencore-target-vision.md)                                                                       | OpenCore Lite / Full / AI Native 的长期愿景             |
 
-## 哪些文件回答哪些问题
+## 文件职责
 
-| 问题                                                                                         | 入口                                                                                                                                                       |
-| -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| OpenCore Lite / Full / AI Native Edition 怎么分                                              | [目标愿景](opencore-target-vision.md#opencore-lite--full--ai-native-edition)                                                                               |
-| 为什么学习 RuoYi/Yudao 但不复制 Java/Vue                                                     | [目标愿景](opencore-target-vision.md#与-ruoyiyudao-的关系)                                                                                                 |
-| RuoYi/Yudao 的 system、infra、workflow、report 等怎么映射                                    | [能力矩阵](ruoyi-yudao-capability-matrix.md)                                                                                                               |
-| 后端 core / monitor / tool / collaboration / optional / industry / integration / ai 如何落地 | [API 蓝图](api-target-architecture.md#模块层级如何落地)                                                                                                    |
-| 后台一级菜单和页面如何规划                                                                   | [Admin 页面蓝图](admin-page-map.md#最终一级菜单设计)                                                                                                       |
-| NestWeb 的 Role.code、OpenAPI drift、runtime config 等如何复用                               | [旧项目复用审计](legacy-reuse-audit.md)                                                                                                                    |
-| 当前压缩状态索引、关键 guardrail 和活跃 source-of-truth                                      | [progress.md](progress.md)                                                                                                                                 |
-| S9/OpenForge V1 完成了什么                                                                   | [阶段路线图](staged-roadmap.md)、[OpenForge 路线图](../development/openforge-roadmap.md)、[OpenForge V1 架构](../development/openforge-v1-architecture.md) |
-| 后端若依/芋道主干能力完成到哪里                                                              | [BE20 completion report](../quality-cycle/cycle-020/completion-report.md)、[BE20 backlog](../quality-cycle/cycle-020/backlog.md)                           |
+| 文件                                                 | 职责                                                  | 不负责                        |
+| ---------------------------------------------------- | ----------------------------------------------------- | ----------------------------- |
+| `progress.md`                                        | 当前状态索引、固定部署端口、guardrail、无自动队列边界 | 轮次流水账、命令输出          |
+| `ruoyi-yudao-capability-matrix.md`                   | 对标能力归属、优先级、准入层级                        | 逐项验收证据                  |
+| `admin-page-map.md`                                  | 当前 Admin routes/menu/page map                       | 预测未来 S10/S12 路径         |
+| `staged-roadmap.md`                                  | 历史阶段总结和未来准入方式                            | 作为当前执行 goal             |
+| `../quality-cycle/cycle-021/acceptance-matrix.md`    | 七个 System Admin 页面的严格验收矩阵                  | 泛化成所有能力矩阵            |
+| `../quality-cycle/cycle-021/reference-comparison.md` | 若依/芋道与 OpenCore 的产品化验收对比                 | 重复 waterline 或每轮决策列表 |
+| `../quality-cycle/cycle-021/audit.md`                | 自审结论、返工原因、沉淀规则                          | 每轮报告或烟测日志            |
 
 ## 后续 Codex 规则
 
-后续不应复用 S3-S8、runtime integration、S9、OpenForge V1 或 BE20 backend self-loop handoff 做新业务实现。OpenForge V1 已完成安全生成器闭环，但不生成业务逻辑，不写 Prisma schema/migration，不绕过 patch plan 修改 human-authored entry files。后续工作必须另起 S10+ hardening 或专项 handoff/goal，并使用有限验收清单。
+后续不应复用 S3-S8、runtime integration、S9、OpenForge V1、BE20 或 Cycle-021 closure 文档继续扩大范围。新的实现工作必须有明确的有限队列、验收矩阵、测试/smoke/deploy guard 和回滚边界。
 
-P4/P5 能力仍保留长期 backlog：CRM、ERP、MES、WMS、商城、支付、会员、多租户、知识库、RAG、Agent 均不得无 handoff 直接实现。
+P0/P1/P2 基础后台能力可以在已有准入范围内做独立闭环；业务域模块、支付、生产多租户、BPM、AI、完整报表设计器、行业套件和 OpenForge 直接写 schema/migration/business code 需要用户明确准入。

@@ -6,10 +6,10 @@ Branch: `main`
 
 ## Goal
 
-Close only the finite Cycle-021 System Admin fallback debt queue. This handoff
-is the source of truth for the seven fixed System Admin pages below. Do not
-restore the old capability-map productization recursion goal or select new
-P0/P1 work outside this list.
+Record only the finite Cycle-021 System Admin fallback debt closure. This
+handoff is the source of truth for the seven fixed System Admin pages below.
+It must not be used to start a new queue or select new P0/P1 work outside this
+list.
 
 Fixed pages:
 

@@ -4,7 +4,7 @@
 
 ## 当前状态
 
-S3 已实现 `@opencore/module-registry`，并在 S5-S9、Q001 和 BE20 中被 Admin shell、RBAC、系统管理、Monitor/Tool/Collaboration/Optional/Integration 页面、OpenAPI gate 和 OpenForge 持续消费。OpenForge V1 已完成安全生成器闭环，但仍依赖 registry 作为 module、permission、menu 和 OpenAPI tag 的单一事实来源。
+S3 已实现 `@opencore/module-registry`，并在 S5-S9、Q001、BE20、Admin Pro V6 和 Cycle-021 中被 Admin shell、RBAC、系统管理、Monitor/Tool/Collaboration/Optional/Integration 页面、OpenAPI gate、OpenForge 和 Admin live-only guards 持续消费。OpenForge V1 已完成安全生成器闭环，但仍依赖 registry 作为 module、permission、menu 和 OpenAPI tag 的单一事实来源。
 
 当前能力：
 
@@ -13,7 +13,7 @@ S3 已实现 `@opencore/module-registry`，并在 S5-S9、Q001 和 BE20 中被 A
 - 校验重复 module code、permission code、menu key。
 - 校验菜单 permission 指向已注册权限码。
 - 阻止高风险 P5/行业/真实支付/AI 模块绕过准入泄漏进 registry。
-- 为 OpenForge V1 schema validation、patch plan 和 S10 collaboration skeleton generation 提供 module metadata。
+- 为 OpenForge V1 schema validation、patch plan、Admin routes/access drift guard 和后续明确准入的模块提供 module metadata。
 
 ## 模块分层
 
@@ -57,4 +57,4 @@ P4/P5 模块继续保留在长期 backlog，不进入当前 core：
 - OpenForge V1 读取模块注册表、OpenAPI 和人工 schema，生成 plan/diff/check、generated skeleton、patch plan、manifest 和 rollback 信息。
 - `tool:openforge:manage` 只代表允许运行 OpenForge tool。真实写入仍必须显式 `--yes`，且只能写 generated-owned files 或 patch-plan markdown。
 - Registry 本身是 human-authored source of truth。OpenForge 不直接修改 `packages/module-registry/src/modules.ts`；只生成 `openforge-patches/module-registry.patch.md` 供人工 review。
-- S10 collaboration 使用 OpenForge 前，必须先登记 collaboration module、permission code、menu 和 OpenAPI tag；不得用 OpenForge 绕过 registry 直接生成未登记模块。
+- 后续任何明确准入的模块使用 OpenForge 前，必须先登记 module、permission code、menu 和 OpenAPI tag；不得用 OpenForge 绕过 registry 直接生成未登记模块。

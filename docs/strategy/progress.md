@@ -11,10 +11,10 @@ scripts, deployment scripts, and the active quality-cycle handoff.
 
 | Topic                          | Source                                                           |
 | ------------------------------ | ---------------------------------------------------------------- |
-| Active capstone handoff        | `docs/quality-cycle/cycle-021/handoff.md`                        |
+| Closed capstone handoff        | `docs/quality-cycle/cycle-021/handoff.md`                        |
 | Current waterline and debt     | `docs/quality-cycle/cycle-021/productization-waterline-audit.md` |
 | Acceptance matrix              | `docs/quality-cycle/cycle-021/acceptance-matrix.md`              |
-| Active backlog                 | `docs/quality-cycle/cycle-021/backlog.md`                        |
+| Closed finite backlog          | `docs/quality-cycle/cycle-021/backlog.md`                        |
 | Guard and implementation facts | `docs/quality-cycle/cycle-021/implementation-notes.md`           |
 | Round history                  | `docs/quality-cycle/cycle-021/round-history.md`                  |
 | Reference comparison           | `docs/quality-cycle/cycle-021/reference-comparison.md`           |
@@ -22,9 +22,10 @@ scripts, deployment scripts, and the active quality-cycle handoff.
 
 ## Current Status
 
-OpenCore is in Cycle-021 capability-map productization. The project has moved
-past strategy-only planning, S3-S8 foundation, runtime integration, OpenForge
-V1, Admin Ant Design Pro V6 migration, and backend package extraction.
+OpenCore has completed the Cycle-021 finite System Admin fallback closure. The
+project has moved past strategy-only planning, S3-S8 foundation, runtime
+integration, OpenForge V1, Admin Ant Design Pro V6 migration, backend package
+extraction and the seven-page Capstone Acceptance flow.
 
 Cycle-021 has delivered 126 deployable/runtime and guard stages, plus Round
 127 docs-only reconciliation. The finite System Admin Fallback Closure is
@@ -82,7 +83,7 @@ Admin smoke.
 | OpenForge V1            | Complete | Schema/config DSL, template pack, safe apply, manifest rollback, doctor, gate, and generated API/Admin/SDK/docs skeletons landed.          |
 | Admin V6 migration      | Complete | Admin moved to official Ant Design Pro V6 structure; official OpenCore pages, login/request, route registry and smoke guards were aligned. |
 | Backend extraction BE20 | Complete | Runtime capabilities were extracted into `packages/*`; `apps/api` is now bootstrap, HTTP aggregation, config and OpenAPI export/check.     |
-| Cycle-021               | Active   | The finite System Admin fallback closure is complete; new large domains still require explicit admission.                                  |
+| Cycle-021               | Closed   | The finite System Admin fallback closure is complete; new large domains still require explicit admission.                                  |
 
 ## Cycle-021 Compressed History
 
@@ -116,7 +117,7 @@ See `docs/quality-cycle/cycle-021/round-history.md` for the maintained version.
 ## Active Productization Queue
 
 No in-scope System Admin fallback closure item remains. This file must not be
-used to automatically select another foundation loop.
+used to select another queue.
 
 Large domains such as business modules, payment, multitenancy, BPM, AI and
 report designer still require explicit admission before implementation.

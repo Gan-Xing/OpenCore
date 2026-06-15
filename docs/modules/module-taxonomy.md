@@ -1,20 +1,20 @@
 # 模块分类
 
-本文档锁定 OpenCore 的模块分层、启用策略和注册表设计方向。当前 S3-S9、Q001 和 Backend Self-Loop BE20 已完成 P0-P3 主线和后端 runtime 包化；P4/P5 仍保留长期 backlog，不进入当前 core。
+本文档锁定 OpenCore 的模块分层、启用策略和注册表设计方向。当前 S3-S9、Q001、Backend Self-Loop BE20、Admin Pro V6 migration 和 Cycle-021 System Admin fallback closure 已完成 P0-P3 主线、后端 runtime 包化和七个 System Admin live-only 验收；P4/P5 仍保留长期 backlog，不进入当前 core。
 
 ## 分层定义
 
-| 层级            | 定义                                                                     | 当前策略                                                             |
-| --------------- | ------------------------------------------------------------------------ | -------------------------------------------------------------------- |
-| `core`          | 平台运行必需能力，例如用户、角色、权限、菜单、配置、字典、文件、审计基础 | BE20 已实现 system/security/audit 主线                               |
-| `monitor`       | 系统监控和运维能力，例如健康、版本、队列、日志、任务、运行状态           | BE20 已实现 status/version/queue/cache/online-user/scheduler runtime |
-| `tool`          | 开发工具和平台工具，例如 OpenAPI、导入导出、OpenForge                    | S9/V1/BE20 已实现 OpenAPI gate、导出协议、OpenForge core/CLI         |
-| `collaboration` | 消息、待办、通知、轻量审批和工作台等协同能力                             | Q001 已有轻量边界，后续只做加固                                      |
-| `optional`      | 通用可选模块，例如报表、工单、工作流增强等                               | Q001 已有 design/runtime 边界，完整实现需逐项准入                    |
-| `industry`      | 工程、制造、教育、医疗、电商、CRM、ERP、MES、WMS 等行业能力              | 后续独立包或独立 app 评估                                            |
-| `integration`   | 微信、短信、邮件、钉钉、飞书、支付等第三方集成                           | Q001 已有 provider/design 边界，真实供应商闭环需准入                 |
-| `ai`            | AI Native 能力预留，例如模型供应商、Prompt、工具调用、审计、成本治理     | 当前只预留，不实现 RAG/Agent/知识库                                  |
-| `experimental`  | 示例、实验和非主线模块                                                   | 默认关闭，不进入稳定版承诺                                           |
+| 层级            | 定义                                                                     | 当前策略                                                                                               |
+| --------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| `core`          | 平台运行必需能力，例如用户、角色、权限、菜单、配置、字典、文件、审计基础 | BE20/Cycle-021 已实现 system/security/audit 主线和 System Admin live-only 验收                         |
+| `monitor`       | 系统监控和运维能力，例如健康、版本、队列、日志、任务、运行状态           | BE20/Cycle-021 已实现 status/version/queue/cache/online-user/scheduler runtime 和 Admin live-only 加固 |
+| `tool`          | 开发工具和平台工具，例如 OpenAPI、导入导出、OpenForge                    | S9/V1/BE20/Cycle-021 已实现 OpenAPI gate、导出协议、OpenForge core/CLI/Admin safe workbench            |
+| `collaboration` | 消息、待办、通知、轻量审批和工作台等协同能力                             | Q001/Cycle-021 已完成轻量 live operations；BPMN/full workflow 仍需准入                                 |
+| `optional`      | 通用可选模块，例如报表、工单、工作流增强等                               | Q001 已有 design/runtime 边界，完整实现需逐项准入                                                      |
+| `industry`      | 工程、制造、教育、医疗、电商、CRM、ERP、MES、WMS 等行业能力              | 后续独立包或独立 app 评估                                                                              |
+| `integration`   | 微信、短信、邮件、钉钉、飞书、支付等第三方集成                           | Q001 已有 provider/design 边界，真实供应商闭环需准入                                                   |
+| `ai`            | AI Native 能力预留，例如模型供应商、Prompt、工具调用、审计、成本治理     | 当前只预留，不实现 RAG/Agent/知识库                                                                    |
+| `experimental`  | 示例、实验和非主线模块                                                   | 默认关闭，不进入稳定版承诺                                                                             |
 
 ## 模块注册表字段
 
@@ -56,4 +56,4 @@ OpenCore 学习 RuoYi/Yudao 的模块地图、权限粒度、代码生成器和�
 
 ## 当前阶段禁止项
 
-S3-S9、Q001 和 BE20 已完成，但仍不实现 CRM、ERP、MES、WMS、商城、真实支付、会员、多租户、知识库、RAG、Agent、完整 BPMN 工作流或完整报表设计器。
+S3-S9、Q001、BE20 和 Cycle-021 closure 已完成，但仍不直接实现 CRM、ERP、MES、WMS、商城、真实支付、会员、生产多租户、知识库、RAG、Agent、完整 BPMN 工作流、完整报表设计器或大数据异步导出。新能力需要明确准入和有限验收队列。

@@ -13,8 +13,7 @@ Round 127: final System Admin fallback closure documentation reconciliation.
   and strategy progress.
 - Confirmed all seven fixed System Admin rows are full `Meets` with no
   remaining in-scope fallback debt.
-- Kept out-of-scope domains explicit instead of selecting a new automatic
-  foundation loop.
+- Kept out-of-scope domains explicit instead of selecting a new queue.
 
 ## Outside This Closure
 
