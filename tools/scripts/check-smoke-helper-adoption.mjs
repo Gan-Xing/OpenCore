@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 const root = process.cwd();
 const scriptsDir = join(root, 'tools', 'scripts');
+const typedSmokeDir = join(root, 'tools', 'smoke');
 const smokeFiles = readdirSync(scriptsDir)
   .filter((name) => {
     return (
@@ -15,6 +16,12 @@ const smokeFiles = readdirSync(scriptsDir)
   })
   .sort()
   .map((name) => join(scriptsDir, name));
+const typedSmokeFiles = existsSync(typedSmokeDir)
+  ? readdirSync(typedSmokeDir)
+      .filter((name) => name.startsWith('smoke-') && name.endsWith('.ts'))
+      .sort()
+      .map((name) => join(typedSmokeDir, name))
+  : [];
 
 const forbiddenPatterns = [
   {
@@ -72,6 +79,15 @@ for (const file of smokeFiles) {
   }
 }
 
+for (const file of typedSmokeFiles) {
+  const rel = relative(root, file);
+  const source = readFileSync(file, 'utf8');
+
+  if (!source.includes("from './runtime'")) {
+    issues.push(`${rel}: must import typed smoke runtime.`);
+  }
+}
+
 if (issues.length > 0) {
   console.error('Smoke helper adoption check failed.');
   for (const issue of issues) {
@@ -81,5 +97,5 @@ if (issues.length > 0) {
 }
 
 console.log(
-  `Smoke helper adoption check passed (${smokeFiles.length} scripts).`,
+  `Smoke helper adoption check passed (${smokeFiles.length} mjs scripts, ${typedSmokeFiles.length} typed scripts).`,
 );

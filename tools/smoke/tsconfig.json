@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": "../..",
+    "module": "commonjs",
+    "moduleResolution": "node10",
+    "noEmit": true,
+    "paths": {
+      "@opencore/module-registry": ["packages/module-registry/src/index.ts"],
+      "@opencore/sdk": ["packages/sdk/src/index.ts"]
+    },
+    "types": ["node"]
+  },
+  "include": ["./**/*.ts"]
+}

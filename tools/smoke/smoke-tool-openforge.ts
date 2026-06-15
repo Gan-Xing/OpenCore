@@ -1,23 +1,21 @@
-#!/usr/bin/env node
-
 import {
   assertArray,
+  assertDefined,
   assertEqual,
   assertIncludes,
   assertNumberAtLeast,
   assertOpenApiPath,
   assertString,
-  createSmokeRuntime,
-} from './smoke-helpers.mjs';
+  createTypedSmokeRuntime,
+} from './runtime';
 
-const SCHEMA_PATH = 'tools/generator/examples/core.dict.v1.schema.json';
 const CONFIG_PATH = 'tools/generator/examples/openforge.v1.config.json';
+const SCHEMA_PATH = 'tools/generator/examples/core.dict.v1.schema.json';
 
-const smoke = createSmokeRuntime();
-const { apiPrefix, apiRequest, baseUrl, checkDocs, login, request } = smoke;
-let token;
+const smoke = createTypedSmokeRuntime();
+const { apiPrefix, baseUrl, checkDocs, clients, request } = smoke;
 
-try {
+async function main() {
   await request('/health/live', { expected: [200] });
   await request('/health/ready', { expected: [200] });
 
@@ -36,11 +34,10 @@ try {
     assertOpenApiPath(openApi, '/api/tools/openforge/rollback/dry-run');
   }
 
-  const loginResponse = await login();
-  token = assertString(loginResponse.accessToken, 'login accessToken');
-  smoke.setToken(token);
+  const loginResponse = await smoke.login();
+  const token = assertString(loginResponse.accessToken, 'login accessToken');
 
-  const drift = await apiRequest('/tools/openapi/drift');
+  const drift = await clients.tooling.getOpenApiDriftStatus(token);
   assertEqual(drift.status, 'configured', 'openapi drift status');
   assertEqual(drift.snapshotExists, true, 'openapi snapshot exists');
   assertString(drift.snapshotPath, 'openapi snapshot path');
@@ -49,14 +46,14 @@ try {
   assertString(drift.checkedAt, 'openapi drift checkedAt');
   assertString(drift.snapshotUpdatedAt, 'openapi snapshot updatedAt');
   assertString(drift.snapshotSha256, 'openapi snapshot sha256');
-  if (!/^[a-f0-9]{64}$/.test(drift.snapshotSha256)) {
+  if (!/^[a-f0-9]{64}$/.test(drift.snapshotSha256 ?? '')) {
     throw new Error('Expected OpenAPI snapshot SHA-256 to be a hex digest.');
   }
   assertNumberAtLeast(drift.pathCount, 1, 'openapi path count');
   assertNumberAtLeast(drift.schemaCount, 1, 'openapi schema count');
   assertNumberAtLeast(drift.operationCount, 1, 'openapi operation count');
 
-  const exportProtocol = await apiRequest('/tools/export/protocol');
+  const exportProtocol = await clients.tooling.getExportProtocol(token);
   assertEqual(exportProtocol.stage, 'S8', 'export protocol stage');
   assertEqual(exportProtocol.status, 'active', 'export protocol status');
   assertEqual(exportProtocol.scope, 'current-page', 'export protocol scope');
@@ -68,13 +65,10 @@ try {
   assertEqual(exportProtocol.asyncExport, false, 'export protocol async flag');
   assertNumberAtLeast(exportProtocol.maxRows, 1, 'export protocol max rows');
 
-  const exportPreview = await apiRequest('/tools/export/preview', {
-    method: 'POST',
-    body: {
-      resource: 'system-users',
-      columns: ['username', 'displayName', 'email', 'status'],
-      rowCount: exportProtocol.maxRows + 25,
-    },
+  const exportPreview = await clients.tooling.createExportPreview(token, {
+    columns: ['username', 'displayName', 'email', 'status'],
+    resource: 'system-users',
+    rowCount: exportProtocol.maxRows + 25,
   });
   assertEqual(
     exportPreview.resource,
@@ -96,7 +90,7 @@ try {
   assertIncludes(exportPreview.columns, 'username', 'export preview columns');
   assertString(exportPreview.generatedAt, 'export preview generatedAt');
 
-  const status = await apiRequest('/tools/openforge/status');
+  const status = await clients.tooling.getOpenForgeStatus(token);
   assertEqual(status.status, 'workspace-ready', 'openforge status');
   assertEqual(status.workspace.noWrite, true, 'openforge workspace noWrite');
   assertEqual(
@@ -115,18 +109,16 @@ try {
     'openforge operation confirmation text',
   );
 
-  const doctor = await apiRequest('/tools/openforge/doctor');
+  const doctor = await clients.tooling.getOpenForgeDoctor(token);
   assertEqual(doctor.valid, true, 'openforge doctor valid');
-  assertArray(doctor.checks, 'openforge doctor checks');
   assertIncludes(
     doctor.checks.map((check) => check.id),
     'template-packs',
     'openforge doctor checks',
   );
 
-  const plan = await apiRequest('/tools/openforge/plan', {
-    method: 'POST',
-    body: { schemaPath: SCHEMA_PATH },
+  const plan = await clients.tooling.createOpenForgePlan(token, {
+    schemaPath: SCHEMA_PATH,
   });
   assertEqual(plan.moduleCode, 'core.dict', 'openforge plan module');
   assertEqual(plan.safety.noWrite, true, 'openforge plan noWrite');
@@ -136,9 +128,8 @@ try {
     'openforge plan artifact kinds',
   );
 
-  const diff = await apiRequest('/tools/openforge/diff', {
-    method: 'POST',
-    body: { schemaPath: SCHEMA_PATH },
+  const diff = await clients.tooling.createOpenForgeDiff(token, {
+    schemaPath: SCHEMA_PATH,
   });
   assertEqual(diff.moduleCode, 'core.dict', 'openforge diff module');
   assertIncludes(
@@ -147,9 +138,8 @@ try {
     'openforge diff statuses',
   );
 
-  const preflight = await apiRequest('/tools/openforge/check', {
-    method: 'POST',
-    body: { schemaPath: SCHEMA_PATH },
+  const preflight = await clients.tooling.createOpenForgePreflight(token, {
+    schemaPath: SCHEMA_PATH,
   });
   assertEqual(preflight.noWrite, true, 'openforge preflight noWrite');
   assertEqual(
@@ -158,54 +148,59 @@ try {
     'openforge preflight prisma guard',
   );
 
-  const applyDryRun = await apiRequest('/tools/openforge/apply/dry-run', {
-    method: 'POST',
-    body: {
-      schemaPath: SCHEMA_PATH,
-      configPath: CONFIG_PATH,
-      confirmationText: status.operationPolicy.confirmationText,
-      requestedMode: 'dry-run',
-    },
+  const applyDryRun = await clients.tooling.createOpenForgeApplyDryRun(token, {
+    configPath: CONFIG_PATH,
+    confirmationText: status.operationPolicy.confirmationText,
+    requestedMode: 'dry-run',
+    schemaPath: SCHEMA_PATH,
   });
   assertEqual(applyDryRun.mode, 'dry-run', 'openforge apply mode');
   assertEqual(applyDryRun.applied, false, 'openforge apply dry-run applied');
+  const applyManifest = assertDefined(
+    applyDryRun.manifest,
+    'openforge apply manifest',
+  );
   assertEqual(
-    applyDryRun.manifest.moduleCode,
+    applyManifest.moduleCode,
     'core.dict',
     'openforge apply manifest module',
   );
   assertArray(applyDryRun.entries, 'openforge apply dry-run entries');
   assertArray(applyDryRun.errors, 'openforge apply dry-run errors');
 
-  const manifests = await apiRequest('/tools/openforge/manifests');
+  const manifests = await clients.tooling.listOpenForgeManifests(token);
   assertArray(manifests.manifests, 'openforge manifests');
 
-  const manifestPreview = await apiRequest(
-    '/tools/openforge/manifests/preview',
+  const manifestPreview = await clients.tooling.createOpenForgeManifestPreview(
+    token,
     {
-      method: 'POST',
-      body: { schemaPath: SCHEMA_PATH, configPath: CONFIG_PATH },
+      configPath: CONFIG_PATH,
+      schemaPath: SCHEMA_PATH,
     },
   );
+  const previewManifest = assertDefined(
+    manifestPreview.manifest,
+    'openforge manifest preview manifest',
+  );
   assertEqual(
-    manifestPreview.manifest.moduleCode,
+    previewManifest.moduleCode,
     'core.dict',
     'openforge manifest preview module',
   );
   assertEqual(
     manifestPreview.manifestPath,
-    `dry-run:${manifestPreview.manifest.id}`,
+    `dry-run:${previewManifest.id}`,
     'openforge manifest preview path',
   );
 
-  const rollbackDryRun = await apiRequest('/tools/openforge/rollback/dry-run', {
-    method: 'POST',
-    body: {
-      manifestId: 'missing-openforge-smoke-manifest',
+  const rollbackDryRun = await clients.tooling.createOpenForgeRollbackDryRun(
+    token,
+    {
       confirmationText: status.operationPolicy.confirmationText,
+      manifestId: 'missing-openforge-smoke-manifest',
       requestedMode: 'dry-run',
     },
-  });
+  );
   assertEqual(rollbackDryRun.mode, 'dry-run', 'openforge rollback mode');
   assertEqual(
     rollbackDryRun.rolledBack,
@@ -217,49 +212,55 @@ try {
     throw new Error('Expected missing rollback manifest to return errors.');
   }
 
-  await apiRequest('/tools/openforge/plan', {
-    method: 'POST',
+  await smoke.apiRequest('/tools/openforge/plan', {
     body: { schemaPath: 'prisma/schema.prisma' },
     expected: [400],
-  });
-  await apiRequest('/tools/openforge/apply/dry-run', {
     method: 'POST',
+    token,
+  });
+  await smoke.apiRequest('/tools/openforge/apply/dry-run', {
     body: {
-      schemaPath: SCHEMA_PATH,
       configPath: '.env.opencore.local',
       confirmationText: status.operationPolicy.confirmationText,
+      schemaPath: SCHEMA_PATH,
     },
     expected: [400],
-  });
-  await apiRequest('/tools/openforge/apply/dry-run', {
     method: 'POST',
-    body: { schemaPath: SCHEMA_PATH, configPath: CONFIG_PATH },
+    token,
+  });
+  await smoke.apiRequest('/tools/openforge/apply/dry-run', {
+    body: { configPath: CONFIG_PATH, schemaPath: SCHEMA_PATH },
     expected: [400],
-  });
-  await apiRequest('/tools/openforge/apply/dry-run', {
     method: 'POST',
+    token,
+  });
+  await smoke.apiRequest('/tools/openforge/apply/dry-run', {
     body: {
-      schemaPath: SCHEMA_PATH,
       configPath: CONFIG_PATH,
       confirmationText: status.operationPolicy.confirmationText,
       requestedMode: 'write',
+      schemaPath: SCHEMA_PATH,
     },
     expected: [400],
-  });
-  await apiRequest('/tools/openforge/rollback/dry-run', {
     method: 'POST',
+    token,
+  });
+  await smoke.apiRequest('/tools/openforge/rollback/dry-run', {
     body: { manifestId: 'missing-openforge-smoke-manifest' },
     expected: [400],
+    method: 'POST',
+    token,
   });
-  await apiRequest('/tools/openforge/manifests/bad%24id', {
+  await smoke.apiRequest('/tools/openforge/manifests/bad%24id', {
     expected: [400],
+    token,
   });
 
   console.log(
     JSON.stringify({
       status: 'pass',
-      baseUrl,
       apiPrefix,
+      baseUrl,
       checks: [
         'health.live',
         'health.ready',
@@ -284,14 +285,16 @@ try {
       ],
     }),
   );
-} catch (error) {
+}
+
+main().catch((error: unknown) => {
   console.error(
     JSON.stringify({
       status: 'fail',
-      baseUrl,
       apiPrefix,
+      baseUrl,
       error: error instanceof Error ? error.message : String(error),
     }),
   );
   process.exitCode = 1;
-}
+});
