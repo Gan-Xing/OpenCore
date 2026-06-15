@@ -168,21 +168,23 @@ describe('ToolingRepository', () => {
   it('rejects unsafe area dataset imports', async () => {
     const repository = new ToolingRepository();
 
-    await expect(
+    await expectHttpExceptionCode(
       repository.importAreaDataset({
         version: 'bad version',
         source: 'unit-test',
         entries: [{ code: 'ROOT', name: 'Root' }],
       }),
-    ).rejects.toThrow('version must be 3-80 characters');
-    await expect(
+      'TOOL_AREA_DATASET_VERSION_INVALID',
+    );
+    await expectHttpExceptionCode(
       repository.importAreaDataset({
         version: 'area-bad-parent-v1',
         source: 'unit-test',
         entries: [{ code: 'CHILD', name: 'Child', parentCode: 'ROOT' }],
       }),
-    ).rejects.toThrow('references missing parentCode ROOT');
-    await expect(
+      'TOOL_AREA_REGION_PARENT_NOT_FOUND',
+    );
+    await expectHttpExceptionCode(
       repository.importAreaDataset({
         version: 'area-bad-ip-v1',
         source: 'unit-test',
@@ -194,13 +196,16 @@ describe('ToolingRepository', () => {
           },
         ],
       }),
-    ).rejects.toThrow('must use IPv4 CIDR or exact IPv4');
-    await expect(repository.lookupAreaIp({ ip: 'not-an-ip' })).rejects.toThrow(
-      'ip must be a valid IP address',
+      'TOOL_AREA_IP_RANGE_FORMAT_INVALID',
     );
-    await expect(
+    await expectHttpExceptionCode(
+      repository.lookupAreaIp({ ip: 'not-an-ip' }),
+      'TOOL_AREA_IP_INVALID',
+    );
+    await expectHttpExceptionCode(
       repository.activateAreaDatasetVersion('missing-area-v1'),
-    ).rejects.toThrow('Area dataset version missing-area-v1 was not found.');
+      'TOOL_AREA_DATASET_VERSION_NOT_FOUND',
+    );
   });
 
   it('exposes OpenForge status, doctor, plan, diff, check and dry-run apply', () => {
@@ -261,36 +266,87 @@ describe('ToolingRepository', () => {
   it('blocks unsafe OpenForge paths from API inputs', () => {
     const repository = new ToolingRepository();
 
-    expect(() =>
-      repository.createOpenForgePlan({ schemaPath: '../.env' }),
-    ).toThrow('schemaPath must be a safe repo-relative path.');
-    expect(() =>
-      repository.createOpenForgePlan({ schemaPath: 'prisma/schema.prisma' }),
-    ).toThrow('schemaPath must point to an OpenForge example schema.');
-    expect(() =>
-      repository.createOpenForgeApplyDryRun({
-        schemaPath: 'tools/generator/examples/core.dict.v1.schema.json',
-        configPath: '.env.opencore.local',
-        confirmationText: 'OPENFORGE DRY RUN',
-      }),
-    ).toThrow('configPath must point to the OpenForge example config.');
-    expect(() =>
-      repository.createOpenForgeApplyDryRun({
-        schemaPath: 'tools/generator/examples/core.dict.v1.schema.json',
-      }),
-    ).toThrow('OpenForge dry-run requires confirmationText');
-    expect(() =>
-      repository.createOpenForgeApplyDryRun({
-        confirmationText: 'OPENFORGE DRY RUN',
-        requestedMode: 'write',
-        schemaPath: 'tools/generator/examples/core.dict.v1.schema.json',
-      }),
-    ).toThrow('OpenForge API only supports dry-run operations');
-    expect(() => repository.getOpenForgeManifest('../secret')).toThrow(
-      'manifestId may contain only letters, numbers, dot, underscore and dash.',
+    expectThrownHttpExceptionCode(
+      () => repository.createOpenForgePlan({ schemaPath: '../.env' }),
+      'TOOL_OPENFORGE_REPO_PATH_INVALID',
+    );
+    expectThrownHttpExceptionCode(
+      () =>
+        repository.createOpenForgePlan({ schemaPath: 'prisma/schema.prisma' }),
+      'TOOL_OPENFORGE_SCHEMA_PATH_INVALID',
+    );
+    expectThrownHttpExceptionCode(
+      () =>
+        repository.createOpenForgeApplyDryRun({
+          schemaPath: 'tools/generator/examples/core.dict.v1.schema.json',
+          configPath: '.env.opencore.local',
+          confirmationText: 'OPENFORGE DRY RUN',
+        }),
+      'TOOL_OPENFORGE_CONFIG_PATH_INVALID',
+    );
+    expectThrownHttpExceptionCode(
+      () =>
+        repository.createOpenForgeApplyDryRun({
+          schemaPath: 'tools/generator/examples/core.dict.v1.schema.json',
+        }),
+      'TOOL_OPENFORGE_DRY_RUN_CONFIRMATION_REQUIRED',
+    );
+    expectThrownHttpExceptionCode(
+      () =>
+        repository.createOpenForgeApplyDryRun({
+          confirmationText: 'OPENFORGE DRY RUN',
+          requestedMode: 'write',
+          schemaPath: 'tools/generator/examples/core.dict.v1.schema.json',
+        }),
+      'TOOL_OPENFORGE_WRITE_MODE_FORBIDDEN',
+    );
+    expectThrownHttpExceptionCode(
+      () => repository.getOpenForgeManifest('../secret'),
+      'TOOL_OPENFORGE_MANIFEST_ID_INVALID',
     );
   });
 });
+
+async function expectHttpExceptionCode(
+  promise: Promise<unknown>,
+  code: string,
+): Promise<void> {
+  try {
+    await promise;
+  } catch (error) {
+    expect(getHttpExceptionResponse(error)).toMatchObject({ code });
+    return;
+  }
+
+  throw new Error(`Expected HTTP exception code ${code}`);
+}
+
+function expectThrownHttpExceptionCode(
+  action: () => unknown,
+  code: string,
+): void {
+  try {
+    action();
+  } catch (error) {
+    expect(getHttpExceptionResponse(error)).toMatchObject({ code });
+    return;
+  }
+
+  throw new Error(`Expected HTTP exception code ${code}`);
+}
+
+function getHttpExceptionResponse(error: unknown): unknown {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'getResponse' in error &&
+    typeof error.getResponse === 'function'
+  ) {
+    return error.getResponse();
+  }
+
+  return undefined;
+}
 
 describe('ToolingRepository Prisma area dataset persistence', () => {
   const prisma = new PrismaService();

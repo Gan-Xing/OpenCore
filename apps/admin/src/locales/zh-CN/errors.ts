@@ -217,6 +217,49 @@ export default {
   'error.INTEGRATION_WEBSOCKET_PUBLISH_EVENT_TYPE_INVALID':
     'WebSocket 发布事件类型无效。',
   'error.INTEGRATION_WEBSOCKET_ROOM_INVALID': 'WebSocket 房间名无效。',
+  'error.TOOL_AREA_DATASET_DEPTH_TOO_DEEP': '地区数据集层级过深。',
+  'error.TOOL_AREA_DATASET_ENTRIES_INVALID': '地区数据集条目必须是数组。',
+  'error.TOOL_AREA_DATASET_ENTRIES_SIZE_INVALID':
+    '地区数据集条目数量超出允许范围。',
+  'error.TOOL_AREA_DATASET_PARENT_CYCLE': '地区数据集存在父级循环。',
+  'error.TOOL_AREA_DATASET_SOURCE_INVALID': '地区数据集来源格式无效。',
+  'error.TOOL_AREA_DATASET_SOURCE_REQUIRED': '地区数据集来源不能为空。',
+  'error.TOOL_AREA_DATASET_VERSION_INVALID': '地区数据集版本格式无效。',
+  'error.TOOL_AREA_DATASET_VERSION_NOT_FOUND': '地区数据集版本不存在。',
+  'error.TOOL_AREA_IP_INVALID': 'IP 地址格式无效。',
+  'error.TOOL_AREA_IP_RANGE_ADDRESS_INVALID': '地区 IP 范围地址无效。',
+  'error.TOOL_AREA_IP_RANGE_EMPTY': '地区 IP 范围不能为空。',
+  'error.TOOL_AREA_IP_RANGE_FORMAT_INVALID':
+    '地区 IP 范围必须是 IPv4 CIDR 或单个 IPv4。',
+  'error.TOOL_AREA_IP_RANGE_PREFIX_INVALID': '地区 IP 范围前缀无效。',
+  'error.TOOL_AREA_REGION_ALIASES_INVALID': '地区别名必须是数组。',
+  'error.TOOL_AREA_REGION_ALIASES_TOO_MANY': '地区别名数量过多。',
+  'error.TOOL_AREA_REGION_ALIAS_INVALID': '地区别名格式无效。',
+  'error.TOOL_AREA_REGION_ALIAS_INVALID_TYPE': '地区别名必须是字符串。',
+  'error.TOOL_AREA_REGION_CODE_DUPLICATED': '地区编码重复。',
+  'error.TOOL_AREA_REGION_CODE_INVALID': '地区编码格式无效。',
+  'error.TOOL_AREA_REGION_CODE_REQUIRED': '地区编码不能为空。',
+  'error.TOOL_AREA_REGION_IP_RANGES_INVALID': '地区 IP 范围必须是数组。',
+  'error.TOOL_AREA_REGION_IP_RANGES_TOO_MANY': '地区 IP 范围数量过多。',
+  'error.TOOL_AREA_REGION_IP_RANGE_INVALID_TYPE':
+    '地区 IP 范围必须是字符串。',
+  'error.TOOL_AREA_REGION_NAME_INVALID': '地区名称格式无效。',
+  'error.TOOL_AREA_REGION_NAME_REQUIRED': '地区名称不能为空。',
+  'error.TOOL_AREA_REGION_NOT_FOUND': '地区不存在。',
+  'error.TOOL_AREA_REGION_PARENT_NOT_FOUND': '地区父级不存在。',
+  'error.TOOL_AREA_REGION_PARENT_SELF': '地区父级不能是自己。',
+  'error.TOOL_OPENFORGE_CONFIG_PATH_INVALID':
+    'OpenForge 配置路径必须指向示例配置。',
+  'error.TOOL_OPENFORGE_DRY_RUN_CONFIRMATION_REQUIRED':
+    'OpenForge dry-run 缺少确认文本。',
+  'error.TOOL_OPENFORGE_MANIFEST_ID_INVALID':
+    'OpenForge manifest ID 格式无效。',
+  'error.TOOL_OPENFORGE_REPO_PATH_INVALID':
+    'OpenForge 路径必须是安全的仓库相对路径。',
+  'error.TOOL_OPENFORGE_SCHEMA_PATH_INVALID':
+    'OpenForge schema 路径必须指向示例 schema。',
+  'error.TOOL_OPENFORGE_WRITE_MODE_FORBIDDEN':
+    'OpenForge API 只允许 dry-run 操作。',
   'error.SYSTEM_CONFIG_ALREADY_EXISTS': '配置键已存在。',
   'error.SYSTEM_CONFIG_CATEGORY_INVALID_TYPE': '配置分类必须是字符串。',
   'error.SYSTEM_CONFIG_CATEGORY_REQUIRED': '配置分类不能为空。',

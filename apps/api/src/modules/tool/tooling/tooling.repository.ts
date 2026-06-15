@@ -3,7 +3,11 @@ import { existsSync, readFileSync, statSync } from 'node:fs';
 import { isIP } from 'node:net';
 import { dirname, resolve } from 'node:path';
 import { Prisma } from '@prisma/client';
-import { lookupIpLocation, normalizeIpAddress } from '@opencore/common';
+import {
+  createApiErrorBody,
+  lookupIpLocation,
+  normalizeIpAddress,
+} from '@opencore/common';
 import {
   CURRENT_PAGE_EXPORT_PROTOCOL,
   createCurrentPageExportPlan,
@@ -62,6 +66,24 @@ const AREA_DATASET_INCLUDE = {
     orderBy: [{ code: 'asc' }],
   },
 } satisfies Prisma.AreaDatasetVersionInclude;
+
+function toolingBadRequest(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): BadRequestException {
+  return new BadRequestException(
+    createApiErrorBody({ code, message, details }),
+  );
+}
+
+function toolingNotFound(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): NotFoundException {
+  return new NotFoundException(createApiErrorBody({ code, message, details }));
+}
 
 type AreaDatasetImportEntryInput = {
   aliases?: readonly string[];
@@ -210,8 +232,10 @@ function rejectUnsafeRepoPath(path: string, label: string): void {
     path.includes('\0') ||
     path.split('/').includes('..')
   ) {
-    throw new BadRequestException(
+    throw toolingBadRequest(
+      'TOOL_OPENFORGE_REPO_PATH_INVALID',
       `${label} must be a safe repo-relative path.`,
+      { label },
     );
   }
 }
@@ -225,8 +249,10 @@ function normalizeOpenForgeSchemaPath(schemaPath?: string): string {
     !normalized.startsWith(ALLOWED_OPENFORGE_SCHEMA_PREFIX) ||
     !normalized.endsWith('.schema.json')
   ) {
-    throw new BadRequestException(
+    throw toolingBadRequest(
+      'TOOL_OPENFORGE_SCHEMA_PATH_INVALID',
       'schemaPath must point to an OpenForge example schema.',
+      { schemaPath: normalized },
     );
   }
 
@@ -243,8 +269,10 @@ function normalizeOpenForgeConfigPath(configPath?: string): string | undefined {
   rejectUnsafeRepoPath(normalized, 'configPath');
 
   if (normalized !== DEFAULT_OPENFORGE_CONFIG_PATH) {
-    throw new BadRequestException(
+    throw toolingBadRequest(
+      'TOOL_OPENFORGE_CONFIG_PATH_INVALID',
       'configPath must point to the OpenForge example config.',
+      { configPath: normalized },
     );
   }
 
@@ -255,8 +283,10 @@ function manifestPathFromId(manifestId: string): string {
   const normalized = manifestId.trim();
 
   if (!OPENFORGE_MANIFEST_ID_PATTERN.test(normalized)) {
-    throw new BadRequestException(
+    throw toolingBadRequest(
+      'TOOL_OPENFORGE_MANIFEST_ID_INVALID',
       'manifestId may contain only letters, numbers, dot, underscore and dash.',
+      { manifestId },
     );
   }
 
@@ -268,14 +298,18 @@ function assertOpenForgeDryRunConfirmation(input: {
   requestedMode?: string;
 }): void {
   if (input.requestedMode && input.requestedMode !== 'dry-run') {
-    throw new BadRequestException(
+    throw toolingBadRequest(
+      'TOOL_OPENFORGE_WRITE_MODE_FORBIDDEN',
       'OpenForge API only supports dry-run operations; direct code writes require explicit user admission.',
+      { requestedMode: input.requestedMode },
     );
   }
 
   if (input.confirmationText !== OPENFORGE_DRY_RUN_CONFIRMATION_TEXT) {
-    throw new BadRequestException(
+    throw toolingBadRequest(
+      'TOOL_OPENFORGE_DRY_RUN_CONFIRMATION_REQUIRED',
       `OpenForge dry-run requires confirmationText "${OPENFORGE_DRY_RUN_CONFIRMATION_TEXT}".`,
+      { expectedConfirmationText: OPENFORGE_DRY_RUN_CONFIRMATION_TEXT },
     );
   }
 }
@@ -309,8 +343,10 @@ class AreaDatasetStore {
     const dataset = this.versions.get(normalized);
 
     if (!dataset) {
-      throw new NotFoundException(
+      throw toolingNotFound(
+        'TOOL_AREA_DATASET_VERSION_NOT_FOUND',
         `Area dataset version ${normalized} was not found.`,
+        { version: normalized },
       );
     }
 
@@ -392,7 +428,11 @@ function getAreaRegionFromDataset(dataset: AreaDatasetRecord, code: string) {
   );
 
   if (!region) {
-    throw new NotFoundException(`Area region ${normalized} was not found.`);
+    throw toolingNotFound(
+      'TOOL_AREA_REGION_NOT_FOUND',
+      `Area region ${normalized} was not found.`,
+      { code: normalized },
+    );
   }
 
   return toAreaRegionDto(region);
@@ -406,7 +446,11 @@ function lookupAreaIpFromDataset(
   const normalizedIp = normalizeIpAddress(ip);
 
   if (!normalizedIp || isIP(normalizedIp) === 0) {
-    throw new BadRequestException('ip must be a valid IP address.');
+    throw toolingBadRequest(
+      'TOOL_AREA_IP_INVALID',
+      'ip must be a valid IP address.',
+      { ip },
+    );
   }
 
   const providerResult = lookupIpLocation(normalizedIp);
@@ -454,8 +498,10 @@ function createAreaDataset(
 
   const maxDepth = Math.max(...regions.map((region) => region.level));
   if (maxDepth > AREA_DATASET_MAX_DEPTH) {
-    throw new BadRequestException(
+    throw toolingBadRequest(
+      'TOOL_AREA_DATASET_DEPTH_TOO_DEEP',
       `Area dataset depth must not exceed ${AREA_DATASET_MAX_DEPTH}.`,
+      { maxDepth, maxAllowedDepth: AREA_DATASET_MAX_DEPTH },
     );
   }
 
@@ -473,7 +519,8 @@ function normalizeAreaDatasetVersion(version: unknown): string {
     typeof version !== 'string' ||
     !AREA_DATASET_VERSION_PATTERN.test(version)
   ) {
-    throw new BadRequestException(
+    throw toolingBadRequest(
+      'TOOL_AREA_DATASET_VERSION_INVALID',
       'version must be 3-80 characters and may contain letters, numbers, dot, underscore, colon or dash.',
     );
   }
@@ -483,12 +530,19 @@ function normalizeAreaDatasetVersion(version: unknown): string {
 
 function normalizeAreaDatasetSource(source: unknown): string {
   if (typeof source !== 'string') {
-    throw new BadRequestException('source is required.');
+    throw toolingBadRequest(
+      'TOOL_AREA_DATASET_SOURCE_REQUIRED',
+      'source is required.',
+    );
   }
 
   const normalized = source.trim();
   if (!normalized || normalized.length > 120) {
-    throw new BadRequestException('source must be 1-120 characters.');
+    throw toolingBadRequest(
+      'TOOL_AREA_DATASET_SOURCE_INVALID',
+      'source must be 1-120 characters.',
+      { maxLength: 120 },
+    );
   }
 
   return normalized;
@@ -498,12 +552,17 @@ function normalizeAreaDatasetEntries(
   entries: AreaDatasetImportInput['entries'],
 ) {
   if (!Array.isArray(entries)) {
-    throw new BadRequestException('entries must be an array.');
+    throw toolingBadRequest(
+      'TOOL_AREA_DATASET_ENTRIES_INVALID',
+      'entries must be an array.',
+    );
   }
 
   if (entries.length === 0 || entries.length > AREA_DATASET_MAX_ENTRIES) {
-    throw new BadRequestException(
+    throw toolingBadRequest(
+      'TOOL_AREA_DATASET_ENTRIES_SIZE_INVALID',
       `entries must contain 1-${AREA_DATASET_MAX_ENTRIES} regions.`,
+      { maxEntries: AREA_DATASET_MAX_ENTRIES, minEntries: 1 },
     );
   }
 
@@ -515,13 +574,19 @@ function normalizeAreaDatasetEntries(
     );
     const parentCode = normalizeOptionalAreaCode(entry.parentCode);
     if (parentCode === code) {
-      throw new BadRequestException(
+      throw toolingBadRequest(
+        'TOOL_AREA_REGION_PARENT_SELF',
         `Area region ${code} cannot parent itself.`,
+        { code },
       );
     }
 
     if (seenCodes.has(code)) {
-      throw new BadRequestException(`Duplicate area region code ${code}.`);
+      throw toolingBadRequest(
+        'TOOL_AREA_REGION_CODE_DUPLICATED',
+        `Duplicate area region code ${code}.`,
+        { code },
+      );
     }
     seenCodes.add(code);
 
@@ -537,8 +602,10 @@ function normalizeAreaDatasetEntries(
   const codes = new Set(normalized.map((entry) => entry.code));
   for (const entry of normalized) {
     if (entry.parentCode && !codes.has(entry.parentCode)) {
-      throw new BadRequestException(
+      throw toolingBadRequest(
+        'TOOL_AREA_REGION_PARENT_NOT_FOUND',
         `Area region ${entry.code} references missing parentCode ${entry.parentCode}.`,
+        { code: entry.code, parentCode: entry.parentCode },
       );
     }
   }
@@ -548,13 +615,19 @@ function normalizeAreaDatasetEntries(
 
 function normalizeRequiredAreaCode(value: unknown, label: string): string {
   if (typeof value !== 'string') {
-    throw new BadRequestException(`${label} is required.`);
+    throw toolingBadRequest(
+      'TOOL_AREA_REGION_CODE_REQUIRED',
+      `${label} is required.`,
+      { label },
+    );
   }
 
   const normalized = value.trim();
   if (!AREA_REGION_CODE_PATTERN.test(normalized)) {
-    throw new BadRequestException(
+    throw toolingBadRequest(
+      'TOOL_AREA_REGION_CODE_INVALID',
       `${label} must be 2-32 characters and may contain letters, numbers, dot, underscore, colon or dash.`,
+      { label },
     );
   }
 
@@ -571,13 +644,19 @@ function normalizeOptionalAreaCode(value: unknown): string | null {
 
 function normalizeAreaName(value: unknown, code: string): string {
   if (typeof value !== 'string') {
-    throw new BadRequestException(`Area region ${code} name is required.`);
+    throw toolingBadRequest(
+      'TOOL_AREA_REGION_NAME_REQUIRED',
+      `Area region ${code} name is required.`,
+      { code },
+    );
   }
 
   const normalized = value.trim();
   if (!normalized || normalized.length > 120) {
-    throw new BadRequestException(
+    throw toolingBadRequest(
+      'TOOL_AREA_REGION_NAME_INVALID',
       `Area region ${code} name must be 1-120 characters.`,
+      { code, maxLength: 120 },
     );
   }
 
@@ -590,28 +669,36 @@ function normalizeAreaAliases(value: unknown, code: string): readonly string[] {
   }
 
   if (!Array.isArray(value)) {
-    throw new BadRequestException(
+    throw toolingBadRequest(
+      'TOOL_AREA_REGION_ALIASES_INVALID',
       `Area region ${code} aliases must be an array.`,
+      { code },
     );
   }
 
   if (value.length > AREA_DATASET_MAX_ALIASES) {
-    throw new BadRequestException(
+    throw toolingBadRequest(
+      'TOOL_AREA_REGION_ALIASES_TOO_MANY',
       `Area region ${code} may declare at most ${AREA_DATASET_MAX_ALIASES} aliases.`,
+      { code, maxAliases: AREA_DATASET_MAX_ALIASES },
     );
   }
 
   return value.map((alias, index) => {
     if (typeof alias !== 'string') {
-      throw new BadRequestException(
+      throw toolingBadRequest(
+        'TOOL_AREA_REGION_ALIAS_INVALID_TYPE',
         `Area region ${code} aliases[${index}] must be a string.`,
+        { code, index },
       );
     }
 
     const normalized = alias.trim();
     if (!normalized || normalized.length > 80) {
-      throw new BadRequestException(
+      throw toolingBadRequest(
+        'TOOL_AREA_REGION_ALIAS_INVALID',
         `Area region ${code} aliases[${index}] must be 1-80 characters.`,
+        { code, index, maxLength: 80 },
       );
     }
 
@@ -628,21 +715,27 @@ function normalizeAreaIpRanges(
   }
 
   if (!Array.isArray(value)) {
-    throw new BadRequestException(
+    throw toolingBadRequest(
+      'TOOL_AREA_REGION_IP_RANGES_INVALID',
       `Area region ${code} ipRanges must be an array.`,
+      { code },
     );
   }
 
   if (value.length > AREA_DATASET_MAX_IP_RANGES_PER_REGION) {
-    throw new BadRequestException(
+    throw toolingBadRequest(
+      'TOOL_AREA_REGION_IP_RANGES_TOO_MANY',
       `Area region ${code} may declare at most ${AREA_DATASET_MAX_IP_RANGES_PER_REGION} IP ranges.`,
+      { code, maxIpRanges: AREA_DATASET_MAX_IP_RANGES_PER_REGION },
     );
   }
 
   return value.map((range, index) => {
     if (typeof range !== 'string') {
-      throw new BadRequestException(
+      throw toolingBadRequest(
+        'TOOL_AREA_REGION_IP_RANGE_INVALID_TYPE',
         `Area region ${code} ipRanges[${index}] must be a string.`,
+        { code, index },
       );
     }
 
@@ -662,14 +755,20 @@ function resolveAreaPath(
   }
 
   if (stack.includes(code)) {
-    throw new BadRequestException(
+    throw toolingBadRequest(
+      'TOOL_AREA_DATASET_PARENT_CYCLE',
       `Area dataset contains a parent cycle at ${code}.`,
+      { code },
     );
   }
 
   const entry = entries.get(code);
   if (!entry) {
-    throw new BadRequestException(`Area region ${code} was not found.`);
+    throw toolingBadRequest(
+      'TOOL_AREA_REGION_NOT_FOUND',
+      `Area region ${code} was not found.`,
+      { code },
+    );
   }
 
   const path = entry.parentCode
@@ -686,32 +785,56 @@ function resolveAreaPath(
 function parseAreaIpRange(value: string, label: string): AreaIpRangeRecord {
   const normalized = value.trim();
   if (!normalized) {
-    throw new BadRequestException(`${label} must not be empty.`);
+    throw toolingBadRequest(
+      'TOOL_AREA_IP_RANGE_EMPTY',
+      `${label} must not be empty.`,
+      { label },
+    );
   }
 
   const parts = normalized.split('/');
   if (parts.length > 2) {
-    throw new BadRequestException(`${label} must use IPv4 CIDR or exact IPv4.`);
+    throw toolingBadRequest(
+      'TOOL_AREA_IP_RANGE_FORMAT_INVALID',
+      `${label} must use IPv4 CIDR or exact IPv4.`,
+      { label },
+    );
   }
 
   const [ip, prefixPart] = parts;
   const startIp = normalizeIpAddress(ip ?? '');
   if (!startIp || isIP(startIp) !== 4) {
-    throw new BadRequestException(`${label} must use IPv4 CIDR or exact IPv4.`);
+    throw toolingBadRequest(
+      'TOOL_AREA_IP_RANGE_FORMAT_INVALID',
+      `${label} must use IPv4 CIDR or exact IPv4.`,
+      { label },
+    );
   }
 
   const prefix =
     prefixPart === undefined ? 32 : Number.parseInt(prefixPart.trim(), 10);
   if (prefixPart !== undefined && !/^\d{1,2}$/.test(prefixPart.trim())) {
-    throw new BadRequestException(`${label} CIDR prefix must be 0-32.`);
+    throw toolingBadRequest(
+      'TOOL_AREA_IP_RANGE_PREFIX_INVALID',
+      `${label} CIDR prefix must be 0-32.`,
+      { label },
+    );
   }
   if (!Number.isInteger(prefix) || prefix < 0 || prefix > 32) {
-    throw new BadRequestException(`${label} CIDR prefix must be 0-32.`);
+    throw toolingBadRequest(
+      'TOOL_AREA_IP_RANGE_PREFIX_INVALID',
+      `${label} CIDR prefix must be 0-32.`,
+      { label },
+    );
   }
 
   const startNumber = parseIpv4Number(startIp);
   if (typeof startNumber !== 'number') {
-    throw new BadRequestException(`${label} must use a valid IPv4 address.`);
+    throw toolingBadRequest(
+      'TOOL_AREA_IP_RANGE_ADDRESS_INVALID',
+      `${label} must use a valid IPv4 address.`,
+      { label },
+    );
   }
 
   const blockSize = 2 ** (32 - prefix);
@@ -1138,8 +1261,10 @@ export class ToolingRepository {
       });
 
       if (!dataset) {
-        throw new NotFoundException(
+        throw toolingNotFound(
+          'TOOL_AREA_DATASET_VERSION_NOT_FOUND',
           `Area dataset version ${normalized} was not found.`,
+          { version: normalized },
         );
       }
 

@@ -287,6 +287,71 @@ export default {
     'The WebSocket publish event type is invalid.',
   'error.INTEGRATION_WEBSOCKET_ROOM_INVALID':
     'The WebSocket room is invalid.',
+  'error.TOOL_AREA_DATASET_DEPTH_TOO_DEEP':
+    'The area dataset hierarchy is too deep.',
+  'error.TOOL_AREA_DATASET_ENTRIES_INVALID':
+    'The area dataset entries must be an array.',
+  'error.TOOL_AREA_DATASET_ENTRIES_SIZE_INVALID':
+    'The area dataset entry count is outside the allowed range.',
+  'error.TOOL_AREA_DATASET_PARENT_CYCLE':
+    'The area dataset contains a parent cycle.',
+  'error.TOOL_AREA_DATASET_SOURCE_INVALID':
+    'The area dataset source is invalid.',
+  'error.TOOL_AREA_DATASET_SOURCE_REQUIRED':
+    'The area dataset source is required.',
+  'error.TOOL_AREA_DATASET_VERSION_INVALID':
+    'The area dataset version is invalid.',
+  'error.TOOL_AREA_DATASET_VERSION_NOT_FOUND':
+    'The area dataset version does not exist.',
+  'error.TOOL_AREA_IP_INVALID': 'The IP address is invalid.',
+  'error.TOOL_AREA_IP_RANGE_ADDRESS_INVALID':
+    'The area IP range address is invalid.',
+  'error.TOOL_AREA_IP_RANGE_EMPTY': 'The area IP range must not be empty.',
+  'error.TOOL_AREA_IP_RANGE_FORMAT_INVALID':
+    'The area IP range must be an IPv4 CIDR or exact IPv4 address.',
+  'error.TOOL_AREA_IP_RANGE_PREFIX_INVALID':
+    'The area IP range prefix is invalid.',
+  'error.TOOL_AREA_REGION_ALIASES_INVALID':
+    'The area region aliases must be an array.',
+  'error.TOOL_AREA_REGION_ALIASES_TOO_MANY':
+    'The area region alias list is too large.',
+  'error.TOOL_AREA_REGION_ALIAS_INVALID':
+    'The area region alias is invalid.',
+  'error.TOOL_AREA_REGION_ALIAS_INVALID_TYPE':
+    'The area region alias must be a string.',
+  'error.TOOL_AREA_REGION_CODE_DUPLICATED':
+    'The area region code is duplicated.',
+  'error.TOOL_AREA_REGION_CODE_INVALID':
+    'The area region code is invalid.',
+  'error.TOOL_AREA_REGION_CODE_REQUIRED':
+    'The area region code is required.',
+  'error.TOOL_AREA_REGION_IP_RANGES_INVALID':
+    'The area region IP ranges must be an array.',
+  'error.TOOL_AREA_REGION_IP_RANGES_TOO_MANY':
+    'The area region IP range list is too large.',
+  'error.TOOL_AREA_REGION_IP_RANGE_INVALID_TYPE':
+    'The area region IP range must be a string.',
+  'error.TOOL_AREA_REGION_NAME_INVALID':
+    'The area region name is invalid.',
+  'error.TOOL_AREA_REGION_NAME_REQUIRED':
+    'The area region name is required.',
+  'error.TOOL_AREA_REGION_NOT_FOUND': 'The area region does not exist.',
+  'error.TOOL_AREA_REGION_PARENT_NOT_FOUND':
+    'The area region parent does not exist.',
+  'error.TOOL_AREA_REGION_PARENT_SELF':
+    'The area region parent cannot be itself.',
+  'error.TOOL_OPENFORGE_CONFIG_PATH_INVALID':
+    'The OpenForge config path must point to the example config.',
+  'error.TOOL_OPENFORGE_DRY_RUN_CONFIRMATION_REQUIRED':
+    'The OpenForge dry-run confirmation text is required.',
+  'error.TOOL_OPENFORGE_MANIFEST_ID_INVALID':
+    'The OpenForge manifest ID is invalid.',
+  'error.TOOL_OPENFORGE_REPO_PATH_INVALID':
+    'The OpenForge path must be a safe repository-relative path.',
+  'error.TOOL_OPENFORGE_SCHEMA_PATH_INVALID':
+    'The OpenForge schema path must point to the example schema.',
+  'error.TOOL_OPENFORGE_WRITE_MODE_FORBIDDEN':
+    'OpenForge API operations allow dry-run only.',
   'error.SYSTEM_CONFIG_ALREADY_EXISTS': 'The config key already exists.',
   'error.SYSTEM_CONFIG_CATEGORY_INVALID_TYPE':
     'The config category must be a string.',
