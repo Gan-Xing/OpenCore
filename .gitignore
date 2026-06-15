@@ -20,6 +20,7 @@ apps/admin/.umi-test/
 apps/admin/.mfsu/
 apps/admin/.swc/
 apps/admin/.turbopack/
+apps/admin/types/cache/
 
 # Logs
 *.log
