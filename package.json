@@ -62,7 +62,7 @@
     "smoke:core-notice": "node tools/scripts/smoke-core-notice.mjs",
     "smoke:integration-designs": "node tools/scripts/run-typed-smoke.mjs tools/smoke/smoke-integration-designs.ts",
     "smoke:integration-health": "node tools/scripts/run-typed-smoke.mjs tools/smoke/smoke-integration-health.ts",
-    "smoke:integration-oauth-tokens": "node tools/scripts/smoke-integration-oauth-tokens.mjs",
+    "smoke:integration-oauth-tokens": "node tools/scripts/run-typed-smoke.mjs tools/smoke/smoke-integration-oauth-tokens.ts",
     "smoke:core-online-user": "node tools/scripts/smoke-core-online-user.mjs",
     "smoke:core-post": "node tools/scripts/smoke-core-post.mjs",
     "smoke:core-role": "node tools/scripts/smoke-core-role.mjs",
