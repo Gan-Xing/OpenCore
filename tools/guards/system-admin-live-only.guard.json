@@ -1,0 +1,226 @@
+{
+  "name": "system-admin-live-only",
+  "expectedPageCount": 7,
+  "pages": [
+    {
+      "name": "System Roles",
+      "sourcePath": "apps/admin/src/pages/System/Roles.tsx",
+      "forbiddenSource": [
+        "createPermissionSummariesFromRegistry",
+        "createSystemDeptFixtures",
+        "fallbackRows",
+        "Using fallback role snapshot",
+        "setRows(fallbackRows)",
+        "setSelectedDetail(record)"
+      ],
+      "requiredSource": [
+        "Unable to load live roles",
+        "Unable to load live role detail.",
+        "listOpenCoreRoles",
+        "getOpenCoreRole",
+        "getOpenCoreRoleMenuAssignment",
+        "assignOpenCoreRoleMenus",
+        "getOpenCoreRoleUserAssignment",
+        "assignOpenCoreRoleUsers",
+        "CurrentPageExportButton",
+        "rows={filteredRows}"
+      ],
+      "requiredDist": [
+        "Unable to load live roles",
+        "Unable to load live role detail.",
+        "Role menus updated.",
+        "Role users updated.",
+        "core-roles"
+      ],
+      "forbiddenDist": ["Using fallback role snapshot"]
+    },
+    {
+      "name": "System Users",
+      "sourcePath": "apps/admin/src/pages/System/Users.tsx",
+      "forbiddenSource": [
+        "createSystemDeptOptionFixtures",
+        "createSystemDeptFixtures",
+        "createSystemPostFixtures",
+        "fallbackRows",
+        "fallbackRoleRows",
+        "Using fallback user snapshot",
+        "setRows(fallbackRows)",
+        "setSelectedDetail(record)"
+      ],
+      "requiredSource": [
+        "Unable to load live users",
+        "Unable to load live user detail.",
+        "listOpenCoreUsers",
+        "getOpenCoreUser",
+        "createOpenCoreUser",
+        "updateOpenCoreUser",
+        "deleteOpenCoreUser",
+        "assignOpenCoreUserRoles",
+        "CurrentPageExportButton",
+        "rows={filteredRows}"
+      ],
+      "requiredDist": [
+        "Unable to load live users",
+        "Unable to load live user detail.",
+        "User Excel export downloaded",
+        "Assign Roles",
+        "core-users"
+      ],
+      "forbiddenDist": ["Using fallback user snapshot"]
+    },
+    {
+      "name": "System Config",
+      "sourcePath": "apps/admin/src/pages/System/Config.tsx",
+      "forbiddenSource": [
+        "createSystemConfigFixtures",
+        "fallbackRows",
+        "Using fallback config snapshot",
+        "setRows(fallbackRows)",
+        "setSelectedDetail(record)"
+      ],
+      "requiredSource": [
+        "Unable to load live system config",
+        "Unable to load live system config detail.",
+        "listOpenCoreSystemConfig",
+        "getOpenCoreSystemConfig",
+        "createOpenCoreSystemConfig",
+        "updateOpenCoreSystemConfig",
+        "deleteOpenCoreSystemConfig",
+        "CurrentPageExportButton",
+        "rows={filteredRows}"
+      ],
+      "requiredDist": [
+        "Unable to load live system config",
+        "Unable to load live system config detail.",
+        "Config Excel export downloaded",
+        "Vault Key Rotation",
+        "core-config"
+      ],
+      "forbiddenDist": ["Using fallback config snapshot"]
+    },
+    {
+      "name": "System Notices",
+      "sourcePath": "apps/admin/src/pages/System/Notices.tsx",
+      "forbiddenSource": [
+        "createSystemNoticeFixtures",
+        "fallbackRows",
+        "Using fallback system notice snapshot",
+        "setRows(fallbackRows)",
+        "setSelectedDetail(record)",
+        "setSelectedTemplateDetail(record)",
+        "setSelectedInboxDetail(record)"
+      ],
+      "requiredSource": [
+        "Unable to load live system notices",
+        "Unable to load live system notice detail.",
+        "Unable to load live system notice template detail.",
+        "Unable to load live system notice inbox detail.",
+        "listOpenCoreSystemNotices",
+        "getOpenCoreSystemNotice",
+        "CurrentPageExportButton",
+        "rows={filteredRows}"
+      ],
+      "requiredDist": [
+        "Unable to load live system notices",
+        "Unable to load live system notice detail.",
+        "Unable to load live system notice templates",
+        "Unable to load live system notice delivery records",
+        "Run outbox schedule",
+        "core-notices",
+        "core-notice-templates"
+      ],
+      "forbiddenDist": ["Using fallback system notice snapshot"]
+    },
+    {
+      "name": "System Files",
+      "sourcePath": "apps/admin/src/pages/System/Files.tsx",
+      "forbiddenSource": [
+        "createFileAssetFixtures",
+        "fallbackRows",
+        "Using fallback file fixtures",
+        "setRows(fallbackRows)",
+        "setSelectedDetail(record)"
+      ],
+      "requiredSource": [
+        "Unable to load live files",
+        "Unable to load live file detail.",
+        "listOpenCoreFiles",
+        "getOpenCoreFile",
+        "uploadOpenCoreFile",
+        "downloadOpenCoreFile",
+        "updateOpenCoreFile",
+        "deleteOpenCoreFile",
+        "CurrentPageExportButton",
+        "rows={filteredRows}"
+      ],
+      "requiredDist": [
+        "Unable to load live files",
+        "Unable to load live file detail.",
+        "Upload File",
+        "Choose file",
+        "core-files"
+      ],
+      "forbiddenDist": ["Using fallback file fixtures"]
+    },
+    {
+      "name": "System Permissions",
+      "sourcePath": "apps/admin/src/pages/System/Permissions.tsx",
+      "forbiddenSource": [
+        "createPermissionSummariesFromRegistry",
+        "fallbackRows",
+        "Using fallback permission snapshot",
+        "setRows(fallbackRows)",
+        "setSelectedDetail(record)"
+      ],
+      "requiredSource": [
+        "Unable to load live permissions",
+        "Unable to load live permission detail.",
+        "listOpenCorePermissions",
+        "getOpenCorePermission",
+        "createOpenCorePermission",
+        "updateOpenCorePermission",
+        "deleteOpenCorePermission",
+        "CurrentPageExportButton",
+        "rows={filteredRows}"
+      ],
+      "requiredDist": [
+        "Unable to load live permissions",
+        "Permission created.",
+        "System permissions cannot be edited",
+        "core-permissions"
+      ],
+      "forbiddenDist": ["Using fallback permission snapshot"]
+    },
+    {
+      "name": "System Posts",
+      "sourcePath": "apps/admin/src/pages/System/Posts.tsx",
+      "forbiddenSource": [
+        "createSystemPostFixtures",
+        "fallbackRows",
+        "Using fallback post snapshot",
+        "setRows(fallbackRows)",
+        "setSelectedDetail(record)"
+      ],
+      "requiredSource": [
+        "Unable to load live posts",
+        "Unable to load live post detail.",
+        "listOpenCoreSystemPosts",
+        "getOpenCoreSystemPost",
+        "createOpenCoreSystemPost",
+        "updateOpenCoreSystemPost",
+        "updateOpenCoreSystemPostOrder",
+        "deleteOpenCoreSystemPost",
+        "deleteOpenCoreSystemPosts",
+        "CurrentPageExportButton",
+        "rows={filteredRows}"
+      ],
+      "requiredDist": [
+        "Unable to load live posts",
+        "Post order saved.",
+        "Delete selected",
+        "core-posts"
+      ],
+      "forbiddenDist": ["Using fallback post snapshot"]
+    }
+  ]
+}

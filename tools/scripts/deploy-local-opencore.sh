@@ -125,6 +125,7 @@ verify_admin_bundle_api_base_url() {
 
   run_tools_ts_script "$ROOT_DIR/tools/scripts/admin-fallback-closure-guard.ts" \
     --root "$ROOT_DIR" \
+    --manifest "$ROOT_DIR/tools/guards/system-admin-live-only.guard.json" \
     --dist "$ROOT_DIR/apps/admin/dist"
 
   if ! grep -R \

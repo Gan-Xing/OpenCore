@@ -231,6 +231,7 @@ if (
   !deployScript.includes('loginMaxFailedAttempts') ||
   !deployScript.includes('System Notice Templates') ||
   !deployScript.includes('admin-fallback-closure-guard.ts') ||
+  !deployScript.includes('system-admin-live-only.guard.json') ||
   !deployScript.includes('Fail outbox') ||
   !deployScript.includes('Retry outbox') ||
   !deployScript.includes('Process queued outbox') ||

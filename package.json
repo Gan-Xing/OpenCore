@@ -75,7 +75,8 @@
     "typecheck": "NX_DAEMON=false nx run-many -t typecheck",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "guard:admin-fallback-closure": "pnpm scripts:ts tools/scripts/admin-fallback-closure-guard.ts",
+    "guard:admin-live-only": "pnpm scripts:ts tools/scripts/admin-fallback-closure-guard.ts",
+    "guard:admin-fallback-closure": "pnpm scripts:ts tools/scripts/admin-fallback-closure-guard.ts --manifest tools/guards/system-admin-live-only.guard.json",
     "nx": "NX_DAEMON=false nx"
   },
   "devDependencies": {

@@ -120,7 +120,9 @@ the closure docs without runtime artifact changes.
 
 - API prefix: deploy/Admin smoke reject duplicate `/api/api` login.
 - Admin bundle: deploy script checks built chunks and current page markers.
-- Admin fallback closure: `tools/scripts/admin-fallback-closure-guard.ts`
+- Admin fallback closure runner: `tools/scripts/admin-fallback-closure-guard.ts`
+- System Admin live-only guard manifest:
+  `tools/guards/system-admin-live-only.guard.json`
   covers the seven fixed System Admin pages in one source of truth. Admin smoke
   runs source checks, while deployment runs source plus built-bundle checks for
   Roles, Users, Config, Notices, Files, Permissions and Posts.

@@ -1,248 +1,47 @@
 #!/usr/bin/env node
 
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { isAbsolute, relative, resolve } from 'node:path';
 
-const fixedPages = [
-  {
-    name: 'System Roles',
-    sourcePath: 'apps/admin/src/pages/System/Roles.tsx',
-    forbiddenSource: [
-      'createPermissionSummariesFromRegistry',
-      'createSystemDeptFixtures',
-      'fallbackRows',
-      'Using fallback role snapshot',
-      'setRows(fallbackRows)',
-      'setSelectedDetail(record)',
-    ],
-    requiredSource: [
-      'Unable to load live roles',
-      'Unable to load live role detail.',
-      'listOpenCoreRoles',
-      'getOpenCoreRole',
-      'getOpenCoreRoleMenuAssignment',
-      'assignOpenCoreRoleMenus',
-      'getOpenCoreRoleUserAssignment',
-      'assignOpenCoreRoleUsers',
-      'CurrentPageExportButton',
-      'rows={filteredRows}',
-    ],
-    requiredDist: [
-      'Unable to load live roles',
-      'Unable to load live role detail.',
-      'Role menus updated.',
-      'Role users updated.',
-      'core-roles',
-    ],
-    forbiddenDist: ['Using fallback role snapshot'],
-  },
-  {
-    name: 'System Users',
-    sourcePath: 'apps/admin/src/pages/System/Users.tsx',
-    forbiddenSource: [
-      'createSystemDeptOptionFixtures',
-      'createSystemDeptFixtures',
-      'createSystemPostFixtures',
-      'fallbackRows',
-      'fallbackRoleRows',
-      'Using fallback user snapshot',
-      'setRows(fallbackRows)',
-      'setSelectedDetail(record)',
-    ],
-    requiredSource: [
-      'Unable to load live users',
-      'Unable to load live user detail.',
-      'listOpenCoreUsers',
-      'getOpenCoreUser',
-      'createOpenCoreUser',
-      'updateOpenCoreUser',
-      'deleteOpenCoreUser',
-      'assignOpenCoreUserRoles',
-      'CurrentPageExportButton',
-      'rows={filteredRows}',
-    ],
-    requiredDist: [
-      'Unable to load live users',
-      'Unable to load live user detail.',
-      'User Excel export downloaded',
-      'Assign Roles',
-      'core-users',
-    ],
-    forbiddenDist: ['Using fallback user snapshot'],
-  },
-  {
-    name: 'System Config',
-    sourcePath: 'apps/admin/src/pages/System/Config.tsx',
-    forbiddenSource: [
-      'createSystemConfigFixtures',
-      'fallbackRows',
-      'Using fallback config snapshot',
-      'setRows(fallbackRows)',
-      'setSelectedDetail(record)',
-    ],
-    requiredSource: [
-      'Unable to load live system config',
-      'Unable to load live system config detail.',
-      'listOpenCoreSystemConfig',
-      'getOpenCoreSystemConfig',
-      'createOpenCoreSystemConfig',
-      'updateOpenCoreSystemConfig',
-      'deleteOpenCoreSystemConfig',
-      'CurrentPageExportButton',
-      'rows={filteredRows}',
-    ],
-    requiredDist: [
-      'Unable to load live system config',
-      'Unable to load live system config detail.',
-      'Config Excel export downloaded',
-      'Vault Key Rotation',
-      'core-config',
-    ],
-    forbiddenDist: ['Using fallback config snapshot'],
-  },
-  {
-    name: 'System Notices',
-    sourcePath: 'apps/admin/src/pages/System/Notices.tsx',
-    forbiddenSource: [
-      'createSystemNoticeFixtures',
-      'fallbackRows',
-      'Using fallback system notice snapshot',
-      'setRows(fallbackRows)',
-      'setSelectedDetail(record)',
-      'setSelectedTemplateDetail(record)',
-      'setSelectedInboxDetail(record)',
-    ],
-    requiredSource: [
-      'Unable to load live system notices',
-      'Unable to load live system notice detail.',
-      'Unable to load live system notice template detail.',
-      'Unable to load live system notice inbox detail.',
-      'listOpenCoreSystemNotices',
-      'getOpenCoreSystemNotice',
-      'CurrentPageExportButton',
-      'rows={filteredRows}',
-    ],
-    requiredDist: [
-      'Unable to load live system notices',
-      'Unable to load live system notice detail.',
-      'Unable to load live system notice templates',
-      'Unable to load live system notice delivery records',
-      'Run outbox schedule',
-      'core-notices',
-      'core-notice-templates',
-    ],
-    forbiddenDist: ['Using fallback system notice snapshot'],
-  },
-  {
-    name: 'System Files',
-    sourcePath: 'apps/admin/src/pages/System/Files.tsx',
-    forbiddenSource: [
-      'createFileAssetFixtures',
-      'fallbackRows',
-      'Using fallback file fixtures',
-      'setRows(fallbackRows)',
-      'setSelectedDetail(record)',
-    ],
-    requiredSource: [
-      'Unable to load live files',
-      'Unable to load live file detail.',
-      'listOpenCoreFiles',
-      'getOpenCoreFile',
-      'uploadOpenCoreFile',
-      'downloadOpenCoreFile',
-      'updateOpenCoreFile',
-      'deleteOpenCoreFile',
-      'CurrentPageExportButton',
-      'rows={filteredRows}',
-    ],
-    requiredDist: [
-      'Unable to load live files',
-      'Unable to load live file detail.',
-      'Upload File',
-      'Choose file',
-      'core-files',
-    ],
-    forbiddenDist: ['Using fallback file fixtures'],
-  },
-  {
-    name: 'System Permissions',
-    sourcePath: 'apps/admin/src/pages/System/Permissions.tsx',
-    forbiddenSource: [
-      'createPermissionSummariesFromRegistry',
-      'fallbackRows',
-      'Using fallback permission snapshot',
-      'setRows(fallbackRows)',
-      'setSelectedDetail(record)',
-    ],
-    requiredSource: [
-      'Unable to load live permissions',
-      'Unable to load live permission detail.',
-      'listOpenCorePermissions',
-      'getOpenCorePermission',
-      'createOpenCorePermission',
-      'updateOpenCorePermission',
-      'deleteOpenCorePermission',
-      'CurrentPageExportButton',
-      'rows={filteredRows}',
-    ],
-    requiredDist: [
-      'Unable to load live permissions',
-      'Permission created.',
-      'System permissions cannot be edited',
-      'core-permissions',
-    ],
-    forbiddenDist: ['Using fallback permission snapshot'],
-  },
-  {
-    name: 'System Posts',
-    sourcePath: 'apps/admin/src/pages/System/Posts.tsx',
-    forbiddenSource: [
-      'createSystemPostFixtures',
-      'fallbackRows',
-      'Using fallback post snapshot',
-      'setRows(fallbackRows)',
-      'setSelectedDetail(record)',
-    ],
-    requiredSource: [
-      'Unable to load live posts',
-      'Unable to load live post detail.',
-      'listOpenCoreSystemPosts',
-      'getOpenCoreSystemPost',
-      'createOpenCoreSystemPost',
-      'updateOpenCoreSystemPost',
-      'updateOpenCoreSystemPostOrder',
-      'deleteOpenCoreSystemPost',
-      'deleteOpenCoreSystemPosts',
-      'CurrentPageExportButton',
-      'rows={filteredRows}',
-    ],
-    requiredDist: [
-      'Unable to load live posts',
-      'Post order saved.',
-      'Delete selected',
-      'core-posts',
-    ],
-    forbiddenDist: ['Using fallback post snapshot'],
-  },
-];
+const DEFAULT_MANIFEST_PATH = 'tools/guards/system-admin-live-only.guard.json';
+
+type AdminLiveOnlyGuardManifest = {
+  expectedPageCount?: number;
+  name: string;
+  pages: AdminLiveOnlyGuardPage[];
+};
+
+type AdminLiveOnlyGuardPage = {
+  forbiddenDist: string[];
+  forbiddenSource: string[];
+  name: string;
+  requiredDist: string[];
+  requiredSource: string[];
+  sourcePath: string;
+};
 
 type AdminFallbackClosureGuardOptions = {
   checkDist?: boolean;
   distDir?: string;
   json?: boolean;
+  manifestPath?: string;
   rootDir?: string;
 };
+
+type JsonRecord = Record<string, unknown>;
 
 export function runAdminFallbackClosureGuard(
   options: AdminFallbackClosureGuardOptions = {},
 ) {
   const rootDir = resolve(options.rootDir ?? defaultRootDir());
+  const manifestPath = resolveManifestPath(rootDir, options.manifestPath);
+  const manifest = readGuardManifest(manifestPath);
   const distDir = options.distDir ? resolve(options.distDir) : undefined;
   const checkDist = Boolean(options.checkDist);
   const distText = checkDist ? readDistText(distDir) : '';
-  const failures = [];
+  const failures: string[] = [];
 
-  for (const page of fixedPages) {
+  for (const page of manifest.pages) {
     const sourceFile = resolve(rootDir, page.sourcePath);
     if (!existsSync(sourceFile)) {
       failures.push(`${page.name}: missing source file ${page.sourcePath}`);
@@ -275,16 +74,19 @@ export function runAdminFallbackClosureGuard(
     }
   }
 
-  if (fixedPages.length !== 7) {
+  if (
+    manifest.expectedPageCount !== undefined &&
+    manifest.pages.length !== manifest.expectedPageCount
+  ) {
     failures.push(
-      `Unified guard must cover exactly 7 fixed System Admin pages, received ${fixedPages.length}`,
+      `${manifest.name}: expected ${manifest.expectedPageCount} pages, received ${manifest.pages.length}`,
     );
   }
 
   if (failures.length > 0) {
     throw new Error(
       [
-        'Seven-page Admin fallback closure guard failed.',
+        `${manifest.name} guard failed.`,
         ...failures.map((failure) => `- ${failure}`),
       ].join('\n'),
     );
@@ -293,8 +95,195 @@ export function runAdminFallbackClosureGuard(
   return {
     status: 'pass',
     checkDist,
-    pages: fixedPages.map((page) => page.name),
+    guard: manifest.name,
+    manifestPath: relative(rootDir, manifestPath),
+    pages: manifest.pages.map((page) => page.name),
   };
+}
+
+function readGuardManifest(manifestPath: string): AdminLiveOnlyGuardManifest {
+  if (!existsSync(manifestPath)) {
+    throw new Error(`Guard manifest not found: ${manifestPath}`);
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(readFileSync(manifestPath, 'utf8'));
+  } catch (error) {
+    throw new Error(
+      `Unable to parse guard manifest ${manifestPath}: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
+
+  const issues: string[] = [];
+  if (!isRecord(parsed)) {
+    throw new Error(`Guard manifest must be a JSON object: ${manifestPath}`);
+  }
+
+  const name = readRequiredString(parsed, 'name', 'manifest', issues);
+  const expectedPageCount = readOptionalPositiveInteger(
+    parsed,
+    'expectedPageCount',
+    'manifest',
+    issues,
+  );
+  const pages = readPages(parsed, issues);
+
+  if (issues.length > 0) {
+    throw new Error(
+      [
+        `Guard manifest is invalid: ${manifestPath}`,
+        ...issues.map((issue) => `- ${issue}`),
+      ].join('\n'),
+    );
+  }
+
+  return {
+    expectedPageCount,
+    name,
+    pages,
+  };
+}
+
+function readPages(
+  manifest: JsonRecord,
+  issues: string[],
+): AdminLiveOnlyGuardPage[] {
+  const pagesValue = manifest.pages;
+  if (!Array.isArray(pagesValue)) {
+    issues.push('manifest.pages must be an array.');
+    return [];
+  }
+
+  const pages = pagesValue.map((pageValue, index) =>
+    readPage(pageValue, index, issues),
+  );
+  const names = new Set<string>();
+  const sourcePaths = new Set<string>();
+
+  for (const page of pages) {
+    if (page.name && names.has(page.name)) {
+      issues.push(`duplicate page name "${page.name}".`);
+    }
+    if (page.sourcePath && sourcePaths.has(page.sourcePath)) {
+      issues.push(`duplicate sourcePath "${page.sourcePath}".`);
+    }
+    names.add(page.name);
+    sourcePaths.add(page.sourcePath);
+  }
+
+  return pages;
+}
+
+function readPage(
+  pageValue: unknown,
+  index: number,
+  issues: string[],
+): AdminLiveOnlyGuardPage {
+  const label = `pages[${index}]`;
+  if (!isRecord(pageValue)) {
+    issues.push(`${label} must be an object.`);
+    return emptyPage(label);
+  }
+
+  return {
+    forbiddenDist: readOptionalStringArray(
+      pageValue,
+      'forbiddenDist',
+      label,
+      issues,
+    ),
+    forbiddenSource: readOptionalStringArray(
+      pageValue,
+      'forbiddenSource',
+      label,
+      issues,
+    ),
+    name: readRequiredString(pageValue, 'name', label, issues),
+    requiredDist: readOptionalStringArray(
+      pageValue,
+      'requiredDist',
+      label,
+      issues,
+    ),
+    requiredSource: readOptionalStringArray(
+      pageValue,
+      'requiredSource',
+      label,
+      issues,
+    ),
+    sourcePath: readRequiredString(pageValue, 'sourcePath', label, issues),
+  };
+}
+
+function emptyPage(label: string): AdminLiveOnlyGuardPage {
+  return {
+    forbiddenDist: [],
+    forbiddenSource: [],
+    name: label,
+    requiredDist: [],
+    requiredSource: [],
+    sourcePath: '',
+  };
+}
+
+function readRequiredString(
+  record: JsonRecord,
+  field: string,
+  label: string,
+  issues: string[],
+): string {
+  const value = record[field];
+  if (typeof value !== 'string' || value.trim() === '') {
+    issues.push(`${label}.${field} must be a non-empty string.`);
+    return '';
+  }
+  return value;
+}
+
+function readOptionalStringArray(
+  record: JsonRecord,
+  field: string,
+  label: string,
+  issues: string[],
+): string[] {
+  const value = record[field];
+  if (value === undefined) {
+    return [];
+  }
+  if (!Array.isArray(value)) {
+    issues.push(`${label}.${field} must be an array of strings.`);
+    return [];
+  }
+
+  const strings: string[] = [];
+  value.forEach((item, index) => {
+    if (typeof item !== 'string' || item.trim() === '') {
+      issues.push(`${label}.${field}[${index}] must be a non-empty string.`);
+      return;
+    }
+    strings.push(item);
+  });
+  return strings;
+}
+
+function readOptionalPositiveInteger(
+  record: JsonRecord,
+  field: string,
+  label: string,
+  issues: string[],
+): number | undefined {
+  const value = record[field];
+  if (value === undefined) {
+    return undefined;
+  }
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < 1) {
+    issues.push(`${label}.${field} must be a positive integer.`);
+    return undefined;
+  }
+  return value;
 }
 
 function readDistText(distDir: string | undefined): string {
@@ -323,6 +312,11 @@ function defaultRootDir() {
   return resolve(__dirname, '../..');
 }
 
+function resolveManifestPath(rootDir: string, manifestPath?: string): string {
+  const path = manifestPath ?? DEFAULT_MANIFEST_PATH;
+  return isAbsolute(path) ? path : resolve(rootDir, path);
+}
+
 function parseCliArgs(argv: string[]): AdminFallbackClosureGuardOptions {
   const options: AdminFallbackClosureGuardOptions = { json: false };
 
@@ -330,6 +324,8 @@ function parseCliArgs(argv: string[]): AdminFallbackClosureGuardOptions {
     const arg = argv[index];
     if (arg === '--root') {
       options.rootDir = requireValue(argv, (index += 1), arg);
+    } else if (arg === '--manifest') {
+      options.manifestPath = requireValue(argv, (index += 1), arg);
     } else if (arg === '--dist') {
       options.distDir = requireValue(argv, (index += 1), arg);
       options.checkDist = true;
@@ -349,6 +345,10 @@ function requireValue(argv: string[], index: number, flag: string) {
     throw new Error(`${flag} requires a value.`);
   }
   return value;
+}
+
+function isRecord(value: unknown): value is JsonRecord {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 if (require.main === module) {
