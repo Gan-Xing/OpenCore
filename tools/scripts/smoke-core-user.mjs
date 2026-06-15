@@ -1,31 +1,34 @@
 #!/usr/bin/env node
 import { createRequire } from 'node:module';
 
+import {
+  HttpStatusError,
+  assertArray,
+  assertEqual,
+  assertIncludes,
+  assertNotIncludes,
+  assertString,
+  createSmokeRuntime,
+  formatBody,
+} from './smoke-helpers.mjs';
+
 const require = createRequire(import.meta.url);
 const {
   strToU8,
   zipSync,
 } = require('../../packages/system/node_modules/fflate');
 
-const DEFAULT_PORT = '39173';
-
-const port = process.env.OPENCORE_SMOKE_PORT || DEFAULT_PORT;
-const baseUrl = trimTrailingSlash(
-  process.env.OPENCORE_SMOKE_BASE_URL || `http://127.0.0.1:${port}`,
-);
-const apiPrefix = normalizeApiPrefix(
-  process.env.OPENCORE_SMOKE_API_PREFIX || '/api',
-);
-const checkDocs = parseBoolean(process.env.OPENCORE_SMOKE_CHECK_DOCS, true);
-const username = process.env.OPENCORE_SMOKE_ADMIN_USERNAME || 'admin';
-const passwordCandidates = [
-  process.env.OPENCORE_SMOKE_ADMIN_PASSWORD,
-  process.env.BOOTSTRAP_ADMIN_PASSWORD,
-  'admin123',
-].filter((candidate, index, candidates) => {
-  return Boolean(candidate) && candidates.indexOf(candidate) === index;
-});
-const timeoutMs = Number(process.env.OPENCORE_SMOKE_TIMEOUT_MS || 10000);
+const smoke = createSmokeRuntime();
+const {
+  apiPrefix,
+  apiRequest,
+  baseUrl,
+  checkDocs,
+  login,
+  request,
+  timeoutMs,
+  username,
+} = smoke;
 const tinyPngBase64 =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=';
 const extensionByMimeType = {
@@ -68,14 +71,6 @@ let originalAdminDisplayName;
 let originalAdminAvatarUpload;
 let adminAvatarTouched = false;
 
-class HttpStatusError extends Error {
-  constructor(message, status) {
-    super(message);
-    this.name = 'HttpStatusError';
-    this.status = status;
-  }
-}
-
 try {
   await request('/health/live', { expected: [200] });
   await request('/health/ready', { expected: [200] });
@@ -88,8 +83,9 @@ try {
     expected: [401],
   });
 
-  const loginResponse = await loginAdmin();
+  const loginResponse = await login();
   adminToken = assertString(loginResponse.accessToken, 'login accessToken');
+  smoke.setToken(adminToken);
 
   const adminProfile = await apiRequest('/core/users/profile');
   const adminUserId = assertString(adminProfile.id, 'admin profile id');
@@ -1247,44 +1243,6 @@ try {
   process.exitCode = 1;
 }
 
-async function apiRequest(path, options = {}) {
-  return request(`${apiPrefix}${path}`, {
-    ...options,
-    token: adminToken,
-    expected: options.expected || [200, 201],
-  });
-}
-
-async function loginAdmin() {
-  let lastError;
-
-  for (const password of passwordCandidates) {
-    try {
-      return await request(`${apiPrefix}/auth/login`, {
-        method: 'POST',
-        expected: [200, 201],
-        body: {
-          username,
-          password,
-        },
-      });
-    } catch (error) {
-      lastError = error;
-      if (
-        !(error instanceof HttpStatusError) ||
-        ![401, 403].includes(error.status)
-      ) {
-        throw error;
-      }
-    }
-  }
-
-  throw new Error(
-    `Unable to authenticate smoke admin ${username}. Set OPENCORE_SMOKE_ADMIN_PASSWORD to the deployed admin password.`,
-    { cause: lastError },
-  );
-}
-
 async function loginSmokeUser(password, expected) {
   return loginUser(smokeUsername, password, expected);
 }
@@ -1471,46 +1429,6 @@ async function cleanupUserSessions(sessionUsername) {
   }).catch(() => undefined);
 }
 
-async function request(path, options = {}) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  const expected = options.expected || [200];
-
-  try {
-    const response = await fetch(`${baseUrl}${path}`, {
-      method: options.method || 'GET',
-      headers: {
-        ...(options.body ? { 'content-type': 'application/json' } : {}),
-        ...(options.token ? { authorization: `Bearer ${options.token}` } : {}),
-      },
-      body: options.body ? JSON.stringify(options.body) : undefined,
-      signal: controller.signal,
-    });
-    const contentType = response.headers.get('content-type') || '';
-    const responseBody = contentType.includes('application/json')
-      ? await response.json()
-      : await response.text();
-
-    if (!expected.includes(response.status)) {
-      throw new HttpStatusError(
-        `${options.method || 'GET'} ${path} returned ${response.status}: ${formatBody(
-          responseBody,
-        )}`,
-        response.status,
-      );
-    }
-
-    return responseBody;
-  } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
-      throw new Error(`${options.method || 'GET'} ${path} timed out`);
-    }
-    throw error;
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
 async function requestBuffer(path, options = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -1547,27 +1465,6 @@ async function requestBuffer(path, options = {}) {
   } finally {
     clearTimeout(timer);
   }
-}
-
-function trimTrailingSlash(value) {
-  return value.replace(/\/+$/, '');
-}
-
-function normalizeApiPrefix(value) {
-  const trimmed = value.trim();
-  if (!trimmed || trimmed === '/') {
-    return '';
-  }
-
-  return `/${trimmed.replace(/^\/+|\/+$/g, '')}`;
-}
-
-function parseBoolean(value, defaultValue) {
-  if (value === undefined || value === '') {
-    return defaultValue;
-  }
-
-  return ['1', 'true', 'yes'].includes(value.toLowerCase());
 }
 
 function createUserImportCsvBase64(rows) {
@@ -1711,25 +1608,6 @@ function escapeCsvCell(value) {
   return `"${value.replace(/"/g, '""')}"`;
 }
 
-function assertString(value, label) {
-  if (typeof value !== 'string' || value.length === 0) {
-    throw new Error(`Expected ${label} to be a non-empty string`);
-  }
-  return value;
-}
-
-function assertIncludes(values, expected, label) {
-  if (!values.includes(expected)) {
-    throw new Error(`Expected ${label} to include ${expected}`);
-  }
-}
-
-function assertNotIncludes(values, expected, label) {
-  if (values.includes(expected)) {
-    throw new Error(`Expected ${label} not to include ${expected}`);
-  }
-}
-
 function assertUserListIncludesUsername(users, expectedUsername, label) {
   if (!Array.isArray(users)) {
     throw new Error(`Expected ${label} to be an array`);
@@ -1777,16 +1655,6 @@ function assertUserOptionNotIncludesUsername(options, expectedUsername, label) {
   }
 }
 
-function assertEqual(actual, expected, label) {
-  if (actual !== expected) {
-    throw new Error(
-      `Expected ${label} to equal ${JSON.stringify(
-        expected,
-      )}, got ${JSON.stringify(actual)}`,
-    );
-  }
-}
-
 function assertBufferEqual(actual, expected, label) {
   if (!actual.equals(expected)) {
     throw new Error(
@@ -1797,18 +1665,4 @@ function assertBufferEqual(actual, expected, label) {
 
 function normalizeContentType(value) {
   return (value || '').split(';')[0].trim().toLowerCase();
-}
-
-function assertArray(value, label) {
-  if (!Array.isArray(value)) {
-    throw new Error(`Expected ${label} to be an array`);
-  }
-}
-
-function formatBody(body) {
-  if (typeof body === 'string') {
-    return body.slice(0, 500);
-  }
-
-  return JSON.stringify(body).slice(0, 500);
 }
