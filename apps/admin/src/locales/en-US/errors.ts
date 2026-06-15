@@ -22,6 +22,38 @@ export default {
     'The current signed-in user is missing. Please sign in again.',
   'error.UNAUTHORIZED': 'Your session has expired. Please sign in again.',
   'error.FORBIDDEN': 'Your account does not have permission for this action.',
+  'error.AUDIT_LOGIN_DATE_INVALID': 'The login log date filter is invalid.',
+  'error.AUDIT_LOGIN_DATE_RANGE_INVALID':
+    'The login log start time must not be later than the end time.',
+  'error.AUDIT_LOGIN_IDS_EMPTY': 'The login log ID list must not be empty.',
+  'error.AUDIT_LOGIN_IDS_INVALID': 'The login log ID list must be an array.',
+  'error.AUDIT_LOGIN_ID_DUPLICATED': 'The login log ID is duplicated.',
+  'error.AUDIT_LOGIN_ID_INVALID_TYPE': 'The login log ID must be a string.',
+  'error.AUDIT_LOGIN_ID_REQUIRED': 'The login log ID is required.',
+  'error.AUDIT_LOGIN_LOG_NOT_FOUND': 'The login log does not exist.',
+  'error.AUDIT_LOGIN_LOG_TYPE_INVALID': 'The login log type is invalid.',
+  'error.AUDIT_LOGIN_RESULT_INVALID': 'The login log result is invalid.',
+  'error.AUDIT_OPERATION_DATE_INVALID':
+    'The operation log date filter is invalid.',
+  'error.AUDIT_OPERATION_DURATION_INVALID':
+    'The operation log duration filter is invalid.',
+  'error.AUDIT_OPERATION_DURATION_RANGE_INVALID':
+    'The operation log minimum duration must not exceed the maximum duration.',
+  'error.AUDIT_OPERATION_IDS_EMPTY':
+    'The operation log ID list must not be empty.',
+  'error.AUDIT_OPERATION_IDS_INVALID':
+    'The operation log ID list must be an array.',
+  'error.AUDIT_OPERATION_ID_DUPLICATED':
+    'The operation log ID is duplicated.',
+  'error.AUDIT_OPERATION_ID_INVALID_TYPE':
+    'The operation log ID must be a string.',
+  'error.AUDIT_OPERATION_ID_REQUIRED': 'The operation log ID is required.',
+  'error.AUDIT_OPERATION_LOG_NOT_FOUND':
+    'The operation log does not exist.',
+  'error.AUDIT_OPERATION_RETENTION_DAYS_INVALID':
+    'The operation log retention period is invalid.',
+  'error.AUDIT_OPERATION_STATUS_FILTER_INVALID':
+    'The operation log status filter is invalid.',
   'error.FILE_MIME_TYPE_INVALID': 'The file MIME type is invalid.',
   'error.FILE_NAME_INVALID': 'The file name must be a plain file name.',
   'error.FILE_OBJECT_PREFIX_INVALID':

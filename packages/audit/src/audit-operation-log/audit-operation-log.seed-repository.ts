@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
 import {
   seedAuditOperationLogs,
@@ -11,6 +11,7 @@ import type {
 } from './audit-operation-log.dto';
 import {
   AuditOperationLogRepository,
+  auditOperationLogNotFound,
   compareAuditOperationLogRecords,
   createAuditOperationLogPageResult,
   normalizeBatchDeleteAuditOperationLogIds,
@@ -80,7 +81,11 @@ export class SeedAuditOperationLogRepository extends AuditOperationLogRepository
     const log = this.operationLogs.find((entry) => entry.id === id);
 
     if (!log) {
-      throw new NotFoundException(`Audit log not found: ${id}`);
+      throw auditOperationLogNotFound(
+        'AUDIT_OPERATION_LOG_NOT_FOUND',
+        `Audit log not found: ${id}`,
+        { id },
+      );
     }
 
     return cloneOperationLog({
@@ -143,7 +148,11 @@ export class SeedAuditOperationLogRepository extends AuditOperationLogRepository
     const log = this.operationLogs.find((entry) => entry.id === id);
 
     if (!log) {
-      throw new NotFoundException(`Audit log not found: ${id}`);
+      throw auditOperationLogNotFound(
+        'AUDIT_OPERATION_LOG_NOT_FOUND',
+        `Audit log not found: ${id}`,
+        { id },
+      );
     }
 
     return log;

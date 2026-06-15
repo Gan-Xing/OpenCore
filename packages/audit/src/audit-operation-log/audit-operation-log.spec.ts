@@ -139,19 +139,23 @@ describe('@opencore/audit audit-operation-log', () => {
         }),
       ],
     });
-    await expect(
+    await expectHttpExceptionCode(
       service.listOperationLogs({ minDurationMs: 40, maxDurationMs: 10 }),
-    ).rejects.toThrow('Audit log minDurationMs must not exceed maxDurationMs.');
-
-    await expect(service.deleteOperationLogs({ ids: [] })).rejects.toThrow(
-      'Audit log ids must not be empty.',
+      'AUDIT_OPERATION_DURATION_RANGE_INVALID',
     );
-    await expect(
+
+    await expectHttpExceptionCode(
+      service.deleteOperationLogs({ ids: [] }),
+      'AUDIT_OPERATION_IDS_EMPTY',
+    );
+    await expectHttpExceptionCode(
       service.deleteOperationLogs({ ids: ['audit_3', 'audit_3'] }),
-    ).rejects.toThrow('Audit log id is duplicated: audit_3');
-    await expect(
+      'AUDIT_OPERATION_ID_DUPLICATED',
+    );
+    await expectHttpExceptionCode(
       service.deleteOperationLogs({ ids: ['audit_3', 'missing_audit_log'] }),
-    ).rejects.toThrow('Audit log not found: missing_audit_log');
+      'AUDIT_OPERATION_LOG_NOT_FOUND',
+    );
     await expect(
       service.deleteOperationLogs({ ids: ['audit_3'] }),
     ).resolves.toEqual({
@@ -159,8 +163,9 @@ describe('@opencore/audit audit-operation-log', () => {
       affected: 1,
       ids: ['audit_3'],
     });
-    await expect(service.getOperationLog('audit_3')).rejects.toThrow(
-      'Audit log not found: audit_3',
+    await expectHttpExceptionCode(
+      service.getOperationLog('audit_3'),
+      'AUDIT_OPERATION_LOG_NOT_FOUND',
     );
     await expect(
       service.cleanOperationLogs({ retentionDays: 0 }),
@@ -397,19 +402,22 @@ describe('@opencore/audit audit-operation-log', () => {
           },
         }),
       );
-      await expect(service.deleteOperationLogs({ ids: [] })).rejects.toThrow(
-        'Audit log ids must not be empty.',
+      await expectHttpExceptionCode(
+        service.deleteOperationLogs({ ids: [] }),
+        'AUDIT_OPERATION_IDS_EMPTY',
       );
-      await expect(
+      await expectHttpExceptionCode(
         service.deleteOperationLogs({
           ids: [recordedLog.id, recordedLog.id],
         }),
-      ).rejects.toThrow(`Audit log id is duplicated: ${recordedLog.id}`);
-      await expect(
+        'AUDIT_OPERATION_ID_DUPLICATED',
+      );
+      await expectHttpExceptionCode(
         service.deleteOperationLogs({
           ids: [recordedLog.id, `missing_${testRunId}`],
         }),
-      ).rejects.toThrow(`Audit log not found: missing_${testRunId}`);
+        'AUDIT_OPERATION_LOG_NOT_FOUND',
+      );
       await expect(service.getOperationLog(recordedLog.id)).resolves.toEqual(
         expect.objectContaining({
           requestId,
@@ -422,8 +430,9 @@ describe('@opencore/audit audit-operation-log', () => {
         affected: 1,
         ids: [recordedLog.id],
       });
-      await expect(service.getOperationLog(recordedLog.id)).rejects.toThrow(
-        `Audit log not found: ${recordedLog.id}`,
+      await expectHttpExceptionCode(
+        service.getOperationLog(recordedLog.id),
+        'AUDIT_OPERATION_LOG_NOT_FOUND',
       );
 
       const oldRequestId = `req_old_${testRunId}`;
@@ -516,4 +525,31 @@ function readMetadata(key: string, target: object): unknown {
       getMetadata(metadataKey: string, metadataTarget: object): unknown;
     }
   ).getMetadata(key, target);
+}
+
+async function expectHttpExceptionCode(
+  promise: Promise<unknown>,
+  code: string,
+): Promise<void> {
+  try {
+    await promise;
+  } catch (error) {
+    expect(getHttpExceptionResponse(error)).toMatchObject({ code });
+    return;
+  }
+
+  throw new Error(`Expected HTTP exception code ${code}`);
+}
+
+function getHttpExceptionResponse(error: unknown): unknown {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'getResponse' in error &&
+    typeof error.getResponse === 'function'
+  ) {
+    return error.getResponse();
+  }
+
+  return undefined;
 }

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
 import type { SecurityLoginAttemptRecord } from '@opencore/security';
 import {
@@ -8,6 +8,7 @@ import {
 } from './audit-login-log.records';
 import {
   AuditLoginLogRepository,
+  auditLoginLogNotFound,
   compareAuditLoginLogRecords,
   createAuditLoginLogPageResult,
   normalizeBatchDeleteLoginLogIds,
@@ -85,7 +86,11 @@ export class SeedAuditLoginLogRepository extends AuditLoginLogRepository {
     const log = this.loginLogs.find((candidate) => candidate.id === id);
 
     if (!log) {
-      throw new NotFoundException(`Login log not found: ${id}`);
+      throw auditLoginLogNotFound(
+        'AUDIT_LOGIN_LOG_NOT_FOUND',
+        `Login log not found: ${id}`,
+        { id },
+      );
     }
 
     return cloneLoginLog(log);
@@ -121,7 +126,11 @@ export class SeedAuditLoginLogRepository extends AuditLoginLogRepository {
     const log = this.loginLogs.find((candidate) => candidate.id === id);
 
     if (!log) {
-      throw new NotFoundException(`Login log not found: ${id}`);
+      throw auditLoginLogNotFound(
+        'AUDIT_LOGIN_LOG_NOT_FOUND',
+        `Login log not found: ${id}`,
+        { id },
+      );
     }
 
     return log;

@@ -147,24 +147,30 @@ describe('@opencore/audit audit-login-log', () => {
       total: 1,
       items: [expect.objectContaining({ id: 'login_failure_unknown' })],
     });
-    await expect(
+    await expectHttpExceptionCode(
       service.listLoginLogs({ createdFrom: 'not-a-date' }),
-    ).rejects.toThrow('createdFrom must be a valid ISO date-time string');
-    await expect(
-      service.listLoginLogs({ result: 'not-a-result' }),
-    ).rejects.toThrow('result must be one of:');
-    await expect(
-      service.listLoginLogs({ logType: 'login.magic' }),
-    ).rejects.toThrow('logType must be one of:');
-    await expect(service.deleteLoginLogs({ ids: [] })).rejects.toThrow(
-      'Login log ids must not be empty.',
+      'AUDIT_LOGIN_DATE_INVALID',
     );
-    await expect(
+    await expectHttpExceptionCode(
+      service.listLoginLogs({ result: 'not-a-result' }),
+      'AUDIT_LOGIN_RESULT_INVALID',
+    );
+    await expectHttpExceptionCode(
+      service.listLoginLogs({ logType: 'login.magic' }),
+      'AUDIT_LOGIN_LOG_TYPE_INVALID',
+    );
+    await expectHttpExceptionCode(
+      service.deleteLoginLogs({ ids: [] }),
+      'AUDIT_LOGIN_IDS_EMPTY',
+    );
+    await expectHttpExceptionCode(
       service.deleteLoginLogs({ ids: ['login_3', 'login_3'] }),
-    ).rejects.toThrow('Login log id is duplicated: login_3');
-    await expect(
+      'AUDIT_LOGIN_ID_DUPLICATED',
+    );
+    await expectHttpExceptionCode(
       service.deleteLoginLogs({ ids: ['login_3', 'missing_login_log'] }),
-    ).rejects.toThrow('Login log not found: missing_login_log');
+      'AUDIT_LOGIN_LOG_NOT_FOUND',
+    );
     await expect(
       service.deleteLoginLogs({ ids: ['login_3'] }),
     ).resolves.toEqual({
@@ -172,8 +178,9 @@ describe('@opencore/audit audit-login-log', () => {
       affected: 1,
       ids: ['login_3'],
     });
-    await expect(service.getLoginLog('login_3')).rejects.toThrow(
-      'Login log not found: login_3',
+    await expectHttpExceptionCode(
+      service.getLoginLog('login_3'),
+      'AUDIT_LOGIN_LOG_NOT_FOUND',
     );
     await expect(service.cleanLoginLogs()).resolves.toEqual({
       deleted: true,
@@ -290,19 +297,22 @@ describe('@opencore/audit audit-login-log', () => {
         logType: 'login.username',
         result: 'bad_credentials',
       });
-      await expect(service.deleteLoginLogs({ ids: [] })).rejects.toThrow(
-        'Login log ids must not be empty.',
+      await expectHttpExceptionCode(
+        service.deleteLoginLogs({ ids: [] }),
+        'AUDIT_LOGIN_IDS_EMPTY',
       );
-      await expect(
+      await expectHttpExceptionCode(
         service.deleteLoginLogs({
           ids: [String(persistedId), String(persistedId)],
         }),
-      ).rejects.toThrow(`Login log id is duplicated: ${persistedId}`);
-      await expect(
+        'AUDIT_LOGIN_ID_DUPLICATED',
+      );
+      await expectHttpExceptionCode(
         service.deleteLoginLogs({
           ids: [String(persistedId), `missing_${testRunId}`],
         }),
-      ).rejects.toThrow(`Login log not found: missing_${testRunId}`);
+        'AUDIT_LOGIN_LOG_NOT_FOUND',
+      );
       await expect(service.getLoginLog(String(persistedId))).resolves.toEqual(
         expect.objectContaining({
           requestId,
@@ -315,8 +325,9 @@ describe('@opencore/audit audit-login-log', () => {
         affected: 1,
         ids: [String(persistedId)],
       });
-      await expect(service.getLoginLog(String(persistedId))).rejects.toThrow(
-        `Login log not found: ${persistedId}`,
+      await expectHttpExceptionCode(
+        service.getLoginLog(String(persistedId)),
+        'AUDIT_LOGIN_LOG_NOT_FOUND',
       );
     });
 
@@ -327,3 +338,30 @@ describe('@opencore/audit audit-login-log', () => {
     }
   });
 });
+
+async function expectHttpExceptionCode(
+  promise: Promise<unknown>,
+  code: string,
+): Promise<void> {
+  try {
+    await promise;
+  } catch (error) {
+    expect(getHttpExceptionResponse(error)).toMatchObject({ code });
+    return;
+  }
+
+  throw new Error(`Expected HTTP exception code ${code}`);
+}
+
+function getHttpExceptionResponse(error: unknown): unknown {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'getResponse' in error &&
+    typeof error.getResponse === 'function'
+  ) {
+    return error.getResponse();
+  }
+
+  return undefined;
+}

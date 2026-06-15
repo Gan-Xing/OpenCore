@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
 import { PrismaService } from '@opencore/database';
 import { Prisma } from '@prisma/client';
@@ -12,6 +12,7 @@ import type {
 } from './audit-operation-log.dto';
 import {
   AuditOperationLogRepository,
+  auditOperationLogNotFound,
   createAuditOperationLogPageResult,
   normalizeBatchDeleteAuditOperationLogIds,
   normalizeAuditOperationLogFilters,
@@ -117,7 +118,11 @@ export class PrismaAuditOperationLogRepository extends AuditOperationLogReposito
     });
 
     if (!log) {
-      throw new NotFoundException(`Audit log not found: ${id}`);
+      throw auditOperationLogNotFound(
+        'AUDIT_OPERATION_LOG_NOT_FOUND',
+        `Audit log not found: ${id}`,
+        { id },
+      );
     }
 
     return toAuditOperationLogRecord(log);
@@ -156,7 +161,11 @@ export class PrismaAuditOperationLogRepository extends AuditOperationLogReposito
     const missing = ids.find((id) => !existingIds.has(id));
 
     if (missing) {
-      throw new NotFoundException(`Audit log not found: ${missing}`);
+      throw auditOperationLogNotFound(
+        'AUDIT_OPERATION_LOG_NOT_FOUND',
+        `Audit log not found: ${missing}`,
+        { id: missing },
+      );
     }
 
     await this.prisma.auditLog.deleteMany({

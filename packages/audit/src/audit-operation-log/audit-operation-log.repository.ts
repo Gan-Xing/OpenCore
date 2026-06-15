@@ -1,5 +1,6 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import {
+  createApiErrorBody,
   createPageResult,
   normalizeOptionalString,
   normalizePagination,
@@ -95,6 +96,24 @@ export abstract class AuditOperationLogRepository {
   ): Promise<AuditOperationLogCleanRecord>;
 }
 
+export function auditOperationLogBadRequest(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): BadRequestException {
+  return new BadRequestException(
+    createApiErrorBody({ code, message, details }),
+  );
+}
+
+export function auditOperationLogNotFound(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): NotFoundException {
+  return new NotFoundException(createApiErrorBody({ code, message, details }));
+}
+
 export function normalizeAuditOperationLogFilters(
   query: AuditOperationLogQuery = {},
 ): AuditOperationLogFilters {
@@ -112,8 +131,10 @@ export function normalizeAuditOperationLogFilters(
     maxDurationMs !== undefined &&
     minDurationMs > maxDurationMs
   ) {
-    throw new BadRequestException(
+    throw auditOperationLogBadRequest(
+      'AUDIT_OPERATION_DURATION_RANGE_INVALID',
       'Audit log minDurationMs must not exceed maxDurationMs.',
+      { maxDurationMs, minDurationMs },
     );
   }
 
@@ -205,18 +226,28 @@ export function normalizeBatchDeleteAuditOperationLogIds(
   body: BatchDeleteAuditLogsDto,
 ): readonly string[] {
   if (!Array.isArray(body?.ids)) {
-    throw new BadRequestException('Audit log ids must be an array.');
+    throw auditOperationLogBadRequest(
+      'AUDIT_OPERATION_IDS_INVALID',
+      'Audit log ids must be an array.',
+    );
   }
 
   if (body.ids.length === 0) {
-    throw new BadRequestException('Audit log ids must not be empty.');
+    throw auditOperationLogBadRequest(
+      'AUDIT_OPERATION_IDS_EMPTY',
+      'Audit log ids must not be empty.',
+    );
   }
 
   const ids = body.ids.map(normalizeAuditOperationLogId);
   const duplicate = findFirstDuplicate(ids);
 
   if (duplicate) {
-    throw new BadRequestException(`Audit log id is duplicated: ${duplicate}`);
+    throw auditOperationLogBadRequest(
+      'AUDIT_OPERATION_ID_DUPLICATED',
+      `Audit log id is duplicated: ${duplicate}`,
+      { id: duplicate },
+    );
   }
 
   return [...ids].sort();
@@ -257,13 +288,19 @@ const MAX_RETENTION_DAYS = 3650;
 
 function normalizeAuditOperationLogId(value: string): string {
   if (typeof value !== 'string') {
-    throw new BadRequestException('Audit log id must be a string.');
+    throw auditOperationLogBadRequest(
+      'AUDIT_OPERATION_ID_INVALID_TYPE',
+      'Audit log id must be a string.',
+    );
   }
 
   const normalized = value.trim();
 
   if (!normalized) {
-    throw new BadRequestException('Audit log id is required.');
+    throw auditOperationLogBadRequest(
+      'AUDIT_OPERATION_ID_REQUIRED',
+      'Audit log id is required.',
+    );
   }
 
   return normalized;
@@ -290,8 +327,10 @@ function normalizeOptionalAuditOperationLogStatus(
   }
 
   if (value !== 'error' && value !== 'success') {
-    throw new BadRequestException(
+    throw auditOperationLogBadRequest(
+      'AUDIT_OPERATION_STATUS_FILTER_INVALID',
       'Audit log status filter must be "success" or "error".',
+      { status: value },
     );
   }
 
@@ -309,8 +348,10 @@ function normalizeOptionalDurationMs(
   const normalized = Number(value);
 
   if (!Number.isInteger(normalized) || normalized < 0) {
-    throw new BadRequestException(
+    throw auditOperationLogBadRequest(
+      'AUDIT_OPERATION_DURATION_INVALID',
       `Audit log ${fieldName} must be a non-negative integer.`,
+      { fieldName, value },
     );
   }
 
@@ -326,16 +367,20 @@ function normalizeOptionalIsoDate(
   }
 
   if (typeof value !== 'string') {
-    throw new BadRequestException(
+    throw auditOperationLogBadRequest(
+      'AUDIT_OPERATION_DATE_INVALID',
       `Audit log ${fieldName} must be an ISO datetime string.`,
+      { fieldName, value },
     );
   }
 
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
-    throw new BadRequestException(
+    throw auditOperationLogBadRequest(
+      'AUDIT_OPERATION_DATE_INVALID',
       `Audit log ${fieldName} must be an ISO datetime string.`,
+      { fieldName, value },
     );
   }
 
@@ -354,8 +399,14 @@ function normalizeRetentionDays(value: unknown): number {
     normalized < 0 ||
     normalized > MAX_RETENTION_DAYS
   ) {
-    throw new BadRequestException(
+    throw auditOperationLogBadRequest(
+      'AUDIT_OPERATION_RETENTION_DAYS_INVALID',
       `Audit log retentionDays must be an integer between 0 and ${MAX_RETENTION_DAYS}.`,
+      {
+        maxRetentionDays: MAX_RETENTION_DAYS,
+        minRetentionDays: 0,
+        retentionDays: value,
+      },
     );
   }
 

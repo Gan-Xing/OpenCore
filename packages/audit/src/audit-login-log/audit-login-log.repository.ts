@@ -1,5 +1,6 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import {
+  createApiErrorBody,
   createPageResult,
   normalizeOptionalBoolean,
   normalizeOptionalString,
@@ -105,6 +106,24 @@ export abstract class AuditLoginLogRepository extends SecurityLoginAttemptRecord
   abstract cleanLoginLogs(): Promise<AuditLoginLogCleanRecord>;
 }
 
+export function auditLoginLogBadRequest(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): BadRequestException {
+  return new BadRequestException(
+    createApiErrorBody({ code, message, details }),
+  );
+}
+
+export function auditLoginLogNotFound(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): NotFoundException {
+  return new NotFoundException(createApiErrorBody({ code, message, details }));
+}
+
 export function normalizeAuditLoginLogFilters(
   query: AuditLoginLogQuery = {},
 ): AuditLoginLogFilters {
@@ -115,8 +134,10 @@ export function normalizeAuditLoginLogFilters(
   const createdTo = normalizeOptionalIsoDate(query.createdTo, 'createdTo');
 
   if (createdFrom && createdTo && createdFrom > createdTo) {
-    throw new BadRequestException(
+    throw auditLoginLogBadRequest(
+      'AUDIT_LOGIN_DATE_RANGE_INVALID',
       'createdFrom must be earlier than or equal to createdTo',
+      { createdFrom, createdTo },
     );
   }
 
@@ -198,18 +219,28 @@ export function normalizeBatchDeleteLoginLogIds(
   body: BatchDeleteLoginLogsDto,
 ): readonly string[] {
   if (!Array.isArray(body?.ids)) {
-    throw new BadRequestException('Login log ids must be an array.');
+    throw auditLoginLogBadRequest(
+      'AUDIT_LOGIN_IDS_INVALID',
+      'Login log ids must be an array.',
+    );
   }
 
   if (body.ids.length === 0) {
-    throw new BadRequestException('Login log ids must not be empty.');
+    throw auditLoginLogBadRequest(
+      'AUDIT_LOGIN_IDS_EMPTY',
+      'Login log ids must not be empty.',
+    );
   }
 
   const ids = body.ids.map(normalizeLoginLogId);
   const duplicate = findFirstDuplicate(ids);
 
   if (duplicate) {
-    throw new BadRequestException(`Login log id is duplicated: ${duplicate}`);
+    throw auditLoginLogBadRequest(
+      'AUDIT_LOGIN_ID_DUPLICATED',
+      `Login log id is duplicated: ${duplicate}`,
+      { id: duplicate },
+    );
   }
 
   return [...ids].sort();
@@ -238,8 +269,10 @@ function normalizeOptionalIsoDate(
   const date = new Date(normalized);
 
   if (Number.isNaN(date.getTime())) {
-    throw new BadRequestException(
+    throw auditLoginLogBadRequest(
+      'AUDIT_LOGIN_DATE_INVALID',
       `${fieldName} must be a valid ISO date-time string`,
+      { fieldName, value },
     );
   }
 
@@ -270,8 +303,12 @@ function normalizeOptionalEnumValue<T extends string>(
   }
 
   if (!allowed.includes(normalized as T)) {
-    throw new BadRequestException(
+    throw auditLoginLogBadRequest(
+      fieldName === 'logType'
+        ? 'AUDIT_LOGIN_LOG_TYPE_INVALID'
+        : 'AUDIT_LOGIN_RESULT_INVALID',
       `${fieldName} must be one of: ${allowed.join(', ')}`,
+      { allowed, fieldName, value },
     );
   }
 
@@ -280,13 +317,19 @@ function normalizeOptionalEnumValue<T extends string>(
 
 function normalizeLoginLogId(value: string): string {
   if (typeof value !== 'string') {
-    throw new BadRequestException('Login log id must be a string.');
+    throw auditLoginLogBadRequest(
+      'AUDIT_LOGIN_ID_INVALID_TYPE',
+      'Login log id must be a string.',
+    );
   }
 
   const normalized = value.trim();
 
   if (!normalized) {
-    throw new BadRequestException('Login log id is required.');
+    throw auditLoginLogBadRequest(
+      'AUDIT_LOGIN_ID_REQUIRED',
+      'Login log id is required.',
+    );
   }
 
   return normalized;
