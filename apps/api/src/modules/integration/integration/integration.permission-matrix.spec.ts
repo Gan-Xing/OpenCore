@@ -45,6 +45,9 @@ describe('IntegrationController permission matrix', () => {
       ['callbackSmsOutbox', ['integration:sms:manage']],
       ['listOAuthProviders', ['integration:oauth:read']],
       ['getOAuthCallbackContract', ['integration:oauth:read']],
+      ['startOAuthFlow', ['integration:oauth:manage']],
+      ['listOAuthFlows', ['integration:oauth:read']],
+      ['listOAuthCallbackAudits', ['integration:oauth:read']],
       ['getOAuthTokenSummary', ['integration:oauth:read']],
       ['listOAuthTokens', ['integration:oauth:read']],
       ['getOAuthToken', ['integration:oauth:read']],
@@ -62,5 +65,14 @@ describe('IntegrationController permission matrix', () => {
         ),
       ).toEqual(permissions);
     }
+  });
+
+  it('keeps OAuth provider callback public and state-guarded', () => {
+    expect(
+      Reflect.getMetadata(
+        REQUIRED_PERMISSIONS_KEY,
+        IntegrationController.prototype.callbackOAuthProvider,
+      ),
+    ).toBeUndefined();
   });
 });

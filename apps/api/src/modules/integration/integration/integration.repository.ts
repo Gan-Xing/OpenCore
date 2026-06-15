@@ -19,6 +19,11 @@ import type {
   IntegrationProviderType,
   IntegrationSummaryDto,
   IntegrationTemplateQueryDto,
+  OAuthCallbackAuditQueryDto,
+  OAuthCallbackAuditStatus,
+  OAuthFlowQueryDto,
+  OAuthFlowStatus,
+  OAuthProviderCallbackDto,
   OAuthTokenInventorySummaryDto,
   OAuthTokenQueryDto,
   OAuthTokenStatus,
@@ -27,6 +32,7 @@ import type {
   PreviewTemplateDto,
   RevokeOAuthTokenDto,
   ScheduleOutboxDto,
+  StartOAuthFlowDto,
   TestIntegrationProviderDto,
   TestOutboxMessageDto,
   UpdateIntegrationProviderDto,
@@ -37,7 +43,9 @@ import type {
   IntegrationProviderAuditLogRecord,
   IntegrationProviderRecord,
   IntegrationTemplateRecord,
+  OAuthCallbackAuditRecord,
   OAuthCallbackContractRecord,
+  OAuthFlowRecord,
   OAuthTokenRecord,
 } from './integration.seed';
 
@@ -79,6 +87,24 @@ export type ProviderTestResult = {
   secretRefStatus: IntegrationProviderSecretRefStatus;
   message: string;
   testedAt: string;
+};
+
+export type NormalizedOAuthStartFlow = {
+  providerCode: string;
+  subjectType: string;
+  subjectId: string;
+  scopes: readonly string[];
+  redirectUri?: string;
+};
+
+export type NormalizedOAuthCallback = {
+  providerCode: string;
+  state: string;
+  code?: string;
+  error?: string;
+  providerAccountId?: string;
+  scopes?: readonly string[];
+  expiresInSeconds: number;
 };
 
 export abstract class IntegrationRepository {
@@ -186,6 +212,26 @@ export abstract class IntegrationRepository {
     query?: IntegrationProviderQueryDto,
   ): Promise<PageResult<IntegrationProviderRecord>>;
   abstract getOAuthCallbackContract(): OAuthCallbackContractRecord;
+  abstract startOAuthFlow(body: StartOAuthFlowDto): Promise<OAuthFlowRecord>;
+  abstract listOAuthFlows(
+    query?: OAuthFlowQueryDto,
+  ): Promise<PageResult<OAuthFlowRecord>>;
+  abstract callbackOAuthProvider(
+    providerCode: string,
+    body: OAuthProviderCallbackDto,
+  ): Promise<{
+    providerCode: string;
+    flowId?: string;
+    state: string;
+    status: OAuthCallbackAuditStatus;
+    message: string;
+    audit: OAuthCallbackAuditRecord;
+    token?: OAuthTokenRecord;
+    completedAt?: string;
+  }>;
+  abstract listOAuthCallbackAudits(
+    query?: OAuthCallbackAuditQueryDto,
+  ): Promise<PageResult<OAuthCallbackAuditRecord>>;
   abstract getOAuthTokenSummary(): Promise<OAuthTokenInventorySummaryDto>;
   abstract listOAuthTokens(
     query?: OAuthTokenQueryDto,
@@ -845,6 +891,32 @@ export function normalizeOAuthTokenRecord(
   };
 }
 
+export function normalizeOAuthFlowStatus(
+  flow: Pick<OAuthFlowRecord, 'expiresAt' | 'status'>,
+  now = new Date(),
+): OAuthFlowStatus {
+  if (flow.status === 'completed' || flow.status === 'failed') {
+    return flow.status;
+  }
+
+  if (Date.parse(flow.expiresAt) <= now.getTime()) {
+    return 'expired';
+  }
+
+  return 'pending';
+}
+
+export function normalizeOAuthFlowRecord(
+  flow: OAuthFlowRecord,
+  now = new Date(),
+): OAuthFlowRecord {
+  return {
+    ...flow,
+    scopes: normalizeOAuthTokenScopes(flow.scopes),
+    status: normalizeOAuthFlowStatus(flow, now),
+  };
+}
+
 export function matchesOAuthTokenQuery(
   token: OAuthTokenRecord,
   query: OAuthTokenQueryDto = {},
@@ -861,6 +933,181 @@ export function matchesOAuthTokenQuery(
     ) &&
     matchesOptional(normalized.status, query.status)
   );
+}
+
+export function matchesOAuthFlowQuery(
+  flow: OAuthFlowRecord,
+  query: OAuthFlowQueryDto = {},
+): boolean {
+  const normalized = normalizeOAuthFlowRecord(flow);
+  return (
+    matchesOptional(
+      normalized.providerCode,
+      normalizeOptionalText(query.providerCode),
+    ) &&
+    matchesOptional(
+      normalized.subjectId,
+      normalizeOptionalText(query.subjectId),
+    ) &&
+    matchesOptional(normalized.status, query.status)
+  );
+}
+
+export function matchesOAuthCallbackAuditQuery(
+  audit: OAuthCallbackAuditRecord,
+  query: OAuthCallbackAuditQueryDto = {},
+): boolean {
+  return (
+    matchesOptional(
+      audit.providerCode,
+      normalizeOptionalText(query.providerCode),
+    ) && matchesOptional(audit.status, query.status)
+  );
+}
+
+export function normalizeOAuthStartFlow(
+  body: StartOAuthFlowDto,
+  provider: IntegrationProviderRecord,
+): NormalizedOAuthStartFlow {
+  const providerCode = normalizeOAuthProviderCode(body.providerCode);
+  if (provider.code !== providerCode) {
+    throw new BadRequestException(
+      `OAuth provider mismatch: expected ${provider.code}.`,
+    );
+  }
+  assertOAuthProviderReady(provider);
+
+  return {
+    providerCode,
+    subjectType: normalizeOptionalText(body.subjectType) ?? 'system-user',
+    subjectId: normalizeRequiredString(
+      body.subjectId,
+      'OAuth flow subjectId is required.',
+    ),
+    scopes: normalizeOAuthRequestedScopes(body.scopes, provider.config.scopes),
+    redirectUri: normalizeOptionalText(body.redirectUri),
+  };
+}
+
+export function normalizeOAuthCallback(
+  providerCode: string,
+  body: OAuthProviderCallbackDto,
+): NormalizedOAuthCallback {
+  const error = normalizeOptionalText(body.error);
+  const code = normalizeOptionalText(body.code);
+  if (!error && !code) {
+    throw new BadRequestException('OAuth callback code is required.');
+  }
+
+  return {
+    providerCode: normalizeOAuthProviderCode(providerCode),
+    state: normalizeRequiredString(
+      body.state,
+      'OAuth callback state is required.',
+    ),
+    code: error ? undefined : code,
+    error,
+    providerAccountId: normalizeOptionalText(body.providerAccountId),
+    scopes: normalizeOAuthCallbackScopes(body.scopes),
+    expiresInSeconds: normalizeOAuthExpiresInSeconds(body.expiresInSeconds),
+  };
+}
+
+export function normalizeOAuthProviderCode(value: unknown): string {
+  const code = normalizeRequiredString(
+    value,
+    'OAuth providerCode is required.',
+  );
+  return code.startsWith('oauth.') ? code : `oauth.${code}`;
+}
+
+export function assertOAuthProviderReady(
+  provider: IntegrationProviderRecord,
+): void {
+  if (provider.type !== 'oauth') {
+    throw new BadRequestException(
+      `Provider ${provider.code} is not an OAuth provider.`,
+    );
+  }
+
+  if (!provider.enabled) {
+    throw new BadRequestException(
+      `OAuth provider ${provider.code} is disabled.`,
+    );
+  }
+}
+
+export function buildOAuthAuthorizationUrl(input: {
+  provider: IntegrationProviderRecord;
+  state: string;
+  start: NormalizedOAuthStartFlow;
+}): string {
+  const authorizationUrl = normalizeRequiredString(
+    input.provider.config.authorizationUrl,
+    `OAuth provider ${input.provider.code} authorizationUrl is required.`,
+  );
+  const clientId = normalizeRequiredString(
+    input.provider.config.clientId,
+    `OAuth provider ${input.provider.code} clientId is required.`,
+  );
+  const redirectUri =
+    input.start.redirectUri ??
+    normalizeRequiredString(
+      input.provider.config.callbackPath,
+      `OAuth provider ${input.provider.code} callbackPath is required.`,
+    );
+
+  let url: URL;
+  try {
+    url = new URL(authorizationUrl);
+  } catch {
+    throw new BadRequestException(
+      `OAuth provider ${input.provider.code} authorizationUrl is invalid.`,
+    );
+  }
+
+  url.searchParams.set('response_type', 'code');
+  url.searchParams.set('client_id', clientId);
+  url.searchParams.set('redirect_uri', redirectUri);
+  url.searchParams.set('scope', input.start.scopes.join(' '));
+  url.searchParams.set('state', input.state);
+  return url.toString();
+}
+
+export function createOAuthProviderAccountId(input: {
+  providerCode: string;
+  subjectId: string;
+  providerAccountId?: string;
+}): string {
+  return (
+    input.providerAccountId ??
+    `${input.providerCode}:${slugForRef(input.subjectId)}`
+  );
+}
+
+export function createOAuthTokenSecretRefs(input: {
+  providerCode: string;
+  subjectId: string;
+  providerAccountId: string;
+}): { accessTokenRef: string; refreshTokenRef: string } {
+  const provider = slugForRef(input.providerCode.replace(/^oauth\./, ''));
+  const subject = slugForRef(input.subjectId);
+  const account = slugForRef(input.providerAccountId);
+  const base = `secret://config/integration.oauth.${provider}.${subject}.${account}`;
+  return {
+    accessTokenRef: `${base}.access-token`,
+    refreshTokenRef: `${base}.refresh-token`,
+  };
+}
+
+export function createOAuthTokenId(input: {
+  providerCode: string;
+  subjectId: string;
+  providerAccountId: string;
+}): string {
+  return `oauth_token_${slugForRef(input.providerCode)}_${slugForRef(
+    input.subjectId,
+  )}_${slugForRef(input.providerAccountId)}`;
 }
 
 export function normalizeOAuthRevokeReason(value: unknown): string {
@@ -1221,6 +1468,60 @@ function normalizeOAuthTokenScopes(value: unknown): readonly string[] {
   return value
     .map((item) => (typeof item === 'string' ? item.trim() : ''))
     .filter(Boolean);
+}
+
+function normalizeOAuthRequestedScopes(
+  requested: unknown,
+  fallback: unknown,
+): readonly string[] {
+  const scopes = normalizeOAuthTokenScopes(requested);
+  const fallbackScopes = normalizeOAuthTokenScopes(fallback);
+  const selected = scopes.length > 0 ? scopes : fallbackScopes;
+
+  if (selected.length === 0) {
+    throw new BadRequestException('OAuth flow scopes are required.');
+  }
+
+  return [...new Set(selected)];
+}
+
+function normalizeOAuthCallbackScopes(
+  value: unknown,
+): readonly string[] | undefined {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+
+  if (Array.isArray(value)) {
+    return normalizeOAuthTokenScopes(value);
+  }
+
+  return String(value)
+    .split(/[,\s]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function normalizeOAuthExpiresInSeconds(value: unknown): number {
+  const parsed = Number(value ?? 3600);
+
+  if (!Number.isInteger(parsed) || parsed < 60 || parsed > 90 * 24 * 60 * 60) {
+    throw new BadRequestException(
+      'OAuth callback expiresInSeconds must be an integer between 60 and 7776000.',
+    );
+  }
+
+  return parsed;
+}
+
+function slugForRef(value: string): string {
+  const slug = value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80);
+  return slug || 'value';
 }
 
 function isOAuthTokenExpiringSoon(

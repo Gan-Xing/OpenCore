@@ -1261,6 +1261,101 @@ describe('IntegrationRepository', () => {
     );
   });
 
+  it('runs OAuth callback flow with state validation, audit, and token archive', async () => {
+    const repository = new SeedIntegrationRepository();
+
+    const flow = await repository.startOAuthFlow({
+      providerCode: 'oauth.github',
+      subjectId: 'user_oauth_flow',
+      scopes: ['read:user'],
+    });
+    expect(flow).toMatchObject({
+      providerCode: 'oauth.github',
+      subjectType: 'system-user',
+      subjectId: 'user_oauth_flow',
+      scopes: ['read:user'],
+      status: 'pending',
+    });
+    expect(flow.authorizationUrl).toContain('state=');
+    expect(flow.authorizationUrl).toContain('client_id=opencore-github');
+
+    await expect(repository.listOAuthFlows()).resolves.toMatchObject({
+      total: 1,
+      items: [expect.objectContaining({ state: flow.state })],
+    });
+
+    const accepted = await repository.callbackOAuthProvider('github', {
+      state: flow.state,
+      code: 'oauth-callback-code',
+      providerAccountId: 'github:opencore-flow',
+      scopes: 'read:user user:email',
+      expiresInSeconds: 3600,
+    });
+    expect(accepted).toMatchObject({
+      providerCode: 'oauth.github',
+      flowId: flow.id,
+      state: flow.state,
+      status: 'accepted',
+      token: expect.objectContaining({
+        providerCode: 'oauth.github',
+        subjectId: 'user_oauth_flow',
+        providerAccountId: 'github:opencore-flow',
+        status: 'active',
+        accessTokenRef:
+          'secret://config/integration.oauth.github.user-oauth-flow.github-opencore-flow.access-token',
+        refreshTokenRef:
+          'secret://config/integration.oauth.github.user-oauth-flow.github-opencore-flow.refresh-token',
+      }),
+    });
+    expect(accepted.audit.callbackCodeHash).toMatch(/^[a-f0-9]{64}$/);
+    expect(JSON.stringify(accepted)).not.toContain('oauth-callback-code');
+
+    await expect(
+      repository.listOAuthFlows({ status: 'completed' }),
+    ).resolves.toMatchObject({
+      total: 1,
+      items: [
+        expect.objectContaining({
+          state: flow.state,
+          status: 'completed',
+          tokenId: accepted.token?.id,
+        }),
+      ],
+    });
+    await expect(
+      repository.listOAuthCallbackAudits({ status: 'accepted' }),
+    ).resolves.toMatchObject({
+      total: 1,
+      items: [
+        expect.objectContaining({
+          flowId: flow.id,
+          status: 'accepted',
+          tokenId: accepted.token?.id,
+        }),
+      ],
+    });
+
+    const repeated = await repository.callbackOAuthProvider('oauth.github', {
+      state: flow.state,
+      code: 'second-code',
+    });
+    expect(repeated).toMatchObject({
+      status: 'rejected',
+      message: 'OAuth callback state is completed.',
+    });
+    await expect(
+      repository.listOAuthCallbackAudits({ status: 'rejected' }),
+    ).resolves.toMatchObject({
+      total: 1,
+      items: [
+        expect.objectContaining({
+          flowId: flow.id,
+          reason: 'OAuth callback state is completed.',
+        }),
+      ],
+    });
+  });
+
   it('manages OAuth token inventory and revoke lifecycle', async () => {
     const repository = new SeedIntegrationRepository();
 

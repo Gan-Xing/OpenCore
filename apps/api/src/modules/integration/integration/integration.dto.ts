@@ -793,6 +793,187 @@ export class OAuthCallbackContractDto {
   auditAction!: string;
 }
 
+export type OAuthFlowStatus = 'completed' | 'expired' | 'failed' | 'pending';
+export type OAuthCallbackAuditStatus = 'accepted' | 'rejected';
+
+export class StartOAuthFlowDto {
+  @ApiProperty()
+  providerCode!: string;
+
+  @ApiProperty({ required: false })
+  subjectType?: string;
+
+  @ApiProperty()
+  subjectId!: string;
+
+  @ApiProperty({ type: [String], required: false })
+  scopes?: readonly string[];
+
+  @ApiProperty({ required: false })
+  redirectUri?: string;
+}
+
+export class OAuthFlowDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  providerCode!: string;
+
+  @ApiProperty()
+  state!: string;
+
+  @ApiProperty()
+  subjectType!: string;
+
+  @ApiProperty()
+  subjectId!: string;
+
+  @ApiProperty({ type: [String] })
+  scopes!: readonly string[];
+
+  @ApiProperty({ required: false })
+  redirectUri?: string;
+
+  @ApiProperty()
+  authorizationUrl!: string;
+
+  @ApiProperty({ enum: ['completed', 'expired', 'failed', 'pending'] })
+  status!: OAuthFlowStatus;
+
+  @ApiProperty()
+  expiresAt!: string;
+
+  @ApiProperty({ required: false })
+  callbackCodeHash?: string;
+
+  @ApiProperty({ required: false })
+  callbackError?: string;
+
+  @ApiProperty({ required: false })
+  tokenId?: string;
+
+  @ApiProperty({ required: false })
+  completedAt?: string;
+
+  @ApiProperty()
+  createdAt!: string;
+}
+
+export class OAuthFlowPageDto {
+  @ApiProperty({ type: [OAuthFlowDto] })
+  items!: readonly OAuthFlowDto[];
+
+  @ApiProperty()
+  page!: number;
+
+  @ApiProperty()
+  pageSize!: number;
+
+  @ApiProperty()
+  total!: number;
+
+  @ApiProperty()
+  totalPages!: number;
+}
+
+export class OAuthFlowQueryDto extends PageQueryDto {
+  @ApiProperty({ required: false })
+  providerCode?: string;
+
+  @ApiProperty({ required: false })
+  subjectId?: string;
+
+  @ApiProperty({
+    enum: ['completed', 'expired', 'failed', 'pending'],
+    required: false,
+  })
+  status?: OAuthFlowStatus;
+}
+
+export class OAuthProviderCallbackDto {
+  @ApiProperty()
+  state!: string;
+
+  @ApiProperty({ required: false })
+  code?: string;
+
+  @ApiProperty({ required: false })
+  error?: string;
+
+  @ApiProperty({ required: false })
+  providerAccountId?: string;
+
+  @ApiProperty({ required: false })
+  scopes?: string;
+
+  @ApiProperty({ required: false })
+  expiresInSeconds?: number;
+}
+
+export class OAuthCallbackAuditDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  providerCode!: string;
+
+  @ApiProperty({ required: false })
+  flowId?: string;
+
+  @ApiProperty()
+  state!: string;
+
+  @ApiProperty({ enum: ['accepted', 'rejected'] })
+  status!: OAuthCallbackAuditStatus;
+
+  @ApiProperty({ required: false })
+  reason?: string;
+
+  @ApiProperty({ required: false })
+  callbackCodeHash?: string;
+
+  @ApiProperty({ required: false })
+  callbackError?: string;
+
+  @ApiProperty({ required: false })
+  providerAccountId?: string;
+
+  @ApiProperty({ required: false })
+  tokenId?: string;
+
+  @ApiProperty()
+  createdAt!: string;
+}
+
+export class OAuthCallbackAuditPageDto {
+  @ApiProperty({ type: [OAuthCallbackAuditDto] })
+  items!: readonly OAuthCallbackAuditDto[];
+
+  @ApiProperty()
+  page!: number;
+
+  @ApiProperty()
+  pageSize!: number;
+
+  @ApiProperty()
+  total!: number;
+
+  @ApiProperty()
+  totalPages!: number;
+}
+
+export class OAuthCallbackAuditQueryDto extends PageQueryDto {
+  @ApiProperty({ required: false })
+  providerCode?: string;
+
+  @ApiProperty({
+    enum: ['accepted', 'rejected'],
+    required: false,
+  })
+  status?: OAuthCallbackAuditStatus;
+}
+
 export type OAuthTokenStatus = 'active' | 'expired' | 'revoked';
 
 export class OAuthTokenDto {
@@ -896,6 +1077,32 @@ export class OAuthTokenInventorySummaryDto {
 export class RevokeOAuthTokenDto {
   @ApiProperty({ required: false })
   reason?: string;
+}
+
+export class OAuthCallbackResultDto {
+  @ApiProperty()
+  providerCode!: string;
+
+  @ApiProperty({ required: false })
+  flowId?: string;
+
+  @ApiProperty()
+  state!: string;
+
+  @ApiProperty({ enum: ['accepted', 'rejected'] })
+  status!: OAuthCallbackAuditStatus;
+
+  @ApiProperty()
+  message!: string;
+
+  @ApiProperty({ type: OAuthCallbackAuditDto })
+  audit!: OAuthCallbackAuditDto;
+
+  @ApiProperty({ type: OAuthTokenDto, required: false })
+  token?: OAuthTokenDto;
+
+  @ApiProperty({ required: false })
+  completedAt?: string;
 }
 
 export class IntegrationDesignDto {

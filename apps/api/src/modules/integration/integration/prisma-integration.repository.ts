@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { createHash, randomBytes } from 'node:crypto';
 import { Prisma } from '@prisma/client';
 import {
   PrismaService,
@@ -16,12 +17,16 @@ import type {
   IntegrationProviderAuditAction,
   IntegrationProviderQueryDto,
   IntegrationTemplateQueryDto,
+  OAuthCallbackAuditQueryDto,
+  OAuthFlowQueryDto,
+  OAuthProviderCallbackDto,
   OAuthTokenQueryDto,
   PageQueryDto,
   ProcessOutboxDto,
   PreviewTemplateDto,
   RevokeOAuthTokenDto,
   ScheduleOutboxDto,
+  StartOAuthFlowDto,
   TestIntegrationProviderDto,
   TestOutboxMessageDto,
   UpdateIntegrationProviderDto,
@@ -34,7 +39,9 @@ import {
   type IntegrationProviderAuditLogRecord,
   type IntegrationProviderRecord,
   type IntegrationTemplateRecord,
+  type OAuthCallbackAuditRecord,
   type OAuthCallbackContractRecord,
+  type OAuthFlowRecord,
   type OAuthTokenRecord,
 } from './integration.seed';
 import {
@@ -54,10 +61,20 @@ import {
   buildProviderDiagnostics,
   buildIntegrationSummary,
   buildOAuthTokenSummary,
+  buildOAuthAuthorizationUrl,
+  createOAuthProviderAccountId,
+  createOAuthTokenId,
+  createOAuthTokenSecretRefs,
   createOutboxScheduleResult,
   createPage,
   IntegrationRepository,
+  matchesOAuthCallbackAuditQuery,
+  matchesOAuthFlowQuery,
   matchesOAuthTokenQuery,
+  normalizeOAuthCallback,
+  normalizeOAuthFlowRecord,
+  normalizeOAuthProviderCode,
+  normalizeOAuthStartFlow,
   normalizeOutboxCallback,
   normalizeOutboxAttachments,
   normalizeOutboxFailureError,
@@ -157,6 +174,38 @@ type OAuthTokenRow = {
   revokedAt: Date | null;
   revokedBy: string | null;
   revokeReason: string | null;
+  createdAt: Date;
+};
+
+type OAuthFlowRow = {
+  id: string;
+  providerCode: string;
+  state: string;
+  subjectType: string;
+  subjectId: string;
+  scopes: unknown;
+  redirectUri: string | null;
+  authorizationUrl: string;
+  status: string;
+  expiresAt: Date;
+  callbackCodeHash: string | null;
+  callbackError: string | null;
+  tokenId: string | null;
+  completedAt: Date | null;
+  createdAt: Date;
+};
+
+type OAuthCallbackAuditRow = {
+  id: string;
+  providerCode: string;
+  flowId: string | null;
+  state: string;
+  status: string;
+  reason: string | null;
+  callbackCodeHash: string | null;
+  callbackError: string | null;
+  providerAccountId: string | null;
+  tokenId: string | null;
   createdAt: Date;
 };
 
@@ -862,6 +911,278 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
     return { ...oauthCallbackContract };
   }
 
+  async startOAuthFlow(body: StartOAuthFlowDto): Promise<OAuthFlowRecord> {
+    const provider = await this.findProvider(
+      normalizeOAuthProviderCode(body.providerCode),
+    );
+    const start = normalizeOAuthStartFlow(body, provider);
+    const state = randomBytes(24).toString('base64url');
+    const expiresAt = new Date(
+      Date.now() + oauthCallbackContract.stateTtlSeconds * 1000,
+    );
+    const authorizationUrl = buildOAuthAuthorizationUrl({
+      provider,
+      state,
+      start,
+    });
+
+    const flow = await this.prisma.integrationOAuthFlow.create({
+      data: {
+        providerCode: start.providerCode,
+        state,
+        subjectType: start.subjectType,
+        subjectId: start.subjectId,
+        scopes: toInputJson([...start.scopes]),
+        redirectUri: start.redirectUri,
+        authorizationUrl,
+        status: 'pending',
+        expiresAt,
+      },
+    });
+
+    return normalizeOAuthFlowRecord(toOAuthFlowRecord(flow));
+  }
+
+  async listOAuthFlows(
+    query: OAuthFlowQueryDto = {},
+  ): Promise<PageResult<OAuthFlowRecord>> {
+    const rows = await this.prisma.integrationOAuthFlow.findMany({
+      where: {
+        providerCode: normalizeOptionalWhereText(query.providerCode),
+        subjectId: normalizeOptionalWhereText(query.subjectId),
+      },
+      orderBy: [{ createdAt: 'desc' }],
+    });
+
+    return createPage(
+      rows
+        .map(toOAuthFlowRecord)
+        .map((flow) => normalizeOAuthFlowRecord(flow))
+        .filter((flow) => matchesOAuthFlowQuery(flow, query)),
+      query,
+    );
+  }
+
+  async callbackOAuthProvider(
+    providerCode: string,
+    body: OAuthProviderCallbackDto,
+  ) {
+    const callback = normalizeOAuthCallback(providerCode, body);
+    const provider = await this.findProvider(callback.providerCode);
+    if (provider.type !== 'oauth' || !provider.enabled) {
+      const reason =
+        provider.type !== 'oauth'
+          ? `Provider ${provider.code} is not an OAuth provider.`
+          : `OAuth provider ${provider.code} is disabled.`;
+      const audit = await this.createOAuthCallbackAudit({
+        providerCode: callback.providerCode,
+        state: callback.state,
+        status: 'rejected',
+        reason,
+      });
+      return {
+        providerCode: callback.providerCode,
+        state: callback.state,
+        status: 'rejected' as const,
+        message: audit.reason ?? 'OAuth callback rejected.',
+        audit,
+      };
+    }
+
+    const now = new Date();
+    const flow = await this.prisma.integrationOAuthFlow.findUnique({
+      where: { state: callback.state },
+    });
+
+    if (!flow || flow.providerCode !== callback.providerCode) {
+      const audit = await this.createOAuthCallbackAudit({
+        providerCode: callback.providerCode,
+        state: callback.state,
+        status: 'rejected',
+        reason: 'OAuth callback state is invalid for this provider.',
+      });
+      return {
+        providerCode: callback.providerCode,
+        state: callback.state,
+        status: 'rejected' as const,
+        message: audit.reason ?? 'OAuth callback rejected.',
+        audit,
+      };
+    }
+
+    const normalizedFlow = normalizeOAuthFlowRecord(toOAuthFlowRecord(flow));
+    if (normalizedFlow.status !== 'pending') {
+      const audit = await this.createOAuthCallbackAudit({
+        providerCode: callback.providerCode,
+        flowId: flow.id,
+        state: callback.state,
+        status: 'rejected',
+        reason: `OAuth callback state is ${normalizedFlow.status}.`,
+        tokenId: flow.tokenId ?? undefined,
+      });
+      return {
+        providerCode: callback.providerCode,
+        flowId: flow.id,
+        state: callback.state,
+        status: 'rejected' as const,
+        message: audit.reason ?? 'OAuth callback rejected.',
+        audit,
+      };
+    }
+
+    if (callback.error) {
+      const failed = await this.prisma.$transaction(async (tx) => {
+        const updatedFlow = await tx.integrationOAuthFlow.update({
+          where: { id: flow.id },
+          data: {
+            status: 'failed',
+            callbackError: callback.error,
+            completedAt: now,
+          },
+        });
+        const audit = await tx.integrationOAuthCallbackAudit.create({
+          data: {
+            providerCode: callback.providerCode,
+            flowId: flow.id,
+            state: callback.state,
+            status: 'rejected',
+            reason: `OAuth provider returned error: ${callback.error}`,
+            callbackError: callback.error,
+          },
+        });
+
+        return { audit, flow: updatedFlow };
+      });
+
+      const audit = toOAuthCallbackAuditRecord(failed.audit);
+      return {
+        providerCode: callback.providerCode,
+        flowId: flow.id,
+        state: callback.state,
+        status: 'rejected' as const,
+        message: audit.reason ?? 'OAuth callback rejected.',
+        audit,
+        completedAt: failed.flow.completedAt?.toISOString(),
+      };
+    }
+
+    const code = callback.code ?? '';
+    const callbackCodeHash = hashOAuthCallbackCode(code);
+    const providerAccountId = createOAuthProviderAccountId({
+      providerCode: callback.providerCode,
+      subjectId: flow.subjectId,
+      providerAccountId: callback.providerAccountId,
+    });
+    const tokenRefs = createOAuthTokenSecretRefs({
+      providerCode: callback.providerCode,
+      subjectId: flow.subjectId,
+      providerAccountId,
+    });
+    const scopes =
+      callback.scopes && callback.scopes.length > 0
+        ? callback.scopes
+        : normalizeScopes(flow.scopes);
+    const tokenExpiresAt = new Date(
+      now.getTime() + callback.expiresInSeconds * 1000,
+    );
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      const token = await tx.integrationOAuthToken.upsert({
+        where: {
+          providerCode_subjectId_providerAccountId: {
+            providerCode: callback.providerCode,
+            subjectId: flow.subjectId,
+            providerAccountId,
+          },
+        },
+        create: {
+          id: createOAuthTokenId({
+            providerCode: callback.providerCode,
+            subjectId: flow.subjectId,
+            providerAccountId,
+          }),
+          providerCode: callback.providerCode,
+          subjectType: flow.subjectType,
+          subjectId: flow.subjectId,
+          providerAccountId,
+          scopes: toInputJson([...scopes]),
+          accessTokenRef: tokenRefs.accessTokenRef,
+          refreshTokenRef: tokenRefs.refreshTokenRef,
+          status: 'active',
+          expiresAt: tokenExpiresAt,
+          lastRotatedAt: now,
+        },
+        update: {
+          subjectType: flow.subjectType,
+          scopes: toInputJson([...scopes]),
+          accessTokenRef: tokenRefs.accessTokenRef,
+          refreshTokenRef: tokenRefs.refreshTokenRef,
+          status: 'active',
+          expiresAt: tokenExpiresAt,
+          lastRotatedAt: now,
+          revokedAt: null,
+          revokedBy: null,
+          revokeReason: null,
+        },
+      });
+      const updatedFlow = await tx.integrationOAuthFlow.update({
+        where: { id: flow.id },
+        data: {
+          status: 'completed',
+          callbackCodeHash,
+          callbackError: null,
+          tokenId: token.id,
+          completedAt: now,
+        },
+      });
+      const audit = await tx.integrationOAuthCallbackAudit.create({
+        data: {
+          providerCode: callback.providerCode,
+          flowId: flow.id,
+          state: callback.state,
+          status: 'accepted',
+          reason: 'OAuth callback accepted and token reference archived.',
+          callbackCodeHash,
+          providerAccountId,
+          tokenId: token.id,
+        },
+      });
+
+      return { audit, flow: updatedFlow, token };
+    });
+
+    const audit = toOAuthCallbackAuditRecord(result.audit);
+    return {
+      providerCode: callback.providerCode,
+      flowId: flow.id,
+      state: callback.state,
+      status: 'accepted' as const,
+      message: audit.reason ?? 'OAuth callback accepted.',
+      audit,
+      token: normalizeOAuthTokenRecord(toOAuthTokenRecord(result.token)),
+      completedAt: result.flow.completedAt?.toISOString(),
+    };
+  }
+
+  async listOAuthCallbackAudits(
+    query: OAuthCallbackAuditQueryDto = {},
+  ): Promise<PageResult<OAuthCallbackAuditRecord>> {
+    const rows = await this.prisma.integrationOAuthCallbackAudit.findMany({
+      where: {
+        providerCode: normalizeOptionalWhereText(query.providerCode),
+        status: normalizeOptionalWhereText(query.status),
+      },
+      orderBy: [{ createdAt: 'desc' }],
+    });
+
+    return createPage(
+      rows
+        .map(toOAuthCallbackAuditRecord)
+        .filter((audit) => matchesOAuthCallbackAuditQuery(audit, query)),
+      query,
+    );
+  }
+
   async getOAuthTokenSummary() {
     const rows = await this.prisma.integrationOAuthToken.findMany({
       orderBy: [{ providerCode: 'asc' }, { subjectId: 'asc' }],
@@ -931,6 +1252,34 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
       'Integration design',
       topic,
     );
+  }
+
+  private async createOAuthCallbackAudit(input: {
+    providerCode: string;
+    flowId?: string;
+    state: string;
+    status: 'accepted' | 'rejected';
+    reason?: string;
+    callbackCodeHash?: string;
+    callbackError?: string;
+    providerAccountId?: string;
+    tokenId?: string;
+  }): Promise<OAuthCallbackAuditRecord> {
+    const audit = await this.prisma.integrationOAuthCallbackAudit.create({
+      data: {
+        providerCode: input.providerCode,
+        flowId: input.flowId,
+        state: input.state,
+        status: input.status,
+        reason: input.reason,
+        callbackCodeHash: input.callbackCodeHash,
+        callbackError: input.callbackError,
+        providerAccountId: input.providerAccountId,
+        tokenId: input.tokenId,
+      },
+    });
+
+    return toOAuthCallbackAuditRecord(audit);
   }
 
   private async findProvider(code: string): Promise<IntegrationProviderRecord> {
@@ -1138,6 +1487,53 @@ function toOAuthTokenRecord(row: OAuthTokenRow): OAuthTokenRecord {
     revokeReason: row.revokeReason ?? undefined,
     createdAt: row.createdAt.toISOString(),
   };
+}
+
+function toOAuthFlowRecord(row: OAuthFlowRow): OAuthFlowRecord {
+  return {
+    id: row.id,
+    providerCode: row.providerCode,
+    state: row.state,
+    subjectType: row.subjectType,
+    subjectId: row.subjectId,
+    scopes: normalizeScopes(row.scopes),
+    redirectUri: row.redirectUri ?? undefined,
+    authorizationUrl: row.authorizationUrl,
+    status:
+      row.status === 'completed' ||
+      row.status === 'expired' ||
+      row.status === 'failed'
+        ? row.status
+        : 'pending',
+    expiresAt: row.expiresAt.toISOString(),
+    callbackCodeHash: row.callbackCodeHash ?? undefined,
+    callbackError: row.callbackError ?? undefined,
+    tokenId: row.tokenId ?? undefined,
+    completedAt: row.completedAt?.toISOString(),
+    createdAt: row.createdAt.toISOString(),
+  };
+}
+
+function toOAuthCallbackAuditRecord(
+  row: OAuthCallbackAuditRow,
+): OAuthCallbackAuditRecord {
+  return {
+    id: row.id,
+    providerCode: row.providerCode,
+    flowId: row.flowId ?? undefined,
+    state: row.state,
+    status: row.status === 'accepted' ? 'accepted' : 'rejected',
+    reason: row.reason ?? undefined,
+    callbackCodeHash: row.callbackCodeHash ?? undefined,
+    callbackError: row.callbackError ?? undefined,
+    providerAccountId: row.providerAccountId ?? undefined,
+    tokenId: row.tokenId ?? undefined,
+    createdAt: row.createdAt.toISOString(),
+  };
+}
+
+function hashOAuthCallbackCode(code: string): string {
+  return createHash('sha256').update(code).digest('hex');
 }
 
 function redactProvider(

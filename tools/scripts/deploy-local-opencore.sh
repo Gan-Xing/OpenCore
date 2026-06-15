@@ -1143,6 +1143,26 @@ verify_admin_bundle_api_base_url() {
     ! grep -R \
     --fixed-strings \
     --include='*.js' \
+    "OAuth callback flow admission" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "State validation flow ledger" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "OAuth callback audit trail" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Start OAuth flow" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
     "Unable to load live OAuth token inventory" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null || \
     ! grep -R \
@@ -1160,7 +1180,7 @@ verify_admin_bundle_api_base_url() {
     --include='*.js' \
     "integration:oauth:manage" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null; then
-    echo "Admin bundle does not include OAuth token inventory and revoke controls." >&2
+    echo "Admin bundle does not include OAuth token inventory, callback flow and revoke controls." >&2
     echo "Refusing to deploy a stale frontend OAuth page." >&2
     exit 1
   fi

@@ -182,6 +182,41 @@ export type OAuthCallbackContractSummary = {
   auditAction: string;
 };
 
+export type OAuthFlowStatus = 'completed' | 'expired' | 'failed' | 'pending';
+export type OAuthCallbackAuditStatus = 'accepted' | 'rejected';
+
+export type OAuthFlowSummary = {
+  id: string;
+  providerCode: string;
+  state: string;
+  subjectType: string;
+  subjectId: string;
+  scopes: readonly string[];
+  redirectUri?: string;
+  authorizationUrl: string;
+  status: OAuthFlowStatus;
+  expiresAt: string;
+  callbackCodeHash?: string;
+  callbackError?: string;
+  tokenId?: string;
+  completedAt?: string;
+  createdAt: string;
+};
+
+export type OAuthCallbackAuditSummary = {
+  id: string;
+  providerCode: string;
+  flowId?: string;
+  state: string;
+  status: OAuthCallbackAuditStatus;
+  reason?: string;
+  callbackCodeHash?: string;
+  callbackError?: string;
+  providerAccountId?: string;
+  tokenId?: string;
+  createdAt: string;
+};
+
 export type OAuthTokenStatus = 'active' | 'expired' | 'revoked';
 
 export type OAuthTokenSummary = {
@@ -383,8 +418,47 @@ export type OAuthTokenQueryRequest = PageRequest & {
   status?: OAuthTokenStatus;
 };
 
+export type StartOAuthFlowRequest = {
+  providerCode: string;
+  subjectType?: string;
+  subjectId: string;
+  scopes?: readonly string[];
+  redirectUri?: string;
+};
+
+export type OAuthFlowQueryRequest = PageRequest & {
+  providerCode?: string;
+  subjectId?: string;
+  status?: OAuthFlowStatus;
+};
+
+export type OAuthProviderCallbackRequest = {
+  state: string;
+  code?: string;
+  error?: string;
+  providerAccountId?: string;
+  scopes?: string;
+  expiresInSeconds?: number;
+};
+
+export type OAuthCallbackAuditQueryRequest = PageRequest & {
+  providerCode?: string;
+  status?: OAuthCallbackAuditStatus;
+};
+
 export type RevokeOAuthTokenRequest = {
   reason?: string;
+};
+
+export type OAuthCallbackResult = {
+  providerCode: string;
+  flowId?: string;
+  state: string;
+  status: OAuthCallbackAuditStatus;
+  message: string;
+  audit: OAuthCallbackAuditSummary;
+  token?: OAuthTokenSummary;
+  completedAt?: string;
 };
 
 export type IntegrationFixtures = {
@@ -396,6 +470,8 @@ export type IntegrationFixtures = {
   smsTemplates: readonly IntegrationTemplateSummary[];
   outbox: readonly IntegrationOutboxSummary[];
   oauthContract: OAuthCallbackContractSummary;
+  oauthFlows: readonly OAuthFlowSummary[];
+  oauthCallbackAudits: readonly OAuthCallbackAuditSummary[];
   oauthTokenSummary: OAuthTokenInventorySummary;
   oauthTokens: readonly OAuthTokenSummary[];
   designs: readonly IntegrationDesignSummary[];
@@ -579,6 +655,36 @@ export function createIntegrationFixtures(): IntegrationFixtures {
     accountBinding: ['user id', 'provider code', 'provider account id'],
     auditAction: 'integration.oauth.callback',
   };
+  const oauthFlows: readonly OAuthFlowSummary[] = [
+    {
+      id: 'oauth_flow_github_admin_pending',
+      providerCode: 'oauth.github',
+      state: 'seeded-oauth-state',
+      subjectType: 'system-user',
+      subjectId: 'user_admin',
+      scopes: ['read:user', 'user:email'],
+      authorizationUrl:
+        'https://github.com/login/oauth/authorize?response_type=code&client_id=opencore-github&state=seeded-oauth-state',
+      status: 'pending',
+      expiresAt: '2099-01-01T00:00:00.000Z',
+      createdAt: '2026-06-10T00:00:00.000Z',
+    },
+  ];
+  const oauthCallbackAudits: readonly OAuthCallbackAuditSummary[] = [
+    {
+      id: 'oauth_callback_audit_github_admin',
+      providerCode: 'oauth.github',
+      flowId: 'oauth_flow_github_admin_pending',
+      state: 'seeded-oauth-state',
+      status: 'accepted',
+      reason: 'Seeded OAuth callback audit.',
+      callbackCodeHash:
+        'f4f0df3a19be88c307f6a234a45c206ef18ac66d93f8feee56a2a97d3ef82f5f',
+      providerAccountId: 'github:opencore-admin',
+      tokenId: 'oauth_token_github_admin_active',
+      createdAt: '2026-06-10T00:00:00.000Z',
+    },
+  ];
   const oauthTokens: readonly OAuthTokenSummary[] = [
     {
       id: 'oauth_token_github_admin_active',
@@ -704,6 +810,8 @@ export function createIntegrationFixtures(): IntegrationFixtures {
     smsTemplates,
     outbox,
     oauthContract,
+    oauthFlows,
+    oauthCallbackAudits,
     oauthTokenSummary,
     oauthTokens,
     designs,
@@ -757,6 +865,18 @@ export function findOAuthCallbackContractFixture(
   return fixture.callbackPath === callbackPath ? fixture : undefined;
 }
 
+export function findOAuthFlowFixture(id: string): OAuthFlowSummary | undefined {
+  return createIntegrationFixtures().oauthFlows.find((flow) => flow.id === id);
+}
+
+export function findOAuthCallbackAuditFixture(
+  id: string,
+): OAuthCallbackAuditSummary | undefined {
+  return createIntegrationFixtures().oauthCallbackAudits.find(
+    (audit) => audit.id === id,
+  );
+}
+
 export function findOAuthTokenFixture(
   id: string,
 ): OAuthTokenSummary | undefined {
@@ -778,6 +898,8 @@ export type IntegrationProviderAuditLogPage =
   PageResponse<IntegrationProviderAuditLogSummary>;
 export type IntegrationTemplatePage = PageResponse<IntegrationTemplateSummary>;
 export type IntegrationOutboxPage = PageResponse<IntegrationOutboxSummary>;
+export type OAuthFlowPage = PageResponse<OAuthFlowSummary>;
+export type OAuthCallbackAuditPage = PageResponse<OAuthCallbackAuditSummary>;
 export type OAuthTokenPage = PageResponse<OAuthTokenSummary>;
 
 function buildProviderDiagnosticsFixture(

@@ -584,3 +584,43 @@ model IntegrationOAuthToken {
   @@index([providerCode])
   @@index([status])
 }
+
+model IntegrationOAuthFlow {
+  id               String    @id @default(cuid())
+  providerCode     String
+  state            String    @unique
+  subjectType      String
+  subjectId        String
+  scopes           Json
+  redirectUri      String?
+  authorizationUrl String
+  status           String    @default("pending")
+  expiresAt        DateTime
+  callbackCodeHash String?
+  callbackError    String?
+  tokenId          String?
+  completedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([providerCode, status])
+  @@index([subjectId, createdAt])
+}
+
+model IntegrationOAuthCallbackAudit {
+  id                String   @id @default(cuid())
+  providerCode      String
+  flowId            String?
+  state             String
+  status            String
+  reason            String?
+  callbackCodeHash  String?
+  callbackError     String?
+  providerAccountId String?
+  tokenId           String?
+  createdAt         DateTime @default(now())
+
+  @@index([providerCode, createdAt])
+  @@index([state])
+  @@index([status])
+}

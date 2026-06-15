@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { createHash, randomBytes } from 'node:crypto';
 import type {
   CreateIntegrationProviderDto,
   CreateIntegrationTemplateDto,
@@ -10,12 +11,16 @@ import type {
   IntegrationProviderAuditAction,
   IntegrationProviderQueryDto,
   IntegrationTemplateQueryDto,
+  OAuthCallbackAuditQueryDto,
+  OAuthFlowQueryDto,
+  OAuthProviderCallbackDto,
   OAuthTokenQueryDto,
   PageQueryDto,
   ProcessOutboxDto,
   PreviewTemplateDto,
   RevokeOAuthTokenDto,
   ScheduleOutboxDto,
+  StartOAuthFlowDto,
   TestIntegrationProviderDto,
   TestOutboxMessageDto,
   UpdateIntegrationProviderDto,
@@ -32,7 +37,9 @@ import {
   type IntegrationProviderAuditLogRecord,
   type IntegrationProviderRecord,
   type IntegrationTemplateRecord,
+  type OAuthCallbackAuditRecord,
   type OAuthCallbackContractRecord,
+  type OAuthFlowRecord,
   type OAuthTokenRecord,
 } from './integration.seed';
 import {
@@ -53,11 +60,21 @@ import {
   buildProviderDiagnostics,
   buildIntegrationSummary,
   buildOAuthTokenSummary,
+  buildOAuthAuthorizationUrl,
+  createOAuthProviderAccountId,
+  createOAuthTokenId,
+  createOAuthTokenSecretRefs,
   createOutboxScheduleResult,
   createPage,
   IntegrationRepository,
+  matchesOAuthCallbackAuditQuery,
+  matchesOAuthFlowQuery,
   matchesOptional,
   matchesOAuthTokenQuery,
+  normalizeOAuthCallback,
+  normalizeOAuthFlowRecord,
+  normalizeOAuthProviderCode,
+  normalizeOAuthStartFlow,
   normalizeOutboxCallback,
   normalizeOutboxAttachments,
   normalizeOutboxFailureError,
@@ -97,6 +114,8 @@ export class SeedIntegrationRepository extends IntegrationRepository {
   private outbox: IntegrationOutboxRecord[] = seedIntegrationOutbox.map(
     (message) => ({ ...message }),
   );
+  private oauthFlows: OAuthFlowRecord[] = [];
+  private oauthCallbackAudits: OAuthCallbackAuditRecord[] = [];
   private oauthTokens: OAuthTokenRecord[] =
     seedIntegrationOAuthTokens.map(cloneOAuthToken);
 
@@ -660,6 +679,236 @@ export class SeedIntegrationRepository extends IntegrationRepository {
     return { ...oauthCallbackContract };
   }
 
+  async startOAuthFlow(body: StartOAuthFlowDto): Promise<OAuthFlowRecord> {
+    const provider = this.findProvider(
+      normalizeOAuthProviderCode(body.providerCode),
+    );
+    const start = normalizeOAuthStartFlow(body, provider);
+    const state = randomBytes(24).toString('base64url');
+    const expiresAt = new Date(
+      Date.now() + oauthCallbackContract.stateTtlSeconds * 1000,
+    ).toISOString();
+    const flow: OAuthFlowRecord = {
+      id: `oauth_flow_${state}`,
+      providerCode: start.providerCode,
+      state,
+      subjectType: start.subjectType,
+      subjectId: start.subjectId,
+      scopes: [...start.scopes],
+      redirectUri: start.redirectUri,
+      authorizationUrl: buildOAuthAuthorizationUrl({
+        provider,
+        state,
+        start,
+      }),
+      status: 'pending',
+      expiresAt,
+      createdAt: new Date().toISOString(),
+    };
+    this.oauthFlows = [flow, ...this.oauthFlows];
+
+    return normalizeOAuthFlowRecord(flow);
+  }
+
+  async listOAuthFlows(
+    query: OAuthFlowQueryDto = {},
+  ): Promise<PageResult<OAuthFlowRecord>> {
+    return createPage(
+      this.oauthFlows
+        .map((flow) => normalizeOAuthFlowRecord(flow))
+        .filter((flow) => matchesOAuthFlowQuery(flow, query)),
+      query,
+    );
+  }
+
+  async callbackOAuthProvider(
+    providerCode: string,
+    body: OAuthProviderCallbackDto,
+  ) {
+    const callback = normalizeOAuthCallback(providerCode, body);
+    const provider = this.findProvider(callback.providerCode);
+    if (provider.type !== 'oauth' || !provider.enabled) {
+      const reason =
+        provider.type !== 'oauth'
+          ? `Provider ${provider.code} is not an OAuth provider.`
+          : `OAuth provider ${provider.code} is disabled.`;
+      const audit = this.addOAuthCallbackAudit({
+        providerCode: callback.providerCode,
+        state: callback.state,
+        status: 'rejected',
+        reason,
+      });
+      return {
+        providerCode: callback.providerCode,
+        state: callback.state,
+        status: 'rejected' as const,
+        message: audit.reason ?? 'OAuth callback rejected.',
+        audit,
+      };
+    }
+
+    const flow = this.oauthFlows.find((item) => item.state === callback.state);
+    if (!flow || flow.providerCode !== callback.providerCode) {
+      const audit = this.addOAuthCallbackAudit({
+        providerCode: callback.providerCode,
+        state: callback.state,
+        status: 'rejected',
+        reason: 'OAuth callback state is invalid for this provider.',
+      });
+      return {
+        providerCode: callback.providerCode,
+        state: callback.state,
+        status: 'rejected' as const,
+        message: audit.reason ?? 'OAuth callback rejected.',
+        audit,
+      };
+    }
+
+    const normalizedFlow = normalizeOAuthFlowRecord(flow);
+    if (normalizedFlow.status !== 'pending') {
+      const audit = this.addOAuthCallbackAudit({
+        providerCode: callback.providerCode,
+        flowId: flow.id,
+        state: callback.state,
+        status: 'rejected',
+        reason: `OAuth callback state is ${normalizedFlow.status}.`,
+        tokenId: flow.tokenId,
+      });
+      return {
+        providerCode: callback.providerCode,
+        flowId: flow.id,
+        state: callback.state,
+        status: 'rejected' as const,
+        message: audit.reason ?? 'OAuth callback rejected.',
+        audit,
+      };
+    }
+
+    const completedAt = new Date().toISOString();
+    if (callback.error) {
+      Object.assign(flow, {
+        status: 'failed' as const,
+        callbackError: callback.error,
+        completedAt,
+      });
+      const audit = this.addOAuthCallbackAudit({
+        providerCode: callback.providerCode,
+        flowId: flow.id,
+        state: callback.state,
+        status: 'rejected',
+        reason: `OAuth provider returned error: ${callback.error}`,
+        callbackError: callback.error,
+      });
+      return {
+        providerCode: callback.providerCode,
+        flowId: flow.id,
+        state: callback.state,
+        status: 'rejected' as const,
+        message: audit.reason ?? 'OAuth callback rejected.',
+        audit,
+        completedAt,
+      };
+    }
+
+    const code = callback.code ?? '';
+    const callbackCodeHash = hashOAuthCallbackCode(code);
+    const providerAccountId = createOAuthProviderAccountId({
+      providerCode: callback.providerCode,
+      subjectId: flow.subjectId,
+      providerAccountId: callback.providerAccountId,
+    });
+    const tokenRefs = createOAuthTokenSecretRefs({
+      providerCode: callback.providerCode,
+      subjectId: flow.subjectId,
+      providerAccountId,
+    });
+    const tokenId = createOAuthTokenId({
+      providerCode: callback.providerCode,
+      subjectId: flow.subjectId,
+      providerAccountId,
+    });
+    const expiresAt = new Date(
+      Date.now() + callback.expiresInSeconds * 1000,
+    ).toISOString();
+    const token: OAuthTokenRecord = {
+      id: tokenId,
+      providerCode: callback.providerCode,
+      subjectType: flow.subjectType,
+      subjectId: flow.subjectId,
+      providerAccountId,
+      scopes:
+        callback.scopes && callback.scopes.length > 0
+          ? [...callback.scopes]
+          : [...flow.scopes],
+      accessTokenRef: tokenRefs.accessTokenRef,
+      refreshTokenRef: tokenRefs.refreshTokenRef,
+      status: 'active',
+      expiresAt,
+      lastRotatedAt: completedAt,
+      createdAt: completedAt,
+    };
+    const existingIndex = this.oauthTokens.findIndex(
+      (item) =>
+        item.providerCode === token.providerCode &&
+        item.subjectId === token.subjectId &&
+        item.providerAccountId === token.providerAccountId,
+    );
+    let archivedToken: OAuthTokenRecord;
+    if (existingIndex >= 0) {
+      archivedToken = {
+        ...this.oauthTokens[existingIndex],
+        ...token,
+        createdAt: this.oauthTokens[existingIndex].createdAt,
+        revokedAt: undefined,
+        revokedBy: undefined,
+        revokeReason: undefined,
+      };
+      this.oauthTokens[existingIndex] = archivedToken;
+    } else {
+      archivedToken = token;
+      this.oauthTokens = [archivedToken, ...this.oauthTokens];
+    }
+    Object.assign(flow, {
+      status: 'completed' as const,
+      callbackCodeHash,
+      callbackError: undefined,
+      tokenId: archivedToken.id,
+      completedAt,
+    });
+    const audit = this.addOAuthCallbackAudit({
+      providerCode: callback.providerCode,
+      flowId: flow.id,
+      state: callback.state,
+      status: 'accepted',
+      reason: 'OAuth callback accepted and token reference archived.',
+      callbackCodeHash,
+      providerAccountId,
+      tokenId: archivedToken.id,
+    });
+
+    return {
+      providerCode: callback.providerCode,
+      flowId: flow.id,
+      state: callback.state,
+      status: 'accepted' as const,
+      message: audit.reason ?? 'OAuth callback accepted.',
+      audit,
+      token: normalizeOAuthTokenRecord(archivedToken),
+      completedAt,
+    };
+  }
+
+  async listOAuthCallbackAudits(
+    query: OAuthCallbackAuditQueryDto = {},
+  ): Promise<PageResult<OAuthCallbackAuditRecord>> {
+    return createPage(
+      this.oauthCallbackAudits.filter((audit) =>
+        matchesOAuthCallbackAuditQuery(audit, query),
+      ),
+      query,
+    );
+  }
+
   async getOAuthTokenSummary() {
     return buildOAuthTokenSummary(this.oauthTokens);
   }
@@ -789,6 +1038,34 @@ export class SeedIntegrationRepository extends IntegrationRepository {
       },
       ...this.providerAuditLogs,
     ];
+  }
+
+  private addOAuthCallbackAudit(input: {
+    providerCode: string;
+    flowId?: string;
+    state: string;
+    status: 'accepted' | 'rejected';
+    reason?: string;
+    callbackCodeHash?: string;
+    callbackError?: string;
+    providerAccountId?: string;
+    tokenId?: string;
+  }): OAuthCallbackAuditRecord {
+    const entry: OAuthCallbackAuditRecord = {
+      id: `oauth_callback_audit_${this.oauthCallbackAudits.length + 1}`,
+      providerCode: input.providerCode,
+      flowId: input.flowId,
+      state: input.state,
+      status: input.status,
+      reason: input.reason,
+      callbackCodeHash: input.callbackCodeHash,
+      callbackError: input.callbackError,
+      providerAccountId: input.providerAccountId,
+      tokenId: input.tokenId,
+      createdAt: new Date().toISOString(),
+    };
+    this.oauthCallbackAudits = [entry, ...this.oauthCallbackAudits];
+    return entry;
   }
 
   private findProvider(code: string): IntegrationProviderRecord {
@@ -927,6 +1204,10 @@ function cloneOAuthToken(token: OAuthTokenRecord): OAuthTokenRecord {
     ...token,
     scopes: [...token.scopes],
   };
+}
+
+function hashOAuthCallbackCode(code: string): string {
+  return createHash('sha256').update(code).digest('hex');
 }
 
 function listProviderChangedFields(

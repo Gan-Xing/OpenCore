@@ -2,7 +2,9 @@ import type {
   IntegrationDesignDto,
   IntegrationOutboxDto,
   IntegrationProviderAuditLogDto,
+  OAuthCallbackAuditDto,
   OAuthTokenDto,
+  OAuthFlowDto,
   IntegrationProviderDto,
   IntegrationTemplateDto,
   OAuthCallbackContractDto,
@@ -13,6 +15,8 @@ export type IntegrationProviderAuditLogRecord = IntegrationProviderAuditLogDto;
 export type IntegrationTemplateRecord = IntegrationTemplateDto;
 export type IntegrationOutboxRecord = IntegrationOutboxDto;
 export type OAuthCallbackContractRecord = OAuthCallbackContractDto;
+export type OAuthFlowRecord = OAuthFlowDto;
+export type OAuthCallbackAuditRecord = OAuthCallbackAuditDto;
 export type OAuthTokenRecord = OAuthTokenDto;
 export type IntegrationDesignRecord = IntegrationDesignDto;
 

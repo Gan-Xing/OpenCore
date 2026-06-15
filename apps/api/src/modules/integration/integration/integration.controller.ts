@@ -34,6 +34,13 @@ import {
   IntegrationTemplatePageDto,
   IntegrationTemplateQueryDto,
   OAuthCallbackContractDto,
+  OAuthCallbackAuditPageDto,
+  OAuthCallbackAuditQueryDto,
+  OAuthCallbackResultDto,
+  OAuthFlowDto,
+  OAuthFlowPageDto,
+  OAuthFlowQueryDto,
+  OAuthProviderCallbackDto,
   OAuthTokenDto,
   OAuthTokenInventorySummaryDto,
   OAuthTokenPageDto,
@@ -43,6 +50,7 @@ import {
   PreviewTemplateDto,
   RevokeOAuthTokenDto,
   ScheduleOutboxDto,
+  StartOAuthFlowDto,
   TestIntegrationProviderDto,
   TemplatePreviewDto,
   TestOutboxMessageDto,
@@ -444,6 +452,42 @@ export class IntegrationController {
   @ApiOkResponse({ type: OAuthCallbackContractDto })
   getOAuthCallbackContract(): OAuthCallbackContractDto {
     return this.repository.getOAuthCallbackContract();
+  }
+
+  @Post('oauth/flows')
+  @ApiTags('Integration OAuth')
+  @RequirePermission('integration:oauth:manage')
+  @ApiOkResponse({ type: OAuthFlowDto })
+  startOAuthFlow(@Body() body: StartOAuthFlowDto): Promise<OAuthFlowDto> {
+    return this.repository.startOAuthFlow(body);
+  }
+
+  @Get('oauth/flows')
+  @ApiTags('Integration OAuth')
+  @RequirePermission('integration:oauth:read')
+  @ApiOkResponse({ type: OAuthFlowPageDto })
+  listOAuthFlows(@Query() query: OAuthFlowQueryDto): Promise<OAuthFlowPageDto> {
+    return this.repository.listOAuthFlows(query);
+  }
+
+  @Get('oauth/callback/:providerCode')
+  @ApiTags('Integration OAuth')
+  @ApiOkResponse({ type: OAuthCallbackResultDto })
+  callbackOAuthProvider(
+    @Param('providerCode') providerCode: string,
+    @Query() query: OAuthProviderCallbackDto,
+  ): Promise<OAuthCallbackResultDto> {
+    return this.repository.callbackOAuthProvider(providerCode, query);
+  }
+
+  @Get('oauth/callback-audits')
+  @ApiTags('Integration OAuth')
+  @RequirePermission('integration:oauth:read')
+  @ApiOkResponse({ type: OAuthCallbackAuditPageDto })
+  listOAuthCallbackAudits(
+    @Query() query: OAuthCallbackAuditQueryDto,
+  ): Promise<OAuthCallbackAuditPageDto> {
+    return this.repository.listOAuthCallbackAudits(query);
   }
 
   @Get('oauth/tokens/summary')

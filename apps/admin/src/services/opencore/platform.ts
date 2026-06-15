@@ -120,7 +120,9 @@ import {
   type IntegrationOutboxTestResult,
   type IntegrationTemplateQueryRequest,
   type IntegrationTemplateSummary,
+  type OAuthCallbackAuditSummary,
   type OAuthCallbackContractSummary,
+  type OAuthFlowSummary,
   type OAuthTokenInventorySummary,
   type OAuthTokenQueryRequest,
   type OAuthTokenSummary,
@@ -1600,6 +1602,51 @@ export function getOpenCoreWebSocketDesign(): Promise<IntegrationDesignSummary> 
 
 export function getOpenCoreOAuthCallbackContract(): Promise<OAuthCallbackContractSummary> {
   return integrationClient.getOAuthCallbackContract(getRequiredAdminToken());
+}
+
+export async function listOpenCoreOAuthProviders(): Promise<
+  IntegrationProviderSummary[]
+> {
+  const page = await integrationClient.listOAuthProviders(
+    getRequiredAdminToken(),
+    {
+      enabled: true,
+      page: 1,
+      pageSize: 100,
+    },
+  );
+  return [...page.items];
+}
+
+export function startOpenCoreOAuthFlow(body: {
+  providerCode: string;
+  subjectId: string;
+  subjectType?: string;
+  scopes?: readonly string[];
+  redirectUri?: string;
+}): Promise<OAuthFlowSummary> {
+  return integrationClient.startOAuthFlow(getRequiredAdminToken(), body);
+}
+
+export async function listOpenCoreOAuthFlows(): Promise<OAuthFlowSummary[]> {
+  const page = await integrationClient.listOAuthFlows(getRequiredAdminToken(), {
+    page: 1,
+    pageSize: 20,
+  });
+  return [...page.items];
+}
+
+export async function listOpenCoreOAuthCallbackAudits(): Promise<
+  OAuthCallbackAuditSummary[]
+> {
+  const page = await integrationClient.listOAuthCallbackAudits(
+    getRequiredAdminToken(),
+    {
+      page: 1,
+      pageSize: 20,
+    },
+  );
+  return [...page.items];
 }
 
 export function getOpenCoreOAuthTokenSummary(): Promise<OAuthTokenInventorySummary> {

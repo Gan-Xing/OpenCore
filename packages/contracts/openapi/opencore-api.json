@@ -6413,6 +6413,202 @@
         "tags": ["Integration", "Integration OAuth"]
       }
     },
+    "/api/integrations/oauth/flows": {
+      "post": {
+        "operationId": "IntegrationController_startOAuthFlow",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/StartOAuthFlowDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OAuthFlowDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration OAuth"]
+      },
+      "get": {
+        "operationId": "IntegrationController_listOAuthFlows",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "providerCode",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "subjectId",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["completed", "expired", "failed", "pending"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OAuthFlowPageDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration OAuth"]
+      }
+    },
+    "/api/integrations/oauth/callback/{providerCode}": {
+      "get": {
+        "operationId": "IntegrationController_callbackOAuthProvider",
+        "parameters": [
+          {
+            "name": "providerCode",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "state",
+            "required": true,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "code",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "error",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "providerAccountId",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "scopes",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "expiresInSeconds",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "number" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthCallbackResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration OAuth"]
+      }
+    },
+    "/api/integrations/oauth/callback-audits": {
+      "get": {
+        "operationId": "IntegrationController_listOAuthCallbackAudits",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "providerCode",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string", "enum": ["accepted", "rejected"] }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthCallbackAuditPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration OAuth"]
+      }
+    },
     "/api/integrations/oauth/tokens/summary": {
       "get": {
         "operationId": "IntegrationController_getOAuthTokenSummary",
@@ -11174,6 +11370,83 @@
           "auditAction"
         ]
       },
+      "StartOAuthFlowDto": {
+        "type": "object",
+        "properties": {
+          "providerCode": { "type": "string" },
+          "subjectType": { "type": "string" },
+          "subjectId": { "type": "string" },
+          "scopes": { "type": "array", "items": { "type": "string" } },
+          "redirectUri": { "type": "string" }
+        },
+        "required": ["providerCode", "subjectId"]
+      },
+      "OAuthFlowDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "providerCode": { "type": "string" },
+          "state": { "type": "string" },
+          "subjectType": { "type": "string" },
+          "subjectId": { "type": "string" },
+          "scopes": { "type": "array", "items": { "type": "string" } },
+          "redirectUri": { "type": "string" },
+          "authorizationUrl": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["completed", "expired", "failed", "pending"]
+          },
+          "expiresAt": { "type": "string" },
+          "callbackCodeHash": { "type": "string" },
+          "callbackError": { "type": "string" },
+          "tokenId": { "type": "string" },
+          "completedAt": { "type": "string" },
+          "createdAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "providerCode",
+          "state",
+          "subjectType",
+          "subjectId",
+          "scopes",
+          "authorizationUrl",
+          "status",
+          "expiresAt",
+          "createdAt"
+        ]
+      },
+      "OAuthFlowPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/OAuthFlowDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "OAuthCallbackAuditDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "providerCode": { "type": "string" },
+          "flowId": { "type": "string" },
+          "state": { "type": "string" },
+          "status": { "type": "string", "enum": ["accepted", "rejected"] },
+          "reason": { "type": "string" },
+          "callbackCodeHash": { "type": "string" },
+          "callbackError": { "type": "string" },
+          "providerAccountId": { "type": "string" },
+          "tokenId": { "type": "string" },
+          "createdAt": { "type": "string" }
+        },
+        "required": ["id", "providerCode", "state", "status", "createdAt"]
+      },
       "OAuthTokenDto": {
         "type": "object",
         "properties": {
@@ -11207,6 +11480,34 @@
           "status",
           "createdAt"
         ]
+      },
+      "OAuthCallbackResultDto": {
+        "type": "object",
+        "properties": {
+          "providerCode": { "type": "string" },
+          "flowId": { "type": "string" },
+          "state": { "type": "string" },
+          "status": { "type": "string", "enum": ["accepted", "rejected"] },
+          "message": { "type": "string" },
+          "audit": { "$ref": "#/components/schemas/OAuthCallbackAuditDto" },
+          "token": { "$ref": "#/components/schemas/OAuthTokenDto" },
+          "completedAt": { "type": "string" }
+        },
+        "required": ["providerCode", "state", "status", "message", "audit"]
+      },
+      "OAuthCallbackAuditPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/OAuthCallbackAuditDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
       },
       "OAuthTokenPageDto": {
         "type": "object",

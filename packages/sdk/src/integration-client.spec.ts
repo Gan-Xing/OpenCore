@@ -130,6 +130,25 @@ describe('createIntegrationClient', () => {
     });
     await client.listOAuthProviders('token', { enabled: true });
     await client.getOAuthCallbackContract('token');
+    await client.startOAuthFlow('token', {
+      providerCode: 'oauth.github',
+      subjectId: 'user_admin',
+      scopes: ['read:user'],
+    });
+    await client.listOAuthFlows('token', {
+      providerCode: 'oauth.github',
+      status: 'pending',
+    });
+    await client.callbackOAuthProvider('github', {
+      state: 'oauth-state',
+      code: 'oauth-code',
+      providerAccountId: 'github:opencore-admin',
+      scopes: 'read:user,user:email',
+    });
+    await client.listOAuthCallbackAudits('token', {
+      providerCode: 'oauth.github',
+      status: 'accepted',
+    });
     await client.getOAuthTokenSummary('token');
     await client.listOAuthTokens('token', {
       providerCode: 'oauth.github',
@@ -237,6 +256,16 @@ describe('createIntegrationClient', () => {
       },
       { path: '/integrations/oauth/providers?enabled=true' },
       { path: '/integrations/oauth/callback-contract' },
+      { path: '/integrations/oauth/flows', method: 'POST' },
+      {
+        path: '/integrations/oauth/flows?providerCode=oauth.github&status=pending',
+      },
+      {
+        path: '/integrations/oauth/callback/github?state=oauth-state&code=oauth-code&providerAccountId=github%3Aopencore-admin&scopes=read%3Auser%2Cuser%3Aemail',
+      },
+      {
+        path: '/integrations/oauth/callback-audits?providerCode=oauth.github&status=accepted',
+      },
       { path: '/integrations/oauth/tokens/summary' },
       {
         path: '/integrations/oauth/tokens?providerCode=oauth.github&status=active',

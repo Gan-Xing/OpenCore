@@ -17,6 +17,8 @@ const smoke = createTypedSmokeRuntime();
 const { apiPrefix, baseUrl, checkDocs, clients, request } = smoke;
 
 const SMOKE_TOKEN_ID = 'oauth_token_github_smoke_revoke';
+const SMOKE_FLOW_SUBJECT_ID = 'user_smoke_oauth_flow';
+const SMOKE_FLOW_PROVIDER_ACCOUNT_ID = 'github:opencore-smoke-flow';
 const SMOKE_TOKEN_SEED = assertDefined(
   findOAuthTokenFixture(SMOKE_TOKEN_ID),
   `OAuth token fixture ${SMOKE_TOKEN_ID}`,
@@ -24,6 +26,7 @@ const SMOKE_TOKEN_SEED = assertDefined(
 
 async function main() {
   await resetSmokeOAuthToken();
+  await resetSmokeOAuthFlow();
   let checks: string[] = [];
 
   try {
@@ -36,6 +39,9 @@ async function main() {
       });
       for (const path of [
         '/api/integrations/oauth/tokens/summary',
+        '/api/integrations/oauth/flows',
+        '/api/integrations/oauth/callback/{providerCode}',
+        '/api/integrations/oauth/callback-audits',
         '/api/integrations/oauth/tokens',
         '/api/integrations/oauth/tokens/{id}',
         '/api/integrations/oauth/tokens/{id}/revoke',
@@ -60,6 +66,89 @@ async function main() {
       contract.auditAction,
       'integration.oauth.callback',
       'OAuth callback audit action',
+    );
+
+    const flow = await clients.integration.startOAuthFlow(token, {
+      providerCode: 'oauth.github',
+      subjectId: SMOKE_FLOW_SUBJECT_ID,
+      scopes: ['read:user'],
+    });
+    assertEqual(flow.providerCode, 'oauth.github', 'OAuth flow provider');
+    assertEqual(flow.status, 'pending', 'OAuth flow initial status');
+    assertString(flow.state, 'OAuth flow state');
+    assertIncludes(
+      flow.authorizationUrl,
+      `state=${encodeURIComponent(flow.state)}`,
+      'OAuth authorization URL state',
+    );
+
+    const callbackCode = `smoke-oauth-code-${Date.now()}`;
+    const callbackResult = await clients.integration.callbackOAuthProvider(
+      'github',
+      {
+        state: flow.state,
+        code: callbackCode,
+        providerAccountId: SMOKE_FLOW_PROVIDER_ACCOUNT_ID,
+        scopes: 'read:user',
+      },
+    );
+    assertEqual(callbackResult.status, 'accepted', 'OAuth callback status');
+    assertEqual(callbackResult.flowId, flow.id, 'OAuth callback flow binding');
+    assertDefined(callbackResult.token, 'OAuth callback archived token');
+    assertEqual(
+      callbackResult.token?.subjectId,
+      SMOKE_FLOW_SUBJECT_ID,
+      'OAuth callback token subject',
+    );
+    assertString(
+      callbackResult.token?.accessTokenRef,
+      'OAuth callback access token ref',
+    );
+    assertString(
+      callbackResult.audit.callbackCodeHash,
+      'OAuth callback code hash',
+    );
+
+    const completedFlows = await clients.integration.listOAuthFlows(token, {
+      subjectId: SMOKE_FLOW_SUBJECT_ID,
+      status: 'completed',
+    });
+    assertAtLeast(completedFlows.total, 1, 'completed OAuth flow total');
+    assertIncludes(
+      completedFlows.items.map((item) => item.id),
+      flow.id,
+      'completed OAuth flow list',
+    );
+
+    const acceptedAudits = await clients.integration.listOAuthCallbackAudits(
+      token,
+      {
+        providerCode: 'oauth.github',
+        status: 'accepted',
+      },
+    );
+    assertIncludes(
+      acceptedAudits.items.map((item) => item.flowId ?? ''),
+      flow.id,
+      'accepted OAuth callback audit list',
+    );
+
+    const repeatedCallback = await clients.integration.callbackOAuthProvider(
+      'oauth.github',
+      {
+        state: flow.state,
+        code: 'smoke-oauth-code-repeat',
+      },
+    );
+    assertEqual(
+      repeatedCallback.status,
+      'rejected',
+      'OAuth repeated callback status',
+    );
+    assertIncludes(
+      repeatedCallback.message,
+      'completed',
+      'OAuth repeated callback rejection reason',
     );
 
     const activePage = await clients.integration.listOAuthTokens(token, {
@@ -126,7 +215,10 @@ async function main() {
       activePage,
       afterSummary,
       beforeSummary,
+      callbackResult,
+      completedFlows,
       detail,
+      repeatedCallback,
       repeated,
       revoked,
       revokedPage,
@@ -139,12 +231,17 @@ async function main() {
       'auth.login',
       'integration.oauth-token-reset-before',
       'integration.oauth-token-summary',
+      'integration.oauth-flow-start',
+      'integration.oauth-callback-accept',
+      'integration.oauth-callback-audit',
+      'integration.oauth-callback-reject-repeat',
       'integration.oauth-token-list-detail',
       'integration.oauth-token-revoke',
       'integration.oauth-token-revoke-idempotent',
       'integration.oauth-token-secret-leak-guard',
     ];
   } finally {
+    await resetSmokeOAuthFlow();
     await resetSmokeOAuthToken();
     await disconnectSmokePrisma();
   }
@@ -171,6 +268,29 @@ async function resetSmokeOAuthToken() {
   });
 }
 
+async function resetSmokeOAuthFlow() {
+  const db = getSmokePrisma();
+  const flows = await db.integrationOAuthFlow.findMany({
+    select: { id: true },
+    where: { subjectId: SMOKE_FLOW_SUBJECT_ID },
+  });
+  const flowIds = flows.map((flow) => flow.id);
+  await db.integrationOAuthCallbackAudit.deleteMany({
+    where: {
+      OR: [
+        { providerAccountId: SMOKE_FLOW_PROVIDER_ACCOUNT_ID },
+        ...(flowIds.length > 0 ? [{ flowId: { in: flowIds } }] : []),
+      ],
+    },
+  });
+  await db.integrationOAuthFlow.deleteMany({
+    where: { subjectId: SMOKE_FLOW_SUBJECT_ID },
+  });
+  await db.integrationOAuthToken.deleteMany({
+    where: { subjectId: SMOKE_FLOW_SUBJECT_ID },
+  });
+}
+
 function toPrismaOAuthToken(token: OAuthTokenSummary) {
   return {
     accessTokenRef: token.accessTokenRef,
@@ -192,7 +312,13 @@ function toPrismaOAuthToken(token: OAuthTokenSummary) {
 
 function assertNoSecretLeak(value: unknown) {
   const text = JSON.stringify(value);
-  const forbidden = ['ghp_', 'github_pat_', 'refresh-token-value', 'unsafe'];
+  const forbidden = [
+    'ghp_',
+    'github_pat_',
+    'refresh-token-value',
+    'smoke-oauth-code',
+    'unsafe',
+  ];
   for (const marker of forbidden) {
     if (text.includes(marker)) {
       throw new Error(`OAuth token smoke leaked secret marker: ${marker}`);

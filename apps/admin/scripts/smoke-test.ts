@@ -895,10 +895,18 @@ if (
   !smsPage.includes('Outbox Recipient') ||
   !smsPage.includes('Sample Outbox Payload') ||
   !oauthPage.includes('@opencore/sdk') ||
+  !oauthPage.includes('listOpenCoreOAuthProviders') ||
+  !oauthPage.includes('startOpenCoreOAuthFlow') ||
+  !oauthPage.includes('listOpenCoreOAuthFlows') ||
+  !oauthPage.includes('listOpenCoreOAuthCallbackAudits') ||
   !oauthPage.includes('listOpenCoreOAuthTokens') ||
   !oauthPage.includes('getOpenCoreOAuthToken') ||
   !oauthPage.includes('revokeOpenCoreOAuthToken') ||
   !oauthPage.includes('Live OAuth token inventory') ||
+  !oauthPage.includes('OAuth callback flow admission') ||
+  !oauthPage.includes('State validation flow ledger') ||
+  !oauthPage.includes('OAuth callback audit trail') ||
+  !oauthPage.includes('Start OAuth flow') ||
   !oauthPage.includes('Unable to load live OAuth token inventory') ||
   !oauthPage.includes('canManageOAuthIntegration') ||
   !oauthPage.includes('integration:oauth:manage') ||
@@ -1024,12 +1032,18 @@ if (
   oauthPage.includes('createIntegrationFixtures') ||
   oauthPage.includes('findOAuthTokenFixture') ||
   oauthPage.includes('Using fallback OAuth token inventory data') ||
+  !opencorePlatformService.includes('integrationClient.listOAuthProviders') ||
+  !opencorePlatformService.includes('integrationClient.startOAuthFlow') ||
+  !opencorePlatformService.includes('integrationClient.listOAuthFlows') ||
+  !opencorePlatformService.includes(
+    'integrationClient.listOAuthCallbackAudits',
+  ) ||
   !opencorePlatformService.includes('integrationClient.listOAuthTokens') ||
   !opencorePlatformService.includes('integrationClient.getOAuthToken') ||
   !opencorePlatformService.includes('integrationClient.revokeOAuthToken')
 ) {
   throw new Error(
-    'Integration OAuth page must use live token list/detail/revoke SDK APIs without fixture fallback.',
+    'Integration OAuth page must use live provider/flow/callback-audit/token SDK APIs without fixture fallback.',
   );
 }
 

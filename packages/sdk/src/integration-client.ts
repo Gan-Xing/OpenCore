@@ -22,7 +22,14 @@ import type {
   IntegrationTemplatePage,
   IntegrationTemplateQueryRequest,
   IntegrationTemplateSummary,
+  OAuthCallbackAuditPage,
+  OAuthCallbackAuditQueryRequest,
   OAuthCallbackContractSummary,
+  OAuthCallbackResult,
+  OAuthFlowPage,
+  OAuthFlowQueryRequest,
+  OAuthFlowSummary,
+  OAuthProviderCallbackRequest,
   OAuthTokenInventorySummary,
   OAuthTokenPage,
   OAuthTokenQueryRequest,
@@ -33,6 +40,7 @@ import type {
   PreviewTemplateRequest,
   RevokeOAuthTokenRequest,
   ScheduleOutboxRequest,
+  StartOAuthFlowRequest,
   TestIntegrationProviderRequest,
   TestOutboxMessageRequest,
   TemplatePreviewSummary,
@@ -205,6 +213,22 @@ export type IntegrationClient = {
   getOAuthCallbackContract: (
     token: string,
   ) => Promise<OAuthCallbackContractSummary>;
+  startOAuthFlow: (
+    token: string,
+    body: StartOAuthFlowRequest,
+  ) => Promise<OAuthFlowSummary>;
+  listOAuthFlows: (
+    token: string,
+    query?: OAuthFlowQueryRequest,
+  ) => Promise<OAuthFlowPage>;
+  callbackOAuthProvider: (
+    providerCode: string,
+    query: OAuthProviderCallbackRequest,
+  ) => Promise<OAuthCallbackResult>;
+  listOAuthCallbackAudits: (
+    token: string,
+    query?: OAuthCallbackAuditQueryRequest,
+  ) => Promise<OAuthCallbackAuditPage>;
   getOAuthTokenSummary: (token: string) => Promise<OAuthTokenInventorySummary>;
   listOAuthTokens: (
     token: string,
@@ -439,6 +463,28 @@ export function createIntegrationClient(
     getOAuthCallbackContract: (token) =>
       request<OAuthCallbackContractSummary>(
         '/integrations/oauth/callback-contract',
+        { token },
+      ),
+    startOAuthFlow: (token, body) =>
+      request<OAuthFlowSummary>('/integrations/oauth/flows', {
+        method: 'POST',
+        body,
+        token,
+      }),
+    listOAuthFlows: (token, query) =>
+      request<OAuthFlowPage>(withQuery('/integrations/oauth/flows', query), {
+        token,
+      }),
+    callbackOAuthProvider: (providerCode, query) =>
+      request<OAuthCallbackResult>(
+        withQuery(
+          `/integrations/oauth/callback/${encodeURIComponent(providerCode)}`,
+          query,
+        ),
+      ),
+    listOAuthCallbackAudits: (token, query) =>
+      request<OAuthCallbackAuditPage>(
+        withQuery('/integrations/oauth/callback-audits', query),
         { token },
       ),
     getOAuthTokenSummary: (token) =>
