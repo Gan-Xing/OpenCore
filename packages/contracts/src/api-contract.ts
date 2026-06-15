@@ -44,6 +44,12 @@ export type ApiErrorResponseContract = {
   success: false;
   error: {
     code: string;
+    details?: unknown;
+    issues?: readonly {
+      code?: string;
+      message: string;
+      path?: string;
+    }[];
     message: string;
     statusCode: number;
     path?: string;

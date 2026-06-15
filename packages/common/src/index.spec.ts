@@ -1,6 +1,7 @@
 import {
   REQUEST_ID_HEADER,
   TRACE_ID_HEADER,
+  createApiErrorBody,
   createErrorResponse,
   createPageResult,
   createSuccessResponse,
@@ -8,6 +9,7 @@ import {
   findDuplicateValues,
   isNonEmptyString,
   isRecord,
+  isStableApiErrorCode,
   normalizeFilters,
   normalizeOptionalBoolean,
   normalizeOptionalNumber,
@@ -107,6 +109,8 @@ describe('@opencore/common', () => {
     expect(
       createErrorResponse({
         code: 'BAD_REQUEST',
+        details: { field: 'name' },
+        issues: [{ message: 'Name is required.', path: 'name' }],
         message: 'Invalid payload',
         statusCode: 400,
         timestamp: '2026-06-11T00:00:00.000Z',
@@ -115,6 +119,8 @@ describe('@opencore/common', () => {
       success: false,
       error: {
         code: 'BAD_REQUEST',
+        details: { field: 'name' },
+        issues: [{ message: 'Name is required.', path: 'name' }],
         message: 'Invalid payload',
         statusCode: 400,
         timestamp: '2026-06-11T00:00:00.000Z',
@@ -127,6 +133,27 @@ describe('@opencore/common', () => {
     expect(errorCodeFromHttpStatus(400, 'Bad Request')).toBe('BAD_REQUEST');
     expect(errorCodeFromHttpStatus(404)).toBe('HTTP_404');
     expect(errorCodeFromHttpStatus(503)).toBe('INTERNAL_SERVER_ERROR');
+  });
+
+  it('creates stable business error bodies with module-prefixed codes', () => {
+    expect(isStableApiErrorCode('AUTH_INVALID_CREDENTIALS')).toBe(true);
+    expect(isStableApiErrorCode('HTTP_400')).toBe(true);
+    expect(isStableApiErrorCode('bad-request')).toBe(false);
+    expect(
+      createApiErrorBody({
+        code: 'AUTH_INVALID_CREDENTIALS',
+        message: 'Invalid username or password',
+      }),
+    ).toEqual({
+      code: 'AUTH_INVALID_CREDENTIALS',
+      message: 'Invalid username or password',
+    });
+    expect(() =>
+      createApiErrorBody({
+        code: 'invalid code',
+        message: 'Invalid',
+      }),
+    ).toThrow('Invalid API error code: invalid code');
   });
 
   it('provides small deterministic runtime guards', () => {

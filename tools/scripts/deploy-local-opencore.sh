@@ -128,6 +128,9 @@ verify_admin_bundle_api_base_url() {
     --manifest "$ROOT_DIR/tools/guards/system-admin-live-only.guard.json" \
     --dist "$ROOT_DIR/apps/admin/dist"
 
+  run_tools_ts_script "$ROOT_DIR/tools/scripts/check-admin-i18n.ts" \
+    --root "$ROOT_DIR"
+
   if ! grep -R \
     --fixed-strings \
     --include='*.js' \
@@ -2279,6 +2282,12 @@ append_deploy_cors_origins() {
 }
 
 cd "$ROOT_DIR"
+
+echo "Running source guards"
+run_tools_ts_script "$ROOT_DIR/tools/scripts/check-admin-i18n.ts" \
+  --root "$ROOT_DIR"
+run_tools_ts_script "$ROOT_DIR/tools/scripts/check-api-error-codes.ts" \
+  --root "$ROOT_DIR"
 
 echo "Building OpenCore API"
 pnpm build:api

@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@opencore/database';
 import type { CreateMenuDto, UpdateMenuDto } from './system-menu.dto';
 import type { SystemMenuRecord } from './system-menu.records';
@@ -12,6 +7,9 @@ import {
   normalizeCreateSystemMenuInput,
   normalizeUpdateSystemMenuInput,
   resolveSystemMenuStage,
+  systemMenuBadRequest,
+  systemMenuConflict,
+  systemMenuNotFound,
   SystemMenuRepository,
 } from './system-menu.repository';
 
@@ -59,7 +57,11 @@ export class PrismaSystemMenuRepository extends SystemMenuRepository {
     const input = normalizeCreateSystemMenuInput(body);
 
     if (await this.prisma.menu.findUnique({ where: { key: input.key } })) {
-      throw new ConflictException(`Menu already exists: ${input.key}`);
+      throw systemMenuConflict(
+        'SYSTEM_MENU_ALREADY_EXISTS',
+        'Menu already exists.',
+        { key: input.key },
+      );
     }
 
     const permission = input.permissionCode
@@ -127,7 +129,11 @@ export class PrismaSystemMenuRepository extends SystemMenuRepository {
     });
 
     if (childCount > 0) {
-      throw new BadRequestException(`Menu has child menus: ${key}`);
+      throw systemMenuBadRequest(
+        'SYSTEM_MENU_HAS_CHILDREN',
+        'Menu has child menus.',
+        { key },
+      );
     }
 
     await this.prisma.menu.delete({ where: { key } });
@@ -157,7 +163,11 @@ export class PrismaSystemMenuRepository extends SystemMenuRepository {
     });
 
     if (!permission) {
-      throw new NotFoundException(`Permission not found: ${code}`);
+      throw systemMenuNotFound(
+        'SYSTEM_MENU_PERMISSION_NOT_FOUND',
+        'Permission not found.',
+        { code },
+      );
     }
 
     return permission;
@@ -172,7 +182,9 @@ export class PrismaSystemMenuRepository extends SystemMenuRepository {
     });
 
     if (!menu) {
-      throw new NotFoundException(`Menu not found: ${key}`);
+      throw systemMenuNotFound('SYSTEM_MENU_NOT_FOUND', 'Menu not found.', {
+        key,
+      });
     }
 
     return menu;
@@ -197,14 +209,20 @@ export class PrismaSystemMenuRepository extends SystemMenuRepository {
     );
 
     if (!parentByKey.has(parentKey)) {
-      throw new NotFoundException(`Parent menu not found: ${parentKey}`);
+      throw systemMenuNotFound(
+        'SYSTEM_MENU_PARENT_NOT_FOUND',
+        'Parent menu not found.',
+        { parentKey },
+      );
     }
 
     let cursor: string | undefined = parentKey;
     while (cursor) {
       if (cursor === currentKey) {
-        throw new BadRequestException(
-          `Menu parent would create a cycle: ${currentKey}`,
+        throw systemMenuBadRequest(
+          'SYSTEM_MENU_PARENT_CYCLE',
+          'Menu parent would create a cycle.',
+          { key: currentKey },
         );
       }
       cursor = parentByKey.get(cursor);

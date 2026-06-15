@@ -443,6 +443,9 @@ importers:
       '@nestjs/common':
         specifier: ^11.0.0
         version: 11.1.26(reflect-metadata@0.1.14)(rxjs@7.8.1)
+      '@opencore/common':
+        specifier: workspace:*
+        version: link:../common
       minio:
         specifier: ^8.0.7
         version: 8.0.7
@@ -584,6 +587,9 @@ importers:
       '@nestjs/core':
         specifier: ^11.0.0
         version: 11.1.26(@nestjs/common@11.1.26(reflect-metadata@0.1.14)(rxjs@7.8.1))(@nestjs/platform-express@11.1.26)(reflect-metadata@0.1.14)(rxjs@7.8.1)
+      '@opencore/common':
+        specifier: workspace:*
+        version: link:../common
       '@opencore/contracts':
         specifier: workspace:*
         version: link:../contracts

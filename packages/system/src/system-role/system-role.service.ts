@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import type { SystemMenuRecord } from '../system-menu/system-menu.records';
 import { SystemMenuService } from '../system-menu/system-menu.service';
 import type {
@@ -12,6 +12,7 @@ import type { SystemRoleRecord } from './system-role.records';
 import {
   createSystemRoleExportPreview,
   normalizeSetRoleStatusInput,
+  systemRoleBadRequest,
   SystemRoleRepository,
   type SystemRoleExportPreview,
 } from './system-role.repository';
@@ -68,7 +69,11 @@ export class SystemRoleService {
     const missingKey = menuKeys.find((menuKey) => !menusByKey.has(menuKey));
 
     if (missingKey) {
-      throw new BadRequestException(`System menu not found: ${missingKey}`);
+      throw systemRoleBadRequest(
+        'SYSTEM_ROLE_MENU_NOT_FOUND',
+        'System menu not found.',
+        { key: missingKey },
+      );
     }
 
     const menuPermissionCodes = collectMenuPermissionCodes(menus);
@@ -142,15 +147,21 @@ function collectMenuPermissionCodes(
 
 function normalizeRoleMenuKeys(value: unknown): readonly string[] {
   if (!Array.isArray(value)) {
-    throw new BadRequestException('System role menuKeys must be an array.');
+    throw systemRoleBadRequest(
+      'SYSTEM_ROLE_MENU_KEYS_INVALID',
+      'System role menuKeys must be an array.',
+      { field: 'menuKeys' },
+    );
   }
 
   const normalized = value.map((menuKey) => normalizeMenuKey(menuKey));
   const duplicate = findFirstDuplicate(normalized);
 
   if (duplicate) {
-    throw new BadRequestException(
+    throw systemRoleBadRequest(
+      'SYSTEM_ROLE_MENU_KEY_DUPLICATED',
       `System role menu key is duplicated: ${duplicate}`,
+      { duplicate },
     );
   }
 
@@ -159,13 +170,21 @@ function normalizeRoleMenuKeys(value: unknown): readonly string[] {
 
 function normalizeMenuKey(value: unknown): string {
   if (typeof value !== 'string') {
-    throw new BadRequestException('System role menu key must be a string.');
+    throw systemRoleBadRequest(
+      'SYSTEM_ROLE_MENU_KEY_INVALID_TYPE',
+      'System role menu key must be a string.',
+      { field: 'menuKeys' },
+    );
   }
 
   const normalized = value.trim();
 
   if (!normalized) {
-    throw new BadRequestException('System role menu key is required.');
+    throw systemRoleBadRequest(
+      'SYSTEM_ROLE_MENU_KEY_REQUIRED',
+      'System role menu key is required.',
+      { field: 'menuKeys' },
+    );
   }
 
   return normalized;

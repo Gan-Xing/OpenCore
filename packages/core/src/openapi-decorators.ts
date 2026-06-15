@@ -7,12 +7,20 @@ import {
 } from '@nestjs/swagger';
 
 export function ApiStandardErrorResponses(): MethodDecorator & ClassDecorator {
+  const schema = {
+    $ref: '#/components/schemas/ApiErrorResponse',
+  };
+
   return applyDecorators(
-    ApiResponse({ status: 400, description: 'Bad request' }),
-    ApiResponse({ status: 401, description: 'Unauthorized' }),
-    ApiResponse({ status: 403, description: 'Forbidden' }),
-    ApiResponse({ status: 404, description: 'Not found' }),
-    ApiResponse({ status: 500, description: 'Internal server error' }),
+    ApiResponse({ status: 400, description: 'Bad request', schema }),
+    ApiResponse({ status: 401, description: 'Unauthorized', schema }),
+    ApiResponse({ status: 403, description: 'Forbidden', schema }),
+    ApiResponse({ status: 404, description: 'Not found', schema }),
+    ApiResponse({
+      status: 500,
+      description: 'Internal server error',
+      schema,
+    }),
   );
 }
 

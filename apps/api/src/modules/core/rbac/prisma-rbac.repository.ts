@@ -1,10 +1,5 @@
 import { collectPermissionDefinitions } from '@opencore/module-registry';
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@opencore/database';
 import type {
   SecurityDataScopeProfile,
@@ -14,6 +9,9 @@ import {
   createRbacExportPreview,
   normalizeCreatePermissionInput,
   normalizeUpdatePermissionInput,
+  rbacBadRequest,
+  rbacConflict,
+  rbacNotFound,
   RbacRepository,
   type CreatePermissionRecord,
   type PermissionSummaryRecord,
@@ -116,7 +114,11 @@ export class PrismaRbacRepository extends RbacRepository {
     if (
       await this.prisma.permission.findUnique({ where: { code: input.code } })
     ) {
-      throw new ConflictException(`Permission already exists: ${input.code}`);
+      throw rbacConflict(
+        'RBAC_PERMISSION_ALREADY_EXISTS',
+        'Permission already exists.',
+        { code: input.code },
+      );
     }
 
     const permission = await this.prisma.permission.create({
@@ -267,7 +269,9 @@ export class PrismaRbacRepository extends RbacRepository {
     });
 
     if (!permission) {
-      throw new NotFoundException(`Permission not found: ${code}`);
+      throw rbacNotFound('RBAC_PERMISSION_NOT_FOUND', 'Permission not found.', {
+        code,
+      });
     }
 
     return permission;
@@ -275,7 +279,11 @@ export class PrismaRbacRepository extends RbacRepository {
 
   private assertCustomPermission(code: string, action: 'deleted' | 'updated') {
     if (permissionMetadataByCode.has(code)) {
-      throw new BadRequestException(`System permissions cannot be ${action}.`);
+      throw rbacBadRequest(
+        'RBAC_SYSTEM_PERMISSION_IMMUTABLE',
+        `System permissions cannot be ${action}.`,
+        { action, code },
+      );
     }
   }
 }

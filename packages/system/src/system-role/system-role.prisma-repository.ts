@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@opencore/database';
 import type { CreateRoleDto, UpdateRoleDto } from './system-role.dto';
 import type { SystemRoleRecord } from './system-role.records';
@@ -11,6 +6,9 @@ import {
   normalizeDataScope,
   normalizeCreateSystemRoleInput,
   normalizeUpdateSystemRoleInput,
+  systemRoleBadRequest,
+  systemRoleConflict,
+  systemRoleNotFound,
   SystemRoleRepository,
 } from './system-role.repository';
 
@@ -54,7 +52,11 @@ export class PrismaSystemRoleRepository extends SystemRoleRepository {
     const input = normalizeCreateSystemRoleInput(body);
 
     if (await this.prisma.role.findUnique({ where: { code: input.code } })) {
-      throw new ConflictException(`Role already exists: ${input.code}`);
+      throw systemRoleConflict(
+        'SYSTEM_ROLE_ALREADY_EXISTS',
+        'Role already exists.',
+        { code: input.code },
+      );
     }
 
     await this.assertPermissionsExist(input.permissionCodes);
@@ -132,7 +134,11 @@ export class PrismaSystemRoleRepository extends SystemRoleRepository {
     const role = await this.findRoleEntityByCode(code);
 
     if (role.system) {
-      throw new BadRequestException('System roles cannot be deleted.');
+      throw systemRoleBadRequest(
+        'SYSTEM_ROLE_CANNOT_DELETE_SYSTEM',
+        'System roles cannot be deleted.',
+        { code },
+      );
     }
 
     await this.prisma.rolePermission.deleteMany({
@@ -158,7 +164,9 @@ export class PrismaSystemRoleRepository extends SystemRoleRepository {
     });
 
     if (!role) {
-      throw new NotFoundException(`Role not found: ${code}`);
+      throw systemRoleNotFound('SYSTEM_ROLE_NOT_FOUND', 'Role not found.', {
+        code,
+      });
     }
 
     return role;
@@ -177,7 +185,11 @@ export class PrismaSystemRoleRepository extends SystemRoleRepository {
     );
 
     if (missing) {
-      throw new NotFoundException(`Permission not found: ${missing}`);
+      throw systemRoleNotFound(
+        'SYSTEM_ROLE_PERMISSION_NOT_FOUND',
+        'Permission not found.',
+        { code: missing },
+      );
     }
   }
 
@@ -194,7 +206,11 @@ export class PrismaSystemRoleRepository extends SystemRoleRepository {
     const missing = deptIds.find((deptId) => !existing.has(deptId));
 
     if (missing) {
-      throw new NotFoundException(`System dept not found: ${missing}`);
+      throw systemRoleNotFound(
+        'SYSTEM_ROLE_DEPT_NOT_FOUND',
+        'System dept not found.',
+        { id: missing },
+      );
     }
   }
 }

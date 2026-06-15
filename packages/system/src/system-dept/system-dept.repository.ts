@@ -1,4 +1,9 @@
-import { BadRequestException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
+import { createApiErrorBody } from '@opencore/common';
 import type {
   CreateSystemDeptDto,
   UpdateSystemDeptOrderDto,
@@ -145,23 +150,29 @@ export function normalizeUpdateSystemDeptOrderInput(
   body: UpdateSystemDeptOrderDto,
 ): NormalizedSystemDeptOrderItem[] {
   if (!Array.isArray(body.items) || body.items.length === 0) {
-    throw new BadRequestException(
+    throw systemDeptBadRequest(
+      'SYSTEM_DEPT_ORDER_ITEMS_INVALID',
       'System dept order update requires at least one item.',
+      { field: 'items' },
     );
   }
 
   const seenIds = new Set<string>();
   return body.items.map((item, index) => {
     if (!item || typeof item !== 'object') {
-      throw new BadRequestException(
+      throw systemDeptBadRequest(
+        'SYSTEM_DEPT_ORDER_ITEM_INVALID',
         `System dept order item ${index + 1} must be an object.`,
+        { index },
       );
     }
 
     const id = normalizeRequiredText(item.id, `items[${index}].id`);
     if (seenIds.has(id)) {
-      throw new BadRequestException(
+      throw systemDeptBadRequest(
+        'SYSTEM_DEPT_ORDER_ITEM_ID_DUPLICATED',
         `Duplicate system dept order item id: ${id}`,
+        { id },
       );
     }
     seenIds.add(id);
@@ -229,7 +240,11 @@ export function toSystemDeptOptionRecord(
 
 export function assertNoDeptSelfParent(id: string, parentId?: string): void {
   if (parentId && parentId === id) {
-    throw new BadRequestException('System dept cannot be its own parent.');
+    throw systemDeptBadRequest(
+      'SYSTEM_DEPT_PARENT_SELF',
+      'System dept cannot be its own parent.',
+      { id },
+    );
   }
 }
 
@@ -238,16 +253,20 @@ export function assertNoDeptChildren(
   action = 'deleted',
 ): void {
   if (childCount > 0) {
-    throw new BadRequestException(
+    throw systemDeptBadRequest(
+      'SYSTEM_DEPT_HAS_CHILDREN',
       `System dept cannot be ${action} while it has children.`,
+      { action, childCount },
     );
   }
 }
 
 export function assertNoDeptUsers(userCount: number): void {
   if (userCount > 0) {
-    throw new BadRequestException(
+    throw systemDeptBadRequest(
+      'SYSTEM_DEPT_HAS_USERS',
       'System dept cannot be deleted while users are assigned.',
+      { userCount },
     );
   }
 }
@@ -262,8 +281,10 @@ export function assertSameDeptParent(
 
   const firstParentId = rows[0]?.parentId;
   if (!rows.every((row) => row.parentId === firstParentId)) {
-    throw new BadRequestException(
+    throw systemDeptBadRequest(
+      'SYSTEM_DEPT_SIBLING_PARENT_MISMATCH',
       `System dept siblings must share the same parent to be ${action}.`,
+      { action },
     );
   }
 }
@@ -279,8 +300,10 @@ function normalizeDeptCode(value: string): string {
   const code = normalizeRequiredText(value, 'code');
 
   if (!DEPT_CODE_PATTERN.test(code)) {
-    throw new BadRequestException(
+    throw systemDeptBadRequest(
+      'SYSTEM_DEPT_CODE_INVALID',
       'System dept code must start with a lowercase letter and contain only lowercase letters, numbers, dot, underscore or dash.',
+      { field: 'code' },
     );
   }
 
@@ -291,7 +314,11 @@ function normalizeRequiredText(value: string, fieldName: string): string {
   const normalized = value.trim();
 
   if (!normalized) {
-    throw new BadRequestException(`System dept ${fieldName} is required.`);
+    throw systemDeptBadRequest(
+      'SYSTEM_DEPT_FIELD_REQUIRED',
+      `System dept ${fieldName} is required.`,
+      { field: fieldName },
+    );
   }
 
   return normalized;
@@ -317,7 +344,11 @@ function normalizeOptionalBoolean(
     return false;
   }
 
-  throw new BadRequestException(`Invalid system dept enabled filter: ${value}`);
+  throw systemDeptBadRequest(
+    'SYSTEM_DEPT_ENABLED_FILTER_INVALID',
+    `Invalid system dept enabled filter: ${value}`,
+    { value },
+  );
 }
 
 function normalizeOrder(value: number | undefined): number {
@@ -326,8 +357,10 @@ function normalizeOrder(value: number | undefined): number {
   }
 
   if (!Number.isInteger(value) || value < 0) {
-    throw new BadRequestException(
+    throw systemDeptBadRequest(
+      'SYSTEM_DEPT_ORDER_INVALID',
       'System dept order must be a non-negative integer.',
+      { field: 'order' },
     );
   }
 
@@ -348,4 +381,30 @@ function withoutChildren(node: SystemDeptTreeRecord): SystemDeptRecord {
     createdAt: node.createdAt,
     updatedAt: node.updatedAt,
   };
+}
+
+export function systemDeptBadRequest(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): BadRequestException {
+  return new BadRequestException(
+    createApiErrorBody({ code, message, details }),
+  );
+}
+
+export function systemDeptConflict(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): ConflictException {
+  return new ConflictException(createApiErrorBody({ code, message, details }));
+}
+
+export function systemDeptNotFound(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): NotFoundException {
+  return new NotFoundException(createApiErrorBody({ code, message, details }));
 }

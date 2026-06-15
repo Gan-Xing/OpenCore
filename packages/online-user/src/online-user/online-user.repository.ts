@@ -3,6 +3,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { createApiErrorBody } from '@opencore/common';
 import {
   createPageResult,
   normalizeOptionalString,
@@ -180,8 +181,10 @@ export function assertSessionActive(input: {
   revokedAt?: string;
 }): void {
   if (input.revokedAt) {
-    throw new BadRequestException(
-      `Online user session is already revoked: ${input.id}`,
+    throw onlineBadRequest(
+      'ONLINE_USER_SESSION_ALREADY_REVOKED',
+      'Online user session is already revoked.',
+      { id: input.id },
     );
   }
 }
@@ -192,11 +195,19 @@ export function assertTokenSessionActive(input: {
   expiresAt?: string;
 }): void {
   if (input.revokedAt) {
-    throw new UnauthorizedException('Bearer token has been revoked');
+    throw onlineUnauthorized(
+      'ONLINE_USER_TOKEN_REVOKED',
+      'Bearer token has been revoked',
+      { tokenId: input.tokenId },
+    );
   }
 
   if (input.expiresAt && input.expiresAt <= new Date().toISOString()) {
-    throw new UnauthorizedException('Bearer token session expired');
+    throw onlineUnauthorized(
+      'ONLINE_USER_TOKEN_EXPIRED',
+      'Bearer token session expired',
+      { tokenId: input.tokenId },
+    );
   }
 }
 
@@ -205,8 +216,10 @@ export function assertTokenSessionRegistered<T>(
   tokenId: string,
 ): NonNullable<T> {
   if (!session) {
-    throw new UnauthorizedException(
-      `Bearer token session is not registered: ${tokenId}`,
+    throw onlineUnauthorized(
+      'ONLINE_USER_TOKEN_SESSION_UNREGISTERED',
+      'Bearer token session is not registered.',
+      { tokenId },
     );
   }
 
@@ -227,7 +240,11 @@ export function normalizeExpiredBefore(value: string | undefined): string {
 
   const timestamp = Date.parse(value);
   if (Number.isNaN(timestamp)) {
-    throw new BadRequestException('expiredBefore must be an ISO date-time');
+    throw onlineBadRequest(
+      'ONLINE_USER_EXPIRED_BEFORE_INVALID',
+      'expiredBefore must be an ISO date-time',
+      { field: 'expiredBefore' },
+    );
   }
 
   return new Date(timestamp).toISOString();
@@ -238,10 +255,42 @@ export function requireOnlineUserSession<T>(
   id: string,
 ): T {
   if (!record) {
-    throw new NotFoundException(`Online user session not found: ${id}`);
+    throw onlineNotFound(
+      'ONLINE_USER_SESSION_NOT_FOUND',
+      'Online user session not found.',
+      { id },
+    );
   }
 
   return record;
+}
+
+function onlineBadRequest(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): BadRequestException {
+  return new BadRequestException(
+    createApiErrorBody({ code, message, details }),
+  );
+}
+
+function onlineUnauthorized(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): UnauthorizedException {
+  return new UnauthorizedException(
+    createApiErrorBody({ code, message, details }),
+  );
+}
+
+function onlineNotFound(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): NotFoundException {
+  return new NotFoundException(createApiErrorBody({ code, message, details }));
 }
 
 export function compareOnlineUserSessions(

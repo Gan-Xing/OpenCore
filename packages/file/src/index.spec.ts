@@ -77,8 +77,17 @@ describe('@opencore/file', () => {
     expect(() =>
       assertSafeFileAssetInput({ ...input, originalName: '../secret.txt' }),
     ).toThrow('File name must be a plain file name.');
+    expectFileErrorCode(
+      () =>
+        assertSafeFileAssetInput({ ...input, originalName: '../secret.txt' }),
+      'FILE_NAME_INVALID',
+    );
     expect(() => normalizeObjectPrefix('/absolute')).toThrow(
       'Object prefix must be a relative prefix.',
+    );
+    expectFileErrorCode(
+      () => normalizeObjectPrefix('/absolute'),
+      'FILE_OBJECT_PREFIX_INVALID',
     );
   });
 
@@ -112,9 +121,10 @@ describe('@opencore/file', () => {
           }),
         ],
       );
-      await expect(
+      await expectFileErrorCodeAsync(
         storage.putObject({ key: '../escape.txt', body: 'nope' }),
-      ).rejects.toThrow('Storage key must be a relative object key.');
+        'FILE_STORAGE_KEY_INVALID',
+      );
       await expect(
         storage.deleteObject('runtime/file-assets/handbook.txt'),
       ).resolves.toEqual({
@@ -245,6 +255,44 @@ function createMemoryStorage(): FileStorage & {
   };
 
   return storage;
+}
+
+function expectFileErrorCode(action: () => unknown, code: string): void {
+  try {
+    action();
+  } catch (error) {
+    expect(getHttpExceptionResponse(error)).toMatchObject({ code });
+    return;
+  }
+
+  throw new Error(`Expected file error code ${code}`);
+}
+
+async function expectFileErrorCodeAsync(
+  promise: Promise<unknown>,
+  code: string,
+): Promise<void> {
+  try {
+    await promise;
+  } catch (error) {
+    expect(getHttpExceptionResponse(error)).toMatchObject({ code });
+    return;
+  }
+
+  throw new Error(`Expected file error code ${code}`);
+}
+
+function getHttpExceptionResponse(error: unknown): unknown {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'getResponse' in error &&
+    typeof error.getResponse === 'function'
+  ) {
+    return error.getResponse();
+  }
+
+  return undefined;
 }
 
 function createS3ProbeClient(exists: boolean): S3PrefixProbeClient & {

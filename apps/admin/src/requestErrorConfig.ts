@@ -14,6 +14,8 @@ enum ErrorShowType {
 
 type ApiErrorInfo = {
   code?: string;
+  details?: unknown;
+  issues?: readonly unknown[];
   message?: string;
   statusCode?: number;
   requestId?: string;
@@ -59,13 +61,31 @@ function getErrorStatus(error: any): number | undefined {
   return error?.response?.status ?? getApiErrorInfo(error)?.statusCode;
 }
 
-function getErrorMessage(error: any): string {
+export function formatRequestErrorMessage(error: unknown): string {
+  const fallbackMessage = getFallbackErrorMessage(error);
+  const errorCode = getErrorCode(error);
+
+  if (!errorCode) {
+    return fallbackMessage;
+  }
+
+  return getIntl().formatMessage({
+    id: `error.${errorCode}`,
+    defaultMessage: fallbackMessage,
+  });
+}
+
+function getFallbackErrorMessage(error: any): string {
   return (
     getApiErrorInfo(error)?.message ??
     error?.info?.errorMessage ??
     error?.message ??
     'Request error, please retry.'
   );
+}
+
+function getErrorCode(error: any): string | undefined {
+  return getApiErrorInfo(error)?.code ?? error?.info?.errorCode;
 }
 
 export const errorConfig: RequestConfig = {
@@ -91,28 +111,16 @@ export const errorConfig: RequestConfig = {
     errorHandler: (error: any, opts: any) => {
       if (opts?.skipErrorHandler) throw error;
 
-      const status = getErrorStatus(error);
-
-      if (status === 401) {
-        redirectToLogin();
-        return;
-      }
-
-      if (status === 403) {
-        history.push('/403');
-        return;
-      }
-
       if (error.name === 'BizError') {
         const errorInfo: ResponseStructure | undefined = error.info;
 
         if (!errorInfo) {
-          message.error(getErrorMessage(error));
+          message.error(formatRequestErrorMessage(error));
           return;
         }
 
-        const errorMessage = getErrorMessage(error);
-        const errorCode = errorInfo.errorCode;
+        const errorMessage = formatRequestErrorMessage(error);
+        const errorCode = getErrorCode(error);
 
         switch (errorInfo.showType) {
           case ErrorShowType.SILENT:
@@ -136,10 +144,22 @@ export const errorConfig: RequestConfig = {
             message.error(errorMessage);
         }
       } else if (error.response) {
+        const status = getErrorStatus(error);
+
+        if (status === 401) {
+          redirectToLogin();
+          return;
+        }
+
+        if (status === 403) {
+          history.push('/403');
+          return;
+        }
+
         const apiError = getApiErrorInfo(error);
         notification.error({
           message: apiError?.code ?? `HTTP ${error.response.status}`,
-          description: apiError?.message ?? `Response status: ${status}`,
+          description: formatRequestErrorMessage(error),
         });
       } else if (typeof navigator !== 'undefined' && !navigator.onLine) {
         message.error(
@@ -152,7 +172,7 @@ export const errorConfig: RequestConfig = {
       } else if (error.request) {
         message.error('None response! Please retry.');
       } else {
-        message.error(getErrorMessage(error));
+        message.error(formatRequestErrorMessage(error));
       }
     },
   },

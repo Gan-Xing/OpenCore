@@ -72,7 +72,12 @@ describe('@opencore/security security-rbac', () => {
     ).rejects.toThrow(UnauthorizedException);
     await expect(
       guard.canActivate(createContext(createRequest(adminToken))),
-    ).rejects.toThrow(ForbiddenException);
+    ).rejects.toMatchObject({
+      response: expect.objectContaining({
+        code: 'RBAC_PERMISSION_MISSING',
+        details: { permissionCode: 'core:user:delete' },
+      }),
+    });
   });
 
   it('allows authenticated-only requests without requiring a permission', async () => {
@@ -109,7 +114,12 @@ describe('@opencore/security security-rbac', () => {
 
     await expect(
       guard.canActivate(createContext(createRequest(adminToken))),
-    ).rejects.toThrow(ForbiddenException);
+    ).rejects.toMatchObject({
+      response: expect.objectContaining({
+        code: 'RBAC_ROLE_MISSING',
+        details: { roleCodes: ['operator'] },
+      }),
+    });
   });
 
   it('reuses the request user when an earlier guard has already authenticated', async () => {

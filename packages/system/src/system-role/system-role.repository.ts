@@ -1,4 +1,9 @@
-import { BadRequestException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
+import { createApiErrorBody } from '@opencore/common';
 import type {
   CreateRoleDto,
   SetRoleStatusDto,
@@ -136,7 +141,10 @@ export function normalizeUpdateSystemRoleInput(
 
 function assertRoleStatusAllowed(system: boolean, enabled: boolean): void {
   if (system && !enabled) {
-    throw new BadRequestException('System roles cannot be disabled.');
+    throw systemRoleBadRequest(
+      'SYSTEM_ROLE_CANNOT_DISABLE_SYSTEM',
+      'System roles cannot be disabled.',
+    );
   }
 }
 
@@ -159,8 +167,10 @@ function normalizeRoleCode(value: string): string {
   const code = normalizeRequiredText(value, 'code');
 
   if (!ROLE_CODE_PATTERN.test(code)) {
-    throw new BadRequestException(
+    throw systemRoleBadRequest(
+      'SYSTEM_ROLE_CODE_INVALID',
       'System role code must start with a lowercase letter and contain only lowercase letters, numbers, dot, underscore or dash.',
+      { field: 'code' },
     );
   }
 
@@ -171,7 +181,11 @@ function normalizeRequiredText(value: string, fieldName: string): string {
   const normalized = value.trim();
 
   if (!normalized) {
-    throw new BadRequestException(`System role ${fieldName} is required.`);
+    throw systemRoleBadRequest(
+      'SYSTEM_ROLE_FIELD_REQUIRED',
+      `System role ${fieldName} is required.`,
+      { field: fieldName },
+    );
   }
 
   return normalized;
@@ -189,8 +203,10 @@ function normalizeOptionalBoolean(
 
 function normalizeRequiredBoolean(value: unknown, fieldName: string): boolean {
   if (typeof value !== 'boolean') {
-    throw new BadRequestException(
+    throw systemRoleBadRequest(
+      'SYSTEM_ROLE_BOOLEAN_INVALID',
       `System role ${fieldName} must be a boolean.`,
+      { field: fieldName },
     );
   }
 
@@ -206,8 +222,10 @@ function normalizePermissionCodes(
   const duplicate = findFirstDuplicate(normalized);
 
   if (duplicate) {
-    throw new BadRequestException(
+    throw systemRoleBadRequest(
+      'SYSTEM_ROLE_PERMISSION_CODE_DUPLICATED',
       `System role permission code is duplicated: ${duplicate}`,
+      { duplicate },
     );
   }
 
@@ -223,7 +241,11 @@ export function normalizeDataScope(value: string): SystemRoleDataScope {
     return value as SystemRoleDataScope;
   }
 
-  throw new BadRequestException(`System role dataScope is invalid: ${value}`);
+  throw systemRoleBadRequest(
+    'SYSTEM_ROLE_DATA_SCOPE_INVALID',
+    `System role dataScope is invalid: ${value}`,
+    { value },
+  );
 }
 
 function normalizeDataScopeDeptIds(
@@ -235,8 +257,10 @@ function normalizeDataScopeDeptIds(
   const duplicate = findFirstDuplicate(normalized);
 
   if (duplicate) {
-    throw new BadRequestException(
+    throw systemRoleBadRequest(
+      'SYSTEM_ROLE_DATA_SCOPE_DEPT_ID_DUPLICATED',
       `System role data scope dept id is duplicated: ${duplicate}`,
+      { duplicate },
     );
   }
 
@@ -248,10 +272,37 @@ function assertDataScopeDeptIds(
   dataScopeDeptIds: readonly string[],
 ): void {
   if (dataScope === 'custom' && dataScopeDeptIds.length === 0) {
-    throw new BadRequestException(
+    throw systemRoleBadRequest(
+      'SYSTEM_ROLE_CUSTOM_DATA_SCOPE_DEPT_REQUIRED',
       'System role custom data scope requires at least one dept id.',
     );
   }
+}
+
+export function systemRoleBadRequest(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): BadRequestException {
+  return new BadRequestException(
+    createApiErrorBody({ code, message, details }),
+  );
+}
+
+export function systemRoleConflict(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): ConflictException {
+  return new ConflictException(createApiErrorBody({ code, message, details }));
+}
+
+export function systemRoleNotFound(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): NotFoundException {
+  return new NotFoundException(createApiErrorBody({ code, message, details }));
 }
 
 function findFirstDuplicate(values: readonly string[]): string | undefined {

@@ -1,4 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
+import { createApiErrorBody } from '@opencore/common';
 import { toApiErrorResponse } from './error-response';
 
 describe('toApiErrorResponse', () => {
@@ -40,6 +41,46 @@ describe('toApiErrorResponse', () => {
         code: 'INTERNAL_SERVER_ERROR',
         message: 'Unexpected server error',
         statusCode: 500,
+        timestamp: '2026-06-10T00:00:00.000Z',
+      },
+    });
+  });
+
+  it('preserves stable business error codes and structured details', () => {
+    expect(
+      toApiErrorResponse(
+        new BadRequestException(
+          createApiErrorBody({
+            code: 'AUTH_INVALID_CREDENTIALS',
+            message: 'Invalid username or password',
+            details: { provider: 'local' },
+            issues: [
+              {
+                code: 'REQUIRED',
+                message: 'username is required',
+                path: 'username',
+              },
+            ],
+          }),
+        ),
+        {
+          timestamp: '2026-06-10T00:00:00.000Z',
+        },
+      ),
+    ).toEqual({
+      success: false,
+      error: {
+        code: 'AUTH_INVALID_CREDENTIALS',
+        message: 'Invalid username or password',
+        statusCode: 400,
+        details: { provider: 'local' },
+        issues: [
+          {
+            code: 'REQUIRED',
+            message: 'username is required',
+            path: 'username',
+          },
+        ],
         timestamp: '2026-06-10T00:00:00.000Z',
       },
     });

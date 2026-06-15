@@ -34,9 +34,56 @@ export function createOpenApiDocument(app: INestApplication) {
 
   return {
     ...document,
+    components: {
+      ...document.components,
+      schemas: {
+        ...document.components?.schemas,
+        ...createApiErrorSchemas(),
+      },
+    },
     tags: [...existingTags.values()].sort((left, right) =>
       left.name.localeCompare(right.name),
     ),
+  };
+}
+
+function createApiErrorSchemas() {
+  return {
+    ApiErrorIssue: {
+      type: 'object',
+      properties: {
+        code: { type: 'string' },
+        message: { type: 'string' },
+        path: { type: 'string' },
+      },
+      required: ['message'],
+    },
+    ApiErrorDetail: {
+      type: 'object',
+      properties: {
+        code: { type: 'string' },
+        message: { type: 'string' },
+        statusCode: { type: 'number' },
+        details: {},
+        issues: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/ApiErrorIssue' },
+        },
+        path: { type: 'string' },
+        requestId: { type: 'string' },
+        traceId: { type: 'string' },
+        timestamp: { type: 'string', format: 'date-time' },
+      },
+      required: ['code', 'message', 'statusCode', 'timestamp'],
+    },
+    ApiErrorResponse: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', enum: [false] },
+        error: { $ref: '#/components/schemas/ApiErrorDetail' },
+      },
+      required: ['success', 'error'],
+    },
   };
 }
 

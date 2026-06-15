@@ -14,4 +14,8 @@ export default {
   'app.error.home': 'Back Home',
   'app.request.offline':
     'Network unavailable. Please check your connection and try again.',
+  'app.header.dashboard': 'OpenCore Dashboard',
+  'app.header.tools': 'OpenCore tools',
+  'app.header.version': 'Version {version}',
+  'app.header.language': 'Switch language',
 };

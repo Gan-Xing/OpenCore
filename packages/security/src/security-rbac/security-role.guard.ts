@@ -5,6 +5,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { createApiErrorBody } from '@opencore/common';
 import { SecurityAuthService } from '../security-auth';
 import { REQUIRED_ROLES_KEY } from './security-rbac.decorators';
 import type { SecurityRequestWithAuth } from './security-rbac.request';
@@ -41,7 +42,11 @@ export class SecurityRoleGuard implements CanActivate {
 
     if (!hasRole) {
       throw new ForbiddenException(
-        `Missing role: ${requiredRoles.join(' or ')}`,
+        createApiErrorBody({
+          code: 'RBAC_ROLE_MISSING',
+          message: `Missing role: ${requiredRoles.join(' or ')}`,
+          details: { roleCodes: requiredRoles },
+        }),
       );
     }
 

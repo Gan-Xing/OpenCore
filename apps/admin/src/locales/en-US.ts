@@ -1,10 +1,10 @@
 import component from './en-US/component';
+import errors from './en-US/errors';
 import globalHeader from './en-US/globalHeader';
 import menu from './en-US/menu';
 import network from './en-US/network';
 import pages from './en-US/pages';
 import settingDrawer from './en-US/settingDrawer';
-import settings from './en-US/settings';
 
 export default {
   'navBar.lang': 'Languages',
@@ -15,8 +15,8 @@ export default {
   ...globalHeader,
   ...menu,
   ...settingDrawer,
-  ...settings,
   ...network,
   ...component,
   ...pages,
+  ...errors,
 };

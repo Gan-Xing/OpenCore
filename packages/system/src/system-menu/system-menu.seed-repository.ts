@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import {
   seedSystemMenuPermissionCodes,
   seedSystemMenus,
@@ -13,6 +8,9 @@ import {
   compareSystemMenuRecords,
   normalizeCreateSystemMenuInput,
   normalizeUpdateSystemMenuInput,
+  systemMenuBadRequest,
+  systemMenuConflict,
+  systemMenuNotFound,
   SystemMenuRepository,
 } from './system-menu.repository';
 import type { CreateMenuDto, UpdateMenuDto } from './system-menu.dto';
@@ -36,7 +34,11 @@ export class SeedSystemMenuRepository extends SystemMenuRepository {
     const input = normalizeCreateSystemMenuInput(body);
 
     if (this.menus.some((menu) => menu.key === input.key)) {
-      throw new ConflictException(`Menu already exists: ${input.key}`);
+      throw systemMenuConflict(
+        'SYSTEM_MENU_ALREADY_EXISTS',
+        'Menu already exists.',
+        { key: input.key },
+      );
     }
 
     this.assertPermissionCode(input.permissionCode);
@@ -90,7 +92,11 @@ export class SeedSystemMenuRepository extends SystemMenuRepository {
   async deleteMenu(key: string): Promise<{ deleted: true }> {
     this.findMutableMenuByKey(key);
     if (this.menus.some((menu) => menu.parentKey === key)) {
-      throw new BadRequestException(`Menu has child menus: ${key}`);
+      throw systemMenuBadRequest(
+        'SYSTEM_MENU_HAS_CHILDREN',
+        'Menu has child menus.',
+        { key },
+      );
     }
 
     this.menus = this.menus.filter((menu) => menu.key !== key);
@@ -101,7 +107,9 @@ export class SeedSystemMenuRepository extends SystemMenuRepository {
     const menu = this.menus.find((candidate) => candidate.key === key);
 
     if (!menu) {
-      throw new NotFoundException(`Menu not found: ${key}`);
+      throw systemMenuNotFound('SYSTEM_MENU_NOT_FOUND', 'Menu not found.', {
+        key,
+      });
     }
 
     return menu;
@@ -111,7 +119,11 @@ export class SeedSystemMenuRepository extends SystemMenuRepository {
     permissionCode: string | null | undefined,
   ): void {
     if (permissionCode && !this.permissionCodes.has(permissionCode)) {
-      throw new NotFoundException(`Permission not found: ${permissionCode}`);
+      throw systemMenuNotFound(
+        'SYSTEM_MENU_PERMISSION_NOT_FOUND',
+        'Permission not found.',
+        { code: permissionCode },
+      );
     }
   }
 
@@ -124,7 +136,11 @@ export class SeedSystemMenuRepository extends SystemMenuRepository {
     }
 
     if (!this.menus.some((menu) => menu.key === parentKey)) {
-      throw new NotFoundException(`Parent menu not found: ${parentKey}`);
+      throw systemMenuNotFound(
+        'SYSTEM_MENU_PARENT_NOT_FOUND',
+        'Parent menu not found.',
+        { parentKey },
+      );
     }
 
     let cursor: string | undefined = parentKey;
@@ -134,8 +150,10 @@ export class SeedSystemMenuRepository extends SystemMenuRepository {
 
     while (cursor) {
       if (cursor === currentKey) {
-        throw new BadRequestException(
-          `Menu parent would create a cycle: ${currentKey}`,
+        throw systemMenuBadRequest(
+          'SYSTEM_MENU_PARENT_CYCLE',
+          'Menu parent would create a cycle.',
+          { key: currentKey },
         );
       }
       cursor = parentByKey.get(cursor);

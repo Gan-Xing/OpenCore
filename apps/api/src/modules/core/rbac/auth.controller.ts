@@ -8,6 +8,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { createApiErrorBody } from '@opencore/common';
 import { getRequestContext } from '@opencore/core';
 import { AuthService, type AuthenticatedUser } from './auth.service';
 import {
@@ -47,7 +48,7 @@ export class AuthController {
   @ApiOkResponse({ type: LoginResponseDto })
   me(@Req() request: RequestWithUser): Promise<LoginResponseDto> {
     if (!request.user) {
-      throw new UnauthorizedException('Missing authenticated user');
+      throw authUnauthorized('AUTH_USER_MISSING', 'Missing authenticated user');
     }
 
     return this.authService.createSessionForUser(request.user.id, {
@@ -85,4 +86,11 @@ function getHeaderValue(
   }
 
   return value;
+}
+
+function authUnauthorized(
+  code: string,
+  message: string,
+): UnauthorizedException {
+  return new UnauthorizedException(createApiErrorBody({ code, message }));
 }

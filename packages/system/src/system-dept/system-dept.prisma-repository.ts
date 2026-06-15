@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@opencore/database';
 import type {
   CreateSystemDeptDto,
@@ -26,6 +21,9 @@ import {
   normalizeSystemDeptFilters,
   normalizeUpdateSystemDeptOrderInput,
   normalizeUpdateSystemDeptInput,
+  systemDeptBadRequest,
+  systemDeptConflict,
+  systemDeptNotFound,
   SystemDeptRepository,
   toSystemDeptOptionRecord,
   type SystemDeptQuery,
@@ -85,7 +83,11 @@ export class PrismaSystemDeptRepository extends SystemDeptRepository {
     if (
       await this.prisma.systemDept.findUnique({ where: { code: input.code } })
     ) {
-      throw new ConflictException(`System dept already exists: ${input.code}`);
+      throw systemDeptConflict(
+        'SYSTEM_DEPT_ALREADY_EXISTS',
+        'System dept already exists.',
+        { code: input.code },
+      );
     }
 
     if (input.parentId) {
@@ -158,7 +160,13 @@ export class PrismaSystemDeptRepository extends SystemDeptRepository {
     const dept = await this.prisma.systemDept.findUnique({ where: { id } });
 
     if (!dept) {
-      throw new NotFoundException(`System dept not found: ${id}`);
+      throw systemDeptNotFound(
+        'SYSTEM_DEPT_NOT_FOUND',
+        'System dept not found.',
+        {
+          id,
+        },
+      );
     }
 
     return dept;
@@ -172,8 +180,10 @@ export class PrismaSystemDeptRepository extends SystemDeptRepository {
 
     while (currentParentId) {
       if (currentParentId === id) {
-        throw new BadRequestException(
+        throw systemDeptBadRequest(
+          'SYSTEM_DEPT_PARENT_DESCENDANT',
           'System dept parent cannot be one of its descendants.',
+          { id },
         );
       }
 
@@ -207,8 +217,10 @@ function assertFoundDeptIds(
   const missingIds = expectedIds.filter((id) => !foundIds.has(id));
 
   if (missingIds.length > 0) {
-    throw new NotFoundException(
-      `System dept not found: ${missingIds.join(', ')}`,
+    throw systemDeptNotFound(
+      'SYSTEM_DEPT_NOT_FOUND',
+      'System dept not found.',
+      { ids: missingIds },
     );
   }
 }

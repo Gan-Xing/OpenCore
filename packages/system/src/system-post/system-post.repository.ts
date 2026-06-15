@@ -1,6 +1,11 @@
-import { BadRequestException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   createPageResult,
+  createApiErrorBody,
   normalizePagination,
   type PageQueryInput,
   type PageResult,
@@ -207,19 +212,29 @@ export function normalizeBatchDeleteSystemPostsInput(
   body: BatchDeleteSystemPostsDto,
 ): readonly string[] {
   if (!Array.isArray(body?.codes)) {
-    throw new BadRequestException('System post codes must be an array.');
+    throw systemPostBadRequest(
+      'SYSTEM_POST_CODES_INVALID',
+      'System post codes must be an array.',
+      { field: 'codes' },
+    );
   }
 
   if (body.codes.length === 0) {
-    throw new BadRequestException('System post codes must not be empty.');
+    throw systemPostBadRequest(
+      'SYSTEM_POST_CODES_EMPTY',
+      'System post codes must not be empty.',
+      { field: 'codes' },
+    );
   }
 
   const codes = body.codes.map(normalizePostCode);
   const duplicate = findFirstDuplicate(codes);
 
   if (duplicate) {
-    throw new BadRequestException(
+    throw systemPostBadRequest(
+      'SYSTEM_POST_CODE_DUPLICATED',
       `System post code is duplicated: ${duplicate}`,
+      { duplicate },
     );
   }
 
@@ -230,23 +245,29 @@ export function normalizeUpdateSystemPostOrderInput(
   body: UpdateSystemPostOrderDto,
 ): NormalizedSystemPostOrderItem[] {
   if (!Array.isArray(body.items) || body.items.length === 0) {
-    throw new BadRequestException(
+    throw systemPostBadRequest(
+      'SYSTEM_POST_ORDER_ITEMS_INVALID',
       'System post order update requires at least one item.',
+      { field: 'items' },
     );
   }
 
   const seenCodes = new Set<string>();
   return body.items.map((item, index) => {
     if (!item || typeof item !== 'object') {
-      throw new BadRequestException(
+      throw systemPostBadRequest(
+        'SYSTEM_POST_ORDER_ITEM_INVALID',
         `System post order item ${index + 1} must be an object.`,
+        { index },
       );
     }
 
     const code = normalizePostCode(item.code);
     if (seenCodes.has(code)) {
-      throw new BadRequestException(
+      throw systemPostBadRequest(
+        'SYSTEM_POST_ORDER_ITEM_CODE_DUPLICATED',
         `Duplicate system post order item code: ${code}`,
+        { code },
       );
     }
     seenCodes.add(code);
@@ -260,14 +281,20 @@ export function normalizeUpdateSystemPostOrderInput(
 
 export function normalizePostCode(value: string): string {
   if (typeof value !== 'string') {
-    throw new BadRequestException('System post code must be a string.');
+    throw systemPostBadRequest(
+      'SYSTEM_POST_CODE_INVALID_TYPE',
+      'System post code must be a string.',
+      { field: 'code' },
+    );
   }
 
   const code = normalizeRequiredText(value, 'code');
 
   if (!POST_CODE_PATTERN.test(code)) {
-    throw new BadRequestException(
+    throw systemPostBadRequest(
+      'SYSTEM_POST_CODE_INVALID',
       'System post code must start with a lowercase letter and contain only lowercase letters, numbers, dot, underscore or dash.',
+      { field: 'code' },
     );
   }
 
@@ -278,7 +305,11 @@ function normalizeRequiredText(value: string, fieldName: string): string {
   const normalized = value.trim();
 
   if (!normalized) {
-    throw new BadRequestException(`System post ${fieldName} is required.`);
+    throw systemPostBadRequest(
+      'SYSTEM_POST_FIELD_REQUIRED',
+      `System post ${fieldName} is required.`,
+      { field: fieldName },
+    );
   }
 
   return normalized;
@@ -304,7 +335,11 @@ function normalizeOptionalBoolean(
     return false;
   }
 
-  throw new BadRequestException(`Invalid system post enabled filter: ${value}`);
+  throw systemPostBadRequest(
+    'SYSTEM_POST_ENABLED_FILTER_INVALID',
+    `Invalid system post enabled filter: ${value}`,
+    { value },
+  );
 }
 
 function normalizeOrder(value: number | undefined): number {
@@ -313,8 +348,10 @@ function normalizeOrder(value: number | undefined): number {
   }
 
   if (!Number.isInteger(value) || value < 0) {
-    throw new BadRequestException(
+    throw systemPostBadRequest(
+      'SYSTEM_POST_ORDER_INVALID',
       'System post order must be a non-negative integer.',
+      { field: 'order' },
     );
   }
 
@@ -332,4 +369,30 @@ function findFirstDuplicate(values: readonly string[]): string | undefined {
   }
 
   return undefined;
+}
+
+export function systemPostBadRequest(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): BadRequestException {
+  return new BadRequestException(
+    createApiErrorBody({ code, message, details }),
+  );
+}
+
+export function systemPostConflict(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): ConflictException {
+  return new ConflictException(createApiErrorBody({ code, message, details }));
+}
+
+export function systemPostNotFound(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): NotFoundException {
+  return new NotFoundException(createApiErrorBody({ code, message, details }));
 }

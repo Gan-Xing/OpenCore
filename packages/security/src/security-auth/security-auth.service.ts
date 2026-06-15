@@ -1,4 +1,5 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { createApiErrorBody } from '@opencore/common';
 import {
   AllowAllSecurityAuthSessionRepository,
   DefaultSecurityLoginPolicyProvider,
@@ -68,7 +69,7 @@ export class SecurityAuthService {
         'invalid-credentials',
         context,
       );
-      throw new UnauthorizedException('Invalid username or password');
+      throw invalidCredentialsError();
     }
 
     const policy = await this.loginPolicy.getLoginPolicy();
@@ -82,19 +83,19 @@ export class SecurityAuthService {
         'account-locked',
         context,
       );
-      throw new UnauthorizedException('Invalid username or password');
+      throw invalidCredentialsError();
     }
 
     const user = await this.repository.findUserByUsername(normalizedUsername);
 
     if (!user) {
       await this.recordFailedLoginAttempt(normalizedUsername, policy, context);
-      throw new UnauthorizedException('Invalid username or password');
+      throw invalidCredentialsError();
     }
 
     if (!verifySecurityPassword(password, user.passwordHash)) {
       await this.recordFailedLoginAttempt(normalizedUsername, policy, context);
-      throw new UnauthorizedException('Invalid username or password');
+      throw invalidCredentialsError();
     }
 
     if (!user.enabled) {
@@ -104,7 +105,7 @@ export class SecurityAuthService {
         'user-disabled',
         context,
       );
-      throw new UnauthorizedException('Invalid username or password');
+      throw invalidCredentialsError();
     }
 
     const session = await this.createSessionForUser(user.id, context);
@@ -185,7 +186,12 @@ export class SecurityAuthService {
     const user = await this.repository.findUserById(userId);
 
     if (!user || !user.enabled) {
-      throw new UnauthorizedException('User is disabled or missing');
+      throw new UnauthorizedException(
+        createApiErrorBody({
+          code: 'AUTH_USER_UNAVAILABLE',
+          message: 'User is disabled or missing',
+        }),
+      );
     }
 
     return {
@@ -254,6 +260,15 @@ export class SecurityAuthService {
 
 function normalizeLoginUsername(username: string): string {
   return username.trim();
+}
+
+function invalidCredentialsError(): UnauthorizedException {
+  return new UnauthorizedException(
+    createApiErrorBody({
+      code: 'AUTH_INVALID_CREDENTIALS',
+      message: 'Invalid username or password',
+    }),
+  );
 }
 
 function isActiveLoginLockout(

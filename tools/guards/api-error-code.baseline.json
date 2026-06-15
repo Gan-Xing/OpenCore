@@ -1,0 +1,1997 @@
+{
+  "description": "Existing naked NestJS exception debt. New business exceptions must use createApiErrorBody with a stable code.",
+  "violations": [
+    {
+      "argument": "'Notice can only be published from draft.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/collaboration/collaboration/collaboration.repository.ts"
+    },
+    {
+      "argument": "`${resource} is not pending.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/collaboration/collaboration/collaboration.repository.ts"
+    },
+    {
+      "argument": "`Message cannot be ${action} after deletion.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/collaboration/collaboration/collaboration.repository.ts"
+    },
+    {
+      "argument": "`Message cannot be marked read from ${status} status.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/collaboration/collaboration/collaboration.repository.ts"
+    },
+    {
+      "argument": "`Notice cannot be ${action} after archive.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/collaboration/collaboration/collaboration.repository.ts"
+    },
+    {
+      "argument": "`Todo cannot be ${action} from ${status} status.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/collaboration/collaboration/collaboration.repository.ts"
+    },
+    {
+      "argument": "`${resource} not found: ${id}`",
+      "count": 1,
+      "exception": "NotFoundException",
+      "file": "apps/api/src/modules/collaboration/collaboration/collaboration.repository.ts"
+    },
+    {
+      "argument": "`Message not found: ${id}`",
+      "count": 1,
+      "exception": "NotFoundException",
+      "file": "apps/api/src/modules/collaboration/collaboration/collaboration.repository.ts"
+    },
+    {
+      "argument": "'Login username is required.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/core/login-security/prisma-security-login-lockout.repository.ts"
+    },
+    {
+      "argument": "'occurredAt must be a valid ISO date-time.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/core/login-security/prisma-security-login-lockout.repository.ts"
+    },
+    {
+      "argument": "`${fieldName} must be a positive integer.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/core/login-security/prisma-security-login-lockout.repository.ts"
+    },
+    {
+      "argument": "`File asset already exists: ${storageKey}`",
+      "count": 1,
+      "exception": "ConflictException",
+      "file": "apps/api/src/modules/core/system-management/prisma-system-management.repository.ts"
+    },
+    {
+      "argument": "`File asset not found: ${id}`",
+      "count": 1,
+      "exception": "NotFoundException",
+      "file": "apps/api/src/modules/core/system-management/prisma-system-management.repository.ts"
+    },
+    {
+      "argument": "`File asset not found: ${id}`",
+      "count": 1,
+      "exception": "NotFoundException",
+      "file": "apps/api/src/modules/core/system-management/seed-system-management.repository.ts"
+    },
+    {
+      "argument": "'File content must be valid base64.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/core/system-management/system-management.controller.ts"
+    },
+    {
+      "argument": "'File content must not be empty.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/core/system-management/system-management.controller.ts"
+    },
+    {
+      "argument": "'IP address is required'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/core/system-management/system-management.controller.ts"
+    },
+    {
+      "argument": "`Stored file object is missing: ${id}`",
+      "count": 1,
+      "exception": "NotFoundException",
+      "file": "apps/api/src/modules/core/system-management/system-management.controller.ts"
+    },
+    {
+      "argument": "'Missing authenticated user'",
+      "count": 1,
+      "exception": "UnauthorizedException",
+      "file": "apps/api/src/modules/core/system-management/system-management.controller.ts"
+    },
+    {
+      "argument": "'Missing authenticated user'",
+      "count": 1,
+      "exception": "UnauthorizedException",
+      "file": "apps/api/src/modules/integration/integration/integration.controller.ts"
+    },
+    {
+      "argument": "'Integration credentials must be stored as secret:// references.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "'Integration provider config secret key is required.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "'Integration provider secretRef must use secret://config/<key> for runtime secret resolution.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "'Mail outbox attachments must be an array.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "'Mail outbox attachments must contain at most 5 files.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "'Mail outbox attachments total size must be at most 256KB.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "'Mail outbox subject must be a string.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "'Mail outbox subject must be at most 200 characters.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "'OAuth callback code is required.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "'OAuth callback expiresInSeconds must be an integer between 60 and 7776000.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "'OAuth flow scopes are required.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "'OAuth token revoke reason must be at most 300 characters.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "'OAuth token revoke reason must not be blank.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "'Outbox callback signature is invalid.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "'Outbox callback signature must be a SHA-256 hex digest.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "'Outbox callback status must be sent or failed.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "'Outbox failure error is required.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "'Outbox failure error must be at most 500 characters.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "'Outbox process limit must be an integer between 1 and 100.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "'Outbox providerCode must not be blank.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "'Outbox schedule channels must contain only mail or sms.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "'Outbox schedule channels must not be empty.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "'Outbox schedule maxRetryCount must be an integer between 1 and 20.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "'Outbox schedule retryFailed must be boolean.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "'SMS outbox messages do not support attachments.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "'SMS outbox messages do not support subject.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "'SMS recipient must be a phone-like number.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "'SMS verification code must be at least 4 chars.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "'WebSocket runtime event type must be a safe event identifier.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "'WebSocket runtime only accepts diagnostic.* events.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "'WebSocket runtime room must be an integration.* identifier.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "`Integration template is disabled: ${input.code}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "`Mail outbox attachment at index ${index} must be an object.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "`Mail outbox attachment at index ${index} must be between 1 byte and 64KB.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "`Mail outbox attachment contentBase64 at index ${index} must be valid base64.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "`Mail outbox attachment contentType at index ${index} is invalid.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "`Mail outbox attachment filename at index ${index} is invalid.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "`OAuth provider ${input.provider.code} authorizationUrl is invalid.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "`OAuth provider ${provider.code} is disabled.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "`OAuth provider mismatch: expected ${provider.code}.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "`Outbox callback provider mismatch for message ${input.messageId}.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "`Provider ${input.code} is disabled and cannot enqueue outbox messages.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "`Provider ${input.code} is not a ${input.channel} provider.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "`Provider ${provider.code} is not an OAuth provider.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "message",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "`${resource} not found: ${id}`",
+      "count": 1,
+      "exception": "NotFoundException",
+      "file": "apps/api/src/modules/integration/integration/integration.repository.ts"
+    },
+    {
+      "argument": "'Only failed outbox messages can be retried.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/prisma-integration.repository.ts"
+    },
+    {
+      "argument": "'Sent outbox messages cannot be marked failed.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/prisma-integration.repository.ts"
+    },
+    {
+      "argument": "'Only failed outbox messages can be retried.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/seed-integration.repository.ts"
+    },
+    {
+      "argument": "'Sent outbox messages cannot be marked failed.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/seed-integration.repository.ts"
+    },
+    {
+      "argument": "`System config secret not found: ${key}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/integration/integration/seed-integration.repository.ts"
+    },
+    {
+      "argument": "'Cache clear prefix must be at least 3 chars.'",
+      "count": 2,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/monitor/operations/operations.repository.ts"
+    },
+    {
+      "argument": "'Cache clear prefix must not contain glob wildcards.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/monitor/operations/operations.repository.ts"
+    },
+    {
+      "argument": "'Cache clear write mode requires confirmed=true.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/monitor/operations/operations.repository.ts"
+    },
+    {
+      "argument": "'Cache key delete write mode requires confirmed=true.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/monitor/operations/operations.repository.ts"
+    },
+    {
+      "argument": "'Cache key must be a single line.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/monitor/operations/operations.repository.ts"
+    },
+    {
+      "argument": "'Cache key must be at least 3 chars.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/monitor/operations/operations.repository.ts"
+    },
+    {
+      "argument": "`${resource} not found: ${id}`",
+      "count": 1,
+      "exception": "NotFoundException",
+      "file": "apps/api/src/modules/monitor/operations/operations.repository.ts"
+    },
+    {
+      "argument": "'Cache clear matched the scan limit; narrow the prefix before confirmed deletion.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/monitor/operations/prisma-operations.repository.ts"
+    },
+    {
+      "argument": "`Cache key not found: ${key}`",
+      "count": 1,
+      "exception": "NotFoundException",
+      "file": "apps/api/src/modules/monitor/operations/prisma-operations.repository.ts"
+    },
+    {
+      "argument": "'configPath must point to the OpenForge example config.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/tool/tooling/tooling.repository.ts"
+    },
+    {
+      "argument": "'entries must be an array.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/tool/tooling/tooling.repository.ts"
+    },
+    {
+      "argument": "'ip must be a valid IP address.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/tool/tooling/tooling.repository.ts"
+    },
+    {
+      "argument": "'manifestId may contain only letters, numbers, dot, underscore and dash.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/tool/tooling/tooling.repository.ts"
+    },
+    {
+      "argument": "'OpenForge API only supports dry-run operations; direct code writes require explicit user admission.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/tool/tooling/tooling.repository.ts"
+    },
+    {
+      "argument": "'schemaPath must point to an OpenForge example schema.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/tool/tooling/tooling.repository.ts"
+    },
+    {
+      "argument": "'source is required.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/tool/tooling/tooling.repository.ts"
+    },
+    {
+      "argument": "'source must be 1-120 characters.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/tool/tooling/tooling.repository.ts"
+    },
+    {
+      "argument": "'version must be 3-80 characters and may contain letters, numbers, dot, underscore, colon or dash.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/tool/tooling/tooling.repository.ts"
+    },
+    {
+      "argument": "`${label} CIDR prefix must be 0-32.`",
+      "count": 2,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/tool/tooling/tooling.repository.ts"
+    },
+    {
+      "argument": "`${label} is required.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/tool/tooling/tooling.repository.ts"
+    },
+    {
+      "argument": "`${label} must be 2-32 characters and may contain letters, numbers, dot, underscore, colon or dash.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/tool/tooling/tooling.repository.ts"
+    },
+    {
+      "argument": "`${label} must be a safe repo-relative path.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/tool/tooling/tooling.repository.ts"
+    },
+    {
+      "argument": "`${label} must not be empty.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/tool/tooling/tooling.repository.ts"
+    },
+    {
+      "argument": "`${label} must use a valid IPv4 address.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/tool/tooling/tooling.repository.ts"
+    },
+    {
+      "argument": "`${label} must use IPv4 CIDR or exact IPv4.`",
+      "count": 2,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/tool/tooling/tooling.repository.ts"
+    },
+    {
+      "argument": "`Area dataset contains a parent cycle at ${code}.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/tool/tooling/tooling.repository.ts"
+    },
+    {
+      "argument": "`Area dataset depth must not exceed ${AREA_DATASET_MAX_DEPTH}.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/tool/tooling/tooling.repository.ts"
+    },
+    {
+      "argument": "`Area region ${code} aliases must be an array.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/tool/tooling/tooling.repository.ts"
+    },
+    {
+      "argument": "`Area region ${code} aliases[${index}] must be 1-80 characters.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/tool/tooling/tooling.repository.ts"
+    },
+    {
+      "argument": "`Area region ${code} aliases[${index}] must be a string.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/tool/tooling/tooling.repository.ts"
+    },
+    {
+      "argument": "`Area region ${code} cannot parent itself.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/tool/tooling/tooling.repository.ts"
+    },
+    {
+      "argument": "`Area region ${code} ipRanges must be an array.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/tool/tooling/tooling.repository.ts"
+    },
+    {
+      "argument": "`Area region ${code} ipRanges[${index}] must be a string.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/tool/tooling/tooling.repository.ts"
+    },
+    {
+      "argument": "`Area region ${code} may declare at most ${AREA_DATASET_MAX_ALIASES} aliases.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/tool/tooling/tooling.repository.ts"
+    },
+    {
+      "argument": "`Area region ${code} may declare at most ${AREA_DATASET_MAX_IP_RANGES_PER_REGION} IP ranges.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/tool/tooling/tooling.repository.ts"
+    },
+    {
+      "argument": "`Area region ${code} name is required.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/tool/tooling/tooling.repository.ts"
+    },
+    {
+      "argument": "`Area region ${code} name must be 1-120 characters.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/tool/tooling/tooling.repository.ts"
+    },
+    {
+      "argument": "`Area region ${code} was not found.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/tool/tooling/tooling.repository.ts"
+    },
+    {
+      "argument": "`Area region ${entry.code} references missing parentCode ${entry.parentCode}.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/tool/tooling/tooling.repository.ts"
+    },
+    {
+      "argument": "`Duplicate area region code ${code}.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/tool/tooling/tooling.repository.ts"
+    },
+    {
+      "argument": "`entries must contain 1-${AREA_DATASET_MAX_ENTRIES} regions.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/tool/tooling/tooling.repository.ts"
+    },
+    {
+      "argument": "`OpenForge dry-run requires confirmationText \"${OPENFORGE_DRY_RUN_CONFIRMATION_TEXT}\".`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "apps/api/src/modules/tool/tooling/tooling.repository.ts"
+    },
+    {
+      "argument": "`Area dataset version ${normalized} was not found.`",
+      "count": 2,
+      "exception": "NotFoundException",
+      "file": "apps/api/src/modules/tool/tooling/tooling.repository.ts"
+    },
+    {
+      "argument": "`Area region ${normalized} was not found.`",
+      "count": 1,
+      "exception": "NotFoundException",
+      "file": "apps/api/src/modules/tool/tooling/tooling.repository.ts"
+    },
+    {
+      "argument": "`Login log not found: ${id}`",
+      "count": 1,
+      "exception": "NotFoundException",
+      "file": "packages/audit/src/audit-login-log/audit-login-log.prisma-repository.ts"
+    },
+    {
+      "argument": "`Login log not found: ${missing}`",
+      "count": 1,
+      "exception": "NotFoundException",
+      "file": "packages/audit/src/audit-login-log/audit-login-log.prisma-repository.ts"
+    },
+    {
+      "argument": "'createdFrom must be earlier than or equal to createdTo'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/audit/src/audit-login-log/audit-login-log.repository.ts"
+    },
+    {
+      "argument": "'Login log id is required.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/audit/src/audit-login-log/audit-login-log.repository.ts"
+    },
+    {
+      "argument": "'Login log id must be a string.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/audit/src/audit-login-log/audit-login-log.repository.ts"
+    },
+    {
+      "argument": "'Login log ids must be an array.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/audit/src/audit-login-log/audit-login-log.repository.ts"
+    },
+    {
+      "argument": "'Login log ids must not be empty.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/audit/src/audit-login-log/audit-login-log.repository.ts"
+    },
+    {
+      "argument": "`${fieldName} must be a valid ISO date-time string`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/audit/src/audit-login-log/audit-login-log.repository.ts"
+    },
+    {
+      "argument": "`${fieldName} must be one of: ${allowed.join(', ')}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/audit/src/audit-login-log/audit-login-log.repository.ts"
+    },
+    {
+      "argument": "`Login log id is duplicated: ${duplicate}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/audit/src/audit-login-log/audit-login-log.repository.ts"
+    },
+    {
+      "argument": "`Login log not found: ${id}`",
+      "count": 2,
+      "exception": "NotFoundException",
+      "file": "packages/audit/src/audit-login-log/audit-login-log.seed-repository.ts"
+    },
+    {
+      "argument": "`Audit log not found: ${id}`",
+      "count": 1,
+      "exception": "NotFoundException",
+      "file": "packages/audit/src/audit-operation-log/audit-operation-log.prisma-repository.ts"
+    },
+    {
+      "argument": "`Audit log not found: ${missing}`",
+      "count": 1,
+      "exception": "NotFoundException",
+      "file": "packages/audit/src/audit-operation-log/audit-operation-log.prisma-repository.ts"
+    },
+    {
+      "argument": "'Audit log id is required.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/audit/src/audit-operation-log/audit-operation-log.repository.ts"
+    },
+    {
+      "argument": "'Audit log id must be a string.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/audit/src/audit-operation-log/audit-operation-log.repository.ts"
+    },
+    {
+      "argument": "'Audit log ids must be an array.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/audit/src/audit-operation-log/audit-operation-log.repository.ts"
+    },
+    {
+      "argument": "'Audit log ids must not be empty.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/audit/src/audit-operation-log/audit-operation-log.repository.ts"
+    },
+    {
+      "argument": "'Audit log minDurationMs must not exceed maxDurationMs.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/audit/src/audit-operation-log/audit-operation-log.repository.ts"
+    },
+    {
+      "argument": "'Audit log status filter must be \"success\" or \"error\".'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/audit/src/audit-operation-log/audit-operation-log.repository.ts"
+    },
+    {
+      "argument": "`Audit log ${fieldName} must be a non-negative integer.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/audit/src/audit-operation-log/audit-operation-log.repository.ts"
+    },
+    {
+      "argument": "`Audit log ${fieldName} must be an ISO datetime string.`",
+      "count": 2,
+      "exception": "BadRequestException",
+      "file": "packages/audit/src/audit-operation-log/audit-operation-log.repository.ts"
+    },
+    {
+      "argument": "`Audit log id is duplicated: ${duplicate}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/audit/src/audit-operation-log/audit-operation-log.repository.ts"
+    },
+    {
+      "argument": "`Audit log retentionDays must be an integer between 0 and ${MAX_RETENTION_DAYS}.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/audit/src/audit-operation-log/audit-operation-log.repository.ts"
+    },
+    {
+      "argument": "`Audit log not found: ${id}`",
+      "count": 2,
+      "exception": "NotFoundException",
+      "file": "packages/audit/src/audit-operation-log/audit-operation-log.seed-repository.ts"
+    },
+    {
+      "argument": "`Unsupported monitor queue \"${value}\". Allowed queues: ${monitorQueueNames.join( ', ', )}.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/monitor/src/monitor/monitor.repository.ts"
+    },
+    {
+      "argument": "'BullMQ queue control failed without exposing Redis details.'",
+      "count": 1,
+      "exception": "ServiceUnavailableException",
+      "file": "packages/monitor/src/monitor/monitor.repository.ts"
+    },
+    {
+      "argument": "`No scheduler handler registered: ${input.entry.handlerKey}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/scheduler/src/scheduler/scheduler.executor.ts"
+    },
+    {
+      "argument": "'Job retry limit must be between 0 and 10.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/scheduler/src/scheduler/scheduler.repository.ts"
+    },
+    {
+      "argument": "'Job timeout must be between 1 and 3600 seconds.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/scheduler/src/scheduler/scheduler.repository.ts"
+    },
+    {
+      "argument": "'Scheduler dispatch now must be an ISO date.'",
+      "count": 2,
+      "exception": "BadRequestException",
+      "file": "packages/scheduler/src/scheduler/scheduler.repository.ts"
+    },
+    {
+      "argument": "'Scheduler run cleanup only supports completed or failed terminal runs.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/scheduler/src/scheduler/scheduler.repository.ts"
+    },
+    {
+      "argument": "'Scheduler run retentionDays must be an integer between 0 and 3650.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/scheduler/src/scheduler/scheduler.repository.ts"
+    },
+    {
+      "argument": "'Scheduler worker limit must be an integer between 1 and 100.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/scheduler/src/scheduler/scheduler.repository.ts"
+    },
+    {
+      "argument": "`Invalid cron expression: ${input.cron}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/scheduler/src/scheduler/scheduler.repository.ts"
+    },
+    {
+      "argument": "`Job ${input.code} must use registered queue: ${entry.queueName}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/scheduler/src/scheduler/scheduler.repository.ts"
+    },
+    {
+      "argument": "`Job definition is disabled: ${input.code}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/scheduler/src/scheduler/scheduler.repository.ts"
+    },
+    {
+      "argument": "`Job does not allow manual trigger: ${input.code}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/scheduler/src/scheduler/scheduler.repository.ts"
+    },
+    {
+      "argument": "`${resource} not found: ${id}`",
+      "count": 1,
+      "exception": "NotFoundException",
+      "file": "packages/scheduler/src/scheduler/scheduler.repository.ts"
+    },
+    {
+      "argument": "`Secret system config ${key} must keep string value type.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.prisma-repository.ts"
+    },
+    {
+      "argument": "`System built-in config cannot be deleted: ${systemConfig.key}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.prisma-repository.ts"
+    },
+    {
+      "argument": "`System config already exists: ${body.key}`",
+      "count": 1,
+      "exception": "ConflictException",
+      "file": "packages/system/src/system-config/system-config.prisma-repository.ts"
+    },
+    {
+      "argument": "`System config is not secret: ${key}`",
+      "count": 1,
+      "exception": "ForbiddenException",
+      "file": "packages/system/src/system-config/system-config.prisma-repository.ts"
+    },
+    {
+      "argument": "`System config environment override not found: ${key}/${normalizedEnvironment}`",
+      "count": 1,
+      "exception": "NotFoundException",
+      "file": "packages/system/src/system-config/system-config.prisma-repository.ts"
+    },
+    {
+      "argument": "`System config not found: ${key}`",
+      "count": 1,
+      "exception": "NotFoundException",
+      "file": "packages/system/src/system-config/system-config.prisma-repository.ts"
+    },
+    {
+      "argument": "`System config not found: ${missing}`",
+      "count": 1,
+      "exception": "NotFoundException",
+      "file": "packages/system/src/system-config/system-config.prisma-repository.ts"
+    },
+    {
+      "argument": "'Boolean system config values must be \"true\" or \"false\".'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "'JSON system config values must be valid JSON.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "'Number system config values must be finite numbers.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "'Secret system config visibility requires a secret-like key name.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "'Secret-like system config keys must be explicitly marked with secret visibility.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "'System config category is required.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "'System config category must be a string.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "'System config category must not exceed 50 characters.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "'System config environment must be 2 to 40 lowercase letters, numbers or hyphens, starting with a letter.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "'System config environment must be a string.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "'System config environment override cannot target the default environment.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "'System config key is required.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "'System config key must be a string.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "'System config keys must be an array.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "'System config keys must not be empty.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "'System config name is required.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "'System config name must be a string.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "'System config name must not exceed 100 characters.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "'System config secret rotation actor must be a string.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "'System config secret rotation actor must not exceed 100 characters.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "'System config secret rotation value is required.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "'System config secret rotation value must be a string.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "'System config value must be a string.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "`Feature flag audience ${key} mode must be all or any.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "`Feature flag audience ${key} must be a JSON object.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "`Feature flag audience ${key} must not exceed 20 rules.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "`Feature flag audience ${key} rule ${index + 1} attribute is invalid.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "`Feature flag audience ${key} rule ${index + 1} attribute must be a string.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "`Feature flag audience ${key} rule ${index + 1} must be a JSON object.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "`Feature flag audience ${key} rule ${index + 1} operator is invalid.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "`Feature flag audience ${key} rule ${index + 1} value is duplicated: ${duplicate}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "`Feature flag audience ${key} rule ${index + 1} values must be 1 to 100 characters.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "`Feature flag audience ${key} rule ${index + 1} values must be strings.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "`Feature flag audience ${key} rule ${index + 1} values must contain 1 to 50 items.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "`Feature flag audience ${key} rules must be an array.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "`Feature flag config ${input.key} must keep ${valueTypeLabel}.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "`Feature flag config ${input.key} must remain public.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "`Feature flag rollout ${input.key} must be an integer between 0 and 100.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "`Only public system config can define environment overrides: ${config.key}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "`Only secret system config can keep secret versions: ${config.key}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "`Secret system config ${config.key} must keep string value type.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "`Secret system config ${input.key} must keep string value type.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "`System built-in config cannot be deleted: ${config.key}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "`System config ${fieldName} must be a string.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "`System config ${fieldName} must not exceed 500 characters.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "`System config key is duplicated: ${duplicate}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.repository.ts"
+    },
+    {
+      "argument": "`Secret system config ${key} must keep string value type.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.seed-repository.ts"
+    },
+    {
+      "argument": "`System built-in config cannot be deleted: ${systemConfig.key}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.seed-repository.ts"
+    },
+    {
+      "argument": "`System config already exists: ${body.key}`",
+      "count": 1,
+      "exception": "ConflictException",
+      "file": "packages/system/src/system-config/system-config.seed-repository.ts"
+    },
+    {
+      "argument": "`System config is not secret: ${key}`",
+      "count": 1,
+      "exception": "ForbiddenException",
+      "file": "packages/system/src/system-config/system-config.seed-repository.ts"
+    },
+    {
+      "argument": "`System config environment override not found: ${key}/${normalizedEnvironment}`",
+      "count": 1,
+      "exception": "NotFoundException",
+      "file": "packages/system/src/system-config/system-config.seed-repository.ts"
+    },
+    {
+      "argument": "`System config not found: ${key}`",
+      "count": 1,
+      "exception": "NotFoundException",
+      "file": "packages/system/src/system-config/system-config.seed-repository.ts"
+    },
+    {
+      "argument": "`System config not found: ${missing}`",
+      "count": 1,
+      "exception": "NotFoundException",
+      "file": "packages/system/src/system-config/system-config.seed-repository.ts"
+    },
+    {
+      "argument": "'Feature flag name is invalid.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.service.ts"
+    },
+    {
+      "argument": "'Feature flag name must be a string.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.service.ts"
+    },
+    {
+      "argument": "'Feature flag subject attribute key is invalid.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.service.ts"
+    },
+    {
+      "argument": "'Feature flag subject attributes must be a JSON object string.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.service.ts"
+    },
+    {
+      "argument": "'Feature flag subject attributes must be a JSON object.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.service.ts"
+    },
+    {
+      "argument": "'Feature flag subject attributes must be valid JSON.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.service.ts"
+    },
+    {
+      "argument": "'Feature flag subject attributes must not exceed 50 keys.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.service.ts"
+    },
+    {
+      "argument": "'Feature flag subject key is required.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.service.ts"
+    },
+    {
+      "argument": "'Feature flag subject key must be a string.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.service.ts"
+    },
+    {
+      "argument": "'Feature flag subject key must not exceed 200 characters.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.service.ts"
+    },
+    {
+      "argument": "'System config key is required.'",
+      "count": 2,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.service.ts"
+    },
+    {
+      "argument": "`Feature flag audience ${flagName} is missing its enabled config.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.service.ts"
+    },
+    {
+      "argument": "`Feature flag audience config ${config.key} must be public json.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.service.ts"
+    },
+    {
+      "argument": "`Feature flag config ${config.key} must be public boolean.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.service.ts"
+    },
+    {
+      "argument": "`Feature flag rollout ${flagName} is missing its enabled config.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.service.ts"
+    },
+    {
+      "argument": "`Feature flag rollout ${key} must be an integer between 0 and 100.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.service.ts"
+    },
+    {
+      "argument": "`Feature flag rollout config ${config.key} must be public number.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.service.ts"
+    },
+    {
+      "argument": "`Feature flag subject attribute ${key} must be 1 to 100 characters.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.service.ts"
+    },
+    {
+      "argument": "`Feature flag subject attribute ${key} must be a string, number or boolean.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.service.ts"
+    },
+    {
+      "argument": "`Runtime config ${key} must be an integer between ${minimum} and ${maximum}.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.service.ts"
+    },
+    {
+      "argument": "`Runtime config ${key} must keep number value type.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.service.ts"
+    },
+    {
+      "argument": "`Runtime config ${key} must keep string value type.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.service.ts"
+    },
+    {
+      "argument": "`Runtime config ${key} must remain public.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.service.ts"
+    },
+    {
+      "argument": "`System config value is not public: ${config.key}`",
+      "count": 1,
+      "exception": "ForbiddenException",
+      "file": "packages/system/src/system-config/system-config.service.ts"
+    },
+    {
+      "argument": "`Feature flag not found: ${flag}`",
+      "count": 1,
+      "exception": "NotFoundException",
+      "file": "packages/system/src/system-config/system-config.service.ts"
+    },
+    {
+      "argument": "'OPENCORE_CONFIG_KMS_KEYRING must be a JSON object of keyId to key material.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.vault.ts"
+    },
+    {
+      "argument": "'System config vault key id must start with a letter and contain only lowercase letters, numbers, dots, underscores or hyphens.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.vault.ts"
+    },
+    {
+      "argument": "'System config vault key material must be a non-empty string.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.vault.ts"
+    },
+    {
+      "argument": "`Managed KMS provider is not ready: ${kms.lastError}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.vault.ts"
+    },
+    {
+      "argument": "`OPENCORE_CONFIG_KMS_ACTIVE_KEY_ID is not present in OPENCORE_CONFIG_KMS_KEYRING: ${activeKeyId}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.vault.ts"
+    },
+    {
+      "argument": "`System config secret value cannot be decrypted: ${key}`",
+      "count": 2,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.vault.ts"
+    },
+    {
+      "argument": "`System config vault key is not configured: ${keyId}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-config/system-config.vault.ts"
+    },
+    {
+      "argument": "`Integration provider ${provider} is not a ${channel} provider.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-notice/system-notice.prisma-repository.ts"
+    },
+    {
+      "argument": "`Integration provider ${provider} must be enabled before notice delivery execution.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-notice/system-notice.prisma-repository.ts"
+    },
+    {
+      "argument": "`Integration provider is not configured for notice delivery: ${provider}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-notice/system-notice.prisma-repository.ts"
+    },
+    {
+      "argument": "`Notice mail delivery recipient is invalid: ${recipient}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-notice/system-notice.prisma-repository.ts"
+    },
+    {
+      "argument": "`Notice SMS delivery recipient is invalid: ${recipient}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-notice/system-notice.prisma-repository.ts"
+    },
+    {
+      "argument": "`System notice already exists: ${input.title}`",
+      "count": 1,
+      "exception": "ConflictException",
+      "file": "packages/system/src/system-notice/system-notice.prisma-repository.ts"
+    },
+    {
+      "argument": "`System notice template already exists: ${input.code}`",
+      "count": 1,
+      "exception": "ConflictException",
+      "file": "packages/system/src/system-notice/system-notice.prisma-repository.ts"
+    },
+    {
+      "argument": "`System notice not found in inbox: ${id}`",
+      "count": 1,
+      "exception": "NotFoundException",
+      "file": "packages/system/src/system-notice/system-notice.prisma-repository.ts"
+    },
+    {
+      "argument": "`System notice not found in inbox: ${missingId}`",
+      "count": 1,
+      "exception": "NotFoundException",
+      "file": "packages/system/src/system-notice/system-notice.prisma-repository.ts"
+    },
+    {
+      "argument": "`System notice not found: ${id}`",
+      "count": 1,
+      "exception": "NotFoundException",
+      "file": "packages/system/src/system-notice/system-notice.prisma-repository.ts"
+    },
+    {
+      "argument": "`System notice template not found: ${code}`",
+      "count": 1,
+      "exception": "NotFoundException",
+      "file": "packages/system/src/system-notice/system-notice.prisma-repository.ts"
+    },
+    {
+      "argument": "'System notice can only be published from draft.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-notice/system-notice.repository.ts"
+    },
+    {
+      "argument": "'System notice deliveries can only be dispatched after publish.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-notice/system-notice.repository.ts"
+    },
+    {
+      "argument": "'System notice read ids must be an array.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-notice/system-notice.repository.ts"
+    },
+    {
+      "argument": "'System notice read ids must not be empty.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-notice/system-notice.repository.ts"
+    },
+    {
+      "argument": "'System notice template code must use lowercase letters, numbers, dot, underscore or dash segments.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-notice/system-notice.repository.ts"
+    },
+    {
+      "argument": "'System notice templateParams must be an object.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-notice/system-notice.repository.ts"
+    },
+    {
+      "argument": "'System notice unread limit must be an integer between 1 and 50.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-notice/system-notice.repository.ts"
+    },
+    {
+      "argument": "'System notice validFrom must be before validTo.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-notice/system-notice.repository.ts"
+    },
+    {
+      "argument": "`Invalid system notice ${fieldName}: ${value}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-notice/system-notice.repository.ts"
+    },
+    {
+      "argument": "`Invalid system notice ${fieldName}.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-notice/system-notice.repository.ts"
+    },
+    {
+      "argument": "`Invalid system notice audience: ${value}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-notice/system-notice.repository.ts"
+    },
+    {
+      "argument": "`Invalid system notice delivery channel: ${value}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-notice/system-notice.repository.ts"
+    },
+    {
+      "argument": "`Invalid system notice delivery provider status: ${value}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-notice/system-notice.repository.ts"
+    },
+    {
+      "argument": "`Invalid system notice delivery provider: ${value}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-notice/system-notice.repository.ts"
+    },
+    {
+      "argument": "`Invalid system notice delivery status: ${value}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-notice/system-notice.repository.ts"
+    },
+    {
+      "argument": "`Invalid system notice status: ${value}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-notice/system-notice.repository.ts"
+    },
+    {
+      "argument": "`Invalid system notice type: ${value}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-notice/system-notice.repository.ts"
+    },
+    {
+      "argument": "`Missing system notice template param: ${missing}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-notice/system-notice.repository.ts"
+    },
+    {
+      "argument": "`System notice ${fieldName} is required.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-notice/system-notice.repository.ts"
+    },
+    {
+      "argument": "`System notice ${fieldName} must be a non-empty string.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-notice/system-notice.repository.ts"
+    },
+    {
+      "argument": "`System notice cannot be ${action} after archive.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-notice/system-notice.repository.ts"
+    },
+    {
+      "argument": "`System notice read id is duplicated: ${duplicate}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-notice/system-notice.repository.ts"
+    },
+    {
+      "argument": "`System notice template is disabled: ${template.code}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-notice/system-notice.repository.ts"
+    },
+    {
+      "argument": "`System notice template param is required: ${key}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-notice/system-notice.repository.ts"
+    },
+    {
+      "argument": "`System notice template param must be a string, number or boolean: ${key}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-notice/system-notice.repository.ts"
+    },
+    {
+      "argument": "`Unexpected system notice template param: ${unexpected}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-notice/system-notice.repository.ts"
+    },
+    {
+      "argument": "`System notice already exists: ${id}`",
+      "count": 1,
+      "exception": "ConflictException",
+      "file": "packages/system/src/system-notice/system-notice.seed-repository.ts"
+    },
+    {
+      "argument": "`System notice template already exists: ${input.code}`",
+      "count": 1,
+      "exception": "ConflictException",
+      "file": "packages/system/src/system-notice/system-notice.seed-repository.ts"
+    },
+    {
+      "argument": "`System notice not found in inbox: ${id}`",
+      "count": 1,
+      "exception": "NotFoundException",
+      "file": "packages/system/src/system-notice/system-notice.seed-repository.ts"
+    },
+    {
+      "argument": "`System notice not found: ${id}`",
+      "count": 1,
+      "exception": "NotFoundException",
+      "file": "packages/system/src/system-notice/system-notice.seed-repository.ts"
+    },
+    {
+      "argument": "`System notice template not found: ${code}`",
+      "count": 1,
+      "exception": "NotFoundException",
+      "file": "packages/system/src/system-notice/system-notice.seed-repository.ts"
+    },
+    {
+      "argument": "'System users cannot be role-assigned.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-user/system-user.prisma-repository.ts"
+    },
+    {
+      "argument": "'System users cannot be updated or deleted.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-user/system-user.prisma-repository.ts"
+    },
+    {
+      "argument": "`User already exists: ${input.username}`",
+      "count": 1,
+      "exception": "ConflictException",
+      "file": "packages/system/src/system-user/system-user.prisma-repository.ts"
+    },
+    {
+      "argument": "`Role not found: ${code}`",
+      "count": 1,
+      "exception": "NotFoundException",
+      "file": "packages/system/src/system-user/system-user.prisma-repository.ts"
+    },
+    {
+      "argument": "`Role not found: ${missing}`",
+      "count": 1,
+      "exception": "NotFoundException",
+      "file": "packages/system/src/system-user/system-user.prisma-repository.ts"
+    },
+    {
+      "argument": "`System dept not found: ${deptId}`",
+      "count": 2,
+      "exception": "NotFoundException",
+      "file": "packages/system/src/system-user/system-user.prisma-repository.ts"
+    },
+    {
+      "argument": "`System post not found: ${missing}`",
+      "count": 1,
+      "exception": "NotFoundException",
+      "file": "packages/system/src/system-user/system-user.prisma-repository.ts"
+    },
+    {
+      "argument": "`User not found: ${id}`",
+      "count": 1,
+      "exception": "NotFoundException",
+      "file": "packages/system/src/system-user/system-user.prisma-repository.ts"
+    },
+    {
+      "argument": "`User not found: ${missing}`",
+      "count": 2,
+      "exception": "NotFoundException",
+      "file": "packages/system/src/system-user/system-user.prisma-repository.ts"
+    },
+    {
+      "argument": "'New password must be different from old password.'",
+      "count": 2,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-user/system-user.repository.ts"
+    },
+    {
+      "argument": "'System role userIds must be an array.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-user/system-user.repository.ts"
+    },
+    {
+      "argument": "'System user data scope type is invalid.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-user/system-user.repository.ts"
+    },
+    {
+      "argument": "'System user enabled must be a boolean.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-user/system-user.repository.ts"
+    },
+    {
+      "argument": "'System user id must be a string.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-user/system-user.repository.ts"
+    },
+    {
+      "argument": "'System user import content must be base64.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-user/system-user.repository.ts"
+    },
+    {
+      "argument": "'System user import content must not be empty.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-user/system-user.repository.ts"
+    },
+    {
+      "argument": "'System user import CSV has an unclosed quote.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-user/system-user.repository.ts"
+    },
+    {
+      "argument": "'System user import XLSX must be a valid workbook.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-user/system-user.repository.ts"
+    },
+    {
+      "argument": "'System user import XLSX must contain xl/worksheets/sheet1.xml.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-user/system-user.repository.ts"
+    },
+    {
+      "argument": "'System user postCodes must be an array.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-user/system-user.repository.ts"
+    },
+    {
+      "argument": "'System user roleCodes must be an array.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-user/system-user.repository.ts"
+    },
+    {
+      "argument": "'System user username must start with a lowercase letter and contain only lowercase letters, numbers, dot, underscore or dash.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-user/system-user.repository.ts"
+    },
+    {
+      "argument": "'System userIds must be an array.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-user/system-user.repository.ts"
+    },
+    {
+      "argument": "'System userIds must not be empty.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-user/system-user.repository.ts"
+    },
+    {
+      "argument": "'System users cannot be updated or deleted.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-user/system-user.repository.ts"
+    },
+    {
+      "argument": "`System role user id is duplicated: ${duplicate}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-user/system-user.repository.ts"
+    },
+    {
+      "argument": "`System user ${fieldName} is duplicated: ${duplicate}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-user/system-user.repository.ts"
+    },
+    {
+      "argument": "`System user ${fieldName} is required.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-user/system-user.repository.ts"
+    },
+    {
+      "argument": "`System user ${fieldName} must be a boolean.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-user/system-user.repository.ts"
+    },
+    {
+      "argument": "`System user ${fieldName} must be a string.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-user/system-user.repository.ts"
+    },
+    {
+      "argument": "`System user ${fieldName}s must be an array.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-user/system-user.repository.ts"
+    },
+    {
+      "argument": "`System user id is duplicated: ${duplicate}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-user/system-user.repository.ts"
+    },
+    {
+      "argument": "`System user import ${label} is missing column: ${missingHeader}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-user/system-user.repository.ts"
+    },
+    {
+      "argument": "`System user import ${label} must contain a header and at least one data row.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-user/system-user.repository.ts"
+    },
+    {
+      "argument": "`System user import ${label} must contain at least one non-empty data row.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-user/system-user.repository.ts"
+    },
+    {
+      "argument": "`System user import content must not exceed ${USER_IMPORT_MAX_BYTES} bytes.`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-user/system-user.repository.ts"
+    },
+    {
+      "argument": "`System user post code is duplicated: ${duplicate}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-user/system-user.repository.ts"
+    },
+    {
+      "argument": "`System user role code is duplicated: ${duplicate}`",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-user/system-user.repository.ts"
+    },
+    {
+      "argument": "'Current password is incorrect.'",
+      "count": 1,
+      "exception": "UnauthorizedException",
+      "file": "packages/system/src/system-user/system-user.repository.ts"
+    },
+    {
+      "argument": "`User already exists: ${input.username}`",
+      "count": 1,
+      "exception": "ConflictException",
+      "file": "packages/system/src/system-user/system-user.seed-repository.ts"
+    },
+    {
+      "argument": "`Role not found: ${missingRoleCode}`",
+      "count": 1,
+      "exception": "NotFoundException",
+      "file": "packages/system/src/system-user/system-user.seed-repository.ts"
+    },
+    {
+      "argument": "`System dept not found: ${deptId}`",
+      "count": 1,
+      "exception": "NotFoundException",
+      "file": "packages/system/src/system-user/system-user.seed-repository.ts"
+    },
+    {
+      "argument": "`System post not found: ${missingPostCode}`",
+      "count": 1,
+      "exception": "NotFoundException",
+      "file": "packages/system/src/system-user/system-user.seed-repository.ts"
+    },
+    {
+      "argument": "`User not found: ${id}`",
+      "count": 1,
+      "exception": "NotFoundException",
+      "file": "packages/system/src/system-user/system-user.seed-repository.ts"
+    },
+    {
+      "argument": "'System user import updateExisting must be a boolean.'",
+      "count": 1,
+      "exception": "BadRequestException",
+      "file": "packages/system/src/system-user/system-user.service.ts"
+    }
+  ]
+}

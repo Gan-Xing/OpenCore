@@ -1,5 +1,10 @@
-import { BadRequestException } from '@nestjs/common';
 import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
+import {
+  createApiErrorBody,
   createPageResult,
   normalizePagination,
   type PageQueryInput,
@@ -183,7 +188,11 @@ export function normalizeOptionalBoolean(
   }
 
   if (typeof value !== 'boolean') {
-    throw new BadRequestException(`${fieldName} must be a boolean.`);
+    throw systemDictBadRequest(
+      'SYSTEM_DICT_BOOLEAN_INVALID',
+      `${fieldName} must be a boolean.`,
+      { field: fieldName },
+    );
   }
 
   return value;
@@ -191,7 +200,11 @@ export function normalizeOptionalBoolean(
 
 function normalizeRequiredText(value: unknown, fieldName: string): string {
   if (typeof value !== 'string' || value.trim().length === 0) {
-    throw new BadRequestException(`${fieldName} must be a non-empty string.`);
+    throw systemDictBadRequest(
+      'SYSTEM_DICT_TEXT_REQUIRED',
+      `${fieldName} must be a non-empty string.`,
+      { field: fieldName },
+    );
   }
 
   return value.trim();
@@ -217,8 +230,38 @@ function normalizeOptionalInteger(
   }
 
   if (typeof value !== 'number' || !Number.isInteger(value)) {
-    throw new BadRequestException(`${fieldName} must be an integer.`);
+    throw systemDictBadRequest(
+      'SYSTEM_DICT_INTEGER_INVALID',
+      `${fieldName} must be an integer.`,
+      { field: fieldName },
+    );
   }
 
   return value;
+}
+
+export function systemDictBadRequest(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): BadRequestException {
+  return new BadRequestException(
+    createApiErrorBody({ code, message, details }),
+  );
+}
+
+export function systemDictConflict(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): ConflictException {
+  return new ConflictException(createApiErrorBody({ code, message, details }));
+}
+
+export function systemDictNotFound(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): NotFoundException {
+  return new NotFoundException(createApiErrorBody({ code, message, details }));
 }

@@ -65,14 +65,16 @@ describe('PrismaRbacRepository integration', () => {
       code: permissionCode,
       title: 'Read updated permission smoke',
     });
-    await expect(
+    await expectHttpExceptionCode(
       repository.updatePermission('core:permission:read', {
         title: 'Renamed',
       }),
-    ).rejects.toThrow('System permissions cannot be updated.');
-    await expect(
+      'RBAC_SYSTEM_PERMISSION_IMMUTABLE',
+    );
+    await expectHttpExceptionCode(
       repository.deletePermission('core:permission:read'),
-    ).rejects.toThrow('System permissions cannot be deleted.');
+      'RBAC_SYSTEM_PERMISSION_IMMUTABLE',
+    );
     await expect(repository.deletePermission(permissionCode)).resolves.toEqual({
       deleted: true,
     });
@@ -146,3 +148,30 @@ describe('PrismaRbacRepository integration', () => {
     await prisma.permission.deleteMany({ where: { code: permissionCode } });
   }
 });
+
+async function expectHttpExceptionCode(
+  promise: Promise<unknown>,
+  code: string,
+): Promise<void> {
+  try {
+    await promise;
+  } catch (error) {
+    expect(getHttpExceptionResponse(error)).toMatchObject({ code });
+    return;
+  }
+
+  throw new Error(`Expected HTTP exception code ${code}`);
+}
+
+function getHttpExceptionResponse(error: unknown): unknown {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'getResponse' in error &&
+    typeof error.getResponse === 'function'
+  ) {
+    return error.getResponse();
+  }
+
+  return undefined;
+}

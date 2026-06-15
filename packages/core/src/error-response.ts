@@ -1,5 +1,10 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
-import { errorCodeFromHttpStatus, isRecord } from '@opencore/common';
+import {
+  errorCodeFromHttpStatus,
+  isRecord,
+  sanitizeErrorCode,
+  type ApiErrorIssue,
+} from '@opencore/common';
 import type { RequestContext } from './request-context';
 
 export type ApiErrorResponse = {
@@ -8,6 +13,8 @@ export type ApiErrorResponse = {
     code: string;
     message: string;
     statusCode: number;
+    details?: unknown;
+    issues?: readonly ApiErrorIssue[];
     path?: string;
     requestId?: string;
     traceId?: string;
@@ -36,6 +43,7 @@ export function toApiErrorResponse(
       code: getErrorCode(statusCode, exceptionResponse),
       message: getErrorMessage(exception, exceptionResponse),
       statusCode,
+      ...getStructuredErrorFields(exceptionResponse),
       path: options.path,
       requestId: options.context?.requestId,
       traceId: options.context?.traceId,
@@ -48,6 +56,16 @@ function getErrorCode(
   statusCode: number,
   exceptionResponse: string | object | undefined,
 ): string {
+  if (
+    isRecord(exceptionResponse) &&
+    typeof exceptionResponse.code === 'string'
+  ) {
+    return (
+      sanitizeErrorCode(exceptionResponse.code) ??
+      errorCodeFromHttpStatus(statusCode)
+    );
+  }
+
   if (
     isRecord(exceptionResponse) &&
     typeof exceptionResponse.error === 'string'
@@ -83,4 +101,34 @@ function getErrorMessage(
   }
 
   return 'Unexpected server error';
+}
+
+function getStructuredErrorFields(
+  exceptionResponse: string | object | undefined,
+): Pick<ApiErrorResponse['error'], 'details' | 'issues'> {
+  if (!isRecord(exceptionResponse)) {
+    return {};
+  }
+
+  return {
+    ...(exceptionResponse.details === undefined
+      ? {}
+      : { details: exceptionResponse.details }),
+    ...(isApiErrorIssues(exceptionResponse.issues)
+      ? { issues: exceptionResponse.issues }
+      : {}),
+  };
+}
+
+function isApiErrorIssues(value: unknown): value is readonly ApiErrorIssue[] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (issue) =>
+        isRecord(issue) &&
+        typeof issue.message === 'string' &&
+        (issue.code === undefined || typeof issue.code === 'string') &&
+        (issue.path === undefined || typeof issue.path === 'string'),
+    )
+  );
 }

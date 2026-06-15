@@ -1,6 +1,6 @@
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
-import { history } from '@umijs/max';
+import { history, useIntl } from '@umijs/max';
 import { Button, Result } from 'antd';
 
 type ExceptionPageProps = {
@@ -14,6 +14,8 @@ const ExceptionPage: React.FC<ExceptionPageProps> = ({
   title,
   subTitle,
 }) => {
+  const intl = useIntl();
+
   return (
     <PageContainer title={title}>
       <Result
@@ -26,7 +28,10 @@ const ExceptionPage: React.FC<ExceptionPageProps> = ({
             type="primary"
             onClick={() => history.push('/dashboard')}
           >
-            Dashboard
+            {intl.formatMessage({
+              id: 'menu.dashboard',
+              defaultMessage: 'Dashboard',
+            })}
           </Button>
         }
       />

@@ -19,6 +19,7 @@ import {
   ApiProduces,
   ApiTags,
 } from '@nestjs/swagger';
+import { createApiErrorBody } from '@opencore/common';
 import {
   assertStorageKeyAllowed,
   FileStorageService,
@@ -377,19 +378,25 @@ export class RbacController {
     const user = await this.users.getUser(id);
 
     if (!user.enabled) {
-      throw new NotFoundException(`User avatar not found: ${id}`);
+      throw rbacNotFound('USER_AVATAR_NOT_FOUND', 'User avatar not found.', {
+        id,
+      });
     }
 
     const avatar = await this.users.getUserAvatar(id);
 
     if (!avatar.avatarStorageKey || !avatar.avatarMimeType) {
-      throw new NotFoundException(`User avatar not found: ${id}`);
+      throw rbacNotFound('USER_AVATAR_NOT_FOUND', 'User avatar not found.', {
+        id,
+      });
     }
 
     const body = await this.files.getObject(avatar.avatarStorageKey);
 
     if (!body) {
-      throw new NotFoundException(`User avatar not found: ${id}`);
+      throw rbacNotFound('USER_AVATAR_NOT_FOUND', 'User avatar not found.', {
+        id,
+      });
     }
 
     response.set({
@@ -851,7 +858,7 @@ function getAuthenticatedUserId(request: RequestWithUser): string {
   const userId = request.user?.id;
 
   if (!userId) {
-    throw new UnauthorizedException('Missing authenticated user');
+    throw rbacUnauthorized('AUTH_USER_MISSING', 'Missing authenticated user');
   }
 
   return userId;
@@ -896,8 +903,10 @@ function normalizeAvatarUpload(
   const avatarBody = decodeAvatarBase64(body?.contentBase64);
 
   if (avatarBody.byteLength > AVATAR_MAX_BYTES) {
-    throw new BadRequestException(
+    throw rbacBadRequest(
+      'USER_AVATAR_TOO_LARGE',
       `User avatar must be ${AVATAR_MAX_BYTES} bytes or smaller.`,
+      { maxBytes: AVATAR_MAX_BYTES },
     );
   }
 
@@ -921,7 +930,11 @@ function normalizeAvatarUpload(
 
 function normalizeAvatarOriginalName(value: unknown): string {
   if (typeof value !== 'string') {
-    throw new BadRequestException('User avatar originalName must be a string.');
+    throw rbacBadRequest(
+      'USER_AVATAR_ORIGINAL_NAME_INVALID_TYPE',
+      'User avatar originalName must be a string.',
+      { field: 'originalName' },
+    );
   }
 
   const normalized = value.trim();
@@ -932,8 +945,10 @@ function normalizeAvatarOriginalName(value: unknown): string {
     normalized.includes('\\') ||
     normalized.includes('\0')
   ) {
-    throw new BadRequestException(
+    throw rbacBadRequest(
+      'USER_AVATAR_ORIGINAL_NAME_INVALID',
       'User avatar originalName must be a plain file name.',
+      { field: 'originalName' },
     );
   }
 
@@ -942,14 +957,20 @@ function normalizeAvatarOriginalName(value: unknown): string {
 
 function normalizeAvatarMimeType(value: unknown): string {
   if (typeof value !== 'string') {
-    throw new BadRequestException('User avatar mimeType must be a string.');
+    throw rbacBadRequest(
+      'USER_AVATAR_MIME_TYPE_INVALID_TYPE',
+      'User avatar mimeType must be a string.',
+      { field: 'mimeType' },
+    );
   }
 
   const normalized = value.trim().toLowerCase();
 
   if (!ALLOWED_AVATAR_MIME_TYPES.has(normalized)) {
-    throw new BadRequestException(
+    throw rbacBadRequest(
+      'USER_AVATAR_MIME_TYPE_UNSUPPORTED',
       'User avatar mimeType must be image/png, image/jpeg, image/webp or image/gif.',
+      { field: 'mimeType' },
     );
   }
 
@@ -958,8 +979,10 @@ function normalizeAvatarMimeType(value: unknown): string {
 
 function decodeAvatarBase64(value: unknown): Buffer {
   if (typeof value !== 'string') {
-    throw new BadRequestException(
+    throw rbacBadRequest(
+      'USER_AVATAR_CONTENT_INVALID_TYPE',
       'User avatar contentBase64 must be a string.',
+      { field: 'contentBase64' },
     );
   }
 
@@ -971,8 +994,10 @@ function decodeAvatarBase64(value: unknown): Buffer {
     normalized.length % 4 !== 0 ||
     !/^[A-Za-z0-9+/]+={0,2}$/.test(normalized)
   ) {
-    throw new BadRequestException(
+    throw rbacBadRequest(
+      'USER_AVATAR_CONTENT_INVALID_BASE64',
       'User avatar contentBase64 must be valid base64.',
+      { field: 'contentBase64' },
     );
   }
 
@@ -983,8 +1008,10 @@ function decodeAvatarBase64(value: unknown): Buffer {
     body.byteLength === 0 ||
     canonical.replace(/=+$/, '') !== normalized.replace(/=+$/, '')
   ) {
-    throw new BadRequestException(
+    throw rbacBadRequest(
+      'USER_AVATAR_CONTENT_INVALID_BASE64',
       'User avatar contentBase64 must be valid base64.',
+      { field: 'contentBase64' },
     );
   }
 
@@ -1004,10 +1031,37 @@ function assertAvatarMagic(mimeType: string, body: Buffer): void {
       body.toString('ascii', 8, 12) === 'WEBP');
 
   if (!valid) {
-    throw new BadRequestException(
+    throw rbacBadRequest(
+      'USER_AVATAR_BYTES_MISMATCH',
       'User avatar bytes must match the declared image mimeType.',
+      { field: 'contentBase64', mimeType },
     );
   }
+}
+
+function rbacBadRequest(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): BadRequestException {
+  return new BadRequestException(
+    createApiErrorBody({ code, message, details }),
+  );
+}
+
+function rbacUnauthorized(
+  code: string,
+  message: string,
+): UnauthorizedException {
+  return new UnauthorizedException(createApiErrorBody({ code, message }));
+}
+
+function rbacNotFound(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): NotFoundException {
+  return new NotFoundException(createApiErrorBody({ code, message, details }));
 }
 
 function startsWithHex(body: Buffer, hex: string): boolean {

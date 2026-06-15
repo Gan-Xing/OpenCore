@@ -16,6 +16,7 @@ import { createStyles } from 'antd-style';
 import React, { startTransition, useState } from 'react';
 import { Footer } from '@/components';
 import { registrySummary, shellMenuItems } from '@/core/shellRegistry';
+import { formatRequestErrorMessage } from '@/requestErrorConfig';
 import { loginToOpenCore, toAdminCurrentUser } from '@/services/opencore/auth';
 import Settings from '../../../../config/defaultSettings';
 
@@ -158,8 +159,11 @@ const Login: React.FC = () => {
         id: 'pages.login.failure',
         defaultMessage: 'Login failed. Please try again.',
       });
-      setLoginError(defaultLoginFailureMessage);
-      message.error(defaultLoginFailureMessage);
+      const errorMessage =
+        formatRequestErrorMessage(error) || defaultLoginFailureMessage;
+
+      setLoginError(errorMessage);
+      message.error(errorMessage);
       console.error(error);
     }
   };
@@ -203,8 +207,17 @@ const Login: React.FC = () => {
                   className={styles.loginPolicyText}
                   type="secondary"
                 >
-                  Login lockout policy: {loginMaxFailedAttempts} failed attempts
-                  / {loginLockoutMinutes} minutes
+                  {intl.formatMessage(
+                    {
+                      id: 'pages.login.lockoutPolicy',
+                      defaultMessage:
+                        'Login lockout policy: {attempts} failed attempts / {minutes} minutes',
+                    },
+                    {
+                      attempts: loginMaxFailedAttempts,
+                      minutes: loginLockoutMinutes,
+                    },
+                  )}
                 </Typography.Text>
               ) : null}
             </Space>

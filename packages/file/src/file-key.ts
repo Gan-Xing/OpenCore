@@ -1,4 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
+import { createApiErrorBody } from '@opencore/common';
 import { createHash } from 'node:crypto';
 
 export type FileAssetStorageInput = {
@@ -16,11 +17,19 @@ export function assertSafeFileAssetInput(input: FileAssetStorageInput): void {
     fileName.includes('\\') ||
     fileName.includes('\0')
   ) {
-    throw new BadRequestException('File name must be a plain file name.');
+    throw fileBadRequest(
+      'FILE_NAME_INVALID',
+      'File name must be a plain file name.',
+      { field: 'originalName' },
+    );
   }
 
   if (!input.mimeType.trim() || !input.mimeType.includes('/')) {
-    throw new BadRequestException('File MIME type must be valid.');
+    throw fileBadRequest(
+      'FILE_MIME_TYPE_INVALID',
+      'File MIME type must be valid.',
+      { field: 'mimeType' },
+    );
   }
 
   if (
@@ -28,7 +37,9 @@ export function assertSafeFileAssetInput(input: FileAssetStorageInput): void {
     !Number.isInteger(input.sizeBytes) ||
     input.sizeBytes <= 0
   ) {
-    throw new BadRequestException('File size must be positive.');
+    throw fileBadRequest('FILE_SIZE_INVALID', 'File size must be positive.', {
+      field: 'sizeBytes',
+    });
   }
 }
 
@@ -67,12 +78,18 @@ export function normalizeObjectPrefix(prefix: string): string {
     trimmed.includes('\\') ||
     trimmed.includes('\0')
   ) {
-    throw new BadRequestException('Object prefix must be a relative prefix.');
+    throw fileBadRequest(
+      'FILE_OBJECT_PREFIX_INVALID',
+      'Object prefix must be a relative prefix.',
+      { field: 'prefix' },
+    );
   }
 
   if (trimmed.toLowerCase().includes('nestweb')) {
-    throw new BadRequestException(
+    throw fileBadRequest(
+      'FILE_OBJECT_PREFIX_RESERVED',
       'Object prefix must not reuse a NestWeb prefix.',
+      { field: 'prefix' },
     );
   }
 
@@ -89,6 +106,24 @@ export function assertStorageKeyAllowed(key: string): void {
     trimmed.includes('\\') ||
     trimmed.includes('\0')
   ) {
-    throw new BadRequestException('Storage key must be a relative object key.');
+    throw fileBadRequest(
+      'FILE_STORAGE_KEY_INVALID',
+      'Storage key must be a relative object key.',
+      { field: 'key' },
+    );
   }
+}
+
+function fileBadRequest(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): BadRequestException {
+  return new BadRequestException(
+    createApiErrorBody({
+      code,
+      message,
+      details,
+    }),
+  );
 }

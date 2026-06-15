@@ -1,4 +1,5 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { createApiErrorBody } from '@opencore/common';
 import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 
 export type SecurityBearerTokenResult = {
@@ -62,7 +63,10 @@ export class SecurityBearerTokenService {
     authorization: string | undefined,
   ): VerifiedSecurityBearerToken {
     if (!authorization?.startsWith('Bearer ')) {
-      throw new UnauthorizedException('Missing bearer token');
+      throw bearerTokenError(
+        'AUTH_BEARER_TOKEN_MISSING',
+        'Missing bearer token',
+      );
     }
 
     return this.verifyTokenPayload(authorization.slice('Bearer '.length));
@@ -76,17 +80,26 @@ export class SecurityBearerTokenService {
     const [payload, signature] = token.split('.');
 
     if (!payload || !signature || !safeEqual(signature, this.sign(payload))) {
-      throw new UnauthorizedException('Invalid bearer token');
+      throw bearerTokenError(
+        'AUTH_BEARER_TOKEN_INVALID',
+        'Invalid bearer token',
+      );
     }
 
     const decoded = decodePayload(payload);
 
     if (!decoded.sub) {
-      throw new UnauthorizedException('Invalid bearer token payload');
+      throw bearerTokenError(
+        'AUTH_BEARER_TOKEN_INVALID_PAYLOAD',
+        'Invalid bearer token payload',
+      );
     }
 
     if (!decoded.exp || decoded.exp <= Math.floor(Date.now() / 1000)) {
-      throw new UnauthorizedException('Bearer token expired');
+      throw bearerTokenError(
+        'AUTH_BEARER_TOKEN_EXPIRED',
+        'Bearer token expired',
+      );
     }
 
     return {
@@ -116,8 +129,18 @@ function decodePayload(payload: string): SecurityBearerTokenPayload {
       Buffer.from(payload, 'base64url').toString('utf8'),
     ) as SecurityBearerTokenPayload;
   } catch {
-    throw new UnauthorizedException('Invalid bearer token payload');
+    throw bearerTokenError(
+      'AUTH_BEARER_TOKEN_INVALID_PAYLOAD',
+      'Invalid bearer token payload',
+    );
   }
+}
+
+function bearerTokenError(
+  code: string,
+  message: string,
+): UnauthorizedException {
+  return new UnauthorizedException(createApiErrorBody({ code, message }));
 }
 
 function safeEqual(left: string, right: string): boolean {

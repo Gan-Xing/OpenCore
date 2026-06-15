@@ -1,8 +1,4 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
 import type {
   BatchDeleteSystemPostsDto,
@@ -20,6 +16,8 @@ import {
   normalizeSystemPostPageQuery,
   normalizeUpdateSystemPostOrderInput,
   normalizeUpdateSystemPostInput,
+  systemPostConflict,
+  systemPostNotFound,
   SystemPostRepository,
   type SystemPostBatchMutationRecord,
   type SystemPostOrderMutationResult,
@@ -69,7 +67,11 @@ export class SeedSystemPostRepository extends SystemPostRepository {
     const input = normalizeCreateSystemPostInput(body);
 
     if (this.posts.some((post) => post.code === input.code)) {
-      throw new ConflictException(`System post already exists: ${input.code}`);
+      throw systemPostConflict(
+        'SYSTEM_POST_ALREADY_EXISTS',
+        'System post already exists.',
+        { code: input.code },
+      );
     }
 
     const now = new Date().toISOString();
@@ -144,7 +146,13 @@ export class SeedSystemPostRepository extends SystemPostRepository {
     const post = this.posts.find((candidate) => candidate.code === code);
 
     if (!post) {
-      throw new NotFoundException(`System post not found: ${code}`);
+      throw systemPostNotFound(
+        'SYSTEM_POST_NOT_FOUND',
+        'System post not found.',
+        {
+          code,
+        },
+      );
     }
 
     return post;

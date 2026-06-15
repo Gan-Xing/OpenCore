@@ -24,6 +24,13 @@ describe('OpenAPI baseline', () => {
     expect(Object.keys(document.paths)).toEqual(
       expect.arrayContaining(['/health/live', '/health/ready']),
     );
+    expect(document.components?.schemas?.ApiErrorResponse).toMatchObject({
+      type: 'object',
+      required: ['success', 'error'],
+    });
+    expect(document.components?.schemas?.ApiErrorDetail).toMatchObject({
+      required: ['code', 'message', 'statusCode', 'timestamp'],
+    });
 
     await app.close();
   });

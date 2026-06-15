@@ -46,6 +46,13 @@ describe('SeedRbacRepository', () => {
       title: 'Read examples',
       system: false,
     });
+    await expectHttpExceptionCode(
+      repository.createPermission({
+        code: 'core:example:read',
+        title: 'Duplicate examples',
+      }),
+      'RBAC_PERMISSION_ALREADY_EXISTS',
+    );
 
     await expect(
       repository.updatePermission('core:example:read', {
@@ -70,14 +77,16 @@ describe('SeedRbacRepository', () => {
   });
 
   it('protects registry permissions from mutation', async () => {
-    await expect(
+    await expectHttpExceptionCode(
       repository.updatePermission('core:permission:read', {
         title: 'Renamed',
       }),
-    ).rejects.toThrow('System permissions cannot be updated.');
-    await expect(
+      'RBAC_SYSTEM_PERMISSION_IMMUTABLE',
+    );
+    await expectHttpExceptionCode(
       repository.deletePermission('core:permission:read'),
-    ).rejects.toThrow('System permissions cannot be deleted.');
+      'RBAC_SYSTEM_PERMISSION_IMMUTABLE',
+    );
   });
 
   it('resolves seed data-scope profiles and dept descendants', async () => {
@@ -99,3 +108,30 @@ describe('SeedRbacRepository', () => {
     ).resolves.toEqual(['dept_engineering', 'dept_operations']);
   });
 });
+
+async function expectHttpExceptionCode(
+  promise: Promise<unknown>,
+  code: string,
+): Promise<void> {
+  try {
+    await promise;
+  } catch (error) {
+    expect(getHttpExceptionResponse(error)).toMatchObject({ code });
+    return;
+  }
+
+  throw new Error(`Expected HTTP exception code ${code}`);
+}
+
+function getHttpExceptionResponse(error: unknown): unknown {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'getResponse' in error &&
+    typeof error.getResponse === 'function'
+  ) {
+    return error.getResponse();
+  }
+
+  return undefined;
+}

@@ -26,7 +26,7 @@ export default {
   'app.setting.weakmode': '色弱模式',
   'app.setting.copy': '拷贝设置',
   'app.setting.copyinfo':
-    '拷贝成功，请到 config/defaultSettings.js 中替换默认配置',
+    '拷贝成功，请到 apps/admin/config/defaultSettings.ts 中替换默认配置',
   'app.setting.production.hint':
     '配置栏只在开发环境用于预览，生产环境不会展现，请拷贝后手动修改配置文件',
 };

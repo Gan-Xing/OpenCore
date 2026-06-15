@@ -11,4 +11,8 @@ export default {
   'app.error.reload': '刷新页面',
   'app.error.home': '返回首页',
   'app.request.offline': '网络不可用，请检查网络连接后重试。',
+  'app.header.dashboard': 'OpenCore 仪表盘',
+  'app.header.tools': 'OpenCore 工具',
+  'app.header.version': '版本 {version}',
+  'app.header.language': '切换语言',
 };

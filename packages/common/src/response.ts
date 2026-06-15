@@ -1,3 +1,5 @@
+import type { ApiErrorIssue } from './api-error';
+
 export type RequestTrace = {
   path?: string;
   requestId?: string;
@@ -12,6 +14,8 @@ export type ApiSuccessResponse<T> = RequestTrace & {
 
 export type ApiErrorDetail = RequestTrace & {
   code: string;
+  details?: unknown;
+  issues?: readonly ApiErrorIssue[];
   message: string;
   statusCode: number;
 };

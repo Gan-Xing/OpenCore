@@ -1,4 +1,3 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '@opencore/database';
 import { PrismaSystemPostRepository } from './system-post.prisma-repository';
@@ -76,15 +75,18 @@ describe('@opencore/system system-post', () => {
       name: 'Quality Batch B',
       order: 32,
     });
-    await expect(service.deletePosts({ codes: [] })).rejects.toThrow(
-      BadRequestException,
+    await expectHttpExceptionCode(
+      service.deletePosts({ codes: [] }),
+      'SYSTEM_POST_CODES_EMPTY',
     );
-    await expect(
+    await expectHttpExceptionCode(
       service.deletePosts({ codes: ['qa_batch_a', 'qa_batch_a'] }),
-    ).rejects.toThrow(BadRequestException);
-    await expect(
+      'SYSTEM_POST_CODE_DUPLICATED',
+    );
+    await expectHttpExceptionCode(
       service.deletePosts({ codes: ['qa_batch_a', 'missing_post'] }),
-    ).rejects.toThrow(NotFoundException);
+      'SYSTEM_POST_NOT_FOUND',
+    );
     await expect(service.getPost('qa_batch_a')).resolves.toMatchObject({
       code: 'qa_batch_a',
     });
@@ -95,11 +97,13 @@ describe('@opencore/system system-post', () => {
       affected: 2,
       codes: ['qa_batch_a', 'qa_batch_b'],
     });
-    await expect(service.getPost('qa_batch_a')).rejects.toThrow(
-      NotFoundException,
+    await expectHttpExceptionCode(
+      service.getPost('qa_batch_a'),
+      'SYSTEM_POST_NOT_FOUND',
     );
-    await expect(service.getPost('qa_batch_b')).rejects.toThrow(
-      NotFoundException,
+    await expectHttpExceptionCode(
+      service.getPost('qa_batch_b'),
+      'SYSTEM_POST_NOT_FOUND',
     );
 
     await service.createPost({
@@ -126,22 +130,24 @@ describe('@opencore/system system-post', () => {
         expect.objectContaining({ code: 'qa_order_a', order: 20 }),
       ],
     });
-    await expect(
+    await expectHttpExceptionCode(
       service.updatePostOrder({
         items: [
           { code: 'qa_order_a', order: 10 },
           { code: 'qa_order_a', order: 20 },
         ],
       }),
-    ).rejects.toThrow(BadRequestException);
-    await expect(
+      'SYSTEM_POST_ORDER_ITEM_CODE_DUPLICATED',
+    );
+    await expectHttpExceptionCode(
       service.updatePostOrder({
         items: [
           { code: 'qa_order_a', order: 10 },
           { code: 'missing_order_post', order: 20 },
         ],
       }),
-    ).rejects.toThrow(NotFoundException);
+      'SYSTEM_POST_NOT_FOUND',
+    );
 
     await service.deletePost('qa_order_a');
     await service.deletePost('qa_order_b');
@@ -151,19 +157,21 @@ describe('@opencore/system system-post', () => {
   it('rejects invalid post codes and order values', async () => {
     const service = new SystemPostService(new SeedSystemPostRepository());
 
-    await expect(
+    await expectHttpExceptionCode(
       service.createPost({
         code: 'Invalid Code',
         name: 'Invalid',
       }),
-    ).rejects.toThrow(BadRequestException);
-    await expect(
+      'SYSTEM_POST_CODE_INVALID',
+    );
+    await expectHttpExceptionCode(
       service.createPost({
         code: 'invalid-order',
         name: 'Invalid',
         order: -1,
       }),
-    ).rejects.toThrow(BadRequestException);
+      'SYSTEM_POST_ORDER_INVALID',
+    );
   });
 
   describe('PrismaSystemPostRepository integration', () => {
@@ -270,9 +278,10 @@ describe('@opencore/system system-post', () => {
         order: 42,
       });
 
-      await expect(
+      await expectHttpExceptionCode(
         service.deletePosts({ codes: [batchCodeA, 'missing_post'] }),
-      ).rejects.toThrow(NotFoundException);
+        'SYSTEM_POST_NOT_FOUND',
+      );
       await expect(service.getPost(batchCodeA)).resolves.toMatchObject({
         code: batchCodeA,
       });
@@ -319,14 +328,15 @@ describe('@opencore/system system-post', () => {
           expect.objectContaining({ code: orderCodeA, order: 20 }),
         ],
       });
-      await expect(
+      await expectHttpExceptionCode(
         service.updatePostOrder({
           items: [
             { code: orderCodeA, order: 10 },
             { code: 'missing_order_post', order: 20 },
           ],
         }),
-      ).rejects.toThrow(NotFoundException);
+        'SYSTEM_POST_NOT_FOUND',
+      );
       await expect(service.getPost(orderCodeA)).resolves.toMatchObject({
         code: orderCodeA,
         order: 20,
@@ -348,3 +358,30 @@ describe('@opencore/system system-post', () => {
     }
   });
 });
+
+async function expectHttpExceptionCode(
+  promise: Promise<unknown>,
+  code: string,
+): Promise<void> {
+  try {
+    await promise;
+  } catch (error) {
+    expect(getHttpExceptionResponse(error)).toMatchObject({ code });
+    return;
+  }
+
+  throw new Error(`Expected HTTP exception code ${code}`);
+}
+
+function getHttpExceptionResponse(error: unknown): unknown {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'getResponse' in error &&
+    typeof error.getResponse === 'function'
+  ) {
+    return error.getResponse();
+  }
+
+  return undefined;
+}

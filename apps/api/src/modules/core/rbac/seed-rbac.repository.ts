@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import {
   seedSystemDepts,
   seedSystemRoles,
@@ -17,6 +12,9 @@ import {
   createRbacExportPreview,
   normalizeCreatePermissionInput,
   normalizeUpdatePermissionInput,
+  rbacBadRequest,
+  rbacConflict,
+  rbacNotFound,
   RbacRepository,
   type CreatePermissionRecord,
   type PermissionSummaryRecord,
@@ -72,7 +70,11 @@ export class SeedRbacRepository extends RbacRepository {
     const input = normalizeCreatePermissionInput(body);
 
     if (this.permissions.some((permission) => permission.code === input.code)) {
-      throw new ConflictException(`Permission already exists: ${input.code}`);
+      throw rbacConflict(
+        'RBAC_PERMISSION_ALREADY_EXISTS',
+        'Permission already exists.',
+        { code: input.code },
+      );
     }
 
     const permission = {
@@ -94,7 +96,11 @@ export class SeedRbacRepository extends RbacRepository {
     const permission = this.findMutablePermissionByCode(code);
 
     if (permission.system) {
-      throw new BadRequestException('System permissions cannot be updated.');
+      throw rbacBadRequest(
+        'RBAC_SYSTEM_PERMISSION_IMMUTABLE',
+        'System permissions cannot be updated.',
+        { action: 'updated', code },
+      );
     }
 
     permission.title = input.title ?? permission.title;
@@ -107,11 +113,17 @@ export class SeedRbacRepository extends RbacRepository {
     );
 
     if (index === -1) {
-      throw new NotFoundException(`Permission not found: ${code}`);
+      throw rbacNotFound('RBAC_PERMISSION_NOT_FOUND', 'Permission not found.', {
+        code,
+      });
     }
 
     if (this.permissions[index]?.system) {
-      throw new BadRequestException('System permissions cannot be deleted.');
+      throw rbacBadRequest(
+        'RBAC_SYSTEM_PERMISSION_IMMUTABLE',
+        'System permissions cannot be deleted.',
+        { action: 'deleted', code },
+      );
     }
 
     this.permissions.splice(index, 1);
@@ -195,7 +207,9 @@ export class SeedRbacRepository extends RbacRepository {
     );
 
     if (!permission) {
-      throw new NotFoundException(`Permission not found: ${code}`);
+      throw rbacNotFound('RBAC_PERMISSION_NOT_FOUND', 'Permission not found.', {
+        code,
+      });
     }
 
     return permission;

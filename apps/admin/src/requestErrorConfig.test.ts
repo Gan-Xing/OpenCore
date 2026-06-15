@@ -21,7 +21,11 @@ vi.mock('antd', () => ({
 
 vi.mock('@umijs/max', () => ({
   getIntl: vi.fn(() => ({
-    formatMessage: vi.fn(({ defaultMessage }) => defaultMessage),
+    formatMessage: vi.fn(({ id, defaultMessage }) =>
+      id === 'error.AUTH_INVALID_CREDENTIALS'
+        ? '用户名或密码错误。'
+        : defaultMessage,
+    ),
   })),
   history: {
     location: {
@@ -135,6 +139,23 @@ describe('requestErrorConfig', () => {
         message: 'HTTP_409',
         description: 'Conflict',
       });
+    });
+
+    it('localizes BizError messages by stable error code', () => {
+      const error: any = new Error('Invalid username or password');
+      error.name = 'BizError';
+      error.info = {
+        error: {
+          code: 'AUTH_INVALID_CREDENTIALS',
+          message: 'Invalid username or password',
+          statusCode: 401,
+        },
+        errorCode: 'AUTH_INVALID_CREDENTIALS',
+      };
+
+      errorHandler?.(error, {});
+
+      expect(message.error).toHaveBeenCalledWith('用户名或密码错误。');
     });
 
     it('handles axios response errors with OpenCore error bodies', () => {

@@ -5,6 +5,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { createApiErrorBody } from '@opencore/common';
 import { SecurityAuthService } from '../security-auth';
 import {
   REQUIRED_PERMISSIONS_KEY,
@@ -54,7 +55,13 @@ export class SecurityPermissionGuard implements CanActivate {
     );
 
     if (missingPermission) {
-      throw new ForbiddenException(`Missing permission: ${missingPermission}`);
+      throw new ForbiddenException(
+        createApiErrorBody({
+          code: 'RBAC_PERMISSION_MISSING',
+          message: `Missing permission: ${missingPermission}`,
+          details: { permissionCode: missingPermission },
+        }),
+      );
     }
 
     return true;

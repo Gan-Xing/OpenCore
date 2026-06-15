@@ -1,4 +1,3 @@
-import { BadRequestException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '@opencore/database';
 import { PrismaSystemMenuRepository } from './system-menu.prisma-repository';
@@ -95,31 +94,34 @@ describe('@opencore/system system-menu', () => {
   it('rejects invalid menu keys, paths and order values', async () => {
     const service = new SystemMenuService(new SeedSystemMenuRepository());
 
-    await expect(
+    await expectHttpExceptionCode(
       service.createMenu({
         key: 'Invalid Key',
         title: 'Invalid',
         path: '/invalid',
         order: 1,
       }),
-    ).rejects.toThrow(BadRequestException);
-    await expect(
+      'SYSTEM_MENU_KEY_INVALID',
+    );
+    await expectHttpExceptionCode(
       service.createMenu({
         key: 'system.invalid',
         title: 'Invalid',
         path: 'system/invalid',
         order: 1,
       }),
-    ).rejects.toThrow(BadRequestException);
-    await expect(
+      'SYSTEM_MENU_PATH_INVALID',
+    );
+    await expectHttpExceptionCode(
       service.createMenu({
         key: 'system.invalid',
         title: 'Invalid',
         path: '/system/invalid',
         order: -1,
       }),
-    ).rejects.toThrow(BadRequestException);
-    await expect(
+      'SYSTEM_MENU_ORDER_INVALID',
+    );
+    await expectHttpExceptionCode(
       service.createMenu({
         key: 'system.invalid',
         parentKey: 'system.invalid',
@@ -127,7 +129,8 @@ describe('@opencore/system system-menu', () => {
         path: '/system/invalid',
         order: 1,
       }),
-    ).rejects.toThrow(BadRequestException);
+      'SYSTEM_MENU_PARENT_SELF',
+    );
   });
 
   it('protects seeded menu tree structure from cycles and parent deletes', async () => {
@@ -148,13 +151,15 @@ describe('@opencore/system system-menu', () => {
       order: 1000,
     });
 
-    await expect(
+    await expectHttpExceptionCode(
       service.updateMenu('system.examples', {
         parentKey: 'system.examples.child',
       }),
-    ).rejects.toThrow(BadRequestException);
-    await expect(service.deleteMenu('system.examples')).rejects.toThrow(
-      BadRequestException,
+      'SYSTEM_MENU_PARENT_CYCLE',
+    );
+    await expectHttpExceptionCode(
+      service.deleteMenu('system.examples'),
+      'SYSTEM_MENU_HAS_CHILDREN',
     );
   });
 
@@ -258,3 +263,30 @@ describe('@opencore/system system-menu', () => {
     }
   });
 });
+
+async function expectHttpExceptionCode(
+  promise: Promise<unknown>,
+  code: string,
+): Promise<void> {
+  try {
+    await promise;
+  } catch (error) {
+    expect(getHttpExceptionResponse(error)).toMatchObject({ code });
+    return;
+  }
+
+  throw new Error(`Expected HTTP exception code ${code}`);
+}
+
+function getHttpExceptionResponse(error: unknown): unknown {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'getResponse' in error &&
+    typeof error.getResponse === 'function'
+  ) {
+    return error.getResponse();
+  }
+
+  return undefined;
+}

@@ -1,4 +1,9 @@
-import { BadRequestException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
+import { createApiErrorBody } from '@opencore/common';
 import {
   SecurityAuthUserRepository,
   type SecurityDataScopeProfile,
@@ -105,8 +110,10 @@ function normalizePermissionCode(value: string): string {
   const code = normalizeRequiredPermissionText(value, 'code');
 
   if (!isPermissionCode(code)) {
-    throw new BadRequestException(
+    throw rbacBadRequest(
+      'RBAC_PERMISSION_CODE_INVALID',
       'Permission code must follow <layer>:<resource>:<action> and use a supported action.',
+      { field: 'code' },
     );
   }
 
@@ -124,8 +131,38 @@ function normalizeRequiredPermissionText(
   const normalized = value.trim();
 
   if (!normalized) {
-    throw new BadRequestException(`Permission ${fieldName} is required.`);
+    throw rbacBadRequest(
+      'RBAC_PERMISSION_FIELD_REQUIRED',
+      `Permission ${fieldName} is required.`,
+      { field: fieldName },
+    );
   }
 
   return normalized;
+}
+
+export function rbacBadRequest(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): BadRequestException {
+  return new BadRequestException(
+    createApiErrorBody({ code, message, details }),
+  );
+}
+
+export function rbacConflict(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): ConflictException {
+  return new ConflictException(createApiErrorBody({ code, message, details }));
+}
+
+export function rbacNotFound(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): NotFoundException {
+  return new NotFoundException(createApiErrorBody({ code, message, details }));
 }

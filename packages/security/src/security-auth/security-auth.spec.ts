@@ -184,6 +184,12 @@ describe('@opencore/security security-auth', () => {
     await expect(service.login('disabled', 'disabled123')).rejects.toThrow(
       UnauthorizedException,
     );
+    await expect(service.login('missing', 'missing123')).rejects.toMatchObject({
+      response: expect.objectContaining({
+        code: 'AUTH_INVALID_CREDENTIALS',
+        message: 'Invalid username or password',
+      }),
+    });
     expect(loginAttempts.records).toEqual([
       expect.objectContaining({
         username: 'admin',
@@ -198,6 +204,13 @@ describe('@opencore/security security-auth', () => {
         result: 'user_disabled',
         success: false,
         failureReason: 'user-disabled',
+      }),
+      expect.objectContaining({
+        username: 'missing',
+        logType: 'login.username',
+        result: 'bad_credentials',
+        success: false,
+        failureReason: 'invalid-credentials',
       }),
     ]);
   });

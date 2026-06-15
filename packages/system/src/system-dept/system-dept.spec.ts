@@ -1,4 +1,3 @@
-import { BadRequestException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '@opencore/database';
 import { PrismaSystemDeptRepository } from './system-dept.prisma-repository';
@@ -78,22 +77,24 @@ describe('@opencore/system system-dept', () => {
         expect.objectContaining({ id: dept.id, order: 2 }),
       ],
     });
-    await expect(
+    await expectHttpExceptionCode(
       service.updateDeptOrder({
         items: [
           { id: dept.id, order: 10 },
           { id: dept.id, order: 20 },
         ],
       }),
-    ).rejects.toThrow(BadRequestException);
-    await expect(
+      'SYSTEM_DEPT_ORDER_ITEM_ID_DUPLICATED',
+    );
+    await expectHttpExceptionCode(
       service.updateDeptOrder({
         items: [
           { id: dept.id, order: 10 },
           { id: 'dept_operations', order: 20 },
         ],
       }),
-    ).rejects.toThrow(BadRequestException);
+      'SYSTEM_DEPT_SIBLING_PARENT_MISMATCH',
+    );
     await expect(service.deleteDept(sibling.id)).resolves.toEqual({
       deleted: true,
     });
@@ -110,13 +111,15 @@ describe('@opencore/system system-dept', () => {
   it('rejects dept cycles and deleting parents with children', async () => {
     const service = new SystemDeptService(new SeedSystemDeptRepository());
 
-    await expect(
+    await expectHttpExceptionCode(
       service.updateDept('dept_engineering', {
         parentId: 'dept_engineering',
       }),
-    ).rejects.toThrow(BadRequestException);
-    await expect(service.deleteDept('dept_headquarters')).rejects.toThrow(
-      BadRequestException,
+      'SYSTEM_DEPT_PARENT_SELF',
+    );
+    await expectHttpExceptionCode(
+      service.deleteDept('dept_headquarters'),
+      'SYSTEM_DEPT_HAS_CHILDREN',
     );
   });
 
@@ -137,8 +140,9 @@ describe('@opencore/system system-dept', () => {
       ]),
     );
 
-    await expect(service.deleteDept('dept_operations')).rejects.toThrow(
-      BadRequestException,
+    await expectHttpExceptionCode(
+      service.deleteDept('dept_operations'),
+      'SYSTEM_DEPT_HAS_USERS',
     );
     await expect(service.getDept('dept_operations')).resolves.toMatchObject({
       id: 'dept_operations',
@@ -220,12 +224,14 @@ describe('@opencore/system system-dept', () => {
         id: parentId,
         code: parentCode,
       });
-      await expect(service.deleteDept(parentId)).rejects.toThrow(
-        BadRequestException,
+      await expectHttpExceptionCode(
+        service.deleteDept(parentId),
+        'SYSTEM_DEPT_HAS_CHILDREN',
       );
-      await expect(
+      await expectHttpExceptionCode(
         service.updateDept(parentId, { parentId: childId }),
-      ).rejects.toThrow(BadRequestException);
+        'SYSTEM_DEPT_PARENT_DESCENDANT',
+      );
       await expect(
         service.updateDeptOrder({
           items: [
@@ -240,19 +246,21 @@ describe('@opencore/system system-dept', () => {
           expect.objectContaining({ id: childId, order: 2 }),
         ],
       });
-      await expect(
+      await expectHttpExceptionCode(
         service.updateDeptOrder({
           items: [
             { id: childId, order: 10 },
             { id: 'dept_engineering', order: 20 },
           ],
         }),
-      ).rejects.toThrow(BadRequestException);
-      await expect(
+        'SYSTEM_DEPT_SIBLING_PARENT_MISMATCH',
+      );
+      await expectHttpExceptionCode(
         service.updateDeptOrder({
           items: [{ id: `missing_${childId}`, order: 10 }],
         }),
-      ).rejects.toThrow();
+        'SYSTEM_DEPT_NOT_FOUND',
+      );
       await expect(service.deleteDept(childId)).resolves.toEqual({
         deleted: true,
       });
@@ -284,8 +292,9 @@ describe('@opencore/system system-dept', () => {
         },
       });
 
-      await expect(service.deleteDept(boundDeptId)).rejects.toThrow(
-        BadRequestException,
+      await expectHttpExceptionCode(
+        service.deleteDept(boundDeptId),
+        'SYSTEM_DEPT_HAS_USERS',
       );
       await expect(
         prisma.user.findUnique({ where: { id: user.id } }),
@@ -319,3 +328,30 @@ describe('@opencore/system system-dept', () => {
     }
   });
 });
+
+async function expectHttpExceptionCode(
+  promise: Promise<unknown>,
+  code: string,
+): Promise<void> {
+  try {
+    await promise;
+  } catch (error) {
+    expect(getHttpExceptionResponse(error)).toMatchObject({ code });
+    return;
+  }
+
+  throw new Error(`Expected HTTP exception code ${code}`);
+}
+
+function getHttpExceptionResponse(error: unknown): unknown {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'getResponse' in error &&
+    typeof error.getResponse === 'function'
+  ) {
+    return error.getResponse();
+  }
+
+  return undefined;
+}

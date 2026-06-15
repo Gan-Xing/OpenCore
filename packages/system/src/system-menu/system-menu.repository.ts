@@ -1,4 +1,9 @@
-import { BadRequestException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
+import { createApiErrorBody } from '@opencore/common';
 import {
   MENU_STATUSES,
   MENU_TYPES,
@@ -97,7 +102,11 @@ export function normalizeCreateSystemMenuInput(
   const parentKey = normalizeOptionalMenuKey(body.parentKey);
 
   if (parentKey === key) {
-    throw new BadRequestException('System menu parent cannot be itself.');
+    throw systemMenuBadRequest(
+      'SYSTEM_MENU_PARENT_SELF',
+      'System menu parent cannot be itself.',
+      { key },
+    );
   }
 
   return {
@@ -126,7 +135,11 @@ export function normalizeUpdateSystemMenuInput(
       : normalizeNullableMenuKey(body.parentKey);
 
   if (parentKey === existing.key) {
-    throw new BadRequestException('System menu parent cannot be itself.');
+    throw systemMenuBadRequest(
+      'SYSTEM_MENU_PARENT_SELF',
+      'System menu parent cannot be itself.',
+      { key: existing.key },
+    );
   }
 
   return {
@@ -183,8 +196,10 @@ function normalizeMenuKey(value: string): string {
   const key = normalizeRequiredText(value, 'key');
 
   if (!MENU_KEY_PATTERN.test(key)) {
-    throw new BadRequestException(
+    throw systemMenuBadRequest(
+      'SYSTEM_MENU_KEY_INVALID',
       'System menu key must start with a lowercase letter and contain only lowercase letters, numbers, dot, underscore or dash.',
+      { field: 'key' },
     );
   }
 
@@ -213,7 +228,11 @@ function normalizeMenuPath(value: string): string {
   const path = normalizeRequiredText(value, 'path');
 
   if (!path.startsWith('/')) {
-    throw new BadRequestException('System menu path must start with "/".');
+    throw systemMenuBadRequest(
+      'SYSTEM_MENU_PATH_INVALID',
+      'System menu path must start with "/".',
+      { field: 'path' },
+    );
   }
 
   return path;
@@ -223,7 +242,11 @@ function normalizeMenuType(value: MenuType | undefined): MenuType {
   const type = value ?? 'menu';
 
   if (!(MENU_TYPES as readonly string[]).includes(type)) {
-    throw new BadRequestException('System menu type is invalid.');
+    throw systemMenuBadRequest(
+      'SYSTEM_MENU_TYPE_INVALID',
+      'System menu type is invalid.',
+      { field: 'type' },
+    );
   }
 
   return type;
@@ -233,7 +256,11 @@ function normalizeMenuStatus(value: MenuStatus | undefined): MenuStatus {
   const status = value ?? 'enabled';
 
   if (!(MENU_STATUSES as readonly string[]).includes(status)) {
-    throw new BadRequestException('System menu status is invalid.');
+    throw systemMenuBadRequest(
+      'SYSTEM_MENU_STATUS_INVALID',
+      'System menu status is invalid.',
+      { field: 'status' },
+    );
   }
 
   return status;
@@ -243,7 +270,11 @@ function normalizeRequiredText(value: string, fieldName: string): string {
   const normalized = value.trim();
 
   if (!normalized) {
-    throw new BadRequestException(`System menu ${fieldName} is required.`);
+    throw systemMenuBadRequest(
+      'SYSTEM_MENU_FIELD_REQUIRED',
+      `System menu ${fieldName} is required.`,
+      { field: fieldName },
+    );
   }
 
   return normalized;
@@ -281,14 +312,46 @@ function normalizeBoolean(
 
 function normalizeOrder(value: number | undefined): number {
   if (value === undefined) {
-    throw new BadRequestException('System menu order is required.');
+    throw systemMenuBadRequest(
+      'SYSTEM_MENU_ORDER_REQUIRED',
+      'System menu order is required.',
+      { field: 'order' },
+    );
   }
 
   if (!Number.isInteger(value) || value < 0) {
-    throw new BadRequestException(
+    throw systemMenuBadRequest(
+      'SYSTEM_MENU_ORDER_INVALID',
       'System menu order must be a non-negative integer.',
+      { field: 'order' },
     );
   }
 
   return value;
+}
+
+export function systemMenuBadRequest(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): BadRequestException {
+  return new BadRequestException(
+    createApiErrorBody({ code, message, details }),
+  );
+}
+
+export function systemMenuConflict(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): ConflictException {
+  return new ConflictException(createApiErrorBody({ code, message, details }));
+}
+
+export function systemMenuNotFound(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): NotFoundException {
+  return new NotFoundException(createApiErrorBody({ code, message, details }));
 }

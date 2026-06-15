@@ -39,6 +39,14 @@ describe('@opencore/system system-dict', () => {
     });
 
     expect(dict.code).toBe('sample.status');
+    await expectHttpExceptionCode(
+      service.createDict({
+        code: 'sample.status',
+        name: 'Duplicate Sample Status',
+        items: [],
+      }),
+      'SYSTEM_DICT_ALREADY_EXISTS',
+    );
     expect(
       (await service.updateDict('sample.status', { enabled: false })).enabled,
     ).toBe(false);
@@ -65,6 +73,13 @@ describe('@opencore/system system-dict', () => {
       enabled: false,
       sort: 20,
     });
+    await expectHttpExceptionCode(
+      service.createDictItem(dict.code, {
+        label: 'Duplicate Visible',
+        value: 'visible',
+      }),
+      'SYSTEM_DICT_ITEM_ALREADY_EXISTS',
+    );
 
     await expect(service.listDictItems(dict.code)).resolves.toHaveLength(2);
     await expect(
@@ -92,24 +107,26 @@ describe('@opencore/system system-dict', () => {
     await expect(
       service.deleteDictItem(dict.code, visible.id),
     ).resolves.toEqual({ deleted: true });
-    await expect(service.getDictItem(dict.code, visible.id)).rejects.toThrow(
-      'Dictionary item not found',
+    await expectHttpExceptionCode(
+      service.getDictItem(dict.code, visible.id),
+      'SYSTEM_DICT_ITEM_NOT_FOUND',
     );
   });
 
   it('rejects malformed dictionary booleans and item sort values', async () => {
     const service = new SystemDictService(new SeedSystemDictRepository());
 
-    await expect(
+    await expectHttpExceptionCode(
       service.createDict({
         code: 'sample.invalid',
         name: 'Sample Invalid',
         enabled: 'true' as unknown as boolean,
         items: [],
       }),
-    ).rejects.toThrow('enabled must be a boolean');
+      'SYSTEM_DICT_BOOLEAN_INVALID',
+    );
 
-    await expect(
+    await expectHttpExceptionCode(
       service.createDict({
         code: 'sample.invalid-item',
         name: 'Sample Invalid Item',
@@ -123,7 +140,8 @@ describe('@opencore/system system-dict', () => {
           },
         ],
       }),
-    ).rejects.toThrow('sort must be an integer');
+      'SYSTEM_DICT_INTEGER_INVALID',
+    );
   });
 
   describe('PrismaSystemDictRepository integration', () => {
@@ -250,3 +268,30 @@ describe('@opencore/system system-dict', () => {
     }
   });
 });
+
+async function expectHttpExceptionCode(
+  promise: Promise<unknown>,
+  code: string,
+): Promise<void> {
+  try {
+    await promise;
+  } catch (error) {
+    expect(getHttpExceptionResponse(error)).toMatchObject({ code });
+    return;
+  }
+
+  throw new Error(`Expected HTTP exception code ${code}`);
+}
+
+function getHttpExceptionResponse(error: unknown): unknown {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'getResponse' in error &&
+    typeof error.getResponse === 'function'
+  ) {
+    return error.getResponse();
+  }
+
+  return undefined;
+}

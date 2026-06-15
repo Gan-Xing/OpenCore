@@ -1,8 +1,4 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
 import { PrismaService } from '@opencore/database';
 import type {
@@ -21,6 +17,8 @@ import {
   normalizeSystemPostPageQuery,
   normalizeUpdateSystemPostOrderInput,
   normalizeUpdateSystemPostInput,
+  systemPostConflict,
+  systemPostNotFound,
   SystemPostRepository,
   type SystemPostBatchMutationRecord,
   type SystemPostOrderMutationResult,
@@ -86,7 +84,11 @@ export class PrismaSystemPostRepository extends SystemPostRepository {
     if (
       await this.prisma.systemPost.findUnique({ where: { code: input.code } })
     ) {
-      throw new ConflictException(`System post already exists: ${input.code}`);
+      throw systemPostConflict(
+        'SYSTEM_POST_ALREADY_EXISTS',
+        'System post already exists.',
+        { code: input.code },
+      );
     }
 
     const post = await this.prisma.systemPost.create({ data: input });
@@ -124,7 +126,11 @@ export class PrismaSystemPostRepository extends SystemPostRepository {
     const missing = codes.find((code) => !existingCodes.has(code));
 
     if (missing) {
-      throw new NotFoundException(`System post not found: ${missing}`);
+      throw systemPostNotFound(
+        'SYSTEM_POST_NOT_FOUND',
+        'System post not found.',
+        { code: missing },
+      );
     }
 
     await this.prisma.systemPost.deleteMany({
@@ -170,7 +176,13 @@ export class PrismaSystemPostRepository extends SystemPostRepository {
     const post = await this.prisma.systemPost.findUnique({ where: { code } });
 
     if (!post) {
-      throw new NotFoundException(`System post not found: ${code}`);
+      throw systemPostNotFound(
+        'SYSTEM_POST_NOT_FOUND',
+        'System post not found.',
+        {
+          code,
+        },
+      );
     }
 
     return post;
@@ -198,8 +210,10 @@ function assertFoundPostCodes(
   const missingCodes = expectedCodes.filter((code) => !foundCodes.has(code));
 
   if (missingCodes.length > 0) {
-    throw new NotFoundException(
-      `System post not found: ${missingCodes.join(', ')}`,
+    throw systemPostNotFound(
+      'SYSTEM_POST_NOT_FOUND',
+      'System post not found.',
+      { codes: missingCodes },
     );
   }
 }

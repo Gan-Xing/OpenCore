@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import type { CreateRoleDto, UpdateRoleDto } from './system-role.dto';
 import { seedSystemDepts } from '../system-dept/system-dept.records';
 import {
@@ -15,6 +10,9 @@ import {
   compareSystemRoleRecords,
   normalizeCreateSystemRoleInput,
   normalizeUpdateSystemRoleInput,
+  systemRoleBadRequest,
+  systemRoleConflict,
+  systemRoleNotFound,
   SystemRoleRepository,
 } from './system-role.repository';
 
@@ -40,7 +38,11 @@ export class SeedSystemRoleRepository extends SystemRoleRepository {
     const input = normalizeCreateSystemRoleInput(body);
 
     if (this.roles.some((role) => role.code === input.code)) {
-      throw new ConflictException(`Role already exists: ${input.code}`);
+      throw systemRoleConflict(
+        'SYSTEM_ROLE_ALREADY_EXISTS',
+        'Role already exists.',
+        { code: input.code },
+      );
     }
 
     this.assertPermissionCodes(input.permissionCodes);
@@ -80,7 +82,11 @@ export class SeedSystemRoleRepository extends SystemRoleRepository {
     const role = this.findMutableRoleByCode(code);
 
     if (role.system) {
-      throw new BadRequestException('System roles cannot be deleted.');
+      throw systemRoleBadRequest(
+        'SYSTEM_ROLE_CANNOT_DELETE_SYSTEM',
+        'System roles cannot be deleted.',
+        { code },
+      );
     }
 
     this.roles = this.roles.filter((candidate) => candidate.code !== code);
@@ -91,7 +97,9 @@ export class SeedSystemRoleRepository extends SystemRoleRepository {
     const role = this.roles.find((candidate) => candidate.code === code);
 
     if (!role) {
-      throw new NotFoundException(`Role not found: ${code}`);
+      throw systemRoleNotFound('SYSTEM_ROLE_NOT_FOUND', 'Role not found.', {
+        code,
+      });
     }
 
     return role;
@@ -103,7 +111,11 @@ export class SeedSystemRoleRepository extends SystemRoleRepository {
     );
 
     if (missing) {
-      throw new NotFoundException(`Permission not found: ${missing}`);
+      throw systemRoleNotFound(
+        'SYSTEM_ROLE_PERMISSION_NOT_FOUND',
+        'Permission not found.',
+        { code: missing },
+      );
     }
   }
 
@@ -111,7 +123,11 @@ export class SeedSystemRoleRepository extends SystemRoleRepository {
     const missingDeptId = deptIds.find((deptId) => !this.deptIds.has(deptId));
 
     if (missingDeptId) {
-      throw new NotFoundException(`System dept not found: ${missingDeptId}`);
+      throw systemRoleNotFound(
+        'SYSTEM_ROLE_DEPT_NOT_FOUND',
+        'System dept not found.',
+        { id: missingDeptId },
+      );
     }
   }
 }

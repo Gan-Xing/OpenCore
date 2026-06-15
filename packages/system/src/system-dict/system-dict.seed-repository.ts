@@ -1,8 +1,4 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
 import type {
   CreateDictItemDto,
@@ -23,6 +19,8 @@ import {
   normalizeSystemDictPageQuery,
   normalizeCreateDictItemInput,
   normalizeOptionalBoolean,
+  systemDictConflict,
+  systemDictNotFound,
   normalizeUpdateDictItemInput,
   SystemDictRepository,
   type SystemDictPageQuery,
@@ -77,7 +75,11 @@ export class SeedSystemDictRepository extends SystemDictRepository {
 
   async createDict(body: CreateDictTypeDto): Promise<DictTypeRecord> {
     if (this.dictTypes.some((dict) => dict.code === body.code)) {
-      throw new ConflictException(`Dictionary already exists: ${body.code}`);
+      throw systemDictConflict(
+        'SYSTEM_DICT_ALREADY_EXISTS',
+        'Dictionary already exists.',
+        { code: body.code },
+      );
     }
     const normalizedItems = (body.items ?? []).map((item, index) =>
       normalizeCreateDictItemInput(item, index),
@@ -178,7 +180,13 @@ export class SeedSystemDictRepository extends SystemDictRepository {
     const dict = this.dictTypes.find((candidate) => candidate.code === code);
 
     if (!dict) {
-      throw new NotFoundException(`Dictionary not found: ${code}`);
+      throw systemDictNotFound(
+        'SYSTEM_DICT_NOT_FOUND',
+        'Dictionary not found.',
+        {
+          code,
+        },
+      );
     }
 
     return dict;
@@ -192,7 +200,11 @@ export class SeedSystemDictRepository extends SystemDictRepository {
     const item = dict.items.find((candidate) => candidate.id === itemId);
 
     if (!item) {
-      throw new NotFoundException(`Dictionary item not found: ${itemId}`);
+      throw systemDictNotFound(
+        'SYSTEM_DICT_ITEM_NOT_FOUND',
+        'Dictionary item not found.',
+        { itemId },
+      );
     }
 
     return { dict, item };
@@ -200,7 +212,11 @@ export class SeedSystemDictRepository extends SystemDictRepository {
 
   private assertItemValueAvailable(dict: DictTypeRecord, value: string): void {
     if (dict.items.some((item) => item.value === value)) {
-      throw new ConflictException(`Dictionary item already exists: ${value}`);
+      throw systemDictConflict(
+        'SYSTEM_DICT_ITEM_ALREADY_EXISTS',
+        'Dictionary item already exists.',
+        { value },
+      );
     }
   }
 }

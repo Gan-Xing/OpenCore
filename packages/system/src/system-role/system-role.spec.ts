@@ -1,4 +1,3 @@
-import { BadRequestException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '@opencore/database';
 import { PrismaSystemMenuRepository } from '../system-menu/system-menu.prisma-repository';
@@ -90,29 +89,32 @@ describe('@opencore/system system-role', () => {
   it('rejects invalid role codes, duplicated permission codes and bad status payloads', async () => {
     const service = createSeedRoleService();
 
-    await expect(
+    await expectHttpExceptionCode(
       service.createRole({
         code: 'Invalid Code',
         name: 'Invalid',
         permissionCodes: [],
       }),
-    ).rejects.toThrow(BadRequestException);
-    await expect(
+      'SYSTEM_ROLE_CODE_INVALID',
+    );
+    await expectHttpExceptionCode(
       service.createRole({
         code: 'duplicate_permissions',
         name: 'Duplicate Permissions',
         permissionCodes: ['core:user:read', 'core:user:read'],
       }),
-    ).rejects.toThrow(BadRequestException);
-    await expect(
+      'SYSTEM_ROLE_PERMISSION_CODE_DUPLICATED',
+    );
+    await expectHttpExceptionCode(
       service.createRole({
         code: 'custom_without_dept',
         name: 'Custom Without Dept',
         permissionCodes: ['core:user:read'],
         dataScope: 'custom',
       }),
-    ).rejects.toThrow(BadRequestException);
-    await expect(
+      'SYSTEM_ROLE_CUSTOM_DATA_SCOPE_DEPT_REQUIRED',
+    );
+    await expectHttpExceptionCode(
       service.createRole({
         code: 'duplicate_depts',
         name: 'Duplicate Depts',
@@ -120,17 +122,20 @@ describe('@opencore/system system-role', () => {
         dataScope: 'custom',
         dataScopeDeptIds: ['dept_operations', 'dept_operations'],
       }),
-    ).rejects.toThrow(BadRequestException);
-    await expect(
+      'SYSTEM_ROLE_DATA_SCOPE_DEPT_ID_DUPLICATED',
+    );
+    await expectHttpExceptionCode(
       service.setRoleStatus('viewer', { enabled: 'false' as never }),
-    ).rejects.toThrow(BadRequestException);
+      'SYSTEM_ROLE_BOOLEAN_INVALID',
+    );
   });
 
   it('protects system roles from deletion, system demotion and status disable', async () => {
     const service = createSeedRoleService();
 
-    await expect(service.deleteRole('admin')).rejects.toThrow(
-      'System roles cannot be deleted.',
+    await expectHttpExceptionCode(
+      service.deleteRole('admin'),
+      'SYSTEM_ROLE_CANNOT_DELETE_SYSTEM',
     );
     await expect(
       service.updateRole('viewer', { system: false }),
@@ -140,9 +145,10 @@ describe('@opencore/system system-role', () => {
         system: true,
       }),
     );
-    await expect(
+    await expectHttpExceptionCode(
       service.setRoleStatus('viewer', { enabled: false }),
-    ).rejects.toThrow('System roles cannot be disabled.');
+      'SYSTEM_ROLE_CANNOT_DISABLE_SYSTEM',
+    );
   });
 
   it('assigns role menus while preserving non-menu permissions', async () => {
@@ -167,11 +173,12 @@ describe('@opencore/system system-role', () => {
     await expect(service.getRole('menu_operator')).resolves.toMatchObject({
       permissionCodes: ['core:role:read', 'core:role:update', 'core:user:read'],
     });
-    await expect(
+    await expectHttpExceptionCode(
       service.assignRoleMenus('menu_operator', {
         menuKeys: ['system.missing'],
       }),
-    ).rejects.toThrow(BadRequestException);
+      'SYSTEM_ROLE_MENU_NOT_FOUND',
+    );
   });
 
   describe('PrismaSystemRoleRepository integration', () => {
@@ -322,8 +329,9 @@ describe('@opencore/system system-role', () => {
     });
 
     it('protects seeded system roles in PostgreSQL', async () => {
-      await expect(service.deleteRole('admin')).rejects.toThrow(
-        'System roles cannot be deleted.',
+      await expectHttpExceptionCode(
+        service.deleteRole('admin'),
+        'SYSTEM_ROLE_CANNOT_DELETE_SYSTEM',
       );
     });
 
@@ -360,4 +368,31 @@ function createSeedRoleService(): SystemRoleService {
     new SeedSystemRoleRepository(),
     new SystemMenuService(new SeedSystemMenuRepository()),
   );
+}
+
+async function expectHttpExceptionCode(
+  promise: Promise<unknown>,
+  code: string,
+): Promise<void> {
+  try {
+    await promise;
+  } catch (error) {
+    expect(getHttpExceptionResponse(error)).toMatchObject({ code });
+    return;
+  }
+
+  throw new Error(`Expected HTTP exception code ${code}`);
+}
+
+function getHttpExceptionResponse(error: unknown): unknown {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'getResponse' in error &&
+    typeof error.getResponse === 'function'
+  ) {
+    return error.getResponse();
+  }
+
+  return undefined;
 }

@@ -1,8 +1,4 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
 import { PrismaService } from '@opencore/database';
 import type {
@@ -22,6 +18,8 @@ import {
   normalizeSystemDictPageQuery,
   normalizeCreateDictItemInput,
   normalizeOptionalBoolean,
+  systemDictConflict,
+  systemDictNotFound,
   normalizeUpdateDictItemInput,
   SystemDictRepository,
   type SystemDictPageQuery,
@@ -115,7 +113,11 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
 
   async createDict(body: CreateDictTypeDto): Promise<DictTypeRecord> {
     if (await this.prisma.dictType.findUnique({ where: { code: body.code } })) {
-      throw new ConflictException(`Dictionary already exists: ${body.code}`);
+      throw systemDictConflict(
+        'SYSTEM_DICT_ALREADY_EXISTS',
+        'Dictionary already exists.',
+        { code: body.code },
+      );
     }
     const normalizedItems = (body.items ?? []).map((item, index) =>
       normalizeCreateDictItemInput(item, index),
@@ -249,7 +251,13 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
     });
 
     if (!dict) {
-      throw new NotFoundException(`Dictionary not found: ${code}`);
+      throw systemDictNotFound(
+        'SYSTEM_DICT_NOT_FOUND',
+        'Dictionary not found.',
+        {
+          code,
+        },
+      );
     }
 
     return dict;
@@ -269,7 +277,11 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
     });
 
     if (!item) {
-      throw new NotFoundException(`Dictionary item not found: ${itemId}`);
+      throw systemDictNotFound(
+        'SYSTEM_DICT_ITEM_NOT_FOUND',
+        'Dictionary item not found.',
+        { itemId },
+      );
     }
 
     return item;
@@ -287,7 +299,11 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
     });
 
     if (existing) {
-      throw new ConflictException(`Dictionary item already exists: ${value}`);
+      throw systemDictConflict(
+        'SYSTEM_DICT_ITEM_ALREADY_EXISTS',
+        'Dictionary item already exists.',
+        { value },
+      );
     }
   }
 }

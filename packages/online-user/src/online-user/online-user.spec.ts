@@ -1,4 +1,8 @@
-import { BadRequestException, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '@opencore/database';
 import { PrismaOnlineUserRepository } from './online-user.prisma-repository';
@@ -46,12 +50,14 @@ describe('@opencore/online-user', () => {
       expired: 0,
       cleanupEligible: 0,
     });
-    await expect(
+    await expectHttpExceptionCode(
       service.kickOutSession('session_admin', {
         actor: 'admin',
         reason: 'repeat',
       }),
-    ).rejects.toThrow(BadRequestException);
+      BadRequestException,
+      'ONLINE_USER_SESSION_ALREADY_REVOKED',
+    );
   });
 
   it('registers auth sessions, parses user agents and rejects revoked tokens', async () => {
@@ -91,12 +97,16 @@ describe('@opencore/online-user', () => {
       reason: 'batch revoke',
     });
 
-    await expect(repository.assertSessionActive(tokenId)).rejects.toThrow(
+    await expectHttpExceptionCode(
+      repository.assertSessionActive(tokenId),
       UnauthorizedException,
+      'ONLINE_USER_TOKEN_REVOKED',
     );
-    await expect(
+    await expectHttpExceptionCode(
       repository.assertSessionActive(`missing_${tokenId}`),
-    ).rejects.toThrow(UnauthorizedException);
+      UnauthorizedException,
+      'ONLINE_USER_TOKEN_SESSION_UNREGISTERED',
+    );
   });
 
   it('summarizes and cleans expired seed token sessions', async () => {
@@ -121,8 +131,17 @@ describe('@opencore/online-user', () => {
       total: 1,
       items: [expect.objectContaining({ tokenId })],
     });
-    await expect(repository.assertSessionActive(tokenId)).rejects.toThrow(
+    await expectHttpExceptionCode(
+      repository.assertSessionActive(tokenId),
       UnauthorizedException,
+      'ONLINE_USER_TOKEN_EXPIRED',
+    );
+    await expectHttpExceptionCode(
+      service.cleanExpiredSessions({
+        expiredBefore: 'not-a-date',
+      }),
+      BadRequestException,
+      'ONLINE_USER_EXPIRED_BEFORE_INVALID',
     );
     await expect(
       service.cleanExpiredSessions({
@@ -206,12 +225,16 @@ describe('@opencore/online-user', () => {
         revokedBy: 'admin',
         revokedReason: 'security rotation',
       });
-      await expect(repository.assertSessionActive(tokenId)).rejects.toThrow(
+      await expectHttpExceptionCode(
+        repository.assertSessionActive(tokenId),
         UnauthorizedException,
+        'ONLINE_USER_TOKEN_REVOKED',
       );
-      await expect(
+      await expectHttpExceptionCode(
         repository.assertSessionActive(`missing_${tokenId}`),
-      ).rejects.toThrow(UnauthorizedException);
+        UnauthorizedException,
+        'ONLINE_USER_TOKEN_SESSION_UNREGISTERED',
+      );
     });
 
     it('summarizes and cleans expired Prisma sessions without deleting active sessions', async () => {
@@ -221,9 +244,11 @@ describe('@opencore/online-user', () => {
         total: 1,
         items: [expect.objectContaining({ id: expiredId })],
       });
-      await expect(
+      await expectHttpExceptionCode(
         repository.assertSessionActive(expiredTokenId),
-      ).rejects.toThrow(UnauthorizedException);
+        UnauthorizedException,
+        'ONLINE_USER_TOKEN_EXPIRED',
+      );
       const cleanResult = await service.cleanExpiredSessions({
         expiredBefore: '2026-06-10T01:10:00.000Z',
       });
@@ -236,7 +261,11 @@ describe('@opencore/online-user', () => {
         id,
         tokenId,
       });
-      await expect(service.getOnlineUser(expiredId)).rejects.toThrow();
+      await expectHttpExceptionCode(
+        service.getOnlineUser(expiredId),
+        NotFoundException,
+        'ONLINE_USER_SESSION_NOT_FOUND',
+      );
     });
 
     async function cleanupTestRows(): Promise<void> {
@@ -253,3 +282,32 @@ describe('@opencore/online-user', () => {
     }
   });
 });
+
+async function expectHttpExceptionCode(
+  promise: Promise<unknown>,
+  exceptionClass: new (...args: never[]) => Error,
+  code: string,
+): Promise<void> {
+  try {
+    await promise;
+  } catch (error) {
+    expect(error).toBeInstanceOf(exceptionClass);
+    expect(getHttpExceptionResponse(error)).toMatchObject({ code });
+    return;
+  }
+
+  throw new Error(`Expected HTTP exception code ${code}`);
+}
+
+function getHttpExceptionResponse(error: unknown): unknown {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'getResponse' in error &&
+    typeof error.getResponse === 'function'
+  ) {
+    return error.getResponse();
+  }
+
+  return undefined;
+}

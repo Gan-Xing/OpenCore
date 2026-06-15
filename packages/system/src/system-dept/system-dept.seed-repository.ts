@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import type {
   CreateSystemDeptDto,
   UpdateSystemDeptOrderDto,
@@ -26,6 +21,9 @@ import {
   normalizeSystemDeptFilters,
   normalizeUpdateSystemDeptOrderInput,
   normalizeUpdateSystemDeptInput,
+  systemDeptBadRequest,
+  systemDeptConflict,
+  systemDeptNotFound,
   SystemDeptRepository,
   toSystemDeptOptionRecord,
   type SystemDeptQuery,
@@ -75,7 +73,11 @@ export class SeedSystemDeptRepository extends SystemDeptRepository {
     const input = normalizeCreateSystemDeptInput(body);
 
     if (this.depts.some((dept) => dept.code === input.code)) {
-      throw new ConflictException(`System dept already exists: ${input.code}`);
+      throw systemDeptConflict(
+        'SYSTEM_DEPT_ALREADY_EXISTS',
+        'System dept already exists.',
+        { code: input.code },
+      );
     }
 
     if (input.parentId) {
@@ -145,7 +147,13 @@ export class SeedSystemDeptRepository extends SystemDeptRepository {
     const dept = this.depts.find((candidate) => candidate.id === id);
 
     if (!dept) {
-      throw new NotFoundException(`System dept not found: ${id}`);
+      throw systemDeptNotFound(
+        'SYSTEM_DEPT_NOT_FOUND',
+        'System dept not found.',
+        {
+          id,
+        },
+      );
     }
 
     return dept;
@@ -156,8 +164,10 @@ export class SeedSystemDeptRepository extends SystemDeptRepository {
 
     while (currentParentId) {
       if (currentParentId === id) {
-        throw new BadRequestException(
+        throw systemDeptBadRequest(
+          'SYSTEM_DEPT_PARENT_DESCENDANT',
           'System dept parent cannot be one of its descendants.',
+          { id },
         );
       }
 

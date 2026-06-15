@@ -1,10 +1,10 @@
 import component from './zh-CN/component';
+import errors from './zh-CN/errors';
 import globalHeader from './zh-CN/globalHeader';
 import menu from './zh-CN/menu';
 import network from './zh-CN/network';
 import pages from './zh-CN/pages';
 import settingDrawer from './zh-CN/settingDrawer';
-import settings from './zh-CN/settings';
 
 export default {
   'navBar.lang': '语言',
@@ -16,7 +16,7 @@ export default {
   ...globalHeader,
   ...menu,
   ...settingDrawer,
-  ...settings,
   ...network,
   ...component,
+  ...errors,
 };
