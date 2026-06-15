@@ -1,6 +1,7 @@
+// @ts-nocheck
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { runAdminFallbackClosureGuard } from '../../../tools/scripts/admin-fallback-closure-guard.mjs';
+import { runAdminFallbackClosureGuard } from '../../../tools/scripts/admin-fallback-closure-guard';
 
 const root = process.cwd();
 const packageJson = JSON.parse(
@@ -177,7 +178,7 @@ const tokenService = readFileSync(
   'utf8',
 );
 const adminStaticServer = readFileSync(
-  resolve(root, '../../tools/scripts/serve-admin-static.mjs'),
+  resolve(root, '../../tools/scripts/serve-admin-static.ts'),
   'utf8',
 );
 const deployScript = readFileSync(
@@ -229,7 +230,7 @@ if (
   !deployScript.includes('admin.api-proxy.duplicate-prefix-login') ||
   !deployScript.includes('loginMaxFailedAttempts') ||
   !deployScript.includes('System Notice Templates') ||
-  !deployScript.includes('admin-fallback-closure-guard.mjs') ||
+  !deployScript.includes('admin-fallback-closure-guard.ts') ||
   !deployScript.includes('Fail outbox') ||
   !deployScript.includes('Retry outbox') ||
   !deployScript.includes('Process queued outbox') ||

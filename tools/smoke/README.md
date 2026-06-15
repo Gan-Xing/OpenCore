@@ -15,7 +15,7 @@ Rules:
   binary downloads, SSE streams, callback signatures and provider mocks where
   SDK clients intentionally do not model the invalid request.
 - Add each typed smoke to `package.json` through
-  `tools/scripts/run-typed-smoke.mjs`.
+  `pnpm scripts:ts tools/scripts/run-typed-smoke.ts`.
 - `pnpm smoke:typed:check` must pass before a typed smoke script is committed.
 
 Do not add `.mjs` smoke scripts. New smoke coverage should be a typed entry in

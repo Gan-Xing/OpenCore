@@ -8,14 +8,9 @@ import {
   readdirSync,
   rmSync,
 } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join, resolve } from 'node:path';
 
-const workspaceRoot = resolve(
-  dirname(fileURLToPath(import.meta.url)),
-  '..',
-  '..',
-);
+const workspaceRoot = resolve(__dirname, '..', '..');
 const pnpmStoreDir = join(workspaceRoot, 'node_modules', '.pnpm');
 const workspaceSchemaPath = join(workspaceRoot, 'prisma', 'schema.prisma');
 

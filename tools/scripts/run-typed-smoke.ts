@@ -1,14 +1,15 @@
 #!/usr/bin/env node
 
 import { spawnSync } from 'node:child_process';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
 
 const entry = process.argv[2];
-const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
+const root = resolve(__dirname, '..', '..');
 
 if (!entry) {
-  console.error('Usage: node tools/scripts/run-typed-smoke.mjs <entry.ts>');
+  console.error(
+    'Usage: pnpm scripts:ts tools/scripts/run-typed-smoke.ts <entry.ts>',
+  );
   process.exit(1);
 }
 

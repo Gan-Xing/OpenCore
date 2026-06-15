@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": "../..",
+    "customConditions": null,
+    "module": "commonjs",
+    "moduleResolution": "node10",
+    "noEmit": true,
+    "noImplicitAny": false,
+    "strict": false,
+    "types": ["node"]
+  },
+  "include": [
+    "./**/*.ts",
+    "../quality-cycle/**/*.ts",
+    "../../apps/admin/scripts/**/*.ts"
+  ]
+}

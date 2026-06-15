@@ -213,7 +213,7 @@ requests for the strict matrix. Round 124 did the same for System
 Permissions.
 
 Latest guard stage: Round 126 seven-page unified no-fixture-fallback guard. It
-adds `tools/scripts/admin-fallback-closure-guard.mjs`, wires it into Admin
+adds `tools/scripts/admin-fallback-closure-guard.ts`, wires it into Admin
 smoke and the fixed deploy script, and checks both source pages and built Admin
 bundles for the seven fixed System Admin rows.
 

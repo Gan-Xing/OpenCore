@@ -82,7 +82,6 @@ npm install                                                # Update dependencies
 | `npm run test:coverage` | Test with coverage                                          |
 | `npm run test:update`   | Update test snapshots                                       |
 | `npm run tsc`           | Type check without emitting                                 |
-| `npm run i18n-remove`   | Remove i18n wrappers (locale=zh-CN)                         |
 | `npm run record`        | Record request data for login scene                         |
 | `npm run openapi`       | Generate API code from OpenAPI schema                       |
 | `npm run simple`        | Strip demo pages and unused deps                            |

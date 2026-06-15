@@ -115,10 +115,10 @@ describe('@opencore/contracts', () => {
     );
     expect(OPENAPI_CONTRACT_PROTOCOL.sdkPackage).toBe('@opencore/sdk');
     expect(rootPackageJson.scripts?.['sdk:generate']).toBe(
-      'node tools/scripts/check-sdk-generate.mjs',
+      'pnpm scripts:ts tools/scripts/check-sdk-generate.ts',
     );
     expect(rootPackageJson.scripts?.['sdk:check']).toBe(
-      'node tools/scripts/check-sdk-generate.mjs',
+      'pnpm scripts:ts tools/scripts/check-sdk-generate.ts',
     );
   });
 

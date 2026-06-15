@@ -77,6 +77,12 @@ run_with_env() {
   )
 }
 
+run_tools_ts_script() {
+  TS_NODE_PROJECT="$ROOT_DIR/tools/scripts/tsconfig.json" \
+    TS_NODE_COMPILER_OPTIONS='{"moduleResolution":"node10","module":"commonjs","customConditions":null}' \
+    node -r ts-node/register -r tsconfig-paths/register "$@"
+}
+
 if ! ensure_port_clear "$SMOKE_PORT"; then
   echo "Fixed smoke port $SMOKE_PORT is already in use. Stop that listener or set OPENCORE_SMOKE_PORT explicitly." >&2
   exit 1
@@ -110,147 +116,147 @@ run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$BASE_URL" \
   OPENCORE_SMOKE_PORT="$SMOKE_PORT" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-true}" \
-  node "$ROOT_DIR/tools/scripts/run-typed-smoke.mjs" \
+  run_tools_ts_script "$ROOT_DIR/tools/scripts/run-typed-smoke.ts" \
     "$ROOT_DIR/tools/smoke/smoke-core-config.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$BASE_URL" \
   OPENCORE_SMOKE_PORT="$SMOKE_PORT" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
-  node "$ROOT_DIR/tools/scripts/run-typed-smoke.mjs" \
+  run_tools_ts_script "$ROOT_DIR/tools/scripts/run-typed-smoke.ts" \
     "$ROOT_DIR/tools/smoke/smoke-core-dict.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$BASE_URL" \
   OPENCORE_SMOKE_PORT="$SMOKE_PORT" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
-  node "$ROOT_DIR/tools/scripts/run-typed-smoke.mjs" \
+  run_tools_ts_script "$ROOT_DIR/tools/scripts/run-typed-smoke.ts" \
     "$ROOT_DIR/tools/smoke/smoke-core-menu.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$BASE_URL" \
   OPENCORE_SMOKE_PORT="$SMOKE_PORT" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
-  node "$ROOT_DIR/tools/scripts/run-typed-smoke.mjs" \
+  run_tools_ts_script "$ROOT_DIR/tools/scripts/run-typed-smoke.ts" \
     "$ROOT_DIR/tools/smoke/smoke-core-permission.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$BASE_URL" \
   OPENCORE_SMOKE_PORT="$SMOKE_PORT" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
-  node "$ROOT_DIR/tools/scripts/run-typed-smoke.mjs" \
+  run_tools_ts_script "$ROOT_DIR/tools/scripts/run-typed-smoke.ts" \
     "$ROOT_DIR/tools/smoke/smoke-core-role.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$BASE_URL" \
   OPENCORE_SMOKE_PORT="$SMOKE_PORT" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
-  node "$ROOT_DIR/tools/scripts/run-typed-smoke.mjs" \
+  run_tools_ts_script "$ROOT_DIR/tools/scripts/run-typed-smoke.ts" \
     "$ROOT_DIR/tools/smoke/smoke-monitor-status.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$BASE_URL" \
   OPENCORE_SMOKE_PORT="$SMOKE_PORT" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
-  node "$ROOT_DIR/tools/scripts/run-typed-smoke.mjs" \
+  run_tools_ts_script "$ROOT_DIR/tools/scripts/run-typed-smoke.ts" \
     "$ROOT_DIR/tools/smoke/smoke-core-monitor-jobs.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$BASE_URL" \
   OPENCORE_SMOKE_PORT="$SMOKE_PORT" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
-  node "$ROOT_DIR/tools/scripts/run-typed-smoke.mjs" \
+  run_tools_ts_script "$ROOT_DIR/tools/scripts/run-typed-smoke.ts" \
     "$ROOT_DIR/tools/smoke/smoke-core-post.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$BASE_URL" \
   OPENCORE_SMOKE_PORT="$SMOKE_PORT" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
-  node "$ROOT_DIR/tools/scripts/run-typed-smoke.mjs" \
+  run_tools_ts_script "$ROOT_DIR/tools/scripts/run-typed-smoke.ts" \
     "$ROOT_DIR/tools/smoke/smoke-core-collaboration-messages.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$BASE_URL" \
   OPENCORE_SMOKE_PORT="$SMOKE_PORT" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
-  node "$ROOT_DIR/tools/scripts/run-typed-smoke.mjs" \
+  run_tools_ts_script "$ROOT_DIR/tools/scripts/run-typed-smoke.ts" \
     "$ROOT_DIR/tools/smoke/smoke-core-collaboration-notices.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$BASE_URL" \
   OPENCORE_SMOKE_PORT="$SMOKE_PORT" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
-  node "$ROOT_DIR/tools/scripts/run-typed-smoke.mjs" \
+  run_tools_ts_script "$ROOT_DIR/tools/scripts/run-typed-smoke.ts" \
     "$ROOT_DIR/tools/smoke/smoke-core-collaboration-todos.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$BASE_URL" \
   OPENCORE_SMOKE_PORT="$SMOKE_PORT" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
-  node "$ROOT_DIR/tools/scripts/run-typed-smoke.mjs" \
+  run_tools_ts_script "$ROOT_DIR/tools/scripts/run-typed-smoke.ts" \
     "$ROOT_DIR/tools/smoke/smoke-core-collaboration-approvals.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$BASE_URL" \
   OPENCORE_SMOKE_PORT="$SMOKE_PORT" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
-  node "$ROOT_DIR/tools/scripts/run-typed-smoke.mjs" \
+  run_tools_ts_script "$ROOT_DIR/tools/scripts/run-typed-smoke.ts" \
     "$ROOT_DIR/tools/smoke/smoke-core-notice.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$BASE_URL" \
   OPENCORE_SMOKE_PORT="$SMOKE_PORT" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
-  node "$ROOT_DIR/tools/scripts/run-typed-smoke.mjs" \
+  run_tools_ts_script "$ROOT_DIR/tools/scripts/run-typed-smoke.ts" \
     "$ROOT_DIR/tools/smoke/smoke-integration-oauth-tokens.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$BASE_URL" \
   OPENCORE_SMOKE_PORT="$SMOKE_PORT" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
-  node "$ROOT_DIR/tools/scripts/run-typed-smoke.mjs" \
+  run_tools_ts_script "$ROOT_DIR/tools/scripts/run-typed-smoke.ts" \
     "$ROOT_DIR/tools/smoke/smoke-integration-designs.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$BASE_URL" \
   OPENCORE_SMOKE_PORT="$SMOKE_PORT" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
-  node "$ROOT_DIR/tools/scripts/run-typed-smoke.mjs" \
+  run_tools_ts_script "$ROOT_DIR/tools/scripts/run-typed-smoke.ts" \
     "$ROOT_DIR/tools/smoke/smoke-core-dept.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$BASE_URL" \
   OPENCORE_SMOKE_PORT="$SMOKE_PORT" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
-  node "$ROOT_DIR/tools/scripts/run-typed-smoke.mjs" \
+  run_tools_ts_script "$ROOT_DIR/tools/scripts/run-typed-smoke.ts" \
     "$ROOT_DIR/tools/smoke/smoke-core-user.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$BASE_URL" \
   OPENCORE_SMOKE_PORT="$SMOKE_PORT" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
-  node "$ROOT_DIR/tools/scripts/run-typed-smoke.mjs" \
+  run_tools_ts_script "$ROOT_DIR/tools/scripts/run-typed-smoke.ts" \
     "$ROOT_DIR/tools/smoke/smoke-core-file.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$BASE_URL" \
   OPENCORE_SMOKE_PORT="$SMOKE_PORT" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
-  node "$ROOT_DIR/tools/scripts/run-typed-smoke.mjs" \
+  run_tools_ts_script "$ROOT_DIR/tools/scripts/run-typed-smoke.ts" \
     "$ROOT_DIR/tools/smoke/smoke-core-audit-log.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$BASE_URL" \
   OPENCORE_SMOKE_PORT="$SMOKE_PORT" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
-  node "$ROOT_DIR/tools/scripts/run-typed-smoke.mjs" \
+  run_tools_ts_script "$ROOT_DIR/tools/scripts/run-typed-smoke.ts" \
     "$ROOT_DIR/tools/smoke/smoke-core-online-user.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$BASE_URL" \
   OPENCORE_SMOKE_PORT="$SMOKE_PORT" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
-  node "$ROOT_DIR/tools/scripts/run-typed-smoke.mjs" \
+  run_tools_ts_script "$ROOT_DIR/tools/scripts/run-typed-smoke.ts" \
     "$ROOT_DIR/tools/smoke/smoke-core-login-log.ts"
 
 echo "OpenCore local API smoke passed on $BASE_URL"

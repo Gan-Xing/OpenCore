@@ -18,14 +18,14 @@ const issues = [];
 
 if (
   packageJson.scripts?.['sdk:generate'] !==
-  'node tools/scripts/check-sdk-generate.mjs'
+  'pnpm scripts:ts tools/scripts/check-sdk-generate.ts'
 ) {
   issues.push('root package.json must expose sdk:generate.');
 }
 
 if (
   packageJson.scripts?.['sdk:check'] !==
-  'node tools/scripts/check-sdk-generate.mjs'
+  'pnpm scripts:ts tools/scripts/check-sdk-generate.ts'
 ) {
   issues.push('root package.json must expose sdk:check.');
 }

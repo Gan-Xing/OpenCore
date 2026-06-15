@@ -4,11 +4,9 @@ import { createReadStream, existsSync, statSync } from 'node:fs';
 import { createServer, request as httpRequest } from 'node:http';
 import { request as httpsRequest } from 'node:https';
 import { basename, extname, join, normalize, resolve, sep } from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 const root = resolve(
-  process.env.ADMIN_STATIC_ROOT ||
-    join(fileURLToPath(new URL('../..', import.meta.url)), 'apps/admin/dist'),
+  process.env.ADMIN_STATIC_ROOT || join(__dirname, '../..', 'apps/admin/dist'),
 );
 const port = Number(process.env.PORT || process.env.ADMIN_PORT || 39174);
 const host = process.env.HOST || '0.0.0.0';

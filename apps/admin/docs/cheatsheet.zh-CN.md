@@ -82,7 +82,6 @@ npm install                                                # 更新依赖
 | `npm run test:coverage` | 测试覆盖率                                        |
 | `npm run test:update`   | 更新测试快照                                      |
 | `npm run tsc`           | 类型检查（不生成文件）                            |
-| `npm run i18n-remove`   | 移除国际化（locale=zh-CN）                        |
 | `npm run record`        | 录制登录场景请求数据                              |
 | `npm run openapi`       | 根据 OpenAPI 生成 API 代码                        |
 | `npm run simple`        | 精简模式（删除示例页面和多余依赖）                |

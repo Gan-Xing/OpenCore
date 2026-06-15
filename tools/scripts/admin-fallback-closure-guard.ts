@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
 
 const fixedPages = [
   {
@@ -227,7 +226,16 @@ const fixedPages = [
   },
 ];
 
-export function runAdminFallbackClosureGuard(options = {}) {
+type AdminFallbackClosureGuardOptions = {
+  checkDist?: boolean;
+  distDir?: string;
+  json?: boolean;
+  rootDir?: string;
+};
+
+export function runAdminFallbackClosureGuard(
+  options: AdminFallbackClosureGuardOptions = {},
+) {
   const rootDir = resolve(options.rootDir ?? defaultRootDir());
   const distDir = options.distDir ? resolve(options.distDir) : undefined;
   const checkDist = Boolean(options.checkDist);
@@ -289,7 +297,7 @@ export function runAdminFallbackClosureGuard(options = {}) {
   };
 }
 
-function readDistText(distDir) {
+function readDistText(distDir: string | undefined): string {
   if (!distDir) {
     throw new Error('Dist guard requires --dist <path>.');
   }
@@ -298,12 +306,12 @@ function readDistText(distDir) {
   }
 
   return collectFiles(distDir)
-    .filter((file) => file.endsWith('.js'))
-    .map((file) => readFileSync(file, 'utf8'))
+    .filter((file: string) => file.endsWith('.js'))
+    .map((file: string) => readFileSync(file, 'utf8'))
     .join('\n');
 }
 
-function collectFiles(directory) {
+function collectFiles(directory: string): string[] {
   return readdirSync(directory).flatMap((entry) => {
     const entryPath = resolve(directory, entry);
     const stat = statSync(entryPath);
@@ -312,11 +320,11 @@ function collectFiles(directory) {
 }
 
 function defaultRootDir() {
-  return resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+  return resolve(__dirname, '../..');
 }
 
-function parseCliArgs(argv) {
-  const options = { json: false };
+function parseCliArgs(argv: string[]): AdminFallbackClosureGuardOptions {
+  const options: AdminFallbackClosureGuardOptions = { json: false };
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -335,7 +343,7 @@ function parseCliArgs(argv) {
   return options;
 }
 
-function requireValue(argv, index, flag) {
+function requireValue(argv: string[], index: number, flag: string) {
   const value = argv[index];
   if (!value) {
     throw new Error(`${flag} requires a value.`);
@@ -343,7 +351,7 @@ function requireValue(argv, index, flag) {
   return value;
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (require.main === module) {
   try {
     const options = parseCliArgs(process.argv.slice(2));
     const result = runAdminFallbackClosureGuard(options);
