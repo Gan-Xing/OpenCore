@@ -7,9 +7,8 @@ Rules:
 
 - Use `createTypedSmokeRuntime()` for base URL, auth, request timeouts and SDK
   client wiring.
-- `tools/scripts/smoke-helpers.mjs` is only the compatibility adapter for
-  legacy `.mjs` smoke scripts; shared runtime behavior belongs in
-  `runtime.ts`.
+- Legacy `.mjs` smoke scripts are not allowed; shared runtime behavior belongs
+  in `runtime.ts`.
 - Prefer SDK clients for accepted 2xx API paths so request and response DTOs
   stay type-checked against `@opencore/sdk`.
 - Keep `smoke.apiRequest()` for negative-path guards, malformed payloads,
@@ -19,6 +18,5 @@ Rules:
   `tools/scripts/run-typed-smoke.mjs`.
 - `pnpm smoke:typed:check` must pass before a typed smoke script is committed.
 
-Do not migrate `.mjs` smoke scripts only to change extensions. Migrate when the
-script benefits from SDK DTO coverage or when new smoke coverage would
-otherwise duplicate request/runtime plumbing.
+Do not add `.mjs` smoke scripts. New smoke coverage should be a typed entry in
+this directory and should reuse `runtime.ts`.

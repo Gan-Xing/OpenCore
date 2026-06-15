@@ -41,8 +41,6 @@ export class HttpStatusError extends Error {
 
 export type TypedSmokeRuntime = ReturnType<typeof createTypedSmokeRuntime>;
 
-export const createSmokeRuntime = createTypedSmokeRuntime;
-
 export function createTypedSmokeRuntime() {
   const port = process.env.OPENCORE_SMOKE_PORT || '39173';
   const baseUrl = trimTrailingSlash(

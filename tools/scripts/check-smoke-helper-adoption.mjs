@@ -6,14 +6,8 @@ import { join, relative } from 'node:path';
 const root = process.cwd();
 const scriptsDir = join(root, 'tools', 'scripts');
 const typedSmokeDir = join(root, 'tools', 'smoke');
-const smokeFiles = readdirSync(scriptsDir)
-  .filter((name) => {
-    return (
-      name.startsWith('smoke-') &&
-      name.endsWith('.mjs') &&
-      name !== 'smoke-helpers.mjs'
-    );
-  })
+const legacySmokeFiles = readdirSync(scriptsDir)
+  .filter((name) => name.startsWith('smoke-') && name.endsWith('.mjs'))
   .sort()
   .map((name) => join(scriptsDir, name));
 const typedSmokeFiles = existsSync(typedSmokeDir)
@@ -64,17 +58,14 @@ const forbiddenPatterns = [
 
 const issues = [];
 
-for (const file of smokeFiles) {
+for (const file of legacySmokeFiles) {
   const rel = relative(root, file);
   const source = readFileSync(file, 'utf8');
-
-  if (!source.includes("from './smoke-helpers.mjs'")) {
-    issues.push(`${rel}: must import shared smoke helpers.`);
-  }
+  issues.push(`${rel}: legacy .mjs smoke scripts are not allowed.`);
 
   for (const { label, pattern } of forbiddenPatterns) {
     if (pattern.test(source)) {
-      issues.push(`${rel}: ${label} must live in smoke-helpers.mjs.`);
+      issues.push(`${rel}: ${label} must live in tools/smoke/runtime.ts.`);
     }
   }
 }
@@ -97,5 +88,5 @@ if (issues.length > 0) {
 }
 
 console.log(
-  `Smoke helper adoption check passed (${smokeFiles.length} mjs scripts, ${typedSmokeFiles.length} typed scripts).`,
+  `Smoke helper adoption check passed (${legacySmokeFiles.length} legacy mjs scripts, ${typedSmokeFiles.length} typed scripts).`,
 );
