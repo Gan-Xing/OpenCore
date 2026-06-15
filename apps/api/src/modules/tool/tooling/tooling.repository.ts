@@ -2,11 +2,16 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { isIP } from 'node:net';
 import { dirname, resolve } from 'node:path';
+import { Prisma } from '@prisma/client';
 import { lookupIpLocation, normalizeIpAddress } from '@opencore/common';
 import {
   CURRENT_PAGE_EXPORT_PROTOCOL,
   createCurrentPageExportPlan,
 } from '@opencore/contracts';
+import {
+  PrismaService,
+  type PrismaTransactionClient,
+} from '@opencore/database';
 import {
   applyOpenForge,
   buildDiffPlan,
@@ -49,6 +54,14 @@ const OPENAPI_HTTP_METHODS = new Set([
   'put',
   'trace',
 ]);
+const AREA_DATASET_INCLUDE = {
+  ipRanges: {
+    orderBy: [{ regionCode: 'asc' }, { start: 'asc' }],
+  },
+  regions: {
+    orderBy: [{ code: 'asc' }],
+  },
+} satisfies Prisma.AreaDatasetVersionInclude;
 
 type AreaDatasetImportEntryInput = {
   aliases?: readonly string[];
@@ -93,6 +106,29 @@ type AreaDatasetRecord = {
   checksum: string;
   importedAt: string;
   regions: readonly AreaRegionRecord[];
+  source: string;
+  version: string;
+};
+
+type PersistedAreaDatasetRow = {
+  checksum: string;
+  importedAt: Date;
+  ipRanges: readonly {
+    cidr: string;
+    end: bigint;
+    endIp: string;
+    regionCode: string;
+    start: bigint;
+    startIp: string;
+  }[];
+  regions: readonly {
+    aliases: unknown;
+    code: string;
+    level: number;
+    name: string;
+    parentCode: string | null;
+    path: unknown;
+  }[];
   source: string;
   version: string;
 };
@@ -269,73 +305,15 @@ class AreaDatasetStore {
   }
 
   listRegions(input: AreaRegionQueryInput = {}) {
-    const limit = clampAreaListLimit(input.limit);
-    const query = input.query?.trim().toLowerCase();
-    const parentCode = normalizeOptionalAreaCode(input.parentCode);
-    const items = this.active.regions.filter((region) => {
-      if (parentCode && region.parentCode !== parentCode) {
-        return false;
-      }
-
-      if (!query) {
-        return true;
-      }
-
-      return [
-        region.code,
-        region.name,
-        region.parentCode ?? '',
-        ...region.aliases,
-        ...region.path,
-      ].some((value) => value.toLowerCase().includes(query));
-    });
-
-    return {
-      datasetVersion: this.active.version,
-      total: items.length,
-      limit,
-      items: items.slice(0, limit).map(toAreaRegionDto),
-    };
+    return listAreaRegionsFromDataset(this.active, input);
   }
 
   getRegion(code: string) {
-    const normalized = normalizeRequiredAreaCode(code, 'code');
-    const region = this.active.regions.find(
-      (candidate) => candidate.code === normalized,
-    );
-
-    if (!region) {
-      throw new NotFoundException(`Area region ${normalized} was not found.`);
-    }
-
-    return toAreaRegionDto(region);
+    return getAreaRegionFromDataset(this.active, code);
   }
 
   lookupIp(input: { ip?: string }) {
-    const ip = input.ip?.trim() ?? '';
-    const normalizedIp = normalizeIpAddress(ip);
-
-    if (!normalizedIp || isIP(normalizedIp) === 0) {
-      throw new BadRequestException('ip must be a valid IP address.');
-    }
-
-    const providerResult = lookupIpLocation(normalizedIp);
-    const ipNumber = parseIpv4Number(normalizedIp);
-    const match =
-      typeof ipNumber === 'number'
-        ? findAreaIpRangeMatch(this.active, ipNumber)
-        : undefined;
-
-    return {
-      ip,
-      normalizedIp,
-      networkType: providerResult.networkType,
-      location: providerResult.location,
-      datasetVersion: this.active.version,
-      matched: Boolean(match),
-      region: match ? toAreaRegionDto(match.region) : null,
-      range: match ? toAreaIpRangeDto(match.range) : null,
-    };
+    return lookupAreaIpFromDataset(this.active, input);
   }
 
   importDataset(input: AreaDatasetImportInput) {
@@ -355,6 +333,82 @@ class AreaDatasetStore {
       warnings,
     };
   }
+}
+
+function listAreaRegionsFromDataset(
+  dataset: AreaDatasetRecord,
+  input: AreaRegionQueryInput = {},
+) {
+  const limit = clampAreaListLimit(input.limit);
+  const query = input.query?.trim().toLowerCase();
+  const parentCode = normalizeOptionalAreaCode(input.parentCode);
+  const items = dataset.regions.filter((region) => {
+    if (parentCode && region.parentCode !== parentCode) {
+      return false;
+    }
+
+    if (!query) {
+      return true;
+    }
+
+    return [
+      region.code,
+      region.name,
+      region.parentCode ?? '',
+      ...region.aliases,
+      ...region.path,
+    ].some((value) => value.toLowerCase().includes(query));
+  });
+
+  return {
+    datasetVersion: dataset.version,
+    total: items.length,
+    limit,
+    items: items.slice(0, limit).map(toAreaRegionDto),
+  };
+}
+
+function getAreaRegionFromDataset(dataset: AreaDatasetRecord, code: string) {
+  const normalized = normalizeRequiredAreaCode(code, 'code');
+  const region = dataset.regions.find(
+    (candidate) => candidate.code === normalized,
+  );
+
+  if (!region) {
+    throw new NotFoundException(`Area region ${normalized} was not found.`);
+  }
+
+  return toAreaRegionDto(region);
+}
+
+function lookupAreaIpFromDataset(
+  dataset: AreaDatasetRecord,
+  input: { ip?: string },
+) {
+  const ip = input.ip?.trim() ?? '';
+  const normalizedIp = normalizeIpAddress(ip);
+
+  if (!normalizedIp || isIP(normalizedIp) === 0) {
+    throw new BadRequestException('ip must be a valid IP address.');
+  }
+
+  const providerResult = lookupIpLocation(normalizedIp);
+  const ipNumber = parseIpv4Number(normalizedIp);
+  const match =
+    typeof ipNumber === 'number'
+      ? findAreaIpRangeMatch(dataset, ipNumber)
+      : undefined;
+
+  return {
+    ip,
+    normalizedIp,
+    networkType: providerResult.networkType,
+    location: providerResult.location,
+    datasetVersion: dataset.version,
+    matched: Boolean(match),
+    region: match ? toAreaRegionDto(match.region) : null,
+    range: match ? toAreaIpRangeDto(match.range) : null,
+  };
 }
 
 function createAreaDataset(
@@ -755,6 +809,120 @@ function toAreaIpRangeDto(range: AreaIpRangeRecord) {
   };
 }
 
+function toPersistedAreaDatasetRecord(
+  row: PersistedAreaDatasetRow,
+): AreaDatasetRecord {
+  const rangesByRegion = new Map<string, AreaIpRangeRecord[]>();
+  for (const range of row.ipRanges) {
+    const ranges = rangesByRegion.get(range.regionCode) ?? [];
+    ranges.push({
+      cidr: range.cidr,
+      end: Number(range.end),
+      endIp: range.endIp,
+      start: Number(range.start),
+      startIp: range.startIp,
+    });
+    rangesByRegion.set(range.regionCode, ranges);
+  }
+
+  return {
+    checksum: row.checksum,
+    importedAt: row.importedAt.toISOString(),
+    regions: row.regions
+      .map((region) => ({
+        aliases: toPersistedStringArray(
+          region.aliases,
+          `Area region ${region.code} aliases`,
+        ),
+        code: region.code,
+        ipRanges: rangesByRegion.get(region.code) ?? [],
+        level: region.level,
+        name: region.name,
+        parentCode: region.parentCode,
+        path: toPersistedStringArray(
+          region.path,
+          `Area region ${region.code} path`,
+        ),
+      }))
+      .sort((left, right) => left.code.localeCompare(right.code)),
+    source: row.source,
+    version: row.version,
+  };
+}
+
+function toPersistedStringArray(
+  value: unknown,
+  label: string,
+): readonly string[] {
+  if (!Array.isArray(value) || value.some((item) => typeof item !== 'string')) {
+    throw new Error(`${label} must be stored as a string array.`);
+  }
+
+  return value;
+}
+
+async function persistAreaDataset(
+  tx: PrismaTransactionClient,
+  dataset: AreaDatasetRecord,
+  options: { active: boolean },
+): Promise<void> {
+  await tx.areaDatasetVersion.upsert({
+    where: { version: dataset.version },
+    update: {
+      active: options.active,
+      checksum: dataset.checksum,
+      importedAt: new Date(dataset.importedAt),
+      source: dataset.source,
+    },
+    create: {
+      active: options.active,
+      checksum: dataset.checksum,
+      importedAt: new Date(dataset.importedAt),
+      source: dataset.source,
+      version: dataset.version,
+    },
+  });
+
+  await tx.areaIpRange.deleteMany({
+    where: { datasetVersion: dataset.version },
+  });
+  await tx.areaRegion.deleteMany({
+    where: { datasetVersion: dataset.version },
+  });
+
+  await tx.areaRegion.createMany({
+    data: dataset.regions.map((region) => ({
+      aliases: toInputJson([...region.aliases]),
+      code: region.code,
+      datasetVersion: dataset.version,
+      level: region.level,
+      name: region.name,
+      parentCode: region.parentCode,
+      path: toInputJson([...region.path]),
+    })),
+  });
+
+  const ranges = dataset.regions.flatMap((region) =>
+    region.ipRanges.map((range) => ({
+      cidr: range.cidr,
+      datasetVersion: dataset.version,
+      end: BigInt(range.end),
+      endIp: range.endIp,
+      regionCode: region.code,
+      start: BigInt(range.start),
+      startIp: range.startIp,
+    })),
+  );
+
+  if (ranges.length > 0) {
+    await tx.areaIpRange.createMany({ data: ranges });
+  }
+}
+
+function toInputJson(value: unknown): Prisma.InputJsonValue {
+  return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
+}
+
 function createAreaDatasetChecksum(input: {
   regions: readonly AreaRegionRecord[];
   source: string;
@@ -796,8 +964,38 @@ function createAreaDatasetWarnings(
 export class ToolingRepository {
   private readonly areaDatasetStore = new AreaDatasetStore();
 
+  constructor(private readonly prisma?: PrismaService) {}
+
   private getOpenForgeRepoRoot(): string {
     return findWorkspaceRoot();
+  }
+
+  private async getActiveAreaDataset(): Promise<AreaDatasetRecord> {
+    if (!this.prisma) {
+      return createAreaDataset(BUILTIN_AREA_IMPORT, {
+        importedAt: '2026-01-01T00:00:00.000Z',
+      });
+    }
+
+    const active = await this.prisma.areaDatasetVersion.findFirst({
+      where: { active: true },
+      orderBy: [{ importedAt: 'desc' }, { version: 'asc' }],
+      include: AREA_DATASET_INCLUDE,
+    });
+
+    if (active) {
+      return toPersistedAreaDatasetRecord(active);
+    }
+
+    const builtin = createAreaDataset(BUILTIN_AREA_IMPORT, {
+      importedAt: '2026-01-01T00:00:00.000Z',
+    });
+    await this.prisma.$transaction(async (tx) => {
+      await tx.areaDatasetVersion.updateMany({ data: { active: false } });
+      await persistAreaDataset(tx, builtin, { active: true });
+    });
+
+    return builtin;
   }
 
   getOpenApiDriftStatus() {
@@ -883,27 +1081,85 @@ export class ToolingRepository {
     return createCurrentPageExportPlan(input);
   }
 
-  getAreaDatasetStatus() {
+  async getAreaDatasetStatus() {
+    if (this.prisma) {
+      return toAreaDatasetSummary(await this.getActiveAreaDataset());
+    }
+
     return this.areaDatasetStore.getStatus();
   }
 
-  listAreaDatasetVersions() {
+  async listAreaDatasetVersions() {
+    if (this.prisma) {
+      await this.getActiveAreaDataset();
+      const versions = await this.prisma.areaDatasetVersion.findMany({
+        orderBy: [{ importedAt: 'desc' }, { version: 'asc' }],
+        include: AREA_DATASET_INCLUDE,
+      });
+      const activeVersion =
+        versions.find((version) => version.active)?.version ??
+        BUILTIN_AREA_IMPORT.version;
+
+      return {
+        activeVersion,
+        versions: versions.map((version) => ({
+          ...toAreaDatasetSummary(toPersistedAreaDatasetRecord(version)),
+          active: version.active,
+        })),
+      };
+    }
+
     return this.areaDatasetStore.listVersions();
   }
 
-  listAreaRegions(query: AreaRegionQueryInput = {}) {
+  async listAreaRegions(query: AreaRegionQueryInput = {}) {
+    if (this.prisma) {
+      return listAreaRegionsFromDataset(
+        await this.getActiveAreaDataset(),
+        query,
+      );
+    }
+
     return this.areaDatasetStore.listRegions(query);
   }
 
-  getAreaRegion(code: string) {
+  async getAreaRegion(code: string) {
+    if (this.prisma) {
+      return getAreaRegionFromDataset(await this.getActiveAreaDataset(), code);
+    }
+
     return this.areaDatasetStore.getRegion(code);
   }
 
-  lookupAreaIp(input: { ip?: string }) {
+  async lookupAreaIp(input: { ip?: string }) {
+    if (this.prisma) {
+      return lookupAreaIpFromDataset(await this.getActiveAreaDataset(), input);
+    }
+
     return this.areaDatasetStore.lookupIp(input);
   }
 
-  importAreaDataset(input: AreaDatasetImportInput) {
+  async importAreaDataset(input: AreaDatasetImportInput) {
+    if (this.prisma) {
+      const dryRun = input.dryRun !== false;
+      const dataset = createAreaDataset(input);
+      const warnings = createAreaDatasetWarnings(dataset);
+
+      if (!dryRun) {
+        await this.prisma.$transaction(async (tx) => {
+          await tx.areaDatasetVersion.updateMany({ data: { active: false } });
+          await persistAreaDataset(tx, dataset, { active: true });
+        });
+      }
+
+      return {
+        dryRun,
+        applied: !dryRun,
+        dataset: toAreaDatasetSummary(dataset),
+        warnings,
+      };
+    }
+
     return this.areaDatasetStore.importDataset(input);
   }
 

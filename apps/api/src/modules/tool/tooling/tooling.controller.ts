@@ -64,7 +64,7 @@ export class ToolingController {
   @ApiTags('Tool Area')
   @RequirePermission('tool:area:read')
   @ApiOkResponse({ type: AreaDatasetSummaryDto })
-  getAreaDatasetStatus(): AreaDatasetSummaryDto {
+  getAreaDatasetStatus(): Promise<AreaDatasetSummaryDto> {
     return this.repository.getAreaDatasetStatus();
   }
 
@@ -72,7 +72,7 @@ export class ToolingController {
   @ApiTags('Tool Area')
   @RequirePermission('tool:area:read')
   @ApiOkResponse({ type: AreaDatasetVersionListDto })
-  listAreaDatasetVersions(): AreaDatasetVersionListDto {
+  listAreaDatasetVersions(): Promise<AreaDatasetVersionListDto> {
     return this.repository.listAreaDatasetVersions();
   }
 
@@ -80,7 +80,9 @@ export class ToolingController {
   @ApiTags('Tool Area')
   @RequirePermission('tool:area:read')
   @ApiOkResponse({ type: AreaRegionListDto })
-  listAreaRegions(@Query() query: AreaRegionQueryDto): AreaRegionListDto {
+  listAreaRegions(
+    @Query() query: AreaRegionQueryDto,
+  ): Promise<AreaRegionListDto> {
     return this.repository.listAreaRegions(query);
   }
 
@@ -88,7 +90,7 @@ export class ToolingController {
   @ApiTags('Tool Area')
   @RequirePermission('tool:area:read')
   @ApiOkResponse({ type: AreaRegionDto })
-  getAreaRegion(@Param('code') code: string): AreaRegionDto {
+  getAreaRegion(@Param('code') code: string): Promise<AreaRegionDto> {
     return this.repository.getAreaRegion(code);
   }
 
@@ -96,7 +98,7 @@ export class ToolingController {
   @ApiTags('Tool Area')
   @RequirePermission('tool:area:read')
   @ApiOkResponse({ type: AreaIpLookupDto })
-  lookupAreaIp(@Body() body: AreaIpLookupRequestDto): AreaIpLookupDto {
+  lookupAreaIp(@Body() body: AreaIpLookupRequestDto): Promise<AreaIpLookupDto> {
     return this.repository.lookupAreaIp(body);
   }
 
@@ -106,7 +108,7 @@ export class ToolingController {
   @ApiOkResponse({ type: AreaDatasetImportResultDto })
   importAreaDataset(
     @Body() body: AreaDatasetImportRequestDto,
-  ): AreaDatasetImportResultDto {
+  ): Promise<AreaDatasetImportResultDto> {
     return this.repository.importAreaDataset(body);
   }
 

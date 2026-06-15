@@ -624,3 +624,53 @@ model IntegrationOAuthCallbackAudit {
   @@index([state])
   @@index([status])
 }
+
+model AreaDatasetVersion {
+  id         String        @id @default(cuid())
+  version    String        @unique
+  source     String
+  checksum   String
+  importedAt DateTime
+  active     Boolean       @default(false)
+  regions    AreaRegion[]
+  ipRanges   AreaIpRange[]
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  @@index([active, importedAt])
+  @@index([importedAt])
+}
+
+model AreaRegion {
+  id             String             @id @default(cuid())
+  datasetVersion String
+  dataset        AreaDatasetVersion @relation(fields: [datasetVersion], references: [version], onDelete: Cascade)
+  code           String
+  name           String
+  parentCode     String?
+  level          Int
+  path           Json
+  aliases        Json
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@unique([datasetVersion, code])
+  @@index([datasetVersion, parentCode])
+  @@index([datasetVersion, level])
+}
+
+model AreaIpRange {
+  id             String             @id @default(cuid())
+  datasetVersion String
+  dataset        AreaDatasetVersion @relation(fields: [datasetVersion], references: [version], onDelete: Cascade)
+  regionCode     String
+  cidr           String
+  start          BigInt
+  end            BigInt
+  startIp        String
+  endIp          String
+  createdAt      DateTime           @default(now())
+
+  @@index([datasetVersion, regionCode])
+  @@index([datasetVersion, start, end])
+}

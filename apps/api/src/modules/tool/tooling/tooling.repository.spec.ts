@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+import { PrismaService } from '@opencore/database';
 import { ToolingRepository } from './tooling.repository';
 
 describe('ToolingRepository', () => {
@@ -29,10 +31,10 @@ describe('ToolingRepository', () => {
     });
   });
 
-  it('queries versioned area data and maps IP ranges without external lookups', () => {
+  it('queries versioned area data and maps IP ranges without external lookups', async () => {
     const repository = new ToolingRepository();
 
-    expect(repository.getAreaDatasetStatus()).toMatchObject({
+    await expect(repository.getAreaDatasetStatus()).resolves.toMatchObject({
       status: 'active',
       version: 'opencore-area-boundary-v1',
       regionCount: expect.any(Number),
@@ -42,7 +44,7 @@ describe('ToolingRepository', () => {
         'ipv4-range-lookup',
       ]),
     });
-    expect(repository.listAreaDatasetVersions()).toMatchObject({
+    await expect(repository.listAreaDatasetVersions()).resolves.toMatchObject({
       activeVersion: 'opencore-area-boundary-v1',
       versions: [
         expect.objectContaining({
@@ -51,9 +53,9 @@ describe('ToolingRepository', () => {
         }),
       ],
     });
-    expect(
+    await expect(
       repository.listAreaRegions({ query: 'san', limit: 5 }),
-    ).toMatchObject({
+    ).resolves.toMatchObject({
       datasetVersion: 'opencore-area-boundary-v1',
       total: 1,
       items: [
@@ -63,7 +65,9 @@ describe('ToolingRepository', () => {
         }),
       ],
     });
-    expect(repository.getAreaRegion('RFC-EXAMPLE')).toMatchObject({
+    await expect(
+      repository.getAreaRegion('RFC-EXAMPLE'),
+    ).resolves.toMatchObject({
       code: 'RFC-EXAMPLE',
       ipRanges: expect.arrayContaining([
         expect.objectContaining({
@@ -71,7 +75,9 @@ describe('ToolingRepository', () => {
         }),
       ]),
     });
-    expect(repository.lookupAreaIp({ ip: '203.0.113.7' })).toMatchObject({
+    await expect(
+      repository.lookupAreaIp({ ip: '203.0.113.7' }),
+    ).resolves.toMatchObject({
       normalizedIp: '203.0.113.7',
       matched: true,
       range: {
@@ -85,7 +91,7 @@ describe('ToolingRepository', () => {
     });
   });
 
-  it('validates and applies bounded area dataset imports', () => {
+  it('validates and applies bounded area dataset imports', async () => {
     const repository = new ToolingRepository();
     const input = {
       version: 'area-smoke-v1',
@@ -105,12 +111,12 @@ describe('ToolingRepository', () => {
       ],
     };
 
-    expect(
+    await expect(
       repository.importAreaDataset({
         ...input,
         dryRun: true,
       }),
-    ).toMatchObject({
+    ).resolves.toMatchObject({
       dryRun: true,
       applied: false,
       dataset: {
@@ -119,24 +125,28 @@ describe('ToolingRepository', () => {
         ipRangeCount: 1,
       },
     });
-    expect(repository.getAreaDatasetStatus().version).toBe(
-      'opencore-area-boundary-v1',
-    );
+    await expect(repository.getAreaDatasetStatus()).resolves.toMatchObject({
+      version: 'opencore-area-boundary-v1',
+    });
 
-    expect(
+    await expect(
       repository.importAreaDataset({
         ...input,
         dryRun: false,
       }),
-    ).toMatchObject({
+    ).resolves.toMatchObject({
       dryRun: false,
       applied: true,
       dataset: {
         version: 'area-smoke-v1',
       },
     });
-    expect(repository.getAreaDatasetStatus().version).toBe('area-smoke-v1');
-    expect(repository.lookupAreaIp({ ip: '10.10.5.6' })).toMatchObject({
+    await expect(repository.getAreaDatasetStatus()).resolves.toMatchObject({
+      version: 'area-smoke-v1',
+    });
+    await expect(
+      repository.lookupAreaIp({ ip: '10.10.5.6' }),
+    ).resolves.toMatchObject({
       matched: true,
       region: {
         code: 'ROOT-EDGE',
@@ -144,24 +154,24 @@ describe('ToolingRepository', () => {
     });
   });
 
-  it('rejects unsafe area dataset imports', () => {
+  it('rejects unsafe area dataset imports', async () => {
     const repository = new ToolingRepository();
 
-    expect(() =>
+    await expect(
       repository.importAreaDataset({
         version: 'bad version',
         source: 'unit-test',
         entries: [{ code: 'ROOT', name: 'Root' }],
       }),
-    ).toThrow('version must be 3-80 characters');
-    expect(() =>
+    ).rejects.toThrow('version must be 3-80 characters');
+    await expect(
       repository.importAreaDataset({
         version: 'area-bad-parent-v1',
         source: 'unit-test',
         entries: [{ code: 'CHILD', name: 'Child', parentCode: 'ROOT' }],
       }),
-    ).toThrow('references missing parentCode ROOT');
-    expect(() =>
+    ).rejects.toThrow('references missing parentCode ROOT');
+    await expect(
       repository.importAreaDataset({
         version: 'area-bad-ip-v1',
         source: 'unit-test',
@@ -173,8 +183,8 @@ describe('ToolingRepository', () => {
           },
         ],
       }),
-    ).toThrow('must use IPv4 CIDR or exact IPv4');
-    expect(() => repository.lookupAreaIp({ ip: 'not-an-ip' })).toThrow(
+    ).rejects.toThrow('must use IPv4 CIDR or exact IPv4');
+    await expect(repository.lookupAreaIp({ ip: 'not-an-ip' })).rejects.toThrow(
       'ip must be a valid IP address',
     );
   });
@@ -266,4 +276,94 @@ describe('ToolingRepository', () => {
       'manifestId may contain only letters, numbers, dot, underscore and dash.',
     );
   });
+});
+
+describe('ToolingRepository Prisma area dataset persistence', () => {
+  const prisma = new PrismaService();
+  const repository = new ToolingRepository(prisma);
+  const version = `area-prisma-${randomUUID().slice(0, 8)}`;
+
+  beforeEach(async () => {
+    await repository.getAreaDatasetStatus();
+    await cleanup();
+  });
+
+  afterEach(async () => {
+    await cleanup();
+  });
+
+  afterAll(async () => {
+    await prisma.$disconnect();
+  });
+
+  it('persists applied area dataset imports and reads active data from PostgreSQL', async () => {
+    await expect(
+      repository.importAreaDataset({
+        version,
+        source: 'tooling-prisma-test',
+        dryRun: false,
+        entries: [
+          {
+            code: 'ROOT',
+            name: 'Root',
+          },
+          {
+            code: 'ROOT-RFC',
+            name: 'RFC example',
+            parentCode: 'ROOT',
+            aliases: ['rfc'],
+            ipRanges: ['203.0.113.0/24'],
+          },
+        ],
+      }),
+    ).resolves.toMatchObject({
+      applied: true,
+      dataset: {
+        version,
+        ipRangeCount: 1,
+        regionCount: 2,
+      },
+    });
+
+    await expect(repository.getAreaDatasetStatus()).resolves.toMatchObject({
+      version,
+    });
+    await expect(
+      repository.lookupAreaIp({ ip: '203.0.113.7' }),
+    ).resolves.toMatchObject({
+      matched: true,
+      region: {
+        code: 'ROOT-RFC',
+      },
+      range: {
+        cidr: '203.0.113.0/24',
+      },
+    });
+
+    const persisted = await prisma.areaDatasetVersion.findUnique({
+      where: { version },
+      include: {
+        ipRanges: true,
+        regions: true,
+      },
+    });
+
+    expect(persisted).toMatchObject({
+      active: true,
+      version,
+      regions: expect.arrayContaining([
+        expect.objectContaining({ code: 'ROOT-RFC' }),
+      ]),
+    });
+    expect(persisted?.ipRanges[0]?.start).toEqual(BigInt(3405803776));
+  });
+
+  async function cleanup(): Promise<void> {
+    await prisma.areaDatasetVersion.deleteMany({ where: { version } });
+    await prisma.areaDatasetVersion.updateMany({ data: { active: false } });
+    await prisma.areaDatasetVersion.updateMany({
+      where: { version: 'opencore-area-boundary-v1' },
+      data: { active: true },
+    });
+  }
 });
