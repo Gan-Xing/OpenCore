@@ -1,8 +1,4 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { seedSystemDepts } from '../system-dept/system-dept.records';
 import { seedSystemPosts } from '../system-post/system-post.records';
 import { seedSystemRoles } from '../system-role/system-role.records';
@@ -22,6 +18,9 @@ import {
   normalizeUpdateSystemUserInput,
   normalizeUpdateSystemUserProfileInput,
   assertSystemUserPasswordChangeAllowed,
+  systemUserBadRequest,
+  systemUserConflict,
+  systemUserNotFound,
   SystemUserRepository,
   toSystemUserOptionRecord,
   type SystemUserListQuery,
@@ -109,7 +108,11 @@ export class SeedSystemUserRepository extends SystemUserRepository {
     const input = normalizeCreateSystemUserInput(body);
 
     if (this.users.some((user) => user.username === input.username)) {
-      throw new ConflictException(`User already exists: ${input.username}`);
+      throw systemUserConflict(
+        'SYSTEM_USER_ALREADY_EXISTS',
+        `User already exists: ${input.username}`,
+        { username: input.username },
+      );
     }
 
     this.assertRoleCodes(input.roleCodes);
@@ -294,7 +297,14 @@ export class SeedSystemUserRepository extends SystemUserRepository {
 
     for (const userId of selectedUserIds) {
       const user = this.findMutableUserById(userId);
-      assertSystemUserMutable(cloneSystemUserSummary(user));
+
+      if (user.system) {
+        throw systemUserBadRequest(
+          'SYSTEM_USER_ROLE_ASSIGN_SYSTEM_FORBIDDEN',
+          'System users cannot be role-assigned.',
+          { userId: user.id },
+        );
+      }
     }
 
     for (const user of this.users) {
@@ -318,7 +328,9 @@ export class SeedSystemUserRepository extends SystemUserRepository {
     const user = this.users.find((candidate) => candidate.id === id);
 
     if (!user) {
-      throw new NotFoundException(`User not found: ${id}`);
+      throw systemUserNotFound('SYSTEM_USER_NOT_FOUND', `User not found: ${id}`, {
+        userId: id,
+      });
     }
 
     return user;
@@ -334,7 +346,11 @@ export class SeedSystemUserRepository extends SystemUserRepository {
     );
 
     if (missingRoleCode) {
-      throw new NotFoundException(`Role not found: ${missingRoleCode}`);
+      throw systemUserNotFound(
+        'SYSTEM_USER_ROLE_NOT_FOUND',
+        `Role not found: ${missingRoleCode}`,
+        { roleCode: missingRoleCode },
+      );
     }
   }
 
@@ -344,7 +360,11 @@ export class SeedSystemUserRepository extends SystemUserRepository {
     }
 
     if (!this.deptIds.has(deptId)) {
-      throw new NotFoundException(`System dept not found: ${deptId}`);
+      throw systemUserNotFound(
+        'SYSTEM_USER_DEPT_NOT_FOUND',
+        `System dept not found: ${deptId}`,
+        { deptId },
+      );
     }
   }
 
@@ -373,7 +393,11 @@ export class SeedSystemUserRepository extends SystemUserRepository {
     );
 
     if (missingPostCode) {
-      throw new NotFoundException(`System post not found: ${missingPostCode}`);
+      throw systemUserNotFound(
+        'SYSTEM_USER_POST_NOT_FOUND',
+        `System post not found: ${missingPostCode}`,
+        { postCode: missingPostCode },
+      );
     }
   }
 }

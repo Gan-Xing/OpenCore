@@ -524,31 +524,34 @@ describe('@opencore/system system-user', () => {
   it('rejects invalid usernames, duplicated role codes, and unknown roles', async () => {
     const service = new SystemUserService(new SeedSystemUserRepository());
 
-    await expect(
+    await expectHttpExceptionCode(
       service.createUser({
         username: 'Invalid User',
         displayName: 'Invalid',
         password: 'change-me',
         roleCodes: [],
       }),
-    ).rejects.toThrow(BadRequestException);
-    await expect(
+      'SYSTEM_USER_USERNAME_INVALID',
+    );
+    await expectHttpExceptionCode(
       service.createUser({
         username: 'duplicate_roles',
         displayName: 'Duplicate Roles',
         password: 'change-me',
         roleCodes: ['viewer', 'viewer'],
       }),
-    ).rejects.toThrow(BadRequestException);
-    await expect(
+      'SYSTEM_USER_ROLE_CODE_DUPLICATED',
+    );
+    await expectHttpExceptionCode(
       service.createUser({
         username: 'unknown_role',
         displayName: 'Unknown Role',
         password: 'change-me',
         roleCodes: ['missing'],
       }),
-    ).rejects.toThrow(NotFoundException);
-    await expect(
+      'SYSTEM_USER_ROLE_NOT_FOUND',
+    );
+    await expectHttpExceptionCode(
       service.createUser({
         username: 'unknown_dept',
         displayName: 'Unknown Dept',
@@ -556,8 +559,9 @@ describe('@opencore/system system-user', () => {
         roleCodes: ['viewer'],
         deptId: 'missing_dept',
       }),
-    ).rejects.toThrow(NotFoundException);
-    await expect(
+      'SYSTEM_USER_DEPT_NOT_FOUND',
+    );
+    await expectHttpExceptionCode(
       service.createUser({
         username: 'unknown_post',
         displayName: 'Unknown Post',
@@ -565,8 +569,9 @@ describe('@opencore/system system-user', () => {
         roleCodes: ['viewer'],
         postCodes: ['missing_post'],
       }),
-    ).rejects.toThrow(NotFoundException);
-    await expect(
+      'SYSTEM_USER_POST_NOT_FOUND',
+    );
+    await expectHttpExceptionCode(
       service.createUser({
         username: 'duplicate_posts',
         displayName: 'Duplicate Posts',
@@ -574,7 +579,37 @@ describe('@opencore/system system-user', () => {
         roleCodes: ['viewer'],
         postCodes: ['engineer', 'engineer'],
       }),
-    ).rejects.toThrow(BadRequestException);
+      'SYSTEM_USER_POST_CODE_DUPLICATED',
+    );
+  });
+
+  it('returns stable error codes for system-user guards', async () => {
+    const service = new SystemUserService(new SeedSystemUserRepository());
+
+    await expectHttpExceptionCode(
+      service.updateUser('user_admin', { displayName: 'Renamed Admin' }),
+      'SYSTEM_USER_SYSTEM_IMMUTABLE',
+    );
+    await expectHttpExceptionCode(
+      service.updateUserPassword('user_admin', {
+        oldPassword: 'wrong-password',
+        newPassword: 'next-password',
+      }),
+      'SYSTEM_USER_CURRENT_PASSWORD_INVALID',
+    );
+    await expectHttpExceptionCode(
+      service.importUsers({
+        contentBase64: createUserImportCsvBase64([
+          ['stable_codes', 'Stable Codes', 'change-me', 'viewer', '', '', 'true'],
+        ]),
+        updateExisting: 'true' as unknown as boolean,
+      }),
+      'SYSTEM_USER_IMPORT_UPDATE_EXISTING_INVALID',
+    );
+    await expectHttpExceptionCode(
+      service.assignRoleUsers('viewer', { userIds: ['user_admin'] }),
+      'SYSTEM_USER_ROLE_ASSIGN_SYSTEM_FORBIDDEN',
+    );
   });
 
   it('assigns users to roles while protecting system users', async () => {
@@ -1308,4 +1343,31 @@ function escapeCsvCell(value: string): string {
   }
 
   return `"${value.replace(/"/g, '""')}"`;
+}
+
+async function expectHttpExceptionCode(
+  promise: Promise<unknown>,
+  code: string,
+): Promise<void> {
+  try {
+    await promise;
+  } catch (error) {
+    expect(getHttpExceptionResponse(error)).toMatchObject({ code });
+    return;
+  }
+
+  throw new Error(`Expected HTTP exception code ${code}`);
+}
+
+function getHttpExceptionResponse(error: unknown): unknown {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'getResponse' in error &&
+    typeof error.getResponse === 'function'
+  ) {
+    return error.getResponse();
+  }
+
+  return undefined;
 }

@@ -1,4 +1,10 @@
-import { BadRequestException, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { createApiErrorBody } from '@opencore/common';
 import { unzipSync } from 'fflate';
 import {
   createOpenCoreXlsxWorkbookBase64,
@@ -260,6 +266,42 @@ export abstract class SystemUserRepository {
   ): Promise<RoleUserAssignmentDto>;
 }
 
+export function systemUserBadRequest(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): BadRequestException {
+  return new BadRequestException(
+    createApiErrorBody({ code, message, details }),
+  );
+}
+
+export function systemUserConflict(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): ConflictException {
+  return new ConflictException(createApiErrorBody({ code, message, details }));
+}
+
+export function systemUserNotFound(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): NotFoundException {
+  return new NotFoundException(createApiErrorBody({ code, message, details }));
+}
+
+export function systemUserUnauthorized(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): UnauthorizedException {
+  return new UnauthorizedException(
+    createApiErrorBody({ code, message, details }),
+  );
+}
+
 export function createSystemUserExportPreview(
   rows: readonly SystemUserSummaryRecord[],
 ): SystemUserExportPreview {
@@ -344,8 +386,10 @@ export function parseSystemUserImport(
   const label = isXlsx ? 'XLSX' : 'CSV';
 
   if (rows.length < 2) {
-    throw new BadRequestException(
+    throw systemUserBadRequest(
+      'SYSTEM_USER_IMPORT_ROWS_REQUIRED',
       `System user import ${label} must contain a header and at least one data row.`,
+      { format: label },
     );
   }
 
@@ -355,8 +399,10 @@ export function parseSystemUserImport(
   );
 
   if (missingHeader) {
-    throw new BadRequestException(
+    throw systemUserBadRequest(
+      'SYSTEM_USER_IMPORT_COLUMN_MISSING',
       `System user import ${label} is missing column: ${missingHeader}`,
+      { column: missingHeader, format: label },
     );
   }
 
@@ -380,8 +426,10 @@ export function parseSystemUserImport(
     );
 
   if (records.length === 0) {
-    throw new BadRequestException(
+    throw systemUserBadRequest(
+      'SYSTEM_USER_IMPORT_DATA_ROW_REQUIRED',
       `System user import ${label} must contain at least one non-empty data row.`,
+      { format: label },
     );
   }
 
@@ -488,7 +536,8 @@ export function normalizeUpdateSystemUserPasswordInput(
   const newPassword = normalizeRequiredText(body?.newPassword, 'newPassword');
 
   if (oldPassword === newPassword) {
-    throw new BadRequestException(
+    throw systemUserBadRequest(
+      'SYSTEM_USER_PASSWORD_UNCHANGED',
       'New password must be different from old password.',
     );
   }
@@ -572,7 +621,11 @@ export function toSystemUserOptionRecord(
 
 export function assertSystemUserMutable(user: SystemUserSummaryRecord): void {
   if (user.system) {
-    throw new BadRequestException('System users cannot be updated or deleted.');
+    throw systemUserBadRequest(
+      'SYSTEM_USER_SYSTEM_IMMUTABLE',
+      'System users cannot be updated or deleted.',
+      { userId: user.id },
+    );
   }
 }
 
@@ -581,11 +634,15 @@ export function assertSystemUserPasswordChangeAllowed(
   input: NormalizedSystemUserPasswordUpdateInput,
 ): void {
   if (!verifySystemUserPassword(input.oldPassword, passwordHash)) {
-    throw new UnauthorizedException('Current password is incorrect.');
+    throw systemUserUnauthorized(
+      'SYSTEM_USER_CURRENT_PASSWORD_INVALID',
+      'Current password is incorrect.',
+    );
   }
 
   if (verifySystemUserPassword(input.newPassword, passwordHash)) {
-    throw new BadRequestException(
+    throw systemUserBadRequest(
+      'SYSTEM_USER_PASSWORD_UNCHANGED',
       'New password must be different from old password.',
     );
   }
@@ -628,7 +685,11 @@ export function normalizeAssignUserRolesInput(
   const value = body?.roleCodes;
 
   if (!Array.isArray(value)) {
-    throw new BadRequestException('System user roleCodes must be an array.');
+    throw systemUserBadRequest(
+      'SYSTEM_USER_ROLE_CODES_INVALID',
+      'System user roleCodes must be an array.',
+      { field: 'roleCodes' },
+    );
   }
 
   return normalizeRoleCodes(value);
@@ -640,15 +701,21 @@ export function normalizeAssignRoleUsersInput(
   const value = body?.userIds;
 
   if (!Array.isArray(value)) {
-    throw new BadRequestException('System role userIds must be an array.');
+    throw systemUserBadRequest(
+      'SYSTEM_ROLE_USER_IDS_INVALID',
+      'System role userIds must be an array.',
+      { field: 'userIds' },
+    );
   }
 
   const normalized = value.map((userId) => normalizeUserId(userId));
   const duplicate = findFirstDuplicate(normalized);
 
   if (duplicate) {
-    throw new BadRequestException(
+    throw systemUserBadRequest(
+      'SYSTEM_ROLE_USER_ID_DUPLICATED',
       `System role user id is duplicated: ${duplicate}`,
+      { userId: duplicate },
     );
   }
 
@@ -659,8 +726,10 @@ function normalizeUsername(value: string): string {
   const username = normalizeRequiredText(value, 'username');
 
   if (!USERNAME_PATTERN.test(username)) {
-    throw new BadRequestException(
+    throw systemUserBadRequest(
+      'SYSTEM_USER_USERNAME_INVALID',
       'System user username must start with a lowercase letter and contain only lowercase letters, numbers, dot, underscore or dash.',
+      { field: 'username' },
     );
   }
 
@@ -669,13 +738,21 @@ function normalizeUsername(value: string): string {
 
 function normalizeRequiredText(value: unknown, fieldName: string): string {
   if (typeof value !== 'string') {
-    throw new BadRequestException(`System user ${fieldName} must be a string.`);
+    throw systemUserBadRequest(
+      'SYSTEM_USER_FIELD_INVALID_TYPE',
+      `System user ${fieldName} must be a string.`,
+      { field: fieldName, expected: 'string' },
+    );
   }
 
   const normalized = value.trim();
 
   if (!normalized) {
-    throw new BadRequestException(`System user ${fieldName} is required.`);
+    throw systemUserBadRequest(
+      'SYSTEM_USER_FIELD_REQUIRED',
+      `System user ${fieldName} is required.`,
+      { field: fieldName },
+    );
   }
 
   return normalized;
@@ -683,8 +760,10 @@ function normalizeRequiredText(value: unknown, fieldName: string): string {
 
 function normalizeRequiredBoolean(value: unknown, fieldName: string): boolean {
   if (typeof value !== 'boolean') {
-    throw new BadRequestException(
+    throw systemUserBadRequest(
+      'SYSTEM_USER_BOOLEAN_INVALID',
       `System user ${fieldName} must be a boolean.`,
+      { field: fieldName },
     );
   }
 
@@ -706,7 +785,11 @@ function normalizeImportBoolean(value: string): boolean {
     return false;
   }
 
-  throw new BadRequestException('System user enabled must be a boolean.');
+  throw systemUserBadRequest(
+    'SYSTEM_USER_ENABLED_INVALID',
+    'System user enabled must be a boolean.',
+    { field: 'enabled' },
+  );
 }
 
 function normalizeOptionalBoolean(
@@ -722,7 +805,11 @@ function normalizeOptionalBoolean(
 
 function normalizeUserId(value: unknown): string {
   if (typeof value !== 'string') {
-    throw new BadRequestException('System user id must be a string.');
+    throw systemUserBadRequest(
+      'SYSTEM_USER_ID_INVALID_TYPE',
+      'System user id must be a string.',
+      { field: 'userId' },
+    );
   }
 
   return normalizeRequiredText(value, 'user id');
@@ -740,7 +827,11 @@ function normalizeSystemUserDataScopeFilter(
   }
 
   if (value.type !== 'restricted') {
-    throw new BadRequestException('System user data scope type is invalid.');
+    throw systemUserBadRequest(
+      'SYSTEM_USER_DATA_SCOPE_TYPE_INVALID',
+      'System user data scope type is invalid.',
+      { field: 'dataScope.type' },
+    );
   }
 
   return {
@@ -755,8 +846,10 @@ function normalizeDataScopeIds(
   fieldName: string,
 ): readonly string[] {
   if (!Array.isArray(values)) {
-    throw new BadRequestException(
+    throw systemUserBadRequest(
+      'SYSTEM_USER_DATA_SCOPE_IDS_INVALID',
       `System user ${fieldName}s must be an array.`,
+      { field: fieldName },
     );
   }
 
@@ -766,8 +859,10 @@ function normalizeDataScopeIds(
   const duplicate = findFirstDuplicate(normalized);
 
   if (duplicate) {
-    throw new BadRequestException(
+    throw systemUserBadRequest(
+      'SYSTEM_USER_DATA_SCOPE_ID_DUPLICATED',
       `System user ${fieldName} is duplicated: ${duplicate}`,
+      { field: fieldName, id: duplicate },
     );
   }
 
@@ -776,18 +871,30 @@ function normalizeDataScopeIds(
 
 function normalizeBatchSystemUserIds(value: unknown): readonly string[] {
   if (!Array.isArray(value)) {
-    throw new BadRequestException('System userIds must be an array.');
+    throw systemUserBadRequest(
+      'SYSTEM_USER_IDS_INVALID',
+      'System userIds must be an array.',
+      { field: 'userIds' },
+    );
   }
 
   if (value.length === 0) {
-    throw new BadRequestException('System userIds must not be empty.');
+    throw systemUserBadRequest(
+      'SYSTEM_USER_IDS_EMPTY',
+      'System userIds must not be empty.',
+      { field: 'userIds' },
+    );
   }
 
   const normalized = value.map((userId) => normalizeUserId(userId));
   const duplicate = findFirstDuplicate(normalized);
 
   if (duplicate) {
-    throw new BadRequestException(`System user id is duplicated: ${duplicate}`);
+    throw systemUserBadRequest(
+      'SYSTEM_USER_ID_DUPLICATED',
+      `System user id is duplicated: ${duplicate}`,
+      { userId: duplicate },
+    );
   }
 
   return [...normalized].sort();
@@ -802,8 +909,10 @@ function normalizeRoleCodes(
   const duplicate = findFirstDuplicate(normalized);
 
   if (duplicate) {
-    throw new BadRequestException(
+    throw systemUserBadRequest(
+      'SYSTEM_USER_ROLE_CODE_DUPLICATED',
       `System user role code is duplicated: ${duplicate}`,
+      { roleCode: duplicate },
     );
   }
 
@@ -818,7 +927,11 @@ function normalizePostCodes(
   }
 
   if (!Array.isArray(values)) {
-    throw new BadRequestException('System user postCodes must be an array.');
+    throw systemUserBadRequest(
+      'SYSTEM_USER_POST_CODES_INVALID',
+      'System user postCodes must be an array.',
+      { field: 'postCodes' },
+    );
   }
 
   const normalized = values.map((value) =>
@@ -827,8 +940,10 @@ function normalizePostCodes(
   const duplicate = findFirstDuplicate(normalized);
 
   if (duplicate) {
-    throw new BadRequestException(
+    throw systemUserBadRequest(
+      'SYSTEM_USER_POST_CODE_DUPLICATED',
       `System user post code is duplicated: ${duplicate}`,
+      { postCode: duplicate },
     );
   }
 
@@ -896,7 +1011,11 @@ function decodeSystemUserImportContent(body: ImportUsersDto): Buffer {
     trimmedBase64.length % 4 !== 0 ||
     !/^[A-Za-z0-9+/]+={0,2}$/.test(trimmedBase64)
   ) {
-    throw new BadRequestException('System user import content must be base64.');
+    throw systemUserBadRequest(
+      'SYSTEM_USER_IMPORT_CONTENT_BASE64_INVALID',
+      'System user import content must be base64.',
+      { field: 'contentBase64' },
+    );
   }
 
   const content = Buffer.from(trimmedBase64, 'base64');
@@ -906,14 +1025,18 @@ function decodeSystemUserImportContent(body: ImportUsersDto): Buffer {
     content.byteLength === 0 ||
     canonical.replace(/=+$/, '') !== trimmedBase64.replace(/=+$/, '')
   ) {
-    throw new BadRequestException(
+    throw systemUserBadRequest(
+      'SYSTEM_USER_IMPORT_CONTENT_EMPTY',
       'System user import content must not be empty.',
+      { field: 'contentBase64' },
     );
   }
 
   if (content.byteLength > USER_IMPORT_MAX_BYTES) {
-    throw new BadRequestException(
+    throw systemUserBadRequest(
+      'SYSTEM_USER_IMPORT_CONTENT_TOO_LARGE',
       `System user import content must not exceed ${USER_IMPORT_MAX_BYTES} bytes.`,
+      { maxBytes: USER_IMPORT_MAX_BYTES },
     );
   }
 
@@ -930,7 +1053,8 @@ function parseXlsxRows(content: Buffer): string[][] {
   try {
     files = unzipSync(new Uint8Array(content));
   } catch {
-    throw new BadRequestException(
+    throw systemUserBadRequest(
+      'SYSTEM_USER_IMPORT_XLSX_INVALID',
       'System user import XLSX must be a valid workbook.',
     );
   }
@@ -938,7 +1062,8 @@ function parseXlsxRows(content: Buffer): string[][] {
   const worksheet = files['xl/worksheets/sheet1.xml'];
 
   if (!worksheet) {
-    throw new BadRequestException(
+    throw systemUserBadRequest(
+      'SYSTEM_USER_IMPORT_XLSX_SHEET_MISSING',
       'System user import XLSX must contain xl/worksheets/sheet1.xml.',
     );
   }
@@ -1157,7 +1282,8 @@ function parseCsvRows(csv: string): string[][] {
   }
 
   if (inQuotes) {
-    throw new BadRequestException(
+    throw systemUserBadRequest(
+      'SYSTEM_USER_IMPORT_CSV_UNCLOSED_QUOTE',
       'System user import CSV has an unclosed quote.',
     );
   }

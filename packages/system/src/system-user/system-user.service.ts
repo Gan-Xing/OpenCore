@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import type {
   AssignRoleUsersDto,
   AssignUserRolesDto,
@@ -21,6 +21,7 @@ import {
   parseSystemUserImport,
   normalizeResetUserPasswordInput,
   normalizeSetUserStatusInput,
+  systemUserBadRequest,
   SystemUserRepository,
   type SystemUserAvatarRecord,
   type SystemUserAvatarUpdateInput,
@@ -249,8 +250,10 @@ function normalizeImportUpdateExisting(value: unknown): boolean {
   }
 
   if (typeof value !== 'boolean') {
-    throw new BadRequestException(
+    throw systemUserBadRequest(
+      'SYSTEM_USER_IMPORT_UPDATE_EXISTING_INVALID',
       'System user import updateExisting must be a boolean.',
+      { field: 'updateExisting' },
     );
   }
 

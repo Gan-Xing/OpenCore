@@ -69,6 +69,65 @@ export default {
   'error.USER_AVATAR_ORIGINAL_NAME_INVALID_TYPE':
     'The avatar file name must be a string.',
   'error.USER_AVATAR_TOO_LARGE': 'The avatar file is too large.',
+  'error.SYSTEM_ROLE_USER_IDS_INVALID':
+    'The role user list must be an array.',
+  'error.SYSTEM_ROLE_USER_ID_DUPLICATED': 'The role user ID is duplicated.',
+  'error.SYSTEM_USER_ALREADY_EXISTS': 'The username already exists.',
+  'error.SYSTEM_USER_BOOLEAN_INVALID':
+    'The user boolean field must be a boolean.',
+  'error.SYSTEM_USER_CURRENT_PASSWORD_INVALID':
+    'The current password is incorrect.',
+  'error.SYSTEM_USER_DATA_SCOPE_IDS_INVALID':
+    'The user data-scope ID list must be an array.',
+  'error.SYSTEM_USER_DATA_SCOPE_ID_DUPLICATED':
+    'The user data-scope ID is duplicated.',
+  'error.SYSTEM_USER_DATA_SCOPE_TYPE_INVALID':
+    'The user data-scope type is invalid.',
+  'error.SYSTEM_USER_DEPT_NOT_FOUND': 'The user department does not exist.',
+  'error.SYSTEM_USER_ENABLED_INVALID':
+    'The user enabled field must be a boolean.',
+  'error.SYSTEM_USER_FIELD_INVALID_TYPE': 'The user field type is invalid.',
+  'error.SYSTEM_USER_FIELD_REQUIRED': 'A required user field is missing.',
+  'error.SYSTEM_USER_IDS_EMPTY': 'The user ID list must not be empty.',
+  'error.SYSTEM_USER_IDS_INVALID': 'The user ID list must be an array.',
+  'error.SYSTEM_USER_ID_DUPLICATED': 'The user ID is duplicated.',
+  'error.SYSTEM_USER_ID_INVALID_TYPE': 'The user ID must be a string.',
+  'error.SYSTEM_USER_IMPORT_COLUMN_MISSING':
+    'The user import file is missing a required column.',
+  'error.SYSTEM_USER_IMPORT_CONTENT_BASE64_INVALID':
+    'The user import content must be valid base64.',
+  'error.SYSTEM_USER_IMPORT_CONTENT_EMPTY':
+    'The user import content must not be empty.',
+  'error.SYSTEM_USER_IMPORT_CONTENT_TOO_LARGE':
+    'The user import file is too large.',
+  'error.SYSTEM_USER_IMPORT_CSV_UNCLOSED_QUOTE':
+    'The user import CSV has an unclosed quote.',
+  'error.SYSTEM_USER_IMPORT_DATA_ROW_REQUIRED':
+    'The user import file requires at least one non-empty data row.',
+  'error.SYSTEM_USER_IMPORT_ROWS_REQUIRED':
+    'The user import file must contain a header and at least one data row.',
+  'error.SYSTEM_USER_IMPORT_UPDATE_EXISTING_INVALID':
+    'The user import update-existing option must be a boolean.',
+  'error.SYSTEM_USER_IMPORT_XLSX_INVALID':
+    'The user import XLSX must be a valid workbook.',
+  'error.SYSTEM_USER_IMPORT_XLSX_SHEET_MISSING':
+    'The user import XLSX is missing its worksheet.',
+  'error.SYSTEM_USER_NOT_FOUND': 'The user does not exist.',
+  'error.SYSTEM_USER_PASSWORD_UNCHANGED':
+    'The new password must be different from the old password.',
+  'error.SYSTEM_USER_POST_CODES_INVALID':
+    'The user post code list must be an array.',
+  'error.SYSTEM_USER_POST_CODE_DUPLICATED': 'The user post code is duplicated.',
+  'error.SYSTEM_USER_POST_NOT_FOUND': 'The user post does not exist.',
+  'error.SYSTEM_USER_ROLE_ASSIGN_SYSTEM_FORBIDDEN':
+    'Built-in system users cannot be assigned roles.',
+  'error.SYSTEM_USER_ROLE_CODES_INVALID':
+    'The user role code list must be an array.',
+  'error.SYSTEM_USER_ROLE_CODE_DUPLICATED': 'The user role code is duplicated.',
+  'error.SYSTEM_USER_ROLE_NOT_FOUND': 'The user role does not exist.',
+  'error.SYSTEM_USER_SYSTEM_IMMUTABLE':
+    'Built-in system users cannot be changed or deleted.',
+  'error.SYSTEM_USER_USERNAME_INVALID': 'The username is invalid.',
   'error.SYSTEM_ROLE_ALREADY_EXISTS': 'The role code already exists.',
   'error.SYSTEM_ROLE_BOOLEAN_INVALID':
     'The role boolean field must be a boolean.',

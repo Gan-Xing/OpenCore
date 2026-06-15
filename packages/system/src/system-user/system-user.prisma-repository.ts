@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@opencore/database';
 import type {
   AssignRoleUsersDto,
@@ -30,6 +25,9 @@ import {
   normalizeUpdateSystemUserPasswordInput,
   normalizeUpdateSystemUserInput,
   normalizeUpdateSystemUserProfileInput,
+  systemUserBadRequest,
+  systemUserConflict,
+  systemUserNotFound,
   SystemUserRepository,
   toSystemUserOptionRecord,
   type SystemUserAvatarRecord,
@@ -120,7 +118,11 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
     if (
       await this.prisma.user.findUnique({ where: { username: input.username } })
     ) {
-      throw new ConflictException(`User already exists: ${input.username}`);
+      throw systemUserConflict(
+        'SYSTEM_USER_ALREADY_EXISTS',
+        `User already exists: ${input.username}`,
+        { username: input.username },
+      );
     }
 
     await this.assertRolesExist(input.roleCodes);
@@ -498,7 +500,9 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
     });
 
     if (!user) {
-      throw new NotFoundException(`User not found: ${id}`);
+      throw systemUserNotFound('SYSTEM_USER_NOT_FOUND', `User not found: ${id}`, {
+        userId: id,
+      });
     }
 
     return user;
@@ -511,7 +515,9 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
     });
 
     if (!role) {
-      throw new NotFoundException(`Role not found: ${code}`);
+      throw systemUserNotFound('SYSTEM_USER_ROLE_NOT_FOUND', `Role not found: ${code}`, {
+        roleCode: code,
+      });
     }
 
     return role.id;
@@ -543,7 +549,11 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
     const missing = userIds.find((userId) => !usersById.has(userId));
 
     if (missing) {
-      throw new NotFoundException(`User not found: ${missing}`);
+      throw systemUserNotFound(
+        'SYSTEM_USER_NOT_FOUND',
+        `User not found: ${missing}`,
+        { userId: missing },
+      );
     }
 
     const systemUser = userIds
@@ -551,7 +561,11 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
       .find((user) => user?.system);
 
     if (systemUser) {
-      throw new BadRequestException('System users cannot be role-assigned.');
+      throw systemUserBadRequest(
+        'SYSTEM_USER_ROLE_ASSIGN_SYSTEM_FORBIDDEN',
+        'System users cannot be role-assigned.',
+        { userId: systemUser.id },
+      );
     }
   }
 
@@ -579,15 +593,33 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
     const missing = userIds.find((userId) => !usersById.has(userId));
 
     if (missing) {
-      throw new NotFoundException(`User not found: ${missing}`);
+      throw systemUserNotFound(
+        'SYSTEM_USER_NOT_FOUND',
+        `User not found: ${missing}`,
+        { userId: missing },
+      );
     }
 
-    const orderedUsers = userIds.map((userId) => usersById.get(userId)!);
+    const orderedUsers = userIds.map((userId) => {
+      const user = usersById.get(userId);
+
+      if (!user) {
+        throw systemUserNotFound(
+          'SYSTEM_USER_NOT_FOUND',
+          `User not found: ${userId}`,
+          { userId },
+        );
+      }
+
+      return user;
+    });
     const systemUser = orderedUsers.find((user) => user.system);
 
     if (systemUser) {
-      throw new BadRequestException(
+      throw systemUserBadRequest(
+        'SYSTEM_USER_SYSTEM_IMMUTABLE',
         'System users cannot be updated or deleted.',
+        { userId: systemUser.id },
       );
     }
 
@@ -603,7 +635,11 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
     const missing = roleCodes.find((roleCode) => !existing.has(roleCode));
 
     if (missing) {
-      throw new NotFoundException(`Role not found: ${missing}`);
+      throw systemUserNotFound(
+        'SYSTEM_USER_ROLE_NOT_FOUND',
+        `Role not found: ${missing}`,
+        { roleCode: missing },
+      );
     }
   }
 
@@ -620,7 +656,11 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
     });
 
     if (!dept) {
-      throw new NotFoundException(`System dept not found: ${deptId}`);
+      throw systemUserNotFound(
+        'SYSTEM_USER_DEPT_NOT_FOUND',
+        `System dept not found: ${deptId}`,
+        { deptId },
+      );
     }
   }
 
@@ -631,7 +671,11 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
     const target = depts.find((dept) => dept.id === deptId);
 
     if (!target) {
-      throw new NotFoundException(`System dept not found: ${deptId}`);
+      throw systemUserNotFound(
+        'SYSTEM_USER_DEPT_NOT_FOUND',
+        `System dept not found: ${deptId}`,
+        { deptId },
+      );
     }
 
     const childrenByParent = new Map<string, string[]>();
@@ -698,7 +742,11 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
     const missing = postCodes.find((postCode) => !existing.has(postCode));
 
     if (missing) {
-      throw new NotFoundException(`System post not found: ${missing}`);
+      throw systemUserNotFound(
+        'SYSTEM_USER_POST_NOT_FOUND',
+        `System post not found: ${missing}`,
+        { postCode: missing },
+      );
     }
   }
 }
