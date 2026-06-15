@@ -1,5 +1,10 @@
-import { BadRequestException } from '@nestjs/common';
 import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
+import {
+  createApiErrorBody,
   createPageResult,
   normalizePagination,
   type PageQueryInput,
@@ -317,6 +322,34 @@ export abstract class SystemNoticeRepository {
   abstract deleteNotice(id: string): Promise<{ deleted: true }>;
 }
 
+export function systemNoticeBadRequest(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): BadRequestException {
+  return new BadRequestException(
+    createApiErrorBody({ code, message, details }),
+  );
+}
+
+export function systemNoticeConflict(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): ConflictException {
+  return new ConflictException(
+    createApiErrorBody({ code, message, details }),
+  );
+}
+
+export function systemNoticeNotFound(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): NotFoundException {
+  return new NotFoundException(createApiErrorBody({ code, message, details }));
+}
+
 export function normalizeSystemNoticeFilters(
   query: SystemNoticePageQuery = {},
 ): SystemNoticeFilters {
@@ -405,8 +438,10 @@ export function normalizeUnreadNoticeLimit(
       : Number(limit);
 
   if (!Number.isInteger(normalized) || normalized < 1 || normalized > 50) {
-    throw new BadRequestException(
+    throw systemNoticeBadRequest(
+      'SYSTEM_NOTICE_UNREAD_LIMIT_INVALID',
       'System notice unread limit must be an integer between 1 and 50.',
+      { maximum: 50, minimum: 1, value: limit },
     );
   }
 
@@ -492,19 +527,29 @@ export function normalizeMarkSystemNoticesReadInput(
   body: MarkSystemNoticesReadDto,
 ): readonly string[] {
   if (!Array.isArray(body?.ids)) {
-    throw new BadRequestException('System notice read ids must be an array.');
+    throw systemNoticeBadRequest(
+      'SYSTEM_NOTICE_READ_IDS_INVALID',
+      'System notice read ids must be an array.',
+      { field: 'ids' },
+    );
   }
 
   if (body.ids.length === 0) {
-    throw new BadRequestException('System notice read ids must not be empty.');
+    throw systemNoticeBadRequest(
+      'SYSTEM_NOTICE_READ_IDS_EMPTY',
+      'System notice read ids must not be empty.',
+      { field: 'ids' },
+    );
   }
 
   const ids = body.ids.map((id) => normalizeRequiredText(id, 'id'));
   const duplicate = findFirstDuplicate(ids);
 
   if (duplicate) {
-    throw new BadRequestException(
+    throw systemNoticeBadRequest(
+      'SYSTEM_NOTICE_READ_ID_DUPLICATED',
       `System notice read id is duplicated: ${duplicate}`,
+      { id: duplicate },
     );
   }
 
@@ -680,16 +725,20 @@ export function normalizeUpdateSystemNoticeInput(
 
 export function assertNoticeCanPublish(status: SystemNoticeStatus): void {
   if (status !== 'draft') {
-    throw new BadRequestException(
+    throw systemNoticeBadRequest(
+      'SYSTEM_NOTICE_PUBLISH_STATUS_INVALID',
       'System notice can only be published from draft.',
+      { status },
     );
   }
 }
 
 export function assertNoticeCanDispatch(status: SystemNoticeStatus): void {
   if (status !== 'published') {
-    throw new BadRequestException(
+    throw systemNoticeBadRequest(
+      'SYSTEM_NOTICE_DISPATCH_STATUS_INVALID',
       'System notice deliveries can only be dispatched after publish.',
+      { status },
     );
   }
 }
@@ -699,8 +748,10 @@ export function assertNoticeNotArchived(
   action: string,
 ): void {
   if (status === 'archived') {
-    throw new BadRequestException(
+    throw systemNoticeBadRequest(
+      'SYSTEM_NOTICE_ARCHIVED_IMMUTABLE',
       `System notice cannot be ${action} after archive.`,
+      { action, status },
     );
   }
 }
@@ -718,7 +769,11 @@ export function toSystemNoticeType(value: string): SystemNoticeType {
     return value;
   }
 
-  throw new BadRequestException(`Invalid system notice type: ${value}`);
+  throw systemNoticeBadRequest(
+    'SYSTEM_NOTICE_TYPE_INVALID',
+    `Invalid system notice type: ${value}`,
+    { value },
+  );
 }
 
 export function toSystemNoticeAudience(value: string): SystemNoticeAudience {
@@ -726,7 +781,11 @@ export function toSystemNoticeAudience(value: string): SystemNoticeAudience {
     return value;
   }
 
-  throw new BadRequestException(`Invalid system notice audience: ${value}`);
+  throw systemNoticeBadRequest(
+    'SYSTEM_NOTICE_AUDIENCE_INVALID',
+    `Invalid system notice audience: ${value}`,
+    { value },
+  );
 }
 
 export function toSystemNoticeDeliveryChannel(
@@ -736,8 +795,10 @@ export function toSystemNoticeDeliveryChannel(
     return value;
   }
 
-  throw new BadRequestException(
+  throw systemNoticeBadRequest(
+    'SYSTEM_NOTICE_DELIVERY_CHANNEL_INVALID',
     `Invalid system notice delivery channel: ${value}`,
+    { value },
   );
 }
 
@@ -748,8 +809,10 @@ export function toSystemNoticeDeliveryStatus(
     return value;
   }
 
-  throw new BadRequestException(
+  throw systemNoticeBadRequest(
+    'SYSTEM_NOTICE_DELIVERY_STATUS_INVALID',
     `Invalid system notice delivery status: ${value}`,
+    { value },
   );
 }
 
@@ -760,8 +823,10 @@ export function toSystemNoticeDeliveryProvider(
     return value;
   }
 
-  throw new BadRequestException(
+  throw systemNoticeBadRequest(
+    'SYSTEM_NOTICE_DELIVERY_PROVIDER_INVALID',
     `Invalid system notice delivery provider: ${value}`,
+    { value },
   );
 }
 
@@ -772,8 +837,10 @@ export function toSystemNoticeDeliveryProviderStatus(
     return value;
   }
 
-  throw new BadRequestException(
+  throw systemNoticeBadRequest(
+    'SYSTEM_NOTICE_DELIVERY_PROVIDER_STATUS_INVALID',
     `Invalid system notice delivery provider status: ${value}`,
+    { value },
   );
 }
 
@@ -788,7 +855,11 @@ function toOptionalSystemNoticeStatus(
     return value;
   }
 
-  throw new BadRequestException(`Invalid system notice status: ${value}`);
+  throw systemNoticeBadRequest(
+    'SYSTEM_NOTICE_STATUS_INVALID',
+    `Invalid system notice status: ${value}`,
+    { value },
+  );
 }
 
 function toOptionalSystemNoticeType(
@@ -847,7 +918,11 @@ function normalizeOptionalBoolean(
     return false;
   }
 
-  throw new BadRequestException(`Invalid system notice ${fieldName}: ${value}`);
+  throw systemNoticeBadRequest(
+    'SYSTEM_NOTICE_BOOLEAN_INVALID',
+    `Invalid system notice ${fieldName}: ${value}`,
+    { field: fieldName, value },
+  );
 }
 
 function isSystemNoticeStatus(value: string): value is SystemNoticeStatus {
@@ -892,15 +967,21 @@ function isSystemNoticeDeliveryProviderStatus(
 
 function normalizeRequiredText(value: string, fieldName: string): string {
   if (typeof value !== 'string') {
-    throw new BadRequestException(
+    throw systemNoticeBadRequest(
+      'SYSTEM_NOTICE_TEXT_INVALID_TYPE',
       `System notice ${fieldName} must be a non-empty string.`,
+      { field: fieldName },
     );
   }
 
   const normalized = value.trim();
 
   if (!normalized) {
-    throw new BadRequestException(`System notice ${fieldName} is required.`);
+    throw systemNoticeBadRequest(
+      'SYSTEM_NOTICE_TEXT_REQUIRED',
+      `System notice ${fieldName} is required.`,
+      { field: fieldName },
+    );
   }
 
   return normalized;
@@ -921,8 +1002,10 @@ function normalizeSystemNoticeTemplateCode(value: string): string {
   const normalized = normalizeRequiredText(value, 'template code');
 
   if (!/^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/.test(normalized)) {
-    throw new BadRequestException(
+    throw systemNoticeBadRequest(
+      'SYSTEM_NOTICE_TEMPLATE_CODE_INVALID',
       'System notice template code must use lowercase letters, numbers, dot, underscore or dash segments.',
+      { code: value },
     );
   }
 
@@ -940,7 +1023,11 @@ function normalizeOptionalDateString(
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
-    throw new BadRequestException(`Invalid system notice ${fieldName}.`);
+    throw systemNoticeBadRequest(
+      'SYSTEM_NOTICE_DATE_INVALID',
+      `Invalid system notice ${fieldName}.`,
+      { field: fieldName, value },
+    );
   }
 
   return date.toISOString();
@@ -969,8 +1056,10 @@ function normalizeSystemNoticeTemplateParams(
   const rawParams = body.templateParams ?? {};
 
   if (!isPlainRecord(rawParams)) {
-    throw new BadRequestException(
+    throw systemNoticeBadRequest(
+      'SYSTEM_NOTICE_TEMPLATE_PARAMS_INVALID',
       'System notice templateParams must be an object.',
+      { field: 'templateParams' },
     );
   }
 
@@ -979,16 +1068,20 @@ function normalizeSystemNoticeTemplateParams(
   const unexpected = actual.find((key) => !expected.has(key));
 
   if (unexpected) {
-    throw new BadRequestException(
+    throw systemNoticeBadRequest(
+      'SYSTEM_NOTICE_TEMPLATE_PARAM_UNEXPECTED',
       `Unexpected system notice template param: ${unexpected}`,
+      { param: unexpected },
     );
   }
 
   const missing = template.params.find((key) => !(key in rawParams));
 
   if (missing) {
-    throw new BadRequestException(
+    throw systemNoticeBadRequest(
+      'SYSTEM_NOTICE_TEMPLATE_PARAM_MISSING',
       `Missing system notice template param: ${missing}`,
+      { param: missing },
     );
   }
 
@@ -1006,16 +1099,20 @@ function normalizeTemplateParamValue(value: unknown, key: string): string {
     typeof value !== 'number' &&
     typeof value !== 'boolean'
   ) {
-    throw new BadRequestException(
+    throw systemNoticeBadRequest(
+      'SYSTEM_NOTICE_TEMPLATE_PARAM_VALUE_INVALID_TYPE',
       `System notice template param must be a string, number or boolean: ${key}`,
+      { param: key },
     );
   }
 
   const normalized = String(value).trim();
 
   if (!normalized) {
-    throw new BadRequestException(
+    throw systemNoticeBadRequest(
+      'SYSTEM_NOTICE_TEMPLATE_PARAM_VALUE_REQUIRED',
       `System notice template param is required: ${key}`,
+      { param: key },
     );
   }
 
@@ -1036,8 +1133,10 @@ function assertSystemNoticeTemplateEnabled(
   template: SystemNoticeTemplateRecord,
 ): void {
   if (!template.enabled) {
-    throw new BadRequestException(
+    throw systemNoticeBadRequest(
+      'SYSTEM_NOTICE_TEMPLATE_DISABLED',
       `System notice template is disabled: ${template.code}`,
+      { code: template.code },
     );
   }
 }
@@ -1077,8 +1176,10 @@ function assertValidNoticeSchedule(
     validTo &&
     new Date(validFrom).getTime() > new Date(validTo).getTime()
   ) {
-    throw new BadRequestException(
+    throw systemNoticeBadRequest(
+      'SYSTEM_NOTICE_SCHEDULE_INVALID',
       'System notice validFrom must be before validTo.',
+      { validFrom, validTo },
     );
   }
 }

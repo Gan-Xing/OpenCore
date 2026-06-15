@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
 import { PrismaService } from '@opencore/database';
 import type { Prisma } from '@prisma/client';
@@ -44,6 +39,9 @@ import {
   normalizeUpdateSystemNoticeTemplateInput,
   normalizeUpdateSystemNoticeInput,
   getSystemNoticeDeliveryProvider,
+  systemNoticeBadRequest,
+  systemNoticeConflict,
+  systemNoticeNotFound,
   SystemNoticeRepository,
   toSystemNoticeDeliveryChannel,
   toSystemNoticeDeliveryProvider,
@@ -218,7 +216,11 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
     });
 
     if (!notice) {
-      throw new NotFoundException(`System notice not found in inbox: ${id}`);
+      throw systemNoticeNotFound(
+        'SYSTEM_NOTICE_INBOX_NOT_FOUND',
+        `System notice not found in inbox: ${id}`,
+        { id, userId },
+      );
     }
 
     return toSystemNoticeInboxRecord(notice);
@@ -460,8 +462,10 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
         select: { code: true },
       })
     ) {
-      throw new ConflictException(
+      throw systemNoticeConflict(
+        'SYSTEM_NOTICE_TEMPLATE_ALREADY_EXISTS',
         `System notice template already exists: ${input.code}`,
+        { code: input.code },
       );
     }
 
@@ -523,8 +527,10 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
         where: { title: input.title, createdBy: input.createdBy },
       })
     ) {
-      throw new ConflictException(
+      throw systemNoticeConflict(
+        'SYSTEM_NOTICE_ALREADY_EXISTS',
         `System notice already exists: ${input.title}`,
+        { createdBy: input.createdBy, title: input.title },
       );
     }
 
@@ -765,20 +771,26 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
       });
 
     if (!integrationProvider) {
-      throw new BadRequestException(
+      throw systemNoticeBadRequest(
+        'SYSTEM_NOTICE_INTEGRATION_PROVIDER_NOT_CONFIGURED',
         `Integration provider is not configured for notice delivery: ${provider}`,
+        { channel, provider },
       );
     }
 
     if (integrationProvider.type !== channel) {
-      throw new BadRequestException(
+      throw systemNoticeBadRequest(
+        'SYSTEM_NOTICE_INTEGRATION_PROVIDER_TYPE_INVALID',
         `Integration provider ${provider} is not a ${channel} provider.`,
+        { actualType: integrationProvider.type, channel, provider },
       );
     }
 
     if (!integrationProvider.enabled) {
-      throw new BadRequestException(
+      throw systemNoticeBadRequest(
+        'SYSTEM_NOTICE_INTEGRATION_PROVIDER_DISABLED',
         `Integration provider ${provider} must be enabled before notice delivery execution.`,
+        { channel, provider },
       );
     }
   }
@@ -890,7 +902,11 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
     const notice = await this.prisma.systemNotice.findUnique({ where: { id } });
 
     if (!notice) {
-      throw new NotFoundException(`System notice not found: ${id}`);
+      throw systemNoticeNotFound(
+        'SYSTEM_NOTICE_NOT_FOUND',
+        `System notice not found: ${id}`,
+        { id },
+      );
     }
 
     return notice;
@@ -904,7 +920,11 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
     });
 
     if (!template) {
-      throw new NotFoundException(`System notice template not found: ${code}`);
+      throw systemNoticeNotFound(
+        'SYSTEM_NOTICE_TEMPLATE_NOT_FOUND',
+        `System notice template not found: ${code}`,
+        { code },
+      );
     }
 
     return template;
@@ -925,8 +945,10 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
     const missingId = ids.find((id) => !foundIds.has(id));
 
     if (missingId) {
-      throw new NotFoundException(
+      throw systemNoticeNotFound(
+        'SYSTEM_NOTICE_INBOX_NOT_FOUND',
         `System notice not found in inbox: ${missingId}`,
+        { id: missingId, userId },
       );
     }
   }
@@ -1032,14 +1054,18 @@ function assertNoticeDeliveryRecipient(
   recipient: string,
 ): void {
   if (channel === 'mail' && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(recipient)) {
-    throw new BadRequestException(
+    throw systemNoticeBadRequest(
+      'SYSTEM_NOTICE_DELIVERY_RECIPIENT_INVALID',
       `Notice mail delivery recipient is invalid: ${recipient}`,
+      { channel, recipient },
     );
   }
 
   if (channel === 'sms' && !/^\+?[0-9]{6,20}$/.test(recipient)) {
-    throw new BadRequestException(
+    throw systemNoticeBadRequest(
+      'SYSTEM_NOTICE_DELIVERY_RECIPIENT_INVALID',
       `Notice SMS delivery recipient is invalid: ${recipient}`,
+      { channel, recipient },
     );
   }
 }

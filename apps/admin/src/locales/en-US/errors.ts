@@ -128,6 +128,67 @@ export default {
   'error.SYSTEM_USER_SYSTEM_IMMUTABLE':
     'Built-in system users cannot be changed or deleted.',
   'error.SYSTEM_USER_USERNAME_INVALID': 'The username is invalid.',
+  'error.SYSTEM_NOTICE_ALREADY_EXISTS': 'The notice already exists.',
+  'error.SYSTEM_NOTICE_ARCHIVED_IMMUTABLE':
+    'Archived notices cannot be changed.',
+  'error.SYSTEM_NOTICE_AUDIENCE_INVALID': 'The notice audience is invalid.',
+  'error.SYSTEM_NOTICE_BOOLEAN_INVALID': 'The notice boolean field is invalid.',
+  'error.SYSTEM_NOTICE_DATE_INVALID': 'The notice date field is invalid.',
+  'error.SYSTEM_NOTICE_DELIVERY_CHANNEL_INVALID':
+    'The notice delivery channel is invalid.',
+  'error.SYSTEM_NOTICE_DELIVERY_PROVIDER_INVALID':
+    'The notice delivery provider is invalid.',
+  'error.SYSTEM_NOTICE_DELIVERY_PROVIDER_STATUS_INVALID':
+    'The notice delivery provider status is invalid.',
+  'error.SYSTEM_NOTICE_DELIVERY_RECIPIENT_INVALID':
+    'The notice delivery recipient is invalid.',
+  'error.SYSTEM_NOTICE_DELIVERY_STATUS_INVALID':
+    'The notice delivery status is invalid.',
+  'error.SYSTEM_NOTICE_DISPATCH_STATUS_INVALID':
+    'Notices can be dispatched only after publish.',
+  'error.SYSTEM_NOTICE_INBOX_NOT_FOUND':
+    'The notice does not exist in the inbox.',
+  'error.SYSTEM_NOTICE_INTEGRATION_PROVIDER_DISABLED':
+    'The notice delivery provider is disabled.',
+  'error.SYSTEM_NOTICE_INTEGRATION_PROVIDER_NOT_CONFIGURED':
+    'The notice delivery provider is not configured.',
+  'error.SYSTEM_NOTICE_INTEGRATION_PROVIDER_TYPE_INVALID':
+    'The notice delivery provider type does not match.',
+  'error.SYSTEM_NOTICE_NOT_FOUND': 'The notice does not exist.',
+  'error.SYSTEM_NOTICE_PUBLISH_STATUS_INVALID':
+    'Only draft notices can be published.',
+  'error.SYSTEM_NOTICE_READ_IDS_EMPTY':
+    'The notice read ID list must not be empty.',
+  'error.SYSTEM_NOTICE_READ_IDS_INVALID':
+    'The notice read ID list must be an array.',
+  'error.SYSTEM_NOTICE_READ_ID_DUPLICATED':
+    'The notice read ID is duplicated.',
+  'error.SYSTEM_NOTICE_SCHEDULE_INVALID':
+    'The notice validity window is invalid.',
+  'error.SYSTEM_NOTICE_STATUS_INVALID': 'The notice status is invalid.',
+  'error.SYSTEM_NOTICE_TEMPLATE_ALREADY_EXISTS':
+    'The notice template already exists.',
+  'error.SYSTEM_NOTICE_TEMPLATE_CODE_INVALID':
+    'The notice template code is invalid.',
+  'error.SYSTEM_NOTICE_TEMPLATE_DISABLED': 'The notice template is disabled.',
+  'error.SYSTEM_NOTICE_TEMPLATE_NOT_FOUND':
+    'The notice template does not exist.',
+  'error.SYSTEM_NOTICE_TEMPLATE_PARAMS_INVALID':
+    'The notice template params must be an object.',
+  'error.SYSTEM_NOTICE_TEMPLATE_PARAM_MISSING':
+    'A required notice template param is missing.',
+  'error.SYSTEM_NOTICE_TEMPLATE_PARAM_UNEXPECTED':
+    'The notice template contains an unexpected param.',
+  'error.SYSTEM_NOTICE_TEMPLATE_PARAM_VALUE_INVALID_TYPE':
+    'The notice template param value type is invalid.',
+  'error.SYSTEM_NOTICE_TEMPLATE_PARAM_VALUE_REQUIRED':
+    'The notice template param value is required.',
+  'error.SYSTEM_NOTICE_TEXT_INVALID_TYPE':
+    'The notice text field type is invalid.',
+  'error.SYSTEM_NOTICE_TEXT_REQUIRED': 'A required notice text field is empty.',
+  'error.SYSTEM_NOTICE_TYPE_INVALID': 'The notice type is invalid.',
+  'error.SYSTEM_NOTICE_UNREAD_LIMIT_INVALID':
+    'The unread notice limit is invalid.',
   'error.SYSTEM_CONFIG_ALREADY_EXISTS': 'The config key already exists.',
   'error.SYSTEM_CONFIG_CATEGORY_INVALID_TYPE':
     'The config category must be a string.',

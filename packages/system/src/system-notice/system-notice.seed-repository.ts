@@ -1,8 +1,4 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
 import {
   seedSystemNotices,
@@ -37,6 +33,8 @@ import {
   normalizeUnreadNoticeLimit,
   normalizeUpdateSystemNoticeTemplateInput,
   normalizeUpdateSystemNoticeInput,
+  systemNoticeConflict,
+  systemNoticeNotFound,
   SystemNoticeRepository,
   type SystemNoticeDeliveryExecutionResult,
   type SystemNoticeDeliveryMutationResult,
@@ -333,8 +331,10 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
     const input = normalizeCreateSystemNoticeTemplateInput(body);
 
     if (this.templates.some((template) => template.code === input.code)) {
-      throw new ConflictException(
+      throw systemNoticeConflict(
+        'SYSTEM_NOTICE_TEMPLATE_ALREADY_EXISTS',
         `System notice template already exists: ${input.code}`,
+        { code: input.code },
       );
     }
 
@@ -390,7 +390,11 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
       .replace(/^_|_$/g, '')}`;
 
     if (this.notices.some((notice) => notice.id === id)) {
-      throw new ConflictException(`System notice already exists: ${id}`);
+      throw systemNoticeConflict(
+        'SYSTEM_NOTICE_ALREADY_EXISTS',
+        `System notice already exists: ${id}`,
+        { id },
+      );
     }
 
     const now = new Date().toISOString();
@@ -594,7 +598,11 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
     const notice = this.notices.find((candidate) => candidate.id === id);
 
     if (!notice) {
-      throw new NotFoundException(`System notice not found: ${id}`);
+      throw systemNoticeNotFound(
+        'SYSTEM_NOTICE_NOT_FOUND',
+        `System notice not found: ${id}`,
+        { id },
+      );
     }
 
     return notice;
@@ -606,7 +614,11 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
     );
 
     if (!template) {
-      throw new NotFoundException(`System notice template not found: ${code}`);
+      throw systemNoticeNotFound(
+        'SYSTEM_NOTICE_TEMPLATE_NOT_FOUND',
+        `System notice template not found: ${code}`,
+        { code },
+      );
     }
 
     return template;
@@ -633,7 +645,11 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
     );
 
     if (!notice) {
-      throw new NotFoundException(`System notice not found in inbox: ${id}`);
+      throw systemNoticeNotFound(
+        'SYSTEM_NOTICE_INBOX_NOT_FOUND',
+        `System notice not found in inbox: ${id}`,
+        { id, userId },
+      );
     }
 
     return notice;

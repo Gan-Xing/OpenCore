@@ -171,6 +171,70 @@ describe('@opencore/system system-notice', () => {
     ).rejects.toThrow(BadRequestException);
   });
 
+  it('returns stable error codes for system-notice guards', async () => {
+    const service = new SystemNoticeService(new SeedSystemNoticeRepository());
+    const notice = await service.createNotice({
+      title: 'Stable notice codes',
+      content: 'Stable notice code assertions.',
+      type: 'announcement',
+      audience: 'admin',
+      createdBy: 'admin',
+    });
+
+    await expectHttpExceptionCode(
+      service.dispatchNotice(notice.id),
+      'SYSTEM_NOTICE_DISPATCH_STATUS_INVALID',
+    );
+    await expectHttpExceptionCode(
+      service.createNotice({
+        title: 'Invalid schedule code',
+        content: 'validFrom must not be after validTo.',
+        type: 'maintenance',
+        validFrom: '2026-06-12T04:00:00.000Z',
+        validTo: '2026-06-12T03:00:00.000Z',
+        createdBy: 'admin',
+      }),
+      'SYSTEM_NOTICE_SCHEDULE_INVALID',
+    );
+    await expectHttpExceptionCode(
+      service.markNoticesRead('user_operator', { ids: [] }),
+      'SYSTEM_NOTICE_READ_IDS_EMPTY',
+    );
+    await expectHttpExceptionCode(
+      service.markNoticesRead('user_operator', {
+        ids: ['notice_welcome', 'notice_welcome'],
+      }),
+      'SYSTEM_NOTICE_READ_ID_DUPLICATED',
+    );
+    await expectHttpExceptionCode(
+      service.markNoticesRead('user_operator', {
+        ids: ['notice_maintenance_window'],
+      }),
+      'SYSTEM_NOTICE_INBOX_NOT_FOUND',
+    );
+
+    const template = await service.createNoticeTemplate({
+      code: 'stable.notice.codes',
+      name: 'Stable Notice Codes',
+      type: 'security',
+      titleTemplate: 'Security {{service}}',
+      contentTemplate: 'Owner {{owner}} rotates {{service}}.',
+    });
+    await expectHttpExceptionCode(
+      service.renderNoticeTemplate(template.code, {
+        templateParams: { service: 'API' },
+      }),
+      'SYSTEM_NOTICE_TEMPLATE_PARAM_MISSING',
+    );
+    await service.updateNoticeTemplate(template.code, { enabled: false });
+    await expectHttpExceptionCode(
+      service.renderNoticeTemplate(template.code, {
+        templateParams: { owner: 'Platform', service: 'API' },
+      }),
+      'SYSTEM_NOTICE_TEMPLATE_DISABLED',
+    );
+  });
+
   it('supports notice templates, strict rendering and notice creation', async () => {
     const service = new SystemNoticeService(new SeedSystemNoticeRepository());
 
@@ -659,3 +723,30 @@ describe('@opencore/system system-notice', () => {
     }
   });
 });
+
+async function expectHttpExceptionCode(
+  promise: Promise<unknown>,
+  code: string,
+): Promise<void> {
+  try {
+    await promise;
+  } catch (error) {
+    expect(getHttpExceptionResponse(error)).toMatchObject({ code });
+    return;
+  }
+
+  throw new Error(`Expected HTTP exception code ${code}`);
+}
+
+function getHttpExceptionResponse(error: unknown): unknown {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'getResponse' in error &&
+    typeof error.getResponse === 'function'
+  ) {
+    return error.getResponse();
+  }
+
+  return undefined;
+}
