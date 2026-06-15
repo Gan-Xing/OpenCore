@@ -791,6 +791,15 @@ if (
   !openForgePage.includes('OpenForge manifests') ||
   !openForgePage.includes('Dry-run apply') ||
   !openForgePage.includes('tool:openforge:manage') ||
+  openForgePage.includes('createOpenForgeStatusFixture') ||
+  openForgePage.includes('createOpenForgeDoctorFixture') ||
+  openForgePage.includes('createOpenForgePlanFixture') ||
+  openForgePage.includes('createOpenForgeDiffFixture') ||
+  openForgePage.includes('createOpenForgePreflightFixture') ||
+  openForgePage.includes('createOpenForgeApplyDryRunFixture') ||
+  openForgePage.includes('createOpenForgeManifestListFixture') ||
+  openForgePage.includes('fallbackStatus') ||
+  openForgePage.includes('fallbackApplyDryRun') ||
   !messagesPage.includes('@opencore/sdk') ||
   !messagesPage.includes('listOpenCoreMessages') ||
   !messagesPage.includes('getOpenCoreMessage') ||

@@ -12,24 +12,19 @@ import {
   type ProColumns,
 } from '@ant-design/pro-components';
 import { useAccess } from '@umijs/max';
-import {
-  createOpenForgeApplyDryRunFixture,
-  createOpenForgeDiffFixture,
-  createOpenForgeDoctorFixture,
-  createOpenForgeManifestListFixture,
-  createOpenForgePlanFixture,
-  createOpenForgePreflightFixture,
-  createOpenForgeStatusFixture,
-  type OpenForgeArtifactSummary,
-  type OpenForgeDiffEntrySummary,
-  type OpenForgeDoctorCheckSummary,
-  type OpenForgeManifestDetailSummary,
-  type OpenForgeManifestEntrySummary,
-  type OpenForgeManifestListEntrySummary,
-  type OpenForgeManifestListSummary,
-  type OpenForgePlanSummary,
-  type OpenForgePreflightSummary,
-  type OpenForgeStatusSummary,
+import type {
+  OpenForgeArtifactSummary,
+  OpenForgeDiffEntrySummary,
+  OpenForgeDiffSummary,
+  OpenForgeDoctorCheckSummary,
+  OpenForgeDoctorSummary,
+  OpenForgeManifestDetailSummary,
+  OpenForgeManifestEntrySummary,
+  OpenForgeManifestListEntrySummary,
+  OpenForgeManifestListSummary,
+  OpenForgePlanSummary,
+  OpenForgePreflightSummary,
+  OpenForgeStatusSummary,
 } from '@opencore/sdk';
 import {
   Alert,
@@ -60,14 +55,6 @@ import {
 
 const DEFAULT_SCHEMA_PATH = 'tools/generator/examples/core.dict.v1.schema.json';
 const DEFAULT_CONFIG_PATH = 'tools/generator/examples/openforge.v1.config.json';
-
-const fallbackStatus = createOpenForgeStatusFixture();
-const fallbackDoctor = createOpenForgeDoctorFixture();
-const fallbackPlan = createOpenForgePlanFixture();
-const fallbackDiff = createOpenForgeDiffFixture();
-const fallbackPreflight = createOpenForgePreflightFixture();
-const fallbackApplyDryRun = createOpenForgeApplyDryRunFixture();
-const fallbackManifests = createOpenForgeManifestListFixture();
 
 const artifactColumns: ProColumns<OpenForgeArtifactSummary>[] = [
   { title: 'Kind', dataIndex: 'kind', width: 180 },
@@ -158,21 +145,19 @@ export default function OpenForgePage() {
   const access = useAccess();
   const canManageOpenForge = Boolean(access.canManageOpenForge);
   const [schemaPath, setSchemaPath] = useState(DEFAULT_SCHEMA_PATH);
-  const [status, setStatus] = useState<OpenForgeStatusSummary>(fallbackStatus);
-  const [doctor, setDoctor] = useState(fallbackDoctor);
-  const [plan, setPlan] = useState<OpenForgePlanSummary>(fallbackPlan);
-  const [diff, setDiff] = useState(fallbackDiff);
-  const [preflight, setPreflight] =
-    useState<OpenForgePreflightSummary>(fallbackPreflight);
-  const [manifests, setManifests] =
-    useState<OpenForgeManifestListSummary>(fallbackManifests);
+  const [status, setStatus] = useState<OpenForgeStatusSummary>();
+  const [doctor, setDoctor] = useState<OpenForgeDoctorSummary>();
+  const [plan, setPlan] = useState<OpenForgePlanSummary>();
+  const [diff, setDiff] = useState<OpenForgeDiffSummary>();
+  const [preflight, setPreflight] = useState<OpenForgePreflightSummary>();
+  const [manifests, setManifests] = useState<OpenForgeManifestListSummary>();
   const [selectedManifestId, setSelectedManifestId] = useState<string>();
   const [loading, setLoading] = useState(true);
   const [dryRunning, setDryRunning] = useState(false);
   const [loadError, setLoadError] = useState<string>();
-  const firstManifestId = manifests.manifests[0]?.id;
+  const firstManifestId = manifests?.manifests[0]?.id;
   const activeManifestId = selectedManifestId ?? firstManifestId;
-  const dryRunConfirmationText = status.operationPolicy.confirmationText;
+  const dryRunConfirmationText = status?.operationPolicy.confirmationText;
 
   const loadWorkbench = async () => {
     setLoading(true);
@@ -202,12 +187,12 @@ export default function OpenForgePage() {
       setManifests(nextManifests);
       setLoadError(undefined);
     } catch (error: unknown) {
-      setStatus(fallbackStatus);
-      setDoctor(fallbackDoctor);
-      setPlan(fallbackPlan);
-      setDiff(fallbackDiff);
-      setPreflight(fallbackPreflight);
-      setManifests(fallbackManifests);
+      setStatus(undefined);
+      setDoctor(undefined);
+      setPlan(undefined);
+      setDiff(undefined);
+      setPreflight(undefined);
+      setManifests(undefined);
       setLoadError(
         error instanceof Error ? error.message : 'Unable to load OpenForge.',
       );
@@ -265,6 +250,11 @@ export default function OpenForgePage() {
   };
 
   const runApplyDryRun = () => {
+    if (!dryRunConfirmationText) {
+      message.error('OpenForge status must load before dry-run apply.');
+      return;
+    }
+
     Modal.confirm({
       title: 'Confirm OpenForge dry-run apply',
       okText: 'Dry-run apply',
@@ -345,6 +335,10 @@ export default function OpenForgePage() {
       message.warning('No OpenForge manifest selected.');
       return;
     }
+    if (!dryRunConfirmationText) {
+      message.error('OpenForge status must load before dry-run rollback.');
+      return;
+    }
 
     Modal.confirm({
       title: 'Confirm OpenForge rollback dry-run',
@@ -386,22 +380,22 @@ export default function OpenForgePage() {
     () => [
       {
         title: 'Artifacts',
-        value: plan.artifacts.length,
+        value: plan?.artifacts.length ?? 0,
       },
       {
         title: 'Protected',
-        value: countProtected(plan),
+        value: plan ? countProtected(plan) : 0,
       },
       {
         title: 'Diff conflicts',
-        value: countConflicts(diff.entries),
+        value: diff ? countConflicts(diff.entries) : 0,
       },
       {
         title: 'Doctor checks',
-        value: doctor.checks.length,
+        value: doctor?.checks.length ?? 0,
       },
     ],
-    [diff.entries, doctor.checks.length, plan],
+    [diff, doctor, plan],
   );
 
   return (
@@ -429,22 +423,30 @@ export default function OpenForgePage() {
 
         <Descriptions bordered column={2} size="small">
           <Descriptions.Item label="Workspace">
-            {status.workspace.projectName}
+            {status?.workspace.projectName ?? 'not loaded'}
           </Descriptions.Item>
           <Descriptions.Item label="Template">
-            {status.generatorCore.templateVersion}
+            {status?.generatorCore.templateVersion ?? 'not loaded'}
           </Descriptions.Item>
           <Descriptions.Item label="No write">
-            <Tag color={status.workspace.noWrite ? 'green' : 'red'}>
-              {String(status.workspace.noWrite)}
+            <Tag color={status?.workspace.noWrite ? 'green' : 'default'}>
+              {status ? String(status.workspace.noWrite) : 'not loaded'}
             </Tag>
           </Descriptions.Item>
           <Descriptions.Item label="Dry-run confirmation">
-            {dryRunConfirmationText}
+            {dryRunConfirmationText ?? 'not loaded'}
           </Descriptions.Item>
           <Descriptions.Item label="Preflight">
-            <Tag color={preflight.valid ? 'green' : 'red'}>
-              {preflight.valid ? 'valid' : 'invalid'}
+            <Tag
+              color={
+                preflight ? (preflight.valid ? 'green' : 'red') : 'default'
+              }
+            >
+              {preflight
+                ? preflight.valid
+                  ? 'valid'
+                  : 'invalid'
+                : 'not loaded'}
             </Tag>
           </Descriptions.Item>
           <Descriptions.Item label="Schema" span={2}>
@@ -468,7 +470,7 @@ export default function OpenForgePage() {
             <Button
               icon={<ThunderboltOutlined />}
               loading={dryRunning}
-              disabled={!canManageOpenForge}
+              disabled={!canManageOpenForge || !dryRunConfirmationText}
               onClick={runApplyDryRun}
             >
               Dry-run apply
@@ -497,20 +499,28 @@ export default function OpenForgePage() {
             <Button
               icon={<RollbackOutlined />}
               loading={dryRunning}
-              disabled={!canManageOpenForge || !activeManifestId}
+              disabled={
+                !canManageOpenForge ||
+                !activeManifestId ||
+                !dryRunConfirmationText
+              }
               onClick={runRollbackDryRun}
             >
               Dry-run rollback
             </Button>
           </Tooltip>
           <Tag icon={<SafetyCertificateOutlined />}>tool:openforge:manage</Tag>
-          <Tag icon={<FileSearchOutlined />}>{preflight.schemaPath}</Tag>
-          <Tag icon={<DiffOutlined />}>{plan.moduleCode}</Tag>
+          <Tag icon={<FileSearchOutlined />}>
+            {preflight?.schemaPath ?? 'schema not loaded'}
+          </Tag>
+          <Tag icon={<DiffOutlined />}>
+            {plan?.moduleCode ?? 'module not loaded'}
+          </Tag>
         </Space>
 
         <ProTable<OpenForgeArtifactSummary>
           columns={artifactColumns}
-          dataSource={[...plan.artifacts]}
+          dataSource={plan ? [...plan.artifacts] : []}
           loading={loading}
           pagination={{ pageSize: 8 }}
           rowKey="targetPath"
@@ -522,7 +532,7 @@ export default function OpenForgePage() {
 
         <ProTable<OpenForgeDiffEntrySummary>
           columns={diffColumns}
-          dataSource={[...diff.entries]}
+          dataSource={diff ? [...diff.entries] : []}
           loading={loading}
           pagination={{ pageSize: 8 }}
           rowKey="targetPath"
@@ -534,7 +544,7 @@ export default function OpenForgePage() {
 
         <ProTable<OpenForgeDoctorCheckSummary>
           columns={doctorColumns}
-          dataSource={[...doctor.checks]}
+          dataSource={doctor ? [...doctor.checks] : []}
           loading={loading}
           pagination={{ pageSize: 8 }}
           rowKey="id"
@@ -546,7 +556,7 @@ export default function OpenForgePage() {
 
         <ProTable<OpenForgeManifestListEntrySummary>
           columns={manifestColumns}
-          dataSource={[...manifests.manifests]}
+          dataSource={manifests ? [...manifests.manifests] : []}
           loading={loading}
           pagination={{ pageSize: 8 }}
           rowKey="id"
@@ -562,8 +572,8 @@ export default function OpenForgePage() {
         />
 
         <Typography.Paragraph type="secondary">
-          {fallbackApplyDryRun.mode} apply is guarded by dry-run confirmation;
-          write apply remains outside the admitted OpenForge surface.
+          Dry-run apply is guarded by live OpenForge confirmation; write apply
+          remains outside the admitted OpenForge surface.
         </Typography.Paragraph>
       </Space>
     </PageContainer>
