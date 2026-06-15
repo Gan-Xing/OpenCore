@@ -2237,22 +2237,26 @@ run_with_env env \
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
-  node "$ROOT_DIR/tools/scripts/smoke-core-collaboration-messages.mjs"
+  node "$ROOT_DIR/tools/scripts/run-typed-smoke.mjs" \
+    "$ROOT_DIR/tools/smoke/smoke-core-collaboration-messages.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
-  node "$ROOT_DIR/tools/scripts/smoke-core-collaboration-notices.mjs"
+  node "$ROOT_DIR/tools/scripts/run-typed-smoke.mjs" \
+    "$ROOT_DIR/tools/smoke/smoke-core-collaboration-notices.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
-  node "$ROOT_DIR/tools/scripts/smoke-core-collaboration-todos.mjs"
+  node "$ROOT_DIR/tools/scripts/run-typed-smoke.mjs" \
+    "$ROOT_DIR/tools/smoke/smoke-core-collaboration-todos.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
-  node "$ROOT_DIR/tools/scripts/smoke-core-collaboration-approvals.mjs"
+  node "$ROOT_DIR/tools/scripts/run-typed-smoke.mjs" \
+    "$ROOT_DIR/tools/smoke/smoke-core-collaboration-approvals.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \

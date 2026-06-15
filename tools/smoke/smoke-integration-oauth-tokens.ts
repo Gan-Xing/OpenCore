@@ -1,7 +1,7 @@
 import { findOAuthTokenFixture, type OAuthTokenSummary } from '@opencore/sdk';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient, type Prisma } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 
+import { disconnectSmokePrisma, getSmokePrisma } from './prisma';
 import {
   assertArray,
   assertAtLeast,
@@ -21,7 +21,6 @@ const SMOKE_TOKEN_SEED = assertDefined(
   findOAuthTokenFixture(SMOKE_TOKEN_ID),
   `OAuth token fixture ${SMOKE_TOKEN_ID}`,
 );
-let prisma: PrismaClient | undefined;
 
 async function main() {
   await resetSmokeOAuthToken();
@@ -147,7 +146,7 @@ async function main() {
     ];
   } finally {
     await resetSmokeOAuthToken();
-    await prisma?.$disconnect();
+    await disconnectSmokePrisma();
   }
 
   console.log(
@@ -161,7 +160,7 @@ async function main() {
 }
 
 async function resetSmokeOAuthToken() {
-  const db = getPrisma();
+  const db = getSmokePrisma();
   await db.integrationOAuthToken.upsert({
     where: { id: SMOKE_TOKEN_ID },
     update: toPrismaOAuthToken(SMOKE_TOKEN_SEED),
@@ -170,20 +169,6 @@ async function resetSmokeOAuthToken() {
       ...toPrismaOAuthToken(SMOKE_TOKEN_SEED),
     },
   });
-}
-
-function getPrisma() {
-  if (!prisma) {
-    const connectionString = assertString(
-      process.env.DATABASE_URL,
-      'DATABASE_URL',
-    );
-    prisma = new PrismaClient({
-      adapter: new PrismaPg({ connectionString }),
-    });
-  }
-
-  return prisma;
 }
 
 function toPrismaOAuthToken(token: OAuthTokenSummary) {
