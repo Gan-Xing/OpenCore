@@ -625,6 +625,22 @@ model IntegrationOAuthCallbackAudit {
   @@index([status])
 }
 
+model IntegrationWebSocketRuntimeEvent {
+  id             String   @id
+  room           String
+  type           String
+  payloadPreview Json
+  traceId        String?
+  deliveredCount Int
+  status         String
+  createdAt      DateTime @default(now())
+
+  @@index([room, createdAt])
+  @@index([type, createdAt])
+  @@index([traceId])
+  @@index([createdAt])
+}
+
 model AreaDatasetVersion {
   id         String        @id @default(cuid())
   version    String        @unique

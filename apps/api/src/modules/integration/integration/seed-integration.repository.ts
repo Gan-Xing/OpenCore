@@ -962,11 +962,11 @@ export class SeedIntegrationRepository extends IntegrationRepository {
     );
   }
 
-  getWebSocketRuntimeDiagnostics() {
+  async getWebSocketRuntimeDiagnostics() {
     return this.websocketRuntime.getDiagnostics();
   }
 
-  publishWebSocketRuntimeEvent(body: PublishWebSocketRuntimeEventDto) {
+  async publishWebSocketRuntimeEvent(body: PublishWebSocketRuntimeEventDto) {
     return this.websocketRuntime.publish(body);
   }
 

@@ -1356,7 +1356,7 @@ describe('IntegrationRepository', () => {
     });
   });
 
-  it('tracks WebSocket runtime connections, subscriptions, and diagnostic events', () => {
+  it('tracks WebSocket runtime connections, subscriptions, and diagnostic events', async () => {
     const repository = new SeedIntegrationRepository();
     const delivered: unknown[] = [];
     const handle = repository.openWebSocketRuntimeConnection({
@@ -1368,7 +1368,9 @@ describe('IntegrationRepository', () => {
       emit: (event) => delivered.push(event),
     });
 
-    expect(repository.getWebSocketRuntimeDiagnostics()).toMatchObject({
+    await expect(
+      repository.getWebSocketRuntimeDiagnostics(),
+    ).resolves.toMatchObject({
       summary: {
         activeConnections: 1,
         activeSubscriptions: 1,
@@ -1393,7 +1395,7 @@ describe('IntegrationRepository', () => {
       ],
     });
 
-    const event = repository.publishWebSocketRuntimeEvent({
+    const event = await repository.publishWebSocketRuntimeEvent({
       room: 'integration.diagnostics',
       type: 'diagnostic.ping',
       payload: {
@@ -1414,12 +1416,14 @@ describe('IntegrationRepository', () => {
     });
     expect(delivered).toHaveLength(1);
     expect(
-      JSON.stringify(repository.getWebSocketRuntimeDiagnostics()),
+      JSON.stringify(await repository.getWebSocketRuntimeDiagnostics()),
     ).not.toContain('unsafe');
 
     handle.heartbeat();
     handle.close('test_complete');
-    expect(repository.getWebSocketRuntimeDiagnostics()).toMatchObject({
+    await expect(
+      repository.getWebSocketRuntimeDiagnostics(),
+    ).resolves.toMatchObject({
       summary: {
         activeConnections: 0,
         activeSubscriptions: 0,
@@ -1432,19 +1436,19 @@ describe('IntegrationRepository', () => {
         }),
       ],
     });
-    const skipped = repository.publishWebSocketRuntimeEvent({
+    const skipped = await repository.publishWebSocketRuntimeEvent({
       room: 'integration.diagnostics',
       type: 'diagnostic.ping',
     });
     expect(skipped.status).toBe('no_subscribers');
     expect(delivered).toHaveLength(1);
 
-    expect(() =>
+    await expect(
       repository.publishWebSocketRuntimeEvent({
         room: 'integration.diagnostics',
         type: 'chat.message',
       }),
-    ).toThrow(BadRequestException);
+    ).rejects.toThrow(BadRequestException);
   });
 
   it('manages OAuth token inventory and revoke lifecycle', async () => {

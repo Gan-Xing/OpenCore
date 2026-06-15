@@ -45,6 +45,7 @@ import {
   type OAuthCallbackContractRecord,
   type OAuthFlowRecord,
   type OAuthTokenRecord,
+  type WebSocketRuntimeEventRecord,
 } from './integration.seed';
 import {
   deliverOutboxMessage,
@@ -210,6 +211,17 @@ type OAuthCallbackAuditRow = {
   callbackError: string | null;
   providerAccountId: string | null;
   tokenId: string | null;
+  createdAt: Date;
+};
+
+type WebSocketRuntimeEventRow = {
+  id: string;
+  room: string;
+  type: string;
+  payloadPreview: unknown;
+  traceId: string | null;
+  deliveredCount: number;
+  status: string;
   createdAt: Date;
 };
 
@@ -1260,12 +1272,43 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
     );
   }
 
-  getWebSocketRuntimeDiagnostics() {
-    return this.websocketRuntime.getDiagnostics();
+  async getWebSocketRuntimeDiagnostics() {
+    const live = this.websocketRuntime.getDiagnostics();
+    const persistedEvents =
+      await this.prisma.integrationWebSocketRuntimeEvent.findMany({
+        orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+        take: 100,
+      });
+    const events = persistedEvents.map(toWebSocketRuntimeEventRecord);
+
+    return {
+      ...live,
+      summary: {
+        ...live.summary,
+        recentEvents: events.length,
+        lastEventAt: events[0]?.createdAt,
+        generatedAt: new Date().toISOString(),
+      },
+      events,
+    };
   }
 
-  publishWebSocketRuntimeEvent(body: PublishWebSocketRuntimeEventDto) {
-    return this.websocketRuntime.publish(body);
+  async publishWebSocketRuntimeEvent(body: PublishWebSocketRuntimeEventDto) {
+    const event = this.websocketRuntime.publish(body);
+    await this.prisma.integrationWebSocketRuntimeEvent.create({
+      data: {
+        id: event.id,
+        room: event.room,
+        type: event.type,
+        payloadPreview: toInputJson(event.payloadPreview),
+        traceId: event.traceId,
+        deliveredCount: event.deliveredCount,
+        status: event.status,
+        createdAt: new Date(event.createdAt),
+      },
+    });
+
+    return event;
   }
 
   openWebSocketRuntimeConnection(input: {
@@ -1550,6 +1593,21 @@ function toOAuthCallbackAuditRecord(
     callbackError: row.callbackError ?? undefined,
     providerAccountId: row.providerAccountId ?? undefined,
     tokenId: row.tokenId ?? undefined,
+    createdAt: row.createdAt.toISOString(),
+  };
+}
+
+function toWebSocketRuntimeEventRecord(
+  row: WebSocketRuntimeEventRow,
+): WebSocketRuntimeEventRecord {
+  return {
+    id: row.id,
+    room: row.room,
+    type: row.type,
+    payloadPreview: normalizeRecord(row.payloadPreview) ?? {},
+    traceId: row.traceId ?? undefined,
+    deliveredCount: row.deliveredCount,
+    status: row.status === 'delivered' ? 'delivered' : 'no_subscribers',
     createdAt: row.createdAt.toISOString(),
   };
 }

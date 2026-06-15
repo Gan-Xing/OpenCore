@@ -142,6 +142,11 @@ async function main() {
     1,
     'WebSocket runtime recent events',
   );
+  assertIncludes(
+    afterDiagnostics.events.map((event) => event.traceId ?? ''),
+    'typed-smoke-websocket-runtime',
+    'WebSocket runtime persisted event trace',
+  );
   assertNoSecretLeak(afterDiagnostics);
 
   const summary = await clients.integration.getSummary(token);
@@ -171,6 +176,7 @@ async function main() {
         'integration.websocket-runtime.publish-diagnostic',
         'integration.websocket-runtime.reject-non-diagnostic',
         'integration.websocket-runtime.diagnostics',
+        'integration.websocket-runtime.persisted-events',
         'integration.websocket-runtime.secret-leak-guard',
         'integration.designs.summary-topics',
       ],

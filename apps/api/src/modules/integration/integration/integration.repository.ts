@@ -259,10 +259,10 @@ export abstract class IntegrationRepository {
   abstract getDesign(
     topic: 'pay' | 'websocket' | 'wechat',
   ): IntegrationDesignRecord;
-  abstract getWebSocketRuntimeDiagnostics(): WebSocketRuntimeDiagnosticsDto;
+  abstract getWebSocketRuntimeDiagnostics(): Promise<WebSocketRuntimeDiagnosticsDto>;
   abstract publishWebSocketRuntimeEvent(
     body: PublishWebSocketRuntimeEventDto,
-  ): WebSocketRuntimeEventRecord;
+  ): Promise<WebSocketRuntimeEventRecord>;
   abstract openWebSocketRuntimeConnection(input: {
     subjectId: string;
     query?: WebSocketRuntimeStreamQueryDto;
@@ -1296,7 +1296,7 @@ export class IntegrationWebSocketRuntimeStore {
 
   private nextId(prefix: string): string {
     this.sequence += 1;
-    return `${prefix}_${this.sequence}`;
+    return `${prefix}_${Date.now().toString(36)}_${this.sequence}`;
   }
 }
 

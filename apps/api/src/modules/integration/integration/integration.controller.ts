@@ -569,7 +569,7 @@ export class IntegrationController {
   @ApiTags('Integration WebSocket')
   @RequirePermission('integration:websocket:read')
   @ApiOkResponse({ type: WebSocketRuntimeDiagnosticsDto })
-  getWebSocketRuntimeDiagnostics(): WebSocketRuntimeDiagnosticsDto {
+  getWebSocketRuntimeDiagnostics(): Promise<WebSocketRuntimeDiagnosticsDto> {
     return this.repository.getWebSocketRuntimeDiagnostics();
   }
 
@@ -579,7 +579,7 @@ export class IntegrationController {
   @ApiOkResponse({ type: WebSocketRuntimeEventDto })
   publishWebSocketRuntimeEvent(
     @Body() body: PublishWebSocketRuntimeEventDto,
-  ): WebSocketRuntimeEventDto {
+  ): Promise<WebSocketRuntimeEventDto> {
     return this.repository.publishWebSocketRuntimeEvent(body);
   }
 
