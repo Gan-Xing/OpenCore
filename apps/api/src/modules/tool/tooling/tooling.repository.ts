@@ -304,6 +304,23 @@ class AreaDatasetStore {
     };
   }
 
+  activateVersion(version: string) {
+    const normalized = normalizeAreaDatasetVersion(version);
+    const dataset = this.versions.get(normalized);
+
+    if (!dataset) {
+      throw new NotFoundException(
+        `Area dataset version ${normalized} was not found.`,
+      );
+    }
+
+    this.active = dataset;
+    return {
+      activated: true,
+      dataset: toAreaDatasetSummary(dataset),
+    };
+  }
+
   listRegions(input: AreaRegionQueryInput = {}) {
     return listAreaRegionsFromDataset(this.active, input);
   }
@@ -1110,6 +1127,37 @@ export class ToolingRepository {
     }
 
     return this.areaDatasetStore.listVersions();
+  }
+
+  async activateAreaDatasetVersion(version: string) {
+    if (this.prisma) {
+      const normalized = normalizeAreaDatasetVersion(version);
+      const dataset = await this.prisma.areaDatasetVersion.findUnique({
+        where: { version: normalized },
+        include: AREA_DATASET_INCLUDE,
+      });
+
+      if (!dataset) {
+        throw new NotFoundException(
+          `Area dataset version ${normalized} was not found.`,
+        );
+      }
+
+      await this.prisma.$transaction(async (tx) => {
+        await tx.areaDatasetVersion.updateMany({ data: { active: false } });
+        await tx.areaDatasetVersion.update({
+          where: { version: normalized },
+          data: { active: true },
+        });
+      });
+
+      return {
+        activated: true,
+        dataset: toAreaDatasetSummary(toPersistedAreaDatasetRecord(dataset)),
+      };
+    }
+
+    return this.areaDatasetStore.activateVersion(version);
   }
 
   async listAreaRegions(query: AreaRegionQueryInput = {}) {

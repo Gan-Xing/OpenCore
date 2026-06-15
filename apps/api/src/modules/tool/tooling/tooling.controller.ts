@@ -2,6 +2,7 @@ import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { RequirePermission } from '../../core/rbac/permissions.decorator';
 import {
+  AreaDatasetActivationResultDto,
   AreaDatasetImportRequestDto,
   AreaDatasetImportResultDto,
   AreaDatasetSummaryDto,
@@ -74,6 +75,16 @@ export class ToolingController {
   @ApiOkResponse({ type: AreaDatasetVersionListDto })
   listAreaDatasetVersions(): Promise<AreaDatasetVersionListDto> {
     return this.repository.listAreaDatasetVersions();
+  }
+
+  @Post('area/dataset/versions/:version/activate')
+  @ApiTags('Tool Area')
+  @RequirePermission('tool:area:import')
+  @ApiOkResponse({ type: AreaDatasetActivationResultDto })
+  activateAreaDatasetVersion(
+    @Param('version') version: string,
+  ): Promise<AreaDatasetActivationResultDto> {
+    return this.repository.activateAreaDatasetVersion(version);
   }
 
   @Get('area/regions')

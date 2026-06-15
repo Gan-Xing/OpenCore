@@ -152,6 +152,17 @@ describe('ToolingRepository', () => {
         code: 'ROOT-EDGE',
       },
     });
+    await expect(
+      repository.activateAreaDatasetVersion('opencore-area-boundary-v1'),
+    ).resolves.toMatchObject({
+      activated: true,
+      dataset: {
+        version: 'opencore-area-boundary-v1',
+      },
+    });
+    await expect(repository.getAreaDatasetStatus()).resolves.toMatchObject({
+      version: 'opencore-area-boundary-v1',
+    });
   });
 
   it('rejects unsafe area dataset imports', async () => {
@@ -187,6 +198,9 @@ describe('ToolingRepository', () => {
     await expect(repository.lookupAreaIp({ ip: 'not-an-ip' })).rejects.toThrow(
       'ip must be a valid IP address',
     );
+    await expect(
+      repository.activateAreaDatasetVersion('missing-area-v1'),
+    ).rejects.toThrow('Area dataset version missing-area-v1 was not found.');
   });
 
   it('exposes OpenForge status, doctor, plan, diff, check and dry-run apply', () => {
@@ -339,6 +353,17 @@ describe('ToolingRepository Prisma area dataset persistence', () => {
         cidr: '203.0.113.0/24',
       },
     });
+    await expect(
+      repository.activateAreaDatasetVersion('opencore-area-boundary-v1'),
+    ).resolves.toMatchObject({
+      activated: true,
+      dataset: {
+        version: 'opencore-area-boundary-v1',
+      },
+    });
+    await expect(repository.getAreaDatasetStatus()).resolves.toMatchObject({
+      version: 'opencore-area-boundary-v1',
+    });
 
     const persisted = await prisma.areaDatasetVersion.findUnique({
       where: { version },
@@ -349,7 +374,7 @@ describe('ToolingRepository Prisma area dataset persistence', () => {
     });
 
     expect(persisted).toMatchObject({
-      active: true,
+      active: false,
       version,
       regions: expect.arrayContaining([
         expect.objectContaining({ code: 'ROOT-RFC' }),

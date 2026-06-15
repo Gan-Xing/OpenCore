@@ -37,6 +37,12 @@ describe('ToolingController permission matrix', () => {
     expect(
       Reflect.getMetadata(
         REQUIRED_PERMISSIONS_KEY,
+        ToolingController.prototype.activateAreaDatasetVersion,
+      ),
+    ).toEqual(['tool:area:import']);
+    expect(
+      Reflect.getMetadata(
+        REQUIRED_PERMISSIONS_KEY,
         ToolingController.prototype.listAreaRegions,
       ),
     ).toEqual(['tool:area:read']);

@@ -126,6 +126,11 @@ export type AreaDatasetImportResultSummary = {
   warnings: readonly string[];
 };
 
+export type AreaDatasetActivationResultSummary = {
+  activated: boolean;
+  dataset: AreaDatasetSummary;
+};
+
 export type OpenForgeIssueSummary = {
   severity: 'error' | 'warning';
   path: string;

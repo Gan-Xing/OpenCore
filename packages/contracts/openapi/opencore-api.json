@@ -7991,6 +7991,33 @@
         "tags": ["Tooling", "Tool Area"]
       }
     },
+    "/api/tools/area/dataset/versions/{version}/activate": {
+      "post": {
+        "operationId": "ToolingController_activateAreaDatasetVersion",
+        "parameters": [
+          {
+            "name": "version",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AreaDatasetActivationResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Tooling", "Tool Area"]
+      }
+    },
     "/api/tools/area/regions": {
       "get": {
         "operationId": "ToolingController_listAreaRegions",
@@ -12828,6 +12855,14 @@
           }
         },
         "required": ["activeVersion", "versions"]
+      },
+      "AreaDatasetActivationResultDto": {
+        "type": "object",
+        "properties": {
+          "activated": { "type": "boolean" },
+          "dataset": { "$ref": "#/components/schemas/AreaDatasetSummaryDto" }
+        },
+        "required": ["activated", "dataset"]
       },
       "AreaIpRangeDto": {
         "type": "object",

@@ -871,6 +871,7 @@ if (
   !areaPage.includes('IP boundary lookup') ||
   !areaPage.includes('Validate area import') ||
   !areaPage.includes('Activate area import') ||
+  !areaPage.includes('Activate stored version') ||
   !areaPage.includes('tool:area:read') ||
   !areaPage.includes('tool:area:import') ||
   !providersPage.includes('@opencore/sdk') ||
@@ -1126,6 +1127,7 @@ if (
   !areaPage.includes('listOpenCoreAreaRegions') ||
   !areaPage.includes('lookupOpenCoreAreaIp') ||
   !areaPage.includes('importOpenCoreAreaDataset') ||
+  !areaPage.includes('activateOpenCoreAreaDatasetVersion') ||
   !opencorePlatformService.includes('getOpenCoreAreaDatasetStatus') ||
   !opencorePlatformService.includes('toolingClient.getAreaDatasetStatus') ||
   !opencorePlatformService.includes('listOpenCoreAreaDatasetVersions') ||
@@ -1135,10 +1137,12 @@ if (
   !opencorePlatformService.includes('lookupOpenCoreAreaIp') ||
   !opencorePlatformService.includes('toolingClient.lookupAreaIp') ||
   !opencorePlatformService.includes('importOpenCoreAreaDataset') ||
-  !opencorePlatformService.includes('toolingClient.importAreaDataset')
+  !opencorePlatformService.includes('toolingClient.importAreaDataset') ||
+  !opencorePlatformService.includes('activateOpenCoreAreaDatasetVersion') ||
+  !opencorePlatformService.includes('toolingClient.activateAreaDatasetVersion')
 ) {
   throw new Error(
-    'Area Data page must use live SDK dataset, region query, IP lookup and import APIs instead of static fixtures.',
+    'Area Data page must use live SDK dataset, region query, IP lookup, import and version activation APIs instead of static fixtures.',
   );
 }
 

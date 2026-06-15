@@ -22,6 +22,7 @@ describe('createToolingClient', () => {
     });
     await client.getAreaDatasetStatus('token');
     await client.listAreaDatasetVersions('token');
+    await client.activateAreaDatasetVersion('token', 'sdk-area-v1');
     await client.listAreaRegions('token', {
       limit: 5,
       query: 'san',
@@ -77,6 +78,10 @@ describe('createToolingClient', () => {
       },
       {
         path: '/tools/area/dataset/versions',
+      },
+      {
+        path: '/tools/area/dataset/versions/sdk-area-v1/activate',
+        method: 'POST',
       },
       {
         path: '/tools/area/regions?query=san&limit=5',

@@ -272,6 +272,14 @@ export class AreaDatasetImportResultDto {
   warnings!: readonly string[];
 }
 
+export class AreaDatasetActivationResultDto {
+  @ApiProperty()
+  activated!: boolean;
+
+  @ApiProperty({ type: AreaDatasetSummaryDto })
+  dataset!: AreaDatasetSummaryDto;
+}
+
 export class OpenForgeSchemaRequestDto {
   @ApiProperty({
     default: 'tools/generator/examples/core.dict.v1.schema.json',

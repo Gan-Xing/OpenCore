@@ -10,6 +10,7 @@ import {
   type ApprovalLiteSummary,
   type AssignRoleMenusRequest,
   type AssignRoleUsersRequest,
+  type AreaDatasetActivationResultSummary,
   type AreaDatasetImportRequest,
   type AreaDatasetImportResultSummary,
   type AreaDatasetSummary,
@@ -485,6 +486,15 @@ export function getOpenCoreAreaDatasetStatus(): Promise<AreaDatasetSummary> {
 
 export function listOpenCoreAreaDatasetVersions(): Promise<AreaDatasetVersionListSummary> {
   return toolingClient.listAreaDatasetVersions(getRequiredAdminToken());
+}
+
+export function activateOpenCoreAreaDatasetVersion(
+  version: string,
+): Promise<AreaDatasetActivationResultSummary> {
+  return toolingClient.activateAreaDatasetVersion(
+    getRequiredAdminToken(),
+    version,
+  );
 }
 
 export function listOpenCoreAreaRegions(

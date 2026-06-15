@@ -1,5 +1,6 @@
 import type { SdkRequest } from './rbac-client';
 import type {
+  AreaDatasetActivationResultSummary,
   AreaDatasetImportRequest,
   AreaDatasetImportResultSummary,
   AreaDatasetSummary,
@@ -41,6 +42,10 @@ export type ToolingClient = {
   listAreaDatasetVersions: (
     token: string,
   ) => Promise<AreaDatasetVersionListSummary>;
+  activateAreaDatasetVersion: (
+    token: string,
+    version: string,
+  ) => Promise<AreaDatasetActivationResultSummary>;
   listAreaRegions: (
     token: string,
     query?: AreaRegionQueryRequest,
@@ -111,6 +116,14 @@ export function createToolingClient(request: SdkRequest): ToolingClient {
       request<AreaDatasetVersionListSummary>('/tools/area/dataset/versions', {
         token,
       }),
+    activateAreaDatasetVersion: (token, version) =>
+      request<AreaDatasetActivationResultSummary>(
+        `/tools/area/dataset/versions/${encodeURIComponent(version)}/activate`,
+        {
+          method: 'POST',
+          token,
+        },
+      ),
     listAreaRegions: (token, query = {}) =>
       request<AreaRegionListSummary>(
         `/tools/area/regions${toQueryString(query)}`,

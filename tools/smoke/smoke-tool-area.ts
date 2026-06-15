@@ -22,6 +22,10 @@ async function main() {
     });
     assertOpenApiPath(openApi, '/api/tools/area/dataset');
     assertOpenApiPath(openApi, '/api/tools/area/dataset/versions');
+    assertOpenApiPath(
+      openApi,
+      '/api/tools/area/dataset/versions/{version}/activate',
+    );
     assertOpenApiPath(openApi, '/api/tools/area/regions');
     assertOpenApiPath(openApi, '/api/tools/area/regions/{code}');
     assertOpenApiPath(openApi, '/api/tools/area/ip/lookup');
@@ -112,6 +116,74 @@ async function main() {
     'area import dryRun version',
   );
 
+  const applyVersion = 'smoke-area-apply-v1';
+  let restoreRequired = false;
+  try {
+    const applied = await clients.tooling.importAreaDataset(token, {
+      dryRun: false,
+      entries: [
+        {
+          code: 'ROOT',
+          name: 'Root',
+        },
+        {
+          code: 'ROOT-EDGE',
+          name: 'Edge Lab',
+          parentCode: 'ROOT',
+          aliases: ['edge'],
+          ipRanges: ['10.88.0.0/16'],
+        },
+      ],
+      source: 'smoke-apply',
+      version: applyVersion,
+    });
+    restoreRequired = true;
+    assertEqual(applied.dryRun, false, 'area import apply dryRun flag');
+    assertEqual(applied.applied, true, 'area import apply applied flag');
+    assertEqual(
+      applied.dataset.version,
+      applyVersion,
+      'area import apply version',
+    );
+
+    const appliedStatus = await clients.tooling.getAreaDatasetStatus(token);
+    assertEqual(
+      appliedStatus.version,
+      applyVersion,
+      'area import active version after apply',
+    );
+
+    const appliedLookup = await clients.tooling.lookupAreaIp(token, {
+      ip: '10.88.5.6',
+    });
+    assertEqual(appliedLookup.matched, true, 'area import applied IP match');
+    assertEqual(
+      assertDefined(appliedLookup.region, 'area applied lookup region').code,
+      'ROOT-EDGE',
+      'area applied lookup region code',
+    );
+  } finally {
+    if (restoreRequired) {
+      const restored = await clients.tooling.activateAreaDatasetVersion(
+        token,
+        status.version,
+      );
+      assertEqual(restored.activated, true, 'area restore activation result');
+      assertEqual(
+        restored.dataset.version,
+        status.version,
+        'area restore activation version',
+      );
+    }
+  }
+
+  const restoredStatus = await clients.tooling.getAreaDatasetStatus(token);
+  assertEqual(
+    restoredStatus.version,
+    status.version,
+    'area active version restored after apply smoke',
+  );
+
   await smoke.apiRequest('/tools/area/import', {
     body: {
       dryRun: true,
@@ -142,10 +214,12 @@ async function main() {
         'auth.login',
         'tool.area.dataset-status',
         'tool.area.dataset-versions',
+        'tool.area.dataset-activate',
         'tool.area.region-query',
         'tool.area.region-detail',
         'tool.area.ip-lookup',
         'tool.area.import-dry-run',
+        'tool.area.import-apply-restore',
         'tool.area.bad-parent-rejected',
         'tool.area.bad-ip-rejected',
       ],

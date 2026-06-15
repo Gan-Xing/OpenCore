@@ -3,6 +3,7 @@ import {
   CloudUploadOutlined,
   ReloadOutlined,
   SearchOutlined,
+  SwapOutlined,
 } from '@ant-design/icons';
 import {
   PageContainer,
@@ -34,6 +35,7 @@ import {
 } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 import {
+  activateOpenCoreAreaDatasetVersion,
   importOpenCoreAreaDataset,
   listOpenCoreAreaDatasetVersions,
   listOpenCoreAreaRegions,
@@ -108,22 +110,6 @@ const regionColumns: ProColumns<AreaRegionSummary>[] = [
   },
 ];
 
-const versionColumns: ProColumns<AreaDatasetVersionSummary>[] = [
-  { title: 'Version', dataIndex: 'version' },
-  { title: 'Source', dataIndex: 'source' },
-  { title: 'Regions', dataIndex: 'regionCount', width: 100 },
-  { title: 'IP ranges', dataIndex: 'ipRangeCount', width: 110 },
-  { title: 'Max depth', dataIndex: 'maxDepth', width: 110 },
-  {
-    title: 'Active',
-    dataIndex: 'active',
-    width: 90,
-    render: (_, record) =>
-      record.active ? <Tag color="green">active</Tag> : <Tag>stored</Tag>,
-  },
-  { title: 'Imported at', dataIndex: 'importedAt' },
-];
-
 export default function AreaDataPage() {
   const access = useAccess();
   const canImportAreaData = Boolean(access.canImportAreaData);
@@ -142,6 +128,7 @@ export default function AreaDataPage() {
   const [searching, setSearching] = useState(false);
   const [lookupLoading, setLookupLoading] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
+  const [activatingVersion, setActivatingVersion] = useState<string>();
   const [loadError, setLoadError] = useState<string>();
 
   const activeVersion = useMemo(
@@ -234,6 +221,59 @@ export default function AreaDataPage() {
       setImportLoading(false);
     }
   };
+
+  const activateVersion = async (version: string) => {
+    setActivatingVersion(version);
+    try {
+      await activateOpenCoreAreaDatasetVersion(version);
+      setLoadError(undefined);
+      message.success('Area dataset version activated.');
+      await loadAreaData(regionForm.getFieldValue('query'));
+    } catch (error: unknown) {
+      setLoadError(
+        error instanceof Error
+          ? error.message
+          : 'Unable to activate area dataset version.',
+      );
+    } finally {
+      setActivatingVersion(undefined);
+    }
+  };
+
+  const versionColumns: ProColumns<AreaDatasetVersionSummary>[] = [
+    { title: 'Version', dataIndex: 'version' },
+    { title: 'Source', dataIndex: 'source' },
+    { title: 'Regions', dataIndex: 'regionCount', width: 100 },
+    { title: 'IP ranges', dataIndex: 'ipRangeCount', width: 110 },
+    { title: 'Max depth', dataIndex: 'maxDepth', width: 110 },
+    {
+      title: 'Active',
+      dataIndex: 'active',
+      width: 90,
+      render: (_, record) =>
+        record.active ? <Tag color="green">active</Tag> : <Tag>stored</Tag>,
+    },
+    { title: 'Imported at', dataIndex: 'importedAt' },
+    {
+      title: 'Action',
+      valueType: 'option',
+      width: 120,
+      render: (_, record) =>
+        record.active ? null : (
+          <Tooltip title="Activate stored version">
+            <Button
+              disabled={!canImportAreaData}
+              icon={<SwapOutlined />}
+              loading={activatingVersion === record.version}
+              onClick={() => void activateVersion(record.version)}
+              size="small"
+            >
+              Activate
+            </Button>
+          </Tooltip>
+        ),
+    },
+  ];
 
   useEffect(() => {
     regionForm.setFieldsValue({ query: 'san' });
