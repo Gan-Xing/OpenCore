@@ -101,7 +101,12 @@ async function main() {
     );
     assertNoSecretLeak(published);
 
-    const eventChunk = await stream.readUntil('diagnostic.ping');
+    const eventChunk = await stream.readUntil('typed-smoke-websocket-runtime');
+    assertTextIncludes(
+      eventChunk,
+      'diagnostic.ping',
+      'WebSocket runtime stream event type',
+    );
     assertTextIncludes(
       eventChunk,
       'typed-smoke-websocket-runtime',

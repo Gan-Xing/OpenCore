@@ -2235,6 +2235,35 @@ run_with_env() {
     # shellcheck disable=SC1090
     . "$ENV_FILE"
     set +a
+
+    if [ "$#" -gt 0 ] && [ "$1" = "env" ]; then
+      shift
+      local env_args=()
+      while [ "$#" -gt 0 ]; do
+        case "$1" in
+          *=*)
+            env_args+=("$1")
+            shift
+            ;;
+          *)
+            break
+            ;;
+        esac
+      done
+
+      if [ "$#" -gt 0 ] && [ "$1" = "run_tools_ts_script" ]; then
+        shift
+        env "${env_args[@]}" \
+          TS_NODE_PROJECT="$ROOT_DIR/tools/scripts/tsconfig.json" \
+          TS_NODE_COMPILER_OPTIONS='{"moduleResolution":"node10","module":"commonjs","customConditions":null}' \
+          node -r ts-node/register -r tsconfig-paths/register "$@"
+        return
+      fi
+
+      env "${env_args[@]}" "$@"
+      return
+    fi
+
     "$@"
   )
 }

@@ -76,9 +76,9 @@ async function main() {
     assertEqual(flow.providerCode, 'oauth.github', 'OAuth flow provider');
     assertEqual(flow.status, 'pending', 'OAuth flow initial status');
     assertString(flow.state, 'OAuth flow state');
-    assertIncludes(
-      flow.authorizationUrl,
-      `state=${encodeURIComponent(flow.state)}`,
+    assertEqual(
+      new URL(flow.authorizationUrl, baseUrl).searchParams.get('state'),
+      flow.state,
       'OAuth authorization URL state',
     );
 
@@ -145,11 +145,11 @@ async function main() {
       'rejected',
       'OAuth repeated callback status',
     );
-    assertIncludes(
-      repeatedCallback.message,
-      'completed',
-      'OAuth repeated callback rejection reason',
-    );
+    if (!repeatedCallback.message.includes('completed')) {
+      throw new Error(
+        `Expected OAuth repeated callback rejection reason to include completed, received ${repeatedCallback.message}`,
+      );
+    }
 
     const activePage = await clients.integration.listOAuthTokens(token, {
       status: 'active',
