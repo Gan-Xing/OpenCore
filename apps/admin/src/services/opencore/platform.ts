@@ -109,8 +109,11 @@ import {
   type FailOutboxMessageRequest,
   type IntegrationDesignSummary,
   type IntegrationOutboxQueryRequest,
+  type IntegrationProviderAuditLogSummary,
   type IntegrationProviderDiagnosticsSummary,
   type IntegrationProviderHealthAuditSummary,
+  type IntegrationProviderSummary,
+  type IntegrationProviderTestResult,
   type IntegrationOutboxSummary,
   type IntegrationOutboxProcessResult,
   type IntegrationOutboxScheduleResult,
@@ -1533,10 +1536,47 @@ export function getOpenCoreIntegrationProviderHealthAudit(): Promise<Integration
   return integrationClient.getProviderHealthAudit(getRequiredAdminToken());
 }
 
+export function enableOpenCoreIntegrationProvider(
+  code: string,
+): Promise<IntegrationProviderSummary> {
+  return integrationClient.enableProvider(getRequiredAdminToken(), code);
+}
+
+export function disableOpenCoreIntegrationProvider(
+  code: string,
+): Promise<IntegrationProviderSummary> {
+  return integrationClient.disableProvider(getRequiredAdminToken(), code);
+}
+
+export function testOpenCoreIntegrationProvider(
+  code: string,
+): Promise<IntegrationProviderTestResult> {
+  return integrationClient.testProvider(getRequiredAdminToken(), code, {
+    reason: 'Admin provider credential test',
+  });
+}
+
 export function getOpenCoreIntegrationProviderDiagnostics(
   code: string,
 ): Promise<IntegrationProviderDiagnosticsSummary> {
-  return integrationClient.getProviderDiagnostics(getRequiredAdminToken(), code);
+  return integrationClient.getProviderDiagnostics(
+    getRequiredAdminToken(),
+    code,
+  );
+}
+
+export async function listOpenCoreIntegrationProviderAuditLogs(
+  code: string,
+): Promise<IntegrationProviderAuditLogSummary[]> {
+  const page = await integrationClient.listProviderAuditLogs(
+    getRequiredAdminToken(),
+    code,
+    {
+      page: 1,
+      pageSize: 20,
+    },
+  );
+  return [...page.items];
 }
 
 export function getOpenCoreWeChatDesign(): Promise<IntegrationDesignSummary> {

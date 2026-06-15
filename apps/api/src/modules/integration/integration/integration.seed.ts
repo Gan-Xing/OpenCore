@@ -1,6 +1,7 @@
 import type {
   IntegrationDesignDto,
   IntegrationOutboxDto,
+  IntegrationProviderAuditLogDto,
   OAuthTokenDto,
   IntegrationProviderDto,
   IntegrationTemplateDto,
@@ -8,6 +9,7 @@ import type {
 } from './integration.dto';
 
 export type IntegrationProviderRecord = IntegrationProviderDto;
+export type IntegrationProviderAuditLogRecord = IntegrationProviderAuditLogDto;
 export type IntegrationTemplateRecord = IntegrationTemplateDto;
 export type IntegrationOutboxRecord = IntegrationOutboxDto;
 export type OAuthCallbackContractRecord = OAuthCallbackContractDto;
@@ -22,6 +24,8 @@ export const seedIntegrationProviders: readonly IntegrationProviderRecord[] = [
     name: 'Mail Sandbox',
     enabled: false,
     secretRef: 'secret://integration/mail/sandbox',
+    secretRefStatus: 'unchecked',
+    configVersion: 1,
     config: {
       adapter: 'sandbox',
       host: 'smtp.example.test',
@@ -37,6 +41,8 @@ export const seedIntegrationProviders: readonly IntegrationProviderRecord[] = [
     name: 'Mail SMTP',
     enabled: false,
     secretRef: 'secret://config/integration.mail.smtp.password.secret',
+    secretRefStatus: 'unchecked',
+    configVersion: 1,
     config: {
       adapter: 'smtp',
       authMethod: 'PLAIN',
@@ -56,6 +62,8 @@ export const seedIntegrationProviders: readonly IntegrationProviderRecord[] = [
     name: 'SMS Sandbox',
     enabled: false,
     secretRef: 'secret://integration/sms/sandbox',
+    secretRefStatus: 'unchecked',
+    configVersion: 1,
     config: {
       adapter: 'sandbox',
       endpoint: 'https://sms.example.test',
@@ -70,6 +78,8 @@ export const seedIntegrationProviders: readonly IntegrationProviderRecord[] = [
     name: 'SMS HTTP',
     enabled: false,
     secretRef: 'secret://config/integration.sms.http.api-key.secret',
+    secretRefStatus: 'unchecked',
+    configVersion: 1,
     config: {
       adapter: 'http',
       endpoint: 'https://sms.example.test/send',
@@ -108,6 +118,8 @@ export const seedIntegrationProviders: readonly IntegrationProviderRecord[] = [
     name: 'GitHub OAuth',
     enabled: true,
     secretRef: 'secret://config/integration.oauth.github.client-secret.secret',
+    secretRefStatus: 'unchecked',
+    configVersion: 1,
     config: {
       adapter: 'oauth2',
       clientId: 'opencore-github',

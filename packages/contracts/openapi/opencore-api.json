@@ -5379,6 +5379,43 @@
         "tags": ["Integration", "Integration Providers"]
       }
     },
+    "/api/integrations/providers/{code}/test": {
+      "post": {
+        "operationId": "IntegrationController_testProvider",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestIntegrationProviderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationProviderTestResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Providers"]
+      }
+    },
     "/api/integrations/providers/{code}/diagnostics": {
       "get": {
         "operationId": "IntegrationController_getProviderDiagnostics",
@@ -5397,6 +5434,51 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/IntegrationProviderDiagnosticsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Providers"]
+      }
+    },
+    "/api/integrations/providers/{code}/audit-logs": {
+      "get": {
+        "operationId": "IntegrationController_listProviderAuditLogs",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationProviderAuditLogPageDto"
                 }
               }
             }
@@ -10461,6 +10543,11 @@
           "name": { "type": "string" },
           "enabled": { "type": "boolean" },
           "secretRef": { "type": "string" },
+          "secretRefStatus": {
+            "type": "string",
+            "enum": ["invalid", "missing", "unchecked", "unsupported", "valid"]
+          },
+          "configVersion": { "type": "number" },
           "config": {
             "type": "object",
             "additionalProperties": true,
@@ -10474,7 +10561,13 @@
             "type": "string",
             "enum": ["unknown", "healthy", "degraded", "disabled"]
           },
-          "lastCheckedAt": { "type": "string" }
+          "lastCheckedAt": { "type": "string" },
+          "lastTestStatus": {
+            "type": "string",
+            "enum": ["failed", "not_run", "passed", "warning"]
+          },
+          "lastTestMessage": { "type": "string" },
+          "lastTestedAt": { "type": "string" }
         },
         "required": [
           "id",
@@ -10483,6 +10576,8 @@
           "name",
           "enabled",
           "secretRef",
+          "secretRefStatus",
+          "configVersion",
           "config",
           "healthStatus"
         ]
@@ -10649,6 +10744,87 @@
             }
           }
         }
+      },
+      "TestIntegrationProviderDto": {
+        "type": "object",
+        "properties": { "reason": { "type": "string" } }
+      },
+      "IntegrationProviderTestResultDto": {
+        "type": "object",
+        "properties": {
+          "provider": { "$ref": "#/components/schemas/IntegrationProviderDto" },
+          "status": {
+            "type": "string",
+            "enum": ["failed", "not_run", "passed", "warning"]
+          },
+          "secretRefStatus": {
+            "type": "string",
+            "enum": ["invalid", "missing", "unchecked", "unsupported", "valid"]
+          },
+          "message": { "type": "string" },
+          "testedAt": { "type": "string" }
+        },
+        "required": [
+          "provider",
+          "status",
+          "secretRefStatus",
+          "message",
+          "testedAt"
+        ]
+      },
+      "IntegrationProviderAuditLogDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "providerCode": { "type": "string" },
+          "action": {
+            "type": "string",
+            "enum": [
+              "created",
+              "disabled",
+              "enabled",
+              "health_checked",
+              "tested",
+              "updated"
+            ]
+          },
+          "actor": { "type": "string" },
+          "reason": { "type": "string" },
+          "beforeConfigVersion": { "type": "number" },
+          "afterConfigVersion": { "type": "number" },
+          "beforeSecretRefStatus": {
+            "type": "string",
+            "enum": ["invalid", "missing", "unchecked", "unsupported", "valid"]
+          },
+          "afterSecretRefStatus": {
+            "type": "string",
+            "enum": ["invalid", "missing", "unchecked", "unsupported", "valid"]
+          },
+          "testStatus": {
+            "type": "string",
+            "enum": ["failed", "not_run", "passed", "warning"]
+          },
+          "message": { "type": "string" },
+          "summary": { "type": "object", "additionalProperties": true },
+          "createdAt": { "type": "string" }
+        },
+        "required": ["id", "providerCode", "action", "actor", "createdAt"]
+      },
+      "IntegrationProviderAuditLogPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IntegrationProviderAuditLogDto"
+            }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
       },
       "ScheduleOutboxDto": {
         "type": "object",

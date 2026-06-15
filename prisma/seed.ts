@@ -98,10 +98,17 @@ async function seedIntegrations(): Promise<{
         name: provider.name,
         enabled: provider.enabled,
         secretRef: provider.secretRef,
+        secretRefStatus: provider.secretRefStatus,
         config: provider.config as Prisma.InputJsonValue,
+        configVersion: provider.configVersion,
         healthStatus: provider.healthStatus,
         lastCheckedAt: provider.lastCheckedAt
           ? new Date(provider.lastCheckedAt)
+          : null,
+        lastTestStatus: provider.lastTestStatus ?? null,
+        lastTestMessage: provider.lastTestMessage ?? null,
+        lastTestedAt: provider.lastTestedAt
+          ? new Date(provider.lastTestedAt)
           : null,
       },
       create: {
@@ -111,10 +118,17 @@ async function seedIntegrations(): Promise<{
         name: provider.name,
         enabled: provider.enabled,
         secretRef: provider.secretRef,
+        secretRefStatus: provider.secretRefStatus,
         config: provider.config as Prisma.InputJsonValue,
+        configVersion: provider.configVersion,
         healthStatus: provider.healthStatus,
         lastCheckedAt: provider.lastCheckedAt
           ? new Date(provider.lastCheckedAt)
+          : null,
+        lastTestStatus: provider.lastTestStatus ?? null,
+        lastTestMessage: provider.lastTestMessage ?? null,
+        lastTestedAt: provider.lastTestedAt
+          ? new Date(provider.lastTestedAt)
           : null,
       },
     });

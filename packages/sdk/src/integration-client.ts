@@ -10,10 +10,13 @@ import type {
   IntegrationOutboxScheduleResult,
   IntegrationOutboxSummary,
   IntegrationProviderDiagnosticsSummary,
+  IntegrationProviderAuditLogPage,
+  IntegrationProviderAuditLogQueryRequest,
   IntegrationProviderHealthAuditSummary,
   IntegrationProviderPage,
   IntegrationProviderQueryRequest,
   IntegrationProviderSummary,
+  IntegrationProviderTestResult,
   IntegrationSummary,
   IntegrationTemplatePage,
   IntegrationTemplateQueryRequest,
@@ -29,6 +32,7 @@ import type {
   PreviewTemplateRequest,
   RevokeOAuthTokenRequest,
   ScheduleOutboxRequest,
+  TestIntegrationProviderRequest,
   TemplatePreviewSummary,
   UpdateIntegrationProviderRequest,
 } from './integration-types';
@@ -65,10 +69,20 @@ export type IntegrationClient = {
     token: string,
     code: string,
   ) => Promise<IntegrationProviderSummary>;
+  testProvider: (
+    token: string,
+    code: string,
+    body?: TestIntegrationProviderRequest,
+  ) => Promise<IntegrationProviderTestResult>;
   getProviderDiagnostics: (
     token: string,
     code: string,
   ) => Promise<IntegrationProviderDiagnosticsSummary>;
+  listProviderAuditLogs: (
+    token: string,
+    code: string,
+    query?: IntegrationProviderAuditLogQueryRequest,
+  ) => Promise<IntegrationProviderAuditLogPage>;
   getProviderHealthAudit: (
     token: string,
   ) => Promise<IntegrationProviderHealthAuditSummary>;
@@ -239,9 +253,22 @@ export function createIntegrationClient(
         `/integrations/providers/${encodeURIComponent(code)}/health-check`,
         { method: 'POST', token },
       ),
+    testProvider: (token, code, body) =>
+      request<IntegrationProviderTestResult>(
+        `/integrations/providers/${encodeURIComponent(code)}/test`,
+        { method: 'POST', body: body ?? {}, token },
+      ),
     getProviderDiagnostics: (token, code) =>
       request<IntegrationProviderDiagnosticsSummary>(
         `/integrations/providers/${encodeURIComponent(code)}/diagnostics`,
+        { token },
+      ),
+    listProviderAuditLogs: (token, code, query) =>
+      request<IntegrationProviderAuditLogPage>(
+        withQuery(
+          `/integrations/providers/${encodeURIComponent(code)}/audit-logs`,
+          query,
+        ),
         { token },
       ),
     getProviderHealthAudit: (token) =>

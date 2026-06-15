@@ -3,16 +3,31 @@ import {
   ProTable,
   type ProColumns,
 } from '@ant-design/pro-components';
+import { useAccess } from '@umijs/max';
 import type {
-  IntegrationProviderHealthAuditSummary,
+  IntegrationProviderAuditLogSummary,
   IntegrationProviderDiagnosticsSummary,
+  IntegrationProviderHealthAuditSummary,
   IntegrationProviderSummary,
+  IntegrationProviderTestResult,
 } from '@opencore/sdk';
-import { Alert, Button, Space, Statistic, Tag, Typography, message } from 'antd';
+import {
+  Alert,
+  Button,
+  Space,
+  Statistic,
+  Tag,
+  Typography,
+  message,
+} from 'antd';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  disableOpenCoreIntegrationProvider,
+  enableOpenCoreIntegrationProvider,
   getOpenCoreIntegrationProviderDiagnostics,
   getOpenCoreIntegrationProviderHealthAudit,
+  listOpenCoreIntegrationProviderAuditLogs,
+  testOpenCoreIntegrationProvider,
 } from '@/services/opencore/platform';
 import {
   CurrentPageExportButton,
@@ -56,8 +71,12 @@ const exportColumns: CurrentPageExportColumn<IntegrationProviderSummary>[] = [
   { title: 'Type', dataIndex: 'type' },
   { title: 'Name', dataIndex: 'name' },
   { title: 'Enabled', dataIndex: 'enabled' },
+  { title: 'Config Version', dataIndex: 'configVersion' },
+  { title: 'Secret Ref Validation', dataIndex: 'secretRefStatus' },
+  { title: 'Last Provider Test', dataIndex: 'lastTestStatus' },
   { title: 'Health', dataIndex: 'healthStatus' },
   { title: 'Last Checked At', dataIndex: 'lastCheckedAt' },
+  { title: 'Last Tested At', dataIndex: 'lastTestedAt' },
   { title: 'Secret Ref', dataIndex: 'secretRef', sensitive: true },
   { title: 'Config', dataIndex: 'config', sensitive: true },
 ];
@@ -69,12 +88,26 @@ const searchFields: CurrentPageSearchField<IntegrationProviderSummary>[] = [
 ];
 
 export default function ProvidersPage() {
+  const access = useAccess();
+  const canManageIntegrationProviders = Boolean(
+    access.canManageIntegrationProviders,
+  );
+  const canUpdateIntegrationProviders = Boolean(
+    access.canUpdateIntegrationProviders,
+  );
   const [healthAudit, setHealthAudit] =
     useState<IntegrationProviderHealthAuditSummary>(emptyHealthAudit);
   const [selected, setSelected] = useState<IntegrationProviderSummary>();
   const [selectedDiagnostics, setSelectedDiagnostics] =
     useState<IntegrationProviderDiagnosticsSummary>();
+  const [selectedAuditLogs, setSelectedAuditLogs] = useState<
+    readonly IntegrationProviderAuditLogSummary[]
+  >([]);
+  const [selectedTestResult, setSelectedTestResult] =
+    useState<IntegrationProviderTestResult>();
   const [detailLoadingCode, setDetailLoadingCode] = useState<string>();
+  const [providerTestingCode, setProviderTestingCode] = useState<string>();
+  const [providerMutatingCode, setProviderMutatingCode] = useState<string>();
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
   const rows = useMemo(
@@ -117,6 +150,12 @@ export default function ProvidersPage() {
           placeholder: 'Health',
           predicate: (record, value) => record.healthStatus === value,
         },
+        {
+          key: 'secretRefStatus',
+          options: createCurrentPageFilterOptions(rows, 'secretRefStatus'),
+          placeholder: 'Secret Ref',
+          predicate: (record, value) => record.secretRefStatus === value,
+        },
       ],
       [rows],
     );
@@ -143,6 +182,8 @@ export default function ProvidersPage() {
       setHealthAudit(emptyHealthAudit);
       setSelected(undefined);
       setSelectedDiagnostics(undefined);
+      setSelectedAuditLogs([]);
+      setSelectedTestResult(undefined);
       setLoadError(
         error instanceof Error
           ? error.message
@@ -160,12 +201,19 @@ export default function ProvidersPage() {
   const openDetail = async (code: string) => {
     setDetailLoadingCode(code);
     try {
-      const diagnostics = await getOpenCoreIntegrationProviderDiagnostics(code);
+      const [diagnostics, auditLogs] = await Promise.all([
+        getOpenCoreIntegrationProviderDiagnostics(code),
+        listOpenCoreIntegrationProviderAuditLogs(code),
+      ]);
       setSelected(diagnostics.provider);
       setSelectedDiagnostics(diagnostics);
+      setSelectedAuditLogs(auditLogs);
+      setSelectedTestResult(undefined);
     } catch (error: unknown) {
       setSelected(undefined);
       setSelectedDiagnostics(undefined);
+      setSelectedAuditLogs([]);
+      setSelectedTestResult(undefined);
       message.error(
         error instanceof Error
           ? error.message
@@ -173,6 +221,48 @@ export default function ProvidersPage() {
       );
     } finally {
       setDetailLoadingCode(undefined);
+    }
+  };
+
+  const testProvider = async (code: string) => {
+    setProviderTestingCode(code);
+    try {
+      const result = await testOpenCoreIntegrationProvider(code);
+      setSelected(result.provider);
+      setSelectedTestResult(result);
+      message.success('Provider Test completed.');
+      await loadHealthAudit();
+      await openDetail(code);
+      setSelectedTestResult(result);
+    } catch (error: unknown) {
+      message.error(
+        error instanceof Error ? error.message : 'Unable to run Provider Test.',
+      );
+    } finally {
+      setProviderTestingCode(undefined);
+    }
+  };
+
+  const toggleProvider = async (record: IntegrationProviderSummary) => {
+    setProviderMutatingCode(record.code);
+    try {
+      const nextProvider = record.enabled
+        ? await disableOpenCoreIntegrationProvider(record.code)
+        : await enableOpenCoreIntegrationProvider(record.code);
+      setSelected(nextProvider);
+      message.success(
+        record.enabled ? 'Provider disabled.' : 'Provider enabled.',
+      );
+      await loadHealthAudit();
+      await openDetail(record.code);
+    } catch (error: unknown) {
+      message.error(
+        error instanceof Error
+          ? error.message
+          : 'Unable to update provider state.',
+      );
+    } finally {
+      setProviderMutatingCode(undefined);
     }
   };
 
@@ -189,6 +279,11 @@ export default function ProvidersPage() {
     { title: 'Type', dataIndex: 'type' },
     { title: 'Name', dataIndex: 'name' },
     {
+      title: 'Config Version',
+      dataIndex: 'configVersion',
+      render: (_, record) => <Tag>v{record.configVersion}</Tag>,
+    },
+    {
       title: 'Secret Ref',
       render: () => (
         <Typography.Text type="secondary">[redacted]</Typography.Text>
@@ -204,17 +299,30 @@ export default function ProvidersPage() {
       },
     },
     {
-      title: 'Config Audit',
+      title: 'Secret Ref Validation',
       render: (_, record) => (
         <Tag
           color={
-            record.secretRef.startsWith('secret://config/') ? 'green' : 'gold'
+            record.secretRefStatus === 'valid'
+              ? 'green'
+              : record.secretRefStatus === 'missing' ||
+                  record.secretRefStatus === 'invalid'
+                ? 'red'
+                : 'gold'
           }
         >
-          {record.secretRef.startsWith('secret://config/')
-            ? 'vault-backed'
-            : 'needs vault'}
+          {record.secretRefStatus}
         </Tag>
+      ),
+    },
+    {
+      title: 'Last Provider Test',
+      render: (_, record) => (
+        <Typography.Text
+          type={record.lastTestStatus === 'failed' ? 'danger' : 'secondary'}
+        >
+          {record.lastTestStatus ?? 'not_run'}
+        </Typography.Text>
       ),
     },
     {
@@ -246,14 +354,34 @@ export default function ProvidersPage() {
       title: 'Action',
       valueType: 'option',
       render: (_, record) => (
-        <Button
-          loading={detailLoadingCode === record.code}
-          onClick={() => void openDetail(record.code)}
-          size="small"
-          type="link"
-        >
-          Detail
-        </Button>
+        <Space size={4}>
+          <Button
+            loading={detailLoadingCode === record.code}
+            onClick={() => void openDetail(record.code)}
+            size="small"
+            type="link"
+          >
+            Detail
+          </Button>
+          <Button
+            disabled={!canManageIntegrationProviders}
+            loading={providerTestingCode === record.code}
+            onClick={() => void testProvider(record.code)}
+            size="small"
+            type="link"
+          >
+            Provider Test
+          </Button>
+          <Button
+            disabled={!canUpdateIntegrationProviders}
+            loading={providerMutatingCode === record.code}
+            onClick={() => void toggleProvider(record)}
+            size="small"
+            type="link"
+          >
+            {record.enabled ? 'Disable' : 'Enable'}
+          </Button>
+        </Space>
       ),
     },
   ];
@@ -293,6 +421,11 @@ export default function ProvidersPage() {
           suffix={`/ ${healthAudit.totals.total}`}
         />
         <Statistic
+          title="Provider Test"
+          value={rows.filter((provider) => provider.lastTestStatus).length}
+          suffix={`/ ${rows.length}`}
+        />
+        <Statistic
           title="Failure History"
           value={healthAudit.totals.retryableFailed}
         />
@@ -305,10 +438,7 @@ export default function ProvidersPage() {
         <Statistic title="Mail SMTP adapter" value="vault-backed" />
         <Statistic title="SMTP TLS Policy" value="tlsMode" />
         <Statistic title="Provider Diagnostics" value="read-only" />
-        <Statistic
-          title="Design topics"
-          value={designTopicCount}
-        />
+        <Statistic title="Design topics" value={designTopicCount} />
       </Space>
       <ProTable<IntegrationProviderSummary>
         rowKey="code"
@@ -333,13 +463,24 @@ export default function ProvidersPage() {
           { label: 'Code', value: selected?.code },
           { label: 'Type', value: selected?.type },
           { label: 'Name', value: selected?.name },
+          { label: 'Config Version', value: selected?.configVersion },
           {
             label: 'Enabled',
             value: selected?.enabled ? 'enabled' : 'disabled',
           },
           { label: 'Secret Ref', value: selected?.secretRef, sensitive: true },
+          {
+            label: 'Secret Ref Validation',
+            value: selected?.secretRefStatus,
+          },
           { label: 'Health', value: selected?.healthStatus },
           { label: 'Last Checked At', value: selected?.lastCheckedAt },
+          { label: 'Last Provider Test', value: selected?.lastTestStatus },
+          { label: 'Last Provider Test At', value: selected?.lastTestedAt },
+          {
+            label: 'Last Provider Test Message',
+            value: selected?.lastTestMessage,
+          },
           {
             label: 'Diagnostics Readiness',
             value: selectedDiagnostics?.readiness,
@@ -410,6 +551,14 @@ export default function ProvidersPage() {
         jsonSections={[
           { title: 'Redacted Config', value: selected?.config ?? {} },
           {
+            title: 'Provider Test',
+            value: selectedTestResult ?? {},
+          },
+          {
+            title: 'Provider Audit Logs',
+            value: selectedAuditLogs,
+          },
+          {
             title: 'Signed Callback Canonical Payload',
             value: signedCallbackContract,
           },
@@ -425,6 +574,8 @@ export default function ProvidersPage() {
         onClose={() => {
           setSelected(undefined);
           setSelectedDiagnostics(undefined);
+          setSelectedAuditLogs([]);
+          setSelectedTestResult(undefined);
         }}
         open={Boolean(selected)}
         title={selected?.name ?? 'Provider Detail'}

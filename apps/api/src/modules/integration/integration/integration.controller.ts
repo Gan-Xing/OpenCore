@@ -21,11 +21,13 @@ import {
   IntegrationOutboxProcessResultDto,
   IntegrationOutboxQueryDto,
   IntegrationOutboxScheduleResultDto,
+  IntegrationProviderAuditLogPageDto,
   IntegrationProviderDiagnosticsDto,
   IntegrationProviderDto,
   IntegrationProviderHealthAuditDto,
   IntegrationProviderPageDto,
   IntegrationProviderQueryDto,
+  IntegrationProviderTestResultDto,
   IntegrationSummaryDto,
   IntegrationTemplateDto,
   IntegrationTemplatePageDto,
@@ -35,10 +37,12 @@ import {
   OAuthTokenInventorySummaryDto,
   OAuthTokenPageDto,
   OAuthTokenQueryDto,
+  PageQueryDto,
   ProcessOutboxDto,
   PreviewTemplateDto,
   RevokeOAuthTokenDto,
   ScheduleOutboxDto,
+  TestIntegrationProviderDto,
   TemplatePreviewDto,
   UpdateIntegrationProviderDto,
 } from './integration.dto';
@@ -132,6 +136,17 @@ export class IntegrationController {
     return this.repository.checkProviderHealth(code);
   }
 
+  @Post('providers/:code/test')
+  @ApiTags('Integration Providers')
+  @RequirePermission('integration:provider:manage')
+  @ApiOkResponse({ type: IntegrationProviderTestResultDto })
+  testProvider(
+    @Param('code') code: string,
+    @Body() body: TestIntegrationProviderDto,
+  ): Promise<IntegrationProviderTestResultDto> {
+    return this.repository.testProvider(code, body);
+  }
+
   @Get('providers/:code/diagnostics')
   @ApiTags('Integration Providers')
   @RequirePermission('integration:provider:read')
@@ -140,6 +155,17 @@ export class IntegrationController {
     @Param('code') code: string,
   ): Promise<IntegrationProviderDiagnosticsDto> {
     return this.repository.getProviderDiagnostics(code);
+  }
+
+  @Get('providers/:code/audit-logs')
+  @ApiTags('Integration Providers')
+  @RequirePermission('integration:provider:read')
+  @ApiOkResponse({ type: IntegrationProviderAuditLogPageDto })
+  listProviderAuditLogs(
+    @Param('code') code: string,
+    @Query() query: PageQueryDto,
+  ): Promise<IntegrationProviderAuditLogPageDto> {
+    return this.repository.listProviderAuditLogs(code, query);
   }
 
   @Post('outbox/schedule/run')

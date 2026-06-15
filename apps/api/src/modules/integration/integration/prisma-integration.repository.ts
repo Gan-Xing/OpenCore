@@ -13,13 +13,16 @@ import type {
   IntegrationOutboxCallbackDto,
   IntegrationOutboxQueryDto,
   IntegrationOutboxScheduleChannelResultDto,
+  IntegrationProviderAuditAction,
   IntegrationProviderQueryDto,
   IntegrationTemplateQueryDto,
   OAuthTokenQueryDto,
+  PageQueryDto,
   ProcessOutboxDto,
   PreviewTemplateDto,
   RevokeOAuthTokenDto,
   ScheduleOutboxDto,
+  TestIntegrationProviderDto,
   UpdateIntegrationProviderDto,
 } from './integration.dto';
 import {
@@ -27,6 +30,7 @@ import {
   oauthCallbackContract,
   type IntegrationDesignRecord,
   type IntegrationOutboxRecord,
+  type IntegrationProviderAuditLogRecord,
   type IntegrationProviderRecord,
   type IntegrationTemplateRecord,
   type OAuthCallbackContractRecord,
@@ -44,6 +48,7 @@ import {
   assertSecretRef,
   assertSmsSafety,
   assertTemplateEnabled,
+  buildProviderTestResult,
   buildProviderHealthAudit,
   buildProviderDiagnostics,
   buildIntegrationSummary,
@@ -62,13 +67,18 @@ import {
   normalizeOAuthTokenStatus,
   normalizeOptionalProviderCode,
   parseConfigSecretRef,
+  normalizeProviderAuditAction,
+  normalizeProviderSecretRefStatus,
+  normalizeProviderTestStatus,
   normalizeProviderType,
   normalizeOptionalBoolean,
   normalizeProcessOutboxLimit,
   redactProviderConfig,
   renderTemplate,
   requireRecord,
+  validateProviderSecretRef,
   type PageResult,
+  type ProviderTestResult,
 } from './integration.repository';
 
 type ProviderRow = {
@@ -78,9 +88,30 @@ type ProviderRow = {
   name: string;
   enabled: boolean;
   secretRef: string;
+  secretRefStatus: string;
   config: unknown;
+  configVersion: number;
   healthStatus: string;
   lastCheckedAt: Date | null;
+  lastTestStatus: string | null;
+  lastTestMessage: string | null;
+  lastTestedAt: Date | null;
+};
+
+type ProviderAuditLogRow = {
+  id: string;
+  providerCode: string;
+  action: string;
+  actor: string;
+  reason: string | null;
+  beforeConfigVersion: number | null;
+  afterConfigVersion: number | null;
+  beforeSecretRefStatus: string | null;
+  afterSecretRefStatus: string | null;
+  testStatus: string | null;
+  message: string | null;
+  summary: unknown;
+  createdAt: Date;
 };
 
 type TemplateRow = {
@@ -180,16 +211,33 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
     body: CreateIntegrationProviderDto,
   ): Promise<IntegrationProviderRecord> {
     assertSecretRef(body.secretRef);
-    const provider = await this.prisma.integrationProvider.create({
-      data: {
-        code: body.code,
-        type: body.type,
-        name: body.name,
-        enabled: body.enabled ?? false,
-        secretRef: body.secretRef,
-        config: toInputJson(body.config),
-        healthStatus: body.enabled ? 'unknown' : 'disabled',
-      },
+    const provider = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.integrationProvider.create({
+        data: {
+          code: body.code,
+          type: body.type,
+          name: body.name,
+          enabled: body.enabled ?? false,
+          secretRef: body.secretRef,
+          secretRefStatus: 'unchecked',
+          config: toInputJson(body.config),
+          configVersion: 1,
+          healthStatus: body.enabled ? 'unknown' : 'disabled',
+        },
+      });
+      await createProviderAuditLog(tx, {
+        providerCode: created.code,
+        action: 'created',
+        afterConfigVersion: created.configVersion,
+        afterSecretRefStatus: created.secretRefStatus,
+        message: 'Integration provider created.',
+        summary: {
+          enabled: created.enabled,
+          type: created.type,
+        },
+      });
+
+      return created;
     });
 
     return redactProvider(toProviderRecord(provider));
@@ -203,33 +251,15 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
     code: string,
     body: UpdateIntegrationProviderDto,
   ): Promise<IntegrationProviderRecord> {
-    const existing = await this.findProvider(code);
-
-    if (body.secretRef) {
-      assertSecretRef(body.secretRef);
-    }
-
-    const provider = await this.prisma.integrationProvider.update({
-      where: { code },
-      data: {
-        name: body.name ?? existing.name,
-        enabled: body.enabled ?? existing.enabled,
-        secretRef: body.secretRef ?? existing.secretRef,
-        config: body.config ? toInputJson(body.config) : undefined,
-        healthStatus:
-          body.enabled === false ? 'disabled' : existing.healthStatus,
-      },
-    });
-
-    return redactProvider(toProviderRecord(provider));
+    return this.updateProviderConfig(code, body, 'updated');
   }
 
   async enableProvider(code: string): Promise<IntegrationProviderRecord> {
-    return this.updateProvider(code, { enabled: true });
+    return this.updateProviderConfig(code, { enabled: true }, 'enabled');
   }
 
   async disableProvider(code: string): Promise<IntegrationProviderRecord> {
-    return this.updateProvider(code, { enabled: false });
+    return this.updateProviderConfig(code, { enabled: false }, 'disabled');
   }
 
   async checkProviderHealth(code: string): Promise<IntegrationProviderRecord> {
@@ -237,12 +267,144 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
     const health = await evaluateProviderDeliveryHealth(existing, {
       secretResolver: this.resolveProviderSecret,
     });
-    const provider = await this.prisma.integrationProvider.update({
-      where: { code },
-      data: {
-        healthStatus: health.status,
-        lastCheckedAt: new Date(),
-      },
+    const provider = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.integrationProvider.update({
+        where: { code },
+        data: {
+          healthStatus: health.status,
+          lastCheckedAt: new Date(),
+        },
+      });
+      await createProviderAuditLog(tx, {
+        providerCode: code,
+        action: 'health_checked',
+        beforeConfigVersion: existing.configVersion,
+        afterConfigVersion: updated.configVersion,
+        beforeSecretRefStatus: existing.secretRefStatus,
+        afterSecretRefStatus: updated.secretRefStatus,
+        message:
+          health.error ??
+          `Integration provider health check completed: ${health.status}.`,
+        summary: { healthStatus: health.status },
+      });
+
+      return updated;
+    });
+
+    return redactProvider(toProviderRecord(provider));
+  }
+
+  async testProvider(
+    code: string,
+    body: TestIntegrationProviderDto = {},
+  ): Promise<ProviderTestResult> {
+    const existing = await this.findProvider(code);
+    const [secret, adapter] = await Promise.all([
+      validateProviderSecretRef(existing.secretRef, this.resolveProviderSecret),
+      evaluateProviderDeliveryHealth(
+        { ...existing, enabled: true },
+        { secretResolver: this.resolveProviderSecret },
+      ),
+    ]);
+    const testedAt = new Date();
+    const result = buildProviderTestResult({
+      provider: existing,
+      secret,
+      adapter,
+      testedAt: testedAt.toISOString(),
+    });
+    const provider = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.integrationProvider.update({
+        where: { code },
+        data: {
+          secretRefStatus: result.secretRefStatus,
+          lastTestStatus: result.status,
+          lastTestMessage: result.message,
+          lastTestedAt: testedAt,
+        },
+      });
+      await createProviderAuditLog(tx, {
+        providerCode: code,
+        action: 'tested',
+        reason: normalizeOptionalWhereText(body.reason),
+        beforeConfigVersion: existing.configVersion,
+        afterConfigVersion: updated.configVersion,
+        beforeSecretRefStatus: existing.secretRefStatus,
+        afterSecretRefStatus: updated.secretRefStatus,
+        testStatus: result.status,
+        message: result.message,
+        summary: {
+          adapterStatus: adapter.status,
+          secretRefStatus: result.secretRefStatus,
+        },
+      });
+
+      return updated;
+    });
+
+    return {
+      ...result,
+      provider: redactProvider(toProviderRecord(provider)),
+    };
+  }
+
+  async listProviderAuditLogs(
+    code: string,
+    query: PageQueryDto = {},
+  ): Promise<PageResult<IntegrationProviderAuditLogRecord>> {
+    await this.findProvider(code);
+    const rows = await this.prisma.integrationProviderAuditLog.findMany({
+      where: { providerCode: code },
+      orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+    });
+
+    return createPage(rows.map(toProviderAuditLogRecord), query);
+  }
+
+  private async updateProviderConfig(
+    code: string,
+    body: UpdateIntegrationProviderDto,
+    action: IntegrationProviderAuditAction,
+  ): Promise<IntegrationProviderRecord> {
+    const existing = await this.findProvider(code);
+    if (body.secretRef) {
+      assertSecretRef(body.secretRef);
+    }
+
+    const changedFields = listProviderChangedFields(body);
+    const configVersion =
+      changedFields.length > 0
+        ? existing.configVersion + 1
+        : existing.configVersion;
+    const provider = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.integrationProvider.update({
+        where: { code },
+        data: {
+          name: body.name ?? existing.name,
+          enabled: body.enabled ?? existing.enabled,
+          secretRef: body.secretRef ?? existing.secretRef,
+          secretRefStatus: body.secretRef ? 'unchecked' : undefined,
+          config: body.config ? toInputJson(body.config) : undefined,
+          configVersion,
+          healthStatus:
+            body.enabled === false ? 'disabled' : existing.healthStatus,
+          lastTestStatus: body.secretRef || body.config ? null : undefined,
+          lastTestMessage: body.secretRef || body.config ? null : undefined,
+          lastTestedAt: body.secretRef || body.config ? null : undefined,
+        },
+      });
+      await createProviderAuditLog(tx, {
+        providerCode: code,
+        action,
+        beforeConfigVersion: existing.configVersion,
+        afterConfigVersion: updated.configVersion,
+        beforeSecretRefStatus: existing.secretRefStatus,
+        afterSecretRefStatus: updated.secretRefStatus,
+        message: `Integration provider ${action.replace('_', ' ')}.`,
+        summary: { changedFields },
+      });
+
+      return updated;
     });
 
     return redactProvider(toProviderRecord(provider));
@@ -862,9 +1024,38 @@ function toProviderRecord(row: ProviderRow): IntegrationProviderRecord {
     name: row.name,
     enabled: row.enabled,
     secretRef: row.secretRef,
+    secretRefStatus: normalizeProviderSecretRefStatus(row.secretRefStatus),
+    configVersion: row.configVersion,
     config: normalizeRecord(row.config) ?? {},
     healthStatus: normalizeHealthStatus(row.healthStatus),
     lastCheckedAt: row.lastCheckedAt?.toISOString(),
+    lastTestStatus: normalizeProviderTestStatus(row.lastTestStatus),
+    lastTestMessage: row.lastTestMessage ?? undefined,
+    lastTestedAt: row.lastTestedAt?.toISOString(),
+  };
+}
+
+function toProviderAuditLogRecord(
+  row: ProviderAuditLogRow,
+): IntegrationProviderAuditLogRecord {
+  return {
+    id: row.id,
+    providerCode: row.providerCode,
+    action: normalizeProviderAuditAction(row.action),
+    actor: row.actor,
+    reason: row.reason ?? undefined,
+    beforeConfigVersion: row.beforeConfigVersion ?? undefined,
+    afterConfigVersion: row.afterConfigVersion ?? undefined,
+    beforeSecretRefStatus: row.beforeSecretRefStatus
+      ? normalizeProviderSecretRefStatus(row.beforeSecretRefStatus)
+      : undefined,
+    afterSecretRefStatus: row.afterSecretRefStatus
+      ? normalizeProviderSecretRefStatus(row.afterSecretRefStatus)
+      : undefined,
+    testStatus: normalizeProviderTestStatus(row.testStatus),
+    message: row.message ?? undefined,
+    summary: normalizeRecord(row.summary),
+    createdAt: row.createdAt.toISOString(),
   };
 }
 
@@ -970,6 +1161,47 @@ function normalizeOutboxStatus(
   return ['queued', 'sent', 'failed'].includes(value)
     ? (value as IntegrationOutboxRecord['status'])
     : 'queued';
+}
+
+function listProviderChangedFields(
+  body: UpdateIntegrationProviderDto,
+): string[] {
+  return (['name', 'enabled', 'secretRef', 'config'] as const).filter(
+    (field) => body[field] !== undefined,
+  );
+}
+
+async function createProviderAuditLog(
+  tx: PrismaTransactionClient,
+  input: {
+    providerCode: string;
+    action: IntegrationProviderAuditAction;
+    actor?: string;
+    reason?: string;
+    beforeConfigVersion?: number;
+    afterConfigVersion?: number;
+    beforeSecretRefStatus?: string;
+    afterSecretRefStatus?: string;
+    testStatus?: string;
+    message?: string;
+    summary?: Record<string, unknown>;
+  },
+): Promise<void> {
+  await tx.integrationProviderAuditLog.create({
+    data: {
+      providerCode: input.providerCode,
+      action: input.action,
+      actor: input.actor ?? 'admin',
+      reason: input.reason,
+      beforeConfigVersion: input.beforeConfigVersion,
+      afterConfigVersion: input.afterConfigVersion,
+      beforeSecretRefStatus: input.beforeSecretRefStatus,
+      afterSecretRefStatus: input.afterSecretRefStatus,
+      testStatus: input.testStatus,
+      message: input.message,
+      summary: input.summary ? toInputJson(input.summary) : undefined,
+    },
+  });
 }
 
 async function syncNoticeDeliveryFromOutbox(

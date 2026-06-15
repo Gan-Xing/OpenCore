@@ -11,6 +11,8 @@ describe('access', () => {
         'core:user:read',
         'monitor:status:read',
         'integration:provider:read',
+        'integration:provider:update',
+        'integration:provider:manage',
       ],
     });
 
@@ -20,6 +22,8 @@ describe('access', () => {
     expect(result.canReadUsers).toBe(true);
     expect(result.canReadSystemStatus).toBe(true);
     expect(result.canReadIntegrationProviders).toBe(true);
+    expect(result.canUpdateIntegrationProviders).toBe(true);
+    expect(result.canManageIntegrationProviders).toBe(true);
     expect(result.canReadRoles).toBe(false);
   });
 
@@ -31,6 +35,8 @@ describe('access', () => {
     expect(result.canExportUsers).toBe(false);
     expect(result.canReadUsers).toBe(false);
     expect(result.canReadOpenForge).toBe(false);
+    expect(result.canUpdateIntegrationProviders).toBe(false);
+    expect(result.canManageIntegrationProviders).toBe(false);
     expect(result.hasAllShellPermissions).toBe(false);
   });
 });

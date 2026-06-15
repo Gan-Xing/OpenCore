@@ -11,6 +11,27 @@ export type IntegrationProviderType =
   | 'websocket'
   | 'wechat';
 
+export type IntegrationProviderSecretRefStatus =
+  | 'invalid'
+  | 'missing'
+  | 'unchecked'
+  | 'unsupported'
+  | 'valid';
+
+export type IntegrationProviderTestStatus =
+  | 'failed'
+  | 'not_run'
+  | 'passed'
+  | 'warning';
+
+export type IntegrationProviderAuditAction =
+  | 'created'
+  | 'disabled'
+  | 'enabled'
+  | 'health_checked'
+  | 'tested'
+  | 'updated';
+
 export class IntegrationProviderDto {
   @ApiProperty()
   id!: string;
@@ -31,6 +52,14 @@ export class IntegrationProviderDto {
   secretRef!: string;
 
   @ApiProperty({
+    enum: ['invalid', 'missing', 'unchecked', 'unsupported', 'valid'],
+  })
+  secretRefStatus!: IntegrationProviderSecretRefStatus;
+
+  @ApiProperty()
+  configVersion!: number;
+
+  @ApiProperty({
     additionalProperties: true,
     example: {
       adapter: 'smtp',
@@ -45,6 +74,18 @@ export class IntegrationProviderDto {
 
   @ApiProperty({ required: false })
   lastCheckedAt?: string;
+
+  @ApiProperty({
+    enum: ['failed', 'not_run', 'passed', 'warning'],
+    required: false,
+  })
+  lastTestStatus?: IntegrationProviderTestStatus;
+
+  @ApiProperty({ required: false })
+  lastTestMessage?: string;
+
+  @ApiProperty({ required: false })
+  lastTestedAt?: string;
 }
 
 export class IntegrationProviderPageDto {
@@ -268,6 +309,106 @@ export class UpdateIntegrationProviderDto {
     required: false,
   })
   config?: Record<string, unknown>;
+}
+
+export class TestIntegrationProviderDto {
+  @ApiProperty({ required: false })
+  reason?: string;
+}
+
+export class IntegrationProviderTestResultDto {
+  @ApiProperty({ type: IntegrationProviderDto })
+  provider!: IntegrationProviderDto;
+
+  @ApiProperty({ enum: ['failed', 'not_run', 'passed', 'warning'] })
+  status!: IntegrationProviderTestStatus;
+
+  @ApiProperty({
+    enum: ['invalid', 'missing', 'unchecked', 'unsupported', 'valid'],
+  })
+  secretRefStatus!: IntegrationProviderSecretRefStatus;
+
+  @ApiProperty()
+  message!: string;
+
+  @ApiProperty()
+  testedAt!: string;
+}
+
+export class IntegrationProviderAuditLogDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  providerCode!: string;
+
+  @ApiProperty({
+    enum: [
+      'created',
+      'disabled',
+      'enabled',
+      'health_checked',
+      'tested',
+      'updated',
+    ],
+  })
+  action!: IntegrationProviderAuditAction;
+
+  @ApiProperty()
+  actor!: string;
+
+  @ApiProperty({ required: false })
+  reason?: string;
+
+  @ApiProperty({ required: false })
+  beforeConfigVersion?: number;
+
+  @ApiProperty({ required: false })
+  afterConfigVersion?: number;
+
+  @ApiProperty({
+    enum: ['invalid', 'missing', 'unchecked', 'unsupported', 'valid'],
+    required: false,
+  })
+  beforeSecretRefStatus?: IntegrationProviderSecretRefStatus;
+
+  @ApiProperty({
+    enum: ['invalid', 'missing', 'unchecked', 'unsupported', 'valid'],
+    required: false,
+  })
+  afterSecretRefStatus?: IntegrationProviderSecretRefStatus;
+
+  @ApiProperty({
+    enum: ['failed', 'not_run', 'passed', 'warning'],
+    required: false,
+  })
+  testStatus?: IntegrationProviderTestStatus;
+
+  @ApiProperty({ required: false })
+  message?: string;
+
+  @ApiProperty({ additionalProperties: true, required: false })
+  summary?: Record<string, unknown>;
+
+  @ApiProperty()
+  createdAt!: string;
+}
+
+export class IntegrationProviderAuditLogPageDto {
+  @ApiProperty({ type: [IntegrationProviderAuditLogDto] })
+  items!: readonly IntegrationProviderAuditLogDto[];
+
+  @ApiProperty()
+  page!: number;
+
+  @ApiProperty()
+  pageSize!: number;
+
+  @ApiProperty()
+  total!: number;
+
+  @ApiProperty()
+  totalPages!: number;
 }
 
 export class IntegrationTemplateDto {

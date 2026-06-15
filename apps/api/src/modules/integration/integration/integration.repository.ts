@@ -9,25 +9,31 @@ import type {
   IntegrationOutboxProcessResultDto,
   IntegrationOutboxScheduleResultDto,
   IntegrationOutboxAttachmentDto,
+  IntegrationProviderAuditAction,
   IntegrationProviderHealthAuditDto,
   IntegrationOutboxQueryDto,
   IntegrationProviderDiagnosticsDto,
   IntegrationProviderQueryDto,
+  IntegrationProviderSecretRefStatus,
+  IntegrationProviderTestStatus,
   IntegrationProviderType,
   IntegrationSummaryDto,
   IntegrationTemplateQueryDto,
   OAuthTokenInventorySummaryDto,
   OAuthTokenQueryDto,
   OAuthTokenStatus,
+  PageQueryDto,
   ProcessOutboxDto,
   PreviewTemplateDto,
   RevokeOAuthTokenDto,
   ScheduleOutboxDto,
+  TestIntegrationProviderDto,
   UpdateIntegrationProviderDto,
 } from './integration.dto';
 import type {
   IntegrationDesignRecord,
   IntegrationOutboxRecord,
+  IntegrationProviderAuditLogRecord,
   IntegrationProviderRecord,
   IntegrationTemplateRecord,
   OAuthCallbackContractRecord,
@@ -59,6 +65,21 @@ export type NormalizedOutboxSchedule = {
   maxRetryCount: number;
 };
 
+export type ProviderSecretResolver = (secretRef: string) => Promise<string>;
+
+export type ProviderSecretRefValidation = {
+  status: IntegrationProviderSecretRefStatus;
+  message: string;
+};
+
+export type ProviderTestResult = {
+  provider: IntegrationProviderRecord;
+  status: IntegrationProviderTestStatus;
+  secretRefStatus: IntegrationProviderSecretRefStatus;
+  message: string;
+  testedAt: string;
+};
+
 export abstract class IntegrationRepository {
   abstract getSummary(): Promise<IntegrationSummaryDto>;
 
@@ -78,10 +99,18 @@ export abstract class IntegrationRepository {
   abstract checkProviderHealth(
     code: string,
   ): Promise<IntegrationProviderRecord>;
+  abstract testProvider(
+    code: string,
+    body?: TestIntegrationProviderDto,
+  ): Promise<ProviderTestResult>;
   abstract getProviderDiagnostics(
     code: string,
   ): Promise<IntegrationProviderDiagnosticsDto>;
   abstract getProviderHealthAudit(): Promise<IntegrationProviderHealthAuditDto>;
+  abstract listProviderAuditLogs(
+    code: string,
+    query?: PageQueryDto,
+  ): Promise<PageResult<IntegrationProviderAuditLogRecord>>;
 
   abstract listTemplates(
     channel: 'mail' | 'sms',
@@ -499,6 +528,127 @@ export function buildProviderHealthAudit(input: {
       ),
     ],
   };
+}
+
+export async function validateProviderSecretRef(
+  secretRef: string,
+  resolver?: ProviderSecretResolver,
+): Promise<ProviderSecretRefValidation> {
+  try {
+    assertSecretRef(secretRef);
+  } catch {
+    return {
+      status: 'invalid',
+      message: 'Provider secretRef must start with secret://.',
+    };
+  }
+
+  if (!secretRef.startsWith(CONFIG_SECRET_REF_PREFIX)) {
+    return {
+      status: 'unsupported',
+      message: 'Provider secretRef is not backed by the config vault.',
+    };
+  }
+
+  if (!resolver) {
+    return {
+      status: 'unchecked',
+      message: 'Provider secretRef could not be resolved in this runtime.',
+    };
+  }
+
+  try {
+    const secret = await resolver(secretRef);
+    if (!secret.trim()) {
+      return {
+        status: 'missing',
+        message: 'Provider secretRef resolves to an empty secret.',
+      };
+    }
+
+    return {
+      status: 'valid',
+      message: 'Provider secretRef resolves through the config vault.',
+    };
+  } catch {
+    return {
+      status: 'missing',
+      message: 'Provider secretRef does not resolve to an active secret.',
+    };
+  }
+}
+
+export function buildProviderTestResult(input: {
+  provider: IntegrationProviderRecord;
+  secret: ProviderSecretRefValidation;
+  adapter: { status: 'degraded' | 'disabled' | 'healthy'; error?: string };
+  testedAt?: string;
+}): ProviderTestResult {
+  const adapterMessage =
+    input.adapter.status === 'healthy'
+      ? 'Provider adapter configuration passed.'
+      : input.adapter.error
+        ? `Provider adapter configuration failed: ${input.adapter.error}`
+        : `Provider adapter configuration status is ${input.adapter.status}.`;
+  const status =
+    input.secret.status === 'invalid' ||
+    input.secret.status === 'missing' ||
+    input.adapter.status === 'degraded'
+      ? 'failed'
+      : input.secret.status === 'valid' && input.adapter.status === 'healthy'
+        ? 'passed'
+        : 'warning';
+  const testedAt = input.testedAt ?? new Date().toISOString();
+
+  return {
+    provider: input.provider,
+    status,
+    secretRefStatus: input.secret.status,
+    message: `${input.secret.message} ${adapterMessage}`,
+    testedAt,
+  };
+}
+
+export function normalizeProviderAuditAction(
+  value: string,
+): IntegrationProviderAuditAction {
+  if (
+    [
+      'created',
+      'disabled',
+      'enabled',
+      'health_checked',
+      'tested',
+      'updated',
+    ].includes(value)
+  ) {
+    return value as IntegrationProviderAuditAction;
+  }
+
+  return 'updated';
+}
+
+export function normalizeProviderSecretRefStatus(
+  value: string | null | undefined,
+): IntegrationProviderSecretRefStatus {
+  if (
+    value &&
+    ['invalid', 'missing', 'unchecked', 'unsupported', 'valid'].includes(value)
+  ) {
+    return value as IntegrationProviderSecretRefStatus;
+  }
+
+  return 'unchecked';
+}
+
+export function normalizeProviderTestStatus(
+  value: string | null | undefined,
+): IntegrationProviderTestStatus | undefined {
+  if (value && ['failed', 'not_run', 'passed', 'warning'].includes(value)) {
+    return value as IntegrationProviderTestStatus;
+  }
+
+  return undefined;
 }
 
 const SECRET_KEY_PATTERN =

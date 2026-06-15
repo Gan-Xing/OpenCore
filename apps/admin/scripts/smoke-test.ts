@@ -1874,6 +1874,12 @@ if (
   ) ||
   !providersPage.includes('Signed callback contract') ||
   !providersPage.includes('Provider Diagnostics') ||
+  !providersPage.includes('Config Version') ||
+  !providersPage.includes('Secret Ref Validation') ||
+  !providersPage.includes('Provider Test') ||
+  !providersPage.includes('Provider Audit Logs') ||
+  !providersPage.includes('canManageIntegrationProviders') ||
+  !providersPage.includes('canUpdateIntegrationProviders') ||
   !providersPage.includes('selectedDiagnostics?.readiness') ||
   !providersPage.includes('SMS HTTP adapter') ||
   !providersPage.includes('HTTP Secret Injection') ||
@@ -1893,10 +1899,14 @@ if (
   !opencorePlatformService.includes(
     'integrationClient.getProviderHealthAudit',
   ) ||
-  !opencorePlatformService.includes('integrationClient.getProviderDiagnostics')
+  !opencorePlatformService.includes(
+    'integrationClient.getProviderDiagnostics',
+  ) ||
+  !opencorePlatformService.includes('integrationClient.testProvider') ||
+  !opencorePlatformService.includes('integrationClient.listProviderAuditLogs')
 ) {
   throw new Error(
-    'Integration provider list and detail must use live health audit/diagnostics data, redact scalar secret references and show signed callback/provider adapter contracts without fixture fallback.',
+    'Integration provider list and detail must use live health audit/diagnostics/provider test/audit data, redact scalar secret references and show signed callback/provider adapter contracts without fixture fallback.',
   );
 }
 

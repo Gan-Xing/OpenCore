@@ -5,6 +5,7 @@ import {
   assertAtLeast,
   assertEqual,
   assertIncludes,
+  assertNumber,
   assertOpenApiPath,
   assertString,
   createTypedSmokeRuntime,
@@ -22,6 +23,8 @@ async function main() {
       expected: [200],
     });
     assertOpenApiPath(openApi, '/api/integrations/providers/health-audit');
+    assertOpenApiPath(openApi, '/api/integrations/providers/{code}/test');
+    assertOpenApiPath(openApi, '/api/integrations/providers/{code}/audit-logs');
   }
 
   const loginResponse = await smoke.login();
@@ -45,6 +48,14 @@ async function main() {
   const smsSandbox = assertProvider(byCode, 'sms.sandbox');
   const smsHttp = assertProvider(byCode, 'sms.http');
 
+  assertNumber(
+    mailSandbox.provider.configVersion,
+    'mail sandbox config version',
+  );
+  assertString(
+    mailSandbox.provider.secretRefStatus,
+    'mail sandbox secret ref status',
+  );
   assertEqual(mailSandbox.channel, 'mail', 'mail sandbox channel');
   assertEqual(mailSandbox.readiness, 'blocked', 'mail sandbox readiness');
   assertAtLeast(mailSandbox.outbox.queued, 1, 'mail sandbox queued outbox');
@@ -80,7 +91,44 @@ async function main() {
     'mail diagnostics readiness parity',
   );
 
+  const providerTest = await clients.integration.testProvider(
+    token,
+    'mail.sandbox',
+    {
+      reason: 'smoke provider credential audit',
+    },
+  );
+  assertEqual(
+    providerTest.status,
+    'warning',
+    'mail sandbox provider test status',
+  );
+  assertEqual(
+    providerTest.secretRefStatus,
+    'unsupported',
+    'mail sandbox provider test secretRefStatus',
+  );
+  assertString(providerTest.testedAt, 'mail sandbox provider test testedAt');
+  assertString(
+    providerTest.provider.lastTestedAt,
+    'mail sandbox provider lastTestedAt',
+  );
+
+  const auditLogs = await clients.integration.listProviderAuditLogs(
+    token,
+    'mail.sandbox',
+    { page: 1, pageSize: 20 },
+  );
+  assertAtLeast(auditLogs.items.length, 1, 'mail sandbox provider audit logs');
+  assertIncludes(
+    auditLogs.items.map((log) => log.action),
+    'tested',
+    'mail sandbox provider audit action',
+  );
+
   assertNoSecretLeak(audit);
+  assertNoSecretLeak(providerTest);
+  assertNoSecretLeak(auditLogs);
 
   console.log(
     JSON.stringify({
@@ -91,9 +139,13 @@ async function main() {
         'health.live',
         'health.ready',
         ...(checkDocs ? ['openapi.integration-health-audit'] : []),
+        ...(checkDocs ? ['openapi.integration-provider-test'] : []),
+        ...(checkDocs ? ['openapi.integration-provider-audit-logs'] : []),
         'auth.login',
         'integration.provider-health-audit',
         'integration.provider-diagnostics-parity',
+        'integration.provider-credential-test',
+        'integration.provider-audit-logs',
         'integration.config-vault-audit',
         'integration.failure-history',
         'integration.secret-leak-guard',

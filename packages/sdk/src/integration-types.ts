@@ -10,6 +10,27 @@ export type IntegrationProviderType =
   | 'websocket'
   | 'wechat';
 
+export type IntegrationProviderSecretRefStatus =
+  | 'invalid'
+  | 'missing'
+  | 'unchecked'
+  | 'unsupported'
+  | 'valid';
+
+export type IntegrationProviderTestStatus =
+  | 'failed'
+  | 'not_run'
+  | 'passed'
+  | 'warning';
+
+export type IntegrationProviderAuditAction =
+  | 'created'
+  | 'disabled'
+  | 'enabled'
+  | 'health_checked'
+  | 'tested'
+  | 'updated';
+
 export type IntegrationMailSmtpTlsMode =
   | 'implicit-tls'
   | 'plain'
@@ -23,9 +44,38 @@ export type IntegrationProviderSummary = {
   name: string;
   enabled: boolean;
   secretRef: string;
+  secretRefStatus: IntegrationProviderSecretRefStatus;
+  configVersion: number;
   config: Record<string, unknown>;
   healthStatus: 'degraded' | 'disabled' | 'healthy' | 'unknown';
   lastCheckedAt?: string;
+  lastTestStatus?: IntegrationProviderTestStatus;
+  lastTestMessage?: string;
+  lastTestedAt?: string;
+};
+
+export type IntegrationProviderTestResult = {
+  provider: IntegrationProviderSummary;
+  status: IntegrationProviderTestStatus;
+  secretRefStatus: IntegrationProviderSecretRefStatus;
+  message: string;
+  testedAt: string;
+};
+
+export type IntegrationProviderAuditLogSummary = {
+  id: string;
+  providerCode: string;
+  action: IntegrationProviderAuditAction;
+  actor: string;
+  reason?: string;
+  beforeConfigVersion?: number;
+  afterConfigVersion?: number;
+  beforeSecretRefStatus?: IntegrationProviderSecretRefStatus;
+  afterSecretRefStatus?: IntegrationProviderSecretRefStatus;
+  testStatus?: IntegrationProviderTestStatus;
+  message?: string;
+  summary?: Record<string, unknown>;
+  createdAt: string;
 };
 
 export type IntegrationProviderDiagnosticCheck = {
@@ -191,7 +241,15 @@ export type IntegrationSummary = {
 
 export type CreateIntegrationProviderRequest = Omit<
   IntegrationProviderSummary,
-  'enabled' | 'healthStatus' | 'id' | 'lastCheckedAt'
+  | 'configVersion'
+  | 'enabled'
+  | 'healthStatus'
+  | 'id'
+  | 'lastCheckedAt'
+  | 'lastTestMessage'
+  | 'lastTestStatus'
+  | 'lastTestedAt'
+  | 'secretRefStatus'
 > & {
   enabled?: boolean;
 };
@@ -199,6 +257,10 @@ export type CreateIntegrationProviderRequest = Omit<
 export type UpdateIntegrationProviderRequest = Partial<
   Pick<IntegrationProviderSummary, 'config' | 'enabled' | 'name' | 'secretRef'>
 >;
+
+export type TestIntegrationProviderRequest = {
+  reason?: string;
+};
 
 export type CreateIntegrationTemplateRequest = Omit<
   IntegrationTemplateSummary,
@@ -291,6 +353,8 @@ export type IntegrationProviderQueryRequest = PageRequest & {
   healthStatus?: IntegrationProviderSummary['healthStatus'];
 };
 
+export type IntegrationProviderAuditLogQueryRequest = PageRequest;
+
 export type IntegrationTemplateQueryRequest = PageRequest & {
   enabled?: boolean;
 };
@@ -333,6 +397,8 @@ export function createIntegrationFixtures(): IntegrationFixtures {
       name: 'Mail Sandbox',
       enabled: false,
       secretRef: 'secret://integration/mail/sandbox',
+      secretRefStatus: 'unchecked',
+      configVersion: 1,
       config: {
         adapter: 'sandbox',
         host: 'smtp.example.test',
@@ -347,6 +413,8 @@ export function createIntegrationFixtures(): IntegrationFixtures {
       name: 'Mail SMTP',
       enabled: false,
       secretRef: 'secret://config/integration.mail.smtp.password.secret',
+      secretRefStatus: 'unchecked',
+      configVersion: 1,
       config: {
         adapter: 'smtp',
         authMethod: 'PLAIN',
@@ -366,6 +434,8 @@ export function createIntegrationFixtures(): IntegrationFixtures {
       name: 'SMS Sandbox',
       enabled: false,
       secretRef: 'secret://integration/sms/sandbox',
+      secretRefStatus: 'unchecked',
+      configVersion: 1,
       config: {
         adapter: 'sandbox',
         endpoint: 'https://sms.example.test',
@@ -380,6 +450,8 @@ export function createIntegrationFixtures(): IntegrationFixtures {
       name: 'SMS HTTP',
       enabled: false,
       secretRef: 'secret://config/integration.sms.http.api-key.secret',
+      secretRefStatus: 'unchecked',
+      configVersion: 1,
       config: {
         adapter: 'http',
         allowedHosts: ['sms.example.test'],
@@ -416,6 +488,8 @@ export function createIntegrationFixtures(): IntegrationFixtures {
       enabled: true,
       secretRef:
         'secret://config/integration.oauth.github.client-secret.secret',
+      secretRefStatus: 'unchecked',
+      configVersion: 1,
       config: {
         adapter: 'oauth2',
         authorizationUrl: 'https://github.com/login/oauth/authorize',
@@ -687,6 +761,8 @@ export function findIntegrationDesignFixture(
 }
 
 export type IntegrationProviderPage = PageResponse<IntegrationProviderSummary>;
+export type IntegrationProviderAuditLogPage =
+  PageResponse<IntegrationProviderAuditLogSummary>;
 export type IntegrationTemplatePage = PageResponse<IntegrationTemplateSummary>;
 export type IntegrationOutboxPage = PageResponse<IntegrationOutboxSummary>;
 export type OAuthTokenPage = PageResponse<OAuthTokenSummary>;

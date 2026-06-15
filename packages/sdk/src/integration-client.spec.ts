@@ -31,7 +31,14 @@ describe('createIntegrationClient', () => {
     await client.enableProvider('token', 'mail.sandbox');
     await client.disableProvider('token', 'mail.sandbox');
     await client.checkProviderHealth('token', 'mail.sandbox');
+    await client.testProvider('token', 'mail.sandbox', {
+      reason: 'SDK provider credential audit',
+    });
     await client.getProviderDiagnostics('token', 'mail.sandbox');
+    await client.listProviderAuditLogs('token', 'mail.sandbox', {
+      page: 1,
+      pageSize: 10,
+    });
     await client.getProviderHealthAudit('token');
     await client.runOutboxSchedule('token', {
       channels: ['mail', 'sms'],
@@ -142,7 +149,14 @@ describe('createIntegrationClient', () => {
         method: 'POST',
       },
       {
+        path: '/integrations/providers/mail.sandbox/test',
+        method: 'POST',
+      },
+      {
         path: '/integrations/providers/mail.sandbox/diagnostics',
+      },
+      {
+        path: '/integrations/providers/mail.sandbox/audit-logs?page=1&pageSize=10',
       },
       {
         path: '/integrations/providers/health-audit',

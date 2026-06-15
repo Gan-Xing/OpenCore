@@ -115,6 +115,88 @@ describe('IntegrationRepository', () => {
     });
   });
 
+  it('versions provider config, validates secret refs, and records audit logs', async () => {
+    const secretKey = 'integration.mail.smtp.password.secret';
+    const repository = new SeedIntegrationRepository(
+      createMapProviderSecretResolver(new Map([[secretKey, 'smtp-password']])),
+      jest.fn<
+        ReturnType<MailSmtpTransportFactory>,
+        Parameters<MailSmtpTransportFactory>
+      >(() => ({
+        close: jest.fn(),
+        sendMail: jest.fn().mockResolvedValue({}),
+        verify: jest.fn().mockResolvedValue(true),
+      })),
+    );
+
+    const initialProvider = await repository.getProvider('mail.smtp');
+    expect(initialProvider).toMatchObject({
+      code: 'mail.smtp',
+      configVersion: 1,
+      secretRefStatus: 'unchecked',
+    });
+    expect(initialProvider).not.toHaveProperty('lastTestStatus');
+    await expect(
+      repository.updateProvider('mail.smtp', {
+        config: {
+          adapter: 'smtp',
+          authMethod: 'PLAIN',
+          from: 'no-reply@opencore.test',
+          host: 'smtp.gateway.test',
+          tlsMode: 'starttls-required',
+          username: 'smtp-user',
+        },
+      }),
+    ).resolves.toMatchObject({
+      configVersion: 2,
+      secretRefStatus: 'unchecked',
+    });
+    await expect(
+      repository.testProvider('mail.smtp', {
+        reason: 'Repository provider credential audit',
+      }),
+    ).resolves.toMatchObject({
+      status: 'passed',
+      secretRefStatus: 'valid',
+      provider: {
+        code: 'mail.smtp',
+        configVersion: 2,
+        secretRefStatus: 'valid',
+        lastTestStatus: 'passed',
+        lastTestedAt: expect.any(String),
+      },
+    });
+    await expect(
+      repository.testProvider('mail.sandbox'),
+    ).resolves.toMatchObject({
+      status: 'warning',
+      secretRefStatus: 'unsupported',
+      provider: {
+        code: 'mail.sandbox',
+        lastTestStatus: 'warning',
+      },
+    });
+
+    const auditLogs = await repository.listProviderAuditLogs('mail.smtp');
+    expect(auditLogs.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          action: 'tested',
+          afterConfigVersion: 2,
+          afterSecretRefStatus: 'valid',
+          reason: 'Repository provider credential audit',
+          testStatus: 'passed',
+        }),
+        expect.objectContaining({
+          action: 'updated',
+          beforeConfigVersion: 1,
+          afterConfigVersion: 2,
+        }),
+      ]),
+    );
+    expect(JSON.stringify(auditLogs)).not.toContain('smtp-password');
+  });
+
   it('builds provider diagnostics from health, secret, and outbox state', async () => {
     const repository = new SeedIntegrationRepository();
 

@@ -52,6 +52,8 @@ export default function access(initialState: InitialState = {}) {
     canReadReports: hasPermission('optional:report:read'),
     canReadExportJobs: hasPermission('optional:export-job:read'),
     canReadIntegrationProviders: hasPermission('integration:provider:read'),
+    canUpdateIntegrationProviders: hasPermission('integration:provider:update'),
+    canManageIntegrationProviders: hasPermission('integration:provider:manage'),
     canReadMailIntegration: hasPermission('integration:mail:read'),
     canReadSmsIntegration: hasPermission('integration:sms:read'),
     canReadOAuthIntegration: hasPermission('integration:oauth:read'),

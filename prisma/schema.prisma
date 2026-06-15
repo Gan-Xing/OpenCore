@@ -495,17 +495,41 @@ model ReportDefinition {
 }
 
 model IntegrationProvider {
-  id            String    @id @default(cuid())
-  code          String    @unique
-  type          String
-  name          String
-  enabled       Boolean   @default(false)
-  secretRef     String
-  config        Json
-  healthStatus  String    @default("unknown")
-  lastCheckedAt DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id              String    @id @default(cuid())
+  code            String    @unique
+  type            String
+  name            String
+  enabled         Boolean   @default(false)
+  secretRef       String
+  secretRefStatus String    @default("unchecked")
+  config          Json
+  configVersion   Int       @default(1)
+  healthStatus    String    @default("unknown")
+  lastCheckedAt   DateTime?
+  lastTestStatus  String?
+  lastTestMessage String?
+  lastTestedAt    DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model IntegrationProviderAuditLog {
+  id                    String   @id @default(cuid())
+  providerCode          String
+  action                String
+  actor                 String   @default("admin")
+  reason                String?
+  beforeConfigVersion   Int?
+  afterConfigVersion    Int?
+  beforeSecretRefStatus String?
+  afterSecretRefStatus  String?
+  testStatus            String?
+  message               String?
+  summary               Json?
+  createdAt             DateTime @default(now())
+
+  @@index([providerCode, createdAt])
+  @@index([action])
 }
 
 model IntegrationTemplate {

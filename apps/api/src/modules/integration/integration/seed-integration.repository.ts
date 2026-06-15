@@ -7,13 +7,16 @@ import type {
   IntegrationOutboxCallbackDto,
   IntegrationOutboxQueryDto,
   IntegrationOutboxScheduleChannelResultDto,
+  IntegrationProviderAuditAction,
   IntegrationProviderQueryDto,
   IntegrationTemplateQueryDto,
   OAuthTokenQueryDto,
+  PageQueryDto,
   ProcessOutboxDto,
   PreviewTemplateDto,
   RevokeOAuthTokenDto,
   ScheduleOutboxDto,
+  TestIntegrationProviderDto,
   UpdateIntegrationProviderDto,
 } from './integration.dto';
 import {
@@ -25,6 +28,7 @@ import {
   seedIntegrationTemplates,
   type IntegrationDesignRecord,
   type IntegrationOutboxRecord,
+  type IntegrationProviderAuditLogRecord,
   type IntegrationProviderRecord,
   type IntegrationTemplateRecord,
   type OAuthCallbackContractRecord,
@@ -43,6 +47,7 @@ import {
   assertSecretRef,
   assertSmsSafety,
   assertTemplateEnabled,
+  buildProviderTestResult,
   buildProviderHealthAudit,
   buildProviderDiagnostics,
   buildIntegrationSummary,
@@ -61,12 +66,16 @@ import {
   normalizeOAuthTokenRecord,
   normalizeOptionalProviderCode,
   normalizeOptionalBoolean,
+  normalizeProviderSecretRefStatus,
+  normalizeProviderTestStatus,
   parseConfigSecretRef,
   normalizeProcessOutboxLimit,
   redactProviderConfig,
   renderTemplate,
   requireRecord,
+  validateProviderSecretRef,
   type PageResult,
+  type ProviderTestResult,
 } from './integration.repository';
 
 @Injectable()
@@ -80,6 +89,7 @@ export class SeedIntegrationRepository extends IntegrationRepository {
 
   private providers: IntegrationProviderRecord[] =
     seedIntegrationProviders.map(cloneProvider);
+  private providerAuditLogs: IntegrationProviderAuditLogRecord[] = [];
   private templates: IntegrationTemplateRecord[] = seedIntegrationTemplates.map(
     (template) => ({ ...template }),
   );
@@ -126,10 +136,23 @@ export class SeedIntegrationRepository extends IntegrationRepository {
       name: body.name,
       enabled: body.enabled ?? false,
       secretRef: body.secretRef,
+      secretRefStatus: 'unchecked',
+      configVersion: 1,
       config: body.config,
       healthStatus: body.enabled ? 'unknown' : 'disabled',
     };
     this.providers = [provider, ...this.providers];
+    this.addProviderAuditLog({
+      providerCode: provider.code,
+      action: 'created',
+      afterConfigVersion: provider.configVersion,
+      afterSecretRefStatus: provider.secretRefStatus,
+      message: 'Integration provider created.',
+      summary: {
+        enabled: provider.enabled,
+        type: provider.type,
+      },
+    });
     return redactProvider(provider);
   }
 
@@ -141,39 +164,88 @@ export class SeedIntegrationRepository extends IntegrationRepository {
     code: string,
     body: UpdateIntegrationProviderDto,
   ): Promise<IntegrationProviderRecord> {
-    const provider = this.findProvider(code);
-
-    if (body.secretRef) {
-      assertSecretRef(body.secretRef);
-    }
-
-    Object.assign(provider, {
-      name: body.name ?? provider.name,
-      enabled: body.enabled ?? provider.enabled,
-      secretRef: body.secretRef ?? provider.secretRef,
-      config: body.config ?? provider.config,
-      healthStatus: body.enabled === false ? 'disabled' : provider.healthStatus,
-    });
-    return redactProvider(provider);
+    return this.updateProviderConfig(code, body, 'updated');
   }
 
   async enableProvider(code: string): Promise<IntegrationProviderRecord> {
-    return this.updateProvider(code, { enabled: true });
+    return this.updateProviderConfig(code, { enabled: true }, 'enabled');
   }
 
   async disableProvider(code: string): Promise<IntegrationProviderRecord> {
-    return this.updateProvider(code, { enabled: false });
+    return this.updateProviderConfig(code, { enabled: false }, 'disabled');
   }
 
   async checkProviderHealth(code: string): Promise<IntegrationProviderRecord> {
     const provider = this.findProvider(code);
+    const before = { ...provider };
     const health = await evaluateProviderDeliveryHealth(provider, {
       secretResolver: this.secretResolver,
       smtpTransportFactory: this.smtpTransportFactory,
     });
     provider.healthStatus = health.status;
     provider.lastCheckedAt = new Date().toISOString();
+    this.addProviderAuditLog({
+      providerCode: provider.code,
+      action: 'health_checked',
+      beforeConfigVersion: before.configVersion,
+      afterConfigVersion: provider.configVersion,
+      beforeSecretRefStatus: before.secretRefStatus,
+      afterSecretRefStatus: provider.secretRefStatus,
+      message:
+        health.error ??
+        `Integration provider health check completed: ${health.status}.`,
+      summary: { healthStatus: health.status },
+    });
     return redactProvider(provider);
+  }
+
+  async testProvider(
+    code: string,
+    body: TestIntegrationProviderDto = {},
+  ): Promise<ProviderTestResult> {
+    const provider = this.findProvider(code);
+    const before = { ...provider };
+    const [secret, adapter] = await Promise.all([
+      validateProviderSecretRef(provider.secretRef, this.secretResolver),
+      evaluateProviderDeliveryHealth(
+        { ...provider, enabled: true },
+        {
+          secretResolver: this.secretResolver,
+          smtpTransportFactory: this.smtpTransportFactory,
+        },
+      ),
+    ]);
+    const result = buildProviderTestResult({
+      provider,
+      secret,
+      adapter,
+    });
+    Object.assign(provider, {
+      secretRefStatus: result.secretRefStatus,
+      lastTestStatus: result.status,
+      lastTestMessage: result.message,
+      lastTestedAt: result.testedAt,
+    });
+    this.addProviderAuditLog({
+      providerCode: provider.code,
+      action: 'tested',
+      reason: normalizeOptionalText(body.reason),
+      beforeConfigVersion: before.configVersion,
+      afterConfigVersion: provider.configVersion,
+      beforeSecretRefStatus: before.secretRefStatus,
+      afterSecretRefStatus: provider.secretRefStatus,
+      testStatus: result.status,
+      message: result.message,
+      summary: {
+        adapterStatus: adapter.status,
+        secretRefStatus: result.secretRefStatus,
+      },
+    });
+
+    return {
+      ...result,
+      provider: redactProvider(provider),
+    };
   }
 
   async getProviderDiagnostics(code: string) {
@@ -190,6 +262,17 @@ export class SeedIntegrationRepository extends IntegrationRepository {
       providers: this.providers,
       outbox: this.outbox,
     });
+  }
+
+  async listProviderAuditLogs(
+    code: string,
+    query: PageQueryDto = {},
+  ): Promise<PageResult<IntegrationProviderAuditLogRecord>> {
+    this.findProvider(code);
+    return createPage(
+      this.providerAuditLogs.filter((log) => log.providerCode === code),
+      query,
+    );
   }
 
   async listTemplates(
@@ -585,6 +668,90 @@ export class SeedIntegrationRepository extends IntegrationRepository {
     );
   }
 
+  private updateProviderConfig(
+    code: string,
+    body: UpdateIntegrationProviderDto,
+    action: IntegrationProviderAuditAction,
+  ): IntegrationProviderRecord {
+    const provider = this.findProvider(code);
+    const before = { ...provider };
+
+    if (body.secretRef) {
+      assertSecretRef(body.secretRef);
+    }
+
+    const changedFields = listProviderChangedFields(body);
+    Object.assign(provider, {
+      name: body.name ?? provider.name,
+      enabled: body.enabled ?? provider.enabled,
+      secretRef: body.secretRef ?? provider.secretRef,
+      secretRefStatus: body.secretRef
+        ? 'unchecked'
+        : normalizeProviderSecretRefStatus(provider.secretRefStatus),
+      config: body.config ?? provider.config,
+      configVersion:
+        changedFields.length > 0
+          ? provider.configVersion + 1
+          : provider.configVersion,
+      healthStatus: body.enabled === false ? 'disabled' : provider.healthStatus,
+      lastTestStatus:
+        body.secretRef || body.config ? undefined : provider.lastTestStatus,
+      lastTestMessage:
+        body.secretRef || body.config ? undefined : provider.lastTestMessage,
+      lastTestedAt:
+        body.secretRef || body.config ? undefined : provider.lastTestedAt,
+    });
+    this.addProviderAuditLog({
+      providerCode: provider.code,
+      action,
+      beforeConfigVersion: before.configVersion,
+      afterConfigVersion: provider.configVersion,
+      beforeSecretRefStatus: before.secretRefStatus,
+      afterSecretRefStatus: provider.secretRefStatus,
+      message: `Integration provider ${action.replace('_', ' ')}.`,
+      summary: { changedFields },
+    });
+
+    return redactProvider(provider);
+  }
+
+  private addProviderAuditLog(input: {
+    providerCode: string;
+    action: IntegrationProviderAuditAction;
+    actor?: string;
+    reason?: string;
+    beforeConfigVersion?: number;
+    afterConfigVersion?: number;
+    beforeSecretRefStatus?: string;
+    afterSecretRefStatus?: string;
+    testStatus?: string;
+    message?: string;
+    summary?: Record<string, unknown>;
+  }): void {
+    this.providerAuditLogs = [
+      {
+        id: `provider_audit_${this.providerAuditLogs.length + 1}`,
+        providerCode: input.providerCode,
+        action: input.action,
+        actor: input.actor ?? 'admin',
+        reason: input.reason,
+        beforeConfigVersion: input.beforeConfigVersion,
+        afterConfigVersion: input.afterConfigVersion,
+        beforeSecretRefStatus: input.beforeSecretRefStatus
+          ? normalizeProviderSecretRefStatus(input.beforeSecretRefStatus)
+          : undefined,
+        afterSecretRefStatus: input.afterSecretRefStatus
+          ? normalizeProviderSecretRefStatus(input.afterSecretRefStatus)
+          : undefined,
+        testStatus: normalizeProviderTestStatus(input.testStatus),
+        message: input.message,
+        summary: input.summary,
+        createdAt: new Date().toISOString(),
+      },
+      ...this.providerAuditLogs,
+    ];
+  }
+
   private findProvider(code: string): IntegrationProviderRecord {
     return requireRecord(
       this.providers.find((provider) => provider.code === code),
@@ -721,4 +888,21 @@ function cloneOAuthToken(token: OAuthTokenRecord): OAuthTokenRecord {
     ...token,
     scopes: [...token.scopes],
   };
+}
+
+function listProviderChangedFields(
+  body: UpdateIntegrationProviderDto,
+): string[] {
+  return (['name', 'enabled', 'secretRef', 'config'] as const).filter(
+    (field) => body[field] !== undefined,
+  );
+}
+
+function normalizeOptionalText(value: unknown): string | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  const text = String(value).trim();
+  return text ? text : undefined;
 }

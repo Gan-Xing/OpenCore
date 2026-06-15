@@ -1071,9 +1071,29 @@ verify_admin_bundle_api_base_url() {
     ! grep -R \
     --fixed-strings \
     --include='*.js' \
+    "Config Version" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Secret Ref Validation" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Provider Test" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Provider Audit Logs" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
     "Live Outbox Summary" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null; then
-    echo "Admin bundle does not include live integration provider health audit, signed callback, SMS HTTP, secret injection, Mail SMTP, SMTP TLS policy, outbox subject, SMTP attachments and provider diagnostics surfaces." >&2
+    echo "Admin bundle does not include live integration provider health audit, signed callback, SMS HTTP, secret injection, Mail SMTP, SMTP TLS policy, outbox subject, SMTP attachments, provider diagnostics, provider test and provider audit surfaces." >&2
     echo "Refusing to deploy a stale frontend integration provider page." >&2
     exit 1
   fi
