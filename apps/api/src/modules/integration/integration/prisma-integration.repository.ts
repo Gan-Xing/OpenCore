@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { createHash, randomBytes } from 'node:crypto';
 import { Prisma } from '@prisma/client';
 import {
@@ -71,6 +71,7 @@ import {
   createOutboxScheduleResult,
   IntegrationWebSocketRuntimeStore,
   createPage,
+  integrationBadRequest,
   IntegrationRepository,
   matchesOAuthCallbackAuditQuery,
   matchesOAuthFlowQuery,
@@ -698,7 +699,8 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
   ): Promise<IntegrationOutboxRecord> {
     const existing = await this.findOutboxRow(channel, id);
     if (existing.status === 'sent') {
-      throw new BadRequestException(
+      throw integrationBadRequest(
+        'INTEGRATION_OUTBOX_ALREADY_SENT',
         'Sent outbox messages cannot be marked failed.',
       );
     }
@@ -734,7 +736,8 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
   ): Promise<IntegrationOutboxRecord> {
     const existing = await this.findOutboxRow(channel, id);
     if (existing.status !== 'failed') {
-      throw new BadRequestException(
+      throw integrationBadRequest(
+        'INTEGRATION_OUTBOX_RETRY_STATUS_INVALID',
         'Only failed outbox messages can be retried.',
       );
     }

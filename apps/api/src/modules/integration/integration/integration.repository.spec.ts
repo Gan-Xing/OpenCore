@@ -1,4 +1,3 @@
-import { BadRequestException } from '@nestjs/common';
 import type { MailSmtpTransportFactory } from './integration.delivery-adapter';
 import { createOutboxCallbackSignature } from './integration.repository';
 import {
@@ -82,7 +81,7 @@ describe('IntegrationRepository', () => {
     expect(JSON.stringify(await repository.listProviders())).not.toContain(
       'unsafe',
     );
-    await expect(
+    await expectHttpExceptionCode(
       repository.createProvider({
         code: 'mail.invalid',
         type: 'mail',
@@ -90,7 +89,8 @@ describe('IntegrationRepository', () => {
         secretRef: 'plain-secret',
         config: {},
       }),
-    ).rejects.toThrow(BadRequestException);
+      'INTEGRATION_SECRET_REF_INVALID',
+    );
   });
 
   it('checks provider health and supports enable/disable state', async () => {
@@ -377,9 +377,10 @@ describe('IntegrationRepository', () => {
       retryCount: 1,
       error: undefined,
     });
-    await expect(
+    await expectHttpExceptionCode(
       repository.markOutboxFailed('mail', queued.id, { error: ' ' }),
-    ).rejects.toThrow(BadRequestException);
+      'INTEGRATION_OUTBOX_FAILURE_ERROR_REQUIRED',
+    );
     await expect(
       repository.markOutboxSent('mail', queued.id),
     ).resolves.toMatchObject({
@@ -388,15 +389,18 @@ describe('IntegrationRepository', () => {
       error: undefined,
       sentAt: expect.any(String),
     });
-    await expect(repository.retryOutbox('mail', queued.id)).rejects.toThrow(
-      BadRequestException,
+    await expectHttpExceptionCode(
+      repository.retryOutbox('mail', queued.id),
+      'INTEGRATION_OUTBOX_RETRY_STATUS_INVALID',
     );
-    await expect(
+    await expectHttpExceptionCode(
       repository.markOutboxFailed('mail', queued.id, { error: 'too late' }),
-    ).rejects.toThrow(BadRequestException);
-    await expect(
+      'INTEGRATION_OUTBOX_ALREADY_SENT',
+    );
+    await expectHttpExceptionCode(
       repository.markOutboxFailed('sms', queued.id, { error: 'wrong channel' }),
-    ).rejects.toThrow('Integration outbox message not found');
+      'INTEGRATION_RESOURCE_NOT_FOUND',
+    );
   });
 
   it('sends isolated mail and SMS provider test messages through outbox', async () => {
@@ -452,21 +456,23 @@ describe('IntegrationRepository', () => {
         providerCode: 'mail.sandbox',
       }),
     ).resolves.toMatchObject({ total: 1 });
-    await expect(
+    await expectHttpExceptionCode(
       repository.sendTestOutbox('sms', {
         providerCode: 'sms.sandbox',
         recipient: 'bad-phone',
         payload: { code: '123456' },
       }),
-    ).rejects.toThrow(BadRequestException);
+      'INTEGRATION_SMS_RECIPIENT_INVALID',
+    );
   });
 
   it('processes queued outbox messages through the provider reliability loop', async () => {
     const repository = new SeedIntegrationRepository();
 
-    await expect(
+    await expectHttpExceptionCode(
       repository.processOutbox('mail', { providerCode: 'mail.sandbox' }),
-    ).rejects.toThrow(BadRequestException);
+      'INTEGRATION_PROVIDER_DISABLED',
+    );
     await repository.enableProvider('mail.sandbox');
 
     const result = await repository.processOutbox('mail', {
@@ -484,18 +490,22 @@ describe('IntegrationRepository', () => {
     const processed = (await repository.listOutbox('mail', { status: 'sent' }))
       .items[0];
     expect(processed.sentAt).toEqual(expect.any(String));
-    await expect(
+    await expectHttpExceptionCode(
       repository.markOutboxFailed('mail', processed.id, { error: 'too late' }),
-    ).rejects.toThrow(BadRequestException);
-    await expect(repository.retryOutbox('mail', processed.id)).rejects.toThrow(
-      BadRequestException,
+      'INTEGRATION_OUTBOX_ALREADY_SENT',
     );
-    await expect(
+    await expectHttpExceptionCode(
+      repository.retryOutbox('mail', processed.id),
+      'INTEGRATION_OUTBOX_RETRY_STATUS_INVALID',
+    );
+    await expectHttpExceptionCode(
       repository.processOutbox('mail', { providerCode: ' ' }),
-    ).rejects.toThrow(BadRequestException);
-    await expect(
+      'INTEGRATION_OUTBOX_PROVIDER_CODE_REQUIRED',
+    );
+    await expectHttpExceptionCode(
       repository.processOutbox('mail', { limit: 0 }),
-    ).rejects.toThrow(BadRequestException);
+      'INTEGRATION_OUTBOX_PROCESS_LIMIT_INVALID',
+    );
   });
 
   it('runs the outbox retry schedule with bounded retry policy', async () => {
@@ -569,15 +579,17 @@ describe('IntegrationRepository', () => {
       error: 'Retry cap reached',
     });
 
-    await expect(
+    await expectHttpExceptionCode(
       repository.runOutboxSchedule({ channels: ['push' as never] }),
-    ).rejects.toThrow(BadRequestException);
-    await expect(
+      'INTEGRATION_OUTBOX_SCHEDULE_CHANNEL_INVALID',
+    );
+    await expectHttpExceptionCode(
       repository.runOutboxSchedule({
         channels: ['sms'],
         providerCode: 'mail.sandbox',
       }),
-    ).rejects.toThrow(BadRequestException);
+      'INTEGRATION_PROVIDER_TYPE_MISMATCH',
+    );
   });
 
   it('delivers mail outbox through the authenticated SMTP adapter', async () => {
@@ -1013,6 +1025,11 @@ describe('IntegrationRepository', () => {
     );
     const fetchMock = jest.spyOn(globalThis, 'fetch');
 
+    await expectHttpExceptionCode(
+      createMapProviderSecretResolver(new Map())('secret://config/missing.key'),
+      'INTEGRATION_CONFIG_SECRET_NOT_FOUND',
+    );
+
     await repository.createProvider({
       code: 'sms.bad-secret-http',
       type: 'sms',
@@ -1133,13 +1150,14 @@ describe('IntegrationRepository', () => {
       'secret://integration/mail/sandbox',
     );
 
-    await expect(
+    await expectHttpExceptionCode(
       repository.callbackOutbox('mail', {
         ...callback,
         signature: '0'.repeat(64),
       }),
-    ).rejects.toThrow(BadRequestException);
-    await expect(
+      'INTEGRATION_OUTBOX_CALLBACK_SIGNATURE_INVALID',
+    );
+    await expectHttpExceptionCode(
       repository.callbackOutbox('mail', {
         providerCode: 'mail.sandbox',
         messageId: queued.id,
@@ -1147,13 +1165,15 @@ describe('IntegrationRepository', () => {
         error: ' ',
         signature,
       }),
-    ).rejects.toThrow(BadRequestException);
-    await expect(
+      'INTEGRATION_OUTBOX_FAILURE_ERROR_REQUIRED',
+    );
+    await expectHttpExceptionCode(
       repository.callbackOutbox('sms', {
         ...callback,
         signature,
       }),
-    ).rejects.toThrow(BadRequestException);
+      'INTEGRATION_PROVIDER_TYPE_MISMATCH',
+    );
 
     await expect(
       repository.callbackOutbox('mail', { ...callback, signature }),
@@ -1168,26 +1188,28 @@ describe('IntegrationRepository', () => {
   it('guards outbox enqueue by enabled provider, channel, and template state', async () => {
     const repository = new SeedIntegrationRepository();
 
-    await expect(
+    await expectHttpExceptionCode(
       repository.enqueueOutbox('mail', {
         providerCode: 'mail.sandbox',
         templateCode: 'mail.welcome',
         recipient: 'admin@example.test',
         payload: { name: 'Admin' },
       }),
-    ).rejects.toThrow(BadRequestException);
+      'INTEGRATION_PROVIDER_DISABLED',
+    );
 
     await repository.enableProvider('mail.sandbox');
-    await expect(
+    await expectHttpExceptionCode(
       repository.enqueueOutbox('sms', {
         providerCode: 'mail.sandbox',
         recipient: '+15551234567',
         payload: { code: '123456' },
       }),
-    ).rejects.toThrow(BadRequestException);
+      'INTEGRATION_PROVIDER_TYPE_MISMATCH',
+    );
 
     await repository.enableProvider('sms.sandbox');
-    await expect(
+    await expectHttpExceptionCode(
       repository.enqueueOutbox('sms', {
         providerCode: 'sms.sandbox',
         recipient: '+15551234567',
@@ -1200,7 +1222,8 @@ describe('IntegrationRepository', () => {
         ],
         payload: { code: '123456' },
       }),
-    ).rejects.toThrow(BadRequestException);
+      'INTEGRATION_OUTBOX_SMS_ATTACHMENTS_UNSUPPORTED',
+    );
 
     await repository.createTemplate('mail', {
       code: 'mail.disabled',
@@ -1208,14 +1231,15 @@ describe('IntegrationRepository', () => {
       body: 'Disabled',
       enabled: false,
     });
-    await expect(
+    await expectHttpExceptionCode(
       repository.enqueueOutbox('mail', {
         providerCode: 'mail.sandbox',
         templateCode: 'mail.disabled',
         recipient: 'admin@example.test',
         payload: {},
       }),
-    ).rejects.toThrow(BadRequestException);
+      'INTEGRATION_TEMPLATE_DISABLED',
+    );
   });
 
   it('enforces SMS recipient and verification-code safety', async () => {
@@ -1233,13 +1257,14 @@ describe('IntegrationRepository', () => {
       channel: 'sms',
       status: 'queued',
     });
-    await expect(
+    await expectHttpExceptionCode(
       repository.enqueueOutbox('sms', {
         providerCode: 'sms.sandbox',
         recipient: 'not-a-phone',
         payload: { code: '1' },
       }),
-    ).rejects.toThrow(BadRequestException);
+      'INTEGRATION_SMS_RECIPIENT_INVALID',
+    );
   });
 
   it('exposes OAuth callback contract and integration design boundaries', () => {
@@ -1443,12 +1468,13 @@ describe('IntegrationRepository', () => {
     expect(skipped.status).toBe('no_subscribers');
     expect(delivered).toHaveLength(1);
 
-    await expect(
+    await expectHttpExceptionCode(
       repository.publishWebSocketRuntimeEvent({
         room: 'integration.diagnostics',
         type: 'chat.message',
       }),
-    ).rejects.toThrow(BadRequestException);
+      'INTEGRATION_WEBSOCKET_PUBLISH_EVENT_TYPE_INVALID',
+    );
   });
 
   it('manages OAuth token inventory and revoke lifecycle', async () => {
@@ -1515,13 +1541,41 @@ describe('IntegrationRepository', () => {
     ).resolves.toMatchObject({
       revokeReason: 'Round92 smoke revoke',
     });
-    await expect(
+    await expectHttpExceptionCode(
       repository.revokeOAuthToken('oauth_token_github_ops_expired', {
         reason: ' ',
       }),
-    ).rejects.toThrow(BadRequestException);
+      'INTEGRATION_OAUTH_REVOKE_REASON_REQUIRED',
+    );
     expect(JSON.stringify(await repository.listOAuthTokens())).not.toContain(
       'ghp_',
     );
   });
 });
+
+async function expectHttpExceptionCode(
+  promise: Promise<unknown>,
+  code: string,
+): Promise<void> {
+  try {
+    await promise;
+  } catch (error) {
+    expect(getHttpExceptionResponse(error)).toMatchObject({ code });
+    return;
+  }
+
+  throw new Error(`Expected HTTP exception code ${code}`);
+}
+
+function getHttpExceptionResponse(error: unknown): unknown {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'getResponse' in error &&
+    typeof error.getResponse === 'function'
+  ) {
+    return error.getResponse();
+  }
+
+  return undefined;
+}

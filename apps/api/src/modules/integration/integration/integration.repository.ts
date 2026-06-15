@@ -1,4 +1,5 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { createApiErrorBody } from '@opencore/common';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import type {
   CreateIntegrationProviderDto,
@@ -268,6 +269,24 @@ export abstract class IntegrationRepository {
     query?: WebSocketRuntimeStreamQueryDto;
     emit: WebSocketRuntimeSink;
   }): WebSocketRuntimeConnectionHandle;
+}
+
+export function integrationBadRequest(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): BadRequestException {
+  return new BadRequestException(
+    createApiErrorBody({ code, message, details }),
+  );
+}
+
+export function integrationNotFound(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): NotFoundException {
+  return new NotFoundException(createApiErrorBody({ code, message, details }));
 }
 
 export function buildIntegrationSummary(input: {
@@ -829,8 +848,10 @@ function listProviderSecretInjections(
 
 export function assertSecretRef(secretRef: string): void {
   if (!secretRef.startsWith('secret://')) {
-    throw new BadRequestException(
+    throw integrationBadRequest(
+      'INTEGRATION_SECRET_REF_INVALID',
       'Integration credentials must be stored as secret:// references.',
+      { secretRef },
     );
   }
 }
@@ -838,8 +859,10 @@ export function assertSecretRef(secretRef: string): void {
 export function parseConfigSecretRef(secretRef: string): string {
   assertSecretRef(secretRef);
   if (!secretRef.startsWith(CONFIG_SECRET_REF_PREFIX)) {
-    throw new BadRequestException(
+    throw integrationBadRequest(
+      'INTEGRATION_SECRET_REF_CONFIG_INVALID',
       'Integration provider secretRef must use secret://config/<key> for runtime secret resolution.',
+      { secretRef },
     );
   }
 
@@ -847,8 +870,10 @@ export function parseConfigSecretRef(secretRef: string): string {
     secretRef.slice(CONFIG_SECRET_REF_PREFIX.length),
   ).trim();
   if (!key) {
-    throw new BadRequestException(
+    throw integrationBadRequest(
+      'INTEGRATION_SECRET_REF_CONFIG_KEY_REQUIRED',
       'Integration provider config secret key is required.',
+      { secretRef },
     );
   }
 
@@ -862,14 +887,18 @@ export function assertProviderReadyForOutbox(input: {
   channel: 'mail' | 'sms';
 }): void {
   if (input.type !== input.channel) {
-    throw new BadRequestException(
+    throw integrationBadRequest(
+      'INTEGRATION_PROVIDER_TYPE_MISMATCH',
       `Provider ${input.code} is not a ${input.channel} provider.`,
+      { channel: input.channel, code: input.code, type: input.type },
     );
   }
 
   if (!input.enabled) {
-    throw new BadRequestException(
+    throw integrationBadRequest(
+      'INTEGRATION_PROVIDER_DISABLED',
       `Provider ${input.code} is disabled and cannot enqueue outbox messages.`,
+      { channel: input.channel, code: input.code },
     );
   }
 }
@@ -879,8 +908,10 @@ export function assertTemplateEnabled(input: {
   enabled: boolean;
 }): void {
   if (!input.enabled) {
-    throw new BadRequestException(
+    throw integrationBadRequest(
+      'INTEGRATION_TEMPLATE_DISABLED',
       `Integration template is disabled: ${input.code}`,
+      { code: input.code },
     );
   }
 }
@@ -995,8 +1026,10 @@ export function normalizeOAuthStartFlow(
 ): NormalizedOAuthStartFlow {
   const providerCode = normalizeOAuthProviderCode(body.providerCode);
   if (provider.code !== providerCode) {
-    throw new BadRequestException(
+    throw integrationBadRequest(
+      'INTEGRATION_OAUTH_PROVIDER_MISMATCH',
       `OAuth provider mismatch: expected ${provider.code}.`,
+      { actualProviderCode: providerCode, expectedProviderCode: provider.code },
     );
   }
   assertOAuthProviderReady(provider);
@@ -1020,7 +1053,11 @@ export function normalizeOAuthCallback(
   const error = normalizeOptionalText(body.error);
   const code = normalizeOptionalText(body.code);
   if (!error && !code) {
-    throw new BadRequestException('OAuth callback code is required.');
+    throw integrationBadRequest(
+      'INTEGRATION_OAUTH_CALLBACK_CODE_REQUIRED',
+      'OAuth callback code is required.',
+      { providerCode },
+    );
   }
 
   return {
@@ -1049,14 +1086,18 @@ export function assertOAuthProviderReady(
   provider: IntegrationProviderRecord,
 ): void {
   if (provider.type !== 'oauth') {
-    throw new BadRequestException(
+    throw integrationBadRequest(
+      'INTEGRATION_OAUTH_PROVIDER_TYPE_INVALID',
       `Provider ${provider.code} is not an OAuth provider.`,
+      { code: provider.code, type: provider.type },
     );
   }
 
   if (!provider.enabled) {
-    throw new BadRequestException(
+    throw integrationBadRequest(
+      'INTEGRATION_OAUTH_PROVIDER_DISABLED',
       `OAuth provider ${provider.code} is disabled.`,
+      { code: provider.code },
     );
   }
 }
@@ -1085,8 +1126,10 @@ export function buildOAuthAuthorizationUrl(input: {
   try {
     url = new URL(authorizationUrl);
   } catch {
-    throw new BadRequestException(
+    throw integrationBadRequest(
+      'INTEGRATION_OAUTH_AUTHORIZATION_URL_INVALID',
       `OAuth provider ${input.provider.code} authorizationUrl is invalid.`,
+      { providerCode: input.provider.code },
     );
   }
 
@@ -1305,14 +1348,17 @@ export function normalizeOAuthRevokeReason(value: unknown): string {
     typeof value === 'string' ? value.trim() : 'Revoked from OpenCore Admin.';
 
   if (!reason) {
-    throw new BadRequestException(
+    throw integrationBadRequest(
+      'INTEGRATION_OAUTH_REVOKE_REASON_REQUIRED',
       'OAuth token revoke reason must not be blank.',
     );
   }
 
   if (reason.length > 300) {
-    throw new BadRequestException(
+    throw integrationBadRequest(
+      'INTEGRATION_OAUTH_REVOKE_REASON_TOO_LONG',
       'OAuth token revoke reason must be at most 300 characters.',
+      { maxLength: 300 },
     );
   }
 
@@ -1345,13 +1391,19 @@ export function normalizeOutboxSubject(
   }
 
   if (channel === 'sms') {
-    throw new BadRequestException(
+    throw integrationBadRequest(
+      'INTEGRATION_OUTBOX_SMS_SUBJECT_UNSUPPORTED',
       'SMS outbox messages do not support subject.',
+      { channel },
     );
   }
 
   if (typeof value !== 'string') {
-    throw new BadRequestException('Mail outbox subject must be a string.');
+    throw integrationBadRequest(
+      'INTEGRATION_OUTBOX_SUBJECT_INVALID_TYPE',
+      'Mail outbox subject must be a string.',
+      { channel },
+    );
   }
 
   const subject = value.trim();
@@ -1360,8 +1412,10 @@ export function normalizeOutboxSubject(
   }
 
   if (subject.length > 200) {
-    throw new BadRequestException(
+    throw integrationBadRequest(
+      'INTEGRATION_OUTBOX_SUBJECT_TOO_LONG',
       'Mail outbox subject must be at most 200 characters.',
+      { maxLength: 200 },
     );
   }
 
@@ -1377,13 +1431,18 @@ export function normalizeOutboxAttachments(
   }
 
   if (channel === 'sms') {
-    throw new BadRequestException(
+    throw integrationBadRequest(
+      'INTEGRATION_OUTBOX_SMS_ATTACHMENTS_UNSUPPORTED',
       'SMS outbox messages do not support attachments.',
+      { channel },
     );
   }
 
   if (!Array.isArray(value)) {
-    throw new BadRequestException('Mail outbox attachments must be an array.');
+    throw integrationBadRequest(
+      'INTEGRATION_OUTBOX_ATTACHMENTS_INVALID',
+      'Mail outbox attachments must be an array.',
+    );
   }
 
   if (value.length === 0) {
@@ -1391,16 +1450,20 @@ export function normalizeOutboxAttachments(
   }
 
   if (value.length > 5) {
-    throw new BadRequestException(
+    throw integrationBadRequest(
+      'INTEGRATION_OUTBOX_ATTACHMENTS_TOO_MANY',
       'Mail outbox attachments must contain at most 5 files.',
+      { maxItems: 5 },
     );
   }
 
   let totalSizeBytes = 0;
   const attachments = value.map((item, index) => {
     if (!item || typeof item !== 'object' || Array.isArray(item)) {
-      throw new BadRequestException(
+      throw integrationBadRequest(
+        'INTEGRATION_OUTBOX_ATTACHMENT_INVALID',
         `Mail outbox attachment at index ${index} must be an object.`,
+        { index },
       );
     }
     const record = item as Record<string, unknown>;
@@ -1416,8 +1479,10 @@ export function normalizeOutboxAttachments(
     totalSizeBytes += sizeBytes;
 
     if (totalSizeBytes > 256 * 1024) {
-      throw new BadRequestException(
+      throw integrationBadRequest(
+        'INTEGRATION_OUTBOX_ATTACHMENTS_TOTAL_SIZE_TOO_LARGE',
         'Mail outbox attachments total size must be at most 256KB.',
+        { maxBytes: 256 * 1024 },
       );
     }
 
@@ -1437,12 +1502,18 @@ export function assertSmsSafety(
   payload: Record<string, unknown>,
 ): void {
   if (!/^\+?[0-9]{6,20}$/.test(recipient)) {
-    throw new BadRequestException('SMS recipient must be a phone-like number.');
+    throw integrationBadRequest(
+      'INTEGRATION_SMS_RECIPIENT_INVALID',
+      'SMS recipient must be a phone-like number.',
+      { recipient },
+    );
   }
 
   if ('code' in payload && String(payload.code).length < 4) {
-    throw new BadRequestException(
+    throw integrationBadRequest(
+      'INTEGRATION_SMS_VERIFICATION_CODE_TOO_SHORT',
       'SMS verification code must be at least 4 chars.',
+      { minLength: 4 },
     );
   }
 }
@@ -1451,12 +1522,17 @@ export function normalizeOutboxFailureError(value: unknown): string {
   const error = typeof value === 'string' ? value.trim() : '';
 
   if (error.length === 0) {
-    throw new BadRequestException('Outbox failure error is required.');
+    throw integrationBadRequest(
+      'INTEGRATION_OUTBOX_FAILURE_ERROR_REQUIRED',
+      'Outbox failure error is required.',
+    );
   }
 
   if (error.length > 500) {
-    throw new BadRequestException(
+    throw integrationBadRequest(
+      'INTEGRATION_OUTBOX_FAILURE_ERROR_TOO_LONG',
       'Outbox failure error must be at most 500 characters.',
+      { maxLength: 500 },
     );
   }
 
@@ -1467,8 +1543,10 @@ export function normalizeProcessOutboxLimit(value: unknown): number {
   const parsed = Number(value ?? 100);
 
   if (!Number.isInteger(parsed) || parsed < 1 || parsed > 100) {
-    throw new BadRequestException(
+    throw integrationBadRequest(
+      'INTEGRATION_OUTBOX_PROCESS_LIMIT_INVALID',
       'Outbox process limit must be an integer between 1 and 100.',
+      { maximum: 100, minimum: 1, value },
     );
   }
 
@@ -1531,7 +1609,10 @@ export function normalizeOptionalProviderCode(
 
   const providerCode = String(value).trim();
   if (providerCode.length === 0) {
-    throw new BadRequestException('Outbox providerCode must not be blank.');
+    throw integrationBadRequest(
+      'INTEGRATION_OUTBOX_PROVIDER_CODE_REQUIRED',
+      'Outbox providerCode must not be blank.',
+    );
   }
 
   return providerCode;
@@ -1552,8 +1633,10 @@ export function normalizeOutboxCallback(
   const signature = normalizeOutboxCallbackSignature(body.signature);
 
   if (body.status !== 'sent' && body.status !== 'failed') {
-    throw new BadRequestException(
+    throw integrationBadRequest(
+      'INTEGRATION_OUTBOX_CALLBACK_STATUS_INVALID',
       'Outbox callback status must be sent or failed.',
+      { status: body.status },
     );
   }
 
@@ -1576,8 +1659,10 @@ export function assertOutboxCallbackProviderMatch(input: {
   messageId: string;
 }): void {
   if (input.expectedProviderCode !== input.actualProviderCode) {
-    throw new BadRequestException(
+    throw integrationBadRequest(
+      'INTEGRATION_OUTBOX_CALLBACK_PROVIDER_MISMATCH',
       `Outbox callback provider mismatch for message ${input.messageId}.`,
+      input,
     );
   }
 }
@@ -1594,7 +1679,11 @@ export function assertOutboxCallbackSignature(
   const actual = Buffer.from(callback.signature, 'hex');
 
   if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) {
-    throw new BadRequestException('Outbox callback signature is invalid.');
+    throw integrationBadRequest(
+      'INTEGRATION_OUTBOX_CALLBACK_SIGNATURE_INVALID',
+      'Outbox callback signature is invalid.',
+      { messageId: callback.messageId, providerCode: callback.providerCode },
+    );
   }
 }
 
@@ -1625,7 +1714,11 @@ export function requireRecord<T>(
   id: string,
 ): T {
   if (!record) {
-    throw new NotFoundException(`${resource} not found: ${id}`);
+    throw integrationNotFound(
+      'INTEGRATION_RESOURCE_NOT_FOUND',
+      `${resource} not found: ${id}`,
+      { id, resource },
+    );
   }
 
   return record;
@@ -1635,7 +1728,11 @@ function normalizeRequiredString(value: unknown, message: string): string {
   const normalized = typeof value === 'string' ? value.trim() : '';
 
   if (normalized.length === 0) {
-    throw new BadRequestException(message);
+    throw integrationBadRequest(
+      'INTEGRATION_REQUIRED_STRING_MISSING',
+      message,
+      { message },
+    );
   }
 
   return normalized;
@@ -1669,7 +1766,10 @@ function normalizeOAuthRequestedScopes(
   const selected = scopes.length > 0 ? scopes : fallbackScopes;
 
   if (selected.length === 0) {
-    throw new BadRequestException('OAuth flow scopes are required.');
+    throw integrationBadRequest(
+      'INTEGRATION_OAUTH_SCOPES_REQUIRED',
+      'OAuth flow scopes are required.',
+    );
   }
 
   return [...new Set(selected)];
@@ -1696,8 +1796,10 @@ function normalizeOAuthExpiresInSeconds(value: unknown): number {
   const parsed = Number(value ?? 3600);
 
   if (!Number.isInteger(parsed) || parsed < 60 || parsed > 90 * 24 * 60 * 60) {
-    throw new BadRequestException(
+    throw integrationBadRequest(
+      'INTEGRATION_OAUTH_EXPIRES_IN_INVALID',
       'OAuth callback expiresInSeconds must be an integer between 60 and 7776000.',
+      { maximum: 90 * 24 * 60 * 60, minimum: 60, value },
     );
   }
 
@@ -1711,8 +1813,10 @@ function normalizeWebSocketRuntimeRoom(value: unknown): string {
     !room.startsWith('integration.') ||
     !/^[a-z0-9][a-z0-9._:-]+$/.test(room)
   ) {
-    throw new BadRequestException(
+    throw integrationBadRequest(
+      'INTEGRATION_WEBSOCKET_ROOM_INVALID',
       'WebSocket runtime room must be an integration.* identifier.',
+      { room },
     );
   }
 
@@ -1742,8 +1846,10 @@ function normalizeWebSocketRuntimeEventTypes(
 function normalizeWebSocketRuntimePublishEventType(value: unknown): string {
   const type = normalizeWebSocketRuntimeEventType(value);
   if (!type.startsWith('diagnostic.')) {
-    throw new BadRequestException(
+    throw integrationBadRequest(
+      'INTEGRATION_WEBSOCKET_PUBLISH_EVENT_TYPE_INVALID',
       'WebSocket runtime only accepts diagnostic.* events.',
+      { type },
     );
   }
 
@@ -1759,8 +1865,10 @@ function normalizeWebSocketRuntimeEventType(value: unknown): string {
     type !== '*' &&
     (type.length > 120 || !/^[a-z0-9][a-z0-9.-]+$/.test(type))
   ) {
-    throw new BadRequestException(
+    throw integrationBadRequest(
+      'INTEGRATION_WEBSOCKET_EVENT_TYPE_INVALID',
       'WebSocket runtime event type must be a safe event identifier.',
+      { type },
     );
   }
 
@@ -1857,8 +1965,10 @@ function normalizeAttachmentFilename(value: unknown, index: number): string {
     /[\\/]/.test(filename) ||
     hasAsciiControlCharacter(filename)
   ) {
-    throw new BadRequestException(
+    throw integrationBadRequest(
+      'INTEGRATION_OUTBOX_ATTACHMENT_FILENAME_INVALID',
       `Mail outbox attachment filename at index ${index} is invalid.`,
+      { filename, index },
     );
   }
 
@@ -1878,8 +1988,10 @@ function normalizeAttachmentContentType(value: unknown, index: number): string {
     contentType.length > 120 ||
     !/^[a-z0-9][a-z0-9.+-]*\/[a-z0-9][a-z0-9.+-]*$/.test(contentType)
   ) {
-    throw new BadRequestException(
+    throw integrationBadRequest(
+      'INTEGRATION_OUTBOX_ATTACHMENT_CONTENT_TYPE_INVALID',
       `Mail outbox attachment contentType at index ${index} is invalid.`,
+      { contentType, index },
     );
   }
 
@@ -1898,15 +2010,19 @@ function normalizeAttachmentContentBase64(
     contentBase64.length % 4 !== 0 ||
     !/^[A-Za-z0-9+/]+={0,2}$/.test(contentBase64)
   ) {
-    throw new BadRequestException(
+    throw integrationBadRequest(
+      'INTEGRATION_OUTBOX_ATTACHMENT_CONTENT_BASE64_INVALID',
       `Mail outbox attachment contentBase64 at index ${index} must be valid base64.`,
+      { index },
     );
   }
 
   const sizeBytes = Buffer.from(contentBase64, 'base64').length;
   if (sizeBytes < 1 || sizeBytes > 64 * 1024) {
-    throw new BadRequestException(
+    throw integrationBadRequest(
+      'INTEGRATION_OUTBOX_ATTACHMENT_SIZE_INVALID',
       `Mail outbox attachment at index ${index} must be between 1 byte and 64KB.`,
+      { index, maxBytes: 64 * 1024, minBytes: 1, sizeBytes },
     );
   }
 
@@ -1920,7 +2036,8 @@ function normalizeOutboxCallbackSignature(value: unknown): string {
   ).replace(/^sha256=/i, '');
 
   if (!/^[a-f0-9]{64}$/i.test(signature)) {
-    throw new BadRequestException(
+    throw integrationBadRequest(
+      'INTEGRATION_OUTBOX_CALLBACK_SIGNATURE_FORMAT_INVALID',
       'Outbox callback signature must be a SHA-256 hex digest.',
     );
   }
@@ -1941,8 +2058,10 @@ function normalizeOutboxScheduleChannels(
 
   for (const raw of rawValues) {
     if (raw !== 'mail' && raw !== 'sms') {
-      throw new BadRequestException(
+      throw integrationBadRequest(
+        'INTEGRATION_OUTBOX_SCHEDULE_CHANNEL_INVALID',
         'Outbox schedule channels must contain only mail or sms.',
+        { channel: raw },
       );
     }
     if (!channels.includes(raw)) {
@@ -1951,7 +2070,8 @@ function normalizeOutboxScheduleChannels(
   }
 
   if (channels.length === 0) {
-    throw new BadRequestException(
+    throw integrationBadRequest(
+      'INTEGRATION_OUTBOX_SCHEDULE_CHANNELS_EMPTY',
       'Outbox schedule channels must not be empty.',
     );
   }
@@ -1967,15 +2087,21 @@ function normalizeOptionalScheduleBoolean(
   if (value === true || value === 'true') return true;
   if (value === false || value === 'false') return false;
 
-  throw new BadRequestException('Outbox schedule retryFailed must be boolean.');
+  throw integrationBadRequest(
+    'INTEGRATION_OUTBOX_SCHEDULE_RETRY_FAILED_INVALID',
+    'Outbox schedule retryFailed must be boolean.',
+    { value },
+  );
 }
 
 function normalizeOutboxScheduleMaxRetryCount(value: unknown): number {
   const parsed = Number(value ?? 3);
 
   if (!Number.isInteger(parsed) || parsed < 1 || parsed > 20) {
-    throw new BadRequestException(
+    throw integrationBadRequest(
+      'INTEGRATION_OUTBOX_SCHEDULE_MAX_RETRY_INVALID',
       'Outbox schedule maxRetryCount must be an integer between 1 and 20.',
+      { maximum: 20, minimum: 1, value },
     );
   }
 

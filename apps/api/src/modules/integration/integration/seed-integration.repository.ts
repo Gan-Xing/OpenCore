@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { createHash, randomBytes } from 'node:crypto';
 import type {
   CreateIntegrationProviderDto,
@@ -69,6 +69,7 @@ import {
   createOutboxScheduleResult,
   IntegrationWebSocketRuntimeStore,
   createPage,
+  integrationBadRequest,
   IntegrationRepository,
   matchesOAuthCallbackAuditQuery,
   matchesOAuthFlowQuery,
@@ -491,7 +492,8 @@ export class SeedIntegrationRepository extends IntegrationRepository {
   ): Promise<IntegrationOutboxRecord> {
     const message = this.findOutboxMessage(channel, id);
     if (message.status === 'sent') {
-      throw new BadRequestException(
+      throw integrationBadRequest(
+        'INTEGRATION_OUTBOX_ALREADY_SENT',
         'Sent outbox messages cannot be marked failed.',
       );
     }
@@ -514,7 +516,8 @@ export class SeedIntegrationRepository extends IntegrationRepository {
   ): Promise<IntegrationOutboxRecord> {
     const message = this.findOutboxMessage(channel, id);
     if (message.status !== 'failed') {
-      throw new BadRequestException(
+      throw integrationBadRequest(
+        'INTEGRATION_OUTBOX_RETRY_STATUS_INVALID',
         'Only failed outbox messages can be retried.',
       );
     }
@@ -1196,7 +1199,11 @@ export function createMapProviderSecretResolver(
     const key = parseConfigSecretRef(secretRef);
     const value = secrets.get(key);
     if (value === undefined) {
-      throw new BadRequestException(`System config secret not found: ${key}`);
+      throw integrationBadRequest(
+        'INTEGRATION_CONFIG_SECRET_NOT_FOUND',
+        `System config secret not found: ${key}`,
+        { key },
+      );
     }
 
     return value;

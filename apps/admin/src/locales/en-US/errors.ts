@@ -189,6 +189,104 @@ export default {
   'error.SYSTEM_NOTICE_TYPE_INVALID': 'The notice type is invalid.',
   'error.SYSTEM_NOTICE_UNREAD_LIMIT_INVALID':
     'The unread notice limit is invalid.',
+  'error.INTEGRATION_CONFIG_SECRET_NOT_FOUND':
+    'The integration config secret does not exist.',
+  'error.INTEGRATION_OAUTH_AUTHORIZATION_URL_INVALID':
+    'The OAuth authorization URL is invalid.',
+  'error.INTEGRATION_OAUTH_CALLBACK_CODE_REQUIRED':
+    'The OAuth callback is missing its authorization code.',
+  'error.INTEGRATION_OAUTH_EXPIRES_IN_INVALID':
+    'The OAuth token expiration is invalid.',
+  'error.INTEGRATION_OAUTH_PROVIDER_DISABLED':
+    'The OAuth provider is disabled.',
+  'error.INTEGRATION_OAUTH_PROVIDER_MISMATCH':
+    'The OAuth callback provider does not match.',
+  'error.INTEGRATION_OAUTH_PROVIDER_TYPE_INVALID':
+    'The OAuth provider type is invalid.',
+  'error.INTEGRATION_OAUTH_REVOKE_REASON_REQUIRED':
+    'The OAuth token revoke reason is required.',
+  'error.INTEGRATION_OAUTH_REVOKE_REASON_TOO_LONG':
+    'The OAuth token revoke reason is too long.',
+  'error.INTEGRATION_OAUTH_SCOPES_REQUIRED':
+    'The OAuth scope list must not be empty.',
+  'error.INTEGRATION_OUTBOX_ALREADY_SENT':
+    'Sent outbox messages cannot be marked failed.',
+  'error.INTEGRATION_OUTBOX_ATTACHMENT_CONTENT_BASE64_INVALID':
+    'The outbox attachment content must be valid base64.',
+  'error.INTEGRATION_OUTBOX_ATTACHMENT_CONTENT_TYPE_INVALID':
+    'The outbox attachment content type is invalid.',
+  'error.INTEGRATION_OUTBOX_ATTACHMENT_FILENAME_INVALID':
+    'The outbox attachment file name is invalid.',
+  'error.INTEGRATION_OUTBOX_ATTACHMENT_INVALID':
+    'The outbox attachment is invalid.',
+  'error.INTEGRATION_OUTBOX_ATTACHMENT_SIZE_INVALID':
+    'The outbox attachment size is invalid.',
+  'error.INTEGRATION_OUTBOX_ATTACHMENTS_INVALID':
+    'The outbox attachment list must be an array.',
+  'error.INTEGRATION_OUTBOX_ATTACHMENTS_TOO_MANY':
+    'The outbox attachment list is too large.',
+  'error.INTEGRATION_OUTBOX_ATTACHMENTS_TOTAL_SIZE_TOO_LARGE':
+    'The outbox attachment total size is too large.',
+  'error.INTEGRATION_OUTBOX_CALLBACK_PROVIDER_MISMATCH':
+    'The outbox callback provider does not match.',
+  'error.INTEGRATION_OUTBOX_CALLBACK_SIGNATURE_FORMAT_INVALID':
+    'The outbox callback signature format is invalid.',
+  'error.INTEGRATION_OUTBOX_CALLBACK_SIGNATURE_INVALID':
+    'The outbox callback signature is invalid.',
+  'error.INTEGRATION_OUTBOX_CALLBACK_STATUS_INVALID':
+    'The outbox callback status is invalid.',
+  'error.INTEGRATION_OUTBOX_FAILURE_ERROR_REQUIRED':
+    'The outbox failure reason is required.',
+  'error.INTEGRATION_OUTBOX_FAILURE_ERROR_TOO_LONG':
+    'The outbox failure reason is too long.',
+  'error.INTEGRATION_OUTBOX_PROCESS_LIMIT_INVALID':
+    'The outbox process limit is invalid.',
+  'error.INTEGRATION_OUTBOX_PROVIDER_CODE_REQUIRED':
+    'The outbox provider code is required.',
+  'error.INTEGRATION_OUTBOX_RETRY_STATUS_INVALID':
+    'Only failed outbox messages can be retried.',
+  'error.INTEGRATION_OUTBOX_SCHEDULE_CHANNEL_INVALID':
+    'The outbox schedule channel is invalid.',
+  'error.INTEGRATION_OUTBOX_SCHEDULE_CHANNELS_EMPTY':
+    'The outbox schedule channel list must not be empty.',
+  'error.INTEGRATION_OUTBOX_SCHEDULE_MAX_RETRY_INVALID':
+    'The outbox schedule max retry count is invalid.',
+  'error.INTEGRATION_OUTBOX_SCHEDULE_RETRY_FAILED_INVALID':
+    'The outbox schedule retry flag is invalid.',
+  'error.INTEGRATION_OUTBOX_SMS_ATTACHMENTS_UNSUPPORTED':
+    'SMS outbox messages do not support attachments.',
+  'error.INTEGRATION_OUTBOX_SMS_SUBJECT_UNSUPPORTED':
+    'SMS outbox messages do not support subjects.',
+  'error.INTEGRATION_OUTBOX_SUBJECT_INVALID_TYPE':
+    'The outbox subject must be a string.',
+  'error.INTEGRATION_OUTBOX_SUBJECT_TOO_LONG':
+    'The outbox subject is too long.',
+  'error.INTEGRATION_PROVIDER_DISABLED':
+    'The integration provider is disabled.',
+  'error.INTEGRATION_PROVIDER_TYPE_MISMATCH':
+    'The integration provider type does not match.',
+  'error.INTEGRATION_REQUIRED_STRING_MISSING':
+    'A required integration text field is empty.',
+  'error.INTEGRATION_RESOURCE_NOT_FOUND':
+    'The integration resource does not exist.',
+  'error.INTEGRATION_SECRET_REF_CONFIG_INVALID':
+    'The integration secret ref must use secret://config/<key>.',
+  'error.INTEGRATION_SECRET_REF_CONFIG_KEY_REQUIRED':
+    'The integration config secret key is required.',
+  'error.INTEGRATION_SECRET_REF_INVALID':
+    'The integration secret ref is invalid.',
+  'error.INTEGRATION_SMS_RECIPIENT_INVALID':
+    'The SMS recipient is invalid.',
+  'error.INTEGRATION_SMS_VERIFICATION_CODE_TOO_SHORT':
+    'The SMS verification code is too short.',
+  'error.INTEGRATION_TEMPLATE_DISABLED':
+    'The integration template is disabled.',
+  'error.INTEGRATION_WEBSOCKET_EVENT_TYPE_INVALID':
+    'The WebSocket event type is invalid.',
+  'error.INTEGRATION_WEBSOCKET_PUBLISH_EVENT_TYPE_INVALID':
+    'The WebSocket publish event type is invalid.',
+  'error.INTEGRATION_WEBSOCKET_ROOM_INVALID':
+    'The WebSocket room is invalid.',
   'error.SYSTEM_CONFIG_ALREADY_EXISTS': 'The config key already exists.',
   'error.SYSTEM_CONFIG_CATEGORY_INVALID_TYPE':
     'The config category must be a string.',

@@ -137,6 +137,86 @@ export default {
   'error.SYSTEM_NOTICE_TEXT_REQUIRED': '通知必填文本不能为空。',
   'error.SYSTEM_NOTICE_TYPE_INVALID': '通知类型无效。',
   'error.SYSTEM_NOTICE_UNREAD_LIMIT_INVALID': '未读通知数量限制无效。',
+  'error.INTEGRATION_CONFIG_SECRET_NOT_FOUND': '集成配置密钥不存在。',
+  'error.INTEGRATION_OAUTH_AUTHORIZATION_URL_INVALID':
+    'OAuth 授权地址配置无效。',
+  'error.INTEGRATION_OAUTH_CALLBACK_CODE_REQUIRED':
+    'OAuth 回调缺少授权码。',
+  'error.INTEGRATION_OAUTH_EXPIRES_IN_INVALID': 'OAuth token 有效期无效。',
+  'error.INTEGRATION_OAUTH_PROVIDER_DISABLED': 'OAuth provider 未启用。',
+  'error.INTEGRATION_OAUTH_PROVIDER_MISMATCH':
+    'OAuth 回调 provider 不匹配。',
+  'error.INTEGRATION_OAUTH_PROVIDER_TYPE_INVALID':
+    'OAuth provider 类型无效。',
+  'error.INTEGRATION_OAUTH_REVOKE_REASON_REQUIRED':
+    'OAuth token 撤销原因不能为空。',
+  'error.INTEGRATION_OAUTH_REVOKE_REASON_TOO_LONG':
+    'OAuth token 撤销原因过长。',
+  'error.INTEGRATION_OAUTH_SCOPES_REQUIRED': 'OAuth 授权范围不能为空。',
+  'error.INTEGRATION_OUTBOX_ALREADY_SENT': '已发送的 outbox 消息不能改为失败。',
+  'error.INTEGRATION_OUTBOX_ATTACHMENT_CONTENT_BASE64_INVALID':
+    'outbox 附件内容必须是有效 base64。',
+  'error.INTEGRATION_OUTBOX_ATTACHMENT_CONTENT_TYPE_INVALID':
+    'outbox 附件内容类型无效。',
+  'error.INTEGRATION_OUTBOX_ATTACHMENT_FILENAME_INVALID':
+    'outbox 附件文件名无效。',
+  'error.INTEGRATION_OUTBOX_ATTACHMENT_INVALID': 'outbox 附件格式无效。',
+  'error.INTEGRATION_OUTBOX_ATTACHMENT_SIZE_INVALID':
+    'outbox 附件大小无效。',
+  'error.INTEGRATION_OUTBOX_ATTACHMENTS_INVALID':
+    'outbox 附件列表必须是数组。',
+  'error.INTEGRATION_OUTBOX_ATTACHMENTS_TOO_MANY': 'outbox 附件数量过多。',
+  'error.INTEGRATION_OUTBOX_ATTACHMENTS_TOTAL_SIZE_TOO_LARGE':
+    'outbox 附件总大小过大。',
+  'error.INTEGRATION_OUTBOX_CALLBACK_PROVIDER_MISMATCH':
+    'outbox 回调 provider 不匹配。',
+  'error.INTEGRATION_OUTBOX_CALLBACK_SIGNATURE_FORMAT_INVALID':
+    'outbox 回调签名格式无效。',
+  'error.INTEGRATION_OUTBOX_CALLBACK_SIGNATURE_INVALID':
+    'outbox 回调签名无效。',
+  'error.INTEGRATION_OUTBOX_CALLBACK_STATUS_INVALID':
+    'outbox 回调状态无效。',
+  'error.INTEGRATION_OUTBOX_FAILURE_ERROR_REQUIRED':
+    'outbox 失败原因不能为空。',
+  'error.INTEGRATION_OUTBOX_FAILURE_ERROR_TOO_LONG': 'outbox 失败原因过长。',
+  'error.INTEGRATION_OUTBOX_PROCESS_LIMIT_INVALID':
+    'outbox 处理数量限制无效。',
+  'error.INTEGRATION_OUTBOX_PROVIDER_CODE_REQUIRED':
+    'outbox provider 编码不能为空。',
+  'error.INTEGRATION_OUTBOX_RETRY_STATUS_INVALID':
+    '只有失败状态的 outbox 消息可以重试。',
+  'error.INTEGRATION_OUTBOX_SCHEDULE_CHANNEL_INVALID':
+    'outbox 调度渠道无效。',
+  'error.INTEGRATION_OUTBOX_SCHEDULE_CHANNELS_EMPTY':
+    'outbox 调度渠道不能为空。',
+  'error.INTEGRATION_OUTBOX_SCHEDULE_MAX_RETRY_INVALID':
+    'outbox 调度最大重试次数无效。',
+  'error.INTEGRATION_OUTBOX_SCHEDULE_RETRY_FAILED_INVALID':
+    'outbox 调度重试开关无效。',
+  'error.INTEGRATION_OUTBOX_SMS_ATTACHMENTS_UNSUPPORTED':
+    'SMS outbox 不支持附件。',
+  'error.INTEGRATION_OUTBOX_SMS_SUBJECT_UNSUPPORTED':
+    'SMS outbox 不支持主题。',
+  'error.INTEGRATION_OUTBOX_SUBJECT_INVALID_TYPE': 'outbox 主题必须是字符串。',
+  'error.INTEGRATION_OUTBOX_SUBJECT_TOO_LONG': 'outbox 主题过长。',
+  'error.INTEGRATION_PROVIDER_DISABLED': '集成 provider 未启用。',
+  'error.INTEGRATION_PROVIDER_TYPE_MISMATCH': '集成 provider 类型不匹配。',
+  'error.INTEGRATION_REQUIRED_STRING_MISSING': '集成必填文本不能为空。',
+  'error.INTEGRATION_RESOURCE_NOT_FOUND': '集成资源不存在。',
+  'error.INTEGRATION_SECRET_REF_CONFIG_INVALID':
+    '集成密钥引用必须使用 secret://config/<key>。',
+  'error.INTEGRATION_SECRET_REF_CONFIG_KEY_REQUIRED':
+    '集成配置密钥 key 不能为空。',
+  'error.INTEGRATION_SECRET_REF_INVALID': '集成密钥引用格式无效。',
+  'error.INTEGRATION_SMS_RECIPIENT_INVALID': 'SMS 收件人格式无效。',
+  'error.INTEGRATION_SMS_VERIFICATION_CODE_TOO_SHORT':
+    'SMS 验证码长度不足。',
+  'error.INTEGRATION_TEMPLATE_DISABLED': '集成模板已停用。',
+  'error.INTEGRATION_WEBSOCKET_EVENT_TYPE_INVALID':
+    'WebSocket 事件类型无效。',
+  'error.INTEGRATION_WEBSOCKET_PUBLISH_EVENT_TYPE_INVALID':
+    'WebSocket 发布事件类型无效。',
+  'error.INTEGRATION_WEBSOCKET_ROOM_INVALID': 'WebSocket 房间名无效。',
   'error.SYSTEM_CONFIG_ALREADY_EXISTS': '配置键已存在。',
   'error.SYSTEM_CONFIG_CATEGORY_INVALID_TYPE': '配置分类必须是字符串。',
   'error.SYSTEM_CONFIG_CATEGORY_REQUIRED': '配置分类不能为空。',

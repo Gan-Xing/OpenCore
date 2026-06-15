@@ -16,6 +16,7 @@ import {
   ApiProduces,
   ApiTags,
 } from '@nestjs/swagger';
+import { createApiErrorBody } from '@opencore/common';
 import type { SecurityRequestWithAuth } from '@opencore/security';
 import { RequirePermission } from '../../core/rbac/permissions.decorator';
 import {
@@ -633,7 +634,12 @@ function getAuthenticatedUserId(request: RequestWithUser): string {
   const userId = request.user?.id;
 
   if (!userId) {
-    throw new UnauthorizedException('Missing authenticated user');
+    throw new UnauthorizedException(
+      createApiErrorBody({
+        code: 'AUTH_USER_MISSING',
+        message: 'Missing authenticated user',
+      }),
+    );
   }
 
   return userId;
