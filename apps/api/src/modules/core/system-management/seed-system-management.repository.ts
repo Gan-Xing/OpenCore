@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import type {
   CreateFileAssetDto,
   PageQueryDto,
@@ -10,6 +10,7 @@ import {
   createExportPreview,
   createPage,
   createStorageKey,
+  systemManagementNotFound,
   SystemManagementRepository,
   type ExportPreview,
   type PageResult,
@@ -89,7 +90,11 @@ export class SeedSystemManagementRepository extends SystemManagementRepository {
     const file = this.fileAssets.find((candidate) => candidate.id === id);
 
     if (!file) {
-      throw new NotFoundException(`File asset not found: ${id}`);
+      throw systemManagementNotFound(
+        'SYSTEM_FILE_ASSET_NOT_FOUND',
+        'File asset not found.',
+        { id },
+      );
     }
 
     return file;

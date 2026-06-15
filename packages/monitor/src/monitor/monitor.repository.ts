@@ -23,6 +23,16 @@ function monitorBadRequest(
   );
 }
 
+function monitorServiceUnavailable(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): ServiceUnavailableException {
+  return new ServiceUnavailableException(
+    createApiErrorBody({ code, message, details }),
+  );
+}
+
 export type DependencyStatus = {
   name: string;
   status: 'degraded' | 'ok';
@@ -240,8 +250,10 @@ export class MonitorRepository {
         queue,
       };
     } catch {
-      throw new ServiceUnavailableException(
+      throw monitorServiceUnavailable(
+        'MONITOR_QUEUE_CONTROL_UNAVAILABLE',
         'BullMQ queue control failed without exposing Redis details.',
+        { action, queueName: name },
       );
     }
   }

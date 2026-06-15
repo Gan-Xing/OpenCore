@@ -48,6 +48,19 @@ describe('PrismaSystemManagementRepository integration', () => {
       id: file.id,
       originalName: fileName,
     });
+    await expectHttpExceptionCode(
+      repository.createFileAsset({
+        originalName: fileName,
+        mimeType: 'text/plain',
+        sizeBytes: 64,
+        uploadedBy: 'admin',
+      }),
+      'SYSTEM_FILE_ASSET_EXISTS',
+    );
+    await expectHttpExceptionCode(
+      repository.getFile(`missing_${testRunId}`),
+      'SYSTEM_FILE_ASSET_NOT_FOUND',
+    );
     await expect(
       repository.createExportPreview('files', { page: 1, pageSize: 20 }),
     ).resolves.toMatchObject({
@@ -66,3 +79,30 @@ describe('PrismaSystemManagementRepository integration', () => {
     });
   }
 });
+
+async function expectHttpExceptionCode(
+  promise: Promise<unknown>,
+  code: string,
+): Promise<void> {
+  try {
+    await promise;
+  } catch (error) {
+    expect(getHttpExceptionResponse(error)).toMatchObject({ code });
+    return;
+  }
+
+  throw new Error(`Expected HTTP exception code ${code}`);
+}
+
+function getHttpExceptionResponse(error: unknown): unknown {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'getResponse' in error &&
+    typeof error.getResponse === 'function'
+  ) {
+    return error.getResponse();
+  }
+
+  return undefined;
+}

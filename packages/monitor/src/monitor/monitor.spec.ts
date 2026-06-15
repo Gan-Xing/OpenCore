@@ -144,6 +144,15 @@ describe('@opencore/monitor', () => {
       service.pauseQueue('unknown'),
       'MONITOR_QUEUE_UNSUPPORTED',
     );
+
+    await expectHttpExceptionCode(
+      new MonitorService(
+        new MonitorRepository(
+          createFakeDiagnostics({ queueControlThrows: true }),
+        ),
+      ).pauseQueue('maintenance'),
+      'MONITOR_QUEUE_CONTROL_UNAVAILABLE',
+    );
   });
 
   it('returns safe version metadata', () => {
@@ -214,7 +223,10 @@ describe('@opencore/monitor', () => {
 });
 
 function createFakeDiagnostics(
-  options: { redisStatus?: 'degraded' | 'ok' } = {},
+  options: {
+    queueControlThrows?: boolean;
+    redisStatus?: 'degraded' | 'ok';
+  } = {},
 ): MonitorRuntimeDiagnostics {
   return {
     checkDatabase: async () => ({
@@ -267,26 +279,38 @@ function createFakeDiagnostics(
         },
       ],
     }),
-    pauseQueue: async (name) => ({
-      name,
-      driver: 'bullmq-redis-managed',
-      waiting: 0,
-      active: 0,
-      completed: 0,
-      failed: 0,
-      paused: true,
-      controlMode: 'managed',
-    }),
-    resumeQueue: async (name) => ({
-      name,
-      driver: 'bullmq-redis-managed',
-      waiting: 0,
-      active: 0,
-      completed: 0,
-      failed: 0,
-      paused: false,
-      controlMode: 'managed',
-    }),
+    pauseQueue: async (name) => {
+      if (options.queueControlThrows) {
+        throw new Error('queue unavailable');
+      }
+
+      return {
+        name,
+        driver: 'bullmq-redis-managed',
+        waiting: 0,
+        active: 0,
+        completed: 0,
+        failed: 0,
+        paused: true,
+        controlMode: 'managed',
+      };
+    },
+    resumeQueue: async (name) => {
+      if (options.queueControlThrows) {
+        throw new Error('queue unavailable');
+      }
+
+      return {
+        name,
+        driver: 'bullmq-redis-managed',
+        waiting: 0,
+        active: 0,
+        completed: 0,
+        failed: 0,
+        paused: false,
+        controlMode: 'managed',
+      };
+    },
   };
 }
 

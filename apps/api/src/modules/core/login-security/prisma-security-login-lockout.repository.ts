@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { createApiErrorBody } from '@opencore/common';
 import { PrismaService } from '@opencore/database';
 import {
   SecurityLoginLockoutRepository,
@@ -110,7 +111,11 @@ function normalizeLockoutUsername(username: string): string {
   const normalized = username.trim();
 
   if (!normalized) {
-    throw new BadRequestException('Login username is required.');
+    throw loginSecurityBadRequest(
+      'SECURITY_LOGIN_USERNAME_REQUIRED',
+      'Login username is required.',
+      { field: 'username' },
+    );
   }
 
   return normalized;
@@ -118,7 +123,11 @@ function normalizeLockoutUsername(username: string): string {
 
 function normalizePositiveInteger(value: number, fieldName: string): number {
   if (!Number.isInteger(value) || value < 1) {
-    throw new BadRequestException(`${fieldName} must be a positive integer.`);
+    throw loginSecurityBadRequest(
+      'SECURITY_LOGIN_LOCKOUT_POLICY_INVALID',
+      'Login lockout policy value must be a positive integer.',
+      { field: fieldName },
+    );
   }
 
   return value;
@@ -132,10 +141,24 @@ function normalizeDate(value: string | undefined): Date {
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
-    throw new BadRequestException('occurredAt must be a valid ISO date-time.');
+    throw loginSecurityBadRequest(
+      'SECURITY_LOGIN_LOCKOUT_OCCURRED_AT_INVALID',
+      'Login lockout attempt time must be a valid ISO date-time.',
+      { field: 'occurredAt' },
+    );
   }
 
   return date;
+}
+
+function loginSecurityBadRequest(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): BadRequestException {
+  return new BadRequestException(
+    createApiErrorBody({ code, message, details }),
+  );
 }
 
 function toSecurityLoginLockoutRecord(

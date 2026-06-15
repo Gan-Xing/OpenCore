@@ -1,17 +1,14 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
-  NotFoundException,
   Param,
   Patch,
   Post,
   Query,
   Req,
   Res,
-  UnauthorizedException,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -145,7 +142,12 @@ import {
   MarkSystemNoticesReadDto,
   RenderSystemNoticeTemplateDto,
 } from './system-management.dto';
-import { SystemManagementRepository } from './system-management.repository';
+import {
+  systemManagementBadRequest,
+  systemManagementNotFound,
+  systemManagementUnauthorized,
+  SystemManagementRepository,
+} from './system-management.repository';
 
 type DownloadResponse = {
   send(body: Buffer): void;
@@ -941,7 +943,11 @@ export class SystemManagementController {
     const object = await this.files.getObject(file.storageKey);
 
     if (!object) {
-      throw new NotFoundException(`Stored file object is missing: ${id}`);
+      throw systemManagementNotFound(
+        'SYSTEM_FILE_OBJECT_NOT_FOUND',
+        'Stored file object is missing.',
+        { id, storageKey: file.storageKey },
+      );
     }
 
     response.set({
@@ -1039,7 +1045,11 @@ export class SystemManagementController {
     @Query() query: IpLocationLookupQueryDto,
   ): Promise<IpLocationLookupDto> {
     if (!query.ip?.trim()) {
-      throw new BadRequestException('IP address is required');
+      throw systemManagementBadRequest(
+        'SYSTEM_IP_ADDRESS_REQUIRED',
+        'IP address is required.',
+        { field: 'ip' },
+      );
     }
 
     return this.ipLocationProvider.lookup(query.ip);
@@ -1146,7 +1156,10 @@ function getAuthenticatedUserId(request: RequestWithUser): string {
   const userId = request.user?.id;
 
   if (!userId) {
-    throw new UnauthorizedException('Missing authenticated user');
+    throw systemManagementUnauthorized(
+      'SYSTEM_AUTH_USER_REQUIRED',
+      'Missing authenticated user.',
+    );
   }
 
   return userId;
@@ -1176,13 +1189,21 @@ function decodeBase64FileContent(contentBase64: string): Buffer {
   const normalized = payload.trim().replace(/\s/g, '');
 
   if (!normalized || !/^[A-Za-z0-9+/]+={0,2}$/.test(normalized)) {
-    throw new BadRequestException('File content must be valid base64.');
+    throw systemManagementBadRequest(
+      'SYSTEM_FILE_CONTENT_BASE64_INVALID',
+      'File content must be valid base64.',
+      { field: 'contentBase64' },
+    );
   }
 
   const content = Buffer.from(normalized, 'base64');
 
   if (content.byteLength === 0) {
-    throw new BadRequestException('File content must not be empty.');
+    throw systemManagementBadRequest(
+      'SYSTEM_FILE_CONTENT_EMPTY',
+      'File content must not be empty.',
+      { field: 'contentBase64' },
+    );
   }
 
   return content;

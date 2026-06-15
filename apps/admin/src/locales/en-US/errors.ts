@@ -8,6 +8,11 @@ export default {
     'The sign-in credential is invalid. Please sign in again.',
   'error.AUTH_BEARER_TOKEN_EXPIRED':
     'The sign-in credential has expired. Please sign in again.',
+  'error.SECURITY_LOGIN_LOCKOUT_OCCURRED_AT_INVALID':
+    'The login lockout attempt time is invalid.',
+  'error.SECURITY_LOGIN_LOCKOUT_POLICY_INVALID':
+    'The login lockout policy is invalid.',
+  'error.SECURITY_LOGIN_USERNAME_REQUIRED': 'The login username is required.',
   'error.RBAC_PERMISSION_MISSING':
     'Your account is missing the required permission.',
   'error.RBAC_PERMISSION_ALREADY_EXISTS': 'The permission code already exists.',
@@ -63,6 +68,16 @@ export default {
   'error.FILE_SIZE_INVALID': 'The file size must be positive.',
   'error.FILE_STORAGE_KEY_INVALID':
     'The storage object key must be a relative path.',
+  'error.SYSTEM_AUTH_USER_REQUIRED':
+    'The current signed-in user is missing. Please sign in again.',
+  'error.SYSTEM_FILE_ASSET_EXISTS': 'The file asset already exists.',
+  'error.SYSTEM_FILE_ASSET_NOT_FOUND': 'The file asset does not exist.',
+  'error.SYSTEM_FILE_CONTENT_BASE64_INVALID':
+    'The file content must be valid base64.',
+  'error.SYSTEM_FILE_CONTENT_EMPTY': 'The file content must not be empty.',
+  'error.SYSTEM_FILE_OBJECT_NOT_FOUND':
+    'The stored file object does not exist.',
+  'error.SYSTEM_IP_ADDRESS_REQUIRED': 'The IP address is required.',
   'error.BAD_REQUEST': 'The request is invalid.',
   'error.VALIDATION_FAILED': 'The submitted content failed validation.',
   'error.NOT_FOUND': 'The requested resource does not exist.',
@@ -375,6 +390,8 @@ export default {
     'The cache key must be a single line.',
   'error.MONITOR_OPERATIONS_RESOURCE_NOT_FOUND':
     'The operations resource does not exist.',
+  'error.MONITOR_QUEUE_CONTROL_UNAVAILABLE':
+    'Queue control is temporarily unavailable.',
   'error.MONITOR_QUEUE_UNSUPPORTED': 'The monitor queue is not supported.',
   'error.TOOL_AREA_DATASET_DEPTH_TOO_DEEP':
     'The area dataset hierarchy is too deep.',

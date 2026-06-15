@@ -1,4 +1,11 @@
 import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { createApiErrorBody } from '@opencore/common';
+import {
   assertSafeFileAssetInput,
   createFileAssetStorageKey,
 } from '@opencore/file';
@@ -129,6 +136,42 @@ export function createStorageKey(
 
 export function assertSafeFileAsset(body: CreateFileAssetDto): void {
   assertSafeFileAssetInput(body);
+}
+
+export function systemManagementBadRequest(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): BadRequestException {
+  return new BadRequestException(
+    createApiErrorBody({ code, message, details }),
+  );
+}
+
+export function systemManagementConflict(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): ConflictException {
+  return new ConflictException(createApiErrorBody({ code, message, details }));
+}
+
+export function systemManagementNotFound(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): NotFoundException {
+  return new NotFoundException(createApiErrorBody({ code, message, details }));
+}
+
+export function systemManagementUnauthorized(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): UnauthorizedException {
+  return new UnauthorizedException(
+    createApiErrorBody({ code, message, details }),
+  );
 }
 
 function normalizePositiveInteger(

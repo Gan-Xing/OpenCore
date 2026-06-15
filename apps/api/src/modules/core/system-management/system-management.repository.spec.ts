@@ -29,6 +29,10 @@ describe('SystemManagementRepository', () => {
     await expect(repository.deleteFile(file.id)).resolves.toEqual({
       deleted: true,
     });
+    await expectHttpExceptionCode(
+      repository.getFile(file.id),
+      'SYSTEM_FILE_ASSET_NOT_FOUND',
+    );
   });
 
   it('creates current-page export previews', async () => {
@@ -41,3 +45,30 @@ describe('SystemManagementRepository', () => {
     });
   });
 });
+
+async function expectHttpExceptionCode(
+  promise: Promise<unknown>,
+  code: string,
+): Promise<void> {
+  try {
+    await promise;
+  } catch (error) {
+    expect(getHttpExceptionResponse(error)).toMatchObject({ code });
+    return;
+  }
+
+  throw new Error(`Expected HTTP exception code ${code}`);
+}
+
+function getHttpExceptionResponse(error: unknown): unknown {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'getResponse' in error &&
+    typeof error.getResponse === 'function'
+  ) {
+    return error.getResponse();
+  }
+
+  return undefined;
+}

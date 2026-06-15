@@ -1,8 +1,4 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@opencore/database';
 import { loadRuntimeConfig } from '../../../platform/config/runtime-config';
 import type {
@@ -17,6 +13,8 @@ import {
   createPageResult,
   createStorageKey,
   normalizePageQuery,
+  systemManagementConflict,
+  systemManagementNotFound,
   SystemManagementRepository,
   type ExportPreview,
   type PageResult,
@@ -66,7 +64,11 @@ export class PrismaSystemManagementRepository extends SystemManagementRepository
     const storageKey = createStorageKey(body, this.storagePrefix);
 
     if (await this.prisma.fileAsset.findUnique({ where: { storageKey } })) {
-      throw new ConflictException(`File asset already exists: ${storageKey}`);
+      throw systemManagementConflict(
+        'SYSTEM_FILE_ASSET_EXISTS',
+        'File asset already exists.',
+        { storageKey },
+      );
     }
 
     const file = await this.prisma.fileAsset.create({
@@ -133,7 +135,11 @@ export class PrismaSystemManagementRepository extends SystemManagementRepository
     const file = await this.prisma.fileAsset.findUnique({ where: { id } });
 
     if (!file) {
-      throw new NotFoundException(`File asset not found: ${id}`);
+      throw systemManagementNotFound(
+        'SYSTEM_FILE_ASSET_NOT_FOUND',
+        'File asset not found.',
+        { id },
+      );
     }
 
     return file;
