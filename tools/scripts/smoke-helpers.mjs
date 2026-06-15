@@ -40,6 +40,7 @@ export function createSmokeRuntime() {
       const response = await fetch(url, {
         method: options.method || 'GET',
         headers: {
+          ...(options.headers || {}),
           ...(options.body ? { 'content-type': 'application/json' } : {}),
           ...(options.token
             ? { authorization: `Bearer ${options.token}` }
@@ -172,11 +173,23 @@ export function assertOpenApiPath(openApi, path) {
   }
 }
 
+export function assertOpenApiSchema(openApi, schema) {
+  if (!openApi?.components?.schemas?.[schema]) {
+    throw new Error(`OpenAPI docs-json does not include schema ${schema}`);
+  }
+}
+
 export function assertString(value, label) {
   if (typeof value !== 'string' || value.length === 0) {
     throw new Error(`Expected ${label} to be a non-empty string`);
   }
   return value;
+}
+
+export function delay(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
 
 export function formatBody(body) {
