@@ -1,4 +1,5 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { createApiErrorBody } from '@opencore/common';
 import type {
   AssignTodoDto,
   ApprovalLiteQueryDto,
@@ -159,16 +160,20 @@ export function appendTimeline(
 
 export function assertMessageReadable(status: string): void {
   if (status === 'archived' || status === 'deleted') {
-    throw new BadRequestException(
-      `Message cannot be marked read from ${status} status.`,
+    throw collaborationBadRequest(
+      'COLLABORATION_MESSAGE_READ_STATUS_INVALID',
+      'Message cannot be marked read from the current status.',
+      { status },
     );
   }
 }
 
 export function assertMessageNotDeleted(status: string, action: string): void {
   if (status === 'deleted') {
-    throw new BadRequestException(
-      `Message cannot be ${action} after deletion.`,
+    throw collaborationBadRequest(
+      'COLLABORATION_MESSAGE_DELETED',
+      'Message cannot be changed after deletion.',
+      { action, status },
     );
   }
 }
@@ -178,7 +183,11 @@ export function requireVisibleMessage(
   id: string,
 ): MessageRecord {
   if (!record || record.status === 'deleted') {
-    throw new NotFoundException(`Message not found: ${id}`);
+    throw collaborationNotFound(
+      'COLLABORATION_MESSAGE_NOT_FOUND',
+      'Message not found.',
+      { id },
+    );
   }
 
   return record;
@@ -186,26 +195,40 @@ export function requireVisibleMessage(
 
 export function assertNoticeCanPublish(status: string): void {
   if (status !== 'draft') {
-    throw new BadRequestException('Notice can only be published from draft.');
+    throw collaborationBadRequest(
+      'COLLABORATION_NOTICE_PUBLISH_STATUS_INVALID',
+      'Notice can only be published from draft.',
+      { status },
+    );
   }
 }
 
 export function assertNoticeNotArchived(status: string, action: string): void {
   if (status === 'archived') {
-    throw new BadRequestException(`Notice cannot be ${action} after archive.`);
+    throw collaborationBadRequest(
+      'COLLABORATION_NOTICE_ARCHIVED',
+      'Notice cannot be changed after archive.',
+      { action, status },
+    );
   }
 }
 
 export function assertPending(status: string, resource: string): void {
   if (status !== 'pending') {
-    throw new BadRequestException(`${resource} is not pending.`);
+    throw collaborationBadRequest(
+      'COLLABORATION_RESOURCE_NOT_PENDING',
+      'The collaboration resource is not pending.',
+      { resource, status },
+    );
   }
 }
 
 export function assertTodoOpen(status: string, action: string): void {
   if (status === 'completed' || status === 'canceled') {
-    throw new BadRequestException(
-      `Todo cannot be ${action} from ${status} status.`,
+    throw collaborationBadRequest(
+      'COLLABORATION_TODO_STATUS_TERMINAL',
+      'Todo cannot be changed from a terminal status.',
+      { action, status },
     );
   }
 }
@@ -216,10 +239,32 @@ export function requireRecord<T>(
   id: string,
 ): T {
   if (!record) {
-    throw new NotFoundException(`${resource} not found: ${id}`);
+    throw collaborationNotFound(
+      'COLLABORATION_RESOURCE_NOT_FOUND',
+      'Collaboration resource not found.',
+      { id, resource },
+    );
   }
 
   return record;
+}
+
+export function collaborationBadRequest(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): BadRequestException {
+  return new BadRequestException(
+    createApiErrorBody({ code, message, details }),
+  );
+}
+
+export function collaborationNotFound(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): NotFoundException {
+  return new NotFoundException(createApiErrorBody({ code, message, details }));
 }
 
 function normalizePositiveInteger(

@@ -319,6 +319,21 @@ export default {
     'The WebSocket publish event type is invalid.',
   'error.INTEGRATION_WEBSOCKET_ROOM_INVALID':
     'The WebSocket room is invalid.',
+  'error.COLLABORATION_MESSAGE_DELETED':
+    'The message has already been deleted.',
+  'error.COLLABORATION_MESSAGE_NOT_FOUND': 'The message does not exist.',
+  'error.COLLABORATION_MESSAGE_READ_STATUS_INVALID':
+    'The message cannot be marked read from its current status.',
+  'error.COLLABORATION_NOTICE_ARCHIVED':
+    'The notice has already been archived.',
+  'error.COLLABORATION_NOTICE_PUBLISH_STATUS_INVALID':
+    'Only draft notices can be published.',
+  'error.COLLABORATION_RESOURCE_NOT_FOUND':
+    'The collaboration resource does not exist.',
+  'error.COLLABORATION_RESOURCE_NOT_PENDING':
+    'The collaboration resource is not pending.',
+  'error.COLLABORATION_TODO_STATUS_TERMINAL':
+    'The todo is already in a terminal status.',
   'error.SCHEDULER_DISPATCH_NOW_INVALID':
     'The scheduler dispatch time must be a valid ISO date-time.',
   'error.SCHEDULER_HANDLER_NOT_FOUND':

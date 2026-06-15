@@ -2,54 +2,6 @@
   "description": "Existing naked NestJS exception debt. New business exceptions must use createApiErrorBody with a stable code.",
   "violations": [
     {
-      "argument": "'Notice can only be published from draft.'",
-      "count": 1,
-      "exception": "BadRequestException",
-      "file": "apps/api/src/modules/collaboration/collaboration/collaboration.repository.ts"
-    },
-    {
-      "argument": "`${resource} is not pending.`",
-      "count": 1,
-      "exception": "BadRequestException",
-      "file": "apps/api/src/modules/collaboration/collaboration/collaboration.repository.ts"
-    },
-    {
-      "argument": "`Message cannot be ${action} after deletion.`",
-      "count": 1,
-      "exception": "BadRequestException",
-      "file": "apps/api/src/modules/collaboration/collaboration/collaboration.repository.ts"
-    },
-    {
-      "argument": "`Message cannot be marked read from ${status} status.`",
-      "count": 1,
-      "exception": "BadRequestException",
-      "file": "apps/api/src/modules/collaboration/collaboration/collaboration.repository.ts"
-    },
-    {
-      "argument": "`Notice cannot be ${action} after archive.`",
-      "count": 1,
-      "exception": "BadRequestException",
-      "file": "apps/api/src/modules/collaboration/collaboration/collaboration.repository.ts"
-    },
-    {
-      "argument": "`Todo cannot be ${action} from ${status} status.`",
-      "count": 1,
-      "exception": "BadRequestException",
-      "file": "apps/api/src/modules/collaboration/collaboration/collaboration.repository.ts"
-    },
-    {
-      "argument": "`${resource} not found: ${id}`",
-      "count": 1,
-      "exception": "NotFoundException",
-      "file": "apps/api/src/modules/collaboration/collaboration/collaboration.repository.ts"
-    },
-    {
-      "argument": "`Message not found: ${id}`",
-      "count": 1,
-      "exception": "NotFoundException",
-      "file": "apps/api/src/modules/collaboration/collaboration/collaboration.repository.ts"
-    },
-    {
       "argument": "'Login username is required.'",
       "count": 1,
       "exception": "BadRequestException",

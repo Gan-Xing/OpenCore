@@ -1,4 +1,3 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { SeedCollaborationRepository } from './seed-collaboration.repository';
 
 describe('CollaborationRepository', () => {
@@ -59,17 +58,21 @@ describe('CollaborationRepository', () => {
     await expect(repository.deleteMessage(message.id)).resolves.toEqual({
       deleted: true,
     });
-    await expect(repository.getMessage(message.id)).rejects.toThrow(
-      NotFoundException,
+    await expectHttpExceptionCode(
+      repository.getMessage(message.id),
+      'COLLABORATION_MESSAGE_NOT_FOUND',
     );
-    await expect(repository.markMessageRead(message.id)).rejects.toThrow(
-      BadRequestException,
+    await expectHttpExceptionCode(
+      repository.markMessageRead(message.id),
+      'COLLABORATION_MESSAGE_READ_STATUS_INVALID',
     );
-    await expect(repository.archiveMessage(message.id)).rejects.toThrow(
-      BadRequestException,
+    await expectHttpExceptionCode(
+      repository.archiveMessage(message.id),
+      'COLLABORATION_MESSAGE_DELETED',
     );
-    await expect(repository.deleteMessage(message.id)).rejects.toThrow(
-      BadRequestException,
+    await expectHttpExceptionCode(
+      repository.deleteMessage(message.id),
+      'COLLABORATION_MESSAGE_DELETED',
     );
     expect(
       (await repository.listMessages()).items.some(
@@ -100,11 +103,17 @@ describe('CollaborationRepository', () => {
       status: 'archived',
       archivedAt: expect.any(String),
     });
-    await expect(repository.publishNotice(notice.id)).rejects.toThrow(
-      BadRequestException,
+    await expectHttpExceptionCode(
+      repository.publishNotice(notice.id),
+      'COLLABORATION_NOTICE_PUBLISH_STATUS_INVALID',
     );
-    await expect(repository.archiveNotice(notice.id)).rejects.toThrow(
-      BadRequestException,
+    await expectHttpExceptionCode(
+      repository.archiveNotice(notice.id),
+      'COLLABORATION_NOTICE_ARCHIVED',
+    );
+    await expectHttpExceptionCode(
+      repository.getNotice('missing_notice'),
+      'COLLABORATION_RESOURCE_NOT_FOUND',
     );
   });
 
@@ -138,15 +147,17 @@ describe('CollaborationRepository', () => {
       'assigned',
       'completed',
     ]);
-    await expect(
+    await expectHttpExceptionCode(
       repository.cancelTodo(todo.id, { actor: 'reviewer' }),
-    ).rejects.toThrow(BadRequestException);
-    await expect(
+      'COLLABORATION_TODO_STATUS_TERMINAL',
+    );
+    await expectHttpExceptionCode(
       repository.assignTodo(todo.id, {
         assignee: 'admin',
         actor: 'reviewer',
       }),
-    ).rejects.toThrow(BadRequestException);
+      'COLLABORATION_TODO_STATUS_TERMINAL',
+    );
   });
 
   it('implements single-step approval-lite approve and reject decisions', async () => {
@@ -175,10 +186,38 @@ describe('CollaborationRepository', () => {
       id: approval.id,
       status: 'approved',
     });
-    await expect(
+    await expectHttpExceptionCode(
       repository.rejectApprovalLiteRequest(approval.id, {
         actor: 'admin',
       }),
-    ).rejects.toThrow(BadRequestException);
+      'COLLABORATION_RESOURCE_NOT_PENDING',
+    );
   });
 });
+
+async function expectHttpExceptionCode(
+  promise: Promise<unknown>,
+  code: string,
+): Promise<void> {
+  try {
+    await promise;
+  } catch (error) {
+    expect(getHttpExceptionResponse(error)).toMatchObject({ code });
+    return;
+  }
+
+  throw new Error(`Expected HTTP exception code ${code}`);
+}
+
+function getHttpExceptionResponse(error: unknown): unknown {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'getResponse' in error &&
+    typeof error.getResponse === 'function'
+  ) {
+    return error.getResponse();
+  }
+
+  return undefined;
+}

@@ -240,6 +240,16 @@ export default {
   'error.INTEGRATION_WEBSOCKET_PUBLISH_EVENT_TYPE_INVALID':
     'WebSocket 发布事件类型无效。',
   'error.INTEGRATION_WEBSOCKET_ROOM_INVALID': 'WebSocket 房间名无效。',
+  'error.COLLABORATION_MESSAGE_DELETED': '消息已删除。',
+  'error.COLLABORATION_MESSAGE_NOT_FOUND': '消息不存在。',
+  'error.COLLABORATION_MESSAGE_READ_STATUS_INVALID':
+    '消息当前状态不能标记为已读。',
+  'error.COLLABORATION_NOTICE_ARCHIVED': '公告已归档。',
+  'error.COLLABORATION_NOTICE_PUBLISH_STATUS_INVALID':
+    '只有草稿公告可以发布。',
+  'error.COLLABORATION_RESOURCE_NOT_FOUND': '协作资源不存在。',
+  'error.COLLABORATION_RESOURCE_NOT_PENDING': '协作资源不是待处理状态。',
+  'error.COLLABORATION_TODO_STATUS_TERMINAL': '待办已处于终态。',
   'error.SCHEDULER_DISPATCH_NOW_INVALID':
     '调度触发时间必须是有效的 ISO 时间。',
   'error.SCHEDULER_HANDLER_NOT_FOUND': '调度任务处理器不存在。',
