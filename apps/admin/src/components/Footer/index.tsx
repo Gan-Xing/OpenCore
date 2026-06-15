@@ -1,18 +1,20 @@
 import { GithubOutlined } from '@ant-design/icons';
 import packageJson from '@root/package.json';
+import { useIntl } from '@umijs/max';
 import { Divider } from 'antd';
 import { createStyles } from 'antd-style';
 import React from 'react';
 
+const DEFAULT_REPO_URL = 'https://github.com/Gan-Xing/OpenCore';
+
 const getRepoUrl = () => {
-  if (!packageJson.repository)
-    return 'https://github.com/ant-design/ant-design-pro';
+  if (!packageJson.repository) return DEFAULT_REPO_URL;
   const repo =
     typeof packageJson.repository === 'string'
       ? packageJson.repository
       : (packageJson.repository as { url: string }).url;
   const match = repo.match(/github\.com[:/]([^/]+)\/([^/.]+)/);
-  if (!match) return 'https://github.com/ant-design/ant-design-pro';
+  if (!match) return DEFAULT_REPO_URL;
   return `https://github.com/${match[1]}/${match[2]}`;
 };
 
@@ -65,14 +67,26 @@ const useStyles = createStyles(({ token, css }) => ({
 
 const Footer: React.FC = () => {
   const { styles } = useStyles();
+  const intl = useIntl();
   const year = new Date().getFullYear();
+  const productName = intl.formatMessage({
+    id: 'app.footer.product',
+    defaultMessage: 'OpenCore Admin',
+  });
 
   return (
     <div className={styles.footer}>
-      <div className={styles.copyright}>Ant Design Pro &copy; {year}</div>
+      <div className={styles.copyright}>
+        {productName} &copy; {year}
+      </div>
       <div className={styles.meta}>
         <span className={styles.group}>
-          <span className={styles.label}>ver</span>
+          <span className={styles.label}>
+            {intl.formatMessage({
+              id: 'app.footer.version',
+              defaultMessage: 'Version',
+            })}
+          </span>
           <a
             className={styles.link}
             href={REPO_URL}
@@ -106,7 +120,12 @@ const Footer: React.FC = () => {
         </span>
         <Divider orientation="vertical" className={styles.divider} />
         <span className={styles.group}>
-          <span className={styles.label}>Bundler</span>
+          <span className={styles.label}>
+            {intl.formatMessage({
+              id: 'app.footer.bundler',
+              defaultMessage: 'Bundler',
+            })}
+          </span>
           <span className={styles.link}>
             {__BUILD_BUNDLER__} {__BUILD_BUNDLER_VERSION__}
           </span>
@@ -119,7 +138,10 @@ const Footer: React.FC = () => {
           rel="noopener noreferrer"
         >
           <GithubOutlined style={{ marginRight: 4 }} />
-          GitHub
+          {intl.formatMessage({
+            id: 'app.footer.repository',
+            defaultMessage: 'Repository',
+          })}
         </a>
       </div>
     </div>

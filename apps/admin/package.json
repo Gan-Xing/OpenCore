@@ -2,7 +2,7 @@
   "name": "@opencore/admin",
   "version": "6.0.2",
   "private": true,
-  "description": "OpenCore Admin built on the official Ant Design Pro v6 template",
+  "description": "OpenCore Admin console",
   "repository": "https://github.com/Gan-Xing/OpenCore.git",
   "scripts": {
     "analyze": "cross-env ANALYZE=1 max build",

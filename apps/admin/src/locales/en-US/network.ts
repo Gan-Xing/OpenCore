@@ -18,4 +18,8 @@ export default {
   'app.header.tools': 'OpenCore tools',
   'app.header.version': 'Version {version}',
   'app.header.language': 'Switch language',
+  'app.footer.product': 'OpenCore Admin',
+  'app.footer.version': 'Version',
+  'app.footer.bundler': 'Bundler',
+  'app.footer.repository': 'Repository',
 };

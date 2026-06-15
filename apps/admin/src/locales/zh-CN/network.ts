@@ -15,4 +15,8 @@ export default {
   'app.header.tools': 'OpenCore 工具',
   'app.header.version': '版本 {version}',
   'app.header.language': '切换语言',
+  'app.footer.product': 'OpenCore 管理后台',
+  'app.footer.version': '版本',
+  'app.footer.bundler': '构建器',
+  'app.footer.repository': '代码仓库',
 };

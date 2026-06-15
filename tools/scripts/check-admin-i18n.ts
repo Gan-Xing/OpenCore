@@ -15,6 +15,9 @@ const forbiddenLocaleNames = [
   'zh-TW',
 ];
 const forbiddenMarkers = [
+  'Ant Design Pro',
+  'ant-design/ant-design-pro',
+  'official Ant Design Pro',
   'Ant Design 是西湖',
   'Ant Design is the most influential',
   'admin/ant.design',
@@ -24,6 +27,12 @@ const forbiddenMarkers = [
   "'menu.form'",
   "'menu.list'",
   "'menu.editor'",
+];
+const forbiddenMarkerScanPaths = [
+  localesRoot,
+  join(adminRoot, 'package.json'),
+  join(adminRoot, 'src', 'components', 'Footer', 'index.tsx'),
+  join(adminRoot, 'src', 'manifest.json'),
 ];
 
 const failures: string[] = [];
@@ -61,7 +70,9 @@ for (const entry of readdirSync(localesRoot)) {
   }
 }
 
-checkForbiddenMarkers(localesRoot);
+for (const scanPath of forbiddenMarkerScanPaths) {
+  checkForbiddenMarkers(scanPath);
+}
 checkRouteMenuKeys();
 
 if (failures.length > 0) {
@@ -74,30 +85,41 @@ if (failures.length > 0) {
 
 console.log('Admin i18n guard passed.');
 
-function checkForbiddenMarkers(dir: string): void {
-  for (const entry of readdirSync(dir)) {
-    const fullPath = join(dir, entry);
-    const stat = statSync(fullPath);
+function checkForbiddenMarkers(path: string): void {
+  const stat = statSync(path);
 
-    if (stat.isDirectory()) {
+  if (!stat.isDirectory()) {
+    checkForbiddenMarkersInFile(path);
+    return;
+  }
+
+  for (const entry of readdirSync(path)) {
+    const fullPath = join(path, entry);
+    const entryStat = statSync(fullPath);
+
+    if (entryStat.isDirectory()) {
       checkForbiddenMarkers(fullPath);
       continue;
     }
 
-    if (!fullPath.endsWith('.ts')) {
-      continue;
-    }
+    checkForbiddenMarkersInFile(fullPath);
+  }
+}
 
-    const content = readFileSync(fullPath, 'utf8');
-    for (const marker of forbiddenMarkers) {
-      if (content.includes(marker)) {
-        failures.push(
-          `Forbidden template marker ${JSON.stringify(marker)} in ${relative(
-            root,
-            fullPath,
-          )}`,
-        );
-      }
+function checkForbiddenMarkersInFile(path: string): void {
+  if (!/\.(json|ts|tsx)$/u.test(path)) {
+    return;
+  }
+
+  const content = readFileSync(path, 'utf8');
+  for (const marker of forbiddenMarkers) {
+    if (content.includes(marker)) {
+      failures.push(
+        `Forbidden template marker ${JSON.stringify(marker)} in ${relative(
+          root,
+          path,
+        )}`,
+      );
     }
   }
 }
