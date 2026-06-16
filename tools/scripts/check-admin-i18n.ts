@@ -42,8 +42,12 @@ const coreI18nScanPaths = [
   join(adminRoot, 'src', 'pages', 'shared', 'CurrentPageExportButton.tsx'),
   join(adminRoot, 'src', 'pages', 'shared', 'CurrentPageFilters.tsx'),
   join(adminRoot, 'src', 'pages', 'shared', 'ReadOnlyDetailDrawer.tsx'),
+  join(adminRoot, 'src', 'pages', 'System', 'Posts.tsx'),
   join(adminRoot, 'src', 'pages', 'user', 'login', 'index.tsx'),
   join(adminRoot, 'src', 'requestErrorConfig.ts'),
+];
+const localizedAdminPageScanPaths = [
+  join(adminRoot, 'src', 'pages', 'System', 'Posts.tsx'),
 ];
 const forbiddenMarkerScanPaths = [
   localesRoot,
@@ -92,6 +96,7 @@ for (const scanPath of forbiddenMarkerScanPaths) {
 }
 checkRouteMenuKeys();
 checkCoreI18nKeys();
+checkLocalizedAdminPageText();
 
 if (failures.length > 0) {
   console.error('Admin i18n guard failed.');
@@ -183,6 +188,31 @@ function checkCoreI18nKeys(): void {
             )}`,
           );
         }
+      }
+    }
+  }
+}
+
+function checkLocalizedAdminPageText(): void {
+  const hardcodedTextPatterns = [
+    /\bmessage\.(?:success|error|warning|info)\(\s*['"`]/g,
+    /\b(?:aria-label|label|message|okText|placeholder|subTitle|title)=["'][A-Za-z][^"']*["']/g,
+    /\b(?:label|message|okText|placeholder|title):\s*['"][A-Za-z][^'"]*['"]/g,
+    /<Button\b[^>]*>\s*[A-Za-z][^<{]*\s*<\/Button>/g,
+    /<Typography\.(?:Text|Title)\b[^>]*>\s*[A-Za-z][^<{]*\s*<\/Typography\.(?:Text|Title)>/g,
+    /<Tag\b[^>]*>\s*[A-Za-z][^<{]*\s*<\/Tag>/g,
+  ];
+
+  for (const scanPath of localizedAdminPageScanPaths) {
+    const content = readFileSync(scanPath, 'utf8');
+
+    for (const pattern of hardcodedTextPatterns) {
+      for (const match of content.matchAll(pattern)) {
+        failures.push(
+          `Hardcoded Admin page text in ${relative(root, scanPath)}: ${JSON.stringify(
+            match[0],
+          )}`,
+        );
       }
     }
   }

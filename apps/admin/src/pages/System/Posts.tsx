@@ -13,6 +13,7 @@ import {
   type ProColumns,
 } from '@ant-design/pro-components';
 import type { SystemPostSummary } from '@opencore/sdk';
+import { useIntl } from '@umijs/max';
 import {
   Alert,
   Button,
@@ -65,40 +66,6 @@ const searchFields: CurrentPageSearchField<SystemPostSummary>[] = [
   'name',
   'description',
 ];
-const filterOptions: CurrentPageFilterOption<SystemPostSummary>[] = [
-  {
-    key: 'enabled',
-    options: [
-      { label: 'enabled', value: 'true' },
-      { label: 'disabled', value: 'false' },
-    ],
-    placeholder: 'Status',
-    predicate: (record, value) => record.enabled === (value === 'true'),
-  },
-];
-const exportColumns: CurrentPageExportColumn<SystemPostSummary>[] = [
-  { title: 'ID', dataIndex: 'id' },
-  { title: 'Code', dataIndex: 'code' },
-  { title: 'Name', dataIndex: 'name' },
-  { title: 'Order', dataIndex: 'order' },
-  { title: 'Enabled', dataIndex: 'enabled' },
-  { title: 'Description', dataIndex: 'description' },
-  { title: 'Created At', dataIndex: 'createdAt' },
-  { title: 'Updated At', dataIndex: 'updatedAt' },
-];
-
-function createDetailFields(record: SystemPostSummary): DetailField[] {
-  return [
-    { label: 'ID', value: record.id },
-    { label: 'Code', value: record.code },
-    { label: 'Name', value: record.name },
-    { label: 'Order', value: record.order },
-    { label: 'Enabled', value: record.enabled ? 'enabled' : 'disabled' },
-    { label: 'Description', value: record.description },
-    { label: 'Created At', value: record.createdAt },
-    { label: 'Updated At', value: record.updatedAt },
-  ];
-}
 
 function createReorderedPostItems(
   rows: readonly SystemPostSummary[],
@@ -126,6 +93,7 @@ function createReorderedPostItems(
 }
 
 export default function PostsPage() {
+  const intl = useIntl();
   const [form] = Form.useForm<PostFormValues>();
   const [rows, setRows] = useState<readonly SystemPostSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -144,11 +112,112 @@ export default function PostsPage() {
         .filter((code) => rows.some((record) => record.code === code)),
     [rows, selectedRowKeys],
   );
+  const formatMessage = (
+    id: string,
+    defaultMessage: string,
+    values?: Record<string, number | string>,
+  ) =>
+    values
+      ? intl.formatMessage({ id, defaultMessage }, values)
+      : intl.formatMessage({ id, defaultMessage });
+  const statusLabels = {
+    disabled: formatMessage('pages.system.posts.status.disabled', 'Disabled'),
+    enabled: formatMessage('pages.system.posts.status.enabled', 'Enabled'),
+  };
+  const filterOptions: CurrentPageFilterOption<SystemPostSummary>[] = [
+    {
+      key: 'enabled',
+      options: [
+        { label: statusLabels.enabled, value: 'true' },
+        { label: statusLabels.disabled, value: 'false' },
+      ],
+      placeholder: formatMessage(
+        'pages.system.posts.filters.status',
+        'Status',
+      ),
+      predicate: (record, value) => record.enabled === (value === 'true'),
+    },
+  ];
+  const exportColumns: CurrentPageExportColumn<SystemPostSummary>[] = [
+    {
+      title: formatMessage('pages.system.posts.fields.id', 'ID'),
+      dataIndex: 'id',
+    },
+    {
+      title: formatMessage('pages.system.posts.fields.code', 'Code'),
+      dataIndex: 'code',
+    },
+    {
+      title: formatMessage('pages.system.posts.fields.name', 'Name'),
+      dataIndex: 'name',
+    },
+    {
+      title: formatMessage('pages.system.posts.fields.order', 'Order'),
+      dataIndex: 'order',
+    },
+    {
+      title: formatMessage('pages.system.posts.fields.enabled', 'Enabled'),
+      renderText: (record) =>
+        record.enabled ? statusLabels.enabled : statusLabels.disabled,
+    },
+    {
+      title: formatMessage(
+        'pages.system.posts.fields.description',
+        'Description',
+      ),
+      dataIndex: 'description',
+    },
+    {
+      title: formatMessage('pages.system.posts.fields.createdAt', 'Created At'),
+      dataIndex: 'createdAt',
+    },
+    {
+      title: formatMessage('pages.system.posts.fields.updatedAt', 'Updated At'),
+      dataIndex: 'updatedAt',
+    },
+  ];
+  const createDetailFields = (record: SystemPostSummary): DetailField[] => [
+    { label: formatMessage('pages.system.posts.fields.id', 'ID'), value: record.id },
+    {
+      label: formatMessage('pages.system.posts.fields.code', 'Code'),
+      value: record.code,
+    },
+    {
+      label: formatMessage('pages.system.posts.fields.name', 'Name'),
+      value: record.name,
+    },
+    {
+      label: formatMessage('pages.system.posts.fields.order', 'Order'),
+      value: record.order,
+    },
+    {
+      label: formatMessage('pages.system.posts.fields.enabled', 'Enabled'),
+      value: record.enabled ? statusLabels.enabled : statusLabels.disabled,
+    },
+    {
+      label: formatMessage(
+        'pages.system.posts.fields.description',
+        'Description',
+      ),
+      value: record.description,
+    },
+    {
+      label: formatMessage('pages.system.posts.fields.createdAt', 'Created At'),
+      value: record.createdAt,
+    },
+    {
+      label: formatMessage('pages.system.posts.fields.updatedAt', 'Updated At'),
+      value: record.updatedAt,
+    },
+  ];
   const { filteredRows, toolbar: filterToolbar } =
     useCurrentPageFilters<SystemPostSummary>({
       rows,
       searchFields,
-      searchPlaceholder: 'Search posts',
+      searchPlaceholder: formatMessage(
+        'pages.system.posts.search.placeholder',
+        'Search posts',
+      ),
       selectFilters: filterOptions,
     });
 
@@ -169,7 +238,12 @@ export default function PostsPage() {
       setSelectedDetail(undefined);
       setEditingPost(undefined);
       setLoadError(
-        error instanceof Error ? error.message : 'Unable to load posts.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.system.posts.load.failure',
+              'Unable to load posts.',
+            ),
       );
     } finally {
       setLoading(false);
@@ -206,7 +280,12 @@ export default function PostsPage() {
       setFormOpen(true);
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'Unable to open post.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.system.posts.open.failure',
+              'Unable to open post.',
+            ),
       );
     }
   };
@@ -219,7 +298,10 @@ export default function PostsPage() {
       message.error(
         error instanceof Error
           ? error.message
-          : 'Unable to load live post detail.',
+          : formatMessage(
+              'pages.system.posts.detail.loadFailure',
+              'Unable to load live post detail.',
+            ),
       );
     }
   };
@@ -235,7 +317,9 @@ export default function PostsPage() {
           name: values.name,
           order: values.order,
         });
-        message.success('Post updated.');
+        message.success(
+          formatMessage('pages.system.posts.messages.updated', 'Post updated.'),
+        );
       } else {
         await createOpenCoreSystemPost({
           code: values.code,
@@ -244,7 +328,9 @@ export default function PostsPage() {
           name: values.name,
           order: values.order,
         });
-        message.success('Post created.');
+        message.success(
+          formatMessage('pages.system.posts.messages.created', 'Post created.'),
+        );
       }
       setFormOpen(false);
       setEditingPost(undefined);
@@ -256,14 +342,21 @@ export default function PostsPage() {
 
   const deletePost = async (record: SystemPostSummary) => {
     await deleteOpenCoreSystemPost(record.code);
-    message.success('Post deleted.');
+    message.success(
+      formatMessage('pages.system.posts.messages.deleted', 'Post deleted.'),
+    );
     await loadPosts();
   };
 
   const deleteSelectedPosts = async () => {
     const codes = selectedPostCodes;
     if (codes.length === 0) {
-      message.warning('Select at least one post.');
+      message.warning(
+        formatMessage(
+          'pages.system.posts.messages.selectAtLeastOne',
+          'Select at least one post.',
+        ),
+      );
       return;
     }
 
@@ -271,7 +364,13 @@ export default function PostsPage() {
     try {
       const result = await deleteOpenCoreSystemPosts({ codes });
       setSelectedRowKeys([]);
-      message.success(`Selected posts deleted. ${result.affected} row(s).`);
+      message.success(
+        formatMessage(
+          'pages.system.posts.messages.batchDeleted',
+          'Selected posts deleted. {count} row(s).',
+          { count: result.affected },
+        ),
+      );
       await loadPosts();
     } finally {
       setBatchDeleting(false);
@@ -291,7 +390,12 @@ export default function PostsPage() {
     setOrderingPostCode(record.code);
     try {
       await updateOpenCoreSystemPostOrder({ items });
-      message.success('Post order saved.');
+      message.success(
+        formatMessage(
+          'pages.system.posts.messages.orderSaved',
+          'Post order saved.',
+        ),
+      );
       await loadPosts();
     } finally {
       setOrderingPostCode(undefined);
@@ -300,7 +404,7 @@ export default function PostsPage() {
 
   const columns: ProColumns<SystemPostSummary>[] = [
     {
-      title: 'Name',
+      title: formatMessage('pages.system.posts.fields.name', 'Name'),
       dataIndex: 'name',
       render: (_, record) => (
         <Typography.Link onClick={() => void openDetail(record)}>
@@ -308,27 +412,47 @@ export default function PostsPage() {
         </Typography.Link>
       ),
     },
-    { title: 'Code', dataIndex: 'code' },
-    { title: 'Order', dataIndex: 'order', width: 88 },
     {
-      title: 'Status',
+      title: formatMessage('pages.system.posts.fields.code', 'Code'),
+      dataIndex: 'code',
+    },
+    {
+      title: formatMessage('pages.system.posts.fields.order', 'Order'),
+      dataIndex: 'order',
+      width: 88,
+    },
+    {
+      title: formatMessage('pages.system.posts.filters.status', 'Status'),
       dataIndex: 'enabled',
       render: (_, record) => (
         <Tag color={record.enabled ? 'green' : 'default'}>
-          {record.enabled ? 'enabled' : 'disabled'}
+          {record.enabled ? statusLabels.enabled : statusLabels.disabled}
         </Tag>
       ),
     },
-    { title: 'Description', dataIndex: 'description', ellipsis: true },
     {
-      title: 'Actions',
+      title: formatMessage(
+        'pages.system.posts.fields.description',
+        'Description',
+      ),
+      dataIndex: 'description',
+      ellipsis: true,
+    },
+    {
+      title: formatMessage('pages.system.posts.actions.column', 'Actions'),
       valueType: 'option',
       width: 264,
       render: (_, record) => (
         <Space size="small">
-          <Tooltip title="Move up">
+          <Tooltip
+            title={formatMessage('pages.system.posts.actions.moveUp', 'Move up')}
+          >
             <Button
-              aria-label={`Move up ${record.name}`}
+              aria-label={formatMessage(
+                'pages.system.posts.actions.moveUpAria',
+                'Move up {name}',
+                { name: record.name },
+              )}
               disabled={
                 rows.findIndex((item) => item.code === record.code) <= 0
               }
@@ -338,9 +462,18 @@ export default function PostsPage() {
               size="small"
             />
           </Tooltip>
-          <Tooltip title="Move down">
+          <Tooltip
+            title={formatMessage(
+              'pages.system.posts.actions.moveDown',
+              'Move down',
+            )}
+          >
             <Button
-              aria-label={`Move down ${record.name}`}
+              aria-label={formatMessage(
+                'pages.system.posts.actions.moveDownAria',
+                'Move down {name}',
+                { name: record.name },
+              )}
               disabled={
                 rows.findIndex((item) => item.code === record.code) >=
                 rows.length - 1
@@ -351,31 +484,55 @@ export default function PostsPage() {
               size="small"
             />
           </Tooltip>
-          <Tooltip title="Detail">
+          <Tooltip
+            title={formatMessage('pages.system.posts.actions.detail', 'Detail')}
+          >
             <Button
-              aria-label={`View ${record.name}`}
+              aria-label={formatMessage(
+                'pages.system.posts.actions.viewAria',
+                'View {name}',
+                { name: record.name },
+              )}
               icon={<EyeOutlined />}
               onClick={() => void openDetail(record)}
               size="small"
             />
           </Tooltip>
-          <Tooltip title="Edit">
+          <Tooltip
+            title={formatMessage('pages.system.posts.actions.edit', 'Edit')}
+          >
             <Button
-              aria-label={`Edit ${record.name}`}
+              aria-label={formatMessage(
+                'pages.system.posts.actions.editAria',
+                'Edit {name}',
+                { name: record.name },
+              )}
               icon={<EditOutlined />}
               onClick={() => void openEditForm(record)}
               size="small"
             />
           </Tooltip>
           <Popconfirm
-            title="Delete this post?"
-            okText="Delete"
+            title={formatMessage(
+              'pages.system.posts.confirm.deleteOne',
+              'Delete this post?',
+            )}
+            okText={formatMessage('pages.system.posts.actions.delete', 'Delete')}
             okButtonProps={{ danger: true }}
             onConfirm={() => void deletePost(record)}
           >
-            <Tooltip title="Delete">
+            <Tooltip
+              title={formatMessage(
+                'pages.system.posts.actions.delete',
+                'Delete',
+              )}
+            >
               <Button
-                aria-label={`Delete ${record.name}`}
+                aria-label={formatMessage(
+                  'pages.system.posts.actions.deleteAria',
+                  'Delete {name}',
+                  { name: record.name },
+                )}
                 danger
                 icon={<DeleteOutlined />}
                 size="small"
@@ -388,12 +545,18 @@ export default function PostsPage() {
   ];
 
   return (
-    <PageContainer title="Posts" subTitle="S7 System">
+    <PageContainer
+      title={formatMessage('menu.system.posts', 'Posts')}
+      subTitle={formatMessage('pages.system.section', 'S7 System')}
+    >
       {loadError ? (
         <Alert
           showIcon
           type="error"
-          message="Unable to load live posts"
+          message={formatMessage(
+            'pages.system.posts.load.liveFailure',
+            'Unable to load live posts',
+          )}
           description={loadError}
           style={{ marginBlockEnd: 16 }}
         />
@@ -411,19 +574,23 @@ export default function PostsPage() {
             icon={<PlusOutlined />}
             onClick={openCreateForm}
           >
-            New
+            {formatMessage('pages.system.posts.actions.new', 'New')}
           </Button>,
           <Button
             key="refresh"
             icon={<ReloadOutlined />}
             onClick={() => void loadPosts()}
           >
-            Refresh
+            {formatMessage('pages.system.posts.actions.refresh', 'Refresh')}
           </Button>,
           <Popconfirm
             key="batch-delete"
-            title={`Delete ${selectedPostCodes.length} selected post(s)?`}
-            okText="Delete"
+            title={formatMessage(
+              'pages.system.posts.confirm.deleteSelected',
+              'Delete {count} selected post(s)?',
+              { count: selectedPostCodes.length },
+            )}
+            okText={formatMessage('pages.system.posts.actions.delete', 'Delete')}
             okButtonProps={{ danger: true }}
             disabled={selectedPostCodes.length === 0}
             onConfirm={() => void deleteSelectedPosts()}
@@ -434,7 +601,10 @@ export default function PostsPage() {
               icon={<DeleteOutlined />}
               loading={batchDeleting}
             >
-              Delete selected
+              {formatMessage(
+                'pages.system.posts.actions.deleteSelected',
+                'Delete selected',
+              )}
             </Button>
           </Popconfirm>,
           <CurrentPageExportButton<SystemPostSummary>
@@ -457,10 +627,17 @@ export default function PostsPage() {
         fields={selectedDetail ? createDetailFields(selectedDetail) : []}
         onClose={() => setSelectedDetail(undefined)}
         open={Boolean(selectedDetail)}
-        title={selectedDetail?.name ?? 'Post Detail'}
+        title={
+          selectedDetail?.name ??
+          formatMessage('pages.system.posts.detail.title', 'Post Detail')
+        }
       />
       <Modal
-        title={editingPost ? 'Edit Post' : 'New Post'}
+        title={
+          editingPost
+            ? formatMessage('pages.system.posts.form.editTitle', 'Edit Post')
+            : formatMessage('pages.system.posts.form.createTitle', 'New Post')
+        }
         open={formOpen}
         onCancel={() => {
           setFormOpen(false);
@@ -468,32 +645,68 @@ export default function PostsPage() {
         }}
         onOk={() => void submitForm()}
         confirmLoading={submitting}
-        okText={editingPost ? 'Save' : 'Create'}
+        okText={
+          editingPost
+            ? formatMessage('pages.system.posts.actions.save', 'Save')
+            : formatMessage('pages.system.posts.actions.create', 'Create')
+        }
       >
         <Form<PostFormValues> form={form} layout="vertical">
           <Form.Item
-            label="Code"
+            label={formatMessage('pages.system.posts.fields.code', 'Code')}
             name="code"
-            rules={[{ required: true, message: 'Code is required.' }]}
+            rules={[
+              {
+                required: true,
+                message: formatMessage(
+                  'pages.system.posts.validation.codeRequired',
+                  'Code is required.',
+                ),
+              },
+            ]}
           >
             <Input disabled={Boolean(editingPost)} maxLength={64} />
           </Form.Item>
           <Form.Item
-            label="Name"
+            label={formatMessage('pages.system.posts.fields.name', 'Name')}
             name="name"
-            rules={[{ required: true, message: 'Name is required.' }]}
+            rules={[
+              {
+                required: true,
+                message: formatMessage(
+                  'pages.system.posts.validation.nameRequired',
+                  'Name is required.',
+                ),
+              },
+            ]}
           >
             <Input maxLength={80} />
           </Form.Item>
           <Space align="start" size="middle" wrap>
-            <Form.Item label="Order" name="order">
+            <Form.Item
+              label={formatMessage('pages.system.posts.fields.order', 'Order')}
+              name="order"
+            >
               <InputNumber min={0} precision={0} />
             </Form.Item>
-            <Form.Item label="Enabled" name="enabled" valuePropName="checked">
+            <Form.Item
+              label={formatMessage(
+                'pages.system.posts.fields.enabled',
+                'Enabled',
+              )}
+              name="enabled"
+              valuePropName="checked"
+            >
               <Switch />
             </Form.Item>
           </Space>
-          <Form.Item label="Description" name="description">
+          <Form.Item
+            label={formatMessage(
+              'pages.system.posts.fields.description',
+              'Description',
+            )}
+            name="description"
+          >
             <Input.TextArea maxLength={240} rows={3} />
           </Form.Item>
         </Form>
