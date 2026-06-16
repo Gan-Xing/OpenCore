@@ -13,6 +13,7 @@ import {
   type ProColumns,
 } from '@ant-design/pro-components';
 import type { SystemDeptSummary, SystemDeptTreeSummary } from '@opencore/sdk';
+import { useIntl } from '@umijs/max';
 import {
   Alert,
   Button,
@@ -80,30 +81,6 @@ const searchFields: CurrentPageSearchField<SystemDeptSummary>[] = [
   'phone',
   'email',
 ];
-const filterOptions: CurrentPageFilterOption<SystemDeptSummary>[] = [
-  {
-    key: 'enabled',
-    options: [
-      { label: 'enabled', value: 'true' },
-      { label: 'disabled', value: 'false' },
-    ],
-    placeholder: 'Status',
-    predicate: (record, value) => record.enabled === (value === 'true'),
-  },
-];
-const exportColumns: CurrentPageExportColumn<SystemDeptSummary>[] = [
-  { title: 'ID', dataIndex: 'id' },
-  { title: 'Code', dataIndex: 'code' },
-  { title: 'Name', dataIndex: 'name' },
-  { title: 'Parent ID', dataIndex: 'parentId' },
-  { title: 'Order', dataIndex: 'order' },
-  { title: 'Leader', dataIndex: 'leader' },
-  { title: 'Phone', dataIndex: 'phone' },
-  { title: 'Email', dataIndex: 'email' },
-  { title: 'Enabled', dataIndex: 'enabled' },
-  { title: 'Created At', dataIndex: 'createdAt' },
-  { title: 'Updated At', dataIndex: 'updatedAt' },
-];
 
 function flattenDeptTree(
   rows: readonly SystemDeptTreeSummary[],
@@ -149,30 +126,6 @@ function withoutChildren(row: SystemDeptTreeSummary): SystemDeptSummary {
 
 function createParentNameMap(rows: readonly SystemDeptSummary[]) {
   return new Map(rows.map((row) => [row.id, row.name]));
-}
-
-function createDetailFields(
-  record: SystemDeptSummary,
-  parentNames: ReadonlyMap<string, string>,
-): DetailField[] {
-  return [
-    { label: 'ID', value: record.id },
-    { label: 'Code', value: record.code },
-    { label: 'Name', value: record.name },
-    {
-      label: 'Parent',
-      value: record.parentId
-        ? (parentNames.get(record.parentId) ?? record.parentId)
-        : 'Root',
-    },
-    { label: 'Order', value: record.order },
-    { label: 'Leader', value: record.leader },
-    { label: 'Phone', value: record.phone },
-    { label: 'Email', value: record.email },
-    { label: 'Enabled', value: record.enabled ? 'enabled' : 'disabled' },
-    { label: 'Created At', value: record.createdAt },
-    { label: 'Updated At', value: record.updatedAt },
-  ];
 }
 
 function collectDescendantIds(row: SystemDeptTreeSummary): Set<string> {
@@ -254,6 +207,7 @@ function toTreeSelectData(
 }
 
 export default function DepartmentsPage() {
+  const intl = useIntl();
   const [form] = Form.useForm<DeptFormValues>();
   const [rows, setRows] =
     useState<readonly SystemDeptTreeSummary[]>([]);
@@ -266,11 +220,157 @@ export default function DepartmentsPage() {
   const [submitting, setSubmitting] = useState(false);
   const flatRows = useMemo(() => flattenDeptTree(rows), [rows]);
   const parentNames = useMemo(() => createParentNameMap(flatRows), [flatRows]);
+  const formatMessage = (
+    id: string,
+    defaultMessage: string,
+    values?: Record<string, number | string>,
+  ) =>
+    values
+      ? intl.formatMessage({ id, defaultMessage }, values)
+      : intl.formatMessage({ id, defaultMessage });
+  const statusLabels = {
+    disabled: formatMessage(
+      'pages.system.departments.status.disabled',
+      'Disabled',
+    ),
+    enabled: formatMessage(
+      'pages.system.departments.status.enabled',
+      'Enabled',
+    ),
+  };
+  const rootLabel = formatMessage(
+    'pages.system.departments.parent.root',
+    'Root',
+  );
+  const filterOptions: CurrentPageFilterOption<SystemDeptSummary>[] = [
+    {
+      key: 'enabled',
+      options: [
+        { label: statusLabels.enabled, value: 'true' },
+        { label: statusLabels.disabled, value: 'false' },
+      ],
+      placeholder: formatMessage(
+        'pages.system.departments.filters.status',
+        'Status',
+      ),
+      predicate: (record, value) => record.enabled === (value === 'true'),
+    },
+  ];
+  const exportColumns: CurrentPageExportColumn<SystemDeptSummary>[] = [
+    {
+      title: formatMessage('pages.system.departments.fields.id', 'ID'),
+      dataIndex: 'id',
+    },
+    {
+      title: formatMessage('pages.system.departments.fields.code', 'Code'),
+      dataIndex: 'code',
+    },
+    {
+      title: formatMessage('pages.system.departments.fields.name', 'Name'),
+      dataIndex: 'name',
+    },
+    {
+      title: formatMessage(
+        'pages.system.departments.fields.parentId',
+        'Parent ID',
+      ),
+      dataIndex: 'parentId',
+    },
+    {
+      title: formatMessage('pages.system.departments.fields.order', 'Order'),
+      dataIndex: 'order',
+    },
+    {
+      title: formatMessage('pages.system.departments.fields.leader', 'Leader'),
+      dataIndex: 'leader',
+    },
+    {
+      title: formatMessage('pages.system.departments.fields.phone', 'Phone'),
+      dataIndex: 'phone',
+    },
+    {
+      title: formatMessage('pages.system.departments.fields.email', 'Email'),
+      dataIndex: 'email',
+    },
+    {
+      title: formatMessage('pages.system.departments.fields.enabled', 'Enabled'),
+      renderText: (record) =>
+        record.enabled ? statusLabels.enabled : statusLabels.disabled,
+    },
+    {
+      title: formatMessage(
+        'pages.system.departments.fields.createdAt',
+        'Created At',
+      ),
+      dataIndex: 'createdAt',
+    },
+    {
+      title: formatMessage(
+        'pages.system.departments.fields.updatedAt',
+        'Updated At',
+      ),
+      dataIndex: 'updatedAt',
+    },
+  ];
+  const createDetailFields = (record: SystemDeptSummary): DetailField[] => [
+    { label: formatMessage('pages.system.departments.fields.id', 'ID'), value: record.id },
+    {
+      label: formatMessage('pages.system.departments.fields.code', 'Code'),
+      value: record.code,
+    },
+    {
+      label: formatMessage('pages.system.departments.fields.name', 'Name'),
+      value: record.name,
+    },
+    {
+      label: formatMessage('pages.system.departments.fields.parent', 'Parent'),
+      value: record.parentId
+        ? (parentNames.get(record.parentId) ?? record.parentId)
+        : rootLabel,
+    },
+    {
+      label: formatMessage('pages.system.departments.fields.order', 'Order'),
+      value: record.order,
+    },
+    {
+      label: formatMessage('pages.system.departments.fields.leader', 'Leader'),
+      value: record.leader,
+    },
+    {
+      label: formatMessage('pages.system.departments.fields.phone', 'Phone'),
+      value: record.phone,
+    },
+    {
+      label: formatMessage('pages.system.departments.fields.email', 'Email'),
+      value: record.email,
+    },
+    {
+      label: formatMessage('pages.system.departments.fields.enabled', 'Enabled'),
+      value: record.enabled ? statusLabels.enabled : statusLabels.disabled,
+    },
+    {
+      label: formatMessage(
+        'pages.system.departments.fields.createdAt',
+        'Created At',
+      ),
+      value: record.createdAt,
+    },
+    {
+      label: formatMessage(
+        'pages.system.departments.fields.updatedAt',
+        'Updated At',
+      ),
+      value: record.updatedAt,
+    },
+  ];
   const { filteredRows, toolbar: filterToolbar } =
     useCurrentPageFilters<SystemDeptSummary>({
       rows: flatRows,
       searchFields,
-      searchPlaceholder: 'Search departments',
+      searchPlaceholder: formatMessage(
+        'pages.system.departments.search.placeholder',
+        'Search departments',
+      ),
       selectFilters: filterOptions,
     });
   const filteredTreeRows = useMemo(
@@ -288,7 +388,12 @@ export default function DepartmentsPage() {
       setSelectedDetail(undefined);
       setEditingDept(undefined);
       setLoadError(
-        error instanceof Error ? error.message : 'Unable to load departments.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.system.departments.load.failure',
+              'Unable to load departments.',
+            ),
       );
     } finally {
       setLoading(false);
@@ -331,7 +436,12 @@ export default function DepartmentsPage() {
       setFormOpen(true);
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'Unable to open department.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.system.departments.open.failure',
+              'Unable to open department.',
+            ),
       );
     }
   };
@@ -344,7 +454,10 @@ export default function DepartmentsPage() {
       message.error(
         error instanceof Error
           ? error.message
-          : 'Unable to load live department detail.',
+          : formatMessage(
+              'pages.system.departments.detail.loadFailure',
+              'Unable to load live department detail.',
+            ),
       );
     }
   };
@@ -363,7 +476,12 @@ export default function DepartmentsPage() {
           parentId: values.parentId ?? null,
           phone: values.phone,
         });
-        message.success('Department updated.');
+        message.success(
+          formatMessage(
+            'pages.system.departments.messages.updated',
+            'Department updated.',
+          ),
+        );
       } else {
         await createOpenCoreSystemDept({
           code: values.code,
@@ -375,7 +493,12 @@ export default function DepartmentsPage() {
           parentId: values.parentId,
           phone: values.phone,
         });
-        message.success('Department created.');
+        message.success(
+          formatMessage(
+            'pages.system.departments.messages.created',
+            'Department created.',
+          ),
+        );
       }
       setFormOpen(false);
       setEditingDept(undefined);
@@ -388,13 +511,21 @@ export default function DepartmentsPage() {
   const deleteDept = async (record: SystemDeptTreeSummary) => {
     try {
       await deleteOpenCoreSystemDept(record.id);
-      message.success('Department deleted.');
+      message.success(
+        formatMessage(
+          'pages.system.departments.messages.deleted',
+          'Department deleted.',
+        ),
+      );
       await loadDepts();
     } catch (error: unknown) {
       message.error(
         error instanceof Error
           ? error.message
-          : 'Unable to delete department. Departments with assigned users cannot be deleted.',
+          : formatMessage(
+              'pages.system.departments.messages.deleteFailure',
+              'Unable to delete department. Departments with assigned users cannot be deleted.',
+            ),
       );
     }
   };
@@ -413,13 +544,21 @@ export default function DepartmentsPage() {
     setOrderingDeptId(record.id);
     try {
       await updateOpenCoreSystemDeptOrder({ items });
-      message.success('Department order saved.');
+      message.success(
+        formatMessage(
+          'pages.system.departments.messages.orderSaved',
+          'Department order saved.',
+        ),
+      );
       await loadDepts();
     } catch (error: unknown) {
       message.error(
         error instanceof Error
           ? error.message
-          : 'Unable to save department order.',
+          : formatMessage(
+              'pages.system.departments.messages.orderSaveFailure',
+              'Unable to save department order.',
+            ),
       );
     } finally {
       setOrderingDeptId(undefined);
@@ -443,7 +582,7 @@ export default function DepartmentsPage() {
   );
   const columns: ProColumns<SystemDeptTreeSummary>[] = [
     {
-      title: 'Name',
+      title: formatMessage('pages.system.departments.fields.name', 'Name'),
       dataIndex: 'name',
       render: (_, record) => (
         <Typography.Link onClick={() => void openDetail(record)}>
@@ -451,26 +590,39 @@ export default function DepartmentsPage() {
         </Typography.Link>
       ),
     },
-    { title: 'Code', dataIndex: 'code' },
     {
-      title: 'Parent',
+      title: formatMessage('pages.system.departments.fields.code', 'Code'),
+      dataIndex: 'code',
+    },
+    {
+      title: formatMessage('pages.system.departments.fields.parent', 'Parent'),
       dataIndex: 'parentId',
       render: (_, record) =>
-        record.parentId ? (parentNames.get(record.parentId) ?? '-') : 'Root',
+        record.parentId ? (parentNames.get(record.parentId) ?? '-') : rootLabel,
     },
-    { title: 'Order', dataIndex: 'order', width: 88 },
-    { title: 'Leader', dataIndex: 'leader' },
     {
-      title: 'Status',
+      title: formatMessage('pages.system.departments.fields.order', 'Order'),
+      dataIndex: 'order',
+      width: 88,
+    },
+    {
+      title: formatMessage('pages.system.departments.fields.leader', 'Leader'),
+      dataIndex: 'leader',
+    },
+    {
+      title: formatMessage('pages.system.departments.filters.status', 'Status'),
       dataIndex: 'enabled',
       render: (_, record) => (
         <Tag color={record.enabled ? 'green' : 'default'}>
-          {record.enabled ? 'enabled' : 'disabled'}
+          {record.enabled ? statusLabels.enabled : statusLabels.disabled}
         </Tag>
       ),
     },
     {
-      title: 'Actions',
+      title: formatMessage(
+        'pages.system.departments.actions.column',
+        'Actions',
+      ),
       valueType: 'option',
       width: 300,
       render: (_, record) => {
@@ -483,33 +635,69 @@ export default function DepartmentsPage() {
 
         return (
           <Space size="small">
-            <Tooltip title="Detail">
+            <Tooltip
+              title={formatMessage(
+                'pages.system.departments.actions.detail',
+                'Detail',
+              )}
+            >
               <Button
-                aria-label={`View ${record.name}`}
+                aria-label={formatMessage(
+                  'pages.system.departments.actions.viewAria',
+                  'View {name}',
+                  { name: record.name },
+                )}
                 icon={<EyeOutlined />}
                 onClick={() => void openDetail(record)}
                 size="small"
               />
             </Tooltip>
-            <Tooltip title="Edit">
+            <Tooltip
+              title={formatMessage(
+                'pages.system.departments.actions.edit',
+                'Edit',
+              )}
+            >
               <Button
-                aria-label={`Edit ${record.name}`}
+                aria-label={formatMessage(
+                  'pages.system.departments.actions.editAria',
+                  'Edit {name}',
+                  { name: record.name },
+                )}
                 icon={<EditOutlined />}
                 onClick={() => void openEditForm(record)}
                 size="small"
               />
             </Tooltip>
-            <Tooltip title="Create child">
+            <Tooltip
+              title={formatMessage(
+                'pages.system.departments.actions.createChild',
+                'Create child',
+              )}
+            >
               <Button
-                aria-label={`Create child department under ${record.name}`}
+                aria-label={formatMessage(
+                  'pages.system.departments.actions.createChildAria',
+                  'Create child department under {name}',
+                  { name: record.name },
+                )}
                 icon={<PlusOutlined />}
                 onClick={() => openCreateForm(record.id)}
                 size="small"
               />
             </Tooltip>
-            <Tooltip title="Move up">
+            <Tooltip
+              title={formatMessage(
+                'pages.system.departments.actions.moveUp',
+                'Move up',
+              )}
+            >
               <Button
-                aria-label={`Move ${record.name} up`}
+                aria-label={formatMessage(
+                  'pages.system.departments.actions.moveUpAria',
+                  'Move {name} up',
+                  { name: record.name },
+                )}
                 disabled={!canMoveUp}
                 icon={<ArrowUpOutlined />}
                 loading={orderingDeptId === record.id}
@@ -517,9 +705,18 @@ export default function DepartmentsPage() {
                 size="small"
               />
             </Tooltip>
-            <Tooltip title="Move down">
+            <Tooltip
+              title={formatMessage(
+                'pages.system.departments.actions.moveDown',
+                'Move down',
+              )}
+            >
               <Button
-                aria-label={`Move ${record.name} down`}
+                aria-label={formatMessage(
+                  'pages.system.departments.actions.moveDownAria',
+                  'Move {name} down',
+                  { name: record.name },
+                )}
                 disabled={!canMoveDown}
                 icon={<ArrowDownOutlined />}
                 loading={orderingDeptId === record.id}
@@ -528,8 +725,14 @@ export default function DepartmentsPage() {
               />
             </Tooltip>
             <Popconfirm
-              title="Delete this department?"
-              okText="Delete"
+              title={formatMessage(
+                'pages.system.departments.confirm.deleteOne',
+                'Delete this department?',
+              )}
+              okText={formatMessage(
+                'pages.system.departments.actions.delete',
+                'Delete',
+              )}
               okButtonProps={{ danger: true }}
               onConfirm={() => void deleteDept(record)}
               disabled={hasChildren}
@@ -537,12 +740,22 @@ export default function DepartmentsPage() {
               <Tooltip
                 title={
                   hasChildren
-                    ? 'Departments with children cannot be deleted'
-                    : 'Delete'
+                    ? formatMessage(
+                        'pages.system.departments.actions.deleteChildrenLocked',
+                        'Departments with children cannot be deleted',
+                      )
+                    : formatMessage(
+                        'pages.system.departments.actions.delete',
+                        'Delete',
+                      )
                 }
               >
                 <Button
-                  aria-label={`Delete ${record.name}`}
+                  aria-label={formatMessage(
+                    'pages.system.departments.actions.deleteAria',
+                    'Delete {name}',
+                    { name: record.name },
+                  )}
                   danger
                   disabled={hasChildren}
                   icon={<DeleteOutlined />}
@@ -557,12 +770,18 @@ export default function DepartmentsPage() {
   ];
 
   return (
-    <PageContainer title="Departments" subTitle="S7 System">
+    <PageContainer
+      title={formatMessage('menu.system.departments', 'Departments')}
+      subTitle={formatMessage('pages.system.section', 'S7 System')}
+    >
       {loadError ? (
         <Alert
           showIcon
           type="error"
-          message="Unable to load live departments"
+          message={formatMessage(
+            'pages.system.departments.load.liveFailure',
+            'Unable to load live departments',
+          )}
           description={loadError}
           style={{ marginBlockEnd: 16 }}
         />
@@ -580,14 +799,17 @@ export default function DepartmentsPage() {
             icon={<PlusOutlined />}
             onClick={() => openCreateForm()}
           >
-            New
+            {formatMessage('pages.system.departments.actions.new', 'New')}
           </Button>,
           <Button
             key="refresh"
             icon={<ReloadOutlined />}
             onClick={() => void loadDepts()}
           >
-            Refresh
+            {formatMessage(
+              'pages.system.departments.actions.refresh',
+              'Refresh',
+            )}
           </Button>,
           <CurrentPageExportButton<SystemDeptSummary>
             key="export"
@@ -601,15 +823,29 @@ export default function DepartmentsPage() {
         columns={columns}
       />
       <ReadOnlyDetailDrawer
-        fields={
-          selectedDetail ? createDetailFields(selectedDetail, parentNames) : []
-        }
+        fields={selectedDetail ? createDetailFields(selectedDetail) : []}
         onClose={() => setSelectedDetail(undefined)}
         open={Boolean(selectedDetail)}
-        title={selectedDetail?.name ?? 'Department Detail'}
+        title={
+          selectedDetail?.name ??
+          formatMessage(
+            'pages.system.departments.detail.title',
+            'Department Detail',
+          )
+        }
       />
       <Modal
-        title={editingDept ? 'Edit Department' : 'New Department'}
+        title={
+          editingDept
+            ? formatMessage(
+                'pages.system.departments.form.editTitle',
+                'Edit Department',
+              )
+            : formatMessage(
+                'pages.system.departments.form.createTitle',
+                'New Department',
+              )
+        }
         open={formOpen}
         onCancel={() => {
           setFormOpen(false);
@@ -617,47 +853,110 @@ export default function DepartmentsPage() {
         }}
         onOk={() => void submitForm()}
         confirmLoading={submitting}
-        okText={editingDept ? 'Save' : 'Create'}
+        okText={
+          editingDept
+            ? formatMessage('pages.system.departments.actions.save', 'Save')
+            : formatMessage(
+                'pages.system.departments.actions.create',
+                'Create',
+              )
+        }
       >
         <Form<DeptFormValues> form={form} layout="vertical">
           <Form.Item
-            label="Code"
+            label={formatMessage('pages.system.departments.fields.code', 'Code')}
             name="code"
-            rules={[{ required: true, message: 'Code is required.' }]}
+            rules={[
+              {
+                required: true,
+                message: formatMessage(
+                  'pages.system.departments.validation.codeRequired',
+                  'Code is required.',
+                ),
+              },
+            ]}
           >
             <Input disabled={Boolean(editingDept)} maxLength={64} />
           </Form.Item>
           <Form.Item
-            label="Name"
+            label={formatMessage('pages.system.departments.fields.name', 'Name')}
             name="name"
-            rules={[{ required: true, message: 'Name is required.' }]}
+            rules={[
+              {
+                required: true,
+                message: formatMessage(
+                  'pages.system.departments.validation.nameRequired',
+                  'Name is required.',
+                ),
+              },
+            ]}
           >
             <Input maxLength={80} />
           </Form.Item>
-          <Form.Item label="Parent" name="parentId">
+          <Form.Item
+            label={formatMessage(
+              'pages.system.departments.fields.parent',
+              'Parent',
+            )}
+            name="parentId"
+          >
             <TreeSelect
               allowClear
               showSearch
               treeDefaultExpandAll
-              placeholder="Root department"
+              placeholder={formatMessage(
+                'pages.system.departments.parent.placeholder',
+                'Root department',
+              )}
               treeData={parentTreeData}
             />
           </Form.Item>
           <Space align="start" size="middle" wrap>
-            <Form.Item label="Order" name="order">
+            <Form.Item
+              label={formatMessage(
+                'pages.system.departments.fields.order',
+                'Order',
+              )}
+              name="order"
+            >
               <InputNumber min={0} precision={0} />
             </Form.Item>
-            <Form.Item label="Enabled" name="enabled" valuePropName="checked">
+            <Form.Item
+              label={formatMessage(
+                'pages.system.departments.fields.enabled',
+                'Enabled',
+              )}
+              name="enabled"
+              valuePropName="checked"
+            >
               <Switch />
             </Form.Item>
           </Space>
-          <Form.Item label="Leader" name="leader">
+          <Form.Item
+            label={formatMessage(
+              'pages.system.departments.fields.leader',
+              'Leader',
+            )}
+            name="leader"
+          >
             <Input maxLength={80} />
           </Form.Item>
-          <Form.Item label="Phone" name="phone">
+          <Form.Item
+            label={formatMessage(
+              'pages.system.departments.fields.phone',
+              'Phone',
+            )}
+            name="phone"
+          >
             <Input maxLength={40} />
           </Form.Item>
-          <Form.Item label="Email" name="email">
+          <Form.Item
+            label={formatMessage(
+              'pages.system.departments.fields.email',
+              'Email',
+            )}
+            name="email"
+          >
             <Input maxLength={120} />
           </Form.Item>
         </Form>

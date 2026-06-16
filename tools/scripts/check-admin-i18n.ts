@@ -42,12 +42,14 @@ const coreI18nScanPaths = [
   join(adminRoot, 'src', 'pages', 'shared', 'CurrentPageExportButton.tsx'),
   join(adminRoot, 'src', 'pages', 'shared', 'CurrentPageFilters.tsx'),
   join(adminRoot, 'src', 'pages', 'shared', 'ReadOnlyDetailDrawer.tsx'),
+  join(adminRoot, 'src', 'pages', 'System', 'Departments.tsx'),
   join(adminRoot, 'src', 'pages', 'System', 'Permissions.tsx'),
   join(adminRoot, 'src', 'pages', 'System', 'Posts.tsx'),
   join(adminRoot, 'src', 'pages', 'user', 'login', 'index.tsx'),
   join(adminRoot, 'src', 'requestErrorConfig.ts'),
 ];
 const localizedAdminPageScanPaths = [
+  join(adminRoot, 'src', 'pages', 'System', 'Departments.tsx'),
   join(adminRoot, 'src', 'pages', 'System', 'Permissions.tsx'),
   join(adminRoot, 'src', 'pages', 'System', 'Posts.tsx'),
 ];
