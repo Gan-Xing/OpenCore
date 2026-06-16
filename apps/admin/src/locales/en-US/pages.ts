@@ -243,6 +243,138 @@ export default {
   'pages.system.files.validation.sizeRequired': 'Enter a file size.',
   'pages.system.files.validation.uploadedByRequired': 'Enter an uploader.',
   'pages.system.rbac.section': 'S6 RBAC',
+  'pages.system.users.actions.assignRoles': 'Assign Roles',
+  'pages.system.users.actions.assignRolesAria':
+    'Assign roles for {username}',
+  'pages.system.users.actions.column': 'Actions',
+  'pages.system.users.actions.create': 'Create',
+  'pages.system.users.actions.delete': 'Delete',
+  'pages.system.users.actions.deleteAria': 'Delete {username}',
+  'pages.system.users.actions.deleteSelected': 'Delete selected',
+  'pages.system.users.actions.detail': 'Detail',
+  'pages.system.users.actions.disable': 'Disable',
+  'pages.system.users.actions.disableAria': 'Disable {username}',
+  'pages.system.users.actions.disableSelected': 'Disable selected',
+  'pages.system.users.actions.downloadExcel': 'Download Excel export',
+  'pages.system.users.actions.downloadExcelShort': 'Download Excel',
+  'pages.system.users.actions.downloadImportTemplate':
+    'Download import template',
+  'pages.system.users.actions.edit': 'Edit',
+  'pages.system.users.actions.editAria': 'Edit {username}',
+  'pages.system.users.actions.enable': 'Enable',
+  'pages.system.users.actions.enableAria': 'Enable {username}',
+  'pages.system.users.actions.enableSelected': 'Enable selected',
+  'pages.system.users.actions.import': 'Import',
+  'pages.system.users.actions.importUsers': 'Import users',
+  'pages.system.users.actions.new': 'New',
+  'pages.system.users.actions.refresh': 'Refresh',
+  'pages.system.users.actions.reload': 'Reload',
+  'pages.system.users.actions.reloadAria': 'Reload users',
+  'pages.system.users.actions.reset': 'Reset',
+  'pages.system.users.actions.resetPassword': 'Reset Password',
+  'pages.system.users.actions.resetPasswordAria':
+    'Reset password for {username}',
+  'pages.system.users.actions.save': 'Save',
+  'pages.system.users.actions.selectImportFile': 'Select CSV/XLSX file',
+  'pages.system.users.actions.systemAssignRolesLocked':
+    'System users cannot be assigned roles',
+  'pages.system.users.actions.systemDeleteLocked':
+    'System users cannot be deleted',
+  'pages.system.users.actions.systemEditLocked':
+    'System users cannot be edited',
+  'pages.system.users.actions.systemResetLocked':
+    'System users cannot reset password',
+  'pages.system.users.actions.systemStatusLocked':
+    'System users cannot change status',
+  'pages.system.users.actions.viewAria': 'View {username}',
+  'pages.system.users.confirm.deleteOne': 'Delete this user?',
+  'pages.system.users.confirm.deleteSelected':
+    'Delete {count} selected user(s)?',
+  'pages.system.users.confirm.disable': 'Disable this user?',
+  'pages.system.users.confirm.enable': 'Enable this user?',
+  'pages.system.users.deptScope.allDepartments': 'All departments',
+  'pages.system.users.deptScope.title': 'Department scope',
+  'pages.system.users.detail.loadFailure':
+    'Unable to load live user detail.',
+  'pages.system.users.detail.title': 'User Detail',
+  'pages.system.users.fields.department': 'Department',
+  'pages.system.users.fields.departmentId': 'Department ID',
+  'pages.system.users.fields.displayName': 'Display Name',
+  'pages.system.users.fields.enabled': 'Enabled',
+  'pages.system.users.fields.id': 'ID',
+  'pages.system.users.fields.newPassword': 'New Password',
+  'pages.system.users.fields.password': 'Password',
+  'pages.system.users.fields.posts': 'Posts',
+  'pages.system.users.fields.roles': 'Roles',
+  'pages.system.users.fields.status': 'Status',
+  'pages.system.users.fields.system': 'System',
+  'pages.system.users.fields.username': 'Username',
+  'pages.system.users.filters.status': 'Status',
+  'pages.system.users.filters.system': 'System',
+  'pages.system.users.form.createTitle': 'New User',
+  'pages.system.users.form.editTitle': 'Edit User',
+  'pages.system.users.import.failureRow': 'Row {rowNumber}: {reason}',
+  'pages.system.users.import.failureRowWithUsername':
+    'Row {rowNumber} ({username}): {reason}',
+  'pages.system.users.import.title': 'Import users',
+  'pages.system.users.import.updateExisting': 'Update existing users',
+  'pages.system.users.load.failure': 'Unable to load live users.',
+  'pages.system.users.load.liveFailure': 'Unable to load live users',
+  'pages.system.users.messages.batchDeleted':
+    'Selected users deleted. {mutation}',
+  'pages.system.users.messages.batchDisabled':
+    'Selected users disabled. {mutation}',
+  'pages.system.users.messages.batchEnabled':
+    'Selected users enabled. {mutation}',
+  'pages.system.users.messages.batchMutation':
+    '{affected} user(s) affected. {revokedSessions}',
+  'pages.system.users.messages.created': 'User created.',
+  'pages.system.users.messages.deleted': 'User deleted. {revokedSessions}',
+  'pages.system.users.messages.disabled': 'User disabled. {revokedSessions}',
+  'pages.system.users.messages.enabled': 'User enabled. {revokedSessions}',
+  'pages.system.users.messages.excelExportDownloaded':
+    'User Excel export downloaded. {rowCount} row(s).',
+  'pages.system.users.messages.excelExportUnavailable':
+    'User Excel export is unavailable.',
+  'pages.system.users.messages.fileReadFailure': 'File read failed.',
+  'pages.system.users.messages.importSummary':
+    'Imported {totalRows} row(s): {created} created, {updated} updated, {failed} failed. {revokedSessions}',
+  'pages.system.users.messages.importTemplateDownloaded':
+    'User import template downloaded.',
+  'pages.system.users.messages.passwordReset':
+    'Password reset. {revokedSessions}',
+  'pages.system.users.messages.revokedSessions':
+    'Revoked sessions: {count}.',
+  'pages.system.users.messages.selectCustomUser':
+    'Select at least one custom user.',
+  'pages.system.users.messages.selectImportFile':
+    'Select a CSV or XLSX file to import.',
+  'pages.system.users.messages.updated': 'User updated.',
+  'pages.system.users.open.failure': 'Unable to open user.',
+  'pages.system.users.permissions.missingExport': 'Missing core:user:export',
+  'pages.system.users.permissions.missingImport': 'Missing core:user:import',
+  'pages.system.users.permissions.missingManage': 'Missing core:user:manage',
+  'pages.system.users.placeholders.department': 'Select department',
+  'pages.system.users.placeholders.posts': 'Select posts',
+  'pages.system.users.placeholders.roles': 'Select roles',
+  'pages.system.users.resetPassword.title': 'Reset Password',
+  'pages.system.users.roleAssignment.messages.updated':
+    'Roles assigned. {revokedSessions}',
+  'pages.system.users.roleAssignment.openFailure':
+    'Unable to open role assignment.',
+  'pages.system.users.roleAssignment.title': 'Assign Roles',
+  'pages.system.users.roleAssignment.titleForUser':
+    'Assign Roles - {username}',
+  'pages.system.users.search.placeholder': 'Search users',
+  'pages.system.users.status.disabled': 'Disabled',
+  'pages.system.users.status.enabled': 'Enabled',
+  'pages.system.users.system.custom': 'Custom',
+  'pages.system.users.system.system': 'System',
+  'pages.system.users.title': 'Users',
+  'pages.system.users.validation.displayNameRequired':
+    'Display name is required.',
+  'pages.system.users.validation.passwordRequired': 'Password is required.',
+  'pages.system.users.validation.usernameRequired': 'Username is required.',
   'pages.system.roles.actions.column': 'Actions',
   'pages.system.roles.actions.create': 'Create',
   'pages.system.roles.actions.delete': 'Delete',

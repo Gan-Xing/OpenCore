@@ -16,7 +16,7 @@ import {
   ProTable,
   type ProColumns,
 } from '@ant-design/pro-components';
-import { useAccess } from '@umijs/max';
+import { useAccess, useIntl } from '@umijs/max';
 import type {
   RoleSummary,
   SystemDeptOptionSummary,
@@ -152,37 +152,6 @@ const searchFields: CurrentPageSearchField<UserSummary>[] = [
   (record) => record.roleCodes,
   (record) => record.postCodes,
 ];
-const filterOptions: CurrentPageFilterOption<UserSummary>[] = [
-  {
-    key: 'enabled',
-    options: [
-      { label: 'enabled', value: 'true' },
-      { label: 'disabled', value: 'false' },
-    ],
-    placeholder: 'Status',
-    predicate: (record, value) => record.enabled === (value === 'true'),
-  },
-  {
-    key: 'system',
-    options: [
-      { label: 'system', value: 'true' },
-      { label: 'custom', value: 'false' },
-    ],
-    placeholder: 'System',
-    predicate: (record, value) => record.system === (value === 'true'),
-  },
-];
-const exportColumns: CurrentPageExportColumn<UserSummary>[] = [
-  { title: 'ID', dataIndex: 'id' },
-  { title: 'Username', dataIndex: 'username' },
-  { title: 'Display Name', dataIndex: 'displayName' },
-  { title: 'Department ID', dataIndex: 'deptId' },
-  { title: 'Roles', renderText: (record) => record.roleCodes.join(', ') },
-  { title: 'Posts', renderText: (record) => record.postCodes.join(', ') },
-  { title: 'Enabled', dataIndex: 'enabled' },
-  { title: 'System', dataIndex: 'system' },
-];
-
 function flattenDeptTree(
   rows: readonly SystemDeptTreeSummary[],
 ): SystemDeptSummary[] {
@@ -288,48 +257,8 @@ function toDeptFilterTreeData(
   }));
 }
 
-function createDetailFields(
-  record: UserSummary,
-  deptNames: ReadonlyMap<string, string>,
-  postNames: ReadonlyMap<string, string>,
-): DetailField[] {
-  return [
-    { label: 'ID', value: record.id },
-    { label: 'Username', value: record.username },
-    { label: 'Display Name', value: record.displayName },
-    {
-      label: 'Department',
-      value: record.deptId
-        ? (deptNames.get(record.deptId) ?? record.deptId)
-        : undefined,
-    },
-    {
-      label: 'Roles',
-      value: (
-        <Space wrap>
-          {record.roleCodes.map((code) => (
-            <Tag key={code}>{code}</Tag>
-          ))}
-        </Space>
-      ),
-    },
-    {
-      label: 'Posts',
-      value:
-        record.postCodes.length > 0 ? (
-          <Space wrap>
-            {record.postCodes.map((code) => (
-              <Tag key={code}>{postNames.get(code) ?? code}</Tag>
-            ))}
-          </Space>
-        ) : undefined,
-    },
-    { label: 'Status', value: record.enabled ? 'enabled' : 'disabled' },
-    { label: 'System', value: record.system ? 'system' : 'custom' },
-  ];
-}
-
 export default function UsersPage() {
+  const intl = useIntl();
   const access = useAccess();
   const canAssignUserRoles = Boolean(access.canAssignUserRoles);
   const canExportUsers = Boolean(access.canExportUsers);
@@ -373,6 +302,176 @@ export default function UsersPage() {
   const [importResult, setImportResult] = useState<UserImportResultSummary>();
   const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
   const [selectedDeptId, setSelectedDeptId] = useState<string>();
+  const formatMessage = (
+    id: string,
+    defaultMessage: string,
+    values?: Record<string, number | string>,
+  ) =>
+    values
+      ? intl.formatMessage({ id, defaultMessage }, values)
+      : intl.formatMessage({ id, defaultMessage });
+  const statusLabels = {
+    disabled: formatMessage('pages.system.users.status.disabled', 'Disabled'),
+    enabled: formatMessage('pages.system.users.status.enabled', 'Enabled'),
+  };
+  const systemLabels = {
+    custom: formatMessage('pages.system.users.system.custom', 'Custom'),
+    system: formatMessage('pages.system.users.system.system', 'System'),
+  };
+  const filterOptions: CurrentPageFilterOption<UserSummary>[] = [
+    {
+      key: 'enabled',
+      options: [
+        { label: statusLabels.enabled, value: 'true' },
+        { label: statusLabels.disabled, value: 'false' },
+      ],
+      placeholder: formatMessage('pages.system.users.filters.status', 'Status'),
+      predicate: (record, value) => record.enabled === (value === 'true'),
+    },
+    {
+      key: 'system',
+      options: [
+        { label: systemLabels.system, value: 'true' },
+        { label: systemLabels.custom, value: 'false' },
+      ],
+      placeholder: formatMessage('pages.system.users.filters.system', 'System'),
+      predicate: (record, value) => record.system === (value === 'true'),
+    },
+  ];
+  const exportColumns: CurrentPageExportColumn<UserSummary>[] = [
+    {
+      title: formatMessage('pages.system.users.fields.id', 'ID'),
+      dataIndex: 'id',
+    },
+    {
+      title: formatMessage('pages.system.users.fields.username', 'Username'),
+      dataIndex: 'username',
+    },
+    {
+      title: formatMessage(
+        'pages.system.users.fields.displayName',
+        'Display Name',
+      ),
+      dataIndex: 'displayName',
+    },
+    {
+      title: formatMessage(
+        'pages.system.users.fields.departmentId',
+        'Department ID',
+      ),
+      dataIndex: 'deptId',
+    },
+    {
+      title: formatMessage('pages.system.users.fields.roles', 'Roles'),
+      renderText: (record) => record.roleCodes.join(', '),
+    },
+    {
+      title: formatMessage('pages.system.users.fields.posts', 'Posts'),
+      renderText: (record) => record.postCodes.join(', '),
+    },
+    {
+      title: formatMessage('pages.system.users.fields.enabled', 'Enabled'),
+      renderText: (record) =>
+        record.enabled ? statusLabels.enabled : statusLabels.disabled,
+    },
+    {
+      title: formatMessage('pages.system.users.fields.system', 'System'),
+      renderText: (record) =>
+        record.system ? systemLabels.system : systemLabels.custom,
+    },
+  ];
+  const formatRevokedSessions = (count: number | undefined): string =>
+    formatMessage(
+      'pages.system.users.messages.revokedSessions',
+      'Revoked sessions: {count}.',
+      { count: count ?? 0 },
+    );
+  const formatBatchMutation = (
+    affected: number,
+    revokedSessionCount: number | undefined,
+  ): string =>
+    formatMessage(
+      'pages.system.users.messages.batchMutation',
+      '{affected} user(s) affected. {revokedSessions}',
+      { affected, revokedSessions: formatRevokedSessions(revokedSessionCount) },
+    );
+  const formatImportSummary = (result: UserImportResultSummary): string =>
+    formatMessage(
+      'pages.system.users.messages.importSummary',
+      'Imported {totalRows} row(s): {created} created, {updated} updated, {failed} failed. {revokedSessions}',
+      {
+        created: result.created,
+        failed: result.failed,
+        revokedSessions: formatRevokedSessions(result.revokedSessionCount),
+        totalRows: result.totalRows,
+        updated: result.updated,
+      },
+    );
+  const formatImportFailureRow = (
+    rowNumber: number,
+    username: string | undefined,
+    reason: string,
+  ): string =>
+    username
+      ? formatMessage(
+          'pages.system.users.import.failureRowWithUsername',
+          'Row {rowNumber} ({username}): {reason}',
+          { reason, rowNumber, username },
+        )
+      : formatMessage(
+          'pages.system.users.import.failureRow',
+          'Row {rowNumber}: {reason}',
+          { reason, rowNumber },
+        );
+  const createDetailFields = (record: UserSummary): DetailField[] => [
+    { label: formatMessage('pages.system.users.fields.id', 'ID'), value: record.id },
+    {
+      label: formatMessage('pages.system.users.fields.username', 'Username'),
+      value: record.username,
+    },
+    {
+      label: formatMessage(
+        'pages.system.users.fields.displayName',
+        'Display Name',
+      ),
+      value: record.displayName,
+    },
+    {
+      label: formatMessage('pages.system.users.fields.department', 'Department'),
+      value: record.deptId
+        ? (deptNames.get(record.deptId) ?? record.deptId)
+        : undefined,
+    },
+    {
+      label: formatMessage('pages.system.users.fields.roles', 'Roles'),
+      value: (
+        <Space wrap>
+          {record.roleCodes.map((code) => (
+            <Tag key={code}>{code}</Tag>
+          ))}
+        </Space>
+      ),
+    },
+    {
+      label: formatMessage('pages.system.users.fields.posts', 'Posts'),
+      value:
+        record.postCodes.length > 0 ? (
+          <Space wrap>
+            {record.postCodes.map((code) => (
+              <Tag key={code}>{postNames.get(code) ?? code}</Tag>
+            ))}
+          </Space>
+        ) : undefined,
+    },
+    {
+      label: formatMessage('pages.system.users.fields.status', 'Status'),
+      value: record.enabled ? statusLabels.enabled : statusLabels.disabled,
+    },
+    {
+      label: formatMessage('pages.system.users.fields.system', 'System'),
+      value: record.system ? systemLabels.system : systemLabels.custom,
+    },
+  ];
   const flatDeptRows = useMemo(
     () => flattenDeptTree(deptTreeRows),
     [deptTreeRows],
@@ -396,7 +495,10 @@ export default function UsersPage() {
     useCurrentPageFilters<UserSummary>({
       rows,
       searchFields,
-      searchPlaceholder: 'Search users',
+      searchPlaceholder: formatMessage(
+        'pages.system.users.search.placeholder',
+        'Search users',
+      ),
       selectFilters: filterOptions,
     });
   const selectedUserIds = useMemo(
@@ -449,7 +551,12 @@ export default function UsersPage() {
       setImportFileList([]);
       setImportResult(undefined);
       setLoadError(
-        error instanceof Error ? error.message : 'Unable to load live users.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.system.users.load.failure',
+              'Unable to load live users.',
+            ),
       );
     } finally {
       setLoading(false);
@@ -486,7 +593,12 @@ export default function UsersPage() {
       template.contentBase64,
       template.contentType,
     );
-    message.success('User import template downloaded.');
+    message.success(
+      formatMessage(
+        'pages.system.users.messages.importTemplateDownloaded',
+        'User import template downloaded.',
+      ),
+    );
   };
 
   const downloadUserExcelExport = async () => {
@@ -497,7 +609,12 @@ export default function UsersPage() {
       );
 
       if (!exported.contentBase64 || !exported.contentType) {
-        message.warning('User Excel export is unavailable.');
+        message.warning(
+          formatMessage(
+            'pages.system.users.messages.excelExportUnavailable',
+            'User Excel export is unavailable.',
+          ),
+        );
         return;
       }
 
@@ -507,7 +624,11 @@ export default function UsersPage() {
         exported.contentType,
       );
       message.success(
-        `User Excel export downloaded. ${exported.rowCount} row(s).`,
+        formatMessage(
+          'pages.system.users.messages.excelExportDownloaded',
+          'User Excel export downloaded. {rowCount} row(s).',
+          { rowCount: exported.rowCount },
+        ),
       );
     } finally {
       setExportingUsers(false);
@@ -523,7 +644,12 @@ export default function UsersPage() {
 
   const openEditForm = async (record: UserSummary) => {
     if (record.system) {
-      message.warning('System users cannot be edited.');
+      message.warning(
+        formatMessage(
+          'pages.system.users.actions.systemEditLocked',
+          'System users cannot be edited.',
+        ),
+      );
       return;
     }
 
@@ -542,7 +668,12 @@ export default function UsersPage() {
       setFormOpen(true);
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'Unable to open user.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.system.users.open.failure',
+              'Unable to open user.',
+            ),
       );
     }
   };
@@ -555,14 +686,22 @@ export default function UsersPage() {
       message.error(
         error instanceof Error
           ? error.message
-          : 'Unable to load live user detail.',
+          : formatMessage(
+              'pages.system.users.detail.loadFailure',
+              'Unable to load live user detail.',
+            ),
       );
     }
   };
 
   const openResetPassword = async (record: UserSummary) => {
     if (record.system) {
-      message.warning('System users cannot be reset.');
+      message.warning(
+        formatMessage(
+          'pages.system.users.actions.systemResetLocked',
+          'System users cannot be reset.',
+        ),
+      );
       return;
     }
 
@@ -573,19 +712,34 @@ export default function UsersPage() {
       setResetPasswordOpen(true);
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'Unable to open user.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.system.users.open.failure',
+              'Unable to open user.',
+            ),
       );
     }
   };
 
   const openAssignRoles = async (record: UserSummary) => {
     if (record.system) {
-      message.warning('System users cannot be assigned roles.');
+      message.warning(
+        formatMessage(
+          'pages.system.users.actions.systemAssignRolesLocked',
+          'System users cannot be assigned roles.',
+        ),
+      );
       return;
     }
 
     if (!canAssignUserRoles) {
-      message.warning('Missing core:user:manage');
+      message.warning(
+        formatMessage(
+          'pages.system.users.permissions.missingManage',
+          'Missing core:user:manage',
+        ),
+      );
       return;
     }
 
@@ -600,7 +754,10 @@ export default function UsersPage() {
       message.error(
         error instanceof Error
           ? error.message
-          : 'Unable to open role assignment.',
+          : formatMessage(
+              'pages.system.users.roleAssignment.openFailure',
+              'Unable to open role assignment.',
+            ),
       );
     }
   };
@@ -621,7 +778,9 @@ export default function UsersPage() {
           postCodes,
           enabled: values.enabled ?? true,
         });
-        message.success('User updated.');
+        message.success(
+          formatMessage('pages.system.users.messages.updated', 'User updated.'),
+        );
       } else {
         await createOpenCoreUser({
           username: values.username,
@@ -632,7 +791,9 @@ export default function UsersPage() {
           postCodes,
           enabled: values.enabled ?? true,
         });
-        message.success('User created.');
+        message.success(
+          formatMessage('pages.system.users.messages.created', 'User created.'),
+        );
       }
       setFormOpen(false);
       setEditingUser(undefined);
@@ -654,7 +815,11 @@ export default function UsersPage() {
         password: values.password,
       });
       message.success(
-        `Password reset. ${formatRevokedSessions(result.revokedSessionCount)}`,
+        formatMessage(
+          'pages.system.users.messages.passwordReset',
+          'Password reset. {revokedSessions}',
+          { revokedSessions: formatRevokedSessions(result.revokedSessionCount) },
+        ),
       );
       setResetPasswordOpen(false);
       setResetPasswordUser(undefined);
@@ -676,7 +841,11 @@ export default function UsersPage() {
         roleCodes: values.roleCodes ?? [],
       });
       message.success(
-        `Roles assigned. ${formatRevokedSessions(result.revokedSessionCount)}`,
+        formatMessage(
+          'pages.system.users.roleAssignment.messages.updated',
+          'Roles assigned. {revokedSessions}',
+          { revokedSessions: formatRevokedSessions(result.revokedSessionCount) },
+        ),
       );
       setAssignRolesOpen(false);
       setAssigningRoleUser(undefined);
@@ -693,9 +862,15 @@ export default function UsersPage() {
         enabled: !record.enabled,
       });
       message.success(
-        `User ${result.enabled ? 'enabled' : 'disabled'}. ${formatRevokedSessions(
-          result.revokedSessionCount,
-        )}`,
+        formatMessage(
+          result.enabled
+            ? 'pages.system.users.messages.enabled'
+            : 'pages.system.users.messages.disabled',
+          result.enabled
+            ? 'User enabled. {revokedSessions}'
+            : 'User disabled. {revokedSessions}',
+          { revokedSessions: formatRevokedSessions(result.revokedSessionCount) },
+        ),
       );
       await loadUsers();
     } finally {
@@ -706,14 +881,23 @@ export default function UsersPage() {
   const deleteUser = async (record: UserSummary) => {
     const result = await deleteOpenCoreUser(record.id);
     message.success(
-      `User deleted. ${formatRevokedSessions(result.revokedSessionCount)}`,
+      formatMessage(
+        'pages.system.users.messages.deleted',
+        'User deleted. {revokedSessions}',
+        { revokedSessions: formatRevokedSessions(result.revokedSessionCount) },
+      ),
     );
     await loadUsers();
   };
 
   const batchSetUsersStatus = async (enabled: boolean) => {
     if (selectedUserIds.length === 0) {
-      message.warning('Select at least one custom user.');
+      message.warning(
+        formatMessage(
+          'pages.system.users.messages.selectCustomUser',
+          'Select at least one custom user.',
+        ),
+      );
       return;
     }
 
@@ -725,10 +909,20 @@ export default function UsersPage() {
         enabled,
       });
       message.success(
-        `Selected users ${enabled ? 'enabled' : 'disabled'}. ${formatBatchMutation(
-          result.affected,
-          result.revokedSessionCount,
-        )}`,
+        formatMessage(
+          enabled
+            ? 'pages.system.users.messages.batchEnabled'
+            : 'pages.system.users.messages.batchDisabled',
+          enabled
+            ? 'Selected users enabled. {mutation}'
+            : 'Selected users disabled. {mutation}',
+          {
+            mutation: formatBatchMutation(
+              result.affected,
+              result.revokedSessionCount,
+            ),
+          },
+        ),
       );
       setSelectedRowKeys([]);
       await loadUsers();
@@ -739,7 +933,12 @@ export default function UsersPage() {
 
   const batchDeleteUsers = async () => {
     if (selectedUserIds.length === 0) {
-      message.warning('Select at least one custom user.');
+      message.warning(
+        formatMessage(
+          'pages.system.users.messages.selectCustomUser',
+          'Select at least one custom user.',
+        ),
+      );
       return;
     }
 
@@ -749,10 +948,16 @@ export default function UsersPage() {
         userIds: selectedUserIds,
       });
       message.success(
-        `Selected users deleted. ${formatBatchMutation(
-          result.affected,
-          result.revokedSessionCount,
-        )}`,
+        formatMessage(
+          'pages.system.users.messages.batchDeleted',
+          'Selected users deleted. {mutation}',
+          {
+            mutation: formatBatchMutation(
+              result.affected,
+              result.revokedSessionCount,
+            ),
+          },
+        ),
       );
       setSelectedRowKeys([]);
       await loadUsers();
@@ -765,14 +970,25 @@ export default function UsersPage() {
     const file = importFileList[0]?.originFileObj;
 
     if (!file) {
-      message.warning('Select a CSV or XLSX file to import.');
+      message.warning(
+        formatMessage(
+          'pages.system.users.messages.selectImportFile',
+          'Select a CSV or XLSX file to import.',
+        ),
+      );
       return;
     }
 
     setImportSubmitting(true);
     try {
       const result = await importOpenCoreUsers({
-        contentBase64: await readFileAsDataUrl(file),
+        contentBase64: await readFileAsDataUrl(
+          file,
+          formatMessage(
+            'pages.system.users.messages.fileReadFailure',
+            'File read failed.',
+          ),
+        ),
         updateExisting: importUpdateExisting,
       });
       setImportResult(result);
@@ -790,7 +1006,7 @@ export default function UsersPage() {
 
   const columns: ProColumns<UserSummary>[] = [
     {
-      title: 'Username',
+      title: formatMessage('pages.system.users.fields.username', 'Username'),
       dataIndex: 'username',
       render: (_, record) => (
         <Typography.Link onClick={() => void openDetail(record)}>
@@ -798,15 +1014,21 @@ export default function UsersPage() {
         </Typography.Link>
       ),
     },
-    { title: 'Display name', dataIndex: 'displayName' },
     {
-      title: 'Department',
+      title: formatMessage(
+        'pages.system.users.fields.displayName',
+        'Display Name',
+      ),
+      dataIndex: 'displayName',
+    },
+    {
+      title: formatMessage('pages.system.users.fields.department', 'Department'),
       dataIndex: 'deptId',
       render: (_, record) =>
         record.deptId ? (deptNames.get(record.deptId) ?? record.deptId) : '-',
     },
     {
-      title: 'Roles',
+      title: formatMessage('pages.system.users.fields.roles', 'Roles'),
       dataIndex: 'roleCodes',
       render: (_, record) => (
         <Space wrap size={4}>
@@ -817,7 +1039,7 @@ export default function UsersPage() {
       ),
     },
     {
-      title: 'Posts',
+      title: formatMessage('pages.system.users.fields.posts', 'Posts'),
       dataIndex: 'postCodes',
       render: (_, record) =>
         record.postCodes.length > 0 ? (
@@ -831,44 +1053,64 @@ export default function UsersPage() {
         ),
     },
     {
-      title: 'Status',
+      title: formatMessage('pages.system.users.fields.status', 'Status'),
       dataIndex: 'enabled',
       width: 96,
       render: (_, record) => (
         <Tag color={record.enabled ? 'green' : 'red'}>
-          {record.enabled ? 'enabled' : 'disabled'}
+          {record.enabled ? statusLabels.enabled : statusLabels.disabled}
         </Tag>
       ),
     },
     {
-      title: 'System',
+      title: formatMessage('pages.system.users.fields.system', 'System'),
       dataIndex: 'system',
       width: 96,
       render: (_, record) => (
         <Tag color={record.system ? 'blue' : 'default'}>
-          {record.system ? 'system' : 'custom'}
+          {record.system ? systemLabels.system : systemLabels.custom}
         </Tag>
       ),
     },
     {
-      title: 'Actions',
+      title: formatMessage('pages.system.users.actions.column', 'Actions'),
       valueType: 'option',
       width: 248,
       render: (_, record) => (
         <Space size="small">
-          <Tooltip title="Detail">
+          <Tooltip
+            title={formatMessage(
+              'pages.system.users.actions.detail',
+              'Detail',
+            )}
+          >
             <Button
-              aria-label={`View ${record.username}`}
+              aria-label={formatMessage(
+                'pages.system.users.actions.viewAria',
+                'View {username}',
+                { username: record.username },
+              )}
               icon={<EyeOutlined />}
               onClick={() => void openDetail(record)}
               size="small"
             />
           </Tooltip>
           <Tooltip
-            title={record.system ? 'System users cannot be edited' : 'Edit'}
+            title={
+              record.system
+                ? formatMessage(
+                    'pages.system.users.actions.systemEditLocked',
+                    'System users cannot be edited',
+                  )
+                : formatMessage('pages.system.users.actions.edit', 'Edit')
+            }
           >
             <Button
-              aria-label={`Edit ${record.username}`}
+              aria-label={formatMessage(
+                'pages.system.users.actions.editAria',
+                'Edit {username}',
+                { username: record.username },
+              )}
               disabled={record.system}
               icon={<EditOutlined />}
               onClick={() => void openEditForm(record)}
@@ -876,22 +1118,48 @@ export default function UsersPage() {
             />
           </Tooltip>
           <Popconfirm
-            title={record.enabled ? 'Disable this user?' : 'Enable this user?'}
-            okText={record.enabled ? 'Disable' : 'Enable'}
+            title={formatMessage(
+              record.enabled
+                ? 'pages.system.users.confirm.disable'
+                : 'pages.system.users.confirm.enable',
+              record.enabled ? 'Disable this user?' : 'Enable this user?',
+            )}
+            okText={
+              record.enabled
+                ? formatMessage('pages.system.users.actions.disable', 'Disable')
+                : formatMessage('pages.system.users.actions.enable', 'Enable')
+            }
             okButtonProps={{ danger: record.enabled }}
             onConfirm={() => void toggleUserStatus(record)}
           >
             <Tooltip
               title={
                 record.system
-                  ? 'System users cannot change status'
+                  ? formatMessage(
+                      'pages.system.users.actions.systemStatusLocked',
+                      'System users cannot change status',
+                    )
                   : record.enabled
-                    ? 'Disable'
-                    : 'Enable'
+                    ? formatMessage(
+                        'pages.system.users.actions.disable',
+                        'Disable',
+                      )
+                    : formatMessage(
+                        'pages.system.users.actions.enable',
+                        'Enable',
+                      )
               }
             >
               <Button
-                aria-label={`${record.enabled ? 'Disable' : 'Enable'} ${record.username}`}
+                aria-label={formatMessage(
+                  record.enabled
+                    ? 'pages.system.users.actions.disableAria'
+                    : 'pages.system.users.actions.enableAria',
+                  record.enabled
+                    ? 'Disable {username}'
+                    : 'Enable {username}',
+                  { username: record.username },
+                )}
                 danger={record.enabled}
                 disabled={record.system}
                 icon={
@@ -905,12 +1173,22 @@ export default function UsersPage() {
           <Tooltip
             title={
               record.system
-                ? 'System users cannot reset password'
-                : 'Reset Password'
+                ? formatMessage(
+                    'pages.system.users.actions.systemResetLocked',
+                    'System users cannot reset password',
+                  )
+                : formatMessage(
+                    'pages.system.users.actions.resetPassword',
+                    'Reset Password',
+                  )
             }
           >
             <Button
-              aria-label={`Reset password for ${record.username}`}
+              aria-label={formatMessage(
+                'pages.system.users.actions.resetPasswordAria',
+                'Reset password for {username}',
+                { username: record.username },
+              )}
               disabled={record.system}
               icon={<LockOutlined />}
               onClick={() => void openResetPassword(record)}
@@ -920,14 +1198,27 @@ export default function UsersPage() {
           <Tooltip
             title={
               record.system
-                ? 'System users cannot be assigned roles'
+                ? formatMessage(
+                    'pages.system.users.actions.systemAssignRolesLocked',
+                    'System users cannot be assigned roles',
+                  )
                 : canAssignUserRoles
-                  ? 'Assign Roles'
-                  : 'Missing core:user:manage'
+                  ? formatMessage(
+                      'pages.system.users.actions.assignRoles',
+                      'Assign Roles',
+                    )
+                  : formatMessage(
+                      'pages.system.users.permissions.missingManage',
+                      'Missing core:user:manage',
+                    )
             }
           >
             <Button
-              aria-label={`Assign roles for ${record.username}`}
+              aria-label={formatMessage(
+                'pages.system.users.actions.assignRolesAria',
+                'Assign roles for {username}',
+                { username: record.username },
+              )}
               disabled={record.system || !canAssignUserRoles}
               icon={<TeamOutlined />}
               onClick={() => void openAssignRoles(record)}
@@ -935,18 +1226,33 @@ export default function UsersPage() {
             />
           </Tooltip>
           <Popconfirm
-            title="Delete this user?"
-            okText="Delete"
+            title={formatMessage(
+              'pages.system.users.confirm.deleteOne',
+              'Delete this user?',
+            )}
+            okText={formatMessage('pages.system.users.actions.delete', 'Delete')}
             okButtonProps={{ danger: true }}
             onConfirm={() => void deleteUser(record)}
           >
             <Tooltip
               title={
-                record.system ? 'System users cannot be deleted' : 'Delete'
+                record.system
+                  ? formatMessage(
+                      'pages.system.users.actions.systemDeleteLocked',
+                      'System users cannot be deleted',
+                    )
+                  : formatMessage(
+                      'pages.system.users.actions.delete',
+                      'Delete',
+                    )
               }
             >
               <Button
-                aria-label={`Delete ${record.username}`}
+                aria-label={formatMessage(
+                  'pages.system.users.actions.deleteAria',
+                  'Delete {username}',
+                  { username: record.username },
+                )}
                 danger
                 disabled={record.system}
                 icon={<DeleteOutlined />}
@@ -960,12 +1266,18 @@ export default function UsersPage() {
   ];
 
   return (
-    <PageContainer title="Users" subTitle="S6 RBAC">
+    <PageContainer
+      title={formatMessage('pages.system.users.title', 'Users')}
+      subTitle={formatMessage('pages.system.rbac.section', 'S6 RBAC')}
+    >
       {loadError ? (
         <Alert
           showIcon
           type="error"
-          message="Unable to load live users"
+          message={formatMessage(
+            'pages.system.users.load.liveFailure',
+            'Unable to load live users',
+          )}
           description={loadError}
           style={{ marginBlockEnd: 16 }}
         />
@@ -973,10 +1285,20 @@ export default function UsersPage() {
       <div style={usersPageLayoutStyle}>
         <div style={deptFilterPanelStyle}>
           <Space style={deptFilterHeaderStyle}>
-            <Typography.Text strong>Department scope</Typography.Text>
-            <Tooltip title="Reload">
+            <Typography.Text strong>
+              {formatMessage(
+                'pages.system.users.deptScope.title',
+                'Department scope',
+              )}
+            </Typography.Text>
+            <Tooltip
+              title={formatMessage('pages.system.users.actions.reload', 'Reload')}
+            >
               <Button
-                aria-label="Reload users"
+                aria-label={formatMessage(
+                  'pages.system.users.actions.reloadAria',
+                  'Reload users',
+                )}
                 icon={<ReloadOutlined />}
                 onClick={() => void loadUsers()}
                 size="small"
@@ -988,7 +1310,10 @@ export default function UsersPage() {
             type={selectedDeptId ? 'default' : 'primary'}
             onClick={() => void selectDept(undefined)}
           >
-            All departments
+            {formatMessage(
+              'pages.system.users.deptScope.allDepartments',
+              'All departments',
+            )}
           </Button>
           <Tree
             blockNode
@@ -1017,7 +1342,10 @@ export default function UsersPage() {
                 loading={batchAction === 'enable'}
                 onClick={() => void batchSetUsersStatus(true)}
               >
-                Enable selected
+                {formatMessage(
+                  'pages.system.users.actions.enableSelected',
+                  'Enable selected',
+                )}
               </Button>,
               <Button
                 disabled={selectedUserCount === 0}
@@ -1026,12 +1354,22 @@ export default function UsersPage() {
                 loading={batchAction === 'disable'}
                 onClick={() => void batchSetUsersStatus(false)}
               >
-                Disable selected
+                {formatMessage(
+                  'pages.system.users.actions.disableSelected',
+                  'Disable selected',
+                )}
               </Button>,
               <Popconfirm
                 key="batch-delete"
-                title={`Delete ${selectedUserCount} selected user(s)?`}
-                okText="Delete"
+                title={formatMessage(
+                  'pages.system.users.confirm.deleteSelected',
+                  'Delete {count} selected user(s)?',
+                  { count: selectedUserCount },
+                )}
+                okText={formatMessage(
+                  'pages.system.users.actions.delete',
+                  'Delete',
+                )}
                 okButtonProps={{ danger: true }}
                 onConfirm={() => void batchDeleteUsers()}
               >
@@ -1041,15 +1379,24 @@ export default function UsersPage() {
                   icon={<DeleteOutlined />}
                   loading={batchAction === 'delete'}
                 >
-                  Delete selected
+                  {formatMessage(
+                    'pages.system.users.actions.deleteSelected',
+                    'Delete selected',
+                  )}
                 </Button>
               </Popconfirm>,
               <Tooltip
                 key="download-import-template"
                 title={
                   canImportUsers
-                    ? 'Download import template'
-                    : 'Missing core:user:import'
+                    ? formatMessage(
+                        'pages.system.users.actions.downloadImportTemplate',
+                        'Download import template',
+                      )
+                    : formatMessage(
+                        'pages.system.users.permissions.missingImport',
+                        'Missing core:user:import',
+                      )
                 }
               >
                 <Button
@@ -1057,13 +1404,24 @@ export default function UsersPage() {
                   icon={<DownloadOutlined />}
                   onClick={() => void downloadImportTemplate()}
                 >
-                  Download import template
+                  {formatMessage(
+                    'pages.system.users.actions.downloadImportTemplate',
+                    'Download import template',
+                  )}
                 </Button>
               </Tooltip>,
               <Tooltip
                 key="import-users"
                 title={
-                  canImportUsers ? 'Import users' : 'Missing core:user:import'
+                  canImportUsers
+                    ? formatMessage(
+                        'pages.system.users.actions.importUsers',
+                        'Import users',
+                      )
+                    : formatMessage(
+                        'pages.system.users.permissions.missingImport',
+                        'Missing core:user:import',
+                      )
                 }
               >
                 <Button
@@ -1071,7 +1429,10 @@ export default function UsersPage() {
                   icon={<UploadOutlined />}
                   onClick={openImportUsers}
                 >
-                  Import users
+                  {formatMessage(
+                    'pages.system.users.actions.importUsers',
+                    'Import users',
+                  )}
                 </Button>
               </Tooltip>,
               <Button
@@ -1080,21 +1441,27 @@ export default function UsersPage() {
                 icon={<PlusOutlined />}
                 onClick={openCreateForm}
               >
-                New
+                {formatMessage('pages.system.users.actions.new', 'New')}
               </Button>,
               <Button
                 key="refresh"
                 icon={<ReloadOutlined />}
                 onClick={() => void loadUsers()}
               >
-                Refresh
+                {formatMessage('pages.system.users.actions.refresh', 'Refresh')}
               </Button>,
               <Tooltip
                 key="download-user-excel-export"
                 title={
                   canExportUsers
-                    ? 'Download Excel export'
-                    : 'Missing core:user:export'
+                    ? formatMessage(
+                        'pages.system.users.actions.downloadExcel',
+                        'Download Excel export',
+                      )
+                    : formatMessage(
+                        'pages.system.users.permissions.missingExport',
+                        'Missing core:user:export',
+                      )
                 }
               >
                 <Button
@@ -1103,7 +1470,10 @@ export default function UsersPage() {
                   loading={exportingUsers}
                   onClick={() => void downloadUserExcelExport()}
                 >
-                  Download Excel
+                  {formatMessage(
+                    'pages.system.users.actions.downloadExcelShort',
+                    'Download Excel',
+                  )}
                 </Button>
               </Tooltip>,
               <CurrentPageExportButton<UserSummary>
@@ -1130,17 +1500,23 @@ export default function UsersPage() {
       <ReadOnlyDetailDrawer
         fields={
           selectedDetail
-            ? createDetailFields(selectedDetail, deptNames, postNames)
+            ? createDetailFields(selectedDetail)
             : []
         }
         onClose={() => setSelectedDetail(undefined)}
         open={Boolean(selectedDetail)}
-        title={selectedDetail?.username ?? 'User Detail'}
+        title={
+          selectedDetail?.username ??
+          formatMessage('pages.system.users.detail.title', 'User Detail')
+        }
       />
       <Modal
-        title="Import users"
+        title={formatMessage(
+          'pages.system.users.import.title',
+          'Import users',
+        )}
         open={importOpen}
-        okText="Import"
+        okText={formatMessage('pages.system.users.actions.import', 'Import')}
         confirmLoading={importSubmitting}
         onCancel={() => setImportOpen(false)}
         onOk={() => void submitImportUsers()}
@@ -1160,13 +1536,21 @@ export default function UsersPage() {
               setImportResult(undefined);
             }}
           >
-            <Button icon={<UploadOutlined />}>Select CSV/XLSX file</Button>
+            <Button icon={<UploadOutlined />}>
+              {formatMessage(
+                'pages.system.users.actions.selectImportFile',
+                'Select CSV/XLSX file',
+              )}
+            </Button>
           </Upload>
           <Checkbox
             checked={importUpdateExisting}
             onChange={(event) => setImportUpdateExisting(event.target.checked)}
           >
-            Update existing users
+            {formatMessage(
+              'pages.system.users.import.updateExisting',
+              'Update existing users',
+            )}
           </Checkbox>
           {importResult ? (
             <Alert
@@ -1181,9 +1565,11 @@ export default function UsersPage() {
                         key={`${failure.rowNumber}-${failure.username ?? 'row'}`}
                         type="secondary"
                       >
-                        Row {failure.rowNumber}
-                        {failure.username ? ` (${failure.username})` : ''}:{' '}
-                        {failure.reason}
+                        {formatImportFailureRow(
+                          failure.rowNumber,
+                          failure.username,
+                          failure.reason,
+                        )}
                       </Typography.Text>
                     ))}
                   </Space>
@@ -1194,7 +1580,12 @@ export default function UsersPage() {
         </Space>
       </Modal>
       <Modal
-        title={editingUser ? 'Edit User' : 'New User'}
+        title={formatMessage(
+          editingUser
+            ? 'pages.system.users.form.editTitle'
+            : 'pages.system.users.form.createTitle',
+          editingUser ? 'Edit User' : 'New User',
+        )}
         open={formOpen}
         onCancel={() => {
           setFormOpen(false);
@@ -1202,74 +1593,139 @@ export default function UsersPage() {
         }}
         onOk={() => void submitForm()}
         confirmLoading={submitting}
-        okText={editingUser ? 'Save' : 'Create'}
+        okText={
+          editingUser
+            ? formatMessage('pages.system.users.actions.save', 'Save')
+            : formatMessage('pages.system.users.actions.create', 'Create')
+        }
         width={720}
       >
         <Form<UserFormValues> form={form} layout="vertical">
           <Form.Item
-            label="Username"
+            label={formatMessage(
+              'pages.system.users.fields.username',
+              'Username',
+            )}
             name="username"
-            rules={[{ required: true, message: 'Username is required.' }]}
+            rules={[
+              {
+                required: true,
+                message: formatMessage(
+                  'pages.system.users.validation.usernameRequired',
+                  'Username is required.',
+                ),
+              },
+            ]}
           >
             <Input disabled={Boolean(editingUser)} maxLength={96} />
           </Form.Item>
           <Form.Item
-            label="Display Name"
+            label={formatMessage(
+              'pages.system.users.fields.displayName',
+              'Display Name',
+            )}
             name="displayName"
-            rules={[{ required: true, message: 'Display name is required.' }]}
+            rules={[
+              {
+                required: true,
+                message: formatMessage(
+                  'pages.system.users.validation.displayNameRequired',
+                  'Display name is required.',
+                ),
+              },
+            ]}
           >
             <Input maxLength={120} />
           </Form.Item>
           {!editingUser ? (
             <Form.Item
-              label="Password"
+              label={formatMessage(
+                'pages.system.users.fields.password',
+                'Password',
+              )}
               name="password"
               rules={[
                 {
                   required: true,
-                  message: 'Password is required.',
+                  message: formatMessage(
+                    'pages.system.users.validation.passwordRequired',
+                    'Password is required.',
+                  ),
                 },
               ]}
             >
               <Input.Password autoComplete="new-password" maxLength={128} />
             </Form.Item>
           ) : null}
-          <Form.Item label="Roles" name="roleCodes" rules={[{ type: 'array' }]}>
+          <Form.Item
+            label={formatMessage('pages.system.users.fields.roles', 'Roles')}
+            name="roleCodes"
+            rules={[{ type: 'array' }]}
+          >
             <Select
               allowClear
               mode="multiple"
               optionFilterProp="label"
               options={roleOptions}
-              placeholder="Select roles"
+              placeholder={formatMessage(
+                'pages.system.users.placeholders.roles',
+                'Select roles',
+              )}
               showSearch
             />
           </Form.Item>
-          <Form.Item label="Department" name="deptId">
+          <Form.Item
+            label={formatMessage(
+              'pages.system.users.fields.department',
+              'Department',
+            )}
+            name="deptId"
+          >
             <TreeSelect
               allowClear
               showSearch
               treeData={deptOptionTreeData}
               treeDefaultExpandAll
-              placeholder="Select department"
+              placeholder={formatMessage(
+                'pages.system.users.placeholders.department',
+                'Select department',
+              )}
             />
           </Form.Item>
-          <Form.Item label="Posts" name="postCodes" rules={[{ type: 'array' }]}>
+          <Form.Item
+            label={formatMessage('pages.system.users.fields.posts', 'Posts')}
+            name="postCodes"
+            rules={[{ type: 'array' }]}
+          >
             <Select
               allowClear
               mode="multiple"
               optionFilterProp="label"
               options={postOptions}
-              placeholder="Select posts"
+              placeholder={formatMessage(
+                'pages.system.users.placeholders.posts',
+                'Select posts',
+              )}
               showSearch
             />
           </Form.Item>
-          <Form.Item label="Enabled" name="enabled" valuePropName="checked">
-            <Switch checkedChildren="Enabled" unCheckedChildren="Disabled" />
+          <Form.Item
+            label={formatMessage('pages.system.users.fields.enabled', 'Enabled')}
+            name="enabled"
+            valuePropName="checked"
+          >
+            <Switch
+              checkedChildren={statusLabels.enabled}
+              unCheckedChildren={statusLabels.disabled}
+            />
           </Form.Item>
         </Form>
       </Modal>
       <Modal
-        title="Reset Password"
+        title={formatMessage(
+          'pages.system.users.resetPassword.title',
+          'Reset Password',
+        )}
         open={resetPasswordOpen}
         onCancel={() => {
           setResetPasswordOpen(false);
@@ -1277,14 +1733,25 @@ export default function UsersPage() {
         }}
         onOk={() => void submitResetPassword()}
         confirmLoading={resetPasswordSubmitting}
-        okText="Reset"
+        okText={formatMessage('pages.system.users.actions.reset', 'Reset')}
         width={520}
       >
         <Form<ResetPasswordValues> form={resetPasswordForm} layout="vertical">
           <Form.Item
-            label="New Password"
+            label={formatMessage(
+              'pages.system.users.fields.newPassword',
+              'New Password',
+            )}
             name="password"
-            rules={[{ required: true, message: 'Password is required.' }]}
+            rules={[
+              {
+                required: true,
+                message: formatMessage(
+                  'pages.system.users.validation.passwordRequired',
+                  'Password is required.',
+                ),
+              },
+            ]}
           >
             <Input.Password autoComplete="new-password" maxLength={128} />
           </Form.Item>
@@ -1293,8 +1760,15 @@ export default function UsersPage() {
       <Modal
         title={
           assigningRoleUser
-            ? `Assign Roles - ${assigningRoleUser.username}`
-            : 'Assign Roles'
+            ? formatMessage(
+                'pages.system.users.roleAssignment.titleForUser',
+                'Assign Roles - {username}',
+                { username: assigningRoleUser.username },
+              )
+            : formatMessage(
+                'pages.system.users.roleAssignment.title',
+                'Assign Roles',
+              )
         }
         open={assignRolesOpen}
         onCancel={() => {
@@ -1303,23 +1777,40 @@ export default function UsersPage() {
         }}
         onOk={() => void submitAssignRoles()}
         confirmLoading={assignRolesSubmitting}
-        okText="Save"
+        okText={formatMessage('pages.system.users.actions.save', 'Save')}
         width={560}
       >
         <Form<AssignRolesValues> form={assignRolesForm} layout="vertical">
-          <Form.Item label="Username">
+          <Form.Item
+            label={formatMessage(
+              'pages.system.users.fields.username',
+              'Username',
+            )}
+          >
             <Input value={assigningRoleUser?.username} disabled />
           </Form.Item>
-          <Form.Item label="Display Name">
+          <Form.Item
+            label={formatMessage(
+              'pages.system.users.fields.displayName',
+              'Display Name',
+            )}
+          >
             <Input value={assigningRoleUser?.displayName} disabled />
           </Form.Item>
-          <Form.Item label="Roles" name="roleCodes" rules={[{ type: 'array' }]}>
+          <Form.Item
+            label={formatMessage('pages.system.users.fields.roles', 'Roles')}
+            name="roleCodes"
+            rules={[{ type: 'array' }]}
+          >
             <Select
               allowClear
               mode="multiple"
               optionFilterProp="label"
               options={roleOptions}
-              placeholder="Select roles"
+              placeholder={formatMessage(
+                'pages.system.users.placeholders.roles',
+                'Select roles',
+              )}
               showSearch
             />
           </Form.Item>
@@ -1329,30 +1820,14 @@ export default function UsersPage() {
   );
 }
 
-function formatRevokedSessions(count: number | undefined): string {
-  return `Revoked sessions: ${count ?? 0}.`;
-}
-
-function formatBatchMutation(
-  affected: number,
-  revokedSessionCount: number | undefined,
-): string {
-  return `${affected} user(s) affected. ${formatRevokedSessions(
-    revokedSessionCount,
-  )}`;
-}
-
-function formatImportSummary(result: UserImportResultSummary): string {
-  return `Imported ${result.totalRows} row(s): ${result.created} created, ${result.updated} updated, ${result.failed} failed. ${formatRevokedSessions(
-    result.revokedSessionCount,
-  )}`;
-}
-
-function readFileAsDataUrl(file: File): Promise<string> {
+function readFileAsDataUrl(
+  file: File,
+  readFailureMessage: string,
+): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onerror = () =>
-      reject(reader.error ?? new Error('File read failed.'));
+      reject(reader.error ?? new Error(readFailureMessage));
     reader.onload = () => resolve(String(reader.result));
     reader.readAsDataURL(file);
   });
