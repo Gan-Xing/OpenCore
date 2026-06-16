@@ -23,16 +23,30 @@ const forbiddenMarkers = [
   'admin/ant.design',
   'Password: ant.design',
   '密码: ant.design',
+  'None response! Please retry.',
+  'Request error, please retry.',
   'pages.searchTable.',
   "'menu.form'",
   "'menu.list'",
   "'menu.editor'",
 ];
+const coreI18nScanPaths = [
+  join(adminRoot, 'src', 'components', 'ErrorBoundary', 'index.tsx'),
+  join(adminRoot, 'src', 'components', 'Footer', 'index.tsx'),
+  join(adminRoot, 'src', 'components', 'OfflineBanner', 'index.tsx'),
+  join(adminRoot, 'src', 'components', 'RightContent', 'index.tsx'),
+  join(adminRoot, 'src', 'pages', 'Exception', '403.tsx'),
+  join(adminRoot, 'src', 'pages', 'Exception', '404.tsx'),
+  join(adminRoot, 'src', 'pages', 'Exception', '500.tsx'),
+  join(adminRoot, 'src', 'pages', 'Exception', 'ExceptionPage.tsx'),
+  join(adminRoot, 'src', 'pages', 'user', 'login', 'index.tsx'),
+  join(adminRoot, 'src', 'requestErrorConfig.ts'),
+];
 const forbiddenMarkerScanPaths = [
   localesRoot,
   join(adminRoot, 'package.json'),
-  join(adminRoot, 'src', 'components', 'Footer', 'index.tsx'),
   join(adminRoot, 'src', 'manifest.json'),
+  ...coreI18nScanPaths,
 ];
 
 const failures: string[] = [];
@@ -74,6 +88,7 @@ for (const scanPath of forbiddenMarkerScanPaths) {
   checkForbiddenMarkers(scanPath);
 }
 checkRouteMenuKeys();
+checkCoreI18nKeys();
 
 if (failures.length > 0) {
   console.error('Admin i18n guard failed.');
@@ -145,6 +160,72 @@ function checkRouteMenuKeys(): void {
       }
     }
   }
+}
+
+function checkCoreI18nKeys(): void {
+  const localeKeysByLocale = new Map(
+    [...supportedLocales].map((locale) => [locale, readLocaleBundleKeys(locale)]),
+  );
+
+  for (const scanPath of coreI18nScanPaths) {
+    const ids = readI18nIds(scanPath);
+
+    for (const id of ids) {
+      for (const [locale, keys] of localeKeysByLocale) {
+        if (!keys.has(id)) {
+          failures.push(
+            `${locale} is missing core Admin i18n key ${id} used by ${relative(
+              root,
+              scanPath,
+            )}`,
+          );
+        }
+      }
+    }
+  }
+}
+
+function readLocaleBundleKeys(locale: string): Set<string> {
+  const keys = new Set<string>();
+  const entryPath = join(localesRoot, `${locale}.ts`);
+  const localeDir = join(localesRoot, locale);
+
+  for (const key of readLocaleKeys(entryPath)) {
+    keys.add(key);
+  }
+
+  if (existsSync(localeDir)) {
+    for (const entry of readdirSync(localeDir)) {
+      const fullPath = join(localeDir, entry);
+
+      if (statSync(fullPath).isDirectory() || !fullPath.endsWith('.ts')) {
+        continue;
+      }
+
+      for (const key of readLocaleKeys(fullPath)) {
+        keys.add(key);
+      }
+    }
+  }
+
+  return keys;
+}
+
+function readI18nIds(path: string): Set<string> {
+  const content = readFileSync(path, 'utf8');
+  const ids = new Set<string>();
+
+  for (const match of content.matchAll(/\bid:\s*['"]([^'"]+)['"]/g)) {
+    ids.add(match[1]);
+  }
+
+  for (const match of content.matchAll(
+    /<FormattedMessage\b[^>]*\bid=["']([^"']+)["']/g,
+  )) {
+    ids.add(match[1]);
+  }
+
+  return ids;
 }
 
 function readLocaleKeys(path: string): Set<string> {

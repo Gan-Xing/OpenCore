@@ -80,7 +80,10 @@ function getFallbackErrorMessage(error: any): string {
     getApiErrorInfo(error)?.message ??
     error?.info?.errorMessage ??
     error?.message ??
-    'Request error, please retry.'
+    getIntl().formatMessage({
+      id: 'app.request.errorFallback',
+      defaultMessage: 'The request failed. Please try again.',
+    })
   );
 }
 
@@ -133,7 +136,13 @@ export const errorConfig: RequestConfig = {
             break;
           case ErrorShowType.NOTIFICATION:
             notification.open({
-              message: String(errorCode ?? 'Request failed'),
+              message: String(
+                errorCode ??
+                  getIntl().formatMessage({
+                    id: 'app.request.failedTitle',
+                    defaultMessage: 'Request failed',
+                  }),
+              ),
               description: errorMessage,
             });
             break;
@@ -170,7 +179,12 @@ export const errorConfig: RequestConfig = {
           }),
         );
       } else if (error.request) {
-        message.error('None response! Please retry.');
+        message.error(
+          getIntl().formatMessage({
+            id: 'app.request.noResponse',
+            defaultMessage: 'No response from server. Please retry.',
+          }),
+        );
       } else {
         message.error(formatRequestErrorMessage(error));
       }

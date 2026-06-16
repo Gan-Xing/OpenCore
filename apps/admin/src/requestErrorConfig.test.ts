@@ -21,11 +21,15 @@ vi.mock('antd', () => ({
 
 vi.mock('@umijs/max', () => ({
   getIntl: vi.fn(() => ({
-    formatMessage: vi.fn(({ id, defaultMessage }) =>
-      id === 'error.AUTH_INVALID_CREDENTIALS'
-        ? '用户名或密码错误。'
-        : defaultMessage,
-    ),
+    formatMessage: vi.fn(({ id, defaultMessage }) => {
+      const messages: Record<string, string> = {
+        'app.request.errorFallback': '请求失败，请重试。',
+        'app.request.noResponse': '服务器无响应，请重试。',
+        'error.AUTH_INVALID_CREDENTIALS': '用户名或密码错误。',
+      };
+
+      return messages[id] ?? defaultMessage;
+    }),
   })),
   history: {
     location: {
@@ -203,6 +207,36 @@ describe('requestErrorConfig', () => {
           value: originalOnLine,
         });
       }
+    });
+
+    it('localizes no-response request errors', () => {
+      const error: any = new Error();
+      error.request = {};
+      const originalOnLine = navigator.onLine;
+
+      Object.defineProperty(navigator, 'onLine', {
+        writable: true,
+        value: true,
+      });
+
+      try {
+        errorHandler?.(error, {});
+
+        expect(message.error).toHaveBeenCalledWith('服务器无响应，请重试。');
+      } finally {
+        Object.defineProperty(navigator, 'onLine', {
+          writable: true,
+          value: originalOnLine,
+        });
+      }
+    });
+
+    it('localizes generic fallback request errors', () => {
+      const error: any = {};
+
+      errorHandler?.(error, {});
+
+      expect(message.error).toHaveBeenCalledWith('请求失败，请重试。');
     });
   });
 
