@@ -11,6 +11,7 @@ import {
   type ProColumns,
 } from '@ant-design/pro-components';
 import type { PermissionSummary } from '@opencore/sdk';
+import { useIntl } from '@umijs/max';
 import {
   Alert,
   Button,
@@ -61,25 +62,9 @@ const searchFields: CurrentPageSearchField<PermissionSummary>[] = [
   (record) => (record.dangerous ? 'dangerous' : 'normal'),
   (record) => (record.system ? 'system' : 'custom'),
 ];
-const exportColumns: CurrentPageExportColumn<PermissionSummary>[] = [
-  { title: 'Code', dataIndex: 'code' },
-  { title: 'Title', dataIndex: 'title' },
-  { title: 'Stage', dataIndex: 'stage' },
-  { title: 'Dangerous', dataIndex: 'dangerous' },
-  { title: 'System', dataIndex: 'system' },
-];
-
-function createDetailFields(record: PermissionSummary): DetailField[] {
-  return [
-    { label: 'Code', value: record.code },
-    { label: 'Title', value: record.title },
-    { label: 'Stage', value: record.stage },
-    { label: 'Risk', value: record.dangerous ? 'dangerous' : 'normal' },
-    { label: 'System', value: record.system ? 'system' : 'custom' },
-  ];
-}
 
 export default function PermissionsPage() {
+  const intl = useIntl();
   const [form] = Form.useForm<PermissionFormValues>();
   const [rows, setRows] = useState<readonly PermissionSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -89,40 +74,117 @@ export default function PermissionsPage() {
     useState<PermissionSummary>();
   const [formOpen, setFormOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const formatMessage = (
+    id: string,
+    defaultMessage: string,
+    values?: Record<string, number | string>,
+  ) =>
+    values
+      ? intl.formatMessage({ id, defaultMessage }, values)
+      : intl.formatMessage({ id, defaultMessage });
+  const riskLabels = {
+    dangerous: formatMessage(
+      'pages.system.permissions.risk.dangerous',
+      'Dangerous',
+    ),
+    normal: formatMessage('pages.system.permissions.risk.normal', 'Normal'),
+  };
+  const systemLabels = {
+    custom: formatMessage('pages.system.permissions.system.custom', 'Custom'),
+    system: formatMessage('pages.system.permissions.system.system', 'System'),
+  };
+  const exportColumns: CurrentPageExportColumn<PermissionSummary>[] = [
+    {
+      title: formatMessage('pages.system.permissions.fields.code', 'Code'),
+      dataIndex: 'code',
+    },
+    {
+      title: formatMessage('pages.system.permissions.fields.title', 'Title'),
+      dataIndex: 'title',
+    },
+    {
+      title: formatMessage('pages.system.permissions.fields.stage', 'Stage'),
+      dataIndex: 'stage',
+    },
+    {
+      title: formatMessage('pages.system.permissions.fields.risk', 'Risk'),
+      renderText: (record) =>
+        record.dangerous ? riskLabels.dangerous : riskLabels.normal,
+    },
+    {
+      title: formatMessage('pages.system.permissions.fields.system', 'System'),
+      renderText: (record) =>
+        record.system ? systemLabels.system : systemLabels.custom,
+    },
+  ];
+  const createDetailFields = (record: PermissionSummary): DetailField[] => [
+    {
+      label: formatMessage('pages.system.permissions.fields.code', 'Code'),
+      value: record.code,
+    },
+    {
+      label: formatMessage('pages.system.permissions.fields.title', 'Title'),
+      value: record.title,
+    },
+    {
+      label: formatMessage('pages.system.permissions.fields.stage', 'Stage'),
+      value: record.stage,
+    },
+    {
+      label: formatMessage('pages.system.permissions.fields.risk', 'Risk'),
+      value: record.dangerous ? riskLabels.dangerous : riskLabels.normal,
+    },
+    {
+      label: formatMessage('pages.system.permissions.fields.system', 'System'),
+      value: record.system ? systemLabels.system : systemLabels.custom,
+    },
+  ];
   const filterOptions = useMemo<CurrentPageFilterOption<PermissionSummary>[]>(
     () => [
       {
         key: 'stage',
         options: createCurrentPageFilterOptions(rows, 'stage'),
-        placeholder: 'Stage',
+        placeholder: formatMessage(
+          'pages.system.permissions.filters.stage',
+          'Stage',
+        ),
         predicate: (record, value) => record.stage === value,
       },
       {
         key: 'dangerous',
         options: [
-          { label: 'dangerous', value: 'true' },
-          { label: 'normal', value: 'false' },
+          { label: riskLabels.dangerous, value: 'true' },
+          { label: riskLabels.normal, value: 'false' },
         ],
-        placeholder: 'Risk',
+        placeholder: formatMessage(
+          'pages.system.permissions.filters.risk',
+          'Risk',
+        ),
         predicate: (record, value) => record.dangerous === (value === 'true'),
       },
       {
         key: 'system',
         options: [
-          { label: 'system', value: 'true' },
-          { label: 'custom', value: 'false' },
+          { label: systemLabels.system, value: 'true' },
+          { label: systemLabels.custom, value: 'false' },
         ],
-        placeholder: 'System',
+        placeholder: formatMessage(
+          'pages.system.permissions.filters.system',
+          'System',
+        ),
         predicate: (record, value) => record.system === (value === 'true'),
       },
     ],
-    [rows],
+    [rows, riskLabels.dangerous, riskLabels.normal, systemLabels.custom, systemLabels.system],
   );
   const { filteredRows, toolbar: filterToolbar } =
     useCurrentPageFilters<PermissionSummary>({
       rows,
       searchFields,
-      searchPlaceholder: 'Search permissions',
+      searchPlaceholder: formatMessage(
+        'pages.system.permissions.search.placeholder',
+        'Search permissions',
+      ),
       selectFilters: filterOptions,
     });
 
@@ -139,7 +201,10 @@ export default function PermissionsPage() {
       setLoadError(
         error instanceof Error
           ? error.message
-          : 'Unable to load live permissions.',
+          : formatMessage(
+              'pages.system.permissions.load.failure',
+              'Unable to load live permissions.',
+            ),
       );
     } finally {
       setLoading(false);
@@ -170,7 +235,12 @@ export default function PermissionsPage() {
       setFormOpen(true);
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'Unable to open permission.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.system.permissions.open.failure',
+              'Unable to open permission.',
+            ),
       );
     }
   };
@@ -183,7 +253,10 @@ export default function PermissionsPage() {
       message.error(
         error instanceof Error
           ? error.message
-          : 'Unable to load live permission detail.',
+          : formatMessage(
+              'pages.system.permissions.detail.loadFailure',
+              'Unable to load live permission detail.',
+            ),
       );
     }
   };
@@ -196,13 +269,23 @@ export default function PermissionsPage() {
         await updateOpenCorePermission(editingPermission.code, {
           title: values.title,
         });
-        message.success('Permission updated.');
+        message.success(
+          formatMessage(
+            'pages.system.permissions.messages.updated',
+            'Permission updated.',
+          ),
+        );
       } else {
         await createOpenCorePermission({
           code: values.code,
           title: values.title,
         });
-        message.success('Permission created.');
+        message.success(
+          formatMessage(
+            'pages.system.permissions.messages.created',
+            'Permission created.',
+          ),
+        );
       }
       setFormOpen(false);
       setEditingPermission(undefined);
@@ -214,13 +297,18 @@ export default function PermissionsPage() {
 
   const deletePermission = async (record: PermissionSummary) => {
     await deleteOpenCorePermission(record.code);
-    message.success('Permission deleted.');
+    message.success(
+      formatMessage(
+        'pages.system.permissions.messages.deleted',
+        'Permission deleted.',
+      ),
+    );
     await loadPermissions();
   };
 
   const columns: ProColumns<PermissionSummary>[] = [
     {
-      title: 'Title',
+      title: formatMessage('pages.system.permissions.fields.title', 'Title'),
       dataIndex: 'title',
       render: (_, record) => (
         <Typography.Link onClick={() => void openDetail(record)}>
@@ -228,42 +316,58 @@ export default function PermissionsPage() {
         </Typography.Link>
       ),
     },
-    { title: 'Code', dataIndex: 'code', ellipsis: true },
     {
-      title: 'Stage',
+      title: formatMessage('pages.system.permissions.fields.code', 'Code'),
+      dataIndex: 'code',
+      ellipsis: true,
+    },
+    {
+      title: formatMessage('pages.system.permissions.fields.stage', 'Stage'),
       dataIndex: 'stage',
       width: 88,
       render: (_, record) => <Tag>{record.stage}</Tag>,
     },
     {
-      title: 'Risk',
+      title: formatMessage('pages.system.permissions.fields.risk', 'Risk'),
       dataIndex: 'dangerous',
       width: 112,
       render: (_, record) => (
         <Tag color={record.dangerous ? 'red' : 'green'}>
-          {record.dangerous ? 'dangerous' : 'normal'}
+          {record.dangerous ? riskLabels.dangerous : riskLabels.normal}
         </Tag>
       ),
     },
     {
-      title: 'System',
+      title: formatMessage('pages.system.permissions.fields.system', 'System'),
       dataIndex: 'system',
       width: 96,
       render: (_, record) => (
         <Tag color={record.system ? 'blue' : 'default'}>
-          {record.system ? 'system' : 'custom'}
+          {record.system ? systemLabels.system : systemLabels.custom}
         </Tag>
       ),
     },
     {
-      title: 'Actions',
+      title: formatMessage(
+        'pages.system.permissions.actions.column',
+        'Actions',
+      ),
       valueType: 'option',
       width: 184,
       render: (_, record) => (
         <Space size="small">
-          <Tooltip title="Detail">
+          <Tooltip
+            title={formatMessage(
+              'pages.system.permissions.actions.detail',
+              'Detail',
+            )}
+          >
             <Button
-              aria-label={`View ${record.code}`}
+              aria-label={formatMessage(
+                'pages.system.permissions.actions.viewAria',
+                'View {code}',
+                { code: record.code },
+              )}
               icon={<EyeOutlined />}
               onClick={() => void openDetail(record)}
               size="small"
@@ -271,11 +375,23 @@ export default function PermissionsPage() {
           </Tooltip>
           <Tooltip
             title={
-              record.system ? 'System permissions cannot be edited' : 'Edit'
+              record.system
+                ? formatMessage(
+                    'pages.system.permissions.actions.systemEditLocked',
+                    'System permissions cannot be edited',
+                  )
+                : formatMessage(
+                    'pages.system.permissions.actions.edit',
+                    'Edit',
+                  )
             }
           >
             <Button
-              aria-label={`Edit ${record.code}`}
+              aria-label={formatMessage(
+                'pages.system.permissions.actions.editAria',
+                'Edit {code}',
+                { code: record.code },
+              )}
               disabled={record.system}
               icon={<EditOutlined />}
               onClick={() => void openEditForm(record)}
@@ -283,20 +399,36 @@ export default function PermissionsPage() {
             />
           </Tooltip>
           <Popconfirm
-            title="Delete this permission?"
-            okText="Delete"
+            title={formatMessage(
+              'pages.system.permissions.confirm.deleteOne',
+              'Delete this permission?',
+            )}
+            okText={formatMessage(
+              'pages.system.permissions.actions.delete',
+              'Delete',
+            )}
             okButtonProps={{ danger: true }}
             onConfirm={() => void deletePermission(record)}
           >
             <Tooltip
               title={
                 record.system
-                  ? 'System permissions cannot be deleted'
-                  : 'Delete'
+                  ? formatMessage(
+                      'pages.system.permissions.actions.systemDeleteLocked',
+                      'System permissions cannot be deleted',
+                    )
+                  : formatMessage(
+                      'pages.system.permissions.actions.delete',
+                      'Delete',
+                    )
               }
             >
               <Button
-                aria-label={`Delete ${record.code}`}
+                aria-label={formatMessage(
+                  'pages.system.permissions.actions.deleteAria',
+                  'Delete {code}',
+                  { code: record.code },
+                )}
                 danger
                 disabled={record.system}
                 icon={<DeleteOutlined />}
@@ -310,12 +442,18 @@ export default function PermissionsPage() {
   ];
 
   return (
-    <PageContainer title="Permissions" subTitle="S6 RBAC">
+    <PageContainer
+      title={formatMessage('menu.system.permissions', 'Permissions')}
+      subTitle={formatMessage('pages.system.rbac.section', 'S6 RBAC')}
+    >
       {loadError ? (
         <Alert
           showIcon
           type="error"
-          message="Unable to load live permissions"
+          message={formatMessage(
+            'pages.system.permissions.load.liveFailure',
+            'Unable to load live permissions',
+          )}
           description={loadError}
           style={{ marginBlockEnd: 16 }}
         />
@@ -333,14 +471,17 @@ export default function PermissionsPage() {
             icon={<PlusOutlined />}
             onClick={openCreateForm}
           >
-            New
+            {formatMessage('pages.system.permissions.actions.new', 'New')}
           </Button>,
           <Button
             key="refresh"
             icon={<ReloadOutlined />}
             onClick={() => void loadPermissions()}
           >
-            Refresh
+            {formatMessage(
+              'pages.system.permissions.actions.refresh',
+              'Refresh',
+            )}
           </Button>,
           <CurrentPageExportButton<PermissionSummary>
             key="export"
@@ -357,10 +498,26 @@ export default function PermissionsPage() {
         fields={selectedDetail ? createDetailFields(selectedDetail) : []}
         onClose={() => setSelectedDetail(undefined)}
         open={Boolean(selectedDetail)}
-        title={selectedDetail?.code ?? 'Permission Detail'}
+        title={
+          selectedDetail?.code ??
+          formatMessage(
+            'pages.system.permissions.detail.title',
+            'Permission Detail',
+          )
+        }
       />
       <Modal
-        title={editingPermission ? 'Edit Permission' : 'New Permission'}
+        title={
+          editingPermission
+            ? formatMessage(
+                'pages.system.permissions.form.editTitle',
+                'Edit Permission',
+              )
+            : formatMessage(
+                'pages.system.permissions.form.createTitle',
+                'New Permission',
+              )
+        }
         open={formOpen}
         onCancel={() => {
           setFormOpen(false);
@@ -368,27 +525,50 @@ export default function PermissionsPage() {
         }}
         onOk={() => void submitForm()}
         confirmLoading={submitting}
-        okText={editingPermission ? 'Save' : 'Create'}
+        okText={
+          editingPermission
+            ? formatMessage('pages.system.permissions.actions.save', 'Save')
+            : formatMessage('pages.system.permissions.actions.create', 'Create')
+        }
       >
         <Form<PermissionFormValues> form={form} layout="vertical">
           <Form.Item
-            label="Code"
+            label={formatMessage('pages.system.permissions.fields.code', 'Code')}
             name="code"
             rules={[
-              { required: true, message: 'Code is required.' },
+              {
+                required: true,
+                message: formatMessage(
+                  'pages.system.permissions.validation.codeRequired',
+                  'Code is required.',
+                ),
+              },
               {
                 pattern: permissionCodePattern,
-                message:
+                message: formatMessage(
+                  'pages.system.permissions.validation.codePattern',
                   'Use <layer>:<resource>:<action> with a supported action.',
+                ),
               },
             ]}
           >
             <Input disabled={Boolean(editingPermission)} maxLength={120} />
           </Form.Item>
           <Form.Item
-            label="Title"
+            label={formatMessage(
+              'pages.system.permissions.fields.title',
+              'Title',
+            )}
             name="title"
-            rules={[{ required: true, message: 'Title is required.' }]}
+            rules={[
+              {
+                required: true,
+                message: formatMessage(
+                  'pages.system.permissions.validation.titleRequired',
+                  'Title is required.',
+                ),
+              },
+            ]}
           >
             <Input maxLength={160} />
           </Form.Item>
