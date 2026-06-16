@@ -12,6 +12,7 @@ import {
   type ProColumns,
 } from '@ant-design/pro-components';
 import type { FileAssetSummary } from '@opencore/sdk';
+import { useIntl } from '@umijs/max';
 import {
   Alert,
   Button,
@@ -66,48 +67,6 @@ const searchFields: CurrentPageSearchField<FileAssetSummary>[] = [
   'uploadedBy',
   'checksum',
 ];
-const exportColumns: CurrentPageExportColumn<FileAssetSummary>[] = [
-  { title: 'ID', dataIndex: 'id' },
-  { title: 'Name', dataIndex: 'originalName' },
-  { title: 'MIME', dataIndex: 'mimeType' },
-  { title: 'Size Bytes', dataIndex: 'sizeBytes' },
-  { title: 'Storage Key', dataIndex: 'storageKey' },
-  { title: 'Checksum', dataIndex: 'checksum' },
-  { title: 'Uploaded By', dataIndex: 'uploadedBy' },
-  { title: 'Created At', dataIndex: 'createdAt' },
-];
-
-function createFilterOptions(
-  rows: readonly FileAssetSummary[],
-): CurrentPageFilterOption<FileAssetSummary>[] {
-  return [
-    {
-      key: 'mimeType',
-      options: createCurrentPageFilterOptions(rows, 'mimeType'),
-      placeholder: 'MIME',
-      predicate: (record, value) => record.mimeType === value,
-    },
-    {
-      key: 'uploadedBy',
-      options: createCurrentPageFilterOptions(rows, 'uploadedBy'),
-      placeholder: 'Uploaded by',
-      predicate: (record, value) => record.uploadedBy === value,
-    },
-  ];
-}
-
-function createDetailFields(record: FileAssetSummary): DetailField[] {
-  return [
-    { label: 'ID', value: record.id },
-    { label: 'Name', value: record.originalName },
-    { label: 'MIME', value: record.mimeType },
-    { label: 'Size Bytes', value: record.sizeBytes },
-    { label: 'Storage Key', value: record.storageKey },
-    { label: 'Checksum', value: record.checksum },
-    { label: 'Uploaded By', value: record.uploadedBy },
-    { label: 'Created At', value: record.createdAt },
-  ];
-}
 
 function formatBytes(sizeBytes: number): string {
   if (sizeBytes < 1024) {
@@ -122,15 +81,19 @@ function formatBytes(sizeBytes: number): string {
   return `${(kib / 1024).toFixed(1)} MiB`;
 }
 
-function readFileContentBase64(file: File): Promise<string> {
+function readFileContentBase64(
+  file: File,
+  failureMessage: string,
+  unexpectedResultMessage: string,
+): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onerror = () => reject(new Error('Unable to read file content.'));
+    reader.onerror = () => reject(new Error(failureMessage));
     reader.onload = () => {
       const result = reader.result;
 
       if (typeof result !== 'string') {
-        reject(new Error('Unexpected file reader result.'));
+        reject(new Error(unexpectedResultMessage));
         return;
       }
 
@@ -147,6 +110,7 @@ function getErrorMessage(error: unknown, fallback: string): string {
 }
 
 export default function FilesPage() {
+  const intl = useIntl();
   const [form] = Form.useForm<FileFormValues>();
   const [rows, setRows] = useState<readonly FileAssetSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -156,12 +120,119 @@ export default function FilesPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [selectedUploadFile, setSelectedUploadFile] = useState<File>();
-  const filterOptions = useMemo(() => createFilterOptions(rows), [rows]);
+  const formatMessage = (
+    id: string,
+    defaultMessage: string,
+    values?: Record<string, number | string>,
+  ) =>
+    values
+      ? intl.formatMessage({ id, defaultMessage }, values)
+      : intl.formatMessage({ id, defaultMessage });
+  const filterOptions = useMemo<CurrentPageFilterOption<FileAssetSummary>[]>(
+    () => [
+      {
+        key: 'mimeType',
+        options: createCurrentPageFilterOptions(rows, 'mimeType'),
+        placeholder: formatMessage('pages.system.files.fields.mime', 'MIME'),
+        predicate: (record, value) => record.mimeType === value,
+      },
+      {
+        key: 'uploadedBy',
+        options: createCurrentPageFilterOptions(rows, 'uploadedBy'),
+        placeholder: formatMessage(
+          'pages.system.files.fields.uploadedBy',
+          'Uploaded by',
+        ),
+        predicate: (record, value) => record.uploadedBy === value,
+      },
+    ],
+    [rows, intl],
+  );
+  const exportColumns: CurrentPageExportColumn<FileAssetSummary>[] = [
+    {
+      title: formatMessage('pages.system.files.fields.id', 'ID'),
+      dataIndex: 'id',
+    },
+    {
+      title: formatMessage('pages.system.files.fields.name', 'Name'),
+      dataIndex: 'originalName',
+    },
+    {
+      title: formatMessage('pages.system.files.fields.mime', 'MIME'),
+      dataIndex: 'mimeType',
+    },
+    {
+      title: formatMessage('pages.system.files.fields.sizeBytes', 'Size Bytes'),
+      dataIndex: 'sizeBytes',
+    },
+    {
+      title: formatMessage(
+        'pages.system.files.fields.storageKey',
+        'Storage Key',
+      ),
+      dataIndex: 'storageKey',
+    },
+    {
+      title: formatMessage('pages.system.files.fields.checksum', 'Checksum'),
+      dataIndex: 'checksum',
+    },
+    {
+      title: formatMessage(
+        'pages.system.files.fields.uploadedBy',
+        'Uploaded By',
+      ),
+      dataIndex: 'uploadedBy',
+    },
+    {
+      title: formatMessage('pages.system.files.fields.createdAt', 'Created At'),
+      dataIndex: 'createdAt',
+    },
+  ];
+  const createDetailFields = (record: FileAssetSummary): DetailField[] => [
+    { label: formatMessage('pages.system.files.fields.id', 'ID'), value: record.id },
+    {
+      label: formatMessage('pages.system.files.fields.name', 'Name'),
+      value: record.originalName,
+    },
+    {
+      label: formatMessage('pages.system.files.fields.mime', 'MIME'),
+      value: record.mimeType,
+    },
+    {
+      label: formatMessage('pages.system.files.fields.sizeBytes', 'Size Bytes'),
+      value: record.sizeBytes,
+    },
+    {
+      label: formatMessage(
+        'pages.system.files.fields.storageKey',
+        'Storage Key',
+      ),
+      value: record.storageKey,
+    },
+    {
+      label: formatMessage('pages.system.files.fields.checksum', 'Checksum'),
+      value: record.checksum,
+    },
+    {
+      label: formatMessage(
+        'pages.system.files.fields.uploadedBy',
+        'Uploaded By',
+      ),
+      value: record.uploadedBy,
+    },
+    {
+      label: formatMessage('pages.system.files.fields.createdAt', 'Created At'),
+      value: record.createdAt,
+    },
+  ];
   const { filteredRows, toolbar: filterToolbar } =
     useCurrentPageFilters<FileAssetSummary>({
       rows,
       searchFields,
-      searchPlaceholder: 'Search files',
+      searchPlaceholder: formatMessage(
+        'pages.system.files.search.placeholder',
+        'Search files',
+      ),
       selectFilters: filterOptions,
     });
 
@@ -176,7 +247,15 @@ export default function FilesPage() {
       setEditingFile(undefined);
       setSelectedUploadFile(undefined);
       setFormOpen(false);
-      setLoadError(getErrorMessage(error, 'Unable to load live files.'));
+      setLoadError(
+        getErrorMessage(
+          error,
+          formatMessage(
+            'pages.system.files.load.failure',
+            'Unable to load live files.',
+          ),
+        ),
+      );
     } finally {
       setLoading(false);
     }
@@ -212,7 +291,15 @@ export default function FilesPage() {
       });
       setFormOpen(true);
     } catch (error: unknown) {
-      message.error(getErrorMessage(error, 'Unable to load live file detail.'));
+      message.error(
+        getErrorMessage(
+          error,
+          formatMessage(
+            'pages.system.files.detail.loadFailure',
+            'Unable to load live file detail.',
+          ),
+        ),
+      );
     }
   };
 
@@ -221,7 +308,15 @@ export default function FilesPage() {
       setSelectedDetail(await getOpenCoreFile(record.id));
     } catch (error: unknown) {
       setSelectedDetail(undefined);
-      message.error(getErrorMessage(error, 'Unable to load live file detail.'));
+      message.error(
+        getErrorMessage(
+          error,
+          formatMessage(
+            'pages.system.files.detail.loadFailure',
+            'Unable to load live file detail.',
+          ),
+        ),
+      );
     }
   };
 
@@ -238,18 +333,43 @@ export default function FilesPage() {
     try {
       if (editingFile) {
         await updateOpenCoreFile(editingFile.id, body);
-        message.success('File asset updated.');
+        message.success(
+          formatMessage(
+            'pages.system.files.messages.updated',
+            'File asset updated.',
+          ),
+        );
       } else {
         if (!selectedUploadFile) {
-          message.error('Choose a file to upload.');
+          message.error(
+            formatMessage(
+              'pages.system.files.messages.chooseFile',
+              'Choose a file to upload.',
+            ),
+          );
           return;
         }
 
         await uploadOpenCoreFile({
           ...body,
-          contentBase64: await readFileContentBase64(selectedUploadFile),
+          contentBase64: await readFileContentBase64(
+            selectedUploadFile,
+            formatMessage(
+              'pages.system.files.messages.readFailure',
+              'Unable to read file content.',
+            ),
+            formatMessage(
+              'pages.system.files.messages.unexpectedReaderResult',
+              'Unexpected file reader result.',
+            ),
+          ),
         });
-        message.success('File uploaded.');
+        message.success(
+          formatMessage(
+            'pages.system.files.messages.uploaded',
+            'File uploaded.',
+          ),
+        );
       }
       setFormOpen(false);
       setEditingFile(undefined);
@@ -262,7 +382,12 @@ export default function FilesPage() {
 
   const deleteFile = async (record: FileAssetSummary) => {
     await deleteOpenCoreFile(record.id);
-    message.success('File asset deleted.');
+    message.success(
+      formatMessage(
+        'pages.system.files.messages.deleted',
+        'File asset deleted.',
+      ),
+    );
     await loadFiles();
   };
 
@@ -276,12 +401,17 @@ export default function FilesPage() {
     anchor.click();
     anchor.remove();
     URL.revokeObjectURL(objectUrl);
-    message.success('File downloaded.');
+    message.success(
+      formatMessage(
+        'pages.system.files.messages.downloaded',
+        'File downloaded.',
+      ),
+    );
   };
 
   const columns: ProColumns<FileAssetSummary>[] = [
     {
-      title: 'Name',
+      title: formatMessage('pages.system.files.fields.name', 'Name'),
       dataIndex: 'originalName',
       render: (_, record) => (
         <Typography.Link onClick={() => void openDetail(record)}>
@@ -290,61 +420,106 @@ export default function FilesPage() {
       ),
     },
     {
-      title: 'MIME',
+      title: formatMessage('pages.system.files.fields.mime', 'MIME'),
       dataIndex: 'mimeType',
       width: 184,
       render: (_, record) => <Tag>{record.mimeType}</Tag>,
     },
     {
-      title: 'Size',
+      title: formatMessage('pages.system.files.fields.size', 'Size'),
       dataIndex: 'sizeBytes',
       width: 112,
       render: (_, record) => (
         <Typography.Text>{formatBytes(record.sizeBytes)}</Typography.Text>
       ),
     },
-    { title: 'Storage key', dataIndex: 'storageKey', ellipsis: true },
-    { title: 'Uploaded by', dataIndex: 'uploadedBy', width: 128 },
-    { title: 'Created at', dataIndex: 'createdAt', width: 192 },
     {
-      title: 'Actions',
+      title: formatMessage('pages.system.files.fields.storageKey', 'Storage key'),
+      dataIndex: 'storageKey',
+      ellipsis: true,
+    },
+    {
+      title: formatMessage('pages.system.files.fields.uploadedBy', 'Uploaded by'),
+      dataIndex: 'uploadedBy',
+      width: 128,
+    },
+    {
+      title: formatMessage('pages.system.files.fields.createdAt', 'Created at'),
+      dataIndex: 'createdAt',
+      width: 192,
+    },
+    {
+      title: formatMessage('pages.system.files.actions.column', 'Actions'),
       valueType: 'option',
       width: 224,
       render: (_, record) => (
         <Space size="small">
-          <Tooltip title="Download">
+          <Tooltip
+            title={formatMessage(
+              'pages.system.files.actions.download',
+              'Download',
+            )}
+          >
             <Button
-              aria-label={`Download ${record.originalName}`}
+              aria-label={formatMessage(
+                'pages.system.files.actions.downloadAria',
+                'Download {name}',
+                { name: record.originalName },
+              )}
               icon={<DownloadOutlined />}
               onClick={() => void downloadFile(record)}
               size="small"
             />
           </Tooltip>
-          <Tooltip title="Detail">
+          <Tooltip
+            title={formatMessage('pages.system.files.actions.detail', 'Detail')}
+          >
             <Button
-              aria-label={`View ${record.originalName}`}
+              aria-label={formatMessage(
+                'pages.system.files.actions.viewAria',
+                'View {name}',
+                { name: record.originalName },
+              )}
               icon={<EyeOutlined />}
               onClick={() => void openDetail(record)}
               size="small"
             />
           </Tooltip>
-          <Tooltip title="Edit metadata">
+          <Tooltip
+            title={formatMessage(
+              'pages.system.files.actions.editMetadata',
+              'Edit metadata',
+            )}
+          >
             <Button
-              aria-label={`Edit ${record.originalName}`}
+              aria-label={formatMessage(
+                'pages.system.files.actions.editAria',
+                'Edit {name}',
+                { name: record.originalName },
+              )}
               icon={<EditOutlined />}
               onClick={() => void openEditForm(record)}
               size="small"
             />
           </Tooltip>
           <Popconfirm
-            title="Delete this file asset?"
-            okText="Delete"
+            title={formatMessage(
+              'pages.system.files.confirm.deleteOne',
+              'Delete this file asset?',
+            )}
+            okText={formatMessage('pages.system.files.actions.delete', 'Delete')}
             okButtonProps={{ danger: true }}
             onConfirm={() => void deleteFile(record)}
           >
-            <Tooltip title="Delete">
+            <Tooltip
+              title={formatMessage('pages.system.files.actions.delete', 'Delete')}
+            >
               <Button
-                aria-label={`Delete ${record.originalName}`}
+                aria-label={formatMessage(
+                  'pages.system.files.actions.deleteAria',
+                  'Delete {name}',
+                  { name: record.originalName },
+                )}
                 danger
                 icon={<DeleteOutlined />}
                 size="small"
@@ -357,10 +532,16 @@ export default function FilesPage() {
   ];
 
   return (
-    <PageContainer title="File Center" subTitle="S7 System">
+    <PageContainer
+      title={formatMessage('menu.system.files', 'File Center')}
+      subTitle={formatMessage('pages.system.section', 'S7 System')}
+    >
       {loadError ? (
         <Alert
-          message="Unable to load live files"
+          message={formatMessage(
+            'pages.system.files.load.liveFailure',
+            'Unable to load live files',
+          )}
           description={loadError}
           type="error"
           showIcon
@@ -384,9 +565,15 @@ export default function FilesPage() {
             resource="core-files"
             rows={filteredRows}
           />,
-          <Tooltip key="refresh" title="Reload">
+          <Tooltip
+            key="refresh"
+            title={formatMessage('pages.system.files.actions.reload', 'Reload')}
+          >
             <Button
-              aria-label="Reload files"
+              aria-label={formatMessage(
+                'pages.system.files.actions.reloadAria',
+                'Reload files',
+              )}
               icon={<ReloadOutlined />}
               onClick={() => void loadFiles()}
             />
@@ -397,7 +584,7 @@ export default function FilesPage() {
             onClick={openCreateForm}
             type="primary"
           >
-            Upload File
+            {formatMessage('pages.system.files.actions.upload', 'Upload File')}
           </Button>,
         ]}
       />
@@ -405,7 +592,10 @@ export default function FilesPage() {
         fields={selectedDetail ? createDetailFields(selectedDetail) : []}
         onClose={() => setSelectedDetail(undefined)}
         open={Boolean(selectedDetail)}
-        title={selectedDetail?.originalName ?? 'File Asset Detail'}
+        title={
+          selectedDetail?.originalName ??
+          formatMessage('pages.system.files.detail.title', 'File Asset Detail')
+        }
       />
       <Modal
         confirmLoading={submitting}
@@ -417,11 +607,26 @@ export default function FilesPage() {
         }}
         onOk={() => void submitForm()}
         open={formOpen}
-        title={editingFile ? 'Edit File Asset' : 'Upload File'}
+        okText={
+          editingFile
+            ? formatMessage('pages.system.files.actions.save', 'Save')
+            : formatMessage('pages.system.files.actions.upload', 'Upload')
+        }
+        title={
+          editingFile
+            ? formatMessage(
+                'pages.system.files.form.editTitle',
+                'Edit File Asset',
+              )
+            : formatMessage('pages.system.files.form.uploadTitle', 'Upload File')
+        }
       >
         <Form<FileFormValues> form={form} layout="vertical">
           {!editingFile ? (
-            <Form.Item label="File" required>
+            <Form.Item
+              label={formatMessage('pages.system.files.fields.file', 'File')}
+              required
+            >
               <Upload
                 beforeUpload={(file) => {
                   setSelectedUploadFile(file);
@@ -442,31 +647,73 @@ export default function FilesPage() {
                   });
                 }}
               >
-                <Button icon={<UploadOutlined />}>Choose file</Button>
+                <Button icon={<UploadOutlined />}>
+                  {formatMessage(
+                    'pages.system.files.actions.chooseFile',
+                    'Choose file',
+                  )}
+                </Button>
               </Upload>
             </Form.Item>
           ) : null}
           <Form.Item
-            label="Name"
+            label={formatMessage('pages.system.files.fields.name', 'Name')}
             name="originalName"
-            rules={[{ required: true, message: 'Enter a file name.' }]}
+            rules={[
+              {
+                required: true,
+                message: formatMessage(
+                  'pages.system.files.validation.nameRequired',
+                  'Enter a file name.',
+                ),
+              },
+            ]}
           >
-            <Input placeholder="handbook.pdf" />
+            <Input
+              placeholder={formatMessage(
+                'pages.system.files.placeholders.name',
+                'handbook.pdf',
+              )}
+            />
           </Form.Item>
           <Form.Item
-            label="MIME"
+            label={formatMessage('pages.system.files.fields.mime', 'MIME')}
             name="mimeType"
-            rules={[{ required: true, message: 'Enter a MIME type.' }]}
+            rules={[
+              {
+                required: true,
+                message: formatMessage(
+                  'pages.system.files.validation.mimeRequired',
+                  'Enter a MIME type.',
+                ),
+              },
+            ]}
           >
-            <Input placeholder="application/pdf" />
+            <Input
+              placeholder={formatMessage(
+                'pages.system.files.placeholders.mime',
+                'application/pdf',
+              )}
+            />
           </Form.Item>
           <Form.Item
-            label="Size bytes"
+            label={formatMessage(
+              'pages.system.files.fields.sizeBytes',
+              'Size bytes',
+            )}
             name="sizeBytes"
             rules={
               editingFile
                 ? []
-                : [{ required: true, message: 'Enter a file size.' }]
+                : [
+                    {
+                      required: true,
+                      message: formatMessage(
+                        'pages.system.files.validation.sizeRequired',
+                        'Enter a file size.',
+                      ),
+                    },
+                  ]
             }
           >
             <InputNumber
@@ -476,15 +723,39 @@ export default function FilesPage() {
               style={{ width: '100%' }}
             />
           </Form.Item>
-          <Form.Item label="Checksum" name="checksum">
-            <Input placeholder="sha256:..." />
+          <Form.Item
+            label={formatMessage('pages.system.files.fields.checksum', 'Checksum')}
+            name="checksum"
+          >
+            <Input
+              placeholder={formatMessage(
+                'pages.system.files.placeholders.checksum',
+                'sha256:...',
+              )}
+            />
           </Form.Item>
           <Form.Item
-            label="Uploaded by"
+            label={formatMessage(
+              'pages.system.files.fields.uploadedBy',
+              'Uploaded by',
+            )}
             name="uploadedBy"
-            rules={[{ required: true, message: 'Enter an uploader.' }]}
+            rules={[
+              {
+                required: true,
+                message: formatMessage(
+                  'pages.system.files.validation.uploadedByRequired',
+                  'Enter an uploader.',
+                ),
+              },
+            ]}
           >
-            <Input placeholder="admin" />
+            <Input
+              placeholder={formatMessage(
+                'pages.system.files.placeholders.uploadedBy',
+                'admin',
+              )}
+            />
           </Form.Item>
         </Form>
       </Modal>

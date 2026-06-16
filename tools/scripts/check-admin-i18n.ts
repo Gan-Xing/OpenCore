@@ -44,6 +44,7 @@ const coreI18nScanPaths = [
   join(adminRoot, 'src', 'pages', 'shared', 'ReadOnlyDetailDrawer.tsx'),
   join(adminRoot, 'src', 'pages', 'System', 'Departments.tsx'),
   join(adminRoot, 'src', 'pages', 'System', 'Dicts.tsx'),
+  join(adminRoot, 'src', 'pages', 'System', 'Files.tsx'),
   join(adminRoot, 'src', 'pages', 'System', 'Permissions.tsx'),
   join(adminRoot, 'src', 'pages', 'System', 'Posts.tsx'),
   join(adminRoot, 'src', 'pages', 'user', 'login', 'index.tsx'),
@@ -52,6 +53,7 @@ const coreI18nScanPaths = [
 const localizedAdminPageScanPaths = [
   join(adminRoot, 'src', 'pages', 'System', 'Departments.tsx'),
   join(adminRoot, 'src', 'pages', 'System', 'Dicts.tsx'),
+  join(adminRoot, 'src', 'pages', 'System', 'Files.tsx'),
   join(adminRoot, 'src', 'pages', 'System', 'Permissions.tsx'),
   join(adminRoot, 'src', 'pages', 'System', 'Posts.tsx'),
 ];
