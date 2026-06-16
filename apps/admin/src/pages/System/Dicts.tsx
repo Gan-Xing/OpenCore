@@ -13,6 +13,7 @@ import {
   type ProColumns,
 } from '@ant-design/pro-components';
 import type { DictItemSummary, DictTypeSummary } from '@opencore/sdk';
+import { useIntl } from '@umijs/max';
 import {
   Alert,
   Button,
@@ -78,42 +79,6 @@ const searchFields: CurrentPageSearchField<DictTypeSummary>[] = [
   'description',
   (record) => record.items.map((item) => `${item.label} ${item.value}`),
 ];
-const filterOptions: CurrentPageFilterOption<DictTypeSummary>[] = [
-  {
-    key: 'enabled',
-    options: [
-      { label: 'enabled', value: 'true' },
-      { label: 'disabled', value: 'false' },
-    ],
-    placeholder: 'Status',
-    predicate: (record, value) => record.enabled === (value === 'true'),
-  },
-];
-const exportColumns: CurrentPageExportColumn<DictTypeSummary>[] = [
-  { title: 'ID', dataIndex: 'id' },
-  { title: 'Code', dataIndex: 'code' },
-  { title: 'Name', dataIndex: 'name' },
-  { title: 'Description', dataIndex: 'description' },
-  { title: 'Item Count', renderText: (record) => record.items.length },
-  { title: 'Enabled', dataIndex: 'enabled' },
-];
-
-function createDetailFields(record: DictTypeSummary): DetailField[] {
-  return [
-    { label: 'ID', value: record.id },
-    { label: 'Code', value: record.code },
-    { label: 'Name', value: record.name },
-    { label: 'Description', value: record.description },
-    { label: 'Status', value: record.enabled ? 'enabled' : 'disabled' },
-    { label: 'Item Count', value: record.items.length },
-  ];
-}
-
-function createDetailJsonSections(
-  record: DictTypeSummary,
-): DetailJsonSection[] {
-  return [{ title: 'Items', value: record.items }];
-}
 
 function normalizeDictItems(
   code: string,
@@ -156,15 +121,8 @@ function createIdPart(value: string): string {
     .slice(0, 48);
 }
 
-function renderStatus(enabled: boolean) {
-  return (
-    <Tag color={enabled ? 'green' : 'red'}>
-      {enabled ? 'enabled' : 'disabled'}
-    </Tag>
-  );
-}
-
 export default function DictsPage() {
+  const intl = useIntl();
   const [form] = Form.useForm<DictFormValues>();
   const [itemForm] = Form.useForm<DictItemFormValue>();
   const [rows, setRows] = useState<readonly DictTypeSummary[]>([]);
@@ -182,11 +140,106 @@ export default function DictsPage() {
   const [editingItem, setEditingItem] = useState<DictItemSummary>();
   const [itemFormOpen, setItemFormOpen] = useState(false);
   const [itemSubmitting, setItemSubmitting] = useState(false);
+  const formatMessage = (
+    id: string,
+    defaultMessage: string,
+    values?: Record<string, number | string>,
+  ) =>
+    values
+      ? intl.formatMessage({ id, defaultMessage }, values)
+      : intl.formatMessage({ id, defaultMessage });
+  const statusLabels = {
+    disabled: formatMessage('pages.system.dicts.status.disabled', 'Disabled'),
+    enabled: formatMessage('pages.system.dicts.status.enabled', 'Enabled'),
+  };
+  const filterOptions: CurrentPageFilterOption<DictTypeSummary>[] = [
+    {
+      key: 'enabled',
+      options: [
+        { label: statusLabels.enabled, value: 'true' },
+        { label: statusLabels.disabled, value: 'false' },
+      ],
+      placeholder: formatMessage('pages.system.dicts.filters.status', 'Status'),
+      predicate: (record, value) => record.enabled === (value === 'true'),
+    },
+  ];
+  const exportColumns: CurrentPageExportColumn<DictTypeSummary>[] = [
+    {
+      title: formatMessage('pages.system.dicts.fields.id', 'ID'),
+      dataIndex: 'id',
+    },
+    {
+      title: formatMessage('pages.system.dicts.fields.code', 'Code'),
+      dataIndex: 'code',
+    },
+    {
+      title: formatMessage('pages.system.dicts.fields.name', 'Name'),
+      dataIndex: 'name',
+    },
+    {
+      title: formatMessage(
+        'pages.system.dicts.fields.description',
+        'Description',
+      ),
+      dataIndex: 'description',
+    },
+    {
+      title: formatMessage('pages.system.dicts.fields.itemCount', 'Item Count'),
+      renderText: (record) => record.items.length,
+    },
+    {
+      title: formatMessage('pages.system.dicts.fields.enabled', 'Enabled'),
+      renderText: (record) =>
+        record.enabled ? statusLabels.enabled : statusLabels.disabled,
+    },
+  ];
+  const createDetailFields = (record: DictTypeSummary): DetailField[] => [
+    { label: formatMessage('pages.system.dicts.fields.id', 'ID'), value: record.id },
+    {
+      label: formatMessage('pages.system.dicts.fields.code', 'Code'),
+      value: record.code,
+    },
+    {
+      label: formatMessage('pages.system.dicts.fields.name', 'Name'),
+      value: record.name,
+    },
+    {
+      label: formatMessage(
+        'pages.system.dicts.fields.description',
+        'Description',
+      ),
+      value: record.description,
+    },
+    {
+      label: formatMessage('pages.system.dicts.fields.status', 'Status'),
+      value: record.enabled ? statusLabels.enabled : statusLabels.disabled,
+    },
+    {
+      label: formatMessage('pages.system.dicts.fields.itemCount', 'Item Count'),
+      value: record.items.length,
+    },
+  ];
+  const createDetailJsonSections = (
+    record: DictTypeSummary,
+  ): DetailJsonSection[] => [
+    {
+      title: formatMessage('pages.system.dicts.fields.items', 'Items'),
+      value: record.items,
+    },
+  ];
+  const renderStatus = (enabled: boolean) => (
+    <Tag color={enabled ? 'green' : 'red'}>
+      {enabled ? statusLabels.enabled : statusLabels.disabled}
+    </Tag>
+  );
   const { filteredRows, toolbar: filterToolbar } =
     useCurrentPageFilters<DictTypeSummary>({
       rows,
       searchFields,
-      searchPlaceholder: 'Search dictionaries',
+      searchPlaceholder: formatMessage(
+        'pages.system.dicts.search.placeholder',
+        'Search dictionaries',
+      ),
       selectFilters: filterOptions,
     });
 
@@ -203,7 +256,12 @@ export default function DictsPage() {
       setItemRows([]);
       setConsumerOptionCount(0);
       setLoadError(
-        error instanceof Error ? error.message : 'Unable to load dictionaries.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.system.dicts.load.failure',
+              'Unable to load dictionaries.',
+            ),
       );
     } finally {
       setLoading(false);
@@ -240,7 +298,12 @@ export default function DictsPage() {
       setFormOpen(true);
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'Unable to open dictionary.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.system.dicts.open.failure',
+              'Unable to open dictionary.',
+            ),
       );
     }
   };
@@ -253,7 +316,10 @@ export default function DictsPage() {
       message.error(
         error instanceof Error
           ? error.message
-          : 'Unable to load live dictionary detail.',
+          : formatMessage(
+              'pages.system.dicts.detail.loadFailure',
+              'Unable to load live dictionary detail.',
+            ),
       );
     }
   };
@@ -273,7 +339,10 @@ export default function DictsPage() {
       message.error(
         error instanceof Error
           ? error.message
-          : 'Unable to load dictionary items.',
+          : formatMessage(
+              'pages.system.dicts.items.loadFailure',
+              'Unable to load dictionary items.',
+            ),
       );
     } finally {
       setItemsLoading(false);
@@ -318,13 +387,23 @@ export default function DictsPage() {
     try {
       if (editingDict) {
         await updateOpenCoreDict(editingDict.code, body);
-        message.success('Dictionary updated.');
+        message.success(
+          formatMessage(
+            'pages.system.dicts.messages.updated',
+            'Dictionary updated.',
+          ),
+        );
       } else {
         await createOpenCoreDict({
           ...body,
           code,
         });
-        message.success('Dictionary created.');
+        message.success(
+          formatMessage(
+            'pages.system.dicts.messages.created',
+            'Dictionary created.',
+          ),
+        );
       }
       setFormOpen(false);
       setEditingDict(undefined);
@@ -336,7 +415,12 @@ export default function DictsPage() {
 
   const removeDict = async (record: DictTypeSummary) => {
     await deleteOpenCoreDict(record.code);
-    message.success('Dictionary deleted.');
+    message.success(
+      formatMessage(
+        'pages.system.dicts.messages.deleted',
+        'Dictionary deleted.',
+      ),
+    );
     await loadDicts();
   };
 
@@ -352,10 +436,20 @@ export default function DictsPage() {
     try {
       if (editingItem) {
         await updateOpenCoreDictItem(itemsDict.code, editingItem.id, body);
-        message.success('Dictionary item updated.');
+        message.success(
+          formatMessage(
+            'pages.system.dicts.items.messages.updated',
+            'Dictionary item updated.',
+          ),
+        );
       } else {
         await createOpenCoreDictItem(itemsDict.code, body);
-        message.success('Dictionary item created.');
+        message.success(
+          formatMessage(
+            'pages.system.dicts.items.messages.created',
+            'Dictionary item created.',
+          ),
+        );
       }
       setItemFormOpen(false);
       setEditingItem(undefined);
@@ -372,44 +466,80 @@ export default function DictsPage() {
     }
 
     await deleteOpenCoreDictItem(itemsDict.code, record.id);
-    message.success('Dictionary item deleted.');
+    message.success(
+      formatMessage(
+        'pages.system.dicts.items.messages.deleted',
+        'Dictionary item deleted.',
+      ),
+    );
     await loadDictItems(itemsDict);
     await loadDicts();
   };
 
   const itemColumns: ProColumns<DictItemSummary>[] = [
-    { title: 'Label', dataIndex: 'label' },
-    { title: 'Value', dataIndex: 'value' },
-    { title: 'Sort', dataIndex: 'sort', width: 88 },
     {
-      title: 'Status',
+      title: formatMessage('pages.system.dicts.items.fields.label', 'Label'),
+      dataIndex: 'label',
+    },
+    {
+      title: formatMessage('pages.system.dicts.items.fields.value', 'Value'),
+      dataIndex: 'value',
+    },
+    {
+      title: formatMessage('pages.system.dicts.items.fields.sort', 'Sort'),
+      dataIndex: 'sort',
+      width: 88,
+    },
+    {
+      title: formatMessage('pages.system.dicts.fields.status', 'Status'),
       dataIndex: 'enabled',
       width: 96,
       render: (_, record) => renderStatus(record.enabled),
     },
     {
-      title: 'Actions',
+      title: formatMessage('pages.system.dicts.actions.column', 'Actions'),
       valueType: 'option',
       width: 112,
       render: (_, record) => (
         <Space size="small">
-          <Tooltip title="Edit item">
+          <Tooltip
+            title={formatMessage(
+              'pages.system.dicts.items.actions.edit',
+              'Edit item',
+            )}
+          >
             <Button
-              aria-label={`Edit item ${record.value}`}
+              aria-label={formatMessage(
+                'pages.system.dicts.items.actions.editAria',
+                'Edit item {value}',
+                { value: record.value },
+              )}
               icon={<EditOutlined />}
               onClick={() => openEditItemForm(record)}
               size="small"
             />
           </Tooltip>
           <Popconfirm
-            title="Delete this dictionary item?"
-            okText="Delete"
+            title={formatMessage(
+              'pages.system.dicts.items.confirm.deleteOne',
+              'Delete this dictionary item?',
+            )}
+            okText={formatMessage('pages.system.dicts.actions.delete', 'Delete')}
             okButtonProps={{ danger: true }}
             onConfirm={() => void removeDictItem(record)}
           >
-            <Tooltip title="Delete item">
+            <Tooltip
+              title={formatMessage(
+                'pages.system.dicts.items.actions.delete',
+                'Delete item',
+              )}
+            >
               <Button
-                aria-label={`Delete item ${record.value}`}
+                aria-label={formatMessage(
+                  'pages.system.dicts.items.actions.deleteAria',
+                  'Delete item {value}',
+                  { value: record.value },
+                )}
                 danger
                 icon={<DeleteOutlined />}
                 size="small"
@@ -423,7 +553,7 @@ export default function DictsPage() {
 
   const columns: ProColumns<DictTypeSummary>[] = [
     {
-      title: 'Code',
+      title: formatMessage('pages.system.dicts.fields.code', 'Code'),
       dataIndex: 'code',
       render: (_, record) => (
         <Typography.Link onClick={() => void openDetail(record)}>
@@ -431,59 +561,95 @@ export default function DictsPage() {
         </Typography.Link>
       ),
     },
-    { title: 'Name', dataIndex: 'name' },
     {
-      title: 'Items',
+      title: formatMessage('pages.system.dicts.fields.name', 'Name'),
+      dataIndex: 'name',
+    },
+    {
+      title: formatMessage('pages.system.dicts.fields.items', 'Items'),
       dataIndex: 'items',
       render: (_, record) => (
-        <Typography.Text>{record.items.length} items</Typography.Text>
+        <Typography.Text>
+          {formatMessage(
+            'pages.system.dicts.items.count',
+            '{count} items',
+            { count: record.items.length },
+          )}
+        </Typography.Text>
       ),
     },
     {
-      title: 'Status',
+      title: formatMessage('pages.system.dicts.fields.status', 'Status'),
       dataIndex: 'enabled',
       width: 96,
       render: (_, record) => renderStatus(record.enabled),
     },
     {
-      title: 'Actions',
+      title: formatMessage('pages.system.dicts.actions.column', 'Actions'),
       valueType: 'option',
       width: 196,
       render: (_, record) => (
         <Space size="small">
-          <Tooltip title="Detail">
+          <Tooltip
+            title={formatMessage('pages.system.dicts.actions.detail', 'Detail')}
+          >
             <Button
-              aria-label={`View ${record.code}`}
+              aria-label={formatMessage(
+                'pages.system.dicts.actions.viewAria',
+                'View {code}',
+                { code: record.code },
+              )}
               icon={<EyeOutlined />}
               onClick={() => void openDetail(record)}
               size="small"
             />
           </Tooltip>
-          <Tooltip title="Items">
+          <Tooltip
+            title={formatMessage('pages.system.dicts.actions.items', 'Items')}
+          >
             <Button
-              aria-label={`Manage items for ${record.code}`}
+              aria-label={formatMessage(
+                'pages.system.dicts.actions.itemsAria',
+                'Manage items for {code}',
+                { code: record.code },
+              )}
               icon={<OrderedListOutlined />}
               onClick={() => void openItems(record)}
               size="small"
             />
           </Tooltip>
-          <Tooltip title="Edit">
+          <Tooltip
+            title={formatMessage('pages.system.dicts.actions.edit', 'Edit')}
+          >
             <Button
-              aria-label={`Edit ${record.code}`}
+              aria-label={formatMessage(
+                'pages.system.dicts.actions.editAria',
+                'Edit {code}',
+                { code: record.code },
+              )}
               icon={<EditOutlined />}
               onClick={() => void openEditForm(record)}
               size="small"
             />
           </Tooltip>
           <Popconfirm
-            title="Delete this dictionary?"
-            okText="Delete"
+            title={formatMessage(
+              'pages.system.dicts.confirm.deleteOne',
+              'Delete this dictionary?',
+            )}
+            okText={formatMessage('pages.system.dicts.actions.delete', 'Delete')}
             okButtonProps={{ danger: true }}
             onConfirm={() => void removeDict(record)}
           >
-            <Tooltip title="Delete">
+            <Tooltip
+              title={formatMessage('pages.system.dicts.actions.delete', 'Delete')}
+            >
               <Button
-                aria-label={`Delete ${record.code}`}
+                aria-label={formatMessage(
+                  'pages.system.dicts.actions.deleteAria',
+                  'Delete {code}',
+                  { code: record.code },
+                )}
                 danger
                 icon={<DeleteOutlined />}
                 size="small"
@@ -496,12 +662,18 @@ export default function DictsPage() {
   ];
 
   return (
-    <PageContainer title="Dictionaries" subTitle="S7 System">
+    <PageContainer
+      title={formatMessage('menu.system.dicts', 'Dictionaries')}
+      subTitle={formatMessage('pages.system.section', 'S7 System')}
+    >
       {loadError ? (
         <Alert
           showIcon
           type="error"
-          message="Unable to load live dictionaries"
+          message={formatMessage(
+            'pages.system.dicts.load.liveFailure',
+            'Unable to load live dictionaries',
+          )}
           description={loadError}
           style={{ marginBlockEnd: 16 }}
         />
@@ -519,14 +691,14 @@ export default function DictsPage() {
             icon={<PlusOutlined />}
             onClick={openCreateForm}
           >
-            New
+            {formatMessage('pages.system.dicts.actions.new', 'New')}
           </Button>,
           <Button
             key="refresh"
             icon={<ReloadOutlined />}
             onClick={() => void loadDicts()}
           >
-            Refresh
+            {formatMessage('pages.system.dicts.actions.refresh', 'Refresh')}
           </Button>,
           <CurrentPageExportButton<DictTypeSummary>
             key="export"
@@ -546,10 +718,24 @@ export default function DictsPage() {
         }
         onClose={() => setSelectedDetail(undefined)}
         open={Boolean(selectedDetail)}
-        title={selectedDetail?.name ?? 'Dictionary Detail'}
+        title={
+          selectedDetail?.name ??
+          formatMessage('pages.system.dicts.detail.title', 'Dictionary Detail')
+        }
       />
       <Modal
-        title={`Dictionary Items${itemsDict ? `: ${itemsDict.code}` : ''}`}
+        title={
+          itemsDict
+            ? formatMessage(
+                'pages.system.dicts.items.titleForCode',
+                'Dictionary Items: {code}',
+                { code: itemsDict.code },
+              )
+            : formatMessage(
+                'pages.system.dicts.items.title',
+                'Dictionary Items',
+              )
+        }
         open={itemsOpen}
         onCancel={() => {
           setItemsOpen(false);
@@ -563,7 +749,11 @@ export default function DictsPage() {
         <Alert
           showIcon
           type="info"
-          message={`${consumerOptionCount} enabled items are visible through the simple-list consumer endpoint.`}
+          message={formatMessage(
+            'pages.system.dicts.items.consumerVisible',
+            '{count} enabled items are visible through the simple-list consumer endpoint.',
+            { count: consumerOptionCount },
+          )}
           style={{ marginBlockEnd: 16 }}
         />
         <ProTable<DictItemSummary>
@@ -578,7 +768,10 @@ export default function DictsPage() {
               type="primary"
               onClick={openCreateItemForm}
             >
-              New Item
+              {formatMessage(
+                'pages.system.dicts.items.actions.new',
+                'New Item',
+              )}
             </Button>,
             <Button
               key="refresh-items"
@@ -589,7 +782,10 @@ export default function DictsPage() {
                 }
               }}
             >
-              Refresh Items
+              {formatMessage(
+                'pages.system.dicts.items.actions.refresh',
+                'Refresh Items',
+              )}
             </Button>,
           ]}
           pagination={false}
@@ -598,7 +794,17 @@ export default function DictsPage() {
         />
       </Modal>
       <Modal
-        title={editingItem ? 'Edit Dictionary Item' : 'New Dictionary Item'}
+        title={
+          editingItem
+            ? formatMessage(
+                'pages.system.dicts.items.form.editTitle',
+                'Edit Dictionary Item',
+              )
+            : formatMessage(
+                'pages.system.dicts.items.form.createTitle',
+                'New Dictionary Item',
+              )
+        }
         open={itemFormOpen}
         onCancel={() => {
           setItemFormOpen(false);
@@ -606,36 +812,85 @@ export default function DictsPage() {
         }}
         onOk={() => void submitItemForm()}
         confirmLoading={itemSubmitting}
-        okText={editingItem ? 'Save' : 'Create'}
+        okText={
+          editingItem
+            ? formatMessage('pages.system.dicts.actions.save', 'Save')
+            : formatMessage('pages.system.dicts.actions.create', 'Create')
+        }
       >
         <Form<DictItemFormValue> form={itemForm} layout="vertical">
           <Form.Item
-            label="Label"
+            label={formatMessage(
+              'pages.system.dicts.items.fields.label',
+              'Label',
+            )}
             name="label"
-            rules={[{ required: true, message: 'Label is required.' }]}
+            rules={[
+              {
+                required: true,
+                message: formatMessage(
+                  'pages.system.dicts.items.validation.labelRequired',
+                  'Label is required.',
+                ),
+              },
+            ]}
           >
             <Input maxLength={80} />
           </Form.Item>
           <Form.Item
-            label="Value"
+            label={formatMessage(
+              'pages.system.dicts.items.fields.value',
+              'Value',
+            )}
             name="value"
-            rules={[{ required: true, message: 'Value is required.' }]}
+            rules={[
+              {
+                required: true,
+                message: formatMessage(
+                  'pages.system.dicts.items.validation.valueRequired',
+                  'Value is required.',
+                ),
+              },
+            ]}
           >
             <Input maxLength={80} />
           </Form.Item>
-          <Form.Item label="ID" name="id">
+          <Form.Item
+            label={formatMessage('pages.system.dicts.fields.id', 'ID')}
+            name="id"
+          >
             <Input disabled={Boolean(editingItem)} maxLength={120} />
           </Form.Item>
-          <Form.Item label="Sort" name="sort">
+          <Form.Item
+            label={formatMessage('pages.system.dicts.items.fields.sort', 'Sort')}
+            name="sort"
+          >
             <InputNumber min={0} precision={0} />
           </Form.Item>
-          <Form.Item label="Enabled" name="enabled" valuePropName="checked">
-            <Switch checkedChildren="Enabled" unCheckedChildren="Disabled" />
+          <Form.Item
+            label={formatMessage('pages.system.dicts.fields.enabled', 'Enabled')}
+            name="enabled"
+            valuePropName="checked"
+          >
+            <Switch
+              checkedChildren={statusLabels.enabled}
+              unCheckedChildren={statusLabels.disabled}
+            />
           </Form.Item>
         </Form>
       </Modal>
       <Modal
-        title={editingDict ? 'Edit Dictionary' : 'New Dictionary'}
+        title={
+          editingDict
+            ? formatMessage(
+                'pages.system.dicts.form.editTitle',
+                'Edit Dictionary',
+              )
+            : formatMessage(
+                'pages.system.dicts.form.createTitle',
+                'New Dictionary',
+              )
+        }
         open={formOpen}
         onCancel={() => {
           setFormOpen(false);
@@ -643,35 +898,70 @@ export default function DictsPage() {
         }}
         onOk={() => void submitForm()}
         confirmLoading={submitting}
-        okText={editingDict ? 'Save' : 'Create'}
+        okText={
+          editingDict
+            ? formatMessage('pages.system.dicts.actions.save', 'Save')
+            : formatMessage('pages.system.dicts.actions.create', 'Create')
+        }
         width={920}
       >
         <Form<DictFormValues> form={form} layout="vertical">
           <Form.Item
-            label="Code"
+            label={formatMessage('pages.system.dicts.fields.code', 'Code')}
             name="code"
-            rules={[{ required: true, message: 'Code is required.' }]}
+            rules={[
+              {
+                required: true,
+                message: formatMessage(
+                  'pages.system.dicts.validation.codeRequired',
+                  'Code is required.',
+                ),
+              },
+            ]}
           >
             <Input disabled={Boolean(editingDict)} maxLength={96} />
           </Form.Item>
           <Form.Item
-            label="Name"
+            label={formatMessage('pages.system.dicts.fields.name', 'Name')}
             name="name"
-            rules={[{ required: true, message: 'Name is required.' }]}
+            rules={[
+              {
+                required: true,
+                message: formatMessage(
+                  'pages.system.dicts.validation.nameRequired',
+                  'Name is required.',
+                ),
+              },
+            ]}
           >
             <Input maxLength={120} />
           </Form.Item>
-          <Form.Item label="Description" name="description">
+          <Form.Item
+            label={formatMessage(
+              'pages.system.dicts.fields.description',
+              'Description',
+            )}
+            name="description"
+          >
             <Input.TextArea rows={2} maxLength={240} />
           </Form.Item>
-          <Form.Item label="Enabled" name="enabled" valuePropName="checked">
-            <Switch checkedChildren="Enabled" unCheckedChildren="Disabled" />
+          <Form.Item
+            label={formatMessage('pages.system.dicts.fields.enabled', 'Enabled')}
+            name="enabled"
+            valuePropName="checked"
+          >
+            <Switch
+              checkedChildren={statusLabels.enabled}
+              unCheckedChildren={statusLabels.disabled}
+            />
           </Form.Item>
           <Form.List name="items">
             {(fields, { add, remove }) => (
               <Space direction="vertical" style={{ width: '100%' }}>
                 <Space>
-                  <Typography.Text strong>Items</Typography.Text>
+                  <Typography.Text strong>
+                    {formatMessage('pages.system.dicts.fields.items', 'Items')}
+                  </Typography.Text>
                   <Button
                     icon={<PlusOutlined />}
                     onClick={() =>
@@ -682,52 +972,109 @@ export default function DictsPage() {
                     }
                     size="small"
                   >
-                    Add Item
+                    {formatMessage(
+                      'pages.system.dicts.items.actions.add',
+                      'Add Item',
+                    )}
                   </Button>
                 </Space>
                 {fields.map((field) => (
                   <Space key={field.key} align="baseline" wrap>
                     <Form.Item
                       {...field}
-                      label="Label"
+                      label={formatMessage(
+                        'pages.system.dicts.items.fields.label',
+                        'Label',
+                      )}
                       name={[field.name, 'label']}
                       rules={[
-                        { required: true, message: 'Label is required.' },
+                        {
+                          required: true,
+                          message: formatMessage(
+                            'pages.system.dicts.items.validation.labelRequired',
+                            'Label is required.',
+                          ),
+                        },
                       ]}
                     >
-                      <Input maxLength={80} placeholder="Enabled" />
+                      <Input
+                        maxLength={80}
+                        placeholder={formatMessage(
+                          'pages.system.dicts.items.placeholders.label',
+                          'Enabled',
+                        )}
+                      />
                     </Form.Item>
                     <Form.Item
                       {...field}
-                      label="Value"
+                      label={formatMessage(
+                        'pages.system.dicts.items.fields.value',
+                        'Value',
+                      )}
                       name={[field.name, 'value']}
                       rules={[
-                        { required: true, message: 'Value is required.' },
+                        {
+                          required: true,
+                          message: formatMessage(
+                            'pages.system.dicts.items.validation.valueRequired',
+                            'Value is required.',
+                          ),
+                        },
                       ]}
                     >
-                      <Input maxLength={80} placeholder="enabled" />
-                    </Form.Item>
-                    <Form.Item {...field} label="ID" name={[field.name, 'id']}>
-                      <Input maxLength={120} placeholder="auto" />
+                      <Input
+                        maxLength={80}
+                        placeholder={formatMessage(
+                          'pages.system.dicts.items.placeholders.value',
+                          'enabled',
+                        )}
+                      />
                     </Form.Item>
                     <Form.Item
                       {...field}
-                      label="Sort"
+                      label={formatMessage('pages.system.dicts.fields.id', 'ID')}
+                      name={[field.name, 'id']}
+                    >
+                      <Input
+                        maxLength={120}
+                        placeholder={formatMessage(
+                          'pages.system.dicts.items.placeholders.id',
+                          'auto',
+                        )}
+                      />
+                    </Form.Item>
+                    <Form.Item
+                      {...field}
+                      label={formatMessage(
+                        'pages.system.dicts.items.fields.sort',
+                        'Sort',
+                      )}
                       name={[field.name, 'sort']}
                     >
                       <InputNumber min={0} precision={0} />
                     </Form.Item>
                     <Form.Item
                       {...field}
-                      label="Enabled"
+                      label={formatMessage(
+                        'pages.system.dicts.fields.enabled',
+                        'Enabled',
+                      )}
                       name={[field.name, 'enabled']}
                       valuePropName="checked"
                     >
                       <Switch />
                     </Form.Item>
-                    <Tooltip title="Remove item">
+                    <Tooltip
+                      title={formatMessage(
+                        'pages.system.dicts.items.actions.remove',
+                        'Remove item',
+                      )}
+                    >
                       <Button
-                        aria-label="Remove dictionary item"
+                        aria-label={formatMessage(
+                          'pages.system.dicts.items.actions.removeAria',
+                          'Remove dictionary item',
+                        )}
                         icon={<MinusCircleOutlined />}
                         onClick={() => remove(field.name)}
                         size="small"
