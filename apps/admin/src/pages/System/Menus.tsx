@@ -10,6 +10,7 @@ import {
   ProTable,
   type ProColumns,
 } from '@ant-design/pro-components';
+import { useIntl } from '@umijs/max';
 import type {
   MenuStatus,
   MenuSummary,
@@ -92,30 +93,6 @@ const searchFields: CurrentPageSearchField<MenuSummary>[] = [
   'component',
   'icon',
 ];
-const menuTypeOptions = [
-  { label: 'directory', value: 'directory' },
-  { label: 'menu', value: 'menu' },
-];
-const menuStatusOptions = [
-  { label: 'enabled', value: 'enabled' },
-  { label: 'disabled', value: 'disabled' },
-];
-const exportColumns: CurrentPageExportColumn<MenuSummary>[] = [
-  { title: 'Key', dataIndex: 'key' },
-  { title: 'Parent', dataIndex: 'parentKey' },
-  { title: 'Title', dataIndex: 'title' },
-  { title: 'Type', dataIndex: 'type' },
-  { title: 'Path', dataIndex: 'path' },
-  { title: 'Icon', dataIndex: 'icon' },
-  { title: 'Component', dataIndex: 'component' },
-  { title: 'Permission', dataIndex: 'permissionCode' },
-  { title: 'Stage', dataIndex: 'stage' },
-  { title: 'Order', dataIndex: 'order' },
-  { title: 'Status', dataIndex: 'status' },
-  { title: 'Cache', dataIndex: 'cache' },
-  { title: 'Hidden', dataIndex: 'hidden' },
-];
-
 function flattenMenuTree(rows: readonly MenuTreeNode[]): MenuSummary[] {
   return rows.flatMap((row) => [
     withoutChildren(row),
@@ -153,32 +130,6 @@ function withoutChildren(row: MenuTreeNode): MenuSummary {
 
 function createParentTitleMap(rows: readonly MenuSummary[]) {
   return new Map(rows.map((row) => [row.key, row.title]));
-}
-
-function createDetailFields(
-  record: MenuSummary,
-  parentTitles: ReadonlyMap<string, string>,
-): DetailField[] {
-  return [
-    { label: 'Key', value: record.key },
-    {
-      label: 'Parent',
-      value: record.parentKey
-        ? (parentTitles.get(record.parentKey) ?? record.parentKey)
-        : 'Root',
-    },
-    { label: 'Title', value: record.title },
-    { label: 'Type', value: record.type },
-    { label: 'Path', value: record.path },
-    { label: 'Icon', value: record.icon },
-    { label: 'Component', value: record.component },
-    { label: 'Permission', value: record.permissionCode },
-    { label: 'Stage', value: record.stage },
-    { label: 'Order', value: record.order },
-    { label: 'Status', value: record.status },
-    { label: 'Cache', value: record.cache ? 'cache' : 'no cache' },
-    { label: 'Hidden', value: record.hidden ? 'hidden' : 'visible' },
-  ];
 }
 
 function findMenuNode(
@@ -232,6 +183,7 @@ function createChildPath(parent: MenuSummary): string {
 }
 
 export default function MenusPage() {
+  const intl = useIntl();
   const [form] = Form.useForm<MenuFormValues>();
   const [rows, setRows] = useState<readonly MenuSummary[]>([]);
   const [permissionRows, setPermissionRows] = useState<
@@ -265,34 +217,194 @@ export default function MenusPage() {
     () => createPermissionOptions(permissionRows, flatRows),
     [flatRows, permissionRows],
   );
+  const formatMessage = (
+    id: string,
+    defaultMessage: string,
+    values?: Record<string, number | string>,
+  ) =>
+    values
+      ? intl.formatMessage({ id, defaultMessage }, values)
+      : intl.formatMessage({ id, defaultMessage });
+  const menuTypeLabels: Record<MenuType, string> = {
+    directory: formatMessage(
+      'pages.system.menus.type.directory',
+      'directory',
+    ),
+    menu: formatMessage('pages.system.menus.type.menu', 'menu'),
+  };
+  const menuStatusLabels: Record<MenuStatus, string> = {
+    disabled: formatMessage('pages.system.menus.status.disabled', 'disabled'),
+    enabled: formatMessage('pages.system.menus.status.enabled', 'enabled'),
+  };
+  const menuTypeOptions = (
+    Object.entries(menuTypeLabels) as Array<[MenuType, string]>
+  ).map(([value, label]) => ({ label, value }));
+  const menuStatusOptions = (
+    Object.entries(menuStatusLabels) as Array<[MenuStatus, string]>
+  ).map(([value, label]) => ({ label, value }));
+  const rootLabel = formatMessage('pages.system.menus.parent.root', 'Root');
+  const unboundLabel = formatMessage(
+    'pages.system.menus.permission.unbound',
+    'Unbound',
+  );
+  const cacheLabels = {
+    cache: formatMessage('pages.system.menus.cache.cache', 'cache'),
+    none: formatMessage('pages.system.menus.cache.none', 'none'),
+    noCache: formatMessage('pages.system.menus.cache.noCache', 'no cache'),
+  };
+  const hiddenLabels = {
+    hidden: formatMessage('pages.system.menus.hidden.hidden', 'hidden'),
+    visible: formatMessage('pages.system.menus.hidden.visible', 'visible'),
+  };
+  const exportColumns: CurrentPageExportColumn<MenuSummary>[] = [
+    {
+      title: formatMessage('pages.system.menus.fields.key', 'Key'),
+      dataIndex: 'key',
+    },
+    {
+      title: formatMessage('pages.system.menus.fields.parent', 'Parent'),
+      renderText: (record) =>
+        record.parentKey
+          ? (parentTitles.get(record.parentKey) ?? record.parentKey)
+          : rootLabel,
+    },
+    {
+      title: formatMessage('pages.system.menus.fields.title', 'Title'),
+      dataIndex: 'title',
+    },
+    {
+      title: formatMessage('pages.system.menus.fields.type', 'Type'),
+      renderText: (record) => menuTypeLabels[record.type],
+    },
+    {
+      title: formatMessage('pages.system.menus.fields.path', 'Path'),
+      dataIndex: 'path',
+    },
+    {
+      title: formatMessage('pages.system.menus.fields.icon', 'Icon'),
+      dataIndex: 'icon',
+    },
+    {
+      title: formatMessage('pages.system.menus.fields.component', 'Component'),
+      dataIndex: 'component',
+    },
+    {
+      title: formatMessage('pages.system.menus.fields.permission', 'Permission'),
+      dataIndex: 'permissionCode',
+    },
+    {
+      title: formatMessage('pages.system.menus.fields.stage', 'Stage'),
+      dataIndex: 'stage',
+    },
+    {
+      title: formatMessage('pages.system.menus.fields.order', 'Order'),
+      dataIndex: 'order',
+    },
+    {
+      title: formatMessage('pages.system.menus.fields.status', 'Status'),
+      renderText: (record) => menuStatusLabels[record.status],
+    },
+    {
+      title: formatMessage('pages.system.menus.fields.cache', 'Cache'),
+      renderText: (record) =>
+        record.cache ? cacheLabels.cache : cacheLabels.none,
+    },
+    {
+      title: formatMessage('pages.system.menus.fields.hidden', 'Hidden'),
+      renderText: (record) =>
+        record.hidden ? hiddenLabels.hidden : hiddenLabels.visible,
+    },
+  ];
+  const createDetailFields = (record: MenuSummary): DetailField[] => [
+    {
+      label: formatMessage('pages.system.menus.fields.key', 'Key'),
+      value: record.key,
+    },
+    {
+      label: formatMessage('pages.system.menus.fields.parent', 'Parent'),
+      value: record.parentKey
+        ? (parentTitles.get(record.parentKey) ?? record.parentKey)
+        : rootLabel,
+    },
+    {
+      label: formatMessage('pages.system.menus.fields.title', 'Title'),
+      value: record.title,
+    },
+    {
+      label: formatMessage('pages.system.menus.fields.type', 'Type'),
+      value: menuTypeLabels[record.type],
+    },
+    {
+      label: formatMessage('pages.system.menus.fields.path', 'Path'),
+      value: record.path,
+    },
+    {
+      label: formatMessage('pages.system.menus.fields.icon', 'Icon'),
+      value: record.icon,
+    },
+    {
+      label: formatMessage('pages.system.menus.fields.component', 'Component'),
+      value: record.component,
+    },
+    {
+      label: formatMessage('pages.system.menus.fields.permission', 'Permission'),
+      value: record.permissionCode,
+    },
+    {
+      label: formatMessage('pages.system.menus.fields.stage', 'Stage'),
+      value: record.stage,
+    },
+    {
+      label: formatMessage('pages.system.menus.fields.order', 'Order'),
+      value: record.order,
+    },
+    {
+      label: formatMessage('pages.system.menus.fields.status', 'Status'),
+      value: menuStatusLabels[record.status],
+    },
+    {
+      label: formatMessage('pages.system.menus.fields.cache', 'Cache'),
+      value: record.cache ? cacheLabels.cache : cacheLabels.noCache,
+    },
+    {
+      label: formatMessage('pages.system.menus.fields.hidden', 'Hidden'),
+      value: record.hidden ? hiddenLabels.hidden : hiddenLabels.visible,
+    },
+  ];
   const filterOptions = useMemo<CurrentPageFilterOption<MenuSummary>[]>(
     () => [
       {
         key: 'type',
         options: menuTypeOptions,
-        placeholder: 'Type',
+        placeholder: formatMessage('pages.system.menus.filters.type', 'Type'),
         predicate: (record, value) => record.type === value,
       },
       {
         key: 'status',
         options: menuStatusOptions,
-        placeholder: 'Status',
+        placeholder: formatMessage(
+          'pages.system.menus.filters.status',
+          'Status',
+        ),
         predicate: (record, value) => record.status === value,
       },
       {
         key: 'stage',
         options: createCurrentPageFilterOptions(flatRows, 'stage'),
-        placeholder: 'Stage',
+        placeholder: formatMessage('pages.system.menus.filters.stage', 'Stage'),
         predicate: (record, value) => record.stage === value,
       },
     ],
-    [flatRows],
+    [flatRows, menuStatusOptions, menuTypeOptions],
   );
   const { filteredRows, toolbar: filterToolbar } =
     useCurrentPageFilters<MenuSummary>({
       rows: flatRows,
       searchFields,
-      searchPlaceholder: 'Search menus',
+      searchPlaceholder: formatMessage(
+        'pages.system.menus.search.placeholder',
+        'Search menus',
+      ),
       selectFilters: filterOptions,
     });
   const filteredTreeRows = useMemo(
@@ -317,7 +429,12 @@ export default function MenusPage() {
       setEditingMenu(undefined);
       setFormOpen(false);
       setLoadError(
-        error instanceof Error ? error.message : 'Unable to load live menus.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.system.menus.load.failure',
+              'Unable to load live menus.',
+            ),
       );
     } finally {
       setLoading(false);
@@ -368,7 +485,12 @@ export default function MenusPage() {
       setFormOpen(true);
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'Unable to open menu.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.system.menus.open.failure',
+              'Unable to open menu.',
+            ),
       );
     }
   };
@@ -381,7 +503,10 @@ export default function MenusPage() {
       message.error(
         error instanceof Error
           ? error.message
-          : 'Unable to load live menu detail.',
+          : formatMessage(
+              'pages.system.menus.detail.loadFailure',
+              'Unable to load live menu detail.',
+            ),
       );
     }
   };
@@ -404,7 +529,9 @@ export default function MenusPage() {
           title: values.title,
           type: values.type ?? 'menu',
         });
-        message.success('Menu updated.');
+        message.success(
+          formatMessage('pages.system.menus.messages.updated', 'Menu updated.'),
+        );
       } else {
         await createOpenCoreMenu({
           cache: Boolean(values.cache),
@@ -420,7 +547,9 @@ export default function MenusPage() {
           title: values.title,
           type: values.type ?? 'menu',
         });
-        message.success('Menu created.');
+        message.success(
+          formatMessage('pages.system.menus.messages.created', 'Menu created.'),
+        );
       }
       setFormOpen(false);
       setEditingMenu(undefined);
@@ -432,13 +561,15 @@ export default function MenusPage() {
 
   const deleteMenu = async (record: MenuSummary) => {
     await deleteOpenCoreMenu(record.key);
-    message.success('Menu deleted.');
+    message.success(
+      formatMessage('pages.system.menus.messages.deleted', 'Menu deleted.'),
+    );
     await loadMenus();
   };
 
   const columns: ProColumns<MenuSummary>[] = [
     {
-      title: 'Title',
+      title: formatMessage('pages.system.menus.fields.title', 'Title'),
       dataIndex: 'title',
       render: (_, record) => (
         <Space size={8}>
@@ -449,107 +580,159 @@ export default function MenusPage() {
         </Space>
       ),
     },
-    { title: 'Key', dataIndex: 'key', ellipsis: true },
     {
-      title: 'Type',
+      title: formatMessage('pages.system.menus.fields.key', 'Key'),
+      dataIndex: 'key',
+      ellipsis: true,
+    },
+    {
+      title: formatMessage('pages.system.menus.fields.type', 'Type'),
       dataIndex: 'type',
       width: 104,
       render: (_, record) => (
         <Tag color={record.type === 'directory' ? 'purple' : 'blue'}>
-          {record.type}
+          {menuTypeLabels[record.type]}
         </Tag>
       ),
     },
     {
-      title: 'Parent',
+      title: formatMessage('pages.system.menus.fields.parent', 'Parent'),
       dataIndex: 'parentKey',
       ellipsis: true,
       render: (_, record) =>
         record.parentKey ? (
           (parentTitles.get(record.parentKey) ?? record.parentKey)
         ) : (
-          <Tag>root</Tag>
+          <Tag>{rootLabel}</Tag>
         ),
     },
-    { title: 'Path', dataIndex: 'path', ellipsis: true },
-    { title: 'Component', dataIndex: 'component', ellipsis: true },
     {
-      title: 'Permission',
+      title: formatMessage('pages.system.menus.fields.path', 'Path'),
+      dataIndex: 'path',
+      ellipsis: true,
+    },
+    {
+      title: formatMessage('pages.system.menus.fields.component', 'Component'),
+      dataIndex: 'component',
+      ellipsis: true,
+    },
+    {
+      title: formatMessage('pages.system.menus.fields.permission', 'Permission'),
       dataIndex: 'permissionCode',
       ellipsis: true,
       render: (_, record) =>
         record.permissionCode ? (
           <Tag color="blue">{record.permissionCode}</Tag>
         ) : (
-          <Tag>unbound</Tag>
+          <Tag>{unboundLabel}</Tag>
         ),
     },
     {
-      title: 'Status',
+      title: formatMessage('pages.system.menus.fields.status', 'Status'),
       dataIndex: 'status',
       width: 104,
       render: (_, record) => (
         <Tag color={record.status === 'enabled' ? 'green' : 'default'}>
-          {record.status}
+          {menuStatusLabels[record.status]}
         </Tag>
       ),
     },
     {
-      title: 'Cache',
+      title: formatMessage('pages.system.menus.fields.cache', 'Cache'),
       dataIndex: 'cache',
       width: 88,
-      render: (_, record) => <Tag>{record.cache ? 'cache' : 'none'}</Tag>,
+      render: (_, record) => (
+        <Tag>{record.cache ? cacheLabels.cache : cacheLabels.none}</Tag>
+      ),
     },
     {
-      title: 'Hidden',
+      title: formatMessage('pages.system.menus.fields.hidden', 'Hidden'),
       dataIndex: 'hidden',
       width: 88,
-      render: (_, record) => <Tag>{record.hidden ? 'hidden' : 'visible'}</Tag>,
+      render: (_, record) => (
+        <Tag>{record.hidden ? hiddenLabels.hidden : hiddenLabels.visible}</Tag>
+      ),
     },
     {
-      title: 'Order',
+      title: formatMessage('pages.system.menus.fields.order', 'Order'),
       dataIndex: 'order',
       width: 88,
     },
     {
-      title: 'Actions',
+      title: formatMessage('pages.system.menus.actions.column', 'Actions'),
       valueType: 'option',
       width: 232,
       render: (_, record) => (
         <Space size="small">
-          <Tooltip title="Detail">
+          <Tooltip
+            title={formatMessage(
+              'pages.system.menus.actions.detail',
+              'Detail',
+            )}
+          >
             <Button
-              aria-label={`View ${record.title}`}
+              aria-label={formatMessage(
+                'pages.system.menus.actions.viewAria',
+                'View {title}',
+                { title: record.title },
+              )}
               icon={<EyeOutlined />}
               onClick={() => void openDetail(record)}
               size="small"
             />
           </Tooltip>
-          <Tooltip title="Add child">
+          <Tooltip
+            title={formatMessage(
+              'pages.system.menus.actions.addChild',
+              'Add child',
+            )}
+          >
             <Button
-              aria-label={`Add child menu under ${record.title}`}
+              aria-label={formatMessage(
+                'pages.system.menus.actions.addChildAria',
+                'Add child menu under {title}',
+                { title: record.title },
+              )}
               icon={<PlusOutlined />}
               onClick={() => openCreateForm(record)}
               size="small"
             />
           </Tooltip>
-          <Tooltip title="Edit">
+          <Tooltip
+            title={formatMessage('pages.system.menus.actions.edit', 'Edit')}
+          >
             <Button
-              aria-label={`Edit ${record.title}`}
+              aria-label={formatMessage(
+                'pages.system.menus.actions.editAria',
+                'Edit {title}',
+                { title: record.title },
+              )}
               icon={<EditOutlined />}
               onClick={() => void openEditForm(record)}
               size="small"
             />
           </Tooltip>
           <Popconfirm
-            title="Delete this menu?"
-            okText="Delete"
+            title={formatMessage(
+              'pages.system.menus.confirm.deleteOne',
+              'Delete this menu?',
+            )}
+            okText={formatMessage('pages.system.menus.actions.delete', 'Delete')}
             okButtonProps={{ danger: true }}
             onConfirm={() => void deleteMenu(record)}
           >
-            <Tooltip title="Delete">
+            <Tooltip
+              title={formatMessage(
+                'pages.system.menus.actions.delete',
+                'Delete',
+              )}
+            >
               <Button
-                aria-label={`Delete ${record.title}`}
+                aria-label={formatMessage(
+                  'pages.system.menus.actions.deleteAria',
+                  'Delete {title}',
+                  { title: record.title },
+                )}
                 danger
                 icon={<DeleteOutlined />}
                 size="small"
@@ -562,12 +745,18 @@ export default function MenusPage() {
   ];
 
   return (
-    <PageContainer title="Menus" subTitle="S6 RBAC">
+    <PageContainer
+      title={formatMessage('pages.system.menus.title', 'Menus')}
+      subTitle={formatMessage('pages.system.rbac.section', 'S6 RBAC')}
+    >
       {loadError ? (
         <Alert
           showIcon
           type="error"
-          message="Unable to load live menus"
+          message={formatMessage(
+            'pages.system.menus.load.liveFailure',
+            'Unable to load live menus',
+          )}
           description={loadError}
           style={{ marginBlockEnd: 16 }}
         />
@@ -585,14 +774,14 @@ export default function MenusPage() {
             icon={<PlusOutlined />}
             onClick={() => openCreateForm()}
           >
-            New
+            {formatMessage('pages.system.menus.actions.new', 'New')}
           </Button>,
           <Button
             key="refresh"
             icon={<ReloadOutlined />}
             onClick={() => void loadMenus()}
           >
-            Refresh
+            {formatMessage('pages.system.menus.actions.refresh', 'Refresh')}
           </Button>,
           <CurrentPageExportButton<MenuSummary>
             key="export"
@@ -606,15 +795,21 @@ export default function MenusPage() {
         columns={columns}
       />
       <ReadOnlyDetailDrawer
-        fields={
-          selectedDetail ? createDetailFields(selectedDetail, parentTitles) : []
-        }
+        fields={selectedDetail ? createDetailFields(selectedDetail) : []}
         onClose={() => setSelectedDetail(undefined)}
         open={Boolean(selectedDetail)}
-        title={selectedDetail?.title ?? 'Menu Detail'}
+        title={
+          selectedDetail?.title ??
+          formatMessage('pages.system.menus.detail.title', 'Menu Detail')
+        }
       />
       <Modal
-        title={editingMenu ? 'Edit Menu' : 'New Menu'}
+        title={formatMessage(
+          editingMenu
+            ? 'pages.system.menus.form.editTitle'
+            : 'pages.system.menus.form.createTitle',
+          editingMenu ? 'Edit Menu' : 'New Menu',
+        )}
         open={formOpen}
         onCancel={() => {
           setFormOpen(false);
@@ -622,88 +817,159 @@ export default function MenusPage() {
         }}
         onOk={() => void submitForm()}
         confirmLoading={submitting}
-        okText={editingMenu ? 'Save' : 'Create'}
+        okText={
+          editingMenu
+            ? formatMessage('pages.system.menus.actions.save', 'Save')
+            : formatMessage('pages.system.menus.actions.create', 'Create')
+        }
       >
         <Form<MenuFormValues> form={form} layout="vertical">
           <Form.Item
-            label="Key"
+            label={formatMessage('pages.system.menus.fields.key', 'Key')}
             name="key"
-            rules={[{ required: true, message: 'Key is required.' }]}
+            rules={[
+              {
+                required: true,
+                message: formatMessage(
+                  'pages.system.menus.validation.keyRequired',
+                  'Key is required.',
+                ),
+              },
+            ]}
           >
             <Input disabled={Boolean(editingMenu)} maxLength={96} />
           </Form.Item>
-          <Form.Item label="Parent" name="parentKey">
+          <Form.Item
+            label={formatMessage('pages.system.menus.fields.parent', 'Parent')}
+            name="parentKey"
+          >
             <TreeSelect
               allowClear
               showSearch
               treeDefaultExpandAll
               treeData={parentTreeData}
-              placeholder="Root"
+              placeholder={rootLabel}
             />
           </Form.Item>
           <Space align="start" size="middle" wrap>
             <Form.Item
-              label="Type"
+              label={formatMessage('pages.system.menus.fields.type', 'Type')}
               name="type"
-              rules={[{ required: true, message: 'Type is required.' }]}
+              rules={[
+                {
+                  required: true,
+                  message: formatMessage(
+                    'pages.system.menus.validation.typeRequired',
+                    'Type is required.',
+                  ),
+                },
+              ]}
             >
               <Select options={menuTypeOptions} style={{ minWidth: 160 }} />
             </Form.Item>
             <Form.Item
-              label="Status"
+              label={formatMessage('pages.system.menus.fields.status', 'Status')}
               name="status"
-              rules={[{ required: true, message: 'Status is required.' }]}
+              rules={[
+                {
+                  required: true,
+                  message: formatMessage(
+                    'pages.system.menus.validation.statusRequired',
+                    'Status is required.',
+                  ),
+                },
+              ]}
             >
               <Select options={menuStatusOptions} style={{ minWidth: 160 }} />
             </Form.Item>
             <Form.Item
-              label="Order"
+              label={formatMessage('pages.system.menus.fields.order', 'Order')}
               name="order"
-              rules={[{ required: true, message: 'Order is required.' }]}
+              rules={[
+                {
+                  required: true,
+                  message: formatMessage(
+                    'pages.system.menus.validation.orderRequired',
+                    'Order is required.',
+                  ),
+                },
+              ]}
             >
               <InputNumber min={0} precision={0} />
             </Form.Item>
           </Space>
           <Form.Item
-            label="Title"
+            label={formatMessage('pages.system.menus.fields.title', 'Title')}
             name="title"
-            rules={[{ required: true, message: 'Title is required.' }]}
+            rules={[
+              {
+                required: true,
+                message: formatMessage(
+                  'pages.system.menus.validation.titleRequired',
+                  'Title is required.',
+                ),
+              },
+            ]}
           >
             <Input maxLength={120} />
           </Form.Item>
           <Form.Item
-            label="Path"
+            label={formatMessage('pages.system.menus.fields.path', 'Path')}
             name="path"
             rules={[
-              { required: true, message: 'Path is required.' },
+              {
+                required: true,
+                message: formatMessage(
+                  'pages.system.menus.validation.pathRequired',
+                  'Path is required.',
+                ),
+              },
               {
                 pattern: /^\//,
-                message: 'Path must start with "/".',
+                message: formatMessage(
+                  'pages.system.menus.validation.pathPattern',
+                  'Path must start with "/".',
+                ),
               },
             ]}
           >
             <Input maxLength={160} />
           </Form.Item>
           <Space align="start" size="middle" wrap>
-            <Form.Item label="Icon" name="icon">
+            <Form.Item
+              label={formatMessage('pages.system.menus.fields.icon', 'Icon')}
+              name="icon"
+            >
               <Input maxLength={80} style={{ width: 180 }} />
             </Form.Item>
-            <Form.Item label="Component" name="component">
+            <Form.Item
+              label={formatMessage(
+                'pages.system.menus.fields.component',
+                'Component',
+              )}
+              name="component"
+            >
               <Input maxLength={160} style={{ width: 240 }} />
             </Form.Item>
           </Space>
-          <Form.Item label="Permission" name="permissionCode">
+          <Form.Item
+            label={formatMessage(
+              'pages.system.menus.fields.permission',
+              'Permission',
+            )}
+            name="permissionCode"
+          >
             <Select
               allowClear
               showSearch
               optionFilterProp="label"
               options={permissionOptions}
-              placeholder="Unbound"
+              placeholder={unboundLabel}
             />
           </Form.Item>
           <Space align="center" size="large" wrap>
             <Form.Item
-              label="Cache"
+              label={formatMessage('pages.system.menus.fields.cache', 'Cache')}
               name="cache"
               valuePropName="checked"
               style={{ marginBottom: 0 }}
@@ -711,7 +977,7 @@ export default function MenusPage() {
               <Switch />
             </Form.Item>
             <Form.Item
-              label="Hidden"
+              label={formatMessage('pages.system.menus.fields.hidden', 'Hidden')}
               name="hidden"
               valuePropName="checked"
               style={{ marginBottom: 0 }}
