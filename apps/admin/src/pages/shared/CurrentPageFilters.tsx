@@ -1,4 +1,5 @@
 import { ClearOutlined } from '@ant-design/icons';
+import { useIntl } from '@umijs/max';
 import { Button, Input, Select, Space, Typography } from 'antd';
 import type { ReactNode } from 'react';
 import { useMemo, useState } from 'react';
@@ -172,11 +173,18 @@ export function filterCurrentPageRows<T extends object>({
 export function useCurrentPageFilters<T extends object>({
   rows,
   searchFields,
-  searchPlaceholder = 'Search current page',
+  searchPlaceholder,
   selectFilters = [],
 }: UseCurrentPageFiltersOptions<T>): UseCurrentPageFiltersResult<T> {
+  const intl = useIntl();
   const [searchText, setSearchText] = useState('');
   const [filterValues, setFilterValues] = useState<CurrentPageFilterState>({});
+  const resolvedSearchPlaceholder =
+    searchPlaceholder ??
+    intl.formatMessage({
+      id: 'component.currentPageFilters.searchPlaceholder',
+      defaultMessage: 'Search current page',
+    });
 
   const filteredRows = useMemo(
     () =>
@@ -208,7 +216,7 @@ export function useCurrentPageFilters<T extends object>({
       <Input
         allowClear
         onChange={(event) => setSearchText(event.target.value)}
-        placeholder={searchPlaceholder}
+        placeholder={resolvedSearchPlaceholder}
         style={{ width: 220 }}
         value={searchText}
       />
@@ -231,7 +239,10 @@ export function useCurrentPageFilters<T extends object>({
         icon={<ClearOutlined />}
         onClick={resetFilters}
       >
-        Reset
+        {intl.formatMessage({
+          id: 'component.currentPageFilters.reset',
+          defaultMessage: 'Reset',
+        })}
       </Button>
     </Space>
   );

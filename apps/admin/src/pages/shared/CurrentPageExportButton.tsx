@@ -1,5 +1,6 @@
 import { DownloadOutlined } from '@ant-design/icons';
 import type { CurrentPageExportProtocolSummary } from '@opencore/sdk';
+import { useIntl } from '@umijs/max';
 import { Button, message } from 'antd';
 import { useCallback, useEffect, useState } from 'react';
 import { getOpenCoreExportProtocol } from '../../services/opencore/platform';
@@ -19,15 +20,18 @@ type CurrentPageExportButtonProps<T extends object> = {
   rows: readonly T[];
 };
 
-const LIVE_CURRENT_PAGE_EXPORT_PROTOCOL_LABEL =
-  'Live current-page export protocol';
-const SERVER_CAPPED_CURRENT_PAGE_EXPORT_LABEL =
-  'Server capped current-page export';
 const CSV_FORMULA_PREFIX_PATTERN = /^\s*[=+\-@]/;
-const CSV_FILENAME_UNSAFE_PATTERN = new RegExp(
-  '[\\\\/:*?"<>|\\x00-\\x1F]+',
-  'g',
-);
+const CSV_FILENAME_UNSAFE_CHARACTERS = new Set([
+  '\\',
+  '/',
+  ':',
+  '*',
+  '?',
+  '"',
+  '<',
+  '>',
+  '|',
+]);
 const REDACTED_EXPORT_CELL_VALUE = '[redacted]';
 const EXPORT_CELL_SENSITIVE_KEY_PATTERN =
   /password|secret|token|credential|authorization|api[-_]?key|client[-_]?secret/i;
@@ -178,7 +182,13 @@ export function sanitizeCsvCellText(text: string): string {
 export function sanitizeCsvFilename(filename: string): string {
   const basename = filename
     .trim()
-    .replace(CSV_FILENAME_UNSAFE_PATTERN, '-')
+    .split('')
+    .map((char) =>
+      CSV_FILENAME_UNSAFE_CHARACTERS.has(char) || char.charCodeAt(0) < 32
+        ? '-'
+        : char,
+    )
+    .join('')
     .replace(/^\.+/, '')
     .replace(/\.+$/, '');
   const safeBasename = basename || 'opencore-export';
@@ -261,6 +271,7 @@ export function CurrentPageExportButton<T extends object>({
   resource,
   rows,
 }: CurrentPageExportButtonProps<T>) {
+  const intl = useIntl();
   const { load, loading, protocol } = useCurrentPageExportProtocol();
 
   const handleExport = async () => {
@@ -269,13 +280,23 @@ export function CurrentPageExportButton<T extends object>({
       try {
         liveProtocol = await load();
       } catch {
-        message.error(`${LIVE_CURRENT_PAGE_EXPORT_PROTOCOL_LABEL} unavailable`);
+        message.error(
+          intl.formatMessage({
+            id: 'component.currentPageExport.protocolUnavailable',
+            defaultMessage: 'Live current-page export protocol unavailable.',
+          }),
+        );
         return;
       }
     }
 
     if (!isUsableCurrentPageCsvProtocol(liveProtocol)) {
-      message.error(`${LIVE_CURRENT_PAGE_EXPORT_PROTOCOL_LABEL} inactive`);
+      message.error(
+        intl.formatMessage({
+          id: 'component.currentPageExport.protocolInactive',
+          defaultMessage: 'Live current-page export protocol is inactive.',
+        }),
+      );
       return;
     }
 
@@ -284,7 +305,12 @@ export function CurrentPageExportButton<T extends object>({
     const exportRows = rows.slice(0, maxRows);
 
     if (exportRows.length === 0) {
-      message.warning('There is no data to export');
+      message.warning(
+        intl.formatMessage({
+          id: 'component.currentPageExport.empty',
+          defaultMessage: 'There is no data to export.',
+        }),
+      );
       return;
     }
 
@@ -295,9 +321,25 @@ export function CurrentPageExportButton<T extends object>({
     );
 
     if (rows.length > exportRows.length) {
-      message.info(`${SERVER_CAPPED_CURRENT_PAGE_EXPORT_LABEL} at ${maxRows}`);
+      message.info(
+        intl.formatMessage(
+          {
+            id: 'component.currentPageExport.capped',
+            defaultMessage: 'Server capped current-page export at {maxRows}.',
+          },
+          { maxRows },
+        ),
+      );
     }
-    message.success(`Exported ${exportRows.length} current-page rows`);
+    message.success(
+      intl.formatMessage(
+        {
+          id: 'component.currentPageExport.success',
+          defaultMessage: 'Exported {count} current-page rows.',
+        },
+        { count: exportRows.length },
+      ),
+    );
   };
 
   return (
@@ -309,7 +351,10 @@ export function CurrentPageExportButton<T extends object>({
         void handleExport();
       }}
     >
-      Export
+      {intl.formatMessage({
+        id: 'component.currentPageExport.button',
+        defaultMessage: 'Export',
+      })}
     </Button>
   );
 }

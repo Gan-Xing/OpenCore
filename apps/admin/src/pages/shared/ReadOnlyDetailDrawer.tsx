@@ -1,3 +1,4 @@
+import { useIntl } from '@umijs/max';
 import { Descriptions, Drawer, Space, Timeline, Typography } from 'antd';
 import type { ReactNode } from 'react';
 
@@ -83,6 +84,8 @@ export function ReadOnlyDetailDrawer({
   timeline = [],
   title,
 }: ReadOnlyDetailDrawerProps) {
+  const intl = useIntl();
+
   return (
     <Drawer
       destroyOnClose
@@ -120,7 +123,12 @@ export function ReadOnlyDetailDrawer({
 
       {timeline.length > 0 ? (
         <section style={{ marginTop: 24 }}>
-          <Typography.Title level={5}>Timeline</Typography.Title>
+          <Typography.Title level={5}>
+            {intl.formatMessage({
+              id: 'component.readOnlyDetail.timeline',
+              defaultMessage: 'Timeline',
+            })}
+          </Typography.Title>
           <Timeline
             items={timeline.map((entry) => ({
               color: entry.color ?? 'blue',

@@ -39,6 +39,9 @@ const coreI18nScanPaths = [
   join(adminRoot, 'src', 'pages', 'Exception', '404.tsx'),
   join(adminRoot, 'src', 'pages', 'Exception', '500.tsx'),
   join(adminRoot, 'src', 'pages', 'Exception', 'ExceptionPage.tsx'),
+  join(adminRoot, 'src', 'pages', 'shared', 'CurrentPageExportButton.tsx'),
+  join(adminRoot, 'src', 'pages', 'shared', 'CurrentPageFilters.tsx'),
+  join(adminRoot, 'src', 'pages', 'shared', 'ReadOnlyDetailDrawer.tsx'),
   join(adminRoot, 'src', 'pages', 'user', 'login', 'index.tsx'),
   join(adminRoot, 'src', 'requestErrorConfig.ts'),
 ];
