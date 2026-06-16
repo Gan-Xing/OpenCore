@@ -47,6 +47,7 @@ const coreI18nScanPaths = [
   join(adminRoot, 'src', 'pages', 'System', 'Files.tsx'),
   join(adminRoot, 'src', 'pages', 'System', 'Permissions.tsx'),
   join(adminRoot, 'src', 'pages', 'System', 'Posts.tsx'),
+  join(adminRoot, 'src', 'pages', 'System', 'Roles.tsx'),
   join(adminRoot, 'src', 'pages', 'user', 'login', 'index.tsx'),
   join(adminRoot, 'src', 'requestErrorConfig.ts'),
 ];
@@ -56,6 +57,7 @@ const localizedAdminPageScanPaths = [
   join(adminRoot, 'src', 'pages', 'System', 'Files.tsx'),
   join(adminRoot, 'src', 'pages', 'System', 'Permissions.tsx'),
   join(adminRoot, 'src', 'pages', 'System', 'Posts.tsx'),
+  join(adminRoot, 'src', 'pages', 'System', 'Roles.tsx'),
 ];
 const forbiddenMarkerScanPaths = [
   localesRoot,

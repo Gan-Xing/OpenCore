@@ -24,6 +24,7 @@ import type {
   UserOptionSummary,
   UserSummary,
 } from '@opencore/sdk';
+import { useIntl } from '@umijs/max';
 import {
   Alert,
   Button,
@@ -94,67 +95,12 @@ type UserTransferItem = {
   description: string;
 };
 
-const dataScopeLabels: Record<RoleDataScope, string> = {
-  all: 'All data',
-  custom: 'Custom departments',
-  dept_tree: 'Department tree',
-  own_dept: 'Own department',
-  self: 'Self only',
-};
-const dataScopeOptions = Object.entries(dataScopeLabels).map(
-  ([value, label]) => ({
-    label,
-    value,
-  }),
-) as { label: string; value: RoleDataScope }[];
 const searchFields: CurrentPageSearchField<RoleSummary>[] = [
   'code',
   'name',
   'dataScope',
   (record) => record.permissionCodes,
   (record) => record.dataScopeDeptIds,
-];
-const filterOptions: CurrentPageFilterOption<RoleSummary>[] = [
-  {
-    key: 'system',
-    options: [
-      { label: 'system', value: 'true' },
-      { label: 'custom', value: 'false' },
-    ],
-    placeholder: 'System',
-    predicate: (record, value) => record.system === (value === 'true'),
-  },
-  {
-    key: 'enabled',
-    options: [
-      { label: 'enabled', value: 'true' },
-      { label: 'disabled', value: 'false' },
-    ],
-    placeholder: 'Status',
-    predicate: (record, value) => record.enabled === (value === 'true'),
-  },
-  {
-    key: 'dataScope',
-    options: dataScopeOptions,
-    placeholder: 'Data scope',
-    predicate: (record, value) => record.dataScope === value,
-  },
-];
-const exportColumns: CurrentPageExportColumn<RoleSummary>[] = [
-  { title: 'ID', dataIndex: 'id' },
-  { title: 'Code', dataIndex: 'code' },
-  { title: 'Name', dataIndex: 'name' },
-  { title: 'Enabled', dataIndex: 'enabled' },
-  {
-    title: 'Permission Count',
-    renderText: (record) => record.permissionCodes.length,
-  },
-  { title: 'System', dataIndex: 'system' },
-  { title: 'Data Scope', dataIndex: 'dataScope' },
-  {
-    title: 'Data Scope Dept IDs',
-    renderText: (record) => record.dataScopeDeptIds.join(', '),
-  },
 ];
 
 function flattenDeptTree(
@@ -234,6 +180,7 @@ function normalizeCheckedTreeKeys(value: unknown): string[] {
 function createUserTransferItems(
   users: readonly UserSummary[],
   userOptions: readonly UserOptionSummary[],
+  disabledLabel: string,
 ): UserTransferItem[] {
   const userById = new Map(users.map((user) => [user.id, user]));
   const userOptionById = new Map(userOptions.map((user) => [user.id, user]));
@@ -249,7 +196,7 @@ function createUserTransferItems(
       return {
         key: user.id,
         title: option?.displayName ?? user.displayName,
-        description: `${username}${posts}${user.enabled ? '' : ' (disabled)'}`,
+        description: `${username}${posts}${user.enabled ? '' : ` (${disabledLabel})`}`,
         disabled: user.system,
       };
     });
@@ -259,42 +206,8 @@ function normalizeTransferKeys(keys: readonly Key[]): string[] {
   return keys.map((key) => String(key)).sort();
 }
 
-function createDetailFields(
-  record: RoleSummary,
-  deptNames: ReadonlyMap<string, string>,
-): DetailField[] {
-  return [
-    { label: 'ID', value: record.id },
-    { label: 'Code', value: record.code },
-    { label: 'Name', value: record.name },
-    { label: 'Status', value: record.enabled ? 'enabled' : 'disabled' },
-    { label: 'System', value: record.system ? 'system' : 'custom' },
-    { label: 'Data Scope', value: dataScopeLabels[record.dataScope] },
-    {
-      label: 'Data Scope Departments',
-      value:
-        record.dataScopeDeptIds.length > 0
-          ? record.dataScopeDeptIds
-              .map((deptId) => deptNames.get(deptId) ?? deptId)
-              .join(', ')
-          : undefined,
-    },
-    { label: 'Permission Count', value: record.permissionCodes.length },
-  ];
-}
-
-function createDetailJsonSections(record: RoleSummary): DetailJsonSection[] {
-  return [
-    { title: 'Permission Codes', value: record.permissionCodes },
-    { title: 'Data Scope Dept IDs', value: record.dataScopeDeptIds },
-  ];
-}
-
-function formatRevokedSessions(count: number | undefined): string {
-  return `Revoked sessions: ${count ?? 0}.`;
-}
-
 export default function RolesPage() {
+  const intl = useIntl();
   const [form] = Form.useForm<RoleFormValues>();
   const [rows, setRows] = useState<readonly RoleSummary[]>([]);
   const [permissionRows, setPermissionRows] = useState<
@@ -325,6 +238,187 @@ export default function RolesPage() {
     useState<string>();
   const selectedDataScope = Form.useWatch('dataScope', form);
   const isCustomDataScope = selectedDataScope === 'custom';
+  const formatMessage = (
+    id: string,
+    defaultMessage: string,
+    values?: Record<string, number | string>,
+  ) =>
+    values
+      ? intl.formatMessage({ id, defaultMessage }, values)
+      : intl.formatMessage({ id, defaultMessage });
+  const statusLabels = {
+    disabled: formatMessage('pages.system.roles.status.disabled', 'Disabled'),
+    enabled: formatMessage('pages.system.roles.status.enabled', 'Enabled'),
+  };
+  const systemLabels = {
+    custom: formatMessage('pages.system.roles.system.custom', 'Custom'),
+    system: formatMessage('pages.system.roles.system.system', 'System'),
+  };
+  const dataScopeLabels: Record<RoleDataScope, string> = {
+    all: formatMessage('pages.system.roles.dataScope.all', 'All data'),
+    custom: formatMessage(
+      'pages.system.roles.dataScope.custom',
+      'Custom departments',
+    ),
+    dept_tree: formatMessage(
+      'pages.system.roles.dataScope.deptTree',
+      'Department tree',
+    ),
+    own_dept: formatMessage(
+      'pages.system.roles.dataScope.ownDept',
+      'Own department',
+    ),
+    self: formatMessage('pages.system.roles.dataScope.self', 'Self only'),
+  };
+  const dataScopeOptions = Object.entries(dataScopeLabels).map(
+    ([value, label]) => ({
+      label,
+      value,
+    }),
+  ) as { label: string; value: RoleDataScope }[];
+  const filterOptions: CurrentPageFilterOption<RoleSummary>[] = [
+    {
+      key: 'system',
+      options: [
+        { label: systemLabels.system, value: 'true' },
+        { label: systemLabels.custom, value: 'false' },
+      ],
+      placeholder: formatMessage('pages.system.roles.filters.system', 'System'),
+      predicate: (record, value) => record.system === (value === 'true'),
+    },
+    {
+      key: 'enabled',
+      options: [
+        { label: statusLabels.enabled, value: 'true' },
+        { label: statusLabels.disabled, value: 'false' },
+      ],
+      placeholder: formatMessage('pages.system.roles.filters.status', 'Status'),
+      predicate: (record, value) => record.enabled === (value === 'true'),
+    },
+    {
+      key: 'dataScope',
+      options: dataScopeOptions,
+      placeholder: formatMessage(
+        'pages.system.roles.filters.dataScope',
+        'Data scope',
+      ),
+      predicate: (record, value) => record.dataScope === value,
+    },
+  ];
+  const exportColumns: CurrentPageExportColumn<RoleSummary>[] = [
+    {
+      title: formatMessage('pages.system.roles.fields.id', 'ID'),
+      dataIndex: 'id',
+    },
+    {
+      title: formatMessage('pages.system.roles.fields.code', 'Code'),
+      dataIndex: 'code',
+    },
+    {
+      title: formatMessage('pages.system.roles.fields.name', 'Name'),
+      dataIndex: 'name',
+    },
+    {
+      title: formatMessage('pages.system.roles.fields.enabled', 'Enabled'),
+      renderText: (record) =>
+        record.enabled ? statusLabels.enabled : statusLabels.disabled,
+    },
+    {
+      title: formatMessage(
+        'pages.system.roles.fields.permissionCount',
+        'Permission Count',
+      ),
+      renderText: (record) => record.permissionCodes.length,
+    },
+    {
+      title: formatMessage('pages.system.roles.fields.system', 'System'),
+      renderText: (record) =>
+        record.system ? systemLabels.system : systemLabels.custom,
+    },
+    {
+      title: formatMessage('pages.system.roles.fields.dataScope', 'Data Scope'),
+      renderText: (record) => dataScopeLabels[record.dataScope],
+    },
+    {
+      title: formatMessage(
+        'pages.system.roles.fields.dataScopeDeptIds',
+        'Data Scope Dept IDs',
+      ),
+      renderText: (record) => record.dataScopeDeptIds.join(', '),
+    },
+  ];
+  const createDetailFields = (record: RoleSummary): DetailField[] => [
+    { label: formatMessage('pages.system.roles.fields.id', 'ID'), value: record.id },
+    {
+      label: formatMessage('pages.system.roles.fields.code', 'Code'),
+      value: record.code,
+    },
+    {
+      label: formatMessage('pages.system.roles.fields.name', 'Name'),
+      value: record.name,
+    },
+    {
+      label: formatMessage('pages.system.roles.fields.status', 'Status'),
+      value: record.enabled ? statusLabels.enabled : statusLabels.disabled,
+    },
+    {
+      label: formatMessage('pages.system.roles.fields.system', 'System'),
+      value: record.system ? systemLabels.system : systemLabels.custom,
+    },
+    {
+      label: formatMessage('pages.system.roles.fields.dataScope', 'Data Scope'),
+      value: dataScopeLabels[record.dataScope],
+    },
+    {
+      label: formatMessage(
+        'pages.system.roles.fields.dataScopeDepartments',
+        'Data Scope Departments',
+      ),
+      value:
+        record.dataScopeDeptIds.length > 0
+          ? record.dataScopeDeptIds
+              .map((deptId) => deptNames.get(deptId) ?? deptId)
+              .join(', ')
+          : undefined,
+    },
+    {
+      label: formatMessage(
+        'pages.system.roles.fields.permissionCount',
+        'Permission Count',
+      ),
+      value: record.permissionCodes.length,
+    },
+  ];
+  const createDetailJsonSections = (
+    record: RoleSummary,
+  ): DetailJsonSection[] => [
+    {
+      title: formatMessage(
+        'pages.system.roles.fields.permissionCodes',
+        'Permission Codes',
+      ),
+      value: record.permissionCodes,
+    },
+    {
+      title: formatMessage(
+        'pages.system.roles.fields.dataScopeDeptIds',
+        'Data Scope Dept IDs',
+      ),
+      value: record.dataScopeDeptIds,
+    },
+  ];
+  const formatRevokedSessions = (count: number | undefined) =>
+    formatMessage(
+      'pages.system.roles.messages.revokedSessions',
+      'Revoked sessions: {count}.',
+      { count: count ?? 0 },
+    );
+  const formatActiveSessionsRevoked = (count: number) =>
+    formatMessage(
+      'pages.system.roles.messages.activeSessionsRevoked',
+      '{count} active session(s) revoked.',
+      { count },
+    );
   const permissionOptions = useMemo(
     () =>
       permissionRows
@@ -342,7 +436,10 @@ export default function RolesPage() {
     useCurrentPageFilters<RoleSummary>({
       rows,
       searchFields,
-      searchPlaceholder: 'Search roles',
+      searchPlaceholder: formatMessage(
+        'pages.system.roles.search.placeholder',
+        'Search roles',
+      ),
       selectFilters: filterOptions,
     });
 
@@ -376,7 +473,12 @@ export default function RolesPage() {
       setMenuAssignmentOpen(false);
       setUserAssignmentOpen(false);
       setLoadError(
-        error instanceof Error ? error.message : 'Unable to load live roles.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.system.roles.load.failure',
+              'Unable to load live roles.',
+            ),
       );
     } finally {
       setLoading(false);
@@ -413,7 +515,12 @@ export default function RolesPage() {
       setFormOpen(true);
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'Unable to open role.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.system.roles.open.failure',
+              'Unable to open role.',
+            ),
       );
     }
   };
@@ -426,7 +533,10 @@ export default function RolesPage() {
       message.error(
         error instanceof Error
           ? error.message
-          : 'Unable to load live role detail.',
+          : formatMessage(
+              'pages.system.roles.detail.loadFailure',
+              'Unable to load live role detail.',
+            ),
       );
     }
   };
@@ -442,7 +552,10 @@ export default function RolesPage() {
       message.error(
         error instanceof Error
           ? error.message
-          : 'Unable to open role menu assignment.',
+          : formatMessage(
+              'pages.system.roles.menuAssignment.openFailure',
+              'Unable to open role menu assignment.',
+            ),
       );
     }
   };
@@ -459,6 +572,7 @@ export default function RolesPage() {
         createUserTransferItems(
           [...assignment.assignedUsers, ...assignment.availableUsers],
           userOptions,
+          statusLabels.disabled,
         ),
       );
       setUserAssignmentOpen(true);
@@ -466,7 +580,10 @@ export default function RolesPage() {
       message.error(
         error instanceof Error
           ? error.message
-          : 'Unable to open role user assignment.',
+          : formatMessage(
+              'pages.system.roles.userAssignment.openFailure',
+              'Unable to open role user assignment.',
+            ),
       );
     }
   };
@@ -485,7 +602,11 @@ export default function RolesPage() {
           permissionCodes: values.permissionCodes ?? [],
         });
         message.success(
-          `Role updated. ${formatRevokedSessions(role.revokedSessionCount)}`,
+          formatMessage(
+            'pages.system.roles.messages.updated',
+            'Role updated. {revokedSessions}',
+            { revokedSessions: formatRevokedSessions(role.revokedSessionCount) },
+          ),
         );
       } else {
         await createOpenCoreRole({
@@ -495,7 +616,9 @@ export default function RolesPage() {
           name: values.name,
           permissionCodes: values.permissionCodes ?? [],
         });
-        message.success('Role created.');
+        message.success(
+          formatMessage('pages.system.roles.messages.created', 'Role created.'),
+        );
       }
       setFormOpen(false);
       setEditingRole(undefined);
@@ -508,7 +631,11 @@ export default function RolesPage() {
   const deleteRole = async (record: RoleSummary) => {
     const result = await deleteOpenCoreRole(record.code);
     message.success(
-      `Role deleted. ${formatRevokedSessions(result.revokedSessionCount)}`,
+      formatMessage(
+        'pages.system.roles.messages.deleted',
+        'Role deleted. {revokedSessions}',
+        { revokedSessions: formatRevokedSessions(result.revokedSessionCount) },
+      ),
     );
     await loadRoles();
   };
@@ -520,9 +647,15 @@ export default function RolesPage() {
         enabled: !record.enabled,
       });
       message.success(
-        `Role ${role.enabled ? 'enabled' : 'disabled'}. ${formatRevokedSessions(
-          role.revokedSessionCount,
-        )}`,
+        formatMessage(
+          role.enabled
+            ? 'pages.system.roles.messages.enabled'
+            : 'pages.system.roles.messages.disabled',
+          role.enabled
+            ? 'Role enabled. {revokedSessions}'
+            : 'Role disabled. {revokedSessions}',
+          { revokedSessions: formatRevokedSessions(role.revokedSessionCount) },
+        ),
       );
     } finally {
       setStatusUpdatingRoleCode(undefined);
@@ -543,8 +676,15 @@ export default function RolesPage() {
       const revoked = assignment.revokedSessionCount ?? 0;
       message.success(
         revoked > 0
-          ? `Role menus updated. ${revoked} active session${revoked === 1 ? '' : 's'} revoked.`
-          : 'Role menus updated.',
+          ? formatMessage(
+              'pages.system.roles.menuAssignment.messages.updatedWithRevoked',
+              'Role menus updated. {revokedSessions}',
+              { revokedSessions: formatActiveSessionsRevoked(revoked) },
+            )
+          : formatMessage(
+              'pages.system.roles.menuAssignment.messages.updated',
+              'Role menus updated.',
+            ),
       );
       setMenuAssignmentOpen(false);
       setAssigningMenuRole(undefined);
@@ -568,8 +708,15 @@ export default function RolesPage() {
       const revoked = assignment.revokedSessionCount ?? 0;
       message.success(
         revoked > 0
-          ? `Role users updated. ${revoked} active session${revoked === 1 ? '' : 's'} revoked.`
-          : 'Role users updated.',
+          ? formatMessage(
+              'pages.system.roles.userAssignment.messages.updatedWithRevoked',
+              'Role users updated. {revokedSessions}',
+              { revokedSessions: formatActiveSessionsRevoked(revoked) },
+            )
+          : formatMessage(
+              'pages.system.roles.userAssignment.messages.updated',
+              'Role users updated.',
+            ),
       );
       setUserAssignmentOpen(false);
       setAssigningUserRole(undefined);
@@ -583,7 +730,7 @@ export default function RolesPage() {
 
   const columns: ProColumns<RoleSummary>[] = [
     {
-      title: 'Name',
+      title: formatMessage('pages.system.roles.fields.name', 'Name'),
       dataIndex: 'name',
       render: (_, record) => (
         <Typography.Link onClick={() => void openDetail(record)}>
@@ -591,14 +738,24 @@ export default function RolesPage() {
         </Typography.Link>
       ),
     },
-    { title: 'Code', dataIndex: 'code' },
     {
-      title: 'Permissions',
+      title: formatMessage('pages.system.roles.fields.code', 'Code'),
+      dataIndex: 'code',
+    },
+    {
+      title: formatMessage(
+        'pages.system.roles.fields.permissions',
+        'Permissions',
+      ),
       dataIndex: 'permissionCodes',
       render: (_, record) =>
         record.permissionCodes.length > 4 ? (
           <Typography.Text>
-            {record.permissionCodes.length} permissions
+            {formatMessage(
+              'pages.system.roles.permissions.count',
+              '{count} permissions',
+              { count: record.permissionCodes.length },
+            )}
           </Typography.Text>
         ) : (
           <Space wrap size={4}>
@@ -606,90 +763,153 @@ export default function RolesPage() {
               <Tag key={code}>{code}</Tag>
             ))}
           </Space>
-        ),
+      ),
     },
     {
-      title: 'Data Scope',
+      title: formatMessage('pages.system.roles.fields.dataScope', 'Data Scope'),
       dataIndex: 'dataScope',
       render: (_, record) => <Tag>{dataScopeLabels[record.dataScope]}</Tag>,
     },
     {
-      title: 'Status',
+      title: formatMessage('pages.system.roles.fields.status', 'Status'),
       dataIndex: 'enabled',
       width: 104,
       render: (_, record) => (
         <Tag color={record.enabled ? 'green' : 'default'}>
-          {record.enabled ? 'enabled' : 'disabled'}
+          {record.enabled ? statusLabels.enabled : statusLabels.disabled}
         </Tag>
       ),
     },
     {
-      title: 'System',
+      title: formatMessage('pages.system.roles.fields.system', 'System'),
       dataIndex: 'system',
       width: 96,
       render: (_, record) => (
         <Tag color={record.system ? 'blue' : 'default'}>
-          {record.system ? 'system' : 'custom'}
+          {record.system ? systemLabels.system : systemLabels.custom}
         </Tag>
       ),
     },
     {
-      title: 'Actions',
+      title: formatMessage('pages.system.roles.actions.column', 'Actions'),
       valueType: 'option',
       width: 264,
       render: (_, record) => (
         <Space size="small">
-          <Tooltip title="Detail">
+          <Tooltip
+            title={formatMessage('pages.system.roles.actions.detail', 'Detail')}
+          >
             <Button
-              aria-label={`View ${record.name}`}
+              aria-label={formatMessage(
+                'pages.system.roles.actions.viewAria',
+                'View {name}',
+                { name: record.name },
+              )}
               icon={<EyeOutlined />}
               onClick={() => void openDetail(record)}
               size="small"
             />
           </Tooltip>
-          <Tooltip title="Edit">
+          <Tooltip
+            title={formatMessage('pages.system.roles.actions.edit', 'Edit')}
+          >
             <Button
-              aria-label={`Edit ${record.name}`}
+              aria-label={formatMessage(
+                'pages.system.roles.actions.editAria',
+                'Edit {name}',
+                { name: record.name },
+              )}
               icon={<EditOutlined />}
               onClick={() => void openEditForm(record)}
               size="small"
             />
           </Tooltip>
-          <Tooltip title="Menu Assignment">
+          <Tooltip
+            title={formatMessage(
+              'pages.system.roles.actions.menuAssignment',
+              'Menu Assignment',
+            )}
+          >
             <Button
-              aria-label={`Assign menus for ${record.name}`}
+              aria-label={formatMessage(
+                'pages.system.roles.actions.menuAssignmentAria',
+                'Assign menus for {name}',
+                { name: record.name },
+              )}
               icon={<ApartmentOutlined />}
               onClick={() => void openMenuAssignment(record)}
               size="small"
             />
           </Tooltip>
-          <Tooltip title="User Assignment">
+          <Tooltip
+            title={formatMessage(
+              'pages.system.roles.actions.userAssignment',
+              'User Assignment',
+            )}
+          >
             <Button
-              aria-label={`Assign users for ${record.name}`}
+              aria-label={formatMessage(
+                'pages.system.roles.actions.userAssignmentAria',
+                'Assign users for {name}',
+                { name: record.name },
+              )}
               icon={<TeamOutlined />}
               onClick={() => void openUserAssignment(record)}
               size="small"
             />
           </Tooltip>
           <Popconfirm
-            title={record.enabled ? 'Disable this role?' : 'Enable this role?'}
-            okText={record.enabled ? 'Disable' : 'Enable'}
+            title={
+              record.enabled
+                ? formatMessage(
+                    'pages.system.roles.confirm.disable',
+                    'Disable this role?',
+                  )
+                : formatMessage(
+                    'pages.system.roles.confirm.enable',
+                    'Enable this role?',
+                  )
+            }
+            okText={
+              record.enabled
+                ? formatMessage('pages.system.roles.actions.disable', 'Disable')
+                : formatMessage('pages.system.roles.actions.enable', 'Enable')
+            }
             okButtonProps={{ danger: record.enabled }}
             onConfirm={() => void toggleRoleStatus(record)}
           >
             <Tooltip
               title={
                 record.system
-                  ? 'System roles cannot be disabled'
+                  ? formatMessage(
+                      'pages.system.roles.actions.systemDisableLocked',
+                      'System roles cannot be disabled',
+                    )
                   : record.enabled
-                    ? 'Disable'
-                    : 'Enable'
+                    ? formatMessage(
+                        'pages.system.roles.actions.disable',
+                        'Disable',
+                      )
+                    : formatMessage(
+                        'pages.system.roles.actions.enable',
+                        'Enable',
+                      )
               }
             >
               <Button
-                aria-label={`${record.enabled ? 'Disable' : 'Enable'} ${
-                  record.name
-                }`}
+                aria-label={
+                  record.enabled
+                    ? formatMessage(
+                        'pages.system.roles.actions.disableAria',
+                        'Disable {name}',
+                        { name: record.name },
+                      )
+                    : formatMessage(
+                        'pages.system.roles.actions.enableAria',
+                        'Enable {name}',
+                        { name: record.name },
+                      )
+                }
                 danger={record.enabled}
                 disabled={record.system}
                 icon={
@@ -701,18 +921,30 @@ export default function RolesPage() {
             </Tooltip>
           </Popconfirm>
           <Popconfirm
-            title="Delete this role?"
-            okText="Delete"
+            title={formatMessage(
+              'pages.system.roles.confirm.deleteOne',
+              'Delete this role?',
+            )}
+            okText={formatMessage('pages.system.roles.actions.delete', 'Delete')}
             okButtonProps={{ danger: true }}
             onConfirm={() => void deleteRole(record)}
           >
             <Tooltip
               title={
-                record.system ? 'System roles cannot be deleted' : 'Delete'
+                record.system
+                  ? formatMessage(
+                      'pages.system.roles.actions.systemDeleteLocked',
+                      'System roles cannot be deleted',
+                    )
+                  : formatMessage('pages.system.roles.actions.delete', 'Delete')
               }
             >
               <Button
-                aria-label={`Delete ${record.name}`}
+                aria-label={formatMessage(
+                  'pages.system.roles.actions.deleteAria',
+                  'Delete {name}',
+                  { name: record.name },
+                )}
                 danger
                 disabled={record.system}
                 icon={<DeleteOutlined />}
@@ -726,12 +958,18 @@ export default function RolesPage() {
   ];
 
   return (
-    <PageContainer title="Roles" subTitle="S6 RBAC">
+    <PageContainer
+      title={formatMessage('menu.system.roles', 'Roles')}
+      subTitle={formatMessage('pages.system.rbac.section', 'S6 RBAC')}
+    >
       {loadError ? (
         <Alert
           showIcon
           type="error"
-          message="Unable to load live roles"
+          message={formatMessage(
+            'pages.system.roles.load.liveFailure',
+            'Unable to load live roles',
+          )}
           description={loadError}
           style={{ marginBlockEnd: 16 }}
         />
@@ -749,14 +987,14 @@ export default function RolesPage() {
             icon={<PlusOutlined />}
             onClick={openCreateForm}
           >
-            New
+            {formatMessage('pages.system.roles.actions.new', 'New')}
           </Button>,
           <Button
             key="refresh"
             icon={<ReloadOutlined />}
             onClick={() => void loadRoles()}
           >
-            Refresh
+            {formatMessage('pages.system.roles.actions.refresh', 'Refresh')}
           </Button>,
           <CurrentPageExportButton<RoleSummary>
             key="export"
@@ -770,18 +1008,23 @@ export default function RolesPage() {
         columns={columns}
       />
       <ReadOnlyDetailDrawer
-        fields={
-          selectedDetail ? createDetailFields(selectedDetail, deptNames) : []
-        }
+        fields={selectedDetail ? createDetailFields(selectedDetail) : []}
         jsonSections={
           selectedDetail ? createDetailJsonSections(selectedDetail) : []
         }
         onClose={() => setSelectedDetail(undefined)}
         open={Boolean(selectedDetail)}
-        title={selectedDetail?.name ?? 'Role Detail'}
+        title={
+          selectedDetail?.name ??
+          formatMessage('pages.system.roles.detail.title', 'Role Detail')
+        }
       />
       <Modal
-        title={editingRole ? 'Edit Role' : 'New Role'}
+        title={
+          editingRole
+            ? formatMessage('pages.system.roles.form.editTitle', 'Edit Role')
+            : formatMessage('pages.system.roles.form.createTitle', 'New Role')
+        }
         open={formOpen}
         onCancel={() => {
           setFormOpen(false);
@@ -789,26 +1032,49 @@ export default function RolesPage() {
         }}
         onOk={() => void submitForm()}
         confirmLoading={submitting}
-        okText={editingRole ? 'Save' : 'Create'}
+        okText={
+          editingRole
+            ? formatMessage('pages.system.roles.actions.save', 'Save')
+            : formatMessage('pages.system.roles.actions.create', 'Create')
+        }
         width={720}
       >
         <Form<RoleFormValues> form={form} layout="vertical">
           <Form.Item
-            label="Code"
+            label={formatMessage('pages.system.roles.fields.code', 'Code')}
             name="code"
-            rules={[{ required: true, message: 'Code is required.' }]}
+            rules={[
+              {
+                required: true,
+                message: formatMessage(
+                  'pages.system.roles.validation.codeRequired',
+                  'Code is required.',
+                ),
+              },
+            ]}
           >
             <Input disabled={Boolean(editingRole)} maxLength={96} />
           </Form.Item>
           <Form.Item
-            label="Name"
+            label={formatMessage('pages.system.roles.fields.name', 'Name')}
             name="name"
-            rules={[{ required: true, message: 'Name is required.' }]}
+            rules={[
+              {
+                required: true,
+                message: formatMessage(
+                  'pages.system.roles.validation.nameRequired',
+                  'Name is required.',
+                ),
+              },
+            ]}
           >
             <Input maxLength={120} />
           </Form.Item>
           <Form.Item
-            label="Permissions"
+            label={formatMessage(
+              'pages.system.roles.fields.permissions',
+              'Permissions',
+            )}
             name="permissionCodes"
             rules={[{ type: 'array' }]}
           >
@@ -817,14 +1083,28 @@ export default function RolesPage() {
               mode="multiple"
               optionFilterProp="label"
               options={permissionOptions}
-              placeholder="Select permissions"
+              placeholder={formatMessage(
+                'pages.system.roles.placeholders.permissions',
+                'Select permissions',
+              )}
               showSearch
             />
           </Form.Item>
           <Form.Item
-            label="Data Scope"
+            label={formatMessage(
+              'pages.system.roles.fields.dataScope',
+              'Data Scope',
+            )}
             name="dataScope"
-            rules={[{ required: true, message: 'Data scope is required.' }]}
+            rules={[
+              {
+                required: true,
+                message: formatMessage(
+                  'pages.system.roles.validation.dataScopeRequired',
+                  'Data scope is required.',
+                ),
+              },
+            ]}
           >
             <Select
               options={dataScopeOptions}
@@ -836,12 +1116,18 @@ export default function RolesPage() {
             />
           </Form.Item>
           <Form.Item
-            label="Data Scope Departments"
+            label={formatMessage(
+              'pages.system.roles.fields.dataScopeDepartments',
+              'Data Scope Departments',
+            )}
             name="dataScopeDeptIds"
             rules={[
               {
                 required: isCustomDataScope,
-                message: 'Custom data scope requires at least one department.',
+                message: formatMessage(
+                  'pages.system.roles.validation.customDataScopeDepartmentsRequired',
+                  'Custom data scope requires at least one department.',
+                ),
               },
             ]}
           >
@@ -851,7 +1137,10 @@ export default function RolesPage() {
               mode="multiple"
               optionFilterProp="label"
               options={deptOptions}
-              placeholder="Select departments"
+              placeholder={formatMessage(
+                'pages.system.roles.placeholders.departments',
+                'Select departments',
+              )}
               showSearch
             />
           </Form.Item>
@@ -860,8 +1149,15 @@ export default function RolesPage() {
       <Modal
         title={
           assigningMenuRole
-            ? `Menu Assignment - ${assigningMenuRole.name}`
-            : 'Menu Assignment'
+            ? formatMessage(
+                'pages.system.roles.menuAssignment.titleForRole',
+                'Menu Assignment - {name}',
+                { name: assigningMenuRole.name },
+              )
+            : formatMessage(
+                'pages.system.roles.menuAssignment.title',
+                'Menu Assignment',
+              )
         }
         open={menuAssignmentOpen}
         onCancel={() => {
@@ -871,7 +1167,7 @@ export default function RolesPage() {
         }}
         onOk={() => void submitMenuAssignment()}
         confirmLoading={menuAssignmentSubmitting}
-        okText="Save"
+        okText={formatMessage('pages.system.roles.actions.save', 'Save')}
         width={760}
       >
         {menuTreeData.length > 0 ? (
@@ -888,15 +1184,25 @@ export default function RolesPage() {
           />
         ) : (
           <Typography.Text type="secondary">
-            No menus available.
+            {formatMessage(
+              'pages.system.roles.menuAssignment.empty',
+              'No menus available.',
+            )}
           </Typography.Text>
         )}
       </Modal>
       <Modal
         title={
           assigningUserRole
-            ? `User Assignment - ${assigningUserRole.name}`
-            : 'User Assignment'
+            ? formatMessage(
+                'pages.system.roles.userAssignment.titleForRole',
+                'User Assignment - {name}',
+                { name: assigningUserRole.name },
+              )
+            : formatMessage(
+                'pages.system.roles.userAssignment.title',
+                'User Assignment',
+              )
         }
         open={userAssignmentOpen}
         onCancel={() => {
@@ -907,12 +1213,21 @@ export default function RolesPage() {
         }}
         onOk={() => void submitUserAssignment()}
         confirmLoading={userAssignmentSubmitting}
-        okText="Save"
+        okText={formatMessage('pages.system.roles.actions.save', 'Save')}
         width={820}
       >
         <Transfer
           dataSource={[...userTransferItems]}
-          titles={['Available users', 'Assigned users']}
+          titles={[
+            formatMessage(
+              'pages.system.roles.userAssignment.availableUsers',
+              'Available users',
+            ),
+            formatMessage(
+              'pages.system.roles.userAssignment.assignedUsers',
+              'Assigned users',
+            ),
+          ]}
           targetKeys={assignedUserIds}
           onChange={(keys) => setAssignedUserIds(normalizeTransferKeys(keys))}
           render={(item) => (
