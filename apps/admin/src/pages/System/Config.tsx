@@ -16,7 +16,7 @@ import {
   ProTable,
   type ProColumns,
 } from '@ant-design/pro-components';
-import { useAccess } from '@umijs/max';
+import { useAccess, useIntl } from '@umijs/max';
 import type {
   SystemConfigSecretVersionSummary,
   SystemConfigSummary,
@@ -123,38 +123,6 @@ const searchFields: CurrentPageSearchField<SystemConfigSummary>[] = [
   isFeatureFlagRelatedConfig,
   'system',
 ];
-const exportColumns: CurrentPageExportColumn<SystemConfigSummary>[] = [
-  { title: 'ID', dataIndex: 'id' },
-  { title: 'Category', dataIndex: 'category' },
-  { title: 'Name', dataIndex: 'name' },
-  { title: 'Key', dataIndex: 'key' },
-  {
-    title: 'Value',
-    renderText: formatConfigValue,
-  },
-  { title: 'Type', dataIndex: 'valueType' },
-  { title: 'Visibility', dataIndex: 'visibility' },
-  { title: 'Vault', renderText: renderVaultExportText },
-  { title: 'Public', dataIndex: 'public' },
-  { title: 'Feature Flag', renderText: renderFeatureFlagExportText },
-  { title: 'Rollout %', renderText: renderFeatureFlagRolloutExportText },
-  { title: 'Audience Rules', renderText: renderFeatureFlagAudienceExportText },
-  { title: 'System', dataIndex: 'system' },
-  { title: 'Description', dataIndex: 'description' },
-  { title: 'Remark', dataIndex: 'remark' },
-];
-const valueTypeOptions: { label: string; value: ConfigValueType }[] = [
-  { label: 'string', value: 'string' },
-  { label: 'json', value: 'json' },
-  { label: 'number', value: 'number' },
-  { label: 'boolean', value: 'boolean' },
-];
-const visibilityOptions: { label: string; value: ConfigVisibility }[] = [
-  { label: 'private', value: 'private' },
-  { label: 'public', value: 'public' },
-  { label: 'secret', value: 'secret' },
-];
-
 function formatConfigValue(record: SystemConfigSummary): string {
   return record.visibility === 'secret' ? '[REDACTED]' : record.value;
 }
@@ -221,20 +189,6 @@ function findFeatureFlagAudienceRecord(
   return rows.find((record) => record.key === audienceKey);
 }
 
-function renderFeatureFlagExportText(record: SystemConfigSummary): string {
-  const flagName = getFeatureFlagName(record);
-
-  if (!flagName) {
-    return '';
-  }
-
-  return isFeatureFlagConfig(record)
-    ? `${flagName}=${record.value}`
-    : isFeatureFlagRolloutConfig(record)
-      ? `${flagName} rollout`
-      : `${flagName} audience`;
-}
-
 function renderFeatureFlagRolloutExportText(
   record: SystemConfigSummary,
 ): string {
@@ -245,16 +199,6 @@ function renderFeatureFlagRolloutExportText(
   return `${record.value}%`;
 }
 
-function renderFeatureFlagAudienceExportText(
-  record: SystemConfigSummary,
-): string {
-  if (!isFeatureFlagAudienceConfig(record)) {
-    return '';
-  }
-
-  return formatAudienceRules(record.value);
-}
-
 function getDefaultAudienceRulesJson(): string {
   return JSON.stringify({ mode: 'all', rules: [] }, null, 2);
 }
@@ -263,9 +207,17 @@ function normalizeAudienceRulesJson(value: string): string {
   return JSON.stringify(JSON.parse(value));
 }
 
-function formatAudienceRules(value?: string): string {
+function formatAudienceRules(
+  value: string | undefined,
+  labels: {
+    formatRules: (mode: string, count: number) => string;
+    invalidRules: string;
+    modeAll: string;
+    modeAny: string;
+  },
+): string {
   if (!value) {
-    return 'all / 0 rules';
+    return labels.formatRules(labels.modeAll, 0);
   }
 
   try {
@@ -273,124 +225,12 @@ function formatAudienceRules(value?: string): string {
       mode?: string;
       rules?: unknown[];
     };
-    const mode = parsed.mode === 'any' ? 'any' : 'all';
+    const mode = parsed.mode === 'any' ? labels.modeAny : labels.modeAll;
     const count = Array.isArray(parsed.rules) ? parsed.rules.length : 0;
-    return `${mode} / ${count} rule${count === 1 ? '' : 's'}`;
+    return labels.formatRules(mode, count);
   } catch {
-    return 'invalid rules';
+    return labels.invalidRules;
   }
-}
-
-function renderVaultExportText(record: SystemConfigSummary): string {
-  if (record.visibility !== 'secret') {
-    return 'plain';
-  }
-
-  return record.encrypted ? 'vault encrypted' : 'legacy secret';
-}
-
-function createFilterOptions(
-  rows: readonly SystemConfigSummary[],
-): CurrentPageFilterOption<SystemConfigSummary>[] {
-  return [
-    {
-      key: 'category',
-      options: createCurrentPageFilterOptions(rows, 'category'),
-      placeholder: 'Category',
-      predicate: (record, value) => record.category === value,
-    },
-    {
-      key: 'valueType',
-      options: createCurrentPageFilterOptions(rows, 'valueType'),
-      placeholder: 'Type',
-      predicate: (record, value) => record.valueType === value,
-    },
-    {
-      key: 'visibility',
-      options: createCurrentPageFilterOptions(rows, 'visibility'),
-      placeholder: 'Visibility',
-      predicate: (record, value) => record.visibility === value,
-    },
-    {
-      key: 'public',
-      options: [
-        { label: 'public', value: 'true' },
-        { label: 'private', value: 'false' },
-      ],
-      placeholder: 'Public',
-      predicate: (record, value) => record.public === (value === 'true'),
-    },
-    {
-      key: 'encrypted',
-      options: [
-        { label: 'vault encrypted', value: 'true' },
-        { label: 'plain or legacy', value: 'false' },
-      ],
-      placeholder: 'Vault',
-      predicate: (record, value) => record.encrypted === (value === 'true'),
-    },
-    {
-      key: 'featureFlag',
-      options: [
-        { label: 'feature flag', value: 'true' },
-        { label: 'standard config', value: 'false' },
-      ],
-      placeholder: 'Feature flag',
-      predicate: (record, value) =>
-        isFeatureFlagRelatedConfig(record) === (value === 'true'),
-    },
-    {
-      key: 'system',
-      options: [
-        { label: 'system', value: 'true' },
-        { label: 'custom', value: 'false' },
-      ],
-      placeholder: 'System',
-      predicate: (record, value) => record.system === (value === 'true'),
-    },
-  ];
-}
-
-function createDetailFields(record: SystemConfigSummary): DetailField[] {
-  return [
-    { label: 'ID', value: record.id },
-    { label: 'Category', value: record.category },
-    { label: 'Name', value: record.name },
-    { label: 'Key', value: record.key },
-    {
-      label: 'Value',
-      sensitive: record.visibility === 'secret',
-      value: formatConfigValue(record),
-    },
-    { label: 'Type', value: record.valueType },
-    { label: 'Visibility', value: record.visibility },
-    { label: 'Vault', value: renderVaultExportText(record) },
-    { label: 'Public', value: record.public ? 'public' : 'private' },
-    {
-      label: 'Feature Flag',
-      value: isFeatureFlagRelatedConfig(record)
-        ? renderFeatureFlagExportText(record)
-        : 'standard config',
-    },
-    {
-      label: 'Rollout %',
-      value: isFeatureFlagRolloutConfig(record) ? `${record.value}%` : '',
-    },
-    {
-      label: 'Audience Rules',
-      value: isFeatureFlagAudienceConfig(record)
-        ? formatAudienceRules(record.value)
-        : '',
-    },
-    { label: 'System', value: record.system ? 'system' : 'custom' },
-    { label: 'Description', value: record.description },
-    { label: 'Remark', value: record.remark },
-  ];
-}
-
-function renderVisibility(record: SystemConfigSummary) {
-  const color = record.visibility === 'secret' ? 'red' : 'default';
-  return <Tag color={color}>{record.visibility}</Tag>;
 }
 
 function renderValue(record: SystemConfigSummary) {
@@ -404,31 +244,12 @@ function renderValue(record: SystemConfigSummary) {
   );
 }
 
-function renderVault(record: SystemConfigSummary) {
-  if (record.visibility !== 'secret') {
-    return <Tag>plain</Tag>;
-  }
-
-  return (
-    <Tag color={record.encrypted ? 'purple' : 'orange'}>
-      <LockOutlined /> {record.encrypted ? 'Vault encrypted' : 'Legacy secret'}
-    </Tag>
-  );
-}
-
-function renderSystem(record: SystemConfigSummary) {
-  return (
-    <Tag color={record.system ? 'blue' : 'default'}>
-      {record.system ? 'system' : 'custom'}
-    </Tag>
-  );
-}
-
 function getErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
 }
 
 export default function ConfigPage() {
+  const intl = useIntl();
   const access = useAccess();
   const canExportSystemConfig = Boolean(access.canExportSystemConfig);
   const [form] = Form.useForm<ConfigFormValues>();
@@ -482,7 +303,362 @@ export default function ConfigPage() {
   const [vaultStatusLoading, setVaultStatusLoading] = useState(false);
   const [vaultKeyRotating, setVaultKeyRotating] = useState(false);
   const watchedVisibility = Form.useWatch('visibility', form);
-  const filterOptions = useMemo(() => createFilterOptions(rows), [rows]);
+  const formatMessage = (
+    id: string,
+    defaultMessage: string,
+    values?: Record<string, number | string>,
+  ) =>
+    values
+      ? intl.formatMessage({ id, defaultMessage }, values)
+      : intl.formatMessage({ id, defaultMessage });
+  const valueTypeLabels: Record<ConfigValueType, string> = {
+    boolean: formatMessage('pages.system.config.valueType.boolean', 'boolean'),
+    json: formatMessage('pages.system.config.valueType.json', 'json'),
+    number: formatMessage('pages.system.config.valueType.number', 'number'),
+    string: formatMessage('pages.system.config.valueType.string', 'string'),
+  };
+  const visibilityLabels: Record<ConfigVisibility, string> = {
+    private: formatMessage('pages.system.config.visibility.private', 'private'),
+    public: formatMessage('pages.system.config.visibility.public', 'public'),
+    secret: formatMessage('pages.system.config.visibility.secret', 'secret'),
+  };
+  const publicLabels = {
+    private: formatMessage('pages.system.config.public.private', 'private'),
+    public: formatMessage('pages.system.config.public.public', 'public'),
+  };
+  const systemLabels = {
+    custom: formatMessage('pages.system.config.system.custom', 'custom'),
+    system: formatMessage('pages.system.config.system.system', 'system'),
+  };
+  const vaultLabels = {
+    legacySecret: formatMessage(
+      'pages.system.config.vault.legacySecret',
+      'Legacy secret',
+    ),
+    plain: formatMessage('pages.system.config.vault.plain', 'plain'),
+    plainOrLegacy: formatMessage(
+      'pages.system.config.vault.plainOrLegacy',
+      'plain or legacy',
+    ),
+    vaultEncrypted: formatMessage(
+      'pages.system.config.vault.encrypted',
+      'Vault encrypted',
+    ),
+  };
+  const featureLabels = {
+    audience: formatMessage(
+      'pages.system.config.feature.audience',
+      'audience',
+    ),
+    invalidRules: formatMessage(
+      'pages.system.config.feature.invalidRules',
+      'invalid rules',
+    ),
+    modeAll: formatMessage('pages.system.config.feature.modeAll', 'all'),
+    modeAny: formatMessage('pages.system.config.feature.modeAny', 'any'),
+    notApplicable: formatMessage(
+      'pages.system.config.feature.notApplicable',
+      'n/a',
+    ),
+    rollout: formatMessage('pages.system.config.feature.rollout', 'rollout'),
+    runtime: formatMessage('pages.system.config.feature.runtime', 'runtime'),
+    standard: formatMessage(
+      'pages.system.config.feature.standard',
+      'standard',
+    ),
+    standardConfig: formatMessage(
+      'pages.system.config.feature.standardConfig',
+      'standard config',
+    ),
+  };
+  const valueTypeOptions: { label: string; value: ConfigValueType }[] = [
+    { label: valueTypeLabels.string, value: 'string' },
+    { label: valueTypeLabels.json, value: 'json' },
+    { label: valueTypeLabels.number, value: 'number' },
+    { label: valueTypeLabels.boolean, value: 'boolean' },
+  ];
+  const visibilityOptions: { label: string; value: ConfigVisibility }[] = [
+    { label: visibilityLabels.private, value: 'private' },
+    { label: visibilityLabels.public, value: 'public' },
+    { label: visibilityLabels.secret, value: 'secret' },
+  ];
+  const formatAudienceRulesText = (value?: string): string =>
+    formatAudienceRules(value, {
+      formatRules: (mode, count) =>
+        formatMessage(
+          count === 1
+            ? 'pages.system.config.feature.rulesSummaryOne'
+            : 'pages.system.config.feature.rulesSummaryMany',
+          count === 1 ? '{mode} / {count} rule' : '{mode} / {count} rules',
+          { count, mode },
+        ),
+      invalidRules: featureLabels.invalidRules,
+      modeAll: featureLabels.modeAll,
+      modeAny: featureLabels.modeAny,
+    });
+  const renderVaultExportText = (record: SystemConfigSummary): string => {
+    if (record.visibility !== 'secret') {
+      return vaultLabels.plain;
+    }
+
+    return record.encrypted
+      ? vaultLabels.vaultEncrypted
+      : vaultLabels.legacySecret;
+  };
+  const renderFeatureFlagExportText = (
+    record: SystemConfigSummary,
+  ): string => {
+    const flagName = getFeatureFlagName(record);
+
+    if (!flagName) {
+      return '';
+    }
+
+    return isFeatureFlagConfig(record)
+      ? `${flagName}=${record.value}`
+      : isFeatureFlagRolloutConfig(record)
+        ? `${flagName} ${featureLabels.rollout}`
+        : `${flagName} ${featureLabels.audience}`;
+  };
+  const renderFeatureFlagAudienceExportText = (
+    record: SystemConfigSummary,
+  ): string => {
+    if (!isFeatureFlagAudienceConfig(record)) {
+      return '';
+    }
+
+    return formatAudienceRulesText(record.value);
+  };
+  const renderVisibility = (record: SystemConfigSummary) => {
+    const color = record.visibility === 'secret' ? 'red' : 'default';
+    return <Tag color={color}>{visibilityLabels[record.visibility]}</Tag>;
+  };
+  const renderVault = (record: SystemConfigSummary) => {
+    if (record.visibility !== 'secret') {
+      return <Tag>{vaultLabels.plain}</Tag>;
+    }
+
+    return (
+      <Tag color={record.encrypted ? 'purple' : 'orange'}>
+        <LockOutlined />{' '}
+        {record.encrypted ? vaultLabels.vaultEncrypted : vaultLabels.legacySecret}
+      </Tag>
+    );
+  };
+  const renderSystem = (record: SystemConfigSummary) => (
+    <Tag color={record.system ? 'blue' : 'default'}>
+      {record.system ? systemLabels.system : systemLabels.custom}
+    </Tag>
+  );
+  const filterOptions: CurrentPageFilterOption<SystemConfigSummary>[] = [
+    {
+      key: 'category',
+      options: createCurrentPageFilterOptions(rows, 'category'),
+      placeholder: formatMessage(
+        'pages.system.config.filters.category',
+        'Category',
+      ),
+      predicate: (record, value) => record.category === value,
+    },
+    {
+      key: 'valueType',
+      options: valueTypeOptions,
+      placeholder: formatMessage('pages.system.config.filters.type', 'Type'),
+      predicate: (record, value) => record.valueType === value,
+    },
+    {
+      key: 'visibility',
+      options: visibilityOptions,
+      placeholder: formatMessage(
+        'pages.system.config.filters.visibility',
+        'Visibility',
+      ),
+      predicate: (record, value) => record.visibility === value,
+    },
+    {
+      key: 'public',
+      options: [
+        { label: publicLabels.public, value: 'true' },
+        { label: publicLabels.private, value: 'false' },
+      ],
+      placeholder: formatMessage('pages.system.config.filters.public', 'Public'),
+      predicate: (record, value) => record.public === (value === 'true'),
+    },
+    {
+      key: 'encrypted',
+      options: [
+        { label: vaultLabels.vaultEncrypted, value: 'true' },
+        { label: vaultLabels.plainOrLegacy, value: 'false' },
+      ],
+      placeholder: formatMessage('pages.system.config.filters.vault', 'Vault'),
+      predicate: (record, value) => record.encrypted === (value === 'true'),
+    },
+    {
+      key: 'featureFlag',
+      options: [
+        {
+          label: formatMessage(
+            'pages.system.config.filters.featureFlagOption',
+            'feature flag',
+          ),
+          value: 'true',
+        },
+        { label: featureLabels.standardConfig, value: 'false' },
+      ],
+      placeholder: formatMessage(
+        'pages.system.config.filters.featureFlag',
+        'Feature flag',
+      ),
+      predicate: (record, value) =>
+        isFeatureFlagRelatedConfig(record) === (value === 'true'),
+    },
+    {
+      key: 'system',
+      options: [
+        { label: systemLabels.system, value: 'true' },
+        { label: systemLabels.custom, value: 'false' },
+      ],
+      placeholder: formatMessage('pages.system.config.filters.system', 'System'),
+      predicate: (record, value) => record.system === (value === 'true'),
+    },
+  ];
+  const exportColumns: CurrentPageExportColumn<SystemConfigSummary>[] = [
+    { title: formatMessage('pages.system.config.fields.id', 'ID'), dataIndex: 'id' },
+    {
+      title: formatMessage('pages.system.config.fields.category', 'Category'),
+      dataIndex: 'category',
+    },
+    {
+      title: formatMessage('pages.system.config.fields.name', 'Name'),
+      dataIndex: 'name',
+    },
+    {
+      title: formatMessage('pages.system.config.fields.key', 'Key'),
+      dataIndex: 'key',
+    },
+    {
+      title: formatMessage('pages.system.config.fields.value', 'Value'),
+      renderText: formatConfigValue,
+    },
+    {
+      title: formatMessage('pages.system.config.fields.type', 'Type'),
+      renderText: (record) => valueTypeLabels[record.valueType],
+    },
+    {
+      title: formatMessage('pages.system.config.fields.visibility', 'Visibility'),
+      renderText: (record) => visibilityLabels[record.visibility],
+    },
+    {
+      title: formatMessage('pages.system.config.fields.vault', 'Vault'),
+      renderText: renderVaultExportText,
+    },
+    {
+      title: formatMessage('pages.system.config.fields.public', 'Public'),
+      renderText: (record) =>
+        record.public ? publicLabels.public : publicLabels.private,
+    },
+    {
+      title: formatMessage(
+        'pages.system.config.fields.featureFlag',
+        'Feature Flag',
+      ),
+      renderText: renderFeatureFlagExportText,
+    },
+    {
+      title: formatMessage('pages.system.config.fields.rollout', 'Rollout %'),
+      renderText: renderFeatureFlagRolloutExportText,
+    },
+    {
+      title: formatMessage(
+        'pages.system.config.fields.audienceRules',
+        'Audience Rules',
+      ),
+      renderText: renderFeatureFlagAudienceExportText,
+    },
+    {
+      title: formatMessage('pages.system.config.fields.system', 'System'),
+      renderText: (record) =>
+        record.system ? systemLabels.system : systemLabels.custom,
+    },
+    {
+      title: formatMessage('pages.system.config.fields.description', 'Description'),
+      dataIndex: 'description',
+    },
+    {
+      title: formatMessage('pages.system.config.fields.remark', 'Remark'),
+      dataIndex: 'remark',
+    },
+  ];
+  const createDetailFields = (record: SystemConfigSummary): DetailField[] => [
+    { label: formatMessage('pages.system.config.fields.id', 'ID'), value: record.id },
+    {
+      label: formatMessage('pages.system.config.fields.category', 'Category'),
+      value: record.category,
+    },
+    {
+      label: formatMessage('pages.system.config.fields.name', 'Name'),
+      value: record.name,
+    },
+    {
+      label: formatMessage('pages.system.config.fields.key', 'Key'),
+      value: record.key,
+    },
+    {
+      label: formatMessage('pages.system.config.fields.value', 'Value'),
+      sensitive: record.visibility === 'secret',
+      value: formatConfigValue(record),
+    },
+    {
+      label: formatMessage('pages.system.config.fields.type', 'Type'),
+      value: valueTypeLabels[record.valueType],
+    },
+    {
+      label: formatMessage('pages.system.config.fields.visibility', 'Visibility'),
+      value: visibilityLabels[record.visibility],
+    },
+    {
+      label: formatMessage('pages.system.config.fields.vault', 'Vault'),
+      value: renderVaultExportText(record),
+    },
+    {
+      label: formatMessage('pages.system.config.fields.public', 'Public'),
+      value: record.public ? publicLabels.public : publicLabels.private,
+    },
+    {
+      label: formatMessage(
+        'pages.system.config.fields.featureFlag',
+        'Feature Flag',
+      ),
+      value: isFeatureFlagRelatedConfig(record)
+        ? renderFeatureFlagExportText(record)
+        : featureLabels.standardConfig,
+    },
+    {
+      label: formatMessage('pages.system.config.fields.rollout', 'Rollout %'),
+      value: isFeatureFlagRolloutConfig(record) ? `${record.value}%` : '',
+    },
+    {
+      label: formatMessage(
+        'pages.system.config.fields.audienceRules',
+        'Audience Rules',
+      ),
+      value: isFeatureFlagAudienceConfig(record)
+        ? formatAudienceRulesText(record.value)
+        : '',
+    },
+    {
+      label: formatMessage('pages.system.config.fields.system', 'System'),
+      value: record.system ? systemLabels.system : systemLabels.custom,
+    },
+    {
+      label: formatMessage('pages.system.config.fields.description', 'Description'),
+      value: record.description,
+    },
+    {
+      label: formatMessage('pages.system.config.fields.remark', 'Remark'),
+      value: record.remark,
+    },
+  ];
   const selectedDeletableKeys = useMemo(
     () =>
       selectedRowKeys
@@ -496,7 +672,10 @@ export default function ConfigPage() {
     useCurrentPageFilters<SystemConfigSummary>({
       rows,
       searchFields,
-      searchPlaceholder: 'Search config',
+      searchPlaceholder: formatMessage(
+        'pages.system.config.search.placeholder',
+        'Search config',
+      ),
       selectFilters: filterOptions,
     });
   const valueRequired =
@@ -520,7 +699,13 @@ export default function ConfigPage() {
       setSecretVersions([]);
       setSecretVersionsError(undefined);
       setLoadError(
-        getErrorMessage(error, 'Unable to load live system config.'),
+        getErrorMessage(
+          error,
+          formatMessage(
+            'pages.system.config.load.failure',
+            'Unable to load live system config.',
+          ),
+        ),
       );
     } finally {
       setLoading(false);
@@ -552,7 +737,12 @@ export default function ConfigPage() {
       const exported = await exportOpenCoreSystemConfig();
 
       if (!exported.contentBase64 || !exported.contentType) {
-        message.warning('Config Excel export is unavailable.');
+        message.warning(
+          formatMessage(
+            'pages.system.config.messages.excelExportUnavailable',
+            'Config Excel export is unavailable.',
+          ),
+        );
         return;
       }
 
@@ -562,7 +752,11 @@ export default function ConfigPage() {
         exported.contentType,
       );
       message.success(
-        `Config Excel export downloaded. ${exported.rowCount} row(s).`,
+        formatMessage(
+          'pages.system.config.messages.excelExportDownloaded',
+          'Config Excel export downloaded. {rowCount} row(s).',
+          { rowCount: exported.rowCount },
+        ),
       );
     } finally {
       setExportingConfig(false);
@@ -588,7 +782,10 @@ export default function ConfigPage() {
       message.error(
         error instanceof Error
           ? error.message
-          : 'Unable to open system config.',
+          : formatMessage(
+              'pages.system.config.open.failure',
+              'Unable to open system config.',
+            ),
       );
     }
   };
@@ -599,7 +796,13 @@ export default function ConfigPage() {
     } catch (error: unknown) {
       setSelectedDetail(undefined);
       message.error(
-        getErrorMessage(error, 'Unable to load live system config detail.'),
+        getErrorMessage(
+          error,
+          formatMessage(
+            'pages.system.config.detail.loadFailure',
+            'Unable to load live system config detail.',
+          ),
+        ),
       );
     }
   };
@@ -634,14 +837,24 @@ export default function ConfigPage() {
           ...commonBody,
           ...(preserveRedactedSecret ? {} : { value }),
         });
-        message.success('System config updated.');
+        message.success(
+          formatMessage(
+            'pages.system.config.messages.updated',
+            'System config updated.',
+          ),
+        );
       } else {
         await createOpenCoreSystemConfig({
           ...commonBody,
           key,
           value,
         });
-        message.success('System config created.');
+        message.success(
+          formatMessage(
+            'pages.system.config.messages.created',
+            'System config created.',
+          ),
+        );
       }
       setFormOpen(false);
       setEditingConfig(undefined);
@@ -653,7 +866,12 @@ export default function ConfigPage() {
 
   const deleteConfig = async (record: SystemConfigSummary) => {
     await deleteOpenCoreSystemConfig(record.key);
-    message.success('System config deleted.');
+    message.success(
+      formatMessage(
+        'pages.system.config.messages.deleted',
+        'System config deleted.',
+      ),
+    );
     await loadConfig();
   };
 
@@ -667,7 +885,13 @@ export default function ConfigPage() {
     try {
       const result = await deleteOpenCoreSystemConfigs({ keys });
       setSelectedRowKeys([]);
-      message.success(`Selected configs deleted. ${result.affected} row(s).`);
+      message.success(
+        formatMessage(
+          'pages.system.config.messages.batchDeleted',
+          'Selected configs deleted. {affected} row(s).',
+          { affected: result.affected },
+        ),
+      );
       await loadConfig();
     } finally {
       setBatchDeleting(false);
@@ -678,7 +902,13 @@ export default function ConfigPage() {
     setCacheRefreshing(true);
     try {
       const result = await refreshOpenCoreSystemConfigCache();
-      message.success(`Config cache refreshed: ${result.cachedKeys} keys.`);
+      message.success(
+        formatMessage(
+          'pages.system.config.messages.cacheRefreshed',
+          'Config cache refreshed: {cachedKeys} keys.',
+          { cachedKeys: result.cachedKeys },
+        ),
+      );
     } finally {
       setCacheRefreshing(false);
     }
@@ -688,7 +918,13 @@ export default function ConfigPage() {
     setValueReadingKey(record.key);
     try {
       const result = await getOpenCoreSystemConfigValue(record.key);
-      message.info(`${result.key} = ${result.value}`);
+      message.info(
+        formatMessage(
+          'pages.system.config.messages.publicValueRead',
+          '{key} = {value}',
+          { key: result.key, value: result.value },
+        ),
+      );
     } finally {
       setValueReadingKey(undefined);
     }
@@ -720,7 +956,10 @@ export default function ConfigPage() {
       message.error(
         getErrorMessage(
           error,
-          'Unable to load live config environment overrides.',
+          formatMessage(
+            'pages.system.config.environment.loadFailure',
+            'Unable to load live config environment overrides.',
+          ),
         ),
       );
     } finally {
@@ -746,7 +985,13 @@ export default function ConfigPage() {
           value: values.value.trim(),
         },
       );
-      message.success(`Environment override ${environment} saved.`);
+      message.success(
+        formatMessage(
+          'pages.system.config.environment.saved',
+          'Environment override {environment} saved.',
+          { environment },
+        ),
+      );
       setEnvironmentConfigTarget(undefined);
     } finally {
       setEnvironmentOverrideSaving(false);
@@ -766,7 +1011,13 @@ export default function ConfigPage() {
         environmentConfigTarget.key,
         environment,
       );
-      message.success(`Environment override ${environment} deleted.`);
+      message.success(
+        formatMessage(
+          'pages.system.config.environment.deleted',
+          'Environment override {environment} deleted.',
+          { environment },
+        ),
+      );
       setEnvironmentConfigTarget(undefined);
     } finally {
       setEnvironmentOverrideSaving(false);
@@ -795,7 +1046,10 @@ export default function ConfigPage() {
       setSecretVersions([]);
       const nextError = getErrorMessage(
         error,
-        'Unable to load live config secret versions.',
+        formatMessage(
+          'pages.system.config.secretVersions.loadFailure',
+          'Unable to load live config secret versions.',
+        ),
       );
       setSecretVersionsError(nextError);
       message.error(nextError);
@@ -817,7 +1071,12 @@ export default function ConfigPage() {
         rotatedBy: values.rotatedBy?.trim() || undefined,
         value: values.value,
       });
-      message.success('Secret rotated.');
+      message.success(
+        formatMessage(
+          'pages.system.config.secretVersions.rotated',
+          'Secret rotated.',
+        ),
+      );
       secretRotationForm.setFieldsValue({ reason: '', value: '' });
       setSecretVersions(
         await listOpenCoreSystemConfigSecretVersions(secretConfigTarget.key),
@@ -843,7 +1102,10 @@ export default function ConfigPage() {
       setVaultStatus(undefined);
       const nextError = getErrorMessage(
         error,
-        'Unable to load live config vault status.',
+        formatMessage(
+          'pages.system.config.vaultStatus.loadFailure',
+          'Unable to load live config vault status.',
+        ),
       );
       setVaultStatusError(nextError);
       message.error(nextError);
@@ -862,7 +1124,14 @@ export default function ConfigPage() {
       });
       setVaultStatus(result);
       message.success(
-        `Vault key rotation rewrapped ${result.rewrappedConfigCount} config(s) and ${result.rewrappedSecretVersionCount} version(s).`,
+        formatMessage(
+          'pages.system.config.vaultStatus.rotationResult',
+          'Vault key rotation rewrapped {configCount} config(s) and {versionCount} version(s).',
+          {
+            configCount: result.rewrappedConfigCount,
+            versionCount: result.rewrappedSecretVersionCount,
+          },
+        ),
       );
       await loadConfig();
     } finally {
@@ -883,7 +1152,13 @@ export default function ConfigPage() {
         valueType: 'boolean',
         visibility: 'public',
       });
-      message.success(`Feature flag ${record.key} updated.`);
+      message.success(
+        formatMessage(
+          'pages.system.config.feature.flagUpdated',
+          'Feature flag {key} updated.',
+          { key: record.key },
+        ),
+      );
       await loadConfig();
     } finally {
       setFeatureFlagTogglingKey(undefined);
@@ -935,15 +1210,29 @@ export default function ConfigPage() {
       } else {
         await createOpenCoreSystemConfig({
           category: 'feature',
-          description: `Public rollout percentage for ${flagName}.`,
+          description: formatMessage(
+            'pages.system.config.feature.rolloutDescription',
+            'Public rollout percentage for {flagName}.',
+            { flagName },
+          ),
           key: rolloutKey,
-          name: `${rolloutConfigTarget.name} rollout`,
+          name: formatMessage(
+            'pages.system.config.feature.rolloutName',
+            '{name} rollout',
+            { name: rolloutConfigTarget.name },
+          ),
           value: nextValue,
           valueType: 'number',
           visibility: 'public',
         });
       }
-      message.success(`Feature rollout ${flagName} set to ${nextValue}%.`);
+      message.success(
+        formatMessage(
+          'pages.system.config.feature.rolloutUpdated',
+          'Feature rollout {flagName} set to {value}%.',
+          { flagName, value: nextValue },
+        ),
+      );
       setRolloutConfigTarget(undefined);
       await loadConfig();
     } finally {
@@ -986,7 +1275,12 @@ export default function ConfigPage() {
     try {
       nextValue = normalizeAudienceRulesJson(audienceRulesJson);
     } catch {
-      message.error('Audience rules must be valid JSON.');
+      message.error(
+        formatMessage(
+          'pages.system.config.feature.audienceRulesInvalid',
+          'Audience rules must be valid JSON.',
+        ),
+      );
       return;
     }
 
@@ -1004,15 +1298,29 @@ export default function ConfigPage() {
       } else {
         await createOpenCoreSystemConfig({
           category: 'feature',
-          description: `Public audience targeting rules for ${flagName}.`,
+          description: formatMessage(
+            'pages.system.config.feature.audienceDescription',
+            'Public audience targeting rules for {flagName}.',
+            { flagName },
+          ),
           key: audienceKey,
-          name: `${audienceConfigTarget.name} audience`,
+          name: formatMessage(
+            'pages.system.config.feature.audienceName',
+            '{name} audience',
+            { name: audienceConfigTarget.name },
+          ),
           value: nextValue,
           valueType: 'json',
           visibility: 'public',
         });
       }
-      message.success(`Feature audience ${flagName} updated.`);
+      message.success(
+        formatMessage(
+          'pages.system.config.feature.audienceUpdated',
+          'Feature audience {flagName} updated.',
+          { flagName },
+        ),
+      );
       setAudienceConfigTarget(undefined);
       await loadConfig();
     } finally {
@@ -1022,7 +1330,7 @@ export default function ConfigPage() {
 
   const columns: ProColumns<SystemConfigSummary>[] = [
     {
-      title: 'Name',
+      title: formatMessage('pages.system.config.fields.name', 'Name'),
       dataIndex: 'name',
       ellipsis: true,
       render: (_, record) => (
@@ -1032,48 +1340,52 @@ export default function ConfigPage() {
       ),
     },
     {
-      title: 'Category',
+      title: formatMessage('pages.system.config.fields.category', 'Category'),
       dataIndex: 'category',
       width: 132,
       render: (_, record) => <Tag>{record.category}</Tag>,
     },
     {
-      title: 'Key',
+      title: formatMessage('pages.system.config.fields.key', 'Key'),
       dataIndex: 'key',
       ellipsis: true,
     },
     {
-      title: 'Value',
+      title: formatMessage('pages.system.config.fields.value', 'Value'),
       dataIndex: 'value',
       ellipsis: true,
       render: (_, record) => renderValue(record),
     },
     {
-      title: 'Type',
+      title: formatMessage('pages.system.config.fields.type', 'Type'),
       dataIndex: 'valueType',
       width: 112,
-      render: (_, record) => <Tag>{record.valueType}</Tag>,
+      render: (_, record) => <Tag>{valueTypeLabels[record.valueType]}</Tag>,
     },
     {
-      title: 'Visibility',
+      title: formatMessage('pages.system.config.fields.visibility', 'Visibility'),
       dataIndex: 'visibility',
       width: 124,
       render: (_, record) => renderVisibility(record),
     },
     {
-      title: 'Vault',
+      title: formatMessage('pages.system.config.fields.vault', 'Vault'),
       dataIndex: 'encrypted',
       width: 148,
       render: (_, record) => renderVault(record),
     },
     {
-      title: 'Public',
+      title: formatMessage('pages.system.config.fields.public', 'Public'),
       dataIndex: 'public',
       width: 96,
-      render: (_, record) => (record.public ? 'public' : 'private'),
+      render: (_, record) =>
+        record.public ? publicLabels.public : publicLabels.private,
     },
     {
-      title: 'Feature Flag',
+      title: formatMessage(
+        'pages.system.config.fields.featureFlag',
+        'Feature Flag',
+      ),
       dataIndex: 'key',
       width: 156,
       render: (_, record) => {
@@ -1088,27 +1400,29 @@ export default function ConfigPage() {
               onChange={() => void toggleFeatureFlag(record)}
               size="small"
             />
-            <Tag color="green">runtime</Tag>
+            <Tag color="green">{featureLabels.runtime}</Tag>
           </Space>
         ) : flagName ? (
           <Tag color="cyan">
             {flagName}{' '}
-            {isFeatureFlagAudienceConfig(record) ? 'audience' : 'rollout'}
+            {isFeatureFlagAudienceConfig(record)
+              ? featureLabels.audience
+              : featureLabels.rollout}
           </Tag>
         ) : (
-          <Tag>standard</Tag>
+          <Tag>{featureLabels.standard}</Tag>
         );
       },
     },
     {
-      title: 'Rollout %',
+      title: formatMessage('pages.system.config.fields.rollout', 'Rollout %'),
       dataIndex: 'key',
       width: 148,
       render: (_, record) => {
         const flagName = getFeatureFlagName(record);
 
         if (!flagName) {
-          return <Tag>n/a</Tag>;
+          return <Tag>{featureLabels.notApplicable}</Tag>;
         }
 
         const rolloutRecord = findFeatureFlagRolloutRecord(rows, flagName);
@@ -1120,9 +1434,18 @@ export default function ConfigPage() {
           <Space size="small">
             <Tag color="cyan">{rolloutValue}%</Tag>
             {isFeatureFlagConfig(record) ? (
-              <Tooltip title="Set rollout">
+              <Tooltip
+                title={formatMessage(
+                  'pages.system.config.actions.setRollout',
+                  'Set rollout',
+                )}
+              >
                 <Button
-                  aria-label={`Set rollout for ${record.key}`}
+                  aria-label={formatMessage(
+                    'pages.system.config.actions.setRolloutAria',
+                    'Set rollout for {key}',
+                    { key: record.key },
+                  )}
                   icon={<PercentageOutlined />}
                   loading={
                     featureFlagRolloutSavingKey ===
@@ -1138,14 +1461,17 @@ export default function ConfigPage() {
       },
     },
     {
-      title: 'Audience Rules',
+      title: formatMessage(
+        'pages.system.config.fields.audienceRules',
+        'Audience Rules',
+      ),
       dataIndex: 'key',
       width: 176,
       render: (_, record) => {
         const flagName = getFeatureFlagName(record);
 
         if (!flagName) {
-          return <Tag>n/a</Tag>;
+          return <Tag>{featureLabels.notApplicable}</Tag>;
         }
 
         const audienceRecord = findFeatureFlagAudienceRecord(rows, flagName);
@@ -1155,11 +1481,22 @@ export default function ConfigPage() {
 
         return (
           <Space size="small">
-            <Tag color="geekblue">{formatAudienceRules(audienceValue)}</Tag>
+            <Tag color="geekblue">
+              {formatAudienceRulesText(audienceValue)}
+            </Tag>
             {isFeatureFlagConfig(record) ? (
-              <Tooltip title="Set audience">
+              <Tooltip
+                title={formatMessage(
+                  'pages.system.config.actions.setAudience',
+                  'Set audience',
+                )}
+              >
                 <Button
-                  aria-label={`Set audience for ${record.key}`}
+                  aria-label={formatMessage(
+                    'pages.system.config.actions.setAudienceAria',
+                    'Set audience for {key}',
+                    { key: record.key },
+                  )}
                   icon={<ApartmentOutlined />}
                   loading={
                     featureFlagAudienceSavingKey ===
@@ -1175,22 +1512,39 @@ export default function ConfigPage() {
       },
     },
     {
-      title: 'System',
+      title: formatMessage('pages.system.config.fields.system', 'System'),
       dataIndex: 'system',
       width: 104,
       render: (_, record) => renderSystem(record),
     },
-    { title: 'Description', dataIndex: 'description', ellipsis: true },
-    { title: 'Remark', dataIndex: 'remark', ellipsis: true },
     {
-      title: 'Actions',
+      title: formatMessage('pages.system.config.fields.description', 'Description'),
+      dataIndex: 'description',
+      ellipsis: true,
+    },
+    {
+      title: formatMessage('pages.system.config.fields.remark', 'Remark'),
+      dataIndex: 'remark',
+      ellipsis: true,
+    },
+    {
+      title: formatMessage('pages.system.config.actions.column', 'Actions'),
       valueType: 'option',
       width: 272,
       render: (_, record) => (
         <Space size="small">
-          <Tooltip title="Detail">
+          <Tooltip
+            title={formatMessage(
+              'pages.system.config.actions.detail',
+              'Detail',
+            )}
+          >
             <Button
-              aria-label={`View ${record.key}`}
+              aria-label={formatMessage(
+                'pages.system.config.actions.viewAria',
+                'View {key}',
+                { key: record.key },
+              )}
               icon={<EyeOutlined />}
               onClick={() => void openDetail(record)}
               size="small"
@@ -1199,12 +1553,22 @@ export default function ConfigPage() {
           <Tooltip
             title={
               record.visibility === 'public'
-                ? 'Read public value by key'
-                : 'Only public config values can be read by key'
+                ? formatMessage(
+                    'pages.system.config.actions.readPublicValue',
+                    'Read public value by key',
+                  )
+                : formatMessage(
+                    'pages.system.config.actions.publicValueOnly',
+                    'Only public config values can be read by key',
+                  )
             }
           >
             <Button
-              aria-label={`Read public value ${record.key}`}
+              aria-label={formatMessage(
+                'pages.system.config.actions.readPublicValueAria',
+                'Read public value {key}',
+                { key: record.key },
+              )}
               disabled={record.visibility !== 'public'}
               icon={<KeyOutlined />}
               loading={valueReadingKey === record.key}
@@ -1215,12 +1579,22 @@ export default function ConfigPage() {
           <Tooltip
             title={
               record.visibility === 'public'
-                ? 'Environment Override'
-                : 'Only public config can define environment overrides'
+                ? formatMessage(
+                    'pages.system.config.environment.title',
+                    'Environment Override',
+                  )
+                : formatMessage(
+                    'pages.system.config.environment.publicOnly',
+                    'Only public config can define environment overrides',
+                  )
             }
           >
             <Button
-              aria-label={`Environment override ${record.key}`}
+              aria-label={formatMessage(
+                'pages.system.config.environment.aria',
+                'Environment override {key}',
+                { key: record.key },
+              )}
               disabled={record.visibility !== 'public'}
               icon={<ApartmentOutlined />}
               onClick={() => void openEnvironmentOverride(record)}
@@ -1230,29 +1604,48 @@ export default function ConfigPage() {
           <Tooltip
             title={
               record.visibility === 'secret'
-                ? 'Secret Versions'
-                : 'Only secret config keeps secret versions'
+                ? formatMessage(
+                    'pages.system.config.secretVersions.title',
+                    'Secret Versions',
+                  )
+                : formatMessage(
+                    'pages.system.config.secretVersions.secretOnly',
+                    'Only secret config keeps secret versions',
+                  )
             }
           >
             <Button
-              aria-label={`Secret versions ${record.key}`}
+              aria-label={formatMessage(
+                'pages.system.config.secretVersions.aria',
+                'Secret versions {key}',
+                { key: record.key },
+              )}
               disabled={record.visibility !== 'secret'}
               icon={<LockOutlined />}
               onClick={() => void openSecretVersions(record)}
               size="small"
             />
           </Tooltip>
-          <Tooltip title="Edit">
+          <Tooltip
+            title={formatMessage('pages.system.config.actions.edit', 'Edit')}
+          >
             <Button
-              aria-label={`Edit ${record.key}`}
+              aria-label={formatMessage(
+                'pages.system.config.actions.editAria',
+                'Edit {key}',
+                { key: record.key },
+              )}
               icon={<EditOutlined />}
               onClick={() => void openEditForm(record)}
               size="small"
             />
           </Tooltip>
           <Popconfirm
-            title="Delete this system config?"
-            okText="Delete"
+            title={formatMessage(
+              'pages.system.config.confirm.deleteOne',
+              'Delete this system config?',
+            )}
+            okText={formatMessage('pages.system.config.actions.delete', 'Delete')}
             okButtonProps={{ danger: true }}
             disabled={record.system}
             onConfirm={() => void deleteConfig(record)}
@@ -1260,12 +1653,22 @@ export default function ConfigPage() {
             <Tooltip
               title={
                 record.system
-                  ? 'System built-in configs cannot be deleted'
-                  : 'Delete'
+                  ? formatMessage(
+                      'pages.system.config.actions.systemDeleteLocked',
+                      'System built-in configs cannot be deleted',
+                    )
+                  : formatMessage(
+                      'pages.system.config.actions.delete',
+                      'Delete',
+                    )
               }
             >
               <Button
-                aria-label={`Delete ${record.key}`}
+                aria-label={formatMessage(
+                  'pages.system.config.actions.deleteAria',
+                  'Delete {key}',
+                  { key: record.key },
+                )}
                 danger
                 disabled={record.system}
                 icon={<DeleteOutlined />}
@@ -1279,12 +1682,18 @@ export default function ConfigPage() {
   ];
 
   return (
-    <PageContainer title="System Config" subTitle="S7 System">
+    <PageContainer
+      title={formatMessage('pages.system.config.title', 'System Config')}
+      subTitle={formatMessage('pages.system.config.section', 'S7 System')}
+    >
       {loadError ? (
         <Alert
           showIcon
           type="error"
-          message="Unable to load live system config"
+          message={formatMessage(
+            'pages.system.config.load.liveFailure',
+            'Unable to load live system config',
+          )}
           description={loadError}
           style={{ marginBlockEnd: 16 }}
         />
@@ -1302,7 +1711,7 @@ export default function ConfigPage() {
             icon={<PlusOutlined />}
             onClick={openCreateForm}
           >
-            New
+            {formatMessage('pages.system.config.actions.new', 'New')}
           </Button>,
           <Button
             key="cache"
@@ -1310,7 +1719,10 @@ export default function ConfigPage() {
             loading={cacheRefreshing}
             onClick={() => void refreshConfigCache()}
           >
-            Refresh cache
+            {formatMessage(
+              'pages.system.config.actions.refreshCache',
+              'Refresh cache',
+            )}
           </Button>,
           <Button
             key="vault-key-rotation"
@@ -1318,19 +1730,29 @@ export default function ConfigPage() {
             loading={vaultStatusLoading || vaultKeyRotating}
             onClick={() => void openVaultStatus()}
           >
-            Vault Key Rotation
+            {formatMessage(
+              'pages.system.config.vaultStatus.title',
+              'Vault Key Rotation',
+            )}
           </Button>,
           <Button
             key="refresh"
             icon={<ReloadOutlined />}
             onClick={() => void loadConfig()}
           >
-            Reload data
+            {formatMessage(
+              'pages.system.config.actions.reloadData',
+              'Reload data',
+            )}
           </Button>,
           <Popconfirm
             key="batch-delete"
-            title={`Delete ${selectedDeletableKeys.length} selected custom config(s)?`}
-            okText="Delete"
+            title={formatMessage(
+              'pages.system.config.confirm.deleteSelected',
+              'Delete {count} selected custom config(s)?',
+              { count: selectedDeletableKeys.length },
+            )}
+            okText={formatMessage('pages.system.config.actions.delete', 'Delete')}
             okButtonProps={{ danger: true }}
             disabled={selectedDeletableKeys.length === 0}
             onConfirm={() => void deleteSelectedConfigs()}
@@ -1341,15 +1763,24 @@ export default function ConfigPage() {
               icon={<DeleteOutlined />}
               loading={batchDeleting}
             >
-              Delete selected
+              {formatMessage(
+                'pages.system.config.actions.deleteSelected',
+                'Delete selected',
+              )}
             </Button>
           </Popconfirm>,
           <Tooltip
             key="download-config-excel-export"
             title={
               canExportSystemConfig
-                ? 'Download Excel export'
-                : 'Missing core:config:export'
+                ? formatMessage(
+                    'pages.system.config.actions.downloadExcel',
+                    'Download Excel export',
+                  )
+                : formatMessage(
+                    'pages.system.config.permissions.missingExport',
+                    'Missing core:config:export',
+                  )
             }
           >
             <Button
@@ -1358,7 +1789,10 @@ export default function ConfigPage() {
               loading={exportingConfig}
               onClick={() => void downloadConfigExcelExport()}
             >
-              Download Excel
+              {formatMessage(
+                'pages.system.config.actions.downloadExcelShort',
+                'Download Excel',
+              )}
             </Button>
           </Tooltip>,
           <CurrentPageExportButton<SystemConfigSummary>
@@ -1385,10 +1819,21 @@ export default function ConfigPage() {
         fields={selectedDetail ? createDetailFields(selectedDetail) : []}
         onClose={() => setSelectedDetail(undefined)}
         open={Boolean(selectedDetail)}
-        title={selectedDetail?.key ?? 'System Config Detail'}
+        title={
+          selectedDetail?.key ??
+          formatMessage(
+            'pages.system.config.detail.title',
+            'System Config Detail',
+          )
+        }
       />
       <Modal
-        title={editingConfig ? 'Edit System Config' : 'New System Config'}
+        title={formatMessage(
+          editingConfig
+            ? 'pages.system.config.form.editTitle'
+            : 'pages.system.config.form.createTitle',
+          editingConfig ? 'Edit System Config' : 'New System Config',
+        )}
         open={formOpen}
         onCancel={() => {
           setFormOpen(false);
@@ -1396,68 +1841,141 @@ export default function ConfigPage() {
         }}
         onOk={() => void submitForm()}
         confirmLoading={submitting}
-        okText={editingConfig ? 'Save' : 'Create'}
+        okText={
+          editingConfig
+            ? formatMessage('pages.system.config.actions.save', 'Save')
+            : formatMessage('pages.system.config.actions.create', 'Create')
+        }
       >
         <Form<ConfigFormValues> form={form} layout="vertical">
           <Form.Item
-            label="Name"
+            label={formatMessage('pages.system.config.fields.name', 'Name')}
             name="name"
-            rules={[{ required: true, message: 'Name is required.' }]}
+            rules={[
+              {
+                required: true,
+                message: formatMessage(
+                  'pages.system.config.validation.nameRequired',
+                  'Name is required.',
+                ),
+              },
+            ]}
           >
             <Input maxLength={100} />
           </Form.Item>
           <Form.Item
-            label="Category"
+            label={formatMessage(
+              'pages.system.config.fields.category',
+              'Category',
+            )}
             name="category"
-            rules={[{ required: true, message: 'Category is required.' }]}
+            rules={[
+              {
+                required: true,
+                message: formatMessage(
+                  'pages.system.config.validation.categoryRequired',
+                  'Category is required.',
+                ),
+              },
+            ]}
           >
             <Input maxLength={50} />
           </Form.Item>
           <Form.Item
-            label="Key"
+            label={formatMessage('pages.system.config.fields.key', 'Key')}
             name="key"
-            rules={[{ required: true, message: 'Key is required.' }]}
+            rules={[
+              {
+                required: true,
+                message: formatMessage(
+                  'pages.system.config.validation.keyRequired',
+                  'Key is required.',
+                ),
+              },
+            ]}
           >
             <Input disabled={Boolean(editingConfig)} maxLength={120} />
           </Form.Item>
           <Form.Item
-            label="Value"
+            label={formatMessage('pages.system.config.fields.value', 'Value')}
             name="value"
-            rules={[{ required: valueRequired, message: 'Value is required.' }]}
+            rules={[
+              {
+                required: valueRequired,
+                message: formatMessage(
+                  'pages.system.config.validation.valueRequired',
+                  'Value is required.',
+                ),
+              },
+            ]}
           >
             <Input.TextArea rows={3} maxLength={500} />
           </Form.Item>
           <Space align="start" size="middle" wrap>
             <Form.Item
-              label="Type"
+              label={formatMessage('pages.system.config.fields.type', 'Type')}
               name="valueType"
-              rules={[{ required: true, message: 'Type is required.' }]}
+              rules={[
+                {
+                  required: true,
+                  message: formatMessage(
+                    'pages.system.config.validation.typeRequired',
+                    'Type is required.',
+                  ),
+                },
+              ]}
             >
               <Select options={valueTypeOptions} style={{ width: 150 }} />
             </Form.Item>
             <Form.Item
-              label="Visibility"
+              label={formatMessage(
+                'pages.system.config.fields.visibility',
+                'Visibility',
+              )}
               name="visibility"
-              rules={[{ required: true, message: 'Visibility is required.' }]}
+              rules={[
+                {
+                  required: true,
+                  message: formatMessage(
+                    'pages.system.config.validation.visibilityRequired',
+                    'Visibility is required.',
+                  ),
+                },
+              ]}
             >
               <Select options={visibilityOptions} style={{ width: 150 }} />
             </Form.Item>
           </Space>
-          <Form.Item label="Description" name="description">
+          <Form.Item
+            label={formatMessage(
+              'pages.system.config.fields.description',
+              'Description',
+            )}
+            name="description"
+          >
             <Input.TextArea maxLength={240} rows={3} />
           </Form.Item>
-          <Form.Item label="Remark" name="remark">
+          <Form.Item
+            label={formatMessage('pages.system.config.fields.remark', 'Remark')}
+            name="remark"
+          >
             <Input.TextArea maxLength={500} rows={3} />
           </Form.Item>
         </Form>
       </Modal>
       <Modal
-        title="Environment Override"
+        title={formatMessage(
+          'pages.system.config.environment.title',
+          'Environment Override',
+        )}
         open={Boolean(environmentConfigTarget)}
         confirmLoading={environmentOverrideSaving}
         onCancel={() => setEnvironmentConfigTarget(undefined)}
         onOk={() => void saveEnvironmentOverride()}
-        okText="Save override"
+        okText={formatMessage(
+          'pages.system.config.environment.save',
+          'Save override',
+        )}
         footer={[
           <Button
             key="delete"
@@ -1465,13 +1983,16 @@ export default function ConfigPage() {
             loading={environmentOverrideSaving}
             onClick={() => void deleteEnvironmentOverride()}
           >
-            Delete override
+            {formatMessage(
+              'pages.system.config.environment.delete',
+              'Delete override',
+            )}
           </Button>,
           <Button
             key="cancel"
             onClick={() => setEnvironmentConfigTarget(undefined)}
           >
-            Cancel
+            {formatMessage('pages.system.config.actions.cancel', 'Cancel')}
           </Button>,
           <Button
             key="save"
@@ -1479,14 +2000,20 @@ export default function ConfigPage() {
             loading={environmentOverrideSaving}
             onClick={() => void saveEnvironmentOverride()}
           >
-            Save override
+            {formatMessage(
+              'pages.system.config.environment.save',
+              'Save override',
+            )}
           </Button>,
         ]}
       >
         <Alert
           showIcon
           type="info"
-          message="Environment overrides"
+          message={formatMessage(
+            'pages.system.config.environment.overrides',
+            'Environment overrides',
+          )}
           description={environmentConfigTarget?.key}
           style={{ marginBlockEnd: 16 }}
         />
@@ -1496,57 +2023,103 @@ export default function ConfigPage() {
           disabled={environmentOverrideLoading}
         >
           <Form.Item
-            label="Environment"
+            label={formatMessage(
+              'pages.system.config.fields.environment',
+              'Environment',
+            )}
             name="environment"
-            rules={[{ required: true, message: 'Environment is required.' }]}
+            rules={[
+              {
+                required: true,
+                message: formatMessage(
+                  'pages.system.config.validation.environmentRequired',
+                  'Environment is required.',
+                ),
+              },
+            ]}
           >
             <Input maxLength={40} />
           </Form.Item>
           <Form.Item
-            label="Value"
+            label={formatMessage('pages.system.config.fields.value', 'Value')}
             name="value"
-            rules={[{ required: true, message: 'Value is required.' }]}
+            rules={[
+              {
+                required: true,
+                message: formatMessage(
+                  'pages.system.config.validation.valueRequired',
+                  'Value is required.',
+                ),
+              },
+            ]}
           >
             <Input.TextArea rows={3} maxLength={500} />
           </Form.Item>
-          <Form.Item label="Description" name="description">
+          <Form.Item
+            label={formatMessage(
+              'pages.system.config.fields.description',
+              'Description',
+            )}
+            name="description"
+          >
             <Input.TextArea maxLength={240} rows={3} />
           </Form.Item>
-          <Form.Item label="Remark" name="remark">
+          <Form.Item
+            label={formatMessage('pages.system.config.fields.remark', 'Remark')}
+            name="remark"
+          >
             <Input.TextArea maxLength={500} rows={3} />
           </Form.Item>
         </Form>
       </Modal>
       <Modal
-        title="Secret Versions"
+        title={formatMessage(
+          'pages.system.config.secretVersions.title',
+          'Secret Versions',
+        )}
         open={Boolean(secretConfigTarget)}
         confirmLoading={secretRotating}
         onCancel={() => setSecretConfigTarget(undefined)}
         onOk={() => void rotateSecret()}
-        okText="Rotate secret"
+        okText={formatMessage(
+          'pages.system.config.secretVersions.rotate',
+          'Rotate secret',
+        )}
       >
         <Alert
           showIcon
           type="info"
-          message="Secret version history"
+          message={formatMessage(
+            'pages.system.config.secretVersions.history',
+            'Secret version history',
+          )}
           description={secretConfigTarget?.key}
           style={{ marginBlockEnd: 16 }}
         />
         <Space direction="vertical" style={{ width: '100%' }}>
           {secretVersionsLoading ? (
             <Typography.Text type="secondary">
-              Loading versions...
+              {formatMessage(
+                'pages.system.config.secretVersions.loading',
+                'Loading versions...',
+              )}
             </Typography.Text>
           ) : secretVersionsError ? (
             <Alert
               showIcon
               type="error"
-              message="Unable to load live config secret versions"
+              message={formatMessage(
+                'pages.system.config.secretVersions.loadLiveFailure',
+                'Unable to load live config secret versions',
+              )}
               description={secretVersionsError}
             />
           ) : secretVersions.length === 0 ? (
             <Typography.Text type="secondary">
-              No secret versions
+              {formatMessage(
+                'pages.system.config.secretVersions.empty',
+                'No secret versions',
+              )}
             </Typography.Text>
           ) : (
             secretVersions.map((version) => (
@@ -1554,7 +2127,17 @@ export default function ConfigPage() {
                 <Tag color={version.active ? 'green' : 'default'}>
                   v{version.version}
                 </Tag>
-                <Tag>{version.active ? 'active' : 'inactive'}</Tag>
+                <Tag>
+                  {version.active
+                    ? formatMessage(
+                        'pages.system.config.secretVersions.active',
+                        'active',
+                      )
+                    : formatMessage(
+                        'pages.system.config.secretVersions.inactive',
+                        'inactive',
+                      )}
+                </Tag>
                 <Tag color={version.encrypted ? 'purple' : 'orange'}>
                   {version.envelopeVersion}
                 </Tag>
@@ -1585,51 +2168,86 @@ export default function ConfigPage() {
           style={{ marginBlockStart: 16 }}
         >
           <Form.Item
-            label="New secret value"
+            label={formatMessage(
+              'pages.system.config.fields.newSecretValue',
+              'New secret value',
+            )}
             name="value"
             rules={[
               {
                 required: true,
                 whitespace: true,
-                message: 'New secret value is required.',
+                message: formatMessage(
+                  'pages.system.config.validation.newSecretValueRequired',
+                  'New secret value is required.',
+                ),
               },
             ]}
           >
             <Input.Password autoComplete="new-password" maxLength={500} />
           </Form.Item>
-          <Form.Item label="Rotated by" name="rotatedBy">
+          <Form.Item
+            label={formatMessage(
+              'pages.system.config.fields.rotatedBy',
+              'Rotated by',
+            )}
+            name="rotatedBy"
+          >
             <Input maxLength={100} />
           </Form.Item>
-          <Form.Item label="Reason" name="reason">
+          <Form.Item
+            label={formatMessage('pages.system.config.fields.reason', 'Reason')}
+            name="reason"
+          >
             <Input.TextArea maxLength={500} rows={2} />
           </Form.Item>
         </Form>
       </Modal>
       <Modal
-        title="Vault Key Rotation"
+        title={formatMessage(
+          'pages.system.config.vaultStatus.title',
+          'Vault Key Rotation',
+        )}
         open={vaultStatusOpen}
         confirmLoading={vaultKeyRotating}
         onCancel={() => setVaultStatusOpen(false)}
         onOk={() => void rotateVaultKey()}
-        okText="Rotate vault key"
+        okText={formatMessage(
+          'pages.system.config.vaultStatus.rotate',
+          'Rotate vault key',
+        )}
       >
         <Alert
           showIcon
           type={vaultStatusError ? 'error' : 'info'}
-          message="Active vault key"
+          message={formatMessage(
+            'pages.system.config.vaultStatus.activeKey',
+            'Active vault key',
+          )}
           description={
             vaultStatusError ??
             vaultStatus?.activeKeyId ??
             (vaultStatusLoading
-              ? 'Loading vault status'
-              : 'No live vault status')
+              ? formatMessage(
+                  'pages.system.config.vaultStatus.loading',
+                  'Loading vault status',
+                )
+              : formatMessage(
+                  'pages.system.config.vaultStatus.empty',
+                  'No live vault status',
+                ))
           }
           style={{ marginBlockEnd: 16 }}
         />
         {vaultStatusError ? null : (
           <Space direction="vertical" style={{ width: '100%' }}>
             <Space wrap>
-              <Tag color="blue">Managed KMS provider</Tag>
+              <Tag color="blue">
+                {formatMessage(
+                  'pages.system.config.vaultStatus.managedKmsProvider',
+                  'Managed KMS provider',
+                )}
+              </Tag>
               <Tag
                 color={
                   vaultStatus?.provider === 'opencore.http-json'
@@ -1641,21 +2259,50 @@ export default function ConfigPage() {
               </Tag>
               <Tag>{vaultStatus?.mode ?? 'local'}</Tag>
               <Tag color={vaultStatus?.ready === false ? 'red' : 'green'}>
-                KMS {vaultStatus?.ready === false ? 'not ready' : 'ready'}
+                {vaultStatus?.ready === false
+                  ? formatMessage(
+                      'pages.system.config.vaultStatus.kmsNotReady',
+                      'KMS not ready',
+                    )
+                  : formatMessage(
+                      'pages.system.config.vaultStatus.kmsReady',
+                      'KMS ready',
+                    )}
               </Tag>
               <Tag
                 color={
                   vaultStatus?.externalEncryptionEnabled ? 'purple' : 'default'
                 }
               >
-                External encryption{' '}
-                {vaultStatus?.externalEncryptionEnabled ? 'on' : 'off'}
+                {vaultStatus?.externalEncryptionEnabled
+                  ? formatMessage(
+                      'pages.system.config.vaultStatus.externalEncryptionOn',
+                      'External encryption on',
+                    )
+                  : formatMessage(
+                      'pages.system.config.vaultStatus.externalEncryptionOff',
+                      'External encryption off',
+                    )}
               </Tag>
               {vaultStatus?.endpointHost ? (
-                <Tag>KMS endpoint {vaultStatus.endpointHost}</Tag>
+                <Tag>
+                  {formatMessage(
+                    'pages.system.config.vaultStatus.endpoint',
+                    'KMS endpoint {host}',
+                    { host: vaultStatus.endpointHost },
+                  )}
+                </Tag>
               ) : null}
               <Tag>
-                {vaultStatus?.legacyDecryptEnabled ? 'v1 decrypt' : 'v2 only'}
+                {vaultStatus?.legacyDecryptEnabled
+                  ? formatMessage(
+                      'pages.system.config.vaultStatus.v1Decrypt',
+                      'v1 decrypt',
+                    )
+                  : formatMessage(
+                      'pages.system.config.vaultStatus.v2Only',
+                      'v2 only',
+                    )}
               </Tag>
               {(vaultStatus?.keyIds ?? []).map((keyId) => (
                 <Tag
@@ -1669,25 +2316,54 @@ export default function ConfigPage() {
               ))}
             </Space>
             <Space wrap>
-              <Tag>configs {vaultStatus?.encryptedConfigCount ?? 0}</Tag>
-              <Tag>versions {vaultStatus?.secretVersionCount ?? 0}</Tag>
-              <Tag>active key {vaultStatus?.activeKeyConfigCount ?? 0}</Tag>
+              <Tag>
+                {formatMessage(
+                  'pages.system.config.vaultStatus.configs',
+                  'configs {count}',
+                  { count: vaultStatus?.encryptedConfigCount ?? 0 },
+                )}
+              </Tag>
+              <Tag>
+                {formatMessage(
+                  'pages.system.config.vaultStatus.versions',
+                  'versions {count}',
+                  { count: vaultStatus?.secretVersionCount ?? 0 },
+                )}
+              </Tag>
+              <Tag>
+                {formatMessage(
+                  'pages.system.config.vaultStatus.activeKeyConfigs',
+                  'active key {count}',
+                  { count: vaultStatus?.activeKeyConfigCount ?? 0 },
+                )}
+              </Tag>
               <Tag
                 color={vaultStatus?.legacyEnvelopeCount ? 'orange' : 'green'}
               >
-                legacy {vaultStatus?.legacyEnvelopeCount ?? 0}
+                {formatMessage(
+                  'pages.system.config.vaultStatus.legacy',
+                  'legacy {count}',
+                  { count: vaultStatus?.legacyEnvelopeCount ?? 0 },
+                )}
               </Tag>
               <Tag
                 color={vaultStatus?.staleKeyEnvelopeCount ? 'orange' : 'green'}
               >
-                stale {vaultStatus?.staleKeyEnvelopeCount ?? 0}
+                {formatMessage(
+                  'pages.system.config.vaultStatus.stale',
+                  'stale {count}',
+                  { count: vaultStatus?.staleKeyEnvelopeCount ?? 0 },
+                )}
               </Tag>
             </Space>
             {vaultStatus?.lastError ? (
               <Alert
                 showIcon
                 type="warning"
-                message="Managed KMS provider not ready"
+                message={formatMessage(
+                  'pages.system.config.vaultStatus.providerNotReady',
+                  'Managed KMS provider not ready',
+                )}
                 description={vaultStatus.lastError}
               />
             ) : null}
@@ -1698,30 +2374,51 @@ export default function ConfigPage() {
           layout="vertical"
           style={{ marginBlockStart: 16 }}
         >
-          <Form.Item label="Rotated by" name="rotatedBy">
+          <Form.Item
+            label={formatMessage(
+              'pages.system.config.fields.rotatedBy',
+              'Rotated by',
+            )}
+            name="rotatedBy"
+          >
             <Input maxLength={100} />
           </Form.Item>
-          <Form.Item label="Reason" name="reason">
+          <Form.Item
+            label={formatMessage('pages.system.config.fields.reason', 'Reason')}
+            name="reason"
+          >
             <Input.TextArea maxLength={500} rows={2} />
           </Form.Item>
         </Form>
       </Modal>
       <Modal
-        title="Feature rollout"
+        title={formatMessage(
+          'pages.system.config.feature.rolloutTitle',
+          'Feature rollout',
+        )}
         open={Boolean(rolloutConfigTarget)}
         onCancel={() => setRolloutConfigTarget(undefined)}
         onOk={() => void saveFeatureFlagRollout()}
         confirmLoading={Boolean(featureFlagRolloutSavingKey)}
-        okText="Set rollout"
+        okText={formatMessage(
+          'pages.system.config.actions.setRollout',
+          'Set rollout',
+        )}
       >
         <Space direction="vertical" style={{ width: '100%' }}>
           <Typography.Text strong>
             {rolloutConfigTarget
               ? getFeatureFlagName(rolloutConfigTarget)
-              : 'feature flag'}
+              : formatMessage(
+                  'pages.system.config.feature.featureFlag',
+                  'feature flag',
+                )}
           </Typography.Text>
           <InputNumber
-            aria-label="Feature rollout percentage"
+            aria-label={formatMessage(
+              'pages.system.config.feature.rolloutPercentageAria',
+              'Feature rollout percentage',
+            )}
             addonAfter="%"
             max={100}
             min={0}
@@ -1735,21 +2432,33 @@ export default function ConfigPage() {
         </Space>
       </Modal>
       <Modal
-        title="Feature audience"
+        title={formatMessage(
+          'pages.system.config.feature.audienceTitle',
+          'Feature audience',
+        )}
         open={Boolean(audienceConfigTarget)}
         onCancel={() => setAudienceConfigTarget(undefined)}
         onOk={() => void saveFeatureFlagAudience()}
         confirmLoading={Boolean(featureFlagAudienceSavingKey)}
-        okText="Set audience"
+        okText={formatMessage(
+          'pages.system.config.actions.setAudience',
+          'Set audience',
+        )}
       >
         <Space direction="vertical" style={{ width: '100%' }}>
           <Typography.Text strong>
             {audienceConfigTarget
               ? getFeatureFlagName(audienceConfigTarget)
-              : 'feature flag'}
+              : formatMessage(
+                  'pages.system.config.feature.featureFlag',
+                  'feature flag',
+                )}
           </Typography.Text>
           <Input.TextArea
-            aria-label="Feature audience rules"
+            aria-label={formatMessage(
+              'pages.system.config.feature.audienceRulesAria',
+              'Feature audience rules',
+            )}
             rows={8}
             value={audienceRulesJson}
             onChange={(event) => setAudienceRulesJson(event.target.value)}
