@@ -437,6 +437,301 @@ export default {
   'pages.system.config.visibility.private': 'private',
   'pages.system.config.visibility.public': 'public',
   'pages.system.config.visibility.secret': 'secret',
+  'pages.system.notices.actions.alreadyArchived': 'Already archived',
+  'pages.system.notices.actions.archive': 'Archive',
+  'pages.system.notices.actions.archiveAria': 'Archive {title}',
+  'pages.system.notices.actions.archivedEditLocked':
+    'Archived notices cannot be edited',
+  'pages.system.notices.actions.cancel': 'Cancel',
+  'pages.system.notices.actions.column': 'Actions',
+  'pages.system.notices.actions.create': 'Create',
+  'pages.system.notices.actions.delete': 'Delete',
+  'pages.system.notices.actions.deleteAria': 'Delete {title}',
+  'pages.system.notices.actions.deliveryRecords': 'Delivery records',
+  'pages.system.notices.actions.deliveryRecordsAria':
+    'View delivery records for {title}',
+  'pages.system.notices.actions.detail': 'Detail',
+  'pages.system.notices.actions.dispatch': 'Dispatch',
+  'pages.system.notices.actions.dispatchInApp':
+    'Dispatch in-app deliveries',
+  'pages.system.notices.actions.dispatchInAppAria':
+    'Dispatch delivery records for {title}',
+  'pages.system.notices.actions.dispatchMail': 'Dispatch mail deliveries',
+  'pages.system.notices.actions.dispatchMailAria':
+    'Dispatch mail delivery records for {title}',
+  'pages.system.notices.actions.dispatchSms': 'Dispatch SMS deliveries',
+  'pages.system.notices.actions.dispatchSmsAria':
+    'Dispatch SMS delivery records for {title}',
+  'pages.system.notices.actions.draftPublishOnly':
+    'Only draft notices can publish',
+  'pages.system.notices.actions.edit': 'Edit',
+  'pages.system.notices.actions.editAria': 'Edit {title}',
+  'pages.system.notices.actions.execute': 'Execute',
+  'pages.system.notices.actions.executeLocal': 'Execute local provider',
+  'pages.system.notices.actions.executeLocalAria':
+    'Execute local provider for {title}',
+  'pages.system.notices.actions.executeMail':
+    'Execute mail outbox provider',
+  'pages.system.notices.actions.executeMailAria':
+    'Execute mail provider for {title}',
+  'pages.system.notices.actions.executeSms': 'Execute SMS outbox provider',
+  'pages.system.notices.actions.executeSmsAria':
+    'Execute SMS provider for {title}',
+  'pages.system.notices.actions.new': 'New',
+  'pages.system.notices.actions.publish': 'Publish',
+  'pages.system.notices.actions.publishAria': 'Publish {title}',
+  'pages.system.notices.actions.publishedDispatchOnly':
+    'Only published notices can dispatch',
+  'pages.system.notices.actions.publishedExecuteOnly':
+    'Only published notices can execute',
+  'pages.system.notices.actions.readUsers': 'Read users',
+  'pages.system.notices.actions.readUsersAria':
+    'View read users for {title}',
+  'pages.system.notices.actions.refresh': 'Refresh',
+  'pages.system.notices.actions.save': 'Save',
+  'pages.system.notices.actions.viewAria': 'View {title}',
+  'pages.system.notices.audience.admin': 'admin',
+  'pages.system.notices.audience.all': 'all',
+  'pages.system.notices.boolean.no': 'no',
+  'pages.system.notices.boolean.yes': 'yes',
+  'pages.system.notices.channel.inApp': 'in-app',
+  'pages.system.notices.channel.mail': 'mail',
+  'pages.system.notices.channel.sms': 'sms',
+  'pages.system.notices.confirm.archive': 'Archive this notice?',
+  'pages.system.notices.confirm.deleteOne': 'Delete this notice?',
+  'pages.system.notices.confirm.dispatchInApp':
+    'Dispatch in-app delivery records?',
+  'pages.system.notices.confirm.dispatchMail':
+    'Dispatch mail delivery records?',
+  'pages.system.notices.confirm.dispatchSms':
+    'Dispatch SMS delivery records?',
+  'pages.system.notices.confirm.executeLocal':
+    'Execute local notice provider?',
+  'pages.system.notices.confirm.executeMail': 'Execute mail outbox provider?',
+  'pages.system.notices.confirm.executeSms': 'Execute SMS outbox provider?',
+  'pages.system.notices.confirm.publish': 'Publish this notice?',
+  'pages.system.notices.deliveries.loadFailure':
+    'Unable to load live system notice delivery records.',
+  'pages.system.notices.deliveries.loadLiveFailure':
+    'Unable to load live system notice delivery records',
+  'pages.system.notices.deliveries.title': 'System Notice Delivery Records',
+  'pages.system.notices.deliveries.titleForNotice':
+    'System Notice Delivery Records: {title}',
+  'pages.system.notices.deliveryStatus.delivered': 'delivered',
+  'pages.system.notices.detail.loadFailure':
+    'Unable to load live system notice detail.',
+  'pages.system.notices.detail.title': 'System Notice Detail',
+  'pages.system.notices.empty.none': 'none',
+  'pages.system.notices.enabled.disabled': 'disabled',
+  'pages.system.notices.enabled.enabled': 'enabled',
+  'pages.system.notices.fields.archivedAt': 'Archived At',
+  'pages.system.notices.fields.attempts': 'Attempts',
+  'pages.system.notices.fields.audience': 'Audience',
+  'pages.system.notices.fields.channel': 'Channel',
+  'pages.system.notices.fields.code': 'Code',
+  'pages.system.notices.fields.content': 'Content',
+  'pages.system.notices.fields.contentTemplate': 'Content Template',
+  'pages.system.notices.fields.createdAt': 'Created At',
+  'pages.system.notices.fields.createdBy': 'Created By',
+  'pages.system.notices.fields.deliveredAt': 'Delivered At',
+  'pages.system.notices.fields.displayName': 'Display Name',
+  'pages.system.notices.fields.enabled': 'Enabled',
+  'pages.system.notices.fields.id': 'ID',
+  'pages.system.notices.fields.lastAttemptAt': 'Last Attempt At',
+  'pages.system.notices.fields.lastError': 'Last Error',
+  'pages.system.notices.fields.name': 'Name',
+  'pages.system.notices.fields.params': 'Params',
+  'pages.system.notices.fields.pinned': 'Pinned',
+  'pages.system.notices.fields.provider': 'Provider',
+  'pages.system.notices.fields.providerMessage': 'Provider Message',
+  'pages.system.notices.fields.providerStatus': 'Provider Status',
+  'pages.system.notices.fields.publishedAt': 'Published At',
+  'pages.system.notices.fields.read': 'Read',
+  'pages.system.notices.fields.readAt': 'Read At',
+  'pages.system.notices.fields.recipient': 'Recipient',
+  'pages.system.notices.fields.remark': 'Remark',
+  'pages.system.notices.fields.sentAt': 'Sent At',
+  'pages.system.notices.fields.status': 'Status',
+  'pages.system.notices.fields.title': 'Title',
+  'pages.system.notices.fields.titleTemplate': 'Title Template',
+  'pages.system.notices.fields.type': 'Type',
+  'pages.system.notices.fields.updatedAt': 'Updated At',
+  'pages.system.notices.fields.username': 'Username',
+  'pages.system.notices.fields.validFrom': 'Valid From',
+  'pages.system.notices.fields.validTo': 'Valid To',
+  'pages.system.notices.filters.audience': 'Audience',
+  'pages.system.notices.filters.enabled': 'Enabled',
+  'pages.system.notices.filters.status': 'Status',
+  'pages.system.notices.filters.type': 'Type',
+  'pages.system.notices.form.createTitle': 'New System Notice',
+  'pages.system.notices.form.editTitle': 'Edit System Notice',
+  'pages.system.notices.inbox.actions.alreadyRead': 'Already read',
+  'pages.system.notices.inbox.actions.markAllRead': 'Mark all read',
+  'pages.system.notices.inbox.actions.markRead': 'Mark read',
+  'pages.system.notices.inbox.actions.markReadAria': 'Mark {title} read',
+  'pages.system.notices.inbox.actions.viewAria':
+    'View inbox notice {title}',
+  'pages.system.notices.inbox.detailLoadFailure':
+    'Unable to load live system notice inbox detail.',
+  'pages.system.notices.inbox.detailTitle': 'System Notice Inbox Detail',
+  'pages.system.notices.inbox.loadFailure':
+    'Unable to load live system notice inbox.',
+  'pages.system.notices.inbox.loadLiveFailure':
+    'Unable to load live system notice inbox',
+  'pages.system.notices.inbox.messages.allMarkedRead':
+    'All system notices marked read.',
+  'pages.system.notices.inbox.messages.markedRead':
+    'System notice marked read.',
+  'pages.system.notices.inbox.realtimeDescription':
+    'SSE inbox events: {path}',
+  'pages.system.notices.inbox.realtimeStream': 'Realtime stream',
+  'pages.system.notices.load.failure':
+    'Unable to load live system notices.',
+  'pages.system.notices.load.liveFailure':
+    'Unable to load live system notices',
+  'pages.system.notices.messages.archived': 'System notice archived.',
+  'pages.system.notices.messages.created': 'System notice created.',
+  'pages.system.notices.messages.deleted': 'System notice deleted.',
+  'pages.system.notices.messages.deliveryDispatched':
+    '{channel} delivery dispatched: {deliveredCount} new, {skippedCount} skipped.',
+  'pages.system.notices.messages.deliveryExecuted':
+    '{provider} executed: {sentCount} sent, {pendingCount} pending, {queuedCount} queued.',
+  'pages.system.notices.messages.published':
+    'System notice published and in-app deliveries created.',
+  'pages.system.notices.messages.updated': 'System notice updated.',
+  'pages.system.notices.open.failure': 'Unable to open live system notice.',
+  'pages.system.notices.outbox.actions.alreadySent': 'Already sent',
+  'pages.system.notices.outbox.actions.column': 'Outbox Actions',
+  'pages.system.notices.outbox.actions.fail': 'Fail outbox',
+  'pages.system.notices.outbox.actions.failAria': 'Fail outbox {id}',
+  'pages.system.notices.outbox.actions.failedOnlyRetry':
+    'Only failed outbox messages can retry',
+  'pages.system.notices.outbox.actions.mailSmsOnlyFail':
+    'Only mail/SMS outbox deliveries can fail',
+  'pages.system.notices.outbox.actions.mailSmsOnlyMarkSent':
+    'Only mail/SMS outbox deliveries can be marked sent',
+  'pages.system.notices.outbox.actions.mailSmsOnlyProcess':
+    'Only mail/SMS outbox deliveries can be processed',
+  'pages.system.notices.outbox.actions.mailSmsOnlyRetry':
+    'Only mail/SMS outbox deliveries can retry',
+  'pages.system.notices.outbox.actions.markSent': 'Mark outbox sent',
+  'pages.system.notices.outbox.actions.markSentAria':
+    'Mark outbox sent {id}',
+  'pages.system.notices.outbox.actions.processAria':
+    'Process queued outbox {id}',
+  'pages.system.notices.outbox.actions.processQueued':
+    'Process queued outbox',
+  'pages.system.notices.outbox.actions.retry': 'Retry outbox',
+  'pages.system.notices.outbox.actions.retryAria': 'Retry outbox {id}',
+  'pages.system.notices.outbox.actions.retryFailedFirst':
+    'Retry failed outbox first',
+  'pages.system.notices.outbox.actions.runSchedule': 'Run outbox schedule',
+  'pages.system.notices.outbox.actions.sentCannotFail':
+    'Sent outbox messages cannot fail',
+  'pages.system.notices.outbox.confirm.fail': 'Fail outbox?',
+  'pages.system.notices.outbox.confirm.markSent': 'Mark outbox sent?',
+  'pages.system.notices.outbox.messages.failed':
+    '{channel} outbox marked failed.',
+  'pages.system.notices.outbox.messages.processed':
+    '{channel} outbox processed: {sentCount} sent, {failedCount} failed, {queuedCount} queued.',
+  'pages.system.notices.outbox.messages.retryQueued':
+    '{channel} outbox queued for retry.',
+  'pages.system.notices.outbox.messages.scheduleRun':
+    'Outbox schedule run: {retriedCount} retried, {sentCount} sent, {failedCount} failed, {queuedCount} queued.',
+  'pages.system.notices.outbox.messages.sent': '{channel} outbox marked sent.',
+  'pages.system.notices.pinned.normal': 'normal',
+  'pages.system.notices.pinned.pinned': 'pinned',
+  'pages.system.notices.providerStatus.failed': 'failed',
+  'pages.system.notices.providerStatus.pending': 'pending',
+  'pages.system.notices.providerStatus.sent': 'sent',
+  'pages.system.notices.read.read': 'read',
+  'pages.system.notices.read.unread': 'unread',
+  'pages.system.notices.readUsers.loadFailure':
+    'Unable to load live system notice read users.',
+  'pages.system.notices.readUsers.loadLiveFailure':
+    'Unable to load live system notice read users',
+  'pages.system.notices.readUsers.title': 'System Notice Read Users',
+  'pages.system.notices.readUsers.titleForNotice':
+    'System Notice Read Users: {title}',
+  'pages.system.notices.search.placeholder': 'Search system notices',
+  'pages.system.notices.section': 'S7 System',
+  'pages.system.notices.status.archived': 'archived',
+  'pages.system.notices.status.draft': 'draft',
+  'pages.system.notices.status.published': 'published',
+  'pages.system.notices.tabs.inbox': 'Inbox ({count})',
+  'pages.system.notices.tabs.manage': 'Manage',
+  'pages.system.notices.tabs.templates': 'System Notice Templates',
+  'pages.system.notices.templates.actions.createDraft':
+    'Create draft from template',
+  'pages.system.notices.templates.actions.deleteAria':
+    'Delete template {name}',
+  'pages.system.notices.templates.actions.disabledRenderLocked':
+    'Disabled templates cannot render',
+  'pages.system.notices.templates.actions.editAria': 'Edit template {name}',
+  'pages.system.notices.templates.actions.new': 'New Template',
+  'pages.system.notices.templates.actions.renderAria':
+    'Render template {name}',
+  'pages.system.notices.templates.actions.renderPreview':
+    'Notice template render preview',
+  'pages.system.notices.templates.actions.renderPreviewButton':
+    'Render Preview',
+  'pages.system.notices.templates.actions.viewAria': 'View template {name}',
+  'pages.system.notices.templates.confirm.deleteOne':
+    'Delete this notice template?',
+  'pages.system.notices.templates.detailLoadFailure':
+    'Unable to load live system notice template detail.',
+  'pages.system.notices.templates.detailTitle':
+    'System Notice Template Detail',
+  'pages.system.notices.templates.form.createTitle':
+    'New System Notice Template',
+  'pages.system.notices.templates.form.editTitle':
+    'Edit System Notice Template',
+  'pages.system.notices.templates.loadFailure':
+    'Unable to load live system notice templates.',
+  'pages.system.notices.templates.loadLiveFailure':
+    'Unable to load live system notice templates',
+  'pages.system.notices.templates.messages.created':
+    'System notice template created.',
+  'pages.system.notices.templates.messages.deleted':
+    'System notice template deleted.',
+  'pages.system.notices.templates.messages.draftCreated':
+    'Draft notice created from template.',
+  'pages.system.notices.templates.messages.updated':
+    'System notice template updated.',
+  'pages.system.notices.templates.noRequiredParams':
+    'This template has no required parameters.',
+  'pages.system.notices.templates.openFailure':
+    'Unable to open live system notice template.',
+  'pages.system.notices.templates.placeholders.code': 'release.window',
+  'pages.system.notices.templates.placeholders.content':
+    'Version {{version}} is scheduled for {{window}}.',
+  'pages.system.notices.templates.placeholders.title':
+    'Release window: {{version}}',
+  'pages.system.notices.templates.previewOpenFailure':
+    'Unable to open live system notice template render preview.',
+  'pages.system.notices.templates.previewTitle':
+    'Notice template render preview',
+  'pages.system.notices.templates.previewTitleForTemplate':
+    'Notice template render preview: {name}',
+  'pages.system.notices.templates.searchPlaceholder':
+    'Search system notice templates',
+  'pages.system.notices.title': 'System Notices',
+  'pages.system.notices.type.announcement': 'announcement',
+  'pages.system.notices.type.maintenance': 'maintenance',
+  'pages.system.notices.type.security': 'security',
+  'pages.system.notices.validation.audienceRequired':
+    'Audience is required.',
+  'pages.system.notices.validation.codeRequired': 'Code is required.',
+  'pages.system.notices.validation.contentRequired': 'Content is required.',
+  'pages.system.notices.validation.contentTemplateRequired':
+    'Content template is required.',
+  'pages.system.notices.validation.nameRequired': 'Name is required.',
+  'pages.system.notices.validation.templateParamRequired':
+    '{param} is required.',
+  'pages.system.notices.validation.titleRequired': 'Title is required.',
+  'pages.system.notices.validation.titleTemplateRequired':
+    'Title template is required.',
+  'pages.system.notices.validation.typeRequired': 'Type is required.',
   'pages.system.users.actions.assignRoles': 'Assign Roles',
   'pages.system.users.actions.assignRolesAria':
     'Assign roles for {username}',
