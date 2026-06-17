@@ -9,7 +9,7 @@ import {
   ProTable,
   type ProColumns,
 } from '@ant-design/pro-components';
-import { useAccess } from '@umijs/max';
+import { useAccess, useIntl } from '@umijs/max';
 import type {
   OnlineUserSessionSummary,
   OnlineUserSummary,
@@ -25,7 +25,7 @@ import {
   Typography,
   message,
 } from 'antd';
-import { useEffect, useMemo, useState, type Key } from 'react';
+import { useCallback, useEffect, useMemo, useState, type Key } from 'react';
 import {
   cleanExpiredOpenCoreOnlineUsers,
   getOpenCoreOnlineUser,
@@ -49,6 +49,13 @@ import {
   type DetailField,
 } from '../shared/ReadOnlyDetailDrawer';
 
+type FormatMessage = (
+  id: string,
+  defaultMessage: string,
+  values?: Record<string, number | string>,
+) => string;
+type OnlineUserStatus = 'active' | 'expired' | 'revoked';
+
 const emptySummary: OnlineUserSummary = {
   active: 0,
   cleanupEligible: 0,
@@ -57,20 +64,6 @@ const emptySummary: OnlineUserSummary = {
   total: 0,
 };
 
-const exportColumns: CurrentPageExportColumn<OnlineUserSessionSummary>[] = [
-  { title: 'ID', dataIndex: 'id' },
-  { title: 'Username', dataIndex: 'username' },
-  { title: 'IP', dataIndex: 'ip' },
-  { title: 'Browser', dataIndex: 'browser' },
-  { title: 'OS', dataIndex: 'os' },
-  { title: 'User Agent', dataIndex: 'userAgent' },
-  { title: 'Last Seen', dataIndex: 'lastSeenAt' },
-  { title: 'Expires At', dataIndex: 'expiresAt' },
-  { title: 'Revoked At', dataIndex: 'revokedAt' },
-  { title: 'Token ID', dataIndex: 'tokenId', sensitive: true },
-  { title: 'Revoked By', dataIndex: 'revokedBy' },
-  { title: 'Revoked Reason', dataIndex: 'revokedReason', sensitive: true },
-];
 const searchFields: CurrentPageSearchField<OnlineUserSessionSummary>[] = [
   'id',
   'username',
@@ -82,18 +75,107 @@ const searchFields: CurrentPageSearchField<OnlineUserSessionSummary>[] = [
   'revokedReason',
 ];
 
+function createExportColumns(
+  formatMessage: FormatMessage,
+): CurrentPageExportColumn<OnlineUserSessionSummary>[] {
+  return [
+    {
+      title: formatMessage('pages.monitor.onlineUsers.fields.id', 'ID'),
+      dataIndex: 'id',
+    },
+    {
+      title: formatMessage(
+        'pages.monitor.onlineUsers.fields.username',
+        'Username',
+      ),
+      dataIndex: 'username',
+    },
+    {
+      title: formatMessage('pages.monitor.onlineUsers.fields.ip', 'IP'),
+      dataIndex: 'ip',
+    },
+    {
+      title: formatMessage(
+        'pages.monitor.onlineUsers.fields.browser',
+        'Browser',
+      ),
+      dataIndex: 'browser',
+    },
+    {
+      title: formatMessage('pages.monitor.onlineUsers.fields.os', 'OS'),
+      dataIndex: 'os',
+    },
+    {
+      title: formatMessage(
+        'pages.monitor.onlineUsers.fields.userAgent',
+        'User Agent',
+      ),
+      dataIndex: 'userAgent',
+    },
+    {
+      title: formatMessage(
+        'pages.monitor.onlineUsers.fields.lastSeen',
+        'Last Seen',
+      ),
+      dataIndex: 'lastSeenAt',
+    },
+    {
+      title: formatMessage(
+        'pages.monitor.onlineUsers.fields.expiresAt',
+        'Expires At',
+      ),
+      dataIndex: 'expiresAt',
+    },
+    {
+      title: formatMessage(
+        'pages.monitor.onlineUsers.fields.revokedAt',
+        'Revoked At',
+      ),
+      dataIndex: 'revokedAt',
+    },
+    {
+      title: formatMessage(
+        'pages.monitor.onlineUsers.fields.tokenId',
+        'Token ID',
+      ),
+      dataIndex: 'tokenId',
+      sensitive: true,
+    },
+    {
+      title: formatMessage(
+        'pages.monitor.onlineUsers.fields.revokedBy',
+        'Revoked By',
+      ),
+      dataIndex: 'revokedBy',
+    },
+    {
+      title: formatMessage(
+        'pages.monitor.onlineUsers.fields.revokedReason',
+        'Revoked Reason',
+      ),
+      dataIndex: 'revokedReason',
+      sensitive: true,
+    },
+  ];
+}
+
 function createFilterOptions(
   rows: readonly OnlineUserSessionSummary[],
+  formatMessage: FormatMessage,
+  statusLabels: Record<OnlineUserStatus, string>,
 ): CurrentPageFilterOption<OnlineUserSessionSummary>[] {
   return [
     {
       key: 'active',
       options: [
-        { label: 'active', value: 'active' },
-        { label: 'revoked', value: 'revoked' },
-        { label: 'expired', value: 'expired' },
+        { label: statusLabels.active, value: 'active' },
+        { label: statusLabels.revoked, value: 'revoked' },
+        { label: statusLabels.expired, value: 'expired' },
       ],
-      placeholder: 'Status',
+      placeholder: formatMessage(
+        'pages.monitor.onlineUsers.filters.status',
+        'Status',
+      ),
       predicate: (record, value) =>
         value === 'active'
           ? isOnlineUserActive(record)
@@ -104,40 +186,117 @@ function createFilterOptions(
     {
       key: 'username',
       options: createCurrentPageFilterOptions(rows, 'username'),
-      placeholder: 'Username',
+      placeholder: formatMessage(
+        'pages.monitor.onlineUsers.fields.username',
+        'Username',
+      ),
       predicate: (record, value) => record.username === value,
     },
     {
       key: 'browser',
       options: createCurrentPageFilterOptions(rows, 'browser'),
-      placeholder: 'Browser',
+      placeholder: formatMessage(
+        'pages.monitor.onlineUsers.fields.browser',
+        'Browser',
+      ),
       predicate: (record, value) => record.browser === value,
     },
     {
       key: 'os',
       options: createCurrentPageFilterOptions(rows, 'os'),
-      placeholder: 'OS',
+      placeholder: formatMessage('pages.monitor.onlineUsers.fields.os', 'OS'),
       predicate: (record, value) => record.os === value,
     },
   ];
 }
 
-function createDetailFields(record: OnlineUserSessionSummary): DetailField[] {
+function createDetailFields(
+  record: OnlineUserSessionSummary,
+  formatMessage: FormatMessage,
+  statusLabels: Record<OnlineUserStatus, string>,
+): DetailField[] {
   return [
-    { label: 'Username', value: record.username },
-    { label: 'Session ID', value: record.id },
-    { label: 'Token ID', value: record.tokenId, sensitive: true },
-    { label: 'IP', value: record.ip },
-    { label: 'Browser', value: record.browser },
-    { label: 'OS', value: record.os },
-    { label: 'User Agent', value: record.userAgent },
-    { label: 'Last Seen', value: record.lastSeenAt },
-    { label: 'Expires At', value: record.expiresAt },
-    { label: 'Status', value: formatOnlineUserStatus(record) },
-    { label: 'Revoked At', value: record.revokedAt },
-    { label: 'Revoked By', value: record.revokedBy },
     {
-      label: 'Revoked Reason',
+      label: formatMessage(
+        'pages.monitor.onlineUsers.fields.username',
+        'Username',
+      ),
+      value: record.username,
+    },
+    {
+      label: formatMessage(
+        'pages.monitor.onlineUsers.fields.sessionId',
+        'Session ID',
+      ),
+      value: record.id,
+    },
+    {
+      label: formatMessage(
+        'pages.monitor.onlineUsers.fields.tokenId',
+        'Token ID',
+      ),
+      value: record.tokenId,
+      sensitive: true,
+    },
+    {
+      label: formatMessage('pages.monitor.onlineUsers.fields.ip', 'IP'),
+      value: record.ip,
+    },
+    {
+      label: formatMessage(
+        'pages.monitor.onlineUsers.fields.browser',
+        'Browser',
+      ),
+      value: record.browser,
+    },
+    {
+      label: formatMessage('pages.monitor.onlineUsers.fields.os', 'OS'),
+      value: record.os,
+    },
+    {
+      label: formatMessage(
+        'pages.monitor.onlineUsers.fields.userAgent',
+        'User Agent',
+      ),
+      value: record.userAgent,
+    },
+    {
+      label: formatMessage(
+        'pages.monitor.onlineUsers.fields.lastSeen',
+        'Last Seen',
+      ),
+      value: record.lastSeenAt,
+    },
+    {
+      label: formatMessage(
+        'pages.monitor.onlineUsers.fields.expiresAt',
+        'Expires At',
+      ),
+      value: record.expiresAt,
+    },
+    {
+      label: formatMessage('pages.monitor.onlineUsers.fields.status', 'Status'),
+      value: formatOnlineUserStatus(record, statusLabels),
+    },
+    {
+      label: formatMessage(
+        'pages.monitor.onlineUsers.fields.revokedAt',
+        'Revoked At',
+      ),
+      value: record.revokedAt,
+    },
+    {
+      label: formatMessage(
+        'pages.monitor.onlineUsers.fields.revokedBy',
+        'Revoked By',
+      ),
+      value: record.revokedBy,
+    },
+    {
+      label: formatMessage(
+        'pages.monitor.onlineUsers.fields.revokedReason',
+        'Revoked Reason',
+      ),
       value: record.revokedReason,
       sensitive: true,
     },
@@ -152,7 +311,9 @@ function isOnlineUserActive(record: OnlineUserSessionSummary): boolean {
   return !record.revokedAt && !isOnlineUserExpired(record);
 }
 
-function formatOnlineUserStatus(record: OnlineUserSessionSummary): string {
+function getOnlineUserStatus(
+  record: OnlineUserSessionSummary,
+): OnlineUserStatus {
   if (record.revokedAt) {
     return 'revoked';
   }
@@ -160,16 +321,22 @@ function formatOnlineUserStatus(record: OnlineUserSessionSummary): string {
   return isOnlineUserExpired(record) ? 'expired' : 'active';
 }
 
-function statusColor(record: OnlineUserSessionSummary): string {
-  if (record.revokedAt) {
-    return 'red';
-  }
+function formatOnlineUserStatus(
+  record: OnlineUserSessionSummary,
+  labels: Record<OnlineUserStatus, string>,
+): string {
+  return labels[getOnlineUserStatus(record)];
+}
 
-  return isOnlineUserExpired(record) ? 'orange' : 'green';
+function statusColor(record: OnlineUserSessionSummary): string {
+  const status = getOnlineUserStatus(record);
+  if (status === 'revoked') return 'red';
+  return status === 'expired' ? 'orange' : 'green';
 }
 
 export default function OnlineUsersPage() {
   const access = useAccess();
+  const intl = useIntl();
   const canManageOnlineUsers = Boolean(access.canManageOnlineUsers);
   const [rows, setRows] = useState<readonly OnlineUserSessionSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -182,12 +349,50 @@ export default function OnlineUsersPage() {
   const [cleaningExpired, setCleaningExpired] = useState(false);
   const [summary, setSummary] = useState<OnlineUserSummary>(emptySummary);
   const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
-  const filterOptions = useMemo(() => createFilterOptions(rows), [rows]);
+  const formatMessage = useCallback(
+    (
+      id: string,
+      defaultMessage: string,
+      values?: Record<string, number | string>,
+    ) =>
+      values
+        ? intl.formatMessage({ id, defaultMessage }, values)
+        : intl.formatMessage({ id, defaultMessage }),
+    [intl],
+  );
+  const statusLabels = useMemo<Record<OnlineUserStatus, string>>(
+    () => ({
+      active: formatMessage(
+        'pages.monitor.onlineUsers.status.active',
+        'active',
+      ),
+      expired: formatMessage(
+        'pages.monitor.onlineUsers.status.expired',
+        'expired',
+      ),
+      revoked: formatMessage(
+        'pages.monitor.onlineUsers.status.revoked',
+        'revoked',
+      ),
+    }),
+    [formatMessage],
+  );
+  const exportColumns = useMemo(
+    () => createExportColumns(formatMessage),
+    [formatMessage],
+  );
+  const filterOptions = useMemo(
+    () => createFilterOptions(rows, formatMessage, statusLabels),
+    [formatMessage, rows, statusLabels],
+  );
   const { filteredRows, toolbar: filterToolbar } =
     useCurrentPageFilters<OnlineUserSessionSummary>({
       rows,
       searchFields,
-      searchPlaceholder: 'Search sessions',
+      searchPlaceholder: formatMessage(
+        'pages.monitor.onlineUsers.search.placeholder',
+        'Search sessions',
+      ),
       selectFilters: filterOptions,
     });
   const activeSelectedRows = useMemo(
@@ -214,7 +419,12 @@ export default function OnlineUsersPage() {
       setSelectedDetail(undefined);
       setSelectedRowKeys([]);
       setLoadError(
-        error instanceof Error ? error.message : 'Unable to load online users.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.monitor.onlineUsers.load.failure',
+              'Unable to load online users.',
+            ),
       );
     } finally {
       setLoading(false);
@@ -234,7 +444,10 @@ export default function OnlineUsersPage() {
       message.error(
         error instanceof Error
           ? error.message
-          : 'Unable to load live online user detail.',
+          : formatMessage(
+              'pages.monitor.onlineUsers.detail.loadFailure',
+              'Unable to load live online user detail.',
+            ),
       );
     } finally {
       setDetailLoadingId(undefined);
@@ -243,10 +456,21 @@ export default function OnlineUsersPage() {
 
   const confirmKickOut = (record: OnlineUserSessionSummary) => {
     Modal.confirm({
-      title: `Kick out ${record.username}?`,
-      content: `Session ${record.id} will be revoked and its bearer token will stop authenticating protected API requests.`,
+      title: formatMessage(
+        'pages.monitor.onlineUsers.confirm.kickOut',
+        'Kick out {username}?',
+        { username: record.username },
+      ),
+      content: formatMessage(
+        'pages.monitor.onlineUsers.confirm.kickOutContent',
+        'Session {id} will be revoked and its bearer token will stop authenticating protected API requests.',
+        { id: record.id },
+      ),
       okButtonProps: { danger: true },
-      okText: 'Kick out',
+      okText: formatMessage(
+        'pages.monitor.onlineUsers.actions.kickOut',
+        'Kick out',
+      ),
       onOk: async () => {
         setKickingId(record.id);
         try {
@@ -254,7 +478,12 @@ export default function OnlineUsersPage() {
             actor: 'admin',
             reason: 'Manual kick-out from Admin Online Users page',
           });
-          message.success('Session kicked out');
+          message.success(
+            formatMessage(
+              'pages.monitor.onlineUsers.messages.kickedOut',
+              'Session kicked out',
+            ),
+          );
           await loadOnlineUsers();
         } finally {
           setKickingId(undefined);
@@ -265,16 +494,30 @@ export default function OnlineUsersPage() {
 
   const confirmCleanExpired = () => {
     Modal.confirm({
-      title: 'Clean expired sessions?',
-      content:
+      title: formatMessage(
+        'pages.monitor.onlineUsers.confirm.cleanExpired',
+        'Clean expired sessions?',
+      ),
+      content: formatMessage(
+        'pages.monitor.onlineUsers.confirm.cleanExpiredContent',
         'Expired bearer session records will be removed after their JWT expiry has passed.',
+      ),
       okButtonProps: { danger: true },
-      okText: 'Clean expired',
+      okText: formatMessage(
+        'pages.monitor.onlineUsers.actions.cleanExpired',
+        'Clean expired',
+      ),
       onOk: async () => {
         setCleaningExpired(true);
         try {
           const result = await cleanExpiredOpenCoreOnlineUsers();
-          message.success(`Cleaned ${result.affected} expired sessions`);
+          message.success(
+            formatMessage(
+              'pages.monitor.onlineUsers.messages.cleanedExpired',
+              'Cleaned {count} expired sessions',
+              { count: result.affected },
+            ),
+          );
           setSelectedRowKeys([]);
           await loadOnlineUsers();
         } finally {
@@ -286,11 +529,20 @@ export default function OnlineUsersPage() {
 
   const confirmBulkKickOut = () => {
     Modal.confirm({
-      title: `Kick out ${activeSelectedRows.length} selected sessions?`,
-      content:
+      title: formatMessage(
+        'pages.monitor.onlineUsers.confirm.bulkKickOut',
+        'Kick out {count} selected sessions?',
+        { count: activeSelectedRows.length },
+      ),
+      content: formatMessage(
+        'pages.monitor.onlineUsers.confirm.bulkKickOutContent',
         'Selected active sessions will be revoked and their bearer tokens will stop authenticating protected API requests.',
+      ),
       okButtonProps: { danger: true },
-      okText: 'Kick out selected',
+      okText: formatMessage(
+        'pages.monitor.onlineUsers.actions.kickOutSelected',
+        'Kick out selected',
+      ),
       onOk: async () => {
         setBulkKicking(true);
         try {
@@ -300,7 +552,11 @@ export default function OnlineUsersPage() {
             reason: 'Bulk kick-out from Admin Online Users page',
           });
           message.success(
-            `Kicked ${result.kicked} sessions, skipped ${result.skipped}`,
+            formatMessage(
+              'pages.monitor.onlineUsers.messages.bulkKicked',
+              'Kicked {kicked} sessions, skipped {skipped}',
+              { kicked: result.kicked, skipped: result.skipped },
+            ),
           );
           setSelectedRowKeys([]);
           await loadOnlineUsers();
@@ -313,7 +569,10 @@ export default function OnlineUsersPage() {
 
   const columns: ProColumns<OnlineUserSessionSummary>[] = [
     {
-      title: 'Username',
+      title: formatMessage(
+        'pages.monitor.onlineUsers.fields.username',
+        'Username',
+      ),
       dataIndex: 'username',
       render: (_, record) => (
         <Typography.Link onClick={() => void openDetail(record)}>
@@ -321,27 +580,70 @@ export default function OnlineUsersPage() {
         </Typography.Link>
       ),
     },
-    { title: 'IP', dataIndex: 'ip', width: 144 },
-    { title: 'Browser', dataIndex: 'browser', width: 136 },
-    { title: 'OS', dataIndex: 'os', width: 112 },
-    { title: 'User Agent', dataIndex: 'userAgent', ellipsis: true },
-    { title: 'Last Seen', dataIndex: 'lastSeenAt', width: 192 },
     {
-      title: 'Status',
+      title: formatMessage('pages.monitor.onlineUsers.fields.ip', 'IP'),
+      dataIndex: 'ip',
+      width: 144,
+    },
+    {
+      title: formatMessage(
+        'pages.monitor.onlineUsers.fields.browser',
+        'Browser',
+      ),
+      dataIndex: 'browser',
+      width: 136,
+    },
+    {
+      title: formatMessage('pages.monitor.onlineUsers.fields.os', 'OS'),
+      dataIndex: 'os',
+      width: 112,
+    },
+    {
+      title: formatMessage(
+        'pages.monitor.onlineUsers.fields.userAgent',
+        'User Agent',
+      ),
+      dataIndex: 'userAgent',
+      ellipsis: true,
+    },
+    {
+      title: formatMessage(
+        'pages.monitor.onlineUsers.fields.lastSeen',
+        'Last Seen',
+      ),
+      dataIndex: 'lastSeenAt',
+      width: 192,
+    },
+    {
+      title: formatMessage('pages.monitor.onlineUsers.fields.status', 'Status'),
       width: 112,
       render: (_, record) => (
-        <Tag color={statusColor(record)}>{formatOnlineUserStatus(record)}</Tag>
+        <Tag color={statusColor(record)}>
+          {formatOnlineUserStatus(record, statusLabels)}
+        </Tag>
       ),
     },
     {
-      title: 'Action',
+      title: formatMessage(
+        'pages.monitor.onlineUsers.actions.column',
+        'Action',
+      ),
       valueType: 'option',
       width: 112,
       render: (_, record) => (
         <Space size="small">
-          <Tooltip title="Detail">
+          <Tooltip
+            title={formatMessage(
+              'pages.monitor.onlineUsers.actions.detail',
+              'Detail',
+            )}
+          >
             <Button
-              aria-label={`View online user ${record.id}`}
+              aria-label={formatMessage(
+                'pages.monitor.onlineUsers.actions.viewAria',
+                'View online user {id}',
+                { id: record.id },
+              )}
               icon={<EyeOutlined />}
               loading={detailLoadingId === record.id}
               onClick={() => void openDetail(record)}
@@ -351,14 +653,28 @@ export default function OnlineUsersPage() {
           <Tooltip
             title={
               !isOnlineUserActive(record)
-                ? `Already ${formatOnlineUserStatus(record)}`
+                ? formatMessage(
+                    'pages.monitor.onlineUsers.actions.alreadyStatus',
+                    'Already {status}',
+                    { status: formatOnlineUserStatus(record, statusLabels) },
+                  )
                 : canManageOnlineUsers
-                  ? 'Kick out'
-                  : 'Requires monitor:online-user:manage'
+                  ? formatMessage(
+                      'pages.monitor.onlineUsers.actions.kickOut',
+                      'Kick out',
+                    )
+                  : formatMessage(
+                      'pages.monitor.onlineUsers.permission.manageRequired',
+                      'Requires monitor:online-user:manage',
+                    )
             }
           >
             <Button
-              aria-label={`Kick out online user ${record.id}`}
+              aria-label={formatMessage(
+                'pages.monitor.onlineUsers.actions.kickOutAria',
+                'Kick out online user {id}',
+                { id: record.id },
+              )}
               danger
               disabled={!isOnlineUserActive(record) || !canManageOnlineUsers}
               icon={<DisconnectOutlined />}
@@ -373,10 +689,16 @@ export default function OnlineUsersPage() {
   ];
 
   return (
-    <PageContainer title="Online Users" subTitle="S11 Operations">
+    <PageContainer
+      title={formatMessage('pages.monitor.onlineUsers.title', 'Online Users')}
+      subTitle={formatMessage('pages.monitor.section', 'S11 Operations')}
+    >
       {loadError ? (
         <Alert
-          message="Unable to load live online users"
+          message={formatMessage(
+            'pages.monitor.onlineUsers.load.liveFailure',
+            'Unable to load live online users',
+          )}
           description={loadError}
           type="error"
           showIcon
@@ -385,15 +707,45 @@ export default function OnlineUsersPage() {
       ) : null}
       <Space size="large" style={{ marginBottom: 16 }} wrap>
         <Typography.Text type="secondary">
-          Live online user sessions
+          {formatMessage(
+            'pages.monitor.onlineUsers.policy.liveSessions',
+            'Live online user sessions',
+          )}
         </Typography.Text>
         <Typography.Text type="secondary">
-          Token blacklist maintenance
+          {formatMessage(
+            'pages.monitor.onlineUsers.policy.tokenBlacklist',
+            'Token blacklist maintenance',
+          )}
         </Typography.Text>
-        <Statistic title="Active sessions" value={summary.active} />
-        <Statistic title="Revoked sessions" value={summary.revoked} />
-        <Statistic title="Expired sessions" value={summary.expired} />
-        <Statistic title="Cleanup eligible" value={summary.cleanupEligible} />
+        <Statistic
+          title={formatMessage(
+            'pages.monitor.onlineUsers.stats.active',
+            'Active sessions',
+          )}
+          value={summary.active}
+        />
+        <Statistic
+          title={formatMessage(
+            'pages.monitor.onlineUsers.stats.revoked',
+            'Revoked sessions',
+          )}
+          value={summary.revoked}
+        />
+        <Statistic
+          title={formatMessage(
+            'pages.monitor.onlineUsers.stats.expired',
+            'Expired sessions',
+          )}
+          value={summary.expired}
+        />
+        <Statistic
+          title={formatMessage(
+            'pages.monitor.onlineUsers.stats.cleanupEligible',
+            'Cleanup eligible',
+          )}
+          value={summary.cleanupEligible}
+        />
       </Space>
       <ProTable<OnlineUserSessionSummary>
         rowKey="id"
@@ -402,14 +754,23 @@ export default function OnlineUsersPage() {
         toolBarRender={() => [
           filterToolbar,
           <Typography.Text key="kick-out-policy" type="secondary">
-            Kick-out invalidates active bearer sessions
+            {formatMessage(
+              'pages.monitor.onlineUsers.policy.kickOut',
+              'Kick-out invalidates active bearer sessions',
+            )}
           </Typography.Text>,
           <Tooltip
             key="clean-expired"
             title={
               canManageOnlineUsers
-                ? 'Clean expired sessions'
-                : 'Requires monitor:online-user:manage'
+                ? formatMessage(
+                    'pages.monitor.onlineUsers.actions.cleanExpiredSessions',
+                    'Clean expired sessions',
+                  )
+                : formatMessage(
+                    'pages.monitor.onlineUsers.permission.manageRequired',
+                    'Requires monitor:online-user:manage',
+                  )
             }
           >
             <Button
@@ -419,15 +780,24 @@ export default function OnlineUsersPage() {
               loading={cleaningExpired}
               onClick={confirmCleanExpired}
             >
-              Clean expired sessions
+              {formatMessage(
+                'pages.monitor.onlineUsers.actions.cleanExpiredSessions',
+                'Clean expired sessions',
+              )}
             </Button>
           </Tooltip>,
           <Tooltip
             key="bulk-kick"
             title={
               canManageOnlineUsers
-                ? 'Kick out selected active sessions'
-                : 'Requires monitor:online-user:manage'
+                ? formatMessage(
+                    'pages.monitor.onlineUsers.actions.kickOutSelectedActive',
+                    'Kick out selected active sessions',
+                  )
+                : formatMessage(
+                    'pages.monitor.onlineUsers.permission.manageRequired',
+                    'Requires monitor:online-user:manage',
+                  )
             }
           >
             <Button
@@ -439,7 +809,10 @@ export default function OnlineUsersPage() {
               loading={bulkKicking}
               onClick={confirmBulkKickOut}
             >
-              Kick selected
+              {formatMessage(
+                'pages.monitor.onlineUsers.actions.kickSelected',
+                'Kick selected',
+              )}
             </Button>
           </Tooltip>,
           <CurrentPageExportButton<OnlineUserSessionSummary>
@@ -449,9 +822,18 @@ export default function OnlineUsersPage() {
             resource="monitor-online-users"
             rows={filteredRows}
           />,
-          <Tooltip key="refresh" title="Reload">
+          <Tooltip
+            key="refresh"
+            title={formatMessage(
+              'pages.monitor.onlineUsers.actions.reload',
+              'Reload',
+            )}
+          >
             <Button
-              aria-label="Reload online users"
+              aria-label={formatMessage(
+                'pages.monitor.onlineUsers.actions.reloadAria',
+                'Reload online users',
+              )}
               icon={<ReloadOutlined />}
               onClick={() => void loadOnlineUsers()}
             />
@@ -470,10 +852,20 @@ export default function OnlineUsersPage() {
         }}
       />
       <ReadOnlyDetailDrawer
-        fields={selectedDetail ? createDetailFields(selectedDetail) : []}
+        fields={
+          selectedDetail
+            ? createDetailFields(selectedDetail, formatMessage, statusLabels)
+            : []
+        }
         onClose={() => setSelectedDetail(undefined)}
         open={Boolean(selectedDetail)}
-        title={selectedDetail?.username ?? 'Online User Detail'}
+        title={
+          selectedDetail?.username ??
+          formatMessage(
+            'pages.monitor.onlineUsers.detail.title',
+            'Online User Detail',
+          )
+        }
       />
     </PageContainer>
   );

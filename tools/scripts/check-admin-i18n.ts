@@ -46,6 +46,9 @@ const coreI18nScanPaths = [
   join(adminRoot, 'src', 'pages', 'Integrations', 'OAuth.tsx'),
   join(adminRoot, 'src', 'pages', 'Integrations', 'Providers.tsx'),
   join(adminRoot, 'src', 'pages', 'Integrations', 'Sms.tsx'),
+  join(adminRoot, 'src', 'pages', 'Monitor', 'Cache.tsx'),
+  join(adminRoot, 'src', 'pages', 'Monitor', 'Jobs.tsx'),
+  join(adminRoot, 'src', 'pages', 'Monitor', 'OnlineUsers.tsx'),
   join(adminRoot, 'src', 'pages', 'Security', 'LoginLogs.tsx'),
   join(adminRoot, 'src', 'pages', 'Security', 'OperationLogs.tsx'),
   join(adminRoot, 'src', 'pages', 'System', 'Config.tsx'),
@@ -66,6 +69,9 @@ const localizedAdminPageScanPaths = [
   join(adminRoot, 'src', 'pages', 'Integrations', 'OAuth.tsx'),
   join(adminRoot, 'src', 'pages', 'Integrations', 'Providers.tsx'),
   join(adminRoot, 'src', 'pages', 'Integrations', 'Sms.tsx'),
+  join(adminRoot, 'src', 'pages', 'Monitor', 'Cache.tsx'),
+  join(adminRoot, 'src', 'pages', 'Monitor', 'Jobs.tsx'),
+  join(adminRoot, 'src', 'pages', 'Monitor', 'OnlineUsers.tsx'),
   join(adminRoot, 'src', 'pages', 'Security', 'LoginLogs.tsx'),
   join(adminRoot, 'src', 'pages', 'Security', 'OperationLogs.tsx'),
   join(adminRoot, 'src', 'pages', 'System', 'Config.tsx'),
@@ -202,7 +208,10 @@ function checkRouteMenuKeys(): void {
 
 function checkCoreI18nKeys(): void {
   const localeKeysByLocale = new Map(
-    [...supportedLocales].map((locale) => [locale, readLocaleBundleKeys(locale)]),
+    [...supportedLocales].map((locale) => [
+      locale,
+      readLocaleBundleKeys(locale),
+    ]),
   );
 
   for (const scanPath of coreI18nScanPaths) {
@@ -279,6 +288,12 @@ function readI18nIds(path: string): Set<string> {
   const ids = new Set<string>();
 
   for (const match of content.matchAll(/\bid:\s*['"]([^'"]+)['"]/g)) {
+    ids.add(match[1]);
+  }
+
+  for (const match of content.matchAll(
+    /\bformatMessage\(\s*['"]([^'"]+)['"]/g,
+  )) {
     ids.add(match[1]);
   }
 

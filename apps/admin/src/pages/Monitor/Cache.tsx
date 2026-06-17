@@ -9,7 +9,7 @@ import {
   ProTable,
   type ProColumns,
 } from '@ant-design/pro-components';
-import { useAccess } from '@umijs/max';
+import { useAccess, useIntl } from '@umijs/max';
 import type {
   CacheKeySummary,
   CacheNameSummary,
@@ -26,7 +26,7 @@ import {
   Typography,
   message,
 } from 'antd';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   clearOpenCoreCache,
   deleteOpenCoreCacheKey,
@@ -49,14 +49,12 @@ import {
   type DetailField,
 } from '../shared/ReadOnlyDetailDrawer';
 
-const exportColumns: CurrentPageExportColumn<CacheKeySummary>[] = [
-  { title: 'Key', dataIndex: 'key', sensitive: true },
-  { title: 'Name', dataIndex: 'name' },
-  { title: 'Prefix', dataIndex: 'prefix' },
-  { title: 'Type', dataIndex: 'type' },
-  { title: 'TTL Seconds', dataIndex: 'ttlSeconds' },
-  { title: 'Size Bytes', dataIndex: 'sizeBytes' },
-];
+type FormatMessage = (
+  id: string,
+  defaultMessage: string,
+  values?: Record<string, number | string>,
+) => string;
+
 const searchFields: CurrentPageSearchField<CacheKeySummary>[] = [
   'key',
   'name',
@@ -64,53 +62,142 @@ const searchFields: CurrentPageSearchField<CacheKeySummary>[] = [
   'type',
 ];
 
+function createExportColumns(
+  formatMessage: FormatMessage,
+): CurrentPageExportColumn<CacheKeySummary>[] {
+  return [
+    {
+      title: formatMessage('pages.monitor.cache.fields.key', 'Key'),
+      dataIndex: 'key',
+      sensitive: true,
+    },
+    {
+      title: formatMessage('pages.monitor.cache.fields.name', 'Name'),
+      dataIndex: 'name',
+    },
+    {
+      title: formatMessage('pages.monitor.cache.fields.prefix', 'Prefix'),
+      dataIndex: 'prefix',
+    },
+    {
+      title: formatMessage('pages.monitor.cache.fields.type', 'Type'),
+      dataIndex: 'type',
+    },
+    {
+      title: formatMessage(
+        'pages.monitor.cache.fields.ttlSeconds',
+        'TTL Seconds',
+      ),
+      dataIndex: 'ttlSeconds',
+    },
+    {
+      title: formatMessage(
+        'pages.monitor.cache.fields.sizeBytes',
+        'Size Bytes',
+      ),
+      dataIndex: 'sizeBytes',
+    },
+  ];
+}
+
 function createFilterOptions(
   rows: readonly CacheKeySummary[],
+  formatMessage: FormatMessage,
 ): CurrentPageFilterOption<CacheKeySummary>[] {
   return [
     {
       key: 'name',
       options: createCurrentPageFilterOptions(rows, 'name'),
-      placeholder: 'Namespace',
+      placeholder: formatMessage(
+        'pages.monitor.cache.fields.namespace',
+        'Namespace',
+      ),
       predicate: (record, value) => record.name === value,
     },
     {
       key: 'type',
       options: createCurrentPageFilterOptions(rows, 'type'),
-      placeholder: 'Type',
+      placeholder: formatMessage('pages.monitor.cache.fields.type', 'Type'),
       predicate: (record, value) => record.type === value,
     },
   ];
 }
 
-function formatTtl(ttlSeconds: number): string {
+function formatTtl(ttlSeconds: number, formatMessage: FormatMessage): string {
   if (ttlSeconds === -2) {
-    return 'missing';
+    return formatMessage('pages.monitor.cache.ttl.missing', 'missing');
   }
 
   if (ttlSeconds === -1) {
-    return 'persistent';
+    return formatMessage('pages.monitor.cache.ttl.persistent', 'persistent');
   }
 
-  return `${ttlSeconds}s`;
+  return formatMessage('pages.monitor.cache.ttl.seconds', '{seconds}s', {
+    seconds: ttlSeconds,
+  });
 }
 
-function createCacheDetailFields(record: CacheValueSummary): DetailField[] {
+function createCacheDetailFields(
+  record: CacheValueSummary,
+  formatMessage: FormatMessage,
+): DetailField[] {
   return [
-    { label: 'Key', value: record.key, sensitive: true },
-    { label: 'Namespace', value: record.name },
-    { label: 'Prefix', value: record.prefix },
-    { label: 'Type', value: record.type },
-    { label: 'TTL', value: formatTtl(record.ttlSeconds) },
-    { label: 'Size Bytes', value: record.sizeBytes },
-    { label: 'Encoding', value: record.encoding },
-    { label: 'Sensitive Preview', value: String(record.sensitive) },
-    { label: 'Preview Truncated', value: String(record.truncated) },
+    {
+      label: formatMessage('pages.monitor.cache.fields.key', 'Key'),
+      value: record.key,
+      sensitive: true,
+    },
+    {
+      label: formatMessage('pages.monitor.cache.fields.namespace', 'Namespace'),
+      value: record.name,
+    },
+    {
+      label: formatMessage('pages.monitor.cache.fields.prefix', 'Prefix'),
+      value: record.prefix,
+    },
+    {
+      label: formatMessage('pages.monitor.cache.fields.type', 'Type'),
+      value: record.type,
+    },
+    {
+      label: formatMessage('pages.monitor.cache.fields.ttl', 'TTL'),
+      value: formatTtl(record.ttlSeconds, formatMessage),
+    },
+    {
+      label: formatMessage(
+        'pages.monitor.cache.fields.sizeBytes',
+        'Size Bytes',
+      ),
+      value: record.sizeBytes,
+    },
+    {
+      label: formatMessage('pages.monitor.cache.fields.encoding', 'Encoding'),
+      value: record.encoding,
+    },
+    {
+      label: formatMessage(
+        'pages.monitor.cache.fields.sensitivePreview',
+        'Sensitive Preview',
+      ),
+      value: record.sensitive
+        ? formatMessage('pages.monitor.cache.boolean.true', 'true')
+        : formatMessage('pages.monitor.cache.boolean.false', 'false'),
+    },
+    {
+      label: formatMessage(
+        'pages.monitor.cache.fields.previewTruncated',
+        'Preview Truncated',
+      ),
+      value: record.truncated
+        ? formatMessage('pages.monitor.cache.boolean.true', 'true')
+        : formatMessage('pages.monitor.cache.boolean.false', 'false'),
+    },
   ];
 }
 
 export default function CachePage() {
   const access = useAccess();
+  const intl = useIntl();
   const canManageCache = Boolean(access.canManageCache);
   const [rows, setRows] = useState<readonly CacheKeySummary[]>([]);
   const [names, setNames] = useState<readonly CacheNameSummary[]>([]);
@@ -121,12 +208,33 @@ export default function CachePage() {
   const [selectedDetail, setSelectedDetail] = useState<CacheValueSummary>();
   const [actionKey, setActionKey] = useState<string>();
   const [clearingPrefix, setClearingPrefix] = useState<string>();
-  const filterOptions = useMemo(() => createFilterOptions(rows), [rows]);
+  const formatMessage = useCallback(
+    (
+      id: string,
+      defaultMessage: string,
+      values?: Record<string, number | string>,
+    ) =>
+      values
+        ? intl.formatMessage({ id, defaultMessage }, values)
+        : intl.formatMessage({ id, defaultMessage }),
+    [intl],
+  );
+  const exportColumns = useMemo(
+    () => createExportColumns(formatMessage),
+    [formatMessage],
+  );
+  const filterOptions = useMemo(
+    () => createFilterOptions(rows, formatMessage),
+    [formatMessage, rows],
+  );
   const { filteredRows, toolbar: filterToolbar } =
     useCurrentPageFilters<CacheKeySummary>({
       rows,
       searchFields,
-      searchPlaceholder: 'Search Redis cache',
+      searchPlaceholder: formatMessage(
+        'pages.monitor.cache.search.placeholder',
+        'Search Redis cache',
+      ),
       selectFilters: filterOptions,
     });
   const totalSizeBytes = rows.reduce((total, row) => total + row.sizeBytes, 0);
@@ -147,7 +255,12 @@ export default function CachePage() {
       setRows([]);
       setNames([]);
       setLoadError(
-        error instanceof Error ? error.message : 'Unable to load cache.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.monitor.cache.load.failure',
+              'Unable to load cache.',
+            ),
       );
     } finally {
       setLoading(false);
@@ -174,7 +287,13 @@ export default function CachePage() {
         prefix,
         dryRun: true,
       });
-      message.info(`Dry run matched ${result.matchedKeys} cache keys`);
+      message.info(
+        formatMessage(
+          'pages.monitor.cache.messages.dryRunMatched',
+          'Dry run matched {count} cache keys',
+          { count: result.matchedKeys },
+        ),
+      );
     } finally {
       setClearingPrefix(undefined);
     }
@@ -182,11 +301,20 @@ export default function CachePage() {
 
   const confirmClearPrefix = (name: CacheNameSummary) => {
     Modal.confirm({
-      title: `Clear cache namespace ${name.name}?`,
-      content:
+      title: formatMessage(
+        'pages.monitor.cache.confirm.clearNamespace',
+        'Clear cache namespace {name}?',
+        { name: name.name },
+      ),
+      content: formatMessage(
+        'pages.monitor.cache.confirm.clearNamespaceContent',
         'Confirmed prefix clear deletes every key currently matching this namespace.',
+      ),
       okButtonProps: { danger: true },
-      okText: 'Clear namespace',
+      okText: formatMessage(
+        'pages.monitor.cache.actions.clearNamespace',
+        'Clear namespace',
+      ),
       onOk: async () => {
         setClearingPrefix(`clear:${name.prefix}`);
         try {
@@ -195,7 +323,13 @@ export default function CachePage() {
             dryRun: false,
             confirmed: true,
           });
-          message.success(`Cleared ${result.clearedKeys} cache keys`);
+          message.success(
+            formatMessage(
+              'pages.monitor.cache.messages.clearedKeys',
+              'Cleared {count} cache keys',
+              { count: result.clearedKeys },
+            ),
+          );
           await loadCache();
         } finally {
           setClearingPrefix(undefined);
@@ -206,10 +340,16 @@ export default function CachePage() {
 
   const confirmDeleteKey = (record: CacheKeySummary) => {
     Modal.confirm({
-      title: `Delete cache key?`,
+      title: formatMessage(
+        'pages.monitor.cache.confirm.deleteKey',
+        'Delete cache key?',
+      ),
       content: record.key,
       okButtonProps: { danger: true },
-      okText: 'Delete key',
+      okText: formatMessage(
+        'pages.monitor.cache.actions.deleteKey',
+        'Delete key',
+      ),
       onOk: async () => {
         setActionKey(`delete:${record.key}`);
         try {
@@ -218,7 +358,17 @@ export default function CachePage() {
             dryRun: false,
             confirmed: true,
           });
-          message.success(result.deleted ? 'Cache key deleted' : 'Key missing');
+          message.success(
+            result.deleted
+              ? formatMessage(
+                  'pages.monitor.cache.messages.keyDeleted',
+                  'Cache key deleted',
+                )
+              : formatMessage(
+                  'pages.monitor.cache.messages.keyMissing',
+                  'Key missing',
+                ),
+          );
           await loadCache();
         } finally {
           setActionKey(undefined);
@@ -229,35 +379,56 @@ export default function CachePage() {
 
   const columns: ProColumns<CacheKeySummary>[] = [
     {
-      title: 'Key',
+      title: formatMessage('pages.monitor.cache.fields.key', 'Key'),
       dataIndex: 'key',
       ellipsis: true,
       copyable: true,
     },
-    { title: 'Namespace', dataIndex: 'name', width: 180 },
-    { title: 'Type', dataIndex: 'type', width: 100 },
     {
-      title: 'TTL',
+      title: formatMessage('pages.monitor.cache.fields.namespace', 'Namespace'),
+      dataIndex: 'name',
+      width: 180,
+    },
+    {
+      title: formatMessage('pages.monitor.cache.fields.type', 'Type'),
+      dataIndex: 'type',
+      width: 100,
+    },
+    {
+      title: formatMessage('pages.monitor.cache.fields.ttl', 'TTL'),
       dataIndex: 'ttlSeconds',
       width: 120,
-      render: (_, record) => formatTtl(record.ttlSeconds),
+      render: (_, record) => formatTtl(record.ttlSeconds, formatMessage),
     },
-    { title: 'Size', dataIndex: 'sizeBytes', width: 100 },
     {
-      title: 'Policy',
+      title: formatMessage('pages.monitor.cache.fields.size', 'Size'),
+      dataIndex: 'sizeBytes',
+      width: 100,
+    },
+    {
+      title: formatMessage('pages.monitor.cache.fields.policy', 'Policy'),
       width: 220,
       render: () => (
         <Tag color="orange">
-          Redis live monitor; dry-run by default; confirmed clear required
+          {formatMessage(
+            'pages.monitor.cache.policy.liveMonitor',
+            'Redis live monitor; dry-run by default; confirmed clear required',
+          )}
         </Tag>
       ),
     },
     {
-      title: 'Actions',
+      title: formatMessage('pages.monitor.cache.actions.column', 'Actions'),
       valueType: 'option',
       width: 140,
       render: (_, record) => [
-        <Tooltip title="View safe value preview" key="detail">
+        <Tooltip
+          title={formatMessage(
+            'pages.monitor.cache.actions.viewSafePreview',
+            'View safe value preview',
+          )}
+          key="detail"
+        >
           <Button
             icon={<EyeOutlined />}
             loading={actionKey === `detail:${record.key}`}
@@ -265,7 +436,13 @@ export default function CachePage() {
             onClick={() => void openDetail(record)}
           />
         </Tooltip>,
-        <Tooltip title="Delete cache key" key="delete">
+        <Tooltip
+          title={formatMessage(
+            'pages.monitor.cache.actions.deleteKey',
+            'Delete cache key',
+          )}
+          key="delete"
+        >
           <Button
             danger
             disabled={!canManageCache}
@@ -280,40 +457,108 @@ export default function CachePage() {
   ];
 
   return (
-    <PageContainer title="Cache" subTitle="Redis Monitor">
+    <PageContainer
+      title={formatMessage('pages.monitor.cache.title', 'Cache')}
+      subTitle={formatMessage('pages.monitor.cache.subTitle', 'Redis Monitor')}
+    >
       <Space direction="vertical" size={16} style={{ width: '100%' }}>
         {loadError ? <Alert showIcon type="error" message={loadError} /> : null}
         {!scanComplete ? (
           <Alert
             showIcon
             type="warning"
-            message={`Cache scan reached the ${scanLimit} key limit; narrow by namespace before confirmed deletion.`}
+            message={formatMessage(
+              'pages.monitor.cache.scan.limited',
+              'Cache scan reached the {limit} key limit; narrow by namespace before confirmed deletion.',
+              { limit: scanLimit },
+            )}
           />
         ) : null}
 
         <Space wrap>
-          <Statistic title="Keys" value={rows.length} />
-          <Statistic title="Namespaces" value={names.length} />
-          <Statistic title="Size Bytes" value={totalSizeBytes} />
           <Statistic
-            title="Scan"
-            value={scanComplete ? 'complete' : 'limited'}
+            title={formatMessage('pages.monitor.cache.stats.keys', 'Keys')}
+            value={rows.length}
+          />
+          <Statistic
+            title={formatMessage(
+              'pages.monitor.cache.stats.namespaces',
+              'Namespaces',
+            )}
+            value={names.length}
+          />
+          <Statistic
+            title={formatMessage(
+              'pages.monitor.cache.fields.sizeBytes',
+              'Size Bytes',
+            )}
+            value={totalSizeBytes}
+          />
+          <Statistic
+            title={formatMessage('pages.monitor.cache.stats.scan', 'Scan')}
+            value={
+              scanComplete
+                ? formatMessage('pages.monitor.cache.scan.complete', 'complete')
+                : formatMessage(
+                    'pages.monitor.cache.scan.limitedStatus',
+                    'limited',
+                  )
+            }
           />
         </Space>
 
         <ProTable<CacheNameSummary>
           columns={[
-            { title: 'Namespace', dataIndex: 'name' },
-            { title: 'Prefix', dataIndex: 'prefix' },
-            { title: 'Keys', dataIndex: 'keyCount' },
-            { title: 'Expiring', dataIndex: 'expiringKeys' },
-            { title: 'Persistent', dataIndex: 'persistentKeys' },
-            { title: 'Size', dataIndex: 'totalSizeBytes' },
             {
-              title: 'Actions',
+              title: formatMessage(
+                'pages.monitor.cache.fields.namespace',
+                'Namespace',
+              ),
+              dataIndex: 'name',
+            },
+            {
+              title: formatMessage(
+                'pages.monitor.cache.fields.prefix',
+                'Prefix',
+              ),
+              dataIndex: 'prefix',
+            },
+            {
+              title: formatMessage('pages.monitor.cache.stats.keys', 'Keys'),
+              dataIndex: 'keyCount',
+            },
+            {
+              title: formatMessage(
+                'pages.monitor.cache.fields.expiring',
+                'Expiring',
+              ),
+              dataIndex: 'expiringKeys',
+            },
+            {
+              title: formatMessage(
+                'pages.monitor.cache.ttl.persistent',
+                'Persistent',
+              ),
+              dataIndex: 'persistentKeys',
+            },
+            {
+              title: formatMessage('pages.monitor.cache.fields.size', 'Size'),
+              dataIndex: 'totalSizeBytes',
+            },
+            {
+              title: formatMessage(
+                'pages.monitor.cache.actions.column',
+                'Actions',
+              ),
               valueType: 'option',
               render: (_, record) => [
-                <Tooltip title="Dry-run prefix clear" key="dry-run">
+                <Tooltip
+                  title={formatMessage(
+                    'pages.monitor.cache.actions.dryRunPrefixClear',
+                    'Dry-run prefix clear',
+                  )}
+                  key="dry-run"
+                >
                   <Button
                     icon={<ClearOutlined />}
                     loading={clearingPrefix === `dry-run:${record.prefix}`}
@@ -321,7 +566,13 @@ export default function CachePage() {
                     onClick={() => void dryRunClearPrefix(record.prefix)}
                   />
                 </Tooltip>,
-                <Tooltip title="Clear namespace" key="clear">
+                <Tooltip
+                  title={formatMessage(
+                    'pages.monitor.cache.actions.clearNamespace',
+                    'Clear namespace',
+                  )}
+                  key="clear"
+                >
                   <Button
                     danger
                     disabled={!canManageCache}
@@ -347,7 +598,10 @@ export default function CachePage() {
               key="reload-names"
               onClick={() => void loadCache()}
             >
-              Reload Redis cache
+              {formatMessage(
+                'pages.monitor.cache.actions.reloadRedisCache',
+                'Reload Redis cache',
+              )}
             </Button>,
           ]}
         />
@@ -373,12 +627,19 @@ export default function CachePage() {
       </Space>
 
       <ReadOnlyDetailDrawer
-        fields={selectedDetail ? createCacheDetailFields(selectedDetail) : []}
+        fields={
+          selectedDetail
+            ? createCacheDetailFields(selectedDetail, formatMessage)
+            : []
+        }
         jsonSections={
           selectedDetail
             ? [
                 {
-                  title: 'Safe Value Preview',
+                  title: formatMessage(
+                    'pages.monitor.cache.fields.safeValuePreview',
+                    'Safe Value Preview',
+                  ),
                   value: {
                     preview: selectedDetail.valuePreview,
                     sensitive: selectedDetail.sensitive,
@@ -392,8 +653,17 @@ export default function CachePage() {
         open={Boolean(selectedDetail)}
         title={
           <Space>
-            <Typography.Text>Cache Value</Typography.Text>
-            {selectedDetail?.sensitive ? <Tag color="red">redacted</Tag> : null}
+            <Typography.Text>
+              {formatMessage('pages.monitor.cache.detail.title', 'Cache Value')}
+            </Typography.Text>
+            {selectedDetail?.sensitive ? (
+              <Tag color="red">
+                {formatMessage(
+                  'pages.monitor.cache.preview.redacted',
+                  'redacted',
+                )}
+              </Tag>
+            ) : null}
           </Space>
         }
       />

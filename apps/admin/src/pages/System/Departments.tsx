@@ -771,7 +771,7 @@ export default function DepartmentsPage() {
 
   return (
     <PageContainer
-      title={formatMessage('menu.system.departments', 'Departments')}
+      title={formatMessage('menu.system.depts', 'Departments')}
       subTitle={formatMessage('pages.system.section', 'S7 System')}
     >
       {loadError ? (
