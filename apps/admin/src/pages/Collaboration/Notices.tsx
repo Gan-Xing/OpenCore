@@ -11,6 +11,7 @@ import {
   type ProColumns,
 } from '@ant-design/pro-components';
 import type { NoticeSummary } from '@opencore/sdk';
+import { useIntl } from '@umijs/max';
 import {
   Alert,
   Button,
@@ -24,7 +25,7 @@ import {
   Typography,
   message,
 } from 'antd';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   archiveOpenCoreNotice,
   createOpenCoreNotice,
@@ -53,25 +54,15 @@ type NoticeFormValues = {
   validTo?: string;
 };
 
+type FormatMessage = (
+  id: string,
+  defaultMessage: string,
+  values?: Record<string, number | string>,
+) => string;
+
 const NOTICE_CREATE_PERMISSION_MARKER = 'collaboration:notice:create';
 const NOTICE_UPDATE_PERMISSION_MARKER = 'collaboration:notice:update';
 
-const exportColumns: CurrentPageExportColumn<NoticeSummary>[] = [
-  { title: 'ID', dataIndex: 'id' },
-  { title: 'Title', dataIndex: 'title' },
-  { title: 'Status', dataIndex: 'status' },
-  {
-    title: 'Audience',
-    renderText: (record) => record.targetAudience.join(', '),
-  },
-  { title: 'Created By', dataIndex: 'createdBy' },
-  { title: 'Valid From', dataIndex: 'validFrom' },
-  { title: 'Valid To', dataIndex: 'validTo' },
-  { title: 'Published At', dataIndex: 'publishedAt' },
-  { title: 'Archived At', dataIndex: 'archivedAt' },
-  { title: 'Created At', dataIndex: 'createdAt' },
-  { title: 'Body', dataIndex: 'body', sensitive: true },
-];
 const searchFields: CurrentPageSearchField<NoticeSummary>[] = [
   'title',
   'createdBy',
@@ -99,7 +90,84 @@ function countByStatus(
   return rows.filter((row) => row.status === status).length;
 }
 
+function createExportColumns(
+  formatMessage: FormatMessage,
+): CurrentPageExportColumn<NoticeSummary>[] {
+  return [
+    {
+      title: formatMessage('pages.collaboration.common.fields.id', 'ID'),
+      dataIndex: 'id',
+    },
+    {
+      title: formatMessage('pages.collaboration.notices.fields.title', 'Title'),
+      dataIndex: 'title',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.common.fields.status',
+        'Status',
+      ),
+      dataIndex: 'status',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.notices.fields.audience',
+        'Audience',
+      ),
+      renderText: (record) => record.targetAudience.join(', '),
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.notices.fields.createdBy',
+        'Created By',
+      ),
+      dataIndex: 'createdBy',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.notices.fields.validFrom',
+        'Valid From',
+      ),
+      dataIndex: 'validFrom',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.notices.fields.validTo',
+        'Valid To',
+      ),
+      dataIndex: 'validTo',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.notices.fields.publishedAt',
+        'Published At',
+      ),
+      dataIndex: 'publishedAt',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.common.fields.archivedAt',
+        'Archived At',
+      ),
+      dataIndex: 'archivedAt',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.common.fields.createdAt',
+        'Created At',
+      ),
+      dataIndex: 'createdAt',
+    },
+    {
+      title: formatMessage('pages.collaboration.notices.fields.body', 'Body'),
+      dataIndex: 'body',
+      sensitive: true,
+    },
+  ];
+}
+
 export default function NoticesPage() {
+  const intl = useIntl();
   const [form] = Form.useForm<NoticeFormValues>();
   const [rows, setRows] = useState<readonly NoticeSummary[]>([]);
   const [selected, setSelected] = useState<NoticeSummary>();
@@ -108,6 +176,42 @@ export default function NoticesPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [actingNoticeId, setActingNoticeId] = useState<string>();
+  const formatMessage: FormatMessage = useCallback(
+    (id, defaultMessage, values) =>
+      values
+        ? intl.formatMessage({ id, defaultMessage }, values)
+        : intl.formatMessage({ id, defaultMessage }),
+    [intl],
+  );
+  const statusLabels = useMemo(
+    () => ({
+      archived: formatMessage(
+        'pages.collaboration.notices.status.archived',
+        'archived',
+      ),
+      draft: formatMessage('pages.collaboration.notices.status.draft', 'draft'),
+      published: formatMessage(
+        'pages.collaboration.notices.status.published',
+        'published',
+      ),
+    }),
+    [formatMessage],
+  );
+  const exportColumns = useMemo(
+    () => createExportColumns(formatMessage),
+    [formatMessage],
+  );
+  const requiredRule = useMemo(
+    () => ({
+      message: formatMessage(
+        'pages.collaboration.common.validation.required',
+        'This field is required.',
+      ),
+      required: true,
+      whitespace: true,
+    }),
+    [formatMessage],
+  );
 
   const stats = useMemo(
     () => ({
@@ -124,24 +228,33 @@ export default function NoticesPage() {
       {
         key: 'status',
         options: createCurrentPageFilterOptions(rows, 'status'),
-        placeholder: 'Status',
+        placeholder: formatMessage(
+          'pages.collaboration.common.fields.status',
+          'Status',
+        ),
         predicate: (record, value) => record.status === value,
       },
       {
         key: 'createdBy',
         options: createCurrentPageFilterOptions(rows, 'createdBy'),
-        placeholder: 'Created by',
+        placeholder: formatMessage(
+          'pages.collaboration.notices.fields.createdBy',
+          'Created by',
+        ),
         predicate: (record, value) => record.createdBy === value,
       },
     ],
-    [rows],
+    [formatMessage, rows],
   );
 
   const { filteredRows, toolbar: filterToolbar } =
     useCurrentPageFilters<NoticeSummary>({
       rows,
       searchFields,
-      searchPlaceholder: 'Search live notices',
+      searchPlaceholder: formatMessage(
+        'pages.collaboration.notices.search.placeholder',
+        'Search live notices',
+      ),
       selectFilters: filterOptions,
     });
 
@@ -153,7 +266,12 @@ export default function NoticesPage() {
     } catch (error: unknown) {
       setRows([]);
       setLoadError(
-        error instanceof Error ? error.message : 'Unable to load notices.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.collaboration.notices.load.failure',
+              'Unable to load notices.',
+            ),
       );
     } finally {
       setLoading(false);
@@ -169,7 +287,12 @@ export default function NoticesPage() {
       setSelected(await getOpenCoreNotice(id));
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'Unable to load notice.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.collaboration.notices.detail.loadFailure',
+              'Unable to load notice.',
+            ),
       );
     }
   };
@@ -190,7 +313,12 @@ export default function NoticesPage() {
     const values = await form.validateFields();
     const targetAudience = splitAudience(values.targetAudience);
     if (targetAudience.length === 0) {
-      message.error('Audience is required.');
+      message.error(
+        formatMessage(
+          'pages.collaboration.notices.validation.audienceRequired',
+          'Audience is required.',
+        ),
+      );
       return;
     }
 
@@ -204,13 +332,23 @@ export default function NoticesPage() {
         validFrom: values.validFrom?.trim() || undefined,
         validTo: values.validTo?.trim() || undefined,
       });
-      message.success('Notice created.');
+      message.success(
+        formatMessage(
+          'pages.collaboration.notices.messages.created',
+          'Notice created.',
+        ),
+      );
       setFormOpen(false);
       setSelected(created);
       await loadNotices();
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'Unable to create notice.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.collaboration.notices.messages.createFailure',
+              'Unable to create notice.',
+            ),
       );
     } finally {
       setSubmitting(false);
@@ -222,11 +360,21 @@ export default function NoticesPage() {
     try {
       const next = await publishOpenCoreNotice(record.id);
       setSelected(next);
-      message.success('Notice published.');
+      message.success(
+        formatMessage(
+          'pages.collaboration.notices.messages.published',
+          'Notice published.',
+        ),
+      );
       await loadNotices();
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'Unable to publish notice.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.collaboration.notices.messages.publishFailure',
+              'Unable to publish notice.',
+            ),
       );
     } finally {
       setActingNoticeId(undefined);
@@ -238,11 +386,21 @@ export default function NoticesPage() {
     try {
       const next = await archiveOpenCoreNotice(record.id);
       setSelected(next);
-      message.success('Notice archived.');
+      message.success(
+        formatMessage(
+          'pages.collaboration.notices.messages.archived',
+          'Notice archived.',
+        ),
+      );
       await loadNotices();
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'Unable to archive notice.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.collaboration.notices.messages.archiveFailure',
+              'Unable to archive notice.',
+            ),
       );
     } finally {
       setActingNoticeId(undefined);
@@ -251,7 +409,7 @@ export default function NoticesPage() {
 
   const columns: ProColumns<NoticeSummary>[] = [
     {
-      title: 'Title',
+      title: formatMessage('pages.collaboration.notices.fields.title', 'Title'),
       dataIndex: 'title',
       render: (_, record) => (
         <Typography.Link onClick={() => void openDetail(record.id)}>
@@ -259,27 +417,68 @@ export default function NoticesPage() {
         </Typography.Link>
       ),
     },
-    { title: 'Created By', dataIndex: 'createdBy' },
     {
-      title: 'Audience',
+      title: formatMessage(
+        'pages.collaboration.notices.fields.createdBy',
+        'Created By',
+      ),
+      dataIndex: 'createdBy',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.notices.fields.audience',
+        'Audience',
+      ),
       dataIndex: 'targetAudience',
       renderText: (_, record) => record.targetAudience.join(', '),
     },
     {
-      title: 'Status',
+      title: formatMessage(
+        'pages.collaboration.common.fields.status',
+        'Status',
+      ),
       dataIndex: 'status',
       render: (_, record) => (
-        <Tag color={statusColor(record.status)}>{record.status}</Tag>
+        <Tag color={statusColor(record.status)}>
+          {statusLabels[record.status]}
+        </Tag>
       ),
     },
-    { title: 'Valid From', dataIndex: 'validFrom' },
-    { title: 'Valid To', dataIndex: 'validTo' },
-    { title: 'Created At', dataIndex: 'createdAt' },
     {
-      title: 'Action',
+      title: formatMessage(
+        'pages.collaboration.notices.fields.validFrom',
+        'Valid From',
+      ),
+      dataIndex: 'validFrom',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.notices.fields.validTo',
+        'Valid To',
+      ),
+      dataIndex: 'validTo',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.common.fields.createdAt',
+        'Created At',
+      ),
+      dataIndex: 'createdAt',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.common.actions.column',
+        'Action',
+      ),
       valueType: 'option',
       render: (_, record) => [
-        <Tooltip key="detail" title="Detail">
+        <Tooltip
+          key="detail"
+          title={formatMessage(
+            'pages.collaboration.common.actions.detail',
+            'Detail',
+          )}
+        >
           <Button
             icon={<EyeOutlined />}
             onClick={() => void openDetail(record.id)}
@@ -297,7 +496,10 @@ export default function NoticesPage() {
             title={NOTICE_UPDATE_PERMISSION_MARKER}
             type="link"
           >
-            Publish notice
+            {formatMessage(
+              'pages.collaboration.notices.actions.publish',
+              'Publish notice',
+            )}
           </Button>
         ) : null,
         record.status !== 'archived' ? (
@@ -310,7 +512,10 @@ export default function NoticesPage() {
             title={NOTICE_UPDATE_PERMISSION_MARKER}
             type="link"
           >
-            Archive notice
+            {formatMessage(
+              'pages.collaboration.notices.actions.archive',
+              'Archive notice',
+            )}
           </Button>
         ) : null,
       ],
@@ -318,26 +523,62 @@ export default function NoticesPage() {
   ];
 
   return (
-    <PageContainer title="Notices" subTitle="S10 Collaboration">
+    <PageContainer
+      title={formatMessage('pages.collaboration.notices.title', 'Notices')}
+      subTitle={formatMessage(
+        'pages.collaboration.section',
+        'S10 Collaboration',
+      )}
+    >
       {loadError ? (
         <Alert
           action={
             <Button onClick={() => void loadNotices()}>
-              Reload live notices
+              {formatMessage(
+                'pages.collaboration.notices.actions.reload',
+                'Reload live notices',
+              )}
             </Button>
           }
           description={loadError}
-          message="Live collaboration notices unavailable"
+          message={formatMessage(
+            'pages.collaboration.notices.load.liveFailure',
+            'Live collaboration notices unavailable',
+          )}
           showIcon
           style={{ marginBottom: 16 }}
           type="error"
         />
       ) : null}
       <Space size="large" style={{ marginBottom: 16 }} wrap>
-        <Statistic title="Live notices" value={stats.total} />
-        <Statistic title="Draft notices" value={stats.draft} />
-        <Statistic title="Published notices" value={stats.published} />
-        <Statistic title="Archived notices" value={stats.archived} />
+        <Statistic
+          title={formatMessage(
+            'pages.collaboration.notices.stats.live',
+            'Live notices',
+          )}
+          value={stats.total}
+        />
+        <Statistic
+          title={formatMessage(
+            'pages.collaboration.notices.stats.draft',
+            'Draft notices',
+          )}
+          value={stats.draft}
+        />
+        <Statistic
+          title={formatMessage(
+            'pages.collaboration.notices.stats.published',
+            'Published notices',
+          )}
+          value={stats.published}
+        />
+        <Statistic
+          title={formatMessage(
+            'pages.collaboration.notices.stats.archived',
+            'Archived notices',
+          )}
+          value={stats.archived}
+        />
       </Space>
       <ProTable<NoticeSummary>
         columns={columns}
@@ -354,7 +595,10 @@ export default function NoticesPage() {
             key="reload"
             onClick={() => void loadNotices()}
           >
-            Reload live notices
+            {formatMessage(
+              'pages.collaboration.notices.actions.reload',
+              'Reload live notices',
+            )}
           </Button>,
           <Button
             icon={<PlusOutlined />}
@@ -363,7 +607,10 @@ export default function NoticesPage() {
             title={NOTICE_CREATE_PERMISSION_MARKER}
             type="primary"
           >
-            Create notice
+            {formatMessage(
+              'pages.collaboration.notices.actions.create',
+              'Create notice',
+            )}
           </Button>,
           <CurrentPageExportButton<NoticeSummary>
             columns={exportColumns}
@@ -375,24 +622,90 @@ export default function NoticesPage() {
       />
       <ReadOnlyDetailDrawer
         fields={[
-          { label: 'ID', value: selected?.id },
-          { label: 'Title', value: selected?.title },
-          { label: 'Created By', value: selected?.createdBy },
-          { label: 'Status', value: selected?.status },
           {
-            label: 'Audience',
+            label: formatMessage('pages.collaboration.common.fields.id', 'ID'),
+            value: selected?.id,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.notices.fields.title',
+              'Title',
+            ),
+            value: selected?.title,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.notices.fields.createdBy',
+              'Created By',
+            ),
+            value: selected?.createdBy,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.common.fields.status',
+              'Status',
+            ),
+            value: selected ? statusLabels[selected.status] : undefined,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.notices.fields.audience',
+              'Audience',
+            ),
             value: selected?.targetAudience.join(', '),
           },
-          { label: 'Valid From', value: selected?.validFrom },
-          { label: 'Valid To', value: selected?.validTo },
-          { label: 'Published At', value: selected?.publishedAt },
-          { label: 'Archived At', value: selected?.archivedAt },
-          { label: 'Created At', value: selected?.createdAt },
-          { label: 'Body', value: selected?.body },
+          {
+            label: formatMessage(
+              'pages.collaboration.notices.fields.validFrom',
+              'Valid From',
+            ),
+            value: selected?.validFrom,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.notices.fields.validTo',
+              'Valid To',
+            ),
+            value: selected?.validTo,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.notices.fields.publishedAt',
+              'Published At',
+            ),
+            value: selected?.publishedAt,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.common.fields.archivedAt',
+              'Archived At',
+            ),
+            value: selected?.archivedAt,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.common.fields.createdAt',
+              'Created At',
+            ),
+            value: selected?.createdAt,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.notices.fields.body',
+              'Body',
+            ),
+            value: selected?.body,
+          },
         ]}
         onClose={() => setSelected(undefined)}
         open={Boolean(selected)}
-        title={selected?.title ?? 'Notice Detail'}
+        title={
+          selected?.title ??
+          formatMessage(
+            'pages.collaboration.notices.detail.title',
+            'Notice Detail',
+          )
+        }
       />
       <Modal
         confirmLoading={submitting}
@@ -400,42 +713,69 @@ export default function NoticesPage() {
         onCancel={() => setFormOpen(false)}
         onOk={() => void submitForm()}
         open={formOpen}
-        title="Create notice"
+        title={formatMessage(
+          'pages.collaboration.notices.actions.create',
+          'Create notice',
+        )}
       >
         <Form<NoticeFormValues> form={form} layout="vertical">
           <Form.Item
-            label="Title"
+            label={formatMessage(
+              'pages.collaboration.notices.fields.title',
+              'Title',
+            )}
             name="title"
-            rules={[{ required: true, whitespace: true }]}
+            rules={[requiredRule]}
           >
             <Input maxLength={160} />
           </Form.Item>
           <Form.Item
-            label="Created By"
+            label={formatMessage(
+              'pages.collaboration.notices.fields.createdBy',
+              'Created By',
+            )}
             name="createdBy"
-            rules={[{ required: true, whitespace: true }]}
+            rules={[requiredRule]}
           >
             <Input maxLength={80} />
           </Form.Item>
           <Form.Item
-            label="Audience"
+            label={formatMessage(
+              'pages.collaboration.notices.fields.audience',
+              'Audience',
+            )}
             name="targetAudience"
-            rules={[{ required: true, whitespace: true }]}
+            rules={[requiredRule]}
           >
             <Input maxLength={240} />
           </Form.Item>
           <Form.Item
-            label="Body"
+            label={formatMessage(
+              'pages.collaboration.notices.fields.body',
+              'Body',
+            )}
             name="body"
-            rules={[{ required: true, whitespace: true }]}
+            rules={[requiredRule]}
           >
             <Input.TextArea maxLength={2000} rows={4} />
           </Form.Item>
           <Space align="start" style={{ width: '100%' }}>
-            <Form.Item label="Valid From" name="validFrom">
+            <Form.Item
+              label={formatMessage(
+                'pages.collaboration.notices.fields.validFrom',
+                'Valid From',
+              )}
+              name="validFrom"
+            >
               <Input placeholder="2026-06-14T00:00:00.000Z" />
             </Form.Item>
-            <Form.Item label="Valid To" name="validTo">
+            <Form.Item
+              label={formatMessage(
+                'pages.collaboration.notices.fields.validTo',
+                'Valid To',
+              )}
+              name="validTo"
+            >
               <Input placeholder="2026-06-15T00:00:00.000Z" />
             </Form.Item>
           </Space>

@@ -11,6 +11,7 @@ import {
   type ProColumns,
 } from '@ant-design/pro-components';
 import type { CollaborationSummary, MessageSummary } from '@opencore/sdk';
+import { useIntl } from '@umijs/max';
 import {
   Alert,
   Button,
@@ -25,7 +26,7 @@ import {
   Typography,
   message,
 } from 'antd';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   archiveOpenCoreMessage,
   createOpenCoreMessage,
@@ -56,6 +57,12 @@ type MessageFormValues = {
   title: string;
 };
 
+type FormatMessage = (
+  id: string,
+  defaultMessage: string,
+  values?: Record<string, number | string>,
+) => string;
+
 const MESSAGE_CREATE_PERMISSION_MARKER = 'collaboration:message:create';
 const MESSAGE_UPDATE_PERMISSION_MARKER = 'collaboration:message:update';
 const MESSAGE_DELETE_PERMISSION_MARKER = 'collaboration:message:delete';
@@ -67,19 +74,6 @@ const emptySummary: CollaborationSummary = {
   todos: { assigned: 0, canceled: 0, completed: 0, pending: 0, total: 0 },
 };
 
-const exportColumns: CurrentPageExportColumn<MessageSummary>[] = [
-  { title: 'ID', dataIndex: 'id' },
-  { title: 'Title', dataIndex: 'title' },
-  { title: 'Sender', dataIndex: 'sender' },
-  { title: 'Recipient', dataIndex: 'recipient' },
-  { title: 'Status', dataIndex: 'status' },
-  { title: 'Business Type', dataIndex: 'businessType' },
-  { title: 'Business ID', dataIndex: 'businessId' },
-  { title: 'Read At', dataIndex: 'readAt' },
-  { title: 'Archived At', dataIndex: 'archivedAt' },
-  { title: 'Created At', dataIndex: 'createdAt' },
-  { title: 'Body', dataIndex: 'body', sensitive: true },
-];
 const searchFields: CurrentPageSearchField<MessageSummary>[] = [
   'title',
   'sender',
@@ -96,7 +90,87 @@ function statusColor(status: MessageSummary['status']): string {
   return 'red';
 }
 
+function createExportColumns(
+  formatMessage: FormatMessage,
+): CurrentPageExportColumn<MessageSummary>[] {
+  return [
+    {
+      title: formatMessage('pages.collaboration.common.fields.id', 'ID'),
+      dataIndex: 'id',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.messages.fields.title',
+        'Title',
+      ),
+      dataIndex: 'title',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.messages.fields.sender',
+        'Sender',
+      ),
+      dataIndex: 'sender',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.messages.fields.recipient',
+        'Recipient',
+      ),
+      dataIndex: 'recipient',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.common.fields.status',
+        'Status',
+      ),
+      dataIndex: 'status',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.common.fields.businessType',
+        'Business Type',
+      ),
+      dataIndex: 'businessType',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.common.fields.businessId',
+        'Business ID',
+      ),
+      dataIndex: 'businessId',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.messages.fields.readAt',
+        'Read At',
+      ),
+      dataIndex: 'readAt',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.common.fields.archivedAt',
+        'Archived At',
+      ),
+      dataIndex: 'archivedAt',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.common.fields.createdAt',
+        'Created At',
+      ),
+      dataIndex: 'createdAt',
+    },
+    {
+      title: formatMessage('pages.collaboration.messages.fields.body', 'Body'),
+      dataIndex: 'body',
+      sensitive: true,
+    },
+  ];
+}
+
 export default function MessagesPage() {
+  const intl = useIntl();
   const [form] = Form.useForm<MessageFormValues>();
   const [rows, setRows] = useState<readonly MessageSummary[]>([]);
   const [summary, setSummary] = useState<CollaborationSummary>(emptySummary);
@@ -106,36 +180,88 @@ export default function MessagesPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [actingMessageId, setActingMessageId] = useState<string>();
+  const formatMessage: FormatMessage = useCallback(
+    (id, defaultMessage, values) =>
+      values
+        ? intl.formatMessage({ id, defaultMessage }, values)
+        : intl.formatMessage({ id, defaultMessage }),
+    [intl],
+  );
+  const statusLabels = useMemo(
+    () => ({
+      archived: formatMessage(
+        'pages.collaboration.messages.status.archived',
+        'archived',
+      ),
+      deleted: formatMessage(
+        'pages.collaboration.messages.status.deleted',
+        'deleted',
+      ),
+      read: formatMessage('pages.collaboration.messages.status.read', 'read'),
+      unread: formatMessage(
+        'pages.collaboration.messages.status.unread',
+        'unread',
+      ),
+    }),
+    [formatMessage],
+  );
+  const exportColumns = useMemo(
+    () => createExportColumns(formatMessage),
+    [formatMessage],
+  );
+  const requiredRule = useMemo(
+    () => ({
+      message: formatMessage(
+        'pages.collaboration.common.validation.required',
+        'This field is required.',
+      ),
+      required: true,
+      whitespace: true,
+    }),
+    [formatMessage],
+  );
 
   const filterOptions: CurrentPageFilterOption<MessageSummary>[] = useMemo(
     () => [
       {
         key: 'status',
         options: createCurrentPageFilterOptions(rows, 'status'),
-        placeholder: 'Status',
+        placeholder: formatMessage(
+          'pages.collaboration.common.fields.status',
+          'Status',
+        ),
         predicate: (record, value) => record.status === value,
       },
       {
         key: 'recipient',
         options: createCurrentPageFilterOptions(rows, 'recipient'),
-        placeholder: 'Recipient',
+        placeholder: formatMessage(
+          'pages.collaboration.messages.fields.recipient',
+          'Recipient',
+        ),
         predicate: (record, value) => record.recipient === value,
       },
       {
         key: 'sender',
         options: createCurrentPageFilterOptions(rows, 'sender'),
-        placeholder: 'Sender',
+        placeholder: formatMessage(
+          'pages.collaboration.messages.fields.sender',
+          'Sender',
+        ),
         predicate: (record, value) => record.sender === value,
       },
     ],
-    [rows],
+    [formatMessage, rows],
   );
 
   const { filteredRows, toolbar: filterToolbar } =
     useCurrentPageFilters<MessageSummary>({
       rows,
       searchFields,
-      searchPlaceholder: 'Search live messages',
+      searchPlaceholder: formatMessage(
+        'pages.collaboration.messages.search.placeholder',
+        'Search live messages',
+      ),
       selectFilters: filterOptions,
     });
 
@@ -153,7 +279,12 @@ export default function MessagesPage() {
       setRows([]);
       setSummary(emptySummary);
       setLoadError(
-        error instanceof Error ? error.message : 'Unable to load messages.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.collaboration.messages.load.failure',
+              'Unable to load messages.',
+            ),
       );
     } finally {
       setLoading(false);
@@ -169,7 +300,12 @@ export default function MessagesPage() {
       setSelected(await getOpenCoreMessage(id));
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'Unable to load message.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.collaboration.messages.detail.loadFailure',
+              'Unable to load message.',
+            ),
       );
     }
   };
@@ -198,13 +334,23 @@ export default function MessagesPage() {
         sender: values.sender.trim(),
         title: values.title.trim(),
       });
-      message.success('Message created.');
+      message.success(
+        formatMessage(
+          'pages.collaboration.messages.messages.created',
+          'Message created.',
+        ),
+      );
       setFormOpen(false);
       setSelected(created);
       await loadMessages();
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'Unable to create message.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.collaboration.messages.messages.createFailure',
+              'Unable to create message.',
+            ),
       );
     } finally {
       setSubmitting(false);
@@ -216,11 +362,21 @@ export default function MessagesPage() {
     try {
       const next = await markOpenCoreMessageRead(record.id);
       setSelected(next);
-      message.success('Message marked read.');
+      message.success(
+        formatMessage(
+          'pages.collaboration.messages.messages.markedRead',
+          'Message marked read.',
+        ),
+      );
       await loadMessages();
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'Unable to mark message read.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.collaboration.messages.messages.markReadFailure',
+              'Unable to mark message read.',
+            ),
       );
     } finally {
       setActingMessageId(undefined);
@@ -232,11 +388,21 @@ export default function MessagesPage() {
     try {
       const next = await archiveOpenCoreMessage(record.id);
       setSelected(next);
-      message.success('Message archived.');
+      message.success(
+        formatMessage(
+          'pages.collaboration.messages.messages.archived',
+          'Message archived.',
+        ),
+      );
       await loadMessages();
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'Unable to archive message.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.collaboration.messages.messages.archiveFailure',
+              'Unable to archive message.',
+            ),
       );
     } finally {
       setActingMessageId(undefined);
@@ -250,11 +416,21 @@ export default function MessagesPage() {
       setSelected((current) =>
         current?.id === record.id ? undefined : current,
       );
-      message.success('Message deleted.');
+      message.success(
+        formatMessage(
+          'pages.collaboration.messages.messages.deleted',
+          'Message deleted.',
+        ),
+      );
       await loadMessages();
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'Unable to delete message.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.collaboration.messages.messages.deleteFailure',
+              'Unable to delete message.',
+            ),
       );
     } finally {
       setActingMessageId(undefined);
@@ -263,7 +439,10 @@ export default function MessagesPage() {
 
   const columns: ProColumns<MessageSummary>[] = [
     {
-      title: 'Title',
+      title: formatMessage(
+        'pages.collaboration.messages.fields.title',
+        'Title',
+      ),
       dataIndex: 'title',
       render: (_, record) => (
         <Typography.Link onClick={() => void openDetail(record.id)}>
@@ -271,22 +450,60 @@ export default function MessagesPage() {
         </Typography.Link>
       ),
     },
-    { title: 'Sender', dataIndex: 'sender' },
-    { title: 'Recipient', dataIndex: 'recipient' },
     {
-      title: 'Status',
+      title: formatMessage(
+        'pages.collaboration.messages.fields.sender',
+        'Sender',
+      ),
+      dataIndex: 'sender',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.messages.fields.recipient',
+        'Recipient',
+      ),
+      dataIndex: 'recipient',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.common.fields.status',
+        'Status',
+      ),
       dataIndex: 'status',
       render: (_, record) => (
-        <Tag color={statusColor(record.status)}>{record.status}</Tag>
+        <Tag color={statusColor(record.status)}>
+          {statusLabels[record.status]}
+        </Tag>
       ),
     },
-    { title: 'Business', dataIndex: 'businessType' },
-    { title: 'Created At', dataIndex: 'createdAt' },
     {
-      title: 'Action',
+      title: formatMessage(
+        'pages.collaboration.common.fields.business',
+        'Business',
+      ),
+      dataIndex: 'businessType',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.common.fields.createdAt',
+        'Created At',
+      ),
+      dataIndex: 'createdAt',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.common.actions.column',
+        'Action',
+      ),
       valueType: 'option',
       render: (_, record) => [
-        <Tooltip key="detail" title="Detail">
+        <Tooltip
+          key="detail"
+          title={formatMessage(
+            'pages.collaboration.common.actions.detail',
+            'Detail',
+          )}
+        >
           <Button
             icon={<EyeOutlined />}
             onClick={() => void openDetail(record.id)}
@@ -303,7 +520,10 @@ export default function MessagesPage() {
             title={MESSAGE_UPDATE_PERMISSION_MARKER}
             type="link"
           >
-            Mark read
+            {formatMessage(
+              'pages.collaboration.messages.actions.markRead',
+              'Mark read',
+            )}
           </Button>
         ) : null,
         record.status !== 'archived' ? (
@@ -316,13 +536,19 @@ export default function MessagesPage() {
             title={MESSAGE_UPDATE_PERMISSION_MARKER}
             type="link"
           >
-            Archive message
+            {formatMessage(
+              'pages.collaboration.messages.actions.archive',
+              'Archive message',
+            )}
           </Button>
         ) : null,
         <Popconfirm
           key="delete"
           onConfirm={() => void deleteMessage(record)}
-          title="Delete message?"
+          title={formatMessage(
+            'pages.collaboration.messages.confirm.delete',
+            'Delete message?',
+          )}
         >
           <Button
             danger
@@ -338,27 +564,60 @@ export default function MessagesPage() {
   ];
 
   return (
-    <PageContainer title="Messages" subTitle="S10 Collaboration">
+    <PageContainer
+      title={formatMessage('pages.collaboration.messages.title', 'Messages')}
+      subTitle={formatMessage(
+        'pages.collaboration.section',
+        'S10 Collaboration',
+      )}
+    >
       {loadError ? (
         <Alert
           action={
             <Button onClick={() => void loadMessages()}>
-              Reload live messages
+              {formatMessage(
+                'pages.collaboration.messages.actions.reload',
+                'Reload live messages',
+              )}
             </Button>
           }
           description={loadError}
-          message="Live collaboration messages unavailable"
+          message={formatMessage(
+            'pages.collaboration.messages.load.liveFailure',
+            'Live collaboration messages unavailable',
+          )}
           showIcon
           style={{ marginBottom: 16 }}
           type="error"
         />
       ) : null}
       <Space size="large" style={{ marginBottom: 16 }} wrap>
-        <Statistic title="Live messages" value={summary.messages.total} />
-        <Statistic title="Unread messages" value={summary.messages.unread} />
-        <Statistic title="Read messages" value={summary.messages.read} />
         <Statistic
-          title="Archived messages"
+          title={formatMessage(
+            'pages.collaboration.messages.stats.live',
+            'Live messages',
+          )}
+          value={summary.messages.total}
+        />
+        <Statistic
+          title={formatMessage(
+            'pages.collaboration.messages.stats.unread',
+            'Unread messages',
+          )}
+          value={summary.messages.unread}
+        />
+        <Statistic
+          title={formatMessage(
+            'pages.collaboration.messages.stats.read',
+            'Read messages',
+          )}
+          value={summary.messages.read}
+        />
+        <Statistic
+          title={formatMessage(
+            'pages.collaboration.messages.stats.archived',
+            'Archived messages',
+          )}
           value={summary.messages.archived}
         />
       </Space>
@@ -377,7 +636,10 @@ export default function MessagesPage() {
             key="reload"
             onClick={() => void loadMessages()}
           >
-            Reload live messages
+            {formatMessage(
+              'pages.collaboration.messages.actions.reload',
+              'Reload live messages',
+            )}
           </Button>,
           <Button
             icon={<PlusOutlined />}
@@ -386,7 +648,10 @@ export default function MessagesPage() {
             title={MESSAGE_CREATE_PERMISSION_MARKER}
             type="primary"
           >
-            Create message
+            {formatMessage(
+              'pages.collaboration.messages.actions.create',
+              'Create message',
+            )}
           </Button>,
           <CurrentPageExportButton<MessageSummary>
             columns={exportColumns}
@@ -398,21 +663,90 @@ export default function MessagesPage() {
       />
       <ReadOnlyDetailDrawer
         fields={[
-          { label: 'ID', value: selected?.id },
-          { label: 'Title', value: selected?.title },
-          { label: 'Sender', value: selected?.sender },
-          { label: 'Recipient', value: selected?.recipient },
-          { label: 'Status', value: selected?.status },
-          { label: 'Business Type', value: selected?.businessType },
-          { label: 'Business ID', value: selected?.businessId },
-          { label: 'Read At', value: selected?.readAt },
-          { label: 'Archived At', value: selected?.archivedAt },
-          { label: 'Created At', value: selected?.createdAt },
-          { label: 'Body', value: selected?.body },
+          {
+            label: formatMessage('pages.collaboration.common.fields.id', 'ID'),
+            value: selected?.id,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.messages.fields.title',
+              'Title',
+            ),
+            value: selected?.title,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.messages.fields.sender',
+              'Sender',
+            ),
+            value: selected?.sender,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.messages.fields.recipient',
+              'Recipient',
+            ),
+            value: selected?.recipient,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.common.fields.status',
+              'Status',
+            ),
+            value: selected ? statusLabels[selected.status] : undefined,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.common.fields.businessType',
+              'Business Type',
+            ),
+            value: selected?.businessType,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.common.fields.businessId',
+              'Business ID',
+            ),
+            value: selected?.businessId,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.messages.fields.readAt',
+              'Read At',
+            ),
+            value: selected?.readAt,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.common.fields.archivedAt',
+              'Archived At',
+            ),
+            value: selected?.archivedAt,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.common.fields.createdAt',
+              'Created At',
+            ),
+            value: selected?.createdAt,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.messages.fields.body',
+              'Body',
+            ),
+            value: selected?.body,
+          },
         ]}
         onClose={() => setSelected(undefined)}
         open={Boolean(selected)}
-        title={selected?.title ?? 'Message Detail'}
+        title={
+          selected?.title ??
+          formatMessage(
+            'pages.collaboration.messages.detail.title',
+            'Message Detail',
+          )
+        }
       />
       <Modal
         confirmLoading={submitting}
@@ -420,44 +754,71 @@ export default function MessagesPage() {
         onCancel={() => setFormOpen(false)}
         onOk={() => void submitForm()}
         open={formOpen}
-        title="Create message"
+        title={formatMessage(
+          'pages.collaboration.messages.actions.create',
+          'Create message',
+        )}
       >
         <Form<MessageFormValues> form={form} layout="vertical">
           <Form.Item
-            label="Title"
+            label={formatMessage(
+              'pages.collaboration.messages.fields.title',
+              'Title',
+            )}
             name="title"
-            rules={[{ required: true, whitespace: true }]}
+            rules={[requiredRule]}
           >
             <Input maxLength={160} />
           </Form.Item>
           <Space align="start" style={{ width: '100%' }}>
             <Form.Item
-              label="Sender"
+              label={formatMessage(
+                'pages.collaboration.messages.fields.sender',
+                'Sender',
+              )}
               name="sender"
-              rules={[{ required: true, whitespace: true }]}
+              rules={[requiredRule]}
             >
               <Input maxLength={80} />
             </Form.Item>
             <Form.Item
-              label="Recipient"
+              label={formatMessage(
+                'pages.collaboration.messages.fields.recipient',
+                'Recipient',
+              )}
               name="recipient"
-              rules={[{ required: true, whitespace: true }]}
+              rules={[requiredRule]}
             >
               <Input maxLength={80} />
             </Form.Item>
           </Space>
           <Form.Item
-            label="Body"
+            label={formatMessage(
+              'pages.collaboration.messages.fields.body',
+              'Body',
+            )}
             name="body"
-            rules={[{ required: true, whitespace: true }]}
+            rules={[requiredRule]}
           >
             <Input.TextArea maxLength={1000} rows={4} />
           </Form.Item>
           <Space align="start" style={{ width: '100%' }}>
-            <Form.Item label="Business Type" name="businessType">
+            <Form.Item
+              label={formatMessage(
+                'pages.collaboration.common.fields.businessType',
+                'Business Type',
+              )}
+              name="businessType"
+            >
               <Input maxLength={80} />
             </Form.Item>
-            <Form.Item label="Business ID" name="businessId">
+            <Form.Item
+              label={formatMessage(
+                'pages.collaboration.common.fields.businessId',
+                'Business ID',
+              )}
+              name="businessId"
+            >
               <Input maxLength={120} />
             </Form.Item>
           </Space>

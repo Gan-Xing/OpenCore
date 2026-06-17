@@ -11,6 +11,7 @@ import {
   type ProColumns,
 } from '@ant-design/pro-components';
 import type { ApprovalLiteSummary } from '@opencore/sdk';
+import { useIntl } from '@umijs/max';
 import {
   Alert,
   Button,
@@ -25,7 +26,7 @@ import {
   Typography,
   message,
 } from 'antd';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   approveOpenCoreApprovalLiteRequest,
   createOpenCoreApprovalLiteRequest,
@@ -60,26 +61,16 @@ type DecisionFormValues = {
 
 type ApprovalDecision = 'approve' | 'reject';
 
+type FormatMessage = (
+  id: string,
+  defaultMessage: string,
+  values?: Record<string, number | string>,
+) => string;
+
 const APPROVAL_CREATE_PERMISSION_MARKER = 'collaboration:approval-lite:create';
 const APPROVAL_UPDATE_PERMISSION_MARKER = 'collaboration:approval-lite:update';
 const DEFAULT_DECISION_ACTOR = 'admin';
 
-const exportColumns: CurrentPageExportColumn<ApprovalLiteSummary>[] = [
-  { title: 'ID', dataIndex: 'id' },
-  { title: 'Title', dataIndex: 'title' },
-  { title: 'Requester', dataIndex: 'requester' },
-  { title: 'Approver', dataIndex: 'approver' },
-  { title: 'Business Type', dataIndex: 'businessType' },
-  { title: 'Business ID', dataIndex: 'businessId' },
-  { title: 'Status', dataIndex: 'status' },
-  {
-    title: 'Timeline',
-    renderText: (record) => `${record.timeline.length} events`,
-  },
-  { title: 'Decided At', dataIndex: 'decidedAt' },
-  { title: 'Created At', dataIndex: 'createdAt' },
-  { title: 'Comment', dataIndex: 'comment', sensitive: true },
-];
 const searchFields: CurrentPageSearchField<ApprovalLiteSummary>[] = [
   'title',
   'requester',
@@ -102,7 +93,97 @@ function countByStatus(
   return rows.filter((row) => row.status === status).length;
 }
 
+function createExportColumns(
+  formatMessage: FormatMessage,
+): CurrentPageExportColumn<ApprovalLiteSummary>[] {
+  return [
+    {
+      title: formatMessage('pages.collaboration.common.fields.id', 'ID'),
+      dataIndex: 'id',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.approvals.fields.title',
+        'Title',
+      ),
+      dataIndex: 'title',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.approvals.fields.requester',
+        'Requester',
+      ),
+      dataIndex: 'requester',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.approvals.fields.approver',
+        'Approver',
+      ),
+      dataIndex: 'approver',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.common.fields.businessType',
+        'Business Type',
+      ),
+      dataIndex: 'businessType',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.common.fields.businessId',
+        'Business ID',
+      ),
+      dataIndex: 'businessId',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.common.fields.status',
+        'Status',
+      ),
+      dataIndex: 'status',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.common.fields.timeline',
+        'Timeline',
+      ),
+      renderText: (record) =>
+        formatMessage(
+          'pages.collaboration.common.timeline.events',
+          '{count} events',
+          {
+            count: record.timeline.length,
+          },
+        ),
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.approvals.fields.decidedAt',
+        'Decided At',
+      ),
+      dataIndex: 'decidedAt',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.common.fields.createdAt',
+        'Created At',
+      ),
+      dataIndex: 'createdAt',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.approvals.fields.comment',
+        'Comment',
+      ),
+      dataIndex: 'comment',
+      sensitive: true,
+    },
+  ];
+}
+
 export default function ApprovalsPage() {
+  const intl = useIntl();
   const [createForm] = Form.useForm<ApprovalFormValues>();
   const [decisionForm] = Form.useForm<DecisionFormValues>();
   const [rows, setRows] = useState<readonly ApprovalLiteSummary[]>([]);
@@ -114,6 +195,58 @@ export default function ApprovalsPage() {
   const [decision, setDecision] = useState<ApprovalDecision>();
   const [submitting, setSubmitting] = useState(false);
   const [actingApprovalId, setActingApprovalId] = useState<string>();
+  const formatMessage: FormatMessage = useCallback(
+    (id, defaultMessage, values) =>
+      values
+        ? intl.formatMessage({ id, defaultMessage }, values)
+        : intl.formatMessage({ id, defaultMessage }),
+    [intl],
+  );
+  const statusLabels = useMemo(
+    () => ({
+      approved: formatMessage(
+        'pages.collaboration.approvals.status.approved',
+        'approved',
+      ),
+      pending: formatMessage(
+        'pages.collaboration.approvals.status.pending',
+        'pending',
+      ),
+      rejected: formatMessage(
+        'pages.collaboration.approvals.status.rejected',
+        'rejected',
+      ),
+    }),
+    [formatMessage],
+  );
+  const actionPolicyLabels = useMemo(
+    () => ({
+      active: formatMessage(
+        'pages.collaboration.approvals.policy.approveReject',
+        'approve/reject',
+      ),
+      terminal: formatMessage(
+        'pages.collaboration.common.policy.terminal',
+        'terminal',
+      ),
+    }),
+    [formatMessage],
+  );
+  const exportColumns = useMemo(
+    () => createExportColumns(formatMessage),
+    [formatMessage],
+  );
+  const requiredRule = useMemo(
+    () => ({
+      message: formatMessage(
+        'pages.collaboration.common.validation.required',
+        'This field is required.',
+      ),
+      required: true,
+      whitespace: true,
+    }),
+    [formatMessage],
+  );
 
   const stats = useMemo(
     () => ({
@@ -130,30 +263,42 @@ export default function ApprovalsPage() {
       {
         key: 'status',
         options: createCurrentPageFilterOptions(rows, 'status'),
-        placeholder: 'Status',
+        placeholder: formatMessage(
+          'pages.collaboration.common.fields.status',
+          'Status',
+        ),
         predicate: (record, value) => record.status === value,
       },
       {
         key: 'requester',
         options: createCurrentPageFilterOptions(rows, 'requester'),
-        placeholder: 'Requester',
+        placeholder: formatMessage(
+          'pages.collaboration.approvals.fields.requester',
+          'Requester',
+        ),
         predicate: (record, value) => record.requester === value,
       },
       {
         key: 'approver',
         options: createCurrentPageFilterOptions(rows, 'approver'),
-        placeholder: 'Approver',
+        placeholder: formatMessage(
+          'pages.collaboration.approvals.fields.approver',
+          'Approver',
+        ),
         predicate: (record, value) => record.approver === value,
       },
     ],
-    [rows],
+    [formatMessage, rows],
   );
 
   const { filteredRows, toolbar: filterToolbar } =
     useCurrentPageFilters<ApprovalLiteSummary>({
       rows,
       searchFields,
-      searchPlaceholder: 'Search live approvals',
+      searchPlaceholder: formatMessage(
+        'pages.collaboration.approvals.search.placeholder',
+        'Search live approvals',
+      ),
       selectFilters: filterOptions,
     });
 
@@ -165,7 +310,12 @@ export default function ApprovalsPage() {
     } catch (error: unknown) {
       setRows([]);
       setLoadError(
-        error instanceof Error ? error.message : 'Unable to load approvals.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.collaboration.approvals.load.failure',
+              'Unable to load approvals.',
+            ),
       );
     } finally {
       setLoading(false);
@@ -181,7 +331,12 @@ export default function ApprovalsPage() {
       setSelected(await getOpenCoreApprovalLiteRequest(id));
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'Unable to load approval.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.collaboration.approvals.detail.loadFailure',
+              'Unable to load approval.',
+            ),
       );
     }
   };
@@ -225,13 +380,23 @@ export default function ApprovalsPage() {
         requester: values.requester.trim(),
         title: values.title.trim(),
       });
-      message.success('Approval created.');
+      message.success(
+        formatMessage(
+          'pages.collaboration.approvals.messages.created',
+          'Approval created.',
+        ),
+      );
       setCreateOpen(false);
       setSelected(created);
       await loadApprovals();
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'Unable to create approval.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.collaboration.approvals.messages.createFailure',
+              'Unable to create approval.',
+            ),
       );
     } finally {
       setSubmitting(false);
@@ -254,14 +419,27 @@ export default function ApprovalsPage() {
           ? await approveOpenCoreApprovalLiteRequest(decisionRecord.id, body)
           : await rejectOpenCoreApprovalLiteRequest(decisionRecord.id, body);
       message.success(
-        decision === 'approve' ? 'Approval approved.' : 'Approval rejected.',
+        decision === 'approve'
+          ? formatMessage(
+              'pages.collaboration.approvals.messages.approved',
+              'Approval approved.',
+            )
+          : formatMessage(
+              'pages.collaboration.approvals.messages.rejected',
+              'Approval rejected.',
+            ),
       );
       closeDecisionForm();
       setSelected(next);
       await loadApprovals();
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'Unable to decide approval.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.collaboration.approvals.messages.decideFailure',
+              'Unable to decide approval.',
+            ),
       );
     } finally {
       setSubmitting(false);
@@ -271,7 +449,10 @@ export default function ApprovalsPage() {
 
   const columns: ProColumns<ApprovalLiteSummary>[] = [
     {
-      title: 'Title',
+      title: formatMessage(
+        'pages.collaboration.approvals.fields.title',
+        'Title',
+      ),
       dataIndex: 'title',
       render: (_, record) => (
         <Typography.Link onClick={() => void openDetail(record.id)}>
@@ -279,29 +460,66 @@ export default function ApprovalsPage() {
         </Typography.Link>
       ),
     },
-    { title: 'Requester', dataIndex: 'requester' },
-    { title: 'Approver', dataIndex: 'approver' },
-    { title: 'Business', dataIndex: 'businessType' },
     {
-      title: 'Status',
-      dataIndex: 'status',
-      render: (_, record) => (
-        <Tag color={statusColor(record.status)}>{record.status}</Tag>
+      title: formatMessage(
+        'pages.collaboration.approvals.fields.requester',
+        'Requester',
       ),
+      dataIndex: 'requester',
     },
     {
-      title: 'Action Policy',
+      title: formatMessage(
+        'pages.collaboration.approvals.fields.approver',
+        'Approver',
+      ),
+      dataIndex: 'approver',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.common.fields.business',
+        'Business',
+      ),
+      dataIndex: 'businessType',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.common.fields.status',
+        'Status',
+      ),
+      dataIndex: 'status',
       render: (_, record) => (
-        <Tag color={record.status === 'pending' ? 'green' : 'default'}>
-          {record.status === 'pending' ? 'approve/reject' : 'terminal'}
+        <Tag color={statusColor(record.status)}>
+          {statusLabels[record.status]}
         </Tag>
       ),
     },
     {
-      title: 'Action',
+      title: formatMessage(
+        'pages.collaboration.common.fields.actionPolicy',
+        'Action Policy',
+      ),
+      render: (_, record) => (
+        <Tag color={record.status === 'pending' ? 'green' : 'default'}>
+          {record.status === 'pending'
+            ? actionPolicyLabels.active
+            : actionPolicyLabels.terminal}
+        </Tag>
+      ),
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.common.actions.column',
+        'Action',
+      ),
       valueType: 'option',
       render: (_, record) => [
-        <Tooltip key="detail" title="Detail">
+        <Tooltip
+          key="detail"
+          title={formatMessage(
+            'pages.collaboration.common.actions.detail',
+            'Detail',
+          )}
+        >
           <Button
             icon={<EyeOutlined />}
             onClick={() => void openDetail(record.id)}
@@ -319,14 +537,20 @@ export default function ApprovalsPage() {
             title={APPROVAL_UPDATE_PERMISSION_MARKER}
             type="link"
           >
-            Approve request
+            {formatMessage(
+              'pages.collaboration.approvals.actions.approve',
+              'Approve request',
+            )}
           </Button>
         ) : null,
         record.status === 'pending' ? (
           <Popconfirm
             key="reject"
             onConfirm={() => openDecisionForm(record, 'reject')}
-            title="Reject this approval?"
+            title={formatMessage(
+              'pages.collaboration.approvals.confirm.reject',
+              'Reject this approval?',
+            )}
           >
             <Button
               danger
@@ -336,7 +560,10 @@ export default function ApprovalsPage() {
               title={APPROVAL_UPDATE_PERMISSION_MARKER}
               type="link"
             >
-              Reject request
+              {formatMessage(
+                'pages.collaboration.approvals.actions.reject',
+                'Reject request',
+              )}
             </Button>
           </Popconfirm>
         ) : null,
@@ -345,26 +572,65 @@ export default function ApprovalsPage() {
   ];
 
   return (
-    <PageContainer title="Approval Lite" subTitle="S10 Collaboration">
+    <PageContainer
+      title={formatMessage(
+        'pages.collaboration.approvals.title',
+        'Approval Lite',
+      )}
+      subTitle={formatMessage(
+        'pages.collaboration.section',
+        'S10 Collaboration',
+      )}
+    >
       {loadError ? (
         <Alert
           action={
             <Button onClick={() => void loadApprovals()}>
-              Reload live approvals
+              {formatMessage(
+                'pages.collaboration.approvals.actions.reload',
+                'Reload live approvals',
+              )}
             </Button>
           }
           description={loadError}
-          message="Live collaboration approvals unavailable"
+          message={formatMessage(
+            'pages.collaboration.approvals.load.liveFailure',
+            'Live collaboration approvals unavailable',
+          )}
           showIcon
           style={{ marginBottom: 16 }}
           type="error"
         />
       ) : null}
       <Space size="large" style={{ marginBottom: 16 }} wrap>
-        <Statistic title="Live approvals" value={stats.total} />
-        <Statistic title="Pending approvals" value={stats.pending} />
-        <Statistic title="Approved approvals" value={stats.approved} />
-        <Statistic title="Rejected approvals" value={stats.rejected} />
+        <Statistic
+          title={formatMessage(
+            'pages.collaboration.approvals.stats.live',
+            'Live approvals',
+          )}
+          value={stats.total}
+        />
+        <Statistic
+          title={formatMessage(
+            'pages.collaboration.approvals.stats.pending',
+            'Pending approvals',
+          )}
+          value={stats.pending}
+        />
+        <Statistic
+          title={formatMessage(
+            'pages.collaboration.approvals.stats.approved',
+            'Approved approvals',
+          )}
+          value={stats.approved}
+        />
+        <Statistic
+          title={formatMessage(
+            'pages.collaboration.approvals.stats.rejected',
+            'Rejected approvals',
+          )}
+          value={stats.rejected}
+        />
       </Space>
       <ProTable<ApprovalLiteSummary>
         columns={columns}
@@ -381,7 +647,10 @@ export default function ApprovalsPage() {
             key="reload"
             onClick={() => void loadApprovals()}
           >
-            Reload live approvals
+            {formatMessage(
+              'pages.collaboration.approvals.actions.reload',
+              'Reload live approvals',
+            )}
           </Button>,
           <Button
             icon={<PlusOutlined />}
@@ -390,7 +659,10 @@ export default function ApprovalsPage() {
             title={APPROVAL_CREATE_PERMISSION_MARKER}
             type="primary"
           >
-            Create approval
+            {formatMessage(
+              'pages.collaboration.approvals.actions.create',
+              'Create approval',
+            )}
           </Button>,
           <CurrentPageExportButton<ApprovalLiteSummary>
             columns={exportColumns}
@@ -402,21 +674,84 @@ export default function ApprovalsPage() {
       />
       <ReadOnlyDetailDrawer
         fields={[
-          { label: 'ID', value: selected?.id },
-          { label: 'Title', value: selected?.title },
-          { label: 'Requester', value: selected?.requester },
-          { label: 'Approver', value: selected?.approver },
-          { label: 'Business Type', value: selected?.businessType },
-          { label: 'Business ID', value: selected?.businessId },
-          { label: 'Status', value: selected?.status },
-          { label: 'Comment', value: selected?.comment },
-          { label: 'Decided At', value: selected?.decidedAt },
-          { label: 'Created At', value: selected?.createdAt },
+          {
+            label: formatMessage('pages.collaboration.common.fields.id', 'ID'),
+            value: selected?.id,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.approvals.fields.title',
+              'Title',
+            ),
+            value: selected?.title,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.approvals.fields.requester',
+              'Requester',
+            ),
+            value: selected?.requester,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.approvals.fields.approver',
+              'Approver',
+            ),
+            value: selected?.approver,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.common.fields.businessType',
+              'Business Type',
+            ),
+            value: selected?.businessType,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.common.fields.businessId',
+              'Business ID',
+            ),
+            value: selected?.businessId,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.common.fields.status',
+              'Status',
+            ),
+            value: selected ? statusLabels[selected.status] : undefined,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.approvals.fields.comment',
+              'Comment',
+            ),
+            value: selected?.comment,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.approvals.fields.decidedAt',
+              'Decided At',
+            ),
+            value: selected?.decidedAt,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.common.fields.createdAt',
+              'Created At',
+            ),
+            value: selected?.createdAt,
+          },
         ]}
         onClose={() => setSelected(undefined)}
         open={Boolean(selected)}
         timeline={selected?.timeline}
-        title={selected?.title ?? 'Approval Detail'}
+        title={
+          selected?.title ??
+          formatMessage(
+            'pages.collaboration.approvals.detail.title',
+            'Approval Detail',
+          )
+        }
       />
       <Modal
         confirmLoading={submitting}
@@ -424,37 +759,61 @@ export default function ApprovalsPage() {
         onCancel={() => setCreateOpen(false)}
         onOk={() => void submitCreate()}
         open={createOpen}
-        title="Create approval"
+        title={formatMessage(
+          'pages.collaboration.approvals.actions.create',
+          'Create approval',
+        )}
       >
         <Form<ApprovalFormValues> form={createForm} layout="vertical">
           <Form.Item
-            label="Title"
+            label={formatMessage(
+              'pages.collaboration.approvals.fields.title',
+              'Title',
+            )}
             name="title"
-            rules={[{ required: true, whitespace: true }]}
+            rules={[requiredRule]}
           >
             <Input maxLength={160} />
           </Form.Item>
           <Space align="start" style={{ width: '100%' }}>
             <Form.Item
-              label="Requester"
+              label={formatMessage(
+                'pages.collaboration.approvals.fields.requester',
+                'Requester',
+              )}
               name="requester"
-              rules={[{ required: true, whitespace: true }]}
+              rules={[requiredRule]}
             >
               <Input maxLength={80} />
             </Form.Item>
             <Form.Item
-              label="Approver"
+              label={formatMessage(
+                'pages.collaboration.approvals.fields.approver',
+                'Approver',
+              )}
               name="approver"
-              rules={[{ required: true, whitespace: true }]}
+              rules={[requiredRule]}
             >
               <Input maxLength={80} />
             </Form.Item>
           </Space>
           <Space align="start" style={{ width: '100%' }}>
-            <Form.Item label="Business Type" name="businessType">
+            <Form.Item
+              label={formatMessage(
+                'pages.collaboration.common.fields.businessType',
+                'Business Type',
+              )}
+              name="businessType"
+            >
               <Input maxLength={80} />
             </Form.Item>
-            <Form.Item label="Business ID" name="businessId">
+            <Form.Item
+              label={formatMessage(
+                'pages.collaboration.common.fields.businessId',
+                'Business ID',
+              )}
+              name="businessId"
+            >
               <Input maxLength={120} />
             </Form.Item>
           </Space>
@@ -466,17 +825,36 @@ export default function ApprovalsPage() {
         onCancel={closeDecisionForm}
         onOk={() => void submitDecision()}
         open={Boolean(decisionRecord)}
-        title={decision === 'approve' ? 'Approve request' : 'Reject request'}
+        title={
+          decision === 'approve'
+            ? formatMessage(
+                'pages.collaboration.approvals.actions.approve',
+                'Approve request',
+              )
+            : formatMessage(
+                'pages.collaboration.approvals.actions.reject',
+                'Reject request',
+              )
+        }
       >
         <Form<DecisionFormValues> form={decisionForm} layout="vertical">
           <Form.Item
-            label="Actor"
+            label={formatMessage(
+              'pages.collaboration.common.fields.actor',
+              'Actor',
+            )}
             name="actor"
-            rules={[{ required: true, whitespace: true }]}
+            rules={[requiredRule]}
           >
             <Input maxLength={80} />
           </Form.Item>
-          <Form.Item label="Comment" name="comment">
+          <Form.Item
+            label={formatMessage(
+              'pages.collaboration.approvals.fields.comment',
+              'Comment',
+            )}
+            name="comment"
+          >
             <Input.TextArea maxLength={1000} rows={4} />
           </Form.Item>
         </Form>

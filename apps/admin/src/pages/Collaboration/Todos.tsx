@@ -12,6 +12,7 @@ import {
   type ProColumns,
 } from '@ant-design/pro-components';
 import type { TodoSummary } from '@opencore/sdk';
+import { useIntl } from '@umijs/max';
 import {
   Alert,
   Button,
@@ -26,7 +27,7 @@ import {
   Typography,
   message,
 } from 'antd';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   assignOpenCoreTodo,
   cancelOpenCoreTodo,
@@ -62,27 +63,16 @@ type AssignFormValues = {
   assignee: string;
 };
 
+type FormatMessage = (
+  id: string,
+  defaultMessage: string,
+  values?: Record<string, number | string>,
+) => string;
+
 const TODO_CREATE_PERMISSION_MARKER = 'collaboration:todo:create';
 const TODO_UPDATE_PERMISSION_MARKER = 'collaboration:todo:update';
 const DEFAULT_TODO_ACTOR = 'admin';
 
-const exportColumns: CurrentPageExportColumn<TodoSummary>[] = [
-  { title: 'ID', dataIndex: 'id' },
-  { title: 'Title', dataIndex: 'title' },
-  { title: 'Source', dataIndex: 'sourceType' },
-  { title: 'Business Type', dataIndex: 'businessType' },
-  { title: 'Business ID', dataIndex: 'businessId' },
-  { title: 'Assignee', dataIndex: 'assignee' },
-  { title: 'Status', dataIndex: 'status' },
-  {
-    title: 'Timeline',
-    renderText: (record) => `${record.timeline.length} events`,
-  },
-  { title: 'Completed At', dataIndex: 'completedAt' },
-  { title: 'Canceled At', dataIndex: 'canceledAt' },
-  { title: 'Created At', dataIndex: 'createdAt' },
-  { title: 'Description', dataIndex: 'description', sensitive: true },
-];
 const searchFields: CurrentPageSearchField<TodoSummary>[] = [
   'title',
   'sourceType',
@@ -110,7 +100,98 @@ function countByStatus(
   return rows.filter((row) => row.status === status).length;
 }
 
+function createExportColumns(
+  formatMessage: FormatMessage,
+): CurrentPageExportColumn<TodoSummary>[] {
+  return [
+    {
+      title: formatMessage('pages.collaboration.common.fields.id', 'ID'),
+      dataIndex: 'id',
+    },
+    {
+      title: formatMessage('pages.collaboration.todos.fields.title', 'Title'),
+      dataIndex: 'title',
+    },
+    {
+      title: formatMessage('pages.collaboration.todos.fields.source', 'Source'),
+      dataIndex: 'sourceType',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.common.fields.businessType',
+        'Business Type',
+      ),
+      dataIndex: 'businessType',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.common.fields.businessId',
+        'Business ID',
+      ),
+      dataIndex: 'businessId',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.todos.fields.assignee',
+        'Assignee',
+      ),
+      dataIndex: 'assignee',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.common.fields.status',
+        'Status',
+      ),
+      dataIndex: 'status',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.common.fields.timeline',
+        'Timeline',
+      ),
+      renderText: (record) =>
+        formatMessage(
+          'pages.collaboration.common.timeline.events',
+          '{count} events',
+          {
+            count: record.timeline.length,
+          },
+        ),
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.todos.fields.completedAt',
+        'Completed At',
+      ),
+      dataIndex: 'completedAt',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.todos.fields.canceledAt',
+        'Canceled At',
+      ),
+      dataIndex: 'canceledAt',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.common.fields.createdAt',
+        'Created At',
+      ),
+      dataIndex: 'createdAt',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.todos.fields.description',
+        'Description',
+      ),
+      dataIndex: 'description',
+      sensitive: true,
+    },
+  ];
+}
+
 export default function TodosPage() {
+  const intl = useIntl();
   const [createForm] = Form.useForm<TodoFormValues>();
   const [assignForm] = Form.useForm<AssignFormValues>();
   const [rows, setRows] = useState<readonly TodoSummary[]>([]);
@@ -121,6 +202,62 @@ export default function TodosPage() {
   const [assigningTodo, setAssigningTodo] = useState<TodoSummary>();
   const [submitting, setSubmitting] = useState(false);
   const [actingTodoId, setActingTodoId] = useState<string>();
+  const formatMessage: FormatMessage = useCallback(
+    (id, defaultMessage, values) =>
+      values
+        ? intl.formatMessage({ id, defaultMessage }, values)
+        : intl.formatMessage({ id, defaultMessage }),
+    [intl],
+  );
+  const statusLabels = useMemo(
+    () => ({
+      assigned: formatMessage(
+        'pages.collaboration.todos.status.assigned',
+        'assigned',
+      ),
+      canceled: formatMessage(
+        'pages.collaboration.todos.status.canceled',
+        'canceled',
+      ),
+      completed: formatMessage(
+        'pages.collaboration.todos.status.completed',
+        'completed',
+      ),
+      pending: formatMessage(
+        'pages.collaboration.todos.status.pending',
+        'pending',
+      ),
+    }),
+    [formatMessage],
+  );
+  const actionPolicyLabels = useMemo(
+    () => ({
+      active: formatMessage(
+        'pages.collaboration.todos.policy.assignCompleteCancel',
+        'assign/complete/cancel',
+      ),
+      terminal: formatMessage(
+        'pages.collaboration.common.policy.terminal',
+        'terminal',
+      ),
+    }),
+    [formatMessage],
+  );
+  const exportColumns = useMemo(
+    () => createExportColumns(formatMessage),
+    [formatMessage],
+  );
+  const requiredRule = useMemo(
+    () => ({
+      message: formatMessage(
+        'pages.collaboration.common.validation.required',
+        'This field is required.',
+      ),
+      required: true,
+      whitespace: true,
+    }),
+    [formatMessage],
+  );
 
   const stats = useMemo(
     () => ({
@@ -138,30 +275,42 @@ export default function TodosPage() {
       {
         key: 'status',
         options: createCurrentPageFilterOptions(rows, 'status'),
-        placeholder: 'Status',
+        placeholder: formatMessage(
+          'pages.collaboration.common.fields.status',
+          'Status',
+        ),
         predicate: (record, value) => record.status === value,
       },
       {
         key: 'assignee',
         options: createCurrentPageFilterOptions(rows, 'assignee'),
-        placeholder: 'Assignee',
+        placeholder: formatMessage(
+          'pages.collaboration.todos.fields.assignee',
+          'Assignee',
+        ),
         predicate: (record, value) => record.assignee === value,
       },
       {
         key: 'sourceType',
         options: createCurrentPageFilterOptions(rows, 'sourceType'),
-        placeholder: 'Source',
+        placeholder: formatMessage(
+          'pages.collaboration.todos.fields.source',
+          'Source',
+        ),
         predicate: (record, value) => record.sourceType === value,
       },
     ],
-    [rows],
+    [formatMessage, rows],
   );
 
   const { filteredRows, toolbar: filterToolbar } =
     useCurrentPageFilters<TodoSummary>({
       rows,
       searchFields,
-      searchPlaceholder: 'Search live todos',
+      searchPlaceholder: formatMessage(
+        'pages.collaboration.todos.search.placeholder',
+        'Search live todos',
+      ),
       selectFilters: filterOptions,
     });
 
@@ -173,7 +322,12 @@ export default function TodosPage() {
     } catch (error: unknown) {
       setRows([]);
       setLoadError(
-        error instanceof Error ? error.message : 'Unable to load todos.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.collaboration.todos.load.failure',
+              'Unable to load todos.',
+            ),
       );
     } finally {
       setLoading(false);
@@ -189,7 +343,12 @@ export default function TodosPage() {
       setSelected(await getOpenCoreTodo(id));
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'Unable to load todo.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.collaboration.todos.detail.loadFailure',
+              'Unable to load todo.',
+            ),
       );
     }
   };
@@ -228,13 +387,23 @@ export default function TodosPage() {
         sourceType: values.sourceType.trim(),
         title: values.title.trim(),
       });
-      message.success('Todo created.');
+      message.success(
+        formatMessage(
+          'pages.collaboration.todos.messages.created',
+          'Todo created.',
+        ),
+      );
       setCreateOpen(false);
       setSelected(created);
       await loadTodos();
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'Unable to create todo.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.collaboration.todos.messages.createFailure',
+              'Unable to create todo.',
+            ),
       );
     } finally {
       setSubmitting(false);
@@ -251,13 +420,23 @@ export default function TodosPage() {
         actor: values.actor.trim(),
         assignee: values.assignee.trim(),
       });
-      message.success('Todo assigned.');
+      message.success(
+        formatMessage(
+          'pages.collaboration.todos.messages.assigned',
+          'Todo assigned.',
+        ),
+      );
       setAssigningTodo(undefined);
       setSelected(next);
       await loadTodos();
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'Unable to assign todo.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.collaboration.todos.messages.assignFailure',
+              'Unable to assign todo.',
+            ),
       );
     } finally {
       setSubmitting(false);
@@ -271,11 +450,21 @@ export default function TodosPage() {
         actor: DEFAULT_TODO_ACTOR,
       });
       setSelected(next);
-      message.success('Todo completed.');
+      message.success(
+        formatMessage(
+          'pages.collaboration.todos.messages.completed',
+          'Todo completed.',
+        ),
+      );
       await loadTodos();
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'Unable to complete todo.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.collaboration.todos.messages.completeFailure',
+              'Unable to complete todo.',
+            ),
       );
     } finally {
       setActingTodoId(undefined);
@@ -289,11 +478,21 @@ export default function TodosPage() {
         actor: DEFAULT_TODO_ACTOR,
       });
       setSelected(next);
-      message.success('Todo canceled.');
+      message.success(
+        formatMessage(
+          'pages.collaboration.todos.messages.canceled',
+          'Todo canceled.',
+        ),
+      );
       await loadTodos();
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'Unable to cancel todo.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.collaboration.todos.messages.cancelFailure',
+              'Unable to cancel todo.',
+            ),
       );
     } finally {
       setActingTodoId(undefined);
@@ -302,7 +501,7 @@ export default function TodosPage() {
 
   const columns: ProColumns<TodoSummary>[] = [
     {
-      title: 'Title',
+      title: formatMessage('pages.collaboration.todos.fields.title', 'Title'),
       dataIndex: 'title',
       render: (_, record) => (
         <Typography.Link onClick={() => void openDetail(record.id)}>
@@ -310,35 +509,71 @@ export default function TodosPage() {
         </Typography.Link>
       ),
     },
-    { title: 'Source', dataIndex: 'sourceType' },
-    { title: 'Assignee', dataIndex: 'assignee' },
     {
-      title: 'Status',
+      title: formatMessage('pages.collaboration.todos.fields.source', 'Source'),
+      dataIndex: 'sourceType',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.todos.fields.assignee',
+        'Assignee',
+      ),
+      dataIndex: 'assignee',
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.common.fields.status',
+        'Status',
+      ),
       dataIndex: 'status',
       render: (_, record) => (
-        <Tag color={statusColor(record.status)}>{record.status}</Tag>
-      ),
-    },
-    {
-      title: 'Timeline',
-      dataIndex: 'timeline',
-      renderText: (_, record) => `${record.timeline.length} events`,
-    },
-    {
-      title: 'Action Policy',
-      render: (_, record) => (
-        <Tag color={isTerminalTodo(record.status) ? 'default' : 'green'}>
-          {isTerminalTodo(record.status)
-            ? 'terminal'
-            : 'assign/complete/cancel'}
+        <Tag color={statusColor(record.status)}>
+          {statusLabels[record.status]}
         </Tag>
       ),
     },
     {
-      title: 'Action',
+      title: formatMessage(
+        'pages.collaboration.common.fields.timeline',
+        'Timeline',
+      ),
+      dataIndex: 'timeline',
+      renderText: (_, record) =>
+        formatMessage(
+          'pages.collaboration.common.timeline.events',
+          '{count} events',
+          {
+            count: record.timeline.length,
+          },
+        ),
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.common.fields.actionPolicy',
+        'Action Policy',
+      ),
+      render: (_, record) => (
+        <Tag color={isTerminalTodo(record.status) ? 'default' : 'green'}>
+          {isTerminalTodo(record.status)
+            ? actionPolicyLabels.terminal
+            : actionPolicyLabels.active}
+        </Tag>
+      ),
+    },
+    {
+      title: formatMessage(
+        'pages.collaboration.common.actions.column',
+        'Action',
+      ),
       valueType: 'option',
       render: (_, record) => [
-        <Tooltip key="detail" title="Detail">
+        <Tooltip
+          key="detail"
+          title={formatMessage(
+            'pages.collaboration.common.actions.detail',
+            'Detail',
+          )}
+        >
           <Button
             icon={<EyeOutlined />}
             onClick={() => void openDetail(record.id)}
@@ -356,14 +591,20 @@ export default function TodosPage() {
             title={TODO_UPDATE_PERMISSION_MARKER}
             type="link"
           >
-            Assign todo
+            {formatMessage(
+              'pages.collaboration.todos.actions.assign',
+              'Assign todo',
+            )}
           </Button>
         ),
         isTerminalTodo(record.status) ? null : (
           <Popconfirm
             key="complete"
             onConfirm={() => void complete(record)}
-            title="Complete todo?"
+            title={formatMessage(
+              'pages.collaboration.todos.confirm.complete',
+              'Complete todo?',
+            )}
           >
             <Button
               icon={<CheckCircleOutlined />}
@@ -372,7 +613,10 @@ export default function TodosPage() {
               title={TODO_UPDATE_PERMISSION_MARKER}
               type="link"
             >
-              Complete todo
+              {formatMessage(
+                'pages.collaboration.todos.actions.complete',
+                'Complete todo',
+              )}
             </Button>
           </Popconfirm>
         ),
@@ -380,7 +624,10 @@ export default function TodosPage() {
           <Popconfirm
             key="cancel"
             onConfirm={() => void cancel(record)}
-            title="Cancel todo?"
+            title={formatMessage(
+              'pages.collaboration.todos.confirm.cancel',
+              'Cancel todo?',
+            )}
           >
             <Button
               danger
@@ -390,7 +637,10 @@ export default function TodosPage() {
               title={TODO_UPDATE_PERMISSION_MARKER}
               type="link"
             >
-              Cancel todo
+              {formatMessage(
+                'pages.collaboration.todos.actions.cancel',
+                'Cancel todo',
+              )}
             </Button>
           </Popconfirm>
         ),
@@ -399,25 +649,69 @@ export default function TodosPage() {
   ];
 
   return (
-    <PageContainer title="Todos" subTitle="S10 Collaboration">
+    <PageContainer
+      title={formatMessage('pages.collaboration.todos.title', 'Todos')}
+      subTitle={formatMessage(
+        'pages.collaboration.section',
+        'S10 Collaboration',
+      )}
+    >
       {loadError ? (
         <Alert
           action={
-            <Button onClick={() => void loadTodos()}>Reload live todos</Button>
+            <Button onClick={() => void loadTodos()}>
+              {formatMessage(
+                'pages.collaboration.todos.actions.reload',
+                'Reload live todos',
+              )}
+            </Button>
           }
           description={loadError}
-          message="Live collaboration todos unavailable"
+          message={formatMessage(
+            'pages.collaboration.todos.load.liveFailure',
+            'Live collaboration todos unavailable',
+          )}
           showIcon
           style={{ marginBottom: 16 }}
           type="error"
         />
       ) : null}
       <Space size="large" style={{ marginBottom: 16 }} wrap>
-        <Statistic title="Live todos" value={stats.total} />
-        <Statistic title="Pending todos" value={stats.pending} />
-        <Statistic title="Assigned todos" value={stats.assigned} />
-        <Statistic title="Completed todos" value={stats.completed} />
-        <Statistic title="Canceled todos" value={stats.canceled} />
+        <Statistic
+          title={formatMessage(
+            'pages.collaboration.todos.stats.live',
+            'Live todos',
+          )}
+          value={stats.total}
+        />
+        <Statistic
+          title={formatMessage(
+            'pages.collaboration.todos.stats.pending',
+            'Pending todos',
+          )}
+          value={stats.pending}
+        />
+        <Statistic
+          title={formatMessage(
+            'pages.collaboration.todos.stats.assigned',
+            'Assigned todos',
+          )}
+          value={stats.assigned}
+        />
+        <Statistic
+          title={formatMessage(
+            'pages.collaboration.todos.stats.completed',
+            'Completed todos',
+          )}
+          value={stats.completed}
+        />
+        <Statistic
+          title={formatMessage(
+            'pages.collaboration.todos.stats.canceled',
+            'Canceled todos',
+          )}
+          value={stats.canceled}
+        />
       </Space>
       <ProTable<TodoSummary>
         columns={columns}
@@ -434,7 +728,10 @@ export default function TodosPage() {
             key="reload"
             onClick={() => void loadTodos()}
           >
-            Reload live todos
+            {formatMessage(
+              'pages.collaboration.todos.actions.reload',
+              'Reload live todos',
+            )}
           </Button>,
           <Button
             icon={<PlusOutlined />}
@@ -443,7 +740,10 @@ export default function TodosPage() {
             title={TODO_CREATE_PERMISSION_MARKER}
             type="primary"
           >
-            Create todo
+            {formatMessage(
+              'pages.collaboration.todos.actions.create',
+              'Create todo',
+            )}
           </Button>,
           <CurrentPageExportButton<TodoSummary>
             columns={exportColumns}
@@ -455,22 +755,88 @@ export default function TodosPage() {
       />
       <ReadOnlyDetailDrawer
         fields={[
-          { label: 'ID', value: selected?.id },
-          { label: 'Title', value: selected?.title },
-          { label: 'Source', value: selected?.sourceType },
-          { label: 'Business Type', value: selected?.businessType },
-          { label: 'Business ID', value: selected?.businessId },
-          { label: 'Assignee', value: selected?.assignee },
-          { label: 'Status', value: selected?.status },
-          { label: 'Completed At', value: selected?.completedAt },
-          { label: 'Canceled At', value: selected?.canceledAt },
-          { label: 'Created At', value: selected?.createdAt },
-          { label: 'Description', value: selected?.description },
+          {
+            label: formatMessage('pages.collaboration.common.fields.id', 'ID'),
+            value: selected?.id,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.todos.fields.title',
+              'Title',
+            ),
+            value: selected?.title,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.todos.fields.source',
+              'Source',
+            ),
+            value: selected?.sourceType,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.common.fields.businessType',
+              'Business Type',
+            ),
+            value: selected?.businessType,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.common.fields.businessId',
+              'Business ID',
+            ),
+            value: selected?.businessId,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.todos.fields.assignee',
+              'Assignee',
+            ),
+            value: selected?.assignee,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.common.fields.status',
+              'Status',
+            ),
+            value: selected ? statusLabels[selected.status] : undefined,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.todos.fields.completedAt',
+              'Completed At',
+            ),
+            value: selected?.completedAt,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.todos.fields.canceledAt',
+              'Canceled At',
+            ),
+            value: selected?.canceledAt,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.common.fields.createdAt',
+              'Created At',
+            ),
+            value: selected?.createdAt,
+          },
+          {
+            label: formatMessage(
+              'pages.collaboration.todos.fields.description',
+              'Description',
+            ),
+            value: selected?.description,
+          },
         ]}
         onClose={() => setSelected(undefined)}
         open={Boolean(selected)}
         timeline={selected?.timeline}
-        title={selected?.title ?? 'Todo Detail'}
+        title={
+          selected?.title ??
+          formatMessage('pages.collaboration.todos.detail.title', 'Todo Detail')
+        }
       />
       <Modal
         confirmLoading={submitting}
@@ -478,47 +844,80 @@ export default function TodosPage() {
         onCancel={() => setCreateOpen(false)}
         onOk={() => void submitCreate()}
         open={createOpen}
-        title="Create todo"
+        title={formatMessage(
+          'pages.collaboration.todos.actions.create',
+          'Create todo',
+        )}
       >
         <Form<TodoFormValues> form={createForm} layout="vertical">
           <Form.Item
-            label="Title"
+            label={formatMessage(
+              'pages.collaboration.todos.fields.title',
+              'Title',
+            )}
             name="title"
-            rules={[{ required: true, whitespace: true }]}
+            rules={[requiredRule]}
           >
             <Input maxLength={160} />
           </Form.Item>
           <Space align="start" style={{ width: '100%' }}>
             <Form.Item
-              label="Source"
+              label={formatMessage(
+                'pages.collaboration.todos.fields.source',
+                'Source',
+              )}
               name="sourceType"
-              rules={[{ required: true, whitespace: true }]}
+              rules={[requiredRule]}
             >
               <Input maxLength={80} />
             </Form.Item>
             <Form.Item
-              label="Assignee"
+              label={formatMessage(
+                'pages.collaboration.todos.fields.assignee',
+                'Assignee',
+              )}
               name="assignee"
-              rules={[{ required: true, whitespace: true }]}
+              rules={[requiredRule]}
             >
               <Input maxLength={80} />
             </Form.Item>
             <Form.Item
-              label="Actor"
+              label={formatMessage(
+                'pages.collaboration.common.fields.actor',
+                'Actor',
+              )}
               name="actor"
-              rules={[{ required: true, whitespace: true }]}
+              rules={[requiredRule]}
             >
               <Input maxLength={80} />
             </Form.Item>
           </Space>
-          <Form.Item label="Description" name="description">
+          <Form.Item
+            label={formatMessage(
+              'pages.collaboration.todos.fields.description',
+              'Description',
+            )}
+            name="description"
+          >
             <Input.TextArea maxLength={1000} rows={4} />
           </Form.Item>
           <Space align="start" style={{ width: '100%' }}>
-            <Form.Item label="Business Type" name="businessType">
+            <Form.Item
+              label={formatMessage(
+                'pages.collaboration.common.fields.businessType',
+                'Business Type',
+              )}
+              name="businessType"
+            >
               <Input maxLength={80} />
             </Form.Item>
-            <Form.Item label="Business ID" name="businessId">
+            <Form.Item
+              label={formatMessage(
+                'pages.collaboration.common.fields.businessId',
+                'Business ID',
+              )}
+              name="businessId"
+            >
               <Input maxLength={120} />
             </Form.Item>
           </Space>
@@ -530,20 +929,29 @@ export default function TodosPage() {
         onCancel={() => setAssigningTodo(undefined)}
         onOk={() => void submitAssign()}
         open={Boolean(assigningTodo)}
-        title="Assign todo"
+        title={formatMessage(
+          'pages.collaboration.todos.actions.assign',
+          'Assign todo',
+        )}
       >
         <Form<AssignFormValues> form={assignForm} layout="vertical">
           <Form.Item
-            label="Assignee"
+            label={formatMessage(
+              'pages.collaboration.todos.fields.assignee',
+              'Assignee',
+            )}
             name="assignee"
-            rules={[{ required: true, whitespace: true }]}
+            rules={[requiredRule]}
           >
             <Input maxLength={80} />
           </Form.Item>
           <Form.Item
-            label="Actor"
+            label={formatMessage(
+              'pages.collaboration.common.fields.actor',
+              'Actor',
+            )}
             name="actor"
-            rules={[{ required: true, whitespace: true }]}
+            rules={[requiredRule]}
           >
             <Input maxLength={80} />
           </Form.Item>
