@@ -3,13 +3,14 @@ import {
   ProTable,
   type ProColumns,
 } from '@ant-design/pro-components';
+import { useIntl } from '@umijs/max';
 import {
   createIntegrationFixtures,
   findIntegrationDesignFixture,
   type IntegrationDesignSummary,
 } from '@opencore/sdk';
 import { Tag, Typography } from 'antd';
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   CurrentPageExportButton,
   type CurrentPageExportColumn,
@@ -25,34 +26,100 @@ import { ReadOnlyDetailDrawer } from '../shared/ReadOnlyDetailDrawer';
 const rows = createIntegrationFixtures().designs.filter(
   (design) => design.topic === 'pay',
 );
-const exportColumns: CurrentPageExportColumn<IntegrationDesignSummary>[] = [
-  { title: 'Topic', dataIndex: 'topic' },
-  { title: 'Status', dataIndex: 'status' },
-  { title: 'Boundaries', renderText: (record) => record.boundaries.join(', ') },
-  { title: 'Document', dataIndex: 'documentPath' },
-];
 const searchFields: CurrentPageSearchField<IntegrationDesignSummary>[] = [
   'topic',
   'status',
   'documentPath',
   (record) => record.boundaries,
 ];
-const filterOptions: CurrentPageFilterOption<IntegrationDesignSummary>[] = [
-  {
-    key: 'status',
-    options: createCurrentPageFilterOptions(rows, 'status'),
-    placeholder: 'Status',
-    predicate: (record, value) => record.status === value,
-  },
-];
+
+type FormatMessage = (
+  id: string,
+  defaultMessage: string,
+  values?: Record<string, number | string>,
+) => string;
+
+function createExportColumns(
+  formatMessage: FormatMessage,
+): CurrentPageExportColumn<IntegrationDesignSummary>[] {
+  return [
+    {
+      title: formatMessage('pages.integrations.design.fields.topic', 'Topic'),
+      dataIndex: 'topic',
+    },
+    {
+      title: formatMessage('pages.integrations.design.fields.status', 'Status'),
+      dataIndex: 'status',
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.design.fields.boundaries',
+        'Boundaries',
+      ),
+      renderText: (record) => record.boundaries.join(', '),
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.design.fields.document',
+        'Document',
+      ),
+      dataIndex: 'documentPath',
+    },
+  ];
+}
 
 export default function BillingDesignPage() {
+  const intl = useIntl();
   const [selected, setSelected] = useState<IntegrationDesignSummary>();
+  const formatMessage: FormatMessage = useCallback(
+    (id, defaultMessage, values) =>
+      values
+        ? intl.formatMessage({ id, defaultMessage }, values)
+        : intl.formatMessage({ id, defaultMessage }),
+    [intl],
+  );
+  const statusLabels = useMemo<
+    Record<IntegrationDesignSummary['status'], string>
+  >(
+    () => ({
+      'design-only': formatMessage(
+        'pages.integrations.design.status.designOnly',
+        'design-only',
+      ),
+      'runtime-active': formatMessage(
+        'pages.integrations.design.status.runtimeActive',
+        'runtime-active',
+      ),
+    }),
+    [formatMessage],
+  );
+  const exportColumns = useMemo(
+    () => createExportColumns(formatMessage),
+    [formatMessage],
+  );
+  const filterOptions: CurrentPageFilterOption<IntegrationDesignSummary>[] =
+    useMemo(
+      () => [
+        {
+          key: 'status',
+          options: createCurrentPageFilterOptions(rows, 'status'),
+          placeholder: formatMessage(
+            'pages.integrations.design.fields.status',
+            'Status',
+          ),
+          predicate: (record, value) => record.status === value,
+        },
+      ],
+      [formatMessage],
+    );
   const { filteredRows, toolbar: filterToolbar } =
     useCurrentPageFilters<IntegrationDesignSummary>({
       rows,
       searchFields,
-      searchPlaceholder: 'Search payment design',
+      searchPlaceholder: formatMessage(
+        'pages.integrations.billing.search.placeholder',
+        'Search payment design',
+      ),
       selectFilters: filterOptions,
     });
 
@@ -62,7 +129,7 @@ export default function BillingDesignPage() {
 
   const columns: ProColumns<IntegrationDesignSummary>[] = [
     {
-      title: 'Topic',
+      title: formatMessage('pages.integrations.design.fields.topic', 'Topic'),
       dataIndex: 'topic',
       render: (_, record) => (
         <Typography.Link onClick={() => openDetail(record.topic)}>
@@ -71,25 +138,44 @@ export default function BillingDesignPage() {
       ),
     },
     {
-      title: 'Status',
-      render: (_, record) => <Tag color="blue">{record.status}</Tag>,
+      title: formatMessage('pages.integrations.design.fields.status', 'Status'),
+      render: (_, record) => (
+        <Tag color="blue">{statusLabels[record.status]}</Tag>
+      ),
     },
     {
-      title: 'Boundaries',
+      title: formatMessage(
+        'pages.integrations.design.fields.boundaries',
+        'Boundaries',
+      ),
       renderText: (_, record) => record.boundaries.join(', '),
     },
-    { title: 'Document', dataIndex: 'documentPath' },
     {
-      title: 'Action',
+      title: formatMessage(
+        'pages.integrations.design.fields.document',
+        'Document',
+      ),
+      dataIndex: 'documentPath',
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.design.actions.column',
+        'Action',
+      ),
       valueType: 'option',
       render: (_, record) => (
-        <a onClick={() => openDetail(record.topic)}>Detail</a>
+        <Typography.Link onClick={() => openDetail(record.topic)}>
+          {formatMessage('pages.integrations.design.actions.detail', 'Detail')}
+        </Typography.Link>
       ),
     },
   ];
 
   return (
-    <PageContainer title="Payment Design" subTitle="S12 Integrations">
+    <PageContainer
+      title={formatMessage('menu.integrations.payment', 'Payment Design')}
+      subTitle={formatMessage('pages.integrations.section', 'S12 Integrations')}
+    >
       <ProTable<IntegrationDesignSummary>
         rowKey="topic"
         search={false}
@@ -109,14 +195,41 @@ export default function BillingDesignPage() {
       />
       <ReadOnlyDetailDrawer
         fields={[
-          { label: 'Topic', value: selected?.topic },
-          { label: 'Status', value: selected?.status },
-          { label: 'Boundaries', value: selected?.boundaries.join(', ') },
-          { label: 'Document', value: selected?.documentPath },
+          {
+            label: formatMessage(
+              'pages.integrations.design.fields.topic',
+              'Topic',
+            ),
+            value: selected?.topic,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.design.fields.status',
+              'Status',
+            ),
+            value: selected ? statusLabels[selected.status] : undefined,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.design.fields.boundaries',
+              'Boundaries',
+            ),
+            value: selected?.boundaries.join(', '),
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.design.fields.document',
+              'Document',
+            ),
+            value: selected?.documentPath,
+          },
         ]}
         onClose={() => setSelected(undefined)}
         open={Boolean(selected)}
-        title="Payment Design Detail"
+        title={formatMessage(
+          'pages.integrations.billing.detail.title',
+          'Payment Design Detail',
+        )}
       />
     </PageContainer>
   );

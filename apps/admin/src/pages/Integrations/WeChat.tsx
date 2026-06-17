@@ -4,6 +4,7 @@ import {
   ProTable,
   type ProColumns,
 } from '@ant-design/pro-components';
+import { useIntl } from '@umijs/max';
 import type { IntegrationDesignSummary } from '@opencore/sdk';
 import {
   Alert,
@@ -31,13 +32,6 @@ import { ReadOnlyDetailDrawer } from '../shared/ReadOnlyDetailDrawer';
 
 const WECHAT_READ_PERMISSION_MARKER = 'integration:wechat:read';
 
-const exportColumns: CurrentPageExportColumn<IntegrationDesignSummary>[] = [
-  { title: 'Topic', dataIndex: 'topic' },
-  { title: 'Status', dataIndex: 'status' },
-  { title: 'Boundaries', renderText: (record) => record.boundaries.join(', ') },
-  { title: 'Document', dataIndex: 'documentPath' },
-];
-
 const searchFields: CurrentPageSearchField<IntegrationDesignSummary>[] = [
   'topic',
   'status',
@@ -49,12 +43,74 @@ function statusColor(status: IntegrationDesignSummary['status']): string {
   return status === 'design-only' ? 'gold' : 'blue';
 }
 
+type FormatMessage = (
+  id: string,
+  defaultMessage: string,
+  values?: Record<string, number | string>,
+) => string;
+
+function createExportColumns(
+  formatMessage: FormatMessage,
+): CurrentPageExportColumn<IntegrationDesignSummary>[] {
+  return [
+    {
+      title: formatMessage('pages.integrations.design.fields.topic', 'Topic'),
+      dataIndex: 'topic',
+    },
+    {
+      title: formatMessage('pages.integrations.design.fields.status', 'Status'),
+      dataIndex: 'status',
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.design.fields.boundaries',
+        'Boundaries',
+      ),
+      renderText: (record) => record.boundaries.join(', '),
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.design.fields.document',
+        'Document',
+      ),
+      dataIndex: 'documentPath',
+    },
+  ];
+}
+
 export default function WeChatIntegrationPage() {
+  const intl = useIntl();
   const [rows, setRows] = useState<readonly IntegrationDesignSummary[]>([]);
   const [selected, setSelected] = useState<IntegrationDesignSummary>();
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
   const [loadError, setLoadError] = useState<string>();
+  const formatMessage: FormatMessage = useCallback(
+    (id, defaultMessage, values) =>
+      values
+        ? intl.formatMessage({ id, defaultMessage }, values)
+        : intl.formatMessage({ id, defaultMessage }),
+    [intl],
+  );
+  const statusLabels = useMemo<
+    Record<IntegrationDesignSummary['status'], string>
+  >(
+    () => ({
+      'design-only': formatMessage(
+        'pages.integrations.design.status.designOnly',
+        'design-only',
+      ),
+      'runtime-active': formatMessage(
+        'pages.integrations.design.status.runtimeActive',
+        'runtime-active',
+      ),
+    }),
+    [formatMessage],
+  );
+  const exportColumns = useMemo(
+    () => createExportColumns(formatMessage),
+    [formatMessage],
+  );
 
   const filterOptions: CurrentPageFilterOption<IntegrationDesignSummary>[] =
     useMemo(
@@ -62,17 +118,23 @@ export default function WeChatIntegrationPage() {
         {
           key: 'status',
           options: createCurrentPageFilterOptions(rows, 'status'),
-          placeholder: 'Status',
+          placeholder: formatMessage(
+            'pages.integrations.design.fields.status',
+            'Status',
+          ),
           predicate: (record, value) => record.status === value,
         },
       ],
-      [rows],
+      [formatMessage, rows],
     );
   const { filteredRows, toolbar: filterToolbar } =
     useCurrentPageFilters<IntegrationDesignSummary>({
       rows,
       searchFields,
-      searchPlaceholder: 'Search live WeChat design',
+      searchPlaceholder: formatMessage(
+        'pages.integrations.wechat.search.placeholder',
+        'Search live WeChat design',
+      ),
       selectFilters: filterOptions,
     });
 
@@ -86,12 +148,15 @@ export default function WeChatIntegrationPage() {
       setLoadError(
         error instanceof Error
           ? error.message
-          : 'Unable to load live WeChat integration design.',
+          : formatMessage(
+              'pages.integrations.wechat.load.failure',
+              'Unable to load live WeChat integration design.',
+            ),
       );
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [formatMessage]);
 
   useEffect(() => {
     void loadDesign();
@@ -106,7 +171,10 @@ export default function WeChatIntegrationPage() {
       message.error(
         error instanceof Error
           ? error.message
-          : 'Unable to load WeChat design detail.',
+          : formatMessage(
+              'pages.integrations.wechat.detail.loadFailure',
+              'Unable to load WeChat design detail.',
+            ),
       );
     } finally {
       setDetailLoading(false);
@@ -115,7 +183,7 @@ export default function WeChatIntegrationPage() {
 
   const columns: ProColumns<IntegrationDesignSummary>[] = [
     {
-      title: 'Topic',
+      title: formatMessage('pages.integrations.design.fields.topic', 'Topic'),
       dataIndex: 'topic',
       render: (_, record) => (
         <Typography.Link onClick={() => void openDetail()}>
@@ -124,18 +192,32 @@ export default function WeChatIntegrationPage() {
       ),
     },
     {
-      title: 'Status',
+      title: formatMessage('pages.integrations.design.fields.status', 'Status'),
       render: (_, record) => (
-        <Tag color={statusColor(record.status)}>{record.status}</Tag>
+        <Tag color={statusColor(record.status)}>
+          {statusLabels[record.status]}
+        </Tag>
       ),
     },
     {
-      title: 'Boundaries',
+      title: formatMessage(
+        'pages.integrations.design.fields.boundaries',
+        'Boundaries',
+      ),
       renderText: (_, record) => record.boundaries.join(', '),
     },
-    { title: 'Document', dataIndex: 'documentPath' },
     {
-      title: 'Action',
+      title: formatMessage(
+        'pages.integrations.design.fields.document',
+        'Document',
+      ),
+      dataIndex: 'documentPath',
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.design.actions.column',
+        'Action',
+      ),
       valueType: 'option',
       render: () => (
         <Button
@@ -146,7 +228,7 @@ export default function WeChatIntegrationPage() {
           title={WECHAT_READ_PERMISSION_MARKER}
           type="link"
         >
-          Detail
+          {formatMessage('pages.integrations.design.actions.detail', 'Detail')}
         </Button>
       ),
     },
@@ -154,12 +236,24 @@ export default function WeChatIntegrationPage() {
 
   return (
     <PageContainer
-      title="Live WeChat design"
-      subTitle="S12 Integrations"
+      title={formatMessage(
+        'pages.integrations.wechat.title',
+        'Live WeChat design',
+      )}
+      subTitle={formatMessage('pages.integrations.section', 'S12 Integrations')}
       extra={[
-        <Tooltip key="reload" title="Reload live WeChat design">
+        <Tooltip
+          key="reload"
+          title={formatMessage(
+            'pages.integrations.wechat.actions.reload',
+            'Reload live WeChat design',
+          )}
+        >
           <Button
-            aria-label="Reload live WeChat design"
+            aria-label={formatMessage(
+              'pages.integrations.wechat.actions.reloadAria',
+              'Reload live WeChat design',
+            )}
             icon={<ReloadOutlined />}
             loading={loading}
             onClick={() => void loadDesign()}
@@ -171,19 +265,36 @@ export default function WeChatIntegrationPage() {
         <Alert
           showIcon
           type="warning"
-          message="Unable to load live WeChat integration design"
+          message={formatMessage(
+            'pages.integrations.wechat.load.liveFailure',
+            'Unable to load live WeChat integration design',
+          )}
           description={loadError}
           style={{ marginBlockEnd: 16 }}
         />
       ) : null}
       <Space size="large" style={{ marginBottom: 16 }} wrap>
-        <Statistic title="Design topics" value={rows.length} />
         <Statistic
-          title="Boundary count"
+          title={formatMessage(
+            'pages.integrations.design.stats.topics',
+            'Design topics',
+          )}
+          value={rows.length}
+        />
+        <Statistic
+          title={formatMessage(
+            'pages.integrations.design.stats.boundaryCount',
+            'Boundary count',
+          )}
           value={rows[0]?.boundaries.length ?? 0}
         />
         <Tag color="blue">{WECHAT_READ_PERMISSION_MARKER}</Tag>
-        <Tag color="gold">Integration design boundary</Tag>
+        <Tag color="gold">
+          {formatMessage(
+            'pages.integrations.design.policy.boundary',
+            'Integration design boundary',
+          )}
+        </Tag>
       </Space>
       <ProTable<IntegrationDesignSummary>
         rowKey="topic"
@@ -205,14 +316,41 @@ export default function WeChatIntegrationPage() {
       />
       <ReadOnlyDetailDrawer
         fields={[
-          { label: 'Topic', value: selected?.topic },
-          { label: 'Status', value: selected?.status },
-          { label: 'Boundaries', value: selected?.boundaries.join(', ') },
-          { label: 'Document', value: selected?.documentPath },
+          {
+            label: formatMessage(
+              'pages.integrations.design.fields.topic',
+              'Topic',
+            ),
+            value: selected?.topic,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.design.fields.status',
+              'Status',
+            ),
+            value: selected ? statusLabels[selected.status] : undefined,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.design.fields.boundaries',
+              'Boundaries',
+            ),
+            value: selected?.boundaries.join(', '),
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.design.fields.document',
+              'Document',
+            ),
+            value: selected?.documentPath,
+          },
         ]}
         onClose={() => setSelected(undefined)}
         open={Boolean(selected)}
-        title="WeChat Design Detail"
+        title={formatMessage(
+          'pages.integrations.wechat.detail.title',
+          'WeChat Design Detail',
+        )}
       />
     </PageContainer>
   );

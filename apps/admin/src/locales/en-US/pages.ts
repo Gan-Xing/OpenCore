@@ -1035,6 +1035,100 @@ export default {
   'pages.system.permissions.validation.codeRequired': 'Code is required.',
   'pages.system.permissions.validation.titleRequired': 'Title is required.',
   'pages.integrations.section': 'S12 Integrations',
+  'pages.integrations.design.actions.column': 'Action',
+  'pages.integrations.design.actions.detail': 'Detail',
+  'pages.integrations.design.fields.boundaries': 'Boundaries',
+  'pages.integrations.design.fields.document': 'Document',
+  'pages.integrations.design.fields.status': 'Status',
+  'pages.integrations.design.fields.topic': 'Topic',
+  'pages.integrations.design.policy.boundary': 'Integration design boundary',
+  'pages.integrations.design.stats.boundaryCount': 'Boundary count',
+  'pages.integrations.design.stats.topics': 'Design topics',
+  'pages.integrations.design.status.designOnly': 'design-only',
+  'pages.integrations.design.status.runtimeActive': 'runtime-active',
+  'pages.integrations.billing.detail.title': 'Payment Design Detail',
+  'pages.integrations.billing.search.placeholder': 'Search payment design',
+  'pages.integrations.wechat.actions.reload': 'Reload live WeChat design',
+  'pages.integrations.wechat.actions.reloadAria': 'Reload live WeChat design',
+  'pages.integrations.wechat.detail.loadFailure':
+    'Unable to load WeChat design detail.',
+  'pages.integrations.wechat.detail.title': 'WeChat Design Detail',
+  'pages.integrations.wechat.load.failure':
+    'Unable to load live WeChat integration design.',
+  'pages.integrations.wechat.load.liveFailure':
+    'Unable to load live WeChat integration design',
+  'pages.integrations.wechat.search.placeholder': 'Search live WeChat design',
+  'pages.integrations.wechat.title': 'Live WeChat design',
+  'pages.integrations.websocket.actions.closeStream': 'Close stream',
+  'pages.integrations.websocket.actions.openDiagnosticStream':
+    'Open diagnostic stream',
+  'pages.integrations.websocket.actions.publishDiagnosticEvent':
+    'Publish diagnostic event',
+  'pages.integrations.websocket.actions.reload':
+    'Reload live WebSocket runtime',
+  'pages.integrations.websocket.actions.reloadAria':
+    'Reload live WebSocket runtime',
+  'pages.integrations.websocket.connectionStatus.closed': 'closed',
+  'pages.integrations.websocket.connectionStatus.connected': 'connected',
+  'pages.integrations.websocket.detail.loadFailure':
+    'Unable to load WebSocket runtime detail.',
+  'pages.integrations.websocket.detail.runtimeDiagnostics':
+    'Runtime Diagnostics',
+  'pages.integrations.websocket.detail.title': 'WebSocket Runtime Detail',
+  'pages.integrations.websocket.eventStatus.delivered': 'delivered',
+  'pages.integrations.websocket.eventStatus.noSubscribers': 'no subscribers',
+  'pages.integrations.websocket.fields.closeReason': 'Close Reason',
+  'pages.integrations.websocket.fields.connection': 'Connection',
+  'pages.integrations.websocket.fields.createdAt': 'Created At',
+  'pages.integrations.websocket.fields.delivered': 'Delivered',
+  'pages.integrations.websocket.fields.event': 'Event',
+  'pages.integrations.websocket.fields.eventTypes': 'Event Types',
+  'pages.integrations.websocket.fields.lastSeenAt': 'Last Seen At',
+  'pages.integrations.websocket.fields.room': 'Room',
+  'pages.integrations.websocket.fields.rooms': 'Rooms',
+  'pages.integrations.websocket.fields.subject': 'Subject',
+  'pages.integrations.websocket.fields.subscribedAt': 'Subscribed At',
+  'pages.integrations.websocket.fields.subscription': 'Subscription',
+  'pages.integrations.websocket.fields.trace': 'Trace',
+  'pages.integrations.websocket.fields.transport': 'Transport',
+  'pages.integrations.websocket.fields.type': 'Type',
+  'pages.integrations.websocket.load.failure':
+    'Unable to load live WebSocket runtime diagnostics.',
+  'pages.integrations.websocket.load.liveFailure':
+    'Unable to load live WebSocket runtime diagnostics',
+  'pages.integrations.websocket.messages.publishFailure':
+    'Unable to publish diagnostic event.',
+  'pages.integrations.websocket.messages.published':
+    'Diagnostic event published',
+  'pages.integrations.websocket.messages.streamFailed':
+    'WebSocket runtime stream failed.',
+  'pages.integrations.websocket.policy.diagnosticRuntimeEvents':
+    'Diagnostic runtime events',
+  'pages.integrations.websocket.policy.runtimeBoundary':
+    'Live WebSocket runtime boundary',
+  'pages.integrations.websocket.policy.runtimeConnectionStatus':
+    'Runtime connection status',
+  'pages.integrations.websocket.policy.subscriptionEventRouting':
+    'Subscription event routing',
+  'pages.integrations.websocket.search.connectionsPlaceholder':
+    'Search runtime connections',
+  'pages.integrations.websocket.search.designPlaceholder':
+    'Search live WebSocket runtime',
+  'pages.integrations.websocket.search.eventsPlaceholder':
+    'Search runtime events',
+  'pages.integrations.websocket.search.subscriptionsPlaceholder':
+    'Search subscriptions',
+  'pages.integrations.websocket.stats.activeConnections': 'Active connections',
+  'pages.integrations.websocket.stats.activeSubscriptions':
+    'Active subscriptions',
+  'pages.integrations.websocket.stats.recentRuntimeEvents':
+    'Recent runtime events',
+  'pages.integrations.websocket.stream.closed': 'Runtime stream closed',
+  'pages.integrations.websocket.stream.connected': 'Runtime stream connected',
+  'pages.integrations.websocket.stream.lastChunk': 'Last runtime stream chunk',
+  'pages.integrations.websocket.subscriptionStatus.active': 'active',
+  'pages.integrations.websocket.subscriptionStatus.closed': 'closed',
+  'pages.integrations.websocket.title': 'WebSocket Runtime',
   'pages.integrations.mail.actions.column': 'Action',
   'pages.integrations.mail.actions.detail': 'Detail',
   'pages.integrations.mail.actions.previewTemplate': 'Preview template',
