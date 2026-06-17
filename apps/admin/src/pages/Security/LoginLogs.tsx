@@ -12,7 +12,7 @@ import {
   ProTable,
   type ProColumns,
 } from '@ant-design/pro-components';
-import { useAccess } from '@umijs/max';
+import { useAccess, useIntl } from '@umijs/max';
 import type {
   IpLocationLookupSummary,
   IpLocationProviderStatusSummary,
@@ -58,22 +58,6 @@ import {
   type DetailField,
 } from '../shared/ReadOnlyDetailDrawer';
 
-const loginTypeOptions: { label: string; value: LoginLogType }[] = [
-  { label: 'Username login', value: 'login.username' },
-  { label: 'Mobile login', value: 'login.mobile' },
-  { label: 'SMS login', value: 'login.sms' },
-  { label: 'Social login', value: 'login.social' },
-  { label: 'Self logout', value: 'logout.self' },
-  { label: 'Forced logout', value: 'logout.force' },
-];
-const loginResultOptions: { label: string; value: LoginLogResult }[] = [
-  { label: 'Success', value: 'success' },
-  { label: 'Account locked', value: 'account_locked' },
-  { label: 'Bad credentials', value: 'bad_credentials' },
-  { label: 'User disabled', value: 'user_disabled' },
-  { label: 'Captcha missing', value: 'captcha_not_found' },
-  { label: 'Captcha error', value: 'captcha_code_error' },
-];
 const searchFields: CurrentPageSearchField<LoginLogSummary>[] = [
   'username',
   'logType',
@@ -87,22 +71,15 @@ const searchFields: CurrentPageSearchField<LoginLogSummary>[] = [
   'actorUsername',
   'reason',
 ];
-const exportColumns: CurrentPageExportColumn<LoginLogSummary>[] = [
-  { title: 'ID', dataIndex: 'id' },
-  { title: 'Time', dataIndex: 'createdAt' },
-  { title: 'Username', dataIndex: 'username' },
-  { title: 'Actor', dataIndex: 'actorUsername' },
-  { title: 'Login Type', dataIndex: 'logType' },
-  { title: 'Result', dataIndex: 'result' },
-  { title: 'Failure Reason', dataIndex: 'failureReason' },
-  { title: 'Reason', dataIndex: 'reason' },
-  { title: 'IP', dataIndex: 'ip' },
-  { title: 'Location', dataIndex: 'location' },
-  { title: 'User Agent', dataIndex: 'userAgent' },
-  { title: 'Browser', dataIndex: 'browser' },
-  { title: 'OS', dataIndex: 'os' },
-  { title: 'Request ID', dataIndex: 'requestId' },
-];
+
+type LocaleFormatter = (
+  id: string,
+  defaultMessage: string,
+  values?: Record<string, number | string>,
+) => string;
+
+type LoginTypeOption = { label: string; value: LoginLogType };
+type LoginResultOption = { label: string; value: LoginLogResult };
 
 type LoginLogServerFilterDraft = {
   actorUsername: string;
@@ -126,6 +103,9 @@ const emptyServerFilterDraft: LoginLogServerFilterDraft = {
 
 function createFilterOptions(
   rows: readonly LoginLogSummary[],
+  loginResultOptions: readonly LoginResultOption[],
+  loginTypeOptions: readonly LoginTypeOption[],
+  formatMessage: LocaleFormatter,
 ): CurrentPageFilterOption<LoginLogSummary>[] {
   return [
     {
@@ -134,7 +114,7 @@ function createFilterOptions(
         label: option.label,
         value: option.value,
       })),
-      placeholder: 'Result',
+      placeholder: formatMessage('pages.security.loginLogs.fields.result', 'Result'),
       predicate: (record, value) => record.result === value,
     },
     {
@@ -143,40 +123,102 @@ function createFilterOptions(
         label: option.label,
         value: option.value,
       })),
-      placeholder: 'Type',
+      placeholder: formatMessage('pages.security.loginLogs.filters.type', 'Type'),
       predicate: (record, value) => record.logType === value,
     },
     {
       key: 'location',
       options: createCurrentPageFilterOptions(rows, 'location'),
-      placeholder: 'Location',
+      placeholder: formatMessage(
+        'pages.security.loginLogs.fields.location',
+        'Location',
+      ),
       predicate: (record, value) => record.location === value,
     },
     {
       key: 'username',
       options: createCurrentPageFilterOptions(rows, 'username'),
-      placeholder: 'Username',
+      placeholder: formatMessage(
+        'pages.security.loginLogs.fields.username',
+        'Username',
+      ),
       predicate: (record, value) => record.username === value,
     },
   ];
 }
 
-function createDetailFields(record: LoginLogSummary): DetailField[] {
+function createDetailFields(
+  record: LoginLogSummary,
+  formatLoginType: (value: LoginLogType) => string,
+  formatLoginResult: (value: LoginLogResult) => string,
+  formatMessage: LocaleFormatter,
+): DetailField[] {
   return [
-    { label: 'ID', value: record.id },
-    { label: 'Time', value: record.createdAt },
-    { label: 'Username', value: record.username },
-    { label: 'Actor', value: record.actorUsername },
-    { label: 'Login Type', value: formatLoginType(record.logType) },
-    { label: 'Result', value: formatLoginResult(record.result) },
-    { label: 'Failure Reason', value: record.failureReason },
-    { label: 'Reason', value: record.reason },
-    { label: 'IP', value: record.ip },
-    { label: 'Location', value: record.location },
-    { label: 'User Agent', value: record.userAgent },
-    { label: 'Browser', value: record.browser },
-    { label: 'OS', value: record.os },
-    { label: 'Request ID', value: record.requestId },
+    { label: formatMessage('pages.security.loginLogs.fields.id', 'ID'), value: record.id },
+    {
+      label: formatMessage('pages.security.loginLogs.fields.time', 'Time'),
+      value: record.createdAt,
+    },
+    {
+      label: formatMessage(
+        'pages.security.loginLogs.fields.username',
+        'Username',
+      ),
+      value: record.username,
+    },
+    {
+      label: formatMessage('pages.security.loginLogs.fields.actor', 'Actor'),
+      value: record.actorUsername,
+    },
+    {
+      label: formatMessage(
+        'pages.security.loginLogs.fields.loginType',
+        'Login Type',
+      ),
+      value: formatLoginType(record.logType),
+    },
+    {
+      label: formatMessage('pages.security.loginLogs.fields.result', 'Result'),
+      value: formatLoginResult(record.result),
+    },
+    {
+      label: formatMessage(
+        'pages.security.loginLogs.fields.failureReason',
+        'Failure Reason',
+      ),
+      value: record.failureReason,
+    },
+    {
+      label: formatMessage('pages.security.loginLogs.fields.reason', 'Reason'),
+      value: record.reason,
+    },
+    { label: formatMessage('pages.security.loginLogs.fields.ip', 'IP'), value: record.ip },
+    {
+      label: formatMessage(
+        'pages.security.loginLogs.fields.location',
+        'Location',
+      ),
+      value: record.location,
+    },
+    {
+      label: formatMessage(
+        'pages.security.loginLogs.fields.userAgent',
+        'User Agent',
+      ),
+      value: record.userAgent,
+    },
+    {
+      label: formatMessage('pages.security.loginLogs.fields.browser', 'Browser'),
+      value: record.browser,
+    },
+    { label: formatMessage('pages.security.loginLogs.fields.os', 'OS'), value: record.os },
+    {
+      label: formatMessage(
+        'pages.security.loginLogs.fields.requestId',
+        'Request ID',
+      ),
+      value: record.requestId,
+    },
   ];
 }
 
@@ -204,19 +246,10 @@ function toIsoDateTime(value: string): string | undefined {
   return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
 }
 
-function formatLoginType(value: LoginLogType): string {
-  return (
-    loginTypeOptions.find((option) => option.value === value)?.label ?? value
-  );
-}
-
-function formatLoginResult(value: LoginLogResult): string {
-  return (
-    loginResultOptions.find((option) => option.value === value)?.label ?? value
-  );
-}
-
-function formatIpLocationLookup(result: IpLocationLookupSummary): string {
+function formatIpLocationLookup(
+  result: IpLocationLookupSummary,
+  formatMessage: LocaleFormatter,
+): string {
   const preciseLocation = [result.countryCode, result.region, result.city]
     .filter(Boolean)
     .join(' / ');
@@ -226,13 +259,20 @@ function formatIpLocationLookup(result: IpLocationLookupSummary): string {
     result.provider,
     result.source,
     preciseLocation,
-    result.fallbackReason ? `fallback: ${result.fallbackReason}` : undefined,
+    result.fallbackReason
+      ? formatMessage(
+          'pages.security.loginLogs.geoip.fallbackReason',
+          'fallback: {reason}',
+          { reason: result.fallbackReason },
+        )
+      : undefined,
   ]
     .filter(Boolean)
     .join(' / ');
 }
 
 export default function LoginLogsPage() {
+  const intl = useIntl();
   const access = useAccess();
   const canDeleteLoginLogs = Boolean(access.canDeleteLoginLogs);
   const canManageLoginLogs = Boolean(access.canManageLoginLogs);
@@ -252,12 +292,182 @@ export default function LoginLogsPage() {
     useState<IpLocationProviderStatusSummary>();
   const [ipLookup, setIpLookup] = useState<IpLocationLookupSummary>();
   const [ipLookupLoading, setIpLookupLoading] = useState(false);
-  const filterOptions = useMemo(() => createFilterOptions(rows), [rows]);
+  const formatMessage = (
+    id: string,
+    defaultMessage: string,
+    values?: Record<string, number | string>,
+  ) =>
+    values
+      ? intl.formatMessage({ id, defaultMessage }, values)
+      : intl.formatMessage({ id, defaultMessage });
+  const loginTypeOptions: LoginTypeOption[] = [
+    {
+      label: formatMessage(
+        'pages.security.loginLogs.loginType.username',
+        'Username login',
+      ),
+      value: 'login.username',
+    },
+    {
+      label: formatMessage(
+        'pages.security.loginLogs.loginType.mobile',
+        'Mobile login',
+      ),
+      value: 'login.mobile',
+    },
+    {
+      label: formatMessage('pages.security.loginLogs.loginType.sms', 'SMS login'),
+      value: 'login.sms',
+    },
+    {
+      label: formatMessage(
+        'pages.security.loginLogs.loginType.social',
+        'Social login',
+      ),
+      value: 'login.social',
+    },
+    {
+      label: formatMessage(
+        'pages.security.loginLogs.loginType.selfLogout',
+        'Self logout',
+      ),
+      value: 'logout.self',
+    },
+    {
+      label: formatMessage(
+        'pages.security.loginLogs.loginType.forceLogout',
+        'Forced logout',
+      ),
+      value: 'logout.force',
+    },
+  ];
+  const loginResultOptions: LoginResultOption[] = [
+    {
+      label: formatMessage('pages.security.loginLogs.result.success', 'Success'),
+      value: 'success',
+    },
+    {
+      label: formatMessage(
+        'pages.security.loginLogs.result.accountLocked',
+        'Account locked',
+      ),
+      value: 'account_locked',
+    },
+    {
+      label: formatMessage(
+        'pages.security.loginLogs.result.badCredentials',
+        'Bad credentials',
+      ),
+      value: 'bad_credentials',
+    },
+    {
+      label: formatMessage(
+        'pages.security.loginLogs.result.userDisabled',
+        'User disabled',
+      ),
+      value: 'user_disabled',
+    },
+    {
+      label: formatMessage(
+        'pages.security.loginLogs.result.captchaMissing',
+        'Captcha missing',
+      ),
+      value: 'captcha_not_found',
+    },
+    {
+      label: formatMessage(
+        'pages.security.loginLogs.result.captchaError',
+        'Captcha error',
+      ),
+      value: 'captcha_code_error',
+    },
+  ];
+  const exportColumns: CurrentPageExportColumn<LoginLogSummary>[] = [
+    { title: formatMessage('pages.security.loginLogs.fields.id', 'ID'), dataIndex: 'id' },
+    {
+      title: formatMessage('pages.security.loginLogs.fields.time', 'Time'),
+      dataIndex: 'createdAt',
+    },
+    {
+      title: formatMessage(
+        'pages.security.loginLogs.fields.username',
+        'Username',
+      ),
+      dataIndex: 'username',
+    },
+    {
+      title: formatMessage('pages.security.loginLogs.fields.actor', 'Actor'),
+      dataIndex: 'actorUsername',
+    },
+    {
+      title: formatMessage(
+        'pages.security.loginLogs.fields.loginType',
+        'Login Type',
+      ),
+      dataIndex: 'logType',
+    },
+    {
+      title: formatMessage('pages.security.loginLogs.fields.result', 'Result'),
+      dataIndex: 'result',
+    },
+    {
+      title: formatMessage(
+        'pages.security.loginLogs.fields.failureReason',
+        'Failure Reason',
+      ),
+      dataIndex: 'failureReason',
+    },
+    {
+      title: formatMessage('pages.security.loginLogs.fields.reason', 'Reason'),
+      dataIndex: 'reason',
+    },
+    { title: formatMessage('pages.security.loginLogs.fields.ip', 'IP'), dataIndex: 'ip' },
+    {
+      title: formatMessage(
+        'pages.security.loginLogs.fields.location',
+        'Location',
+      ),
+      dataIndex: 'location',
+    },
+    {
+      title: formatMessage(
+        'pages.security.loginLogs.fields.userAgent',
+        'User Agent',
+      ),
+      dataIndex: 'userAgent',
+    },
+    {
+      title: formatMessage('pages.security.loginLogs.fields.browser', 'Browser'),
+      dataIndex: 'browser',
+    },
+    { title: formatMessage('pages.security.loginLogs.fields.os', 'OS'), dataIndex: 'os' },
+    {
+      title: formatMessage(
+        'pages.security.loginLogs.fields.requestId',
+        'Request ID',
+      ),
+      dataIndex: 'requestId',
+    },
+  ];
+  const allOptionLabel = formatMessage('pages.security.common.all', 'All');
+  const formatLoginType = (value: LoginLogType): string =>
+    loginTypeOptions.find((option) => option.value === value)?.label ?? value;
+  const formatLoginResult = (value: LoginLogResult): string =>
+    loginResultOptions.find((option) => option.value === value)?.label ?? value;
+  const filterOptions = createFilterOptions(
+    rows,
+    loginResultOptions,
+    loginTypeOptions,
+    formatMessage,
+  );
   const { filteredRows, toolbar: filterToolbar } =
     useCurrentPageFilters<LoginLogSummary>({
       rows,
       searchFields,
-      searchPlaceholder: 'Search login logs',
+      searchPlaceholder: formatMessage(
+        'pages.security.loginLogs.search.placeholder',
+        'Search login logs',
+      ),
       selectFilters: filterOptions,
     });
   const selectedRows = useMemo(
@@ -276,7 +486,12 @@ export default function LoginLogsPage() {
       setRows([]);
       setSelectedRowKeys([]);
       setLoadError(
-        error instanceof Error ? error.message : 'Unable to load login logs.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.security.loginLogs.load.failure',
+              'Unable to load login logs.',
+            ),
       );
     } finally {
       setLoading(false);
@@ -327,18 +542,30 @@ export default function LoginLogsPage() {
 
   const confirmUnlock = (record: LoginLogSummary) => {
     Modal.confirm({
-      title: `Unlock ${record.username}?`,
-      content:
+      title: formatMessage('pages.security.loginLogs.confirm.unlock', 'Unlock {username}?', {
+        username: record.username,
+      }),
+      content: formatMessage(
+        'pages.security.loginLogs.confirm.unlockContent',
         'Failed login counters for this username will be cleared immediately.',
-      okText: 'Unlock',
+      ),
+      okText: formatMessage('pages.security.loginLogs.actions.unlock', 'Unlock'),
       onOk: async () => {
         setUnlockingUsername(record.username);
         try {
           const result = await unlockOpenCoreLoginUser(record.username);
           message.success(
             result.unlocked
-              ? `${result.username} unlocked`
-              : `${result.username} had no active lockout`,
+              ? formatMessage(
+                  'pages.security.loginLogs.messages.unlocked',
+                  '{username} unlocked',
+                  { username: result.username },
+                )
+              : formatMessage(
+                  'pages.security.loginLogs.messages.noActiveLockout',
+                  '{username} had no active lockout',
+                  { username: result.username },
+                ),
           );
           await loadLoginLogs();
         } finally {
@@ -350,17 +577,33 @@ export default function LoginLogsPage() {
 
   const confirmDeleteSelected = () => {
     Modal.confirm({
-      title: `Delete ${selectedRows.length} selected login logs?`,
-      content: 'Selected login log records will be permanently removed.',
+      title: formatMessage(
+        'pages.security.loginLogs.confirm.deleteSelected',
+        'Delete {count} selected login logs?',
+        { count: selectedRows.length },
+      ),
+      content: formatMessage(
+        'pages.security.loginLogs.confirm.deleteSelectedContent',
+        'Selected login log records will be permanently removed.',
+      ),
       okButtonProps: { danger: true },
-      okText: 'Delete selected',
+      okText: formatMessage(
+        'pages.security.loginLogs.actions.deleteSelected',
+        'Delete selected',
+      ),
       onOk: async () => {
         setDeletingSelected(true);
         try {
           const result = await deleteOpenCoreLoginLogs({
             ids: selectedRows.map((record) => record.id),
           });
-          message.success(`Deleted ${result.affected} login logs`);
+          message.success(
+            formatMessage(
+              'pages.security.loginLogs.messages.deleted',
+              'Deleted {count} login logs',
+              { count: result.affected },
+            ),
+          );
           setSelectedRowKeys([]);
           await loadLoginLogs();
         } finally {
@@ -372,15 +615,27 @@ export default function LoginLogsPage() {
 
   const confirmCleanAll = () => {
     Modal.confirm({
-      title: 'Clean all login logs?',
-      content: 'Every login log record will be permanently removed.',
+      title: formatMessage(
+        'pages.security.loginLogs.confirm.cleanAll',
+        'Clean all login logs?',
+      ),
+      content: formatMessage(
+        'pages.security.loginLogs.confirm.cleanAllContent',
+        'Every login log record will be permanently removed.',
+      ),
       okButtonProps: { danger: true },
-      okText: 'Clean all',
+      okText: formatMessage('pages.security.loginLogs.actions.cleanAll', 'Clean all'),
       onOk: async () => {
         setCleaningLogs(true);
         try {
           const result = await cleanOpenCoreLoginLogs();
-          message.success(`Cleaned ${result.affected} login logs`);
+          message.success(
+            formatMessage(
+              'pages.security.loginLogs.messages.cleaned',
+              'Cleaned {count} login logs',
+              { count: result.affected },
+            ),
+          );
           setSelectedRowKeys([]);
           await loadLoginLogs();
         } finally {
@@ -399,16 +654,29 @@ export default function LoginLogsPage() {
     try {
       const result = await lookupOpenCoreIpLocation(lookupIp);
       setIpLookup(result);
-      message.success(`GeoIP lookup: ${result.location}`);
+      message.success(
+        formatMessage(
+          'pages.security.loginLogs.messages.geoipLookup',
+          'GeoIP lookup: {location}',
+          { location: result.location },
+        ),
+      );
     } finally {
       setIpLookupLoading(false);
     }
   };
 
   const columns: ProColumns<LoginLogSummary>[] = [
-    { title: 'Time', dataIndex: 'createdAt', width: 192 },
     {
-      title: 'Username',
+      title: formatMessage('pages.security.loginLogs.fields.time', 'Time'),
+      dataIndex: 'createdAt',
+      width: 192,
+    },
+    {
+      title: formatMessage(
+        'pages.security.loginLogs.fields.username',
+        'Username',
+      ),
       dataIndex: 'username',
       render: (_, record) => (
         <Typography.Link onClick={() => void openDetail(record)}>
@@ -417,19 +685,22 @@ export default function LoginLogsPage() {
       ),
     },
     {
-      title: 'Login Type',
+      title: formatMessage(
+        'pages.security.loginLogs.fields.loginType',
+        'Login Type',
+      ),
       dataIndex: 'logType',
       width: 136,
       render: (_, record) => <Tag>{formatLoginType(record.logType)}</Tag>,
     },
     {
-      title: 'Actor',
+      title: formatMessage('pages.security.loginLogs.fields.actor', 'Actor'),
       dataIndex: 'actorUsername',
       width: 136,
       render: (_, record) => record.actorUsername ?? '-',
     },
     {
-      title: 'Result',
+      title: formatMessage('pages.security.loginLogs.fields.result', 'Result'),
       dataIndex: 'result',
       width: 144,
       render: (_, record) => (
@@ -438,21 +709,55 @@ export default function LoginLogsPage() {
         </Tag>
       ),
     },
-    { title: 'IP', dataIndex: 'ip', width: 144 },
-    { title: 'Location', dataIndex: 'location', width: 168 },
-    { title: 'Browser', dataIndex: 'browser', width: 136 },
-    { title: 'OS', dataIndex: 'os', width: 112 },
-    { title: 'Reason', dataIndex: 'reason', ellipsis: true },
-    { title: 'Request ID', dataIndex: 'requestId', ellipsis: true },
     {
-      title: 'Action',
+      title: formatMessage('pages.security.loginLogs.fields.ip', 'IP'),
+      dataIndex: 'ip',
+      width: 144,
+    },
+    {
+      title: formatMessage(
+        'pages.security.loginLogs.fields.location',
+        'Location',
+      ),
+      dataIndex: 'location',
+      width: 168,
+    },
+    {
+      title: formatMessage('pages.security.loginLogs.fields.browser', 'Browser'),
+      dataIndex: 'browser',
+      width: 136,
+    },
+    {
+      title: formatMessage('pages.security.loginLogs.fields.os', 'OS'),
+      dataIndex: 'os',
+      width: 112,
+    },
+    {
+      title: formatMessage('pages.security.loginLogs.fields.reason', 'Reason'),
+      dataIndex: 'reason',
+      ellipsis: true,
+    },
+    {
+      title: formatMessage(
+        'pages.security.loginLogs.fields.requestId',
+        'Request ID',
+      ),
+      dataIndex: 'requestId',
+      ellipsis: true,
+    },
+    {
+      title: formatMessage('pages.security.loginLogs.actions.column', 'Action'),
       valueType: 'option',
       width: 88,
       render: (_, record) => (
         <Space size="small">
-          <Tooltip title="Detail">
+          <Tooltip title={formatMessage('pages.security.loginLogs.actions.detail', 'Detail')}>
             <Button
-              aria-label={`View login log ${record.id}`}
+              aria-label={formatMessage(
+                'pages.security.loginLogs.actions.viewAria',
+                'View login log {id}',
+                { id: record.id },
+              )}
               icon={<EyeOutlined />}
               onClick={() => void openDetail(record)}
               size="small"
@@ -461,12 +766,22 @@ export default function LoginLogsPage() {
           <Tooltip
             title={
               canManageLoginLogs
-                ? 'Unlock username'
-                : 'Requires core:login-log:manage'
+                ? formatMessage(
+                    'pages.security.loginLogs.actions.unlockUsername',
+                    'Unlock username',
+                  )
+                : formatMessage(
+                    'pages.security.loginLogs.permission.manageRequired',
+                    'Requires core:login-log:manage',
+                  )
             }
           >
             <Button
-              aria-label={`Unlock login username ${record.username}`}
+              aria-label={formatMessage(
+                'pages.security.loginLogs.actions.unlockAria',
+                'Unlock login username {username}',
+                { username: record.username },
+              )}
               disabled={!canManageLoginLogs}
               icon={<UnlockOutlined />}
               loading={unlockingUsername === record.username}
@@ -482,48 +797,69 @@ export default function LoginLogsPage() {
   const serverFilterToolbar = (
     <Space key="server-filters" size="small" wrap>
       <Input
-        aria-label="Login username server filter"
+        aria-label={formatMessage(
+          'pages.security.loginLogs.serverFilters.usernameAria',
+          'Login username server filter',
+        )}
         onChange={(event) =>
           updateServerFilterDraft('username', event.target.value)
         }
-        placeholder="Username"
+        placeholder={formatMessage(
+          'pages.security.loginLogs.fields.username',
+          'Username',
+        )}
         style={{ width: 148 }}
         value={serverFilterDraft.username}
       />
       <Input
-        aria-label="Login actor server filter"
+        aria-label={formatMessage(
+          'pages.security.loginLogs.serverFilters.actorAria',
+          'Login actor server filter',
+        )}
         onChange={(event) =>
           updateServerFilterDraft('actorUsername', event.target.value)
         }
-        placeholder="Actor"
+        placeholder={formatMessage('pages.security.loginLogs.fields.actor', 'Actor')}
         style={{ width: 132 }}
         value={serverFilterDraft.actorUsername}
       />
       <Input
-        aria-label="Login IP server filter"
+        aria-label={formatMessage(
+          'pages.security.loginLogs.serverFilters.ipAria',
+          'Login IP server filter',
+        )}
         onChange={(event) => updateServerFilterDraft('ip', event.target.value)}
-        placeholder="IP"
+        placeholder={formatMessage('pages.security.loginLogs.fields.ip', 'IP')}
         style={{ width: 132 }}
         value={serverFilterDraft.ip}
       />
       <Input
-        aria-label="Login location server filter"
+        aria-label={formatMessage(
+          'pages.security.loginLogs.serverFilters.locationAria',
+          'Login location server filter',
+        )}
         onChange={(event) =>
           updateServerFilterDraft('location', event.target.value)
         }
-        placeholder="Location"
+        placeholder={formatMessage(
+          'pages.security.loginLogs.fields.location',
+          'Location',
+        )}
         style={{ width: 148 }}
         value={serverFilterDraft.location}
       />
       <Select
-        aria-label="Login type server filter"
+        aria-label={formatMessage(
+          'pages.security.loginLogs.serverFilters.typeAria',
+          'Login type server filter',
+        )}
         onChange={(value) =>
           updateServerFilterDraft(
             'logType',
             value === 'all' ? undefined : (value as LoginLogType),
           )
         }
-        options={[{ label: 'All', value: 'all' }, ...loginTypeOptions]}
+        options={[{ label: allOptionLabel, value: 'all' }, ...loginTypeOptions]}
         style={{ width: 152 }}
         value={
           serverFilterDraft.logType === undefined
@@ -532,14 +868,17 @@ export default function LoginLogsPage() {
         }
       />
       <Select
-        aria-label="Login result server filter"
+        aria-label={formatMessage(
+          'pages.security.loginLogs.serverFilters.resultAria',
+          'Login result server filter',
+        )}
         onChange={(value) =>
           updateServerFilterDraft(
             'result',
             value === 'all' ? undefined : (value as LoginLogResult),
           )
         }
-        options={[{ label: 'All', value: 'all' }, ...loginResultOptions]}
+        options={[{ label: allOptionLabel, value: 'all' }, ...loginResultOptions]}
         style={{ width: 160 }}
         value={
           serverFilterDraft.result === undefined
@@ -548,7 +887,10 @@ export default function LoginLogsPage() {
         }
       />
       <Input
-        aria-label="Login created from server filter"
+        aria-label={formatMessage(
+          'pages.security.loginLogs.serverFilters.createdFromAria',
+          'Login created from server filter',
+        )}
         onChange={(event) =>
           updateServerFilterDraft('createdFrom', event.target.value)
         }
@@ -557,7 +899,10 @@ export default function LoginLogsPage() {
         value={serverFilterDraft.createdFrom}
       />
       <Input
-        aria-label="Login created to server filter"
+        aria-label={formatMessage(
+          'pages.security.loginLogs.serverFilters.createdToAria',
+          'Login created to server filter',
+        )}
         onChange={(event) =>
           updateServerFilterDraft('createdTo', event.target.value)
         }
@@ -565,16 +910,32 @@ export default function LoginLogsPage() {
         type="datetime-local"
         value={serverFilterDraft.createdTo}
       />
-      <Tooltip title="Apply server filters">
+      <Tooltip
+        title={formatMessage(
+          'pages.security.loginLogs.actions.applyServerFilters',
+          'Apply server filters',
+        )}
+      >
         <Button
-          aria-label="Apply login log server filters"
+          aria-label={formatMessage(
+            'pages.security.loginLogs.actions.applyServerFiltersAria',
+            'Apply login log server filters',
+          )}
           icon={<SearchOutlined />}
           onClick={() => void applyServerFilters()}
         />
       </Tooltip>
-      <Tooltip title="Reset server filters">
+      <Tooltip
+        title={formatMessage(
+          'pages.security.loginLogs.actions.resetServerFilters',
+          'Reset server filters',
+        )}
+      >
         <Button
-          aria-label="Reset login log server filters"
+          aria-label={formatMessage(
+            'pages.security.loginLogs.actions.resetServerFiltersAria',
+            'Reset login log server filters',
+          )}
           icon={<ClearOutlined />}
           onClick={() => void resetServerFilters()}
         />
@@ -583,10 +944,16 @@ export default function LoginLogsPage() {
   );
 
   return (
-    <PageContainer title="Login Logs" subTitle="S7 System">
+    <PageContainer
+      title={formatMessage('pages.security.loginLogs.title', 'Login Logs')}
+      subTitle={formatMessage('pages.system.section', 'S7 System')}
+    >
       {loadError ? (
         <Alert
-          message="Unable to load live login logs"
+          message={formatMessage(
+            'pages.security.loginLogs.load.liveFailure',
+            'Unable to load live login logs',
+          )}
           description={loadError}
           type="error"
           showIcon
@@ -595,8 +962,12 @@ export default function LoginLogsPage() {
       ) : null}
       {ipLookup ? (
         <Alert
-          message={`GeoIP lookup ${ipLookup.ip}`}
-          description={formatIpLocationLookup(ipLookup)}
+          message={formatMessage(
+            'pages.security.loginLogs.geoip.lookupForIp',
+            'GeoIP lookup {ip}',
+            { ip: ipLookup.ip },
+          )}
+          description={formatIpLocationLookup(ipLookup, formatMessage)}
           type="info"
           showIcon
           style={{ marginBottom: 16 }}
@@ -614,18 +985,37 @@ export default function LoginLogsPage() {
           serverFilterToolbar,
           filterToolbar,
           <Typography.Text key="read-only-policy" type="secondary">
-            Audit trail with unlock and cleanup
+            {formatMessage(
+              'pages.security.loginLogs.policy.auditTrail',
+              'Audit trail with unlock and cleanup',
+            )}
           </Typography.Text>,
           <Typography.Text key="geoip-provider" type="secondary">
-            External GeoIP adapter{' '}
             {ipLocationStatus
-              ? `${ipLocationStatus.provider} / ${ipLocationStatus.datasetVersion}`
-              : 'loading'}
+              ? formatMessage(
+                  'pages.security.loginLogs.geoip.adapterStatus',
+                  'External GeoIP adapter {provider} / {version}',
+                  {
+                    provider: ipLocationStatus.provider,
+                    version: ipLocationStatus.datasetVersion,
+                  },
+                )
+              : formatMessage(
+                  'pages.security.loginLogs.geoip.adapterLoading',
+                  'External GeoIP adapter loading',
+                )}
           </Typography.Text>,
           <Typography.Text key="geoip-endpoint" type="secondary">
             {ipLocationStatus?.endpointHost
-              ? `GeoIP endpoint ${ipLocationStatus.endpointHost}`
-              : 'GeoIP endpoint offline'}
+              ? formatMessage(
+                  'pages.security.loginLogs.geoip.endpoint',
+                  'GeoIP endpoint {host}',
+                  { host: ipLocationStatus.endpointHost },
+                )
+              : formatMessage(
+                  'pages.security.loginLogs.geoip.endpointOffline',
+                  'GeoIP endpoint offline',
+                )}
           </Typography.Text>,
           <Tag
             color={
@@ -637,12 +1027,27 @@ export default function LoginLogsPage() {
             }
             key="external-lookup"
           >
-            External lookup{' '}
-            {ipLocationStatus?.externalLookupEnabled ? 'on' : 'off'}
+            {formatMessage(
+              ipLocationStatus?.externalLookupEnabled
+                ? 'pages.security.loginLogs.geoip.externalLookupOn'
+                : 'pages.security.loginLogs.geoip.externalLookupOff',
+              ipLocationStatus?.externalLookupEnabled
+                ? 'External lookup on'
+                : 'External lookup off',
+            )}
           </Tag>,
-          <Tooltip key="geoip-lookup" title="GeoIP lookup">
+          <Tooltip
+            key="geoip-lookup"
+            title={formatMessage(
+              'pages.security.loginLogs.actions.geoipLookup',
+              'GeoIP lookup',
+            )}
+          >
             <Button
-              aria-label="GeoIP lookup"
+              aria-label={formatMessage(
+                'pages.security.loginLogs.actions.geoipLookupAria',
+                'GeoIP lookup',
+              )}
               icon={<GlobalOutlined />}
               loading={ipLookupLoading}
               onClick={() => void runIpLocationLookup()}
@@ -652,8 +1057,14 @@ export default function LoginLogsPage() {
             key="delete-selected"
             title={
               canDeleteLoginLogs
-                ? 'Delete selected login logs'
-                : 'Requires core:login-log:delete'
+                ? formatMessage(
+                    'pages.security.loginLogs.actions.deleteSelectedLogs',
+                    'Delete selected login logs',
+                  )
+                : formatMessage(
+                    'pages.security.loginLogs.permission.deleteRequired',
+                    'Requires core:login-log:delete',
+                  )
             }
           >
             <Button
@@ -663,15 +1074,24 @@ export default function LoginLogsPage() {
               loading={deletingSelected}
               onClick={confirmDeleteSelected}
             >
-              Delete selected
+              {formatMessage(
+                'pages.security.loginLogs.actions.deleteSelected',
+                'Delete selected',
+              )}
             </Button>
           </Tooltip>,
           <Tooltip
             key="clean-all"
             title={
               canDeleteLoginLogs
-                ? 'Clean all login logs'
-                : 'Requires core:login-log:delete'
+                ? formatMessage(
+                    'pages.security.loginLogs.actions.cleanAllLogs',
+                    'Clean all login logs',
+                  )
+                : formatMessage(
+                    'pages.security.loginLogs.permission.deleteRequired',
+                    'Requires core:login-log:delete',
+                  )
             }
           >
             <Button
@@ -681,7 +1101,7 @@ export default function LoginLogsPage() {
               loading={cleaningLogs}
               onClick={confirmCleanAll}
             >
-              Clean all
+              {formatMessage('pages.security.loginLogs.actions.cleanAll', 'Clean all')}
             </Button>
           </Tooltip>,
           <CurrentPageExportButton
@@ -691,9 +1111,15 @@ export default function LoginLogsPage() {
             resource="core-login-logs"
             rows={filteredRows}
           />,
-          <Tooltip key="refresh" title="Reload">
+          <Tooltip
+            key="refresh"
+            title={formatMessage('pages.security.loginLogs.actions.reload', 'Reload')}
+          >
             <Button
-              aria-label="Reload login logs"
+              aria-label={formatMessage(
+                'pages.security.loginLogs.actions.reloadAria',
+                'Reload login logs',
+              )}
               icon={<ReloadOutlined />}
               onClick={() => void loadLoginLogs()}
             />
@@ -708,10 +1134,25 @@ export default function LoginLogsPage() {
         }}
       />
       <ReadOnlyDetailDrawer
-        fields={selectedDetail ? createDetailFields(selectedDetail) : []}
+        fields={
+          selectedDetail
+            ? createDetailFields(
+                selectedDetail,
+                formatLoginType,
+                formatLoginResult,
+                formatMessage,
+              )
+            : []
+        }
         onClose={() => setSelectedDetail(undefined)}
         open={Boolean(selectedDetail)}
-        title={selectedDetail?.id ?? 'Login Log Detail'}
+        title={
+          selectedDetail?.id ??
+          formatMessage(
+            'pages.security.loginLogs.detail.title',
+            'Login Log Detail',
+          )
+        }
       />
     </PageContainer>
   );

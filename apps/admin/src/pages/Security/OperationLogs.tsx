@@ -10,7 +10,7 @@ import {
   ProTable,
   type ProColumns,
 } from '@ant-design/pro-components';
-import { useAccess } from '@umijs/max';
+import { useAccess, useIntl } from '@umijs/max';
 import type { AuditLogQueryRequest, AuditLogSummary } from '@opencore/sdk';
 import {
   Alert,
@@ -71,11 +71,6 @@ const emptyServerFilterDraft: AuditLogServerFilterDraft = {
   resource: '',
 };
 
-const auditStatusOptions: { label: string; value: AuditLogStatus }[] = [
-  { label: 'Success', value: 'success' },
-  { label: 'Error', value: 'error' },
-];
-
 const searchFields: CurrentPageSearchField<AuditLogSummary>[] = [
   'actorUsername',
   'action',
@@ -86,50 +81,55 @@ const searchFields: CurrentPageSearchField<AuditLogSummary>[] = [
   'location',
   'requestId',
 ];
-const exportColumns: CurrentPageExportColumn<AuditLogSummary>[] = [
-  { title: 'ID', dataIndex: 'id' },
-  { title: 'Time', dataIndex: 'createdAt' },
-  { title: 'Actor', dataIndex: 'actorUsername' },
-  { title: 'Action', dataIndex: 'action' },
-  { title: 'Resource', dataIndex: 'resource' },
-  { title: 'Resource ID', dataIndex: 'resourceId' },
-  { title: 'Method', dataIndex: 'method' },
-  { title: 'Path', dataIndex: 'path' },
-  { title: 'Status Code', dataIndex: 'statusCode' },
-  { title: 'Duration ms', dataIndex: 'durationMs' },
-  { title: 'Location', dataIndex: 'location' },
-  { title: 'Request ID', dataIndex: 'requestId' },
-];
+
+type LocaleFormatter = (
+  id: string,
+  defaultMessage: string,
+  values?: Record<string, number | string>,
+) => string;
+
+type AuditStatusOption = { label: string; value: AuditLogStatus };
 
 function createFilterOptions(
   rows: readonly AuditLogSummary[],
+  auditStatusOptions: readonly AuditStatusOption[],
+  formatMessage: LocaleFormatter,
 ): CurrentPageFilterOption<AuditLogSummary>[] {
   return [
     {
       key: 'method',
       options: createCurrentPageFilterOptions(rows, 'method'),
-      placeholder: 'Method',
+      placeholder: formatMessage(
+        'pages.security.operationLogs.fields.method',
+        'Method',
+      ),
       predicate: (record, value) => record.method === value,
     },
     {
       key: 'action',
       options: createCurrentPageFilterOptions(rows, 'action'),
-      placeholder: 'Action',
+      placeholder: formatMessage(
+        'pages.security.operationLogs.fields.action',
+        'Action',
+      ),
       predicate: (record, value) => record.action === value,
     },
     {
       key: 'location',
       options: createCurrentPageFilterOptions(rows, 'location'),
-      placeholder: 'Location',
+      placeholder: formatMessage(
+        'pages.security.operationLogs.fields.location',
+        'Location',
+      ),
       predicate: (record, value) => record.location === value,
     },
     {
       key: 'status',
-      options: [
-        { label: 'success', value: 'success' },
-        { label: 'error', value: 'error' },
-      ],
-      placeholder: 'Status',
+      options: auditStatusOptions,
+      placeholder: formatMessage(
+        'pages.security.operationLogs.fields.status',
+        'Status',
+      ),
       predicate: (record, value) =>
         value === 'success'
           ? record.statusCode < 400
@@ -138,29 +138,95 @@ function createFilterOptions(
   ];
 }
 
-function createDetailFields(record: AuditLogSummary): DetailField[] {
+function createDetailFields(
+  record: AuditLogSummary,
+  formatMessage: LocaleFormatter,
+): DetailField[] {
   return [
-    { label: 'ID', value: record.id },
-    { label: 'Time', value: record.createdAt },
-    { label: 'Actor', value: record.actorUsername },
-    { label: 'Action', value: record.action },
-    { label: 'Resource', value: record.resource },
-    { label: 'Resource ID', value: record.resourceId },
-    { label: 'Method', value: record.method },
-    { label: 'Path', value: record.path },
-    { label: 'Status Code', value: record.statusCode },
-    { label: 'IP', value: record.ip },
-    { label: 'Location', value: record.location },
-    { label: 'Duration ms', value: record.durationMs },
-    { label: 'User Agent', value: record.userAgent },
-    { label: 'Request ID', value: record.requestId },
+    { label: formatMessage('pages.security.operationLogs.fields.id', 'ID'), value: record.id },
+    {
+      label: formatMessage('pages.security.operationLogs.fields.time', 'Time'),
+      value: record.createdAt,
+    },
+    {
+      label: formatMessage('pages.security.operationLogs.fields.actor', 'Actor'),
+      value: record.actorUsername,
+    },
+    {
+      label: formatMessage('pages.security.operationLogs.fields.action', 'Action'),
+      value: record.action,
+    },
+    {
+      label: formatMessage(
+        'pages.security.operationLogs.fields.resource',
+        'Resource',
+      ),
+      value: record.resource,
+    },
+    {
+      label: formatMessage(
+        'pages.security.operationLogs.fields.resourceId',
+        'Resource ID',
+      ),
+      value: record.resourceId,
+    },
+    {
+      label: formatMessage('pages.security.operationLogs.fields.method', 'Method'),
+      value: record.method,
+    },
+    {
+      label: formatMessage('pages.security.operationLogs.fields.path', 'Path'),
+      value: record.path,
+    },
+    {
+      label: formatMessage(
+        'pages.security.operationLogs.fields.statusCode',
+        'Status Code',
+      ),
+      value: record.statusCode,
+    },
+    { label: formatMessage('pages.security.operationLogs.fields.ip', 'IP'), value: record.ip },
+    {
+      label: formatMessage(
+        'pages.security.operationLogs.fields.location',
+        'Location',
+      ),
+      value: record.location,
+    },
+    {
+      label: formatMessage(
+        'pages.security.operationLogs.fields.durationMs',
+        'Duration ms',
+      ),
+      value: record.durationMs,
+    },
+    {
+      label: formatMessage(
+        'pages.security.operationLogs.fields.userAgent',
+        'User Agent',
+      ),
+      value: record.userAgent,
+    },
+    {
+      label: formatMessage(
+        'pages.security.operationLogs.fields.requestId',
+        'Request ID',
+      ),
+      value: record.requestId,
+    },
   ];
 }
 
 function createDetailJsonSections(
   record: AuditLogSummary,
+  formatMessage: LocaleFormatter,
 ): DetailJsonSection[] {
-  return [{ title: 'Metadata', value: record.metadata ?? {} }];
+  return [
+    {
+      title: formatMessage('pages.security.operationLogs.fields.metadata', 'Metadata'),
+      value: record.metadata ?? {},
+    },
+  ];
 }
 
 function createServerFilterQuery(
@@ -189,6 +255,7 @@ function toIsoDateTime(value: string): string | undefined {
 }
 
 export default function OperationLogsPage() {
+  const intl = useIntl();
   const access = useAccess();
   const canDeleteAuditLogs = Boolean(access.canDeleteAuditLogs);
   const [rows, setRows] = useState<readonly AuditLogSummary[]>([]);
@@ -203,12 +270,103 @@ export default function OperationLogsPage() {
     useState<AuditLogQueryRequest>({});
   const [serverFilterDraft, setServerFilterDraft] =
     useState<AuditLogServerFilterDraft>({ ...emptyServerFilterDraft });
-  const filterOptions = useMemo(() => createFilterOptions(rows), [rows]);
+  const formatMessage = (
+    id: string,
+    defaultMessage: string,
+    values?: Record<string, number | string>,
+  ) =>
+    values
+      ? intl.formatMessage({ id, defaultMessage }, values)
+      : intl.formatMessage({ id, defaultMessage });
+  const auditStatusOptions: AuditStatusOption[] = [
+    {
+      label: formatMessage('pages.security.operationLogs.status.success', 'Success'),
+      value: 'success',
+    },
+    {
+      label: formatMessage('pages.security.operationLogs.status.error', 'Error'),
+      value: 'error',
+    },
+  ];
+  const allOptionLabel = formatMessage('pages.security.common.all', 'All');
+  const exportColumns: CurrentPageExportColumn<AuditLogSummary>[] = [
+    { title: formatMessage('pages.security.operationLogs.fields.id', 'ID'), dataIndex: 'id' },
+    {
+      title: formatMessage('pages.security.operationLogs.fields.time', 'Time'),
+      dataIndex: 'createdAt',
+    },
+    {
+      title: formatMessage('pages.security.operationLogs.fields.actor', 'Actor'),
+      dataIndex: 'actorUsername',
+    },
+    {
+      title: formatMessage('pages.security.operationLogs.fields.action', 'Action'),
+      dataIndex: 'action',
+    },
+    {
+      title: formatMessage(
+        'pages.security.operationLogs.fields.resource',
+        'Resource',
+      ),
+      dataIndex: 'resource',
+    },
+    {
+      title: formatMessage(
+        'pages.security.operationLogs.fields.resourceId',
+        'Resource ID',
+      ),
+      dataIndex: 'resourceId',
+    },
+    {
+      title: formatMessage('pages.security.operationLogs.fields.method', 'Method'),
+      dataIndex: 'method',
+    },
+    {
+      title: formatMessage('pages.security.operationLogs.fields.path', 'Path'),
+      dataIndex: 'path',
+    },
+    {
+      title: formatMessage(
+        'pages.security.operationLogs.fields.statusCode',
+        'Status Code',
+      ),
+      dataIndex: 'statusCode',
+    },
+    {
+      title: formatMessage(
+        'pages.security.operationLogs.fields.durationMs',
+        'Duration ms',
+      ),
+      dataIndex: 'durationMs',
+    },
+    {
+      title: formatMessage(
+        'pages.security.operationLogs.fields.location',
+        'Location',
+      ),
+      dataIndex: 'location',
+    },
+    {
+      title: formatMessage(
+        'pages.security.operationLogs.fields.requestId',
+        'Request ID',
+      ),
+      dataIndex: 'requestId',
+    },
+  ];
+  const filterOptions = createFilterOptions(
+    rows,
+    auditStatusOptions,
+    formatMessage,
+  );
   const { filteredRows, toolbar: filterToolbar } =
     useCurrentPageFilters<AuditLogSummary>({
       rows,
       searchFields,
-      searchPlaceholder: 'Search operation logs',
+      searchPlaceholder: formatMessage(
+        'pages.security.operationLogs.search.placeholder',
+        'Search operation logs',
+      ),
       selectFilters: filterOptions,
     });
   const selectedRows = useMemo(
@@ -229,7 +387,10 @@ export default function OperationLogsPage() {
       setLoadError(
         error instanceof Error
           ? error.message
-          : 'Unable to load operation logs.',
+          : formatMessage(
+              'pages.security.operationLogs.load.failure',
+              'Unable to load operation logs.',
+            ),
       );
     } finally {
       setLoading(false);
@@ -271,17 +432,33 @@ export default function OperationLogsPage() {
 
   const confirmDeleteSelected = () => {
     Modal.confirm({
-      title: `Delete ${selectedRows.length} selected operation logs?`,
-      content: 'Selected operation log records will be permanently removed.',
+      title: formatMessage(
+        'pages.security.operationLogs.confirm.deleteSelected',
+        'Delete {count} selected operation logs?',
+        { count: selectedRows.length },
+      ),
+      content: formatMessage(
+        'pages.security.operationLogs.confirm.deleteSelectedContent',
+        'Selected operation log records will be permanently removed.',
+      ),
       okButtonProps: { danger: true },
-      okText: 'Delete selected',
+      okText: formatMessage(
+        'pages.security.operationLogs.actions.deleteSelected',
+        'Delete selected',
+      ),
       onOk: async () => {
         setDeletingSelected(true);
         try {
           const result = await deleteOpenCoreAuditLogs({
             ids: selectedRows.map((record) => record.id),
           });
-          message.success(`Deleted ${result.affected} operation logs`);
+          message.success(
+            formatMessage(
+              'pages.security.operationLogs.messages.deleted',
+              'Deleted {count} operation logs',
+              { count: result.affected },
+            ),
+          );
           setSelectedRowKeys([]);
           await loadAuditLogs();
         } finally {
@@ -293,17 +470,30 @@ export default function OperationLogsPage() {
 
   const confirmCleanExpired = () => {
     Modal.confirm({
-      title: `Clean operation logs older than ${retentionDays} day(s)?`,
-      content:
+      title: formatMessage(
+        'pages.security.operationLogs.confirm.cleanExpired',
+        'Clean operation logs older than {days} day(s)?',
+        { days: retentionDays },
+      ),
+      content: formatMessage(
+        'pages.security.operationLogs.confirm.cleanExpiredContent',
         'Recent operation logs and the cleanup audit record are retained.',
+      ),
       okButtonProps: { danger: true },
-      okText: 'Clean expired',
+      okText: formatMessage(
+        'pages.security.operationLogs.actions.cleanExpired',
+        'Clean expired',
+      ),
       onOk: async () => {
         setCleaningLogs(true);
         try {
           const result = await cleanOpenCoreAuditLogs({ retentionDays });
           message.success(
-            `Cleaned ${result.affected} operation logs before ${result.cutoffBefore}`,
+            formatMessage(
+              'pages.security.operationLogs.messages.cleaned',
+              'Cleaned {count} operation logs before {cutoff}',
+              { count: result.affected, cutoff: result.cutoffBefore },
+            ),
           );
           setSelectedRowKeys([]);
           await loadAuditLogs();
@@ -315,9 +505,13 @@ export default function OperationLogsPage() {
   };
 
   const columns: ProColumns<AuditLogSummary>[] = [
-    { title: 'Time', dataIndex: 'createdAt', width: 192 },
     {
-      title: 'Actor',
+      title: formatMessage('pages.security.operationLogs.fields.time', 'Time'),
+      dataIndex: 'createdAt',
+      width: 192,
+    },
+    {
+      title: formatMessage('pages.security.operationLogs.fields.actor', 'Actor'),
       dataIndex: 'actorUsername',
       render: (_, record) => (
         <Typography.Link onClick={() => void openDetail(record)}>
@@ -325,18 +519,46 @@ export default function OperationLogsPage() {
         </Typography.Link>
       ),
     },
-    { title: 'Action', dataIndex: 'action', width: 132 },
-    { title: 'Resource', dataIndex: 'resource', ellipsis: true },
-    { title: 'Method', dataIndex: 'method', width: 96 },
-    { title: 'Location', dataIndex: 'location', width: 148 },
     {
-      title: 'Duration',
-      dataIndex: 'durationMs',
-      width: 112,
-      render: (_, record) => `${record.durationMs} ms`,
+      title: formatMessage('pages.security.operationLogs.fields.action', 'Action'),
+      dataIndex: 'action',
+      width: 132,
     },
     {
-      title: 'Status',
+      title: formatMessage(
+        'pages.security.operationLogs.fields.resource',
+        'Resource',
+      ),
+      dataIndex: 'resource',
+      ellipsis: true,
+    },
+    {
+      title: formatMessage('pages.security.operationLogs.fields.method', 'Method'),
+      dataIndex: 'method',
+      width: 96,
+    },
+    {
+      title: formatMessage(
+        'pages.security.operationLogs.fields.location',
+        'Location',
+      ),
+      dataIndex: 'location',
+      width: 148,
+    },
+    {
+      title: formatMessage(
+        'pages.security.operationLogs.fields.duration',
+        'Duration',
+      ),
+      dataIndex: 'durationMs',
+      width: 112,
+      render: (_, record) =>
+        formatMessage('pages.security.operationLogs.duration.ms', '{value} ms', {
+          value: record.durationMs,
+        }),
+    },
+    {
+      title: formatMessage('pages.security.operationLogs.fields.status', 'Status'),
       dataIndex: 'statusCode',
       width: 96,
       render: (_, record) => (
@@ -345,16 +567,35 @@ export default function OperationLogsPage() {
         </Tag>
       ),
     },
-    { title: 'Request ID', dataIndex: 'requestId', ellipsis: true },
     {
-      title: 'Action',
+      title: formatMessage(
+        'pages.security.operationLogs.fields.requestId',
+        'Request ID',
+      ),
+      dataIndex: 'requestId',
+      ellipsis: true,
+    },
+    {
+      title: formatMessage(
+        'pages.security.operationLogs.actions.column',
+        'Action',
+      ),
       valueType: 'option',
       width: 88,
       render: (_, record) => (
         <Space size="small">
-          <Tooltip title="Detail">
+          <Tooltip
+            title={formatMessage(
+              'pages.security.operationLogs.actions.detail',
+              'Detail',
+            )}
+          >
             <Button
-              aria-label={`View operation log ${record.id}`}
+              aria-label={formatMessage(
+                'pages.security.operationLogs.actions.viewAria',
+                'View operation log {id}',
+                { id: record.id },
+              )}
               icon={<EyeOutlined />}
               onClick={() => void openDetail(record)}
               size="small"
@@ -368,50 +609,77 @@ export default function OperationLogsPage() {
   const serverFilterToolbar = (
     <Space key="server-filters" size="small" wrap>
       <Input
-        aria-label="Operation actor server filter"
+        aria-label={formatMessage(
+          'pages.security.operationLogs.serverFilters.actorAria',
+          'Operation actor server filter',
+        )}
         onChange={(event) =>
           updateServerFilterDraft('actorUsername', event.target.value)
         }
-        placeholder="Actor"
+        placeholder={formatMessage(
+          'pages.security.operationLogs.fields.actor',
+          'Actor',
+        )}
         style={{ width: 132 }}
         value={serverFilterDraft.actorUsername}
       />
       <Input
-        aria-label="Operation action server filter"
+        aria-label={formatMessage(
+          'pages.security.operationLogs.serverFilters.actionAria',
+          'Operation action server filter',
+        )}
         onChange={(event) =>
           updateServerFilterDraft('action', event.target.value)
         }
-        placeholder="Action"
+        placeholder={formatMessage(
+          'pages.security.operationLogs.fields.action',
+          'Action',
+        )}
         style={{ width: 132 }}
         value={serverFilterDraft.action}
       />
       <Input
-        aria-label="Operation resource server filter"
+        aria-label={formatMessage(
+          'pages.security.operationLogs.serverFilters.resourceAria',
+          'Operation resource server filter',
+        )}
         onChange={(event) =>
           updateServerFilterDraft('resource', event.target.value)
         }
-        placeholder="Resource"
+        placeholder={formatMessage(
+          'pages.security.operationLogs.fields.resource',
+          'Resource',
+        )}
         style={{ width: 164 }}
         value={serverFilterDraft.resource}
       />
       <Input
-        aria-label="Operation location server filter"
+        aria-label={formatMessage(
+          'pages.security.operationLogs.serverFilters.locationAria',
+          'Operation location server filter',
+        )}
         onChange={(event) =>
           updateServerFilterDraft('location', event.target.value)
         }
-        placeholder="Location"
+        placeholder={formatMessage(
+          'pages.security.operationLogs.fields.location',
+          'Location',
+        )}
         style={{ width: 148 }}
         value={serverFilterDraft.location}
       />
       <Select
-        aria-label="Operation status server filter"
+        aria-label={formatMessage(
+          'pages.security.operationLogs.serverFilters.statusAria',
+          'Operation status server filter',
+        )}
         onChange={(value) =>
           updateServerFilterDraft(
             'status',
             value === 'all' ? undefined : (value as AuditLogStatus),
           )
         }
-        options={[{ label: 'All', value: 'all' }, ...auditStatusOptions]}
+        options={[{ label: allOptionLabel, value: 'all' }, ...auditStatusOptions]}
         style={{ width: 132 }}
         value={
           serverFilterDraft.status === undefined
@@ -420,8 +688,11 @@ export default function OperationLogsPage() {
         }
       />
       <InputNumber
-        aria-label="Operation minimum duration server filter"
-        addonAfter="ms"
+        aria-label={formatMessage(
+          'pages.security.operationLogs.serverFilters.minDurationAria',
+          'Operation minimum duration server filter',
+        )}
+        addonAfter={formatMessage('pages.security.operationLogs.units.ms', 'ms')}
         min={0}
         onChange={(value) =>
           updateServerFilterDraft(
@@ -429,14 +700,20 @@ export default function OperationLogsPage() {
             typeof value === 'number' ? value : undefined,
           )
         }
-        placeholder="Min"
+        placeholder={formatMessage(
+          'pages.security.operationLogs.filters.min',
+          'Min',
+        )}
         precision={0}
         style={{ width: 116 }}
         value={serverFilterDraft.minDurationMs}
       />
       <InputNumber
-        aria-label="Operation maximum duration server filter"
-        addonAfter="ms"
+        aria-label={formatMessage(
+          'pages.security.operationLogs.serverFilters.maxDurationAria',
+          'Operation maximum duration server filter',
+        )}
+        addonAfter={formatMessage('pages.security.operationLogs.units.ms', 'ms')}
         min={0}
         onChange={(value) =>
           updateServerFilterDraft(
@@ -444,13 +721,19 @@ export default function OperationLogsPage() {
             typeof value === 'number' ? value : undefined,
           )
         }
-        placeholder="Max"
+        placeholder={formatMessage(
+          'pages.security.operationLogs.filters.max',
+          'Max',
+        )}
         precision={0}
         style={{ width: 116 }}
         value={serverFilterDraft.maxDurationMs}
       />
       <Input
-        aria-label="Operation created from server filter"
+        aria-label={formatMessage(
+          'pages.security.operationLogs.serverFilters.createdFromAria',
+          'Operation created from server filter',
+        )}
         onChange={(event) =>
           updateServerFilterDraft('createdFrom', event.target.value)
         }
@@ -459,7 +742,10 @@ export default function OperationLogsPage() {
         value={serverFilterDraft.createdFrom}
       />
       <Input
-        aria-label="Operation created to server filter"
+        aria-label={formatMessage(
+          'pages.security.operationLogs.serverFilters.createdToAria',
+          'Operation created to server filter',
+        )}
         onChange={(event) =>
           updateServerFilterDraft('createdTo', event.target.value)
         }
@@ -467,16 +753,32 @@ export default function OperationLogsPage() {
         type="datetime-local"
         value={serverFilterDraft.createdTo}
       />
-      <Tooltip title="Apply server filters">
+      <Tooltip
+        title={formatMessage(
+          'pages.security.operationLogs.actions.applyServerFilters',
+          'Apply server filters',
+        )}
+      >
         <Button
-          aria-label="Apply operation log server filters"
+          aria-label={formatMessage(
+            'pages.security.operationLogs.actions.applyServerFiltersAria',
+            'Apply operation log server filters',
+          )}
           icon={<SearchOutlined />}
           onClick={() => void applyServerFilters()}
         />
       </Tooltip>
-      <Tooltip title="Reset server filters">
+      <Tooltip
+        title={formatMessage(
+          'pages.security.operationLogs.actions.resetServerFilters',
+          'Reset server filters',
+        )}
+      >
         <Button
-          aria-label="Reset operation log server filters"
+          aria-label={formatMessage(
+            'pages.security.operationLogs.actions.resetServerFiltersAria',
+            'Reset operation log server filters',
+          )}
           icon={<ClearOutlined />}
           onClick={() => void resetServerFilters()}
         />
@@ -485,10 +787,19 @@ export default function OperationLogsPage() {
   );
 
   return (
-    <PageContainer title="Operation Logs" subTitle="S7 System">
+    <PageContainer
+      title={formatMessage(
+        'pages.security.operationLogs.title',
+        'Operation Logs',
+      )}
+      subTitle={formatMessage('pages.system.section', 'S7 System')}
+    >
       {loadError ? (
         <Alert
-          message="Unable to load live operation logs"
+          message={formatMessage(
+            'pages.security.operationLogs.load.liveFailure',
+            'Unable to load live operation logs',
+          )}
           description={loadError}
           type="error"
           showIcon
@@ -507,10 +818,16 @@ export default function OperationLogsPage() {
           serverFilterToolbar,
           filterToolbar,
           <Typography.Text key="cleanup-policy" type="secondary">
-            Retention policy
+            {formatMessage(
+              'pages.security.operationLogs.policy.retention',
+              'Retention policy',
+            )}
           </Typography.Text>,
           <InputNumber
-            addonAfter="days"
+            addonAfter={formatMessage(
+              'pages.security.operationLogs.units.days',
+              'days',
+            )}
             key="retention-days"
             max={3650}
             min={0}
@@ -523,8 +840,14 @@ export default function OperationLogsPage() {
             key="delete-selected"
             title={
               canDeleteAuditLogs
-                ? 'Delete selected operation logs'
-                : 'Requires core:audit-log:delete'
+                ? formatMessage(
+                    'pages.security.operationLogs.actions.deleteSelectedLogs',
+                    'Delete selected operation logs',
+                  )
+                : formatMessage(
+                    'pages.security.operationLogs.permission.deleteRequired',
+                    'Requires core:audit-log:delete',
+                  )
             }
           >
             <Button
@@ -534,15 +857,24 @@ export default function OperationLogsPage() {
               loading={deletingSelected}
               onClick={confirmDeleteSelected}
             >
-              Delete selected
+              {formatMessage(
+                'pages.security.operationLogs.actions.deleteSelected',
+                'Delete selected',
+              )}
             </Button>
           </Tooltip>,
           <Tooltip
             key="clean-expired"
             title={
               canDeleteAuditLogs
-                ? 'Clean expired operation logs'
-                : 'Requires core:audit-log:delete'
+                ? formatMessage(
+                    'pages.security.operationLogs.actions.cleanExpiredLogs',
+                    'Clean expired operation logs',
+                  )
+                : formatMessage(
+                    'pages.security.operationLogs.permission.deleteRequired',
+                    'Requires core:audit-log:delete',
+                  )
             }
           >
             <Button
@@ -552,7 +884,10 @@ export default function OperationLogsPage() {
               loading={cleaningLogs}
               onClick={confirmCleanExpired}
             >
-              Clean expired
+              {formatMessage(
+                'pages.security.operationLogs.actions.cleanExpired',
+                'Clean expired',
+              )}
             </Button>
           </Tooltip>,
           <CurrentPageExportButton
@@ -562,9 +897,18 @@ export default function OperationLogsPage() {
             resource="core-audit-logs"
             rows={filteredRows}
           />,
-          <Tooltip key="refresh" title="Reload">
+          <Tooltip
+            key="refresh"
+            title={formatMessage(
+              'pages.security.operationLogs.actions.reload',
+              'Reload',
+            )}
+          >
             <Button
-              aria-label="Reload operation logs"
+              aria-label={formatMessage(
+                'pages.security.operationLogs.actions.reloadAria',
+                'Reload operation logs',
+              )}
               icon={<ReloadOutlined />}
               onClick={() => void loadAuditLogs()}
             />
@@ -579,13 +923,23 @@ export default function OperationLogsPage() {
         }}
       />
       <ReadOnlyDetailDrawer
-        fields={selectedDetail ? createDetailFields(selectedDetail) : []}
+        fields={
+          selectedDetail ? createDetailFields(selectedDetail, formatMessage) : []
+        }
         jsonSections={
-          selectedDetail ? createDetailJsonSections(selectedDetail) : []
+          selectedDetail
+            ? createDetailJsonSections(selectedDetail, formatMessage)
+            : []
         }
         onClose={() => setSelectedDetail(undefined)}
         open={Boolean(selectedDetail)}
-        title={selectedDetail?.id ?? 'Operation Log Detail'}
+        title={
+          selectedDetail?.id ??
+          formatMessage(
+            'pages.security.operationLogs.detail.title',
+            'Operation Log Detail',
+          )
+        }
       />
     </PageContainer>
   );

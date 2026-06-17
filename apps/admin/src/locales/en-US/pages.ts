@@ -1065,4 +1065,195 @@ export default {
     'Use <layer>:<resource>:<action> with a supported action.',
   'pages.system.permissions.validation.codeRequired': 'Code is required.',
   'pages.system.permissions.validation.titleRequired': 'Title is required.',
+  'pages.security.common.all': 'All',
+  'pages.security.loginLogs.actions.applyServerFilters':
+    'Apply server filters',
+  'pages.security.loginLogs.actions.applyServerFiltersAria':
+    'Apply login log server filters',
+  'pages.security.loginLogs.actions.cleanAll': 'Clean all',
+  'pages.security.loginLogs.actions.cleanAllLogs': 'Clean all login logs',
+  'pages.security.loginLogs.actions.column': 'Action',
+  'pages.security.loginLogs.actions.deleteSelected': 'Delete selected',
+  'pages.security.loginLogs.actions.deleteSelectedLogs':
+    'Delete selected login logs',
+  'pages.security.loginLogs.actions.detail': 'Detail',
+  'pages.security.loginLogs.actions.geoipLookup': 'GeoIP lookup',
+  'pages.security.loginLogs.actions.geoipLookupAria': 'GeoIP lookup',
+  'pages.security.loginLogs.actions.reload': 'Reload',
+  'pages.security.loginLogs.actions.reloadAria': 'Reload login logs',
+  'pages.security.loginLogs.actions.resetServerFilters':
+    'Reset server filters',
+  'pages.security.loginLogs.actions.resetServerFiltersAria':
+    'Reset login log server filters',
+  'pages.security.loginLogs.actions.unlock': 'Unlock',
+  'pages.security.loginLogs.actions.unlockAria':
+    'Unlock login username {username}',
+  'pages.security.loginLogs.actions.unlockUsername': 'Unlock username',
+  'pages.security.loginLogs.actions.viewAria': 'View login log {id}',
+  'pages.security.loginLogs.confirm.cleanAll': 'Clean all login logs?',
+  'pages.security.loginLogs.confirm.cleanAllContent':
+    'Every login log record will be permanently removed.',
+  'pages.security.loginLogs.confirm.deleteSelected':
+    'Delete {count} selected login logs?',
+  'pages.security.loginLogs.confirm.deleteSelectedContent':
+    'Selected login log records will be permanently removed.',
+  'pages.security.loginLogs.confirm.unlock': 'Unlock {username}?',
+  'pages.security.loginLogs.confirm.unlockContent':
+    'Failed login counters for this username will be cleared immediately.',
+  'pages.security.loginLogs.detail.title': 'Login Log Detail',
+  'pages.security.loginLogs.fields.actor': 'Actor',
+  'pages.security.loginLogs.fields.browser': 'Browser',
+  'pages.security.loginLogs.fields.failureReason': 'Failure Reason',
+  'pages.security.loginLogs.fields.id': 'ID',
+  'pages.security.loginLogs.fields.ip': 'IP',
+  'pages.security.loginLogs.fields.location': 'Location',
+  'pages.security.loginLogs.fields.loginType': 'Login Type',
+  'pages.security.loginLogs.fields.os': 'OS',
+  'pages.security.loginLogs.fields.reason': 'Reason',
+  'pages.security.loginLogs.fields.requestId': 'Request ID',
+  'pages.security.loginLogs.fields.result': 'Result',
+  'pages.security.loginLogs.fields.time': 'Time',
+  'pages.security.loginLogs.fields.userAgent': 'User Agent',
+  'pages.security.loginLogs.fields.username': 'Username',
+  'pages.security.loginLogs.filters.type': 'Type',
+  'pages.security.loginLogs.geoip.adapterLoading':
+    'External GeoIP adapter loading',
+  'pages.security.loginLogs.geoip.adapterStatus':
+    'External GeoIP adapter {provider} / {version}',
+  'pages.security.loginLogs.geoip.endpoint': 'GeoIP endpoint {host}',
+  'pages.security.loginLogs.geoip.endpointOffline': 'GeoIP endpoint offline',
+  'pages.security.loginLogs.geoip.externalLookupOff': 'External lookup off',
+  'pages.security.loginLogs.geoip.externalLookupOn': 'External lookup on',
+  'pages.security.loginLogs.geoip.fallbackReason': 'fallback: {reason}',
+  'pages.security.loginLogs.geoip.lookupForIp': 'GeoIP lookup {ip}',
+  'pages.security.loginLogs.load.failure': 'Unable to load login logs.',
+  'pages.security.loginLogs.load.liveFailure':
+    'Unable to load live login logs',
+  'pages.security.loginLogs.loginType.forceLogout': 'Forced logout',
+  'pages.security.loginLogs.loginType.mobile': 'Mobile login',
+  'pages.security.loginLogs.loginType.selfLogout': 'Self logout',
+  'pages.security.loginLogs.loginType.sms': 'SMS login',
+  'pages.security.loginLogs.loginType.social': 'Social login',
+  'pages.security.loginLogs.loginType.username': 'Username login',
+  'pages.security.loginLogs.messages.cleaned':
+    'Cleaned {count} login logs',
+  'pages.security.loginLogs.messages.deleted':
+    'Deleted {count} login logs',
+  'pages.security.loginLogs.messages.geoipLookup':
+    'GeoIP lookup: {location}',
+  'pages.security.loginLogs.messages.noActiveLockout':
+    '{username} had no active lockout',
+  'pages.security.loginLogs.messages.unlocked': '{username} unlocked',
+  'pages.security.loginLogs.permission.deleteRequired':
+    'Requires core:login-log:delete',
+  'pages.security.loginLogs.permission.manageRequired':
+    'Requires core:login-log:manage',
+  'pages.security.loginLogs.policy.auditTrail':
+    'Audit trail with unlock and cleanup',
+  'pages.security.loginLogs.result.accountLocked': 'Account locked',
+  'pages.security.loginLogs.result.badCredentials': 'Bad credentials',
+  'pages.security.loginLogs.result.captchaError': 'Captcha error',
+  'pages.security.loginLogs.result.captchaMissing': 'Captcha missing',
+  'pages.security.loginLogs.result.success': 'Success',
+  'pages.security.loginLogs.result.userDisabled': 'User disabled',
+  'pages.security.loginLogs.search.placeholder': 'Search login logs',
+  'pages.security.loginLogs.serverFilters.actorAria':
+    'Login actor server filter',
+  'pages.security.loginLogs.serverFilters.createdFromAria':
+    'Login created from server filter',
+  'pages.security.loginLogs.serverFilters.createdToAria':
+    'Login created to server filter',
+  'pages.security.loginLogs.serverFilters.ipAria': 'Login IP server filter',
+  'pages.security.loginLogs.serverFilters.locationAria':
+    'Login location server filter',
+  'pages.security.loginLogs.serverFilters.resultAria':
+    'Login result server filter',
+  'pages.security.loginLogs.serverFilters.typeAria':
+    'Login type server filter',
+  'pages.security.loginLogs.serverFilters.usernameAria':
+    'Login username server filter',
+  'pages.security.loginLogs.title': 'Login Logs',
+  'pages.security.operationLogs.actions.applyServerFilters':
+    'Apply server filters',
+  'pages.security.operationLogs.actions.applyServerFiltersAria':
+    'Apply operation log server filters',
+  'pages.security.operationLogs.actions.cleanExpired': 'Clean expired',
+  'pages.security.operationLogs.actions.cleanExpiredLogs':
+    'Clean expired operation logs',
+  'pages.security.operationLogs.actions.column': 'Action',
+  'pages.security.operationLogs.actions.deleteSelected': 'Delete selected',
+  'pages.security.operationLogs.actions.deleteSelectedLogs':
+    'Delete selected operation logs',
+  'pages.security.operationLogs.actions.detail': 'Detail',
+  'pages.security.operationLogs.actions.reload': 'Reload',
+  'pages.security.operationLogs.actions.reloadAria': 'Reload operation logs',
+  'pages.security.operationLogs.actions.resetServerFilters':
+    'Reset server filters',
+  'pages.security.operationLogs.actions.resetServerFiltersAria':
+    'Reset operation log server filters',
+  'pages.security.operationLogs.actions.viewAria': 'View operation log {id}',
+  'pages.security.operationLogs.confirm.cleanExpired':
+    'Clean operation logs older than {days} day(s)?',
+  'pages.security.operationLogs.confirm.cleanExpiredContent':
+    'Recent operation logs and the cleanup audit record are retained.',
+  'pages.security.operationLogs.confirm.deleteSelected':
+    'Delete {count} selected operation logs?',
+  'pages.security.operationLogs.confirm.deleteSelectedContent':
+    'Selected operation log records will be permanently removed.',
+  'pages.security.operationLogs.detail.title': 'Operation Log Detail',
+  'pages.security.operationLogs.duration.ms': '{value} ms',
+  'pages.security.operationLogs.fields.action': 'Action',
+  'pages.security.operationLogs.fields.actor': 'Actor',
+  'pages.security.operationLogs.fields.duration': 'Duration',
+  'pages.security.operationLogs.fields.durationMs': 'Duration ms',
+  'pages.security.operationLogs.fields.id': 'ID',
+  'pages.security.operationLogs.fields.ip': 'IP',
+  'pages.security.operationLogs.fields.location': 'Location',
+  'pages.security.operationLogs.fields.metadata': 'Metadata',
+  'pages.security.operationLogs.fields.method': 'Method',
+  'pages.security.operationLogs.fields.path': 'Path',
+  'pages.security.operationLogs.fields.requestId': 'Request ID',
+  'pages.security.operationLogs.fields.resource': 'Resource',
+  'pages.security.operationLogs.fields.resourceId': 'Resource ID',
+  'pages.security.operationLogs.fields.status': 'Status',
+  'pages.security.operationLogs.fields.statusCode': 'Status Code',
+  'pages.security.operationLogs.fields.time': 'Time',
+  'pages.security.operationLogs.fields.userAgent': 'User Agent',
+  'pages.security.operationLogs.filters.max': 'Max',
+  'pages.security.operationLogs.filters.min': 'Min',
+  'pages.security.operationLogs.load.failure':
+    'Unable to load operation logs.',
+  'pages.security.operationLogs.load.liveFailure':
+    'Unable to load live operation logs',
+  'pages.security.operationLogs.messages.cleaned':
+    'Cleaned {count} operation logs before {cutoff}',
+  'pages.security.operationLogs.messages.deleted':
+    'Deleted {count} operation logs',
+  'pages.security.operationLogs.permission.deleteRequired':
+    'Requires core:audit-log:delete',
+  'pages.security.operationLogs.policy.retention': 'Retention policy',
+  'pages.security.operationLogs.search.placeholder': 'Search operation logs',
+  'pages.security.operationLogs.serverFilters.actionAria':
+    'Operation action server filter',
+  'pages.security.operationLogs.serverFilters.actorAria':
+    'Operation actor server filter',
+  'pages.security.operationLogs.serverFilters.createdFromAria':
+    'Operation created from server filter',
+  'pages.security.operationLogs.serverFilters.createdToAria':
+    'Operation created to server filter',
+  'pages.security.operationLogs.serverFilters.locationAria':
+    'Operation location server filter',
+  'pages.security.operationLogs.serverFilters.maxDurationAria':
+    'Operation maximum duration server filter',
+  'pages.security.operationLogs.serverFilters.minDurationAria':
+    'Operation minimum duration server filter',
+  'pages.security.operationLogs.serverFilters.resourceAria':
+    'Operation resource server filter',
+  'pages.security.operationLogs.serverFilters.statusAria':
+    'Operation status server filter',
+  'pages.security.operationLogs.status.error': 'Error',
+  'pages.security.operationLogs.status.success': 'Success',
+  'pages.security.operationLogs.title': 'Operation Logs',
+  'pages.security.operationLogs.units.days': 'days',
+  'pages.security.operationLogs.units.ms': 'ms',
 };

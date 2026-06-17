@@ -949,4 +949,180 @@ export default {
     '请使用 <layer>:<resource>:<action> 格式，并选择受支持的操作。',
   'pages.system.permissions.validation.codeRequired': '请输入权限编码。',
   'pages.system.permissions.validation.titleRequired': '请输入权限名称。',
+  'pages.security.common.all': '全部',
+  'pages.security.loginLogs.actions.applyServerFilters': '应用服务端筛选',
+  'pages.security.loginLogs.actions.applyServerFiltersAria':
+    '应用登录日志服务端筛选',
+  'pages.security.loginLogs.actions.cleanAll': '清空全部',
+  'pages.security.loginLogs.actions.cleanAllLogs': '清空全部登录日志',
+  'pages.security.loginLogs.actions.column': '操作',
+  'pages.security.loginLogs.actions.deleteSelected': '删除选中项',
+  'pages.security.loginLogs.actions.deleteSelectedLogs': '删除选中登录日志',
+  'pages.security.loginLogs.actions.detail': '详情',
+  'pages.security.loginLogs.actions.geoipLookup': 'GeoIP 查询',
+  'pages.security.loginLogs.actions.geoipLookupAria': 'GeoIP 查询',
+  'pages.security.loginLogs.actions.reload': '刷新',
+  'pages.security.loginLogs.actions.reloadAria': '刷新登录日志',
+  'pages.security.loginLogs.actions.resetServerFilters': '重置服务端筛选',
+  'pages.security.loginLogs.actions.resetServerFiltersAria':
+    '重置登录日志服务端筛选',
+  'pages.security.loginLogs.actions.unlock': '解锁',
+  'pages.security.loginLogs.actions.unlockAria': '解锁登录用户名 {username}',
+  'pages.security.loginLogs.actions.unlockUsername': '解锁用户名',
+  'pages.security.loginLogs.actions.viewAria': '查看登录日志 {id}',
+  'pages.security.loginLogs.confirm.cleanAll': '确认清空全部登录日志？',
+  'pages.security.loginLogs.confirm.cleanAllContent':
+    '所有登录日志记录都会被永久删除。',
+  'pages.security.loginLogs.confirm.deleteSelected':
+    '确认删除选中的 {count} 条登录日志？',
+  'pages.security.loginLogs.confirm.deleteSelectedContent':
+    '选中的登录日志记录会被永久删除。',
+  'pages.security.loginLogs.confirm.unlock': '确认解锁 {username}？',
+  'pages.security.loginLogs.confirm.unlockContent':
+    '该用户名的登录失败计数会立即清除。',
+  'pages.security.loginLogs.detail.title': '登录日志详情',
+  'pages.security.loginLogs.fields.actor': '操作者',
+  'pages.security.loginLogs.fields.browser': '浏览器',
+  'pages.security.loginLogs.fields.failureReason': '失败原因',
+  'pages.security.loginLogs.fields.id': 'ID',
+  'pages.security.loginLogs.fields.ip': 'IP',
+  'pages.security.loginLogs.fields.location': '地点',
+  'pages.security.loginLogs.fields.loginType': '登录类型',
+  'pages.security.loginLogs.fields.os': '操作系统',
+  'pages.security.loginLogs.fields.reason': '原因',
+  'pages.security.loginLogs.fields.requestId': '请求 ID',
+  'pages.security.loginLogs.fields.result': '结果',
+  'pages.security.loginLogs.fields.time': '时间',
+  'pages.security.loginLogs.fields.userAgent': 'User Agent',
+  'pages.security.loginLogs.fields.username': '用户名',
+  'pages.security.loginLogs.filters.type': '类型',
+  'pages.security.loginLogs.geoip.adapterLoading': '外部 GeoIP 适配器加载中',
+  'pages.security.loginLogs.geoip.adapterStatus':
+    '外部 GeoIP 适配器 {provider} / {version}',
+  'pages.security.loginLogs.geoip.endpoint': 'GeoIP 端点 {host}',
+  'pages.security.loginLogs.geoip.endpointOffline': 'GeoIP 端点离线',
+  'pages.security.loginLogs.geoip.externalLookupOff': '外部查询关闭',
+  'pages.security.loginLogs.geoip.externalLookupOn': '外部查询开启',
+  'pages.security.loginLogs.geoip.fallbackReason': 'fallback：{reason}',
+  'pages.security.loginLogs.geoip.lookupForIp': 'GeoIP 查询 {ip}',
+  'pages.security.loginLogs.load.failure': '无法加载登录日志。',
+  'pages.security.loginLogs.load.liveFailure': '无法加载实时登录日志',
+  'pages.security.loginLogs.loginType.forceLogout': '强制退出',
+  'pages.security.loginLogs.loginType.mobile': '手机号登录',
+  'pages.security.loginLogs.loginType.selfLogout': '主动退出',
+  'pages.security.loginLogs.loginType.sms': '短信登录',
+  'pages.security.loginLogs.loginType.social': '社交登录',
+  'pages.security.loginLogs.loginType.username': '用户名登录',
+  'pages.security.loginLogs.messages.cleaned': '已清理 {count} 条登录日志',
+  'pages.security.loginLogs.messages.deleted': '已删除 {count} 条登录日志',
+  'pages.security.loginLogs.messages.geoipLookup': 'GeoIP 查询：{location}',
+  'pages.security.loginLogs.messages.noActiveLockout':
+    '{username} 当前没有锁定状态',
+  'pages.security.loginLogs.messages.unlocked': '{username} 已解锁',
+  'pages.security.loginLogs.permission.deleteRequired':
+    '需要 core:login-log:delete 权限',
+  'pages.security.loginLogs.permission.manageRequired':
+    '需要 core:login-log:manage 权限',
+  'pages.security.loginLogs.policy.auditTrail': '登录审计、解锁和清理',
+  'pages.security.loginLogs.result.accountLocked': '账号锁定',
+  'pages.security.loginLogs.result.badCredentials': '凭证错误',
+  'pages.security.loginLogs.result.captchaError': '验证码错误',
+  'pages.security.loginLogs.result.captchaMissing': '验证码不存在',
+  'pages.security.loginLogs.result.success': '成功',
+  'pages.security.loginLogs.result.userDisabled': '用户停用',
+  'pages.security.loginLogs.search.placeholder': '搜索登录日志',
+  'pages.security.loginLogs.serverFilters.actorAria':
+    '登录操作者服务端筛选',
+  'pages.security.loginLogs.serverFilters.createdFromAria':
+    '登录创建起始时间服务端筛选',
+  'pages.security.loginLogs.serverFilters.createdToAria':
+    '登录创建结束时间服务端筛选',
+  'pages.security.loginLogs.serverFilters.ipAria': '登录 IP 服务端筛选',
+  'pages.security.loginLogs.serverFilters.locationAria':
+    '登录地点服务端筛选',
+  'pages.security.loginLogs.serverFilters.resultAria': '登录结果服务端筛选',
+  'pages.security.loginLogs.serverFilters.typeAria': '登录类型服务端筛选',
+  'pages.security.loginLogs.serverFilters.usernameAria':
+    '登录用户名服务端筛选',
+  'pages.security.loginLogs.title': '登录日志',
+  'pages.security.operationLogs.actions.applyServerFilters':
+    '应用服务端筛选',
+  'pages.security.operationLogs.actions.applyServerFiltersAria':
+    '应用操作日志服务端筛选',
+  'pages.security.operationLogs.actions.cleanExpired': '清理过期',
+  'pages.security.operationLogs.actions.cleanExpiredLogs': '清理过期操作日志',
+  'pages.security.operationLogs.actions.column': '操作',
+  'pages.security.operationLogs.actions.deleteSelected': '删除选中项',
+  'pages.security.operationLogs.actions.deleteSelectedLogs':
+    '删除选中操作日志',
+  'pages.security.operationLogs.actions.detail': '详情',
+  'pages.security.operationLogs.actions.reload': '刷新',
+  'pages.security.operationLogs.actions.reloadAria': '刷新操作日志',
+  'pages.security.operationLogs.actions.resetServerFilters':
+    '重置服务端筛选',
+  'pages.security.operationLogs.actions.resetServerFiltersAria':
+    '重置操作日志服务端筛选',
+  'pages.security.operationLogs.actions.viewAria': '查看操作日志 {id}',
+  'pages.security.operationLogs.confirm.cleanExpired':
+    '确认清理早于 {days} 天的操作日志？',
+  'pages.security.operationLogs.confirm.cleanExpiredContent':
+    '近期操作日志和清理审计记录会保留。',
+  'pages.security.operationLogs.confirm.deleteSelected':
+    '确认删除选中的 {count} 条操作日志？',
+  'pages.security.operationLogs.confirm.deleteSelectedContent':
+    '选中的操作日志记录会被永久删除。',
+  'pages.security.operationLogs.detail.title': '操作日志详情',
+  'pages.security.operationLogs.duration.ms': '{value} ms',
+  'pages.security.operationLogs.fields.action': '动作',
+  'pages.security.operationLogs.fields.actor': '操作者',
+  'pages.security.operationLogs.fields.duration': '耗时',
+  'pages.security.operationLogs.fields.durationMs': '耗时 ms',
+  'pages.security.operationLogs.fields.id': 'ID',
+  'pages.security.operationLogs.fields.ip': 'IP',
+  'pages.security.operationLogs.fields.location': '地点',
+  'pages.security.operationLogs.fields.metadata': '元数据',
+  'pages.security.operationLogs.fields.method': '方法',
+  'pages.security.operationLogs.fields.path': '路径',
+  'pages.security.operationLogs.fields.requestId': '请求 ID',
+  'pages.security.operationLogs.fields.resource': '资源',
+  'pages.security.operationLogs.fields.resourceId': '资源 ID',
+  'pages.security.operationLogs.fields.status': '状态',
+  'pages.security.operationLogs.fields.statusCode': '状态码',
+  'pages.security.operationLogs.fields.time': '时间',
+  'pages.security.operationLogs.fields.userAgent': 'User Agent',
+  'pages.security.operationLogs.filters.max': '最大',
+  'pages.security.operationLogs.filters.min': '最小',
+  'pages.security.operationLogs.load.failure': '无法加载操作日志。',
+  'pages.security.operationLogs.load.liveFailure': '无法加载实时操作日志',
+  'pages.security.operationLogs.messages.cleaned':
+    '已清理 {cutoff} 之前的 {count} 条操作日志',
+  'pages.security.operationLogs.messages.deleted':
+    '已删除 {count} 条操作日志',
+  'pages.security.operationLogs.permission.deleteRequired':
+    '需要 core:audit-log:delete 权限',
+  'pages.security.operationLogs.policy.retention': '保留策略',
+  'pages.security.operationLogs.search.placeholder': '搜索操作日志',
+  'pages.security.operationLogs.serverFilters.actionAria':
+    '操作动作服务端筛选',
+  'pages.security.operationLogs.serverFilters.actorAria':
+    '操作操作者服务端筛选',
+  'pages.security.operationLogs.serverFilters.createdFromAria':
+    '操作创建起始时间服务端筛选',
+  'pages.security.operationLogs.serverFilters.createdToAria':
+    '操作创建结束时间服务端筛选',
+  'pages.security.operationLogs.serverFilters.locationAria':
+    '操作地点服务端筛选',
+  'pages.security.operationLogs.serverFilters.maxDurationAria':
+    '操作最大耗时服务端筛选',
+  'pages.security.operationLogs.serverFilters.minDurationAria':
+    '操作最小耗时服务端筛选',
+  'pages.security.operationLogs.serverFilters.resourceAria':
+    '操作资源服务端筛选',
+  'pages.security.operationLogs.serverFilters.statusAria':
+    '操作状态服务端筛选',
+  'pages.security.operationLogs.status.error': '错误',
+  'pages.security.operationLogs.status.success': '成功',
+  'pages.security.operationLogs.title': '操作日志',
+  'pages.security.operationLogs.units.days': '天',
+  'pages.security.operationLogs.units.ms': 'ms',
 };
