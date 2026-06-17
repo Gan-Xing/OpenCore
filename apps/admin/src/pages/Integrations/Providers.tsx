@@ -3,7 +3,7 @@ import {
   ProTable,
   type ProColumns,
 } from '@ant-design/pro-components';
-import { useAccess } from '@umijs/max';
+import { useAccess, useIntl } from '@umijs/max';
 import type {
   IntegrationProviderAuditLogSummary,
   IntegrationProviderDiagnosticsSummary,
@@ -66,20 +66,6 @@ const signedCallbackContract = {
   smsPath: '/api/integrations/sms/outbox/callback',
   canonicalPayload: 'channel\\nproviderCode\\nmessageId\\nstatus\\nerror',
 };
-const exportColumns: CurrentPageExportColumn<IntegrationProviderSummary>[] = [
-  { title: 'Code', dataIndex: 'code' },
-  { title: 'Type', dataIndex: 'type' },
-  { title: 'Name', dataIndex: 'name' },
-  { title: 'Enabled', dataIndex: 'enabled' },
-  { title: 'Config Version', dataIndex: 'configVersion' },
-  { title: 'Secret Ref Validation', dataIndex: 'secretRefStatus' },
-  { title: 'Last Provider Test', dataIndex: 'lastTestStatus' },
-  { title: 'Health', dataIndex: 'healthStatus' },
-  { title: 'Last Checked At', dataIndex: 'lastCheckedAt' },
-  { title: 'Last Tested At', dataIndex: 'lastTestedAt' },
-  { title: 'Secret Ref', dataIndex: 'secretRef', sensitive: true },
-  { title: 'Config', dataIndex: 'config', sensitive: true },
-];
 const searchFields: CurrentPageSearchField<IntegrationProviderSummary>[] = [
   'code',
   'type',
@@ -88,6 +74,7 @@ const searchFields: CurrentPageSearchField<IntegrationProviderSummary>[] = [
 ];
 
 export default function ProvidersPage() {
+  const intl = useIntl();
   const access = useAccess();
   const canManageIntegrationProviders = Boolean(
     access.canManageIntegrationProviders,
@@ -126,48 +113,218 @@ export default function ProvidersPage() {
       ).length,
     [healthAudit],
   );
-  const filterOptions: CurrentPageFilterOption<IntegrationProviderSummary>[] =
-    useMemo(
-      () => [
-        {
-          key: 'type',
-          options: createCurrentPageFilterOptions(rows, 'type'),
-          placeholder: 'Type',
-          predicate: (record, value) => record.type === value,
-        },
-        {
-          key: 'enabled',
-          options: [
-            { label: 'enabled', value: 'true' },
-            { label: 'disabled', value: 'false' },
-          ],
-          placeholder: 'Enabled',
-          predicate: (record, value) => record.enabled === (value === 'true'),
-        },
-        {
-          key: 'healthStatus',
-          options: createCurrentPageFilterOptions(rows, 'healthStatus'),
-          placeholder: 'Health',
-          predicate: (record, value) => record.healthStatus === value,
-        },
-        {
-          key: 'secretRefStatus',
-          options: createCurrentPageFilterOptions(rows, 'secretRefStatus'),
-          placeholder: 'Secret Ref',
-          predicate: (record, value) => record.secretRefStatus === value,
-        },
+  const formatMessage = useCallback(
+    (
+      id: string,
+      defaultMessage: string,
+      values?: Record<string, number | string>,
+    ) =>
+      values
+        ? intl.formatMessage({ id, defaultMessage }, values)
+        : intl.formatMessage({ id, defaultMessage }),
+    [intl],
+  );
+  const statusLabels = {
+    disabled: formatMessage(
+      'pages.integrations.providers.status.disabled',
+      'disabled',
+    ),
+    enabled: formatMessage(
+      'pages.integrations.providers.status.enabled',
+      'enabled',
+    ),
+  };
+  const outboxPolicyLabels = {
+    blocked: formatMessage(
+      'pages.integrations.providers.outboxPolicy.blocked',
+      'enqueue blocked',
+    ),
+    allowed: formatMessage(
+      'pages.integrations.providers.outboxPolicy.allowed',
+      'enqueue allowed',
+    ),
+  };
+  const configAuditLabels = {
+    needsVault: formatMessage(
+      'pages.integrations.providers.configAudit.needsVault',
+      'needs vault',
+    ),
+    vaultBacked: formatMessage(
+      'pages.integrations.providers.configAudit.vaultBacked',
+      'vault-backed',
+    ),
+  };
+  const staticValueLabels = {
+    allowlisted: formatMessage(
+      'pages.integrations.providers.static.allowlisted',
+      'allowlisted',
+    ),
+    httpSecretInjection: formatMessage(
+      'pages.integrations.providers.static.httpSecretInjection',
+      'header/query/body',
+    ),
+    mailSmtpAdapter: formatMessage(
+      'pages.integrations.providers.static.mailSmtpAdapter',
+      'vault-backed',
+    ),
+    providerDiagnostics: formatMessage(
+      'pages.integrations.providers.static.providerDiagnostics',
+      'read-only',
+    ),
+    smsHttpAdapterDetail: formatMessage(
+      'pages.integrations.providers.static.smsHttpAdapterDetail',
+      'allowlisted endpoint + status contract',
+    ),
+    httpSecretInjectionDetail: formatMessage(
+      'pages.integrations.providers.static.httpSecretInjectionDetail',
+      'secretRef -> header/query/body',
+    ),
+    mailSmtpAdapterDetail: formatMessage(
+      'pages.integrations.providers.static.mailSmtpAdapterDetail',
+      'secretRef -> config vault + SMTP send',
+    ),
+    none: formatMessage('pages.integrations.providers.static.none', 'none'),
+    notConfigured: formatMessage(
+      'pages.integrations.providers.static.notConfigured',
+      'not configured',
+    ),
+    redacted: formatMessage(
+      'pages.integrations.providers.static.redacted',
+      '[redacted]',
+    ),
+  };
+  const filterOptions: CurrentPageFilterOption<IntegrationProviderSummary>[] = [
+    {
+      key: 'type',
+      options: createCurrentPageFilterOptions(rows, 'type'),
+      placeholder: formatMessage(
+        'pages.integrations.providers.fields.type',
+        'Type',
+      ),
+      predicate: (record, value) => record.type === value,
+    },
+    {
+      key: 'enabled',
+      options: [
+        { label: statusLabels.enabled, value: 'true' },
+        { label: statusLabels.disabled, value: 'false' },
       ],
-      [rows],
-    );
+      placeholder: formatMessage(
+        'pages.integrations.providers.fields.enabled',
+        'Enabled',
+      ),
+      predicate: (record, value) => record.enabled === (value === 'true'),
+    },
+    {
+      key: 'healthStatus',
+      options: createCurrentPageFilterOptions(rows, 'healthStatus'),
+      placeholder: formatMessage(
+        'pages.integrations.providers.fields.health',
+        'Health',
+      ),
+      predicate: (record, value) => record.healthStatus === value,
+    },
+    {
+      key: 'secretRefStatus',
+      options: createCurrentPageFilterOptions(rows, 'secretRefStatus'),
+      placeholder: formatMessage(
+        'pages.integrations.providers.fields.secretRef',
+        'Secret Ref',
+      ),
+      predicate: (record, value) => record.secretRefStatus === value,
+    },
+  ];
+  const exportColumns: CurrentPageExportColumn<IntegrationProviderSummary>[] = [
+    {
+      title: formatMessage('pages.integrations.providers.fields.code', 'Code'),
+      dataIndex: 'code',
+    },
+    {
+      title: formatMessage('pages.integrations.providers.fields.type', 'Type'),
+      dataIndex: 'type',
+    },
+    {
+      title: formatMessage('pages.integrations.providers.fields.name', 'Name'),
+      dataIndex: 'name',
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.providers.fields.enabled',
+        'Enabled',
+      ),
+      dataIndex: 'enabled',
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.providers.fields.configVersion',
+        'Config Version',
+      ),
+      dataIndex: 'configVersion',
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.providers.fields.secretRefValidation',
+        'Secret Ref Validation',
+      ),
+      dataIndex: 'secretRefStatus',
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.providers.fields.lastProviderTest',
+        'Last Provider Test',
+      ),
+      dataIndex: 'lastTestStatus',
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.providers.fields.health',
+        'Health',
+      ),
+      dataIndex: 'healthStatus',
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.providers.fields.lastCheckedAt',
+        'Last Checked At',
+      ),
+      dataIndex: 'lastCheckedAt',
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.providers.fields.lastTestedAt',
+        'Last Tested At',
+      ),
+      dataIndex: 'lastTestedAt',
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.providers.fields.secretRef',
+        'Secret Ref',
+      ),
+      dataIndex: 'secretRef',
+      sensitive: true,
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.providers.fields.config',
+        'Config',
+      ),
+      dataIndex: 'config',
+      sensitive: true,
+    },
+  ];
   const selectedSmtpTlsPolicy =
     selected?.type === 'mail'
-      ? String(selected.config.tlsMode ?? 'not configured')
+      ? String(selected.config.tlsMode ?? staticValueLabels.notConfigured)
       : undefined;
   const { filteredRows, toolbar: filterToolbar } =
     useCurrentPageFilters<IntegrationProviderSummary>({
       rows,
       searchFields,
-      searchPlaceholder: 'Search providers',
+      searchPlaceholder: formatMessage(
+        'pages.integrations.providers.search.placeholder',
+        'Search providers',
+      ),
       selectFilters: filterOptions,
     });
 
@@ -187,12 +344,15 @@ export default function ProvidersPage() {
       setLoadError(
         error instanceof Error
           ? error.message
-          : 'Unable to load integration health audit.',
+          : formatMessage(
+              'pages.integrations.providers.load.failure',
+              'Unable to load integration health audit.',
+            ),
       );
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [formatMessage]);
 
   useEffect(() => {
     void loadHealthAudit();
@@ -217,7 +377,10 @@ export default function ProvidersPage() {
       message.error(
         error instanceof Error
           ? error.message
-          : 'Unable to load live provider diagnostics.',
+          : formatMessage(
+              'pages.integrations.providers.load.diagnosticsFailure',
+              'Unable to load live provider diagnostics.',
+            ),
       );
     } finally {
       setDetailLoadingCode(undefined);
@@ -230,13 +393,23 @@ export default function ProvidersPage() {
       const result = await testOpenCoreIntegrationProvider(code);
       setSelected(result.provider);
       setSelectedTestResult(result);
-      message.success('Provider Test completed.');
+      message.success(
+        formatMessage(
+          'pages.integrations.providers.messages.testCompleted',
+          'Provider Test completed.',
+        ),
+      );
       await loadHealthAudit();
       await openDetail(code);
       setSelectedTestResult(result);
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'Unable to run Provider Test.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.integrations.providers.messages.testFailure',
+              'Unable to run Provider Test.',
+            ),
       );
     } finally {
       setProviderTestingCode(undefined);
@@ -251,7 +424,15 @@ export default function ProvidersPage() {
         : await enableOpenCoreIntegrationProvider(record.code);
       setSelected(nextProvider);
       message.success(
-        record.enabled ? 'Provider disabled.' : 'Provider enabled.',
+        record.enabled
+          ? formatMessage(
+              'pages.integrations.providers.messages.disabled',
+              'Provider disabled.',
+            )
+          : formatMessage(
+              'pages.integrations.providers.messages.enabled',
+              'Provider enabled.',
+            ),
       );
       await loadHealthAudit();
       await openDetail(record.code);
@@ -259,7 +440,10 @@ export default function ProvidersPage() {
       message.error(
         error instanceof Error
           ? error.message
-          : 'Unable to update provider state.',
+          : formatMessage(
+              'pages.integrations.providers.messages.updateFailure',
+              'Unable to update provider state.',
+            ),
       );
     } finally {
       setProviderMutatingCode(undefined);
@@ -268,7 +452,7 @@ export default function ProvidersPage() {
 
   const columns: ProColumns<IntegrationProviderSummary>[] = [
     {
-      title: 'Code',
+      title: formatMessage('pages.integrations.providers.fields.code', 'Code'),
       dataIndex: 'code',
       render: (_, record) => (
         <Typography.Link onClick={() => void openDetail(record.code)}>
@@ -276,21 +460,38 @@ export default function ProvidersPage() {
         </Typography.Link>
       ),
     },
-    { title: 'Type', dataIndex: 'type' },
-    { title: 'Name', dataIndex: 'name' },
     {
-      title: 'Config Version',
+      title: formatMessage('pages.integrations.providers.fields.type', 'Type'),
+      dataIndex: 'type',
+    },
+    {
+      title: formatMessage('pages.integrations.providers.fields.name', 'Name'),
+      dataIndex: 'name',
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.providers.fields.configVersion',
+        'Config Version',
+      ),
       dataIndex: 'configVersion',
       render: (_, record) => <Tag>v{record.configVersion}</Tag>,
     },
     {
-      title: 'Secret Ref',
+      title: formatMessage(
+        'pages.integrations.providers.fields.secretRef',
+        'Secret Ref',
+      ),
       render: () => (
-        <Typography.Text type="secondary">[redacted]</Typography.Text>
+        <Typography.Text type="secondary">
+          {staticValueLabels.redacted}
+        </Typography.Text>
       ),
     },
     {
-      title: 'Readiness',
+      title: formatMessage(
+        'pages.integrations.providers.fields.readiness',
+        'Readiness',
+      ),
       render: (_, record) => {
         const readiness = diagnosticsByCode.get(record.code)?.readiness;
         return (
@@ -299,7 +500,10 @@ export default function ProvidersPage() {
       },
     },
     {
-      title: 'Secret Ref Validation',
+      title: formatMessage(
+        'pages.integrations.providers.fields.secretRefValidation',
+        'Secret Ref Validation',
+      ),
       render: (_, record) => (
         <Tag
           color={
@@ -316,42 +520,63 @@ export default function ProvidersPage() {
       ),
     },
     {
-      title: 'Last Provider Test',
+      title: formatMessage(
+        'pages.integrations.providers.fields.lastProviderTest',
+        'Last Provider Test',
+      ),
       render: (_, record) => (
         <Typography.Text
           type={record.lastTestStatus === 'failed' ? 'danger' : 'secondary'}
         >
-          {record.lastTestStatus ?? 'not_run'}
+          {record.lastTestStatus ??
+            formatMessage(
+              'pages.integrations.providers.testStatus.notRun',
+              'not_run',
+            )}
         </Typography.Text>
       ),
     },
     {
-      title: 'Failure History',
+      title: formatMessage(
+        'pages.integrations.providers.fields.failureHistory',
+        'Failure History',
+      ),
       render: (_, record) => {
         const diagnostics = diagnosticsByCode.get(record.code);
         return (
           <Typography.Text
             type={diagnostics?.outbox.failed ? 'danger' : 'secondary'}
           >
-            {diagnostics?.outbox.lastFailure?.id ?? 'none'}
+            {diagnostics?.outbox.lastFailure?.id ?? staticValueLabels.none}
           </Typography.Text>
         );
       },
     },
     {
-      title: 'Health',
+      title: formatMessage(
+        'pages.integrations.providers.fields.health',
+        'Health',
+      ),
       render: (_, record) => <Tag color="blue">{record.healthStatus}</Tag>,
     },
     {
-      title: 'Outbox Policy',
+      title: formatMessage(
+        'pages.integrations.providers.fields.outboxPolicy',
+        'Outbox Policy',
+      ),
       render: (_, record) => (
         <Tag color={record.enabled ? 'green' : 'default'}>
-          {record.enabled ? 'enqueue allowed' : 'enqueue blocked'}
+          {record.enabled
+            ? outboxPolicyLabels.allowed
+            : outboxPolicyLabels.blocked}
         </Tag>
       ),
     },
     {
-      title: 'Action',
+      title: formatMessage(
+        'pages.integrations.providers.actions.column',
+        'Action',
+      ),
       valueType: 'option',
       render: (_, record) => (
         <Space size={4}>
@@ -361,7 +586,10 @@ export default function ProvidersPage() {
             size="small"
             type="link"
           >
-            Detail
+            {formatMessage(
+              'pages.integrations.providers.actions.detail',
+              'Detail',
+            )}
           </Button>
           <Button
             disabled={!canManageIntegrationProviders}
@@ -370,7 +598,10 @@ export default function ProvidersPage() {
             size="small"
             type="link"
           >
-            Provider Test
+            {formatMessage(
+              'pages.integrations.providers.actions.providerTest',
+              'Provider Test',
+            )}
           </Button>
           <Button
             disabled={!canUpdateIntegrationProviders}
@@ -379,7 +610,15 @@ export default function ProvidersPage() {
             size="small"
             type="link"
           >
-            {record.enabled ? 'Disable' : 'Enable'}
+            {record.enabled
+              ? formatMessage(
+                  'pages.integrations.providers.actions.disable',
+                  'Disable',
+                )
+              : formatMessage(
+                  'pages.integrations.providers.actions.enable',
+                  'Enable',
+                )}
           </Button>
         </Space>
       ),
@@ -387,58 +626,138 @@ export default function ProvidersPage() {
   ];
 
   return (
-    <PageContainer title="Providers" subTitle="S12 Integrations">
+    <PageContainer
+      title={formatMessage('menu.integrations.providers', 'Providers')}
+      subTitle={formatMessage('pages.integrations.section', 'S12 Integrations')}
+    >
       {loadError ? (
         <Alert
           showIcon
           style={{ marginBottom: 16 }}
           type="error"
-          message="Unable to load live Integration Health Audit data"
+          message={formatMessage(
+            'pages.integrations.providers.load.liveFailure',
+            'Unable to load live Integration Health Audit data',
+          )}
           description={loadError}
           action={
-            <Button onClick={() => void loadHealthAudit()}>Reload</Button>
+            <Button onClick={() => void loadHealthAudit()}>
+              {formatMessage(
+                'pages.integrations.providers.actions.reload',
+                'Reload',
+              )}
+            </Button>
           }
         />
       ) : null}
       <Space size="large" style={{ marginBottom: 16 }} wrap>
         <Typography.Text type="secondary">
-          Live Integration Health Audit
+          {formatMessage(
+            'pages.integrations.providers.summary.liveHealthAudit',
+            'Live Integration Health Audit',
+          )}
         </Typography.Text>
         <Statistic
-          title="Enabled providers"
+          title={formatMessage(
+            'pages.integrations.providers.summary.enabledProviders',
+            'Enabled providers',
+          )}
           value={rows.filter((provider) => provider.enabled).length}
         />
         <Statistic
-          title="Health Audit"
+          title={formatMessage(
+            'pages.integrations.providers.summary.healthAudit',
+            'Health Audit',
+          )}
           value={healthAudit.totals.blocked}
           suffix={`/ ${healthAudit.totals.total}`}
         />
-        <Statistic title="Queued outbox" value={healthAudit.totals.queued} />
-        <Statistic title="Failed outbox" value={healthAudit.totals.failed} />
         <Statistic
-          title="Config Audit"
+          title={formatMessage(
+            'pages.integrations.providers.summary.queuedOutbox',
+            'Queued outbox',
+          )}
+          value={healthAudit.totals.queued}
+        />
+        <Statistic
+          title={formatMessage(
+            'pages.integrations.providers.summary.failedOutbox',
+            'Failed outbox',
+          )}
+          value={healthAudit.totals.failed}
+        />
+        <Statistic
+          title={formatMessage(
+            'pages.integrations.providers.summary.configAudit',
+            'Config Audit',
+          )}
           value={healthAudit.totals.configVaultBacked}
           suffix={`/ ${healthAudit.totals.total}`}
         />
         <Statistic
-          title="Provider Test"
+          title={formatMessage(
+            'pages.integrations.providers.summary.providerTest',
+            'Provider Test',
+          )}
           value={rows.filter((provider) => provider.lastTestStatus).length}
           suffix={`/ ${rows.length}`}
         />
         <Statistic
-          title="Failure History"
+          title={formatMessage(
+            'pages.integrations.providers.summary.failureHistory',
+            'Failure History',
+          )}
           value={healthAudit.totals.retryableFailed}
         />
         <Statistic
-          title="Signed callback contract"
+          title={formatMessage(
+            'pages.integrations.providers.summary.signedCallbackContract',
+            'Signed callback contract',
+          )}
           value={signedCallbackContract.algorithm}
         />
-        <Statistic title="SMS HTTP adapter" value="allowlisted" />
-        <Statistic title="HTTP Secret Injection" value="header/query/body" />
-        <Statistic title="Mail SMTP adapter" value="vault-backed" />
-        <Statistic title="SMTP TLS Policy" value="tlsMode" />
-        <Statistic title="Provider Diagnostics" value="read-only" />
-        <Statistic title="Design topics" value={designTopicCount} />
+        <Statistic
+          title={formatMessage(
+            'pages.integrations.providers.summary.smsHttpAdapter',
+            'SMS HTTP adapter',
+          )}
+          value={staticValueLabels.allowlisted}
+        />
+        <Statistic
+          title={formatMessage(
+            'pages.integrations.providers.summary.httpSecretInjection',
+            'HTTP Secret Injection',
+          )}
+          value={staticValueLabels.httpSecretInjection}
+        />
+        <Statistic
+          title={formatMessage(
+            'pages.integrations.providers.summary.mailSmtpAdapter',
+            'Mail SMTP adapter',
+          )}
+          value={staticValueLabels.mailSmtpAdapter}
+        />
+        <Statistic
+          title={formatMessage(
+            'pages.integrations.providers.summary.smtpTlsPolicy',
+            'SMTP TLS Policy',
+          )}
+          value="tlsMode"
+        />
+        <Statistic
+          title={formatMessage(
+            'pages.integrations.providers.summary.providerDiagnostics',
+            'Provider Diagnostics',
+          )}
+          value={staticValueLabels.providerDiagnostics}
+        />
+        <Statistic
+          title={formatMessage(
+            'pages.integrations.providers.summary.designTopics',
+            'Design topics',
+          )}
+          value={designTopicCount}
+        />
       </Space>
       <ProTable<IntegrationProviderSummary>
         rowKey="code"
@@ -460,114 +779,253 @@ export default function ProvidersPage() {
       />
       <ReadOnlyDetailDrawer
         fields={[
-          { label: 'Code', value: selected?.code },
-          { label: 'Type', value: selected?.type },
-          { label: 'Name', value: selected?.name },
-          { label: 'Config Version', value: selected?.configVersion },
           {
-            label: 'Enabled',
-            value: selected?.enabled ? 'enabled' : 'disabled',
+            label: formatMessage(
+              'pages.integrations.providers.fields.code',
+              'Code',
+            ),
+            value: selected?.code,
           },
-          { label: 'Secret Ref', value: selected?.secretRef, sensitive: true },
           {
-            label: 'Secret Ref Validation',
+            label: formatMessage(
+              'pages.integrations.providers.fields.type',
+              'Type',
+            ),
+            value: selected?.type,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.providers.fields.name',
+              'Name',
+            ),
+            value: selected?.name,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.providers.fields.configVersion',
+              'Config Version',
+            ),
+            value: selected?.configVersion,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.providers.fields.enabled',
+              'Enabled',
+            ),
+            value: selected?.enabled
+              ? statusLabels.enabled
+              : statusLabels.disabled,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.providers.fields.secretRef',
+              'Secret Ref',
+            ),
+            value: selected?.secretRef,
+            sensitive: true,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.providers.fields.secretRefValidation',
+              'Secret Ref Validation',
+            ),
             value: selected?.secretRefStatus,
           },
-          { label: 'Health', value: selected?.healthStatus },
-          { label: 'Last Checked At', value: selected?.lastCheckedAt },
-          { label: 'Last Provider Test', value: selected?.lastTestStatus },
-          { label: 'Last Provider Test At', value: selected?.lastTestedAt },
           {
-            label: 'Last Provider Test Message',
+            label: formatMessage(
+              'pages.integrations.providers.fields.health',
+              'Health',
+            ),
+            value: selected?.healthStatus,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.providers.fields.lastCheckedAt',
+              'Last Checked At',
+            ),
+            value: selected?.lastCheckedAt,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.providers.fields.lastProviderTest',
+              'Last Provider Test',
+            ),
+            value: selected?.lastTestStatus,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.providers.fields.lastProviderTestAt',
+              'Last Provider Test At',
+            ),
+            value: selected?.lastTestedAt,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.providers.fields.lastProviderTestMessage',
+              'Last Provider Test Message',
+            ),
             value: selected?.lastTestMessage,
           },
           {
-            label: 'Diagnostics Readiness',
+            label: formatMessage(
+              'pages.integrations.providers.fields.diagnosticsReadiness',
+              'Diagnostics Readiness',
+            ),
             value: selectedDiagnostics?.readiness,
           },
           {
-            label: 'Health Audit Generated At',
+            label: formatMessage(
+              'pages.integrations.providers.fields.healthAuditGeneratedAt',
+              'Health Audit Generated At',
+            ),
             value: healthAudit.generatedAt,
           },
           {
-            label: 'Config Audit',
+            label: formatMessage(
+              'pages.integrations.providers.fields.configAudit',
+              'Config Audit',
+            ),
             value: selected?.secretRef.startsWith('secret://config/')
-              ? 'vault-backed'
-              : 'needs vault',
+              ? configAuditLabels.vaultBacked
+              : configAuditLabels.needsVault,
           },
           {
-            label: 'Failure History',
-            value: selectedDiagnostics?.outbox.lastFailure?.id ?? 'none',
+            label: formatMessage(
+              'pages.integrations.providers.fields.failureHistory',
+              'Failure History',
+            ),
+            value:
+              selectedDiagnostics?.outbox.lastFailure?.id ??
+              staticValueLabels.none,
           },
           {
-            label: 'Diagnostics Channel',
+            label: formatMessage(
+              'pages.integrations.providers.fields.diagnosticsChannel',
+              'Diagnostics Channel',
+            ),
             value: selectedDiagnostics?.channel,
           },
           {
-            label: 'Outbox Failed',
+            label: formatMessage(
+              'pages.integrations.providers.fields.outboxFailed',
+              'Outbox Failed',
+            ),
             value: selectedDiagnostics?.outbox.failed,
           },
           {
-            label: 'Retryable Failed',
+            label: formatMessage(
+              'pages.integrations.providers.fields.retryableFailed',
+              'Retryable Failed',
+            ),
             value: selectedDiagnostics?.outbox.retryableFailed,
           },
           {
-            label: 'Outbox Policy',
-            value: selected?.enabled ? 'enqueue allowed' : 'enqueue blocked',
+            label: formatMessage(
+              'pages.integrations.providers.fields.outboxPolicy',
+              'Outbox Policy',
+            ),
+            value: selected?.enabled
+              ? outboxPolicyLabels.allowed
+              : outboxPolicyLabels.blocked,
           },
           {
-            label: 'Signed Callback Contract',
+            label: formatMessage(
+              'pages.integrations.providers.fields.signedCallbackContract',
+              'Signed Callback Contract',
+            ),
             value: signedCallbackContract.algorithm,
           },
           {
-            label: 'SMS HTTP Adapter',
-            value: 'allowlisted endpoint + status contract',
+            label: formatMessage(
+              'pages.integrations.providers.fields.smsHttpAdapter',
+              'SMS HTTP Adapter',
+            ),
+            value: staticValueLabels.smsHttpAdapterDetail,
           },
           {
-            label: 'HTTP Secret Injection',
-            value: 'secretRef -> header/query/body',
+            label: formatMessage(
+              'pages.integrations.providers.fields.httpSecretInjection',
+              'HTTP Secret Injection',
+            ),
+            value: staticValueLabels.httpSecretInjectionDetail,
           },
           {
-            label: 'Mail SMTP Adapter',
-            value: 'secretRef -> config vault + SMTP send',
+            label: formatMessage(
+              'pages.integrations.providers.fields.mailSmtpAdapter',
+              'Mail SMTP Adapter',
+            ),
+            value: staticValueLabels.mailSmtpAdapterDetail,
           },
           {
-            label: 'SMTP TLS Policy',
+            label: formatMessage(
+              'pages.integrations.providers.fields.smtpTlsPolicy',
+              'SMTP TLS Policy',
+            ),
             value: selectedSmtpTlsPolicy,
           },
           {
-            label: 'Mail Callback Path',
+            label: formatMessage(
+              'pages.integrations.providers.fields.mailCallbackPath',
+              'Mail Callback Path',
+            ),
             value: signedCallbackContract.mailPath,
           },
           {
-            label: 'SMS Callback Path',
+            label: formatMessage(
+              'pages.integrations.providers.fields.smsCallbackPath',
+              'SMS Callback Path',
+            ),
             value: signedCallbackContract.smsPath,
           },
           {
-            label: 'Live Outbox Total',
+            label: formatMessage(
+              'pages.integrations.providers.fields.liveOutboxTotal',
+              'Live Outbox Total',
+            ),
             value: selectedDiagnostics?.outbox.total,
           },
         ]}
         jsonSections={[
-          { title: 'Redacted Config', value: selected?.config ?? {} },
           {
-            title: 'Provider Test',
+            title: formatMessage(
+              'pages.integrations.providers.json.redactedConfig',
+              'Redacted Config',
+            ),
+            value: selected?.config ?? {},
+          },
+          {
+            title: formatMessage(
+              'pages.integrations.providers.json.providerTest',
+              'Provider Test',
+            ),
             value: selectedTestResult ?? {},
           },
           {
-            title: 'Provider Audit Logs',
+            title: formatMessage(
+              'pages.integrations.providers.json.providerAuditLogs',
+              'Provider Audit Logs',
+            ),
             value: selectedAuditLogs,
           },
           {
-            title: 'Signed Callback Canonical Payload',
+            title: formatMessage(
+              'pages.integrations.providers.json.signedCallbackCanonicalPayload',
+              'Signed Callback Canonical Payload',
+            ),
             value: signedCallbackContract,
           },
           {
-            title: 'Provider Diagnostics',
+            title: formatMessage(
+              'pages.integrations.providers.json.providerDiagnostics',
+              'Provider Diagnostics',
+            ),
             value: selectedDiagnostics ?? {},
           },
           {
-            title: 'Live Outbox Summary',
+            title: formatMessage(
+              'pages.integrations.providers.json.liveOutboxSummary',
+              'Live Outbox Summary',
+            ),
             value: selectedDiagnostics?.outbox ?? {},
           },
         ]}
@@ -578,7 +1036,13 @@ export default function ProvidersPage() {
           setSelectedTestResult(undefined);
         }}
         open={Boolean(selected)}
-        title={selected?.name ?? 'Provider Detail'}
+        title={
+          selected?.name ??
+          formatMessage(
+            'pages.integrations.providers.detail.title',
+            'Provider Detail',
+          )
+        }
       />
     </PageContainer>
   );

@@ -33,7 +33,8 @@ export default {
   'pages.system.posts.actions.save': '保存',
   'pages.system.posts.actions.viewAria': '查看 {name}',
   'pages.system.posts.confirm.deleteOne': '确认删除该岗位？',
-  'pages.system.posts.confirm.deleteSelected': '确认删除选中的 {count} 个岗位？',
+  'pages.system.posts.confirm.deleteSelected':
+    '确认删除选中的 {count} 个岗位？',
   'pages.system.posts.detail.loadFailure': '无法加载实时岗位详情。',
   'pages.system.posts.detail.title': '岗位详情',
   'pages.system.posts.fields.code': '岗位编码',
@@ -49,7 +50,8 @@ export default {
   'pages.system.posts.form.editTitle': '编辑岗位',
   'pages.system.posts.load.failure': '无法加载岗位列表。',
   'pages.system.posts.load.liveFailure': '无法加载实时岗位列表',
-  'pages.system.posts.messages.batchDeleted': '已删除选中岗位，影响 {count} 行。',
+  'pages.system.posts.messages.batchDeleted':
+    '已删除选中岗位，影响 {count} 行。',
   'pages.system.posts.messages.created': '岗位已创建。',
   'pages.system.posts.messages.deleted': '岗位已删除。',
   'pages.system.posts.messages.orderSaved': '岗位排序已保存。',
@@ -64,10 +66,12 @@ export default {
   'pages.system.departments.actions.column': '操作',
   'pages.system.departments.actions.create': '创建',
   'pages.system.departments.actions.createChild': '新建下级',
-  'pages.system.departments.actions.createChildAria': '在 {name} 下新建下级部门',
+  'pages.system.departments.actions.createChildAria':
+    '在 {name} 下新建下级部门',
   'pages.system.departments.actions.delete': '删除',
   'pages.system.departments.actions.deleteAria': '删除 {name}',
-  'pages.system.departments.actions.deleteChildrenLocked': '存在下级部门时不可删除',
+  'pages.system.departments.actions.deleteChildrenLocked':
+    '存在下级部门时不可删除',
   'pages.system.departments.actions.detail': '详情',
   'pages.system.departments.actions.edit': '编辑',
   'pages.system.departments.actions.editAria': '编辑 {name}',
@@ -261,8 +265,7 @@ export default {
   'pages.system.config.environment.aria': '环境覆盖 {key}',
   'pages.system.config.environment.delete': '删除覆盖',
   'pages.system.config.environment.deleted': '环境覆盖 {environment} 已删除。',
-  'pages.system.config.environment.loadFailure':
-    '无法加载实时配置环境覆盖。',
+  'pages.system.config.environment.loadFailure': '无法加载实时配置环境覆盖。',
   'pages.system.config.environment.overrides': '环境覆盖',
   'pages.system.config.environment.publicOnly': '只有公开配置可以定义环境覆盖',
   'pages.system.config.environment.save': '保存覆盖',
@@ -273,7 +276,8 @@ export default {
     '{flagName} 的公开受众规则。',
   'pages.system.config.feature.audienceName': '{name} 受众',
   'pages.system.config.feature.audienceRulesAria': '功能受众规则',
-  'pages.system.config.feature.audienceRulesInvalid': '受众规则必须是有效 JSON。',
+  'pages.system.config.feature.audienceRulesInvalid':
+    '受众规则必须是有效 JSON。',
   'pages.system.config.feature.audienceTitle': '功能受众',
   'pages.system.config.feature.audienceUpdated': '功能受众 {flagName} 已更新。',
   'pages.system.config.feature.featureFlag': '功能开关',
@@ -326,7 +330,8 @@ export default {
   'pages.system.config.form.editTitle': '编辑系统配置',
   'pages.system.config.load.failure': '无法加载实时系统配置。',
   'pages.system.config.load.liveFailure': '无法加载实时系统配置',
-  'pages.system.config.messages.batchDeleted': '选中配置已删除，共 {affected} 行。',
+  'pages.system.config.messages.batchDeleted':
+    '选中配置已删除，共 {affected} 行。',
   'pages.system.config.messages.cacheRefreshed':
     '配置缓存已刷新：{cachedKeys} 个 key。',
   'pages.system.config.messages.created': '系统配置已创建。',
@@ -387,8 +392,7 @@ export default {
   'pages.system.config.vaultStatus.kmsNotReady': 'KMS 未就绪',
   'pages.system.config.vaultStatus.kmsReady': 'KMS 已就绪',
   'pages.system.config.vaultStatus.legacy': '旧版 {count}',
-  'pages.system.config.vaultStatus.loadFailure':
-    '无法加载实时配置密钥库状态。',
+  'pages.system.config.vaultStatus.loadFailure': '无法加载实时配置密钥库状态。',
   'pages.system.config.vaultStatus.loading': '正在加载密钥库状态',
   'pages.system.config.vaultStatus.managedKmsProvider': '托管 KMS Provider',
   'pages.system.config.vaultStatus.providerNotReady':
@@ -424,8 +428,7 @@ export default {
   'pages.system.notices.actions.dispatchMailAria':
     '为 {title} 派发邮件投递记录',
   'pages.system.notices.actions.dispatchSms': '派发短信投递',
-  'pages.system.notices.actions.dispatchSmsAria':
-    '为 {title} 派发短信投递记录',
+  'pages.system.notices.actions.dispatchSmsAria': '为 {title} 派发短信投递记录',
   'pages.system.notices.actions.draftPublishOnly': '只有草稿通知可以发布',
   'pages.system.notices.actions.edit': '编辑',
   'pages.system.notices.actions.editAria': '编辑 {title}',
@@ -434,7 +437,8 @@ export default {
   'pages.system.notices.actions.executeLocalAria':
     '为 {title} 执行本地 Provider',
   'pages.system.notices.actions.executeMail': '执行邮件 outbox Provider',
-  'pages.system.notices.actions.executeMailAria': '为 {title} 执行邮件 Provider',
+  'pages.system.notices.actions.executeMailAria':
+    '为 {title} 执行邮件 Provider',
   'pages.system.notices.actions.executeSms': '执行短信 outbox Provider',
   'pages.system.notices.actions.executeSmsAria': '为 {title} 执行短信 Provider',
   'pages.system.notices.actions.new': '新建',
@@ -442,8 +446,7 @@ export default {
   'pages.system.notices.actions.publishAria': '发布 {title}',
   'pages.system.notices.actions.publishedDispatchOnly':
     '只有已发布通知可以派发',
-  'pages.system.notices.actions.publishedExecuteOnly':
-    '只有已发布通知可以执行',
+  'pages.system.notices.actions.publishedExecuteOnly': '只有已发布通知可以执行',
   'pages.system.notices.actions.readUsers': '已读用户',
   'pages.system.notices.actions.readUsersAria': '查看 {title} 的已读用户',
   'pages.system.notices.actions.refresh': '刷新',
@@ -564,8 +567,7 @@ export default {
   'pages.system.notices.outbox.actions.processQueued': '处理排队 outbox',
   'pages.system.notices.outbox.actions.retry': '重试 outbox',
   'pages.system.notices.outbox.actions.retryAria': '重试 outbox {id}',
-  'pages.system.notices.outbox.actions.retryFailedFirst':
-    '请先重试失败 outbox',
+  'pages.system.notices.outbox.actions.retryFailedFirst': '请先重试失败 outbox',
   'pages.system.notices.outbox.actions.runSchedule': '运行 outbox 调度',
   'pages.system.notices.outbox.actions.sentCannotFail':
     '已发送 outbox 消息不可标记失败',
@@ -579,8 +581,7 @@ export default {
     '{channel} outbox 已加入重试队列。',
   'pages.system.notices.outbox.messages.scheduleRun':
     'Outbox 调度已运行：重试 {retriedCount}，发送 {sentCount}，失败 {failedCount}，入队 {queuedCount}。',
-  'pages.system.notices.outbox.messages.sent':
-    '{channel} outbox 已标记发送。',
+  'pages.system.notices.outbox.messages.sent': '{channel} outbox 已标记发送。',
   'pages.system.notices.pinned.normal': '普通',
   'pages.system.notices.pinned.pinned': '置顶',
   'pages.system.notices.providerStatus.failed': '失败',
@@ -746,7 +747,8 @@ export default {
   'pages.system.users.actions.systemStatusLocked': '系统用户不可变更状态',
   'pages.system.users.actions.viewAria': '查看 {username}',
   'pages.system.users.confirm.deleteOne': '确认删除该用户？',
-  'pages.system.users.confirm.deleteSelected': '确认删除选中的 {count} 个用户？',
+  'pages.system.users.confirm.deleteSelected':
+    '确认删除选中的 {count} 个用户？',
   'pages.system.users.confirm.disable': '确认停用该用户？',
   'pages.system.users.confirm.enable': '确认启用该用户？',
   'pages.system.users.deptScope.allDepartments': '全部部门',
@@ -792,7 +794,8 @@ export default {
   'pages.system.users.messages.fileReadFailure': '文件读取失败。',
   'pages.system.users.messages.importSummary':
     '已导入 {totalRows} 行：新增 {created}，更新 {updated}，失败 {failed}。{revokedSessions}',
-  'pages.system.users.messages.importTemplateDownloaded': '用户导入模板已下载。',
+  'pages.system.users.messages.importTemplateDownloaded':
+    '用户导入模板已下载。',
   'pages.system.users.messages.passwordReset': '密码已重置。{revokedSessions}',
   'pages.system.users.messages.revokedSessions': '已撤销会话：{count}。',
   'pages.system.users.messages.selectCustomUser': '请至少选择一个自定义用户。',
@@ -949,6 +952,105 @@ export default {
     '请使用 <layer>:<resource>:<action> 格式，并选择受支持的操作。',
   'pages.system.permissions.validation.codeRequired': '请输入权限编码。',
   'pages.system.permissions.validation.titleRequired': '请输入权限名称。',
+  'pages.integrations.section': 'S12 集成',
+  'pages.integrations.providers.actions.column': '操作',
+  'pages.integrations.providers.actions.detail': '详情',
+  'pages.integrations.providers.actions.disable': '停用',
+  'pages.integrations.providers.actions.enable': '启用',
+  'pages.integrations.providers.actions.providerTest': 'Provider 测试',
+  'pages.integrations.providers.actions.reload': '刷新',
+  'pages.integrations.providers.configAudit.needsVault': '需要密钥库',
+  'pages.integrations.providers.configAudit.vaultBacked': '密钥库托管',
+  'pages.integrations.providers.detail.title': 'Provider 详情',
+  'pages.integrations.providers.fields.code': '编码',
+  'pages.integrations.providers.fields.config': '配置',
+  'pages.integrations.providers.fields.configAudit': '配置审计',
+  'pages.integrations.providers.fields.configVersion': '配置版本',
+  'pages.integrations.providers.fields.diagnosticsChannel': '诊断通道',
+  'pages.integrations.providers.fields.diagnosticsReadiness': '诊断就绪状态',
+  'pages.integrations.providers.fields.enabled': '启用',
+  'pages.integrations.providers.fields.failureHistory': '失败历史',
+  'pages.integrations.providers.fields.health': '健康状态',
+  'pages.integrations.providers.fields.healthAuditGeneratedAt':
+    '健康审计生成时间',
+  'pages.integrations.providers.fields.httpSecretInjection': 'HTTP 密钥注入',
+  'pages.integrations.providers.fields.lastCheckedAt': '最近检查时间',
+  'pages.integrations.providers.fields.lastProviderTest': '最近 Provider 测试',
+  'pages.integrations.providers.fields.lastProviderTestAt':
+    '最近 Provider 测试时间',
+  'pages.integrations.providers.fields.lastProviderTestMessage':
+    '最近 Provider 测试消息',
+  'pages.integrations.providers.fields.lastTestedAt': '最近测试时间',
+  'pages.integrations.providers.fields.liveOutboxTotal': '实时 outbox 总数',
+  'pages.integrations.providers.fields.mailCallbackPath': '邮件回调路径',
+  'pages.integrations.providers.fields.mailSmtpAdapter': '邮件 SMTP 适配器',
+  'pages.integrations.providers.fields.name': '名称',
+  'pages.integrations.providers.fields.outboxFailed': 'Outbox 失败数',
+  'pages.integrations.providers.fields.outboxPolicy': 'Outbox 策略',
+  'pages.integrations.providers.fields.readiness': '就绪状态',
+  'pages.integrations.providers.fields.retryableFailed': '可重试失败数',
+  'pages.integrations.providers.fields.secretRef': '密钥引用',
+  'pages.integrations.providers.fields.secretRefValidation': '密钥引用校验',
+  'pages.integrations.providers.fields.signedCallbackContract': '签名回调协议',
+  'pages.integrations.providers.fields.smsCallbackPath': '短信回调路径',
+  'pages.integrations.providers.fields.smsHttpAdapter': '短信 HTTP 适配器',
+  'pages.integrations.providers.fields.smtpTlsPolicy': 'SMTP TLS 策略',
+  'pages.integrations.providers.fields.type': '类型',
+  'pages.integrations.providers.json.liveOutboxSummary': '实时 outbox 摘要',
+  'pages.integrations.providers.json.providerAuditLogs': 'Provider 审计日志',
+  'pages.integrations.providers.json.providerDiagnostics': 'Provider 诊断',
+  'pages.integrations.providers.json.providerTest': 'Provider 测试',
+  'pages.integrations.providers.json.redactedConfig': '脱敏配置',
+  'pages.integrations.providers.json.signedCallbackCanonicalPayload':
+    '签名回调规范化载荷',
+  'pages.integrations.providers.load.diagnosticsFailure':
+    '无法加载实时 Provider 诊断。',
+  'pages.integrations.providers.load.failure': '无法加载集成健康审计。',
+  'pages.integrations.providers.load.liveFailure':
+    '无法加载实时集成健康审计数据',
+  'pages.integrations.providers.messages.disabled': 'Provider 已停用。',
+  'pages.integrations.providers.messages.enabled': 'Provider 已启用。',
+  'pages.integrations.providers.messages.testCompleted':
+    'Provider 测试已完成。',
+  'pages.integrations.providers.messages.testFailure':
+    '无法运行 Provider 测试。',
+  'pages.integrations.providers.messages.updateFailure':
+    '无法更新 Provider 状态。',
+  'pages.integrations.providers.outboxPolicy.allowed': '允许入队',
+  'pages.integrations.providers.outboxPolicy.blocked': '阻止入队',
+  'pages.integrations.providers.search.placeholder': '搜索 Provider',
+  'pages.integrations.providers.static.allowlisted': '已加入允许列表',
+  'pages.integrations.providers.static.httpSecretInjection':
+    'header/query/body',
+  'pages.integrations.providers.static.httpSecretInjectionDetail':
+    'secretRef -> header/query/body',
+  'pages.integrations.providers.static.mailSmtpAdapter': '密钥库托管',
+  'pages.integrations.providers.static.mailSmtpAdapterDetail':
+    'secretRef -> 配置密钥库 + SMTP 发送',
+  'pages.integrations.providers.static.none': '无',
+  'pages.integrations.providers.static.notConfigured': '未配置',
+  'pages.integrations.providers.static.providerDiagnostics': '只读',
+  'pages.integrations.providers.static.redacted': '[已脱敏]',
+  'pages.integrations.providers.static.smsHttpAdapterDetail':
+    '允许列表端点 + 状态协议',
+  'pages.integrations.providers.status.disabled': '停用',
+  'pages.integrations.providers.status.enabled': '启用',
+  'pages.integrations.providers.summary.configAudit': '配置审计',
+  'pages.integrations.providers.summary.designTopics': '设计主题',
+  'pages.integrations.providers.summary.enabledProviders': '已启用 Provider',
+  'pages.integrations.providers.summary.failedOutbox': '失败 outbox',
+  'pages.integrations.providers.summary.failureHistory': '失败历史',
+  'pages.integrations.providers.summary.healthAudit': '健康审计',
+  'pages.integrations.providers.summary.httpSecretInjection': 'HTTP 密钥注入',
+  'pages.integrations.providers.summary.liveHealthAudit': '实时集成健康审计',
+  'pages.integrations.providers.summary.mailSmtpAdapter': '邮件 SMTP 适配器',
+  'pages.integrations.providers.summary.providerDiagnostics': 'Provider 诊断',
+  'pages.integrations.providers.summary.providerTest': 'Provider 测试',
+  'pages.integrations.providers.summary.queuedOutbox': '排队 outbox',
+  'pages.integrations.providers.summary.signedCallbackContract': '签名回调协议',
+  'pages.integrations.providers.summary.smsHttpAdapter': '短信 HTTP 适配器',
+  'pages.integrations.providers.summary.smtpTlsPolicy': 'SMTP TLS 策略',
+  'pages.integrations.providers.testStatus.notRun': '未运行',
   'pages.security.common.all': '全部',
   'pages.security.loginLogs.actions.applyServerFilters': '应用服务端筛选',
   'pages.security.loginLogs.actions.applyServerFiltersAria':
@@ -1031,35 +1133,29 @@ export default {
   'pages.security.loginLogs.result.success': '成功',
   'pages.security.loginLogs.result.userDisabled': '用户停用',
   'pages.security.loginLogs.search.placeholder': '搜索登录日志',
-  'pages.security.loginLogs.serverFilters.actorAria':
-    '登录操作者服务端筛选',
+  'pages.security.loginLogs.serverFilters.actorAria': '登录操作者服务端筛选',
   'pages.security.loginLogs.serverFilters.createdFromAria':
     '登录创建起始时间服务端筛选',
   'pages.security.loginLogs.serverFilters.createdToAria':
     '登录创建结束时间服务端筛选',
   'pages.security.loginLogs.serverFilters.ipAria': '登录 IP 服务端筛选',
-  'pages.security.loginLogs.serverFilters.locationAria':
-    '登录地点服务端筛选',
+  'pages.security.loginLogs.serverFilters.locationAria': '登录地点服务端筛选',
   'pages.security.loginLogs.serverFilters.resultAria': '登录结果服务端筛选',
   'pages.security.loginLogs.serverFilters.typeAria': '登录类型服务端筛选',
-  'pages.security.loginLogs.serverFilters.usernameAria':
-    '登录用户名服务端筛选',
+  'pages.security.loginLogs.serverFilters.usernameAria': '登录用户名服务端筛选',
   'pages.security.loginLogs.title': '登录日志',
-  'pages.security.operationLogs.actions.applyServerFilters':
-    '应用服务端筛选',
+  'pages.security.operationLogs.actions.applyServerFilters': '应用服务端筛选',
   'pages.security.operationLogs.actions.applyServerFiltersAria':
     '应用操作日志服务端筛选',
   'pages.security.operationLogs.actions.cleanExpired': '清理过期',
   'pages.security.operationLogs.actions.cleanExpiredLogs': '清理过期操作日志',
   'pages.security.operationLogs.actions.column': '操作',
   'pages.security.operationLogs.actions.deleteSelected': '删除选中项',
-  'pages.security.operationLogs.actions.deleteSelectedLogs':
-    '删除选中操作日志',
+  'pages.security.operationLogs.actions.deleteSelectedLogs': '删除选中操作日志',
   'pages.security.operationLogs.actions.detail': '详情',
   'pages.security.operationLogs.actions.reload': '刷新',
   'pages.security.operationLogs.actions.reloadAria': '刷新操作日志',
-  'pages.security.operationLogs.actions.resetServerFilters':
-    '重置服务端筛选',
+  'pages.security.operationLogs.actions.resetServerFilters': '重置服务端筛选',
   'pages.security.operationLogs.actions.resetServerFiltersAria':
     '重置操作日志服务端筛选',
   'pages.security.operationLogs.actions.viewAria': '查看操作日志 {id}',
@@ -1096,14 +1192,12 @@ export default {
   'pages.security.operationLogs.load.liveFailure': '无法加载实时操作日志',
   'pages.security.operationLogs.messages.cleaned':
     '已清理 {cutoff} 之前的 {count} 条操作日志',
-  'pages.security.operationLogs.messages.deleted':
-    '已删除 {count} 条操作日志',
+  'pages.security.operationLogs.messages.deleted': '已删除 {count} 条操作日志',
   'pages.security.operationLogs.permission.deleteRequired':
     '需要 core:audit-log:delete 权限',
   'pages.security.operationLogs.policy.retention': '保留策略',
   'pages.security.operationLogs.search.placeholder': '搜索操作日志',
-  'pages.security.operationLogs.serverFilters.actionAria':
-    '操作动作服务端筛选',
+  'pages.security.operationLogs.serverFilters.actionAria': '操作动作服务端筛选',
   'pages.security.operationLogs.serverFilters.actorAria':
     '操作操作者服务端筛选',
   'pages.security.operationLogs.serverFilters.createdFromAria':
@@ -1118,8 +1212,7 @@ export default {
     '操作最小耗时服务端筛选',
   'pages.security.operationLogs.serverFilters.resourceAria':
     '操作资源服务端筛选',
-  'pages.security.operationLogs.serverFilters.statusAria':
-    '操作状态服务端筛选',
+  'pages.security.operationLogs.serverFilters.statusAria': '操作状态服务端筛选',
   'pages.security.operationLogs.status.error': '错误',
   'pages.security.operationLogs.status.success': '成功',
   'pages.security.operationLogs.title': '操作日志',

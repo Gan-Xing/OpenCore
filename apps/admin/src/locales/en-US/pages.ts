@@ -37,8 +37,7 @@ export default {
   'pages.system.posts.confirm.deleteOne': 'Delete this post?',
   'pages.system.posts.confirm.deleteSelected':
     'Delete {count} selected post(s)?',
-  'pages.system.posts.detail.loadFailure':
-    'Unable to load live post detail.',
+  'pages.system.posts.detail.loadFailure': 'Unable to load live post detail.',
   'pages.system.posts.detail.title': 'Post Detail',
   'pages.system.posts.fields.code': 'Code',
   'pages.system.posts.fields.createdAt': 'Created At',
@@ -161,8 +160,7 @@ export default {
   'pages.system.dicts.items.actions.refresh': 'Refresh Items',
   'pages.system.dicts.items.actions.remove': 'Remove item',
   'pages.system.dicts.items.actions.removeAria': 'Remove dictionary item',
-  'pages.system.dicts.items.confirm.deleteOne':
-    'Delete this dictionary item?',
+  'pages.system.dicts.items.confirm.deleteOne': 'Delete this dictionary item?',
   'pages.system.dicts.items.consumerVisible':
     '{count} enabled items are visible through the simple-list consumer endpoint.',
   'pages.system.dicts.items.count': '{count} items',
@@ -208,8 +206,7 @@ export default {
   'pages.system.files.actions.upload': 'Upload File',
   'pages.system.files.actions.viewAria': 'View {name}',
   'pages.system.files.confirm.deleteOne': 'Delete this file asset?',
-  'pages.system.files.detail.loadFailure':
-    'Unable to load live file detail.',
+  'pages.system.files.detail.loadFailure': 'Unable to load live file detail.',
   'pages.system.files.detail.title': 'File Asset Detail',
   'pages.system.files.fields.checksum': 'Checksum',
   'pages.system.files.fields.createdAt': 'Created At',
@@ -258,8 +255,7 @@ export default {
   'pages.system.config.actions.publicValueOnly':
     'Only public config values can be read by key',
   'pages.system.config.actions.readPublicValue': 'Read public value by key',
-  'pages.system.config.actions.readPublicValueAria':
-    'Read public value {key}',
+  'pages.system.config.actions.readPublicValueAria': 'Read public value {key}',
   'pages.system.config.actions.refreshCache': 'Refresh cache',
   'pages.system.config.actions.reloadData': 'Reload data',
   'pages.system.config.actions.save': 'Save',
@@ -314,8 +310,7 @@ export default {
   'pages.system.config.feature.rolloutTitle': 'Feature rollout',
   'pages.system.config.feature.rolloutUpdated':
     'Feature rollout {flagName} set to {value}%.',
-  'pages.system.config.feature.rulesSummaryMany':
-    '{mode} / {count} rules',
+  'pages.system.config.feature.rulesSummaryMany': '{mode} / {count} rules',
   'pages.system.config.feature.rulesSummaryOne': '{mode} / {count} rule',
   'pages.system.config.feature.runtime': 'runtime',
   'pages.system.config.feature.standard': 'standard',
@@ -364,8 +359,7 @@ export default {
   'pages.system.config.messages.publicValueRead': '{key} = {value}',
   'pages.system.config.messages.updated': 'System config updated.',
   'pages.system.config.open.failure': 'Unable to open system config.',
-  'pages.system.config.permissions.missingExport':
-    'Missing core:config:export',
+  'pages.system.config.permissions.missingExport': 'Missing core:config:export',
   'pages.system.config.public.private': 'private',
   'pages.system.config.public.public': 'public',
   'pages.system.config.search.placeholder': 'Search config',
@@ -422,8 +416,7 @@ export default {
   'pages.system.config.vaultStatus.loadFailure':
     'Unable to load live config vault status.',
   'pages.system.config.vaultStatus.loading': 'Loading vault status',
-  'pages.system.config.vaultStatus.managedKmsProvider':
-    'Managed KMS provider',
+  'pages.system.config.vaultStatus.managedKmsProvider': 'Managed KMS provider',
   'pages.system.config.vaultStatus.providerNotReady':
     'Managed KMS provider not ready',
   'pages.system.config.vaultStatus.rotate': 'Rotate vault key',
@@ -452,8 +445,7 @@ export default {
     'View delivery records for {title}',
   'pages.system.notices.actions.detail': 'Detail',
   'pages.system.notices.actions.dispatch': 'Dispatch',
-  'pages.system.notices.actions.dispatchInApp':
-    'Dispatch in-app deliveries',
+  'pages.system.notices.actions.dispatchInApp': 'Dispatch in-app deliveries',
   'pages.system.notices.actions.dispatchInAppAria':
     'Dispatch delivery records for {title}',
   'pages.system.notices.actions.dispatchMail': 'Dispatch mail deliveries',
@@ -470,8 +462,7 @@ export default {
   'pages.system.notices.actions.executeLocal': 'Execute local provider',
   'pages.system.notices.actions.executeLocalAria':
     'Execute local provider for {title}',
-  'pages.system.notices.actions.executeMail':
-    'Execute mail outbox provider',
+  'pages.system.notices.actions.executeMail': 'Execute mail outbox provider',
   'pages.system.notices.actions.executeMailAria':
     'Execute mail provider for {title}',
   'pages.system.notices.actions.executeSms': 'Execute SMS outbox provider',
@@ -485,8 +476,7 @@ export default {
   'pages.system.notices.actions.publishedExecuteOnly':
     'Only published notices can execute',
   'pages.system.notices.actions.readUsers': 'Read users',
-  'pages.system.notices.actions.readUsersAria':
-    'View read users for {title}',
+  'pages.system.notices.actions.readUsersAria': 'View read users for {title}',
   'pages.system.notices.actions.refresh': 'Refresh',
   'pages.system.notices.actions.save': 'Save',
   'pages.system.notices.actions.viewAria': 'View {title}',
@@ -503,10 +493,8 @@ export default {
     'Dispatch in-app delivery records?',
   'pages.system.notices.confirm.dispatchMail':
     'Dispatch mail delivery records?',
-  'pages.system.notices.confirm.dispatchSms':
-    'Dispatch SMS delivery records?',
-  'pages.system.notices.confirm.executeLocal':
-    'Execute local notice provider?',
+  'pages.system.notices.confirm.dispatchSms': 'Dispatch SMS delivery records?',
+  'pages.system.notices.confirm.executeLocal': 'Execute local notice provider?',
   'pages.system.notices.confirm.executeMail': 'Execute mail outbox provider?',
   'pages.system.notices.confirm.executeSms': 'Execute SMS outbox provider?',
   'pages.system.notices.confirm.publish': 'Publish this notice?',
@@ -569,8 +557,7 @@ export default {
   'pages.system.notices.inbox.actions.markAllRead': 'Mark all read',
   'pages.system.notices.inbox.actions.markRead': 'Mark read',
   'pages.system.notices.inbox.actions.markReadAria': 'Mark {title} read',
-  'pages.system.notices.inbox.actions.viewAria':
-    'View inbox notice {title}',
+  'pages.system.notices.inbox.actions.viewAria': 'View inbox notice {title}',
   'pages.system.notices.inbox.detailLoadFailure':
     'Unable to load live system notice inbox detail.',
   'pages.system.notices.inbox.detailTitle': 'System Notice Inbox Detail',
@@ -582,13 +569,10 @@ export default {
     'All system notices marked read.',
   'pages.system.notices.inbox.messages.markedRead':
     'System notice marked read.',
-  'pages.system.notices.inbox.realtimeDescription':
-    'SSE inbox events: {path}',
+  'pages.system.notices.inbox.realtimeDescription': 'SSE inbox events: {path}',
   'pages.system.notices.inbox.realtimeStream': 'Realtime stream',
-  'pages.system.notices.load.failure':
-    'Unable to load live system notices.',
-  'pages.system.notices.load.liveFailure':
-    'Unable to load live system notices',
+  'pages.system.notices.load.failure': 'Unable to load live system notices.',
+  'pages.system.notices.load.liveFailure': 'Unable to load live system notices',
   'pages.system.notices.messages.archived': 'System notice archived.',
   'pages.system.notices.messages.created': 'System notice created.',
   'pages.system.notices.messages.deleted': 'System notice deleted.',
@@ -615,12 +599,10 @@ export default {
   'pages.system.notices.outbox.actions.mailSmsOnlyRetry':
     'Only mail/SMS outbox deliveries can retry',
   'pages.system.notices.outbox.actions.markSent': 'Mark outbox sent',
-  'pages.system.notices.outbox.actions.markSentAria':
-    'Mark outbox sent {id}',
+  'pages.system.notices.outbox.actions.markSentAria': 'Mark outbox sent {id}',
   'pages.system.notices.outbox.actions.processAria':
     'Process queued outbox {id}',
-  'pages.system.notices.outbox.actions.processQueued':
-    'Process queued outbox',
+  'pages.system.notices.outbox.actions.processQueued': 'Process queued outbox',
   'pages.system.notices.outbox.actions.retry': 'Retry outbox',
   'pages.system.notices.outbox.actions.retryAria': 'Retry outbox {id}',
   'pages.system.notices.outbox.actions.retryFailedFirst':
@@ -663,14 +645,12 @@ export default {
   'pages.system.notices.tabs.templates': 'System Notice Templates',
   'pages.system.notices.templates.actions.createDraft':
     'Create draft from template',
-  'pages.system.notices.templates.actions.deleteAria':
-    'Delete template {name}',
+  'pages.system.notices.templates.actions.deleteAria': 'Delete template {name}',
   'pages.system.notices.templates.actions.disabledRenderLocked':
     'Disabled templates cannot render',
   'pages.system.notices.templates.actions.editAria': 'Edit template {name}',
   'pages.system.notices.templates.actions.new': 'New Template',
-  'pages.system.notices.templates.actions.renderAria':
-    'Render template {name}',
+  'pages.system.notices.templates.actions.renderAria': 'Render template {name}',
   'pages.system.notices.templates.actions.renderPreview':
     'Notice template render preview',
   'pages.system.notices.templates.actions.renderPreviewButton':
@@ -680,8 +660,7 @@ export default {
     'Delete this notice template?',
   'pages.system.notices.templates.detailLoadFailure':
     'Unable to load live system notice template detail.',
-  'pages.system.notices.templates.detailTitle':
-    'System Notice Template Detail',
+  'pages.system.notices.templates.detailTitle': 'System Notice Template Detail',
   'pages.system.notices.templates.form.createTitle':
     'New System Notice Template',
   'pages.system.notices.templates.form.editTitle':
@@ -719,8 +698,7 @@ export default {
   'pages.system.notices.type.announcement': 'announcement',
   'pages.system.notices.type.maintenance': 'maintenance',
   'pages.system.notices.type.security': 'security',
-  'pages.system.notices.validation.audienceRequired':
-    'Audience is required.',
+  'pages.system.notices.validation.audienceRequired': 'Audience is required.',
   'pages.system.notices.validation.codeRequired': 'Code is required.',
   'pages.system.notices.validation.contentRequired': 'Content is required.',
   'pages.system.notices.validation.contentTemplateRequired':
@@ -793,8 +771,7 @@ export default {
   'pages.system.menus.validation.titleRequired': 'Title is required.',
   'pages.system.menus.validation.typeRequired': 'Type is required.',
   'pages.system.users.actions.assignRoles': 'Assign Roles',
-  'pages.system.users.actions.assignRolesAria':
-    'Assign roles for {username}',
+  'pages.system.users.actions.assignRolesAria': 'Assign roles for {username}',
   'pages.system.users.actions.column': 'Actions',
   'pages.system.users.actions.create': 'Create',
   'pages.system.users.actions.delete': 'Delete',
@@ -843,8 +820,7 @@ export default {
   'pages.system.users.confirm.enable': 'Enable this user?',
   'pages.system.users.deptScope.allDepartments': 'All departments',
   'pages.system.users.deptScope.title': 'Department scope',
-  'pages.system.users.detail.loadFailure':
-    'Unable to load live user detail.',
+  'pages.system.users.detail.loadFailure': 'Unable to load live user detail.',
   'pages.system.users.detail.title': 'User Detail',
   'pages.system.users.fields.department': 'Department',
   'pages.system.users.fields.departmentId': 'Department ID',
@@ -892,8 +868,7 @@ export default {
     'User import template downloaded.',
   'pages.system.users.messages.passwordReset':
     'Password reset. {revokedSessions}',
-  'pages.system.users.messages.revokedSessions':
-    'Revoked sessions: {count}.',
+  'pages.system.users.messages.revokedSessions': 'Revoked sessions: {count}.',
   'pages.system.users.messages.selectCustomUser':
     'Select at least one custom user.',
   'pages.system.users.messages.selectImportFile':
@@ -912,8 +887,7 @@ export default {
   'pages.system.users.roleAssignment.openFailure':
     'Unable to open role assignment.',
   'pages.system.users.roleAssignment.title': 'Assign Roles',
-  'pages.system.users.roleAssignment.titleForUser':
-    'Assign Roles - {username}',
+  'pages.system.users.roleAssignment.titleForUser': 'Assign Roles - {username}',
   'pages.system.users.search.placeholder': 'Search users',
   'pages.system.users.status.disabled': 'Disabled',
   'pages.system.users.status.enabled': 'Enabled',
@@ -977,15 +951,13 @@ export default {
   'pages.system.roles.load.failure': 'Unable to load live roles.',
   'pages.system.roles.load.liveFailure': 'Unable to load live roles',
   'pages.system.roles.menuAssignment.empty': 'No menus available.',
-  'pages.system.roles.menuAssignment.messages.updated':
-    'Role menus updated.',
+  'pages.system.roles.menuAssignment.messages.updated': 'Role menus updated.',
   'pages.system.roles.menuAssignment.messages.updatedWithRevoked':
     'Role menus updated. {revokedSessions}',
   'pages.system.roles.menuAssignment.openFailure':
     'Unable to open role menu assignment.',
   'pages.system.roles.menuAssignment.title': 'Menu Assignment',
-  'pages.system.roles.menuAssignment.titleForRole':
-    'Menu Assignment - {name}',
+  'pages.system.roles.menuAssignment.titleForRole': 'Menu Assignment - {name}',
   'pages.system.roles.messages.activeSessionsRevoked':
     '{count} active session(s) revoked.',
   'pages.system.roles.messages.created': 'Role created.',
@@ -1005,20 +977,17 @@ export default {
   'pages.system.roles.system.system': 'System',
   'pages.system.roles.userAssignment.assignedUsers': 'Assigned users',
   'pages.system.roles.userAssignment.availableUsers': 'Available users',
-  'pages.system.roles.userAssignment.messages.updated':
-    'Role users updated.',
+  'pages.system.roles.userAssignment.messages.updated': 'Role users updated.',
   'pages.system.roles.userAssignment.messages.updatedWithRevoked':
     'Role users updated. {revokedSessions}',
   'pages.system.roles.userAssignment.openFailure':
     'Unable to open role user assignment.',
   'pages.system.roles.userAssignment.title': 'User Assignment',
-  'pages.system.roles.userAssignment.titleForRole':
-    'User Assignment - {name}',
+  'pages.system.roles.userAssignment.titleForRole': 'User Assignment - {name}',
   'pages.system.roles.validation.codeRequired': 'Code is required.',
   'pages.system.roles.validation.customDataScopeDepartmentsRequired':
     'Custom data scope requires at least one department.',
-  'pages.system.roles.validation.dataScopeRequired':
-    'Data scope is required.',
+  'pages.system.roles.validation.dataScopeRequired': 'Data scope is required.',
   'pages.system.roles.validation.nameRequired': 'Name is required.',
   'pages.system.permissions.actions.column': 'Actions',
   'pages.system.permissions.actions.create': 'Create',
@@ -1065,9 +1034,118 @@ export default {
     'Use <layer>:<resource>:<action> with a supported action.',
   'pages.system.permissions.validation.codeRequired': 'Code is required.',
   'pages.system.permissions.validation.titleRequired': 'Title is required.',
+  'pages.integrations.section': 'S12 Integrations',
+  'pages.integrations.providers.actions.column': 'Action',
+  'pages.integrations.providers.actions.detail': 'Detail',
+  'pages.integrations.providers.actions.disable': 'Disable',
+  'pages.integrations.providers.actions.enable': 'Enable',
+  'pages.integrations.providers.actions.providerTest': 'Provider Test',
+  'pages.integrations.providers.actions.reload': 'Reload',
+  'pages.integrations.providers.configAudit.needsVault': 'needs vault',
+  'pages.integrations.providers.configAudit.vaultBacked': 'vault-backed',
+  'pages.integrations.providers.detail.title': 'Provider Detail',
+  'pages.integrations.providers.fields.code': 'Code',
+  'pages.integrations.providers.fields.config': 'Config',
+  'pages.integrations.providers.fields.configAudit': 'Config Audit',
+  'pages.integrations.providers.fields.configVersion': 'Config Version',
+  'pages.integrations.providers.fields.diagnosticsChannel':
+    'Diagnostics Channel',
+  'pages.integrations.providers.fields.diagnosticsReadiness':
+    'Diagnostics Readiness',
+  'pages.integrations.providers.fields.enabled': 'Enabled',
+  'pages.integrations.providers.fields.failureHistory': 'Failure History',
+  'pages.integrations.providers.fields.health': 'Health',
+  'pages.integrations.providers.fields.healthAuditGeneratedAt':
+    'Health Audit Generated At',
+  'pages.integrations.providers.fields.httpSecretInjection':
+    'HTTP Secret Injection',
+  'pages.integrations.providers.fields.lastCheckedAt': 'Last Checked At',
+  'pages.integrations.providers.fields.lastProviderTest': 'Last Provider Test',
+  'pages.integrations.providers.fields.lastProviderTestAt':
+    'Last Provider Test At',
+  'pages.integrations.providers.fields.lastProviderTestMessage':
+    'Last Provider Test Message',
+  'pages.integrations.providers.fields.lastTestedAt': 'Last Tested At',
+  'pages.integrations.providers.fields.liveOutboxTotal': 'Live Outbox Total',
+  'pages.integrations.providers.fields.mailCallbackPath': 'Mail Callback Path',
+  'pages.integrations.providers.fields.mailSmtpAdapter': 'Mail SMTP Adapter',
+  'pages.integrations.providers.fields.name': 'Name',
+  'pages.integrations.providers.fields.outboxFailed': 'Outbox Failed',
+  'pages.integrations.providers.fields.outboxPolicy': 'Outbox Policy',
+  'pages.integrations.providers.fields.readiness': 'Readiness',
+  'pages.integrations.providers.fields.retryableFailed': 'Retryable Failed',
+  'pages.integrations.providers.fields.secretRef': 'Secret Ref',
+  'pages.integrations.providers.fields.secretRefValidation':
+    'Secret Ref Validation',
+  'pages.integrations.providers.fields.signedCallbackContract':
+    'Signed Callback Contract',
+  'pages.integrations.providers.fields.smsCallbackPath': 'SMS Callback Path',
+  'pages.integrations.providers.fields.smsHttpAdapter': 'SMS HTTP Adapter',
+  'pages.integrations.providers.fields.smtpTlsPolicy': 'SMTP TLS Policy',
+  'pages.integrations.providers.fields.type': 'Type',
+  'pages.integrations.providers.json.liveOutboxSummary': 'Live Outbox Summary',
+  'pages.integrations.providers.json.providerAuditLogs': 'Provider Audit Logs',
+  'pages.integrations.providers.json.providerDiagnostics':
+    'Provider Diagnostics',
+  'pages.integrations.providers.json.providerTest': 'Provider Test',
+  'pages.integrations.providers.json.redactedConfig': 'Redacted Config',
+  'pages.integrations.providers.json.signedCallbackCanonicalPayload':
+    'Signed Callback Canonical Payload',
+  'pages.integrations.providers.load.diagnosticsFailure':
+    'Unable to load live provider diagnostics.',
+  'pages.integrations.providers.load.failure':
+    'Unable to load integration health audit.',
+  'pages.integrations.providers.load.liveFailure':
+    'Unable to load live Integration Health Audit data',
+  'pages.integrations.providers.messages.disabled': 'Provider disabled.',
+  'pages.integrations.providers.messages.enabled': 'Provider enabled.',
+  'pages.integrations.providers.messages.testCompleted':
+    'Provider Test completed.',
+  'pages.integrations.providers.messages.testFailure':
+    'Unable to run Provider Test.',
+  'pages.integrations.providers.messages.updateFailure':
+    'Unable to update provider state.',
+  'pages.integrations.providers.outboxPolicy.allowed': 'enqueue allowed',
+  'pages.integrations.providers.outboxPolicy.blocked': 'enqueue blocked',
+  'pages.integrations.providers.search.placeholder': 'Search providers',
+  'pages.integrations.providers.static.allowlisted': 'allowlisted',
+  'pages.integrations.providers.static.httpSecretInjection':
+    'header/query/body',
+  'pages.integrations.providers.static.httpSecretInjectionDetail':
+    'secretRef -> header/query/body',
+  'pages.integrations.providers.static.mailSmtpAdapter': 'vault-backed',
+  'pages.integrations.providers.static.mailSmtpAdapterDetail':
+    'secretRef -> config vault + SMTP send',
+  'pages.integrations.providers.static.none': 'none',
+  'pages.integrations.providers.static.notConfigured': 'not configured',
+  'pages.integrations.providers.static.providerDiagnostics': 'read-only',
+  'pages.integrations.providers.static.redacted': '[redacted]',
+  'pages.integrations.providers.static.smsHttpAdapterDetail':
+    'allowlisted endpoint + status contract',
+  'pages.integrations.providers.status.disabled': 'disabled',
+  'pages.integrations.providers.status.enabled': 'enabled',
+  'pages.integrations.providers.summary.configAudit': 'Config Audit',
+  'pages.integrations.providers.summary.designTopics': 'Design topics',
+  'pages.integrations.providers.summary.enabledProviders': 'Enabled providers',
+  'pages.integrations.providers.summary.failedOutbox': 'Failed outbox',
+  'pages.integrations.providers.summary.failureHistory': 'Failure History',
+  'pages.integrations.providers.summary.healthAudit': 'Health Audit',
+  'pages.integrations.providers.summary.httpSecretInjection':
+    'HTTP Secret Injection',
+  'pages.integrations.providers.summary.liveHealthAudit':
+    'Live Integration Health Audit',
+  'pages.integrations.providers.summary.mailSmtpAdapter': 'Mail SMTP adapter',
+  'pages.integrations.providers.summary.providerDiagnostics':
+    'Provider Diagnostics',
+  'pages.integrations.providers.summary.providerTest': 'Provider Test',
+  'pages.integrations.providers.summary.queuedOutbox': 'Queued outbox',
+  'pages.integrations.providers.summary.signedCallbackContract':
+    'Signed callback contract',
+  'pages.integrations.providers.summary.smsHttpAdapter': 'SMS HTTP adapter',
+  'pages.integrations.providers.summary.smtpTlsPolicy': 'SMTP TLS Policy',
+  'pages.integrations.providers.testStatus.notRun': 'not_run',
   'pages.security.common.all': 'All',
-  'pages.security.loginLogs.actions.applyServerFilters':
-    'Apply server filters',
+  'pages.security.loginLogs.actions.applyServerFilters': 'Apply server filters',
   'pages.security.loginLogs.actions.applyServerFiltersAria':
     'Apply login log server filters',
   'pages.security.loginLogs.actions.cleanAll': 'Clean all',
@@ -1081,8 +1159,7 @@ export default {
   'pages.security.loginLogs.actions.geoipLookupAria': 'GeoIP lookup',
   'pages.security.loginLogs.actions.reload': 'Reload',
   'pages.security.loginLogs.actions.reloadAria': 'Reload login logs',
-  'pages.security.loginLogs.actions.resetServerFilters':
-    'Reset server filters',
+  'pages.security.loginLogs.actions.resetServerFilters': 'Reset server filters',
   'pages.security.loginLogs.actions.resetServerFiltersAria':
     'Reset login log server filters',
   'pages.security.loginLogs.actions.unlock': 'Unlock',
@@ -1127,20 +1204,16 @@ export default {
   'pages.security.loginLogs.geoip.fallbackReason': 'fallback: {reason}',
   'pages.security.loginLogs.geoip.lookupForIp': 'GeoIP lookup {ip}',
   'pages.security.loginLogs.load.failure': 'Unable to load login logs.',
-  'pages.security.loginLogs.load.liveFailure':
-    'Unable to load live login logs',
+  'pages.security.loginLogs.load.liveFailure': 'Unable to load live login logs',
   'pages.security.loginLogs.loginType.forceLogout': 'Forced logout',
   'pages.security.loginLogs.loginType.mobile': 'Mobile login',
   'pages.security.loginLogs.loginType.selfLogout': 'Self logout',
   'pages.security.loginLogs.loginType.sms': 'SMS login',
   'pages.security.loginLogs.loginType.social': 'Social login',
   'pages.security.loginLogs.loginType.username': 'Username login',
-  'pages.security.loginLogs.messages.cleaned':
-    'Cleaned {count} login logs',
-  'pages.security.loginLogs.messages.deleted':
-    'Deleted {count} login logs',
-  'pages.security.loginLogs.messages.geoipLookup':
-    'GeoIP lookup: {location}',
+  'pages.security.loginLogs.messages.cleaned': 'Cleaned {count} login logs',
+  'pages.security.loginLogs.messages.deleted': 'Deleted {count} login logs',
+  'pages.security.loginLogs.messages.geoipLookup': 'GeoIP lookup: {location}',
   'pages.security.loginLogs.messages.noActiveLockout':
     '{username} had no active lockout',
   'pages.security.loginLogs.messages.unlocked': '{username} unlocked',
@@ -1168,8 +1241,7 @@ export default {
     'Login location server filter',
   'pages.security.loginLogs.serverFilters.resultAria':
     'Login result server filter',
-  'pages.security.loginLogs.serverFilters.typeAria':
-    'Login type server filter',
+  'pages.security.loginLogs.serverFilters.typeAria': 'Login type server filter',
   'pages.security.loginLogs.serverFilters.usernameAria':
     'Login username server filter',
   'pages.security.loginLogs.title': 'Login Logs',
@@ -1221,8 +1293,7 @@ export default {
   'pages.security.operationLogs.fields.userAgent': 'User Agent',
   'pages.security.operationLogs.filters.max': 'Max',
   'pages.security.operationLogs.filters.min': 'Min',
-  'pages.security.operationLogs.load.failure':
-    'Unable to load operation logs.',
+  'pages.security.operationLogs.load.failure': 'Unable to load operation logs.',
   'pages.security.operationLogs.load.liveFailure':
     'Unable to load live operation logs',
   'pages.security.operationLogs.messages.cleaned':
