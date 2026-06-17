@@ -1,5 +1,6 @@
 import { ReloadOutlined } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
+import { useIntl } from '@umijs/max';
 import type { VersionInfoSummary } from '@opencore/sdk';
 import {
   Alert,
@@ -10,12 +11,24 @@ import {
   Tag,
   Tooltip,
 } from 'antd';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { getOpenCoreVersionInfo } from '@/services/opencore/platform';
 
-function formatUptime(seconds: number | undefined): string {
+type FormatMessage = (
+  id: string,
+  defaultMessage: string,
+  values?: Record<string, number | string>,
+) => string;
+
+function formatUptime(
+  seconds: number | undefined,
+  formatMessage: FormatMessage,
+): string {
   if (seconds === undefined) {
-    return 'Unavailable';
+    return formatMessage(
+      'pages.monitor.version.static.unavailable',
+      'Unavailable',
+    );
   }
 
   const minutes = Math.floor(seconds / 60);
@@ -23,18 +36,47 @@ function formatUptime(seconds: number | undefined): string {
   const days = Math.floor(hours / 24);
 
   if (days > 0) {
-    return `${days}d ${hours % 24}h`;
+    return formatMessage(
+      'pages.monitor.version.uptime.daysHours',
+      '{days}d {hours}h',
+      {
+        days,
+        hours: hours % 24,
+      },
+    );
   }
   if (hours > 0) {
-    return `${hours}h ${minutes % 60}m`;
+    return formatMessage(
+      'pages.monitor.version.uptime.hoursMinutes',
+      '{hours}h {minutes}m',
+      { hours, minutes: minutes % 60 },
+    );
   }
-  return `${minutes}m`;
+  return formatMessage('pages.monitor.version.uptime.minutes', '{minutes}m', {
+    minutes,
+  });
 }
 
 export default function VersionPage() {
+  const intl = useIntl();
   const [version, setVersion] = useState<VersionInfoSummary>();
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
+  const formatMessage: FormatMessage = useCallback(
+    (id, defaultMessage, values) =>
+      values
+        ? intl.formatMessage({ id, defaultMessage }, values)
+        : intl.formatMessage({ id, defaultMessage }),
+    [intl],
+  );
+  const unknownLabel = formatMessage(
+    'pages.monitor.version.static.unknown',
+    'unknown',
+  );
+  const unavailableLabel = formatMessage(
+    'pages.monitor.version.static.unavailable',
+    'Unavailable',
+  );
 
   const loadVersion = async () => {
     setLoading(true);
@@ -46,7 +88,10 @@ export default function VersionPage() {
       setLoadError(
         error instanceof Error
           ? error.message
-          : 'Unable to load OpenCore runtime version.',
+          : formatMessage(
+              'pages.monitor.version.load.failure',
+              'Unable to load OpenCore runtime version.',
+            ),
       );
     } finally {
       setLoading(false);
@@ -58,26 +103,55 @@ export default function VersionPage() {
   }, []);
 
   return (
-    <PageContainer title="Live runtime version" subTitle="S8 Monitor">
+    <PageContainer
+      title={formatMessage(
+        'pages.monitor.version.title',
+        'Live runtime version',
+      )}
+      subTitle={formatMessage('pages.monitor.runtime.section', 'S8 Monitor')}
+    >
       {loadError ? (
         <Alert
           showIcon
           type="warning"
-          message="Unable to load live runtime metadata"
+          message={formatMessage(
+            'pages.monitor.version.load.liveFailure',
+            'Unable to load live runtime metadata',
+          )}
           description={loadError}
           style={{ marginBlockEnd: 16 }}
         />
       ) : null}
       <Space size="large" style={{ marginBottom: 16 }} wrap>
-        <Statistic title="OpenCore runtime" value={version?.runtime ?? '-'} />
-        <Statistic title="Version" value={version?.version ?? '-'} />
         <Statistic
-          title="Uptime"
-          value={formatUptime(version?.uptimeSeconds)}
+          title={formatMessage(
+            'pages.monitor.version.stats.runtime',
+            'OpenCore runtime',
+          )}
+          value={version?.runtime ?? '-'}
         />
-        <Tooltip title="Reload version info">
+        <Statistic
+          title={formatMessage(
+            'pages.monitor.version.fields.version',
+            'Version',
+          )}
+          value={version?.version ?? '-'}
+        />
+        <Statistic
+          title={formatMessage('pages.monitor.version.fields.uptime', 'Uptime')}
+          value={formatUptime(version?.uptimeSeconds, formatMessage)}
+        />
+        <Tooltip
+          title={formatMessage(
+            'pages.monitor.version.actions.reload',
+            'Reload version info',
+          )}
+        >
           <Button
-            aria-label="Reload version info"
+            aria-label={formatMessage(
+              'pages.monitor.version.actions.reloadAria',
+              'Reload version info',
+            )}
             icon={<ReloadOutlined />}
             loading={loading}
             onClick={() => void loadVersion()}
@@ -85,37 +159,78 @@ export default function VersionPage() {
         </Tooltip>
       </Space>
       <Descriptions bordered column={1} size="middle">
-        <Descriptions.Item label="Name">
-          {version?.name ?? 'Unavailable'}
+        <Descriptions.Item
+          label={formatMessage('pages.monitor.version.fields.name', 'Name')}
+        >
+          {version?.name ?? unavailableLabel}
         </Descriptions.Item>
-        <Descriptions.Item label="Environment">
+        <Descriptions.Item
+          label={formatMessage(
+            'pages.monitor.version.fields.environment',
+            'Environment',
+          )}
+        >
           <Tag color={version?.environment === 'production' ? 'green' : 'blue'}>
-            {version?.environment ?? 'unknown'}
+            {version?.environment ?? unknownLabel}
           </Tag>
         </Descriptions.Item>
-        <Descriptions.Item label="Commit">
-          {version?.commit ?? 'unknown'}
+        <Descriptions.Item
+          label={formatMessage('pages.monitor.version.fields.commit', 'Commit')}
+        >
+          {version?.commit ?? unknownLabel}
         </Descriptions.Item>
-        <Descriptions.Item label="Build time">
-          {version?.buildTime ?? 'unknown'}
+        <Descriptions.Item
+          label={formatMessage(
+            'pages.monitor.version.fields.buildTime',
+            'Build time',
+          )}
+        >
+          {version?.buildTime ?? unknownLabel}
         </Descriptions.Item>
-        <Descriptions.Item label="Deployment ID">
-          {version?.deploymentId ?? 'unknown'}
+        <Descriptions.Item
+          label={formatMessage(
+            'pages.monitor.version.fields.deploymentId',
+            'Deployment ID',
+          )}
+        >
+          {version?.deploymentId ?? unknownLabel}
         </Descriptions.Item>
-        <Descriptions.Item label="Node">
-          {version?.nodeVersion ?? 'unknown'}
+        <Descriptions.Item
+          label={formatMessage('pages.monitor.version.fields.node', 'Node')}
+        >
+          {version?.nodeVersion ?? unknownLabel}
         </Descriptions.Item>
-        <Descriptions.Item label="Platform">
-          {version ? `${version.platform}/${version.arch}` : 'unknown'}
+        <Descriptions.Item
+          label={formatMessage(
+            'pages.monitor.version.fields.platform',
+            'Platform',
+          )}
+        >
+          {version ? `${version.platform}/${version.arch}` : unknownLabel}
         </Descriptions.Item>
-        <Descriptions.Item label="Process ID">
-          {version?.processId ?? 'unknown'}
+        <Descriptions.Item
+          label={formatMessage(
+            'pages.monitor.version.fields.processId',
+            'Process ID',
+          )}
+        >
+          {version?.processId ?? unknownLabel}
         </Descriptions.Item>
-        <Descriptions.Item label="Started at">
-          {version?.startedAt ?? 'unknown'}
+        <Descriptions.Item
+          label={formatMessage(
+            'pages.monitor.version.fields.startedAt',
+            'Started at',
+          )}
+        >
+          {version?.startedAt ?? unknownLabel}
         </Descriptions.Item>
-        <Descriptions.Item label="Timezone">
-          {version?.timezone ?? 'unknown'}
+        <Descriptions.Item
+          label={formatMessage(
+            'pages.monitor.version.fields.timezone',
+            'Timezone',
+          )}
+        >
+          {version?.timezone ?? unknownLabel}
         </Descriptions.Item>
       </Descriptions>
     </PageContainer>
