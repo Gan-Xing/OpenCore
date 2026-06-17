@@ -3,7 +3,7 @@ import {
   ProTable,
   type ProColumns,
 } from '@ant-design/pro-components';
-import { useAccess } from '@umijs/max';
+import { useAccess, useIntl } from '@umijs/max';
 import type {
   IntegrationProviderSummary,
   OAuthCallbackAuditSummary,
@@ -57,21 +57,6 @@ const emptySummary: OAuthTokenInventorySummary = {
   revoked: 0,
   total: 0,
 };
-
-const exportColumns: CurrentPageExportColumn<OAuthTokenSummary>[] = [
-  { title: 'ID', dataIndex: 'id' },
-  { title: 'Provider', dataIndex: 'providerCode' },
-  { title: 'Subject Type', dataIndex: 'subjectType' },
-  { title: 'Subject ID', dataIndex: 'subjectId' },
-  { title: 'Provider Account', dataIndex: 'providerAccountId' },
-  { title: 'Scopes', renderText: (record) => record.scopes.join(', ') },
-  { title: 'Status', dataIndex: 'status' },
-  { title: 'Expires At', dataIndex: 'expiresAt' },
-  { title: 'Last Rotated At', dataIndex: 'lastRotatedAt' },
-  { title: 'Revoked At', dataIndex: 'revokedAt' },
-  { title: 'Access Token Ref', dataIndex: 'accessTokenRef', sensitive: true },
-  { title: 'Refresh Token Ref', dataIndex: 'refreshTokenRef', sensitive: true },
-];
 
 const searchFields: CurrentPageSearchField<OAuthTokenSummary>[] = [
   'id',
@@ -129,6 +114,7 @@ function providerScopes(
 }
 
 export default function OAuthIntegrationPage() {
+  const intl = useIntl();
   const access = useAccess();
   const canManageOAuthIntegration = Boolean(access.canManageOAuthIntegration);
   const [rows, setRows] = useState<readonly OAuthTokenSummary[]>([]);
@@ -150,42 +136,147 @@ export default function OAuthIntegrationPage() {
   const [detailLoadingId, setDetailLoadingId] = useState<string>();
   const [startingFlow, setStartingFlow] = useState(false);
   const [lastStartedFlow, setLastStartedFlow] = useState<OAuthFlowSummary>();
+  const formatMessage = useCallback(
+    (
+      id: string,
+      defaultMessage: string,
+      values?: Record<string, number | string>,
+    ) =>
+      values
+        ? intl.formatMessage({ id, defaultMessage }, values)
+        : intl.formatMessage({ id, defaultMessage }),
+    [intl],
+  );
+  const exportColumns: CurrentPageExportColumn<OAuthTokenSummary>[] = [
+    {
+      title: formatMessage('pages.integrations.oauth.fields.id', 'ID'),
+      dataIndex: 'id',
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.oauth.fields.provider',
+        'Provider',
+      ),
+      dataIndex: 'providerCode',
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.oauth.fields.subjectType',
+        'Subject Type',
+      ),
+      dataIndex: 'subjectType',
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.oauth.fields.subjectId',
+        'Subject ID',
+      ),
+      dataIndex: 'subjectId',
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.oauth.fields.providerAccount',
+        'Provider Account',
+      ),
+      dataIndex: 'providerAccountId',
+    },
+    {
+      title: formatMessage('pages.integrations.oauth.fields.scopes', 'Scopes'),
+      renderText: (record) => record.scopes.join(', '),
+    },
+    {
+      title: formatMessage('pages.integrations.oauth.fields.status', 'Status'),
+      dataIndex: 'status',
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.oauth.fields.expiresAt',
+        'Expires At',
+      ),
+      dataIndex: 'expiresAt',
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.oauth.fields.lastRotatedAt',
+        'Last Rotated At',
+      ),
+      dataIndex: 'lastRotatedAt',
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.oauth.fields.revokedAt',
+        'Revoked At',
+      ),
+      dataIndex: 'revokedAt',
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.oauth.fields.accessTokenRef',
+        'Access Token Ref',
+      ),
+      dataIndex: 'accessTokenRef',
+      sensitive: true,
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.oauth.fields.refreshTokenRef',
+        'Refresh Token Ref',
+      ),
+      dataIndex: 'refreshTokenRef',
+      sensitive: true,
+    },
+  ];
 
   const filterOptions: CurrentPageFilterOption<OAuthTokenSummary>[] = useMemo(
     () => [
       {
         key: 'providerCode',
         options: createCurrentPageFilterOptions(rows, 'providerCode'),
-        placeholder: 'Provider',
+        placeholder: formatMessage(
+          'pages.integrations.oauth.fields.provider',
+          'Provider',
+        ),
         predicate: (record, value) => record.providerCode === value,
       },
       {
         key: 'status',
         options: createCurrentPageFilterOptions(rows, 'status'),
-        placeholder: 'Status',
+        placeholder: formatMessage(
+          'pages.integrations.oauth.fields.status',
+          'Status',
+        ),
         predicate: (record, value) => record.status === value,
       },
     ],
-    [rows],
+    [formatMessage, rows],
   );
   const { filteredRows, toolbar: filterToolbar } =
     useCurrentPageFilters<OAuthTokenSummary>({
       rows,
       searchFields,
-      searchPlaceholder: 'Search OAuth tokens',
+      searchPlaceholder: formatMessage(
+        'pages.integrations.oauth.search.tokens',
+        'Search OAuth tokens',
+      ),
       selectFilters: filterOptions,
     });
   const { filteredRows: filteredFlows, toolbar: flowFilterToolbar } =
     useCurrentPageFilters<OAuthFlowSummary>({
       rows: flows,
       searchFields: flowSearchFields,
-      searchPlaceholder: 'Search OAuth flows',
+      searchPlaceholder: formatMessage(
+        'pages.integrations.oauth.search.flows',
+        'Search OAuth flows',
+      ),
     });
   const { filteredRows: filteredAudits, toolbar: auditFilterToolbar } =
     useCurrentPageFilters<OAuthCallbackAuditSummary>({
       rows: audits,
       searchFields: auditSearchFields,
-      searchPlaceholder: 'Search OAuth callback audits',
+      searchPlaceholder: formatMessage(
+        'pages.integrations.oauth.search.audits',
+        'Search OAuth callback audits',
+      ),
     });
 
   const loadTokens = useCallback(async () => {
@@ -224,12 +315,15 @@ export default function OAuthIntegrationPage() {
       setLoadError(
         error instanceof Error
           ? error.message
-          : 'Unable to load OAuth token inventory.',
+          : formatMessage(
+              'pages.integrations.oauth.load.failure',
+              'Unable to load OAuth token inventory.',
+            ),
       );
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [formatMessage]);
 
   useEffect(() => {
     void loadTokens();
@@ -245,7 +339,10 @@ export default function OAuthIntegrationPage() {
       message.error(
         error instanceof Error
           ? error.message
-          : 'Unable to load live OAuth token detail.',
+          : formatMessage(
+              'pages.integrations.oauth.load.detailFailure',
+              'Unable to load live OAuth token detail.',
+            ),
       );
     } finally {
       setDetailLoadingId(undefined);
@@ -255,7 +352,12 @@ export default function OAuthIntegrationPage() {
   const startFlow = async () => {
     const provider = providers[0];
     if (!provider) {
-      message.error('No enabled OAuth provider is available.');
+      message.error(
+        formatMessage(
+          'pages.integrations.oauth.messages.noProvider',
+          'No enabled OAuth provider is available.',
+        ),
+      );
       return;
     }
 
@@ -267,11 +369,21 @@ export default function OAuthIntegrationPage() {
         scopes: providerScopes(provider),
       });
       setLastStartedFlow(flow);
-      message.success('OAuth flow started');
+      message.success(
+        formatMessage(
+          'pages.integrations.oauth.messages.flowStarted',
+          'OAuth flow started',
+        ),
+      );
       await loadTokens();
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'Unable to start OAuth flow.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.integrations.oauth.messages.flowStartFailure',
+              'Unable to start OAuth flow.',
+            ),
       );
     } finally {
       setStartingFlow(false);
@@ -280,11 +392,20 @@ export default function OAuthIntegrationPage() {
 
   const confirmRevoke = (record: OAuthTokenSummary) => {
     Modal.confirm({
-      title: `Revoke token ${record.id}?`,
-      content:
+      title: formatMessage(
+        'pages.integrations.oauth.confirm.revoke',
+        'Revoke token {id}?',
+        { id: record.id },
+      ),
+      content: formatMessage(
+        'pages.integrations.oauth.confirm.revokeContent',
         'The token reference will be marked revoked and excluded from active OAuth token inventory.',
+      ),
       okButtonProps: { danger: true },
-      okText: 'Revoke token',
+      okText: formatMessage(
+        'pages.integrations.oauth.actions.revokeToken',
+        'Revoke token',
+      ),
       onOk: async () => {
         setRevokingId(record.id);
         try {
@@ -292,7 +413,12 @@ export default function OAuthIntegrationPage() {
             reason: 'Manual revoke from Admin OAuth token inventory',
           });
           setSelected(revoked);
-          message.success('OAuth token revoked');
+          message.success(
+            formatMessage(
+              'pages.integrations.oauth.messages.revoked',
+              'OAuth token revoked',
+            ),
+          );
           await loadTokens();
         } finally {
           setRevokingId(undefined);
@@ -303,7 +429,7 @@ export default function OAuthIntegrationPage() {
 
   const columns: ProColumns<OAuthTokenSummary>[] = [
     {
-      title: 'Token',
+      title: formatMessage('pages.integrations.oauth.fields.token', 'Token'),
       dataIndex: 'id',
       render: (_, record) => (
         <Typography.Link onClick={() => void openDetail(record.id)}>
@@ -311,23 +437,53 @@ export default function OAuthIntegrationPage() {
         </Typography.Link>
       ),
     },
-    { title: 'Provider', dataIndex: 'providerCode' },
-    { title: 'Subject', dataIndex: 'subjectId' },
-    { title: 'Provider Account', dataIndex: 'providerAccountId' },
     {
-      title: 'Scopes',
+      title: formatMessage(
+        'pages.integrations.oauth.fields.provider',
+        'Provider',
+      ),
+      dataIndex: 'providerCode',
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.oauth.fields.subject',
+        'Subject',
+      ),
+      dataIndex: 'subjectId',
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.oauth.fields.providerAccount',
+        'Provider Account',
+      ),
+      dataIndex: 'providerAccountId',
+    },
+    {
+      title: formatMessage('pages.integrations.oauth.fields.scopes', 'Scopes'),
       renderText: (_, record) => record.scopes.join(', '),
     },
     {
-      title: 'Status',
+      title: formatMessage('pages.integrations.oauth.fields.status', 'Status'),
       render: (_, record) => (
         <Tag color={statusColor(record.status)}>{record.status}</Tag>
       ),
     },
-    { title: 'Expires At', dataIndex: 'expiresAt' },
-    { title: 'Last Rotated At', dataIndex: 'lastRotatedAt' },
     {
-      title: 'Action',
+      title: formatMessage(
+        'pages.integrations.oauth.fields.expiresAt',
+        'Expires At',
+      ),
+      dataIndex: 'expiresAt',
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.oauth.fields.lastRotatedAt',
+        'Last Rotated At',
+      ),
+      dataIndex: 'lastRotatedAt',
+    },
+    {
+      title: formatMessage('pages.integrations.oauth.actions.column', 'Action'),
       valueType: 'option',
       render: (_, record) => [
         <Button
@@ -337,7 +493,7 @@ export default function OAuthIntegrationPage() {
           size="small"
           type="link"
         >
-          Detail
+          {formatMessage('pages.integrations.oauth.actions.detail', 'Detail')}
         </Button>,
         <Button
           danger
@@ -349,66 +505,187 @@ export default function OAuthIntegrationPage() {
           title={OAUTH_MANAGE_PERMISSION_MARKER}
           type="link"
         >
-          Revoke token
+          {formatMessage(
+            'pages.integrations.oauth.actions.revokeToken',
+            'Revoke token',
+          )}
         </Button>,
       ],
     },
   ];
 
   const flowColumns: ProColumns<OAuthFlowSummary>[] = [
-    { title: 'Flow', dataIndex: 'id' },
-    { title: 'Provider', dataIndex: 'providerCode' },
-    { title: 'Subject', dataIndex: 'subjectId' },
     {
-      title: 'Status',
+      title: formatMessage('pages.integrations.oauth.fields.flow', 'Flow'),
+      dataIndex: 'id',
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.oauth.fields.provider',
+        'Provider',
+      ),
+      dataIndex: 'providerCode',
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.oauth.fields.subject',
+        'Subject',
+      ),
+      dataIndex: 'subjectId',
+    },
+    {
+      title: formatMessage('pages.integrations.oauth.fields.status', 'Status'),
       render: (_, record) => (
         <Tag color={flowStatusColor(record.status)}>{record.status}</Tag>
       ),
     },
-    { title: 'State', dataIndex: 'state' },
-    { title: 'Expires At', dataIndex: 'expiresAt' },
-    { title: 'Token Archive', dataIndex: 'tokenId' },
+    {
+      title: formatMessage('pages.integrations.oauth.fields.state', 'State'),
+      dataIndex: 'state',
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.oauth.fields.expiresAt',
+        'Expires At',
+      ),
+      dataIndex: 'expiresAt',
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.oauth.fields.tokenArchive',
+        'Token Archive',
+      ),
+      dataIndex: 'tokenId',
+    },
   ];
 
   const auditColumns: ProColumns<OAuthCallbackAuditSummary>[] = [
-    { title: 'Audit', dataIndex: 'id' },
-    { title: 'Provider', dataIndex: 'providerCode' },
-    { title: 'Flow', dataIndex: 'flowId' },
     {
-      title: 'Status',
+      title: formatMessage('pages.integrations.oauth.fields.audit', 'Audit'),
+      dataIndex: 'id',
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.oauth.fields.provider',
+        'Provider',
+      ),
+      dataIndex: 'providerCode',
+    },
+    {
+      title: formatMessage('pages.integrations.oauth.fields.flow', 'Flow'),
+      dataIndex: 'flowId',
+    },
+    {
+      title: formatMessage('pages.integrations.oauth.fields.status', 'Status'),
       render: (_, record) => (
         <Tag color={auditStatusColor(record.status)}>{record.status}</Tag>
       ),
     },
-    { title: 'Reason', dataIndex: 'reason' },
-    { title: 'Code Hash', dataIndex: 'callbackCodeHash' },
-    { title: 'Token Archive', dataIndex: 'tokenId' },
-    { title: 'Created At', dataIndex: 'createdAt' },
+    {
+      title: formatMessage('pages.integrations.oauth.fields.reason', 'Reason'),
+      dataIndex: 'reason',
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.oauth.fields.codeHash',
+        'Code Hash',
+      ),
+      dataIndex: 'callbackCodeHash',
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.oauth.fields.tokenArchive',
+        'Token Archive',
+      ),
+      dataIndex: 'tokenId',
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.oauth.fields.createdAt',
+        'Created At',
+      ),
+      dataIndex: 'createdAt',
+    },
   ];
 
   return (
-    <PageContainer title="OAuth" subTitle="S12 Integrations">
+    <PageContainer
+      title={formatMessage('menu.integrations.oauth', 'OAuth')}
+      subTitle={formatMessage('pages.integrations.section', 'S12 Integrations')}
+    >
       {loadError ? (
         <Alert
           showIcon
           style={{ marginBottom: 16 }}
           type="error"
-          message="Unable to load live OAuth token inventory"
+          message={formatMessage(
+            'pages.integrations.oauth.load.liveFailure',
+            'Unable to load live OAuth token inventory',
+          )}
           description={loadError}
-          action={<Button onClick={() => void loadTokens()}>Reload</Button>}
+          action={
+            <Button onClick={() => void loadTokens()}>
+              {formatMessage(
+                'pages.integrations.oauth.actions.reload',
+                'Reload',
+              )}
+            </Button>
+          }
         />
       ) : null}
       <Space size="large" style={{ marginBottom: 16 }} wrap>
-        <Statistic title="OAuth token inventory" value={summary.total} />
-        <Statistic title="Active tokens" value={summary.active} />
-        <Statistic title="Expired tokens" value={summary.expired} />
-        <Statistic title="Revoked tokens" value={summary.revoked} />
-        <Statistic title="OAuth callback flows" value={flows.length} />
-        <Statistic title="Callback audit trail" value={audits.length} />
         <Statistic
-          title="Token lifecycle summary"
+          title={formatMessage(
+            'pages.integrations.oauth.summary.tokenInventory',
+            'OAuth token inventory',
+          )}
+          value={summary.total}
+        />
+        <Statistic
+          title={formatMessage(
+            'pages.integrations.oauth.summary.activeTokens',
+            'Active tokens',
+          )}
+          value={summary.active}
+        />
+        <Statistic
+          title={formatMessage(
+            'pages.integrations.oauth.summary.expiredTokens',
+            'Expired tokens',
+          )}
+          value={summary.expired}
+        />
+        <Statistic
+          title={formatMessage(
+            'pages.integrations.oauth.summary.revokedTokens',
+            'Revoked tokens',
+          )}
+          value={summary.revoked}
+        />
+        <Statistic
+          title={formatMessage(
+            'pages.integrations.oauth.summary.callbackFlows',
+            'OAuth callback flows',
+          )}
+          value={flows.length}
+        />
+        <Statistic
+          title={formatMessage(
+            'pages.integrations.oauth.summary.callbackAuditTrail',
+            'Callback audit trail',
+          )}
+          value={audits.length}
+        />
+        <Statistic
+          title={formatMessage(
+            'pages.integrations.oauth.summary.lifecycle',
+            'Token lifecycle summary',
+          )}
           value={summary.providers}
-          suffix="provider(s)"
+          suffix={formatMessage(
+            'pages.integrations.oauth.summary.providerSuffix',
+            'provider(s)',
+          )}
         />
       </Space>
       {lastStartedFlow ? (
@@ -416,7 +693,10 @@ export default function OAuthIntegrationPage() {
           showIcon
           style={{ marginBottom: 16 }}
           type="success"
-          message="OAuth callback flow admission"
+          message={formatMessage(
+            'pages.integrations.oauth.messages.callbackFlowAdmission',
+            'OAuth callback flow admission',
+          )}
           description={lastStartedFlow.authorizationUrl}
         />
       ) : null}
@@ -427,7 +707,10 @@ export default function OAuthIntegrationPage() {
         loading={loading}
         toolBarRender={() => [
           <Typography.Text key="live-policy" type="secondary">
-            Live OAuth token inventory
+            {formatMessage(
+              'pages.integrations.oauth.policy.liveInventory',
+              'Live OAuth token inventory',
+            )}
           </Typography.Text>,
           <Button
             disabled={!canManageOAuthIntegration || providers.length === 0}
@@ -437,7 +720,10 @@ export default function OAuthIntegrationPage() {
             title={OAUTH_MANAGE_PERMISSION_MARKER}
             type="primary"
           >
-            Start OAuth flow
+            {formatMessage(
+              'pages.integrations.oauth.actions.startFlow',
+              'Start OAuth flow',
+            )}
           </Button>,
           filterToolbar,
           <CurrentPageExportButton<OAuthTokenSummary>
@@ -458,7 +744,10 @@ export default function OAuthIntegrationPage() {
         loading={loading}
         toolBarRender={() => [
           <Typography.Text key="flow-policy" type="secondary">
-            State validation flow ledger
+            {formatMessage(
+              'pages.integrations.oauth.policy.flowLedger',
+              'State validation flow ledger',
+            )}
           </Typography.Text>,
           flowFilterToolbar,
         ]}
@@ -473,7 +762,10 @@ export default function OAuthIntegrationPage() {
         loading={loading}
         toolBarRender={() => [
           <Typography.Text key="audit-policy" type="secondary">
-            OAuth callback audit trail
+            {formatMessage(
+              'pages.integrations.oauth.policy.auditTrail',
+              'OAuth callback audit trail',
+            )}
           </Typography.Text>,
           auditFilterToolbar,
         ]}
@@ -483,38 +775,125 @@ export default function OAuthIntegrationPage() {
       />
       <ReadOnlyDetailDrawer
         fields={[
-          { label: 'Token ID', value: selected?.id },
-          { label: 'Provider', value: selected?.providerCode },
-          { label: 'Subject Type', value: selected?.subjectType },
-          { label: 'Subject ID', value: selected?.subjectId },
-          { label: 'Provider Account', value: selected?.providerAccountId },
-          { label: 'Status', value: selected?.status },
-          { label: 'Scopes', value: selected?.scopes.join(', ') },
-          { label: 'Expires At', value: selected?.expiresAt },
-          { label: 'Last Rotated At', value: selected?.lastRotatedAt },
-          { label: 'Revoked At', value: selected?.revokedAt },
-          { label: 'Revoked By', value: selected?.revokedBy },
-          { label: 'Revoke Reason', value: selected?.revokeReason },
           {
-            label: 'Access Token Ref',
+            label: formatMessage(
+              'pages.integrations.oauth.fields.tokenId',
+              'Token ID',
+            ),
+            value: selected?.id,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.oauth.fields.provider',
+              'Provider',
+            ),
+            value: selected?.providerCode,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.oauth.fields.subjectType',
+              'Subject Type',
+            ),
+            value: selected?.subjectType,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.oauth.fields.subjectId',
+              'Subject ID',
+            ),
+            value: selected?.subjectId,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.oauth.fields.providerAccount',
+              'Provider Account',
+            ),
+            value: selected?.providerAccountId,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.oauth.fields.status',
+              'Status',
+            ),
+            value: selected?.status,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.oauth.fields.scopes',
+              'Scopes',
+            ),
+            value: selected?.scopes.join(', '),
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.oauth.fields.expiresAt',
+              'Expires At',
+            ),
+            value: selected?.expiresAt,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.oauth.fields.lastRotatedAt',
+              'Last Rotated At',
+            ),
+            value: selected?.lastRotatedAt,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.oauth.fields.revokedAt',
+              'Revoked At',
+            ),
+            value: selected?.revokedAt,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.oauth.fields.revokedBy',
+              'Revoked By',
+            ),
+            value: selected?.revokedBy,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.oauth.fields.revokeReason',
+              'Revoke Reason',
+            ),
+            value: selected?.revokeReason,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.oauth.fields.accessTokenRef',
+              'Access Token Ref',
+            ),
             value: selected?.accessTokenRef,
             sensitive: true,
           },
           {
-            label: 'Refresh Token Ref',
+            label: formatMessage(
+              'pages.integrations.oauth.fields.refreshTokenRef',
+              'Refresh Token Ref',
+            ),
             value: selected?.refreshTokenRef,
             sensitive: true,
           },
         ]}
         jsonSections={[
           {
-            title: 'OAuth Callback Contract',
+            title: formatMessage(
+              'pages.integrations.oauth.json.callbackContract',
+              'OAuth Callback Contract',
+            ),
             value: callbackContract ?? {},
           },
         ]}
         onClose={() => setSelected(undefined)}
         open={Boolean(selected)}
-        title={selected?.id ?? 'OAuth Token Detail'}
+        title={
+          selected?.id ??
+          formatMessage(
+            'pages.integrations.oauth.detail.title',
+            'OAuth Token Detail',
+          )
+        }
       />
     </PageContainer>
   );

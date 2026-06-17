@@ -3,6 +3,7 @@ import {
   ProTable,
   type ProColumns,
 } from '@ant-design/pro-components';
+import { useIntl } from '@umijs/max';
 import type {
   IntegrationOutboxProcessResult,
   IntegrationOutboxSummary,
@@ -42,30 +43,6 @@ import {
 import { ReadOnlyDetailDrawer } from '../shared/ReadOnlyDetailDrawer';
 
 const SMS_MANAGE_PERMISSION_MARKER = 'integration:sms:manage';
-
-const templateExportColumns: CurrentPageExportColumn<IntegrationTemplateSummary>[] =
-  [
-    { title: 'Code', dataIndex: 'code' },
-    { title: 'Channel', dataIndex: 'channel' },
-    { title: 'Name', dataIndex: 'name' },
-    { title: 'Enabled', dataIndex: 'enabled' },
-    { title: 'Body', dataIndex: 'body', sensitive: true },
-  ];
-
-const outboxExportColumns: CurrentPageExportColumn<IntegrationOutboxSummary>[] =
-  [
-    { title: 'ID', dataIndex: 'id' },
-    { title: 'Provider', dataIndex: 'providerCode' },
-    { title: 'Template', dataIndex: 'templateCode' },
-    { title: 'Recipient', dataIndex: 'recipient' },
-    { title: 'Status', dataIndex: 'status' },
-    { title: 'Retry Count', dataIndex: 'retryCount' },
-    { title: 'Created At', dataIndex: 'createdAt' },
-    { title: 'Sent At', dataIndex: 'sentAt' },
-    { title: 'Payload', dataIndex: 'payload', sensitive: true },
-    { title: 'Preview', dataIndex: 'preview', sensitive: true },
-    { title: 'Error', dataIndex: 'error', sensitive: true },
-  ];
 
 const templateSearchFields: CurrentPageSearchField<IntegrationTemplateSummary>[] =
   ['code', 'channel', 'name'];
@@ -121,6 +98,7 @@ function selectSmsProviderCode(
 }
 
 export default function SmsIntegrationPage() {
+  const intl = useIntl();
   const [templates, setTemplates] = useState<
     readonly IntegrationTemplateSummary[]
   >([]);
@@ -140,6 +118,132 @@ export default function SmsIntegrationPage() {
   const [previewingCode, setPreviewingCode] = useState<string>();
   const [testSendingCode, setTestSendingCode] = useState<string>();
   const [loadError, setLoadError] = useState<string>();
+  const formatMessage = useCallback(
+    (
+      id: string,
+      defaultMessage: string,
+      values?: Record<string, number | string>,
+    ) =>
+      values
+        ? intl.formatMessage({ id, defaultMessage }, values)
+        : intl.formatMessage({ id, defaultMessage }),
+    [intl],
+  );
+  const statusLabels = {
+    disabled: formatMessage(
+      'pages.integrations.sms.status.disabled',
+      'disabled',
+    ),
+    enabled: formatMessage('pages.integrations.sms.status.enabled', 'enabled'),
+  };
+  const staticLabels = {
+    notRun: formatMessage('pages.integrations.sms.static.notRun', 'not run'),
+    safety: formatMessage(
+      'pages.integrations.sms.static.safety',
+      'phone + OTP guarded',
+    ),
+  };
+  const templateExportColumns: CurrentPageExportColumn<IntegrationTemplateSummary>[] =
+    [
+      {
+        title: formatMessage('pages.integrations.sms.fields.code', 'Code'),
+        dataIndex: 'code',
+      },
+      {
+        title: formatMessage(
+          'pages.integrations.sms.fields.channel',
+          'Channel',
+        ),
+        dataIndex: 'channel',
+      },
+      {
+        title: formatMessage('pages.integrations.sms.fields.name', 'Name'),
+        dataIndex: 'name',
+      },
+      {
+        title: formatMessage(
+          'pages.integrations.sms.fields.enabled',
+          'Enabled',
+        ),
+        dataIndex: 'enabled',
+      },
+      {
+        title: formatMessage('pages.integrations.sms.fields.body', 'Body'),
+        dataIndex: 'body',
+        sensitive: true,
+      },
+    ];
+  const outboxExportColumns: CurrentPageExportColumn<IntegrationOutboxSummary>[] =
+    [
+      {
+        title: formatMessage('pages.integrations.sms.fields.id', 'ID'),
+        dataIndex: 'id',
+      },
+      {
+        title: formatMessage(
+          'pages.integrations.sms.fields.provider',
+          'Provider',
+        ),
+        dataIndex: 'providerCode',
+      },
+      {
+        title: formatMessage(
+          'pages.integrations.sms.fields.template',
+          'Template',
+        ),
+        dataIndex: 'templateCode',
+      },
+      {
+        title: formatMessage(
+          'pages.integrations.sms.fields.recipient',
+          'Recipient',
+        ),
+        dataIndex: 'recipient',
+      },
+      {
+        title: formatMessage('pages.integrations.sms.fields.status', 'Status'),
+        dataIndex: 'status',
+      },
+      {
+        title: formatMessage(
+          'pages.integrations.sms.fields.retryCount',
+          'Retry Count',
+        ),
+        dataIndex: 'retryCount',
+      },
+      {
+        title: formatMessage(
+          'pages.integrations.sms.fields.createdAt',
+          'Created At',
+        ),
+        dataIndex: 'createdAt',
+      },
+      {
+        title: formatMessage('pages.integrations.sms.fields.sentAt', 'Sent At'),
+        dataIndex: 'sentAt',
+      },
+      {
+        title: formatMessage(
+          'pages.integrations.sms.fields.payload',
+          'Payload',
+        ),
+        dataIndex: 'payload',
+        sensitive: true,
+      },
+      {
+        title: formatMessage(
+          'pages.integrations.sms.fields.preview',
+          'Preview',
+        ),
+        dataIndex: 'preview',
+        sensitive: true,
+      },
+      {
+        title: formatMessage('pages.integrations.sms.fields.error', 'Error'),
+        dataIndex: 'error',
+        sensitive: true,
+      },
+    ];
 
   const templateFilterOptions: CurrentPageFilterOption<IntegrationTemplateSummary>[] =
     useMemo(
@@ -147,14 +251,17 @@ export default function SmsIntegrationPage() {
         {
           key: 'enabled',
           options: [
-            { label: 'enabled', value: 'true' },
-            { label: 'disabled', value: 'false' },
+            { label: statusLabels.enabled, value: 'true' },
+            { label: statusLabels.disabled, value: 'false' },
           ],
-          placeholder: 'Enabled',
+          placeholder: formatMessage(
+            'pages.integrations.sms.fields.enabled',
+            'Enabled',
+          ),
           predicate: (record, value) => record.enabled === (value === 'true'),
         },
       ],
-      [],
+      [formatMessage, statusLabels.disabled, statusLabels.enabled],
     );
   const outboxFilterOptions: CurrentPageFilterOption<IntegrationOutboxSummary>[] =
     useMemo(
@@ -162,30 +269,42 @@ export default function SmsIntegrationPage() {
         {
           key: 'providerCode',
           options: createCurrentPageFilterOptions(outboxRows, 'providerCode'),
-          placeholder: 'Provider',
+          placeholder: formatMessage(
+            'pages.integrations.sms.fields.provider',
+            'Provider',
+          ),
           predicate: (record, value) => record.providerCode === value,
         },
         {
           key: 'status',
           options: createCurrentPageFilterOptions(outboxRows, 'status'),
-          placeholder: 'Status',
+          placeholder: formatMessage(
+            'pages.integrations.sms.fields.status',
+            'Status',
+          ),
           predicate: (record, value) => record.status === value,
         },
       ],
-      [outboxRows],
+      [formatMessage, outboxRows],
     );
   const { filteredRows: filteredTemplates, toolbar: templateFilterToolbar } =
     useCurrentPageFilters<IntegrationTemplateSummary>({
       rows: templates,
       searchFields: templateSearchFields,
-      searchPlaceholder: 'Search live SMS templates',
+      searchPlaceholder: formatMessage(
+        'pages.integrations.sms.search.templates',
+        'Search live SMS templates',
+      ),
       selectFilters: templateFilterOptions,
     });
   const { filteredRows: filteredOutboxRows, toolbar: outboxFilterToolbar } =
     useCurrentPageFilters<IntegrationOutboxSummary>({
       rows: outboxRows,
       searchFields: outboxSearchFields,
-      searchPlaceholder: 'Search live SMS outbox',
+      searchPlaceholder: formatMessage(
+        'pages.integrations.sms.search.outbox',
+        'Search live SMS outbox',
+      ),
       selectFilters: outboxFilterOptions,
     });
   const queuedCount = outboxRows.filter(
@@ -210,12 +329,15 @@ export default function SmsIntegrationPage() {
       setLoadError(
         error instanceof Error
           ? error.message
-          : 'Unable to load live SMS integration operations.',
+          : formatMessage(
+              'pages.integrations.sms.load.failure',
+              'Unable to load live SMS integration operations.',
+            ),
       );
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [formatMessage]);
 
   useEffect(() => {
     void loadSmsOperations();
@@ -234,7 +356,12 @@ export default function SmsIntegrationPage() {
       );
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'Unable to load SMS detail.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.integrations.sms.load.detailFailure',
+              'Unable to load SMS detail.',
+            ),
       );
     }
   };
@@ -252,7 +379,10 @@ export default function SmsIntegrationPage() {
       message.error(
         error instanceof Error
           ? error.message
-          : 'Unable to load SMS outbox detail.',
+          : formatMessage(
+              'pages.integrations.sms.load.outboxDetailFailure',
+              'Unable to load SMS outbox detail.',
+            ),
       );
     }
   };
@@ -271,12 +401,20 @@ export default function SmsIntegrationPage() {
       setSelected(record);
       setSelectedOutbox(outbox);
       setPreview(nextPreview);
-      message.success('SMS template preview rendered');
+      message.success(
+        formatMessage(
+          'pages.integrations.sms.messages.previewRendered',
+          'SMS template preview rendered',
+        ),
+      );
     } catch (error: unknown) {
       message.error(
         error instanceof Error
           ? error.message
-          : 'Unable to preview SMS template.',
+          : formatMessage(
+              'pages.integrations.sms.messages.previewFailure',
+              'Unable to preview SMS template.',
+            ),
       );
     } finally {
       setPreviewingCode(undefined);
@@ -291,14 +429,21 @@ export default function SmsIntegrationPage() {
       });
       setLastProcess(result);
       message.success(
-        `SMS outbox processed: attempted ${result.attemptedCount}`,
+        formatMessage(
+          'pages.integrations.sms.messages.processed',
+          'SMS outbox processed: attempted {count}',
+          { count: result.attemptedCount },
+        ),
       );
       await loadSmsOperations();
     } catch (error: unknown) {
       message.error(
         error instanceof Error
           ? error.message
-          : 'Unable to process SMS outbox.',
+          : formatMessage(
+              'pages.integrations.sms.messages.processFailure',
+              'Unable to process SMS outbox.',
+            ),
       );
     } finally {
       setProcessing(false);
@@ -322,11 +467,22 @@ export default function SmsIntegrationPage() {
       setSelected(record);
       setSelectedOutbox(result.message);
       setLastTestSend(result);
-      message.success(`SMS test-send ${result.status}.`);
+      message.success(
+        formatMessage(
+          'pages.integrations.sms.messages.testSent',
+          'SMS test-send {status}.',
+          { status: result.status },
+        ),
+      );
       await loadSmsOperations();
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'Unable to send SMS test.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.integrations.sms.messages.testFailure',
+              'Unable to send SMS test.',
+            ),
       );
     } finally {
       setTestSendingCode(undefined);
@@ -335,7 +491,7 @@ export default function SmsIntegrationPage() {
 
   const templateColumns: ProColumns<IntegrationTemplateSummary>[] = [
     {
-      title: 'Code',
+      title: formatMessage('pages.integrations.sms.fields.code', 'Code'),
       dataIndex: 'code',
       render: (_, record) => (
         <Typography.Link onClick={() => void openTemplateDetail(record.code)}>
@@ -343,26 +499,32 @@ export default function SmsIntegrationPage() {
         </Typography.Link>
       ),
     },
-    { title: 'Name', dataIndex: 'name' },
-    { title: 'Body', dataIndex: 'body' },
     {
-      title: 'Enabled',
+      title: formatMessage('pages.integrations.sms.fields.name', 'Name'),
+      dataIndex: 'name',
+    },
+    {
+      title: formatMessage('pages.integrations.sms.fields.body', 'Body'),
+      dataIndex: 'body',
+    },
+    {
+      title: formatMessage('pages.integrations.sms.fields.enabled', 'Enabled'),
       render: (_, record) => (
         <Tag color={record.enabled ? 'green' : 'default'}>
-          {record.enabled ? 'enabled' : 'disabled'}
+          {record.enabled ? statusLabels.enabled : statusLabels.disabled}
         </Tag>
       ),
     },
     {
-      title: 'Safety',
-      render: () => <Tag color="orange">phone + OTP guarded</Tag>,
+      title: formatMessage('pages.integrations.sms.fields.safety', 'Safety'),
+      render: () => <Tag color="orange">{staticLabels.safety}</Tag>,
     },
     {
-      title: 'Action',
+      title: formatMessage('pages.integrations.sms.actions.column', 'Action'),
       valueType: 'option',
       render: (_, record) => [
         <a key="detail" onClick={() => void openTemplateDetail(record.code)}>
-          Detail
+          {formatMessage('pages.integrations.sms.actions.detail', 'Detail')}
         </a>,
         <Button
           key="preview"
@@ -371,7 +533,10 @@ export default function SmsIntegrationPage() {
           size="small"
           type="link"
         >
-          Preview template
+          {formatMessage(
+            'pages.integrations.sms.actions.previewTemplate',
+            'Preview template',
+          )}
         </Button>,
         <Button
           key="test-send"
@@ -381,7 +546,10 @@ export default function SmsIntegrationPage() {
           title={SMS_MANAGE_PERMISSION_MARKER}
           type="link"
         >
-          Send test
+          {formatMessage(
+            'pages.integrations.sms.actions.sendTest',
+            'Send test',
+          )}
         </Button>,
       ],
     },
@@ -389,7 +557,7 @@ export default function SmsIntegrationPage() {
 
   const outboxColumns: ProColumns<IntegrationOutboxSummary>[] = [
     {
-      title: 'Message',
+      title: formatMessage('pages.integrations.sms.fields.message', 'Message'),
       dataIndex: 'id',
       render: (_, record) => (
         <Typography.Link onClick={() => void openOutboxDetail(record.id)}>
@@ -397,55 +565,127 @@ export default function SmsIntegrationPage() {
         </Typography.Link>
       ),
     },
-    { title: 'Provider', dataIndex: 'providerCode' },
-    { title: 'Template', dataIndex: 'templateCode' },
-    { title: 'Recipient', dataIndex: 'recipient' },
     {
-      title: 'Status',
+      title: formatMessage(
+        'pages.integrations.sms.fields.provider',
+        'Provider',
+      ),
+      dataIndex: 'providerCode',
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.sms.fields.template',
+        'Template',
+      ),
+      dataIndex: 'templateCode',
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.sms.fields.recipient',
+        'Recipient',
+      ),
+      dataIndex: 'recipient',
+    },
+    {
+      title: formatMessage('pages.integrations.sms.fields.status', 'Status'),
       render: (_, record) => (
         <Tag color={statusColor(record.status)}>{record.status}</Tag>
       ),
     },
-    { title: 'Retry', dataIndex: 'retryCount' },
-    { title: 'Created At', dataIndex: 'createdAt' },
     {
-      title: 'Action',
+      title: formatMessage('pages.integrations.sms.fields.retry', 'Retry'),
+      dataIndex: 'retryCount',
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.sms.fields.createdAt',
+        'Created At',
+      ),
+      dataIndex: 'createdAt',
+    },
+    {
+      title: formatMessage('pages.integrations.sms.actions.column', 'Action'),
       valueType: 'option',
       render: (_, record) => (
-        <a onClick={() => void openOutboxDetail(record.id)}>Detail</a>
+        <a onClick={() => void openOutboxDetail(record.id)}>
+          {formatMessage('pages.integrations.sms.actions.detail', 'Detail')}
+        </a>
       ),
     },
   ];
 
   return (
-    <PageContainer title="SMS" subTitle="S12 Integrations">
+    <PageContainer
+      title={formatMessage('menu.integrations.sms', 'SMS')}
+      subTitle={formatMessage('pages.integrations.section', 'S12 Integrations')}
+    >
       {loadError ? (
         <Alert
           action={
             <Button onClick={() => void loadSmsOperations()}>
-              Reload live SMS operations
+              {formatMessage(
+                'pages.integrations.sms.actions.reloadOperations',
+                'Reload live SMS operations',
+              )}
             </Button>
           }
           description={loadError}
-          message="Live SMS integration operations unavailable"
+          message={formatMessage(
+            'pages.integrations.sms.load.liveUnavailable',
+            'Live SMS integration operations unavailable',
+          )}
           showIcon
           style={{ marginBottom: 16 }}
           type="error"
         />
       ) : null}
       <Space size="large" style={{ marginBottom: 16 }} wrap>
-        <Statistic title="Live SMS templates" value={templates.length} />
-        <Statistic title="SMS outbox operations" value={outboxRows.length} />
-        <Statistic title="Queued SMS outbox" value={queuedCount} />
-        <Statistic title="Failed SMS outbox" value={failedCount} />
         <Statistic
-          title="Last SMS process"
-          value={lastProcess?.attemptedCount ?? 0}
-          suffix={`sent ${lastProcess?.sentCount ?? 0}`}
+          title={formatMessage(
+            'pages.integrations.sms.summary.liveTemplates',
+            'Live SMS templates',
+          )}
+          value={templates.length}
         />
         <Statistic
-          title="Last SMS test-send"
-          value={lastTestSend?.status ?? 'not run'}
+          title={formatMessage(
+            'pages.integrations.sms.summary.outboxOperations',
+            'SMS outbox operations',
+          )}
+          value={outboxRows.length}
+        />
+        <Statistic
+          title={formatMessage(
+            'pages.integrations.sms.summary.queuedOutbox',
+            'Queued SMS outbox',
+          )}
+          value={queuedCount}
+        />
+        <Statistic
+          title={formatMessage(
+            'pages.integrations.sms.summary.failedOutbox',
+            'Failed SMS outbox',
+          )}
+          value={failedCount}
+        />
+        <Statistic
+          title={formatMessage(
+            'pages.integrations.sms.summary.lastProcess',
+            'Last SMS process',
+          )}
+          value={lastProcess?.attemptedCount ?? 0}
+          suffix={formatMessage(
+            'pages.integrations.sms.summary.sentSuffix',
+            'sent {count}',
+            { count: lastProcess?.sentCount ?? 0 },
+          )}
+        />
+        <Statistic
+          title={formatMessage(
+            'pages.integrations.sms.summary.lastTestSend',
+            'Last SMS test-send',
+          )}
+          value={lastTestSend?.status ?? staticLabels.notRun}
         />
       </Space>
       <ProTable<IntegrationTemplateSummary>
@@ -459,7 +699,10 @@ export default function SmsIntegrationPage() {
         toolBarRender={() => [
           templateFilterToolbar,
           <Button key="reload" onClick={() => void loadSmsOperations()}>
-            Reload live SMS operations
+            {formatMessage(
+              'pages.integrations.sms.actions.reloadOperations',
+              'Reload live SMS operations',
+            )}
           </Button>,
           <Button
             key="process"
@@ -467,7 +710,10 @@ export default function SmsIntegrationPage() {
             onClick={() => void processQueuedOutbox()}
             title={SMS_MANAGE_PERMISSION_MARKER}
           >
-            Process queued SMS outbox
+            {formatMessage(
+              'pages.integrations.sms.actions.processQueuedOutbox',
+              'Process queued SMS outbox',
+            )}
           </Button>,
           <CurrentPageExportButton<IntegrationTemplateSummary>
             columns={templateExportColumns}
@@ -498,45 +744,155 @@ export default function SmsIntegrationPage() {
       />
       <ReadOnlyDetailDrawer
         fields={[
-          { label: 'Code', value: selected?.code },
-          { label: 'Channel', value: selected?.channel },
-          { label: 'Name', value: selected?.name },
           {
-            label: 'Enabled',
-            value: selected?.enabled ? 'enabled' : 'disabled',
+            label: formatMessage('pages.integrations.sms.fields.code', 'Code'),
+            value: selected?.code,
           },
-          { label: 'Safety', value: 'phone + OTP guarded' },
-          { label: 'Outbox Message', value: selectedOutbox?.id },
-          { label: 'Outbox Provider', value: selectedOutbox?.providerCode },
-          { label: 'Outbox Recipient', value: selectedOutbox?.recipient },
-          { label: 'Outbox Status', value: selectedOutbox?.status },
-          { label: 'Outbox Retry Count', value: selectedOutbox?.retryCount },
-          { label: 'Outbox Sent At', value: selectedOutbox?.sentAt },
-          { label: 'Outbox Error', value: selectedOutbox?.error },
-          { label: 'Test Send Status', value: lastTestSend?.status },
-          { label: 'Test Send Error', value: lastTestSend?.error },
-          { label: 'Test Send At', value: lastTestSend?.testedAt },
-          { label: 'Preview Body', value: preview?.body },
-          { label: 'Body', value: selected?.body },
-          { label: 'Rendered Preview', value: preview?.body },
+          {
+            label: formatMessage(
+              'pages.integrations.sms.fields.channel',
+              'Channel',
+            ),
+            value: selected?.channel,
+          },
+          {
+            label: formatMessage('pages.integrations.sms.fields.name', 'Name'),
+            value: selected?.name,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.sms.fields.enabled',
+              'Enabled',
+            ),
+            value: selected?.enabled
+              ? statusLabels.enabled
+              : statusLabels.disabled,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.sms.fields.safety',
+              'Safety',
+            ),
+            value: staticLabels.safety,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.sms.fields.outboxMessage',
+              'Outbox Message',
+            ),
+            value: selectedOutbox?.id,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.sms.fields.outboxProvider',
+              'Outbox Provider',
+            ),
+            value: selectedOutbox?.providerCode,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.sms.fields.outboxRecipient',
+              'Outbox Recipient',
+            ),
+            value: selectedOutbox?.recipient,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.sms.fields.outboxStatus',
+              'Outbox Status',
+            ),
+            value: selectedOutbox?.status,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.sms.fields.outboxRetryCount',
+              'Outbox Retry Count',
+            ),
+            value: selectedOutbox?.retryCount,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.sms.fields.outboxSentAt',
+              'Outbox Sent At',
+            ),
+            value: selectedOutbox?.sentAt,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.sms.fields.outboxError',
+              'Outbox Error',
+            ),
+            value: selectedOutbox?.error,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.sms.fields.testSendStatus',
+              'Test Send Status',
+            ),
+            value: lastTestSend?.status,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.sms.fields.testSendError',
+              'Test Send Error',
+            ),
+            value: lastTestSend?.error,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.sms.fields.testSendAt',
+              'Test Send At',
+            ),
+            value: lastTestSend?.testedAt,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.sms.fields.previewBody',
+              'Preview Body',
+            ),
+            value: preview?.body,
+          },
+          {
+            label: formatMessage('pages.integrations.sms.fields.body', 'Body'),
+            value: selected?.body,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.sms.fields.renderedPreview',
+              'Rendered Preview',
+            ),
+            value: preview?.body,
+          },
         ]}
         jsonSections={[
           {
-            title: 'Sample Outbox Payload',
+            title: formatMessage(
+              'pages.integrations.sms.json.sampleOutboxPayload',
+              'Sample Outbox Payload',
+            ),
             value: selectedOutbox?.payload ?? {},
           },
           {
-            title: 'Template Preview Payload',
+            title: formatMessage(
+              'pages.integrations.sms.json.templatePreviewPayload',
+              'Template Preview Payload',
+            ),
             value: selected
               ? buildPreviewPayload(selected, selectedOutbox)
               : undefined,
           },
           {
-            title: 'Last Process Result',
+            title: formatMessage(
+              'pages.integrations.sms.json.lastProcessResult',
+              'Last Process Result',
+            ),
             value: lastProcess,
           },
           {
-            title: 'Last Test Send Result',
+            title: formatMessage(
+              'pages.integrations.sms.json.lastTestSendResult',
+              'Last Test Send Result',
+            ),
             value: lastTestSend,
           },
         ]}
@@ -546,7 +902,14 @@ export default function SmsIntegrationPage() {
           setPreview(undefined);
         }}
         open={Boolean(selected || selectedOutbox)}
-        title={selected?.name ?? selectedOutbox?.id ?? 'SMS Operation Detail'}
+        title={
+          selected?.name ??
+          selectedOutbox?.id ??
+          formatMessage(
+            'pages.integrations.sms.detail.title',
+            'SMS Operation Detail',
+          )
+        }
       />
     </PageContainer>
   );

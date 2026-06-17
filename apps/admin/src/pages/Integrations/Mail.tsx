@@ -3,6 +3,7 @@ import {
   ProTable,
   type ProColumns,
 } from '@ant-design/pro-components';
+import { useIntl } from '@umijs/max';
 import type {
   IntegrationOutboxProcessResult,
   IntegrationOutboxSummary,
@@ -42,31 +43,6 @@ import {
 import { ReadOnlyDetailDrawer } from '../shared/ReadOnlyDetailDrawer';
 
 const MAIL_MANAGE_PERMISSION_MARKER = 'integration:mail:manage';
-
-const templateExportColumns: CurrentPageExportColumn<IntegrationTemplateSummary>[] =
-  [
-    { title: 'Code', dataIndex: 'code' },
-    { title: 'Channel', dataIndex: 'channel' },
-    { title: 'Name', dataIndex: 'name' },
-    { title: 'Subject', dataIndex: 'subject' },
-    { title: 'Enabled', dataIndex: 'enabled' },
-    { title: 'Body', dataIndex: 'body', sensitive: true },
-  ];
-
-const outboxExportColumns: CurrentPageExportColumn<IntegrationOutboxSummary>[] =
-  [
-    { title: 'ID', dataIndex: 'id' },
-    { title: 'Provider', dataIndex: 'providerCode' },
-    { title: 'Template', dataIndex: 'templateCode' },
-    { title: 'Recipient', dataIndex: 'recipient' },
-    { title: 'Subject', dataIndex: 'subject' },
-    { title: 'Status', dataIndex: 'status' },
-    { title: 'Retry Count', dataIndex: 'retryCount' },
-    { title: 'Created At', dataIndex: 'createdAt' },
-    { title: 'Sent At', dataIndex: 'sentAt' },
-    { title: 'Payload', dataIndex: 'payload', sensitive: true },
-    { title: 'Preview', dataIndex: 'preview', sensitive: true },
-  ];
 
 const templateSearchFields: CurrentPageSearchField<IntegrationTemplateSummary>[] =
   ['code', 'channel', 'name', 'subject'];
@@ -115,6 +91,7 @@ function selectMailProviderCode(
 }
 
 export default function MailIntegrationPage() {
+  const intl = useIntl();
   const [templates, setTemplates] = useState<
     readonly IntegrationTemplateSummary[]
   >([]);
@@ -134,6 +111,150 @@ export default function MailIntegrationPage() {
   const [previewingCode, setPreviewingCode] = useState<string>();
   const [testSendingCode, setTestSendingCode] = useState<string>();
   const [loadError, setLoadError] = useState<string>();
+  const formatMessage = useCallback(
+    (
+      id: string,
+      defaultMessage: string,
+      values?: Record<string, number | string>,
+    ) =>
+      values
+        ? intl.formatMessage({ id, defaultMessage }, values)
+        : intl.formatMessage({ id, defaultMessage }),
+    [intl],
+  );
+  const statusLabels = {
+    disabled: formatMessage(
+      'pages.integrations.mail.status.disabled',
+      'disabled',
+    ),
+    enabled: formatMessage('pages.integrations.mail.status.enabled', 'enabled'),
+  };
+  const previewPolicyLabels = {
+    allowed: formatMessage(
+      'pages.integrations.mail.previewPolicy.allowed',
+      'preview allowed',
+    ),
+    blocked: formatMessage(
+      'pages.integrations.mail.previewPolicy.blocked',
+      'preview blocked',
+    ),
+  };
+  const staticLabels = {
+    notRun: formatMessage('pages.integrations.mail.static.notRun', 'not run'),
+  };
+  const templateExportColumns: CurrentPageExportColumn<IntegrationTemplateSummary>[] =
+    [
+      {
+        title: formatMessage('pages.integrations.mail.fields.code', 'Code'),
+        dataIndex: 'code',
+      },
+      {
+        title: formatMessage(
+          'pages.integrations.mail.fields.channel',
+          'Channel',
+        ),
+        dataIndex: 'channel',
+      },
+      {
+        title: formatMessage('pages.integrations.mail.fields.name', 'Name'),
+        dataIndex: 'name',
+      },
+      {
+        title: formatMessage(
+          'pages.integrations.mail.fields.subject',
+          'Subject',
+        ),
+        dataIndex: 'subject',
+      },
+      {
+        title: formatMessage(
+          'pages.integrations.mail.fields.enabled',
+          'Enabled',
+        ),
+        dataIndex: 'enabled',
+      },
+      {
+        title: formatMessage('pages.integrations.mail.fields.body', 'Body'),
+        dataIndex: 'body',
+        sensitive: true,
+      },
+    ];
+  const outboxExportColumns: CurrentPageExportColumn<IntegrationOutboxSummary>[] =
+    [
+      {
+        title: formatMessage('pages.integrations.mail.fields.id', 'ID'),
+        dataIndex: 'id',
+      },
+      {
+        title: formatMessage(
+          'pages.integrations.mail.fields.provider',
+          'Provider',
+        ),
+        dataIndex: 'providerCode',
+      },
+      {
+        title: formatMessage(
+          'pages.integrations.mail.fields.template',
+          'Template',
+        ),
+        dataIndex: 'templateCode',
+      },
+      {
+        title: formatMessage(
+          'pages.integrations.mail.fields.recipient',
+          'Recipient',
+        ),
+        dataIndex: 'recipient',
+      },
+      {
+        title: formatMessage(
+          'pages.integrations.mail.fields.subject',
+          'Subject',
+        ),
+        dataIndex: 'subject',
+      },
+      {
+        title: formatMessage('pages.integrations.mail.fields.status', 'Status'),
+        dataIndex: 'status',
+      },
+      {
+        title: formatMessage(
+          'pages.integrations.mail.fields.retryCount',
+          'Retry Count',
+        ),
+        dataIndex: 'retryCount',
+      },
+      {
+        title: formatMessage(
+          'pages.integrations.mail.fields.createdAt',
+          'Created At',
+        ),
+        dataIndex: 'createdAt',
+      },
+      {
+        title: formatMessage(
+          'pages.integrations.mail.fields.sentAt',
+          'Sent At',
+        ),
+        dataIndex: 'sentAt',
+      },
+      {
+        title: formatMessage(
+          'pages.integrations.mail.fields.payload',
+          'Payload',
+        ),
+        dataIndex: 'payload',
+        sensitive: true,
+      },
+      {
+        title: formatMessage(
+          'pages.integrations.mail.fields.preview',
+          'Preview',
+        ),
+        dataIndex: 'preview',
+        sensitive: true,
+      },
+    ];
 
   const templateFilterOptions: CurrentPageFilterOption<IntegrationTemplateSummary>[] =
     useMemo(
@@ -141,14 +262,17 @@ export default function MailIntegrationPage() {
         {
           key: 'enabled',
           options: [
-            { label: 'enabled', value: 'true' },
-            { label: 'disabled', value: 'false' },
+            { label: statusLabels.enabled, value: 'true' },
+            { label: statusLabels.disabled, value: 'false' },
           ],
-          placeholder: 'Enabled',
+          placeholder: formatMessage(
+            'pages.integrations.mail.fields.enabled',
+            'Enabled',
+          ),
           predicate: (record, value) => record.enabled === (value === 'true'),
         },
       ],
-      [],
+      [formatMessage, statusLabels.disabled, statusLabels.enabled],
     );
   const outboxFilterOptions: CurrentPageFilterOption<IntegrationOutboxSummary>[] =
     useMemo(
@@ -156,30 +280,42 @@ export default function MailIntegrationPage() {
         {
           key: 'providerCode',
           options: createCurrentPageFilterOptions(outboxRows, 'providerCode'),
-          placeholder: 'Provider',
+          placeholder: formatMessage(
+            'pages.integrations.mail.fields.provider',
+            'Provider',
+          ),
           predicate: (record, value) => record.providerCode === value,
         },
         {
           key: 'status',
           options: createCurrentPageFilterOptions(outboxRows, 'status'),
-          placeholder: 'Status',
+          placeholder: formatMessage(
+            'pages.integrations.mail.fields.status',
+            'Status',
+          ),
           predicate: (record, value) => record.status === value,
         },
       ],
-      [outboxRows],
+      [formatMessage, outboxRows],
     );
   const { filteredRows: filteredTemplates, toolbar: templateFilterToolbar } =
     useCurrentPageFilters<IntegrationTemplateSummary>({
       rows: templates,
       searchFields: templateSearchFields,
-      searchPlaceholder: 'Search live mail templates',
+      searchPlaceholder: formatMessage(
+        'pages.integrations.mail.search.templates',
+        'Search live mail templates',
+      ),
       selectFilters: templateFilterOptions,
     });
   const { filteredRows: filteredOutboxRows, toolbar: outboxFilterToolbar } =
     useCurrentPageFilters<IntegrationOutboxSummary>({
       rows: outboxRows,
       searchFields: outboxSearchFields,
-      searchPlaceholder: 'Search live mail outbox',
+      searchPlaceholder: formatMessage(
+        'pages.integrations.mail.search.outbox',
+        'Search live mail outbox',
+      ),
       selectFilters: outboxFilterOptions,
     });
   const queuedCount = outboxRows.filter(
@@ -204,12 +340,15 @@ export default function MailIntegrationPage() {
       setLoadError(
         error instanceof Error
           ? error.message
-          : 'Unable to load live mail integration operations.',
+          : formatMessage(
+              'pages.integrations.mail.load.failure',
+              'Unable to load live mail integration operations.',
+            ),
       );
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [formatMessage]);
 
   useEffect(() => {
     void loadMailOperations();
@@ -228,7 +367,12 @@ export default function MailIntegrationPage() {
       );
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'Unable to load mail detail.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.integrations.mail.load.detailFailure',
+              'Unable to load mail detail.',
+            ),
       );
     }
   };
@@ -246,7 +390,10 @@ export default function MailIntegrationPage() {
       message.error(
         error instanceof Error
           ? error.message
-          : 'Unable to load outbox detail.',
+          : formatMessage(
+              'pages.integrations.mail.load.outboxDetailFailure',
+              'Unable to load outbox detail.',
+            ),
       );
     }
   };
@@ -265,12 +412,20 @@ export default function MailIntegrationPage() {
       setSelected(record);
       setSelectedOutbox(outbox);
       setPreview(nextPreview);
-      message.success('Mail template preview rendered');
+      message.success(
+        formatMessage(
+          'pages.integrations.mail.messages.previewRendered',
+          'Mail template preview rendered',
+        ),
+      );
     } catch (error: unknown) {
       message.error(
         error instanceof Error
           ? error.message
-          : 'Unable to preview mail template.',
+          : formatMessage(
+              'pages.integrations.mail.messages.previewFailure',
+              'Unable to preview mail template.',
+            ),
       );
     } finally {
       setPreviewingCode(undefined);
@@ -285,14 +440,21 @@ export default function MailIntegrationPage() {
       });
       setLastProcess(result);
       message.success(
-        `Mail outbox processed: attempted ${result.attemptedCount}`,
+        formatMessage(
+          'pages.integrations.mail.messages.processed',
+          'Mail outbox processed: attempted {count}',
+          { count: result.attemptedCount },
+        ),
       );
       await loadMailOperations();
     } catch (error: unknown) {
       message.error(
         error instanceof Error
           ? error.message
-          : 'Unable to process mail outbox.',
+          : formatMessage(
+              'pages.integrations.mail.messages.processFailure',
+              'Unable to process mail outbox.',
+            ),
       );
     } finally {
       setProcessing(false);
@@ -316,11 +478,22 @@ export default function MailIntegrationPage() {
       setSelected(record);
       setSelectedOutbox(result.message);
       setLastTestSend(result);
-      message.success(`Mail test-send ${result.status}.`);
+      message.success(
+        formatMessage(
+          'pages.integrations.mail.messages.testSent',
+          'Mail test-send {status}.',
+          { status: result.status },
+        ),
+      );
       await loadMailOperations();
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'Unable to send mail test.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.integrations.mail.messages.testFailure',
+              'Unable to send mail test.',
+            ),
       );
     } finally {
       setTestSendingCode(undefined);
@@ -329,7 +502,7 @@ export default function MailIntegrationPage() {
 
   const templateColumns: ProColumns<IntegrationTemplateSummary>[] = [
     {
-      title: 'Code',
+      title: formatMessage('pages.integrations.mail.fields.code', 'Code'),
       dataIndex: 'code',
       render: (_, record) => (
         <Typography.Link onClick={() => void openTemplateDetail(record.code)}>
@@ -337,30 +510,41 @@ export default function MailIntegrationPage() {
         </Typography.Link>
       ),
     },
-    { title: 'Name', dataIndex: 'name' },
-    { title: 'Subject', dataIndex: 'subject' },
     {
-      title: 'Enabled',
+      title: formatMessage('pages.integrations.mail.fields.name', 'Name'),
+      dataIndex: 'name',
+    },
+    {
+      title: formatMessage('pages.integrations.mail.fields.subject', 'Subject'),
+      dataIndex: 'subject',
+    },
+    {
+      title: formatMessage('pages.integrations.mail.fields.enabled', 'Enabled'),
       render: (_, record) => (
         <Tag color={record.enabled ? 'green' : 'default'}>
-          {record.enabled ? 'enabled' : 'disabled'}
+          {record.enabled ? statusLabels.enabled : statusLabels.disabled}
         </Tag>
       ),
     },
     {
-      title: 'Preview Policy',
+      title: formatMessage(
+        'pages.integrations.mail.fields.previewPolicy',
+        'Preview Policy',
+      ),
       render: (_, record) => (
         <Tag color={record.enabled ? 'green' : 'default'}>
-          {record.enabled ? 'preview allowed' : 'preview blocked'}
+          {record.enabled
+            ? previewPolicyLabels.allowed
+            : previewPolicyLabels.blocked}
         </Tag>
       ),
     },
     {
-      title: 'Action',
+      title: formatMessage('pages.integrations.mail.actions.column', 'Action'),
       valueType: 'option',
       render: (_, record) => [
         <a key="detail" onClick={() => void openTemplateDetail(record.code)}>
-          Detail
+          {formatMessage('pages.integrations.mail.actions.detail', 'Detail')}
         </a>,
         <Button
           key="preview"
@@ -369,7 +553,10 @@ export default function MailIntegrationPage() {
           size="small"
           type="link"
         >
-          Preview template
+          {formatMessage(
+            'pages.integrations.mail.actions.previewTemplate',
+            'Preview template',
+          )}
         </Button>,
         <Button
           key="test-send"
@@ -379,7 +566,10 @@ export default function MailIntegrationPage() {
           title={MAIL_MANAGE_PERMISSION_MARKER}
           type="link"
         >
-          Send test
+          {formatMessage(
+            'pages.integrations.mail.actions.sendTest',
+            'Send test',
+          )}
         </Button>,
       ],
     },
@@ -387,7 +577,7 @@ export default function MailIntegrationPage() {
 
   const outboxColumns: ProColumns<IntegrationOutboxSummary>[] = [
     {
-      title: 'Message',
+      title: formatMessage('pages.integrations.mail.fields.message', 'Message'),
       dataIndex: 'id',
       render: (_, record) => (
         <Typography.Link onClick={() => void openOutboxDetail(record.id)}>
@@ -395,56 +585,133 @@ export default function MailIntegrationPage() {
         </Typography.Link>
       ),
     },
-    { title: 'Provider', dataIndex: 'providerCode' },
-    { title: 'Template', dataIndex: 'templateCode' },
-    { title: 'Recipient', dataIndex: 'recipient' },
-    { title: 'Subject', dataIndex: 'subject' },
     {
-      title: 'Status',
+      title: formatMessage(
+        'pages.integrations.mail.fields.provider',
+        'Provider',
+      ),
+      dataIndex: 'providerCode',
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.mail.fields.template',
+        'Template',
+      ),
+      dataIndex: 'templateCode',
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.mail.fields.recipient',
+        'Recipient',
+      ),
+      dataIndex: 'recipient',
+    },
+    {
+      title: formatMessage('pages.integrations.mail.fields.subject', 'Subject'),
+      dataIndex: 'subject',
+    },
+    {
+      title: formatMessage('pages.integrations.mail.fields.status', 'Status'),
       render: (_, record) => (
         <Tag color={statusColor(record.status)}>{record.status}</Tag>
       ),
     },
-    { title: 'Retry', dataIndex: 'retryCount' },
-    { title: 'Created At', dataIndex: 'createdAt' },
     {
-      title: 'Action',
+      title: formatMessage('pages.integrations.mail.fields.retry', 'Retry'),
+      dataIndex: 'retryCount',
+    },
+    {
+      title: formatMessage(
+        'pages.integrations.mail.fields.createdAt',
+        'Created At',
+      ),
+      dataIndex: 'createdAt',
+    },
+    {
+      title: formatMessage('pages.integrations.mail.actions.column', 'Action'),
       valueType: 'option',
       render: (_, record) => (
-        <a onClick={() => void openOutboxDetail(record.id)}>Detail</a>
+        <a onClick={() => void openOutboxDetail(record.id)}>
+          {formatMessage('pages.integrations.mail.actions.detail', 'Detail')}
+        </a>
       ),
     },
   ];
 
   return (
-    <PageContainer title="Mail" subTitle="S12 Integrations">
+    <PageContainer
+      title={formatMessage('menu.integrations.mail', 'Mail')}
+      subTitle={formatMessage('pages.integrations.section', 'S12 Integrations')}
+    >
       {loadError ? (
         <Alert
           action={
             <Button onClick={() => void loadMailOperations()}>
-              Reload live mail operations
+              {formatMessage(
+                'pages.integrations.mail.actions.reloadOperations',
+                'Reload live mail operations',
+              )}
             </Button>
           }
           description={loadError}
-          message="Live mail integration operations unavailable"
+          message={formatMessage(
+            'pages.integrations.mail.load.liveUnavailable',
+            'Live mail integration operations unavailable',
+          )}
           showIcon
           style={{ marginBottom: 16 }}
           type="error"
         />
       ) : null}
       <Space size="large" style={{ marginBottom: 16 }} wrap>
-        <Statistic title="Live mail templates" value={templates.length} />
-        <Statistic title="Mail outbox operations" value={outboxRows.length} />
-        <Statistic title="Queued mail outbox" value={queuedCount} />
-        <Statistic title="Failed mail outbox" value={failedCount} />
         <Statistic
-          title="Last mail process"
-          value={lastProcess?.attemptedCount ?? 0}
-          suffix={`sent ${lastProcess?.sentCount ?? 0}`}
+          title={formatMessage(
+            'pages.integrations.mail.summary.liveTemplates',
+            'Live mail templates',
+          )}
+          value={templates.length}
         />
         <Statistic
-          title="Last mail test-send"
-          value={lastTestSend?.status ?? 'not run'}
+          title={formatMessage(
+            'pages.integrations.mail.summary.outboxOperations',
+            'Mail outbox operations',
+          )}
+          value={outboxRows.length}
+        />
+        <Statistic
+          title={formatMessage(
+            'pages.integrations.mail.summary.queuedOutbox',
+            'Queued mail outbox',
+          )}
+          value={queuedCount}
+        />
+        <Statistic
+          title={formatMessage(
+            'pages.integrations.mail.summary.failedOutbox',
+            'Failed mail outbox',
+          )}
+          value={failedCount}
+        />
+        <Statistic
+          title={formatMessage(
+            'pages.integrations.mail.summary.lastProcess',
+            'Last mail process',
+          )}
+          value={lastProcess?.attemptedCount ?? 0}
+          suffix={formatMessage(
+            'pages.integrations.mail.summary.sentSuffix',
+            'sent {count}',
+            {
+              count: lastProcess?.sentCount ?? 0,
+            },
+          )}
+        />
+        <Statistic
+          title={formatMessage(
+            'pages.integrations.mail.summary.lastTestSend',
+            'Last mail test-send',
+          )}
+          value={lastTestSend?.status ?? staticLabels.notRun}
         />
       </Space>
       <ProTable<IntegrationTemplateSummary>
@@ -458,7 +725,10 @@ export default function MailIntegrationPage() {
         toolBarRender={() => [
           templateFilterToolbar,
           <Button key="reload" onClick={() => void loadMailOperations()}>
-            Reload live mail operations
+            {formatMessage(
+              'pages.integrations.mail.actions.reloadOperations',
+              'Reload live mail operations',
+            )}
           </Button>,
           <Button
             key="process"
@@ -466,7 +736,10 @@ export default function MailIntegrationPage() {
             onClick={() => void processQueuedOutbox()}
             title={MAIL_MANAGE_PERMISSION_MARKER}
           >
-            Process queued mail outbox
+            {formatMessage(
+              'pages.integrations.mail.actions.processQueuedOutbox',
+              'Process queued mail outbox',
+            )}
           </Button>,
           <CurrentPageExportButton<IntegrationTemplateSummary>
             columns={templateExportColumns}
@@ -497,51 +770,164 @@ export default function MailIntegrationPage() {
       />
       <ReadOnlyDetailDrawer
         fields={[
-          { label: 'Code', value: selected?.code },
-          { label: 'Channel', value: selected?.channel },
-          { label: 'Name', value: selected?.name },
-          { label: 'Subject', value: selected?.subject },
           {
-            label: 'Enabled',
-            value: selected?.enabled ? 'enabled' : 'disabled',
+            label: formatMessage('pages.integrations.mail.fields.code', 'Code'),
+            value: selected?.code,
           },
-          { label: 'Outbox Message', value: selectedOutbox?.id },
-          { label: 'Outbox Provider', value: selectedOutbox?.providerCode },
-          { label: 'Outbox Recipient', value: selectedOutbox?.recipient },
-          { label: 'Outbox Subject', value: selectedOutbox?.subject },
-          { label: 'Outbox Status', value: selectedOutbox?.status },
-          { label: 'Outbox Retry Count', value: selectedOutbox?.retryCount },
-          { label: 'Outbox Sent At', value: selectedOutbox?.sentAt },
-          { label: 'Test Send Status', value: lastTestSend?.status },
-          { label: 'Test Send Error', value: lastTestSend?.error },
-          { label: 'Test Send At', value: lastTestSend?.testedAt },
           {
-            label: 'SMTP Attachments',
+            label: formatMessage(
+              'pages.integrations.mail.fields.channel',
+              'Channel',
+            ),
+            value: selected?.channel,
+          },
+          {
+            label: formatMessage('pages.integrations.mail.fields.name', 'Name'),
+            value: selected?.name,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.mail.fields.subject',
+              'Subject',
+            ),
+            value: selected?.subject,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.mail.fields.enabled',
+              'Enabled',
+            ),
+            value: selected?.enabled
+              ? statusLabels.enabled
+              : statusLabels.disabled,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.mail.fields.outboxMessage',
+              'Outbox Message',
+            ),
+            value: selectedOutbox?.id,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.mail.fields.outboxProvider',
+              'Outbox Provider',
+            ),
+            value: selectedOutbox?.providerCode,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.mail.fields.outboxRecipient',
+              'Outbox Recipient',
+            ),
+            value: selectedOutbox?.recipient,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.mail.fields.outboxSubject',
+              'Outbox Subject',
+            ),
+            value: selectedOutbox?.subject,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.mail.fields.outboxStatus',
+              'Outbox Status',
+            ),
+            value: selectedOutbox?.status,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.mail.fields.outboxRetryCount',
+              'Outbox Retry Count',
+            ),
+            value: selectedOutbox?.retryCount,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.mail.fields.outboxSentAt',
+              'Outbox Sent At',
+            ),
+            value: selectedOutbox?.sentAt,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.mail.fields.testSendStatus',
+              'Test Send Status',
+            ),
+            value: lastTestSend?.status,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.mail.fields.testSendError',
+              'Test Send Error',
+            ),
+            value: lastTestSend?.error,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.mail.fields.testSendAt',
+              'Test Send At',
+            ),
+            value: lastTestSend?.testedAt,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.mail.fields.smtpAttachments',
+              'SMTP Attachments',
+            ),
             value: selectedOutbox?.attachments?.length ?? 0,
           },
           {
-            label: 'Attachment Names',
+            label: formatMessage(
+              'pages.integrations.mail.fields.attachmentNames',
+              'Attachment Names',
+            ),
             value: selectedOutbox?.attachments
               ?.map((attachment) => attachment.filename)
               .join(', '),
           },
-          { label: 'Preview Subject', value: preview?.subject },
-          { label: 'Body', value: selected?.body },
-          { label: 'Rendered Preview', value: preview?.body },
+          {
+            label: formatMessage(
+              'pages.integrations.mail.fields.previewSubject',
+              'Preview Subject',
+            ),
+            value: preview?.subject,
+          },
+          {
+            label: formatMessage('pages.integrations.mail.fields.body', 'Body'),
+            value: selected?.body,
+          },
+          {
+            label: formatMessage(
+              'pages.integrations.mail.fields.renderedPreview',
+              'Rendered Preview',
+            ),
+            value: preview?.body,
+          },
         ]}
         jsonSections={[
           {
-            title: 'Sample Outbox Payload',
+            title: formatMessage(
+              'pages.integrations.mail.json.sampleOutboxPayload',
+              'Sample Outbox Payload',
+            ),
             value: selectedOutbox?.payload ?? {},
           },
           {
-            title: 'Template Preview Payload',
+            title: formatMessage(
+              'pages.integrations.mail.json.templatePreviewPayload',
+              'Template Preview Payload',
+            ),
             value: selected
               ? buildPreviewPayload(selected, selectedOutbox)
               : undefined,
           },
           {
-            title: 'Attachment Metadata',
+            title: formatMessage(
+              'pages.integrations.mail.json.attachmentMetadata',
+              'Attachment Metadata',
+            ),
             value:
               selectedOutbox?.attachments?.map((attachment) => ({
                 filename: attachment.filename,
@@ -550,11 +936,17 @@ export default function MailIntegrationPage() {
               })) ?? [],
           },
           {
-            title: 'Last Process Result',
+            title: formatMessage(
+              'pages.integrations.mail.json.lastProcessResult',
+              'Last Process Result',
+            ),
             value: lastProcess,
           },
           {
-            title: 'Last Test Send Result',
+            title: formatMessage(
+              'pages.integrations.mail.json.lastTestSendResult',
+              'Last Test Send Result',
+            ),
             value: lastTestSend,
           },
         ]}
@@ -564,7 +956,14 @@ export default function MailIntegrationPage() {
           setPreview(undefined);
         }}
         open={Boolean(selected || selectedOutbox)}
-        title={selected?.name ?? selectedOutbox?.id ?? 'Mail Operation Detail'}
+        title={
+          selected?.name ??
+          selectedOutbox?.id ??
+          formatMessage(
+            'pages.integrations.mail.detail.title',
+            'Mail Operation Detail',
+          )
+        }
       />
     </PageContainer>
   );

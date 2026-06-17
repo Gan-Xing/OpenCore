@@ -42,7 +42,10 @@ const coreI18nScanPaths = [
   join(adminRoot, 'src', 'pages', 'shared', 'CurrentPageExportButton.tsx'),
   join(adminRoot, 'src', 'pages', 'shared', 'CurrentPageFilters.tsx'),
   join(adminRoot, 'src', 'pages', 'shared', 'ReadOnlyDetailDrawer.tsx'),
+  join(adminRoot, 'src', 'pages', 'Integrations', 'Mail.tsx'),
+  join(adminRoot, 'src', 'pages', 'Integrations', 'OAuth.tsx'),
   join(adminRoot, 'src', 'pages', 'Integrations', 'Providers.tsx'),
+  join(adminRoot, 'src', 'pages', 'Integrations', 'Sms.tsx'),
   join(adminRoot, 'src', 'pages', 'Security', 'LoginLogs.tsx'),
   join(adminRoot, 'src', 'pages', 'Security', 'OperationLogs.tsx'),
   join(adminRoot, 'src', 'pages', 'System', 'Config.tsx'),
@@ -59,7 +62,10 @@ const coreI18nScanPaths = [
   join(adminRoot, 'src', 'requestErrorConfig.ts'),
 ];
 const localizedAdminPageScanPaths = [
+  join(adminRoot, 'src', 'pages', 'Integrations', 'Mail.tsx'),
+  join(adminRoot, 'src', 'pages', 'Integrations', 'OAuth.tsx'),
   join(adminRoot, 'src', 'pages', 'Integrations', 'Providers.tsx'),
+  join(adminRoot, 'src', 'pages', 'Integrations', 'Sms.tsx'),
   join(adminRoot, 'src', 'pages', 'Security', 'LoginLogs.tsx'),
   join(adminRoot, 'src', 'pages', 'Security', 'OperationLogs.tsx'),
   join(adminRoot, 'src', 'pages', 'System', 'Config.tsx'),
