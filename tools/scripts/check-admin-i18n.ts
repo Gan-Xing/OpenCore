@@ -67,6 +67,10 @@ const coreI18nScanPaths = [
   join(adminRoot, 'src', 'pages', 'System', 'Posts.tsx'),
   join(adminRoot, 'src', 'pages', 'System', 'Roles.tsx'),
   join(adminRoot, 'src', 'pages', 'System', 'Users.tsx'),
+  join(adminRoot, 'src', 'pages', 'Tools', 'Area', 'index.tsx'),
+  join(adminRoot, 'src', 'pages', 'Tools', 'Export', 'index.tsx'),
+  join(adminRoot, 'src', 'pages', 'Tools', 'OpenApi', 'index.tsx'),
+  join(adminRoot, 'src', 'pages', 'Tools', 'OpenForge', 'index.tsx'),
   join(adminRoot, 'src', 'pages', 'user', 'login', 'index.tsx'),
   join(adminRoot, 'src', 'requestErrorConfig.ts'),
 ];
@@ -96,6 +100,10 @@ const localizedAdminPageScanPaths = [
   join(adminRoot, 'src', 'pages', 'System', 'Posts.tsx'),
   join(adminRoot, 'src', 'pages', 'System', 'Roles.tsx'),
   join(adminRoot, 'src', 'pages', 'System', 'Users.tsx'),
+  join(adminRoot, 'src', 'pages', 'Tools', 'Area', 'index.tsx'),
+  join(adminRoot, 'src', 'pages', 'Tools', 'Export', 'index.tsx'),
+  join(adminRoot, 'src', 'pages', 'Tools', 'OpenApi', 'index.tsx'),
+  join(adminRoot, 'src', 'pages', 'Tools', 'OpenForge', 'index.tsx'),
 ];
 const forbiddenMarkerScanPaths = [
   localesRoot,

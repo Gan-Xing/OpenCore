@@ -6,6 +6,7 @@ import {
   ReloadOutlined,
 } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
+import { useIntl } from '@umijs/max';
 import type { OpenApiDriftStatus } from '@opencore/sdk';
 import {
   Alert,
@@ -18,9 +19,15 @@ import {
   Tooltip,
   Typography,
 } from 'antd';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getOpenCoreOpenApiDriftStatus } from '@/services/opencore/platform';
 import styles from './index.less';
+
+type FormatMessage = (
+  id: string,
+  defaultMessage: string,
+  values?: Record<string, number | string>,
+) => string;
 
 function statusColor(status: OpenApiDriftStatus['status'] | undefined): string {
   if (status === 'configured') {
@@ -33,9 +40,48 @@ function statusColor(status: OpenApiDriftStatus['status'] | undefined): string {
 }
 
 const OpenApiStatusPage: React.FC = () => {
+  const intl = useIntl();
   const [driftStatus, setDriftStatus] = useState<OpenApiDriftStatus>();
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
+  const formatMessage: FormatMessage = useCallback(
+    (id, defaultMessage, values) =>
+      values
+        ? intl.formatMessage({ id, defaultMessage }, values)
+        : intl.formatMessage({ id, defaultMessage }),
+    [intl],
+  );
+  const driftStatusLabels = useMemo(
+    () => ({
+      configured: formatMessage(
+        'pages.tools.openapi.status.configured',
+        'configured',
+      ),
+      invalid: formatMessage('pages.tools.openapi.status.invalid', 'invalid'),
+      missing: formatMessage('pages.tools.openapi.status.missing', 'missing'),
+      loading: formatMessage('pages.tools.openapi.status.loading', 'loading'),
+    }),
+    [formatMessage],
+  );
+  const contractStatusLabels = useMemo(
+    () => ({
+      available: formatMessage(
+        'pages.tools.openapi.status.available',
+        'available',
+      ),
+      configured: formatMessage(
+        'pages.tools.openapi.status.configured',
+        'configured',
+      ),
+      invalid: formatMessage('pages.tools.openapi.status.invalid', 'invalid'),
+      live: formatMessage('pages.tools.openapi.status.live', 'live'),
+      loaded: formatMessage('pages.tools.openapi.status.loaded', 'loaded'),
+      loading: formatMessage('pages.tools.openapi.status.loading', 'loading'),
+      missing: formatMessage('pages.tools.openapi.status.missing', 'missing'),
+      ready: formatMessage('pages.tools.openapi.status.ready', 'ready'),
+    }),
+    [formatMessage],
+  );
 
   const loadDriftStatus = async () => {
     setLoading(true);
@@ -47,7 +93,10 @@ const OpenApiStatusPage: React.FC = () => {
       setLoadError(
         error instanceof Error
           ? error.message
-          : 'Unable to load OpenAPI drift status.',
+          : formatMessage(
+              'pages.tools.openapi.load.failure',
+              'Unable to load OpenAPI drift status.',
+            ),
       );
     } finally {
       setLoading(false);
@@ -62,13 +111,19 @@ const OpenApiStatusPage: React.FC = () => {
     () => [
       {
         key: 'swagger',
-        label: 'Swagger UI',
+        label: formatMessage(
+          'pages.tools.openapi.contract.swagger',
+          'Swagger UI',
+        ),
         value: '/api/docs',
         status: 'available',
       },
       {
         key: 'snapshot',
-        label: 'Contract snapshot',
+        label: formatMessage(
+          'pages.tools.openapi.contract.snapshot',
+          'Contract snapshot',
+        ),
         value:
           driftStatus?.snapshotPath ??
           'packages/contracts/openapi/opencore-api.json',
@@ -76,40 +131,60 @@ const OpenApiStatusPage: React.FC = () => {
       },
       {
         key: 'command',
-        label: 'Export command',
+        label: formatMessage(
+          'pages.tools.openapi.contract.exportCommand',
+          'Export command',
+        ),
         value: driftStatus?.exportCommand ?? 'pnpm openapi:export',
         status: 'ready',
       },
       {
         key: 'drift',
-        label: 'Drift check',
+        label: formatMessage(
+          'pages.tools.openapi.contract.driftCheck',
+          'Drift check',
+        ),
         value: driftStatus?.driftCheckCommand ?? 'pnpm openapi:check',
         status: driftStatus?.status ?? 'loading',
       },
       {
         key: 'checkedAt',
-        label: 'Checked at',
-        value: driftStatus?.checkedAt ?? 'loading',
+        label: formatMessage(
+          'pages.tools.openapi.contract.checkedAt',
+          'Checked at',
+        ),
+        value:
+          driftStatus?.checkedAt ??
+          formatMessage('pages.tools.openapi.status.loading', 'loading'),
         status: 'live',
       },
     ],
-    [driftStatus],
+    [driftStatus, formatMessage],
   );
 
   return (
     <PageContainer
-      title="Live OpenAPI drift"
-      subTitle="S5 status entry"
+      title={formatMessage('pages.tools.openapi.title', 'Live OpenAPI drift')}
+      subTitle={formatMessage('pages.tools.openapi.section', 'S5 status entry')}
       extra={[
         <Button key="docs" icon={<ApiOutlined />} href="/api/docs">
-          Swagger
+          {formatMessage('pages.tools.openapi.actions.swagger', 'Swagger')}
         </Button>,
         <Button key="ready" icon={<HeartOutlined />} href="/health/ready">
-          Readiness
+          {formatMessage('pages.tools.openapi.actions.readiness', 'Readiness')}
         </Button>,
-        <Tooltip key="reload" title="Reload OpenAPI drift">
+        <Tooltip
+          key="reload"
+          title={formatMessage(
+            'pages.tools.openapi.actions.reload',
+            'Reload OpenAPI drift',
+          )}
+        >
           <Button
-            aria-label="Reload OpenAPI drift"
+            aria-label={formatMessage(
+              'pages.tools.openapi.actions.reloadAria',
+              'Reload OpenAPI drift',
+            )}
             icon={<ReloadOutlined />}
             loading={loading}
             onClick={() => void loadDriftStatus()}
@@ -121,34 +196,62 @@ const OpenApiStatusPage: React.FC = () => {
         <Alert
           showIcon
           type="warning"
-          message="Unable to load live OpenAPI drift status"
+          message={formatMessage(
+            'pages.tools.openapi.load.liveFailure',
+            'Unable to load live OpenAPI drift status',
+          )}
           description={loadError}
           style={{ marginBlockEnd: 16 }}
         />
       ) : null}
       <Space size="large" style={{ marginBottom: 16 }} wrap>
-        <Statistic title="Snapshot paths" value={driftStatus?.pathCount ?? 0} />
         <Statistic
-          title="Snapshot schemas"
+          title={formatMessage(
+            'pages.tools.openapi.stats.snapshotPaths',
+            'Snapshot paths',
+          )}
+          value={driftStatus?.pathCount ?? 0}
+        />
+        <Statistic
+          title={formatMessage(
+            'pages.tools.openapi.stats.snapshotSchemas',
+            'Snapshot schemas',
+          )}
           value={driftStatus?.schemaCount ?? 0}
         />
         <Statistic
-          title="Snapshot operations"
+          title={formatMessage(
+            'pages.tools.openapi.stats.snapshotOperations',
+            'Snapshot operations',
+          )}
           value={driftStatus?.operationCount ?? 0}
         />
         <Tag color={statusColor(driftStatus?.status)}>
-          {driftStatus?.status ?? 'loading'}
+          {driftStatus
+            ? driftStatusLabels[driftStatus.status]
+            : driftStatusLabels.loading}
         </Tag>
       </Space>
       <div className={styles.statusGrid}>
-        <Card title="Contract status">
+        <Card
+          title={formatMessage(
+            'pages.tools.openapi.cards.contractStatus',
+            'Contract status',
+          )}
+        >
           <Descriptions column={1} bordered size="small">
             {contractRows.map((row) => (
               <Descriptions.Item
                 key={row.key}
                 label={
                   <Space>
-                    <Tag color="blue">{row.status}</Tag>
+                    <Tag color="blue">
+                      {
+                        contractStatusLabels[
+                          row.status as keyof typeof contractStatusLabels
+                        ]
+                      }
+                    </Tag>
                     {row.label}
                   </Space>
                 }
@@ -156,19 +259,45 @@ const OpenApiStatusPage: React.FC = () => {
                 {row.value}
               </Descriptions.Item>
             ))}
-            <Descriptions.Item label="Snapshot SHA-256">
-              {driftStatus?.snapshotSha256 ?? 'unavailable'}
+            <Descriptions.Item
+              label={formatMessage(
+                'pages.tools.openapi.contract.snapshotSha256',
+                'Snapshot SHA-256',
+              )}
+            >
+              {driftStatus?.snapshotSha256 ??
+                formatMessage(
+                  'pages.tools.openapi.status.unavailable',
+                  'unavailable',
+                )}
             </Descriptions.Item>
-            <Descriptions.Item label="Snapshot updated">
-              {driftStatus?.snapshotUpdatedAt ?? 'unavailable'}
+            <Descriptions.Item
+              label={formatMessage(
+                'pages.tools.openapi.contract.snapshotUpdated',
+                'Snapshot updated',
+              )}
+            >
+              {driftStatus?.snapshotUpdatedAt ??
+                formatMessage(
+                  'pages.tools.openapi.status.unavailable',
+                  'unavailable',
+                )}
             </Descriptions.Item>
           </Descriptions>
         </Card>
 
-        <Card title="Drift guard">
+        <Card
+          title={formatMessage(
+            'pages.tools.openapi.cards.driftGuard',
+            'Drift guard',
+          )}
+        >
           <Space direction="vertical" size="middle">
             <Typography.Text>
-              OpenAPI drift is checked against the committed contract snapshot.
+              {formatMessage(
+                'pages.tools.openapi.policy.driftGuard',
+                'OpenAPI drift is checked against the committed contract snapshot.',
+              )}
             </Typography.Text>
             <pre className={styles.commandBlock}>
               <code>
@@ -178,8 +307,14 @@ const OpenApiStatusPage: React.FC = () => {
             <EmptyState
               title={
                 driftStatus?.status === 'configured'
-                  ? 'Snapshot configured'
-                  : 'Snapshot needs attention'
+                  ? formatMessage(
+                      'pages.tools.openapi.empty.snapshotConfigured',
+                      'Snapshot configured',
+                    )
+                  : formatMessage(
+                      'pages.tools.openapi.empty.snapshotNeedsAttention',
+                      'Snapshot needs attention',
+                    )
               }
               description={
                 driftStatus?.snapshotPath ??
@@ -189,12 +324,25 @@ const OpenApiStatusPage: React.FC = () => {
           </Space>
         </Card>
 
-        <Card title="Trace contract">
+        <Card
+          title={formatMessage(
+            'pages.tools.openapi.cards.traceContract',
+            'Trace contract',
+          )}
+        >
           <Space direction="vertical">
             <Typography.Text>
-              Admin requests attach `x-request-id` and `x-trace-id`.
+              {formatMessage(
+                'pages.tools.openapi.policy.traceContract',
+                'Admin requests attach `x-request-id` and `x-trace-id`.',
+              )}
             </Typography.Text>
-            <Tag icon={<BranchesOutlined />}>request scoped</Tag>
+            <Tag icon={<BranchesOutlined />}>
+              {formatMessage(
+                'pages.tools.openapi.status.requestScoped',
+                'request scoped',
+              )}
+            </Tag>
           </Space>
         </Card>
       </div>

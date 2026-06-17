@@ -10,7 +10,7 @@ import {
   ProTable,
   type ProColumns,
 } from '@ant-design/pro-components';
-import { useAccess } from '@umijs/max';
+import { useAccess, useIntl } from '@umijs/max';
 import type {
   AreaDatasetImportRequest,
   AreaDatasetImportResultSummary,
@@ -33,7 +33,7 @@ import {
   Typography,
   message,
 } from 'antd';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   activateOpenCoreAreaDatasetVersion,
   importOpenCoreAreaDataset,
@@ -53,6 +53,12 @@ type IpLookupValues = {
 type ImportValues = {
   datasetJson: string;
 };
+
+type FormatMessage = (
+  id: string,
+  defaultMessage: string,
+  values?: Record<string, number | string>,
+) => string;
 
 const sampleImportJson = JSON.stringify(
   {
@@ -75,43 +81,61 @@ const sampleImportJson = JSON.stringify(
   null,
   2,
 );
+const areaReadPermissionCode = 'tool:area:read';
+const areaImportPermissionCode = 'tool:area:import';
 
-const regionColumns: ProColumns<AreaRegionSummary>[] = [
-  { title: 'Code', dataIndex: 'code', width: 160 },
-  { title: 'Name', dataIndex: 'name' },
-  {
-    title: 'Parent',
-    dataIndex: 'parentCode',
-    render: (_, record) => record.parentCode ?? '-',
-  },
-  { title: 'Level', dataIndex: 'level', width: 90 },
-  {
-    title: 'Path',
-    dataIndex: 'path',
-    render: (_, record) => record.path.join(' / '),
-  },
-  {
-    title: 'Aliases',
-    dataIndex: 'aliases',
-    render: (_, record) =>
-      record.aliases.length > 0
-        ? record.aliases.map((alias) => <Tag key={alias}>{alias}</Tag>)
-        : '-',
-  },
-  {
-    title: 'IP ranges',
-    dataIndex: 'ipRanges',
-    render: (_, record) =>
-      record.ipRanges.length > 0
-        ? record.ipRanges.map((range) => (
-            <Tag key={range.cidr}>{range.cidr}</Tag>
-          ))
-        : '-',
-  },
-];
+function createRegionColumns(
+  formatMessage: FormatMessage,
+): ProColumns<AreaRegionSummary>[] {
+  return [
+    {
+      title: formatMessage('pages.tools.area.fields.code', 'Code'),
+      dataIndex: 'code',
+      width: 160,
+    },
+    {
+      title: formatMessage('pages.tools.area.fields.name', 'Name'),
+      dataIndex: 'name',
+    },
+    {
+      title: formatMessage('pages.tools.area.fields.parent', 'Parent'),
+      dataIndex: 'parentCode',
+      render: (_, record) => record.parentCode ?? '-',
+    },
+    {
+      title: formatMessage('pages.tools.area.fields.level', 'Level'),
+      dataIndex: 'level',
+      width: 90,
+    },
+    {
+      title: formatMessage('pages.tools.area.fields.path', 'Path'),
+      dataIndex: 'path',
+      render: (_, record) => record.path.join(' / '),
+    },
+    {
+      title: formatMessage('pages.tools.area.fields.aliases', 'Aliases'),
+      dataIndex: 'aliases',
+      render: (_, record) =>
+        record.aliases.length > 0
+          ? record.aliases.map((alias) => <Tag key={alias}>{alias}</Tag>)
+          : '-',
+    },
+    {
+      title: formatMessage('pages.tools.area.fields.ipRanges', 'IP ranges'),
+      dataIndex: 'ipRanges',
+      render: (_, record) =>
+        record.ipRanges.length > 0
+          ? record.ipRanges.map((range) => (
+              <Tag key={range.cidr}>{range.cidr}</Tag>
+            ))
+          : '-',
+    },
+  ];
+}
 
 export default function AreaDataPage() {
   const access = useAccess();
+  const intl = useIntl();
   const canImportAreaData = Boolean(access.canImportAreaData);
   const [regionForm] = Form.useForm<RegionSearchValues>();
   const [lookupForm] = Form.useForm<IpLookupValues>();
@@ -130,10 +154,35 @@ export default function AreaDataPage() {
   const [importLoading, setImportLoading] = useState(false);
   const [activatingVersion, setActivatingVersion] = useState<string>();
   const [loadError, setLoadError] = useState<string>();
+  const formatMessage: FormatMessage = useCallback(
+    (id, defaultMessage, values) =>
+      values
+        ? intl.formatMessage({ id, defaultMessage }, values)
+        : intl.formatMessage({ id, defaultMessage }),
+    [intl],
+  );
+  const booleanLabels = useMemo(
+    () => ({
+      no: formatMessage('pages.tools.area.boolean.no', 'no'),
+      yes: formatMessage('pages.tools.area.boolean.yes', 'yes'),
+    }),
+    [formatMessage],
+  );
+  const versionStateLabels = useMemo(
+    () => ({
+      active: formatMessage('pages.tools.area.versionState.active', 'active'),
+      stored: formatMessage('pages.tools.area.versionState.stored', 'stored'),
+    }),
+    [formatMessage],
+  );
 
   const activeVersion = useMemo(
     () => versions.find((version) => version.active),
     [versions],
+  );
+  const regionColumns = useMemo(
+    () => createRegionColumns(formatMessage),
+    [formatMessage],
   );
 
   const loadAreaData = async (query = 'san') => {
@@ -150,7 +199,12 @@ export default function AreaDataPage() {
       setLoadError(undefined);
     } catch (error: unknown) {
       setLoadError(
-        error instanceof Error ? error.message : 'Unable to load area data.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.tools.area.load.failure',
+              'Unable to load area data.',
+            ),
       );
     } finally {
       setLoading(false);
@@ -170,7 +224,10 @@ export default function AreaDataPage() {
       setLoadError(
         error instanceof Error
           ? error.message
-          : 'Unable to query area regions.',
+          : formatMessage(
+              'pages.tools.area.query.failure',
+              'Unable to query area regions.',
+            ),
       );
     } finally {
       setSearching(false);
@@ -187,7 +244,10 @@ export default function AreaDataPage() {
       setLoadError(
         error instanceof Error
           ? error.message
-          : 'Unable to lookup IP boundary.',
+          : formatMessage(
+              'pages.tools.area.lookup.failure',
+              'Unable to lookup IP boundary.',
+            ),
       );
     } finally {
       setLookupLoading(false);
@@ -206,7 +266,15 @@ export default function AreaDataPage() {
       setImportResult(result);
       setLoadError(undefined);
       message.success(
-        dryRun ? 'Area import dry-run passed.' : 'Area dataset activated.',
+        dryRun
+          ? formatMessage(
+              'pages.tools.area.messages.dryRunPassed',
+              'Area import dry-run passed.',
+            )
+          : formatMessage(
+              'pages.tools.area.messages.datasetActivated',
+              'Area dataset activated.',
+            ),
       );
       if (!dryRun) {
         await loadAreaData('');
@@ -215,7 +283,10 @@ export default function AreaDataPage() {
       setLoadError(
         error instanceof Error
           ? error.message
-          : 'Unable to import area dataset.',
+          : formatMessage(
+              'pages.tools.area.import.failure',
+              'Unable to import area dataset.',
+            ),
       );
     } finally {
       setImportLoading(false);
@@ -227,13 +298,21 @@ export default function AreaDataPage() {
     try {
       await activateOpenCoreAreaDatasetVersion(version);
       setLoadError(undefined);
-      message.success('Area dataset version activated.');
+      message.success(
+        formatMessage(
+          'pages.tools.area.messages.versionActivated',
+          'Area dataset version activated.',
+        ),
+      );
       await loadAreaData(regionForm.getFieldValue('query'));
     } catch (error: unknown) {
       setLoadError(
         error instanceof Error
           ? error.message
-          : 'Unable to activate area dataset version.',
+          : formatMessage(
+              'pages.tools.area.activate.failure',
+              'Unable to activate area dataset version.',
+            ),
       );
     } finally {
       setActivatingVersion(undefined);
@@ -241,26 +320,56 @@ export default function AreaDataPage() {
   };
 
   const versionColumns: ProColumns<AreaDatasetVersionSummary>[] = [
-    { title: 'Version', dataIndex: 'version' },
-    { title: 'Source', dataIndex: 'source' },
-    { title: 'Regions', dataIndex: 'regionCount', width: 100 },
-    { title: 'IP ranges', dataIndex: 'ipRangeCount', width: 110 },
-    { title: 'Max depth', dataIndex: 'maxDepth', width: 110 },
     {
-      title: 'Active',
+      title: formatMessage('pages.tools.area.fields.version', 'Version'),
+      dataIndex: 'version',
+    },
+    {
+      title: formatMessage('pages.tools.area.fields.source', 'Source'),
+      dataIndex: 'source',
+    },
+    {
+      title: formatMessage('pages.tools.area.fields.regions', 'Regions'),
+      dataIndex: 'regionCount',
+      width: 100,
+    },
+    {
+      title: formatMessage('pages.tools.area.fields.ipRanges', 'IP ranges'),
+      dataIndex: 'ipRangeCount',
+      width: 110,
+    },
+    {
+      title: formatMessage('pages.tools.area.fields.maxDepth', 'Max depth'),
+      dataIndex: 'maxDepth',
+      width: 110,
+    },
+    {
+      title: formatMessage('pages.tools.area.fields.active', 'Active'),
       dataIndex: 'active',
       width: 90,
       render: (_, record) =>
-        record.active ? <Tag color="green">active</Tag> : <Tag>stored</Tag>,
+        record.active ? (
+          <Tag color="green">{versionStateLabels.active}</Tag>
+        ) : (
+          <Tag>{versionStateLabels.stored}</Tag>
+        ),
     },
-    { title: 'Imported at', dataIndex: 'importedAt' },
     {
-      title: 'Action',
+      title: formatMessage('pages.tools.area.fields.importedAt', 'Imported at'),
+      dataIndex: 'importedAt',
+    },
+    {
+      title: formatMessage('pages.tools.area.actions.column', 'Action'),
       valueType: 'option',
       width: 120,
       render: (_, record) =>
         record.active ? null : (
-          <Tooltip title="Activate stored version">
+          <Tooltip
+            title={formatMessage(
+              'pages.tools.area.actions.activateTooltip',
+              'Activate stored version',
+            )}
+          >
             <Button
               disabled={!canImportAreaData}
               icon={<SwapOutlined />}
@@ -268,7 +377,7 @@ export default function AreaDataPage() {
               onClick={() => void activateVersion(record.version)}
               size="small"
             >
-              Activate
+              {formatMessage('pages.tools.area.actions.activate', 'Activate')}
             </Button>
           </Tooltip>
         ),
@@ -284,12 +393,21 @@ export default function AreaDataPage() {
 
   return (
     <PageContainer
-      title="Area data boundary"
-      subTitle="Tool Area"
+      title={formatMessage('pages.tools.area.title', 'Area data boundary')}
+      subTitle={formatMessage('pages.tools.area.section', 'Tool Area')}
       extra={[
-        <Tooltip key="reload" title="Reload area dataset">
+        <Tooltip
+          key="reload"
+          title={formatMessage(
+            'pages.tools.area.actions.reload',
+            'Reload area dataset',
+          )}
+        >
           <Button
-            aria-label="Reload area dataset"
+            aria-label={formatMessage(
+              'pages.tools.area.actions.reloadAria',
+              'Reload area dataset',
+            )}
             icon={<ReloadOutlined />}
             loading={loading}
             onClick={() => void loadAreaData(regionForm.getFieldValue('query'))}
@@ -301,25 +419,50 @@ export default function AreaDataPage() {
         <Alert
           showIcon
           type="warning"
-          message="Area data live API unavailable"
+          message={formatMessage(
+            'pages.tools.area.load.liveFailure',
+            'Area data live API unavailable',
+          )}
           description={loadError}
           style={{ marginBlockEnd: 16 }}
         />
       ) : null}
 
       <Space size="large" style={{ marginBottom: 16 }} wrap>
-        <Statistic title="Active version" value={dataset?.version ?? '-'} />
-        <Statistic title="Regions" value={dataset?.regionCount ?? 0} />
-        <Statistic title="IP ranges" value={dataset?.ipRangeCount ?? 0} />
-        <Statistic title="Max depth" value={dataset?.maxDepth ?? 0} />
-        <Tag color={activeVersion ? 'green' : 'blue'}>tool:area:read</Tag>
+        <Statistic
+          title={formatMessage(
+            'pages.tools.area.stats.activeVersion',
+            'Active version',
+          )}
+          value={dataset?.version ?? '-'}
+        />
+        <Statistic
+          title={formatMessage('pages.tools.area.stats.regions', 'Regions')}
+          value={dataset?.regionCount ?? 0}
+        />
+        <Statistic
+          title={formatMessage('pages.tools.area.stats.ipRanges', 'IP ranges')}
+          value={dataset?.ipRangeCount ?? 0}
+        />
+        <Statistic
+          title={formatMessage('pages.tools.area.stats.maxDepth', 'Max depth')}
+          value={dataset?.maxDepth ?? 0}
+        />
+        <Tag color={activeVersion ? 'green' : 'blue'}>
+          {areaReadPermissionCode}
+        </Tag>
         <Tag color={canImportAreaData ? 'gold' : 'default'}>
-          tool:area:import
+          {areaImportPermissionCode}
         </Tag>
       </Space>
 
       <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-        <Card title="Area dataset versions">
+        <Card
+          title={formatMessage(
+            'pages.tools.area.cards.datasetVersions',
+            'Area dataset versions',
+          )}
+        >
           <ProTable<AreaDatasetVersionSummary>
             columns={versionColumns}
             dataSource={versions}
@@ -331,7 +474,12 @@ export default function AreaDataPage() {
           />
         </Card>
 
-        <Card title="Area region query">
+        <Card
+          title={formatMessage(
+            'pages.tools.area.cards.regionQuery',
+            'Area region query',
+          )}
+        >
           <Form<RegionSearchValues>
             form={regionForm}
             layout="inline"
@@ -339,7 +487,13 @@ export default function AreaDataPage() {
             style={{ marginBottom: 16 }}
           >
             <Form.Item name="query">
-              <Input allowClear placeholder="Search code, name, alias, path" />
+              <Input
+                allowClear
+                placeholder={formatMessage(
+                  'pages.tools.area.search.placeholder',
+                  'Search code, name, alias, path',
+                )}
+              />
             </Form.Item>
             <Button
               htmlType="submit"
@@ -347,7 +501,10 @@ export default function AreaDataPage() {
               loading={searching}
               type="primary"
             >
-              Search regions
+              {formatMessage(
+                'pages.tools.area.actions.searchRegions',
+                'Search regions',
+              )}
             </Button>
           </Form>
           <ProTable<AreaRegionSummary>
@@ -361,7 +518,12 @@ export default function AreaDataPage() {
           />
         </Card>
 
-        <Card title="IP boundary lookup">
+        <Card
+          title={formatMessage(
+            'pages.tools.area.cards.ipBoundaryLookup',
+            'IP boundary lookup',
+          )}
+        >
           <Form<IpLookupValues>
             form={lookupForm}
             layout="inline"
@@ -370,7 +532,15 @@ export default function AreaDataPage() {
           >
             <Form.Item
               name="ip"
-              rules={[{ required: true, message: 'IP is required.' }]}
+              rules={[
+                {
+                  required: true,
+                  message: formatMessage(
+                    'pages.tools.area.validation.ipRequired',
+                    'IP is required.',
+                  ),
+                },
+              ]}
             >
               <Input placeholder="203.0.113.7" />
             </Form.Item>
@@ -380,20 +550,43 @@ export default function AreaDataPage() {
               loading={lookupLoading}
               type="primary"
             >
-              Lookup IP boundary
+              {formatMessage(
+                'pages.tools.area.actions.lookupIpBoundary',
+                'Lookup IP boundary',
+              )}
             </Button>
           </Form>
           <Descriptions bordered column={1}>
-            <Descriptions.Item label="Normalized IP">
+            <Descriptions.Item
+              label={formatMessage(
+                'pages.tools.area.fields.normalizedIp',
+                'Normalized IP',
+              )}
+            >
               {lookupResult?.normalizedIp ?? '-'}
             </Descriptions.Item>
-            <Descriptions.Item label="Network type">
+            <Descriptions.Item
+              label={formatMessage(
+                'pages.tools.area.fields.networkType',
+                'Network type',
+              )}
+            >
               {lookupResult?.networkType ?? '-'}
             </Descriptions.Item>
-            <Descriptions.Item label="Location">
+            <Descriptions.Item
+              label={formatMessage(
+                'pages.tools.area.fields.location',
+                'Location',
+              )}
+            >
               {lookupResult?.location ?? '-'}
             </Descriptions.Item>
-            <Descriptions.Item label="Matched region">
+            <Descriptions.Item
+              label={formatMessage(
+                'pages.tools.area.fields.matchedRegion',
+                'Matched region',
+              )}
+            >
               {lookupResult?.region ? (
                 <Space>
                   <Tag color="green">{lookupResult.region.code}</Tag>
@@ -403,18 +596,39 @@ export default function AreaDataPage() {
                 '-'
               )}
             </Descriptions.Item>
-            <Descriptions.Item label="Matched range">
+            <Descriptions.Item
+              label={formatMessage(
+                'pages.tools.area.fields.matchedRange',
+                'Matched range',
+              )}
+            >
               {lookupResult?.range?.cidr ?? '-'}
             </Descriptions.Item>
           </Descriptions>
         </Card>
 
-        <Card title="Area dataset import">
+        <Card
+          title={formatMessage(
+            'pages.tools.area.cards.datasetImport',
+            'Area dataset import',
+          )}
+        >
           <Form<ImportValues> form={importForm} layout="vertical">
             <Form.Item
-              label="Dataset JSON"
+              label={formatMessage(
+                'pages.tools.area.fields.datasetJson',
+                'Dataset JSON',
+              )}
               name="datasetJson"
-              rules={[{ required: true, message: 'Dataset JSON is required.' }]}
+              rules={[
+                {
+                  required: true,
+                  message: formatMessage(
+                    'pages.tools.area.validation.datasetJsonRequired',
+                    'Dataset JSON is required.',
+                  ),
+                },
+              ]}
             >
               <Input.TextArea rows={10} />
             </Form.Item>
@@ -424,9 +638,17 @@ export default function AreaDataPage() {
                 loading={importLoading}
                 onClick={() => void importDataset(true)}
               >
-                Validate area import
+                {formatMessage(
+                  'pages.tools.area.actions.validateImport',
+                  'Validate area import',
+                )}
               </Button>
-              <Tooltip title="Requires tool:area:import">
+              <Tooltip
+                title={formatMessage(
+                  'pages.tools.area.permission.importRequired',
+                  'Requires tool:area:import',
+                )}
+              >
                 <Button
                   disabled={!canImportAreaData}
                   icon={<CloudUploadOutlined />}
@@ -434,28 +656,56 @@ export default function AreaDataPage() {
                   onClick={() => void importDataset(false)}
                   type="primary"
                 >
-                  Activate area import
+                  {formatMessage(
+                    'pages.tools.area.actions.activateImport',
+                    'Activate area import',
+                  )}
                 </Button>
               </Tooltip>
             </Space>
           </Form>
           {importResult ? (
             <Descriptions bordered column={1} style={{ marginTop: 16 }}>
-              <Descriptions.Item label="Dry run">
-                {importResult.dryRun ? 'yes' : 'no'}
+              <Descriptions.Item
+                label={formatMessage(
+                  'pages.tools.area.fields.dryRun',
+                  'Dry run',
+                )}
+              >
+                {importResult.dryRun ? booleanLabels.yes : booleanLabels.no}
               </Descriptions.Item>
-              <Descriptions.Item label="Applied">
-                {importResult.applied ? 'yes' : 'no'}
+              <Descriptions.Item
+                label={formatMessage(
+                  'pages.tools.area.fields.applied',
+                  'Applied',
+                )}
+              >
+                {importResult.applied ? booleanLabels.yes : booleanLabels.no}
               </Descriptions.Item>
-              <Descriptions.Item label="Version">
+              <Descriptions.Item
+                label={formatMessage(
+                  'pages.tools.area.fields.version',
+                  'Version',
+                )}
+              >
                 {importResult.dataset.version}
               </Descriptions.Item>
-              <Descriptions.Item label="Checksum">
+              <Descriptions.Item
+                label={formatMessage(
+                  'pages.tools.area.fields.checksum',
+                  'Checksum',
+                )}
+              >
                 <Typography.Text copyable>
                   {importResult.dataset.checksum}
                 </Typography.Text>
               </Descriptions.Item>
-              <Descriptions.Item label="Warnings">
+              <Descriptions.Item
+                label={formatMessage(
+                  'pages.tools.area.fields.warnings',
+                  'Warnings',
+                )}
+              >
                 {importResult.warnings.length > 0
                   ? importResult.warnings.join('; ')
                   : '-'}
