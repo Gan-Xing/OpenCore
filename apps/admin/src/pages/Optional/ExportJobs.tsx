@@ -8,8 +8,9 @@ import {
   findExportJobDesignFixture,
   type ExportJobDesignSummary,
 } from '@opencore/sdk';
+import { useIntl } from '@umijs/max';
 import { Tag, Typography } from 'antd';
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   CurrentPageExportButton,
   type CurrentPageExportColumn,
@@ -23,19 +24,6 @@ import {
 import { ReadOnlyDetailDrawer } from '../shared/ReadOnlyDetailDrawer';
 
 const rows = [createOperationsFixtures().exportJobDesign];
-const exportColumns: CurrentPageExportColumn<ExportJobDesignSummary>[] = [
-  { title: 'Resource', dataIndex: 'resource' },
-  { title: 'Status', dataIndex: 'status' },
-  {
-    title: 'Required Bindings',
-    renderText: (record) => record.requiredBindings.join(', '),
-  },
-  {
-    title: 'Safety Checks',
-    renderText: (record) => record.safetyChecks.join(', '),
-  },
-  { title: 'Runbook', dataIndex: 'runbook' },
-];
 const searchFields: CurrentPageSearchField<ExportJobDesignSummary>[] = [
   'resource',
   'status',
@@ -43,22 +31,87 @@ const searchFields: CurrentPageSearchField<ExportJobDesignSummary>[] = [
   (record) => record.requiredBindings,
   (record) => record.safetyChecks,
 ];
-const filterOptions: CurrentPageFilterOption<ExportJobDesignSummary>[] = [
-  {
-    key: 'status',
-    options: createCurrentPageFilterOptions(rows, 'status'),
-    placeholder: 'Status',
-    predicate: (record, value) => record.status === value,
-  },
-];
+
+type FormatMessage = (
+  id: string,
+  defaultMessage: string,
+  values?: Record<string, number | string>,
+) => string;
 
 export default function ExportJobsPage() {
+  const intl = useIntl();
   const [selected, setSelected] = useState<ExportJobDesignSummary>();
+  const formatMessage: FormatMessage = useCallback(
+    (id, defaultMessage, values) =>
+      values
+        ? intl.formatMessage({ id, defaultMessage }, values)
+        : intl.formatMessage({ id, defaultMessage }),
+    [intl],
+  );
+  const exportColumns: CurrentPageExportColumn<ExportJobDesignSummary>[] =
+    useMemo(
+      () => [
+        {
+          title: formatMessage(
+            'pages.optional.exportJobs.fields.resource',
+            'Resource',
+          ),
+          dataIndex: 'resource',
+        },
+        {
+          title: formatMessage(
+            'pages.optional.exportJobs.fields.status',
+            'Status',
+          ),
+          dataIndex: 'status',
+        },
+        {
+          title: formatMessage(
+            'pages.optional.exportJobs.fields.requiredBindings',
+            'Required Bindings',
+          ),
+          renderText: (record) => record.requiredBindings.join(', '),
+        },
+        {
+          title: formatMessage(
+            'pages.optional.exportJobs.fields.safetyChecks',
+            'Safety Checks',
+          ),
+          renderText: (record) => record.safetyChecks.join(', '),
+        },
+        {
+          title: formatMessage(
+            'pages.optional.exportJobs.fields.runbook',
+            'Runbook',
+          ),
+          dataIndex: 'runbook',
+        },
+      ],
+      [formatMessage],
+    );
+  const filterOptions: CurrentPageFilterOption<ExportJobDesignSummary>[] =
+    useMemo(
+      () => [
+        {
+          key: 'status',
+          options: createCurrentPageFilterOptions(rows, 'status'),
+          placeholder: formatMessage(
+            'pages.optional.exportJobs.fields.status',
+            'Status',
+          ),
+          predicate: (record, value) => record.status === value,
+        },
+      ],
+      [formatMessage],
+    );
   const { filteredRows, toolbar: filterToolbar } =
     useCurrentPageFilters<ExportJobDesignSummary>({
       rows,
       searchFields,
-      searchPlaceholder: 'Search export design',
+      searchPlaceholder: formatMessage(
+        'pages.optional.exportJobs.search.placeholder',
+        'Search export design',
+      ),
       selectFilters: filterOptions,
     });
 
@@ -68,7 +121,10 @@ export default function ExportJobsPage() {
 
   const columns: ProColumns<ExportJobDesignSummary>[] = [
     {
-      title: 'Resource',
+      title: formatMessage(
+        'pages.optional.exportJobs.fields.resource',
+        'Resource',
+      ),
       dataIndex: 'resource',
       render: (_, record) => (
         <Typography.Link onClick={() => openDetail(record.resource)}>
@@ -77,25 +133,39 @@ export default function ExportJobsPage() {
       ),
     },
     {
-      title: 'Status',
+      title: formatMessage('pages.optional.exportJobs.fields.status', 'Status'),
       render: (_, record) => <Tag color="blue">{record.status}</Tag>,
     },
     {
-      title: 'Bindings',
+      title: formatMessage(
+        'pages.optional.exportJobs.fields.bindings',
+        'Bindings',
+      ),
       renderText: (_, record) => record.requiredBindings.join(', '),
     },
-    { title: 'Runbook', dataIndex: 'runbook' },
     {
-      title: 'Action',
+      title: formatMessage(
+        'pages.optional.exportJobs.fields.runbook',
+        'Runbook',
+      ),
+      dataIndex: 'runbook',
+    },
+    {
+      title: formatMessage('pages.optional.common.actions.column', 'Action'),
       valueType: 'option',
       render: (_, record) => (
-        <a onClick={() => openDetail(record.resource)}>Detail</a>
+        <a onClick={() => openDetail(record.resource)}>
+          {formatMessage('pages.optional.common.actions.detail', 'Detail')}
+        </a>
       ),
     },
   ];
 
   return (
-    <PageContainer title="Export Jobs" subTitle="S11 Optional">
+    <PageContainer
+      title={formatMessage('pages.optional.exportJobs.title', 'Export Jobs')}
+      subTitle={formatMessage('pages.optional.section', 'S11 Optional')}
+    >
       <ProTable<ExportJobDesignSummary>
         rowKey="resource"
         search={false}
@@ -115,21 +185,51 @@ export default function ExportJobsPage() {
       />
       <ReadOnlyDetailDrawer
         fields={[
-          { label: 'Resource', value: selected?.resource },
-          { label: 'Status', value: selected?.status },
           {
-            label: 'Required Bindings',
+            label: formatMessage(
+              'pages.optional.exportJobs.fields.resource',
+              'Resource',
+            ),
+            value: selected?.resource,
+          },
+          {
+            label: formatMessage(
+              'pages.optional.exportJobs.fields.status',
+              'Status',
+            ),
+            value: selected?.status,
+          },
+          {
+            label: formatMessage(
+              'pages.optional.exportJobs.fields.requiredBindings',
+              'Required Bindings',
+            ),
             value: selected?.requiredBindings.join(', '),
           },
           {
-            label: 'Safety Checks',
+            label: formatMessage(
+              'pages.optional.exportJobs.fields.safetyChecks',
+              'Safety Checks',
+            ),
             value: selected?.safetyChecks.join(', '),
           },
-          { label: 'Runbook', value: selected?.runbook },
+          {
+            label: formatMessage(
+              'pages.optional.exportJobs.fields.runbook',
+              'Runbook',
+            ),
+            value: selected?.runbook,
+          },
         ]}
         onClose={() => setSelected(undefined)}
         open={Boolean(selected)}
-        title={selected?.resource ?? 'Export Job Detail'}
+        title={
+          selected?.resource ??
+          formatMessage(
+            'pages.optional.exportJobs.detail.title',
+            'Export Job Detail',
+          )
+        }
       />
     </PageContainer>
   );

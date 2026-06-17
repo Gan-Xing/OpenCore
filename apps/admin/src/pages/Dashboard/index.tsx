@@ -11,24 +11,69 @@ import {
   SafetyCertificateOutlined,
 } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
-import { history } from '@umijs/max';
+import { history, useIntl } from '@umijs/max';
 import { Button, Card, List, Space, Statistic, Tag, Typography } from 'antd';
+import { useCallback, useMemo } from 'react';
 import styles from './index.less';
 
+type FormatMessage = (
+  id: string,
+  defaultMessage: string,
+  values?: Record<string, number | string>,
+) => string;
+
 const DashboardPage: React.FC = () => {
+  const intl = useIntl();
   const nextModules = plannedModuleSummaries.slice(0, 6);
+  const formatMessage: FormatMessage = useCallback(
+    (id, defaultMessage, values) =>
+      values
+        ? intl.formatMessage({ id, defaultMessage }, values)
+        : intl.formatMessage({ id, defaultMessage }),
+    [intl],
+  );
+  const readyLabel = formatMessage('pages.dashboard.status.ready', 'ready');
+  const foundationStatusRows = useMemo(
+    () => [
+      {
+        label: formatMessage(
+          'pages.dashboard.foundation.apiLive',
+          'API liveness',
+        ),
+        value: '/health/live',
+        status: readyLabel,
+      },
+      {
+        label: formatMessage(
+          'pages.dashboard.foundation.apiReady',
+          'API readiness',
+        ),
+        value: '/health/ready',
+        status: readyLabel,
+      },
+      {
+        label: formatMessage(
+          'pages.dashboard.foundation.openapiContract',
+          'OpenAPI contract',
+        ),
+        value: 'packages/contracts/openapi/opencore-api.json',
+        status: readyLabel,
+      },
+    ],
+    [formatMessage, readyLabel],
+  );
 
   return (
     <PageContainer
-      title="Dashboard"
-      subTitle="S5 shell"
+      title={formatMessage('pages.dashboard.title', 'Dashboard')}
+      subTitle={formatMessage('pages.dashboard.section', 'S5 shell')}
       extra={[
         <Button
           key="openapi"
           icon={<ApiOutlined />}
           onClick={() => history.push('/tools/openapi')}
         >
-          OpenAPI
+          {formatMessage('pages.dashboard.actions.openapi', 'OpenAPI')}
         </Button>,
       ]}
     >
@@ -36,56 +81,63 @@ const DashboardPage: React.FC = () => {
         <section className={styles.metricGrid}>
           <Card className={styles.metricCard}>
             <Statistic
-              title="Shell modules"
+              title={formatMessage(
+                'pages.dashboard.stats.shellModules',
+                'Shell modules',
+              )}
               value={registrySummary.shellModuleCount}
               prefix={<PartitionOutlined />}
             />
             <Typography.Text type="secondary">
-              Menu entries are derived from module registry.
+              {formatMessage(
+                'pages.dashboard.stats.shellModulesDescription',
+                'Menu entries are derived from module registry.',
+              )}
             </Typography.Text>
           </Card>
           <Card className={styles.metricCard}>
             <Statistic
-              title="Shell permissions"
+              title={formatMessage(
+                'pages.dashboard.stats.shellPermissions',
+                'Shell permissions',
+              )}
               value={registrySummary.shellPermissionCount}
               prefix={<SafetyCertificateOutlined />}
             />
             <Typography.Text type="secondary">
-              Access checks use stable permission codes.
+              {formatMessage(
+                'pages.dashboard.stats.shellPermissionsDescription',
+                'Access checks use stable permission codes.',
+              )}
             </Typography.Text>
           </Card>
           <Card className={styles.metricCard}>
             <Statistic
-              title="Planned modules"
+              title={formatMessage(
+                'pages.dashboard.stats.plannedModules',
+                'Planned modules',
+              )}
               value={registrySummary.plannedModuleCount}
               prefix={<CheckCircleOutlined />}
             />
             <Typography.Text type="secondary">
-              Later modules stay hidden until they pass admission.
+              {formatMessage(
+                'pages.dashboard.stats.plannedModulesDescription',
+                'Later modules stay hidden until they pass admission.',
+              )}
             </Typography.Text>
           </Card>
         </section>
 
         <section className={styles.statusGrid}>
-          <Card title="Foundation status">
+          <Card
+            title={formatMessage(
+              'pages.dashboard.cards.foundationStatus',
+              'Foundation status',
+            )}
+          >
             <List
-              dataSource={[
-                {
-                  label: 'API liveness',
-                  value: '/health/live',
-                  status: 'ready',
-                },
-                {
-                  label: 'API readiness',
-                  value: '/health/ready',
-                  status: 'ready',
-                },
-                {
-                  label: 'OpenAPI contract',
-                  value: 'packages/contracts/openapi/opencore-api.json',
-                  status: 'ready',
-                },
-              ]}
+              dataSource={foundationStatusRows}
               renderItem={(item) => (
                 <List.Item>
                   <List.Item.Meta
@@ -102,7 +154,12 @@ const DashboardPage: React.FC = () => {
             />
           </Card>
 
-          <Card title="Active shell routes">
+          <Card
+            title={formatMessage(
+              'pages.dashboard.cards.activeShellRoutes',
+              'Active shell routes',
+            )}
+          >
             <List
               dataSource={[...shellMenuItems]}
               renderItem={(item) => (
@@ -115,7 +172,12 @@ const DashboardPage: React.FC = () => {
           </Card>
         </section>
 
-        <Card title="Next modules">
+        <Card
+          title={formatMessage(
+            'pages.dashboard.cards.nextModules',
+            'Next modules',
+          )}
+        >
           {nextModules.length > 0 ? (
             <List
               className={styles.plannedList}
@@ -129,13 +191,27 @@ const DashboardPage: React.FC = () => {
                         {item.title}
                       </Space>
                     }
-                    description={`${item.code} · ${item.layer} · ${item.permissionCount} permissions · ${item.menuCount} menus`}
+                    description={formatMessage(
+                      'pages.dashboard.modules.description',
+                      '{code} · {layer} · {permissions} permissions · {menus} menus',
+                      {
+                        code: item.code,
+                        layer: item.layer,
+                        permissions: item.permissionCount,
+                        menus: item.menuCount,
+                      },
+                    )}
                   />
                 </List.Item>
               )}
             />
           ) : (
-            <EmptyState title="No planned modules" />
+            <EmptyState
+              title={formatMessage(
+                'pages.dashboard.empty.noPlannedModules',
+                'No planned modules',
+              )}
+            />
           )}
         </Card>
       </div>

@@ -4,9 +4,10 @@ import {
   ProTable,
   type ProColumns,
 } from '@ant-design/pro-components';
+import { useIntl } from '@umijs/max';
 import { Button, Tooltip, Typography } from 'antd';
 import type { ReactNode } from 'react';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   CurrentPageExportButton,
   type CurrentPageExportColumn,
@@ -44,6 +45,12 @@ type SystemManagementTableProps<T extends SystemManagementRecord> = {
   searchFields: readonly CurrentPageSearchField<T>[];
 };
 
+type FormatMessage = (
+  id: string,
+  defaultMessage: string,
+  values?: Record<string, number | string>,
+) => string;
+
 const SystemManagementTable = <T extends SystemManagementRecord>({
   title,
   rows,
@@ -58,16 +65,32 @@ const SystemManagementTable = <T extends SystemManagementRecord>({
   resource,
   searchFields,
 }: SystemManagementTableProps<T>) => {
+  const intl = useIntl();
   const [selectedDetail, setSelectedDetail] = useState<T>();
+  const formatMessage: FormatMessage = useCallback(
+    (id, defaultMessage, values) =>
+      values
+        ? intl.formatMessage({ id, defaultMessage }, values)
+        : intl.formatMessage({ id, defaultMessage }),
+    [intl],
+  );
+  const titleText = typeof title === 'string' ? title : '';
   const { filteredRows, toolbar: filterToolbar } = useCurrentPageFilters<T>({
     rows,
     searchFields,
-    searchPlaceholder: `Search ${title.toLowerCase()}`,
+    searchPlaceholder: formatMessage(
+      'pages.system.managementTable.search.placeholder',
+      'Search {title}',
+      { title: titleText.toLowerCase() },
+    ),
     selectFilters: filterOptions,
   });
 
   return (
-    <PageContainer title={title} subTitle="S7 System">
+    <PageContainer
+      title={title}
+      subTitle={formatMessage('pages.system.section', 'S7 System')}
+    >
       <ProTable<T>
         rowKey={(record) => String(record.id ?? record.code ?? record.key)}
         search={false}
@@ -91,16 +114,29 @@ const SystemManagementTable = <T extends SystemManagementRecord>({
         columns={[
           ...columns,
           {
-            title: 'Action',
+            title: formatMessage(
+              'pages.system.managementTable.actions.column',
+              'Action',
+            ),
             valueType: 'option',
             width: 72,
             render: (_, record) => {
               const recordKey = String(record.id ?? record.code ?? record.key);
 
               return (
-                <Tooltip title={`View ${recordKey}`}>
+                <Tooltip
+                  title={formatMessage(
+                    'pages.system.managementTable.actions.viewRecord',
+                    'View {key}',
+                    { key: recordKey },
+                  )}
+                >
                   <Button
-                    aria-label={`View ${recordKey}`}
+                    aria-label={formatMessage(
+                      'pages.system.managementTable.actions.viewRecord',
+                      'View {key}',
+                      { key: recordKey },
+                    )}
                     icon={<EyeOutlined />}
                     onClick={() => setSelectedDetail(record)}
                     size="small"
@@ -125,8 +161,17 @@ const SystemManagementTable = <T extends SystemManagementRecord>({
         }
         title={
           selectedDetail
-            ? (detailTitle?.(selectedDetail) ?? `${title} Detail`)
-            : `${title} Detail`
+            ? (detailTitle?.(selectedDetail) ??
+              formatMessage(
+                'pages.system.managementTable.detail.title',
+                '{title} Detail',
+                { title: titleText },
+              ))
+            : formatMessage(
+                'pages.system.managementTable.detail.title',
+                '{title} Detail',
+                { title: titleText },
+              )
         }
       />
     </PageContainer>

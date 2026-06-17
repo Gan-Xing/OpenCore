@@ -8,8 +8,9 @@ import {
   findReportFixture,
   type ReportDefinitionSummary,
 } from '@opencore/sdk';
+import { useIntl } from '@umijs/max';
 import { Tag, Typography } from 'antd';
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   CurrentPageExportButton,
   type CurrentPageExportColumn,
@@ -23,46 +24,121 @@ import {
 import { ReadOnlyDetailDrawer } from '../shared/ReadOnlyDetailDrawer';
 
 const rows = createOperationsFixtures().reports;
-const exportColumns: CurrentPageExportColumn<ReportDefinitionSummary>[] = [
-  { title: 'ID', dataIndex: 'id' },
-  { title: 'Code', dataIndex: 'code' },
-  { title: 'Name', dataIndex: 'name' },
-  { title: 'Owner', dataIndex: 'owner' },
-  { title: 'Enabled', dataIndex: 'enabled' },
-  { title: 'Description', dataIndex: 'description' },
-  { title: 'Query Schema', dataIndex: 'querySchema', sensitive: true },
-];
 const searchFields: CurrentPageSearchField<ReportDefinitionSummary>[] = [
   'code',
   'name',
   'owner',
   'description',
 ];
-const filterOptions: CurrentPageFilterOption<ReportDefinitionSummary>[] = [
-  {
-    key: 'enabled',
-    options: [
-      { label: 'enabled', value: 'true' },
-      { label: 'disabled', value: 'false' },
-    ],
-    placeholder: 'Enabled',
-    predicate: (record, value) => record.enabled === (value === 'true'),
-  },
-  {
-    key: 'owner',
-    options: createCurrentPageFilterOptions(rows, 'owner'),
-    placeholder: 'Owner',
-    predicate: (record, value) => record.owner === value,
-  },
-];
+
+type FormatMessage = (
+  id: string,
+  defaultMessage: string,
+  values?: Record<string, number | string>,
+) => string;
 
 export default function ReportsPage() {
+  const intl = useIntl();
   const [selected, setSelected] = useState<ReportDefinitionSummary>();
+  const formatMessage: FormatMessage = useCallback(
+    (id, defaultMessage, values) =>
+      values
+        ? intl.formatMessage({ id, defaultMessage }, values)
+        : intl.formatMessage({ id, defaultMessage }),
+    [intl],
+  );
+  const statusLabels = useMemo(
+    () => ({
+      disabled: formatMessage(
+        'pages.optional.reports.status.disabled',
+        'disabled',
+      ),
+      enabled: formatMessage(
+        'pages.optional.reports.status.enabled',
+        'enabled',
+      ),
+    }),
+    [formatMessage],
+  );
+  const exportColumns: CurrentPageExportColumn<ReportDefinitionSummary>[] =
+    useMemo(
+      () => [
+        {
+          title: formatMessage('pages.optional.common.fields.id', 'ID'),
+          dataIndex: 'id',
+        },
+        {
+          title: formatMessage('pages.optional.reports.fields.code', 'Code'),
+          dataIndex: 'code',
+        },
+        {
+          title: formatMessage('pages.optional.reports.fields.name', 'Name'),
+          dataIndex: 'name',
+        },
+        {
+          title: formatMessage('pages.optional.reports.fields.owner', 'Owner'),
+          dataIndex: 'owner',
+        },
+        {
+          title: formatMessage(
+            'pages.optional.reports.fields.enabled',
+            'Enabled',
+          ),
+          dataIndex: 'enabled',
+        },
+        {
+          title: formatMessage(
+            'pages.optional.reports.fields.description',
+            'Description',
+          ),
+          dataIndex: 'description',
+        },
+        {
+          title: formatMessage(
+            'pages.optional.reports.fields.querySchema',
+            'Query Schema',
+          ),
+          dataIndex: 'querySchema',
+          sensitive: true,
+        },
+      ],
+      [formatMessage],
+    );
+  const filterOptions: CurrentPageFilterOption<ReportDefinitionSummary>[] =
+    useMemo(
+      () => [
+        {
+          key: 'enabled',
+          options: [
+            { label: statusLabels.enabled, value: 'true' },
+            { label: statusLabels.disabled, value: 'false' },
+          ],
+          placeholder: formatMessage(
+            'pages.optional.reports.fields.enabled',
+            'Enabled',
+          ),
+          predicate: (record, value) => record.enabled === (value === 'true'),
+        },
+        {
+          key: 'owner',
+          options: createCurrentPageFilterOptions(rows, 'owner'),
+          placeholder: formatMessage(
+            'pages.optional.reports.fields.owner',
+            'Owner',
+          ),
+          predicate: (record, value) => record.owner === value,
+        },
+      ],
+      [formatMessage, statusLabels],
+    );
   const { filteredRows, toolbar: filterToolbar } =
     useCurrentPageFilters<ReportDefinitionSummary>({
       rows,
       searchFields,
-      searchPlaceholder: 'Search reports',
+      searchPlaceholder: formatMessage(
+        'pages.optional.reports.search.placeholder',
+        'Search reports',
+      ),
       selectFilters: filterOptions,
     });
 
@@ -72,7 +148,7 @@ export default function ReportsPage() {
 
   const columns: ProColumns<ReportDefinitionSummary>[] = [
     {
-      title: 'Code',
+      title: formatMessage('pages.optional.reports.fields.code', 'Code'),
       dataIndex: 'code',
       render: (_, record) => (
         <Typography.Link onClick={() => openDetail(record.code)}>
@@ -80,27 +156,38 @@ export default function ReportsPage() {
         </Typography.Link>
       ),
     },
-    { title: 'Name', dataIndex: 'name' },
-    { title: 'Owner', dataIndex: 'owner' },
     {
-      title: 'Enabled',
+      title: formatMessage('pages.optional.reports.fields.name', 'Name'),
+      dataIndex: 'name',
+    },
+    {
+      title: formatMessage('pages.optional.reports.fields.owner', 'Owner'),
+      dataIndex: 'owner',
+    },
+    {
+      title: formatMessage('pages.optional.reports.fields.enabled', 'Enabled'),
       render: (_, record) => (
         <Tag color={record.enabled ? 'green' : 'default'}>
-          {record.enabled ? 'enabled' : 'disabled'}
+          {record.enabled ? statusLabels.enabled : statusLabels.disabled}
         </Tag>
       ),
     },
     {
-      title: 'Action',
+      title: formatMessage('pages.optional.common.actions.column', 'Action'),
       valueType: 'option',
       render: (_, record) => (
-        <a onClick={() => openDetail(record.code)}>Detail</a>
+        <a onClick={() => openDetail(record.code)}>
+          {formatMessage('pages.optional.common.actions.detail', 'Detail')}
+        </a>
       ),
     },
   ];
 
   return (
-    <PageContainer title="Reports" subTitle="S11 Optional">
+    <PageContainer
+      title={formatMessage('pages.optional.reports.title', 'Reports')}
+      subTitle={formatMessage('pages.optional.section', 'S11 Optional')}
+    >
       <ProTable<ReportDefinitionSummary>
         rowKey="code"
         search={false}
@@ -120,21 +207,56 @@ export default function ReportsPage() {
       />
       <ReadOnlyDetailDrawer
         fields={[
-          { label: 'Code', value: selected?.code },
-          { label: 'Name', value: selected?.name },
-          { label: 'Owner', value: selected?.owner },
           {
-            label: 'Enabled',
-            value: selected?.enabled ? 'enabled' : 'disabled',
+            label: formatMessage('pages.optional.reports.fields.code', 'Code'),
+            value: selected?.code,
           },
-          { label: 'Description', value: selected?.description },
+          {
+            label: formatMessage('pages.optional.reports.fields.name', 'Name'),
+            value: selected?.name,
+          },
+          {
+            label: formatMessage(
+              'pages.optional.reports.fields.owner',
+              'Owner',
+            ),
+            value: selected?.owner,
+          },
+          {
+            label: formatMessage(
+              'pages.optional.reports.fields.enabled',
+              'Enabled',
+            ),
+            value:
+              selected?.enabled === undefined
+                ? undefined
+                : selected.enabled
+                  ? statusLabels.enabled
+                  : statusLabels.disabled,
+          },
+          {
+            label: formatMessage(
+              'pages.optional.reports.fields.description',
+              'Description',
+            ),
+            value: selected?.description,
+          },
         ]}
         jsonSections={[
-          { title: 'Query Schema', value: selected?.querySchema ?? {} },
+          {
+            title: formatMessage(
+              'pages.optional.reports.fields.querySchema',
+              'Query Schema',
+            ),
+            value: selected?.querySchema ?? {},
+          },
         ]}
         onClose={() => setSelected(undefined)}
         open={Boolean(selected)}
-        title={selected?.name ?? 'Report Detail'}
+        title={
+          selected?.name ??
+          formatMessage('pages.optional.reports.detail.title', 'Report Detail')
+        }
       />
     </PageContainer>
   );

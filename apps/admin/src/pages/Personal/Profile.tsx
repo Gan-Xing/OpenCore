@@ -8,7 +8,7 @@ import {
 } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
 import type { UserProfileSummary } from '@opencore/sdk';
-import { history, useModel } from '@umijs/max';
+import { history, useIntl, useModel } from '@umijs/max';
 import {
   Alert,
   Avatar,
@@ -42,6 +42,12 @@ type PasswordFormValues = {
   confirmPassword: string;
 };
 
+type FormatMessage = (
+  id: string,
+  defaultMessage: string,
+  values?: Record<string, number | string>,
+) => string;
+
 const profileLayoutStyle: CSSProperties = {
   display: 'grid',
   gap: 16,
@@ -67,9 +73,9 @@ const AVATAR_ACCEPT = 'image/png,image/jpeg,image/webp,image/gif';
 const AVATAR_MAX_BYTES = 1_048_576;
 const AVATAR_MIME_TYPES = new Set(AVATAR_ACCEPT.split(','));
 
-function renderTags(values: readonly string[]) {
+function renderTags(values: readonly string[], emptyText: string) {
   if (values.length === 0) {
-    return <Typography.Text type="secondary">None</Typography.Text>;
+    return <Typography.Text type="secondary">{emptyText}</Typography.Text>;
   }
 
   return (
@@ -81,7 +87,10 @@ function renderTags(values: readonly string[]) {
   );
 }
 
-function readFileAsBase64(file: File): Promise<string> {
+function readFileAsBase64(
+  file: File,
+  formatMessage: FormatMessage,
+): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
@@ -89,7 +98,14 @@ function readFileAsBase64(file: File): Promise<string> {
       const result = reader.result;
 
       if (typeof result !== 'string') {
-        reject(new Error('Unable to read avatar file.'));
+        reject(
+          new Error(
+            formatMessage(
+              'pages.personal.profile.avatar.readFailure',
+              'Unable to read avatar file.',
+            ),
+          ),
+        );
         return;
       }
 
@@ -98,13 +114,22 @@ function readFileAsBase64(file: File): Promise<string> {
       resolve(commaIndex >= 0 ? result.slice(commaIndex + 1) : result);
     });
     reader.addEventListener('error', () => {
-      reject(reader.error ?? new Error('Unable to read avatar file.'));
+      reject(
+        reader.error ??
+          new Error(
+            formatMessage(
+              'pages.personal.profile.avatar.readFailure',
+              'Unable to read avatar file.',
+            ),
+          ),
+      );
     });
     reader.readAsDataURL(file);
   });
 }
 
 export default function PersonalProfilePage() {
+  const intl = useIntl();
   const [form] = Form.useForm<ProfileFormValues>();
   const [passwordForm] = Form.useForm<PasswordFormValues>();
   const { initialState, setInitialState } = useModel('@@initialState');
@@ -116,6 +141,13 @@ export default function PersonalProfilePage() {
   const [deletingAvatar, setDeletingAvatar] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
   const [loadError, setLoadError] = useState<string>();
+  const formatMessage: FormatMessage = useCallback(
+    (id, defaultMessage, values) =>
+      values
+        ? intl.formatMessage({ id, defaultMessage }, values)
+        : intl.formatMessage({ id, defaultMessage }),
+    [intl],
+  );
 
   const syncCurrentUserProfile = useCallback(
     (updated: UserProfileSummary) => {
@@ -167,12 +199,17 @@ export default function PersonalProfilePage() {
         form.setFieldsValue({ displayName: fallback.displayName });
       }
       setLoadError(
-        error instanceof Error ? error.message : 'Unable to load profile.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.personal.profile.load.failure',
+              'Unable to load profile.',
+            ),
       );
     } finally {
       setLoading(false);
     }
-  }, [form, initialState?.currentUser]);
+  }, [form, formatMessage, initialState?.currentUser]);
 
   useEffect(() => {
     void loadProfile();
@@ -189,10 +226,20 @@ export default function PersonalProfilePage() {
       form.setFieldsValue({ displayName: updated.displayName });
       syncCurrentUserProfile(updated);
       setLoadError(undefined);
-      message.success('Profile saved.');
+      message.success(
+        formatMessage(
+          'pages.personal.profile.messages.saved',
+          'Profile saved.',
+        ),
+      );
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'Unable to save profile.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.personal.profile.messages.saveFailure',
+              'Unable to save profile.',
+            ),
       );
     } finally {
       setSaving(false);
@@ -210,12 +257,22 @@ export default function PersonalProfilePage() {
     }
 
     if (!AVATAR_MIME_TYPES.has(file.type)) {
-      message.error('Avatar must be PNG, JPEG, WebP or GIF.');
+      message.error(
+        formatMessage(
+          'pages.personal.profile.avatar.invalidType',
+          'Avatar must be PNG, JPEG, WebP or GIF.',
+        ),
+      );
       return;
     }
 
     if (file.size > AVATAR_MAX_BYTES) {
-      message.error('Avatar must be 1 MB or smaller.');
+      message.error(
+        formatMessage(
+          'pages.personal.profile.avatar.tooLarge',
+          'Avatar must be 1 MB or smaller.',
+        ),
+      );
       return;
     }
 
@@ -224,16 +281,26 @@ export default function PersonalProfilePage() {
       const updated = await updateOpenCoreUserAvatar({
         originalName: file.name,
         mimeType: file.type,
-        contentBase64: await readFileAsBase64(file),
+        contentBase64: await readFileAsBase64(file, formatMessage),
       });
       setProfile(updated);
       form.setFieldsValue({ displayName: updated.displayName });
       syncCurrentUserProfile(updated);
       setLoadError(undefined);
-      message.success('Avatar updated.');
+      message.success(
+        formatMessage(
+          'pages.personal.profile.messages.avatarUpdated',
+          'Avatar updated.',
+        ),
+      );
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'Unable to update avatar.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.personal.profile.messages.avatarUpdateFailure',
+              'Unable to update avatar.',
+            ),
       );
     } finally {
       setUploadingAvatar(false);
@@ -248,10 +315,20 @@ export default function PersonalProfilePage() {
       form.setFieldsValue({ displayName: updated.displayName });
       syncCurrentUserProfile(updated);
       setLoadError(undefined);
-      message.success('Avatar removed.');
+      message.success(
+        formatMessage(
+          'pages.personal.profile.messages.avatarRemoved',
+          'Avatar removed.',
+        ),
+      );
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'Unable to remove avatar.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.personal.profile.messages.avatarRemoveFailure',
+              'Unable to remove avatar.',
+            ),
       );
     } finally {
       setDeletingAvatar(false);
@@ -278,7 +355,11 @@ export default function PersonalProfilePage() {
           : state,
       );
       message.success(
-        `Password changed. ${result.revokedSessionCount} active session(s) revoked. Sign in again.`,
+        formatMessage(
+          'pages.personal.profile.messages.passwordChanged',
+          'Password changed. {count} active session(s) revoked. Sign in again.',
+          { count: result.revokedSessionCount },
+        ),
       );
       history.replace({
         pathname: '/user/login',
@@ -288,7 +369,12 @@ export default function PersonalProfilePage() {
       });
     } catch (error: unknown) {
       message.error(
-        error instanceof Error ? error.message : 'Unable to change password.',
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.personal.profile.messages.passwordChangeFailure',
+              'Unable to change password.',
+            ),
       );
     } finally {
       setChangingPassword(false);
@@ -297,14 +383,14 @@ export default function PersonalProfilePage() {
 
   return (
     <PageContainer
-      title="Profile"
+      title={formatMessage('pages.personal.profile.title', 'Profile')}
       extra={[
         <Button
           key="reload"
           icon={<ReloadOutlined />}
           onClick={() => void loadProfile()}
         >
-          Reload
+          {formatMessage('pages.personal.profile.actions.reload', 'Reload')}
         </Button>,
       ]}
     >
@@ -321,7 +407,11 @@ export default function PersonalProfilePage() {
                 {profile?.displayName ?? 'OpenCore User'}
               </Typography.Title>
               <Typography.Text type="secondary">
-                {profile?.username ?? 'unknown'}
+                {profile?.username ??
+                  formatMessage(
+                    'pages.personal.profile.status.unknown',
+                    'unknown',
+                  )}
               </Typography.Text>
             </div>
           </div>
@@ -338,7 +428,10 @@ export default function PersonalProfilePage() {
               loading={uploadingAvatar}
               onClick={() => avatarInputRef.current?.click()}
             >
-              Upload avatar
+              {formatMessage(
+                'pages.personal.profile.actions.uploadAvatar',
+                'Upload avatar',
+              )}
             </Button>
             <Button
               danger
@@ -347,24 +440,58 @@ export default function PersonalProfilePage() {
               loading={deletingAvatar}
               onClick={() => void handleDeleteAvatar()}
             >
-              Remove avatar
+              {formatMessage(
+                'pages.personal.profile.actions.removeAvatar',
+                'Remove avatar',
+              )}
             </Button>
           </Space>
           <Descriptions column={1} size="small" bordered>
-            <Descriptions.Item label="User ID">
+            <Descriptions.Item
+              label={formatMessage(
+                'pages.personal.profile.fields.userId',
+                'User ID',
+              )}
+            >
               {profile?.id ?? '-'}
             </Descriptions.Item>
-            <Descriptions.Item label="Username">
+            <Descriptions.Item
+              label={formatMessage(
+                'pages.personal.profile.fields.username',
+                'Username',
+              )}
+            >
               {profile?.username ?? '-'}
             </Descriptions.Item>
-            <Descriptions.Item label="Department">
+            <Descriptions.Item
+              label={formatMessage(
+                'pages.personal.profile.fields.department',
+                'Department',
+              )}
+            >
               {profile?.deptId ?? '-'}
             </Descriptions.Item>
-            <Descriptions.Item label="Roles">
-              {renderTags(profile?.roleCodes ?? [])}
+            <Descriptions.Item
+              label={formatMessage(
+                'pages.personal.profile.fields.roles',
+                'Roles',
+              )}
+            >
+              {renderTags(
+                profile?.roleCodes ?? [],
+                formatMessage('pages.personal.profile.status.none', 'None'),
+              )}
             </Descriptions.Item>
-            <Descriptions.Item label="Posts">
-              {renderTags(profile?.postCodes ?? [])}
+            <Descriptions.Item
+              label={formatMessage(
+                'pages.personal.profile.fields.posts',
+                'Posts',
+              )}
+            >
+              {renderTags(
+                profile?.postCodes ?? [],
+                formatMessage('pages.personal.profile.status.none', 'None'),
+              )}
             </Descriptions.Item>
           </Descriptions>
         </section>
@@ -374,7 +501,10 @@ export default function PersonalProfilePage() {
             <Alert
               type="warning"
               showIcon
-              message="Profile data is using the current session fallback."
+              message={formatMessage(
+                'pages.personal.profile.load.sessionFallback',
+                'Profile data is using the current session fallback.',
+              )}
               description={loadError}
               style={{ marginBottom: 16 }}
             />
@@ -386,13 +516,25 @@ export default function PersonalProfilePage() {
             onFinish={() => void handleSave()}
           >
             <Form.Item
-              label="Display name"
+              label={formatMessage(
+                'pages.personal.profile.fields.displayName',
+                'Display name',
+              )}
               name="displayName"
               rules={[
-                { required: true, message: 'Display name is required.' },
+                {
+                  required: true,
+                  message: formatMessage(
+                    'pages.personal.profile.validation.displayNameRequired',
+                    'Display name is required.',
+                  ),
+                },
                 {
                   max: 80,
-                  message: 'Display name must be 80 characters or fewer.',
+                  message: formatMessage(
+                    'pages.personal.profile.validation.displayNameMax',
+                    'Display name must be 80 characters or fewer.',
+                  ),
                 },
               ]}
             >
@@ -404,14 +546,17 @@ export default function PersonalProfilePage() {
               icon={<SaveOutlined />}
               loading={saving}
             >
-              Save
+              {formatMessage('pages.personal.profile.actions.save', 'Save')}
             </Button>
           </Form>
         </section>
 
         <section style={profilePanelStyle}>
           <Typography.Title level={5} style={{ marginTop: 0 }}>
-            Change password
+            {formatMessage(
+              'pages.personal.profile.password.title',
+              'Change password',
+            )}
           </Typography.Title>
           <Form<PasswordFormValues>
             form={passwordForm}
@@ -419,23 +564,44 @@ export default function PersonalProfilePage() {
             onFinish={() => void handlePasswordChange()}
           >
             <Form.Item
-              label="Current password"
+              label={formatMessage(
+                'pages.personal.profile.password.current',
+                'Current password',
+              )}
               name="oldPassword"
               rules={[
-                { required: true, message: 'Current password is required.' },
+                {
+                  required: true,
+                  message: formatMessage(
+                    'pages.personal.profile.validation.currentPasswordRequired',
+                    'Current password is required.',
+                  ),
+                },
               ]}
             >
               <Input.Password autoComplete="current-password" />
             </Form.Item>
             <Form.Item
-              label="New password"
+              label={formatMessage(
+                'pages.personal.profile.password.new',
+                'New password',
+              )}
               name="newPassword"
               dependencies={['oldPassword']}
               rules={[
-                { required: true, message: 'New password is required.' },
+                {
+                  required: true,
+                  message: formatMessage(
+                    'pages.personal.profile.validation.newPasswordRequired',
+                    'New password is required.',
+                  ),
+                },
                 {
                   min: 6,
-                  message: 'New password must be at least 6 characters.',
+                  message: formatMessage(
+                    'pages.personal.profile.validation.newPasswordMin',
+                    'New password must be at least 6 characters.',
+                  ),
                 },
                 ({ getFieldValue }) => ({
                   validator(_, value) {
@@ -445,7 +611,10 @@ export default function PersonalProfilePage() {
 
                     return Promise.reject(
                       new Error(
-                        'New password must be different from current password.',
+                        formatMessage(
+                          'pages.personal.profile.validation.newPasswordDifferent',
+                          'New password must be different from current password.',
+                        ),
                       ),
                     );
                   },
@@ -455,11 +624,20 @@ export default function PersonalProfilePage() {
               <Input.Password autoComplete="new-password" />
             </Form.Item>
             <Form.Item
-              label="Confirm password"
+              label={formatMessage(
+                'pages.personal.profile.password.confirm',
+                'Confirm password',
+              )}
               name="confirmPassword"
               dependencies={['newPassword']}
               rules={[
-                { required: true, message: 'Confirm password is required.' },
+                {
+                  required: true,
+                  message: formatMessage(
+                    'pages.personal.profile.validation.confirmPasswordRequired',
+                    'Confirm password is required.',
+                  ),
+                },
                 ({ getFieldValue }) => ({
                   validator(_, value) {
                     if (!value || value === getFieldValue('newPassword')) {
@@ -467,7 +645,12 @@ export default function PersonalProfilePage() {
                     }
 
                     return Promise.reject(
-                      new Error('The two passwords do not match.'),
+                      new Error(
+                        formatMessage(
+                          'pages.personal.profile.validation.passwordMismatch',
+                          'The two passwords do not match.',
+                        ),
+                      ),
                     );
                   },
                 }),
@@ -481,7 +664,10 @@ export default function PersonalProfilePage() {
               icon={<LockOutlined />}
               loading={changingPassword}
             >
-              Change password
+              {formatMessage(
+                'pages.personal.profile.actions.changePassword',
+                'Change password',
+              )}
             </Button>
           </Form>
         </section>

@@ -9,9 +9,10 @@ import {
   ProTable,
   type ProColumns,
 } from '@ant-design/pro-components';
+import { useIntl } from '@umijs/max';
 import { Button, Space, Tooltip, Typography } from 'antd';
 import type { ReactNode } from 'react';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   CurrentPageExportButton,
   type CurrentPageExportColumn,
@@ -50,6 +51,12 @@ type RbacTableProps<T extends RbacRecord> = {
   searchFields: readonly CurrentPageSearchField<T>[];
 };
 
+type FormatMessage = (
+  id: string,
+  defaultMessage: string,
+  values?: Record<string, number | string>,
+) => string;
+
 const RbacTable = <T extends RbacRecord>({
   title,
   rows,
@@ -65,16 +72,32 @@ const RbacTable = <T extends RbacRecord>({
   resource,
   searchFields,
 }: RbacTableProps<T>) => {
+  const intl = useIntl();
   const [selectedDetail, setSelectedDetail] = useState<T>();
+  const formatMessage: FormatMessage = useCallback(
+    (id, defaultMessage, values) =>
+      values
+        ? intl.formatMessage({ id, defaultMessage }, values)
+        : intl.formatMessage({ id, defaultMessage }),
+    [intl],
+  );
+  const titleText = typeof title === 'string' ? title : '';
   const { filteredRows, toolbar: filterToolbar } = useCurrentPageFilters<T>({
     rows,
     searchFields,
-    searchPlaceholder: `Search ${title.toLowerCase()}`,
+    searchPlaceholder: formatMessage(
+      'pages.system.rbacTable.search.placeholder',
+      'Search {title}',
+      { title: titleText.toLowerCase() },
+    ),
     selectFilters: filterOptions,
   });
 
   return (
-    <PageContainer title={title} subTitle="S6 RBAC">
+    <PageContainer
+      title={title}
+      subTitle={formatMessage('pages.system.rbac.section', 'S6 RBAC')}
+    >
       <ProTable<T>
         rowKey={(record) => String(record.id ?? record.code ?? record.key)}
         loading={loading}
@@ -87,7 +110,7 @@ const RbacTable = <T extends RbacRecord>({
           </Typography.Text>,
           <Tooltip key="create" title={readOnlyReason}>
             <Button disabled type="primary" icon={<PlusOutlined />}>
-              New
+              {formatMessage('pages.system.rbacTable.actions.new', 'New')}
             </Button>
           </Tooltip>,
           <CurrentPageExportButton<T>
@@ -104,7 +127,10 @@ const RbacTable = <T extends RbacRecord>({
         columns={[
           ...columns,
           {
-            title: 'Actions',
+            title: formatMessage(
+              'pages.system.rbacTable.actions.column',
+              'Actions',
+            ),
             valueType: 'option',
             width: 136,
             render: (_, record) => {
@@ -112,9 +138,19 @@ const RbacTable = <T extends RbacRecord>({
 
               return (
                 <Space size="small">
-                  <Tooltip title={`View ${recordKey}`}>
+                  <Tooltip
+                    title={formatMessage(
+                      'pages.system.rbacTable.actions.viewRecord',
+                      'View {key}',
+                      { key: recordKey },
+                    )}
+                  >
                     <Button
-                      aria-label={`View ${recordKey}`}
+                      aria-label={formatMessage(
+                        'pages.system.rbacTable.actions.viewRecord',
+                        'View {key}',
+                        { key: recordKey },
+                      )}
                       icon={<EyeOutlined />}
                       onClick={() => setSelectedDetail(record)}
                       size="small"
@@ -122,7 +158,11 @@ const RbacTable = <T extends RbacRecord>({
                   </Tooltip>
                   <Tooltip title={readOnlyReason}>
                     <Button
-                      aria-label={`Edit ${recordKey}`}
+                      aria-label={formatMessage(
+                        'pages.system.rbacTable.actions.editRecord',
+                        'Edit {key}',
+                        { key: recordKey },
+                      )}
                       disabled
                       icon={<EditOutlined />}
                       size="small"
@@ -130,7 +170,11 @@ const RbacTable = <T extends RbacRecord>({
                   </Tooltip>
                   <Tooltip title={readOnlyReason}>
                     <Button
-                      aria-label={`Delete ${recordKey}`}
+                      aria-label={formatMessage(
+                        'pages.system.rbacTable.actions.deleteRecord',
+                        'Delete {key}',
+                        { key: recordKey },
+                      )}
                       danger
                       disabled
                       icon={<DeleteOutlined />}
@@ -157,8 +201,19 @@ const RbacTable = <T extends RbacRecord>({
         }
         title={
           selectedDetail
-            ? (detailTitle?.(selectedDetail) ?? `${title} Detail`)
-            : `${title} Detail`
+            ? (detailTitle?.(selectedDetail) ??
+              formatMessage(
+                'pages.system.rbacTable.detail.title',
+                '{title} Detail',
+                { title: titleText },
+              ))
+            : formatMessage(
+                'pages.system.rbacTable.detail.title',
+                '{title} Detail',
+                {
+                  title: titleText,
+                },
+              )
         }
       />
     </PageContainer>
