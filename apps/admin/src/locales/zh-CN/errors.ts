@@ -59,6 +59,7 @@ export default {
   'error.VALIDATION_FAILED': '提交内容校验失败。',
   'error.NOT_FOUND': '请求的资源不存在。',
   'error.CONFLICT': '当前数据状态冲突，请刷新后重试。',
+  'error.RATE_LIMITED': '请求过于频繁，请稍后重试。',
   'error.HTTP_400': '请求参数无效。',
   'error.HTTP_401': '登录已失效，请重新登录。',
   'error.HTTP_403': '当前账号没有访问权限。',

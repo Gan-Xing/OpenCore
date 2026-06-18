@@ -82,6 +82,7 @@ export default {
   'error.VALIDATION_FAILED': 'The submitted content failed validation.',
   'error.NOT_FOUND': 'The requested resource does not exist.',
   'error.CONFLICT': 'The current data state conflicts. Refresh and try again.',
+  'error.RATE_LIMITED': 'Too many requests. Please try again later.',
   'error.HTTP_400': 'The request is invalid.',
   'error.HTTP_401': 'Your session has expired. Please sign in again.',
   'error.HTTP_403': 'Your account does not have access.',

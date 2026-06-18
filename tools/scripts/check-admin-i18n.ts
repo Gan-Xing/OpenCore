@@ -6,6 +6,36 @@ const root = readRootArg();
 const adminRoot = join(root, 'apps', 'admin');
 const localesRoot = join(adminRoot, 'src', 'locales');
 const supportedLocales = new Set(['zh-CN', 'en-US']);
+const commonApiErrorCodes = new Set([
+  'BAD_REQUEST',
+  'VALIDATION_FAILED',
+  'UNAUTHORIZED',
+  'FORBIDDEN',
+  'NOT_FOUND',
+  'CONFLICT',
+  'RATE_LIMITED',
+  'INTERNAL_SERVER_ERROR',
+]);
+const backendErrorCodePrefixes = [
+  'AUDIT',
+  'AUTH',
+  'COLLABORATION',
+  'FILE',
+  'INTEGRATION',
+  'MONITOR',
+  'ONLINE',
+  'RBAC',
+  'SCHEDULER',
+  'SECURITY',
+  'SYSTEM',
+  'TOOL',
+  'USER',
+];
+const ignoredBackendErrorCodeCandidates = new Set([
+  'FILE_STORAGE',
+  'FILE_STORAGE_OPTIONS',
+  'MONITOR_RUNTIME_DIAGNOSTICS',
+]);
 const forbiddenLocaleNames = [
   'bn-BD',
   'fa-IR',
@@ -173,6 +203,8 @@ for (const scanPath of forbiddenMarkerScanPaths) {
 checkRouteMenuKeys();
 checkCoreI18nKeys();
 checkLocalizedAdminPageText();
+checkErrorLocaleParity();
+checkBackendErrorCodeTranslations();
 
 if (failures.length > 0) {
   console.error('Admin i18n guard failed.');
@@ -295,6 +327,139 @@ function checkLocalizedAdminPageText(): void {
       }
     }
   }
+}
+
+function checkErrorLocaleParity(): void {
+  const errorKeysByLocale = new Map(
+    [...supportedLocales].map((locale) => [
+      locale,
+      filterErrorKeys(readLocaleBundleKeys(locale)),
+    ]),
+  );
+  const allErrorKeys = new Set<string>();
+
+  for (const keys of errorKeysByLocale.values()) {
+    for (const key of keys) {
+      allErrorKeys.add(key);
+    }
+  }
+
+  for (const key of [...allErrorKeys].sort()) {
+    for (const [locale, keys] of errorKeysByLocale) {
+      if (!keys.has(key)) {
+        failures.push(`${locale} is missing Admin error i18n key: ${key}`);
+      }
+    }
+  }
+}
+
+function checkBackendErrorCodeTranslations(): void {
+  const localeKeysByLocale = new Map(
+    [...supportedLocales].map((locale) => [
+      locale,
+      readLocaleBundleKeys(locale),
+    ]),
+  );
+
+  for (const code of readBackendErrorCodes()) {
+    const key = `error.${code}`;
+
+    for (const [locale, keys] of localeKeysByLocale) {
+      if (!keys.has(key)) {
+        failures.push(
+          `${locale} is missing backend error-code translation: ${key}`,
+        );
+      }
+    }
+  }
+}
+
+function readBackendErrorCodes(): string[] {
+  const codes = new Set(commonApiErrorCodes);
+  const sourceRoots = [join(root, 'apps', 'api', 'src'), join(root, 'packages')];
+
+  for (const sourceRoot of sourceRoots) {
+    if (!existsSync(sourceRoot)) {
+      continue;
+    }
+
+    for (const filePath of collectTsSourceFiles(sourceRoot)) {
+      const content = readFileSync(filePath, 'utf8');
+
+      for (const match of content.matchAll(
+        /['"]([A-Z][A-Z0-9]+(?:_[A-Z0-9]+)+)['"]/g,
+      )) {
+        const code = match[1];
+
+        if (isBackendErrorCodeCandidate(code)) {
+          codes.add(code);
+        }
+      }
+    }
+  }
+
+  return [...codes].sort();
+}
+
+function collectTsSourceFiles(dir: string): string[] {
+  const files: string[] = [];
+
+  for (const entry of readdirSync(dir)) {
+    const fullPath = join(dir, entry);
+    const stat = statSync(fullPath);
+
+    if (stat.isDirectory()) {
+      if (
+        entry === 'node_modules' ||
+        entry === 'dist' ||
+        entry === 'coverage' ||
+        entry === '__fixtures__'
+      ) {
+        continue;
+      }
+
+      files.push(...collectTsSourceFiles(fullPath));
+      continue;
+    }
+
+    if (
+      fullPath.endsWith('.ts') &&
+      !fullPath.endsWith('.d.ts') &&
+      !fullPath.endsWith('.spec.ts') &&
+      !fullPath.endsWith('.test.ts')
+    ) {
+      files.push(fullPath);
+    }
+  }
+
+  return files;
+}
+
+function isBackendErrorCodeCandidate(code: string): boolean {
+  if (
+    ignoredBackendErrorCodeCandidates.has(code) ||
+    code.endsWith('_OPTIONS') ||
+    code.endsWith('_SECRET') ||
+    code.endsWith('_STORAGE')
+  ) {
+    return false;
+  }
+
+  if (commonApiErrorCodes.has(code) || /^HTTP_[45]\d\d$/u.test(code)) {
+    return true;
+  }
+
+  if (code.split('_').length < 3) {
+    return false;
+  }
+
+  return backendErrorCodePrefixes.some((prefix) =>
+    code.startsWith(`${prefix}_`),
+  );
+}
+
+function filterErrorKeys(keys: Set<string>): Set<string> {
+  return new Set([...keys].filter((key) => key.startsWith('error.')));
 }
 
 function readLocaleBundleKeys(locale: string): Set<string> {
