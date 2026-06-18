@@ -23,6 +23,24 @@ const resourceTemplatePlaceholder = templatePlaceholder('resource');
 
 runAdminFallbackClosureGuard({ rootDir: resolve(root, '../..') });
 
+function extractLocaleValues(source) {
+  const values = [];
+  const entryPattern = /'(?:[^'\\]|\\.)+'\s*:\s*'([^'\\]*(?:\\.[^'\\]*)*)'/g;
+  let match;
+
+  while ((match = entryPattern.exec(source))) {
+    values.push(match[1]);
+  }
+
+  return values;
+}
+
+function findForbiddenLocaleValueTerms(source, terms) {
+  const values = extractLocaleValues(source);
+
+  return terms.filter((term) => values.some((value) => value.includes(term)));
+}
+
 if (deps.mockjs || deps['@umijs/max-plugin-openapi']) {
   throw new Error(
     'Admin dependencies must not include mockjs or the Umi OpenAPI plugin.',
@@ -848,13 +866,41 @@ if (
   );
 }
 
-if (
-  zhCnPagesLocale.includes('供应商 readiness') ||
-  zhCnPagesLocale.includes('attention / blocked') ||
-  zhCnPagesLocale.includes('邮件/短信 outbox')
-) {
+const forbiddenZhCnVisibleTerms = findForbiddenLocaleValueTerms(
+  zhCnPagesLocale,
+  [
+    '供应商 readiness',
+    'attention / blocked',
+    '邮件/短信 outbox',
+    'Provider',
+    'Outbox',
+    'outbox',
+    'OAuth token',
+    ' token',
+    'Token',
+    'OAuth flow',
+    ' flow',
+    'Flow',
+    'State',
+    'Scopes',
+    'User Agent',
+    'fallback',
+    'Dashboard',
+    'handler',
+    'Worker',
+    'API Live',
+    'API Ready',
+    ' paths',
+    ' schemas',
+    ' operations',
+  ],
+);
+
+if (forbiddenZhCnVisibleTerms.length > 0) {
   throw new Error(
-    'Dashboard zh-CN locale must not expose English provider readiness/status terms.',
+    `zh-CN locale values must not expose avoidable English UI terms: ${forbiddenZhCnVisibleTerms.join(
+      ', ',
+    )}.`,
   );
 }
 
