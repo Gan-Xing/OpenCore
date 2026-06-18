@@ -156,6 +156,7 @@ import {
   type LoginLogBatchMutationSummary,
   type LoginLogCleanSummary,
   type LoginLogSummary,
+  type PageResponse,
   type LoginUnlockSummary,
   type MarkSystemNoticesReadRequest,
   type MessageQueryRequest,
@@ -1166,15 +1167,18 @@ function parseContentDispositionFilename(
 export async function listOpenCoreLoginLogs(
   query?: LoginLogQueryRequest,
 ): Promise<LoginLogSummary[]> {
-  const page = await systemManagementClient.listLoginLogs(
-    getRequiredAdminToken(),
-    {
-      page: 1,
-      pageSize: 100,
-      ...query,
-    },
-  );
+  const page = await getOpenCoreLoginLogPage(query);
   return [...page.items];
+}
+
+export function getOpenCoreLoginLogPage(
+  query?: LoginLogQueryRequest,
+): Promise<PageResponse<LoginLogSummary>> {
+  return systemManagementClient.listLoginLogs(getRequiredAdminToken(), {
+    page: 1,
+    pageSize: 100,
+    ...query,
+  });
 }
 
 export function getOpenCoreLoginLog(id: string): Promise<LoginLogSummary> {

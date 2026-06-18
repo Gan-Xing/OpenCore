@@ -431,6 +431,7 @@ if (
   !opencorePlatformService.includes('getOpenCoreAuditLog') ||
   !opencorePlatformService.includes('listOpenCoreSystemDeptOptions') ||
   !opencorePlatformService.includes('listOpenCoreLoginLogs') ||
+  !opencorePlatformService.includes('getOpenCoreLoginLogPage') ||
   !opencorePlatformService.includes('getOpenCoreLoginLog') ||
   !opencorePlatformService.includes('deleteOpenCoreLoginLogs') ||
   !opencorePlatformService.includes('cleanOpenCoreLoginLogs') ||
@@ -816,6 +817,33 @@ const billingDesignPage = readFileSync(
   resolve(root, 'src/pages/Integrations/BillingDesign.tsx'),
   'utf8',
 );
+const dashboardPage = readFileSync(
+  resolve(root, 'src/pages/Dashboard/index.tsx'),
+  'utf8',
+);
+
+if (
+  !dashboardPage.includes('getOpenCoreOperationsSummary') ||
+  !dashboardPage.includes('getOpenCoreOnlineUserSummary') ||
+  !dashboardPage.includes('getOpenCoreIntegrationProviderHealthAudit') ||
+  !dashboardPage.includes('getOpenCoreSystemNoticeUnreadCount') ||
+  !dashboardPage.includes('getOpenCoreLoginLogPage') ||
+  !dashboardPage.includes('getOpenCoreSystemStatus') ||
+  !dashboardPage.includes('getOpenCoreVersionInfo') ||
+  !dashboardPage.includes('getOpenCoreOpenApiDriftStatus') ||
+  !dashboardPage.includes('process.env.ADMIN_API_BASE_URL') ||
+  !dashboardPage.includes(`/health/${pathTemplatePlaceholder}`) ||
+  !dashboardPage.includes("useModel('@@initialState')") ||
+  !dashboardPage.includes('useAccess()') ||
+  dashboardPage.includes('plannedModuleSummaries') ||
+  dashboardPage.includes('shellMenuItems') ||
+  dashboardPage.includes('@ant-design/plots')
+) {
+  throw new Error(
+    'Admin dashboard must be a live workbench using real platform endpoints, permission-aware shortcuts and no demo shell/chart fallback.',
+  );
+}
+
 if (
   !usersPage.includes('@opencore/sdk') ||
   !usersPage.includes('listOpenCoreUsers') ||
@@ -1927,7 +1955,9 @@ if (
   !currentPageExportButton.includes('CSV_FILENAME_UNSAFE_CHARACTERS') ||
   !currentPageExportButton.includes('[=+\\-@]') ||
   !currentPageExportButton.includes('char.charCodeAt(0) < 32') ||
-  !currentPageExportButton.includes("CSV_FILENAME_UNSAFE_CHARACTERS.has(char)") ||
+  !currentPageExportButton.includes(
+    'CSV_FILENAME_UNSAFE_CHARACTERS.has(char)',
+  ) ||
   !currentPageExportButton.includes("basename || 'opencore-export'") ||
   !currentPageExportButton.includes("endsWith('.csv')") ||
   !currentPageExportButton.includes(
