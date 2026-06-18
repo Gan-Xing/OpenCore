@@ -1233,6 +1233,7 @@ function applyRuntimeIntegrationProviderEnv(
 
   const clientId = readOptionalEnv('OPENCORE_GITHUB_OAUTH_CLIENT_ID');
   const callbackPath = readOptionalEnv('OPENCORE_GITHUB_OAUTH_CALLBACK_URL');
+  const clientSecret = readOptionalEnv(GITHUB_OAUTH_SECRET_ENV_NAME);
 
   if (!clientId && !callbackPath) {
     return provider;
@@ -1256,7 +1257,7 @@ function applyRuntimeIntegrationProviderEnv(
     },
     configVersion: Math.max(provider.configVersion, 2),
     secretRef: `secret://config/${GITHUB_OAUTH_SECRET_CONFIG_KEY}`,
-    secretRefStatus: 'unchecked',
+    secretRefStatus: clientSecret ? 'valid' : 'unchecked',
   };
 }
 

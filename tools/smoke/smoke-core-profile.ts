@@ -169,6 +169,26 @@ async function main() {
 
     checks = [...checks, 'core.profile.oauth.providers'];
 
+    const githubProvider = providers.find(
+      (item) => item.code === 'oauth.github',
+    );
+    if (
+      process.env.OPENCORE_GITHUB_OAUTH_CLIENT_ID?.trim() &&
+      process.env.OPENCORE_GITHUB_OAUTH_CLIENT_SECRET?.trim()
+    ) {
+      if (!githubProvider) {
+        throw new Error(
+          'Expected runtime-configured GitHub OAuth provider to be visible',
+        );
+      }
+      assertEqual(
+        githubProvider.bindingStatus,
+        'ready',
+        `runtime GitHub OAuth binding status (${githubProvider.bindingIssue ?? 'no issue'})`,
+      );
+      checks = [...checks, 'core.profile.oauth.github-ready'];
+    }
+
     const readyProvider = providers.find(
       (item) => item.bindingStatus === 'ready',
     );
