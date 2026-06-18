@@ -934,6 +934,9 @@ export class OAuthProviderCallbackDto {
   @ApiProperty()
   state!: string;
 
+  @ApiProperty({ enum: ['json', 'redirect'], required: false })
+  response?: 'json' | 'redirect';
+
   @ApiProperty({ required: false })
   code?: string;
 

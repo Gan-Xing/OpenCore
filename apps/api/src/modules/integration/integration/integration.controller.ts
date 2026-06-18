@@ -86,6 +86,10 @@ type SseResponse = {
   write(chunk: string): void;
 };
 
+type OAuthCallbackHttpResponse = {
+  redirect(status: number, url: string): void;
+};
+
 type RequestWithUser = SecurityRequestWithAuth;
 
 @ApiBearerAuth()
@@ -554,11 +558,22 @@ export class IntegrationController {
   @Get('oauth/callback/:providerCode')
   @ApiTags('Integration OAuth')
   @ApiOkResponse({ type: OAuthCallbackResultDto })
-  callbackOAuthProvider(
+  async callbackOAuthProvider(
     @Param('providerCode') providerCode: string,
     @Query() query: OAuthProviderCallbackDto,
-  ): Promise<OAuthCallbackResultDto> {
-    return this.repository.callbackOAuthProvider(providerCode, query);
+    @Res({ passthrough: true }) response: OAuthCallbackHttpResponse,
+  ): Promise<OAuthCallbackResultDto | undefined> {
+    const result = await this.repository.callbackOAuthProvider(
+      providerCode,
+      query,
+    );
+
+    if (query.response === 'json') {
+      return result;
+    }
+
+    response.redirect(302, buildOAuthCallbackRedirectUrl(result));
+    return undefined;
   }
 
   @Get('oauth/callback-audits')
@@ -716,6 +731,37 @@ function getAuthenticatedUsername(request: RequestWithUser): string {
   }
 
   return username;
+}
+
+function buildOAuthCallbackRedirectUrl(result: OAuthCallbackResultDto): string {
+  const redirectUrl = new URL(resolveOAuthCallbackRedirectTarget());
+
+  if (redirectUrl.pathname === '/' || redirectUrl.pathname === '') {
+    redirectUrl.pathname = '/personal/profile';
+  }
+
+  redirectUrl.searchParams.set('oauthStatus', result.status);
+  redirectUrl.searchParams.set('oauthProvider', result.providerCode);
+  if (result.flowId) {
+    redirectUrl.searchParams.set('oauthFlowId', result.flowId);
+  }
+
+  return redirectUrl.toString();
+}
+
+function resolveOAuthCallbackRedirectTarget(): string {
+  const configured = process.env.OPENCORE_OAUTH_CALLBACK_REDIRECT_URL?.trim();
+  if (configured) {
+    return configured;
+  }
+
+  const adminBaseUrl =
+    process.env.OPENCORE_DEPLOY_PUBLIC_ADMIN_BASE_URL?.trim();
+  if (adminBaseUrl) {
+    return `${adminBaseUrl.replace(/\/+$/u, '')}/personal/profile`;
+  }
+
+  return 'http://127.0.0.1:39174/personal/profile';
 }
 
 function writeSseEvent(

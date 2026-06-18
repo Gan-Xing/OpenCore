@@ -1940,6 +1940,8 @@ export default {
   'pages.personal.profile.messages.avatarRemoved': '头像已移除。',
   'pages.personal.profile.messages.avatarUpdateFailure': '无法更新头像。',
   'pages.personal.profile.messages.avatarUpdated': '头像已更新。',
+  'pages.personal.profile.messages.oauthBindingCompleted': '账号绑定已完成。',
+  'pages.personal.profile.messages.oauthBindingFailed': '账号绑定失败。',
   'pages.personal.profile.messages.oauthFlowFailure': '无法发起账号绑定。',
   'pages.personal.profile.messages.oauthFlowStarted': '授权页面已打开。',
   'pages.personal.profile.messages.oauthUnbound': '账号绑定已移除。',

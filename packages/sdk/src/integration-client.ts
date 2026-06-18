@@ -508,7 +508,7 @@ export function createIntegrationClient(
       request<OAuthCallbackResult>(
         withQuery(
           `/integrations/oauth/callback/${encodeURIComponent(providerCode)}`,
-          query,
+          { ...query, response: 'json' },
         ),
       ),
     listOAuthCallbackAudits: (token, query) =>

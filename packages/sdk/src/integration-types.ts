@@ -445,6 +445,7 @@ export type OAuthFlowQueryRequest = PageRequest & {
 
 export type OAuthProviderCallbackRequest = {
   state: string;
+  response?: 'json' | 'redirect';
   code?: string;
   error?: string;
   providerAccountId?: string;

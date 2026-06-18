@@ -281,7 +281,7 @@ describe('createIntegrationClient', () => {
         path: '/integrations/oauth/flows?providerCode=oauth.github&status=pending',
       },
       {
-        path: '/integrations/oauth/callback/github?state=oauth-state&code=oauth-code&providerAccountId=github%3Aopencore-admin&scopes=read%3Auser%2Cuser%3Aemail',
+        path: '/integrations/oauth/callback/github?state=oauth-state&code=oauth-code&providerAccountId=github%3Aopencore-admin&scopes=read%3Auser%2Cuser%3Aemail&response=json',
       },
       {
         path: '/integrations/oauth/callback-audits?providerCode=oauth.github&status=accepted',

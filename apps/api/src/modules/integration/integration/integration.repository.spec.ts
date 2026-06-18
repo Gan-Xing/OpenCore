@@ -1,4 +1,5 @@
 import type { MailSmtpTransportFactory } from './integration.delivery-adapter';
+import { IntegrationController } from './integration.controller';
 import { createOutboxCallbackSignature } from './integration.repository';
 import {
   createMapProviderSecretResolver,
@@ -1423,6 +1424,104 @@ describe('IntegrationRepository', () => {
         }),
       ],
     });
+  });
+
+  it('redirects browser OAuth callbacks back to Admin profile', async () => {
+    const previousRedirectUrl =
+      process.env.OPENCORE_OAUTH_CALLBACK_REDIRECT_URL;
+    process.env.OPENCORE_OAUTH_CALLBACK_REDIRECT_URL =
+      'https://admin.example.test/personal/profile';
+
+    try {
+      const callbackResult = {
+        providerCode: 'oauth.github',
+        flowId: 'oauth_flow_1',
+        state: 'oauth-state',
+        status: 'accepted' as const,
+        message: 'OAuth callback accepted.',
+        audit: {
+          id: 'audit_1',
+          providerCode: 'oauth.github',
+          flowId: 'oauth_flow_1',
+          state: 'oauth-state',
+          status: 'accepted' as const,
+          reason: 'OAuth callback accepted.',
+          createdAt: '2026-06-18T00:00:00.000Z',
+        },
+      };
+      const repository = {
+        callbackOAuthProvider: jest.fn().mockResolvedValue(callbackResult),
+      };
+      const controller = new IntegrationController(repository as never);
+      const response = { redirect: jest.fn() };
+
+      await expect(
+        controller.callbackOAuthProvider(
+          'github',
+          { code: 'oauth-code', state: 'oauth-state' },
+          response,
+        ),
+      ).resolves.toBeUndefined();
+
+      expect(repository.callbackOAuthProvider).toHaveBeenCalledWith(
+        'github',
+        expect.objectContaining({ code: 'oauth-code', state: 'oauth-state' }),
+      );
+      expect(response.redirect).toHaveBeenCalledTimes(1);
+
+      const [status, location] = response.redirect.mock.calls[0] as [
+        number,
+        string,
+      ];
+      const redirectUrl = new URL(location);
+      expect(status).toBe(302);
+      expect(redirectUrl.origin).toBe('https://admin.example.test');
+      expect(redirectUrl.pathname).toBe('/personal/profile');
+      expect(redirectUrl.searchParams.get('oauthStatus')).toBe('accepted');
+      expect(redirectUrl.searchParams.get('oauthProvider')).toBe(
+        'oauth.github',
+      );
+      expect(redirectUrl.searchParams.get('oauthFlowId')).toBe('oauth_flow_1');
+    } finally {
+      if (previousRedirectUrl === undefined) {
+        delete process.env.OPENCORE_OAUTH_CALLBACK_REDIRECT_URL;
+      } else {
+        process.env.OPENCORE_OAUTH_CALLBACK_REDIRECT_URL = previousRedirectUrl;
+      }
+    }
+  });
+
+  it('keeps JSON OAuth callback responses for SDK and smoke callers', async () => {
+    const callbackResult = {
+      providerCode: 'oauth.github',
+      flowId: 'oauth_flow_json',
+      state: 'oauth-state',
+      status: 'accepted' as const,
+      message: 'OAuth callback accepted.',
+      audit: {
+        id: 'audit_json',
+        providerCode: 'oauth.github',
+        flowId: 'oauth_flow_json',
+        state: 'oauth-state',
+        status: 'accepted' as const,
+        reason: 'OAuth callback accepted.',
+        createdAt: '2026-06-18T00:00:00.000Z',
+      },
+    };
+    const repository = {
+      callbackOAuthProvider: jest.fn().mockResolvedValue(callbackResult),
+    };
+    const controller = new IntegrationController(repository as never);
+    const response = { redirect: jest.fn() };
+
+    await expect(
+      controller.callbackOAuthProvider(
+        'github',
+        { code: 'oauth-code', response: 'json', state: 'oauth-state' },
+        response,
+      ),
+    ).resolves.toEqual(callbackResult);
+    expect(response.redirect).not.toHaveBeenCalled();
   });
 
   it('exposes profile OAuth providers and bindings without secrets', async () => {

@@ -2368,6 +2368,7 @@ echo "Starting OpenCore API on fixed port $API_PORT"
   export OPENCORE_GIT_COMMIT="$DEPLOY_GIT_COMMIT"
   export OPENCORE_BUILD_TIME="$DEPLOY_BUILD_TIME"
   export OPENCORE_DEPLOYMENT_ID="$DEPLOYMENT_ID"
+  export OPENCORE_OAUTH_CALLBACK_REDIRECT_URL="${OPENCORE_OAUTH_CALLBACK_REDIRECT_URL:-$ADMIN_PUBLIC_BASE_URL/personal/profile}"
   setsid node dist/apps/api/main.js </dev/null >>"$API_LOG_FILE" 2>&1 &
   echo "$!" > "$API_PID_FILE"
 )

@@ -309,6 +309,34 @@ export default function PersonalProfilePage() {
     void loadProfile();
   }, [loadProfile]);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const oauthStatus = params.get('oauthStatus');
+
+    if (!oauthStatus) {
+      return;
+    }
+
+    if (oauthStatus === 'accepted') {
+      message.success(
+        formatMessage(
+          'pages.personal.profile.messages.oauthBindingCompleted',
+          'Account binding completed.',
+        ),
+      );
+      void loadProfile();
+    } else {
+      message.error(
+        formatMessage(
+          'pages.personal.profile.messages.oauthBindingFailed',
+          'Account binding failed.',
+        ),
+      );
+    }
+
+    history.replace({ pathname: '/personal/profile' });
+  }, [formatMessage, loadProfile]);
+
   const handleSave = async () => {
     const values = await form.validateFields();
     setSaving(true);

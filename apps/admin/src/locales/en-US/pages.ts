@@ -2108,6 +2108,10 @@ export default {
   'pages.personal.profile.messages.avatarUpdateFailure':
     'Unable to update avatar.',
   'pages.personal.profile.messages.avatarUpdated': 'Avatar updated.',
+  'pages.personal.profile.messages.oauthBindingCompleted':
+    'Account binding completed.',
+  'pages.personal.profile.messages.oauthBindingFailed':
+    'Account binding failed.',
   'pages.personal.profile.messages.oauthFlowFailure':
     'Unable to start account binding.',
   'pages.personal.profile.messages.oauthFlowStarted':
