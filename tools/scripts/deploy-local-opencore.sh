@@ -2371,6 +2371,11 @@ verify_api_duplicate_prefix_login
 verify_public_admin_bundle
 
 run_with_env env \
+  OPENCORE_SMOKE_ADMIN_BASE_URL="$ADMIN_PUBLIC_BASE_URL" \
+  run_tools_ts_script "$ROOT_DIR/tools/scripts/run-typed-smoke.ts" \
+    "$ROOT_DIR/tools/smoke/smoke-admin-error-ui.ts"
+
+run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \
   OPENCORE_SMOKE_CHECK_DOCS="${OPENCORE_SMOKE_CHECK_DOCS:-false}" \
   run_tools_ts_script "$ROOT_DIR/tools/scripts/run-typed-smoke.ts" \

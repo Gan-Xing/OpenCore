@@ -186,6 +186,10 @@ const deployScript = readFileSync(
   resolve(root, '../../tools/scripts/deploy-local-opencore.sh'),
   'utf8',
 );
+const adminErrorUiSmoke = readFileSync(
+  resolve(root, '../../tools/smoke/smoke-admin-error-ui.ts'),
+  'utf8',
+);
 
 if (
   proConfig.includes('oneapi.json') ||
@@ -229,6 +233,8 @@ if (
   !deployScript.includes('/api/api/auth/login') ||
   !deployScript.includes('admin.public-bundle.no-duplicate-api-prefix') ||
   !deployScript.includes('admin.api-proxy.duplicate-prefix-login') ||
+  !deployScript.includes('smoke-admin-error-ui.ts') ||
+  !deployScript.includes('OPENCORE_SMOKE_ADMIN_BASE_URL') ||
   !deployScript.includes('loginMaxFailedAttempts') ||
   !deployScript.includes('System Notice Templates') ||
   !deployScript.includes('admin-fallback-closure-guard.ts') ||
@@ -248,7 +254,19 @@ if (
   !deployScript.includes('Refusing to deploy a stale frontend login page')
 ) {
   throw new Error(
-    'OpenCore deploy script must verify the public Admin bundle, stale login/version page content, runtime deploy metadata and duplicated /api/api login requests.',
+    'OpenCore deploy script must verify the public Admin bundle, Admin error UI smoke, stale login/version page content, runtime deploy metadata and duplicated /api/api login requests.',
+  );
+}
+
+if (
+  !adminErrorUiSmoke.includes('admin.public-login.error-localized') ||
+  !adminErrorUiSmoke.includes('admin.public-login.error-code-message') ||
+  !adminErrorUiSmoke.includes('admin.public-login.no-duplicate-api-prefix') ||
+  !adminErrorUiSmoke.includes('用户名或密码错误') ||
+  !adminErrorUiSmoke.includes('Invalid username or password')
+) {
+  throw new Error(
+    'Admin error UI smoke must verify localized login errors, backend fallback absence and duplicate API prefix absence.',
   );
 }
 
@@ -1538,9 +1556,12 @@ if (
   !loginLogsPage.includes('result') ||
   !loginLogsPage.includes('actorUsername') ||
   !loginLogsPage.includes('Login actor server filter') ||
-  !loginLogsPage.includes("{ title: 'Actor', dataIndex: 'actorUsername' }") ||
-  !loginLogsPage.includes("{ title: 'Reason', dataIndex: 'reason' }") ||
-  !loginLogsPage.includes("{ title: 'Location', dataIndex: 'location' }") ||
+  !loginLogsPage.includes("dataIndex: 'actorUsername'") ||
+  !loginLogsPage.includes('pages.security.loginLogs.fields.actor') ||
+  !loginLogsPage.includes("dataIndex: 'reason'") ||
+  !loginLogsPage.includes('pages.security.loginLogs.fields.reason') ||
+  !loginLogsPage.includes("dataIndex: 'location'") ||
+  !loginLogsPage.includes('pages.security.loginLogs.fields.location') ||
   !loginLogsPage.includes('Login location server filter') ||
   !loginLogsPage.includes('createdFrom') ||
   !loginLogsPage.includes('createdTo') ||
@@ -1847,9 +1868,10 @@ if (
   !currentPageExportButton.includes('sanitizeCsvCellText') ||
   !currentPageExportButton.includes('sanitizeCsvFilename') ||
   !currentPageExportButton.includes('CSV_FORMULA_PREFIX_PATTERN') ||
-  !currentPageExportButton.includes('CSV_FILENAME_UNSAFE_PATTERN') ||
+  !currentPageExportButton.includes('CSV_FILENAME_UNSAFE_CHARACTERS') ||
   !currentPageExportButton.includes('[=+\\-@]') ||
-  !currentPageExportButton.includes('\\\\/:*?"<>|\\\\x00-\\\\x1F') ||
+  !currentPageExportButton.includes('char.charCodeAt(0) < 32') ||
+  !currentPageExportButton.includes("CSV_FILENAME_UNSAFE_CHARACTERS.has(char)") ||
   !currentPageExportButton.includes("basename || 'opencore-export'") ||
   !currentPageExportButton.includes("endsWith('.csv')") ||
   !currentPageExportButton.includes(
@@ -1938,9 +1960,10 @@ if (
 }
 
 if (
-  !providersPage.includes('<Typography.Text type="secondary">[redacted]') ||
-  !providersPage.includes("label: 'Secret Ref'") ||
-  !providersPage.includes('selected?.secretRef, sensitive: true') ||
+  !providersPage.includes('staticValueLabels.redacted') ||
+  !providersPage.includes('pages.integrations.providers.fields.secretRef') ||
+  !providersPage.includes('value: selected?.secretRef') ||
+  !providersPage.includes('sensitive: true') ||
   !providersPage.includes('getOpenCoreIntegrationProviderHealthAudit') ||
   !providersPage.includes('getOpenCoreIntegrationProviderDiagnostics') ||
   !providersPage.includes('Live Integration Health Audit') ||
@@ -2036,11 +2059,11 @@ if (
   !onlineUsersPage.includes('Cleanup eligible') ||
   !onlineUsersPage.includes('activeSelectedRows') ||
   !onlineUsersPage.includes('Kick selected') ||
-  !onlineUsersPage.includes("label: 'Browser'") ||
-  !onlineUsersPage.includes("label: 'OS'") ||
-  !onlineUsersPage.includes("label: 'Token ID'") ||
-  !onlineUsersPage.includes('value: record.tokenId, sensitive: true') ||
-  !onlineUsersPage.includes("label: 'Revoked Reason'") ||
+  !onlineUsersPage.includes('pages.monitor.onlineUsers.fields.browser') ||
+  !onlineUsersPage.includes('pages.monitor.onlineUsers.fields.os') ||
+  !onlineUsersPage.includes('pages.monitor.onlineUsers.fields.tokenId') ||
+  !onlineUsersPage.includes('value: record.tokenId') ||
+  !onlineUsersPage.includes('pages.monitor.onlineUsers.fields.revokedReason') ||
   !onlineUsersPage.includes('value: record.revokedReason') ||
   (onlineUsersPage.match(/sensitive: true/g) ?? []).length < 2 ||
   onlineUsersPage.includes('createOperationsFixtures') ||

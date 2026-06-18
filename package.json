@@ -46,6 +46,7 @@
     "sdk:check": "pnpm scripts:ts tools/scripts/check-sdk-generate.ts",
     "sdk:generate": "pnpm scripts:ts tools/scripts/check-sdk-generate.ts",
     "smoke:api:local": "bash tools/scripts/run-local-api-smoke.sh",
+    "smoke:admin-error-ui": "pnpm scripts:ts tools/scripts/run-typed-smoke.ts tools/smoke/smoke-admin-error-ui.ts",
     "smoke:error-contract": "pnpm scripts:ts tools/scripts/run-typed-smoke.ts tools/smoke/smoke-error-contract.ts",
     "smoke:helpers:check": "pnpm scripts:ts tools/scripts/check-smoke-helper-adoption.ts",
     "smoke:typed:check": "tsc --noEmit -p tools/smoke/tsconfig.json",
