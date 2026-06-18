@@ -301,6 +301,7 @@ async function main() {
         limit: 1,
         metadata: { source: 'monitor.jobs.dispatch-smoke', runId },
         now: smokeCron.now,
+        queueName: 'reports',
       },
     });
     assertEqual(dispatch.dispatchedCount, 1, 'scheduler dispatch count');

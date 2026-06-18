@@ -1609,6 +1609,9 @@ export default {
   'pages.monitor.jobs.actions.runNow': '立即运行',
   'pages.monitor.jobs.actions.viewAria': '查看任务 {code}',
   'pages.monitor.jobs.actions.workerClaim': 'Worker 领取',
+  'pages.monitor.jobs.activeRuns.policy':
+    'Dashboard 排队/运行统计对应的可见运行记录',
+  'pages.monitor.jobs.activeRuns.title': '排队/运行中的运行记录',
   'pages.monitor.jobs.confirm.clean': '确认清理 {code} 的 {status} 运行日志？',
   'pages.monitor.jobs.confirm.cleanContent':
     '将删除早于 {days} 天的终态运行日志。排队中和运行中的记录会保留。',
@@ -1641,8 +1644,11 @@ export default {
   'pages.monitor.jobs.fields.recentRuns': '近期运行',
   'pages.monitor.jobs.fields.retry': '重试',
   'pages.monitor.jobs.fields.retryLimit': '重试上限',
+  'pages.monitor.jobs.fields.source': '来源',
+  'pages.monitor.jobs.fields.startedAt': '开始时间',
   'pages.monitor.jobs.fields.timeout': '超时',
   'pages.monitor.jobs.fields.timeoutSeconds': '超时秒数',
+  'pages.monitor.jobs.fields.trigger': '触发方式',
   'pages.monitor.jobs.filters.enabled': '启用',
   'pages.monitor.jobs.filters.queue': '队列',
   'pages.monitor.jobs.load.failure': '无法加载任务列表。',
@@ -1808,9 +1814,9 @@ export default {
   'pages.dashboard.attention.providerAttention': '{count} 个供应商需要处理',
   'pages.dashboard.attention.providerAttentionDesc':
     '供应商 readiness 存在 attention 或 blocked 项。',
-  'pages.dashboard.attention.queuedJobs': '{count} 个调度任务等待处理',
+  'pages.dashboard.attention.queuedJobs': '{count} 条调度运行记录排队/运行中',
   'pages.dashboard.attention.queuedJobsDesc':
-    '当前存在等待中或运行中的调度任务。',
+    '当前存在排队中或运行中的调度运行记录。',
   'pages.dashboard.attention.systemDegraded': '运行状态降级',
   'pages.dashboard.attention.systemDegradedDesc':
     '一个或多个运行依赖处于降级状态。',

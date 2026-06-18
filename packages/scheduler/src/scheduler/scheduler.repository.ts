@@ -63,6 +63,7 @@ export type TriggerSchedulerJobInput = {
 export type DispatchDueSchedulerJobsInput = {
   actor: string;
   now?: string;
+  queueName?: string;
   limit?: number;
   metadata?: Record<string, unknown>;
 };
@@ -417,9 +418,7 @@ export function normalizeSchedulerWorkerLimit(value: unknown): number {
 export function normalizeSchedulerRunCleanPolicy(
   query: SchedulerRunCleanQuery = {},
 ): SchedulerRunCleanPolicy {
-  const retentionDays = normalizeSchedulerRunRetentionDays(
-    query.retentionDays,
-  );
+  const retentionDays = normalizeSchedulerRunRetentionDays(query.retentionDays);
   const statuses =
     query.status === undefined
       ? terminalRunStatuses

@@ -66,6 +66,16 @@ type FormatMessage = (
   defaultMessage: string,
   values?: Record<string, number | string>,
 ) => string;
+type ActiveJobRunRow = JobRunLogSummary & {
+  jobName: string;
+  queueName: string;
+  source?: string;
+};
+
+const activeRunStatuses: readonly JobRunLogSummary['status'][] = [
+  'queued',
+  'running',
+];
 
 const emptySummary: OperationsSummary = {
   cache: {
@@ -236,12 +246,49 @@ function runStatusTag(
   return <Tag color={colorByStatus[run.status]}>{labels[run.status]}</Tag>;
 }
 
+function readRunSource(run: JobRunLogSummary): string | undefined {
+  const source = run.metadata?.source;
+
+  return typeof source === 'string' ? source : undefined;
+}
+
+async function listActiveJobRuns(
+  jobs: readonly JobDefinitionSummary[],
+): Promise<ActiveJobRunRow[]> {
+  const pages = await Promise.all(
+    jobs.flatMap((job) =>
+      activeRunStatuses.map(async (status) => ({
+        job,
+        runs: await listOpenCoreJobRuns(job.code, {
+          page: 1,
+          pageSize: 20,
+          status,
+        }),
+      })),
+    ),
+  );
+
+  return pages
+    .flatMap(({ job, runs }) =>
+      runs.map((run) => ({
+        ...run,
+        jobName: job.name,
+        queueName: job.queueName,
+        source: readRunSource(run),
+      })),
+    )
+    .sort((left, right) => right.startedAt.localeCompare(left.startedAt));
+}
+
 export default function JobsPage() {
   const access = useAccess();
   const intl = useIntl();
   const canUpdateJobs = Boolean(access.canUpdateJobs);
   const canManageJobs = Boolean(access.canManageJobs);
   const [rows, setRows] = useState<readonly JobDefinitionSummary[]>([]);
+  const [activeRunRows, setActiveRunRows] = useState<
+    readonly ActiveJobRunRow[]
+  >([]);
   const [summary, setSummary] = useState<OperationsSummary>(emptySummary);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
@@ -329,14 +376,17 @@ export default function JobsPage() {
         listOpenCoreJobRegistry(),
         listOpenCoreJobs(),
       ]);
+      const nextActiveRunRows = await listActiveJobRuns(nextRows);
       setSummary(nextSummary);
       setRegistry(nextRegistry);
       setRows(nextRows);
+      setActiveRunRows(nextActiveRunRows);
       setLoadError(undefined);
     } catch (error: unknown) {
       setSummary(emptySummary);
       setRegistry([]);
       setRows([]);
+      setActiveRunRows([]);
       setSelected(undefined);
       setSelectedRuns([]);
       setLoadError(
@@ -544,6 +594,63 @@ export default function JobsPage() {
       setClaimingQueuedJobs(false);
     }
   };
+
+  const openActiveRunJob = async (record: ActiveJobRunRow) => {
+    const job = rows.find((item) => item.code === record.jobCode);
+
+    if (job) {
+      await openDetail(job);
+    }
+  };
+
+  const activeRunColumns: ProColumns<ActiveJobRunRow>[] = [
+    {
+      title: formatMessage('pages.monitor.jobs.fields.latestRun', 'Latest Run'),
+      dataIndex: 'id',
+      render: (_, record) => (
+        <Typography.Link onClick={() => void openActiveRunJob(record)}>
+          {record.id}
+        </Typography.Link>
+      ),
+    },
+    {
+      title: formatMessage('pages.monitor.jobs.fields.code', 'Code'),
+      dataIndex: 'jobCode',
+    },
+    {
+      title: formatMessage('pages.monitor.jobs.fields.name', 'Name'),
+      dataIndex: 'jobName',
+    },
+    {
+      title: formatMessage('pages.monitor.jobs.fields.queue', 'Queue'),
+      dataIndex: 'queueName',
+      width: 140,
+    },
+    {
+      title: formatMessage(
+        'pages.monitor.jobs.fields.latestRunStatus',
+        'Latest Run Status',
+      ),
+      dataIndex: 'status',
+      width: 128,
+      render: (_, record) => runStatusTag(record, runStatusLabels),
+    },
+    {
+      title: formatMessage('pages.monitor.jobs.fields.trigger', 'Trigger'),
+      dataIndex: 'trigger',
+      width: 112,
+    },
+    {
+      title: formatMessage('pages.monitor.jobs.fields.startedAt', 'Started At'),
+      dataIndex: 'startedAt',
+      width: 220,
+    },
+    {
+      title: formatMessage('pages.monitor.jobs.fields.source', 'Source'),
+      dataIndex: 'source',
+      ellipsis: true,
+    },
+  ];
 
   const columns: ProColumns<JobDefinitionSummary>[] = [
     {
@@ -811,6 +918,30 @@ export default function JobsPage() {
           )}
         />
       </Space>
+      {activeRunRows.length > 0 ? (
+        <ProTable<ActiveJobRunRow>
+          rowKey="id"
+          search={false}
+          options={false}
+          pagination={false}
+          loading={loading}
+          dataSource={activeRunRows}
+          columns={activeRunColumns}
+          style={{ marginBottom: 16 }}
+          headerTitle={formatMessage(
+            'pages.monitor.jobs.activeRuns.title',
+            'Queued/running run logs',
+          )}
+          toolBarRender={() => [
+            <Typography.Text key="active-runs-policy" type="secondary">
+              {formatMessage(
+                'pages.monitor.jobs.activeRuns.policy',
+                'Visible run logs behind Dashboard pending/running counts',
+              )}
+            </Typography.Text>,
+          ]}
+        />
+      ) : null}
       <ProTable<JobDefinitionSummary>
         rowKey="code"
         search={false}

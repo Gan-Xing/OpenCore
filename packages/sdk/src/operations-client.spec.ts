@@ -35,6 +35,7 @@ describe('createOperationsClient', () => {
     await client.dispatchDueJobs('token', {
       actor: 'scheduler-dispatcher',
       now: '2026-06-10T03:00:00.000Z',
+      queueName: 'maintenance',
     });
     await client.claimQueuedJobs('token', {
       actor: 'scheduler-worker',

@@ -234,6 +234,48 @@ describe('@opencore/scheduler', () => {
     });
   });
 
+  it('dispatches due cron jobs within a requested queue boundary', async () => {
+    const service = new SchedulerService(new SeedSchedulerRepository());
+    const now = '2026-06-10T03:00:00.000Z';
+    await service.createJob({
+      code: 'report.refresh',
+      cron: '0 3 * * *',
+      name: 'Refresh reports',
+      queueName: 'reports',
+    });
+
+    const dispatch = await service.dispatchDueJobs({
+      actor: 'scheduler-dispatcher',
+      limit: 10,
+      metadata: { source: 'scheduler.spec.dispatch.reports-only' },
+      now,
+      queueName: 'reports',
+    });
+
+    expect(dispatch).toMatchObject({
+      dispatchedCount: 1,
+      skippedCount: 0,
+      queuedRuns: [
+        expect.objectContaining({
+          jobCode: 'report.refresh',
+          metadata: expect.objectContaining({
+            queueName: 'reports',
+            scheduledAt: now,
+          }),
+          status: 'queued',
+        }),
+      ],
+    });
+    expect(
+      dispatch.queuedRuns.some((run) => run.jobCode === 'openapi.drift-check'),
+    ).toBe(false);
+    expect(
+      dispatch.queuedRuns.some(
+        (run) => run.jobCode === 'audit-log.retention-clean',
+      ),
+    ).toBe(false);
+  });
+
   it('rejects invalid cron and unsafe numeric policy', async () => {
     const service = new SchedulerService(new SeedSchedulerRepository());
 

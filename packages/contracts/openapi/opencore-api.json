@@ -12285,6 +12285,7 @@
         "properties": {
           "actor": { "type": "string" },
           "now": { "type": "string" },
+          "queueName": { "type": "string" },
           "limit": { "type": "number", "default": 20 },
           "metadata": { "type": "object" }
         },

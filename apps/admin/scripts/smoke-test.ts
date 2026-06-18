@@ -2108,6 +2108,11 @@ if (
   !jobsPage.includes('Run now') ||
   !jobsPage.includes('Run log retention') ||
   !jobsPage.includes('Clean run logs') ||
+  !jobsPage.includes('activeRunRows') ||
+  !jobsPage.includes('Queued/running run logs') ||
+  !jobsPage.includes(
+    'Visible run logs behind Dashboard pending/running counts',
+  ) ||
   !jobsPage.includes('Live scheduler jobs') ||
   !jobsPage.includes('Unable to load live scheduler jobs') ||
   !jobsPage.includes('Registered handlers') ||

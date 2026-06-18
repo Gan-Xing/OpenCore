@@ -557,12 +557,12 @@ const DashboardPage: React.FC = () => {
         actionPath: '/monitor/jobs',
         description: formatMessage(
           'pages.dashboard.attention.queuedJobsDesc',
-          'There are pending or running scheduler jobs.',
+          'There are queued or running scheduler run logs.',
         ),
         key: 'queuedJobs',
         title: formatMessage(
           'pages.dashboard.attention.queuedJobs',
-          '{count} scheduler jobs are pending',
+          '{count} scheduler run logs are queued/running',
           { count: queuedJobs + runningJobs },
         ),
         tone: 'warning',

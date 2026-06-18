@@ -198,8 +198,9 @@ export class PrismaSchedulerRepository extends SchedulerRepository {
     const now = normalizeSchedulerDispatchNow(body.now);
     const dispatchTick = createSchedulerDispatchTick(now);
     const limit = normalizeSchedulerWorkerLimit(body.limit);
+    const queueName = normalizeOptionalString(body.queueName);
     const jobs = await this.prisma.jobDefinition.findMany({
-      where: { enabled: true, cron: { not: null } },
+      where: { enabled: true, cron: { not: null }, queueName },
       orderBy: [{ code: 'asc' }],
     });
     const queuedRuns: SchedulerJobRunLogRecord[] = [];

@@ -157,11 +157,17 @@ export class SeedSchedulerRepository extends SchedulerRepository {
     const now = normalizeSchedulerDispatchNow(body.now);
     const dispatchTick = createSchedulerDispatchTick(now);
     const limit = normalizeSchedulerWorkerLimit(body.limit);
+    const queueName = normalizeOptionalString(body.queueName);
     const queuedRuns: SchedulerJobRunLogRecord[] = [];
     let skippedCount = 0;
 
     for (const job of this.jobs.sort(compareJobs)) {
-      if (!job.enabled || !job.cron || !isCronDue(job.cron, now)) {
+      if (
+        !job.enabled ||
+        !job.cron ||
+        (queueName && job.queueName !== queueName) ||
+        !isCronDue(job.cron, now)
+      ) {
         continue;
       }
       assertSafeJobPolicy(job);

@@ -1757,6 +1757,9 @@ export default {
   'pages.monitor.jobs.actions.runNow': 'Run now',
   'pages.monitor.jobs.actions.viewAria': 'View job {code}',
   'pages.monitor.jobs.actions.workerClaim': 'Worker claim',
+  'pages.monitor.jobs.activeRuns.policy':
+    'Visible run logs behind Dashboard pending/running counts',
+  'pages.monitor.jobs.activeRuns.title': 'Queued/running run logs',
   'pages.monitor.jobs.confirm.clean': 'Clean {status} run logs for {code}?',
   'pages.monitor.jobs.confirm.cleanContent':
     'Deletes terminal run logs older than {days} day(s). Queued and running runs are retained.',
@@ -1790,8 +1793,11 @@ export default {
   'pages.monitor.jobs.fields.recentRuns': 'Recent Runs',
   'pages.monitor.jobs.fields.retry': 'Retry',
   'pages.monitor.jobs.fields.retryLimit': 'Retry Limit',
+  'pages.monitor.jobs.fields.source': 'Source',
+  'pages.monitor.jobs.fields.startedAt': 'Started At',
   'pages.monitor.jobs.fields.timeout': 'Timeout',
   'pages.monitor.jobs.fields.timeoutSeconds': 'Timeout Seconds',
+  'pages.monitor.jobs.fields.trigger': 'Trigger',
   'pages.monitor.jobs.filters.enabled': 'Enabled',
   'pages.monitor.jobs.filters.queue': 'Queue',
   'pages.monitor.jobs.load.failure': 'Unable to load jobs.',
@@ -1964,9 +1970,10 @@ export default {
     '{count} providers need attention',
   'pages.dashboard.attention.providerAttentionDesc':
     'Provider readiness has attention or blocked entries.',
-  'pages.dashboard.attention.queuedJobs': '{count} scheduler jobs are pending',
+  'pages.dashboard.attention.queuedJobs':
+    '{count} scheduler run logs are queued/running',
   'pages.dashboard.attention.queuedJobsDesc':
-    'There are pending or running scheduler jobs.',
+    'There are queued or running scheduler run logs.',
   'pages.dashboard.attention.systemDegraded': 'Runtime status is degraded',
   'pages.dashboard.attention.systemDegradedDesc':
     'One or more runtime dependencies are degraded.',

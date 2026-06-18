@@ -176,6 +176,7 @@ export type TriggerJobRequest = {
 export type DispatchDueJobsRequest = {
   actor: string;
   now?: string;
+  queueName?: string;
   limit?: number;
   metadata?: Record<string, unknown>;
 };

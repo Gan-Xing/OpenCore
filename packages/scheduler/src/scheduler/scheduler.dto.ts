@@ -150,6 +150,9 @@ export class DispatchDueJobsDto {
   @ApiProperty({ required: false })
   now?: string;
 
+  @ApiProperty({ required: false })
+  queueName?: string;
+
   @ApiProperty({ required: false, default: 20 })
   limit?: number;
 
