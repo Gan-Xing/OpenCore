@@ -237,6 +237,8 @@ export default {
     'The unread notice limit is invalid.',
   'error.INTEGRATION_CONFIG_SECRET_NOT_FOUND':
     'The integration config secret does not exist.',
+  'error.INTEGRATION_CONFIG_SECRET_ENV_MISSING':
+    'The integration provider environment secret is not configured.',
   'error.INTEGRATION_OAUTH_AUTHORIZATION_URL_INVALID':
     'The OAuth authorization URL is invalid.',
   'error.INTEGRATION_OAUTH_CALLBACK_CODE_REQUIRED':

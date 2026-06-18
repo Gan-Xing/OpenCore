@@ -169,6 +169,8 @@ export default {
   'error.SYSTEM_NOTICE_TYPE_INVALID': '通知类型无效。',
   'error.SYSTEM_NOTICE_UNREAD_LIMIT_INVALID': '未读通知数量限制无效。',
   'error.INTEGRATION_CONFIG_SECRET_NOT_FOUND': '集成配置密钥不存在。',
+  'error.INTEGRATION_CONFIG_SECRET_ENV_MISSING':
+    '集成通道环境变量密钥尚未配置。',
   'error.INTEGRATION_OAUTH_AUTHORIZATION_URL_INVALID':
     'OAuth 授权地址配置无效。',
   'error.INTEGRATION_OAUTH_CALLBACK_CODE_REQUIRED': 'OAuth 回调缺少授权码。',
