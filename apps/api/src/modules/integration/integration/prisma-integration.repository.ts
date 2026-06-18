@@ -1295,7 +1295,11 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
     const tokens = rows
       .map(toOAuthTokenRecord)
       .map((token) => normalizeOAuthTokenRecord(token))
-      .filter((token) => !isLegacySyntheticOAuthProfileAccount(token));
+      .filter(
+        (token) =>
+          token.status === 'active' &&
+          !isLegacySyntheticOAuthProfileAccount(token),
+      );
     const providers = await this.prisma.integrationProvider.findMany({
       where: {
         code: { in: [...new Set(tokens.map((token) => token.providerCode))] },

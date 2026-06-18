@@ -981,7 +981,11 @@ export class SeedIntegrationRepository extends IntegrationRepository {
         (token) =>
           token.subjectType === 'user' && token.subjectId === subjectId,
       )
-      .filter((token) => !isLegacySyntheticOAuthProfileAccount(token))
+      .filter(
+        (token) =>
+          token.status === 'active' &&
+          !isLegacySyntheticOAuthProfileAccount(token),
+      )
       .map((token) =>
         toOAuthProfileAccountDto(
           token,

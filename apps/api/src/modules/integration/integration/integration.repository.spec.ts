@@ -1806,6 +1806,9 @@ describe('IntegrationRepository', () => {
       status: 'revoked',
       revokeReason: 'profile self-service test',
     });
+    await expect(
+      repository.listProfileOAuthAccounts('user_profile'),
+    ).resolves.toEqual([]);
   });
 
   it('tracks WebSocket runtime connections, subscriptions, and diagnostic events', async () => {
