@@ -17,6 +17,13 @@ export default {
   'pages.login.social.bindingTitle': '绑定已有 OpenCore 账号',
   'pages.login.social.callbackRejected': '社交登录已被拒绝或已过期。',
   'pages.login.social.divider': '其他登录方式',
+  'pages.login.social.errors.badVerificationCode':
+    'GitHub 授权码无效或已被使用，请从登录页重新发起。',
+  'pages.login.social.errors.incorrectClientCredentials':
+    'GitHub 登录配置错误：Client ID 与 Client Secret 不匹配。请更新服务器环境变量 OPENCORE_GITHUB_OAUTH_CLIENT_SECRET 后重新部署。',
+  'pages.login.social.errors.notConfigured': '社交登录尚未完成第三方应用配置。',
+  'pages.login.social.errors.redirectUriMismatch':
+    'GitHub 登录配置错误：回调地址与 GitHub OAuth App 配置不一致。',
   'pages.login.social.failure': '社交登录失败',
   'pages.login.social.hint': '不可用通道需要先完成第三方应用配置。',
   'pages.login.social.loading': '正在完成社交登录',

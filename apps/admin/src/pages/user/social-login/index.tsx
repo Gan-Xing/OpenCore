@@ -67,6 +67,7 @@ const SocialLogin: React.FC = () => {
   const providerCode = params.get('providerCode') ?? 'oauth.github';
   const state = params.get('state') ?? '';
   const socialStatus = params.get('socialStatus');
+  const failureReason = params.get('reason') ?? '';
 
   const redirectAfterLogin = () => {
     const redirect =
@@ -98,10 +99,7 @@ const SocialLogin: React.FC = () => {
     if (socialStatus !== 'accepted' || !state) {
       setPageState('failed');
       setErrorMessage(
-        intl.formatMessage({
-          id: 'pages.login.social.callbackRejected',
-          defaultMessage: 'Social login was rejected or expired.',
-        }),
+        formatSocialCallbackFailureMessage(failureReason, intl.formatMessage),
       );
       return;
     }
@@ -127,7 +125,7 @@ const SocialLogin: React.FC = () => {
         setErrorMessage(formatRequestErrorMessage(error));
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [providerCode, socialStatus, state]);
+  }, [failureReason, providerCode, socialStatus, state]);
 
   const handleBind = async (values: BindValues) => {
     setBinding(true);
@@ -294,6 +292,42 @@ function getSafeRedirectUrl(redirect: string | null): string {
     return `${parsed.pathname}${parsed.search}${parsed.hash}`;
   } catch {
     return '/dashboard';
+  }
+}
+
+function formatSocialCallbackFailureMessage(
+  reason: string,
+  formatMessage: ReturnType<typeof useIntl>['formatMessage'],
+): string {
+  switch (reason) {
+    case 'oauth_exchange_incorrect_client_credentials':
+      return formatMessage({
+        id: 'pages.login.social.errors.incorrectClientCredentials',
+        defaultMessage:
+          'GitHub login is misconfigured: Client ID and Client Secret do not match. Update OPENCORE_GITHUB_OAUTH_CLIENT_SECRET on the server and redeploy.',
+      });
+    case 'oauth_exchange_redirect_uri_mismatch':
+      return formatMessage({
+        id: 'pages.login.social.errors.redirectUriMismatch',
+        defaultMessage:
+          'GitHub login is misconfigured: the callback URL does not match the GitHub OAuth App.',
+      });
+    case 'oauth_exchange_bad_verification_code':
+      return formatMessage({
+        id: 'pages.login.social.errors.badVerificationCode',
+        defaultMessage:
+          'The GitHub authorization code is invalid or already used. Start again from the login page.',
+      });
+    case 'oauth_exchange_not_configured':
+      return formatMessage({
+        id: 'pages.login.social.errors.notConfigured',
+        defaultMessage: 'Social login is not fully configured.',
+      });
+    default:
+      return formatMessage({
+        id: 'pages.login.social.callbackRejected',
+        defaultMessage: 'Social login was rejected or expired.',
+      });
   }
 }
 

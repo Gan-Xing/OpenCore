@@ -1701,6 +1701,102 @@ describe('IntegrationRepository', () => {
     }
   });
 
+  it('preserves safe GitHub token exchange errors for OAuth callback audits', async () => {
+    const previousSecret = process.env.OPENCORE_GITHUB_OAUTH_CLIENT_SECRET;
+    process.env.OPENCORE_GITHUB_OAUTH_CLIENT_SECRET = 'github-secret';
+    const fetchMock = jest.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          error: 'incorrect_client_credentials',
+          error_description:
+            'The client_id and/or client_secret passed are incorrect.',
+        }),
+        {
+          headers: { 'content-type': 'application/json' },
+          status: 200,
+        },
+      ),
+    );
+    const repository = {
+      callbackOAuthProvider: jest.fn().mockResolvedValue({
+        providerCode: 'oauth.github',
+        flowId: 'oauth_flow_real_github',
+        subjectType: 'social-login',
+        state: 'github-state',
+        status: 'rejected' as const,
+        message: 'OAuth provider returned error.',
+        audit: {
+          id: 'audit_real_github_failed',
+          providerCode: 'oauth.github',
+          flowId: 'oauth_flow_real_github',
+          state: 'github-state',
+          status: 'rejected' as const,
+          callbackError: 'oauth_exchange_incorrect_client_credentials',
+          reason:
+            'OAuth provider returned error: oauth_exchange_incorrect_client_credentials',
+          createdAt: '2026-06-18T00:00:00.000Z',
+        },
+      }),
+      getProvider: jest.fn().mockResolvedValue({
+        code: 'oauth.github',
+        config: {
+          callbackPath: '/api/integrations/oauth/callback/github',
+          clientId: 'github-client-id',
+          tokenUrl: 'https://github.com/login/oauth/access_token',
+        },
+      }),
+      listOAuthFlows: jest.fn().mockResolvedValue({
+        items: [
+          {
+            providerCode: 'oauth.github',
+            redirectUri:
+              'http://144.217.243.161:39172/api/integrations/oauth/callback/github',
+            state: 'github-state',
+          },
+        ],
+        page: 1,
+        pageSize: 100,
+        total: 1,
+        totalPages: 1,
+      }),
+    };
+    const controller = new IntegrationController(repository as never);
+    const response = { redirect: jest.fn() };
+
+    try {
+      await expect(
+        controller.callbackOAuthProvider(
+          'github',
+          { code: 'real-github-code', response: 'json', state: 'github-state' },
+          response,
+        ),
+      ).resolves.toMatchObject({
+        status: 'rejected',
+        audit: {
+          callbackError: 'oauth_exchange_incorrect_client_credentials',
+        },
+      });
+
+      expect(repository.callbackOAuthProvider).toHaveBeenCalledWith(
+        'github',
+        expect.objectContaining({
+          code: undefined,
+          error: 'oauth_exchange_incorrect_client_credentials',
+          state: 'github-state',
+        }),
+      );
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(response.redirect).not.toHaveBeenCalled();
+    } finally {
+      fetchMock.mockRestore();
+      if (previousSecret === undefined) {
+        delete process.env.OPENCORE_GITHUB_OAUTH_CLIENT_SECRET;
+      } else {
+        process.env.OPENCORE_GITHUB_OAUTH_CLIENT_SECRET = previousSecret;
+      }
+    }
+  });
+
   it('exposes profile OAuth providers and bindings without secrets', async () => {
     const repository = new SeedIntegrationRepository(async () => 'secret');
     await repository.createProvider({

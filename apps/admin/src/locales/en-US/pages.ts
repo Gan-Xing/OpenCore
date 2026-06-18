@@ -19,6 +19,14 @@ export default {
   'pages.login.social.callbackRejected':
     'Social login was rejected or expired.',
   'pages.login.social.divider': 'Other sign-in methods',
+  'pages.login.social.errors.badVerificationCode':
+    'The GitHub authorization code is invalid or already used. Start again from the login page.',
+  'pages.login.social.errors.incorrectClientCredentials':
+    'GitHub login is misconfigured: Client ID and Client Secret do not match. Update OPENCORE_GITHUB_OAUTH_CLIENT_SECRET on the server and redeploy.',
+  'pages.login.social.errors.notConfigured':
+    'Social login is not fully configured.',
+  'pages.login.social.errors.redirectUriMismatch':
+    'GitHub login is misconfigured: the callback URL does not match the GitHub OAuth App.',
   'pages.login.social.failure': 'Social login failed',
   'pages.login.social.hint':
     'Unavailable channels require third-party app configuration before use.',

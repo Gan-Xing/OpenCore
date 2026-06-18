@@ -628,11 +628,11 @@ export class IntegrationController {
         providerAccountId: exchanged.providerAccountId,
         scopes: exchanged.scopes,
       };
-    } catch {
+    } catch (error) {
       return {
         ...query,
         code: undefined,
-        error: 'oauth_exchange_failed',
+        error: readOAuthExchangeErrorCode(error),
       };
     }
   }
@@ -904,7 +904,10 @@ async function exchangeGitHubOAuthCode(
   const tokenUrl = readConfigString(provider.config.tokenUrl);
 
   if (!clientId || !clientSecret || !tokenUrl) {
-    throw new Error('GitHub OAuth is not configured.');
+    throw new OAuthExchangeError(
+      'oauth_exchange_not_configured',
+      'GitHub OAuth is not configured.',
+    );
   }
 
   const tokenResponse = await fetch(tokenUrl, {
@@ -923,12 +926,16 @@ async function exchangeGitHubOAuthCode(
   const tokenPayload = (await tokenResponse.json()) as {
     access_token?: string;
     error?: string;
+    error_description?: string;
     expires_in?: number;
     scope?: string;
   };
 
   if (!tokenResponse.ok || !tokenPayload.access_token || tokenPayload.error) {
-    throw new Error('GitHub OAuth token exchange failed.');
+    throw new OAuthExchangeError(
+      normalizeOAuthExchangeProviderError(tokenPayload.error),
+      tokenPayload.error_description ?? 'GitHub OAuth token exchange failed.',
+    );
   }
 
   const userResponse = await fetch('https://api.github.com/user', {
@@ -943,7 +950,10 @@ async function exchangeGitHubOAuthCode(
   };
 
   if (!userResponse.ok || userPayload.id === undefined) {
-    throw new Error('GitHub OAuth user lookup failed.');
+    throw new OAuthExchangeError(
+      'oauth_exchange_user_lookup_failed',
+      'GitHub OAuth user lookup failed.',
+    );
   }
 
   return {
@@ -969,7 +979,10 @@ async function exchangeOidcOAuthCode(
   const tokenUrl = readConfigString(provider.config.tokenUrl);
 
   if (!clientId || !clientSecret || !tokenUrl) {
-    throw new Error(`${provider.code} OAuth is not configured.`);
+    throw new OAuthExchangeError(
+      'oauth_exchange_not_configured',
+      `${provider.code} OAuth is not configured.`,
+    );
   }
 
   const tokenResponse = await fetch(tokenUrl, {
@@ -994,7 +1007,10 @@ async function exchangeOidcOAuthCode(
   };
 
   if (!tokenResponse.ok || tokenPayload.error || !tokenPayload.id_token) {
-    throw new Error(`${provider.code} OAuth token exchange failed.`);
+    throw new OAuthExchangeError(
+      normalizeOAuthExchangeProviderError(tokenPayload.error),
+      `${provider.code} OAuth token exchange failed.`,
+    );
   }
 
   const subject = readTokenSubject(decodeJwtPayload(tokenPayload.id_token));
@@ -1051,6 +1067,38 @@ function readScopeFallback(value: unknown): string {
     return value.filter((item) => typeof item === 'string').join(' ');
   }
   return '';
+}
+
+class OAuthExchangeError extends Error {
+  constructor(
+    readonly code: string,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+function readOAuthExchangeErrorCode(error: unknown): string {
+  if (error instanceof OAuthExchangeError) {
+    return error.code;
+  }
+  return 'oauth_exchange_failed';
+}
+
+function normalizeOAuthExchangeProviderError(error: unknown): string {
+  const raw = typeof error === 'string' ? error.trim().toLowerCase() : '';
+  const normalized = raw.replace(/[^a-z0-9]+/gu, '_').replace(/^_+|_+$/gu, '');
+
+  switch (normalized) {
+    case 'bad_verification_code':
+      return 'oauth_exchange_bad_verification_code';
+    case 'incorrect_client_credentials':
+      return 'oauth_exchange_incorrect_client_credentials';
+    case 'redirect_uri_mismatch':
+      return 'oauth_exchange_redirect_uri_mismatch';
+    default:
+      return 'oauth_exchange_failed';
+  }
 }
 
 function readConfigString(value: unknown): string {
