@@ -17,6 +17,7 @@ import {
   type UserProfileKickOutOtherSessionsSummary,
   type UserProfileSummary,
 } from '@opencore/sdk';
+import { request } from '@umijs/max';
 import {
   getRequiredAdminToken,
   MissingAdminTokenError,
@@ -46,7 +47,11 @@ export function toAdminCurrentUser(user: AuthenticatedUser): AdminCurrentUser {
 export async function loginToOpenCore(
   requestBody: LoginRequest,
 ): Promise<LoginResponse> {
-  const session = await authClient.login(requestBody);
+  const session = await request<LoginResponse>('/api/auth/login', {
+    data: requestBody,
+    method: 'POST',
+    skipErrorHandler: true,
+  });
   setAdminToken(session.accessToken);
   return session;
 }
