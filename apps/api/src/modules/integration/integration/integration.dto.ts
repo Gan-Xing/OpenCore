@@ -950,7 +950,7 @@ export class OAuthProviderCallbackDto {
   scopes?: string;
 
   @ApiProperty({ required: false })
-  expiresInSeconds?: number;
+  expiresInSeconds?: number | null;
 }
 
 export class OAuthCallbackAuditDto {
@@ -1167,6 +1167,9 @@ export class OAuthCallbackResultDto {
 
   @ApiProperty({ required: false })
   flowId?: string;
+
+  @ApiProperty({ required: false })
+  subjectType?: string;
 
   @ApiProperty()
   state!: string;

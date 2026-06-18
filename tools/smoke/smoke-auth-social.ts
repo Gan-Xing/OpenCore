@@ -98,7 +98,7 @@ async function main() {
     'social flow authorization state',
   );
   const redirectUri = authorizationUrl.searchParams.get('redirect_uri');
-  if (!redirectUri?.includes('/api/auth/social/callback/github')) {
+  if (!redirectUri?.includes('/api/integrations/oauth/callback/github')) {
     throw new Error(`Unexpected social redirect_uri: ${redirectUri}`);
   }
   checks.push('auth.social.github-flow');
@@ -212,7 +212,9 @@ async function followSocialCallback(input: {
   providerAccountId: string;
   state: string;
 }): Promise<URL> {
-  const url = new URL(`${baseUrl}${apiPrefix}/auth/social/callback/github`);
+  const url = new URL(
+    `${baseUrl}${apiPrefix}/integrations/oauth/callback/github`,
+  );
   url.searchParams.set('code', input.code);
   url.searchParams.set('providerAccountId', input.providerAccountId);
   url.searchParams.set('scopes', 'read:user user:email');

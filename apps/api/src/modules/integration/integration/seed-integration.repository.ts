@@ -74,6 +74,7 @@ import {
   createPage,
   integrationBadRequest,
   IntegrationRepository,
+  isLegacySyntheticOAuthProfileAccount,
   matchesOAuthCallbackAuditQuery,
   matchesOAuthFlowQuery,
   matchesOptional,
@@ -798,6 +799,7 @@ export class SeedIntegrationRepository extends IntegrationRepository {
       return {
         providerCode: callback.providerCode,
         flowId: flow.id,
+        subjectType: flow.subjectType,
         state: callback.state,
         status: 'rejected' as const,
         message: audit.reason ?? 'OAuth callback rejected.',
@@ -823,6 +825,7 @@ export class SeedIntegrationRepository extends IntegrationRepository {
       return {
         providerCode: callback.providerCode,
         flowId: flow.id,
+        subjectType: flow.subjectType,
         state: callback.state,
         status: 'rejected' as const,
         message: audit.reason ?? 'OAuth callback rejected.',
@@ -848,9 +851,10 @@ export class SeedIntegrationRepository extends IntegrationRepository {
       subjectId: flow.subjectId,
       providerAccountId,
     });
-    const expiresAt = new Date(
-      Date.now() + callback.expiresInSeconds * 1000,
-    ).toISOString();
+    const expiresAt =
+      callback.expiresInSeconds === null
+        ? undefined
+        : new Date(Date.now() + callback.expiresInSeconds * 1000).toISOString();
     const token: OAuthTokenRecord = {
       id: tokenId,
       providerCode: callback.providerCode,
@@ -899,6 +903,7 @@ export class SeedIntegrationRepository extends IntegrationRepository {
     const audit = this.addOAuthCallbackAudit({
       providerCode: callback.providerCode,
       flowId: flow.id,
+      subjectType: flow.subjectType,
       state: callback.state,
       status: 'accepted',
       reason: 'OAuth callback accepted and token reference archived.',
@@ -910,6 +915,7 @@ export class SeedIntegrationRepository extends IntegrationRepository {
     return {
       providerCode: callback.providerCode,
       flowId: flow.id,
+      subjectType: flow.subjectType,
       state: callback.state,
       status: 'accepted' as const,
       message: audit.reason ?? 'OAuth callback accepted.',
@@ -976,6 +982,7 @@ export class SeedIntegrationRepository extends IntegrationRepository {
         (token) =>
           token.subjectType === 'user' && token.subjectId === subjectId,
       )
+      .filter((token) => !isLegacySyntheticOAuthProfileAccount(token))
       .map((token) =>
         toOAuthProfileAccountDto(
           token,

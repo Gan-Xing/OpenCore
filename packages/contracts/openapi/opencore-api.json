@@ -2954,7 +2954,7 @@
             "name": "expiresInSeconds",
             "required": false,
             "in": "query",
-            "schema": { "type": "number" }
+            "schema": { "$ref": "#/components/schemas/Object" }
           }
         ],
         "responses": {
@@ -10481,6 +10481,7 @@
         "properties": {
           "providerCode": { "type": "string" },
           "flowId": { "type": "string" },
+          "subjectType": { "type": "string" },
           "state": { "type": "string" },
           "status": { "type": "string", "enum": ["accepted", "rejected"] },
           "message": { "type": "string" },

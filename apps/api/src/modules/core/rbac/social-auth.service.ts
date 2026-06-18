@@ -114,7 +114,7 @@ export class SocialAuthService {
 
     const flow = await this.integration.startOAuthFlow({
       providerCode,
-      redirectUri: this.resolveSocialCallbackUrl(providerCode),
+      redirectUri: this.resolveProviderCallbackUrl(provider, providerCode),
       subjectId: `social_${randomBytes(12).toString('hex')}`,
       subjectType: SOCIAL_LOGIN_SUBJECT_TYPE,
     });
@@ -260,7 +260,7 @@ export class SocialAuthService {
     code: string,
     providerCode: string,
   ): Promise<{
-    expiresInSeconds: number;
+    expiresInSeconds: number | null;
     providerAccountId: string;
     scopes: string;
   }> {
@@ -324,7 +324,7 @@ export class SocialAuthService {
     code: string,
     providerCode: string,
   ): Promise<{
-    expiresInSeconds: number;
+    expiresInSeconds: number | null;
     providerAccountId: string;
     scopes: string;
   }> {
@@ -583,6 +583,25 @@ export class SocialAuthService {
       'http://127.0.0.1:39172';
     return `${publicApi.replace(/\/+$/u, '')}/api/auth/social/callback/${shortProvider}`;
   }
+
+  private resolveProviderCallbackUrl(
+    provider: IntegrationProviderRecord,
+    providerCode: string,
+  ): string {
+    const configured = readConfigString(provider.config.callbackPath);
+    if (/^https?:\/\//iu.test(configured)) {
+      return configured;
+    }
+
+    const shortProvider = providerCode.replace(/^oauth\./, '');
+    const publicApi =
+      process.env.OPENCORE_DEPLOY_PUBLIC_API_BASE_URL?.trim() ??
+      process.env.OPENCORE_API_PUBLIC_BASE_URL?.trim() ??
+      'http://127.0.0.1:39172';
+    const path =
+      configured || `/api/integrations/oauth/callback/${shortProvider}`;
+    return `${publicApi.replace(/\/+$/u, '')}/${path.replace(/^\/+/u, '')}`;
+  }
 }
 
 function formatSocialProviderMessage(
@@ -620,8 +639,12 @@ function readConfigString(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
 }
 
-function normalizeExpiresInSeconds(value: unknown): number {
-  const parsed = Number(value ?? 90 * 24 * 60 * 60);
+function normalizeExpiresInSeconds(value: unknown): number | null {
+  if (value === undefined || value === null || value === '') {
+    return null;
+  }
+
+  const parsed = Number(value);
   if (!Number.isInteger(parsed) || parsed < 60) {
     return 3600;
   }

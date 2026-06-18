@@ -76,6 +76,7 @@ import {
   createPage,
   integrationBadRequest,
   IntegrationRepository,
+  isLegacySyntheticOAuthProfileAccount,
   matchesOAuthCallbackAuditQuery,
   matchesOAuthFlowQuery,
   matchesOAuthTokenQuery,
@@ -1059,6 +1060,7 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
       return {
         providerCode: callback.providerCode,
         flowId: flow.id,
+        subjectType: flow.subjectType,
         state: callback.state,
         status: 'rejected' as const,
         message: audit.reason ?? 'OAuth callback rejected.',
@@ -1094,6 +1096,7 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
       return {
         providerCode: callback.providerCode,
         flowId: flow.id,
+        subjectType: flow.subjectType,
         state: callback.state,
         status: 'rejected' as const,
         message: audit.reason ?? 'OAuth callback rejected.',
@@ -1118,9 +1121,10 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
       callback.scopes && callback.scopes.length > 0
         ? callback.scopes
         : normalizeScopes(flow.scopes);
-    const tokenExpiresAt = new Date(
-      now.getTime() + callback.expiresInSeconds * 1000,
-    );
+    const tokenExpiresAt =
+      callback.expiresInSeconds === null
+        ? null
+        : new Date(now.getTime() + callback.expiresInSeconds * 1000);
 
     const result = await this.prisma.$transaction(async (tx) => {
       const token = await tx.integrationOAuthToken.upsert({
@@ -1191,6 +1195,7 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
     return {
       providerCode: callback.providerCode,
       flowId: flow.id,
+      subjectType: flow.subjectType,
       state: callback.state,
       status: 'accepted' as const,
       message: audit.reason ?? 'OAuth callback accepted.',
@@ -1287,9 +1292,13 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
       where: { subjectType: 'user', subjectId },
       orderBy: [{ providerCode: 'asc' }, { createdAt: 'desc' }],
     });
+    const tokens = rows
+      .map(toOAuthTokenRecord)
+      .map((token) => normalizeOAuthTokenRecord(token))
+      .filter((token) => !isLegacySyntheticOAuthProfileAccount(token));
     const providers = await this.prisma.integrationProvider.findMany({
       where: {
-        code: { in: [...new Set(rows.map((row) => row.providerCode))] },
+        code: { in: [...new Set(tokens.map((token) => token.providerCode))] },
       },
       select: { code: true, name: true },
     });
@@ -1297,11 +1306,8 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
       providers.map((provider) => [provider.code, provider]),
     );
 
-    return rows.map((row) =>
-      toOAuthProfileAccountDto(
-        toOAuthTokenRecord(row),
-        providersByCode.get(row.providerCode),
-      ),
+    return tokens.map((token) =>
+      toOAuthProfileAccountDto(token, providersByCode.get(token.providerCode)),
     );
   }
 

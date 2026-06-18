@@ -1458,14 +1458,22 @@ describe('IntegrationRepository', () => {
       await expect(
         controller.callbackOAuthProvider(
           'github',
-          { code: 'oauth-code', state: 'oauth-state' },
+          {
+            code: 'oauth-code',
+            providerAccountId: 'github:opencore-admin',
+            state: 'oauth-state',
+          },
           response,
         ),
       ).resolves.toBeUndefined();
 
       expect(repository.callbackOAuthProvider).toHaveBeenCalledWith(
         'github',
-        expect.objectContaining({ code: 'oauth-code', state: 'oauth-state' }),
+        expect.objectContaining({
+          code: 'oauth-code',
+          providerAccountId: 'github:opencore-admin',
+          state: 'oauth-state',
+        }),
       );
       expect(response.redirect).toHaveBeenCalledTimes(1);
 
@@ -1517,11 +1525,180 @@ describe('IntegrationRepository', () => {
     await expect(
       controller.callbackOAuthProvider(
         'github',
-        { code: 'oauth-code', response: 'json', state: 'oauth-state' },
+        {
+          code: 'oauth-code',
+          providerAccountId: 'github:opencore-admin',
+          response: 'json',
+          state: 'oauth-state',
+        },
         response,
       ),
     ).resolves.toEqual(callbackResult);
     expect(response.redirect).not.toHaveBeenCalled();
+  });
+
+  it('redirects social OAuth callbacks back to the social login page', async () => {
+    const previousRedirectUrl = process.env.OPENCORE_SOCIAL_LOGIN_REDIRECT_URL;
+    process.env.OPENCORE_SOCIAL_LOGIN_REDIRECT_URL =
+      'https://admin.example.test/user/social-login';
+
+    try {
+      const callbackResult = {
+        providerCode: 'oauth.github',
+        flowId: 'oauth_flow_social',
+        subjectType: 'social-login',
+        state: 'social-state',
+        status: 'accepted' as const,
+        message: 'OAuth callback accepted.',
+        audit: {
+          id: 'audit_social',
+          providerCode: 'oauth.github',
+          flowId: 'oauth_flow_social',
+          state: 'social-state',
+          status: 'accepted' as const,
+          reason: 'OAuth callback accepted.',
+          createdAt: '2026-06-18T00:00:00.000Z',
+        },
+      };
+      const repository = {
+        callbackOAuthProvider: jest.fn().mockResolvedValue(callbackResult),
+      };
+      const controller = new IntegrationController(repository as never);
+      const response = { redirect: jest.fn() };
+
+      await expect(
+        controller.callbackOAuthProvider(
+          'github',
+          {
+            code: 'oauth-code',
+            providerAccountId: 'github:opencore-social',
+            state: 'social-state',
+          },
+          response,
+        ),
+      ).resolves.toBeUndefined();
+
+      const [status, location] = response.redirect.mock.calls[0] as [
+        number,
+        string,
+      ];
+      const redirectUrl = new URL(location);
+      expect(status).toBe(302);
+      expect(redirectUrl.origin).toBe('https://admin.example.test');
+      expect(redirectUrl.pathname).toBe('/user/social-login');
+      expect(redirectUrl.searchParams.get('providerCode')).toBe('oauth.github');
+      expect(redirectUrl.searchParams.get('state')).toBe('social-state');
+      expect(redirectUrl.searchParams.get('socialStatus')).toBe('accepted');
+      expect(redirectUrl.searchParams.get('flowId')).toBe('oauth_flow_social');
+    } finally {
+      if (previousRedirectUrl === undefined) {
+        delete process.env.OPENCORE_SOCIAL_LOGIN_REDIRECT_URL;
+      } else {
+        process.env.OPENCORE_SOCIAL_LOGIN_REDIRECT_URL = previousRedirectUrl;
+      }
+    }
+  });
+
+  it('exchanges real GitHub callback codes before archiving OAuth tokens', async () => {
+    const previousSecret = process.env.OPENCORE_GITHUB_OAUTH_CLIENT_SECRET;
+    process.env.OPENCORE_GITHUB_OAUTH_CLIENT_SECRET = 'github-secret';
+    const fetchMock = jest
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            access_token: 'github-access-token',
+            scope: 'read:user,user:email',
+          }),
+          {
+            headers: { 'content-type': 'application/json' },
+            status: 200,
+          },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ id: 12345 }), {
+          headers: { 'content-type': 'application/json' },
+          status: 200,
+        }),
+      );
+    const callbackResult = {
+      providerCode: 'oauth.github',
+      flowId: 'oauth_flow_real_github',
+      subjectType: 'user',
+      state: 'github-state',
+      status: 'accepted' as const,
+      message: 'OAuth callback accepted.',
+      audit: {
+        id: 'audit_real_github',
+        providerCode: 'oauth.github',
+        flowId: 'oauth_flow_real_github',
+        state: 'github-state',
+        status: 'accepted' as const,
+        reason: 'OAuth callback accepted.',
+        createdAt: '2026-06-18T00:00:00.000Z',
+      },
+    };
+    const repository = {
+      callbackOAuthProvider: jest.fn().mockResolvedValue(callbackResult),
+      getProvider: jest.fn().mockResolvedValue({
+        code: 'oauth.github',
+        config: {
+          callbackPath: '/api/integrations/oauth/callback/github',
+          clientId: 'github-client-id',
+          tokenUrl: 'https://github.com/login/oauth/access_token',
+        },
+      }),
+      listOAuthFlows: jest.fn().mockResolvedValue({
+        items: [
+          {
+            providerCode: 'oauth.github',
+            redirectUri:
+              'http://144.217.243.161:39172/api/integrations/oauth/callback/github',
+            state: 'github-state',
+          },
+        ],
+        page: 1,
+        pageSize: 100,
+        total: 1,
+        totalPages: 1,
+      }),
+    };
+    const controller = new IntegrationController(repository as never);
+    const response = { redirect: jest.fn() };
+
+    try {
+      await expect(
+        controller.callbackOAuthProvider(
+          'github',
+          { code: 'real-github-code', response: 'json', state: 'github-state' },
+          response,
+        ),
+      ).resolves.toEqual(callbackResult);
+
+      expect(repository.callbackOAuthProvider).toHaveBeenCalledWith(
+        'github',
+        expect.objectContaining({
+          code: 'real-github-code',
+          expiresInSeconds: null,
+          providerAccountId: 'github:12345',
+          scopes: 'read:user,user:email',
+          state: 'github-state',
+        }),
+      );
+      const tokenRequest = fetchMock.mock.calls[0]?.[1] as RequestInit;
+      expect(String(tokenRequest.body)).toContain(
+        'redirect_uri=http%3A%2F%2F144.217.243.161%3A39172%2Fapi%2Fintegrations%2Foauth%2Fcallback%2Fgithub',
+      );
+      expect(response.redirect).not.toHaveBeenCalled();
+    } finally {
+      fetchMock.mockRestore();
+      if (previousSecret === undefined) {
+        delete process.env.OPENCORE_GITHUB_OAUTH_CLIENT_SECRET;
+      } else {
+        process.env.OPENCORE_GITHUB_OAUTH_CLIENT_SECRET = previousSecret;
+      }
+    }
   });
 
   it('exposes profile OAuth providers and bindings without secrets', async () => {
@@ -1587,6 +1764,19 @@ describe('IntegrationRepository', () => {
       subjectId: 'user_profile',
       status: 'pending',
     });
+
+    const legacyFlow = await repository.startOAuthFlow({
+      providerCode: 'oauth.ready',
+      subjectId: 'user_profile',
+      subjectType: 'user',
+    });
+    await repository.callbackOAuthProvider('oauth.ready', {
+      state: legacyFlow.state,
+      code: 'legacy-profile-oauth-code',
+    });
+    await expect(
+      repository.listProfileOAuthAccounts('user_profile'),
+    ).resolves.toEqual([]);
 
     const callback = await repository.callbackOAuthProvider('oauth.ready', {
       state: flow.state,

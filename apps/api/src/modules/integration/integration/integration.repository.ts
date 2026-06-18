@@ -115,7 +115,7 @@ export type NormalizedOAuthCallback = {
   error?: string;
   providerAccountId?: string;
   scopes?: readonly string[];
-  expiresInSeconds: number;
+  expiresInSeconds: number | null;
 };
 
 export type WebSocketRuntimeConnectionHandle = {
@@ -242,6 +242,7 @@ export abstract class IntegrationRepository {
   ): Promise<{
     providerCode: string;
     flowId?: string;
+    subjectType?: string;
     state: string;
     status: OAuthCallbackAuditStatus;
     message: string;
@@ -1238,6 +1239,18 @@ export function toOAuthProfileAccountDto(
   };
 }
 
+export function isLegacySyntheticOAuthProfileAccount(
+  token: Pick<
+    OAuthTokenRecord,
+    'providerAccountId' | 'providerCode' | 'subjectType'
+  >,
+): boolean {
+  return (
+    token.subjectType === 'user' &&
+    token.providerAccountId.startsWith(`${token.providerCode}:`)
+  );
+}
+
 export function toOAuthProfileProviderDto(
   provider: IntegrationProviderRecord,
 ): OAuthProfileProviderDto {
@@ -1931,7 +1944,11 @@ function normalizeOAuthCallbackScopes(
     .filter(Boolean);
 }
 
-function normalizeOAuthExpiresInSeconds(value: unknown): number {
+function normalizeOAuthExpiresInSeconds(value: unknown): number | null {
+  if (value === null) {
+    return null;
+  }
+
   const parsed = Number(value ?? 3600);
 
   if (!Number.isInteger(parsed) || parsed < 60 || parsed > 90 * 24 * 60 * 60) {

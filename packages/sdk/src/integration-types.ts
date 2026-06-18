@@ -450,7 +450,7 @@ export type OAuthProviderCallbackRequest = {
   error?: string;
   providerAccountId?: string;
   scopes?: string;
-  expiresInSeconds?: number;
+  expiresInSeconds?: number | null;
 };
 
 export type OAuthCallbackAuditQueryRequest = PageRequest & {
@@ -491,6 +491,7 @@ export type UnbindOAuthProfileAccountRequest = {
 export type OAuthCallbackResult = {
   providerCode: string;
   flowId?: string;
+  subjectType?: string;
   state: string;
   status: OAuthCallbackAuditStatus;
   message: string;

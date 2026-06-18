@@ -77,7 +77,10 @@ import {
   WebSocketRuntimeEventDto,
   WebSocketRuntimeStreamQueryDto,
 } from './integration.dto';
-import { IntegrationRepository } from './integration.repository';
+import {
+  IntegrationRepository,
+  normalizeOAuthProviderCode,
+} from './integration.repository';
 
 type SseResponse = {
   end?: () => void;
@@ -89,6 +92,18 @@ type SseResponse = {
 type OAuthCallbackHttpResponse = {
   redirect(status: number, url: string): void;
 };
+
+type OAuthExchangeResult = {
+  expiresInSeconds: number | null;
+  providerAccountId: string;
+  scopes: string;
+};
+
+const REAL_OAUTH_CALLBACK_PROVIDERS = new Set([
+  'oauth.github',
+  'oauth.google',
+  'oauth.microsoft',
+]);
 
 type RequestWithUser = SecurityRequestWithAuth;
 
@@ -563,9 +578,10 @@ export class IntegrationController {
     @Query() query: OAuthProviderCallbackDto,
     @Res({ passthrough: true }) response: OAuthCallbackHttpResponse,
   ): Promise<OAuthCallbackResultDto | undefined> {
+    const callback = await this.resolveRealOAuthCallback(providerCode, query);
     const result = await this.repository.callbackOAuthProvider(
       providerCode,
-      query,
+      callback,
     );
 
     if (query.response === 'json') {
@@ -574,6 +590,61 @@ export class IntegrationController {
 
     response.redirect(302, buildOAuthCallbackRedirectUrl(result));
     return undefined;
+  }
+
+  private async resolveRealOAuthCallback(
+    providerCodeInput: string,
+    query: OAuthProviderCallbackDto,
+  ): Promise<OAuthProviderCallbackDto> {
+    if (query.error || query.providerAccountId || !query.code) {
+      return query;
+    }
+
+    const providerCode = normalizeOAuthProviderCode(providerCodeInput);
+    if (!REAL_OAUTH_CALLBACK_PROVIDERS.has(providerCode)) {
+      return query;
+    }
+
+    const flow = await this.findOAuthCallbackFlow(providerCode, query.state);
+    if (!flow) {
+      return query;
+    }
+
+    try {
+      const provider = await this.repository.getProvider(providerCode);
+      const redirectUri = resolveOAuthExchangeRedirectUri(
+        provider.config.callbackPath,
+        flow.redirectUri,
+        providerCode,
+      );
+      const exchanged =
+        providerCode === 'oauth.github'
+          ? await exchangeGitHubOAuthCode(query.code, provider, redirectUri)
+          : await exchangeOidcOAuthCode(query.code, provider, redirectUri);
+
+      return {
+        ...query,
+        expiresInSeconds: exchanged.expiresInSeconds,
+        providerAccountId: exchanged.providerAccountId,
+        scopes: exchanged.scopes,
+      };
+    } catch {
+      return {
+        ...query,
+        code: undefined,
+        error: 'oauth_exchange_failed',
+      };
+    }
+  }
+
+  private async findOAuthCallbackFlow(providerCode: string, state: string) {
+    const flows = await this.repository.listOAuthFlows({
+      page: 1,
+      pageSize: 100,
+      providerCode,
+    });
+
+    return flows.items.find((flow) => flow.state === state);
   }
 
   @Get('oauth/callback-audits')
@@ -734,6 +805,10 @@ function getAuthenticatedUsername(request: RequestWithUser): string {
 }
 
 function buildOAuthCallbackRedirectUrl(result: OAuthCallbackResultDto): string {
+  if (result.subjectType === 'social-login') {
+    return buildSocialOAuthCallbackRedirectUrl(result);
+  }
+
   const redirectUrl = new URL(resolveOAuthCallbackRedirectTarget());
 
   if (redirectUrl.pathname === '/' || redirectUrl.pathname === '') {
@@ -746,6 +821,25 @@ function buildOAuthCallbackRedirectUrl(result: OAuthCallbackResultDto): string {
     redirectUrl.searchParams.set('oauthFlowId', result.flowId);
   }
 
+  return redirectUrl.toString();
+}
+
+function buildSocialOAuthCallbackRedirectUrl(
+  result: OAuthCallbackResultDto,
+): string {
+  const redirectUrl = new URL(resolveSocialOAuthCallbackRedirectTarget());
+  redirectUrl.searchParams.set('providerCode', result.providerCode);
+  redirectUrl.searchParams.set('state', result.state);
+  redirectUrl.searchParams.set('socialStatus', result.status);
+  if (result.flowId) {
+    redirectUrl.searchParams.set('flowId', result.flowId);
+  }
+  if (result.status === 'rejected') {
+    redirectUrl.searchParams.set(
+      'reason',
+      result.audit.callbackError ?? 'rejected',
+    );
+  }
   return redirectUrl.toString();
 }
 
@@ -762,6 +856,205 @@ function resolveOAuthCallbackRedirectTarget(): string {
   }
 
   return 'http://127.0.0.1:39174/personal/profile';
+}
+
+function resolveSocialOAuthCallbackRedirectTarget(): string {
+  const configured = process.env.OPENCORE_SOCIAL_LOGIN_REDIRECT_URL?.trim();
+  if (configured) {
+    return configured;
+  }
+
+  const adminBaseUrl =
+    process.env.OPENCORE_DEPLOY_PUBLIC_ADMIN_BASE_URL?.trim();
+  if (adminBaseUrl) {
+    return `${adminBaseUrl.replace(/\/+$/u, '')}/user/social-login`;
+  }
+
+  return 'http://127.0.0.1:39174/user/social-login';
+}
+
+function resolveOAuthExchangeRedirectUri(
+  providerCallbackPath: unknown,
+  flowRedirectUri: string | undefined,
+  providerCode: string,
+): string {
+  const configured =
+    flowRedirectUri?.trim() || readConfigString(providerCallbackPath);
+  if (/^https?:\/\//iu.test(configured)) {
+    return configured;
+  }
+
+  const shortProvider = providerCode.replace(/^oauth\./, '');
+  const path =
+    configured || `/api/integrations/oauth/callback/${shortProvider}`;
+  const publicApi =
+    process.env.OPENCORE_DEPLOY_PUBLIC_API_BASE_URL?.trim() ??
+    process.env.OPENCORE_API_PUBLIC_BASE_URL?.trim() ??
+    'http://127.0.0.1:39172';
+  return `${publicApi.replace(/\/+$/u, '')}/${path.replace(/^\/+/u, '')}`;
+}
+
+async function exchangeGitHubOAuthCode(
+  code: string,
+  provider: { config: Record<string, unknown> },
+  redirectUri: string,
+): Promise<OAuthExchangeResult> {
+  const clientId = readConfigString(provider.config.clientId);
+  const clientSecret = process.env.OPENCORE_GITHUB_OAUTH_CLIENT_SECRET?.trim();
+  const tokenUrl = readConfigString(provider.config.tokenUrl);
+
+  if (!clientId || !clientSecret || !tokenUrl) {
+    throw new Error('GitHub OAuth is not configured.');
+  }
+
+  const tokenResponse = await fetch(tokenUrl, {
+    body: new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      code,
+      redirect_uri: redirectUri,
+    }),
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/x-www-form-urlencoded',
+    },
+    method: 'POST',
+  });
+  const tokenPayload = (await tokenResponse.json()) as {
+    access_token?: string;
+    error?: string;
+    expires_in?: number;
+    scope?: string;
+  };
+
+  if (!tokenResponse.ok || !tokenPayload.access_token || tokenPayload.error) {
+    throw new Error('GitHub OAuth token exchange failed.');
+  }
+
+  const userResponse = await fetch('https://api.github.com/user', {
+    headers: {
+      accept: 'application/vnd.github+json',
+      authorization: `Bearer ${tokenPayload.access_token}`,
+      'user-agent': 'OpenCore Admin',
+    },
+  });
+  const userPayload = (await userResponse.json()) as {
+    id?: number | string;
+  };
+
+  if (!userResponse.ok || userPayload.id === undefined) {
+    throw new Error('GitHub OAuth user lookup failed.');
+  }
+
+  return {
+    expiresInSeconds: normalizeProviderTokenExpiresInSeconds(
+      tokenPayload.expires_in,
+    ),
+    providerAccountId: `github:${userPayload.id}`,
+    scopes: tokenPayload.scope || 'read:user user:email',
+  };
+}
+
+async function exchangeOidcOAuthCode(
+  code: string,
+  provider: { code: string; config: Record<string, unknown> },
+  redirectUri: string,
+): Promise<OAuthExchangeResult> {
+  const shortProvider = provider.code.replace(/^oauth\./, '');
+  const clientId = readConfigString(provider.config.clientId);
+  const clientSecret =
+    process.env[
+      `OPENCORE_${shortProvider.toUpperCase()}_OAUTH_CLIENT_SECRET`
+    ]?.trim();
+  const tokenUrl = readConfigString(provider.config.tokenUrl);
+
+  if (!clientId || !clientSecret || !tokenUrl) {
+    throw new Error(`${provider.code} OAuth is not configured.`);
+  }
+
+  const tokenResponse = await fetch(tokenUrl, {
+    body: new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      code,
+      grant_type: 'authorization_code',
+      redirect_uri: redirectUri,
+    }),
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/x-www-form-urlencoded',
+    },
+    method: 'POST',
+  });
+  const tokenPayload = (await tokenResponse.json()) as {
+    error?: string;
+    expires_in?: number;
+    id_token?: string;
+    scope?: string;
+  };
+
+  if (!tokenResponse.ok || tokenPayload.error || !tokenPayload.id_token) {
+    throw new Error(`${provider.code} OAuth token exchange failed.`);
+  }
+
+  const subject = readTokenSubject(decodeJwtPayload(tokenPayload.id_token));
+  return {
+    expiresInSeconds: normalizeProviderTokenExpiresInSeconds(
+      tokenPayload.expires_in,
+    ),
+    providerAccountId: `${shortProvider}:${subject}`,
+    scopes: tokenPayload.scope || readScopeFallback(provider.config.scopes),
+  };
+}
+
+function normalizeProviderTokenExpiresInSeconds(value: unknown): number | null {
+  if (value === undefined || value === null || value === '') {
+    return null;
+  }
+
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 60) {
+    return 3600;
+  }
+  return Math.min(parsed, 90 * 24 * 60 * 60);
+}
+
+function decodeJwtPayload(token: string): Record<string, unknown> {
+  const payload = token.split('.')[1];
+  if (!payload) {
+    throw new Error('OIDC id_token payload is missing.');
+  }
+
+  const normalized = payload.replace(/-/gu, '+').replace(/_/gu, '/');
+  const padded = normalized.padEnd(
+    normalized.length + ((4 - (normalized.length % 4)) % 4),
+    '=',
+  );
+  return JSON.parse(Buffer.from(padded, 'base64').toString('utf8')) as Record<
+    string,
+    unknown
+  >;
+}
+
+function readTokenSubject(payload: Record<string, unknown>): string {
+  for (const key of ['oid', 'sub', 'email']) {
+    const value = payload[key];
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+  }
+  throw new Error('OIDC id_token subject is missing.');
+}
+
+function readScopeFallback(value: unknown): string {
+  if (Array.isArray(value)) {
+    return value.filter((item) => typeof item === 'string').join(' ');
+  }
+  return '';
+}
+
+function readConfigString(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : '';
 }
 
 function writeSseEvent(
