@@ -5,8 +5,7 @@ export default {
   'error.AUTH_BEARER_TOKEN_INVALID': '登录凭证无效，请重新登录。',
   'error.AUTH_BEARER_TOKEN_INVALID_PAYLOAD': '登录凭证无效，请重新登录。',
   'error.AUTH_BEARER_TOKEN_EXPIRED': '登录已过期，请重新登录。',
-  'error.SECURITY_LOGIN_LOCKOUT_OCCURRED_AT_INVALID':
-    '登录锁定尝试时间无效。',
+  'error.SECURITY_LOGIN_LOCKOUT_OCCURRED_AT_INVALID': '登录锁定尝试时间无效。',
   'error.SECURITY_LOGIN_LOCKOUT_POLICY_INVALID': '登录锁定策略无效。',
   'error.SECURITY_LOGIN_USERNAME_REQUIRED': '登录用户名不能为空。',
   'error.RBAC_PERMISSION_MISSING': '当前账号缺少所需权限。',
@@ -39,8 +38,7 @@ export default {
   'error.AUDIT_OPERATION_ID_INVALID_TYPE': '操作日志 ID 必须是字符串。',
   'error.AUDIT_OPERATION_ID_REQUIRED': '操作日志 ID 不能为空。',
   'error.AUDIT_OPERATION_LOG_NOT_FOUND': '操作日志不存在。',
-  'error.AUDIT_OPERATION_RETENTION_DAYS_INVALID':
-    '操作日志保留天数无效。',
+  'error.AUDIT_OPERATION_RETENTION_DAYS_INVALID': '操作日志保留天数无效。',
   'error.AUDIT_OPERATION_STATUS_FILTER_INVALID': '操作日志状态筛选无效。',
   'error.FILE_MIME_TYPE_INVALID': '文件 MIME 类型无效。',
   'error.FILE_NAME_INVALID': '文件名必须是普通文件名。',
@@ -89,13 +87,16 @@ export default {
   'error.SYSTEM_USER_ALREADY_EXISTS': '用户名已存在。',
   'error.SYSTEM_USER_BOOLEAN_INVALID': '用户布尔字段必须是布尔值。',
   'error.SYSTEM_USER_CURRENT_PASSWORD_INVALID': '当前密码不正确。',
-  'error.SYSTEM_USER_DATA_SCOPE_IDS_INVALID': '用户数据范围 ID 列表必须是数组。',
+  'error.SYSTEM_USER_DATA_SCOPE_IDS_INVALID':
+    '用户数据范围 ID 列表必须是数组。',
   'error.SYSTEM_USER_DATA_SCOPE_ID_DUPLICATED': '用户数据范围 ID 重复。',
   'error.SYSTEM_USER_DATA_SCOPE_TYPE_INVALID': '用户数据范围类型无效。',
   'error.SYSTEM_USER_DEPT_NOT_FOUND': '用户部门不存在。',
+  'error.SYSTEM_USER_EMAIL_INVALID': '邮箱格式无效。',
   'error.SYSTEM_USER_ENABLED_INVALID': '用户启用状态必须是布尔值。',
   'error.SYSTEM_USER_FIELD_INVALID_TYPE': '用户字段类型无效。',
   'error.SYSTEM_USER_FIELD_REQUIRED': '用户必填字段不能为空。',
+  'error.SYSTEM_USER_GENDER_INVALID': '性别取值无效。',
   'error.SYSTEM_USER_IDS_EMPTY': '用户 ID 列表不能为空。',
   'error.SYSTEM_USER_IDS_INVALID': '用户 ID 列表必须是数组。',
   'error.SYSTEM_USER_ID_DUPLICATED': '用户 ID 重复。',
@@ -113,10 +114,8 @@ export default {
     '用户导入文件必须包含表头和至少一行数据。',
   'error.SYSTEM_USER_IMPORT_UPDATE_EXISTING_INVALID':
     '用户导入更新已有用户开关必须是布尔值。',
-  'error.SYSTEM_USER_IMPORT_XLSX_INVALID':
-    '用户导入 XLSX 必须是有效工作簿。',
-  'error.SYSTEM_USER_IMPORT_XLSX_SHEET_MISSING':
-    '用户导入 XLSX 缺少工作表。',
+  'error.SYSTEM_USER_IMPORT_XLSX_INVALID': '用户导入 XLSX 必须是有效工作簿。',
+  'error.SYSTEM_USER_IMPORT_XLSX_SHEET_MISSING': '用户导入 XLSX 缺少工作表。',
   'error.SYSTEM_USER_NOT_FOUND': '用户不存在。',
   'error.SYSTEM_USER_PASSWORD_UNCHANGED': '新密码不能与旧密码相同。',
   'error.SYSTEM_USER_POST_CODES_INVALID': '用户岗位编码列表必须是数组。',
@@ -135,20 +134,18 @@ export default {
   'error.SYSTEM_NOTICE_BOOLEAN_INVALID': '通知布尔字段无效。',
   'error.SYSTEM_NOTICE_DATE_INVALID': '通知日期字段无效。',
   'error.SYSTEM_NOTICE_DELIVERY_CHANNEL_INVALID': '通知投递渠道无效。',
-  'error.SYSTEM_NOTICE_DELIVERY_PROVIDER_INVALID': '通知投递 provider 无效。',
+  'error.SYSTEM_NOTICE_DELIVERY_PROVIDER_INVALID': '通知投递通道无效。',
   'error.SYSTEM_NOTICE_DELIVERY_PROVIDER_STATUS_INVALID':
-    '通知投递 provider 状态无效。',
+    '通知投递通道状态无效。',
   'error.SYSTEM_NOTICE_DELIVERY_RECIPIENT_INVALID': '通知投递收件人无效。',
   'error.SYSTEM_NOTICE_DELIVERY_STATUS_INVALID': '通知投递状态无效。',
-  'error.SYSTEM_NOTICE_DISPATCH_STATUS_INVALID':
-    '通知发布后才能创建投递任务。',
+  'error.SYSTEM_NOTICE_DISPATCH_STATUS_INVALID': '通知发布后才能创建投递任务。',
   'error.SYSTEM_NOTICE_INBOX_NOT_FOUND': '收件箱通知不存在。',
-  'error.SYSTEM_NOTICE_INTEGRATION_PROVIDER_DISABLED':
-    '通知投递 provider 未启用。',
+  'error.SYSTEM_NOTICE_INTEGRATION_PROVIDER_DISABLED': '通知投递通道未启用。',
   'error.SYSTEM_NOTICE_INTEGRATION_PROVIDER_NOT_CONFIGURED':
-    '通知投递 provider 未配置。',
+    '通知投递通道未配置。',
   'error.SYSTEM_NOTICE_INTEGRATION_PROVIDER_TYPE_INVALID':
-    '通知投递 provider 类型不匹配。',
+    '通知投递通道类型不匹配。',
   'error.SYSTEM_NOTICE_NOT_FOUND': '通知不存在。',
   'error.SYSTEM_NOTICE_PUBLISH_STATUS_INVALID': '只有草稿通知可以发布。',
   'error.SYSTEM_NOTICE_READ_IDS_EMPTY': '通知已读 ID 列表不能为空。',
@@ -162,8 +159,7 @@ export default {
   'error.SYSTEM_NOTICE_TEMPLATE_NOT_FOUND': '通知模板不存在。',
   'error.SYSTEM_NOTICE_TEMPLATE_PARAMS_INVALID': '通知模板参数必须是对象。',
   'error.SYSTEM_NOTICE_TEMPLATE_PARAM_MISSING': '通知模板缺少必填参数。',
-  'error.SYSTEM_NOTICE_TEMPLATE_PARAM_UNEXPECTED':
-    '通知模板包含未定义参数。',
+  'error.SYSTEM_NOTICE_TEMPLATE_PARAM_UNEXPECTED': '通知模板包含未定义参数。',
   'error.SYSTEM_NOTICE_TEMPLATE_PARAM_VALUE_INVALID_TYPE':
     '通知模板参数值类型无效。',
   'error.SYSTEM_NOTICE_TEMPLATE_PARAM_VALUE_REQUIRED':
@@ -175,14 +171,13 @@ export default {
   'error.INTEGRATION_CONFIG_SECRET_NOT_FOUND': '集成配置密钥不存在。',
   'error.INTEGRATION_OAUTH_AUTHORIZATION_URL_INVALID':
     'OAuth 授权地址配置无效。',
-  'error.INTEGRATION_OAUTH_CALLBACK_CODE_REQUIRED':
-    'OAuth 回调缺少授权码。',
+  'error.INTEGRATION_OAUTH_CALLBACK_CODE_REQUIRED': 'OAuth 回调缺少授权码。',
   'error.INTEGRATION_OAUTH_EXPIRES_IN_INVALID': 'OAuth token 有效期无效。',
-  'error.INTEGRATION_OAUTH_PROVIDER_DISABLED': 'OAuth provider 未启用。',
-  'error.INTEGRATION_OAUTH_PROVIDER_MISMATCH':
-    'OAuth 回调 provider 不匹配。',
-  'error.INTEGRATION_OAUTH_PROVIDER_TYPE_INVALID':
-    'OAuth provider 类型无效。',
+  'error.INTEGRATION_OAUTH_PROFILE_ACCOUNT_FORBIDDEN':
+    '只能操作当前用户自己的 OAuth 账号绑定。',
+  'error.INTEGRATION_OAUTH_PROVIDER_DISABLED': 'OAuth 通道未启用。',
+  'error.INTEGRATION_OAUTH_PROVIDER_MISMATCH': 'OAuth 回调通道不匹配。',
+  'error.INTEGRATION_OAUTH_PROVIDER_TYPE_INVALID': 'OAuth 通道类型无效。',
   'error.INTEGRATION_OAUTH_REVOKE_REASON_REQUIRED':
     'OAuth token 撤销原因不能为空。',
   'error.INTEGRATION_OAUTH_REVOKE_REASON_TOO_LONG':
@@ -196,32 +191,26 @@ export default {
   'error.INTEGRATION_OUTBOX_ATTACHMENT_FILENAME_INVALID':
     'outbox 附件文件名无效。',
   'error.INTEGRATION_OUTBOX_ATTACHMENT_INVALID': 'outbox 附件格式无效。',
-  'error.INTEGRATION_OUTBOX_ATTACHMENT_SIZE_INVALID':
-    'outbox 附件大小无效。',
-  'error.INTEGRATION_OUTBOX_ATTACHMENTS_INVALID':
-    'outbox 附件列表必须是数组。',
+  'error.INTEGRATION_OUTBOX_ATTACHMENT_SIZE_INVALID': 'outbox 附件大小无效。',
+  'error.INTEGRATION_OUTBOX_ATTACHMENTS_INVALID': 'outbox 附件列表必须是数组。',
   'error.INTEGRATION_OUTBOX_ATTACHMENTS_TOO_MANY': 'outbox 附件数量过多。',
   'error.INTEGRATION_OUTBOX_ATTACHMENTS_TOTAL_SIZE_TOO_LARGE':
     'outbox 附件总大小过大。',
   'error.INTEGRATION_OUTBOX_CALLBACK_PROVIDER_MISMATCH':
-    'outbox 回调 provider 不匹配。',
+    '投递箱回调通道不匹配。',
   'error.INTEGRATION_OUTBOX_CALLBACK_SIGNATURE_FORMAT_INVALID':
     'outbox 回调签名格式无效。',
   'error.INTEGRATION_OUTBOX_CALLBACK_SIGNATURE_INVALID':
     'outbox 回调签名无效。',
-  'error.INTEGRATION_OUTBOX_CALLBACK_STATUS_INVALID':
-    'outbox 回调状态无效。',
+  'error.INTEGRATION_OUTBOX_CALLBACK_STATUS_INVALID': 'outbox 回调状态无效。',
   'error.INTEGRATION_OUTBOX_FAILURE_ERROR_REQUIRED':
     'outbox 失败原因不能为空。',
   'error.INTEGRATION_OUTBOX_FAILURE_ERROR_TOO_LONG': 'outbox 失败原因过长。',
-  'error.INTEGRATION_OUTBOX_PROCESS_LIMIT_INVALID':
-    'outbox 处理数量限制无效。',
-  'error.INTEGRATION_OUTBOX_PROVIDER_CODE_REQUIRED':
-    'outbox provider 编码不能为空。',
+  'error.INTEGRATION_OUTBOX_PROCESS_LIMIT_INVALID': 'outbox 处理数量限制无效。',
+  'error.INTEGRATION_OUTBOX_PROVIDER_CODE_REQUIRED': '投递箱通道编码不能为空。',
   'error.INTEGRATION_OUTBOX_RETRY_STATUS_INVALID':
     '只有失败状态的 outbox 消息可以重试。',
-  'error.INTEGRATION_OUTBOX_SCHEDULE_CHANNEL_INVALID':
-    'outbox 调度渠道无效。',
+  'error.INTEGRATION_OUTBOX_SCHEDULE_CHANNEL_INVALID': 'outbox 调度渠道无效。',
   'error.INTEGRATION_OUTBOX_SCHEDULE_CHANNELS_EMPTY':
     'outbox 调度渠道不能为空。',
   'error.INTEGRATION_OUTBOX_SCHEDULE_MAX_RETRY_INVALID':
@@ -230,12 +219,11 @@ export default {
     'outbox 调度重试开关无效。',
   'error.INTEGRATION_OUTBOX_SMS_ATTACHMENTS_UNSUPPORTED':
     'SMS outbox 不支持附件。',
-  'error.INTEGRATION_OUTBOX_SMS_SUBJECT_UNSUPPORTED':
-    'SMS outbox 不支持主题。',
+  'error.INTEGRATION_OUTBOX_SMS_SUBJECT_UNSUPPORTED': 'SMS outbox 不支持主题。',
   'error.INTEGRATION_OUTBOX_SUBJECT_INVALID_TYPE': 'outbox 主题必须是字符串。',
   'error.INTEGRATION_OUTBOX_SUBJECT_TOO_LONG': 'outbox 主题过长。',
-  'error.INTEGRATION_PROVIDER_DISABLED': '集成 provider 未启用。',
-  'error.INTEGRATION_PROVIDER_TYPE_MISMATCH': '集成 provider 类型不匹配。',
+  'error.INTEGRATION_PROVIDER_DISABLED': '集成通道未启用。',
+  'error.INTEGRATION_PROVIDER_TYPE_MISMATCH': '集成通道类型不匹配。',
   'error.INTEGRATION_REQUIRED_STRING_MISSING': '集成必填文本不能为空。',
   'error.INTEGRATION_RESOURCE_NOT_FOUND': '集成资源不存在。',
   'error.INTEGRATION_SECRET_REF_CONFIG_INVALID':
@@ -244,11 +232,9 @@ export default {
     '集成配置密钥 key 不能为空。',
   'error.INTEGRATION_SECRET_REF_INVALID': '集成密钥引用格式无效。',
   'error.INTEGRATION_SMS_RECIPIENT_INVALID': 'SMS 收件人格式无效。',
-  'error.INTEGRATION_SMS_VERIFICATION_CODE_TOO_SHORT':
-    'SMS 验证码长度不足。',
+  'error.INTEGRATION_SMS_VERIFICATION_CODE_TOO_SHORT': 'SMS 验证码长度不足。',
   'error.INTEGRATION_TEMPLATE_DISABLED': '集成模板已停用。',
-  'error.INTEGRATION_WEBSOCKET_EVENT_TYPE_INVALID':
-    'WebSocket 事件类型无效。',
+  'error.INTEGRATION_WEBSOCKET_EVENT_TYPE_INVALID': 'WebSocket 事件类型无效。',
   'error.INTEGRATION_WEBSOCKET_PUBLISH_EVENT_TYPE_INVALID':
     'WebSocket 发布事件类型无效。',
   'error.INTEGRATION_WEBSOCKET_ROOM_INVALID': 'WebSocket 房间名无效。',
@@ -257,26 +243,22 @@ export default {
   'error.COLLABORATION_MESSAGE_READ_STATUS_INVALID':
     '消息当前状态不能标记为已读。',
   'error.COLLABORATION_NOTICE_ARCHIVED': '公告已归档。',
-  'error.COLLABORATION_NOTICE_PUBLISH_STATUS_INVALID':
-    '只有草稿公告可以发布。',
+  'error.COLLABORATION_NOTICE_PUBLISH_STATUS_INVALID': '只有草稿公告可以发布。',
   'error.COLLABORATION_RESOURCE_NOT_FOUND': '协作资源不存在。',
   'error.COLLABORATION_RESOURCE_NOT_PENDING': '协作资源不是待处理状态。',
   'error.COLLABORATION_TODO_STATUS_TERMINAL': '待办已处于终态。',
-  'error.SCHEDULER_DISPATCH_NOW_INVALID':
-    '调度触发时间必须是有效的 ISO 时间。',
+  'error.SCHEDULER_DISPATCH_NOW_INVALID': '调度触发时间必须是有效的 ISO 时间。',
   'error.SCHEDULER_HANDLER_NOT_FOUND': '调度任务处理器不存在。',
   'error.SCHEDULER_JOB_CRON_INVALID': '调度任务 cron 表达式无效。',
   'error.SCHEDULER_JOB_DISABLED': '调度任务已停用。',
-  'error.SCHEDULER_JOB_MANUAL_TRIGGER_FORBIDDEN':
-    '该调度任务不允许手动触发。',
+  'error.SCHEDULER_JOB_MANUAL_TRIGGER_FORBIDDEN': '该调度任务不允许手动触发。',
   'error.SCHEDULER_JOB_QUEUE_MISMATCH': '调度任务队列与注册配置不匹配。',
   'error.SCHEDULER_JOB_RETRY_LIMIT_INVALID': '调度任务重试次数无效。',
   'error.SCHEDULER_JOB_TIMEOUT_INVALID': '调度任务超时时间无效。',
   'error.SCHEDULER_RESOURCE_NOT_FOUND': '调度资源不存在。',
   'error.SCHEDULER_RUN_CLEAN_STATUS_INVALID':
     '调度运行记录清理只支持终态记录。',
-  'error.SCHEDULER_RUN_RETENTION_DAYS_INVALID':
-    '调度运行记录保留天数无效。',
+  'error.SCHEDULER_RUN_RETENTION_DAYS_INVALID': '调度运行记录保留天数无效。',
   'error.SCHEDULER_WORKER_LIMIT_INVALID': '调度 worker 领取数量无效。',
   'error.MONITOR_OPERATIONS_CACHE_CLEAR_CONFIRMATION_REQUIRED':
     '清理缓存需要确认。',
@@ -288,8 +270,7 @@ export default {
     '缓存清理命中扫描上限，请缩小前缀。',
   'error.MONITOR_OPERATIONS_CACHE_KEY_DELETE_CONFIRMATION_REQUIRED':
     '删除缓存 key 需要确认。',
-  'error.MONITOR_OPERATIONS_CACHE_KEY_INVALID':
-    '缓存 key 至少需要 3 个字符。',
+  'error.MONITOR_OPERATIONS_CACHE_KEY_INVALID': '缓存 key 至少需要 3 个字符。',
   'error.MONITOR_OPERATIONS_CACHE_KEY_NOT_FOUND': '缓存 key 不存在。',
   'error.MONITOR_OPERATIONS_CACHE_KEY_SINGLE_LINE_INVALID':
     '缓存 key 必须是单行文本。',
@@ -320,8 +301,7 @@ export default {
   'error.TOOL_AREA_REGION_CODE_REQUIRED': '地区编码不能为空。',
   'error.TOOL_AREA_REGION_IP_RANGES_INVALID': '地区 IP 范围必须是数组。',
   'error.TOOL_AREA_REGION_IP_RANGES_TOO_MANY': '地区 IP 范围数量过多。',
-  'error.TOOL_AREA_REGION_IP_RANGE_INVALID_TYPE':
-    '地区 IP 范围必须是字符串。',
+  'error.TOOL_AREA_REGION_IP_RANGE_INVALID_TYPE': '地区 IP 范围必须是字符串。',
   'error.TOOL_AREA_REGION_NAME_INVALID': '地区名称格式无效。',
   'error.TOOL_AREA_REGION_NAME_REQUIRED': '地区名称不能为空。',
   'error.TOOL_AREA_REGION_NOT_FOUND': '地区不存在。',
@@ -358,8 +338,7 @@ export default {
     '功能受众配置缺少启用开关。',
   'error.SYSTEM_CONFIG_FEATURE_AUDIENCE_INVALID':
     '功能受众规则必须是 JSON 对象。',
-  'error.SYSTEM_CONFIG_FEATURE_AUDIENCE_MODE_INVALID':
-    '功能受众匹配模式无效。',
+  'error.SYSTEM_CONFIG_FEATURE_AUDIENCE_MODE_INVALID': '功能受众匹配模式无效。',
   'error.SYSTEM_CONFIG_FEATURE_AUDIENCE_OPERATOR_INVALID':
     '功能受众操作符无效。',
   'error.SYSTEM_CONFIG_FEATURE_AUDIENCE_RULES_INVALID':
@@ -370,10 +349,8 @@ export default {
     '功能受众规则必须是对象。',
   'error.SYSTEM_CONFIG_FEATURE_AUDIENCE_VALUES_INVALID':
     '功能受众取值列表无效。',
-  'error.SYSTEM_CONFIG_FEATURE_AUDIENCE_VALUE_DUPLICATED':
-    '功能受众取值重复。',
-  'error.SYSTEM_CONFIG_FEATURE_AUDIENCE_VALUE_INVALID':
-    '功能受众取值无效。',
+  'error.SYSTEM_CONFIG_FEATURE_AUDIENCE_VALUE_DUPLICATED': '功能受众取值重复。',
+  'error.SYSTEM_CONFIG_FEATURE_AUDIENCE_VALUE_INVALID': '功能受众取值无效。',
   'error.SYSTEM_CONFIG_FEATURE_AUDIENCE_VALUE_INVALID_TYPE':
     '功能受众取值必须是字符串。',
   'error.SYSTEM_CONFIG_FEATURE_FLAG_NAME_INVALID': '功能开关名称无效。',
@@ -423,16 +400,13 @@ export default {
   'error.SYSTEM_CONFIG_NOT_SECRET': '配置不是密钥配置。',
   'error.SYSTEM_CONFIG_RUNTIME_INTEGER_INVALID':
     '运行时配置值必须是允许范围内的整数。',
-  'error.SYSTEM_CONFIG_RUNTIME_VALUE_TYPE_INVALID':
-    '运行时配置值类型无效。',
-  'error.SYSTEM_CONFIG_RUNTIME_VISIBILITY_INVALID':
-    '运行时配置必须保持公开。',
+  'error.SYSTEM_CONFIG_RUNTIME_VALUE_TYPE_INVALID': '运行时配置值类型无效。',
+  'error.SYSTEM_CONFIG_RUNTIME_VISIBILITY_INVALID': '运行时配置必须保持公开。',
   'error.SYSTEM_CONFIG_SECRET_KEY_VISIBILITY_REQUIRED':
     '密钥类配置键必须显式标记为密钥可见性。',
   'error.SYSTEM_CONFIG_SECRET_ROTATION_ACTOR_INVALID_TYPE':
     '密钥轮换操作人必须是字符串。',
-  'error.SYSTEM_CONFIG_SECRET_ROTATION_ACTOR_TOO_LONG':
-    '密钥轮换操作人过长。',
+  'error.SYSTEM_CONFIG_SECRET_ROTATION_ACTOR_TOO_LONG': '密钥轮换操作人过长。',
   'error.SYSTEM_CONFIG_SECRET_ROTATION_VALUE_INVALID_TYPE':
     '密钥轮换值必须是字符串。',
   'error.SYSTEM_CONFIG_SECRET_ROTATION_VALUE_REQUIRED': '密钥轮换值不能为空。',

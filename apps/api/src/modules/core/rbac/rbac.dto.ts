@@ -1,4 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { LoginLogDto } from '@opencore/audit';
+import {
+  BatchKickOutSessionsResultDto,
+  OnlineUserSessionDto,
+} from '@opencore/online-user';
 export {
   AssignRoleMenusDto,
   AssignRoleUsersDto,
@@ -126,6 +131,24 @@ export class UserPasswordMutationResultDto {
   @ApiProperty()
   revokedSessionCount!: number;
 }
+
+export class UserProfileSessionDto extends OnlineUserSessionDto {
+  @ApiProperty()
+  current!: boolean;
+}
+
+export class UserProfileActivityDto {
+  @ApiProperty({ type: [UserProfileSessionDto] })
+  sessions!: readonly UserProfileSessionDto[];
+
+  @ApiProperty({ type: [LoginLogDto] })
+  loginLogs!: readonly LoginLogDto[];
+
+  @ApiProperty()
+  currentTokenId!: string;
+}
+
+export class UserProfileKickOutOtherSessionsDto extends BatchKickOutSessionsResultDto {}
 
 export class RbacExportPreviewDto {
   @ApiProperty()

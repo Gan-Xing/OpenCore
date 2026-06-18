@@ -30,6 +30,8 @@ import type {
   OAuthFlowQueryRequest,
   OAuthFlowSummary,
   OAuthProviderCallbackRequest,
+  OAuthProfileAccountSummary,
+  OAuthProfileProviderSummary,
   OAuthTokenInventorySummary,
   OAuthTokenPage,
   OAuthTokenQueryRequest,
@@ -42,9 +44,11 @@ import type {
   RevokeOAuthTokenRequest,
   ScheduleOutboxRequest,
   StartOAuthFlowRequest,
+  StartOAuthProfileFlowRequest,
   TestIntegrationProviderRequest,
   TestOutboxMessageRequest,
   TemplatePreviewSummary,
+  UnbindOAuthProfileAccountRequest,
   UpdateIntegrationProviderRequest,
   WebSocketRuntimeDiagnosticsSummary,
   WebSocketRuntimeEventSummary,
@@ -243,6 +247,21 @@ export type IntegrationClient = {
     id: string,
     body?: RevokeOAuthTokenRequest,
   ) => Promise<OAuthTokenSummary>;
+  listProfileOAuthAccounts: (
+    token: string,
+  ) => Promise<readonly OAuthProfileAccountSummary[]>;
+  listProfileOAuthProviders: (
+    token: string,
+  ) => Promise<readonly OAuthProfileProviderSummary[]>;
+  startProfileOAuthFlow: (
+    token: string,
+    body: StartOAuthProfileFlowRequest,
+  ) => Promise<OAuthFlowSummary>;
+  unbindProfileOAuthAccount: (
+    token: string,
+    id: string,
+    body?: UnbindOAuthProfileAccountRequest,
+  ) => Promise<OAuthProfileAccountSummary>;
   getWeChatDesign: (token: string) => Promise<IntegrationDesignSummary>;
   getWebSocketDesign: (token: string) => Promise<IntegrationDesignSummary>;
   getWebSocketRuntimeDiagnostics: (
@@ -514,6 +533,27 @@ export function createIntegrationClient(
     revokeOAuthToken: (token, id, body) =>
       request<OAuthTokenSummary>(
         `/integrations/oauth/tokens/${encodeURIComponent(id)}/revoke`,
+        { method: 'PATCH', body: body ?? {}, token },
+      ),
+    listProfileOAuthAccounts: (token) =>
+      request<readonly OAuthProfileAccountSummary[]>(
+        '/integrations/oauth/profile/accounts',
+        { token },
+      ),
+    listProfileOAuthProviders: (token) =>
+      request<readonly OAuthProfileProviderSummary[]>(
+        '/integrations/oauth/profile/providers',
+        { token },
+      ),
+    startProfileOAuthFlow: (token, body) =>
+      request<OAuthFlowSummary>('/integrations/oauth/profile/flows', {
+        method: 'POST',
+        body,
+        token,
+      }),
+    unbindProfileOAuthAccount: (token, id, body) =>
+      request<OAuthProfileAccountSummary>(
+        `/integrations/oauth/profile/accounts/${encodeURIComponent(id)}/unbind`,
         { method: 'PATCH', body: body ?? {}, token },
       ),
     getWeChatDesign: (token) =>

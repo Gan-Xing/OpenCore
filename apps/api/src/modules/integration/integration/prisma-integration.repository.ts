@@ -28,6 +28,7 @@ import type {
   RevokeOAuthTokenDto,
   ScheduleOutboxDto,
   StartOAuthFlowDto,
+  StartOAuthProfileFlowDto,
   TestIntegrationProviderDto,
   TestOutboxMessageDto,
   UpdateIntegrationProviderDto,
@@ -55,6 +56,7 @@ import {
 import {
   assertOutboxCallbackProviderMatch,
   assertOutboxCallbackSignature,
+  assertOAuthTokenBelongsToSubject,
   assertProviderReadyForOutbox,
   assertSecretRef,
   assertSmsSafety,
@@ -99,6 +101,8 @@ import {
   redactProviderConfig,
   renderTemplate,
   requireRecord,
+  toOAuthProfileAccountDto,
+  toOAuthProfileProviderDto,
   validateProviderSecretRef,
   type PageResult,
   type ProviderTestResult,
@@ -928,6 +932,15 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
     return createPage(rows.map(toProviderRecord).map(redactProvider), query);
   }
 
+  async listProfileOAuthProviders() {
+    const rows = await this.prisma.integrationProvider.findMany({
+      where: { type: 'oauth', enabled: true },
+      orderBy: [{ code: 'asc' }],
+    });
+
+    return rows.map(toProviderRecord).map(toOAuthProfileProviderDto);
+  }
+
   getOAuthCallbackContract(): OAuthCallbackContractRecord {
     return { ...oauthCallbackContract };
   }
@@ -1265,6 +1278,74 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
     });
 
     return normalizeOAuthTokenRecord(toOAuthTokenRecord(revoked));
+  }
+
+  async listProfileOAuthAccounts(subjectId: string) {
+    const rows = await this.prisma.integrationOAuthToken.findMany({
+      where: { subjectType: 'user', subjectId },
+      orderBy: [{ providerCode: 'asc' }, { createdAt: 'desc' }],
+    });
+    const providers = await this.prisma.integrationProvider.findMany({
+      where: {
+        code: { in: [...new Set(rows.map((row) => row.providerCode))] },
+      },
+      select: { code: true, name: true },
+    });
+    const providersByCode = new Map(
+      providers.map((provider) => [provider.code, provider]),
+    );
+
+    return rows.map((row) =>
+      toOAuthProfileAccountDto(
+        toOAuthTokenRecord(row),
+        providersByCode.get(row.providerCode),
+      ),
+    );
+  }
+
+  startProfileOAuthFlow(
+    subjectId: string,
+    body: StartOAuthProfileFlowDto,
+  ): Promise<OAuthFlowRecord> {
+    return this.startOAuthFlow({
+      providerCode: body.providerCode,
+      subjectType: 'user',
+      subjectId,
+      redirectUri: body.redirectUri,
+    });
+  }
+
+  async unbindProfileOAuthAccount(
+    subjectId: string,
+    id: string,
+    actor: string,
+    body: RevokeOAuthTokenDto = {},
+  ) {
+    const existing = await this.getOAuthToken(id);
+    assertOAuthTokenBelongsToSubject({ subjectId, token: existing });
+
+    const token =
+      existing.status === 'revoked'
+        ? existing
+        : toOAuthTokenRecord(
+            await this.prisma.integrationOAuthToken.update({
+              where: { id },
+              data: {
+                status: 'revoked',
+                revokedAt: new Date(),
+                revokedBy: actor,
+                revokeReason: normalizeOAuthRevokeReason(
+                  body.reason ?? 'Self-service OAuth account unbind.',
+                ),
+              },
+            }),
+          );
+    const provider = await this.prisma.integrationProvider.findUnique({
+      where: { code: token.providerCode },
+      select: { code: true, name: true },
+    });
+
+    return toOAuthProfileAccountDto(token, provider ?? undefined);
   }
 
   getDesign(topic: 'pay' | 'websocket' | 'wechat'): IntegrationDesignRecord {

@@ -158,6 +158,19 @@ describe('createIntegrationClient', () => {
     await client.revokeOAuthToken('token', 'oauth_token_github_admin_active', {
       reason: 'Revoke from SDK spec',
     });
+    await client.listProfileOAuthAccounts('token');
+    await client.listProfileOAuthProviders('token');
+    await client.startProfileOAuthFlow('token', {
+      providerCode: 'oauth.github',
+      redirectUri: 'http://localhost/oauth/callback',
+    });
+    await client.unbindProfileOAuthAccount(
+      'token',
+      'oauth_token_github_admin_active',
+      {
+        reason: 'Unbind from SDK spec',
+      },
+    );
     await client.getWeChatDesign('token');
     await client.getWebSocketDesign('token');
     await client.getWebSocketRuntimeDiagnostics('token');
@@ -280,6 +293,13 @@ describe('createIntegrationClient', () => {
       { path: '/integrations/oauth/tokens/oauth_token_github_admin_active' },
       {
         path: '/integrations/oauth/tokens/oauth_token_github_admin_active/revoke',
+        method: 'PATCH',
+      },
+      { path: '/integrations/oauth/profile/accounts' },
+      { path: '/integrations/oauth/profile/providers' },
+      { path: '/integrations/oauth/profile/flows', method: 'POST' },
+      {
+        path: '/integrations/oauth/profile/accounts/oauth_token_github_admin_active/unbind',
         method: 'PATCH',
       },
       { path: '/integrations/designs/wechat' },

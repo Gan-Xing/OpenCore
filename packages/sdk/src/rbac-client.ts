@@ -34,6 +34,8 @@ import type {
   UpdateUserRequest,
   UserImportResultSummary,
   UserImportTemplateSummary,
+  UserProfileActivitySummary,
+  UserProfileKickOutOtherSessionsSummary,
   UserMutationSummary,
   UserOptionSummary,
   UserPasswordMutationSummary,
@@ -77,6 +79,12 @@ export type RbacClient = {
     token: string,
     body: UpdateUserProfileRequest,
   ) => Promise<UserProfileSummary>;
+  getUserProfileActivity: (
+    token: string,
+  ) => Promise<UserProfileActivitySummary>;
+  kickOutOtherUserProfileSessions: (
+    token: string,
+  ) => Promise<UserProfileKickOutOtherSessionsSummary>;
   updateUserAvatar: (
     token: string,
     body: UploadUserAvatarRequest,
@@ -231,6 +239,18 @@ export function createRbacClient(request: SdkRequest): RbacClient {
         body,
         token,
       }),
+    getUserProfileActivity: (token) =>
+      request<UserProfileActivitySummary>('/core/users/profile/activity', {
+        token,
+      }),
+    kickOutOtherUserProfileSessions: (token) =>
+      request<UserProfileKickOutOtherSessionsSummary>(
+        '/core/users/profile/sessions/kick-out-others',
+        {
+          method: 'POST',
+          token,
+        },
+      ),
     updateUserAvatar: (token, body) =>
       request<UserProfileSummary>('/core/users/profile/avatar', {
         method: 'POST',

@@ -43,16 +43,22 @@ type PrismaUserWithRoles = {
   id: string;
   username: string;
   displayName: string;
+  mobile?: string | null;
+  email?: string | null;
+  gender?: string | null;
   passwordHash: string;
   deptId?: string | null;
+  dept?: { name: string } | null;
   enabled: boolean;
   avatarUrl?: string | null;
   avatarStorageKey?: string | null;
   avatarMimeType?: string | null;
   avatarSizeBytes?: number | null;
   avatarUpdatedAt?: Date | null;
-  roles: Array<{ role: { code: string } }>;
-  posts: Array<{ post: { code: string } }>;
+  roles: Array<{ role: { code: string; name: string } }>;
+  posts: Array<{ post: { code: string; name: string } }>;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 type PrismaUserFindManyArgs = NonNullable<
@@ -77,6 +83,7 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
     const users = await this.prisma.user.findMany({
       where,
       include: {
+        dept: true,
         roles: {
           include: {
             role: true,
@@ -147,6 +154,7 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
         },
       },
       include: {
+        dept: true,
         roles: {
           include: {
             role: true,
@@ -215,6 +223,7 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
             }),
       },
       include: {
+        dept: true,
         roles: {
           include: {
             role: true,
@@ -241,8 +250,12 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
       where: { id },
       data: {
         displayName: input.displayName,
+        mobile: input.mobile,
+        email: input.email,
+        gender: input.gender,
       },
       include: {
+        dept: true,
         roles: {
           include: {
             role: true,
@@ -273,6 +286,7 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
         passwordHash: hashSystemUserPassword(input.newPassword),
       },
       include: {
+        dept: true,
         roles: {
           include: {
             role: true,
@@ -304,6 +318,7 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
         avatarUpdatedAt: new Date(input.avatarUpdatedAt),
       },
       include: {
+        dept: true,
         roles: {
           include: {
             role: true,
@@ -332,6 +347,7 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
         avatarUpdatedAt: null,
       },
       include: {
+        dept: true,
         roles: {
           include: {
             role: true,
@@ -435,6 +451,7 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
         },
       },
       include: {
+        dept: true,
         roles: {
           include: {
             role: true,
@@ -486,6 +503,7 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
     const user = await this.prisma.user.findUnique({
       where: { id },
       include: {
+        dept: true,
         roles: {
           include: {
             role: true,
@@ -500,9 +518,13 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
     });
 
     if (!user) {
-      throw systemUserNotFound('SYSTEM_USER_NOT_FOUND', `User not found: ${id}`, {
-        userId: id,
-      });
+      throw systemUserNotFound(
+        'SYSTEM_USER_NOT_FOUND',
+        `User not found: ${id}`,
+        {
+          userId: id,
+        },
+      );
     }
 
     return user;
@@ -515,9 +537,13 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
     });
 
     if (!role) {
-      throw systemUserNotFound('SYSTEM_USER_ROLE_NOT_FOUND', `Role not found: ${code}`, {
-        roleCode: code,
-      });
+      throw systemUserNotFound(
+        'SYSTEM_USER_ROLE_NOT_FOUND',
+        `Role not found: ${code}`,
+        {
+          roleCode: code,
+        },
+      );
     }
 
     return role.id;
@@ -531,6 +557,7 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
     const users = await this.prisma.user.findMany({
       where: { id: { in: [...userIds] } },
       include: {
+        dept: true,
         roles: {
           include: {
             role: true,
@@ -575,6 +602,7 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
     const users = await this.prisma.user.findMany({
       where: { id: { in: [...userIds] } },
       include: {
+        dept: true,
         roles: {
           include: {
             role: true,
@@ -758,15 +786,23 @@ function toSystemUserSummaryRecord(
     id: user.id,
     username: user.username,
     displayName: user.displayName,
+    mobile: user.mobile ?? undefined,
+    email: user.email ?? undefined,
+    gender: user.gender ?? undefined,
     roleCodes: user.roles.map((userRole) => userRole.role.code).sort(),
+    roleNames: user.roles.map((userRole) => userRole.role.name).sort(),
     deptId: user.deptId ?? undefined,
+    deptName: user.dept?.name,
     postCodes: user.posts.map((userPost) => userPost.post.code).sort(),
+    postNames: user.posts.map((userPost) => userPost.post.name).sort(),
     avatarUrl: user.avatarUrl ?? undefined,
     avatarMimeType: user.avatarMimeType ?? undefined,
     avatarSizeBytes: user.avatarSizeBytes ?? undefined,
     avatarUpdatedAt: user.avatarUpdatedAt?.toISOString(),
     enabled: user.enabled,
     system: isSystemUser(user),
+    createdAt: user.createdAt.toISOString(),
+    updatedAt: user.updatedAt.toISOString(),
   };
 }
 

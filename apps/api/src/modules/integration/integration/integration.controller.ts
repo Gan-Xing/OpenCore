@@ -18,7 +18,10 @@ import {
 } from '@nestjs/swagger';
 import { createApiErrorBody } from '@opencore/common';
 import type { SecurityRequestWithAuth } from '@opencore/security';
-import { RequirePermission } from '../../core/rbac/permissions.decorator';
+import {
+  RequireAuthenticated,
+  RequirePermission,
+} from '../../core/rbac/permissions.decorator';
 import {
   CreateIntegrationProviderDto,
   CreateIntegrationTemplateDto,
@@ -50,6 +53,8 @@ import {
   OAuthFlowDto,
   OAuthFlowPageDto,
   OAuthFlowQueryDto,
+  OAuthProfileAccountDto,
+  OAuthProfileProviderDto,
   OAuthProviderCallbackDto,
   OAuthTokenDto,
   OAuthTokenInventorySummaryDto,
@@ -62,10 +67,12 @@ import {
   RevokeOAuthTokenDto,
   ScheduleOutboxDto,
   StartOAuthFlowDto,
+  StartOAuthProfileFlowDto,
   TestIntegrationProviderDto,
   TemplatePreviewDto,
   TestOutboxMessageDto,
   UpdateIntegrationProviderDto,
+  UnbindOAuthProfileAccountDto,
   WebSocketRuntimeDiagnosticsDto,
   WebSocketRuntimeEventDto,
   WebSocketRuntimeStreamQueryDto,
@@ -459,6 +466,57 @@ export class IntegrationController {
     return this.repository.callbackOutbox('sms', body);
   }
 
+  @Get('oauth/profile/accounts')
+  @ApiTags('Integration OAuth')
+  @RequireAuthenticated()
+  @ApiOkResponse({ type: [OAuthProfileAccountDto] })
+  listProfileOAuthAccounts(
+    @Req() request: RequestWithUser,
+  ): Promise<readonly OAuthProfileAccountDto[]> {
+    return this.repository.listProfileOAuthAccounts(
+      getAuthenticatedUserId(request),
+    );
+  }
+
+  @Get('oauth/profile/providers')
+  @ApiTags('Integration OAuth')
+  @RequireAuthenticated()
+  @ApiOkResponse({ type: [OAuthProfileProviderDto] })
+  listProfileOAuthProviders(): Promise<readonly OAuthProfileProviderDto[]> {
+    return this.repository.listProfileOAuthProviders();
+  }
+
+  @Post('oauth/profile/flows')
+  @ApiTags('Integration OAuth')
+  @RequireAuthenticated()
+  @ApiOkResponse({ type: OAuthFlowDto })
+  startProfileOAuthFlow(
+    @Req() request: RequestWithUser,
+    @Body() body: StartOAuthProfileFlowDto,
+  ): Promise<OAuthFlowDto> {
+    return this.repository.startProfileOAuthFlow(
+      getAuthenticatedUserId(request),
+      body,
+    );
+  }
+
+  @Patch('oauth/profile/accounts/:id/unbind')
+  @ApiTags('Integration OAuth')
+  @RequireAuthenticated()
+  @ApiOkResponse({ type: OAuthProfileAccountDto })
+  unbindProfileOAuthAccount(
+    @Req() request: RequestWithUser,
+    @Param('id') id: string,
+    @Body() body: UnbindOAuthProfileAccountDto,
+  ): Promise<OAuthProfileAccountDto> {
+    return this.repository.unbindProfileOAuthAccount(
+      getAuthenticatedUserId(request),
+      id,
+      getAuthenticatedUsername(request),
+      body,
+    );
+  }
+
   @Get('oauth/providers')
   @ApiTags('Integration OAuth')
   @RequirePermission('integration:oauth:read')
@@ -643,6 +701,21 @@ function getAuthenticatedUserId(request: RequestWithUser): string {
   }
 
   return userId;
+}
+
+function getAuthenticatedUsername(request: RequestWithUser): string {
+  const username = request.user?.username;
+
+  if (!username) {
+    throw new UnauthorizedException(
+      createApiErrorBody({
+        code: 'AUTH_USER_MISSING',
+        message: 'Missing authenticated user',
+      }),
+    );
+  }
+
+  return username;
 }
 
 function writeSseEvent(

@@ -660,9 +660,14 @@ async function seedUsers(bootstrapPassword: string): Promise<number> {
         id: userDefinition.id,
         username: userDefinition.username,
         displayName: userDefinition.displayName,
+        mobile: userDefinition.mobile,
+        email: userDefinition.email,
+        gender: userDefinition.gender,
         passwordHash,
         deptId: userDefinition.deptId,
         enabled: userDefinition.enabled,
+        createdAt: new Date(userDefinition.createdAt),
+        updatedAt: new Date(userDefinition.updatedAt),
       },
     });
     const roles = await prisma.role.findMany({

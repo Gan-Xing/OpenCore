@@ -1,39 +1,70 @@
 import {
   DeleteOutlined,
+  DisconnectOutlined,
+  LinkOutlined,
   LockOutlined,
+  LoginOutlined,
   ReloadOutlined,
+  SafetyCertificateOutlined,
   SaveOutlined,
   UploadOutlined,
   UserOutlined,
 } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
-import type { UserProfileSummary } from '@opencore/sdk';
+import type {
+  OAuthProfileAccountSummary,
+  OAuthProfileProviderSummary,
+  UserProfileActivitySummary,
+  UserProfileLoginActivitySummary,
+  UserProfileSessionSummary,
+  UserProfileSummary,
+} from '@opencore/sdk';
 import { history, useIntl, useModel } from '@umijs/max';
 import {
   Alert,
   Avatar,
   Button,
+  Card,
   Descriptions,
+  Empty,
   Form,
   Input,
+  Modal,
+  Progress,
+  Select,
   Space,
+  Spin,
+  Table,
+  Tabs,
   Tag,
   Typography,
   message,
 } from 'antd';
+import type { TableColumnsType } from 'antd';
 import type { ChangeEvent, CSSProperties } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   deleteOpenCoreUserAvatar,
   getOpenCoreUserProfile,
+  getOpenCoreUserProfileActivity,
+  kickOutOtherOpenCoreUserProfileSessions,
   updateOpenCoreUserAvatar,
   updateOpenCoreUserPassword,
   updateOpenCoreUserProfile,
 } from '@/services/opencore/auth';
+import {
+  listOpenCoreProfileOAuthAccounts,
+  listOpenCoreProfileOAuthProviders,
+  startOpenCoreProfileOAuthFlow,
+  unbindOpenCoreProfileOAuthAccount,
+} from '@/services/opencore/platform';
 import { removeAdminToken } from '@/services/opencore/token';
 
 type ProfileFormValues = {
   displayName: string;
+  email?: string;
+  gender?: string;
+  mobile?: string;
 };
 
 type PasswordFormValues = {
@@ -51,30 +82,36 @@ type FormatMessage = (
 const profileLayoutStyle: CSSProperties = {
   display: 'grid',
   gap: 16,
-  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))',
   alignItems: 'start',
 };
 
-const profilePanelStyle: CSSProperties = {
-  border: '1px solid rgba(5, 5, 5, 0.08)',
-  borderRadius: 8,
-  background: '#fff',
-  padding: 20,
-};
-
-const identityHeaderStyle: CSSProperties = {
+const summaryHeaderStyle: CSSProperties = {
   display: 'flex',
-  gap: 12,
+  gap: 14,
   alignItems: 'center',
   marginBottom: 20,
+};
+
+const tabSectionStyle: CSSProperties = {
+  maxWidth: 760,
+};
+
+const tableWrapStyle: CSSProperties = {
+  overflowX: 'auto',
 };
 
 const AVATAR_ACCEPT = 'image/png,image/jpeg,image/webp,image/gif';
 const AVATAR_MAX_BYTES = 1_048_576;
 const AVATAR_MIME_TYPES = new Set(AVATAR_ACCEPT.split(','));
 
-function renderTags(values: readonly string[], emptyText: string) {
-  if (values.length === 0) {
+function normalizeOptionalText(value: string | undefined): string | null {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+}
+
+function renderTags(values: readonly string[] | undefined, emptyText: string) {
+  if (!values || values.length === 0) {
     return <Typography.Text type="secondary">{emptyText}</Typography.Text>;
   }
 
@@ -85,6 +122,25 @@ function renderTags(values: readonly string[], emptyText: string) {
       ))}
     </Space>
   );
+}
+
+function getPasswordStrength(value: string | undefined) {
+  const password = value ?? '';
+  let score = 0;
+  if (password.length >= 8) score += 1;
+  if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score += 1;
+  if (/\d/.test(password)) score += 1;
+  if (/[^A-Za-z0-9]/.test(password)) score += 1;
+
+  if (score >= 4)
+    return { key: 'strong', percent: 100, status: 'success' as const };
+  if (score >= 2)
+    return { key: 'medium', percent: 60, status: 'normal' as const };
+  return {
+    key: 'weak',
+    percent: password ? 30 : 0,
+    status: 'exception' as const,
+  };
 }
 
 function readFileAsBase64(
@@ -110,7 +166,6 @@ function readFileAsBase64(
       }
 
       const commaIndex = result.indexOf(',');
-
       resolve(commaIndex >= 0 ? result.slice(commaIndex + 1) : result);
     });
     reader.addEventListener('error', () => {
@@ -132,14 +187,26 @@ export default function PersonalProfilePage() {
   const intl = useIntl();
   const [form] = Form.useForm<ProfileFormValues>();
   const [passwordForm] = Form.useForm<PasswordFormValues>();
-  const { initialState, setInitialState } = useModel('@@initialState');
+  const { setInitialState } = useModel('@@initialState');
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const watchedNewPassword = Form.useWatch('newPassword', passwordForm);
   const [profile, setProfile] = useState<UserProfileSummary>();
+  const [activity, setActivity] = useState<UserProfileActivitySummary>();
+  const [oauthAccounts, setOauthAccounts] = useState<
+    readonly OAuthProfileAccountSummary[]
+  >([]);
+  const [oauthProviders, setOauthProviders] = useState<
+    readonly OAuthProfileProviderSummary[]
+  >([]);
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string>();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [deletingAvatar, setDeletingAvatar] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
+  const [kickingOut, setKickingOut] = useState(false);
+  const [bindingProviderCode, setBindingProviderCode] = useState<string>();
+  const [unbindingTokenId, setUnbindingTokenId] = useState<string>();
   const [loadError, setLoadError] = useState<string>();
   const formatMessage: FormatMessage = useCallback(
     (id, defaultMessage, values) =>
@@ -147,6 +214,24 @@ export default function PersonalProfilePage() {
         ? intl.formatMessage({ id, defaultMessage }, values)
         : intl.formatMessage({ id, defaultMessage }),
     [intl],
+  );
+  const passwordStrength = getPasswordStrength(watchedNewPassword);
+
+  useEffect(
+    () => () => {
+      if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
+    },
+    [avatarPreviewUrl],
+  );
+
+  const formatDateTime = useCallback(
+    (value?: string) => {
+      if (!value) return '-';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return value;
+      return date.toLocaleString(intl.locale);
+    },
+    [intl.locale],
   );
 
   const syncCurrentUserProfile = useCallback(
@@ -174,30 +259,25 @@ export default function PersonalProfilePage() {
   const loadProfile = useCallback(async () => {
     setLoading(true);
     try {
-      const nextProfile = await getOpenCoreUserProfile();
+      const [nextProfile, nextActivity, nextAccounts, nextProviders] =
+        await Promise.all([
+          getOpenCoreUserProfile(),
+          getOpenCoreUserProfileActivity(),
+          listOpenCoreProfileOAuthAccounts(),
+          listOpenCoreProfileOAuthProviders(),
+        ]);
       setProfile(nextProfile);
-      form.setFieldsValue({ displayName: nextProfile.displayName });
+      setActivity(nextActivity);
+      setOauthAccounts(nextAccounts);
+      setOauthProviders(nextProviders);
+      form.setFieldsValue({
+        displayName: nextProfile.displayName,
+        email: nextProfile.email,
+        gender: nextProfile.gender,
+        mobile: nextProfile.mobile,
+      });
       setLoadError(undefined);
     } catch (error: unknown) {
-      const fallback = initialState?.currentUser
-        ? {
-            id: initialState.currentUser.id,
-            username: initialState.currentUser.username,
-            displayName: initialState.currentUser.displayName,
-            roleCodes: initialState.currentUser.roleCodes,
-            avatarUrl:
-              initialState.currentUser.avatarUrl ??
-              initialState.currentUser.avatar,
-            postCodes: [],
-            enabled: true,
-            system: false,
-          }
-        : undefined;
-
-      if (fallback) {
-        setProfile(fallback);
-        form.setFieldsValue({ displayName: fallback.displayName });
-      }
       setLoadError(
         error instanceof Error
           ? error.message
@@ -209,7 +289,7 @@ export default function PersonalProfilePage() {
     } finally {
       setLoading(false);
     }
-  }, [form, formatMessage, initialState?.currentUser]);
+  }, [form, formatMessage]);
 
   useEffect(() => {
     void loadProfile();
@@ -220,10 +300,18 @@ export default function PersonalProfilePage() {
     setSaving(true);
     try {
       const updated = await updateOpenCoreUserProfile({
-        displayName: values.displayName,
+        displayName: values.displayName.trim(),
+        email: normalizeOptionalText(values.email),
+        gender: normalizeOptionalText(values.gender),
+        mobile: normalizeOptionalText(values.mobile),
       });
       setProfile(updated);
-      form.setFieldsValue({ displayName: updated.displayName });
+      form.setFieldsValue({
+        displayName: updated.displayName,
+        email: updated.email,
+        gender: updated.gender,
+        mobile: updated.mobile,
+      });
       syncCurrentUserProfile(updated);
       setLoadError(undefined);
       message.success(
@@ -252,9 +340,7 @@ export default function PersonalProfilePage() {
     const file = event.target.files?.[0];
     event.target.value = '';
 
-    if (!file) {
-      return;
-    }
+    if (!file) return;
 
     if (!AVATAR_MIME_TYPES.has(file.type)) {
       message.error(
@@ -276,6 +362,7 @@ export default function PersonalProfilePage() {
       return;
     }
 
+    setAvatarPreviewUrl(URL.createObjectURL(file));
     setUploadingAvatar(true);
     try {
       const updated = await updateOpenCoreUserAvatar({
@@ -284,7 +371,13 @@ export default function PersonalProfilePage() {
         contentBase64: await readFileAsBase64(file, formatMessage),
       });
       setProfile(updated);
-      form.setFieldsValue({ displayName: updated.displayName });
+      form.setFieldsValue({
+        displayName: updated.displayName,
+        email: updated.email,
+        gender: updated.gender,
+        mobile: updated.mobile,
+      });
+      setAvatarPreviewUrl(undefined);
       syncCurrentUserProfile(updated);
       setLoadError(undefined);
       message.success(
@@ -312,7 +405,13 @@ export default function PersonalProfilePage() {
     try {
       const updated = await deleteOpenCoreUserAvatar();
       setProfile(updated);
-      form.setFieldsValue({ displayName: updated.displayName });
+      setAvatarPreviewUrl(undefined);
+      form.setFieldsValue({
+        displayName: updated.displayName,
+        email: updated.email,
+        gender: updated.gender,
+        mobile: updated.mobile,
+      });
       syncCurrentUserProfile(updated);
       setLoadError(undefined);
       message.success(
@@ -333,6 +432,29 @@ export default function PersonalProfilePage() {
     } finally {
       setDeletingAvatar(false);
     }
+  };
+
+  const confirmDeleteAvatar = () => {
+    Modal.confirm({
+      title: formatMessage(
+        'pages.personal.profile.confirm.removeAvatar',
+        'Remove avatar?',
+      ),
+      content: formatMessage(
+        'pages.personal.profile.confirm.removeAvatarContent',
+        'The current avatar will be removed from your account.',
+      ),
+      okText: formatMessage(
+        'pages.personal.profile.actions.removeAvatar',
+        'Remove avatar',
+      ),
+      okButtonProps: { danger: true },
+      cancelText: formatMessage(
+        'pages.personal.profile.actions.cancel',
+        'Cancel',
+      ),
+      onOk: () => handleDeleteAvatar(),
+    });
   };
 
   const handlePasswordChange = async () => {
@@ -381,9 +503,326 @@ export default function PersonalProfilePage() {
     }
   };
 
+  const handleKickOutOtherSessions = async () => {
+    setKickingOut(true);
+    try {
+      const result = await kickOutOtherOpenCoreUserProfileSessions();
+      message.success(
+        formatMessage(
+          'pages.personal.profile.messages.sessionsKicked',
+          '{count} other session(s) signed out.',
+          { count: result.kicked },
+        ),
+      );
+      await loadProfile();
+    } catch (error: unknown) {
+      message.error(
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.personal.profile.messages.sessionsKickFailure',
+              'Unable to sign out other sessions.',
+            ),
+      );
+    } finally {
+      setKickingOut(false);
+    }
+  };
+
+  const handleStartOAuthBinding = async (providerCode: string) => {
+    setBindingProviderCode(providerCode);
+    try {
+      const flow = await startOpenCoreProfileOAuthFlow({ providerCode });
+      window.open(flow.authorizationUrl, '_blank', 'noopener,noreferrer');
+      message.success(
+        formatMessage(
+          'pages.personal.profile.messages.oauthFlowStarted',
+          'Authorization page opened.',
+        ),
+      );
+      await loadProfile();
+    } catch (error: unknown) {
+      message.error(
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.personal.profile.messages.oauthFlowFailure',
+              'Unable to start account binding.',
+            ),
+      );
+    } finally {
+      setBindingProviderCode(undefined);
+    }
+  };
+
+  const confirmUnbindOAuthAccount = (account: OAuthProfileAccountSummary) => {
+    Modal.confirm({
+      title: formatMessage(
+        'pages.personal.profile.confirm.unbindAccount',
+        'Unbind account?',
+      ),
+      content: formatMessage(
+        'pages.personal.profile.confirm.unbindAccountContent',
+        'The selected account binding will be revoked.',
+      ),
+      okText: formatMessage('pages.personal.profile.actions.unbind', 'Unbind'),
+      okButtonProps: { danger: true },
+      cancelText: formatMessage(
+        'pages.personal.profile.actions.cancel',
+        'Cancel',
+      ),
+      onOk: async () => {
+        setUnbindingTokenId(account.tokenId);
+        try {
+          await unbindOpenCoreProfileOAuthAccount(account.tokenId, {
+            reason: 'Self-service account binding removed from profile center.',
+          });
+          message.success(
+            formatMessage(
+              'pages.personal.profile.messages.oauthUnbound',
+              'Account binding removed.',
+            ),
+          );
+          await loadProfile();
+        } finally {
+          setUnbindingTokenId(undefined);
+        }
+      },
+    });
+  };
+
+  const emptyText = formatMessage('pages.personal.profile.status.none', 'None');
+  const avatarSrc = avatarPreviewUrl ?? profile?.avatarUrl;
+
+  const formatGender = (value?: string) => {
+    if (value === 'female') {
+      return formatMessage('pages.personal.profile.gender.female', 'Female');
+    }
+    if (value === 'male') {
+      return formatMessage('pages.personal.profile.gender.male', 'Male');
+    }
+    if (value === 'unknown') {
+      return formatMessage('pages.personal.profile.gender.unknown', 'Unknown');
+    }
+    return '-';
+  };
+
+  const formatOAuthStatus = (value: OAuthProfileAccountSummary['status']) =>
+    ({
+      active: formatMessage(
+        'pages.personal.profile.oauth.status.active',
+        'Active',
+      ),
+      expired: formatMessage(
+        'pages.personal.profile.oauth.status.expired',
+        'Expired',
+      ),
+      revoked: formatMessage(
+        'pages.personal.profile.oauth.status.revoked',
+        'Revoked',
+      ),
+    })[value] ?? value;
+
+  const formatLoginType = (value: UserProfileLoginActivitySummary['logType']) =>
+    ({
+      'login.mobile': formatMessage(
+        'pages.personal.profile.loginType.mobile',
+        'Mobile login',
+      ),
+      'login.sms': formatMessage(
+        'pages.personal.profile.loginType.sms',
+        'SMS login',
+      ),
+      'login.social': formatMessage(
+        'pages.personal.profile.loginType.social',
+        'Social login',
+      ),
+      'login.username': formatMessage(
+        'pages.personal.profile.loginType.username',
+        'Username login',
+      ),
+      'logout.force': formatMessage(
+        'pages.personal.profile.loginType.forceLogout',
+        'Forced logout',
+      ),
+      'logout.self': formatMessage(
+        'pages.personal.profile.loginType.selfLogout',
+        'Self logout',
+      ),
+    })[value] ?? value;
+
+  const formatLoginResult = (
+    value: UserProfileLoginActivitySummary['result'],
+  ) =>
+    ({
+      account_locked: formatMessage(
+        'pages.personal.profile.loginResult.accountLocked',
+        'Account locked',
+      ),
+      bad_credentials: formatMessage(
+        'pages.personal.profile.loginResult.badCredentials',
+        'Bad credentials',
+      ),
+      captcha_code_error: formatMessage(
+        'pages.personal.profile.loginResult.captchaError',
+        'Captcha error',
+      ),
+      captcha_not_found: formatMessage(
+        'pages.personal.profile.loginResult.captchaMissing',
+        'Captcha missing',
+      ),
+      success: formatMessage(
+        'pages.personal.profile.loginResult.success',
+        'Success',
+      ),
+      user_disabled: formatMessage(
+        'pages.personal.profile.loginResult.userDisabled',
+        'User disabled',
+      ),
+    })[value] ?? value;
+
+  const sessionColumns: TableColumnsType<UserProfileSessionSummary> = [
+    {
+      title: formatMessage('pages.personal.profile.fields.session', 'Session'),
+      dataIndex: 'id',
+      render: (_, record) => (
+        <Space direction="vertical" size={0}>
+          <Typography.Text strong>{record.browser}</Typography.Text>
+          <Typography.Text type="secondary">{record.os}</Typography.Text>
+          {record.current ? (
+            <Tag color="green">
+              {formatMessage(
+                'pages.personal.profile.status.currentSession',
+                'Current session',
+              )}
+            </Tag>
+          ) : null}
+        </Space>
+      ),
+    },
+    {
+      title: formatMessage('pages.personal.profile.fields.ip', 'IP'),
+      dataIndex: 'ip',
+    },
+    {
+      title: formatMessage(
+        'pages.personal.profile.fields.lastSeenAt',
+        'Last seen',
+      ),
+      dataIndex: 'lastSeenAt',
+      render: (value: string) => formatDateTime(value),
+    },
+    {
+      title: formatMessage(
+        'pages.personal.profile.fields.expiresAt',
+        'Expires at',
+      ),
+      dataIndex: 'expiresAt',
+      render: (value: string) => formatDateTime(value),
+    },
+  ];
+
+  const loginLogColumns: TableColumnsType<UserProfileLoginActivitySummary> = [
+    {
+      title: formatMessage('pages.personal.profile.fields.time', 'Time'),
+      dataIndex: 'createdAt',
+      render: (value: string) => formatDateTime(value),
+    },
+    {
+      title: formatMessage('pages.personal.profile.fields.loginType', 'Type'),
+      dataIndex: 'logType',
+      render: (value: UserProfileLoginActivitySummary['logType']) =>
+        formatLoginType(value),
+    },
+    {
+      title: formatMessage('pages.personal.profile.fields.result', 'Result'),
+      dataIndex: 'result',
+      render: (value: UserProfileLoginActivitySummary['result'], record) => (
+        <Tag color={record.success ? 'green' : 'red'}>
+          {formatLoginResult(value)}
+        </Tag>
+      ),
+    },
+    {
+      title: formatMessage('pages.personal.profile.fields.ip', 'IP'),
+      dataIndex: 'ip',
+    },
+    {
+      title: formatMessage('pages.personal.profile.fields.device', 'Device'),
+      dataIndex: 'browser',
+      render: (_, record) => `${record.browser} / ${record.os}`,
+    },
+  ];
+
+  const oauthColumns: TableColumnsType<OAuthProfileAccountSummary> = [
+    {
+      title: formatMessage(
+        'pages.personal.profile.oauth.fields.channel',
+        'Binding channel',
+      ),
+      dataIndex: 'providerName',
+      render: (_, record) => (
+        <Space direction="vertical" size={0}>
+          <Typography.Text strong>{record.providerName}</Typography.Text>
+          <Typography.Text type="secondary">
+            {record.providerCode}
+          </Typography.Text>
+        </Space>
+      ),
+    },
+    {
+      title: formatMessage(
+        'pages.personal.profile.oauth.fields.account',
+        'External account',
+      ),
+      dataIndex: 'providerAccountId',
+    },
+    {
+      title: formatMessage('pages.personal.profile.fields.status', 'Status'),
+      dataIndex: 'status',
+      render: (value: OAuthProfileAccountSummary['status']) => (
+        <Tag
+          color={
+            value === 'active'
+              ? 'green'
+              : value === 'revoked'
+                ? 'red'
+                : 'orange'
+          }
+        >
+          {formatOAuthStatus(value)}
+        </Tag>
+      ),
+    },
+    {
+      title: formatMessage(
+        'pages.personal.profile.fields.createdAt',
+        'Created at',
+      ),
+      dataIndex: 'createdAt',
+      render: (value: string) => formatDateTime(value),
+    },
+    {
+      title: formatMessage('pages.personal.profile.actions.column', 'Action'),
+      key: 'action',
+      render: (_, record) => (
+        <Button
+          danger
+          disabled={record.status !== 'active'}
+          icon={<DisconnectOutlined />}
+          loading={unbindingTokenId === record.tokenId}
+          size="small"
+          onClick={() => confirmUnbindOAuthAccount(record)}
+        >
+          {formatMessage('pages.personal.profile.actions.unbind', 'Unbind')}
+        </Button>
+      ),
+    },
+  ];
+
   return (
     <PageContainer
-      title={formatMessage('pages.personal.profile.title', 'Profile')}
+      title={formatMessage('pages.personal.profile.title', 'Profile center')}
       extra={[
         <Button
           key="reload"
@@ -395,26 +834,37 @@ export default function PersonalProfilePage() {
       ]}
     >
       <div style={profileLayoutStyle}>
-        <section style={profilePanelStyle}>
-          <div style={identityHeaderStyle}>
+        <Card loading={loading && !profile}>
+          <div style={summaryHeaderStyle}>
             <Avatar
-              size={56}
-              src={profile?.avatarUrl}
-              icon={profile?.avatarUrl ? undefined : <UserOutlined />}
+              shape="square"
+              size={72}
+              src={avatarSrc}
+              icon={avatarSrc ? undefined : <UserOutlined />}
             />
             <div>
               <Typography.Title level={4} style={{ margin: 0 }}>
-                {profile?.displayName ?? 'OpenCore User'}
+                {profile?.displayName ?? '-'}
               </Typography.Title>
               <Typography.Text type="secondary">
-                {profile?.username ??
-                  formatMessage(
-                    'pages.personal.profile.status.unknown',
-                    'unknown',
-                  )}
+                {profile?.username ?? '-'}
               </Typography.Text>
+              <div style={{ marginTop: 8 }}>
+                <Tag color={profile?.enabled ? 'green' : 'red'}>
+                  {profile?.enabled
+                    ? formatMessage(
+                        'pages.personal.profile.status.enabled',
+                        'Enabled',
+                      )
+                    : formatMessage(
+                        'pages.personal.profile.status.disabled',
+                        'Disabled',
+                      )}
+                </Tag>
+              </div>
             </div>
           </div>
+
           <input
             ref={avatarInputRef}
             type="file"
@@ -424,6 +874,7 @@ export default function PersonalProfilePage() {
           />
           <Space style={{ marginBottom: 16 }} wrap>
             <Button
+              disabled={!profile}
               icon={<UploadOutlined />}
               loading={uploadingAvatar}
               onClick={() => avatarInputRef.current?.click()}
@@ -438,7 +889,7 @@ export default function PersonalProfilePage() {
               disabled={!profile?.avatarUrl}
               icon={<DeleteOutlined />}
               loading={deletingAvatar}
-              onClick={() => void handleDeleteAvatar()}
+              onClick={confirmDeleteAvatar}
             >
               {formatMessage(
                 'pages.personal.profile.actions.removeAvatar',
@@ -446,15 +897,8 @@ export default function PersonalProfilePage() {
               )}
             </Button>
           </Space>
+
           <Descriptions column={1} size="small" bordered>
-            <Descriptions.Item
-              label={formatMessage(
-                'pages.personal.profile.fields.userId',
-                'User ID',
-              )}
-            >
-              {profile?.id ?? '-'}
-            </Descriptions.Item>
             <Descriptions.Item
               label={formatMessage(
                 'pages.personal.profile.fields.username',
@@ -469,7 +913,7 @@ export default function PersonalProfilePage() {
                 'Department',
               )}
             >
-              {profile?.deptId ?? '-'}
+              {profile?.deptName ?? '-'}
             </Descriptions.Item>
             <Descriptions.Item
               label={formatMessage(
@@ -477,10 +921,7 @@ export default function PersonalProfilePage() {
                 'Roles',
               )}
             >
-              {renderTags(
-                profile?.roleCodes ?? [],
-                formatMessage('pages.personal.profile.status.none', 'None'),
-              )}
+              {renderTags(profile?.roleNames, emptyText)}
             </Descriptions.Item>
             <Descriptions.Item
               label={formatMessage(
@@ -488,189 +929,498 @@ export default function PersonalProfilePage() {
                 'Posts',
               )}
             >
-              {renderTags(
-                profile?.postCodes ?? [],
-                formatMessage('pages.personal.profile.status.none', 'None'),
+              {renderTags(profile?.postNames, emptyText)}
+            </Descriptions.Item>
+            <Descriptions.Item
+              label={formatMessage(
+                'pages.personal.profile.fields.mobile',
+                'Mobile',
               )}
+            >
+              {profile?.mobile ?? '-'}
+            </Descriptions.Item>
+            <Descriptions.Item
+              label={formatMessage(
+                'pages.personal.profile.fields.email',
+                'Email',
+              )}
+            >
+              {profile?.email ?? '-'}
+            </Descriptions.Item>
+            <Descriptions.Item
+              label={formatMessage(
+                'pages.personal.profile.fields.gender',
+                'Gender',
+              )}
+            >
+              {formatGender(profile?.gender)}
+            </Descriptions.Item>
+            <Descriptions.Item
+              label={formatMessage(
+                'pages.personal.profile.fields.createdAt',
+                'Created at',
+              )}
+            >
+              {formatDateTime(profile?.createdAt)}
+            </Descriptions.Item>
+            <Descriptions.Item
+              label={formatMessage(
+                'pages.personal.profile.fields.updatedAt',
+                'Updated at',
+              )}
+            >
+              {formatDateTime(profile?.updatedAt)}
+            </Descriptions.Item>
+            <Descriptions.Item
+              label={formatMessage(
+                'pages.personal.profile.fields.avatarMeta',
+                'Avatar metadata',
+              )}
+            >
+              {profile?.avatarMimeType
+                ? `${profile.avatarMimeType} / ${profile.avatarSizeBytes ?? 0} B`
+                : '-'}
             </Descriptions.Item>
           </Descriptions>
-        </section>
+        </Card>
 
-        <section style={profilePanelStyle}>
+        <Card>
           {loadError ? (
             <Alert
-              type="warning"
+              type="error"
               showIcon
               message={formatMessage(
-                'pages.personal.profile.load.sessionFallback',
-                'Profile data is using the current session fallback.',
+                'pages.personal.profile.load.failure',
+                'Unable to load profile.',
               )}
               description={loadError}
               style={{ marginBottom: 16 }}
             />
           ) : null}
-          <Form<ProfileFormValues>
-            form={form}
-            layout="vertical"
-            disabled={loading}
-            onFinish={() => void handleSave()}
-          >
-            <Form.Item
-              label={formatMessage(
-                'pages.personal.profile.fields.displayName',
-                'Display name',
-              )}
-              name="displayName"
-              rules={[
-                {
-                  required: true,
-                  message: formatMessage(
-                    'pages.personal.profile.validation.displayNameRequired',
-                    'Display name is required.',
-                  ),
-                },
-                {
-                  max: 80,
-                  message: formatMessage(
-                    'pages.personal.profile.validation.displayNameMax',
-                    'Display name must be 80 characters or fewer.',
-                  ),
-                },
-              ]}
-            >
-              <Input maxLength={80} autoComplete="name" />
-            </Form.Item>
-            <Button
-              type="primary"
-              htmlType="submit"
-              icon={<SaveOutlined />}
-              loading={saving}
-            >
-              {formatMessage('pages.personal.profile.actions.save', 'Save')}
-            </Button>
-          </Form>
-        </section>
 
-        <section style={profilePanelStyle}>
-          <Typography.Title level={5} style={{ marginTop: 0 }}>
-            {formatMessage(
-              'pages.personal.profile.password.title',
-              'Change password',
-            )}
-          </Typography.Title>
-          <Form<PasswordFormValues>
-            form={passwordForm}
-            layout="vertical"
-            onFinish={() => void handlePasswordChange()}
-          >
-            <Form.Item
-              label={formatMessage(
-                'pages.personal.profile.password.current',
-                'Current password',
-              )}
-              name="oldPassword"
-              rules={[
+          <Spin spinning={loading}>
+            <Tabs
+              items={[
                 {
-                  required: true,
-                  message: formatMessage(
-                    'pages.personal.profile.validation.currentPasswordRequired',
-                    'Current password is required.',
+                  key: 'basic',
+                  label: formatMessage(
+                    'pages.personal.profile.tabs.basic',
+                    'Basic profile',
+                  ),
+                  children: (
+                    <div style={tabSectionStyle}>
+                      <Form<ProfileFormValues>
+                        form={form}
+                        layout="vertical"
+                        disabled={loading || !profile}
+                        onFinish={() => void handleSave()}
+                      >
+                        <Form.Item
+                          label={formatMessage(
+                            'pages.personal.profile.fields.displayName',
+                            'Display name',
+                          )}
+                          name="displayName"
+                          rules={[
+                            {
+                              required: true,
+                              message: formatMessage(
+                                'pages.personal.profile.validation.displayNameRequired',
+                                'Display name is required.',
+                              ),
+                            },
+                            {
+                              max: 80,
+                              message: formatMessage(
+                                'pages.personal.profile.validation.displayNameMax',
+                                'Display name must be 80 characters or fewer.',
+                              ),
+                            },
+                          ]}
+                        >
+                          <Input maxLength={80} autoComplete="name" />
+                        </Form.Item>
+                        <Form.Item
+                          label={formatMessage(
+                            'pages.personal.profile.fields.mobile',
+                            'Mobile',
+                          )}
+                          name="mobile"
+                          rules={[
+                            {
+                              max: 32,
+                              message: formatMessage(
+                                'pages.personal.profile.validation.mobileMax',
+                                'Mobile must be 32 characters or fewer.',
+                              ),
+                            },
+                          ]}
+                        >
+                          <Input maxLength={32} autoComplete="tel" />
+                        </Form.Item>
+                        <Form.Item
+                          label={formatMessage(
+                            'pages.personal.profile.fields.email',
+                            'Email',
+                          )}
+                          name="email"
+                          rules={[
+                            {
+                              type: 'email',
+                              message: formatMessage(
+                                'pages.personal.profile.validation.emailInvalid',
+                                'Email format is invalid.',
+                              ),
+                            },
+                            {
+                              max: 120,
+                              message: formatMessage(
+                                'pages.personal.profile.validation.emailMax',
+                                'Email must be 120 characters or fewer.',
+                              ),
+                            },
+                          ]}
+                        >
+                          <Input maxLength={120} autoComplete="email" />
+                        </Form.Item>
+                        <Form.Item
+                          label={formatMessage(
+                            'pages.personal.profile.fields.gender',
+                            'Gender',
+                          )}
+                          name="gender"
+                        >
+                          <Select
+                            allowClear
+                            options={[
+                              {
+                                label: formatMessage(
+                                  'pages.personal.profile.gender.female',
+                                  'Female',
+                                ),
+                                value: 'female',
+                              },
+                              {
+                                label: formatMessage(
+                                  'pages.personal.profile.gender.male',
+                                  'Male',
+                                ),
+                                value: 'male',
+                              },
+                              {
+                                label: formatMessage(
+                                  'pages.personal.profile.gender.unknown',
+                                  'Unknown',
+                                ),
+                                value: 'unknown',
+                              },
+                            ]}
+                          />
+                        </Form.Item>
+                        <Button
+                          type="primary"
+                          htmlType="submit"
+                          icon={<SaveOutlined />}
+                          loading={saving}
+                        >
+                          {formatMessage(
+                            'pages.personal.profile.actions.save',
+                            'Save',
+                          )}
+                        </Button>
+                      </Form>
+                    </div>
                   ),
                 },
-              ]}
-            >
-              <Input.Password autoComplete="current-password" />
-            </Form.Item>
-            <Form.Item
-              label={formatMessage(
-                'pages.personal.profile.password.new',
-                'New password',
-              )}
-              name="newPassword"
-              dependencies={['oldPassword']}
-              rules={[
                 {
-                  required: true,
-                  message: formatMessage(
-                    'pages.personal.profile.validation.newPasswordRequired',
-                    'New password is required.',
+                  key: 'security',
+                  label: formatMessage(
+                    'pages.personal.profile.tabs.security',
+                    'Security settings',
                   ),
-                },
-                {
-                  min: 6,
-                  message: formatMessage(
-                    'pages.personal.profile.validation.newPasswordMin',
-                    'New password must be at least 6 characters.',
-                  ),
-                },
-                ({ getFieldValue }) => ({
-                  validator(_, value) {
-                    if (!value || value !== getFieldValue('oldPassword')) {
-                      return Promise.resolve();
-                    }
+                  children: (
+                    <div style={tabSectionStyle}>
+                      <Alert
+                        type="info"
+                        showIcon
+                        icon={<SafetyCertificateOutlined />}
+                        message={formatMessage(
+                          'pages.personal.profile.password.policy',
+                          'After password change, active sessions are revoked and you must sign in again.',
+                        )}
+                        style={{ marginBottom: 16 }}
+                      />
+                      <Form<PasswordFormValues>
+                        form={passwordForm}
+                        layout="vertical"
+                        onFinish={() => void handlePasswordChange()}
+                      >
+                        <Form.Item
+                          label={formatMessage(
+                            'pages.personal.profile.password.current',
+                            'Current password',
+                          )}
+                          name="oldPassword"
+                          rules={[
+                            {
+                              required: true,
+                              message: formatMessage(
+                                'pages.personal.profile.validation.currentPasswordRequired',
+                                'Current password is required.',
+                              ),
+                            },
+                          ]}
+                        >
+                          <Input.Password autoComplete="current-password" />
+                        </Form.Item>
+                        <Form.Item
+                          label={formatMessage(
+                            'pages.personal.profile.password.new',
+                            'New password',
+                          )}
+                          name="newPassword"
+                          dependencies={['oldPassword']}
+                          rules={[
+                            {
+                              required: true,
+                              message: formatMessage(
+                                'pages.personal.profile.validation.newPasswordRequired',
+                                'New password is required.',
+                              ),
+                            },
+                            {
+                              min: 6,
+                              message: formatMessage(
+                                'pages.personal.profile.validation.newPasswordMin',
+                                'New password must be at least 6 characters.',
+                              ),
+                            },
+                            ({ getFieldValue }) => ({
+                              validator(_, value) {
+                                if (
+                                  !value ||
+                                  value !== getFieldValue('oldPassword')
+                                ) {
+                                  return Promise.resolve();
+                                }
 
-                    return Promise.reject(
-                      new Error(
-                        formatMessage(
-                          'pages.personal.profile.validation.newPasswordDifferent',
-                          'New password must be different from current password.',
-                        ),
-                      ),
-                    );
-                  },
-                }),
-              ]}
-            >
-              <Input.Password autoComplete="new-password" />
-            </Form.Item>
-            <Form.Item
-              label={formatMessage(
-                'pages.personal.profile.password.confirm',
-                'Confirm password',
-              )}
-              name="confirmPassword"
-              dependencies={['newPassword']}
-              rules={[
-                {
-                  required: true,
-                  message: formatMessage(
-                    'pages.personal.profile.validation.confirmPasswordRequired',
-                    'Confirm password is required.',
+                                return Promise.reject(
+                                  new Error(
+                                    formatMessage(
+                                      'pages.personal.profile.validation.newPasswordDifferent',
+                                      'New password must be different from current password.',
+                                    ),
+                                  ),
+                                );
+                              },
+                            }),
+                          ]}
+                        >
+                          <Input.Password autoComplete="new-password" />
+                        </Form.Item>
+                        <Space
+                          direction="vertical"
+                          style={{ width: '100%', marginBottom: 16 }}
+                        >
+                          <Typography.Text type="secondary">
+                            {formatMessage(
+                              `pages.personal.profile.password.strength.${passwordStrength.key}`,
+                              passwordStrength.key,
+                            )}
+                          </Typography.Text>
+                          <Progress
+                            percent={passwordStrength.percent}
+                            showInfo={false}
+                            status={passwordStrength.status}
+                          />
+                        </Space>
+                        <Form.Item
+                          label={formatMessage(
+                            'pages.personal.profile.password.confirm',
+                            'Confirm password',
+                          )}
+                          name="confirmPassword"
+                          dependencies={['newPassword']}
+                          rules={[
+                            {
+                              required: true,
+                              message: formatMessage(
+                                'pages.personal.profile.validation.confirmPasswordRequired',
+                                'Confirm password is required.',
+                              ),
+                            },
+                            ({ getFieldValue }) => ({
+                              validator(_, value) {
+                                if (
+                                  !value ||
+                                  value === getFieldValue('newPassword')
+                                ) {
+                                  return Promise.resolve();
+                                }
+
+                                return Promise.reject(
+                                  new Error(
+                                    formatMessage(
+                                      'pages.personal.profile.validation.passwordMismatch',
+                                      'The two passwords do not match.',
+                                    ),
+                                  ),
+                                );
+                              },
+                            }),
+                          ]}
+                        >
+                          <Input.Password autoComplete="new-password" />
+                        </Form.Item>
+                        <Space wrap>
+                          <Button
+                            type="primary"
+                            htmlType="submit"
+                            icon={<LockOutlined />}
+                            loading={changingPassword}
+                          >
+                            {formatMessage(
+                              'pages.personal.profile.actions.changePassword',
+                              'Change password',
+                            )}
+                          </Button>
+                          <Button
+                            icon={<LoginOutlined />}
+                            loading={kickingOut}
+                            onClick={() => void handleKickOutOtherSessions()}
+                          >
+                            {formatMessage(
+                              'pages.personal.profile.actions.kickOutOthers',
+                              'Sign out other devices',
+                            )}
+                          </Button>
+                        </Space>
+                      </Form>
+                    </div>
                   ),
                 },
-                ({ getFieldValue }) => ({
-                  validator(_, value) {
-                    if (!value || value === getFieldValue('newPassword')) {
-                      return Promise.resolve();
-                    }
-
-                    return Promise.reject(
-                      new Error(
-                        formatMessage(
-                          'pages.personal.profile.validation.passwordMismatch',
-                          'The two passwords do not match.',
-                        ),
-                      ),
-                    );
-                  },
-                }),
+                {
+                  key: 'binding',
+                  label: formatMessage(
+                    'pages.personal.profile.tabs.bindings',
+                    'Account binding',
+                  ),
+                  children: (
+                    <Space
+                      direction="vertical"
+                      size={16}
+                      style={{ width: '100%' }}
+                    >
+                      <Space wrap>
+                        {oauthProviders.map((provider) => (
+                          <Button
+                            key={provider.code}
+                            icon={<LinkOutlined />}
+                            loading={bindingProviderCode === provider.code}
+                            onClick={() =>
+                              void handleStartOAuthBinding(provider.code)
+                            }
+                          >
+                            {formatMessage(
+                              'pages.personal.profile.actions.bindChannel',
+                              'Bind {name}',
+                              { name: provider.name },
+                            )}
+                          </Button>
+                        ))}
+                      </Space>
+                      {oauthProviders.length === 0 ? (
+                        <Empty
+                          image={Empty.PRESENTED_IMAGE_SIMPLE}
+                          description={formatMessage(
+                            'pages.personal.profile.oauth.emptyProviders',
+                            'No enabled account binding channel.',
+                          )}
+                        />
+                      ) : null}
+                      <div style={tableWrapStyle}>
+                        <Table<OAuthProfileAccountSummary>
+                          columns={oauthColumns}
+                          dataSource={[...oauthAccounts]}
+                          locale={{
+                            emptyText: formatMessage(
+                              'pages.personal.profile.oauth.emptyAccounts',
+                              'No account binding yet.',
+                            ),
+                          }}
+                          pagination={false}
+                          rowKey="tokenId"
+                          size="small"
+                        />
+                      </div>
+                    </Space>
+                  ),
+                },
+                {
+                  key: 'activity',
+                  label: formatMessage(
+                    'pages.personal.profile.tabs.activity',
+                    'Login activity',
+                  ),
+                  children: (
+                    <Space
+                      direction="vertical"
+                      size={20}
+                      style={{ width: '100%' }}
+                    >
+                      <div>
+                        <Typography.Title level={5}>
+                          {formatMessage(
+                            'pages.personal.profile.activity.sessions',
+                            'Current sessions',
+                          )}
+                        </Typography.Title>
+                        <div style={tableWrapStyle}>
+                          <Table<UserProfileSessionSummary>
+                            columns={sessionColumns}
+                            dataSource={[...(activity?.sessions ?? [])]}
+                            locale={{
+                              emptyText: formatMessage(
+                                'pages.personal.profile.activity.emptySessions',
+                                'No active session.',
+                              ),
+                            }}
+                            pagination={false}
+                            rowKey="id"
+                            size="small"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Typography.Title level={5}>
+                          {formatMessage(
+                            'pages.personal.profile.activity.loginLogs',
+                            'Recent login records',
+                          )}
+                        </Typography.Title>
+                        <div style={tableWrapStyle}>
+                          <Table<UserProfileLoginActivitySummary>
+                            columns={loginLogColumns}
+                            dataSource={[...(activity?.loginLogs ?? [])]}
+                            locale={{
+                              emptyText: formatMessage(
+                                'pages.personal.profile.activity.emptyLoginLogs',
+                                'No login record.',
+                              ),
+                            }}
+                            pagination={false}
+                            rowKey="id"
+                            size="small"
+                          />
+                        </div>
+                      </div>
+                    </Space>
+                  ),
+                },
               ]}
-            >
-              <Input.Password autoComplete="new-password" />
-            </Form.Item>
-            <Button
-              type="primary"
-              htmlType="submit"
-              icon={<LockOutlined />}
-              loading={changingPassword}
-            >
-              {formatMessage(
-                'pages.personal.profile.actions.changePassword',
-                'Change password',
-              )}
-            </Button>
-          </Form>
-        </section>
+            />
+          </Spin>
+        </Card>
       </div>
     </PageContainer>
   );

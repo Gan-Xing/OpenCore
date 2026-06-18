@@ -10,14 +10,32 @@ export class UserSummaryDto {
   @ApiProperty()
   displayName!: string;
 
+  @ApiProperty({ required: false, nullable: true, type: String })
+  mobile?: string;
+
+  @ApiProperty({ required: false, nullable: true, type: String })
+  email?: string;
+
+  @ApiProperty({ required: false, nullable: true, type: String })
+  gender?: string;
+
   @ApiProperty({ type: [String] })
   roleCodes!: readonly string[];
+
+  @ApiProperty({ type: [String] })
+  roleNames!: readonly string[];
 
   @ApiProperty({ required: false, nullable: true, type: String })
   deptId?: string;
 
+  @ApiProperty({ required: false, nullable: true, type: String })
+  deptName?: string;
+
   @ApiProperty({ type: [String] })
   postCodes!: readonly string[];
+
+  @ApiProperty({ type: [String] })
+  postNames!: readonly string[];
 
   @ApiProperty({ required: false, nullable: true, type: String })
   avatarUrl?: string;
@@ -36,6 +54,12 @@ export class UserSummaryDto {
 
   @ApiProperty()
   system!: boolean;
+
+  @ApiProperty()
+  createdAt!: string;
+
+  @ApiProperty()
+  updatedAt!: string;
 }
 
 export class UserOptionDto {
@@ -130,6 +154,15 @@ export class UserProfileDto extends UserSummaryDto {}
 export class UpdateUserProfileDto {
   @ApiProperty({ required: false })
   displayName?: string;
+
+  @ApiProperty({ required: false })
+  mobile?: string;
+
+  @ApiProperty({ required: false })
+  email?: string;
+
+  @ApiProperty({ required: false })
+  gender?: string;
 }
 
 export class UploadUserAvatarDto {

@@ -380,10 +380,12 @@ if (
   !authService.includes('queryCurrentOpenCoreUser') ||
   !authService.includes('logoutFromOpenCore') ||
   !authService.includes('getOpenCoreUserProfile') ||
+  !authService.includes('getOpenCoreUserProfileActivity') ||
   !authService.includes('updateOpenCoreUserProfile') ||
   !authService.includes('updateOpenCoreUserAvatar') ||
   !authService.includes('deleteOpenCoreUserAvatar') ||
   !authService.includes('updateOpenCoreUserPassword') ||
+  !authService.includes('kickOutOtherOpenCoreUserProfileSessions') ||
   !authService.includes('getRequiredAdminToken') ||
   !authService.includes('avatar: user.avatarUrl')
 ) {
@@ -1380,31 +1382,67 @@ if (
 
 if (
   !profilePage.includes('getOpenCoreUserProfile') ||
+  !profilePage.includes('getOpenCoreUserProfileActivity') ||
   !profilePage.includes('updateOpenCoreUserProfile') ||
   !profilePage.includes('updateOpenCoreUserAvatar') ||
   !profilePage.includes('deleteOpenCoreUserAvatar') ||
   !profilePage.includes('updateOpenCoreUserPassword') ||
+  !profilePage.includes('kickOutOtherOpenCoreUserProfileSessions') ||
+  !profilePage.includes('listOpenCoreProfileOAuthAccounts') ||
+  !profilePage.includes('listOpenCoreProfileOAuthProviders') ||
+  !profilePage.includes('startOpenCoreProfileOAuthFlow') ||
+  !profilePage.includes('unbindOpenCoreProfileOAuthAccount') ||
+  profilePage.includes('sessionFallback') ||
   !profilePage.includes('Upload avatar') ||
   !profilePage.includes('Remove avatar') ||
   !profilePage.includes('Avatar updated.') ||
   !profilePage.includes('Avatar removed.') ||
   !profilePage.includes('avatarUrl') ||
   !profilePage.includes('AVATAR_ACCEPT') ||
+  !profilePage.includes('Basic profile') ||
+  !profilePage.includes('Security settings') ||
+  !profilePage.includes('Account binding') ||
+  !profilePage.includes('Login activity') ||
   !profilePage.includes('Display name') ||
+  !profilePage.includes('Mobile') ||
+  !profilePage.includes('Email') ||
+  !profilePage.includes('Gender') ||
   !profilePage.includes('Change password') ||
   !profilePage.includes('Current password') ||
   !profilePage.includes('New password') ||
   !profilePage.includes('Confirm password') ||
+  !profilePage.includes('Sign out other devices') ||
+  !profilePage.includes('No account binding yet.') ||
+  !profilePage.includes('Recent login records') ||
   !profilePage.includes('removeAdminToken') ||
   !profilePage.includes('/user/login') ||
   !profilePage.includes('setInitialState') ||
   !profilePage.includes('Profile saved.') ||
   !profilePage.includes('Password changed.') ||
-  !profilePage.includes('postCodes') ||
-  !profilePage.includes('roleCodes')
+  !profilePage.includes('postNames') ||
+  !profilePage.includes('roleNames')
 ) {
   throw new Error(
-    'Admin personal profile page must load and update the authenticated OpenCore profile.',
+    'Admin personal profile page must expose live profile center tabs, OAuth binding, activity and no session fallback.',
+  );
+}
+
+if (
+  !opencorePlatformService.includes(
+    'integrationClient.listProfileOAuthAccounts',
+  ) ||
+  !opencorePlatformService.includes(
+    'integrationClient.listProfileOAuthProviders',
+  ) ||
+  !opencorePlatformService.includes(
+    'integrationClient.startProfileOAuthFlow',
+  ) ||
+  !opencorePlatformService.includes(
+    'integrationClient.unbindProfileOAuthAccount',
+  )
+) {
+  throw new Error(
+    'Admin profile OAuth service must use profile-scoped OAuth SDK APIs without management-provider fallback.',
   );
 }
 

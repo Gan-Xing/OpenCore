@@ -8,6 +8,8 @@ import {
   type UpdateUserPasswordRequest,
   type UpdateUserProfileRequest,
   type UserPasswordMutationSummary,
+  type UserProfileActivitySummary,
+  type UserProfileKickOutOtherSessionsSummary,
   type UserProfileSummary,
 } from '@opencore/sdk';
 import {
@@ -56,6 +58,10 @@ export async function getOpenCoreUserProfile(): Promise<UserProfileSummary> {
   return authClient.getUserProfile(getRequiredAdminToken());
 }
 
+export async function getOpenCoreUserProfileActivity(): Promise<UserProfileActivitySummary> {
+  return authClient.getUserProfileActivity(getRequiredAdminToken());
+}
+
 export async function updateOpenCoreUserProfile(
   body: UpdateUserProfileRequest,
 ): Promise<UserProfileSummary> {
@@ -76,4 +82,8 @@ export async function updateOpenCoreUserPassword(
   body: UpdateUserPasswordRequest,
 ): Promise<UserPasswordMutationSummary> {
   return authClient.updateUserPassword(getRequiredAdminToken(), body);
+}
+
+export async function kickOutOtherOpenCoreUserProfileSessions(): Promise<UserProfileKickOutOtherSessionsSummary> {
+  return authClient.kickOutOtherUserProfileSessions(getRequiredAdminToken());
 }

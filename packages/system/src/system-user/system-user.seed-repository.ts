@@ -128,6 +128,8 @@ export class SeedSystemUserRepository extends SystemUserRepository {
       postCodes: [...input.postCodes],
       enabled: input.enabled,
       system: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
     this.users = [...this.users, user];
     return cloneSystemUserSummary(user);
@@ -160,6 +162,7 @@ export class SeedSystemUserRepository extends SystemUserRepository {
       ? hashSystemUserPassword(input.password)
       : user.passwordHash;
     user.enabled = input.enabled ?? user.enabled;
+    user.updatedAt = new Date().toISOString();
 
     return cloneSystemUserSummary(user);
   }
@@ -172,6 +175,13 @@ export class SeedSystemUserRepository extends SystemUserRepository {
     const input = normalizeUpdateSystemUserProfileInput(body);
 
     user.displayName = input.displayName ?? user.displayName;
+    user.mobile =
+      input.mobile === undefined ? user.mobile : (input.mobile ?? undefined);
+    user.email =
+      input.email === undefined ? user.email : (input.email ?? undefined);
+    user.gender =
+      input.gender === undefined ? user.gender : (input.gender ?? undefined);
+    user.updatedAt = new Date().toISOString();
 
     return cloneSystemUserSummary(user);
   }
@@ -185,6 +195,7 @@ export class SeedSystemUserRepository extends SystemUserRepository {
 
     assertSystemUserPasswordChangeAllowed(user.passwordHash, input);
     user.passwordHash = hashSystemUserPassword(input.newPassword);
+    user.updatedAt = new Date().toISOString();
 
     return cloneSystemUserSummary(user);
   }
@@ -200,6 +211,7 @@ export class SeedSystemUserRepository extends SystemUserRepository {
     user.avatarMimeType = input.avatarMimeType;
     user.avatarSizeBytes = input.avatarSizeBytes;
     user.avatarUpdatedAt = input.avatarUpdatedAt;
+    user.updatedAt = new Date().toISOString();
 
     return cloneSystemUserSummary(user);
   }
@@ -212,6 +224,7 @@ export class SeedSystemUserRepository extends SystemUserRepository {
     user.avatarMimeType = undefined;
     user.avatarSizeBytes = undefined;
     user.avatarUpdatedAt = undefined;
+    user.updatedAt = new Date().toISOString();
 
     return cloneSystemUserSummary(user);
   }
@@ -237,6 +250,7 @@ export class SeedSystemUserRepository extends SystemUserRepository {
 
     for (const user of users) {
       user.enabled = input.enabled;
+      user.updatedAt = new Date().toISOString();
     }
 
     return {
@@ -319,6 +333,7 @@ export class SeedSystemUserRepository extends SystemUserRepository {
           (candidate) => candidate !== roleCode,
         );
       }
+      user.updatedAt = new Date().toISOString();
     }
 
     return createRoleUserAssignment(roleCode, await this.listUsers());
@@ -328,9 +343,13 @@ export class SeedSystemUserRepository extends SystemUserRepository {
     const user = this.users.find((candidate) => candidate.id === id);
 
     if (!user) {
-      throw systemUserNotFound('SYSTEM_USER_NOT_FOUND', `User not found: ${id}`, {
-        userId: id,
-      });
+      throw systemUserNotFound(
+        'SYSTEM_USER_NOT_FOUND',
+        `User not found: ${id}`,
+        {
+          userId: id,
+        },
+      );
     }
 
     return user;

@@ -133,12 +133,15 @@ import {
   type OAuthCallbackAuditSummary,
   type OAuthCallbackContractSummary,
   type OAuthFlowSummary,
+  type OAuthProfileAccountSummary,
+  type OAuthProfileProviderSummary,
   type OAuthTokenInventorySummary,
   type OAuthTokenQueryRequest,
   type OAuthTokenSummary,
   type PublishWebSocketRuntimeEventRequest,
   type PreviewTemplateRequest,
   type RevokeOAuthTokenRequest,
+  type StartOAuthProfileFlowRequest,
   type TemplatePreviewSummary,
   type TestOutboxMessageRequest,
   type WebSocketRuntimeDiagnosticsSummary,
@@ -204,6 +207,7 @@ import {
   type ScheduleOutboxRequest,
   type SetUserStatusRequest,
   type TriggerJobRequest,
+  type UnbindOAuthProfileAccountRequest,
   type UpdateSystemDeptRequest,
   type UpdateSystemDeptOrderRequest,
   type UpdateDictItemRequest,
@@ -1789,6 +1793,35 @@ export function revokeOpenCoreOAuthToken(
   body?: RevokeOAuthTokenRequest,
 ): Promise<OAuthTokenSummary> {
   return integrationClient.revokeOAuthToken(getRequiredAdminToken(), id, body);
+}
+
+export function listOpenCoreProfileOAuthAccounts(): Promise<
+  readonly OAuthProfileAccountSummary[]
+> {
+  return integrationClient.listProfileOAuthAccounts(getRequiredAdminToken());
+}
+
+export function listOpenCoreProfileOAuthProviders(): Promise<
+  readonly OAuthProfileProviderSummary[]
+> {
+  return integrationClient.listProfileOAuthProviders(getRequiredAdminToken());
+}
+
+export function startOpenCoreProfileOAuthFlow(
+  body: StartOAuthProfileFlowRequest,
+): Promise<OAuthFlowSummary> {
+  return integrationClient.startProfileOAuthFlow(getRequiredAdminToken(), body);
+}
+
+export function unbindOpenCoreProfileOAuthAccount(
+  id: string,
+  body?: UnbindOAuthProfileAccountRequest,
+): Promise<OAuthProfileAccountSummary> {
+  return integrationClient.unbindProfileOAuthAccount(
+    getRequiredAdminToken(),
+    id,
+    body,
+  );
 }
 
 export async function listOpenCoreSystemNoticeTemplates(

@@ -27,15 +27,23 @@ export type UserSummary = {
   id: string;
   username: string;
   displayName: string;
+  mobile?: string;
+  email?: string;
+  gender?: string;
   roleCodes: readonly string[];
+  roleNames: readonly string[];
   deptId?: string;
+  deptName?: string;
   postCodes: readonly string[];
+  postNames: readonly string[];
   avatarUrl?: string;
   avatarMimeType?: string;
   avatarSizeBytes?: number;
   avatarUpdatedAt?: string;
   enabled: boolean;
   system: boolean;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type UserOptionSummary = Pick<
@@ -47,6 +55,9 @@ export type UserProfileSummary = UserSummary;
 
 export type UpdateUserProfileRequest = {
   displayName?: string;
+  mobile?: string | null;
+  email?: string | null;
+  gender?: string | null;
 };
 
 export type UploadUserAvatarRequest = {
@@ -63,6 +74,65 @@ export type UpdateUserPasswordRequest = {
 export type UserPasswordMutationSummary = {
   changed: true;
   revokedSessionCount: number;
+};
+
+export type UserProfileSessionSummary = {
+  id: string;
+  username: string;
+  tokenId: string;
+  ip: string;
+  userAgent: string;
+  browser: string;
+  os: string;
+  lastSeenAt: string;
+  expiresAt: string;
+  revokedAt?: string;
+  revokedBy?: string;
+  revokedReason?: string;
+  current?: boolean;
+};
+
+export type UserProfileLoginActivitySummary = {
+  id: string;
+  username: string;
+  logType:
+    | 'login.mobile'
+    | 'login.sms'
+    | 'login.social'
+    | 'login.username'
+    | 'logout.force'
+    | 'logout.self';
+  result:
+    | 'account_locked'
+    | 'bad_credentials'
+    | 'captcha_code_error'
+    | 'captcha_not_found'
+    | 'success'
+    | 'user_disabled';
+  success: boolean;
+  failureReason?: string;
+  actorUsername?: string;
+  reason?: string;
+  ip: string;
+  location: string;
+  userAgent: string;
+  browser: string;
+  os: string;
+  requestId: string;
+  createdAt: string;
+};
+
+export type UserProfileActivitySummary = {
+  sessions: readonly UserProfileSessionSummary[];
+  loginLogs: readonly UserProfileLoginActivitySummary[];
+  currentTokenId: string;
+};
+
+export type UserProfileKickOutOtherSessionsSummary = {
+  requested: number;
+  kicked: number;
+  skipped: number;
+  items: readonly UserProfileSessionSummary[];
 };
 
 export type ListUsersRequest = {

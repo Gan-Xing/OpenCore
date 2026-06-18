@@ -27,6 +27,8 @@ import {
   sanitizeFileName,
 } from '@opencore/file';
 import { OnlineUserService } from '@opencore/online-user';
+import type { OnlineUserSessionRecord } from '@opencore/online-user';
+import { AuditLoginLogService } from '@opencore/audit';
 import {
   SystemMenuService,
   SystemRoleService,
@@ -37,6 +39,7 @@ import type {
   SecurityDataScopeConstraint,
   SecurityRequestWithDataScope,
 } from '@opencore/security';
+import { SecurityBearerTokenService } from '@opencore/security';
 import {
   AssignRoleMenusDto,
   AssignRoleUsersDto,
@@ -71,6 +74,9 @@ import {
   UserImportResultDto,
   UserImportTemplateDto,
   UserOptionDto,
+  UserProfileActivityDto,
+  UserProfileKickOutOtherSessionsDto,
+  UserProfileSessionDto,
   UserProfileDto,
   UserPasswordMutationResultDto,
   UserRoleAssignmentDto,
@@ -121,6 +127,8 @@ export class RbacController {
     private readonly roles: SystemRoleService,
     private readonly menus: SystemMenuService,
     private readonly onlineUsers: OnlineUserService,
+    private readonly loginLogs: AuditLoginLogService,
+    private readonly bearerTokens: SecurityBearerTokenService,
     private readonly files: FileStorageService,
   ) {}
 
@@ -200,6 +208,33 @@ export class RbacController {
   @ApiOkResponse({ type: UserProfileDto })
   getUserProfile(@Req() request: RequestWithUser): Promise<UserProfileDto> {
     return this.users.getUser(getAuthenticatedUserId(request));
+  }
+
+  @Get('users/profile/activity')
+  @ApiTags('Core Users')
+  @RequireAuthenticated()
+  @ApiOkResponse({ type: UserProfileActivityDto })
+  async getUserProfileActivity(
+    @Req() request: RequestWithUser,
+  ): Promise<UserProfileActivityDto> {
+    const user = getAuthenticatedUser(request);
+    const currentTokenId = this.getCurrentTokenId(request);
+    const [sessions, loginLogs] = await Promise.all([
+      this.listProfileSessions(user.username, currentTokenId),
+      this.loginLogs
+        .listLoginLogs({
+          username: user.username,
+          page: 1,
+          pageSize: 10,
+        })
+        .then((page) => page.items),
+    ]);
+
+    return {
+      sessions,
+      loginLogs,
+      currentTokenId,
+    };
   }
 
   @Patch('users/profile')
@@ -285,6 +320,41 @@ export class RbacController {
       changed: true,
       revokedSessionCount,
     };
+  }
+
+  @Post('users/profile/sessions/kick-out-others')
+  @ApiTags('Core Users')
+  @RequireAuthenticated()
+  @ApiOkResponse({ type: UserProfileKickOutOtherSessionsDto })
+  async kickOutOtherProfileSessions(
+    @Req() request: RequestWithUser,
+  ): Promise<UserProfileKickOutOtherSessionsDto> {
+    const user = getAuthenticatedUser(request);
+    const currentTokenId = this.getCurrentTokenId(request);
+    const sessions = await this.onlineUsers.listOnlineUsers({
+      username: user.username,
+      active: true,
+      page: 1,
+      pageSize: 100,
+    });
+    const otherSessions = sessions.items.filter(
+      (session) =>
+        session.username === user.username &&
+        session.tokenId !== currentTokenId,
+    );
+    const result = await this.onlineUsers.kickOutSessions({
+      ids: otherSessions.map((session) => session.id),
+      actor: user.username,
+      reason: 'self kick out other sessions',
+    });
+
+    await Promise.all(
+      result.items.map((session) =>
+        this.recordForceLogoutLoginLog(session, user.username),
+      ),
+    );
+
+    return result;
   }
 
   @Patch('users/batch/status')
@@ -852,6 +922,57 @@ export class RbacController {
 
     return ids;
   }
+
+  private async listProfileSessions(
+    username: string,
+    currentTokenId: string,
+  ): Promise<UserProfileSessionDto[]> {
+    const page = await this.onlineUsers.listOnlineUsers({
+      username,
+      page: 1,
+      pageSize: 100,
+    });
+
+    return page.items
+      .filter((session) => session.username === username)
+      .map((session) => ({
+        ...session,
+        current: session.tokenId === currentTokenId,
+      }));
+  }
+
+  private getCurrentTokenId(request: RequestWithUser): string {
+    return this.bearerTokens.verifyAuthorizationToken(
+      getAuthorizationHeader(request.headers),
+    ).tokenId;
+  }
+
+  private async recordForceLogoutLoginLog(
+    session: OnlineUserSessionRecord,
+    actorUsername: string,
+  ): Promise<void> {
+    await this.loginLogs.recordLoginAttempt({
+      username: session.username,
+      logType: 'logout.force',
+      result: 'success',
+      success: true,
+      ip: session.ip,
+      userAgent: session.userAgent,
+      requestId: `profile.kick-out-others:${session.id}`,
+      actorUsername,
+      reason: 'self kick out other sessions',
+    });
+  }
+}
+
+function getAuthenticatedUser(request: RequestWithUser) {
+  const user = request.user;
+
+  if (!user) {
+    throw rbacUnauthorized('AUTH_USER_MISSING', 'Missing authenticated user');
+  }
+
+  return user;
 }
 
 function getAuthenticatedUserId(request: RequestWithUser): string {
@@ -862,6 +983,12 @@ function getAuthenticatedUserId(request: RequestWithUser): string {
   }
 
   return userId;
+}
+
+function getAuthorizationHeader(
+  headers: RequestWithUser['headers'],
+): string | undefined {
+  return headers?.authorization;
 }
 
 function withRequestDataScope(

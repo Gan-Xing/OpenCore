@@ -813,6 +813,25 @@ export class StartOAuthFlowDto {
   redirectUri?: string;
 }
 
+export class StartOAuthProfileFlowDto {
+  @ApiProperty()
+  providerCode!: string;
+
+  @ApiProperty({ required: false })
+  redirectUri?: string;
+}
+
+export class OAuthProfileProviderDto {
+  @ApiProperty()
+  code!: string;
+
+  @ApiProperty()
+  name!: string;
+
+  @ApiProperty({ enum: ['oauth'] })
+  type!: 'oauth';
+}
+
 export class OAuthFlowDto {
   @ApiProperty()
   id!: string;
@@ -1075,6 +1094,46 @@ export class OAuthTokenInventorySummaryDto {
 }
 
 export class RevokeOAuthTokenDto {
+  @ApiProperty({ required: false })
+  reason?: string;
+}
+
+export class OAuthProfileAccountDto {
+  @ApiProperty()
+  tokenId!: string;
+
+  @ApiProperty()
+  providerCode!: string;
+
+  @ApiProperty()
+  providerName!: string;
+
+  @ApiProperty()
+  providerAccountId!: string;
+
+  @ApiProperty({ type: [String] })
+  scopes!: readonly string[];
+
+  @ApiProperty({ enum: ['active', 'expired', 'revoked'] })
+  status!: OAuthTokenStatus;
+
+  @ApiProperty({ required: false })
+  expiresAt?: string;
+
+  @ApiProperty({ required: false })
+  lastRotatedAt?: string;
+
+  @ApiProperty({ required: false })
+  revokedAt?: string;
+
+  @ApiProperty({ required: false })
+  revokeReason?: string;
+
+  @ApiProperty()
+  createdAt!: string;
+}
+
+export class UnbindOAuthProfileAccountDto {
   @ApiProperty({ required: false })
   reason?: string;
 }

@@ -1,5 +1,8 @@
 import 'reflect-metadata';
-import { REQUIRED_PERMISSIONS_KEY } from '../../core/rbac/permissions.decorator';
+import {
+  REQUIRED_PERMISSIONS_KEY,
+  REQUIRE_AUTHENTICATED_KEY,
+} from '../../core/rbac/permissions.decorator';
 import { IntegrationController } from './integration.controller';
 
 describe('IntegrationController permission matrix', () => {
@@ -77,5 +80,29 @@ describe('IntegrationController permission matrix', () => {
         IntegrationController.prototype.callbackOAuthProvider,
       ),
     ).toBeUndefined();
+  });
+
+  it('keeps profile OAuth routes authenticated without management permissions', () => {
+    const methods: Array<keyof IntegrationController> = [
+      'listProfileOAuthAccounts',
+      'listProfileOAuthProviders',
+      'startProfileOAuthFlow',
+      'unbindProfileOAuthAccount',
+    ];
+
+    for (const method of methods) {
+      expect(
+        Reflect.getMetadata(
+          REQUIRED_PERMISSIONS_KEY,
+          IntegrationController.prototype[method],
+        ),
+      ).toBeUndefined();
+      expect(
+        Reflect.getMetadata(
+          REQUIRE_AUTHENTICATED_KEY,
+          IntegrationController.prototype[method],
+        ),
+      ).toBe(true);
+    }
   });
 });

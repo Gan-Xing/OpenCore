@@ -25,9 +25,11 @@ import type {
   OAuthFlowQueryDto,
   OAuthFlowStatus,
   OAuthProviderCallbackDto,
+  OAuthProfileProviderDto,
   OAuthTokenInventorySummaryDto,
   OAuthTokenQueryDto,
   OAuthTokenStatus,
+  OAuthProfileAccountDto,
   PageQueryDto,
   ProcessOutboxDto,
   PreviewTemplateDto,
@@ -35,6 +37,7 @@ import type {
   RevokeOAuthTokenDto,
   ScheduleOutboxDto,
   StartOAuthFlowDto,
+  StartOAuthProfileFlowDto,
   TestIntegrationProviderDto,
   TestOutboxMessageDto,
   UpdateIntegrationProviderDto,
@@ -257,6 +260,22 @@ export abstract class IntegrationRepository {
     id: string,
     body?: RevokeOAuthTokenDto,
   ): Promise<OAuthTokenRecord>;
+  abstract listProfileOAuthProviders(): Promise<
+    readonly OAuthProfileProviderDto[]
+  >;
+  abstract listProfileOAuthAccounts(
+    subjectId: string,
+  ): Promise<readonly OAuthProfileAccountDto[]>;
+  abstract startProfileOAuthFlow(
+    subjectId: string,
+    body: StartOAuthProfileFlowDto,
+  ): Promise<OAuthFlowRecord>;
+  abstract unbindProfileOAuthAccount(
+    subjectId: string,
+    id: string,
+    actor: string,
+    body?: RevokeOAuthTokenDto,
+  ): Promise<OAuthProfileAccountDto>;
   abstract getDesign(
     topic: 'pay' | 'websocket' | 'wechat',
   ): IntegrationDesignRecord;
@@ -1175,6 +1194,53 @@ export function createOAuthTokenId(input: {
   return `oauth_token_${slugForRef(input.providerCode)}_${slugForRef(
     input.subjectId,
   )}_${slugForRef(input.providerAccountId)}`;
+}
+
+export function toOAuthProfileAccountDto(
+  token: OAuthTokenRecord,
+  provider?: Pick<IntegrationProviderRecord, 'code' | 'name'>,
+): OAuthProfileAccountDto {
+  const normalized = normalizeOAuthTokenRecord(token);
+
+  return {
+    tokenId: normalized.id,
+    providerCode: normalized.providerCode,
+    providerName: provider?.name ?? normalized.providerCode,
+    providerAccountId: normalized.providerAccountId,
+    scopes: [...normalized.scopes],
+    status: normalized.status,
+    expiresAt: normalized.expiresAt,
+    lastRotatedAt: normalized.lastRotatedAt,
+    revokedAt: normalized.revokedAt,
+    revokeReason: normalized.revokeReason,
+    createdAt: normalized.createdAt,
+  };
+}
+
+export function toOAuthProfileProviderDto(
+  provider: IntegrationProviderRecord,
+): OAuthProfileProviderDto {
+  return {
+    code: provider.code,
+    name: provider.name,
+    type: 'oauth',
+  };
+}
+
+export function assertOAuthTokenBelongsToSubject(input: {
+  subjectId: string;
+  token: OAuthTokenRecord;
+}): void {
+  if (
+    input.token.subjectType !== 'user' ||
+    input.token.subjectId !== input.subjectId
+  ) {
+    throw integrationBadRequest(
+      'INTEGRATION_OAUTH_PROFILE_ACCOUNT_FORBIDDEN',
+      'OAuth profile account does not belong to the authenticated user.',
+      { tokenId: input.token.id },
+    );
+  }
 }
 
 export class IntegrationWebSocketRuntimeStore {

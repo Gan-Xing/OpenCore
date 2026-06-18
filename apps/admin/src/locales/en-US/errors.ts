@@ -48,13 +48,11 @@ export default {
     'The operation log ID list must not be empty.',
   'error.AUDIT_OPERATION_IDS_INVALID':
     'The operation log ID list must be an array.',
-  'error.AUDIT_OPERATION_ID_DUPLICATED':
-    'The operation log ID is duplicated.',
+  'error.AUDIT_OPERATION_ID_DUPLICATED': 'The operation log ID is duplicated.',
   'error.AUDIT_OPERATION_ID_INVALID_TYPE':
     'The operation log ID must be a string.',
   'error.AUDIT_OPERATION_ID_REQUIRED': 'The operation log ID is required.',
-  'error.AUDIT_OPERATION_LOG_NOT_FOUND':
-    'The operation log does not exist.',
+  'error.AUDIT_OPERATION_LOG_NOT_FOUND': 'The operation log does not exist.',
   'error.AUDIT_OPERATION_RETENTION_DAYS_INVALID':
     'The operation log retention period is invalid.',
   'error.AUDIT_OPERATION_STATUS_FILTER_INVALID':
@@ -117,8 +115,7 @@ export default {
   'error.USER_AVATAR_ORIGINAL_NAME_INVALID_TYPE':
     'The avatar file name must be a string.',
   'error.USER_AVATAR_TOO_LARGE': 'The avatar file is too large.',
-  'error.SYSTEM_ROLE_USER_IDS_INVALID':
-    'The role user list must be an array.',
+  'error.SYSTEM_ROLE_USER_IDS_INVALID': 'The role user list must be an array.',
   'error.SYSTEM_ROLE_USER_ID_DUPLICATED': 'The role user ID is duplicated.',
   'error.SYSTEM_USER_ALREADY_EXISTS': 'The username already exists.',
   'error.SYSTEM_USER_BOOLEAN_INVALID':
@@ -132,10 +129,12 @@ export default {
   'error.SYSTEM_USER_DATA_SCOPE_TYPE_INVALID':
     'The user data-scope type is invalid.',
   'error.SYSTEM_USER_DEPT_NOT_FOUND': 'The user department does not exist.',
+  'error.SYSTEM_USER_EMAIL_INVALID': 'The user email is invalid.',
   'error.SYSTEM_USER_ENABLED_INVALID':
     'The user enabled field must be a boolean.',
   'error.SYSTEM_USER_FIELD_INVALID_TYPE': 'The user field type is invalid.',
   'error.SYSTEM_USER_FIELD_REQUIRED': 'A required user field is missing.',
+  'error.SYSTEM_USER_GENDER_INVALID': 'The user gender is invalid.',
   'error.SYSTEM_USER_IDS_EMPTY': 'The user ID list must not be empty.',
   'error.SYSTEM_USER_IDS_INVALID': 'The user ID list must be an array.',
   'error.SYSTEM_USER_ID_DUPLICATED': 'The user ID is duplicated.',
@@ -209,8 +208,7 @@ export default {
     'The notice read ID list must not be empty.',
   'error.SYSTEM_NOTICE_READ_IDS_INVALID':
     'The notice read ID list must be an array.',
-  'error.SYSTEM_NOTICE_READ_ID_DUPLICATED':
-    'The notice read ID is duplicated.',
+  'error.SYSTEM_NOTICE_READ_ID_DUPLICATED': 'The notice read ID is duplicated.',
   'error.SYSTEM_NOTICE_SCHEDULE_INVALID':
     'The notice validity window is invalid.',
   'error.SYSTEM_NOTICE_STATUS_INVALID': 'The notice status is invalid.',
@@ -245,6 +243,8 @@ export default {
     'The OAuth callback is missing its authorization code.',
   'error.INTEGRATION_OAUTH_EXPIRES_IN_INVALID':
     'The OAuth token expiration is invalid.',
+  'error.INTEGRATION_OAUTH_PROFILE_ACCOUNT_FORBIDDEN':
+    'Only the current user can manage this OAuth account binding.',
   'error.INTEGRATION_OAUTH_PROVIDER_DISABLED':
     'The OAuth provider is disabled.',
   'error.INTEGRATION_OAUTH_PROVIDER_MISMATCH':
@@ -323,8 +323,7 @@ export default {
     'The integration config secret key is required.',
   'error.INTEGRATION_SECRET_REF_INVALID':
     'The integration secret ref is invalid.',
-  'error.INTEGRATION_SMS_RECIPIENT_INVALID':
-    'The SMS recipient is invalid.',
+  'error.INTEGRATION_SMS_RECIPIENT_INVALID': 'The SMS recipient is invalid.',
   'error.INTEGRATION_SMS_VERIFICATION_CODE_TOO_SHORT':
     'The SMS verification code is too short.',
   'error.INTEGRATION_TEMPLATE_DISABLED':
@@ -333,8 +332,7 @@ export default {
     'The WebSocket event type is invalid.',
   'error.INTEGRATION_WEBSOCKET_PUBLISH_EVENT_TYPE_INVALID':
     'The WebSocket publish event type is invalid.',
-  'error.INTEGRATION_WEBSOCKET_ROOM_INVALID':
-    'The WebSocket room is invalid.',
+  'error.INTEGRATION_WEBSOCKET_ROOM_INVALID': 'The WebSocket room is invalid.',
   'error.COLLABORATION_MESSAGE_DELETED':
     'The message has already been deleted.',
   'error.COLLABORATION_MESSAGE_NOT_FOUND': 'The message does not exist.',
@@ -422,26 +420,21 @@ export default {
     'The area region aliases must be an array.',
   'error.TOOL_AREA_REGION_ALIASES_TOO_MANY':
     'The area region alias list is too large.',
-  'error.TOOL_AREA_REGION_ALIAS_INVALID':
-    'The area region alias is invalid.',
+  'error.TOOL_AREA_REGION_ALIAS_INVALID': 'The area region alias is invalid.',
   'error.TOOL_AREA_REGION_ALIAS_INVALID_TYPE':
     'The area region alias must be a string.',
   'error.TOOL_AREA_REGION_CODE_DUPLICATED':
     'The area region code is duplicated.',
-  'error.TOOL_AREA_REGION_CODE_INVALID':
-    'The area region code is invalid.',
-  'error.TOOL_AREA_REGION_CODE_REQUIRED':
-    'The area region code is required.',
+  'error.TOOL_AREA_REGION_CODE_INVALID': 'The area region code is invalid.',
+  'error.TOOL_AREA_REGION_CODE_REQUIRED': 'The area region code is required.',
   'error.TOOL_AREA_REGION_IP_RANGES_INVALID':
     'The area region IP ranges must be an array.',
   'error.TOOL_AREA_REGION_IP_RANGES_TOO_MANY':
     'The area region IP range list is too large.',
   'error.TOOL_AREA_REGION_IP_RANGE_INVALID_TYPE':
     'The area region IP range must be a string.',
-  'error.TOOL_AREA_REGION_NAME_INVALID':
-    'The area region name is invalid.',
-  'error.TOOL_AREA_REGION_NAME_REQUIRED':
-    'The area region name is required.',
+  'error.TOOL_AREA_REGION_NAME_INVALID': 'The area region name is invalid.',
+  'error.TOOL_AREA_REGION_NAME_REQUIRED': 'The area region name is required.',
   'error.TOOL_AREA_REGION_NOT_FOUND': 'The area region does not exist.',
   'error.TOOL_AREA_REGION_PARENT_NOT_FOUND':
     'The area region parent does not exist.',
@@ -543,8 +536,7 @@ export default {
   'error.SYSTEM_CONFIG_KEY_REQUIRED': 'The config key is required.',
   'error.SYSTEM_CONFIG_KMS_NOT_READY':
     'The config key management service is not ready.',
-  'error.SYSTEM_CONFIG_NAME_INVALID_TYPE':
-    'The config name must be a string.',
+  'error.SYSTEM_CONFIG_NAME_INVALID_TYPE': 'The config name must be a string.',
   'error.SYSTEM_CONFIG_NAME_REQUIRED': 'The config name is required.',
   'error.SYSTEM_CONFIG_NAME_TOO_LONG': 'The config name is too long.',
   'error.SYSTEM_CONFIG_NOT_FOUND': 'The config does not exist.',

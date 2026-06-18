@@ -22,6 +22,7 @@ import type {
   RevokeOAuthTokenDto,
   ScheduleOutboxDto,
   StartOAuthFlowDto,
+  StartOAuthProfileFlowDto,
   TestIntegrationProviderDto,
   TestOutboxMessageDto,
   UpdateIntegrationProviderDto,
@@ -53,6 +54,7 @@ import {
 import {
   assertOutboxCallbackProviderMatch,
   assertOutboxCallbackSignature,
+  assertOAuthTokenBelongsToSubject,
   assertProviderReadyForOutbox,
   assertSecretRef,
   assertSmsSafety,
@@ -88,6 +90,8 @@ import {
   normalizeOAuthTokenRecord,
   normalizeOptionalProviderCode,
   normalizeOptionalBoolean,
+  toOAuthProfileAccountDto,
+  toOAuthProfileProviderDto,
   normalizeProviderSecretRefStatus,
   normalizeProviderTestStatus,
   parseConfigSecretRef,
@@ -684,6 +688,12 @@ export class SeedIntegrationRepository extends IntegrationRepository {
     );
   }
 
+  async listProfileOAuthProviders() {
+    return this.providers
+      .filter((provider) => provider.type === 'oauth' && provider.enabled)
+      .map(toOAuthProfileProviderDto);
+  }
+
   getOAuthCallbackContract(): OAuthCallbackContractRecord {
     return { ...oauthCallbackContract };
   }
@@ -955,6 +965,61 @@ export class SeedIntegrationRepository extends IntegrationRepository {
     });
 
     return normalizeOAuthTokenRecord(token);
+  }
+
+  async listProfileOAuthAccounts(subjectId: string) {
+    return this.oauthTokens
+      .map((token) => normalizeOAuthTokenRecord(token))
+      .filter(
+        (token) =>
+          token.subjectType === 'user' && token.subjectId === subjectId,
+      )
+      .map((token) =>
+        toOAuthProfileAccountDto(
+          token,
+          this.providers.find(
+            (provider) => provider.code === token.providerCode,
+          ),
+        ),
+      );
+  }
+
+  startProfileOAuthFlow(
+    subjectId: string,
+    body: StartOAuthProfileFlowDto,
+  ): Promise<OAuthFlowRecord> {
+    return this.startOAuthFlow({
+      providerCode: body.providerCode,
+      subjectType: 'user',
+      subjectId,
+      redirectUri: body.redirectUri,
+    });
+  }
+
+  async unbindProfileOAuthAccount(
+    subjectId: string,
+    id: string,
+    actor: string,
+    body: RevokeOAuthTokenDto = {},
+  ) {
+    const token = this.findOAuthToken(id);
+    assertOAuthTokenBelongsToSubject({ subjectId, token });
+
+    if (!token.revokedAt && token.status !== 'revoked') {
+      Object.assign(token, {
+        status: 'revoked' as const,
+        revokedAt: new Date().toISOString(),
+        revokedBy: actor,
+        revokeReason: normalizeOAuthRevokeReason(
+          body.reason ?? 'Self-service OAuth account unbind.',
+        ),
+      });
+    }
+
+    return toOAuthProfileAccountDto(
+      token,
+      this.providers.find((provider) => provider.code === token.providerCode),
+    );
   }
 
   getDesign(topic: 'pay' | 'websocket' | 'wechat'): IntegrationDesignRecord {

@@ -1,0 +1,4 @@
+ALTER TABLE "User"
+ADD COLUMN "mobile" TEXT,
+ADD COLUMN "email" TEXT,
+ADD COLUMN "gender" TEXT;

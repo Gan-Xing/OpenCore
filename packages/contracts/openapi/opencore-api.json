@@ -291,6 +291,26 @@
         "tags": ["Rbac", "Core Users"]
       }
     },
+    "/api/core/users/profile/activity": {
+      "get": {
+        "operationId": "RbacController_getUserProfileActivity",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileActivityDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Users"]
+      }
+    },
     "/api/core/users/profile/avatar": {
       "post": {
         "operationId": "RbacController_uploadUserProfileAvatar",
@@ -352,6 +372,26 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UserPasswordMutationResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Users"]
+      }
+    },
+    "/api/core/users/profile/sessions/kick-out-others": {
+      "post": {
+        "operationId": "RbacController_kickOutOtherProfileSessions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileKickOutOtherSessionsDto"
                 }
               }
             }
@@ -6330,6 +6370,117 @@
         "tags": ["Integration", "Integration SMS"]
       }
     },
+    "/api/integrations/oauth/profile/accounts": {
+      "get": {
+        "operationId": "IntegrationController_listProfileOAuthAccounts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OAuthProfileAccountDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration OAuth"]
+      }
+    },
+    "/api/integrations/oauth/profile/providers": {
+      "get": {
+        "operationId": "IntegrationController_listProfileOAuthProviders",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OAuthProfileProviderDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration OAuth"]
+      }
+    },
+    "/api/integrations/oauth/profile/flows": {
+      "post": {
+        "operationId": "IntegrationController_startProfileOAuthFlow",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartOAuthProfileFlowDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OAuthFlowDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration OAuth"]
+      }
+    },
+    "/api/integrations/oauth/profile/accounts/{id}/unbind": {
+      "patch": {
+        "operationId": "IntegrationController_unbindProfileOAuthAccount",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnbindOAuthProfileAccountDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthProfileAccountDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration OAuth"]
+      }
+    },
     "/api/integrations/oauth/providers": {
       "get": {
         "operationId": "IntegrationController_listOAuthProviders",
@@ -8572,24 +8723,36 @@
           "id": { "type": "string" },
           "username": { "type": "string" },
           "displayName": { "type": "string" },
+          "mobile": { "type": "string", "nullable": true },
+          "email": { "type": "string", "nullable": true },
+          "gender": { "type": "string", "nullable": true },
           "roleCodes": { "type": "array", "items": { "type": "string" } },
+          "roleNames": { "type": "array", "items": { "type": "string" } },
           "deptId": { "type": "string", "nullable": true },
+          "deptName": { "type": "string", "nullable": true },
           "postCodes": { "type": "array", "items": { "type": "string" } },
+          "postNames": { "type": "array", "items": { "type": "string" } },
           "avatarUrl": { "type": "string", "nullable": true },
           "avatarMimeType": { "type": "string", "nullable": true },
           "avatarSizeBytes": { "type": "number", "nullable": true },
           "avatarUpdatedAt": { "type": "string", "nullable": true },
           "enabled": { "type": "boolean" },
-          "system": { "type": "boolean" }
+          "system": { "type": "boolean" },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
         },
         "required": [
           "id",
           "username",
           "displayName",
           "roleCodes",
+          "roleNames",
           "postCodes",
+          "postNames",
           "enabled",
-          "system"
+          "system",
+          "createdAt",
+          "updatedAt"
         ]
       },
       "RbacExportPreviewDto": {
@@ -8690,29 +8853,145 @@
           "id": { "type": "string" },
           "username": { "type": "string" },
           "displayName": { "type": "string" },
+          "mobile": { "type": "string", "nullable": true },
+          "email": { "type": "string", "nullable": true },
+          "gender": { "type": "string", "nullable": true },
           "roleCodes": { "type": "array", "items": { "type": "string" } },
+          "roleNames": { "type": "array", "items": { "type": "string" } },
           "deptId": { "type": "string", "nullable": true },
+          "deptName": { "type": "string", "nullable": true },
           "postCodes": { "type": "array", "items": { "type": "string" } },
+          "postNames": { "type": "array", "items": { "type": "string" } },
           "avatarUrl": { "type": "string", "nullable": true },
           "avatarMimeType": { "type": "string", "nullable": true },
           "avatarSizeBytes": { "type": "number", "nullable": true },
           "avatarUpdatedAt": { "type": "string", "nullable": true },
           "enabled": { "type": "boolean" },
-          "system": { "type": "boolean" }
+          "system": { "type": "boolean" },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
         },
         "required": [
           "id",
           "username",
           "displayName",
           "roleCodes",
+          "roleNames",
           "postCodes",
+          "postNames",
           "enabled",
-          "system"
+          "system",
+          "createdAt",
+          "updatedAt"
         ]
+      },
+      "UserProfileSessionDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "username": { "type": "string" },
+          "tokenId": { "type": "string" },
+          "ip": { "type": "string" },
+          "userAgent": { "type": "string" },
+          "browser": { "type": "string" },
+          "os": { "type": "string" },
+          "lastSeenAt": { "type": "string" },
+          "expiresAt": { "type": "string" },
+          "revokedAt": { "type": "string" },
+          "revokedBy": { "type": "string" },
+          "revokedReason": { "type": "string" },
+          "current": { "type": "boolean" }
+        },
+        "required": [
+          "id",
+          "username",
+          "tokenId",
+          "ip",
+          "userAgent",
+          "browser",
+          "os",
+          "lastSeenAt",
+          "expiresAt",
+          "current"
+        ]
+      },
+      "LoginLogDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "username": { "type": "string" },
+          "logType": {
+            "type": "string",
+            "enum": [
+              "login.mobile",
+              "login.sms",
+              "login.social",
+              "login.username",
+              "logout.force",
+              "logout.self"
+            ]
+          },
+          "result": {
+            "type": "string",
+            "enum": [
+              "account_locked",
+              "bad_credentials",
+              "captcha_code_error",
+              "captcha_not_found",
+              "success",
+              "user_disabled"
+            ]
+          },
+          "success": { "type": "boolean" },
+          "failureReason": { "type": "string" },
+          "actorUsername": { "type": "string" },
+          "reason": { "type": "string" },
+          "ip": { "type": "string" },
+          "location": { "type": "string" },
+          "userAgent": { "type": "string" },
+          "browser": { "type": "string" },
+          "os": { "type": "string" },
+          "requestId": { "type": "string" },
+          "createdAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "username",
+          "logType",
+          "result",
+          "success",
+          "ip",
+          "location",
+          "userAgent",
+          "browser",
+          "os",
+          "requestId",
+          "createdAt"
+        ]
+      },
+      "UserProfileActivityDto": {
+        "type": "object",
+        "properties": {
+          "sessions": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/UserProfileSessionDto" }
+          },
+          "loginLogs": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/LoginLogDto" }
+          },
+          "currentTokenId": { "type": "string" }
+        },
+        "required": ["sessions", "loginLogs", "currentTokenId"]
       },
       "UpdateUserProfileDto": {
         "type": "object",
-        "properties": { "displayName": { "type": "string" } }
+        "properties": {
+          "displayName": { "type": "string" },
+          "mobile": { "type": "string" },
+          "email": { "type": "string" },
+          "gender": { "type": "string" }
+        }
       },
       "UploadUserAvatarDto": {
         "type": "object",
@@ -8741,6 +9020,47 @@
           "revokedSessionCount": { "type": "number" }
         },
         "required": ["changed", "revokedSessionCount"]
+      },
+      "OnlineUserSessionDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "username": { "type": "string" },
+          "tokenId": { "type": "string" },
+          "ip": { "type": "string" },
+          "userAgent": { "type": "string" },
+          "browser": { "type": "string" },
+          "os": { "type": "string" },
+          "lastSeenAt": { "type": "string" },
+          "expiresAt": { "type": "string" },
+          "revokedAt": { "type": "string" },
+          "revokedBy": { "type": "string" },
+          "revokedReason": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "username",
+          "tokenId",
+          "ip",
+          "userAgent",
+          "browser",
+          "os",
+          "lastSeenAt",
+          "expiresAt"
+        ]
+      },
+      "UserProfileKickOutOtherSessionsDto": {
+        "type": "object",
+        "properties": {
+          "requested": { "type": "number" },
+          "kicked": { "type": "number" },
+          "skipped": { "type": "number" },
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/OnlineUserSessionDto" }
+          }
+        },
+        "required": ["requested", "kicked", "skipped", "items"]
       },
       "BatchSetUserStatusDto": {
         "type": "object",
@@ -8824,15 +9144,23 @@
           "id": { "type": "string" },
           "username": { "type": "string" },
           "displayName": { "type": "string" },
+          "mobile": { "type": "string", "nullable": true },
+          "email": { "type": "string", "nullable": true },
+          "gender": { "type": "string", "nullable": true },
           "roleCodes": { "type": "array", "items": { "type": "string" } },
+          "roleNames": { "type": "array", "items": { "type": "string" } },
           "deptId": { "type": "string", "nullable": true },
+          "deptName": { "type": "string", "nullable": true },
           "postCodes": { "type": "array", "items": { "type": "string" } },
+          "postNames": { "type": "array", "items": { "type": "string" } },
           "avatarUrl": { "type": "string", "nullable": true },
           "avatarMimeType": { "type": "string", "nullable": true },
           "avatarSizeBytes": { "type": "number", "nullable": true },
           "avatarUpdatedAt": { "type": "string", "nullable": true },
           "enabled": { "type": "boolean" },
           "system": { "type": "boolean" },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" },
           "revokedSessionCount": { "type": "number" }
         },
         "required": [
@@ -8840,9 +9168,13 @@
           "username",
           "displayName",
           "roleCodes",
+          "roleNames",
           "postCodes",
+          "postNames",
           "enabled",
-          "system"
+          "system",
+          "createdAt",
+          "updatedAt"
         ]
       },
       "SetUserStatusDto": {
@@ -10543,60 +10875,6 @@
         },
         "required": ["deleted", "affected", "retentionDays", "cutoffBefore"]
       },
-      "LoginLogDto": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string" },
-          "username": { "type": "string" },
-          "logType": {
-            "type": "string",
-            "enum": [
-              "login.mobile",
-              "login.sms",
-              "login.social",
-              "login.username",
-              "logout.force",
-              "logout.self"
-            ]
-          },
-          "result": {
-            "type": "string",
-            "enum": [
-              "account_locked",
-              "bad_credentials",
-              "captcha_code_error",
-              "captcha_not_found",
-              "success",
-              "user_disabled"
-            ]
-          },
-          "success": { "type": "boolean" },
-          "failureReason": { "type": "string" },
-          "actorUsername": { "type": "string" },
-          "reason": { "type": "string" },
-          "ip": { "type": "string" },
-          "location": { "type": "string" },
-          "userAgent": { "type": "string" },
-          "browser": { "type": "string" },
-          "os": { "type": "string" },
-          "requestId": { "type": "string" },
-          "createdAt": { "type": "string" }
-        },
-        "required": [
-          "id",
-          "username",
-          "logType",
-          "result",
-          "success",
-          "ip",
-          "location",
-          "userAgent",
-          "browser",
-          "os",
-          "requestId",
-          "createdAt"
-        ]
-      },
       "LoginLogPageDto": {
         "type": "object",
         "properties": {
@@ -11624,33 +11902,50 @@
         },
         "required": ["providerCode", "messageId", "status", "signature"]
       },
-      "OAuthCallbackContractDto": {
+      "OAuthProfileAccountDto": {
         "type": "object",
         "properties": {
-          "callbackPath": { "type": "string" },
-          "stateTtlSeconds": { "type": "number" },
-          "securityChecks": { "type": "array", "items": { "type": "string" } },
-          "accountBinding": { "type": "array", "items": { "type": "string" } },
-          "auditAction": { "type": "string" }
+          "tokenId": { "type": "string" },
+          "providerCode": { "type": "string" },
+          "providerName": { "type": "string" },
+          "providerAccountId": { "type": "string" },
+          "scopes": { "type": "array", "items": { "type": "string" } },
+          "status": {
+            "type": "string",
+            "enum": ["active", "expired", "revoked"]
+          },
+          "expiresAt": { "type": "string" },
+          "lastRotatedAt": { "type": "string" },
+          "revokedAt": { "type": "string" },
+          "revokeReason": { "type": "string" },
+          "createdAt": { "type": "string" }
         },
         "required": [
-          "callbackPath",
-          "stateTtlSeconds",
-          "securityChecks",
-          "accountBinding",
-          "auditAction"
+          "tokenId",
+          "providerCode",
+          "providerName",
+          "providerAccountId",
+          "scopes",
+          "status",
+          "createdAt"
         ]
       },
-      "StartOAuthFlowDto": {
+      "OAuthProfileProviderDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "type": { "type": "string", "enum": ["oauth"] }
+        },
+        "required": ["code", "name", "type"]
+      },
+      "StartOAuthProfileFlowDto": {
         "type": "object",
         "properties": {
           "providerCode": { "type": "string" },
-          "subjectType": { "type": "string" },
-          "subjectId": { "type": "string" },
-          "scopes": { "type": "array", "items": { "type": "string" } },
           "redirectUri": { "type": "string" }
         },
-        "required": ["providerCode", "subjectId"]
+        "required": ["providerCode"]
       },
       "OAuthFlowDto": {
         "type": "object",
@@ -11686,6 +11981,38 @@
           "expiresAt",
           "createdAt"
         ]
+      },
+      "UnbindOAuthProfileAccountDto": {
+        "type": "object",
+        "properties": { "reason": { "type": "string" } }
+      },
+      "OAuthCallbackContractDto": {
+        "type": "object",
+        "properties": {
+          "callbackPath": { "type": "string" },
+          "stateTtlSeconds": { "type": "number" },
+          "securityChecks": { "type": "array", "items": { "type": "string" } },
+          "accountBinding": { "type": "array", "items": { "type": "string" } },
+          "auditAction": { "type": "string" }
+        },
+        "required": [
+          "callbackPath",
+          "stateTtlSeconds",
+          "securityChecks",
+          "accountBinding",
+          "auditAction"
+        ]
+      },
+      "StartOAuthFlowDto": {
+        "type": "object",
+        "properties": {
+          "providerCode": { "type": "string" },
+          "subjectType": { "type": "string" },
+          "subjectId": { "type": "string" },
+          "scopes": { "type": "array", "items": { "type": "string" } },
+          "redirectUri": { "type": "string" }
+        },
+        "required": ["providerCode", "subjectId"]
       },
       "OAuthFlowPageDto": {
         "type": "object",
@@ -12573,34 +12900,6 @@
           "policy": { "type": "string" }
         },
         "required": ["key", "dryRun", "existed", "deleted", "policy"]
-      },
-      "OnlineUserSessionDto": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string" },
-          "username": { "type": "string" },
-          "tokenId": { "type": "string" },
-          "ip": { "type": "string" },
-          "userAgent": { "type": "string" },
-          "browser": { "type": "string" },
-          "os": { "type": "string" },
-          "lastSeenAt": { "type": "string" },
-          "expiresAt": { "type": "string" },
-          "revokedAt": { "type": "string" },
-          "revokedBy": { "type": "string" },
-          "revokedReason": { "type": "string" }
-        },
-        "required": [
-          "id",
-          "username",
-          "tokenId",
-          "ip",
-          "userAgent",
-          "browser",
-          "os",
-          "lastSeenAt",
-          "expiresAt"
-        ]
       },
       "OnlineUserSessionPageDto": {
         "type": "object",

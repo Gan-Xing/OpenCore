@@ -31,6 +31,14 @@ const adminBaseUrl = trimTrailingSlash(
 );
 const timeoutMs = Number(process.env.OPENCORE_SMOKE_TIMEOUT_MS ?? 15000);
 const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+const adminUsername = process.env.OPENCORE_SMOKE_ADMIN_USERNAME || 'admin';
+const adminPasswordCandidates = [
+  process.env.OPENCORE_SMOKE_ADMIN_PASSWORD,
+  process.env.BOOTSTRAP_ADMIN_PASSWORD,
+  'admin123',
+].filter((candidate, index, candidates): candidate is string => {
+  return Boolean(candidate) && candidates.indexOf(candidate) === index;
+});
 const expectedLocalizedError = '用户名或密码错误';
 const forbiddenBackendError = 'Invalid username or password';
 
@@ -40,6 +48,7 @@ async function main() {
   const networkEntries: NetworkEntry[] = [];
 
   try {
+    const adminToken = await resolveAdminToken();
     chrome = await launchChrome();
     page = await CdpPage.connect(await createPageTarget(chrome.wsUrl));
     page.on('Network.responseReceived', (params) => {
@@ -61,10 +70,7 @@ async function main() {
       'document.readyState === "complete"',
       'Admin login page load',
     );
-    await evaluate(
-      page,
-      `localStorage.setItem('umi_locale', 'zh-CN'); true;`,
-    );
+    await evaluate(page, `localStorage.setItem('umi_locale', 'zh-CN'); true;`);
     await page.send('Page.reload', { ignoreCache: true });
     await waitForExpression(
       page,
@@ -77,7 +83,10 @@ async function main() {
       'Admin login username input',
     );
 
-    const fillResult = await evaluate(page, createSubmitScript());
+    const fillResult = await evaluate(
+      page,
+      createSubmitScript(`missing_${runId}`, `wrong_${runId}`),
+    );
 
     if (!isRecord(fillResult) || fillResult.ok !== true) {
       throw new Error(
@@ -119,6 +128,38 @@ async function main() {
       );
     }
 
+    await evaluate(
+      page,
+      `localStorage.setItem('opencore.admin.token', ${JSON.stringify(
+        adminToken,
+      )}); true;`,
+    );
+
+    await page.send('Page.navigate', {
+      url: `${adminBaseUrl}/personal/profile?admin-profile-ui-smoke=${runId}`,
+    });
+    await waitForExpression(
+      page,
+      'document.readyState === "complete"',
+      'Admin profile page load',
+    );
+    await waitForExpression(
+      page,
+      `['基本资料', '安全设置', '账号绑定', '登录活动'].every((label) => document.body.innerText.includes(label))`,
+      'Admin profile center tabs',
+    );
+
+    const profileText = String(await evaluate(page, 'document.body.innerText'));
+    for (const forbidden of ['system.users', 'system.roles', 'Provider']) {
+      if (profileText.includes(forbidden)) {
+        throw new Error(
+          `Admin profile page displayed forbidden text ${JSON.stringify(
+            forbidden,
+          )}.`,
+        );
+      }
+    }
+
     console.log(
       JSON.stringify({
         status: 'pass',
@@ -127,6 +168,9 @@ async function main() {
           'admin.public-login.error-localized',
           'admin.public-login.error-code-message',
           'admin.public-login.no-duplicate-api-prefix',
+          'admin.public-profile.authenticated-access',
+          'admin.public-profile.zh-cn-tabs',
+          'admin.public-profile.no-raw-keys',
         ],
       }),
     );
@@ -145,7 +189,29 @@ async function main() {
   }
 }
 
-function createSubmitScript(): string {
+async function resolveAdminToken(): Promise<string> {
+  let lastStatus = 0;
+
+  for (const password of adminPasswordCandidates) {
+    const response = await fetch(`${adminBaseUrl}/api/auth/login`, {
+      body: JSON.stringify({ password, username: adminUsername }),
+      headers: { 'content-type': 'application/json' },
+      method: 'POST',
+    });
+
+    lastStatus = response.status;
+    if (response.ok) {
+      const body = (await response.json()) as { accessToken?: unknown };
+      return assertString(body.accessToken, 'Admin UI smoke accessToken');
+    }
+  }
+
+  throw new Error(
+    `Unable to authenticate Admin UI smoke user ${adminUsername}; last status ${lastStatus}.`,
+  );
+}
+
+function createSubmitScript(username: string, password: string): string {
   return `
 (() => {
   const username = document.querySelector('input[name="username"], input#username, input[placeholder="用户名"], input[placeholder="Username"]');
@@ -171,8 +237,8 @@ function createSubmitScript(): string {
     input.dispatchEvent(new Event('change', { bubbles: true }));
   };
 
-  setInputValue(username, ${JSON.stringify(`missing_${runId}`)});
-  setInputValue(password, ${JSON.stringify(`wrong_${runId}`)});
+  setInputValue(username, ${JSON.stringify(username)});
+  setInputValue(password, ${JSON.stringify(password)});
   submit.click();
   return { ok: true };
 })()
@@ -315,7 +381,9 @@ class CdpPage {
       const ws = new WebSocket(wsUrl);
       const timer = setTimeout(() => {
         ws.close();
-        reject(new Error(`Unable to connect to page DevTools within ${timeoutMs}ms`));
+        reject(
+          new Error(`Unable to connect to page DevTools within ${timeoutMs}ms`),
+        );
       }, timeoutMs);
 
       ws.addEventListener('open', () => {
@@ -371,7 +439,9 @@ class CdpPage {
       this.pending.delete(message.id);
 
       if (message.error) {
-        pending.reject(new Error(message.error.message ?? 'CDP command failed'));
+        pending.reject(
+          new Error(message.error.message ?? 'CDP command failed'),
+        );
       } else {
         pending.resolve(message.result);
       }
@@ -406,7 +476,10 @@ async function waitForExpression(
   expression: string,
   label: string,
 ): Promise<void> {
-  await waitForCondition(async () => Boolean(await evaluate(page, expression)), label);
+  await waitForCondition(
+    async () => Boolean(await evaluate(page, expression)),
+    label,
+  );
 }
 
 async function waitForCondition(

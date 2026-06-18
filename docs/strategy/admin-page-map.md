@@ -1,6 +1,6 @@
 # Admin Page Map
 
-更新时间：2026-06-15
+更新时间：2026-06-18
 
 `apps/admin` 的当前事实来源是 `apps/admin/config/routes.ts`、`packages/module-registry` 和 OpenAPI/SDK。本文只记录当前正式 Admin 页面、菜单分组和产品化状态，不再作为 S10/S12 预测路线图。
 
@@ -17,7 +17,7 @@
 | 一级菜单      | 当前页面                                                                      | 产品化状态                                                                          |
 | ------------- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
 | Dashboard     | `/dashboard`                                                                  | live summary/shell                                                                  |
-| Personal      | `/personal/profile`                                                           | live profile/password/avatar                                                        |
+| Personal      | `/personal/profile`                                                           | live profile center: basic profile, security, account binding and login activity    |
 | System        | users、roles、permissions、menus、dicts、config、notices、depts、posts、files | Cycle-021 fixed pages live-only；dicts/depts/menus 等已去 fixture                   |
 | Security      | login logs、operation logs                                                    | live-only Admin, server-side filters and smoke guards                               |
 | Monitor       | status、version、queues、jobs、cache、online users                            | live runtime/operator surfaces with deploy guards                                   |
@@ -32,7 +32,7 @@
 | 分组          | 路径                           | 能力归属                            | 状态                                                                           |
 | ------------- | ------------------------------ | ----------------------------------- | ------------------------------------------------------------------------------ |
 | Dashboard     | `/dashboard`                   | `core.dashboard` / `monitor.status` | 当前正式入口                                                                   |
-| Personal      | `/personal/profile`            | `core.profile`                      | live profile/password/avatar                                                   |
+| Personal      | `/personal/profile`            | `core.profile`                      | live profile center with basic profile/security/account binding/login activity |
 | System        | `/system/users`                | `core.user`                         | Cycle-021 Meets, Admin live-only                                               |
 | System        | `/system/roles`                | `core.role`                         | Cycle-021 Meets, Admin live-only                                               |
 | System        | `/system/permissions`          | `core.permission`                   | Cycle-021 Meets, Admin live-only                                               |

@@ -1,6 +1,6 @@
 # OpenCore Strategy Progress
 
-更新时间：2026-06-14
+更新时间：2026-06-18
 
 This file is now a compact progress index. It must not be used as a per-round
 execution transcript. Do not paste repeated command lists, smoke logs, changed
@@ -19,6 +19,7 @@ scripts, deployment scripts, and the active quality-cycle handoff.
 | Round history                  | `docs/quality-cycle/cycle-021/round-history.md`                  |
 | Reference comparison           | `docs/quality-cycle/cycle-021/reference-comparison.md`           |
 | Historical backend extraction  | `docs/quality-cycle/cycle-020/completion-report.md`              |
+| Profile center productization  | `docs/strategy/profile-center-productization.md`                 |
 
 ## Current Status
 
@@ -36,6 +37,8 @@ Current state:
 
 - Many API/SDK/Admin live-only local stages have shipped across system,
   security, monitor, integration, tools and collaboration foundations.
+- Personal Profile Center is now a live four-tab account self-service surface:
+  basic profile, security settings, account binding and login activity.
 - System Roles Admin is now live-only for CRUD, menu/user assignment, status,
   data-scope dept selection and current-page export.
 - System Users Admin is now live-only for CRUD, role assignment, status/batch

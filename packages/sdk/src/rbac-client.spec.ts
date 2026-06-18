@@ -27,7 +27,12 @@ describe('createRbacClient', () => {
     await client.getUserProfile('token');
     await client.updateUserProfile('token', {
       displayName: 'Profile Name',
+      email: 'profile@example.com',
+      gender: 'unknown',
+      mobile: '+15551234567',
     });
+    await client.getUserProfileActivity('token');
+    await client.kickOutOtherUserProfileSessions('token');
     await client.updateUserAvatar('token', {
       originalName: 'avatar.png',
       mimeType: 'image/png',
@@ -139,6 +144,12 @@ describe('createRbacClient', () => {
       {
         path: '/core/users/profile',
         method: 'PATCH',
+        token: 'token',
+      },
+      { path: '/core/users/profile/activity', token: 'token' },
+      {
+        path: '/core/users/profile/sessions/kick-out-others',
+        method: 'POST',
         token: 'token',
       },
       {

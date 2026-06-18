@@ -426,6 +426,11 @@ export type StartOAuthFlowRequest = {
   redirectUri?: string;
 };
 
+export type StartOAuthProfileFlowRequest = {
+  providerCode: string;
+  redirectUri?: string;
+};
+
 export type OAuthFlowQueryRequest = PageRequest & {
   providerCode?: string;
   subjectId?: string;
@@ -447,6 +452,30 @@ export type OAuthCallbackAuditQueryRequest = PageRequest & {
 };
 
 export type RevokeOAuthTokenRequest = {
+  reason?: string;
+};
+
+export type OAuthProfileAccountSummary = {
+  tokenId: string;
+  providerCode: string;
+  providerName: string;
+  providerAccountId: string;
+  scopes: readonly string[];
+  status: OAuthTokenStatus;
+  expiresAt?: string;
+  lastRotatedAt?: string;
+  revokedAt?: string;
+  revokeReason?: string;
+  createdAt: string;
+};
+
+export type OAuthProfileProviderSummary = {
+  code: string;
+  name: string;
+  type: 'oauth';
+};
+
+export type UnbindOAuthProfileAccountRequest = {
   reason?: string;
 };
 

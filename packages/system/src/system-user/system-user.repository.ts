@@ -10,6 +10,9 @@ import {
   createOpenCoreXlsxWorkbookBase64,
   OPENCORE_XLSX_CONTENT_TYPE,
 } from '../export-xlsx';
+import { seedSystemDepts } from '../system-dept/system-dept.records';
+import { seedSystemPosts } from '../system-post/system-post.records';
+import { seedSystemRoles } from '../system-role/system-role.records';
 import type {
   AssignRoleUsersDto,
   AssignUserRolesDto,
@@ -31,7 +34,11 @@ import type { SystemUserRecord } from './system-user.records';
 export type SystemUserSummaryRecord = Omit<
   SystemUserRecord,
   'avatarStorageKey' | 'passwordHash'
->;
+> & {
+  deptName?: string;
+  postNames: readonly string[];
+  roleNames: readonly string[];
+};
 export type SystemUserAvatarRecord = Pick<
   SystemUserRecord,
   | 'avatarMimeType'
@@ -106,6 +113,9 @@ export type NormalizedSystemUserUpdateInput = {
 
 export type NormalizedSystemUserProfileUpdateInput = {
   displayName?: string;
+  mobile?: string | null;
+  email?: string | null;
+  gender?: string | null;
 };
 
 export type NormalizedSystemUserPasswordUpdateInput = {
@@ -186,6 +196,9 @@ export const SYSTEM_USER_EXPORT_CONTENT_TYPE = SYSTEM_USER_XLSX_CONTENT_TYPE;
 export const SYSTEM_USER_EXPORT_COLUMNS = [
   'username',
   'displayName',
+  'mobile',
+  'email',
+  'gender',
   'roleCodes',
   'deptId',
   'postCodes',
@@ -330,6 +343,9 @@ function createSystemUserExportWorksheetRows(
     ...rows.map((row) => [
       row.username,
       row.displayName,
+      row.mobile ?? '',
+      row.email ?? '',
+      row.gender ?? '',
       row.roleCodes.join(', '),
       row.deptId ?? '',
       row.postCodes.join(', '),
@@ -526,6 +542,16 @@ export function normalizeUpdateSystemUserProfileInput(
       body.displayName === undefined
         ? undefined
         : normalizeRequiredText(body.displayName, 'displayName'),
+    mobile:
+      body.mobile === undefined
+        ? undefined
+        : normalizeNullableText(body.mobile),
+    email:
+      body.email === undefined ? undefined : normalizeNullableEmail(body.email),
+    gender:
+      body.gender === undefined
+        ? undefined
+        : normalizeNullableGender(body.gender),
   };
 }
 
@@ -595,16 +621,36 @@ export function cloneSystemUserSummary(
     id: user.id,
     username: user.username,
     displayName: user.displayName,
+    mobile: user.mobile,
+    email: user.email,
+    gender: user.gender,
     roleCodes: [...user.roleCodes],
+    roleNames: user.roleCodes.map((code) => getSeedRoleName(code)),
     deptId: user.deptId,
+    deptName: user.deptId ? getSeedDeptName(user.deptId) : undefined,
     postCodes: [...user.postCodes],
+    postNames: user.postCodes.map((code) => getSeedPostName(code)),
     avatarUrl: user.avatarUrl,
     avatarMimeType: user.avatarMimeType,
     avatarSizeBytes: user.avatarSizeBytes,
     avatarUpdatedAt: user.avatarUpdatedAt,
     enabled: user.enabled,
     system: user.system,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
   };
+}
+
+function getSeedRoleName(code: string): string {
+  return seedSystemRoles.find((role) => role.code === code)?.name ?? code;
+}
+
+function getSeedDeptName(id: string): string {
+  return seedSystemDepts.find((dept) => dept.id === id)?.name ?? id;
+}
+
+function getSeedPostName(code: string): string {
+  return seedSystemPosts.find((post) => post.code === code)?.name ?? code;
 }
 
 export function toSystemUserOptionRecord(
@@ -619,7 +665,9 @@ export function toSystemUserOptionRecord(
   };
 }
 
-export function assertSystemUserMutable(user: SystemUserSummaryRecord): void {
+export function assertSystemUserMutable(
+  user: Pick<SystemUserRecord, 'id' | 'system'>,
+): void {
   if (user.system) {
     throw systemUserBadRequest(
       'SYSTEM_USER_SYSTEM_IMMUTABLE',
@@ -752,6 +800,57 @@ function normalizeRequiredText(value: unknown, fieldName: string): string {
       'SYSTEM_USER_FIELD_REQUIRED',
       `System user ${fieldName} is required.`,
       { field: fieldName },
+    );
+  }
+
+  return normalized;
+}
+
+function normalizeNullableText(value: unknown): string | null {
+  if (value === null) {
+    return null;
+  }
+
+  if (typeof value !== 'string') {
+    throw systemUserBadRequest(
+      'SYSTEM_USER_FIELD_INVALID_TYPE',
+      'System user profile field must be a string.',
+      { expected: 'string' },
+    );
+  }
+
+  const normalized = value.trim();
+  return normalized ? normalized : null;
+}
+
+function normalizeNullableEmail(value: unknown): string | null {
+  const normalized = normalizeNullableText(value);
+  if (!normalized) {
+    return normalized;
+  }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
+    throw systemUserBadRequest(
+      'SYSTEM_USER_EMAIL_INVALID',
+      'System user email is invalid.',
+      { field: 'email' },
+    );
+  }
+
+  return normalized;
+}
+
+function normalizeNullableGender(value: unknown): string | null {
+  const normalized = normalizeNullableText(value);
+  if (!normalized) {
+    return normalized;
+  }
+
+  if (!['female', 'male', 'unknown'].includes(normalized)) {
+    throw systemUserBadRequest(
+      'SYSTEM_USER_GENDER_INVALID',
+      'System user gender must be female, male, or unknown.',
+      { field: 'gender' },
     );
   }
 

@@ -1381,6 +1381,58 @@ describe('IntegrationRepository', () => {
     });
   });
 
+  it('exposes profile OAuth providers and bindings without secrets', async () => {
+    const repository = new SeedIntegrationRepository();
+
+    const providers = await repository.listProfileOAuthProviders();
+    expect(providers).toEqual(
+      expect.arrayContaining([
+        { code: 'oauth.github', name: 'GitHub OAuth', type: 'oauth' },
+      ]),
+    );
+    expect(JSON.stringify(providers)).not.toContain('secret');
+    expect(JSON.stringify(providers)).not.toContain('clientId');
+
+    const flow = await repository.startProfileOAuthFlow('user_profile', {
+      providerCode: 'oauth.github',
+    });
+    expect(flow).toMatchObject({
+      providerCode: 'oauth.github',
+      subjectType: 'user',
+      subjectId: 'user_profile',
+      status: 'pending',
+    });
+
+    const callback = await repository.callbackOAuthProvider('oauth.github', {
+      state: flow.state,
+      code: 'profile-oauth-code',
+      providerAccountId: 'github:profile-user',
+    });
+    expect(callback.status).toBe('accepted');
+
+    const accounts = await repository.listProfileOAuthAccounts('user_profile');
+    expect(accounts).toEqual([
+      expect.objectContaining({
+        providerCode: 'oauth.github',
+        providerAccountId: 'github:profile-user',
+        status: 'active',
+      }),
+    ]);
+    expect(JSON.stringify(accounts)).not.toContain('accessTokenRef');
+    expect(JSON.stringify(accounts)).not.toContain('refreshTokenRef');
+
+    const unbound = await repository.unbindProfileOAuthAccount(
+      'user_profile',
+      accounts[0].tokenId,
+      'admin',
+      { reason: 'profile self-service test' },
+    );
+    expect(unbound).toMatchObject({
+      status: 'revoked',
+      revokeReason: 'profile self-service test',
+    });
+  });
+
   it('tracks WebSocket runtime connections, subscriptions, and diagnostic events', async () => {
     const repository = new SeedIntegrationRepository();
     const delivered: unknown[] = [];
