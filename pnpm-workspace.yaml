@@ -5,7 +5,7 @@ packages:
 
 overrides:
   node-fetch@<2.6.7: 2.6.7
-  vite@<6.4.2: 6.4.2
+  vite@<=6.4.2: 6.4.3
   immer@>=7.0.0 <9.0.6: 9.0.6
   axios@<0.32.0: 0.32.0
   path-to-regexp@>=0.2.0 <1.9.0: 1.9.0
@@ -20,7 +20,13 @@ overrides:
   serialize-javascript@>=5.0.0 <7.0.5: 7.0.5
   picomatch@>=4.0.0 <4.0.4: 4.0.4
   '@hono/node-server@<1.19.13': 1.19.13
-  ws@>=8.0.0 <8.20.1: 8.20.1
+  form-data@>=4.0.0 <4.0.6: 4.0.6
+  '@opentelemetry/core@<2.8.0': 2.8.0
+  webpack-dev-server@<5.2.5: 5.2.5
+  ws@>=8.0.0 <8.21.0: 8.21.0
+  js-yaml@<=4.1.1: 4.2.0
+  '@babel/core@<7.29.6': 7.29.6
+  multer@>=1.0.0 <2.2.0: 2.2.0
   uuid@<11.1.1: 11.1.1
 
 patchedDependencies:

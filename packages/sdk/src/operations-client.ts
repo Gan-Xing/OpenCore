@@ -31,7 +31,6 @@ import type {
   OnlineUserSessionSummary,
   OnlineUserSummary,
   OperationsSummary,
-  PageRequest,
   ReportDefinitionPage,
   ReportQueryRequest,
   ReportDefinitionSummary,
