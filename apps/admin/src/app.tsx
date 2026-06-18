@@ -60,7 +60,7 @@ function redirectToLogin(): void {
   );
 }
 
-export function formatAdminLayoutMessage(message: {
+function formatAdminLayoutMessage(message: {
   defaultMessage?: string;
   id: string;
 }): string {

@@ -254,14 +254,7 @@ describe('app getInitialState', () => {
   });
 
   it('uses Umi locale messages for ProLayout menu labels', async () => {
-    const { formatAdminLayoutMessage, layout } = await import('./app');
-
-    expect(
-      formatAdminLayoutMessage({
-        id: 'menu.system.users',
-        defaultMessage: 'system.users',
-      }),
-    ).toBe('用户管理');
+    const { layout } = await import('./app');
 
     const layoutConfig = layout({
       initialState: undefined,

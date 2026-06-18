@@ -150,6 +150,16 @@ if (
   );
 }
 
+if (
+  /export\s+(?:async\s+)?(?:function|const|let|var|class)\s+formatAdminLayoutMessage\b/.test(
+    appRuntime,
+  )
+) {
+  throw new Error(
+    'Admin layout menu i18n helper must stay internal to app.tsx because Umi runtime rejects unsupported app exports.',
+  );
+}
+
 const proConfig = readFileSync(resolve(root, 'config/config.ts'), 'utf8');
 const proxyConfig = readFileSync(resolve(root, 'config/proxy.ts'), 'utf8');
 const loginPage = readFileSync(
