@@ -1,4 +1,14 @@
-import { LockOutlined, UserOutlined } from '@ant-design/icons';
+import {
+  AlipayCircleOutlined,
+  GithubOutlined,
+  GoogleOutlined,
+  LinkOutlined,
+  LockOutlined,
+  TikTokOutlined,
+  UserOutlined,
+  WechatOutlined,
+  WindowsOutlined,
+} from '@ant-design/icons';
 import {
   LoginForm,
   ProFormCheckbox,
@@ -11,13 +21,19 @@ import {
   useIntl,
   useModel,
 } from '@umijs/max';
-import { Alert, App, Space, Typography } from 'antd';
+import { Alert, App, Button, Divider, Space, Tooltip, Typography } from 'antd';
 import { createStyles } from 'antd-style';
-import React, { startTransition, useState } from 'react';
+import React, { startTransition, useEffect, useState } from 'react';
 import { Footer } from '@/components';
 import { registrySummary, shellMenuItems } from '@/core/shellRegistry';
 import { formatRequestErrorMessage } from '@/requestErrorConfig';
-import { loginToOpenCore, toAdminCurrentUser } from '@/services/opencore/auth';
+import {
+  listOpenCoreSocialAuthProviders,
+  loginToOpenCore,
+  startOpenCoreSocialAuthFlow,
+  toAdminCurrentUser,
+} from '@/services/opencore/auth';
+import type { SocialAuthProviderSummary } from '@opencore/sdk';
 import Settings from '../../../../config/defaultSettings';
 
 type LoginValues = {
@@ -42,7 +58,7 @@ const useStyles = createStyles(({ token }) => {
     container: {
       display: 'flex',
       flexDirection: 'column',
-      height: '100vh',
+      minHeight: '100dvh',
       overflow: 'auto',
       backgroundImage:
         "url('https://mdn.alipayobjects.com/yuyan_qk0oxh/afts/img/V-_oS6r-i7wAAAAAAAAAAAAAFl94AQBr')",
@@ -52,8 +68,29 @@ const useStyles = createStyles(({ token }) => {
       fontSize: 12,
       lineHeight: '20px',
     },
+    socialButton: {
+      justifyContent: 'flex-start',
+      minHeight: 40,
+      transition: 'transform 160ms ease, border-color 160ms ease',
+      ':active': {
+        transform: 'translateY(1px) scale(0.99)',
+      },
+    },
+    socialGrid: {
+      display: 'grid',
+      gap: 8,
+      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    },
+    socialMessage: {
+      display: 'block',
+      fontSize: 12,
+      lineHeight: '18px',
+      marginTop: 8,
+    },
   };
 });
+
+const SOCIAL_REDIRECT_STORAGE_PREFIX = 'opencore.social.redirect.';
 
 const Lang = () => {
   const { styles } = useStyles();
@@ -98,6 +135,11 @@ function getSafeRedirectUrl(redirect: string | null): string {
 
 const Login: React.FC = () => {
   const [loginError, setLoginError] = useState<string>();
+  const [socialProviders, setSocialProviders] = useState<
+    readonly SocialAuthProviderSummary[]
+  >([]);
+  const [socialLoading, setSocialLoading] = useState(false);
+  const [startingProviderCode, setStartingProviderCode] = useState<string>();
   const { initialState, setInitialState } = useModel('@@initialState');
   const { styles } = useStyles();
   const { message } = App.useApp();
@@ -107,6 +149,26 @@ const Login: React.FC = () => {
   const loginLockoutMinutes = initialState?.runtimeConfig?.loginLockoutMinutes;
   const loginMaxFailedAttempts =
     initialState?.runtimeConfig?.loginMaxFailedAttempts;
+
+  useEffect(() => {
+    let mounted = true;
+
+    listOpenCoreSocialAuthProviders()
+      .then((providers) => {
+        if (mounted) {
+          setSocialProviders(providers);
+        }
+      })
+      .catch(() => {
+        if (mounted) {
+          setSocialProviders([]);
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const fetchUserInfo = async () => {
     const userInfo = await initialState?.fetchUserInfo?.();
@@ -165,6 +227,41 @@ const Login: React.FC = () => {
       setLoginError(errorMessage);
       message.error(errorMessage);
       console.error(error);
+    }
+  };
+
+  const handleSocialLogin = async (provider: SocialAuthProviderSummary) => {
+    if (provider.status !== 'ready') {
+      message.warning(provider.message);
+      return;
+    }
+
+    setSocialLoading(true);
+    setStartingProviderCode(provider.code);
+    try {
+      const urlParams = new URL(window.location.href).searchParams;
+      const redirect = getSafeRedirectUrl(urlParams.get('redirect'));
+      const flow = await startOpenCoreSocialAuthFlow({
+        providerCode: provider.code,
+        redirect,
+      });
+
+      window.sessionStorage.setItem(
+        `${SOCIAL_REDIRECT_STORAGE_PREFIX}${flow.state}`,
+        redirect,
+      );
+      window.location.href = flow.authorizationUrl;
+    } catch (error) {
+      const errorMessage =
+        formatRequestErrorMessage(error) ||
+        intl.formatMessage({
+          id: 'pages.login.social.startFailure',
+          defaultMessage: 'Unable to start social login.',
+        });
+      message.error(errorMessage);
+    } finally {
+      setSocialLoading(false);
+      setStartingProviderCode(undefined);
     }
   };
 
@@ -286,11 +383,69 @@ const Login: React.FC = () => {
               />
             </ProFormCheckbox>
           </div>
+          <Divider plain>
+            {intl.formatMessage({
+              id: 'pages.login.social.divider',
+              defaultMessage: 'Other sign-in methods',
+            })}
+          </Divider>
+          <div className={styles.socialGrid}>
+            {socialProviders.map((provider) => {
+              const ready = provider.status === 'ready';
+              const loading = startingProviderCode === provider.code;
+              const button = (
+                <Button
+                  block
+                  className={styles.socialButton}
+                  disabled={!ready || socialLoading}
+                  icon={renderSocialIcon(provider.icon)}
+                  loading={loading}
+                  onClick={() => void handleSocialLogin(provider)}
+                >
+                  {provider.name}
+                </Button>
+              );
+
+              return ready ? (
+                <span key={provider.code}>{button}</span>
+              ) : (
+                <Tooltip key={provider.code} title={provider.message}>
+                  <span>{button}</span>
+                </Tooltip>
+              );
+            })}
+          </div>
+          <Typography.Text className={styles.socialMessage} type="secondary">
+            {intl.formatMessage({
+              id: 'pages.login.social.hint',
+              defaultMessage:
+                'Unavailable channels require third-party app configuration before use.',
+            })}
+          </Typography.Text>
         </LoginForm>
       </div>
       <Footer />
     </div>
   );
 };
+
+function renderSocialIcon(icon: string) {
+  switch (icon) {
+    case 'alipay-circle':
+      return <AlipayCircleOutlined />;
+    case 'github':
+      return <GithubOutlined />;
+    case 'google':
+      return <GoogleOutlined />;
+    case 'tik-tok':
+      return <TikTokOutlined />;
+    case 'wechat':
+      return <WechatOutlined />;
+    case 'windows':
+      return <WindowsOutlined />;
+    default:
+      return <LinkOutlined />;
+  }
+}
 
 export default Login;

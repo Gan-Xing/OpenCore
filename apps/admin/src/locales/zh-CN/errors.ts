@@ -1,6 +1,15 @@
 export default {
   'error.AUTH_INVALID_CREDENTIALS': '用户名或密码错误。',
   'error.AUTH_USER_UNAVAILABLE': '用户已停用或不存在。',
+  'error.AUTH_SOCIAL_ACCOUNT_ALREADY_BOUND':
+    '该社交账号已绑定其他 OpenCore 用户。',
+  'error.AUTH_SOCIAL_ACCOUNT_AMBIGUOUS': '该社交账号绑定状态异常。',
+  'error.AUTH_SOCIAL_FIELD_REQUIRED': '社交登录参数不能为空。',
+  'error.AUTH_SOCIAL_FLOW_NOT_COMPLETED': '社交登录流程尚未完成或已过期。',
+  'error.AUTH_SOCIAL_PROVIDER_NOT_FOUND': '社交登录通道不存在。',
+  'error.AUTH_SOCIAL_PROVIDER_NOT_READY': '社交登录通道尚未配置完成。',
+  'error.AUTH_SOCIAL_PROVIDER_UNSUPPORTED': '该社交登录通道暂未启用登录回调。',
+  'error.AUTH_SOCIAL_TOKEN_UNAVAILABLE': '社交登录凭证不可用，请重新发起登录。',
   'error.AUTH_BEARER_TOKEN_MISSING': '请先登录。',
   'error.AUTH_BEARER_TOKEN_INVALID': '登录凭证无效，请重新登录。',
   'error.AUTH_BEARER_TOKEN_INVALID_PAYLOAD': '登录凭证无效，请重新登录。',

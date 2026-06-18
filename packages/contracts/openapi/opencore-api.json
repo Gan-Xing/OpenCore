@@ -96,6 +96,122 @@
         "tags": ["Auth"]
       }
     },
+    "/api/auth/social/providers": {
+      "get": {
+        "operationId": "AuthController_listSocialProviders",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SocialAuthProviderDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Auth"]
+      }
+    },
+    "/api/auth/social/flows": {
+      "post": {
+        "operationId": "AuthController_startSocialFlow",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartSocialAuthFlowDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SocialAuthFlowDto" }
+              }
+            }
+          }
+        },
+        "tags": ["Auth"]
+      }
+    },
+    "/api/auth/social/callback/{providerCode}": {
+      "get": {
+        "operationId": "AuthController_callbackSocialProvider",
+        "parameters": [
+          {
+            "name": "providerCode",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": { "200": { "description": "" } },
+        "tags": ["Auth"]
+      }
+    },
+    "/api/auth/social/complete": {
+      "post": {
+        "operationId": "AuthController_completeSocialLogin",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CompleteSocialAuthDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SocialAuthResultDto" }
+              }
+            }
+          }
+        },
+        "tags": ["Auth"]
+      }
+    },
+    "/api/auth/social/bind-login": {
+      "post": {
+        "operationId": "AuthController_bindSocialLogin",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BindSocialAuthLoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SocialAuthResultDto" }
+              }
+            }
+          }
+        },
+        "tags": ["Auth"]
+      }
+    },
     "/api/core/users": {
       "get": {
         "operationId": "RbacController_listUsers",
@@ -1285,6 +1401,1906 @@
         },
         "security": [{ "bearer": [] }],
         "tags": ["Rbac", "Core Menus"]
+      }
+    },
+    "/api/integrations/summary": {
+      "get": {
+        "operationId": "IntegrationController_getSummary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationSummaryDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration"]
+      }
+    },
+    "/api/integrations/providers": {
+      "get": {
+        "operationId": "IntegrationController_listProviders",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["mail", "oauth", "pay", "sms", "websocket", "wechat"]
+            }
+          },
+          {
+            "name": "enabled",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
+          },
+          {
+            "name": "healthStatus",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["unknown", "healthy", "degraded", "disabled"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationProviderPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Providers"]
+      },
+      "post": {
+        "operationId": "IntegrationController_createProvider",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateIntegrationProviderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationProviderDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Providers"]
+      }
+    },
+    "/api/integrations/providers/health-audit": {
+      "get": {
+        "operationId": "IntegrationController_getProviderHealthAudit",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationProviderHealthAuditDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Providers"]
+      }
+    },
+    "/api/integrations/providers/{code}": {
+      "get": {
+        "operationId": "IntegrationController_getProvider",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationProviderDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Providers"]
+      },
+      "patch": {
+        "operationId": "IntegrationController_updateProvider",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateIntegrationProviderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationProviderDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Providers"]
+      }
+    },
+    "/api/integrations/providers/{code}/enable": {
+      "patch": {
+        "operationId": "IntegrationController_enableProvider",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationProviderDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Providers"]
+      }
+    },
+    "/api/integrations/providers/{code}/disable": {
+      "patch": {
+        "operationId": "IntegrationController_disableProvider",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationProviderDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Providers"]
+      }
+    },
+    "/api/integrations/providers/{code}/health-check": {
+      "post": {
+        "operationId": "IntegrationController_checkProviderHealth",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationProviderDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Providers"]
+      }
+    },
+    "/api/integrations/providers/{code}/test": {
+      "post": {
+        "operationId": "IntegrationController_testProvider",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestIntegrationProviderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationProviderTestResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Providers"]
+      }
+    },
+    "/api/integrations/providers/{code}/diagnostics": {
+      "get": {
+        "operationId": "IntegrationController_getProviderDiagnostics",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationProviderDiagnosticsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Providers"]
+      }
+    },
+    "/api/integrations/providers/{code}/audit-logs": {
+      "get": {
+        "operationId": "IntegrationController_listProviderAuditLogs",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationProviderAuditLogPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Providers"]
+      }
+    },
+    "/api/integrations/outbox/schedule/run": {
+      "post": {
+        "operationId": "IntegrationController_runOutboxSchedule",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ScheduleOutboxDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationOutboxScheduleResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration"]
+      }
+    },
+    "/api/integrations/mail/templates": {
+      "get": {
+        "operationId": "IntegrationController_listMailTemplates",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "enabled",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationTemplatePageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Mail"]
+      },
+      "post": {
+        "operationId": "IntegrationController_createMailTemplate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateIntegrationTemplateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationTemplateDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Mail"]
+      }
+    },
+    "/api/integrations/mail/templates/{code}": {
+      "get": {
+        "operationId": "IntegrationController_getMailTemplate",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationTemplateDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Mail"]
+      }
+    },
+    "/api/integrations/mail/preview": {
+      "post": {
+        "operationId": "IntegrationController_previewMailTemplate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PreviewTemplateDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TemplatePreviewDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Mail"]
+      }
+    },
+    "/api/integrations/mail/outbox": {
+      "get": {
+        "operationId": "IntegrationController_listMailOutbox",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string", "enum": ["queued", "sent", "failed"] }
+          },
+          {
+            "name": "providerCode",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationOutboxPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Mail"]
+      },
+      "post": {
+        "operationId": "IntegrationController_enqueueMail",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOutboxMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationOutboxDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Mail"]
+      }
+    },
+    "/api/integrations/mail/outbox/{id}": {
+      "get": {
+        "operationId": "IntegrationController_getMailOutboxMessage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationOutboxDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Mail"]
+      }
+    },
+    "/api/integrations/mail/test-send": {
+      "post": {
+        "operationId": "IntegrationController_sendMailTest",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/TestOutboxMessageDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationOutboxTestResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Mail"]
+      }
+    },
+    "/api/integrations/mail/outbox/{id}/sent": {
+      "patch": {
+        "operationId": "IntegrationController_markMailOutboxSent",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationOutboxDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Mail"]
+      }
+    },
+    "/api/integrations/mail/outbox/{id}/failed": {
+      "patch": {
+        "operationId": "IntegrationController_markMailOutboxFailed",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/FailOutboxMessageDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationOutboxDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Mail"]
+      }
+    },
+    "/api/integrations/mail/outbox/{id}/retry": {
+      "patch": {
+        "operationId": "IntegrationController_retryMailOutbox",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationOutboxDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Mail"]
+      }
+    },
+    "/api/integrations/mail/outbox/process": {
+      "post": {
+        "operationId": "IntegrationController_processMailOutbox",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ProcessOutboxDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationOutboxProcessResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Mail"]
+      }
+    },
+    "/api/integrations/mail/outbox/callback": {
+      "post": {
+        "operationId": "IntegrationController_callbackMailOutbox",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IntegrationOutboxCallbackDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationOutboxDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Mail"]
+      }
+    },
+    "/api/integrations/sms/templates": {
+      "get": {
+        "operationId": "IntegrationController_listSmsTemplates",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "enabled",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationTemplatePageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration SMS"]
+      },
+      "post": {
+        "operationId": "IntegrationController_createSmsTemplate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateIntegrationTemplateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationTemplateDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration SMS"]
+      }
+    },
+    "/api/integrations/sms/templates/{code}": {
+      "get": {
+        "operationId": "IntegrationController_getSmsTemplate",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationTemplateDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration SMS"]
+      }
+    },
+    "/api/integrations/sms/preview": {
+      "post": {
+        "operationId": "IntegrationController_previewSmsTemplate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PreviewTemplateDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TemplatePreviewDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration SMS"]
+      }
+    },
+    "/api/integrations/sms/outbox": {
+      "get": {
+        "operationId": "IntegrationController_listSmsOutbox",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string", "enum": ["queued", "sent", "failed"] }
+          },
+          {
+            "name": "providerCode",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationOutboxPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration SMS"]
+      },
+      "post": {
+        "operationId": "IntegrationController_enqueueSms",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOutboxMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationOutboxDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration SMS"]
+      }
+    },
+    "/api/integrations/sms/outbox/{id}": {
+      "get": {
+        "operationId": "IntegrationController_getSmsOutboxMessage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationOutboxDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration SMS"]
+      }
+    },
+    "/api/integrations/sms/test-send": {
+      "post": {
+        "operationId": "IntegrationController_sendSmsTest",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/TestOutboxMessageDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationOutboxTestResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration SMS"]
+      }
+    },
+    "/api/integrations/sms/outbox/{id}/sent": {
+      "patch": {
+        "operationId": "IntegrationController_markSmsOutboxSent",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationOutboxDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration SMS"]
+      }
+    },
+    "/api/integrations/sms/outbox/{id}/failed": {
+      "patch": {
+        "operationId": "IntegrationController_markSmsOutboxFailed",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/FailOutboxMessageDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationOutboxDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration SMS"]
+      }
+    },
+    "/api/integrations/sms/outbox/{id}/retry": {
+      "patch": {
+        "operationId": "IntegrationController_retrySmsOutbox",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationOutboxDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration SMS"]
+      }
+    },
+    "/api/integrations/sms/outbox/process": {
+      "post": {
+        "operationId": "IntegrationController_processSmsOutbox",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ProcessOutboxDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationOutboxProcessResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration SMS"]
+      }
+    },
+    "/api/integrations/sms/outbox/callback": {
+      "post": {
+        "operationId": "IntegrationController_callbackSmsOutbox",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IntegrationOutboxCallbackDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationOutboxDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration SMS"]
+      }
+    },
+    "/api/integrations/oauth/profile/accounts": {
+      "get": {
+        "operationId": "IntegrationController_listProfileOAuthAccounts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OAuthProfileAccountDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration OAuth"]
+      }
+    },
+    "/api/integrations/oauth/profile/providers": {
+      "get": {
+        "operationId": "IntegrationController_listProfileOAuthProviders",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OAuthProfileProviderDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration OAuth"]
+      }
+    },
+    "/api/integrations/oauth/profile/flows": {
+      "post": {
+        "operationId": "IntegrationController_startProfileOAuthFlow",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartOAuthProfileFlowDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OAuthFlowDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration OAuth"]
+      }
+    },
+    "/api/integrations/oauth/profile/accounts/{id}/unbind": {
+      "patch": {
+        "operationId": "IntegrationController_unbindProfileOAuthAccount",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnbindOAuthProfileAccountDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthProfileAccountDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration OAuth"]
+      }
+    },
+    "/api/integrations/oauth/providers": {
+      "get": {
+        "operationId": "IntegrationController_listOAuthProviders",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["mail", "oauth", "pay", "sms", "websocket", "wechat"]
+            }
+          },
+          {
+            "name": "enabled",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
+          },
+          {
+            "name": "healthStatus",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["unknown", "healthy", "degraded", "disabled"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationProviderPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration OAuth"]
+      }
+    },
+    "/api/integrations/oauth/callback-contract": {
+      "get": {
+        "operationId": "IntegrationController_getOAuthCallbackContract",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthCallbackContractDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration OAuth"]
+      }
+    },
+    "/api/integrations/oauth/flows": {
+      "post": {
+        "operationId": "IntegrationController_startOAuthFlow",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/StartOAuthFlowDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OAuthFlowDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration OAuth"]
+      },
+      "get": {
+        "operationId": "IntegrationController_listOAuthFlows",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "providerCode",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "subjectId",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["completed", "expired", "failed", "pending"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OAuthFlowPageDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration OAuth"]
+      }
+    },
+    "/api/integrations/oauth/callback/{providerCode}": {
+      "get": {
+        "operationId": "IntegrationController_callbackOAuthProvider",
+        "parameters": [
+          {
+            "name": "providerCode",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "state",
+            "required": true,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "response",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string", "enum": ["json", "redirect"] }
+          },
+          {
+            "name": "code",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "error",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "providerAccountId",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "scopes",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "expiresInSeconds",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "number" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthCallbackResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration OAuth"]
+      }
+    },
+    "/api/integrations/oauth/callback-audits": {
+      "get": {
+        "operationId": "IntegrationController_listOAuthCallbackAudits",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "providerCode",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string", "enum": ["accepted", "rejected"] }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthCallbackAuditPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration OAuth"]
+      }
+    },
+    "/api/integrations/oauth/tokens/summary": {
+      "get": {
+        "operationId": "IntegrationController_getOAuthTokenSummary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthTokenInventorySummaryDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration OAuth"]
+      }
+    },
+    "/api/integrations/oauth/tokens": {
+      "get": {
+        "operationId": "IntegrationController_listOAuthTokens",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "providerCode",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "subjectId",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["active", "expired", "revoked"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OAuthTokenPageDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration OAuth"]
+      }
+    },
+    "/api/integrations/oauth/tokens/{id}": {
+      "get": {
+        "operationId": "IntegrationController_getOAuthToken",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OAuthTokenDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration OAuth"]
+      }
+    },
+    "/api/integrations/oauth/tokens/{id}/revoke": {
+      "patch": {
+        "operationId": "IntegrationController_revokeOAuthToken",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RevokeOAuthTokenDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OAuthTokenDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration OAuth"]
+      }
+    },
+    "/api/integrations/designs/wechat": {
+      "get": {
+        "operationId": "IntegrationController_getWeChatDesign",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationDesignDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration WeChat"]
+      }
+    },
+    "/api/integrations/designs/websocket": {
+      "get": {
+        "operationId": "IntegrationController_getWebSocketDesign",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationDesignDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration WebSocket"]
+      }
+    },
+    "/api/integrations/websocket/runtime": {
+      "get": {
+        "operationId": "IntegrationController_getWebSocketRuntimeDiagnostics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebSocketRuntimeDiagnosticsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration WebSocket"]
+      }
+    },
+    "/api/integrations/websocket/runtime/events": {
+      "post": {
+        "operationId": "IntegrationController_publishWebSocketRuntimeEvent",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishWebSocketRuntimeEventDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebSocketRuntimeEventDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration WebSocket"]
+      }
+    },
+    "/api/integrations/websocket/runtime/stream": {
+      "get": {
+        "operationId": "IntegrationController_streamWebSocketRuntimeEvents",
+        "parameters": [
+          {
+            "name": "room",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "eventTypes",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebSocketRuntimeEventDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration WebSocket"]
+      }
+    },
+    "/api/integrations/designs/pay": {
+      "get": {
+        "operationId": "IntegrationController_getPaymentDesign",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationDesignDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Integration", "Integration Payment"]
       }
     },
     "/api/core/dicts": {
@@ -5151,1906 +7167,6 @@
         "tags": ["Collaboration", "Collaboration Approval Lite"]
       }
     },
-    "/api/integrations/summary": {
-      "get": {
-        "operationId": "IntegrationController_getSummary",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationSummaryDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration"]
-      }
-    },
-    "/api/integrations/providers": {
-      "get": {
-        "operationId": "IntegrationController_listProviders",
-        "parameters": [
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 1,
-              "allOf": [{ "$ref": "#/components/schemas/Object" }]
-            }
-          },
-          {
-            "name": "pageSize",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 10,
-              "allOf": [{ "$ref": "#/components/schemas/Object" }]
-            }
-          },
-          {
-            "name": "type",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": ["mail", "oauth", "pay", "sms", "websocket", "wechat"]
-            }
-          },
-          {
-            "name": "enabled",
-            "required": false,
-            "in": "query",
-            "schema": { "$ref": "#/components/schemas/Object" }
-          },
-          {
-            "name": "healthStatus",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": ["unknown", "healthy", "degraded", "disabled"]
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationProviderPageDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration Providers"]
-      },
-      "post": {
-        "operationId": "IntegrationController_createProvider",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateIntegrationProviderDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationProviderDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration Providers"]
-      }
-    },
-    "/api/integrations/providers/health-audit": {
-      "get": {
-        "operationId": "IntegrationController_getProviderHealthAudit",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationProviderHealthAuditDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration Providers"]
-      }
-    },
-    "/api/integrations/providers/{code}": {
-      "get": {
-        "operationId": "IntegrationController_getProvider",
-        "parameters": [
-          {
-            "name": "code",
-            "required": true,
-            "in": "path",
-            "schema": { "type": "string" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationProviderDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration Providers"]
-      },
-      "patch": {
-        "operationId": "IntegrationController_updateProvider",
-        "parameters": [
-          {
-            "name": "code",
-            "required": true,
-            "in": "path",
-            "schema": { "type": "string" }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateIntegrationProviderDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationProviderDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration Providers"]
-      }
-    },
-    "/api/integrations/providers/{code}/enable": {
-      "patch": {
-        "operationId": "IntegrationController_enableProvider",
-        "parameters": [
-          {
-            "name": "code",
-            "required": true,
-            "in": "path",
-            "schema": { "type": "string" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationProviderDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration Providers"]
-      }
-    },
-    "/api/integrations/providers/{code}/disable": {
-      "patch": {
-        "operationId": "IntegrationController_disableProvider",
-        "parameters": [
-          {
-            "name": "code",
-            "required": true,
-            "in": "path",
-            "schema": { "type": "string" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationProviderDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration Providers"]
-      }
-    },
-    "/api/integrations/providers/{code}/health-check": {
-      "post": {
-        "operationId": "IntegrationController_checkProviderHealth",
-        "parameters": [
-          {
-            "name": "code",
-            "required": true,
-            "in": "path",
-            "schema": { "type": "string" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationProviderDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration Providers"]
-      }
-    },
-    "/api/integrations/providers/{code}/test": {
-      "post": {
-        "operationId": "IntegrationController_testProvider",
-        "parameters": [
-          {
-            "name": "code",
-            "required": true,
-            "in": "path",
-            "schema": { "type": "string" }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TestIntegrationProviderDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationProviderTestResultDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration Providers"]
-      }
-    },
-    "/api/integrations/providers/{code}/diagnostics": {
-      "get": {
-        "operationId": "IntegrationController_getProviderDiagnostics",
-        "parameters": [
-          {
-            "name": "code",
-            "required": true,
-            "in": "path",
-            "schema": { "type": "string" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationProviderDiagnosticsDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration Providers"]
-      }
-    },
-    "/api/integrations/providers/{code}/audit-logs": {
-      "get": {
-        "operationId": "IntegrationController_listProviderAuditLogs",
-        "parameters": [
-          {
-            "name": "code",
-            "required": true,
-            "in": "path",
-            "schema": { "type": "string" }
-          },
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 1,
-              "allOf": [{ "$ref": "#/components/schemas/Object" }]
-            }
-          },
-          {
-            "name": "pageSize",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 10,
-              "allOf": [{ "$ref": "#/components/schemas/Object" }]
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationProviderAuditLogPageDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration Providers"]
-      }
-    },
-    "/api/integrations/outbox/schedule/run": {
-      "post": {
-        "operationId": "IntegrationController_runOutboxSchedule",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/ScheduleOutboxDto" }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationOutboxScheduleResultDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration"]
-      }
-    },
-    "/api/integrations/mail/templates": {
-      "get": {
-        "operationId": "IntegrationController_listMailTemplates",
-        "parameters": [
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 1,
-              "allOf": [{ "$ref": "#/components/schemas/Object" }]
-            }
-          },
-          {
-            "name": "pageSize",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 10,
-              "allOf": [{ "$ref": "#/components/schemas/Object" }]
-            }
-          },
-          {
-            "name": "enabled",
-            "required": false,
-            "in": "query",
-            "schema": { "$ref": "#/components/schemas/Object" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationTemplatePageDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration Mail"]
-      },
-      "post": {
-        "operationId": "IntegrationController_createMailTemplate",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateIntegrationTemplateDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationTemplateDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration Mail"]
-      }
-    },
-    "/api/integrations/mail/templates/{code}": {
-      "get": {
-        "operationId": "IntegrationController_getMailTemplate",
-        "parameters": [
-          {
-            "name": "code",
-            "required": true,
-            "in": "path",
-            "schema": { "type": "string" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationTemplateDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration Mail"]
-      }
-    },
-    "/api/integrations/mail/preview": {
-      "post": {
-        "operationId": "IntegrationController_previewMailTemplate",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/PreviewTemplateDto" }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/TemplatePreviewDto" }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration Mail"]
-      }
-    },
-    "/api/integrations/mail/outbox": {
-      "get": {
-        "operationId": "IntegrationController_listMailOutbox",
-        "parameters": [
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 1,
-              "allOf": [{ "$ref": "#/components/schemas/Object" }]
-            }
-          },
-          {
-            "name": "pageSize",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 10,
-              "allOf": [{ "$ref": "#/components/schemas/Object" }]
-            }
-          },
-          {
-            "name": "status",
-            "required": false,
-            "in": "query",
-            "schema": { "type": "string", "enum": ["queued", "sent", "failed"] }
-          },
-          {
-            "name": "providerCode",
-            "required": false,
-            "in": "query",
-            "schema": { "type": "string" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationOutboxPageDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration Mail"]
-      },
-      "post": {
-        "operationId": "IntegrationController_enqueueMail",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateOutboxMessageDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationOutboxDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration Mail"]
-      }
-    },
-    "/api/integrations/mail/outbox/{id}": {
-      "get": {
-        "operationId": "IntegrationController_getMailOutboxMessage",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": { "type": "string" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationOutboxDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration Mail"]
-      }
-    },
-    "/api/integrations/mail/test-send": {
-      "post": {
-        "operationId": "IntegrationController_sendMailTest",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/TestOutboxMessageDto" }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationOutboxTestResultDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration Mail"]
-      }
-    },
-    "/api/integrations/mail/outbox/{id}/sent": {
-      "patch": {
-        "operationId": "IntegrationController_markMailOutboxSent",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": { "type": "string" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationOutboxDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration Mail"]
-      }
-    },
-    "/api/integrations/mail/outbox/{id}/failed": {
-      "patch": {
-        "operationId": "IntegrationController_markMailOutboxFailed",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": { "type": "string" }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/FailOutboxMessageDto" }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationOutboxDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration Mail"]
-      }
-    },
-    "/api/integrations/mail/outbox/{id}/retry": {
-      "patch": {
-        "operationId": "IntegrationController_retryMailOutbox",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": { "type": "string" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationOutboxDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration Mail"]
-      }
-    },
-    "/api/integrations/mail/outbox/process": {
-      "post": {
-        "operationId": "IntegrationController_processMailOutbox",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/ProcessOutboxDto" }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationOutboxProcessResultDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration Mail"]
-      }
-    },
-    "/api/integrations/mail/outbox/callback": {
-      "post": {
-        "operationId": "IntegrationController_callbackMailOutbox",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/IntegrationOutboxCallbackDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationOutboxDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration Mail"]
-      }
-    },
-    "/api/integrations/sms/templates": {
-      "get": {
-        "operationId": "IntegrationController_listSmsTemplates",
-        "parameters": [
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 1,
-              "allOf": [{ "$ref": "#/components/schemas/Object" }]
-            }
-          },
-          {
-            "name": "pageSize",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 10,
-              "allOf": [{ "$ref": "#/components/schemas/Object" }]
-            }
-          },
-          {
-            "name": "enabled",
-            "required": false,
-            "in": "query",
-            "schema": { "$ref": "#/components/schemas/Object" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationTemplatePageDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration SMS"]
-      },
-      "post": {
-        "operationId": "IntegrationController_createSmsTemplate",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateIntegrationTemplateDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationTemplateDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration SMS"]
-      }
-    },
-    "/api/integrations/sms/templates/{code}": {
-      "get": {
-        "operationId": "IntegrationController_getSmsTemplate",
-        "parameters": [
-          {
-            "name": "code",
-            "required": true,
-            "in": "path",
-            "schema": { "type": "string" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationTemplateDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration SMS"]
-      }
-    },
-    "/api/integrations/sms/preview": {
-      "post": {
-        "operationId": "IntegrationController_previewSmsTemplate",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/PreviewTemplateDto" }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/TemplatePreviewDto" }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration SMS"]
-      }
-    },
-    "/api/integrations/sms/outbox": {
-      "get": {
-        "operationId": "IntegrationController_listSmsOutbox",
-        "parameters": [
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 1,
-              "allOf": [{ "$ref": "#/components/schemas/Object" }]
-            }
-          },
-          {
-            "name": "pageSize",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 10,
-              "allOf": [{ "$ref": "#/components/schemas/Object" }]
-            }
-          },
-          {
-            "name": "status",
-            "required": false,
-            "in": "query",
-            "schema": { "type": "string", "enum": ["queued", "sent", "failed"] }
-          },
-          {
-            "name": "providerCode",
-            "required": false,
-            "in": "query",
-            "schema": { "type": "string" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationOutboxPageDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration SMS"]
-      },
-      "post": {
-        "operationId": "IntegrationController_enqueueSms",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateOutboxMessageDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationOutboxDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration SMS"]
-      }
-    },
-    "/api/integrations/sms/outbox/{id}": {
-      "get": {
-        "operationId": "IntegrationController_getSmsOutboxMessage",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": { "type": "string" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationOutboxDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration SMS"]
-      }
-    },
-    "/api/integrations/sms/test-send": {
-      "post": {
-        "operationId": "IntegrationController_sendSmsTest",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/TestOutboxMessageDto" }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationOutboxTestResultDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration SMS"]
-      }
-    },
-    "/api/integrations/sms/outbox/{id}/sent": {
-      "patch": {
-        "operationId": "IntegrationController_markSmsOutboxSent",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": { "type": "string" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationOutboxDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration SMS"]
-      }
-    },
-    "/api/integrations/sms/outbox/{id}/failed": {
-      "patch": {
-        "operationId": "IntegrationController_markSmsOutboxFailed",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": { "type": "string" }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/FailOutboxMessageDto" }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationOutboxDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration SMS"]
-      }
-    },
-    "/api/integrations/sms/outbox/{id}/retry": {
-      "patch": {
-        "operationId": "IntegrationController_retrySmsOutbox",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": { "type": "string" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationOutboxDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration SMS"]
-      }
-    },
-    "/api/integrations/sms/outbox/process": {
-      "post": {
-        "operationId": "IntegrationController_processSmsOutbox",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/ProcessOutboxDto" }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationOutboxProcessResultDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration SMS"]
-      }
-    },
-    "/api/integrations/sms/outbox/callback": {
-      "post": {
-        "operationId": "IntegrationController_callbackSmsOutbox",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/IntegrationOutboxCallbackDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationOutboxDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration SMS"]
-      }
-    },
-    "/api/integrations/oauth/profile/accounts": {
-      "get": {
-        "operationId": "IntegrationController_listProfileOAuthAccounts",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/OAuthProfileAccountDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration OAuth"]
-      }
-    },
-    "/api/integrations/oauth/profile/providers": {
-      "get": {
-        "operationId": "IntegrationController_listProfileOAuthProviders",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/OAuthProfileProviderDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration OAuth"]
-      }
-    },
-    "/api/integrations/oauth/profile/flows": {
-      "post": {
-        "operationId": "IntegrationController_startProfileOAuthFlow",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/StartOAuthProfileFlowDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/OAuthFlowDto" }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration OAuth"]
-      }
-    },
-    "/api/integrations/oauth/profile/accounts/{id}/unbind": {
-      "patch": {
-        "operationId": "IntegrationController_unbindProfileOAuthAccount",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": { "type": "string" }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UnbindOAuthProfileAccountDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OAuthProfileAccountDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration OAuth"]
-      }
-    },
-    "/api/integrations/oauth/providers": {
-      "get": {
-        "operationId": "IntegrationController_listOAuthProviders",
-        "parameters": [
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 1,
-              "allOf": [{ "$ref": "#/components/schemas/Object" }]
-            }
-          },
-          {
-            "name": "pageSize",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 10,
-              "allOf": [{ "$ref": "#/components/schemas/Object" }]
-            }
-          },
-          {
-            "name": "type",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": ["mail", "oauth", "pay", "sms", "websocket", "wechat"]
-            }
-          },
-          {
-            "name": "enabled",
-            "required": false,
-            "in": "query",
-            "schema": { "$ref": "#/components/schemas/Object" }
-          },
-          {
-            "name": "healthStatus",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": ["unknown", "healthy", "degraded", "disabled"]
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationProviderPageDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration OAuth"]
-      }
-    },
-    "/api/integrations/oauth/callback-contract": {
-      "get": {
-        "operationId": "IntegrationController_getOAuthCallbackContract",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OAuthCallbackContractDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration OAuth"]
-      }
-    },
-    "/api/integrations/oauth/flows": {
-      "post": {
-        "operationId": "IntegrationController_startOAuthFlow",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/StartOAuthFlowDto" }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/OAuthFlowDto" }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration OAuth"]
-      },
-      "get": {
-        "operationId": "IntegrationController_listOAuthFlows",
-        "parameters": [
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 1,
-              "allOf": [{ "$ref": "#/components/schemas/Object" }]
-            }
-          },
-          {
-            "name": "pageSize",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 10,
-              "allOf": [{ "$ref": "#/components/schemas/Object" }]
-            }
-          },
-          {
-            "name": "providerCode",
-            "required": false,
-            "in": "query",
-            "schema": { "type": "string" }
-          },
-          {
-            "name": "subjectId",
-            "required": false,
-            "in": "query",
-            "schema": { "type": "string" }
-          },
-          {
-            "name": "status",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": ["completed", "expired", "failed", "pending"]
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/OAuthFlowPageDto" }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration OAuth"]
-      }
-    },
-    "/api/integrations/oauth/callback/{providerCode}": {
-      "get": {
-        "operationId": "IntegrationController_callbackOAuthProvider",
-        "parameters": [
-          {
-            "name": "providerCode",
-            "required": true,
-            "in": "path",
-            "schema": { "type": "string" }
-          },
-          {
-            "name": "state",
-            "required": true,
-            "in": "query",
-            "schema": { "type": "string" }
-          },
-          {
-            "name": "response",
-            "required": false,
-            "in": "query",
-            "schema": { "type": "string", "enum": ["json", "redirect"] }
-          },
-          {
-            "name": "code",
-            "required": false,
-            "in": "query",
-            "schema": { "type": "string" }
-          },
-          {
-            "name": "error",
-            "required": false,
-            "in": "query",
-            "schema": { "type": "string" }
-          },
-          {
-            "name": "providerAccountId",
-            "required": false,
-            "in": "query",
-            "schema": { "type": "string" }
-          },
-          {
-            "name": "scopes",
-            "required": false,
-            "in": "query",
-            "schema": { "type": "string" }
-          },
-          {
-            "name": "expiresInSeconds",
-            "required": false,
-            "in": "query",
-            "schema": { "type": "number" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OAuthCallbackResultDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration OAuth"]
-      }
-    },
-    "/api/integrations/oauth/callback-audits": {
-      "get": {
-        "operationId": "IntegrationController_listOAuthCallbackAudits",
-        "parameters": [
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 1,
-              "allOf": [{ "$ref": "#/components/schemas/Object" }]
-            }
-          },
-          {
-            "name": "pageSize",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 10,
-              "allOf": [{ "$ref": "#/components/schemas/Object" }]
-            }
-          },
-          {
-            "name": "providerCode",
-            "required": false,
-            "in": "query",
-            "schema": { "type": "string" }
-          },
-          {
-            "name": "status",
-            "required": false,
-            "in": "query",
-            "schema": { "type": "string", "enum": ["accepted", "rejected"] }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OAuthCallbackAuditPageDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration OAuth"]
-      }
-    },
-    "/api/integrations/oauth/tokens/summary": {
-      "get": {
-        "operationId": "IntegrationController_getOAuthTokenSummary",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OAuthTokenInventorySummaryDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration OAuth"]
-      }
-    },
-    "/api/integrations/oauth/tokens": {
-      "get": {
-        "operationId": "IntegrationController_listOAuthTokens",
-        "parameters": [
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 1,
-              "allOf": [{ "$ref": "#/components/schemas/Object" }]
-            }
-          },
-          {
-            "name": "pageSize",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 10,
-              "allOf": [{ "$ref": "#/components/schemas/Object" }]
-            }
-          },
-          {
-            "name": "providerCode",
-            "required": false,
-            "in": "query",
-            "schema": { "type": "string" }
-          },
-          {
-            "name": "subjectId",
-            "required": false,
-            "in": "query",
-            "schema": { "type": "string" }
-          },
-          {
-            "name": "status",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": ["active", "expired", "revoked"]
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/OAuthTokenPageDto" }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration OAuth"]
-      }
-    },
-    "/api/integrations/oauth/tokens/{id}": {
-      "get": {
-        "operationId": "IntegrationController_getOAuthToken",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": { "type": "string" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/OAuthTokenDto" }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration OAuth"]
-      }
-    },
-    "/api/integrations/oauth/tokens/{id}/revoke": {
-      "patch": {
-        "operationId": "IntegrationController_revokeOAuthToken",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": { "type": "string" }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/RevokeOAuthTokenDto" }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/OAuthTokenDto" }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration OAuth"]
-      }
-    },
-    "/api/integrations/designs/wechat": {
-      "get": {
-        "operationId": "IntegrationController_getWeChatDesign",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationDesignDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration WeChat"]
-      }
-    },
-    "/api/integrations/designs/websocket": {
-      "get": {
-        "operationId": "IntegrationController_getWebSocketDesign",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationDesignDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration WebSocket"]
-      }
-    },
-    "/api/integrations/websocket/runtime": {
-      "get": {
-        "operationId": "IntegrationController_getWebSocketRuntimeDiagnostics",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/WebSocketRuntimeDiagnosticsDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration WebSocket"]
-      }
-    },
-    "/api/integrations/websocket/runtime/events": {
-      "post": {
-        "operationId": "IntegrationController_publishWebSocketRuntimeEvent",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PublishWebSocketRuntimeEventDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/WebSocketRuntimeEventDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration WebSocket"]
-      }
-    },
-    "/api/integrations/websocket/runtime/stream": {
-      "get": {
-        "operationId": "IntegrationController_streamWebSocketRuntimeEvents",
-        "parameters": [
-          {
-            "name": "room",
-            "required": false,
-            "in": "query",
-            "schema": { "type": "string" }
-          },
-          {
-            "name": "eventTypes",
-            "required": false,
-            "in": "query",
-            "schema": { "type": "string" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "text/event-stream": {
-                "schema": {
-                  "$ref": "#/components/schemas/WebSocketRuntimeEventDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration WebSocket"]
-      }
-    },
-    "/api/integrations/designs/pay": {
-      "get": {
-        "operationId": "IntegrationController_getPaymentDesign",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IntegrationDesignDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [{ "bearer": [] }],
-        "tags": ["Integration", "Integration Payment"]
-      }
-    },
     "/api/monitor/status": {
       "get": {
         "operationId": "MonitoringController_getStatus",
@@ -8729,6 +8845,80 @@
         "properties": { "loggedOut": { "type": "boolean" } },
         "required": ["loggedOut"]
       },
+      "SocialAuthProviderDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "icon": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["ready", "requires_configuration"]
+          },
+          "issue": {
+            "type": "string",
+            "enum": [
+              "disabled",
+              "missing_config",
+              "placeholder_client",
+              "secret_unverified",
+              "unsupported_provider"
+            ]
+          },
+          "message": { "type": "string" }
+        },
+        "required": ["code", "name", "icon", "status", "message"]
+      },
+      "StartSocialAuthFlowDto": {
+        "type": "object",
+        "properties": {
+          "providerCode": { "type": "string", "example": "oauth.github" },
+          "redirect": { "type": "string" }
+        },
+        "required": ["providerCode"]
+      },
+      "SocialAuthFlowDto": {
+        "type": "object",
+        "properties": {
+          "providerCode": { "type": "string" },
+          "state": { "type": "string" },
+          "authorizationUrl": { "type": "string" },
+          "expiresAt": { "type": "string" }
+        },
+        "required": ["providerCode", "state", "authorizationUrl", "expiresAt"]
+      },
+      "CompleteSocialAuthDto": {
+        "type": "object",
+        "properties": {
+          "providerCode": { "type": "string", "example": "oauth.github" },
+          "state": { "type": "string" }
+        },
+        "required": ["providerCode", "state"]
+      },
+      "SocialAuthResultDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["authenticated", "failed", "requires_binding"]
+          },
+          "providerCode": { "type": "string" },
+          "providerAccountId": { "type": "string" },
+          "message": { "type": "string" },
+          "session": { "$ref": "#/components/schemas/LoginResponseDto" }
+        },
+        "required": ["status", "providerCode", "message"]
+      },
+      "BindSocialAuthLoginDto": {
+        "type": "object",
+        "properties": {
+          "providerCode": { "type": "string", "example": "oauth.github" },
+          "state": { "type": "string" },
+          "username": { "type": "string", "example": "admin" },
+          "password": { "type": "string", "example": "admin123" }
+        },
+        "required": ["providerCode", "state", "username", "password"]
+      },
       "UserSummaryDto": {
         "type": "object",
         "properties": {
@@ -9438,7 +9628,1034 @@
           "hidden": { "type": "boolean" }
         }
       },
+      "IntegrationProviderSummaryDto": {
+        "type": "object",
+        "properties": {
+          "total": { "type": "number" },
+          "enabled": { "type": "number" },
+          "disabled": { "type": "number" },
+          "unknown": { "type": "number" },
+          "healthy": { "type": "number" },
+          "degraded": { "type": "number" }
+        },
+        "required": [
+          "total",
+          "enabled",
+          "disabled",
+          "unknown",
+          "healthy",
+          "degraded"
+        ]
+      },
+      "IntegrationOutboxSummaryDto": {
+        "type": "object",
+        "properties": {
+          "total": { "type": "number" },
+          "queued": { "type": "number" },
+          "sent": { "type": "number" },
+          "failed": { "type": "number" }
+        },
+        "required": ["total", "queued", "sent", "failed"]
+      },
+      "OAuthTokenInventorySummaryDto": {
+        "type": "object",
+        "properties": {
+          "total": { "type": "number" },
+          "active": { "type": "number" },
+          "expired": { "type": "number" },
+          "revoked": { "type": "number" },
+          "expiringSoon": { "type": "number" },
+          "providers": { "type": "number" },
+          "generatedAt": { "type": "string" }
+        },
+        "required": [
+          "total",
+          "active",
+          "expired",
+          "revoked",
+          "expiringSoon",
+          "providers",
+          "generatedAt"
+        ]
+      },
+      "IntegrationDesignSummaryDto": {
+        "type": "object",
+        "properties": {
+          "designOnlyTopics": { "type": "number" },
+          "topics": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["designOnlyTopics", "topics"]
+      },
+      "IntegrationSummaryDto": {
+        "type": "object",
+        "properties": {
+          "providers": {
+            "$ref": "#/components/schemas/IntegrationProviderSummaryDto"
+          },
+          "mailOutbox": {
+            "$ref": "#/components/schemas/IntegrationOutboxSummaryDto"
+          },
+          "smsOutbox": {
+            "$ref": "#/components/schemas/IntegrationOutboxSummaryDto"
+          },
+          "oauthProviders": { "type": "number" },
+          "oauthTokens": {
+            "$ref": "#/components/schemas/OAuthTokenInventorySummaryDto"
+          },
+          "designs": {
+            "$ref": "#/components/schemas/IntegrationDesignSummaryDto"
+          }
+        },
+        "required": [
+          "providers",
+          "mailOutbox",
+          "smsOutbox",
+          "oauthProviders",
+          "oauthTokens",
+          "designs"
+        ]
+      },
       "Object": { "type": "object", "properties": {} },
+      "IntegrationProviderDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "code": { "type": "string" },
+          "type": {
+            "type": "string",
+            "enum": ["mail", "oauth", "pay", "sms", "websocket", "wechat"]
+          },
+          "name": { "type": "string" },
+          "enabled": { "type": "boolean" },
+          "secretRef": { "type": "string" },
+          "secretRefStatus": {
+            "type": "string",
+            "enum": ["invalid", "missing", "unchecked", "unsupported", "valid"]
+          },
+          "configVersion": { "type": "number" },
+          "config": {
+            "type": "object",
+            "additionalProperties": true,
+            "example": {
+              "adapter": "smtp",
+              "host": "smtp.example.test",
+              "tlsMode": "starttls-required"
+            }
+          },
+          "healthStatus": {
+            "type": "string",
+            "enum": ["unknown", "healthy", "degraded", "disabled"]
+          },
+          "lastCheckedAt": { "type": "string" },
+          "lastTestStatus": {
+            "type": "string",
+            "enum": ["failed", "not_run", "passed", "warning"]
+          },
+          "lastTestMessage": { "type": "string" },
+          "lastTestedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "code",
+          "type",
+          "name",
+          "enabled",
+          "secretRef",
+          "secretRefStatus",
+          "configVersion",
+          "config",
+          "healthStatus"
+        ]
+      },
+      "IntegrationProviderPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/IntegrationProviderDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "IntegrationProviderHealthAuditTotalsDto": {
+        "type": "object",
+        "properties": {
+          "total": { "type": "number" },
+          "ready": { "type": "number" },
+          "attention": { "type": "number" },
+          "blocked": { "type": "number" },
+          "unsupported": { "type": "number" },
+          "queued": { "type": "number" },
+          "failed": { "type": "number" },
+          "retryableFailed": { "type": "number" },
+          "unchecked": { "type": "number" },
+          "configVaultBacked": { "type": "number" },
+          "configVaultMissing": { "type": "number" }
+        },
+        "required": [
+          "total",
+          "ready",
+          "attention",
+          "blocked",
+          "unsupported",
+          "queued",
+          "failed",
+          "retryableFailed",
+          "unchecked",
+          "configVaultBacked",
+          "configVaultMissing"
+        ]
+      },
+      "IntegrationProviderDiagnosticLastFailureDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "error": { "type": "string" },
+          "retryCount": { "type": "number" },
+          "createdAt": { "type": "string" }
+        },
+        "required": ["id", "retryCount", "createdAt"]
+      },
+      "IntegrationProviderDiagnosticOutboxDto": {
+        "type": "object",
+        "properties": {
+          "total": { "type": "number" },
+          "queued": { "type": "number" },
+          "sent": { "type": "number" },
+          "failed": { "type": "number" },
+          "retryableFailed": { "type": "number" },
+          "lastFailure": {
+            "$ref": "#/components/schemas/IntegrationProviderDiagnosticLastFailureDto"
+          }
+        },
+        "required": ["total", "queued", "sent", "failed", "retryableFailed"]
+      },
+      "IntegrationProviderDiagnosticCheckDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "status": { "type": "string", "enum": ["pass", "warn", "fail"] },
+          "message": { "type": "string" }
+        },
+        "required": ["code", "status", "message"]
+      },
+      "IntegrationProviderDiagnosticsDto": {
+        "type": "object",
+        "properties": {
+          "provider": { "$ref": "#/components/schemas/IntegrationProviderDto" },
+          "channel": { "type": "string", "enum": ["mail", "sms"] },
+          "readiness": {
+            "type": "string",
+            "enum": ["ready", "attention", "blocked", "unsupported"]
+          },
+          "outbox": {
+            "$ref": "#/components/schemas/IntegrationProviderDiagnosticOutboxDto"
+          },
+          "checks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IntegrationProviderDiagnosticCheckDto"
+            }
+          },
+          "actions": { "type": "array", "items": { "type": "string" } },
+          "generatedAt": { "type": "string" }
+        },
+        "required": [
+          "provider",
+          "readiness",
+          "outbox",
+          "checks",
+          "actions",
+          "generatedAt"
+        ]
+      },
+      "IntegrationProviderHealthAuditDto": {
+        "type": "object",
+        "properties": {
+          "generatedAt": { "type": "string" },
+          "totals": {
+            "$ref": "#/components/schemas/IntegrationProviderHealthAuditTotalsDto"
+          },
+          "providers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IntegrationProviderDiagnosticsDto"
+            }
+          },
+          "actions": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["generatedAt", "totals", "providers", "actions"]
+      },
+      "CreateIntegrationProviderDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "type": {
+            "type": "string",
+            "enum": ["mail", "oauth", "pay", "sms", "websocket", "wechat"]
+          },
+          "name": { "type": "string" },
+          "enabled": { "type": "boolean", "default": false },
+          "secretRef": { "type": "string" },
+          "config": {
+            "type": "object",
+            "additionalProperties": true,
+            "example": {
+              "adapter": "smtp",
+              "host": "smtp.example.test",
+              "tlsMode": "starttls-required"
+            }
+          }
+        },
+        "required": ["code", "type", "name", "secretRef", "config"]
+      },
+      "UpdateIntegrationProviderDto": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "enabled": { "type": "boolean" },
+          "secretRef": { "type": "string" },
+          "config": {
+            "type": "object",
+            "additionalProperties": true,
+            "example": {
+              "adapter": "smtp",
+              "host": "smtp.example.test",
+              "tlsMode": "starttls-required"
+            }
+          }
+        }
+      },
+      "TestIntegrationProviderDto": {
+        "type": "object",
+        "properties": { "reason": { "type": "string" } }
+      },
+      "IntegrationProviderTestResultDto": {
+        "type": "object",
+        "properties": {
+          "provider": { "$ref": "#/components/schemas/IntegrationProviderDto" },
+          "status": {
+            "type": "string",
+            "enum": ["failed", "not_run", "passed", "warning"]
+          },
+          "secretRefStatus": {
+            "type": "string",
+            "enum": ["invalid", "missing", "unchecked", "unsupported", "valid"]
+          },
+          "message": { "type": "string" },
+          "testedAt": { "type": "string" }
+        },
+        "required": [
+          "provider",
+          "status",
+          "secretRefStatus",
+          "message",
+          "testedAt"
+        ]
+      },
+      "IntegrationProviderAuditLogDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "providerCode": { "type": "string" },
+          "action": {
+            "type": "string",
+            "enum": [
+              "created",
+              "disabled",
+              "enabled",
+              "health_checked",
+              "tested",
+              "updated"
+            ]
+          },
+          "actor": { "type": "string" },
+          "reason": { "type": "string" },
+          "beforeConfigVersion": { "type": "number" },
+          "afterConfigVersion": { "type": "number" },
+          "beforeSecretRefStatus": {
+            "type": "string",
+            "enum": ["invalid", "missing", "unchecked", "unsupported", "valid"]
+          },
+          "afterSecretRefStatus": {
+            "type": "string",
+            "enum": ["invalid", "missing", "unchecked", "unsupported", "valid"]
+          },
+          "testStatus": {
+            "type": "string",
+            "enum": ["failed", "not_run", "passed", "warning"]
+          },
+          "message": { "type": "string" },
+          "summary": { "type": "object", "additionalProperties": true },
+          "createdAt": { "type": "string" }
+        },
+        "required": ["id", "providerCode", "action", "actor", "createdAt"]
+      },
+      "IntegrationProviderAuditLogPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IntegrationProviderAuditLogDto"
+            }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "ScheduleOutboxDto": {
+        "type": "object",
+        "properties": {
+          "channels": {
+            "type": "array",
+            "description": "Channels included in the retry schedule run.",
+            "items": { "type": "string", "enum": ["mail", "sms"] }
+          },
+          "providerCode": { "type": "string" },
+          "limit": { "type": "number", "default": 100 },
+          "retryFailed": { "type": "boolean", "default": true },
+          "maxRetryCount": { "type": "number", "default": 3 }
+        }
+      },
+      "IntegrationOutboxProcessResultDto": {
+        "type": "object",
+        "properties": {
+          "channel": { "type": "string", "enum": ["mail", "sms"] },
+          "providerCode": { "type": "string" },
+          "attemptedCount": { "type": "number" },
+          "sentCount": { "type": "number" },
+          "failedCount": { "type": "number" },
+          "skippedCount": { "type": "number" },
+          "queuedCount": { "type": "number" }
+        },
+        "required": [
+          "channel",
+          "attemptedCount",
+          "sentCount",
+          "failedCount",
+          "skippedCount",
+          "queuedCount"
+        ]
+      },
+      "IntegrationOutboxScheduleChannelResultDto": {
+        "type": "object",
+        "properties": {
+          "channel": { "type": "string", "enum": ["mail", "sms"] },
+          "providerCode": { "type": "string" },
+          "retriedCount": { "type": "number" },
+          "process": {
+            "$ref": "#/components/schemas/IntegrationOutboxProcessResultDto"
+          }
+        },
+        "required": ["channel", "retriedCount", "process"]
+      },
+      "IntegrationOutboxScheduleResultDto": {
+        "type": "object",
+        "properties": {
+          "retryFailed": { "type": "boolean" },
+          "maxRetryCount": { "type": "number" },
+          "channels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IntegrationOutboxScheduleChannelResultDto"
+            }
+          },
+          "retriedCount": { "type": "number" },
+          "attemptedCount": { "type": "number" },
+          "sentCount": { "type": "number" },
+          "failedCount": { "type": "number" },
+          "skippedCount": { "type": "number" },
+          "queuedCount": { "type": "number" }
+        },
+        "required": [
+          "retryFailed",
+          "maxRetryCount",
+          "channels",
+          "retriedCount",
+          "attemptedCount",
+          "sentCount",
+          "failedCount",
+          "skippedCount",
+          "queuedCount"
+        ]
+      },
+      "IntegrationTemplateDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "code": { "type": "string" },
+          "channel": { "type": "string", "enum": ["mail", "sms"] },
+          "name": { "type": "string" },
+          "subject": { "type": "string" },
+          "body": { "type": "string" },
+          "enabled": { "type": "boolean" }
+        },
+        "required": ["id", "code", "channel", "name", "body", "enabled"]
+      },
+      "IntegrationTemplatePageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/IntegrationTemplateDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "CreateIntegrationTemplateDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "subject": { "type": "string" },
+          "body": { "type": "string" },
+          "enabled": { "type": "boolean", "default": true }
+        },
+        "required": ["code", "name", "body"]
+      },
+      "PreviewTemplateDto": {
+        "type": "object",
+        "properties": {
+          "templateCode": { "type": "string" },
+          "payload": { "type": "object" }
+        },
+        "required": ["templateCode", "payload"]
+      },
+      "TemplatePreviewDto": {
+        "type": "object",
+        "properties": {
+          "channel": { "type": "string" },
+          "templateCode": { "type": "string" },
+          "subject": { "type": "string" },
+          "body": { "type": "string" }
+        },
+        "required": ["channel", "templateCode", "body"]
+      },
+      "IntegrationOutboxAttachmentDto": {
+        "type": "object",
+        "properties": {
+          "filename": { "type": "string" },
+          "contentType": { "type": "string" },
+          "contentBase64": { "type": "string" },
+          "sizeBytes": { "type": "number" }
+        },
+        "required": ["filename", "contentType", "contentBase64", "sizeBytes"]
+      },
+      "IntegrationOutboxDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "channel": { "type": "string", "enum": ["mail", "sms"] },
+          "providerCode": { "type": "string" },
+          "templateCode": { "type": "string" },
+          "recipient": { "type": "string" },
+          "subject": { "type": "string" },
+          "payload": { "type": "object" },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IntegrationOutboxAttachmentDto"
+            }
+          },
+          "status": { "type": "string", "enum": ["queued", "sent", "failed"] },
+          "retryCount": { "type": "number" },
+          "preview": { "type": "string" },
+          "error": { "type": "string" },
+          "sentAt": { "type": "string" },
+          "createdAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "channel",
+          "providerCode",
+          "recipient",
+          "payload",
+          "status",
+          "retryCount",
+          "createdAt"
+        ]
+      },
+      "IntegrationOutboxPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/IntegrationOutboxDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "CreateIntegrationOutboxAttachmentDto": {
+        "type": "object",
+        "properties": {
+          "filename": { "type": "string" },
+          "contentType": { "type": "string" },
+          "contentBase64": { "type": "string" }
+        },
+        "required": ["filename", "contentType", "contentBase64"]
+      },
+      "CreateOutboxMessageDto": {
+        "type": "object",
+        "properties": {
+          "providerCode": { "type": "string" },
+          "templateCode": { "type": "string" },
+          "recipient": { "type": "string" },
+          "subject": { "type": "string" },
+          "payload": { "type": "object" },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateIntegrationOutboxAttachmentDto"
+            }
+          }
+        },
+        "required": ["providerCode", "recipient", "payload"]
+      },
+      "TestOutboxMessageDto": {
+        "type": "object",
+        "properties": {
+          "providerCode": { "type": "string" },
+          "templateCode": { "type": "string" },
+          "recipient": { "type": "string" },
+          "subject": { "type": "string" },
+          "payload": { "type": "object" },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateIntegrationOutboxAttachmentDto"
+            }
+          },
+          "reason": {
+            "type": "string",
+            "description": "Optional operator reason recorded in the test-send result context."
+          }
+        },
+        "required": ["providerCode", "recipient", "payload"]
+      },
+      "IntegrationOutboxTestResultDto": {
+        "type": "object",
+        "properties": {
+          "channel": { "type": "string", "enum": ["mail", "sms"] },
+          "providerCode": { "type": "string" },
+          "message": { "$ref": "#/components/schemas/IntegrationOutboxDto" },
+          "status": { "type": "string", "enum": ["failed", "sent"] },
+          "error": { "type": "string" },
+          "testedAt": { "type": "string" }
+        },
+        "required": ["channel", "providerCode", "message", "status", "testedAt"]
+      },
+      "FailOutboxMessageDto": {
+        "type": "object",
+        "properties": { "error": { "type": "string" } },
+        "required": ["error"]
+      },
+      "ProcessOutboxDto": {
+        "type": "object",
+        "properties": {
+          "providerCode": { "type": "string" },
+          "limit": { "type": "number", "default": 100 }
+        }
+      },
+      "IntegrationOutboxCallbackDto": {
+        "type": "object",
+        "properties": {
+          "providerCode": { "type": "string" },
+          "messageId": { "type": "string" },
+          "status": { "type": "string", "enum": ["sent", "failed"] },
+          "error": { "type": "string" },
+          "signature": {
+            "type": "string",
+            "description": "HMAC-SHA256 hex signature over channel, providerCode, messageId, status and error."
+          }
+        },
+        "required": ["providerCode", "messageId", "status", "signature"]
+      },
+      "OAuthProfileAccountDto": {
+        "type": "object",
+        "properties": {
+          "tokenId": { "type": "string" },
+          "providerCode": { "type": "string" },
+          "providerName": { "type": "string" },
+          "providerAccountId": { "type": "string" },
+          "scopes": { "type": "array", "items": { "type": "string" } },
+          "status": {
+            "type": "string",
+            "enum": ["active", "expired", "revoked"]
+          },
+          "expiresAt": { "type": "string" },
+          "lastRotatedAt": { "type": "string" },
+          "revokedAt": { "type": "string" },
+          "revokeReason": { "type": "string" },
+          "createdAt": { "type": "string" }
+        },
+        "required": [
+          "tokenId",
+          "providerCode",
+          "providerName",
+          "providerAccountId",
+          "scopes",
+          "status",
+          "createdAt"
+        ]
+      },
+      "OAuthProfileProviderDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "type": { "type": "string", "enum": ["oauth"] },
+          "bindingStatus": {
+            "type": "string",
+            "enum": ["ready", "requires_configuration"]
+          },
+          "bindingIssue": {
+            "type": "string",
+            "enum": [
+              "disabled",
+              "missing_config",
+              "placeholder_client",
+              "secret_unverified"
+            ]
+          }
+        },
+        "required": ["code", "name", "type", "bindingStatus"]
+      },
+      "StartOAuthProfileFlowDto": {
+        "type": "object",
+        "properties": {
+          "providerCode": { "type": "string" },
+          "redirectUri": { "type": "string" }
+        },
+        "required": ["providerCode"]
+      },
+      "OAuthFlowDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "providerCode": { "type": "string" },
+          "state": { "type": "string" },
+          "subjectType": { "type": "string" },
+          "subjectId": { "type": "string" },
+          "scopes": { "type": "array", "items": { "type": "string" } },
+          "redirectUri": { "type": "string" },
+          "authorizationUrl": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["completed", "expired", "failed", "pending"]
+          },
+          "expiresAt": { "type": "string" },
+          "callbackCodeHash": { "type": "string" },
+          "callbackError": { "type": "string" },
+          "tokenId": { "type": "string" },
+          "completedAt": { "type": "string" },
+          "createdAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "providerCode",
+          "state",
+          "subjectType",
+          "subjectId",
+          "scopes",
+          "authorizationUrl",
+          "status",
+          "expiresAt",
+          "createdAt"
+        ]
+      },
+      "UnbindOAuthProfileAccountDto": {
+        "type": "object",
+        "properties": { "reason": { "type": "string" } }
+      },
+      "OAuthCallbackContractDto": {
+        "type": "object",
+        "properties": {
+          "callbackPath": { "type": "string" },
+          "stateTtlSeconds": { "type": "number" },
+          "securityChecks": { "type": "array", "items": { "type": "string" } },
+          "accountBinding": { "type": "array", "items": { "type": "string" } },
+          "auditAction": { "type": "string" }
+        },
+        "required": [
+          "callbackPath",
+          "stateTtlSeconds",
+          "securityChecks",
+          "accountBinding",
+          "auditAction"
+        ]
+      },
+      "StartOAuthFlowDto": {
+        "type": "object",
+        "properties": {
+          "providerCode": { "type": "string" },
+          "subjectType": { "type": "string" },
+          "subjectId": { "type": "string" },
+          "scopes": { "type": "array", "items": { "type": "string" } },
+          "redirectUri": { "type": "string" }
+        },
+        "required": ["providerCode", "subjectId"]
+      },
+      "OAuthFlowPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/OAuthFlowDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "OAuthCallbackAuditDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "providerCode": { "type": "string" },
+          "flowId": { "type": "string" },
+          "state": { "type": "string" },
+          "status": { "type": "string", "enum": ["accepted", "rejected"] },
+          "reason": { "type": "string" },
+          "callbackCodeHash": { "type": "string" },
+          "callbackError": { "type": "string" },
+          "providerAccountId": { "type": "string" },
+          "tokenId": { "type": "string" },
+          "createdAt": { "type": "string" }
+        },
+        "required": ["id", "providerCode", "state", "status", "createdAt"]
+      },
+      "OAuthTokenDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "providerCode": { "type": "string" },
+          "subjectType": { "type": "string" },
+          "subjectId": { "type": "string" },
+          "providerAccountId": { "type": "string" },
+          "scopes": { "type": "array", "items": { "type": "string" } },
+          "accessTokenRef": { "type": "string" },
+          "refreshTokenRef": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["active", "expired", "revoked"]
+          },
+          "expiresAt": { "type": "string" },
+          "lastRotatedAt": { "type": "string" },
+          "revokedAt": { "type": "string" },
+          "revokedBy": { "type": "string" },
+          "revokeReason": { "type": "string" },
+          "createdAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "providerCode",
+          "subjectType",
+          "subjectId",
+          "providerAccountId",
+          "scopes",
+          "accessTokenRef",
+          "status",
+          "createdAt"
+        ]
+      },
+      "OAuthCallbackResultDto": {
+        "type": "object",
+        "properties": {
+          "providerCode": { "type": "string" },
+          "flowId": { "type": "string" },
+          "state": { "type": "string" },
+          "status": { "type": "string", "enum": ["accepted", "rejected"] },
+          "message": { "type": "string" },
+          "audit": { "$ref": "#/components/schemas/OAuthCallbackAuditDto" },
+          "token": { "$ref": "#/components/schemas/OAuthTokenDto" },
+          "completedAt": { "type": "string" }
+        },
+        "required": ["providerCode", "state", "status", "message", "audit"]
+      },
+      "OAuthCallbackAuditPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/OAuthCallbackAuditDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "OAuthTokenPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/OAuthTokenDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "RevokeOAuthTokenDto": {
+        "type": "object",
+        "properties": { "reason": { "type": "string" } }
+      },
+      "IntegrationDesignDto": {
+        "type": "object",
+        "properties": {
+          "topic": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["design-only", "runtime-active"]
+          },
+          "boundaries": { "type": "array", "items": { "type": "string" } },
+          "documentPath": { "type": "string" }
+        },
+        "required": ["topic", "status", "boundaries", "documentPath"]
+      },
+      "WebSocketRuntimeSummaryDto": {
+        "type": "object",
+        "properties": {
+          "activeConnections": { "type": "number" },
+          "totalConnections": { "type": "number" },
+          "activeSubscriptions": { "type": "number" },
+          "recentEvents": { "type": "number" },
+          "lastEventAt": { "type": "string" },
+          "generatedAt": { "type": "string" }
+        },
+        "required": [
+          "activeConnections",
+          "totalConnections",
+          "activeSubscriptions",
+          "recentEvents",
+          "generatedAt"
+        ]
+      },
+      "WebSocketRuntimeConnectionDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "subjectId": { "type": "string" },
+          "transport": { "type": "string", "enum": ["sse"] },
+          "status": { "type": "string", "enum": ["closed", "connected"] },
+          "rooms": { "type": "array", "items": { "type": "string" } },
+          "connectedAt": { "type": "string" },
+          "lastSeenAt": { "type": "string" },
+          "closedAt": { "type": "string" },
+          "closeReason": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "subjectId",
+          "transport",
+          "status",
+          "rooms",
+          "connectedAt",
+          "lastSeenAt"
+        ]
+      },
+      "WebSocketRuntimeSubscriptionDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "connectionId": { "type": "string" },
+          "room": { "type": "string" },
+          "eventTypes": { "type": "array", "items": { "type": "string" } },
+          "status": { "type": "string", "enum": ["active", "closed"] },
+          "subscribedAt": { "type": "string" },
+          "closedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "connectionId",
+          "room",
+          "eventTypes",
+          "status",
+          "subscribedAt"
+        ]
+      },
+      "WebSocketRuntimeEventDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "room": { "type": "string" },
+          "type": { "type": "string" },
+          "payloadPreview": { "type": "object" },
+          "traceId": { "type": "string" },
+          "deliveredCount": { "type": "number" },
+          "status": {
+            "type": "string",
+            "enum": ["delivered", "no_subscribers"]
+          },
+          "createdAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "room",
+          "type",
+          "payloadPreview",
+          "deliveredCount",
+          "status",
+          "createdAt"
+        ]
+      },
+      "WebSocketRuntimeDiagnosticsDto": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "$ref": "#/components/schemas/WebSocketRuntimeSummaryDto"
+          },
+          "connections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WebSocketRuntimeConnectionDto"
+            }
+          },
+          "subscriptions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WebSocketRuntimeSubscriptionDto"
+            }
+          },
+          "events": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/WebSocketRuntimeEventDto" }
+          }
+        },
+        "required": ["summary", "connections", "subscriptions", "events"]
+      },
+      "PublishWebSocketRuntimeEventDto": {
+        "type": "object",
+        "properties": {
+          "room": { "type": "string" },
+          "type": { "type": "string" },
+          "payload": { "type": "object" },
+          "traceId": { "type": "string" }
+        },
+        "required": ["type"]
+      },
       "DictItemDto": {
         "type": "object",
         "properties": {
@@ -11244,1033 +12461,6 @@
           "comment": { "type": "string" }
         },
         "required": ["actor"]
-      },
-      "IntegrationProviderSummaryDto": {
-        "type": "object",
-        "properties": {
-          "total": { "type": "number" },
-          "enabled": { "type": "number" },
-          "disabled": { "type": "number" },
-          "unknown": { "type": "number" },
-          "healthy": { "type": "number" },
-          "degraded": { "type": "number" }
-        },
-        "required": [
-          "total",
-          "enabled",
-          "disabled",
-          "unknown",
-          "healthy",
-          "degraded"
-        ]
-      },
-      "IntegrationOutboxSummaryDto": {
-        "type": "object",
-        "properties": {
-          "total": { "type": "number" },
-          "queued": { "type": "number" },
-          "sent": { "type": "number" },
-          "failed": { "type": "number" }
-        },
-        "required": ["total", "queued", "sent", "failed"]
-      },
-      "OAuthTokenInventorySummaryDto": {
-        "type": "object",
-        "properties": {
-          "total": { "type": "number" },
-          "active": { "type": "number" },
-          "expired": { "type": "number" },
-          "revoked": { "type": "number" },
-          "expiringSoon": { "type": "number" },
-          "providers": { "type": "number" },
-          "generatedAt": { "type": "string" }
-        },
-        "required": [
-          "total",
-          "active",
-          "expired",
-          "revoked",
-          "expiringSoon",
-          "providers",
-          "generatedAt"
-        ]
-      },
-      "IntegrationDesignSummaryDto": {
-        "type": "object",
-        "properties": {
-          "designOnlyTopics": { "type": "number" },
-          "topics": { "type": "array", "items": { "type": "string" } }
-        },
-        "required": ["designOnlyTopics", "topics"]
-      },
-      "IntegrationSummaryDto": {
-        "type": "object",
-        "properties": {
-          "providers": {
-            "$ref": "#/components/schemas/IntegrationProviderSummaryDto"
-          },
-          "mailOutbox": {
-            "$ref": "#/components/schemas/IntegrationOutboxSummaryDto"
-          },
-          "smsOutbox": {
-            "$ref": "#/components/schemas/IntegrationOutboxSummaryDto"
-          },
-          "oauthProviders": { "type": "number" },
-          "oauthTokens": {
-            "$ref": "#/components/schemas/OAuthTokenInventorySummaryDto"
-          },
-          "designs": {
-            "$ref": "#/components/schemas/IntegrationDesignSummaryDto"
-          }
-        },
-        "required": [
-          "providers",
-          "mailOutbox",
-          "smsOutbox",
-          "oauthProviders",
-          "oauthTokens",
-          "designs"
-        ]
-      },
-      "IntegrationProviderDto": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string" },
-          "code": { "type": "string" },
-          "type": {
-            "type": "string",
-            "enum": ["mail", "oauth", "pay", "sms", "websocket", "wechat"]
-          },
-          "name": { "type": "string" },
-          "enabled": { "type": "boolean" },
-          "secretRef": { "type": "string" },
-          "secretRefStatus": {
-            "type": "string",
-            "enum": ["invalid", "missing", "unchecked", "unsupported", "valid"]
-          },
-          "configVersion": { "type": "number" },
-          "config": {
-            "type": "object",
-            "additionalProperties": true,
-            "example": {
-              "adapter": "smtp",
-              "host": "smtp.example.test",
-              "tlsMode": "starttls-required"
-            }
-          },
-          "healthStatus": {
-            "type": "string",
-            "enum": ["unknown", "healthy", "degraded", "disabled"]
-          },
-          "lastCheckedAt": { "type": "string" },
-          "lastTestStatus": {
-            "type": "string",
-            "enum": ["failed", "not_run", "passed", "warning"]
-          },
-          "lastTestMessage": { "type": "string" },
-          "lastTestedAt": { "type": "string" }
-        },
-        "required": [
-          "id",
-          "code",
-          "type",
-          "name",
-          "enabled",
-          "secretRef",
-          "secretRefStatus",
-          "configVersion",
-          "config",
-          "healthStatus"
-        ]
-      },
-      "IntegrationProviderPageDto": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/IntegrationProviderDto" }
-          },
-          "page": { "type": "number" },
-          "pageSize": { "type": "number" },
-          "total": { "type": "number" },
-          "totalPages": { "type": "number" }
-        },
-        "required": ["items", "page", "pageSize", "total", "totalPages"]
-      },
-      "IntegrationProviderHealthAuditTotalsDto": {
-        "type": "object",
-        "properties": {
-          "total": { "type": "number" },
-          "ready": { "type": "number" },
-          "attention": { "type": "number" },
-          "blocked": { "type": "number" },
-          "unsupported": { "type": "number" },
-          "queued": { "type": "number" },
-          "failed": { "type": "number" },
-          "retryableFailed": { "type": "number" },
-          "unchecked": { "type": "number" },
-          "configVaultBacked": { "type": "number" },
-          "configVaultMissing": { "type": "number" }
-        },
-        "required": [
-          "total",
-          "ready",
-          "attention",
-          "blocked",
-          "unsupported",
-          "queued",
-          "failed",
-          "retryableFailed",
-          "unchecked",
-          "configVaultBacked",
-          "configVaultMissing"
-        ]
-      },
-      "IntegrationProviderDiagnosticLastFailureDto": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string" },
-          "error": { "type": "string" },
-          "retryCount": { "type": "number" },
-          "createdAt": { "type": "string" }
-        },
-        "required": ["id", "retryCount", "createdAt"]
-      },
-      "IntegrationProviderDiagnosticOutboxDto": {
-        "type": "object",
-        "properties": {
-          "total": { "type": "number" },
-          "queued": { "type": "number" },
-          "sent": { "type": "number" },
-          "failed": { "type": "number" },
-          "retryableFailed": { "type": "number" },
-          "lastFailure": {
-            "$ref": "#/components/schemas/IntegrationProviderDiagnosticLastFailureDto"
-          }
-        },
-        "required": ["total", "queued", "sent", "failed", "retryableFailed"]
-      },
-      "IntegrationProviderDiagnosticCheckDto": {
-        "type": "object",
-        "properties": {
-          "code": { "type": "string" },
-          "status": { "type": "string", "enum": ["pass", "warn", "fail"] },
-          "message": { "type": "string" }
-        },
-        "required": ["code", "status", "message"]
-      },
-      "IntegrationProviderDiagnosticsDto": {
-        "type": "object",
-        "properties": {
-          "provider": { "$ref": "#/components/schemas/IntegrationProviderDto" },
-          "channel": { "type": "string", "enum": ["mail", "sms"] },
-          "readiness": {
-            "type": "string",
-            "enum": ["ready", "attention", "blocked", "unsupported"]
-          },
-          "outbox": {
-            "$ref": "#/components/schemas/IntegrationProviderDiagnosticOutboxDto"
-          },
-          "checks": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/IntegrationProviderDiagnosticCheckDto"
-            }
-          },
-          "actions": { "type": "array", "items": { "type": "string" } },
-          "generatedAt": { "type": "string" }
-        },
-        "required": [
-          "provider",
-          "readiness",
-          "outbox",
-          "checks",
-          "actions",
-          "generatedAt"
-        ]
-      },
-      "IntegrationProviderHealthAuditDto": {
-        "type": "object",
-        "properties": {
-          "generatedAt": { "type": "string" },
-          "totals": {
-            "$ref": "#/components/schemas/IntegrationProviderHealthAuditTotalsDto"
-          },
-          "providers": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/IntegrationProviderDiagnosticsDto"
-            }
-          },
-          "actions": { "type": "array", "items": { "type": "string" } }
-        },
-        "required": ["generatedAt", "totals", "providers", "actions"]
-      },
-      "CreateIntegrationProviderDto": {
-        "type": "object",
-        "properties": {
-          "code": { "type": "string" },
-          "type": {
-            "type": "string",
-            "enum": ["mail", "oauth", "pay", "sms", "websocket", "wechat"]
-          },
-          "name": { "type": "string" },
-          "enabled": { "type": "boolean", "default": false },
-          "secretRef": { "type": "string" },
-          "config": {
-            "type": "object",
-            "additionalProperties": true,
-            "example": {
-              "adapter": "smtp",
-              "host": "smtp.example.test",
-              "tlsMode": "starttls-required"
-            }
-          }
-        },
-        "required": ["code", "type", "name", "secretRef", "config"]
-      },
-      "UpdateIntegrationProviderDto": {
-        "type": "object",
-        "properties": {
-          "name": { "type": "string" },
-          "enabled": { "type": "boolean" },
-          "secretRef": { "type": "string" },
-          "config": {
-            "type": "object",
-            "additionalProperties": true,
-            "example": {
-              "adapter": "smtp",
-              "host": "smtp.example.test",
-              "tlsMode": "starttls-required"
-            }
-          }
-        }
-      },
-      "TestIntegrationProviderDto": {
-        "type": "object",
-        "properties": { "reason": { "type": "string" } }
-      },
-      "IntegrationProviderTestResultDto": {
-        "type": "object",
-        "properties": {
-          "provider": { "$ref": "#/components/schemas/IntegrationProviderDto" },
-          "status": {
-            "type": "string",
-            "enum": ["failed", "not_run", "passed", "warning"]
-          },
-          "secretRefStatus": {
-            "type": "string",
-            "enum": ["invalid", "missing", "unchecked", "unsupported", "valid"]
-          },
-          "message": { "type": "string" },
-          "testedAt": { "type": "string" }
-        },
-        "required": [
-          "provider",
-          "status",
-          "secretRefStatus",
-          "message",
-          "testedAt"
-        ]
-      },
-      "IntegrationProviderAuditLogDto": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string" },
-          "providerCode": { "type": "string" },
-          "action": {
-            "type": "string",
-            "enum": [
-              "created",
-              "disabled",
-              "enabled",
-              "health_checked",
-              "tested",
-              "updated"
-            ]
-          },
-          "actor": { "type": "string" },
-          "reason": { "type": "string" },
-          "beforeConfigVersion": { "type": "number" },
-          "afterConfigVersion": { "type": "number" },
-          "beforeSecretRefStatus": {
-            "type": "string",
-            "enum": ["invalid", "missing", "unchecked", "unsupported", "valid"]
-          },
-          "afterSecretRefStatus": {
-            "type": "string",
-            "enum": ["invalid", "missing", "unchecked", "unsupported", "valid"]
-          },
-          "testStatus": {
-            "type": "string",
-            "enum": ["failed", "not_run", "passed", "warning"]
-          },
-          "message": { "type": "string" },
-          "summary": { "type": "object", "additionalProperties": true },
-          "createdAt": { "type": "string" }
-        },
-        "required": ["id", "providerCode", "action", "actor", "createdAt"]
-      },
-      "IntegrationProviderAuditLogPageDto": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/IntegrationProviderAuditLogDto"
-            }
-          },
-          "page": { "type": "number" },
-          "pageSize": { "type": "number" },
-          "total": { "type": "number" },
-          "totalPages": { "type": "number" }
-        },
-        "required": ["items", "page", "pageSize", "total", "totalPages"]
-      },
-      "ScheduleOutboxDto": {
-        "type": "object",
-        "properties": {
-          "channels": {
-            "type": "array",
-            "description": "Channels included in the retry schedule run.",
-            "items": { "type": "string", "enum": ["mail", "sms"] }
-          },
-          "providerCode": { "type": "string" },
-          "limit": { "type": "number", "default": 100 },
-          "retryFailed": { "type": "boolean", "default": true },
-          "maxRetryCount": { "type": "number", "default": 3 }
-        }
-      },
-      "IntegrationOutboxProcessResultDto": {
-        "type": "object",
-        "properties": {
-          "channel": { "type": "string", "enum": ["mail", "sms"] },
-          "providerCode": { "type": "string" },
-          "attemptedCount": { "type": "number" },
-          "sentCount": { "type": "number" },
-          "failedCount": { "type": "number" },
-          "skippedCount": { "type": "number" },
-          "queuedCount": { "type": "number" }
-        },
-        "required": [
-          "channel",
-          "attemptedCount",
-          "sentCount",
-          "failedCount",
-          "skippedCount",
-          "queuedCount"
-        ]
-      },
-      "IntegrationOutboxScheduleChannelResultDto": {
-        "type": "object",
-        "properties": {
-          "channel": { "type": "string", "enum": ["mail", "sms"] },
-          "providerCode": { "type": "string" },
-          "retriedCount": { "type": "number" },
-          "process": {
-            "$ref": "#/components/schemas/IntegrationOutboxProcessResultDto"
-          }
-        },
-        "required": ["channel", "retriedCount", "process"]
-      },
-      "IntegrationOutboxScheduleResultDto": {
-        "type": "object",
-        "properties": {
-          "retryFailed": { "type": "boolean" },
-          "maxRetryCount": { "type": "number" },
-          "channels": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/IntegrationOutboxScheduleChannelResultDto"
-            }
-          },
-          "retriedCount": { "type": "number" },
-          "attemptedCount": { "type": "number" },
-          "sentCount": { "type": "number" },
-          "failedCount": { "type": "number" },
-          "skippedCount": { "type": "number" },
-          "queuedCount": { "type": "number" }
-        },
-        "required": [
-          "retryFailed",
-          "maxRetryCount",
-          "channels",
-          "retriedCount",
-          "attemptedCount",
-          "sentCount",
-          "failedCount",
-          "skippedCount",
-          "queuedCount"
-        ]
-      },
-      "IntegrationTemplateDto": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string" },
-          "code": { "type": "string" },
-          "channel": { "type": "string", "enum": ["mail", "sms"] },
-          "name": { "type": "string" },
-          "subject": { "type": "string" },
-          "body": { "type": "string" },
-          "enabled": { "type": "boolean" }
-        },
-        "required": ["id", "code", "channel", "name", "body", "enabled"]
-      },
-      "IntegrationTemplatePageDto": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/IntegrationTemplateDto" }
-          },
-          "page": { "type": "number" },
-          "pageSize": { "type": "number" },
-          "total": { "type": "number" },
-          "totalPages": { "type": "number" }
-        },
-        "required": ["items", "page", "pageSize", "total", "totalPages"]
-      },
-      "CreateIntegrationTemplateDto": {
-        "type": "object",
-        "properties": {
-          "code": { "type": "string" },
-          "name": { "type": "string" },
-          "subject": { "type": "string" },
-          "body": { "type": "string" },
-          "enabled": { "type": "boolean", "default": true }
-        },
-        "required": ["code", "name", "body"]
-      },
-      "PreviewTemplateDto": {
-        "type": "object",
-        "properties": {
-          "templateCode": { "type": "string" },
-          "payload": { "type": "object" }
-        },
-        "required": ["templateCode", "payload"]
-      },
-      "TemplatePreviewDto": {
-        "type": "object",
-        "properties": {
-          "channel": { "type": "string" },
-          "templateCode": { "type": "string" },
-          "subject": { "type": "string" },
-          "body": { "type": "string" }
-        },
-        "required": ["channel", "templateCode", "body"]
-      },
-      "IntegrationOutboxAttachmentDto": {
-        "type": "object",
-        "properties": {
-          "filename": { "type": "string" },
-          "contentType": { "type": "string" },
-          "contentBase64": { "type": "string" },
-          "sizeBytes": { "type": "number" }
-        },
-        "required": ["filename", "contentType", "contentBase64", "sizeBytes"]
-      },
-      "IntegrationOutboxDto": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string" },
-          "channel": { "type": "string", "enum": ["mail", "sms"] },
-          "providerCode": { "type": "string" },
-          "templateCode": { "type": "string" },
-          "recipient": { "type": "string" },
-          "subject": { "type": "string" },
-          "payload": { "type": "object" },
-          "attachments": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/IntegrationOutboxAttachmentDto"
-            }
-          },
-          "status": { "type": "string", "enum": ["queued", "sent", "failed"] },
-          "retryCount": { "type": "number" },
-          "preview": { "type": "string" },
-          "error": { "type": "string" },
-          "sentAt": { "type": "string" },
-          "createdAt": { "type": "string" }
-        },
-        "required": [
-          "id",
-          "channel",
-          "providerCode",
-          "recipient",
-          "payload",
-          "status",
-          "retryCount",
-          "createdAt"
-        ]
-      },
-      "IntegrationOutboxPageDto": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/IntegrationOutboxDto" }
-          },
-          "page": { "type": "number" },
-          "pageSize": { "type": "number" },
-          "total": { "type": "number" },
-          "totalPages": { "type": "number" }
-        },
-        "required": ["items", "page", "pageSize", "total", "totalPages"]
-      },
-      "CreateIntegrationOutboxAttachmentDto": {
-        "type": "object",
-        "properties": {
-          "filename": { "type": "string" },
-          "contentType": { "type": "string" },
-          "contentBase64": { "type": "string" }
-        },
-        "required": ["filename", "contentType", "contentBase64"]
-      },
-      "CreateOutboxMessageDto": {
-        "type": "object",
-        "properties": {
-          "providerCode": { "type": "string" },
-          "templateCode": { "type": "string" },
-          "recipient": { "type": "string" },
-          "subject": { "type": "string" },
-          "payload": { "type": "object" },
-          "attachments": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CreateIntegrationOutboxAttachmentDto"
-            }
-          }
-        },
-        "required": ["providerCode", "recipient", "payload"]
-      },
-      "TestOutboxMessageDto": {
-        "type": "object",
-        "properties": {
-          "providerCode": { "type": "string" },
-          "templateCode": { "type": "string" },
-          "recipient": { "type": "string" },
-          "subject": { "type": "string" },
-          "payload": { "type": "object" },
-          "attachments": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CreateIntegrationOutboxAttachmentDto"
-            }
-          },
-          "reason": {
-            "type": "string",
-            "description": "Optional operator reason recorded in the test-send result context."
-          }
-        },
-        "required": ["providerCode", "recipient", "payload"]
-      },
-      "IntegrationOutboxTestResultDto": {
-        "type": "object",
-        "properties": {
-          "channel": { "type": "string", "enum": ["mail", "sms"] },
-          "providerCode": { "type": "string" },
-          "message": { "$ref": "#/components/schemas/IntegrationOutboxDto" },
-          "status": { "type": "string", "enum": ["failed", "sent"] },
-          "error": { "type": "string" },
-          "testedAt": { "type": "string" }
-        },
-        "required": ["channel", "providerCode", "message", "status", "testedAt"]
-      },
-      "FailOutboxMessageDto": {
-        "type": "object",
-        "properties": { "error": { "type": "string" } },
-        "required": ["error"]
-      },
-      "ProcessOutboxDto": {
-        "type": "object",
-        "properties": {
-          "providerCode": { "type": "string" },
-          "limit": { "type": "number", "default": 100 }
-        }
-      },
-      "IntegrationOutboxCallbackDto": {
-        "type": "object",
-        "properties": {
-          "providerCode": { "type": "string" },
-          "messageId": { "type": "string" },
-          "status": { "type": "string", "enum": ["sent", "failed"] },
-          "error": { "type": "string" },
-          "signature": {
-            "type": "string",
-            "description": "HMAC-SHA256 hex signature over channel, providerCode, messageId, status and error."
-          }
-        },
-        "required": ["providerCode", "messageId", "status", "signature"]
-      },
-      "OAuthProfileAccountDto": {
-        "type": "object",
-        "properties": {
-          "tokenId": { "type": "string" },
-          "providerCode": { "type": "string" },
-          "providerName": { "type": "string" },
-          "providerAccountId": { "type": "string" },
-          "scopes": { "type": "array", "items": { "type": "string" } },
-          "status": {
-            "type": "string",
-            "enum": ["active", "expired", "revoked"]
-          },
-          "expiresAt": { "type": "string" },
-          "lastRotatedAt": { "type": "string" },
-          "revokedAt": { "type": "string" },
-          "revokeReason": { "type": "string" },
-          "createdAt": { "type": "string" }
-        },
-        "required": [
-          "tokenId",
-          "providerCode",
-          "providerName",
-          "providerAccountId",
-          "scopes",
-          "status",
-          "createdAt"
-        ]
-      },
-      "OAuthProfileProviderDto": {
-        "type": "object",
-        "properties": {
-          "code": { "type": "string" },
-          "name": { "type": "string" },
-          "type": { "type": "string", "enum": ["oauth"] },
-          "bindingStatus": {
-            "type": "string",
-            "enum": ["ready", "requires_configuration"]
-          },
-          "bindingIssue": {
-            "type": "string",
-            "enum": [
-              "disabled",
-              "missing_config",
-              "placeholder_client",
-              "secret_unverified"
-            ]
-          }
-        },
-        "required": ["code", "name", "type", "bindingStatus"]
-      },
-      "StartOAuthProfileFlowDto": {
-        "type": "object",
-        "properties": {
-          "providerCode": { "type": "string" },
-          "redirectUri": { "type": "string" }
-        },
-        "required": ["providerCode"]
-      },
-      "OAuthFlowDto": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string" },
-          "providerCode": { "type": "string" },
-          "state": { "type": "string" },
-          "subjectType": { "type": "string" },
-          "subjectId": { "type": "string" },
-          "scopes": { "type": "array", "items": { "type": "string" } },
-          "redirectUri": { "type": "string" },
-          "authorizationUrl": { "type": "string" },
-          "status": {
-            "type": "string",
-            "enum": ["completed", "expired", "failed", "pending"]
-          },
-          "expiresAt": { "type": "string" },
-          "callbackCodeHash": { "type": "string" },
-          "callbackError": { "type": "string" },
-          "tokenId": { "type": "string" },
-          "completedAt": { "type": "string" },
-          "createdAt": { "type": "string" }
-        },
-        "required": [
-          "id",
-          "providerCode",
-          "state",
-          "subjectType",
-          "subjectId",
-          "scopes",
-          "authorizationUrl",
-          "status",
-          "expiresAt",
-          "createdAt"
-        ]
-      },
-      "UnbindOAuthProfileAccountDto": {
-        "type": "object",
-        "properties": { "reason": { "type": "string" } }
-      },
-      "OAuthCallbackContractDto": {
-        "type": "object",
-        "properties": {
-          "callbackPath": { "type": "string" },
-          "stateTtlSeconds": { "type": "number" },
-          "securityChecks": { "type": "array", "items": { "type": "string" } },
-          "accountBinding": { "type": "array", "items": { "type": "string" } },
-          "auditAction": { "type": "string" }
-        },
-        "required": [
-          "callbackPath",
-          "stateTtlSeconds",
-          "securityChecks",
-          "accountBinding",
-          "auditAction"
-        ]
-      },
-      "StartOAuthFlowDto": {
-        "type": "object",
-        "properties": {
-          "providerCode": { "type": "string" },
-          "subjectType": { "type": "string" },
-          "subjectId": { "type": "string" },
-          "scopes": { "type": "array", "items": { "type": "string" } },
-          "redirectUri": { "type": "string" }
-        },
-        "required": ["providerCode", "subjectId"]
-      },
-      "OAuthFlowPageDto": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/OAuthFlowDto" }
-          },
-          "page": { "type": "number" },
-          "pageSize": { "type": "number" },
-          "total": { "type": "number" },
-          "totalPages": { "type": "number" }
-        },
-        "required": ["items", "page", "pageSize", "total", "totalPages"]
-      },
-      "OAuthCallbackAuditDto": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string" },
-          "providerCode": { "type": "string" },
-          "flowId": { "type": "string" },
-          "state": { "type": "string" },
-          "status": { "type": "string", "enum": ["accepted", "rejected"] },
-          "reason": { "type": "string" },
-          "callbackCodeHash": { "type": "string" },
-          "callbackError": { "type": "string" },
-          "providerAccountId": { "type": "string" },
-          "tokenId": { "type": "string" },
-          "createdAt": { "type": "string" }
-        },
-        "required": ["id", "providerCode", "state", "status", "createdAt"]
-      },
-      "OAuthTokenDto": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string" },
-          "providerCode": { "type": "string" },
-          "subjectType": { "type": "string" },
-          "subjectId": { "type": "string" },
-          "providerAccountId": { "type": "string" },
-          "scopes": { "type": "array", "items": { "type": "string" } },
-          "accessTokenRef": { "type": "string" },
-          "refreshTokenRef": { "type": "string" },
-          "status": {
-            "type": "string",
-            "enum": ["active", "expired", "revoked"]
-          },
-          "expiresAt": { "type": "string" },
-          "lastRotatedAt": { "type": "string" },
-          "revokedAt": { "type": "string" },
-          "revokedBy": { "type": "string" },
-          "revokeReason": { "type": "string" },
-          "createdAt": { "type": "string" }
-        },
-        "required": [
-          "id",
-          "providerCode",
-          "subjectType",
-          "subjectId",
-          "providerAccountId",
-          "scopes",
-          "accessTokenRef",
-          "status",
-          "createdAt"
-        ]
-      },
-      "OAuthCallbackResultDto": {
-        "type": "object",
-        "properties": {
-          "providerCode": { "type": "string" },
-          "flowId": { "type": "string" },
-          "state": { "type": "string" },
-          "status": { "type": "string", "enum": ["accepted", "rejected"] },
-          "message": { "type": "string" },
-          "audit": { "$ref": "#/components/schemas/OAuthCallbackAuditDto" },
-          "token": { "$ref": "#/components/schemas/OAuthTokenDto" },
-          "completedAt": { "type": "string" }
-        },
-        "required": ["providerCode", "state", "status", "message", "audit"]
-      },
-      "OAuthCallbackAuditPageDto": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/OAuthCallbackAuditDto" }
-          },
-          "page": { "type": "number" },
-          "pageSize": { "type": "number" },
-          "total": { "type": "number" },
-          "totalPages": { "type": "number" }
-        },
-        "required": ["items", "page", "pageSize", "total", "totalPages"]
-      },
-      "OAuthTokenPageDto": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/OAuthTokenDto" }
-          },
-          "page": { "type": "number" },
-          "pageSize": { "type": "number" },
-          "total": { "type": "number" },
-          "totalPages": { "type": "number" }
-        },
-        "required": ["items", "page", "pageSize", "total", "totalPages"]
-      },
-      "RevokeOAuthTokenDto": {
-        "type": "object",
-        "properties": { "reason": { "type": "string" } }
-      },
-      "IntegrationDesignDto": {
-        "type": "object",
-        "properties": {
-          "topic": { "type": "string" },
-          "status": {
-            "type": "string",
-            "enum": ["design-only", "runtime-active"]
-          },
-          "boundaries": { "type": "array", "items": { "type": "string" } },
-          "documentPath": { "type": "string" }
-        },
-        "required": ["topic", "status", "boundaries", "documentPath"]
-      },
-      "WebSocketRuntimeSummaryDto": {
-        "type": "object",
-        "properties": {
-          "activeConnections": { "type": "number" },
-          "totalConnections": { "type": "number" },
-          "activeSubscriptions": { "type": "number" },
-          "recentEvents": { "type": "number" },
-          "lastEventAt": { "type": "string" },
-          "generatedAt": { "type": "string" }
-        },
-        "required": [
-          "activeConnections",
-          "totalConnections",
-          "activeSubscriptions",
-          "recentEvents",
-          "generatedAt"
-        ]
-      },
-      "WebSocketRuntimeConnectionDto": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string" },
-          "subjectId": { "type": "string" },
-          "transport": { "type": "string", "enum": ["sse"] },
-          "status": { "type": "string", "enum": ["closed", "connected"] },
-          "rooms": { "type": "array", "items": { "type": "string" } },
-          "connectedAt": { "type": "string" },
-          "lastSeenAt": { "type": "string" },
-          "closedAt": { "type": "string" },
-          "closeReason": { "type": "string" }
-        },
-        "required": [
-          "id",
-          "subjectId",
-          "transport",
-          "status",
-          "rooms",
-          "connectedAt",
-          "lastSeenAt"
-        ]
-      },
-      "WebSocketRuntimeSubscriptionDto": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string" },
-          "connectionId": { "type": "string" },
-          "room": { "type": "string" },
-          "eventTypes": { "type": "array", "items": { "type": "string" } },
-          "status": { "type": "string", "enum": ["active", "closed"] },
-          "subscribedAt": { "type": "string" },
-          "closedAt": { "type": "string" }
-        },
-        "required": [
-          "id",
-          "connectionId",
-          "room",
-          "eventTypes",
-          "status",
-          "subscribedAt"
-        ]
-      },
-      "WebSocketRuntimeEventDto": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string" },
-          "room": { "type": "string" },
-          "type": { "type": "string" },
-          "payloadPreview": { "type": "object" },
-          "traceId": { "type": "string" },
-          "deliveredCount": { "type": "number" },
-          "status": {
-            "type": "string",
-            "enum": ["delivered", "no_subscribers"]
-          },
-          "createdAt": { "type": "string" }
-        },
-        "required": [
-          "id",
-          "room",
-          "type",
-          "payloadPreview",
-          "deliveredCount",
-          "status",
-          "createdAt"
-        ]
-      },
-      "WebSocketRuntimeDiagnosticsDto": {
-        "type": "object",
-        "properties": {
-          "summary": {
-            "$ref": "#/components/schemas/WebSocketRuntimeSummaryDto"
-          },
-          "connections": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/WebSocketRuntimeConnectionDto"
-            }
-          },
-          "subscriptions": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/WebSocketRuntimeSubscriptionDto"
-            }
-          },
-          "events": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/WebSocketRuntimeEventDto" }
-          }
-        },
-        "required": ["summary", "connections", "subscriptions", "events"]
-      },
-      "PublishWebSocketRuntimeEventDto": {
-        "type": "object",
-        "properties": {
-          "room": { "type": "string" },
-          "type": { "type": "string" },
-          "payload": { "type": "object" },
-          "traceId": { "type": "string" }
-        },
-        "required": ["type"]
       },
       "RuntimeProcessStatusDto": {
         "type": "object",

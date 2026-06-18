@@ -2,8 +2,10 @@ import type {
   AssignRoleMenusRequest,
   AssignRoleUsersRequest,
   AssignUserRolesRequest,
+  BindSocialAuthLoginRequest,
   BatchDeleteUsersRequest,
   BatchSetUserStatusRequest,
+  CompleteSocialAuthRequest,
   BatchUserMutationSummary,
   CreateMenuRequest,
   CreatePermissionRequest,
@@ -25,6 +27,10 @@ import type {
   RoleSummary,
   SetRoleStatusRequest,
   SetUserStatusRequest,
+  SocialAuthFlowSummary,
+  SocialAuthProviderSummary,
+  SocialAuthResultSummary,
+  StartSocialAuthFlowRequest,
   UpdateUserPasswordRequest,
   UpdateMenuRequest,
   UpdatePermissionRequest,
@@ -57,6 +63,16 @@ export type RbacClient = {
   login: (request: LoginRequest) => Promise<LoginResponse>;
   me: (token: string) => Promise<LoginResponse>;
   logout: (token: string) => Promise<LogoutResponse>;
+  listSocialAuthProviders: () => Promise<readonly SocialAuthProviderSummary[]>;
+  startSocialAuthFlow: (
+    body: StartSocialAuthFlowRequest,
+  ) => Promise<SocialAuthFlowSummary>;
+  completeSocialAuthLogin: (
+    body: CompleteSocialAuthRequest,
+  ) => Promise<SocialAuthResultSummary>;
+  bindSocialAuthLogin: (
+    body: BindSocialAuthLoginRequest,
+  ) => Promise<SocialAuthResultSummary>;
   listUsers: (
     token: string,
     query?: ListUsersRequest,
@@ -203,6 +219,23 @@ export function createRbacClient(request: SdkRequest): RbacClient {
       request<LogoutResponse>('/auth/logout', {
         method: 'POST',
         token,
+      }),
+    listSocialAuthProviders: () =>
+      request<readonly SocialAuthProviderSummary[]>('/auth/social/providers'),
+    startSocialAuthFlow: (body) =>
+      request<SocialAuthFlowSummary>('/auth/social/flows', {
+        method: 'POST',
+        body,
+      }),
+    completeSocialAuthLogin: (body) =>
+      request<SocialAuthResultSummary>('/auth/social/complete', {
+        method: 'POST',
+        body,
+      }),
+    bindSocialAuthLogin: (body) =>
+      request<SocialAuthResultSummary>('/auth/social/bind-login', {
+        method: 'POST',
+        body,
       }),
     listUsers: (token, query) =>
       request<UserSummary[]>(withQuery('/core/users', query), {

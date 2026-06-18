@@ -1,6 +1,21 @@
 export default {
   'error.AUTH_INVALID_CREDENTIALS': 'Invalid username or password.',
   'error.AUTH_USER_UNAVAILABLE': 'The user is disabled or does not exist.',
+  'error.AUTH_SOCIAL_ACCOUNT_ALREADY_BOUND':
+    'This social account is already bound to another OpenCore user.',
+  'error.AUTH_SOCIAL_ACCOUNT_AMBIGUOUS':
+    'This social account has an invalid binding state.',
+  'error.AUTH_SOCIAL_FIELD_REQUIRED': 'A social login parameter is required.',
+  'error.AUTH_SOCIAL_FLOW_NOT_COMPLETED':
+    'The social login flow has not completed or has expired.',
+  'error.AUTH_SOCIAL_PROVIDER_NOT_FOUND':
+    'The social login provider does not exist.',
+  'error.AUTH_SOCIAL_PROVIDER_NOT_READY':
+    'The social login provider is not configured.',
+  'error.AUTH_SOCIAL_PROVIDER_UNSUPPORTED':
+    'This social login provider is not enabled for callback login.',
+  'error.AUTH_SOCIAL_TOKEN_UNAVAILABLE':
+    'The social login credential is unavailable. Start login again.',
   'error.AUTH_BEARER_TOKEN_MISSING': 'Please sign in first.',
   'error.AUTH_BEARER_TOKEN_INVALID':
     'The sign-in credential is invalid. Please sign in again.',

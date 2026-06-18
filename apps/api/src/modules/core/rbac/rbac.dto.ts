@@ -86,6 +86,102 @@ export class LogoutResponseDto {
   loggedOut!: true;
 }
 
+export type SocialAuthProviderStatus = 'ready' | 'requires_configuration';
+export type SocialAuthProviderIssue =
+  | 'disabled'
+  | 'missing_config'
+  | 'placeholder_client'
+  | 'secret_unverified'
+  | 'unsupported_provider';
+export type SocialAuthResultStatus =
+  | 'authenticated'
+  | 'failed'
+  | 'requires_binding';
+
+export class SocialAuthProviderDto {
+  @ApiProperty()
+  code!: string;
+
+  @ApiProperty()
+  name!: string;
+
+  @ApiProperty()
+  icon!: string;
+
+  @ApiProperty({ enum: ['ready', 'requires_configuration'] })
+  status!: SocialAuthProviderStatus;
+
+  @ApiProperty({
+    enum: [
+      'disabled',
+      'missing_config',
+      'placeholder_client',
+      'secret_unverified',
+      'unsupported_provider',
+    ],
+    required: false,
+  })
+  issue?: SocialAuthProviderIssue;
+
+  @ApiProperty()
+  message!: string;
+}
+
+export class StartSocialAuthFlowDto {
+  @ApiProperty({ example: 'oauth.github' })
+  providerCode!: string;
+
+  @ApiProperty({ required: false })
+  redirect?: string;
+}
+
+export class SocialAuthFlowDto {
+  @ApiProperty()
+  providerCode!: string;
+
+  @ApiProperty()
+  state!: string;
+
+  @ApiProperty()
+  authorizationUrl!: string;
+
+  @ApiProperty()
+  expiresAt!: string;
+}
+
+export class CompleteSocialAuthDto {
+  @ApiProperty({ example: 'oauth.github' })
+  providerCode!: string;
+
+  @ApiProperty()
+  state!: string;
+}
+
+export class BindSocialAuthLoginDto extends CompleteSocialAuthDto {
+  @ApiProperty({ example: 'admin' })
+  username!: string;
+
+  @ApiProperty({ example: 'admin123' })
+  password!: string;
+}
+
+export class SocialAuthResultDto {
+  @ApiProperty({ enum: ['authenticated', 'failed', 'requires_binding'] })
+  status!: SocialAuthResultStatus;
+
+  @ApiProperty()
+  providerCode!: string;
+
+  @ApiProperty({ required: false })
+  providerAccountId?: string;
+
+  @ApiProperty()
+  message!: string;
+
+  @ApiProperty({ type: LoginResponseDto, required: false })
+  session?: LoginResponseDto;
+}
+
 export class PermissionSummaryDto {
   @ApiProperty()
   code!: string;

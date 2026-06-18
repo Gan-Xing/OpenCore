@@ -9,6 +9,11 @@ export default [
         component: './user/login',
       },
       {
+        path: '/user/social-login',
+        name: 'socialLogin',
+        component: './user/social-login',
+      },
+      {
         path: '/user',
         redirect: '/user/login',
       },

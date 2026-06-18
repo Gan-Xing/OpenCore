@@ -37,7 +37,14 @@ dayjs.extend(relativeTime);
 
 const isDev = process.env.NODE_ENV === 'development';
 const loginPath = '/user/login';
-const publicPaths = new Set([loginPath, '/403', '/404', '/500']);
+const socialLoginPath = '/user/social-login';
+const publicPaths = new Set([
+  loginPath,
+  socialLoginPath,
+  '/403',
+  '/404',
+  '/500',
+]);
 const fallbackAdminTitle = defaultSettings.title ?? 'OpenCore Admin';
 
 export type AdminInitialState = {

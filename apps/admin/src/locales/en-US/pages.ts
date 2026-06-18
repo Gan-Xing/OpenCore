@@ -10,6 +10,24 @@ export default {
   'pages.login.rememberMe': 'Remember me',
   'pages.login.lockoutPolicy':
     'Login lockout policy: {attempts} failed attempts / {minutes} minutes',
+  'pages.login.social.backLogin': 'Back to login',
+  'pages.login.social.bindSubmit': 'Bind and login',
+  'pages.login.social.bindSuccess': 'Social account bound.',
+  'pages.login.social.bindingNotice':
+    'Enter your OpenCore username and password once. Future logins can use this social account directly.',
+  'pages.login.social.bindingTitle': 'Bind an existing OpenCore account',
+  'pages.login.social.callbackRejected':
+    'Social login was rejected or expired.',
+  'pages.login.social.divider': 'Other sign-in methods',
+  'pages.login.social.failure': 'Social login failed',
+  'pages.login.social.hint':
+    'Unavailable channels require third-party app configuration before use.',
+  'pages.login.social.loading': 'Completing social login',
+  'pages.login.social.loadingHint':
+    'Please wait while OpenCore verifies this login.',
+  'pages.login.social.startFailure': 'Unable to start social login.',
+  'pages.login.social.success': 'Login successful',
+  'pages.login.social.title': 'Social login',
   'pages.403.subTitle':
     'Sorry, your account does not have access to this page.',
   'pages.403.buttonText': 'Back Home',

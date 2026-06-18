@@ -23,6 +23,57 @@ export type LogoutResponse = {
   loggedOut: true;
 };
 
+export type SocialAuthProviderStatus = 'ready' | 'requires_configuration';
+export type SocialAuthProviderIssue =
+  | 'disabled'
+  | 'missing_config'
+  | 'placeholder_client'
+  | 'secret_unverified'
+  | 'unsupported_provider';
+export type SocialAuthResultStatus =
+  | 'authenticated'
+  | 'failed'
+  | 'requires_binding';
+
+export type SocialAuthProviderSummary = {
+  code: string;
+  name: string;
+  icon: string;
+  status: SocialAuthProviderStatus;
+  issue?: SocialAuthProviderIssue;
+  message: string;
+};
+
+export type StartSocialAuthFlowRequest = {
+  providerCode: string;
+  redirect?: string;
+};
+
+export type SocialAuthFlowSummary = {
+  providerCode: string;
+  state: string;
+  authorizationUrl: string;
+  expiresAt: string;
+};
+
+export type CompleteSocialAuthRequest = {
+  providerCode: string;
+  state: string;
+};
+
+export type BindSocialAuthLoginRequest = CompleteSocialAuthRequest & {
+  username: string;
+  password: string;
+};
+
+export type SocialAuthResultSummary = {
+  status: SocialAuthResultStatus;
+  providerCode: string;
+  providerAccountId?: string;
+  message: string;
+  session?: LoginResponse;
+};
+
 export type UserSummary = {
   id: string;
   username: string;

@@ -14,6 +14,7 @@ import {
   type SecurityLoginAttemptRecord,
   type SecurityLoginResult,
   type SecurityLoginLogType,
+  type SecurityAuthUserRecord,
 } from './security-auth.repository';
 import { SecurityBearerTokenService } from './security-bearer-token.service';
 import { verifySecurityPassword } from './security-password';
@@ -60,54 +61,11 @@ export class SecurityAuthService {
     password: string,
     context: LoginContext = {},
   ): Promise<LoginResponse> {
-    const normalizedUsername = normalizeLoginUsername(username);
-
-    if (!normalizedUsername) {
-      await this.recordLoginAttempt(
-        username,
-        'bad_credentials',
-        'invalid-credentials',
-        context,
-      );
-      throw invalidCredentialsError();
-    }
-
-    const policy = await this.loginPolicy.getLoginPolicy();
-    const existingLockout =
-      await this.loginLockouts.getLoginLockout(normalizedUsername);
-
-    if (isActiveLoginLockout(existingLockout)) {
-      await this.recordLoginAttempt(
-        normalizedUsername,
-        'account_locked',
-        'account-locked',
-        context,
-      );
-      throw invalidCredentialsError();
-    }
-
-    const user = await this.repository.findUserByUsername(normalizedUsername);
-
-    if (!user) {
-      await this.recordFailedLoginAttempt(normalizedUsername, policy, context);
-      throw invalidCredentialsError();
-    }
-
-    if (!verifySecurityPassword(password, user.passwordHash)) {
-      await this.recordFailedLoginAttempt(normalizedUsername, policy, context);
-      throw invalidCredentialsError();
-    }
-
-    if (!user.enabled) {
-      await this.recordLoginAttempt(
-        normalizedUsername,
-        'user_disabled',
-        'user-disabled',
-        context,
-      );
-      throw invalidCredentialsError();
-    }
-
+    const { normalizedUsername, user } = await this.assertUsernamePassword(
+      username,
+      password,
+      context,
+    );
     const session = await this.createSessionForUser(user.id, context);
     await this.loginLockouts.clearLoginLockout(normalizedUsername);
     await this.recordLoginAttempt(
@@ -115,6 +73,42 @@ export class SecurityAuthService {
       'success',
       undefined,
       context,
+    );
+    return session;
+  }
+
+  async verifyCredentials(
+    username: string,
+    password: string,
+    context: LoginContext = {},
+  ): Promise<AuthenticatedUser> {
+    const { normalizedUsername, user } = await this.assertUsernamePassword(
+      username,
+      password,
+      context,
+    );
+    await this.loginLockouts.clearLoginLockout(normalizedUsername);
+    return this.toAuthenticatedUser(user.id);
+  }
+
+  async createSocialSessionForUser(
+    userId: string,
+    context: LoginContext = {},
+    provider?: { providerAccountId?: string; providerCode?: string },
+  ): Promise<LoginResponse> {
+    const session = await this.createSessionForUser(userId, context);
+    await this.recordLoginAttempt(
+      session.user.username,
+      'success',
+      undefined,
+      context,
+      'login.social',
+      {
+        actorUsername: session.user.username,
+        reason: provider?.providerCode
+          ? `${provider.providerCode}:${provider.providerAccountId ?? 'unknown'}`
+          : 'social login',
+      },
     );
     return session;
   }
@@ -202,6 +196,65 @@ export class SecurityAuthService {
       permissionCodes: await this.repository.getPermissionCodesForUser(user.id),
       avatarUrl: user.avatarUrl,
     };
+  }
+
+  private async assertUsernamePassword(
+    username: string,
+    password: string,
+    context: LoginContext,
+  ): Promise<{
+    normalizedUsername: string;
+    user: SecurityAuthUserRecord;
+  }> {
+    const normalizedUsername = normalizeLoginUsername(username);
+
+    if (!normalizedUsername) {
+      await this.recordLoginAttempt(
+        username,
+        'bad_credentials',
+        'invalid-credentials',
+        context,
+      );
+      throw invalidCredentialsError();
+    }
+
+    const policy = await this.loginPolicy.getLoginPolicy();
+    const existingLockout =
+      await this.loginLockouts.getLoginLockout(normalizedUsername);
+
+    if (isActiveLoginLockout(existingLockout)) {
+      await this.recordLoginAttempt(
+        normalizedUsername,
+        'account_locked',
+        'account-locked',
+        context,
+      );
+      throw invalidCredentialsError();
+    }
+
+    const user = await this.repository.findUserByUsername(normalizedUsername);
+
+    if (!user) {
+      await this.recordFailedLoginAttempt(normalizedUsername, policy, context);
+      throw invalidCredentialsError();
+    }
+
+    if (!verifySecurityPassword(password, user.passwordHash)) {
+      await this.recordFailedLoginAttempt(normalizedUsername, policy, context);
+      throw invalidCredentialsError();
+    }
+
+    if (!user.enabled) {
+      await this.recordLoginAttempt(
+        normalizedUsername,
+        'user_disabled',
+        'user-disabled',
+        context,
+      );
+      throw invalidCredentialsError();
+    }
+
+    return { normalizedUsername, user };
   }
 
   private async recordLoginAttempt(

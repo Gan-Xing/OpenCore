@@ -44,7 +44,7 @@ function redirectToLogin(): void {
 
   const { pathname, search, hash } = history.location;
 
-  if (pathname === '/user/login') {
+  if (pathname === '/user/login' || pathname === '/user/social-login') {
     return;
   }
 

@@ -16,6 +16,18 @@ describe('createRbacClient', () => {
     await client.login({ username: 'admin', password: 'admin123' });
     await client.me('token');
     await client.logout('token');
+    await client.listSocialAuthProviders();
+    await client.startSocialAuthFlow({ providerCode: 'oauth.github' });
+    await client.completeSocialAuthLogin({
+      providerCode: 'oauth.github',
+      state: 'state',
+    });
+    await client.bindSocialAuthLogin({
+      providerCode: 'oauth.github',
+      state: 'state',
+      username: 'admin',
+      password: 'admin123',
+    });
     await client.listUsers('token', { deptId: 'dept_operations' });
     await client.listUserOptions('token', { deptId: 'dept_operations' });
     await client.exportUsers('token', { deptId: 'dept_operations' });
@@ -130,6 +142,10 @@ describe('createRbacClient', () => {
       { path: '/auth/login', method: 'POST' },
       { path: '/auth/me', token: 'token' },
       { path: '/auth/logout', method: 'POST', token: 'token' },
+      { path: '/auth/social/providers' },
+      { path: '/auth/social/flows', method: 'POST' },
+      { path: '/auth/social/complete', method: 'POST' },
+      { path: '/auth/social/bind-login', method: 'POST' },
       { path: '/core/users?deptId=dept_operations', token: 'token' },
       {
         path: '/core/users/simple-list?deptId=dept_operations',

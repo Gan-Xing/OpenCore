@@ -41,9 +41,35 @@ import {
 const LOCAL_ENV_FILE = '.env.opencore.local';
 const BOOTSTRAP_ADMIN_USERNAME = 'admin';
 const BOOTSTRAP_ADMIN_ROLE_CODE = 'admin';
-const GITHUB_OAUTH_SECRET_CONFIG_KEY =
-  'integration.oauth.github.client-secret.secret';
-const GITHUB_OAUTH_SECRET_ENV_NAME = 'OPENCORE_GITHUB_OAUTH_CLIENT_SECRET';
+const OAUTH_RUNTIME_PROVIDERS = [
+  {
+    code: 'oauth.github',
+    configId: 'config_integration_oauth_github_client_secret',
+    configKey: 'integration.oauth.github.client-secret.secret',
+    envPrefix: 'GITHUB',
+    name: 'GitHub OAuth client secret',
+    remark:
+      'Runtime OAuth adapters resolve this value only through secretRef; the raw GitHub client secret stays in local environment variables.',
+  },
+  {
+    code: 'oauth.google',
+    configId: 'config_integration_oauth_google_client_secret',
+    configKey: 'integration.oauth.google.client-secret.secret',
+    envPrefix: 'GOOGLE',
+    name: 'Google OAuth client secret',
+    remark:
+      'Runtime social login resolves this value only through secretRef; the raw Google client secret stays in local environment variables.',
+  },
+  {
+    code: 'oauth.microsoft',
+    configId: 'config_integration_oauth_microsoft_client_secret',
+    configKey: 'integration.oauth.microsoft.client-secret.secret',
+    envPrefix: 'MICROSOFT',
+    name: 'Microsoft OAuth client secret',
+    remark:
+      'Runtime social login resolves this value only through secretRef; the raw Microsoft client secret stays in local environment variables.',
+  },
+] as const;
 
 loadLocalEnvFile();
 
@@ -1227,17 +1253,29 @@ async function seedSystemManagement(): Promise<{
 function applyRuntimeIntegrationProviderEnv(
   provider: IntegrationProviderRecord,
 ): IntegrationProviderRecord {
-  if (provider.code !== 'oauth.github') {
+  const runtime = OAUTH_RUNTIME_PROVIDERS.find(
+    (item) => item.code === provider.code,
+  );
+
+  if (!runtime) {
     return provider;
   }
 
-  const clientId = readOptionalEnv('OPENCORE_GITHUB_OAUTH_CLIENT_ID');
-  const callbackPath = readOptionalEnv('OPENCORE_GITHUB_OAUTH_CALLBACK_URL');
-  const clientSecret = readOptionalEnv(GITHUB_OAUTH_SECRET_ENV_NAME);
+  const clientId = readOptionalEnv(
+    `OPENCORE_${runtime.envPrefix}_OAUTH_CLIENT_ID`,
+  );
+  const callbackPath = readOptionalEnv(
+    `OPENCORE_${runtime.envPrefix}_OAUTH_CALLBACK_URL`,
+  );
+  const clientSecret = readOptionalEnv(
+    `OPENCORE_${runtime.envPrefix}_OAUTH_CLIENT_SECRET`,
+  );
 
-  if (!clientId && !callbackPath) {
+  if (!clientId && !callbackPath && !clientSecret) {
     return provider;
   }
+
+  const enabled = provider.enabled || Boolean(clientId && clientSecret);
 
   return {
     ...provider,
@@ -1247,52 +1285,47 @@ function applyRuntimeIntegrationProviderEnv(
         callbackPath ??
         (typeof provider.config.callbackPath === 'string'
           ? provider.config.callbackPath
-          : '/api/integrations/oauth/callback/github'),
+          : `/api/auth/social/callback/${provider.code.replace(/^oauth\./, '')}`),
       clientId:
         clientId ??
         (typeof provider.config.clientId === 'string'
           ? provider.config.clientId
-          : 'opencore-github'),
+          : `opencore-${provider.code.replace(/^oauth\./, '')}`),
       clientSecret: '[REDACTED]',
     },
     configVersion: Math.max(provider.configVersion, 2),
-    secretRef: `secret://config/${GITHUB_OAUTH_SECRET_CONFIG_KEY}`,
+    enabled,
+    healthStatus:
+      enabled && provider.healthStatus === 'disabled'
+        ? 'unknown'
+        : provider.healthStatus,
+    secretRef: `secret://config/${runtime.configKey}`,
     secretRefStatus: clientSecret ? 'valid' : 'unchecked',
   };
 }
 
 function getRuntimeSystemConfigs(): typeof seedSystemConfigs {
-  if (!readOptionalEnv(GITHUB_OAUTH_SECRET_ENV_NAME)) {
-    return seedSystemConfigs;
-  }
+  const existingKeys = new Set(seedSystemConfigs.map((config) => config.key));
+  const runtimeConfigs = OAUTH_RUNTIME_PROVIDERS.filter(
+    (provider) =>
+      readOptionalEnv(`OPENCORE_${provider.envPrefix}_OAUTH_CLIENT_SECRET`) &&
+      !existingKeys.has(provider.configKey),
+  ).map((provider) => ({
+    id: provider.configId,
+    category: 'integration' as const,
+    name: provider.name,
+    key: provider.configKey,
+    value: `env:OPENCORE_${provider.envPrefix}_OAUTH_CLIENT_SECRET`,
+    valueType: 'string' as const,
+    description: `Secret env reference used by the ${provider.name}.`,
+    encrypted: false,
+    remark: provider.remark,
+    public: false,
+    system: true,
+    visibility: 'secret' as const,
+  }));
 
-  if (
-    seedSystemConfigs.some(
-      (config) => config.key === GITHUB_OAUTH_SECRET_CONFIG_KEY,
-    )
-  ) {
-    return seedSystemConfigs;
-  }
-
-  return [
-    ...seedSystemConfigs,
-    {
-      id: 'config_integration_oauth_github_client_secret',
-      category: 'integration',
-      name: 'GitHub OAuth client secret',
-      key: GITHUB_OAUTH_SECRET_CONFIG_KEY,
-      value: `env:${GITHUB_OAUTH_SECRET_ENV_NAME}`,
-      valueType: 'string',
-      description:
-        'Secret env reference used by the GitHub OAuth account binding provider.',
-      encrypted: false,
-      remark:
-        'Runtime OAuth adapters resolve this value only through secretRef; the raw GitHub client secret stays in local environment variables.',
-      public: false,
-      system: true,
-      visibility: 'secret',
-    },
-  ];
+  return [...seedSystemConfigs, ...runtimeConfigs] as typeof seedSystemConfigs;
 }
 
 function readOptionalEnv(key: string): string | undefined {

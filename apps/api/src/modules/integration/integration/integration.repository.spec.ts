@@ -15,10 +15,10 @@ describe('IntegrationRepository', () => {
     const repository = new SeedIntegrationRepository();
 
     expect(await repository.getSummary()).toMatchObject({
-      providers: { total: 5, enabled: 1, disabled: 4, degraded: 0 },
+      providers: { total: 10, enabled: 1, disabled: 9, degraded: 0 },
       mailOutbox: { total: 1, queued: 1 },
       smsOutbox: { total: 1, queued: 0 },
-      oauthProviders: 1,
+      oauthProviders: 6,
       oauthTokens: { total: 4, active: 2, expired: 1, revoked: 1 },
       designs: { designOnlyTopics: 2 },
     });
@@ -310,12 +310,12 @@ describe('IntegrationRepository', () => {
 
     await expect(repository.getProviderHealthAudit()).resolves.toMatchObject({
       totals: {
-        total: 5,
+        total: 10,
         blocked: 4,
-        unsupported: 1,
+        unsupported: 6,
         failed: 1,
         retryableFailed: 1,
-        configVaultBacked: 3,
+        configVaultBacked: 8,
         configVaultMissing: 2,
       },
       providers: expect.arrayContaining([

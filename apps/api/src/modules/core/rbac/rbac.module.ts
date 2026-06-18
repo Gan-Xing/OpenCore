@@ -17,6 +17,7 @@ import {
   SystemRoleModule,
   SystemUserModule,
 } from '@opencore/system';
+import { IntegrationModule } from '../../integration/integration/integration.module';
 import { LoginSecurityModule } from '../login-security/login-security.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
@@ -24,12 +25,14 @@ import { PermissionGuard } from './permission.guard';
 import { PrismaRbacRepository } from './prisma-rbac.repository';
 import { RbacController } from './rbac.controller';
 import { RbacRepository } from './rbac.repository';
+import { SocialAuthService } from './social-auth.service';
 
 @Module({
   imports: [
     DatabaseModule,
     AuditLoginLogModule,
     FileModule,
+    IntegrationModule,
     LoginSecurityModule,
     OnlineUserModule,
     SystemUserModule,
@@ -53,6 +56,7 @@ import { RbacRepository } from './rbac.repository';
     SecurityBearerTokenService,
     SecurityDataScopeService,
     AuthService,
+    SocialAuthService,
     PermissionGuard,
     {
       provide: APP_GUARD,

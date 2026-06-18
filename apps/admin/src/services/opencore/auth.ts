@@ -1,9 +1,15 @@
 import {
   createRbacClient,
   type AuthenticatedUser,
+  type BindSocialAuthLoginRequest,
+  type CompleteSocialAuthRequest,
   type LoginRequest,
   type LoginResponse,
   type LogoutResponse,
+  type SocialAuthFlowSummary,
+  type SocialAuthProviderSummary,
+  type SocialAuthResultSummary,
+  type StartSocialAuthFlowRequest,
   type UpdateUserPasswordRequest,
   type UpdateUserProfileRequest,
   type UserPasswordMutationSummary,
@@ -51,6 +57,38 @@ export async function queryCurrentOpenCoreUser(): Promise<LoginResponse> {
 
 export async function logoutFromOpenCore(): Promise<LogoutResponse> {
   return authClient.logout(getRequiredAdminToken());
+}
+
+export async function listOpenCoreSocialAuthProviders(): Promise<
+  readonly SocialAuthProviderSummary[]
+> {
+  return authClient.listSocialAuthProviders();
+}
+
+export async function startOpenCoreSocialAuthFlow(
+  body: StartSocialAuthFlowRequest,
+): Promise<SocialAuthFlowSummary> {
+  return authClient.startSocialAuthFlow(body);
+}
+
+export async function completeOpenCoreSocialAuthLogin(
+  body: CompleteSocialAuthRequest,
+): Promise<SocialAuthResultSummary> {
+  const result = await authClient.completeSocialAuthLogin(body);
+  if (result.session) {
+    setAdminToken(result.session.accessToken);
+  }
+  return result;
+}
+
+export async function bindOpenCoreSocialAuthLogin(
+  body: BindSocialAuthLoginRequest,
+): Promise<SocialAuthResultSummary> {
+  const result = await authClient.bindSocialAuthLogin(body);
+  if (result.session) {
+    setAdminToken(result.session.accessToken);
+  }
+  return result;
 }
 
 export async function getOpenCoreUserProfile(): Promise<UserProfileSummary> {
