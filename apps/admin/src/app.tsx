@@ -2,7 +2,7 @@ import { LinkOutlined } from '@ant-design/icons';
 import type { Settings as LayoutSettings } from '@ant-design/pro-components';
 import { SettingDrawer } from '@ant-design/pro-components';
 import type { RequestConfig, RunTimeLayoutConfig } from '@umijs/max';
-import { history, Link } from '@umijs/max';
+import { getIntl, history, Link } from '@umijs/max';
 import { ConfigProvider } from 'antd';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -60,6 +60,13 @@ function redirectToLogin(): void {
   );
 }
 
+export function formatAdminLayoutMessage(message: {
+  defaultMessage?: string;
+  id: string;
+}): string {
+  return getIntl().formatMessage(message);
+}
+
 export async function getInitialState(): Promise<AdminInitialState> {
   const runtimeConfig = await getOpenCoreAdminRuntimeConfig().catch(
     () => undefined,
@@ -111,6 +118,7 @@ export const layout: RunTimeLayoutConfig = ({
   setInitialState,
 }) => {
   return {
+    formatMessage: formatAdminLayoutMessage,
     menuItemRender: (item, dom) => {
       if (item.path) {
         return (

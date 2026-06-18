@@ -137,6 +137,8 @@ for (const requiredRoute of [
 const appRuntime = readFileSync(resolve(root, 'src/app.tsx'), 'utf8');
 if (
   !appRuntime.includes('queryCurrentOpenCoreUser') ||
+  !appRuntime.includes('formatAdminLayoutMessage') ||
+  !appRuntime.includes('getIntl().formatMessage') ||
   !appRuntime.includes('shellMenuItems') ||
   !appRuntime.includes('registrySummary') ||
   !appRuntime.includes('permissions: currentUser?.permissionCodes') ||
@@ -144,7 +146,7 @@ if (
   !appRuntime.includes('baseURL: process.env.ADMIN_API_BASE_URL')
 ) {
   throw new Error(
-    'Admin app runtime must use OpenCore auth, shell registry metadata, runtime config and non-demo request base URL.',
+    'Admin app runtime must use OpenCore auth, shell registry metadata, Umi-backed layout menu i18n, runtime config and non-demo request base URL.',
   );
 }
 

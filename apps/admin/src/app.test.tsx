@@ -14,6 +14,20 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@umijs/max', () => ({
+  getIntl: () => ({
+    formatMessage: ({
+      defaultMessage,
+      id,
+    }: {
+      defaultMessage?: string;
+      id: string;
+    }) =>
+      ({
+        'menu.system.users': '用户管理',
+      })[id] ??
+      defaultMessage ??
+      id,
+  }),
   history: mocks.history,
   Link: ({ children }: any) => children,
 }));
@@ -237,5 +251,28 @@ describe('app getInitialState', () => {
     expect(state.runtimeConfig?.loginLockoutMinutes).toBe(20);
     expect(state.runtimeConfig?.loginMaxFailedAttempts).toBe(4);
     expect(state.runtimeConfig?.featureFlags['notice.inbox']).toBe(false);
+  });
+
+  it('uses Umi locale messages for ProLayout menu labels', async () => {
+    const { formatAdminLayoutMessage, layout } = await import('./app');
+
+    expect(
+      formatAdminLayoutMessage({
+        id: 'menu.system.users',
+        defaultMessage: 'system.users',
+      }),
+    ).toBe('用户管理');
+
+    const layoutConfig = layout({
+      initialState: undefined,
+      setInitialState: vi.fn(),
+    } as any);
+
+    expect(
+      layoutConfig.formatMessage?.({
+        id: 'menu.system.users',
+        defaultMessage: 'system.users',
+      }),
+    ).toBe('用户管理');
   });
 });
