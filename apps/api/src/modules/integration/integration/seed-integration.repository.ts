@@ -903,7 +903,6 @@ export class SeedIntegrationRepository extends IntegrationRepository {
     const audit = this.addOAuthCallbackAudit({
       providerCode: callback.providerCode,
       flowId: flow.id,
-      subjectType: flow.subjectType,
       state: callback.state,
       status: 'accepted',
       reason: 'OAuth callback accepted and token reference archived.',
