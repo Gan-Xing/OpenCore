@@ -152,16 +152,17 @@ async function main() {
     }
 
     const activePage = await clients.integration.listOAuthTokens(token, {
+      pageSize: 100,
       status: 'active',
     });
     assertAtLeast(activePage.total, 1, 'active OAuth token page total');
     assertArray(activePage.items, 'active OAuth token items');
-    const activeToken = activePage.items.find(
-      (item) => item.id === SMOKE_TOKEN_ID,
+    const activeToken = await findOAuthTokenById(
+      token,
+      'active',
+      SMOKE_TOKEN_ID,
+      'active OAuth smoke token',
     );
-    if (!activeToken) {
-      throw new Error(`Expected active OAuth smoke token ${SMOKE_TOKEN_ID}.`);
-    }
     assertString(activeToken.id, 'active OAuth token id');
     assertEqual(activeToken.status, 'active', 'active OAuth token status');
     assertString(activeToken.accessTokenRef, 'active OAuth token ref');
@@ -202,13 +203,16 @@ async function main() {
       'OAuth token revoked summary increment',
     );
 
-    const revokedPage = await clients.integration.listOAuthTokens(token, {
-      status: 'revoked',
-    });
-    assertIncludes(
-      revokedPage.items.map((item) => item.id),
+    const revokedToken = await findOAuthTokenById(
+      token,
+      'revoked',
       activeToken.id,
       'revoked OAuth token page',
+    );
+    assertEqual(
+      revokedToken.id,
+      activeToken.id,
+      'revoked OAuth token page token id',
     );
 
     assertNoSecretLeak({
@@ -221,7 +225,7 @@ async function main() {
       repeatedCallback,
       repeated,
       revoked,
-      revokedPage,
+      revokedToken,
     });
 
     checks = [
@@ -258,6 +262,22 @@ async function main() {
 
 async function resetSmokeOAuthToken() {
   const db = getSmokePrisma();
+  await db.integrationOAuthCallbackAudit.deleteMany({
+    where: {
+      OR: [
+        { providerAccountId: { startsWith: 'profile-smoke-' } },
+        { providerAccountId: { startsWith: 'github:social-smoke-' } },
+      ],
+    },
+  });
+  await db.integrationOAuthToken.deleteMany({
+    where: {
+      OR: [
+        { providerAccountId: { startsWith: 'profile-smoke-' } },
+        { providerAccountId: { startsWith: 'github:social-smoke-' } },
+      ],
+    },
+  });
   await db.integrationOAuthToken.upsert({
     where: { id: SMOKE_TOKEN_ID },
     update: toPrismaOAuthToken(SMOKE_TOKEN_SEED),
@@ -266,6 +286,38 @@ async function resetSmokeOAuthToken() {
       ...toPrismaOAuthToken(SMOKE_TOKEN_SEED),
     },
   });
+}
+
+async function findOAuthTokenById(
+  token: string,
+  status: 'active' | 'expired' | 'revoked',
+  id: string,
+  label: string,
+): Promise<OAuthTokenSummary> {
+  let page = 1;
+  let totalPages = 1;
+  const seen: string[] = [];
+
+  while (page <= totalPages) {
+    const result = await clients.integration.listOAuthTokens(token, {
+      page,
+      pageSize: 100,
+      status,
+    });
+    totalPages = result.totalPages;
+    seen.push(...result.items.map((item) => item.id));
+    const found = result.items.find((item) => item.id === id);
+    if (found) {
+      return found;
+    }
+    page += 1;
+  }
+
+  throw new Error(
+    `Expected ${label} to include ${JSON.stringify(id)}, received ${JSON.stringify(
+      seen,
+    )}`,
+  );
 }
 
 async function resetSmokeOAuthFlow() {
