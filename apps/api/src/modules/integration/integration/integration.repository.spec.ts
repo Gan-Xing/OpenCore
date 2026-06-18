@@ -197,6 +197,50 @@ describe('IntegrationRepository', () => {
     expect(JSON.stringify(auditLogs)).not.toContain('smtp-password');
   });
 
+  it('resolves env-backed provider secrets during credential tests', async () => {
+    const envName = 'OPENCORE_TEST_GITHUB_OAUTH_CLIENT_SECRET';
+    const previous = process.env[envName];
+    process.env[envName] = 'github-oauth-secret-from-env';
+    try {
+      const secretKey = 'integration.oauth.env.client-secret.secret';
+      const repository = new SeedIntegrationRepository(
+        createMapProviderSecretResolver(
+          new Map([[secretKey, `env:${envName}`]]),
+        ),
+      );
+
+      await repository.createProvider({
+        code: 'oauth.env',
+        type: 'oauth',
+        name: 'Env OAuth',
+        enabled: true,
+        secretRef: `secret://config/${secretKey}`,
+        config: {
+          adapter: 'oauth2',
+          authorizationUrl: 'https://github.com/login/oauth/authorize',
+          callbackPath:
+            'https://opencore.example.test/api/integrations/oauth/callback/env',
+          clientId: 'env-client-id',
+          scopes: ['read:user'],
+          tokenUrl: 'https://github.com/login/oauth/access_token',
+        },
+      });
+
+      await expect(repository.testProvider('oauth.env')).resolves.toMatchObject(
+        {
+          secretRefStatus: 'valid',
+          status: 'passed',
+        },
+      );
+    } finally {
+      if (previous === undefined) {
+        delete process.env[envName];
+      } else {
+        process.env[envName] = previous;
+      }
+    }
+  });
+
   it('builds provider diagnostics from health, secret, and outbox state', async () => {
     const repository = new SeedIntegrationRepository();
 
@@ -1398,7 +1442,12 @@ describe('IntegrationRepository', () => {
         scopes: ['read:user'],
       },
     });
-    await repository.testProvider('oauth.ready');
+    await expect(repository.testProvider('oauth.ready')).resolves.toMatchObject(
+      {
+        secretRefStatus: 'valid',
+        status: 'passed',
+      },
+    );
 
     const providers = await repository.listProfileOAuthProviders();
     expect(providers).toEqual(

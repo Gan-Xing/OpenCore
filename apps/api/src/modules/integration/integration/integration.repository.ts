@@ -900,6 +900,26 @@ export function parseConfigSecretRef(secretRef: string): string {
   return key;
 }
 
+export function resolveProviderSecretValue(value: string): string {
+  const normalized = value.trim();
+  const envMatch = /^env:([A-Z_][A-Z0-9_]*)$/.exec(normalized);
+  if (!envMatch) {
+    return value;
+  }
+
+  const envName = envMatch[1];
+  const envValue = process.env[envName];
+  if (!envValue?.trim()) {
+    throw integrationBadRequest(
+      'INTEGRATION_CONFIG_SECRET_ENV_MISSING',
+      'Integration provider environment secret is not configured.',
+      { envName },
+    );
+  }
+
+  return envValue;
+}
+
 export function assertProviderReadyForOutbox(input: {
   code: string;
   type: IntegrationProviderType;

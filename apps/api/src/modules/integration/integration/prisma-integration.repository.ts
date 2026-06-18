@@ -93,6 +93,7 @@ import {
   normalizeOAuthTokenStatus,
   normalizeOptionalProviderCode,
   parseConfigSecretRef,
+  resolveProviderSecretValue,
   normalizeProviderAuditAction,
   normalizeProviderSecretRefStatus,
   normalizeProviderTestStatus,
@@ -247,7 +248,7 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
   ): Promise<string> => {
     const key = parseConfigSecretRef(secretRef);
     const secret = await this.systemConfig.resolveSecretConfigValue(key);
-    return secret.value;
+    return resolveProviderSecretValue(secret.value);
   };
 
   async getSummary() {

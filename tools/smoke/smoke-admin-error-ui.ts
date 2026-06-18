@@ -163,8 +163,8 @@ async function main() {
     );
     await waitForExpression(
       page,
-      `document.body.innerText.includes('待配置')`,
-      'Admin profile OAuth not-ready status',
+      `document.body.innerText.includes('待配置') || document.body.innerText.includes('可绑定')`,
+      'Admin profile OAuth binding status',
     );
     const bindingScrollPane = await evaluate(
       page,
@@ -192,9 +192,41 @@ async function main() {
       );
     }
 
-    await evaluate(
+    const oauthBindingState = await evaluate(
       page,
       `
+(() => {
+  const button = Array.from(document.querySelectorAll('button')).find((node) => node.textContent?.includes('绑定') && node.textContent?.includes('GitHub'));
+  if (!(button instanceof HTMLButtonElement)) {
+    return { ok: false, reason: 'missing GitHub binding button', text: document.body.innerText.slice(0, 500) };
+  }
+  const text = document.body.innerText;
+  return {
+    ok: true,
+    buttonDisabled: button.disabled,
+    ready: text.includes('可绑定'),
+    requiresConfiguration: text.includes('待配置'),
+  };
+})()
+`,
+    );
+
+    if (!isRecord(oauthBindingState) || oauthBindingState.ok !== true) {
+      throw new Error(
+        `Admin profile GitHub binding state is not visible: ${JSON.stringify(oauthBindingState)}`,
+      );
+    }
+
+    if (oauthBindingState.ready === true) {
+      if (oauthBindingState.buttonDisabled === true) {
+        throw new Error(
+          'Admin profile GitHub binding is ready but the binding button is disabled.',
+        );
+      }
+    } else if (oauthBindingState.requiresConfiguration === true) {
+      await evaluate(
+        page,
+        `
 (() => {
   const button = Array.from(document.querySelectorAll('button')).find((node) => node.textContent?.includes('绑定') && node.textContent?.includes('GitHub'));
   if (!(button instanceof HTMLButtonElement)) {
@@ -204,15 +236,15 @@ async function main() {
   return true;
 })()
 `,
-    );
-    await waitForExpression(
-      page,
-      `document.body.innerText.includes('账号绑定尚未配置完成')`,
-      'Admin profile OAuth not-ready modal',
-    );
-    await evaluate(
-      page,
-      `
+      );
+      await waitForExpression(
+        page,
+        `document.body.innerText.includes('账号绑定尚未配置完成')`,
+        'Admin profile OAuth not-ready modal',
+      );
+      await evaluate(
+        page,
+        `
 (() => {
   const close = Array.from(document.querySelectorAll('button')).find((node) => node.textContent?.includes('我知道了'));
   if (close instanceof HTMLButtonElement) {
@@ -221,7 +253,12 @@ async function main() {
   return true;
 })()
 `,
-    );
+      );
+    } else {
+      throw new Error(
+        `Admin profile GitHub binding has neither ready nor requires-configuration status: ${JSON.stringify(oauthBindingState)}`,
+      );
+    }
     await evaluate(
       page,
       `
@@ -283,8 +320,7 @@ async function main() {
           'admin.public-profile.authenticated-access',
           'admin.public-profile.zh-cn-tabs',
           'admin.public-profile.single-scroll-pane',
-          'admin.public-profile.oauth-not-ready',
-          'admin.public-profile.oauth-no-external-404',
+          'admin.public-profile.oauth-state-aware',
           'admin.public-profile.no-raw-keys',
         ],
       }),

@@ -35,11 +35,15 @@ import {
   seedIntegrationOAuthTokens,
   seedIntegrationProviders,
   seedIntegrationTemplates,
+  type IntegrationProviderRecord,
 } from '../apps/api/src/modules/integration/integration/integration.seed';
 
 const LOCAL_ENV_FILE = '.env.opencore.local';
 const BOOTSTRAP_ADMIN_USERNAME = 'admin';
 const BOOTSTRAP_ADMIN_ROLE_CODE = 'admin';
+const GITHUB_OAUTH_SECRET_CONFIG_KEY =
+  'integration.oauth.github.client-secret.secret';
+const GITHUB_OAUTH_SECRET_ENV_NAME = 'OPENCORE_GITHUB_OAUTH_CLIENT_SECRET';
 
 loadLocalEnvFile();
 
@@ -90,7 +94,9 @@ async function seedIntegrations(): Promise<{
   outbox: number;
   oauthTokens: number;
 }> {
-  for (const provider of seedIntegrationProviders) {
+  for (const seedProvider of seedIntegrationProviders) {
+    const provider = applyRuntimeIntegrationProviderEnv(seedProvider);
+
     await prisma.integrationProvider.upsert({
       where: { code: provider.code },
       update: {
@@ -927,7 +933,8 @@ async function seedSystemManagement(): Promise<{
   }
 
   let systemConfigSecretVersions = 0;
-  for (const config of seedSystemConfigs) {
+  const runtimeSystemConfigs = getRuntimeSystemConfigs();
+  for (const config of runtimeSystemConfigs) {
     const storedConfigValue = normalizeStoredConfigValue({
       key: config.key,
       value: config.value,
@@ -1205,7 +1212,7 @@ async function seedSystemManagement(): Promise<{
 
   return {
     dictTypes: seedDictTypes.length,
-    systemConfigs: seedSystemConfigs.length,
+    systemConfigs: runtimeSystemConfigs.length,
     systemConfigSecretVersions,
     systemNotices: seedSystemNotices.length,
     systemNoticeTemplates: seedSystemNoticeTemplates.length,
@@ -1215,6 +1222,82 @@ async function seedSystemManagement(): Promise<{
     auditLogs: seedAuditLogs.length,
     loginLogs: seedLoginLogs.length,
   };
+}
+
+function applyRuntimeIntegrationProviderEnv(
+  provider: IntegrationProviderRecord,
+): IntegrationProviderRecord {
+  if (provider.code !== 'oauth.github') {
+    return provider;
+  }
+
+  const clientId = readOptionalEnv('OPENCORE_GITHUB_OAUTH_CLIENT_ID');
+  const callbackPath = readOptionalEnv('OPENCORE_GITHUB_OAUTH_CALLBACK_URL');
+
+  if (!clientId && !callbackPath) {
+    return provider;
+  }
+
+  return {
+    ...provider,
+    config: {
+      ...provider.config,
+      callbackPath:
+        callbackPath ??
+        (typeof provider.config.callbackPath === 'string'
+          ? provider.config.callbackPath
+          : '/api/integrations/oauth/callback/github'),
+      clientId:
+        clientId ??
+        (typeof provider.config.clientId === 'string'
+          ? provider.config.clientId
+          : 'opencore-github'),
+      clientSecret: '[REDACTED]',
+    },
+    configVersion: Math.max(provider.configVersion, 2),
+    secretRef: `secret://config/${GITHUB_OAUTH_SECRET_CONFIG_KEY}`,
+    secretRefStatus: 'unchecked',
+  };
+}
+
+function getRuntimeSystemConfigs(): typeof seedSystemConfigs {
+  if (!readOptionalEnv(GITHUB_OAUTH_SECRET_ENV_NAME)) {
+    return seedSystemConfigs;
+  }
+
+  if (
+    seedSystemConfigs.some(
+      (config) => config.key === GITHUB_OAUTH_SECRET_CONFIG_KEY,
+    )
+  ) {
+    return seedSystemConfigs;
+  }
+
+  return [
+    ...seedSystemConfigs,
+    {
+      id: 'config_integration_oauth_github_client_secret',
+      category: 'integration',
+      name: 'GitHub OAuth client secret',
+      key: GITHUB_OAUTH_SECRET_CONFIG_KEY,
+      value: `env:${GITHUB_OAUTH_SECRET_ENV_NAME}`,
+      valueType: 'string',
+      description:
+        'Secret env reference used by the GitHub OAuth account binding provider.',
+      encrypted: false,
+      remark:
+        'Runtime OAuth adapters resolve this value only through secretRef; the raw GitHub client secret stays in local environment variables.',
+      public: false,
+      system: true,
+      visibility: 'secret',
+    },
+  ];
+}
+
+function readOptionalEnv(key: string): string | undefined {
+  const value = process.env[key]?.trim();
+
+  return value ? value : undefined;
 }
 
 function loadLocalEnvFile(): void {

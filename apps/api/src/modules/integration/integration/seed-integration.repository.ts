@@ -96,6 +96,7 @@ import {
   normalizeProviderSecretRefStatus,
   normalizeProviderTestStatus,
   parseConfigSecretRef,
+  resolveProviderSecretValue,
   normalizeProcessOutboxLimit,
   redactProviderConfig,
   renderTemplate,
@@ -1277,7 +1278,7 @@ export function createMapProviderSecretResolver(
       );
     }
 
-    return value;
+    return resolveProviderSecretValue(value);
   };
 }
 

@@ -62,6 +62,14 @@ type MailSmtpProviderConfig = {
   username?: string;
 };
 
+type OAuth2ProviderConfig = {
+  authorizationUrl: URL;
+  callbackPath: string;
+  clientId: string;
+  scopes: readonly string[];
+  tokenUrl: URL;
+};
+
 type MailSmtpTlsMode =
   | 'implicit-tls'
   | 'plain'
@@ -186,6 +194,12 @@ async function assertDeliveryAdapterConfig(
     const config = normalizeMailSmtpProviderConfig(provider);
     await resolveMailSmtpPassword(provider, config, options.secretResolver);
     await verifyMailSmtpTransport(provider, config, options);
+    return;
+  }
+
+  if (provider.type === 'oauth' && adapter === 'oauth2') {
+    normalizeOAuth2ProviderConfig(provider);
+    await resolveOAuth2ClientSecret(provider, options.secretResolver);
     return;
   }
 
@@ -525,6 +539,44 @@ function normalizeSmsHttpProviderConfig(
   };
 }
 
+function normalizeOAuth2ProviderConfig(
+  provider: IntegrationProviderRecord,
+): OAuth2ProviderConfig {
+  const config = provider.config;
+  const clientId = normalizeTrimmedString(
+    config.clientId,
+    'OAuth clientId',
+    200,
+  );
+  if (/^opencore[-_]/i.test(clientId)) {
+    throw new Error(
+      `OAuth provider ${provider.code} clientId is still a placeholder.`,
+    );
+  }
+
+  const callbackPath = normalizeTrimmedString(
+    config.callbackPath,
+    'OAuth callbackPath',
+    500,
+  );
+  if (!callbackPath.startsWith('/') && !isAbsoluteHttpUrl(callbackPath)) {
+    throw new Error(
+      'OAuth callbackPath must be an absolute HTTP(S) URL or API path.',
+    );
+  }
+
+  return {
+    authorizationUrl: normalizeHttpUrl(
+      config.authorizationUrl,
+      'OAuth authorizationUrl',
+    ),
+    callbackPath,
+    clientId,
+    scopes: normalizeOAuthScopes(config.scopes),
+    tokenUrl: normalizeHttpUrl(config.tokenUrl, 'OAuth tokenUrl'),
+  };
+}
+
 function normalizeHttpEndpoint(value: unknown): URL {
   if (typeof value !== 'string' || !value.trim()) {
     throw new Error('SMS HTTP adapter endpoint is required.');
@@ -771,6 +823,40 @@ function normalizeTrimmedString(
   return normalized;
 }
 
+function normalizeHttpUrl(value: unknown, label: string): URL {
+  const normalized = normalizeTrimmedString(value, label, 500);
+  try {
+    const url = new URL(normalized);
+    if (!['http:', 'https:'].includes(url.protocol)) {
+      throw new Error('unsupported protocol');
+    }
+    return url;
+  } catch {
+    throw new Error(`${label} must be a valid HTTP(S) URL.`);
+  }
+}
+
+function normalizeOAuthScopes(value: unknown): readonly string[] {
+  if (value === undefined || value === null) {
+    return [];
+  }
+  if (!Array.isArray(value)) {
+    throw new Error('OAuth scopes must be an array.');
+  }
+  return value.map((item, index) =>
+    normalizeTrimmedString(item, `OAuth scopes[${index}]`, 120),
+  );
+}
+
+function isAbsoluteHttpUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return ['http:', 'https:'].includes(url.protocol);
+  } catch {
+    return false;
+  }
+}
+
 function assertConfigSecretRef(secretRef: string): void {
   if (
     !secretRef.startsWith(CONFIG_SECRET_REF_PREFIX) ||
@@ -780,6 +866,22 @@ function assertConfigSecretRef(secretRef: string): void {
       'Mail SMTP provider secretRef must use secret://config/<key>.',
     );
   }
+}
+
+async function resolveOAuth2ClientSecret(
+  provider: IntegrationProviderRecord,
+  secretResolver: ProviderSecretResolver | undefined,
+): Promise<string> {
+  if (!secretResolver) {
+    throw new Error('OAuth provider secret resolver is unavailable.');
+  }
+
+  const secret = await secretResolver(provider.secretRef);
+  if (!secret.trim()) {
+    throw new Error(`OAuth provider ${provider.code} client secret is empty.`);
+  }
+
+  return secret;
 }
 
 async function resolveSmsHttpSecretInjections(
