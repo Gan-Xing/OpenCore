@@ -89,42 +89,71 @@ async function main() {
     );
     assertEqual(adminProfile.username, username, 'admin profile username');
 
-    const avatarUploadBody = {
-      originalName: `admin-avatar-${runId}.png`,
-      mimeType: 'image/png',
-      contentBase64: tinyPngBase64,
-    };
     await request(`${apiPrefix}/core/users/profile/avatar`, {
       method: 'POST',
       expected: [401],
-      body: avatarUploadBody,
+      body: createAvatarUploadForm(
+        Buffer.from(tinyPngBase64, 'base64'),
+        'image/png',
+        `admin-avatar-${runId}.png`,
+      ),
     });
     await apiRequest('/core/users/profile/avatar', {
       method: 'POST',
       expected: [400],
-      body: {
-        ...avatarUploadBody,
-        mimeType: 'image/svg+xml',
-      },
+      body: createAvatarUploadForm(
+        Buffer.from('<svg></svg>'),
+        'image/svg+xml',
+        `admin-avatar-${runId}.svg`,
+      ),
     });
-    await apiRequest('/core/users/profile/avatar', {
+    const avatarBytesGuard = await apiRequest('/core/users/profile/avatar', {
       method: 'POST',
       expected: [400],
-      body: {
-        ...avatarUploadBody,
-        contentBase64: 'not-base64',
-      },
+      body: createAvatarUploadForm(
+        Buffer.from('not an image'),
+        'image/png',
+        `admin-avatar-${runId}.png`,
+      ),
     });
+    assertEqual(
+      avatarBytesGuard.error.code,
+      'USER_AVATAR_BYTES_MISMATCH',
+      'avatar bytes guard error code',
+    );
+    const largePngBody = Buffer.concat([
+      Buffer.from('89504e470d0a1a0a', 'hex'),
+      Buffer.alloc(1_050_000),
+    ]);
+    const avatarSizeGuard = await apiRequest('/core/users/profile/avatar', {
+      method: 'POST',
+      expected: [400],
+      body: createAvatarUploadForm(
+        largePngBody,
+        'image/png',
+        `admin-avatar-large-${runId}.png`,
+      ),
+    });
+    assertEqual(
+      avatarSizeGuard.error.code,
+      'USER_AVATAR_TOO_LARGE',
+      'avatar size guard error code',
+    );
+    const avatarBody = Buffer.from(tinyPngBase64, 'base64');
     const avatarProfile = await apiRequest('/core/users/profile/avatar', {
       method: 'POST',
-      body: avatarUploadBody,
+      body: createAvatarUploadForm(
+        avatarBody,
+        'image/png',
+        `admin-avatar-${runId}.png`,
+      ),
     });
     adminAvatarTouched = true;
     const avatarUrl = assertString(avatarProfile.avatarUrl, 'avatar URL');
     assertEqual(avatarProfile.avatarMimeType, 'image/png', 'avatar mime type');
     assertEqual(
       avatarProfile.avatarSizeBytes,
-      Buffer.from(tinyPngBase64, 'base64').byteLength,
+      avatarBody.byteLength,
       'avatar size',
     );
     assertString(avatarProfile.avatarUpdatedAt, 'avatar updatedAt');
@@ -1181,7 +1210,8 @@ async function main() {
           'core.user.profile.get',
           'core.user.profile.avatar.auth-guard',
           'core.user.profile.avatar.mime-guard',
-          'core.user.profile.avatar.base64-guard',
+          'core.user.profile.avatar.bytes-guard',
+          'core.user.profile.avatar.size-guard',
           'core.user.profile.avatar.upload',
           'core.user.profile.avatar.public-download',
           'core.user.profile.avatar.auth-me-refresh',
@@ -1303,10 +1333,24 @@ async function captureAvatarUpload(avatarUrl) {
   }
 
   return {
+    body: downloaded.body,
     originalName: `restored-admin-avatar.${extension}`,
     mimeType,
-    contentBase64: downloaded.body.toString('base64'),
   };
+}
+
+function createAvatarUploadForm(
+  body: Buffer,
+  mimeType: string,
+  originalName: string,
+) {
+  const form = new FormData();
+  form.append(
+    'file',
+    new Blob([new Uint8Array(body)], { type: mimeType }),
+    originalName,
+  );
+  return form;
 }
 
 async function cleanup() {
@@ -1402,7 +1446,11 @@ async function restoreAdminProfile() {
     await apiRequest('/core/users/profile/avatar', {
       method: 'POST',
       expected: [200, 201],
-      body: originalAdminAvatarUpload,
+      body: createAvatarUploadForm(
+        originalAdminAvatarUpload.body,
+        originalAdminAvatarUpload.mimeType,
+        originalAdminAvatarUpload.originalName,
+      ),
     }).catch(() => undefined);
   } else {
     await apiRequest('/core/users/profile/avatar', {

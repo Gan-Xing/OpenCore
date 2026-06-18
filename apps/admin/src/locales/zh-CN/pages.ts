@@ -1891,8 +1891,18 @@ export default {
   'pages.personal.profile.activity.sessions': '当前会话',
   'pages.personal.profile.avatar.invalidType':
     '头像必须是 PNG、JPEG、WebP 或 GIF。',
-  'pages.personal.profile.avatar.readFailure': '无法读取头像文件。',
+  'pages.personal.profile.avatar.confirmUpload': '裁剪并上传',
+  'pages.personal.profile.avatar.cropFailure': '无法裁剪头像图片。',
+  'pages.personal.profile.avatar.editorTitle': '编辑头像',
+  'pages.personal.profile.avatar.preview': '预览',
+  'pages.personal.profile.avatar.reset': '重置裁剪',
+  'pages.personal.profile.avatar.rotateLeft': '向左旋转',
+  'pages.personal.profile.avatar.rotateRight': '向右旋转',
+  'pages.personal.profile.avatar.sourceTooLarge':
+    '头像原图必须小于或等于 5 MB。',
   'pages.personal.profile.avatar.tooLarge': '头像必须小于或等于 1 MB。',
+  'pages.personal.profile.avatar.zoomIn': '放大',
+  'pages.personal.profile.avatar.zoomOut': '缩小',
   'pages.personal.profile.confirm.removeAvatar': '移除头像？',
   'pages.personal.profile.confirm.removeAvatarContent':
     '当前账号头像会被移除。',

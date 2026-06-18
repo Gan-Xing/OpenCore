@@ -2057,8 +2057,18 @@ export default {
   'pages.personal.profile.activity.sessions': 'Current sessions',
   'pages.personal.profile.avatar.invalidType':
     'Avatar must be PNG, JPEG, WebP or GIF.',
-  'pages.personal.profile.avatar.readFailure': 'Unable to read avatar file.',
+  'pages.personal.profile.avatar.confirmUpload': 'Crop and upload',
+  'pages.personal.profile.avatar.cropFailure': 'Unable to crop avatar image.',
+  'pages.personal.profile.avatar.editorTitle': 'Edit avatar',
+  'pages.personal.profile.avatar.preview': 'Preview',
+  'pages.personal.profile.avatar.reset': 'Reset crop',
+  'pages.personal.profile.avatar.rotateLeft': 'Rotate left',
+  'pages.personal.profile.avatar.rotateRight': 'Rotate right',
+  'pages.personal.profile.avatar.sourceTooLarge':
+    'Avatar source image must be 5 MB or smaller.',
   'pages.personal.profile.avatar.tooLarge': 'Avatar must be 1 MB or smaller.',
+  'pages.personal.profile.avatar.zoomIn': 'Zoom in',
+  'pages.personal.profile.avatar.zoomOut': 'Zoom out',
   'pages.personal.profile.confirm.removeAvatar': 'Remove avatar?',
   'pages.personal.profile.confirm.removeAvatarContent':
     'The current avatar will be removed from your account.',

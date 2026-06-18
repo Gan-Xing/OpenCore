@@ -20,12 +20,16 @@ export const opencoreSdkRequest: SdkRequest = async <T>(
   options: SdkRequestOptions = {},
 ): Promise<T> => {
   const token = options.token ?? getAdminToken();
+  const multipart =
+    typeof FormData !== 'undefined' && options.body instanceof FormData;
 
   return request<T>(`/api${path}`, {
     method: options.method ?? 'GET',
     data: options.body,
     headers: {
-      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(options.body && !multipart
+        ? { 'Content-Type': 'application/json' }
+        : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
   });

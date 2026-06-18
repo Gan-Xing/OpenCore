@@ -86,6 +86,7 @@ export default {
   'error.HTTP_403': 'Your account does not have access.',
   'error.HTTP_404': 'The requested resource does not exist.',
   'error.HTTP_409': 'The current data state conflicts. Refresh and try again.',
+  'error.PAYLOAD_TOO_LARGE': 'The upload is too large. Compress it and retry.',
   'error.INTERNAL_SERVER_ERROR':
     'The service is temporarily unavailable. Please try again later.',
   'error.ONLINE_USER_EXPIRED_BEFORE_INVALID':
@@ -101,10 +102,9 @@ export default {
     'The sign-in session is not registered. Please sign in again.',
   'error.USER_AVATAR_BYTES_MISMATCH':
     'The avatar file bytes do not match the declared image type.',
-  'error.USER_AVATAR_CONTENT_INVALID_BASE64':
-    'The avatar content must be valid base64.',
   'error.USER_AVATAR_CONTENT_INVALID_TYPE':
-    'The avatar content must be a string.',
+    'The avatar file content is invalid.',
+  'error.USER_AVATAR_FILE_REQUIRED': 'Choose an avatar file.',
   'error.USER_AVATAR_MIME_TYPE_INVALID_TYPE':
     'The avatar MIME type must be a string.',
   'error.USER_AVATAR_MIME_TYPE_UNSUPPORTED':
@@ -114,6 +114,8 @@ export default {
     'The avatar file name must be a plain file name.',
   'error.USER_AVATAR_ORIGINAL_NAME_INVALID_TYPE':
     'The avatar file name must be a string.',
+  'error.USER_AVATAR_STORAGE_WRITE_FAILED':
+    'Unable to save the avatar file. Please try again later.',
   'error.USER_AVATAR_TOO_LARGE': 'The avatar file is too large.',
   'error.SYSTEM_ROLE_USER_IDS_INVALID': 'The role user list must be an array.',
   'error.SYSTEM_ROLE_USER_ID_DUPLICATED': 'The role user ID is duplicated.',

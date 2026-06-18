@@ -318,8 +318,14 @@
         "requestBody": {
           "required": true,
           "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/UploadUserAvatarDto" }
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["file"],
+                "properties": {
+                  "file": { "type": "string", "format": "binary" }
+                }
+              }
             }
           }
         },
@@ -6663,6 +6669,12 @@
             "schema": { "type": "string" }
           },
           {
+            "name": "response",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string", "enum": ["json", "redirect"] }
+          },
+          {
             "name": "code",
             "required": false,
             "in": "query",
@@ -8992,18 +9004,6 @@
           "email": { "type": "string" },
           "gender": { "type": "string" }
         }
-      },
-      "UploadUserAvatarDto": {
-        "type": "object",
-        "properties": {
-          "originalName": { "type": "string", "example": "avatar.png" },
-          "mimeType": { "type": "string", "example": "image/png" },
-          "contentBase64": {
-            "type": "string",
-            "description": "Base64-encoded image bytes."
-          }
-        },
-        "required": ["originalName", "mimeType", "contentBase64"]
       },
       "UpdateUserPasswordDto": {
         "type": "object",

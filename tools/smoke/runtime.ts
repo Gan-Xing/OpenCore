@@ -92,11 +92,19 @@ export function createTypedSmokeRuntime() {
       : `${baseUrl}${pathOrUrl}`;
 
     try {
+      const multipart =
+        typeof FormData !== 'undefined' && options.body instanceof FormData;
       const response = await fetch(url, {
-        body: options.body ? JSON.stringify(options.body) : undefined,
+        body: multipart
+          ? (options.body as BodyInit)
+          : options.body
+            ? JSON.stringify(options.body)
+            : undefined,
         headers: {
           ...(options.headers || {}),
-          ...(options.body ? { 'content-type': 'application/json' } : {}),
+          ...(options.body && !multipart
+            ? { 'content-type': 'application/json' }
+            : {}),
           ...(options.token
             ? { authorization: `Bearer ${options.token}` }
             : {}),

@@ -11,10 +11,16 @@ import {
   Query,
   Req,
   Res,
+  ServiceUnavailableException,
+  UploadedFile,
+  UseInterceptors,
   UnauthorizedException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
+  ApiBody,
   ApiBearerAuth,
+  ApiConsumes,
   ApiOkResponse,
   ApiProduces,
   ApiTags,
@@ -66,7 +72,6 @@ import {
   SetUserStatusDto,
   UpdateUserPasswordDto,
   UpdateUserProfileDto,
-  UploadUserAvatarDto,
   UpdateMenuDto,
   UpdatePermissionDto,
   UpdateRoleDto,
@@ -110,7 +115,15 @@ type NormalizedAvatarUpload = {
   avatarUrl: string;
 };
 
+type UploadedAvatarFile = {
+  buffer?: Buffer;
+  mimetype?: string;
+  originalname?: string;
+  size?: number;
+};
+
 const AVATAR_MAX_BYTES = 1_048_576;
+const AVATAR_MULTIPART_MAX_BYTES = 5_242_880;
 const ALLOWED_AVATAR_MIME_TYPES = new Set([
   'image/gif',
   'image/jpeg',
@@ -251,21 +264,49 @@ export class RbacController {
   @Post('users/profile/avatar')
   @ApiTags('Core Users')
   @RequireAuthenticated()
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: {
+        fileSize: AVATAR_MULTIPART_MAX_BYTES,
+      },
+    }),
+  )
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['file'],
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
   @ApiOkResponse({ type: UserProfileDto })
   async uploadUserProfileAvatar(
     @Req() request: RequestWithUser,
-    @Body() body: UploadUserAvatarDto,
+    @UploadedFile() file: UploadedAvatarFile | undefined,
   ): Promise<UserProfileDto> {
     const userId = getAuthenticatedUserId(request);
     const previousAvatar = await this.users.getUserAvatar(userId);
-    const avatar = normalizeAvatarUpload(userId, body);
+    const avatar = normalizeAvatarUpload(userId, file);
 
-    await this.files.storeObjectAtKey({
-      key: avatar.avatarStorageKey,
-      body: avatar.body,
-      contentType: avatar.avatarMimeType,
-      uploadedBy: userId,
-    });
+    try {
+      await this.files.storeObjectAtKey({
+        key: avatar.avatarStorageKey,
+        body: avatar.body,
+        contentType: avatar.avatarMimeType,
+        uploadedBy: userId,
+      });
+    } catch {
+      throw rbacServiceUnavailable(
+        'USER_AVATAR_STORAGE_WRITE_FAILED',
+        'Unable to store user avatar.',
+        { field: 'file' },
+      );
+    }
 
     try {
       const profile = await this.users.updateUserAvatar(userId, {
@@ -1023,11 +1064,19 @@ function toSystemUserDataScopeFilter(
 
 function normalizeAvatarUpload(
   userId: string,
-  body: UploadUserAvatarDto,
+  file: UploadedAvatarFile | undefined,
 ): NormalizedAvatarUpload {
-  const originalName = normalizeAvatarOriginalName(body?.originalName);
-  const avatarMimeType = normalizeAvatarMimeType(body?.mimeType);
-  const avatarBody = decodeAvatarBase64(body?.contentBase64);
+  if (!file) {
+    throw rbacBadRequest(
+      'USER_AVATAR_FILE_REQUIRED',
+      'User avatar file is required.',
+      { field: 'file' },
+    );
+  }
+
+  const originalName = normalizeAvatarOriginalName(file.originalname);
+  const avatarMimeType = normalizeAvatarMimeType(file.mimetype);
+  const avatarBody = normalizeAvatarBody(file.buffer);
 
   if (avatarBody.byteLength > AVATAR_MAX_BYTES) {
     throw rbacBadRequest(
@@ -1104,45 +1153,24 @@ function normalizeAvatarMimeType(value: unknown): string {
   return normalized;
 }
 
-function decodeAvatarBase64(value: unknown): Buffer {
-  if (typeof value !== 'string') {
+function normalizeAvatarBody(value: unknown): Buffer {
+  if (!Buffer.isBuffer(value)) {
     throw rbacBadRequest(
       'USER_AVATAR_CONTENT_INVALID_TYPE',
-      'User avatar contentBase64 must be a string.',
-      { field: 'contentBase64' },
+      'User avatar file bytes are required.',
+      { field: 'file' },
     );
   }
 
-  const normalized = value.trim();
-
-  if (
-    !normalized ||
-    /\s/.test(normalized) ||
-    normalized.length % 4 !== 0 ||
-    !/^[A-Za-z0-9+/]+={0,2}$/.test(normalized)
-  ) {
+  if (value.byteLength === 0) {
     throw rbacBadRequest(
-      'USER_AVATAR_CONTENT_INVALID_BASE64',
-      'User avatar contentBase64 must be valid base64.',
-      { field: 'contentBase64' },
+      'USER_AVATAR_CONTENT_INVALID_TYPE',
+      'User avatar file bytes are required.',
+      { field: 'file' },
     );
   }
 
-  const body = Buffer.from(normalized, 'base64');
-  const canonical = body.toString('base64');
-
-  if (
-    body.byteLength === 0 ||
-    canonical.replace(/=+$/, '') !== normalized.replace(/=+$/, '')
-  ) {
-    throw rbacBadRequest(
-      'USER_AVATAR_CONTENT_INVALID_BASE64',
-      'User avatar contentBase64 must be valid base64.',
-      { field: 'contentBase64' },
-    );
-  }
-
-  return body;
+  return value;
 }
 
 function assertAvatarMagic(mimeType: string, body: Buffer): void {
@@ -1161,7 +1189,7 @@ function assertAvatarMagic(mimeType: string, body: Buffer): void {
     throw rbacBadRequest(
       'USER_AVATAR_BYTES_MISMATCH',
       'User avatar bytes must match the declared image mimeType.',
-      { field: 'contentBase64', mimeType },
+      { field: 'file', mimeType },
     );
   }
 }
@@ -1189,6 +1217,16 @@ function rbacNotFound(
   details?: Record<string, unknown>,
 ): NotFoundException {
   return new NotFoundException(createApiErrorBody({ code, message, details }));
+}
+
+function rbacServiceUnavailable(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>,
+): ServiceUnavailableException {
+  return new ServiceUnavailableException(
+    createApiErrorBody({ code, message, details }),
+  );
 }
 
 function startsWithHex(body: Buffer, hex: string): boolean {

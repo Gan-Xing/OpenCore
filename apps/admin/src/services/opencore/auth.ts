@@ -4,7 +4,6 @@ import {
   type LoginRequest,
   type LoginResponse,
   type LogoutResponse,
-  type UploadUserAvatarRequest,
   type UpdateUserPasswordRequest,
   type UpdateUserProfileRequest,
   type UserPasswordMutationSummary,
@@ -69,8 +68,11 @@ export async function updateOpenCoreUserProfile(
 }
 
 export async function updateOpenCoreUserAvatar(
-  body: UploadUserAvatarRequest,
+  file: Blob,
+  filename: string,
 ): Promise<UserProfileSummary> {
+  const body = new FormData();
+  body.append('file', file, filename);
   return authClient.updateUserAvatar(getRequiredAdminToken(), body);
 }
 

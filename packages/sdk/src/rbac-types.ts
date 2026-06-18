@@ -60,11 +60,7 @@ export type UpdateUserProfileRequest = {
   gender?: string | null;
 };
 
-export type UploadUserAvatarRequest = {
-  originalName: string;
-  mimeType: string;
-  contentBase64: string;
-};
+export type UploadUserAvatarRequest = FormData;
 
 export type UpdateUserPasswordRequest = {
   oldPassword: string;

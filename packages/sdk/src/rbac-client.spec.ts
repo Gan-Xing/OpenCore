@@ -33,11 +33,13 @@ describe('createRbacClient', () => {
     });
     await client.getUserProfileActivity('token');
     await client.kickOutOtherUserProfileSessions('token');
-    await client.updateUserAvatar('token', {
-      originalName: 'avatar.png',
-      mimeType: 'image/png',
-      contentBase64: 'iVBORw0KGgo=',
-    });
+    const avatarForm = new FormData();
+    avatarForm.append(
+      'file',
+      new Blob(['avatar'], { type: 'image/png' }),
+      'avatar.png',
+    );
+    await client.updateUserAvatar('token', avatarForm);
     await client.deleteUserAvatar('token');
     expect(client.getUserAvatarPath('user admin')).toBe(
       '/core/users/user%20admin/avatar',

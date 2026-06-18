@@ -63,6 +63,7 @@ export default {
   'error.HTTP_403': '当前账号没有访问权限。',
   'error.HTTP_404': '请求的资源不存在。',
   'error.HTTP_409': '当前数据状态冲突，请刷新后重试。',
+  'error.PAYLOAD_TOO_LARGE': '上传内容过大，请压缩后重试。',
   'error.INTERNAL_SERVER_ERROR': '服务暂时不可用，请稍后重试。',
   'error.ONLINE_USER_EXPIRED_BEFORE_INVALID':
     '过期清理时间必须是有效的 ISO 时间。',
@@ -73,14 +74,15 @@ export default {
   'error.ONLINE_USER_TOKEN_SESSION_UNREGISTERED':
     '登录会话未登记，请重新登录。',
   'error.USER_AVATAR_BYTES_MISMATCH': '头像文件内容与声明的图片类型不一致。',
-  'error.USER_AVATAR_CONTENT_INVALID_BASE64': '头像内容必须是有效的 base64。',
-  'error.USER_AVATAR_CONTENT_INVALID_TYPE': '头像内容必须是字符串。',
+  'error.USER_AVATAR_CONTENT_INVALID_TYPE': '头像文件内容无效。',
+  'error.USER_AVATAR_FILE_REQUIRED': '请选择头像文件。',
   'error.USER_AVATAR_MIME_TYPE_INVALID_TYPE': '头像 MIME 类型必须是字符串。',
   'error.USER_AVATAR_MIME_TYPE_UNSUPPORTED':
     '头像 MIME 类型只支持 PNG、JPEG、WebP 或 GIF。',
   'error.USER_AVATAR_NOT_FOUND': '用户头像不存在。',
   'error.USER_AVATAR_ORIGINAL_NAME_INVALID': '头像文件名必须是普通文件名。',
   'error.USER_AVATAR_ORIGINAL_NAME_INVALID_TYPE': '头像文件名必须是字符串。',
+  'error.USER_AVATAR_STORAGE_WRITE_FAILED': '头像文件保存失败，请稍后重试。',
   'error.USER_AVATAR_TOO_LARGE': '头像文件过大。',
   'error.SYSTEM_ROLE_USER_IDS_INVALID': '角色分配用户列表必须是数组。',
   'error.SYSTEM_ROLE_USER_ID_DUPLICATED': '角色分配用户 ID 重复。',

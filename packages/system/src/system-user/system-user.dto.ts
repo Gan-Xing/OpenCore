@@ -166,14 +166,8 @@ export class UpdateUserProfileDto {
 }
 
 export class UploadUserAvatarDto {
-  @ApiProperty({ example: 'avatar.png' })
-  originalName!: string;
-
-  @ApiProperty({ example: 'image/png' })
-  mimeType!: string;
-
-  @ApiProperty({ description: 'Base64-encoded image bytes.' })
-  contentBase64!: string;
+  @ApiProperty({ format: 'binary', type: 'string' })
+  file!: unknown;
 }
 
 export class UpdateUserPasswordDto {

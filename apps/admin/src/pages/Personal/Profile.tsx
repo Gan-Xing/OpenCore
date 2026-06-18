@@ -1,14 +1,20 @@
 import {
   DeleteOutlined,
   DisconnectOutlined,
+  CheckOutlined,
   LinkOutlined,
   LockOutlined,
   LoginOutlined,
   ReloadOutlined,
+  RotateLeftOutlined,
+  RotateRightOutlined,
   SafetyCertificateOutlined,
   SaveOutlined,
+  UndoOutlined,
   UploadOutlined,
   UserOutlined,
+  ZoomInOutlined,
+  ZoomOutOutlined,
 } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
 import type {
@@ -42,6 +48,8 @@ import {
   message,
 } from 'antd';
 import type { TableColumnsType } from 'antd';
+import Cropper from 'cropperjs';
+import 'cropperjs/dist/cropper.css';
 import type { ChangeEvent, CSSProperties } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -117,7 +125,40 @@ const scrollableProfileTabStyle: CSSProperties = {
 
 const AVATAR_ACCEPT = 'image/png,image/jpeg,image/webp,image/gif';
 const AVATAR_MAX_BYTES = 1_048_576;
+const AVATAR_SOURCE_MAX_BYTES = 5_242_880;
+const AVATAR_CROP_SIZE = 512;
 const AVATAR_MIME_TYPES = new Set(AVATAR_ACCEPT.split(','));
+
+const avatarEditorBodyStyle: CSSProperties = {
+  display: 'grid',
+  gap: 16,
+  gridTemplateColumns: 'minmax(0, 1fr) 180px',
+};
+
+const avatarCropperFrameStyle: CSSProperties = {
+  background: '#f5f5f5',
+  height: 360,
+  overflow: 'hidden',
+};
+
+const avatarCropperImageStyle: CSSProperties = {
+  display: 'block',
+  maxWidth: '100%',
+};
+
+const avatarPreviewPanelStyle: CSSProperties = {
+  alignItems: 'center',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 12,
+};
+
+const avatarToolbarStyle: CSSProperties = {
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: 8,
+  marginTop: 12,
+};
 
 function normalizeOptionalText(value: string | undefined): string | null {
   const trimmed = value?.trim();
@@ -157,44 +198,32 @@ function getPasswordStrength(value: string | undefined) {
   };
 }
 
-function readFileAsBase64(
-  file: File,
-  formatMessage: FormatMessage,
-): Promise<string> {
+function canvasToBlob(
+  canvas: HTMLCanvasElement,
+  type: string,
+  quality?: number,
+): Promise<Blob> {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
+    canvas.toBlob(
+      (blob) => {
+        if (blob) {
+          resolve(blob);
+          return;
+        }
 
-    reader.addEventListener('load', () => {
-      const result = reader.result;
-
-      if (typeof result !== 'string') {
-        reject(
-          new Error(
-            formatMessage(
-              'pages.personal.profile.avatar.readFailure',
-              'Unable to read avatar file.',
-            ),
-          ),
-        );
-        return;
-      }
-
-      const commaIndex = result.indexOf(',');
-      resolve(commaIndex >= 0 ? result.slice(commaIndex + 1) : result);
-    });
-    reader.addEventListener('error', () => {
-      reject(
-        reader.error ??
-          new Error(
-            formatMessage(
-              'pages.personal.profile.avatar.readFailure',
-              'Unable to read avatar file.',
-            ),
-          ),
-      );
-    });
-    reader.readAsDataURL(file);
+        reject(new Error('Unable to render avatar.'));
+      },
+      type,
+      quality,
+    );
   });
+}
+
+function getAvatarUploadFileName(originalName: string, mimeType: string) {
+  const extension = mimeType === 'image/jpeg' ? 'jpg' : 'png';
+  const baseName = originalName.replace(/\.[^.]*$/u, '') || 'avatar';
+
+  return `${baseName}.${extension}`;
 }
 
 export default function PersonalProfilePage() {
@@ -213,6 +242,11 @@ export default function PersonalProfilePage() {
     readonly OAuthProfileProviderSummary[]
   >([]);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string>();
+  const [avatarEditorFileName, setAvatarEditorFileName] =
+    useState('avatar.png');
+  const [avatarEditorMimeType, setAvatarEditorMimeType] = useState('image/png');
+  const [avatarEditorOpen, setAvatarEditorOpen] = useState(false);
+  const [avatarEditorUrl, setAvatarEditorUrl] = useState<string>();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -222,6 +256,8 @@ export default function PersonalProfilePage() {
   const [bindingProviderCode, setBindingProviderCode] = useState<string>();
   const [unbindingTokenId, setUnbindingTokenId] = useState<string>();
   const [loadError, setLoadError] = useState<string>();
+  const avatarCropperImageRef = useRef<HTMLImageElement>(null);
+  const avatarCropperRef = useRef<Cropper | undefined>(undefined);
   const formatMessage: FormatMessage = useCallback(
     (id, defaultMessage, values) =>
       values
@@ -236,6 +272,50 @@ export default function PersonalProfilePage() {
       if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
     },
     [avatarPreviewUrl],
+  );
+
+  const destroyAvatarCropper = useCallback(() => {
+    avatarCropperRef.current?.destroy();
+    avatarCropperRef.current = undefined;
+  }, []);
+
+  const initializeAvatarCropper = useCallback(() => {
+    const image = avatarCropperImageRef.current;
+
+    if (!avatarEditorOpen || !image) {
+      return;
+    }
+
+    destroyAvatarCropper();
+    avatarCropperRef.current = new Cropper(image, {
+      aspectRatio: 1,
+      autoCropArea: 1,
+      background: false,
+      checkOrientation: true,
+      dragMode: 'move',
+      guides: true,
+      preview: '.opencore-avatar-crop-preview',
+      responsive: true,
+      viewMode: 1,
+    });
+  }, [avatarEditorOpen, destroyAvatarCropper]);
+
+  const closeAvatarEditor = useCallback(() => {
+    destroyAvatarCropper();
+    setAvatarEditorOpen(false);
+    setAvatarEditorUrl((current) => {
+      if (current) URL.revokeObjectURL(current);
+      return undefined;
+    });
+    setAvatarPreviewUrl(undefined);
+  }, [destroyAvatarCropper]);
+
+  useEffect(
+    () => () => {
+      destroyAvatarCropper();
+      if (avatarEditorUrl) URL.revokeObjectURL(avatarEditorUrl);
+    },
+    [avatarEditorUrl, destroyAvatarCropper],
   );
 
   const formatDateTime = useCallback(
@@ -394,24 +474,107 @@ export default function PersonalProfilePage() {
       return;
     }
 
-    if (file.size > AVATAR_MAX_BYTES) {
+    if (file.size > AVATAR_SOURCE_MAX_BYTES) {
       message.error(
         formatMessage(
-          'pages.personal.profile.avatar.tooLarge',
-          'Avatar must be 1 MB or smaller.',
+          'pages.personal.profile.avatar.sourceTooLarge',
+          'Avatar source image must be 5 MB or smaller.',
         ),
       );
       return;
     }
 
-    setAvatarPreviewUrl(URL.createObjectURL(file));
+    const objectUrl = URL.createObjectURL(file);
+    setAvatarEditorFileName(file.name);
+    setAvatarEditorMimeType(file.type);
+    setAvatarEditorUrl((current) => {
+      if (current) URL.revokeObjectURL(current);
+      return objectUrl;
+    });
+    setAvatarPreviewUrl(objectUrl);
+    setAvatarEditorOpen(true);
+  };
+
+  const handleAvatarCropperAction = (
+    action: 'reset' | 'rotate-left' | 'rotate-right' | 'zoom-in' | 'zoom-out',
+  ) => {
+    const cropper = avatarCropperRef.current;
+
+    if (!cropper) {
+      return;
+    }
+
+    if (action === 'reset') {
+      cropper.reset();
+      return;
+    }
+
+    if (action === 'rotate-left') {
+      cropper.rotate(-90);
+      return;
+    }
+
+    if (action === 'rotate-right') {
+      cropper.rotate(90);
+      return;
+    }
+
+    cropper.zoom(action === 'zoom-in' ? 0.1 : -0.1);
+  };
+
+  const renderCroppedAvatar = async () => {
+    const cropper = avatarCropperRef.current;
+    const canvas = cropper?.getCroppedCanvas({
+      fillColor: '#fff',
+      height: AVATAR_CROP_SIZE,
+      imageSmoothingEnabled: true,
+      imageSmoothingQuality: 'high',
+      width: AVATAR_CROP_SIZE,
+    });
+
+    if (!canvas) {
+      throw new Error(
+        formatMessage(
+          'pages.personal.profile.avatar.cropFailure',
+          'Unable to crop avatar image.',
+        ),
+      );
+    }
+
+    const primaryType =
+      avatarEditorMimeType === 'image/jpeg' ? 'image/jpeg' : 'image/png';
+    let blob = await canvasToBlob(
+      canvas,
+      primaryType,
+      primaryType === 'image/jpeg' ? 0.92 : undefined,
+    );
+    let mimeType = primaryType;
+
+    if (blob.size > AVATAR_MAX_BYTES && primaryType !== 'image/jpeg') {
+      blob = await canvasToBlob(canvas, 'image/jpeg', 0.9);
+      mimeType = 'image/jpeg';
+    }
+
+    if (blob.size > AVATAR_MAX_BYTES) {
+      throw new Error(
+        formatMessage(
+          'pages.personal.profile.avatar.tooLarge',
+          'Avatar must be 1 MB or smaller.',
+        ),
+      );
+    }
+
+    return {
+      blob,
+      fileName: getAvatarUploadFileName(avatarEditorFileName, mimeType),
+    };
+  };
+
+  const handleAvatarEditorConfirm = async () => {
     setUploadingAvatar(true);
     try {
-      const updated = await updateOpenCoreUserAvatar({
-        originalName: file.name,
-        mimeType: file.type,
-        contentBase64: await readFileAsBase64(file, formatMessage),
-      });
+      const { blob, fileName } = await renderCroppedAvatar();
+      const updated = await updateOpenCoreUserAvatar(blob, fileName);
       setProfile(updated);
       form.setFieldsValue({
         displayName: updated.displayName,
@@ -419,7 +582,7 @@ export default function PersonalProfilePage() {
         gender: updated.gender,
         mobile: updated.mobile,
       });
-      setAvatarPreviewUrl(undefined);
+      closeAvatarEditor();
       syncCurrentUserProfile(updated);
       setLoadError(undefined);
       message.success(
@@ -964,6 +1127,141 @@ export default function PersonalProfilePage() {
               )}
             </Button>
           </Space>
+
+          <Modal
+            destroyOnClose
+            maskClosable={!uploadingAvatar}
+            open={avatarEditorOpen}
+            title={formatMessage(
+              'pages.personal.profile.avatar.editorTitle',
+              'Edit avatar',
+            )}
+            width={780}
+            footer={[
+              <Button
+                key="cancel"
+                disabled={uploadingAvatar}
+                onClick={closeAvatarEditor}
+              >
+                {formatMessage(
+                  'pages.personal.profile.actions.cancel',
+                  'Cancel',
+                )}
+              </Button>,
+              <Button
+                key="submit"
+                type="primary"
+                icon={<CheckOutlined />}
+                loading={uploadingAvatar}
+                onClick={() => void handleAvatarEditorConfirm()}
+              >
+                {formatMessage(
+                  'pages.personal.profile.avatar.confirmUpload',
+                  'Crop and upload',
+                )}
+              </Button>,
+            ]}
+            onCancel={() => {
+              if (!uploadingAvatar) closeAvatarEditor();
+            }}
+          >
+            <div style={avatarEditorBodyStyle}>
+              <div>
+                <div style={avatarCropperFrameStyle}>
+                  {avatarEditorUrl ? (
+                    <img
+                      ref={avatarCropperImageRef}
+                      alt={formatMessage(
+                        'pages.personal.profile.avatar.editorTitle',
+                        'Edit avatar',
+                      )}
+                      src={avatarEditorUrl}
+                      style={avatarCropperImageStyle}
+                      onLoad={initializeAvatarCropper}
+                    />
+                  ) : null}
+                </div>
+                <div style={avatarToolbarStyle}>
+                  <Tooltip
+                    title={formatMessage(
+                      'pages.personal.profile.avatar.reset',
+                      'Reset crop',
+                    )}
+                  >
+                    <Button
+                      icon={<UndoOutlined />}
+                      onClick={() => handleAvatarCropperAction('reset')}
+                    />
+                  </Tooltip>
+                  <Tooltip
+                    title={formatMessage(
+                      'pages.personal.profile.avatar.rotateLeft',
+                      'Rotate left',
+                    )}
+                  >
+                    <Button
+                      icon={<RotateLeftOutlined />}
+                      onClick={() => handleAvatarCropperAction('rotate-left')}
+                    />
+                  </Tooltip>
+                  <Tooltip
+                    title={formatMessage(
+                      'pages.personal.profile.avatar.rotateRight',
+                      'Rotate right',
+                    )}
+                  >
+                    <Button
+                      icon={<RotateRightOutlined />}
+                      onClick={() => handleAvatarCropperAction('rotate-right')}
+                    />
+                  </Tooltip>
+                  <Tooltip
+                    title={formatMessage(
+                      'pages.personal.profile.avatar.zoomIn',
+                      'Zoom in',
+                    )}
+                  >
+                    <Button
+                      icon={<ZoomInOutlined />}
+                      onClick={() => handleAvatarCropperAction('zoom-in')}
+                    />
+                  </Tooltip>
+                  <Tooltip
+                    title={formatMessage(
+                      'pages.personal.profile.avatar.zoomOut',
+                      'Zoom out',
+                    )}
+                  >
+                    <Button
+                      icon={<ZoomOutOutlined />}
+                      onClick={() => handleAvatarCropperAction('zoom-out')}
+                    />
+                  </Tooltip>
+                </div>
+              </div>
+              <div style={avatarPreviewPanelStyle}>
+                <Typography.Text type="secondary">
+                  {formatMessage(
+                    'pages.personal.profile.avatar.preview',
+                    'Preview',
+                  )}
+                </Typography.Text>
+                <div
+                  className="opencore-avatar-crop-preview"
+                  style={{
+                    border: '1px solid #d9d9d9',
+                    borderRadius: '50%',
+                    height: 128,
+                    overflow: 'hidden',
+                    width: 128,
+                  }}
+                />
+                <Typography.Text type="secondary">
+                  {AVATAR_CROP_SIZE} x {AVATAR_CROP_SIZE}
+                </Typography.Text>
+              </div>
+            </div>
+          </Modal>
 
           <Descriptions column={1} size="small" bordered>
             <Descriptions.Item
