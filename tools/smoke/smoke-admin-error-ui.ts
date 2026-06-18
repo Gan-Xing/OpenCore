@@ -689,7 +689,12 @@ function cleanupChrome(chrome: ChromeInstance | undefined): void {
   }
 
   chrome.child.kill('SIGTERM');
-  rmSync(chrome.profileDir, { force: true, recursive: true });
+  rmSync(chrome.profileDir, {
+    force: true,
+    maxRetries: 3,
+    recursive: true,
+    retryDelay: 100,
+  });
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

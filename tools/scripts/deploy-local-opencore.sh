@@ -2403,6 +2403,7 @@ verify_public_admin_bundle
 
 run_with_env env \
   OPENCORE_SMOKE_ADMIN_BASE_URL="$ADMIN_PUBLIC_BASE_URL" \
+  OPENCORE_SMOKE_TIMEOUT_MS="${OPENCORE_SMOKE_TIMEOUT_MS:-60000}" \
   run_tools_ts_script "$ROOT_DIR/tools/scripts/run-typed-smoke.ts" \
     "$ROOT_DIR/tools/smoke/smoke-admin-error-ui.ts"
 
