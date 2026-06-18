@@ -821,6 +821,10 @@ const dashboardPage = readFileSync(
   resolve(root, 'src/pages/Dashboard/index.tsx'),
   'utf8',
 );
+const zhCnPagesLocale = readFileSync(
+  resolve(root, 'src/locales/zh-CN/pages.ts'),
+  'utf8',
+);
 
 if (
   !dashboardPage.includes('getOpenCoreOperationsSummary') ||
@@ -841,6 +845,16 @@ if (
 ) {
   throw new Error(
     'Admin dashboard must be a live workbench using real platform endpoints, permission-aware shortcuts and no demo shell/chart fallback.',
+  );
+}
+
+if (
+  zhCnPagesLocale.includes('供应商 readiness') ||
+  zhCnPagesLocale.includes('attention / blocked') ||
+  zhCnPagesLocale.includes('邮件/短信 outbox')
+) {
+  throw new Error(
+    'Dashboard zh-CN locale must not expose English provider readiness/status terms.',
   );
 }
 

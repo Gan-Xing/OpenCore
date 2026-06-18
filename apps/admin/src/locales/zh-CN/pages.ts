@@ -554,13 +554,13 @@ export default {
   'pages.system.notices.outbox.actions.failedOnlyRetry':
     '只有失败 outbox 消息可以重试',
   'pages.system.notices.outbox.actions.mailSmsOnlyFail':
-    '只有邮件/短信 outbox 投递可以标记失败',
+    '只有邮件/短信投递箱消息可以标记失败',
   'pages.system.notices.outbox.actions.mailSmsOnlyMarkSent':
-    '只有邮件/短信 outbox 投递可以标记发送',
+    '只有邮件/短信投递箱消息可以标记发送',
   'pages.system.notices.outbox.actions.mailSmsOnlyProcess':
-    '只有邮件/短信 outbox 投递可以处理',
+    '只有邮件/短信投递箱消息可以处理',
   'pages.system.notices.outbox.actions.mailSmsOnlyRetry':
-    '只有邮件/短信 outbox 投递可以重试',
+    '只有邮件/短信投递箱消息可以重试',
   'pages.system.notices.outbox.actions.markSent': '标记已发送',
   'pages.system.notices.outbox.actions.markSentAria': '标记 outbox 已发送 {id}',
   'pages.system.notices.outbox.actions.processAria': '处理排队 outbox {id}',
@@ -1813,7 +1813,7 @@ export default {
     '依赖生成客户端前先刷新 OpenAPI 快照。',
   'pages.dashboard.attention.providerAttention': '{count} 个供应商需要处理',
   'pages.dashboard.attention.providerAttentionDesc':
-    '供应商 readiness 存在 attention 或 blocked 项。',
+    '供应商就绪状态存在需关注或已阻断项。',
   'pages.dashboard.attention.queuedJobs': '{count} 条调度运行记录排队/运行中',
   'pages.dashboard.attention.queuedJobsDesc':
     '当前存在排队中或运行中的调度运行记录。',
@@ -1837,13 +1837,13 @@ export default {
   'pages.dashboard.metrics.failedJobs': '失败任务',
   'pages.dashboard.metrics.failedJobsDesc': '调度运行失败',
   'pages.dashboard.metrics.failedOutbox': '失败投递',
-  'pages.dashboard.metrics.failedOutboxDesc': '邮件/短信 outbox',
+  'pages.dashboard.metrics.failedOutboxDesc': '邮件/短信投递箱',
   'pages.dashboard.metrics.lockedAccounts': '锁定账号',
   'pages.dashboard.metrics.lockedAccountsDesc': '登录锁定日志',
   'pages.dashboard.metrics.onlineUsers': '在线用户',
   'pages.dashboard.metrics.onlineUsersDesc': '去重后的活跃账号',
   'pages.dashboard.metrics.providerAttention': '供应商异常',
-  'pages.dashboard.metrics.providerAttentionDesc': 'attention / blocked',
+  'pages.dashboard.metrics.providerAttentionDesc': '需关注 / 已阻断',
   'pages.dashboard.metrics.unreadNotices': '未读通知',
   'pages.dashboard.metrics.unreadNoticesDesc': '当前账号未读',
   'pages.dashboard.platform.apiLive': 'API Live',
