@@ -10,3 +10,49 @@ index e585e0b348014c39f03bb67c94b6bf23d961b3e6..24a08ec1ca4efd6d98c765b4cff4bd55
      "postcss": "^8.4.21",
      "postcss-preset-env": "7.5.0",
      "react-error-overlay": "6.0.9",
+diff --git a/dist/config/nodePolyfill.js b/dist/config/nodePolyfill.js
+index db67939e023b99ed0d7ce7e4f8c41b3e6005d24e..900559e2be0985be504665224133b09c9e8ecae1 100644
+--- a/dist/config/nodePolyfill.js
++++ b/dist/config/nodePolyfill.js
+@@ -25,7 +25,40 @@ module.exports = __toCommonJS(nodePolyfill_exports);
+ var import_webpack = require("@umijs/bundler-webpack/compiled/webpack");
+ async function addNodePolyfill(opts) {
+   const { config } = opts;
+-  const nodeLibs = require("node-libs-browser");
++  const nodeLibs = {
++    assert: false,
++    buffer: require.resolve("buffer/"),
++    child_process: false,
++    cluster: false,
++    console: false,
++    constants: false,
++    crypto: false,
++    dgram: false,
++    dns: false,
++    domain: false,
++    events: false,
++    fs: false,
++    http: false,
++    https: false,
++    module: false,
++    net: false,
++    os: false,
++    path: false,
++    process: require.resolve("process/browser"),
++    punycode: false,
++    querystring: false,
++    readline: false,
++    repl: false,
++    stream: false,
++    string_decoder: false,
++    timers: false,
++    tls: false,
++    tty: false,
++    url: false,
++    util: false,
++    vm: false,
++    zlib: false
++  };
+   config.plugin("node-polyfill-provider").use(import_webpack.ProvidePlugin, [
+     {
+       Buffer: ["buffer", "Buffer"],
