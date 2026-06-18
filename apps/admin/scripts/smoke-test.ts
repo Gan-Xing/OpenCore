@@ -843,6 +843,10 @@ const zhCnPagesLocale = readFileSync(
   resolve(root, 'src/locales/zh-CN/pages.ts'),
   'utf8',
 );
+const zhCnMenuLocale = readFileSync(
+  resolve(root, 'src/locales/zh-CN/menu.ts'),
+  'utf8',
+);
 
 if (
   !dashboardPage.includes('getOpenCoreOperationsSummary') ||
@@ -853,6 +857,11 @@ if (
   !dashboardPage.includes('getOpenCoreSystemStatus') ||
   !dashboardPage.includes('getOpenCoreVersionInfo') ||
   !dashboardPage.includes('getOpenCoreOpenApiDriftStatus') ||
+  !dashboardPage.includes('isActionableIntegrationChannel') ||
+  !dashboardPage.includes('isSandboxOrSmokeChannel') ||
+  !dashboardPage.includes("code.endsWith('.smoke')") ||
+  !dashboardPage.includes("adapter === 'sandbox'") ||
+  dashboardPage.includes('workbench.providerHealth.totals.attention +') ||
   !dashboardPage.includes('process.env.ADMIN_API_BASE_URL') ||
   !dashboardPage.includes(`/health/${pathTemplatePlaceholder}`) ||
   !dashboardPage.includes("useModel('@@initialState')") ||
@@ -867,8 +876,9 @@ if (
 }
 
 const forbiddenZhCnVisibleTerms = findForbiddenLocaleValueTerms(
-  zhCnPagesLocale,
+  `${zhCnMenuLocale}\n${zhCnPagesLocale}`,
   [
+    '供应商',
     '供应商 readiness',
     'attention / blocked',
     '邮件/短信 outbox',

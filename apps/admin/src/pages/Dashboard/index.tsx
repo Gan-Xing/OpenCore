@@ -204,6 +204,40 @@ function openApiTone(drift?: OpenApiDriftStatus) {
     : 'warning';
 }
 
+type IntegrationChannelDiagnostics =
+  IntegrationProviderHealthAuditSummary['providers'][number];
+
+function isSandboxOrSmokeChannel(item: IntegrationChannelDiagnostics): boolean {
+  const provider = item.provider;
+  const code = provider.code.toLowerCase();
+  const name = provider.name.toLowerCase();
+  const adapter =
+    typeof provider.config.adapter === 'string'
+      ? provider.config.adapter.toLowerCase()
+      : undefined;
+
+  return (
+    code.endsWith('.sandbox') ||
+    code.includes('.sandbox.') ||
+    code.endsWith('.smoke') ||
+    code.includes('.smoke.') ||
+    name.includes('sandbox') ||
+    name.includes('smoke') ||
+    adapter === 'sandbox'
+  );
+}
+
+function isActionableIntegrationChannel(
+  item: IntegrationChannelDiagnostics,
+): boolean {
+  return (
+    Boolean(item.channel) &&
+    item.provider.enabled &&
+    !isSandboxOrSmokeChannel(item) &&
+    (item.readiness === 'attention' || item.readiness === 'blocked')
+  );
+}
+
 const DashboardPage: React.FC = () => {
   const access = useAccess();
   const intl = useIntl();
@@ -326,10 +360,21 @@ const DashboardPage: React.FC = () => {
     currentUser?.username ??
     formatMessage('pages.dashboard.welcome.userFallback', 'OpenCore User');
   const roleCodes = currentUser?.roleCodes ?? [];
+  const operationalIntegrationChannels = useMemo(
+    () =>
+      workbench.providerHealth?.providers.filter(
+        (item) =>
+          Boolean(item.channel) &&
+          item.provider.enabled &&
+          !isSandboxOrSmokeChannel(item),
+      ) ?? [],
+    [workbench.providerHealth],
+  );
   const providerIssues =
     workbench.providerHealth !== undefined
-      ? workbench.providerHealth.totals.attention +
-        workbench.providerHealth.totals.blocked
+      ? workbench.providerHealth.providers.filter(
+          isActionableIntegrationChannel,
+        ).length
       : undefined;
   const failedOutbox = workbench.providerHealth?.totals.failed;
   const queuedJobs = workbench.operations?.jobRuns.queued ?? 0;
@@ -488,8 +533,8 @@ const DashboardPage: React.FC = () => {
         icon: <ExclamationCircleOutlined />,
         key: 'providerAttention',
         suffix:
-          workbench.providerHealth !== undefined
-            ? `/ ${workbench.providerHealth.totals.total}`
+          operationalIntegrationChannels.length > 0
+            ? `/ ${operationalIntegrationChannels.length}`
             : undefined,
         title: formatMessage(
           'pages.dashboard.metrics.providerAttention',
@@ -526,6 +571,7 @@ const DashboardPage: React.FC = () => {
     failedOutbox,
     formatMessage,
     providerIssues,
+    operationalIntegrationChannels.length,
     workbench.lockedAccounts,
     workbench.onlineUsers?.activeUsers,
     workbench.operations?.jobRuns.failed,

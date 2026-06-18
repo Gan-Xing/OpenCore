@@ -40,7 +40,7 @@ export default {
   'menu.optional.reports': '报表',
   'menu.optional.exportJobs': '导出任务',
   'menu.integrations': '集成',
-  'menu.integrations.providers': '供应商',
+  'menu.integrations.providers': '集成通道',
   'menu.integrations.mail': '邮件',
   'menu.integrations.sms': '短信',
   'menu.integrations.oauth': 'OAuth',
