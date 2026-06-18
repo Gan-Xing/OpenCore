@@ -31,6 +31,15 @@ const backendErrorCodePrefixes = [
   'TOOL',
   'USER',
 ];
+const routeMenuGroupSegments = new Set([
+  'collaboration',
+  'integrations',
+  'monitor',
+  'optional',
+  'security',
+  'system',
+  'tools',
+]);
 const ignoredBackendErrorCodeCandidates = new Set([
   'FILE_STORAGE',
   'FILE_STORAGE_OPTIONS',
@@ -258,9 +267,7 @@ function checkForbiddenMarkersInFile(path: string): void {
 function checkRouteMenuKeys(): void {
   const routesPath = join(adminRoot, 'config', 'routes.ts');
   const routesSource = readFileSync(routesPath, 'utf8');
-  const routeNames = [...routesSource.matchAll(/name:\s*'([^']+)'/g)].map(
-    (match) => match[1],
-  );
+  const routes = readRouteNamePathPairs(routesSource);
   const menuKeysByLocale = new Map(
     [...supportedLocales].map((locale) => [
       locale,
@@ -268,14 +275,64 @@ function checkRouteMenuKeys(): void {
     ]),
   );
 
-  for (const routeName of routeNames) {
-    const menuKey = `menu.${routeName}`;
+  for (const route of routes) {
+    const menuKey = toRouteMenuKey(route);
     for (const [locale, keys] of menuKeysByLocale) {
       if (!keys.has(menuKey)) {
         failures.push(`${locale} is missing route menu key: ${menuKey}`);
       }
     }
   }
+}
+
+function readRouteNamePathPairs(
+  routesSource: string,
+): Array<{ name: string; path: string }> {
+  const routePairs: Array<{ name: string; path: string }> = [];
+  const stack: number[] = [];
+
+  for (let index = 0; index < routesSource.length; index += 1) {
+    const char = routesSource[index];
+
+    if (char === '{') {
+      stack.push(index);
+      continue;
+    }
+
+    if (char !== '}') {
+      continue;
+    }
+
+    const start = stack.pop();
+
+    if (start === undefined) {
+      continue;
+    }
+
+    const objectSource = routesSource.slice(start, index + 1);
+    const name = objectSource.match(/\bname:\s*'([^']+)'/)?.[1];
+    const path = objectSource.match(/\bpath:\s*'([^']+)'/)?.[1];
+
+    if (name && path) {
+      routePairs.push({ name, path });
+    }
+  }
+
+  return routePairs;
+}
+
+function toRouteMenuKey(route: { name: string; path: string }): string {
+  const [, firstSegment] = route.path.match(/^\/([^/]+)/u) ?? [];
+
+  if (
+    firstSegment &&
+    routeMenuGroupSegments.has(firstSegment) &&
+    route.name !== firstSegment
+  ) {
+    return `menu.${firstSegment}.${route.name}`;
+  }
+
+  return `menu.${route.name}`;
 }
 
 function checkCoreI18nKeys(): void {

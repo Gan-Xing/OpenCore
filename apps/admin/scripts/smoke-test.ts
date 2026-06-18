@@ -134,6 +134,50 @@ for (const requiredRoute of [
   }
 }
 
+for (const repeatedNestedName of [
+  'system.users',
+  'system.roles',
+  'system.permissions',
+  'system.menus',
+  'system.dicts',
+  'system.config',
+  'system.notices',
+  'system.depts',
+  'system.posts',
+  'system.files',
+  'security.loginLogs',
+  'security.operationLogs',
+  'monitor.status',
+  'monitor.version',
+  'monitor.queues',
+  'monitor.jobs',
+  'monitor.cache',
+  'monitor.onlineUsers',
+  'tools.openapi',
+  'tools.export',
+  'tools.area',
+  'tools.openforge',
+  'collaboration.messages',
+  'collaboration.notices',
+  'collaboration.todos',
+  'collaboration.approvals',
+  'optional.reports',
+  'optional.exportJobs',
+  'integrations.providers',
+  'integrations.mail',
+  'integrations.sms',
+  'integrations.oauth',
+  'integrations.wechat',
+  'integrations.websocket',
+  'integrations.payment',
+]) {
+  if (config.includes(`name: '${repeatedNestedName}'`)) {
+    throw new Error(
+      `Nested Admin route name must be a leaf segment, not ${repeatedNestedName}; ProLayout prefixes parent names when resolving menu locale ids.`,
+    );
+  }
+}
+
 const appRuntime = readFileSync(resolve(root, 'src/app.tsx'), 'utf8');
 if (
   !appRuntime.includes('queryCurrentOpenCoreUser') ||
