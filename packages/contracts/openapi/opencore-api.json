@@ -12178,11 +12178,19 @@
         "properties": {
           "total": { "type": "number" },
           "active": { "type": "number" },
+          "activeUsers": { "type": "number" },
           "revoked": { "type": "number" },
           "expired": { "type": "number" },
           "cleanupEligible": { "type": "number" }
         },
-        "required": ["total", "active", "revoked", "expired", "cleanupEligible"]
+        "required": [
+          "total",
+          "active",
+          "activeUsers",
+          "revoked",
+          "expired",
+          "cleanupEligible"
+        ]
       },
       "ReportSummaryDto": {
         "type": "object",

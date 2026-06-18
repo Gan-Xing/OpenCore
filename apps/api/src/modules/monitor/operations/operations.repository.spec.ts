@@ -19,6 +19,7 @@ describe('OperationsRepository', () => {
       onlineUsers: {
         total: 2,
         active: 2,
+        activeUsers: 2,
         revoked: 0,
         expired: 0,
         cleanupEligible: 0,

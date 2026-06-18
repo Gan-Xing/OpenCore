@@ -157,22 +157,27 @@ export function createOnlineUserPageResult<T>(
 }
 
 export function createOnlineUserSummary(
-  sessions: readonly Pick<OnlineUserSessionRecord, 'expiresAt' | 'revokedAt'>[],
+  sessions: readonly Pick<
+    OnlineUserSessionRecord,
+    'expiresAt' | 'revokedAt' | 'username'
+  >[],
   now = new Date().toISOString(),
 ): OnlineUserSummaryDto {
   const expired = sessions.filter((session) =>
     isOnlineUserSessionExpired(session, now),
-  ).length;
+  );
+  const active = sessions.filter(
+    (session) =>
+      !session.revokedAt && !isOnlineUserSessionExpired(session, now),
+  );
 
   return {
     total: sessions.length,
-    active: sessions.filter(
-      (session) =>
-        !session.revokedAt && !isOnlineUserSessionExpired(session, now),
-    ).length,
+    active: active.length,
+    activeUsers: new Set(active.map((session) => session.username)).size,
     revoked: sessions.filter((session) => session.revokedAt).length,
-    expired,
-    cleanupEligible: expired,
+    expired: expired.length,
+    cleanupEligible: expired.length,
   };
 }
 

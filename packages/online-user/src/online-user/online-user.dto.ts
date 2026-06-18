@@ -120,6 +120,9 @@ export class OnlineUserSummaryDto {
   active!: number;
 
   @ApiProperty()
+  activeUsers!: number;
+
+  @ApiProperty()
   revoked!: number;
 
   @ApiProperty()

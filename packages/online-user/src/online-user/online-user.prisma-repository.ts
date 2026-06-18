@@ -175,13 +175,14 @@ export class PrismaOnlineUserRepository extends OnlineUserRepository {
 
   async getSummary() {
     const sessions = await this.prisma.onlineUserSession.findMany({
-      select: { expiresAt: true, revokedAt: true },
+      select: { expiresAt: true, revokedAt: true, username: true },
     });
 
     return createOnlineUserSummary(
       sessions.map((session) => ({
         expiresAt: session.expiresAt.toISOString(),
         revokedAt: session.revokedAt?.toISOString(),
+        username: session.username,
       })),
     );
   }

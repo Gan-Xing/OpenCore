@@ -443,7 +443,7 @@ const DashboardPage: React.FC = () => {
           'Online users',
         ),
         tone: 'normal',
-        value: workbench.onlineUsers?.active,
+        value: workbench.onlineUsers?.activeUsers,
       },
       {
         actionPath: '/monitor/jobs',
@@ -527,7 +527,7 @@ const DashboardPage: React.FC = () => {
     formatMessage,
     providerIssues,
     workbench.lockedAccounts,
-    workbench.onlineUsers?.active,
+    workbench.onlineUsers?.activeUsers,
     workbench.operations?.jobRuns.failed,
     workbench.providerHealth,
     workbench.unreadNotices,

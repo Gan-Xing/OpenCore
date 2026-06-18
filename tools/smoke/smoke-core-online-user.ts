@@ -50,6 +50,11 @@ async function main() {
     const summary = await apiRequest('/monitor/online-users/summary');
     assertNumberAtLeast(summary.total, 1, 'online user summary total');
     assertNumberAtLeast(summary.active, 1, 'online user summary active');
+    assertNumberAtLeast(
+      summary.activeUsers,
+      1,
+      'online user summary activeUsers',
+    );
     assertNumberAtLeast(summary.revoked, 0, 'online user summary revoked');
     assertNumberAtLeast(summary.expired, 0, 'online user summary expired');
     assertNumberAtLeast(

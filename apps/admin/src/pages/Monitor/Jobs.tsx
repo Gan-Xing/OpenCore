@@ -90,6 +90,7 @@ const emptySummary: OperationsSummary = {
   },
   onlineUsers: {
     active: 0,
+    activeUsers: 0,
     cleanupEligible: 0,
     expired: 0,
     revoked: 0,

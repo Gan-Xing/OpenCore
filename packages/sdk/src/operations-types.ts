@@ -144,6 +144,7 @@ export type OperationsSummary = {
   onlineUsers: {
     total: number;
     active: number;
+    activeUsers: number;
     revoked: number;
     expired: number;
     cleanupEligible: number;
@@ -483,6 +484,11 @@ export function createOperationsFixtures(): OperationsFixtures {
       onlineUsers: {
         total: onlineUsers.length,
         active: onlineUsers.filter((session) => !session.revokedAt).length,
+        activeUsers: new Set(
+          onlineUsers
+            .filter((session) => !session.revokedAt)
+            .map((session) => session.username),
+        ).size,
         revoked: onlineUsers.filter((session) => session.revokedAt).length,
         expired: 0,
         cleanupEligible: 0,

@@ -1835,7 +1835,7 @@ export default {
   'pages.dashboard.metrics.lockedAccounts': '锁定账号',
   'pages.dashboard.metrics.lockedAccountsDesc': '登录锁定日志',
   'pages.dashboard.metrics.onlineUsers': '在线用户',
-  'pages.dashboard.metrics.onlineUsersDesc': '活跃会话',
+  'pages.dashboard.metrics.onlineUsersDesc': '去重后的活跃账号',
   'pages.dashboard.metrics.providerAttention': '供应商异常',
   'pages.dashboard.metrics.providerAttentionDesc': 'attention / blocked',
   'pages.dashboard.metrics.unreadNotices': '未读通知',

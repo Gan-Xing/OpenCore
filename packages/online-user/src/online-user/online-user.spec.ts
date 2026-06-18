@@ -28,6 +28,7 @@ describe('@opencore/online-user', () => {
     await expect(service.getSummary()).resolves.toEqual({
       total: 2,
       active: 2,
+      activeUsers: 2,
       revoked: 0,
       expired: 0,
       cleanupEligible: 0,
@@ -46,6 +47,7 @@ describe('@opencore/online-user', () => {
     await expect(service.getSummary()).resolves.toEqual({
       total: 2,
       active: 1,
+      activeUsers: 1,
       revoked: 1,
       expired: 0,
       cleanupEligible: 0,

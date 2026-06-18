@@ -1992,7 +1992,7 @@ export default {
   'pages.dashboard.metrics.lockedAccounts': 'Locked accounts',
   'pages.dashboard.metrics.lockedAccountsDesc': 'Account locked logs',
   'pages.dashboard.metrics.onlineUsers': 'Online users',
-  'pages.dashboard.metrics.onlineUsersDesc': 'Active sessions',
+  'pages.dashboard.metrics.onlineUsersDesc': 'Distinct active accounts',
   'pages.dashboard.metrics.providerAttention': 'Provider issues',
   'pages.dashboard.metrics.providerAttentionDesc': 'attention / blocked',
   'pages.dashboard.metrics.unreadNotices': 'Unread notices',
