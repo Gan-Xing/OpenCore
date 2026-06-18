@@ -20,6 +20,7 @@ import type {
   IntegrationProviderType,
   IntegrationSummaryDto,
   IntegrationTemplateQueryDto,
+  OAuthProfileBindingIssue,
   OAuthCallbackAuditQueryDto,
   OAuthCallbackAuditStatus,
   OAuthFlowQueryDto,
@@ -1220,11 +1221,63 @@ export function toOAuthProfileAccountDto(
 export function toOAuthProfileProviderDto(
   provider: IntegrationProviderRecord,
 ): OAuthProfileProviderDto {
+  const bindingIssue = getOAuthProfileBindingIssue(provider);
+
   return {
+    bindingIssue,
+    bindingStatus: bindingIssue ? 'requires_configuration' : 'ready',
     code: provider.code,
     name: provider.name,
     type: 'oauth',
   };
+}
+
+export function assertOAuthProfileProviderBindable(
+  provider: IntegrationProviderRecord,
+): void {
+  const bindingIssue = getOAuthProfileBindingIssue(provider);
+  if (!bindingIssue) {
+    return;
+  }
+
+  throw integrationBadRequest(
+    'INTEGRATION_OAUTH_PROFILE_PROVIDER_NOT_READY',
+    `OAuth provider ${provider.code} is not ready for profile binding.`,
+    { bindingIssue, providerCode: provider.code },
+  );
+}
+
+function getOAuthProfileBindingIssue(
+  provider: IntegrationProviderRecord,
+): OAuthProfileBindingIssue | undefined {
+  if (!provider.enabled) {
+    return 'disabled';
+  }
+
+  const authorizationUrl =
+    typeof provider.config.authorizationUrl === 'string'
+      ? provider.config.authorizationUrl.trim()
+      : '';
+  const callbackPath =
+    typeof provider.config.callbackPath === 'string'
+      ? provider.config.callbackPath.trim()
+      : '';
+  const clientId =
+    typeof provider.config.clientId === 'string'
+      ? provider.config.clientId.trim()
+      : '';
+
+  if (!authorizationUrl || !callbackPath || !clientId) {
+    return 'missing_config';
+  }
+
+  if (/^opencore[-_]/i.test(clientId)) {
+    return 'placeholder_client';
+  }
+
+  if (provider.secretRefStatus !== 'valid') {
+    return 'secret_unverified';
+  }
 }
 
 export function assertOAuthTokenBelongsToSubject(input: {

@@ -11935,9 +11935,22 @@
         "properties": {
           "code": { "type": "string" },
           "name": { "type": "string" },
-          "type": { "type": "string", "enum": ["oauth"] }
+          "type": { "type": "string", "enum": ["oauth"] },
+          "bindingStatus": {
+            "type": "string",
+            "enum": ["ready", "requires_configuration"]
+          },
+          "bindingIssue": {
+            "type": "string",
+            "enum": [
+              "disabled",
+              "missing_config",
+              "placeholder_client",
+              "secret_unverified"
+            ]
+          }
         },
-        "required": ["code", "name", "type"]
+        "required": ["code", "name", "type", "bindingStatus"]
       },
       "StartOAuthProfileFlowDto": {
         "type": "object",

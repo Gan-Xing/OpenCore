@@ -795,6 +795,12 @@ export class OAuthCallbackContractDto {
 
 export type OAuthFlowStatus = 'completed' | 'expired' | 'failed' | 'pending';
 export type OAuthCallbackAuditStatus = 'accepted' | 'rejected';
+export type OAuthProfileBindingStatus = 'ready' | 'requires_configuration';
+export type OAuthProfileBindingIssue =
+  | 'disabled'
+  | 'missing_config'
+  | 'placeholder_client'
+  | 'secret_unverified';
 
 export class StartOAuthFlowDto {
   @ApiProperty()
@@ -830,6 +836,20 @@ export class OAuthProfileProviderDto {
 
   @ApiProperty({ enum: ['oauth'] })
   type!: 'oauth';
+
+  @ApiProperty({ enum: ['ready', 'requires_configuration'] })
+  bindingStatus!: OAuthProfileBindingStatus;
+
+  @ApiProperty({
+    enum: [
+      'disabled',
+      'missing_config',
+      'placeholder_client',
+      'secret_unverified',
+    ],
+    required: false,
+  })
+  bindingIssue?: OAuthProfileBindingIssue;
 }
 
 export class OAuthFlowDto {

@@ -245,6 +245,8 @@ export default {
     'The OAuth token expiration is invalid.',
   'error.INTEGRATION_OAUTH_PROFILE_ACCOUNT_FORBIDDEN':
     'Only the current user can manage this OAuth account binding.',
+  'error.INTEGRATION_OAUTH_PROFILE_PROVIDER_NOT_READY':
+    'The account binding channel is not ready.',
   'error.INTEGRATION_OAUTH_PROVIDER_DISABLED':
     'The OAuth provider is disabled.',
   'error.INTEGRATION_OAUTH_PROVIDER_MISMATCH':

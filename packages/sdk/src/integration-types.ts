@@ -184,6 +184,12 @@ export type OAuthCallbackContractSummary = {
 
 export type OAuthFlowStatus = 'completed' | 'expired' | 'failed' | 'pending';
 export type OAuthCallbackAuditStatus = 'accepted' | 'rejected';
+export type OAuthProfileBindingStatus = 'ready' | 'requires_configuration';
+export type OAuthProfileBindingIssue =
+  | 'disabled'
+  | 'missing_config'
+  | 'placeholder_client'
+  | 'secret_unverified';
 
 export type OAuthFlowSummary = {
   id: string;
@@ -473,6 +479,8 @@ export type OAuthProfileProviderSummary = {
   code: string;
   name: string;
   type: 'oauth';
+  bindingStatus: OAuthProfileBindingStatus;
+  bindingIssue?: OAuthProfileBindingIssue;
 };
 
 export type UnbindOAuthProfileAccountRequest = {

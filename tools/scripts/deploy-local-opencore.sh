@@ -150,6 +150,11 @@ verify_admin_bundle_api_base_url() {
     --fixed-strings \
     --include='*.js' \
     "Sign out other devices" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Needs configuration" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null; then
     echo "Admin bundle does not include the live profile center tabs, activity and OAuth binding surface." >&2
     echo "Refusing to deploy a stale personal profile frontend." >&2

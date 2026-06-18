@@ -37,6 +37,7 @@ import {
   Table,
   Tabs,
   Tag,
+  Tooltip,
   Typography,
   message,
 } from 'antd';
@@ -97,8 +98,16 @@ const tabSectionStyle: CSSProperties = {
   maxWidth: 760,
 };
 
+const scrollableTabStyle: CSSProperties = {
+  maxHeight: 'min(560px, calc(100vh - 320px))',
+  overflowX: 'hidden',
+  overflowY: 'auto',
+  paddingRight: 8,
+};
+
 const tableWrapStyle: CSSProperties = {
   overflowX: 'auto',
+  minWidth: 0,
 };
 
 const AVATAR_ACCEPT = 'image/png,image/jpeg,image/webp,image/gif';
@@ -529,10 +538,35 @@ export default function PersonalProfilePage() {
     }
   };
 
-  const handleStartOAuthBinding = async (providerCode: string) => {
-    setBindingProviderCode(providerCode);
+  const formatOAuthBindingIssue = (provider: OAuthProfileProviderSummary) => {
+    const issue = provider.bindingIssue ?? 'missing_config';
+    return formatMessage(
+      `pages.personal.profile.oauth.bindingIssue.${issue}`,
+      '{name} is not ready for account binding.',
+      { name: provider.name },
+    );
+  };
+
+  const handleStartOAuthBinding = async (
+    provider: OAuthProfileProviderSummary,
+  ) => {
+    if (provider.bindingStatus !== 'ready') {
+      Modal.warning({
+        title: formatMessage(
+          'pages.personal.profile.oauth.notReadyTitle',
+          'Account binding is not ready.',
+        ),
+        content: formatOAuthBindingIssue(provider),
+        okText: formatMessage('pages.personal.profile.actions.ok', 'OK'),
+      });
+      return;
+    }
+
+    setBindingProviderCode(provider.code);
     try {
-      const flow = await startOpenCoreProfileOAuthFlow({ providerCode });
+      const flow = await startOpenCoreProfileOAuthFlow({
+        providerCode: provider.code,
+      });
       window.open(flow.authorizationUrl, '_blank', 'noopener,noreferrer');
       message.success(
         formatMessage(
@@ -1306,54 +1340,95 @@ export default function PersonalProfilePage() {
                     'Account binding',
                   ),
                   children: (
-                    <Space
-                      direction="vertical"
-                      size={16}
-                      style={{ width: '100%' }}
-                    >
-                      <Space wrap>
-                        {oauthProviders.map((provider) => (
-                          <Button
-                            key={provider.code}
-                            icon={<LinkOutlined />}
-                            loading={bindingProviderCode === provider.code}
-                            onClick={() =>
-                              void handleStartOAuthBinding(provider.code)
-                            }
-                          >
-                            {formatMessage(
-                              'pages.personal.profile.actions.bindChannel',
-                              'Bind {name}',
-                              { name: provider.name },
+                    <div style={scrollableTabStyle}>
+                      <Space
+                        direction="vertical"
+                        size={16}
+                        style={{ width: '100%' }}
+                      >
+                        {oauthProviders.some(
+                          (provider) => provider.bindingStatus !== 'ready',
+                        ) ? (
+                          <Alert
+                            type="warning"
+                            showIcon
+                            message={formatMessage(
+                              'pages.personal.profile.oauth.notReadyHint',
+                              'Some account binding channels still need configuration.',
                             )}
-                          </Button>
-                        ))}
+                          />
+                        ) : null}
+                        <Space wrap>
+                          {oauthProviders.map((provider) => {
+                            const isReady = provider.bindingStatus === 'ready';
+                            const statusLabel = isReady
+                              ? formatMessage(
+                                  'pages.personal.profile.oauth.bindingStatus.ready',
+                                  'Ready',
+                                )
+                              : formatMessage(
+                                  'pages.personal.profile.oauth.bindingStatus.requiresConfiguration',
+                                  'Needs configuration',
+                                );
+
+                            return (
+                              <Space key={provider.code} size={8} wrap>
+                                <Tooltip
+                                  title={
+                                    isReady
+                                      ? undefined
+                                      : formatOAuthBindingIssue(provider)
+                                  }
+                                >
+                                  <Button
+                                    icon={<LinkOutlined />}
+                                    loading={
+                                      bindingProviderCode === provider.code
+                                    }
+                                    onClick={() =>
+                                      void handleStartOAuthBinding(provider)
+                                    }
+                                  >
+                                    {formatMessage(
+                                      'pages.personal.profile.actions.bindChannel',
+                                      'Bind {name}',
+                                      { name: provider.name },
+                                    )}
+                                  </Button>
+                                </Tooltip>
+                                <Tag color={isReady ? 'green' : 'orange'}>
+                                  {statusLabel}
+                                </Tag>
+                              </Space>
+                            );
+                          })}
+                        </Space>
+                        {oauthProviders.length === 0 ? (
+                          <Empty
+                            image={Empty.PRESENTED_IMAGE_SIMPLE}
+                            description={formatMessage(
+                              'pages.personal.profile.oauth.emptyProviders',
+                              'No enabled account binding channel.',
+                            )}
+                          />
+                        ) : null}
+                        <div style={tableWrapStyle}>
+                          <Table<OAuthProfileAccountSummary>
+                            columns={oauthColumns}
+                            dataSource={[...oauthAccounts]}
+                            locale={{
+                              emptyText: formatMessage(
+                                'pages.personal.profile.oauth.emptyAccounts',
+                                'No account binding yet.',
+                              ),
+                            }}
+                            pagination={false}
+                            rowKey="tokenId"
+                            size="small"
+                          />
+                        </div>
                       </Space>
-                      {oauthProviders.length === 0 ? (
-                        <Empty
-                          image={Empty.PRESENTED_IMAGE_SIMPLE}
-                          description={formatMessage(
-                            'pages.personal.profile.oauth.emptyProviders',
-                            'No enabled account binding channel.',
-                          )}
-                        />
-                      ) : null}
-                      <div style={tableWrapStyle}>
-                        <Table<OAuthProfileAccountSummary>
-                          columns={oauthColumns}
-                          dataSource={[...oauthAccounts]}
-                          locale={{
-                            emptyText: formatMessage(
-                              'pages.personal.profile.oauth.emptyAccounts',
-                              'No account binding yet.',
-                            ),
-                          }}
-                          pagination={false}
-                          rowKey="tokenId"
-                          size="small"
-                        />
-                      </div>
-                    </Space>
+                    </div>
                   ),
                 },
                 {
@@ -1363,58 +1438,60 @@ export default function PersonalProfilePage() {
                     'Login activity',
                   ),
                   children: (
-                    <Space
-                      direction="vertical"
-                      size={20}
-                      style={{ width: '100%' }}
-                    >
-                      <div>
-                        <Typography.Title level={5}>
-                          {formatMessage(
-                            'pages.personal.profile.activity.sessions',
-                            'Current sessions',
-                          )}
-                        </Typography.Title>
-                        <div style={tableWrapStyle}>
-                          <Table<UserProfileSessionSummary>
-                            columns={sessionColumns}
-                            dataSource={[...(activity?.sessions ?? [])]}
-                            locale={{
-                              emptyText: formatMessage(
-                                'pages.personal.profile.activity.emptySessions',
-                                'No active session.',
-                              ),
-                            }}
-                            pagination={false}
-                            rowKey="id"
-                            size="small"
-                          />
+                    <div style={scrollableTabStyle}>
+                      <Space
+                        direction="vertical"
+                        size={20}
+                        style={{ width: '100%' }}
+                      >
+                        <div>
+                          <Typography.Title level={5}>
+                            {formatMessage(
+                              'pages.personal.profile.activity.sessions',
+                              'Current sessions',
+                            )}
+                          </Typography.Title>
+                          <div style={tableWrapStyle}>
+                            <Table<UserProfileSessionSummary>
+                              columns={sessionColumns}
+                              dataSource={[...(activity?.sessions ?? [])]}
+                              locale={{
+                                emptyText: formatMessage(
+                                  'pages.personal.profile.activity.emptySessions',
+                                  'No active session.',
+                                ),
+                              }}
+                              pagination={false}
+                              rowKey="id"
+                              size="small"
+                            />
+                          </div>
                         </div>
-                      </div>
-                      <div>
-                        <Typography.Title level={5}>
-                          {formatMessage(
-                            'pages.personal.profile.activity.loginLogs',
-                            'Recent login records',
-                          )}
-                        </Typography.Title>
-                        <div style={tableWrapStyle}>
-                          <Table<UserProfileLoginActivitySummary>
-                            columns={loginLogColumns}
-                            dataSource={[...(activity?.loginLogs ?? [])]}
-                            locale={{
-                              emptyText: formatMessage(
-                                'pages.personal.profile.activity.emptyLoginLogs',
-                                'No login record.',
-                              ),
-                            }}
-                            pagination={false}
-                            rowKey="id"
-                            size="small"
-                          />
+                        <div>
+                          <Typography.Title level={5}>
+                            {formatMessage(
+                              'pages.personal.profile.activity.loginLogs',
+                              'Recent login records',
+                            )}
+                          </Typography.Title>
+                          <div style={tableWrapStyle}>
+                            <Table<UserProfileLoginActivitySummary>
+                              columns={loginLogColumns}
+                              dataSource={[...(activity?.loginLogs ?? [])]}
+                              locale={{
+                                emptyText: formatMessage(
+                                  'pages.personal.profile.activity.emptyLoginLogs',
+                                  'No login record.',
+                                ),
+                              }}
+                              pagination={false}
+                              rowKey="id"
+                              size="small"
+                            />
+                          </div>
                         </div>
-                      </div>
-                    </Space>
+                      </Space>
+                    </div>
                   ),
                 },
               ]}

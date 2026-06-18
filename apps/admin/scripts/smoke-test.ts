@@ -1393,6 +1393,10 @@ if (
   !profilePage.includes('startOpenCoreProfileOAuthFlow') ||
   !profilePage.includes('unbindOpenCoreProfileOAuthAccount') ||
   profilePage.includes('sessionFallback') ||
+  !profilePage.includes('scrollableTabStyle') ||
+  !profilePage.includes('maxHeight') ||
+  !profilePage.includes("provider.bindingStatus !== 'ready'") ||
+  !profilePage.includes('formatOAuthBindingIssue') ||
   !profilePage.includes('Upload avatar') ||
   !profilePage.includes('Remove avatar') ||
   !profilePage.includes('Avatar updated.') ||
@@ -1413,6 +1417,8 @@ if (
   !profilePage.includes('Confirm password') ||
   !profilePage.includes('Sign out other devices') ||
   !profilePage.includes('No account binding yet.') ||
+  !profilePage.includes('Needs configuration') ||
+  !profilePage.includes('Account binding is not ready.') ||
   !profilePage.includes('Recent login records') ||
   !profilePage.includes('removeAdminToken') ||
   !profilePage.includes('/user/login') ||

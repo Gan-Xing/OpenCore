@@ -29,7 +29,7 @@ type ChromeInstance = {
 const adminBaseUrl = trimTrailingSlash(
   process.env.OPENCORE_SMOKE_ADMIN_BASE_URL ?? 'http://127.0.0.1:39174',
 );
-const timeoutMs = Number(process.env.OPENCORE_SMOKE_TIMEOUT_MS ?? 15000);
+const timeoutMs = Number(process.env.OPENCORE_SMOKE_TIMEOUT_MS ?? 30000);
 const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 const adminUsername = process.env.OPENCORE_SMOKE_ADMIN_USERNAME || 'admin';
 const adminPasswordCandidates = [
@@ -148,6 +148,42 @@ async function main() {
       `['基本资料', '安全设置', '账号绑定', '登录活动'].every((label) => document.body.innerText.includes(label))`,
       'Admin profile center tabs',
     );
+    await evaluate(
+      page,
+      `
+(() => {
+  const tab = Array.from(document.querySelectorAll('[role="tab"], button, div')).find((node) => node.textContent?.trim() === '账号绑定');
+  if (!(tab instanceof HTMLElement)) {
+    return false;
+  }
+  tab.click();
+  return true;
+})()
+`,
+    );
+    await waitForExpression(
+      page,
+      `document.body.innerText.includes('待配置')`,
+      'Admin profile OAuth not-ready status',
+    );
+    await evaluate(
+      page,
+      `
+(() => {
+  const button = Array.from(document.querySelectorAll('button')).find((node) => node.textContent?.includes('绑定') && node.textContent?.includes('GitHub'));
+  if (!(button instanceof HTMLButtonElement)) {
+    return false;
+  }
+  button.click();
+  return true;
+})()
+`,
+    );
+    await waitForExpression(
+      page,
+      `document.body.innerText.includes('账号绑定尚未配置完成')`,
+      'Admin profile OAuth not-ready modal',
+    );
 
     const profileText = String(await evaluate(page, 'document.body.innerText'));
     for (const forbidden of ['system.users', 'system.roles', 'Provider']) {
@@ -170,6 +206,8 @@ async function main() {
           'admin.public-login.no-duplicate-api-prefix',
           'admin.public-profile.authenticated-access',
           'admin.public-profile.zh-cn-tabs',
+          'admin.public-profile.oauth-not-ready',
+          'admin.public-profile.oauth-no-external-404',
           'admin.public-profile.no-raw-keys',
         ],
       }),

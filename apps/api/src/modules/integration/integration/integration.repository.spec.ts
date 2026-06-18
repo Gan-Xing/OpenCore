@@ -1382,39 +1382,76 @@ describe('IntegrationRepository', () => {
   });
 
   it('exposes profile OAuth providers and bindings without secrets', async () => {
-    const repository = new SeedIntegrationRepository();
+    const repository = new SeedIntegrationRepository(async () => 'secret');
+    await repository.createProvider({
+      code: 'oauth.ready',
+      type: 'oauth',
+      name: 'Ready OAuth',
+      enabled: true,
+      secretRef: 'secret://config/integration.oauth.ready.client-secret',
+      config: {
+        adapter: 'oauth2',
+        clientId: 'ready-client-id',
+        authorizationUrl: 'https://github.com/login/oauth/authorize',
+        tokenUrl: 'https://github.com/login/oauth/access_token',
+        callbackPath: '/api/integrations/oauth/callback/ready',
+        scopes: ['read:user'],
+      },
+    });
+    await repository.testProvider('oauth.ready');
 
     const providers = await repository.listProfileOAuthProviders();
     expect(providers).toEqual(
       expect.arrayContaining([
-        { code: 'oauth.github', name: 'GitHub OAuth', type: 'oauth' },
+        expect.objectContaining({
+          bindingIssue: 'placeholder_client',
+          bindingStatus: 'requires_configuration',
+          code: 'oauth.github',
+          name: 'GitHub OAuth',
+          type: 'oauth',
+        }),
+        expect.objectContaining({
+          bindingStatus: 'ready',
+          code: 'oauth.ready',
+          name: 'Ready OAuth',
+          type: 'oauth',
+        }),
       ]),
     );
     expect(JSON.stringify(providers)).not.toContain('secret');
     expect(JSON.stringify(providers)).not.toContain('clientId');
+    await expect(
+      repository.startProfileOAuthFlow('user_profile', {
+        providerCode: 'oauth.github',
+      }),
+    ).rejects.toMatchObject({
+      response: expect.objectContaining({
+        code: 'INTEGRATION_OAUTH_PROFILE_PROVIDER_NOT_READY',
+      }),
+    });
 
     const flow = await repository.startProfileOAuthFlow('user_profile', {
-      providerCode: 'oauth.github',
+      providerCode: 'oauth.ready',
     });
     expect(flow).toMatchObject({
-      providerCode: 'oauth.github',
+      providerCode: 'oauth.ready',
       subjectType: 'user',
       subjectId: 'user_profile',
       status: 'pending',
     });
 
-    const callback = await repository.callbackOAuthProvider('oauth.github', {
+    const callback = await repository.callbackOAuthProvider('oauth.ready', {
       state: flow.state,
       code: 'profile-oauth-code',
-      providerAccountId: 'github:profile-user',
+      providerAccountId: 'ready:profile-user',
     });
     expect(callback.status).toBe('accepted');
 
     const accounts = await repository.listProfileOAuthAccounts('user_profile');
     expect(accounts).toEqual([
       expect.objectContaining({
-        providerCode: 'oauth.github',
-        providerAccountId: 'github:profile-user',
+        providerCode: 'oauth.ready',
+        providerAccountId: 'ready:profile-user',
         status: 'active',
       }),
     ]);

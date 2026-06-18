@@ -55,6 +55,7 @@ import {
 } from './integration.delivery-adapter';
 import {
   assertOutboxCallbackProviderMatch,
+  assertOAuthProfileProviderBindable,
   assertOutboxCallbackSignature,
   assertOAuthTokenBelongsToSubject,
   assertProviderReadyForOutbox,
@@ -1303,10 +1304,15 @@ export class PrismaIntegrationRepository extends IntegrationRepository {
     );
   }
 
-  startProfileOAuthFlow(
+  async startProfileOAuthFlow(
     subjectId: string,
     body: StartOAuthProfileFlowDto,
   ): Promise<OAuthFlowRecord> {
+    const provider = await this.findProvider(
+      normalizeOAuthProviderCode(body.providerCode),
+    );
+    assertOAuthProfileProviderBindable(provider);
+
     return this.startOAuthFlow({
       providerCode: body.providerCode,
       subjectType: 'user',

@@ -136,52 +136,25 @@ async function main() {
     assertString(provider.code, 'profile OAuth provider code');
     assertString(provider.name, 'profile OAuth provider name');
     assertEqual(provider.type, 'oauth', 'profile OAuth provider type');
+    assertString(provider.bindingStatus, 'profile OAuth bindingStatus');
     const providerPayload = JSON.stringify(providers);
     if (
-      providerPayload.includes('secret') ||
-      providerPayload.includes('config')
+      providerPayload.includes('secretRef') ||
+      providerPayload.includes('clientId') ||
+      providerPayload.includes('clientSecret') ||
+      providerPayload.includes('authorizationUrl') ||
+      providerPayload.includes('tokenUrl') ||
+      providerPayload.includes('configVersion')
     ) {
       throw new Error(
-        `Profile OAuth providers must not expose secret/config: ${formatBody(
+        `Profile OAuth providers must not expose sensitive config fields: ${formatBody(
           providers,
         )}`,
       );
     }
 
-    const flow = await clients.integration.startProfileOAuthFlow(token, {
-      providerCode: provider.code,
-    });
-    assertEqual(flow.subjectType, 'user', 'profile OAuth flow subjectType');
-    assertEqual(flow.subjectId, profile.id, 'profile OAuth flow subjectId');
-    assertEqual(flow.status, 'pending', 'profile OAuth flow status');
-    assertEqual(
-      new URL(flow.authorizationUrl, baseUrl).searchParams.get('state'),
-      flow.state,
-      'profile OAuth authorization state',
-    );
-
-    const callback = await clients.integration.callbackOAuthProvider(
-      provider.code,
-      {
-        state: flow.state,
-        code: `profile-smoke-code-${runId}`,
-        providerAccountId: `profile-smoke-${runId}`,
-        scopes: 'read:user',
-      },
-    );
-    assertEqual(callback.status, 'accepted', 'profile OAuth callback status');
-
     const accounts = await clients.integration.listProfileOAuthAccounts(token);
-    const account = accounts.find(
-      (item) => item.tokenId === callback.token?.id,
-    );
-    if (!account) {
-      throw new Error(
-        'Expected profile OAuth account list to include callback token',
-      );
-    }
-    assertEqual(account.status, 'active', 'profile OAuth account status');
-    const accountPayload = JSON.stringify(account);
+    const accountPayload = JSON.stringify(accounts);
     if (
       accountPayload.includes('accessTokenRef') ||
       accountPayload.includes('refreshTokenRef') ||
@@ -189,24 +162,85 @@ async function main() {
     ) {
       throw new Error(
         `Profile OAuth account must not expose token refs: ${formatBody(
-          account,
+          accounts,
         )}`,
       );
     }
 
-    const unbound = await clients.integration.unbindProfileOAuthAccount(
-      token,
-      account.tokenId,
-      { reason: 'Profile center smoke unbind.' },
+    checks = [...checks, 'core.profile.oauth.providers'];
+
+    const readyProvider = providers.find(
+      (item) => item.bindingStatus === 'ready',
     );
-    assertEqual(unbound.status, 'revoked', 'profile OAuth unbind status');
-    checks = [
-      ...checks,
-      'core.profile.oauth.providers',
-      'core.profile.oauth.flow',
-      'core.profile.oauth.accounts',
-      'core.profile.oauth.unbind',
-    ];
+    if (readyProvider) {
+      const flow = await clients.integration.startProfileOAuthFlow(token, {
+        providerCode: readyProvider.code,
+      });
+      assertEqual(flow.subjectType, 'user', 'profile OAuth flow subjectType');
+      assertEqual(flow.subjectId, profile.id, 'profile OAuth flow subjectId');
+      assertEqual(flow.status, 'pending', 'profile OAuth flow status');
+      assertEqual(
+        new URL(flow.authorizationUrl, baseUrl).searchParams.get('state'),
+        flow.state,
+        'profile OAuth authorization state',
+      );
+
+      const callback = await clients.integration.callbackOAuthProvider(
+        readyProvider.code,
+        {
+          state: flow.state,
+          code: `profile-smoke-code-${runId}`,
+          providerAccountId: `profile-smoke-${runId}`,
+          scopes: 'read:user',
+        },
+      );
+      assertEqual(callback.status, 'accepted', 'profile OAuth callback status');
+
+      const refreshedAccounts =
+        await clients.integration.listProfileOAuthAccounts(token);
+      const account = refreshedAccounts.find(
+        (item) => item.tokenId === callback.token?.id,
+      );
+      if (!account) {
+        throw new Error(
+          'Expected profile OAuth account list to include callback token',
+        );
+      }
+      assertEqual(account.status, 'active', 'profile OAuth account status');
+
+      const unbound = await clients.integration.unbindProfileOAuthAccount(
+        token,
+        account.tokenId,
+        { reason: 'Profile center smoke unbind.' },
+      );
+      assertEqual(unbound.status, 'revoked', 'profile OAuth unbind status');
+      checks = [
+        ...checks,
+        'core.profile.oauth.flow',
+        'core.profile.oauth.accounts',
+        'core.profile.oauth.unbind',
+      ];
+    } else {
+      const response = await request<Record<string, unknown>>(
+        `${apiPrefix}/integrations/oauth/profile/flows`,
+        {
+          body: { providerCode: provider.code },
+          expected: [400],
+          method: 'POST',
+          token,
+        },
+      );
+      assertEqual(
+        readApiErrorCode(response),
+        'INTEGRATION_OAUTH_PROFILE_PROVIDER_NOT_READY',
+        'profile OAuth not-ready error code',
+      );
+      checks = [
+        ...checks,
+        'core.profile.oauth.accounts',
+        'core.profile.oauth.not-ready-guard',
+      ];
+    }
 
     console.log(
       JSON.stringify(
@@ -235,3 +269,19 @@ main().catch((error: unknown) => {
   console.error(error);
   process.exitCode = 1;
 });
+
+function readApiErrorCode(response: Record<string, unknown>): unknown {
+  if (typeof response.code === 'string') {
+    return response.code;
+  }
+
+  const error = response.error;
+  if (
+    error &&
+    typeof error === 'object' &&
+    !Array.isArray(error) &&
+    typeof (error as { code?: unknown }).code === 'string'
+  ) {
+    return (error as { code: string }).code;
+  }
+}

@@ -19,6 +19,7 @@
   - `integrations/oauth/profile/flows`
   - `integrations/oauth/profile/accounts/{id}/unbind`
 - profile OAuth provider/account DTO 不暴露 `secretRef`、`config`、`accessTokenRef` 或 `refreshTokenRef`。
+- 未完成真实 OAuth 应用配置的账号绑定通道会显示待配置状态；前端不会打开外部授权页，profile flow API 也会拒绝未就绪通道，避免演示配置跳到无效授权地址。
 - 前端文案走 i18n，中文环境避免裸 key 和未本地化的 Provider 文案。
 
 ## 验收门槛
@@ -26,7 +27,7 @@
 - OpenAPI 导出包含 profile activity、kick-out-others 和 profile OAuth API。
 - SDK path spec 覆盖新增 profile activity/session 和 profile OAuth API。
 - Admin smoke guard 覆盖四个 Tab、profile OAuth service、activity service，并拒绝 session fallback。
-- `tools/smoke/smoke-core-profile.ts` 覆盖真实登录、资料更新后刷新、activity、其他会话退出、profile OAuth provider/flow/account/unbind 和 token-ref redaction。
+- `tools/smoke/smoke-core-profile.ts` 覆盖真实登录、资料更新后刷新、activity、其他会话退出、profile OAuth provider/account redaction；有 ready provider 时覆盖 flow/account/unbind，没有 ready provider 时覆盖 not-ready guard。
 - 部署后必须通过固定入口：
   - API: `http://144.217.243.161:39172`
   - Admin: `http://144.217.243.161:39174`
@@ -42,16 +43,17 @@
   - `core.profile.activity.read`
   - `core.profile.sessions.kick-out-others`
   - `core.profile.oauth.providers`
-  - `core.profile.oauth.flow`
   - `core.profile.oauth.accounts`
-  - `core.profile.oauth.unbind`
+  - `core.profile.oauth.flow` / `core.profile.oauth.unbind`，或默认演示环境下的 `core.profile.oauth.not-ready-guard`
 - Public Admin profile UI smoke 已通过：
   - `admin.public-profile.authenticated-access`
   - `admin.public-profile.zh-cn-tabs`
+  - `admin.public-profile.oauth-not-ready`
+  - `admin.public-profile.oauth-no-external-404`
   - `admin.public-profile.no-raw-keys`
 
 ## 明确剩余债务
 
 - 头像裁剪暂未实现；当前不引入新裁剪依赖，等需要固定头像构图时再用现有前端栈补。
 - 本轮不做 MFA、Passkey、企业 SSO 管理平台、多租户账号体系。
-- profile OAuth 当前完成 state/callback/token archive/解绑审计的基础闭环；真实外部供应商授权体验取决于部署环境里的 OAuth provider 配置。
+- profile OAuth 当前完成 state/callback/token archive/解绑审计的基础闭环；真实外部账号授权体验取决于部署环境里的 OAuth 通道配置，未配置完成时只显示待配置状态。

@@ -175,6 +175,8 @@ export default {
   'error.INTEGRATION_OAUTH_EXPIRES_IN_INVALID': 'OAuth token 有效期无效。',
   'error.INTEGRATION_OAUTH_PROFILE_ACCOUNT_FORBIDDEN':
     '只能操作当前用户自己的 OAuth 账号绑定。',
+  'error.INTEGRATION_OAUTH_PROFILE_PROVIDER_NOT_READY':
+    '账号绑定通道尚未配置完成。',
   'error.INTEGRATION_OAUTH_PROVIDER_DISABLED': 'OAuth 通道未启用。',
   'error.INTEGRATION_OAUTH_PROVIDER_MISMATCH': 'OAuth 回调通道不匹配。',
   'error.INTEGRATION_OAUTH_PROVIDER_TYPE_INVALID': 'OAuth 通道类型无效。',

@@ -2045,6 +2045,7 @@ export default {
   'pages.personal.profile.actions.changePassword': 'Change password',
   'pages.personal.profile.actions.column': 'Action',
   'pages.personal.profile.actions.kickOutOthers': 'Sign out other devices',
+  'pages.personal.profile.actions.ok': 'OK',
   'pages.personal.profile.actions.reload': 'Reload',
   'pages.personal.profile.actions.removeAvatar': 'Remove avatar',
   'pages.personal.profile.actions.save': 'Save',
@@ -2125,8 +2126,22 @@ export default {
   'pages.personal.profile.oauth.emptyAccounts': 'No account binding yet.',
   'pages.personal.profile.oauth.emptyProviders':
     'No enabled account binding channel.',
+  'pages.personal.profile.oauth.bindingIssue.disabled':
+    '{name} is disabled. Enable the integration channel before binding.',
+  'pages.personal.profile.oauth.bindingIssue.missing_config':
+    '{name} is missing the authorization URL, callback path, or application ID. Complete the integration channel configuration first.',
+  'pages.personal.profile.oauth.bindingIssue.placeholder_client':
+    '{name} is still using the demo application ID, so the external authorization page is blocked to avoid opening an invalid URL.',
+  'pages.personal.profile.oauth.bindingIssue.secret_unverified':
+    '{name} secret reference has not passed validation. Run the channel test or secret validation first.',
+  'pages.personal.profile.oauth.bindingStatus.ready': 'Ready',
+  'pages.personal.profile.oauth.bindingStatus.requiresConfiguration':
+    'Needs configuration',
   'pages.personal.profile.oauth.fields.account': 'External account',
   'pages.personal.profile.oauth.fields.channel': 'Binding channel',
+  'pages.personal.profile.oauth.notReadyHint':
+    'Some account binding channels still need configuration. Unready channels will not open external authorization pages.',
+  'pages.personal.profile.oauth.notReadyTitle': 'Account binding is not ready',
   'pages.personal.profile.oauth.status.active': 'Active',
   'pages.personal.profile.oauth.status.expired': 'Expired',
   'pages.personal.profile.oauth.status.revoked': 'Revoked',

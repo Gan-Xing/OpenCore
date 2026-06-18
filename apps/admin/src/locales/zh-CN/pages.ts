@@ -1879,6 +1879,7 @@ export default {
   'pages.personal.profile.actions.changePassword': '修改密码',
   'pages.personal.profile.actions.column': '操作',
   'pages.personal.profile.actions.kickOutOthers': '退出其他设备',
+  'pages.personal.profile.actions.ok': '我知道了',
   'pages.personal.profile.actions.reload': '刷新',
   'pages.personal.profile.actions.removeAvatar': '移除头像',
   'pages.personal.profile.actions.save': '保存',
@@ -1952,8 +1953,21 @@ export default {
     '已退出 {count} 个其他会话。',
   'pages.personal.profile.oauth.emptyAccounts': '暂无账号绑定。',
   'pages.personal.profile.oauth.emptyProviders': '暂无可用账号绑定通道。',
+  'pages.personal.profile.oauth.bindingIssue.disabled':
+    '{name} 已停用，请先在集成通道中启用后再绑定。',
+  'pages.personal.profile.oauth.bindingIssue.missing_config':
+    '{name} 缺少授权地址、回调地址或应用 ID，请先完成集成通道配置。',
+  'pages.personal.profile.oauth.bindingIssue.placeholder_client':
+    '{name} 当前仍使用演示应用 ID，已阻止打开外部授权页，避免进入无效授权地址。',
+  'pages.personal.profile.oauth.bindingIssue.secret_unverified':
+    '{name} 的密钥引用尚未校验通过，请先完成通道测试或密钥校验。',
+  'pages.personal.profile.oauth.bindingStatus.ready': '可绑定',
+  'pages.personal.profile.oauth.bindingStatus.requiresConfiguration': '待配置',
   'pages.personal.profile.oauth.fields.account': '外部账号',
   'pages.personal.profile.oauth.fields.channel': '绑定通道',
+  'pages.personal.profile.oauth.notReadyHint':
+    '存在待配置的账号绑定通道，未就绪通道不会打开外部授权页。',
+  'pages.personal.profile.oauth.notReadyTitle': '账号绑定尚未配置完成',
   'pages.personal.profile.oauth.status.active': '有效',
   'pages.personal.profile.oauth.status.expired': '已过期',
   'pages.personal.profile.oauth.status.revoked': '已撤销',
