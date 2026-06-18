@@ -1393,7 +1393,11 @@ if (
   !profilePage.includes('startOpenCoreProfileOAuthFlow') ||
   !profilePage.includes('unbindOpenCoreProfileOAuthAccount') ||
   profilePage.includes('sessionFallback') ||
-  !profilePage.includes('scrollableTabStyle') ||
+  profilePage.includes('tableWrapStyle') ||
+  !profilePage.includes('scrollableProfileTabStyle') ||
+  !profilePage.includes('data-opencore-profile-scroll-pane') ||
+  !profilePage.includes('overscrollBehavior') ||
+  !profilePage.includes("scroll={{ x: 'max-content' }}") ||
   !profilePage.includes('maxHeight') ||
   !profilePage.includes("provider.bindingStatus !== 'ready'") ||
   !profilePage.includes('formatOAuthBindingIssue') ||

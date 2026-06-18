@@ -166,6 +166,32 @@ async function main() {
       `document.body.innerText.includes('待配置')`,
       'Admin profile OAuth not-ready status',
     );
+    const bindingScrollPane = await evaluate(
+      page,
+      `
+(() => {
+  const pane = document.querySelector('[data-opencore-profile-scroll-pane="account-binding"]');
+  if (!(pane instanceof HTMLElement)) {
+    return { ok: false, reason: 'missing account binding scroll pane' };
+  }
+  const style = window.getComputedStyle(pane);
+  return {
+    ok: style.overflowY === 'auto' && style.overflowX === 'hidden' && style.overscrollBehavior.includes('contain'),
+    overflowX: style.overflowX,
+    overflowY: style.overflowY,
+    overscrollBehavior: style.overscrollBehavior,
+    maxHeight: style.maxHeight,
+  };
+})()
+`,
+    );
+
+    if (!isRecord(bindingScrollPane) || bindingScrollPane.ok !== true) {
+      throw new Error(
+        `Admin profile account binding scroll pane is not configured correctly: ${JSON.stringify(bindingScrollPane)}`,
+      );
+    }
+
     await evaluate(
       page,
       `
@@ -184,6 +210,56 @@ async function main() {
       `document.body.innerText.includes('账号绑定尚未配置完成')`,
       'Admin profile OAuth not-ready modal',
     );
+    await evaluate(
+      page,
+      `
+(() => {
+  const close = Array.from(document.querySelectorAll('button')).find((node) => node.textContent?.includes('我知道了'));
+  if (close instanceof HTMLButtonElement) {
+    close.click();
+  }
+  return true;
+})()
+`,
+    );
+    await evaluate(
+      page,
+      `
+(() => {
+  const tab = Array.from(document.querySelectorAll('[role="tab"], button, div')).find((node) => node.textContent?.trim() === '登录活动');
+  if (!(tab instanceof HTMLElement)) {
+    return false;
+  }
+  tab.click();
+  return true;
+})()
+`,
+    );
+    const activityScrollPane = await evaluate(
+      page,
+      `
+(() => {
+  const pane = document.querySelector('[data-opencore-profile-scroll-pane="login-activity"]');
+  if (!(pane instanceof HTMLElement)) {
+    return { ok: false, reason: 'missing login activity scroll pane' };
+  }
+  const style = window.getComputedStyle(pane);
+  return {
+    ok: style.overflowY === 'auto' && style.overflowX === 'hidden' && style.overscrollBehavior.includes('contain'),
+    overflowX: style.overflowX,
+    overflowY: style.overflowY,
+    overscrollBehavior: style.overscrollBehavior,
+    maxHeight: style.maxHeight,
+  };
+})()
+`,
+    );
+
+    if (!isRecord(activityScrollPane) || activityScrollPane.ok !== true) {
+      throw new Error(
+        `Admin profile login activity scroll pane is not configured correctly: ${JSON.stringify(activityScrollPane)}`,
+      );
+    }
 
     const profileText = String(await evaluate(page, 'document.body.innerText'));
     for (const forbidden of ['system.users', 'system.roles', 'Provider']) {
@@ -206,6 +282,7 @@ async function main() {
           'admin.public-login.no-duplicate-api-prefix',
           'admin.public-profile.authenticated-access',
           'admin.public-profile.zh-cn-tabs',
+          'admin.public-profile.single-scroll-pane',
           'admin.public-profile.oauth-not-ready',
           'admin.public-profile.oauth-no-external-404',
           'admin.public-profile.no-raw-keys',

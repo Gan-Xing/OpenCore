@@ -98,16 +98,21 @@ const tabSectionStyle: CSSProperties = {
   maxWidth: 760,
 };
 
-const scrollableTabStyle: CSSProperties = {
-  maxHeight: 'min(560px, calc(100vh - 320px))',
+const profileTabsCardStyle: CSSProperties = {
+  minWidth: 0,
+};
+
+const profileTabsStyle: CSSProperties = {
+  minWidth: 0,
+};
+
+const scrollableProfileTabStyle: CSSProperties = {
+  maxHeight: 'min(640px, calc(100vh - 260px))',
+  overscrollBehavior: 'contain',
   overflowX: 'hidden',
   overflowY: 'auto',
   paddingRight: 8,
-};
-
-const tableWrapStyle: CSSProperties = {
-  overflowX: 'auto',
-  minWidth: 0,
+  WebkitOverflowScrolling: 'touch',
 };
 
 const AVATAR_ACCEPT = 'image/png,image/jpeg,image/webp,image/gif';
@@ -1018,7 +1023,7 @@ export default function PersonalProfilePage() {
           </Descriptions>
         </Card>
 
-        <Card>
+        <Card style={profileTabsCardStyle}>
           {loadError ? (
             <Alert
               type="error"
@@ -1034,6 +1039,7 @@ export default function PersonalProfilePage() {
 
           <Spin spinning={loading}>
             <Tabs
+              style={profileTabsStyle}
               items={[
                 {
                   key: 'basic',
@@ -1340,7 +1346,10 @@ export default function PersonalProfilePage() {
                     'Account binding',
                   ),
                   children: (
-                    <div style={scrollableTabStyle}>
+                    <div
+                      data-opencore-profile-scroll-pane="account-binding"
+                      style={scrollableProfileTabStyle}
+                    >
                       <Space
                         direction="vertical"
                         size={16}
@@ -1412,21 +1421,20 @@ export default function PersonalProfilePage() {
                             )}
                           />
                         ) : null}
-                        <div style={tableWrapStyle}>
-                          <Table<OAuthProfileAccountSummary>
-                            columns={oauthColumns}
-                            dataSource={[...oauthAccounts]}
-                            locale={{
-                              emptyText: formatMessage(
-                                'pages.personal.profile.oauth.emptyAccounts',
-                                'No account binding yet.',
-                              ),
-                            }}
-                            pagination={false}
-                            rowKey="tokenId"
-                            size="small"
-                          />
-                        </div>
+                        <Table<OAuthProfileAccountSummary>
+                          columns={oauthColumns}
+                          dataSource={[...oauthAccounts]}
+                          locale={{
+                            emptyText: formatMessage(
+                              'pages.personal.profile.oauth.emptyAccounts',
+                              'No account binding yet.',
+                            ),
+                          }}
+                          pagination={false}
+                          rowKey="tokenId"
+                          scroll={{ x: 'max-content' }}
+                          size="small"
+                        />
                       </Space>
                     </div>
                   ),
@@ -1438,7 +1446,10 @@ export default function PersonalProfilePage() {
                     'Login activity',
                   ),
                   children: (
-                    <div style={scrollableTabStyle}>
+                    <div
+                      data-opencore-profile-scroll-pane="login-activity"
+                      style={scrollableProfileTabStyle}
+                    >
                       <Space
                         direction="vertical"
                         size={20}
@@ -1451,21 +1462,20 @@ export default function PersonalProfilePage() {
                               'Current sessions',
                             )}
                           </Typography.Title>
-                          <div style={tableWrapStyle}>
-                            <Table<UserProfileSessionSummary>
-                              columns={sessionColumns}
-                              dataSource={[...(activity?.sessions ?? [])]}
-                              locale={{
-                                emptyText: formatMessage(
-                                  'pages.personal.profile.activity.emptySessions',
-                                  'No active session.',
-                                ),
-                              }}
-                              pagination={false}
-                              rowKey="id"
-                              size="small"
-                            />
-                          </div>
+                          <Table<UserProfileSessionSummary>
+                            columns={sessionColumns}
+                            dataSource={[...(activity?.sessions ?? [])]}
+                            locale={{
+                              emptyText: formatMessage(
+                                'pages.personal.profile.activity.emptySessions',
+                                'No active session.',
+                              ),
+                            }}
+                            pagination={false}
+                            rowKey="id"
+                            scroll={{ x: 'max-content' }}
+                            size="small"
+                          />
                         </div>
                         <div>
                           <Typography.Title level={5}>
@@ -1474,21 +1484,20 @@ export default function PersonalProfilePage() {
                               'Recent login records',
                             )}
                           </Typography.Title>
-                          <div style={tableWrapStyle}>
-                            <Table<UserProfileLoginActivitySummary>
-                              columns={loginLogColumns}
-                              dataSource={[...(activity?.loginLogs ?? [])]}
-                              locale={{
-                                emptyText: formatMessage(
-                                  'pages.personal.profile.activity.emptyLoginLogs',
-                                  'No login record.',
-                                ),
-                              }}
-                              pagination={false}
-                              rowKey="id"
-                              size="small"
-                            />
-                          </div>
+                          <Table<UserProfileLoginActivitySummary>
+                            columns={loginLogColumns}
+                            dataSource={[...(activity?.loginLogs ?? [])]}
+                            locale={{
+                              emptyText: formatMessage(
+                                'pages.personal.profile.activity.emptyLoginLogs',
+                                'No login record.',
+                              ),
+                            }}
+                            pagination={false}
+                            rowKey="id"
+                            scroll={{ x: 'max-content' }}
+                            size="small"
+                          />
                         </div>
                       </Space>
                     </div>
