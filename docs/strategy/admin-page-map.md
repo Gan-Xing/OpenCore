@@ -1,6 +1,6 @@
 # Admin Page Map
 
-更新时间：2026-06-18
+更新时间：2026-06-19
 
 `apps/admin` 的当前事实来源是 `apps/admin/config/routes.ts`、`packages/module-registry` 和 OpenAPI/SDK。本文只记录当前正式 Admin 页面、菜单分组和产品化状态，不再作为 S10/S12 预测路线图。
 
@@ -14,18 +14,18 @@
 
 ## 当前一级菜单
 
-| 一级菜单      | 当前页面                                                                      | 产品化状态                                                                          |
-| ------------- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| Dashboard     | `/dashboard`                                                                  | live summary/shell                                                                  |
-| Personal      | `/personal/profile`                                                           | live profile center: basic profile, security, account binding and login activity    |
-| System        | users、roles、permissions、menus、dicts、config、notices、depts、posts、files | Cycle-021 fixed pages live-only；dicts/depts/menus 等已去 fixture                   |
-| Security      | login logs、operation logs                                                    | live-only Admin, server-side filters and smoke guards                               |
-| Monitor       | status、version、queues、jobs、cache、online users                            | live runtime/operator surfaces with deploy guards                                   |
-| Tools         | OpenAPI、Export、Area Data、OpenForge                                         | live protocol/drift/area-boundary/safe workbench surfaces                           |
-| Collaboration | messages、notices、todos、approvals                                           | admitted lightweight collaboration live operations                                  |
-| Optional      | reports、export jobs                                                          | design/admitted surface only, full designer/executor needs explicit admission       |
-| Integrations  | providers、mail、sms、oauth、wechat、websocket、billing design                | admitted provider/design/token/template surfaces; real payment remains out of scope |
-| Exceptions    | `/403`、`/404`、`/500`                                                        | formal exception pages                                                              |
+| 一级菜单      | 当前页面                                                                            | 产品化状态                                                                          |
+| ------------- | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| Dashboard     | `/dashboard`                                                                        | live summary/shell                                                                  |
+| Personal      | `/personal/profile`                                                                 | live profile center: basic profile, security, account binding and login activity    |
+| System        | users、roles、permissions、menus、dicts、config、notices、depts、posts、files、area | Cycle-021 fixed pages live-only；area 已升级为系统基础主数据能力                    |
+| Security      | login logs、operation logs                                                          | live-only Admin, server-side filters and smoke guards                               |
+| Monitor       | status、version、queues、jobs、cache、online users                                  | live runtime/operator surfaces with deploy guards                                   |
+| Tools         | OpenAPI、Export、OpenForge                                                          | live protocol/drift/safe workbench surfaces；`/tools/area` 仅隐藏重定向             |
+| Collaboration | messages、notices、todos、approvals                                                 | admitted lightweight collaboration live operations                                  |
+| Optional      | reports、export jobs                                                                | design/admitted surface only, full designer/executor needs explicit admission       |
+| Integrations  | providers、mail、sms、oauth、wechat、websocket、billing design                      | admitted provider/design/token/template surfaces; real payment remains out of scope |
+| Exceptions    | `/403`、`/404`、`/500`                                                              | formal exception pages                                                              |
 
 ## 当前页面清单
 
@@ -43,6 +43,7 @@
 | System        | `/system/depts`                | `core.dept`                         | live-only tree/detail/order operations                                         |
 | System        | `/system/posts`                | `core.post`                         | Cycle-021 Meets, Admin live-only                                               |
 | System        | `/system/files`                | `core.file`                         | Cycle-021 Meets, Admin live-only                                               |
+| System        | `/system/area`                 | `system.area`                       | live area tree, cascader, dataset governance, import dry-run and IP lookup     |
 | Security      | `/security/login-logs`         | `core.login-log`                    | live-only security log page                                                    |
 | Security      | `/security/operation-logs`     | `core.audit-log`                    | live-only filters/detail/export                                                |
 | Monitor       | `/monitor/status`              | `monitor.status`                    | live dependency/resource status                                                |
@@ -53,7 +54,7 @@
 | Monitor       | `/monitor/online-users`        | `monitor.online-user`               | live session list/detail/kick-out                                              |
 | Tools         | `/tools/openapi`               | `tool.openapi`                      | live drift snapshot metadata                                                   |
 | Tools         | `/tools/export`                | `tool.export`                       | live export protocol/preview                                                   |
-| Tools         | `/tools/area`                  | `tool.area`                         | live area dataset version/query/import and IP boundary lookup                  |
+| Tools         | `/tools/area`                  | `system.area`                       | hidden redirect to `/system/area`; not a standalone product surface            |
 | Tools         | `/tools/openforge`             | `tool.openforge`                    | live safe dry-run workbench                                                    |
 | Collaboration | `/collaboration/messages`      | `collaboration.message`             | live message lifecycle                                                         |
 | Collaboration | `/collaboration/notices`       | `collaboration.notice`              | live collaboration notice lifecycle                                            |

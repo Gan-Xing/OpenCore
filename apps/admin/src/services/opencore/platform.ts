@@ -17,9 +17,13 @@ import {
   type AreaDatasetVersionListSummary,
   type AreaIpLookupRequest,
   type AreaIpLookupSummary,
+  type AreaRegionFormatRequest,
+  type AreaRegionFormatSummary,
   type AreaRegionListSummary,
   type AreaRegionQueryRequest,
   type AreaRegionSummary,
+  type AreaRegionTreeListSummary,
+  type AreaRegionTreeRequest,
   type AssignTodoRequest,
   type AssignUserRolesRequest,
   type AuditLogBatchMutationSummary,
@@ -510,10 +514,22 @@ export function listOpenCoreAreaRegions(
   return toolingClient.listAreaRegions(getRequiredAdminToken(), query);
 }
 
+export function listOpenCoreAreaTree(
+  query?: AreaRegionTreeRequest,
+): Promise<AreaRegionTreeListSummary> {
+  return toolingClient.listAreaTree(getRequiredAdminToken(), query);
+}
+
 export function getOpenCoreAreaRegion(
   code: string,
 ): Promise<AreaRegionSummary> {
   return toolingClient.getAreaRegion(getRequiredAdminToken(), code);
+}
+
+export function formatOpenCoreAreaRegion(
+  query: AreaRegionFormatRequest,
+): Promise<AreaRegionFormatSummary> {
+  return toolingClient.formatAreaRegion(getRequiredAdminToken(), query);
 }
 
 export function lookupOpenCoreAreaIp(

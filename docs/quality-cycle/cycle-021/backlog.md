@@ -65,6 +65,14 @@ No unchecked in-scope queue item remains. The closed execution order was:
 8. Unified Admin smoke/deploy guard coverage for the seven pages
 9. Documentation reconciliation
 
+## Post-Capstone Admitted Extension
+
+- System Area (`system.area`) is a separate admitted productization closure,
+  not a reopening of the seven-page fallback queue. It upgrades the former
+  area tool boundary into System Management master data with live tree/query,
+  AreaCascader, formatter, IP lookup, dataset governance, smoke and deploy
+  guards. No new automatic backlog queue is created by this note.
+
 ## Public Smoke Rule
 
 - Local smoke: requests against the fixed local smoke/API runtime.

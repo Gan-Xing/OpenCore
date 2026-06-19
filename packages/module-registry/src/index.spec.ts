@@ -121,34 +121,40 @@ describe('@opencore/module-registry', () => {
     });
   });
 
-  it('registers OpenForge as the S9 read-only planning tool', () => {
-    expect(findModuleByCode('tool.area')).toMatchObject({
-      code: 'tool.area',
-      layer: 'tool',
+  it('registers system area as the S12 master-data capability', () => {
+    expect(findModuleByCode('system.area')).toMatchObject({
+      code: 'system.area',
+      layer: 'system',
       priority: 'P1',
       status: 'active',
       stage: 'S12',
       enabledByDefault: true,
-      apiTags: ['Tool Area'],
+      apiTags: ['System Area'],
       admin: {
-        basePath: '/tools/area',
+        basePath: '/system/area',
       },
     });
 
     expect(collectPermissionCodes()).toEqual(
-      expect.arrayContaining(['tool:area:read', 'tool:area:import']),
+      expect.arrayContaining([
+        'system:area:read',
+        'system:area:import',
+        'system:area:manage',
+      ]),
     );
 
     expect(collectMenus()).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          key: 'tools.area',
-          path: '/tools/area',
-          permissionCode: 'tool:area:read',
+          key: 'system.area',
+          path: '/system/area',
+          permissionCode: 'system:area:read',
         }),
       ]),
     );
+  });
 
+  it('registers OpenForge as the S9 read-only planning tool', () => {
     expect(findModuleByCode('tool.openforge')).toMatchObject({
       code: 'tool.openforge',
       layer: 'tool',

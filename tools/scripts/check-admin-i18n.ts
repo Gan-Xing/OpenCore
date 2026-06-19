@@ -116,7 +116,8 @@ const coreI18nScanPaths = [
   join(adminRoot, 'src', 'pages', 'Collaboration', 'Messages.tsx'),
   join(adminRoot, 'src', 'pages', 'Collaboration', 'Notices.tsx'),
   join(adminRoot, 'src', 'pages', 'Collaboration', 'Todos.tsx'),
-  join(adminRoot, 'src', 'pages', 'Tools', 'Area', 'index.tsx'),
+  join(adminRoot, 'src', 'components', 'AreaCascader.tsx'),
+  join(adminRoot, 'src', 'pages', 'System', 'Area.tsx'),
   join(adminRoot, 'src', 'pages', 'Tools', 'Export', 'index.tsx'),
   join(adminRoot, 'src', 'pages', 'Tools', 'OpenApi', 'index.tsx'),
   join(adminRoot, 'src', 'pages', 'Tools', 'OpenForge', 'index.tsx'),
@@ -159,7 +160,7 @@ const localizedAdminPageScanPaths = [
   join(adminRoot, 'src', 'pages', 'Collaboration', 'Messages.tsx'),
   join(adminRoot, 'src', 'pages', 'Collaboration', 'Notices.tsx'),
   join(adminRoot, 'src', 'pages', 'Collaboration', 'Todos.tsx'),
-  join(adminRoot, 'src', 'pages', 'Tools', 'Area', 'index.tsx'),
+  join(adminRoot, 'src', 'pages', 'System', 'Area.tsx'),
   join(adminRoot, 'src', 'pages', 'Tools', 'Export', 'index.tsx'),
   join(adminRoot, 'src', 'pages', 'Tools', 'OpenApi', 'index.tsx'),
   join(adminRoot, 'src', 'pages', 'Tools', 'OpenForge', 'index.tsx'),
@@ -433,7 +434,10 @@ function checkBackendErrorCodeTranslations(): void {
 
 function readBackendErrorCodes(): string[] {
   const codes = new Set(commonApiErrorCodes);
-  const sourceRoots = [join(root, 'apps', 'api', 'src'), join(root, 'packages')];
+  const sourceRoots = [
+    join(root, 'apps', 'api', 'src'),
+    join(root, 'packages'),
+  ];
 
   for (const sourceRoot of sourceRoots) {
     if (!existsSync(sourceRoot)) {

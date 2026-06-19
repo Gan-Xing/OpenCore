@@ -349,6 +349,9 @@ describe('@opencore/system system-user', () => {
       columns: [
         'username',
         'displayName',
+        'mobile',
+        'email',
+        'gender',
         'roleCodes',
         'deptId',
         'postCodes',
@@ -600,7 +603,15 @@ describe('@opencore/system system-user', () => {
     await expectHttpExceptionCode(
       service.importUsers({
         contentBase64: createUserImportCsvBase64([
-          ['stable_codes', 'Stable Codes', 'change-me', 'viewer', '', '', 'true'],
+          [
+            'stable_codes',
+            'Stable Codes',
+            'change-me',
+            'viewer',
+            '',
+            '',
+            'true',
+          ],
         ]),
         updateExisting: 'true' as unknown as boolean,
       }),

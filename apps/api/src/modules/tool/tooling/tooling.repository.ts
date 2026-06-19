@@ -102,8 +102,19 @@ type AreaDatasetImportInput = {
 
 type AreaRegionQueryInput = {
   limit?: number | string;
+  level?: number | string;
   parentCode?: string;
   query?: string;
+};
+
+type AreaTreeQueryInput = {
+  maxLevel?: number | string;
+  parentCode?: string;
+};
+
+type AreaFormatInput = {
+  code?: string;
+  separator?: string;
 };
 
 type AreaIpRangeRecord = {
@@ -130,6 +141,10 @@ type AreaDatasetRecord = {
   regions: readonly AreaRegionRecord[];
   source: string;
   version: string;
+};
+
+type AreaTreeNodeRecord = ReturnType<typeof toAreaRegionDto> & {
+  children: AreaTreeNodeRecord[];
 };
 
 type PersistedAreaDatasetRow = {
@@ -361,6 +376,14 @@ class AreaDatasetStore {
     return listAreaRegionsFromDataset(this.active, input);
   }
 
+  listTree(input: AreaTreeQueryInput = {}) {
+    return listAreaTreeFromDataset(this.active, input);
+  }
+
+  formatRegion(input: AreaFormatInput) {
+    return formatAreaRegionFromDataset(this.active, input);
+  }
+
   getRegion(code: string) {
     return getAreaRegionFromDataset(this.active, code);
   }
@@ -395,8 +418,13 @@ function listAreaRegionsFromDataset(
   const limit = clampAreaListLimit(input.limit);
   const query = input.query?.trim().toLowerCase();
   const parentCode = normalizeOptionalAreaCode(input.parentCode);
+  const level = normalizeOptionalAreaLevel(input.level, 'level');
   const items = dataset.regions.filter((region) => {
     if (parentCode && region.parentCode !== parentCode) {
+      return false;
+    }
+
+    if (level && region.level !== level) {
       return false;
     }
 
@@ -418,6 +446,82 @@ function listAreaRegionsFromDataset(
     total: items.length,
     limit,
     items: items.slice(0, limit).map(toAreaRegionDto),
+  };
+}
+
+function listAreaTreeFromDataset(
+  dataset: AreaDatasetRecord,
+  input: AreaTreeQueryInput = {},
+) {
+  const parentCode = normalizeOptionalAreaCode(input.parentCode);
+  const maxLevel = normalizeOptionalAreaLevel(input.maxLevel, 'maxLevel');
+  const nodes = new Map<string, AreaTreeNodeRecord>();
+
+  for (const region of dataset.regions) {
+    if (maxLevel && region.level > maxLevel) {
+      continue;
+    }
+    nodes.set(region.code, { ...toAreaRegionDto(region), children: [] });
+  }
+
+  const roots: AreaTreeNodeRecord[] = [];
+  for (const region of dataset.regions) {
+    const node = nodes.get(region.code);
+    if (!node) {
+      continue;
+    }
+
+    if (parentCode) {
+      if (region.parentCode === parentCode) {
+        roots.push(node);
+      }
+      continue;
+    }
+
+    const parent = region.parentCode ? nodes.get(region.parentCode) : undefined;
+    if (parent) {
+      parent.children.push(node);
+    } else if (!region.parentCode) {
+      roots.push(node);
+    }
+  }
+
+  return {
+    datasetVersion: dataset.version,
+    total: nodes.size,
+    items: roots,
+  };
+}
+
+function formatAreaRegionFromDataset(
+  dataset: AreaDatasetRecord,
+  input: AreaFormatInput,
+) {
+  const code = normalizeRequiredAreaCode(input.code, 'code');
+  const separator = normalizeAreaFormatSeparator(input.separator);
+  const region = dataset.regions.find((candidate) => candidate.code === code);
+
+  if (!region) {
+    throw toolingNotFound(
+      'TOOL_AREA_REGION_NOT_FOUND',
+      `Area region ${code} was not found.`,
+      { code },
+    );
+  }
+
+  const byCode = new Map(dataset.regions.map((item) => [item.code, item]));
+  const names = region.path.map(
+    (pathCode) => byCode.get(pathCode)?.name ?? pathCode,
+  );
+
+  return {
+    code,
+    datasetVersion: dataset.version,
+    formatted: names.join(separator),
+    names,
+    path: region.path,
+    region: toAreaRegionDto(region),
+    separator,
   };
 }
 
@@ -640,6 +744,47 @@ function normalizeOptionalAreaCode(value: unknown): string | null {
   }
 
   return normalizeRequiredAreaCode(value, 'parentCode');
+}
+
+function normalizeOptionalAreaLevel(
+  value: unknown,
+  label: string,
+): number | null {
+  if (value === undefined || value === null || value === '') {
+    return null;
+  }
+
+  const parsed =
+    typeof value === 'number' ? value : Number.parseInt(String(value), 10);
+  if (
+    !Number.isInteger(parsed) ||
+    parsed < 1 ||
+    parsed > AREA_DATASET_MAX_DEPTH
+  ) {
+    throw toolingBadRequest(
+      'TOOL_AREA_LEVEL_INVALID',
+      `${label} must be an integer between 1 and ${AREA_DATASET_MAX_DEPTH}.`,
+      { label, maxLevel: AREA_DATASET_MAX_DEPTH },
+    );
+  }
+
+  return parsed;
+}
+
+function normalizeAreaFormatSeparator(value: unknown): string {
+  if (value === undefined || value === null || value === '') {
+    return ' / ';
+  }
+
+  if (typeof value !== 'string' || value.length > 8) {
+    throw toolingBadRequest(
+      'TOOL_AREA_FORMAT_SEPARATOR_INVALID',
+      'separator must be at most 8 characters.',
+      { maxLength: 8 },
+    );
+  }
+
+  return value;
 }
 
 function normalizeAreaName(value: unknown, code: string): string {
@@ -1294,6 +1439,25 @@ export class ToolingRepository {
     }
 
     return this.areaDatasetStore.listRegions(query);
+  }
+
+  async listAreaTree(query: AreaTreeQueryInput = {}) {
+    if (this.prisma) {
+      return listAreaTreeFromDataset(await this.getActiveAreaDataset(), query);
+    }
+
+    return this.areaDatasetStore.listTree(query);
+  }
+
+  async formatAreaRegion(input: AreaFormatInput) {
+    if (this.prisma) {
+      return formatAreaRegionFromDataset(
+        await this.getActiveAreaDataset(),
+        input,
+      );
+    }
+
+    return this.areaDatasetStore.formatRegion(input);
   }
 
   async getAreaRegion(code: string) {

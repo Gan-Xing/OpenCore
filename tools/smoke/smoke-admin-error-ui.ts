@@ -378,6 +378,179 @@ async function main() {
       width: 1280,
     });
     await page.send('Page.navigate', {
+      url: `${adminBaseUrl}/system/area?admin-area-ui-smoke=${runId}`,
+    });
+    await waitForExpression(
+      page,
+      'document.readyState === "complete"',
+      'Admin area page load',
+    );
+    await waitForExpression(
+      page,
+      `['地区管理', '通用地区选择器', '虚拟化地区树表格'].every((label) => document.body.innerText.includes(label))`,
+      'Admin area tree surface',
+    );
+    const areaTreeState = await evaluate(
+      page,
+      `
+(() => {
+  const text = document.body.innerText;
+  return {
+    hasCascader: text.includes('通用地区选择器'),
+    hasImportPermission: text.includes('system:area:import'),
+    hasManagePermission: text.includes('system:area:manage'),
+    hasReadPermission: text.includes('system:area:read'),
+    hasRawKeys: text.includes('pages.system.area') || text.includes('tool.area') || text.includes('Area Data'),
+    hasTreeTable: text.includes('虚拟化地区树表格'),
+    text: text.slice(0, 1000),
+  };
+})()
+`,
+    );
+
+    if (
+      !isRecord(areaTreeState) ||
+      areaTreeState.hasCascader !== true ||
+      areaTreeState.hasTreeTable !== true ||
+      areaTreeState.hasReadPermission !== true ||
+      areaTreeState.hasImportPermission !== true ||
+      areaTreeState.hasManagePermission !== true
+    ) {
+      throw new Error(
+        `Admin area tree page is missing required live controls or permissions: ${JSON.stringify(areaTreeState)}`,
+      );
+    }
+
+    if (areaTreeState.hasRawKeys === true) {
+      throw new Error(
+        `Admin area page displayed raw i18n or retired tool keys: ${JSON.stringify(areaTreeState)}`,
+      );
+    }
+
+    await evaluate(
+      page,
+      `
+(() => {
+  const tab = Array.from(document.querySelectorAll('[role="tab"], button, div')).find((node) => node.textContent?.trim() === 'IP 查询');
+  if (!(tab instanceof HTMLElement)) {
+    return false;
+  }
+  tab.click();
+  return true;
+})()
+`,
+    );
+    await waitForExpression(
+      page,
+      `document.body.innerText.includes('IP 边界查询') && document.body.innerText.includes('查询 IP 边界')`,
+      'Admin area IP lookup tab',
+    );
+    await evaluate(
+      page,
+      `
+(() => {
+  const tab = Array.from(document.querySelectorAll('[role="tab"], button, div')).find((node) => node.textContent?.trim() === '数据集治理');
+  if (!(tab instanceof HTMLElement)) {
+    return false;
+  }
+  tab.click();
+  return true;
+})()
+`,
+    );
+    await waitForExpression(
+      page,
+      `document.body.innerText.includes('地区数据集版本')`,
+      'Admin area dataset governance tab',
+    );
+    await evaluate(
+      page,
+      `
+(() => {
+  const tab = Array.from(document.querySelectorAll('[role="tab"], button, div')).find((node) => node.textContent?.trim() === '数据导入');
+  if (!(tab instanceof HTMLElement)) {
+    return false;
+  }
+  tab.click();
+  return true;
+})()
+`,
+    );
+    await waitForExpression(
+      page,
+      `document.body.innerText.includes('地区数据集导入') && document.body.innerText.includes('校验地区导入')`,
+      'Admin area dataset import tab',
+    );
+
+    await page.send('Emulation.setDeviceMetricsOverride', {
+      deviceScaleFactor: 1,
+      height: 844,
+      mobile: true,
+      screenHeight: 844,
+      screenWidth: 390,
+      width: 390,
+    });
+    await page.send('Page.navigate', {
+      url: `${adminBaseUrl}/system/area?admin-area-mobile-smoke=${runId}`,
+    });
+    await waitForExpression(
+      page,
+      'document.readyState === "complete"',
+      'Admin area mobile page load',
+    );
+    await waitForExpression(
+      page,
+      `document.body.innerText.includes('地区管理') && document.body.innerText.includes('通用地区选择器')`,
+      'Admin area mobile text',
+    );
+    const areaMobileState = await evaluate(
+      page,
+      `
+(() => {
+  const text = document.body.innerText;
+  return {
+    clientWidth: document.documentElement.clientWidth,
+    hasRawKeys: text.includes('pages.system.area') || text.includes('tool.area'),
+    hasTitle: text.includes('地区管理'),
+    scrollWidth: document.documentElement.scrollWidth,
+    text: text.slice(0, 1000),
+  };
+})()
+`,
+    );
+
+    if (
+      !isRecord(areaMobileState) ||
+      typeof areaMobileState.scrollWidth !== 'number' ||
+      typeof areaMobileState.clientWidth !== 'number' ||
+      areaMobileState.hasTitle !== true
+    ) {
+      throw new Error(
+        `Admin area mobile page state is invalid: ${JSON.stringify(areaMobileState)}`,
+      );
+    }
+
+    if (areaMobileState.scrollWidth > areaMobileState.clientWidth + 2) {
+      throw new Error(
+        `Admin area mobile page has document-level horizontal overflow: ${JSON.stringify(areaMobileState)}`,
+      );
+    }
+
+    if (areaMobileState.hasRawKeys === true) {
+      throw new Error(
+        `Admin area mobile page displayed raw i18n or retired tool keys: ${JSON.stringify(areaMobileState)}`,
+      );
+    }
+
+    await page.send('Emulation.setDeviceMetricsOverride', {
+      deviceScaleFactor: 1,
+      height: 900,
+      mobile: false,
+      screenHeight: 900,
+      screenWidth: 1280,
+      width: 1280,
+    });
+    await page.send('Page.navigate', {
       url: `${adminBaseUrl}/personal/profile?admin-profile-ui-smoke=${runId}`,
     });
     await waitForExpression(
@@ -568,6 +741,13 @@ async function main() {
           'admin.public-notices.mobile-no-page-overflow',
           'admin.public-notices.empty-safe-or-collapsed-actions',
           'admin.public-notices.no-sse-copy-leak',
+          'admin.public-area.authenticated-access',
+          'admin.public-area.tree-cascader',
+          'admin.public-area.ip-tab',
+          'admin.public-area.dataset-governance-tab',
+          'admin.public-area.import-tab',
+          'admin.public-area.mobile-no-page-overflow',
+          'admin.public-area.no-raw-keys',
           'admin.public-profile.authenticated-access',
           'admin.public-profile.zh-cn-tabs',
           'admin.public-profile.single-scroll-pane',

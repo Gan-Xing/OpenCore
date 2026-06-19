@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 import { REQUIRED_PERMISSIONS_KEY } from '../../core/rbac/permissions.decorator';
+import { SystemAreaController } from './system-area.controller';
 import { ToolingController } from './tooling.controller';
 
 describe('ToolingController permission matrix', () => {
@@ -22,48 +23,6 @@ describe('ToolingController permission matrix', () => {
         ToolingController.prototype.createExportPreview,
       ),
     ).toEqual(['tool:export:export']);
-    expect(
-      Reflect.getMetadata(
-        REQUIRED_PERMISSIONS_KEY,
-        ToolingController.prototype.getAreaDatasetStatus,
-      ),
-    ).toEqual(['tool:area:read']);
-    expect(
-      Reflect.getMetadata(
-        REQUIRED_PERMISSIONS_KEY,
-        ToolingController.prototype.listAreaDatasetVersions,
-      ),
-    ).toEqual(['tool:area:read']);
-    expect(
-      Reflect.getMetadata(
-        REQUIRED_PERMISSIONS_KEY,
-        ToolingController.prototype.activateAreaDatasetVersion,
-      ),
-    ).toEqual(['tool:area:import']);
-    expect(
-      Reflect.getMetadata(
-        REQUIRED_PERMISSIONS_KEY,
-        ToolingController.prototype.listAreaRegions,
-      ),
-    ).toEqual(['tool:area:read']);
-    expect(
-      Reflect.getMetadata(
-        REQUIRED_PERMISSIONS_KEY,
-        ToolingController.prototype.getAreaRegion,
-      ),
-    ).toEqual(['tool:area:read']);
-    expect(
-      Reflect.getMetadata(
-        REQUIRED_PERMISSIONS_KEY,
-        ToolingController.prototype.lookupAreaIp,
-      ),
-    ).toEqual(['tool:area:read']);
-    expect(
-      Reflect.getMetadata(
-        REQUIRED_PERMISSIONS_KEY,
-        ToolingController.prototype.importAreaDataset,
-      ),
-    ).toEqual(['tool:area:import']);
     expect(
       Reflect.getMetadata(
         REQUIRED_PERMISSIONS_KEY,
@@ -124,5 +83,58 @@ describe('ToolingController permission matrix', () => {
         ToolingController.prototype.createOpenForgeRollbackDryRun,
       ),
     ).toEqual(['tool:openforge:manage']);
+  });
+});
+
+describe('SystemAreaController permission matrix', () => {
+  it('guards system area routes with system.area permission codes', () => {
+    expect(
+      Reflect.getMetadata(
+        REQUIRED_PERMISSIONS_KEY,
+        SystemAreaController.prototype.getAreaDatasetStatus,
+      ),
+    ).toEqual(['system:area:read']);
+    expect(
+      Reflect.getMetadata(
+        REQUIRED_PERMISSIONS_KEY,
+        SystemAreaController.prototype.listAreaDatasetVersions,
+      ),
+    ).toEqual(['system:area:read']);
+    expect(
+      Reflect.getMetadata(
+        REQUIRED_PERMISSIONS_KEY,
+        SystemAreaController.prototype.activateAreaDatasetVersion,
+      ),
+    ).toEqual(['system:area:manage']);
+    expect(
+      Reflect.getMetadata(
+        REQUIRED_PERMISSIONS_KEY,
+        SystemAreaController.prototype.listAreaTree,
+      ),
+    ).toEqual(['system:area:read']);
+    expect(
+      Reflect.getMetadata(
+        REQUIRED_PERMISSIONS_KEY,
+        SystemAreaController.prototype.listAreaRegions,
+      ),
+    ).toEqual(['system:area:read']);
+    expect(
+      Reflect.getMetadata(
+        REQUIRED_PERMISSIONS_KEY,
+        SystemAreaController.prototype.formatAreaRegion,
+      ),
+    ).toEqual(['system:area:read']);
+    expect(
+      Reflect.getMetadata(
+        REQUIRED_PERMISSIONS_KEY,
+        SystemAreaController.prototype.getAreaByIp,
+      ),
+    ).toEqual(['system:area:read']);
+    expect(
+      Reflect.getMetadata(
+        REQUIRED_PERMISSIONS_KEY,
+        SystemAreaController.prototype.importAreaDataset,
+      ),
+    ).toEqual(['system:area:import']);
   });
 });

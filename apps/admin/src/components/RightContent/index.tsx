@@ -72,10 +72,10 @@ export const VersionDropdown: React.FC = () => {
   const versionItems: MenuProps['items'] = [
     { key: '/tools/openapi', label: 'OpenAPI' },
     {
-      key: '/tools/area',
+      key: '/system/area',
       label: intl.formatMessage({
-        id: 'menu.tools.area',
-        defaultMessage: 'Area Data',
+        id: 'menu.system.area',
+        defaultMessage: 'Area Management',
       }),
     },
     { key: '/tools/openforge', label: 'OpenForge' },

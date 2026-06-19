@@ -1,6 +1,6 @@
 # cycle-021 Reference Comparison
 
-Date: 2026-06-15
+Date: 2026-06-19
 
 Reference comparison is capability-based, not commit-count based. OpenCore
 translates stable enterprise admin foundations into its own package-owned
@@ -30,29 +30,30 @@ This table is a comparison index. The detailed acceptance matrix for the seven
 fixed closure rows lives in `acceptance-matrix.md`; current waterline details
 live in `productization-waterline-audit.md`.
 
-| Capability         | RuoYi/Yudao counterpart                        | OpenCore API            | OpenCore Admin               | Live-only | Public smoke | Fixture fallback | Still needed                                                                          |
-| ------------------ | ---------------------------------------------- | ----------------------- | ---------------------------- | --------- | ------------ | ---------------- | ------------------------------------------------------------------------------------- |
-| System Users       | System user management                         | live                    | live-only                    | yes       | yes          | no               | Keep guard and public smoke current.                                                  |
-| System Roles       | System role management                         | live                    | live-only                    | yes       | yes          | no               | Keep guard and public smoke current.                                                  |
-| System Permissions | Permission catalog/menu authority              | live                    | live-only                    | yes       | yes          | no               | Keep guard and public smoke current.                                                  |
-| System Menus       | Menu tree and route authority                  | live                    | live-only                    | yes       | yes          | no               | Keep registry/access drift guard current.                                             |
-| System Posts       | Post management                                | live                    | live-only                    | yes       | yes          | no               | Keep guard and public smoke current.                                                  |
-| Departments        | Organization/dept management                   | live                    | live-only                    | yes       | yes          | no               | None in admitted scope.                                                               |
-| Dicts              | Dictionary management                          | live                    | live-only                    | yes       | yes          | no               | None in admitted scope.                                                               |
-| System Config      | Config, runtime, feature flags, secrets        | live                    | live-only                    | yes       | yes          | no               | Full external KMS fleet expansion needs explicit admission.                           |
-| System Notices     | Notice management/inbox/templates/outbox       | live                    | live-only                    | yes       | yes          | no               | Real provider fleet operations need explicit admission.                               |
-| System Files       | File service and file center                   | live                    | live-only                    | yes       | yes          | no               | File provider expansion needs explicit admission.                                     |
-| Security Logs      | Login and operation logs                       | live                    | live-only                    | yes       | yes          | no               | Historical GeoIP backfill remains out of scope.                                       |
-| Online Users       | Online sessions/token revocation               | live                    | live-only                    | yes       | yes          | no               | None in admitted scope.                                                               |
-| Scheduler/Monitor  | Jobs, queues, status, cache, version           | live                    | live-only                    | yes       | yes          | no               | Keep admitted operator surfaces guarded.                                              |
-| Tools/OpenForge    | OpenAPI, Export, safe OpenForge workbench      | live                    | live-only                    | yes       | yes          | no               | Direct schema/migration/business-code writes remain out of scope.                     |
-| Integration        | Provider health, Mail/SMS, OAuth, design pages | live for admitted scope | live-only for admitted scope | yes       | yes          | no               | Payment/BillingDesign, full SSO and provider fleet expansion need explicit admission. |
-| Collaboration      | Messages, notices, todos, approval-lite        | live                    | live-only                    | yes       | yes          | no               | BPMN/full workflow remains out of scope.                                              |
+| Capability         | RuoYi/Yudao counterpart                        | OpenCore API            | OpenCore Admin               | Live-only | Public smoke | Fixture fallback | Still needed                                                                                                         |
+| ------------------ | ---------------------------------------------- | ----------------------- | ---------------------------- | --------- | ------------ | ---------------- | -------------------------------------------------------------------------------------------------------------------- |
+| System Users       | System user management                         | live                    | live-only                    | yes       | yes          | no               | Keep guard and public smoke current.                                                                                 |
+| System Roles       | System role management                         | live                    | live-only                    | yes       | yes          | no               | Keep guard and public smoke current.                                                                                 |
+| System Permissions | Permission catalog/menu authority              | live                    | live-only                    | yes       | yes          | no               | Keep guard and public smoke current.                                                                                 |
+| System Menus       | Menu tree and route authority                  | live                    | live-only                    | yes       | yes          | no               | Keep registry/access drift guard current.                                                                            |
+| System Posts       | Post management                                | live                    | live-only                    | yes       | yes          | no               | Keep guard and public smoke current.                                                                                 |
+| Departments        | Organization/dept management                   | live                    | live-only                    | yes       | yes          | no               | None in admitted scope.                                                                                              |
+| Dicts              | Dictionary management                          | live                    | live-only                    | yes       | yes          | no               | None in admitted scope.                                                                                              |
+| System Config      | Config, runtime, feature flags, secrets        | live                    | live-only                    | yes       | yes          | no               | Full external KMS fleet expansion needs explicit admission.                                                          |
+| System Notices     | Notice management/inbox/templates/outbox       | live                    | live-only                    | yes       | yes          | no               | Real provider fleet operations need explicit admission.                                                              |
+| System Files       | File service and file center                   | live                    | live-only                    | yes       | yes          | no               | File provider expansion needs explicit admission.                                                                    |
+| System Area        | Area tree, AreaSelect and IP query             | live                    | live-only                    | yes       | yes          | no               | External commercial area datasets need explicit admission.                                                           |
+| Security Logs      | Login and operation logs                       | live                    | live-only                    | yes       | yes          | no               | Historical GeoIP backfill remains out of scope.                                                                      |
+| Online Users       | Online sessions/token revocation               | live                    | live-only                    | yes       | yes          | no               | None in admitted scope.                                                                                              |
+| Scheduler/Monitor  | Jobs, queues, status, cache, version           | live                    | live-only                    | yes       | yes          | no               | Keep admitted operator surfaces guarded.                                                                             |
+| Tools/OpenForge    | OpenAPI, Export, safe OpenForge workbench      | live                    | live-only                    | yes       | yes          | no               | Direct schema/migration/business-code writes remain out of scope.                                                    |
+| Integration        | Provider health, Mail/SMS, OAuth, design pages | live for admitted scope | live-only for admitted scope | yes       | yes          | no               | Payment/BillingDesign, full SSO and provider fleet expansion need explicit admission.                                |
+| Collaboration      | Messages, notices, todos, approval-lite        | live                    | live-only                    | yes       | yes          | no               | BPMN/full workflow remains out of scope.                                                                             |
 
 ## Coverage Summary
 
-- System/RBAC: user, role, permission, menu, dept, post, dict, config, notice
-  and file have live API/SDK/Admin surfaces within admitted scope.
+- System/RBAC: user, role, permission, menu, dept, post, dict, config, notice,
+  file and area have live API/SDK/Admin surfaces within admitted scope.
 - Auth/session: login policy, logout, force logout, registered-token allowlist,
   revocation and expired cleanup are real behavior.
 - Logs/location: login-log and operation-log include filtering, cleanup,

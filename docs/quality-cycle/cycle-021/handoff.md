@@ -139,7 +139,12 @@ recorded and aggregate docs are reconciled.
   read actions, template CRUD/render/create-draft, read-user analytics,
   delivery records and outbox provider actions. Files Admin is live-only for
   list/detail, upload/download, metadata update, delete and current-page
-  export without fixture fallback.
+  export without fixture fallback. System Area is now `system.area`: the former
+  area tool boundary is exposed as System Management master data with a live
+  area tree, AreaCascader, child/level query, detail, formatter, IP lookup,
+  versioned dataset governance, import dry-run and activation; `/tools/area`
+  is only a hidden redirect to `/system/area`. Public API/Admin smoke for
+  `system.area` is recorded on the fixed deployment ports.
 - Security/session: login policy, logout, force logout, online-user kick-out,
   registered-token allowlist enforcement and expired session cleanup are live;
   Online Users Admin is live-only for list/detail/kick-out/cleanup and no

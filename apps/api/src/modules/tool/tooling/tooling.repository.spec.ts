@@ -66,6 +66,37 @@ describe('ToolingRepository', () => {
       ],
     });
     await expect(
+      repository.listAreaRegions({ level: 2 }),
+    ).resolves.toMatchObject({
+      items: expect.arrayContaining([
+        expect.objectContaining({
+          code: 'US',
+          level: 2,
+        }),
+      ]),
+    });
+    await expect(repository.listAreaTree()).resolves.toMatchObject({
+      datasetVersion: 'opencore-area-boundary-v1',
+      items: expect.arrayContaining([
+        expect.objectContaining({
+          code: '000000',
+          children: expect.arrayContaining([
+            expect.objectContaining({
+              code: 'US',
+            }),
+          ]),
+        }),
+      ]),
+    });
+    await expect(
+      repository.formatAreaRegion({ code: 'US-CA-SFO' }),
+    ).resolves.toMatchObject({
+      code: 'US-CA-SFO',
+      formatted: 'Global / United States / California / San Francisco',
+      names: ['Global', 'United States', 'California', 'San Francisco'],
+      path: ['000000', 'US', 'US-CA', 'US-CA-SFO'],
+    });
+    await expect(
       repository.getAreaRegion('RFC-EXAMPLE'),
     ).resolves.toMatchObject({
       code: 'RFC-EXAMPLE',

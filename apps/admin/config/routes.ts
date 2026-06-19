@@ -103,6 +103,12 @@ export default [
         component: './System/Files',
         access: 'canReadFiles',
       },
+      {
+        name: 'area',
+        path: '/system/area',
+        component: './System/Area',
+        access: 'canReadAreaData',
+      },
     ],
   },
   {
@@ -188,10 +194,9 @@ export default [
         access: 'canReadExportTools',
       },
       {
-        name: 'area',
         path: '/tools/area',
-        component: './Tools/Area',
-        access: 'canReadAreaData',
+        redirect: '/system/area',
+        hideInMenu: true,
       },
       {
         name: 'openforge',

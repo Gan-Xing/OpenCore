@@ -1023,45 +1023,45 @@ verify_admin_bundle_api_base_url() {
   if ! grep -R \
     --fixed-strings \
     --include='*.js' \
-    "Area data boundary" \
+    "pages.system.area.title" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null || \
-    ! grep -R \
+  ! grep -R \
     --fixed-strings \
     --include='*.js' \
-    "Reload area dataset" \
+    "pages.system.area.cards.reusableSelector" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null || \
-    ! grep -R \
+  ! grep -R \
     --fixed-strings \
     --include='*.js' \
-    "Area dataset versions" \
+    "pages.system.area.cards.treeTable" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null || \
-    ! grep -R \
+  ! grep -R \
     --fixed-strings \
     --include='*.js' \
-    "Area region query" \
+    "pages.system.area.cards.ipBoundaryLookup" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null || \
-    ! grep -R \
+  ! grep -R \
     --fixed-strings \
     --include='*.js' \
-    "IP boundary lookup" \
+    "pages.system.area.cards.datasetVersions" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null || \
-    ! grep -R \
+  ! grep -R \
     --fixed-strings \
     --include='*.js' \
-    "Validate area import" \
+    "pages.system.area.actions.validateImport" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null || \
-    ! grep -R \
+  ! grep -R \
     --fixed-strings \
     --include='*.js' \
-    "Activate area import" \
+    "pages.system.area.actions.activateImport" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null || \
-    ! grep -R \
+  ! grep -R \
     --fixed-strings \
     --include='*.js' \
-    "tool:area:read" \
+    "system:area:read" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null; then
-    echo "Admin bundle does not include Area Data boundary, query, IP lookup and import controls." >&2
-    echo "Refusing to deploy a stale frontend Area Data page." >&2
+    echo "Admin bundle does not include System Area tree, selector, IP lookup and import controls." >&2
+    echo "Refusing to deploy a stale frontend Area Management page." >&2
     exit 1
   fi
 

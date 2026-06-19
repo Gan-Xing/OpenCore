@@ -64,6 +64,24 @@ describe('Admin routes', () => {
     );
   });
 
+  it('registers system area and redirects the old tool entry', () => {
+    expect(flatRoutes).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          access: 'canReadAreaData',
+          component: './System/Area',
+          name: 'area',
+          path: '/system/area',
+        }),
+        expect.objectContaining({
+          hideInMenu: true,
+          path: '/tools/area',
+          redirect: '/system/area',
+        }),
+      ]),
+    );
+  });
+
   it('keeps the catch-all route after explicit exception routes', () => {
     const explicit404Index = routes.findIndex((route) => route.path === '/404');
     const catchAllIndex = routes.findIndex((route) => route.path === '/*');

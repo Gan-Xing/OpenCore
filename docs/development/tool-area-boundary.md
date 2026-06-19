@@ -1,22 +1,29 @@
-# Tool Area Boundary
+# System Area Management
 
-OpenCore `tool.area` owns the admitted area/IP data boundary.
+OpenCore `system.area` owns the admitted area/IP master-data boundary. It
+absorbs the former tool-area dataset governance surface into System Management.
 
 Current scope:
 
-- versioned in-process area dataset
+- canonical Admin page at `/system/area`
+- hidden `/tools/area` frontend redirect to `/system/area`
+- versioned area dataset
 - bounded JSON import and validation
-- hierarchical region query and detail lookup
+- dry-run import and active version switching
+- hierarchical region tree, child query, level query and detail lookup
+- reusable Admin `AreaCascader`
+- path formatting
 - IPv4 CIDR/exact range lookup
-- Admin live page at `/tools/area`
 - SDK and typed smoke coverage
+- OpenAPI and deploy bundle guards
 
 Explicit non-goals:
 
-- no full administrative division operations platform
-- no bulk province/city/county curation workflow
 - no GeoIP vendor database redistribution
-- no database migration in this loop
+- no paid/redistributed province-city-county vendor dataset bundled into the
+  repository
+- no business-domain address book workflow in this capability
 
 The dataset import endpoint defaults to dry-run unless `dryRun: false` is sent
-by an authorized caller with `tool:area:import`.
+by an authorized caller with `system:area:import`. Stored dataset activation
+requires `system:area:manage`.

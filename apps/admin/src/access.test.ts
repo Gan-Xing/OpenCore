@@ -9,6 +9,9 @@ describe('access', () => {
         'core:user:manage',
         'core:user:export',
         'core:user:read',
+        'system:area:read',
+        'system:area:import',
+        'system:area:manage',
         'monitor:status:read',
         'integration:provider:read',
         'integration:provider:update',
@@ -20,6 +23,9 @@ describe('access', () => {
     expect(result.canAssignUserRoles).toBe(true);
     expect(result.canExportUsers).toBe(true);
     expect(result.canReadUsers).toBe(true);
+    expect(result.canReadAreaData).toBe(true);
+    expect(result.canImportAreaData).toBe(true);
+    expect(result.canManageAreaData).toBe(true);
     expect(result.canReadSystemStatus).toBe(true);
     expect(result.canReadIntegrationProviders).toBe(true);
     expect(result.canUpdateIntegrationProviders).toBe(true);
@@ -36,6 +42,7 @@ describe('access', () => {
     expect(result.canReadUsers).toBe(false);
     expect(result.canReadAreaData).toBe(false);
     expect(result.canImportAreaData).toBe(false);
+    expect(result.canManageAreaData).toBe(false);
     expect(result.canReadOpenForge).toBe(false);
     expect(result.canUpdateIntegrationProviders).toBe(false);
     expect(result.canManageIntegrationProviders).toBe(false);

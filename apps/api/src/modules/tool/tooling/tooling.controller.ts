@@ -1,17 +1,7 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { RequirePermission } from '../../core/rbac/permissions.decorator';
 import {
-  AreaDatasetActivationResultDto,
-  AreaDatasetImportRequestDto,
-  AreaDatasetImportResultDto,
-  AreaDatasetSummaryDto,
-  AreaDatasetVersionListDto,
-  AreaIpLookupDto,
-  AreaIpLookupRequestDto,
-  AreaRegionDto,
-  AreaRegionListDto,
-  AreaRegionQueryDto,
   CreateExportPreviewDto,
   CurrentPageExportProtocolDto,
   ExportPlanDto,
@@ -59,68 +49,6 @@ export class ToolingController {
   @ApiOkResponse({ type: ExportPlanDto })
   createExportPreview(@Body() body: CreateExportPreviewDto): ExportPlanDto {
     return this.repository.createExportPlan(body);
-  }
-
-  @Get('area/dataset')
-  @ApiTags('Tool Area')
-  @RequirePermission('tool:area:read')
-  @ApiOkResponse({ type: AreaDatasetSummaryDto })
-  getAreaDatasetStatus(): Promise<AreaDatasetSummaryDto> {
-    return this.repository.getAreaDatasetStatus();
-  }
-
-  @Get('area/dataset/versions')
-  @ApiTags('Tool Area')
-  @RequirePermission('tool:area:read')
-  @ApiOkResponse({ type: AreaDatasetVersionListDto })
-  listAreaDatasetVersions(): Promise<AreaDatasetVersionListDto> {
-    return this.repository.listAreaDatasetVersions();
-  }
-
-  @Post('area/dataset/versions/:version/activate')
-  @ApiTags('Tool Area')
-  @RequirePermission('tool:area:import')
-  @ApiOkResponse({ type: AreaDatasetActivationResultDto })
-  activateAreaDatasetVersion(
-    @Param('version') version: string,
-  ): Promise<AreaDatasetActivationResultDto> {
-    return this.repository.activateAreaDatasetVersion(version);
-  }
-
-  @Get('area/regions')
-  @ApiTags('Tool Area')
-  @RequirePermission('tool:area:read')
-  @ApiOkResponse({ type: AreaRegionListDto })
-  listAreaRegions(
-    @Query() query: AreaRegionQueryDto,
-  ): Promise<AreaRegionListDto> {
-    return this.repository.listAreaRegions(query);
-  }
-
-  @Get('area/regions/:code')
-  @ApiTags('Tool Area')
-  @RequirePermission('tool:area:read')
-  @ApiOkResponse({ type: AreaRegionDto })
-  getAreaRegion(@Param('code') code: string): Promise<AreaRegionDto> {
-    return this.repository.getAreaRegion(code);
-  }
-
-  @Post('area/ip/lookup')
-  @ApiTags('Tool Area')
-  @RequirePermission('tool:area:read')
-  @ApiOkResponse({ type: AreaIpLookupDto })
-  lookupAreaIp(@Body() body: AreaIpLookupRequestDto): Promise<AreaIpLookupDto> {
-    return this.repository.lookupAreaIp(body);
-  }
-
-  @Post('area/import')
-  @ApiTags('Tool Area')
-  @RequirePermission('tool:area:import')
-  @ApiOkResponse({ type: AreaDatasetImportResultDto })
-  importAreaDataset(
-    @Body() body: AreaDatasetImportRequestDto,
-  ): Promise<AreaDatasetImportResultDto> {
-    return this.repository.importAreaDataset(body);
   }
 
   @Get('openforge/status')

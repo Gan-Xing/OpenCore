@@ -20,16 +20,20 @@ async function main() {
     const openApi = await request(`${apiPrefix}/docs-json`, {
       expected: [200],
     });
-    assertOpenApiPath(openApi, '/api/tools/area/dataset');
-    assertOpenApiPath(openApi, '/api/tools/area/dataset/versions');
+    assertOpenApiPath(openApi, '/api/system/area/dataset');
+    assertOpenApiPath(openApi, '/api/system/area/dataset/versions');
     assertOpenApiPath(
       openApi,
-      '/api/tools/area/dataset/versions/{version}/activate',
+      '/api/system/area/dataset/versions/{version}/activate',
     );
-    assertOpenApiPath(openApi, '/api/tools/area/regions');
-    assertOpenApiPath(openApi, '/api/tools/area/regions/{code}');
-    assertOpenApiPath(openApi, '/api/tools/area/ip/lookup');
-    assertOpenApiPath(openApi, '/api/tools/area/import');
+    assertOpenApiPath(openApi, '/api/system/area/tree');
+    assertOpenApiPath(openApi, '/api/system/area/children');
+    assertOpenApiPath(openApi, '/api/system/area/regions');
+    assertOpenApiPath(openApi, '/api/system/area/regions/{code}');
+    assertOpenApiPath(openApi, '/api/system/area/format');
+    assertOpenApiPath(openApi, '/api/system/area/get-by-ip');
+    assertOpenApiPath(openApi, '/api/system/area/ip/lookup');
+    assertOpenApiPath(openApi, '/api/system/area/import');
   }
 
   const loginResponse = await smoke.login();
@@ -55,6 +59,15 @@ async function main() {
   assertArray(versions.versions, 'area dataset versions');
   assertAtLeast(versions.versions.length, 1, 'area dataset version count');
 
+  const tree = await clients.tooling.listAreaTree(token);
+  assertEqual(tree.datasetVersion, status.version, 'area tree dataset version');
+  assertAtLeast(tree.items.length, 1, 'area tree root count');
+  assertIncludes(
+    tree.items.map((region) => region.code),
+    '000000',
+    'area tree root codes',
+  );
+
   const regionList = await clients.tooling.listAreaRegions(token, {
     limit: 10,
     query: 'san',
@@ -74,6 +87,15 @@ async function main() {
   const region = await clients.tooling.getAreaRegion(token, 'RFC-EXAMPLE');
   assertEqual(region.code, 'RFC-EXAMPLE', 'area region detail code');
   assertAtLeast(region.ipRanges.length, 3, 'area region detail ranges');
+
+  const formatted = await clients.tooling.formatAreaRegion(token, {
+    code: 'US-CA-SFO',
+  });
+  assertEqual(
+    formatted.formatted,
+    'Global / United States / California / San Francisco',
+    'area formatter output',
+  );
 
   const lookup = await clients.tooling.lookupAreaIp(token, {
     ip: '203.0.113.7',
@@ -184,7 +206,17 @@ async function main() {
     'area active version restored after apply smoke',
   );
 
-  await smoke.apiRequest('/tools/area/import', {
+  const getByIp = (await smoke.apiRequest(
+    '/system/area/get-by-ip?ip=203.0.113.7',
+    {
+      expected: [200],
+      method: 'GET',
+      token,
+    },
+  )) as { matched?: unknown };
+  assertEqual(getByIp.matched, true, 'area get-by-ip matched');
+
+  await smoke.apiRequest('/system/area/import', {
     body: {
       dryRun: true,
       entries: [{ code: 'CHILD', name: 'Child', parentCode: 'MISSING' }],
@@ -195,7 +227,7 @@ async function main() {
     method: 'POST',
     token,
   });
-  await smoke.apiRequest('/tools/area/ip/lookup', {
+  await smoke.apiRequest('/system/area/ip/lookup', {
     body: { ip: 'not-an-ip' },
     expected: [400],
     method: 'POST',
@@ -210,18 +242,21 @@ async function main() {
       checks: [
         'health.live',
         'health.ready',
-        ...(checkDocs ? ['openapi.tool-area'] : []),
+        ...(checkDocs ? ['openapi.system-area'] : []),
         'auth.login',
-        'tool.area.dataset-status',
-        'tool.area.dataset-versions',
-        'tool.area.dataset-activate',
-        'tool.area.region-query',
-        'tool.area.region-detail',
-        'tool.area.ip-lookup',
-        'tool.area.import-dry-run',
-        'tool.area.import-apply-restore',
-        'tool.area.bad-parent-rejected',
-        'tool.area.bad-ip-rejected',
+        'system.area.dataset-status',
+        'system.area.dataset-versions',
+        'system.area.dataset-activate',
+        'system.area.tree',
+        'system.area.region-query',
+        'system.area.region-detail',
+        'system.area.format',
+        'system.area.ip-lookup',
+        'system.area.get-by-ip',
+        'system.area.import-dry-run',
+        'system.area.import-apply-restore',
+        'system.area.bad-parent-rejected',
+        'system.area.bad-ip-rejected',
       ],
     }),
   );

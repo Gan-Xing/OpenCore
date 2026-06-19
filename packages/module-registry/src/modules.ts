@@ -727,37 +727,38 @@ export const moduleRegistry = [
     },
   },
   {
-    code: 'tool.area',
-    title: 'Area Data',
-    layer: 'tool',
+    code: 'system.area',
+    title: 'Area Management',
+    layer: 'system',
     priority: 'P1',
     status: 'active',
     stage: 'S12',
     enabledByDefault: true,
     description:
-      'Versioned area dataset boundary with bounded import, region query, and IPv4 range lookup.',
-    apiTags: ['Tool Area'],
-    permissions: definePermissions('tool', 'area', 'area data', 'S12', [
+      'System area master data with versioned dataset governance, tree query, formatter, and IP range lookup.',
+    apiTags: ['System Area'],
+    permissions: definePermissions('system', 'area', 'area management', 'S12', [
       { action: 'read', title: 'Read' },
       { action: 'import', title: 'Import' },
+      { action: 'manage', title: 'Manage', dangerous: true },
     ]),
     menus: [
       defineMenu(
-        'tools.area',
-        'Area Data',
-        '/tools/area',
-        'tool:area:read',
-        515,
+        'system.area',
+        'Area Management',
+        '/system/area',
+        'system:area:read',
+        225,
         'S12',
       ),
     ],
     admin: {
-      basePath: '/tools/area',
+      basePath: '/system/area',
       routes: [
         {
-          path: '/tools/area',
-          title: 'Area Data',
-          permissionCode: 'tool:area:read',
+          path: '/system/area',
+          title: 'Area Management',
+          permissionCode: 'system:area:read',
         },
       ],
     },

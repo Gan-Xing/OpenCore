@@ -118,6 +118,7 @@ for (const requiredRoute of [
   "path: '/system/depts'",
   "path: '/system/posts'",
   "path: '/system/files'",
+  "path: '/system/area'",
   "path: '/security/login-logs'",
   "path: '/security/operation-logs'",
   "path: '/monitor/status'",
@@ -174,7 +175,7 @@ for (const repeatedNestedName of [
   'monitor.onlineUsers',
   'tools.openapi',
   'tools.export',
-  'tools.area',
+  'system.area',
   'tools.openforge',
   'collaboration.messages',
   'collaboration.notices',
@@ -769,7 +770,11 @@ const exportPage = readFileSync(
   'utf8',
 );
 const areaPage = readFileSync(
-  resolve(root, 'src/pages/Tools/Area/index.tsx'),
+  resolve(root, 'src/pages/System/Area.tsx'),
+  'utf8',
+);
+const areaCascader = readFileSync(
+  resolve(root, 'src/components/AreaCascader.tsx'),
   'utf8',
 );
 const openForgePage = readFileSync(
@@ -1041,16 +1046,16 @@ if (
   !reportsPage.includes('@opencore/sdk') ||
   !exportJobsPage.includes('@opencore/sdk') ||
   !areaPage.includes('@opencore/sdk') ||
-  !areaPage.includes('Area data boundary') ||
-  !areaPage.includes('Reload area dataset') ||
-  !areaPage.includes('Area dataset versions') ||
-  !areaPage.includes('Area region query') ||
-  !areaPage.includes('IP boundary lookup') ||
-  !areaPage.includes('Validate area import') ||
-  !areaPage.includes('Activate area import') ||
-  !areaPage.includes('Activate stored version') ||
-  !areaPage.includes('tool:area:read') ||
-  !areaPage.includes('tool:area:import') ||
+  !areaPage.includes('地区管理') ||
+  !areaPage.includes('刷新地区数据集') ||
+  !areaPage.includes('地区数据集版本') ||
+  !areaPage.includes('虚拟化地区树表格') ||
+  !areaPage.includes('IP 边界查询') ||
+  !areaPage.includes('校验地区导入') ||
+  !areaPage.includes('激活地区导入') ||
+  !areaPage.includes('system:area:read') ||
+  !areaPage.includes('system:area:import') ||
+  !areaPage.includes('system:area:manage') ||
   !providersPage.includes('@opencore/sdk') ||
   !mailPage.includes('@opencore/sdk') ||
   !mailPage.includes('listOpenCoreMailTemplates') ||
@@ -1300,6 +1305,18 @@ if (
 if (
   areaPage.includes('createAreaDatasetFixture') ||
   areaPage.includes('setRows(fallbackRows)') ||
+  areaCascader.includes('createAreaDatasetFixture') ||
+  areaCascader.includes('fallback') ||
+  !config.includes("path: '/tools/area'") ||
+  !config.includes("redirect: '/system/area'") ||
+  !areaPage.includes('system:area:read') ||
+  !areaPage.includes('system:area:import') ||
+  !areaPage.includes('system:area:manage') ||
+  !areaPage.includes('AreaCascader') ||
+  !areaPage.includes('listOpenCoreAreaTree') ||
+  !areaPage.includes('formatOpenCoreAreaRegion') ||
+  !areaPage.includes('virtual') ||
+  !areaCascader.includes('listOpenCoreAreaTree') ||
   !areaPage.includes('listOpenCoreAreaDatasetVersions') ||
   !areaPage.includes('listOpenCoreAreaRegions') ||
   !areaPage.includes('lookupOpenCoreAreaIp') ||
@@ -1307,6 +1324,10 @@ if (
   !areaPage.includes('activateOpenCoreAreaDatasetVersion') ||
   !opencorePlatformService.includes('getOpenCoreAreaDatasetStatus') ||
   !opencorePlatformService.includes('toolingClient.getAreaDatasetStatus') ||
+  !opencorePlatformService.includes('listOpenCoreAreaTree') ||
+  !opencorePlatformService.includes('toolingClient.listAreaTree') ||
+  !opencorePlatformService.includes('formatOpenCoreAreaRegion') ||
+  !opencorePlatformService.includes('toolingClient.formatAreaRegion') ||
   !opencorePlatformService.includes('listOpenCoreAreaDatasetVersions') ||
   !opencorePlatformService.includes('toolingClient.listAreaDatasetVersions') ||
   !opencorePlatformService.includes('listOpenCoreAreaRegions') ||
@@ -1319,7 +1340,7 @@ if (
   !opencorePlatformService.includes('toolingClient.activateAreaDatasetVersion')
 ) {
   throw new Error(
-    'Area Data page must use live SDK dataset, region query, IP lookup, import and version activation APIs instead of static fixtures.',
+    'System Area page must use live SDK tree, formatter, dataset, region query, IP lookup, import and version activation APIs instead of static fixtures.',
   );
 }
 

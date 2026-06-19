@@ -77,16 +77,17 @@ Admin smoke.
 
 ## Milestone Summary
 
-| Area                    | State    | Compact record                                                                                                                             |
-| ----------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| Strategy blueprint      | Complete | Target vision, capability matrix, API architecture, Admin map, staged roadmap and offline visual were created.                             |
-| S3-S8 foundation        | Complete | Contracts/shared/module-registry, API foundation, Admin shell, auth/RBAC, system management, monitor/tool baseline shipped.                |
-| Runtime integration     | Complete | Legacy app runtime frozen; OpenCore received isolated PostgreSQL, Redis/BullMQ and MinIO/S3 boundaries plus live smoke.                    |
-| OpenForge S9 MVP        | Complete | Registry entry, contracts, read-only plan/diff/check, safety preflight and docs landed.                                                    |
-| OpenForge V1            | Complete | Schema/config DSL, template pack, safe apply, manifest rollback, doctor, gate, and generated API/Admin/SDK/docs skeletons landed.          |
-| Admin V6 migration      | Complete | Admin moved to official Ant Design Pro V6 structure; official OpenCore pages, login/request, route registry and smoke guards were aligned. |
-| Backend extraction BE20 | Complete | Runtime capabilities were extracted into `packages/*`; `apps/api` is now bootstrap, HTTP aggregation, config and OpenAPI export/check.     |
-| Cycle-021               | Closed   | The finite System Admin fallback closure is complete; new large domains still require explicit admission.                                  |
+| Area                    | State     | Compact record                                                                                                                                                                                             |
+| ----------------------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Strategy blueprint      | Complete  | Target vision, capability matrix, API architecture, Admin map, staged roadmap and offline visual were created.                                                                                             |
+| S3-S8 foundation        | Complete  | Contracts/shared/module-registry, API foundation, Admin shell, auth/RBAC, system management, monitor/tool baseline shipped.                                                                                |
+| Runtime integration     | Complete  | Legacy app runtime frozen; OpenCore received isolated PostgreSQL, Redis/BullMQ and MinIO/S3 boundaries plus live smoke.                                                                                    |
+| OpenForge S9 MVP        | Complete  | Registry entry, contracts, read-only plan/diff/check, safety preflight and docs landed.                                                                                                                    |
+| OpenForge V1            | Complete  | Schema/config DSL, template pack, safe apply, manifest rollback, doctor, gate, and generated API/Admin/SDK/docs skeletons landed.                                                                          |
+| Admin V6 migration      | Complete  | Admin moved to official Ant Design Pro V6 structure; official OpenCore pages, login/request, route registry and smoke guards were aligned.                                                                 |
+| Backend extraction BE20 | Complete  | Runtime capabilities were extracted into `packages/*`; `apps/api` is now bootstrap, HTTP aggregation, config and OpenAPI export/check.                                                                     |
+| Cycle-021               | Closed    | The finite System Admin fallback closure is complete; new large domains still require explicit admission.                                                                                                  |
+| System Area             | Complete  | `system.area` upgrades the former area tool boundary into System Management master data with tree/query, AreaCascader, formatter, IP lookup and dataset governance; public API/Admin smoke is recorded. |
 
 ## Cycle-021 Compressed History
 

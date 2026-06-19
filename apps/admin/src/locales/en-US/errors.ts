@@ -707,4 +707,7 @@ export default {
   'error.SYSTEM_DICT_ITEM_NOT_FOUND': 'The dictionary item does not exist.',
   'error.SYSTEM_DICT_NOT_FOUND': 'The dictionary does not exist.',
   'error.SYSTEM_DICT_TEXT_REQUIRED': 'A required dictionary text is missing.',
+  'error.TOOL_AREA_FORMAT_SEPARATOR_INVALID':
+    'The area path separator is invalid.',
+  'error.TOOL_AREA_LEVEL_INVALID': 'The area level is invalid.',
 };

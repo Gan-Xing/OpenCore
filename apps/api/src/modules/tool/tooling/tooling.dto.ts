@@ -129,6 +129,22 @@ export class AreaRegionDto {
   ipRanges!: readonly AreaIpRangeDto[];
 }
 
+export class AreaRegionTreeNodeDto extends AreaRegionDto {
+  @ApiProperty({ type: () => [AreaRegionTreeNodeDto] })
+  children!: readonly AreaRegionTreeNodeDto[];
+}
+
+export class AreaRegionTreeDto {
+  @ApiProperty()
+  datasetVersion!: string;
+
+  @ApiProperty()
+  total!: number;
+
+  @ApiProperty({ type: [AreaRegionTreeNodeDto] })
+  items!: readonly AreaRegionTreeNodeDto[];
+}
+
 export class AreaDatasetSummaryDto {
   @ApiProperty({ enum: ['active'] })
   status!: 'active';
@@ -193,7 +209,54 @@ export class AreaRegionQueryDto {
   parentCode?: string;
 
   @ApiProperty({ required: false })
+  level?: number;
+
+  @ApiProperty({ required: false })
   limit?: number;
+}
+
+export class AreaTreeQueryDto {
+  @ApiProperty({ required: false })
+  parentCode?: string;
+
+  @ApiProperty({ required: false })
+  maxLevel?: number;
+}
+
+export class AreaRegionFormatQueryDto {
+  @ApiProperty()
+  code!: string;
+
+  @ApiProperty({ required: false })
+  separator?: string;
+}
+
+export class AreaRegionFormatDto {
+  @ApiProperty()
+  code!: string;
+
+  @ApiProperty()
+  datasetVersion!: string;
+
+  @ApiProperty()
+  formatted!: string;
+
+  @ApiProperty({ type: [String] })
+  names!: readonly string[];
+
+  @ApiProperty({ type: [String] })
+  path!: readonly string[];
+
+  @ApiProperty({ type: AreaRegionDto })
+  region!: AreaRegionDto;
+
+  @ApiProperty()
+  separator!: string;
+}
+
+export class AreaIpLookupQueryDto {
+  @ApiProperty({ example: '203.0.113.7' })
+  ip!: string;
 }
 
 export class AreaIpLookupRequestDto {

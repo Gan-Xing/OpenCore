@@ -7,9 +7,13 @@ import type {
   AreaDatasetVersionListSummary,
   AreaIpLookupRequest,
   AreaIpLookupSummary,
+  AreaRegionFormatRequest,
+  AreaRegionFormatSummary,
   AreaRegionListSummary,
   AreaRegionQueryRequest,
   AreaRegionSummary,
+  AreaRegionTreeListSummary,
+  AreaRegionTreeRequest,
   CreateExportPreviewRequest,
   CurrentPageExportProtocolSummary,
   ExportPlanSummary,
@@ -50,7 +54,15 @@ export type ToolingClient = {
     token: string,
     query?: AreaRegionQueryRequest,
   ) => Promise<AreaRegionListSummary>;
+  listAreaTree: (
+    token: string,
+    query?: AreaRegionTreeRequest,
+  ) => Promise<AreaRegionTreeListSummary>;
   getAreaRegion: (token: string, code: string) => Promise<AreaRegionSummary>;
+  formatAreaRegion: (
+    token: string,
+    query: AreaRegionFormatRequest,
+  ) => Promise<AreaRegionFormatSummary>;
   lookupAreaIp: (
     token: string,
     body: AreaIpLookupRequest,
@@ -111,14 +123,14 @@ export function createToolingClient(request: SdkRequest): ToolingClient {
         token,
       }),
     getAreaDatasetStatus: (token) =>
-      request<AreaDatasetSummary>('/tools/area/dataset', { token }),
+      request<AreaDatasetSummary>('/system/area/dataset', { token }),
     listAreaDatasetVersions: (token) =>
-      request<AreaDatasetVersionListSummary>('/tools/area/dataset/versions', {
+      request<AreaDatasetVersionListSummary>('/system/area/dataset/versions', {
         token,
       }),
     activateAreaDatasetVersion: (token, version) =>
       request<AreaDatasetActivationResultSummary>(
-        `/tools/area/dataset/versions/${encodeURIComponent(version)}/activate`,
+        `/system/area/dataset/versions/${encodeURIComponent(version)}/activate`,
         {
           method: 'POST',
           token,
@@ -126,22 +138,32 @@ export function createToolingClient(request: SdkRequest): ToolingClient {
       ),
     listAreaRegions: (token, query = {}) =>
       request<AreaRegionListSummary>(
-        `/tools/area/regions${toQueryString(query)}`,
+        `/system/area/regions${toAreaRegionQueryString(query)}`,
+        { token },
+      ),
+    listAreaTree: (token, query = {}) =>
+      request<AreaRegionTreeListSummary>(
+        `/system/area/tree${toAreaTreeQueryString(query)}`,
         { token },
       ),
     getAreaRegion: (token, code) =>
       request<AreaRegionSummary>(
-        `/tools/area/regions/${encodeURIComponent(code)}`,
+        `/system/area/regions/${encodeURIComponent(code)}`,
+        { token },
+      ),
+    formatAreaRegion: (token, query) =>
+      request<AreaRegionFormatSummary>(
+        `/system/area/format${toAreaFormatQueryString(query)}`,
         { token },
       ),
     lookupAreaIp: (token, body) =>
-      request<AreaIpLookupSummary>('/tools/area/ip/lookup', {
+      request<AreaIpLookupSummary>('/system/area/ip/lookup', {
         method: 'POST',
         body,
         token,
       }),
     importAreaDataset: (token, body) =>
-      request<AreaDatasetImportResultSummary>('/tools/area/import', {
+      request<AreaDatasetImportResultSummary>('/system/area/import', {
         method: 'POST',
         body,
         token,
@@ -208,7 +230,7 @@ export function createToolingClient(request: SdkRequest): ToolingClient {
   };
 }
 
-function toQueryString(query: AreaRegionQueryRequest): string {
+function toAreaRegionQueryString(query: AreaRegionQueryRequest): string {
   const search = new URLSearchParams();
 
   if (query.query) {
@@ -217,10 +239,37 @@ function toQueryString(query: AreaRegionQueryRequest): string {
   if (query.parentCode) {
     search.set('parentCode', query.parentCode);
   }
+  if (query.level !== undefined) {
+    search.set('level', String(query.level));
+  }
   if (query.limit !== undefined) {
     search.set('limit', String(query.limit));
   }
 
   const value = search.toString();
   return value ? `?${value}` : '';
+}
+
+function toAreaTreeQueryString(query: AreaRegionTreeRequest): string {
+  const search = new URLSearchParams();
+
+  if (query.parentCode) {
+    search.set('parentCode', query.parentCode);
+  }
+  if (query.maxLevel !== undefined) {
+    search.set('maxLevel', String(query.maxLevel));
+  }
+
+  const value = search.toString();
+  return value ? `?${value}` : '';
+}
+
+function toAreaFormatQueryString(query: AreaRegionFormatRequest): string {
+  const search = new URLSearchParams({ code: query.code });
+
+  if (query.separator !== undefined) {
+    search.set('separator', query.separator);
+  }
+
+  return `?${search.toString()}`;
 }

@@ -27,7 +27,12 @@ describe('createToolingClient', () => {
       limit: 5,
       query: 'san',
     });
+    await client.listAreaTree('token', { maxLevel: 3 });
     await client.getAreaRegion('token', 'US-CA-SFO');
+    await client.formatAreaRegion('token', {
+      code: 'US-CA-SFO',
+      separator: ' > ',
+    });
     await client.lookupAreaIp('token', {
       ip: '203.0.113.7',
     });
@@ -74,27 +79,33 @@ describe('createToolingClient', () => {
         method: 'POST',
       },
       {
-        path: '/tools/area/dataset',
+        path: '/system/area/dataset',
       },
       {
-        path: '/tools/area/dataset/versions',
+        path: '/system/area/dataset/versions',
       },
       {
-        path: '/tools/area/dataset/versions/sdk-area-v1/activate',
+        path: '/system/area/dataset/versions/sdk-area-v1/activate',
         method: 'POST',
       },
       {
-        path: '/tools/area/regions?query=san&limit=5',
+        path: '/system/area/regions?query=san&limit=5',
       },
       {
-        path: '/tools/area/regions/US-CA-SFO',
+        path: '/system/area/tree?maxLevel=3',
       },
       {
-        path: '/tools/area/ip/lookup',
+        path: '/system/area/regions/US-CA-SFO',
+      },
+      {
+        path: '/system/area/format?code=US-CA-SFO&separator=+%3E+',
+      },
+      {
+        path: '/system/area/ip/lookup',
         method: 'POST',
       },
       {
-        path: '/tools/area/import',
+        path: '/system/area/import',
         method: 'POST',
       },
       {

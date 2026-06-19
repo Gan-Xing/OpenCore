@@ -514,4 +514,6 @@ export default {
   'error.SYSTEM_DICT_ITEM_NOT_FOUND': '字典项不存在。',
   'error.SYSTEM_DICT_NOT_FOUND': '字典不存在。',
   'error.SYSTEM_DICT_TEXT_REQUIRED': '字典必填文本不能为空。',
+  'error.TOOL_AREA_FORMAT_SEPARATOR_INVALID': '地区路径分隔符无效。',
+  'error.TOOL_AREA_LEVEL_INVALID': '地区层级无效。',
 };

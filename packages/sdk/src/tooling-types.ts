@@ -55,6 +55,10 @@ export type AreaRegionSummary = {
   path: readonly string[];
 };
 
+export type AreaRegionTreeSummary = AreaRegionSummary & {
+  children: readonly AreaRegionTreeSummary[];
+};
+
 export type AreaDatasetSummary = {
   capabilities: readonly string[];
   checksum: string;
@@ -78,6 +82,7 @@ export type AreaDatasetVersionListSummary = {
 
 export type AreaRegionQueryRequest = {
   limit?: number;
+  level?: number;
   parentCode?: string;
   query?: string;
 };
@@ -87,6 +92,32 @@ export type AreaRegionListSummary = {
   items: readonly AreaRegionSummary[];
   limit: number;
   total: number;
+};
+
+export type AreaRegionTreeRequest = {
+  maxLevel?: number;
+  parentCode?: string;
+};
+
+export type AreaRegionTreeListSummary = {
+  datasetVersion: string;
+  items: readonly AreaRegionTreeSummary[];
+  total: number;
+};
+
+export type AreaRegionFormatRequest = {
+  code: string;
+  separator?: string;
+};
+
+export type AreaRegionFormatSummary = {
+  code: string;
+  datasetVersion: string;
+  formatted: string;
+  names: readonly string[];
+  path: readonly string[];
+  region: AreaRegionSummary;
+  separator: string;
 };
 
 export type AreaIpLookupRequest = {
