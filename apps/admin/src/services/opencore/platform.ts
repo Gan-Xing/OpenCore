@@ -194,6 +194,7 @@ import {
   type SystemNoticeTemplateQueryRequest,
   type SystemNoticeTemplateRenderSummary,
   type SystemNoticeTemplateSummary,
+  type SystemNoticeTemplateTestSendSummary,
   type SystemNoticeUnreadCountSummary,
   type SystemPostBatchMutationSummary,
   type SystemPostOptionSummary,
@@ -206,6 +207,7 @@ import {
   type ResetUserPasswordRequest,
   type ScheduleOutboxRequest,
   type SetUserStatusRequest,
+  type TestSystemNoticeTemplateRequest,
   type TriggerJobRequest,
   type UnbindOAuthProfileAccountRequest,
   type UpdateSystemDeptRequest,
@@ -1447,6 +1449,16 @@ export async function listOpenCoreSystemNoticeDeliveries(
   return [...page.items];
 }
 
+export async function listOpenCoreSystemNoticeDeliveryRecords(
+  query?: SystemNoticeDeliveryQueryRequest,
+): Promise<SystemNoticeDeliverySummary[]> {
+  const page = await systemManagementClient.listAllNoticeDeliveries(
+    getRequiredAdminToken(),
+    query,
+  );
+  return [...page.items];
+}
+
 export function dispatchOpenCoreSystemNotice(
   id: string,
   channel: SystemNoticeDeliveryChannel = 'in_app',
@@ -1464,6 +1476,17 @@ export function executeOpenCoreSystemNoticeDeliveries(
     getRequiredAdminToken(),
     id,
     { channel },
+  );
+}
+
+export function testSendOpenCoreSystemNoticeTemplate(
+  code: string,
+  body: TestSystemNoticeTemplateRequest,
+): Promise<SystemNoticeTemplateTestSendSummary> {
+  return systemManagementClient.testSendNoticeTemplate(
+    getRequiredAdminToken(),
+    code,
+    body,
   );
 }
 

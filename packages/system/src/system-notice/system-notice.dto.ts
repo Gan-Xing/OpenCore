@@ -396,6 +396,17 @@ export class SystemNoticeTemplateRenderDto {
   params!: readonly string[];
 }
 
+export class SystemNoticeTemplateTestSendResultDto {
+  @ApiProperty({ type: SystemNoticeDto })
+  notice!: SystemNoticeDto;
+
+  @ApiProperty({ type: SystemNoticeDeliveryDto })
+  delivery!: SystemNoticeDeliveryDto;
+
+  @ApiProperty({ type: SystemNoticeTemplateRenderDto })
+  rendered!: SystemNoticeTemplateRenderDto;
+}
+
 export class MarkSystemNoticesReadDto {
   @ApiProperty({ type: [String] })
   ids!: readonly string[];
@@ -611,6 +622,14 @@ export class CreateSystemNoticeFromTemplateDto extends RenderSystemNoticeTemplat
 
   @ApiProperty({ required: false })
   validTo?: string;
+
+  @ApiProperty({ example: 'admin' })
+  createdBy!: string;
+}
+
+export class TestSystemNoticeTemplateDto extends RenderSystemNoticeTemplateDto {
+  @ApiProperty({ example: 'user_admin' })
+  recipientUserId!: string;
 
   @ApiProperty({ example: 'admin' })
   createdBy!: string;

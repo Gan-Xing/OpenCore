@@ -159,6 +159,7 @@ export default {
     '通知投递通道类型不匹配。',
   'error.SYSTEM_NOTICE_NOT_FOUND': '通知不存在。',
   'error.SYSTEM_NOTICE_PUBLISH_STATUS_INVALID': '只有草稿通知可以发布。',
+  'error.SYSTEM_NOTICE_RECIPIENT_NOT_FOUND': '通知接收用户不存在或已停用。',
   'error.SYSTEM_NOTICE_READ_IDS_EMPTY': '通知已读 ID 列表不能为空。',
   'error.SYSTEM_NOTICE_READ_IDS_INVALID': '通知已读 ID 列表必须是数组。',
   'error.SYSTEM_NOTICE_READ_ID_DUPLICATED': '通知已读 ID 重复。',

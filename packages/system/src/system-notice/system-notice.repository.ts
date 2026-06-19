@@ -18,6 +18,7 @@ import type {
   RenderSystemNoticeTemplateDto,
   SystemNoticeDeliveryExecuteDto,
   SystemNoticeDispatchDto,
+  TestSystemNoticeTemplateDto,
   UpdateSystemNoticeTemplateDto,
   UpdateSystemNoticeDto,
 } from './system-notice.dto';
@@ -145,6 +146,12 @@ export type SystemNoticeTemplateRenderRecord = {
   params: readonly string[];
 };
 
+export type SystemNoticeTemplateTestSendResult = {
+  notice: SystemNoticeRecord;
+  delivery: SystemNoticeDeliveryRecord;
+  rendered: SystemNoticeTemplateRenderRecord;
+};
+
 export type SystemNoticeNormalizedPageQuery = {
   page: number;
   pageSize: number;
@@ -205,6 +212,12 @@ export type NormalizedSystemNoticeFromTemplateInput = {
   pinned: boolean;
   validFrom?: string;
   validTo?: string;
+};
+
+export type NormalizedSystemNoticeTemplateTestSendInput = {
+  recipientUserId: string;
+  templateParams: NormalizedSystemNoticeTemplateRenderInput;
+  createdBy: string;
 };
 
 const SYSTEM_NOTICE_STATUSES = ['draft', 'published', 'archived'] as const;
@@ -268,6 +281,10 @@ export abstract class SystemNoticeRepository {
     query?: SystemNoticeDeliveryPageQuery,
   ): Promise<PageResult<SystemNoticeDeliveryRecord>>;
 
+  abstract listAllNoticeDeliveries(
+    query?: SystemNoticeDeliveryPageQuery,
+  ): Promise<PageResult<SystemNoticeDeliveryRecord>>;
+
   abstract dispatchNotice(
     id: string,
     body?: SystemNoticeDispatchDto,
@@ -303,6 +320,11 @@ export abstract class SystemNoticeRepository {
     code: string,
     body: CreateSystemNoticeFromTemplateDto,
   ): Promise<SystemNoticeRecord>;
+
+  abstract testSendNoticeTemplate(
+    code: string,
+    body: TestSystemNoticeTemplateDto,
+  ): Promise<SystemNoticeTemplateTestSendResult>;
 
   abstract getNotice(id: string): Promise<SystemNoticeRecord>;
 
@@ -643,6 +665,22 @@ export function renderSystemNoticeTemplate(
     title: applySystemNoticeTemplateParams(template.titleTemplate, params),
     content: applySystemNoticeTemplateParams(template.contentTemplate, params),
     params: template.params,
+  };
+}
+
+export function normalizeTestSystemNoticeTemplateInput(
+  template: SystemNoticeTemplateRecord,
+  body: TestSystemNoticeTemplateDto,
+): NormalizedSystemNoticeTemplateTestSendInput {
+  assertSystemNoticeTemplateEnabled(template);
+
+  return {
+    recipientUserId: normalizeRequiredText(
+      body.recipientUserId,
+      'recipientUserId',
+    ),
+    templateParams: normalizeSystemNoticeTemplateParams(template, body),
+    createdBy: normalizeRequiredText(body.createdBy, 'createdBy'),
   };
 }
 

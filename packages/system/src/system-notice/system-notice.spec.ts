@@ -101,6 +101,22 @@ describe('@opencore/system system-notice', () => {
       totalPages: 1,
     });
     await expect(
+      service.listAllNoticeDeliveries({
+        providerStatus: 'sent',
+        username: 'admin',
+      }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        items: expect.arrayContaining([
+          expect.objectContaining({
+            noticeId: notice.id,
+            providerStatus: 'sent',
+            username: 'admin',
+          }),
+        ]),
+      }),
+    );
+    await expect(
       service.dispatchNotice(notice.id, { channel: 'mail' }),
     ).resolves.toMatchObject({
       noticeId: notice.id,
@@ -309,6 +325,42 @@ describe('@opencore/system system-notice', () => {
       pinned: true,
       status: 'draft',
     });
+
+    await expect(
+      service.testSendNoticeTemplate(template.code, {
+        createdBy: 'admin',
+        recipientUserId: 'user_admin',
+        templateParams: { owner: 'Platform', service: 'API', time: '09:00' },
+      }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        delivery: expect.objectContaining({
+          channel: 'in_app',
+          providerStatus: 'sent',
+          userId: 'user_admin',
+          username: 'admin',
+        }),
+        notice: expect.objectContaining({
+          status: 'published',
+          title: 'Security rotation for API',
+        }),
+        rendered: expect.objectContaining({
+          content: 'API credentials rotate at 09:00 by Platform.',
+        }),
+      }),
+    );
+    await expect(
+      service.listAllNoticeDeliveries({ username: 'admin' }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        items: expect.arrayContaining([
+          expect.objectContaining({
+            title: 'Security rotation for API',
+            userId: 'user_admin',
+          }),
+        ]),
+      }),
+    );
 
     await expect(
       service.updateNoticeTemplate(template.code, { enabled: false }),

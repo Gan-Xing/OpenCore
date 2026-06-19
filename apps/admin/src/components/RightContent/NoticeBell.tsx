@@ -1,5 +1,5 @@
 import { BellOutlined, CheckOutlined } from '@ant-design/icons';
-import { history, useModel } from '@umijs/max';
+import { history, useIntl, useModel } from '@umijs/max';
 import type { MenuProps } from 'antd';
 import { Badge, Button, Tooltip } from 'antd';
 import { createStyles } from 'antd-style';
@@ -40,6 +40,7 @@ const useStyles = createStyles(({ token, css }) => ({
 
 export const NoticeBell: React.FC = () => {
   const { styles } = useStyles();
+  const intl = useIntl();
   const { initialState } = useModel('@@initialState');
   const [unreadCount, setUnreadCount] = useState(0);
   const [items, setItems] = useState<
@@ -73,6 +74,8 @@ export const NoticeBell: React.FC = () => {
   const openInbox = () => {
     history.push('/system/notices?tab=inbox');
   };
+  const formatMessage = (id: string, defaultMessage: string) =>
+    intl.formatMessage({ id, defaultMessage });
 
   const markOneRead = async (id: string) => {
     await markOpenCoreSystemNoticesRead({ ids: [id] });
@@ -91,13 +94,19 @@ export const NoticeBell: React.FC = () => {
       ? [
           {
             key: 'open-inbox',
-            label: 'Open inbox',
+            label: formatMessage(
+              'pages.system.notices.bell.openInbox',
+              'Open inbox',
+            ),
             onClick: openInbox,
           },
           {
             key: 'mark-all',
             icon: <CheckOutlined />,
-            label: 'Mark all read',
+            label: formatMessage(
+              'pages.system.notices.bell.markAllRead',
+              'Mark all read',
+            ),
             onClick: () => void markAllRead(),
           },
           { type: 'divider' as const },
@@ -118,11 +127,17 @@ export const NoticeBell: React.FC = () => {
           {
             key: 'empty',
             disabled: true,
-            label: 'No unread system notices',
+            label: formatMessage(
+              'pages.system.notices.bell.empty',
+              'No unread system notices',
+            ),
           },
           {
             key: 'open-inbox',
-            label: 'Open inbox',
+            label: formatMessage(
+              'pages.system.notices.bell.openInbox',
+              'Open inbox',
+            ),
             onClick: openInbox,
           },
         ];
@@ -137,13 +152,21 @@ export const NoticeBell: React.FC = () => {
         style: { minWidth: 280 },
       }}
     >
-      <Tooltip title="System notice inbox">
+      <Tooltip
+        title={formatMessage(
+          'pages.system.notices.bell.tooltip',
+          'System notice inbox',
+        )}
+      >
         <Badge count={unreadCount} size="small" overflowCount={99}>
           <Button
             type="text"
             className={styles.action}
             icon={<BellOutlined />}
-            aria-label="System notice inbox"
+            aria-label={formatMessage(
+              'pages.system.notices.bell.tooltip',
+              'System notice inbox',
+            )}
           />
         </Badge>
       </Tooltip>

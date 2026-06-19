@@ -46,6 +46,10 @@ async function main() {
 
     const loginResponse = await login();
     token = assertString(loginResponse.accessToken, 'login accessToken');
+    const smokeUserId = assertString(
+      loginResponse.user.id,
+      'login user id',
+    );
     smoke.setToken(token);
 
     await apiRequest('/core/notices/templates/simple-list', {
@@ -216,6 +220,66 @@ async function main() {
     );
     assertEqual(templateNotice.status, 'draft', 'template notice status');
     assertEqual(templateNotice.pinned, true, 'template notice pinned');
+
+    await apiRequest(
+      `/core/notices/templates/${encodeURIComponent(templateCode)}/test-send`,
+      {
+        method: 'POST',
+        expected: [404],
+        body: {
+          createdBy: username,
+          recipientUserId: 'missing_notice_recipient',
+          templateParams: {
+            owner: 'Ops',
+            service: 'API',
+            time: '09:00 UTC',
+          },
+        },
+      },
+    );
+    const templateTestSend = await apiRequest(
+      `/core/notices/templates/${encodeURIComponent(templateCode)}/test-send`,
+      {
+        method: 'POST',
+        body: {
+          createdBy: username,
+          recipientUserId: smokeUserId,
+          templateParams: {
+            owner: 'Ops',
+            service: 'API',
+            time: '09:00 UTC',
+          },
+        },
+      },
+    );
+    createdNoticeIds.push(
+      assertString(templateTestSend.notice.id, 'template test notice id'),
+    );
+    assertEqual(
+      templateTestSend.notice.status,
+      'published',
+      'template test notice status',
+    );
+    assertEqual(
+      templateTestSend.delivery.userId,
+      smokeUserId,
+      'template test delivery user',
+    );
+    assertEqual(
+      templateTestSend.delivery.providerStatus,
+      'sent',
+      'template test delivery provider status',
+    );
+    assertPageItemsContainDelivery(
+      await apiRequest(
+        `/core/notices/deliveries?channel=in_app&providerStatus=sent&username=${encodeURIComponent(username)}`,
+      ),
+      username,
+      'delivered',
+      false,
+      'sent',
+      'global template test delivery records',
+    );
 
     const disabledTemplate = await apiRequest(
       `/core/notices/templates/${encodeURIComponent(templateCode)}`,
@@ -1300,6 +1364,9 @@ async function main() {
           'core.notice.template.render-created',
           'core.notice.template.pinned-deserialization-guard',
           'core.notice.template.create-notice',
+          'core.notice.template.test-send-recipient-guard',
+          'core.notice.template.test-send',
+          'core.notice.deliveries.global-records',
           'core.notice.template.update',
           'core.notice.template.disabled-render-guard',
           'core.notice.template.delete',

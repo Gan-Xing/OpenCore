@@ -9,6 +9,7 @@ import type {
   MarkSystemNoticesReadDto,
   SystemNoticeDeliveryExecuteDto,
   SystemNoticeDispatchDto,
+  TestSystemNoticeTemplateDto,
   UpdateSystemNoticeTemplateDto,
   UpdateSystemNoticeDto,
 } from './system-notice.dto';
@@ -35,10 +36,12 @@ import {
   normalizeSystemNoticeFilters,
   normalizeSystemNoticePageQuery,
   normalizeSystemNoticeTemplateFilters,
+  normalizeTestSystemNoticeTemplateInput,
   normalizeUnreadNoticeLimit,
   normalizeUpdateSystemNoticeTemplateInput,
   normalizeUpdateSystemNoticeInput,
   getSystemNoticeDeliveryProvider,
+  renderSystemNoticeTemplate,
   systemNoticeBadRequest,
   systemNoticeConflict,
   systemNoticeNotFound,
@@ -61,6 +64,7 @@ import {
   type SystemNoticePageQuery,
   type SystemNoticeTemplateOptionRecord,
   type SystemNoticeTemplatePageQuery,
+  type SystemNoticeTemplateTestSendResult,
 } from './system-notice.repository';
 
 type PrismaSystemNotice = {
@@ -341,9 +345,22 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
     query: SystemNoticeDeliveryPageQuery = {},
   ): Promise<PageResult<SystemNoticeDeliveryRecord>> {
     await this.findNoticeById(id);
+    return this.listNoticeDeliveriesByWhere(query, { noticeId: id });
+  }
+
+  async listAllNoticeDeliveries(
+    query: SystemNoticeDeliveryPageQuery = {},
+  ): Promise<PageResult<SystemNoticeDeliveryRecord>> {
+    return this.listNoticeDeliveriesByWhere(query);
+  }
+
+  private async listNoticeDeliveriesByWhere(
+    query: SystemNoticeDeliveryPageQuery = {},
+    baseWhere: Prisma.SystemNoticeDeliveryWhereInput = {},
+  ): Promise<PageResult<SystemNoticeDeliveryRecord>> {
     const filters = normalizeSystemNoticeDeliveryFilters(query);
     const where: Prisma.SystemNoticeDeliveryWhereInput = {
-      noticeId: id,
+      ...baseWhere,
       ...(filters.channel ? { channel: filters.channel } : {}),
       ...(filters.providerStatus
         ? { providerStatus: filters.providerStatus }
@@ -513,6 +530,64 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
       body,
     );
     return this.createNotice(input);
+  }
+
+  async testSendNoticeTemplate(
+    code: string,
+    body: TestSystemNoticeTemplateDto,
+  ): Promise<SystemNoticeTemplateTestSendResult> {
+    const template = toSystemNoticeTemplateRecord(
+      await this.findNoticeTemplateByCode(code),
+    );
+    const input = normalizeTestSystemNoticeTemplateInput(template, body);
+    const rendered = renderSystemNoticeTemplate(template, {
+      templateParams: input.templateParams,
+    });
+    const recipient = await this.findNoticeRecipientById(input.recipientUserId);
+    const now = new Date();
+
+    const notice = await this.prisma.systemNotice.create({
+      data: {
+        title: rendered.title,
+        content: rendered.content,
+        type: template.type,
+        audience: 'admin',
+        pinned: false,
+        status: 'published',
+        publishedAt: now,
+        archivedAt: null,
+        createdBy: input.createdBy,
+      },
+    });
+    const delivery = await this.prisma.systemNoticeDelivery.create({
+      data: {
+        noticeId: notice.id,
+        userId: recipient.id,
+        username: recipient.username,
+        displayName: recipient.displayName,
+        channel: 'in_app',
+        status: 'delivered',
+        provider: getSystemNoticeDeliveryProvider('in_app'),
+        providerStatus: 'sent',
+        recipient: null,
+        providerMessageId: null,
+        attemptCount: 1,
+        title: rendered.title,
+        content: rendered.content,
+        type: template.type,
+        audience: 'admin',
+        deliveredAt: now,
+        lastAttemptAt: now,
+        sentAt: now,
+        lastError: null,
+      },
+    });
+
+    return {
+      notice: toSystemNoticeRecord(notice),
+      delivery: toSystemNoticeDeliveryRecord(delivery),
+      rendered,
+    };
   }
 
   async getNotice(id: string): Promise<SystemNoticeRecord> {
@@ -873,6 +948,29 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
       },
       orderBy: [{ username: 'asc' }],
     });
+  }
+
+  private async findNoticeRecipientById(
+    userId: string,
+  ): Promise<PrismaNoticeDeliveryRecipient> {
+    const recipient = await this.prisma.user.findFirst({
+      where: { id: userId, enabled: true },
+      select: {
+        id: true,
+        username: true,
+        displayName: true,
+      },
+    });
+
+    if (!recipient) {
+      throw systemNoticeNotFound(
+        'SYSTEM_NOTICE_RECIPIENT_NOT_FOUND',
+        `System notice recipient not found: ${userId}`,
+        { userId },
+      );
+    }
+
+    return recipient;
   }
 
   private async markDeliveriesRead(

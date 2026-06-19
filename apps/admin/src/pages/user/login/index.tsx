@@ -395,6 +395,7 @@ const Login: React.FC = () => {
               const loading = startingProviderCode === provider.code;
               const button = (
                 <Button
+                  key={provider.code}
                   block
                   className={styles.socialButton}
                   disabled={!ready || socialLoading}

@@ -116,6 +116,7 @@ import {
   SystemNoticeTemplatePageDto,
   SystemNoticeTemplateQueryDto,
   SystemNoticeTemplateRenderDto,
+  SystemNoticeTemplateTestSendResultDto,
   SystemNoticeReadUserPageDto,
   SystemNoticeReadUsersQueryDto,
   SystemNoticeUnreadCountDto,
@@ -141,6 +142,7 @@ import {
   AuditLogDto,
   MarkSystemNoticesReadDto,
   RenderSystemNoticeTemplateDto,
+  TestSystemNoticeTemplateDto,
 } from './system-management.dto';
 import {
   systemManagementBadRequest,
@@ -601,6 +603,16 @@ export class SystemManagementController {
     return this.notices.listNoticeReadUsers(id, query);
   }
 
+  @Get('notices/deliveries')
+  @ApiTags('Core System Notices')
+  @RequirePermission('core:notice:read')
+  @ApiOkResponse({ type: SystemNoticeDeliveryPageDto })
+  listAllNoticeDeliveries(
+    @Query() query: SystemNoticeDeliveryQueryDto,
+  ): Promise<SystemNoticeDeliveryPageDto> {
+    return this.notices.listAllNoticeDeliveries(query);
+  }
+
   @Get('notices/:id/deliveries')
   @ApiTags('Core System Notices')
   @RequirePermission('core:notice:read')
@@ -684,6 +696,17 @@ export class SystemManagementController {
     @Body() body: CreateSystemNoticeFromTemplateDto,
   ): Promise<SystemNoticeDto> {
     return this.notices.createNoticeFromTemplate(code, body);
+  }
+
+  @Post('notices/templates/:code/test-send')
+  @ApiTags('Core System Notices')
+  @RequirePermission('core:notice:create')
+  @ApiOkResponse({ type: SystemNoticeTemplateTestSendResultDto })
+  testSendNoticeTemplate(
+    @Param('code') code: string,
+    @Body() body: TestSystemNoticeTemplateDto,
+  ): Promise<SystemNoticeTemplateTestSendResultDto> {
+    return this.notices.testSendNoticeTemplate(code, body);
   }
 
   @Post('notices/templates')

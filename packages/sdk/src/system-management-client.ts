@@ -71,6 +71,7 @@ import type {
   SystemNoticeTemplateQueryRequest,
   SystemNoticeTemplateRenderSummary,
   SystemNoticeTemplateSummary,
+  SystemNoticeTemplateTestSendSummary,
   SystemNoticeUnreadCountSummary,
   SystemPostBatchMutationSummary,
   SystemPostOrderMutationSummary,
@@ -82,6 +83,7 @@ import type {
   UpdateFileAssetRequest,
   UnlockLoginUserRequest,
   UploadFileAssetRequest,
+  TestSystemNoticeTemplateRequest,
   UpdateSystemDeptOrderRequest,
   UpdateSystemDeptRequest,
   UpdateSystemNoticeRequest,
@@ -322,6 +324,10 @@ export type SystemManagementClient = {
     id: string,
     query?: SystemNoticeDeliveryQueryRequest,
   ) => Promise<PageResponse<SystemNoticeDeliverySummary>>;
+  listAllNoticeDeliveries: (
+    token: Token,
+    query?: SystemNoticeDeliveryQueryRequest,
+  ) => Promise<PageResponse<SystemNoticeDeliverySummary>>;
   dispatchNotice: (
     token: Token,
     id: string,
@@ -353,6 +359,11 @@ export type SystemManagementClient = {
     code: string,
     body: CreateSystemNoticeFromTemplateRequest,
   ) => Promise<SystemNoticeSummary>;
+  testSendNoticeTemplate: (
+    token: Token,
+    code: string,
+    body: TestSystemNoticeTemplateRequest,
+  ) => Promise<SystemNoticeTemplateTestSendSummary>;
   createNoticeTemplate: (
     token: Token,
     body: CreateSystemNoticeTemplateRequest,
@@ -805,6 +816,13 @@ export function createSystemManagementClient(
           token,
         },
       ),
+    listAllNoticeDeliveries: (token, query) =>
+      request<PageResponse<SystemNoticeDeliverySummary>>(
+        withQuery('/core/notices/deliveries', query),
+        {
+          token,
+        },
+      ),
     dispatchNotice: (token, id, body = {}) =>
       request<SystemNoticeDispatchSummary>(
         `/core/notices/${encodeURIComponent(id)}/dispatch`,
@@ -856,6 +874,15 @@ export function createSystemManagementClient(
     createNoticeFromTemplate: (token, code, body) =>
       request<SystemNoticeSummary>(
         `/core/notices/templates/${encodeURIComponent(code)}/create-notice`,
+        {
+          method: 'POST',
+          body,
+          token,
+        },
+      ),
+    testSendNoticeTemplate: (token, code, body) =>
+      request<SystemNoticeTemplateTestSendSummary>(
+        `/core/notices/templates/${encodeURIComponent(code)}/test-send`,
         {
           method: 'POST',
           body,

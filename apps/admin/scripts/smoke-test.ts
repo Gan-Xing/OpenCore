@@ -23,13 +23,14 @@ const resourceTemplatePlaceholder = templatePlaceholder('resource');
 
 runAdminFallbackClosureGuard({ rootDir: resolve(root, '../..') });
 
-function extractLocaleValues(source) {
-  const values = [];
+function extractLocaleValues(source: string): string[] {
+  const values: string[] = [];
   const entryPattern = /'(?:[^'\\]|\\.)+'\s*:\s*'([^'\\]*(?:\\.[^'\\]*)*)'/g;
-  let match;
+  let match: RegExpExecArray | null = entryPattern.exec(source);
 
-  while ((match = entryPattern.exec(source))) {
+  while (match) {
     values.push(match[1]);
+    match = entryPattern.exec(source);
   }
 
   return values;

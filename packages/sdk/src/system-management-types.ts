@@ -524,6 +524,12 @@ export type SystemNoticeTemplateRenderSummary = {
   params: readonly string[];
 };
 
+export type SystemNoticeTemplateTestSendSummary = {
+  notice: SystemNoticeSummary;
+  delivery: SystemNoticeDeliverySummary;
+  rendered: SystemNoticeTemplateRenderSummary;
+};
+
 export type SystemNoticeQueryRequest = PageRequest & {
   audience?: SystemNoticeAudience;
   status?: SystemNoticeStatus;
@@ -663,6 +669,12 @@ export type CreateSystemNoticeFromTemplateRequest =
     pinned?: boolean;
     validFrom?: string;
     validTo?: string;
+  };
+
+export type TestSystemNoticeTemplateRequest =
+  RenderSystemNoticeTemplateRequest & {
+    recipientUserId: string;
+    createdBy: string;
   };
 
 export type AuditLogSummary = {

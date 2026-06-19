@@ -224,6 +224,13 @@ describe('createSystemManagementClient', () => {
       readStatus: false,
       username: 'admin',
     });
+    await client.listAllNoticeDeliveries('token', {
+      channel: 'in_app',
+      page: 1,
+      pageSize: 20,
+      providerStatus: 'pending',
+      username: 'admin',
+    });
     await client.dispatchNotice('token', 'notice_welcome');
     await client.executeNoticeDeliveries('token', 'notice_welcome');
     await client.listNoticeTemplates('token', {
@@ -244,6 +251,15 @@ describe('createSystemManagementClient', () => {
     await client.createNoticeFromTemplate('token', 'release.window', {
       audience: 'admin',
       createdBy: 'admin',
+      templateParams: {
+        owner: 'Ops',
+        version: '2026.6',
+        window: '02:00 UTC',
+      },
+    });
+    await client.testSendNoticeTemplate('token', 'release.window', {
+      createdBy: 'admin',
+      recipientUserId: 'user_admin',
       templateParams: {
         owner: 'Ops',
         version: '2026.6',
@@ -588,6 +604,10 @@ describe('createSystemManagementClient', () => {
         token: 'token',
       },
       {
+        path: '/core/notices/deliveries?channel=in_app&page=1&pageSize=20&providerStatus=pending&username=admin',
+        token: 'token',
+      },
+      {
         path: '/core/notices/notice_welcome/dispatch',
         method: 'POST',
         token: 'token',
@@ -616,6 +636,11 @@ describe('createSystemManagementClient', () => {
       },
       {
         path: '/core/notices/templates/release.window/create-notice',
+        method: 'POST',
+        token: 'token',
+      },
+      {
+        path: '/core/notices/templates/release.window/test-send',
         method: 'POST',
         token: 'token',
       },

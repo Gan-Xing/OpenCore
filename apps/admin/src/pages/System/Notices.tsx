@@ -32,6 +32,7 @@ import type {
   SystemNoticeTemplateRenderSummary,
   SystemNoticeTemplateSummary,
   SystemNoticeType,
+  UserOptionSummary,
 } from '@opencore/sdk';
 import { useIntl, useLocation, useModel } from '@umijs/max';
 import {
@@ -41,6 +42,7 @@ import {
   Input,
   Modal,
   Popconfirm,
+  Segmented,
   Select,
   Space,
   Switch,
@@ -64,7 +66,9 @@ import {
   getOpenCoreSystemNoticeInboxItem,
   getOpenCoreSystemNoticeInboxEventsPath,
   getOpenCoreSystemNoticeTemplate,
+  listOpenCoreUserOptions,
   listOpenCoreSystemNoticeInbox,
+  listOpenCoreSystemNoticeDeliveryRecords,
   listOpenCoreSystemNoticeDeliveries,
   listOpenCoreSystemNoticeReadUsers,
   listOpenCoreSystemNoticeTemplates,
@@ -78,6 +82,7 @@ import {
   retryOpenCoreIntegrationOutbox,
   renderOpenCoreSystemNoticeTemplate,
   runOpenCoreIntegrationOutboxSchedule,
+  testSendOpenCoreSystemNoticeTemplate,
   updateOpenCoreSystemNotice,
   updateOpenCoreSystemNoticeTemplate,
 } from '@/services/opencore/platform';
@@ -116,6 +121,7 @@ type NoticeTemplateFormValues = {
 type NoticeTemplateRenderFormValues = {
   audience?: SystemNoticeAudience;
   pinned?: boolean;
+  recipientUserId?: string;
   templateParams?: Record<string, string>;
 };
 
@@ -125,6 +131,7 @@ type ExternalNoticeDeliveryChannel = Extract<
 >;
 
 type NoticeTab = 'manage' | 'inbox' | 'templates';
+type NoticeManageView = 'notices' | 'deliveryRecords';
 
 const searchFields: CurrentPageSearchField<SystemNoticeSummary>[] = [
   'title',
@@ -134,8 +141,28 @@ const searchFields: CurrentPageSearchField<SystemNoticeSummary>[] = [
   'status',
   'audience',
 ];
+const inboxSearchFields: CurrentPageSearchField<SystemNoticeInboxSummary>[] = [
+  'title',
+  'content',
+  'createdBy',
+  'type',
+  'status',
+  'audience',
+];
 const templateSearchFields: CurrentPageSearchField<SystemNoticeTemplateSummary>[] =
   ['code', 'name', 'type', 'titleTemplate', 'contentTemplate', 'remark'];
+const deliverySearchFields: CurrentPageSearchField<SystemNoticeDeliverySummary>[] =
+  [
+    'title',
+    'content',
+    'username',
+    'displayName',
+    'channel',
+    'provider',
+    'providerStatus',
+    'recipient',
+    'lastError',
+  ];
 
 function getNoticeTabFromSearch(search: string): NoticeTab {
   const tab = new URLSearchParams(search).get('tab');
@@ -183,18 +210,28 @@ export default function SystemNoticesPage() {
   const [activeTab, setActiveTab] = useState<NoticeTab>(() =>
     getNoticeTabFromSearch(location.search),
   );
+  const [manageView, setManageView] = useState<NoticeManageView>('notices');
   const [rows, setRows] = useState<readonly SystemNoticeSummary[]>([]);
   const [inboxRows, setInboxRows] = useState<
     readonly SystemNoticeInboxSummary[]
   >([]);
+  const [selectedInboxNoticeIds, setSelectedInboxNoticeIds] = useState<
+    string[]
+  >([]);
+  const [deliveryRecordRows, setDeliveryRecordRows] = useState<
+    readonly SystemNoticeDeliverySummary[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [inboxLoading, setInboxLoading] = useState(true);
+  const [deliveryRecordsLoading, setDeliveryRecordsLoading] = useState(true);
   const [templates, setTemplates] = useState<
     readonly SystemNoticeTemplateSummary[]
   >([]);
   const [templateLoading, setTemplateLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
   const [inboxLoadError, setInboxLoadError] = useState<string>();
+  const [deliveryRecordsLoadError, setDeliveryRecordsLoadError] =
+    useState<string>();
   const [templateLoadError, setTemplateLoadError] = useState<string>();
   const [selectedDetail, setSelectedDetail] = useState<SystemNoticeSummary>();
   const [selectedInboxDetail, setSelectedInboxDetail] =
@@ -229,6 +266,11 @@ export default function SystemNoticesPage() {
   const [templatePreviewLoading, setTemplatePreviewLoading] = useState(false);
   const [templateNoticeSubmitting, setTemplateNoticeSubmitting] =
     useState(false);
+  const [templateTestSubmitting, setTemplateTestSubmitting] = useState(false);
+  const [userOptions, setUserOptions] = useState<
+    readonly UserOptionSummary[]
+  >([]);
+  const [userOptionsLoading, setUserOptionsLoading] = useState(false);
   const realtimeEventsPath = getOpenCoreSystemNoticeInboxEventsPath();
   const formatMessage = (
     id: string,
@@ -346,6 +388,27 @@ export default function SystemNoticesPage() {
       predicate: (record, value) => record.audience === value,
     },
   ];
+  const inboxFilterOptions: CurrentPageFilterOption<SystemNoticeInboxSummary>[] =
+    [
+      {
+        key: 'read',
+        options: [
+          { label: readLabels.unread, value: 'false' },
+          { label: readLabels.read, value: 'true' },
+        ],
+        placeholder: formatMessage(
+          'pages.system.notices.filters.readStatus',
+          'Read Status',
+        ),
+        predicate: (record, value) => String(record.read) === value,
+      },
+      {
+        key: 'type',
+        options: noticeTypeOptions,
+        placeholder: formatMessage('pages.system.notices.filters.type', 'Type'),
+        predicate: (record, value) => record.type === value,
+      },
+    ];
   const templateFilterOptions: CurrentPageFilterOption<SystemNoticeTemplateSummary>[] =
     [
       {
@@ -365,6 +428,46 @@ export default function SystemNoticesPage() {
           'Enabled',
         ),
         predicate: (record, value) => String(record.enabled) === value,
+      },
+    ];
+  const deliveryFilterOptions: CurrentPageFilterOption<SystemNoticeDeliverySummary>[] =
+    [
+      {
+        key: 'channel',
+        options: (
+          Object.entries(channelLabels) as Array<
+            [SystemNoticeDeliveryChannel, string]
+          >
+        ).map(([value, label]) => ({ label, value })),
+        placeholder: formatMessage(
+          'pages.system.notices.filters.channel',
+          'Channel',
+        ),
+        predicate: (record, value) => record.channel === value,
+      },
+      {
+        key: 'providerStatus',
+        options: Object.entries(providerStatusLabels).map(([value, label]) => ({
+          label,
+          value,
+        })),
+        placeholder: formatMessage(
+          'pages.system.notices.filters.providerStatus',
+          'Provider Status',
+        ),
+        predicate: (record, value) => record.providerStatus === value,
+      },
+      {
+        key: 'read',
+        options: [
+          { label: readLabels.read, value: 'true' },
+          { label: readLabels.unread, value: 'false' },
+        ],
+        placeholder: formatMessage(
+          'pages.system.notices.filters.readStatus',
+          'Read Status',
+        ),
+        predicate: (record, value) => String(Boolean(record.readAt)) === value,
       },
     ];
   const exportColumns: CurrentPageExportColumn<SystemNoticeSummary>[] = [
@@ -459,6 +562,44 @@ export default function SystemNoticesPage() {
       {
         title: formatMessage('pages.system.notices.fields.updatedAt', 'Updated At'),
         dataIndex: 'updatedAt',
+      },
+    ];
+  const deliveryExportColumns: CurrentPageExportColumn<SystemNoticeDeliverySummary>[] =
+    [
+      {
+        title: formatMessage('pages.system.notices.fields.noticeId', 'Notice ID'),
+        dataIndex: 'noticeId',
+      },
+      {
+        title: formatMessage('pages.system.notices.fields.title', 'Title'),
+        dataIndex: 'title',
+      },
+      {
+        title: formatMessage('pages.system.notices.fields.username', 'Username'),
+        dataIndex: 'username',
+      },
+      {
+        title: formatMessage('pages.system.notices.fields.channel', 'Channel'),
+        renderText: (record) => channelLabels[record.channel],
+      },
+      {
+        title: formatMessage(
+          'pages.system.notices.fields.providerStatus',
+          'Provider Status',
+        ),
+        renderText: (record) =>
+          labelFrom(providerStatusLabels, record.providerStatus),
+      },
+      {
+        title: formatMessage('pages.system.notices.fields.readAt', 'Read At'),
+        dataIndex: 'readAt',
+      },
+      {
+        title: formatMessage(
+          'pages.system.notices.fields.deliveredAt',
+          'Delivered At',
+        ),
+        dataIndex: 'deliveredAt',
       },
     ];
   const createDetailFields = (
@@ -612,6 +753,16 @@ export default function SystemNoticesPage() {
       ),
       selectFilters: filterOptions,
     });
+  const { filteredRows: filteredInboxRows, toolbar: inboxFilterToolbar } =
+    useCurrentPageFilters<SystemNoticeInboxSummary>({
+      rows: inboxRows,
+      searchFields: inboxSearchFields,
+      searchPlaceholder: formatMessage(
+        'pages.system.notices.inbox.searchPlaceholder',
+        'Search inbox notices',
+      ),
+      selectFilters: inboxFilterOptions,
+    });
   const { filteredRows: filteredTemplates, toolbar: templateFilterToolbar } =
     useCurrentPageFilters<SystemNoticeTemplateSummary>({
       rows: templates,
@@ -622,6 +773,18 @@ export default function SystemNoticesPage() {
       ),
       selectFilters: templateFilterOptions,
     });
+  const {
+    filteredRows: filteredDeliveryRecords,
+    toolbar: deliveryRecordFilterToolbar,
+  } = useCurrentPageFilters<SystemNoticeDeliverySummary>({
+    rows: deliveryRecordRows,
+    searchFields: deliverySearchFields,
+    searchPlaceholder: formatMessage(
+      'pages.system.notices.deliveries.searchPlaceholder',
+      'Search delivery records',
+    ),
+    selectFilters: deliveryFilterOptions,
+  });
 
   const loadNotices = async () => {
     setLoading(true);
@@ -665,9 +828,15 @@ export default function SystemNoticesPage() {
         pageSize: 100,
       });
       setInboxRows(notices);
+      setSelectedInboxNoticeIds((ids) =>
+        ids.filter((id) =>
+          notices.some((notice) => notice.id === id && !notice.read),
+        ),
+      );
       setInboxLoadError(undefined);
     } catch (error: unknown) {
       setInboxRows([]);
+      setSelectedInboxNoticeIds([]);
       setInboxLoadError(
         getErrorMessage(
           error,
@@ -679,6 +848,31 @@ export default function SystemNoticesPage() {
       );
     } finally {
       setInboxLoading(false);
+    }
+  };
+
+  const loadDeliveryRecords = async () => {
+    setDeliveryRecordsLoading(true);
+    try {
+      const deliveries = await listOpenCoreSystemNoticeDeliveryRecords({
+        page: 1,
+        pageSize: 100,
+      });
+      setDeliveryRecordRows(deliveries);
+      setDeliveryRecordsLoadError(undefined);
+    } catch (error: unknown) {
+      setDeliveryRecordRows([]);
+      setDeliveryRecordsLoadError(
+        getErrorMessage(
+          error,
+          formatMessage(
+            'pages.system.notices.deliveries.loadFailure',
+            'Unable to load live system notice delivery records.',
+          ),
+        ),
+      );
+    } finally {
+      setDeliveryRecordsLoading(false);
     }
   };
 
@@ -712,9 +906,21 @@ export default function SystemNoticesPage() {
     }
   };
 
+  const loadUserOptions = async () => {
+    setUserOptionsLoading(true);
+    try {
+      setUserOptions(await listOpenCoreUserOptions());
+    } catch (_error: unknown) {
+      setUserOptions([]);
+    } finally {
+      setUserOptionsLoading(false);
+    }
+  };
+
   useEffect(() => {
     void loadNotices();
     void loadInbox();
+    void loadDeliveryRecords();
     void loadTemplates();
   }, []);
 
@@ -844,10 +1050,12 @@ export default function SystemNoticesPage() {
       templateRenderForm.setFieldsValue({
         audience: 'admin',
         pinned: false,
+        recipientUserId: initialState?.currentUser?.id,
         templateParams: Object.fromEntries(
           fresh.params.map((param) => [param, '']),
         ),
       });
+      void loadUserOptions();
     } catch (error: unknown) {
       message.error(
         getErrorMessage(
@@ -917,6 +1125,25 @@ export default function SystemNoticesPage() {
     }
   };
 
+  const openDeliveryRecordNotice = async (
+    record: SystemNoticeDeliverySummary,
+  ) => {
+    try {
+      const notice = await getOpenCoreSystemNotice(record.noticeId);
+      await openDeliveryRecords(notice);
+    } catch (error: unknown) {
+      message.error(
+        getErrorMessage(
+          error,
+          formatMessage(
+            'pages.system.notices.open.failure',
+            'Unable to open live system notice.',
+          ),
+        ),
+      );
+    }
+  };
+
   const submitForm = async () => {
     const values = await form.validateFields();
     const createdBy = initialState?.currentUser?.username ?? 'admin';
@@ -947,6 +1174,7 @@ export default function SystemNoticesPage() {
       setEditingNotice(undefined);
       await loadNotices();
       await loadInbox();
+      await loadDeliveryRecords();
     } finally {
       setSubmitting(false);
     }
@@ -1034,8 +1262,55 @@ export default function SystemNoticesPage() {
       setTemplateRenderPreview(undefined);
       await loadNotices();
       await loadInbox();
+      await loadDeliveryRecords();
     } finally {
       setTemplateNoticeSubmitting(false);
+    }
+  };
+
+  const testSendTemplate = async () => {
+    if (!renderTemplateFor) {
+      return;
+    }
+    const values = await templateRenderForm.validateFields();
+
+    if (!values.recipientUserId) {
+      templateRenderForm.setFields([
+        {
+          name: 'recipientUserId',
+          errors: [
+            formatMessage(
+              'pages.system.notices.validation.recipientRequired',
+              'Recipient is required.',
+            ),
+          ],
+        },
+      ]);
+      return;
+    }
+
+    const createdBy = initialState?.currentUser?.username ?? 'admin';
+
+    setTemplateTestSubmitting(true);
+    try {
+      await testSendOpenCoreSystemNoticeTemplate(renderTemplateFor.code, {
+        createdBy,
+        recipientUserId: values.recipientUserId,
+        templateParams: values.templateParams ?? {},
+      });
+      message.success(
+        formatMessage(
+          'pages.system.notices.templates.messages.testSent',
+          'Test notice sent.',
+        ),
+      );
+      setRenderTemplateFor(undefined);
+      setTemplateRenderPreview(undefined);
+      await loadNotices();
+      await loadInbox();
+      await loadDeliveryRecords();
+    } finally {
+      setTemplateTestSubmitting(false);
     }
   };
 
@@ -1049,6 +1324,7 @@ export default function SystemNoticesPage() {
     );
     await loadNotices();
     await loadInbox();
+    await loadDeliveryRecords();
   };
 
   const dispatchNoticeDeliveries = async (
@@ -1068,6 +1344,7 @@ export default function SystemNoticesPage() {
       ),
     );
     await loadInbox();
+    await loadDeliveryRecords();
 
     if (deliveriesOpenFor?.id === record.id) {
       await openDeliveryRecords(record);
@@ -1095,6 +1372,7 @@ export default function SystemNoticesPage() {
       ),
     );
     await loadInbox();
+    await loadDeliveryRecords();
 
     if (deliveriesOpenFor?.id === record.id) {
       await openDeliveryRecords(record);
@@ -1105,6 +1383,11 @@ export default function SystemNoticesPage() {
     if (deliveriesOpenFor) {
       await openDeliveryRecords(deliveriesOpenFor);
     }
+  };
+
+  const refreshDeliverySurfaces = async () => {
+    await loadDeliveryRecords();
+    await refreshOpenDeliveries();
   };
 
   const failDeliveryOutbox = async (record: SystemNoticeDeliverySummary) => {
@@ -1127,7 +1410,7 @@ export default function SystemNoticesPage() {
         { channel: channelLabels[channel] },
       ),
     );
-    await refreshOpenDeliveries();
+    await refreshDeliverySurfaces();
   };
 
   const retryDeliveryOutbox = async (record: SystemNoticeDeliverySummary) => {
@@ -1144,7 +1427,7 @@ export default function SystemNoticesPage() {
         { channel: channelLabels[channel] },
       ),
     );
-    await refreshOpenDeliveries();
+    await refreshDeliverySurfaces();
   };
 
   const markDeliveryOutboxSent = async (
@@ -1163,7 +1446,7 @@ export default function SystemNoticesPage() {
         { channel: channelLabels[channel] },
       ),
     );
-    await refreshOpenDeliveries();
+    await refreshDeliverySurfaces();
   };
 
   const processDeliveryOutbox = async (record: SystemNoticeDeliverySummary) => {
@@ -1187,7 +1470,7 @@ export default function SystemNoticesPage() {
         },
       ),
     );
-    await refreshOpenDeliveries();
+    await refreshDeliverySurfaces();
   };
 
   const runDeliveryOutboxSchedule = async () => {
@@ -1210,7 +1493,7 @@ export default function SystemNoticesPage() {
       ),
     );
     await loadInbox();
-    await refreshOpenDeliveries();
+    await refreshDeliverySurfaces();
   };
 
   const archiveNotice = async (record: SystemNoticeSummary) => {
@@ -1223,6 +1506,7 @@ export default function SystemNoticesPage() {
     );
     await loadNotices();
     await loadInbox();
+    await loadDeliveryRecords();
   };
 
   const deleteNotice = async (record: SystemNoticeSummary) => {
@@ -1235,6 +1519,7 @@ export default function SystemNoticesPage() {
     );
     await loadNotices();
     await loadInbox();
+    await loadDeliveryRecords();
   };
 
   const deleteTemplate = async (record: SystemNoticeTemplateSummary) => {
@@ -1250,7 +1535,14 @@ export default function SystemNoticesPage() {
 
   const openInboxDetail = async (record: SystemNoticeInboxSummary) => {
     try {
+      if (!record.read) {
+        await markOpenCoreSystemNoticesRead({ ids: [record.id] });
+      }
       setSelectedInboxDetail(await getOpenCoreSystemNoticeInboxItem(record.id));
+      if (!record.read) {
+        await loadInbox();
+        await loadDeliveryRecords();
+      }
     } catch (error: unknown) {
       setSelectedInboxDetail(undefined);
       message.error(
@@ -1274,6 +1566,24 @@ export default function SystemNoticesPage() {
       ),
     );
     await loadInbox();
+    await loadDeliveryRecords();
+  };
+
+  const markSelectedInboxNoticesRead = async () => {
+    if (selectedInboxNoticeIds.length === 0) {
+      return;
+    }
+
+    await markOpenCoreSystemNoticesRead({ ids: selectedInboxNoticeIds });
+    message.success(
+      formatMessage(
+        'pages.system.notices.inbox.messages.selectedMarkedRead',
+        'Selected system notices marked read.',
+      ),
+    );
+    setSelectedInboxNoticeIds([]);
+    await loadInbox();
+    await loadDeliveryRecords();
   };
 
   const markAllInboxNoticesRead = async () => {
@@ -1284,7 +1594,9 @@ export default function SystemNoticesPage() {
         'All system notices marked read.',
       ),
     );
+    setSelectedInboxNoticeIds([]);
     await loadInbox();
+    await loadDeliveryRecords();
   };
 
   const columns: ProColumns<SystemNoticeSummary>[] = [
@@ -2023,6 +2335,24 @@ export default function SystemNoticesPage() {
     },
   ];
 
+  const deliveryRecordColumns: ProColumns<SystemNoticeDeliverySummary>[] = [
+    {
+      title: formatMessage('pages.system.notices.fields.title', 'Title'),
+      dataIndex: 'title',
+      render: (_, record) => (
+        <Typography.Link onClick={() => void openDeliveryRecordNotice(record)}>
+          {record.title}
+        </Typography.Link>
+      ),
+    },
+    {
+      title: formatMessage('pages.system.notices.fields.noticeId', 'Notice ID'),
+      dataIndex: 'noticeId',
+      ellipsis: true,
+    },
+    ...deliveryColumns,
+  ];
+
   const inboxColumns: ProColumns<SystemNoticeInboxSummary>[] = [
     {
       title: formatMessage('pages.system.notices.fields.title', 'Title'),
@@ -2257,7 +2587,10 @@ export default function SystemNoticesPage() {
       ),
     },
   ];
-  const hasSchedulableExternalOutbox = deliveryRows.some(
+  const hasOpenSchedulableExternalOutbox = deliveryRows.some(
+    isSchedulableExternalOutboxDelivery,
+  );
+  const hasDeliveryRecordSchedulableExternalOutbox = deliveryRecordRows.some(
     isSchedulableExternalOutboxDelivery,
   );
 
@@ -2275,56 +2608,141 @@ export default function SystemNoticesPage() {
             label: formatMessage('pages.system.notices.tabs.manage', 'Manage'),
             children: (
               <>
-                {loadError ? (
-                  <Alert
-                    showIcon
-                    type="error"
-                    message={formatMessage(
-                      'pages.system.notices.load.liveFailure',
-                      'Unable to load live system notices',
-                    )}
-                    description={loadError}
-                    style={{ marginBlockEnd: 16 }}
-                  />
-                ) : null}
-                <ProTable<SystemNoticeSummary>
-                  rowKey="id"
-                  loading={loading}
-                  search={false}
-                  options={false}
-                  toolBarRender={() => [
-                    filterToolbar,
-                    <Button
-                      key="create"
-                      type="primary"
-                      icon={<PlusOutlined />}
-                      onClick={openCreateForm}
-                    >
-                      {formatMessage('pages.system.notices.actions.new', 'New')}
-                    </Button>,
-                    <Button
-                      key="refresh"
-                      icon={<ReloadOutlined />}
-                      onClick={() => void loadNotices()}
-                    >
-                      {formatMessage(
-                        'pages.system.notices.actions.refresh',
-                        'Refresh',
-                      )}
-                    </Button>,
-                    <CurrentPageExportButton<SystemNoticeSummary>
-                      key="export"
-                      columns={exportColumns}
-                      resource="core-notices"
-                      rows={filteredRows}
-                    />,
+                <Segmented<NoticeManageView>
+                  value={manageView}
+                  onChange={(value) => setManageView(value)}
+                  options={[
+                    {
+                      label: formatMessage(
+                        'pages.system.notices.manageViews.notices',
+                        'Notices',
+                      ),
+                      value: 'notices',
+                    },
+                    {
+                      label: formatMessage(
+                        'pages.system.notices.manageViews.deliveryRecords',
+                        'Delivery Records',
+                      ),
+                      value: 'deliveryRecords',
+                    },
                   ]}
-                  pagination={{
-                    pageSize: 10,
-                  }}
-                  dataSource={filteredRows}
-                  columns={columns}
+                  style={{ marginBlockEnd: 16 }}
                 />
+                {manageView === 'notices' ? (
+                  <>
+                    {loadError ? (
+                      <Alert
+                        showIcon
+                        type="error"
+                        message={formatMessage(
+                          'pages.system.notices.load.liveFailure',
+                          'Unable to load live system notices',
+                        )}
+                        description={loadError}
+                        style={{ marginBlockEnd: 16 }}
+                      />
+                    ) : null}
+                    <ProTable<SystemNoticeSummary>
+                      rowKey="id"
+                      loading={loading}
+                      search={false}
+                      options={false}
+                      toolBarRender={() => [
+                        filterToolbar,
+                        <Button
+                          key="create"
+                          type="primary"
+                          icon={<PlusOutlined />}
+                          onClick={openCreateForm}
+                        >
+                          {formatMessage(
+                            'pages.system.notices.actions.new',
+                            'New',
+                          )}
+                        </Button>,
+                        <Button
+                          key="refresh"
+                          icon={<ReloadOutlined />}
+                          onClick={() => void loadNotices()}
+                        >
+                          {formatMessage(
+                            'pages.system.notices.actions.refresh',
+                            'Refresh',
+                          )}
+                        </Button>,
+                        <CurrentPageExportButton<SystemNoticeSummary>
+                          key="export"
+                          columns={exportColumns}
+                          resource="core-notices"
+                          rows={filteredRows}
+                        />,
+                      ]}
+                      pagination={{
+                        pageSize: 10,
+                      }}
+                      dataSource={filteredRows}
+                      columns={columns}
+                    />
+                  </>
+                ) : (
+                  <>
+                    {deliveryRecordsLoadError ? (
+                      <Alert
+                        showIcon
+                        type="error"
+                        message={formatMessage(
+                          'pages.system.notices.deliveries.loadLiveFailure',
+                          'Unable to load live system notice delivery records',
+                        )}
+                        description={deliveryRecordsLoadError}
+                        style={{ marginBlockEnd: 16 }}
+                      />
+                    ) : null}
+                    <ProTable<SystemNoticeDeliverySummary>
+                      rowKey="id"
+                      loading={deliveryRecordsLoading}
+                      search={false}
+                      options={false}
+                      toolBarRender={() => [
+                        deliveryRecordFilterToolbar,
+                        <Button
+                          key="schedule"
+                          icon={<SyncOutlined />}
+                          disabled={!hasDeliveryRecordSchedulableExternalOutbox}
+                          onClick={() => void runDeliveryOutboxSchedule()}
+                        >
+                          {formatMessage(
+                            'pages.system.notices.outbox.actions.runSchedule',
+                            'Run outbox schedule',
+                          )}
+                        </Button>,
+                        <Button
+                          key="refresh"
+                          icon={<ReloadOutlined />}
+                          onClick={() => void loadDeliveryRecords()}
+                        >
+                          {formatMessage(
+                            'pages.system.notices.actions.refresh',
+                            'Refresh',
+                          )}
+                        </Button>,
+                        <CurrentPageExportButton<SystemNoticeDeliverySummary>
+                          key="export"
+                          columns={deliveryExportColumns}
+                          resource="core-notice-deliveries"
+                          rows={filteredDeliveryRecords}
+                        />,
+                      ]}
+                      pagination={{
+                        pageSize: 10,
+                      }}
+                      scroll={{ x: 1480 }}
+                      dataSource={filteredDeliveryRecords}
+                      columns={deliveryRecordColumns}
+                    />
+                  </>
+                )}
               </>
             ),
           },
@@ -2368,7 +2786,27 @@ export default function SystemNoticesPage() {
                   loading={inboxLoading}
                   search={false}
                   options={false}
+                  rowSelection={{
+                    selectedRowKeys: selectedInboxNoticeIds,
+                    onChange: (keys) =>
+                      setSelectedInboxNoticeIds(keys.map(String)),
+                    getCheckboxProps: (record) => ({
+                      disabled: record.read,
+                    }),
+                  }}
                   toolBarRender={() => [
+                    inboxFilterToolbar,
+                    <Button
+                      key="mark-selected"
+                      icon={<CheckOutlined />}
+                      onClick={() => void markSelectedInboxNoticesRead()}
+                      disabled={selectedInboxNoticeIds.length === 0}
+                    >
+                      {formatMessage(
+                        'pages.system.notices.inbox.actions.markSelectedRead',
+                        'Mark selected read',
+                      )}
+                    </Button>,
                     <Button
                       key="mark-all"
                       icon={<CheckOutlined />}
@@ -2394,13 +2832,13 @@ export default function SystemNoticesPage() {
                       key="export"
                       columns={inboxExportColumns}
                       resource="core-notice-inbox"
-                      rows={inboxRows}
+                      rows={filteredInboxRows}
                     />,
                   ]}
                   pagination={{
                     pageSize: 10,
                   }}
-                  dataSource={inboxRows}
+                  dataSource={filteredInboxRows}
                   columns={inboxColumns}
                 />
               </>
@@ -2606,7 +3044,7 @@ export default function SystemNoticesPage() {
             <Button
               key="schedule"
               icon={<SyncOutlined />}
-              disabled={!hasSchedulableExternalOutbox}
+              disabled={!hasOpenSchedulableExternalOutbox}
               onClick={() => void runDeliveryOutboxSchedule()}
             >
               {formatMessage(
@@ -2919,7 +3357,6 @@ export default function SystemNoticesPage() {
           </Button>,
           <Button
             key="create"
-            type="primary"
             icon={<SendOutlined />}
             loading={templateNoticeSubmitting}
             onClick={() => void createDraftFromTemplate()}
@@ -2927,6 +3364,18 @@ export default function SystemNoticesPage() {
             {formatMessage(
               'pages.system.notices.templates.actions.createDraft',
               'Create draft from template',
+            )}
+          </Button>,
+          <Button
+            key="test-send"
+            type="primary"
+            icon={<SendOutlined />}
+            loading={templateTestSubmitting}
+            onClick={() => void testSendTemplate()}
+          >
+            {formatMessage(
+              'pages.system.notices.templates.actions.testSend',
+              'Test send',
             )}
           </Button>,
         ]}
@@ -2966,6 +3415,29 @@ export default function SystemNoticesPage() {
                 valuePropName="checked"
               >
                 <Switch />
+              </Form.Item>
+              <Form.Item
+                label={formatMessage(
+                  'pages.system.notices.fields.recipientUser',
+                  'Recipient User',
+                )}
+                name="recipientUserId"
+              >
+                <Select
+                  allowClear
+                  showSearch
+                  loading={userOptionsLoading}
+                  optionFilterProp="label"
+                  style={{ width: 240 }}
+                  options={userOptions.map((user) => ({
+                    label: `${user.displayName} (${user.username})`,
+                    value: user.id,
+                  }))}
+                  placeholder={formatMessage(
+                    'pages.system.notices.templates.placeholders.recipient',
+                    'Select recipient',
+                  )}
+                />
               </Form.Item>
             </Space>
             {renderTemplateFor.params.map((param) => (

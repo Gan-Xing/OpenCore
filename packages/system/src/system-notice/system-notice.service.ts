@@ -8,6 +8,7 @@ import type {
   RenderSystemNoticeTemplateDto,
   SystemNoticeDeliveryExecuteDto,
   SystemNoticeDispatchDto,
+  TestSystemNoticeTemplateDto,
   UpdateSystemNoticeTemplateDto,
   UpdateSystemNoticeDto,
 } from './system-notice.dto';
@@ -33,6 +34,7 @@ import {
   type SystemNoticeTemplateOptionRecord,
   type SystemNoticeTemplatePageQuery,
   type SystemNoticeTemplateRenderRecord,
+  type SystemNoticeTemplateTestSendResult,
 } from './system-notice.repository';
 import {
   createSystemNoticeRealtimeEvent,
@@ -126,6 +128,12 @@ export class SystemNoticeService {
     return this.repository.listNoticeDeliveries(id, query);
   }
 
+  listAllNoticeDeliveries(
+    query: SystemNoticeDeliveryPageQuery = {},
+  ): Promise<PageResult<SystemNoticeDeliveryRecord>> {
+    return this.repository.listAllNoticeDeliveries(query);
+  }
+
   dispatchNotice(
     id: string,
     body?: SystemNoticeDispatchDto,
@@ -188,6 +196,18 @@ export class SystemNoticeService {
     body: CreateSystemNoticeFromTemplateDto,
   ): Promise<SystemNoticeRecord> {
     return this.repository.createNoticeFromTemplate(code, body);
+  }
+
+  async testSendNoticeTemplate(
+    code: string,
+    body: TestSystemNoticeTemplateDto,
+  ): Promise<SystemNoticeTemplateTestSendResult> {
+    const result = await this.repository.testSendNoticeTemplate(code, body);
+    await this.publishRealtimeEvent(result.delivery.userId, 'notice.published', [
+      result.notice.id,
+    ]);
+
+    return result;
   }
 
   getNotice(id: string): Promise<SystemNoticeRecord> {

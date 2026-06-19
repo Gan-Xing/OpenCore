@@ -30,9 +30,11 @@ import {
   normalizeSystemNoticeFilters,
   normalizeSystemNoticePageQuery,
   normalizeSystemNoticeTemplateFilters,
+  normalizeTestSystemNoticeTemplateInput,
   normalizeUnreadNoticeLimit,
   normalizeUpdateSystemNoticeTemplateInput,
   normalizeUpdateSystemNoticeInput,
+  renderSystemNoticeTemplate,
   systemNoticeConflict,
   systemNoticeNotFound,
   SystemNoticeRepository,
@@ -47,6 +49,7 @@ import {
   type SystemNoticePageQuery,
   type SystemNoticeTemplateOptionRecord,
   type SystemNoticeTemplatePageQuery,
+  type SystemNoticeTemplateTestSendResult,
 } from './system-notice.repository';
 import type {
   CreateSystemNoticeFromTemplateDto,
@@ -55,6 +58,7 @@ import type {
   MarkSystemNoticesReadDto,
   SystemNoticeDeliveryExecuteDto,
   SystemNoticeDispatchDto,
+  TestSystemNoticeTemplateDto,
   UpdateSystemNoticeTemplateDto,
   UpdateSystemNoticeDto,
 } from './system-notice.dto';
@@ -234,14 +238,29 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
     query: SystemNoticeDeliveryPageQuery = {},
   ): Promise<PageResult<SystemNoticeDeliveryRecord>> {
     this.findNotice(id);
+    return this.listDeliveryRows(query, id);
+  }
+
+  async listAllNoticeDeliveries(
+    query: SystemNoticeDeliveryPageQuery = {},
+  ): Promise<PageResult<SystemNoticeDeliveryRecord>> {
+    return this.listDeliveryRows(query);
+  }
+
+  private listDeliveryRows(
+    query: SystemNoticeDeliveryPageQuery = {},
+    noticeId?: string,
+  ): PageResult<SystemNoticeDeliveryRecord> {
     const filters = normalizeSystemNoticeDeliveryFilters(query);
     const rows = [...this.deliveries.values()]
       .filter(
         (delivery) =>
-          delivery.noticeId === id &&
+          (!noticeId || delivery.noticeId === noticeId) &&
           (!filters.channel || delivery.channel === filters.channel) &&
           (filters.readStatus === undefined ||
             Boolean(delivery.readAt) === filters.readStatus) &&
+          (!filters.providerStatus ||
+            delivery.providerStatus === filters.providerStatus) &&
           (!filters.username ||
             delivery.username.includes(filters.username) ||
             delivery.displayName.includes(filters.username)),
@@ -380,6 +399,54 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
       body,
     );
     return this.createNotice(input);
+  }
+
+  async testSendNoticeTemplate(
+    code: string,
+    body: TestSystemNoticeTemplateDto,
+  ): Promise<SystemNoticeTemplateTestSendResult> {
+    const template = this.findTemplate(code);
+    const input = normalizeTestSystemNoticeTemplateInput(template, body);
+    const rendered = renderSystemNoticeTemplate(template, {
+      templateParams: input.templateParams,
+    });
+    const recipient = this.findEnabledRecipient(input.recipientUserId);
+    const now = new Date().toISOString();
+    const notice: SystemNoticeRecord = {
+      id: `notice_template_test_${code.replace(/[^a-z0-9]+/g, '_')}_${Date.now()}`,
+      title: rendered.title,
+      content: rendered.content,
+      type: template.type,
+      status: 'published',
+      audience: 'admin',
+      pinned: false,
+      publishedAt: now,
+      createdBy: input.createdBy,
+      createdAt: now,
+      updatedAt: now,
+    };
+    const delivery = createDeliveryRecord(
+      notice,
+      recipient,
+      now,
+      'in_app',
+      {
+        attemptCount: 1,
+        providerStatus: 'sent',
+      },
+    );
+
+    this.notices = [notice, ...this.notices];
+    this.deliveries.set(
+      createDeliveryKey(notice.id, recipient.id, 'in_app'),
+      delivery,
+    );
+
+    return {
+      notice: { ...notice },
+      delivery: { ...delivery },
+      rendered,
+    };
   }
 
   async createNotice(body: CreateSystemNoticeDto): Promise<SystemNoticeRecord> {
@@ -622,6 +689,22 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
     }
 
     return template;
+  }
+
+  private findEnabledRecipient(userId: string): SystemUserRecord {
+    const recipient = seedSystemUsers.find(
+      (candidate) => candidate.id === userId && candidate.enabled,
+    );
+
+    if (!recipient) {
+      throw systemNoticeNotFound(
+        'SYSTEM_NOTICE_RECIPIENT_NOT_FOUND',
+        `System notice recipient not found: ${userId}`,
+        { userId },
+      );
+    }
+
+    return recipient;
   }
 
   private listVisibleInboxNotices(userId: string): SystemNoticeInboxRecord[] {

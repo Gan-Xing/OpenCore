@@ -522,6 +522,10 @@ export default {
   'pages.system.notices.audience.all': 'all',
   'pages.system.notices.boolean.no': 'no',
   'pages.system.notices.boolean.yes': 'yes',
+  'pages.system.notices.bell.empty': 'No unread system notices',
+  'pages.system.notices.bell.markAllRead': 'Mark all read',
+  'pages.system.notices.bell.openInbox': 'Open inbox',
+  'pages.system.notices.bell.tooltip': 'System notice inbox',
   'pages.system.notices.channel.inApp': 'in-app',
   'pages.system.notices.channel.mail': 'mail',
   'pages.system.notices.channel.sms': 'sms',
@@ -540,6 +544,8 @@ export default {
     'Unable to load live system notice delivery records.',
   'pages.system.notices.deliveries.loadLiveFailure':
     'Unable to load live system notice delivery records',
+  'pages.system.notices.deliveries.searchPlaceholder':
+    'Search delivery records',
   'pages.system.notices.deliveries.title': 'System Notice Delivery Records',
   'pages.system.notices.deliveries.titleForNotice':
     'System Notice Delivery Records: {title}',
@@ -566,6 +572,7 @@ export default {
   'pages.system.notices.fields.lastAttemptAt': 'Last Attempt At',
   'pages.system.notices.fields.lastError': 'Last Error',
   'pages.system.notices.fields.name': 'Name',
+  'pages.system.notices.fields.noticeId': 'Notice ID',
   'pages.system.notices.fields.params': 'Params',
   'pages.system.notices.fields.pinned': 'Pinned',
   'pages.system.notices.fields.provider': 'Provider',
@@ -575,6 +582,7 @@ export default {
   'pages.system.notices.fields.read': 'Read',
   'pages.system.notices.fields.readAt': 'Read At',
   'pages.system.notices.fields.recipient': 'Recipient',
+  'pages.system.notices.fields.recipientUser': 'Recipient User',
   'pages.system.notices.fields.remark': 'Remark',
   'pages.system.notices.fields.sentAt': 'Sent At',
   'pages.system.notices.fields.status': 'Status',
@@ -586,7 +594,10 @@ export default {
   'pages.system.notices.fields.validFrom': 'Valid From',
   'pages.system.notices.fields.validTo': 'Valid To',
   'pages.system.notices.filters.audience': 'Audience',
+  'pages.system.notices.filters.channel': 'Channel',
   'pages.system.notices.filters.enabled': 'Enabled',
+  'pages.system.notices.filters.providerStatus': 'Provider Status',
+  'pages.system.notices.filters.readStatus': 'Read Status',
   'pages.system.notices.filters.status': 'Status',
   'pages.system.notices.filters.type': 'Type',
   'pages.system.notices.form.createTitle': 'New System Notice',
@@ -595,6 +606,7 @@ export default {
   'pages.system.notices.inbox.actions.markAllRead': 'Mark all read',
   'pages.system.notices.inbox.actions.markRead': 'Mark read',
   'pages.system.notices.inbox.actions.markReadAria': 'Mark {title} read',
+  'pages.system.notices.inbox.actions.markSelectedRead': 'Mark selected read',
   'pages.system.notices.inbox.actions.viewAria': 'View inbox notice {title}',
   'pages.system.notices.inbox.detailLoadFailure':
     'Unable to load live system notice inbox detail.',
@@ -607,8 +619,11 @@ export default {
     'All system notices marked read.',
   'pages.system.notices.inbox.messages.markedRead':
     'System notice marked read.',
+  'pages.system.notices.inbox.messages.selectedMarkedRead':
+    'Selected system notices marked read.',
   'pages.system.notices.inbox.realtimeDescription': 'SSE inbox events: {path}',
   'pages.system.notices.inbox.realtimeStream': 'Realtime stream',
+  'pages.system.notices.inbox.searchPlaceholder': 'Search inbox notices',
   'pages.system.notices.load.failure': 'Unable to load live system notices.',
   'pages.system.notices.load.liveFailure': 'Unable to load live system notices',
   'pages.system.notices.messages.archived': 'System notice archived.',
@@ -621,6 +636,8 @@ export default {
   'pages.system.notices.messages.published':
     'System notice published and in-app deliveries created.',
   'pages.system.notices.messages.updated': 'System notice updated.',
+  'pages.system.notices.manageViews.deliveryRecords': 'Delivery Records',
+  'pages.system.notices.manageViews.notices': 'Notices',
   'pages.system.notices.open.failure': 'Unable to open live system notice.',
   'pages.system.notices.outbox.actions.alreadySent': 'Already sent',
   'pages.system.notices.outbox.actions.column': 'Outbox Actions',
@@ -693,6 +710,7 @@ export default {
     'Notice template render preview',
   'pages.system.notices.templates.actions.renderPreviewButton':
     'Render Preview',
+  'pages.system.notices.templates.actions.testSend': 'Test send',
   'pages.system.notices.templates.actions.viewAria': 'View template {name}',
   'pages.system.notices.templates.confirm.deleteOne':
     'Delete this notice template?',
@@ -713,6 +731,7 @@ export default {
     'System notice template deleted.',
   'pages.system.notices.templates.messages.draftCreated':
     'Draft notice created from template.',
+  'pages.system.notices.templates.messages.testSent': 'Test notice sent.',
   'pages.system.notices.templates.messages.updated':
     'System notice template updated.',
   'pages.system.notices.templates.noRequiredParams':
@@ -722,6 +741,7 @@ export default {
   'pages.system.notices.templates.placeholders.code': 'release.window',
   'pages.system.notices.templates.placeholders.content':
     'Version {{version}} is scheduled for {{window}}.',
+  'pages.system.notices.templates.placeholders.recipient': 'Select recipient',
   'pages.system.notices.templates.placeholders.title':
     'Release window: {{version}}',
   'pages.system.notices.templates.previewOpenFailure':
@@ -742,6 +762,8 @@ export default {
   'pages.system.notices.validation.contentTemplateRequired':
     'Content template is required.',
   'pages.system.notices.validation.nameRequired': 'Name is required.',
+  'pages.system.notices.validation.recipientRequired':
+    'Recipient is required.',
   'pages.system.notices.validation.templateParamRequired':
     '{param} is required.',
   'pages.system.notices.validation.titleRequired': 'Title is required.',

@@ -36,13 +36,25 @@ function safeDecodePath(path: string): string {
   }
 }
 
+function hasControlCharacter(value: string): boolean {
+  for (const character of value) {
+    const code = character.charCodeAt(0);
+
+    if (code <= 31 || code === 127) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 function isUnsafeRedirectPath(path: string): boolean {
   const withoutLeadingSlash = path.replace(/^\/+/, '');
 
   return (
     path.startsWith('//') ||
     path.includes('\\') ||
-    /[\u0000-\u001f\u007f]/.test(path) ||
+    hasControlCharacter(path) ||
     protocolPattern.test(withoutLeadingSlash)
   );
 }

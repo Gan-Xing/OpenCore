@@ -4603,6 +4603,72 @@
         "tags": ["SystemManagement", "Core System Notices"]
       }
     },
+    "/api/core/notices/deliveries": {
+      "get": {
+        "operationId": "SystemManagementController_listAllNoticeDeliveries",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "channel",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string", "enum": ["in_app", "mail", "sms"] }
+          },
+          {
+            "name": "providerStatus",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["failed", "pending", "sent"]
+            }
+          },
+          {
+            "name": "readStatus",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
+          },
+          {
+            "name": "username",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemNoticeDeliveryPageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Notices"]
+      }
+    },
     "/api/core/notices/{id}/deliveries": {
       "get": {
         "operationId": "SystemManagementController_listNoticeDeliveries",
@@ -5003,6 +5069,43 @@
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/SystemNoticeDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core System Notices"]
+      }
+    },
+    "/api/core/notices/templates/{code}/test-send": {
+      "post": {
+        "operationId": "SystemManagementController_testSendNoticeTemplate",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestSystemNoticeTemplateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemNoticeTemplateTestSendResultDto"
+                }
               }
             }
           }
@@ -11563,6 +11666,28 @@
           "createdBy": { "type": "string", "example": "admin" }
         },
         "required": ["createdBy"]
+      },
+      "TestSystemNoticeTemplateDto": {
+        "type": "object",
+        "properties": {
+          "templateParams": { "type": "object" },
+          "recipientUserId": { "type": "string", "example": "user_admin" },
+          "createdBy": { "type": "string", "example": "admin" }
+        },
+        "required": ["recipientUserId", "createdBy"]
+      },
+      "SystemNoticeTemplateTestSendResultDto": {
+        "type": "object",
+        "properties": {
+          "notice": { "$ref": "#/components/schemas/SystemNoticeDto" },
+          "delivery": {
+            "$ref": "#/components/schemas/SystemNoticeDeliveryDto"
+          },
+          "rendered": {
+            "$ref": "#/components/schemas/SystemNoticeTemplateRenderDto"
+          }
+        },
+        "required": ["notice", "delivery", "rendered"]
       },
       "CreateSystemNoticeTemplateDto": {
         "type": "object",

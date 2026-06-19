@@ -221,6 +221,8 @@ export default {
   'error.SYSTEM_NOTICE_NOT_FOUND': 'The notice does not exist.',
   'error.SYSTEM_NOTICE_PUBLISH_STATUS_INVALID':
     'Only draft notices can be published.',
+  'error.SYSTEM_NOTICE_RECIPIENT_NOT_FOUND':
+    'The notice recipient does not exist or is disabled.',
   'error.SYSTEM_NOTICE_READ_IDS_EMPTY':
     'The notice read ID list must not be empty.',
   'error.SYSTEM_NOTICE_READ_IDS_INVALID':

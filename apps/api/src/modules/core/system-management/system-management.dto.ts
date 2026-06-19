@@ -68,6 +68,7 @@ export {
   SystemNoticeTemplatePageDto,
   SystemNoticeTemplateQueryDto,
   SystemNoticeTemplateRenderDto,
+  SystemNoticeTemplateTestSendResultDto,
   SystemNoticeReadUserPageDto,
   SystemNoticeReadUsersQueryDto,
   SystemNoticeUnreadCountDto,
@@ -91,6 +92,7 @@ export {
   UpdateSystemPostDto,
   MarkSystemNoticesReadDto,
   RenderSystemNoticeTemplateDto,
+  TestSystemNoticeTemplateDto,
 } from '@opencore/system';
 
 export class PageQueryDto {
