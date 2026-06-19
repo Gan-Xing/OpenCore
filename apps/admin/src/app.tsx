@@ -47,6 +47,14 @@ const publicPaths = new Set([
 ]);
 const fallbackAdminTitle = defaultSettings.title ?? 'OpenCore Admin';
 
+function isPublicPath(pathname: string): boolean {
+  return (
+    publicPaths.has(pathname) ||
+    pathname === '/redirect' ||
+    pathname.startsWith('/redirect/')
+  );
+}
+
 export type AdminInitialState = {
   settings?: Partial<LayoutSettings>;
   currentUser?: AdminCurrentUser;
@@ -85,7 +93,7 @@ export async function getInitialState(): Promise<AdminInitialState> {
     } catch (_error) {
       const { pathname } = history.location;
 
-      if (!publicPaths.has(pathname)) {
+      if (!isPublicPath(pathname)) {
         redirectToLogin();
       }
     }
@@ -107,7 +115,7 @@ export async function getInitialState(): Promise<AdminInitialState> {
     settingDrawerOpen: false,
   };
 
-  if (!publicPaths.has(location.pathname)) {
+  if (!isPublicPath(location.pathname)) {
     const currentUser = await fetchUserInfo();
 
     return {
@@ -157,7 +165,7 @@ export const layout: RunTimeLayoutConfig = ({
     onPageChange: () => {
       const { location } = history;
 
-      if (!initialState?.currentUser && !publicPaths.has(location.pathname)) {
+      if (!initialState?.currentUser && !isPublicPath(location.pathname)) {
         history.replace(
           `${loginPath}?redirect=${encodeURIComponent(location.pathname + location.search + location.hash)}`,
         );

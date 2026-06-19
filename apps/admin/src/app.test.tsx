@@ -178,6 +178,22 @@ describe('app getInitialState', () => {
     expect(state.fetchUserInfo).toBeDefined();
   });
 
+  it('does not fetch current user on redirect utility pages', async () => {
+    const { getInitialState } = await import('./app');
+    mocks.history.location = {
+      pathname: '/redirect/dashboard',
+      search: '?tab=overview',
+      hash: '#top',
+    };
+
+    const state = await getInitialState();
+
+    expect(mocks.queryCurrentOpenCoreUser).not.toHaveBeenCalled();
+    expect(mocks.history.replace).not.toHaveBeenCalled();
+    expect(state.currentUser).toBeUndefined();
+    expect(state.fetchUserInfo).toBeDefined();
+  });
+
   it('encodes redirect path correctly on auth failure', async () => {
     const { getInitialState } = await import('./app');
     mocks.history.location = {

@@ -44,11 +44,17 @@ export default {
   'pages.login.social.title': 'Social login',
   'pages.403.subTitle':
     'Sorry, your account does not have access to this page.',
-  'pages.403.buttonText': 'Back Home',
+  'pages.403.description':
+    'Check whether the current account has the required role or permission, or go back and continue elsewhere.',
+  'pages.403.backButtonText': 'Back',
   'pages.404.subTitle': 'Sorry, the page you visited does not exist.',
-  'pages.404.buttonText': 'Back Home',
+  'pages.404.description':
+    'Check the address, or return to the dashboard and reopen the feature.',
   'pages.500.subTitle': 'Sorry, the service is temporarily unavailable.',
-  'pages.500.buttonText': 'Back Home',
+  'pages.500.description':
+    'Reload the page after the service recovers, or return to the dashboard.',
+  'pages.500.reloadButtonText': 'Reload Page',
+  'pages.error.homeButtonText': 'Back Home',
   'pages.system.section': 'S7 System',
   'pages.system.posts.actions.column': 'Actions',
   'pages.system.posts.actions.create': 'Create',

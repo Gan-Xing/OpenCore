@@ -304,16 +304,28 @@ export default [
     ],
   },
   {
+    path: '/redirect/*',
+    component: './Redirect',
+    layout: false,
+    hideInMenu: true,
+  },
+  {
     path: '/403',
     component: './Exception/403',
+    hideInMenu: true,
+    name: 'exception.403',
   },
   {
     path: '/404',
     component: './Exception/404',
+    hideInMenu: true,
+    name: 'exception.404',
   },
   {
     path: '/500',
     component: './Exception/500',
+    hideInMenu: true,
+    name: 'exception.500',
   },
   {
     path: '/',
