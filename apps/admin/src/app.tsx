@@ -205,30 +205,32 @@ export const layout: RunTimeLayoutConfig = ({
       return (
         <>
           {children}
-          <SettingDrawer
-            disableUrlParams
-            enableDarkTheme
-            collapse={initialState?.settingDrawerOpen}
-            onCollapseChange={(open) => {
-              setInitialState((s) => ({
-                ...(s ?? {}),
-                menus: s?.menus ?? shellMenuItems,
-                permissions: s?.permissions ?? [],
-                registrySummary: s?.registrySummary ?? registrySummary,
-                settingDrawerOpen: open,
-              }));
-            }}
-            settings={initialState?.settings}
-            onSettingChange={(settings) => {
-              setInitialState((s) => ({
-                ...(s ?? {}),
-                menus: s?.menus ?? shellMenuItems,
-                permissions: s?.permissions ?? [],
-                registrySummary: s?.registrySummary ?? registrySummary,
-                settings,
-              }));
-            }}
-          />
+          {isDev ? (
+            <SettingDrawer
+              disableUrlParams
+              enableDarkTheme
+              collapse={initialState?.settingDrawerOpen}
+              onCollapseChange={(open) => {
+                setInitialState((s) => ({
+                  ...(s ?? {}),
+                  menus: s?.menus ?? shellMenuItems,
+                  permissions: s?.permissions ?? [],
+                  registrySummary: s?.registrySummary ?? registrySummary,
+                  settingDrawerOpen: open,
+                }));
+              }}
+              settings={initialState?.settings}
+              onSettingChange={(settings) => {
+                setInitialState((s) => ({
+                  ...(s ?? {}),
+                  menus: s?.menus ?? shellMenuItems,
+                  permissions: s?.permissions ?? [],
+                  registrySummary: s?.registrySummary ?? registrySummary,
+                  settings,
+                }));
+              }}
+            />
+          ) : null}
         </>
       );
     },

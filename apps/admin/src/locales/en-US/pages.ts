@@ -616,6 +616,8 @@ export default {
   'pages.system.notices.inbox.actions.markRead': 'Mark read',
   'pages.system.notices.inbox.actions.markReadAria': 'Mark {title} read',
   'pages.system.notices.inbox.actions.markSelectedRead': 'Mark selected read',
+  'pages.system.notices.inbox.actions.selectAria':
+    'Select inbox notice {title}',
   'pages.system.notices.inbox.actions.viewAria': 'View inbox notice {title}',
   'pages.system.notices.inbox.detailLoadFailure':
     'Unable to load live system notice inbox detail.',
@@ -648,6 +650,15 @@ export default {
   'pages.system.notices.messages.updated': 'System notice updated.',
   'pages.system.notices.manageViews.deliveryRecords': 'Delivery Records',
   'pages.system.notices.manageViews.notices': 'Notices',
+  'pages.system.notices.mobile.emptyDeliveryRecords':
+    'No delivery records match the current filters.',
+  'pages.system.notices.mobile.emptyInbox':
+    'No inbox notices match the current filters.',
+  'pages.system.notices.mobile.emptyNotices':
+    'No system notices match the current filters.',
+  'pages.system.notices.mobile.emptyTemplates':
+    'No system notice templates match the current filters.',
+  'pages.system.notices.mobile.filtersSummary': 'Filters and search',
   'pages.system.notices.open.failure': 'Unable to open live system notice.',
   'pages.system.notices.outbox.actions.alreadySent': 'Already sent',
   'pages.system.notices.outbox.actions.column': 'Outbox Actions',

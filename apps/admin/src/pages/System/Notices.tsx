@@ -39,9 +39,12 @@ import { useIntl, useLocation, useModel } from '@umijs/max';
 import {
   Alert,
   Button,
+  Checkbox,
   DatePicker,
   Dropdown,
+  Empty,
   Form,
+  Grid,
   Input,
   Modal,
   Popconfirm,
@@ -132,6 +135,20 @@ const useStyles = createStyles(({ token, css }) => ({
     .ant-select,
     .ant-picker {
       max-width: 100%;
+    }
+
+    @media (min-width: ${token.screenMD + 1}px) {
+      .ant-input-affix-wrapper {
+        width: 190px !important;
+      }
+
+      .ant-select {
+        width: 136px !important;
+      }
+
+      .ant-picker {
+        width: 260px !important;
+      }
     }
 
     @media (max-width: ${token.screenMD}px) {
@@ -232,6 +249,132 @@ const useStyles = createStyles(({ token, css }) => ({
         flex: 1 1 auto;
         min-width: 0;
       }
+    }
+  `,
+  mobileCard: css`
+    display: grid;
+    gap: 10px;
+    padding: 14px;
+    background: ${token.colorBgContainer};
+    border: 1px solid ${token.colorBorderSecondary};
+    border-radius: ${token.borderRadiusLG}px;
+    box-shadow: ${token.boxShadowTertiary};
+  `,
+  mobileCardActions: css`
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-top: 2px;
+
+    .ant-btn {
+      min-width: 44px;
+      min-height: 44px;
+    }
+
+    .ant-btn-sm {
+      height: 44px;
+      padding-inline: 10px;
+    }
+  `,
+  mobileCardHeader: css`
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    min-width: 0;
+  `,
+  mobileCardList: css`
+    display: grid;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  `,
+  mobileCardMeta: css`
+    display: grid;
+    gap: 6px;
+    color: ${token.colorTextSecondary};
+    font-size: 13px;
+    line-height: 20px;
+  `,
+  mobileCardMetaRow: css`
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    min-width: 0;
+
+    > span:first-child {
+      flex: 0 0 auto;
+      color: ${token.colorTextTertiary};
+    }
+
+    > span:last-child {
+      min-width: 0;
+      overflow-wrap: anywhere;
+      text-align: right;
+    }
+  `,
+  mobileCardSelection: css`
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    min-width: 0;
+
+    .ant-checkbox-wrapper {
+      min-height: 44px;
+      padding-top: 2px;
+    }
+  `,
+  mobileCardTags: css`
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  `,
+  mobileCardTitle: css`
+    min-width: 0;
+    overflow-wrap: anywhere;
+    color: ${token.colorTextHeading};
+    font-weight: 600;
+    line-height: 22px;
+  `,
+  mobileEmptyState: css`
+    padding: 28px 12px;
+    background: ${token.colorBgContainer};
+    border: 1px dashed ${token.colorBorderSecondary};
+    border-radius: ${token.borderRadiusLG}px;
+  `,
+  mobileFilterBody: css`
+    padding-top: 10px;
+  `,
+  mobileFilterPanel: css`
+    width: 100%;
+
+    summary {
+      display: flex;
+      min-height: 44px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2px;
+      color: ${token.colorTextHeading};
+      cursor: pointer;
+      font-weight: 600;
+      list-style: none;
+    }
+
+    summary::-webkit-details-marker {
+      display: none;
+    }
+
+    summary::after {
+      color: ${token.colorTextTertiary};
+      content: '+';
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    &[open] summary::after {
+      content: '-';
     }
   `,
 }));
@@ -364,6 +507,8 @@ export default function SystemNoticesPage() {
   const [templateRenderForm] = Form.useForm<NoticeTemplateRenderFormValues>();
   const location = useLocation();
   const { initialState } = useModel('@@initialState');
+  const screens = Grid.useBreakpoint();
+  const compactLayout = screens.md === false;
   const [activeTab, setActiveTab] = useState<NoticeTab>(() =>
     getNoticeTabFromSearch(location.search),
   );
@@ -513,6 +658,25 @@ export default function SystemNoticesPage() {
   const labelFrom = (labels: Record<string, string>, value: string): string =>
     labels[value] ?? value;
   const noneLabel = formatMessage('pages.system.notices.empty.none', 'none');
+  const formatNoticeDateTime = (value?: string): string => {
+    if (!value) {
+      return noneLabel;
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return value;
+    }
+
+    return new Intl.DateTimeFormat(
+      intl.locale?.startsWith('zh') ? 'zh-CN' : 'en-US',
+      {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      },
+    ).format(date);
+  };
   const noticeTypeOptions = (
     Object.entries(noticeTypeLabels) as Array<[SystemNoticeType, string]>
   ).map(([value, label]) => ({ label, value }));
@@ -1824,15 +1988,39 @@ export default function SystemNoticesPage() {
     actions: ReactNode;
     filters: ReactNode;
     range?: ReactNode;
-  }) => (
-    <div className={styles.tableToolbar}>
-      <div className={styles.filterCluster}>
-        {filters}
-        {range}
+  }) => {
+    if (compactLayout) {
+      return (
+        <div className={styles.tableToolbar}>
+          <details className={styles.mobileFilterPanel}>
+            <summary>
+              {formatMessage(
+                'pages.system.notices.mobile.filtersSummary',
+                'Filters and search',
+              )}
+            </summary>
+            <div className={styles.mobileFilterBody}>
+              <div className={styles.filterCluster}>
+                {filters}
+                {range}
+              </div>
+            </div>
+          </details>
+          <div className={styles.toolbarActions}>{actions}</div>
+        </div>
+      );
+    }
+
+    return (
+      <div className={styles.tableToolbar}>
+        <div className={styles.filterCluster}>
+          {filters}
+          {range}
+        </div>
+        <div className={styles.toolbarActions}>{actions}</div>
       </div>
-      <div className={styles.toolbarActions}>{actions}</div>
-    </div>
-  );
+    );
+  };
 
   const confirmNoticeAction = ({
     action,
@@ -2156,6 +2344,570 @@ export default function SystemNoticesPage() {
     );
   };
 
+  const renderDeliveryOutboxActions = (record: SystemNoticeDeliverySummary) => {
+    const channel = getExternalOutboxChannel(record);
+    const sent = record.providerStatus === 'sent';
+    const failed = record.providerStatus === 'failed';
+    const queued = record.providerStatus === 'pending';
+
+    return (
+      <div className={styles.actionCell}>
+        <Tooltip
+          title={
+            !channel
+              ? formatMessage(
+                  'pages.system.notices.outbox.actions.mailSmsOnlyProcess',
+                  'Only mail/SMS outbox deliveries can be processed',
+                )
+              : queued
+                ? formatMessage(
+                    'pages.system.notices.outbox.actions.processQueued',
+                    'Process queued outbox',
+                  )
+                : failed
+                  ? formatMessage(
+                      'pages.system.notices.outbox.actions.retryFailedFirst',
+                      'Retry failed outbox first',
+                    )
+                  : formatMessage(
+                      'pages.system.notices.outbox.actions.alreadySent',
+                      'Already sent',
+                    )
+          }
+        >
+          <Button
+            aria-label={formatMessage(
+              'pages.system.notices.outbox.actions.processAria',
+              'Process queued outbox {id}',
+              { id: record.providerMessageId ?? record.id },
+            )}
+            disabled={!channel || !queued}
+            icon={<PlayCircleOutlined />}
+            onClick={() => void processDeliveryOutbox(record)}
+            size="small"
+          />
+        </Tooltip>
+        <Popconfirm
+          title={formatMessage(
+            'pages.system.notices.outbox.confirm.fail',
+            'Fail outbox?',
+          )}
+          okText={formatMessage(
+            'pages.system.notices.outbox.actions.fail',
+            'Fail outbox',
+          )}
+          okButtonProps={{ danger: true }}
+          disabled={!channel || sent}
+          onConfirm={() => void failDeliveryOutbox(record)}
+        >
+          <Tooltip
+            title={
+              !channel
+                ? formatMessage(
+                    'pages.system.notices.outbox.actions.mailSmsOnlyFail',
+                    'Only mail/SMS outbox deliveries can fail',
+                  )
+                : sent
+                  ? formatMessage(
+                      'pages.system.notices.outbox.actions.sentCannotFail',
+                      'Sent outbox messages cannot fail',
+                    )
+                  : formatMessage(
+                      'pages.system.notices.outbox.actions.fail',
+                      'Fail outbox',
+                    )
+            }
+          >
+            <Button
+              aria-label={formatMessage(
+                'pages.system.notices.outbox.actions.failAria',
+                'Fail outbox {id}',
+                { id: record.providerMessageId ?? record.id },
+              )}
+              danger
+              disabled={!channel || sent}
+              icon={<ExclamationCircleOutlined />}
+              size="small"
+            />
+          </Tooltip>
+        </Popconfirm>
+        <Tooltip
+          title={
+            !channel
+              ? formatMessage(
+                  'pages.system.notices.outbox.actions.mailSmsOnlyRetry',
+                  'Only mail/SMS outbox deliveries can retry',
+                )
+              : failed
+                ? formatMessage(
+                    'pages.system.notices.outbox.actions.retry',
+                    'Retry outbox',
+                  )
+                : formatMessage(
+                    'pages.system.notices.outbox.actions.failedOnlyRetry',
+                    'Only failed outbox messages can retry',
+                  )
+          }
+        >
+          <Button
+            aria-label={formatMessage(
+              'pages.system.notices.outbox.actions.retryAria',
+              'Retry outbox {id}',
+              { id: record.providerMessageId ?? record.id },
+            )}
+            disabled={!channel || !failed}
+            icon={<SyncOutlined />}
+            onClick={() => void retryDeliveryOutbox(record)}
+            size="small"
+          />
+        </Tooltip>
+        <Popconfirm
+          title={formatMessage(
+            'pages.system.notices.outbox.confirm.markSent',
+            'Mark outbox sent?',
+          )}
+          okText={formatMessage(
+            'pages.system.notices.outbox.actions.markSent',
+            'Mark outbox sent',
+          )}
+          disabled={!channel || sent}
+          onConfirm={() => void markDeliveryOutboxSent(record)}
+        >
+          <Tooltip
+            title={
+              !channel
+                ? formatMessage(
+                    'pages.system.notices.outbox.actions.mailSmsOnlyMarkSent',
+                    'Only mail/SMS outbox deliveries can be marked sent',
+                  )
+                : sent
+                  ? formatMessage(
+                      'pages.system.notices.outbox.actions.alreadySent',
+                      'Already sent',
+                    )
+                  : formatMessage(
+                      'pages.system.notices.outbox.actions.markSent',
+                      'Mark outbox sent',
+                    )
+            }
+          >
+            <Button
+              aria-label={formatMessage(
+                'pages.system.notices.outbox.actions.markSentAria',
+                'Mark outbox sent {id}',
+                { id: record.providerMessageId ?? record.id },
+              )}
+              disabled={!channel || sent}
+              icon={<CheckCircleOutlined />}
+              size="small"
+            />
+          </Tooltip>
+        </Popconfirm>
+      </div>
+    );
+  };
+
+  const renderInboxActions = (record: SystemNoticeInboxSummary) => (
+    <div className={styles.actionCell}>
+      <Tooltip
+        title={formatMessage('pages.system.notices.actions.detail', 'Detail')}
+      >
+        <Button
+          aria-label={formatMessage(
+            'pages.system.notices.inbox.actions.viewAria',
+            'View inbox notice {title}',
+            { title: record.title },
+          )}
+          icon={<EyeOutlined />}
+          onClick={() => void openInboxDetail(record)}
+          size="small"
+        />
+      </Tooltip>
+      <Tooltip
+        title={
+          record.read
+            ? formatMessage(
+                'pages.system.notices.inbox.actions.alreadyRead',
+                'Already read',
+              )
+            : formatMessage(
+                'pages.system.notices.inbox.actions.markRead',
+                'Mark read',
+              )
+        }
+      >
+        <Button
+          aria-label={formatMessage(
+            'pages.system.notices.inbox.actions.markReadAria',
+            'Mark {title} read',
+            { title: record.title },
+          )}
+          disabled={record.read}
+          icon={<CheckOutlined />}
+          onClick={() => void markInboxNoticeRead(record)}
+          size="small"
+        />
+      </Tooltip>
+    </div>
+  );
+
+  const renderTemplateActions = (record: SystemNoticeTemplateSummary) => (
+    <div className={styles.actionCell}>
+      <Tooltip
+        title={formatMessage('pages.system.notices.actions.detail', 'Detail')}
+      >
+        <Button
+          aria-label={formatMessage(
+            'pages.system.notices.templates.actions.viewAria',
+            'View template {name}',
+            { name: record.name },
+          )}
+          icon={<EyeOutlined />}
+          onClick={() => void openTemplateDetail(record)}
+          size="small"
+        />
+      </Tooltip>
+      <Tooltip
+        title={formatMessage('pages.system.notices.actions.edit', 'Edit')}
+      >
+        <Button
+          aria-label={formatMessage(
+            'pages.system.notices.templates.actions.editAria',
+            'Edit template {name}',
+            { name: record.name },
+          )}
+          icon={<EditOutlined />}
+          onClick={() => void openEditTemplateForm(record)}
+          size="small"
+        />
+      </Tooltip>
+      <Tooltip
+        title={
+          record.enabled
+            ? formatMessage(
+                'pages.system.notices.templates.actions.renderPreview',
+                'Notice template render preview',
+              )
+            : formatMessage(
+                'pages.system.notices.templates.actions.disabledRenderLocked',
+                'Disabled templates cannot render',
+              )
+        }
+      >
+        <Button
+          aria-label={formatMessage(
+            'pages.system.notices.templates.actions.renderAria',
+            'Render template {name}',
+            { name: record.name },
+          )}
+          disabled={!record.enabled}
+          icon={<PlayCircleOutlined />}
+          onClick={() => void openTemplateRender(record)}
+          size="small"
+        />
+      </Tooltip>
+      <Popconfirm
+        title={formatMessage(
+          'pages.system.notices.templates.confirm.deleteOne',
+          'Delete this notice template?',
+        )}
+        okText={formatMessage('pages.system.notices.actions.delete', 'Delete')}
+        okButtonProps={{ danger: true }}
+        onConfirm={() => void deleteTemplate(record)}
+      >
+        <Tooltip
+          title={formatMessage('pages.system.notices.actions.delete', 'Delete')}
+        >
+          <Button
+            aria-label={formatMessage(
+              'pages.system.notices.templates.actions.deleteAria',
+              'Delete template {name}',
+              { name: record.name },
+            )}
+            danger
+            icon={<DeleteOutlined />}
+            size="small"
+          />
+        </Tooltip>
+      </Popconfirm>
+    </div>
+  );
+
+  const toggleInboxMobileSelection = (
+    record: SystemNoticeInboxSummary,
+    checked: boolean,
+  ) => {
+    setSelectedInboxNoticeIds((previous) => {
+      if (checked) {
+        return Array.from(new Set([...previous, record.id]));
+      }
+
+      return previous.filter((id) => id !== record.id);
+    });
+  };
+
+  const renderMobileMetaRow = (label: ReactNode, value: ReactNode) => (
+    <div className={styles.mobileCardMetaRow}>
+      <span>{label}</span>
+      <span>{value || noneLabel}</span>
+    </div>
+  );
+
+  const renderMobileEmptyState = (description: ReactNode) => (
+    <li className={styles.mobileEmptyState}>
+      <Empty description={description} image={Empty.PRESENTED_IMAGE_SIMPLE} />
+    </li>
+  );
+
+  const renderMobileNoticeCards = (records: readonly SystemNoticeSummary[]) => (
+    <ul
+      className={styles.mobileCardList}
+      data-opencore-notices-mobile-list="manage"
+    >
+      {records.length === 0
+        ? renderMobileEmptyState(
+            formatMessage(
+              'pages.system.notices.mobile.emptyNotices',
+              'No system notices match the current filters.',
+            ),
+          )
+        : records.map((record) => (
+            <li className={styles.mobileCard} key={record.id}>
+              <div className={styles.mobileCardHeader}>
+                <Typography.Link
+                  className={styles.mobileCardTitle}
+                  onClick={() => void openDetail(record)}
+                >
+                  {record.title}
+                </Typography.Link>
+                {renderStatus(record.status)}
+              </div>
+              <div className={styles.mobileCardTags}>
+                {renderType(record.type)}
+                <Tag>{audienceLabels[record.audience]}</Tag>
+                <Tag color={record.pinned ? 'blue' : 'default'}>
+                  {record.pinned ? pinnedLabels.pinned : pinnedLabels.normal}
+                </Tag>
+              </div>
+              <div className={styles.mobileCardMeta}>
+                {renderMobileMetaRow(
+                  formatMessage(
+                    'pages.system.notices.fields.createdBy',
+                    'Created By',
+                  ),
+                  record.createdBy,
+                )}
+                {renderMobileMetaRow(
+                  formatMessage(
+                    'pages.system.notices.fields.createdAt',
+                    'Created At',
+                  ),
+                  formatNoticeDateTime(record.createdAt),
+                )}
+              </div>
+              <div className={styles.mobileCardActions}>
+                {renderNoticeActions(record)}
+              </div>
+            </li>
+          ))}
+    </ul>
+  );
+
+  const renderMobileDeliveryRecordCards = (
+    records: readonly SystemNoticeDeliverySummary[],
+  ) => (
+    <ul
+      className={styles.mobileCardList}
+      data-opencore-notices-mobile-list="delivery-records"
+    >
+      {records.length === 0
+        ? renderMobileEmptyState(
+            formatMessage(
+              'pages.system.notices.mobile.emptyDeliveryRecords',
+              'No delivery records match the current filters.',
+            ),
+          )
+        : records.map((record) => (
+            <li className={styles.mobileCard} key={record.id}>
+              <div className={styles.mobileCardHeader}>
+                <Typography.Link
+                  className={styles.mobileCardTitle}
+                  onClick={() => void openDeliveryRecordNotice(record)}
+                >
+                  {record.title}
+                </Typography.Link>
+                <Tag
+                  color={
+                    record.providerStatus === 'sent'
+                      ? 'green'
+                      : record.providerStatus === 'failed'
+                        ? 'red'
+                        : 'gold'
+                  }
+                >
+                  {labelFrom(providerStatusLabels, record.providerStatus)}
+                </Tag>
+              </div>
+              <div className={styles.mobileCardTags}>
+                <Tag>{channelLabels[record.channel]}</Tag>
+                <Tag>{record.provider}</Tag>
+                <Tag color={record.status === 'read' ? 'default' : 'blue'}>
+                  {labelFrom(deliveryStatusLabels, record.status)}
+                </Tag>
+              </div>
+              <div className={styles.mobileCardMeta}>
+                {renderMobileMetaRow(
+                  formatMessage(
+                    'pages.system.notices.fields.username',
+                    'Username',
+                  ),
+                  record.username,
+                )}
+                {renderMobileMetaRow(
+                  formatMessage(
+                    'pages.system.notices.fields.recipient',
+                    'Recipient',
+                  ),
+                  record.recipient,
+                )}
+                {renderMobileMetaRow(
+                  formatMessage(
+                    'pages.system.notices.fields.deliveredAt',
+                    'Delivered At',
+                  ),
+                  formatNoticeDateTime(record.deliveredAt),
+                )}
+              </div>
+              <div className={styles.mobileCardActions}>
+                {renderDeliveryOutboxActions(record)}
+              </div>
+            </li>
+          ))}
+    </ul>
+  );
+
+  const renderMobileInboxCards = (
+    records: readonly SystemNoticeInboxSummary[],
+  ) => (
+    <ul
+      className={styles.mobileCardList}
+      data-opencore-notices-mobile-list="inbox"
+    >
+      {records.length === 0
+        ? renderMobileEmptyState(
+            formatMessage(
+              'pages.system.notices.mobile.emptyInbox',
+              'No inbox notices match the current filters.',
+            ),
+          )
+        : records.map((record) => (
+            <li className={styles.mobileCard} key={record.id}>
+              <div className={styles.mobileCardSelection}>
+                <Checkbox
+                  aria-label={formatMessage(
+                    'pages.system.notices.inbox.actions.selectAria',
+                    'Select inbox notice {title}',
+                    { title: record.title },
+                  )}
+                  checked={selectedInboxNoticeIds.includes(record.id)}
+                  disabled={record.read}
+                  onChange={(event) =>
+                    toggleInboxMobileSelection(record, event.target.checked)
+                  }
+                />
+                <div className={styles.mobileCardTitle}>
+                  <Typography.Link onClick={() => void openInboxDetail(record)}>
+                    {record.title}
+                  </Typography.Link>
+                </div>
+              </div>
+              <div className={styles.mobileCardTags}>
+                {renderType(record.type)}
+                <Tag color={record.read ? 'default' : 'red'}>
+                  {record.read ? readLabels.read : readLabels.unread}
+                </Tag>
+                <Tag color={record.pinned ? 'blue' : 'default'}>
+                  {record.pinned ? pinnedLabels.pinned : pinnedLabels.normal}
+                </Tag>
+              </div>
+              <div className={styles.mobileCardMeta}>
+                {renderMobileMetaRow(
+                  formatMessage(
+                    'pages.system.notices.fields.publishedAt',
+                    'Published At',
+                  ),
+                  formatNoticeDateTime(record.publishedAt),
+                )}
+                {renderMobileMetaRow(
+                  formatMessage(
+                    'pages.system.notices.fields.createdBy',
+                    'Created By',
+                  ),
+                  record.createdBy,
+                )}
+              </div>
+              <div className={styles.mobileCardActions}>
+                {renderInboxActions(record)}
+              </div>
+            </li>
+          ))}
+    </ul>
+  );
+
+  const renderMobileTemplateCards = (
+    records: readonly SystemNoticeTemplateSummary[],
+  ) => (
+    <ul
+      className={styles.mobileCardList}
+      data-opencore-notices-mobile-list="templates"
+    >
+      {records.length === 0
+        ? renderMobileEmptyState(
+            formatMessage(
+              'pages.system.notices.mobile.emptyTemplates',
+              'No system notice templates match the current filters.',
+            ),
+          )
+        : records.map((record) => (
+            <li className={styles.mobileCard} key={record.code}>
+              <div className={styles.mobileCardHeader}>
+                <Typography.Link
+                  className={styles.mobileCardTitle}
+                  onClick={() => void openTemplateDetail(record)}
+                >
+                  {record.name}
+                </Typography.Link>
+                <Tag color={record.enabled ? 'green' : 'default'}>
+                  {record.enabled
+                    ? enabledLabels.enabled
+                    : enabledLabels.disabled}
+                </Tag>
+              </div>
+              <div className={styles.mobileCardTags}>
+                {renderType(record.type)}
+                <Tag>{record.code}</Tag>
+              </div>
+              <div className={styles.mobileCardMeta}>
+                {renderMobileMetaRow(
+                  formatMessage('pages.system.notices.fields.params', 'Params'),
+                  record.params.join(', ') || noneLabel,
+                )}
+                {renderMobileMetaRow(
+                  formatMessage(
+                    'pages.system.notices.fields.updatedAt',
+                    'Updated At',
+                  ),
+                  formatNoticeDateTime(record.updatedAt),
+                )}
+              </div>
+              <div className={styles.mobileCardActions}>
+                {renderTemplateActions(record)}
+              </div>
+            </li>
+          ))}
+    </ul>
+  );
+
   const columns: ProColumns<SystemNoticeSummary>[] = [
     {
       title: formatMessage('pages.system.notices.fields.title', 'Title'),
@@ -2328,168 +3080,7 @@ export default function SystemNoticesPage() {
       ),
       valueType: 'option',
       width: 150,
-      render: (_, record) => {
-        const channel = getExternalOutboxChannel(record);
-        const sent = record.providerStatus === 'sent';
-        const failed = record.providerStatus === 'failed';
-        const queued = record.providerStatus === 'pending';
-
-        return (
-          <Space size="small">
-            <Tooltip
-              title={
-                !channel
-                  ? formatMessage(
-                      'pages.system.notices.outbox.actions.mailSmsOnlyProcess',
-                      'Only mail/SMS outbox deliveries can be processed',
-                    )
-                  : queued
-                    ? formatMessage(
-                        'pages.system.notices.outbox.actions.processQueued',
-                        'Process queued outbox',
-                      )
-                    : failed
-                      ? formatMessage(
-                          'pages.system.notices.outbox.actions.retryFailedFirst',
-                          'Retry failed outbox first',
-                        )
-                      : formatMessage(
-                          'pages.system.notices.outbox.actions.alreadySent',
-                          'Already sent',
-                        )
-              }
-            >
-              <Button
-                aria-label={formatMessage(
-                  'pages.system.notices.outbox.actions.processAria',
-                  'Process queued outbox {id}',
-                  { id: record.providerMessageId ?? record.id },
-                )}
-                disabled={!channel || !queued}
-                icon={<PlayCircleOutlined />}
-                onClick={() => void processDeliveryOutbox(record)}
-                size="small"
-              />
-            </Tooltip>
-            <Popconfirm
-              title={formatMessage(
-                'pages.system.notices.outbox.confirm.fail',
-                'Fail outbox?',
-              )}
-              okText={formatMessage(
-                'pages.system.notices.outbox.actions.fail',
-                'Fail outbox',
-              )}
-              okButtonProps={{ danger: true }}
-              disabled={!channel || sent}
-              onConfirm={() => void failDeliveryOutbox(record)}
-            >
-              <Tooltip
-                title={
-                  !channel
-                    ? formatMessage(
-                        'pages.system.notices.outbox.actions.mailSmsOnlyFail',
-                        'Only mail/SMS outbox deliveries can fail',
-                      )
-                    : sent
-                      ? formatMessage(
-                          'pages.system.notices.outbox.actions.sentCannotFail',
-                          'Sent outbox messages cannot fail',
-                        )
-                      : formatMessage(
-                          'pages.system.notices.outbox.actions.fail',
-                          'Fail outbox',
-                        )
-                }
-              >
-                <Button
-                  aria-label={formatMessage(
-                    'pages.system.notices.outbox.actions.failAria',
-                    'Fail outbox {id}',
-                    { id: record.providerMessageId ?? record.id },
-                  )}
-                  danger
-                  disabled={!channel || sent}
-                  icon={<ExclamationCircleOutlined />}
-                  size="small"
-                />
-              </Tooltip>
-            </Popconfirm>
-            <Tooltip
-              title={
-                !channel
-                  ? formatMessage(
-                      'pages.system.notices.outbox.actions.mailSmsOnlyRetry',
-                      'Only mail/SMS outbox deliveries can retry',
-                    )
-                  : failed
-                    ? formatMessage(
-                        'pages.system.notices.outbox.actions.retry',
-                        'Retry outbox',
-                      )
-                    : formatMessage(
-                        'pages.system.notices.outbox.actions.failedOnlyRetry',
-                        'Only failed outbox messages can retry',
-                      )
-              }
-            >
-              <Button
-                aria-label={formatMessage(
-                  'pages.system.notices.outbox.actions.retryAria',
-                  'Retry outbox {id}',
-                  { id: record.providerMessageId ?? record.id },
-                )}
-                disabled={!channel || !failed}
-                icon={<SyncOutlined />}
-                onClick={() => void retryDeliveryOutbox(record)}
-                size="small"
-              />
-            </Tooltip>
-            <Popconfirm
-              title={formatMessage(
-                'pages.system.notices.outbox.confirm.markSent',
-                'Mark outbox sent?',
-              )}
-              okText={formatMessage(
-                'pages.system.notices.outbox.actions.markSent',
-                'Mark outbox sent',
-              )}
-              disabled={!channel || sent}
-              onConfirm={() => void markDeliveryOutboxSent(record)}
-            >
-              <Tooltip
-                title={
-                  !channel
-                    ? formatMessage(
-                        'pages.system.notices.outbox.actions.mailSmsOnlyMarkSent',
-                        'Only mail/SMS outbox deliveries can be marked sent',
-                      )
-                    : sent
-                      ? formatMessage(
-                          'pages.system.notices.outbox.actions.alreadySent',
-                          'Already sent',
-                        )
-                      : formatMessage(
-                          'pages.system.notices.outbox.actions.markSent',
-                          'Mark outbox sent',
-                        )
-                }
-              >
-                <Button
-                  aria-label={formatMessage(
-                    'pages.system.notices.outbox.actions.markSentAria',
-                    'Mark outbox sent {id}',
-                    { id: record.providerMessageId ?? record.id },
-                  )}
-                  disabled={!channel || sent}
-                  icon={<CheckCircleOutlined />}
-                  size="small"
-                />
-              </Tooltip>
-            </Popconfirm>
-          </Space>
-        );
-      },
+      render: (_, record) => renderDeliveryOutboxActions(record),
     },
   ];
 
@@ -2555,52 +3146,7 @@ export default function SystemNoticesPage() {
       title: formatMessage('pages.system.notices.actions.column', 'Actions'),
       valueType: 'option',
       width: 120,
-      render: (_, record) => (
-        <Space size="small">
-          <Tooltip
-            title={formatMessage(
-              'pages.system.notices.actions.detail',
-              'Detail',
-            )}
-          >
-            <Button
-              aria-label={formatMessage(
-                'pages.system.notices.inbox.actions.viewAria',
-                'View inbox notice {title}',
-                { title: record.title },
-              )}
-              icon={<EyeOutlined />}
-              onClick={() => void openInboxDetail(record)}
-              size="small"
-            />
-          </Tooltip>
-          <Tooltip
-            title={
-              record.read
-                ? formatMessage(
-                    'pages.system.notices.inbox.actions.alreadyRead',
-                    'Already read',
-                  )
-                : formatMessage(
-                    'pages.system.notices.inbox.actions.markRead',
-                    'Mark read',
-                  )
-            }
-          >
-            <Button
-              aria-label={formatMessage(
-                'pages.system.notices.inbox.actions.markReadAria',
-                'Mark {title} read',
-                { title: record.title },
-              )}
-              disabled={record.read}
-              icon={<CheckOutlined />}
-              onClick={() => void markInboxNoticeRead(record)}
-              size="small"
-            />
-          </Tooltip>
-        </Space>
-      ),
+      render: (_, record) => renderInboxActions(record),
     },
   ];
 
@@ -2656,96 +3202,7 @@ export default function SystemNoticesPage() {
       title: formatMessage('pages.system.notices.actions.column', 'Actions'),
       valueType: 'option',
       width: 240,
-      render: (_, record) => (
-        <Space size="small">
-          <Tooltip
-            title={formatMessage(
-              'pages.system.notices.actions.detail',
-              'Detail',
-            )}
-          >
-            <Button
-              aria-label={formatMessage(
-                'pages.system.notices.templates.actions.viewAria',
-                'View template {name}',
-                { name: record.name },
-              )}
-              icon={<EyeOutlined />}
-              onClick={() => void openTemplateDetail(record)}
-              size="small"
-            />
-          </Tooltip>
-          <Tooltip
-            title={formatMessage('pages.system.notices.actions.edit', 'Edit')}
-          >
-            <Button
-              aria-label={formatMessage(
-                'pages.system.notices.templates.actions.editAria',
-                'Edit template {name}',
-                { name: record.name },
-              )}
-              icon={<EditOutlined />}
-              onClick={() => void openEditTemplateForm(record)}
-              size="small"
-            />
-          </Tooltip>
-          <Tooltip
-            title={
-              record.enabled
-                ? formatMessage(
-                    'pages.system.notices.templates.actions.renderPreview',
-                    'Notice template render preview',
-                  )
-                : formatMessage(
-                    'pages.system.notices.templates.actions.disabledRenderLocked',
-                    'Disabled templates cannot render',
-                  )
-            }
-          >
-            <Button
-              aria-label={formatMessage(
-                'pages.system.notices.templates.actions.renderAria',
-                'Render template {name}',
-                { name: record.name },
-              )}
-              disabled={!record.enabled}
-              icon={<PlayCircleOutlined />}
-              onClick={() => void openTemplateRender(record)}
-              size="small"
-            />
-          </Tooltip>
-          <Popconfirm
-            title={formatMessage(
-              'pages.system.notices.templates.confirm.deleteOne',
-              'Delete this notice template?',
-            )}
-            okText={formatMessage(
-              'pages.system.notices.actions.delete',
-              'Delete',
-            )}
-            okButtonProps={{ danger: true }}
-            onConfirm={() => void deleteTemplate(record)}
-          >
-            <Tooltip
-              title={formatMessage(
-                'pages.system.notices.actions.delete',
-                'Delete',
-              )}
-            >
-              <Button
-                aria-label={formatMessage(
-                  'pages.system.notices.templates.actions.deleteAria',
-                  'Delete template {name}',
-                  { name: record.name },
-                )}
-                danger
-                icon={<DeleteOutlined />}
-                size="small"
-              />
-            </Tooltip>
-          </Popconfirm>
-        </Space>
-      ),
+      render: (_, record) => renderTemplateActions(record),
     },
   ];
   const hasOpenSchedulableExternalOutbox = deliveryRows.some(
@@ -2853,21 +3310,25 @@ export default function SystemNoticesPage() {
                         </>
                       ),
                     })}
-                    <div className={styles.tableSurface}>
-                      <ProTable<SystemNoticeSummary>
-                        rowKey="id"
-                        loading={loading}
-                        search={false}
-                        options={false}
-                        toolBarRender={false}
-                        pagination={{
-                          pageSize: 10,
-                        }}
-                        scroll={{ x: 920 }}
-                        dataSource={filteredRows}
-                        columns={columns}
-                      />
-                    </div>
+                    {compactLayout ? (
+                      renderMobileNoticeCards(filteredRows)
+                    ) : (
+                      <div className={styles.tableSurface}>
+                        <ProTable<SystemNoticeSummary>
+                          rowKey="id"
+                          loading={loading}
+                          search={false}
+                          options={false}
+                          toolBarRender={false}
+                          pagination={{
+                            pageSize: 10,
+                          }}
+                          scroll={{ x: 920 }}
+                          dataSource={filteredRows}
+                          columns={columns}
+                        />
+                      </div>
+                    )}
                   </>
                 ) : (
                   <>
@@ -2933,21 +3394,25 @@ export default function SystemNoticesPage() {
                         </>
                       ),
                     })}
-                    <div className={styles.tableSurface}>
-                      <ProTable<SystemNoticeDeliverySummary>
-                        rowKey="id"
-                        loading={deliveryRecordsLoading}
-                        search={false}
-                        options={false}
-                        toolBarRender={false}
-                        pagination={{
-                          pageSize: 10,
-                        }}
-                        scroll={{ x: 1480 }}
-                        dataSource={filteredDeliveryRecords}
-                        columns={deliveryRecordColumns}
-                      />
-                    </div>
+                    {compactLayout ? (
+                      renderMobileDeliveryRecordCards(filteredDeliveryRecords)
+                    ) : (
+                      <div className={styles.tableSurface}>
+                        <ProTable<SystemNoticeDeliverySummary>
+                          rowKey="id"
+                          loading={deliveryRecordsLoading}
+                          search={false}
+                          options={false}
+                          toolBarRender={false}
+                          pagination={{
+                            pageSize: 10,
+                          }}
+                          scroll={{ x: 1480 }}
+                          dataSource={filteredDeliveryRecords}
+                          columns={deliveryRecordColumns}
+                        />
+                      </div>
+                    )}
                   </>
                 )}
               </>
@@ -3050,29 +3515,33 @@ export default function SystemNoticesPage() {
                     </>
                   ),
                 })}
-                <div className={styles.tableSurface}>
-                  <ProTable<SystemNoticeInboxSummary>
-                    rowKey="id"
-                    loading={inboxLoading}
-                    search={false}
-                    options={false}
-                    rowSelection={{
-                      selectedRowKeys: selectedInboxNoticeIds,
-                      onChange: (keys) =>
-                        setSelectedInboxNoticeIds(keys.map(String)),
-                      getCheckboxProps: (record) => ({
-                        disabled: record.read,
-                      }),
-                    }}
-                    toolBarRender={false}
-                    pagination={{
-                      pageSize: 10,
-                    }}
-                    scroll={{ x: 980 }}
-                    dataSource={filteredInboxRows}
-                    columns={inboxColumns}
-                  />
-                </div>
+                {compactLayout ? (
+                  renderMobileInboxCards(filteredInboxRows)
+                ) : (
+                  <div className={styles.tableSurface}>
+                    <ProTable<SystemNoticeInboxSummary>
+                      rowKey="id"
+                      loading={inboxLoading}
+                      search={false}
+                      options={false}
+                      rowSelection={{
+                        selectedRowKeys: selectedInboxNoticeIds,
+                        onChange: (keys) =>
+                          setSelectedInboxNoticeIds(keys.map(String)),
+                        getCheckboxProps: (record) => ({
+                          disabled: record.read,
+                        }),
+                      }}
+                      toolBarRender={false}
+                      pagination={{
+                        pageSize: 10,
+                      }}
+                      scroll={{ x: 980 }}
+                      dataSource={filteredInboxRows}
+                      columns={inboxColumns}
+                    />
+                  </div>
+                )}
               </>
             ),
           },
@@ -3144,21 +3613,25 @@ export default function SystemNoticesPage() {
                     </>
                   ),
                 })}
-                <div className={styles.tableSurface}>
-                  <ProTable<SystemNoticeTemplateSummary>
-                    rowKey="code"
-                    loading={templateLoading}
-                    search={false}
-                    options={false}
-                    toolBarRender={false}
-                    pagination={{
-                      pageSize: 10,
-                    }}
-                    scroll={{ x: 920 }}
-                    dataSource={filteredTemplates}
-                    columns={templateColumns}
-                  />
-                </div>
+                {compactLayout ? (
+                  renderMobileTemplateCards(filteredTemplates)
+                ) : (
+                  <div className={styles.tableSurface}>
+                    <ProTable<SystemNoticeTemplateSummary>
+                      rowKey="code"
+                      loading={templateLoading}
+                      search={false}
+                      options={false}
+                      toolBarRender={false}
+                      pagination={{
+                        pageSize: 10,
+                      }}
+                      scroll={{ x: 920 }}
+                      dataSource={filteredTemplates}
+                      columns={templateColumns}
+                    />
+                  </div>
+                )}
               </>
             ),
           },

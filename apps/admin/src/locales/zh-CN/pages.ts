@@ -572,6 +572,7 @@ export default {
   'pages.system.notices.inbox.actions.markRead': '标为已读',
   'pages.system.notices.inbox.actions.markReadAria': '将 {title} 标为已读',
   'pages.system.notices.inbox.actions.markSelectedRead': '选中标为已读',
+  'pages.system.notices.inbox.actions.selectAria': '选择收件箱通知 {title}',
   'pages.system.notices.inbox.actions.viewAria': '查看收件箱通知 {title}',
   'pages.system.notices.inbox.detailLoadFailure':
     '无法加载实时系统通知收件箱详情。',
@@ -601,6 +602,13 @@ export default {
   'pages.system.notices.messages.updated': '系统通知已更新。',
   'pages.system.notices.manageViews.deliveryRecords': '发送记录',
   'pages.system.notices.manageViews.notices': '通知管理',
+  'pages.system.notices.mobile.emptyDeliveryRecords':
+    '当前筛选条件下没有发送记录。',
+  'pages.system.notices.mobile.emptyInbox': '当前筛选条件下没有收件箱通知。',
+  'pages.system.notices.mobile.emptyNotices': '当前筛选条件下没有系统通知。',
+  'pages.system.notices.mobile.emptyTemplates':
+    '当前筛选条件下没有系统通知模板。',
+  'pages.system.notices.mobile.filtersSummary': '筛选与搜索',
   'pages.system.notices.open.failure': '无法打开实时系统通知。',
   'pages.system.notices.outbox.actions.alreadySent': '已发送',
   'pages.system.notices.outbox.actions.column': '投递箱操作',

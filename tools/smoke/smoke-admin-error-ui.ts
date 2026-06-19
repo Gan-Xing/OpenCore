@@ -225,6 +225,11 @@ async function main() {
       `document.body.innerText.includes('通知管理') && document.body.innerText.includes('系统通知模板')`,
       'Admin notices three-tab page text',
     );
+    await waitForExpression(
+      page,
+      `Boolean(document.querySelector('[data-opencore-notices-mobile-list="manage"]'))`,
+      'Admin notices mobile card list',
+    );
     const noticesMobileState = await evaluate(
       page,
       `
@@ -232,8 +237,11 @@ async function main() {
   const text = document.body.innerText;
   return {
     clientWidth: document.documentElement.clientWidth,
-    hasEmptyState: text.includes('暂无数据') || text.includes('No Data'),
+    hasDesktopTable: Boolean(document.querySelector('.ant-table-wrapper')),
+    hasEmptyState: Boolean(document.querySelector('.ant-empty')) || text.includes('当前筛选条件下没有系统通知') || text.includes('No system notices match'),
+    hasMobileCardList: Boolean(document.querySelector('[data-opencore-notices-mobile-list="manage"]')),
     hasMoreActions: text.includes('更多'),
+    hasSettingDrawerTrigger: Boolean(document.querySelector('.ant-pro-setting-drawer-handle, .ant-pro-setting-drawer')),
     hasSseLeak: text.includes('SSE 收件箱事件') || text.includes('SSE inbox events'),
     scrollWidth: document.documentElement.scrollWidth,
     text: text.slice(0, 800),
@@ -249,6 +257,24 @@ async function main() {
     ) {
       throw new Error(
         `Admin notices mobile layout state is invalid: ${JSON.stringify(noticesMobileState)}`,
+      );
+    }
+
+    if (noticesMobileState.hasMobileCardList !== true) {
+      throw new Error(
+        `Admin notices page did not render the mobile card list: ${JSON.stringify(noticesMobileState)}`,
+      );
+    }
+
+    if (noticesMobileState.hasDesktopTable === true) {
+      throw new Error(
+        `Admin notices mobile layout rendered the desktop table: ${JSON.stringify(noticesMobileState)}`,
+      );
+    }
+
+    if (noticesMobileState.hasSettingDrawerTrigger === true) {
+      throw new Error(
+        `Admin notices mobile layout exposed the development SettingDrawer: ${JSON.stringify(noticesMobileState)}`,
       );
     }
 
@@ -465,6 +491,9 @@ async function main() {
           'admin.public-login.no-duplicate-api-prefix',
           'admin.public-notice-bell.i18n-menu',
           'admin.public-notice-bell.view-all',
+          'admin.public-notices.mobile-card-list',
+          'admin.public-notices.no-desktop-table-on-mobile',
+          'admin.public-notices.no-setting-drawer-trigger',
           'admin.public-notices.mobile-no-page-overflow',
           'admin.public-notices.empty-safe-or-collapsed-actions',
           'admin.public-notices.no-sse-copy-leak',

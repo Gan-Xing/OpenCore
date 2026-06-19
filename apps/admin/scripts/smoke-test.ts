@@ -206,10 +206,12 @@ if (
   !appRuntime.includes('registrySummary') ||
   !appRuntime.includes('permissions: currentUser?.permissionCodes') ||
   !appRuntime.includes('getOpenCoreAdminRuntimeConfig') ||
+  !appRuntime.includes('{isDev ? (') ||
+  !appRuntime.includes('<SettingDrawer') ||
   !appRuntime.includes('baseURL: process.env.ADMIN_API_BASE_URL')
 ) {
   throw new Error(
-    'Admin app runtime must use OpenCore auth, shell registry metadata, Umi-backed layout menu i18n, runtime config and non-demo request base URL.',
+    'Admin app runtime must use OpenCore auth, shell registry metadata, Umi-backed layout menu i18n, runtime config, dev-only SettingDrawer and non-demo request base URL.',
   );
 }
 
@@ -2003,9 +2005,21 @@ if (
   !systemNoticesPage.includes('core-notice-templates') ||
   !systemNoticesPage.includes('useCurrentPageFilters') ||
   !systemNoticesPage.includes('CurrentPageExportButton') ||
+  !systemNoticesPage.includes('const compactLayout = screens.md === false') ||
   !systemNoticesPage.includes('renderTableToolbar') ||
   !systemNoticesPage.includes('renderNoticeActions') ||
+  !systemNoticesPage.includes('renderMobileNoticeCards') ||
+  !systemNoticesPage.includes('renderMobileDeliveryRecordCards') ||
+  !systemNoticesPage.includes('renderMobileInboxCards') ||
+  !systemNoticesPage.includes('renderMobileTemplateCards') ||
+  !systemNoticesPage.includes('data-opencore-notices-mobile-list="manage"') ||
+  !systemNoticesPage.includes('data-opencore-notices-mobile-list="inbox"') ||
+  !systemNoticesPage.includes(
+    'data-opencore-notices-mobile-list="templates"',
+  ) ||
   !systemNoticesPage.includes('<Dropdown') ||
+  !systemNoticesPage.includes('<Checkbox') ||
+  !systemNoticesPage.includes('<Empty') ||
   !systemNoticesPage.includes('toolBarRender={false}') ||
   !systemNoticesPage.includes('scroll={{ x: 920 }}') ||
   !systemNoticesPage.includes('scroll={{ x: 980 }}') ||

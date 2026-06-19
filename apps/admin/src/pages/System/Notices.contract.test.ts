@@ -27,9 +27,22 @@ describe('System notices page contract', () => {
 
   it('keeps the notice center UI bounded and action-dense surfaces collapsed', () => {
     expect(source).toContain('const useStyles = createStyles');
+    expect(source).toContain('const compactLayout = screens.md === false');
     expect(source).toContain('renderTableToolbar');
     expect(source).toContain('renderNoticeActions');
+    expect(source).toContain('renderMobileNoticeCards');
+    expect(source).toContain('renderMobileDeliveryRecordCards');
+    expect(source).toContain('renderMobileInboxCards');
+    expect(source).toContain('renderMobileTemplateCards');
+    expect(source).toContain('styles.mobileFilterPanel');
+    expect(source).toContain('formatNoticeDateTime');
+    expect(source).toContain('pages.system.notices.mobile.filtersSummary');
+    expect(source).toContain('data-opencore-notices-mobile-list="manage"');
+    expect(source).toContain('data-opencore-notices-mobile-list="inbox"');
+    expect(source).toContain('data-opencore-notices-mobile-list="templates"');
     expect(source).toContain('<Dropdown');
+    expect(source).toContain('<Checkbox');
+    expect(source).toContain('<Empty');
     expect(source).toContain('scroll={{ x: 920 }}');
     expect(source).toContain('scroll={{ x: 980 }}');
     expect(source).not.toContain('width: 360');
@@ -37,6 +50,7 @@ describe('System notices page contract', () => {
     expect(zhLocale).toContain(
       "'pages.system.notices.inbox.realtimeStream': '实时同步已启用'",
     );
+    expect(zhLocale).toContain("'pages.system.notices.mobile.emptyNotices':");
     expect(zhLocale).not.toContain('SSE 收件箱事件');
   });
 });

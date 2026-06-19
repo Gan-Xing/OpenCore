@@ -1798,6 +1798,16 @@ verify_admin_bundle_api_base_url() {
     ! grep -R \
     --fixed-strings \
     --include='*.js' \
+    "data-opencore-notices-mobile-list" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "No system notices match the current filters." \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
     "Notice template render preview" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null || \
     ! grep -R \
