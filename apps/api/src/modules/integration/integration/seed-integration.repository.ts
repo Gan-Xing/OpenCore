@@ -194,6 +194,12 @@ export class SeedIntegrationRepository extends IntegrationRepository {
     return redactProvider(this.findProvider(code));
   }
 
+  async getProviderForOAuthExchange(
+    code: string,
+  ): Promise<IntegrationProviderRecord> {
+    return this.findProvider(code);
+  }
+
   async updateProvider(
     code: string,
     body: UpdateIntegrationProviderDto,

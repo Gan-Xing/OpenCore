@@ -61,6 +61,7 @@ describe('IntegrationRepository', () => {
         config: {
           clientId: 'github-client',
           clientSecret: 'unsafe',
+          tokenUrl: 'https://github.com/login/oauth/access_token',
         },
       }),
     ).resolves.toMatchObject({
@@ -69,6 +70,7 @@ describe('IntegrationRepository', () => {
       config: {
         clientId: 'github-client',
         clientSecret: '[REDACTED]',
+        tokenUrl: '[REDACTED]',
       },
     });
     await expect(repository.getProvider('oauth.github')).resolves.toMatchObject(
@@ -76,9 +78,19 @@ describe('IntegrationRepository', () => {
         code: 'oauth.github',
         config: {
           clientSecret: '[REDACTED]',
+          tokenUrl: '[REDACTED]',
         },
       },
     );
+    await expect(
+      repository.getProviderForOAuthExchange('oauth.github'),
+    ).resolves.toMatchObject({
+      code: 'oauth.github',
+      config: {
+        clientSecret: 'unsafe',
+        tokenUrl: 'https://github.com/login/oauth/access_token',
+      },
+    });
     expect(JSON.stringify(await repository.listProviders())).not.toContain(
       'unsafe',
     );
@@ -1641,7 +1653,7 @@ describe('IntegrationRepository', () => {
     };
     const repository = {
       callbackOAuthProvider: jest.fn().mockResolvedValue(callbackResult),
-      getProvider: jest.fn().mockResolvedValue({
+      getProviderForOAuthExchange: jest.fn().mockResolvedValue({
         code: 'oauth.github',
         config: {
           callbackPath: '/api/integrations/oauth/callback/github',
@@ -1737,7 +1749,7 @@ describe('IntegrationRepository', () => {
           createdAt: '2026-06-18T00:00:00.000Z',
         },
       }),
-      getProvider: jest.fn().mockResolvedValue({
+      getProviderForOAuthExchange: jest.fn().mockResolvedValue({
         code: 'oauth.github',
         config: {
           callbackPath: '/api/integrations/oauth/callback/github',

@@ -611,7 +611,8 @@ export class IntegrationController {
     }
 
     try {
-      const provider = await this.repository.getProvider(providerCode);
+      const provider =
+        await this.repository.getProviderForOAuthExchange(providerCode);
       const redirectUri = resolveOAuthExchangeRedirectUri(
         provider.config.callbackPath,
         flow.redirectUri,

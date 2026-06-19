@@ -134,6 +134,9 @@ export abstract class IntegrationRepository {
     query?: IntegrationProviderQueryDto,
   ): Promise<PageResult<IntegrationProviderRecord>>;
   abstract getProvider(code: string): Promise<IntegrationProviderRecord>;
+  abstract getProviderForOAuthExchange(
+    code: string,
+  ): Promise<IntegrationProviderRecord>;
   abstract createProvider(
     body: CreateIntegrationProviderDto,
   ): Promise<IntegrationProviderRecord>;

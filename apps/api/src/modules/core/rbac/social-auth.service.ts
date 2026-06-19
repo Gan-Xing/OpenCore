@@ -93,7 +93,8 @@ export class SocialAuthService {
 
   async startFlow(body: StartSocialAuthFlowDto): Promise<SocialAuthFlowDto> {
     const providerCode = normalizeOAuthProviderCode(body.providerCode);
-    const provider = await this.getSocialProvider(providerCode);
+    const provider =
+      await this.integration.getProviderForOAuthExchange(providerCode);
     const socialProvider = this.toSocialProvider(provider);
 
     if (socialProvider.status !== 'ready') {
@@ -264,7 +265,8 @@ export class SocialAuthService {
     providerAccountId: string;
     scopes: string;
   }> {
-    const provider = await this.getSocialProvider(providerCode);
+    const provider =
+      await this.integration.getProviderForOAuthExchange(providerCode);
     const clientId = readConfigString(provider.config.clientId);
     const clientSecret =
       process.env.OPENCORE_GITHUB_OAUTH_CLIENT_SECRET?.trim();
@@ -360,7 +362,8 @@ export class SocialAuthService {
     providerAccountId: string;
     scopes: string;
   }> {
-    const provider = await this.getSocialProvider(providerCode);
+    const provider =
+      await this.integration.getProviderForOAuthExchange(providerCode);
     const shortProvider = providerCode.replace(/^oauth\./, '');
     const clientId = readConfigString(provider.config.clientId);
     const clientSecret =
