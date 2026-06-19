@@ -21,7 +21,13 @@ export default {
     'GitHub 授权码无效或已被使用，请从登录页重新发起。',
   'pages.login.social.errors.incorrectClientCredentials':
     'GitHub 登录配置错误：Client ID 与 Client Secret 不匹配。请更新服务器环境变量 OPENCORE_GITHUB_OAUTH_CLIENT_SECRET 后重新部署。',
+  'pages.login.social.errors.invalidResponse':
+    'OAuth 服务返回了无效的令牌响应，请检查第三方应用配置。',
+  'pages.login.social.errors.missingToken':
+    'OAuth 服务没有返回必需的令牌，请检查授权范围和第三方应用配置。',
   'pages.login.social.errors.notConfigured': '社交登录尚未完成第三方应用配置。',
+  'pages.login.social.errors.requestFailed':
+    'OpenCore 无法连接 OAuth 服务，请检查服务器到第三方平台的网络访问。',
   'pages.login.social.errors.redirectUriMismatch':
     'GitHub 登录配置错误：回调地址与 GitHub OAuth App 配置不一致。',
   'pages.login.social.failure': '社交登录失败',

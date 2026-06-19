@@ -277,31 +277,53 @@ export class SocialAuthService {
       );
     }
 
-    const tokenResponse = await fetch(tokenUrl, {
-      body: new URLSearchParams({
-        client_id: clientId,
-        client_secret: clientSecret,
-        code,
-        redirect_uri: this.resolveSocialCallbackUrl(providerCode),
-      }),
-      headers: {
-        accept: 'application/json',
-        'content-type': 'application/x-www-form-urlencoded',
-      },
-      method: 'POST',
-    });
-    const tokenPayload = (await tokenResponse.json()) as {
+    let tokenResponse: Response;
+    try {
+      tokenResponse = await fetch(tokenUrl, {
+        body: new URLSearchParams({
+          client_id: clientId,
+          client_secret: clientSecret,
+          code,
+          redirect_uri: this.resolveSocialCallbackUrl(providerCode),
+        }),
+        headers: {
+          accept: 'application/json',
+          'content-type': 'application/x-www-form-urlencoded',
+        },
+        method: 'POST',
+      });
+    } catch (error) {
+      throw new OAuthExchangeError(
+        'oauth_exchange_request_failed',
+        error instanceof Error ? error.message : 'GitHub OAuth request failed.',
+      );
+    }
+    let tokenPayload: {
       access_token?: string;
       error?: string;
       error_description?: string;
       expires_in?: number;
       scope?: string;
     };
+    try {
+      tokenPayload = (await tokenResponse.json()) as typeof tokenPayload;
+    } catch {
+      throw new OAuthExchangeError(
+        'oauth_exchange_invalid_response',
+        'GitHub OAuth token response is not valid JSON.',
+      );
+    }
 
-    if (!tokenResponse.ok || !tokenPayload.access_token || tokenPayload.error) {
+    if (!tokenResponse.ok || tokenPayload.error) {
       throw new OAuthExchangeError(
         normalizeOAuthExchangeProviderError(tokenPayload.error),
         tokenPayload.error_description ?? 'GitHub OAuth token exchange failed.',
+      );
+    }
+    if (!tokenPayload.access_token) {
+      throw new OAuthExchangeError(
+        'oauth_exchange_missing_access_token',
+        'GitHub OAuth token response is missing access_token.',
       );
     }
 
@@ -354,31 +376,55 @@ export class SocialAuthService {
       );
     }
 
-    const tokenResponse = await fetch(tokenUrl, {
-      body: new URLSearchParams({
-        client_id: clientId,
-        client_secret: clientSecret,
-        code,
-        grant_type: 'authorization_code',
-        redirect_uri: this.resolveSocialCallbackUrl(providerCode),
-      }),
-      headers: {
-        accept: 'application/json',
-        'content-type': 'application/x-www-form-urlencoded',
-      },
-      method: 'POST',
-    });
-    const tokenPayload = (await tokenResponse.json()) as {
+    let tokenResponse: Response;
+    try {
+      tokenResponse = await fetch(tokenUrl, {
+        body: new URLSearchParams({
+          client_id: clientId,
+          client_secret: clientSecret,
+          code,
+          grant_type: 'authorization_code',
+          redirect_uri: this.resolveSocialCallbackUrl(providerCode),
+        }),
+        headers: {
+          accept: 'application/json',
+          'content-type': 'application/x-www-form-urlencoded',
+        },
+        method: 'POST',
+      });
+    } catch (error) {
+      throw new OAuthExchangeError(
+        'oauth_exchange_request_failed',
+        error instanceof Error
+          ? error.message
+          : `${providerCode} OAuth request failed.`,
+      );
+    }
+    let tokenPayload: {
       error?: string;
       expires_in?: number;
       id_token?: string;
       scope?: string;
     };
+    try {
+      tokenPayload = (await tokenResponse.json()) as typeof tokenPayload;
+    } catch {
+      throw new OAuthExchangeError(
+        'oauth_exchange_invalid_response',
+        `${providerCode} OAuth token response is not valid JSON.`,
+      );
+    }
 
-    if (!tokenResponse.ok || tokenPayload.error || !tokenPayload.id_token) {
+    if (!tokenResponse.ok || tokenPayload.error) {
       throw new OAuthExchangeError(
         normalizeOAuthExchangeProviderError(tokenPayload.error),
         `${providerCode} OAuth token exchange failed.`,
+      );
+    }
+    if (!tokenPayload.id_token) {
+      throw new OAuthExchangeError(
+        'oauth_exchange_missing_id_token',
+        `${providerCode} OAuth token response is missing id_token.`,
       );
     }
 
@@ -740,7 +786,9 @@ function normalizeOAuthExchangeProviderError(error: unknown): string {
     case 'redirect_uri_mismatch':
       return 'oauth_exchange_redirect_uri_mismatch';
     default:
-      return 'oauth_exchange_failed';
+      return normalized
+        ? `oauth_exchange_${normalized.slice(0, 80)}`
+        : 'oauth_exchange_failed';
   }
 }
 

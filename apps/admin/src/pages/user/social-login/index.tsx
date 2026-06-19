@@ -323,6 +323,25 @@ function formatSocialCallbackFailureMessage(
         id: 'pages.login.social.errors.notConfigured',
         defaultMessage: 'Social login is not fully configured.',
       });
+    case 'oauth_exchange_request_failed':
+      return formatMessage({
+        id: 'pages.login.social.errors.requestFailed',
+        defaultMessage:
+          'OpenCore could not reach the OAuth provider. Check server network access to the provider.',
+      });
+    case 'oauth_exchange_invalid_response':
+      return formatMessage({
+        id: 'pages.login.social.errors.invalidResponse',
+        defaultMessage:
+          'The OAuth provider returned an invalid token response. Check the provider configuration.',
+      });
+    case 'oauth_exchange_missing_access_token':
+    case 'oauth_exchange_missing_id_token':
+      return formatMessage({
+        id: 'pages.login.social.errors.missingToken',
+        defaultMessage:
+          'The OAuth provider did not return the required token. Check scopes and provider configuration.',
+      });
     default:
       return formatMessage({
         id: 'pages.login.social.callbackRejected',
