@@ -134,6 +134,75 @@ async function main() {
         adminToken,
       )}); true;`,
     );
+    await page.send('Page.navigate', {
+      url: `${adminBaseUrl}/dashboard?admin-notice-bell-smoke=${runId}`,
+    });
+    await waitForExpression(
+      page,
+      'document.readyState === "complete"',
+      'Admin dashboard page load',
+    );
+    await waitForExpression(
+      page,
+      `Boolean(Array.from(document.querySelectorAll('button')).find((node) => node.getAttribute('aria-label') === '系统通知收件箱'))`,
+      'Admin NoticeBell button',
+    );
+    await evaluate(
+      page,
+      `
+(() => {
+  const button = Array.from(document.querySelectorAll('button')).find((node) => node.getAttribute('aria-label') === '系统通知收件箱');
+  if (!(button instanceof HTMLButtonElement)) {
+    return false;
+  }
+  button.click();
+  return true;
+})()
+`,
+    );
+    await waitForExpression(
+      page,
+      `Array.from(document.querySelectorAll('.ant-dropdown, .ant-dropdown-menu, [role="menu"]')).some((node) => node.textContent?.includes('查看全部'))`,
+      'Admin NoticeBell view-all menu item',
+    );
+    const noticeBellState = await evaluate(
+      page,
+      `
+(() => {
+  const text = Array.from(document.querySelectorAll('.ant-dropdown, .ant-dropdown-menu, [role="menu"]'))
+    .map((node) => node.textContent || '')
+    .join('\\n');
+  return {
+    hasEmpty: text.includes('暂无未读系统通知'),
+    hasMarkAll: text.includes('全部标为已读'),
+    hasRawType: /\\b(announcement|maintenance|security)\\b/.test(text),
+    hasViewAll: text.includes('查看全部'),
+    text,
+  };
+})()
+`,
+    );
+
+    if (!isRecord(noticeBellState) || noticeBellState.hasViewAll !== true) {
+      throw new Error(
+        `Admin NoticeBell view-all action is not visible: ${JSON.stringify(noticeBellState)}`,
+      );
+    }
+
+    if (
+      noticeBellState.hasMarkAll !== true &&
+      noticeBellState.hasEmpty !== true
+    ) {
+      throw new Error(
+        `Admin NoticeBell has neither unread actions nor empty state: ${JSON.stringify(noticeBellState)}`,
+      );
+    }
+
+    if (noticeBellState.hasRawType === true) {
+      throw new Error(
+        `Admin NoticeBell displayed raw notice type keys: ${JSON.stringify(noticeBellState)}`,
+      );
+    }
 
     await page.send('Page.navigate', {
       url: `${adminBaseUrl}/personal/profile?admin-profile-ui-smoke=${runId}`,
@@ -317,6 +386,8 @@ async function main() {
           'admin.public-login.error-localized',
           'admin.public-login.error-code-message',
           'admin.public-login.no-duplicate-api-prefix',
+          'admin.public-notice-bell.i18n-menu',
+          'admin.public-notice-bell.view-all',
           'admin.public-profile.authenticated-access',
           'admin.public-profile.zh-cn-tabs',
           'admin.public-profile.single-scroll-pane',

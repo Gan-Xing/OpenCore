@@ -74,8 +74,35 @@ export const NoticeBell: React.FC = () => {
   const openInbox = () => {
     history.push('/system/notices?tab=inbox');
   };
-  const formatMessage = (id: string, defaultMessage: string) =>
-    intl.formatMessage({ id, defaultMessage });
+  const formatMessage = (
+    id: string,
+    defaultMessage: string,
+    values?: Record<string, number | string>,
+  ) =>
+    values
+      ? intl.formatMessage({ id, defaultMessage }, values)
+      : intl.formatMessage({ id, defaultMessage });
+  const noticeTypeLabels = {
+    announcement: formatMessage(
+      'pages.system.notices.type.announcement',
+      'announcement',
+    ),
+    maintenance: formatMessage(
+      'pages.system.notices.type.maintenance',
+      'maintenance',
+    ),
+    security: formatMessage('pages.system.notices.type.security', 'security'),
+  };
+  const formatNoticeTime = (value: string | undefined) =>
+    value
+      ? intl.formatDate(new Date(value), {
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        })
+      : '';
 
   const markOneRead = async (id: string) => {
     await markOpenCoreSystemNoticesRead({ ids: [id] });
@@ -116,7 +143,16 @@ export const NoticeBell: React.FC = () => {
               <div>
                 <div className={styles.noticeTitle}>{notice.title}</div>
                 <div className={styles.noticeMeta}>
-                  {notice.type} · {notice.publishedAt ?? notice.createdAt}
+                  {formatMessage(
+                    'pages.system.notices.bell.itemMeta',
+                    '{type} · {time}',
+                    {
+                      time: formatNoticeTime(
+                        notice.publishedAt ?? notice.createdAt,
+                      ),
+                      type: noticeTypeLabels[notice.type],
+                    },
+                  )}
                 </div>
               </div>
             ),
@@ -146,6 +182,7 @@ export const NoticeBell: React.FC = () => {
     <HeaderDropdown
       placement="bottomRight"
       arrow
+      trigger={['click']}
       menu={{
         selectedKeys: [],
         items: menuItems,
