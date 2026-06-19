@@ -52,6 +52,18 @@ describe('Admin routes', () => {
     );
   });
 
+  it('registers the system notices route', () => {
+    expect(flatRoutes).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          component: './System/Notices',
+          name: 'notices',
+          path: '/system/notices',
+        }),
+      ]),
+    );
+  });
+
   it('keeps the catch-all route after explicit exception routes', () => {
     const explicit404Index = routes.findIndex((route) => route.path === '/404');
     const catchAllIndex = routes.findIndex((route) => route.path === '/*');

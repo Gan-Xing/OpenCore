@@ -97,7 +97,12 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
       (notice) =>
         (!filters.status || notice.status === filters.status) &&
         (!filters.type || notice.type === filters.type) &&
-        (!filters.audience || notice.audience === filters.audience),
+        (!filters.audience || notice.audience === filters.audience) &&
+        isWithinDateRange(notice.createdAt, filters) &&
+        matchesKeyword(
+          [notice.title, notice.content, notice.createdBy],
+          filters.keyword,
+        ),
     );
     const pagination = normalizeSystemNoticePageQuery(query, filtered.length);
     const rows = filtered.slice(
@@ -120,7 +125,12 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
       (notice) =>
         (filters.readStatus === undefined ||
           notice.read === filters.readStatus) &&
-        (!filters.type || notice.type === filters.type),
+        (!filters.type || notice.type === filters.type) &&
+        isWithinDateRange(notice.createdAt, filters) &&
+        matchesKeyword(
+          [notice.title, notice.content, notice.createdBy],
+          filters.keyword,
+        ),
     );
     const pagination = normalizeSystemNoticePageQuery(query, rows.length);
 
@@ -252,15 +262,22 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
     noticeId?: string,
   ): PageResult<SystemNoticeDeliveryRecord> {
     const filters = normalizeSystemNoticeDeliveryFilters(query);
+    const effectiveNoticeId = noticeId ?? filters.noticeId;
     const rows = [...this.deliveries.values()]
       .filter(
         (delivery) =>
-          (!noticeId || delivery.noticeId === noticeId) &&
+          (!effectiveNoticeId || delivery.noticeId === effectiveNoticeId) &&
           (!filters.channel || delivery.channel === filters.channel) &&
           (filters.readStatus === undefined ||
             Boolean(delivery.readAt) === filters.readStatus) &&
           (!filters.providerStatus ||
             delivery.providerStatus === filters.providerStatus) &&
+          (!filters.type || delivery.type === filters.type) &&
+          isWithinDateRange(delivery.deliveredAt, filters) &&
+          matchesKeyword(
+            [delivery.title, delivery.content],
+            filters.noticeTitle,
+          ) &&
           (!filters.username ||
             delivery.username.includes(filters.username) ||
             delivery.displayName.includes(filters.username)),
@@ -313,7 +330,18 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
         (template) =>
           (filters.enabled === undefined ||
             template.enabled === filters.enabled) &&
-          (!filters.type || template.type === filters.type),
+          (!filters.type || template.type === filters.type) &&
+          isWithinDateRange(template.createdAt, filters) &&
+          matchesKeyword(
+            [
+              template.code,
+              template.name,
+              template.titleTemplate,
+              template.contentTemplate,
+              template.remark,
+            ],
+            filters.keyword,
+          ),
       )
       .sort(compareNoticeTemplates);
     const pagination = normalizeSystemNoticePageQuery(query, rows.length);
@@ -425,16 +453,10 @@ export class SeedSystemNoticeRepository extends SystemNoticeRepository {
       createdAt: now,
       updatedAt: now,
     };
-    const delivery = createDeliveryRecord(
-      notice,
-      recipient,
-      now,
-      'in_app',
-      {
-        attemptCount: 1,
-        providerStatus: 'sent',
-      },
-    );
+    const delivery = createDeliveryRecord(notice, recipient, now, 'in_app', {
+      attemptCount: 1,
+      providerStatus: 'sent',
+    });
 
     this.notices = [notice, ...this.notices];
     this.deliveries.set(
@@ -839,6 +861,39 @@ function compareNoticeTemplates(
     Number(right.enabled) - Number(left.enabled) ||
     left.code.localeCompare(right.code)
   );
+}
+
+function isWithinDateRange(
+  value: string | undefined,
+  filters: { createdFrom?: string; createdTo?: string },
+): boolean {
+  if (!filters.createdFrom && !filters.createdTo) {
+    return true;
+  }
+
+  if (!value) {
+    return false;
+  }
+
+  const time = new Date(value).getTime();
+
+  return (
+    (!filters.createdFrom || time >= new Date(filters.createdFrom).getTime()) &&
+    (!filters.createdTo || time <= new Date(filters.createdTo).getTime())
+  );
+}
+
+function matchesKeyword(
+  values: readonly (string | undefined)[],
+  keyword: string | undefined,
+): boolean {
+  if (!keyword) {
+    return true;
+  }
+
+  const normalized = keyword.toLowerCase();
+
+  return values.some((value) => value?.toLowerCase().includes(normalized));
 }
 
 function cloneTemplate(

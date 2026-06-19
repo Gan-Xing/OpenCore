@@ -194,12 +194,18 @@ describe('createSystemManagementClient', () => {
     await client.deletePosts('token', { codes: ['qa_batch_a', 'qa_batch_b'] });
     await client.deletePost('token', 'qa');
     await client.listNotices('token', {
+      createdFrom: '2026-06-10T00:00:00.000Z',
+      createdTo: '2026-06-10T23:59:59.999Z',
+      keyword: 'Maintenance',
       page: 1,
       pageSize: 10,
       status: 'draft',
       type: 'maintenance',
     });
     await client.listNoticeInbox('token', {
+      createdFrom: '2026-06-10T00:00:00.000Z',
+      createdTo: '2026-06-10T23:59:59.999Z',
+      keyword: 'Welcome',
       page: 1,
       pageSize: 5,
       readStatus: false,
@@ -226,15 +232,23 @@ describe('createSystemManagementClient', () => {
     });
     await client.listAllNoticeDeliveries('token', {
       channel: 'in_app',
+      createdFrom: '2026-06-10T00:00:00.000Z',
+      createdTo: '2026-06-10T23:59:59.999Z',
+      noticeId: 'notice_welcome',
+      noticeTitle: 'Welcome',
       page: 1,
       pageSize: 20,
       providerStatus: 'pending',
+      type: 'announcement',
       username: 'admin',
     });
     await client.dispatchNotice('token', 'notice_welcome');
     await client.executeNoticeDeliveries('token', 'notice_welcome');
     await client.listNoticeTemplates('token', {
+      createdFrom: '2026-06-10T00:00:00.000Z',
+      createdTo: '2026-06-10T23:59:59.999Z',
       enabled: true,
+      keyword: 'release',
       page: 1,
       pageSize: 10,
       type: 'maintenance',
@@ -566,11 +580,11 @@ describe('createSystemManagementClient', () => {
         token: 'token',
       },
       {
-        path: '/core/notices?page=1&pageSize=10&status=draft&type=maintenance',
+        path: '/core/notices?createdFrom=2026-06-10T00%3A00%3A00.000Z&createdTo=2026-06-10T23%3A59%3A59.999Z&keyword=Maintenance&page=1&pageSize=10&status=draft&type=maintenance',
         token: 'token',
       },
       {
-        path: '/core/notices/inbox?page=1&pageSize=5&readStatus=false',
+        path: '/core/notices/inbox?createdFrom=2026-06-10T00%3A00%3A00.000Z&createdTo=2026-06-10T23%3A59%3A59.999Z&keyword=Welcome&page=1&pageSize=5&readStatus=false',
         token: 'token',
       },
       {
@@ -604,7 +618,7 @@ describe('createSystemManagementClient', () => {
         token: 'token',
       },
       {
-        path: '/core/notices/deliveries?channel=in_app&page=1&pageSize=20&providerStatus=pending&username=admin',
+        path: '/core/notices/deliveries?channel=in_app&createdFrom=2026-06-10T00%3A00%3A00.000Z&createdTo=2026-06-10T23%3A59%3A59.999Z&noticeId=notice_welcome&noticeTitle=Welcome&page=1&pageSize=20&providerStatus=pending&type=announcement&username=admin',
         token: 'token',
       },
       {
@@ -618,7 +632,7 @@ describe('createSystemManagementClient', () => {
         token: 'token',
       },
       {
-        path: '/core/notices/templates?enabled=true&page=1&pageSize=10&type=maintenance',
+        path: '/core/notices/templates?createdFrom=2026-06-10T00%3A00%3A00.000Z&createdTo=2026-06-10T23%3A59%3A59.999Z&enabled=true&keyword=release&page=1&pageSize=10&type=maintenance',
         token: 'token',
       },
       {

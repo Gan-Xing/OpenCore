@@ -46,10 +46,7 @@ async function main() {
 
     const loginResponse = await login();
     token = assertString(loginResponse.accessToken, 'login accessToken');
-    const smokeUserId = assertString(
-      loginResponse.user.id,
-      'login user id',
-    );
+    const smokeUserId = assertString(loginResponse.user.id, 'login user id');
     smoke.setToken(token);
 
     await apiRequest('/core/notices/templates/simple-list', {
@@ -148,7 +145,9 @@ async function main() {
       'created template params',
     );
     assertPageItemsContainCode(
-      await apiRequest('/core/notices/templates?type=maintenance&enabled=true'),
+      await apiRequest(
+        `/core/notices/templates?type=maintenance&enabled=true&keyword=${encodeURIComponent('OpenCore Smoke')}&createdFrom=2020-01-01T00%3A00%3A00.000Z&createdTo=2100-01-01T00%3A00%3A00.000Z`,
+      ),
       templateCode,
       'notice template list',
     );
@@ -272,7 +271,7 @@ async function main() {
     );
     assertPageItemsContainDelivery(
       await apiRequest(
-        `/core/notices/deliveries?channel=in_app&providerStatus=sent&username=${encodeURIComponent(username)}`,
+        `/core/notices/deliveries?channel=in_app&providerStatus=sent&type=maintenance&noticeId=${encodeURIComponent(templateTestSend.notice.id)}&noticeTitle=${encodeURIComponent('Smoke maintenance')}&username=${encodeURIComponent(username)}&createdFrom=2020-01-01T00%3A00%3A00.000Z&createdTo=2100-01-01T00%3A00%3A00.000Z`,
       ),
       username,
       'delivered',
@@ -1211,7 +1210,9 @@ async function main() {
     assertEqual(inboxItem.read, false, 'new inbox item read state');
     assertEqual(inboxItem.readAt, undefined, 'new inbox item readAt');
 
-    const unreadPage = await apiRequest('/core/notices/inbox?readStatus=false');
+    const unreadPage = await apiRequest(
+      `/core/notices/inbox?readStatus=false&type=announcement&keyword=${encodeURIComponent(draftNotice.title)}&createdFrom=2020-01-01T00%3A00%3A00.000Z&createdTo=2100-01-01T00%3A00%3A00.000Z`,
+    );
     assertPageItemsContain(unreadPage, draftNotice.id, 'unread inbox page');
     const unreadList = await apiRequest(
       '/core/notices/inbox/unread-list?limit=10',
@@ -1284,7 +1285,9 @@ async function main() {
     );
     assertEqual(readItem.read, true, 'read inbox item state');
     assertString(readItem.readAt, 'read inbox item readAt');
-    const readPage = await apiRequest('/core/notices/inbox?readStatus=true');
+    const readPage = await apiRequest(
+      `/core/notices/inbox?readStatus=true&type=announcement&keyword=${encodeURIComponent(draftNotice.title)}&createdFrom=2020-01-01T00%3A00%3A00.000Z&createdTo=2100-01-01T00%3A00%3A00.000Z`,
+    );
     assertPageItemsContain(readPage, draftNotice.id, 'read inbox page');
     const readDeliveryPage = await apiRequest(
       `/core/notices/${encodeURIComponent(draftNotice.id)}/deliveries?readStatus=true&username=${encodeURIComponent(username)}`,

@@ -441,6 +441,15 @@ export class SystemNoticeQueryDto {
 
   @ApiProperty({ required: false, enum: ['all', 'admin'] })
   audience?: SystemNoticeAudience | string;
+
+  @ApiProperty({ required: false })
+  keyword?: string;
+
+  @ApiProperty({ required: false })
+  createdFrom?: string;
+
+  @ApiProperty({ required: false })
+  createdTo?: string;
 }
 
 export class SystemNoticeInboxQueryDto {
@@ -458,6 +467,15 @@ export class SystemNoticeInboxQueryDto {
 
   @ApiProperty({ required: false })
   readStatus?: boolean | string;
+
+  @ApiProperty({ required: false })
+  keyword?: string;
+
+  @ApiProperty({ required: false })
+  createdFrom?: string;
+
+  @ApiProperty({ required: false })
+  createdTo?: string;
 }
 
 export class SystemNoticeReadUsersQueryDto {
@@ -486,6 +504,24 @@ export class SystemNoticeDeliveryQueryDto {
 
   @ApiProperty({ required: false })
   username?: string;
+
+  @ApiProperty({ required: false })
+  noticeId?: string;
+
+  @ApiProperty({ required: false })
+  noticeTitle?: string;
+
+  @ApiProperty({
+    required: false,
+    enum: ['announcement', 'maintenance', 'security'],
+  })
+  type?: SystemNoticeType | string;
+
+  @ApiProperty({ required: false })
+  createdFrom?: string;
+
+  @ApiProperty({ required: false })
+  createdTo?: string;
 }
 
 export class SystemNoticeTemplateQueryDto {
@@ -503,6 +539,15 @@ export class SystemNoticeTemplateQueryDto {
 
   @ApiProperty({ required: false })
   enabled?: boolean | string;
+
+  @ApiProperty({ required: false })
+  keyword?: string;
+
+  @ApiProperty({ required: false })
+  createdFrom?: string;
+
+  @ApiProperty({ required: false })
+  createdTo?: string;
 }
 
 export class CreateSystemNoticeDto {

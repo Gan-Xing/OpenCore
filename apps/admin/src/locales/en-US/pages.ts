@@ -595,7 +595,13 @@ export default {
   'pages.system.notices.fields.validTo': 'Valid To',
   'pages.system.notices.filters.audience': 'Audience',
   'pages.system.notices.filters.channel': 'Channel',
+  'pages.system.notices.filters.createdFrom': 'Created From',
+  'pages.system.notices.filters.createdTo': 'Created To',
+  'pages.system.notices.filters.deliveredFrom': 'Delivered From',
+  'pages.system.notices.filters.deliveredTo': 'Delivered To',
   'pages.system.notices.filters.enabled': 'Enabled',
+  'pages.system.notices.filters.publishedFrom': 'Published From',
+  'pages.system.notices.filters.publishedTo': 'Published To',
   'pages.system.notices.filters.providerStatus': 'Provider Status',
   'pages.system.notices.filters.readStatus': 'Read Status',
   'pages.system.notices.filters.status': 'Status',
@@ -762,8 +768,7 @@ export default {
   'pages.system.notices.validation.contentTemplateRequired':
     'Content template is required.',
   'pages.system.notices.validation.nameRequired': 'Name is required.',
-  'pages.system.notices.validation.recipientRequired':
-    'Recipient is required.',
+  'pages.system.notices.validation.recipientRequired': 'Recipient is required.',
   'pages.system.notices.validation.templateParamRequired':
     '{param} is required.',
   'pages.system.notices.validation.titleRequired': 'Title is required.',

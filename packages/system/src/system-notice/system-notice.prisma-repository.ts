@@ -159,6 +159,16 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
       ...(filters.status ? { status: filters.status } : {}),
       ...(filters.type ? { type: filters.type } : {}),
       ...(filters.audience ? { audience: filters.audience } : {}),
+      ...createDateRangeWhere('createdAt', filters),
+      ...(filters.keyword
+        ? {
+            OR: [
+              { title: containsInsensitive(filters.keyword) },
+              { content: containsInsensitive(filters.keyword) },
+              { createdBy: containsInsensitive(filters.keyword) },
+            ],
+          }
+        : {}),
     };
     const total = await this.prisma.systemNotice.count({ where });
     const pagination = normalizeSystemNoticePageQuery(query, total);
@@ -345,7 +355,7 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
     query: SystemNoticeDeliveryPageQuery = {},
   ): Promise<PageResult<SystemNoticeDeliveryRecord>> {
     await this.findNoticeById(id);
-    return this.listNoticeDeliveriesByWhere(query, { noticeId: id });
+    return this.listNoticeDeliveriesByWhere(query, id);
   }
 
   async listAllNoticeDeliveries(
@@ -356,30 +366,22 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
 
   private async listNoticeDeliveriesByWhere(
     query: SystemNoticeDeliveryPageQuery = {},
-    baseWhere: Prisma.SystemNoticeDeliveryWhereInput = {},
+    baseNoticeId?: string,
   ): Promise<PageResult<SystemNoticeDeliveryRecord>> {
     const filters = normalizeSystemNoticeDeliveryFilters(query);
-    const where: Prisma.SystemNoticeDeliveryWhereInput = {
-      ...baseWhere,
+    const where = {
+      ...(baseNoticeId || filters.noticeId
+        ? { noticeId: baseNoticeId ?? filters.noticeId }
+        : {}),
       ...(filters.channel ? { channel: filters.channel } : {}),
+      ...createDateRangeWhere('deliveredAt', filters),
       ...(filters.providerStatus
         ? { providerStatus: filters.providerStatus }
         : {}),
       ...(filters.readStatus === true ? { readAt: { not: null } } : {}),
       ...(filters.readStatus === false ? { readAt: null } : {}),
-      ...(filters.username
-        ? {
-            OR: [
-              { username: { contains: filters.username, mode: 'insensitive' } },
-              {
-                displayName: {
-                  contains: filters.username,
-                  mode: 'insensitive',
-                },
-              },
-            ],
-          }
-        : {}),
+      ...(filters.type ? { type: filters.type } : {}),
+      ...createDeliveryTextWhere(filters),
     };
     const total = await this.prisma.systemNoticeDelivery.count({ where });
     const pagination = normalizeSystemNoticePageQuery(query, total);
@@ -427,6 +429,18 @@ export class PrismaSystemNoticeRepository extends SystemNoticeRepository {
     const where = {
       ...(filters.enabled === undefined ? {} : { enabled: filters.enabled }),
       ...(filters.type ? { type: filters.type } : {}),
+      ...createDateRangeWhere('createdAt', filters),
+      ...(filters.keyword
+        ? {
+            OR: [
+              { code: containsInsensitive(filters.keyword) },
+              { name: containsInsensitive(filters.keyword) },
+              { titleTemplate: containsInsensitive(filters.keyword) },
+              { contentTemplate: containsInsensitive(filters.keyword) },
+              { remark: containsInsensitive(filters.keyword) },
+            ],
+          }
+        : {}),
     };
     const total = await this.prisma.systemNoticeTemplate.count({ where });
     const pagination = normalizeSystemNoticePageQuery(query, total);
@@ -1220,14 +1234,77 @@ function normalizeStoredTemplateParams(
   return [...params].sort((left, right) => left.localeCompare(right));
 }
 
+function containsInsensitive(value: string) {
+  return { contains: value, mode: 'insensitive' as const };
+}
+
+function createDateRangeWhere<TField extends string>(
+  field: TField,
+  filters: { createdFrom?: string; createdTo?: string },
+): Partial<Record<TField, { gte?: Date; lte?: Date }>> {
+  if (!filters.createdFrom && !filters.createdTo) {
+    return {};
+  }
+
+  return {
+    [field]: {
+      ...(filters.createdFrom ? { gte: new Date(filters.createdFrom) } : {}),
+      ...(filters.createdTo ? { lte: new Date(filters.createdTo) } : {}),
+    },
+  } as Partial<Record<TField, { gte?: Date; lte?: Date }>>;
+}
+
+function createDeliveryTextWhere(filters: {
+  noticeTitle?: string;
+  username?: string;
+}) {
+  const and = [];
+
+  if (filters.noticeTitle) {
+    and.push({
+      OR: [
+        { title: containsInsensitive(filters.noticeTitle) },
+        { content: containsInsensitive(filters.noticeTitle) },
+      ],
+    });
+  }
+
+  if (filters.username) {
+    and.push({
+      OR: [
+        { username: containsInsensitive(filters.username) },
+        { displayName: containsInsensitive(filters.username) },
+      ],
+    });
+  }
+
+  return and.length > 0 ? { AND: and } : {};
+}
+
 function createInboxWhere(
   userId: string,
-  filters: { readStatus?: boolean; type?: string },
+  filters: {
+    createdFrom?: string;
+    createdTo?: string;
+    keyword?: string;
+    readStatus?: boolean;
+    type?: string;
+  },
 ) {
   return {
     status: 'published',
     audience: { in: ['all', 'admin'] },
     ...(filters.type ? { type: filters.type } : {}),
+    ...createDateRangeWhere('createdAt', filters),
+    ...(filters.keyword
+      ? {
+          OR: [
+            { title: containsInsensitive(filters.keyword) },
+            { content: containsInsensitive(filters.keyword) },
+            { createdBy: containsInsensitive(filters.keyword) },
+          ],
+        }
+      : {}),
     AND: [
       {
         OR: [{ validFrom: null }, { validFrom: { lte: new Date() } }],

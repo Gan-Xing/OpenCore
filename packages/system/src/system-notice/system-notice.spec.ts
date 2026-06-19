@@ -30,6 +30,21 @@ describe('@opencore/system system-notice', () => {
     });
 
     expect(notice.status).toBe('draft');
+    await expect(
+      service.listNotices({
+        audience: 'admin',
+        createdFrom: '2020-01-01T00:00:00.000Z',
+        createdTo: '2100-01-01T00:00:00.000Z',
+        keyword: 'Release Reminder',
+        type: 'announcement',
+      }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        items: expect.arrayContaining([
+          expect.objectContaining({ id: notice.id }),
+        ]),
+      }),
+    );
     await expect(service.getNotice(notice.id)).resolves.toMatchObject({
       id: notice.id,
       title: 'Release Reminder',
@@ -102,7 +117,12 @@ describe('@opencore/system system-notice', () => {
     });
     await expect(
       service.listAllNoticeDeliveries({
+        createdFrom: '2020-01-01T00:00:00.000Z',
+        createdTo: '2100-01-01T00:00:00.000Z',
+        noticeId: notice.id,
+        noticeTitle: 'Release Reminder',
         providerStatus: 'sent',
+        type: 'announcement',
         username: 'admin',
       }),
     ).resolves.toEqual(
@@ -285,6 +305,20 @@ describe('@opencore/system system-notice', () => {
 
     expect(template.params).toEqual(['owner', 'service', 'time']);
     await expect(
+      service.listNoticeTemplates({
+        createdFrom: '2020-01-01T00:00:00.000Z',
+        createdTo: '2100-01-01T00:00:00.000Z',
+        keyword: 'Security Rotation',
+        type: 'security',
+      }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        items: expect.arrayContaining([
+          expect.objectContaining({ code: template.code }),
+        ]),
+      }),
+    );
+    await expect(
       service.renderNoticeTemplate(template.code, {
         templateParams: { owner: 'Platform', service: 'API', time: '09:00' },
       }),
@@ -390,6 +424,19 @@ describe('@opencore/system system-notice', () => {
             readAt: undefined,
           }),
         ],
+        total: 1,
+      }),
+    );
+    await expect(
+      service.listNoticeInbox(userId, {
+        createdFrom: '2020-01-01T00:00:00.000Z',
+        createdTo: '2100-01-01T00:00:00.000Z',
+        keyword: 'Welcome',
+        type: 'announcement',
+      }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        items: [expect.objectContaining({ id: 'notice_welcome' })],
         total: 1,
       }),
     );

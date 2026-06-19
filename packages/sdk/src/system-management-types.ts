@@ -532,11 +532,17 @@ export type SystemNoticeTemplateTestSendSummary = {
 
 export type SystemNoticeQueryRequest = PageRequest & {
   audience?: SystemNoticeAudience;
+  createdFrom?: string;
+  createdTo?: string;
+  keyword?: string;
   status?: SystemNoticeStatus;
   type?: SystemNoticeType;
 };
 
 export type SystemNoticeInboxQueryRequest = PageRequest & {
+  createdFrom?: string;
+  createdTo?: string;
+  keyword?: string;
   readStatus?: boolean;
   type?: SystemNoticeType;
 };
@@ -545,13 +551,21 @@ export type SystemNoticeReadUsersQueryRequest = PageRequest;
 
 export type SystemNoticeDeliveryQueryRequest = PageRequest & {
   channel?: SystemNoticeDeliveryChannel;
+  createdFrom?: string;
+  createdTo?: string;
+  noticeId?: string;
+  noticeTitle?: string;
   providerStatus?: SystemNoticeDeliveryProviderStatus;
   readStatus?: boolean;
+  type?: SystemNoticeType;
   username?: string;
 };
 
 export type SystemNoticeTemplateQueryRequest = PageRequest & {
+  createdFrom?: string;
+  createdTo?: string;
   enabled?: boolean;
+  keyword?: string;
   type?: SystemNoticeType;
 };
 

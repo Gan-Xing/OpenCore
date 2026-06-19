@@ -38,6 +38,7 @@ import { useIntl, useLocation, useModel } from '@umijs/max';
 import {
   Alert,
   Button,
+  DatePicker,
   Form,
   Input,
   Modal,
@@ -52,6 +53,7 @@ import {
   Typography,
   message,
 } from 'antd';
+import type { Dayjs } from 'dayjs';
 import { useEffect, useState } from 'react';
 import {
   archiveOpenCoreSystemNotice,
@@ -164,6 +166,8 @@ const deliverySearchFields: CurrentPageSearchField<SystemNoticeDeliverySummary>[
     'lastError',
   ];
 
+type DateRangeValue = [Dayjs | null, Dayjs | null] | null;
+
 function getNoticeTabFromSearch(search: string): NoticeTab {
   const tab = new URLSearchParams(search).get('tab');
 
@@ -196,6 +200,24 @@ function isSchedulableExternalOutboxDelivery(
   );
 }
 
+function isInDateRange(value: string | undefined, range: DateRangeValue) {
+  if (!range?.[0] && !range?.[1]) {
+    return true;
+  }
+
+  if (!value) {
+    return false;
+  }
+
+  const time = new Date(value).getTime();
+  const start = range?.[0]?.startOf('day').valueOf();
+  const end = range?.[1]?.endOf('day').valueOf();
+
+  return (
+    (start === undefined || time >= start) && (end === undefined || time <= end)
+  );
+}
+
 function getErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
 }
@@ -218,6 +240,14 @@ export default function SystemNoticesPage() {
   const [selectedInboxNoticeIds, setSelectedInboxNoticeIds] = useState<
     string[]
   >([]);
+  const [noticeCreatedRange, setNoticeCreatedRange] =
+    useState<DateRangeValue>(null);
+  const [inboxPublishedRange, setInboxPublishedRange] =
+    useState<DateRangeValue>(null);
+  const [deliveryDeliveredRange, setDeliveryDeliveredRange] =
+    useState<DateRangeValue>(null);
+  const [templateCreatedRange, setTemplateCreatedRange] =
+    useState<DateRangeValue>(null);
   const [deliveryRecordRows, setDeliveryRecordRows] = useState<
     readonly SystemNoticeDeliverySummary[]
   >([]);
@@ -267,9 +297,9 @@ export default function SystemNoticesPage() {
   const [templateNoticeSubmitting, setTemplateNoticeSubmitting] =
     useState(false);
   const [templateTestSubmitting, setTemplateTestSubmitting] = useState(false);
-  const [userOptions, setUserOptions] = useState<
-    readonly UserOptionSummary[]
-  >([]);
+  const [userOptions, setUserOptions] = useState<readonly UserOptionSummary[]>(
+    [],
+  );
   const [userOptionsLoading, setUserOptionsLoading] = useState(false);
   const realtimeEventsPath = getOpenCoreSystemNoticeInboxEventsPath();
   const formatMessage = (
@@ -281,10 +311,7 @@ export default function SystemNoticesPage() {
       ? intl.formatMessage({ id, defaultMessage }, values)
       : intl.formatMessage({ id, defaultMessage });
   const noticeStatusLabels: Record<SystemNoticeSummary['status'], string> = {
-    archived: formatMessage(
-      'pages.system.notices.status.archived',
-      'archived',
-    ),
+    archived: formatMessage('pages.system.notices.status.archived', 'archived'),
     draft: formatMessage('pages.system.notices.status.draft', 'draft'),
     published: formatMessage(
       'pages.system.notices.status.published',
@@ -471,7 +498,10 @@ export default function SystemNoticesPage() {
       },
     ];
   const exportColumns: CurrentPageExportColumn<SystemNoticeSummary>[] = [
-    { title: formatMessage('pages.system.notices.fields.id', 'ID'), dataIndex: 'id' },
+    {
+      title: formatMessage('pages.system.notices.fields.id', 'ID'),
+      dataIndex: 'id',
+    },
     {
       title: formatMessage('pages.system.notices.fields.title', 'Title'),
       dataIndex: 'title',
@@ -494,15 +524,24 @@ export default function SystemNoticesPage() {
         record.pinned ? pinnedLabels.pinned : pinnedLabels.normal,
     },
     {
-      title: formatMessage('pages.system.notices.fields.createdBy', 'Created By'),
+      title: formatMessage(
+        'pages.system.notices.fields.createdBy',
+        'Created By',
+      ),
       dataIndex: 'createdBy',
     },
     {
-      title: formatMessage('pages.system.notices.fields.createdAt', 'Created At'),
+      title: formatMessage(
+        'pages.system.notices.fields.createdAt',
+        'Created At',
+      ),
       dataIndex: 'createdAt',
     },
     {
-      title: formatMessage('pages.system.notices.fields.updatedAt', 'Updated At'),
+      title: formatMessage(
+        'pages.system.notices.fields.updatedAt',
+        'Updated At',
+      ),
       dataIndex: 'updatedAt',
     },
   ];
@@ -511,7 +550,8 @@ export default function SystemNoticesPage() {
       ...exportColumns,
       {
         title: formatMessage('pages.system.notices.fields.read', 'Read'),
-        renderText: (record) => (record.read ? readLabels.read : readLabels.unread),
+        renderText: (record) =>
+          record.read ? readLabels.read : readLabels.unread,
       },
       {
         title: formatMessage('pages.system.notices.fields.readAt', 'Read At'),
@@ -560,14 +600,20 @@ export default function SystemNoticesPage() {
         dataIndex: 'remark',
       },
       {
-        title: formatMessage('pages.system.notices.fields.updatedAt', 'Updated At'),
+        title: formatMessage(
+          'pages.system.notices.fields.updatedAt',
+          'Updated At',
+        ),
         dataIndex: 'updatedAt',
       },
     ];
   const deliveryExportColumns: CurrentPageExportColumn<SystemNoticeDeliverySummary>[] =
     [
       {
-        title: formatMessage('pages.system.notices.fields.noticeId', 'Notice ID'),
+        title: formatMessage(
+          'pages.system.notices.fields.noticeId',
+          'Notice ID',
+        ),
         dataIndex: 'noticeId',
       },
       {
@@ -575,7 +621,10 @@ export default function SystemNoticesPage() {
         dataIndex: 'title',
       },
       {
-        title: formatMessage('pages.system.notices.fields.username', 'Username'),
+        title: formatMessage(
+          'pages.system.notices.fields.username',
+          'Username',
+        ),
         dataIndex: 'username',
       },
       {
@@ -602,10 +651,11 @@ export default function SystemNoticesPage() {
         dataIndex: 'deliveredAt',
       },
     ];
-  const createDetailFields = (
-    record: SystemNoticeSummary,
-  ): DetailField[] => [
-    { label: formatMessage('pages.system.notices.fields.id', 'ID'), value: record.id },
+  const createDetailFields = (record: SystemNoticeSummary): DetailField[] => [
+    {
+      label: formatMessage('pages.system.notices.fields.id', 'ID'),
+      value: record.id,
+    },
     {
       label: formatMessage('pages.system.notices.fields.title', 'Title'),
       value: record.title,
@@ -627,7 +677,10 @@ export default function SystemNoticesPage() {
       value: record.pinned ? yesNoLabels.yes : yesNoLabels.no,
     },
     {
-      label: formatMessage('pages.system.notices.fields.validFrom', 'Valid From'),
+      label: formatMessage(
+        'pages.system.notices.fields.validFrom',
+        'Valid From',
+      ),
       value: record.validFrom,
     },
     {
@@ -649,15 +702,24 @@ export default function SystemNoticesPage() {
       value: record.archivedAt,
     },
     {
-      label: formatMessage('pages.system.notices.fields.createdBy', 'Created By'),
+      label: formatMessage(
+        'pages.system.notices.fields.createdBy',
+        'Created By',
+      ),
       value: record.createdBy,
     },
     {
-      label: formatMessage('pages.system.notices.fields.createdAt', 'Created At'),
+      label: formatMessage(
+        'pages.system.notices.fields.createdAt',
+        'Created At',
+      ),
       value: record.createdAt,
     },
     {
-      label: formatMessage('pages.system.notices.fields.updatedAt', 'Updated At'),
+      label: formatMessage(
+        'pages.system.notices.fields.updatedAt',
+        'Updated At',
+      ),
       value: record.updatedAt,
     },
     {
@@ -681,7 +743,10 @@ export default function SystemNoticesPage() {
   const createTemplateDetailFields = (
     record: SystemNoticeTemplateSummary,
   ): DetailField[] => [
-    { label: formatMessage('pages.system.notices.fields.id', 'ID'), value: record.id },
+    {
+      label: formatMessage('pages.system.notices.fields.id', 'ID'),
+      value: record.id,
+    },
     {
       label: formatMessage('pages.system.notices.fields.code', 'Code'),
       value: record.code,
@@ -721,11 +786,17 @@ export default function SystemNoticesPage() {
       value: record.remark,
     },
     {
-      label: formatMessage('pages.system.notices.fields.createdAt', 'Created At'),
+      label: formatMessage(
+        'pages.system.notices.fields.createdAt',
+        'Created At',
+      ),
       value: record.createdAt,
     },
     {
-      label: formatMessage('pages.system.notices.fields.updatedAt', 'Updated At'),
+      label: formatMessage(
+        'pages.system.notices.fields.updatedAt',
+        'Updated At',
+      ),
       value: record.updatedAt,
     },
   ];
@@ -743,9 +814,21 @@ export default function SystemNoticesPage() {
       type === 'security' ? 'red' : type === 'maintenance' ? 'blue' : 'purple';
     return <Tag color={color}>{noticeTypeLabels[type]}</Tag>;
   };
+  const dateFilteredRows = rows.filter((record) =>
+    isInDateRange(record.createdAt, noticeCreatedRange),
+  );
+  const dateFilteredInboxRows = inboxRows.filter((record) =>
+    isInDateRange(record.publishedAt ?? record.createdAt, inboxPublishedRange),
+  );
+  const dateFilteredDeliveryRows = deliveryRecordRows.filter((record) =>
+    isInDateRange(record.deliveredAt, deliveryDeliveredRange),
+  );
+  const dateFilteredTemplates = templates.filter((record) =>
+    isInDateRange(record.createdAt, templateCreatedRange),
+  );
   const { filteredRows, toolbar: filterToolbar } =
     useCurrentPageFilters<SystemNoticeSummary>({
-      rows,
+      rows: dateFilteredRows,
       searchFields,
       searchPlaceholder: formatMessage(
         'pages.system.notices.search.placeholder',
@@ -755,7 +838,7 @@ export default function SystemNoticesPage() {
     });
   const { filteredRows: filteredInboxRows, toolbar: inboxFilterToolbar } =
     useCurrentPageFilters<SystemNoticeInboxSummary>({
-      rows: inboxRows,
+      rows: dateFilteredInboxRows,
       searchFields: inboxSearchFields,
       searchPlaceholder: formatMessage(
         'pages.system.notices.inbox.searchPlaceholder',
@@ -765,7 +848,7 @@ export default function SystemNoticesPage() {
     });
   const { filteredRows: filteredTemplates, toolbar: templateFilterToolbar } =
     useCurrentPageFilters<SystemNoticeTemplateSummary>({
-      rows: templates,
+      rows: dateFilteredTemplates,
       searchFields: templateSearchFields,
       searchPlaceholder: formatMessage(
         'pages.system.notices.templates.searchPlaceholder',
@@ -777,7 +860,7 @@ export default function SystemNoticesPage() {
     filteredRows: filteredDeliveryRecords,
     toolbar: deliveryRecordFilterToolbar,
   } = useCurrentPageFilters<SystemNoticeDeliverySummary>({
-    rows: deliveryRecordRows,
+    rows: dateFilteredDeliveryRows,
     searchFields: deliverySearchFields,
     searchPlaceholder: formatMessage(
       'pages.system.notices.deliveries.searchPlaceholder',
@@ -1634,20 +1717,23 @@ export default function SystemNoticesPage() {
       ),
     },
     {
-      title: formatMessage('pages.system.notices.fields.createdBy', 'Created By'),
+      title: formatMessage(
+        'pages.system.notices.fields.createdBy',
+        'Created By',
+      ),
       dataIndex: 'createdBy',
     },
     {
       title: formatMessage('pages.system.notices.actions.column', 'Actions'),
       valueType: 'option',
-      width: 520,
+      width: 360,
       render: (_, record) => {
         const archived = record.status === 'archived';
         const draft = record.status === 'draft';
         const published = record.status === 'published';
 
         return (
-          <Space size="small">
+          <Space size="small" wrap>
             <Tooltip
               title={formatMessage(
                 'pages.system.notices.actions.detail',
@@ -2103,7 +2189,10 @@ export default function SystemNoticesPage() {
       render: (_, record) => <Tag>{record.provider}</Tag>,
     },
     {
-      title: formatMessage('pages.system.notices.fields.recipient', 'Recipient'),
+      title: formatMessage(
+        'pages.system.notices.fields.recipient',
+        'Recipient',
+      ),
       dataIndex: 'recipient',
     },
     {
@@ -2119,7 +2208,7 @@ export default function SystemNoticesPage() {
               ? 'green'
               : record.providerStatus === 'failed'
                 ? 'red'
-            : 'gold'
+                : 'gold'
           }
         >
           {labelFrom(providerStatusLabels, record.providerStatus)}
@@ -2156,7 +2245,10 @@ export default function SystemNoticesPage() {
       dataIndex: 'providerMessageId',
     },
     {
-      title: formatMessage('pages.system.notices.fields.lastError', 'Last Error'),
+      title: formatMessage(
+        'pages.system.notices.fields.lastError',
+        'Last Error',
+      ),
       dataIndex: 'lastError',
     },
     {
@@ -2227,32 +2319,32 @@ export default function SystemNoticesPage() {
               onConfirm={() => void failDeliveryOutbox(record)}
             >
               <Tooltip
-              title={
-                !channel
+                title={
+                  !channel
                     ? formatMessage(
                         'pages.system.notices.outbox.actions.mailSmsOnlyFail',
                         'Only mail/SMS outbox deliveries can fail',
                       )
-                  : sent
-                    ? formatMessage(
-                        'pages.system.notices.outbox.actions.sentCannotFail',
-                        'Sent outbox messages cannot fail',
-                      )
-                    : formatMessage(
-                        'pages.system.notices.outbox.actions.fail',
-                        'Fail outbox',
-                      )
-              }
-            >
-              <Button
-                aria-label={formatMessage(
-                  'pages.system.notices.outbox.actions.failAria',
-                  'Fail outbox {id}',
-                  { id: record.providerMessageId ?? record.id },
-                )}
-                danger
-                disabled={!channel || sent}
-                icon={<ExclamationCircleOutlined />}
+                    : sent
+                      ? formatMessage(
+                          'pages.system.notices.outbox.actions.sentCannotFail',
+                          'Sent outbox messages cannot fail',
+                        )
+                      : formatMessage(
+                          'pages.system.notices.outbox.actions.fail',
+                          'Fail outbox',
+                        )
+                }
+              >
+                <Button
+                  aria-label={formatMessage(
+                    'pages.system.notices.outbox.actions.failAria',
+                    'Fail outbox {id}',
+                    { id: record.providerMessageId ?? record.id },
+                  )}
+                  danger
+                  disabled={!channel || sent}
+                  icon={<ExclamationCircleOutlined />}
                   size="small"
                 />
               </Tooltip>
@@ -2300,31 +2392,31 @@ export default function SystemNoticesPage() {
               onConfirm={() => void markDeliveryOutboxSent(record)}
             >
               <Tooltip
-              title={
-                !channel
+                title={
+                  !channel
                     ? formatMessage(
                         'pages.system.notices.outbox.actions.mailSmsOnlyMarkSent',
                         'Only mail/SMS outbox deliveries can be marked sent',
                       )
-                  : sent
-                    ? formatMessage(
-                        'pages.system.notices.outbox.actions.alreadySent',
-                        'Already sent',
-                      )
-                    : formatMessage(
-                        'pages.system.notices.outbox.actions.markSent',
-                        'Mark outbox sent',
-                      )
-              }
-            >
-              <Button
-                aria-label={formatMessage(
-                  'pages.system.notices.outbox.actions.markSentAria',
-                  'Mark outbox sent {id}',
-                  { id: record.providerMessageId ?? record.id },
-                )}
-                disabled={!channel || sent}
-                icon={<CheckCircleOutlined />}
+                    : sent
+                      ? formatMessage(
+                          'pages.system.notices.outbox.actions.alreadySent',
+                          'Already sent',
+                        )
+                      : formatMessage(
+                          'pages.system.notices.outbox.actions.markSent',
+                          'Mark outbox sent',
+                        )
+                }
+              >
+                <Button
+                  aria-label={formatMessage(
+                    'pages.system.notices.outbox.actions.markSentAria',
+                    'Mark outbox sent {id}',
+                    { id: record.providerMessageId ?? record.id },
+                  )}
+                  disabled={!channel || sent}
+                  icon={<CheckCircleOutlined />}
                   size="small"
                 />
               </Tooltip>
@@ -2488,7 +2580,10 @@ export default function SystemNoticesPage() {
       ),
     },
     {
-      title: formatMessage('pages.system.notices.fields.updatedAt', 'Updated At'),
+      title: formatMessage(
+        'pages.system.notices.fields.updatedAt',
+        'Updated At',
+      ),
       dataIndex: 'updatedAt',
     },
     {
@@ -2650,6 +2745,22 @@ export default function SystemNoticesPage() {
                       options={false}
                       toolBarRender={() => [
                         filterToolbar,
+                        <DatePicker.RangePicker
+                          key="created-range"
+                          onChange={(dates) =>
+                            setNoticeCreatedRange(dates as DateRangeValue)
+                          }
+                          placeholder={[
+                            formatMessage(
+                              'pages.system.notices.filters.createdFrom',
+                              'Created From',
+                            ),
+                            formatMessage(
+                              'pages.system.notices.filters.createdTo',
+                              'Created To',
+                            ),
+                          ]}
+                        />,
                         <Button
                           key="create"
                           type="primary"
@@ -2706,6 +2817,22 @@ export default function SystemNoticesPage() {
                       options={false}
                       toolBarRender={() => [
                         deliveryRecordFilterToolbar,
+                        <DatePicker.RangePicker
+                          key="delivered-range"
+                          onChange={(dates) =>
+                            setDeliveryDeliveredRange(dates as DateRangeValue)
+                          }
+                          placeholder={[
+                            formatMessage(
+                              'pages.system.notices.filters.deliveredFrom',
+                              'Delivered From',
+                            ),
+                            formatMessage(
+                              'pages.system.notices.filters.deliveredTo',
+                              'Delivered To',
+                            ),
+                          ]}
+                        />,
                         <Button
                           key="schedule"
                           icon={<SyncOutlined />}
@@ -2796,6 +2923,22 @@ export default function SystemNoticesPage() {
                   }}
                   toolBarRender={() => [
                     inboxFilterToolbar,
+                    <DatePicker.RangePicker
+                      key="published-range"
+                      onChange={(dates) =>
+                        setInboxPublishedRange(dates as DateRangeValue)
+                      }
+                      placeholder={[
+                        formatMessage(
+                          'pages.system.notices.filters.publishedFrom',
+                          'Published From',
+                        ),
+                        formatMessage(
+                          'pages.system.notices.filters.publishedTo',
+                          'Published To',
+                        ),
+                      ]}
+                    />,
                     <Button
                       key="mark-selected"
                       icon={<CheckOutlined />}
@@ -2871,6 +3014,22 @@ export default function SystemNoticesPage() {
                   options={false}
                   toolBarRender={() => [
                     templateFilterToolbar,
+                    <DatePicker.RangePicker
+                      key="created-range"
+                      onChange={(dates) =>
+                        setTemplateCreatedRange(dates as DateRangeValue)
+                      }
+                      placeholder={[
+                        formatMessage(
+                          'pages.system.notices.filters.createdFrom',
+                          'Created From',
+                        ),
+                        formatMessage(
+                          'pages.system.notices.filters.createdTo',
+                          'Created To',
+                        ),
+                      ]}
+                    />,
                     <Button
                       key="create"
                       type="primary"
@@ -3057,10 +3216,7 @@ export default function SystemNoticesPage() {
               icon={<ReloadOutlined />}
               onClick={() => void refreshOpenDeliveries()}
             >
-              {formatMessage(
-                'pages.system.notices.actions.refresh',
-                'Refresh',
-              )}
+              {formatMessage('pages.system.notices.actions.refresh', 'Refresh')}
             </Button>,
           ]}
           pagination={{ pageSize: 10 }}
@@ -3309,7 +3465,10 @@ export default function SystemNoticesPage() {
             />
           </Form.Item>
           <Form.Item
-            label={formatMessage('pages.system.notices.fields.remark', 'Remark')}
+            label={formatMessage(
+              'pages.system.notices.fields.remark',
+              'Remark',
+            )}
             name="remark"
           >
             <Input.TextArea rows={2} maxLength={300} />

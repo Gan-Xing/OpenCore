@@ -45,11 +45,17 @@ export type SystemNoticeExportPreview = {
 
 export type SystemNoticePageQuery = PageQueryInput & {
   audience?: string;
+  createdFrom?: string;
+  createdTo?: string;
+  keyword?: string;
   status?: string;
   type?: string;
 };
 
 export type SystemNoticeInboxPageQuery = PageQueryInput & {
+  createdFrom?: string;
+  createdTo?: string;
+  keyword?: string;
   readStatus?: boolean | string;
   type?: string;
 };
@@ -58,31 +64,50 @@ export type SystemNoticeReadUsersPageQuery = PageQueryInput;
 
 export type SystemNoticeDeliveryPageQuery = PageQueryInput & {
   channel?: string;
+  createdFrom?: string;
+  createdTo?: string;
+  noticeId?: string;
+  noticeTitle?: string;
   providerStatus?: string;
   readStatus?: boolean | string;
+  type?: string;
   username?: string;
 };
 
 export type SystemNoticeTemplatePageQuery = PageQueryInput & {
+  createdFrom?: string;
+  createdTo?: string;
   enabled?: boolean | string;
+  keyword?: string;
   type?: string;
 };
 
 export type SystemNoticeFilters = {
   audience?: SystemNoticeAudience;
+  createdFrom?: string;
+  createdTo?: string;
+  keyword?: string;
   status?: SystemNoticeStatus;
   type?: SystemNoticeType;
 };
 
 export type SystemNoticeInboxFilters = {
+  createdFrom?: string;
+  createdTo?: string;
+  keyword?: string;
   readStatus?: boolean;
   type?: SystemNoticeType;
 };
 
 export type SystemNoticeDeliveryFilters = {
   channel?: SystemNoticeDeliveryChannel;
+  createdFrom?: string;
+  createdTo?: string;
+  noticeId?: string;
+  noticeTitle?: string;
   providerStatus?: SystemNoticeDeliveryProviderStatus;
   readStatus?: boolean;
+  type?: SystemNoticeType;
   username?: string;
 };
 
@@ -130,7 +155,10 @@ export type SystemNoticeDeliveryExecutionResult = {
 };
 
 export type SystemNoticeTemplateFilters = {
+  createdFrom?: string;
+  createdTo?: string;
   enabled?: boolean;
+  keyword?: string;
   type?: SystemNoticeType;
 };
 
@@ -359,9 +387,7 @@ export function systemNoticeConflict(
   message: string,
   details?: Record<string, unknown>,
 ): ConflictException {
-  return new ConflictException(
-    createApiErrorBody({ code, message, details }),
-  );
+  return new ConflictException(createApiErrorBody({ code, message, details }));
 }
 
 export function systemNoticeNotFound(
@@ -375,33 +401,56 @@ export function systemNoticeNotFound(
 export function normalizeSystemNoticeFilters(
   query: SystemNoticePageQuery = {},
 ): SystemNoticeFilters {
-  return {
+  const filters = {
     audience: toOptionalSystemNoticeAudience(query.audience),
+    createdFrom: normalizeOptionalDateString(query.createdFrom, 'createdFrom'),
+    createdTo: normalizeOptionalDateString(query.createdTo, 'createdTo'),
+    keyword: normalizeOptionalText(query.keyword, 'notice keyword'),
     status: toOptionalSystemNoticeStatus(query.status),
     type: toOptionalSystemNoticeType(query.type),
   };
+
+  assertValidNoticeSchedule(filters.createdFrom, filters.createdTo);
+  return filters;
 }
 
 export function normalizeSystemNoticeInboxFilters(
   query: SystemNoticeInboxPageQuery = {},
 ): SystemNoticeInboxFilters {
-  return {
+  const filters = {
+    createdFrom: normalizeOptionalDateString(query.createdFrom, 'createdFrom'),
+    createdTo: normalizeOptionalDateString(query.createdTo, 'createdTo'),
+    keyword: normalizeOptionalText(query.keyword, 'inbox keyword'),
     readStatus: normalizeOptionalBoolean(query.readStatus, 'readStatus'),
     type: toOptionalSystemNoticeType(query.type),
   };
+
+  assertValidNoticeSchedule(filters.createdFrom, filters.createdTo);
+  return filters;
 }
 
 export function normalizeSystemNoticeDeliveryFilters(
   query: SystemNoticeDeliveryPageQuery = {},
 ): SystemNoticeDeliveryFilters {
-  return {
+  const filters = {
     channel: toOptionalSystemNoticeDeliveryChannel(query.channel),
+    createdFrom: normalizeOptionalDateString(query.createdFrom, 'createdFrom'),
+    createdTo: normalizeOptionalDateString(query.createdTo, 'createdTo'),
+    noticeId: normalizeOptionalText(query.noticeId, 'delivery noticeId'),
+    noticeTitle: normalizeOptionalText(
+      query.noticeTitle,
+      'delivery notice title',
+    ),
     providerStatus: toOptionalSystemNoticeDeliveryProviderStatus(
       query.providerStatus,
     ),
     readStatus: normalizeOptionalBoolean(query.readStatus, 'readStatus'),
+    type: toOptionalSystemNoticeType(query.type),
     username: normalizeOptionalText(query.username, 'delivery username'),
   };
+
+  assertValidNoticeSchedule(filters.createdFrom, filters.createdTo);
+  return filters;
 }
 
 export function normalizeSystemNoticeDeliveryChannelInput(
@@ -427,10 +476,16 @@ export function getSystemNoticeDeliveryProvider(
 export function normalizeSystemNoticeTemplateFilters(
   query: SystemNoticeTemplatePageQuery = {},
 ): SystemNoticeTemplateFilters {
-  return {
+  const filters = {
+    createdFrom: normalizeOptionalDateString(query.createdFrom, 'createdFrom'),
+    createdTo: normalizeOptionalDateString(query.createdTo, 'createdTo'),
     enabled: normalizeOptionalBoolean(query.enabled, 'template enabled'),
+    keyword: normalizeOptionalText(query.keyword, 'template keyword'),
     type: toOptionalSystemNoticeType(query.type),
   };
+
+  assertValidNoticeSchedule(filters.createdFrom, filters.createdTo);
+  return filters;
 }
 
 export function normalizeSystemNoticePageQuery(

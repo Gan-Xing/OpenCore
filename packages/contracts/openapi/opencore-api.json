@@ -4263,6 +4263,24 @@
             "required": false,
             "in": "query",
             "schema": { "type": "string", "enum": ["all", "admin"] }
+          },
+          {
+            "name": "keyword",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "createdFrom",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "createdTo",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
@@ -4348,6 +4366,24 @@
             "required": false,
             "in": "query",
             "schema": { "type": "string", "enum": ["all", "admin"] }
+          },
+          {
+            "name": "keyword",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "createdFrom",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "createdTo",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
@@ -4400,6 +4436,24 @@
             "required": false,
             "in": "query",
             "schema": { "$ref": "#/components/schemas/Object" }
+          },
+          {
+            "name": "keyword",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "createdFrom",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "createdTo",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
@@ -4651,6 +4705,39 @@
             "required": false,
             "in": "query",
             "schema": { "type": "string" }
+          },
+          {
+            "name": "noticeId",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "noticeTitle",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["announcement", "maintenance", "security"]
+            }
+          },
+          {
+            "name": "createdFrom",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "createdTo",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
@@ -4720,6 +4807,39 @@
           },
           {
             "name": "username",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "noticeId",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "noticeTitle",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["announcement", "maintenance", "security"]
+            }
+          },
+          {
+            "name": "createdFrom",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "createdTo",
             "required": false,
             "in": "query",
             "schema": { "type": "string" }
@@ -4851,6 +4971,24 @@
             "required": false,
             "in": "query",
             "schema": { "$ref": "#/components/schemas/Object" }
+          },
+          {
+            "name": "keyword",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "createdFrom",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "createdTo",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
