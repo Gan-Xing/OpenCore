@@ -707,12 +707,23 @@ class OAuthExchangeError extends Error {
     message: string,
   ) {
     super(message);
+    this.name = 'OAuthExchangeError';
+    Object.setPrototypeOf(this, OAuthExchangeError.prototype);
   }
 }
 
 function readOAuthExchangeErrorCode(error: unknown): string {
-  if (error instanceof OAuthExchangeError) {
-    return error.code;
+  if (
+    error instanceof OAuthExchangeError ||
+    (typeof error === 'object' &&
+      error !== null &&
+      'name' in error &&
+      error.name === 'OAuthExchangeError')
+  ) {
+    const code = (error as { code?: unknown }).code;
+    if (typeof code === 'string') {
+      return code;
+    }
   }
   return 'oauth_exchange_failed';
 }
