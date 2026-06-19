@@ -294,7 +294,7 @@ export class SocialAuthService {
       });
     } catch (error) {
       throw new OAuthExchangeError(
-        'oauth_exchange_request_failed',
+        normalizeOAuthRequestError(error),
         error instanceof Error ? error.message : 'GitHub OAuth request failed.',
       );
     }
@@ -394,7 +394,7 @@ export class SocialAuthService {
       });
     } catch (error) {
       throw new OAuthExchangeError(
-        'oauth_exchange_request_failed',
+        normalizeOAuthRequestError(error),
         error instanceof Error
           ? error.message
           : `${providerCode} OAuth request failed.`,
@@ -790,6 +790,41 @@ function normalizeOAuthExchangeProviderError(error: unknown): string {
         ? `oauth_exchange_${normalized.slice(0, 80)}`
         : 'oauth_exchange_failed';
   }
+}
+
+function normalizeOAuthRequestError(error: unknown): string {
+  const code = readOAuthRequestErrorCode(error);
+  return code
+    ? `oauth_exchange_request_failed_${code.slice(0, 80)}`
+    : 'oauth_exchange_request_failed';
+}
+
+function readOAuthRequestErrorCode(error: unknown): string {
+  if (typeof error !== 'object' || error === null) {
+    return '';
+  }
+
+  const directCode = sanitizeOAuthErrorCode((error as { code?: unknown }).code);
+  if (directCode) {
+    return directCode;
+  }
+
+  const cause = (error as { cause?: unknown }).cause;
+  if (typeof cause !== 'object' || cause === null) {
+    return '';
+  }
+
+  return sanitizeOAuthErrorCode((cause as { code?: unknown }).code);
+}
+
+function sanitizeOAuthErrorCode(value: unknown): string {
+  return typeof value === 'string'
+    ? value
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/gu, '_')
+        .replace(/^_+|_+$/gu, '')
+    : '';
 }
 
 function isActiveToken(token: OAuthTokenRow): boolean {

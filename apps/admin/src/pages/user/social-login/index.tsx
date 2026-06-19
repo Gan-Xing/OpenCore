@@ -299,6 +299,14 @@ function formatSocialCallbackFailureMessage(
   reason: string,
   formatMessage: ReturnType<typeof useIntl>['formatMessage'],
 ): string {
+  if (reason.startsWith('oauth_exchange_request_failed')) {
+    return formatMessage({
+      id: 'pages.login.social.errors.requestFailed',
+      defaultMessage:
+        'OpenCore could not reach the OAuth provider. Check server network access to the provider.',
+    });
+  }
+
   switch (reason) {
     case 'oauth_exchange_incorrect_client_credentials':
       return formatMessage({
@@ -322,12 +330,6 @@ function formatSocialCallbackFailureMessage(
       return formatMessage({
         id: 'pages.login.social.errors.notConfigured',
         defaultMessage: 'Social login is not fully configured.',
-      });
-    case 'oauth_exchange_request_failed':
-      return formatMessage({
-        id: 'pages.login.social.errors.requestFailed',
-        defaultMessage:
-          'OpenCore could not reach the OAuth provider. Check server network access to the provider.',
       });
     case 'oauth_exchange_invalid_response':
       return formatMessage({
