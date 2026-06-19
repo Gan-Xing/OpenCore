@@ -25,6 +25,28 @@ describe('System notices page contract', () => {
     expect(source).toContain('setTemplateCreatedRange');
   });
 
+  it('keeps notice creation template selection wired in the create modal', () => {
+    expect(source).toContain('templateCode?: string');
+    expect(source).toContain('selectedCreateTemplate');
+    expect(source).toContain('selectCreateTemplate');
+    expect(source).toContain('applyCreateTemplateToNotice');
+    expect(source).toContain('renderOpenCoreSystemNoticeTemplate');
+    expect(source).toContain('data-opencore-notice-create-template-panel');
+    expect(source).toContain(
+      'pages.system.notices.templates.fields.selectTemplate',
+    );
+    expect(source).toContain(
+      'pages.system.notices.templates.actions.applyToNotice',
+    );
+    expect(source).toContain('createOpenCoreSystemNoticeFromTemplate');
+    expect(zhLocale).toContain(
+      "'pages.system.notices.templates.actions.applyToNotice': '预览并应用'",
+    );
+    expect(zhLocale).toContain(
+      "'pages.system.notices.templates.fields.selectTemplate': '选择模板'",
+    );
+  });
+
   it('keeps the notice center UI bounded and action-dense surfaces collapsed', () => {
     expect(source).toContain('const useStyles = createStyles');
     expect(source).toContain('const compactLayout = screens.md === false');

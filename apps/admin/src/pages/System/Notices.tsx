@@ -377,12 +377,46 @@ const useStyles = createStyles(({ token, css }) => ({
       content: '-';
     }
   `,
+  templateApplyPanel: css`
+    display: grid;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 14px;
+    background: ${token.colorFillAlter};
+    border: 1px solid ${token.colorBorderSecondary};
+    border-radius: ${token.borderRadiusLG}px;
+  `,
+  templateApplyRow: css`
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: end;
+
+    @media (max-width: ${token.screenMD}px) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  `,
+  templateParamGrid: css`
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+
+    .ant-form-item {
+      margin-bottom: 0;
+    }
+
+    @media (max-width: ${token.screenMD}px) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  `,
 }));
 
 type NoticeFormValues = {
   audience: SystemNoticeAudience;
   content: string;
   pinned?: boolean;
+  templateCode?: string;
+  templateParams?: Record<string, string>;
   title: string;
   type: SystemNoticeType;
 };
@@ -565,6 +599,11 @@ export default function SystemNoticesPage() {
   const [editingNotice, setEditingNotice] = useState<SystemNoticeSummary>();
   const [formOpen, setFormOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [createTemplateApplying, setCreateTemplateApplying] = useState(false);
+  const [createTemplatePreview, setCreateTemplatePreview] =
+    useState<SystemNoticeTemplateRenderSummary>();
+  const [selectedCreateTemplate, setSelectedCreateTemplate] =
+    useState<SystemNoticeTemplateSummary>();
   const [editingTemplate, setEditingTemplate] =
     useState<SystemNoticeTemplateSummary>();
   const [templateFormOpen, setTemplateFormOpen] = useState(false);
@@ -1311,10 +1350,14 @@ export default function SystemNoticesPage() {
 
   const openCreateForm = () => {
     setEditingNotice(undefined);
+    setSelectedCreateTemplate(undefined);
+    setCreateTemplatePreview(undefined);
     form.setFieldsValue({
       audience: 'all',
       content: '',
       pinned: false,
+      templateCode: undefined,
+      templateParams: {},
       title: '',
       type: 'announcement',
     });
@@ -1325,10 +1368,14 @@ export default function SystemNoticesPage() {
     try {
       const fresh = await getOpenCoreSystemNotice(record.id);
       setEditingNotice(fresh);
+      setSelectedCreateTemplate(undefined);
+      setCreateTemplatePreview(undefined);
       form.setFieldsValue({
         audience: fresh.audience,
         content: fresh.content,
         pinned: fresh.pinned,
+        templateCode: undefined,
+        templateParams: {},
         title: fresh.title,
         type: fresh.type,
       });
@@ -1525,14 +1572,106 @@ export default function SystemNoticesPage() {
     }
   };
 
+  const selectCreateTemplate = async (code?: string) => {
+    setCreateTemplatePreview(undefined);
+
+    if (!code) {
+      setSelectedCreateTemplate(undefined);
+      form.setFieldsValue({
+        templateCode: undefined,
+        templateParams: {},
+      });
+      return;
+    }
+
+    try {
+      const fresh = await getOpenCoreSystemNoticeTemplate(code);
+
+      if (!fresh.enabled) {
+        message.warning(
+          formatMessage(
+            'pages.system.notices.templates.messages.disabledSelectionBlocked',
+            'Disabled templates cannot be used for new notices.',
+          ),
+        );
+        setSelectedCreateTemplate(undefined);
+        form.setFieldsValue({
+          templateCode: undefined,
+          templateParams: {},
+        });
+        return;
+      }
+
+      setSelectedCreateTemplate(fresh);
+      form.setFieldsValue({
+        templateCode: fresh.code,
+        templateParams: {},
+        type: fresh.type,
+      });
+    } catch (error: unknown) {
+      message.error(
+        getErrorMessage(
+          error,
+          formatMessage(
+            'pages.system.notices.templates.openFailure',
+            'Unable to open live system notice template.',
+          ),
+        ),
+      );
+    }
+  };
+
+  const applyCreateTemplateToNotice = async () => {
+    if (!selectedCreateTemplate) {
+      return;
+    }
+
+    if (selectedCreateTemplate.params.length > 0) {
+      await form.validateFields(
+        selectedCreateTemplate.params.map((param) => ['templateParams', param]),
+      );
+    }
+
+    const templateParams = form.getFieldValue('templateParams') ?? {};
+
+    setCreateTemplateApplying(true);
+    try {
+      const preview = await renderOpenCoreSystemNoticeTemplate(
+        selectedCreateTemplate.code,
+        { templateParams },
+      );
+      setCreateTemplatePreview(preview);
+      form.setFieldsValue({
+        content: preview.content,
+        title: preview.title,
+        type: selectedCreateTemplate.type,
+      });
+      message.success(
+        formatMessage(
+          'pages.system.notices.templates.messages.appliedToNotice',
+          'Template applied to the new notice.',
+        ),
+      );
+    } finally {
+      setCreateTemplateApplying(false);
+    }
+  };
+
   const submitForm = async () => {
     const values = await form.validateFields();
+    const noticeValues = {
+      audience: values.audience,
+      content: values.content,
+      pinned: values.pinned,
+      title: values.title,
+      type: values.type,
+    };
     const createdBy = initialState?.currentUser?.username ?? 'admin';
 
     setSubmitting(true);
     try {
       if (editingNotice) {
-        await updateOpenCoreSystemNotice(editingNotice.id, values);
+        await updateOpenCoreSystemNotice(editingNotice.id, noticeValues);
         message.success(
           formatMessage(
             'pages.system.notices.messages.updated',
@@ -1541,7 +1680,7 @@ export default function SystemNoticesPage() {
         );
       } else {
         await createOpenCoreSystemNotice({
-          ...values,
+          ...noticeValues,
           createdBy,
         });
         message.success(
@@ -3211,6 +3350,12 @@ export default function SystemNoticesPage() {
   const hasDeliveryRecordSchedulableExternalOutbox = deliveryRecordRows.some(
     isSchedulableExternalOutboxDelivery,
   );
+  const enabledTemplateOptions = templates
+    .filter((template) => template.enabled)
+    .map((template) => ({
+      label: `${template.name} (${template.code})`,
+      value: template.code,
+    }));
 
   return (
     <PageContainer
@@ -3804,6 +3949,8 @@ export default function SystemNoticesPage() {
         onCancel={() => {
           setFormOpen(false);
           setEditingNotice(undefined);
+          setSelectedCreateTemplate(undefined);
+          setCreateTemplatePreview(undefined);
         }}
         onOk={() => void submitForm()}
         confirmLoading={submitting}
@@ -3813,7 +3960,117 @@ export default function SystemNoticesPage() {
             : formatMessage('pages.system.notices.actions.create', 'Create')
         }
       >
-        <Form<NoticeFormValues> form={form} layout="vertical">
+        <Form<NoticeFormValues>
+          form={form}
+          layout="vertical"
+          onValuesChange={(changedValues) => {
+            if (Object.hasOwn(changedValues, 'templateParams')) {
+              setCreateTemplatePreview(undefined);
+            }
+          }}
+        >
+          {!editingNotice ? (
+            <div
+              className={styles.templateApplyPanel}
+              data-opencore-notice-create-template-panel="true"
+            >
+              <div className={styles.templateApplyRow}>
+                <Form.Item
+                  label={formatMessage(
+                    'pages.system.notices.templates.fields.selectTemplate',
+                    'Template',
+                  )}
+                  name="templateCode"
+                >
+                  <Select
+                    allowClear
+                    showSearch
+                    loading={templateLoading}
+                    optionFilterProp="label"
+                    options={enabledTemplateOptions}
+                    placeholder={formatMessage(
+                      'pages.system.notices.templates.placeholders.selectTemplate',
+                      'Select enabled template',
+                    )}
+                    notFoundContent={formatMessage(
+                      'pages.system.notices.templates.empty.enabled',
+                      'No enabled templates',
+                    )}
+                    onChange={(value) =>
+                      void selectCreateTemplate(value as string | undefined)
+                    }
+                  />
+                </Form.Item>
+                <Button
+                  icon={<PlayCircleOutlined />}
+                  loading={createTemplateApplying}
+                  disabled={!selectedCreateTemplate}
+                  onClick={() => void applyCreateTemplateToNotice()}
+                >
+                  {formatMessage(
+                    'pages.system.notices.templates.actions.applyToNotice',
+                    'Preview and apply',
+                  )}
+                </Button>
+              </div>
+              {selectedCreateTemplate ? (
+                <>
+                  {selectedCreateTemplate.params.length > 0 ? (
+                    <div className={styles.templateParamGrid}>
+                      {selectedCreateTemplate.params.map((param) => (
+                        <Form.Item
+                          key={param}
+                          label={param}
+                          name={['templateParams', param]}
+                          rules={[
+                            {
+                              required: true,
+                              message: formatMessage(
+                                'pages.system.notices.validation.templateParamRequired',
+                                '{param} is required.',
+                                { param },
+                              ),
+                            },
+                          ]}
+                        >
+                          <Input maxLength={160} />
+                        </Form.Item>
+                      ))}
+                    </div>
+                  ) : (
+                    <Alert
+                      showIcon
+                      type="info"
+                      message={formatMessage(
+                        'pages.system.notices.templates.noRequiredParams',
+                        'This template has no required parameters.',
+                      )}
+                    />
+                  )}
+                  {createTemplatePreview ? (
+                    <Alert
+                      showIcon
+                      type="success"
+                      message={formatMessage(
+                        'pages.system.notices.templates.previewTitle',
+                        'Notice template render preview',
+                      )}
+                      description={
+                        <Space direction="vertical" size={4}>
+                          <Typography.Text strong>
+                            {createTemplatePreview.title}
+                          </Typography.Text>
+                          <Typography.Text>
+                            {createTemplatePreview.content}
+                          </Typography.Text>
+                        </Space>
+                      }
+                    />
+                  ) : null}
+                </>
+              ) : null}
+            </div>
+          ) : null}
           <Form.Item
             label={formatMessage('pages.system.notices.fields.title', 'Title')}
             name="title"

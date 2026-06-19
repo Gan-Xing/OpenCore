@@ -719,6 +719,7 @@ export default {
   'pages.system.notices.tabs.inbox': 'Inbox ({count})',
   'pages.system.notices.tabs.manage': 'Manage',
   'pages.system.notices.tabs.templates': 'System Notice Templates',
+  'pages.system.notices.templates.actions.applyToNotice': 'Preview and apply',
   'pages.system.notices.templates.actions.createDraft':
     'Create draft from template',
   'pages.system.notices.templates.actions.deleteAria': 'Delete template {name}',
@@ -738,6 +739,8 @@ export default {
   'pages.system.notices.templates.detailLoadFailure':
     'Unable to load live system notice template detail.',
   'pages.system.notices.templates.detailTitle': 'System Notice Template Detail',
+  'pages.system.notices.templates.empty.enabled': 'No enabled templates',
+  'pages.system.notices.templates.fields.selectTemplate': 'Template',
   'pages.system.notices.templates.form.createTitle':
     'New System Notice Template',
   'pages.system.notices.templates.form.editTitle':
@@ -746,10 +749,14 @@ export default {
     'Unable to load live system notice templates.',
   'pages.system.notices.templates.loadLiveFailure':
     'Unable to load live system notice templates',
+  'pages.system.notices.templates.messages.appliedToNotice':
+    'Template applied to the new notice.',
   'pages.system.notices.templates.messages.created':
     'System notice template created.',
   'pages.system.notices.templates.messages.deleted':
     'System notice template deleted.',
+  'pages.system.notices.templates.messages.disabledSelectionBlocked':
+    'Disabled templates cannot be used for new notices.',
   'pages.system.notices.templates.messages.draftCreated':
     'Draft notice created from template.',
   'pages.system.notices.templates.messages.testSent': 'Test notice sent.',
@@ -763,6 +770,8 @@ export default {
   'pages.system.notices.templates.placeholders.content':
     'Version {{version}} is scheduled for {{window}}.',
   'pages.system.notices.templates.placeholders.recipient': 'Select recipient',
+  'pages.system.notices.templates.placeholders.selectTemplate':
+    'Select enabled template',
   'pages.system.notices.templates.placeholders.title':
     'Release window: {{version}}',
   'pages.system.notices.templates.previewOpenFailure':

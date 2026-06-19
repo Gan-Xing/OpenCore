@@ -299,6 +299,76 @@ async function main() {
       );
     }
 
+    await evaluate(
+      page,
+      `
+(() => {
+  const button = Array.from(document.querySelectorAll('button')).find((node) => node.textContent?.includes('新建'));
+  if (!(button instanceof HTMLButtonElement)) {
+    return false;
+  }
+  button.click();
+  return true;
+})()
+`,
+    );
+    await waitForExpression(
+      page,
+      `document.body.innerText.includes('新建系统通知') && document.body.innerText.includes('选择模板') && Boolean(document.querySelector('[data-opencore-notice-create-template-panel="true"]'))`,
+      'Admin notices create modal template selector',
+    );
+    const noticeCreateTemplateState = await evaluate(
+      page,
+      `
+(() => {
+  const panel = document.querySelector('[data-opencore-notice-create-template-panel="true"]');
+  const text = document.body.innerText;
+  return {
+    hasPanel: Boolean(panel),
+    hasApplyAction: text.includes('预览并应用'),
+    hasTemplateSelector: text.includes('选择模板'),
+    scrollWidth: document.documentElement.scrollWidth,
+    clientWidth: document.documentElement.clientWidth,
+  };
+})()
+`,
+    );
+
+    if (
+      !isRecord(noticeCreateTemplateState) ||
+      noticeCreateTemplateState.hasPanel !== true ||
+      noticeCreateTemplateState.hasTemplateSelector !== true ||
+      noticeCreateTemplateState.hasApplyAction !== true
+    ) {
+      throw new Error(
+        `Admin notices create modal template selector is missing: ${JSON.stringify(noticeCreateTemplateState)}`,
+      );
+    }
+
+    if (
+      typeof noticeCreateTemplateState.scrollWidth === 'number' &&
+      typeof noticeCreateTemplateState.clientWidth === 'number' &&
+      noticeCreateTemplateState.scrollWidth >
+        noticeCreateTemplateState.clientWidth + 2
+    ) {
+      throw new Error(
+        `Admin notices create modal has document-level horizontal overflow: ${JSON.stringify(noticeCreateTemplateState)}`,
+      );
+    }
+
+    await evaluate(
+      page,
+      `
+(() => {
+  const button = Array.from(document.querySelectorAll('button')).find((node) => node.textContent?.includes('取消'));
+  if (button instanceof HTMLButtonElement) {
+    button.click();
+  }
+  return true;
+})()
+`,
+    );
+
     await page.send('Emulation.setDeviceMetricsOverride', {
       deviceScaleFactor: 1,
       height: 900,
@@ -492,6 +562,7 @@ async function main() {
           'admin.public-notice-bell.i18n-menu',
           'admin.public-notice-bell.view-all',
           'admin.public-notices.mobile-card-list',
+          'admin.public-notices.create-template-selector',
           'admin.public-notices.no-desktop-table-on-mobile',
           'admin.public-notices.no-setting-drawer-trigger',
           'admin.public-notices.mobile-no-page-overflow',

@@ -663,6 +663,7 @@ export default {
   'pages.system.notices.tabs.inbox': '收件箱（{count}）',
   'pages.system.notices.tabs.manage': '管理',
   'pages.system.notices.tabs.templates': '系统通知模板',
+  'pages.system.notices.templates.actions.applyToNotice': '预览并应用',
   'pages.system.notices.templates.actions.createDraft': '从模板创建草稿',
   'pages.system.notices.templates.actions.deleteAria': '删除模板 {name}',
   'pages.system.notices.templates.actions.disabledRenderLocked':
@@ -678,12 +679,18 @@ export default {
   'pages.system.notices.templates.detailLoadFailure':
     '无法加载实时系统通知模板详情。',
   'pages.system.notices.templates.detailTitle': '系统通知模板详情',
+  'pages.system.notices.templates.empty.enabled': '暂无启用模板',
+  'pages.system.notices.templates.fields.selectTemplate': '选择模板',
   'pages.system.notices.templates.form.createTitle': '新建系统通知模板',
   'pages.system.notices.templates.form.editTitle': '编辑系统通知模板',
   'pages.system.notices.templates.loadFailure': '无法加载实时系统通知模板。',
   'pages.system.notices.templates.loadLiveFailure': '无法加载实时系统通知模板',
+  'pages.system.notices.templates.messages.appliedToNotice':
+    '模板已应用到新通知。',
   'pages.system.notices.templates.messages.created': '系统通知模板已创建。',
   'pages.system.notices.templates.messages.deleted': '系统通知模板已删除。',
+  'pages.system.notices.templates.messages.disabledSelectionBlocked':
+    '停用模板不能用于新建通知。',
   'pages.system.notices.templates.messages.draftCreated':
     '已从模板创建草稿通知。',
   'pages.system.notices.templates.messages.testSent': '测试通知已发送。',
@@ -694,6 +701,8 @@ export default {
   'pages.system.notices.templates.placeholders.content':
     'Version {{version}} is scheduled for {{window}}.',
   'pages.system.notices.templates.placeholders.recipient': '选择接收用户',
+  'pages.system.notices.templates.placeholders.selectTemplate':
+    '选择已启用模板',
   'pages.system.notices.templates.placeholders.title':
     'Release window: {{version}}',
   'pages.system.notices.templates.previewOpenFailure':

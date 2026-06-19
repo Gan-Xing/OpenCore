@@ -1979,6 +1979,12 @@ if (
   !systemNoticesPage.includes('System Notice Templates') ||
   !systemNoticesPage.includes('Notice template render preview') ||
   !systemNoticesPage.includes('Create draft from template') ||
+  !systemNoticesPage.includes('data-opencore-notice-create-template-panel') ||
+  !systemNoticesPage.includes('selectCreateTemplate') ||
+  !systemNoticesPage.includes('applyCreateTemplateToNotice') ||
+  !systemNoticesPage.includes('Preview and apply') ||
+  !systemNoticesPage.includes('Select enabled template') ||
+  !systemNoticesPage.includes('Template applied to the new notice.') ||
   !systemNoticesPage.includes('Mark all read') ||
   !systemNoticesPage.includes('Read users') ||
   !systemNoticesPage.includes('System Notice Read Users') ||
