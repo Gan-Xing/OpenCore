@@ -470,6 +470,8 @@ export default {
   'pages.system.notices.actions.executeMailAria': '为 {title} 执行邮件通道',
   'pages.system.notices.actions.executeSms': '执行短信投递箱通道',
   'pages.system.notices.actions.executeSmsAria': '为 {title} 执行短信通道',
+  'pages.system.notices.actions.more': '更多',
+  'pages.system.notices.actions.moreAria': '{title} 的更多操作',
   'pages.system.notices.actions.new': '新建',
   'pages.system.notices.actions.publish': '发布',
   'pages.system.notices.actions.publishAria': '发布 {title}',
@@ -581,8 +583,9 @@ export default {
   'pages.system.notices.inbox.messages.markedRead': '系统通知已标为已读。',
   'pages.system.notices.inbox.messages.selectedMarkedRead':
     '选中的系统通知已标为已读。',
-  'pages.system.notices.inbox.realtimeDescription': 'SSE 收件箱事件：{path}',
-  'pages.system.notices.inbox.realtimeStream': '实时流',
+  'pages.system.notices.inbox.realtimeDescription':
+    '新通知和已读状态会自动同步。',
+  'pages.system.notices.inbox.realtimeStream': '实时同步已启用',
   'pages.system.notices.inbox.searchPlaceholder': '搜索收件箱通知',
   'pages.system.notices.load.failure': '无法加载实时系统通知。',
   'pages.system.notices.load.liveFailure': '无法加载实时系统通知',

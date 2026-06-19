@@ -506,6 +506,8 @@ export default {
   'pages.system.notices.actions.executeSms': 'Execute SMS outbox provider',
   'pages.system.notices.actions.executeSmsAria':
     'Execute SMS provider for {title}',
+  'pages.system.notices.actions.more': 'More',
+  'pages.system.notices.actions.moreAria': 'More actions for {title}',
   'pages.system.notices.actions.new': 'New',
   'pages.system.notices.actions.publish': 'Publish',
   'pages.system.notices.actions.publishAria': 'Publish {title}',
@@ -628,8 +630,9 @@ export default {
     'System notice marked read.',
   'pages.system.notices.inbox.messages.selectedMarkedRead':
     'Selected system notices marked read.',
-  'pages.system.notices.inbox.realtimeDescription': 'SSE inbox events: {path}',
-  'pages.system.notices.inbox.realtimeStream': 'Realtime stream',
+  'pages.system.notices.inbox.realtimeDescription':
+    'New notices and read status changes are synchronized automatically.',
+  'pages.system.notices.inbox.realtimeStream': 'Realtime sync enabled',
   'pages.system.notices.inbox.searchPlaceholder': 'Search inbox notices',
   'pages.system.notices.load.failure': 'Unable to load live system notices.',
   'pages.system.notices.load.liveFailure': 'Unable to load live system notices',

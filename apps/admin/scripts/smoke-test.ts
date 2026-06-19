@@ -1930,6 +1930,9 @@ if (
   systemNoticesPage.includes('setSelectedDetail(record)') ||
   systemNoticesPage.includes('setSelectedTemplateDetail(record)') ||
   systemNoticesPage.includes('setSelectedInboxDetail(record)') ||
+  systemNoticesPage.includes('getOpenCoreSystemNoticeInboxEventsPath') ||
+  systemNoticesPage.includes('SSE inbox events') ||
+  systemNoticesPage.includes('width: 360') ||
   !systemNoticesPage.includes('Unable to load live system notices') ||
   !systemNoticesPage.includes('Unable to load live system notice detail.') ||
   !systemNoticesPage.includes(
@@ -1945,9 +1948,7 @@ if (
   ) ||
   !systemNoticesPage.includes('listOpenCoreSystemNotices') ||
   !systemNoticesPage.includes('listOpenCoreSystemNoticeInbox') ||
-  !systemNoticesPage.includes('getOpenCoreSystemNoticeInboxEventsPath') ||
-  !systemNoticesPage.includes('Realtime stream') ||
-  !systemNoticesPage.includes('SSE inbox events') ||
+  !systemNoticesPage.includes('Realtime sync enabled') ||
   !systemNoticesPage.includes('getOpenCoreSystemNoticeInboxItem') ||
   !systemNoticesPage.includes('listOpenCoreSystemNoticeReadUsers') ||
   !systemNoticesPage.includes('listOpenCoreSystemNoticeDeliveries') ||
@@ -2002,6 +2003,12 @@ if (
   !systemNoticesPage.includes('core-notice-templates') ||
   !systemNoticesPage.includes('useCurrentPageFilters') ||
   !systemNoticesPage.includes('CurrentPageExportButton') ||
+  !systemNoticesPage.includes('renderTableToolbar') ||
+  !systemNoticesPage.includes('renderNoticeActions') ||
+  !systemNoticesPage.includes('<Dropdown') ||
+  !systemNoticesPage.includes('toolBarRender={false}') ||
+  !systemNoticesPage.includes('scroll={{ x: 920 }}') ||
+  !systemNoticesPage.includes('scroll={{ x: 980 }}') ||
   !systemNoticesPage.includes('dataSource={filteredRows}') ||
   !systemNoticesPage.includes('dataSource={filteredTemplates}') ||
   !systemNoticesPage.includes('rows={filteredRows}')

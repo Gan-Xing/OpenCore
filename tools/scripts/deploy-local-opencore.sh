@@ -1770,7 +1770,12 @@ verify_admin_bundle_api_base_url() {
     exit 1
   fi
 
-  if ! grep -R \
+  if grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "SSE inbox events" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
     --fixed-strings \
     --include='*.js' \
     "System Notice Templates" \
@@ -1778,12 +1783,17 @@ verify_admin_bundle_api_base_url() {
     ! grep -R \
     --fixed-strings \
     --include='*.js' \
-    "Realtime stream" \
+    "Realtime sync enabled" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null || \
     ! grep -R \
     --fixed-strings \
     --include='*.js' \
-    "SSE inbox events" \
+    "New notices and read status changes are synchronized automatically." \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "More actions for" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null || \
     ! grep -R \
     --fixed-strings \

@@ -9,6 +9,7 @@ import {
   InboxOutlined,
   MailOutlined,
   MessageOutlined,
+  MoreOutlined,
   PlusOutlined,
   PlayCircleOutlined,
   ReloadOutlined,
@@ -39,6 +40,7 @@ import {
   Alert,
   Button,
   DatePicker,
+  Dropdown,
   Form,
   Input,
   Modal,
@@ -53,7 +55,10 @@ import {
   Typography,
   message,
 } from 'antd';
+import type { MenuProps } from 'antd';
+import { createStyles } from 'antd-style';
 import type { Dayjs } from 'dayjs';
+import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import {
   archiveOpenCoreSystemNotice,
@@ -66,7 +71,6 @@ import {
   executeOpenCoreSystemNoticeDeliveries,
   getOpenCoreSystemNotice,
   getOpenCoreSystemNoticeInboxItem,
-  getOpenCoreSystemNoticeInboxEventsPath,
   getOpenCoreSystemNoticeTemplate,
   listOpenCoreUserOptions,
   listOpenCoreSystemNoticeInbox,
@@ -101,6 +105,136 @@ import {
   ReadOnlyDetailDrawer,
   type DetailField,
 } from '../shared/ReadOnlyDetailDrawer';
+
+const useStyles = createStyles(({ token, css }) => ({
+  actionCell: css`
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  `,
+  filterCluster: css`
+    display: flex;
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-width: 0;
+
+    .ant-space {
+      row-gap: 8px !important;
+    }
+
+    .ant-space-item {
+      max-width: 100%;
+    }
+
+    .ant-input-affix-wrapper,
+    .ant-select,
+    .ant-picker {
+      max-width: 100%;
+    }
+
+    @media (max-width: ${token.screenMD}px) {
+      flex-direction: column;
+
+      .ant-space {
+        display: grid;
+        width: 100%;
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .ant-space-item,
+      .ant-input-affix-wrapper,
+      .ant-select,
+      .ant-picker {
+        width: 100% !important;
+      }
+    }
+  `,
+  pageTabs: css`
+    .ant-tabs-nav {
+      margin-bottom: 16px;
+    }
+
+    @media (max-width: ${token.screenMD}px) {
+      .ant-tabs-nav-wrap {
+        overflow-x: auto;
+      }
+
+      .ant-tabs-nav-list {
+        min-width: max-content;
+      }
+    }
+  `,
+  realtimeStatus: css`
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    color: ${token.colorTextSecondary};
+    background: ${token.colorFillAlter};
+    border: 1px solid ${token.colorBorderSecondary};
+    border-radius: ${token.borderRadiusLG}px;
+    font-size: 13px;
+    line-height: 20px;
+  `,
+  realtimeStatusIcon: css`
+    margin-top: 2px;
+    color: ${token.colorSuccess};
+  `,
+  tableSurface: css`
+    max-width: 100%;
+    overflow: hidden;
+
+    .ant-pro-card {
+      overflow: hidden;
+      border-radius: ${token.borderRadiusLG}px;
+    }
+
+    .ant-table-wrapper {
+      max-width: 100%;
+    }
+
+    .ant-table-cell {
+      vertical-align: middle;
+    }
+  `,
+  tableToolbar: css`
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+    padding: 16px;
+    background: ${token.colorBgContainer};
+    border: 1px solid ${token.colorBorderSecondary};
+    border-radius: ${token.borderRadiusLG}px;
+    box-shadow: ${token.boxShadowTertiary};
+
+    @media (max-width: ${token.screenMD}px) {
+      flex-direction: column;
+      padding: 12px;
+    }
+  `,
+  toolbarActions: css`
+    display: flex;
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+
+    @media (max-width: ${token.screenMD}px) {
+      width: 100%;
+      justify-content: flex-start;
+
+      .ant-btn {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+    }
+  `,
+}));
 
 type NoticeFormValues = {
   audience: SystemNoticeAudience;
@@ -223,6 +357,7 @@ function getErrorMessage(error: unknown, fallback: string): string {
 }
 
 export default function SystemNoticesPage() {
+  const { styles } = useStyles();
   const intl = useIntl();
   const [form] = Form.useForm<NoticeFormValues>();
   const [templateForm] = Form.useForm<NoticeTemplateFormValues>();
@@ -301,7 +436,6 @@ export default function SystemNoticesPage() {
     [],
   );
   const [userOptionsLoading, setUserOptionsLoading] = useState(false);
-  const realtimeEventsPath = getOpenCoreSystemNoticeInboxEventsPath();
   const formatMessage = (
     id: string,
     defaultMessage: string,
@@ -1682,6 +1816,346 @@ export default function SystemNoticesPage() {
     await loadDeliveryRecords();
   };
 
+  const renderTableToolbar = ({
+    actions,
+    filters,
+    range,
+  }: {
+    actions: ReactNode;
+    filters: ReactNode;
+    range?: ReactNode;
+  }) => (
+    <div className={styles.tableToolbar}>
+      <div className={styles.filterCluster}>
+        {filters}
+        {range}
+      </div>
+      <div className={styles.toolbarActions}>{actions}</div>
+    </div>
+  );
+
+  const confirmNoticeAction = ({
+    action,
+    danger,
+    okText,
+    title,
+  }: {
+    action: () => Promise<void>;
+    danger?: boolean;
+    okText: string;
+    title: string;
+  }) => {
+    Modal.confirm({
+      title,
+      okText,
+      cancelText: formatMessage(
+        'pages.system.notices.actions.cancel',
+        'Cancel',
+      ),
+      okButtonProps: danger ? { danger: true } : undefined,
+      onOk: action,
+    });
+  };
+
+  const renderNoticeActions = (record: SystemNoticeSummary) => {
+    const archived = record.status === 'archived';
+    const draft = record.status === 'draft';
+    const published = record.status === 'published';
+    const moreItems = [
+      {
+        key: 'readUsers',
+        icon: <TeamOutlined />,
+        label: formatMessage(
+          'pages.system.notices.actions.readUsers',
+          'Read users',
+        ),
+      },
+      {
+        key: 'deliveryRecords',
+        icon: <InboxOutlined />,
+        label: formatMessage(
+          'pages.system.notices.actions.deliveryRecords',
+          'Delivery records',
+        ),
+      },
+      { type: 'divider' as const },
+      draft
+        ? {
+            key: 'publish',
+            icon: <SendOutlined />,
+            label: formatMessage(
+              'pages.system.notices.actions.publish',
+              'Publish',
+            ),
+          }
+        : undefined,
+      published
+        ? {
+            key: 'dispatchInApp',
+            icon: <SendOutlined />,
+            label: formatMessage(
+              'pages.system.notices.actions.dispatchInApp',
+              'Dispatch in-app deliveries',
+            ),
+          }
+        : undefined,
+      published
+        ? {
+            key: 'dispatchMail',
+            icon: <MailOutlined />,
+            label: formatMessage(
+              'pages.system.notices.actions.dispatchMail',
+              'Dispatch mail deliveries',
+            ),
+          }
+        : undefined,
+      published
+        ? {
+            key: 'dispatchSms',
+            icon: <MessageOutlined />,
+            label: formatMessage(
+              'pages.system.notices.actions.dispatchSms',
+              'Dispatch SMS deliveries',
+            ),
+          }
+        : undefined,
+      published
+        ? {
+            key: 'executeLocal',
+            icon: <PlayCircleOutlined />,
+            label: formatMessage(
+              'pages.system.notices.actions.executeLocal',
+              'Execute local provider',
+            ),
+          }
+        : undefined,
+      published
+        ? {
+            key: 'executeMail',
+            icon: <MailOutlined />,
+            label: formatMessage(
+              'pages.system.notices.actions.executeMail',
+              'Execute mail outbox provider',
+            ),
+          }
+        : undefined,
+      published
+        ? {
+            key: 'executeSms',
+            icon: <MessageOutlined />,
+            label: formatMessage(
+              'pages.system.notices.actions.executeSms',
+              'Execute SMS outbox provider',
+            ),
+          }
+        : undefined,
+      !archived
+        ? {
+            key: 'archive',
+            icon: <StopOutlined />,
+            label: formatMessage(
+              'pages.system.notices.actions.archive',
+              'Archive',
+            ),
+          }
+        : undefined,
+      {
+        danger: true,
+        key: 'delete',
+        icon: <DeleteOutlined />,
+        label: formatMessage('pages.system.notices.actions.delete', 'Delete'),
+      },
+    ].filter(Boolean) as MenuProps['items'];
+
+    const onMoreAction: MenuProps['onClick'] = ({ key }) => {
+      switch (key) {
+        case 'readUsers':
+          void openReadUsers(record);
+          break;
+        case 'deliveryRecords':
+          void openDeliveryRecords(record);
+          break;
+        case 'publish':
+          confirmNoticeAction({
+            title: formatMessage(
+              'pages.system.notices.confirm.publish',
+              'Publish this notice?',
+            ),
+            okText: formatMessage(
+              'pages.system.notices.actions.publish',
+              'Publish',
+            ),
+            action: () => publishNotice(record),
+          });
+          break;
+        case 'dispatchInApp':
+          confirmNoticeAction({
+            title: formatMessage(
+              'pages.system.notices.confirm.dispatchInApp',
+              'Dispatch in-app delivery records?',
+            ),
+            okText: formatMessage(
+              'pages.system.notices.actions.dispatch',
+              'Dispatch',
+            ),
+            action: () => dispatchNoticeDeliveries(record, 'in_app'),
+          });
+          break;
+        case 'dispatchMail':
+          confirmNoticeAction({
+            title: formatMessage(
+              'pages.system.notices.confirm.dispatchMail',
+              'Dispatch mail delivery records?',
+            ),
+            okText: formatMessage(
+              'pages.system.notices.actions.dispatch',
+              'Dispatch',
+            ),
+            action: () => dispatchNoticeDeliveries(record, 'mail'),
+          });
+          break;
+        case 'dispatchSms':
+          confirmNoticeAction({
+            title: formatMessage(
+              'pages.system.notices.confirm.dispatchSms',
+              'Dispatch SMS delivery records?',
+            ),
+            okText: formatMessage(
+              'pages.system.notices.actions.dispatch',
+              'Dispatch',
+            ),
+            action: () => dispatchNoticeDeliveries(record, 'sms'),
+          });
+          break;
+        case 'executeLocal':
+          confirmNoticeAction({
+            title: formatMessage(
+              'pages.system.notices.confirm.executeLocal',
+              'Execute local notice provider?',
+            ),
+            okText: formatMessage(
+              'pages.system.notices.actions.execute',
+              'Execute',
+            ),
+            action: () => executeNoticeDeliveries(record, 'in_app'),
+          });
+          break;
+        case 'executeMail':
+          confirmNoticeAction({
+            title: formatMessage(
+              'pages.system.notices.confirm.executeMail',
+              'Execute mail outbox provider?',
+            ),
+            okText: formatMessage(
+              'pages.system.notices.actions.execute',
+              'Execute',
+            ),
+            action: () => executeNoticeDeliveries(record, 'mail'),
+          });
+          break;
+        case 'executeSms':
+          confirmNoticeAction({
+            title: formatMessage(
+              'pages.system.notices.confirm.executeSms',
+              'Execute SMS outbox provider?',
+            ),
+            okText: formatMessage(
+              'pages.system.notices.actions.execute',
+              'Execute',
+            ),
+            action: () => executeNoticeDeliveries(record, 'sms'),
+          });
+          break;
+        case 'archive':
+          confirmNoticeAction({
+            title: formatMessage(
+              'pages.system.notices.confirm.archive',
+              'Archive this notice?',
+            ),
+            okText: formatMessage(
+              'pages.system.notices.actions.archive',
+              'Archive',
+            ),
+            action: () => archiveNotice(record),
+          });
+          break;
+        case 'delete':
+          confirmNoticeAction({
+            title: formatMessage(
+              'pages.system.notices.confirm.deleteOne',
+              'Delete this notice?',
+            ),
+            okText: formatMessage(
+              'pages.system.notices.actions.delete',
+              'Delete',
+            ),
+            danger: true,
+            action: () => deleteNotice(record),
+          });
+          break;
+        default:
+          break;
+      }
+    };
+
+    return (
+      <div className={styles.actionCell}>
+        <Tooltip
+          title={formatMessage('pages.system.notices.actions.detail', 'Detail')}
+        >
+          <Button
+            aria-label={formatMessage(
+              'pages.system.notices.actions.viewAria',
+              'View {title}',
+              { title: record.title },
+            )}
+            icon={<EyeOutlined />}
+            onClick={() => void openDetail(record)}
+            size="small"
+          />
+        </Tooltip>
+        <Tooltip
+          title={
+            archived
+              ? formatMessage(
+                  'pages.system.notices.actions.archivedEditLocked',
+                  'Archived notices cannot be edited',
+                )
+              : formatMessage('pages.system.notices.actions.edit', 'Edit')
+          }
+        >
+          <Button
+            aria-label={formatMessage(
+              'pages.system.notices.actions.editAria',
+              'Edit {title}',
+              { title: record.title },
+            )}
+            disabled={archived}
+            icon={<EditOutlined />}
+            onClick={() => void openEditForm(record)}
+            size="small"
+          />
+        </Tooltip>
+        <Dropdown
+          menu={{ items: moreItems, onClick: onMoreAction }}
+          trigger={['click']}
+        >
+          <Button
+            aria-label={formatMessage(
+              'pages.system.notices.actions.moreAria',
+              'More actions for {title}',
+              { title: record.title },
+            )}
+            icon={<MoreOutlined />}
+            size="small"
+          >
+            {formatMessage('pages.system.notices.actions.more', 'More')}
+          </Button>
+        </Dropdown>
+      </div>
+    );
+  };
+
   const columns: ProColumns<SystemNoticeSummary>[] = [
     {
       title: formatMessage('pages.system.notices.fields.title', 'Title'),
@@ -1726,416 +2200,8 @@ export default function SystemNoticesPage() {
     {
       title: formatMessage('pages.system.notices.actions.column', 'Actions'),
       valueType: 'option',
-      width: 360,
-      render: (_, record) => {
-        const archived = record.status === 'archived';
-        const draft = record.status === 'draft';
-        const published = record.status === 'published';
-
-        return (
-          <Space size="small" wrap>
-            <Tooltip
-              title={formatMessage(
-                'pages.system.notices.actions.detail',
-                'Detail',
-              )}
-            >
-              <Button
-                aria-label={formatMessage(
-                  'pages.system.notices.actions.viewAria',
-                  'View {title}',
-                  { title: record.title },
-                )}
-                icon={<EyeOutlined />}
-                onClick={() => void openDetail(record)}
-                size="small"
-              />
-            </Tooltip>
-            <Tooltip
-              title={formatMessage(
-                'pages.system.notices.actions.readUsers',
-                'Read users',
-              )}
-            >
-              <Button
-                aria-label={formatMessage(
-                  'pages.system.notices.actions.readUsersAria',
-                  'View read users for {title}',
-                  { title: record.title },
-                )}
-                icon={<TeamOutlined />}
-                onClick={() => void openReadUsers(record)}
-                size="small"
-              />
-            </Tooltip>
-            <Tooltip
-              title={formatMessage(
-                'pages.system.notices.actions.deliveryRecords',
-                'Delivery records',
-              )}
-            >
-              <Button
-                aria-label={formatMessage(
-                  'pages.system.notices.actions.deliveryRecordsAria',
-                  'View delivery records for {title}',
-                  { title: record.title },
-                )}
-                icon={<InboxOutlined />}
-                onClick={() => void openDeliveryRecords(record)}
-                size="small"
-              />
-            </Tooltip>
-            <Tooltip
-              title={
-                archived
-                  ? formatMessage(
-                      'pages.system.notices.actions.archivedEditLocked',
-                      'Archived notices cannot be edited',
-                    )
-                  : formatMessage('pages.system.notices.actions.edit', 'Edit')
-              }
-            >
-              <Button
-                aria-label={formatMessage(
-                  'pages.system.notices.actions.editAria',
-                  'Edit {title}',
-                  { title: record.title },
-                )}
-                disabled={archived}
-                icon={<EditOutlined />}
-                onClick={() => void openEditForm(record)}
-                size="small"
-              />
-            </Tooltip>
-            <Popconfirm
-              title={formatMessage(
-                'pages.system.notices.confirm.publish',
-                'Publish this notice?',
-              )}
-              okText={formatMessage(
-                'pages.system.notices.actions.publish',
-                'Publish',
-              )}
-              onConfirm={() => void publishNotice(record)}
-              disabled={!draft}
-            >
-              <Tooltip
-                title={
-                  draft
-                    ? formatMessage(
-                        'pages.system.notices.actions.publish',
-                        'Publish',
-                      )
-                    : formatMessage(
-                        'pages.system.notices.actions.draftPublishOnly',
-                        'Only draft notices can publish',
-                      )
-                }
-              >
-                <Button
-                  aria-label={formatMessage(
-                    'pages.system.notices.actions.publishAria',
-                    'Publish {title}',
-                    { title: record.title },
-                  )}
-                  disabled={!draft}
-                  icon={<SendOutlined />}
-                  size="small"
-                />
-              </Tooltip>
-            </Popconfirm>
-            <Popconfirm
-              title={formatMessage(
-                'pages.system.notices.confirm.dispatchInApp',
-                'Dispatch in-app delivery records?',
-              )}
-              okText={formatMessage(
-                'pages.system.notices.actions.dispatch',
-                'Dispatch',
-              )}
-              onConfirm={() => void dispatchNoticeDeliveries(record, 'in_app')}
-              disabled={!published}
-            >
-              <Tooltip
-                title={
-                  published
-                    ? formatMessage(
-                        'pages.system.notices.actions.dispatchInApp',
-                        'Dispatch in-app deliveries',
-                      )
-                    : formatMessage(
-                        'pages.system.notices.actions.publishedDispatchOnly',
-                        'Only published notices can dispatch',
-                      )
-                }
-              >
-                <Button
-                  aria-label={formatMessage(
-                    'pages.system.notices.actions.dispatchInAppAria',
-                    'Dispatch delivery records for {title}',
-                    { title: record.title },
-                  )}
-                  disabled={!published}
-                  icon={<SendOutlined />}
-                  size="small"
-                />
-              </Tooltip>
-            </Popconfirm>
-            <Popconfirm
-              title={formatMessage(
-                'pages.system.notices.confirm.dispatchMail',
-                'Dispatch mail delivery records?',
-              )}
-              okText={formatMessage(
-                'pages.system.notices.actions.dispatch',
-                'Dispatch',
-              )}
-              onConfirm={() => void dispatchNoticeDeliveries(record, 'mail')}
-              disabled={!published}
-            >
-              <Tooltip
-                title={
-                  published
-                    ? formatMessage(
-                        'pages.system.notices.actions.dispatchMail',
-                        'Dispatch mail deliveries',
-                      )
-                    : formatMessage(
-                        'pages.system.notices.actions.publishedDispatchOnly',
-                        'Only published notices can dispatch',
-                      )
-                }
-              >
-                <Button
-                  aria-label={formatMessage(
-                    'pages.system.notices.actions.dispatchMailAria',
-                    'Dispatch mail delivery records for {title}',
-                    { title: record.title },
-                  )}
-                  disabled={!published}
-                  icon={<MailOutlined />}
-                  size="small"
-                />
-              </Tooltip>
-            </Popconfirm>
-            <Popconfirm
-              title={formatMessage(
-                'pages.system.notices.confirm.dispatchSms',
-                'Dispatch SMS delivery records?',
-              )}
-              okText={formatMessage(
-                'pages.system.notices.actions.dispatch',
-                'Dispatch',
-              )}
-              onConfirm={() => void dispatchNoticeDeliveries(record, 'sms')}
-              disabled={!published}
-            >
-              <Tooltip
-                title={
-                  published
-                    ? formatMessage(
-                        'pages.system.notices.actions.dispatchSms',
-                        'Dispatch SMS deliveries',
-                      )
-                    : formatMessage(
-                        'pages.system.notices.actions.publishedDispatchOnly',
-                        'Only published notices can dispatch',
-                      )
-                }
-              >
-                <Button
-                  aria-label={formatMessage(
-                    'pages.system.notices.actions.dispatchSmsAria',
-                    'Dispatch SMS delivery records for {title}',
-                    { title: record.title },
-                  )}
-                  disabled={!published}
-                  icon={<MessageOutlined />}
-                  size="small"
-                />
-              </Tooltip>
-            </Popconfirm>
-            <Popconfirm
-              title={formatMessage(
-                'pages.system.notices.confirm.executeLocal',
-                'Execute local notice provider?',
-              )}
-              okText={formatMessage(
-                'pages.system.notices.actions.execute',
-                'Execute',
-              )}
-              onConfirm={() => void executeNoticeDeliveries(record, 'in_app')}
-              disabled={!published}
-            >
-              <Tooltip
-                title={
-                  published
-                    ? formatMessage(
-                        'pages.system.notices.actions.executeLocal',
-                        'Execute local provider',
-                      )
-                    : formatMessage(
-                        'pages.system.notices.actions.publishedExecuteOnly',
-                        'Only published notices can execute',
-                      )
-                }
-              >
-                <Button
-                  aria-label={formatMessage(
-                    'pages.system.notices.actions.executeLocalAria',
-                    'Execute local provider for {title}',
-                    { title: record.title },
-                  )}
-                  disabled={!published}
-                  icon={<PlayCircleOutlined />}
-                  size="small"
-                />
-              </Tooltip>
-            </Popconfirm>
-            <Popconfirm
-              title={formatMessage(
-                'pages.system.notices.confirm.executeMail',
-                'Execute mail outbox provider?',
-              )}
-              okText={formatMessage(
-                'pages.system.notices.actions.execute',
-                'Execute',
-              )}
-              onConfirm={() => void executeNoticeDeliveries(record, 'mail')}
-              disabled={!published}
-            >
-              <Tooltip
-                title={
-                  published
-                    ? formatMessage(
-                        'pages.system.notices.actions.executeMail',
-                        'Execute mail outbox provider',
-                      )
-                    : formatMessage(
-                        'pages.system.notices.actions.publishedExecuteOnly',
-                        'Only published notices can execute',
-                      )
-                }
-              >
-                <Button
-                  aria-label={formatMessage(
-                    'pages.system.notices.actions.executeMailAria',
-                    'Execute mail provider for {title}',
-                    { title: record.title },
-                  )}
-                  disabled={!published}
-                  icon={<MailOutlined />}
-                  size="small"
-                />
-              </Tooltip>
-            </Popconfirm>
-            <Popconfirm
-              title={formatMessage(
-                'pages.system.notices.confirm.executeSms',
-                'Execute SMS outbox provider?',
-              )}
-              okText={formatMessage(
-                'pages.system.notices.actions.execute',
-                'Execute',
-              )}
-              onConfirm={() => void executeNoticeDeliveries(record, 'sms')}
-              disabled={!published}
-            >
-              <Tooltip
-                title={
-                  published
-                    ? formatMessage(
-                        'pages.system.notices.actions.executeSms',
-                        'Execute SMS outbox provider',
-                      )
-                    : formatMessage(
-                        'pages.system.notices.actions.publishedExecuteOnly',
-                        'Only published notices can execute',
-                      )
-                }
-              >
-                <Button
-                  aria-label={formatMessage(
-                    'pages.system.notices.actions.executeSmsAria',
-                    'Execute SMS provider for {title}',
-                    { title: record.title },
-                  )}
-                  disabled={!published}
-                  icon={<MessageOutlined />}
-                  size="small"
-                />
-              </Tooltip>
-            </Popconfirm>
-            <Popconfirm
-              title={formatMessage(
-                'pages.system.notices.confirm.archive',
-                'Archive this notice?',
-              )}
-              okText={formatMessage(
-                'pages.system.notices.actions.archive',
-                'Archive',
-              )}
-              onConfirm={() => void archiveNotice(record)}
-              disabled={archived}
-            >
-              <Tooltip
-                title={
-                  archived
-                    ? formatMessage(
-                        'pages.system.notices.actions.alreadyArchived',
-                        'Already archived',
-                      )
-                    : formatMessage(
-                        'pages.system.notices.actions.archive',
-                        'Archive',
-                      )
-                }
-              >
-                <Button
-                  aria-label={formatMessage(
-                    'pages.system.notices.actions.archiveAria',
-                    'Archive {title}',
-                    { title: record.title },
-                  )}
-                  disabled={archived}
-                  icon={<StopOutlined />}
-                  size="small"
-                />
-              </Tooltip>
-            </Popconfirm>
-            <Popconfirm
-              title={formatMessage(
-                'pages.system.notices.confirm.deleteOne',
-                'Delete this notice?',
-              )}
-              okText={formatMessage(
-                'pages.system.notices.actions.delete',
-                'Delete',
-              )}
-              okButtonProps={{ danger: true }}
-              onConfirm={() => void deleteNotice(record)}
-            >
-              <Tooltip
-                title={formatMessage(
-                  'pages.system.notices.actions.delete',
-                  'Delete',
-                )}
-              >
-                <Button
-                  aria-label={formatMessage(
-                    'pages.system.notices.actions.deleteAria',
-                    'Delete {title}',
-                    { title: record.title },
-                  )}
-                  danger
-                  icon={<DeleteOutlined />}
-                  size="small"
-                />
-              </Tooltip>
-            </Popconfirm>
-          </Space>
-        );
-      },
+      width: 180,
+      render: (_, record) => renderNoticeActions(record),
     },
   ];
 
@@ -2696,6 +2762,7 @@ export default function SystemNoticesPage() {
     >
       <Tabs
         activeKey={activeTab}
+        className={styles.pageTabs}
         onChange={(key) => setActiveTab(key as NoticeTab)}
         items={[
           {
@@ -2738,15 +2805,10 @@ export default function SystemNoticesPage() {
                         style={{ marginBlockEnd: 16 }}
                       />
                     ) : null}
-                    <ProTable<SystemNoticeSummary>
-                      rowKey="id"
-                      loading={loading}
-                      search={false}
-                      options={false}
-                      toolBarRender={() => [
-                        filterToolbar,
+                    {renderTableToolbar({
+                      filters: filterToolbar,
+                      range: (
                         <DatePicker.RangePicker
-                          key="created-range"
                           onChange={(dates) =>
                             setNoticeCreatedRange(dates as DateRangeValue)
                           }
@@ -2760,41 +2822,52 @@ export default function SystemNoticesPage() {
                               'Created To',
                             ),
                           ]}
-                        />,
-                        <Button
-                          key="create"
-                          type="primary"
-                          icon={<PlusOutlined />}
-                          onClick={openCreateForm}
-                        >
-                          {formatMessage(
-                            'pages.system.notices.actions.new',
-                            'New',
-                          )}
-                        </Button>,
-                        <Button
-                          key="refresh"
-                          icon={<ReloadOutlined />}
-                          onClick={() => void loadNotices()}
-                        >
-                          {formatMessage(
-                            'pages.system.notices.actions.refresh',
-                            'Refresh',
-                          )}
-                        </Button>,
-                        <CurrentPageExportButton<SystemNoticeSummary>
-                          key="export"
-                          columns={exportColumns}
-                          resource="core-notices"
-                          rows={filteredRows}
-                        />,
-                      ]}
-                      pagination={{
-                        pageSize: 10,
-                      }}
-                      dataSource={filteredRows}
-                      columns={columns}
-                    />
+                        />
+                      ),
+                      actions: (
+                        <>
+                          <Button
+                            type="primary"
+                            icon={<PlusOutlined />}
+                            onClick={openCreateForm}
+                          >
+                            {formatMessage(
+                              'pages.system.notices.actions.new',
+                              'New',
+                            )}
+                          </Button>
+                          <Button
+                            icon={<ReloadOutlined />}
+                            onClick={() => void loadNotices()}
+                          >
+                            {formatMessage(
+                              'pages.system.notices.actions.refresh',
+                              'Refresh',
+                            )}
+                          </Button>
+                          <CurrentPageExportButton<SystemNoticeSummary>
+                            columns={exportColumns}
+                            resource="core-notices"
+                            rows={filteredRows}
+                          />
+                        </>
+                      ),
+                    })}
+                    <div className={styles.tableSurface}>
+                      <ProTable<SystemNoticeSummary>
+                        rowKey="id"
+                        loading={loading}
+                        search={false}
+                        options={false}
+                        toolBarRender={false}
+                        pagination={{
+                          pageSize: 10,
+                        }}
+                        scroll={{ x: 920 }}
+                        dataSource={filteredRows}
+                        columns={columns}
+                      />
+                    </div>
                   </>
                 ) : (
                   <>
@@ -2810,15 +2883,10 @@ export default function SystemNoticesPage() {
                         style={{ marginBlockEnd: 16 }}
                       />
                     ) : null}
-                    <ProTable<SystemNoticeDeliverySummary>
-                      rowKey="id"
-                      loading={deliveryRecordsLoading}
-                      search={false}
-                      options={false}
-                      toolBarRender={() => [
-                        deliveryRecordFilterToolbar,
+                    {renderTableToolbar({
+                      filters: deliveryRecordFilterToolbar,
+                      range: (
                         <DatePicker.RangePicker
-                          key="delivered-range"
                           onChange={(dates) =>
                             setDeliveryDeliveredRange(dates as DateRangeValue)
                           }
@@ -2832,42 +2900,54 @@ export default function SystemNoticesPage() {
                               'Delivered To',
                             ),
                           ]}
-                        />,
-                        <Button
-                          key="schedule"
-                          icon={<SyncOutlined />}
-                          disabled={!hasDeliveryRecordSchedulableExternalOutbox}
-                          onClick={() => void runDeliveryOutboxSchedule()}
-                        >
-                          {formatMessage(
-                            'pages.system.notices.outbox.actions.runSchedule',
-                            'Run outbox schedule',
-                          )}
-                        </Button>,
-                        <Button
-                          key="refresh"
-                          icon={<ReloadOutlined />}
-                          onClick={() => void loadDeliveryRecords()}
-                        >
-                          {formatMessage(
-                            'pages.system.notices.actions.refresh',
-                            'Refresh',
-                          )}
-                        </Button>,
-                        <CurrentPageExportButton<SystemNoticeDeliverySummary>
-                          key="export"
-                          columns={deliveryExportColumns}
-                          resource="core-notice-deliveries"
-                          rows={filteredDeliveryRecords}
-                        />,
-                      ]}
-                      pagination={{
-                        pageSize: 10,
-                      }}
-                      scroll={{ x: 1480 }}
-                      dataSource={filteredDeliveryRecords}
-                      columns={deliveryRecordColumns}
-                    />
+                        />
+                      ),
+                      actions: (
+                        <>
+                          <Button
+                            icon={<SyncOutlined />}
+                            disabled={
+                              !hasDeliveryRecordSchedulableExternalOutbox
+                            }
+                            onClick={() => void runDeliveryOutboxSchedule()}
+                          >
+                            {formatMessage(
+                              'pages.system.notices.outbox.actions.runSchedule',
+                              'Run outbox schedule',
+                            )}
+                          </Button>
+                          <Button
+                            icon={<ReloadOutlined />}
+                            onClick={() => void loadDeliveryRecords()}
+                          >
+                            {formatMessage(
+                              'pages.system.notices.actions.refresh',
+                              'Refresh',
+                            )}
+                          </Button>
+                          <CurrentPageExportButton<SystemNoticeDeliverySummary>
+                            columns={deliveryExportColumns}
+                            resource="core-notice-deliveries"
+                            rows={filteredDeliveryRecords}
+                          />
+                        </>
+                      ),
+                    })}
+                    <div className={styles.tableSurface}>
+                      <ProTable<SystemNoticeDeliverySummary>
+                        rowKey="id"
+                        loading={deliveryRecordsLoading}
+                        search={false}
+                        options={false}
+                        toolBarRender={false}
+                        pagination={{
+                          pageSize: 10,
+                        }}
+                        scroll={{ x: 1480 }}
+                        dataSource={filteredDeliveryRecords}
+                        columns={deliveryRecordColumns}
+                      />
+                    </div>
                   </>
                 )}
               </>
@@ -2882,20 +2962,24 @@ export default function SystemNoticesPage() {
             ),
             children: (
               <>
-                <Alert
-                  showIcon
-                  type="info"
-                  message={formatMessage(
-                    'pages.system.notices.inbox.realtimeStream',
-                    'Realtime stream',
-                  )}
-                  description={formatMessage(
-                    'pages.system.notices.inbox.realtimeDescription',
-                    'SSE inbox events: {path}',
-                    { path: realtimeEventsPath },
-                  )}
-                  style={{ marginBlockEnd: 16 }}
-                />
+                <div className={styles.realtimeStatus}>
+                  <CheckCircleOutlined className={styles.realtimeStatusIcon} />
+                  <span>
+                    <Typography.Text strong>
+                      {formatMessage(
+                        'pages.system.notices.inbox.realtimeStream',
+                        'Realtime sync enabled',
+                      )}
+                    </Typography.Text>
+                    <br />
+                    <Typography.Text type="secondary">
+                      {formatMessage(
+                        'pages.system.notices.inbox.realtimeDescription',
+                        'New notices and read status changes are synchronized automatically.',
+                      )}
+                    </Typography.Text>
+                  </span>
+                </div>
                 {inboxLoadError ? (
                   <Alert
                     showIcon
@@ -2908,23 +2992,10 @@ export default function SystemNoticesPage() {
                     style={{ marginBlockEnd: 16 }}
                   />
                 ) : null}
-                <ProTable<SystemNoticeInboxSummary>
-                  rowKey="id"
-                  loading={inboxLoading}
-                  search={false}
-                  options={false}
-                  rowSelection={{
-                    selectedRowKeys: selectedInboxNoticeIds,
-                    onChange: (keys) =>
-                      setSelectedInboxNoticeIds(keys.map(String)),
-                    getCheckboxProps: (record) => ({
-                      disabled: record.read,
-                    }),
-                  }}
-                  toolBarRender={() => [
-                    inboxFilterToolbar,
+                {renderTableToolbar({
+                  filters: inboxFilterToolbar,
+                  range: (
                     <DatePicker.RangePicker
-                      key="published-range"
                       onChange={(dates) =>
                         setInboxPublishedRange(dates as DateRangeValue)
                       }
@@ -2938,52 +3009,70 @@ export default function SystemNoticesPage() {
                           'Published To',
                         ),
                       ]}
-                    />,
-                    <Button
-                      key="mark-selected"
-                      icon={<CheckOutlined />}
-                      onClick={() => void markSelectedInboxNoticesRead()}
-                      disabled={selectedInboxNoticeIds.length === 0}
-                    >
-                      {formatMessage(
-                        'pages.system.notices.inbox.actions.markSelectedRead',
-                        'Mark selected read',
-                      )}
-                    </Button>,
-                    <Button
-                      key="mark-all"
-                      icon={<CheckOutlined />}
-                      onClick={() => void markAllInboxNoticesRead()}
-                      disabled={inboxRows.every((record) => record.read)}
-                    >
-                      {formatMessage(
-                        'pages.system.notices.inbox.actions.markAllRead',
-                        'Mark all read',
-                      )}
-                    </Button>,
-                    <Button
-                      key="refresh"
-                      icon={<ReloadOutlined />}
-                      onClick={() => void loadInbox()}
-                    >
-                      {formatMessage(
-                        'pages.system.notices.actions.refresh',
-                        'Refresh',
-                      )}
-                    </Button>,
-                    <CurrentPageExportButton<SystemNoticeInboxSummary>
-                      key="export"
-                      columns={inboxExportColumns}
-                      resource="core-notice-inbox"
-                      rows={filteredInboxRows}
-                    />,
-                  ]}
-                  pagination={{
-                    pageSize: 10,
-                  }}
-                  dataSource={filteredInboxRows}
-                  columns={inboxColumns}
-                />
+                    />
+                  ),
+                  actions: (
+                    <>
+                      <Button
+                        icon={<CheckOutlined />}
+                        onClick={() => void markSelectedInboxNoticesRead()}
+                        disabled={selectedInboxNoticeIds.length === 0}
+                      >
+                        {formatMessage(
+                          'pages.system.notices.inbox.actions.markSelectedRead',
+                          'Mark selected read',
+                        )}
+                      </Button>
+                      <Button
+                        icon={<CheckOutlined />}
+                        onClick={() => void markAllInboxNoticesRead()}
+                        disabled={inboxRows.every((record) => record.read)}
+                      >
+                        {formatMessage(
+                          'pages.system.notices.inbox.actions.markAllRead',
+                          'Mark all read',
+                        )}
+                      </Button>
+                      <Button
+                        icon={<ReloadOutlined />}
+                        onClick={() => void loadInbox()}
+                      >
+                        {formatMessage(
+                          'pages.system.notices.actions.refresh',
+                          'Refresh',
+                        )}
+                      </Button>
+                      <CurrentPageExportButton<SystemNoticeInboxSummary>
+                        columns={inboxExportColumns}
+                        resource="core-notice-inbox"
+                        rows={filteredInboxRows}
+                      />
+                    </>
+                  ),
+                })}
+                <div className={styles.tableSurface}>
+                  <ProTable<SystemNoticeInboxSummary>
+                    rowKey="id"
+                    loading={inboxLoading}
+                    search={false}
+                    options={false}
+                    rowSelection={{
+                      selectedRowKeys: selectedInboxNoticeIds,
+                      onChange: (keys) =>
+                        setSelectedInboxNoticeIds(keys.map(String)),
+                      getCheckboxProps: (record) => ({
+                        disabled: record.read,
+                      }),
+                    }}
+                    toolBarRender={false}
+                    pagination={{
+                      pageSize: 10,
+                    }}
+                    scroll={{ x: 980 }}
+                    dataSource={filteredInboxRows}
+                    columns={inboxColumns}
+                  />
+                </div>
               </>
             ),
           },
@@ -3007,15 +3096,10 @@ export default function SystemNoticesPage() {
                     style={{ marginBlockEnd: 16 }}
                   />
                 ) : null}
-                <ProTable<SystemNoticeTemplateSummary>
-                  rowKey="code"
-                  loading={templateLoading}
-                  search={false}
-                  options={false}
-                  toolBarRender={() => [
-                    templateFilterToolbar,
+                {renderTableToolbar({
+                  filters: templateFilterToolbar,
+                  range: (
                     <DatePicker.RangePicker
-                      key="created-range"
                       onChange={(dates) =>
                         setTemplateCreatedRange(dates as DateRangeValue)
                       }
@@ -3029,41 +3113,52 @@ export default function SystemNoticesPage() {
                           'Created To',
                         ),
                       ]}
-                    />,
-                    <Button
-                      key="create"
-                      type="primary"
-                      icon={<FileTextOutlined />}
-                      onClick={openCreateTemplateForm}
-                    >
-                      {formatMessage(
-                        'pages.system.notices.templates.actions.new',
-                        'New Template',
-                      )}
-                    </Button>,
-                    <Button
-                      key="refresh"
-                      icon={<ReloadOutlined />}
-                      onClick={() => void loadTemplates()}
-                    >
-                      {formatMessage(
-                        'pages.system.notices.actions.refresh',
-                        'Refresh',
-                      )}
-                    </Button>,
-                    <CurrentPageExportButton<SystemNoticeTemplateSummary>
-                      key="export"
-                      columns={templateExportColumns}
-                      resource="core-notice-templates"
-                      rows={filteredTemplates}
-                    />,
-                  ]}
-                  pagination={{
-                    pageSize: 10,
-                  }}
-                  dataSource={filteredTemplates}
-                  columns={templateColumns}
-                />
+                    />
+                  ),
+                  actions: (
+                    <>
+                      <Button
+                        type="primary"
+                        icon={<FileTextOutlined />}
+                        onClick={openCreateTemplateForm}
+                      >
+                        {formatMessage(
+                          'pages.system.notices.templates.actions.new',
+                          'New Template',
+                        )}
+                      </Button>
+                      <Button
+                        icon={<ReloadOutlined />}
+                        onClick={() => void loadTemplates()}
+                      >
+                        {formatMessage(
+                          'pages.system.notices.actions.refresh',
+                          'Refresh',
+                        )}
+                      </Button>
+                      <CurrentPageExportButton<SystemNoticeTemplateSummary>
+                        columns={templateExportColumns}
+                        resource="core-notice-templates"
+                        rows={filteredTemplates}
+                      />
+                    </>
+                  ),
+                })}
+                <div className={styles.tableSurface}>
+                  <ProTable<SystemNoticeTemplateSummary>
+                    rowKey="code"
+                    loading={templateLoading}
+                    search={false}
+                    options={false}
+                    toolBarRender={false}
+                    pagination={{
+                      pageSize: 10,
+                    }}
+                    scroll={{ x: 920 }}
+                    dataSource={filteredTemplates}
+                    columns={templateColumns}
+                  />
+                </div>
               </>
             ),
           },

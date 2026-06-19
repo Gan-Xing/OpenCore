@@ -204,6 +204,83 @@ async function main() {
       );
     }
 
+    await page.send('Emulation.setDeviceMetricsOverride', {
+      deviceScaleFactor: 1,
+      height: 844,
+      mobile: true,
+      screenHeight: 844,
+      screenWidth: 390,
+      width: 390,
+    });
+    await page.send('Page.navigate', {
+      url: `${adminBaseUrl}/system/notices?tab=manage&admin-notices-ui-smoke=${runId}`,
+    });
+    await waitForExpression(
+      page,
+      'document.readyState === "complete"',
+      'Admin notices page load',
+    );
+    await waitForExpression(
+      page,
+      `document.body.innerText.includes('通知管理') && document.body.innerText.includes('系统通知模板')`,
+      'Admin notices three-tab page text',
+    );
+    const noticesMobileState = await evaluate(
+      page,
+      `
+(() => {
+  const text = document.body.innerText;
+  return {
+    clientWidth: document.documentElement.clientWidth,
+    hasEmptyState: text.includes('暂无数据') || text.includes('No Data'),
+    hasMoreActions: text.includes('更多'),
+    hasSseLeak: text.includes('SSE 收件箱事件') || text.includes('SSE inbox events'),
+    scrollWidth: document.documentElement.scrollWidth,
+    text: text.slice(0, 800),
+  };
+})()
+`,
+    );
+
+    if (
+      !isRecord(noticesMobileState) ||
+      typeof noticesMobileState.scrollWidth !== 'number' ||
+      typeof noticesMobileState.clientWidth !== 'number'
+    ) {
+      throw new Error(
+        `Admin notices mobile layout state is invalid: ${JSON.stringify(noticesMobileState)}`,
+      );
+    }
+
+    if (noticesMobileState.scrollWidth > noticesMobileState.clientWidth + 2) {
+      throw new Error(
+        `Admin notices page has document-level horizontal overflow: ${JSON.stringify(noticesMobileState)}`,
+      );
+    }
+
+    if (
+      noticesMobileState.hasMoreActions !== true &&
+      noticesMobileState.hasEmptyState !== true
+    ) {
+      throw new Error(
+        `Admin notices page exposed neither empty state nor collapsed row actions: ${JSON.stringify(noticesMobileState)}`,
+      );
+    }
+
+    if (noticesMobileState.hasSseLeak === true) {
+      throw new Error(
+        `Admin notices page leaked technical SSE copy: ${JSON.stringify(noticesMobileState)}`,
+      );
+    }
+
+    await page.send('Emulation.setDeviceMetricsOverride', {
+      deviceScaleFactor: 1,
+      height: 900,
+      mobile: false,
+      screenHeight: 900,
+      screenWidth: 1280,
+      width: 1280,
+    });
     await page.send('Page.navigate', {
       url: `${adminBaseUrl}/personal/profile?admin-profile-ui-smoke=${runId}`,
     });
@@ -388,6 +465,9 @@ async function main() {
           'admin.public-login.no-duplicate-api-prefix',
           'admin.public-notice-bell.i18n-menu',
           'admin.public-notice-bell.view-all',
+          'admin.public-notices.mobile-no-page-overflow',
+          'admin.public-notices.empty-safe-or-collapsed-actions',
+          'admin.public-notices.no-sse-copy-leak',
           'admin.public-profile.authenticated-access',
           'admin.public-profile.zh-cn-tabs',
           'admin.public-profile.single-scroll-pane',
