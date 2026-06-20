@@ -116,24 +116,32 @@ model DictType {
   code        String     @unique
   name        String
   description String?
+  remark      String?
   enabled     Boolean    @default(true)
+  system      Boolean    @default(false)
   items       DictItem[]
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
+
+  @@index([enabled, createdAt])
 }
 
 model DictItem {
   id        String   @id @default(cuid())
   typeId    String
-  type      DictType @relation(fields: [typeId], references: [id], onDelete: Cascade)
+  type      DictType @relation(fields: [typeId], references: [id], onDelete: Restrict)
   label     String
   value     String
   sort      Int      @default(0)
   enabled   Boolean  @default(true)
+  colorType String?
+  cssClass  String?
+  remark    String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([typeId, value])
+  @@index([typeId, enabled, sort])
 }
 
 model SystemConfig {

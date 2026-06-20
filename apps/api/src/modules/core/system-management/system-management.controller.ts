@@ -44,9 +44,13 @@ import {
   AuditLogBatchMutationResultDto,
   AuditLogCleanResultDto,
   BatchDeleteAuditLogsDto,
+  BatchDeleteDictItemsDto,
+  BatchDeleteDictTypesDto,
   BatchDeleteSystemConfigsDto,
   BatchDeleteLoginLogsDto,
   BatchDeleteSystemPostsDto,
+  BatchUpdateDictItemStatusDto,
+  BatchUpdateDictStatusDto,
   CleanAuditLogsDto,
   CreateDictItemDto,
   CreateDictTypeDto,
@@ -60,9 +64,17 @@ import {
   DeleteResultDto,
   DictDataOptionDto,
   DictDataOptionQueryDto,
+  DictBatchMutationResultDto,
+  DictCacheRefreshDto,
+  DictDeleteMutationResultDto,
   DictItemDto,
+  DictItemBatchMutationResultDto,
+  DictItemDeleteMutationResultDto,
+  DictItemPageDto,
+  DictItemQueryDto,
   DictTypeDto,
   DictTypePageDto,
+  DictTypeQueryDto,
   ExportPreviewDto,
   FileAssetDto,
   FileAssetPageDto,
@@ -187,7 +199,7 @@ export class SystemManagementController {
   @ApiTags('Core Dictionaries')
   @RequirePermission('core:dict:read')
   @ApiOkResponse({ type: DictTypePageDto })
-  listDicts(@Query() query: PageQueryDto): Promise<DictTypePageDto> {
+  listDicts(@Query() query: DictTypeQueryDto): Promise<DictTypePageDto> {
     return this.dicts.listDicts(query);
   }
 
@@ -195,8 +207,74 @@ export class SystemManagementController {
   @ApiTags('Core Dictionaries')
   @RequirePermission('core:dict:export')
   @ApiOkResponse({ type: ExportPreviewDto })
-  exportDicts(@Query() query: PageQueryDto): Promise<ExportPreviewDto> {
+  exportDicts(@Query() query: DictTypeQueryDto): Promise<ExportPreviewDto> {
     return this.dicts.createExportPreview(query);
+  }
+
+  @Get('dict-items')
+  @ApiTags('Core Dictionaries')
+  @RequirePermission('core:dict:read')
+  @ApiOkResponse({ type: DictItemPageDto })
+  listDictItemsPage(
+    @Query() query: DictItemQueryDto,
+  ): Promise<DictItemPageDto> {
+    return this.dicts.listDictItemsPage(query);
+  }
+
+  @Get('dict-items/export')
+  @ApiTags('Core Dictionaries')
+  @RequirePermission('core:dict:export')
+  @ApiOkResponse({ type: ExportPreviewDto })
+  exportDictItems(@Query() query: DictItemQueryDto): Promise<ExportPreviewDto> {
+    return this.dicts.createItemsExportPreview(query);
+  }
+
+  @Patch('dicts/status')
+  @ApiTags('Core Dictionaries')
+  @RequirePermission('core:dict:update')
+  @ApiOkResponse({ type: DictBatchMutationResultDto })
+  updateDictStatus(
+    @Body() body: BatchUpdateDictStatusDto,
+  ): Promise<DictBatchMutationResultDto> {
+    return this.dicts.updateDictStatus(body);
+  }
+
+  @Delete('dicts/batch')
+  @ApiTags('Core Dictionaries')
+  @RequirePermission('core:dict:delete')
+  @ApiOkResponse({ type: DictDeleteMutationResultDto })
+  deleteDicts(
+    @Body() body: BatchDeleteDictTypesDto,
+  ): Promise<DictDeleteMutationResultDto> {
+    return this.dicts.deleteDicts(body);
+  }
+
+  @Patch('dict-items/status')
+  @ApiTags('Core Dictionaries')
+  @RequirePermission('core:dict:update')
+  @ApiOkResponse({ type: DictItemBatchMutationResultDto })
+  updateDictItemStatus(
+    @Body() body: BatchUpdateDictItemStatusDto,
+  ): Promise<DictItemBatchMutationResultDto> {
+    return this.dicts.updateDictItemStatus(body);
+  }
+
+  @Delete('dict-items/batch')
+  @ApiTags('Core Dictionaries')
+  @RequirePermission('core:dict:delete')
+  @ApiOkResponse({ type: DictItemDeleteMutationResultDto })
+  deleteDictItems(
+    @Body() body: BatchDeleteDictItemsDto,
+  ): Promise<DictItemDeleteMutationResultDto> {
+    return this.dicts.deleteDictItems(body);
+  }
+
+  @Post('dicts/refresh-cache')
+  @ApiTags('Core Dictionaries')
+  @RequirePermission('core:dict:manage')
+  @ApiOkResponse({ type: DictCacheRefreshDto })
+  refreshDictCache(): Promise<DictCacheRefreshDto> {
+    return this.dicts.refreshDictCache();
   }
 
   @Get('dict-data/simple-list')

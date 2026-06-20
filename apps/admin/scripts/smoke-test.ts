@@ -426,15 +426,24 @@ if (
   !opencorePlatformService.includes('createOperationsClient') ||
   !opencorePlatformService.includes('createSystemManagementClient') ||
   !opencorePlatformService.includes('listOpenCoreDicts') ||
+  !opencorePlatformService.includes('listOpenCoreDictPage') ||
   !opencorePlatformService.includes('getOpenCoreDict') ||
   !opencorePlatformService.includes('listOpenCoreDictDataOptions') ||
+  !opencorePlatformService.includes('listOpenCoreDictItemsPage') ||
   !opencorePlatformService.includes('listOpenCoreDictItems') ||
+  !opencorePlatformService.includes('exportOpenCoreDicts') ||
+  !opencorePlatformService.includes('exportOpenCoreDictItems') ||
   !opencorePlatformService.includes('createOpenCoreDict') ||
   !opencorePlatformService.includes('createOpenCoreDictItem') ||
   !opencorePlatformService.includes('updateOpenCoreDict') ||
   !opencorePlatformService.includes('updateOpenCoreDictItem') ||
+  !opencorePlatformService.includes('updateOpenCoreDictStatus') ||
+  !opencorePlatformService.includes('updateOpenCoreDictItemStatus') ||
   !opencorePlatformService.includes('deleteOpenCoreDict') ||
   !opencorePlatformService.includes('deleteOpenCoreDictItem') ||
+  !opencorePlatformService.includes('deleteOpenCoreDicts') ||
+  !opencorePlatformService.includes('deleteOpenCoreDictItems') ||
+  !opencorePlatformService.includes('refreshOpenCoreDictCache') ||
   !opencorePlatformService.includes('listOpenCoreSystemConfig') ||
   !opencorePlatformService.includes('exportOpenCoreSystemConfig') ||
   !opencorePlatformService.includes('getOpenCoreSystemConfig') ||
@@ -1524,13 +1533,15 @@ if (
   !usersPage.includes('postCodes') ||
   !usersPage.includes('Select posts') ||
   !usersPage.includes('Reset Password') ||
-  !usersPage.includes('Enable selected') ||
-  !usersPage.includes('Disable selected') ||
-  !usersPage.includes('Delete selected') ||
-  !usersPage.includes('Download Excel') ||
+  !usersPage.includes('pages.system.users.actions.enableSelected') ||
+  !usersPage.includes('pages.system.users.actions.disableSelected') ||
+  !usersPage.includes('pages.system.users.actions.deleteSelected') ||
+  !usersPage.includes('pages.system.users.actions.downloadExcel') ||
   !usersPage.includes('User Excel export downloaded') ||
-  !usersPage.includes('Download import template') ||
-  !usersPage.includes('Import users') ||
+  !usersPage.includes('downloadImportTemplate') ||
+  !usersPage.includes('pages.system.users.actions.downloadImportTemplate') ||
+  !usersPage.includes('openImportUsers') ||
+  !usersPage.includes('pages.system.users.actions.importUsers') ||
   !usersPage.includes('Update existing users') ||
   !usersPage.includes('Select CSV/XLSX file') ||
   !usersPage.includes('Assign Roles') ||
@@ -1539,44 +1550,50 @@ if (
   !usersPage.includes('formatImportSummary') ||
   !usersPage.includes('selectedUserIds') ||
   !usersPage.includes('rowSelection') ||
-  !usersPage.includes('Revoked sessions') ||
-  !usersPage.includes('useCurrentPageFilters') ||
-  !usersPage.includes('CurrentPageExportButton') ||
-  !usersPage.includes('dataSource={filteredRows}') ||
-  !usersPage.includes('rows={filteredRows}')
+  !usersPage.includes('listOpenCoreUsers') ||
+  !usersPage.includes('exportOpenCoreUsers') ||
+  !usersPage.includes('importOpenCoreUsers') ||
+  !usersPage.includes('downloadUserExcelExport') ||
+  !usersPage.includes('request={async (params, sort)') ||
+  !usersPage.includes('params={{ deptId: selectedDeptId }}') ||
+  !usersPage.includes('deptFilterTree') ||
+  !usersPage.includes('currentQuery')
 ) {
   throw new Error(
-    'Users page must use live-only SDK CRUD with role/dept/post selectors, dedicated role assignment, department tree filtering, bounded filtering, backend Excel export, import and current-page export without fixture fallback.',
+    'Users page must use live-only SDK CRUD with role/dept/post selectors, dedicated role assignment, department tree filtering, server-side filtering, backend Excel export and import without fixture fallback.',
   );
 }
 
 if (
   dictsPage.includes('createDictFixtures') ||
   dictsPage.includes('Live data unavailable; showing SDK fixtures.') ||
-  !dictsPage.includes('Unable to load live dictionaries') ||
-  !dictsPage.includes('Unable to load live dictionary detail.') ||
-  !dictsPage.includes('listOpenCoreDicts') ||
+  !dictsPage.includes('无法加载实时字典列表') ||
+  !dictsPage.includes('无法加载实时字典详情') ||
+  !dictsPage.includes('listOpenCoreDictPage') ||
   !dictsPage.includes('getOpenCoreDict') ||
-  !dictsPage.includes('listOpenCoreDictDataOptions') ||
-  !dictsPage.includes('listOpenCoreDictItems') ||
+  !dictsPage.includes('listOpenCoreDictItemsPage') ||
+  !dictsPage.includes('exportOpenCoreDicts') ||
+  !dictsPage.includes('exportOpenCoreDictItems') ||
+  !dictsPage.includes('refreshOpenCoreDictCache') ||
   !dictsPage.includes('createOpenCoreDict') ||
   !dictsPage.includes('createOpenCoreDictItem') ||
   !dictsPage.includes('updateOpenCoreDict') ||
   !dictsPage.includes('updateOpenCoreDictItem') ||
+  !dictsPage.includes('updateOpenCoreDictStatus') ||
+  !dictsPage.includes('updateOpenCoreDictItemStatus') ||
   !dictsPage.includes('deleteOpenCoreDict') ||
   !dictsPage.includes('deleteOpenCoreDictItem') ||
-  !dictsPage.includes('Dictionary Items') ||
-  !dictsPage.includes('New Item') ||
-  !dictsPage.includes('simple-list consumer endpoint') ||
-  !dictsPage.includes('Form.List') ||
-  !dictsPage.includes('normalizeDictItems') ||
-  !dictsPage.includes('useCurrentPageFilters') ||
-  !dictsPage.includes('CurrentPageExportButton') ||
-  !dictsPage.includes('dataSource={filteredRows}') ||
-  !dictsPage.includes('rows={filteredRows}')
+  !dictsPage.includes('deleteOpenCoreDicts') ||
+  !dictsPage.includes('deleteOpenCoreDictItems') ||
+  !dictsPage.includes('clearDictOptionsCache') ||
+  !dictsPage.includes('request={requestDicts}') ||
+  !dictsPage.includes('request={requestItems}') ||
+  !dictsPage.includes('rowSelection=') ||
+  !dictsPage.includes('字典类型') ||
+  !dictsPage.includes('字典数据')
 ) {
   throw new Error(
-    'Dictionaries page must use live-only SDK CRUD with item editing, bounded filtering and current-page export, without fixture fallback.',
+    'Dictionaries page must use live-only SDK CRUD with server pagination, item editing, batch operations, server export and cache refresh, without fixture fallback.',
   );
 }
 

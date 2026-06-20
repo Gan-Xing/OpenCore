@@ -53,8 +53,10 @@ async function main() {
     );
 
     const alpha = await clients.system.createDictItem(token, dictCode, {
+      colorType: 'success',
       enabled: true,
       label: 'Alpha',
+      remark: 'Smoke alpha option',
       sort: 10,
       value: 'alpha',
     });
@@ -62,6 +64,7 @@ async function main() {
     assertEqual(alpha.value, 'alpha', 'alpha value');
 
     const beta = await clients.system.createDictItem(token, dictCode, {
+      colorType: 'warning',
       enabled: false,
       label: 'Beta',
       sort: 20,
@@ -72,6 +75,28 @@ async function main() {
 
     const items = await clients.system.listDictItems(token, dictCode);
     assertEqual(items.length, 2, 'dict item count');
+
+    const itemPage = await clients.system.listDictItemsPage(token, {
+      dictCode,
+      page: 1,
+      pageSize: 10,
+      value: 'alpha',
+    });
+    assertEqual(itemPage.total, 1, 'dict item page filtered total');
+    assertEqual(itemPage.items[0]?.dictCode, dictCode, 'dict item page dictCode');
+
+    const dictPage = await clients.system.listDicts(token, {
+      code: dictCode,
+      page: 1,
+      pageSize: 10,
+    });
+    assertEqual(dictPage.total, 1, 'dict page filtered total');
+
+    const dictExport = await clients.system.exportDicts(token, { code: dictCode });
+    assertEqual(dictExport.rowCount, 1, 'dict export row count');
+
+    const itemExport = await clients.system.exportDictItems(token, { dictCode });
+    assertEqual(itemExport.rowCount, 2, 'dict item export row count');
 
     const betaDetail = await clients.system.getDictItem(
       token,
@@ -98,6 +123,21 @@ async function main() {
     );
     assertEqual(enabledBeta.enabled, true, 'beta enabled update');
 
+    await clients.system.updateDictItemStatus(token, {
+      enabled: false,
+      ids: [betaItemId],
+    });
+    assertOptionValues(
+      await publicSimpleList(dictCode),
+      ['alpha'],
+      'batch-disabled item simple-list options',
+    );
+
+    await clients.system.updateDictItemStatus(token, {
+      enabled: true,
+      ids: [betaItemId],
+    });
+
     const enabledOptions = await publicSimpleList(dictCode);
     assertOptionValues(
       enabledOptions,
@@ -118,6 +158,24 @@ async function main() {
       enabled: true,
     });
 
+    await clients.system.updateDictStatus(token, {
+      codes: [dictCode],
+      enabled: false,
+    });
+    assertOptionValues(
+      await publicSimpleList(dictCode),
+      [],
+      'batch-disabled dict simple-list options',
+    );
+
+    await clients.system.updateDictStatus(token, {
+      codes: [dictCode],
+      enabled: true,
+    });
+
+    const cacheRefresh = await clients.system.refreshDictCache(token);
+    assertEqual(cacheRefresh.refreshed, true, 'dict cache refresh result');
+
     const updatedAlpha = await clients.system.updateDictItem(
       token,
       dictCode,
@@ -136,6 +194,22 @@ async function main() {
       'post-delete simple-list options',
     );
 
+    await smoke.apiRequest(`/core/dicts/${encodeURIComponent(dictCode)}`, {
+      expected: [400],
+      method: 'DELETE',
+      token,
+    });
+
+    await clients.system.deleteDictItems(token, { ids: [betaItemId] });
+    assertOptionValues(
+      await publicSimpleList(dictCode),
+      [],
+      'post-batch-delete simple-list options',
+    );
+
+    await clients.system.deleteDicts(token, { codes: [dictCode] });
+    createdDictCodes.length = 0;
+
     await cleanupCreatedDicts(token);
 
     console.log(
@@ -152,13 +226,22 @@ async function main() {
           'core.dict.item.bad-boolean-rejected',
           'core.dict.item.create',
           'core.dict.item.list',
+          'core.dict.item.page',
+          'core.dict.page',
+          'core.dict.export',
+          'core.dict.item.export',
           'core.dict.item.detail',
           'core.dict.simple-list.public-consumer',
           'core.dict.simple-list.disabled-item-filtered',
+          'core.dict.item.batch-status',
           'core.dict.item.update',
           'core.dict.simple-list.disabled-dict-filtered',
+          'core.dict.batch-status',
+          'core.dict.refresh-cache',
+          'core.dict.delete-with-items-rejected',
           'core.dict.item.delete',
-          'core.dict.delete',
+          'core.dict.item.batch-delete',
+          'core.dict.batch-delete',
         ],
       }),
     );
@@ -201,6 +284,16 @@ async function cleanupCreatedDicts(token: string | undefined) {
   }
 
   for (const code of [...createdDictCodes].reverse()) {
+    const items = await clients.system
+      .listDictItemsPage(token, { dictCode: code, page: 1, pageSize: 200 })
+      .catch(() => undefined);
+    const itemIds = items?.items.map((item) => item.id) ?? [];
+    if (itemIds.length > 0) {
+      await clients.system
+        .deleteDictItems(token, { ids: itemIds })
+        .catch(() => undefined);
+    }
+
     await smoke.apiRequest(`/core/dicts/${encodeURIComponent(code)}`, {
       expected: [200, 404],
       method: 'DELETE',

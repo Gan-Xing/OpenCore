@@ -5,9 +5,13 @@ import type {
   AuditLogCleanSummary,
   AuditLogSummary,
   BatchDeleteAuditLogsRequest,
+  BatchDeleteDictItemsRequest,
+  BatchDeleteDictTypesRequest,
   BatchDeleteLoginLogsRequest,
   BatchDeleteSystemConfigsRequest,
   BatchDeleteSystemPostsRequest,
+  BatchUpdateDictItemStatusRequest,
+  BatchUpdateDictStatusRequest,
   CleanAuditLogsRequest,
   CreateDictItemRequest,
   CreateDictTypeRequest,
@@ -19,9 +23,16 @@ import type {
   CreateSystemPostRequest,
   CreateSystemConfigRequest,
   DeleteResult,
+  DictBatchMutationSummary,
+  DictCacheRefreshSummary,
   DictDataOptionQueryRequest,
   DictDataOptionSummary,
+  DictDeleteMutationSummary,
+  DictItemBatchMutationSummary,
+  DictItemDeleteMutationSummary,
+  DictItemQueryRequest,
   DictItemSummary,
+  DictTypeQueryRequest,
   DictTypeSummary,
   ExportPreview,
   FileAssetSummary,
@@ -99,14 +110,25 @@ type Token = string;
 export type SystemManagementClient = {
   listDicts: (
     token: Token,
-    query?: PageRequest,
+    query?: DictTypeQueryRequest,
   ) => Promise<PageResponse<DictTypeSummary>>;
-  exportDicts: (token: Token, query?: PageRequest) => Promise<ExportPreview>;
+  exportDicts: (
+    token: Token,
+    query?: DictTypeQueryRequest,
+  ) => Promise<ExportPreview>;
   getDict: (token: Token, code: string) => Promise<DictTypeSummary>;
   listDictDataOptions: (
     token: Token,
     query?: DictDataOptionQueryRequest,
   ) => Promise<readonly DictDataOptionSummary[]>;
+  listDictItemsPage: (
+    token: Token,
+    query?: DictItemQueryRequest,
+  ) => Promise<PageResponse<DictItemSummary>>;
+  exportDictItems: (
+    token: Token,
+    query?: DictItemQueryRequest,
+  ) => Promise<ExportPreview>;
   listDictItems: (
     token: Token,
     code: string,
@@ -142,6 +164,23 @@ export type SystemManagementClient = {
     itemId: string,
   ) => Promise<DeleteResult>;
   deleteDict: (token: Token, code: string) => Promise<DeleteResult>;
+  deleteDicts: (
+    token: Token,
+    body: BatchDeleteDictTypesRequest,
+  ) => Promise<DictDeleteMutationSummary>;
+  updateDictStatus: (
+    token: Token,
+    body: BatchUpdateDictStatusRequest,
+  ) => Promise<DictBatchMutationSummary>;
+  deleteDictItems: (
+    token: Token,
+    body: BatchDeleteDictItemsRequest,
+  ) => Promise<DictItemDeleteMutationSummary>;
+  updateDictItemStatus: (
+    token: Token,
+    body: BatchUpdateDictItemStatusRequest,
+  ) => Promise<DictItemBatchMutationSummary>;
+  refreshDictCache: (token: Token) => Promise<DictCacheRefreshSummary>;
   listConfig: (
     token: Token,
     query?: PageRequest,
@@ -458,6 +497,17 @@ export function createSystemManagementClient(
           token,
         },
       ),
+    listDictItemsPage: (token, query) =>
+      request<PageResponse<DictItemSummary>>(
+        withQuery('/core/dict-items', query),
+        {
+          token,
+        },
+      ),
+    exportDictItems: (token, query) =>
+      request<ExportPreview>(withQuery('/core/dict-items/export', query), {
+        token,
+      }),
     listDictItems: (token, code) =>
       request<readonly DictItemSummary[]>(
         `/core/dicts/${encodeURIComponent(code)}/items`,
@@ -513,6 +563,35 @@ export function createSystemManagementClient(
     deleteDict: (token, code) =>
       request<DeleteResult>(`/core/dicts/${encodeURIComponent(code)}`, {
         method: 'DELETE',
+        token,
+      }),
+    deleteDicts: (token, body) =>
+      request<DictDeleteMutationSummary>('/core/dicts/batch', {
+        method: 'DELETE',
+        body,
+        token,
+      }),
+    updateDictStatus: (token, body) =>
+      request<DictBatchMutationSummary>('/core/dicts/status', {
+        method: 'PATCH',
+        body,
+        token,
+      }),
+    deleteDictItems: (token, body) =>
+      request<DictItemDeleteMutationSummary>('/core/dict-items/batch', {
+        method: 'DELETE',
+        body,
+        token,
+      }),
+    updateDictItemStatus: (token, body) =>
+      request<DictItemBatchMutationSummary>('/core/dict-items/status', {
+        method: 'PATCH',
+        body,
+        token,
+      }),
+    refreshDictCache: (token) =>
+      request<DictCacheRefreshSummary>('/core/dicts/refresh-cache', {
+        method: 'POST',
         token,
       }),
     listConfig: (token, query) =>

@@ -914,22 +914,21 @@ async function seedSystemManagement(): Promise<{
       update: {
         name: dict.name,
         description: dict.description,
+        remark: dict.remark,
         enabled: dict.enabled,
+        system: dict.system,
+        updatedAt: new Date(dict.updatedAt),
       },
       create: {
         id: dict.id,
         code: dict.code,
         name: dict.name,
         description: dict.description,
+        remark: dict.remark,
         enabled: dict.enabled,
-      },
-    });
-    const seedValues = dict.items.map((item) => item.value);
-
-    await prisma.dictItem.deleteMany({
-      where: {
-        typeId: dictType.id,
-        value: { notIn: seedValues },
+        system: dict.system,
+        createdAt: new Date(dict.createdAt),
+        updatedAt: new Date(dict.updatedAt),
       },
     });
 
@@ -945,6 +944,10 @@ async function seedSystemManagement(): Promise<{
           label: item.label,
           sort: item.sort,
           enabled: item.enabled,
+          colorType: item.colorType,
+          cssClass: item.cssClass,
+          remark: item.remark,
+          updatedAt: new Date(item.updatedAt),
         },
         create: {
           id: item.id,
@@ -953,6 +956,11 @@ async function seedSystemManagement(): Promise<{
           value: item.value,
           sort: item.sort,
           enabled: item.enabled,
+          colorType: item.colorType,
+          cssClass: item.cssClass,
+          remark: item.remark,
+          createdAt: new Date(item.createdAt),
+          updatedAt: new Date(item.updatedAt),
         },
       });
     }

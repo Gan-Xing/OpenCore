@@ -3581,6 +3581,36 @@
               "default": 10,
               "allOf": [{ "$ref": "#/components/schemas/Object" }]
             }
+          },
+          {
+            "name": "code",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "name",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "enabled",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
+          },
+          {
+            "name": "createdFrom",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "createdTo",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
@@ -3642,6 +3672,36 @@
               "default": 10,
               "allOf": [{ "$ref": "#/components/schemas/Object" }]
             }
+          },
+          {
+            "name": "code",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "name",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "enabled",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
+          },
+          {
+            "name": "createdFrom",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "createdTo",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
@@ -3650,6 +3710,266 @@
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/ExportPreviewDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Dictionaries"]
+      }
+    },
+    "/api/core/dict-items": {
+      "get": {
+        "operationId": "SystemManagementController_listDictItemsPage",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "dictCode",
+            "required": false,
+            "in": "query",
+            "schema": { "example": "system.status", "type": "string" }
+          },
+          {
+            "name": "label",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "value",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "enabled",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DictItemPageDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Dictionaries"]
+      }
+    },
+    "/api/core/dict-items/export": {
+      "get": {
+        "operationId": "SystemManagementController_exportDictItems",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "dictCode",
+            "required": false,
+            "in": "query",
+            "schema": { "example": "system.status", "type": "string" }
+          },
+          {
+            "name": "label",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "value",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "enabled",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ExportPreviewDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Dictionaries"]
+      }
+    },
+    "/api/core/dicts/status": {
+      "patch": {
+        "operationId": "SystemManagementController_updateDictStatus",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchUpdateDictStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DictBatchMutationResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Dictionaries"]
+      }
+    },
+    "/api/core/dicts/batch": {
+      "delete": {
+        "operationId": "SystemManagementController_deleteDicts",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchDeleteDictTypesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DictDeleteMutationResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Dictionaries"]
+      }
+    },
+    "/api/core/dict-items/status": {
+      "patch": {
+        "operationId": "SystemManagementController_updateDictItemStatus",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchUpdateDictItemStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DictItemBatchMutationResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Dictionaries"]
+      }
+    },
+    "/api/core/dict-items/batch": {
+      "delete": {
+        "operationId": "SystemManagementController_deleteDictItems",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchDeleteDictItemsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DictItemDeleteMutationResultDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Dictionaries"]
+      }
+    },
+    "/api/core/dicts/refresh-cache": {
+      "post": {
+        "operationId": "SystemManagementController_refreshDictCache",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DictCacheRefreshDto" }
               }
             }
           }
@@ -11339,12 +11659,27 @@
         "type": "object",
         "properties": {
           "id": { "type": "string" },
+          "dictCode": { "type": "string" },
           "label": { "type": "string" },
           "value": { "type": "string" },
           "sort": { "type": "number" },
-          "enabled": { "type": "boolean" }
+          "enabled": { "type": "boolean" },
+          "colorType": { "type": "string" },
+          "cssClass": { "type": "string" },
+          "remark": { "type": "string" },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
         },
-        "required": ["id", "label", "value", "sort", "enabled"]
+        "required": [
+          "id",
+          "dictCode",
+          "label",
+          "value",
+          "sort",
+          "enabled",
+          "createdAt",
+          "updatedAt"
+        ]
       },
       "DictTypeDto": {
         "type": "object",
@@ -11353,13 +11688,26 @@
           "code": { "type": "string" },
           "name": { "type": "string" },
           "description": { "type": "string" },
+          "remark": { "type": "string" },
           "enabled": { "type": "boolean" },
+          "system": { "type": "boolean" },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" },
           "items": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/DictItemDto" }
           }
         },
-        "required": ["id", "code", "name", "enabled", "items"]
+        "required": [
+          "id",
+          "code",
+          "name",
+          "enabled",
+          "system",
+          "createdAt",
+          "updatedAt",
+          "items"
+        ]
       },
       "DictTypePageDto": {
         "type": "object",
@@ -11388,17 +11736,120 @@
         },
         "required": ["filename", "scope", "columns", "rowCount", "generatedAt"]
       },
+      "DictItemPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/DictItemDto" }
+          },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" },
+          "total": { "type": "number" },
+          "totalPages": { "type": "number" }
+        },
+        "required": ["items", "page", "pageSize", "total", "totalPages"]
+      },
+      "BatchUpdateDictStatusDto": {
+        "type": "object",
+        "properties": {
+          "codes": { "type": "array", "items": { "type": "string" } },
+          "enabled": { "type": "boolean" }
+        },
+        "required": ["codes", "enabled"]
+      },
+      "DictBatchMutationResultDto": {
+        "type": "object",
+        "properties": {
+          "updated": { "type": "boolean" },
+          "affected": { "type": "number" },
+          "codes": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["updated", "affected", "codes"]
+      },
+      "BatchDeleteDictTypesDto": {
+        "type": "object",
+        "properties": {
+          "codes": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["codes"]
+      },
+      "DictDeleteMutationResultDto": {
+        "type": "object",
+        "properties": {
+          "deleted": { "type": "boolean" },
+          "affected": { "type": "number" },
+          "codes": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["deleted", "affected", "codes"]
+      },
+      "BatchUpdateDictItemStatusDto": {
+        "type": "object",
+        "properties": {
+          "ids": { "type": "array", "items": { "type": "string" } },
+          "enabled": { "type": "boolean" }
+        },
+        "required": ["ids", "enabled"]
+      },
+      "DictItemBatchMutationResultDto": {
+        "type": "object",
+        "properties": {
+          "updated": { "type": "boolean" },
+          "affected": { "type": "number" },
+          "ids": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["updated", "affected", "ids"]
+      },
+      "BatchDeleteDictItemsDto": {
+        "type": "object",
+        "properties": {
+          "ids": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["ids"]
+      },
+      "DictItemDeleteMutationResultDto": {
+        "type": "object",
+        "properties": {
+          "deleted": { "type": "boolean" },
+          "affected": { "type": "number" },
+          "ids": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["deleted", "affected", "ids"]
+      },
+      "DictCacheRefreshDto": {
+        "type": "object",
+        "properties": {
+          "refreshed": { "type": "boolean" },
+          "cachedKeys": { "type": "number" },
+          "refreshedAt": { "type": "string" }
+        },
+        "required": ["refreshed", "cachedKeys", "refreshedAt"]
+      },
       "DictDataOptionDto": {
         "type": "object",
         "properties": {
           "id": { "type": "string" },
+          "dictCode": { "type": "string" },
           "label": { "type": "string" },
           "value": { "type": "string" },
           "sort": { "type": "number" },
           "enabled": { "type": "boolean" },
-          "dictCode": { "type": "string" }
+          "colorType": { "type": "string" },
+          "cssClass": { "type": "string" },
+          "remark": { "type": "string" },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
         },
-        "required": ["id", "label", "value", "sort", "enabled", "dictCode"]
+        "required": [
+          "id",
+          "dictCode",
+          "label",
+          "value",
+          "sort",
+          "enabled",
+          "createdAt",
+          "updatedAt"
+        ]
       },
       "CreateDictTypeDto": {
         "type": "object",
@@ -11406,6 +11857,7 @@
           "code": { "type": "string", "example": "system.status" },
           "name": { "type": "string", "example": "System Status" },
           "description": { "type": "string" },
+          "remark": { "type": "string" },
           "enabled": { "type": "boolean", "default": true },
           "items": {
             "type": "array",
@@ -11421,7 +11873,10 @@
           "label": { "type": "string", "example": "Enabled" },
           "value": { "type": "string", "example": "enabled" },
           "sort": { "type": "number", "default": 0 },
-          "enabled": { "type": "boolean", "default": true }
+          "enabled": { "type": "boolean", "default": true },
+          "colorType": { "type": "string" },
+          "cssClass": { "type": "string" },
+          "remark": { "type": "string" }
         },
         "required": ["label", "value"]
       },
@@ -11430,6 +11885,7 @@
         "properties": {
           "name": { "type": "string" },
           "description": { "type": "string" },
+          "remark": { "type": "string" },
           "enabled": { "type": "boolean" },
           "items": {
             "type": "array",
@@ -11443,7 +11899,10 @@
           "label": { "type": "string" },
           "value": { "type": "string" },
           "sort": { "type": "number" },
-          "enabled": { "type": "boolean" }
+          "enabled": { "type": "boolean" },
+          "colorType": { "type": "string" },
+          "cssClass": { "type": "string" },
+          "remark": { "type": "string" }
         }
       },
       "SystemConfigDto": {

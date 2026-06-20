@@ -29,18 +29,50 @@ describe('createSystemManagementClient', () => {
     const client = createSystemManagementClient(request);
 
     await client.listDicts('token', { page: 2, pageSize: 20 });
+    await client.exportDicts('token', {
+      code: 'system',
+      enabled: true,
+      name: 'Status',
+    });
     await client.getDict('token', 'system.status');
     await client.listDictDataOptions('token', { dictCode: 'system.status' });
+    await client.listDictItemsPage('token', {
+      dictCode: 'system.status',
+      enabled: true,
+      label: 'Enabled',
+      page: 1,
+      pageSize: 10,
+      value: 'enabled',
+    });
+    await client.exportDictItems('token', {
+      dictCode: 'system.status',
+      enabled: true,
+    });
     await client.listDictItems('token', 'system.status');
     await client.getDictItem('token', 'system.status', 'dict_item_enabled');
     await client.createDictItem('token', 'system.status', {
+      colorType: 'default',
       label: 'Archived',
+      remark: 'SDK path guard',
       value: 'archived',
     });
     await client.updateDictItem('token', 'system.status', 'dict_item_enabled', {
       sort: 30,
     });
     await client.deleteDictItem('token', 'system.status', 'dict_item_disabled');
+    await client.updateDictStatus('token', {
+      codes: ['custom.status'],
+      enabled: false,
+    });
+    await client.deleteDicts('token', { codes: ['custom.status'] });
+    await client.updateDictItemStatus('token', {
+      enabled: false,
+      ids: ['dict_item_custom_status_enabled'],
+    });
+    await client.deleteDictItems('token', {
+      ids: ['dict_item_custom_status_enabled'],
+    });
+    await client.refreshDictCache('token');
     await client.listConfig('token', { page: 1, pageSize: 10 });
     await client.getConfig('token', 'opencore.admin.title');
     await client.getConfigRuntime();
@@ -313,11 +345,23 @@ describe('createSystemManagementClient', () => {
         token: 'token',
       },
       {
+        path: '/core/dicts/export?code=system&enabled=true&name=Status',
+        token: 'token',
+      },
+      {
         path: '/core/dicts/system.status',
         token: 'token',
       },
       {
         path: '/core/dict-data/simple-list?dictCode=system.status',
+        token: 'token',
+      },
+      {
+        path: '/core/dict-items?dictCode=system.status&enabled=true&label=Enabled&page=1&pageSize=10&value=enabled',
+        token: 'token',
+      },
+      {
+        path: '/core/dict-items/export?dictCode=system.status&enabled=true',
         token: 'token',
       },
       {
@@ -341,6 +385,31 @@ describe('createSystemManagementClient', () => {
       {
         path: '/core/dicts/system.status/items/dict_item_disabled',
         method: 'DELETE',
+        token: 'token',
+      },
+      {
+        path: '/core/dicts/status',
+        method: 'PATCH',
+        token: 'token',
+      },
+      {
+        path: '/core/dicts/batch',
+        method: 'DELETE',
+        token: 'token',
+      },
+      {
+        path: '/core/dict-items/status',
+        method: 'PATCH',
+        token: 'token',
+      },
+      {
+        path: '/core/dict-items/batch',
+        method: 'DELETE',
+        token: 'token',
+      },
+      {
+        path: '/core/dicts/refresh-cache',
+        method: 'POST',
         token: 'token',
       },
       {

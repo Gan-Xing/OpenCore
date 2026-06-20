@@ -12,15 +12,15 @@ describe('@opencore/system system-dict', () => {
       expect.objectContaining({
         page: 1,
         pageSize: 1,
-        total: 2,
-        totalPages: 2,
+        total: 5,
+        totalPages: 5,
       }),
     );
     await expect(service.createExportPreview()).resolves.toMatchObject({
       filename: 'opencore-dicts.csv',
       scope: 'current-page',
-      columns: ['code', 'name', 'enabled'],
-      rowCount: 2,
+      columns: ['code', 'name', 'enabled', 'system', 'createdAt', 'updatedAt'],
+      rowCount: 5,
     });
     await expect(service.getDict('system.status')).resolves.toMatchObject({
       code: 'system.status',
@@ -111,6 +111,16 @@ describe('@opencore/system system-dict', () => {
       service.getDictItem(dict.code, visible.id),
       'SYSTEM_DICT_ITEM_NOT_FOUND',
     );
+    await expectHttpExceptionCode(
+      service.deleteDict(dict.code),
+      'SYSTEM_DICT_HAS_ITEMS',
+    );
+    await expect(
+      service.deleteDictItems({ ids: [hidden.id] }),
+    ).resolves.toMatchObject({ affected: 1, deleted: true });
+    await expect(service.deleteDict(dict.code)).resolves.toEqual({
+      deleted: true,
+    });
   });
 
   it('rejects malformed dictionary booleans and item sort values', async () => {
@@ -210,6 +220,13 @@ describe('@opencore/system system-dict', () => {
         scope: 'current-page',
         rowCount: expect.any(Number),
       });
+      await expectHttpExceptionCode(
+        service.deleteDict(dictCode),
+        'SYSTEM_DICT_HAS_ITEMS',
+      );
+      await expect(
+        service.deleteDictItems({ ids: [`dict_item_${testRunId}`] }),
+      ).resolves.toMatchObject({ affected: 1, deleted: true });
       await expect(service.deleteDict(dictCode)).resolves.toEqual({
         deleted: true,
       });
@@ -261,9 +278,18 @@ describe('@opencore/system system-dict', () => {
       await expect(
         service.deleteDictItem(dict.code, visible.id),
       ).resolves.toEqual({ deleted: true });
+      await expect(
+        service.deleteDictItems({ ids: [hidden.id] }),
+      ).resolves.toMatchObject({ affected: 1, deleted: true });
+      await expect(service.deleteDict(dict.code)).resolves.toEqual({
+        deleted: true,
+      });
     });
 
     async function cleanupTestRows(): Promise<void> {
+      await prisma.dictItem.deleteMany({
+        where: { type: { code: dictCode } },
+      });
       await prisma.dictType.deleteMany({ where: { code: dictCode } });
     }
   });

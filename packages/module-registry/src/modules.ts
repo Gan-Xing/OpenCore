@@ -254,7 +254,7 @@ export const moduleRegistry = [
       'dict',
       'dictionaries',
       'S7',
-      CRUD_PERMISSION_SEEDS,
+      [...CRUD_PERMISSION_SEEDS, { action: 'manage', title: 'Manage' }],
     ),
     menus: [
       defineMenu(

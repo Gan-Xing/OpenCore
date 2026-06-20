@@ -714,12 +714,33 @@ export default {
   'error.SYSTEM_DICT_ALREADY_EXISTS': 'The dictionary code already exists.',
   'error.SYSTEM_DICT_BOOLEAN_INVALID':
     'The dictionary boolean field must be a boolean.',
+  'error.SYSTEM_DICT_CODES_EMPTY':
+    'The dictionary code list must not be empty.',
+  'error.SYSTEM_DICT_CODES_INVALID':
+    'The dictionary code list must be an array.',
+  'error.SYSTEM_DICT_CODE_DUPLICATED': 'The dictionary code is duplicated.',
+  'error.SYSTEM_DICT_CODE_INVALID': 'The dictionary code is invalid.',
+  'error.SYSTEM_DICT_DATE_INVALID': 'The dictionary date filter is invalid.',
+  'error.SYSTEM_DICT_HAS_ITEMS':
+    'The dictionary has items and cannot be deleted directly.',
+  'error.SYSTEM_DICT_INLINE_ITEMS_UPDATE_UNSUPPORTED':
+    'Dictionary items must be managed through dictionary item APIs.',
   'error.SYSTEM_DICT_INTEGER_INVALID':
     'The dictionary integer field is invalid.',
   'error.SYSTEM_DICT_ITEM_ALREADY_EXISTS':
     'The dictionary item value already exists.',
+  'error.SYSTEM_DICT_ITEM_IDS_EMPTY':
+    'The dictionary item ID list must not be empty.',
+  'error.SYSTEM_DICT_ITEM_IDS_INVALID':
+    'The dictionary item ID list must be an array.',
+  'error.SYSTEM_DICT_ITEM_ID_DUPLICATED':
+    'The dictionary item ID is duplicated.',
   'error.SYSTEM_DICT_ITEM_NOT_FOUND': 'The dictionary item does not exist.',
   'error.SYSTEM_DICT_NOT_FOUND': 'The dictionary does not exist.',
+  'error.SYSTEM_DICT_SYSTEM_IMMUTABLE':
+    'The built-in system dictionary cannot perform this action.',
+  'error.SYSTEM_DICT_SYSTEM_ITEM_IMMUTABLE':
+    'The built-in system dictionary item cannot perform this action.',
   'error.SYSTEM_DICT_TEXT_REQUIRED': 'A required dictionary text is missing.',
   'error.TOOL_AREA_FORMAT_SEPARATOR_INVALID':
     'The area path separator is invalid.',

@@ -852,6 +852,82 @@ async function main() {
 `,
     );
 
+    const dictsNetworkStart = networkEntries.length;
+    await page.send('Emulation.clearDeviceMetricsOverride');
+    await page.send('Page.navigate', {
+      url: `${adminBaseUrl}/system/dicts?admin-dicts-ui-smoke=${runId}`,
+    });
+    await waitForExpression(
+      page,
+      'document.readyState === "complete"',
+      'Admin dicts page load',
+    );
+    await waitForCondition(
+      () =>
+        networkEntries
+          .slice(dictsNetworkStart)
+          .some(
+            (entry) =>
+              entry.status === 200 &&
+              /\/api\/core\/dicts(?:\?|$)/u.test(entry.url),
+          ),
+      'Admin dicts live list request',
+    );
+    await waitForCondition(
+      () =>
+        networkEntries
+          .slice(dictsNetworkStart)
+          .some(
+            (entry) =>
+              entry.status === 200 &&
+              /\/api\/core\/dict-items(?:\?|$)/u.test(entry.url),
+          ),
+      'Admin dict items live list request',
+    );
+    await waitForExpression(
+      page,
+      `document.body.innerText.includes('字典管理') && document.body.innerText.includes('字典类型') && document.body.innerText.includes('字典数据')`,
+      'Admin dicts Chinese page surface',
+    );
+    const dictsPageState = await evaluate(
+      page,
+      `
+(() => {
+  const text = document.body.innerText;
+  return {
+    hasCacheRefresh: Boolean(document.querySelector('[data-opencore-system-dicts-cache-refresh="true"]')),
+    hasCreateDict: text.includes('新建字典'),
+    hasCreateItem: text.includes('新建字典项'),
+    hasDictCodeColumn: text.includes('字典编码'),
+    hasDictDataPanel: Boolean(document.querySelector('[data-opencore-system-dicts-items-panel="true"]')),
+    hasDictTypePanel: Boolean(document.querySelector('[data-opencore-system-dicts-type-panel="true"]')),
+    hasRawKeys: text.includes('pages.system.dicts') || text.includes('system.dicts'),
+    text: text.slice(0, 1000),
+  };
+})()
+`,
+    );
+
+    if (
+      !isRecord(dictsPageState) ||
+      dictsPageState.hasDictTypePanel !== true ||
+      dictsPageState.hasDictDataPanel !== true ||
+      dictsPageState.hasCacheRefresh !== true ||
+      dictsPageState.hasCreateDict !== true ||
+      dictsPageState.hasCreateItem !== true ||
+      dictsPageState.hasDictCodeColumn !== true
+    ) {
+      throw new Error(
+        `Admin dicts page is missing live productized controls: ${JSON.stringify(dictsPageState)}`,
+      );
+    }
+
+    if (dictsPageState.hasRawKeys === true) {
+      throw new Error(
+        `Admin dicts page displayed raw i18n keys: ${JSON.stringify(dictsPageState)}`,
+      );
+    }
+
     const usersMobileNetworkStart = networkEntries.length;
     await page.send('Emulation.setDeviceMetricsOverride', {
       deviceScaleFactor: 1,
@@ -984,6 +1060,12 @@ async function main() {
           'admin.public-users.no-raw-keys',
           'admin.public-users.user-picker',
           'admin.public-users.import-preview',
+          'admin.public-dicts.live-list-request',
+          'admin.public-dicts.live-item-request',
+          'admin.public-dicts.zh-cn-surface',
+          'admin.public-dicts.cache-refresh',
+          'admin.public-dicts.create-controls',
+          'admin.public-dicts.no-raw-keys',
           'admin.public-users.mobile-card-list',
           'admin.public-users.no-desktop-table-on-mobile',
           'admin.public-users.mobile-no-page-overflow',

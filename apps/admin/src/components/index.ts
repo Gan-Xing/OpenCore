@@ -15,6 +15,15 @@ import { NoticeBell } from './RightContent/NoticeBell';
  */
 export { default as ArticleListContent } from './ArticleListContent';
 export { default as AvatarList } from './AvatarList';
+export {
+  DictSelect,
+  DictTag,
+  clearDictOptionsCache,
+  loadDictOptions,
+  useDictOptions,
+  type DictSelectProps,
+  type DictTagProps,
+} from './Dict';
 export { default as ErrorBoundary } from './ErrorBoundary';
 export { default as OfflineBanner } from './OfflineBanner';
 export { default as StandardFormRow } from './StandardFormRow';

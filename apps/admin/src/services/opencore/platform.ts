@@ -31,6 +31,8 @@ import {
   type AuditLogQueryRequest,
   type AuditLogSummary,
   type BatchDeleteAuditLogsRequest,
+  type BatchDeleteDictItemsRequest,
+  type BatchDeleteDictTypesRequest,
   type BatchDeleteLoginLogsRequest,
   type BatchDeleteUsersRequest,
   type BatchDeleteSystemConfigsRequest,
@@ -38,6 +40,8 @@ import {
   type BatchKickOutSessionsRequest,
   type BatchKickOutSessionsResult,
   type BatchSetUserStatusRequest,
+  type BatchUpdateDictItemStatusRequest,
+  type BatchUpdateDictStatusRequest,
   type BatchUserMutationSummary,
   type CacheClearResultSummary,
   type CacheKeyDeleteResultSummary,
@@ -99,9 +103,16 @@ import {
   type RoleSummary,
   type SetRoleStatusRequest,
   type SystemStatusSummary,
+  type DictBatchMutationSummary,
+  type DictCacheRefreshSummary,
   type DictDataOptionQueryRequest,
   type DictDataOptionSummary,
+  type DictDeleteMutationSummary,
+  type DictItemBatchMutationSummary,
+  type DictItemDeleteMutationSummary,
+  type DictItemQueryRequest,
   type DictItemSummary,
+  type DictTypeQueryRequest,
   type DictTypeSummary,
   type ExportPreview,
   type CurrentPageExportProtocolSummary,
@@ -906,6 +917,18 @@ export async function listOpenCoreDicts(): Promise<DictTypeSummary[]> {
   return [...page.items];
 }
 
+export function listOpenCoreDictPage(
+  query?: DictTypeQueryRequest,
+): Promise<PageResponse<DictTypeSummary>> {
+  return systemManagementClient.listDicts(getRequiredAdminToken(), query);
+}
+
+export function exportOpenCoreDicts(
+  query?: DictTypeQueryRequest,
+): Promise<ExportPreview> {
+  return systemManagementClient.exportDicts(getRequiredAdminToken(), query);
+}
+
 export function getOpenCoreDict(code: string): Promise<DictTypeSummary> {
   return systemManagementClient.getDict(getRequiredAdminToken(), code);
 }
@@ -923,6 +946,21 @@ export function listOpenCoreDictItems(
   code: string,
 ): Promise<readonly DictItemSummary[]> {
   return systemManagementClient.listDictItems(getRequiredAdminToken(), code);
+}
+
+export function listOpenCoreDictItemsPage(
+  query?: DictItemQueryRequest,
+): Promise<PageResponse<DictItemSummary>> {
+  return systemManagementClient.listDictItemsPage(
+    getRequiredAdminToken(),
+    query,
+  );
+}
+
+export function exportOpenCoreDictItems(
+  query?: DictItemQueryRequest,
+): Promise<ExportPreview> {
+  return systemManagementClient.exportDictItems(getRequiredAdminToken(), query);
 }
 
 export function createOpenCoreDictItem(
@@ -973,8 +1011,41 @@ export function updateOpenCoreDict(
   return systemManagementClient.updateDict(getRequiredAdminToken(), code, body);
 }
 
-export function deleteOpenCoreDict(code: string): Promise<{ deleted: true }> {
+export function deleteOpenCoreDict(
+  code: string,
+): Promise<{ deleted: true }> {
   return systemManagementClient.deleteDict(getRequiredAdminToken(), code);
+}
+
+export function deleteOpenCoreDicts(
+  body: BatchDeleteDictTypesRequest,
+): Promise<DictDeleteMutationSummary> {
+  return systemManagementClient.deleteDicts(getRequiredAdminToken(), body);
+}
+
+export function updateOpenCoreDictStatus(
+  body: BatchUpdateDictStatusRequest,
+): Promise<DictBatchMutationSummary> {
+  return systemManagementClient.updateDictStatus(getRequiredAdminToken(), body);
+}
+
+export function deleteOpenCoreDictItems(
+  body: BatchDeleteDictItemsRequest,
+): Promise<DictItemDeleteMutationSummary> {
+  return systemManagementClient.deleteDictItems(getRequiredAdminToken(), body);
+}
+
+export function updateOpenCoreDictItemStatus(
+  body: BatchUpdateDictItemStatusRequest,
+): Promise<DictItemBatchMutationSummary> {
+  return systemManagementClient.updateDictItemStatus(
+    getRequiredAdminToken(),
+    body,
+  );
+}
+
+export function refreshOpenCoreDictCache(): Promise<DictCacheRefreshSummary> {
+  return systemManagementClient.refreshDictCache(getRequiredAdminToken());
 }
 
 export async function listOpenCoreSystemConfig(): Promise<

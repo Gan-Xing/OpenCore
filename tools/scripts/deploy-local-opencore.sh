@@ -289,27 +289,50 @@ verify_admin_bundle_api_base_url() {
     --fixed-strings \
     "Live data unavailable; showing SDK fixtures." \
     "$ROOT_DIR/apps/admin/src/pages/System/Dicts.tsx" >/dev/null || \
+    ! find "$ROOT_DIR/apps/admin/dist" \
+    -maxdepth 1 \
+    -type f \
+    -name 'p__System__Dicts*.async.js' \
+    | grep . >/dev/null || \
+    ! grep \
+    --fixed-strings \
+    "listOpenCoreDictItemsPage" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Dicts.tsx" >/dev/null || \
+    ! grep \
+    --fixed-strings \
+    "request={requestDicts}" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Dicts.tsx" >/dev/null || \
+    ! grep \
+    --fixed-strings \
+    "request={requestItems}" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Dicts.tsx" >/dev/null || \
+    ! grep \
+    --fixed-strings \
+    "deleteOpenCoreDicts" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Dicts.tsx" >/dev/null || \
+    ! grep \
+    --fixed-strings \
+    "updateOpenCoreDictStatus" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Dicts.tsx" >/dev/null || \
+    ! grep \
+    --fixed-strings \
+    "refreshOpenCoreDictCache" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Dicts.tsx" >/dev/null || \
+    ! grep \
+    --fixed-strings \
+    "clearDictOptionsCache" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Dicts.tsx" >/dev/null || \
     ! grep -R \
     --fixed-strings \
     --include='*.js' \
-    "Unable to load live dictionaries" \
+    "/core/dict-items" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null || \
     ! grep -R \
     --fixed-strings \
     --include='*.js' \
-    "Dictionary Items" \
-    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
-    ! grep -R \
-    --fixed-strings \
-    --include='*.js' \
-    "simple-list consumer endpoint" \
-    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
-    ! grep -R \
-    --fixed-strings \
-    --include='*.js' \
-    "core-dicts" \
+    "/core/dicts/refresh-cache" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null; then
-    echo "Admin Dicts page must use live-only data and dictionary item controls without fixture fallback." >&2
+    echo "Admin Dicts page must use live-only data, server pagination, dictionary item controls and cache refresh without fixture fallback." >&2
     echo "Refusing to deploy a stale or fixture-backed Dicts frontend page." >&2
     exit 1
   fi

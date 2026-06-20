@@ -2,6 +2,10 @@ import { Injectable } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
 import { PrismaService } from '@opencore/database';
 import type {
+  BatchDeleteDictItemsDto,
+  BatchDeleteDictTypesDto,
+  BatchUpdateDictItemStatusDto,
+  BatchUpdateDictStatusDto,
   CreateDictItemDto,
   CreateDictTypeDto,
   DictDataOptionQueryDto,
@@ -17,11 +21,24 @@ import {
   createSystemDictPageResult,
   normalizeSystemDictPageQuery,
   normalizeCreateDictItemInput,
-  normalizeOptionalBoolean,
   systemDictConflict,
   systemDictNotFound,
   normalizeUpdateDictItemInput,
+  normalizeCreateDictTypeInput,
+  normalizeDictCodes,
+  normalizeDictItemFilters,
+  normalizeDictItemIds,
+  normalizeDictTypeFilters,
+  normalizeUpdateDictTypeInput,
+  normalizeBatchEnabled,
+  systemDictBadRequest,
   SystemDictRepository,
+  type DictBatchMutationRecord,
+  type DictCacheRefreshRecord,
+  type DictDeleteMutationRecord,
+  type DictItemBatchMutationRecord,
+  type DictItemDeleteMutationRecord,
+  type SystemDictItemPageQuery,
   type SystemDictPageQuery,
 } from './system-dict.repository';
 
@@ -30,23 +47,37 @@ type PrismaDictTypeWithItems = {
   code: string;
   name: string;
   description: string | null;
+  remark: string | null;
   enabled: boolean;
+  system: boolean;
+  createdAt: Date;
+  updatedAt: Date;
   items: PrismaDictItem[];
 };
 
 type PrismaDictItem = {
   id: string;
   typeId?: string;
+  type?: {
+    code: string;
+    system?: boolean;
+  };
   label: string;
   value: string;
   sort: number;
   enabled: boolean;
+  colorType: string | null;
+  cssClass: string | null;
+  remark: string | null;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 type PrismaDictItemWithType = PrismaDictItem & {
   type: {
     code: string;
     enabled: boolean;
+    system?: boolean;
   };
 };
 
@@ -59,9 +90,28 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
   async listDicts(
     query: SystemDictPageQuery = {},
   ): Promise<PageResult<DictTypeRecord>> {
-    const total = await this.prisma.dictType.count();
+    const filters = normalizeDictTypeFilters(query);
+    const where = {
+      ...(filters.code
+        ? { code: { contains: filters.code, mode: 'insensitive' as const } }
+        : {}),
+      ...(filters.name
+        ? { name: { contains: filters.name, mode: 'insensitive' as const } }
+        : {}),
+      ...(filters.enabled === undefined ? {} : { enabled: filters.enabled }),
+      ...(filters.createdFrom || filters.createdTo
+        ? {
+            createdAt: {
+              ...(filters.createdFrom ? { gte: filters.createdFrom } : {}),
+              ...(filters.createdTo ? { lte: filters.createdTo } : {}),
+            },
+          }
+        : {}),
+    };
+    const total = await this.prisma.dictType.count({ where });
     const pagination = normalizeSystemDictPageQuery(query, total);
     const rows = await this.prisma.dictType.findMany({
+      where,
       include: {
         items: {
           orderBy: [{ sort: 'asc' }, { value: 'asc' }],
@@ -73,6 +123,33 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
     });
 
     return createSystemDictPageResult(rows.map(toDictTypeRecord), pagination);
+  }
+
+  async listDictItemsPage(
+    query: SystemDictItemPageQuery = {},
+  ): Promise<PageResult<DictItemRecord>> {
+    const filters = normalizeDictItemFilters(query);
+    const where = {
+      ...(filters.dictCode ? { type: { code: filters.dictCode } } : {}),
+      ...(filters.label
+        ? { label: { contains: filters.label, mode: 'insensitive' as const } }
+        : {}),
+      ...(filters.value
+        ? { value: { contains: filters.value, mode: 'insensitive' as const } }
+        : {}),
+      ...(filters.enabled === undefined ? {} : { enabled: filters.enabled }),
+    };
+    const total = await this.prisma.dictItem.count({ where });
+    const pagination = normalizeSystemDictPageQuery(query, total);
+    const rows = await this.prisma.dictItem.findMany({
+      where,
+      include: { type: { select: { code: true, system: true } } },
+      orderBy: [{ type: { code: 'asc' } }, { sort: 'asc' }, { value: 'asc' }],
+      skip: pagination.skip,
+      take: pagination.take,
+    });
+
+    return createSystemDictPageResult(rows.map(toDictItemRecord), pagination);
   }
 
   async getDict(code: string): Promise<DictTypeRecord> {
@@ -95,6 +172,7 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
           select: {
             code: true,
             enabled: true,
+            system: true,
           },
         },
       },
@@ -104,7 +182,8 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
   }
 
   async listDictItems(code: string): Promise<readonly DictItemRecord[]> {
-    return (await this.findDictByCode(code)).items.map(toDictItemRecord);
+    const dict = await this.findDictByCode(code);
+    return dict.items.map((item) => toDictItemRecord({ ...item, type: dict }));
   }
 
   async getDictItem(code: string, itemId: string): Promise<DictItemRecord> {
@@ -112,30 +191,35 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
   }
 
   async createDict(body: CreateDictTypeDto): Promise<DictTypeRecord> {
-    if (await this.prisma.dictType.findUnique({ where: { code: body.code } })) {
+    const input = normalizeCreateDictTypeInput(body);
+    assertNoDuplicateItemValues(input.items.map((item) => item.value));
+    if (
+      await this.prisma.dictType.findUnique({ where: { code: input.code } })
+    ) {
       throw systemDictConflict(
         'SYSTEM_DICT_ALREADY_EXISTS',
         'Dictionary already exists.',
-        { code: body.code },
+        { code: input.code },
       );
     }
-    const normalizedItems = (body.items ?? []).map((item, index) =>
-      normalizeCreateDictItemInput(item, index),
-    );
 
     const dict = await this.prisma.dictType.create({
       data: {
-        code: body.code,
-        name: body.name,
-        description: body.description,
-        enabled: normalizeOptionalBoolean(body.enabled, 'enabled') ?? true,
+        code: input.code,
+        name: input.name,
+        description: input.description,
+        remark: input.remark,
+        enabled: input.enabled,
         items: {
-          create: normalizedItems.map((item) => ({
+          create: input.items.map((item) => ({
             ...(item.id ? { id: item.id } : {}),
             label: item.label,
             value: item.value,
             sort: item.sort,
             enabled: item.enabled,
+            colorType: item.colorType,
+            cssClass: item.cssClass,
+            remark: item.remark,
           })),
         },
       },
@@ -161,7 +245,11 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
         value: input.value,
         sort: input.sort,
         enabled: input.enabled,
+        colorType: input.colorType,
+        cssClass: input.cssClass,
+        remark: input.remark,
       },
+      include: { type: { select: { code: true, system: true } } },
     });
 
     return toDictItemRecord(item);
@@ -172,31 +260,23 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
     body: UpdateDictTypeDto,
   ): Promise<DictTypeRecord> {
     const existing = await this.findDictByCode(code);
-    const normalizedItems = body.items?.map((item, index) =>
-      normalizeCreateDictItemInput(item, index),
-    );
+    const input = normalizeUpdateDictTypeInput(body);
+
+    if (existing.system && input.enabled === false) {
+      throw systemDictBadRequest(
+        'SYSTEM_DICT_SYSTEM_IMMUTABLE',
+        'System built-in dictionary cannot be disabled.',
+        { code },
+      );
+    }
 
     const dict = await this.prisma.dictType.update({
       where: { code },
       data: {
-        name: body.name ?? existing.name,
-        description: body.description ?? existing.description,
-        enabled:
-          normalizeOptionalBoolean(body.enabled, 'enabled') ?? existing.enabled,
-        ...(normalizedItems
-          ? {
-              items: {
-                deleteMany: {},
-                create: normalizedItems.map((item) => ({
-                  ...(item.id ? { id: item.id } : {}),
-                  label: item.label,
-                  value: item.value,
-                  sort: item.sort,
-                  enabled: item.enabled,
-                })),
-              },
-            }
-          : {}),
+        name: input.name ?? existing.name,
+        description: input.description ?? existing.description,
+        remark: input.remark ?? existing.remark,
+        enabled: input.enabled ?? existing.enabled,
       },
       include: { items: { orderBy: [{ sort: 'asc' }, { value: 'asc' }] } },
     });
@@ -212,6 +292,18 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
     const existing = await this.findDictItemById(code, itemId);
     const input = normalizeUpdateDictItemInput(body);
 
+    if (
+      existing.type?.system &&
+      (input.enabled === false ||
+        (input.value !== undefined && input.value !== existing.value))
+    ) {
+      throw systemDictBadRequest(
+        'SYSTEM_DICT_SYSTEM_ITEM_IMMUTABLE',
+        'System built-in dictionary item value and status cannot be changed.',
+        { itemId },
+      );
+    }
+
     if (input.value && input.value !== existing.value) {
       await this.assertItemValueAvailable(existing.typeId ?? '', input.value);
     }
@@ -223,7 +315,11 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
         value: input.value ?? existing.value,
         sort: input.sort ?? existing.sort,
         enabled: input.enabled ?? existing.enabled,
+        colorType: input.colorType ?? existing.colorType,
+        cssClass: input.cssClass ?? existing.cssClass,
+        remark: input.remark ?? existing.remark,
       },
+      include: { type: { select: { code: true, system: true } } },
     });
 
     return toDictItemRecord(item);
@@ -233,15 +329,181 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
     code: string,
     itemId: string,
   ): Promise<{ deleted: true }> {
-    await this.findDictItemById(code, itemId);
+    const item = await this.findDictItemById(code, itemId);
+    if (item.type?.system) {
+      throw systemDictBadRequest(
+        'SYSTEM_DICT_SYSTEM_ITEM_IMMUTABLE',
+        'System built-in dictionary item cannot be deleted.',
+        { itemId },
+      );
+    }
     await this.prisma.dictItem.delete({ where: { id: itemId } });
     return { deleted: true };
   }
 
   async deleteDict(code: string): Promise<{ deleted: true }> {
-    await this.findDictByCode(code);
+    const dict = await this.findDictByCode(code);
+    assertDictCanBeDeleted(dict);
     await this.prisma.dictType.delete({ where: { code } });
     return { deleted: true };
+  }
+
+  async deleteDicts(
+    body: BatchDeleteDictTypesDto,
+  ): Promise<DictDeleteMutationRecord> {
+    const codes = normalizeDictCodes(body);
+    const dicts = await this.prisma.dictType.findMany({
+      where: { code: { in: [...codes] } },
+      select: {
+        code: true,
+        system: true,
+        _count: { select: { items: true } },
+      },
+    });
+    const existingCodes = new Set(dicts.map((dict) => dict.code));
+    const missing = codes.find((code) => !existingCodes.has(code));
+
+    if (missing) {
+      throw systemDictNotFound(
+        'SYSTEM_DICT_NOT_FOUND',
+        'Dictionary not found.',
+        { code: missing },
+      );
+    }
+
+    const systemDict = dicts.find((dict) => dict.system);
+    if (systemDict) {
+      throw systemDictBadRequest(
+        'SYSTEM_DICT_SYSTEM_IMMUTABLE',
+        'System built-in dictionary cannot be deleted.',
+        { code: systemDict.code },
+      );
+    }
+
+    const dictWithItems = dicts.find((dict) => dict._count.items > 0);
+    if (dictWithItems) {
+      throw systemDictBadRequest(
+        'SYSTEM_DICT_HAS_ITEMS',
+        'Dictionary has items and cannot be deleted.',
+        { code: dictWithItems.code },
+      );
+    }
+
+    await this.prisma.dictType.deleteMany({ where: { code: { in: [...codes] } } });
+
+    return { deleted: true, affected: codes.length, codes };
+  }
+
+  async updateDictStatus(
+    body: BatchUpdateDictStatusDto,
+  ): Promise<DictBatchMutationRecord> {
+    const codes = normalizeDictCodes(body);
+    const enabled = normalizeBatchEnabled(body.enabled);
+    const dicts = await this.prisma.dictType.findMany({
+      where: { code: { in: [...codes] } },
+      select: { code: true, system: true },
+    });
+    const existingCodes = new Set(dicts.map((dict) => dict.code));
+    const missing = codes.find((code) => !existingCodes.has(code));
+    if (missing) {
+      throw systemDictNotFound(
+        'SYSTEM_DICT_NOT_FOUND',
+        'Dictionary not found.',
+        { code: missing },
+      );
+    }
+    const systemDict = !enabled && dicts.find((dict) => dict.system);
+    if (systemDict) {
+      throw systemDictBadRequest(
+        'SYSTEM_DICT_SYSTEM_IMMUTABLE',
+        'System built-in dictionary cannot be disabled.',
+        { code: systemDict.code },
+      );
+    }
+
+    await this.prisma.dictType.updateMany({
+      where: { code: { in: [...codes] } },
+      data: { enabled },
+    });
+
+    return { updated: true, affected: codes.length, codes };
+  }
+
+  async deleteDictItems(
+    body: BatchDeleteDictItemsDto,
+  ): Promise<DictItemDeleteMutationRecord> {
+    const ids = normalizeDictItemIds(body);
+    const items = await this.prisma.dictItem.findMany({
+      where: { id: { in: [...ids] } },
+      include: { type: { select: { code: true, system: true } } },
+    });
+    const existingIds = new Set(items.map((item) => item.id));
+    const missing = ids.find((id) => !existingIds.has(id));
+    if (missing) {
+      throw systemDictNotFound(
+        'SYSTEM_DICT_ITEM_NOT_FOUND',
+        'Dictionary item not found.',
+        { itemId: missing },
+      );
+    }
+    const systemItem = items.find((item) => item.type.system);
+    if (systemItem) {
+      throw systemDictBadRequest(
+        'SYSTEM_DICT_SYSTEM_ITEM_IMMUTABLE',
+        'System built-in dictionary item cannot be deleted.',
+        { itemId: systemItem.id },
+      );
+    }
+
+    await this.prisma.dictItem.deleteMany({ where: { id: { in: [...ids] } } });
+
+    return { deleted: true, affected: ids.length, ids };
+  }
+
+  async updateDictItemStatus(
+    body: BatchUpdateDictItemStatusDto,
+  ): Promise<DictItemBatchMutationRecord> {
+    const ids = normalizeDictItemIds(body);
+    const enabled = normalizeBatchEnabled(body.enabled);
+    const items = await this.prisma.dictItem.findMany({
+      where: { id: { in: [...ids] } },
+      include: { type: { select: { code: true, system: true } } },
+    });
+    const existingIds = new Set(items.map((item) => item.id));
+    const missing = ids.find((id) => !existingIds.has(id));
+    if (missing) {
+      throw systemDictNotFound(
+        'SYSTEM_DICT_ITEM_NOT_FOUND',
+        'Dictionary item not found.',
+        { itemId: missing },
+      );
+    }
+    const systemItem = !enabled && items.find((item) => item.type.system);
+    if (systemItem) {
+      throw systemDictBadRequest(
+        'SYSTEM_DICT_SYSTEM_ITEM_IMMUTABLE',
+        'System built-in dictionary item cannot be disabled.',
+        { itemId: systemItem.id },
+      );
+    }
+
+    await this.prisma.dictItem.updateMany({
+      where: { id: { in: [...ids] } },
+      data: { enabled },
+    });
+
+    return { updated: true, affected: ids.length, ids };
+  }
+
+  async refreshDictCache(): Promise<DictCacheRefreshRecord> {
+    const cachedKeys = await this.prisma.dictType.count({
+      where: { enabled: true },
+    });
+    return {
+      refreshed: true,
+      cachedKeys,
+      refreshedAt: new Date().toISOString(),
+    };
   }
 
   private async findDictByCode(code: string): Promise<PrismaDictTypeWithItems> {
@@ -274,6 +536,7 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
           code,
         },
       },
+      include: { type: { select: { code: true, system: true } } },
     });
 
     if (!item) {
@@ -314,18 +577,28 @@ function toDictTypeRecord(dict: PrismaDictTypeWithItems): DictTypeRecord {
     code: dict.code,
     name: dict.name,
     description: dict.description ?? undefined,
+    remark: dict.remark ?? undefined,
     enabled: dict.enabled,
-    items: dict.items.map(toDictItemRecord),
+    system: dict.system,
+    createdAt: dict.createdAt.toISOString(),
+    updatedAt: dict.updatedAt.toISOString(),
+    items: dict.items.map((item) => toDictItemRecord({ ...item, type: dict })),
   };
 }
 
 function toDictItemRecord(item: PrismaDictItem): DictItemRecord {
   return {
+    dictCode: item.type?.code ?? '',
     id: item.id,
     label: item.label,
     value: item.value,
     sort: item.sort,
     enabled: item.enabled,
+    colorType: item.colorType ?? undefined,
+    cssClass: item.cssClass ?? undefined,
+    remark: item.remark ?? undefined,
+    createdAt: item.createdAt.toISOString(),
+    updatedAt: item.updatedAt.toISOString(),
   };
 }
 
@@ -347,4 +620,36 @@ function compareDictDataOptions(
     left.sort - right.sort ||
     left.value.localeCompare(right.value)
   );
+}
+
+function assertDictCanBeDeleted(dict: PrismaDictTypeWithItems): void {
+  if (dict.system) {
+    throw systemDictBadRequest(
+      'SYSTEM_DICT_SYSTEM_IMMUTABLE',
+      'System built-in dictionary cannot be deleted.',
+      { code: dict.code },
+    );
+  }
+
+  if (dict.items.length > 0) {
+    throw systemDictBadRequest(
+      'SYSTEM_DICT_HAS_ITEMS',
+      'Dictionary has items and cannot be deleted.',
+      { code: dict.code },
+    );
+  }
+}
+
+function assertNoDuplicateItemValues(values: readonly string[]): void {
+  const seen = new Set<string>();
+  for (const value of values) {
+    if (seen.has(value)) {
+      throw systemDictConflict(
+        'SYSTEM_DICT_ITEM_ALREADY_EXISTS',
+        'Dictionary item already exists.',
+        { value },
+      );
+    }
+    seen.add(value);
+  }
 }

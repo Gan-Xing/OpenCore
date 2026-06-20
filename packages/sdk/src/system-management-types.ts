@@ -52,11 +52,17 @@ export type LoginLogCleanSummary = {
 };
 
 export type DictItemSummary = {
+  colorType?: string;
+  cssClass?: string;
+  createdAt?: string;
+  dictCode?: string;
   id: string;
   label: string;
+  remark?: string;
   value: string;
   sort: number;
   enabled: boolean;
+  updatedAt?: string;
 };
 
 export type DictDataOptionSummary = DictItemSummary & {
@@ -68,20 +74,40 @@ export type DictTypeSummary = {
   code: string;
   name: string;
   description?: string;
+  remark?: string;
   enabled: boolean;
+  system: boolean;
+  createdAt?: string;
+  updatedAt?: string;
   items: readonly DictItemSummary[];
+};
+
+export type DictTypeQueryRequest = PageRequest & {
+  code?: string;
+  createdFrom?: string;
+  createdTo?: string;
+  enabled?: boolean;
+  name?: string;
+};
+
+export type DictItemQueryRequest = PageRequest & {
+  dictCode?: string;
+  enabled?: boolean;
+  label?: string;
+  value?: string;
 };
 
 export type CreateDictTypeRequest = {
   code: string;
   name: string;
   description?: string;
+  remark?: string;
   enabled?: boolean;
-  items?: readonly DictItemSummary[];
+  items?: readonly CreateDictItemRequest[];
 };
 
 export type UpdateDictTypeRequest = Partial<
-  Pick<DictTypeSummary, 'description' | 'enabled' | 'items' | 'name'>
+  Pick<DictTypeSummary, 'description' | 'enabled' | 'name' | 'remark'>
 >;
 
 export type DictDataOptionQueryRequest = {
@@ -89,16 +115,70 @@ export type DictDataOptionQueryRequest = {
 };
 
 export type CreateDictItemRequest = {
+  colorType?: string;
+  cssClass?: string;
   enabled?: boolean;
   id?: string;
   label: string;
+  remark?: string;
   sort?: number;
   value: string;
 };
 
 export type UpdateDictItemRequest = Partial<
-  Pick<DictItemSummary, 'enabled' | 'label' | 'sort' | 'value'>
+  Pick<
+    DictItemSummary,
+    'colorType' | 'cssClass' | 'enabled' | 'label' | 'remark' | 'sort' | 'value'
+  >
 >;
+
+export type BatchDeleteDictTypesRequest = {
+  codes: readonly string[];
+};
+
+export type BatchDeleteDictItemsRequest = {
+  ids: readonly string[];
+};
+
+export type BatchUpdateDictStatusRequest = {
+  codes: readonly string[];
+  enabled: boolean;
+};
+
+export type BatchUpdateDictItemStatusRequest = {
+  ids: readonly string[];
+  enabled: boolean;
+};
+
+export type DictBatchMutationSummary = {
+  updated: true;
+  affected: number;
+  codes: readonly string[];
+};
+
+export type DictDeleteMutationSummary = {
+  deleted: true;
+  affected: number;
+  codes: readonly string[];
+};
+
+export type DictItemBatchMutationSummary = {
+  updated: true;
+  affected: number;
+  ids: readonly string[];
+};
+
+export type DictItemDeleteMutationSummary = {
+  deleted: true;
+  affected: number;
+  ids: readonly string[];
+};
+
+export type DictCacheRefreshSummary = {
+  cachedKeys: number;
+  refreshed: true;
+  refreshedAt: string;
+};
 
 export type SystemConfigSummary = {
   id: string;
