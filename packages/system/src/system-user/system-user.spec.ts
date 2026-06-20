@@ -109,6 +109,28 @@ describe('@opencore/system system-user', () => {
       }),
     ]);
     await expect(
+      service.listUserPage({
+        deptId: 'dept_operations',
+        username: 'oper',
+        roleCode: 'viewer',
+        postCode: 'engineer',
+        enabled: true,
+        page: 1,
+        pageSize: 5,
+      }),
+    ).resolves.toMatchObject({
+      total: 1,
+      page: 1,
+      pageSize: 5,
+      list: [
+        expect.objectContaining({
+          id: user.id,
+          username: 'operator',
+          deptId: 'dept_operations',
+        }),
+      ],
+    });
+    await expect(
       service.listUsers({ deptId: 'dept_headquarters' }),
     ).resolves.toEqual(
       expect.arrayContaining([
@@ -320,6 +342,7 @@ describe('@opencore/system system-user', () => {
       }),
     ).resolves.toMatchObject({
       id: 'user_operator',
+      forcePasswordChange: true,
     });
     await expect(
       service.updateUserPassword('user_operator', {
@@ -340,7 +363,19 @@ describe('@opencore/system system-user', () => {
       }),
     ).resolves.toMatchObject({
       id: 'user_operator',
+      forcePasswordChange: false,
     });
+    const temporaryPasswordReset = await service.resetUserPassword(
+      'user_operator',
+      {},
+    );
+    expect(temporaryPasswordReset).toMatchObject({
+      id: 'user_operator',
+      forcePasswordChange: true,
+    });
+    expect(temporaryPasswordReset.temporaryPassword).toMatch(
+      /^UserTmp-[A-Za-z0-9_-]+-7a$/,
+    );
     const exportPreview = await service.createExportPreview();
     expect(exportPreview).toMatchObject({
       filename: 'opencore-system-users.xlsx',
@@ -352,11 +387,18 @@ describe('@opencore/system system-user', () => {
         'mobile',
         'email',
         'gender',
+        'remark',
         'roleCodes',
         'deptId',
         'postCodes',
         'enabled',
         'system',
+        'forcePasswordChange',
+        'createdAt',
+        'updatedAt',
+        'lastLoginAt',
+        'lastLoginIp',
+        'lastLoginLocation',
       ],
     });
     const exportWorkbook = Buffer.from(exportPreview.contentBase64, 'base64');
@@ -370,6 +412,10 @@ describe('@opencore/system system-user', () => {
         'username',
         'displayName',
         'password',
+        'mobile',
+        'email',
+        'gender',
+        'remark',
         'roleCodes',
         'deptId',
         'postCodes',
@@ -418,12 +464,45 @@ describe('@opencore/system system-user', () => {
         enabled: false,
       },
     );
+    const previewImportResult = await service.previewImportUsers({
+      contentBase64: createUserImportCsvBase64([
+        [
+          'csv_preview',
+          'CSV Preview',
+          'csv-preview-password',
+          '+15550000002',
+          'csv.preview@example.com',
+          'unknown',
+          'preview only',
+          'viewer',
+          'dept_operations',
+          'engineer',
+          'true',
+        ],
+      ]),
+    });
+    expect(previewImportResult).toMatchObject({
+      dryRun: true,
+      totalRows: 1,
+      created: 1,
+      updated: 0,
+      failed: 0,
+      createdUsernames: ['csv_preview'],
+      updatedSessionUsernames: [],
+    });
+    await expect(service.getUser('user_csv_preview')).rejects.toThrow(
+      NotFoundException,
+    );
     const importResult = await service.importUsers({
       contentBase64: createUserImportCsvBase64([
         [
           'csv_operator',
           'CSV Operator',
           'csv-password',
+          '+15550000001',
+          'csv.operator@example.com',
+          'unknown',
+          'created through csv import',
           'viewer',
           'dept_operations',
           'engineer',
@@ -433,6 +512,10 @@ describe('@opencore/system system-user', () => {
           'csv_operator',
           'Duplicate CSV Operator',
           'csv-password',
+          '',
+          '',
+          '',
+          '',
           'viewer',
           '',
           '',
@@ -442,12 +525,28 @@ describe('@opencore/system system-user', () => {
           'operator',
           'Existing Operator',
           'csv-password',
+          '',
+          '',
+          '',
+          '',
           'viewer',
           '',
           '',
           'true',
         ],
-        ['csv_no_password', 'CSV No Password', '', 'viewer', '', '', 'true'],
+        [
+          'csv_no_password',
+          'CSV No Password',
+          '',
+          '',
+          '',
+          '',
+          '',
+          'viewer',
+          '',
+          '',
+          'true',
+        ],
       ]),
     });
     expect(importResult).toMatchObject({
@@ -488,6 +587,10 @@ describe('@opencore/system system-user', () => {
           'operator',
           'Imported Operator Update',
           'import-updated-password',
+          '',
+          '',
+          '',
+          'updated through csv import',
           'viewer',
           'dept_engineering',
           '',
@@ -756,6 +859,27 @@ describe('@opencore/system system-user', () => {
           expect.objectContaining({ username, deptId: 'dept_operations' }),
         ]),
       );
+      await expect(
+        service.listUserPage({
+          deptId: 'dept_operations',
+          username: testRunId,
+          roleCode: 'viewer',
+          postCode: 'engineer',
+          enabled: true,
+          page: 1,
+          pageSize: 5,
+        }),
+      ).resolves.toMatchObject({
+        total: 1,
+        page: 1,
+        pageSize: 5,
+        list: [
+          expect.objectContaining({
+            username,
+            deptId: 'dept_operations',
+          }),
+        ],
+      });
       await expect(
         service.listUsers({ deptId: 'dept_headquarters' }),
       ).resolves.toEqual(
@@ -1048,11 +1172,13 @@ describe('@opencore/system system-user', () => {
         }),
       ).resolves.toMatchObject({
         username,
+        forcePasswordChange: true,
       });
       await expect(
         prisma.user.findUniqueOrThrow({ where: { id: user.id } }),
       ).resolves.toMatchObject({
         passwordHash: hashSystemUserPassword('reset-password'),
+        forcePasswordChange: true,
       });
       await expect(
         service.updateUserPassword(user.id, {
@@ -1073,11 +1199,13 @@ describe('@opencore/system system-user', () => {
         }),
       ).resolves.toMatchObject({
         username,
+        forcePasswordChange: false,
       });
       await expect(
         prisma.user.findUniqueOrThrow({ where: { id: user.id } }),
       ).resolves.toMatchObject({
         passwordHash: hashSystemUserPassword('self-password'),
+        forcePasswordChange: false,
       });
 
       await expect(
@@ -1334,18 +1462,44 @@ function createUserImportCsvBase64(
       'username',
       'displayName',
       'password',
+      'mobile',
+      'email',
+      'gender',
+      'remark',
       'roleCodes',
       'deptId',
       'postCodes',
       'enabled',
     ],
-    ...rows,
+    ...rows.map(normalizeUserImportCsvTestRow),
   ];
 
   return Buffer.from(
     csvRows.map((row) => row.map(escapeCsvCell).join(',')).join('\n'),
     'utf8',
   ).toString('base64');
+}
+
+function normalizeUserImportCsvTestRow(
+  row: readonly string[],
+): readonly string[] {
+  if (row.length !== 7) {
+    return row;
+  }
+
+  return [
+    row[0],
+    row[1],
+    row[2],
+    '',
+    '',
+    '',
+    '',
+    row[3],
+    row[4],
+    row[5],
+    row[6],
+  ];
 }
 
 function escapeCsvCell(value: string): string {

@@ -231,6 +231,7 @@ import {
   type UpdateRoleRequest,
   type UserSummary,
   type UserOptionSummary,
+  type UserPageSummary,
   type UserMutationSummary,
   type UserRoleAssignmentSummary,
   type UpdateUserRequest,
@@ -546,7 +547,7 @@ export function importOpenCoreAreaDataset(
 
 export function listOpenCoreUsers(
   query?: ListUsersRequest,
-): Promise<UserSummary[]> {
+): Promise<UserPageSummary> {
   return rbacClient.listUsers(getRequiredAdminToken(), query);
 }
 
@@ -630,6 +631,12 @@ export function importOpenCoreUsers(
   body: ImportUsersRequest,
 ): Promise<UserImportResultSummary> {
   return rbacClient.importUsers(getRequiredAdminToken(), body);
+}
+
+export function previewOpenCoreUsersImport(
+  body: ImportUsersRequest,
+): Promise<UserImportResultSummary> {
+  return rbacClient.previewImportUsers(getRequiredAdminToken(), body);
 }
 
 export function listOpenCoreRoles(): Promise<RoleSummary[]> {

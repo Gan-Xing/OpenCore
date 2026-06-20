@@ -5,9 +5,9 @@ import { seedSystemRoles } from '../system-role/system-role.records';
 import {
   assertSystemUserMutable,
   cloneSystemUserSummary,
-  compareSystemUserRecords,
   createRoleUserAssignment,
   createUserRoleAssignment,
+  createSystemUserPageRecord,
   normalizeAssignUserRolesInput,
   normalizeCreateSystemUserInput,
   normalizeAssignRoleUsersInput,
@@ -23,7 +23,10 @@ import {
   systemUserNotFound,
   SystemUserRepository,
   toSystemUserOptionRecord,
+  type SystemUserListFilters,
   type SystemUserListQuery,
+  type SystemUserPageQuery,
+  type SystemUserPageRecord,
   type SystemUserAvatarRecord,
   type SystemUserAvatarUpdateInput,
   type SystemUserBatchMutationRecord,
@@ -74,10 +77,19 @@ export class SeedSystemUserRepository extends SystemUserRepository {
           return false;
         }
 
-        return matchesDataScope(user, filters.dataScope);
+        return (
+          matchesUserFilters(user, filters) &&
+          matchesDataScope(user, filters.dataScope)
+        );
       })
       .map(cloneSystemUserSummary)
-      .sort(compareSystemUserRecords);
+      .sort((left, right) => compareUsersByFilters(left, right, filters));
+  }
+
+  async listUserPage(
+    query?: SystemUserPageQuery,
+  ): Promise<SystemUserPageRecord> {
+    return createSystemUserPageRecord(await this.listUsers(query), query);
   }
 
   async listUserOptions(
@@ -115,6 +127,7 @@ export class SeedSystemUserRepository extends SystemUserRepository {
       );
     }
 
+    this.assertUniqueContact(undefined, input.mobile, input.email);
     this.assertRoleCodes(input.roleCodes);
     this.assertDeptId(input.deptId);
     this.assertPostCodes(input.postCodes);
@@ -122,11 +135,16 @@ export class SeedSystemUserRepository extends SystemUserRepository {
       id: `user_${input.username.replace(/[^a-z0-9]+/g, '_')}`,
       username: input.username,
       displayName: input.displayName,
+      mobile: input.mobile ?? undefined,
+      email: input.email ?? undefined,
+      gender: input.gender ?? undefined,
+      remark: input.remark ?? undefined,
       passwordHash: hashSystemUserPassword(input.password),
       roleCodes: [...input.roleCodes],
       deptId: input.deptId,
       postCodes: [...input.postCodes],
       enabled: input.enabled,
+      forcePasswordChange: false,
       system: false,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -156,12 +174,23 @@ export class SeedSystemUserRepository extends SystemUserRepository {
       this.assertPostCodes(input.postCodes);
       user.postCodes = [...input.postCodes];
     }
+    this.assertUniqueContact(user.id, input.mobile, input.email);
 
     user.displayName = input.displayName ?? user.displayName;
+    user.mobile =
+      input.mobile === undefined ? user.mobile : (input.mobile ?? undefined);
+    user.email =
+      input.email === undefined ? user.email : (input.email ?? undefined);
+    user.gender =
+      input.gender === undefined ? user.gender : (input.gender ?? undefined);
+    user.remark =
+      input.remark === undefined ? user.remark : (input.remark ?? undefined);
     user.passwordHash = input.password
       ? hashSystemUserPassword(input.password)
       : user.passwordHash;
     user.enabled = input.enabled ?? user.enabled;
+    user.forcePasswordChange =
+      input.forcePasswordChange ?? user.forcePasswordChange;
     user.updatedAt = new Date().toISOString();
 
     return cloneSystemUserSummary(user);
@@ -174,6 +203,7 @@ export class SeedSystemUserRepository extends SystemUserRepository {
     const user = this.findMutableUserById(id);
     const input = normalizeUpdateSystemUserProfileInput(body);
 
+    this.assertUniqueContact(user.id, input.mobile, input.email);
     user.displayName = input.displayName ?? user.displayName;
     user.mobile =
       input.mobile === undefined ? user.mobile : (input.mobile ?? undefined);
@@ -195,6 +225,7 @@ export class SeedSystemUserRepository extends SystemUserRepository {
 
     assertSystemUserPasswordChangeAllowed(user.passwordHash, input);
     user.passwordHash = hashSystemUserPassword(input.newPassword);
+    user.forcePasswordChange = false;
     user.updatedAt = new Date().toISOString();
 
     return cloneSystemUserSummary(user);
@@ -419,6 +450,34 @@ export class SeedSystemUserRepository extends SystemUserRepository {
       );
     }
   }
+
+  private assertUniqueContact(
+    userId: string | undefined,
+    mobile: string | null | undefined,
+    email: string | null | undefined,
+  ): void {
+    if (
+      mobile &&
+      this.users.some((user) => user.id !== userId && user.mobile === mobile)
+    ) {
+      throw systemUserConflict(
+        'SYSTEM_USER_MOBILE_EXISTS',
+        `User mobile already exists: ${mobile}`,
+        { mobile },
+      );
+    }
+
+    if (
+      email &&
+      this.users.some((user) => user.id !== userId && user.email === email)
+    ) {
+      throw systemUserConflict(
+        'SYSTEM_USER_EMAIL_EXISTS',
+        `User email already exists: ${email}`,
+        { email },
+      );
+    }
+  }
 }
 
 function createDeptChildrenByParent(): Map<string, string[]> {
@@ -462,4 +521,39 @@ function matchesDataScope(
     Boolean(dataScope.userIds?.includes(user.id)) ||
     Boolean(user.deptId && dataScope.deptIds?.includes(user.deptId))
   );
+}
+
+function matchesUserFilters(
+  user: SystemUserRecord,
+  filters: SystemUserListFilters,
+): boolean {
+  return (
+    includesText(user.username, filters.username) &&
+    includesText(user.displayName, filters.displayName) &&
+    includesText(user.mobile, filters.mobile) &&
+    includesText(user.email, filters.email) &&
+    (filters.enabled === undefined || user.enabled === filters.enabled) &&
+    (!filters.roleCode || user.roleCodes.includes(filters.roleCode)) &&
+    (!filters.postCode || user.postCodes.includes(filters.postCode)) &&
+    (!filters.createdFrom || new Date(user.createdAt) >= filters.createdFrom) &&
+    (!filters.createdTo || new Date(user.createdAt) <= filters.createdTo)
+  );
+}
+
+function includesText(value: string | undefined, filter: string | undefined) {
+  return (
+    !filter || Boolean(value?.toLowerCase().includes(filter.toLowerCase()))
+  );
+}
+
+function compareUsersByFilters(
+  left: SystemUserSummaryRecord,
+  right: SystemUserSummaryRecord,
+  filters: SystemUserListFilters,
+): number {
+  const leftValue = String(left[filters.orderBy] ?? '');
+  const rightValue = String(right[filters.orderBy] ?? '');
+  const result = leftValue.localeCompare(rightValue);
+
+  return filters.orderDirection === 'desc' ? -result : result;
 }

@@ -81,6 +81,7 @@ export type UserSummary = {
   mobile?: string;
   email?: string;
   gender?: string;
+  remark?: string;
   roleCodes: readonly string[];
   roleNames: readonly string[];
   deptId?: string;
@@ -91,6 +92,10 @@ export type UserSummary = {
   avatarMimeType?: string;
   avatarSizeBytes?: number;
   avatarUpdatedAt?: string;
+  forcePasswordChange?: boolean;
+  lastLoginAt?: string;
+  lastLoginIp?: string;
+  lastLoginLocation?: string;
   enabled: boolean;
   system: boolean;
   createdAt: string;
@@ -183,13 +188,37 @@ export type UserProfileKickOutOtherSessionsSummary = {
 };
 
 export type ListUsersRequest = {
+  createdFrom?: string;
+  createdTo?: string;
   deptId?: string;
+  displayName?: string;
+  email?: string;
+  enabled?: boolean | string;
+  mobile?: string;
+  orderBy?: string;
+  orderDirection?: string;
+  page?: number;
+  pageSize?: number;
+  postCode?: string;
+  roleCode?: string;
+  username?: string;
+};
+
+export type UserPageSummary = {
+  list: readonly UserSummary[];
+  total: number;
+  page: number;
+  pageSize: number;
 };
 
 export type CreateUserRequest = {
   username: string;
   displayName: string;
   password: string;
+  mobile?: string | null;
+  email?: string | null;
+  gender?: string | null;
+  remark?: string | null;
   roleCodes: readonly string[];
   deptId?: string | null;
   postCodes?: readonly string[];
@@ -199,10 +228,15 @@ export type CreateUserRequest = {
 export type UpdateUserRequest = {
   displayName?: string;
   password?: string;
+  mobile?: string | null;
+  email?: string | null;
+  gender?: string | null;
+  remark?: string | null;
   roleCodes?: readonly string[];
   deptId?: string | null;
   postCodes?: readonly string[];
   enabled?: boolean;
+  forcePasswordChange?: boolean;
 };
 
 export type SetUserStatusRequest = {
@@ -237,22 +271,25 @@ export type UserImportFailureSummary = {
 };
 
 export type UserImportResultSummary = {
+  dryRun: boolean;
   totalRows: number;
   created: number;
   updated: number;
   failed: number;
   createdUsernames: readonly string[];
   updatedUsernames: readonly string[];
+  updatedSessionUsernames: readonly string[];
   failures: readonly UserImportFailureSummary[];
   revokedSessionCount?: number;
 };
 
 export type ResetUserPasswordRequest = {
-  password: string;
+  password?: string | null;
 };
 
 export type UserMutationSummary = UserSummary & {
   revokedSessionCount?: number;
+  temporaryPassword?: string;
 };
 
 export type UserRoleAssignmentSummary = Pick<

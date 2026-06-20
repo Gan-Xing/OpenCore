@@ -521,7 +521,7 @@ verify_admin_bundle_api_base_url() {
     ! grep -R \
     --fixed-strings \
     --include='*.js' \
-    "Imported " \
+    "Previewed " \
     "$ROOT_DIR/apps/admin/dist" >/dev/null || \
     ! grep -R \
     --fixed-strings \
@@ -531,7 +531,12 @@ verify_admin_bundle_api_base_url() {
     ! grep -R \
     --fixed-strings \
     --include='*.js' \
-    "core-users" \
+    "Pick users" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "Temporary password generated" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null; then
     echo "Admin Users page must use live-only data, imports, exports and assignment controls without fixture fallback." >&2
     echo "Refusing to deploy a stale or fixture-backed Users frontend page." >&2
@@ -2455,7 +2460,7 @@ verify_public_admin_bundle
 
 run_with_env env \
   OPENCORE_SMOKE_ADMIN_BASE_URL="$ADMIN_PUBLIC_BASE_URL" \
-  OPENCORE_SMOKE_TIMEOUT_MS="${OPENCORE_SMOKE_TIMEOUT_MS:-60000}" \
+  OPENCORE_SMOKE_TIMEOUT_MS="${OPENCORE_SMOKE_TIMEOUT_MS:-120000}" \
   run_tools_ts_script "$ROOT_DIR/tools/scripts/run-typed-smoke.ts" \
     "$ROOT_DIR/tools/smoke/smoke-admin-error-ui.ts"
 

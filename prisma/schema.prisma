@@ -7,28 +7,32 @@ datasource db {
 }
 
 model User {
-  id               String                    @id @default(cuid())
-  username         String                    @unique
-  displayName      String
-  mobile           String?
-  email            String?
-  gender           String?
-  passwordHash     String
-  enabled          Boolean                   @default(true)
-  avatarUrl        String?
-  avatarStorageKey String?                   @unique
-  avatarMimeType   String?
-  avatarSizeBytes  Int?
-  avatarUpdatedAt  DateTime?
-  deptId           String?
-  dept             SystemDept?               @relation(fields: [deptId], references: [id], onDelete: SetNull)
-  roles            UserRole[]
-  posts            UserPost[]
-  noticeReads      SystemNoticeReadReceipt[]
-  noticeDeliveries SystemNoticeDelivery[]
-  createdAt        DateTime                  @default(now())
-  updatedAt        DateTime                  @updatedAt
+  id                  String                    @id @default(cuid())
+  username            String                    @unique
+  displayName         String
+  mobile              String?
+  email               String?
+  gender              String?
+  remark              String?
+  passwordHash        String
+  enabled             Boolean                   @default(true)
+  forcePasswordChange Boolean                   @default(false)
+  avatarUrl           String?
+  avatarStorageKey    String?                   @unique
+  avatarMimeType      String?
+  avatarSizeBytes     Int?
+  avatarUpdatedAt     DateTime?
+  deptId              String?
+  dept                SystemDept?               @relation(fields: [deptId], references: [id], onDelete: SetNull)
+  roles               UserRole[]
+  posts               UserPost[]
+  noticeReads         SystemNoticeReadReceipt[]
+  noticeDeliveries    SystemNoticeDelivery[]
+  createdAt           DateTime                  @default(now())
+  updatedAt           DateTime                  @updatedAt
 
+  @@unique([mobile])
+  @@unique([email])
   @@index([deptId])
 }
 

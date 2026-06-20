@@ -221,6 +221,84 @@
             "required": false,
             "in": "query",
             "schema": { "type": "string" }
+          },
+          {
+            "name": "username",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "displayName",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "mobile",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "email",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "enabled",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
+          },
+          {
+            "name": "roleCode",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "postCode",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "createdFrom",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "createdTo",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "orderBy",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "orderDirection",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
           }
         ],
         "responses": {
@@ -228,10 +306,7 @@
             "description": "",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": { "$ref": "#/components/schemas/UserSummaryDto" }
-                }
+                "schema": { "$ref": "#/components/schemas/UserPageDto" }
               }
             }
           }
@@ -273,6 +348,84 @@
             "required": false,
             "in": "query",
             "schema": { "type": "string" }
+          },
+          {
+            "name": "username",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "displayName",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "mobile",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "email",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "enabled",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
+          },
+          {
+            "name": "roleCode",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "postCode",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "createdFrom",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "createdTo",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "orderBy",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "orderDirection",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
           }
         ],
         "responses": {
@@ -337,6 +490,32 @@
         "tags": ["Rbac", "Core Users"]
       }
     },
+    "/api/core/users/import/preview": {
+      "post": {
+        "operationId": "RbacController_previewImportUsers",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ImportUsersDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UserImportResultDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Rbac", "Core Users"]
+      }
+    },
     "/api/core/users/simple-list": {
       "get": {
         "operationId": "RbacController_listUserOptions",
@@ -346,6 +525,84 @@
             "required": false,
             "in": "query",
             "schema": { "type": "string" }
+          },
+          {
+            "name": "username",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "displayName",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "mobile",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "email",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "enabled",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
+          },
+          {
+            "name": "roleCode",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "postCode",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "createdFrom",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "createdTo",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "orderBy",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "orderDirection",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
           }
         ],
         "responses": {
@@ -9296,6 +9553,7 @@
         },
         "required": ["providerCode", "state", "username", "password"]
       },
+      "Object": { "type": "object", "properties": {} },
       "UserSummaryDto": {
         "type": "object",
         "properties": {
@@ -9305,6 +9563,7 @@
           "mobile": { "type": "string", "nullable": true },
           "email": { "type": "string", "nullable": true },
           "gender": { "type": "string", "nullable": true },
+          "remark": { "type": "string", "nullable": true },
           "roleCodes": { "type": "array", "items": { "type": "string" } },
           "roleNames": { "type": "array", "items": { "type": "string" } },
           "deptId": { "type": "string", "nullable": true },
@@ -9315,6 +9574,10 @@
           "avatarMimeType": { "type": "string", "nullable": true },
           "avatarSizeBytes": { "type": "number", "nullable": true },
           "avatarUpdatedAt": { "type": "string", "nullable": true },
+          "forcePasswordChange": { "type": "boolean" },
+          "lastLoginAt": { "type": "string", "nullable": true },
+          "lastLoginIp": { "type": "string", "nullable": true },
+          "lastLoginLocation": { "type": "string", "nullable": true },
           "enabled": { "type": "boolean" },
           "system": { "type": "boolean" },
           "createdAt": { "type": "string" },
@@ -9333,6 +9596,19 @@
           "createdAt",
           "updatedAt"
         ]
+      },
+      "UserPageDto": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/UserSummaryDto" }
+          },
+          "total": { "type": "number" },
+          "page": { "type": "number" },
+          "pageSize": { "type": "number" }
+        },
+        "required": ["list", "total", "page", "pageSize"]
       },
       "RbacExportPreviewDto": {
         "type": "object",
@@ -9387,6 +9663,7 @@
       "UserImportResultDto": {
         "type": "object",
         "properties": {
+          "dryRun": { "type": "boolean" },
           "totalRows": { "type": "number" },
           "created": { "type": "number" },
           "updated": { "type": "number" },
@@ -9399,6 +9676,10 @@
             "type": "array",
             "items": { "type": "string" }
           },
+          "updatedSessionUsernames": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
           "failures": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/UserImportFailureDto" }
@@ -9406,12 +9687,14 @@
           "revokedSessionCount": { "type": "number" }
         },
         "required": [
+          "dryRun",
           "totalRows",
           "created",
           "updated",
           "failed",
           "createdUsernames",
           "updatedUsernames",
+          "updatedSessionUsernames",
           "failures"
         ]
       },
@@ -9435,6 +9718,7 @@
           "mobile": { "type": "string", "nullable": true },
           "email": { "type": "string", "nullable": true },
           "gender": { "type": "string", "nullable": true },
+          "remark": { "type": "string", "nullable": true },
           "roleCodes": { "type": "array", "items": { "type": "string" } },
           "roleNames": { "type": "array", "items": { "type": "string" } },
           "deptId": { "type": "string", "nullable": true },
@@ -9445,6 +9729,10 @@
           "avatarMimeType": { "type": "string", "nullable": true },
           "avatarSizeBytes": { "type": "number", "nullable": true },
           "avatarUpdatedAt": { "type": "string", "nullable": true },
+          "forcePasswordChange": { "type": "boolean" },
+          "lastLoginAt": { "type": "string", "nullable": true },
+          "lastLoginIp": { "type": "string", "nullable": true },
+          "lastLoginLocation": { "type": "string", "nullable": true },
           "enabled": { "type": "boolean" },
           "system": { "type": "boolean" },
           "createdAt": { "type": "string" },
@@ -9679,6 +9967,10 @@
           "username": { "type": "string", "example": "operator" },
           "displayName": { "type": "string", "example": "Operations User" },
           "password": { "type": "string" },
+          "mobile": { "type": "string", "nullable": true },
+          "email": { "type": "string", "nullable": true },
+          "gender": { "type": "string", "nullable": true },
+          "remark": { "type": "string", "nullable": true },
           "roleCodes": {
             "default": [],
             "type": "array",
@@ -9699,10 +9991,15 @@
         "properties": {
           "displayName": { "type": "string" },
           "password": { "type": "string" },
+          "mobile": { "type": "string", "nullable": true },
+          "email": { "type": "string", "nullable": true },
+          "gender": { "type": "string", "nullable": true },
+          "remark": { "type": "string", "nullable": true },
           "roleCodes": { "type": "array", "items": { "type": "string" } },
           "deptId": { "type": "string", "nullable": true },
           "postCodes": { "type": "array", "items": { "type": "string" } },
-          "enabled": { "type": "boolean" }
+          "enabled": { "type": "boolean" },
+          "forcePasswordChange": { "type": "boolean" }
         }
       },
       "UserMutationResultDto": {
@@ -9714,6 +10011,7 @@
           "mobile": { "type": "string", "nullable": true },
           "email": { "type": "string", "nullable": true },
           "gender": { "type": "string", "nullable": true },
+          "remark": { "type": "string", "nullable": true },
           "roleCodes": { "type": "array", "items": { "type": "string" } },
           "roleNames": { "type": "array", "items": { "type": "string" } },
           "deptId": { "type": "string", "nullable": true },
@@ -9724,11 +10022,16 @@
           "avatarMimeType": { "type": "string", "nullable": true },
           "avatarSizeBytes": { "type": "number", "nullable": true },
           "avatarUpdatedAt": { "type": "string", "nullable": true },
+          "forcePasswordChange": { "type": "boolean" },
+          "lastLoginAt": { "type": "string", "nullable": true },
+          "lastLoginIp": { "type": "string", "nullable": true },
+          "lastLoginLocation": { "type": "string", "nullable": true },
           "enabled": { "type": "boolean" },
           "system": { "type": "boolean" },
           "createdAt": { "type": "string" },
           "updatedAt": { "type": "string" },
-          "revokedSessionCount": { "type": "number" }
+          "revokedSessionCount": { "type": "number" },
+          "temporaryPassword": { "type": "string" }
         },
         "required": [
           "id",
@@ -9751,8 +10054,7 @@
       },
       "ResetUserPasswordDto": {
         "type": "object",
-        "properties": { "password": { "type": "string" } },
-        "required": ["password"]
+        "properties": { "password": { "type": "object" } }
       },
       "DeleteResultDto": {
         "type": "object",
@@ -10092,7 +10394,6 @@
           "designs"
         ]
       },
-      "Object": { "type": "object", "properties": {} },
       "IntegrationProviderDto": {
         "type": "object",
         "properties": {

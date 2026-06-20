@@ -19,6 +19,9 @@ export class UserSummaryDto {
   @ApiProperty({ required: false, nullable: true, type: String })
   gender?: string;
 
+  @ApiProperty({ required: false, nullable: true, type: String })
+  remark?: string;
+
   @ApiProperty({ type: [String] })
   roleCodes!: readonly string[];
 
@@ -48,6 +51,18 @@ export class UserSummaryDto {
 
   @ApiProperty({ required: false, nullable: true, type: String })
   avatarUpdatedAt?: string;
+
+  @ApiProperty({ required: false })
+  forcePasswordChange?: boolean;
+
+  @ApiProperty({ required: false, nullable: true, type: String })
+  lastLoginAt?: string;
+
+  @ApiProperty({ required: false, nullable: true, type: String })
+  lastLoginIp?: string;
+
+  @ApiProperty({ required: false, nullable: true, type: String })
+  lastLoginLocation?: string;
 
   @ApiProperty()
   enabled!: boolean;
@@ -82,6 +97,59 @@ export class UserOptionDto {
 export class ListUsersQueryDto {
   @ApiProperty({ required: false })
   deptId?: string;
+
+  @ApiProperty({ required: false })
+  username?: string;
+
+  @ApiProperty({ required: false })
+  displayName?: string;
+
+  @ApiProperty({ required: false })
+  mobile?: string;
+
+  @ApiProperty({ required: false })
+  email?: string;
+
+  @ApiProperty({ required: false })
+  enabled?: boolean | string;
+
+  @ApiProperty({ required: false })
+  roleCode?: string;
+
+  @ApiProperty({ required: false })
+  postCode?: string;
+
+  @ApiProperty({ required: false })
+  createdFrom?: string;
+
+  @ApiProperty({ required: false })
+  createdTo?: string;
+
+  @ApiProperty({ required: false })
+  orderBy?: string;
+
+  @ApiProperty({ required: false })
+  orderDirection?: string;
+
+  @ApiProperty({ required: false })
+  page?: number | string;
+
+  @ApiProperty({ required: false })
+  pageSize?: number | string;
+}
+
+export class UserPageDto {
+  @ApiProperty({ type: [UserSummaryDto] })
+  list!: readonly UserSummaryDto[];
+
+  @ApiProperty()
+  total!: number;
+
+  @ApiProperty()
+  page!: number;
+
+  @ApiProperty()
+  pageSize!: number;
 }
 
 export class CreateUserDto {
@@ -93,6 +161,18 @@ export class CreateUserDto {
 
   @ApiProperty()
   password!: string;
+
+  @ApiProperty({ required: false, nullable: true, type: String })
+  mobile?: string | null;
+
+  @ApiProperty({ required: false, nullable: true, type: String })
+  email?: string | null;
+
+  @ApiProperty({ required: false, nullable: true, type: String })
+  gender?: string | null;
+
+  @ApiProperty({ required: false, nullable: true, type: String })
+  remark?: string | null;
 
   @ApiProperty({ type: [String], default: [] })
   roleCodes!: readonly string[];
@@ -114,6 +194,18 @@ export class UpdateUserDto {
   @ApiProperty({ required: false })
   password?: string;
 
+  @ApiProperty({ required: false, nullable: true, type: String })
+  mobile?: string | null;
+
+  @ApiProperty({ required: false, nullable: true, type: String })
+  email?: string | null;
+
+  @ApiProperty({ required: false, nullable: true, type: String })
+  gender?: string | null;
+
+  @ApiProperty({ required: false, nullable: true, type: String })
+  remark?: string | null;
+
   @ApiProperty({ required: false, type: [String] })
   roleCodes?: readonly string[];
 
@@ -125,6 +217,9 @@ export class UpdateUserDto {
 
   @ApiProperty({ required: false })
   enabled?: boolean;
+
+  @ApiProperty({ required: false })
+  forcePasswordChange?: boolean;
 }
 
 export class UserRoleAssignmentDto {
@@ -231,6 +326,9 @@ export class UserImportFailureDto {
 
 export class UserImportResultDto {
   @ApiProperty()
+  dryRun!: boolean;
+
+  @ApiProperty()
   totalRows!: number;
 
   @ApiProperty()
@@ -248,6 +346,9 @@ export class UserImportResultDto {
   @ApiProperty({ type: [String] })
   updatedUsernames!: readonly string[];
 
+  @ApiProperty({ type: [String] })
+  updatedSessionUsernames!: readonly string[];
+
   @ApiProperty({ type: [UserImportFailureDto] })
   failures!: readonly UserImportFailureDto[];
 
@@ -256,13 +357,16 @@ export class UserImportResultDto {
 }
 
 export class ResetUserPasswordDto {
-  @ApiProperty()
-  password!: string;
+  @ApiProperty({ required: false })
+  password?: string | null;
 }
 
 export class UserMutationResultDto extends UserSummaryDto {
   @ApiProperty({ required: false })
   revokedSessionCount?: number;
+
+  @ApiProperty({ required: false })
+  temporaryPassword?: string;
 }
 
 export class BatchUserMutationResultDto {

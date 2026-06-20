@@ -7,6 +7,7 @@ export type SystemUserRecord = {
   mobile?: string;
   email?: string;
   gender?: string;
+  remark?: string;
   passwordHash: string;
   roleCodes: readonly string[];
   deptId?: string;
@@ -17,6 +18,7 @@ export type SystemUserRecord = {
   avatarMimeType?: string;
   avatarSizeBytes?: number;
   avatarUpdatedAt?: string;
+  forcePasswordChange?: boolean;
   system: boolean;
   createdAt: string;
   updatedAt: string;

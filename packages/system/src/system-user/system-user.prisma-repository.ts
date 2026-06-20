@@ -22,6 +22,7 @@ import {
   normalizeAssignUserRolesInput,
   normalizeCreateSystemUserInput,
   normalizeListSystemUsersQuery,
+  normalizeListSystemUsersPageQuery,
   normalizeUpdateSystemUserPasswordInput,
   normalizeUpdateSystemUserInput,
   normalizeUpdateSystemUserProfileInput,
@@ -36,6 +37,8 @@ import {
   type SystemUserDataScopeFilter,
   type SystemUserListQuery,
   type SystemUserOptionRecord,
+  type SystemUserPageQuery,
+  type SystemUserPageRecord,
   type SystemUserSummaryRecord,
 } from './system-user.repository';
 
@@ -46,10 +49,12 @@ type PrismaUserWithRoles = {
   mobile?: string | null;
   email?: string | null;
   gender?: string | null;
+  remark?: string | null;
   passwordHash: string;
   deptId?: string | null;
   dept?: { name: string } | null;
   enabled: boolean;
+  forcePasswordChange?: boolean;
   avatarUrl?: string | null;
   avatarStorageKey?: string | null;
   avatarMimeType?: string | null;
@@ -65,6 +70,13 @@ type PrismaUserFindManyArgs = NonNullable<
   Parameters<PrismaService['user']['findMany']>[0]
 >;
 type PrismaUserWhereInput = NonNullable<PrismaUserFindManyArgs['where']>;
+type PrismaUserOrderBy = NonNullable<PrismaUserFindManyArgs['orderBy']>;
+type PrismaLoginLogRecord = {
+  username: string;
+  ip: string;
+  location: string;
+  createdAt: Date;
+};
 
 const SYSTEM_USER_IDS = new Set(['user_admin']);
 const SYSTEM_USERNAMES = new Set(['admin']);
@@ -82,6 +94,7 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
     const where = await this.createListUsersWhere(filters);
     const users = await this.prisma.user.findMany({
       where,
+      orderBy: createListUsersOrderBy(filters),
       include: {
         dept: true,
         roles: {
@@ -95,10 +108,47 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
           },
         },
       },
-      orderBy: { username: 'asc' },
     });
 
-    return users.map(toSystemUserSummaryRecord);
+    return this.attachLastLoginSummaries(users.map(toSystemUserSummaryRecord));
+  }
+
+  async listUserPage(
+    query?: SystemUserPageQuery,
+  ): Promise<SystemUserPageRecord> {
+    const filters = normalizeListSystemUsersPageQuery(query);
+    const where = await this.createListUsersWhere(filters);
+    const [total, users] = await this.prisma.$transaction([
+      this.prisma.user.count({ where }),
+      this.prisma.user.findMany({
+        where,
+        orderBy: createListUsersOrderBy(filters),
+        skip: (filters.page - 1) * filters.pageSize,
+        take: filters.pageSize,
+        include: {
+          dept: true,
+          roles: {
+            include: {
+              role: true,
+            },
+          },
+          posts: {
+            include: {
+              post: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    return {
+      list: await this.attachLastLoginSummaries(
+        users.map(toSystemUserSummaryRecord),
+      ),
+      total,
+      page: filters.page,
+      pageSize: filters.pageSize,
+    };
   }
 
   async listUserOptions(
@@ -110,7 +160,11 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
   }
 
   async getUser(id: string): Promise<SystemUserSummaryRecord> {
-    return toSystemUserSummaryRecord(await this.findUserEntityById(id));
+    const [user] = await this.attachLastLoginSummaries([
+      toSystemUserSummaryRecord(await this.findUserEntityById(id)),
+    ]);
+
+    return user;
   }
 
   async getUserAvatar(id: string): Promise<SystemUserAvatarRecord> {
@@ -135,10 +189,15 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
     await this.assertRolesExist(input.roleCodes);
     await this.assertDeptExists(input.deptId);
     await this.assertPostsExist(input.postCodes);
+    await this.assertUniqueContact(undefined, input.mobile, input.email);
     const user = await this.prisma.user.create({
       data: {
         username: input.username,
         displayName: input.displayName,
+        mobile: input.mobile,
+        email: input.email,
+        gender: input.gender,
+        remark: input.remark,
         passwordHash: hashSystemUserPassword(input.password),
         deptId: input.deptId,
         enabled: input.enabled,
@@ -191,16 +250,22 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
     if (input.postCodes !== undefined) {
       await this.assertPostsExist(input.postCodes);
     }
+    await this.assertUniqueContact(id, input.mobile, input.email);
 
     const user = await this.prisma.user.update({
       where: { id },
       data: {
         displayName: input.displayName,
+        mobile: input.mobile,
+        email: input.email,
+        gender: input.gender,
+        remark: input.remark,
         passwordHash: input.password
           ? hashSystemUserPassword(input.password)
           : undefined,
         deptId: input.deptId,
         enabled: input.enabled,
+        forcePasswordChange: input.forcePasswordChange,
         ...(input.roleCodes === undefined
           ? {}
           : {
@@ -246,6 +311,7 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
   ): Promise<SystemUserSummaryRecord> {
     await this.findUserEntityById(id);
     const input = normalizeUpdateSystemUserProfileInput(body);
+    await this.assertUniqueContact(id, input.mobile, input.email);
     const user = await this.prisma.user.update({
       where: { id },
       data: {
@@ -284,6 +350,7 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
       where: { id },
       data: {
         passwordHash: hashSystemUserPassword(input.newPassword),
+        forcePasswordChange: false,
       },
       include: {
         dept: true,
@@ -735,10 +802,9 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
     return deptIds;
   }
 
-  private async createListUsersWhere(filters: {
-    deptId?: string;
-    dataScope: SystemUserDataScopeFilter;
-  }): Promise<PrismaUserWhereInput | undefined> {
+  private async createListUsersWhere(
+    filters: ReturnType<typeof normalizeListSystemUsersQuery>,
+  ): Promise<PrismaUserWhereInput | undefined> {
     const deptWhere = filters.deptId
       ? {
           deptId: {
@@ -747,14 +813,139 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
         }
       : undefined;
     const dataScopeWhere = createUserDataScopeWhere(filters.dataScope);
+    const directFilters: PrismaUserWhereInput[] = [
+      filters.username
+        ? {
+            username: {
+              contains: filters.username,
+              mode: 'insensitive' as const,
+            },
+          }
+        : {},
+      filters.displayName
+        ? {
+            displayName: {
+              contains: filters.displayName,
+              mode: 'insensitive' as const,
+            },
+          }
+        : {},
+      filters.mobile
+        ? {
+            mobile: { contains: filters.mobile, mode: 'insensitive' as const },
+          }
+        : {},
+      filters.email
+        ? { email: { contains: filters.email, mode: 'insensitive' as const } }
+        : {},
+      filters.enabled === undefined ? {} : { enabled: filters.enabled },
+      filters.roleCode
+        ? { roles: { some: { role: { code: filters.roleCode } } } }
+        : {},
+      filters.postCode
+        ? { posts: { some: { post: { code: filters.postCode } } } }
+        : {},
+      filters.createdFrom || filters.createdTo
+        ? {
+            createdAt: {
+              gte: filters.createdFrom,
+              lte: filters.createdTo,
+            },
+          }
+        : {},
+    ].filter((filter) => Object.keys(filter).length > 0);
+    const filterWhere =
+      directFilters.length > 0 ? { AND: directFilters } : undefined;
+    const filtersToApply = [deptWhere, dataScopeWhere, filterWhere].filter(
+      Boolean,
+    ) as PrismaUserWhereInput[];
 
-    if (deptWhere && dataScopeWhere) {
-      return {
-        AND: [deptWhere, dataScopeWhere],
-      };
+    if (filtersToApply.length === 0) {
+      return undefined;
     }
 
-    return deptWhere ?? dataScopeWhere;
+    return filtersToApply.length === 1
+      ? filtersToApply[0]
+      : { AND: filtersToApply };
+  }
+
+  private async assertUniqueContact(
+    userId: string | undefined,
+    mobile: string | null | undefined,
+    email: string | null | undefined,
+  ): Promise<void> {
+    if (mobile) {
+      const existing = await this.prisma.user.findFirst({
+        where: { mobile, id: userId ? { not: userId } : undefined },
+        select: { id: true },
+      });
+
+      if (existing) {
+        throw systemUserConflict(
+          'SYSTEM_USER_MOBILE_EXISTS',
+          `User mobile already exists: ${mobile}`,
+          { mobile },
+        );
+      }
+    }
+
+    if (email) {
+      const existing = await this.prisma.user.findFirst({
+        where: { email, id: userId ? { not: userId } : undefined },
+        select: { id: true },
+      });
+
+      if (existing) {
+        throw systemUserConflict(
+          'SYSTEM_USER_EMAIL_EXISTS',
+          `User email already exists: ${email}`,
+          { email },
+        );
+      }
+    }
+  }
+
+  private async attachLastLoginSummaries(
+    users: readonly SystemUserSummaryRecord[],
+  ): Promise<SystemUserSummaryRecord[]> {
+    if (users.length === 0) {
+      return [];
+    }
+
+    const usernames = users.map((user) => user.username);
+    const loginLogs = (await this.prisma.loginLog.findMany({
+      where: {
+        username: { in: usernames },
+        success: true,
+      },
+      orderBy: [{ createdAt: 'desc' }],
+      select: {
+        username: true,
+        ip: true,
+        location: true,
+        createdAt: true,
+      },
+    })) as PrismaLoginLogRecord[];
+    const latestByUsername = new Map<string, PrismaLoginLogRecord>();
+
+    for (const log of loginLogs) {
+      if (!latestByUsername.has(log.username)) {
+        latestByUsername.set(log.username, log);
+      }
+    }
+
+    return users.map((user) => {
+      const latest = latestByUsername.get(user.username);
+
+      return latest
+        ? {
+            ...user,
+            lastLoginAt: latest.createdAt.toISOString(),
+            lastLoginIp: latest.ip,
+            lastLoginLocation: latest.location,
+          }
+        : user;
+    });
   }
 
   private async assertPostsExist(postCodes: readonly string[]): Promise<void> {
@@ -789,6 +980,7 @@ function toSystemUserSummaryRecord(
     mobile: user.mobile ?? undefined,
     email: user.email ?? undefined,
     gender: user.gender ?? undefined,
+    remark: user.remark ?? undefined,
     roleCodes: user.roles.map((userRole) => userRole.role.code).sort(),
     roleNames: user.roles.map((userRole) => userRole.role.name).sort(),
     deptId: user.deptId ?? undefined,
@@ -799,6 +991,7 @@ function toSystemUserSummaryRecord(
     avatarMimeType: user.avatarMimeType ?? undefined,
     avatarSizeBytes: user.avatarSizeBytes ?? undefined,
     avatarUpdatedAt: user.avatarUpdatedAt?.toISOString(),
+    forcePasswordChange: user.forcePasswordChange ?? false,
     enabled: user.enabled,
     system: isSystemUser(user),
     createdAt: user.createdAt.toISOString(),
@@ -820,6 +1013,15 @@ function toSystemUserAvatarRecord(
 
 function isSystemUser(user: Pick<PrismaUserWithRoles, 'id' | 'username'>) {
   return SYSTEM_USER_IDS.has(user.id) || SYSTEM_USERNAMES.has(user.username);
+}
+
+function createListUsersOrderBy(
+  filters: ReturnType<typeof normalizeListSystemUsersQuery>,
+): PrismaUserOrderBy {
+  return [
+    { [filters.orderBy]: filters.orderDirection },
+    ...(filters.orderBy === 'username' ? [] : [{ username: 'asc' as const }]),
+  ] as PrismaUserOrderBy;
 }
 
 function createUserDataScopeWhere(

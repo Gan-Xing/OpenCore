@@ -38,6 +38,9 @@ export type SystemUserSummaryRecord = Omit<
   deptName?: string;
   postNames: readonly string[];
   roleNames: readonly string[];
+  lastLoginAt?: string;
+  lastLoginIp?: string;
+  lastLoginLocation?: string;
 };
 export type SystemUserAvatarRecord = Pick<
   SystemUserRecord,
@@ -83,19 +86,72 @@ export type SystemUserDataScopeFilter =
     };
 
 export type SystemUserListQuery = {
+  createdFrom?: string;
+  createdTo?: string;
   deptId?: string;
+  displayName?: string;
+  email?: string;
+  enabled?: boolean | string;
+  mobile?: string;
+  orderBy?: string;
+  orderDirection?: string;
+  postCode?: string;
+  roleCode?: string;
+  username?: string;
   dataScope?: SystemUserDataScopeFilter;
 };
 
+export type SystemUserPageQuery = SystemUserListQuery & {
+  page?: number | string;
+  pageSize?: number | string;
+};
+
 export type SystemUserListFilters = {
+  createdFrom?: Date;
+  createdTo?: Date;
   deptId?: string;
+  displayName?: string;
+  email?: string;
+  enabled?: boolean;
+  mobile?: string;
+  orderBy: SystemUserOrderBy;
+  orderDirection: SystemUserOrderDirection;
+  postCode?: string;
+  roleCode?: string;
+  username?: string;
   dataScope: SystemUserDataScopeFilter;
+};
+
+export type SystemUserOrderBy =
+  | 'createdAt'
+  | 'displayName'
+  | 'email'
+  | 'enabled'
+  | 'mobile'
+  | 'updatedAt'
+  | 'username';
+export type SystemUserOrderDirection = 'asc' | 'desc';
+
+export type SystemUserPageFilters = SystemUserListFilters & {
+  page: number;
+  pageSize: number;
+};
+
+export type SystemUserPageRecord = {
+  list: readonly SystemUserSummaryRecord[];
+  total: number;
+  page: number;
+  pageSize: number;
 };
 
 export type NormalizedSystemUserCreateInput = {
   username: string;
   displayName: string;
   password: string;
+  mobile?: string | null;
+  email?: string | null;
+  gender?: string | null;
+  remark?: string | null;
   roleCodes: readonly string[];
   deptId?: string;
   postCodes: readonly string[];
@@ -105,10 +161,15 @@ export type NormalizedSystemUserCreateInput = {
 export type NormalizedSystemUserUpdateInput = {
   displayName?: string;
   password?: string;
+  mobile?: string | null;
+  email?: string | null;
+  gender?: string | null;
+  remark?: string | null;
   roleCodes?: readonly string[];
   deptId?: string | null;
   postCodes?: readonly string[];
   enabled?: boolean;
+  forcePasswordChange?: boolean;
 };
 
 export type NormalizedSystemUserProfileUpdateInput = {
@@ -137,7 +198,7 @@ export type NormalizedBatchDeleteUsersInput = {
 };
 
 export type NormalizedResetUserPasswordInput = {
-  password: string;
+  password?: string;
 };
 
 export type SystemUserBatchMutationRecord = {
@@ -166,6 +227,10 @@ export type NormalizedSystemUserImportInput = {
   username: string;
   displayName: string;
   password?: string;
+  mobile?: string | null;
+  email?: string | null;
+  gender?: string | null;
+  remark?: string | null;
   roleCodes: readonly string[];
   deptId?: string;
   postCodes: readonly string[];
@@ -179,6 +244,7 @@ export type SystemUserImportFailureRecord = {
 };
 
 export type SystemUserImportResultRecord = {
+  dryRun: boolean;
   totalRows: number;
   created: number;
   updated: number;
@@ -199,16 +265,27 @@ export const SYSTEM_USER_EXPORT_COLUMNS = [
   'mobile',
   'email',
   'gender',
+  'remark',
   'roleCodes',
   'deptId',
   'postCodes',
   'enabled',
   'system',
+  'forcePasswordChange',
+  'createdAt',
+  'updatedAt',
+  'lastLoginAt',
+  'lastLoginIp',
+  'lastLoginLocation',
 ] as const;
 export const SYSTEM_USER_IMPORT_COLUMNS = [
   'username',
   'displayName',
   'password',
+  'mobile',
+  'email',
+  'gender',
+  'remark',
   'roleCodes',
   'deptId',
   'postCodes',
@@ -219,6 +296,10 @@ export abstract class SystemUserRepository {
   abstract listUsers(
     query?: SystemUserListQuery,
   ): Promise<SystemUserSummaryRecord[]>;
+
+  abstract listUserPage(
+    query?: SystemUserPageQuery,
+  ): Promise<SystemUserPageRecord>;
 
   abstract listUserOptions(
     query?: SystemUserListQuery,
@@ -346,11 +427,18 @@ function createSystemUserExportWorksheetRows(
       row.mobile ?? '',
       row.email ?? '',
       row.gender ?? '',
+      row.remark ?? '',
       row.roleCodes.join(', '),
       row.deptId ?? '',
       row.postCodes.join(', '),
       row.enabled ? 'true' : 'false',
       row.system ? 'true' : 'false',
+      row.forcePasswordChange ? 'true' : 'false',
+      row.createdAt,
+      row.updatedAt,
+      row.lastLoginAt ?? '',
+      row.lastLoginIp ?? '',
+      row.lastLoginLocation ?? '',
     ]),
   ];
 }
@@ -362,6 +450,10 @@ export function createSystemUserImportTemplate(): SystemUserImportTemplateRecord
       'operator_import',
       'Imported Operator',
       'ChangeMe-123456',
+      '+15551234567',
+      'operator.import@opencore.local',
+      'unknown',
+      'Imported from the user template',
       'viewer',
       'dept_operations',
       'engineer',
@@ -371,6 +463,10 @@ export function createSystemUserImportTemplate(): SystemUserImportTemplateRecord
       'auditor_import',
       'Imported Auditor',
       'ChangeMe-123456',
+      '',
+      'auditor.import@opencore.local',
+      'unknown',
+      '',
       'viewer',
       '',
       '',
@@ -471,6 +567,18 @@ export function normalizeSystemUserImportRecord(
     password: record.values.password
       ? normalizeRequiredText(record.values.password, 'password')
       : undefined,
+    mobile: record.values.mobile
+      ? normalizeNullableMobile(record.values.mobile)
+      : undefined,
+    email: record.values.email
+      ? normalizeNullableEmail(record.values.email)
+      : undefined,
+    gender: record.values.gender
+      ? normalizeNullableGender(record.values.gender)
+      : undefined,
+    remark: record.values.remark
+      ? normalizeNullableBoundedText(record.values.remark, 'remark', 500)
+      : undefined,
     roleCodes: normalizeRoleCodes(splitImportCodes(record.values.roleCodes)),
     deptId: record.values.deptId
       ? normalizeOptionalDeptId(record.values.deptId)
@@ -484,11 +592,70 @@ export function normalizeListSystemUsersQuery(
   query: SystemUserListQuery = {},
 ): SystemUserListFilters {
   return {
+    createdFrom: normalizeOptionalDate(query.createdFrom, 'createdFrom'),
+    createdTo: normalizeOptionalDate(query.createdTo, 'createdTo'),
     deptId:
       query.deptId === undefined
         ? undefined
         : normalizeRequiredText(query.deptId, 'deptId'),
+    displayName:
+      query.displayName === undefined
+        ? undefined
+        : (normalizeNullableText(query.displayName) ?? undefined),
+    email:
+      query.email === undefined
+        ? undefined
+        : (normalizeNullableText(query.email) ?? undefined),
+    enabled: normalizeOptionalQueryBoolean(query.enabled, 'enabled'),
+    mobile:
+      query.mobile === undefined
+        ? undefined
+        : (normalizeNullableText(query.mobile) ?? undefined),
+    orderBy: normalizeOrderBy(query.orderBy),
+    orderDirection: normalizeOrderDirection(query.orderDirection),
+    postCode:
+      query.postCode === undefined
+        ? undefined
+        : normalizeRequiredText(query.postCode, 'postCode'),
+    roleCode:
+      query.roleCode === undefined
+        ? undefined
+        : normalizeRequiredText(query.roleCode, 'roleCode'),
+    username:
+      query.username === undefined
+        ? undefined
+        : (normalizeNullableText(query.username) ?? undefined),
     dataScope: normalizeSystemUserDataScopeFilter(query.dataScope),
+  };
+}
+
+export function normalizeListSystemUsersPageQuery(
+  query: SystemUserPageQuery = {},
+): SystemUserPageFilters {
+  return {
+    ...normalizeListSystemUsersQuery(query),
+    page: normalizeOptionalPositiveInteger(query.page, 'page', 1, 10_000),
+    pageSize: normalizeOptionalPositiveInteger(
+      query.pageSize,
+      'pageSize',
+      10,
+      100,
+    ),
+  };
+}
+
+export function createSystemUserPageRecord(
+  rows: readonly SystemUserSummaryRecord[],
+  query?: SystemUserPageQuery,
+): SystemUserPageRecord {
+  const filters = normalizeListSystemUsersPageQuery(query);
+  const start = (filters.page - 1) * filters.pageSize;
+
+  return {
+    list: rows.slice(start, start + filters.pageSize),
+    total: rows.length,
+    page: filters.page,
+    pageSize: filters.pageSize,
   };
 }
 
@@ -499,6 +666,20 @@ export function normalizeCreateSystemUserInput(
     username: normalizeUsername(body.username),
     displayName: normalizeRequiredText(body.displayName, 'displayName'),
     password: normalizeRequiredText(body.password, 'password'),
+    mobile:
+      body.mobile === undefined
+        ? undefined
+        : normalizeNullableMobile(body.mobile),
+    email:
+      body.email === undefined ? undefined : normalizeNullableEmail(body.email),
+    gender:
+      body.gender === undefined
+        ? undefined
+        : normalizeNullableGender(body.gender),
+    remark:
+      body.remark === undefined
+        ? undefined
+        : normalizeNullableBoundedText(body.remark, 'remark', 500),
     roleCodes: normalizeRoleCodes(body.roleCodes),
     deptId: normalizeOptionalDeptId(body.deptId),
     postCodes: normalizePostCodes(body.postCodes),
@@ -518,6 +699,20 @@ export function normalizeUpdateSystemUserInput(
       body.password === undefined
         ? undefined
         : normalizeRequiredText(body.password, 'password'),
+    mobile:
+      body.mobile === undefined
+        ? undefined
+        : normalizeNullableMobile(body.mobile),
+    email:
+      body.email === undefined ? undefined : normalizeNullableEmail(body.email),
+    gender:
+      body.gender === undefined
+        ? undefined
+        : normalizeNullableGender(body.gender),
+    remark:
+      body.remark === undefined
+        ? undefined
+        : normalizeNullableBoundedText(body.remark, 'remark', 500),
     roleCodes:
       body.roleCodes === undefined
         ? undefined
@@ -531,6 +726,10 @@ export function normalizeUpdateSystemUserInput(
         ? undefined
         : normalizePostCodes(body.postCodes),
     enabled: normalizeOptionalBoolean(body.enabled, 'enabled'),
+    forcePasswordChange: normalizeOptionalBoolean(
+      body.forcePasswordChange,
+      'forcePasswordChange',
+    ),
   };
 }
 
@@ -603,7 +802,12 @@ export function normalizeResetUserPasswordInput(
   body: ResetUserPasswordDto,
 ): NormalizedResetUserPasswordInput {
   return {
-    password: normalizeRequiredText(body?.password, 'password'),
+    password:
+      body?.password === undefined ||
+      body.password === null ||
+      body.password === ''
+        ? undefined
+        : normalizeRequiredText(body.password, 'password'),
   };
 }
 
@@ -624,6 +828,7 @@ export function cloneSystemUserSummary(
     mobile: user.mobile,
     email: user.email,
     gender: user.gender,
+    remark: user.remark,
     roleCodes: [...user.roleCodes],
     roleNames: user.roleCodes.map((code) => getSeedRoleName(code)),
     deptId: user.deptId,
@@ -634,6 +839,7 @@ export function cloneSystemUserSummary(
     avatarMimeType: user.avatarMimeType,
     avatarSizeBytes: user.avatarSizeBytes,
     avatarUpdatedAt: user.avatarUpdatedAt,
+    forcePasswordChange: user.forcePasswordChange,
     enabled: user.enabled,
     system: user.system,
     createdAt: user.createdAt,
@@ -823,6 +1029,24 @@ function normalizeNullableText(value: unknown): string | null {
   return normalized ? normalized : null;
 }
 
+function normalizeNullableBoundedText(
+  value: unknown,
+  fieldName: string,
+  maxLength: number,
+): string | null {
+  const normalized = normalizeNullableText(value);
+
+  if (normalized && normalized.length > maxLength) {
+    throw systemUserBadRequest(
+      'SYSTEM_USER_TEXT_TOO_LONG',
+      `System user ${fieldName} must be at most ${maxLength} characters.`,
+      { field: fieldName, maxLength },
+    );
+  }
+
+  return normalized;
+}
+
 function normalizeNullableEmail(value: unknown): string | null {
   const normalized = normalizeNullableText(value);
   if (!normalized) {
@@ -834,6 +1058,23 @@ function normalizeNullableEmail(value: unknown): string | null {
       'SYSTEM_USER_EMAIL_INVALID',
       'System user email is invalid.',
       { field: 'email' },
+    );
+  }
+
+  return normalized;
+}
+
+function normalizeNullableMobile(value: unknown): string | null {
+  const normalized = normalizeNullableText(value);
+  if (!normalized) {
+    return normalized;
+  }
+
+  if (!/^\+?[0-9][0-9 ().-]{5,24}$/.test(normalized)) {
+    throw systemUserBadRequest(
+      'SYSTEM_USER_MOBILE_INVALID',
+      'System user mobile is invalid.',
+      { field: 'mobile' },
     );
   }
 
@@ -855,6 +1096,142 @@ function normalizeNullableGender(value: unknown): string | null {
   }
 
   return normalized;
+}
+
+function normalizeOptionalDate(
+  value: unknown,
+  fieldName: string,
+): Date | undefined {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+
+  if (typeof value !== 'string') {
+    throw systemUserBadRequest(
+      'SYSTEM_USER_DATE_INVALID_TYPE',
+      `System user ${fieldName} must be an ISO date string.`,
+      { field: fieldName },
+    );
+  }
+
+  const parsed = new Date(value);
+
+  if (Number.isNaN(parsed.getTime())) {
+    throw systemUserBadRequest(
+      'SYSTEM_USER_DATE_INVALID',
+      `System user ${fieldName} must be a valid ISO date string.`,
+      { field: fieldName },
+    );
+  }
+
+  return parsed;
+}
+
+function normalizeOptionalQueryBoolean(
+  value: unknown,
+  fieldName: string,
+): boolean | undefined {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value !== 'string') {
+    throw systemUserBadRequest(
+      'SYSTEM_USER_BOOLEAN_INVALID',
+      `System user ${fieldName} must be a boolean.`,
+      { field: fieldName },
+    );
+  }
+
+  const normalized = value.trim().toLowerCase();
+
+  if (['1', 'enabled', 'true', 'yes'].includes(normalized)) {
+    return true;
+  }
+
+  if (['0', 'disabled', 'false', 'no'].includes(normalized)) {
+    return false;
+  }
+
+  throw systemUserBadRequest(
+    'SYSTEM_USER_BOOLEAN_INVALID',
+    `System user ${fieldName} must be a boolean.`,
+    { field: fieldName },
+  );
+}
+
+function normalizeOptionalPositiveInteger(
+  value: unknown,
+  fieldName: string,
+  defaultValue: number,
+  maxValue: number,
+): number {
+  if (value === undefined || value === null || value === '') {
+    return defaultValue;
+  }
+
+  const parsed =
+    typeof value === 'number'
+      ? value
+      : typeof value === 'string'
+        ? Number(value)
+        : Number.NaN;
+
+  if (!Number.isInteger(parsed) || parsed < 1 || parsed > maxValue) {
+    throw systemUserBadRequest(
+      'SYSTEM_USER_PAGINATION_INVALID',
+      `System user ${fieldName} must be an integer between 1 and ${maxValue}.`,
+      { field: fieldName, maxValue },
+    );
+  }
+
+  return parsed;
+}
+
+function normalizeOrderBy(value: unknown): SystemUserOrderBy {
+  if (value === undefined || value === null || value === '') {
+    return 'username';
+  }
+
+  if (
+    [
+      'createdAt',
+      'displayName',
+      'email',
+      'enabled',
+      'mobile',
+      'updatedAt',
+      'username',
+    ].includes(String(value))
+  ) {
+    return String(value) as SystemUserOrderBy;
+  }
+
+  throw systemUserBadRequest(
+    'SYSTEM_USER_ORDER_BY_INVALID',
+    'System user orderBy is invalid.',
+    { field: 'orderBy' },
+  );
+}
+
+function normalizeOrderDirection(value: unknown): SystemUserOrderDirection {
+  if (value === undefined || value === null || value === '') {
+    return 'asc';
+  }
+
+  if (value === 'asc' || value === 'desc') {
+    return value;
+  }
+
+  throw systemUserBadRequest(
+    'SYSTEM_USER_ORDER_DIRECTION_INVALID',
+    'System user orderDirection must be asc or desc.',
+    { field: 'orderDirection' },
+  );
 }
 
 function normalizeRequiredBoolean(value: unknown, fieldName: string): boolean {

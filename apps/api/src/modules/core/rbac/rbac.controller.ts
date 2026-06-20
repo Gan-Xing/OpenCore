@@ -79,6 +79,7 @@ import {
   UserImportResultDto,
   UserImportTemplateDto,
   UserOptionDto,
+  UserPageDto,
   UserProfileActivityDto,
   UserProfileKickOutOtherSessionsDto,
   UserProfileSessionDto,
@@ -149,12 +150,12 @@ export class RbacController {
   @ApiTags('Core Users')
   @RequirePermission('core:user:read')
   @RequireDataScope({ userIdField: 'id', deptIdField: 'deptId' })
-  @ApiOkResponse({ type: [UserSummaryDto] })
+  @ApiOkResponse({ type: UserPageDto })
   listUsers(
     @Query() query: ListUsersQueryDto,
     @Req() request: RequestWithUser,
-  ): Promise<UserSummaryDto[]> {
-    return this.users.listUsers(withRequestDataScope(query, request));
+  ): Promise<UserPageDto> {
+    return this.users.listUserPage(withRequestDataScope(query, request));
   }
 
   @Get('users/export')
@@ -192,14 +193,39 @@ export class RbacController {
     );
 
     return {
+      dryRun: false,
       totalRows: result.totalRows,
       created: result.created,
       updated: result.updated,
       failed: result.failed,
       createdUsernames: result.createdUsernames,
       updatedUsernames: result.updatedUsernames,
+      updatedSessionUsernames: result.updatedSessionUsernames,
       failures: result.failures,
       revokedSessionCount,
+    };
+  }
+
+  @Post('users/import/preview')
+  @ApiTags('Core Users')
+  @RequirePermission('core:user:import')
+  @ApiOkResponse({ type: UserImportResultDto })
+  async previewImportUsers(
+    @Body() body: ImportUsersDto,
+  ): Promise<UserImportResultDto> {
+    const result = await this.users.previewImportUsers(body);
+
+    return {
+      dryRun: true,
+      totalRows: result.totalRows,
+      created: result.created,
+      updated: result.updated,
+      failed: result.failed,
+      createdUsernames: result.createdUsernames,
+      updatedUsernames: result.updatedUsernames,
+      updatedSessionUsernames: result.updatedSessionUsernames,
+      failures: result.failures,
+      revokedSessionCount: 0,
     };
   }
 

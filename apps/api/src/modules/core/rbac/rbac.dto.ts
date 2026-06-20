@@ -33,6 +33,7 @@ export {
   UserImportResultDto,
   UserImportTemplateDto,
   UserOptionDto,
+  UserPageDto,
   UserProfileDto,
   UserRoleAssignmentDto,
   UserMutationResultDto,

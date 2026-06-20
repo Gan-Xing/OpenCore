@@ -861,6 +861,7 @@ export default {
   'pages.system.menus.validation.typeRequired': 'Type is required.',
   'pages.system.users.actions.assignRoles': 'Assign Roles',
   'pages.system.users.actions.assignRolesAria': 'Assign roles for {username}',
+  'pages.system.users.actions.cancel': 'Cancel',
   'pages.system.users.actions.column': 'Actions',
   'pages.system.users.actions.create': 'Create',
   'pages.system.users.actions.delete': 'Delete',
@@ -882,6 +883,8 @@ export default {
   'pages.system.users.actions.import': 'Import',
   'pages.system.users.actions.importUsers': 'Import users',
   'pages.system.users.actions.new': 'New',
+  'pages.system.users.actions.pickUsers': 'Pick users',
+  'pages.system.users.actions.previewImport': 'Preview',
   'pages.system.users.actions.refresh': 'Refresh',
   'pages.system.users.actions.reload': 'Reload',
   'pages.system.users.actions.reloadAria': 'Reload users',
@@ -902,6 +905,8 @@ export default {
   'pages.system.users.actions.systemStatusLocked':
     'System users cannot change status',
   'pages.system.users.actions.viewAria': 'View {username}',
+  'pages.system.users.boolean.no': 'No',
+  'pages.system.users.boolean.yes': 'Yes',
   'pages.system.users.confirm.deleteOne': 'Delete this user?',
   'pages.system.users.confirm.deleteSelected':
     'Delete {count} selected user(s)?',
@@ -914,19 +919,32 @@ export default {
   'pages.system.users.fields.department': 'Department',
   'pages.system.users.fields.departmentId': 'Department ID',
   'pages.system.users.fields.displayName': 'Display Name',
+  'pages.system.users.fields.email': 'Email',
   'pages.system.users.fields.enabled': 'Enabled',
+  'pages.system.users.fields.forcePasswordChange': 'Force password change',
+  'pages.system.users.fields.gender': 'Gender',
   'pages.system.users.fields.id': 'ID',
+  'pages.system.users.fields.lastLoginAt': 'Last login',
+  'pages.system.users.fields.lastLoginIp': 'Last login IP',
+  'pages.system.users.fields.lastLoginLocation': 'Last login location',
+  'pages.system.users.fields.mobile': 'Mobile',
   'pages.system.users.fields.newPassword': 'New Password',
   'pages.system.users.fields.password': 'Password',
   'pages.system.users.fields.posts': 'Posts',
+  'pages.system.users.fields.remark': 'Remark',
   'pages.system.users.fields.roles': 'Roles',
   'pages.system.users.fields.status': 'Status',
   'pages.system.users.fields.system': 'System',
+  'pages.system.users.fields.createdAt': 'Created at',
+  'pages.system.users.fields.updatedAt': 'Updated at',
   'pages.system.users.fields.username': 'Username',
   'pages.system.users.filters.status': 'Status',
   'pages.system.users.filters.system': 'System',
   'pages.system.users.form.createTitle': 'New User',
   'pages.system.users.form.editTitle': 'Edit User',
+  'pages.system.users.gender.female': 'Female',
+  'pages.system.users.gender.male': 'Male',
+  'pages.system.users.gender.unknown': 'Unknown',
   'pages.system.users.import.failureRow': 'Row {rowNumber}: {reason}',
   'pages.system.users.import.failureRowWithUsername':
     'Row {rowNumber} ({username}): {reason}',
@@ -953,6 +971,8 @@ export default {
   'pages.system.users.messages.fileReadFailure': 'File read failed.',
   'pages.system.users.messages.importSummary':
     'Imported {totalRows} row(s): {created} created, {updated} updated, {failed} failed. {revokedSessions}',
+  'pages.system.users.messages.importPreviewSummary':
+    'Previewed {totalRows} row(s): {created} create, {updated} update, {failed} failed.',
   'pages.system.users.messages.importTemplateDownloaded':
     'User import template downloaded.',
   'pages.system.users.messages.passwordReset':
@@ -971,6 +991,12 @@ export default {
   'pages.system.users.placeholders.posts': 'Select posts',
   'pages.system.users.placeholders.roles': 'Select roles',
   'pages.system.users.resetPassword.title': 'Reset Password',
+  'pages.system.users.resetPassword.autoGeneratePlaceholder':
+    'Leave blank to generate a temporary password',
+  'pages.system.users.resetPassword.temporaryPasswordHint':
+    'Copy the temporary password and share it through a secure channel.',
+  'pages.system.users.resetPassword.temporaryPasswordTitle':
+    'Temporary password generated',
   'pages.system.users.roleAssignment.messages.updated':
     'Roles assigned. {revokedSessions}',
   'pages.system.users.roleAssignment.openFailure':
@@ -983,8 +1009,10 @@ export default {
   'pages.system.users.system.custom': 'Custom',
   'pages.system.users.system.system': 'System',
   'pages.system.users.title': 'Users',
+  'pages.system.users.userPicker.title': 'Pick users',
   'pages.system.users.validation.displayNameRequired':
     'Display name is required.',
+  'pages.system.users.validation.emailInvalid': 'Email is invalid.',
   'pages.system.users.validation.passwordRequired': 'Password is required.',
   'pages.system.users.validation.usernameRequired': 'Username is required.',
   'pages.system.roles.actions.column': 'Actions',

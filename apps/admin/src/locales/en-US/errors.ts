@@ -145,7 +145,12 @@ export default {
     'The user data-scope ID is duplicated.',
   'error.SYSTEM_USER_DATA_SCOPE_TYPE_INVALID':
     'The user data-scope type is invalid.',
+  'error.SYSTEM_USER_DATE_INVALID': 'The user date field is invalid.',
+  'error.SYSTEM_USER_DATE_INVALID_TYPE':
+    'The user date field must be a string.',
   'error.SYSTEM_USER_DEPT_NOT_FOUND': 'The user department does not exist.',
+  'error.SYSTEM_USER_EMAIL_EXISTS':
+    'The user email is already used by another user.',
   'error.SYSTEM_USER_EMAIL_INVALID': 'The user email is invalid.',
   'error.SYSTEM_USER_ENABLED_INVALID':
     'The user enabled field must be a boolean.',
@@ -176,7 +181,15 @@ export default {
     'The user import XLSX must be a valid workbook.',
   'error.SYSTEM_USER_IMPORT_XLSX_SHEET_MISSING':
     'The user import XLSX is missing its worksheet.',
+  'error.SYSTEM_USER_MOBILE_EXISTS':
+    'The user mobile is already used by another user.',
+  'error.SYSTEM_USER_MOBILE_INVALID': 'The user mobile is invalid.',
   'error.SYSTEM_USER_NOT_FOUND': 'The user does not exist.',
+  'error.SYSTEM_USER_ORDER_BY_INVALID': 'The user sort field is invalid.',
+  'error.SYSTEM_USER_ORDER_DIRECTION_INVALID':
+    'The user sort direction is invalid.',
+  'error.SYSTEM_USER_PAGINATION_INVALID':
+    'The user pagination parameters are invalid.',
   'error.SYSTEM_USER_PASSWORD_UNCHANGED':
     'The new password must be different from the old password.',
   'error.SYSTEM_USER_POST_CODES_INVALID':
@@ -191,6 +204,7 @@ export default {
   'error.SYSTEM_USER_ROLE_NOT_FOUND': 'The user role does not exist.',
   'error.SYSTEM_USER_SYSTEM_IMMUTABLE':
     'Built-in system users cannot be changed or deleted.',
+  'error.SYSTEM_USER_TEXT_TOO_LONG': 'The user text field is too long.',
   'error.SYSTEM_USER_USERNAME_INVALID': 'The username is invalid.',
   'error.SYSTEM_NOTICE_ALREADY_EXISTS': 'The notice already exists.',
   'error.SYSTEM_NOTICE_ARCHIVED_IMMUTABLE':

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { randomBytes } from 'node:crypto';
 import type {
   AssignRoleUsersDto,
   AssignUserRolesDto,
@@ -29,6 +30,8 @@ import {
   type SystemUserExportPreview,
   type SystemUserImportResultRecord,
   type SystemUserImportTemplateRecord,
+  type SystemUserPageQuery,
+  type SystemUserPageRecord,
   type SystemUserListQuery,
   type SystemUserOptionRecord,
   type SystemUserSummaryRecord,
@@ -40,6 +43,12 @@ export class SystemUserService {
 
   listUsers(query?: SystemUserListQuery): Promise<SystemUserSummaryRecord[]> {
     return this.repository.listUsers(query);
+  }
+
+  async listUserPage(
+    query?: SystemUserPageQuery,
+  ): Promise<SystemUserPageRecord> {
+    return this.repository.listUserPage(query);
   }
 
   listUserOptions(
@@ -103,9 +112,15 @@ export class SystemUserService {
   async resetUserPassword(
     id: string,
     body: ResetUserPasswordDto,
-  ): Promise<SystemUserSummaryRecord> {
+  ): Promise<SystemUserSummaryRecord & { temporaryPassword?: string }> {
     const input = normalizeResetUserPasswordInput(body);
-    return await this.repository.updateUser(id, { password: input.password });
+    const password = input.password ?? createTemporaryPassword();
+    const user = await this.repository.updateUser(id, {
+      password,
+      forcePasswordChange: true,
+    });
+
+    return input.password ? user : { ...user, temporaryPassword: password };
   }
 
   deleteUser(id: string): Promise<{ deleted: true }> {
@@ -161,6 +176,19 @@ export class SystemUserService {
   async importUsers(
     body: ImportUsersDto,
   ): Promise<SystemUserImportResultRecord> {
+    return this.processImportUsers(body, false);
+  }
+
+  async previewImportUsers(
+    body: ImportUsersDto,
+  ): Promise<SystemUserImportResultRecord> {
+    return this.processImportUsers(body, true);
+  }
+
+  private async processImportUsers(
+    body: ImportUsersDto,
+    dryRun: boolean,
+  ): Promise<SystemUserImportResultRecord> {
     const records = parseSystemUserImport(body);
     const updateExisting = normalizeImportUpdateExisting(body.updateExisting);
     const existingUsers = new Map(
@@ -192,9 +220,18 @@ export class SystemUserService {
             throw new Error(`User already exists: ${input.username}`);
           }
 
+          if (dryRun) {
+            updatedUsernames.push(existing.username);
+            continue;
+          }
+
           const updated = await this.repository.updateUser(existing.id, {
             displayName: input.displayName,
             password: input.password,
+            mobile: input.mobile,
+            email: input.email,
+            gender: input.gender,
+            remark: input.remark,
             roleCodes: input.roleCodes,
             deptId: input.deptId ?? null,
             postCodes: input.postCodes,
@@ -211,10 +248,37 @@ export class SystemUserService {
           );
         }
 
+        if (dryRun) {
+          createdUsernames.push(input.username);
+          existingUsers.set(input.username, {
+            id: `dry_run_${input.username}`,
+            username: input.username,
+            displayName: input.displayName,
+            mobile: input.mobile ?? undefined,
+            email: input.email ?? undefined,
+            gender: input.gender ?? undefined,
+            remark: input.remark ?? undefined,
+            roleCodes: [...input.roleCodes],
+            roleNames: [],
+            deptId: input.deptId,
+            postCodes: [...input.postCodes],
+            postNames: [],
+            enabled: input.enabled,
+            system: false,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          });
+          continue;
+        }
+
         const created = await this.repository.createUser({
           username: input.username,
           displayName: input.displayName,
           password: input.password,
+          mobile: input.mobile,
+          email: input.email,
+          gender: input.gender,
+          remark: input.remark,
           roleCodes: input.roleCodes,
           deptId: input.deptId,
           postCodes: input.postCodes,
@@ -232,6 +296,7 @@ export class SystemUserService {
     }
 
     return {
+      dryRun,
       totalRows: records.length,
       created: createdUsernames.length,
       updated: updatedUsernames.length,
@@ -239,9 +304,13 @@ export class SystemUserService {
       createdUsernames,
       updatedUsernames,
       failures,
-      updatedSessionUsernames: updatedUsernames,
+      updatedSessionUsernames: dryRun ? [] : updatedUsernames,
     };
   }
+}
+
+function createTemporaryPassword(): string {
+  return `UserTmp-${randomBytes(9).toString('base64url')}-7a`;
 }
 
 function normalizeImportUpdateExisting(value: unknown): boolean {

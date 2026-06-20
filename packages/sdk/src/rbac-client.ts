@@ -40,6 +40,7 @@ import type {
   UpdateUserRequest,
   UserImportResultSummary,
   UserImportTemplateSummary,
+  UserPageSummary,
   UserProfileActivitySummary,
   UserProfileKickOutOtherSessionsSummary,
   UserMutationSummary,
@@ -76,7 +77,7 @@ export type RbacClient = {
   listUsers: (
     token: string,
     query?: ListUsersRequest,
-  ) => Promise<UserSummary[]>;
+  ) => Promise<UserPageSummary>;
   listUserOptions: (
     token: string,
     query?: ListUsersRequest,
@@ -87,6 +88,10 @@ export type RbacClient = {
   ) => Promise<RbacExportPreview>;
   getUserImportTemplate: (token: string) => Promise<UserImportTemplateSummary>;
   importUsers: (
+    token: string,
+    body: ImportUsersRequest,
+  ) => Promise<UserImportResultSummary>;
+  previewImportUsers: (
     token: string,
     body: ImportUsersRequest,
   ) => Promise<UserImportResultSummary>;
@@ -238,7 +243,7 @@ export function createRbacClient(request: SdkRequest): RbacClient {
         body,
       }),
     listUsers: (token, query) =>
-      request<UserSummary[]>(withQuery('/core/users', query), {
+      request<UserPageSummary>(withQuery('/core/users', query), {
         token,
       }),
     listUserOptions: (token, query) =>
@@ -258,6 +263,12 @@ export function createRbacClient(request: SdkRequest): RbacClient {
       }),
     importUsers: (token, body) =>
       request<UserImportResultSummary>('/core/users/import', {
+        method: 'POST',
+        body,
+        token,
+      }),
+    previewImportUsers: (token, body) =>
+      request<UserImportResultSummary>('/core/users/import/preview', {
         method: 'POST',
         body,
         token,

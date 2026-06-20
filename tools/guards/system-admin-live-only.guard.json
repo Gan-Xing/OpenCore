@@ -56,15 +56,20 @@
         "updateOpenCoreUser",
         "deleteOpenCoreUser",
         "assignOpenCoreUserRoles",
-        "CurrentPageExportButton",
-        "rows={filteredRows}"
+        "exportOpenCoreUsers(exportQuery)",
+        "previewOpenCoreUsersImport",
+        "UserPicker",
+        "request={async (params, sort)",
+        "data: [...page.list]"
       ],
       "requiredDist": [
         "Unable to load live users",
         "Unable to load live user detail.",
         "User Excel export downloaded",
         "Assign Roles",
-        "core-users"
+        "Pick users",
+        "Temporary password generated",
+        "Previewed"
       ],
       "forbiddenDist": ["Using fallback user snapshot"]
     },

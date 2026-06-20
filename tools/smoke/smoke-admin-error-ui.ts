@@ -724,6 +724,134 @@ async function main() {
       }
     }
 
+    const usersNetworkStart = networkEntries.length;
+    await page.send('Page.navigate', {
+      url: `${adminBaseUrl}/system/users?admin-users-ui-smoke=${runId}`,
+    });
+    await waitForExpression(
+      page,
+      'document.readyState === "complete"',
+      'Admin users page load',
+    );
+    await waitForCondition(
+      () =>
+        networkEntries
+          .slice(usersNetworkStart)
+          .some(
+            (entry) =>
+              entry.status === 200 &&
+              /\/api\/core\/users(?:\?|$)/u.test(entry.url),
+          ),
+      'Admin users live list request',
+    );
+    await waitForExpression(
+      page,
+      `document.body.innerText.includes('用户') && document.body.innerText.includes('用户名') && document.body.innerText.includes('显示名称')`,
+      'Admin users page Chinese table surface',
+    );
+    await waitForExpression(
+      page,
+      `Boolean(document.querySelector('[data-opencore-system-users-live-table="true"]'))`,
+      'Admin users live table marker',
+    );
+    const usersPageState = await evaluate(
+      page,
+      `
+(() => {
+  const text = document.body.innerText;
+  return {
+    hasAdminUser: text.includes('admin'),
+    hasExport: text.includes('下载 Excel'),
+    hasImport: text.includes('导入用户'),
+    hasPicker: Boolean(document.querySelector('[data-opencore-user-picker-button="true"]')),
+    hasRawKeys: text.includes('pages.system.users') || text.includes('system.users'),
+    hasTableMarker: Boolean(document.querySelector('[data-opencore-system-users-live-table="true"]')),
+    text: text.slice(0, 1000),
+  };
+})()
+`,
+    );
+
+    if (
+      !isRecord(usersPageState) ||
+      usersPageState.hasTableMarker !== true ||
+      usersPageState.hasPicker !== true ||
+      usersPageState.hasImport !== true ||
+      usersPageState.hasExport !== true ||
+      usersPageState.hasAdminUser !== true
+    ) {
+      throw new Error(
+        `Admin users page is missing live productized controls: ${JSON.stringify(usersPageState)}`,
+      );
+    }
+
+    if (usersPageState.hasRawKeys === true) {
+      throw new Error(
+        `Admin users page displayed raw i18n keys: ${JSON.stringify(usersPageState)}`,
+      );
+    }
+
+    await evaluate(
+      page,
+      `
+(() => {
+  const button = document.querySelector('[data-opencore-user-picker-button="true"]');
+  if (!(button instanceof HTMLButtonElement)) {
+    return false;
+  }
+  button.click();
+  return true;
+})()
+`,
+    );
+    await waitForExpression(
+      page,
+      `Boolean(document.querySelector('[data-opencore-user-picker-modal="true"]')) && document.body.innerText.includes('按部门筛选')`,
+      'Admin users picker modal',
+    );
+    await evaluate(
+      page,
+      `
+(() => {
+  const button = Array.from(document.querySelectorAll('button')).find((node) => node.textContent?.includes('取消'));
+  if (button instanceof HTMLButtonElement) {
+    button.click();
+  }
+  return true;
+})()
+`,
+    );
+    await evaluate(
+      page,
+      `
+(() => {
+  const button = Array.from(document.querySelectorAll('button')).find((node) => node.textContent?.includes('导入用户'));
+  if (!(button instanceof HTMLButtonElement)) {
+    return false;
+  }
+  button.click();
+  return true;
+})()
+`,
+    );
+    await waitForExpression(
+      page,
+      `Boolean(document.querySelector('[data-opencore-system-users-import-modal="true"]')) && Boolean(document.querySelector('[data-opencore-system-users-import-preview="true"]')) && document.body.innerText.includes('选择 CSV/XLSX 文件')`,
+      'Admin users import preview modal',
+    );
+    await evaluate(
+      page,
+      `
+(() => {
+  const button = Array.from(document.querySelectorAll('button')).find((node) => node.textContent?.includes('取消'));
+  if (button instanceof HTMLButtonElement) {
+    button.click();
+  }
+  return true;
+})()
+`,
+    );
+
     console.log(
       JSON.stringify({
         status: 'pass',
@@ -753,6 +881,12 @@ async function main() {
           'admin.public-profile.single-scroll-pane',
           'admin.public-profile.oauth-state-aware',
           'admin.public-profile.no-raw-keys',
+          'admin.public-users.live-list-request',
+          'admin.public-users.zh-cn-table',
+          'admin.public-users.live-table-marker',
+          'admin.public-users.no-raw-keys',
+          'admin.public-users.user-picker',
+          'admin.public-users.import-preview',
         ],
       }),
     );

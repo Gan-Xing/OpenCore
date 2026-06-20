@@ -323,6 +323,19 @@ async function main() {
       smokeUsername,
       'engineering department user list',
     );
+    const filteredUserPage = await apiRequest(
+      `/core/users?deptId=dept_operations&username=${encodeURIComponent(
+        smokeUsername,
+      )}&roleCode=viewer&postCode=engineer&enabled=true&page=1&pageSize=5`,
+    );
+    assertEqual(filteredUserPage.page, 1, 'filtered user page number');
+    assertEqual(filteredUserPage.pageSize, 5, 'filtered user page size');
+    assertEqual(filteredUserPage.total >= 1, true, 'filtered user page total');
+    assertUserListIncludesUsername(
+      filteredUserPage,
+      smokeUsername,
+      'filtered user page',
+    );
     assertUserOptionNotIncludesUsername(
       await apiRequest('/core/users/simple-list?deptId=dept_engineering'),
       smokeUsername,
@@ -981,6 +994,25 @@ async function main() {
         updateExisting: false,
       },
     });
+    await request(`${apiPrefix}/core/users/import/preview`, {
+      method: 'POST',
+      token: importGuardToken,
+      expected: [403],
+      body: {
+        contentBase64: createUserImportCsvBase64([
+          [
+            `${importUsername}_preview_forbidden`,
+            'Forbidden Preview User',
+            importPassword,
+            'viewer',
+            '',
+            '',
+            'true',
+          ],
+        ]),
+        updateExisting: false,
+      },
+    });
 
     const importTemplate = await apiRequest('/core/users/import-template');
     assertEqual(
@@ -1012,6 +1044,39 @@ async function main() {
       true,
       'user import template XLSX byte length',
     );
+    const importPreviewResult = await apiRequest('/core/users/import/preview', {
+      method: 'POST',
+      body: {
+        contentBase64: createUserImportCsvBase64([
+          [
+            `${importUsername}_preview`,
+            'Import Preview User',
+            importPassword,
+            'viewer',
+            'dept_operations',
+            'engineer',
+            'true',
+          ],
+        ]),
+        updateExisting: false,
+      },
+    });
+    assertEqual(importPreviewResult.dryRun, true, 'user import preview dryRun');
+    assertEqual(
+      importPreviewResult.created,
+      1,
+      'user import preview created count',
+    );
+    assertEqual(
+      importPreviewResult.updatedSessionUsernames.length,
+      0,
+      'user import preview revoked usernames',
+    );
+    assertUserListNotIncludesUsername(
+      await apiRequest('/core/users'),
+      `${importUsername}_preview`,
+      'user import preview persistence',
+    );
     const xlsxImportResult = await apiRequest('/core/users/import', {
       method: 'POST',
       body: {
@@ -1037,7 +1102,7 @@ async function main() {
       xlsxImportUsername,
       'user XLSX import created usernames',
     );
-    const xlsxImportedUser = (await apiRequest('/core/users')).find(
+    const xlsxImportedUser = toUserList(await apiRequest('/core/users')).find(
       (user) => user.username === xlsxImportUsername,
     );
     xlsxImportUserId = assertString(
@@ -1122,7 +1187,7 @@ async function main() {
       `${importUsername}_bad_role`,
       'user import failure username',
     );
-    const importedUser = (await apiRequest('/core/users')).find(
+    const importedUser = toUserList(await apiRequest('/core/users')).find(
       (user) => user.username === importUsername,
     );
     importUserId = assertString(importedUser?.id, 'imported user id');
@@ -1552,12 +1617,16 @@ function createUserImportCsvBase64(rows) {
       'username',
       'displayName',
       'password',
+      'mobile',
+      'email',
+      'gender',
+      'remark',
       'roleCodes',
       'deptId',
       'postCodes',
       'enabled',
     ],
-    ...rows,
+    ...rows.map(normalizeUserImportRow),
   ];
 
   return Buffer.from(
@@ -1572,12 +1641,16 @@ function createUserImportXlsxBase64(rows) {
       'username',
       'displayName',
       'password',
+      'mobile',
+      'email',
+      'gender',
+      'remark',
       'roleCodes',
       'deptId',
       'postCodes',
       'enabled',
     ],
-    ...rows,
+    ...rows.map(normalizeUserImportRow),
   ];
   const workbook = zipSync(
     {
@@ -1595,6 +1668,26 @@ function createUserImportXlsxBase64(rows) {
   );
 
   return Buffer.from(workbook).toString('base64');
+}
+
+function normalizeUserImportRow(row) {
+  if (row.length !== 7) {
+    return row;
+  }
+
+  return [
+    row[0],
+    row[1],
+    row[2],
+    '',
+    '',
+    '',
+    '',
+    row[3],
+    row[4],
+    row[5],
+    row[6],
+  ];
 }
 
 function createXlsxContentTypesXml() {
@@ -1688,23 +1781,31 @@ function escapeCsvCell(value) {
 }
 
 function assertUserListIncludesUsername(users, expectedUsername, label) {
-  if (!Array.isArray(users)) {
-    throw new Error(`Expected ${label} to be an array`);
-  }
+  const list = toUserList(users);
 
-  if (!users.some((user) => user.username === expectedUsername)) {
+  if (!list.some((user) => user.username === expectedUsername)) {
     throw new Error(`Expected ${label} to include ${expectedUsername}`);
   }
 }
 
 function assertUserListNotIncludesUsername(users, expectedUsername, label) {
-  if (!Array.isArray(users)) {
-    throw new Error(`Expected ${label} to be an array`);
-  }
+  const list = toUserList(users);
 
-  if (users.some((user) => user.username === expectedUsername)) {
+  if (list.some((user) => user.username === expectedUsername)) {
     throw new Error(`Expected ${label} not to include ${expectedUsername}`);
   }
+}
+
+function toUserList(value) {
+  if (Array.isArray(value)) {
+    return value;
+  }
+
+  if (value && Array.isArray(value.list)) {
+    return value.list;
+  }
+
+  throw new Error(`Expected user list response to include an array list`);
 }
 
 function findUserOption(options, username) {

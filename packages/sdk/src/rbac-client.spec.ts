@@ -36,6 +36,12 @@ describe('createRbacClient', () => {
       contentBase64: Buffer.from('username\noperator\n').toString('base64'),
       updateExisting: false,
     });
+    await client.previewImportUsers('token', {
+      contentBase64: Buffer.from('username\noperator_preview\n').toString(
+        'base64',
+      ),
+      updateExisting: false,
+    });
     await client.getUserProfile('token');
     await client.updateUserProfile('token', {
       displayName: 'Profile Name',
@@ -155,6 +161,11 @@ describe('createRbacClient', () => {
       { path: '/core/users/import-template', token: 'token' },
       {
         path: '/core/users/import',
+        method: 'POST',
+        token: 'token',
+      },
+      {
+        path: '/core/users/import/preview',
         method: 'POST',
         token: 'token',
       },

@@ -14,10 +14,12 @@ import {
 import {
   PageContainer,
   ProTable,
+  type ActionType,
   type ProColumns,
 } from '@ant-design/pro-components';
 import { useAccess, useIntl } from '@umijs/max';
 import type {
+  ListUsersRequest,
   RoleSummary,
   SystemDeptOptionSummary,
   SystemDeptSummary,
@@ -50,6 +52,7 @@ import {
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
   type CSSProperties,
   type Key,
@@ -69,38 +72,35 @@ import {
   listOpenCoreSystemDeptOptions,
   listOpenCoreSystemPostOptions,
   listOpenCoreUsers,
+  previewOpenCoreUsersImport,
   resetOpenCoreUserPassword,
   setOpenCoreUsersStatus,
   setOpenCoreUserStatus,
   updateOpenCoreUser,
 } from '@/services/opencore/platform';
 import {
-  CurrentPageExportButton,
-  type CurrentPageExportColumn,
-} from '../shared/CurrentPageExportButton';
-import {
-  useCurrentPageFilters,
-  type CurrentPageFilterOption,
-  type CurrentPageSearchField,
-} from '../shared/CurrentPageFilters';
-import {
   ReadOnlyDetailDrawer,
   type DetailField,
 } from '../shared/ReadOnlyDetailDrawer';
 import { downloadBase64File } from '../shared/downloadBase64File';
+import { UserPicker } from './components/UserPicker';
 
 type UserFormValues = {
   deptId?: string;
   displayName: string;
+  email?: string;
   enabled?: boolean;
+  gender?: string;
+  mobile?: string;
   password?: string;
   postCodes?: string[];
+  remark?: string;
   roleCodes?: string[];
   username: string;
 };
 
 type ResetPasswordValues = {
-  password: string;
+  password?: string;
 };
 
 type AssignRolesValues = {
@@ -145,13 +145,6 @@ const deptFilterTreeStyle: CSSProperties = {
   marginBlockStart: 8,
 };
 
-const searchFields: CurrentPageSearchField<UserSummary>[] = [
-  'username',
-  'displayName',
-  'deptId',
-  (record) => record.roleCodes,
-  (record) => record.postCodes,
-];
 function flattenDeptTree(
   rows: readonly SystemDeptTreeSummary[],
 ): SystemDeptSummary[] {
@@ -263,10 +256,13 @@ export default function UsersPage() {
   const canAssignUserRoles = Boolean(access.canAssignUserRoles);
   const canExportUsers = Boolean(access.canExportUsers);
   const canImportUsers = Boolean(access.canImportUsers);
+  const actionRef = useRef<ActionType | undefined>(undefined);
   const [form] = Form.useForm<UserFormValues>();
   const [resetPasswordForm] = Form.useForm<ResetPasswordValues>();
   const [assignRolesForm] = Form.useForm<AssignRolesValues>();
   const [rows, setRows] = useState<readonly UserSummary[]>([]);
+  const [totalRows, setTotalRows] = useState(0);
+  const [currentQuery, setCurrentQuery] = useState<ListUsersRequest>({});
   const [roleRows, setRoleRows] = useState<readonly RoleSummary[]>([]);
   const [deptTreeRows, setDeptTreeRows] = useState<
     readonly SystemDeptTreeSummary[]
@@ -297,10 +293,12 @@ export default function UsersPage() {
   const [exportingUsers, setExportingUsers] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [importSubmitting, setImportSubmitting] = useState(false);
+  const [importPreviewing, setImportPreviewing] = useState(false);
   const [importUpdateExisting, setImportUpdateExisting] = useState(false);
   const [importFileList, setImportFileList] = useState<UploadFile[]>([]);
   const [importResult, setImportResult] = useState<UserImportResultSummary>();
   const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
+  const [pickedUsers, setPickedUsers] = useState<readonly UserSummary[]>([]);
   const [selectedDeptId, setSelectedDeptId] = useState<string>();
   const formatMessage = (
     id: string,
@@ -311,79 +309,17 @@ export default function UsersPage() {
       ? intl.formatMessage({ id, defaultMessage }, values)
       : intl.formatMessage({ id, defaultMessage });
   const statusLabels = {
-    disabled: formatMessage('pages.system.users.status.disabled', 'Disabled'),
-    enabled: formatMessage('pages.system.users.status.enabled', 'Enabled'),
+    disabled: formatMessage('pages.system.users.status.disabled', '禁用'),
+    enabled: formatMessage('pages.system.users.status.enabled', '启用'),
   };
   const systemLabels = {
-    custom: formatMessage('pages.system.users.system.custom', 'Custom'),
-    system: formatMessage('pages.system.users.system.system', 'System'),
+    custom: formatMessage('pages.system.users.system.custom', '自定义'),
+    system: formatMessage('pages.system.users.system.system', '系统'),
   };
-  const filterOptions: CurrentPageFilterOption<UserSummary>[] = [
-    {
-      key: 'enabled',
-      options: [
-        { label: statusLabels.enabled, value: 'true' },
-        { label: statusLabels.disabled, value: 'false' },
-      ],
-      placeholder: formatMessage('pages.system.users.filters.status', 'Status'),
-      predicate: (record, value) => record.enabled === (value === 'true'),
-    },
-    {
-      key: 'system',
-      options: [
-        { label: systemLabels.system, value: 'true' },
-        { label: systemLabels.custom, value: 'false' },
-      ],
-      placeholder: formatMessage('pages.system.users.filters.system', 'System'),
-      predicate: (record, value) => record.system === (value === 'true'),
-    },
-  ];
-  const exportColumns: CurrentPageExportColumn<UserSummary>[] = [
-    {
-      title: formatMessage('pages.system.users.fields.id', 'ID'),
-      dataIndex: 'id',
-    },
-    {
-      title: formatMessage('pages.system.users.fields.username', 'Username'),
-      dataIndex: 'username',
-    },
-    {
-      title: formatMessage(
-        'pages.system.users.fields.displayName',
-        'Display Name',
-      ),
-      dataIndex: 'displayName',
-    },
-    {
-      title: formatMessage(
-        'pages.system.users.fields.departmentId',
-        'Department ID',
-      ),
-      dataIndex: 'deptId',
-    },
-    {
-      title: formatMessage('pages.system.users.fields.roles', 'Roles'),
-      renderText: (record) => record.roleCodes.join(', '),
-    },
-    {
-      title: formatMessage('pages.system.users.fields.posts', 'Posts'),
-      renderText: (record) => record.postCodes.join(', '),
-    },
-    {
-      title: formatMessage('pages.system.users.fields.enabled', 'Enabled'),
-      renderText: (record) =>
-        record.enabled ? statusLabels.enabled : statusLabels.disabled,
-    },
-    {
-      title: formatMessage('pages.system.users.fields.system', 'System'),
-      renderText: (record) =>
-        record.system ? systemLabels.system : systemLabels.custom,
-    },
-  ];
   const formatRevokedSessions = (count: number | undefined): string =>
     formatMessage(
       'pages.system.users.messages.revokedSessions',
-      'Revoked sessions: {count}.',
+      '已撤销会话：{count}',
       { count: count ?? 0 },
     );
   const formatBatchMutation = (
@@ -392,13 +328,17 @@ export default function UsersPage() {
   ): string =>
     formatMessage(
       'pages.system.users.messages.batchMutation',
-      '{affected} user(s) affected. {revokedSessions}',
+      '已处理 {affected} 个用户。{revokedSessions}',
       { affected, revokedSessions: formatRevokedSessions(revokedSessionCount) },
     );
   const formatImportSummary = (result: UserImportResultSummary): string =>
     formatMessage(
-      'pages.system.users.messages.importSummary',
-      'Imported {totalRows} row(s): {created} created, {updated} updated, {failed} failed. {revokedSessions}',
+      result.dryRun
+        ? 'pages.system.users.messages.importPreviewSummary'
+        : 'pages.system.users.messages.importSummary',
+      result.dryRun
+        ? '预检 {totalRows} 行：预计新建 {created}，预计更新 {updated}，失败 {failed}'
+        : '导入 {totalRows} 行：新建 {created}，更新 {updated}，失败 {failed}。{revokedSessions}',
       {
         created: result.created,
         failed: result.failed,
@@ -424,26 +364,38 @@ export default function UsersPage() {
           { reason, rowNumber },
         );
   const createDetailFields = (record: UserSummary): DetailField[] => [
-    { label: formatMessage('pages.system.users.fields.id', 'ID'), value: record.id },
     {
-      label: formatMessage('pages.system.users.fields.username', 'Username'),
+      label: formatMessage('pages.system.users.fields.id', 'ID'),
+      value: record.id,
+    },
+    {
+      label: formatMessage('pages.system.users.fields.username', '账号'),
       value: record.username,
     },
     {
-      label: formatMessage(
-        'pages.system.users.fields.displayName',
-        'Display Name',
-      ),
+      label: formatMessage('pages.system.users.fields.displayName', '显示名称'),
       value: record.displayName,
     },
     {
-      label: formatMessage('pages.system.users.fields.department', 'Department'),
+      label: formatMessage('pages.system.users.fields.mobile', '手机号'),
+      value: record.mobile,
+    },
+    {
+      label: formatMessage('pages.system.users.fields.email', '邮箱'),
+      value: record.email,
+    },
+    {
+      label: formatMessage('pages.system.users.fields.gender', '性别'),
+      value: formatGender(record.gender),
+    },
+    {
+      label: formatMessage('pages.system.users.fields.department', '部门'),
       value: record.deptId
         ? (deptNames.get(record.deptId) ?? record.deptId)
         : undefined,
     },
     {
-      label: formatMessage('pages.system.users.fields.roles', 'Roles'),
+      label: formatMessage('pages.system.users.fields.roles', '角色'),
       value: (
         <Space wrap>
           {record.roleCodes.map((code) => (
@@ -453,7 +405,7 @@ export default function UsersPage() {
       ),
     },
     {
-      label: formatMessage('pages.system.users.fields.posts', 'Posts'),
+      label: formatMessage('pages.system.users.fields.posts', '岗位'),
       value:
         record.postCodes.length > 0 ? (
           <Space wrap>
@@ -464,12 +416,51 @@ export default function UsersPage() {
         ) : undefined,
     },
     {
-      label: formatMessage('pages.system.users.fields.status', 'Status'),
+      label: formatMessage('pages.system.users.fields.status', '状态'),
       value: record.enabled ? statusLabels.enabled : statusLabels.disabled,
     },
     {
-      label: formatMessage('pages.system.users.fields.system', 'System'),
+      label: formatMessage('pages.system.users.fields.system', '账号类型'),
       value: record.system ? systemLabels.system : systemLabels.custom,
+    },
+    {
+      label: formatMessage(
+        'pages.system.users.fields.forcePasswordChange',
+        '强制改密',
+      ),
+      value: record.forcePasswordChange
+        ? formatMessage('pages.system.users.boolean.yes', '是')
+        : formatMessage('pages.system.users.boolean.no', '否'),
+    },
+    {
+      label: formatMessage('pages.system.users.fields.remark', '备注'),
+      value: record.remark,
+    },
+    {
+      label: formatMessage('pages.system.users.fields.lastLoginAt', '最近登录'),
+      value: record.lastLoginAt,
+    },
+    {
+      label: formatMessage(
+        'pages.system.users.fields.lastLoginIp',
+        '最近登录 IP',
+      ),
+      value: record.lastLoginIp,
+    },
+    {
+      label: formatMessage(
+        'pages.system.users.fields.lastLoginLocation',
+        '最近登录地点',
+      ),
+      value: record.lastLoginLocation,
+    },
+    {
+      label: formatMessage('pages.system.users.fields.createdAt', '创建时间'),
+      value: record.createdAt,
+    },
+    {
+      label: formatMessage('pages.system.users.fields.updatedAt', '更新时间'),
+      value: record.updatedAt,
     },
   ];
   const flatDeptRows = useMemo(
@@ -491,43 +482,52 @@ export default function UsersPage() {
   const roleOptions = useMemo(() => createRoleOptions(roleRows), [roleRows]);
   const postNames = useMemo(() => createPostNameMap(postRows), [postRows]);
   const postOptions = useMemo(() => createPostOptions(postRows), [postRows]);
-  const { filteredRows, toolbar: filterToolbar } =
-    useCurrentPageFilters<UserSummary>({
-      rows,
-      searchFields,
-      searchPlaceholder: formatMessage(
-        'pages.system.users.search.placeholder',
-        'Search users',
-      ),
-      selectFilters: filterOptions,
-    });
   const selectedUserIds = useMemo(
     () =>
       selectedRowKeys
         .map((key) => String(key))
-        .filter((id) =>
-          filteredRows.some((row) => row.id === id && !row.system),
-        ),
-    [filteredRows, selectedRowKeys],
+        .filter((id) => {
+          const row = rows.find((user) => user.id === id);
+
+          if (row) {
+            return !row.system;
+          }
+
+          const picked = pickedUsers.find((user) => user.id === id);
+          return Boolean(picked && !picked.system);
+        }),
+    [pickedUsers, rows, selectedRowKeys],
   );
+  const selectedUsersForPicker = useMemo(() => {
+    const byId = new Map<string, UserSummary>();
+
+    for (const user of pickedUsers) {
+      byId.set(user.id, user);
+    }
+
+    for (const user of rows) {
+      if (selectedRowKeys.includes(user.id)) {
+        byId.set(user.id, user);
+      }
+    }
+
+    return [...byId.values()];
+  }, [pickedUsers, rows, selectedRowKeys]);
   const selectedUserCount = selectedUserIds.length;
 
-  const loadUsers = async (deptId = selectedDeptId) => {
+  const reloadUsers = () => {
+    actionRef.current?.reload();
+  };
+
+  const loadSupportData = async () => {
     setLoading(true);
     try {
-      const [users, roles, deptTree, deptOptions, posts] = await Promise.all([
-        listOpenCoreUsers(deptId ? { deptId } : undefined),
+      const [roles, deptTree, deptOptions, posts] = await Promise.all([
         listOpenCoreRoles(),
         listOpenCoreSystemDepts(),
         listOpenCoreSystemDeptOptions(),
         listOpenCoreSystemPostOptions(),
       ]);
-      setRows(users);
-      setSelectedRowKeys((current) =>
-        current.filter((key) =>
-          users.some((user) => user.id === String(key) && !user.system),
-        ),
-      );
       setRoleRows(roles);
       setDeptTreeRows(deptTree);
       setDeptOptionRows(deptOptions);
@@ -535,7 +535,9 @@ export default function UsersPage() {
       setLoadError(undefined);
     } catch (error: unknown) {
       setRows([]);
+      setTotalRows(0);
       setSelectedRowKeys([]);
+      setPickedUsers([]);
       setRoleRows([]);
       setDeptTreeRows([]);
       setDeptOptionRows([]);
@@ -564,12 +566,17 @@ export default function UsersPage() {
   };
 
   useEffect(() => {
-    void loadUsers();
+    void loadSupportData();
   }, []);
 
-  const selectDept = async (deptId: string | undefined) => {
+  useEffect(() => {
+    actionRef.current?.reload();
+  }, [selectedDeptId]);
+
+  const selectDept = (deptId: string | undefined) => {
     setSelectedDeptId(deptId);
-    await loadUsers(deptId);
+    setSelectedRowKeys([]);
+    setPickedUsers([]);
   };
 
   const openCreateForm = () => {
@@ -577,6 +584,10 @@ export default function UsersPage() {
     form.setFieldsValue({
       username: '',
       displayName: '',
+      mobile: '',
+      email: '',
+      gender: 'unknown',
+      remark: '',
       password: '',
       roleCodes: [],
       deptId: undefined,
@@ -604,9 +615,8 @@ export default function UsersPage() {
   const downloadUserExcelExport = async () => {
     setExportingUsers(true);
     try {
-      const exported = await exportOpenCoreUsers(
-        selectedDeptId ? { deptId: selectedDeptId } : undefined,
-      );
+      const { page: _page, pageSize: _pageSize, ...exportQuery } = currentQuery;
+      const exported = await exportOpenCoreUsers(exportQuery);
 
       if (!exported.contentBase64 || !exported.contentType) {
         message.warning(
@@ -659,6 +669,10 @@ export default function UsersPage() {
       form.setFieldsValue({
         username: fresh.username,
         displayName: fresh.displayName,
+        mobile: fresh.mobile,
+        email: fresh.email,
+        gender: fresh.gender ?? 'unknown',
+        remark: fresh.remark,
         password: undefined,
         roleCodes: [...fresh.roleCodes],
         deptId: fresh.deptId,
@@ -772,6 +786,10 @@ export default function UsersPage() {
       if (editingUser) {
         await updateOpenCoreUser(editingUser.id, {
           displayName: values.displayName,
+          mobile: normalizeNullableFormText(values.mobile),
+          email: normalizeNullableFormText(values.email),
+          gender: values.gender ?? 'unknown',
+          remark: normalizeNullableFormText(values.remark),
           password: password || undefined,
           roleCodes,
           deptId: values.deptId ?? null,
@@ -785,6 +803,10 @@ export default function UsersPage() {
         await createOpenCoreUser({
           username: values.username,
           displayName: values.displayName,
+          mobile: normalizeNullableFormText(values.mobile),
+          email: normalizeNullableFormText(values.email),
+          gender: values.gender ?? 'unknown',
+          remark: normalizeNullableFormText(values.remark),
           password: password ?? '',
           roleCodes,
           deptId: values.deptId,
@@ -797,7 +819,7 @@ export default function UsersPage() {
       }
       setFormOpen(false);
       setEditingUser(undefined);
-      await loadUsers();
+      reloadUsers();
     } finally {
       setSubmitting(false);
     }
@@ -811,19 +833,43 @@ export default function UsersPage() {
     const values = await resetPasswordForm.validateFields();
     setResetPasswordSubmitting(true);
     try {
+      const password = values.password?.trim();
       const result = await resetOpenCoreUserPassword(resetPasswordUser.id, {
-        password: values.password,
+        password: password || undefined,
       });
       message.success(
         formatMessage(
           'pages.system.users.messages.passwordReset',
-          'Password reset. {revokedSessions}',
-          { revokedSessions: formatRevokedSessions(result.revokedSessionCount) },
+          '密码已重置。{revokedSessions}',
+          {
+            revokedSessions: formatRevokedSessions(result.revokedSessionCount),
+          },
         ),
       );
+      if (result.temporaryPassword) {
+        Modal.success({
+          title: formatMessage(
+            'pages.system.users.resetPassword.temporaryPasswordTitle',
+            '临时密码已生成',
+          ),
+          content: (
+            <Space direction="vertical">
+              <Typography.Text>
+                {formatMessage(
+                  'pages.system.users.resetPassword.temporaryPasswordHint',
+                  '请复制临时密码并通过安全渠道交给用户。',
+                )}
+              </Typography.Text>
+              <Typography.Text copyable code>
+                {result.temporaryPassword}
+              </Typography.Text>
+            </Space>
+          ),
+        });
+      }
       setResetPasswordOpen(false);
       setResetPasswordUser(undefined);
-      await loadUsers();
+      reloadUsers();
     } finally {
       setResetPasswordSubmitting(false);
     }
@@ -844,12 +890,14 @@ export default function UsersPage() {
         formatMessage(
           'pages.system.users.roleAssignment.messages.updated',
           'Roles assigned. {revokedSessions}',
-          { revokedSessions: formatRevokedSessions(result.revokedSessionCount) },
+          {
+            revokedSessions: formatRevokedSessions(result.revokedSessionCount),
+          },
         ),
       );
       setAssignRolesOpen(false);
       setAssigningRoleUser(undefined);
-      await loadUsers();
+      reloadUsers();
     } finally {
       setAssignRolesSubmitting(false);
     }
@@ -869,10 +917,12 @@ export default function UsersPage() {
           result.enabled
             ? 'User enabled. {revokedSessions}'
             : 'User disabled. {revokedSessions}',
-          { revokedSessions: formatRevokedSessions(result.revokedSessionCount) },
+          {
+            revokedSessions: formatRevokedSessions(result.revokedSessionCount),
+          },
         ),
       );
-      await loadUsers();
+      reloadUsers();
     } finally {
       setStatusUpdatingUserId(undefined);
     }
@@ -887,7 +937,7 @@ export default function UsersPage() {
         { revokedSessions: formatRevokedSessions(result.revokedSessionCount) },
       ),
     );
-    await loadUsers();
+    reloadUsers();
   };
 
   const batchSetUsersStatus = async (enabled: boolean) => {
@@ -925,7 +975,8 @@ export default function UsersPage() {
         ),
       );
       setSelectedRowKeys([]);
-      await loadUsers();
+      setPickedUsers([]);
+      reloadUsers();
     } finally {
       setBatchAction(undefined);
     }
@@ -960,7 +1011,8 @@ export default function UsersPage() {
         ),
       );
       setSelectedRowKeys([]);
-      await loadUsers();
+      setPickedUsers([]);
+      reloadUsers();
     } finally {
       setBatchAction(undefined);
     }
@@ -998,16 +1050,49 @@ export default function UsersPage() {
         setImportOpen(false);
       }
 
-      await loadUsers();
+      reloadUsers();
     } finally {
       setImportSubmitting(false);
     }
   };
 
+  const previewImportUsers = async () => {
+    const file = importFileList[0]?.originFileObj;
+
+    if (!file) {
+      message.warning(
+        formatMessage(
+          'pages.system.users.messages.selectImportFile',
+          '请选择要导入的 CSV 或 XLSX 文件。',
+        ),
+      );
+      return;
+    }
+
+    setImportPreviewing(true);
+    try {
+      const result = await previewOpenCoreUsersImport({
+        contentBase64: await readFileAsDataUrl(
+          file,
+          formatMessage(
+            'pages.system.users.messages.fileReadFailure',
+            '文件读取失败。',
+          ),
+        ),
+        updateExisting: importUpdateExisting,
+      });
+      setImportResult(result);
+      message.success(formatImportSummary(result));
+    } finally {
+      setImportPreviewing(false);
+    }
+  };
+
   const columns: ProColumns<UserSummary>[] = [
     {
-      title: formatMessage('pages.system.users.fields.username', 'Username'),
+      title: formatMessage('pages.system.users.fields.username', '账号'),
       dataIndex: 'username',
+      sorter: true,
       render: (_, record) => (
         <Typography.Link onClick={() => void openDetail(record)}>
           {record.username}
@@ -1015,21 +1100,41 @@ export default function UsersPage() {
       ),
     },
     {
-      title: formatMessage(
-        'pages.system.users.fields.displayName',
-        'Display Name',
-      ),
+      title: formatMessage('pages.system.users.fields.displayName', '显示名称'),
       dataIndex: 'displayName',
+      sorter: true,
     },
     {
-      title: formatMessage('pages.system.users.fields.department', 'Department'),
+      title: formatMessage('pages.system.users.fields.mobile', '手机号'),
+      dataIndex: 'mobile',
+      sorter: true,
+      responsive: ['lg'],
+      render: (_, record) => record.mobile ?? '-',
+    },
+    {
+      title: formatMessage('pages.system.users.fields.email', '邮箱'),
+      dataIndex: 'email',
+      sorter: true,
+      responsive: ['xl'],
+      render: (_, record) => record.email ?? '-',
+    },
+    {
+      title: formatMessage('pages.system.users.fields.department', '部门'),
       dataIndex: 'deptId',
+      search: false,
       render: (_, record) =>
         record.deptId ? (deptNames.get(record.deptId) ?? record.deptId) : '-',
     },
     {
-      title: formatMessage('pages.system.users.fields.roles', 'Roles'),
-      dataIndex: 'roleCodes',
+      title: formatMessage('pages.system.users.fields.roles', '角色'),
+      dataIndex: 'roleCode',
+      valueType: 'select',
+      fieldProps: {
+        allowClear: true,
+        options: roleOptions,
+        showSearch: true,
+        optionFilterProp: 'label',
+      },
       render: (_, record) => (
         <Space wrap size={4}>
           {record.roleCodes.map((code) => (
@@ -1039,8 +1144,16 @@ export default function UsersPage() {
       ),
     },
     {
-      title: formatMessage('pages.system.users.fields.posts', 'Posts'),
-      dataIndex: 'postCodes',
+      title: formatMessage('pages.system.users.fields.posts', '岗位'),
+      dataIndex: 'postCode',
+      valueType: 'select',
+      hideInTable: false,
+      fieldProps: {
+        allowClear: true,
+        options: postOptions,
+        showSearch: true,
+        optionFilterProp: 'label',
+      },
       render: (_, record) =>
         record.postCodes.length > 0 ? (
           <Space wrap size={4}>
@@ -1053,8 +1166,13 @@ export default function UsersPage() {
         ),
     },
     {
-      title: formatMessage('pages.system.users.fields.status', 'Status'),
+      title: formatMessage('pages.system.users.fields.status', '状态'),
       dataIndex: 'enabled',
+      valueType: 'select',
+      valueEnum: {
+        true: { text: statusLabels.enabled, status: 'Success' },
+        false: { text: statusLabels.disabled, status: 'Error' },
+      },
       width: 96,
       render: (_, record) => (
         <Tag color={record.enabled ? 'green' : 'red'}>
@@ -1063,8 +1181,9 @@ export default function UsersPage() {
       ),
     },
     {
-      title: formatMessage('pages.system.users.fields.system', 'System'),
+      title: formatMessage('pages.system.users.fields.system', '账号类型'),
       dataIndex: 'system',
+      search: false,
       width: 96,
       render: (_, record) => (
         <Tag color={record.system ? 'blue' : 'default'}>
@@ -1073,16 +1192,20 @@ export default function UsersPage() {
       ),
     },
     {
+      title: formatMessage('pages.system.users.fields.lastLoginAt', '最近登录'),
+      dataIndex: 'lastLoginAt',
+      search: false,
+      responsive: ['xl'],
+      render: (_, record) => record.lastLoginAt ?? '-',
+    },
+    {
       title: formatMessage('pages.system.users.actions.column', 'Actions'),
       valueType: 'option',
       width: 248,
       render: (_, record) => (
         <Space size="small">
           <Tooltip
-            title={formatMessage(
-              'pages.system.users.actions.detail',
-              'Detail',
-            )}
+            title={formatMessage('pages.system.users.actions.detail', 'Detail')}
           >
             <Button
               aria-label={formatMessage(
@@ -1155,9 +1278,7 @@ export default function UsersPage() {
                   record.enabled
                     ? 'pages.system.users.actions.disableAria'
                     : 'pages.system.users.actions.enableAria',
-                  record.enabled
-                    ? 'Disable {username}'
-                    : 'Enable {username}',
+                  record.enabled ? 'Disable {username}' : 'Enable {username}',
                   { username: record.username },
                 )}
                 danger={record.enabled}
@@ -1230,7 +1351,10 @@ export default function UsersPage() {
               'pages.system.users.confirm.deleteOne',
               'Delete this user?',
             )}
-            okText={formatMessage('pages.system.users.actions.delete', 'Delete')}
+            okText={formatMessage(
+              'pages.system.users.actions.delete',
+              'Delete',
+            )}
             okButtonProps={{ danger: true }}
             onConfirm={() => void deleteUser(record)}
           >
@@ -1241,10 +1365,7 @@ export default function UsersPage() {
                       'pages.system.users.actions.systemDeleteLocked',
                       'System users cannot be deleted',
                     )
-                  : formatMessage(
-                      'pages.system.users.actions.delete',
-                      'Delete',
-                    )
+                  : formatMessage('pages.system.users.actions.delete', 'Delete')
               }
             >
               <Button
@@ -1292,7 +1413,10 @@ export default function UsersPage() {
               )}
             </Typography.Text>
             <Tooltip
-              title={formatMessage('pages.system.users.actions.reload', 'Reload')}
+              title={formatMessage(
+                'pages.system.users.actions.reload',
+                'Reload',
+              )}
             >
               <Button
                 aria-label={formatMessage(
@@ -1300,7 +1424,7 @@ export default function UsersPage() {
                   'Reload users',
                 )}
                 icon={<ReloadOutlined />}
-                onClick={() => void loadUsers()}
+                onClick={reloadUsers}
                 size="small"
               />
             </Tooltip>
@@ -1327,14 +1451,69 @@ export default function UsersPage() {
             treeData={deptFilterTreeData}
           />
         </div>
-        <div style={usersTablePanelStyle}>
+        <div
+          data-opencore-system-users-live-table="true"
+          style={usersTablePanelStyle}
+        >
           <ProTable<UserSummary>
+            actionRef={actionRef}
             rowKey="id"
             loading={loading}
-            search={false}
+            params={{ deptId: selectedDeptId }}
+            request={async (params, sort) => {
+              const query = createListUsersRequest(
+                params as Record<string, unknown>,
+                sort as Record<string, unknown>,
+                selectedDeptId,
+              );
+
+              try {
+                const page = await listOpenCoreUsers(query);
+                setRows(page.list);
+                setTotalRows(page.total);
+                setCurrentQuery(query);
+                setSelectedRowKeys((current) =>
+                  current.filter((key) => {
+                    const id = String(key);
+                    const pageUser = page.list.find((user) => user.id === id);
+
+                    if (pageUser) {
+                      return !pageUser.system;
+                    }
+
+                    return pickedUsers.some(
+                      (user) => user.id === id && !user.system,
+                    );
+                  }),
+                );
+                setLoadError(undefined);
+
+                return {
+                  data: [...page.list],
+                  success: true,
+                  total: page.total,
+                };
+              } catch (error: unknown) {
+                setRows([]);
+                setTotalRows(0);
+                setLoadError(
+                  error instanceof Error
+                    ? error.message
+                    : formatMessage(
+                        'pages.system.users.load.failure',
+                        '无法加载用户列表。',
+                      ),
+                );
+
+                return {
+                  data: [],
+                  success: false,
+                  total: 0,
+                };
+              }
+            }}
             options={false}
             toolBarRender={() => [
-              filterToolbar,
               <Button
                 disabled={selectedUserCount === 0}
                 icon={<CheckCircleOutlined />}
@@ -1344,7 +1523,7 @@ export default function UsersPage() {
               >
                 {formatMessage(
                   'pages.system.users.actions.enableSelected',
-                  'Enable selected',
+                  '启用已选',
                 )}
               </Button>,
               <Button
@@ -1356,14 +1535,14 @@ export default function UsersPage() {
               >
                 {formatMessage(
                   'pages.system.users.actions.disableSelected',
-                  'Disable selected',
+                  '禁用已选',
                 )}
               </Button>,
               <Popconfirm
                 key="batch-delete"
                 title={formatMessage(
                   'pages.system.users.confirm.deleteSelected',
-                  'Delete {count} selected user(s)?',
+                  '删除已选的 {count} 个用户？',
                   { count: selectedUserCount },
                 )}
                 okText={formatMessage(
@@ -1381,17 +1560,34 @@ export default function UsersPage() {
                 >
                   {formatMessage(
                     'pages.system.users.actions.deleteSelected',
-                    'Delete selected',
+                    '删除已选',
                   )}
                 </Button>
               </Popconfirm>,
+              <UserPicker
+                buttonText={formatMessage(
+                  'pages.system.users.actions.pickUsers',
+                  '选择用户',
+                )}
+                key="pick-users"
+                onChange={(ids, users) => {
+                  setSelectedRowKeys(ids);
+                  setPickedUsers(users);
+                }}
+                selectedUsers={selectedUsersForPicker}
+                title={formatMessage(
+                  'pages.system.users.userPicker.title',
+                  '选择用户',
+                )}
+                value={selectedUserIds}
+              />,
               <Tooltip
                 key="download-import-template"
                 title={
                   canImportUsers
                     ? formatMessage(
                         'pages.system.users.actions.downloadImportTemplate',
-                        'Download import template',
+                        '下载导入模板',
                       )
                     : formatMessage(
                         'pages.system.users.permissions.missingImport',
@@ -1406,7 +1602,7 @@ export default function UsersPage() {
                 >
                   {formatMessage(
                     'pages.system.users.actions.downloadImportTemplate',
-                    'Download import template',
+                    '下载导入模板',
                   )}
                 </Button>
               </Tooltip>,
@@ -1416,7 +1612,7 @@ export default function UsersPage() {
                   canImportUsers
                     ? formatMessage(
                         'pages.system.users.actions.importUsers',
-                        'Import users',
+                        '导入用户',
                       )
                     : formatMessage(
                         'pages.system.users.permissions.missingImport',
@@ -1431,7 +1627,7 @@ export default function UsersPage() {
                 >
                   {formatMessage(
                     'pages.system.users.actions.importUsers',
-                    'Import users',
+                    '导入用户',
                   )}
                 </Button>
               </Tooltip>,
@@ -1441,14 +1637,14 @@ export default function UsersPage() {
                 icon={<PlusOutlined />}
                 onClick={openCreateForm}
               >
-                {formatMessage('pages.system.users.actions.new', 'New')}
+                {formatMessage('pages.system.users.actions.new', '新建')}
               </Button>,
               <Button
                 key="refresh"
                 icon={<ReloadOutlined />}
-                onClick={() => void loadUsers()}
+                onClick={reloadUsers}
               >
-                {formatMessage('pages.system.users.actions.refresh', 'Refresh')}
+                {formatMessage('pages.system.users.actions.refresh', '刷新')}
               </Button>,
               <Tooltip
                 key="download-user-excel-export"
@@ -1456,7 +1652,7 @@ export default function UsersPage() {
                   canExportUsers
                     ? formatMessage(
                         'pages.system.users.actions.downloadExcel',
-                        'Download Excel export',
+                        '下载 Excel 导出',
                       )
                     : formatMessage(
                         'pages.system.users.permissions.missingExport',
@@ -1472,37 +1668,34 @@ export default function UsersPage() {
                 >
                   {formatMessage(
                     'pages.system.users.actions.downloadExcelShort',
-                    'Download Excel',
+                    '下载 Excel',
                   )}
                 </Button>
               </Tooltip>,
-              <CurrentPageExportButton<UserSummary>
-                key="export"
-                columns={exportColumns}
-                resource="core-users"
-                rows={filteredRows}
-              />,
             ]}
-            pagination={{ pageSize: 10 }}
-            dataSource={filteredRows}
+            pagination={{
+              pageSize: 10,
+              showSizeChanger: true,
+              total: totalRows,
+            }}
             columns={columns}
             rowSelection={{
               selectedRowKeys,
-              onChange: (keys) => setSelectedRowKeys([...keys]),
+              onChange: (keys, selectedRows) => {
+                setSelectedRowKeys([...keys]);
+                setPickedUsers(selectedRows);
+              },
               getCheckboxProps: (record) => ({
                 disabled: record.system,
                 name: record.username,
               }),
+              preserveSelectedRowKeys: true,
             }}
           />
         </div>
       </div>
       <ReadOnlyDetailDrawer
-        fields={
-          selectedDetail
-            ? createDetailFields(selectedDetail)
-            : []
-        }
+        fields={selectedDetail ? createDetailFields(selectedDetail) : []}
         onClose={() => setSelectedDetail(undefined)}
         open={Boolean(selectedDetail)}
         title={
@@ -1511,15 +1704,33 @@ export default function UsersPage() {
         }
       />
       <Modal
-        title={formatMessage(
-          'pages.system.users.import.title',
-          'Import users',
-        )}
+        title={formatMessage('pages.system.users.import.title', '导入用户')}
         open={importOpen}
-        okText={formatMessage('pages.system.users.actions.import', 'Import')}
+        data-opencore-system-users-import-modal="true"
+        okText={formatMessage('pages.system.users.actions.import', '导入')}
+        footer={[
+          <Button key="cancel" onClick={() => setImportOpen(false)}>
+            {formatMessage('pages.system.users.actions.cancel', '取消')}
+          </Button>,
+          <Button
+            data-opencore-system-users-import-preview="true"
+            key="preview"
+            loading={importPreviewing}
+            onClick={() => void previewImportUsers()}
+          >
+            {formatMessage('pages.system.users.actions.previewImport', '预检')}
+          </Button>,
+          <Button
+            key="import"
+            loading={importSubmitting}
+            onClick={() => void submitImportUsers()}
+            type="primary"
+          >
+            {formatMessage('pages.system.users.actions.import', '导入')}
+          </Button>,
+        ]}
         confirmLoading={importSubmitting}
         onCancel={() => setImportOpen(false)}
-        onOk={() => void submitImportUsers()}
       >
         <Space direction="vertical" style={{ width: '100%' }} size="middle">
           <Upload
@@ -1622,7 +1833,7 @@ export default function UsersPage() {
           <Form.Item
             label={formatMessage(
               'pages.system.users.fields.displayName',
-              'Display Name',
+              '显示名称',
             )}
             name="displayName"
             rules={[
@@ -1636,6 +1847,54 @@ export default function UsersPage() {
             ]}
           >
             <Input maxLength={120} />
+          </Form.Item>
+          <Form.Item
+            label={formatMessage('pages.system.users.fields.mobile', '手机号')}
+            name="mobile"
+          >
+            <Input maxLength={32} />
+          </Form.Item>
+          <Form.Item
+            label={formatMessage('pages.system.users.fields.email', '邮箱')}
+            name="email"
+            rules={[
+              {
+                type: 'email',
+                message: formatMessage(
+                  'pages.system.users.validation.emailInvalid',
+                  '邮箱格式不正确。',
+                ),
+              },
+            ]}
+          >
+            <Input maxLength={128} />
+          </Form.Item>
+          <Form.Item
+            label={formatMessage('pages.system.users.fields.gender', '性别')}
+            name="gender"
+          >
+            <Select
+              options={[
+                {
+                  label: formatMessage(
+                    'pages.system.users.gender.unknown',
+                    '未知',
+                  ),
+                  value: 'unknown',
+                },
+                {
+                  label: formatMessage('pages.system.users.gender.male', '男'),
+                  value: 'male',
+                },
+                {
+                  label: formatMessage(
+                    'pages.system.users.gender.female',
+                    '女',
+                  ),
+                  value: 'female',
+                },
+              ]}
+            />
           </Form.Item>
           {!editingUser ? (
             <Form.Item
@@ -1658,7 +1917,7 @@ export default function UsersPage() {
             </Form.Item>
           ) : null}
           <Form.Item
-            label={formatMessage('pages.system.users.fields.roles', 'Roles')}
+            label={formatMessage('pages.system.users.fields.roles', '角色')}
             name="roleCodes"
             rules={[{ type: 'array' }]}
           >
@@ -1677,7 +1936,7 @@ export default function UsersPage() {
           <Form.Item
             label={formatMessage(
               'pages.system.users.fields.department',
-              'Department',
+              '部门',
             )}
             name="deptId"
           >
@@ -1693,7 +1952,7 @@ export default function UsersPage() {
             />
           </Form.Item>
           <Form.Item
-            label={formatMessage('pages.system.users.fields.posts', 'Posts')}
+            label={formatMessage('pages.system.users.fields.posts', '岗位')}
             name="postCodes"
             rules={[{ type: 'array' }]}
           >
@@ -1710,7 +1969,7 @@ export default function UsersPage() {
             />
           </Form.Item>
           <Form.Item
-            label={formatMessage('pages.system.users.fields.enabled', 'Enabled')}
+            label={formatMessage('pages.system.users.fields.enabled', '启用')}
             name="enabled"
             valuePropName="checked"
           >
@@ -1718,6 +1977,12 @@ export default function UsersPage() {
               checkedChildren={statusLabels.enabled}
               unCheckedChildren={statusLabels.disabled}
             />
+          </Form.Item>
+          <Form.Item
+            label={formatMessage('pages.system.users.fields.remark', '备注')}
+            name="remark"
+          >
+            <Input.TextArea maxLength={500} rows={3} showCount />
           </Form.Item>
         </Form>
       </Modal>
@@ -1740,20 +2005,18 @@ export default function UsersPage() {
           <Form.Item
             label={formatMessage(
               'pages.system.users.fields.newPassword',
-              'New Password',
+              '新密码',
             )}
             name="password"
-            rules={[
-              {
-                required: true,
-                message: formatMessage(
-                  'pages.system.users.validation.passwordRequired',
-                  'Password is required.',
-                ),
-              },
-            ]}
           >
-            <Input.Password autoComplete="new-password" maxLength={128} />
+            <Input.Password
+              autoComplete="new-password"
+              maxLength={128}
+              placeholder={formatMessage(
+                'pages.system.users.resetPassword.autoGeneratePlaceholder',
+                '留空自动生成临时密码',
+              )}
+            />
           </Form.Item>
         </Form>
       </Modal>
@@ -1818,6 +2081,111 @@ export default function UsersPage() {
       </Modal>
     </PageContainer>
   );
+}
+
+function createListUsersRequest(
+  params: Record<string, unknown>,
+  sort: Record<string, unknown>,
+  deptId: string | undefined,
+): ListUsersRequest {
+  return removeUndefinedFields({
+    ...toUserOrderQuery(sort),
+    deptId,
+    username: normalizeOptionalFormText(params.username),
+    displayName: normalizeOptionalFormText(params.displayName),
+    mobile: normalizeOptionalFormText(params.mobile),
+    email: normalizeOptionalFormText(params.email),
+    enabled: normalizeOptionalEnabled(params.enabled),
+    roleCode: normalizeOptionalFormText(params.roleCode),
+    postCode: normalizeOptionalFormText(params.postCode),
+    page: normalizeOptionalNumber(params.current, 1),
+    pageSize: normalizeOptionalNumber(params.pageSize, 10),
+  });
+}
+
+function normalizeOptionalFormText(value: unknown): string | undefined {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+
+  const normalized = value.trim();
+  return normalized || undefined;
+}
+
+function normalizeNullableFormText(value: unknown): string | null {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const normalized = value.trim();
+  return normalized || null;
+}
+
+function normalizeOptionalEnabled(value: unknown): boolean | undefined {
+  if (value === true || value === 'true') {
+    return true;
+  }
+
+  if (value === false || value === 'false') {
+    return false;
+  }
+
+  return undefined;
+}
+
+function normalizeOptionalNumber(value: unknown, fallback: number): number {
+  const parsed = typeof value === 'number' ? value : Number(value);
+
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function toUserOrderQuery(
+  sort: Record<string, unknown>,
+): Pick<ListUsersRequest, 'orderBy' | 'orderDirection'> {
+  const sortableFields = new Set([
+    'createdAt',
+    'displayName',
+    'email',
+    'enabled',
+    'mobile',
+    'updatedAt',
+    'username',
+  ]);
+  const sorted = Object.entries(sort).find(
+    ([field, order]) =>
+      sortableFields.has(field) && (order === 'ascend' || order === 'descend'),
+  );
+
+  if (!sorted) {
+    return {};
+  }
+
+  return {
+    orderBy: sorted[0],
+    orderDirection: sorted[1] === 'descend' ? 'desc' : 'asc',
+  };
+}
+
+function removeUndefinedFields<T extends Record<string, unknown>>(value: T): T {
+  return Object.fromEntries(
+    Object.entries(value).filter((entry) => entry[1] !== undefined),
+  ) as T;
+}
+
+function formatGender(value: string | undefined): string | undefined {
+  if (value === 'male') {
+    return '男';
+  }
+
+  if (value === 'female') {
+    return '女';
+  }
+
+  if (value === 'unknown') {
+    return '未知';
+  }
+
+  return value;
 }
 
 function readFileAsDataUrl(
