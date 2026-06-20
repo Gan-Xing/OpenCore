@@ -67,11 +67,14 @@ import {
   DictBatchMutationResultDto,
   DictCacheRefreshDto,
   DictDeleteMutationResultDto,
+  DictImportResultDto,
+  DictImportTemplateDto,
   DictItemDto,
   DictItemBatchMutationResultDto,
   DictItemDeleteMutationResultDto,
   DictItemPageDto,
   DictItemQueryDto,
+  DictTranslationResultDto,
   DictTypeDto,
   DictTypePageDto,
   DictTypeQueryDto,
@@ -83,6 +86,7 @@ import {
   LoginLogDto,
   LoginLogBatchMutationResultDto,
   LoginLogCleanResultDto,
+  ImportDictsDto,
   IpLocationLookupDto,
   IpLocationLookupQueryDto,
   IpLocationProviderStatusDto,
@@ -143,6 +147,7 @@ import {
   UpdateSystemPostOrderDto,
   UpdateDictItemDto,
   UpdateDictTypeDto,
+  TranslateDictValuesDto,
   UpdateFileAssetDto,
   UploadFileAssetDto,
   UpdateSystemConfigDto,
@@ -211,6 +216,42 @@ export class SystemManagementController {
     return this.dicts.createExportPreview(query);
   }
 
+  @Get('dicts/recycle-bin')
+  @ApiTags('Core Dictionaries')
+  @RequirePermission('core:dict:read')
+  @ApiOkResponse({ type: DictTypePageDto })
+  listDeletedDicts(
+    @Query() query: DictTypeQueryDto,
+  ): Promise<DictTypePageDto> {
+    return this.dicts.listDeletedDicts(query);
+  }
+
+  @Get('dicts/import-template')
+  @ApiTags('Core Dictionaries')
+  @RequirePermission('core:dict:export')
+  @ApiOkResponse({ type: DictImportTemplateDto })
+  getDictImportTemplate(): DictImportTemplateDto {
+    return this.dicts.createImportTemplate();
+  }
+
+  @Post('dicts/import/preview')
+  @ApiTags('Core Dictionaries')
+  @RequirePermission('core:dict:create')
+  @ApiOkResponse({ type: DictImportResultDto })
+  previewImportDicts(
+    @Body() body: ImportDictsDto,
+  ): Promise<DictImportResultDto> {
+    return this.dicts.previewImportDicts(body);
+  }
+
+  @Post('dicts/import')
+  @ApiTags('Core Dictionaries')
+  @RequirePermission('core:dict:create')
+  @ApiOkResponse({ type: DictImportResultDto })
+  importDicts(@Body() body: ImportDictsDto): Promise<DictImportResultDto> {
+    return this.dicts.importDicts(body);
+  }
+
   @Get('dict-items')
   @ApiTags('Core Dictionaries')
   @RequirePermission('core:dict:read')
@@ -227,6 +268,16 @@ export class SystemManagementController {
   @ApiOkResponse({ type: ExportPreviewDto })
   exportDictItems(@Query() query: DictItemQueryDto): Promise<ExportPreviewDto> {
     return this.dicts.createItemsExportPreview(query);
+  }
+
+  @Get('dict-items/recycle-bin')
+  @ApiTags('Core Dictionaries')
+  @RequirePermission('core:dict:read')
+  @ApiOkResponse({ type: DictItemPageDto })
+  listDeletedDictItemsPage(
+    @Query() query: DictItemQueryDto,
+  ): Promise<DictItemPageDto> {
+    return this.dicts.listDeletedDictItemsPage(query);
   }
 
   @Patch('dicts/status')
@@ -275,6 +326,16 @@ export class SystemManagementController {
   @ApiOkResponse({ type: DictCacheRefreshDto })
   refreshDictCache(): Promise<DictCacheRefreshDto> {
     return this.dicts.refreshDictCache();
+  }
+
+  @Post('dict-data/translate')
+  @ApiTags('Core Dictionaries')
+  @RequirePermission('core:dict:read')
+  @ApiOkResponse({ type: DictTranslationResultDto })
+  translateDictValues(
+    @Body() body: TranslateDictValuesDto,
+  ): Promise<DictTranslationResultDto> {
+    return this.dicts.translateDictValues(body);
   }
 
   @Get('dict-data/simple-list')
@@ -332,6 +393,22 @@ export class SystemManagementController {
     return this.dicts.createDictItem(code, body);
   }
 
+  @Patch('dicts/:code/restore')
+  @ApiTags('Core Dictionaries')
+  @RequirePermission('core:dict:update')
+  @ApiOkResponse({ type: DictTypeDto })
+  restoreDict(@Param('code') code: string): Promise<DictTypeDto> {
+    return this.dicts.restoreDict(code);
+  }
+
+  @Delete('dicts/:code/hard')
+  @ApiTags('Core Dictionaries')
+  @RequirePermission('core:dict:delete')
+  @ApiOkResponse({ type: DeleteResultDto })
+  hardDeleteDict(@Param('code') code: string): Promise<DeleteResultDto> {
+    return this.dicts.hardDeleteDict(code);
+  }
+
   @Patch('dicts/:code')
   @ApiTags('Core Dictionaries')
   @RequirePermission('core:dict:update')
@@ -364,6 +441,24 @@ export class SystemManagementController {
     @Param('itemId') itemId: string,
   ): Promise<DeleteResultDto> {
     return this.dicts.deleteDictItem(code, itemId);
+  }
+
+  @Patch('dict-items/:itemId/restore')
+  @ApiTags('Core Dictionaries')
+  @RequirePermission('core:dict:update')
+  @ApiOkResponse({ type: DictItemDto })
+  restoreDictItem(@Param('itemId') itemId: string): Promise<DictItemDto> {
+    return this.dicts.restoreDictItem(itemId);
+  }
+
+  @Delete('dict-items/:itemId/hard')
+  @ApiTags('Core Dictionaries')
+  @RequirePermission('core:dict:delete')
+  @ApiOkResponse({ type: DeleteResultDto })
+  hardDeleteDictItem(
+    @Param('itemId') itemId: string,
+  ): Promise<DeleteResultDto> {
+    return this.dicts.hardDeleteDictItem(itemId);
   }
 
   @Delete('dicts/:code')

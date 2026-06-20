@@ -4,11 +4,14 @@ import {
   DownloadOutlined,
   EditOutlined,
   EyeOutlined,
+  HistoryOutlined,
   OrderedListOutlined,
   PlusOutlined,
   ReloadOutlined,
+  RestOutlined,
   StopOutlined,
   SyncOutlined,
+  UploadOutlined,
 } from '@ant-design/icons';
 import {
   PageContainer,
@@ -19,6 +22,7 @@ import {
 import type {
   DictItemQueryRequest,
   DictItemSummary,
+  DictImportResultSummary,
   DictTypeQueryRequest,
   DictTypeSummary,
   ExportPreview,
@@ -27,6 +31,7 @@ import { useAccess } from '@umijs/max';
 import {
   Alert,
   Button,
+  Checkbox,
   Empty,
   Form,
   Grid,
@@ -40,8 +45,10 @@ import {
   Tag,
   Tooltip,
   Typography,
+  Upload,
   message,
   type TablePaginationConfig,
+  type UploadFile,
 } from 'antd';
 import { createStyles } from 'antd-style';
 import { useMemo, useRef, useState, type Key } from 'react';
@@ -54,16 +61,27 @@ import {
   deleteOpenCoreDicts,
   exportOpenCoreDictItems,
   exportOpenCoreDicts,
+  getOpenCoreDictImportTemplate,
   getOpenCoreDict,
+  hardDeleteOpenCoreDict,
+  hardDeleteOpenCoreDictItem,
+  importOpenCoreDicts,
+  listOpenCoreDeletedDictItemsPage,
+  listOpenCoreDeletedDictPage,
   listOpenCoreDictItemsPage,
   listOpenCoreDictPage,
+  previewOpenCoreDictsImport,
   refreshOpenCoreDictCache,
+  restoreOpenCoreDict,
+  restoreOpenCoreDictItem,
+  translateOpenCoreDictValues,
   updateOpenCoreDict,
   updateOpenCoreDictItem,
   updateOpenCoreDictItemStatus,
   updateOpenCoreDictStatus,
 } from '@/services/opencore/platform';
 import { clearDictOptionsCache } from '@/components';
+import { downloadBase64File } from '../shared/downloadBase64File';
 import {
   ReadOnlyDetailDrawer,
   type DetailField,
@@ -115,20 +133,30 @@ const text = {
   cacheRefreshFailure: '字典缓存刷新失败。',
   cacheRefreshed: '字典缓存已刷新。',
   colorDefault: '默认',
+  cancel: '取消',
   confirmDeleteDict: '确认删除该字典？有字典项时请先清空字典项。',
   confirmDeleteDictItem: '确认删除该字典项？',
+  confirmHardDeleteDict: '确认永久删除该字典？该操作不可恢复。',
+  confirmHardDeleteDictItem: '确认永久删除该字典项？该操作不可恢复。',
   create: '创建',
   createDict: '新建字典',
   createDictItem: '新建字典项',
   delete: '删除',
   deleteSelectedDictItems: '删除选中字典项',
   deleteSelectedDicts: '删除选中字典',
+  downloadImportTemplate: '下载模板',
   detail: '详情',
   dictCreated: '字典已创建。',
   dictDeleted: '字典已删除。',
+  dictHardDeleted: '字典已永久删除。',
+  dictImportTemplateDownloaded: '字典导入模板已下载。',
+  dictImported: '字典导入已完成。',
   dictItemCreated: '字典项已创建。',
   dictItemDeleted: '字典项已删除。',
+  dictItemHardDeleted: '字典项已永久删除。',
+  dictItemRestored: '字典项已恢复。',
   dictItemUpdated: '字典项已更新。',
+  dictRestored: '字典已恢复。',
   dictStatusUpdated: '字典状态已更新。',
   dictUpdated: '字典已更新。',
   disabled: '停用',
@@ -139,6 +167,12 @@ const text = {
   export: '导出',
   exportPreviewTitle: '导出预览',
   fieldId: '标识',
+  hardDelete: '永久删除',
+  importDicts: '导入字典',
+  importFailureRows: '失败明细',
+  importPreview: '预检',
+  importSubmit: '导入',
+  importUpdateExisting: '更新已存在的字典和字典项',
   itemStatusUpdated: '字典项状态已更新。',
   loadDictDetailFailure: '无法加载实时字典详情。',
   loadDictFailure: '无法加载实时字典列表。',
@@ -148,12 +182,17 @@ const text = {
   pageTitle: '字典管理',
   refresh: '刷新',
   refreshCache: '刷新缓存',
+  recycleBin: '回收站',
+  restore: '恢复',
   save: '保存',
+  selectImportFile: '请选择要导入的 CSV 或 XLSX 文件。',
   selectedDictItems: '已选择 {count} 个字典项',
   selectedDicts: '已选择 {count} 个字典',
   systemDictDeleteDisabled: '内置字典不可删除',
   systemDictDisableDisabled: '内置字典不可停用',
   systemDictItemDeleteDisabled: '内置字典项不可删除',
+  translationPreview: '翻译校验',
+  translationUnmatched: '未匹配',
   validationCodeRequired: '请输入字典编码。',
   validationLabelRequired: '请输入显示标签。',
   validationNameRequired: '请输入字典名称。',
@@ -339,6 +378,28 @@ function showExportPreview(preview: ExportPreview) {
   });
 }
 
+function formatImportSummary(result: DictImportResultSummary): string {
+  return `字典 ${result.createdDicts} 新建、${result.updatedDicts} 更新；字典项 ${result.createdItems} 新建、${result.updatedItems} 更新；失败 ${result.failed} 行。`;
+}
+
+function formatImportFailureRow(
+  failure: DictImportResultSummary['failures'][number],
+): string {
+  return `第 ${failure.rowNumber} 行：${failure.dictCode ?? '-'} ${
+    failure.itemValue ?? ''
+  } ${failure.reason}`;
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () =>
+      reject(reader.error ?? new Error('文件读取失败。'));
+    reader.onload = () => resolve(String(reader.result));
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function DictsPage() {
   const access = useAccess();
   const { styles } = useStyles();
@@ -346,6 +407,8 @@ export default function DictsPage() {
   const isNarrow = screens.lg === false;
   const typeActionRef = useRef<ActionType | undefined>(undefined);
   const itemActionRef = useRef<ActionType | undefined>(undefined);
+  const deletedDictActionRef = useRef<ActionType | undefined>(undefined);
+  const deletedItemActionRef = useRef<ActionType | undefined>(undefined);
   const [dictForm] = Form.useForm<DictTypeFormValues>();
   const [itemForm] = Form.useForm<DictItemFormValues>();
   const [loadError, setLoadError] = useState<string>();
@@ -371,6 +434,13 @@ export default function DictsPage() {
   const [selectedItemKeys, setSelectedItemKeys] = useState<readonly Key[]>([]);
   const [batchLoading, setBatchLoading] = useState(false);
   const [cacheRefreshing, setCacheRefreshing] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importSubmitting, setImportSubmitting] = useState(false);
+  const [importPreviewing, setImportPreviewing] = useState(false);
+  const [importUpdateExisting, setImportUpdateExisting] = useState(false);
+  const [importFileList, setImportFileList] = useState<UploadFile[]>([]);
+  const [importResult, setImportResult] = useState<DictImportResultSummary>();
+  const [recycleOpen, setRecycleOpen] = useState(false);
   const selectedDictCodes = useMemo(
     () =>
       selectedDictKeys
@@ -795,6 +865,114 @@ export default function DictsPage() {
     showExportPreview(await exportOpenCoreDictItems(itemQuery));
   };
 
+  const downloadImportTemplate = async () => {
+    const template = await getOpenCoreDictImportTemplate();
+    downloadBase64File(
+      template.filename,
+      template.contentBase64,
+      template.contentType,
+    );
+    message.success(text.dictImportTemplateDownloaded);
+  };
+
+  const openImportDicts = () => {
+    setImportFileList([]);
+    setImportResult(undefined);
+    setImportUpdateExisting(false);
+    setImportOpen(true);
+  };
+
+  const runImportDicts = async (dryRun: boolean) => {
+    const file = importFileList[0]?.originFileObj;
+
+    if (!file) {
+      message.warning(text.selectImportFile);
+      return;
+    }
+
+    const submit = dryRun ? previewOpenCoreDictsImport : importOpenCoreDicts;
+    const setLoading = dryRun ? setImportPreviewing : setImportSubmitting;
+
+    setLoading(true);
+    try {
+      const result = await submit({
+        contentBase64: await readFileAsDataUrl(file),
+        updateExisting: importUpdateExisting,
+      });
+      setImportResult(result);
+      message.success(formatImportSummary(result));
+
+      if (!dryRun) {
+        await refreshCache(true);
+        reloadDicts();
+        reloadItems();
+        if (result.failed === 0) {
+          setImportOpen(false);
+        }
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const reloadRecycleBin = () => {
+    deletedDictActionRef.current?.reload();
+    deletedItemActionRef.current?.reload();
+  };
+
+  const restoreDict = async (record: DictTypeSummary) => {
+    await restoreOpenCoreDict(record.code);
+    message.success(text.dictRestored);
+    await refreshCache(true);
+    reloadRecycleBin();
+    reloadDicts();
+  };
+
+  const hardDeleteDict = async (record: DictTypeSummary) => {
+    await hardDeleteOpenCoreDict(record.code);
+    message.success(text.dictHardDeleted);
+    reloadRecycleBin();
+  };
+
+  const restoreDictItem = async (record: DictItemSummary) => {
+    await restoreOpenCoreDictItem(record.id);
+    message.success(text.dictItemRestored);
+    await refreshCache(true);
+    reloadRecycleBin();
+    reloadItems();
+    reloadDicts();
+  };
+
+  const hardDeleteDictItem = async (record: DictItemSummary) => {
+    await hardDeleteOpenCoreDictItem(record.id);
+    message.success(text.dictItemHardDeleted);
+    reloadRecycleBin();
+  };
+
+  const previewTranslations = async () => {
+    if (!selectedDict) {
+      return;
+    }
+
+    const values = itemRows.map((item) => item.value);
+    const result = await translateOpenCoreDictValues({
+      entries: [{ dictCode: selectedDict.code, values }],
+    });
+
+    Modal.info({
+      title: text.translationPreview,
+      content: (
+        <Space direction="vertical" size={4}>
+          {result.items.map((item) => (
+            <Typography.Text key={`${item.dictCode}:${item.value}`}>
+              {item.value}：{item.found ? item.label : text.translationUnmatched}
+            </Typography.Text>
+          ))}
+        </Space>
+      ),
+    });
+  };
+
   const dictColumns: ProColumns<DictTypeSummary>[] = [
     {
       title: '字典编码',
@@ -1030,6 +1208,101 @@ export default function DictsPage() {
     },
   ];
 
+  const deletedDictColumns: ProColumns<DictTypeSummary>[] = [
+    {
+      title: '字典编码',
+      dataIndex: 'code',
+      ellipsis: true,
+    },
+    {
+      title: '字典名称',
+      dataIndex: 'name',
+      ellipsis: true,
+    },
+    {
+      title: '删除时间',
+      dataIndex: 'deletedAt',
+      search: false,
+      render: (_, record) => formatDateTime(record.deletedAt),
+    },
+    {
+      title: text.actionColumn,
+      valueType: 'option',
+      width: 140,
+      render: (_, record) => (
+        <Space size="small" wrap>
+          <Tooltip title={text.restore}>
+            <Button
+              icon={<SyncOutlined />}
+              onClick={() => void restoreDict(record)}
+              size="small"
+            />
+          </Tooltip>
+          <Popconfirm
+            title={text.confirmHardDeleteDict}
+            okText={text.hardDelete}
+            okButtonProps={{ danger: true }}
+            onConfirm={() => void hardDeleteDict(record)}
+          >
+            <Tooltip title={text.hardDelete}>
+              <Button danger icon={<RestOutlined />} size="small" />
+            </Tooltip>
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ];
+
+  const deletedItemColumns: ProColumns<DictItemSummary>[] = [
+    {
+      title: '字典编码',
+      dataIndex: 'dictCode',
+      ellipsis: true,
+    },
+    {
+      title: '显示标签',
+      dataIndex: 'label',
+      ellipsis: true,
+    },
+    {
+      title: '字典值',
+      dataIndex: 'value',
+      ellipsis: true,
+    },
+    {
+      title: '删除时间',
+      dataIndex: 'deletedAt',
+      search: false,
+      render: (_, record) => formatDateTime(record.deletedAt),
+    },
+    {
+      title: text.actionColumn,
+      valueType: 'option',
+      width: 140,
+      render: (_, record) => (
+        <Space size="small" wrap>
+          <Tooltip title={text.restore}>
+            <Button
+              icon={<SyncOutlined />}
+              onClick={() => void restoreDictItem(record)}
+              size="small"
+            />
+          </Tooltip>
+          <Popconfirm
+            title={text.confirmHardDeleteDictItem}
+            okText={text.hardDelete}
+            okButtonProps={{ danger: true }}
+            onConfirm={() => void hardDeleteDictItem(record)}
+          >
+            <Tooltip title={text.hardDelete}>
+              <Button danger icon={<RestOutlined />} size="small" />
+            </Tooltip>
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ];
+
   const dictPagination: TablePaginationConfig = {
     defaultPageSize: 10,
     showSizeChanger: true,
@@ -1071,6 +1344,32 @@ export default function DictsPage() {
                   onClick={() => void refreshCache()}
                 >
                   {text.refreshCache}
+                </Button>
+              ) : null}
+              {canExport ? (
+                <Button
+                  icon={<DownloadOutlined />}
+                  onClick={() => void downloadImportTemplate()}
+                >
+                  {text.downloadImportTemplate}
+                </Button>
+              ) : null}
+              {canCreate ? (
+                <Button
+                  data-opencore-system-dicts-import="true"
+                  icon={<UploadOutlined />}
+                  onClick={openImportDicts}
+                >
+                  {text.importDicts}
+                </Button>
+              ) : null}
+              {canManage ? (
+                <Button
+                  data-opencore-system-dicts-recycle="true"
+                  icon={<HistoryOutlined />}
+                  onClick={() => setRecycleOpen(true)}
+                >
+                  {text.recycleBin}
                 </Button>
               ) : null}
               {canExport ? (
@@ -1181,6 +1480,16 @@ export default function DictsPage() {
               </div>
             </div>
             <Space wrap>
+              {canManage ? (
+                <Button
+                  data-opencore-system-dicts-translate="true"
+                  disabled={!selectedDict || itemRows.length === 0}
+                  icon={<SyncOutlined />}
+                  onClick={() => void previewTranslations()}
+                >
+                  {text.translationPreview}
+                </Button>
+              ) : null}
               {canExport ? (
                 <Button
                   disabled={!selectedDict}
@@ -1286,6 +1595,126 @@ export default function DictsPage() {
         open={Boolean(selectedDetail)}
         title={selectedDetail?.name ?? '字典详情'}
       />
+
+      <Modal
+        title={text.importDicts}
+        open={importOpen}
+        onCancel={() => setImportOpen(false)}
+        width={720}
+        footer={[
+          <Button key="cancel" onClick={() => setImportOpen(false)}>
+            {text.cancel}
+          </Button>,
+          <Button
+            key="preview"
+            loading={importPreviewing}
+            onClick={() => void runImportDicts(true)}
+          >
+            {text.importPreview}
+          </Button>,
+          <Button
+            key="submit"
+            loading={importSubmitting}
+            onClick={() => void runImportDicts(false)}
+            type="primary"
+          >
+            {text.importSubmit}
+          </Button>,
+        ]}
+      >
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          <Upload
+            accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            beforeUpload={(file) => {
+              setImportFileList([file]);
+              setImportResult(undefined);
+              return false;
+            }}
+            fileList={importFileList}
+            maxCount={1}
+            onRemove={() => {
+              setImportFileList([]);
+              setImportResult(undefined);
+            }}
+          >
+            <Button icon={<UploadOutlined />}>{text.selectImportFile}</Button>
+          </Upload>
+          <Checkbox
+            checked={importUpdateExisting}
+            onChange={(event) => setImportUpdateExisting(event.target.checked)}
+          >
+            {text.importUpdateExisting}
+          </Checkbox>
+          {importResult ? (
+            <Alert
+              showIcon
+              type={importResult.failed > 0 ? 'warning' : 'success'}
+              message={formatImportSummary(importResult)}
+              description={
+                importResult.failures.length > 0 ? (
+                  <Space direction="vertical" size={2}>
+                    <Typography.Text strong>{text.importFailureRows}</Typography.Text>
+                    {importResult.failures.slice(0, 8).map((failure) => (
+                      <Typography.Text key={`${failure.rowNumber}:${failure.reason}`}>
+                        {formatImportFailureRow(failure)}
+                      </Typography.Text>
+                    ))}
+                  </Space>
+                ) : undefined
+              }
+            />
+          ) : null}
+        </Space>
+      </Modal>
+
+      <Modal
+        title={text.recycleBin}
+        open={recycleOpen}
+        onCancel={() => setRecycleOpen(false)}
+        width={960}
+        footer={null}
+      >
+        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+          <ProTable<DictTypeSummary, DictTableParams>
+            actionRef={deletedDictActionRef}
+            columns={deletedDictColumns}
+            options={false}
+            pagination={{ defaultPageSize: 5, showSizeChanger: true }}
+            request={async (params) => {
+              const page = await listOpenCoreDeletedDictPage(
+                toDictTypeQuery(params),
+              );
+              return {
+                data: [...page.items],
+                success: true,
+                total: page.total,
+              };
+            }}
+            rowKey="code"
+            search={{ labelWidth: 84 }}
+            toolBarRender={() => [<Typography.Text key="title">已删除字典</Typography.Text>]}
+          />
+          <ProTable<DictItemSummary, DictItemTableParams>
+            actionRef={deletedItemActionRef}
+            columns={deletedItemColumns}
+            options={false}
+            pagination={{ defaultPageSize: 5, showSizeChanger: true }}
+            request={async (params) => {
+              const page = await listOpenCoreDeletedDictItemsPage(
+                toDictItemQuery(params),
+              );
+              return {
+                data: [...page.items],
+                success: true,
+                total: page.total,
+              };
+            }}
+            rowKey="id"
+            search={{ labelWidth: 84 }}
+            toolBarRender={() => [<Typography.Text key="title">已删除字典项</Typography.Text>]}
+          />
+        </Space>
+      </Modal>
 
       <Modal
         title={editingDict ? text.editDict : text.createDict}

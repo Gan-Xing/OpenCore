@@ -55,6 +55,7 @@ export type DictItemSummary = {
   colorType?: string;
   cssClass?: string;
   createdAt?: string;
+  deletedAt?: string;
   dictCode?: string;
   id: string;
   label: string;
@@ -78,6 +79,7 @@ export type DictTypeSummary = {
   enabled: boolean;
   system: boolean;
   createdAt?: string;
+  deletedAt?: string;
   updatedAt?: string;
   items: readonly DictItemSummary[];
 };
@@ -178,6 +180,63 @@ export type DictCacheRefreshSummary = {
   cachedKeys: number;
   refreshed: true;
   refreshedAt: string;
+};
+
+export type DictImportTemplateSummary = {
+  filename: string;
+  contentType: string;
+  contentBase64: string;
+  columns: readonly string[];
+  rowCount: number;
+};
+
+export type ImportDictsRequest = {
+  contentBase64: string;
+  updateExisting?: boolean;
+};
+
+export type DictImportFailureSummary = {
+  rowNumber: number;
+  dictCode?: string;
+  itemValue?: string;
+  reason: string;
+};
+
+export type DictImportResultSummary = {
+  dryRun: boolean;
+  totalRows: number;
+  createdDicts: number;
+  updatedDicts: number;
+  createdItems: number;
+  updatedItems: number;
+  failed: number;
+  createdDictCodes: readonly string[];
+  updatedDictCodes: readonly string[];
+  createdItemRefs: readonly string[];
+  updatedItemRefs: readonly string[];
+  failures: readonly DictImportFailureSummary[];
+};
+
+export type TranslateDictValuesRequest = {
+  entries: readonly {
+    dictCode: string;
+    values: readonly string[];
+  }[];
+};
+
+export type DictTranslationItemSummary = {
+  dictCode: string;
+  value: string;
+  found: boolean;
+  label?: string;
+  colorType?: string;
+  cssClass?: string;
+  enabled?: boolean;
+};
+
+export type DictTranslationResultSummary = {
+  items: readonly DictTranslationItemSummary[];
+  translatedAt: string;
 };
 
 export type SystemConfigSummary = {

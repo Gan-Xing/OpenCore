@@ -50,6 +50,7 @@ type PrismaDictTypeWithItems = {
   remark: string | null;
   enabled: boolean;
   system: boolean;
+  deletedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
   items: PrismaDictItem[];
@@ -60,6 +61,7 @@ type PrismaDictItem = {
   typeId?: string;
   type?: {
     code: string;
+    deletedAt?: Date | null;
     system?: boolean;
   };
   label: string;
@@ -69,6 +71,7 @@ type PrismaDictItem = {
   colorType: string | null;
   cssClass: string | null;
   remark: string | null;
+  deletedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -76,6 +79,7 @@ type PrismaDictItem = {
 type PrismaDictItemWithType = PrismaDictItem & {
   type: {
     code: string;
+    deletedAt?: Date | null;
     enabled: boolean;
     system?: boolean;
   };
@@ -92,6 +96,7 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
   ): Promise<PageResult<DictTypeRecord>> {
     const filters = normalizeDictTypeFilters(query);
     const where = {
+      deletedAt: null,
       ...(filters.code
         ? { code: { contains: filters.code, mode: 'insensitive' as const } }
         : {}),
@@ -114,6 +119,7 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
       where,
       include: {
         items: {
+          where: { deletedAt: null },
           orderBy: [{ sort: 'asc' }, { value: 'asc' }],
         },
       },
@@ -130,6 +136,7 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
   ): Promise<PageResult<DictItemRecord>> {
     const filters = normalizeDictItemFilters(query);
     const where = {
+      deletedAt: null,
       ...(filters.dictCode ? { type: { code: filters.dictCode } } : {}),
       ...(filters.label
         ? { label: { contains: filters.label, mode: 'insensitive' as const } }
@@ -152,6 +159,74 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
     return createSystemDictPageResult(rows.map(toDictItemRecord), pagination);
   }
 
+  async listDeletedDicts(
+    query: SystemDictPageQuery = {},
+  ): Promise<PageResult<DictTypeRecord>> {
+    const filters = normalizeDictTypeFilters(query);
+    const where = {
+      deletedAt: { not: null },
+      ...(filters.code
+        ? { code: { contains: filters.code, mode: 'insensitive' as const } }
+        : {}),
+      ...(filters.name
+        ? { name: { contains: filters.name, mode: 'insensitive' as const } }
+        : {}),
+      ...(filters.enabled === undefined ? {} : { enabled: filters.enabled }),
+      ...(filters.createdFrom || filters.createdTo
+        ? {
+            createdAt: {
+              ...(filters.createdFrom ? { gte: filters.createdFrom } : {}),
+              ...(filters.createdTo ? { lte: filters.createdTo } : {}),
+            },
+          }
+        : {}),
+    };
+    const total = await this.prisma.dictType.count({ where });
+    const pagination = normalizeSystemDictPageQuery(query, total);
+    const rows = await this.prisma.dictType.findMany({
+      where,
+      include: {
+        items: {
+          where: { deletedAt: null },
+          orderBy: [{ sort: 'asc' }, { value: 'asc' }],
+        },
+      },
+      orderBy: [{ deletedAt: 'desc' }, { code: 'asc' }],
+      skip: pagination.skip,
+      take: pagination.take,
+    });
+
+    return createSystemDictPageResult(rows.map(toDictTypeRecord), pagination);
+  }
+
+  async listDeletedDictItemsPage(
+    query: SystemDictItemPageQuery = {},
+  ): Promise<PageResult<DictItemRecord>> {
+    const filters = normalizeDictItemFilters(query);
+    const where = {
+      deletedAt: { not: null },
+      ...(filters.dictCode ? { type: { code: filters.dictCode } } : {}),
+      ...(filters.label
+        ? { label: { contains: filters.label, mode: 'insensitive' as const } }
+        : {}),
+      ...(filters.value
+        ? { value: { contains: filters.value, mode: 'insensitive' as const } }
+        : {}),
+      ...(filters.enabled === undefined ? {} : { enabled: filters.enabled }),
+    };
+    const total = await this.prisma.dictItem.count({ where });
+    const pagination = normalizeSystemDictPageQuery(query, total);
+    const rows = await this.prisma.dictItem.findMany({
+      where,
+      include: { type: { select: { code: true, system: true } } },
+      orderBy: [{ deletedAt: 'desc' }, { type: { code: 'asc' } }],
+      skip: pagination.skip,
+      take: pagination.take,
+    });
+
+    return createSystemDictPageResult(rows.map(toDictItemRecord), pagination);
+  }
+
   async getDict(code: string): Promise<DictTypeRecord> {
     return toDictTypeRecord(await this.findDictByCode(code));
   }
@@ -161,8 +236,10 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
   ): Promise<readonly DictDataOptionRecord[]> {
     const rows = await this.prisma.dictItem.findMany({
       where: {
+        deletedAt: null,
         enabled: true,
         type: {
+          deletedAt: null,
           enabled: true,
           ...(query.dictCode ? { code: query.dictCode } : {}),
         },
@@ -271,14 +348,19 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
     }
 
     const dict = await this.prisma.dictType.update({
-      where: { code },
+      where: { id: existing.id },
       data: {
         name: input.name ?? existing.name,
         description: input.description ?? existing.description,
         remark: input.remark ?? existing.remark,
         enabled: input.enabled ?? existing.enabled,
       },
-      include: { items: { orderBy: [{ sort: 'asc' }, { value: 'asc' }] } },
+      include: {
+        items: {
+          where: { deletedAt: null },
+          orderBy: [{ sort: 'asc' }, { value: 'asc' }],
+        },
+      },
     });
 
     return toDictTypeRecord(dict);
@@ -337,14 +419,75 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
         { itemId },
       );
     }
-    await this.prisma.dictItem.delete({ where: { id: itemId } });
+    await this.prisma.dictItem.update({
+      where: { id: itemId },
+      data: { deletedAt: new Date() },
+    });
     return { deleted: true };
   }
 
   async deleteDict(code: string): Promise<{ deleted: true }> {
     const dict = await this.findDictByCode(code);
     assertDictCanBeDeleted(dict);
-    await this.prisma.dictType.delete({ where: { code } });
+    await this.prisma.dictType.update({
+      where: { id: dict.id },
+      data: { deletedAt: new Date() },
+    });
+    return { deleted: true };
+  }
+
+  async restoreDict(code: string): Promise<DictTypeRecord> {
+    const dict = await this.findDeletedDictByCode(code);
+    const restored = await this.prisma.dictType.update({
+      where: { id: dict.id },
+      data: { deletedAt: null },
+      include: {
+        items: {
+          where: { deletedAt: null },
+          orderBy: [{ sort: 'asc' }, { value: 'asc' }],
+        },
+      },
+    });
+
+    return toDictTypeRecord(restored);
+  }
+
+  async restoreDictItem(itemId: string): Promise<DictItemRecord> {
+    const item = await this.findDeletedDictItemById(itemId);
+    if (item.type?.deletedAt) {
+      throw systemDictBadRequest(
+        'SYSTEM_DICT_PARENT_DELETED',
+        'Dictionary item cannot be restored while its dictionary is deleted.',
+        { itemId, dictCode: item.type.code },
+      );
+    }
+
+    const restored = await this.prisma.dictItem.update({
+      where: { id: itemId },
+      data: { deletedAt: null },
+      include: { type: { select: { code: true, system: true } } },
+    });
+
+    return toDictItemRecord(restored);
+  }
+
+  async hardDeleteDict(code: string): Promise<{ deleted: true }> {
+    const dict = await this.findDeletedDictByCode(code);
+    if (dict.items.length > 0) {
+      throw systemDictBadRequest(
+        'SYSTEM_DICT_HAS_ITEMS',
+        'Dictionary has items and cannot be permanently deleted.',
+        { code },
+      );
+    }
+
+    await this.prisma.dictType.delete({ where: { id: dict.id } });
+    return { deleted: true };
+  }
+
+  async hardDeleteDictItem(itemId: string): Promise<{ deleted: true }> {
+    const item = await this.findDeletedDictItemById(itemId);
+    await this.prisma.dictItem.delete({ where: { id: item.id } });
     return { deleted: true };
   }
 
@@ -353,7 +496,7 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
   ): Promise<DictDeleteMutationRecord> {
     const codes = normalizeDictCodes(body);
     const dicts = await this.prisma.dictType.findMany({
-      where: { code: { in: [...codes] } },
+      where: { code: { in: [...codes] }, deletedAt: null },
       select: {
         code: true,
         system: true,
@@ -389,7 +532,10 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
       );
     }
 
-    await this.prisma.dictType.deleteMany({ where: { code: { in: [...codes] } } });
+    await this.prisma.dictType.updateMany({
+      where: { code: { in: [...codes] } },
+      data: { deletedAt: new Date() },
+    });
 
     return { deleted: true, affected: codes.length, codes };
   }
@@ -400,7 +546,7 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
     const codes = normalizeDictCodes(body);
     const enabled = normalizeBatchEnabled(body.enabled);
     const dicts = await this.prisma.dictType.findMany({
-      where: { code: { in: [...codes] } },
+      where: { code: { in: [...codes] }, deletedAt: null },
       select: { code: true, system: true },
     });
     const existingCodes = new Set(dicts.map((dict) => dict.code));
@@ -422,7 +568,7 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
     }
 
     await this.prisma.dictType.updateMany({
-      where: { code: { in: [...codes] } },
+      where: { code: { in: [...codes] }, deletedAt: null },
       data: { enabled },
     });
 
@@ -434,7 +580,7 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
   ): Promise<DictItemDeleteMutationRecord> {
     const ids = normalizeDictItemIds(body);
     const items = await this.prisma.dictItem.findMany({
-      where: { id: { in: [...ids] } },
+      where: { id: { in: [...ids] }, deletedAt: null },
       include: { type: { select: { code: true, system: true } } },
     });
     const existingIds = new Set(items.map((item) => item.id));
@@ -455,7 +601,10 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
       );
     }
 
-    await this.prisma.dictItem.deleteMany({ where: { id: { in: [...ids] } } });
+    await this.prisma.dictItem.updateMany({
+      where: { id: { in: [...ids] } },
+      data: { deletedAt: new Date() },
+    });
 
     return { deleted: true, affected: ids.length, ids };
   }
@@ -466,7 +615,7 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
     const ids = normalizeDictItemIds(body);
     const enabled = normalizeBatchEnabled(body.enabled);
     const items = await this.prisma.dictItem.findMany({
-      where: { id: { in: [...ids] } },
+      where: { id: { in: [...ids] }, deletedAt: null },
       include: { type: { select: { code: true, system: true } } },
     });
     const existingIds = new Set(items.map((item) => item.id));
@@ -488,7 +637,7 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
     }
 
     await this.prisma.dictItem.updateMany({
-      where: { id: { in: [...ids] } },
+      where: { id: { in: [...ids] }, deletedAt: null },
       data: { enabled },
     });
 
@@ -497,7 +646,7 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
 
   async refreshDictCache(): Promise<DictCacheRefreshRecord> {
     const cachedKeys = await this.prisma.dictType.count({
-      where: { enabled: true },
+      where: { deletedAt: null, enabled: true },
     });
     return {
       refreshed: true,
@@ -507,9 +656,14 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
   }
 
   private async findDictByCode(code: string): Promise<PrismaDictTypeWithItems> {
-    const dict = await this.prisma.dictType.findUnique({
-      where: { code },
-      include: { items: { orderBy: [{ sort: 'asc' }, { value: 'asc' }] } },
+    const dict = await this.prisma.dictType.findFirst({
+      where: { code, deletedAt: null },
+      include: {
+        items: {
+          where: { deletedAt: null },
+          orderBy: [{ sort: 'asc' }, { value: 'asc' }],
+        },
+      },
     });
 
     if (!dict) {
@@ -525,6 +679,29 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
     return dict;
   }
 
+  private async findDeletedDictByCode(
+    code: string,
+  ): Promise<PrismaDictTypeWithItems> {
+    const dict = await this.prisma.dictType.findFirst({
+      where: { code, deletedAt: { not: null } },
+      include: {
+        items: {
+          orderBy: [{ sort: 'asc' }, { value: 'asc' }],
+        },
+      },
+    });
+
+    if (!dict) {
+      throw systemDictNotFound(
+        'SYSTEM_DICT_NOT_FOUND',
+        'Deleted dictionary not found.',
+        { code },
+      );
+    }
+
+    return dict;
+  }
+
   private async findDictItemById(
     code: string,
     itemId: string,
@@ -532,8 +709,10 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
     const item = await this.prisma.dictItem.findFirst({
       where: {
         id: itemId,
+        deletedAt: null,
         type: {
           code,
+          deletedAt: null,
         },
       },
       include: { type: { select: { code: true, system: true } } },
@@ -543,6 +722,30 @@ export class PrismaSystemDictRepository extends SystemDictRepository {
       throw systemDictNotFound(
         'SYSTEM_DICT_ITEM_NOT_FOUND',
         'Dictionary item not found.',
+        { itemId },
+      );
+    }
+
+    return item;
+  }
+
+  private async findDeletedDictItemById(
+    itemId: string,
+  ): Promise<Required<PrismaDictItem>> {
+    const item = await this.prisma.dictItem.findFirst({
+      where: {
+        id: itemId,
+        deletedAt: { not: null },
+      },
+      include: {
+        type: { select: { code: true, deletedAt: true, system: true } },
+      },
+    });
+
+    if (!item) {
+      throw systemDictNotFound(
+        'SYSTEM_DICT_ITEM_NOT_FOUND',
+        'Deleted dictionary item not found.',
         { itemId },
       );
     }
@@ -580,6 +783,7 @@ function toDictTypeRecord(dict: PrismaDictTypeWithItems): DictTypeRecord {
     remark: dict.remark ?? undefined,
     enabled: dict.enabled,
     system: dict.system,
+    deletedAt: dict.deletedAt?.toISOString(),
     createdAt: dict.createdAt.toISOString(),
     updatedAt: dict.updatedAt.toISOString(),
     items: dict.items.map((item) => toDictItemRecord({ ...item, type: dict })),
@@ -597,6 +801,7 @@ function toDictItemRecord(item: PrismaDictItem): DictItemRecord {
     colorType: item.colorType ?? undefined,
     cssClass: item.cssClass ?? undefined,
     remark: item.remark ?? undefined,
+    deletedAt: item.deletedAt?.toISOString(),
     createdAt: item.createdAt.toISOString(),
     updatedAt: item.updatedAt.toISOString(),
   };

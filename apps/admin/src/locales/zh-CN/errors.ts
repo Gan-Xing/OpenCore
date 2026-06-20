@@ -524,6 +524,24 @@ export default {
   'error.SYSTEM_DICT_CODE_INVALID': '字典编码格式无效。',
   'error.SYSTEM_DICT_DATE_INVALID': '字典日期筛选无效。',
   'error.SYSTEM_DICT_HAS_ITEMS': '字典下存在字典项，不能直接删除。',
+  'error.SYSTEM_DICT_IMPORT_BOOLEAN_INVALID': '字典导入布尔值无效。',
+  'error.SYSTEM_DICT_IMPORT_COLUMN_MISSING': '字典导入文件缺少必填列。',
+  'error.SYSTEM_DICT_IMPORT_CONTENT_BASE64_INVALID':
+    '字典导入内容必须是有效的 base64。',
+  'error.SYSTEM_DICT_IMPORT_CONTENT_EMPTY': '字典导入内容不能为空。',
+  'error.SYSTEM_DICT_IMPORT_CONTENT_TOO_LARGE': '字典导入文件过大。',
+  'error.SYSTEM_DICT_IMPORT_CSV_UNCLOSED_QUOTE':
+    '字典导入 CSV 存在未闭合引号。',
+  'error.SYSTEM_DICT_IMPORT_DATA_ROW_REQUIRED':
+    '字典导入文件至少需要一行非空数据。',
+  'error.SYSTEM_DICT_IMPORT_INTEGER_INVALID': '字典导入整数字段无效。',
+  'error.SYSTEM_DICT_IMPORT_ITEM_PAIR_INVALID':
+    '字典导入字典项值和显示标签必须同时填写。',
+  'error.SYSTEM_DICT_IMPORT_ROWS_REQUIRED':
+    '字典导入文件必须包含表头和至少一行数据。',
+  'error.SYSTEM_DICT_IMPORT_XLSX_INVALID': '字典导入 XLSX 必须是有效工作簿。',
+  'error.SYSTEM_DICT_IMPORT_XLSX_SHEET_MISSING':
+    '字典导入 XLSX 缺少工作表。',
   'error.SYSTEM_DICT_INLINE_ITEMS_UPDATE_UNSUPPORTED':
     '字典项必须通过字典数据接口维护。',
   'error.SYSTEM_DICT_INTEGER_INVALID': '字典整数字段无效。',
@@ -533,9 +551,18 @@ export default {
   'error.SYSTEM_DICT_ITEM_ID_DUPLICATED': '字典项 ID 重复。',
   'error.SYSTEM_DICT_ITEM_NOT_FOUND': '字典项不存在。',
   'error.SYSTEM_DICT_NOT_FOUND': '字典不存在。',
+  'error.SYSTEM_DICT_PARENT_DELETED': '请先恢复所属字典，再恢复该字典项。',
   'error.SYSTEM_DICT_SYSTEM_IMMUTABLE': '系统内置字典不能执行该操作。',
   'error.SYSTEM_DICT_SYSTEM_ITEM_IMMUTABLE': '系统内置字典项不能执行该操作。',
   'error.SYSTEM_DICT_TEXT_REQUIRED': '字典必填文本不能为空。',
+  'error.SYSTEM_DICT_TRANSLATION_ENTRIES_EMPTY':
+    '字典翻译条目不能为空。',
+  'error.SYSTEM_DICT_TRANSLATION_ENTRIES_INVALID':
+    '字典翻译条目必须是数组。',
+  'error.SYSTEM_DICT_TRANSLATION_VALUES_INVALID':
+    '字典翻译值必须是数组。',
+  'error.SYSTEM_DICT_TRANSLATION_VALUE_DUPLICATED':
+    '字典翻译值重复。',
   'error.TOOL_AREA_FORMAT_SEPARATOR_INVALID': '地区路径分隔符无效。',
   'error.TOOL_AREA_LEVEL_INVALID': '地区层级无效。',
 };

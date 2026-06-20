@@ -3718,6 +3718,145 @@
         "tags": ["SystemManagement", "Core Dictionaries"]
       }
     },
+    "/api/core/dicts/recycle-bin": {
+      "get": {
+        "operationId": "SystemManagementController_listDeletedDicts",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "code",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "name",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "enabled",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
+          },
+          {
+            "name": "createdFrom",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "createdTo",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DictTypePageDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Dictionaries"]
+      }
+    },
+    "/api/core/dicts/import-template": {
+      "get": {
+        "operationId": "SystemManagementController_getDictImportTemplate",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DictImportTemplateDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Dictionaries"]
+      }
+    },
+    "/api/core/dicts/import/preview": {
+      "post": {
+        "operationId": "SystemManagementController_previewImportDicts",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ImportDictsDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DictImportResultDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Dictionaries"]
+      }
+    },
+    "/api/core/dicts/import": {
+      "post": {
+        "operationId": "SystemManagementController_importDicts",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ImportDictsDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DictImportResultDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Dictionaries"]
+      }
+    },
     "/api/core/dict-items": {
       "get": {
         "operationId": "SystemManagementController_listDictItemsPage",
@@ -3832,6 +3971,67 @@
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/ExportPreviewDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Dictionaries"]
+      }
+    },
+    "/api/core/dict-items/recycle-bin": {
+      "get": {
+        "operationId": "SystemManagementController_listDeletedDictItemsPage",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "allOf": [{ "$ref": "#/components/schemas/Object" }]
+            }
+          },
+          {
+            "name": "dictCode",
+            "required": false,
+            "in": "query",
+            "schema": { "example": "system.status", "type": "string" }
+          },
+          {
+            "name": "label",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "value",
+            "required": false,
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "enabled",
+            "required": false,
+            "in": "query",
+            "schema": { "$ref": "#/components/schemas/Object" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DictItemPageDto" }
               }
             }
           }
@@ -3970,6 +4170,36 @@
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/DictCacheRefreshDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Dictionaries"]
+      }
+    },
+    "/api/core/dict-data/translate": {
+      "post": {
+        "operationId": "SystemManagementController_translateDictValues",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TranslateDictValuesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DictTranslationResultDto"
+                }
               }
             }
           }
@@ -4222,6 +4452,106 @@
         "parameters": [
           {
             "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DeleteResultDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Dictionaries"]
+      }
+    },
+    "/api/core/dicts/{code}/restore": {
+      "patch": {
+        "operationId": "SystemManagementController_restoreDict",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DictTypeDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Dictionaries"]
+      }
+    },
+    "/api/core/dicts/{code}/hard": {
+      "delete": {
+        "operationId": "SystemManagementController_hardDeleteDict",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DeleteResultDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Dictionaries"]
+      }
+    },
+    "/api/core/dict-items/{itemId}/restore": {
+      "patch": {
+        "operationId": "SystemManagementController_restoreDictItem",
+        "parameters": [
+          {
+            "name": "itemId",
+            "required": true,
+            "in": "path",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DictItemDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["SystemManagement", "Core Dictionaries"]
+      }
+    },
+    "/api/core/dict-items/{itemId}/hard": {
+      "delete": {
+        "operationId": "SystemManagementController_hardDeleteDictItem",
+        "parameters": [
+          {
+            "name": "itemId",
             "required": true,
             "in": "path",
             "schema": { "type": "string" }
@@ -11668,7 +11998,8 @@
           "cssClass": { "type": "string" },
           "remark": { "type": "string" },
           "createdAt": { "type": "string" },
-          "updatedAt": { "type": "string" }
+          "updatedAt": { "type": "string" },
+          "deletedAt": { "type": "string" }
         },
         "required": [
           "id",
@@ -11693,6 +12024,7 @@
           "system": { "type": "boolean" },
           "createdAt": { "type": "string" },
           "updatedAt": { "type": "string" },
+          "deletedAt": { "type": "string" },
           "items": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/DictItemDto" }
@@ -11735,6 +12067,84 @@
           "generatedAt": { "type": "string" }
         },
         "required": ["filename", "scope", "columns", "rowCount", "generatedAt"]
+      },
+      "DictImportTemplateDto": {
+        "type": "object",
+        "properties": {
+          "filename": { "type": "string" },
+          "contentType": { "type": "string" },
+          "contentBase64": { "type": "string" },
+          "columns": { "type": "array", "items": { "type": "string" } },
+          "rowCount": { "type": "number" }
+        },
+        "required": [
+          "filename",
+          "contentType",
+          "contentBase64",
+          "columns",
+          "rowCount"
+        ]
+      },
+      "ImportDictsDto": {
+        "type": "object",
+        "properties": {
+          "contentBase64": {
+            "type": "string",
+            "description": "Base64-encoded CSV or XLSX content."
+          },
+          "updateExisting": { "type": "boolean", "default": false }
+        },
+        "required": ["contentBase64"]
+      },
+      "DictImportFailureDto": {
+        "type": "object",
+        "properties": {
+          "rowNumber": { "type": "number" },
+          "dictCode": { "type": "string" },
+          "itemValue": { "type": "string" },
+          "reason": { "type": "string" }
+        },
+        "required": ["rowNumber", "reason"]
+      },
+      "DictImportResultDto": {
+        "type": "object",
+        "properties": {
+          "dryRun": { "type": "boolean" },
+          "totalRows": { "type": "number" },
+          "createdDicts": { "type": "number" },
+          "updatedDicts": { "type": "number" },
+          "createdItems": { "type": "number" },
+          "updatedItems": { "type": "number" },
+          "failed": { "type": "number" },
+          "createdDictCodes": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "updatedDictCodes": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "createdItemRefs": { "type": "array", "items": { "type": "string" } },
+          "updatedItemRefs": { "type": "array", "items": { "type": "string" } },
+          "failures": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/DictImportFailureDto" }
+          }
+        },
+        "required": [
+          "dryRun",
+          "totalRows",
+          "createdDicts",
+          "updatedDicts",
+          "createdItems",
+          "updatedItems",
+          "failed",
+          "createdDictCodes",
+          "updatedDictCodes",
+          "createdItemRefs",
+          "updatedItemRefs",
+          "failures"
+        ]
       },
       "DictItemPageDto": {
         "type": "object",
@@ -11825,6 +12235,52 @@
         },
         "required": ["refreshed", "cachedKeys", "refreshedAt"]
       },
+      "DictTranslationEntryDto": {
+        "type": "object",
+        "properties": {
+          "dictCode": { "type": "string", "example": "system.status" },
+          "values": {
+            "example": ["enabled", "disabled"],
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        },
+        "required": ["dictCode", "values"]
+      },
+      "TranslateDictValuesDto": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/DictTranslationEntryDto" }
+          }
+        },
+        "required": ["entries"]
+      },
+      "DictTranslationItemDto": {
+        "type": "object",
+        "properties": {
+          "dictCode": { "type": "string" },
+          "value": { "type": "string" },
+          "found": { "type": "boolean" },
+          "label": { "type": "string" },
+          "colorType": { "type": "string" },
+          "cssClass": { "type": "string" },
+          "enabled": { "type": "boolean" }
+        },
+        "required": ["dictCode", "value", "found"]
+      },
+      "DictTranslationResultDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/DictTranslationItemDto" }
+          },
+          "translatedAt": { "type": "string" }
+        },
+        "required": ["items", "translatedAt"]
+      },
       "DictDataOptionDto": {
         "type": "object",
         "properties": {
@@ -11838,7 +12294,8 @@
           "cssClass": { "type": "string" },
           "remark": { "type": "string" },
           "createdAt": { "type": "string" },
-          "updatedAt": { "type": "string" }
+          "updatedAt": { "type": "string" },
+          "deletedAt": { "type": "string" }
         },
         "required": [
           "id",

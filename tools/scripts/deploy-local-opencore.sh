@@ -320,6 +320,30 @@ verify_admin_bundle_api_base_url() {
     "$ROOT_DIR/apps/admin/src/pages/System/Dicts.tsx" >/dev/null || \
     ! grep \
     --fixed-strings \
+    "getOpenCoreDictImportTemplate" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Dicts.tsx" >/dev/null || \
+    ! grep \
+    --fixed-strings \
+    "importOpenCoreDicts" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Dicts.tsx" >/dev/null || \
+    ! grep \
+    --fixed-strings \
+    "listOpenCoreDeletedDictPage" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Dicts.tsx" >/dev/null || \
+    ! grep \
+    --fixed-strings \
+    "restoreOpenCoreDictItem" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Dicts.tsx" >/dev/null || \
+    ! grep \
+    --fixed-strings \
+    "hardDeleteOpenCoreDict" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Dicts.tsx" >/dev/null || \
+    ! grep \
+    --fixed-strings \
+    "translateOpenCoreDictValues" \
+    "$ROOT_DIR/apps/admin/src/pages/System/Dicts.tsx" >/dev/null || \
+    ! grep \
+    --fixed-strings \
     "clearDictOptionsCache" \
     "$ROOT_DIR/apps/admin/src/pages/System/Dicts.tsx" >/dev/null || \
     ! grep -R \
@@ -331,8 +355,23 @@ verify_admin_bundle_api_base_url() {
     --fixed-strings \
     --include='*.js' \
     "/core/dicts/refresh-cache" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "/core/dicts/import" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "/core/dicts/recycle-bin" \
+    "$ROOT_DIR/apps/admin/dist" >/dev/null || \
+    ! grep -R \
+    --fixed-strings \
+    --include='*.js' \
+    "/core/dict-data/translate" \
     "$ROOT_DIR/apps/admin/dist" >/dev/null; then
-    echo "Admin Dicts page must use live-only data, server pagination, dictionary item controls and cache refresh without fixture fallback." >&2
+    echo "Admin Dicts page must use live-only data, server pagination, dictionary item controls, import, recycle bin, translation preview and cache refresh without fixture fallback." >&2
     echo "Refusing to deploy a stale or fixture-backed Dicts frontend page." >&2
     exit 1
   fi

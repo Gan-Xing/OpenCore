@@ -45,6 +45,8 @@ import {
 @Injectable()
 export class SeedSystemDictRepository extends SystemDictRepository {
   private dictTypes = seedDictTypes.map(cloneDictType);
+  private deletedDictTypes: DictTypeRecord[] = [];
+  private deletedDictItems: DictItemRecord[] = [];
 
   async listDicts(
     query: SystemDictPageQuery = {},
@@ -84,6 +86,52 @@ export class SeedSystemDictRepository extends SystemDictRepository {
       )
       .sort(compareDictDataOptions);
     const pagination = normalizeSystemDictPageQuery(query, filtered.length);
+    return createSystemDictPageResult(
+      filtered
+        .slice(pagination.skip, pagination.skip + pagination.take)
+        .map((item) => ({ ...item })),
+      pagination,
+    );
+  }
+
+  async listDeletedDicts(
+    query: SystemDictPageQuery = {},
+  ): Promise<PageResult<DictTypeRecord>> {
+    const filters = normalizeDictTypeFilters(query);
+    const filtered = this.deletedDictTypes.filter((dict) => {
+      const createdAt = new Date(dict.createdAt);
+      return (
+        (!filters.code || dict.code.includes(filters.code)) &&
+        (!filters.name || dict.name.includes(filters.name)) &&
+        (filters.enabled === undefined || dict.enabled === filters.enabled) &&
+        (!filters.createdFrom || createdAt >= filters.createdFrom) &&
+        (!filters.createdTo || createdAt <= filters.createdTo)
+      );
+    });
+    const pagination = normalizeSystemDictPageQuery(query, filtered.length);
+    const rows = filtered.slice(
+      pagination.skip,
+      pagination.skip + pagination.take,
+    );
+
+    return createSystemDictPageResult(rows.map(cloneDictType), pagination);
+  }
+
+  async listDeletedDictItemsPage(
+    query: SystemDictItemPageQuery = {},
+  ): Promise<PageResult<DictItemRecord>> {
+    const filters = normalizeDictItemFilters(query);
+    const filtered = this.deletedDictItems
+      .filter(
+        (item) =>
+          (!filters.dictCode || item.dictCode === filters.dictCode) &&
+          (!filters.label || item.label.includes(filters.label)) &&
+          (!filters.value || item.value.includes(filters.value)) &&
+          (filters.enabled === undefined || item.enabled === filters.enabled),
+      )
+      .sort(compareDictDataOptions);
+    const pagination = normalizeSystemDictPageQuery(query, filtered.length);
+
     return createSystemDictPageResult(
       filtered
         .slice(pagination.skip, pagination.skip + pagination.take)
@@ -248,7 +296,15 @@ export class SeedSystemDictRepository extends SystemDictRepository {
         { itemId },
       );
     }
+    const now = new Date().toISOString();
+    const deleted = dict.items.find((item) => item.id === itemId);
     dict.items = dict.items.filter((item) => item.id !== itemId);
+    if (deleted) {
+      this.deletedDictItems = [
+        { ...deleted, deletedAt: now, updatedAt: now },
+        ...this.deletedDictItems,
+      ];
+    }
     return { deleted: true };
   }
 
@@ -256,6 +312,64 @@ export class SeedSystemDictRepository extends SystemDictRepository {
     const dict = this.findDict(code);
     assertDictCanBeDeleted(dict);
     this.dictTypes = this.dictTypes.filter((dict) => dict.code !== code);
+    const now = new Date().toISOString();
+    this.deletedDictTypes = [
+      { ...cloneDictType(dict), deletedAt: now, updatedAt: now },
+      ...this.deletedDictTypes,
+    ];
+    return { deleted: true };
+  }
+
+  async restoreDict(code: string): Promise<DictTypeRecord> {
+    const dict = this.findDeletedDict(code);
+    const restored = {
+      ...cloneDictType(dict),
+      deletedAt: undefined,
+      updatedAt: new Date().toISOString(),
+    };
+    this.deletedDictTypes = this.deletedDictTypes.filter(
+      (candidate) => candidate.code !== code,
+    );
+    this.dictTypes = [restored, ...this.dictTypes];
+    return cloneDictType(restored);
+  }
+
+  async restoreDictItem(itemId: string): Promise<DictItemRecord> {
+    const item = this.findDeletedDictItem(itemId);
+    const dict = this.findActiveParentForRestore(item);
+    this.assertItemValueAvailable(dict, item.value);
+    const restored = {
+      ...item,
+      deletedAt: undefined,
+      updatedAt: new Date().toISOString(),
+    };
+    this.deletedDictItems = this.deletedDictItems.filter(
+      (candidate) => candidate.id !== itemId,
+    );
+    dict.items = sortItems([...dict.items, restored]);
+    return { ...restored };
+  }
+
+  async hardDeleteDict(code: string): Promise<{ deleted: true }> {
+    this.findDeletedDict(code);
+    if (this.deletedDictItems.some((item) => item.dictCode === code)) {
+      throw systemDictBadRequest(
+        'SYSTEM_DICT_HAS_ITEMS',
+        'Dictionary has items and cannot be permanently deleted.',
+        { code },
+      );
+    }
+    this.deletedDictTypes = this.deletedDictTypes.filter(
+      (dict) => dict.code !== code,
+    );
+    return { deleted: true };
+  }
+
+  async hardDeleteDictItem(itemId: string): Promise<{ deleted: true }> {
+    this.findDeletedDictItem(itemId);
+    this.deletedDictItems = this.deletedDictItems.filter(
+      (item) => item.id !== itemId,
+    );
     return { deleted: true };
   }
 
@@ -280,7 +394,16 @@ export class SeedSystemDictRepository extends SystemDictRepository {
         { code: dictWithItems.code },
       );
     }
+    const now = new Date().toISOString();
     this.dictTypes = this.dictTypes.filter((dict) => !codes.includes(dict.code));
+    this.deletedDictTypes = [
+      ...dicts.map((dict) => ({
+        ...cloneDictType(dict),
+        deletedAt: now,
+        updatedAt: now,
+      })),
+      ...this.deletedDictTypes,
+    ];
     return { deleted: true, affected: codes.length, codes };
   }
 
@@ -319,8 +442,13 @@ export class SeedSystemDictRepository extends SystemDictRepository {
         { itemId: systemItem.item.id },
       );
     }
+    const now = new Date().toISOString();
     matches.forEach(({ dict, item }) => {
       dict.items = dict.items.filter((candidate) => candidate.id !== item.id);
+      this.deletedDictItems = [
+        { ...item, deletedAt: now, updatedAt: now },
+        ...this.deletedDictItems,
+      ];
     });
     return { deleted: true, affected: ids.length, ids };
   }
@@ -371,6 +499,22 @@ export class SeedSystemDictRepository extends SystemDictRepository {
     return dict;
   }
 
+  private findDeletedDict(code: string): DictTypeRecord {
+    const dict = this.deletedDictTypes.find(
+      (candidate) => candidate.code === code,
+    );
+
+    if (!dict) {
+      throw systemDictNotFound(
+        'SYSTEM_DICT_NOT_FOUND',
+        'Deleted dictionary not found.',
+        { code },
+      );
+    }
+
+    return dict;
+  }
+
   private findDictItem(
     code: string,
     itemId: string,
@@ -404,6 +548,48 @@ export class SeedSystemDictRepository extends SystemDictRepository {
       'SYSTEM_DICT_ITEM_NOT_FOUND',
       'Dictionary item not found.',
       { itemId },
+    );
+  }
+
+  private findDeletedDictItem(itemId: string): DictItemRecord {
+    const item = this.deletedDictItems.find(
+      (candidate) => candidate.id === itemId,
+    );
+
+    if (!item) {
+      throw systemDictNotFound(
+        'SYSTEM_DICT_ITEM_NOT_FOUND',
+        'Deleted dictionary item not found.',
+        { itemId },
+      );
+    }
+
+    return item;
+  }
+
+  private findActiveParentForRestore(item: DictItemRecord): DictTypeRecord {
+    const dict = this.dictTypes.find(
+      (candidate) => candidate.code === item.dictCode,
+    );
+
+    if (dict) {
+      return dict;
+    }
+
+    if (
+      this.deletedDictTypes.some((candidate) => candidate.code === item.dictCode)
+    ) {
+      throw systemDictBadRequest(
+        'SYSTEM_DICT_PARENT_DELETED',
+        'Dictionary item cannot be restored while its dictionary is deleted.',
+        { itemId: item.id, dictCode: item.dictCode },
+      );
+    }
+
+    throw systemDictNotFound(
+      'SYSTEM_DICT_NOT_FOUND',
+      'Dictionary not found.',
+      { code: item.dictCode },
     );
   }
 

@@ -901,7 +901,10 @@ async function main() {
     hasDictCodeColumn: text.includes('字典编码'),
     hasDictDataPanel: Boolean(document.querySelector('[data-opencore-system-dicts-items-panel="true"]')),
     hasDictTypePanel: Boolean(document.querySelector('[data-opencore-system-dicts-type-panel="true"]')),
+    hasImport: Boolean(document.querySelector('[data-opencore-system-dicts-import="true"]')),
     hasRawKeys: text.includes('pages.system.dicts') || text.includes('system.dicts'),
+    hasRecycle: Boolean(document.querySelector('[data-opencore-system-dicts-recycle="true"]')),
+    hasTranslation: Boolean(document.querySelector('[data-opencore-system-dicts-translate="true"]')),
     text: text.slice(0, 1000),
   };
 })()
@@ -915,7 +918,10 @@ async function main() {
       dictsPageState.hasCacheRefresh !== true ||
       dictsPageState.hasCreateDict !== true ||
       dictsPageState.hasCreateItem !== true ||
-      dictsPageState.hasDictCodeColumn !== true
+      dictsPageState.hasDictCodeColumn !== true ||
+      dictsPageState.hasImport !== true ||
+      dictsPageState.hasRecycle !== true ||
+      dictsPageState.hasTranslation !== true
     ) {
       throw new Error(
         `Admin dicts page is missing live productized controls: ${JSON.stringify(dictsPageState)}`,
@@ -1065,6 +1071,9 @@ async function main() {
           'admin.public-dicts.zh-cn-surface',
           'admin.public-dicts.cache-refresh',
           'admin.public-dicts.create-controls',
+          'admin.public-dicts.import',
+          'admin.public-dicts.recycle',
+          'admin.public-dicts.translation',
           'admin.public-dicts.no-raw-keys',
           'admin.public-users.mobile-card-list',
           'admin.public-users.no-desktop-table-on-mobile',

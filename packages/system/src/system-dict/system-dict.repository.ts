@@ -10,6 +10,11 @@ import {
   type PageQueryInput,
   type PageResult,
 } from '@opencore/common';
+import { unzipSync } from 'fflate';
+import {
+  createOpenCoreXlsxWorkbookBase64,
+  OPENCORE_XLSX_CONTENT_TYPE,
+} from '../export-xlsx';
 import type {
   BatchDeleteDictItemsDto,
   BatchDeleteDictTypesDto,
@@ -19,6 +24,8 @@ import type {
   CreateDictTypeDto,
   DictDataOptionQueryDto,
   DictItemQueryDto,
+  ImportDictsDto,
+  TranslateDictValuesDto,
   DictTypeQueryDto,
   UpdateDictItemDto,
   UpdateDictTypeDto,
@@ -67,6 +74,94 @@ export type DictCacheRefreshRecord = {
   refreshedAt: string;
 };
 
+export type SystemDictImportTemplateRecord = {
+  filename: string;
+  contentType: string;
+  contentBase64: string;
+  columns: readonly string[];
+  rowCount: number;
+};
+
+export type SystemDictImportCsvRecord = {
+  rowNumber: number;
+  values: Record<string, string>;
+};
+
+export type NormalizedSystemDictImportInput = {
+  rowNumber: number;
+  dictCode: string;
+  dictName: string;
+  dictDescription?: string;
+  dictRemark?: string;
+  dictEnabled: boolean;
+  itemValue?: string;
+  itemLabel?: string;
+  itemSort?: number;
+  itemEnabled?: boolean;
+  itemColorType?: string;
+  itemCssClass?: string;
+  itemRemark?: string;
+};
+
+export type SystemDictImportFailureRecord = {
+  rowNumber: number;
+  dictCode?: string;
+  itemValue?: string;
+  reason: string;
+};
+
+export type SystemDictImportResultRecord = {
+  dryRun: boolean;
+  totalRows: number;
+  createdDicts: number;
+  updatedDicts: number;
+  createdItems: number;
+  updatedItems: number;
+  failed: number;
+  createdDictCodes: readonly string[];
+  updatedDictCodes: readonly string[];
+  createdItemRefs: readonly string[];
+  updatedItemRefs: readonly string[];
+  failures: readonly SystemDictImportFailureRecord[];
+};
+
+export type NormalizedDictTranslationEntry = {
+  dictCode: string;
+  values: readonly string[];
+};
+
+export type DictTranslationItemRecord = {
+  dictCode: string;
+  value: string;
+  found: boolean;
+  label?: string;
+  colorType?: string;
+  cssClass?: string;
+  enabled?: boolean;
+};
+
+export type DictTranslationResultRecord = {
+  items: readonly DictTranslationItemRecord[];
+  translatedAt: string;
+};
+
+export const SYSTEM_DICT_XLSX_CONTENT_TYPE = OPENCORE_XLSX_CONTENT_TYPE;
+export const SYSTEM_DICT_IMPORT_COLUMNS = [
+  'dictCode',
+  'dictName',
+  'dictDescription',
+  'dictRemark',
+  'dictEnabled',
+  'itemValue',
+  'itemLabel',
+  'itemSort',
+  'itemEnabled',
+  'itemColorType',
+  'itemCssClass',
+  'itemRemark',
+] as const;
+const DICT_IMPORT_MAX_BYTES = 512 * 1024;
+
 export type SystemDictPageQuery = PageQueryInput &
   Pick<
     DictTypeQueryDto,
@@ -90,6 +185,14 @@ export abstract class SystemDictRepository {
   ): Promise<PageResult<DictTypeRecord>>;
 
   abstract listDictItemsPage(
+    query?: SystemDictItemPageQuery,
+  ): Promise<PageResult<DictItemRecord>>;
+
+  abstract listDeletedDicts(
+    query?: SystemDictPageQuery,
+  ): Promise<PageResult<DictTypeRecord>>;
+
+  abstract listDeletedDictItemsPage(
     query?: SystemDictItemPageQuery,
   ): Promise<PageResult<DictItemRecord>>;
 
@@ -127,6 +230,14 @@ export abstract class SystemDictRepository {
   ): Promise<{ deleted: true }>;
 
   abstract deleteDict(code: string): Promise<{ deleted: true }>;
+
+  abstract restoreDict(code: string): Promise<DictTypeRecord>;
+
+  abstract restoreDictItem(itemId: string): Promise<DictItemRecord>;
+
+  abstract hardDeleteDict(code: string): Promise<{ deleted: true }>;
+
+  abstract hardDeleteDictItem(itemId: string): Promise<{ deleted: true }>;
 
   abstract deleteDicts(
     body: BatchDeleteDictTypesDto,
@@ -210,6 +321,159 @@ export function createSystemDictItemsExportPreview(
     ],
     rowCount: page.items.length,
     generatedAt: new Date().toISOString(),
+  };
+}
+
+export function createSystemDictImportTemplate(): SystemDictImportTemplateRecord {
+  const rows: readonly (readonly string[])[] = [
+    SYSTEM_DICT_IMPORT_COLUMNS,
+    [
+      'system.example.priority',
+      'Example Priority',
+      'Example dictionary imported from template.',
+      'Replace this row before production import.',
+      'true',
+      'high',
+      'High',
+      '10',
+      'true',
+      'error',
+      '',
+      'High priority label',
+    ],
+    [
+      'system.example.priority',
+      'Example Priority',
+      'Example dictionary imported from template.',
+      'Replace this row before production import.',
+      'true',
+      'normal',
+      'Normal',
+      '20',
+      'true',
+      'processing',
+      '',
+      'Normal priority label',
+    ],
+  ];
+
+  return {
+    filename: 'opencore-system-dicts-import-template.xlsx',
+    contentType: SYSTEM_DICT_XLSX_CONTENT_TYPE,
+    contentBase64: createOpenCoreXlsxWorkbookBase64({
+      worksheetRows: rows,
+      generatedAt: new Date().toISOString(),
+      sheetName: 'Dictionaries',
+    }),
+    columns: SYSTEM_DICT_IMPORT_COLUMNS,
+    rowCount: rows.length - 1,
+  };
+}
+
+export function parseSystemDictImport(
+  body: ImportDictsDto,
+): readonly SystemDictImportCsvRecord[] {
+  const content = decodeSystemDictImportContent(body);
+  const isXlsx = isXlsxContent(content);
+  const rows = isXlsx
+    ? parseXlsxRows(content)
+    : parseCsvRows(stripUtf8Bom(content.toString('utf8')));
+  const label = isXlsx ? 'XLSX' : 'CSV';
+
+  if (rows.length < 2) {
+    throw systemDictBadRequest(
+      'SYSTEM_DICT_IMPORT_ROWS_REQUIRED',
+      `System dictionary import ${label} must contain a header and at least one data row.`,
+      { format: label },
+    );
+  }
+
+  const headers = rows[0].map((header) => header.trim());
+  const missingHeader = SYSTEM_DICT_IMPORT_COLUMNS.find(
+    (column) => !headers.includes(column),
+  );
+
+  if (missingHeader) {
+    throw systemDictBadRequest(
+      'SYSTEM_DICT_IMPORT_COLUMN_MISSING',
+      `System dictionary import ${label} is missing column: ${missingHeader}`,
+      { column: missingHeader, format: label },
+    );
+  }
+
+  const records = rows
+    .slice(1)
+    .map((cells, index) => {
+      const values: Record<string, string> = {};
+
+      for (const column of SYSTEM_DICT_IMPORT_COLUMNS) {
+        const columnIndex = headers.indexOf(column);
+        values[column] = cells[columnIndex]?.trim() ?? '';
+      }
+
+      return {
+        rowNumber: index + 2,
+        values,
+      };
+    })
+    .filter((record) =>
+      SYSTEM_DICT_IMPORT_COLUMNS.some((column) => record.values[column]),
+    );
+
+  if (records.length === 0) {
+    throw systemDictBadRequest(
+      'SYSTEM_DICT_IMPORT_DATA_ROW_REQUIRED',
+      `System dictionary import ${label} must contain at least one non-empty data row.`,
+      { format: label },
+    );
+  }
+
+  return records;
+}
+
+export function normalizeSystemDictImportRecord(
+  record: SystemDictImportCsvRecord,
+): NormalizedSystemDictImportInput {
+  const itemValue = normalizeOptionalText(record.values.itemValue, 'itemValue');
+  const itemLabel = normalizeOptionalText(record.values.itemLabel, 'itemLabel');
+
+  if ((itemValue && !itemLabel) || (!itemValue && itemLabel)) {
+    throw systemDictBadRequest(
+      'SYSTEM_DICT_IMPORT_ITEM_PAIR_INVALID',
+      'Dictionary import itemValue and itemLabel must be provided together.',
+      { rowNumber: record.rowNumber },
+    );
+  }
+
+  return {
+    rowNumber: record.rowNumber,
+    dictCode: normalizeDictCode(record.values.dictCode),
+    dictName: normalizeRequiredText(record.values.dictName, 'dictName'),
+    dictDescription: normalizeOptionalText(
+      record.values.dictDescription,
+      'dictDescription',
+    ),
+    dictRemark: normalizeOptionalText(record.values.dictRemark, 'dictRemark'),
+    dictEnabled: normalizeImportBoolean(record.values.dictEnabled, true),
+    itemValue,
+    itemLabel,
+    itemSort: normalizeOptionalImportInteger(
+      record.values.itemSort,
+      'itemSort',
+    ),
+    itemEnabled:
+      itemValue === undefined
+        ? undefined
+        : normalizeImportBoolean(record.values.itemEnabled, true),
+    itemColorType: normalizeOptionalText(
+      record.values.itemColorType,
+      'itemColorType',
+    ),
+    itemCssClass: normalizeOptionalText(
+      record.values.itemCssClass,
+      'itemCssClass',
+    ),
+    itemRemark: normalizeOptionalText(record.values.itemRemark, 'itemRemark'),
   };
 }
 
@@ -490,7 +754,7 @@ function normalizeOptionalBooleanish(
   return normalizeOptionalBoolean(value, fieldName);
 }
 
-function normalizeDictCode(value: unknown): string {
+export function normalizeDictCode(value: unknown): string {
   const code = normalizeRequiredText(value, 'code');
   if (!/^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/.test(code)) {
     throw systemDictBadRequest(
@@ -502,7 +766,7 @@ function normalizeDictCode(value: unknown): string {
   return code;
 }
 
-function normalizeRequiredText(value: unknown, fieldName: string): string {
+export function normalizeRequiredText(value: unknown, fieldName: string): string {
   if (typeof value !== 'string' || value.trim().length === 0) {
     throw systemDictBadRequest(
       'SYSTEM_DICT_TEXT_REQUIRED',
@@ -570,6 +834,398 @@ function normalizeOptionalInteger(
   }
 
   return value;
+}
+
+function normalizeOptionalImportInteger(
+  value: unknown,
+  fieldName: string,
+): number | undefined {
+  if (value === undefined || value === '') {
+    return undefined;
+  }
+
+  const parsed =
+    typeof value === 'number' ? value : Number.parseInt(String(value), 10);
+
+  if (!Number.isInteger(parsed)) {
+    throw systemDictBadRequest(
+      'SYSTEM_DICT_IMPORT_INTEGER_INVALID',
+      `${fieldName} must be an integer.`,
+      { field: fieldName },
+    );
+  }
+
+  return parsed;
+}
+
+export function normalizeImportUpdateExisting(value: unknown): boolean {
+  return normalizeOptionalBoolean(value, 'updateExisting') ?? false;
+}
+
+export function normalizeDictTranslationEntries(
+  body: TranslateDictValuesDto,
+): readonly NormalizedDictTranslationEntry[] {
+  if (!Array.isArray(body?.entries)) {
+    throw systemDictBadRequest(
+      'SYSTEM_DICT_TRANSLATION_ENTRIES_INVALID',
+      'Dictionary translation entries must be an array.',
+      { field: 'entries' },
+    );
+  }
+
+  if (body.entries.length === 0) {
+    throw systemDictBadRequest(
+      'SYSTEM_DICT_TRANSLATION_ENTRIES_EMPTY',
+      'Dictionary translation entries must not be empty.',
+      { field: 'entries' },
+    );
+  }
+
+  return body.entries.map((entry, index) => {
+    const dictCode = normalizeDictCode(entry?.dictCode);
+
+    if (!Array.isArray(entry?.values)) {
+      throw systemDictBadRequest(
+        'SYSTEM_DICT_TRANSLATION_VALUES_INVALID',
+        'Dictionary translation values must be an array.',
+        { field: `entries.${index}.values`, dictCode },
+      );
+    }
+
+    const values = entry.values.map((value: unknown) =>
+      normalizeRequiredText(value, 'value'),
+    );
+    const duplicate = findFirstDuplicate(values);
+
+    if (duplicate) {
+      throw systemDictBadRequest(
+        'SYSTEM_DICT_TRANSLATION_VALUE_DUPLICATED',
+        `Dictionary translation value is duplicated: ${duplicate}`,
+        { duplicate, dictCode },
+      );
+    }
+
+    return { dictCode, values };
+  });
+}
+
+function normalizeImportBoolean(value: string, fallback: boolean): boolean {
+  if (value === '') {
+    return fallback;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  if (['true', '1', 'yes', 'y', 'enabled', '启用'].includes(normalized)) {
+    return true;
+  }
+  if (['false', '0', 'no', 'n', 'disabled', '停用'].includes(normalized)) {
+    return false;
+  }
+
+  throw systemDictBadRequest(
+    'SYSTEM_DICT_IMPORT_BOOLEAN_INVALID',
+    'Dictionary import boolean value is invalid.',
+    { value },
+  );
+}
+
+function decodeSystemDictImportContent(body: ImportDictsDto): Buffer {
+  const contentBase64 = normalizeRequiredText(
+    body?.contentBase64,
+    'import contentBase64',
+  );
+  const normalizedBase64 = contentBase64.includes(',')
+    ? contentBase64.slice(contentBase64.indexOf(',') + 1)
+    : contentBase64;
+  const trimmedBase64 = normalizedBase64.trim();
+
+  if (
+    trimmedBase64.length % 4 !== 0 ||
+    !/^[A-Za-z0-9+/]+={0,2}$/.test(trimmedBase64)
+  ) {
+    throw systemDictBadRequest(
+      'SYSTEM_DICT_IMPORT_CONTENT_BASE64_INVALID',
+      'System dictionary import content must be base64.',
+      { field: 'contentBase64' },
+    );
+  }
+
+  const content = Buffer.from(trimmedBase64, 'base64');
+  const canonical = content.toString('base64');
+
+  if (
+    content.byteLength === 0 ||
+    canonical.replace(/=+$/, '') !== trimmedBase64.replace(/=+$/, '')
+  ) {
+    throw systemDictBadRequest(
+      'SYSTEM_DICT_IMPORT_CONTENT_EMPTY',
+      'System dictionary import content must not be empty.',
+      { field: 'contentBase64' },
+    );
+  }
+
+  if (content.byteLength > DICT_IMPORT_MAX_BYTES) {
+    throw systemDictBadRequest(
+      'SYSTEM_DICT_IMPORT_CONTENT_TOO_LARGE',
+      `System dictionary import content must not exceed ${DICT_IMPORT_MAX_BYTES} bytes.`,
+      { maxBytes: DICT_IMPORT_MAX_BYTES },
+    );
+  }
+
+  return content;
+}
+
+function isXlsxContent(content: Buffer): boolean {
+  return content[0] === 0x50 && content[1] === 0x4b;
+}
+
+function parseXlsxRows(content: Buffer): string[][] {
+  let files: Record<string, Uint8Array>;
+
+  try {
+    files = unzipSync(new Uint8Array(content));
+  } catch {
+    throw systemDictBadRequest(
+      'SYSTEM_DICT_IMPORT_XLSX_INVALID',
+      'System dictionary import XLSX must be a valid workbook.',
+    );
+  }
+
+  const worksheet = files['xl/worksheets/sheet1.xml'];
+
+  if (!worksheet) {
+    throw systemDictBadRequest(
+      'SYSTEM_DICT_IMPORT_XLSX_SHEET_MISSING',
+      'System dictionary import XLSX must contain xl/worksheets/sheet1.xml.',
+    );
+  }
+
+  return parseXlsxWorksheetRows(
+    Buffer.from(worksheet).toString('utf8'),
+    parseXlsxSharedStrings(files['xl/sharedStrings.xml']),
+  );
+}
+
+function parseXlsxSharedStrings(sharedStrings?: Uint8Array): readonly string[] {
+  if (!sharedStrings) {
+    return [];
+  }
+
+  const xml = Buffer.from(sharedStrings).toString('utf8');
+  const values: string[] = [];
+  const stringPattern = /<si\b[^>]*>([\s\S]*?)<\/si>/gi;
+  let match: RegExpExecArray | null;
+
+  while ((match = stringPattern.exec(xml))) {
+    values.push(readXlsxTextNodes(match[1]));
+  }
+
+  return values;
+}
+
+function parseXlsxWorksheetRows(
+  worksheetXml: string,
+  sharedStrings: readonly string[],
+): string[][] {
+  const rows: string[][] = [];
+  const rowPattern = /<row\b[^>]*>([\s\S]*?)<\/row>/gi;
+  let rowMatch: RegExpExecArray | null;
+
+  while ((rowMatch = rowPattern.exec(worksheetXml))) {
+    const cells: string[] = [];
+    const cellPattern = /<c\b([^>]*)>([\s\S]*?)<\/c>/gi;
+    let cellMatch: RegExpExecArray | null;
+    let fallbackIndex = 0;
+
+    while ((cellMatch = cellPattern.exec(rowMatch[1]))) {
+      const columnIndex = getXlsxCellColumnIndex(cellMatch[1], fallbackIndex);
+      cells[columnIndex] = parseXlsxCellValue(
+        cellMatch[1],
+        cellMatch[2],
+        sharedStrings,
+      );
+      fallbackIndex = columnIndex + 1;
+    }
+
+    rows.push(cells.map((cell) => cell ?? ''));
+  }
+
+  return rows.filter((row) => row.some((cell) => cell.trim()));
+}
+
+function getXlsxCellColumnIndex(attrs: string, fallbackIndex: number): number {
+  const reference = getXmlAttribute(attrs, 'r');
+  const match = reference ? /^([A-Z]+)\d+$/i.exec(reference) : undefined;
+
+  return match ? columnNameToIndex(match[1]) : fallbackIndex;
+}
+
+function parseXlsxCellValue(
+  attrs: string,
+  body: string,
+  sharedStrings: readonly string[],
+): string {
+  const cellType = getXmlAttribute(attrs, 't');
+
+  if (cellType === 'inlineStr') {
+    return readXlsxTextNodes(body);
+  }
+
+  const rawValue = readXmlElementText(body, 'v');
+
+  if (cellType === 's') {
+    const sharedStringIndex =
+      rawValue === undefined ? Number.NaN : Number.parseInt(rawValue, 10);
+    return Number.isInteger(sharedStringIndex)
+      ? (sharedStrings[sharedStringIndex] ?? '')
+      : '';
+  }
+
+  if (cellType === 'b') {
+    if (rawValue === '1') {
+      return 'true';
+    }
+
+    if (rawValue === '0') {
+      return 'false';
+    }
+  }
+
+  if (rawValue !== undefined) {
+    return rawValue;
+  }
+
+  return readXlsxTextNodes(body);
+}
+
+function readXlsxTextNodes(xml: string): string {
+  const values: string[] = [];
+  const textPattern = /<t\b[^>]*>([\s\S]*?)<\/t>/gi;
+  let match: RegExpExecArray | null;
+
+  while ((match = textPattern.exec(xml))) {
+    values.push(unescapeXml(match[1]));
+  }
+
+  return values.join('');
+}
+
+function readXmlElementText(xml: string, name: string): string | undefined {
+  const pattern = new RegExp(`<${name}\\b[^>]*>([\\s\\S]*?)<\\/${name}>`, 'i');
+  const match = pattern.exec(xml);
+
+  return match ? unescapeXml(match[1]) : undefined;
+}
+
+function getXmlAttribute(attrs: string, name: string): string | undefined {
+  const pattern = new RegExp(`\\b${name}="([^"]*)"`, 'i');
+  const match = pattern.exec(attrs);
+
+  return match ? unescapeXml(match[1]) : undefined;
+}
+
+function columnNameToIndex(name: string): number {
+  let index = 0;
+
+  for (const char of name.toUpperCase()) {
+    index = index * 26 + char.charCodeAt(0) - 64;
+  }
+
+  return Math.max(index - 1, 0);
+}
+
+function unescapeXml(value: string): string {
+  return value.replace(
+    /&(#x[0-9a-f]+|#\d+|quot|apos|lt|gt|amp);/gi,
+    (_entity, code: string) => {
+      const normalizedCode = code.toLowerCase();
+
+      switch (normalizedCode) {
+        case 'quot':
+          return '"';
+        case 'apos':
+          return "'";
+        case 'lt':
+          return '<';
+        case 'gt':
+          return '>';
+        case 'amp':
+          return '&';
+        default:
+          if (normalizedCode.startsWith('#x')) {
+            return String.fromCodePoint(
+              Number.parseInt(normalizedCode.slice(2), 16),
+            );
+          }
+
+          return String.fromCodePoint(
+            Number.parseInt(normalizedCode.slice(1), 10),
+          );
+      }
+    },
+  );
+}
+
+function stripUtf8Bom(value: string): string {
+  return value.charCodeAt(0) === 0xfeff ? value.slice(1) : value;
+}
+
+function parseCsvRows(csv: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let cell = '';
+  let inQuotes = false;
+
+  for (let index = 0; index < csv.length; index += 1) {
+    const char = csv[index];
+    const next = csv[index + 1];
+
+    if (char === '"') {
+      if (inQuotes && next === '"') {
+        cell += '"';
+        index += 1;
+        continue;
+      }
+
+      inQuotes = !inQuotes;
+      continue;
+    }
+
+    if (!inQuotes && char === ',') {
+      row.push(cell);
+      cell = '';
+      continue;
+    }
+
+    if (!inQuotes && (char === '\n' || char === '\r')) {
+      row.push(cell);
+      rows.push(row);
+      row = [];
+      cell = '';
+
+      if (char === '\r' && next === '\n') {
+        index += 1;
+      }
+
+      continue;
+    }
+
+    cell += char;
+  }
+
+  if (inQuotes) {
+    throw systemDictBadRequest(
+      'SYSTEM_DICT_IMPORT_CSV_UNCLOSED_QUOTE',
+      'System dictionary import CSV has an unclosed quote.',
+    );
+  }
+
+  row.push(cell);
+  rows.push(row);
+
+  return rows.filter((candidate) =>
+    candidate.some((candidateCell) => candidateCell.trim()),
+  );
 }
 
 export function systemDictBadRequest(

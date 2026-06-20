@@ -28,10 +28,13 @@ import type {
   DictDataOptionQueryRequest,
   DictDataOptionSummary,
   DictDeleteMutationSummary,
+  DictImportResultSummary,
+  DictImportTemplateSummary,
   DictItemBatchMutationSummary,
   DictItemDeleteMutationSummary,
   DictItemQueryRequest,
   DictItemSummary,
+  DictTranslationResultSummary,
   DictTypeQueryRequest,
   DictTypeSummary,
   ExportPreview,
@@ -39,6 +42,7 @@ import type {
   IpLocationLookupRequest,
   IpLocationLookupSummary,
   IpLocationProviderStatusSummary,
+  ImportDictsRequest,
   LoginLogQueryRequest,
   LoginLogBatchMutationSummary,
   LoginLogCleanSummary,
@@ -89,6 +93,7 @@ import type {
   SystemPostOptionSummary,
   SystemPostQueryRequest,
   SystemPostSummary,
+  TranslateDictValuesRequest,
   UpdateDictItemRequest,
   UpdateDictTypeRequest,
   UpdateFileAssetRequest,
@@ -116,6 +121,19 @@ export type SystemManagementClient = {
     token: Token,
     query?: DictTypeQueryRequest,
   ) => Promise<ExportPreview>;
+  listDeletedDicts: (
+    token: Token,
+    query?: DictTypeQueryRequest,
+  ) => Promise<PageResponse<DictTypeSummary>>;
+  getDictImportTemplate: (token: Token) => Promise<DictImportTemplateSummary>;
+  previewImportDicts: (
+    token: Token,
+    body: ImportDictsRequest,
+  ) => Promise<DictImportResultSummary>;
+  importDicts: (
+    token: Token,
+    body: ImportDictsRequest,
+  ) => Promise<DictImportResultSummary>;
   getDict: (token: Token, code: string) => Promise<DictTypeSummary>;
   listDictDataOptions: (
     token: Token,
@@ -129,6 +147,10 @@ export type SystemManagementClient = {
     token: Token,
     query?: DictItemQueryRequest,
   ) => Promise<ExportPreview>;
+  listDeletedDictItemsPage: (
+    token: Token,
+    query?: DictItemQueryRequest,
+  ) => Promise<PageResponse<DictItemSummary>>;
   listDictItems: (
     token: Token,
     code: string,
@@ -164,6 +186,10 @@ export type SystemManagementClient = {
     itemId: string,
   ) => Promise<DeleteResult>;
   deleteDict: (token: Token, code: string) => Promise<DeleteResult>;
+  restoreDict: (token: Token, code: string) => Promise<DictTypeSummary>;
+  restoreDictItem: (token: Token, itemId: string) => Promise<DictItemSummary>;
+  hardDeleteDict: (token: Token, code: string) => Promise<DeleteResult>;
+  hardDeleteDictItem: (token: Token, itemId: string) => Promise<DeleteResult>;
   deleteDicts: (
     token: Token,
     body: BatchDeleteDictTypesRequest,
@@ -181,6 +207,10 @@ export type SystemManagementClient = {
     body: BatchUpdateDictItemStatusRequest,
   ) => Promise<DictItemBatchMutationSummary>;
   refreshDictCache: (token: Token) => Promise<DictCacheRefreshSummary>;
+  translateDictValues: (
+    token: Token,
+    body: TranslateDictValuesRequest,
+  ) => Promise<DictTranslationResultSummary>;
   listConfig: (
     token: Token,
     query?: PageRequest,
@@ -486,6 +516,27 @@ export function createSystemManagementClient(
       request<ExportPreview>(withQuery('/core/dicts/export', query), {
         token,
       }),
+    listDeletedDicts: (token, query) =>
+      request<PageResponse<DictTypeSummary>>(
+        withQuery('/core/dicts/recycle-bin', query),
+        { token },
+      ),
+    getDictImportTemplate: (token) =>
+      request<DictImportTemplateSummary>('/core/dicts/import-template', {
+        token,
+      }),
+    previewImportDicts: (token, body) =>
+      request<DictImportResultSummary>('/core/dicts/import/preview', {
+        method: 'POST',
+        body,
+        token,
+      }),
+    importDicts: (token, body) =>
+      request<DictImportResultSummary>('/core/dicts/import', {
+        method: 'POST',
+        body,
+        token,
+      }),
     getDict: (token, code) =>
       request<DictTypeSummary>(`/core/dicts/${encodeURIComponent(code)}`, {
         token,
@@ -508,6 +559,11 @@ export function createSystemManagementClient(
       request<ExportPreview>(withQuery('/core/dict-items/export', query), {
         token,
       }),
+    listDeletedDictItemsPage: (token, query) =>
+      request<PageResponse<DictItemSummary>>(
+        withQuery('/core/dict-items/recycle-bin', query),
+        { token },
+      ),
     listDictItems: (token, code) =>
       request<readonly DictItemSummary[]>(
         `/core/dicts/${encodeURIComponent(code)}/items`,
@@ -565,6 +621,32 @@ export function createSystemManagementClient(
         method: 'DELETE',
         token,
       }),
+    restoreDict: (token, code) =>
+      request<DictTypeSummary>(`/core/dicts/${encodeURIComponent(code)}/restore`, {
+        method: 'PATCH',
+        token,
+      }),
+    restoreDictItem: (token, itemId) =>
+      request<DictItemSummary>(
+        `/core/dict-items/${encodeURIComponent(itemId)}/restore`,
+        {
+          method: 'PATCH',
+          token,
+        },
+      ),
+    hardDeleteDict: (token, code) =>
+      request<DeleteResult>(`/core/dicts/${encodeURIComponent(code)}/hard`, {
+        method: 'DELETE',
+        token,
+      }),
+    hardDeleteDictItem: (token, itemId) =>
+      request<DeleteResult>(
+        `/core/dict-items/${encodeURIComponent(itemId)}/hard`,
+        {
+          method: 'DELETE',
+          token,
+        },
+      ),
     deleteDicts: (token, body) =>
       request<DictDeleteMutationSummary>('/core/dicts/batch', {
         method: 'DELETE',
@@ -592,6 +674,12 @@ export function createSystemManagementClient(
     refreshDictCache: (token) =>
       request<DictCacheRefreshSummary>('/core/dicts/refresh-cache', {
         method: 'POST',
+        token,
+      }),
+    translateDictValues: (token, body) =>
+      request<DictTranslationResultSummary>('/core/dict-data/translate', {
+        method: 'POST',
+        body,
         token,
       }),
     listConfig: (token, query) =>

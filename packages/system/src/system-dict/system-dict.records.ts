@@ -8,6 +8,7 @@ export type DictItemRecord = {
   colorType?: string;
   cssClass?: string;
   remark?: string;
+  deletedAt?: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -24,6 +25,7 @@ export type DictTypeRecord = {
   remark?: string;
   enabled: boolean;
   system: boolean;
+  deletedAt?: string;
   createdAt: string;
   updatedAt: string;
   items: DictItemRecord[];

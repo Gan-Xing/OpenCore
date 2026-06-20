@@ -723,6 +723,30 @@ export default {
   'error.SYSTEM_DICT_DATE_INVALID': 'The dictionary date filter is invalid.',
   'error.SYSTEM_DICT_HAS_ITEMS':
     'The dictionary has items and cannot be deleted directly.',
+  'error.SYSTEM_DICT_IMPORT_BOOLEAN_INVALID':
+    'The dictionary import boolean value is invalid.',
+  'error.SYSTEM_DICT_IMPORT_COLUMN_MISSING':
+    'The dictionary import file is missing a required column.',
+  'error.SYSTEM_DICT_IMPORT_CONTENT_BASE64_INVALID':
+    'The dictionary import content must be valid base64.',
+  'error.SYSTEM_DICT_IMPORT_CONTENT_EMPTY':
+    'The dictionary import content must not be empty.',
+  'error.SYSTEM_DICT_IMPORT_CONTENT_TOO_LARGE':
+    'The dictionary import file is too large.',
+  'error.SYSTEM_DICT_IMPORT_CSV_UNCLOSED_QUOTE':
+    'The dictionary import CSV has an unclosed quote.',
+  'error.SYSTEM_DICT_IMPORT_DATA_ROW_REQUIRED':
+    'The dictionary import file requires at least one non-empty data row.',
+  'error.SYSTEM_DICT_IMPORT_INTEGER_INVALID':
+    'The dictionary import integer field is invalid.',
+  'error.SYSTEM_DICT_IMPORT_ITEM_PAIR_INVALID':
+    'The dictionary import item value and label must be provided together.',
+  'error.SYSTEM_DICT_IMPORT_ROWS_REQUIRED':
+    'The dictionary import file must contain a header and at least one data row.',
+  'error.SYSTEM_DICT_IMPORT_XLSX_INVALID':
+    'The dictionary import XLSX must be a valid workbook.',
+  'error.SYSTEM_DICT_IMPORT_XLSX_SHEET_MISSING':
+    'The dictionary import XLSX is missing its worksheet.',
   'error.SYSTEM_DICT_INLINE_ITEMS_UPDATE_UNSUPPORTED':
     'Dictionary items must be managed through dictionary item APIs.',
   'error.SYSTEM_DICT_INTEGER_INVALID':
@@ -737,11 +761,21 @@ export default {
     'The dictionary item ID is duplicated.',
   'error.SYSTEM_DICT_ITEM_NOT_FOUND': 'The dictionary item does not exist.',
   'error.SYSTEM_DICT_NOT_FOUND': 'The dictionary does not exist.',
+  'error.SYSTEM_DICT_PARENT_DELETED':
+    'Restore the dictionary before restoring this dictionary item.',
   'error.SYSTEM_DICT_SYSTEM_IMMUTABLE':
     'The built-in system dictionary cannot perform this action.',
   'error.SYSTEM_DICT_SYSTEM_ITEM_IMMUTABLE':
     'The built-in system dictionary item cannot perform this action.',
   'error.SYSTEM_DICT_TEXT_REQUIRED': 'A required dictionary text is missing.',
+  'error.SYSTEM_DICT_TRANSLATION_ENTRIES_EMPTY':
+    'Dictionary translation entries must not be empty.',
+  'error.SYSTEM_DICT_TRANSLATION_ENTRIES_INVALID':
+    'Dictionary translation entries must be an array.',
+  'error.SYSTEM_DICT_TRANSLATION_VALUES_INVALID':
+    'Dictionary translation values must be an array.',
+  'error.SYSTEM_DICT_TRANSLATION_VALUE_DUPLICATED':
+    'The dictionary translation value is duplicated.',
   'error.TOOL_AREA_FORMAT_SEPARATOR_INVALID':
     'The area path separator is invalid.',
   'error.TOOL_AREA_LEVEL_INVALID': 'The area level is invalid.',

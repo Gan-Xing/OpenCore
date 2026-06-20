@@ -123,6 +123,78 @@ describe('@opencore/system system-dict', () => {
     });
   });
 
+  it('supports dictionary import, translation, restore and hard delete in seed mode', async () => {
+    const service = new SystemDictService(new SeedSystemDictRepository());
+    const dictCode = 'sample.imported';
+    const contentBase64 = createDictImportCsvBase64(dictCode);
+
+    await expect(service.previewImportDicts({ contentBase64 })).resolves.toMatchObject({
+      createdDicts: 1,
+      createdItems: 2,
+      dryRun: true,
+      failed: 0,
+    });
+    await expect(service.importDicts({ contentBase64 })).resolves.toMatchObject({
+      createdDicts: 1,
+      createdItems: 2,
+      dryRun: false,
+      failed: 0,
+    });
+    await expect(
+      service.listDictDataOptions({ dictCode }),
+    ).resolves.toEqual([
+      expect.objectContaining({ dictCode, label: 'Open', value: 'open' }),
+    ]);
+    await expect(
+      service.translateDictValues({
+        entries: [{ dictCode, values: ['open', 'missing'] }],
+      }),
+    ).resolves.toMatchObject({
+      items: [
+        expect.objectContaining({ found: true, label: 'Open', value: 'open' }),
+        expect.objectContaining({ found: false, value: 'missing' }),
+      ],
+    });
+
+    const openItem = requireDictItem(await service.listDictItems(dictCode), 'open');
+    await expect(service.deleteDictItem(dictCode, openItem.id)).resolves.toEqual({
+      deleted: true,
+    });
+    await expect(
+      service.listDeletedDictItemsPage({ dictCode, value: 'open' }),
+    ).resolves.toMatchObject({ total: 1 });
+    await expect(service.restoreDictItem(openItem.id)).resolves.toMatchObject({
+      value: 'open',
+    });
+    await service.deleteDictItem(dictCode, openItem.id);
+    await expect(service.hardDeleteDictItem(openItem.id)).resolves.toEqual({
+      deleted: true,
+    });
+
+    const closedItem = requireDictItem(
+      await service.listDictItems(dictCode),
+      'closed',
+    );
+    await service.deleteDictItem(dictCode, closedItem.id);
+    await service.deleteDict(dictCode);
+    await expectHttpExceptionCode(
+      service.restoreDictItem(closedItem.id),
+      'SYSTEM_DICT_PARENT_DELETED',
+    );
+    await expectHttpExceptionCode(
+      service.hardDeleteDict(dictCode),
+      'SYSTEM_DICT_HAS_ITEMS',
+    );
+    await service.restoreDict(dictCode);
+    await service.restoreDictItem(closedItem.id);
+    await service.deleteDictItem(dictCode, closedItem.id);
+    await service.hardDeleteDictItem(closedItem.id);
+    await service.deleteDict(dictCode);
+    await expect(service.hardDeleteDict(dictCode)).resolves.toEqual({
+      deleted: true,
+    });
+  });
+
   it('rejects malformed dictionary booleans and item sort values', async () => {
     const service = new SystemDictService(new SeedSystemDictRepository());
 
@@ -161,6 +233,7 @@ describe('@opencore/system system-dict', () => {
     );
     const testRunId = randomUUID().slice(0, 8);
     const dictCode = `system.pkg.${testRunId}`;
+    const importDictCode = `system.pkg.import.${testRunId}`;
 
     beforeEach(async () => {
       await cleanupTestRows();
@@ -286,11 +359,80 @@ describe('@opencore/system system-dict', () => {
       });
     });
 
+    it('persists import, translation, recycle and hard delete through Prisma', async () => {
+      const contentBase64 = createDictImportCsvBase64(importDictCode);
+
+      await expect(
+        service.previewImportDicts({ contentBase64 }),
+      ).resolves.toMatchObject({
+        createdDicts: 1,
+        createdItems: 2,
+        dryRun: true,
+        failed: 0,
+      });
+      await expect(service.importDicts({ contentBase64 })).resolves.toMatchObject({
+        createdDicts: 1,
+        createdItems: 2,
+        dryRun: false,
+        failed: 0,
+      });
+      await expect(
+        service.translateDictValues({
+          entries: [{ dictCode: importDictCode, values: ['open', 'missing'] }],
+        }),
+      ).resolves.toMatchObject({
+        items: [
+          expect.objectContaining({ found: true, label: 'Open', value: 'open' }),
+          expect.objectContaining({ found: false, value: 'missing' }),
+        ],
+      });
+
+      const openItem = requireDictItem(
+        await service.listDictItems(importDictCode),
+        'open',
+      );
+      await service.deleteDictItem(importDictCode, openItem.id);
+      await expect(
+        service.listDeletedDictItemsPage({
+          dictCode: importDictCode,
+          value: 'open',
+        }),
+      ).resolves.toMatchObject({ total: 1 });
+      await service.restoreDictItem(openItem.id);
+      await service.deleteDictItem(importDictCode, openItem.id);
+      await service.hardDeleteDictItem(openItem.id);
+
+      const closedItem = requireDictItem(
+        await service.listDictItems(importDictCode),
+        'closed',
+      );
+      await service.deleteDictItem(importDictCode, closedItem.id);
+      await service.deleteDict(importDictCode);
+      await expectHttpExceptionCode(
+        service.restoreDictItem(closedItem.id),
+        'SYSTEM_DICT_PARENT_DELETED',
+      );
+      await expectHttpExceptionCode(
+        service.hardDeleteDict(importDictCode),
+        'SYSTEM_DICT_HAS_ITEMS',
+      );
+      await service.restoreDict(importDictCode);
+      await service.restoreDictItem(closedItem.id);
+      await service.deleteDictItem(importDictCode, closedItem.id);
+      await service.hardDeleteDictItem(closedItem.id);
+      await service.deleteDict(importDictCode);
+      await expect(service.hardDeleteDict(importDictCode)).resolves.toEqual({
+        deleted: true,
+      });
+    });
+
     async function cleanupTestRows(): Promise<void> {
       await prisma.dictItem.deleteMany({
-        where: { type: { code: dictCode } },
+        where: { type: { code: { in: [dictCode, importDictCode] } } },
       });
-      await prisma.dictType.deleteMany({ where: { code: dictCode } });
+      await prisma.dictType.deleteMany({
+        where: { code: { in: [dictCode, importDictCode] } },
+      });
     }
   });
 });
@@ -320,4 +462,72 @@ function getHttpExceptionResponse(error: unknown): unknown {
   }
 
   return undefined;
+}
+
+function createDictImportCsvBase64(code: string): string {
+  const csv = [
+    [
+      'dictCode',
+      'dictName',
+      'dictDescription',
+      'dictRemark',
+      'dictEnabled',
+      'itemValue',
+      'itemLabel',
+      'itemSort',
+      'itemEnabled',
+      'itemColorType',
+      'itemCssClass',
+      'itemRemark',
+    ],
+    [
+      code,
+      'Imported Dictionary',
+      'Imported by system-dict tests.',
+      '',
+      'true',
+      'open',
+      'Open',
+      '10',
+      'true',
+      'success',
+      '',
+      'Open item',
+    ],
+    [
+      code,
+      'Imported Dictionary',
+      'Imported by system-dict tests.',
+      '',
+      'true',
+      'closed',
+      'Closed',
+      '20',
+      'false',
+      'default',
+      '',
+      'Closed item',
+    ],
+  ]
+    .map((row) => row.map(escapeCsvCell).join(','))
+    .join('\n');
+
+  return Buffer.from(csv, 'utf8').toString('base64');
+}
+
+function escapeCsvCell(value: string): string {
+  return /[",\n\r]/.test(value) ? `"${value.replaceAll('"', '""')}"` : value;
+}
+
+function requireDictItem(
+  items: readonly { value: string; id: string }[],
+  value: string,
+): { value: string; id: string } {
+  const item = items.find((candidate) => candidate.value === value);
+
+  if (!item) {
+    throw new Error(`Expected dictionary item ${value}`);
+  }
+
+  return item;
 }

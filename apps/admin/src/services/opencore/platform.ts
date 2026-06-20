@@ -84,6 +84,7 @@ import {
   type OpenForgeSchemaRequest,
   type OpenForgeStatusSummary,
   type OpenApiDriftStatus,
+  type ImportDictsRequest,
   type ImportUsersRequest,
   type CreateSystemDeptRequest,
   type CreateSystemNoticeFromTemplateRequest,
@@ -108,15 +109,19 @@ import {
   type DictDataOptionQueryRequest,
   type DictDataOptionSummary,
   type DictDeleteMutationSummary,
+  type DictImportResultSummary,
+  type DictImportTemplateSummary,
   type DictItemBatchMutationSummary,
   type DictItemDeleteMutationSummary,
   type DictItemQueryRequest,
   type DictItemSummary,
+  type DictTranslationResultSummary,
   type DictTypeQueryRequest,
   type DictTypeSummary,
   type ExportPreview,
   type CurrentPageExportProtocolSummary,
   type ExportPlanSummary,
+  type TranslateDictValuesRequest,
   type SystemConfigSummary,
   type SystemConfigBatchMutationSummary,
   type SystemConfigCacheRefreshSummary,
@@ -929,6 +934,31 @@ export function exportOpenCoreDicts(
   return systemManagementClient.exportDicts(getRequiredAdminToken(), query);
 }
 
+export function listOpenCoreDeletedDictPage(
+  query?: DictTypeQueryRequest,
+): Promise<PageResponse<DictTypeSummary>> {
+  return systemManagementClient.listDeletedDicts(getRequiredAdminToken(), query);
+}
+
+export function getOpenCoreDictImportTemplate(): Promise<DictImportTemplateSummary> {
+  return systemManagementClient.getDictImportTemplate(getRequiredAdminToken());
+}
+
+export function previewOpenCoreDictsImport(
+  body: ImportDictsRequest,
+): Promise<DictImportResultSummary> {
+  return systemManagementClient.previewImportDicts(
+    getRequiredAdminToken(),
+    body,
+  );
+}
+
+export function importOpenCoreDicts(
+  body: ImportDictsRequest,
+): Promise<DictImportResultSummary> {
+  return systemManagementClient.importDicts(getRequiredAdminToken(), body);
+}
+
 export function getOpenCoreDict(code: string): Promise<DictTypeSummary> {
   return systemManagementClient.getDict(getRequiredAdminToken(), code);
 }
@@ -961,6 +991,15 @@ export function exportOpenCoreDictItems(
   query?: DictItemQueryRequest,
 ): Promise<ExportPreview> {
   return systemManagementClient.exportDictItems(getRequiredAdminToken(), query);
+}
+
+export function listOpenCoreDeletedDictItemsPage(
+  query?: DictItemQueryRequest,
+): Promise<PageResponse<DictItemSummary>> {
+  return systemManagementClient.listDeletedDictItemsPage(
+    getRequiredAdminToken(),
+    query,
+  );
 }
 
 export function createOpenCoreDictItem(
@@ -998,6 +1037,21 @@ export function deleteOpenCoreDictItem(
   );
 }
 
+export function restoreOpenCoreDictItem(
+  itemId: string,
+): Promise<DictItemSummary> {
+  return systemManagementClient.restoreDictItem(getRequiredAdminToken(), itemId);
+}
+
+export function hardDeleteOpenCoreDictItem(
+  itemId: string,
+): Promise<{ deleted: true }> {
+  return systemManagementClient.hardDeleteDictItem(
+    getRequiredAdminToken(),
+    itemId,
+  );
+}
+
 export function createOpenCoreDict(
   body: CreateDictTypeRequest,
 ): Promise<DictTypeSummary> {
@@ -1015,6 +1069,16 @@ export function deleteOpenCoreDict(
   code: string,
 ): Promise<{ deleted: true }> {
   return systemManagementClient.deleteDict(getRequiredAdminToken(), code);
+}
+
+export function restoreOpenCoreDict(code: string): Promise<DictTypeSummary> {
+  return systemManagementClient.restoreDict(getRequiredAdminToken(), code);
+}
+
+export function hardDeleteOpenCoreDict(
+  code: string,
+): Promise<{ deleted: true }> {
+  return systemManagementClient.hardDeleteDict(getRequiredAdminToken(), code);
 }
 
 export function deleteOpenCoreDicts(
@@ -1046,6 +1110,15 @@ export function updateOpenCoreDictItemStatus(
 
 export function refreshOpenCoreDictCache(): Promise<DictCacheRefreshSummary> {
   return systemManagementClient.refreshDictCache(getRequiredAdminToken());
+}
+
+export function translateOpenCoreDictValues(
+  body: TranslateDictValuesRequest,
+): Promise<DictTranslationResultSummary> {
+  return systemManagementClient.translateDictValues(
+    getRequiredAdminToken(),
+    body,
+  );
 }
 
 export async function listOpenCoreSystemConfig(): Promise<

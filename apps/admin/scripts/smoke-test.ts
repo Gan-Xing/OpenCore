@@ -433,6 +433,11 @@ if (
   !opencorePlatformService.includes('listOpenCoreDictItems') ||
   !opencorePlatformService.includes('exportOpenCoreDicts') ||
   !opencorePlatformService.includes('exportOpenCoreDictItems') ||
+  !opencorePlatformService.includes('getOpenCoreDictImportTemplate') ||
+  !opencorePlatformService.includes('previewOpenCoreDictsImport') ||
+  !opencorePlatformService.includes('importOpenCoreDicts') ||
+  !opencorePlatformService.includes('listOpenCoreDeletedDictPage') ||
+  !opencorePlatformService.includes('listOpenCoreDeletedDictItemsPage') ||
   !opencorePlatformService.includes('createOpenCoreDict') ||
   !opencorePlatformService.includes('createOpenCoreDictItem') ||
   !opencorePlatformService.includes('updateOpenCoreDict') ||
@@ -441,8 +446,13 @@ if (
   !opencorePlatformService.includes('updateOpenCoreDictItemStatus') ||
   !opencorePlatformService.includes('deleteOpenCoreDict') ||
   !opencorePlatformService.includes('deleteOpenCoreDictItem') ||
+  !opencorePlatformService.includes('restoreOpenCoreDict') ||
+  !opencorePlatformService.includes('restoreOpenCoreDictItem') ||
+  !opencorePlatformService.includes('hardDeleteOpenCoreDict') ||
+  !opencorePlatformService.includes('hardDeleteOpenCoreDictItem') ||
   !opencorePlatformService.includes('deleteOpenCoreDicts') ||
   !opencorePlatformService.includes('deleteOpenCoreDictItems') ||
+  !opencorePlatformService.includes('translateOpenCoreDictValues') ||
   !opencorePlatformService.includes('refreshOpenCoreDictCache') ||
   !opencorePlatformService.includes('listOpenCoreSystemConfig') ||
   !opencorePlatformService.includes('exportOpenCoreSystemConfig') ||
@@ -1574,6 +1584,16 @@ if (
   !dictsPage.includes('listOpenCoreDictItemsPage') ||
   !dictsPage.includes('exportOpenCoreDicts') ||
   !dictsPage.includes('exportOpenCoreDictItems') ||
+  !dictsPage.includes('getOpenCoreDictImportTemplate') ||
+  !dictsPage.includes('previewOpenCoreDictsImport') ||
+  !dictsPage.includes('importOpenCoreDicts') ||
+  !dictsPage.includes('listOpenCoreDeletedDictPage') ||
+  !dictsPage.includes('listOpenCoreDeletedDictItemsPage') ||
+  !dictsPage.includes('restoreOpenCoreDict') ||
+  !dictsPage.includes('restoreOpenCoreDictItem') ||
+  !dictsPage.includes('hardDeleteOpenCoreDict') ||
+  !dictsPage.includes('hardDeleteOpenCoreDictItem') ||
+  !dictsPage.includes('translateOpenCoreDictValues') ||
   !dictsPage.includes('refreshOpenCoreDictCache') ||
   !dictsPage.includes('createOpenCoreDict') ||
   !dictsPage.includes('createOpenCoreDictItem') ||
@@ -1589,11 +1609,14 @@ if (
   !dictsPage.includes('request={requestDicts}') ||
   !dictsPage.includes('request={requestItems}') ||
   !dictsPage.includes('rowSelection=') ||
+  !dictsPage.includes('data-opencore-system-dicts-import="true"') ||
+  !dictsPage.includes('data-opencore-system-dicts-recycle="true"') ||
+  !dictsPage.includes('data-opencore-system-dicts-translate="true"') ||
   !dictsPage.includes('字典类型') ||
   !dictsPage.includes('字典数据')
 ) {
   throw new Error(
-    'Dictionaries page must use live-only SDK CRUD with server pagination, item editing, batch operations, server export and cache refresh, without fixture fallback.',
+    'Dictionaries page must use live-only SDK CRUD with server pagination, item editing, batch operations, server export/import, recycle-bin restore/hard-delete, translation preview and cache refresh, without fixture fallback.',
   );
 }
 

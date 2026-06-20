@@ -57,6 +57,7 @@ console.log(
 
 function findGeneratedClientDir(clientPackageDirs, workspaceSchema) {
   const workspaceModelNames = getModelNames(workspaceSchema);
+  const workspaceModelFields = getModelFields(workspaceSchema);
 
   for (const clientPackageDir of clientPackageDirs) {
     const clientNodeModulesDir = resolve(clientPackageDir, '..', '..');
@@ -86,10 +87,16 @@ function findGeneratedClientDir(clientPackageDirs, workspaceSchema) {
     const generatedSchema = readFileSync(generatedSchemaPath, 'utf8');
     const generatedIndex = readFileSync(generatedIndexPath, 'utf8');
     const generatedModelNames = new Set(getModelNames(generatedSchema));
+    const generatedModelFields = getModelFields(generatedSchema);
 
     if (
       workspaceModelNames.every((modelName) =>
         generatedModelNames.has(modelName),
+      ) &&
+      workspaceModelNames.every((modelName) =>
+        (workspaceModelFields.get(modelName) ?? []).every((fieldName) =>
+          (generatedModelFields.get(modelName) ?? []).includes(fieldName),
+        ),
       ) &&
       workspaceModelNames.every((modelName) =>
         generatedIndex.includes(`Model ${modelName}`),
@@ -108,4 +115,23 @@ function getModelNames(schema) {
   return [...schema.matchAll(/^model\s+([A-Za-z][A-Za-z0-9_]*)\s+\{/gm)].map(
     (match) => match[1],
   );
+}
+
+function getModelFields(schema) {
+  const fieldsByModel = new Map();
+
+  for (const match of schema.matchAll(
+    /^model\s+([A-Za-z][A-Za-z0-9_]*)\s+\{([\s\S]*?)^\}/gm,
+  )) {
+    const fields = match[2]
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line && !line.startsWith('@@'))
+      .map((line) => line.match(/^([A-Za-z][A-Za-z0-9_]*)\s+/)?.[1])
+      .filter(Boolean);
+
+    fieldsByModel.set(match[1], fields);
+  }
+
+  return fieldsByModel;
 }

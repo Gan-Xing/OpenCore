@@ -34,6 +34,15 @@ describe('createSystemManagementClient', () => {
       enabled: true,
       name: 'Status',
     });
+    await client.listDeletedDicts('token', { page: 1, pageSize: 5 });
+    await client.getDictImportTemplate('token');
+    await client.previewImportDicts('token', {
+      contentBase64: 'ZGljdENvZGUsZGljdE5hbWUK',
+    });
+    await client.importDicts('token', {
+      contentBase64: 'ZGljdENvZGUsZGljdE5hbWUK',
+      updateExisting: true,
+    });
     await client.getDict('token', 'system.status');
     await client.listDictDataOptions('token', { dictCode: 'system.status' });
     await client.listDictItemsPage('token', {
@@ -48,6 +57,11 @@ describe('createSystemManagementClient', () => {
       dictCode: 'system.status',
       enabled: true,
     });
+    await client.listDeletedDictItemsPage('token', {
+      dictCode: 'system.status',
+      page: 1,
+      pageSize: 5,
+    });
     await client.listDictItems('token', 'system.status');
     await client.getDictItem('token', 'system.status', 'dict_item_enabled');
     await client.createDictItem('token', 'system.status', {
@@ -60,6 +74,10 @@ describe('createSystemManagementClient', () => {
       sort: 30,
     });
     await client.deleteDictItem('token', 'system.status', 'dict_item_disabled');
+    await client.restoreDict('token', 'custom.status');
+    await client.restoreDictItem('token', 'dict_item_disabled');
+    await client.hardDeleteDict('token', 'custom.status');
+    await client.hardDeleteDictItem('token', 'dict_item_disabled');
     await client.updateDictStatus('token', {
       codes: ['custom.status'],
       enabled: false,
@@ -73,6 +91,9 @@ describe('createSystemManagementClient', () => {
       ids: ['dict_item_custom_status_enabled'],
     });
     await client.refreshDictCache('token');
+    await client.translateDictValues('token', {
+      entries: [{ dictCode: 'system.status', values: ['enabled'] }],
+    });
     await client.listConfig('token', { page: 1, pageSize: 10 });
     await client.getConfig('token', 'opencore.admin.title');
     await client.getConfigRuntime();
@@ -349,6 +370,24 @@ describe('createSystemManagementClient', () => {
         token: 'token',
       },
       {
+        path: '/core/dicts/recycle-bin?page=1&pageSize=5',
+        token: 'token',
+      },
+      {
+        path: '/core/dicts/import-template',
+        token: 'token',
+      },
+      {
+        path: '/core/dicts/import/preview',
+        method: 'POST',
+        token: 'token',
+      },
+      {
+        path: '/core/dicts/import',
+        method: 'POST',
+        token: 'token',
+      },
+      {
         path: '/core/dicts/system.status',
         token: 'token',
       },
@@ -362,6 +401,10 @@ describe('createSystemManagementClient', () => {
       },
       {
         path: '/core/dict-items/export?dictCode=system.status&enabled=true',
+        token: 'token',
+      },
+      {
+        path: '/core/dict-items/recycle-bin?dictCode=system.status&page=1&pageSize=5',
         token: 'token',
       },
       {
@@ -388,6 +431,26 @@ describe('createSystemManagementClient', () => {
         token: 'token',
       },
       {
+        path: '/core/dicts/custom.status/restore',
+        method: 'PATCH',
+        token: 'token',
+      },
+      {
+        path: '/core/dict-items/dict_item_disabled/restore',
+        method: 'PATCH',
+        token: 'token',
+      },
+      {
+        path: '/core/dicts/custom.status/hard',
+        method: 'DELETE',
+        token: 'token',
+      },
+      {
+        path: '/core/dict-items/dict_item_disabled/hard',
+        method: 'DELETE',
+        token: 'token',
+      },
+      {
         path: '/core/dicts/status',
         method: 'PATCH',
         token: 'token',
@@ -409,6 +472,11 @@ describe('createSystemManagementClient', () => {
       },
       {
         path: '/core/dicts/refresh-cache',
+        method: 'POST',
+        token: 'token',
+      },
+      {
+        path: '/core/dict-data/translate',
         method: 'POST',
         token: 'token',
       },

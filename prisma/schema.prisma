@@ -120,10 +120,12 @@ model DictType {
   enabled     Boolean    @default(true)
   system      Boolean    @default(false)
   items       DictItem[]
+  deletedAt   DateTime?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
   @@index([enabled, createdAt])
+  @@index([deletedAt, createdAt])
 }
 
 model DictItem {
@@ -137,11 +139,13 @@ model DictItem {
   colorType String?
   cssClass  String?
   remark    String?
+  deletedAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([typeId, value])
   @@index([typeId, enabled, sort])
+  @@index([deletedAt, updatedAt])
 }
 
 model SystemConfig {
