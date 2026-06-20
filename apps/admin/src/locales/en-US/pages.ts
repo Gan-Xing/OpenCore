@@ -889,10 +889,12 @@ export default {
   'pages.system.users.actions.reload': 'Reload',
   'pages.system.users.actions.reloadAria': 'Reload users',
   'pages.system.users.actions.reset': 'Reset',
+  'pages.system.users.actions.resetFilters': 'Reset',
   'pages.system.users.actions.resetPassword': 'Reset Password',
   'pages.system.users.actions.resetPasswordAria':
     'Reset password for {username}',
   'pages.system.users.actions.save': 'Save',
+  'pages.system.users.actions.search': 'Search',
   'pages.system.users.actions.selectImportFile': 'Select CSV/XLSX file',
   'pages.system.users.actions.systemAssignRolesLocked':
     'System users cannot be assigned roles',
@@ -983,6 +985,8 @@ export default {
   'pages.system.users.messages.selectImportFile':
     'Select a CSV or XLSX file to import.',
   'pages.system.users.messages.updated': 'User updated.',
+  'pages.system.users.mobile.emptyUsers': 'No users match the current filters.',
+  'pages.system.users.mobile.selectedCount': '{count} custom user(s) selected',
   'pages.system.users.open.failure': 'Unable to open user.',
   'pages.system.users.permissions.missingExport': 'Missing core:user:export',
   'pages.system.users.permissions.missingImport': 'Missing core:user:import',

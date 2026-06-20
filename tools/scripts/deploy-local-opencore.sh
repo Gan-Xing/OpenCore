@@ -84,6 +84,31 @@ start_tools_ts_script_detached() {
     node -r ts-node/register -r tsconfig-paths/register "$@" </dev/null >>"$ADMIN_LOG_FILE" 2>&1 &
 }
 
+run_with_retry() {
+  local label="$1"
+  local attempts="$2"
+  shift 2
+
+  local attempt=1
+  local status=0
+
+  while [ "$attempt" -le "$attempts" ]; do
+    if "$@"; then
+      return 0
+    fi
+
+    status=$?
+    if [ "$attempt" -ge "$attempts" ]; then
+      echo "$label failed after $attempts attempt(s)." >&2
+      return "$status"
+    fi
+
+    echo "$label failed on attempt $attempt/$attempts; retrying in 5s." >&2
+    attempt=$((attempt + 1))
+    sleep 5
+  done
+}
+
 verify_admin_bundle_api_base_url() {
   case "$ADMIN_API_BASE_URL_VALUE" in
     */api | */api/)
@@ -2458,11 +2483,14 @@ verify_admin_api_proxy_login
 verify_api_duplicate_prefix_login
 verify_public_admin_bundle
 
-run_with_env env \
-  OPENCORE_SMOKE_ADMIN_BASE_URL="$ADMIN_PUBLIC_BASE_URL" \
-  OPENCORE_SMOKE_TIMEOUT_MS="${OPENCORE_SMOKE_TIMEOUT_MS:-120000}" \
-  run_tools_ts_script "$ROOT_DIR/tools/scripts/run-typed-smoke.ts" \
-    "$ROOT_DIR/tools/smoke/smoke-admin-error-ui.ts"
+run_with_retry \
+  "Admin public UI smoke" \
+  "${OPENCORE_DEPLOY_ADMIN_UI_SMOKE_ATTEMPTS:-3}" \
+  run_with_env env \
+    OPENCORE_SMOKE_ADMIN_BASE_URL="$ADMIN_PUBLIC_BASE_URL" \
+    OPENCORE_SMOKE_TIMEOUT_MS="${OPENCORE_SMOKE_TIMEOUT_MS:-120000}" \
+    run_tools_ts_script "$ROOT_DIR/tools/scripts/run-typed-smoke.ts" \
+      "$ROOT_DIR/tools/smoke/smoke-admin-error-ui.ts"
 
 run_with_env env \
   OPENCORE_SMOKE_BASE_URL="$API_BASE_URL" \

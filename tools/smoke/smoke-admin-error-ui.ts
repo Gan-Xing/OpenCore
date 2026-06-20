@@ -852,6 +852,103 @@ async function main() {
 `,
     );
 
+    const usersMobileNetworkStart = networkEntries.length;
+    await page.send('Emulation.setDeviceMetricsOverride', {
+      deviceScaleFactor: 1,
+      height: 844,
+      mobile: true,
+      screenHeight: 844,
+      screenWidth: 390,
+      width: 390,
+    });
+    await page.send('Page.navigate', {
+      url: `${adminBaseUrl}/system/users?admin-users-mobile-smoke=${runId}`,
+    });
+    await waitForExpression(
+      page,
+      'document.readyState === "complete"',
+      'Admin users mobile page load',
+    );
+    await waitForCondition(
+      () =>
+        networkEntries
+          .slice(usersMobileNetworkStart)
+          .some(
+            (entry) =>
+              entry.status === 200 &&
+              /\/api\/core\/users(?:\?|$)/u.test(entry.url),
+          ),
+      'Admin users mobile live list request',
+    );
+    await waitForExpression(
+      page,
+      `Boolean(document.querySelector('[data-opencore-system-users-mobile-list="true"]'))`,
+      'Admin users mobile card list marker',
+    );
+    await waitForExpression(
+      page,
+      `document.body.innerText.includes('admin') || document.body.innerText.includes('当前筛选条件下没有用户。')`,
+      'Admin users mobile live rows settled',
+    );
+    const usersMobileState = await evaluate(
+      page,
+      `
+(() => {
+  const text = document.body.innerText;
+  return {
+    clientWidth: document.documentElement.clientWidth,
+    hasAdminUser: text.includes('admin'),
+    hasDesktopTable: Boolean(document.querySelector('[data-opencore-system-users-live-table="true"]')),
+    hasImport: text.includes('导入用户'),
+    hasMobileList: Boolean(document.querySelector('[data-opencore-system-users-mobile-list="true"]')),
+    hasPicker: Boolean(document.querySelector('[data-opencore-user-picker-button="true"]')),
+    hasRawKeys: text.includes('pages.system.users') || text.includes('system.users'),
+    scrollWidth: document.documentElement.scrollWidth,
+    text: text.slice(0, 1000),
+  };
+})()
+`,
+    );
+
+    if (
+      !isRecord(usersMobileState) ||
+      typeof usersMobileState.scrollWidth !== 'number' ||
+      typeof usersMobileState.clientWidth !== 'number'
+    ) {
+      throw new Error(
+        `Admin users mobile layout state is invalid: ${JSON.stringify(usersMobileState)}`,
+      );
+    }
+
+    if (
+      usersMobileState.hasMobileList !== true ||
+      usersMobileState.hasAdminUser !== true ||
+      usersMobileState.hasPicker !== true ||
+      usersMobileState.hasImport !== true
+    ) {
+      throw new Error(
+        `Admin users mobile page is missing live controls: ${JSON.stringify(usersMobileState)}`,
+      );
+    }
+
+    if (usersMobileState.hasDesktopTable === true) {
+      throw new Error(
+        `Admin users mobile layout rendered the desktop table: ${JSON.stringify(usersMobileState)}`,
+      );
+    }
+
+    if (usersMobileState.hasRawKeys === true) {
+      throw new Error(
+        `Admin users mobile page displayed raw i18n keys: ${JSON.stringify(usersMobileState)}`,
+      );
+    }
+
+    if (usersMobileState.scrollWidth > usersMobileState.clientWidth + 2) {
+      throw new Error(
+        `Admin users mobile page has document-level horizontal overflow: ${JSON.stringify(usersMobileState)}`,
+      );
+    }
+
     console.log(
       JSON.stringify({
         status: 'pass',
@@ -887,6 +984,9 @@ async function main() {
           'admin.public-users.no-raw-keys',
           'admin.public-users.user-picker',
           'admin.public-users.import-preview',
+          'admin.public-users.mobile-card-list',
+          'admin.public-users.no-desktop-table-on-mobile',
+          'admin.public-users.mobile-no-page-overflow',
         ],
       }),
     );

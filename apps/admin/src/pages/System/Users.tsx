@@ -7,6 +7,7 @@ import {
   LockOutlined,
   PlusOutlined,
   ReloadOutlined,
+  SearchOutlined,
   StopOutlined,
   TeamOutlined,
   UploadOutlined,
@@ -33,11 +34,14 @@ import {
   Alert,
   Button,
   Checkbox,
+  Empty,
   Form,
+  Grid,
   Input,
   Modal,
   Popconfirm,
   Select,
+  Skeleton,
   Space,
   Switch,
   Tag,
@@ -49,13 +53,14 @@ import {
   message,
   type UploadFile,
 } from 'antd';
+import { createStyles } from 'antd-style';
 import {
   useEffect,
   useMemo,
   useRef,
   useState,
-  type CSSProperties,
   type Key,
+  type ReactNode,
 } from 'react';
 import {
   createOpenCoreUser,
@@ -107,6 +112,14 @@ type AssignRolesValues = {
   roleCodes?: string[];
 };
 
+type UserMobileFilterValues = {
+  displayName?: string;
+  enabled?: string;
+  mobile?: string;
+  roleCode?: string;
+  username?: string;
+};
+
 type TreeSelectNode = {
   children?: TreeSelectNode[];
   title: string;
@@ -119,31 +132,193 @@ type DeptFilterTreeNode = {
   title: string;
 };
 
-const usersPageLayoutStyle: CSSProperties = {
-  alignItems: 'flex-start',
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: 16,
-};
-const deptFilterPanelStyle: CSSProperties = {
-  borderRight: '1px solid #f0f0f0',
-  flex: '1 1 220px',
-  maxWidth: 280,
-  minWidth: 220,
-  paddingInlineEnd: 16,
-};
-const usersTablePanelStyle: CSSProperties = {
-  flex: '999 1 620px',
-  minWidth: 0,
-};
-const deptFilterHeaderStyle: CSSProperties = {
-  justifyContent: 'space-between',
-  marginBlockEnd: 12,
-  width: '100%',
-};
-const deptFilterTreeStyle: CSSProperties = {
-  marginBlockStart: 8,
-};
+const useStyles = createStyles(({ token, css }) => ({
+  actionCell: css`
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  `,
+  deptFilterHeader: css`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 12px;
+  `,
+  deptFilterPanel: css`
+    min-width: 0;
+    padding: 14px;
+    background: ${token.colorBgContainer};
+    border: 1px solid ${token.colorBorderSecondary};
+    border-radius: ${token.borderRadiusLG}px;
+    box-shadow: ${token.boxShadowTertiary};
+  `,
+  deptFilterTree: css`
+    margin-top: 8px;
+    max-height: 520px;
+    overflow: auto;
+  `,
+  mobileCard: css`
+    display: grid;
+    gap: 10px;
+    padding: 14px;
+    background: ${token.colorBgContainer};
+    border: 1px solid ${token.colorBorderSecondary};
+    border-radius: ${token.borderRadiusLG}px;
+    box-shadow: ${token.boxShadowTertiary};
+  `,
+  mobileCardActions: css`
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-top: 2px;
+
+    .ant-btn {
+      min-width: 42px;
+      min-height: 42px;
+    }
+
+    .ant-btn-sm {
+      height: 42px;
+      padding-inline: 10px;
+    }
+  `,
+  mobileCardHeader: css`
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    min-width: 0;
+  `,
+  mobileCardList: css`
+    display: grid;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  `,
+  mobileCardMeta: css`
+    display: grid;
+    gap: 6px;
+    color: ${token.colorTextSecondary};
+    font-size: 13px;
+    line-height: 20px;
+  `,
+  mobileCardMetaRow: css`
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    min-width: 0;
+
+    > span:first-child {
+      flex: 0 0 auto;
+      color: ${token.colorTextTertiary};
+    }
+
+    > span:last-child {
+      min-width: 0;
+      overflow-wrap: anywhere;
+      text-align: right;
+    }
+  `,
+  mobileCardSelection: css`
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    min-width: 0;
+
+    .ant-checkbox-wrapper {
+      min-height: 42px;
+      padding-top: 2px;
+    }
+  `,
+  mobileCardTags: css`
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  `,
+  mobileCardTitle: css`
+    min-width: 0;
+    overflow-wrap: anywhere;
+    color: ${token.colorTextHeading};
+    font-weight: 600;
+    line-height: 22px;
+  `,
+  mobileEmptyState: css`
+    padding: 28px 12px;
+    background: ${token.colorBgContainer};
+    border: 1px dashed ${token.colorBorderSecondary};
+    border-radius: ${token.borderRadiusLG}px;
+  `,
+  mobileFilterPanel: css`
+    padding: 14px;
+    background: ${token.colorBgContainer};
+    border: 1px solid ${token.colorBorderSecondary};
+    border-radius: ${token.borderRadiusLG}px;
+    box-shadow: ${token.boxShadowTertiary};
+
+    .ant-form-item {
+      margin-bottom: 12px;
+    }
+  `,
+  mobileListSurface: css`
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+  `,
+  pageLayout: css`
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+    max-width: 100%;
+
+    @media (max-width: ${token.screenLG}px) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  `,
+  tableSurface: css`
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+
+    .ant-pro-card,
+    .ant-table-wrapper {
+      max-width: 100%;
+      overflow: hidden;
+    }
+
+    .ant-pro-table-list-toolbar-container {
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .ant-pro-table-list-toolbar-left,
+    .ant-pro-table-list-toolbar-right {
+      min-width: 0;
+      max-width: 100%;
+    }
+
+    .ant-table-cell {
+      vertical-align: middle;
+    }
+  `,
+  toolbarActions: css`
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+    max-width: 100%;
+
+    .ant-btn,
+    .ant-space-item {
+      max-width: 100%;
+    }
+  `,
+}));
 
 function flattenDeptTree(
   rows: readonly SystemDeptTreeSummary[],
@@ -170,6 +345,10 @@ function createRoleOptions(rows: readonly RoleSummary[]) {
       label: `${role.name} (${role.code})`,
       value: role.code,
     }));
+}
+
+function createRoleNameMap(rows: readonly RoleSummary[]) {
+  return new Map(rows.map((row) => [row.code, row.name]));
 }
 
 function createPostNameMap(rows: readonly SystemPostOptionSummary[]) {
@@ -253,11 +432,15 @@ function toDeptFilterTreeData(
 export default function UsersPage() {
   const intl = useIntl();
   const access = useAccess();
+  const { styles } = useStyles();
+  const screens = Grid.useBreakpoint();
+  const isMobile = screens.md === false;
   const canAssignUserRoles = Boolean(access.canAssignUserRoles);
   const canExportUsers = Boolean(access.canExportUsers);
   const canImportUsers = Boolean(access.canImportUsers);
   const actionRef = useRef<ActionType | undefined>(undefined);
   const [form] = Form.useForm<UserFormValues>();
+  const [mobileFilterForm] = Form.useForm<UserMobileFilterValues>();
   const [resetPasswordForm] = Form.useForm<ResetPasswordValues>();
   const [assignRolesForm] = Form.useForm<AssignRolesValues>();
   const [rows, setRows] = useState<readonly UserSummary[]>([]);
@@ -300,6 +483,9 @@ export default function UsersPage() {
   const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
   const [pickedUsers, setPickedUsers] = useState<readonly UserSummary[]>([]);
   const [selectedDeptId, setSelectedDeptId] = useState<string>();
+  const [mobileFilters, setMobileFilters] = useState<UserMobileFilterValues>(
+    {},
+  );
   const formatMessage = (
     id: string,
     defaultMessage: string,
@@ -390,16 +576,14 @@ export default function UsersPage() {
     },
     {
       label: formatMessage('pages.system.users.fields.department', '部门'),
-      value: record.deptId
-        ? (deptNames.get(record.deptId) ?? record.deptId)
-        : undefined,
+      value: record.deptId ? getDepartmentLabel(record) : undefined,
     },
     {
       label: formatMessage('pages.system.users.fields.roles', '角色'),
       value: (
         <Space wrap>
-          {record.roleCodes.map((code) => (
-            <Tag key={code}>{code}</Tag>
+          {record.roleCodes.map((code, index) => (
+            <Tag key={code}>{getRoleLabel(record, code, index)}</Tag>
           ))}
         </Space>
       ),
@@ -409,8 +593,8 @@ export default function UsersPage() {
       value:
         record.postCodes.length > 0 ? (
           <Space wrap>
-            {record.postCodes.map((code) => (
-              <Tag key={code}>{postNames.get(code) ?? code}</Tag>
+            {record.postCodes.map((code, index) => (
+              <Tag key={code}>{getPostLabel(record, code, index)}</Tag>
             ))}
           </Space>
         ) : undefined,
@@ -480,6 +664,7 @@ export default function UsersPage() {
     [deptTreeRows],
   );
   const roleOptions = useMemo(() => createRoleOptions(roleRows), [roleRows]);
+  const roleNames = useMemo(() => createRoleNameMap(roleRows), [roleRows]);
   const postNames = useMemo(() => createPostNameMap(postRows), [postRows]);
   const postOptions = useMemo(() => createPostOptions(postRows), [postRows]);
   const selectedUserIds = useMemo(
@@ -515,7 +700,97 @@ export default function UsersPage() {
   }, [pickedUsers, rows, selectedRowKeys]);
   const selectedUserCount = selectedUserIds.length;
 
+  const getDepartmentLabel = (record: UserSummary): string =>
+    record.deptName ??
+    (record.deptId ? (deptNames.get(record.deptId) ?? record.deptId) : '-');
+
+  const getRoleLabel = (
+    record: UserSummary,
+    code: string,
+    index: number,
+  ): string => record.roleNames[index] ?? roleNames.get(code) ?? code;
+
+  const getPostLabel = (
+    record: UserSummary,
+    code: string,
+    index: number,
+  ): string => record.postNames[index] ?? postNames.get(code) ?? code;
+
+  const applyLoadedUsers = (
+    page: Awaited<ReturnType<typeof listOpenCoreUsers>>,
+    query: ListUsersRequest,
+  ) => {
+    setRows(page.list);
+    setTotalRows(page.total);
+    setCurrentQuery(query);
+    setSelectedRowKeys((current) =>
+      current.filter((key) => {
+        const id = String(key);
+        const pageUser = page.list.find((user) => user.id === id);
+
+        if (pageUser) {
+          return !pageUser.system;
+        }
+
+        return pickedUsers.some((user) => user.id === id && !user.system);
+      }),
+    );
+    setLoadError(undefined);
+  };
+
+  const loadUsersPage = async (query: ListUsersRequest) => {
+    setLoading(true);
+    try {
+      const page = await listOpenCoreUsers(query);
+      applyLoadedUsers(page, query);
+
+      return {
+        data: [...page.list],
+        success: true,
+        total: page.total,
+      };
+    } catch (error: unknown) {
+      setRows([]);
+      setTotalRows(0);
+      setLoadError(
+        error instanceof Error
+          ? error.message
+          : formatMessage(
+              'pages.system.users.load.failure',
+              '无法加载用户列表。',
+            ),
+      );
+
+      return {
+        data: [],
+        success: false,
+        total: 0,
+      };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createMobileListQuery = (): ListUsersRequest => ({
+    ...createListUsersRequest(
+      { ...mobileFilters, current: 1, pageSize: 20 },
+      {},
+      selectedDeptId,
+    ),
+    orderBy: 'createdAt',
+    orderDirection: 'desc',
+  });
+
+  const loadMobileUsers = async () => {
+    await loadUsersPage(createMobileListQuery());
+  };
+
   const reloadUsers = () => {
+    if (isMobile) {
+      void loadMobileUsers();
+      return;
+    }
+
     actionRef.current?.reload();
   };
 
@@ -570,13 +845,32 @@ export default function UsersPage() {
   }, []);
 
   useEffect(() => {
+    if (isMobile) {
+      void loadMobileUsers();
+      return;
+    }
+
     actionRef.current?.reload();
-  }, [selectedDeptId]);
+  }, [isMobile, mobileFilters, selectedDeptId]);
 
   const selectDept = (deptId: string | undefined) => {
     setSelectedDeptId(deptId);
     setSelectedRowKeys([]);
     setPickedUsers([]);
+  };
+
+  const submitMobileFilters = async () => {
+    const values = await mobileFilterForm.validateFields();
+    setSelectedRowKeys([]);
+    setPickedUsers([]);
+    setMobileFilters(values);
+  };
+
+  const resetMobileFilters = () => {
+    mobileFilterForm.resetFields();
+    setSelectedRowKeys([]);
+    setPickedUsers([]);
+    setMobileFilters({});
   };
 
   const openCreateForm = () => {
@@ -1088,11 +1382,192 @@ export default function UsersPage() {
     }
   };
 
+  const renderUserActions = (
+    record: UserSummary,
+    mode: 'mobile' | 'table' = 'table',
+  ) => (
+    <Space
+      className={
+        mode === 'mobile' ? styles.mobileCardActions : styles.actionCell
+      }
+      size="small"
+      wrap={mode === 'mobile'}
+    >
+      <Tooltip
+        title={formatMessage('pages.system.users.actions.detail', 'Detail')}
+      >
+        <Button
+          aria-label={formatMessage(
+            'pages.system.users.actions.viewAria',
+            'View {username}',
+            { username: record.username },
+          )}
+          icon={<EyeOutlined />}
+          onClick={() => void openDetail(record)}
+          size="small"
+        />
+      </Tooltip>
+      <Tooltip
+        title={
+          record.system
+            ? formatMessage(
+                'pages.system.users.actions.systemEditLocked',
+                'System users cannot be edited',
+              )
+            : formatMessage('pages.system.users.actions.edit', 'Edit')
+        }
+      >
+        <Button
+          aria-label={formatMessage(
+            'pages.system.users.actions.editAria',
+            'Edit {username}',
+            { username: record.username },
+          )}
+          disabled={record.system}
+          icon={<EditOutlined />}
+          onClick={() => void openEditForm(record)}
+          size="small"
+        />
+      </Tooltip>
+      <Popconfirm
+        title={formatMessage(
+          record.enabled
+            ? 'pages.system.users.confirm.disable'
+            : 'pages.system.users.confirm.enable',
+          record.enabled ? 'Disable this user?' : 'Enable this user?',
+        )}
+        okText={
+          record.enabled
+            ? formatMessage('pages.system.users.actions.disable', 'Disable')
+            : formatMessage('pages.system.users.actions.enable', 'Enable')
+        }
+        okButtonProps={{ danger: record.enabled }}
+        onConfirm={() => void toggleUserStatus(record)}
+      >
+        <Tooltip
+          title={
+            record.system
+              ? formatMessage(
+                  'pages.system.users.actions.systemStatusLocked',
+                  'System users cannot change status',
+                )
+              : record.enabled
+                ? formatMessage('pages.system.users.actions.disable', 'Disable')
+                : formatMessage('pages.system.users.actions.enable', 'Enable')
+          }
+        >
+          <Button
+            aria-label={formatMessage(
+              record.enabled
+                ? 'pages.system.users.actions.disableAria'
+                : 'pages.system.users.actions.enableAria',
+              record.enabled ? 'Disable {username}' : 'Enable {username}',
+              { username: record.username },
+            )}
+            danger={record.enabled}
+            disabled={record.system}
+            icon={record.enabled ? <StopOutlined /> : <CheckCircleOutlined />}
+            loading={statusUpdatingUserId === record.id}
+            size="small"
+          />
+        </Tooltip>
+      </Popconfirm>
+      <Tooltip
+        title={
+          record.system
+            ? formatMessage(
+                'pages.system.users.actions.systemResetLocked',
+                'System users cannot reset password',
+              )
+            : formatMessage(
+                'pages.system.users.actions.resetPassword',
+                'Reset Password',
+              )
+        }
+      >
+        <Button
+          aria-label={formatMessage(
+            'pages.system.users.actions.resetPasswordAria',
+            'Reset password for {username}',
+            { username: record.username },
+          )}
+          disabled={record.system}
+          icon={<LockOutlined />}
+          onClick={() => void openResetPassword(record)}
+          size="small"
+        />
+      </Tooltip>
+      <Tooltip
+        title={
+          record.system
+            ? formatMessage(
+                'pages.system.users.actions.systemAssignRolesLocked',
+                'System users cannot be assigned roles',
+              )
+            : canAssignUserRoles
+              ? formatMessage(
+                  'pages.system.users.actions.assignRoles',
+                  'Assign Roles',
+                )
+              : formatMessage(
+                  'pages.system.users.permissions.missingManage',
+                  'Missing core:user:manage',
+                )
+        }
+      >
+        <Button
+          aria-label={formatMessage(
+            'pages.system.users.actions.assignRolesAria',
+            'Assign roles for {username}',
+            { username: record.username },
+          )}
+          disabled={record.system || !canAssignUserRoles}
+          icon={<TeamOutlined />}
+          onClick={() => void openAssignRoles(record)}
+          size="small"
+        />
+      </Tooltip>
+      <Popconfirm
+        title={formatMessage(
+          'pages.system.users.confirm.deleteOne',
+          'Delete this user?',
+        )}
+        okText={formatMessage('pages.system.users.actions.delete', 'Delete')}
+        okButtonProps={{ danger: true }}
+        onConfirm={() => void deleteUser(record)}
+      >
+        <Tooltip
+          title={
+            record.system
+              ? formatMessage(
+                  'pages.system.users.actions.systemDeleteLocked',
+                  'System users cannot be deleted',
+                )
+              : formatMessage('pages.system.users.actions.delete', 'Delete')
+          }
+        >
+          <Button
+            aria-label={formatMessage(
+              'pages.system.users.actions.deleteAria',
+              'Delete {username}',
+              { username: record.username },
+            )}
+            danger
+            disabled={record.system}
+            icon={<DeleteOutlined />}
+            size="small"
+          />
+        </Tooltip>
+      </Popconfirm>
+    </Space>
+  );
+
   const columns: ProColumns<UserSummary>[] = [
     {
       title: formatMessage('pages.system.users.fields.username', '账号'),
       dataIndex: 'username',
       sorter: true,
+      width: 128,
       render: (_, record) => (
         <Typography.Link onClick={() => void openDetail(record)}>
           {record.username}
@@ -1103,12 +1578,14 @@ export default function UsersPage() {
       title: formatMessage('pages.system.users.fields.displayName', '显示名称'),
       dataIndex: 'displayName',
       sorter: true,
+      width: 168,
     },
     {
       title: formatMessage('pages.system.users.fields.mobile', '手机号'),
       dataIndex: 'mobile',
       sorter: true,
       responsive: ['lg'],
+      width: 152,
       render: (_, record) => record.mobile ?? '-',
     },
     {
@@ -1116,14 +1593,15 @@ export default function UsersPage() {
       dataIndex: 'email',
       sorter: true,
       responsive: ['xl'],
+      width: 220,
       render: (_, record) => record.email ?? '-',
     },
     {
       title: formatMessage('pages.system.users.fields.department', '部门'),
       dataIndex: 'deptId',
       search: false,
-      render: (_, record) =>
-        record.deptId ? (deptNames.get(record.deptId) ?? record.deptId) : '-',
+      width: 160,
+      render: (_, record) => getDepartmentLabel(record),
     },
     {
       title: formatMessage('pages.system.users.fields.roles', '角色'),
@@ -1135,10 +1613,11 @@ export default function UsersPage() {
         showSearch: true,
         optionFilterProp: 'label',
       },
+      width: 170,
       render: (_, record) => (
         <Space wrap size={4}>
-          {record.roleCodes.map((code) => (
-            <Tag key={code}>{code}</Tag>
+          {record.roleCodes.map((code, index) => (
+            <Tag key={code}>{getRoleLabel(record, code, index)}</Tag>
           ))}
         </Space>
       ),
@@ -1154,11 +1633,12 @@ export default function UsersPage() {
         showSearch: true,
         optionFilterProp: 'label',
       },
+      width: 170,
       render: (_, record) =>
         record.postCodes.length > 0 ? (
           <Space wrap size={4}>
-            {record.postCodes.map((code) => (
-              <Tag key={code}>{postNames.get(code) ?? code}</Tag>
+            {record.postCodes.map((code, index) => (
+              <Tag key={code}>{getPostLabel(record, code, index)}</Tag>
             ))}
           </Space>
         ) : (
@@ -1196,195 +1676,419 @@ export default function UsersPage() {
       dataIndex: 'lastLoginAt',
       search: false,
       responsive: ['xl'],
+      width: 196,
       render: (_, record) => record.lastLoginAt ?? '-',
     },
     {
       title: formatMessage('pages.system.users.actions.column', 'Actions'),
       valueType: 'option',
-      width: 248,
-      render: (_, record) => (
-        <Space size="small">
-          <Tooltip
-            title={formatMessage('pages.system.users.actions.detail', 'Detail')}
-          >
-            <Button
-              aria-label={formatMessage(
-                'pages.system.users.actions.viewAria',
-                'View {username}',
-                { username: record.username },
-              )}
-              icon={<EyeOutlined />}
-              onClick={() => void openDetail(record)}
-              size="small"
-            />
-          </Tooltip>
-          <Tooltip
-            title={
-              record.system
-                ? formatMessage(
-                    'pages.system.users.actions.systemEditLocked',
-                    'System users cannot be edited',
-                  )
-                : formatMessage('pages.system.users.actions.edit', 'Edit')
-            }
-          >
-            <Button
-              aria-label={formatMessage(
-                'pages.system.users.actions.editAria',
-                'Edit {username}',
-                { username: record.username },
-              )}
-              disabled={record.system}
-              icon={<EditOutlined />}
-              onClick={() => void openEditForm(record)}
-              size="small"
-            />
-          </Tooltip>
-          <Popconfirm
-            title={formatMessage(
-              record.enabled
-                ? 'pages.system.users.confirm.disable'
-                : 'pages.system.users.confirm.enable',
-              record.enabled ? 'Disable this user?' : 'Enable this user?',
-            )}
-            okText={
-              record.enabled
-                ? formatMessage('pages.system.users.actions.disable', 'Disable')
-                : formatMessage('pages.system.users.actions.enable', 'Enable')
-            }
-            okButtonProps={{ danger: record.enabled }}
-            onConfirm={() => void toggleUserStatus(record)}
-          >
-            <Tooltip
-              title={
-                record.system
-                  ? formatMessage(
-                      'pages.system.users.actions.systemStatusLocked',
-                      'System users cannot change status',
-                    )
-                  : record.enabled
-                    ? formatMessage(
-                        'pages.system.users.actions.disable',
-                        'Disable',
-                      )
-                    : formatMessage(
-                        'pages.system.users.actions.enable',
-                        'Enable',
-                      )
-              }
-            >
-              <Button
-                aria-label={formatMessage(
-                  record.enabled
-                    ? 'pages.system.users.actions.disableAria'
-                    : 'pages.system.users.actions.enableAria',
-                  record.enabled ? 'Disable {username}' : 'Enable {username}',
-                  { username: record.username },
-                )}
-                danger={record.enabled}
-                disabled={record.system}
-                icon={
-                  record.enabled ? <StopOutlined /> : <CheckCircleOutlined />
-                }
-                loading={statusUpdatingUserId === record.id}
-                size="small"
-              />
-            </Tooltip>
-          </Popconfirm>
-          <Tooltip
-            title={
-              record.system
-                ? formatMessage(
-                    'pages.system.users.actions.systemResetLocked',
-                    'System users cannot reset password',
-                  )
-                : formatMessage(
-                    'pages.system.users.actions.resetPassword',
-                    'Reset Password',
-                  )
-            }
-          >
-            <Button
-              aria-label={formatMessage(
-                'pages.system.users.actions.resetPasswordAria',
-                'Reset password for {username}',
-                { username: record.username },
-              )}
-              disabled={record.system}
-              icon={<LockOutlined />}
-              onClick={() => void openResetPassword(record)}
-              size="small"
-            />
-          </Tooltip>
-          <Tooltip
-            title={
-              record.system
-                ? formatMessage(
-                    'pages.system.users.actions.systemAssignRolesLocked',
-                    'System users cannot be assigned roles',
-                  )
-                : canAssignUserRoles
-                  ? formatMessage(
-                      'pages.system.users.actions.assignRoles',
-                      'Assign Roles',
-                    )
-                  : formatMessage(
-                      'pages.system.users.permissions.missingManage',
-                      'Missing core:user:manage',
-                    )
-            }
-          >
-            <Button
-              aria-label={formatMessage(
-                'pages.system.users.actions.assignRolesAria',
-                'Assign roles for {username}',
-                { username: record.username },
-              )}
-              disabled={record.system || !canAssignUserRoles}
-              icon={<TeamOutlined />}
-              onClick={() => void openAssignRoles(record)}
-              size="small"
-            />
-          </Tooltip>
-          <Popconfirm
-            title={formatMessage(
-              'pages.system.users.confirm.deleteOne',
-              'Delete this user?',
-            )}
-            okText={formatMessage(
-              'pages.system.users.actions.delete',
-              'Delete',
-            )}
-            okButtonProps={{ danger: true }}
-            onConfirm={() => void deleteUser(record)}
-          >
-            <Tooltip
-              title={
-                record.system
-                  ? formatMessage(
-                      'pages.system.users.actions.systemDeleteLocked',
-                      'System users cannot be deleted',
-                    )
-                  : formatMessage('pages.system.users.actions.delete', 'Delete')
-              }
-            >
-              <Button
-                aria-label={formatMessage(
-                  'pages.system.users.actions.deleteAria',
-                  'Delete {username}',
-                  { username: record.username },
-                )}
-                danger
-                disabled={record.system}
-                icon={<DeleteOutlined />}
-                size="small"
-              />
-            </Tooltip>
-          </Popconfirm>
-        </Space>
-      ),
+      width: 236,
+      render: (_, record) => renderUserActions(record),
     },
   ];
+
+  const renderStatusTag = (record: UserSummary) => (
+    <Tag color={record.enabled ? 'green' : 'red'}>
+      {record.enabled ? statusLabels.enabled : statusLabels.disabled}
+    </Tag>
+  );
+
+  const renderSystemTag = (record: UserSummary) => (
+    <Tag color={record.system ? 'blue' : 'default'}>
+      {record.system ? systemLabels.system : systemLabels.custom}
+    </Tag>
+  );
+
+  const renderRoleTags = (record: UserSummary) =>
+    record.roleCodes.length > 0 ? (
+      <Space wrap size={4}>
+        {record.roleCodes.map((code, index) => (
+          <Tag key={code}>{getRoleLabel(record, code, index)}</Tag>
+        ))}
+      </Space>
+    ) : (
+      '-'
+    );
+
+  const renderPostTags = (record: UserSummary) =>
+    record.postCodes.length > 0 ? (
+      <Space wrap size={4}>
+        {record.postCodes.map((code, index) => (
+          <Tag key={code}>{getPostLabel(record, code, index)}</Tag>
+        ))}
+      </Space>
+    ) : (
+      '-'
+    );
+
+  const renderMobileMetaRow = (label: ReactNode, value: ReactNode) => (
+    <div className={styles.mobileCardMetaRow}>
+      <span>{label}</span>
+      <span>{value || '-'}</span>
+    </div>
+  );
+
+  const toggleMobileSelection = (record: UserSummary, checked: boolean) => {
+    if (record.system) {
+      return;
+    }
+
+    setSelectedRowKeys((current) => {
+      if (checked) {
+        return Array.from(new Set([...current, record.id]));
+      }
+
+      return current.filter((key) => String(key) !== record.id);
+    });
+    setPickedUsers((current) => {
+      if (checked) {
+        const existing = current.some((user) => user.id === record.id);
+        return existing ? current : [...current, record];
+      }
+
+      return current.filter((user) => user.id !== record.id);
+    });
+  };
+
+  const renderToolbarActions = () => (
+    <div className={styles.toolbarActions} key="toolbar-actions">
+      <Button
+        disabled={selectedUserCount === 0}
+        icon={<CheckCircleOutlined />}
+        loading={batchAction === 'enable'}
+        onClick={() => void batchSetUsersStatus(true)}
+      >
+        {formatMessage('pages.system.users.actions.enableSelected', '启用已选')}
+      </Button>
+      <Button
+        disabled={selectedUserCount === 0}
+        icon={<StopOutlined />}
+        loading={batchAction === 'disable'}
+        onClick={() => void batchSetUsersStatus(false)}
+      >
+        {formatMessage(
+          'pages.system.users.actions.disableSelected',
+          '禁用已选',
+        )}
+      </Button>
+      <Popconfirm
+        title={formatMessage(
+          'pages.system.users.confirm.deleteSelected',
+          '删除已选的 {count} 个用户？',
+          { count: selectedUserCount },
+        )}
+        okText={formatMessage('pages.system.users.actions.delete', 'Delete')}
+        okButtonProps={{ danger: true }}
+        onConfirm={() => void batchDeleteUsers()}
+      >
+        <Button
+          danger
+          disabled={selectedUserCount === 0}
+          icon={<DeleteOutlined />}
+          loading={batchAction === 'delete'}
+        >
+          {formatMessage(
+            'pages.system.users.actions.deleteSelected',
+            '删除已选',
+          )}
+        </Button>
+      </Popconfirm>
+      <UserPicker
+        buttonText={formatMessage(
+          'pages.system.users.actions.pickUsers',
+          '选择用户',
+        )}
+        onChange={(ids, users) => {
+          setSelectedRowKeys(ids);
+          setPickedUsers(users);
+        }}
+        selectedUsers={selectedUsersForPicker}
+        title={formatMessage('pages.system.users.userPicker.title', '选择用户')}
+        value={selectedUserIds}
+      />
+      <Tooltip
+        title={
+          canImportUsers
+            ? formatMessage(
+                'pages.system.users.actions.downloadImportTemplate',
+                '下载导入模板',
+              )
+            : formatMessage(
+                'pages.system.users.permissions.missingImport',
+                'Missing core:user:import',
+              )
+        }
+      >
+        <Button
+          disabled={!canImportUsers}
+          icon={<DownloadOutlined />}
+          onClick={() => void downloadImportTemplate()}
+        >
+          {formatMessage(
+            'pages.system.users.actions.downloadImportTemplate',
+            '下载导入模板',
+          )}
+        </Button>
+      </Tooltip>
+      <Tooltip
+        title={
+          canImportUsers
+            ? formatMessage(
+                'pages.system.users.actions.importUsers',
+                '导入用户',
+              )
+            : formatMessage(
+                'pages.system.users.permissions.missingImport',
+                'Missing core:user:import',
+              )
+        }
+      >
+        <Button
+          disabled={!canImportUsers}
+          icon={<UploadOutlined />}
+          onClick={openImportUsers}
+        >
+          {formatMessage('pages.system.users.actions.importUsers', '导入用户')}
+        </Button>
+      </Tooltip>
+      <Button type="primary" icon={<PlusOutlined />} onClick={openCreateForm}>
+        {formatMessage('pages.system.users.actions.new', '新建')}
+      </Button>
+      <Button icon={<ReloadOutlined />} onClick={reloadUsers}>
+        {formatMessage('pages.system.users.actions.refresh', '刷新')}
+      </Button>
+      <Tooltip
+        title={
+          canExportUsers
+            ? formatMessage(
+                'pages.system.users.actions.downloadExcel',
+                '下载 Excel 导出',
+              )
+            : formatMessage(
+                'pages.system.users.permissions.missingExport',
+                'Missing core:user:export',
+              )
+        }
+      >
+        <Button
+          disabled={!canExportUsers}
+          icon={<DownloadOutlined />}
+          loading={exportingUsers}
+          onClick={() => void downloadUserExcelExport()}
+        >
+          {formatMessage(
+            'pages.system.users.actions.downloadExcelShort',
+            '下载 Excel',
+          )}
+        </Button>
+      </Tooltip>
+    </div>
+  );
+
+  const renderMobileFilterPanel = () => (
+    <Form<UserMobileFilterValues>
+      className={styles.mobileFilterPanel}
+      form={mobileFilterForm}
+      layout="vertical"
+      onFinish={() => void submitMobileFilters()}
+    >
+      <Form.Item
+        label={formatMessage('pages.system.users.fields.username', '用户名')}
+        name="username"
+      >
+        <Input
+          allowClear
+          prefix={<SearchOutlined />}
+          placeholder={formatMessage(
+            'pages.system.users.fields.username',
+            '用户名',
+          )}
+        />
+      </Form.Item>
+      <Form.Item
+        label={formatMessage(
+          'pages.system.users.fields.displayName',
+          '显示名称',
+        )}
+        name="displayName"
+      >
+        <Input
+          allowClear
+          placeholder={formatMessage(
+            'pages.system.users.fields.displayName',
+            '显示名称',
+          )}
+        />
+      </Form.Item>
+      <Form.Item
+        label={formatMessage('pages.system.users.fields.mobile', '手机号')}
+        name="mobile"
+      >
+        <Input
+          allowClear
+          placeholder={formatMessage(
+            'pages.system.users.fields.mobile',
+            '手机号',
+          )}
+        />
+      </Form.Item>
+      <Form.Item
+        label={formatMessage('pages.system.users.fields.roles', '角色')}
+        name="roleCode"
+      >
+        <Select
+          allowClear
+          optionFilterProp="label"
+          options={roleOptions}
+          placeholder={formatMessage(
+            'pages.system.users.placeholders.roles',
+            '选择角色',
+          )}
+          showSearch
+        />
+      </Form.Item>
+      <Form.Item
+        label={formatMessage('pages.system.users.fields.posts', '岗位')}
+        name="postCode"
+      >
+        <Select
+          allowClear
+          optionFilterProp="label"
+          options={postOptions}
+          placeholder={formatMessage(
+            'pages.system.users.placeholders.posts',
+            '选择岗位',
+          )}
+          showSearch
+        />
+      </Form.Item>
+      <Form.Item
+        label={formatMessage('pages.system.users.fields.status', '状态')}
+        name="enabled"
+      >
+        <Select
+          allowClear
+          options={[
+            { label: statusLabels.enabled, value: 'true' },
+            { label: statusLabels.disabled, value: 'false' },
+          ]}
+          placeholder={formatMessage(
+            'pages.system.users.filters.status',
+            '状态',
+          )}
+        />
+      </Form.Item>
+      <div className={styles.toolbarActions}>
+        <Button htmlType="submit" icon={<SearchOutlined />} type="primary">
+          {formatMessage('pages.system.users.actions.search', '查询')}
+        </Button>
+        <Button onClick={resetMobileFilters}>
+          {formatMessage('pages.system.users.actions.resetFilters', '重置')}
+        </Button>
+      </div>
+    </Form>
+  );
+
+  const renderMobileUserCards = () => (
+    <div
+      className={styles.mobileListSurface}
+      data-opencore-system-users-mobile-list="true"
+    >
+      {renderMobileFilterPanel()}
+      {renderToolbarActions()}
+      <Typography.Text type="secondary">
+        {formatMessage(
+          'pages.system.users.mobile.selectedCount',
+          '已选 {count} 个自定义用户',
+          { count: selectedUserCount },
+        )}
+      </Typography.Text>
+      {loading ? (
+        <Skeleton active paragraph={{ rows: 8 }} />
+      ) : (
+        <ul className={styles.mobileCardList}>
+          {rows.length === 0 ? (
+            <li className={styles.mobileEmptyState}>
+              <Empty
+                description={formatMessage(
+                  'pages.system.users.mobile.emptyUsers',
+                  '当前筛选条件下没有用户。',
+                )}
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+              />
+            </li>
+          ) : (
+            rows.map((record) => (
+              <li className={styles.mobileCard} key={record.id}>
+                <div className={styles.mobileCardHeader}>
+                  <div className={styles.mobileCardSelection}>
+                    <Checkbox
+                      checked={selectedRowKeys.includes(record.id)}
+                      disabled={record.system}
+                      onChange={(event) =>
+                        toggleMobileSelection(record, event.target.checked)
+                      }
+                    />
+                    <div>
+                      <Typography.Link
+                        className={styles.mobileCardTitle}
+                        onClick={() => void openDetail(record)}
+                      >
+                        {record.username}
+                      </Typography.Link>
+                      <Typography.Paragraph
+                        style={{ marginBottom: 0 }}
+                        type="secondary"
+                      >
+                        {record.displayName}
+                      </Typography.Paragraph>
+                    </div>
+                  </div>
+                </div>
+                <div className={styles.mobileCardTags}>
+                  {renderStatusTag(record)}
+                  {renderSystemTag(record)}
+                </div>
+                <div className={styles.mobileCardMeta}>
+                  {renderMobileMetaRow(
+                    formatMessage(
+                      'pages.system.users.fields.department',
+                      '部门',
+                    ),
+                    getDepartmentLabel(record),
+                  )}
+                  {renderMobileMetaRow(
+                    formatMessage('pages.system.users.fields.roles', '角色'),
+                    renderRoleTags(record),
+                  )}
+                  {renderMobileMetaRow(
+                    formatMessage('pages.system.users.fields.posts', '岗位'),
+                    renderPostTags(record),
+                  )}
+                  {renderMobileMetaRow(
+                    formatMessage('pages.system.users.fields.mobile', '手机号'),
+                    record.mobile,
+                  )}
+                  {renderMobileMetaRow(
+                    formatMessage('pages.system.users.fields.email', '邮箱'),
+                    record.email,
+                  )}
+                  {renderMobileMetaRow(
+                    formatMessage(
+                      'pages.system.users.fields.lastLoginAt',
+                      '最近登录',
+                    ),
+                    record.lastLoginAt,
+                  )}
+                </div>
+                {renderUserActions(record, 'mobile')}
+              </li>
+            ))
+          )}
+        </ul>
+      )}
+    </div>
+  );
 
   return (
     <PageContainer
@@ -1403,9 +2107,9 @@ export default function UsersPage() {
           style={{ marginBlockEnd: 16 }}
         />
       ) : null}
-      <div style={usersPageLayoutStyle}>
-        <div style={deptFilterPanelStyle}>
-          <Space style={deptFilterHeaderStyle}>
+      <div className={styles.pageLayout}>
+        <div className={styles.deptFilterPanel}>
+          <div className={styles.deptFilterHeader}>
             <Typography.Text strong>
               {formatMessage(
                 'pages.system.users.deptScope.title',
@@ -1428,7 +2132,7 @@ export default function UsersPage() {
                 size="small"
               />
             </Tooltip>
-          </Space>
+          </div>
           <Button
             block
             type={selectedDeptId ? 'default' : 'primary'}
@@ -1447,252 +2151,55 @@ export default function UsersPage() {
               void selectDept(deptId);
             }}
             selectedKeys={selectedDeptId ? [selectedDeptId] : []}
-            style={deptFilterTreeStyle}
+            className={styles.deptFilterTree}
             treeData={deptFilterTreeData}
           />
         </div>
-        <div
-          data-opencore-system-users-live-table="true"
-          style={usersTablePanelStyle}
-        >
-          <ProTable<UserSummary>
-            actionRef={actionRef}
-            rowKey="id"
-            loading={loading}
-            params={{ deptId: selectedDeptId }}
-            request={async (params, sort) => {
-              const query = createListUsersRequest(
-                params as Record<string, unknown>,
-                sort as Record<string, unknown>,
-                selectedDeptId,
-              );
-
-              try {
-                const page = await listOpenCoreUsers(query);
-                setRows(page.list);
-                setTotalRows(page.total);
-                setCurrentQuery(query);
-                setSelectedRowKeys((current) =>
-                  current.filter((key) => {
-                    const id = String(key);
-                    const pageUser = page.list.find((user) => user.id === id);
-
-                    if (pageUser) {
-                      return !pageUser.system;
-                    }
-
-                    return pickedUsers.some(
-                      (user) => user.id === id && !user.system,
-                    );
-                  }),
-                );
-                setLoadError(undefined);
-
-                return {
-                  data: [...page.list],
-                  success: true,
-                  total: page.total,
-                };
-              } catch (error: unknown) {
-                setRows([]);
-                setTotalRows(0);
-                setLoadError(
-                  error instanceof Error
-                    ? error.message
-                    : formatMessage(
-                        'pages.system.users.load.failure',
-                        '无法加载用户列表。',
-                      ),
-                );
-
-                return {
-                  data: [],
-                  success: false,
-                  total: 0,
-                };
+        {isMobile ? (
+          renderMobileUserCards()
+        ) : (
+          <div
+            className={styles.tableSurface}
+            data-opencore-system-users-live-table="true"
+          >
+            <ProTable<UserSummary>
+              actionRef={actionRef}
+              rowKey="id"
+              loading={loading}
+              params={{ deptId: selectedDeptId }}
+              request={async (params, sort) =>
+                loadUsersPage(
+                  createListUsersRequest(
+                    params as Record<string, unknown>,
+                    sort as Record<string, unknown>,
+                    selectedDeptId,
+                  ),
+                )
               }
-            }}
-            options={false}
-            toolBarRender={() => [
-              <Button
-                disabled={selectedUserCount === 0}
-                icon={<CheckCircleOutlined />}
-                key="batch-enable"
-                loading={batchAction === 'enable'}
-                onClick={() => void batchSetUsersStatus(true)}
-              >
-                {formatMessage(
-                  'pages.system.users.actions.enableSelected',
-                  '启用已选',
-                )}
-              </Button>,
-              <Button
-                disabled={selectedUserCount === 0}
-                icon={<StopOutlined />}
-                key="batch-disable"
-                loading={batchAction === 'disable'}
-                onClick={() => void batchSetUsersStatus(false)}
-              >
-                {formatMessage(
-                  'pages.system.users.actions.disableSelected',
-                  '禁用已选',
-                )}
-              </Button>,
-              <Popconfirm
-                key="batch-delete"
-                title={formatMessage(
-                  'pages.system.users.confirm.deleteSelected',
-                  '删除已选的 {count} 个用户？',
-                  { count: selectedUserCount },
-                )}
-                okText={formatMessage(
-                  'pages.system.users.actions.delete',
-                  'Delete',
-                )}
-                okButtonProps={{ danger: true }}
-                onConfirm={() => void batchDeleteUsers()}
-              >
-                <Button
-                  danger
-                  disabled={selectedUserCount === 0}
-                  icon={<DeleteOutlined />}
-                  loading={batchAction === 'delete'}
-                >
-                  {formatMessage(
-                    'pages.system.users.actions.deleteSelected',
-                    '删除已选',
-                  )}
-                </Button>
-              </Popconfirm>,
-              <UserPicker
-                buttonText={formatMessage(
-                  'pages.system.users.actions.pickUsers',
-                  '选择用户',
-                )}
-                key="pick-users"
-                onChange={(ids, users) => {
-                  setSelectedRowKeys(ids);
-                  setPickedUsers(users);
-                }}
-                selectedUsers={selectedUsersForPicker}
-                title={formatMessage(
-                  'pages.system.users.userPicker.title',
-                  '选择用户',
-                )}
-                value={selectedUserIds}
-              />,
-              <Tooltip
-                key="download-import-template"
-                title={
-                  canImportUsers
-                    ? formatMessage(
-                        'pages.system.users.actions.downloadImportTemplate',
-                        '下载导入模板',
-                      )
-                    : formatMessage(
-                        'pages.system.users.permissions.missingImport',
-                        'Missing core:user:import',
-                      )
-                }
-              >
-                <Button
-                  disabled={!canImportUsers}
-                  icon={<DownloadOutlined />}
-                  onClick={() => void downloadImportTemplate()}
-                >
-                  {formatMessage(
-                    'pages.system.users.actions.downloadImportTemplate',
-                    '下载导入模板',
-                  )}
-                </Button>
-              </Tooltip>,
-              <Tooltip
-                key="import-users"
-                title={
-                  canImportUsers
-                    ? formatMessage(
-                        'pages.system.users.actions.importUsers',
-                        '导入用户',
-                      )
-                    : formatMessage(
-                        'pages.system.users.permissions.missingImport',
-                        'Missing core:user:import',
-                      )
-                }
-              >
-                <Button
-                  disabled={!canImportUsers}
-                  icon={<UploadOutlined />}
-                  onClick={openImportUsers}
-                >
-                  {formatMessage(
-                    'pages.system.users.actions.importUsers',
-                    '导入用户',
-                  )}
-                </Button>
-              </Tooltip>,
-              <Button
-                key="create"
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={openCreateForm}
-              >
-                {formatMessage('pages.system.users.actions.new', '新建')}
-              </Button>,
-              <Button
-                key="refresh"
-                icon={<ReloadOutlined />}
-                onClick={reloadUsers}
-              >
-                {formatMessage('pages.system.users.actions.refresh', '刷新')}
-              </Button>,
-              <Tooltip
-                key="download-user-excel-export"
-                title={
-                  canExportUsers
-                    ? formatMessage(
-                        'pages.system.users.actions.downloadExcel',
-                        '下载 Excel 导出',
-                      )
-                    : formatMessage(
-                        'pages.system.users.permissions.missingExport',
-                        'Missing core:user:export',
-                      )
-                }
-              >
-                <Button
-                  disabled={!canExportUsers}
-                  icon={<DownloadOutlined />}
-                  loading={exportingUsers}
-                  onClick={() => void downloadUserExcelExport()}
-                >
-                  {formatMessage(
-                    'pages.system.users.actions.downloadExcelShort',
-                    '下载 Excel',
-                  )}
-                </Button>
-              </Tooltip>,
-            ]}
-            pagination={{
-              pageSize: 10,
-              showSizeChanger: true,
-              total: totalRows,
-            }}
-            columns={columns}
-            rowSelection={{
-              selectedRowKeys,
-              onChange: (keys, selectedRows) => {
-                setSelectedRowKeys([...keys]);
-                setPickedUsers(selectedRows);
-              },
-              getCheckboxProps: (record) => ({
-                disabled: record.system,
-                name: record.username,
-              }),
-              preserveSelectedRowKeys: true,
-            }}
-          />
-        </div>
+              options={false}
+              toolBarRender={() => [renderToolbarActions()]}
+              pagination={{
+                pageSize: 10,
+                showSizeChanger: true,
+                total: totalRows,
+              }}
+              columns={columns}
+              scroll={{ x: 1650 }}
+              rowSelection={{
+                selectedRowKeys,
+                onChange: (keys, selectedRows) => {
+                  setSelectedRowKeys([...keys]);
+                  setPickedUsers(selectedRows);
+                },
+                getCheckboxProps: (record) => ({
+                  disabled: record.system,
+                  name: record.username,
+                }),
+                preserveSelectedRowKeys: true,
+              }}
+            />
+          </div>
+        )}
       </div>
       <ReadOnlyDetailDrawer
         fields={selectedDetail ? createDetailFields(selectedDetail) : []}
