@@ -38,9 +38,15 @@ export function DictTag({
     <Space size={[4, 4]} wrap>
       {values.map((itemValue) => {
         const option = optionMap.get(itemValue);
-        const label = option?.label ?? (showValueWhenMissing ? itemValue : fallback);
+        const label =
+          option?.label ?? (showValueWhenMissing ? itemValue : fallback);
         const tag = (
-          <Tag color={option?.colorType || (option?.enabled ? 'success' : 'default')}>
+          <Tag
+            key={itemValue}
+            color={
+              option?.colorType || (option?.enabled ? 'success' : 'default')
+            }
+          >
             {label}
           </Tag>
         );
