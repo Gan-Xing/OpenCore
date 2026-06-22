@@ -157,7 +157,15 @@ export function createTypedSmokeRuntime() {
 
     for (const password of passwordCandidates) {
       try {
-        return await clients.rbac.login({ password, username });
+        const session = await clients.rbac.login({ password, username });
+
+        if (session.status !== 'authenticated') {
+          throw new Error(
+            `Smoke admin ${username} requires tenant selection; set a tenantCode-capable smoke login.`,
+          );
+        }
+
+        return session;
       } catch (error) {
         lastError = error;
         if (

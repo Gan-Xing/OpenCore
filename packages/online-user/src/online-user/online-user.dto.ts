@@ -10,6 +10,18 @@ export class OnlineUserSessionDto {
   @ApiProperty()
   tokenId!: string;
 
+  @ApiProperty({ required: false })
+  tenantId?: string;
+
+  @ApiProperty({ required: false })
+  membershipId?: string;
+
+  @ApiProperty({
+    required: false,
+    enum: ['platform', 'platform-visit', 'tenant'],
+  })
+  accessMode?: 'platform' | 'platform-visit' | 'tenant';
+
   @ApiProperty()
   ip!: string;
 

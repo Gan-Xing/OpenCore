@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { createApiErrorBody } from '@opencore/common';
+import { setRequestActorContext } from '@opencore/core';
 import { SecurityAuthService } from '../security-auth';
 import {
   REQUIRED_PERMISSIONS_KEY,
@@ -45,6 +46,12 @@ export class SecurityPermissionGuard implements CanActivate {
         request.headers.authorization,
       ));
     request.user = user;
+    setRequestActorContext({
+      accessMode: user.accessMode,
+      actorUserId: user.id,
+      membershipId: user.activeMembership?.id,
+      tenantId: user.activeTenant?.id,
+    });
 
     if (requiredPermissions.length === 0) {
       return true;

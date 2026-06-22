@@ -7,6 +7,7 @@ import {
   SecurityLoginPolicyProvider,
   SecurityAuthSessionRepository,
   type SecurityAuthSessionRecord,
+  type SecurityAuthSessionContext,
   type SecurityAuthSessionRevocationInput,
   SecurityAuthUserRepository,
   type SecurityAuthUserRecord,
@@ -70,11 +71,13 @@ describe('@opencore/security security-auth', () => {
       sessions,
     );
 
-    const session = await service.login('admin', 'admin123', {
-      ip: '127.0.0.1',
-      requestId: 'req_login_success',
-      userAgent: 'jest',
-    });
+    const session = expectAuthenticated(
+      await service.login('admin', 'admin123', {
+        ip: '127.0.0.1',
+        requestId: 'req_login_success',
+        userAgent: 'jest',
+      }),
+    );
 
     expect(session.user).toMatchObject({
       username: 'admin',
@@ -91,6 +94,9 @@ describe('@opencore/security security-auth', () => {
     expect(sessions.records).toEqual([
       expect.objectContaining({
         username: 'admin',
+        tenantId: 'tenant_root',
+        membershipId: 'tenant_membership_root_user_admin',
+        accessMode: 'tenant',
         ip: '127.0.0.1',
         userAgent: 'jest',
         tokenId: expect.any(String),
@@ -125,11 +131,13 @@ describe('@opencore/security security-auth', () => {
       sessions,
     );
 
-    const session = await service.login('admin', 'admin123', {
-      ip: '127.0.0.1',
-      requestId: 'req_login_before_logout',
-      userAgent: 'jest-login',
-    });
+    const session = expectAuthenticated(
+      await service.login('admin', 'admin123', {
+        ip: '127.0.0.1',
+        requestId: 'req_login_before_logout',
+        userAgent: 'jest-login',
+      }),
+    );
     const tokenId = sessions.records[0].tokenId;
 
     await expect(
@@ -171,6 +179,42 @@ describe('@opencore/security security-auth', () => {
         userAgent: 'jest-logout',
       },
     ]);
+  });
+
+  it('returns a login ticket when multiple tenants are available and selects one', async () => {
+    const repository = new MultiTenantSecurityAuthUserRepository();
+    const sessions = new InMemorySecurityAuthSessionRepository();
+    const service = new SecurityAuthService(
+      repository,
+      new InMemorySecurityLoginAttemptRecorder(),
+      sessions,
+    );
+
+    const result = await service.login('admin', 'admin123');
+
+    expect(result).toMatchObject({
+      status: 'tenant_selection_required',
+      tenantOptions: [
+        expect.objectContaining({ code: 'alpha' }),
+        expect.objectContaining({ code: 'beta' }),
+      ],
+    });
+
+    if (result.status !== 'tenant_selection_required') {
+      throw new Error('Expected tenant selection response');
+    }
+
+    const session = await service.selectTenant(result.loginTicket, {
+      tenantCode: 'beta',
+    });
+
+    expect(session.user.activeTenant).toMatchObject({ code: 'beta' });
+    await expect(
+      service.authenticateBearer(`Bearer ${session.accessToken}`),
+    ).resolves.toMatchObject({
+      activeTenant: expect.objectContaining({ code: 'beta' }),
+      username: 'admin',
+    });
   });
 
   it('rejects invalid credentials and disabled users', async () => {
@@ -313,6 +357,35 @@ class InMemorySecurityAuthUserRepository extends SecurityAuthUserRepository {
   }
 }
 
+class MultiTenantSecurityAuthUserRepository extends InMemorySecurityAuthUserRepository {
+  async listTenantMembershipsForUser() {
+    return [
+      {
+        enabledModuleCodes: ['core.user'],
+        isOwner: true,
+        membershipId: 'tenant_membership_alpha_user_admin',
+        membershipStatus: 'active',
+        tenantCode: 'alpha',
+        tenantId: 'tenant_alpha',
+        tenantName: 'Alpha',
+        tenantSlug: 'alpha',
+        tenantStatus: 'active',
+      },
+      {
+        enabledModuleCodes: ['core.user'],
+        isOwner: false,
+        membershipId: 'tenant_membership_beta_user_admin',
+        membershipStatus: 'active',
+        tenantCode: 'beta',
+        tenantId: 'tenant_beta',
+        tenantName: 'Beta',
+        tenantSlug: 'beta',
+        tenantStatus: 'active',
+      },
+    ];
+  }
+}
+
 class InMemorySecurityAuthSessionRepository extends SecurityAuthSessionRepository {
   readonly records: SecurityAuthSessionRecord[] = [];
   readonly revokedTokenIds = new Set<string>();
@@ -324,10 +397,23 @@ class InMemorySecurityAuthSessionRepository extends SecurityAuthSessionRepositor
     this.records.push({ ...record });
   }
 
-  async assertSessionActive(tokenId: string): Promise<void> {
+  async assertSessionActive(
+    tokenId: string,
+  ): Promise<SecurityAuthSessionContext | undefined> {
     if (this.revokedTokenIds.has(tokenId)) {
       throw new UnauthorizedException('Bearer token has been revoked');
     }
+
+    const record = this.records.find((session) => session.tokenId === tokenId);
+
+    return record
+      ? {
+          accessMode: record.accessMode,
+          membershipId: record.membershipId,
+          tenantId: record.tenantId,
+          tokenId,
+        }
+      : undefined;
   }
 
   async revokeSession(
@@ -337,6 +423,16 @@ class InMemorySecurityAuthSessionRepository extends SecurityAuthSessionRepositor
     this.revokedTokenIds.add(tokenId);
     this.revocations.push({ tokenId, ...input });
   }
+}
+
+function expectAuthenticated(
+  session: Awaited<ReturnType<SecurityAuthService['login']>>,
+) {
+  if (session.status !== 'authenticated') {
+    throw new Error('Expected authenticated login response');
+  }
+
+  return session;
 }
 
 class InMemorySecurityLoginAttemptRecorder extends SecurityLoginAttemptRecorder {

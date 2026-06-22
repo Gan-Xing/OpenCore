@@ -80,6 +80,7 @@ type PrismaLoginLogRecord = {
 
 const SYSTEM_USER_IDS = new Set(['user_admin']);
 const SYSTEM_USERNAMES = new Set(['admin']);
+const ROOT_TENANT_ID = 'tenant_root';
 
 @Injectable()
 export class PrismaSystemUserRepository extends SystemUserRepository {
@@ -227,6 +228,8 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
       },
     });
 
+    await this.syncRootTenantMembershipForUser(user.id);
+
     return toSystemUserSummaryRecord(user);
   }
 
@@ -301,6 +304,8 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
         },
       },
     });
+
+    await this.syncRootTenantMembershipForUser(user.id);
 
     return toSystemUserSummaryRecord(user);
   }
@@ -452,6 +457,7 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
       where: { id: { in: [...input.userIds] } },
       data: { enabled: input.enabled },
     });
+    await this.syncRootTenantMembershipsForUsers(input.userIds);
 
     return {
       affected: users.length,
@@ -531,6 +537,7 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
         },
       },
     });
+    await this.syncRootTenantMembershipForUser(user.id);
 
     return createUserRoleAssignment(toSystemUserSummaryRecord(user));
   }
@@ -539,6 +546,10 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
     const roleId = await this.findRoleIdByCode(roleCode);
     const userIds = normalizeAssignRoleUsersInput(body);
     await this.assertUsersAssignable(userIds);
+    const existingAssignments = await this.prisma.userRole.findMany({
+      where: { roleId },
+      select: { userId: true },
+    });
 
     await this.prisma.$transaction([
       this.prisma.userRole.deleteMany({
@@ -562,8 +573,107 @@ export class PrismaSystemUserRepository extends SystemUserRepository {
             }),
           ]),
     ]);
+    await this.syncRootTenantMembershipsForUsers([
+      ...existingAssignments.map((assignment) => assignment.userId),
+      ...userIds,
+    ]);
 
     return createRoleUserAssignment(roleCode, await this.listUsers());
+  }
+
+  private async syncRootTenantMembershipsForUsers(
+    userIds: readonly string[],
+  ): Promise<void> {
+    for (const userId of new Set(userIds)) {
+      await this.syncRootTenantMembershipForUser(userId);
+    }
+  }
+
+  private async syncRootTenantMembershipForUser(userId: string): Promise<void> {
+    if (
+      !(await this.prisma.tenant.findUnique({
+        where: { id: ROOT_TENANT_ID },
+        select: { id: true },
+      }))
+    ) {
+      return;
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        username: true,
+        enabled: true,
+        deptId: true,
+        createdAt: true,
+        roles: { select: { roleId: true } },
+        posts: { select: { postId: true } },
+      },
+    });
+
+    if (!user) {
+      return;
+    }
+
+    const membershipId = `tenant_membership_root_${user.id}`;
+    const roleRows = user.roles.map((role) => ({
+      membershipId,
+      roleId: role.roleId,
+      tenantId: ROOT_TENANT_ID,
+    }));
+    const postRows = user.posts.map((post) => ({
+      membershipId,
+      postId: post.postId,
+      tenantId: ROOT_TENANT_ID,
+    }));
+
+    await this.prisma.$transaction([
+      this.prisma.tenantMembership.upsert({
+        where: {
+          tenantId_userId: {
+            tenantId: ROOT_TENANT_ID,
+            userId: user.id,
+          },
+        },
+        update: {
+          deptId: user.deptId,
+          isOwner: user.username === 'admin',
+          status: user.enabled ? 'active' : 'suspended',
+        },
+        create: {
+          id: membershipId,
+          tenantId: ROOT_TENANT_ID,
+          userId: user.id,
+          deptId: user.deptId,
+          isOwner: user.username === 'admin',
+          joinedAt: user.createdAt,
+          status: user.enabled ? 'active' : 'suspended',
+        },
+      }),
+      this.prisma.tenantMembershipRole.deleteMany({
+        where: { membershipId, tenantId: ROOT_TENANT_ID },
+      }),
+      this.prisma.tenantMembershipPost.deleteMany({
+        where: { membershipId, tenantId: ROOT_TENANT_ID },
+      }),
+      ...(roleRows.length === 0
+        ? []
+        : [
+            this.prisma.tenantMembershipRole.createMany({
+              data: roleRows,
+              skipDuplicates: true,
+            }),
+          ]),
+      ...(postRows.length === 0
+        ? []
+        : [
+            this.prisma.tenantMembershipPost.createMany({
+              data: postRows,
+              skipDuplicates: true,
+            }),
+          ]),
+    ]);
   }
 
   private async findUserEntityById(id: string) {

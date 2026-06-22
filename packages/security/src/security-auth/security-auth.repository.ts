@@ -8,6 +8,29 @@ export type SecurityAuthUserRecord = {
   avatarUrl?: string;
 };
 
+export type SecurityTenantAccessMode = 'platform' | 'platform-visit' | 'tenant';
+
+export type SecurityAuthTenantMembershipRecord = {
+  membershipId: string;
+  membershipStatus: string;
+  tenantId: string;
+  tenantCode: string;
+  tenantSlug: string;
+  tenantName: string;
+  tenantStatus: string;
+  tenantExpiresAt?: string;
+  isOwner: boolean;
+  enabledModuleCodes: readonly string[];
+};
+
+export type SecurityAuthTenantMembershipLookup = {
+  userId: string;
+  membershipId?: string;
+  tenantCode?: string;
+  tenantHost?: string;
+  tenantId?: string;
+};
+
 export type SecurityLoginAttemptRecord = {
   username: string;
   logType?: SecurityLoginLogType;
@@ -65,11 +88,19 @@ export type SecurityAuthSessionRecord = {
   userId: string;
   username: string;
   tokenId: string;
+  tenantId: string;
+  membershipId: string;
+  accessMode: SecurityTenantAccessMode;
   ip: string;
   userAgent: string;
   lastSeenAt: string;
   expiresAt: string;
 };
+
+export type SecurityAuthSessionContext = Pick<
+  SecurityAuthSessionRecord,
+  'accessMode' | 'membershipId' | 'tenantId' | 'tokenId'
+>;
 
 export type SecurityAuthSessionRevocationInput = {
   actor: string;
@@ -144,7 +175,9 @@ export class NoopSecurityLoginLockoutRepository extends SecurityLoginLockoutRepo
 export abstract class SecurityAuthSessionRepository {
   abstract registerSession(record: SecurityAuthSessionRecord): Promise<void>;
 
-  abstract assertSessionActive(tokenId: string): Promise<void>;
+  abstract assertSessionActive(
+    tokenId: string,
+  ): Promise<SecurityAuthSessionContext | undefined>;
 
   abstract revokeSession(
     tokenId: string,
@@ -157,7 +190,7 @@ export class AllowAllSecurityAuthSessionRepository extends SecurityAuthSessionRe
     return undefined;
   }
 
-  async assertSessionActive(): Promise<void> {
+  async assertSessionActive(): Promise<undefined> {
     return undefined;
   }
 
@@ -176,4 +209,62 @@ export abstract class SecurityAuthUserRepository {
   ): Promise<SecurityAuthUserRecord | undefined>;
 
   abstract getPermissionCodesForUser(userId: string): Promise<string[]>;
+
+  async listTenantMembershipsForUser(
+    userId: string,
+  ): Promise<readonly SecurityAuthTenantMembershipRecord[]> {
+    return [createDefaultRootTenantMembership(userId)];
+  }
+
+  async findTenantMembershipForUser(
+    input: SecurityAuthTenantMembershipLookup,
+  ): Promise<SecurityAuthTenantMembershipRecord | undefined> {
+    const memberships = await this.listTenantMembershipsForUser(input.userId);
+    const hostTenantCode = normalizeTenantHostCode(input.tenantHost);
+
+    return memberships.find(
+      (membership) =>
+        (!input.membershipId ||
+          membership.membershipId === input.membershipId) &&
+        (!input.tenantId || membership.tenantId === input.tenantId) &&
+        (!input.tenantCode ||
+          membership.tenantCode === input.tenantCode ||
+          membership.tenantSlug === input.tenantCode) &&
+        (!hostTenantCode ||
+          membership.tenantCode === hostTenantCode ||
+          membership.tenantSlug === hostTenantCode),
+    );
+  }
+}
+
+function createDefaultRootTenantMembership(
+  userId: string,
+): SecurityAuthTenantMembershipRecord {
+  return {
+    enabledModuleCodes: [],
+    isOwner: userId === 'user_admin',
+    membershipId: `tenant_membership_root_${userId}`,
+    membershipStatus: 'active',
+    tenantCode: 'root',
+    tenantId: 'tenant_root',
+    tenantName: 'Root Tenant',
+    tenantSlug: 'root',
+    tenantStatus: 'active',
+  };
+}
+
+function normalizeTenantHostCode(
+  value: string | undefined,
+): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const host = value.split(':')[0]?.trim().toLowerCase();
+
+  if (!host || host === 'localhost' || /^\d+\.\d+\.\d+\.\d+$/u.test(host)) {
+    return undefined;
+  }
+
+  return host.split('.')[0];
 }

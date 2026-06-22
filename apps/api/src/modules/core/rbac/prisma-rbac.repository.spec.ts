@@ -85,7 +85,9 @@ describe('PrismaRbacRepository integration', () => {
 
     expect(bootstrapPassword).toBeTruthy();
 
-    const session = await authService.login('admin', bootstrapPassword ?? '');
+    const session = expectAuthenticated(
+      await authService.login('admin', bootstrapPassword ?? ''),
+    );
 
     expect(session.user.roleCodes).toContain('admin');
     expect(session.user.permissionCodes).toEqual(
@@ -148,6 +150,16 @@ describe('PrismaRbacRepository integration', () => {
     await prisma.permission.deleteMany({ where: { code: permissionCode } });
   }
 });
+
+function expectAuthenticated(
+  session: Awaited<ReturnType<AuthService['login']>>,
+) {
+  if (session.status !== 'authenticated') {
+    throw new Error('Expected authenticated login response');
+  }
+
+  return session;
+}
 
 async function expectHttpExceptionCode(
   promise: Promise<unknown>,

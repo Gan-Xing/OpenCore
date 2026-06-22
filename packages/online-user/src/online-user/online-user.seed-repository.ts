@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
 import type {
   SecurityAuthSessionRecord,
+  SecurityAuthSessionContext,
   SecurityAuthSessionRevocationInput,
 } from '@opencore/security';
 import {
@@ -65,6 +66,9 @@ export class SeedOnlineUserRepository extends OnlineUserRepository {
       id: createSessionId(record.tokenId),
       username: record.username,
       tokenId: record.tokenId,
+      tenantId: record.tenantId,
+      membershipId: record.membershipId,
+      accessMode: record.accessMode,
       ip: record.ip,
       userAgent: record.userAgent,
       lastSeenAt: record.lastSeenAt,
@@ -82,13 +86,26 @@ export class SeedOnlineUserRepository extends OnlineUserRepository {
     this.sessions.push(nextSession);
   }
 
-  async assertSessionActive(tokenId: string): Promise<void> {
+  async assertSessionActive(
+    tokenId: string,
+  ): Promise<SecurityAuthSessionContext | undefined> {
     const session = assertTokenSessionRegistered(
       this.sessions.find((row) => row.tokenId === tokenId),
       tokenId,
     );
     assertTokenSessionActive(session);
     session.lastSeenAt = new Date().toISOString();
+
+    if (!session.tenantId || !session.membershipId || !session.accessMode) {
+      return undefined;
+    }
+
+    return {
+      accessMode: session.accessMode,
+      membershipId: session.membershipId,
+      tenantId: session.tenantId,
+      tokenId,
+    };
   }
 
   async revokeSession(

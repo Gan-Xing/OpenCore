@@ -27,7 +27,9 @@ describe('@opencore/security security-rbac', () => {
   beforeEach(async () => {
     repository = new InMemoryAuthRepository();
     authService = new SecurityAuthService(repository);
-    adminToken = (await authService.login('admin', 'admin123')).accessToken;
+    adminToken = expectAuthenticated(
+      await authService.login('admin', 'admin123'),
+    ).accessToken;
   });
 
   it('sets permission and role metadata through decorators', () => {
@@ -153,11 +155,37 @@ class InMemoryAuthRepository extends SecurityAuthUserRepository {
     const user = this.users[0];
 
     return {
+      accessMode: 'tenant',
+      activeMembership: {
+        id: `tenant_membership_root_${user.id}`,
+        isOwner: true,
+        status: 'active',
+      },
+      activeTenant: {
+        code: 'root',
+        id: 'tenant_root',
+        name: 'Root Tenant',
+        slug: 'root',
+        status: 'active',
+      },
+      enabledModuleCodes: [],
       id: user.id,
       username: user.username,
       displayName: user.displayName,
       roleCodes: [...user.roleCodes],
       permissionCodes: [...user.permissionCodes],
+      tenantOptions: [
+        {
+          code: 'root',
+          id: 'tenant_root',
+          isOwner: true,
+          membershipId: `tenant_membership_root_${user.id}`,
+          membershipStatus: 'active',
+          name: 'Root Tenant',
+          slug: 'root',
+          status: 'active',
+        },
+      ],
     };
   }
 
@@ -208,4 +236,14 @@ function readMetadata(key: string, target: object): unknown {
       getMetadata(metadataKey: string, metadataTarget: object): unknown;
     }
   ).getMetadata(key, target);
+}
+
+function expectAuthenticated(
+  session: Awaited<ReturnType<SecurityAuthService['login']>>,
+) {
+  if (session.status !== 'authenticated') {
+    throw new Error('Expected authenticated login response');
+  }
+
+  return session;
 }

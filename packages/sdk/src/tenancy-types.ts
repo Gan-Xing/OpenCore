@@ -40,6 +40,13 @@ export type TenantBackfillFoundationSummary = {
   missingRootMembershipUsernames: readonly string[];
 };
 
+export type TenantRequestContextSummary = {
+  actorUserId?: string;
+  tenantId?: string;
+  membershipId?: string;
+  accessMode?: 'platform' | 'platform-visit' | 'tenant' | string;
+};
+
 export type TenancyFoundationSummary = {
   tenancyMode: TenancyMode;
   rootTenantCode: string;
@@ -47,5 +54,6 @@ export type TenancyFoundationSummary = {
   plans: readonly TenantPlanFoundationSummary[];
   platformRoles: readonly PlatformRoleFoundationSummary[];
   backfill: TenantBackfillFoundationSummary;
+  requestContext?: TenantRequestContextSummary;
   generatedAt: string;
 };

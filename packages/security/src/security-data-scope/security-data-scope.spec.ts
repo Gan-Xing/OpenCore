@@ -121,8 +121,9 @@ describe('@opencore/security security-data-scope', () => {
       }),
       new SecurityDataScopeService(dataScopeRepository, authService),
     );
-    const token = (await authService.login('operator', 'operator123'))
-      .accessToken;
+    const token = expectAuthenticated(
+      await authService.login('operator', 'operator123'),
+    ).accessToken;
     const request = {
       headers: {
         authorization: `Bearer ${token}`,
@@ -258,4 +259,14 @@ function readMetadata(key: string, target: object): unknown {
       getMetadata(metadataKey: string, metadataTarget: object): unknown;
     }
   ).getMetadata(key, target);
+}
+
+function expectAuthenticated(
+  session: Awaited<ReturnType<SecurityAuthService['login']>>,
+) {
+  if (session.status !== 'authenticated') {
+    throw new Error('Expected authenticated login response');
+  }
+
+  return session;
 }

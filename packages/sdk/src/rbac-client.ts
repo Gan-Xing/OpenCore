@@ -14,6 +14,7 @@ import type {
   ImportUsersRequest,
   ListUsersRequest,
   LoginRequest,
+  LoginResult,
   LoginResponse,
   LogoutResponse,
   MenuSummary,
@@ -25,12 +26,14 @@ import type {
   RoleMutationSummary,
   RoleUserAssignmentSummary,
   RoleSummary,
+  SelectTenantRequest,
   SetRoleStatusRequest,
   SetUserStatusRequest,
   SocialAuthFlowSummary,
   SocialAuthProviderSummary,
   SocialAuthResultSummary,
   StartSocialAuthFlowRequest,
+  SwitchTenantRequest,
   UpdateUserPasswordRequest,
   UpdateMenuRequest,
   UpdatePermissionRequest,
@@ -61,7 +64,12 @@ export type SdkRequest = <T>(
 ) => Promise<T>;
 
 export type RbacClient = {
-  login: (request: LoginRequest) => Promise<LoginResponse>;
+  login: (request: LoginRequest) => Promise<LoginResult>;
+  selectTenant: (request: SelectTenantRequest) => Promise<LoginResponse>;
+  switchTenant: (
+    token: string,
+    request: SwitchTenantRequest,
+  ) => Promise<LoginResponse>;
   me: (token: string) => Promise<LoginResponse>;
   logout: (token: string) => Promise<LogoutResponse>;
   listSocialAuthProviders: () => Promise<readonly SocialAuthProviderSummary[]>;
@@ -212,9 +220,20 @@ export type RbacClient = {
 export function createRbacClient(request: SdkRequest): RbacClient {
   return {
     login: (body) =>
-      request<LoginResponse>('/auth/login', {
+      request<LoginResult>('/auth/login', {
         method: 'POST',
         body,
+      }),
+    selectTenant: (body) =>
+      request<LoginResponse>('/auth/select-tenant', {
+        method: 'POST',
+        body,
+      }),
+    switchTenant: (token, body) =>
+      request<LoginResponse>('/auth/switch-tenant', {
+        method: 'POST',
+        body,
+        token,
       }),
     me: (token) =>
       request<LoginResponse>('/auth/me', {

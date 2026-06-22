@@ -4,19 +4,68 @@ export type AuthenticatedUser = {
   displayName: string;
   roleCodes: readonly string[];
   permissionCodes: readonly string[];
+  accessMode: 'platform' | 'platform-visit' | 'tenant';
+  activeTenant?: AuthenticatedTenant;
+  activeMembership?: AuthenticatedMembership;
+  enabledModuleCodes: readonly string[];
+  tenantOptions: readonly TenantLoginOption[];
   avatarUrl?: string;
+};
+
+export type AuthenticatedTenant = {
+  id: string;
+  code: string;
+  slug: string;
+  name: string;
+  status: string;
+};
+
+export type AuthenticatedMembership = {
+  id: string;
+  status: string;
+  isOwner: boolean;
+};
+
+export type TenantLoginOption = AuthenticatedTenant & {
+  membershipId: string;
+  membershipStatus: string;
+  isOwner: boolean;
 };
 
 export type LoginRequest = {
   username: string;
   password: string;
+  tenantCode?: string;
+  tenantHost?: string;
 };
 
 export type LoginResponse = {
+  status: 'authenticated';
   accessToken: string;
   tokenType: 'Bearer';
   expiresInSeconds: number;
   user: AuthenticatedUser;
+};
+
+export type TenantSelectionLoginResponse = {
+  status: 'tenant_selection_required';
+  loginTicket: string;
+  tenantOptions: readonly TenantLoginOption[];
+};
+
+export type LoginResult = LoginResponse | TenantSelectionLoginResponse;
+
+export type SelectTenantRequest = {
+  loginTicket: string;
+  tenantId?: string;
+  tenantCode?: string;
+  membershipId?: string;
+};
+
+export type SwitchTenantRequest = {
+  tenantId?: string;
+  tenantCode?: string;
+  membershipId?: string;
 };
 
 export type LogoutResponse = {
@@ -132,6 +181,9 @@ export type UserProfileSessionSummary = {
   id: string;
   username: string;
   tokenId: string;
+  tenantId?: string;
+  membershipId?: string;
+  accessMode?: 'platform' | 'platform-visit' | 'tenant';
   ip: string;
   userAgent: string;
   browser: string;

@@ -25,6 +25,11 @@ async function main() {
 
   const summary = await clients.tenancy.getFoundationSummary(token);
   assertEqual(summary.rootTenantCode, 'root', 'root tenant code');
+  assertEqual(
+    summary.requestContext?.tenantId,
+    'tenant_root',
+    'foundation request context tenant',
+  );
   assertArray(summary.tenants, 'tenant foundation tenants');
   assertArray(summary.plans, 'tenant foundation plans');
   assertArray(summary.platformRoles, 'tenant foundation platform roles');
@@ -94,6 +99,11 @@ async function main() {
     },
   );
   assertEqual(tampered.rootTenantCode, 'root', 'tampered header root tenant');
+  assertEqual(
+    tampered.requestContext?.tenantId,
+    'tenant_root',
+    'tampered header request context tenant',
+  );
 }
 
 main().catch((error) => {

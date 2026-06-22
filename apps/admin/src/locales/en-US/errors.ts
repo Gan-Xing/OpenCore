@@ -23,6 +23,16 @@ export default {
     'The sign-in credential is invalid. Please sign in again.',
   'error.AUTH_BEARER_TOKEN_EXPIRED':
     'The sign-in credential has expired. Please sign in again.',
+  'error.AUTH_LOGIN_TICKET_INVALID':
+    'The tenant selection ticket is invalid. Please sign in again.',
+  'error.AUTH_LOGIN_TICKET_MISSING':
+    'The tenant selection ticket is missing. Please sign in again.',
+  'error.AUTH_TENANT_CONTEXT_MISMATCH':
+    'The session tenant context is invalid. Please sign in again.',
+  'error.AUTH_TENANT_CONTEXT_MISSING':
+    'The session is missing tenant context. Please sign in again.',
+  'error.AUTH_TENANT_UNAVAILABLE':
+    'No active tenant membership is available for this account.',
   'error.SECURITY_LOGIN_LOCKOUT_OCCURRED_AT_INVALID':
     'The login lockout attempt time is invalid.',
   'error.SECURITY_LOGIN_LOCKOUT_POLICY_INVALID':

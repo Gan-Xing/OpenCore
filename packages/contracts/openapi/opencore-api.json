@@ -52,11 +52,66 @@
             "description": "",
             "content": {
               "application/json": {
+                "schema": { "$ref": "#/components/schemas/LoginResultDto" }
+              }
+            }
+          }
+        },
+        "tags": ["Auth"]
+      }
+    },
+    "/api/auth/select-tenant": {
+      "post": {
+        "operationId": "AuthController_selectTenant",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SelectTenantRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
                 "schema": { "$ref": "#/components/schemas/LoginResponseDto" }
               }
             }
           }
         },
+        "tags": ["Auth"]
+      }
+    },
+    "/api/auth/switch-tenant": {
+      "post": {
+        "operationId": "AuthController_switchTenant",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SwitchTenantRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LoginResponseDto" }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
         "tags": ["Auth"]
       }
     },
@@ -10116,9 +10171,54 @@
         "type": "object",
         "properties": {
           "username": { "type": "string", "example": "admin" },
-          "password": { "type": "string", "example": "admin123" }
+          "password": { "type": "string", "example": "admin123" },
+          "tenantCode": { "type": "string", "example": "root" },
+          "tenantHost": { "type": "string", "example": "root.opencore.local" }
         },
         "required": ["username", "password"]
+      },
+      "AuthenticatedTenantDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "code": { "type": "string" },
+          "slug": { "type": "string" },
+          "name": { "type": "string" },
+          "status": { "type": "string" }
+        },
+        "required": ["id", "code", "slug", "name", "status"]
+      },
+      "AuthenticatedMembershipDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "status": { "type": "string" },
+          "isOwner": { "type": "boolean" }
+        },
+        "required": ["id", "status", "isOwner"]
+      },
+      "TenantLoginOptionDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "code": { "type": "string" },
+          "slug": { "type": "string" },
+          "name": { "type": "string" },
+          "status": { "type": "string" },
+          "membershipId": { "type": "string" },
+          "membershipStatus": { "type": "string" },
+          "isOwner": { "type": "boolean" }
+        },
+        "required": [
+          "id",
+          "code",
+          "slug",
+          "name",
+          "status",
+          "membershipId",
+          "membershipStatus",
+          "isOwner"
+        ]
       },
       "AuthenticatedUserDto": {
         "type": "object",
@@ -10128,6 +10228,24 @@
           "displayName": { "type": "string" },
           "roleCodes": { "type": "array", "items": { "type": "string" } },
           "permissionCodes": { "type": "array", "items": { "type": "string" } },
+          "accessMode": {
+            "type": "string",
+            "enum": ["platform", "platform-visit", "tenant"]
+          },
+          "activeTenant": {
+            "$ref": "#/components/schemas/AuthenticatedTenantDto"
+          },
+          "activeMembership": {
+            "$ref": "#/components/schemas/AuthenticatedMembershipDto"
+          },
+          "enabledModuleCodes": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "tenantOptions": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/TenantLoginOptionDto" }
+          },
           "avatarUrl": { "type": "string", "nullable": true }
         },
         "required": [
@@ -10135,18 +10253,65 @@
           "username",
           "displayName",
           "roleCodes",
-          "permissionCodes"
+          "permissionCodes",
+          "accessMode",
+          "enabledModuleCodes",
+          "tenantOptions"
         ]
+      },
+      "LoginResultDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["authenticated", "tenant_selection_required"]
+          },
+          "accessToken": { "type": "string" },
+          "tokenType": { "type": "string", "example": "Bearer" },
+          "expiresInSeconds": { "type": "number" },
+          "user": { "$ref": "#/components/schemas/AuthenticatedUserDto" },
+          "loginTicket": { "type": "string" },
+          "tenantOptions": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/TenantLoginOptionDto" }
+          }
+        },
+        "required": ["status"]
+      },
+      "SelectTenantRequestDto": {
+        "type": "object",
+        "properties": {
+          "loginTicket": { "type": "string" },
+          "tenantId": { "type": "string", "example": "tenant_root" },
+          "tenantCode": { "type": "string", "example": "root" },
+          "membershipId": { "type": "string" }
+        },
+        "required": ["loginTicket"]
       },
       "LoginResponseDto": {
         "type": "object",
         "properties": {
+          "status": { "type": "string", "enum": ["authenticated"] },
           "accessToken": { "type": "string" },
           "tokenType": { "type": "string", "example": "Bearer" },
           "expiresInSeconds": { "type": "number" },
           "user": { "$ref": "#/components/schemas/AuthenticatedUserDto" }
         },
-        "required": ["accessToken", "tokenType", "expiresInSeconds", "user"]
+        "required": [
+          "status",
+          "accessToken",
+          "tokenType",
+          "expiresInSeconds",
+          "user"
+        ]
+      },
+      "SwitchTenantRequestDto": {
+        "type": "object",
+        "properties": {
+          "tenantId": { "type": "string", "example": "tenant_root" },
+          "tenantCode": { "type": "string", "example": "root" },
+          "membershipId": { "type": "string" }
+        }
       },
       "LogoutResponseDto": {
         "type": "object",
@@ -10432,6 +10597,12 @@
           "id": { "type": "string" },
           "username": { "type": "string" },
           "tokenId": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "membershipId": { "type": "string" },
+          "accessMode": {
+            "type": "string",
+            "enum": ["platform", "platform-visit", "tenant"]
+          },
           "ip": { "type": "string" },
           "userAgent": { "type": "string" },
           "browser": { "type": "string" },
@@ -10556,6 +10727,12 @@
           "id": { "type": "string" },
           "username": { "type": "string" },
           "tokenId": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "membershipId": { "type": "string" },
+          "accessMode": {
+            "type": "string",
+            "enum": ["platform", "platform-visit", "tenant"]
+          },
           "ip": { "type": "string" },
           "userAgent": { "type": "string" },
           "browser": { "type": "string" },
@@ -12084,6 +12261,18 @@
           "missingRootMembershipUsernames"
         ]
       },
+      "TenantRequestContextDto": {
+        "type": "object",
+        "properties": {
+          "actorUserId": { "type": "string" },
+          "tenantId": { "type": "string" },
+          "membershipId": { "type": "string" },
+          "accessMode": {
+            "type": "string",
+            "enum": ["platform", "platform-visit", "tenant"]
+          }
+        }
+      },
       "TenantFoundationSummaryDto": {
         "type": "object",
         "properties": {
@@ -12105,6 +12294,9 @@
           },
           "backfill": {
             "$ref": "#/components/schemas/TenantBackfillFoundationDto"
+          },
+          "requestContext": {
+            "$ref": "#/components/schemas/TenantRequestContextDto"
           },
           "generatedAt": { "type": "string" }
         },

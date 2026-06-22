@@ -18,12 +18,15 @@ import {
   BindSocialAuthLoginDto,
   CompleteSocialAuthDto,
   LoginRequestDto,
+  LoginResultDto,
   LoginResponseDto,
   LogoutResponseDto,
+  SelectTenantRequestDto,
   SocialAuthFlowDto,
   SocialAuthProviderDto,
   SocialAuthResultDto,
   StartSocialAuthFlowDto,
+  SwitchTenantRequestDto,
 } from './rbac.dto';
 import { RequireAuthenticated } from './permissions.decorator';
 import { SocialAuthService } from './social-auth.service';
@@ -48,16 +51,62 @@ export class AuthController {
   ) {}
 
   @Post('login')
-  @ApiOkResponse({ type: LoginResponseDto })
+  @ApiOkResponse({ type: LoginResultDto })
   login(
     @Body() body: LoginRequestDto,
     @Req() request: RequestWithUser,
-  ): Promise<LoginResponseDto> {
+  ): Promise<LoginResultDto> {
     return this.authService.login(body.username, body.password, {
       ip: request.ip,
+      tenantCode: body.tenantCode,
+      tenantHost: body.tenantHost,
       userAgent: getHeaderValue(request.headers, 'user-agent'),
       requestId: getRequestContext()?.requestId,
     });
+  }
+
+  @Post('select-tenant')
+  @ApiOkResponse({ type: LoginResponseDto })
+  selectTenant(
+    @Body() body: SelectTenantRequestDto,
+    @Req() request: RequestWithUser,
+  ): Promise<LoginResponseDto> {
+    return this.authService.selectTenant(
+      body.loginTicket,
+      {
+        membershipId: body.membershipId,
+        tenantCode: body.tenantCode,
+        tenantId: body.tenantId,
+      },
+      {
+        ip: request.ip,
+        userAgent: getHeaderValue(request.headers, 'user-agent'),
+        requestId: getRequestContext()?.requestId,
+      },
+    );
+  }
+
+  @Post('switch-tenant')
+  @ApiBearerAuth()
+  @RequireAuthenticated()
+  @ApiOkResponse({ type: LoginResponseDto })
+  switchTenant(
+    @Body() body: SwitchTenantRequestDto,
+    @Req() request: RequestWithUser,
+  ): Promise<LoginResponseDto> {
+    return this.authService.switchTenant(
+      getHeaderValue(request.headers, 'authorization'),
+      {
+        membershipId: body.membershipId,
+        tenantCode: body.tenantCode,
+        tenantId: body.tenantId,
+      },
+      {
+        ip: request.ip,
+        userAgent: getHeaderValue(request.headers, 'user-agent'),
+        requestId: getRequestContext()?.requestId,
+      },
+    );
   }
 
   @Get('me')
@@ -69,11 +118,17 @@ export class AuthController {
       throw authUnauthorized('AUTH_USER_MISSING', 'Missing authenticated user');
     }
 
-    return this.authService.createSessionForUser(request.user.id, {
-      ip: request.ip,
-      userAgent: getHeaderValue(request.headers, 'user-agent'),
-      requestId: getRequestContext()?.requestId,
-    });
+    return this.authService.createSessionForUser(
+      request.user.id,
+      {
+        ip: request.ip,
+        userAgent: getHeaderValue(request.headers, 'user-agent'),
+        requestId: getRequestContext()?.requestId,
+      },
+      {
+        membershipId: request.user.activeMembership?.id,
+      },
+    );
   }
 
   @Post('logout')

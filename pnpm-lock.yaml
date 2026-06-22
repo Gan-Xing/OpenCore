@@ -612,6 +612,9 @@ importers:
       '@opencore/contracts':
         specifier: workspace:*
         version: link:../contracts
+      '@opencore/core':
+        specifier: workspace:*
+        version: link:../core
       reflect-metadata:
         specifier: ^0.1.13
         version: 0.1.14

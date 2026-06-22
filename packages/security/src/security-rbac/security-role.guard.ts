@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { createApiErrorBody } from '@opencore/common';
+import { setRequestActorContext } from '@opencore/core';
 import { SecurityAuthService } from '../security-auth';
 import { REQUIRED_ROLES_KEY } from './security-rbac.decorators';
 import type { SecurityRequestWithAuth } from './security-rbac.request';
@@ -51,6 +52,12 @@ export class SecurityRoleGuard implements CanActivate {
     }
 
     request.user = user;
+    setRequestActorContext({
+      accessMode: user.accessMode,
+      actorUserId: user.id,
+      membershipId: user.activeMembership?.id,
+      tenantId: user.activeTenant?.id,
+    });
     return true;
   }
 }

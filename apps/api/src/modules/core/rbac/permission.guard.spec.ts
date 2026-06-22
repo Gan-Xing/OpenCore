@@ -19,7 +19,9 @@ describe('PermissionGuard', () => {
   beforeEach(async () => {
     repository = new SeedRbacRepository(createPermissionGuardUsers());
     authService = new AuthService(repository);
-    token = (await authService.login('admin', 'admin123')).accessToken;
+    token = expectAuthenticated(
+      await authService.login('admin', 'admin123'),
+    ).accessToken;
   });
 
   it('allows requests whose bearer token has the required permission', async () => {
@@ -88,8 +90,9 @@ describe('PermissionGuard', () => {
   });
 
   it('rejects dangerous operations without the matching dangerous permission', async () => {
-    const viewerToken = (await authService.login('viewer', 'viewer123'))
-      .accessToken;
+    const viewerToken = expectAuthenticated(
+      await authService.login('viewer', 'viewer123'),
+    ).accessToken;
     const guard = new PermissionGuard(
       createReflector(['core:user:delete']),
       authService,
@@ -135,6 +138,16 @@ function createPermissionGuardUsers(): readonly SystemUserRecord[] {
       updatedAt: '2026-06-10T00:00:00.000Z',
     },
   ];
+}
+
+function expectAuthenticated(
+  session: Awaited<ReturnType<AuthService['login']>>,
+) {
+  if (session.status !== 'authenticated') {
+    throw new Error('Expected authenticated login response');
+  }
+
+  return session;
 }
 
 function createTestToken(userId: string): string {

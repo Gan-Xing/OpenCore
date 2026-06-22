@@ -39,6 +39,7 @@ import Settings from '../../../../config/defaultSettings';
 type LoginValues = {
   autoLogin?: boolean;
   password: string;
+  tenantCode?: string;
   username: string;
 };
 
@@ -193,7 +194,16 @@ const Login: React.FC = () => {
       const session = await loginToOpenCore({
         username: values.username,
         password: values.password,
+        tenantCode: values.tenantCode,
       });
+      if (session.status !== 'authenticated') {
+        throw new Error(
+          intl.formatMessage({
+            id: 'pages.login.tenantSelectionRequired',
+            defaultMessage: 'Please select a tenant before continuing.',
+          }),
+        );
+      }
       const currentUser =
         (await fetchUserInfo()) ?? toAdminCurrentUser(session.user);
 
@@ -348,6 +358,17 @@ const Login: React.FC = () => {
                 ),
               },
             ]}
+          />
+          <ProFormText
+            name="tenantCode"
+            fieldProps={{
+              size: 'large',
+              prefix: <LinkOutlined />,
+            }}
+            placeholder={intl.formatMessage({
+              id: 'pages.login.tenantCode.placeholder',
+              defaultMessage: 'Tenant code',
+            })}
           />
           <ProFormText.Password
             name="password"

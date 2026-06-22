@@ -4,15 +4,15 @@ Date: 2026-06-20
 Repository: `Gan-Xing/OpenCore`  
 Branch: `main`  
 Target track: `Cycle-022 / Tenant Foundation`  
-Status: **In progress; T1 foundation models and root tenant slice implemented, deployed, and verified**
+Status: **In progress; T2 tenant-bound auth/session/context slice implemented, deployed, and verified**
 
 ## 0. Current Round Snapshot
 
 Updated: 2026-06-22
 
-Current completed slice count: **2**
+Current completed slice count: **3**
 
-This working tree has advanced Cycle-022 through the first deployable tenant foundation slice:
+This working tree has advanced Cycle-022 through the first two deployable tenant foundation slices:
 
 - Prisma models for `TenantPlan`, `TenantPlanModule`, `Tenant`, `TenantMembership`, `TenantMembershipRole`, `TenantMembershipPost`, `PlatformRole`, `UserPlatformRole`, and `PlatformRolePermission`.
 - Migration `20260622223000_tenant_foundation` creates the `root` tenant, root `system.full` plan, root memberships for existing users, and transitional root copies of `UserRole` and `UserPost`.
@@ -21,11 +21,17 @@ This working tree has advanced Cycle-022 through the first deployable tenant fou
 - API/SDK/Admin T1 surface is read-only: `GET /api/core/tenancy/foundation`, `createTenancyClient()`, and `/system/tenants`.
 - `pnpm guard:tenant-foundation` and `pnpm smoke:core-tenancy-foundation` were added.
 - Repository lint/typecheck/test, refreshed deploy, local/public tenant foundation smoke, and public Admin route checks passed for this slice.
+- Migration `20260623003000_tenant_bound_sessions` adds tenant/member/access-mode fields to `OnlineUserSession`.
+- Access tokens now carry tenant id, membership id, and access mode; authenticated sessions are registered with the same context.
+- `SecurityAuthService` validates token/session tenant context, tenant status, and membership status on each bearer request.
+- `/api/auth/select-tenant` and `/api/auth/switch-tenant` reissue tenant-bound sessions; switch revokes the previous token.
+- `RequestContext` now carries actor, tenant, membership, and access mode populated by authenticated guards.
+- Admin login accepts an optional tenant code and no longer stores a token unless the login response is authenticated.
+- `pnpm guard:tenant-auth` and `pnpm smoke:core-tenancy-auth` were added.
+- Refreshed deploy completed on API `39172` and Admin `39174`; tenant foundation/auth smokes passed against local and public API.
 
 Still not complete:
 
-- tenant-bound token/session/request context;
-- tenant switch/select flow;
 - tenant-scoped System repositories and unique constraint rewrites;
 - Redis/file/queue/WebSocket/Integration/OAuth/audit runtime propagation;
 - Tenant Plan and Member CRUD Admin;
@@ -122,9 +128,9 @@ OpenCore 已经完成单租户企业后台的大部分基础产品化，不是 s
 
 当前代码没有完整的 tenant runtime：
 
-- `RequestContext` 只有 `requestId`、`traceId`；
-- Access Token 只有 `sub`、`jti`、`iat`、`exp`；
-- `AuthenticatedUser` 没有当前租户或成员信息；
+- `RequestContext` 已有 `requestId`、`traceId`、`actorUserId`、`tenantId`、`membershipId`、`accessMode`，但多数 repository 尚未消费 tenant 字段；
+- Access Token 已有 `sub`、`jti`、`iat`、`exp`、`tid`、`mid`、`am`；
+- `AuthenticatedUser` 已有当前租户和成员信息，但权限仍来自 legacy `UserRole`；
 - `PrismaService` 是裸 `PrismaClient`，没有 tenant-scoped client；
 - Redis key 没有 tenant namespace；
 - 文件 key 默认是 `runtime/file-assets/...`；

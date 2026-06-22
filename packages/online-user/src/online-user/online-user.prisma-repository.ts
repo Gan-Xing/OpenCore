@@ -3,6 +3,7 @@ import type { PageResult } from '@opencore/common';
 import { PrismaService } from '@opencore/database';
 import type {
   SecurityAuthSessionRecord,
+  SecurityAuthSessionContext,
   SecurityAuthSessionRevocationInput,
 } from '@opencore/security';
 import type { OnlineUserSessionRecord } from './online-user.records';
@@ -27,6 +28,9 @@ type OnlineUserSessionRow = {
   id: string;
   username: string;
   tokenId: string;
+  tenantId: string | null;
+  membershipId: string | null;
+  accessMode: string;
   ip: string;
   userAgent: string;
   lastSeenAt: Date;
@@ -90,6 +94,9 @@ export class PrismaOnlineUserRepository extends OnlineUserRepository {
         id: createSessionId(record.tokenId),
         username: record.username,
         tokenId: record.tokenId,
+        tenantId: record.tenantId,
+        membershipId: record.membershipId,
+        accessMode: record.accessMode,
         ip: record.ip,
         userAgent: record.userAgent,
         lastSeenAt: new Date(record.lastSeenAt),
@@ -97,6 +104,9 @@ export class PrismaOnlineUserRepository extends OnlineUserRepository {
       },
       update: {
         username: record.username,
+        tenantId: record.tenantId,
+        membershipId: record.membershipId,
+        accessMode: record.accessMode,
         ip: record.ip,
         userAgent: record.userAgent,
         lastSeenAt: new Date(record.lastSeenAt),
@@ -108,11 +118,16 @@ export class PrismaOnlineUserRepository extends OnlineUserRepository {
     });
   }
 
-  async assertSessionActive(tokenId: string): Promise<void> {
+  async assertSessionActive(
+    tokenId: string,
+  ): Promise<SecurityAuthSessionContext | undefined> {
     const session = await this.prisma.onlineUserSession.findUnique({
       where: { tokenId },
       select: {
         tokenId: true,
+        tenantId: true,
+        membershipId: true,
+        accessMode: true,
         revokedAt: true,
         expiresAt: true,
       },
@@ -130,6 +145,21 @@ export class PrismaOnlineUserRepository extends OnlineUserRepository {
       where: { tokenId },
       data: { lastSeenAt: new Date() },
     });
+
+    if (
+      !registeredSession.tenantId ||
+      !registeredSession.membershipId ||
+      !isAuthAccessMode(registeredSession.accessMode)
+    ) {
+      return undefined;
+    }
+
+    return {
+      accessMode: registeredSession.accessMode,
+      membershipId: registeredSession.membershipId,
+      tenantId: registeredSession.tenantId,
+      tokenId,
+    };
   }
 
   async revokeSession(
@@ -223,6 +253,9 @@ function toOnlineUserSessionRecord(
     id: row.id,
     username: row.username,
     tokenId: row.tokenId,
+    tenantId: row.tenantId ?? undefined,
+    membershipId: row.membershipId ?? undefined,
+    accessMode: isAuthAccessMode(row.accessMode) ? row.accessMode : undefined,
     ip: row.ip,
     userAgent: row.userAgent,
     browser: userAgent.browser,
@@ -233,6 +266,14 @@ function toOnlineUserSessionRecord(
     revokedBy: row.revokedBy ?? undefined,
     revokedReason: row.revokedReason ?? undefined,
   };
+}
+
+function isAuthAccessMode(
+  value: string,
+): value is 'platform' | 'platform-visit' | 'tenant' {
+  return (
+    value === 'tenant' || value === 'platform' || value === 'platform-visit'
+  );
 }
 
 function createSessionId(tokenId: string): string {

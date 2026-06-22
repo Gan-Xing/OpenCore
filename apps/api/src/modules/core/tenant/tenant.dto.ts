@@ -92,6 +92,23 @@ export class TenantBackfillFoundationDto {
   missingRootMembershipUsernames!: readonly string[];
 }
 
+export class TenantRequestContextDto {
+  @ApiProperty({ required: false })
+  actorUserId?: string;
+
+  @ApiProperty({ required: false })
+  tenantId?: string;
+
+  @ApiProperty({ required: false })
+  membershipId?: string;
+
+  @ApiProperty({
+    required: false,
+    enum: ['platform', 'platform-visit', 'tenant'],
+  })
+  accessMode?: string;
+}
+
 export class TenantFoundationSummaryDto {
   @ApiProperty({ enum: ['shared', 'single'] })
   tenancyMode!: 'shared' | 'single';
@@ -110,6 +127,9 @@ export class TenantFoundationSummaryDto {
 
   @ApiProperty({ type: TenantBackfillFoundationDto })
   backfill!: TenantBackfillFoundationDto;
+
+  @ApiProperty({ type: TenantRequestContextDto, required: false })
+  requestContext?: TenantRequestContextDto;
 
   @ApiProperty()
   generatedAt!: string;

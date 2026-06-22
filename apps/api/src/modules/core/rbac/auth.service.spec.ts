@@ -15,11 +15,13 @@ describe('AuthService', () => {
   });
 
   it('logs in with the seeded admin and exposes stable role and permission codes', async () => {
-    const session = await service.login('admin', 'admin123', {
-      ip: '127.0.0.1',
-      requestId: 'req_login_success',
-      userAgent: 'jest',
-    });
+    const session = expectAuthenticated(
+      await service.login('admin', 'admin123', {
+        ip: '127.0.0.1',
+        requestId: 'req_login_success',
+        userAgent: 'jest',
+      }),
+    );
 
     expect(session.tokenType).toBe('Bearer');
     expect(session.expiresInSeconds).toBe(3600);
@@ -85,7 +87,9 @@ describe('AuthService', () => {
   });
 
   it('rejects expired bearer tokens', async () => {
-    const session = await service.login('admin', 'admin123');
+    const session = expectAuthenticated(
+      await service.login('admin', 'admin123'),
+    );
     const now = Date.now();
     const dateSpy = jest.spyOn(Date, 'now').mockReturnValue(now + 3601 * 1000);
 
@@ -98,3 +102,13 @@ describe('AuthService', () => {
     dateSpy.mockRestore();
   });
 });
+
+function expectAuthenticated(
+  session: Awaited<ReturnType<AuthService['login']>>,
+) {
+  if (session.status !== 'authenticated') {
+    throw new Error('Expected authenticated login response');
+  }
+
+  return session;
+}

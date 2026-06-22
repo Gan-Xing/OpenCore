@@ -5,6 +5,9 @@ export default {
   'pages.login.success': 'Login successful.',
   'pages.login.username.placeholder': 'Username',
   'pages.login.username.required': 'Please input your username.',
+  'pages.login.tenantCode.placeholder': 'Tenant code',
+  'pages.login.tenantSelectionRequired':
+    'Please select a tenant before continuing.',
   'pages.login.password.placeholder': 'Password',
   'pages.login.password.required': 'Please input your password.',
   'pages.login.rememberMe': 'Remember me',

@@ -14,6 +14,8 @@ describe('createRbacClient', () => {
     const client = createRbacClient(request);
 
     await client.login({ username: 'admin', password: 'admin123' });
+    await client.selectTenant({ loginTicket: 'ticket', tenantCode: 'root' });
+    await client.switchTenant('token', { tenantCode: 'root' });
     await client.me('token');
     await client.logout('token');
     await client.listSocialAuthProviders();
@@ -146,6 +148,8 @@ describe('createRbacClient', () => {
 
     expect(calls).toEqual([
       { path: '/auth/login', method: 'POST' },
+      { path: '/auth/select-tenant', method: 'POST' },
+      { path: '/auth/switch-tenant', method: 'POST', token: 'token' },
       { path: '/auth/me', token: 'token' },
       { path: '/auth/logout', method: 'POST', token: 'token' },
       { path: '/auth/social/providers' },

@@ -71,6 +71,68 @@ Passed locally:
 
 - No tenant CRUD.
 - No front-end tenant switching.
-- No token/session tenant binding yet.
 - No rewrite of Role/Dept/Post/Dict/Config/File repositories yet.
 - No Redis/file/queue/WebSocket/Integration tenant propagation yet.
+
+## Round 2: T2 Tenant-Bound Auth, Session, and Request Context
+
+### Completed
+
+- Added migration `20260623003000_tenant_bound_sessions`:
+  - adds nullable `tenantId` and `membershipId` to `OnlineUserSession`;
+  - adds `accessMode` defaulting to `tenant`;
+  - backfills existing online sessions when username maps to root membership.
+- Extended auth token/session model:
+  - access token payload now includes tenant id (`tid`), membership id (`mid`), and access mode (`am`);
+  - login tickets are short-lived HMAC tokens used only for tenant selection;
+  - session repository activation returns tenant context for mismatch checks.
+- Extended authentication flow:
+  - single active membership logs in directly;
+  - multiple active memberships return `tenant_selection_required` and a login ticket;
+  - `/api/auth/select-tenant` exchanges a ticket for a tenant-bound token;
+  - `/api/auth/switch-tenant` reissues a tenant-bound token and revokes the old token.
+- Extended request context:
+  - `RequestContext` now supports `actorUserId`, `tenantId`, `membershipId`, and `accessMode`;
+  - RBAC guards populate context only after bearer authentication succeeds.
+- Preserved single-mode compatibility:
+  - Prisma system-user repository syncs root tenant membership bridges after user create/update/status/role assignment;
+  - seed resolves online-session membership by username for older databases whose admin id predates the stable seed id.
+- Added public surface:
+  - Auth OpenAPI DTOs for active tenant/membership, login result, select tenant, switch tenant;
+  - SDK `LoginResult`, `selectTenant`, and `switchTenant`;
+  - Admin login optional tenant code field.
+- Added verification:
+  - tenant auth guard;
+  - tenant auth smoke;
+  - tenant foundation summary now exposes token-derived request context for smoke verification.
+
+### Verification Log
+
+Passed locally before deploy:
+
+- Prisma schema validation, client generation, migration deploy, and seed.
+- Tenant foundation/auth guards, seed typecheck, typed smoke typecheck, SDK contract check, route/access guard, OpenAPI export/drift/tag checks.
+- Focused tests for security, SDK, API, online-user, and system packages.
+- Focused typecheck for core, security, online-user, system, API, SDK, and Admin.
+- The first affected test run exposed the expected local DB pre-migration state; after applying `20260623003000_tenant_bound_sessions`, the failed online-user integration suite passed.
+
+Passed after deploy:
+
+- Full repository lint, typecheck, and test suites.
+- Refreshed deploy on API `39172` and Admin `39174`.
+- Tenant foundation/auth smokes against local and public API.
+- Public Admin tenant route and login bundle tenant-code check.
+
+### Remaining Product Debt
+
+- T3 tenant RBAC/org repository migration.
+- T4 tenant-owned data isolation for System and core records.
+- T5 Redis/file/queue/WebSocket/Integration/OAuth/audit runtime propagation.
+- T6 live Tenant Plan/Member CRUD, Admin switcher, and platform visit audit.
+
+### Deliberate Non-Goals
+
+- No tenant CRUD.
+- No full Admin tenant switcher yet.
+- No tenant-derived permission clipping yet; permissions still come from legacy `UserRole` until T3.
+- No repository-wide tenant scoping beyond root membership bridge sync for single-mode compatibility.

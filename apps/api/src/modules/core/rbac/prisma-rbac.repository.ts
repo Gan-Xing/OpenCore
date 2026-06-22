@@ -4,6 +4,8 @@ import { PrismaService } from '@opencore/database';
 import type {
   SecurityDataScopeProfile,
   SecurityDataScopeType,
+  SecurityAuthTenantMembershipLookup,
+  SecurityAuthTenantMembershipRecord,
 } from '@opencore/security';
 import {
   createRbacExportPreview,
@@ -199,6 +201,65 @@ export class PrismaRbacRepository extends RbacRepository {
     ].sort();
   }
 
+  async listTenantMembershipsForUser(
+    userId: string,
+  ): Promise<readonly SecurityAuthTenantMembershipRecord[]> {
+    const memberships = await this.prisma.tenantMembership.findMany({
+      where: { userId },
+      include: {
+        tenant: {
+          include: {
+            plan: {
+              include: {
+                modules: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: [
+        { isOwner: 'desc' },
+        { tenant: { code: 'asc' } },
+        { id: 'asc' },
+      ],
+    });
+
+    return memberships.map((membership) => ({
+      enabledModuleCodes:
+        membership.tenant.plan?.modules.map((module) => module.moduleCode) ??
+        [],
+      isOwner: membership.isOwner,
+      membershipId: membership.id,
+      membershipStatus: membership.status,
+      tenantCode: membership.tenant.code,
+      tenantExpiresAt: membership.tenant.expiresAt?.toISOString(),
+      tenantId: membership.tenant.id,
+      tenantName: membership.tenant.name,
+      tenantSlug: membership.tenant.slug,
+      tenantStatus: membership.tenant.status,
+    }));
+  }
+
+  async findTenantMembershipForUser(
+    input: SecurityAuthTenantMembershipLookup,
+  ): Promise<SecurityAuthTenantMembershipRecord | undefined> {
+    const memberships = await this.listTenantMembershipsForUser(input.userId);
+    const hostTenantCode = normalizeTenantHostCode(input.tenantHost);
+
+    return memberships.find(
+      (membership) =>
+        (!input.membershipId ||
+          membership.membershipId === input.membershipId) &&
+        (!input.tenantId || membership.tenantId === input.tenantId) &&
+        (!input.tenantCode ||
+          membership.tenantCode === input.tenantCode ||
+          membership.tenantSlug === input.tenantCode) &&
+        (!hostTenantCode ||
+          membership.tenantCode === hostTenantCode ||
+          membership.tenantSlug === hostTenantCode),
+    );
+  }
+
   async getDataScopeProfileForUser(
     userId: string,
   ): Promise<SecurityDataScopeProfile | undefined> {
@@ -309,6 +370,22 @@ function toUserRecord(user: PrismaUserWithRoles): RbacUserRecord {
     enabled: user.enabled,
     avatarUrl: user.avatarUrl ?? undefined,
   };
+}
+
+function normalizeTenantHostCode(
+  value: string | undefined,
+): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const host = value.split(':')[0]?.trim().toLowerCase();
+
+  if (!host || host === 'localhost' || /^\d+\.\d+\.\d+\.\d+$/u.test(host)) {
+    return undefined;
+  }
+
+  return host.split('.')[0];
 }
 
 function toPermissionSummaryRecord(

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { getRequestContext } from '@opencore/core';
 import { PrismaService } from '@opencore/database';
 import type { TenantFoundationSummaryDto } from './tenant.dto';
 
@@ -43,6 +44,7 @@ export class TenantFoundationService {
       }),
       this.getBackfillSummary(),
     ]);
+    const requestContext = getRequestContext();
 
     return {
       tenancyMode:
@@ -85,6 +87,14 @@ export class TenantFoundationService {
           .sort((left, right) => left.localeCompare(right)),
       })),
       backfill,
+      requestContext: requestContext
+        ? {
+            accessMode: requestContext.accessMode,
+            actorUserId: requestContext.actorUserId,
+            membershipId: requestContext.membershipId,
+            tenantId: requestContext.tenantId,
+          }
+        : undefined,
       generatedAt: new Date().toISOString(),
     };
   }

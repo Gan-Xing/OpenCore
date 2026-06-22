@@ -23,10 +23,22 @@ Cycle-022 may only count a slice when it is code-backed, migrated, seeded, visib
 
 ## Below Waterline
 
-- Tenant-bound authentication is not done.
 - Tenant data-plane isolation is not done.
 - Platform visit/impersonation is not done.
 - Tenant plan CRUD and member management Admin are not done.
 - Runtime propagation is not done.
 
 These remain below the productization waterline and cannot be described as complete SaaS multi-tenancy.
+
+## T2 Audit
+
+| Requirement                                           | Status | Notes                                                                                                       |
+| ----------------------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------- |
+| Token and session tenant binding                      | Done   | Tokens carry `tid/mid/am`; `OnlineUserSession` persists `tenantId`, `membershipId`, and `accessMode`.       |
+| Bearer request validates tenant/member/session status | Done   | Auth rejects missing/mismatched tenant context and inactive tenant/member state before returning the user.  |
+| Request context enrichment                            | Done   | Guards write actor, tenant, membership, and access mode into `AsyncLocalStorage`.                           |
+| Select/switch APIs                                    | Done   | Login can return tenant-selection ticket; select/switch reissue tenant-bound tokens; switch revokes old.    |
+| Single-mode compatibility                             | Done   | System user creation/update syncs root membership bridges; seed resolves root membership by username.       |
+| OpenAPI/SDK/Admin                                     | Done   | Auth DTO/OpenAPI updated; SDK has select/switch; Admin login accepts optional tenant code.                  |
+| Smoke                                                 | Done   | Tenant auth smoke validates token claims, request context, header tamper resistance, and switch revocation. |
+| Guard                                                 | Done   | Static tenant auth guard checks schema/token/session/context/API/smoke markers.                             |

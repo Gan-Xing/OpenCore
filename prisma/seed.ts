@@ -697,11 +697,29 @@ function toInputJson(value: unknown): Prisma.InputJsonValue {
 
 async function seedOnlineUserSessions(): Promise<number> {
   for (const session of onlineUserSessionSeeds) {
+    const rootMembership = await prisma.tenantMembership.findFirst({
+      where: {
+        tenantId: ROOT_TENANT_ID,
+        user: {
+          username: session.username,
+        },
+      },
+      select: {
+        id: true,
+        tenantId: true,
+      },
+    });
+    const tenantId = rootMembership?.tenantId ?? session.tenantId ?? null;
+    const membershipId = rootMembership?.id ?? session.membershipId ?? null;
+
     await prisma.onlineUserSession.upsert({
       where: { id: session.id },
       update: {
         username: session.username,
         tokenId: session.tokenId,
+        tenantId,
+        membershipId,
+        accessMode: session.accessMode ?? 'tenant',
         ip: session.ip,
         userAgent: session.userAgent,
         lastSeenAt: new Date(session.lastSeenAt),
@@ -714,6 +732,9 @@ async function seedOnlineUserSessions(): Promise<number> {
         id: session.id,
         username: session.username,
         tokenId: session.tokenId,
+        tenantId,
+        membershipId,
+        accessMode: session.accessMode ?? 'tenant',
         ip: session.ip,
         userAgent: session.userAgent,
         lastSeenAt: new Date(session.lastSeenAt),

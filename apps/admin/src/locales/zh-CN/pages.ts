@@ -4,6 +4,8 @@ export default {
   'pages.login.success': '登录成功。',
   'pages.login.username.placeholder': '用户名',
   'pages.login.username.required': '请输入用户名。',
+  'pages.login.tenantCode.placeholder': '租户编码',
+  'pages.login.tenantSelectionRequired': '请先选择租户后继续。',
   'pages.login.password.placeholder': '密码',
   'pages.login.password.required': '请输入密码。',
   'pages.login.rememberMe': '记住登录状态',

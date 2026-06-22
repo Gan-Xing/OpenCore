@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { createApiErrorBody } from '@opencore/common';
 import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
+import type { SecurityTenantAccessMode } from './security-auth.repository';
 
 export type SecurityBearerTokenResult = {
   accessToken: string;
@@ -15,15 +16,30 @@ export type SecurityBearerTokenPayload = {
   jti?: string;
   iat?: number;
   exp?: number;
+  typ?: 'access' | 'login-ticket';
+  tid?: string;
+  mid?: string;
+  am?: SecurityTenantAccessMode;
 };
 
 export type VerifiedSecurityBearerToken = {
   subject: string;
   tokenId: string;
   expiresAt: string;
+  tenantId?: string;
+  membershipId?: string;
+  accessMode?: SecurityTenantAccessMode;
+};
+
+export type SecurityBearerSessionSubject = {
+  subject: string;
+  tenantId: string;
+  membershipId: string;
+  accessMode: SecurityTenantAccessMode;
 };
 
 export const DEFAULT_SECURITY_BEARER_TOKEN_TTL_SECONDS = 3600;
+export const DEFAULT_SECURITY_LOGIN_TICKET_TTL_SECONDS = 300;
 export const DEFAULT_SECURITY_AUTH_TOKEN_SECRET =
   'opencore-development-auth-token-secret';
 
@@ -33,12 +49,63 @@ export class SecurityBearerTokenService {
     subject: string,
     ttlSeconds = DEFAULT_SECURITY_BEARER_TOKEN_TTL_SECONDS,
   ): SecurityBearerTokenResult {
+    return this.signPayload({ sub: subject, typ: 'access' }, ttlSeconds);
+  }
+
+  signSession(
+    subject: SecurityBearerSessionSubject,
+    ttlSeconds = DEFAULT_SECURITY_BEARER_TOKEN_TTL_SECONDS,
+  ): SecurityBearerTokenResult {
+    return this.signPayload(
+      {
+        am: subject.accessMode,
+        mid: subject.membershipId,
+        sub: subject.subject,
+        tid: subject.tenantId,
+        typ: 'access',
+      },
+      ttlSeconds,
+    );
+  }
+
+  signLoginTicket(
+    subject: string,
+    ttlSeconds = DEFAULT_SECURITY_LOGIN_TICKET_TTL_SECONDS,
+  ): string {
+    return this.signPayload({ sub: subject, typ: 'login-ticket' }, ttlSeconds)
+      .accessToken;
+  }
+
+  verifyLoginTicket(ticket: string | undefined): string {
+    if (!ticket) {
+      throw bearerTokenError(
+        'AUTH_LOGIN_TICKET_MISSING',
+        'Missing login ticket',
+      );
+    }
+
+    const token = this.verifyTokenPayload(ticket);
+
+    if (token.type !== 'login-ticket') {
+      throw bearerTokenError(
+        'AUTH_LOGIN_TICKET_INVALID',
+        'Invalid login ticket',
+      );
+    }
+
+    return token.subject;
+  }
+
+  private signPayload(
+    input: Omit<SecurityBearerTokenPayload, 'exp' | 'iat' | 'jti'>,
+    ttlSeconds: number,
+  ): SecurityBearerTokenResult {
     const issuedAt = Math.floor(Date.now() / 1000);
     const tokenId = randomUUID();
     const expiresAt = issuedAt + ttlSeconds;
     const payload = Buffer.from(
       JSON.stringify({
-        sub: subject,
+        ...input,
         jti: tokenId,
         iat: issuedAt,
         exp: expiresAt,
@@ -69,14 +136,27 @@ export class SecurityBearerTokenService {
       );
     }
 
-    return this.verifyTokenPayload(authorization.slice('Bearer '.length));
+    const token = this.verifyTokenPayload(
+      authorization.slice('Bearer '.length),
+    );
+
+    if (token.type === 'login-ticket') {
+      throw bearerTokenError(
+        'AUTH_BEARER_TOKEN_INVALID',
+        'Invalid bearer token',
+      );
+    }
+
+    return token;
   }
 
   verifyToken(token: string): string {
     return this.verifyTokenPayload(token).subject;
   }
 
-  verifyTokenPayload(token: string): VerifiedSecurityBearerToken {
+  verifyTokenPayload(
+    token: string,
+  ): VerifiedSecurityBearerToken & { type: 'access' | 'login-ticket' } {
     const [payload, signature] = token.split('.');
 
     if (!payload || !signature || !safeEqual(signature, this.sign(payload))) {
@@ -103,9 +183,13 @@ export class SecurityBearerTokenService {
     }
 
     return {
+      accessMode: decoded.am,
       subject: decoded.sub,
       tokenId: decoded.jti ?? createLegacyTokenId(decoded),
       expiresAt: new Date(decoded.exp * 1000).toISOString(),
+      membershipId: decoded.mid,
+      tenantId: decoded.tid,
+      type: decoded.typ ?? 'access',
     };
   }
 

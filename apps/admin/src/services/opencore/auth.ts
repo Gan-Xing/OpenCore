@@ -4,6 +4,7 @@ import {
   type BindSocialAuthLoginRequest,
   type CompleteSocialAuthRequest,
   type LoginRequest,
+  type LoginResult,
   type LoginResponse,
   type LogoutResponse,
   type SocialAuthFlowSummary,
@@ -46,13 +47,15 @@ export function toAdminCurrentUser(user: AuthenticatedUser): AdminCurrentUser {
 
 export async function loginToOpenCore(
   requestBody: LoginRequest,
-): Promise<LoginResponse> {
-  const session = await request<LoginResponse>('/api/auth/login', {
+): Promise<LoginResult> {
+  const session = await request<LoginResult>('/api/auth/login', {
     data: requestBody,
     method: 'POST',
     skipErrorHandler: true,
   });
-  setAdminToken(session.accessToken);
+  if (session.status === 'authenticated') {
+    setAdminToken(session.accessToken);
+  }
   return session;
 }
 
