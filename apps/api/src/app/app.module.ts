@@ -11,6 +11,7 @@ import { MonitoringModule } from '../modules/monitor/monitoring/monitoring.modul
 import { OperationsModule } from '../modules/monitor/operations/operations.module';
 import { RbacModule } from '../modules/core/rbac/rbac.module';
 import { SystemManagementModule } from '../modules/core/system-management/system-management.module';
+import { TenantFoundationModule } from '../modules/core/tenant/tenant.module';
 import { ToolingModule } from '../modules/tool/tooling/tooling.module';
 import { HealthController } from './health.controller';
 
@@ -19,6 +20,7 @@ import { HealthController } from './health.controller';
     DatabaseModule,
     AuditOperationLogModule,
     RbacModule,
+    TenantFoundationModule,
     SystemManagementModule,
     CollaborationModule,
     IntegrationModule,

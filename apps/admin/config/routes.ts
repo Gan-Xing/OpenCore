@@ -44,6 +44,12 @@ export default [
     routes: [
       { path: '/system', redirect: '/system/users' },
       {
+        name: 'tenants',
+        path: '/system/tenants',
+        component: './System/Tenants',
+        access: 'canReadTenants',
+      },
+      {
         name: 'users',
         path: '/system/users',
         component: './System/Users',

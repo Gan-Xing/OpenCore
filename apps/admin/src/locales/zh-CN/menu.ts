@@ -7,6 +7,7 @@ export default {
   'menu.dashboard': '仪表盘',
   'menu.profile': '个人资料',
   'menu.system': '系统管理',
+  'menu.system.tenants': '租户',
   'menu.system.users': '用户管理',
   'menu.system.roles': '角色管理',
   'menu.system.permissions': '权限管理',

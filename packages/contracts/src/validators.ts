@@ -47,7 +47,8 @@ export function validatePermissionDefinition(
   if (
     parsedCode &&
     options.expectedLayer &&
-    parsedCode.layer !== options.expectedLayer
+    parsedCode.layer !== options.expectedLayer &&
+    !isCoreTenantPlatformPermission(parsedCode.layer, options)
   ) {
     issues.push(
       createValidationIssue(
@@ -83,6 +84,20 @@ export function validatePermissionDefinition(
   }
 
   return createValidationResult(issues);
+}
+
+function isCoreTenantPlatformPermission(
+  parsedLayer: ModuleLayer,
+  options: {
+    expectedLayer?: ModuleLayer;
+    expectedResource?: string;
+  },
+): boolean {
+  return (
+    options.expectedLayer === 'core' &&
+    parsedLayer === 'platform' &&
+    Boolean(options.expectedResource?.startsWith('tenant'))
+  );
 }
 
 export function validateMenuDefinition(menu: MenuDefinition): ValidationResult {

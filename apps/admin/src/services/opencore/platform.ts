@@ -5,6 +5,7 @@ import {
   createOperationsClient,
   createRbacClient,
   createSystemManagementClient,
+  createTenancyClient,
   createToolingClient,
   type ApprovalLiteQueryRequest,
   type ApprovalLiteSummary,
@@ -104,6 +105,7 @@ import {
   type RoleSummary,
   type SetRoleStatusRequest,
   type SystemStatusSummary,
+  type TenancyFoundationSummary,
   type DictBatchMutationSummary,
   type DictCacheRefreshSummary,
   type DictDataOptionQueryRequest,
@@ -262,10 +264,15 @@ const integrationClient = createIntegrationClient(opencoreSdkRequest);
 const monitoringClient = createMonitoringClient(opencoreSdkRequest);
 const operationsClient = createOperationsClient(opencoreSdkRequest);
 const systemManagementClient = createSystemManagementClient(opencoreSdkRequest);
+const tenancyClient = createTenancyClient(opencoreSdkRequest);
 const toolingClient = createToolingClient(opencoreSdkRequest);
 
 export function getOpenCoreOpenApiDriftStatus(): Promise<OpenApiDriftStatus> {
   return toolingClient.getOpenApiDriftStatus(getRequiredAdminToken());
+}
+
+export function getOpenCoreTenancyFoundation(): Promise<TenancyFoundationSummary> {
+  return tenancyClient.getFoundationSummary(getRequiredAdminToken());
 }
 
 export function getOpenCoreExportProtocol(): Promise<CurrentPageExportProtocolSummary> {
@@ -937,7 +944,10 @@ export function exportOpenCoreDicts(
 export function listOpenCoreDeletedDictPage(
   query?: DictTypeQueryRequest,
 ): Promise<PageResponse<DictTypeSummary>> {
-  return systemManagementClient.listDeletedDicts(getRequiredAdminToken(), query);
+  return systemManagementClient.listDeletedDicts(
+    getRequiredAdminToken(),
+    query,
+  );
 }
 
 export function getOpenCoreDictImportTemplate(): Promise<DictImportTemplateSummary> {
@@ -1040,7 +1050,10 @@ export function deleteOpenCoreDictItem(
 export function restoreOpenCoreDictItem(
   itemId: string,
 ): Promise<DictItemSummary> {
-  return systemManagementClient.restoreDictItem(getRequiredAdminToken(), itemId);
+  return systemManagementClient.restoreDictItem(
+    getRequiredAdminToken(),
+    itemId,
+  );
 }
 
 export function hardDeleteOpenCoreDictItem(
@@ -1065,9 +1078,7 @@ export function updateOpenCoreDict(
   return systemManagementClient.updateDict(getRequiredAdminToken(), code, body);
 }
 
-export function deleteOpenCoreDict(
-  code: string,
-): Promise<{ deleted: true }> {
+export function deleteOpenCoreDict(code: string): Promise<{ deleted: true }> {
   return systemManagementClient.deleteDict(getRequiredAdminToken(), code);
 }
 

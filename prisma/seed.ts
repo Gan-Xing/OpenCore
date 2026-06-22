@@ -1,7 +1,10 @@
 import { Prisma, PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { seedAuditLogs, seedLoginLogs } from '@opencore/audit/records';
-import { collectPermissionDefinitions } from '@opencore/module-registry';
+import {
+  collectPermissionDefinitions,
+  listModules,
+} from '@opencore/module-registry';
 import { seedOnlineUserSessions as onlineUserSessionSeeds } from '@opencore/online-user/records';
 import {
   seedSchedulerJobs,
@@ -41,6 +44,9 @@ import {
 const LOCAL_ENV_FILE = '.env.opencore.local';
 const BOOTSTRAP_ADMIN_USERNAME = 'admin';
 const BOOTSTRAP_ADMIN_ROLE_CODE = 'admin';
+const ROOT_TENANT_ID = 'tenant_root';
+const ROOT_TENANT_PLAN_ID = 'tenant_plan_system_full';
+const PLATFORM_ADMIN_ROLE_ID = 'platform_role_admin';
 const OAUTH_RUNTIME_PROVIDERS = [
   {
     code: 'oauth.github',
@@ -87,6 +93,7 @@ async function main(): Promise<void> {
   const integrationCount = await seedIntegrations();
   const systemManagementCount = await seedSystemManagement();
   const userCount = await seedUsers(bootstrapPassword);
+  const tenancyCount = await seedTenancy();
   const systemNoticeDeliveryCount = await seedSystemNoticeDeliveries();
   const onlineUserSessionCount = await seedOnlineUserSessions();
   const schedulerCount = await seedScheduler();
@@ -107,11 +114,273 @@ async function main(): Promise<void> {
         scheduler: schedulerCount,
         operations: operationsCount,
         systemManagement: systemManagementCount,
+        tenancy: tenancyCount,
         bootstrapAdminUsername: BOOTSTRAP_ADMIN_USERNAME,
         bootstrapAdminRoleCode: BOOTSTRAP_ADMIN_ROLE_CODE,
       },
     }),
   );
+}
+
+async function seedTenancy(): Promise<{
+  tenants: number;
+  tenantPlans: number;
+  tenantPlanModules: number;
+  tenantMemberships: number;
+  tenantMembershipRoles: number;
+  tenantMembershipPosts: number;
+  platformRoles: number;
+  userPlatformRoles: number;
+  platformRolePermissions: number;
+}> {
+  const moduleCodes = listModules().map(
+    (moduleDefinition) => moduleDefinition.code,
+  );
+  const platformPermissionCodes = collectPermissionDefinitions()
+    .map((permission) => permission.code)
+    .filter((code) => code.startsWith('platform:tenant'));
+
+  await prisma.tenantPlan.upsert({
+    where: { code: 'system.full' },
+    update: {
+      name: 'System Full',
+      enabled: true,
+      limits: { accountLimit: 1000 },
+      remark: 'Built-in full plan for the default root tenant.',
+    },
+    create: {
+      id: ROOT_TENANT_PLAN_ID,
+      code: 'system.full',
+      name: 'System Full',
+      enabled: true,
+      limits: { accountLimit: 1000 },
+      remark: 'Built-in full plan for the default root tenant.',
+    },
+  });
+
+  for (const moduleCode of moduleCodes) {
+    await prisma.tenantPlanModule.upsert({
+      where: {
+        planId_moduleCode: {
+          planId: ROOT_TENANT_PLAN_ID,
+          moduleCode,
+        },
+      },
+      update: {},
+      create: {
+        planId: ROOT_TENANT_PLAN_ID,
+        moduleCode,
+      },
+    });
+  }
+
+  await prisma.tenantPlanModule.deleteMany({
+    where: {
+      planId: ROOT_TENANT_PLAN_ID,
+      moduleCode: { notIn: moduleCodes },
+    },
+  });
+
+  const adminUser = await prisma.user.findUnique({
+    where: { username: BOOTSTRAP_ADMIN_USERNAME },
+    select: { id: true },
+  });
+
+  await prisma.tenant.upsert({
+    where: { code: 'root' },
+    update: {
+      slug: 'root',
+      name: 'Root Tenant',
+      status: 'active',
+      planId: ROOT_TENANT_PLAN_ID,
+      contactName: 'OpenCore Admin',
+      accountLimit: 1000,
+      createdByUserId: adminUser?.id ?? null,
+    },
+    create: {
+      id: ROOT_TENANT_ID,
+      code: 'root',
+      slug: 'root',
+      name: 'Root Tenant',
+      status: 'active',
+      planId: ROOT_TENANT_PLAN_ID,
+      contactName: 'OpenCore Admin',
+      accountLimit: 1000,
+      createdByUserId: adminUser?.id ?? null,
+    },
+  });
+
+  const users = await prisma.user.findMany({
+    select: {
+      id: true,
+      username: true,
+      enabled: true,
+      deptId: true,
+      createdAt: true,
+    },
+  });
+
+  for (const user of users) {
+    await prisma.tenantMembership.upsert({
+      where: {
+        tenantId_userId: {
+          tenantId: ROOT_TENANT_ID,
+          userId: user.id,
+        },
+      },
+      update: {
+        status: user.enabled ? 'active' : 'suspended',
+        isOwner: user.username === BOOTSTRAP_ADMIN_USERNAME,
+        deptId: user.deptId,
+      },
+      create: {
+        id: `tenant_membership_root_${user.id}`,
+        tenantId: ROOT_TENANT_ID,
+        userId: user.id,
+        status: user.enabled ? 'active' : 'suspended',
+        isOwner: user.username === BOOTSTRAP_ADMIN_USERNAME,
+        deptId: user.deptId,
+        joinedAt: user.createdAt,
+      },
+    });
+  }
+
+  const memberships = await prisma.tenantMembership.findMany({
+    where: { tenantId: ROOT_TENANT_ID },
+    select: { id: true, userId: true },
+  });
+  const membershipIdByUserId = new Map(
+    memberships.map((membership) => [membership.userId, membership.id]),
+  );
+
+  const userRoles = await prisma.userRole.findMany({
+    select: { roleId: true, userId: true },
+  });
+  for (const userRole of userRoles) {
+    const membershipId = membershipIdByUserId.get(userRole.userId);
+
+    if (!membershipId) {
+      continue;
+    }
+
+    await prisma.tenantMembershipRole.upsert({
+      where: {
+        tenantId_membershipId_roleId: {
+          tenantId: ROOT_TENANT_ID,
+          membershipId,
+          roleId: userRole.roleId,
+        },
+      },
+      update: {},
+      create: {
+        tenantId: ROOT_TENANT_ID,
+        membershipId,
+        roleId: userRole.roleId,
+      },
+    });
+  }
+
+  const userPosts = await prisma.userPost.findMany({
+    select: { postId: true, userId: true },
+  });
+  for (const userPost of userPosts) {
+    const membershipId = membershipIdByUserId.get(userPost.userId);
+
+    if (!membershipId) {
+      continue;
+    }
+
+    await prisma.tenantMembershipPost.upsert({
+      where: {
+        tenantId_membershipId_postId: {
+          tenantId: ROOT_TENANT_ID,
+          membershipId,
+          postId: userPost.postId,
+        },
+      },
+      update: {},
+      create: {
+        tenantId: ROOT_TENANT_ID,
+        membershipId,
+        postId: userPost.postId,
+      },
+    });
+  }
+
+  await prisma.platformRole.upsert({
+    where: { code: 'platform-admin' },
+    update: {
+      name: 'Platform Administrator',
+      enabled: true,
+      system: true,
+    },
+    create: {
+      id: PLATFORM_ADMIN_ROLE_ID,
+      code: 'platform-admin',
+      name: 'Platform Administrator',
+      enabled: true,
+      system: true,
+    },
+  });
+
+  if (adminUser) {
+    await prisma.userPlatformRole.upsert({
+      where: {
+        userId_platformRoleId: {
+          userId: adminUser.id,
+          platformRoleId: PLATFORM_ADMIN_ROLE_ID,
+        },
+      },
+      update: {},
+      create: {
+        userId: adminUser.id,
+        platformRoleId: PLATFORM_ADMIN_ROLE_ID,
+      },
+    });
+  }
+
+  const platformPermissions = await prisma.permission.findMany({
+    where: { code: { in: platformPermissionCodes } },
+    select: { id: true },
+  });
+  const desiredPermissionIds = platformPermissions.map(
+    (permission) => permission.id,
+  );
+
+  await prisma.platformRolePermission.deleteMany({
+    where: {
+      platformRoleId: PLATFORM_ADMIN_ROLE_ID,
+      permissionId: { notIn: desiredPermissionIds },
+    },
+  });
+
+  for (const permission of platformPermissions) {
+    await prisma.platformRolePermission.upsert({
+      where: {
+        platformRoleId_permissionId: {
+          platformRoleId: PLATFORM_ADMIN_ROLE_ID,
+          permissionId: permission.id,
+        },
+      },
+      update: {},
+      create: {
+        platformRoleId: PLATFORM_ADMIN_ROLE_ID,
+        permissionId: permission.id,
+      },
+    });
+  }
+
+  return {
+    tenants: 1,
+    tenantPlans: 1,
+    tenantPlanModules: moduleCodes.length,
+    tenantMemberships: users.length,
+    tenantMembershipRoles: userRoles.length,
+    tenantMembershipPosts: userPosts.length,
+    platformRoles: 1,
+    userPlatformRoles: adminUser ? 1 : 0,
+    platformRolePermissions: platformPermissions.length,
+  };
 }
 
 async function seedIntegrations(): Promise<{

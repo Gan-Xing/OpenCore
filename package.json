@@ -103,6 +103,7 @@
     "smoke:core-online-user": "pnpm scripts:ts tools/scripts/run-typed-smoke.ts tools/smoke/smoke-core-online-user.ts",
     "smoke:core-post": "pnpm scripts:ts tools/scripts/run-typed-smoke.ts tools/smoke/smoke-core-post.ts",
     "smoke:core-profile": "pnpm scripts:ts tools/scripts/run-typed-smoke.ts tools/smoke/smoke-core-profile.ts",
+    "smoke:core-tenancy-foundation": "pnpm scripts:ts tools/scripts/run-typed-smoke.ts tools/smoke/smoke-core-tenancy-foundation.ts",
     "smoke:core-role": "pnpm scripts:ts tools/scripts/run-typed-smoke.ts tools/smoke/smoke-core-role.ts",
     "smoke:core-user": "pnpm scripts:ts tools/scripts/run-typed-smoke.ts tools/smoke/smoke-core-user.ts",
     "smoke:tool-area": "pnpm scripts:ts tools/scripts/run-typed-smoke.ts tools/smoke/smoke-tool-area.ts",
@@ -115,6 +116,7 @@
     "format:check": "prettier --check .",
     "guard:admin-live-only": "pnpm scripts:ts tools/scripts/admin-fallback-closure-guard.ts",
     "guard:admin-fallback-closure": "pnpm scripts:ts tools/scripts/admin-fallback-closure-guard.ts --manifest tools/guards/system-admin-live-only.guard.json",
+    "guard:tenant-foundation": "pnpm scripts:ts tools/scripts/check-tenant-foundation.ts",
     "nx": "NX_DAEMON=false nx"
   },
   "devDependencies": {

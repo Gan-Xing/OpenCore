@@ -5,6 +5,7 @@ import {
   createOperationsClient,
   createRbacClient,
   createSystemManagementClient,
+  createTenancyClient,
   createToolingClient,
   type CollaborationClient,
   type IntegrationClient,
@@ -14,6 +15,7 @@ import {
   type RbacClient,
   type SdkRequest,
   type SystemManagementClient,
+  type TenancyClient,
   type ToolingClient,
 } from '@opencore/sdk';
 
@@ -77,6 +79,7 @@ export function createTypedSmokeRuntime() {
     system: createSystemManagementClient(
       sdkRequest,
     ) satisfies SystemManagementClient,
+    tenancy: createTenancyClient(sdkRequest) satisfies TenancyClient,
     tooling: createToolingClient(sdkRequest) satisfies ToolingClient,
   };
 

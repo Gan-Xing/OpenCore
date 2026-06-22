@@ -3560,6 +3560,26 @@
         "tags": ["Integration", "Integration Payment"]
       }
     },
+    "/api/core/tenancy/foundation": {
+      "get": {
+        "operationId": "TenantFoundationController_getFoundationSummary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TenantFoundationSummaryDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "bearer": [] }],
+        "tags": ["Core Tenancy"]
+      }
+    },
     "/api/core/dicts": {
       "get": {
         "operationId": "SystemManagementController_listDicts",
@@ -10009,6 +10029,10 @@
       "name": "Core System Notices",
       "description": "core.notice: System Notices"
     },
+    {
+      "name": "Core Tenancy",
+      "description": "core.tenant-member: Tenant Members"
+    },
     { "name": "Core Users", "description": "core.user: Users" },
     { "name": "Integration Mail", "description": "integration.mail: Mail" },
     { "name": "Integration OAuth", "description": "integration.oauth: OAuth" },
@@ -11984,6 +12008,115 @@
           "traceId": { "type": "string" }
         },
         "required": ["type"]
+      },
+      "TenantFoundationDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "code": { "type": "string" },
+          "slug": { "type": "string" },
+          "name": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["active", "expired", "suspended"]
+          },
+          "planCode": { "type": "object", "nullable": true },
+          "accountLimit": { "type": "object", "nullable": true },
+          "membershipCount": { "type": "number" },
+          "activeMembershipCount": { "type": "number" },
+          "ownerUsernames": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": [
+          "id",
+          "code",
+          "slug",
+          "name",
+          "status",
+          "membershipCount",
+          "activeMembershipCount",
+          "ownerUsernames"
+        ]
+      },
+      "TenantPlanFoundationDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "enabled": { "type": "boolean" },
+          "limits": { "type": "object" },
+          "moduleCodes": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["id", "code", "name", "enabled", "limits", "moduleCodes"]
+      },
+      "PlatformRoleFoundationDto": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "enabled": { "type": "boolean" },
+          "userCount": { "type": "number" },
+          "permissionCodes": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["code", "name", "enabled", "userCount", "permissionCodes"]
+      },
+      "TenantBackfillFoundationDto": {
+        "type": "object",
+        "properties": {
+          "userCount": { "type": "number" },
+          "rootMembershipCount": { "type": "number" },
+          "userRoleCount": { "type": "number" },
+          "rootMembershipRoleCount": { "type": "number" },
+          "userPostCount": { "type": "number" },
+          "rootMembershipPostCount": { "type": "number" },
+          "missingRootMembershipUsernames": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        },
+        "required": [
+          "userCount",
+          "rootMembershipCount",
+          "userRoleCount",
+          "rootMembershipRoleCount",
+          "userPostCount",
+          "rootMembershipPostCount",
+          "missingRootMembershipUsernames"
+        ]
+      },
+      "TenantFoundationSummaryDto": {
+        "type": "object",
+        "properties": {
+          "tenancyMode": { "type": "string", "enum": ["shared", "single"] },
+          "rootTenantCode": { "type": "string" },
+          "tenants": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/TenantFoundationDto" }
+          },
+          "plans": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/TenantPlanFoundationDto" }
+          },
+          "platformRoles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlatformRoleFoundationDto"
+            }
+          },
+          "backfill": {
+            "$ref": "#/components/schemas/TenantBackfillFoundationDto"
+          },
+          "generatedAt": { "type": "string" }
+        },
+        "required": [
+          "tenancyMode",
+          "rootTenantCode",
+          "tenants",
+          "plans",
+          "platformRoles",
+          "backfill",
+          "generatedAt"
+        ]
       },
       "DictItemDto": {
         "type": "object",

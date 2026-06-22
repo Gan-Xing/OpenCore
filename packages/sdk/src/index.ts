@@ -11,5 +11,7 @@ export * from './rbac-types';
 export * from './registry-fixtures';
 export * from './system-management-client';
 export * from './system-management-types';
+export * from './tenancy-client';
+export * from './tenancy-types';
 export * from './tooling-client';
 export * from './tooling-types';

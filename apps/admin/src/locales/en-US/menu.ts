@@ -7,6 +7,7 @@ export default {
   'menu.dashboard': 'Dashboard',
   'menu.profile': 'Profile',
   'menu.system': 'System',
+  'menu.system.tenants': 'Tenants',
   'menu.system.users': 'Users',
   'menu.system.roles': 'Roles',
   'menu.system.permissions': 'Permissions',

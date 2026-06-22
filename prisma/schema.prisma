@@ -26,6 +26,10 @@ model User {
   dept                SystemDept?               @relation(fields: [deptId], references: [id], onDelete: SetNull)
   roles               UserRole[]
   posts               UserPost[]
+  tenantMemberships   TenantMembership[]        @relation("TenantMembershipUser")
+  invitedMemberships  TenantMembership[]        @relation("TenantMembershipInvitedBy")
+  createdTenants      Tenant[]                  @relation("TenantCreatedBy")
+  platformRoles       UserPlatformRole[]
   noticeReads         SystemNoticeReadReceipt[]
   noticeDeliveries    SystemNoticeDelivery[]
   createdAt           DateTime                  @default(now())
@@ -36,28 +40,160 @@ model User {
   @@index([deptId])
 }
 
+model TenantPlan {
+  id        String             @id @default(cuid())
+  code      String             @unique
+  name      String
+  enabled   Boolean            @default(true)
+  limits    Json               @default("{}")
+  remark    String?
+  modules   TenantPlanModule[]
+  tenants   Tenant[]
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+}
+
+model TenantPlanModule {
+  planId     String
+  moduleCode String
+  plan       TenantPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@id([planId, moduleCode])
+  @@index([moduleCode])
+}
+
+model Tenant {
+  id              String                 @id @default(cuid())
+  code            String                 @unique
+  slug            String                 @unique
+  name            String
+  status          String                 @default("active")
+  planId          String?
+  plan            TenantPlan?            @relation(fields: [planId], references: [id], onDelete: SetNull)
+  contactName     String?
+  contactMobile   String?
+  accountLimit    Int?
+  expiresAt       DateTime?
+  createdByUserId String?
+  createdBy       User?                  @relation("TenantCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  memberships     TenantMembership[]
+  membershipRoles TenantMembershipRole[]
+  membershipPosts TenantMembershipPost[]
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+
+  @@index([planId])
+  @@index([status, expiresAt])
+}
+
+model TenantMembership {
+  id              String                 @id @default(cuid())
+  tenantId        String
+  tenant          Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User                   @relation("TenantMembershipUser", fields: [userId], references: [id], onDelete: Cascade)
+  status          String                 @default("active")
+  isOwner         Boolean                @default(false)
+  deptId          String?
+  dept            SystemDept?            @relation(fields: [deptId], references: [id], onDelete: SetNull)
+  invitedByUserId String?
+  invitedBy       User?                  @relation("TenantMembershipInvitedBy", fields: [invitedByUserId], references: [id], onDelete: SetNull)
+  joinedAt        DateTime?
+  lastActiveAt    DateTime?
+  roles           TenantMembershipRole[]
+  posts           TenantMembershipPost[]
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+
+  @@unique([tenantId, userId])
+  @@unique([tenantId, id])
+  @@index([userId, status])
+  @@index([deptId])
+  @@index([invitedByUserId])
+}
+
+model TenantMembershipRole {
+  tenantId     String
+  membershipId String
+  roleId       String
+  tenant       Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  membership   TenantMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  role         Role             @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([tenantId, membershipId, roleId])
+  @@index([membershipId])
+  @@index([roleId])
+}
+
+model TenantMembershipPost {
+  tenantId     String
+  membershipId String
+  postId       String
+  tenant       Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  membership   TenantMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  post         SystemPost       @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([tenantId, membershipId, postId])
+  @@index([membershipId])
+  @@index([postId])
+}
+
+model PlatformRole {
+  id          String                   @id @default(cuid())
+  code        String                   @unique
+  name        String
+  enabled     Boolean                  @default(true)
+  system      Boolean                  @default(false)
+  users       UserPlatformRole[]
+  permissions PlatformRolePermission[]
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @updatedAt
+}
+
+model UserPlatformRole {
+  userId         String
+  platformRoleId String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platformRole   PlatformRole @relation(fields: [platformRoleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, platformRoleId])
+  @@index([platformRoleId])
+}
+
+model PlatformRolePermission {
+  platformRoleId String
+  permissionId   String
+  platformRole   PlatformRole @relation(fields: [platformRoleId], references: [id], onDelete: Cascade)
+  permission     Permission   @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([platformRoleId, permissionId])
+  @@index([permissionId])
+}
+
 model Role {
-  id               String           @id @default(cuid())
-  code             String           @unique
-  name             String
-  enabled          Boolean          @default(true)
-  system           Boolean          @default(false)
-  dataScope        String           @default("all")
-  dataScopeDeptIds Json?
-  users            UserRole[]
-  permissions      RolePermission[]
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  id                String                 @id @default(cuid())
+  code              String                 @unique
+  name              String
+  enabled           Boolean                @default(true)
+  system            Boolean                @default(false)
+  dataScope         String                 @default("all")
+  dataScopeDeptIds  Json?
+  users             UserRole[]
+  tenantMemberships TenantMembershipRole[]
+  permissions       RolePermission[]
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
 }
 
 model Permission {
-  id        String           @id @default(cuid())
-  code      String           @unique
-  title     String
-  roles     RolePermission[]
-  menus     Menu[]
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
+  id            String                   @id @default(cuid())
+  code          String                   @unique
+  title         String
+  roles         RolePermission[]
+  platformRoles PlatformRolePermission[]
+  menus         Menu[]
+  createdAt     DateTime                 @default(now())
+  updatedAt     DateTime                 @updatedAt
 }
 
 model Menu {
@@ -129,19 +265,19 @@ model DictType {
 }
 
 model DictItem {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   typeId    String
-  type      DictType @relation(fields: [typeId], references: [id], onDelete: Restrict)
+  type      DictType  @relation(fields: [typeId], references: [id], onDelete: Restrict)
   label     String
   value     String
-  sort      Int      @default(0)
-  enabled   Boolean  @default(true)
+  sort      Int       @default(0)
+  enabled   Boolean   @default(true)
   colorType String?
   cssClass  String?
   remark    String?
   deletedAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@unique([typeId, value])
   @@index([typeId, enabled, sort])
@@ -287,34 +423,36 @@ model SystemNoticeDelivery {
 }
 
 model SystemDept {
-  id        String       @id @default(cuid())
-  code      String       @unique
-  name      String
-  parentId  String?
-  parent    SystemDept?  @relation("SystemDeptTree", fields: [parentId], references: [id], onDelete: SetNull)
-  children  SystemDept[] @relation("SystemDeptTree")
-  users     User[]
-  order     Int          @default(0)
-  leader    String?
-  phone     String?
-  email     String?
-  enabled   Boolean      @default(true)
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
+  id                String             @id @default(cuid())
+  code              String             @unique
+  name              String
+  parentId          String?
+  parent            SystemDept?        @relation("SystemDeptTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children          SystemDept[]       @relation("SystemDeptTree")
+  users             User[]
+  tenantMemberships TenantMembership[]
+  order             Int                @default(0)
+  leader            String?
+  phone             String?
+  email             String?
+  enabled           Boolean            @default(true)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 
   @@index([parentId, order])
 }
 
 model SystemPost {
-  id          String     @id @default(cuid())
-  code        String     @unique
-  name        String
-  order       Int        @default(0)
-  description String?
-  enabled     Boolean    @default(true)
-  users       UserPost[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  id                String                 @id @default(cuid())
+  code              String                 @unique
+  name              String
+  order             Int                    @default(0)
+  description       String?
+  enabled           Boolean                @default(true)
+  users             UserPost[]
+  tenantMemberships TenantMembershipPost[]
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
 
   @@index([enabled, order])
 }

@@ -2,6 +2,7 @@ import type { PermissionCode } from './permission-code';
 
 export const MODULE_LAYERS = [
   'core',
+  'platform',
   'system',
   'monitor',
   'tool',

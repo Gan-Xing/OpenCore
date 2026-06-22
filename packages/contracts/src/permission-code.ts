@@ -8,6 +8,8 @@ export const PERMISSION_ACTIONS = [
   'export',
   'import',
   'manage',
+  'suspend',
+  'visit',
 ] as const;
 
 export type PermissionAction = (typeof PERMISSION_ACTIONS)[number];

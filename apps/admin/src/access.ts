@@ -11,6 +11,8 @@ export default function access(initialState: InitialState = {}) {
 
   return {
     canAccessDashboard: hasPermission('core:dashboard:read'),
+    canReadTenants: hasPermission('platform:tenant:read'),
+    canVisitTenants: hasPermission('platform:tenant:visit'),
     canReadOpenApiStatus: hasPermission('tool:openapi:read'),
     canReadUsers: hasPermission('core:user:read'),
     canAssignUserRoles: hasPermission('core:user:manage'),

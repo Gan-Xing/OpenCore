@@ -1,0 +1,116 @@
+import { ApiProperty } from '@nestjs/swagger';
+
+export class TenantPlanFoundationDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  code!: string;
+
+  @ApiProperty()
+  name!: string;
+
+  @ApiProperty()
+  enabled!: boolean;
+
+  @ApiProperty({ type: Object })
+  limits!: unknown;
+
+  @ApiProperty({ type: [String] })
+  moduleCodes!: readonly string[];
+}
+
+export class TenantFoundationDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  code!: string;
+
+  @ApiProperty()
+  slug!: string;
+
+  @ApiProperty()
+  name!: string;
+
+  @ApiProperty({ enum: ['active', 'expired', 'suspended'] })
+  status!: string;
+
+  @ApiProperty({ required: false, nullable: true })
+  planCode?: string | null;
+
+  @ApiProperty({ required: false, nullable: true })
+  accountLimit?: number | null;
+
+  @ApiProperty()
+  membershipCount!: number;
+
+  @ApiProperty()
+  activeMembershipCount!: number;
+
+  @ApiProperty({ type: [String] })
+  ownerUsernames!: readonly string[];
+}
+
+export class PlatformRoleFoundationDto {
+  @ApiProperty()
+  code!: string;
+
+  @ApiProperty()
+  name!: string;
+
+  @ApiProperty()
+  enabled!: boolean;
+
+  @ApiProperty()
+  userCount!: number;
+
+  @ApiProperty({ type: [String] })
+  permissionCodes!: readonly string[];
+}
+
+export class TenantBackfillFoundationDto {
+  @ApiProperty()
+  userCount!: number;
+
+  @ApiProperty()
+  rootMembershipCount!: number;
+
+  @ApiProperty()
+  userRoleCount!: number;
+
+  @ApiProperty()
+  rootMembershipRoleCount!: number;
+
+  @ApiProperty()
+  userPostCount!: number;
+
+  @ApiProperty()
+  rootMembershipPostCount!: number;
+
+  @ApiProperty({ type: [String] })
+  missingRootMembershipUsernames!: readonly string[];
+}
+
+export class TenantFoundationSummaryDto {
+  @ApiProperty({ enum: ['shared', 'single'] })
+  tenancyMode!: 'shared' | 'single';
+
+  @ApiProperty()
+  rootTenantCode!: string;
+
+  @ApiProperty({ type: [TenantFoundationDto] })
+  tenants!: readonly TenantFoundationDto[];
+
+  @ApiProperty({ type: [TenantPlanFoundationDto] })
+  plans!: readonly TenantPlanFoundationDto[];
+
+  @ApiProperty({ type: [PlatformRoleFoundationDto] })
+  platformRoles!: readonly PlatformRoleFoundationDto[];
+
+  @ApiProperty({ type: TenantBackfillFoundationDto })
+  backfill!: TenantBackfillFoundationDto;
+
+  @ApiProperty()
+  generatedAt!: string;
+}
