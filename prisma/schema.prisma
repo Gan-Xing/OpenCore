@@ -82,6 +82,7 @@ model Tenant {
   roles           Role[]
   depts           SystemDept[]
   posts           SystemPost[]
+  auditLogs       AuditLog[]
   loginLogs       LoginLog[]
   onlineSessions  OnlineUserSession[]
   createdAt       DateTime               @default(now())
@@ -494,6 +495,8 @@ model FileAsset {
 
 model AuditLog {
   id            String   @id @default(cuid())
+  tenantId      String   @default("tenant_root")
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   actorUsername String
   action        String
   resource      String
@@ -509,6 +512,8 @@ model AuditLog {
   metadata      Json?
   createdAt     DateTime @default(now())
 
+  @@index([tenantId, createdAt])
+  @@index([tenantId, resource, createdAt])
   @@index([createdAt])
   @@index([resource, createdAt])
   @@index([location])

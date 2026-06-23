@@ -1563,6 +1563,7 @@ export default {
   'pages.security.operationLogs.fields.resourceId': '资源 ID',
   'pages.security.operationLogs.fields.status': '状态',
   'pages.security.operationLogs.fields.statusCode': '状态码',
+  'pages.security.operationLogs.fields.tenantId': '租户 ID',
   'pages.security.operationLogs.fields.time': '时间',
   'pages.security.operationLogs.fields.userAgent': '用户代理',
   'pages.security.operationLogs.filters.max': '最大',

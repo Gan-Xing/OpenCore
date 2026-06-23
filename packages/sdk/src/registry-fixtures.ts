@@ -395,6 +395,7 @@ export function createAuditLogFixtures(): PageResponse<AuditLogSummary> {
   return createPage([
     {
       id: 'audit_admin_login',
+      tenantId: 'tenant_root',
       actorUsername: 'admin',
       action: 'login',
       resource: 'auth',

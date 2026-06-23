@@ -133,4 +133,16 @@ These remain below the productization waterline and cannot be described as compl
 | Cross-tenant API rejection     | Done    | Prisma integration test and smoke prove foreign-tenant login logs are hidden, cannot be detailed/deleted, and survive root clean. |
 | Seed/OpenAPI/SDK/Admin         | Done    | Seed login logs, DTO, SDK summary fixture, and Admin Login Logs expose `tenantId`.                                     |
 | Smoke/guard                    | Done    | Added `guard:tenant-login-log-scope`; `smoke:core-login-log` now covers foreign-tenant login-log isolation.            |
-| Remaining log scope            | Pending | Operation audit logs and platform visit audit remain pending.                                                         |
+| Remaining log scope            | Pending | Platform visit/impersonation audit remains pending.                                                                  |
+
+## T4c Audit
+
+| Requirement                    | Status  | Notes                                                                                                                        |
+| ------------------------------ | ------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Operation audit tenant ownership | Done  | `AuditLog.tenantId` is backfilled to `tenant_root`, required, indexed, and constrained to `Tenant`.                          |
+| Repository tenant isolation    | Done    | Audit-log list/detail/export/delete/retention clean use `RequestContext.tenantId` with `tenant_root` fallback.               |
+| Write operation tenant recording | Done  | Interceptor-created write audit rows are stored under the active request tenant through repository fallback.                  |
+| Cross-tenant API rejection     | Done    | Prisma integration test and smoke prove foreign-tenant audit logs are hidden, cannot be detailed/deleted, and survive root clean. |
+| Seed/OpenAPI/SDK/Admin         | Done    | Seed audit logs, DTO, SDK summary fixture, and Admin Operation Logs expose `tenantId`.                                       |
+| Smoke/guard                    | Done    | Added `guard:tenant-operation-log-scope`; `smoke:core-audit-log` now covers foreign-tenant operation-audit isolation.        |
+| Remaining audit scope          | Pending | Platform visit/impersonation audit remains pending.                                                                          |

@@ -4,7 +4,7 @@ Date: 2026-06-23
 Repository: `Gan-Xing/OpenCore`  
 Branch: `main`  
 Target track: `Cycle-022 / Tenant Foundation`  
-Status: **In progress; T4b login-log tenant isolation implemented, deployed, and verified; T4 core data isolation remains partial**
+Status: **In progress; T4c operation-audit tenant isolation implemented, deployed, and verified; T4 core data isolation remains partial**
 
 ## 0. Current Round Snapshot
 
@@ -12,7 +12,7 @@ Updated: 2026-06-23
 
 Current completed slice count: **4 full slices**
 
-This working tree has advanced Cycle-022 through the first four full deployable tenant foundation slices plus T4a online-session tenant isolation and T4b login-log tenant isolation:
+This working tree has advanced Cycle-022 through the first four full deployable tenant foundation slices plus T4a online-session tenant isolation, T4b login-log tenant isolation, and T4c operation-audit tenant isolation:
 
 - Prisma models for `TenantPlan`, `TenantPlanModule`, `Tenant`, `TenantMembership`, `TenantMembershipRole`, `TenantMembershipPost`, `PlatformRole`, `UserPlatformRole`, and `PlatformRolePermission`.
 - Migration `20260622223000_tenant_foundation` creates the `root` tenant, root `system.full` plan, root memberships for existing users, and transitional root copies of `UserRole` and `UserPost`.
@@ -68,10 +68,16 @@ This working tree has advanced Cycle-022 through the first four full deployable 
 - `smoke:core-login-log` seeds a foreign tenant login log and proves root-scope list/detail/delete/clean do not cross tenants.
 - `pnpm guard:tenant-login-log-scope` was added for the T4b Login Log isolation closure.
 - Refreshed deploy completed on API `39172` and Admin `39174`; local deploy smoke and public API login-log smoke passed.
+- Migration `20260623183000_tenant_scoped_operation_logs` makes `AuditLog` tenant-owned with root backfill, tenant/date/resource indexes, and a tenant FK.
+- `PrismaAuditOperationLogRepository` now resolves the active tenant from `RequestContext`, scopes list/detail/export/delete/retention-clean operations, and records write-operation audit rows under the active tenant or root fallback.
+- Operation-audit seed records, OpenAPI DTO, SDK summary fixture, and Admin Operation Logs now expose `tenantId`.
+- `smoke:core-audit-log` seeds a foreign tenant audit log and proves root-scope list/detail/delete/retention-clean do not cross tenants.
+- `pnpm guard:tenant-operation-log-scope` was added for the T4c Operation Audit Log isolation closure.
+- Refreshed deploy completed on API `39172` and Admin `39174`; local deploy smoke and public API operation-audit smoke passed.
 
 Still not complete:
 
-- tenant-scoped System/core repositories for dict, config, notices, files, operation audit logs, and other non-org data;
+- tenant-scoped System/core repositories for dict, config, notices, files, and other non-org data;
 - Redis/file/queue/WebSocket/Integration/OAuth/audit runtime propagation;
 - Tenant Plan CRUD, Tenant Member CRUD/invitation, Admin switcher, and platform visit mode beyond active-tenant member assignment;
 - platform visit/impersonation audit.

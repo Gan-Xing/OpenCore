@@ -1492,6 +1492,7 @@ async function seedSystemManagement(): Promise<{
     await prisma.auditLog.upsert({
       where: { id: auditLog.id },
       update: {
+        tenantId: auditLog.tenantId,
         actorUsername: auditLog.actorUsername,
         action: auditLog.action,
         resource: auditLog.resource,
@@ -1509,6 +1510,7 @@ async function seedSystemManagement(): Promise<{
       },
       create: {
         id: auditLog.id,
+        tenantId: auditLog.tenantId,
         actorUsername: auditLog.actorUsername,
         action: auditLog.action,
         resource: auditLog.resource,

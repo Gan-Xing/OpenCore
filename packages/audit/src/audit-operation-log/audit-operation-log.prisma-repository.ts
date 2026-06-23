@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
+import { getRequestContext } from '@opencore/core';
 import { PrismaService } from '@opencore/database';
 import { Prisma } from '@prisma/client';
 import type {
@@ -27,6 +28,7 @@ import {
 
 type PrismaAuditLog = {
   id: string;
+  tenantId: string;
   actorUsername: string;
   action: string;
   resource: string;
@@ -43,6 +45,8 @@ type PrismaAuditLog = {
   createdAt: Date;
 };
 
+const ROOT_TENANT_ID = 'tenant_root';
+
 @Injectable()
 export class PrismaAuditOperationLogRepository extends AuditOperationLogRepository {
   constructor(private readonly prisma: PrismaService) {
@@ -53,7 +57,9 @@ export class PrismaAuditOperationLogRepository extends AuditOperationLogReposito
     query: AuditOperationLogQuery = {},
   ): Promise<PageResult<AuditOperationLogRecord>> {
     const filters = normalizeAuditOperationLogFilters(query);
+    const tenantId = resolveCurrentTenantId();
     const where = {
+      tenantId,
       ...(filters.actorUsername === undefined
         ? {}
         : { actorUsername: { contains: filters.actorUsername } }),
@@ -113,8 +119,8 @@ export class PrismaAuditOperationLogRepository extends AuditOperationLogReposito
   }
 
   async getOperationLog(id: string): Promise<AuditOperationLogRecord> {
-    const log = await this.prisma.auditLog.findUnique({
-      where: { id },
+    const log = await this.prisma.auditLog.findFirst({
+      where: { id, tenantId: resolveCurrentTenantId() },
     });
 
     if (!log) {
@@ -131,6 +137,7 @@ export class PrismaAuditOperationLogRepository extends AuditOperationLogReposito
   async recordOperation(record: CreateAuditOperationLogRecord): Promise<void> {
     await this.prisma.auditLog.create({
       data: {
+        tenantId: record.tenantId ?? resolveCurrentTenantId(),
         actorUsername: record.actorUsername,
         action: record.action,
         resource: record.resource,
@@ -153,8 +160,9 @@ export class PrismaAuditOperationLogRepository extends AuditOperationLogReposito
     body: BatchDeleteAuditLogsDto,
   ): Promise<AuditOperationLogBatchMutationRecord> {
     const ids = normalizeBatchDeleteAuditOperationLogIds(body);
+    const tenantId = resolveCurrentTenantId();
     const logs = await this.prisma.auditLog.findMany({
-      where: { id: { in: [...ids] } },
+      where: { tenantId, id: { in: [...ids] } },
       select: { id: true },
     });
     const existingIds = new Set(logs.map((log) => log.id));
@@ -169,7 +177,7 @@ export class PrismaAuditOperationLogRepository extends AuditOperationLogReposito
     }
 
     await this.prisma.auditLog.deleteMany({
-      where: { id: { in: [...ids] } },
+      where: { tenantId, id: { in: [...ids] } },
     });
 
     return {
@@ -184,7 +192,10 @@ export class PrismaAuditOperationLogRepository extends AuditOperationLogReposito
   ): Promise<AuditOperationLogCleanRecord> {
     const retention = normalizeAuditOperationLogRetentionPolicy(policy);
     const result = await this.prisma.auditLog.deleteMany({
-      where: { createdAt: { lt: retention.cutoffBefore } },
+      where: {
+        tenantId: resolveCurrentTenantId(),
+        createdAt: { lt: retention.cutoffBefore },
+      },
     });
 
     return {
@@ -201,6 +212,7 @@ function toAuditOperationLogRecord(
 ): AuditOperationLogRecord {
   return {
     id: log.id,
+    tenantId: log.tenantId,
     actorUsername: log.actorUsername,
     action: log.action,
     resource: log.resource,
@@ -216,4 +228,8 @@ function toAuditOperationLogRecord(
     metadata: redactAuditMetadata(log.metadata),
     createdAt: log.createdAt.toISOString(),
   };
+}
+
+function resolveCurrentTenantId(): string {
+  return getRequestContext()?.tenantId ?? ROOT_TENANT_ID;
 }

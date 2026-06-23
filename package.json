@@ -128,6 +128,7 @@
     "guard:tenant-dept-scope": "pnpm scripts:ts tools/scripts/check-tenant-dept-scope.ts",
     "guard:tenant-member-assignment": "pnpm scripts:ts tools/scripts/check-tenant-member-assignment.ts",
     "guard:tenant-online-user-scope": "pnpm scripts:ts tools/scripts/check-tenant-online-user-scope.ts",
+    "guard:tenant-operation-log-scope": "pnpm scripts:ts tools/scripts/check-tenant-operation-log-scope.ts",
     "guard:tenant-post-scope": "pnpm scripts:ts tools/scripts/check-tenant-post-scope.ts",
     "guard:tenant-role-scope": "pnpm scripts:ts tools/scripts/check-tenant-role-scope.ts",
     "guard:tenant-rbac": "pnpm scripts:ts tools/scripts/check-tenant-rbac.ts",

@@ -832,6 +832,7 @@ export type TestSystemNoticeTemplateRequest =
 
 export type AuditLogSummary = {
   id: string;
+  tenantId: string;
   actorUsername: string;
   action: string;
   resource: string;

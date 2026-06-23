@@ -99,6 +99,7 @@ export class SeedAuditOperationLogRepository extends AuditOperationLogRepository
       {
         id: `audit_${this.operationLogs.length + 1}`,
         ...record,
+        tenantId: record.tenantId ?? 'tenant_root',
         location:
           record.location || resolveAuditOperationLogLocation(record.ip),
         metadata: redactAuditMetadata(record.metadata),

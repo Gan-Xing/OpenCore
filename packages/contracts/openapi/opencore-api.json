@@ -14061,6 +14061,7 @@
         "type": "object",
         "properties": {
           "id": { "type": "string" },
+          "tenantId": { "type": "string" },
           "actorUsername": { "type": "string" },
           "action": { "type": "string" },
           "resource": { "type": "string" },
@@ -14078,6 +14079,7 @@
         },
         "required": [
           "id",
+          "tenantId",
           "actorUsername",
           "action",
           "resource",

@@ -72,6 +72,7 @@ const emptyServerFilterDraft: AuditLogServerFilterDraft = {
 };
 
 const searchFields: CurrentPageSearchField<AuditLogSummary>[] = [
+  'tenantId',
   'actorUsername',
   'action',
   'resource',
@@ -144,6 +145,10 @@ function createDetailFields(
 ): DetailField[] {
   return [
     { label: formatMessage('pages.security.operationLogs.fields.id', 'ID'), value: record.id },
+    {
+      label: formatMessage('pages.security.operationLogs.fields.tenantId', 'Tenant ID'),
+      value: record.tenantId,
+    },
     {
       label: formatMessage('pages.security.operationLogs.fields.time', 'Time'),
       value: record.createdAt,
@@ -291,6 +296,10 @@ export default function OperationLogsPage() {
   const allOptionLabel = formatMessage('pages.security.common.all', 'All');
   const exportColumns: CurrentPageExportColumn<AuditLogSummary>[] = [
     { title: formatMessage('pages.security.operationLogs.fields.id', 'ID'), dataIndex: 'id' },
+    {
+      title: formatMessage('pages.security.operationLogs.fields.tenantId', 'Tenant ID'),
+      dataIndex: 'tenantId',
+    },
     {
       title: formatMessage('pages.security.operationLogs.fields.time', 'Time'),
       dataIndex: 'createdAt',
@@ -518,6 +527,12 @@ export default function OperationLogsPage() {
           {record.actorUsername}
         </Typography.Link>
       ),
+    },
+    {
+      title: formatMessage('pages.security.operationLogs.fields.tenantId', 'Tenant ID'),
+      dataIndex: 'tenantId',
+      width: 152,
+      ellipsis: true,
     },
     {
       title: formatMessage('pages.security.operationLogs.fields.action', 'Action'),

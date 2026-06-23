@@ -1,5 +1,6 @@
 export type AuditOperationLogRecord = {
   id: string;
+  tenantId: string;
   actorUsername: string;
   action: string;
   resource: string;
@@ -18,12 +19,13 @@ export type AuditOperationLogRecord = {
 
 export type CreateAuditOperationLogRecord = Omit<
   AuditOperationLogRecord,
-  'id' | 'createdAt'
->;
+  'id' | 'createdAt' | 'tenantId'
+> & { tenantId?: string };
 
 export const seedAuditOperationLogs: readonly AuditOperationLogRecord[] = [
   {
     id: 'audit_admin_login',
+    tenantId: 'tenant_root',
     actorUsername: 'admin',
     action: 'login',
     resource: 'auth',
@@ -45,6 +47,7 @@ export const seedAuditOperationLogs: readonly AuditOperationLogRecord[] = [
   },
   {
     id: 'audit_config_read',
+    tenantId: 'tenant_root',
     actorUsername: 'admin',
     action: 'read',
     resource: 'core.config',

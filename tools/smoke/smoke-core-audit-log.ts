@@ -10,16 +10,21 @@ import {
   delay,
   formatBody,
 } from './runtime';
+import { disconnectSmokePrisma, getSmokePrisma } from './prisma';
 
 const smoke = createTypedSmokeRuntime();
 const { apiPrefix, baseUrl, checkDocs, login, username } = smoke;
 const apiRequest = smoke.apiRequest as any;
 const request = smoke.request as any;
 
+const FOREIGN_TENANT_ID = 'tenant_audit_log_smoke_foreign';
+const FOREIGN_AUDIT_LOG_ID = 'audit_log_smoke_foreign';
+
 const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 const batchConfigKey = `opencore.smoke.audit.batch.${runId}`;
 const cleanConfigKey = `opencore.smoke.audit.clean.${runId}`;
 let token;
+let foreignTenantSeeded = false;
 const createdConfigKeys = new Set<string>();
 
 async function main() {
@@ -35,11 +40,24 @@ async function main() {
 
     token = assertString(loginResponse.accessToken, 'login accessToken');
     smoke.setToken(token);
+    await seedForeignTenantAuditLog();
+    foreignTenantSeeded = true;
 
     const listResponse = await apiRequest(
       '/core/audit-logs?page=1&pageSize=10',
     );
     assertArray(listResponse.items, 'audit log list items');
+    assertForeignTenantHidden(listResponse.items, 'audit log list');
+    await apiRequest(
+      `/core/audit-logs/${encodeURIComponent(FOREIGN_AUDIT_LOG_ID)}`,
+      { expected: [404] },
+    );
+    await apiRequest('/core/audit-logs/batch', {
+      method: 'DELETE',
+      body: { ids: [FOREIGN_AUDIT_LOG_ID] },
+      expected: [404],
+    });
+    await assertForeignAuditLogPreserved();
 
     await createSmokeConfig(batchConfigKey);
 
@@ -72,6 +90,7 @@ async function main() {
       'detail audit log resource',
     );
     assertEqual(detailLog.statusCode, 201, 'detail audit log status code');
+    assertString(detailLog.tenantId, 'detail audit log tenantId');
     assertEqual(
       detailLog.location,
       operationLogLocation,
@@ -86,6 +105,11 @@ async function main() {
     );
     assertEqual(exportPreview.scope, 'current-page', 'audit log export scope');
     assertArray(exportPreview.columns, 'audit log export columns');
+    assertIncludes(
+      exportPreview.columns,
+      'tenantId',
+      'audit log export tenant column',
+    );
     assertIncludes(
       exportPreview.columns,
       'durationMs',
@@ -165,6 +189,7 @@ async function main() {
     assertEqual(cleanResult.deleted, true, 'audit log clean result');
     assertEqual(cleanResult.retentionDays, 0, 'audit log clean retention days');
     assertString(cleanResult.cutoffBefore, 'audit log clean cutoff');
+    await assertForeignAuditLogPreserved();
     if (typeof cleanResult.affected !== 'number' || cleanResult.affected < 1) {
       throw new Error(
         `Expected audit log clean affected to be at least 1, received ${formatBody(
@@ -207,6 +232,9 @@ async function main() {
           'auth.login',
           'auth.write-operation-recorded',
           'core.audit-log.list',
+          'core.audit-log.foreign-tenant-hidden',
+          'core.audit-log.foreign-tenant-delete-blocked',
+          'core.audit-log.foreign-tenant-clean-preserved',
           'core.audit-log.detail',
           'core.audit-log.export',
           'core.audit-log.enrichment-filters',
@@ -228,6 +256,11 @@ async function main() {
       }),
     );
     process.exitCode = 1;
+  } finally {
+    if (foreignTenantSeeded) {
+      await cleanupForeignTenantAuditLog().catch(() => undefined);
+    }
+    await disconnectSmokePrisma();
   }
 }
 
@@ -323,5 +356,68 @@ async function cleanupCreatedConfigs() {
       expected: [200, 404],
     });
     createdConfigKeys.delete(key);
+  }
+}
+
+async function seedForeignTenantAuditLog() {
+  const prisma = getSmokePrisma();
+
+  await cleanupForeignTenantAuditLog();
+  await prisma.tenant.upsert({
+    where: { id: FOREIGN_TENANT_ID },
+    update: {
+      code: 'audit-log-smoke-foreign',
+      slug: 'audit-log-smoke-foreign',
+      name: 'Audit Log Smoke Foreign',
+      status: 'active',
+    },
+    create: {
+      id: FOREIGN_TENANT_ID,
+      code: 'audit-log-smoke-foreign',
+      slug: 'audit-log-smoke-foreign',
+      name: 'Audit Log Smoke Foreign',
+      status: 'active',
+    },
+  });
+  await prisma.auditLog.create({
+    data: {
+      id: FOREIGN_AUDIT_LOG_ID,
+      tenantId: FOREIGN_TENANT_ID,
+      actorUsername: 'foreign-audit-log-smoke',
+      action: 'DELETE',
+      resource: 'foreign tenant audit log',
+      method: 'DELETE',
+      path: '/api/foreign/audit-log-smoke',
+      statusCode: 200,
+      ip: '127.0.0.220',
+      location: 'Loopback',
+      userAgent: 'OpenCore foreign tenant audit log smoke',
+      requestId: `req_foreign_audit_log_smoke_${runId}`,
+      durationMs: 42,
+      createdAt: new Date('2000-01-01T00:00:00.000Z'),
+    },
+  });
+}
+
+async function cleanupForeignTenantAuditLog() {
+  const prisma = getSmokePrisma();
+
+  await prisma.auditLog.deleteMany({ where: { id: FOREIGN_AUDIT_LOG_ID } });
+  await prisma.tenant.deleteMany({ where: { id: FOREIGN_TENANT_ID } });
+}
+
+async function assertForeignAuditLogPreserved() {
+  const log = await getSmokePrisma().auditLog.findUnique({
+    where: { id: FOREIGN_AUDIT_LOG_ID },
+  });
+
+  if (!log || log.tenantId !== FOREIGN_TENANT_ID) {
+    throw new Error('Foreign tenant audit log was changed from root scope');
+  }
+}
+
+function assertForeignTenantHidden(items, label) {
+  if (items.some((item) => item.id === FOREIGN_AUDIT_LOG_ID)) {
+    throw new Error(`${label} leaked foreign tenant audit log`);
   }
 }

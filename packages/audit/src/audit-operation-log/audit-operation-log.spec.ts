@@ -2,6 +2,7 @@ import { BadRequestException, type ExecutionContext } from '@nestjs/common';
 import type { Reflector } from '@nestjs/core';
 import { randomUUID } from 'node:crypto';
 import { lastValueFrom, of, throwError } from 'rxjs';
+import { runWithRequestContext } from '@opencore/core';
 import { PrismaService } from '@opencore/database';
 import {
   AUDIT_OPERATION_KEY,
@@ -14,6 +15,8 @@ import {
 import { PrismaAuditOperationLogRepository } from './audit-operation-log.prisma-repository';
 import { SeedAuditOperationLogRepository } from './audit-operation-log.seed-repository';
 import { AuditOperationLogService } from './audit-operation-log.service';
+
+const ROOT_TENANT_ID = 'tenant_root';
 
 describe('@opencore/audit audit-operation-log', () => {
   it('sets operation metadata and redacts sensitive metadata recursively', () => {
@@ -113,6 +116,7 @@ describe('@opencore/audit audit-operation-log', () => {
       scope: 'current-page',
       columns: [
         'createdAt',
+        'tenantId',
         'actorUsername',
         'action',
         'resource',
@@ -293,9 +297,34 @@ describe('@opencore/audit audit-operation-log', () => {
     const testRunId = randomUUID().slice(0, 8);
     const requestId = `req_audit_${testRunId}`;
     const seedRequestId = `req_s7_seed_config_${testRunId}`;
+    const scopedRootRequestId = `req_audit_root_${testRunId}`;
+    const scopedOtherRequestId = `req_audit_other_${testRunId}`;
+    const otherCleanRequestId = `req_audit_other_clean_${testRunId}`;
+    const otherTenantId = `tenant_audit_${testRunId}`;
+    const otherCleanLogId = `audit_other_clean_${testRunId}`;
 
     beforeEach(async () => {
       await cleanupTestRows();
+      await prisma.tenant.upsert({
+        where: { id: ROOT_TENANT_ID },
+        update: {},
+        create: {
+          id: ROOT_TENANT_ID,
+          code: 'root',
+          slug: 'root',
+          name: 'Root Tenant',
+          status: 'active',
+        },
+      });
+      await prisma.tenant.create({
+        data: {
+          id: otherTenantId,
+          code: `audit-${testRunId}`,
+          slug: `audit-${testRunId}`,
+          name: `Audit ${testRunId}`,
+          status: 'active',
+        },
+      });
     });
 
     afterEach(async () => {
@@ -334,6 +363,7 @@ describe('@opencore/audit audit-operation-log', () => {
             expect.objectContaining({
               requestId: seedRequestId,
               resource: 'core.config',
+              tenantId: ROOT_TENANT_ID,
             }),
           ]),
         }),
@@ -483,22 +513,138 @@ describe('@opencore/audit audit-operation-log', () => {
       ).resolves.toMatchObject({ requestId: recentRequestId });
     });
 
+    it('scopes Prisma operation-log operations to the request tenant', async () => {
+      await runInTenant(ROOT_TENANT_ID, () =>
+        service.recordOperation({
+          actorUsername: 'admin',
+          action: 'POST',
+          resource: `tenant.audit.${testRunId}`,
+          method: 'POST',
+          path: '/api/test/root',
+          statusCode: 201,
+          ip: '127.0.0.1',
+          location: 'Loopback',
+          userAgent: 'jest',
+          requestId: scopedRootRequestId,
+          durationMs: 21,
+        }),
+      );
+      await runInTenant(otherTenantId, () =>
+        service.recordOperation({
+          actorUsername: 'admin',
+          action: 'POST',
+          resource: `tenant.audit.${testRunId}`,
+          method: 'POST',
+          path: '/api/test/other',
+          statusCode: 201,
+          ip: '127.0.0.2',
+          location: 'Loopback',
+          userAgent: 'jest',
+          requestId: scopedOtherRequestId,
+          durationMs: 22,
+        }),
+      );
+      await prisma.auditLog.create({
+        data: {
+          id: otherCleanLogId,
+          tenantId: otherTenantId,
+          actorUsername: 'admin',
+          action: 'DELETE',
+          resource: `tenant.audit.clean.${testRunId}`,
+          method: 'DELETE',
+          path: '/api/test/other-clean',
+          statusCode: 200,
+          ip: '127.0.0.3',
+          location: 'Loopback',
+          userAgent: 'jest',
+          requestId: otherCleanRequestId,
+          durationMs: 23,
+          createdAt: new Date('2000-01-01T00:00:00.000Z'),
+        },
+      });
+
+      const otherLog = await prisma.auditLog.findFirstOrThrow({
+        where: { requestId: scopedOtherRequestId },
+      });
+      const rootPage = await runInTenant(ROOT_TENANT_ID, () =>
+        service.listOperationLogs({
+          page: 1,
+          pageSize: 100,
+          resource: `tenant.audit.${testRunId}`,
+        }),
+      );
+      expect(rootPage.items.map((log) => log.requestId)).toEqual(
+        expect.arrayContaining([scopedRootRequestId]),
+      );
+      expect(rootPage.items.map((log) => log.requestId)).not.toEqual(
+        expect.arrayContaining([scopedOtherRequestId, otherCleanRequestId]),
+      );
+
+      await expectHttpExceptionCode(
+        runInTenant(ROOT_TENANT_ID, () => service.getOperationLog(otherLog.id)),
+        'AUDIT_OPERATION_LOG_NOT_FOUND',
+      );
+      await expectHttpExceptionCode(
+        runInTenant(ROOT_TENANT_ID, () =>
+          service.deleteOperationLogs({ ids: [otherLog.id] }),
+        ),
+        'AUDIT_OPERATION_LOG_NOT_FOUND',
+      );
+      await expect(
+        prisma.auditLog.findUnique({ where: { id: otherLog.id } }),
+      ).resolves.toMatchObject({ id: otherLog.id });
+
+      await expect(
+        runInTenant(otherTenantId, () => service.getOperationLog(otherLog.id)),
+      ).resolves.toMatchObject({
+        id: otherLog.id,
+        tenantId: otherTenantId,
+        requestId: scopedOtherRequestId,
+      });
+      await runInTenant(ROOT_TENANT_ID, () =>
+        service.cleanOperationLogs({ retentionDays: 3650 }),
+      );
+      await expect(
+        prisma.auditLog.findUnique({ where: { id: otherCleanLogId } }),
+      ).resolves.toMatchObject({ id: otherCleanLogId });
+    });
+
     async function cleanupTestRows(): Promise<void> {
       await prisma.auditLog.deleteMany({
         where: {
-          requestId: {
-            in: [
-              requestId,
-              seedRequestId,
-              `req_old_${testRunId}`,
-              `req_recent_${testRunId}`,
-            ],
-          },
+          OR: [
+            {
+              requestId: {
+                in: [
+                  requestId,
+                  seedRequestId,
+                  `req_old_${testRunId}`,
+                  `req_recent_${testRunId}`,
+                  scopedRootRequestId,
+                  scopedOtherRequestId,
+                  otherCleanRequestId,
+                ],
+              },
+            },
+            { id: otherCleanLogId },
+          ],
         },
       });
+      await prisma.tenant.deleteMany({ where: { id: otherTenantId } });
     }
   });
 });
+
+function runInTenant<T>(tenantId: string, callback: () => T): T {
+  return runWithRequestContext(
+    {
+      requestId: `test-${tenantId}`,
+      traceId: `test-${tenantId}`,
+      tenantId,
+    },
+    callback,
+  );
+}
 
 function createReflector(options: unknown): Reflector {
   return {

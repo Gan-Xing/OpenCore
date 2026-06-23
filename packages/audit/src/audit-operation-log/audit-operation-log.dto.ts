@@ -5,6 +5,9 @@ export class AuditLogDto {
   id!: string;
 
   @ApiProperty()
+  tenantId!: string;
+
+  @ApiProperty()
   actorUsername!: string;
 
   @ApiProperty()

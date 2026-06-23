@@ -528,3 +528,47 @@ Passed after deploy:
 - No platform-admin global login-log view in T4b; platform visit/control-plane behavior belongs with T6.
 - No client-driven tenant selector for login-log APIs.
 - No operation-audit tenant isolation in this sub-slice.
+
+## Round 10: T4c Operation-Audit Tenant Isolation
+
+### Completed
+
+- Made operation audit logs tenant-owned:
+  - added `AuditLog.tenantId` with root backfill, required default, tenant/date/resource indexes, and tenant FK;
+  - exposed `tenantId` through audit records, DTO, OpenAPI, SDK summary, seed, and Admin Operation Logs.
+- Scoped Prisma operation-audit operations:
+  - list/detail/export/delete/retention clean resolve the active tenant from `RequestContext`;
+  - missing context falls back to `tenant_root` for single-mode compatibility.
+- Scoped new write audit records:
+  - `recordOperation()` accepts optional `tenantId`;
+  - interceptor-created records use repository fallback to store under the active request tenant.
+- Added tenant-scope verification:
+  - Prisma integration test records root and foreign tenant audit logs and proves root context cannot list, detail, delete, or retention-clean foreign logs;
+  - `smoke:core-audit-log` seeds a foreign tenant audit log and exercises the public API.
+- Added `guard:tenant-operation-log-scope`.
+
+### Verification Log
+
+Passed before deploy:
+
+- Prisma validation, client generation, migration deploy, and seed passed.
+- Seed typecheck, typed-smoke typecheck, OpenAPI export/drift, registry tag, and SDK checks passed.
+- Tenant operation-log, login-log, and online-user guard scripts passed.
+- Focused audit operation-log spec plus full lint/typecheck/test passed.
+
+Passed after deploy:
+
+- OpenCore deploy rebuilt API/Admin, applied migrations, reseeded, restarted API `39172` and Admin `39174`, and passed deploy smoke including local operation-audit tenant checks.
+- Public API operation-audit smoke passed against `http://144.217.243.161:39172`.
+
+### Remaining Product Debt
+
+- Complete T4 System/core tenant data isolation for dict, config, notice, file, and related core tables.
+- Complete T5 Redis/file/queue/WebSocket/Integration/OAuth/runtime tenant propagation.
+- Complete T6 Tenant Plan CRUD, Tenant Member CRUD/invitation, Admin switcher, platform visit mode, and platform visit audit.
+
+### Deliberate Non-Goals
+
+- No platform-admin global operation-log view in T4c; platform visit/control-plane behavior belongs with T6.
+- No client-driven tenant selector for operation-log APIs.
+- No dict/config/notice/file tenant isolation in this sub-slice.

@@ -1724,6 +1724,7 @@ export default {
   'pages.security.operationLogs.fields.resourceId': 'Resource ID',
   'pages.security.operationLogs.fields.status': 'Status',
   'pages.security.operationLogs.fields.statusCode': 'Status Code',
+  'pages.security.operationLogs.fields.tenantId': 'Tenant ID',
   'pages.security.operationLogs.fields.time': 'Time',
   'pages.security.operationLogs.fields.userAgent': 'User Agent',
   'pages.security.operationLogs.filters.max': 'Max',

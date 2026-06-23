@@ -191,6 +191,7 @@ export function createAuditOperationLogExportPreview(
     scope: 'current-page',
     columns: [
       'createdAt',
+      'tenantId',
       'actorUsername',
       'action',
       'resource',
