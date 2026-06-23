@@ -90,6 +90,7 @@ const SYSTEM_CONFIG_ENVIRONMENT_PATTERN = /^[a-z][a-z0-9-]{1,39}$/;
 export const SYSTEM_CONFIG_DEFAULT_ENVIRONMENT = 'default';
 export const SYSTEM_CONFIG_EXPORT_CONTENT_TYPE = OPENCORE_XLSX_CONTENT_TYPE;
 export const SYSTEM_CONFIG_EXPORT_COLUMNS = [
+  'tenantId',
   'category',
   'name',
   'key',
@@ -281,6 +282,7 @@ function createSystemConfigExportWorksheetRows(
   return [
     SYSTEM_CONFIG_EXPORT_COLUMNS,
     ...rows.map((row) => [
+      row.tenantId,
       row.category,
       row.name,
       row.key,

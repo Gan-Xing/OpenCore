@@ -108,6 +108,7 @@ export function createSystemConfigFixtures(): PageResponse<SystemConfigSummary> 
   return createPage([
     {
       id: 'config_admin_title',
+      tenantId: 'tenant_root',
       category: 'system',
       name: 'Admin title',
       key: 'opencore.admin.title',
@@ -122,6 +123,7 @@ export function createSystemConfigFixtures(): PageResponse<SystemConfigSummary> 
     },
     {
       id: 'config_login_lockout',
+      tenantId: 'tenant_root',
       category: 'security',
       name: 'Login lockout minutes',
       key: 'auth.login.lockoutMinutes',
@@ -136,6 +138,7 @@ export function createSystemConfigFixtures(): PageResponse<SystemConfigSummary> 
     },
     {
       id: 'config_login_max_failed_attempts',
+      tenantId: 'tenant_root',
       category: 'security',
       name: 'Login max failed attempts',
       key: 'auth.login.maxFailedAttempts',
@@ -150,6 +153,7 @@ export function createSystemConfigFixtures(): PageResponse<SystemConfigSummary> 
     },
     {
       id: 'config_feature_notice_inbox_enabled',
+      tenantId: 'tenant_root',
       category: 'feature',
       name: 'Notice inbox feature flag',
       key: 'feature.notice.inbox.enabled',
@@ -164,6 +168,7 @@ export function createSystemConfigFixtures(): PageResponse<SystemConfigSummary> 
     },
     {
       id: 'config_feature_notice_inbox_rollout',
+      tenantId: 'tenant_root',
       category: 'feature',
       name: 'Notice inbox rollout percentage',
       key: 'feature.notice.inbox.rolloutPercentage',
@@ -179,6 +184,7 @@ export function createSystemConfigFixtures(): PageResponse<SystemConfigSummary> 
     },
     {
       id: 'config_feature_notice_inbox_audience',
+      tenantId: 'tenant_root',
       category: 'feature',
       name: 'Notice inbox audience rules',
       key: 'feature.notice.inbox.audienceRules',
@@ -193,6 +199,7 @@ export function createSystemConfigFixtures(): PageResponse<SystemConfigSummary> 
     },
     {
       id: 'config_jwt_secret_ref',
+      tenantId: 'tenant_root',
       category: 'security',
       name: 'JWT secret reference',
       key: 'auth.jwt.secretRef',
@@ -207,6 +214,7 @@ export function createSystemConfigFixtures(): PageResponse<SystemConfigSummary> 
     },
     {
       id: 'config_integration_mail_smtp_password',
+      tenantId: 'tenant_root',
       category: 'integration',
       name: 'Mail SMTP password',
       key: 'integration.mail.smtp.password.secret',
@@ -223,6 +231,7 @@ export function createSystemConfigFixtures(): PageResponse<SystemConfigSummary> 
     },
     {
       id: 'config_integration_sms_http_api_key',
+      tenantId: 'tenant_root',
       category: 'integration',
       name: 'SMS HTTP API key',
       key: 'integration.sms.http.api-key.secret',

@@ -613,3 +613,45 @@ Passed after deploy:
 - No platform-admin global dictionary view in T4d; platform visit/control-plane behavior belongs with T6.
 - No client-driven tenant selector for dictionary APIs.
 - No config/notice/file tenant isolation in this sub-slice.
+
+## Round 12: T4e System Config Tenant Isolation
+
+### Completed
+
+- Made system config tenant-owned:
+  - added `SystemConfig.tenantId` with root backfill, tenant/key uniqueness, tenant/category index, and tenant FK;
+  - added tenant ownership to environment overrides and secret versions with same-tenant config FKs and tenant-aware uniqueness;
+  - exposed `tenantId` through config records, DTOs, SDK summaries, seed, export previews, and Admin Config.
+- Scoped Prisma config operations:
+  - config list/detail/export/create/update/delete/batch, value lookup, runtime reads, cache refresh, environment overrides, secret versions, and vault status/rotation resolve the active tenant from `RequestContext`;
+  - `SystemConfigService` value-cache keys include tenant id to prevent same-key tenant cache bleed.
+- Added tenant-scope verification:
+  - Prisma integration test creates the same config key in root and a foreign tenant and proves root context cannot read, mutate, override, or rotate foreign rows;
+  - `smoke:core-config` seeds a foreign tenant config/override/secret version and exercises the public API.
+- Added `guard:tenant-config-scope`.
+
+### Verification Log
+
+Passed before deploy:
+
+- `pnpm prisma:validate`, `pnpm prisma:generate`, `pnpm prisma:migrate`, and `pnpm prisma:seed`.
+- Seed and typed-smoke typechecks plus OpenAPI export/drift, registry tag, SDK, and quality-doc checks passed.
+- Tenant config, dictionary, operation-log, login-log, and online-user guard scripts passed.
+- Focused system-config spec plus full repository lint, typecheck, and test suites passed.
+
+Passed after deploy:
+
+- OpenCore deploy rebuilt API/Admin, applied migrations, reseeded, restarted API `39172` and Admin `39174`, and passed deploy smoke including local config tenant checks.
+- Public API config smoke passed against `http://144.217.243.161:39172`.
+
+### Remaining Product Debt
+
+- Complete T4 System/core tenant data isolation for notices, files, and related core tables.
+- Complete T5 Redis/file/queue/WebSocket/Integration/OAuth/runtime tenant propagation.
+- Complete T6 Tenant Plan CRUD, Tenant Member CRUD/invitation, Admin switcher, platform visit mode, and platform visit audit.
+
+### Deliberate Non-Goals
+
+- No platform-admin global config view in T4e; platform visit/control-plane behavior belongs with T6.
+- No client-driven tenant selector for config APIs.
+- No notice/file tenant isolation in this sub-slice.

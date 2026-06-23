@@ -12795,6 +12795,7 @@
         "type": "object",
         "properties": {
           "id": { "type": "string" },
+          "tenantId": { "type": "string" },
           "category": { "type": "string" },
           "name": { "type": "string" },
           "key": { "type": "string" },
@@ -12815,6 +12816,7 @@
         },
         "required": [
           "id",
+          "tenantId",
           "category",
           "name",
           "key",
@@ -12979,6 +12981,7 @@
         "type": "object",
         "properties": {
           "id": { "type": "string" },
+          "tenantId": { "type": "string" },
           "key": { "type": "string" },
           "environment": { "type": "string", "example": "staging" },
           "value": { "type": "string" },
@@ -12995,6 +12998,7 @@
         },
         "required": [
           "id",
+          "tenantId",
           "key",
           "environment",
           "value",
@@ -13107,6 +13111,7 @@
         "type": "object",
         "properties": {
           "id": { "type": "string" },
+          "tenantId": { "type": "string" },
           "key": { "type": "string" },
           "version": { "type": "number" },
           "active": { "type": "boolean" },
@@ -13124,6 +13129,7 @@
         },
         "required": [
           "id",
+          "tenantId",
           "key",
           "version",
           "active",

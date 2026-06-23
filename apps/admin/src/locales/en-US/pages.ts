@@ -364,6 +364,7 @@ export default {
   'pages.system.config.fields.id': 'ID',
   'pages.system.config.fields.key': 'Key',
   'pages.system.config.fields.name': 'Name',
+  'pages.system.config.fields.tenantId': 'Tenant ID',
   'pages.system.config.fields.newSecretValue': 'New secret value',
   'pages.system.config.fields.public': 'Public',
   'pages.system.config.fields.reason': 'Reason',

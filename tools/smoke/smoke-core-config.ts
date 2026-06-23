@@ -23,6 +23,11 @@ const apiRequest = smoke.apiRequest as any;
 const request = smoke.request as any;
 
 const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+const tenantRunId = runId.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+const ROOT_TENANT_ID = 'tenant_root';
+const FOREIGN_TENANT_ID = `tenant_config_${tenantRunId}`;
+const FOREIGN_CONFIG_KEY = `opencore.smoke.config.foreign.${runId}`;
+const FOREIGN_SECRET_KEY = `auth.token.secret.foreign.${runId}`;
 const plainKey = `opencore.smoke.config.${runId}`;
 const batchKeyA = `opencore.smoke.config.batch.${runId}.a`;
 const batchKeyB = `opencore.smoke.config.batch.${runId}.b`;
@@ -39,6 +44,7 @@ let adminTitleMutated = false;
 let loginLockoutMutated = false;
 let loginMaxFailedAttemptsMutated = false;
 let prisma;
+let foreignConfigSeeded = false;
 
 const createdKeys: string[] = [];
 async function main() {
@@ -54,6 +60,8 @@ async function main() {
 
     token = assertString(loginResponse.accessToken, 'login accessToken');
     smoke.setToken(token);
+    await seedForeignTenantConfig();
+    await assertForeignTenantConfigHidden();
 
     const listResponse = await apiRequest('/core/config?page=1&pageSize=10');
     assertArray(listResponse.items, 'config list items');
@@ -1167,6 +1175,11 @@ async function main() {
     assertArray(exportPreview.columns, 'config export columns');
     assertIncludes(
       exportPreview.columns,
+      'tenantId',
+      'config export tenant column',
+    );
+    assertIncludes(
+      exportPreview.columns,
       'category',
       'config export category column',
     );
@@ -1598,6 +1611,7 @@ async function main() {
     });
 
     await cleanupCreatedConfig();
+    await cleanupForeignTenantConfig();
     await prisma?.$disconnect().catch(() => undefined);
 
     console.log(
@@ -1611,6 +1625,9 @@ async function main() {
           ...(checkDocs ? ['openapi.docs-json'] : []),
           'auth.login',
           'core.config.list',
+          'core.config.foreign-tenant-hidden',
+          'core.config.foreign-tenant-mutation-blocked',
+          'core.config.foreign-tenant-preserved',
           'core.config.detail',
           'core.config.metadata',
           'core.config.runtime',
@@ -1660,6 +1677,7 @@ async function main() {
     );
   } catch (error) {
     await cleanupCreatedConfig().catch(() => undefined);
+    await cleanupForeignTenantConfig().catch(() => undefined);
     await restoreAdminTitle().catch(() => undefined);
     await restoreLoginLockoutMinutes().catch(() => undefined);
     await restoreLoginMaxFailedAttempts().catch(() => undefined);
@@ -1694,18 +1712,10 @@ async function cleanupCreatedConfig() {
 }
 
 async function readStoredConfigValue(key) {
-  if (!prisma) {
-    const connectionString = assertString(
-      process.env.DATABASE_URL,
-      'DATABASE_URL',
-    );
-    prisma = new PrismaClient({
-      adapter: new PrismaPg({ connectionString }),
-    });
-  }
+  const client = await getSmokePrisma();
 
-  const row = await prisma.systemConfig.findUnique({
-    where: { key },
+  const row = await client.systemConfig.findUnique({
+    where: { tenantId_key: { tenantId: ROOT_TENANT_ID, key } },
     select: { value: true },
   });
 
@@ -1717,6 +1727,18 @@ async function readStoredConfigValue(key) {
 }
 
 async function readStoredSecretVersionValues(key) {
+  const client = await getSmokePrisma();
+
+  const rows = await client.systemConfigSecretVersion.findMany({
+    where: { tenantId: ROOT_TENANT_ID, key },
+    orderBy: { version: 'asc' },
+    select: { value: true },
+  });
+
+  return rows.map((row) => row.value);
+}
+
+async function getSmokePrisma() {
   if (!prisma) {
     const connectionString = assertString(
       process.env.DATABASE_URL,
@@ -1727,13 +1749,261 @@ async function readStoredSecretVersionValues(key) {
     });
   }
 
-  const rows = await prisma.systemConfigSecretVersion.findMany({
-    where: { key },
-    orderBy: { version: 'asc' },
-    select: { value: true },
+  return prisma;
+}
+
+async function seedForeignTenantConfig() {
+  const client = await getSmokePrisma();
+  const foreignSecretValue = 'foreign-secret-smoke-value';
+
+  await client.tenant.upsert({
+    where: { id: FOREIGN_TENANT_ID },
+    update: {
+      code: FOREIGN_TENANT_ID,
+      slug: FOREIGN_TENANT_ID,
+      name: 'Config smoke foreign tenant',
+      status: 'active',
+    },
+    create: {
+      id: FOREIGN_TENANT_ID,
+      code: FOREIGN_TENANT_ID,
+      slug: FOREIGN_TENANT_ID,
+      name: 'Config smoke foreign tenant',
+      status: 'active',
+    },
+  });
+  await client.systemConfig.upsert({
+    where: {
+      tenantId_key: {
+        tenantId: FOREIGN_TENANT_ID,
+        key: FOREIGN_CONFIG_KEY,
+      },
+    },
+    update: {
+      category: 'smoke',
+      name: 'Foreign tenant config',
+      value: 'foreign-visible-value',
+      valueType: 'string',
+      description: 'Foreign tenant config smoke row.',
+      remark: 'Must stay hidden from root tenant.',
+      public: true,
+      system: false,
+    },
+    create: {
+      id: `config_foreign_${tenantRunId}`,
+      tenantId: FOREIGN_TENANT_ID,
+      category: 'smoke',
+      name: 'Foreign tenant config',
+      key: FOREIGN_CONFIG_KEY,
+      value: 'foreign-visible-value',
+      valueType: 'string',
+      description: 'Foreign tenant config smoke row.',
+      remark: 'Must stay hidden from root tenant.',
+      public: true,
+      system: false,
+    },
+  });
+  await client.systemConfigEnvironmentOverride.upsert({
+    where: {
+      tenantId_key_environment: {
+        tenantId: FOREIGN_TENANT_ID,
+        key: FOREIGN_CONFIG_KEY,
+        environment: 'staging',
+      },
+    },
+    update: {
+      value: 'foreign-staging-value',
+      valueType: 'string',
+      description: 'Foreign tenant environment override.',
+      remark: 'Must stay hidden from root tenant.',
+    },
+    create: {
+      id: `config_foreign_override_${tenantRunId}`,
+      tenantId: FOREIGN_TENANT_ID,
+      key: FOREIGN_CONFIG_KEY,
+      environment: 'staging',
+      value: 'foreign-staging-value',
+      valueType: 'string',
+      description: 'Foreign tenant environment override.',
+      remark: 'Must stay hidden from root tenant.',
+    },
+  });
+  await client.systemConfig.upsert({
+    where: {
+      tenantId_key: {
+        tenantId: FOREIGN_TENANT_ID,
+        key: FOREIGN_SECRET_KEY,
+      },
+    },
+    update: {
+      category: 'security',
+      name: 'Foreign tenant secret config',
+      value: foreignSecretValue,
+      valueType: 'string',
+      description: 'Foreign tenant secret config smoke row.',
+      remark: 'Must stay hidden from root tenant.',
+      public: false,
+      system: false,
+    },
+    create: {
+      id: `config_foreign_secret_${tenantRunId}`,
+      tenantId: FOREIGN_TENANT_ID,
+      category: 'security',
+      name: 'Foreign tenant secret config',
+      key: FOREIGN_SECRET_KEY,
+      value: foreignSecretValue,
+      valueType: 'string',
+      description: 'Foreign tenant secret config smoke row.',
+      remark: 'Must stay hidden from root tenant.',
+      public: false,
+      system: false,
+    },
+  });
+  await client.systemConfigSecretVersion.upsert({
+    where: {
+      tenantId_key_version: {
+        tenantId: FOREIGN_TENANT_ID,
+        key: FOREIGN_SECRET_KEY,
+        version: 1,
+      },
+    },
+    update: {
+      active: true,
+      value: foreignSecretValue,
+      valueType: 'string',
+      reason: 'Foreign tenant smoke baseline.',
+      rotatedBy: 'smoke',
+    },
+    create: {
+      tenantId: FOREIGN_TENANT_ID,
+      key: FOREIGN_SECRET_KEY,
+      version: 1,
+      active: true,
+      value: foreignSecretValue,
+      valueType: 'string',
+      reason: 'Foreign tenant smoke baseline.',
+      rotatedBy: 'smoke',
+    },
+  });
+  foreignConfigSeeded = true;
+}
+
+async function assertForeignTenantConfigHidden() {
+  await apiRequest(`/core/config/${encodeURIComponent(FOREIGN_CONFIG_KEY)}`, {
+    expected: [404],
+  });
+  await apiRequest(
+    `/core/config/get-value-by-key?key=${encodeURIComponent(FOREIGN_CONFIG_KEY)}`,
+    { expected: [404] },
+  );
+  await apiRequest(
+    `/core/config/${encodeURIComponent(FOREIGN_CONFIG_KEY)}/environments`,
+    { expected: [404] },
+  );
+  await apiRequest(
+    `/core/config/${encodeURIComponent(FOREIGN_CONFIG_KEY)}/environments/staging`,
+    {
+      method: 'PATCH',
+      expected: [404],
+      body: { value: 'root-should-not-write' },
+    },
+  );
+  await apiRequest(
+    `/core/config/${encodeURIComponent(FOREIGN_CONFIG_KEY)}/environments/staging`,
+    { method: 'DELETE', expected: [404] },
+  );
+  await apiRequest(
+    `/core/config/${encodeURIComponent(FOREIGN_SECRET_KEY)}/secret-versions`,
+    { expected: [404] },
+  );
+  await apiRequest(
+    `/core/config/${encodeURIComponent(FOREIGN_SECRET_KEY)}/rotate-secret`,
+    {
+      method: 'POST',
+      expected: [404],
+      body: { value: 'root-should-not-rotate' },
+    },
+  );
+  await apiRequest(`/core/config/${encodeURIComponent(FOREIGN_CONFIG_KEY)}`, {
+    method: 'PATCH',
+    expected: [404],
+    body: { value: 'root-should-not-write' },
+  });
+  await apiRequest('/core/config/batch', {
+    method: 'DELETE',
+    expected: [404],
+    body: { keys: [FOREIGN_CONFIG_KEY] },
+  });
+  await apiRequest(`/core/config/${encodeURIComponent(FOREIGN_CONFIG_KEY)}`, {
+    method: 'DELETE',
+    expected: [404],
   });
 
-  return rows.map((row) => row.value);
+  const rootList = await apiRequest('/core/config?page=1&pageSize=100');
+  assertArray(rootList.items, 'root config list items');
+  if (rootList.items.some((item) => item?.key === FOREIGN_CONFIG_KEY)) {
+    throw new Error('Foreign tenant config leaked into root config list.');
+  }
+  await assertForeignTenantConfigPreserved();
+}
+
+async function assertForeignTenantConfigPreserved() {
+  const client = await getSmokePrisma();
+  const config = await client.systemConfig.findUnique({
+    where: {
+      tenantId_key: {
+        tenantId: FOREIGN_TENANT_ID,
+        key: FOREIGN_CONFIG_KEY,
+      },
+    },
+    select: { tenantId: true, key: true, value: true },
+  });
+  if (!config) {
+    throw new Error('Foreign tenant config was unexpectedly removed.');
+  }
+  assertEqual(config.tenantId, FOREIGN_TENANT_ID, 'foreign config tenant');
+  assertEqual(config.value, 'foreign-visible-value', 'foreign config value');
+
+  const override =
+    await client.systemConfigEnvironmentOverride.findUnique({
+      where: {
+        tenantId_key_environment: {
+          tenantId: FOREIGN_TENANT_ID,
+          key: FOREIGN_CONFIG_KEY,
+          environment: 'staging',
+        },
+      },
+      select: { tenantId: true, value: true },
+    });
+  if (!override) {
+    throw new Error('Foreign tenant config override was unexpectedly removed.');
+  }
+  assertEqual(
+    override.value,
+    'foreign-staging-value',
+    'foreign config override value',
+  );
+
+  const secretVersionCount = await client.systemConfigSecretVersion.count({
+    where: { tenantId: FOREIGN_TENANT_ID, key: FOREIGN_SECRET_KEY },
+  });
+  assertEqual(secretVersionCount, 1, 'foreign secret version count');
+}
+
+async function cleanupForeignTenantConfig() {
+  if (!foreignConfigSeeded) {
+    return;
+  }
+
+  const client = await getSmokePrisma();
+  await client.systemConfig.deleteMany({
+    where: {
+      tenantId: FOREIGN_TENANT_ID,
+      key: { in: [FOREIGN_CONFIG_KEY, FOREIGN_SECRET_KEY] },
+    },
+  });
+  await client.tenant.deleteMany({ where: { id: FOREIGN_TENANT_ID } });
+  foreignConfigSeeded = false;
 }
 
 async function restoreAdminTitle() {

@@ -243,6 +243,7 @@ export type DictTranslationResultSummary = {
 
 export type SystemConfigSummary = {
   id: string;
+  tenantId: string;
   category: string;
   name: string;
   key: string;
@@ -320,6 +321,7 @@ export type SystemConfigBatchMutationSummary = {
 
 export type SystemConfigEnvironmentOverrideSummary = {
   id: string;
+  tenantId: string;
   key: string;
   environment: string;
   value: string;
@@ -334,6 +336,7 @@ export type SystemConfigEnvironmentOverrideSummary = {
 
 export type SystemConfigSecretVersionSummary = {
   id: string;
+  tenantId: string;
   key: string;
   version: number;
   active: boolean;

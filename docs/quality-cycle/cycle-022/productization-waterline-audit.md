@@ -157,4 +157,18 @@ These remain below the productization waterline and cannot be described as compl
 | Cross-tenant API rejection     | Done    | Prisma integration test and smoke prove foreign-tenant dictionaries are hidden, cannot be mutated, and survive root actions. |
 | Seed/OpenAPI/SDK/Admin         | Done    | Seed dictionary rows, DTOs, SDK summaries/fixtures, and Admin Dicts expose `tenantId`.                                      |
 | Smoke/guard                    | Done    | Added `guard:tenant-dict-scope`; `smoke:core-dict` now covers foreign-tenant dictionary isolation.                          |
-| Remaining T4 data scope        | Pending | Config, notice, and file isolation remain pending.                                                                           |
+| Remaining T4 data scope        | Pending | Config was completed in T4e; notice and file isolation remain pending.                                                       |
+
+## T4e System Config
+
+| Requirement                    | Status  | Notes                                                                                                                        |
+| ------------------------------ | ------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Config tenant ownership        | Done    | `SystemConfig.tenantId` is backfilled to `tenant_root`, required, indexed, and constrained to `Tenant`.                      |
+| Tenant-key uniqueness          | Done    | System config key uniqueness is now `(tenantId, key)`, allowing the same config key in different tenants.                    |
+| Override and secret ownership  | Done    | `SystemConfigEnvironmentOverride` and `SystemConfigSecretVersion` carry tenant id and reference the same-tenant config row.  |
+| Repository tenant isolation    | Done    | Config CRUD, batch delete, value/runtime reads, cache refresh, exports, overrides, secret versions, and vault operations use `RequestContext`. |
+| Cache tenant isolation         | Done    | `SystemConfigService` value-cache keys include tenant id so same-key tenant values do not bleed across requests.             |
+| Cross-tenant API rejection     | Done    | Prisma integration test and smoke prove foreign-tenant config rows are hidden, cannot be mutated, and survive root actions.  |
+| Seed/OpenAPI/SDK/Admin         | Done    | Seed config rows, DTOs, SDK summaries/fixtures, export previews, and Admin Config expose `tenantId`.                        |
+| Smoke/guard                    | Done    | Added `guard:tenant-config-scope`; `smoke:core-config` now covers foreign-tenant config isolation.                          |
+| Remaining T4 data scope        | Pending | Notice and file isolation remain pending.                                                                                   |

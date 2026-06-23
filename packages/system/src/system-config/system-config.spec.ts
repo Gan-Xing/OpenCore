@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
@@ -9,6 +10,7 @@ import {
   randomBytes,
   randomUUID,
 } from 'node:crypto';
+import { runWithRequestContext } from '@opencore/core';
 import { PrismaService } from '@opencore/database';
 import { PrismaSystemConfigRepository } from './system-config.prisma-repository';
 import {
@@ -27,6 +29,8 @@ import {
   SYSTEM_CONFIG_SECRET_VALUE_V2_PREFIX,
   SYSTEM_CONFIG_SECRET_VALUE_V3_PREFIX,
 } from './system-config.vault';
+
+const ROOT_TENANT_ID = 'tenant_root';
 
 describe('@opencore/system system-config', () => {
   it('supports seeded config CRUD and export previews', async () => {
@@ -308,6 +312,7 @@ describe('@opencore/system system-config', () => {
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       scope: 'current-page',
       columns: [
+        'tenantId',
         'category',
         'name',
         'key',
@@ -1064,6 +1069,10 @@ describe('@opencore/system system-config', () => {
     const configKey = `system.config.${testRunId}`;
     const batchConfigKey = `system.config.batch.${testRunId}`;
     const secretKey = `auth.token.secret.${testRunId}`;
+    const sharedConfigKey = `system.config.shared.${testRunId}`;
+    const foreignOnlyConfigKey = `system.config.foreign.${testRunId}`;
+    const foreignSecretKey = `auth.config.foreign.secret.${testRunId}`;
+    const otherTenantId = `tenant_config_${testRunId}`;
 
     beforeAll(async () => {
       await ensureSeedSystemConfigs();
@@ -1209,7 +1218,8 @@ describe('@opencore/system system-config', () => {
       await expect(
         prisma.systemConfigEnvironmentOverride.findUnique({
           where: {
-            key_environment: {
+            tenantId_key_environment: {
+              tenantId: ROOT_TENANT_ID,
               environment: 'staging',
               key: configKey,
             },
@@ -1253,7 +1263,9 @@ describe('@opencore/system system-config', () => {
         visibility: 'secret',
       });
       const storedSecret = await prisma.systemConfig.findUnique({
-        where: { key: secretKey },
+        where: {
+          tenantId_key: { tenantId: ROOT_TENANT_ID, key: secretKey },
+        },
         select: { value: true },
       });
       expect(storedSecret?.value).toEqual(
@@ -1290,7 +1302,9 @@ describe('@opencore/system system-config', () => {
       });
       const storedSecretAfterMetadataUpdate =
         await prisma.systemConfig.findUnique({
-          where: { key: secretKey },
+          where: {
+            tenantId_key: { tenantId: ROOT_TENANT_ID, key: secretKey },
+          },
           select: { value: true },
         });
       expect(storedSecretAfterMetadataUpdate?.value).toEqual(
@@ -1389,7 +1403,7 @@ describe('@opencore/system system-config', () => {
       );
       const storedSecretVersions =
         await prisma.systemConfigSecretVersion.findMany({
-          where: { key: secretKey },
+          where: { tenantId: ROOT_TENANT_ID, key: secretKey },
           orderBy: { version: 'asc' },
           select: { active: true, value: true, version: true },
         });
@@ -1409,12 +1423,14 @@ describe('@opencore/system system-config', () => {
       }
       const storedSecretBeforeVaultKeyRotation =
         await prisma.systemConfig.findUnique({
-          where: { key: secretKey },
+          where: {
+            tenantId_key: { tenantId: ROOT_TENANT_ID, key: secretKey },
+          },
           select: { value: true },
         });
       const storedSecretVersionsBeforeVaultKeyRotation =
         await prisma.systemConfigSecretVersion.findMany({
-          where: { key: secretKey },
+          where: { tenantId: ROOT_TENANT_ID, key: secretKey },
           orderBy: { version: 'asc' },
           select: { value: true },
         });
@@ -1439,7 +1455,9 @@ describe('@opencore/system system-config', () => {
       });
       const storedSecretAfterVaultKeyRotation =
         await prisma.systemConfig.findUnique({
-          where: { key: secretKey },
+          where: {
+            tenantId_key: { tenantId: ROOT_TENANT_ID, key: secretKey },
+          },
           select: { value: true },
         });
       expect(storedSecretAfterVaultKeyRotation?.value).toEqual(
@@ -1453,7 +1471,7 @@ describe('@opencore/system system-config', () => {
       );
       const storedSecretVersionsAfterVaultKeyRotation =
         await prisma.systemConfigSecretVersion.findMany({
-          where: { key: secretKey },
+          where: { tenantId: ROOT_TENANT_ID, key: secretKey },
           orderBy: { version: 'asc' },
           select: { value: true },
         });
@@ -1524,14 +1542,234 @@ describe('@opencore/system system-config', () => {
         deleted: true,
       });
       await expect(
-        prisma.systemConfigSecretVersion.count({ where: { key: secretKey } }),
+        prisma.systemConfigSecretVersion.count({
+          where: { tenantId: ROOT_TENANT_ID, key: secretKey },
+        }),
       ).resolves.toBe(0);
+    });
+
+    it('scopes Prisma config operations to the request tenant', async () => {
+      await prisma.tenant.upsert({
+        where: { id: otherTenantId },
+        update: {
+          code: otherTenantId,
+          slug: otherTenantId,
+          name: 'Config isolation tenant',
+          status: 'active',
+        },
+        create: {
+          id: otherTenantId,
+          code: otherTenantId,
+          slug: otherTenantId,
+          name: 'Config isolation tenant',
+          status: 'active',
+        },
+      });
+
+      const rootVaultStatusBefore = await runInTenant(ROOT_TENANT_ID, () =>
+        service.getConfigVaultStatus(),
+      );
+      const rootConfig = await runInTenant(ROOT_TENANT_ID, () =>
+        service.createConfig({
+          category: 'runtime',
+          key: sharedConfigKey,
+          name: 'Shared root config',
+          value: 'root-value',
+          valueType: 'string',
+          visibility: 'public',
+        }),
+      );
+      expect(rootConfig).toMatchObject({
+        key: sharedConfigKey,
+        tenantId: ROOT_TENANT_ID,
+        value: 'root-value',
+      });
+      await expect(
+        runInTenant(ROOT_TENANT_ID, () =>
+          service.createConfig({
+            category: 'runtime',
+            key: sharedConfigKey,
+            name: 'Duplicate root config',
+            value: 'duplicate',
+            valueType: 'string',
+            visibility: 'public',
+          }),
+        ),
+      ).rejects.toThrow(ConflictException);
+
+      const foreignConfig = await runInTenant(otherTenantId, () =>
+        service.createConfig({
+          category: 'runtime',
+          key: sharedConfigKey,
+          name: 'Shared foreign config',
+          value: 'foreign-value',
+          valueType: 'string',
+          visibility: 'public',
+        }),
+      );
+      expect(foreignConfig).toMatchObject({
+        key: sharedConfigKey,
+        tenantId: otherTenantId,
+        value: 'foreign-value',
+      });
+      await runInTenant(otherTenantId, () =>
+        service.upsertConfigEnvironmentOverride(sharedConfigKey, 'staging', {
+          value: 'foreign-staging-value',
+        }),
+      );
+      await runInTenant(otherTenantId, () =>
+        service.createConfig({
+          category: 'runtime',
+          key: foreignOnlyConfigKey,
+          name: 'Foreign-only config',
+          value: 'foreign-only',
+          valueType: 'string',
+          visibility: 'public',
+        }),
+      );
+      await runInTenant(otherTenantId, () =>
+        service.createConfig({
+          category: 'security',
+          key: foreignSecretKey,
+          name: 'Foreign secret config',
+          value: 'foreign-secret',
+          valueType: 'string',
+          visibility: 'secret',
+        }),
+      );
+      await runInTenant(otherTenantId, () =>
+        service.rotateSecretConfig(foreignSecretKey, {
+          reason: 'Foreign rotation',
+          rotatedBy: 'tenant-admin',
+          value: 'foreign-secret-rotated',
+        }),
+      );
+
+      await expect(
+        runInTenant(ROOT_TENANT_ID, () =>
+          service.listConfig({ page: 1, pageSize: 100 }),
+        ),
+      ).resolves.toEqual(
+        expect.objectContaining({
+          items: expect.not.arrayContaining([
+            expect.objectContaining({ key: foreignOnlyConfigKey }),
+          ]),
+        }),
+      );
+      await expect(
+        runInTenant(ROOT_TENANT_ID, () => service.getConfig(foreignOnlyConfigKey)),
+      ).rejects.toThrow(NotFoundException);
+      await expect(
+        runInTenant(ROOT_TENANT_ID, () =>
+          service.getConfigValueByKey(foreignOnlyConfigKey),
+        ),
+      ).rejects.toThrow(NotFoundException);
+      await expect(
+        runInTenant(ROOT_TENANT_ID, () =>
+          service.updateConfig(foreignOnlyConfigKey, { value: 'root-edit' }),
+        ),
+      ).rejects.toThrow(NotFoundException);
+      await expect(
+        runInTenant(ROOT_TENANT_ID, () => service.deleteConfig(foreignOnlyConfigKey)),
+      ).rejects.toThrow(NotFoundException);
+      await expect(
+        runInTenant(ROOT_TENANT_ID, () =>
+          service.deleteConfigs({ keys: [foreignOnlyConfigKey] }),
+        ),
+      ).rejects.toThrow(NotFoundException);
+      await expect(
+        runInTenant(ROOT_TENANT_ID, () =>
+          service.listConfigEnvironmentOverrides(foreignOnlyConfigKey),
+        ),
+      ).rejects.toThrow(NotFoundException);
+      await expect(
+        runInTenant(ROOT_TENANT_ID, () =>
+          service.listConfigSecretVersions(foreignSecretKey),
+        ),
+      ).rejects.toThrow(NotFoundException);
+      await expect(
+        runInTenant(ROOT_TENANT_ID, () =>
+          service.rotateSecretConfig(foreignSecretKey, {
+            value: 'root-should-not-rotate',
+          }),
+        ),
+      ).rejects.toThrow(NotFoundException);
+
+      await expect(
+        runInTenant(ROOT_TENANT_ID, () =>
+          service.getConfigValueByKey(sharedConfigKey, 'staging'),
+        ),
+      ).resolves.toMatchObject({
+        environment: 'staging',
+        key: sharedConfigKey,
+        overridden: false,
+        value: 'root-value',
+      });
+      await expect(
+        runInTenant(otherTenantId, () =>
+          service.getConfigValueByKey(sharedConfigKey, 'staging'),
+        ),
+      ).resolves.toMatchObject({
+        environment: 'staging',
+        key: sharedConfigKey,
+        overridden: true,
+        value: 'foreign-staging-value',
+      });
+      await expect(
+        runInTenant(ROOT_TENANT_ID, () =>
+          service.getConfigValueByKey(sharedConfigKey),
+        ),
+      ).resolves.toMatchObject({ value: 'root-value' });
+      await expect(
+        runInTenant(otherTenantId, () =>
+          service.getConfigValueByKey(sharedConfigKey),
+        ),
+      ).resolves.toMatchObject({ value: 'foreign-value' });
+
+      const rootVaultStatusAfter = await runInTenant(ROOT_TENANT_ID, () =>
+        service.getConfigVaultStatus(),
+      );
+      expect(rootVaultStatusAfter.secretVersionCount).toBe(
+        rootVaultStatusBefore.secretVersionCount,
+      );
+      await expect(
+        prisma.systemConfig.findUnique({
+          where: {
+            tenantId_key: {
+              tenantId: otherTenantId,
+              key: foreignOnlyConfigKey,
+            },
+          },
+        }),
+      ).resolves.toMatchObject({
+        key: foreignOnlyConfigKey,
+        tenantId: otherTenantId,
+        value: 'foreign-only',
+      });
+      await expect(
+        prisma.systemConfigSecretVersion.count({
+          where: { tenantId: otherTenantId, key: foreignSecretKey },
+        }),
+      ).resolves.toBe(2);
     });
 
     async function cleanupTestRows(): Promise<void> {
       await prisma.systemConfig.deleteMany({
-        where: { key: { in: [configKey, batchConfigKey, secretKey] } },
+        where: {
+          tenantId: { in: [ROOT_TENANT_ID, otherTenantId] },
+          key: {
+            in: [
+              configKey,
+              batchConfigKey,
+              secretKey,
+              sharedConfigKey,
+              foreignOnlyConfigKey,
+              foreignSecretKey,
+            ],
+          },
+        },
       });
+      await prisma.tenant.deleteMany({ where: { id: otherTenantId } });
     }
 
     async function ensureSeedSystemConfigs(): Promise<void> {
@@ -1543,7 +1781,12 @@ describe('@opencore/system system-config', () => {
           visibility: config.visibility,
         });
         await prisma.systemConfig.upsert({
-          where: { key: config.key },
+          where: {
+            tenantId_key: {
+              tenantId: config.tenantId,
+              key: config.key,
+            },
+          },
           update: {
             category: config.category,
             name: config.name,
@@ -1556,6 +1799,7 @@ describe('@opencore/system system-config', () => {
           },
           create: {
             id: config.id,
+            tenantId: config.tenantId,
             category: config.category,
             name: config.name,
             key: config.key,
@@ -1570,12 +1814,13 @@ describe('@opencore/system system-config', () => {
 
         if (config.visibility === 'secret') {
           await prisma.systemConfigSecretVersion.updateMany({
-            where: { key: config.key, active: true },
+            where: { tenantId: config.tenantId, key: config.key, active: true },
             data: { active: false },
           });
           await prisma.systemConfigSecretVersion.upsert({
             where: {
-              key_version: {
+              tenantId_key_version: {
+                tenantId: config.tenantId,
                 key: config.key,
                 version: 1,
               },
@@ -1589,6 +1834,7 @@ describe('@opencore/system system-config', () => {
             },
             create: {
               active: true,
+              tenantId: config.tenantId,
               key: config.key,
               reason: 'Seeded secret baseline.',
               rotatedBy: 'seed',
@@ -1602,6 +1848,17 @@ describe('@opencore/system system-config', () => {
     }
   });
 });
+
+function runInTenant<T>(tenantId: string, callback: () => T): T {
+  return runWithRequestContext(
+    {
+      requestId: `test-${tenantId}`,
+      traceId: `test-${tenantId}`,
+      tenantId,
+    },
+    callback,
+  );
+}
 
 function createLegacySystemConfigSecretValue(input: {
   key: string;

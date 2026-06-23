@@ -341,6 +341,7 @@ export default {
   'pages.system.config.fields.id': 'ID',
   'pages.system.config.fields.key': '配置键',
   'pages.system.config.fields.name': '名称',
+  'pages.system.config.fields.tenantId': '租户 ID',
   'pages.system.config.fields.newSecretValue': '新密钥值',
   'pages.system.config.fields.public': '公开',
   'pages.system.config.fields.reason': '原因',

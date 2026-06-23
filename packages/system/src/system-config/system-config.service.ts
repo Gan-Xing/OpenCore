@@ -4,6 +4,7 @@ import {
 } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 import type { PageResult } from '@opencore/common';
+import { getRequestContext } from '@opencore/core';
 import type {
   BatchDeleteSystemConfigsDto,
   CreateSystemConfigDto,
@@ -88,6 +89,7 @@ export type SystemConfigFeatureFlagEvaluationResult = {
 const ADMIN_TITLE_CONFIG_KEY = 'opencore.admin.title';
 const LOGIN_LOCKOUT_MINUTES_CONFIG_KEY = 'auth.login.lockoutMinutes';
 const LOGIN_MAX_FAILED_ATTEMPTS_CONFIG_KEY = 'auth.login.maxFailedAttempts';
+const ROOT_TENANT_ID = 'tenant_root';
 const MIN_LOGIN_LOCKOUT_MINUTES = 1;
 const MAX_LOGIN_LOCKOUT_MINUTES = 1440;
 const MIN_LOGIN_MAX_FAILED_ATTEMPTS = 1;
@@ -123,7 +125,9 @@ export class SystemConfigService {
   ): Promise<SystemConfigValueResult> {
     const normalizedKey = normalizeConfigValueKey(key);
     const normalizedEnvironment = normalizeSystemConfigEnvironment(environment);
+    const tenantId = resolveCurrentTenantId();
     const cacheKey = createConfigValueCacheKey(
+      tenantId,
       normalizedKey,
       normalizedEnvironment,
     );
@@ -246,6 +250,7 @@ export class SystemConfigService {
           );
           this.valueCache.set(
             createConfigValueCacheKey(
+              resolveCurrentTenantId(),
               value.key,
               SYSTEM_CONFIG_DEFAULT_ENVIRONMENT,
             ),
@@ -890,6 +895,14 @@ function toPublicConfigValue(
   };
 }
 
-function createConfigValueCacheKey(key: string, environment: string): string {
-  return `${environment}\0${key}`;
+function createConfigValueCacheKey(
+  tenantId: string,
+  key: string,
+  environment: string,
+): string {
+  return `${tenantId}\0${environment}\0${key}`;
+}
+
+function resolveCurrentTenantId(): string {
+  return getRequestContext()?.tenantId ?? ROOT_TENANT_ID;
 }

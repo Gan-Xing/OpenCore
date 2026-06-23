@@ -52,6 +52,8 @@ type SeedSystemConfigSecretVersion = SystemConfigSecretVersionRecord & {
   value: string;
 };
 
+const ROOT_TENANT_ID = 'tenant_root';
+
 @Injectable()
 export class SeedSystemConfigRepository extends SystemConfigRepository {
   private systemConfigs = seedSystemConfigs.map((config) => {
@@ -80,6 +82,7 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
         id: `secret_version_${config.key.replaceAll('.', '_')}_1`,
         key: config.key,
         reason: 'Seeded secret baseline.',
+        tenantId: config.tenantId,
         rotatedBy: 'seed',
         value: config.value,
         version: 1,
@@ -167,6 +170,7 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
 
     const config: SystemConfigRecord = {
       id: `config_${body.key.replaceAll('.', '_')}`,
+      tenantId: ROOT_TENANT_ID,
       category: normalizeConfigCategory(body.category),
       name: normalizeConfigName(body.name, body.key),
       key: body.key,
@@ -404,6 +408,7 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
 
     const override: SystemConfigEnvironmentOverrideRecord = {
       id: `config_override_${key.replaceAll('.', '_')}_${normalizedEnvironment}`,
+      tenantId: config.tenantId,
       key,
       environment: normalizedEnvironment,
       value,
@@ -571,6 +576,7 @@ export class SeedSystemConfigRepository extends SystemConfigRepository {
         id: `secret_version_${config.key.replaceAll('.', '_')}_${nextVersion}`,
         key: config.key,
         reason: input.reason,
+        tenantId: config.tenantId,
         rotatedBy: input.rotatedBy,
         value: config.value,
         version: nextVersion,
@@ -616,6 +622,7 @@ function createSecretVersionRecordMetadata(input: {
   id: string;
   key: string;
   reason?: string;
+  tenantId: string;
   rotatedBy?: string;
   value: string;
   version: number;
@@ -624,6 +631,7 @@ function createSecretVersionRecordMetadata(input: {
 
   return {
     id: input.id,
+    tenantId: input.tenantId,
     key: input.key,
     version: input.version,
     active: input.active,
@@ -648,6 +656,7 @@ function toSecretVersionRecord(
 ): SystemConfigSecretVersionRecord {
   return {
     id: version.id,
+    tenantId: version.tenantId,
     key: version.key,
     version: version.version,
     active: version.active,

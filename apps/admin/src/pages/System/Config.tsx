@@ -525,6 +525,10 @@ export default function ConfigPage() {
   const exportColumns: CurrentPageExportColumn<SystemConfigSummary>[] = [
     { title: formatMessage('pages.system.config.fields.id', 'ID'), dataIndex: 'id' },
     {
+      title: formatMessage('pages.system.config.fields.tenantId', 'Tenant ID'),
+      dataIndex: 'tenantId',
+    },
+    {
       title: formatMessage('pages.system.config.fields.category', 'Category'),
       dataIndex: 'category',
     },
@@ -591,6 +595,10 @@ export default function ConfigPage() {
   ];
   const createDetailFields = (record: SystemConfigSummary): DetailField[] => [
     { label: formatMessage('pages.system.config.fields.id', 'ID'), value: record.id },
+    {
+      label: formatMessage('pages.system.config.fields.tenantId', 'Tenant ID'),
+      value: record.tenantId,
+    },
     {
       label: formatMessage('pages.system.config.fields.category', 'Category'),
       value: record.category,
@@ -1349,6 +1357,13 @@ export default function ConfigPage() {
       title: formatMessage('pages.system.config.fields.key', 'Key'),
       dataIndex: 'key',
       ellipsis: true,
+    },
+    {
+      title: formatMessage('pages.system.config.fields.tenantId', 'Tenant ID'),
+      dataIndex: 'tenantId',
+      width: 152,
+      ellipsis: true,
+      search: false,
     },
     {
       title: formatMessage('pages.system.config.fields.value', 'Value'),

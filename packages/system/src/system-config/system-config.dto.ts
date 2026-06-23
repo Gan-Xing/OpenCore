@@ -5,6 +5,9 @@ export class SystemConfigDto {
   id!: string;
 
   @ApiProperty()
+  tenantId!: string;
+
+  @ApiProperty()
   category!: string;
 
   @ApiProperty()
@@ -231,6 +234,9 @@ export class SystemConfigEnvironmentOverrideDto {
   id!: string;
 
   @ApiProperty()
+  tenantId!: string;
+
+  @ApiProperty()
   key!: string;
 
   @ApiProperty({ example: 'staging' })
@@ -264,6 +270,9 @@ export class SystemConfigEnvironmentOverrideDto {
 export class SystemConfigSecretVersionDto {
   @ApiProperty()
   id!: string;
+
+  @ApiProperty()
+  tenantId!: string;
 
   @ApiProperty()
   key!: string;

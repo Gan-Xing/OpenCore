@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
+import { getRequestContext } from '@opencore/core';
 import { PrismaService } from '@opencore/database';
 import type {
   BatchDeleteSystemConfigsDto,
@@ -54,6 +55,7 @@ import { inspectSystemConfigSecretEnvelope } from './system-config.vault';
 
 type PrismaSystemConfig = {
   id: string;
+  tenantId: string;
   category: string;
   name: string;
   key: string;
@@ -67,6 +69,7 @@ type PrismaSystemConfig = {
 
 type PrismaSystemConfigEnvironmentOverride = {
   id: string;
+  tenantId: string;
   key: string;
   environment: string;
   value: string;
@@ -79,6 +82,7 @@ type PrismaSystemConfigEnvironmentOverride = {
 
 type PrismaSystemConfigSecretVersion = {
   id: string;
+  tenantId: string;
   key: string;
   version: number;
   value: string;
@@ -87,6 +91,8 @@ type PrismaSystemConfigSecretVersion = {
   reason: string | null;
   createdAt: Date;
 };
+
+const ROOT_TENANT_ID = 'tenant_root';
 
 @Injectable()
 export class PrismaSystemConfigRepository extends SystemConfigRepository {
@@ -97,9 +103,12 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
   async listConfig(
     query: SystemConfigPageQuery = {},
   ): Promise<PageResult<SystemConfigRecord>> {
-    const total = await this.prisma.systemConfig.count();
+    const tenantId = resolveCurrentTenantId();
+    const where = { tenantId };
+    const total = await this.prisma.systemConfig.count({ where });
     const pagination = normalizeSystemConfigPageQuery(query, total);
     const rows = await this.prisma.systemConfig.findMany({
+      where,
       orderBy: [{ createdAt: 'desc' }, { key: 'asc' }],
       skip: pagination.skip,
       take: pagination.take,
@@ -152,6 +161,7 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
   }
 
   async createConfig(body: CreateSystemConfigDto): Promise<SystemConfigRecord> {
+    const tenantId = resolveCurrentTenantId();
     const visibility = resolveConfigVisibility(body);
     assertSafeConfigKey(body.key, visibility);
     assertFeatureFlagConfigShape({
@@ -167,7 +177,9 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
     });
 
     if (
-      await this.prisma.systemConfig.findUnique({ where: { key: body.key } })
+      await this.prisma.systemConfig.findUnique({
+        where: { tenantId_key: { tenantId, key: body.key } },
+      })
     ) {
       throw systemConfigConflict(
         'SYSTEM_CONFIG_ALREADY_EXISTS',
@@ -187,6 +199,7 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
       visibility,
     });
     const data = {
+      tenantId,
       category: normalizeConfigCategory(body.category),
       name: normalizeConfigName(body.name, body.key),
       key: body.key,
@@ -206,6 +219,7 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
         await tx.systemConfigSecretVersion.create({
           data: {
             active: true,
+            tenantId,
             key: body.key,
             reason: 'Initial secret config value.',
             value: storedValue,
@@ -225,6 +239,7 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
     key: string,
     body: UpdateSystemConfigDto,
   ): Promise<SystemConfigRecord> {
+    const tenantId = resolveCurrentTenantId();
     const existing = await this.findConfigByKey(key);
     const existingRecord = toSystemConfigRecord(existing);
     const nextValueType = toSystemConfigValueType(
@@ -290,22 +305,23 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
     };
     const config = await this.prisma.$transaction(async (tx) => {
       const updated = await tx.systemConfig.update({
-        where: { key },
+        where: { tenantId_key: { tenantId, key } },
         data: updateData,
       });
 
       if (shouldCreateSecretVersion) {
         await tx.systemConfigSecretVersion.updateMany({
-          where: { key, active: true },
+          where: { tenantId, key, active: true },
           data: { active: false },
         });
         const latest = await tx.systemConfigSecretVersion.aggregate({
-          where: { key },
+          where: { tenantId, key },
           _max: { version: true },
         });
         await tx.systemConfigSecretVersion.create({
           data: {
             active: true,
+            tenantId,
             key,
             reason: 'Updated secret config value.',
             value: storedValue,
@@ -322,19 +338,23 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
   }
 
   async deleteConfig(key: string): Promise<{ deleted: true }> {
+    const tenantId = resolveCurrentTenantId();
     assertSystemConfigMutable(
       toSystemConfigRecord(await this.findConfigByKey(key)),
     );
-    await this.prisma.systemConfig.delete({ where: { key } });
+    await this.prisma.systemConfig.delete({
+      where: { tenantId_key: { tenantId, key } },
+    });
     return { deleted: true };
   }
 
   async deleteConfigs(
     body: BatchDeleteSystemConfigsDto,
   ): Promise<{ deleted: true; affected: number; keys: readonly string[] }> {
+    const tenantId = resolveCurrentTenantId();
     const keys = normalizeBatchSystemConfigKeys(body?.keys);
     const configs = await this.prisma.systemConfig.findMany({
-      where: { key: { in: [...keys] } },
+      where: { tenantId, key: { in: [...keys] } },
       select: { key: true, system: true },
     });
     const existingKeys = new Set(configs.map((config) => config.key));
@@ -359,7 +379,7 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
     }
 
     await this.prisma.systemConfig.deleteMany({
-      where: { key: { in: [...keys] } },
+      where: { tenantId, key: { in: [...keys] } },
     });
 
     return {
@@ -372,11 +392,12 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
   async listConfigEnvironmentOverrides(
     key: string,
   ): Promise<readonly SystemConfigEnvironmentOverrideRecord[]> {
+    const tenantId = resolveCurrentTenantId();
     assertEnvironmentOverrideConfig(
       toSystemConfigRecord(await this.findConfigByKey(key)),
     );
     const rows = await this.prisma.systemConfigEnvironmentOverride.findMany({
-      where: { key },
+      where: { tenantId, key },
       orderBy: [{ environment: 'asc' }],
     });
 
@@ -387,11 +408,13 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
     key: string,
     environment: string,
   ): Promise<SystemConfigEnvironmentOverrideRecord> {
+    const tenantId = resolveCurrentTenantId();
     const normalizedEnvironment =
       normalizeRequiredSystemConfigEnvironment(environment);
     const row = await this.prisma.systemConfigEnvironmentOverride.findUnique({
       where: {
-        key_environment: {
+        tenantId_key_environment: {
+          tenantId,
           key,
           environment: normalizedEnvironment,
         },
@@ -414,6 +437,7 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
     environment: string,
     body: UpsertSystemConfigEnvironmentOverrideDto,
   ): Promise<SystemConfigEnvironmentOverrideRecord> {
+    const tenantId = resolveCurrentTenantId();
     const config = toSystemConfigRecord(await this.findConfigByKey(key));
     const normalizedEnvironment =
       normalizeRequiredSystemConfigEnvironment(environment);
@@ -439,13 +463,15 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
     };
     const row = await this.prisma.systemConfigEnvironmentOverride.upsert({
       where: {
-        key_environment: {
+        tenantId_key_environment: {
+          tenantId,
           key,
           environment: normalizedEnvironment,
         },
       },
       create: {
         ...data,
+        tenantId,
         key,
         environment: normalizedEnvironment,
       },
@@ -459,12 +485,14 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
     key: string,
     environment: string,
   ): Promise<{ deleted: true }> {
+    const tenantId = resolveCurrentTenantId();
     const normalizedEnvironment =
       normalizeRequiredSystemConfigEnvironment(environment);
     await this.getConfigEnvironmentOverride(key, normalizedEnvironment);
     await this.prisma.systemConfigEnvironmentOverride.delete({
       where: {
-        key_environment: {
+        tenantId_key_environment: {
+          tenantId,
           key,
           environment: normalizedEnvironment,
         },
@@ -477,11 +505,12 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
   async listConfigSecretVersions(
     key: string,
   ): Promise<readonly SystemConfigSecretVersionRecord[]> {
+    const tenantId = resolveCurrentTenantId();
     assertSecretVersionedConfig(
       toSystemConfigRecord(await this.findConfigByKey(key)),
     );
     const rows = await this.prisma.systemConfigSecretVersion.findMany({
-      where: { key },
+      where: { tenantId, key },
       orderBy: [{ version: 'desc' }],
     });
 
@@ -492,6 +521,7 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
     key: string,
     body: RotateSystemConfigSecretDto,
   ): Promise<SystemConfigSecretVersionRecord> {
+    const tenantId = resolveCurrentTenantId();
     const config = toSystemConfigRecord(await this.findConfigByKey(key));
     assertSecretVersionedConfig(config);
 
@@ -505,7 +535,7 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
     const reason = normalizeOptionalConfigText(body.reason, 'remark');
     const version = await this.prisma.$transaction(async (tx) => {
       await tx.systemConfig.update({
-        where: { key },
+        where: { tenantId_key: { tenantId, key } },
         data: {
           public: false,
           value: storedValue,
@@ -513,17 +543,18 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
         },
       });
       await tx.systemConfigSecretVersion.updateMany({
-        where: { key, active: true },
+        where: { tenantId, key, active: true },
         data: { active: false },
       });
       const latest = await tx.systemConfigSecretVersion.aggregate({
-        where: { key },
+        where: { tenantId, key },
         _max: { version: true },
       });
 
       return tx.systemConfigSecretVersion.create({
         data: {
           active: true,
+          tenantId,
           key,
           reason,
           rotatedBy,
@@ -544,15 +575,18 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
   async rotateConfigVaultKey(
     body: RotateSystemConfigVaultKeyDto,
   ): Promise<SystemConfigVaultKeyRotationRecord> {
+    const tenantId = resolveCurrentTenantId();
     const rotatedBy = normalizeSecretRotationActor(body.rotatedBy);
     const reason = normalizeOptionalConfigText(body.reason, 'remark');
     const rotatedAt = new Date().toISOString();
     const result = await this.prisma.$transaction(async (tx) => {
-      const configs = await tx.systemConfig.findMany();
+      const configs = await tx.systemConfig.findMany({ where: { tenantId } });
       const secretConfigs = configs.filter(
         (config) => toSystemConfigRecord(config).visibility === 'secret',
       );
-      const secretVersions = await tx.systemConfigSecretVersion.findMany();
+      const secretVersions = await tx.systemConfigSecretVersion.findMany({
+        where: { tenantId },
+      });
       const currentSecretValues: string[] = [];
       const secretVersionValues: string[] = [];
 
@@ -570,7 +604,7 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
           visibility: 'secret',
         });
         await tx.systemConfig.update({
-          where: { key: config.key },
+          where: { tenantId_key: { tenantId, key: config.key } },
           data: { value: rewrapped, valueType: 'string', public: false },
         });
         currentSecretValues.push(rewrapped);
@@ -591,7 +625,8 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
         });
         await tx.systemConfigSecretVersion.update({
           where: {
-            key_version: {
+            tenantId_key_version: {
+              tenantId,
               key: version.key,
               version: version.version,
             },
@@ -621,8 +656,9 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
   }
 
   private async findConfigByKey(key: string): Promise<PrismaSystemConfig> {
+    const tenantId = resolveCurrentTenantId();
     const config = await this.prisma.systemConfig.findUnique({
-      where: { key },
+      where: { tenantId_key: { tenantId, key } },
     });
 
     if (!config) {
@@ -640,9 +676,13 @@ export class PrismaSystemConfigRepository extends SystemConfigRepository {
     currentSecretValues: readonly string[];
     secretVersionValues: readonly string[];
   }> {
-    const configs = await this.prisma.systemConfig.findMany();
+    const tenantId = resolveCurrentTenantId();
+    const configs = await this.prisma.systemConfig.findMany({
+      where: { tenantId },
+    });
     const secretVersions = await this.prisma.systemConfigSecretVersion.findMany(
       {
+        where: { tenantId },
         select: { value: true },
       },
     );
@@ -666,6 +706,7 @@ function toSystemConfigRecord(config: PrismaSystemConfig): SystemConfigRecord {
 
   return {
     id: config.id,
+    tenantId: config.tenantId,
     category: config.category,
     name: config.name,
     key: config.key,
@@ -688,6 +729,7 @@ function toSystemConfigEnvironmentOverrideRecord(
 ): SystemConfigEnvironmentOverrideRecord {
   return {
     id: override.id,
+    tenantId: override.tenantId,
     key: override.key,
     environment: override.environment,
     value: override.value,
@@ -708,6 +750,7 @@ function toSystemConfigSecretVersionRecord(
 
   return {
     id: version.id,
+    tenantId: version.tenantId,
     key: version.key,
     version: version.version,
     active: version.active,
@@ -725,4 +768,8 @@ function toSystemConfigSecretVersionRecord(
     reason: version.reason ?? undefined,
     createdAt: version.createdAt.toISOString(),
   };
+}
+
+function resolveCurrentTenantId(): string {
+  return getRequestContext()?.tenantId ?? ROOT_TENANT_ID;
 }

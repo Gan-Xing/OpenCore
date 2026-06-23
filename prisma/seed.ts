@@ -1287,7 +1287,12 @@ async function seedSystemManagement(): Promise<{
       visibility: config.visibility,
     });
     await prisma.systemConfig.upsert({
-      where: { key: config.key },
+      where: {
+        tenantId_key: {
+          tenantId: config.tenantId,
+          key: config.key,
+        },
+      },
       update: {
         category: config.category,
         name: config.name,
@@ -1300,6 +1305,7 @@ async function seedSystemManagement(): Promise<{
       },
       create: {
         id: config.id,
+        tenantId: config.tenantId,
         category: config.category,
         name: config.name,
         key: config.key,
@@ -1313,12 +1319,13 @@ async function seedSystemManagement(): Promise<{
     });
     if (config.visibility === 'secret') {
       await prisma.systemConfigSecretVersion.updateMany({
-        where: { key: config.key },
+        where: { tenantId: config.tenantId, key: config.key },
         data: { active: false },
       });
       await prisma.systemConfigSecretVersion.upsert({
         where: {
-          key_version: {
+          tenantId_key_version: {
+            tenantId: config.tenantId,
             key: config.key,
             version: 1,
           },
@@ -1332,6 +1339,7 @@ async function seedSystemManagement(): Promise<{
         },
         create: {
           active: true,
+          tenantId: config.tenantId,
           key: config.key,
           reason: 'Seeded secret baseline.',
           rotatedBy: 'seed',
@@ -1648,6 +1656,7 @@ function getRuntimeSystemConfigs(): typeof seedSystemConfigs {
       !existingKeys.has(provider.configKey),
   ).map((provider) => ({
     id: provider.configId,
+    tenantId: 'tenant_root',
     category: 'integration' as const,
     name: provider.name,
     key: provider.configKey,

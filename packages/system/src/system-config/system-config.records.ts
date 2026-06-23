@@ -4,6 +4,7 @@ export type SystemConfigValueType = 'boolean' | 'json' | 'number' | 'string';
 
 export type SystemConfigRecord = {
   id: string;
+  tenantId: string;
   category: string;
   name: string;
   key: string;
@@ -19,6 +20,7 @@ export type SystemConfigRecord = {
 
 export type SystemConfigEnvironmentOverrideRecord = {
   id: string;
+  tenantId: string;
   key: string;
   environment: string;
   value: string;
@@ -33,6 +35,7 @@ export type SystemConfigEnvironmentOverrideRecord = {
 
 export type SystemConfigSecretVersionRecord = {
   id: string;
+  tenantId: string;
   key: string;
   version: number;
   active: boolean;
@@ -71,11 +74,14 @@ export type SystemConfigVaultKeyRotationRecord =
     reason?: string;
     rewrappedConfigCount: number;
     rewrappedSecretVersionCount: number;
-  };
+};
+
+const ROOT_TENANT_ID = 'tenant_root';
 
 export const seedSystemConfigs: readonly SystemConfigRecord[] = [
   {
     id: 'config_admin_title',
+    tenantId: ROOT_TENANT_ID,
     category: 'system',
     name: 'Admin title',
     key: 'opencore.admin.title',
@@ -90,6 +96,7 @@ export const seedSystemConfigs: readonly SystemConfigRecord[] = [
   },
   {
     id: 'config_login_lockout',
+    tenantId: ROOT_TENANT_ID,
     category: 'security',
     name: 'Login lockout minutes',
     key: 'auth.login.lockoutMinutes',
@@ -104,6 +111,7 @@ export const seedSystemConfigs: readonly SystemConfigRecord[] = [
   },
   {
     id: 'config_login_max_failed_attempts',
+    tenantId: ROOT_TENANT_ID,
     category: 'security',
     name: 'Login max failed attempts',
     key: 'auth.login.maxFailedAttempts',
@@ -118,6 +126,7 @@ export const seedSystemConfigs: readonly SystemConfigRecord[] = [
   },
   {
     id: 'config_feature_notice_inbox_enabled',
+    tenantId: ROOT_TENANT_ID,
     category: 'feature',
     name: 'Notice inbox feature flag',
     key: 'feature.notice.inbox.enabled',
@@ -132,6 +141,7 @@ export const seedSystemConfigs: readonly SystemConfigRecord[] = [
   },
   {
     id: 'config_feature_notice_inbox_rollout',
+    tenantId: ROOT_TENANT_ID,
     category: 'feature',
     name: 'Notice inbox rollout percentage',
     key: 'feature.notice.inbox.rolloutPercentage',
@@ -146,6 +156,7 @@ export const seedSystemConfigs: readonly SystemConfigRecord[] = [
   },
   {
     id: 'config_feature_notice_inbox_audience',
+    tenantId: ROOT_TENANT_ID,
     category: 'feature',
     name: 'Notice inbox audience rules',
     key: 'feature.notice.inbox.audienceRules',
@@ -160,6 +171,7 @@ export const seedSystemConfigs: readonly SystemConfigRecord[] = [
   },
   {
     id: 'config_jwt_secret_ref',
+    tenantId: ROOT_TENANT_ID,
     category: 'security',
     name: 'JWT secret reference',
     key: 'auth.jwt.secretRef',
@@ -174,6 +186,7 @@ export const seedSystemConfigs: readonly SystemConfigRecord[] = [
   },
   {
     id: 'config_integration_mail_smtp_password',
+    tenantId: ROOT_TENANT_ID,
     category: 'integration',
     name: 'Mail SMTP password',
     key: 'integration.mail.smtp.password.secret',
@@ -188,6 +201,7 @@ export const seedSystemConfigs: readonly SystemConfigRecord[] = [
   },
   {
     id: 'config_integration_sms_http_api_key',
+    tenantId: ROOT_TENANT_ID,
     category: 'integration',
     name: 'SMS HTTP API key',
     key: 'integration.sms.http.api-key.secret',

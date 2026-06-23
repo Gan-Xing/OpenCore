@@ -80,6 +80,7 @@ model Tenant {
   membershipRoles TenantMembershipRole[]
   membershipPosts TenantMembershipPost[]
   roles           Role[]
+  systemConfigs   SystemConfig[]
   dictTypes       DictType[]
   depts           SystemDept[]
   posts           SystemPost[]
@@ -304,9 +305,11 @@ model DictItem {
 
 model SystemConfig {
   id          String                            @id @default(cuid())
+  tenantId    String                            @default("tenant_root")
+  tenant      Tenant                            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   category    String                            @default("system")
   name        String
-  key         String                            @unique
+  key         String
   value       String
   valueType   String
   description String?
@@ -317,26 +320,31 @@ model SystemConfig {
   secrets     SystemConfigSecretVersion[]
   createdAt   DateTime                          @default(now())
   updatedAt   DateTime                          @updatedAt
+
+  @@unique([tenantId, key])
+  @@index([tenantId, category, createdAt])
 }
 
 model SystemConfigEnvironmentOverride {
   id          String       @id @default(cuid())
+  tenantId    String       @default("tenant_root")
   key         String
   environment String
   value       String
   valueType   String
   description String?
   remark      String?
-  config      SystemConfig @relation(fields: [key], references: [key], onDelete: Cascade)
+  config      SystemConfig @relation(fields: [tenantId, key], references: [tenantId, key], onDelete: Cascade)
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
-  @@unique([key, environment])
-  @@index([environment])
+  @@unique([tenantId, key, environment])
+  @@index([tenantId, environment])
 }
 
 model SystemConfigSecretVersion {
   id        String       @id @default(cuid())
+  tenantId  String       @default("tenant_root")
   key       String
   version   Int
   value     String
@@ -344,12 +352,12 @@ model SystemConfigSecretVersion {
   active    Boolean      @default(false)
   rotatedBy String?
   reason    String?
-  config    SystemConfig @relation(fields: [key], references: [key], onDelete: Cascade)
+  config    SystemConfig @relation(fields: [tenantId, key], references: [tenantId, key], onDelete: Cascade)
   createdAt DateTime     @default(now())
 
-  @@unique([key, version])
-  @@index([key, active])
-  @@index([createdAt])
+  @@unique([tenantId, key, version])
+  @@index([tenantId, key, active])
+  @@index([tenantId, createdAt])
 }
 
 model SystemNotice {
