@@ -1,6 +1,6 @@
 # OpenCore Cycle-022 Productization Waterline Audit
 
-Date: 2026-06-22
+Date: 2026-06-23
 
 ## Waterline
 
@@ -42,3 +42,15 @@ These remain below the productization waterline and cannot be described as compl
 | OpenAPI/SDK/Admin                                     | Done   | Auth DTO/OpenAPI updated; SDK has select/switch; Admin login accepts optional tenant code.                  |
 | Smoke                                                 | Done   | Tenant auth smoke validates token claims, request context, header tamper resistance, and switch revocation. |
 | Guard                                                 | Done   | Static tenant auth guard checks schema/token/session/context/API/smoke markers.                             |
+
+## T3a Audit
+
+| Requirement                        | Status  | Notes                                                                                                    |
+| ---------------------------------- | ------- | -------------------------------------------------------------------------------------------------------- |
+| Membership-derived roles and posts | Done    | Authenticated users prefer `TenantMembershipRole` and `TenantMembershipPost` for active tenant sessions. |
+| Tenant plan permission clipping    | Done    | Registry permissions are clipped by active tenant plan modules before reaching permission guards.        |
+| Data scope uses active membership  | Done    | Security data-scope resolution receives the active membership id and uses membership dept/role scope.    |
+| OpenAPI/SDK contract               | Done    | Authenticated user DTO/SDK type now includes membership-derived `postCodes`.                             |
+| Smoke/guard                        | Done    | Added `smoke:core-tenant-rbac` and `guard:tenant-rbac`.                                                  |
+| Tenant-owned Role/Dept/Post CRUD   | Pending | Existing Role/Dept/Post repositories remain globally keyed; T3 is not complete.                          |
+| Tenant-scoped unique constraints   | Pending | Role/Dept/Post code uniqueness is still global and must be rewritten in a later T3/T4 closure.           |

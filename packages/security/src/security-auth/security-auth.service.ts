@@ -48,6 +48,7 @@ export type AuthenticatedUser = {
   username: string;
   displayName: string;
   roleCodes: readonly string[];
+  postCodes: readonly string[];
   permissionCodes: readonly string[];
   accessMode: SecurityTenantAccessMode;
   activeTenant?: AuthenticatedTenant;
@@ -321,8 +322,12 @@ export class SecurityAuthService {
       id: user.id,
       username: user.username,
       displayName: user.displayName,
-      roleCodes: [...user.roleCodes],
-      permissionCodes: await this.repository.getPermissionCodesForUser(user.id),
+      roleCodes: [...(activeMembership?.roleCodes ?? user.roleCodes)],
+      postCodes: [...(activeMembership?.postCodes ?? [])],
+      permissionCodes: [
+        ...(activeMembership?.permissionCodes ??
+          (await this.repository.getPermissionCodesForUser(user.id))),
+      ],
       tenantOptions: memberships.map(toTenantLoginOption),
       avatarUrl: user.avatarUrl,
     };

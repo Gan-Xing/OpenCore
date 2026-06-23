@@ -173,6 +173,7 @@ class InMemoryAuthRepository extends SecurityAuthUserRepository {
       username: user.username,
       displayName: user.displayName,
       roleCodes: [...user.roleCodes],
+      postCodes: [],
       permissionCodes: [...user.permissionCodes],
       tenantOptions: [
         {

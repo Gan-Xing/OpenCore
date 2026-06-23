@@ -1,6 +1,6 @@
 # OpenCore Cycle-022 Implementation Notes
 
-Date: 2026-06-22
+Date: 2026-06-23
 
 ## Round 1: T1 Foundation Models and Root Tenant
 
@@ -134,5 +134,59 @@ Passed after deploy:
 
 - No tenant CRUD.
 - No full Admin tenant switcher yet.
-- No tenant-derived permission clipping yet; permissions still come from legacy `UserRole` until T3.
+- No tenant-owned Role/Dept/Post CRUD yet.
 - No repository-wide tenant scoping beyond root membership bridge sync for single-mode compatibility.
+
+## Round 3: T3a Membership-Scoped RBAC Authorization
+
+### Completed
+
+- Extended tenant membership auth records with optional:
+  - `roleCodes`;
+  - `postCodes`;
+  - `permissionCodes`.
+- Updated authenticated user construction:
+  - active tenant sessions prefer membership role codes over legacy `UserRole`;
+  - active tenant sessions expose membership post codes;
+  - active tenant sessions prefer membership permission codes, falling back to legacy permissions only for seed/in-memory compatibility.
+- Updated Prisma RBAC repository:
+  - `listTenantMembershipsForUser()` now loads `TenantMembershipRole`, `TenantMembershipPost`, role permissions, and plan modules;
+  - registry permissions are clipped by the active tenant plan's `TenantPlanModule.moduleCode` list;
+  - custom non-registry permissions are preserved because no module contract exists for them.
+- Updated data-scope resolution:
+  - `SecurityDataScopeService` passes `activeMembership.id`;
+  - Prisma RBAC repository resolves member dept and member role data scope when a membership id is present.
+- Updated public contract:
+  - Auth OpenAPI DTO includes `AuthenticatedUser.postCodes`;
+  - SDK `AuthenticatedUser` includes `postCodes`.
+- Added verification:
+  - tenant RBAC guard;
+  - tenant RBAC smoke;
+  - Prisma integration test creates a temporary tenant plan with only `core.dashboard`, assigns admin membership role/post, and proves login exposes only `core:dashboard:read`.
+
+### Verification Log
+
+Passed before deploy:
+
+- Tenant foundation/auth/RBAC guards, Prisma validation/generation/seed, OpenAPI/SDK drift checks, and typed smoke typecheck.
+- Focused security and API RBAC tests, including the plan-clipping integration test.
+- Full repository lint, typecheck, and test suites.
+
+Passed after deploy:
+
+- Refreshed deploy on API `39172` and Admin `39174`.
+- Local and public API smokes for tenant foundation, tenant auth, and tenant RBAC.
+- Public Admin `/system/tenants` route and login tenant-code bundle check.
+
+### Remaining Product Debt
+
+- Complete T3 tenant-owned Role/Dept/Post CRUD and unique constraint rewrite.
+- Complete T4 tenant-owned System/core data isolation.
+- Complete T5 runtime propagation.
+- Complete T6 live Tenant Plan/Member CRUD, Admin switcher, and platform visit audit.
+
+### Deliberate Non-Goals
+
+- No Tenant Plan CRUD API in T3a; plan-clipping is proven through repository integration tests because the control-plane CRUD surface is T6.
+- No front-end tenant switcher yet.
+- No Redis/file/queue/WebSocket/Integration tenant propagation yet.

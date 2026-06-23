@@ -3,6 +3,7 @@ export type AuthenticatedUser = {
   username: string;
   displayName: string;
   roleCodes: readonly string[];
+  postCodes: readonly string[];
   permissionCodes: readonly string[];
   accessMode: 'platform' | 'platform-visit' | 'tenant';
   activeTenant?: AuthenticatedTenant;

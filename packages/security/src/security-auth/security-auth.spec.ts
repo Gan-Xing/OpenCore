@@ -209,10 +209,18 @@ describe('@opencore/security security-auth', () => {
     });
 
     expect(session.user.activeTenant).toMatchObject({ code: 'beta' });
+    expect(session.user).toMatchObject({
+      permissionCodes: ['core:user:read'],
+      postCodes: ['engineer'],
+      roleCodes: ['viewer'],
+    });
     await expect(
       service.authenticateBearer(`Bearer ${session.accessToken}`),
     ).resolves.toMatchObject({
       activeTenant: expect.objectContaining({ code: 'beta' }),
+      permissionCodes: ['core:user:read'],
+      postCodes: ['engineer'],
+      roleCodes: ['viewer'],
       username: 'admin',
     });
   });
@@ -365,6 +373,9 @@ class MultiTenantSecurityAuthUserRepository extends InMemorySecurityAuthUserRepo
         isOwner: true,
         membershipId: 'tenant_membership_alpha_user_admin',
         membershipStatus: 'active',
+        permissionCodes: ['core:dashboard:read'],
+        postCodes: ['admin'],
+        roleCodes: ['owner'],
         tenantCode: 'alpha',
         tenantId: 'tenant_alpha',
         tenantName: 'Alpha',
@@ -376,6 +387,9 @@ class MultiTenantSecurityAuthUserRepository extends InMemorySecurityAuthUserRepo
         isOwner: false,
         membershipId: 'tenant_membership_beta_user_admin',
         membershipStatus: 'active',
+        permissionCodes: ['core:user:read'],
+        postCodes: ['engineer'],
+        roleCodes: ['viewer'],
         tenantCode: 'beta',
         tenantId: 'tenant_beta',
         tenantName: 'Beta',

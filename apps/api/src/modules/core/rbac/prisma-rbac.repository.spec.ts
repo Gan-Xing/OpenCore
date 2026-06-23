@@ -8,13 +8,21 @@ describe('PrismaRbacRepository integration', () => {
   const repository = new PrismaRbacRepository(prisma);
   const authService = new AuthService(repository);
   const permissionCode = `core:perm-${randomUUID().slice(0, 8)}:read`;
+  const tenantAuthzRunId = randomUUID().slice(0, 8);
+  const tenantAuthzPlanId = `plan_authz_${tenantAuthzRunId}`;
+  const tenantAuthzPlanCode = `authz-plan-${tenantAuthzRunId}`;
+  const tenantAuthzId = `tenant_authz_${tenantAuthzRunId}`;
+  const tenantAuthzCode = `authz-${tenantAuthzRunId}`;
+  const tenantAuthzMembershipId = `membership_authz_${tenantAuthzRunId}`;
 
   beforeEach(async () => {
     await cleanupPermission();
+    await cleanupTenantAuthz();
   });
 
   afterEach(async () => {
     await cleanupPermission();
+    await cleanupTenantAuthz();
   });
 
   afterAll(async () => {
@@ -130,6 +138,89 @@ describe('PrismaRbacRepository integration', () => {
     ).resolves.toEqual(['dept_engineering', 'dept_operations']);
   });
 
+  it('uses active tenant membership roles and clips permissions by tenant plan modules', async () => {
+    const bootstrapPassword = process.env.BOOTSTRAP_ADMIN_PASSWORD;
+
+    expect(bootstrapPassword).toBeTruthy();
+
+    const admin = await prisma.user.findUniqueOrThrow({
+      where: { username: 'admin' },
+      select: { id: true },
+    });
+    const adminRole = await prisma.role.findUniqueOrThrow({
+      where: { code: 'admin' },
+      select: { id: true },
+    });
+    const engineerPost = await prisma.systemPost.findUniqueOrThrow({
+      where: { code: 'engineer' },
+      select: { id: true },
+    });
+
+    await prisma.tenantPlan.create({
+      data: {
+        id: tenantAuthzPlanId,
+        code: tenantAuthzPlanCode,
+        name: 'Authz smoke plan',
+        modules: {
+          create: [{ moduleCode: 'core.dashboard' }],
+        },
+      },
+    });
+    await prisma.tenant.create({
+      data: {
+        id: tenantAuthzId,
+        code: tenantAuthzCode,
+        slug: tenantAuthzCode,
+        name: 'Authz Smoke Tenant',
+        planId: tenantAuthzPlanId,
+        memberships: {
+          create: {
+            id: tenantAuthzMembershipId,
+            userId: admin.id,
+            deptId: 'dept_operations',
+            status: 'active',
+            roles: {
+              create: {
+                roleId: adminRole.id,
+                tenantId: tenantAuthzId,
+              },
+            },
+            posts: {
+              create: {
+                postId: engineerPost.id,
+                tenantId: tenantAuthzId,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const session = expectAuthenticated(
+      await authService.login('admin', bootstrapPassword ?? '', {
+        tenantCode: tenantAuthzCode,
+      }),
+    );
+
+    expect(session.user.activeTenant?.code).toBe(tenantAuthzCode);
+    expect(session.user.roleCodes).toEqual(['admin']);
+    expect(session.user.postCodes).toEqual(['engineer']);
+    expect(session.user.permissionCodes).toEqual(['core:dashboard:read']);
+    await expect(
+      repository.getDataScopeProfileForUser(admin.id, tenantAuthzMembershipId),
+    ).resolves.toEqual({
+      userId: admin.id,
+      deptId: 'dept_operations',
+      roles: [
+        {
+          roleCode: 'admin',
+          dataScope: 'all',
+          dataScopeDeptIds: [],
+        },
+      ],
+    });
+  });
+
   async function cleanupPermission(): Promise<void> {
     const permissions = await prisma.permission.findMany({
       where: { code: permissionCode },
@@ -148,6 +239,11 @@ describe('PrismaRbacRepository integration', () => {
     }
 
     await prisma.permission.deleteMany({ where: { code: permissionCode } });
+  }
+
+  async function cleanupTenantAuthz(): Promise<void> {
+    await prisma.tenant.deleteMany({ where: { id: tenantAuthzId } });
+    await prisma.tenantPlan.deleteMany({ where: { id: tenantAuthzPlanId } });
   }
 });
 

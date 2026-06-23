@@ -132,6 +132,9 @@ export class AuthenticatedUserDto {
   roleCodes!: readonly string[];
 
   @ApiProperty({ type: [String] })
+  postCodes!: readonly string[];
+
+  @ApiProperty({ type: [String] })
   permissionCodes!: readonly string[];
 
   @ApiProperty({ enum: ['platform', 'platform-visit', 'tenant'] })

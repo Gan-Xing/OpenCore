@@ -1,18 +1,18 @@
 # OpenCore Cycle-022 Tenant Foundation Handoff
 
-Date: 2026-06-20  
+Date: 2026-06-23
 Repository: `Gan-Xing/OpenCore`  
 Branch: `main`  
 Target track: `Cycle-022 / Tenant Foundation`  
-Status: **In progress; T2 tenant-bound auth/session/context slice implemented, deployed, and verified**
+Status: **In progress; T3a membership-scoped RBAC authorization implemented, deployed, and verified**
 
 ## 0. Current Round Snapshot
 
-Updated: 2026-06-22
+Updated: 2026-06-23
 
-Current completed slice count: **3**
+Current completed slice count: **3 full slices + 1 T3 sub-slice**
 
-This working tree has advanced Cycle-022 through the first two deployable tenant foundation slices:
+This working tree has advanced Cycle-022 through the first two full deployable tenant foundation slices and the first T3 authorization sub-slice:
 
 - Prisma models for `TenantPlan`, `TenantPlanModule`, `Tenant`, `TenantMembership`, `TenantMembershipRole`, `TenantMembershipPost`, `PlatformRole`, `UserPlatformRole`, and `PlatformRolePermission`.
 - Migration `20260622223000_tenant_foundation` creates the `root` tenant, root `system.full` plan, root memberships for existing users, and transitional root copies of `UserRole` and `UserPost`.
@@ -29,10 +29,17 @@ This working tree has advanced Cycle-022 through the first two deployable tenant
 - Admin login accepts an optional tenant code and no longer stores a token unless the login response is authenticated.
 - `pnpm guard:tenant-auth` and `pnpm smoke:core-tenancy-auth` were added.
 - Refreshed deploy completed on API `39172` and Admin `39174`; tenant foundation/auth smokes passed against local and public API.
+- Active authenticated users now prefer `TenantMembershipRole` and `TenantMembershipPost` over legacy `UserRole`/`UserPost`.
+- Tenant membership permissions are clipped by the active tenant plan's enabled module codes.
+- Security data-scope resolution now uses the active membership id, so member department and member role data scope drive protected user queries.
+- Auth responses and SDK types expose membership-derived `postCodes`.
+- `pnpm guard:tenant-rbac` and `pnpm smoke:core-tenant-rbac` were added for this T3a closure.
+- Refreshed deploy completed on API `39172` and Admin `39174`; tenant foundation/auth/RBAC smokes passed against local and public API.
 
 Still not complete:
 
-- tenant-scoped System repositories and unique constraint rewrites;
+- tenant-owned Role/Department/Post CRUD and unique constraint rewrites;
+- tenant-scoped System repositories for user/org management beyond authz bridge reads;
 - Redis/file/queue/WebSocket/Integration/OAuth/audit runtime propagation;
 - Tenant Plan and Member CRUD Admin;
 - platform visit/impersonation audit.
@@ -130,7 +137,7 @@ OpenCore 已经完成单租户企业后台的大部分基础产品化，不是 s
 
 - `RequestContext` 已有 `requestId`、`traceId`、`actorUserId`、`tenantId`、`membershipId`、`accessMode`，但多数 repository 尚未消费 tenant 字段；
 - Access Token 已有 `sub`、`jti`、`iat`、`exp`、`tid`、`mid`、`am`；
-- `AuthenticatedUser` 已有当前租户和成员信息，但权限仍来自 legacy `UserRole`；
+- `AuthenticatedUser` 已优先使用当前 `TenantMembershipRole` / `TenantMembershipPost`，权限会按租户套餐 module 裁剪；legacy `UserRole` 仅保留为 seed/in-memory fallback；
 - `PrismaService` 是裸 `PrismaClient`，没有 tenant-scoped client；
 - Redis key 没有 tenant namespace；
 - 文件 key 默认是 `runtime/file-assets/...`；

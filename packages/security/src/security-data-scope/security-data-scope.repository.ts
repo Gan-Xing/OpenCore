@@ -20,6 +20,7 @@ export type SecurityDataScopeProfile = {
 export abstract class SecurityDataScopeRepository {
   abstract getDataScopeProfileForUser(
     userId: string,
+    membershipId?: string,
   ): Promise<SecurityDataScopeProfile | undefined>;
 
   abstract listDescendantDeptIds(deptId: string): Promise<string[]>;

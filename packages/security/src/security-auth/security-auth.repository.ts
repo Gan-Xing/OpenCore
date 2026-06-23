@@ -21,6 +21,9 @@ export type SecurityAuthTenantMembershipRecord = {
   tenantExpiresAt?: string;
   isOwner: boolean;
   enabledModuleCodes: readonly string[];
+  roleCodes?: readonly string[];
+  postCodes?: readonly string[];
+  permissionCodes?: readonly string[];
 };
 
 export type SecurityAuthTenantMembershipLookup = {

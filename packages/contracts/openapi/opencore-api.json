@@ -10227,6 +10227,7 @@
           "username": { "type": "string" },
           "displayName": { "type": "string" },
           "roleCodes": { "type": "array", "items": { "type": "string" } },
+          "postCodes": { "type": "array", "items": { "type": "string" } },
           "permissionCodes": { "type": "array", "items": { "type": "string" } },
           "accessMode": {
             "type": "string",
@@ -10253,6 +10254,7 @@
           "username",
           "displayName",
           "roleCodes",
+          "postCodes",
           "permissionCodes",
           "accessMode",
           "enabledModuleCodes",

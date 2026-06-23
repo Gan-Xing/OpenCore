@@ -1,6 +1,6 @@
 # OpenCore Cycle-022 Tenant Architecture
 
-Date: 2026-06-22
+Date: 2026-06-23
 
 ## Decision
 
@@ -13,7 +13,7 @@ OpenCore uses global `User` plus tenant-local `TenantMembership`. Tenant state i
 
 Both modes use the same Tenant/TenantPlan/TenantMembership data model.
 
-## T1/T2 Model
+## T1/T2/T3a Model
 
 - `TenantPlan` owns plan metadata and limits.
 - `TenantPlanModule` grants stable module codes to a plan.
@@ -24,6 +24,9 @@ Both modes use the same Tenant/TenantPlan/TenantMembership data model.
 - `OnlineUserSession` stores the authenticated `tenantId`, `membershipId`, and `accessMode`.
 - Access tokens store the same tenant context as `tid`, `mid`, and `am`.
 - `RequestContext` stores actor, tenant, membership, and access mode after guard authentication.
+- Authenticated tenant users derive effective role codes and post codes from the active membership.
+- Authenticated tenant permissions are derived from active membership roles and clipped by the active tenant plan's enabled module codes.
+- Security data scope resolves from the active membership's department and roles when a membership id is present.
 
 ## Boundary Rules
 
@@ -32,8 +35,9 @@ Both modes use the same Tenant/TenantPlan/TenantMembership data model.
 - Tenant selection uses a short-lived login ticket, not an authenticated access token.
 - Bearer authentication must reject token/session tenant mismatches and inactive tenant/member state.
 - Tenant-owned repositories must eventually use tenant-scoped access or explicit tenant predicates.
+- Permission guards must use effective tenant membership permissions, not global user role permissions.
 - Platform visit mode must be explicit, permissioned, time-bounded, and audited.
 
 ## Sequencing
 
-T1 creates the foundation and root backfill. T2 binds authentication/session/request context to tenant membership. T3/T4 migrate tenant-owned data. T5 propagates runtime context. T6 finishes live Admin control plane.
+T1 creates the foundation and root backfill. T2 binds authentication/session/request context to tenant membership. T3a makes authz membership-scoped and plan-clipped. Remaining T3/T4 work migrates tenant-owned Role/Dept/Post and core data. T5 propagates runtime context. T6 finishes live Admin control plane.

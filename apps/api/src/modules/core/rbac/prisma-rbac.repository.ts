@@ -1,4 +1,7 @@
-import { collectPermissionDefinitions } from '@opencore/module-registry';
+import {
+  collectPermissionDefinitions,
+  listModules,
+} from '@opencore/module-registry';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@opencore/database';
 import type {
@@ -32,6 +35,14 @@ const permissionMetadataByCode = new Map<
     permission,
   ]),
 );
+const permissionModuleCodeByCode: ReadonlyMap<string, string> = new Map(
+  listModules().flatMap((moduleDefinition) =>
+    moduleDefinition.permissions.map((permission): [string, string] => [
+      permission.code,
+      moduleDefinition.code,
+    ]),
+  ),
+);
 
 type PrismaUserWithRoles = {
   id: string;
@@ -47,6 +58,42 @@ type PrismaUserWithRoles = {
       enabled: boolean;
       dataScope?: string;
       dataScopeDeptIds?: unknown;
+    };
+  }>;
+};
+
+type PrismaTenantMembershipWithAuthz = {
+  id: string;
+  status: string;
+  isOwner: boolean;
+  deptId?: string | null;
+  tenant: {
+    id: string;
+    code: string;
+    slug: string;
+    name: string;
+    status: string;
+    expiresAt?: Date | null;
+    plan?: {
+      modules: Array<{ moduleCode: string }>;
+    } | null;
+  };
+  roles: Array<{
+    role: {
+      code: string;
+      enabled: boolean;
+      dataScope?: string;
+      dataScopeDeptIds?: unknown;
+      permissions: Array<{
+        permission: {
+          code: string;
+        };
+      }>;
+    };
+  }>;
+  posts: Array<{
+    post: {
+      code: string;
     };
   }>;
 };
@@ -216,6 +263,24 @@ export class PrismaRbacRepository extends RbacRepository {
             },
           },
         },
+        roles: {
+          include: {
+            role: {
+              include: {
+                permissions: {
+                  include: {
+                    permission: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        posts: {
+          include: {
+            post: true,
+          },
+        },
       },
       orderBy: [
         { isOwner: 'desc' },
@@ -224,20 +289,7 @@ export class PrismaRbacRepository extends RbacRepository {
       ],
     });
 
-    return memberships.map((membership) => ({
-      enabledModuleCodes:
-        membership.tenant.plan?.modules.map((module) => module.moduleCode) ??
-        [],
-      isOwner: membership.isOwner,
-      membershipId: membership.id,
-      membershipStatus: membership.status,
-      tenantCode: membership.tenant.code,
-      tenantExpiresAt: membership.tenant.expiresAt?.toISOString(),
-      tenantId: membership.tenant.id,
-      tenantName: membership.tenant.name,
-      tenantSlug: membership.tenant.slug,
-      tenantStatus: membership.tenant.status,
-    }));
+    return memberships.map(toTenantMembershipRecord);
   }
 
   async findTenantMembershipForUser(
@@ -262,7 +314,42 @@ export class PrismaRbacRepository extends RbacRepository {
 
   async getDataScopeProfileForUser(
     userId: string,
+    membershipId?: string,
   ): Promise<SecurityDataScopeProfile | undefined> {
+    if (membershipId) {
+      const membership = await this.prisma.tenantMembership.findFirst({
+        where: { id: membershipId, userId },
+        include: {
+          roles: {
+            include: {
+              role: true,
+            },
+          },
+        },
+      });
+
+      if (!membership) {
+        return undefined;
+      }
+
+      return {
+        userId,
+        deptId: membership.deptId ?? undefined,
+        roles: membership.roles
+          .filter((membershipRole) => membershipRole.role.enabled)
+          .map((membershipRole) => ({
+            roleCode: membershipRole.role.code,
+            dataScope: normalizeSecurityDataScope(
+              membershipRole.role.dataScope,
+            ),
+            dataScopeDeptIds: normalizeDataScopeDeptIds(
+              membershipRole.role.dataScopeDeptIds,
+            ),
+          }))
+          .sort((left, right) => left.roleCode.localeCompare(right.roleCode)),
+      };
+    }
+
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: {
@@ -400,6 +487,60 @@ function toPermissionSummaryRecord(
     dangerous: metadata?.dangerous ?? false,
     system: Boolean(metadata),
   };
+}
+
+function toTenantMembershipRecord(
+  membership: PrismaTenantMembershipWithAuthz,
+): SecurityAuthTenantMembershipRecord {
+  const enabledModuleCodes = [
+    ...new Set(
+      membership.tenant.plan?.modules.map((module) => module.moduleCode) ?? [],
+    ),
+  ].sort();
+  const enabledModuleCodeSet = new Set(enabledModuleCodes);
+  const activeRoles = membership.roles
+    .map((membershipRole) => membershipRole.role)
+    .filter((role) => role.enabled);
+
+  return {
+    enabledModuleCodes,
+    isOwner: membership.isOwner,
+    membershipId: membership.id,
+    membershipStatus: membership.status,
+    permissionCodes: [
+      ...new Set(
+        activeRoles.flatMap((role) =>
+          role.permissions
+            .map((rolePermission) => rolePermission.permission.code)
+            .filter((permissionCode) =>
+              isPermissionEnabledForTenantPlan(
+                permissionCode,
+                enabledModuleCodeSet,
+              ),
+            ),
+        ),
+      ),
+    ].sort(),
+    postCodes: membership.posts
+      .map((membershipPost) => membershipPost.post.code)
+      .sort(),
+    roleCodes: activeRoles.map((role) => role.code).sort(),
+    tenantCode: membership.tenant.code,
+    tenantExpiresAt: membership.tenant.expiresAt?.toISOString(),
+    tenantId: membership.tenant.id,
+    tenantName: membership.tenant.name,
+    tenantSlug: membership.tenant.slug,
+    tenantStatus: membership.tenant.status,
+  };
+}
+
+function isPermissionEnabledForTenantPlan(
+  permissionCode: string,
+  enabledModuleCodes: ReadonlySet<string>,
+): boolean {
+  const moduleCode = permissionModuleCodeByCode.get(permissionCode);
+
+  return !moduleCode || enabledModuleCodes.has(moduleCode);
 }
 
 function normalizeSecurityDataScope(value: string): SecurityDataScopeType {

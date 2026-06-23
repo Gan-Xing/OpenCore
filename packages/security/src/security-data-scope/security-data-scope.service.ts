@@ -23,7 +23,10 @@ export class SecurityDataScopeService {
     user: AuthenticatedUser,
   ): Promise<SecurityDataScopeConstraint> {
     return resolveSecurityDataScopeConstraint(
-      await this.repository.getDataScopeProfileForUser(user.id),
+      await this.repository.getDataScopeProfileForUser(
+        user.id,
+        user.activeMembership?.id,
+      ),
       this.repository,
     );
   }
