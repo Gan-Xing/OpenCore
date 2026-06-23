@@ -1611,7 +1611,8 @@ Passed after deploy:
 ### Remaining Product Debt
 
 - Future CRM/ERP/Mall/AI/payment domains still require a new tenant-owned domain plan before any implementation starts.
-- The active worktree has unrelated Admin source modifications outside this slice; Cycle-022 cannot be marked complete while the handoff stop condition still requires a clean worktree.
+- Final Admin diff audit is closed: section-label cleanup was committed, format-only locale noise was discarded, and Menu/Permission `stage` visibility/search/filter/export/detail behavior was restored.
+- Clean-worktree stop condition is satisfied for Cycle-022 V1.
 
 ### Deliberate Non-Goals
 
