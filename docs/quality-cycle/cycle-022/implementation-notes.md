@@ -481,3 +481,50 @@ Passed after deploy:
 - No body/query/header tenant selector for online-user monitor APIs.
 - No platform-admin global online-session view; that belongs with T6 platform visit/control plane.
 - No dict/config/notice/file/log tenant isolation in this sub-slice.
+
+## Round 9: T4b Login-Log Tenant Isolation
+
+### Completed
+
+- Made login logs tenant-owned:
+  - added `LoginLog.tenantId` with root backfill, required default, tenant/date indexes, and tenant FK;
+  - exposed `tenantId` through audit records, DTO, OpenAPI, SDK summary, seed, and Admin Login Logs.
+- Scoped Prisma login-log operations:
+  - list/detail/export/delete/clean resolve the active tenant from `RequestContext`;
+  - missing context falls back to `tenant_root` for single-mode compatibility.
+- Scoped new records:
+  - login attempt records accept optional `tenantId`;
+  - successful login/social/logout records pass the selected session tenant when available;
+  - public failed login attempts keep root fallback because they may not have a trusted tenant context.
+- Added tenant-scope verification:
+  - Prisma integration test records root and foreign tenant logs and proves root context cannot list, detail, delete, or clean foreign logs;
+  - `smoke:core-login-log` seeds a foreign tenant login log and exercises the public API.
+- Added `guard:tenant-login-log-scope`.
+
+### Verification Log
+
+Passed before deploy:
+
+- `pnpm prisma:validate`, `pnpm prisma:generate`, and `pnpm prisma:migrate`.
+- Focused security auth spec and audit login-log spec.
+- `pnpm prisma:seed:check`, `pnpm smoke:typed:check`, OpenAPI export/check, registry tag check, and SDK contract check.
+- All tenant guards including `pnpm guard:tenant-login-log-scope`.
+- Full `pnpm lint`, `pnpm typecheck`, and `pnpm test`.
+- `pnpm smoke:api:local`, including foreign-tenant login-log hidden/detail/delete/clean checks.
+
+Passed after deploy:
+
+- `pnpm deploy:local` rebuilt API/Admin, applied migrations, reseeded, restarted API `39172` and Admin `39174`, and passed deploy smoke.
+- Public API login-log smoke passed against `http://144.217.243.161:39172`.
+
+### Remaining Product Debt
+
+- Complete T4 System/core tenant data isolation for dict, config, notice, file, operation audit logs, and related core tables.
+- Complete T5 Redis/file/queue/WebSocket/Integration/OAuth/runtime tenant propagation.
+- Complete T6 Tenant Plan CRUD, Tenant Member CRUD/invitation, Admin switcher, platform visit mode, and tenant operation audit.
+
+### Deliberate Non-Goals
+
+- No platform-admin global login-log view in T4b; platform visit/control-plane behavior belongs with T6.
+- No client-driven tenant selector for login-log APIs.
+- No operation-audit tenant isolation in this sub-slice.

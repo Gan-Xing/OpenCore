@@ -6,6 +6,7 @@ import type {
 
 export type AuditLoginLogRecord = {
   id: string;
+  tenantId: string;
   username: string;
   logType: SecurityLoginLogType;
   result: SecurityLoginResult;
@@ -40,6 +41,7 @@ export function enrichAuditLoginLogRecord(
 export const seedAuditLoginLogs: readonly AuditLoginLogRecord[] = [
   enrichAuditLoginLogRecord({
     id: 'login_success_admin',
+    tenantId: 'tenant_root',
     username: 'admin',
     logType: 'login.username',
     result: 'success',
@@ -52,6 +54,7 @@ export const seedAuditLoginLogs: readonly AuditLoginLogRecord[] = [
   }),
   enrichAuditLoginLogRecord({
     id: 'login_failure_unknown',
+    tenantId: 'tenant_root',
     username: 'unknown',
     logType: 'login.username',
     result: 'bad_credentials',

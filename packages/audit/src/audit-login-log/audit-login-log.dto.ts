@@ -5,6 +5,9 @@ export class LoginLogDto {
   id!: string;
 
   @ApiProperty()
+  tenantId!: string;
+
+  @ApiProperty()
   username!: string;
 
   @ApiProperty({

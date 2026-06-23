@@ -82,6 +82,7 @@ model Tenant {
   roles           Role[]
   depts           SystemDept[]
   posts           SystemPost[]
+  loginLogs       LoginLog[]
   onlineSessions  OnlineUserSession[]
   createdAt       DateTime               @default(now())
   updatedAt       DateTime               @updatedAt
@@ -515,6 +516,8 @@ model AuditLog {
 
 model LoginLog {
   id            String   @id @default(cuid())
+  tenantId      String   @default("tenant_root")
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   username      String
   logType       String   @default("login.username")
   result        String   @default("success")
@@ -527,6 +530,9 @@ model LoginLog {
   userAgent     String
   requestId     String
   createdAt     DateTime @default(now())
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, username, createdAt])
 }
 
 model LoginLockout {

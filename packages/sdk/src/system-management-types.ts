@@ -903,6 +903,7 @@ export type AuditLogQueryRequest = PageRequest & {
 
 export type LoginLogSummary = {
   id: string;
+  tenantId: string;
   username: string;
   logType: LoginLogType;
   result: LoginLogResult;

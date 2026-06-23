@@ -11,11 +11,16 @@ import {
   delay,
   formatBody,
 } from './runtime';
+import { disconnectSmokePrisma, getSmokePrisma } from './prisma';
 
 const smoke = createTypedSmokeRuntime();
 const { apiPrefix, baseUrl, checkDocs, login } = smoke;
 const apiRequest = smoke.apiRequest as any;
 const request = smoke.request as any;
+
+const FOREIGN_TENANT_ID = 'tenant_login_log_smoke_foreign';
+const FOREIGN_LOGIN_LOG_ID = 'login_log_smoke_foreign';
+const FOREIGN_USERNAME = 'foreign-login-log-smoke';
 
 const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 const failedUsername = `opencore-smoke-login-${runId}`;
@@ -33,6 +38,7 @@ let logoutUserId;
 let lockoutUserId;
 let originalLoginMaxFailedAttempts;
 let loginMaxFailedAttemptsMutated = false;
+let foreignTenantSeeded = false;
 
 async function main() {
   try {
@@ -51,6 +57,8 @@ async function main() {
 
     token = assertString(loginResponse.accessToken, 'login accessToken');
     smoke.setToken(token);
+    await seedForeignTenantLoginLog();
+    foreignTenantSeeded = true;
 
     const ipLocationStatus = await apiRequest('/core/ip-location/status');
     assertEqual(
@@ -126,6 +134,17 @@ async function main() {
       '/core/login-logs?page=1&pageSize=10',
     );
     assertArray(listResponse.items, 'login log list items');
+    assertForeignTenantHidden(listResponse.items, 'login log list');
+    await apiRequest(
+      `/core/login-logs/${encodeURIComponent(FOREIGN_LOGIN_LOG_ID)}`,
+      { expected: [404] },
+    );
+    await apiRequest('/core/login-logs/batch', {
+      method: 'DELETE',
+      expected: [404],
+      body: { ids: [FOREIGN_LOGIN_LOG_ID] },
+    });
+    await assertForeignLoginLogPreserved();
 
     const createdLogoutUser = await apiRequest('/core/users', {
       method: 'POST',
@@ -219,6 +238,7 @@ async function main() {
     assertEqual(detailLog.logType, 'login.username', 'detail login log type');
     assertEqual(detailLog.result, 'bad_credentials', 'detail login log result');
     assertEqual(detailLog.success, false, 'detail failed login success flag');
+    assertString(detailLog.tenantId, 'detail login log tenantId');
     assertString(detailLog.requestId, 'detail login log requestId');
     assertString(detailLog.ip, 'detail login log ip');
     assertString(detailLog.location, 'detail login log location');
@@ -292,6 +312,11 @@ async function main() {
       'login log export columns',
     );
     assertIncludes(exportPreview.columns, 'reason', 'login log export columns');
+    assertIncludes(
+      exportPreview.columns,
+      'tenantId',
+      'login log export columns',
+    );
     assertIncludes(
       exportPreview.columns,
       'location',
@@ -493,6 +518,7 @@ async function main() {
     });
     assertEqual(cleanResult.deleted, true, 'clean login logs deleted flag');
     assertNumberAtLeast(cleanResult.affected, 1, 'clean login logs affected');
+    await assertForeignLoginLogPreserved();
 
     const cleanedPage = await apiRequest('/core/login-logs?page=1&pageSize=10');
     assertArray(cleanedPage.items, 'cleaned login log list items');
@@ -563,6 +589,9 @@ async function main() {
           'core.login-log.detail',
           'core.login-log.device-fields',
           'core.login-log.location',
+          'core.login-log.foreign-tenant-hidden',
+          'core.login-log.foreign-tenant-delete-blocked',
+          'core.login-log.foreign-tenant-clean-preserved',
           'core.login-log.export',
           'core.login-log.batch-delete-empty-guard',
           'core.login-log.batch-delete-duplicate-guard',
@@ -593,6 +622,11 @@ async function main() {
       }),
     );
     process.exitCode = 1;
+  } finally {
+    if (foreignTenantSeeded) {
+      await cleanupForeignTenantLoginLog().catch(() => undefined);
+    }
+    await disconnectSmokePrisma();
   }
 }
 
@@ -694,4 +728,64 @@ function offsetIsoDate(value, offsetMs, label) {
   }
 
   return new Date(timestamp + offsetMs).toISOString();
+}
+
+async function seedForeignTenantLoginLog() {
+  const prisma = getSmokePrisma();
+
+  await cleanupForeignTenantLoginLog();
+  await prisma.tenant.upsert({
+    where: { id: FOREIGN_TENANT_ID },
+    update: {
+      code: 'login-log-smoke-foreign',
+      slug: 'login-log-smoke-foreign',
+      name: 'Login Log Smoke Foreign',
+      status: 'active',
+    },
+    create: {
+      id: FOREIGN_TENANT_ID,
+      code: 'login-log-smoke-foreign',
+      slug: 'login-log-smoke-foreign',
+      name: 'Login Log Smoke Foreign',
+      status: 'active',
+    },
+  });
+  await prisma.loginLog.create({
+    data: {
+      id: FOREIGN_LOGIN_LOG_ID,
+      tenantId: FOREIGN_TENANT_ID,
+      username: FOREIGN_USERNAME,
+      logType: 'login.username',
+      result: 'success',
+      success: true,
+      ip: '127.0.0.210',
+      location: 'Loopback',
+      userAgent: 'OpenCore foreign tenant login log smoke',
+      requestId: `req_foreign_login_log_smoke_${runId}`,
+      createdAt: new Date('2026-06-10T00:00:00.000Z'),
+    },
+  });
+}
+
+async function cleanupForeignTenantLoginLog() {
+  const prisma = getSmokePrisma();
+
+  await prisma.loginLog.deleteMany({ where: { id: FOREIGN_LOGIN_LOG_ID } });
+  await prisma.tenant.deleteMany({ where: { id: FOREIGN_TENANT_ID } });
+}
+
+async function assertForeignLoginLogPreserved() {
+  const log = await getSmokePrisma().loginLog.findUnique({
+    where: { id: FOREIGN_LOGIN_LOG_ID },
+  });
+
+  if (!log || log.tenantId !== FOREIGN_TENANT_ID) {
+    throw new Error('Foreign tenant login log was changed from root scope');
+  }
+}
+
+function assertForeignTenantHidden(items, label) {
+  if (items.some((item) => item.id === FOREIGN_LOGIN_LOG_ID)) {
+    throw new Error(`${label} leaked foreign tenant login log`);
+  }
 }

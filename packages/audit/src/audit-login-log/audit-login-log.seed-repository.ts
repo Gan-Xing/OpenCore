@@ -64,6 +64,7 @@ export class SeedAuditLoginLogRepository extends AuditLoginLogRepository {
     this.loginLogs = [
       enrichAuditLoginLogRecord({
         id: `login_${this.loginLogs.length + 1}`,
+        tenantId: record.tenantId ?? 'tenant_root',
         username: record.username,
         logType: record.logType ?? 'login.username',
         result:

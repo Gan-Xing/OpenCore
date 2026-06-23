@@ -1623,6 +1623,7 @@ export default {
   'pages.security.loginLogs.fields.reason': 'Reason',
   'pages.security.loginLogs.fields.requestId': 'Request ID',
   'pages.security.loginLogs.fields.result': 'Result',
+  'pages.security.loginLogs.fields.tenantId': 'Tenant ID',
   'pages.security.loginLogs.fields.time': 'Time',
   'pages.security.loginLogs.fields.userAgent': 'User Agent',
   'pages.security.loginLogs.fields.username': 'Username',

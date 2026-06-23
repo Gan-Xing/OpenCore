@@ -119,6 +119,11 @@ export class SecurityAuthService {
       'success',
       undefined,
       context,
+      'login.username',
+      {
+        tenantId:
+          tenant.status === 'selected' ? tenant.membership.tenantId : undefined,
+      },
     );
 
     if (tenant.status === 'selection') {
@@ -160,6 +165,7 @@ export class SecurityAuthService {
         reason: provider?.providerCode
           ? `${provider.providerCode}:${provider.providerAccountId ?? 'unknown'}`
           : 'social login',
+        tenantId: session.user.activeTenant?.id,
       },
     );
     return session;
@@ -292,6 +298,7 @@ export class SecurityAuthService {
       {
         actorUsername: user.username,
         reason: 'self logout',
+        tenantId: user.activeTenant?.id,
       },
     );
 
@@ -543,11 +550,12 @@ export class SecurityAuthService {
     logType: SecurityLoginLogType = 'login.username',
     structuredContext: Pick<
       SecurityLoginAttemptRecord,
-      'actorUsername' | 'reason'
+      'actorUsername' | 'reason' | 'tenantId'
     > = {},
   ): Promise<void> {
     const record: SecurityLoginAttemptRecord = {
       username,
+      tenantId: structuredContext.tenantId,
       logType,
       result,
       success: result === 'success',

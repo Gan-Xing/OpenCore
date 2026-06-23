@@ -1532,6 +1532,7 @@ async function seedSystemManagement(): Promise<{
       where: { id: loginLog.id },
       update: {
         username: loginLog.username,
+        tenantId: loginLog.tenantId,
         logType: loginLog.logType,
         result: loginLog.result,
         success: loginLog.success,
@@ -1546,6 +1547,7 @@ async function seedSystemManagement(): Promise<{
       },
       create: {
         id: loginLog.id,
+        tenantId: loginLog.tenantId,
         username: loginLog.username,
         logType: loginLog.logType,
         result: loginLog.result,

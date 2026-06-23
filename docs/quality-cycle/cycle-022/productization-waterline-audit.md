@@ -122,3 +122,15 @@ These remain below the productization waterline and cannot be described as compl
 | OpenAPI consistency                 | Done    | Online-session DTO already includes tenant fields; no endpoint shape change was required.                                    |
 | Smoke/guard                         | Done    | Added `guard:tenant-online-user-scope`; existing `smoke:core-online-user` now covers foreign-tenant session isolation.       |
 | Dict/config/notice/file/log scope   | Pending | T4a only closes online sessions. Remaining T4 modules still need tenant ownership, tests, smoke, guards, and docs.           |
+
+## T4b Audit
+
+| Requirement                    | Status  | Notes                                                                                                                  |
+| ------------------------------ | ------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Login log tenant ownership     | Done    | `LoginLog.tenantId` is backfilled to `tenant_root`, required, indexed, and constrained to `Tenant`.                    |
+| Repository tenant isolation    | Done    | Login-log list/detail/export/delete/clean use `RequestContext.tenantId` with `tenant_root` fallback.                  |
+| Login attempt tenant recording | Done    | Successful session/self/social login events can carry the selected session tenant; public failures retain root fallback. |
+| Cross-tenant API rejection     | Done    | Prisma integration test and smoke prove foreign-tenant login logs are hidden, cannot be detailed/deleted, and survive root clean. |
+| Seed/OpenAPI/SDK/Admin         | Done    | Seed login logs, DTO, SDK summary fixture, and Admin Login Logs expose `tenantId`.                                     |
+| Smoke/guard                    | Done    | Added `guard:tenant-login-log-scope`; `smoke:core-login-log` now covers foreign-tenant login-log isolation.            |
+| Remaining log scope            | Pending | Operation audit logs and platform visit audit remain pending.                                                         |

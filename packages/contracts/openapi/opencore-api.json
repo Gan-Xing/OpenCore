@@ -10689,6 +10689,7 @@
         "type": "object",
         "properties": {
           "id": { "type": "string" },
+          "tenantId": { "type": "string" },
           "username": { "type": "string" },
           "logType": {
             "type": "string",
@@ -10726,6 +10727,7 @@
         },
         "required": [
           "id",
+          "tenantId",
           "username",
           "logType",
           "result",

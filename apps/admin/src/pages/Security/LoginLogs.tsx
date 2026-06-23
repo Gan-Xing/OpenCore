@@ -60,6 +60,7 @@ import {
 
 const searchFields: CurrentPageSearchField<LoginLogSummary>[] = [
   'username',
+  'tenantId',
   'logType',
   'result',
   'ip',
@@ -155,6 +156,10 @@ function createDetailFields(
 ): DetailField[] {
   return [
     { label: formatMessage('pages.security.loginLogs.fields.id', 'ID'), value: record.id },
+    {
+      label: formatMessage('pages.security.loginLogs.fields.tenantId', 'Tenant ID'),
+      value: record.tenantId,
+    },
     {
       label: formatMessage('pages.security.loginLogs.fields.time', 'Time'),
       value: record.createdAt,
@@ -384,6 +389,10 @@ export default function LoginLogsPage() {
   ];
   const exportColumns: CurrentPageExportColumn<LoginLogSummary>[] = [
     { title: formatMessage('pages.security.loginLogs.fields.id', 'ID'), dataIndex: 'id' },
+    {
+      title: formatMessage('pages.security.loginLogs.fields.tenantId', 'Tenant ID'),
+      dataIndex: 'tenantId',
+    },
     {
       title: formatMessage('pages.security.loginLogs.fields.time', 'Time'),
       dataIndex: 'createdAt',
@@ -683,6 +692,12 @@ export default function LoginLogsPage() {
           {record.username}
         </Typography.Link>
       ),
+    },
+    {
+      title: formatMessage('pages.security.loginLogs.fields.tenantId', 'Tenant ID'),
+      dataIndex: 'tenantId',
+      width: 152,
+      ellipsis: true,
     },
     {
       title: formatMessage(

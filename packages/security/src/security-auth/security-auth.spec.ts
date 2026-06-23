@@ -110,6 +110,7 @@ describe('@opencore/security security-auth', () => {
     expect(loginAttempts.records).toEqual([
       {
         username: 'admin',
+        tenantId: 'tenant_root',
         logType: 'login.username',
         result: 'success',
         success: true,
@@ -168,6 +169,7 @@ describe('@opencore/security security-auth', () => {
       }),
       {
         username: 'admin',
+        tenantId: 'tenant_root',
         logType: 'logout.self',
         result: 'success',
         success: true,

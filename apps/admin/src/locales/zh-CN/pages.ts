@@ -1472,6 +1472,7 @@ export default {
   'pages.security.loginLogs.fields.reason': '原因',
   'pages.security.loginLogs.fields.requestId': '请求 ID',
   'pages.security.loginLogs.fields.result': '结果',
+  'pages.security.loginLogs.fields.tenantId': '租户 ID',
   'pages.security.loginLogs.fields.time': '时间',
   'pages.security.loginLogs.fields.userAgent': '用户代理',
   'pages.security.loginLogs.fields.username': '用户名',

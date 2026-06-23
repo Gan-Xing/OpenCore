@@ -1,8 +1,11 @@
 import { randomUUID } from 'node:crypto';
+import { runWithRequestContext } from '@opencore/core';
 import { PrismaService } from '@opencore/database';
 import { AuditLoginLogService } from './audit-login-log.service';
 import { PrismaAuditLoginLogRepository } from './audit-login-log.prisma-repository';
 import { SeedAuditLoginLogRepository } from './audit-login-log.seed-repository';
+
+const ROOT_TENANT_ID = 'tenant_root';
 
 describe('@opencore/audit audit-login-log', () => {
   it('lists, filters, records and exports seed login logs', async () => {
@@ -124,6 +127,7 @@ describe('@opencore/audit audit-login-log', () => {
       scope: 'current-page',
       columns: [
         'createdAt',
+        'tenantId',
         'username',
         'logType',
         'result',
@@ -199,9 +203,34 @@ describe('@opencore/audit audit-login-log', () => {
     const testRunId = randomUUID().slice(0, 8);
     const requestId = `req_login_${testRunId}`;
     const forceRequestId = `req_logout_force_${testRunId}`;
+    const scopedRootRequestId = `req_login_root_${testRunId}`;
+    const scopedOtherRequestId = `req_login_other_${testRunId}`;
+    const otherCleanRequestId = `req_login_other_clean_${testRunId}`;
+    const otherTenantId = `tenant_login_${testRunId}`;
+    const otherCleanLogId = `login_other_clean_${testRunId}`;
 
     beforeEach(async () => {
       await cleanupTestRows();
+      await prisma.tenant.upsert({
+        where: { id: ROOT_TENANT_ID },
+        update: {},
+        create: {
+          id: ROOT_TENANT_ID,
+          code: 'root',
+          slug: 'root',
+          name: 'Root Tenant',
+          status: 'active',
+        },
+      });
+      await prisma.tenant.create({
+        data: {
+          id: otherTenantId,
+          code: `login-${testRunId}`,
+          slug: `login-${testRunId}`,
+          name: `Login ${testRunId}`,
+          status: 'active',
+        },
+      });
     });
 
     afterEach(async () => {
@@ -239,6 +268,7 @@ describe('@opencore/audit audit-login-log', () => {
         items: [
           expect.objectContaining({
             browser: 'Chrome',
+            tenantId: ROOT_TENANT_ID,
             location: 'Loopback',
             requestId,
             os: 'Windows',
@@ -331,13 +361,129 @@ describe('@opencore/audit audit-login-log', () => {
       );
     });
 
+    it('scopes Prisma login-log operations to the request tenant', async () => {
+      await runInTenant(ROOT_TENANT_ID, () =>
+        service.recordLoginAttempt({
+          username: `tenant_root_${testRunId}`,
+          logType: 'login.username',
+          result: 'bad_credentials',
+          success: false,
+          failureReason: 'invalid-credentials',
+          ip: '127.0.0.1',
+          userAgent: 'jest',
+          requestId: scopedRootRequestId,
+        }),
+      );
+      await runInTenant(otherTenantId, () =>
+        service.recordLoginAttempt({
+          username: `tenant_other_${testRunId}`,
+          logType: 'login.username',
+          result: 'bad_credentials',
+          success: false,
+          failureReason: 'invalid-credentials',
+          ip: '127.0.0.2',
+          userAgent: 'jest',
+          requestId: scopedOtherRequestId,
+        }),
+      );
+      await prisma.loginLog.create({
+        data: {
+          id: otherCleanLogId,
+          tenantId: otherTenantId,
+          username: `tenant_other_clean_${testRunId}`,
+          logType: 'login.username',
+          result: 'success',
+          success: true,
+          ip: '127.0.0.3',
+          location: 'Loopback',
+          userAgent: 'jest',
+          requestId: otherCleanRequestId,
+        },
+      });
+
+      const otherLog = await prisma.loginLog.findFirstOrThrow({
+        where: { requestId: scopedOtherRequestId },
+      });
+      const rootPage = await runInTenant(ROOT_TENANT_ID, () =>
+        service.listLoginLogs({
+          page: 1,
+          pageSize: 100,
+          username: `tenant_`,
+        }),
+      );
+      expect(rootPage.items.map((log) => log.requestId)).toEqual(
+        expect.arrayContaining([scopedRootRequestId]),
+      );
+      expect(rootPage.items.map((log) => log.requestId)).not.toEqual(
+        expect.arrayContaining([scopedOtherRequestId, otherCleanRequestId]),
+      );
+
+      await expectHttpExceptionCode(
+        runInTenant(ROOT_TENANT_ID, () => service.getLoginLog(otherLog.id)),
+        'AUDIT_LOGIN_LOG_NOT_FOUND',
+      );
+      await expectHttpExceptionCode(
+        runInTenant(ROOT_TENANT_ID, () =>
+          service.deleteLoginLogs({ ids: [otherLog.id] }),
+        ),
+        'AUDIT_LOGIN_LOG_NOT_FOUND',
+      );
+      await expect(
+        prisma.loginLog.findUnique({ where: { id: otherLog.id } }),
+      ).resolves.toMatchObject({ id: otherLog.id });
+
+      await expect(
+        runInTenant(otherTenantId, () => service.getLoginLog(otherLog.id)),
+      ).resolves.toMatchObject({
+        id: otherLog.id,
+        tenantId: otherTenantId,
+        requestId: scopedOtherRequestId,
+      });
+      const cleanOther = await runInTenant(otherTenantId, () =>
+        service.cleanLoginLogs(),
+      );
+      expect(cleanOther.affected).toBeGreaterThanOrEqual(2);
+      await expect(
+        prisma.loginLog.findFirst({
+          where: { requestId: scopedRootRequestId },
+        }),
+      ).resolves.toMatchObject({ requestId: scopedRootRequestId });
+    });
+
     async function cleanupTestRows(): Promise<void> {
       await prisma.loginLog.deleteMany({
-        where: { requestId: { in: [requestId, forceRequestId] } },
+        where: {
+          OR: [
+            {
+              requestId: {
+                in: [
+                  requestId,
+                  forceRequestId,
+                  scopedRootRequestId,
+                  scopedOtherRequestId,
+                  otherCleanRequestId,
+                ],
+              },
+            },
+            { id: otherCleanLogId },
+          ],
+        },
       });
+      await prisma.tenant.deleteMany({ where: { id: otherTenantId } });
     }
   });
 });
+
+function runInTenant<T>(tenantId: string, callback: () => T): T {
+  return runWithRequestContext(
+    {
+      requestId: `test-${tenantId}`,
+      traceId: `test-${tenantId}`,
+      tenantId,
+    },
+    callback,
+  );
+}
 
 async function expectHttpExceptionCode(
   promise: Promise<unknown>,

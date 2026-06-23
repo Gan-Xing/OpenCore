@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { PageResult } from '@opencore/common';
+import { getRequestContext } from '@opencore/core';
 import { PrismaService } from '@opencore/database';
 import type { SecurityLoginAttemptRecord } from '@opencore/security';
 import type { BatchDeleteLoginLogsDto } from './audit-login-log.dto';
@@ -22,6 +23,7 @@ import {
 
 type PrismaLoginLog = {
   id: string;
+  tenantId: string;
   username: string;
   logType: string;
   result: string;
@@ -36,6 +38,8 @@ type PrismaLoginLog = {
   createdAt: Date;
 };
 
+const ROOT_TENANT_ID = 'tenant_root';
+
 @Injectable()
 export class PrismaAuditLoginLogRepository extends AuditLoginLogRepository {
   constructor(private readonly prisma: PrismaService) {
@@ -46,7 +50,9 @@ export class PrismaAuditLoginLogRepository extends AuditLoginLogRepository {
     query: AuditLoginLogQuery = {},
   ): Promise<PageResult<AuditLoginLogRecord>> {
     const filters = normalizeAuditLoginLogFilters(query);
+    const tenantId = resolveCurrentTenantId();
     const where = {
+      tenantId,
       ...(filters.username === undefined
         ? {}
         : { username: { contains: filters.username } }),
@@ -91,6 +97,7 @@ export class PrismaAuditLoginLogRepository extends AuditLoginLogRepository {
   async recordLoginAttempt(record: SecurityLoginAttemptRecord): Promise<void> {
     await this.prisma.loginLog.create({
       data: {
+        tenantId: record.tenantId ?? resolveCurrentTenantId(),
         username: record.username,
         logType: record.logType ?? 'login.username',
         result:
@@ -108,8 +115,8 @@ export class PrismaAuditLoginLogRepository extends AuditLoginLogRepository {
   }
 
   async getLoginLog(id: string): Promise<AuditLoginLogRecord> {
-    const log = await this.prisma.loginLog.findUnique({
-      where: { id },
+    const log = await this.prisma.loginLog.findFirst({
+      where: { id, tenantId: resolveCurrentTenantId() },
     });
 
     if (!log) {
@@ -127,8 +134,9 @@ export class PrismaAuditLoginLogRepository extends AuditLoginLogRepository {
     body: BatchDeleteLoginLogsDto,
   ): Promise<AuditLoginLogBatchMutationRecord> {
     const ids = normalizeBatchDeleteLoginLogIds(body);
+    const tenantId = resolveCurrentTenantId();
     const logs = await this.prisma.loginLog.findMany({
-      where: { id: { in: [...ids] } },
+      where: { tenantId, id: { in: [...ids] } },
       select: { id: true },
     });
     const existingIds = new Set(logs.map((log) => log.id));
@@ -143,7 +151,7 @@ export class PrismaAuditLoginLogRepository extends AuditLoginLogRepository {
     }
 
     await this.prisma.loginLog.deleteMany({
-      where: { id: { in: [...ids] } },
+      where: { tenantId, id: { in: [...ids] } },
     });
 
     return {
@@ -154,7 +162,9 @@ export class PrismaAuditLoginLogRepository extends AuditLoginLogRepository {
   }
 
   async cleanLoginLogs(): Promise<AuditLoginLogCleanRecord> {
-    const result = await this.prisma.loginLog.deleteMany();
+    const result = await this.prisma.loginLog.deleteMany({
+      where: { tenantId: resolveCurrentTenantId() },
+    });
 
     return {
       deleted: true,
@@ -166,6 +176,7 @@ export class PrismaAuditLoginLogRepository extends AuditLoginLogRepository {
 function toAuditLoginLogRecord(log: PrismaLoginLog): AuditLoginLogRecord {
   return enrichAuditLoginLogRecord({
     id: log.id,
+    tenantId: log.tenantId,
     username: log.username,
     logType:
       log.logType === 'login.mobile' ||
@@ -197,4 +208,8 @@ function toAuditLoginLogRecord(log: PrismaLoginLog): AuditLoginLogRecord {
     requestId: log.requestId,
     createdAt: log.createdAt.toISOString(),
   });
+}
+
+function resolveCurrentTenantId(): string {
+  return getRequestContext()?.tenantId ?? ROOT_TENANT_ID;
 }

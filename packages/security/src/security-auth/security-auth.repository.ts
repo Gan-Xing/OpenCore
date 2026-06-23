@@ -36,6 +36,7 @@ export type SecurityAuthTenantMembershipLookup = {
 
 export type SecurityLoginAttemptRecord = {
   username: string;
+  tenantId?: string;
   logType?: SecurityLoginLogType;
   result?: SecurityLoginResult;
   success: boolean;

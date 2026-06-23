@@ -194,6 +194,7 @@ export function createAuditLoginLogExportPreview(
     scope: 'current-page',
     columns: [
       'createdAt',
+      'tenantId',
       'username',
       'logType',
       'result',

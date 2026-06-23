@@ -420,6 +420,7 @@ export function createLoginLogFixtures(): PageResponse<LoginLogSummary> {
   return createPage([
     {
       id: 'login_success_admin',
+      tenantId: 'tenant_root',
       username: 'admin',
       logType: 'login.username',
       result: 'success',
